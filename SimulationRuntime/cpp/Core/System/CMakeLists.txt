@@ -1,8 +1,15 @@
 cmake_minimum_required (VERSION 2.6)
 
 project(${SystemName})
-add_library(${BasiLibName} STATIC tpl.cpp )
-set_target_properties(${BasiLibName} PROPERTIES COMPILE_FLAGS -fPIC)
+set(BASE_LIB "" CACHE INTERNAL "" )
+
+#IF (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR  MSVC))
+#add_library(${BasiLibName} STATIC tpl.cpp )
+#set_target_properties(${BasiLibName} PROPERTIES COMPILE_FLAGS -fPIC)
+#set(BASE_LIB -l${BasiLibName} CACHE INTERNAL "" )
+#ENDIF (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR  MSVC))
+
+
 # add the system default implementation library
 IF(ANALYZATION_MODE)
 	add_library(${SystemName} STATIC AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp SystemDefaultImplementation.cpp FactoryExport.cpp  )
@@ -23,8 +30,9 @@ endif(UNIX)
 
 install (TARGETS ${SystemName} DESTINATION lib/omc/${LIBINSTALLEXT})
 install (TARGETS ${SystemName}_static DESTINATION lib/omc/${LIBINSTALLEXT})
-install (TARGETS ${BasiLibName} DESTINATION lib/omc/${LIBINSTALLEXT})
-
+#IF (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR  MSVC))
+#install (TARGETS ${BasiLibName} DESTINATION lib/omc/${LIBINSTALLEXT})
+#ENDIF (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR  MSVC))
 install (FILES
 	${CMAKE_SOURCE_DIR}/Include/Core/System/SystemDefaultImplementation.h
 	${CMAKE_SOURCE_DIR}/Include/Core/System/AlgLoopDefaultImplementation.h

@@ -1309,7 +1309,7 @@ EXEEXT=<%makefileParams.exeext%>
 DLLEXT=<%makefileParams.dllext%>
 CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
 CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>  <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
-LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -lOMCppBase  -lOMCppOMCFactory -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath  -L"$(BOOST_LIBS)"  $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL)
+LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" $(BASE_LIB)  -lOMCppOMCFactory -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath  -L"$(BOOST_LIBS)"  $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL)
 LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"   -L"<%makefileParams.omhome%>/bin"  -lOMCppOMCFactory -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL)
 CPPFLAGS = $(CFLAGS) -DOMC_BUILD -DBOOST_SYSTEM_NO_DEPRICATED
 SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
@@ -7893,6 +7893,10 @@ template crefStartValueType2(DAE.Type ty)
     case T_INTEGER(__) then 'Int'
     case T_REAL(__) then 'Real'
     case T_BOOL(__) then 'Bool'
+    case T_ENUMERATION(__) then 'Int'
+    case T_ARRAY(ty=T_INTEGER(__)) then 'Int'
+    case T_ARRAY(ty=T_REAL(__)) then 'Real'
+    case T_ARRAY(ty=T_BOOL(__)) then 'Bool'
   else "error start value type"
 end match
 

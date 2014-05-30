@@ -27,7 +27,7 @@ typedef double logRetType;
 typedef double coshRetType;
 
 
-
+/*
 #if !defined(_MSC_VER) && !defined( __APPLE__)
 //extern template class  boost::shared_ptr<IAlgLoopSolver>;
 //extern template class  boost::shared_ptr<IAlgLoop>;
@@ -56,3 +56,4 @@ extern template class  boost::function<void (unordered_map<string,unsigned int>&
 //extern template class  ublas::matrix<double, adaptor_t> shared_matrix_t;
 
 #endif
+*/
