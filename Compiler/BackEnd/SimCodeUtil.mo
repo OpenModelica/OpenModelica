@@ -7599,8 +7599,8 @@ algorithm
   end match;
 end sortSimvars;
 
-public function simVarCompareByCrefSubsAtEndlLexical 
-"mahge: 
+public function simVarCompareByCrefSubsAtEndlLexical
+"mahge:
   Compare two simvars by their name. i.e. component ref.
   we use it to make sure elements of a vectorized array stay contagious
   sto each other in the correct offest/order.
@@ -7611,7 +7611,7 @@ public function simVarCompareByCrefSubsAtEndlLexical
   output Boolean outBool;
 protected
   DAE.ComponentRef cr1;
-  DAE.ComponentRef cr2;   
+  DAE.ComponentRef cr2;
 algorithm
   cr1 := varName(var1);
   cr2 := varName(var2);

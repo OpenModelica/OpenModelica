@@ -764,27 +764,27 @@ end crefSortFunc;
 
 public function crefLexicalGreaterSubsAtEnd
 "mahge:
-  Compares two crefs lexically. Subscripts are treated as if they are 
-  they are at the end of the whole component reference. 
-  e.g. r[1].i is greater than r[2].a. 
+  Compares two crefs lexically. Subscripts are treated as if they are
+  they are at the end of the whole component reference.
+  e.g. r[1].i is greater than r[2].a.
   returns true if the first cref is greater than the second"
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
   output Boolean isGreater;
 algorithm
-  isGreater := crefLexicalCompareubsAtEnd(cr1,cr2) > 0;    
+  isGreater := crefLexicalCompareubsAtEnd(cr1,cr2) > 0;
 end crefLexicalGreaterSubsAtEnd;
 
-public function crefLexicalCompareubsAtEnd 
-"mahge: 
-  Compares two crefs lexically. Subscripts are treated as if they are 
-  they are at the end of the whole component reference. 
-  e.g. r[1].i is greater than r[2].a. 
+public function crefLexicalCompareubsAtEnd
+"mahge:
+  Compares two crefs lexically. Subscripts are treated as if they are
+  they are at the end of the whole component reference.
+  e.g. r[1].i is greater than r[2].a.
   returns value is same as C strcmp. 0 if equal, 1 if first is greater, -1 otherwise"
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
   output Integer comapred;
-protected 
+protected
   String cr1_nosub_str;
   String cr2_nosub_str;
   list<Integer> subs1;
@@ -800,7 +800,7 @@ algorithm
 end crefLexicalCompareubsAtEnd;
 
 protected function crefLexicalCompareubsAtEnd2
-"mahge: 
+"mahge:
   Helper function for crefLexicalCompareubsAtEnd
   compares subs. However only if the crefs with out subs are equal.
   (i.e. identsCompared is 0)
@@ -814,44 +814,44 @@ algorithm
     local
       Integer sub1, sub2;
       list<Integer> rest1, rest2;
-    
+
     case (1, _, _)
       then 1;
-        
+
     case (-1, _, _)
       then -1;
-    
+
     // No subs
     case (_, {}, {})
       then identsCompared;
-        
+
     // One of them has subs while the nosub crefs are the same
     case (0, {}, _)
       then -1;
-         
+
     case (0, _, {})
       then 1;
-         
+
     case (0, sub1::rest1, sub2::rest2)
       equation
         true = intEq(sub1,sub2);
        then
          crefLexicalCompareubsAtEnd2(0, rest1,rest2);
-         
+
     case (0, sub1::rest1, sub2::rest2)
       equation
         true = intGe(sub1,sub2);
        then 1;
-         
+
     case (0, sub1::rest1, sub2::rest2)
        then -1;
-         
+
     case (_, _, _)
       equation
         print("ComponentReference.crefLexicalCompareubsAtEnd2 failed \n");
        then
          fail();
-         
+
   end matchcontinue;
 end crefLexicalCompareubsAtEnd2;
 
