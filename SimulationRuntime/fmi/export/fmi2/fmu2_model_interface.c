@@ -474,7 +474,11 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean noSetFMUStatePri
 }
 
 fmiStatus fmiSetTime(fmiComponent c, fmiReal time) {
-  // TODO Write code here
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiSetTime", modelInstantiated|modelInitialized|modelStepping))
+    return fmiError;
+  FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiSetTime: time=%.16g", time)
+  comp->fmuData->localData[0]->timeValue = time;
   return fmiOK;
 }
 
