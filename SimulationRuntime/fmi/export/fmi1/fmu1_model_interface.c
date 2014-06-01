@@ -108,8 +108,7 @@ const char* fmiGetVersion()
   return fmiVersion;
 }
 
-fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
-    fmiCallbackFunctions functions, fmiBoolean loggingOn)
+fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCallbackFunctions functions, fmiBoolean loggingOn)
 {
   ModelInstance* comp;
   if (!functions.logger)
@@ -130,6 +129,8 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   }
   comp = (ModelInstance *)functions.allocateMemory(1, sizeof(ModelInstance));
   if (comp) {
+    comp->instanceName = functions.allocateMemory(1 + strlen(instanceName), sizeof(char));
+    comp->GUID = functions.allocateMemory(1 + strlen(GUID), sizeof(char));
     DATA* fmudata = (DATA *)functions.allocateMemory(1, sizeof(DATA));
     threadData_t *threadData = (threadData_t *)functions.allocateMemory(1, sizeof(threadData));
     fmudata->threadData = threadData;
@@ -139,9 +140,9 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
           "fmiInstantiateModel: Error: Could not initialize the global data structure file.");
       return NULL;
     }
-  }else{
-    functions.logger(NULL, instanceName, fmiError, "error",
-        "fmiInstantiateModel: Out of memory.");
+  }
+  if (!comp || !comp->instanceName || !comp->GUID) {
+    functions.logger(NULL, instanceName, fmiError, "error", "fmiInstantiateModel: Out of memory.");
     return NULL;
   }
   if (comp->loggingOn) comp->functions.logger(NULL, instanceName, fmiOK, "log",
@@ -157,8 +158,8 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   read_input_xml(&(comp->fmuData->modelData), &(comp->fmuData->simulationInfo));
   modelInfoXmlInit(&(comp->fmuData->modelData.modelDataXml));
 
-  comp->instanceName = instanceName;
-  comp->GUID = GUID;
+  strcpy(comp->instanceName, instanceName);
+  strcpy(comp->GUID, GUID);
   comp->functions = functions;
   comp->loggingOn = loggingOn;
   comp->state = modelInstantiated;
@@ -183,6 +184,11 @@ void fmiFreeModelInstance(fmiComponent c)
   if (!comp) return;
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiFreeModelInstance");
+
+  /* free instanceName & GUID */
+  if (comp->instanceName) comp->functions.freeMemory(comp->instanceName);
+  if (comp->GUID) comp->functions.freeMemory(comp->GUID);
+  /* free comp */
   comp->functions.freeMemory(comp);
 }
 
@@ -768,6 +774,7 @@ fmiStatus fmiTerminate(fmiComponent c)
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiTerminate");
 
+  comp->state = modelTerminated;
   /* deinitDelay(comp->fmuData); */
   comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData);
   /* free nonlinear system data */
@@ -779,6 +786,7 @@ fmiStatus fmiTerminate(fmiComponent c)
   /* free stateset data */
   freeStateSetData(comp->fmuData);
   deInitializeDataStruc(comp->fmuData);
+  comp->functions.freeMemory(comp->fmuData->threadData);
   comp->functions.freeMemory(comp->fmuData);
 
   comp->state = modelTerminated;

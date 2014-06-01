@@ -194,7 +194,7 @@ fmiComponent fmiInstantiate(fmiString instanceName, fmiType fmuType, fmiString f
       comp->logCategories[i] = loggingOn;
     }
   }
-  if (!comp || !comp->instanceName || !comp->GUID || !comp->fmuData) {
+  if (!comp || !comp->instanceName || !comp->GUID) {
     functions->logger(functions->componentEnvironment, instanceName, fmiError, "error", "fmiInstantiate: Out of memory.");
     return NULL;
   }
