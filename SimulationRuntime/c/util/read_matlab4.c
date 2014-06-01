@@ -106,7 +106,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
   for(i=0; i<nMatrix;i++) {
     MHeader_t hdr;
     int nr = fread(&hdr,sizeof(MHeader_t),1,reader->file);
-    int matrix_length,element_length;
+    size_t matrix_length,element_length;
     char *name;
     reader->doublePrecision = 1;
     if(nr != 1) return "Corrupt header (1)";
