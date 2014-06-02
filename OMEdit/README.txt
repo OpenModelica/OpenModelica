@@ -19,11 +19,14 @@ Windows
   Build & Run
   ------------------------------
   - Run the OMEditGUI/Makefile.omdev.mingw via Qt Command Prompt.
+  - Start OMEdit from ../build/bin/OMEdit.exe.
   OR
   - Load the file OMEditGUI/OMEditGUI.pro in Qt Creator IDE. Qt Creator is included in Qt SDK.
-  - Copy omniORB416_rt.dll, omniORB416_rtd.dll, omnithread34_rt.dll and omnithread34_rtd.dll from c:/OMDev/lib/omniORB-4.1.6-mingw/bin/x86_win32 to /location-where-OMEdit.exe-is-created.
   - You must run the makefile once so that the omc_communication.h and omc_communication.cc file is generated.
-  - Build and run the project.
+  - Build the project.
+  - Copy omniORB416_rt.dll, omniORB416_rtd.dll, omnithread34_rt.dll and omnithread34_rtd.dll from c:/OMDev/lib/omniORB-4.1.6-mingw/bin/x86_win32 to /location-where-OMEdit.exe-is-created.
+  - Copy libqjson.dll, libqjson.dll.a, libgc-1.dll and pthreadGC2.dll from ../build/bin to /location-where-OMEdit.exe-is-created.
+  - Run the project.
 
 Linux
 ------------------------------
