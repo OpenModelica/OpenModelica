@@ -1585,6 +1585,18 @@ void MainWindow::openModelicaDocumentation()
   QDesktopServices::openUrl(modelicaDocumentationUrl);
 }
 
+void MainWindow::openModelicaByExample()
+{
+  QUrl modelicaByExampleUrl (QUrl("http://book.xogeny.com"));
+  QDesktopServices::openUrl(modelicaByExampleUrl);
+}
+
+void MainWindow::openModelicaWebReference()
+{
+  QUrl modelicaWebReference (QUrl("http://modref.xogeny.com"));
+  QDesktopServices::openUrl(modelicaWebReference);
+}
+
 void MainWindow::openAboutOMEdit()
 {
   mpAboutOMEditDialog->setGeometry(QRect(rect().center() - QPoint(262.2, 235), rect().center() + QPoint(262.2, 235)));
@@ -1957,6 +1969,14 @@ void MainWindow::createActions()
   mpModelicaDocumentationAction = new QAction(tr("Modelica Documentation"), this);
   mpModelicaDocumentationAction->setStatusTip(tr("Opens the Modelica Documentation"));
   connect(mpModelicaDocumentationAction, SIGNAL(triggered()), SLOT(openModelicaDocumentation()));
+  // Modelica By Example action
+  mpModelicaByExampleAction = new QAction(tr("Modelica By Example"), this);
+  mpModelicaByExampleAction->setStatusTip(tr("Opens the Modelica By Example online book"));
+  connect(mpModelicaByExampleAction, SIGNAL(triggered()), SLOT(openModelicaByExample()));
+  // Modelica Web Reference action
+  mpModelicaWebReferenceAction = new QAction(tr("Modelica Web Reference"), this);
+  mpModelicaWebReferenceAction->setStatusTip(tr("Opens the Modelica Web Reference"));
+  connect(mpModelicaWebReferenceAction, SIGNAL(triggered()), SLOT(openModelicaWebReference()));
   // about OMEdit action
   mpAboutOMEditAction = new QAction(tr("About OMEdit"), this);
   mpAboutOMEditAction->setStatusTip(tr("Information about OMEdit"));
@@ -2177,6 +2197,9 @@ void MainWindow::createMenus()
   pHelpMenu->addAction(mpSystemDocumentationAction);
   pHelpMenu->addAction(mpOpenModelicaScriptingAction);
   pHelpMenu->addAction(mpModelicaDocumentationAction);
+  pHelpMenu->addSeparator();
+  pHelpMenu->addAction(mpModelicaByExampleAction);
+  pHelpMenu->addAction(mpModelicaWebReferenceAction);
   pHelpMenu->addSeparator();
   pHelpMenu->addAction(mpAboutOMEditAction);
   // add Help menu to menu bar
