@@ -2198,9 +2198,9 @@ void MainWindow::createMenus()
   pHelpMenu->addAction(mpOpenModelicaScriptingAction);
   pHelpMenu->addAction(mpModelicaDocumentationAction);
   pHelpMenu->addSeparator();
-  pHelpMenu->addAction(mpModelicaByExampleAction);
-  pHelpMenu->addAction(mpModelicaWebReferenceAction);
-  pHelpMenu->addSeparator();
+//  pHelpMenu->addAction(mpModelicaByExampleAction);
+//  pHelpMenu->addAction(mpModelicaWebReferenceAction);
+//  pHelpMenu->addSeparator();
   pHelpMenu->addAction(mpAboutOMEditAction);
   // add Help menu to menu bar
   menuBar()->addAction(pHelpMenu->menuAction());
