@@ -2522,7 +2522,7 @@ algorithm
   outPriority := match(inOp)
     case Absyn.ADD() then 6;
     case Absyn.SUB() then 5;
-    case Absyn.MUL() then 3;
+    case Absyn.MUL() then 2;
     case Absyn.DIV() then 2;
     case Absyn.POW() then 1;
     case Absyn.ADD_EW() then 6;
