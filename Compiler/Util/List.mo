@@ -659,7 +659,7 @@ end insert;
 
 public function set
  "set an element at a position
-  example: insert({2,1,4,2},2,3) => {2,3,4,2} "
+  example: set({2,1,4,2},2,3) => {2,3,4,2} "
   input list<ElementType> inList;
   input Integer inN;
   input ElementType inElement;
