@@ -123,7 +123,7 @@ algorithm
   // handle alias equations
   (vars, knvars, extVars, aliasVars, eqns, reqns, ieqns, whenclauses_1) := handleAliasEquations(aliaseqns, vars, knvars, extVars, aliasVars, eqns, reqns, ieqns, whenclauses_1);
   vars_1 := detectImplicitDiscrete(vars, knvars, eqns);
-  (vars_1, eqns) := addOptimizationVarsEqns(vars, eqns, Config.acceptOptimicaGrammar(), clsAttrs, constrs);
+  (vars_1, eqns) := addOptimizationVarsEqns(vars_1, eqns, Config.acceptOptimicaGrammar(), clsAttrs, constrs);
   eqnarr := BackendEquation.listEquation(eqns);
   reqnarr := BackendEquation.listEquation(reqns);
   ieqnarr := BackendEquation.listEquation(ieqns);
@@ -3300,7 +3300,7 @@ algorithm
         v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
         e = Util.if_(b, listAppend(e, objectEqn), e);
 
-        (v, e) = addOptimizationVarsEqns2(inConstraint, 1, v, e, true);
+        (v, e) = addOptimizationVarsEqns2(inConstraint, 1, v, e);
 
     then (v, e);
     else (inVars, inEqns);
@@ -3312,11 +3312,10 @@ protected function addOptimizationVarsEqns1
  input Integer inI;
  input BackendDAE.Variables inVars;
  input list<BackendDAE.Equation> inEqns;
- input Boolean b;
  output BackendDAE.Variables outVars;
  output list<BackendDAE.Equation>  outEqns;
 algorithm
- (outVars, outEqns) := match(constraintLst, inI, inVars, inEqns, b)
+ (outVars, outEqns) := match(constraintLst, inI, inVars, inEqns)
  local
    list<DAE.Exp> conLst;
    DAE.Exp e;
@@ -3326,15 +3325,13 @@ algorithm
    BackendDAE.Variables v;
    list<BackendDAE.Equation> eqns;
 
-   case({}, _, _, _, _) then (inVars, inEqns);
-   case(e::conLst, _, _, _, _) equation
+   case({}, _, _, _) then (inVars, inEqns);
+   case(e::conLst, _, _, _) equation
     //print("con"+& intString(inI) +& " "+& ExpressionDump.printExpStr(e) +& "\n");
-    leftcref = ComponentReference.makeCrefIdent("$TMP_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
-    dummyVar = Util.if_(b, BackendDAE.VAR(leftcref, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR()), BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR()));
-    conEqn = Util.if_(b, BackendEquation.generateResidualfromRealtion(leftcref, e, DAE.emptyElementSource), {});
+    (conEqn, dummyVar) = BackendEquation.generateResidualfromRealtion(inI, e, DAE.emptyElementSource);
     v = BackendVariable.addNewVar(dummyVar, inVars);
     eqns = listAppend(conEqn, inEqns);
-    (v, eqns)= addOptimizationVarsEqns1(conLst, inI + 1, v, eqns, b);
+    (v, eqns)= addOptimizationVarsEqns1(conLst, inI + 1, v, eqns);
    then (v, eqns);
    else (inVars, inEqns);
    end match;
@@ -3345,17 +3342,16 @@ public function addOptimizationVarsEqns2
  input Integer inI;
  input BackendDAE.Variables inVars;
  input list<BackendDAE.Equation> inEqns;
- input Boolean b;
  output BackendDAE.Variables outVars;
  output list<BackendDAE.Equation>  outEqns;
 algorithm
-  (outVars, outEqns) := match(inConstraint, inI, inVars, inEqns, b)
+  (outVars, outEqns) := match(inConstraint, inI, inVars, inEqns)
   local
    list<BackendDAE.Equation> e;
    BackendDAE.Variables v;
    list< .DAE.Exp> constraintLst;
-    case({DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}, _, _, _, _) equation
-      (v, e) = addOptimizationVarsEqns1(constraintLst, inI, inVars, inEqns, b);
+    case({DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}, _, _, _) equation
+      (v, e) = addOptimizationVarsEqns1(constraintLst, inI, inVars, inEqns);
       then (v, e);
   else (inVars, inEqns);
   end match;

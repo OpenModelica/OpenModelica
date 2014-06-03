@@ -2219,29 +2219,46 @@ algorithm
 end generateSolvedEqnsfromOption;
 
 public function generateResidualfromRealtion "author: vitalij"
-  input DAE.ComponentRef iLhs;
+  input Integer inI;
   input DAE.Exp iRhs;
   input DAE.ElementSource Source;
   output list<BackendDAE.Equation> outEqn;
+  output BackendDAE.Var vout;
 algorithm
-  outEqn :=  match (iLhs, iRhs, Source)
+  (outEqn,vout) :=  match (inI, iRhs, Source)
   local
     DAE.Exp rhs,e1,e2;
     DAE.ComponentRef lhs;
-
-    case (lhs, DAE.RELATION(e1,DAE.LESS(_),e2,_,_), _) equation
+    BackendDAE.Var dummyVar;
+    case (_,DAE.RELATION(e1,DAE.LESS(_),e2,_,_), _) equation
+      lhs = ComponentReference.makeCrefIdent("$TMP_ineq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
+      dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       (rhs,_) = ExpressionSimplify.simplify(DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2));
-    then {BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,false,BackendDAE.UNKNOWN_EQUATION_KIND())};
-    case (lhs, DAE.RELATION(e1,DAE.LESSEQ(_),e2,_,_), _) equation
+    then ({BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,false,BackendDAE.UNKNOWN_EQUATION_KIND())},dummyVar);
+    case (_,DAE.RELATION(e1,DAE.LESSEQ(_),e2,_,_), _) equation
+      lhs = ComponentReference.makeCrefIdent("$TMP_ineq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
+      dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       (rhs,_) = ExpressionSimplify.simplify(DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2));
-      then {BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,false,BackendDAE.UNKNOWN_EQUATION_KIND())};
-    case (lhs, DAE.RELATION(e1,DAE.GREATER(_),e2,_,_), _) equation
+      then ({BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,false,BackendDAE.UNKNOWN_EQUATION_KIND())},dummyVar);
+    case (_,DAE.RELATION(e1,DAE.GREATER(_),e2,_,_), _) equation
+      lhs = ComponentReference.makeCrefIdent("$TMP_ineq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
+      dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       (rhs,_) = ExpressionSimplify.simplify(DAE.BINARY(e2,DAE.SUB(DAE.T_REAL_DEFAULT),e1));
-      then {BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,false,BackendDAE.UNKNOWN_EQUATION_KIND())};
-    case (lhs, DAE.RELATION(e1,DAE.GREATEREQ(_),e2,_,_), _) equation
+      then ({BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,false,BackendDAE.UNKNOWN_EQUATION_KIND())},dummyVar);
+    case (_,DAE.RELATION(e1,DAE.GREATEREQ(_),e2,_,_), _) equation
+      lhs = ComponentReference.makeCrefIdent("$TMP_ineq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
+      dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       (rhs,_) = ExpressionSimplify.simplify(DAE.BINARY(e2,DAE.SUB(DAE.T_REAL_DEFAULT),e1));
-      then {BackendDAE.SOLVED_EQUATION(lhs, rhs,Source,false,BackendDAE.UNKNOWN_EQUATION_KIND())};
-    else {};
+      then ({BackendDAE.SOLVED_EQUATION(lhs, rhs,Source,false,BackendDAE.UNKNOWN_EQUATION_KIND())},dummyVar);
+    case (_,DAE.RELATION(e1,DAE.EQUAL(_),e2,_,_), _) equation
+      lhs = ComponentReference.makeCrefIdent("$TMP_eq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
+      dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      (rhs,_) = ExpressionSimplify.simplify(DAE.BINARY(e2,DAE.SUB(DAE.T_REAL_DEFAULT),e1));
+      then ({BackendDAE.SOLVED_EQUATION(lhs, rhs,Source,false,BackendDAE.UNKNOWN_EQUATION_KIND())},dummyVar);
+    else equation
+      lhs = ComponentReference.makeCrefIdent("$TMP_eq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
+      dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+    then ({},dummyVar);
   end match;
 end generateResidualfromRealtion;
 

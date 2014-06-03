@@ -240,9 +240,15 @@ static inline void init_ipopt_data(OptData *optData){
 
   externalInputFree(data);
 
-  for(j = 0; j< nc; ++j)
-    for(i = nx; i < NRes; i += nJ)
-      ipop->gmin[i+j] = -1e21;
+  {
+    const int index_con = optData->dim.index_con;
+    for(j = 0; j< nc; ++j){
+      if(data->modelData.realVarsData[j + index_con].info.name[5] == 'i') /* $P$TMP_ineq_conj*/
+        for(i = nx; i < NRes; i += nJ)
+            ipop->gmin[i+j] = -1e21;
+    }
+      /*else $P$TMP_eq_con */
+  }
 
 }
 
