@@ -3245,15 +3245,15 @@ algorithm
     case(_,_,_,_,_)
       equation
         true = speedUpMax ==. -1.0;
-        print("The predicted SpeedUp with "+&intString(numProc)+&" processors is " +& System.snprintff("%.2f", 25, speedUp) +& ".\n");
+        Debug.bcall(Flags.isSet(Flags.HPCOM_DUMP),print,"The predicted SpeedUp with "+&intString(numProc)+&" processors is " +& System.snprintff("%.2f", 25, speedUp) +& ".\n");
       then
         ();
     else
       equation
         isOkString = "The predicted SpeedUp with "+&intString(numProc)+&" processors is: "+& System.snprintff("%.2f", 25, speedUp)+&" With a theoretical maxmimum speedUp of: "+& System.snprintff("%.2f", 25, speedUpMax)+&"\n";
         isNotOkString = "Something is weird. The predicted SpeedUp is "+& System.snprintff("%.2f", 25, speedUp)+&" and the theoretical maximum speedUp is "+& System.snprintff("%.2f", 25, speedUpMax)+&"\n";
-        Debug.bcall(realGt(speedUp,speedUpMax),print,isNotOkString);
-        Debug.bcall(realLe(speedUp,speedUpMax),print,isOkString);
+        Debug.bcall(realGt(speedUp,speedUpMax) and Flags.isSet(Flags.HPCOM_DUMP),print,isNotOkString);
+        Debug.bcall(realLe(speedUp,speedUpMax) and Flags.isSet(Flags.HPCOM_DUMP),print,isOkString);
       then
         ();
   end matchcontinue;
