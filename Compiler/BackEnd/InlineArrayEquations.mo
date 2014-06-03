@@ -46,6 +46,7 @@ protected import DAEUtil;
 protected import Debug;
 protected import Expression;
 protected import ExpressionDump;
+protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
 
@@ -173,7 +174,19 @@ algorithm
       ea2 = Expression.flattenArrayExpToList(e2_1);
       ((_, eqns)) = List.threadFold4(ea1, ea2, generateScalarArrayEqns2, source, differentiated, eqKind, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
     then (eqns, true);
-
+/*
+    case (BackendDAE.ARRAY_EQUATION(left=lhs,right=rhs, source=source, differentiated=differentiated, kind=eqKind), _) equation
+      ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((lhs, (NONE(), false)));
+      ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((rhs, (NONE(), false)));
+      (e1_1,_) = ExpressionSimplify.simplify(e1_1);
+      (e2_1,_) = ExpressionSimplify.simplify(e2_1);
+      true = Expression.isArray(e1_1) or Expression.isMatrix(e1_1);
+      true = Expression.isArray(e2_1) or Expression.isMatrix(e2_1);
+      ea1 = Expression.flattenArrayExpToList(e1_1);
+      ea2 = Expression.flattenArrayExpToList(e2_1);
+      ((_, eqns)) = List.threadFold4(ea1, ea2, generateScalarArrayEqns2, source, differentiated, eqKind, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
+    then (eqns, true);
+*/
     case (BackendDAE.COMPLEX_EQUATION(left=lhs, right=rhs, source=source, differentiated=differentiated, kind=eqKind), _) equation
       ea1 = Expression.splitRecord(lhs,Expression.typeof(lhs));
       ea2 = Expression.splitRecord(rhs,Expression.typeof(rhs));
