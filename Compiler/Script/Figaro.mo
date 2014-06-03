@@ -548,7 +548,7 @@ algorithm
     xml := xml +& System.pwd() +& "/FaultTree.xml";
     xml := xml +& "</FILE>\n";
     xml := xml +& "    <FILE_MACRO>fiab_ADD.h</FILE_MACRO>";
-    xml := xml +& "\n    <FILE_TREE_OPTIONS>C:\\st\\Tests\\Params generation arbre.xml</FILE_TREE_OPTIONS>";
+    xml := xml +& "\n    <FILE_TREE_OPTIONS>C:\\st\\Test\\Params FT generation.xml</FILE_TREE_OPTIONS>";
   end if;
 
   xml := xml +& "\n    <RESOLVE_CONST>VRAI</RESOLVE_CONST>\n    <RESOLVE_ATTR>FAUX</RESOLVE_ATTR>\n    <INST_RULE>VRAI</INST_RULE>\n";
