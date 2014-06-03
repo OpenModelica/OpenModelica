@@ -1613,7 +1613,7 @@ algorithm
 end CellierTearing;
 
 
-protected function tearingSelect 
+protected function tearingSelect
  "collects variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
   author: ptaeuber FHB 2014-05"
   input list<BackendDAE.Var> var_lstIn;
@@ -1627,23 +1627,23 @@ algorithm
  tSelOut := matchcontinue(var_lstIn,alwaysIn,preferIn,avoidIn,neverIn,index)
    local
      BackendDAE.Var var;
-	 list<Integer> always;
-	 list<Integer> prefer;
-	 list<Integer> avoid;
-	 list<Integer> never;
+   list<Integer> always;
+   list<Integer> prefer;
+   list<Integer> avoid;
+   list<Integer> never;
    case(_,_,_,_,_,_)
      equation
-	   true = intLe(index,listLength(var_lstIn));
-	   var = listGet(var_lstIn,index);
-	  (always,prefer,avoid,never) = tearingSelect2(var,alwaysIn,preferIn,avoidIn,neverIn,index);	  
-	then tearingSelect(var_lstIn,always,prefer,avoid,never,index+1);
+     true = intLe(index,listLength(var_lstIn));
+     var = listGet(var_lstIn,index);
+    (always,prefer,avoid,never) = tearingSelect2(var,alwaysIn,preferIn,avoidIn,neverIn,index);
+  then tearingSelect(var_lstIn,always,prefer,avoid,never,index+1);
    else
      equation
-	   Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "\nManual selection of iteration variables by variable annotations:\n");
-	   Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Always: " +& stringDelimitList(List.map(alwaysIn,intString),",") +& "\n");
-	   Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Prefer: " +& stringDelimitList(List.map(preferIn,intString),",") +& "\n");
-	   Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Avoid: " +& stringDelimitList(List.map(avoidIn,intString),",") +& "\n");
-	   Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Never: " +& stringDelimitList(List.map(neverIn,intString),",") +& "\n\n");
+     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "\nManual selection of iteration variables by variable annotations:\n");
+     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Always: " +& stringDelimitList(List.map(alwaysIn,intString),",") +& "\n");
+     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Prefer: " +& stringDelimitList(List.map(preferIn,intString),",") +& "\n");
+     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Avoid: " +& stringDelimitList(List.map(avoidIn,intString),",") +& "\n");
+     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Never: " +& stringDelimitList(List.map(neverIn,intString),",") +& "\n\n");
     then ((alwaysIn,preferIn,avoidIn,neverIn));
  end matchcontinue;
 end tearingSelect;
@@ -1666,27 +1666,27 @@ algorithm
  (alwaysOut,preferOut,avoidOut,neverOut) := matchcontinue(var,alwaysIn,preferIn,avoidIn,neverIn,index)
    local
      SCode.Mod anno;
-	 String anno_str;
+   String anno_str;
    case(BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification=anno))))),_,_,_,_,_)
      equation
-	   anno_str = SCodeDump.printModStr(anno,SCodeDump.defaultOptions);
-	   true = stringEqual(anno_str,"(tearingSelect = always)");
-	then (index::alwaysIn,preferIn,avoidIn,neverIn);
+     anno_str = SCodeDump.printModStr(anno,SCodeDump.defaultOptions);
+     true = stringEqual(anno_str,"(tearingSelect = always)");
+  then (index::alwaysIn,preferIn,avoidIn,neverIn);
    case(BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification=anno))))),_,_,_,_,_)
      equation
-	   anno_str = SCodeDump.printModStr(anno,SCodeDump.defaultOptions);
-	   true = stringEqual(anno_str,"(tearingSelect = prefer)");
-	then (alwaysIn,index::preferIn,avoidIn,neverIn);
+     anno_str = SCodeDump.printModStr(anno,SCodeDump.defaultOptions);
+     true = stringEqual(anno_str,"(tearingSelect = prefer)");
+  then (alwaysIn,index::preferIn,avoidIn,neverIn);
    case(BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification=anno))))),_,_,_,_,_)
      equation
-	   anno_str = SCodeDump.printModStr(anno,SCodeDump.defaultOptions);
-	   true = stringEqual(anno_str,"(tearingSelect = avoid)");
-	then (alwaysIn,preferIn,index::avoidIn,neverIn);
+     anno_str = SCodeDump.printModStr(anno,SCodeDump.defaultOptions);
+     true = stringEqual(anno_str,"(tearingSelect = avoid)");
+  then (alwaysIn,preferIn,index::avoidIn,neverIn);
    case(BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification=anno))))),_,_,_,_,_)
      equation
-	   anno_str = SCodeDump.printModStr(anno,SCodeDump.defaultOptions);
-	   true = stringEqual(anno_str,"(tearingSelect = never)");
-	then (alwaysIn,preferIn,avoidIn,index::neverIn);
+     anno_str = SCodeDump.printModStr(anno,SCodeDump.defaultOptions);
+     true = stringEqual(anno_str,"(tearingSelect = never)");
+  then (alwaysIn,preferIn,avoidIn,index::neverIn);
    else
     then (alwaysIn,preferIn,avoidIn,neverIn);
  end matchcontinue;
@@ -1772,7 +1772,7 @@ algorithm
   case(true,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
     equation
      then
-	  (tvarsIn,ass1In,ass2In,orderIn);
+    (tvarsIn,ass1In,ass2In,orderIn);
   // case: There are no unsolvables and no variables with annotation 'tearingSelect = always'
   case(false,_,_,_,_,_,_,{},_,_,{},_,_,_,_,_,_)
     equation
@@ -1802,17 +1802,17 @@ algorithm
       (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
       (tvars, ass1, ass2, order) = TearingSystemCellier(causal,m,mt,meIn,meTIn,ass1,ass2,unsolvables,tvars,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn);
      then
-	  (tvars,ass1,ass2,order);
+    (tvars,ass1,ass2,order);
   // case: There are unsolvables and/or variables with annotation 'tearingSelect = always'
   case(false,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
     equation
       // First choose unsolvables and 'always'-vars as tVars
       tvars = List.unique(listAppend(Unsolvables,tSel_always));
-	  tVar_never = List.intersectionOnTrue(tvars,tSel_never,intEq);
-	     Debug.bcall(listLength(tVar_never)<>0, Error.addCompilerWarning, "There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
+    tVar_never = List.intersectionOnTrue(tvars,tSel_never,intEq);
+       Debug.bcall(listLength(tVar_never)<>0, Error.addCompilerWarning, "There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
          Debug.fcall(Flags.TEARING_DUMP, print,"\nForced selection of Tearing Variables:\n" +& UNDERLINE +& "\nUnsolvables as tVars: "+& stringDelimitList(List.map(Unsolvables,intString),",")+&"\n");
          Debug.fcall(Flags.TEARING_DUMP, print,"Variables with annotation 'always' as tVars: "+& stringDelimitList(List.map(tSel_always,intString),",")+&"\n");
-	  // mark tvars in ass1
+    // mark tvars in ass1
       ass1 = markTVars(tvars,ass1In);
       // remove tearing var from incidence matrix and transposed inc matrix
       m = updateIncidence2(mIn,tvars,1);
@@ -1873,7 +1873,7 @@ algorithm
        true = intGe(listLength(potentials),1);
           Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of potentialsCellier\n" +& BORDER +& "\n\n");
       then
-	   listGet(potentials,1);
+     listGet(potentials,1);
      else
        equation
          print("selecting tearing variable failed");
@@ -2388,7 +2388,7 @@ algorithm
       ((_,_,selectedcols0)) := Util.arrayFold(mt,findNEntries,(0,1,{}));
       (_,selectedcols0,_) := List.intersection1OnTrue(varlst,selectedcols0,intEq);
       (_,selectedcols0,_) := List.intersection1OnTrue(selectedcols0,discreteVars,intEq);
-	  (_,selectedcols0,_) := List.intersection1OnTrue(selectedcols0,tSel_never,intEq);
+    (_,selectedcols0,_) := List.intersection1OnTrue(selectedcols0,tSel_never,intEq);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: "+& stringDelimitList(List.map(selectedcols0,intString),",")+&"\n(All non-discrete left variables without attribute 'never')\n\n");
        // 1. select the rows(eqs) from m which could be causalized by knowing one more Var
       ((_,assEq)) := List.fold(ass2In,getUnassigned,(1,{}));
@@ -2406,14 +2406,14 @@ algorithm
       points := List.threadMap(counts1,counts2,intAdd);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nPoints: "+& stringDelimitList(List.map(points,intString),",")+&"\n(Sum of impossible assignments and causalizable equations)\n");
       // 5. Prefer variables with annotation attribute 'tearingSelect=prefer'
-	  points := preferAvoidVariables(selectedcols0, points, tSel_prefer, 3.0, 1);
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Points: "+& stringDelimitList(List.map(points,intString),",")+&"\n(Points after preferring variables with attribute 'prefer')\n");
-	  // 6. Avoid variables with annotation attribute 'tearingSelect=avoid'
-	  points := preferAvoidVariables(selectedcols0, points, tSel_avoid, 0.334, 1);
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Points: "+& stringDelimitList(List.map(points,intString),",")+&"\n(Points after discrimination against variables with attribute 'avoid')\n");
-	  // 7. Choose vars with most points and save them in selectedcols1
+    points := preferAvoidVariables(selectedcols0, points, tSel_prefer, 3.0, 1);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Points: "+& stringDelimitList(List.map(points,intString),",")+&"\n(Points after preferring variables with attribute 'prefer')\n");
+    // 6. Avoid variables with annotation attribute 'tearingSelect=avoid'
+    points := preferAvoidVariables(selectedcols0, points, tSel_avoid, 0.334, 1);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Points: "+& stringDelimitList(List.map(points,intString),",")+&"\n(Points after discrimination against variables with attribute 'avoid')\n");
+    // 7. Choose vars with most points and save them in selectedcols1
       selectedcols1 := maxListInt(points);
-	  maxpoints := listGet(points,listGet(selectedcols1,1));
+    maxpoints := listGet(points,listGet(selectedcols1,1));
       selectedcols1 := selectFromList(selectedcols0,selectedcols1);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n2nd: "+& stringDelimitList(List.map(selectedcols1,intString),",")+&"\n(Variables from (1st) with most points [" +& intString(maxpoints) +& "])\n\n");
       // 8. Choose vars with most occurrence in equations as potentials
@@ -2505,18 +2505,18 @@ algorithm
  pointsOut := matchcontinue(varsIn,pointsIn,preferAvoidIn,factor,index)
    local
      Integer pos;
-	 list<Integer> points;
+   list<Integer> points;
    case(_,_,_,_,_)
      equation
-	     true = intLe(index,listLength(preferAvoidIn));
-		 pos = List.position(listGet(preferAvoidIn,index),varsIn)+1;
-		 points = List.set(pointsIn,pos,realInt(realMul(factor,intReal(listGet(pointsIn,pos)))));
-	then preferAvoidVariables(varsIn,points,preferAvoidIn,factor,index+1);
+       true = intLe(index,listLength(preferAvoidIn));
+     pos = List.position(listGet(preferAvoidIn,index),varsIn)+1;
+     points = List.set(pointsIn,pos,realInt(realMul(factor,intReal(listGet(pointsIn,pos)))));
+  then preferAvoidVariables(varsIn,points,preferAvoidIn,factor,index+1);
    case(_,_,_,_,_)
      equation
-	     true = intLe(index,listLength(preferAvoidIn));
-	then preferAvoidVariables(varsIn,pointsIn,preferAvoidIn,factor,index+1);
-   else 
+       true = intLe(index,listLength(preferAvoidIn));
+  then preferAvoidVariables(varsIn,pointsIn,preferAvoidIn,factor,index+1);
+   else
     then pointsIn;
  end matchcontinue;
 end preferAvoidVariables;
