@@ -12420,6 +12420,7 @@ public function getSimVarsInSimEq"gets the indeces for the simVars occuring in t
 author:Waurich TUD 2014-04"
   input Integer simEq;
   input SimCode.BackendMapping map;
+  input Integer opt; //1: get all indeces from the incidenceMatrix, 2: get only positive entries, 3: get only negative entries
   output list<Integer> simVars;
 protected
   list<Integer> bVars,bEqs;
@@ -12433,8 +12434,11 @@ algorithm
   bEqs := getBackendEqsForSimEq(simEq,map);
   bVarsLst := List.map1(bEqs,Util.arrayGetIndexFirst,m);
   bVars := List.flatten(bVarsLst);
-  bVars := List.filter1OnTrue(bVars,intGt,0);
+  bVars := Debug.bcallret3(intEq(opt,2),List.filter1OnTrue,bVars,intGt,0,bVars);
+  bVars := Debug.bcallret3(intEq(opt,3),List.filter1OnTrue,bVars,intLt,0,bVars);
+  Debug.bcall(not List.isMemberOnTrue(opt,{1,2,3},intEq),print,"invalid option for getSimVarsInSimEq\n");
   bVars := List.unique(bVars);
+  bVars := List.map(bVars,intAbs);
   simVars := List.map1(bVars,getSimVarForBackendVar,map);
 end getSimVarsInSimEq;
 
@@ -12442,6 +12446,7 @@ public function getSimEqsOfSimVar"gets the indeces for the simEqs for the given 
 author:Waurich TUD 2014-04"
   input Integer simVar;
   input SimCode.BackendMapping map;
+  input Integer opt; //1: complete incidence matrix row, 2: only positive entries, 3: only negative entries
   output list<Integer> simEqs;
 protected
   Integer bVar;
@@ -12454,7 +12459,9 @@ algorithm
   SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping) := map;
   bVar := getBackendVarForSimVar(simVar,map);
   bEqs := arrayGet(mt,bVar);
-  //bEqs := List.filter1OnTrue(bEqs,intGe,0);
+  bEqs := Debug.bcallret3(intEq(opt,2),List.filter1OnTrue,bEqs,intGt,0,bEqs);
+  bEqs := Debug.bcallret3(intEq(opt,3),List.filter1OnTrue,bEqs,intLt,0,bEqs);
+  Debug.bcall(not List.isMemberOnTrue(opt,{1,2,3},intEq),print,"invalid option for getSimEqsOfSimVar\n");
   bEqs := List.map(bEqs,intAbs);
   simEqs := List.map1(bEqs,getSimEqsForBackendEqs,map);
   simEqs := List.unique(simEqs);
