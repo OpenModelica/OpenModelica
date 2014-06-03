@@ -174,7 +174,7 @@ algorithm
       ea2 = Expression.flattenArrayExpToList(e2_1);
       ((_, eqns)) = List.threadFold4(ea1, ea2, generateScalarArrayEqns2, source, differentiated, eqKind, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
     then (eqns, true);
-/*
+
     case (BackendDAE.ARRAY_EQUATION(left=lhs,right=rhs, source=source, differentiated=differentiated, kind=eqKind), _) equation
       ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((lhs, (NONE(), false)));
       ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((rhs, (NONE(), false)));
@@ -186,7 +186,7 @@ algorithm
       ea2 = Expression.flattenArrayExpToList(e2_1);
       ((_, eqns)) = List.threadFold4(ea1, ea2, generateScalarArrayEqns2, source, differentiated, eqKind, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
     then (eqns, true);
-*/
+
     case (BackendDAE.COMPLEX_EQUATION(left=lhs, right=rhs, source=source, differentiated=differentiated, kind=eqKind), _) equation
       ea1 = Expression.splitRecord(lhs,Expression.typeof(lhs));
       ea2 = Expression.splitRecord(rhs,Expression.typeof(rhs));
