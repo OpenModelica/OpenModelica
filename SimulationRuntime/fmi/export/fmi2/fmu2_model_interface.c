@@ -337,48 +337,190 @@ fmiStatus fmiTerminate(fmiComponent c) {
   return fmiOK;
 }
 
+/*!
+ * Is called by the environment to reset the FMU after a simulation run. Before starting a new run, fmiEnterInitializationMode has to be called.
+ */
 fmiStatus fmiReset(fmiComponent c) {
-  // TODO Write code here
+  ModelInstance* comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiReset", modelInitialized|modelStepping))
+    return fmiError;
+  FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiReset")
+
+  comp->state = modelInstantiated;
+  /* reset the values to start */
+  setDefaultStartValues(comp);
+  setAllVarsToStart(comp->fmuData);
+  setAllParamsToStart(comp->fmuData);
   return fmiOK;
 }
 
 fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiReal value[]) {
-  // TODO Write code here
+  int i;
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiGetReal", modelInitializationMode|modelInitialized|modelStepping|modelError))
+    return fmiError;
+  if (nvr > 0 && nullPointer(comp, "fmiGetReal", "vr[]", vr))
+    return fmiError;
+  if (nvr > 0 && nullPointer(comp, "fmiGetReal", "value[]", value))
+    return fmiError;
+#if NUMBER_OF_REALS > 0
+  for (i = 0; i < nvr; i++) {
+    if (vrOutOfRange(comp, "fmiGetReal", vr[i], NUMBER_OF_REALS))
+      return fmiError;
+    value[i] = getReal(comp, vr[i]); // to be implemented by the includer of this file
+    FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiGetReal: #r%u# = %.16g", vr[i], value[i])
+  }
+#endif
   return fmiOK;
 }
 
 fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiInteger value[]) {
-  // TODO Write code here
+  int i;
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiGetInteger", modelInitializationMode|modelInitialized|modelStepping|modelError))
+    return fmiError;
+  if (nvr > 0 && nullPointer(comp, "fmiGetInteger", "vr[]", vr))
+    return fmiError;
+  if (nvr > 0 && nullPointer(comp, "fmiGetInteger", "value[]", value))
+    return fmiError;
+  for (i = 0; i < nvr; i++) {
+    if (vrOutOfRange(comp, "fmiGetInteger", vr[i], NUMBER_OF_INTEGERS))
+      return fmiError;
+    value[i] = getInteger(comp, vr[i]); // to be implemented by the includer of this file
+    FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiGetInteger: #i%u# = %d", vr[i], value[i])
+  }
   return fmiOK;
 }
 
 fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiBoolean value[]){
-  // TODO Write code here
+  int i;
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiGetBoolean", modelInitializationMode|modelInitialized|modelStepping|modelError))
+    return fmiError;
+  if (nvr > 0 && nullPointer(comp, "fmiGetBoolean", "vr[]", vr))
+    return fmiError;
+  if (nvr > 0 && nullPointer(comp, "fmiGetBoolean", "value[]", value))
+    return fmiError;
+  for (i = 0; i < nvr; i++) {
+    if (vrOutOfRange(comp, "fmiGetBoolean", vr[i], NUMBER_OF_BOOLEANS))
+      return fmiError;
+    value[i] = getBoolean(comp, vr[i]); // to be implemented by the includer of this file
+    FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiGetBoolean: #b%u# = %s", vr[i], value[i]? "true" : "false")
+  }
   return fmiOK;
 }
 
 fmiStatus fmiGetString(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiString value[]) {
-  // TODO Write code here
+  int i;
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiGetString", modelInitializationMode|modelInitialized|modelStepping|modelError))
+    return fmiError;
+  if (nvr>0 && nullPointer(comp, "fmiGetString", "vr[]", vr))
+    return fmiError;
+  if (nvr>0 && nullPointer(comp, "fmiGetString", "value[]", value))
+    return fmiError;
+  for (i=0; i<nvr; i++) {
+    if (vrOutOfRange(comp, "fmiGetString", vr[i], NUMBER_OF_STRINGS))
+      return fmiError;
+    value[i] = getString(comp, vr[i]); // to be implemented by the includer of this file
+    FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiGetString: #s%u# = '%s'", vr[i], value[i])
+  }
   return fmiOK;
 }
 
 fmiStatus fmiSetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiReal value[]) {
-  // TODO Write code here
+  int i;
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiSetReal", modelInstantiated|modelInitializationMode|modelInitialized|modelStepping))
+    return fmiError;
+  if (nvr > 0 && nullPointer(comp, "fmiSetReal", "vr[]", vr))
+    return fmiError;
+  if (nvr > 0 && nullPointer(comp, "fmiSetReal", "value[]", value))
+    return fmiError;
+  FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiSetReal: nvr = %d", nvr)
+  // no check whether setting the value is allowed in the current state
+  for (i = 0; i < nvr; i++) {
+    if (vrOutOfRange(comp, "fmiSetReal", vr[i], NUMBER_OF_REALS+NUMBER_OF_STATES))
+      return fmiError;
+    FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiSetReal: #r%d# = %.16g", vr[i], value[i])
+    if (setReal(comp, vr[i], value[i]) != fmiOK) // to be implemented by the includer of this file
+      return fmiError;
+  }
   return fmiOK;
 }
 
 fmiStatus fmiSetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiInteger value[]) {
-  // TODO Write code here
+  int i;
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiSetInteger", modelInstantiated|modelInitializationMode|modelInitialized|modelStepping))
+    return fmiError;
+  if (nvr > 0 && nullPointer(comp, "fmiSetInteger", "vr[]", vr))
+    return fmiError;
+  if (nvr > 0 && nullPointer(comp, "fmiSetInteger", "value[]", value))
+    return fmiError;
+  FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiSetInteger: nvr = %d", nvr)
+
+  for (i = 0; i < nvr; i++) {
+    if (vrOutOfRange(comp, "fmiSetInteger", vr[i], NUMBER_OF_INTEGERS))
+      return fmiError;
+    FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiSetInteger: #i%d# = %d", vr[i], value[i])
+    if (setInteger(comp, vr[i], value[i]) != fmiOK) // to be implemented by the includer of this file
+      return fmiError;
+  }
   return fmiOK;
 }
 
 fmiStatus fmiSetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiBoolean value[]) {
-  // TODO Write code here
+  int i;
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiSetBoolean", modelInstantiated|modelInitializationMode|modelInitialized|modelStepping))
+    return fmiError;
+  if (nvr>0 && nullPointer(comp, "fmiSetBoolean", "vr[]", vr))
+    return fmiError;
+  if (nvr>0 && nullPointer(comp, "fmiSetBoolean", "value[]", value))
+    return fmiError;
+  FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiSetBoolean: nvr = %d", nvr)
+
+  for (i = 0; i < nvr; i++) {
+    if (vrOutOfRange(comp, "fmiSetBoolean", vr[i], NUMBER_OF_BOOLEANS))
+      return fmiError;
+    FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiSetBoolean: #b%d# = %s", vr[i], value[i] ? "true" : "false")
+    if (setBoolean(comp, vr[i], value[i]) != fmiOK) // to be implemented by the includer of this file
+      return fmiError;
+  }
   return fmiOK;
 }
 
 fmiStatus fmiSetString(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiString value[]) {
-  // TODO Write code here
+  int i, n;
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiSetString", modelInstantiated|modelInitializationMode|modelInitialized|modelStepping))
+    return fmiError;
+  if (nvr>0 && nullPointer(comp, "fmiSetString", "vr[]", vr))
+    return fmiError;
+  if (nvr>0 && nullPointer(comp, "fmiSetString", "value[]", value))
+    return fmiError;
+  FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiSetString: nvr = %d", nvr)
+
+  for (i = 0; i < nvr; i++) {
+    char* string = (char*)comp->fmuData->localData[0]->stringVars[vr[i]];
+    if (vrOutOfRange(comp, "fmiSetString", vr[i], NUMBER_OF_STRINGS))
+      return fmiError;
+    FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiSetString: #s%d# = '%s'", vr[i], value[i])
+
+    if (nullPointer(comp, "fmiSetString", "value[i]", value[i]))
+      return fmiError;
+    if (string == NULL || strlen(string) < strlen(value[i])) {
+      if (string) comp->functions->freeMemory(string);
+      comp->fmuData->localData[0]->stringVars[vr[i]] = *(fmiString*)comp->functions->allocateMemory(1 + strlen(value[i]), sizeof(char));
+      if (!comp->fmuData->localData[0]->stringVars[vr[i]]) {
+        comp->state = modelError;
+        FILTERED_LOG(comp, fmiError, LOG_STATUSERROR, "fmiSetString: Out of memory.")
+        return fmiError;
+      }
+    }
+    strcpy((char*)comp->fmuData->localData[0]->stringVars[vr[i]], (char*)value[i]);
+  }
   return fmiOK;
 }
 
