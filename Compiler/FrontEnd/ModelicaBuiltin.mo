@@ -2148,7 +2148,6 @@ function simulate "simulates a modelica model by generating c code, build it and
   input String options := "<default>" "options. <default> = \"\"";
   input String outputFormat := "mat" "Format for the result file. <default> = \"mat\"";
   input String variableFilter := ".*" "Filter for variables that should store in result file. <default> = \".*\"";
-  input Boolean measureTime := false "creates a html file with proffiling data for model simulation. <default> = false";
   input String cflags := "<default>" "cflags. <default> = \"\"";
   input String simflags := "<default>" "simflags. <default> = \"\"";
   output String simulationResults;
@@ -2173,7 +2172,6 @@ function buildModel "builds a modelica model by generating c code and build it.
   input String options := "<default>" "options. <default> = \"\"";
   input String outputFormat := "mat" "Format for the result file. <default> = \"mat\"";
   input String variableFilter := ".*" "Filter for variables that should store in result file. <default> = \".*\"";
-  input Boolean measureTime := false "creates a html file with proffiling data for model simulation. <default> = false";
   input String cflags := "<default>" "cflags. <default> = \"\"";
   input String simflags := "<default>" "simflags. <default> = \"\"";
   output String[2] buildModelResults;
@@ -2204,7 +2202,6 @@ function linearize "creates a model with symbolic linearization matrixes"
   input String options := "<default>" "options. <default> = \"\"";
   input String outputFormat := "mat" "Format for the result file. <default> = \"mat\"";
   input String variableFilter := ".*" "Filter for variables that should store in result file. <default> = \".*\"";
-  input Boolean measureTime := false "creates a html file with proffiling data for model simulation. <default> = false";
   input String cflags := "<default>" "cflags. <default> = \"\"";
   input String simflags := "<default>" "simflags. <default> = \"\"";
   output String linearizationResult;
@@ -2242,7 +2239,6 @@ function optimize "optimize a modelica/optimica model by generating c code, buil
   input String options := "<default>" "options. <default> = \"\"";
   input String outputFormat := "mat" "Format for the result file. <default> = \"mat\"";
   input String variableFilter := ".*" "Filter for variables that should store in result file. <default> = \".*\"";
-  input Boolean measureTime := false "creates a html file with proffiling data for model optimization. <default> = false";
   input String cflags := "<default>" "cflags. <default> = \"\"";
   input String simflags := "<default>" "simflags. <default> = \"\"";
   output String optimizationResults;

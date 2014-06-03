@@ -51,7 +51,10 @@ public function buildGraph
   "This function will build a graph given a list of nodes, an edge function, and
   an extra argument to the edge function. The edge function should generate a
   list of edges for any given node in the list. From this information a graph
-  represented by an adjacency list will be built."
+  represented by an adjacency list will be built.
+
+  NOTE: There is no check that there is only unique edges for each node.
+  This module assumes that you do not build a graph with duplicate edges!"
   input list<NodeType> inNodes;
   input EdgeFunc inEdgeFunc;
   input ArgType inEdgeArg;

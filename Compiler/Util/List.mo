@@ -584,7 +584,9 @@ end consN_impl;
 
 public function appendNoCopy
   "This function handles special cases such as empty lists so it does not copy
-   if any of the arguments are empty lists."
+   if any of the arguments are empty lists.
+
+   TODO: RML-specific. Not needed in bootstrapped OMC"
   input list<ElementType> inList1;
   input list<ElementType> inList2;
   output list<ElementType> outList;
