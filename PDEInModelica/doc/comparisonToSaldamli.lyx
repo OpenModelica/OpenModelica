@@ -87,8 +87,14 @@ Domains
 Geometry Definition
 \end_layout
 
-\begin_layout Subsection*
+\begin_layout Paragraph*
+
+\series bold
 Originally
+\begin_inset Newline newline
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -668,8 +674,14 @@ end CircularDomain;
 
 \end_layout
 
-\begin_layout Subsection*
+\begin_layout Paragraph*
+
+\series bold
 Problem
+\begin_inset Newline newline
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -734,8 +746,14 @@ name "fig:Boundary-in-3D"
 There is also no simple way to generate grid points during translation/solution.
 \end_layout
 
-\begin_layout Subsection*
+\begin_layout Paragraph*
+
+\series bold
 Alternative approach
+\begin_inset Newline newline
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -980,7 +998,65 @@ type Region
 \begin_inset space ~
 \end_inset
 
-parameter Integer ndim;
+parameter Integer ndims;
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+//dim of space
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Integer ndimr;
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+//dim of region
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real[ndims][2] interval;
 \end_layout
 
 \begin_layout Plain Layout
@@ -1035,7 +1111,7 @@ input Real u[ndim];
 \begin_inset space ~
 \end_inset
 
-output Real coord[ndim];
+output Real coord[ndims];
 \end_layout
 
 \begin_layout Plain Layout
@@ -1049,19 +1125,6 @@ output Real coord[ndim];
 \end_inset
 
 end shape;
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-parameter Real[ndim][2] interval;
 \end_layout
 
 \begin_layout Plain Layout
@@ -1299,8 +1362,14 @@ end DomainCircular2D;
 
 \end_layout
 
-\begin_layout Subsubsection*
+\begin_layout Paragraph*
+
+\series bold
 Modified version
+\begin_inset Newline newline
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -2680,6 +2749,400 @@ Constructive Solid Geometry
  CAD app.
 \end_layout
 
+\begin_layout Part*
+Differential operators
+\end_layout
+
+\begin_layout Standard
+4.3.2
+\end_layout
+
+\begin_layout Section*
+Partial derivatives
+\end_layout
+
+\begin_layout Paragraph*
+Originaly
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+see 4.3.2.1
+\end_layout
+
+\begin_layout Standard
+e.g.
+ 
+\family typewriter
+
+\begin_inset Formula $\frac{\partial u}{\partial t}$
+\end_inset
+
+
+\family default
+ ..
+ 
+\family typewriter
+der(u), 
+\begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial y}$
+\end_inset
+
+
+\family default
+ ..
+ 
+\family typewriter
+der(u,x,y)
+\end_layout
+
+\begin_layout Paragraph*
+Problem
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+There is no way to write mixed time and space derivative 
+\begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial t}$
+\end_inset
+
+ in this notation.
+\end_layout
+
+\begin_layout Standard
+This notation doesn't agree with mathematics, where we have different operators
+ for ordinary (
+\begin_inset Formula $\frac{du}{dx}$
+\end_inset
+
+) and partial (
+\begin_inset Formula $\frac{\partial u}{\partial x}$
+\end_inset
+
+) derivatives.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+der(u)
+\family default
+ for partial time derivative is confusing.
+\end_layout
+
+\begin_layout Paragraph*
+Alternative approach
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\begin_inset Formula $\frac{\partial u}{\partial t}$
+\end_inset
+
+
+\family default
+ ..
+
+\family typewriter
+ pder(u,time)
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial y}$
+\end_inset
+
+
+\family default
+ ..
+ 
+\family typewriter
+pder(u,x,y)
+\end_layout
+
+\begin_layout Standard
+Now we can also write 
+\begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial t}$
+\end_inset
+
+ as 
+\family typewriter
+pder(u,x,time)
+\end_layout
+
+\begin_layout Section*
+
+\series bold
+Normal derivative and normal vector
+\end_layout
+
+\begin_layout Paragraph*
+Originaly
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+see 4.3.2.2
+\end_layout
+
+\begin_layout Standard
+normal vector is implicit member of domain
+\end_layout
+
+\begin_layout Paragraph*
+Problem
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Normal vector makes sense only in regions of dimension 
+\emph on
+n-1
+\emph default
+ in 
+\emph on
+n
+\emph default
+-dimensional domain (i.e.
+ surface in 3D, curve in 2D and point in 1D).
+ There is no normal vector in 
+\emph on
+n
+\emph default
+ dimensional region and infinitely many in less than 
+\emph on
+n-1
+\emph default
+ dimensional regions.
+\end_layout
+
+\begin_layout Paragraph*
+Alternative approach
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+normal vector 
+\family typewriter
+n
+\family default
+ is implicit member of all 
+\emph on
+n-1
+\emph default
+ dimensional regions in 
+\emph on
+n
+\emph default
+-dimensional domain.
+ So we write
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+pder(u,omega.boundary.n) = 0 in omega.boundary;
+\end_layout
+
+\begin_layout Standard
+some shortcuts suggested later.
+\end_layout
+
+\begin_layout Standard
+Using normal vector outside differential operators should be also possible
+ e.g.:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+field Real[3] flux;
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+flux*omega.boundary.n = 0 in omega.boundary; //*scalar product
+\end_layout
+
+\begin_layout Subsection*
+Accessing coordinates and normal vector in der() operator
+\end_layout
+
+\begin_layout Paragraph*
+Problem
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Coordinates and normal vector are defined within the domain class, but they
+ are used in equations that are written outside domains.
+ Thus they should be accessed using 
+\family typewriter
+domainName.
+
+\family default
+ prefix (e.g.
+ 
+\family typewriter
+omega.x
+\family default
+), which is tedious.
+\end_layout
+
+\begin_layout Standard
+In the example in 4.3.2.2 the normal vactor 
+\family typewriter
+n
+\family default
+ is reached outside the domain class without 
+\family typewriter
+domainName.
+
+\family default
+ prefix eventhou it is defined in the domain
+\family typewriter
+.
+
+\family default
+ It is not explained how this is enabled.
+\end_layout
+
+\begin_layout Paragraph*
+Solution
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Fields are differentiated with respect to coordinates or normal vector only
+ (or may be also some other vector for directional derivative??).
+ Thus in place of second and following operands of 
+\family typewriter
+pder()
+\family default
+ operator may be given only coordinates or normal vector.
+ So variables in this positions may be treated specialy and coordinates
+ and normal vector of the domain of the field being differentiated may be
+ accessed without the 
+\family typewriter
+domainName.
+
+\family default
+ prefix here.
+\end_layout
+
+\begin_layout Standard
+If coordinates or normal vector is used in different way (not in place of
+ second and following operands of 
+\family typewriter
+pder()
+\family default
+), an alias for it may be defined in the model, e.g.
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Real x = omega.x; 
+\end_layout
+
+\begin_layout Standard
+or
+\family typewriter
+ (discussed later)
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+coordinate Real x = omega.x;
+\end_layout
+
+\begin_layout Part*
+Start values of derivatives
+\end_layout
+
+\begin_layout Paragraph*
+problem
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Higher derivatives allowed for fileds thus we need to assign initial values
+ to its derivatives sometimes.
+\end_layout
+
+\begin_layout Paragraph*
+solution
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+New attributes 
+\family typewriter
+startPrime
+\family default
+ and 
+\family typewriter
+startSecond
+\family default
+ (May be for 
+\family typewriter
+startSecond
+\family default
+ is not needed??) field variables are introduced.
+ Usage e.g.:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+field Real u(start = 0, startPrime = field(sin(x*y) for (x,y) in omega);
+\begin_inset Newline newline
+\end_inset
+
+
+\family default
+Initial values for higher derivatives must be assigned in 
+\family typewriter
+initial equation
+\family default
+ section.
+\end_layout
+
 \begin_layout Standard
 \begin_inset CommandInset bibtex
 LatexCommand bibtex
@@ -2693,43 +3156,10 @@ options "plain"
 
 \begin_layout Standard
 \begin_inset Note Note
-status collapsed
-
-\begin_layout Plain Layout
-4.3.1.1 
-\series bold
-Domain type
-\series default
- similar (built-in) - In both cases all domains extends general built-in
- 
-\family typewriter
-Domain
-\family default
- type.
- Saldamlis built-in 
-\family typewriter
-Domain
-\family default
- has different members.
- We have only 
-\family typewriter
-replaceable Region interior;
-\end_layout
+status open
 
 \begin_layout Part*
 Accessing field values
-\end_layout
-
-\begin_layout Part*
-Differential operators
-\end_layout
-
-\begin_layout Part*
-Normal vector
-\end_layout
-
-\begin_layout Part*
-Shortcuts to coordinate variables
 \end_layout
 
 \begin_layout Part*
@@ -2738,10 +3168,6 @@ Usage of
 in
 \family default
  operator
-\end_layout
-
-\begin_layout Part*
-Start values of derivatives
 \end_layout
 
 \begin_layout Part*
@@ -3148,77 +3574,6 @@ time
 
 \family typewriter
 coordinate x;
-\end_layout
-
-\begin_layout Plain Layout
-
-\series bold
-4.3.2 Differential Operators
-\end_layout
-
-\begin_layout Plain Layout
-4.3.2.1 
-\series bold
-Partial derivative 
-\series default
-Saldamli uses 
-\family typewriter
-der(u,x,y..)
-\family default
-, here 
-\family typewriter
-pder(u,x,y..).
-
-\family default
- Time derivatives should not be written as 
-\family typewriter
-(p)der(u)
-\family default
- but 
-\family typewriter
-also pder(u,time).
-\end_layout
-
-\begin_layout Plain Layout
-4.3.2.2 
-\series bold
-Normal derivative
-\series default
- (or rather normal vector) - similar, unfinished design.
- It perhaps should be member of the region, e.g.:
-\end_layout
-
-\begin_layout Plain Layout
-pder(u
-\family typewriter
-,omega.boundary.n) = 0 in omega.boundary;
-\end_layout
-
-\begin_layout Plain Layout
-or an operator applied on a region, somethink like:
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-pder(u,normal(omega.boundary)) = 0;
-\end_layout
-
-\begin_layout Plain Layout
-Writing boundary conditions using normal vector but outside differentiation
- should be also allowed e.g.:
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-field Real[3] flux;
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-flux*region.n = 0 in omega.boundary; //*scalar product
 \end_layout
 
 \begin_layout Plain Layout
