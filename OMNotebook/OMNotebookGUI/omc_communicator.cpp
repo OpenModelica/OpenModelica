@@ -177,11 +177,12 @@ bool OmcCommunicator::establishConnection()
 
     // 2005-10-10 AF, Porting, changes
     // ORB initialization.
-    int argc = 4;
+    int argc;
     #if defined(USE_OMNIORB)
-      argc = 2;
+      argc = 6;
       char *argv[] = { "OMNotebook", "-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0", "-ORBgiopMaxMsgSize", "10485760" };
     #else
+      argc = 5;
       char *argv[] = { "OMNotebook", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0", "-ORBIIOPBlocking"};
     #endif
 
