@@ -354,7 +354,7 @@ bool OMCProxy::startServer()
     }
     // ORB initialization.
     int argc = 2;
-    static const char *argv[] = {"-ORBgiopMaxMsgSize", "2147483647"};
+    static const char *argv[] = {"-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0", "-ORBgiopMaxMsgSize", "2147483647"};
     CORBA::ORB_var orb = CORBA::ORB_init(argc, (char **)argv);
     objectRefFile.open(QIODevice::ReadOnly);
     char buf[1024];
