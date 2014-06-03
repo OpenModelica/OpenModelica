@@ -98,7 +98,7 @@ bool OmcCommunicator::establishConnection()
 
   // ORB initialization.
   int argc = 2;
-  static const char *argv[] = { "-ORBgiopMaxMsgSize", "10485760" };
+  static const char *argv[] = { "OMShell", "-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0", "-ORBgiopMaxMsgSize", "10485760" };
   CORBA::ORB_var orb = CORBA::ORB_init(argc, (char **)argv);
 
   QFile objectRefFile;
