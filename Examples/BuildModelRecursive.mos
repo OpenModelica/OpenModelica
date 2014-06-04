@@ -13,7 +13,7 @@ referenceFiles:=getInstallationDirectoryPath()+"/../testsuite/simulation/librari
 referenceFileExtension:="mat";
 referenceFileNameDelimiter:=".";
 
-ulimitOmc:="600"; // 10 minutes to generate the C-code
+ulimitOmc:="300"; // 5 minutes to generate the C-code
 ulimitExe:="480"; // 8 minutes to initialize and run the simulation
 ulimitMemory:="16000000";  // ~16GB memory at most
 javascript := false;
