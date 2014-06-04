@@ -1677,7 +1677,7 @@ algorithm
         SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(vars=simVars), odeEquations=odes, jacobianEquations=jacobianEquations) = iSimCode;
         SimCode.SIMVARS(algVars=algVars) = simVars;
         HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) = iTaskGraphMeta;
-        
+
         //dumping stuff-------------------------
         print("the simEqSysts1: \n"+&stringDelimitList(List.map(odes,SimCodeUtil.dumpSimEqSystemLst),"\n")+&"\n");
         SimCodeUtil.dumpVarLst(algVars,"algVars1");
@@ -1686,9 +1686,9 @@ algorithm
         print("inComps1\n");
         HpcOmSimCodeMain.dumpSccSimEqMapping(inComps);
         //--------------------------------------
-        
+
         // create new variables and equations for the duplicated tasks
-        sizeTasks = List.fold(List.map(clusters,listLength),intAdd,0);        
+        sizeTasks = List.fold(List.map(clusters,listLength),intAdd,0);
         taskAss = arrayCreate(sizeTasks,-1);
         procAss = arrayCreate(listLength(clusters),{});
         threadTask = arrayCreate(numProc,{});
@@ -1701,13 +1701,13 @@ algorithm
         simVarIdx = List.fold(List.map(algVars,SimCodeUtil.varIndex),intMax,0)+1;
         simEqSysIdx = SimCodeUtil.getMaxSimEqSystemIndex(iSimCode)+1;
         (taskAss,procAss,_,simCode,schedule,duplSccSimEqMap,duplComps) = createTDSduplicateTasks(clusters,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx),iTaskGraph,iTaskGraphT,iTaskGraphMeta,iSimCode,schedule,iSccSimEqMapping,duplSccSimEqMap,duplComps);
-        
+
         //update stuff
         procAss = Util.arrayMap(procAss,listReverse);
         sccSimEqMap = Util.arrayAppend(listArray(listReverse(duplSccSimEqMap)),iSccSimEqMapping);
         comps = Util.arrayAppend(inComps,listArray(listReverse(duplComps)));
         meta = HpcOmTaskGraph.replaceInCompsInTaskGraphMeta(comps,iTaskGraphMeta);
-        
+
         //dumping stuff-------------------------
         SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(vars=simVars), odeEquations=odes) = simCode;
         print("the simEqSysts2: \n"+&stringDelimitList(List.map(odes,SimCodeUtil.dumpSimEqSystemLst),"\n")+&"\n");
@@ -1940,7 +1940,7 @@ algorithm
   print("the simEqSystsDupl "+&SimCodeUtil.dumpSimEqSystemLst(simEqSystsDupl)+&"\n");
   simCode := List.fold1(simEqSystsDupl,SimCodeUtil.addSimEqSysToODEquations,1,simCode);
   simEqSysIdx2 := simEqSysIdx + numEqs;
-  
+
   //update duplSccSimEqMap, duplComps, taskAss, procAss for the new duplicates
   duplSccSimEqMapOut := simEqSysIdcs2::duplSccSimEqMapIn;
   taskAssOut := arrayUpdate(taskAssIn,taskIdx,threadIdx);
@@ -1950,10 +1950,10 @@ algorithm
   comps := List.intRange2(compIdx,compIdx+listLength(comps)-1);
   compIdx := compIdx+listLength(comps);
   duplCompsOut := comps::duplCompsIn;
-  
+
   // set task in thread
-  threadOut := HpcOmSimCode.CALCTASK(1,taskIdx,0.0,-1.0,threadIdx,simEqSysIdcs2)::threadIn; 
-  
+  threadOut := HpcOmSimCode.CALCTASK(1,taskIdx,0.0,-1.0,threadIdx,simEqSysIdcs2)::threadIn;
+
   idcsOut := (threadIdx,taskIdx+1,compIdx,simVarIdx2,simEqSysIdx2);
   simCodeOut := simCode;
   replOut := repl;
