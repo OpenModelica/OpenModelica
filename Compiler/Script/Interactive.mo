@@ -1656,17 +1656,6 @@ algorithm
 
     case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
-        matchApiFunction(istmts, "getExperimentAnnotation");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        modelpath = Absyn.crefToPath(cr);
-        ErrorExt.setCheckpoint("getExperimentAnnotation");
-        resstr = getNamedAnnotation(modelpath, p, Absyn.IDENT("experiment"), SOME("{}"), getExperimentAnnotationString);
-        ErrorExt.rollBack("getExperimentAnnotation");
-      then
-        (resstr,st);
-
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
         matchApiFunction(istmts, "getNamedAnnotation");
         {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = Absyn.CREF_IDENT(str, {}))} =
         getApiFunctionArgs(istmts);
