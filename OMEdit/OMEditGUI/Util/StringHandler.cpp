@@ -1031,21 +1031,18 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
 #ifdef WIN32
   fileName = QFileDialog::getOpenFileName(parent, caption, dir_str, filter, selectedFilter);
 #else
-  if (filter.compare(Helper::exeFileTypes) == 0)
-  {
-    QFileDialog *dialog = new QFileDialog(parent, caption, dir_str);
+  QFileDialog *dialog;
+  if (filter.compare(Helper::exeFileTypes) == 0) {
+    dialog = new QFileDialog(parent, caption, dir_str);
     dialog->setFilter(QDir::Files | QDir::Executable);
-  }
-  else
-  {
-    QFileDialog *dialog = new QFileDialog(parent, caption, dir_str, filter);
+  } else {
+    dialog = new QFileDialog(parent, caption, dir_str, filter);
   }
   QList<QUrl> urls = dialog->sidebarUrls();
   urls << QUrl("file://" + OpenModelica::tempDirectory());
   dialog->setSidebarUrls(urls);
   dialog->setFileMode(QFileDialog::ExistingFile);
-  if (dialog->exec())
-  {
+  if (dialog->exec()) {
     fileName = dialog->selectedFiles()[0];
   }
   delete dialog;
@@ -1075,21 +1072,18 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
 #ifdef WIN32
   fileNames = QFileDialog::getOpenFileNames(parent, caption, dir_str, filter, selectedFilter);
 #else
-  if (filter.compare(Helper::exeFileTypes) == 0)
-  {
-    QFileDialog *dialog = new QFileDialog(parent, caption, dir_str);
+  QFileDialog *dialog;
+  if (filter.compare(Helper::exeFileTypes) == 0) {
+    dialog = new QFileDialog(parent, caption, dir_str);
     dialog->setFilter(QDir::Files | QDir::Executable);
-  }
-  else
-  {
-    QFileDialog *dialog = new QFileDialog(parent, caption, dir_str, filter);
+  } else {
+    dialog = new QFileDialog(parent, caption, dir_str, filter);
   }
   QList<QUrl> urls = dialog->sidebarUrls();
   urls << QUrl("file://" + OpenModelica::tempDirectory());
   dialog->setSidebarUrls(urls);
   dialog->setFileMode(QFileDialog::ExistingFiles);
-  if (dialog->exec())
-  {
+  if (dialog->exec()) {
     fileNames = dialog->selectedFiles();
   }
   delete dialog;
