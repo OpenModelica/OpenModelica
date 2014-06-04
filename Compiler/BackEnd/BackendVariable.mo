@@ -1266,9 +1266,9 @@ algorithm
         kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DUMMY_DER(),
                     BackendDAE.DUMMY_STATE()};
       then listMember(kind, kind_lst);
-    
+
     else false;
-    
+
   end match;
 end isVarNonDiscreteAlg;
 
@@ -1284,9 +1284,9 @@ algorithm
     /* Real discrete variable */
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), varType = DAE.T_REAL(_,_)))
       then true;
-    
+
     else false;
-    
+
   end match;
 end isVarDiscreteAlg;
 

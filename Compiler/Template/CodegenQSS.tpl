@@ -201,7 +201,7 @@ case MODELINFO(vars=SIMVARS(__)) then
 
   /* Algebraics */
   <% vars.algVars |> var hasindex i0 => InitAlgVariable(var,algs);separator="\n"%>
-  
+
   /* Discrete Algebraics */
   <% vars.discreteAlgVars |> var hasindex i0 => InitAlgVariable(var,algs);separator="\n"%>
 

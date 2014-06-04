@@ -277,7 +277,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
    '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Discrete Real Algebraic variables
  <%(vars.discreteAlgVars |> v =>
-   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>  
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Integer algebraic variables
  <%(vars.intAlgVars |> v =>
    '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>

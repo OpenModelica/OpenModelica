@@ -935,7 +935,7 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
       <%vars.algVars |> var =>
         globalDataVarDefine(var, "realVars", intMul(2, numStateVars) )
       ;separator="\n"%>
-      
+
       /* Discrete Real Algebraic Vars */
       <%vars.discreteAlgVars |> var =>
         globalDataVarDefine(var, "realVars", intAdd(intMul(2, numStateVars),numAlgVars))
