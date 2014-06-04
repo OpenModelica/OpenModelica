@@ -30,13 +30,12 @@ HEADERS  += ../../SimulationRuntime/c/util/read_matlab4.h \
 win32 {
 QMAKE_LFLAGS += -enable-auto-import
 CONFIG(debug, debug|release){
-LIBS += -L../../build/lib/omc -lOMPlot -lomqwtd -L../../3rdParty/gc-7.2/.libs
+LIBS += -L../../build/lib/omc -lOMPlot -lomqwtd
 }
 else {
-LIBS += -L../../build/lib/omc -lOMPlot -lomqwt -L../../3rdParty/gc-7.2/.libs
+LIBS += -L../../build/lib/omc -lOMPlot -lomqwt
 }
-INCLUDEPATH += ../../3rdParty/qwt/build/include \
-    ../../3rdParty/gc-7.2/include
+INCLUDEPATH += ../../3rdParty/qwt/build/include
 } else {
   include(OMPlotGUI.config)
   LIBS += -lOMPlot
