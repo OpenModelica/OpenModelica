@@ -182,10 +182,10 @@ bool OmcCommunicator::establishConnection()
     char *argv[] = {"-ORBgiopMaxMsgSize", "2147483647"};
 #else
 #if defined(USE_OMNIORB)
-    argc = 2;
+    int argc = 2;
     char *argv[] = {"-ORBgiopMaxMsgSize", "2147483647"};
 #else
-    argc = 4;
+    int argc = 4;
     char *argv[] = {"OMNotebook", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0"};
 #endif
 #endif
