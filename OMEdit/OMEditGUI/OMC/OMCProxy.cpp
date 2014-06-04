@@ -2415,9 +2415,9 @@ bool OMCProxy::setDebugFlags(QString debugFlags)
   return StringHandler::unparseBool(getResult());
 }
 
-bool OMCProxy::exportToFigaro(QString className, QString library, QString mode, QString processor)
+bool OMCProxy::exportToFigaro(QString className, QString database, QString mode, QString options, QString processor)
 {
-  sendCommand("exportToFigaro(" + className + ",\"" + library + "\",\"" + mode + "\",\"" + processor + "\")");
+  sendCommand("exportToFigaro(" + className + ",\"" + database + "\",\"" + mode + "\",\"" + options + "\",\"" + processor + "\")");
   bool result = StringHandler::unparseBool(getResult());
   if (!result) printMessagesStringInternal();
   return result;

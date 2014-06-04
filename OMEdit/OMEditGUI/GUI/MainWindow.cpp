@@ -871,10 +871,11 @@ void MainWindow::exportModelFigaro(LibraryTreeNode *pLibraryTreeNode)
   mpProgressBar->setRange(0, 0);
   showProgressBar();
   FigaroPage *pFigaroPage = mpOptionsDialog->getFigaroPage();
-  QString library = pFigaroPage->getFigaroLibraryFileTextBox()->text();
+  QString library = pFigaroPage->getFigaroDatabaseFileTextBox()->text();
   QString mode = pFigaroPage->getFigaroModeComboBox()->itemData(pFigaroPage->getFigaroModeComboBox()->currentIndex()).toString();
+  QString options = pFigaroPage->getFigaroOptionsTextBox()->text();
   QString processor = pFigaroPage->getFigaroProcessTextBox()->text();
-  if (mpOMCProxy->exportToFigaro(pLibraryTreeNode->getNameStructure(), library, mode, processor))
+  if (mpOMCProxy->exportToFigaro(pLibraryTreeNode->getNameStructure(), library, mode, options, processor))
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FIGARO_GENERATED),
                                                          Helper::scriptingKind, Helper::notificationLevel, 0,
