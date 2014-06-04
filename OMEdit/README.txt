@@ -25,7 +25,7 @@ Windows
   - You must run the makefile once so that the omc_communication.h and omc_communication.cc file is generated.
   - Build the project.
   - Copy omniORB416_rt.dll, omniORB416_rtd.dll, omnithread34_rt.dll and omnithread34_rtd.dll from c:/OMDev/lib/omniORB-4.1.6-mingw/bin/x86_win32 to /location-where-OMEdit.exe-is-created.
-  - Copy libqjson.dll, libqjson.dll.a, libgc-1.dll and pthreadGC2.dll from ../build/bin to /location-where-OMEdit.exe-is-created.
+  - Copy libqjson.dll, libqjson.dll.a, libintl-8.dll and libiconv-2.dll from ../build/bin to /location-where-OMEdit.exe-is-created.
   - Run the project.
 
 Linux

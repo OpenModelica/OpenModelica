@@ -138,8 +138,7 @@ win32 {
         __WIN32__
     CONFIG(debug, debug|release){
     LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rtd -lomnithread34_rtd \
-        -L../../build/lib/omc -lOMPlot -lomqwtd \
-        -L../../3rdParty/gc-7.2/.libs
+        -L../../build/lib/omc -lOMPlot -lomqwtd
 } else {
 # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
 # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
@@ -148,7 +147,6 @@ win32 {
     QMAKE_LFLAGS_RELEASE =
     LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rt -lomnithread34_rt \
         -L../../build/lib/omc -lOMPlot -lomqwt \
-        -L../../3rdParty/gc-7.2/.libs \
         # required for backtrace
         -L$$(OMDEV)/tools/mingw/bin -lintl-8 -lbfd -liberty -limagehlp
 }
