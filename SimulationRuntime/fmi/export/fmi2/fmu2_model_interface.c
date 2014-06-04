@@ -98,7 +98,6 @@ static fmiStatus unsupportedFunction(fmiComponent c, const char *fName, int stat
   fmiCallbackLogger log = comp->functions->logger;
   if (invalidState(comp, fName, statesExpected))
     return fmiError;
-  if (comp->loggingOn) log(c, comp->instanceName, fmiOK, "log", fName);
   FILTERED_LOG(comp, fmiError, LOG_STATUSERROR, "%s: Function not implemented.", fName)
   return fmiError;
 }
@@ -525,39 +524,32 @@ fmiStatus fmiSetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
 }
 
 fmiStatus fmiGetFMUstate(fmiComponent c, fmiFMUstate* FMUstate) {
-  // TODO Write code here
-  return fmiOK;
+  return unsupportedFunction(c, "fmiGetFMUstate", modelInstantiated|modelInitializationMode|modelInitialized|modelStepping|modelTerminated|modelError);
 }
 
 fmiStatus fmiSetFMUstate(fmiComponent c, fmiFMUstate FMUstate) {
-  // TODO Write code here
-  return fmiOK;
+  return unsupportedFunction(c, "fmiSetFMUstate", modelInstantiated|modelInitializationMode|modelInitialized|modelStepping|modelTerminated|modelError);
 }
 
 fmiStatus fmiFreeFMUstate(fmiComponent c, fmiFMUstate* FMUstate) {
-  // TODO Write code here
-  return fmiOK;
+  return unsupportedFunction(c, "fmiFreeFMUstate", modelInstantiated|modelInitializationMode|modelInitialized|modelStepping|modelTerminated|modelError);
 }
 
 fmiStatus fmiSerializedFMUstateSize(fmiComponent c, fmiFMUstate FMUstate, size_t *size) {
-  // TODO Write code here
-  return fmiOK;
+  return unsupportedFunction(c, "fmiSerializedFMUstateSize", modelInstantiated|modelInitializationMode|modelInitialized|modelStepping|modelTerminated|modelError);
 }
 
 fmiStatus fmiSerializeFMUstate(fmiComponent c, fmiFMUstate FMUstate, fmiByte serializedState[], size_t size) {
-  // TODO Write code here
-  return fmiOK;
+  return unsupportedFunction(c, "fmiSerializeFMUstate", modelInstantiated|modelInitializationMode|modelInitialized|modelStepping|modelTerminated|modelError);
 }
 
 fmiStatus fmiDeSerializeFMUstate(fmiComponent c, const fmiByte serializedState[], size_t size, fmiFMUstate* FMUstate) {
-  // TODO Write code here
-  return fmiOK;
+  return unsupportedFunction(c, "fmiDeSerializeFMUstate", modelInstantiated|modelInitializationMode|modelInitialized|modelStepping|modelTerminated|modelError);
 }
 
 fmiStatus fmiGetDirectionalDerivative(fmiComponent c, const fmiValueReference vUnknown_ref[], size_t nUnknown, const fmiValueReference vKnown_ref[] , size_t nKnown,
     const fmiReal dvKnown[], fmiReal dvUnknown[]) {
-  // TODO Write code here
-  return fmiOK;
+  return unsupportedFunction(c, "fmiGetDirectionalDerivative", modelInitializationMode|modelInitialized|modelStepping|modelTerminated|modelError);
 }
 
 /***************************************************
