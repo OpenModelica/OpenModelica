@@ -1985,9 +1985,9 @@ end list;
 function exportToFigaro
   input TypeName path;
   input String database;
-  input String mode := "figaro0";
-  input String options := "";
-  input String processor := "C:/st/figp.exe";
+  input String mode;
+  input String options;
+  input String processor;
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
