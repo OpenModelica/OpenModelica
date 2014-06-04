@@ -2710,21 +2710,6 @@ algorithm
   end matchcontinue;
 end printeqCompMapping;
 
-public function printSccNodeMapping
-  input array<Integer> iSccNodeMapping;
-algorithm
-  _ := Util.arrayFold(iSccNodeMapping, printSccNodeMapping0, 1);
-end printSccNodeMapping;
-
-protected function printSccNodeMapping0
-  input Integer iNodeIdx;
-  input Integer iSccIdx;
-  output Integer oSccIdx;
-algorithm
-  print("Scc " +& intString(iSccIdx) +& " is solved in node " +& intString(iNodeIdx) +& "\n");
-  oSccIdx := iSccIdx + 1;
-end printSccNodeMapping0;
-
 protected function printNodeNames " prints the information about the node names of the taskgraph nodes
 author: Waurich TUD 2013-07"
   input array<String> nodeNames;
@@ -5600,5 +5585,28 @@ algorithm
         annotInfoIn;
   end matchcontinue;
 end setAnnotationsForVar;
+
+//-----------------------------------------------------
+// Util
+//-----------------------------------------------------
+
+public function replaceInCompsInTaskGraphMeta"replaces the inComps in the TaskGraphMeta.
+author:Waurich TUD 2014-05"
+  input array<list<Integer>> compsNew;
+  input TaskGraphMeta tgMetaIn;
+  output TaskGraphMeta tgMetaOut;
+protected
+  array<tuple<Integer,Integer,Integer>> varCompMapping;
+  array<tuple<Integer,Integer,Integer>> eqCompMapping;
+  list<Integer> rootNodes;
+  array<String> nodeNames;
+  array<String> nodeDescs;
+  array<tuple<Integer,Real>> exeCosts;
+  array<list<tuple<Integer,Integer,Integer>>> commCosts;
+  array<Integer> nodeMark;
+algorithm
+  TASKGRAPHMETA(varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,rootNodes=rootNodes,nodeNames=nodeNames,nodeDescs=nodeDescs,exeCosts=exeCosts,commCosts=commCosts,nodeMark=nodeMark) := tgMetaIn;
+  tgMetaOut := TASKGRAPHMETA(compsNew,varCompMapping,eqCompMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
+end replaceInCompsInTaskGraphMeta;
 
 end HpcOmTaskGraph;

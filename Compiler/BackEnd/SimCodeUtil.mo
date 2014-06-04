@@ -7464,6 +7464,28 @@ algorithm
   end match;
 end dumpSimEqSystem;
 
+public function dumpSimCode
+  input SimCode.SimCode simCode;
+protected
+  list<SimCode.SimEqSystem> allEquations,jacobianEquations,equationsForZeroCrossings,algorithmAndEquationAsserts;
+  list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
+algorithm
+  SimCode.SIMCODE(allEquations = allEquations, odeEquations=odeEquations, algebraicEquations=algebraicEquations, algorithmAndEquationAsserts=algorithmAndEquationAsserts, equationsForZeroCrossings=equationsForZeroCrossings, jacobianEquations=jacobianEquations) := simCode;
+  print("allEquations: \n-----------------------\n");
+  print(dumpSimEqSystemLst(allEquations)+&"\n");
+  print("odeEquations: \n-----------------------\n");
+  print(stringDelimitList(List.map(odeEquations,dumpSimEqSystemLst),"\n")+&"\n");
+  print("algebraicEquations: \n-----------------------\n");
+  print(stringDelimitList(List.map(algebraicEquations,dumpSimEqSystemLst),"\n")+&"\n");
+  /*
+  print("algorithmAndEquationAsserts: \n-----------------------\n");
+  print(dumpSimEqSystemLst(algorithmAndEquationAsserts)+&"\n");
+  print("equationsForZeroCrossings: \n-----------------------\n");
+  print(dumpSimEqSystemLst(equationsForZeroCrossings)+&"\n");
+  print("jacobianEquations: \n-----------------------\n");
+  print(dumpSimEqSystemLst(jacobianEquations)+&"\n");
+  */
+end dumpSimCode;
 
 protected function isAliasVar
   input SimCode.SimVar var;
@@ -12847,8 +12869,9 @@ algorithm
   end match;
 end addSimVarToAlgVars;
 
-public function addSimEqSysToODEquations
+public function addSimEqSysToODEquations"adds the given simEqSys to both to allEquations and odeEquations"
   input SimCode.SimEqSystem simEqSys;
+  input Integer sysIdx;
   input SimCode.SimCode simCodeIn;
   output SimCode.SimCode simCodeOut;
 protected
@@ -12861,7 +12884,7 @@ protected
       list<SimCode.SimEqSystem> allEquations, residualEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, equationsForZeroCrossings;
       list<SimCode.StateSet> stateSets;
       Boolean useSymbolicInitialization, useHomotopy;
-      list<SimCode.SimEqSystem> initialEquations;
+      list<SimCode.SimEqSystem> initialEquations, odes;
       list<DAE.Constraint> constraints;
       list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
@@ -12886,12 +12909,15 @@ protected
       Option<SimCode.BackendMapping> backendMapping;
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
 algorithm
-  simCodeOut := match(simEqSys,simCodeIn)
-    case (_,SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+  simCodeOut := match(simEqSys,sysIdx,simCodeIn)
+    case (_,_,SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, crefToSimVarHT, backendMapping))
       equation
-        //odeEquations = listAppend(odeEquations,{simEqSys});
+        odes = listGet(odeEquations,sysIdx);       
+        odes = listAppend({simEqSys},odes);
+        odeEquations = List.set(odeEquations,sysIdx,odes);
+        allEquations = listAppend({simEqSys},allEquations);
       then
         SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                   parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
@@ -12962,6 +12988,45 @@ algorithm
     then simEqSys;
   end match;
 end replaceSimEqSysIndex;
+
+public function getMaxSimEqSystemIndex
+  input SimCode.SimCode simCode;
+  output Integer idxOut;
+protected
+  Integer idx;
+  Boolean isNotEmpty;
+  list<SimCode.SimEqSystem> allEquations,jacobianEquations,equationsForZeroCrossings,algorithmAndEquationAsserts,removedEquations,parameterEquations,maxValueEquations,minValueEquations,nominalValueEquations,startValueEquations,initialEquations;
+  list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
+algorithm
+  SimCode.SIMCODE(allEquations = allEquations, odeEquations=odeEquations, algebraicEquations=algebraicEquations, initialEquations=initialEquations,
+                  startValueEquations=startValueEquations, nominalValueEquations=nominalValueEquations, minValueEquations=minValueEquations, maxValueEquations=maxValueEquations,
+                    parameterEquations=parameterEquations, removedEquations=removedEquations, algorithmAndEquationAsserts=algorithmAndEquationAsserts,
+                   equationsForZeroCrossings=equationsForZeroCrossings, jacobianEquations=jacobianEquations) := simCode;
+  idx := 0;
+  isNotEmpty := List.isNotEmpty(jacobianEquations);
+  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(jacobianEquations,eqIndex),intMax,idx,idx);
+  isNotEmpty := List.isNotEmpty(equationsForZeroCrossings) or not isNotEmpty;
+  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(equationsForZeroCrossings,eqIndex),intMax,idx,idx);
+  isNotEmpty := List.isNotEmpty(algorithmAndEquationAsserts) or not isNotEmpty;
+  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(algorithmAndEquationAsserts,eqIndex),intMax,idx,idx);
+  isNotEmpty := List.isNotEmpty(removedEquations) or not isNotEmpty;
+  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(removedEquations,eqIndex),intMax,idx,idx);
+  isNotEmpty := List.isNotEmpty(parameterEquations) or not isNotEmpty;
+  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(parameterEquations,eqIndex),intMax,idx,idx);
+  isNotEmpty := List.isNotEmpty(maxValueEquations) or not isNotEmpty;
+  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(maxValueEquations,eqIndex),intMax,idx,idx);
+  isNotEmpty := List.isNotEmpty(minValueEquations) or not isNotEmpty;
+  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(minValueEquations,eqIndex),intMax,idx,idx);
+  isNotEmpty := List.isNotEmpty(nominalValueEquations) or not isNotEmpty;
+  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(nominalValueEquations,eqIndex),intMax,idx,idx);
+  isNotEmpty := List.isNotEmpty(nominalValueEquations) or not isNotEmpty;
+  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(nominalValueEquations,eqIndex),intMax,idx,idx);
+  isNotEmpty := List.isNotEmpty(startValueEquations) or not isNotEmpty;
+  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(startValueEquations,eqIndex),intMax,idx,idx);
+  isNotEmpty := List.isNotEmpty(initialEquations) or not isNotEmpty;
+  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(initialEquations,eqIndex),intMax,idx,idx);
+  idxOut := idx;
+end getMaxSimEqSystemIndex;
 
 public function dumpIdxScVarMapping
   input array<Option<SimCode.SimVar>> iMapping;

@@ -248,7 +248,7 @@ algorithm
       //---------------
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       (numProc,_) = setNumProc(numProc,cpCostsWoC,taskGraphDataOde);//in case n-flag is not set
-      schedule = createSchedule(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,numProc,inBackendDAE,simCode);
+      (schedule,simCode,taskGraphData1,sccSimEqMapping) = createSchedule(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,numProc,simCode);
       //(schedule,numProc) = repeatScheduleWithOtherNumProc(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,cpCostsWoC,schedule,numProc,numFixed);
       criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(schedule,numProc,taskGraph1,taskGraphData1);
       schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));
@@ -372,80 +372,96 @@ protected function createSchedule
   input array<list<Integer>> iSccSimEqMapping;
   input String iFilenamePrefix;
   input Integer numProc;
-  input BackendDAE.BackendDAE iDAE;
   input SimCode.SimCode iSimCode;
   output HpcOmSimCode.Schedule oSchedule;
+  output SimCode.SimCode oSimCode;
+  output HpcOmTaskGraph.TaskGraphMeta oTaskGraphMeta;
+  output array<list<Integer>> oSccSimEqMapping;
 protected
   String flagValue;
   list<Integer> lst;
+  array<list<Integer>> sccSimEqMap;
+  HpcOmSimCode.Schedule schedule;
   HpcOmTaskGraph.TaskGraph taskGraph1;
   HpcOmTaskGraph.TaskGraphMeta taskGraphMeta1;
+  SimCode.SimCode simCode;
 algorithm
-  oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping,iFilenamePrefix,numProc,iDAE,iSimCode)
-    case(_,_,_,_,_,_,_)
+  (oSchedule,oSimCode,oTaskGraphMeta,oSccSimEqMapping) := matchcontinue(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping,iFilenamePrefix,numProc,iSimCode)
+    case(_,_,_,_,_,_)
       equation
         true = arrayLength(iTaskGraph) == 0;
         print("There is no ODE system that can be parallelized!\n");
         // just did this because this works fine. TODO: make something reasonable here and do not use a scheduler.
+        schedule =  HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
       then
-        HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_)
+        (schedule,iSimCode,iTaskGraphMeta,iSccSimEqMapping);
+    case(_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "level");
         print("Using level Scheduler\n");
-      then HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_)
+        schedule = HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
+      then (schedule,iSimCode,iTaskGraphMeta,iSccSimEqMapping);
+    case(_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "ext");
         print("Using external Scheduler\n");
-      then HpcOmScheduler.createExtSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping, "taskGraph" +& iFilenamePrefix +& "_ext.graphml");
-    case(_,_,_,_,_,_,_)
+        schedule = HpcOmScheduler.createExtSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping, "taskGraph" +& iFilenamePrefix +& "_ext.graphml");
+      then (schedule,iSimCode,iTaskGraphMeta,iSccSimEqMapping);
+    case(_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "metis");
         print("Using METIS Scheduler\n");
-      then HpcOmScheduler.createExtCSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping);
-    case(_,_,_,_,_,_,_)
+        schedule = HpcOmScheduler.createExtCSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping);
+      then (schedule,iSimCode,iTaskGraphMeta,iSccSimEqMapping);
+    case(_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "hmet");
         print("Using hMETIS Scheduler\n");
-      then HpcOmScheduler.createhmetSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping);
-    case(_,_,_,_,_,_,_)
+        schedule = HpcOmScheduler.createhmetSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping);
+      then (schedule,iSimCode,iTaskGraphMeta,iSccSimEqMapping);
+    case(_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "listr");
-      then HpcOmScheduler.createListScheduleReverse(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_)
+        schedule = HpcOmScheduler.createListScheduleReverse(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
+      then (schedule,iSimCode,iTaskGraphMeta,iSccSimEqMapping);
+    case(_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "list");
-      then HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_)
+        schedule = HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
+      then (schedule,iSimCode,iTaskGraphMeta,iSccSimEqMapping);
+    case(_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "mcp");
         print("Using Modified Critical Path Scheduler\n");
-      then HpcOmScheduler.createMCPschedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_)
+        schedule = HpcOmScheduler.createMCPschedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
+      then (schedule,iSimCode,iTaskGraphMeta,iSccSimEqMapping);
+    case(_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "taskdep");
         print("Using OpenMP task dependencies\n");
-      then HpcOmScheduler.createTaskDepSchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_)
+        schedule = HpcOmScheduler.createTaskDepSchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
+      then (schedule,iSimCode,iTaskGraphMeta,iSccSimEqMapping);
+    case(_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "tds");
         print("Using Task Duplication-based Scheduling\n");
-      then HpcOmScheduler.createTDSschedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping,iDAE,iSimCode);
-    case(_,_,_,_,_,_,_)
+        (schedule,simCode,taskGraphMeta1,sccSimEqMap) = HpcOmScheduler.createTDSschedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping,iSimCode);
+      then (schedule,simCode,taskGraphMeta1,sccSimEqMap);
+    case(_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         print("HpcOmScheduler.createSchedule warning: The scheduler '" +& flagValue +& "' is unknown. The list-scheduling algorithm is used instead.\n");
-      then HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
+        schedule = HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
+      then (schedule,iSimCode,iTaskGraphMeta,iSccSimEqMapping);
     else
       equation
         print("HpcOmSimCode.createSchedule failed. Maybe the n-Flag was not set correctly\n");
@@ -522,7 +538,7 @@ algorithm
   oMapping := arrayUpdate(iMapping,simEqIdx,sccIdx);
 end convertToSimeqCompMapping1;
 
-protected function dumpSccSimEqMapping "function dumpSccSimEqMapping
+public function dumpSccSimEqMapping "function dumpSccSimEqMapping
   author: marcusw
   Prints the given mapping out to the console."
   input array<list<Integer>> iSccMapping;
