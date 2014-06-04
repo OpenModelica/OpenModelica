@@ -160,7 +160,7 @@ win32 {
   CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rt -lomnithread34_rt
   USE_CORBA = USE_OMNIORB
   PLOTLIBS = -L../../build/lib/omc -lOMPlot -lomqwt \
-             -L../../3rdParty/gc-7.2/.libs -lgc-1
+             -L../../3rdParty/gc-7.2/.libs
   PLOTINC = ../../3rdParty/qwt/build/include \
             ../../OMPlot/OMPlotGUI
 } else {
