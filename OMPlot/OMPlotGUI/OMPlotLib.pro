@@ -48,10 +48,10 @@ HEADERS  += ../../SimulationRuntime/c/util/read_matlab4.h \
 
 win32 {
 CONFIG(debug, debug|release){
-LIBS += -L../../build/lib/omc -lomqwtd -L../../3rdParty/gc-7.2/.libs -lgc-1
+LIBS += -L../../build/lib/omc -lomqwtd -L../../3rdParty/gc-7.2/.libs
 }
 else {
-LIBS += -L../../build/lib/omc -lomqwt -L../../3rdParty/gc-7.2/.libs -lgc-1
+LIBS += -L../../build/lib/omc -lomqwt -L../../3rdParty/gc-7.2/.libs
 }
 INCLUDEPATH += ../../3rdParty/qwt/build/include \
     ../../3rdParty/gc-7.2/include
