@@ -9067,7 +9067,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
     { /* ASUB */
     <%expl%>
     default:
-      throwStreamPrint(threadData, "Index %d out of bounds [1..<%listLength(exp.array)%>] for array <%Util.escapeModelicaStringToCString(printExpStr(exp))%>", <%idx1%>);
+      throwStreamPrint(threadData, "Index %ld out of bounds [1..<%listLength(exp.array)%>] for array <%Util.escapeModelicaStringToCString(printExpStr(exp))%>", (long) <%idx1%>);
     }
     <%\n%>
     >>
