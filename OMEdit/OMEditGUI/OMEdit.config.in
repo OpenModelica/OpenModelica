@@ -7,7 +7,7 @@ QMAKE_CC  = @CC@
 QMAKE_CXX = @CXX@
 QMAKE_LINK = @CXX@
 
-LIBS += -L ../../build/lib/omc -lOMPlot -lomqwt @CORBALIBS@ -lgc @RPATH_QMAKE@
+LIBS += -L ../../build/lib/omc -lOMPlot -lomqwt @CORBALIBS@ @RPATH_QMAKE@
 INCLUDEPATH += ../../3rdParty/qwt/src @CORBA_QMAKE_INCLUDES@ ../../OMPlot/OMPlotGUI
 
 QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@
