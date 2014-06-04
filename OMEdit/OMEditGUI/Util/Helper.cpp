@@ -57,6 +57,7 @@ QString Helper::xmlFileTypes = "XML Files (*.xml)";
 QString Helper::infoXmlFileTypes = "OM Info XML Files (*_info.xml)";
 QString Helper::matFileTypes = "MAT Files (*.mat)";
 QString Helper::omResultFileTypes = "OpenModelica Result Files (*.mat *.plt *.csv)";
+QString Helper::exeFileTypes = "EXE Files (*.exe)";
 int Helper::treeIndentation = 13;
 QSize Helper::iconSize = QSize(20, 20);
 QSize Helper::buttonIconSize = QSize(16, 16);

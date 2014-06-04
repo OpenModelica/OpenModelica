@@ -67,6 +67,7 @@ public:
   static QString infoXmlFileTypes;
   static QString matFileTypes;
   static QString omResultFileTypes;
+  static QString exeFileTypes;
   static int treeIndentation;
   static QSize iconSize;
   static QSize buttonIconSize;

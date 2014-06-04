@@ -2804,7 +2804,7 @@ FigaroPage::FigaroPage(OptionsDialog *pParent)
 void FigaroPage::browseFigaroLibraryFile()
 {
   mpFigaroDatabaseFileTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                                     NULL, "", NULL));
+                                                                      NULL, Helper::xmlFileTypes, NULL));
 }
 
 void FigaroPage::browseFigaroOptionsFile()
@@ -2816,5 +2816,5 @@ void FigaroPage::browseFigaroOptionsFile()
 void FigaroPage::browseFigaroProcessFile()
 {
   mpFigaroProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                                 NULL, "", NULL));
+                                                                 NULL, Helper::exeFileTypes, NULL));
 }

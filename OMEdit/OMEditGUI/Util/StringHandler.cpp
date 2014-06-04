@@ -1031,7 +1031,15 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
 #ifdef WIN32
   fileName = QFileDialog::getOpenFileName(parent, caption, dir_str, filter, selectedFilter);
 #else
-  QFileDialog *dialog = new QFileDialog(parent, caption, dir_str, filter);
+  if (filter.compare(Helper::exeFileTypes) == 0)
+  {
+    QFileDialog *dialog = new QFileDialog(parent, caption, dir_str);
+    dialog->setFilter(QDir::Files | QDir::Executable);
+  }
+  else
+  {
+    QFileDialog *dialog = new QFileDialog(parent, caption, dir_str, filter);
+  }
   QList<QUrl> urls = dialog->sidebarUrls();
   urls << QUrl("file://" + OpenModelica::tempDirectory());
   dialog->setSidebarUrls(urls);
@@ -1067,7 +1075,15 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
 #ifdef WIN32
   fileNames = QFileDialog::getOpenFileNames(parent, caption, dir_str, filter, selectedFilter);
 #else
-  QFileDialog *dialog = new QFileDialog(parent, caption, dir_str, filter);
+  if (filter.compare(Helper::exeFileTypes) == 0)
+  {
+    QFileDialog *dialog = new QFileDialog(parent, caption, dir_str);
+    dialog->setFilter(QDir::Files | QDir::Executable);
+  }
+  else
+  {
+    QFileDialog *dialog = new QFileDialog(parent, caption, dir_str, filter);
+  }
   QList<QUrl> urls = dialog->sidebarUrls();
   urls << QUrl("file://" + OpenModelica::tempDirectory());
   dialog->setSidebarUrls(urls);
