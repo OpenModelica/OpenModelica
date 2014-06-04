@@ -556,7 +556,10 @@ fmiStatus fmiGetDirectionalDerivative(fmiComponent c, const fmiValueReference vU
 Functions for FMI for Model Exchange
 ****************************************************/
 fmiStatus fmiEnterEventMode(fmiComponent c) {
-  // TODO Write code here
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiEnterEventMode", modelStepping))
+    return fmiError;
+  FILTERED_LOG(comp, fmiOK, LOG_EVENTS, "fmiEnterEventMode")
   return fmiOK;
 }
 
@@ -603,7 +606,33 @@ fmiStatus fmiEnterContinuousTimeMode(fmiComponent c) {
 }
 
 fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean noSetFMUStatePriorToCurrentPoint, fmiBoolean* enterEventMode, fmiBoolean* terminateSimulation) {
-  // TODO Write code here
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiCompletedIntegratorStep", modelStepping))
+    return fmiError;
+  if (nullPointer(comp, "fmiCompletedIntegratorStep", "enterEventMode", enterEventMode))
+    return fmiError;
+  if (nullPointer(comp, "fmiCompletedIntegratorStep", "terminateSimulation", terminateSimulation))
+    return fmiError;
+  FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL,"fmiCompletedIntegratorStep")
+
+  comp->fmuData->callback->functionAlgebraics(comp->fmuData);
+  comp->fmuData->callback->output_function(comp->fmuData);
+  comp->fmuData->callback->function_storeDelayed(comp->fmuData);
+  storePreValues(comp->fmuData);
+  *enterEventMode = fmiFalse;
+  *terminateSimulation = fmiFalse;
+  /******** check state selection ********/
+  if (stateSelection(comp->fmuData,1, 0))
+  {
+    /* if new set is calculated reinit the solver */
+    *enterEventMode = fmiTrue;
+    FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL,"fmiEventUpdate: Need to iterate state values changed!")
+  }
+  /* TODO: fix the extrapolation in non-linear system
+   *       then we can stop to save all variables in
+   *       in the whole ringbuffer
+   */
+  overwriteOldSimulationData(comp->fmuData);
   return fmiOK;
 }
 
