@@ -36,7 +36,7 @@ algorithm
     then fail();
   end if;
   System.writeFile(bdfFile, figaro);
-  
+
   // Get XML defining the database.
   database := System.readFile(inDatabaseFile);
   database := System.trimWhitespace(database);
@@ -537,8 +537,8 @@ protected function makeXml "Makes instructions for the Figaro processor."
 protected
   String xml;
 algorithm
-  xml := "<REQUESTS>\n	";
-  xml := xml +& "<LOAD_BDC_FI>" +& inDatabase +& "\n	</LOAD_BDC_FI>";
+  xml := "<REQUESTS>\n  ";
+  xml := xml +& "<LOAD_BDC_FI>" +& inDatabase +& "\n  </LOAD_BDC_FI>";
   xml := xml +& "\n\n<LOAD_BDF_FI>\n    <FILE>";
   xml := xml +& inBdfFile;
   xml := xml +& "</FILE>\n</LOAD_BDF_FI>\n";
