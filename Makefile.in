@@ -1,5 +1,4 @@
 all :
-	$(MAKE) boehm-gc-lib
 	$(MAKE) release qtclients @OMSHELL_TERMINAL@
 
 autoconfGeneratedFiles = @GENERATED_AUTOCONF_FILES@
@@ -109,9 +108,9 @@ omnotebook: mkbuilddirs qwt omplot
 	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix
 omshell: mkbuilddirs
 	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix
-omplot: mkbuilddirs qwt boehm-gc-lib
+omplot: mkbuilddirs qwt
 	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix
-omedit: mkbuilddirs qwt omplot boehm-gc-lib qjson
+omedit: mkbuilddirs qwt omplot qjson
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
 ifeq (@with_paradiseo@,)
 omoptim:

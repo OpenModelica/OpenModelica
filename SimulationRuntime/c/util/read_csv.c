@@ -33,7 +33,6 @@
 #include <stdio.h>
 #include "read_csv.h"
 #include "read_matlab4.h"
-#include <gc.h>
 #include "libcsv.h"
 #include "string_util.h"
 
@@ -80,9 +79,9 @@ static void add_variable(void *data, size_t len, void *t)
   }
   if (head->size+1 >= head->buffer_size) {
     head->buffer_size = head->buffer_size ? 2*head->buffer_size : 512;
-    head->variables = GC_realloc(head->variables, sizeof(char*)*head->buffer_size);
+    head->variables = realloc(head->variables, sizeof(char*)*head->buffer_size);
   }
-  head->variables[head->size++] = GC_strdup(data ? data : "");
+  head->variables[head->size++] = strdup(data ? data : "");
 }
 
 static void row_count(int c, void *t)
@@ -103,8 +102,8 @@ int read_csv_dataset_size(const char* filename)
     return -1;
   }
   csv_init(&p, CSV_STRICT | CSV_REPALL_NL | CSV_STRICT_FINI | CSV_APPEND_NULL | CSV_EMPTY_IS_NULL);
-  csv_set_realloc_func(&p, GC_realloc);
-  csv_set_free_func(&p, GC_free);
+  csv_set_realloc_func(&p, realloc);
+  csv_set_free_func(&p, free);
   do {
     size_t len = fread(buf, 1, buf_size, f);
     if (len != buf_size && !feof(f)) {
@@ -129,8 +128,8 @@ char** read_csv_variables(FILE *fin, int *length)
   struct csv_head head = {0};
   fseek(fin,0,SEEK_SET);
   csv_init(&p, CSV_STRICT | CSV_REPALL_NL | CSV_STRICT_FINI | CSV_APPEND_NULL | CSV_EMPTY_IS_NULL);
-  csv_set_realloc_func(&p, GC_realloc);
-  csv_set_free_func(&p, GC_free);
+  csv_set_realloc_func(&p, realloc);
+  csv_set_free_func(&p, free);
   do {
     size_t len = fread(buf, 1, buf_size, fin);
     if (len != buf_size && !feof(fin)) {
@@ -159,7 +158,7 @@ static void add_cell(void *data, size_t len, void *t)
   if (body->size+1 >= body->buffer_size) {
     body->buffer_size = body->res ? 2*body->buffer_size : body->row_length*1024; /* Guess it's 1024 time points; we could also take the size of the file or something, but this is cool too */
     body->buffer_size = body->buffer_size > 0 ? body->buffer_size : 1024;
-    body->res = body->res ? (double*)GC_realloc(body->res, sizeof(double)*body->buffer_size) : (double*) GC_malloc_atomic(sizeof(double)*body->buffer_size);
+    body->res = body->res ? (double*)realloc(body->res, sizeof(double)*body->buffer_size) : (double*) malloc(sizeof(double)*body->buffer_size);
   }
   body->res[body->size++] = data ? om_strtod((const char*)data,&endptr) : 0;
   if (*endptr) {
@@ -191,8 +190,8 @@ double* read_csv_dataset_var(const char *filename, const char *var, int dimsize)
     return NULL;
   }
   csv_init(&p, CSV_STRICT | CSV_REPALL_NL | CSV_STRICT_FINI | CSV_APPEND_NULL | CSV_EMPTY_IS_NULL);
-  csv_set_realloc_func(&p, GC_realloc);
-  csv_set_free_func(&p, GC_free);
+  csv_set_realloc_func(&p, realloc);
+  csv_set_free_func(&p, free);
   do {
     size_t len = fread(buf, 1, buf_size, fin);
     if (len != buf_size && !feof(fin)) {
@@ -219,7 +218,7 @@ struct csv_data* read_csv(const char *filename)
   int dummy;
   struct csv_parser p;
   struct csv_body body = {0};
-  struct csv_data *res = GC_malloc(sizeof(struct csv_data));
+  struct csv_data *res;
   FILE *fin = fopen(filename, "r");
   if (!fin) {
     return NULL;
@@ -232,8 +231,8 @@ struct csv_data* read_csv(const char *filename)
   fseek(fin,0,SEEK_SET);
 
   csv_init(&p, CSV_STRICT | CSV_REPALL_NL | CSV_STRICT_FINI | CSV_APPEND_NULL | CSV_EMPTY_IS_NULL);
-  csv_set_realloc_func(&p, GC_realloc);
-  csv_set_free_func(&p, GC_free);
+  csv_set_realloc_func(&p, realloc);
+  csv_set_free_func(&p, free);
   do {
     size_t len = fread(buf, 1, buf_size, fin);
     if (len != buf_size && !feof(fin)) {
@@ -247,6 +246,10 @@ struct csv_data* read_csv(const char *filename)
   csv_free(&p);
   fclose(fin);
   if (body.error) {
+    return NULL;
+  }
+  res = malloc(sizeof(struct csv_data));
+  if (!res) {
     return NULL;
   }
   res->variables = variables;
@@ -277,11 +280,11 @@ void omc_free_csv_reader(struct csv_data *data)
 {
   int i;
   for (i=0; i<data->numvars; i++) {
-    GC_free(data->variables[i]);
+    free(data->variables[i]);
   }
-  GC_free(data->variables);
-  GC_free(data->data);
+  free(data->variables);
+  free(data->data);
   data->variables = 0;
   data->data = 0;
-  GC_free(data);
+  free(data);
 }
