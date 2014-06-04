@@ -177,14 +177,18 @@ bool OmcCommunicator::establishConnection()
 
     // 2005-10-10 AF, Porting, changes
     // ORB initialization.
-    int argc;
-    #if defined(USE_OMNIORB)
-      argc = 6;
-      char *argv[] = { "OMNotebook", "-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0", "-ORBgiopMaxMsgSize", "10485760" };
-    #else
-      argc = 5;
-      char *argv[] = { "OMNotebook", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0", "-ORBIIOPBlocking"};
-    #endif
+#ifdef WIN32
+    int argc = 2;
+    char *argv[] = {"-ORBgiopMaxMsgSize", "2147483647"};
+#else
+#if defined(USE_OMNIORB)
+    argc = 2;
+    char *argv[] = {"-ORBgiopMaxMsgSize", "2147483647"};
+#else
+    argc = 4;
+    char *argv[] = {"OMNotebook", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0"};
+#endif
+#endif
 
     CORBA::ORB_var orb = CORBA::ORB_init(argc, argv);
     //CORBA::Object_var obj = orb->string_to_object(uri.stripWhiteSpace().latin1()); //org
