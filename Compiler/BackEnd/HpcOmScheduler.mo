@@ -1851,6 +1851,7 @@ algorithm
         comps = arrayGet(inComps,node);
         simEqsLst = List.map1(comps,Util.arrayGetIndexFirst,sccSimEqMappingIn);
         simEqs = List.flatten(simEqsLst);
+        simEqs = listReverse(simEqs);
         task = HpcOmSimCode.CALCTASK(1,node,0.0,-1.0,threadIdx,simEqs);
         thread = task::threadIn;
         (taskAss,procAss,thread,idcs,simCode,duplSccSimEqMap,duplComps) = createTDSduplicateTasks1(rest,replIn,taskAss,procAss,thread,idcsIn,iTaskGraph,iTaskGraphT,iTaskGraphMeta,simCodeIn,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn);
@@ -1914,14 +1915,14 @@ algorithm
   //SimCodeUtil.dumpSimVars(simVars);
   simVarLst := List.map1(crefs,SimCodeUtil.get,ht);
   simEqSysts := List.map1(simEqSysIdcs,SimCodeUtil.getSimEqSysForIndex,List.flatten(odes));
-    SimCodeUtil.dumpVarLst(simVarLst,"the simVars");
+  //SimCodeUtil.dumpVarLst(simVarLst,"the simVars");
 
   // build the new crefs, new simVars
   numVars := listLength(simVarLst);
   simVarSysIdcs2 := List.intRange2(simVarIdx,simVarIdx+numVars-1);
   crefAppend := "_thr"+&intString(threadIdx);
   crefsDupl := List.map1(crefs,ComponentReference.joinCrefs,DAE.CREF_IDENT(crefAppend,DAE.T_UNKNOWN_DEFAULT,{}));
-  print("crefs new :\n"+&stringDelimitList(List.map(crefsDupl,ComponentReference.debugPrintComponentRefTypeStr),"\n")+&"\n");
+  //print("crefs new :\n"+&stringDelimitList(List.map(crefsDupl,ComponentReference.debugPrintComponentRefTypeStr),"\n")+&"\n");
   crefsDuplExp := List.map(crefsDupl,Expression.crefExp);
   simVarDupl := List.threadMap(crefsDupl,simVarLst,SimCodeUtil.replaceSimVarName);
   simVarDupl := List.threadMap(simVarSysIdcs2,simVarDupl,SimCodeUtil.replaceSimVarIndex);
@@ -1937,7 +1938,7 @@ algorithm
   simEqSysIdcs2 := List.intRange2(simEqSysIdx,simEqSysIdx+numEqs-1);
   (simEqSystsDupl,_) := List.map1_2(simEqSysts,replaceExpsInSimEqSystem,repl);
   simEqSystsDupl := List.threadMap(simEqSystsDupl,simEqSysIdcs2,SimCodeUtil.replaceSimEqSysIndex);
-  print("the simEqSystsDupl "+&SimCodeUtil.dumpSimEqSystemLst(simEqSystsDupl)+&"\n");
+  //print("the simEqSystsDupl "+&SimCodeUtil.dumpSimEqSystemLst(simEqSystsDupl)+&"\n");
   simCode := List.fold1(simEqSystsDupl,SimCodeUtil.addSimEqSysToODEquations,1,simCode);
   simEqSysIdx2 := simEqSysIdx + numEqs;
 
