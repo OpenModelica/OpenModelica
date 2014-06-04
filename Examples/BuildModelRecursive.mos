@@ -17,7 +17,7 @@ ulimitOmc:="600"; // 10 minutes to generate the C-code
 ulimitExe:="480"; // 8 minutes to initialize and run the simulation
 ulimitMemory:="16000000";  // ~16GB memory at most
 javascript := false;
-simFlags := "-abortSlowSimulation";
+simFlags := "-abortSlowSimulation -alarm=" + ulimitExe;
 
 runScript("CustomCommands.mos");
 
@@ -147,6 +147,8 @@ end if;
 (startTime,stopTime,tolerance,numberOfIntervals,stepSize):=getSimulationOptions("+s+",defaultTolerance="+String(default_tolerance)+",defaultNumberOfIntervals=2500);
 numberOfIntervals := 2*numberOfIntervals;
 res:=buildModel("+s+",tolerance=tolerance,outputFormat=outputFormat,numberOfIntervals=numberOfIntervals,variableFilter=variableFilter);
+// We built the model fine, so reset the alarm. The simulation executable will also have an alarm, making only result verification a potential to stall.
+alarm(0);
 
 greenColor := \"#00FF00\";
 errFile:=\"files/"+s+".err\";
@@ -174,7 +176,7 @@ timeDiff := -1.0;
 
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 buildRes := res[1] <> \"\";
-simRes  := if not buildRes then false else 0 == system(\"ulimit -t " +ulimitExe+" ; ./"+s+" \"+simFlags+\" > \"+simFile+\" 2>&1\");
+simRes  := if not buildRes then false else 0 == system(\"./"+s+" \"+simFlags+\" > \"+simFile+\" 2>&1\");
 if buildRes and javascript then
   system(\"cp " + s + ".js " + s + "_info.xml " + s + "_init.xml " + s + ".md files/\");
 end if;
@@ -250,8 +252,6 @@ function change(el) {
   end if;
 end if;
 
-alarm(0); // We built the model fine and verified results; let's assume the rest is fast and easy to deal with
-
 sim:=readFile(simFile);
 str:=\"<tr><td>\" + (if err <> \"\" then \"<a class=\\\"\"+errorLinkClass+\"\\\" href=\\\"\"+errFile+\"\\\">"+s+"</a>\" else \""+s+"\") +
   (if sim <> \"\" then \" (<a href=\\\"\"+simFile+\"\\\">sim</a>)\" else \"\") +
@@ -276,7 +276,7 @@ if javascript then
   system("cp ModelicaIcons/Modelica.Icons.Example.svg files/");
   system("cp -a " + OpenModelica.Scripting.getInstallationDirectoryPath() + "/lib/omc/emcc/mdpad/* files/");
 end if;
-results := system_parallel({"ulimit -t "+ulimitOmc+" ; " + omc + " +n=1 " + s + ".mos" for s in a});
+results := system_parallel({omc + " +n=1 " + s + ".mos" for s in a});
 getErrorString();
 
 system("rm -f " + log);
