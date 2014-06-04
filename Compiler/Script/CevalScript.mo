@@ -1146,12 +1146,12 @@ algorithm
     case (cache,_,"list",_,st,_) then (cache,Values.STRING(""),st);
 
   // exportToFigaro cases added by Alexander Carlqvist
-    case (cache, _, "exportToFigaro", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(filename), Values.STRING(str), Values.STRING(filename2)}, st as GlobalScript.SYMBOLTABLE(ast = p), _)
+    case (cache, _, "exportToFigaro", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3)}, st as GlobalScript.SYMBOLTABLE(ast = p), _)
       equation
     (scodeP, _) = Interactive.symbolTableToSCode(st);
     /* The following line of code should be commented out when building from trunk.
     Uncomment when bootstrapping. */
-    //Figaro.run(scodeP, path, filename, str, filename2);
+    //Figaro.run(scodeP, path, str, str1, str2, str3);
       then (cache, Values.BOOL(true), st);
 
     case (cache, _, "exportToFigaro", _, st, _)

@@ -15,8 +15,9 @@ public function run "The main function to be called from CevalScript. This one i
 because of all the side-effects. However, all of them are captured here."
   input SCode.Program inProgram;
   input Path inPath;
-  input String inBdcFile "Figaro library";
+  input String inDatabaseFile "Figaro database XML file";
   input String inMode "Figaro processor mode";
+  input String inOptions "Figaro fault tree generation options";
   input String inFigaroProcessorFile "Figaro processor to call";
 protected
   String bdfFile := System.pwd() +& "/BDF.fi" "Figaro code to the Figaro processor";
@@ -24,7 +25,7 @@ protected
   String argumentFile := System.pwd() +& "/figp_commands.xml" "instructions to the Figaro processor";
   String resultFile := System.pwd() +& "/result.xml" "status from the Figaro processor"; // File name cannot be changed.
   SCode.Element program;
-  String figaro, xml, xml2;
+  String figaro, database, xml, xml2;
   list<String> sl;
 algorithm
   program := SCode.getElementWithPath(inProgram, inPath);
@@ -35,9 +36,13 @@ algorithm
     then fail();
   end if;
   System.writeFile(bdfFile, figaro);
+  
+  // Get XML defining the database.
+  database := System.readFile(inDatabaseFile);
+  database := System.trimWhitespace(database);
 
   // Instructions for the Figaro processor.
-  xml := makeXml(inBdcFile, bdfFile, inMode, figaroFile);
+  xml := makeXml(database, bdfFile, inMode, inOptions, figaroFile);
   System.writeFile(argumentFile, xml);
 
   callFigaroProcessor(inFigaroProcessorFile, argumentFile);
@@ -523,17 +528,18 @@ algorithm
 end figaroObjectToString;
 
 protected function makeXml "Makes instructions for the Figaro processor."
-  input String inBdcFile "library the Figaro processor will use";
+  input String inDatabase "database the Figaro processor will use";
   input String inBdfFile "Figaro code to the Figaro processor";
   input String inMode "Figaro processor mode";
+  input String inOptions "Figaro fault tree generation options";
   input String inFigaroFile "Figaro code from the Figaro processor";
   output String outXml;
 protected
   String xml;
 algorithm
-  xml := "<REQUESTS>\n<LOAD_BDC_FI>\n    <FILE_FI>";
-  xml := xml +& inBdcFile;
-  xml := xml +& "</FILE_FI>\n</LOAD_BDC_FI>\n\n<LOAD_BDF_FI>\n    <FILE>";
+  xml := "<REQUESTS>\n	";
+  xml := xml +& "<LOAD_BDC_FI>" +& inDatabase +& "\n	</LOAD_BDC_FI>";
+  xml := xml +& "\n\n<LOAD_BDF_FI>\n    <FILE>";
   xml := xml +& inBdfFile;
   xml := xml +& "</FILE>\n</LOAD_BDF_FI>\n";
   xml := xml +& "<RUN_TREATMENT>\n";
@@ -548,7 +554,7 @@ algorithm
     xml := xml +& System.pwd() +& "/FaultTree.xml";
     xml := xml +& "</FILE>\n";
     xml := xml +& "    <FILE_MACRO>fiab_ADD.h</FILE_MACRO>";
-    xml := xml +& "\n    <FILE_TREE_OPTIONS>C:\\st\\Test\\Params FT generation.xml</FILE_TREE_OPTIONS>";
+    xml := xml +& "\n    <FILE_TREE_OPTIONS>" +& inOptions +& "</FILE_TREE_OPTIONS>";
   end if;
 
   xml := xml +& "\n    <RESOLVE_CONST>VRAI</RESOLVE_CONST>\n    <RESOLVE_ATTR>FAUX</RESOLVE_ATTR>\n    <INST_RULE>VRAI</INST_RULE>\n";
