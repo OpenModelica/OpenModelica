@@ -224,6 +224,7 @@ uniontype SimVars "Container for metadata about variables in a Modelica model."
     list<SimVar> stateVars;
     list<SimVar> derivativeVars;
     list<SimVar> algVars;
+    list<SimVar> discreteAlgVars;
     list<SimVar> intAlgVars;
     list<SimVar> boolAlgVars;
     list<SimVar> inputVars;
@@ -248,7 +249,7 @@ uniontype SimVars "Container for metadata about variables in a Modelica model."
 end SimVars;
 
 public constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {},
-  {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{});
+  {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{});
 
 uniontype SimVar "Information about a variable in a Modelica model."
   record SIMVAR

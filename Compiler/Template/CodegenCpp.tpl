@@ -85,13 +85,14 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
    private:
 
     void initializeAlgVars();
+    void initializeDiscreteAlgVars();
     void initializeIntAlgVars();
     void initializeBoolAlgVars();
     void initializeAliasVars();
     void initializeIntAliasVars();
     void initializeBoolAliasVars();
     void initializeParameterVars();
-     void initializeStateVars();
+    void initializeStateVars();
     void initializeDerVars();
   };
  >>
@@ -254,6 +255,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     void initialize();
   private:
        void writeAlgVarsResultNames(vector<string>& names);
+       void writeDiscreteAlgVarsResultNames(vector<string>& names);
        void writeIntAlgVarsResultNames(vector<string>& names);
        void writeBoolAlgVarsResultNames(vector<string>& names);
        void writeIntputVarsResultNames(vector<string>& names);
@@ -2806,17 +2808,18 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
 
     <%varDecls%>
 
-     initializeAlgVars();
-  initializeIntAlgVars();
-  initializeBoolAlgVars();
-  initializeAliasVars();
-  initializeIntAliasVars();
-  initializeBoolAliasVars();
-  initializeParameterVars();
+    initializeAlgVars();
+    initializeDiscreteAlgVars();
+    initializeIntAlgVars();
+    initializeBoolAlgVars();
+    initializeAliasVars();
+    initializeIntAliasVars();
+    initializeBoolAliasVars();
+    initializeParameterVars();
     initializeStateVars();
-     initializeDerVars();
-   <%initFunctions%>
-     _event_handling.initialize(this,<%helpvarlength(simCode)%>,boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::initPreVars, this, _1,_2));
+    initializeDerVars();
+    <%initFunctions%>
+    _event_handling.initialize(this,<%helpvarlength(simCode)%>,boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::initPreVars, this, _1,_2));
 
 
 
@@ -2861,15 +2864,17 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    let &varDecls7 = buffer "" /*BUFD*/
    let &varDecls8 = buffer "" /*BUFD*/
    let &varDecls9 = buffer "" /*BUFD*/
+   let &varDecls10 = buffer "" /*BUFD*/
    let init1  = initValst(varDecls1,"Real",vars.stateVars, simCode,contextOther)
    let init2  = initValst(varDecls2,"Real",vars.derivativeVars, simCode,contextOther)
    let init3  = initValst(varDecls3,"Real",vars.algVars, simCode,contextOther)
-   let init4  = initValst(varDecls4,"Int",vars.intAlgVars, simCode,contextOther)
-   let init5  =initValst(varDecls5,"Bool",vars.boolAlgVars, simCode,contextOther)
-   let init6  =initAliasValst(varDecls6,"Real",vars.aliasVars, simCode,contextOther)
-   let init7  =initAliasValst(varDecls7,"Int",vars.intAliasVars, simCode,contextOther)
-   let init8  =initValst(varDecls8,"Bool",vars.boolAliasVars, simCode,contextOther)
-   let init9  =initValst(varDecls9,"Real",vars.paramVars, simCode,contextOther)
+   let init4  = initValst(varDecls4,"Real",vars.discreteAlgVars, simCode,contextOther)
+   let init5  = initValst(varDecls5,"Int",vars.intAlgVars, simCode,contextOther)
+   let init6  =initValst(varDecls6,"Bool",vars.boolAlgVars, simCode,contextOther)
+   let init7  =initAliasValst(varDecls7,"Real",vars.aliasVars, simCode,contextOther)
+   let init8  =initAliasValst(varDecls8,"Int",vars.intAliasVars, simCode,contextOther)
+   let init9  =initValst(varDecls9,"Bool",vars.boolAliasVars, simCode,contextOther)
+   let init10  =initValst(varDecls10,"Real",vars.paramVars, simCode,contextOther)
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeStateVars()
    {
@@ -2886,36 +2891,41 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
       <%varDecls3%>
        <%init3%>
    }
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeDiscreteAlgVars()
+   {
+      <%varDecls4%>
+      <%init4%>
+   }
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAlgVars()
    {
-     <%varDecls4%>
-       <%init4%>
+      <%varDecls5%>
+      <%init5%>
    }
     void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolAlgVars()
-   {
-        <%varDecls5%>
-       <%init5%>
-   }
-    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeAliasVars()
    {
        <%varDecls6%>
        <%init6%>
    }
-     void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAliasVars()
-    {
+    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeAliasVars()
+   {
        <%varDecls7%>
        <%init7%>
+   }
+     void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAliasVars()
+    {
+       <%varDecls8%>
+       <%init8%>
     }
     void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolAliasVars()
     {
-      <%varDecls8%>
-       <%init8%>
+      <%varDecls9%>
+       <%init9%>
     }
 
     void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeParameterVars()
     {
-       <%varDecls9%>
-       <%init9%>
+       <%varDecls10%>
+       <%init10%>
     }
    >>
 end init2;
@@ -3432,6 +3442,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     {
       vector<string> head;
       writeAlgVarsResultNames(head);
+      writeDiscreteAlgVarsResultNames(head);
       writeIntAlgVarsResultNames(head);
       writeBoolAlgVarsResultNames(head);
       writeIntputVarsResultNames(head);
@@ -4053,6 +4064,9 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.algVars |> var =>
     MemberVariableDefine2(var, "algebraics")
   ;separator="\n"%>
+  <%vars.discreteAlgVars |> var =>
+    MemberVariableDefine2(var, "algebraics")
+  ;separator="\n"%>
   <%vars.paramVars |> var =>
     MemberVariableDefine2(var, "parameters")
   ;separator="\n"%>
@@ -4128,6 +4142,9 @@ case MODELINFO(vars=SIMVARS(__)) then
 <<  <%vars.algVars |> var =>
     MemberVariableDefineReference2(var, "algebraics","")
   ;separator=";\n"%><%if vars.algVars then ";" else ""%>
+    <%vars.discreteAlgVars |> var =>
+    MemberVariableDefineReference2(var, "algebraics","")
+  ;separator=";\n"%><%if vars.discreteAlgVars then ";" else ""%>
    <%vars.paramVars |> var =>
     MemberVariableDefineReference2(var, "parameters","")
   ;separator=";\n"%> <%if vars.paramVars then ";" else ""%>
@@ -4187,6 +4204,9 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.algVars |> var =>
     MemberVariableDefineReference2(var, "algebraics","_")
   ;separator=","%><%if vars.algVars then "," else ""%>
+  <%vars.discreteAlgVars |> var =>
+    MemberVariableDefineReference2(var, "algebraics","_")
+  ;separator=","%><%if vars.discreteAlgVars then "," else ""%>
   <%vars.paramVars |> var =>
     MemberVariableDefineReference2(var, "parameters","_")
   ;separator=","%><%if vars.paramVars then "," else ""%>
@@ -4243,6 +4263,9 @@ case MODELINFO(vars=SIMVARS(__)) then
  << <%vars.algVars |> var =>
     CallAlgloopParam(var)
   ;separator=","%> <%if vars.algVars then "," else ""%>
+  <%vars.discreteAlgVars |> var =>
+    CallAlgloopParam(var)
+  ;separator=","%> <%if vars.discreteAlgVars then "," else ""%>
   <%vars.paramVars |> var =>
     CallAlgloopParam(var)
   ;separator=","%> <%if vars.paramVars then "," else ""%>
@@ -4303,6 +4326,10 @@ case MODELINFO(vars=SIMVARS(__)) then
    <%vars.algVars |> var =>
     InitAlgloopParam(var, "algebraics",arrayInit)
   ;separator=","%> <%if vars.algVars then "," else ""%>
+   /* vars.discreteAlgVars */
+  <%vars.discreteAlgVars |> var =>
+    InitAlgloopParam( var, "algebraics",arrayInit)
+  ;separator=","%> <%if vars.discreteAlgVars then "," else ""%>
    /* vars.paramVars */
   <%vars.paramVars |> var =>
     InitAlgloopParam(var, "parameters",arrayInit)
@@ -4541,6 +4568,7 @@ case MODELINFO(vars = vars as SIMVARS(__))
   then
   <<
   <%arrayConstruct1(vars.algVars)%>
+  <%arrayConstruct1(vars.discreteAlgVars)%>
   <%arrayConstruct1(vars.intAlgVars)%>
   <%arrayConstruct1(vars.boolAlgVars)%>
   <%arrayConstruct1(vars.stringAlgVars)%>
@@ -4905,6 +4933,7 @@ case MODELINFO(vars = vars as SIMVARS(__))
   then
   <<
   <%arrayReindex1(vars.algVars)%>
+  <%arrayReindex1(vars.discreteAlgVars)%>
   <%arrayReindex1(vars.intAlgVars)%>
   <%arrayReindex1(vars.boolAlgVars)%>
   <%arrayReindex1(vars.stringAlgVars)%>
@@ -4963,6 +4992,13 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
        {
         <% if vars.algVars then
         'names += <%(vars.algVars |> SIMVAR(__) =>
+        '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+
+       }
+       void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeDiscreteAlgVarsResultNames(vector<string>& names)
+       {
+        <% if vars.discreteAlgVars then
+        'names += <%(vars.discreteAlgVars |> SIMVAR(__) =>
         '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
 
        }
@@ -5085,7 +5121,7 @@ template numAlgvars(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
 <<
-<%varInfo.numAlgVars%>+<%varInfo.numIntAlgVars%>+<%varInfo.numBoolAlgVars%>
+<%varInfo.numAlgVars%>+<%varInfo.numDiscreteReal%>+<%varInfo.numIntAlgVars%>+<%varInfo.numBoolAlgVars%>
 >>
 end numAlgvars;
 
@@ -5115,6 +5151,15 @@ case MODELINFO(varInfo=VARINFO(__)) then
 <%varInfo.numAlgVars%>
 >>
 end numAlgvar;
+
+template numDiscreteAlgVar(ModelInfo modelInfo)
+::=
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__)) then
+<<
+<%varInfo.numDiscreteReal%>
+>>
+end numDiscreteAlgVar;
 
 template numIntAlgvar(ModelInfo modelInfo)
 ::=
@@ -5220,7 +5265,8 @@ case MODELINFO(vars=SIMVARS(__)) then
 
  <<
      const int algVarsStart = 0;
-     const int intAlgVarsStart    = algVarsStart       + <%numAlgvar(modelInfo)%>;
+     const int discrAlgVarsStart  = algVarsStart       + <%numAlgvar(modelInfo)%>;
+     const int intAlgVarsStart    = discrAlgVarsStart  + <%numDiscreteAlgVar(modelInfo)%>;
      const int boolAlgVarsStart   = intAlgVarsStart    + <%numIntAlgvar(modelInfo)%>;
      const int inputVarsStart     = boolAlgVarsStart   + <%numBoolAlgvar(modelInfo)%>;
      const int outputVarsStart    = inputVarsStart     + <%numInputvar(modelInfo)%>;
@@ -5230,6 +5276,7 @@ case MODELINFO(vars=SIMVARS(__)) then
      const int stateVarsStart     = boolAliasVarsStart + <%numBoolAliasvar(modelInfo)%>;
 
      <%vars.algVars         |> SIMVAR(__) hasindex i0 =>'v(algVarsStart+<%i0%>)=<%cref(name)%>;';align=8 %>
+     <%vars.discreteAlgVars |> SIMVAR(__) hasindex i0 =>'v(discrAlgVarsStart+<%i0%>)=<%cref(name)%>;';align=8 %>
      <%vars.intAlgVars      |> SIMVAR(__) hasindex i1 =>'v(intAlgVarsStart+<%i1%>)=<%cref(name)%>;';align=8%>
      <%vars.boolAlgVars     |> SIMVAR(__) hasindex i2 =>'v(boolAlgVarsStart+<%i2%>)=<%cref(name)%>;';align=8 %>
 
@@ -5252,7 +5299,7 @@ template saveall(ModelInfo modelInfo, SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
   then
-  let n_vars = intAdd(listLength(vars.algVars), intAdd( listLength(vars.intAlgVars) , intAdd(listLength(vars.boolAlgVars ), listLength(vars.stateVars ))))
+  let n_vars = intAdd( intAdd(listLength(vars.algVars), listLength(vars.discreteAlgVars)), intAdd( listLength(vars.intAlgVars) , intAdd(listLength(vars.boolAlgVars ), listLength(vars.stateVars ))))
   <<
     void <%lastIdentOfPath(modelInfo.name)%>::saveAll()
     {
@@ -5260,6 +5307,9 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
       double  pre_vars[] = {
       <%{(vars.algVars |> SIMVAR(__) =>
         '<%cref(name)%>'
+      ;separator=","; align=10;alignSeparator=",\n"  ),
+      (vars.discreteAlgVars |> SIMVAR(__) =>
+       '<%cref(name)%>'
       ;separator=","; align=10;alignSeparator=",\n"  ),
       (vars.intAlgVars |> SIMVAR(__) =>
        '<%cref(name)%>'
@@ -5285,11 +5335,12 @@ template initPrevars(ModelInfo modelInfo, SimCode simCode)
 
 ::=
 match simCode
-case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
+case SIMCODE(modelInfo = MODELINFO(varInfo=VARINFO(numAlgVars= numAlgVars, numDiscreteReal=numDiscreteReal, numIntAlgVars = numIntAlgVars, numBoolAlgVars = numBoolAlgVars), vars = vars as SIMVARS(__)))
   then
-  let n1 = listLength(vars.algVars)
-  let n2 = intAdd( listLength(vars.algVars),  listLength(vars.intAlgVars))
-  let n3 = intAdd(intAdd(listLength(vars.algVars),  listLength(vars.intAlgVars)) , listLength(vars.boolAlgVars ))
+  let n1 = numAlgVars
+  let n2 = intAdd(numAlgVars, numDiscreteReal)
+  let n3 = intAdd(intAdd(numAlgVars, numDiscreteReal),numIntAlgVars)
+  let n4 = intAdd(intAdd(intAdd(numAlgVars, numDiscreteReal),numIntAlgVars), numBoolAlgVars)
   <<
     void <%lastIdentOfPath(modelInfo.name)%>::initPreVars(unordered_map<string,unsigned int>& vars1, unordered_map<string,unsigned int>& vars2)
     {
@@ -5297,14 +5348,17 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
       <%{(vars.algVars |> SIMVAR(__) hasindex i0  =>
         '("<%cref(name)%>",<%i0%>)'
       ;separator=" "; align=10;alignSeparator=";\n insert( vars1 ) \n"  ),
-      (vars.intAlgVars |> SIMVAR(__)  hasindex i1  =>
+      (vars.discreteAlgVars |> SIMVAR(__)  hasindex i1  =>
        '("<%cref(name)%>",(<%i1%>+<%n1%>))'
       ;separator=" "; align=10;alignSeparator=";\n insert( vars1 ) \n"  ),
-      (vars.boolAlgVars |> SIMVAR(__) hasindex i2=>
-        '("<%cref(name)%>",(<%i2%>+<%n2%>))'
+      (vars.intAlgVars |> SIMVAR(__)  hasindex i2  =>
+       '("<%cref(name)%>",(<%i2%>+<%n2%>))'
       ;separator=" "; align=10;alignSeparator=";\n insert( vars1 ) \n"  ),
-      (vars.stateVars |> SIMVAR(__) hasindex i3  =>
+      (vars.boolAlgVars |> SIMVAR(__) hasindex i3=>
         '("<%cref(name)%>",(<%i3%>+<%n3%>))'
+      ;separator=" "; align=10;alignSeparator=";\n insert( vars1 ) \n"  ),
+      (vars.stateVars |> SIMVAR(__) hasindex i4  =>
+        '("<%cref(name)%>",(<%i4%>+<%n4%>))'
       ;separator=" "; align=10;alignSeparator="\n"   )}
      ;separator=" "%>;
 
@@ -5315,11 +5369,14 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
        (vars.algVars |> SIMVAR(__) hasindex i0 =>
         '("<%cref(name)%>",<%i0%>)'
       ;separator=" ";align=10;alignSeparator=";\n insert( vars2 ) \n"),
-      (vars.intAlgVars |> SIMVAR(__) hasindex i1=>
+      (vars.discreteAlgVars |> SIMVAR(__) hasindex i1=>
        '("<%cref(name)%>",(<%i1%>+<%n1%>))'
       ;separator=" ";align=10;alignSeparator=";\n insert( vars2 ) \n"),
-      (vars.boolAlgVars |> SIMVAR(__) hasindex i2 =>
-        '("<%cref(name)%>",(<%i2%>+<%n2%>))'
+      (vars.intAlgVars |> SIMVAR(__) hasindex i2=>
+       '("<%cref(name)%>",(<%i2%>+<%n2%>))'
+      ;separator=" ";align=10;alignSeparator=";\n insert( vars2 ) \n"),
+      (vars.boolAlgVars |> SIMVAR(__) hasindex i3 =>
+        '("<%cref(name)%>",(<%i3%>+<%n3%>))'
       ;separator=" ";align=10;alignSeparator=";\n insert( vars2 ) \n")}
      ;separator=" ";align=10;alignSeparator=" \n"
      %>;
@@ -5355,7 +5412,7 @@ template savediscreteVars(ModelInfo modelInfo, SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
   then
-  let n_vars = intAdd(listLength(vars.algVars), intAdd( listLength(vars.intAlgVars) , listLength(vars.boolAlgVars )))
+  let n_vars = intAdd(intAdd(listLength(vars.algVars), listLength(vars.discreteAlgVars)), intAdd( listLength(vars.intAlgVars) , listLength(vars.boolAlgVars )))
   let modelname = lastIdentOfPath(modelInfo.name)
   match n_vars
   case "0" then
@@ -5373,6 +5430,9 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
       <%{
        (vars.algVars |> SIMVAR(__) =>
         '<%cref(name)%>'
+      ;separator=",";align=10;alignSeparator=",\n"),
+      (vars.discreteAlgVars |> SIMVAR(__) =>
+       '<%cref(name)%>'
       ;separator=",";align=10;alignSeparator=",\n"),
       (vars.intAlgVars |> SIMVAR(__) =>
        '<%cref(name)%>'
@@ -5398,12 +5458,14 @@ case MODELINFO(vars=SIMVARS(__)) then
   let &varDecls = buffer "" /*BUFD*/
 
  let algvars =initValst(varDecls,"Real",vars.algVars, simCode,context)
+ let discretealgvars = initValst(varDecls,"Real",vars.discreteAlgVars, simCode,context)
  let intvars = initValst(varDecls,"Int",vars.intAlgVars, simCode,context)
  let boolvars = initValst(varDecls,"Bool",vars.boolAlgVars, simCode,context)
  <<
   <%varDecls%>
 
   <%algvars%>
+  <%discretealgvars%>
   <%intvars%>
   <%boolvars%>
   >>
@@ -5434,6 +5496,7 @@ case MODELINFO(varInfo=VARINFO(__),vars=SIMVARS(__)) then
     <<
     var_ouputs_idx=<%
     {(vars.algVars |> SIMVAR(__) => if isOutput(causality) then '<%index%>';separator=","),
+    (vars.discreteAlgVars |> SIMVAR(__) => if isOutput(causality) then '<%index%>';separator=","),
     (vars.intAlgVars |> SIMVAR(__) => if isOutput(causality) then '<%numAlgvar(modelInfo)%>+<%index%>';separator=","),
     (vars.boolAlgVars |> SIMVAR(__) => if isOutput(causality) then '<%numAlgvar(modelInfo)%>+<%numIntAlgvar(modelInfo)%>+<%index%>';separator=","),
     (vars.stateVars  |> SIMVAR(__) => if isOutput(causality) then '<%numAlgvars(modelInfo)%>+<%index%>';separator=","),
@@ -5620,10 +5683,10 @@ then
     <<
     _dimContinuousStates = <%vi.numStateVars%>;
     _dimRHS = <%vi.numStateVars%>;
-    _dimBoolean =<%vi.numBoolAlgVars%> + <%vi.numBoolParams%>;
-    _dimInteger =<%vi.numIntAlgVars%>  + <%vi.numIntParams%>;
-    _dimString =<%vi.numStringAlgVars%> + <%vi.numStringParamVars%>;
-     _dimReal =<%vi.numAlgVars%> + <%vi.numParams%>;
+    _dimBoolean = <%vi.numBoolAlgVars%> + <%vi.numBoolParams%>;
+    _dimInteger = <%vi.numIntAlgVars%>  + <%vi.numIntParams%>;
+    _dimString = <%vi.numStringAlgVars%> + <%vi.numStringParamVars%>;
+    _dimReal = <%vi.numAlgVars%> + <%vi.numDiscreteReal%> + <%vi.numParams%>;
     >>
 end dimension1;
 
@@ -9743,11 +9806,14 @@ then
  <%{(vars.algVars |> SIMVAR(__) hasindex myindex =>
        '<%cref(name)%>=variables(<%myindex%>);'
        ;separator="\n"),
-    (vars.intAlgVars |> SIMVAR(__) hasindex myindex =>
+    (vars.discreteAlgVars |> SIMVAR(__) hasindex myindex =>
        '<%cref(name)%>=variables(<%numAlgvar(modelInfo)%>+<%myindex%>);'
        ;separator="\n"),
+    (vars.intAlgVars |> SIMVAR(__) hasindex myindex =>
+       '<%cref(name)%>=variables(<%numAlgvar(modelInfo)%>+<%numDiscreteAlgVar(modelInfo)%>+<%myindex%>);'
+       ;separator="\n"),
     (vars.boolAlgVars |> SIMVAR(__) hasindex myindex =>
-       '<%cref(name)%>=variables(<%numAlgvar(modelInfo)%>+<%numIntAlgvar(modelInfo)%>+<%myindex%>);'
+       '<%cref(name)%>=variables(<%numAlgvar(modelInfo)%>+<%numDiscreteAlgVar(modelInfo)%>+<%numIntAlgvar(modelInfo)%>+<%myindex%>);'
        ;separator="\n"),
     (vars.stateVars |> SIMVAR(__) hasindex myindex =>
        '__z[<%index%>]=variables(<%numAlgvars(modelInfo)%>+<%myindex%>);'
@@ -10540,7 +10606,7 @@ case MODELINFO(vars=SIMVARS(__)) then
 
   void <%lastIdentOfPath(name)%>::getReal(double* z)
   {
-    <%listAppend( vars.algVars, vars.paramVars ) |>
+    <%listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ) |>
         var hasindex i0 fromindex 0 => giveVariablesDefault(var, i0)
         ;separator="\n"%>
   }
@@ -10571,7 +10637,7 @@ case MODELINFO(vars=SIMVARS(__)) then
 
   void <%lastIdentOfPath(name)%>::setReal(const double* z)
   {
-    <%listAppend(vars.algVars, vars.paramVars) |>
+    <%listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars) |>
         var hasindex i0 fromindex 0 => setVariablesDefault(var, i0)
         ;separator="\n"%>
   }

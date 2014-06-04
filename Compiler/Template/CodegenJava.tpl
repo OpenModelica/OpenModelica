@@ -127,6 +127,9 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%vars.algVars |> var =>
     globalDataInitialization(var, "algebraics")
   ;separator="\n"%>
+  <%vars.discreteAlgVars |> var =>
+    globalDataInitialization(var, "algebraics")
+  ;separator="\n"%>
   <%vars.paramVars |> var =>
     globalDataInitialization(var, "parameters")
   ;separator="\n"%>
@@ -150,6 +153,9 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%vars.algVars |> var =>
     globalDataVarDefine(var, "algebraics")
   ;separator="\n"%>
+  <%vars.discreteAlgVars |> var =>
+    globalDataVarDefine(var, "algebraics")
+  ;separator="\n"%>
   <%vars.paramVars |> var =>
     globalDataVarDefine(var, "parameters")
   ;separator="\n"%>
@@ -171,6 +177,9 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
     globalDataVarReverseDefine(var, "statesDerivatives")
   ;separator="\n"%>
   <%vars.algVars |> var =>
+    globalDataVarReverseDefine(var, "algebraics")
+  ;separator="\n"%>
+  <%vars.discreteAlgVars |> var =>
     globalDataVarReverseDefine(var, "algebraics")
   ;separator="\n"%>
   <%vars.paramVars |> var =>
@@ -1283,6 +1292,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as S
   "<%s.outputFormat%>" // outputFormat
   <%vi.numStateVars%> // n states
   <%vi.numAlgVars%> // n alg vars
+  <%vi.numDiscreteReal%> // n dicrete alg vars
   <%vi.numParams%> //n parameters
   <%vi.numIntParams%> // n int parameters
   <%vi.numIntAlgVars%> // n int variables
@@ -1293,6 +1303,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as S
   <%initVals(vars.stateVars)%>
   <%initVals(vars.derivativeVars)%>
   <%initVals(vars.algVars)%>
+  <%initVals(vars.discreteAlgVars)%>
   <%initVals(vars.paramVars)%>
   <%initVals(vars.intParamVars)%>
   <%initVals(vars.intAlgVars)%>

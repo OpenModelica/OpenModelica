@@ -1251,8 +1251,7 @@ algorithm
   end match;
 end hasContinousVar;
 
-/* TODO: Is this correct? */
-public function isVarAlg
+public function isVarNonDiscreteAlg
   input BackendDAE.Var var;
   output Boolean result;
 algorithm
@@ -1261,30 +1260,35 @@ algorithm
       BackendDAE.VarKind kind;
       BackendDAE.Type typeVar;
       list<BackendDAE.VarKind> kind_lst;
-    /* bool variable */
-    case (BackendDAE.VAR(varKind = _,
-                     varType = DAE.T_BOOL(source = _)))
-      then false;
-    /* int variable */
-    case (BackendDAE.VAR(varKind = _,
-                     varType = DAE.T_INTEGER(source = _)))
-      then false;
-    /* int enumeration */
-    case (BackendDAE.VAR(varKind = _,
-                     varType = DAE.T_ENUMERATION(source = _)))
-      then false;
-    /* string variable */
-    case (BackendDAE.VAR(varKind = _,
-                     varType = DAE.T_STRING(source = _)))
-      then false;
-    /* non-string variable */
-    case (BackendDAE.VAR(varKind = kind))
+    /* Real non discrete variable */
+    case (BackendDAE.VAR(varKind = kind, varType = DAE.T_REAL(_,_)))
       equation
-        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
+        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DUMMY_DER(),
                     BackendDAE.DUMMY_STATE()};
       then listMember(kind, kind_lst);
+    
+    else false;
+    
   end match;
-end isVarAlg;
+end isVarNonDiscreteAlg;
+
+public function isVarDiscreteAlg
+  input BackendDAE.Var var;
+  output Boolean result;
+algorithm
+  result := match (var)
+    local
+      BackendDAE.VarKind kind;
+      BackendDAE.Type typeVar;
+      list<BackendDAE.VarKind> kind_lst;
+    /* Real discrete variable */
+    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), varType = DAE.T_REAL(_,_)))
+      then true;
+    
+    else false;
+    
+  end match;
+end isVarDiscreteAlg;
 
 /* TODO: Is this correct? */
 public function isVarStringAlg

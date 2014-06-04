@@ -419,6 +419,9 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.algVars |> var =>
     ScalarVariable(var, FMUVersion)
   ;separator="\n"%>
+  <%vars.discreteAlgVars |> var =>
+    ScalarVariable(var, FMUVersion)
+  ;separator="\n"%>
   <%vars.paramVars |> var =>
     ScalarVariable(var, FMUVersion)
   ;separator="\n"%>
@@ -696,7 +699,7 @@ template ModelDefineData(ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(stateVars = listStates)) then
-let numberOfReals = intAdd(intMul(varInfo.numStateVars,2),intAdd(varInfo.numAlgVars,intAdd(varInfo.numParams,varInfo.numAlgAliasVars)))
+let numberOfReals = intAdd(intMul(varInfo.numStateVars,2),intAdd(varInfo.numDiscreteReal, intAdd(varInfo.numAlgVars,intAdd(varInfo.numParams,varInfo.numAlgAliasVars))))
 let numberOfIntegers = intAdd(varInfo.numIntAlgVars,intAdd(varInfo.numIntParams,varInfo.numIntAliasVars))
 let numberOfStrings = intAdd(varInfo.numStringAlgVars,intAdd(varInfo.numStringParamVars,varInfo.numStringAliasVars))
 let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolParams,varInfo.numBoolAliasVars))
@@ -715,6 +718,7 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolParam
   <%vars.stateVars |> var => DefineVariables(var) ;separator="\n"%>
   <%vars.derivativeVars |> var => DefineVariables(var) ;separator="\n"%>
   <%vars.algVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.discreteAlgVars |> var => DefineVariables(var) ;separator="\n"%>
   <%vars.paramVars |> var => DefineVariables(var) ;separator="\n"%>
   <%vars.aliasVars |> var => DefineVariables(var) ;separator="\n"%>
   <%System.tmpTickReset(0)%>
@@ -779,7 +783,7 @@ template setDefaultStartValues(ModelInfo modelInfo)
  "Generates code in c file for function setStartValues() which will set start values for all variables."
 ::=
 match modelInfo
-case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
+case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars),vars=SIMVARS(__)) then
   <<
   // Set values for all variables that define a start value
   void setDefaultStartValues(ModelInstance *comp) {
@@ -787,6 +791,7 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
   <%vars.stateVars |> var => initValsDefault(var,"realVars",0) ;separator="\n"%>
   <%vars.derivativeVars |> var => initValsDefault(var,"realVars",numStateVars) ;separator="\n"%>
   <%vars.algVars |> var => initValsDefault(var,"realVars",intMul(2,numStateVars)) ;separator="\n"%>
+  <%vars.discreteAlgVars |> var => initValsDefault(var, "realVars", intAdd(intMul(2,numStateVars), numAlgVars)) ;separator="\n"%>
   <%vars.intAlgVars |> var => initValsDefault(var,"integerVars",0) ;separator="\n"%>
   <%vars.boolAlgVars |> var => initValsDefault(var,"booleanVars",0) ;separator="\n"%>
   <%vars.stringAlgVars |> var => initValsDefault(var,"stringVars",0) ;separator="\n"%>
@@ -802,7 +807,7 @@ template setStartValues(ModelInfo modelInfo)
  "Generates code in c file for function setStartValues() which will set start values for all variables."
 ::=
 match modelInfo
-case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
+case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars),vars=SIMVARS(__)) then
   <<
   // Set values for all variables that define a start value
   void setStartValues(ModelInstance *comp) {
@@ -810,6 +815,7 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
   <%vars.stateVars |> var => initVals(var,"realVars",0) ;separator="\n"%>
   <%vars.derivativeVars |> var => initVals(var,"realVars",numStateVars) ;separator="\n"%>
   <%vars.algVars |> var => initVals(var,"realVars",intMul(2,numStateVars)) ;separator="\n"%>
+  <%vars.discreteAlgVars |> var => initVals(var, "realVars", intAdd(intMul(2,numStateVars), numAlgVars)) ;separator="\n"%>
   <%vars.intAlgVars |> var => initVals(var,"integerVars",0) ;separator="\n"%>
   <%vars.boolAlgVars |> var => initVals(var,"booleanVars",0) ;separator="\n"%>
   <%vars.stringAlgVars |> var => initVals(var,"stringVars",0) ;separator="\n"%>
@@ -923,13 +929,14 @@ template getRealFunction(ModelInfo modelInfo)
  "Generates getReal function for c file."
 ::=
 match modelInfo
-case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars)) then
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars)) then
   <<
   fmiReal getReal(ModelInstance* comp, const fmiValueReference vr) {
     switch (vr) {
         <%vars.stateVars |> var => SwitchVars(var, "realVars", 0) ;separator="\n"%>
         <%vars.derivativeVars |> var => SwitchVars(var, "realVars", numStateVars) ;separator="\n"%>
         <%vars.algVars |> var => SwitchVars(var, "realVars", intMul(2,numStateVars)) ;separator="\n"%>
+        <%vars.discreteAlgVars |> var => SwitchVars(var, "realVars", intAdd(intMul(2,numStateVars), numAlgVars)) ;separator="\n"%>
         <%vars.paramVars |> var => SwitchParameters(var, "realParameter") ;separator="\n"%>
         <%vars.aliasVars |> var => SwitchAliasVars(var, "Real","-") ;separator="\n"%>
         default:
@@ -944,13 +951,14 @@ template setRealFunction(ModelInfo modelInfo)
  "Generates setReal function for c file."
 ::=
 match modelInfo
-case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars)) then
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars)) then
   <<
   fmiStatus setReal(ModelInstance* comp, const fmiValueReference vr, const fmiReal value) {
     switch (vr) {
         <%vars.stateVars |> var => SwitchVarsSet(var, "realVars", 0) ;separator="\n"%>
         <%vars.derivativeVars |> var => SwitchVarsSet(var, "realVars", numStateVars) ;separator="\n"%>
         <%vars.algVars |> var => SwitchVarsSet(var, "realVars", intMul(2,numStateVars)) ;separator="\n"%>
+        <%vars.discreteAlgVars |> var => SwitchVarsSet(var, "realVars", intAdd(intMul(2,numStateVars), numAlgVars)) ;separator="\n"%>
         <%vars.paramVars |> var => SwitchParametersSet(var, "realParameter") ;separator="\n"%>
         <%vars.aliasVars |> var => SwitchAliasVarsSet(var, "Real", "-") ;separator="\n"%>
         default:

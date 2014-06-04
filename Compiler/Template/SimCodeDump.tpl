@@ -36,6 +36,7 @@ template dumpSimCodeBase(SimCode code, Boolean withOperations)
     <%dumpVars(vars.stateVars,withOperations)%>
     <%dumpVars(vars.derivativeVars,withOperations)%>
     <%dumpVars(vars.algVars,withOperations)%>
+    <%dumpVars(vars.discreteAlgVars,withOperations)%>
     <%dumpVars(vars.intAlgVars,withOperations)%>
     <%dumpVars(vars.boolAlgVars,withOperations)%>
     <%dumpVars(vars.inputVars,withOperations)%>

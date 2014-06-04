@@ -136,6 +136,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.stateVars |> var => ScalarVariableXml(var) ;separator="\n"%>
   <%vars.derivativeVars |> var => ScalarVariableXml(var) ;separator="\n"%>
   <%vars.algVars |> var => ScalarVariableXml(var) ;separator="\n"%>
+  <%vars.discreteAlgVars |> var => ScalarVariableXml(var) ;separator="\n"%>
   <%vars.intAlgVars |> var => ScalarVariableXml(var) ;separator="\n"%>
   <%vars.boolAlgVars |> var => ScalarVariableXml(var) ;separator="\n"%>
   <%/*vars.inputVars |> var => ScalarVariableXml(var) ;separator="\n"*/%>
@@ -737,6 +738,7 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
     <%vars.stateVars |> var => initialEquationXml(var) ;separator="\n"%>
     <%vars.derivativeVars |> var => initialEquationXml(var) ;separator="\n"%>
     <%vars.algVars |> var => initialEquationXml(var) ;separator="\n"%>
+    <%vars.discreteAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
     <%vars.intAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
     <%vars.boolAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
     <%vars.stringAlgVars |> var => initialEquationXml(var) ;separator="\n"%>

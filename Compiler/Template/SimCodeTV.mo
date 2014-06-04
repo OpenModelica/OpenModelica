@@ -446,6 +446,7 @@ package SimCode
       list<SimVar> stateVars;
       list<SimVar> derivativeVars;
       list<SimVar> algVars;
+      list<SimVar> discreteAlgVars;
       list<SimVar> intAlgVars;
       list<SimVar> boolAlgVars;
       list<SimVar> inputVars;

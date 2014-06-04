@@ -336,6 +336,9 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.algVars |> var =>
     MemberVariableDefine2(var, "algebraics", hpcOmMemory)
   ;separator="\n"%>
+  <%vars.discreteAlgVars |> var =>
+    MemberVariableDefine2(var, "algebraics", hpcOmMemory)
+  ;separator="\n"%>
   <%vars.paramVars |> var =>
     MemberVariableDefine2(var, "parameters", hpcOmMemory)
   ;separator="\n"%>
@@ -605,6 +608,9 @@ match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
   <%vars.algVars |> var =>
+    MemberVariableAssign2(var, "algebraics", hpcOmMemory)
+  ;separator="\n"%>
+  <%vars.discreteAlgVars |> var =>
     MemberVariableAssign2(var, "algebraics", hpcOmMemory)
   ;separator="\n"%>
   <%vars.paramVars |> var =>

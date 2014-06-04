@@ -224,6 +224,8 @@ case MODELINFO(vars = vars as SIMVARS(__)) then
      '<%declareGetMethod(v)%>'); separator="\n"%>
    <%(vars.algVars |> v =>
      '<%declareGetMethod(v)%>'); separator="\n"%>
+   <%(vars.discreteAlgVars |> v =>
+     '<%declareGetMethod(v)%>'); separator="\n"%>
    <%(vars.intAlgVars |> v =>
      '<%declareGetMethod(v)%>'); separator="\n"%>
    <%(vars.boolAlgVars |> v =>
@@ -270,9 +272,12 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
  // Derivative variables
  <%(vars.derivativeVars |> v =>
    '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
- // Algebraic variables
+ // Non discrete Real Algebraic variables
  <%(vars.algVars |> v =>
    '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
+ // Discrete Real Algebraic variables
+ <%(vars.discreteAlgVars |> v =>
+   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>  
  // Integer algebraic variables
  <%(vars.intAlgVars |> v =>
    '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
@@ -671,6 +676,8 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        '_PRE<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
      <%(vars.algVars |> SIMVAR(__) =>
        '_PRE<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
+     <%(vars.discreteAlgVars |> SIMVAR(__) =>
+       '_PRE<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
      <%(vars.intAlgVars |> SIMVAR(__) =>
        '_PRE<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
      <%(vars.boolAlgVars |> SIMVAR(__) =>
@@ -723,6 +730,8 @@ case MODELINFO(vars = SIMVARS(__)) then
      '<%cref(name)%>=_PRE<%cref(name)%>;') ;separator="\n"%>
    <%(vars.algVars |> SIMVAR(__) =>
      '<%cref(name)%>=_PRE<%cref(name)%>;') ;separator="\n"%>
+   <%(vars.discreteAlgVars |> SIMVAR(__) =>
+     '<%cref(name)%>=_PRE<%cref(name)%>;') ;separator="\n"%>
    <%(vars.intAlgVars |> SIMVAR(__) =>
      '<%cref(name)%>=_PRE<%cref(name)%>;') ;separator="\n"%>
    <%(vars.boolAlgVars |> SIMVAR(__) =>
@@ -749,10 +758,11 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
    let init3 = initValst(varDecls,vars.boolParamVars)
    let init4 = initValst(varDecls,vars.stateVars)
    let init5 = initValst(varDecls,vars.algVars)
-   let init6 = initValst(varDecls,vars.intAlgVars)
-   let init7 = initValst(varDecls,vars.boolAlgVars)
-   let init8 = initValst(varDecls,vars.derivativeVars)
-   let init9 = makeInitialEqns(varDecls,startValueEquations)
+   let init6 = initValst(varDecls,vars.discreteAlgVars)
+   let init7 = initValst(varDecls,vars.intAlgVars)
+   let init8 = initValst(varDecls,vars.boolAlgVars)
+   let init9 = initValst(varDecls,vars.derivativeVars)
+   let init10 = makeInitialEqns(varDecls,startValueEquations)
    <<
    void <%lastIdentOfPath(modelInfo.name)%>::clear_event_flags()
    {
@@ -772,6 +782,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        <%allocArrays(vars.boolParamVars)%>
        <%allocArrays(vars.stateVars)%>
        <%allocArrays(vars.algVars)%>
+       <%allocArrays(vars.discreteAlgVars)%>
        <%allocArrays(vars.intAlgVars)%>
        <%allocArrays(vars.boolAlgVars)%>
        <%allocArrays(vars.derivativeVars)%>
@@ -787,10 +798,11 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        <%init6%>
        <%init7%>
        <%init8%>
+       <%init9%>
        // Save these to the old values so that pre() and edge() work
        save_vars();
        // Calculate any equations that provide initial values
-       <%init9%>
+       <%init10%>
        bound_params();
        // Solve for any remaining unknowns
        solve_for_initial_unknowns();
@@ -1068,6 +1080,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
       <%initialResidualFixedVars(vars.stateVars)%>
       <%initialResidualFixedVars(vars.derivativeVars)%>
       <%initialResidualFixedVars(vars.algVars)%>
+      <%initialResidualFixedVars(vars.discreteAlgVars)%>
       <%initialResidualFixedVars(vars.paramVars)%>
   }
 
@@ -1076,6 +1089,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     <%selectInitialFreeVars(vars.stateVars)%>
     <%selectInitialFreeVars(vars.derivativeVars)%>
     <%selectInitialFreeVars(vars.algVars)%>
+    <%selectInitialFreeVars(vars.discreteAlgVars)%>
     <%selectInitialFreeVars(vars.paramVars)%>
     if (!init_unknown_vars.empty())
     {

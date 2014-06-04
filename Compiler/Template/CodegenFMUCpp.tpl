@@ -232,7 +232,7 @@ template setDefaultStartValues(ModelInfo modelInfo)
  "Generates code in c file for function setStartValues() which will set start values for all variables."
 ::=
 match modelInfo
-case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
+case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars),vars=SIMVARS(__)) then
   <<
   // Set values for all variables that define a start value
   void setDefaultStartValues(ModelInstance *comp) {
@@ -240,6 +240,7 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
   <%vars.stateVars |> var => initValsDefault(var,"realVars",0) ;separator="\n"%>
   <%vars.derivativeVars |> var => initValsDefault(var,"realVars",numStateVars) ;separator="\n"%>
   <%vars.algVars |> var => initValsDefault(var,"realVars",intMul(2,numStateVars)) ;separator="\n"%>
+  <%vars.discreteAlgVars |> var => initValsDefault(var, "realVars", intAdd(intMul(2,numStateVars), numAlgVars)) ;separator="\n"%>
   <%vars.intAlgVars |> var => initValsDefault(var,"integerVars",0) ;separator="\n"%>
   <%vars.boolAlgVars |> var => initValsDefault(var,"booleanVars",0) ;separator="\n"%>
   <%vars.stringAlgVars |> var => initValsDefault(var,"stringVars",0) ;separator="\n"%>
@@ -256,7 +257,7 @@ template setStartValues(ModelInfo modelInfo)
  "Generates code in c file for function setStartValues() which will set start values for all variables."
 ::=
 match modelInfo
-case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
+case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars),vars=SIMVARS(__)) then
   <<
   // Set values for all variables that define a start value
   void setStartValues(ModelInstance *comp) {
@@ -264,6 +265,7 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
   <%vars.stateVars |> var => initVals(var,"realVars",0) ;separator="\n"%>
   <%vars.derivativeVars |> var => initVals(var,"realVars",numStateVars) ;separator="\n"%>
   <%vars.algVars |> var => initVals(var,"realVars",intMul(2,numStateVars)) ;separator="\n"%>
+  <%vars.discreteAlgVars |> var => initVals(var, "realVars", intAdd(intMul(2,numStateVars), numAlgVars)) ;separator="\n"%>
   <%vars.intAlgVars |> var => initVals(var,"integerVars",0) ;separator="\n"%>
   <%vars.boolAlgVars |> var => initVals(var,"booleanVars",0) ;separator="\n"%>
   <%vars.stringAlgVars |> var => initVals(var,"stringVars",0) ;separator="\n"%>

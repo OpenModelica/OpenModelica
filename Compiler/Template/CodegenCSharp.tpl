@@ -397,7 +397,7 @@ const int
   NM   = <%varInfo.numMathEventFunctions%>,
   NG_SAM = <%varInfo.numTimeEvents%>,
   NX = <%varInfo.numStateVars%>,
-  NY = <%varInfo.numAlgVars%>,
+  NY = <%varInfo.numAlgVars + varInfo.numDiscreteReal%>,
   NA = <%varInfo.numAlgAliasVars%>, // number of alias variables
   NP = <%varInfo.numParams%>,
   NO = <%varInfo.numOutVars%>,
@@ -467,6 +467,7 @@ static <%lastIdentOfPath(name)%>() {
         varInfos("State",     vars.stateVars,    varInfo.numStateVars, simCode),
         varInfos("StateDer",  vars.derivativeVars, varInfo.numStateVars, simCode),
         varInfos("Algebraic",    vars.algVars,      varInfo.numAlgVars, simCode),
+        varInfos("Algebraic",    vars.discreteAlgVars,      varInfo.numAlgVars, simCode),
         varInfos("AlgebraicInt",    vars.intAlgVars,  varInfo.numIntAlgVars, simCode),
         varInfos("AlgebraicBool",   vars.boolAlgVars,  varInfo.numBoolAlgVars, simCode),
         varInfos("AlgebraicString", vars.stringAlgVars, varInfo.numStringAlgVars, simCode),
@@ -496,6 +497,7 @@ static <%lastIdentOfPath(name)%>() {
   <%initVals("svs", "State",     vars.stateVars, simCode)%>
   <%initVals("svs", "StateDer",  vars.derivativeVars, simCode)%>
   <%initVals("svs", "Algebraic", vars.algVars, simCode)%>
+  <%initVals("svs", "Algebraic", vars.discreteAlgVars, simCode)%>
   <%initVals("svs", "Parameter", vars.paramVars, simCode)%>
   <%initVals("svsI", "AlgebraicInt", vars.intAlgVars, simCode)%>
   <%initVals("svsI", "ParameterInt", vars.intParamVars, simCode)%>

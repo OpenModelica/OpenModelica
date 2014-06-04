@@ -842,7 +842,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     #endif
 
     data->modelData.nStates = <%varInfo.numStateVars%>;
-    data->modelData.nVariablesReal = 2*<%varInfo.numStateVars%>+<%varInfo.numAlgVars%>+<%varInfo.numOptimizeConstraints%>;
+    data->modelData.nVariablesReal = 2*<%varInfo.numStateVars%>+<%varInfo.numAlgVars%>+<%varInfo.numDiscreteReal%>+<%varInfo.numOptimizeConstraints%>;
     data->modelData.nDiscreteReal = <%varInfo.numDiscreteReal%>;
     data->modelData.nVariablesInteger = <%varInfo.numIntAlgVars%>;
     data->modelData.nVariablesBoolean = <%varInfo.numBoolAlgVars%>;
@@ -916,9 +916,8 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
   "Generates global data in simulation file."
 ::=
   let () = System.tmpTickReset(1000)
-
   match modelInfo
-    case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars), vars=SIMVARS(__)) then
+    case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars, numDiscreteReal=numDiscreteReal), vars=SIMVARS(__)) then
       <<
       #define time data->localData[0]->timeValue
 
@@ -932,14 +931,19 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
         globalDataVarDefine(var, "realVars", numStateVars)
       ;separator="\n"%>
 
-      /* Algebraic Vars */
+      /* Non Discrete Real Algebraic Vars */
       <%vars.algVars |> var =>
         globalDataVarDefine(var, "realVars", intMul(2, numStateVars) )
+      ;separator="\n"%>
+      
+      /* Discrete Real Algebraic Vars */
+      <%vars.discreteAlgVars |> var =>
+        globalDataVarDefine(var, "realVars", intAdd(intMul(2, numStateVars),numAlgVars))
       ;separator="\n"%>
 
       /* Nonlinear Constraints For Optimization */
       <%vars.realOptimizeConstraintsVars |> var =>
-        globalDataVarDefine(var, "realVars", intAdd(intMul(2, numStateVars),numAlgVars))
+        globalDataVarDefine(var, "realVars", intAdd(intAdd(intMul(2, numStateVars),numAlgVars), numDiscreteReal))
       ;separator="\n"%>
 
       /* Algebraic Parameter */
@@ -1037,10 +1041,10 @@ template globalDataParDefine(SimVar simVar, String arrayName)
  match simVar
   case SIMVAR(arrayCref=SOME(c),aliasvar=NOALIAS()) then
     <<
-    /* <%crefStr(c)%> */
+    /* <%crefStrNoUnderscore(c)%> */
     #define <%cref(c)%> data->simulationInfo.<%arrayName%>[<%index%>]
 
-    /* <%crefStr(name)%> */
+    /* <%crefStrNoUnderscore(name)%> */
     #define <%cref(name)%> data->simulationInfo.<%arrayName%>[<%index%>]
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%index%>].attribute
     #define $P$ATTRIBUTE$P$PRE<%cref(name)%> $P$ATTRIBUTE<%cref(name)%>
@@ -1050,7 +1054,7 @@ template globalDataParDefine(SimVar simVar, String arrayName)
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
     <<
-    /* <%crefStr(name)%> */
+    /* <%crefStrNoUnderscore(name)%> */
     #define <%cref(name)%> data->simulationInfo.<%arrayName%>[<%index%>]
     #define _<%cref(name)%>(i) <%cref(name)%>
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%index%>].attribute
@@ -1068,12 +1072,12 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset) "t
   case SIMVAR(arrayCref=SOME(c),aliasvar=NOALIAS()) then
   let tmp = System.tmpTick()
     <<
-    /* <%crefStr(c)%> */
+    /* <%crefStrNoUnderscore(c)%> */
     #define _<%cref(c)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
     #define <%cref(c)%> _<%cref(c)%>(0)
     #define $P$PRE<%cref(c)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
 
-    /* <%crefStr(name)%> */
+    /* <%crefStrNoUnderscore(name)%> */
     #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
     #define <%cref(name)%> _<%cref(name)%>(0)
     #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
@@ -1086,7 +1090,7 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset) "t
   case SIMVAR(aliasvar=NOALIAS()) then
   let tmp = System.tmpTick()
     <<
-    /* <%crefStr(name)%> */
+    /* <%crefStrNoUnderscore(name)%> */
     #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
     #define <%cref(name)%> _<%cref(name)%>(0)
     #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
@@ -4285,7 +4289,7 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
     numberOfFunctions                   = "<%listLength(functions)%>"  cmt_numberOfFunctions                   = "NFUNC:    number of functions used by the simulation,         OMC"
 
     numberOfContinuousStates            = "<%vi.numStateVars%>"  cmt_numberOfContinuousStates            = "NX:       number of states,                                   FMI"
-    numberOfRealAlgebraicVariables      = "<%intAdd(vi.numAlgVars,vi.numOptimizeConstraints)%>"  cmt_numberOfRealAlgebraicVariables      = "NY:       number of real variables,                           OMC"
+    numberOfRealAlgebraicVariables      = "<%intAdd(vi.numAlgVars,intAdd(vi.numDiscreteReal,vi.numOptimizeConstraints))%>"  cmt_numberOfRealAlgebraicVariables      = "NY:       number of real variables,                           OMC"
     numberOfRealAlgebraicAliasVariables = "<%vi.numAlgAliasVars%>"  cmt_numberOfRealAlgebraicAliasVariables = "NA:       number of alias variables,                          OMC"
     numberOfRealParameters              = "<%vi.numParams%>"  cmt_numberOfRealParameters              = "NP:       number of parameters,                               OMC"
 
@@ -10451,7 +10455,7 @@ template ModelVariables(ModelInfo modelInfo)
  "Generates code for ModelVariables file for FMU target."
 ::=
   match modelInfo
-    case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgVars= numAlgVars)) then
+    case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgVars= numAlgVars, numDiscreteReal = numDiscreteReal)) then
       <<
       <ModelVariables>
       <%System.tmpTickReset(1000)%>
@@ -10459,8 +10463,9 @@ template ModelVariables(ModelInfo modelInfo)
       <%vars.stateVars       |> var hasindex i0 => ScalarVariable(var,i0,"rSta") ;separator="\n";empty%>
       <%vars.derivativeVars  |> var hasindex i0 => ScalarVariable(var,i0,"rDer") ;separator="\n";empty%>
       <%vars.algVars         |> var hasindex i0 => ScalarVariable(var,i0,"rAlg") ;separator="\n";empty%>
+      <%vars.discreteAlgVars |> var hasindex i0 => ScalarVariable(var,intAdd(i0,numAlgVars),"rAlg") ;separator="\n";empty%>
       <%vars.realOptimizeConstraintsVars
-                             |> var hasindex i0 => ScalarVariable(var,intAdd(i0,numAlgVars),"rAlg") ;separator="\n";empty%>
+                             |> var hasindex i0 => ScalarVariable(var,intAdd(i0,intAdd(numAlgVars,numDiscreteReal)),"rAlg") ;separator="\n";empty%>
 
       <%vars.paramVars       |> var hasindex i0 => ScalarVariable(var,i0,"rPar") ;separator="\n";empty%>
       <%vars.aliasVars       |> var hasindex i0 => ScalarVariable(var,i0,"rAli") ;separator="\n";empty%>
