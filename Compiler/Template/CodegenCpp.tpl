@@ -1329,13 +1329,15 @@ SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
 ALGLOOPSOBJ=<%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
 JACALGLOOPSOBJ = <%(jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 => (mat |> (eqs,_,_) =>  algloopcppfilenames(eqs,simCode) ;separator="") ;separator="")%>
 
-CPPFILES=$(SYSTEMFILE)<%\t%>$(FUNCTIONFILE)<%\t%>$(INITFILE)<%\t%>$(WRITEOUTPUTFILE)<%\t%>$(EXTENSIONFILE)<%\t%>$(FACTORYFILE)<%\t%>$(JACOBIANFILE)<%\t%>$(STATESELECTIONFILE)\<%\n%>$(ALGLOOPSOBJ)<%\t%>$(JACALGLOOPSOBJ)
+
+
+CPPFILES=$(SYSTEMFILE) $(FUNCTIONFILE) $(INITFILE) $(WRITEOUTPUTFILE) $(EXTENSIONFILE) $(FACTORYFILE) $(JACOBIANFILE) $(STATESELECTIONFILE)  <%(jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 => (mat |> (eqs,_,_) =>  algloopcppfilenames(eqs,simCode) ;separator="") ;separator="")%> <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
 OFILES=$(CPPFILES:.cpp=.o)
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
 
 <%fileNamePrefix%>: $(MAINFILE) $(OFILES)
-<%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(CPPFILES) $(CPPFLAGS) $(LDSYTEMFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%>
+<%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS) $(LDSYTEMFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%>
 <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
 <% if boolNot(stringEq(makefileParams.platform, "win32")) then
   <<
@@ -1343,9 +1345,7 @@ OFILES=$(CPPFILES:.cpp=.o)
   <%\t%>ln -s <%fileNamePrefix%>.sh <%fileNamePrefix%>
   >>
 %>
->>
-
-end simulationMakefile;
+>>end simulationMakefile;
 
 
 
