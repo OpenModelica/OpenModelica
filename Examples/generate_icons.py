@@ -108,7 +108,7 @@ def ask_omc(question, opt=None, parsed=True):
         if parsed:
             res = OMPython.execute(expression)
         else:
-            res = OMPython.omc.sendExpression(expression)
+            res = OMPython._omc.sendExpression(expression)
     except Exception as e:
         logger.error("OMC failed: {0}, {1}, parsed={2}".format(question, opt, parsed))
         raise
@@ -1168,7 +1168,7 @@ def main():
     success = True
 
     for command in OMC_SETUP_COMMANDS:
-        OMPython.omc.sendExpression(command)
+        OMPython._omc.sendExpression(command)
     for package in PACKAGES_TO_LOAD:
         logger.info('Loading package: {0}'.format(package))
         package_load = OMPython.sendExpression('loadModel(' + package + ')')
