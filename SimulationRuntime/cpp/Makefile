@@ -13,7 +13,7 @@ ifeq ("$(ANALYZATION_MODE)","true")
 	cd ./Build && echo "change to Build" && cmake -DANALYZATION_MODE=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
 	$(MAKE) -C Build;
 else
-	cd ./Build && echo "change to Build" &&	cmake -D CMAKE_BUILD_TYPE=Debug -D CMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
+	cd ./Build && echo "change to Build" &&	cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
 	$(MAKE) -C Build;
 endif
 
