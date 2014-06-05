@@ -1633,7 +1633,7 @@ author:Waurich TUD 2014-05"
 algorithm
   (oSchedule,oSimCode,oTaskGraphMeta,oSccSimEqMapping) := matchcontinue(clustersIn,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,numProc,iSccSimEqMapping,iSimCode)
     local
-      Integer size, sizeTasks, numSfLocks, threadIdx, compIdx, simVarIdx, simEqSysIdx, taskIdx;
+      Integer size, sizeTasks, numSfLocks, threadIdx, compIdx, simVarIdx, simEqSysIdx, taskIdx, lsIdx, nlsIdx, mIdx;
       array<Integer> taskAss;
       array<list<Integer>> procAss, sccSimEqMap, inComps, comps;
       list<Integer> order;
@@ -1700,7 +1700,10 @@ algorithm
         taskIdx = arrayLength(iTaskGraph)+1;
         simVarIdx = List.fold(List.map(algVars,SimCodeUtil.varIndex),intMax,0)+1;
         simEqSysIdx = SimCodeUtil.getMaxSimEqSystemIndex(iSimCode)+1;
-        (taskAss,procAss,_,simCode,schedule,duplSccSimEqMap,duplComps) = createTDSduplicateTasks(clusters,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx),iTaskGraph,iTaskGraphT,iTaskGraphMeta,iSimCode,schedule,iSccSimEqMapping,duplSccSimEqMap,duplComps);
+        lsIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getLSindex),intMax,0)+1;
+        nlsIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getNLSindex),intMax,0)+1;
+        mIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getMixedindex),intMax,0)+1;
+        (taskAss,procAss,_,simCode,schedule,duplSccSimEqMap,duplComps) = createTDSduplicateTasks(clusters,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),iTaskGraph,iTaskGraphT,iTaskGraphMeta,iSimCode,schedule,iSccSimEqMapping,duplSccSimEqMap,duplComps);
 
         //update stuff
         procAss = Util.arrayMap(procAss,listReverse);
@@ -1736,7 +1739,7 @@ author: Waurich TUD 2014-05"
   input list<list<Integer>> clustersIn;
   input array<Integer> taskAssIn;
   input array<list<Integer>> procAssIn;
-  input tuple<Integer,Integer,Integer,Integer,Integer> idcsIn;
+  input tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> idcsIn;
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraph iTaskGraphT;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
@@ -1747,7 +1750,7 @@ author: Waurich TUD 2014-05"
   input list<list<Integer>> duplCompsIn;
   output array<Integer> taskAssOut;
   output array<list<Integer>> procAssOut;
-  output tuple<Integer,Integer,Integer,Integer,Integer> idcsOut;
+  output tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> idcsOut;
   output SimCode.SimCode simCodeOut;
   output HpcOmSimCode.Schedule scheduleOut;
   output list<list<Integer>> duplSccSimEqMapOut;
@@ -1755,13 +1758,13 @@ author: Waurich TUD 2014-05"
 algorithm
   (taskAssOut,procAssOut,idcsOut,simCodeOut,scheduleOut,duplSccSimEqMapOut,duplCompsOut) := matchcontinue(clustersIn,taskAssIn,procAssIn,idcsIn,iTaskGraph,iTaskGraphT,iTaskGraphMeta,simCodeIn,scheduleIn,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn)
     local
-      Integer threadIdx,compIdx,simVarIdx,simEqSysIdx,taskIdx;
+      Integer threadIdx,compIdx,simVarIdx,simEqSysIdx,taskIdx,lsIdx,nlsIdx,mIdx;
       list<Integer> cluster;
       list<String> lockIdc;
       list<list<Integer>> rest, duplSccSimEqMap, duplComps;
       array<Integer> taskAss;
       array<list<Integer>> sccSimEqMap ,procAss;
-      tuple<Integer,Integer,Integer,Integer,Integer> idcs;
+      tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> idcs;
       BackendDAE.BackendDAE dae;
       BackendVarTransform.VariableReplacements repl;
       SimCode.SimCode simCode;
@@ -1777,13 +1780,13 @@ algorithm
       equation
         repl = BackendVarTransform.emptyReplacements();
         //traverse the cluster and build schedule
-        (taskAss,procAss,thread,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx),simCode,duplSccSimEqMap,duplComps) = createTDSduplicateTasks1(cluster,repl,taskAssIn,procAssIn,{},idcsIn,iTaskGraph,iTaskGraphT,iTaskGraphMeta,simCodeIn,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn);
+        (taskAss,procAss,thread,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),simCode,duplSccSimEqMap,duplComps) = createTDSduplicateTasks1(cluster,repl,taskAssIn,procAssIn,{},idcsIn,iTaskGraph,iTaskGraphT,iTaskGraphMeta,simCodeIn,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn);
         HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc) = scheduleIn;
         threadTasks = arrayUpdate(threadTasks,threadIdx,listReverse(thread));
         schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,lockIdc);
         threadIdx = threadIdx+1;
         printSchedule(schedule);
-        (taskAss,procAss,idcs,simCode,schedule,duplSccSimEqMap,duplComps) = createTDSduplicateTasks(rest,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx),iTaskGraph,iTaskGraphT,iTaskGraphMeta,simCode,schedule,sccSimEqMappingIn,duplSccSimEqMap,duplComps);
+        (taskAss,procAss,idcs,simCode,schedule,duplSccSimEqMap,duplComps) = createTDSduplicateTasks(rest,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),iTaskGraph,iTaskGraphT,iTaskGraphMeta,simCode,schedule,sccSimEqMappingIn,duplSccSimEqMap,duplComps);
       then
         (taskAssIn,procAssIn,idcs,simCode,schedule,duplSccSimEqMap,duplComps);
   end matchcontinue;
@@ -1796,7 +1799,7 @@ author: Waurich TUD 2014-05"
   input array<Integer> taskAssIn;
   input array<list<Integer>> procAssIn;
   input list<HpcOmSimCode.Task> threadIn;
-  input tuple<Integer,Integer,Integer,Integer,Integer> idcsIn; // threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx
+  input tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> idcsIn; // threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraph iTaskGraphT;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
@@ -1807,19 +1810,19 @@ author: Waurich TUD 2014-05"
   output array<Integer> taskAssOut;
   output array<list<Integer>> procAssOut;
   output list<HpcOmSimCode.Task> threadOut;
-  output tuple<Integer,Integer,Integer,Integer,Integer> idcsOut; // threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx
+  output tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> idcsOut; // threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx
   output SimCode.SimCode simCodeOut;
   output list<list<Integer>> duplSccSimEqMapOut;
   output list<list<Integer>> duplCompsOut;
 algorithm
   (taskAssOut,procAssOut,threadOut,idcsOut,simCodeOut,duplSccSimEqMapOut,duplCompsOut) := matchcontinue(clusterIn,replIn,taskAssIn,procAssIn,threadIn,idcsIn,iTaskGraph,iTaskGraphT,iTaskGraphMeta,simCodeIn,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn)
     local
-      Integer node,ass,simEqIdx,threadIdx,compIdx,simVarIdx,simEqSysIdx,taskIdx;
+      Integer node,ass,simEqIdx,threadIdx,compIdx,simVarIdx,simEqSysIdx,taskIdx,lsIdx,nlsIdx,mIdx;
       list<Integer> rest,comps, simEqs, sameProcTasks, taskLst;
       list<list<Integer>> duplSccSimEqMap,duplComps, simEqsLst;
       array<Integer> taskAss;
       array<list<Integer>> procAss, sccSimEqMapping, inComps;
-      tuple<Integer,Integer,Integer,Integer,Integer> idcs;
+      tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> idcs;
       BackendDAE.BackendDAE dae;
       BackendVarTransform.VariableReplacements repl;
       HpcOmSimCode.Task task;
@@ -1842,7 +1845,7 @@ algorithm
         ass = arrayGet(taskAssIn,node);
         true = intEq(ass,-1);
         // assign task
-        (threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx) = idcsIn;
+        (threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx) = idcsIn;
         HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) = iTaskGraphMeta;
         print("node "+&intString(node)+&"\n" );
         taskAss = arrayUpdate(taskAssIn,node,threadIdx);
@@ -1865,7 +1868,7 @@ protected function createTDSduplicateTasks2"sets the information about the new t
   input array<Integer> taskAssIn;
   input array<list<Integer>> procAssIn;
   input list<HpcOmSimCode.Task> threadIn;
-  input tuple<Integer,Integer,Integer,Integer,Integer> idcsIn; // threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx
+  input tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> idcsIn; // threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input SimCode.SimCode simCodeIn;
   input array<list<Integer>> sccSimEqMappingIn;
@@ -1875,13 +1878,13 @@ protected function createTDSduplicateTasks2"sets the information about the new t
   output array<Integer> taskAssOut;
   output array<list<Integer>> procAssOut;
   output list<HpcOmSimCode.Task> threadOut;
-  output tuple<Integer,Integer,Integer,Integer,Integer> idcsOut; // threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx
+  output tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> idcsOut; // threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx
   output SimCode.SimCode simCodeOut;
   output list<list<Integer>> duplSccSimEqMapOut;
   output list<list<Integer>> duplCompsOut;
 protected
   String crefAppend;
-  Integer threadIdx,compIdx,simVarIdx,simVarIdx2,simEqSysIdx,simEqSysIdx2,numVars,numEqs,taskIdx;
+  Integer threadIdx,compIdx,simVarIdx,simVarIdx2,simEqSysIdx,simEqSysIdx2,numVars,numEqs,taskIdx,lsIdx,nlsIdx,mIdx;
   list<Integer> comps,simEqSysIdcs,simVarSysIdcs,simEqSysIdcs2,simVarSysIdcs2,thread;
   list<list<Integer>> simEqIdxLst,simVarIdxLst;
   array<list<Integer>> inComps;
@@ -1899,7 +1902,7 @@ protected
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) := iTaskGraphMeta;
   SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(vars=simVars),odeEquations=odes,crefToSimVarHT=ht) := simCodeIn;
-  (threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx) := idcsIn;
+  (threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx) := idcsIn;
 
   // get the vars(crefs) and equations of the node
   print("node to duplicate "+&intString(node)+&"\n");
@@ -1936,7 +1939,8 @@ algorithm
   BackendVarTransform.dumpReplacements(repl);
   numEqs := listLength(simEqSysts);
   simEqSysIdcs2 := List.intRange2(simEqSysIdx,simEqSysIdx+numEqs-1);
-  (simEqSystsDupl,_) := List.map1_2(simEqSysts,replaceExpsInSimEqSystem,repl);
+  (simEqSystsDupl,_) := List.map1_2(simEqSysts,replaceExpsInSimEqSystem,repl);// replace the exps and crefs
+  (simEqSystsDupl,(lsIdx,nlsIdx,mIdx)) := List.mapFold(simEqSystsDupl,replaceSystemIndex,(lsIdx,nlsIdx,mIdx));// udpate the indeces of th systems
   simEqSystsDupl := List.threadMap(simEqSystsDupl,simEqSysIdcs2,SimCodeUtil.replaceSimEqSysIndex);
   //print("the simEqSystsDupl "+&SimCodeUtil.dumpSimEqSystemLst(simEqSystsDupl)+&"\n");
   simCode := List.fold1(simEqSystsDupl,SimCodeUtil.addSimEqSysToODEquations,1,simCode);
@@ -1955,10 +1959,50 @@ algorithm
   // set task in thread
   threadOut := HpcOmSimCode.CALCTASK(1,taskIdx,0.0,-1.0,threadIdx,simEqSysIdcs2)::threadIn;
 
-  idcsOut := (threadIdx,taskIdx+1,compIdx,simVarIdx2,simEqSysIdx2);
+  idcsOut := (threadIdx,taskIdx+1,compIdx,simVarIdx2,simEqSysIdx2,lsIdx,nlsIdx,mIdx);
   simCodeOut := simCode;
   replOut := repl;
 end createTDSduplicateTasks2;
+
+
+protected function replaceSystemIndex"replaces the index of the linear system, the index of the non-linear system or the index of the mixed systems with the given values.
+author: Waurich TUD 2014-04"
+  input SimCode.SimEqSystem simEqSysIn;
+  input tuple<Integer,Integer,Integer> idcsIn;// lsIdx,nlsIdx,mIdx
+  output SimCode.SimEqSystem simEqSysOut;
+  output tuple<Integer,Integer,Integer> idcsOut;// lsIdx,nlsIdx,mIdx
+algorithm
+  (simEqSysOut,idcsOut) := match(simEqSysIn,idcsIn)
+    local
+      Boolean pom,lt;
+      Integer idx,lsIdx,nlsIdx,mIdx;
+      SimCode.SimEqSystem simEqSys,cont;
+      list<SimCode.SimVar> simVars;
+      list<SimCode.SimEqSystem> simEqSysLst;
+      list<DAE.ComponentRef> crefs;
+      list<DAE.Exp> expLst;
+      list<DAE.ElementSource> sources;
+      list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
+      Option<SimCode.JacobianMatrix> jac;
+    case(SimCode.SES_LINEAR(index=idx,partOfMixed=pom,vars=simVars,beqs=expLst,sources=sources,simJac=simJac),_)
+      equation
+        (lsIdx,nlsIdx,mIdx) = idcsIn;
+        simEqSys = SimCode.SES_LINEAR(idx,pom,simVars,expLst,sources,simJac,lsIdx);
+      then (simEqSys,(lsIdx+1,nlsIdx,mIdx));
+    case(SimCode.SES_NONLINEAR(index=idx,eqs=simEqSysLst,crefs=crefs,jacobianMatrix=jac,linearTearing=lt),_)
+      equation
+        (lsIdx,nlsIdx,mIdx) = idcsIn;
+        simEqSys = SimCode.SES_NONLINEAR(idx,simEqSysLst,crefs,nlsIdx,jac,lt);
+      then (simEqSys,(lsIdx,nlsIdx+1,mIdx));
+    case(SimCode.SES_MIXED(index=idx,cont=cont,discVars=simVars,discEqs=simEqSysLst),_)
+      equation
+        (lsIdx,nlsIdx,mIdx) = idcsIn;
+        simEqSys = SimCode.SES_MIXED(idx,cont,simVars,simEqSysLst,mIdx);
+      then (simEqSys,(lsIdx,nlsIdx,mIdx+1));
+    else
+      then (simEqSysIn,idcsIn);
+  end match;
+end replaceSystemIndex; 
 
 protected function replaceExpsInSimEqSystem"performs replacements on a simEqSystem structure"
   input SimCode.SimEqSystem simEqSysIn;
@@ -2011,8 +2055,9 @@ algorithm
     then fail();
     case(SimCode.SES_LINEAR(index=idx,partOfMixed=pom,vars=simVars,beqs=expLst,sources=sources,simJac=simJac,indexLinearSystem=idxLS),_)
       equation
-        print("TODO:replace simVars\n");
+        (simVars,bLst) = List.map1_2(simVars,replaceCrefInSimVar,replIn);
         (expLst,changed) = BackendVarTransform.replaceExpList(expLst,replIn,NONE(),{},false);
+        changed = List.fold(bLst,boolOr,changed);
         simJac = List.map1(simJac,replaceInSimJac,replIn);
         simEqSys = SimCode.SES_LINEAR(idx,pom,simVars,expLst,sources,simJac,idxLS);
     then (simEqSys,changed);
@@ -2034,6 +2079,41 @@ algorithm
     then fail();
   end match;
 end replaceExpsInSimEqSystem;
+
+protected function replaceCrefInSimVar"performs replacements on a simVar structure"
+  input SimCode.SimVar simVarIn;
+  input BackendVarTransform.VariableReplacements replIn;
+  output SimCode.SimVar simVarOut;
+  output Boolean changedOut;
+algorithm
+    (simVarOut,changedOut) := matchcontinue(simVarIn,replIn)
+      local
+        Boolean isFixed,isDiscrete,isValueChangeable,isProtected;
+        Integer index;
+        String comment, unit, displayUnit;
+        list<String> numArrayElement;
+        BackendDAE.VarKind varKind;
+        DAE.ComponentRef name;
+        DAE.Type type_;
+        DAE.ElementSource source;
+        SimCode.AliasVariable aliasvar;
+        SimCode.Causality causality;
+        SimCode.SimVar simVar;
+        Option<Integer> variable_index;
+        Option<DAE.ComponentRef> arrayCref;
+        Option<DAE.Exp> minValue,maxValue,initialValue,nominalValue;
+    case(SimCode.SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,index=index,minValue=minValue,maxValue=maxValue,initialValue=initialValue,
+         nominalValue=nominalValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index,
+         numArrayElement=numArrayElement,isValueChangeable=isValueChangeable,isProtected=isProtected),_)
+      equation
+        true = BackendVarTransform.hasReplacement(replIn,name);
+        DAE.CREF(componentRef=name) = BackendVarTransform.getReplacement(replIn,name);
+        simVar = SimCode.SIMVAR(name,varKind,comment,unit,displayUnit,index,minValue,maxValue,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement,isValueChangeable,isProtected);
+      then (simVar,true);
+    else
+      then (simVarIn,false);
+  end matchcontinue;
+end replaceCrefInSimVar;
 
 protected function replaceInSimJac"replaces the row of a simJac.
 author:Waurich TUD 2014-04"

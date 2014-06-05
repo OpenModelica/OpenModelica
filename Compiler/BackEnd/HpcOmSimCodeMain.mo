@@ -250,6 +250,7 @@ algorithm
       (numProc,_) = setNumProc(numProc,cpCostsWoC,taskGraphDataOde);//in case n-flag is not set
       (schedule,simCode,taskGraphData1,sccSimEqMapping) = createSchedule(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,numProc,simCode);
       //(schedule,numProc) = repeatScheduleWithOtherNumProc(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,cpCostsWoC,schedule,numProc,numFixed);
+      numProc = Flags.getConfigInt(Flags.NUM_PROC);
       criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(schedule,numProc,taskGraph1,taskGraphData1);
       schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));
       Debug.execStat("hpcom create schedule", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);

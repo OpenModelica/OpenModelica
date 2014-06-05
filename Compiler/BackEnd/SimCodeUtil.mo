@@ -7449,19 +7449,19 @@ algorithm
         s = intString(idx) +&": "+& List.fold(sLst,stringAppend,"");
     then (s);
 
-    case(SimCode.SES_LINEAR(index=idx,partOfMixed=_,indexLinearSystem=_))
+    case(SimCode.SES_LINEAR(index=idx,partOfMixed=_,indexLinearSystem=idxLS,beqs = beqs))
       equation
-        s = intString(idx) +&": "+& " (LINEAR)";
+        s = intString(idx) +&": "+& " (LINEAR) index:"+&intString(idxLS);
     then (s);
 
-    case(SimCode.SES_NONLINEAR(index=idx,indexNonLinearSystem=_,jacobianMatrix=_,linearTearing=_))
+    case(SimCode.SES_NONLINEAR(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=_,linearTearing=_,eqs=eqs))
       equation
-        s = intString(idx) +&": "+& " (NONLINEAR)";
+        s = intString(idx) +&": "+& " (NONLINEAR) index:"+&intString(idxNLS);
     then (s);
 
-    case(SimCode.SES_MIXED(index=idx,indexMixedSystem=_))
+    case(SimCode.SES_MIXED(index=idx,indexMixedSystem=idxMS))
       equation
-        s = intString(idx) +&": "+& " (MIXED)";
+        s = intString(idx) +&": "+& " (MIXED) index:"+&intString(idxMS)+&"\n";
     then (s);
 
     case(SimCode.SES_WHEN(index=idx,conditions=_,initialCall=_))
@@ -7480,8 +7480,8 @@ algorithm
   SimCode.SIMCODE(allEquations = allEquations, odeEquations=odeEquations, algebraicEquations=algebraicEquations, algorithmAndEquationAsserts=algorithmAndEquationAsserts, equationsForZeroCrossings=equationsForZeroCrossings, jacobianEquations=jacobianEquations) := simCode;
   print("allEquations: \n-----------------------\n");
   print(dumpSimEqSystemLst(allEquations)+&"\n");
-  print("odeEquations: \n-----------------------\n");
-  print(stringDelimitList(List.map(odeEquations,dumpSimEqSystemLst),"\n")+&"\n");
+  print("odeEquations ("+&intString(listLength(odeEquations))+&" systems): \n-----------------------\n");
+  print(stringDelimitList(List.map(odeEquations,dumpSimEqSystemLst),"\n--------------\n")+&"\n");
   print("algebraicEquations: \n-----------------------\n");
   print(stringDelimitList(List.map(algebraicEquations,dumpSimEqSystemLst),"\n")+&"\n");
   /*
@@ -13012,7 +13012,8 @@ algorithm
   end match;
 end replaceSimEqSysIndex;
 
-public function getMaxSimEqSystemIndex
+public function getMaxSimEqSystemIndex"gets the maximal index of all simEqSystems in the SimCode.
+author:Waurich TUD 2014-06"
   input SimCode.SimCode simCode;
   output Integer idxOut;
 protected
@@ -13050,6 +13051,48 @@ algorithm
   idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(initialEquations,eqIndex),intMax,idx,idx);
   idxOut := idx;
 end getMaxSimEqSystemIndex;
+
+public function getLSindex"outputs the index of the SES_LINEAR or -1"
+  input SimCode.SimEqSystem simEqSys;
+  output Integer lsIdx;
+algorithm
+  lsIdx := match(simEqSys)
+    local
+      Integer idx;
+    case(SimCode.SES_LINEAR(indexLinearSystem=idx))
+      then idx;
+    else
+      then -1;
+  end match;
+end getLSindex;
+
+public function getNLSindex"outputs the index of the SES_NONLINEAR or -1"
+  input SimCode.SimEqSystem simEqSys;
+  output Integer nlsIdx;
+algorithm
+  nlsIdx := match(simEqSys)
+    local
+      Integer idx;
+    case(SimCode.SES_NONLINEAR(indexNonLinearSystem=idx))
+      then idx;
+    else
+      then -1;
+  end match;
+end getNLSindex;
+
+public function getMixedindex"outputs the index of the SES_MIXED or -1"
+  input SimCode.SimEqSystem simEqSys;
+  output Integer mIdx;
+algorithm
+  mIdx := match(simEqSys)
+    local
+      Integer idx;
+    case(SimCode.SES_MIXED(indexMixedSystem=idx))
+      then idx;
+    else
+      then -1;
+  end match;
+end getMixedindex;
 
 public function dumpIdxScVarMapping
   input array<Option<SimCode.SimVar>> iMapping;
