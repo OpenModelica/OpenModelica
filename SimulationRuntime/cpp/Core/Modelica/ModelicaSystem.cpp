@@ -44,7 +44,7 @@ bool Modelica::evaluateAll(const UPDATETYPE command)
 }
 void Modelica::evaluateODE(const UPDATETYPE command)
 {
-  
+
 }
 
 

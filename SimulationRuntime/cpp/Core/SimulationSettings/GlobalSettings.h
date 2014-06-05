@@ -36,7 +36,7 @@ public:
 
      virtual LogType getLogType();
     virtual void setLogType(LogType);
-    
+
     //solver used for simulation
     virtual string    getSelectedSolver();
     virtual void setSelectedSolver(string);

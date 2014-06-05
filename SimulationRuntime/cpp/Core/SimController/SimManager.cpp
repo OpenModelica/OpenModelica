@@ -105,7 +105,7 @@ void SimManager::initialize()
      */
       /* Logs vorübergehend deaktiviert
       BOOST_LOG_SEV(simmgr_lg::get(), simmgr_info) << "Assemble completed";*/
-      
+
 }
 void SimManager::runSimulation()
 {

@@ -40,7 +40,7 @@ public:
     virtual void setOutputFormat(OutputFormat) = 0;
     virtual LogType getLogType() = 0;
     virtual void setLogType(LogType) = 0;
-    
+
     virtual bool useEndlessSim()=0;
     virtual void useEndlessSim(bool)=0;
     ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)

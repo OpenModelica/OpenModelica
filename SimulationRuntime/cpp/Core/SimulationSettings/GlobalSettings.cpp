@@ -69,7 +69,7 @@ void GlobalSettings::setOutputFormat(OutputFormat format)
    return _log_type;
  }
  void GlobalSettings::setLogType(LogType type)
- { 
+ {
   _log_type  = type;
  }
 

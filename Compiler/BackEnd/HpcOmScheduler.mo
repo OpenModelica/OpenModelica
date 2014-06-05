@@ -2002,7 +2002,7 @@ algorithm
     else
       then (simEqSysIn,idcsIn);
   end match;
-end replaceSystemIndex; 
+end replaceSystemIndex;
 
 protected function replaceExpsInSimEqSystem"performs replacements on a simEqSystem structure"
   input SimCode.SimEqSystem simEqSysIn;

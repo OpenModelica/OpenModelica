@@ -685,14 +685,14 @@ end getHpcomDestructorExtension;
 template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  
+
 
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
       let parCode = update2(allEquationsPlusWhen, modelInfo.name, whenClauses, simCode, hpcOmSchedule, context, lastIdentOfPath(modelInfo.name))
       <<
        <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete)%>
-       
+
        <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther)%>
 
       <%parCode%>
@@ -754,11 +754,11 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
                 <%generateThread(0, "pthreads", modelNamePrefixStr, "evaluateThreadFunc")%>
             }
 
-           
+
             this->command = command;
             <%function_HPCOM_releaseLock("startEvaluateLock","","pthreads")%>
             <%function_HPCOM_assignLock("finishedEvaluateLock","","pthreads")%>
-            
+
           }
           >>
    case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
@@ -770,13 +770,13 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
           //using type: <%type%>
           void <%lastIdentOfPath(name)%>::evaluateODE(const UPDATETYPE command)
           {
-            
+
             omp_set_dynamic(0);
 
             <%&varDecls%>
             <%taskEqs%>
 
-           
+
           }
           >>
         else
@@ -789,12 +789,12 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
           //using type: <%type%>
           void <%lastIdentOfPath(name)%>::evaluateODE(const UPDATETYPE command)
           {
-           
+
             this->command = command;
             <%threadReleaseLocks%>
             <%threadAssignLocks1%>
 
-            
+
           }
           >>
     case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
@@ -805,13 +805,13 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
                 //using type: <%type%>
                 void <%lastIdentOfPath(name)%>::evaluateODE(const UPDATETYPE command)
                 {
-                  
+
                   omp_set_dynamic(1);
 
                   <%&varDecls%>
                   <%taskEqs%>
 
-                  
+
                 }
                 >>
             else
@@ -826,7 +826,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
                     void <%lastIdentOfPath(name)%>::evaluateODE(const UPDATETYPE command)
                     {
                       using namespace tbb::flow;
-                      
+
 
                       // Declaration of nodes and edges
                       <%taskNodes%>

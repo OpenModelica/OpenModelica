@@ -36,12 +36,12 @@ namespace keywords = boost::log::keywords;
 
 enum cvodeseverity_level
 {
-	cvode_info,
-	cvode_normal,
-	cvode_notification,
-	cvode_warning,
-	cvode_error,
-	cvode_critical
+  cvode_info,
+  cvode_normal,
+  cvode_notification,
+  cvode_warning,
+  cvode_error,
+  cvode_critical
 };
 
 typedef src::severity_channel_logger_mt<
@@ -59,9 +59,9 @@ BOOST_LOG_INLINE_GLOBAL_LOGGER_INIT(cvode_lg, my_logger_mt)
 
 
 /*BOOST_LOG_INLINE_GLOBAL_LOGGER_CTOR_ARGS(
-	cvode_lg,
-	src::channel_logger_mt< >,
-	(keywords::severity = cvode_normal)(keywords::channel = "solver.CVode"))
+  cvode_lg,
+  src::channel_logger_mt< >,
+  (keywords::severity = cvode_normal)(keywords::channel = "solver.CVode"))
 */
 /*****************************************************************************/
 // Cvode aus dem SUNDIALS-Package

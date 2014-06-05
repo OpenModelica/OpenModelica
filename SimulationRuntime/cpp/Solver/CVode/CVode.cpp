@@ -187,8 +187,8 @@ void Cvode::initialize()
 
     }
     _cvode_initialized = true;
-    
- 
+
+
     //
     // CVODE is ready for integration
     //
@@ -501,14 +501,14 @@ void Cvode::writeSimulationInfo()
 
 /*
 
-	 src::logger lg;
+   src::logger lg;
 
-   
+
 
     // Now, let's try logging with severity
      src::severity_logger< cvodeseverity_level > slg;
-	
-	
+
+
 
 
   long int nst, nfe, nsetups, nni, ncfn, netf;
@@ -535,13 +535,13 @@ void Cvode::writeSimulationInfo()
   BOOST_LOG_SEV(slg, cvode_normal) << " Linear solver setups " << "nsetups: " <<  nsetups;
   BOOST_LOG_SEV(slg, cvode_normal) << " Nonlinear iterations " <<  "nni: "  << nni ;
   BOOST_LOG_SEV(slg, cvode_normal) << " Convergence failures " <<  "ncfn: " <<  ncfn ;
-  
+
 
 */
 
 
-	
-	//// Solver
+
+  //// Solver
   //outputStream  << "\nSolver: " << getName()
   //  << "\nVerfahren: ";
 

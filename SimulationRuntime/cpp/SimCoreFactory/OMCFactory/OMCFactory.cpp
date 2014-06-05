@@ -134,9 +134,9 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
 
      _library_path = libraries_path;
     _modelicasystem_path = modelica_path;
-    
-   
-     
+
+
+
      return settings;
 
 }

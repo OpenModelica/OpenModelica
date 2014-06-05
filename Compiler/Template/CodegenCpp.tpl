@@ -3944,7 +3944,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual bool evaluateAll(const UPDATETYPE command =IContinuous::UNDEF_UPDATE);
     virtual void evaluateODE(const UPDATETYPE command =IContinuous::UNDEF_UPDATE);
     virtual void evaluateZeroFuncs(const UPDATETYPE command =IContinuous::UNDEF_UPDATE);
-   
+
 
     // Provide the right hand side (according to the index)
     virtual void getRHS(double* f);
@@ -9667,7 +9667,7 @@ end update;
 
 template equationFunctions( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context)
 ::=
- 
+
  let equation_func_calls = (allEquationsPlusWhen |> eq  =>
                     equation_function_create_single_func(eq, context/*BUFC*/, simCode)
                     ;separator="\n")
@@ -9686,7 +9686,7 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
                     equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode)
                     ;separator="\n")
 
-  
+
   let reinit = (whenClauses |> when hasindex i0 =>
          genreinits(when, &varDecls,i0,simCode,context)
     ;separator="\n";empty)
@@ -9713,8 +9713,8 @@ template createEvaluate(list<list<SimEqSystem>> odeEquations,list<SimWhenClause>
   let &varDecls = buffer "" /*BUFD*/
 
 
- 
-  
+
+
    let equation_ode_func_calls = (odeEquations |> eqs => (eqs |> eq  =>
                     equation_function_call(eq, context, &varDecls /*BUFC*/, simCode);separator="\n")
                    )
@@ -9722,7 +9722,7 @@ template createEvaluate(list<list<SimEqSystem>> odeEquations,list<SimWhenClause>
   <<
   void <%className%>::evaluateODE(const UPDATETYPE command)
   {
-    
+
     <%varDecls%>
     /* Evaluate Equations*/
     <%equation_ode_func_calls%>
@@ -9741,24 +9741,24 @@ template createEvaluateZeroFuncs( list<SimEqSystem> equationsForZeroCrossings, S
                     equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode)
                     ;separator="\n")
 
-  
+
 
 
   <<
   void <%className%>::evaluateZeroFuncs(const UPDATETYPE command)
   {
-   
+
     <%varDecls%>
     /* Evaluate Equations*/
     <%equation_zero_func_calls%>
-  
-  
+
+
   }
  >>
 end createEvaluateZeroFuncs;
 
 /*
- //! Evaluates only the equations whose indexs are passed to it. 
+ //! Evaluates only the equations whose indexs are passed to it.
   bool <%className%>::evaluate_selective(const std::vector<int>& indices) {
     std::vector<int>::const_iterator iter = indices.begin();
     int offset;
@@ -9769,7 +9769,7 @@ end createEvaluateZeroFuncs;
    return false;
   }
 
-  //! Evaluates only a single equation by index. 
+  //! Evaluates only a single equation by index.
   bool <%className%>::evaluate_single(const int index) {
     int offset = index - first_equation_index;
     (this->*equations_array[offset])();
