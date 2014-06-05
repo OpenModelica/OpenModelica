@@ -5587,27 +5587,4 @@ algorithm
   end matchcontinue;
 end setAnnotationsForVar;
 
-//-----------------------------------------------------
-// Util
-//-----------------------------------------------------
-
-public function replaceInCompsInTaskGraphMeta"replaces the inComps in the TaskGraphMeta.
-author:Waurich TUD 2014-05"
-  input array<list<Integer>> compsNew;
-  input TaskGraphMeta tgMetaIn;
-  output TaskGraphMeta tgMetaOut;
-protected
-  array<tuple<Integer,Integer,Integer>> varCompMapping;
-  array<tuple<Integer,Integer,Integer>> eqCompMapping;
-  list<Integer> rootNodes;
-  array<String> nodeNames;
-  array<String> nodeDescs;
-  array<tuple<Integer,Real>> exeCosts;
-  array<list<tuple<Integer,Integer,Integer>>> commCosts;
-  array<Integer> nodeMark;
-algorithm
-  TASKGRAPHMETA(varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,rootNodes=rootNodes,nodeNames=nodeNames,nodeDescs=nodeDescs,exeCosts=exeCosts,commCosts=commCosts,nodeMark=nodeMark) := tgMetaIn;
-  tgMetaOut := TASKGRAPHMETA(compsNew,varCompMapping,eqCompMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
-end replaceInCompsInTaskGraphMeta;
-
 end HpcOmTaskGraph;
