@@ -800,10 +800,6 @@ void ModelicaTextHighlighter::initializeSettings()
   rule.mFormat = mFunctionFormat;
   mHighlightingRules.append(rule);
 
-  rule.mPattern = QRegExp("//[^\n]*");
-  rule.mFormat = mSingleLineCommentFormat;
-  mHighlightingRules.append(rule);
-
   mCommentStartExpression = QRegExp("/\\*");
   mCommentEndExpression = QRegExp("\\*/");
 }
@@ -824,7 +820,6 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
       case 1:
         if (text[index] == '/' && index+1<text.length() && text[index+1] == '/') {
           index++;
-          setFormat(startIndex, index-startIndex+1, mSingleLineCommentFormat);
           blockState = 1; /* don't change the blockstate. */
         }
         break;
@@ -847,6 +842,7 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
         /* check if single line comment then set the blockstate to 1. */
         if (text[index] == '/' && index+1<text.length() && text[index+1] == '/') {
           startIndex = index++;
+          setFormat(startIndex, text.length(), mSingleLineCommentFormat);
           blockState = 1;
         } else if (text[index] == '/' && index+1<text.length() && text[index+1] == '*') {
           startIndex = index++;
