@@ -59,29 +59,30 @@ typedef struct DASSL_DATA{
   unsigned int* dasslStatistics;
   unsigned int* dasslStatisticsTmp;
 
-  fortran_integer* info;
+  int* info;
 
-  fortran_integer idid;
-  fortran_integer* ipar;
+  int idid;
+  int* ipar;
   double** rpar;
   /* size of work arrays for DASSL */
-  fortran_integer liw;
-  fortran_integer lrw;
+  int liw;
+  int lrw;
   /* work arrays for DASSL */
-  fortran_integer *iwork;
+  int *iwork;
   double *rwork;
   double *rtol;
   double *atol;
 
-  fortran_integer ngdummy;
-  fortran_integer ng;
-  fortran_integer *jroot;
+  int ngdummy;
+  int ng;
+  int *jroot;
 
   /* varibales used in jacobian calculation */
   double sqrteps;
   double *ysave;
   double *delta_hh;
   double *newdelta;
+  double *stateDer;
 
 } DASSL_DATA;
 

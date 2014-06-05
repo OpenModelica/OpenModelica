@@ -46,7 +46,6 @@
 #include "simulation/solver/epsilon.h"
 
 #include "simulation/solver/dassl.h"
-#include "f2c.h"
 #include "meta_modelica.h"
 
 
@@ -73,70 +72,70 @@ static const char *dasslMethodStrDescStr[DASSL_MAX] = {"unknown",
 /* provides a dummy Jacobian to be used with DASSL */
 static int
 dummy_Jacobian(double *t, double *y, double *yprime, double *deltaD,
-    double *delta, double *cj, double *h, double *wt, double *rpar, fortran_integer* ipar) {
+    double *delta, double *cj, double *h, double *wt, double *rpar, int* ipar) {
   return 0;
 }
 static int
-dummy_zeroCrossing(fortran_integer *neqm, double *t, double *y, double *yp,
-                   fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar) {
+dummy_zeroCrossing(int *neqm, double *t, double *y, double *yp,
+                   int *ng, double *gout, double *rpar, int* ipar) {
   return 0;
 }
 
 static int JacobianSymbolic(double *t, double *y, double *yprime,  double *deltaD, double *pd, double *cj, double *h, double *wt,
-    double *rpar, fortran_integer* ipar);
+    double *rpar, int* ipar);
 static int JacobianSymbolicColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-    double *rpar, fortran_integer* ipar);
+    double *rpar, int* ipar);
 static int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-    double *rpar, fortran_integer* ipar);
+    double *rpar, int* ipar);
 static int JacobianOwnNumColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-    double *rpar, fortran_integer* ipar);
+    double *rpar, int* ipar);
 
 void  DDASKR(
-    int (*res) (double *t, double *y, double *yprime, double* cj, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar),
-    fortran_integer *neq,
+    int (*res) (double *t, double *y, double *yprime, double* cj, double *delta, int *ires, double *rpar, int* ipar),
+    int *neq,
     double *t,
     double *y,
     double *yprime,
     double *tout,
-    fortran_integer *info,
+    int *info,
     double *rtol,
     double *atol,
-    fortran_integer *idid,
+    int *idid,
     double *rwork,
-    fortran_integer *lrw,
-    fortran_integer *iwork,
-    fortran_integer *liw,
+    int *lrw,
+    int *iwork,
+    int *liw,
     double *rpar,
-    fortran_integer *ipar,
-    int (*jac) (double *t, double *y, double *yprime, double *deltaD, double *delta, double *cj, double *h, double *wt, double *rpar, fortran_integer* ipar),
-    int (*psol) (fortran_integer *neq, double *t, double *y, double *yprime, double *savr, double *pwk, double *cj, double *wt, double *wp, fortran_integer *iwp, double *b, double eplin, fortran_integer* ires, double *rpar, fortran_integer* ipar),
-    int (*g) (fortran_integer *neqm, double *t, double *y, double *yp, fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar),
-    fortran_integer *ng,
-    fortran_integer *jroot
+    int *ipar,
+    int (*jac) (double *t, double *y, double *yprime, double *deltaD, double *delta, double *cj, double *h, double *wt, double *rpar, int* ipar),
+    int (*psol) (int *neq, double *t, double *y, double *yprime, double *savr, double *pwk, double *cj, double *wt, double *wp, int *iwp, double *b, double eplin, int* ires, double *rpar, int* ipar),
+    int (*g) (int *neqm, double *t, double *y, double *yp, int *ng, double *gout, double *rpar, int* ipar),
+    int *ng,
+    int *jroot
 );
 
 static int
-dummy_precondition(fortran_integer *neq, double *t, double *y, double *yprime, double *savr, double *pwk, double *cj, double *wt, double *wp, fortran_integer *iwp, double *b, double eplin, fortran_integer* ires, double *rpar, fortran_integer* ipar){
+dummy_precondition(int *neq, double *t, double *y, double *yprime, double *savr, double *pwk, double *cj, double *wt, double *wp, int *iwp, double *b, double eplin, int* ires, double *rpar, int* ipar){
     return 0;
 }
 
 
-static int continue_DASSL(fortran_integer* idid, double* tolarence);
+static int continue_DASSL(int* idid, double* tolarence);
 
 
 
 /* function for calculating state values on residual form */
-static int functionODE_residual(double *t, double *x, double *xprime, double *cj, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar);
+static int functionODE_residual(double *t, double *x, double *xprime, double *cj, double *delta, int *ires, double *rpar, int* ipar);
 
 /* function for calculating zeroCrossings */
-static int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y, double *yp,
-        fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar);
+static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
+        int *ng, double *gout, double *rpar, int* ipar);
 
-int dassl_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
+int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
 {
   /* work arrays for DASSL */
   int i;
-  SIMULATION_INFO *simInfo = &(simData->simulationInfo);
+  SIMULATION_INFO *simInfo = &(data->simulationInfo);
 
   TRACE_PUSH
 
@@ -162,7 +161,7 @@ int dassl_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
       }
       messageClose(LOG_SOLVER);
     }
-    throwStreamPrint(simData->threadData,"unrecognized dassl solver method %s", simInfo->solverMethod);
+    throwStreamPrint(data->threadData,"unrecognized dassl solver method %s", simInfo->solverMethod);
   }
   else
   {
@@ -170,35 +169,35 @@ int dassl_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
   }
 
 
-  dasslData->liw = 40 + simData->modelData.nStates;
-  dasslData->lrw = 60 + ((maxOrder + 4) * simData->modelData.nStates) + (simData->modelData.nStates * simData->modelData.nStates)  + (3*simData->modelData.nZeroCrossings);
+  dasslData->liw = 40 + data->modelData.nStates;
+  dasslData->lrw = 60 + ((maxOrder + 4) * data->modelData.nStates) + (data->modelData.nStates * data->modelData.nStates)  + (3*data->modelData.nZeroCrossings);
   dasslData->rwork = (double*) calloc(dasslData->lrw, sizeof(double));
-  assertStreamPrint(simData->threadData, 0 != dasslData->rwork,"out of memory");
-  dasslData->iwork = (fortran_integer*)  calloc(dasslData->liw, sizeof(fortran_integer));
-  assertStreamPrint(simData->threadData, 0 != dasslData->iwork,"out of memory");
-  dasslData->ng = (fortran_integer) simData->modelData.nZeroCrossings;
-  dasslData->ngdummy = (fortran_integer) 0;
-  dasslData->jroot = (fortran_integer*)  calloc(simData->modelData.nZeroCrossings, sizeof(fortran_integer));
+  assertStreamPrint(data->threadData, 0 != dasslData->rwork,"out of memory");
+  dasslData->iwork = (int*)  calloc(dasslData->liw, sizeof(int));
+  assertStreamPrint(data->threadData, 0 != dasslData->iwork,"out of memory");
+  dasslData->ng = (int) data->modelData.nZeroCrossings;
+  dasslData->ngdummy = (int) 0;
+  dasslData->jroot = (int*)  calloc(data->modelData.nZeroCrossings, sizeof(int));
   dasslData->rpar = (double**) malloc(2*sizeof(double*));
-  dasslData->ipar = (fortran_integer*) malloc(sizeof(fortran_integer));
+  dasslData->ipar = (int*) malloc(sizeof(int));
   dasslData->ipar[0] = ACTIVE_STREAM(LOG_JAC);
-  assertStreamPrint(simData->threadData, 0 != dasslData->ipar,"out of memory");
-  dasslData->atol = (double*) malloc(simData->modelData.nStates*sizeof(double));
-  dasslData->rtol = (double*) malloc(simData->modelData.nStates*sizeof(double));
-  dasslData->info = (fortran_integer*) calloc(infoLength, sizeof(fortran_integer));
-  assertStreamPrint(simData->threadData, 0 != dasslData->info,"out of memory");
+  assertStreamPrint(data->threadData, 0 != dasslData->ipar,"out of memory");
+  dasslData->atol = (double*) malloc(data->modelData.nStates*sizeof(double));
+  dasslData->rtol = (double*) malloc(data->modelData.nStates*sizeof(double));
+  dasslData->info = (int*) calloc(infoLength, sizeof(int));
+  assertStreamPrint(data->threadData, 0 != dasslData->info,"out of memory");
   dasslData->dasslStatistics = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
-  assertStreamPrint(simData->threadData, 0 != dasslData->dasslStatistics,"out of memory");
+  assertStreamPrint(data->threadData, 0 != dasslData->dasslStatistics,"out of memory");
   dasslData->dasslStatisticsTmp = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
-  assertStreamPrint(simData->threadData, 0 != dasslData->dasslStatisticsTmp,"out of memory");
+  assertStreamPrint(data->threadData, 0 != dasslData->dasslStatisticsTmp,"out of memory");
 
   dasslData->idid = 0;
 
   dasslData->sqrteps = sqrt(DBL_EPSILON);
-  dasslData->ysave = (double*) malloc(simData->modelData.nStates*sizeof(double));
-  dasslData->delta_hh = (double*) malloc(simData->modelData.nStates*sizeof(double));
-  dasslData->newdelta = (double*) malloc(simData->modelData.nStates*sizeof(double));
-
+  dasslData->ysave = (double*) malloc(data->modelData.nStates*sizeof(double));
+  dasslData->delta_hh = (double*) malloc(data->modelData.nStates*sizeof(double));
+  dasslData->newdelta = (double*) malloc(data->modelData.nStates*sizeof(double));
+  dasslData->stateDer = (double*) malloc(data->modelData.nStates*sizeof(double));
 
   dasslData->info[2] = 1;
   /*********************************************************************
@@ -215,9 +214,9 @@ int dassl_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
       dasslData->dasslMethod == DASSL_WORT ||
       dasslData->dasslMethod == DASSL_RT ||
       dasslData->dasslMethod == DASSL_STEPS){
-    if (simData->callback->initialAnalyticJacobianA(simData)){
+    if (data->callback->initialAnalyticJacobianA(data)){
       /* TODO: check that the one states is dummy */
-      if(simData->modelData.nStates == 1) {
+      if(data->modelData.nStates == 1) {
         infoStreamPrint(LOG_SOLVER, 0, "No SparsePattern, since there are no states! Switch back to normal.");
       } else {
         infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
@@ -234,10 +233,10 @@ int dassl_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
   /* Setup nominal values of the states
    * as relative tolerances */
   dasslData->info[1] = 1;
-  for(i=0;i<simData->modelData.nStates;++i)
+  for(i=0;i<data->modelData.nStates;++i)
   {
-    dasslData->rtol[i] = simData->simulationInfo.tolerance;
-    dasslData->atol[i] = simData->simulationInfo.tolerance * simData->modelData.realVarsData[i].attribute.nominal;
+    dasslData->rtol[i] = data->simulationInfo.tolerance;
+    dasslData->atol[i] = data->simulationInfo.tolerance * data->modelData.realVarsData[i].attribute.nominal;
   }
 
   TRACE_POP
@@ -252,8 +251,16 @@ int dassl_deinitial(DASSL_DATA *dasslData)
   /* free work arrays for DASSL */
   free(dasslData->rwork);
   free(dasslData->iwork);
+  free(dasslData->rpar);
   free(dasslData->ipar);
+  free(dasslData->atol);
+  free(dasslData->rtol);
   free(dasslData->info);
+  free(dasslData->jroot);
+  free(dasslData->ysave);
+  free(dasslData->delta_hh);
+  free(dasslData->newdelta);
+  free(dasslData->stateDer);
   free(dasslData->dasslStatistics);
   free(dasslData->dasslStatisticsTmp);
   free(dasslData);
@@ -268,24 +275,29 @@ int dassl_deinitial(DASSL_DATA *dasslData)
  *   + ZeroCrossing are handled outside DASSL.
  *   + if no event occurs outside DASSL performs a warm-start
  **********************************************************************************************/
-int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
+int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
 {
   double tout = 0;
   int i = 0;
   unsigned int ui = 0;
   int retVal = 0;
 
-  SIMULATION_DATA *sData = (SIMULATION_DATA*) simData->localData[0];
-  SIMULATION_DATA *sDataOld = (SIMULATION_DATA*) simData->localData[1];
-  MODEL_DATA *mData = (MODEL_DATA*) &simData->modelData;
+  SIMULATION_DATA *sData = (SIMULATION_DATA*) data->localData[0];
+  SIMULATION_DATA *sDataOld = (SIMULATION_DATA*) data->localData[1];
+  MODEL_DATA *mData = (MODEL_DATA*) &data->modelData;
   DASSL_DATA *dasslData = (DASSL_DATA*) solverInfo->solverData;
-  modelica_real* stateDer = sDataOld->realVars + simData->modelData.nStates;
-  dasslData->rpar[0] = (double*) (void*) simData;
+  modelica_real* stateDer = dasslData->stateDer;
+
+  /* after rotation dassl expects the same states as before */
+  memcpy(sData->realVars, sDataOld->realVars, sizeof(double)*data->modelData.nStates);
+  memcpy(stateDer, sDataOld->realVars + data->modelData.nStates, sizeof(double)*data->modelData.nStates);
+
+  dasslData->rpar[0] = (double*) (void*) data;
   dasslData->rpar[1] = (double*) (void*) dasslData;
 
   TRACE_PUSH
 
-  assertStreamPrint(simData->threadData, 0 != dasslData->rpar, "could not passed to DDASKR");
+  assertStreamPrint(data->threadData, 0 != dasslData->rpar, "could not passed to DDASKR");
 
   /* If an event is triggered and processed restart dassl. */
   if(solverInfo->didEventStep)
@@ -299,7 +311,7 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
   /* Calculate steps until TOUT is reached */
   /* If dasslsteps is selected, the dassl run to stopTime */
   if  (dasslData->dasslMethod == DASSL_STEPS){
-    tout = simData->simulationInfo.stopTime;
+    tout = data->simulationInfo.stopTime;
   }else {
     tout = solverInfo->currentTime + solverInfo->currentStepSize;
   }
@@ -312,15 +324,14 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
     infoStreamPrint(LOG_DASSL, 0, "Interpolate linear");
 
     /*euler step*/
-    for(i = 0; i < simData->modelData.nStates; i++)
+    for(i = 0; i < data->modelData.nStates; i++)
     {
       sData->realVars[i] = sDataOld->realVars[i] + stateDer[i] * solverInfo->currentStepSize;
     }
     sData->timeValue = tout;
-    simData->callback->functionODE(simData);
+    data->callback->functionODE(data);
     solverInfo->currentTime = tout;
 
-    /* TODO: interpolate states and evaluate the system again */
     TRACE_POP
     return retVal;
   }
@@ -332,16 +343,16 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
     if(dasslData->idid == 1)
     {
       /* rotate RingBuffer before step is calculated */
-      rotateRingBuffer(simData->simulationData, 1, (void**) simData->localData);
-      sData = (SIMULATION_DATA*) simData->localData[0];
-      sDataOld = (SIMULATION_DATA*) simData->localData[1];
-      stateDer = sDataOld->realVars + mData->nStates;
-      sData->timeValue = solverInfo->currentTime;
+      rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
+      sData = (SIMULATION_DATA*) data->localData[0];
+      sDataOld = (SIMULATION_DATA*) data->localData[1];
+      /* after rotation dassl expects the same states as before */
+      memcpy(sData->realVars, sDataOld->realVars, sizeof(double)*data->modelData.nStates);
     }
 
     /* read input vars */
-    externalInputUpdate(simData);
-    simData->callback->input_function(simData);
+    externalInputUpdate(data);
+    data->callback->input_function(data);
 
     if(dasslData->dasslMethod ==  DASSL_SYMJAC) {
       DDASKR(functionODE_residual, &mData->nStates,
@@ -349,28 +360,28 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
           (double*) (void*) dasslData->rpar, dasslData->ipar, JacobianSymbolic, dummy_precondition,
-          function_ZeroCrossingsDASSL, (fortran_integer*) &dasslData->ng, dasslData->jroot);
+          function_ZeroCrossingsDASSL, (int*) &dasslData->ng, dasslData->jroot);
     } else if(dasslData->dasslMethod ==  DASSL_NUMJAC) {
       DDASKR(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
           (double*) (void*) dasslData->rpar, dasslData->ipar, JacobianOwnNum, dummy_precondition,
-          function_ZeroCrossingsDASSL,(fortran_integer*) &dasslData->ng, dasslData->jroot);
+          function_ZeroCrossingsDASSL,(int*) &dasslData->ng, dasslData->jroot);
     } else if(dasslData->dasslMethod ==  DASSL_COLOREDSYMJAC) {
       DDASKR(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
           (double*) (void*) dasslData->rpar, dasslData->ipar, JacobianSymbolicColored, dummy_precondition,
-          function_ZeroCrossingsDASSL, (fortran_integer*) &dasslData->ng, dasslData->jroot);
+          function_ZeroCrossingsDASSL, (int*) &dasslData->ng, dasslData->jroot);
     } else if(dasslData->dasslMethod ==  DASSL_INTERNALNUMJAC) {
       DDASKR(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
           (double*) (void*) dasslData->rpar, dasslData->ipar, dummy_Jacobian, dummy_precondition,
-          function_ZeroCrossingsDASSL, (fortran_integer*) &dasslData->ng, dasslData->jroot);
+          function_ZeroCrossingsDASSL, (int*) &dasslData->ng, dasslData->jroot);
     } else if(dasslData->dasslMethod ==  DASSL_WORT) {
       DDASKR(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
@@ -379,13 +390,15 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
           (double*) (void*)dasslData->rpar, dasslData->ipar, JacobianOwnNumColored,  dummy_precondition,
           dummy_zeroCrossing, &dasslData->ngdummy, NULL);
     } else {
-      DDASKR(functionODE_residual, (fortran_integer*) &mData->nStates,
+      DDASKR(functionODE_residual, (int*) &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
           (double*) (void*) dasslData->rpar, dasslData->ipar, JacobianOwnNumColored,  dummy_precondition,
-          function_ZeroCrossingsDASSL, (fortran_integer*) &dasslData->ng, dasslData->jroot);
+          function_ZeroCrossingsDASSL, (int*) &dasslData->ng, dasslData->jroot);
     }
+    /* set ringbuffer time to current time */ 
+    sData->timeValue = solverInfo->currentTime;
 
     if(dasslData->idid == -1) {
       fflush(stderr);
@@ -396,29 +409,39 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
     } else if(dasslData->idid < 0) {
       fflush(stderr);
       fflush(stdout);
-      retVal = continue_DASSL(&dasslData->idid, &simData->simulationInfo.tolerance);
+      retVal = continue_DASSL(&dasslData->idid, &data->simulationInfo.tolerance);
       /* read input vars */
-      externalInputUpdate(simData);
-      simData->callback->input_function(simData);
-      simData->callback->functionODE(simData);
+      externalInputUpdate(data);
+      data->callback->input_function(data);
+      data->callback->functionODE(data);
       warningStreamPrint(LOG_STDOUT, 0, "can't continue. time = %f", sData->timeValue);
       TRACE_POP
       return retVal;
     } else if(dasslData->idid == 5) {
-      simData->threadData->currentErrorStage = ERROR_EVENTSEARCH;
+      data->threadData->currentErrorStage = ERROR_EVENTSEARCH;
     }
 
     /* emit step, if dasslsteps is selected */
-    if  (dasslData->dasslMethod == DASSL_STEPS){
-        sData->timeValue = solverInfo->currentTime;
-        updateContinuousSystem(simData);
-        sim_result.emit(&sim_result, simData);
+    if (dasslData->dasslMethod == DASSL_STEPS){
+      /*
+       * to emit consistent value we need to update the whole
+       * continuous system with algebraic variables.
+       */
+      updateContinuousSystem(data);
+      sim_result.emit(&sim_result, data);
+
+    } else if (dasslData->idid == 1){
+      /* to be consistent we need to evaluate functionODE again,
+       * since dassl does not evalute functionODE with the freshest states.
+       */
+      sData->timeValue = solverInfo->currentTime;
+      data->callback->functionODE(data);
+      data->callback->function_ZeroCrossingsEquations(data);
     }
 
   } while(dasslData->idid == 1 ||
-          (dasslData->idid == -1 && solverInfo->currentTime <= simData->simulationInfo.stopTime));
+          (dasslData->idid == -1 && solverInfo->currentTime <= data->simulationInfo.stopTime));
 
-  sData->timeValue = solverInfo->currentTime;
 
   if(ACTIVE_STREAM(LOG_DASSL)) {
     infoStreamPrint(LOG_DASSL, 1, "dassl call staistics: ");
@@ -448,7 +471,7 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
 }
 
 static int
-continue_DASSL(fortran_integer* idid, double* atol)
+continue_DASSL(int* idid, double* atol)
 {
   int retValue = -1;
 
@@ -514,7 +537,7 @@ continue_DASSL(fortran_integer* idid, double* atol)
 
 
 int functionODE_residual(double *t, double *y, double *yd, double* cj, double *delta,
-                    fortran_integer *ires, double *rpar, fortran_integer *ipar)
+                    int *ires, double *rpar, int *ipar)
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   threadData_t *threadData = data->threadData;
@@ -567,8 +590,8 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
   return 0;
 }
 
-int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y, double *yp,
-        fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar)
+int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
+        int *ng, double *gout, double *rpar, int* ipar)
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
 
@@ -581,8 +604,8 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y, dou
   data->threadData->currentErrorStage = ERROR_EVENTSEARCH;
 
   timeBackup = data->localData[0]->timeValue;
-
   data->localData[0]->timeValue = *t;
+
   /* read input vars */
   externalInputUpdate(data);
   data->callback->input_function(data);
@@ -716,7 +739,7 @@ int functionJacASym(DATA* data, double* jac)
  */
 
 static int JacobianSymbolicColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-         double *rpar, fortran_integer* ipar)
+         double *rpar, int* ipar)
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   double* backupStates;
@@ -757,7 +780,7 @@ static int JacobianSymbolicColored(double *t, double *y, double *yprime, double 
  * provides a analytical Jacobian to be used with DASSL
  */
 static int JacobianSymbolic(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-         double *rpar, fortran_integer* ipar)
+         double *rpar, int* ipar)
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   double* backupStates;
@@ -797,7 +820,7 @@ static int JacobianSymbolic(double *t, double *y, double *yprime, double *deltaD
  *  function calculates a jacobian matrix by
  *  numerical method finite differences
  */
-int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, fortran_integer *ipar)
+int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, int *ipar)
 {
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   /* const int index = INDEX_JAC_A; */
@@ -805,7 +828,7 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
   double delta_h = dasslData->sqrteps;
   double delta_hh,delta_hhh, deltaInv;
   double ysave;
-  fortran_integer ires;
+  int ires;
   int i,j;
 
   TRACE_PUSH
@@ -857,7 +880,7 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
  * provides a numerical Jacobian to be used with DASSL
  */
 static int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-    double *rpar, fortran_integer* ipar)
+    double *rpar, int* ipar)
 {
   int i,j;
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
@@ -887,13 +910,13 @@ static int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, 
  *  function calculates a jacobian matrix by
  *  numerical method finite differences
  */
-int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, fortran_integer *ipar)
+int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, int *ipar)
 {
   const int index = data->callback->INDEX_JAC_A;
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   double delta_h = dasslData->sqrteps;
   double delta_hhh;
-  fortran_integer ires;
+  int ires;
   double* delta_hh = dasslData->delta_hh;
   double* ysave = dasslData->ysave;
 
@@ -964,7 +987,7 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
  * provides a numerical Jacobian to be used with DASSL
  */
 static int JacobianOwnNumColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-   double *rpar, fortran_integer* ipar)
+   double *rpar, int* ipar)
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   int i,j;
