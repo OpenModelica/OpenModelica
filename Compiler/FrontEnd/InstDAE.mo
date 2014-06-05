@@ -214,7 +214,7 @@ algorithm
     case (vn, ty as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
-      then 
+      then
       DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
     // instantiation of complex type extending from basic type
