@@ -39,7 +39,8 @@ import hashlib
 from optparse import OptionParser
 
 import svgwrite
-import OMPython
+from OMPython import OMCSession
+OMPython = OMCSession()
 
 # OpenModelica setup commands
 OMC_SETUP_COMMANDS = ['setCommandLineOptions("+d=nogen,noevalfunc")']
@@ -1132,7 +1133,7 @@ def main():
     output_dir = options.output_dir
     with_html = options.with_html
     includeInvisibleText = options.includeInvisibleText
-    
+
     # create logger with 'spam_application'
     global logger
     logger = logging.getLogger(os.path.basename(__file__))
@@ -1157,7 +1158,7 @@ def main():
     PACKAGES_TO_LOAD_FROM_FILE = []
     PACKAGES_TO_GENERATE = PACKAGES_TO_LOAD
 
-    
+
     logger.info('Application started')
     logger.info('Output directory: ' + output_dir)
 
