@@ -1018,12 +1018,9 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
 {
   QString dir_str;
 
-  if (dir)
-  {
+  if (dir) {
     dir_str = *dir;
-  }
-  else
-  {
+  } else {
     dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
   }
 
@@ -1032,12 +1029,7 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
   fileName = QFileDialog::getOpenFileName(parent, caption, dir_str, filter, selectedFilter);
 #else
   QFileDialog *dialog;
-  if (filter.compare(Helper::exeFileTypes) == 0) {
-    dialog = new QFileDialog(parent, caption, dir_str);
-    dialog->setFilter(QDir::Files | QDir::Executable);
-  } else {
-    dialog = new QFileDialog(parent, caption, dir_str, filter);
-  }
+  dialog = new QFileDialog(parent, caption, dir_str, filter);
   QList<QUrl> urls = dialog->sidebarUrls();
   urls << QUrl("file://" + OpenModelica::tempDirectory());
   dialog->setSidebarUrls(urls);
@@ -1047,8 +1039,7 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
   }
   delete dialog;
 #endif
-  if (!fileName.isEmpty())
-  {
+  if (!fileName.isEmpty()) {
     QFileInfo fileInfo(fileName);
     mLastOpenDir = fileInfo.absolutePath();
   }
@@ -1059,12 +1050,9 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
 {
   QString dir_str;
 
-  if (dir)
-  {
+  if (dir) {
     dir_str = *dir;
-  }
-  else
-  {
+  } else {
     dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
   }
 
@@ -1073,12 +1061,7 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
   fileNames = QFileDialog::getOpenFileNames(parent, caption, dir_str, filter, selectedFilter);
 #else
   QFileDialog *dialog;
-  if (filter.compare(Helper::exeFileTypes) == 0) {
-    dialog = new QFileDialog(parent, caption, dir_str);
-    dialog->setFilter(QDir::Files | QDir::Executable);
-  } else {
-    dialog = new QFileDialog(parent, caption, dir_str, filter);
-  }
+  dialog = new QFileDialog(parent, caption, dir_str, filter);
   QList<QUrl> urls = dialog->sidebarUrls();
   urls << QUrl("file://" + OpenModelica::tempDirectory());
   dialog->setSidebarUrls(urls);
@@ -1088,8 +1071,7 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
   }
   delete dialog;
 #endif
-  if (!fileNames.isEmpty())
-  {
+  if (!fileNames.isEmpty()) {
     QFileInfo fileInfo(fileNames.at(0));
     mLastOpenDir = fileInfo.absolutePath();
   }
@@ -1100,18 +1082,14 @@ QString StringHandler::getExistingDirectory(QWidget *parent, const QString &capt
 {
   QString dir_str;
 
-  if (dir)
-  {
+  if (dir) {
     dir_str = *dir;
-  }
-  else
-  {
+  } else {
     dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
   }
 
   QString dirName = QFileDialog::getExistingDirectory(parent, caption, dir_str, QFileDialog::ShowDirsOnly);
-  if (!dirName.isEmpty())
-  {
+  if (!dirName.isEmpty()) {
     mLastOpenDir = dirName;
     return dirName;
   }
@@ -1120,17 +1098,17 @@ QString StringHandler::getExistingDirectory(QWidget *parent, const QString &capt
 
 QString StringHandler::createTooltip(QStringList info, QString name, QString path)
 {
-  if (info.size() < 3)
+  if (info.size() < 3) {
     return path;
-  else
-  {
+  } else {
     QString tooltip = QString(Helper::type).append(": ").append(info[0]).append("<br />")
         .append(Helper::name).append(" ").append(name).append("<br />")
         .append(Helper::description).append(": ").append(info[1]).append("<br />");
-    if (QString(info[2]).compare("<interactive>") == 0)
+    if (QString(info[2]).compare("<interactive>") == 0) {
       tooltip.append(Helper::errorLocation).append(": ").append("<br />");
-    else
+    } else {
       tooltip.append(Helper::errorLocation).append(": ").append(QString(info[2]).replace("\\", "/")).append("<br />");
+    }
     tooltip.append(tr("Path")).append(": ").append(path);
     return tooltip;
   }
@@ -1148,16 +1126,16 @@ QString StringHandler::getLastOpenDirectory()
 
 QStringList StringHandler::getDialogAnnotation(QString componentAnnotation)
 {
-  if (componentAnnotation.toLower().contains("error"))
+  if (componentAnnotation.toLower().contains("error")) {
     return QStringList();
+  }
   componentAnnotation = StringHandler::removeFirstLastCurlBrackets(componentAnnotation);
-  if (componentAnnotation.isEmpty())
+  if (componentAnnotation.isEmpty()) {
     return QStringList();
+  }
   QStringList annotations = StringHandler::getStrings(componentAnnotation, '(', ')');
-  foreach (QString annotation, annotations)
-  {
-    if (annotation.startsWith("Dialog"))
-    {
+  foreach (QString annotation, annotations) {
+    if (annotation.startsWith("Dialog")) {
       annotation = annotation.mid(QString("Dialog").length());
       annotation = StringHandler::removeFirstLastBrackets(annotation);
       return StringHandler::getStrings(annotation);
@@ -1168,16 +1146,16 @@ QStringList StringHandler::getDialogAnnotation(QString componentAnnotation)
 
 QString StringHandler::getPlacementAnnotation(QString componentAnnotation)
 {
-  if (componentAnnotation.toLower().contains("error"))
+  if (componentAnnotation.toLower().contains("error")) {
     return QString();
+  }
   componentAnnotation = StringHandler::removeFirstLastCurlBrackets(componentAnnotation);
-  if (componentAnnotation.isEmpty())
+  if (componentAnnotation.isEmpty()) {
     return QString();
+  }
   QStringList annotations = StringHandler::getStrings(componentAnnotation, '(', ')');
-  foreach (QString annotation, annotations)
-  {
-    if (annotation.startsWith("Placement"))
-    {
+  foreach (QString annotation, annotations) {
+    if (annotation.startsWith("Placement")) {
       return StringHandler::removeFirstLastBrackets(annotation);
     }
   }
@@ -1203,12 +1181,9 @@ qreal StringHandler::getNormalizedAngle(qreal angle)
 {
   qreal multiplier = fabs(angle)/360;
   qreal normalizedAngle = angle;
-  if (angle < 0)
-  {
+  if (angle < 0) {
     normalizedAngle = angle + (qCeil(multiplier) * 360);
-  }
-  else
-  {
+  } else {
     normalizedAngle = angle - (qFloor(multiplier) * 360);
   }
   return normalizedAngle;
@@ -1225,28 +1200,21 @@ QStringList StringHandler::splitStringWithSpaces(QString value)
   QString res;
   bool quotesOpen = false;
   value = value.trimmed();
-  for (int i = 0 ; i < value.size() ; i++)
-  {
-    if (value.at(i) == ' ' && !quotesOpen)
-    {
+  for (int i = 0 ; i < value.size() ; i++) {
+    if (value.at(i) == ' ' && !quotesOpen) {
       lst.append(res);
       res.clear();
-    }
-    else if (value.at(i) == '"' && quotesOpen)
-    {
+    } else if (value.at(i) == '"' && quotesOpen) {
       quotesOpen = false;
-    }
-    else if (value.at(i) == '"' && !quotesOpen)
-    {
+    } else if (value.at(i) == '"' && !quotesOpen) {
       quotesOpen = true;
-    }
-    else
-    {
+    } else {
       res.append(value.at(i));
     }
   }
-  if (!res.isEmpty())
+  if (!res.isEmpty()) {
     lst.append(res);
+  }
   return lst;
 }
 
@@ -1256,12 +1224,16 @@ void StringHandler::fillEncodingComboBox(QComboBox *pEncodingComboBox)
   QList<int> mibs = QTextCodec::availableMibs();
   qSort(mibs);
   QList<int> sortedMibs;
-  foreach (int mib, mibs)
-    if (mib >= 0)
+  foreach (int mib, mibs) {
+    if (mib >= 0) {
       sortedMibs += mib;
-  foreach (int mib, mibs)
-    if (mib < 0)
+    }
+  }
+  foreach (int mib, mibs) {
+    if (mib < 0) {
       sortedMibs += mib;
+    }
+  }
   foreach (int mib, sortedMibs)
   {
     /* get the codec from MIB */
@@ -1269,13 +1241,15 @@ void StringHandler::fillEncodingComboBox(QComboBox *pEncodingComboBox)
     QString codecName = QString::fromLatin1(pCodec->name());
     QString codecNameWithAliases = codecName;
     /* get all the aliases of the codec */
-    foreach (const QByteArray &alias, pCodec->aliases())
+    foreach (const QByteArray &alias, pCodec->aliases()) {
       codecNameWithAliases += QLatin1String(" / ") + QString::fromLatin1(alias);
+    }
     pEncodingComboBox->addItem(codecNameWithAliases, codecName);
   }
   int currentIndex = pEncodingComboBox->findData(Helper::utf8);
-  if (currentIndex > -1)
+  if (currentIndex > -1) {
     pEncodingComboBox->setCurrentIndex(currentIndex);
+  }
 }
 
 QStringList StringHandler::makeVariableParts(QString variable)
