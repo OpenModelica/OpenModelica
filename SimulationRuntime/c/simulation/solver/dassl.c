@@ -397,7 +397,7 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
           (double*) (void*) dasslData->rpar, dasslData->ipar, JacobianOwnNumColored,  dummy_precondition,
           function_ZeroCrossingsDASSL, (int*) &dasslData->ng, dasslData->jroot);
     }
-    /* set ringbuffer time to current time */ 
+    /* set ringbuffer time to current time */
     sData->timeValue = solverInfo->currentTime;
 
     if(dasslData->idid == -1) {
