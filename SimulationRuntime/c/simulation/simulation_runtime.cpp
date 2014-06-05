@@ -548,11 +548,6 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   retVal = callSolver(data, result_file_cstr, init_initMethod, init_optiMethod, init_file, init_time, init_lambda_steps, outputVariablesAtEnd, cpuTime);
 
   if (omc_flag[FLAG_ALARM]) {
-    char *endptr;
-    long alarmVal = strtol(omc_flagValue[FLAG_ALARM],&endptr,10);
-    if (errno || *endptr != 0) {
-      throwStreamPrint(data->threadData, "-alarm takes an integer argument (got '%s')", omc_flagValue[FLAG_ALARM]);
-    }
     alarm(0);
   }
 
