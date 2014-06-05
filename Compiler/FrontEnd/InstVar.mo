@@ -1005,6 +1005,9 @@ algorithm
         opt_binding = InstBinding.makeVariableBinding(ty, mod, NFInstUtil.toConst(vt), inPrefix, inName, source);
         start = InstBinding.instStartBindingExp(inMod /* Yup, let's keep the start-binding. It seems sane. */, ty, vt);
 
+        // Propagate the final prefix from the modifier.
+        //fin = InstUtil.propagateModFinal(mod, fin);
+
         // Add the component to the DAE.
         dae2 = InstDAE.daeDeclare(cr, inState, ty, attr, vis, opt_binding, inInstDims,
           start, dae_var_attr, inComment, io, fin, source, false);

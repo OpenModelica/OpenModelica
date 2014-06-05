@@ -6044,6 +6044,29 @@ algorithm
   end match;
 end makeDaeProt;
 
+public function makeDaeVariability
+  input SCode.Variability inVariability;
+  output DAE.VarKind outVariability;
+algorithm
+  outVariability := match(inVariability)
+    case SCode.VAR() then DAE.VARIABLE();
+    case SCode.PARAM() then DAE.PARAM();
+    case SCode.CONST() then DAE.CONST();
+    case SCode.DISCRETE() then DAE.DISCRETE();
+  end match;
+end makeDaeVariability;
+
+public function makeDaeDirection
+  input Absyn.Direction inDirection;
+  output DAE.VarDirection outDirection;
+algorithm
+  outDirection := match(inDirection)
+    case Absyn.INPUT() then DAE.INPUT();
+    case Absyn.OUTPUT() then DAE.OUTPUT();
+    case Absyn.BIDIR() then DAE.BIDIR();
+  end match;
+end makeDaeDirection;
+
 public function mktype
 "From a class typename, its inference state, and a list of subcomponents,
   this function returns DAE.Type.  If the class inference state
@@ -9016,5 +9039,26 @@ algorithm
     else (mods,cmod,m);
   end matchcontinue;
 end noModForUpdatedComponents;
+
+public function propagateModFinal
+  "Takes a component's modifier and final attribute, and return FINAL if either
+   of them is final, otherwise NOT_FINAL."
+  input DAE.Mod inMod;
+  input SCode.Final inFinal;
+  output SCode.Final outFinal;
+algorithm
+  outFinal := match(inMod, inFinal)
+    local
+      SCode.Final fp;
+
+    // If the component is already final, keep it.
+    case (_, SCode.FINAL()) then inFinal;
+    // If we got a modifier, use its final prefix instead.
+    case (DAE.MOD(finalPrefix = fp), _) then fp;
+    // Otherwise, do nothing.
+    else inFinal;
+
+  end match;
+end propagateModFinal;
 
 end InstUtil;
