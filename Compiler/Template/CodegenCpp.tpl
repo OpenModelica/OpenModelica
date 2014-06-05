@@ -6,6 +6,7 @@ import CodegenUtil.*;
 
 
 
+
 template translateModel(SimCode simCode) ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then

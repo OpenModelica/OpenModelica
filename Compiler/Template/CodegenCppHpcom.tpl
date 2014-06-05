@@ -681,6 +681,7 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
                 >>
 end getHpcomDestructorExtension;
 
+
 template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context)
 ::=
   let &varDecls = buffer "" /*BUFD*/
