@@ -125,7 +125,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
      EventHandling _event_handling;
      <%CodegenCpp.MemberVariable(modelInfo)%>
-     
+
      /* <%MemberVariable(modelInfo, hpcOmMemory)%> */
      <%conditionvariable(zeroCrossings,simCode)%>
      Functions _functions;

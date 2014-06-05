@@ -649,74 +649,74 @@ GraphComparator::~GraphComparator()
 
 bool GraphComparator::CompareGraphsLevel(Graph *referenceGraph, Graph *g2, NodeComparator nodeComparator, bool checkCalcTime, std::string *errorMsg)
 {
-//	std::stringstream ss;
+//  std::stringstream ss;
 //
-//	//Create mapping simCodeEq -> node (refernceGraph)
-//	std::map<int,Node*> simCodeEqNodeMapping = std::map<int,Node*>();
-//	for(std::list<Node*>::iterator iter = referenceGraph->nodes.begin(); iter != referenceGraph->nodes.end(); iter++)
-//	{
-//		if((*iter)->simCodeEqs.size() == 0 || (*iter)->simCodeEqs.size() > 1)
-//		{
-//			ss << "Node " << (*iter)->id << " of reference graph has " << (*iter)->simCodeEqs.size() << " equations. One was expected, because summarized nodes are not allowed!" << std::endl;
-//			(*errorMsg) += ss.str().c_str();
-//			return false;
-//		}
+//  //Create mapping simCodeEq -> node (refernceGraph)
+//  std::map<int,Node*> simCodeEqNodeMapping = std::map<int,Node*>();
+//  for(std::list<Node*>::iterator iter = referenceGraph->nodes.begin(); iter != referenceGraph->nodes.end(); iter++)
+//  {
+//    if((*iter)->simCodeEqs.size() == 0 || (*iter)->simCodeEqs.size() > 1)
+//    {
+//      ss << "Node " << (*iter)->id << " of reference graph has " << (*iter)->simCodeEqs.size() << " equations. One was expected, because summarized nodes are not allowed!" << std::endl;
+//      (*errorMsg) += ss.str().c_str();
+//      return false;
+//    }
 //
-//		for(std::list<int>::iterator eqIter = (*iter)->simCodeEqs.begin(); eqIter != (*iter)->simCodeEqs.end(); eqIter++)
-//		{
-//			std::map<int,Node*>::iterator it = simCodeEqNodeMapping.find(*eqIter);
-//			if(it != simCodeEqNodeMapping.end())
-//			{
-//				ss << "SimCode-equation with index " << *eqIter << " was added to node "<< (*it).second->id << " and to node " << (*iter)->id << ". This is not allowed!" << std::endl;
-//				(*errorMsg) += ss.str().c_str();
-//				return false;
-//			}
-//			simCodeEqNodeMapping.insert(std::pair<int, Node*>(*eqIter, *iter));
-//		}
-//	}
+//    for(std::list<int>::iterator eqIter = (*iter)->simCodeEqs.begin(); eqIter != (*iter)->simCodeEqs.end(); eqIter++)
+//    {
+//      std::map<int,Node*>::iterator it = simCodeEqNodeMapping.find(*eqIter);
+//      if(it != simCodeEqNodeMapping.end())
+//      {
+//        ss << "SimCode-equation with index " << *eqIter << " was added to node "<< (*it).second->id << " and to node " << (*iter)->id << ". This is not allowed!" << std::endl;
+//        (*errorMsg) += ss.str().c_str();
+//        return false;
+//      }
+//      simCodeEqNodeMapping.insert(std::pair<int, Node*>(*eqIter, *iter));
+//    }
+//  }
 //
-//	//Create mapping node -> list of edges
-//	std::map<std::string, std::list<Edge*>> edgeMapping = std::map<std::string, std::list<Edge*>>();
-//	for(std::list<Edge*>::iterator iter = referenceGraph->edges.begin(); iter != referenceGraph->edges.end(); iter++)
-//	{
-//		std::list<Edge*> edgeListSource, edgeListTarget;
-//		std::map<std::string*, std::list<Edge*>>::iterator sourceNodeEdgeIter = edgeMapping.find((*iter)->sourceId);
-//		std::map<std::string*, std::list<Edge*>>::iterator targetNodeEdgeIter = edgeMapping.find((*iter)->targetId);
+//  //Create mapping node -> list of edges
+//  std::map<std::string, std::list<Edge*>> edgeMapping = std::map<std::string, std::list<Edge*>>();
+//  for(std::list<Edge*>::iterator iter = referenceGraph->edges.begin(); iter != referenceGraph->edges.end(); iter++)
+//  {
+//    std::list<Edge*> edgeListSource, edgeListTarget;
+//    std::map<std::string*, std::list<Edge*>>::iterator sourceNodeEdgeIter = edgeMapping.find((*iter)->sourceId);
+//    std::map<std::string*, std::list<Edge*>>::iterator targetNodeEdgeIter = edgeMapping.find((*iter)->targetId);
 //
-//		//if(sourceNodeEdgeIter == edgeMapping.end())
-//		//	edgeListSource = std::list<Edge*>();
-//		//else
-//		//	edgeListSource = sourceNodeEdgeIter->second;
+//    //if(sourceNodeEdgeIter == edgeMapping.end())
+//    //  edgeListSource = std::list<Edge*>();
+//    //else
+//    //  edgeListSource = sourceNodeEdgeIter->second;
 //
-//		//if(targetNodeEdgeIter == edgeMapping.end())
-//		//	edgeListTarget = std::list<Edge*>();
-//		//else
-//		//	edgeListTarget = targetNodeEdgeIter->second;
+//    //if(targetNodeEdgeIter == edgeMapping.end())
+//    //  edgeListTarget = std::list<Edge*>();
+//    //else
+//    //  edgeListTarget = targetNodeEdgeIter->second;
 //
-//		edgeListSource.push_back(*iter);
-//		edgeListTarget.push_back(*iter);
+//    edgeListSource.push_back(*iter);
+//    edgeListTarget.push_back(*iter);
 //
-//		//edgeMapping.
-//	}
+//    //edgeMapping.
+//  }
 //
-//	//iterate over all nodes in g2
-//	for(std::list<Node*>::iterator iter = g2->nodes.begin(); iter != g2->nodes.end(); iter++)
-//	{
-//		for(std::list<int>::iterator eqIter = (*iter)->simCodeEqs.begin(); eqIter != (*iter)->simCodeEqs.end(); eqIter++)
-//		{
-//			std::map<int,Node*>::iterator it = simCodeEqNodeMapping.find(*eqIter);
-//			if(it == simCodeEqNodeMapping.end())
-//			{
-//				ss << "SimCode-equation with index " << *eqIter << " solved in node " << (*iter)->id << " was not part of the reference graph" << std::endl;
-//				(*errorMsg) += ss.str().c_str();
-//				return false;
-//			}
-//			//find connected edges
+//  //iterate over all nodes in g2
+//  for(std::list<Node*>::iterator iter = g2->nodes.begin(); iter != g2->nodes.end(); iter++)
+//  {
+//    for(std::list<int>::iterator eqIter = (*iter)->simCodeEqs.begin(); eqIter != (*iter)->simCodeEqs.end(); eqIter++)
+//    {
+//      std::map<int,Node*>::iterator it = simCodeEqNodeMapping.find(*eqIter);
+//      if(it == simCodeEqNodeMapping.end())
+//      {
+//        ss << "SimCode-equation with index " << *eqIter << " solved in node " << (*iter)->id << " was not part of the reference graph" << std::endl;
+//        (*errorMsg) += ss.str().c_str();
+//        return false;
+//      }
+//      //find connected edges
 //
-//		}
-//	}
+//    }
+//  }
 
-	return false;
+  return false;
 }
 
 bool GraphComparator::CompareGraphs(Graph *g1, Graph *g2, CompareMode mode, std::string *errorMsg)
