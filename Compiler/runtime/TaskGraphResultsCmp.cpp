@@ -29,12 +29,12 @@
  */
 #include "TaskGraphResultsCmp.h"
 
-Node::Node() : id(""), name(""), calcTime(-1), threadId(""), taskNumber(-1), taskId(-1)
+Node::Node() : id(""), name(""), calcTime(-1), threadId(""), taskNumber(-1), taskId(-1), simCodeEqs()
 {
 }
 
-Node::Node(std::string id, std::string name, double calcTime, std::string threadId, int taskNumber, int taskId)
-  : id(id), name(name), calcTime(calcTime), threadId(threadId), taskNumber(taskNumber), taskId(taskId)
+Node::Node(std::string id, std::string name, double calcTime, std::string threadId, int taskNumber, int taskId, std::list<int> simCodeEqs)
+  : id(id), name(name), calcTime(calcTime), threadId(threadId), taskNumber(taskNumber), taskId(taskId), simCodeEqs(simCodeEqs)
 {
 
 }
@@ -543,7 +543,7 @@ void GraphCodeParser::ParseGraph(Graph *currentGraph, const char* fileName,NodeC
       std::string nodeIdx = trimmedLine;
       //std::cout << "Found node with index " << nodeIdx << std::endl;
       std::string nodeId = "Node" + nodeIdx;
-      currentGraph->AddNode(new Node(nodeId,nodeId,0,"",0,0));
+      currentGraph->AddNode(new Node(nodeId,nodeId,0,"",0,0,std::list<int>()));
     }
     else if(regexec(&nodeParentRegex, line.c_str(), MAX_MATCHES, matches, 0) == 0)
     {
@@ -552,7 +552,7 @@ void GraphCodeParser::ParseGraph(Graph *currentGraph, const char* fileName,NodeC
       unsigned int spaceIdx = trimmedLine.find(' ');
       std::string nodeIdx = trimmedLine.substr(0, spaceIdx);
       std::string nodeId = "Node" + nodeIdx;
-      currentGraph->AddNode(new Node(nodeId,nodeId,0,"",0,0));
+      currentGraph->AddNode(new Node(nodeId,nodeId,0,"",0,0,std::list<int>()));
       //std::cout << "Found node with index " << nodeIdx;
 
       if(trimmedLine.size() < spaceIdx + 13)
@@ -645,6 +645,78 @@ GraphComparator::GraphComparator()
 
 GraphComparator::~GraphComparator()
 {
+}
+
+bool GraphComparator::CompareGraphsLevel(Graph *referenceGraph, Graph *g2, NodeComparator nodeComparator, bool checkCalcTime, std::string *errorMsg)
+{
+//	std::stringstream ss;
+//
+//	//Create mapping simCodeEq -> node (refernceGraph)
+//	std::map<int,Node*> simCodeEqNodeMapping = std::map<int,Node*>();
+//	for(std::list<Node*>::iterator iter = referenceGraph->nodes.begin(); iter != referenceGraph->nodes.end(); iter++)
+//	{
+//		if((*iter)->simCodeEqs.size() == 0 || (*iter)->simCodeEqs.size() > 1)
+//		{
+//			ss << "Node " << (*iter)->id << " of reference graph has " << (*iter)->simCodeEqs.size() << " equations. One was expected, because summarized nodes are not allowed!" << std::endl;
+//			(*errorMsg) += ss.str().c_str();
+//			return false;
+//		}
+//
+//		for(std::list<int>::iterator eqIter = (*iter)->simCodeEqs.begin(); eqIter != (*iter)->simCodeEqs.end(); eqIter++)
+//		{
+//			std::map<int,Node*>::iterator it = simCodeEqNodeMapping.find(*eqIter);
+//			if(it != simCodeEqNodeMapping.end())
+//			{
+//				ss << "SimCode-equation with index " << *eqIter << " was added to node "<< (*it).second->id << " and to node " << (*iter)->id << ". This is not allowed!" << std::endl;
+//				(*errorMsg) += ss.str().c_str();
+//				return false;
+//			}
+//			simCodeEqNodeMapping.insert(std::pair<int, Node*>(*eqIter, *iter));
+//		}
+//	}
+//
+//	//Create mapping node -> list of edges
+//	std::map<std::string, std::list<Edge*>> edgeMapping = std::map<std::string, std::list<Edge*>>();
+//	for(std::list<Edge*>::iterator iter = referenceGraph->edges.begin(); iter != referenceGraph->edges.end(); iter++)
+//	{
+//		std::list<Edge*> edgeListSource, edgeListTarget;
+//		std::map<std::string*, std::list<Edge*>>::iterator sourceNodeEdgeIter = edgeMapping.find((*iter)->sourceId);
+//		std::map<std::string*, std::list<Edge*>>::iterator targetNodeEdgeIter = edgeMapping.find((*iter)->targetId);
+//
+//		//if(sourceNodeEdgeIter == edgeMapping.end())
+//		//	edgeListSource = std::list<Edge*>();
+//		//else
+//		//	edgeListSource = sourceNodeEdgeIter->second;
+//
+//		//if(targetNodeEdgeIter == edgeMapping.end())
+//		//	edgeListTarget = std::list<Edge*>();
+//		//else
+//		//	edgeListTarget = targetNodeEdgeIter->second;
+//
+//		edgeListSource.push_back(*iter);
+//		edgeListTarget.push_back(*iter);
+//
+//		//edgeMapping.
+//	}
+//
+//	//iterate over all nodes in g2
+//	for(std::list<Node*>::iterator iter = g2->nodes.begin(); iter != g2->nodes.end(); iter++)
+//	{
+//		for(std::list<int>::iterator eqIter = (*iter)->simCodeEqs.begin(); eqIter != (*iter)->simCodeEqs.end(); eqIter++)
+//		{
+//			std::map<int,Node*>::iterator it = simCodeEqNodeMapping.find(*eqIter);
+//			if(it == simCodeEqNodeMapping.end())
+//			{
+//				ss << "SimCode-equation with index " << *eqIter << " solved in node " << (*iter)->id << " was not part of the reference graph" << std::endl;
+//				(*errorMsg) += ss.str().c_str();
+//				return false;
+//			}
+//			//find connected edges
+//
+//		}
+//	}
+
+	return false;
 }
 
 bool GraphComparator::CompareGraphs(Graph *g1, Graph *g2, CompareMode mode, std::string *errorMsg)

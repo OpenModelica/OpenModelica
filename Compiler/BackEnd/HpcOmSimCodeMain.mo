@@ -169,6 +169,7 @@ algorithm
       Option<HpcOmSimCode.MemoryMap> optTmpMemoryMap;
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _, _, _, _, _, _, _, _) equation
 
+      print(Util.if_(Flags.isSet(Flags.HPCOM_ANALYZATION_MODE), "Using analyzation mode\n", ""));
       //Setup
       //-----
       System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
@@ -209,7 +210,7 @@ algorithm
       //--------------
       taskGraphOde = arrayCopy(taskGraph);
       taskGraphDataOde = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
-      (taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraphOde,taskGraphDataOde,inBackendDAE,filenamePrefix);
+      (taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraphOde,taskGraphDataOde,inBackendDAE);
       Debug.execStat("hpcom get ODE system", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
 
       taskGraphMetaValid = HpcOmTaskGraph.validateTaskGraphMeta(taskGraphDataOde, inBackendDAE);
@@ -428,12 +429,14 @@ algorithm
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "listr");
+        print("Using list reverse Scheduler\n");
         schedule = HpcOmScheduler.createListScheduleReverse(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
       then (schedule,iSimCode,iTaskGraphMeta,iSccSimEqMapping);
     case(_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "list");
+        print("Using list Scheduler\n");
         schedule = HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
       then (schedule,iSimCode,iTaskGraphMeta,iSccSimEqMapping);
     case(_,_,_,_,_,_)

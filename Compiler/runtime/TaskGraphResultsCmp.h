@@ -54,9 +54,10 @@ struct Node
   std::string threadId;
   int taskNumber;
   int taskId;
+  std::list<int> simCodeEqs;
 
   Node();
-  Node(std::string id, std::string name, double calcTime, std::string threadId, int taskNumber, int taskId);
+  Node(std::string id, std::string name, double calcTime, std::string threadId, int taskNumber, int taskId, std::list<int> simCodeEqs);
   ~Node();
 };
 #endif //TGRC_NODE
@@ -243,5 +244,11 @@ public:
   static bool IsEdgePartOfGraph(Edge *edge, Graph *graph, EdgeComparator edgeComparator);
 protected:
   static bool FillEdgesWithNodeNames(std::list<Edge*> edges, std::map<std::string, Node*> *nodeIdNodeMap);
+
+  /**
+   * Checks if all nodes of g2 and the connected equations are valid regarding the level-structure of the reference graph.
+   * Attention: The reference graph must contain the original ode-structure without summarized nodes.
+   */
+  static bool CompareGraphsLevel(Graph *referenceGraph, Graph *g2, NodeComparator nodeComparator, bool checkCalcTime, std::string *errorMsg);
 };
 #endif //TGRC_GRAPHCOMPARATOR

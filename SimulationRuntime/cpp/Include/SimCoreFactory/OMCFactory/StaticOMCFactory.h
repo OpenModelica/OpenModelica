@@ -4,6 +4,7 @@
 #include <Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/SimController/SimController.h>
+#include <Core/SimulationSettings/ISimControllerSettings.h>
 
 class StaticOMCFactory : public OMCFactory
 {

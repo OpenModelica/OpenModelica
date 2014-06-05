@@ -6,10 +6,8 @@
 #include "LibrariesConfig.h"
 #include "Configuration.h"
 
-SimController::SimController(PATH library_path,PATH modelicasystem_path)
-    :SimControllerPolicy(library_path,modelicasystem_path,library_path)
+SimController::SimController(PATH library_path,PATH modelicasystem_path) : SimControllerPolicy(library_path, modelicasystem_path,library_path), _initialized(false)
 {
-
   _config =   boost::shared_ptr<Configuration>(new Configuration(_library_path,_config_path,modelicasystem_path));
   _algloopsolverfactory = createAlgLoopSolverFactory(_config->getGlobalSettings());
 }

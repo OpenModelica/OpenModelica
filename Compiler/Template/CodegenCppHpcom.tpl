@@ -120,12 +120,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
      //Variables:
-     <%addHpcomArrayHeaders%>
+     /* <%addHpcomArrayHeaders%> */
      <%addHpcomVarHeaders%>
 
      EventHandling _event_handling;
-
-     <%MemberVariable(modelInfo, hpcOmMemory)%>
+     <%CodegenCpp.MemberVariable(modelInfo)%>
+     
+     /* <%MemberVariable(modelInfo, hpcOmMemory)%> */
      <%conditionvariable(zeroCrossings,simCode)%>
      Functions _functions;
 
@@ -178,11 +179,11 @@ template getAddHpcomFunctionHeaders(Option<Schedule> hpcOmScheduleOpt)
   match hpcOmScheduleOpt
     case SOME(hpcOmSchedule as LEVELSCHEDULE(__)) then
         match type
-            case ("openmp") then
+            case ("mixed") then
                 <<
                 void evaluateThreadFunc0();
                 >>
-            else ""
+            else ''
     case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
         let locks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_createLock(idx, "lock", type); separator="\n"
 
@@ -228,7 +229,7 @@ template getAddHpcomVarHeaders(Option<Schedule> hpcOmScheduleOpt)
   match hpcOmScheduleOpt
     case SOME(hpcOmSchedule as LEVELSCHEDULE(__)) then
         match type
-            case ("openmp") then
+            case ("mixed") then
                 <<
                 <%generateThreadHeaderDecl(0, "pthreads")%>
                 <%function_HPCOM_createLock("startEvaluateLock","","pthreads")%>
@@ -283,6 +284,10 @@ template generateHpcomSpecificIncludes(SimCode simCode)
 
     match type
         case ("openmp") then
+        <<
+        #include <omp.h>
+        >>
+        case ("mixed") then
         <<
         #include <omp.h>
         #include <boost/thread/mutex.hpp>
@@ -559,7 +564,7 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
   match hpcOmScheduleOpt
     case SOME(hpcOmSchedule as LEVELSCHEDULE(__)) then
         match type
-            case ("openmp") then
+            case ("mixed") then
                 <<
                 command = IContinuous::UNDEF_UPDATE;
                 finished = false;
@@ -654,7 +659,7 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
   match hpcOmScheduleOpt
     case SOME(hpcOmSchedule as LEVELSCHEDULE(__)) then
         match type
-            case ("openmp") then
+            case ("mixed") then
                 <<
                 finished = true;
                 <%function_HPCOM_releaseLock("startEvaluateLock","","pthreads")%>
@@ -695,6 +700,8 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
 
        <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther)%>
 
+       <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode,contextOther) %>
+
       <%parCode%>
       >>
 end update;
@@ -713,6 +720,8 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
   match hpcOmScheduleOpt
     case SOME(hpcOmSchedule as LEVELSCHEDULE(__)) then
       let odeEqs = hpcOmSchedule.tasksOfLevels |> tasks => function_HPCOM_Level(allEquationsPlusWhen, tasks, type, &varDecls, simCode); separator="\n"
+      match type
+        case ("mixed") then
           <<
           static bool state_var_reinitialized = false;
           static bool firstRun = true;
@@ -761,6 +770,17 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
 
           }
           >>
+        case ("openmp") then
+          <<
+          void <%lastIdentOfPath(name)%>::evaluateODE(const UPDATETYPE command)
+          {
+             #pragma omp parallel num_threads(<%getConfigInt(NUM_PROC)%>)
+             {
+                <%odeEqs%>
+             }
+          }
+          >>
+        else ""
    case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
 
       match type

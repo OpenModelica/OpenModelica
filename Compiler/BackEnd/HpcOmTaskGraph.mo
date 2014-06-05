@@ -1547,12 +1547,12 @@ end updateMappingTuple;
 //------------------------------------------
 //------------------------------------------
 
-public function getOdeSystem " gets the graph and the adjacencyLst only for the ODEsystem. the der(states) and nodes that evaluate zerocrossings are the only branches of the task graph
+public function getOdeSystem "gets the graph and the adjacencyLst only for the ODEsystem. the der(states) and nodes that evaluate zerocrossings are the only branches of the task graph
+attention: This function will overwrite the values of graphIn and graphDataIn with new values. If you want to hold the values of graphIn and graphDataIn, you have to duplicate them first!
 author: Waurich TUD 2013-06"
   input TaskGraph graphIn;
   input TaskGraphMeta graphDataIn;
   input BackendDAE.BackendDAE systIn;
-  input String filenamePrefix;
   output TaskGraph graphOdeOut;
   output TaskGraphMeta graphDataOdeOut;
 protected
@@ -1708,6 +1708,7 @@ algorithm
         (_,cutNodes,_) = List.intersection1OnTrue(noChildren,listAppend(stateNodes,deleteNodes),intEq);
         true = List.isEmpty(cutNodes);
         //print("pre cut\n");
+        //print("cutting nodes: " +& stringDelimitList(List.map(eventNodes,intString),",") +& "\n");
         //printTaskGraph(graphIn);
         graphTmp = removeEntriesInGraph(graphIn,eventNodes);
         graphTmpLst = arrayList(graphIn);
