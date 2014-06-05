@@ -1325,16 +1325,16 @@ FACTORYFILE=OMCpp<%fileNamePrefix%>FactoryExport.cpp
 MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
 MAINOBJ=OMCpp<%fileNamePrefix%>Main$(EXEEXT)
 SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
+ALGLOOPSOBJ=<%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
+JACALGLOOPSOBJ = <%(jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 => (mat |> (eqs,_,_) =>  algloopcppfilenames(eqs,simCode) ;separator="") ;separator="")%>
 
-
-
-CPPFILES=$(SYSTEMFILE) $(FUNCTIONFILE) $(INITFILE) $(WRITEOUTPUTFILE) $(EXTENSIONFILE) $(FACTORYFILE) $(JACOBIANFILE) $(STATESELECTIONFILE)  <%(jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 => (mat |> (eqs,_,_) =>  algloopcppfilenames(eqs,simCode) ;separator="") ;separator="")%> <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
+CPPFILES=$(SYSTEMFILE)<%\t%>$(FUNCTIONFILE)<%\t%>$(INITFILE)<%\t%>$(WRITEOUTPUTFILE)<%\t%>$(EXTENSIONFILE)<%\t%>$(FACTORYFILE)<%\t%>$(JACOBIANFILE)<%\t%>$(STATESELECTIONFILE)\<%\n%>$(ALGLOOPSOBJ)<%\t%>$(JACALGLOOPSOBJ)
 OFILES=$(CPPFILES:.cpp=.o)
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
 
 <%fileNamePrefix%>: $(MAINFILE) $(OFILES)
-<%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS) $(LDSYTEMFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%>
+<%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(CPPFILES) $(CPPFLAGS) $(LDSYTEMFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%>
 <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
 <% if boolNot(stringEq(makefileParams.platform, "win32")) then
   <<
@@ -3401,7 +3401,10 @@ template Update(SimCode simCode)
 match simCode
 case SIMCODE(__) then
   <<
-  <%update(allEquations,whenClauses,simCode,contextOther)%>
+  <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete)%>
+  <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther)%>
+  <%createEvaluate(odeEquations,whenClauses,simCode,contextOther)%>
+  <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode,contextOther)%>
   >>
 end Update;
 /*<%update(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>*/
@@ -3937,13 +3940,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual void setContinuousStates(const double* z);
 
     // Update transfer behavior of the system of equations according to command given by solver
-    virtual bool evaluate(const UPDATETYPE command =IContinuous::UNDEF_UPDATE);
-
-    /*! Evaluates only the equations whose indices are passed to it. */
-    bool evaluate_selective(const std::vector<int>& indices);
-
-    /*! Evaluates only a single equation by index. */
-    bool evaluate_single(const int index);
+    virtual bool evaluateAll(const UPDATETYPE command =IContinuous::UNDEF_UPDATE);
+    virtual void evaluateODE(const UPDATETYPE command =IContinuous::UNDEF_UPDATE);
+    virtual void evaluateZeroFuncs(const UPDATETYPE command =IContinuous::UNDEF_UPDATE);
+   
 
     // Provide the right hand side (according to the index)
     virtual void getRHS(double* f);
@@ -4013,7 +4013,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 >>
 end generateMethodDeclarationCode;
+ /*! Evaluates only the equations whose indices are passed to it. */
+    //bool evaluate_selective(const std::vector<int>& indices);
 
+    /*! Evaluates only a single equation by index. */
+    //bool evaluate_single(const int index);
 template generateAlgloopMethodDeclarationCode(SimCode simCode)
 
 ::=
@@ -6057,7 +6061,7 @@ end equation_;
 
 
 
-template equation_function_format(SimEqSystem eq, Integer arrayIndex, Context context, Text &varDecls, Text &eqfuncs, SimCode simCode)
+template equation_function_call(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
@@ -6067,18 +6071,20 @@ template equation_function_format(SimEqSystem eq, Integer arrayIndex, Context co
     let ix_str = equationIndex(eq)
 
     let &varDeclsLocal = buffer "" /*BUFL*/
-    let &eqfuncs += equation_function_format_single_func(eq, context, &varDeclsLocal, simCode)
-
     <<
-    (this->*equations_array[<%arrayIndex%>])();
+      evaluate_<%ix_str%>();
     >>
   end match
-end equation_function_format;
-
-
-template equation_function_format_single_func(SimEqSystem eq, Context context, Text &varDeclsLocal, SimCode simCode)
+end equation_function_call;
+/*
+<<
+      (this->*equations_array[<%arrayIndex%>])();
+    >>
+    */
+template equation_function_create_single_func(SimEqSystem eq, Context context,  SimCode simCode)
 ::=
   let ix_str = equationIndex(eq)
+  let &varDeclsLocal = buffer "" /*BUFD*/
   let body =
   match eq
     case e as SES_SIMPLE_ASSIGN(__)
@@ -6114,7 +6120,7 @@ template equation_function_format_single_func(SimEqSystem eq, Context context, T
 
   >>
 
-end equation_function_format_single_func;
+end equation_function_create_single_func;
 
 
 
@@ -6579,7 +6585,7 @@ template algloopcppfilenames(list<SimEqSystem> allEquations,SimCode simCode)
   let &varDecls = buffer "" /*BUFD*/
   let algloopsolver = (allEquations |> eqs => (eqs |> eq =>
       algloopcppfilenames2(eq, contextOther, &varDecls /*BUFC*/,simCode))
-    ;separator=" ")
+    ;separator="\t" ;align=10;alignSeparator="\\\n\t"  )
 
   <<
   <%algloopsolver%>
@@ -7407,11 +7413,11 @@ case CAST(__) then
   case T_ENUMERATION(__)   then '((modelica_integer)<%expVar%>)'
   case T_BOOL(__)   then '((bool)<%expVar%>)'
   case T_ARRAY(__) then
-    let arrayTypeStr = expTypeArray(ty)
+    let arrayTypeStr = expTypeArrayforDim(ty)
     let tvar = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
     let to = expTypeShort(ty)
     let from = expTypeFromExpShort(exp)
-    let &preExp += 'cast_<%from%>_array_to_<%to%>(&<%expVar%>, &<%tvar%>);<%\n%>'
+    let &preExp += 'cast_<%from%>_array_to_<%to%>(&<%expVar%>, &<%tvar%>);<%\n%>' /*test2*/
     '<%tvar%>'
   case T_COMPLEX(complexClassType=rec as RECORD(__))   then '(*((<%underscorePath(rec.path)%>*)&<%expVar%>))'
   else
@@ -9656,42 +9662,102 @@ template update(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> dis
   >>
 end update;
 */
-template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context)
+
+
+template equationFunctions( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context)
+::=
+ 
+ let equation_func_calls = (allEquationsPlusWhen |> eq  =>
+                    equation_function_create_single_func(eq, context/*BUFC*/, simCode)
+                    ;separator="\n")
+<<
+ <%equation_func_calls%>
+>>
+end equationFunctions;
+
+template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context)
 ::=
   let className = lastIdentOfPathFromSimCode(simCode)
   let &varDecls = buffer "" /*BUFD*/
 
   let &eqfuncs = buffer ""
-  let equation_func_calls = (allEquationsPlusWhen |> eq hasindex i0 =>
-                    equation_function_format(eq, i0, contextSimulationDiscrete, &varDecls /*BUFC*/, &eqfuncs, simCode)
+  let equation_all_func_calls = (allEquationsPlusWhen |> eq  =>
+                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode)
                     ;separator="\n")
 
-
-
+  
   let reinit = (whenClauses |> when hasindex i0 =>
          genreinits(when, &varDecls,i0,simCode,context)
     ;separator="\n";empty)
 
   <<
-
-  <%eqfuncs%>
-
-  bool <%className%>::evaluate(const UPDATETYPE command)
+  bool <%className%>::evaluateAll(const UPDATETYPE command)
   {
     bool state_var_reinitialized = false;
-
     <%varDecls%>
-
     /* Evaluate Equations*/
-    <%equation_func_calls%>
-
+    <%equation_all_func_calls%>
     /* Reinits */
     <%reinit%>
-
     return state_var_reinitialized;
   }
+ >>
+end createEvaluateAll;
 
-  /*! Evaluates only the equations whose indexs are passed to it. */
+
+
+template createEvaluate(list<list<SimEqSystem>> odeEquations,list<SimWhenClause> whenClauses, SimCode simCode, Context context)
+::=
+  let className = lastIdentOfPathFromSimCode(simCode)
+  let &varDecls = buffer "" /*BUFD*/
+
+
+ 
+  
+   let equation_ode_func_calls = (odeEquations |> eqs => (eqs |> eq  =>
+                    equation_function_call(eq, context, &varDecls /*BUFC*/, simCode);separator="\n")
+                   )
+
+  <<
+  void <%className%>::evaluateODE(const UPDATETYPE command)
+  {
+    
+    <%varDecls%>
+    /* Evaluate Equations*/
+    <%equation_ode_func_calls%>
+
+  }
+  >>
+end createEvaluate;
+
+template createEvaluateZeroFuncs( list<SimEqSystem> equationsForZeroCrossings, SimCode simCode, Context context)
+::=
+  let className = lastIdentOfPathFromSimCode(simCode)
+  let &varDecls = buffer "" /*BUFD*/
+
+  let &eqfuncs = buffer ""
+  let equation_zero_func_calls = (equationsForZeroCrossings |> eq  =>
+                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode)
+                    ;separator="\n")
+
+  
+
+
+  <<
+  void <%className%>::evaluateZeroFuncs(const UPDATETYPE command)
+  {
+   
+    <%varDecls%>
+    /* Evaluate Equations*/
+    <%equation_zero_func_calls%>
+  
+  
+  }
+ >>
+end createEvaluateZeroFuncs;
+
+/*
+ //! Evaluates only the equations whose indexs are passed to it. 
   bool <%className%>::evaluate_selective(const std::vector<int>& indices) {
     std::vector<int>::const_iterator iter = indices.begin();
     int offset;
@@ -9702,15 +9768,14 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
    return false;
   }
 
-  /*! Evaluates only a single equation by index. */
+  //! Evaluates only a single equation by index. 
   bool <%className%>::evaluate_single(const int index) {
     int offset = index - first_equation_index;
     (this->*equations_array[offset])();
     return false;
   }
+  */
 
-  >>
-end update;
  /*Ranking: removed from update: if(command & IContinuous::RANKING) checkConditions();*/
 
 template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int,SimCode simCode, Context context)

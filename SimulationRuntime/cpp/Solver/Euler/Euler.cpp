@@ -713,7 +713,7 @@ void Euler::giveZeroVal(const double &t,const double *y,double *zeroValue)
     _continuous_system->setContinuousStates(y);
 
     // System aktualisieren
-    _continuous_system->evaluate(IContinuous::ALL);  // vxworksupdate
+    _continuous_system->evaluateODE(IContinuous::ALL);  // vxworksupdate
     _event_system->getZeroFunc(zeroValue);
 }
 
@@ -1027,7 +1027,7 @@ void Euler::doMyZeroSearch()
 
         _time_system->setTime(_tCurrent);
         _continuous_system->setContinuousStates(_z);
-        _continuous_system->evaluate(IContinuous::ALL);  // vxworksupdate
+        _continuous_system->evaluateODE(IContinuous::ALL);  // vxworksupdate
 
 
         delete [] yL;
@@ -1055,7 +1055,7 @@ void Euler::calcFunction(const double& t, const double* z, double* f)
 
     _time_system->setTime(t);
     _continuous_system->setContinuousStates(z);
-    _continuous_system->evaluate(IContinuous::ALL);    // vxworksupdate
+    _continuous_system->evaluateODE(IContinuous::ALL);    // vxworksupdate
     _continuous_system->getRHS(f);
 }
 
@@ -1070,7 +1070,7 @@ void Euler::solverOutput(const int& stp, const double& t, double* z, const doubl
         _firstStep    = false;
 
         // Update the system
-        _continuous_system->evaluate(IContinuous::ALL);  // vxworksupdate
+        _continuous_system->evaluateAll(IContinuous::ALL);  // vxworksupdate
 
         // read variables from the system
         _continuous_system->getContinuousStates(z);
@@ -1099,7 +1099,7 @@ void Euler::solverOutput(const int& stp, const double& t, double* z, const doubl
         _continuous_system->setContinuousStates(z);
 
         // Update the system
-        _continuous_system->evaluate(IContinuous::ALL);   // vxworksupdate
+        _continuous_system->evaluateAll(IContinuous::ALL);   // vxworksupdate
 
 
         if(_zeroVal && (stp > 0))
@@ -1141,7 +1141,7 @@ void Euler::solverOutput(const int& stp, const double& t, double* z, const doubl
                     _continuous_system->setContinuousStates(_zWrite);
 
                     // System aktualisieren
-                    _continuous_system->evaluate(IContinuous::ALL);  // vxworksupdate
+                    _continuous_system->evaluateAll(IContinuous::ALL);  // vxworksupdate
                    /*if(stp%_outputStp==0)*/
 
                     SolverDefaultImplementation::writeToFile(stp, _tLastWrite, h);
@@ -1155,7 +1155,7 @@ void Euler::solverOutput(const int& stp, const double& t, double* z, const doubl
                 // setVars
                 _continuous_system->setContinuousStates(z);
 
-                _continuous_system->evaluate(IContinuous::ALL);  // vxworksupdate
+                _continuous_system->evaluateAll(IContinuous::ALL);  // vxworksupdate
 
             }
         }

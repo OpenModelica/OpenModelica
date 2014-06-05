@@ -34,6 +34,9 @@ public:
     virtual OutputFormat getOutputFormat();
     virtual void setOutputFormat(OutputFormat format);
 
+     virtual LogType getLogType();
+    virtual void setLogType(LogType);
+    
     //solver used for simulation
     virtual string    getSelectedSolver();
     virtual void setSelectedSolver(string);
@@ -62,7 +65,7 @@ private:
         _resultsfile_name,
         _runtimeLibraryPath;
     OutputFormat _outputFormat;
-
+    LogType _log_type;
 
     //Serialization of settings class
 

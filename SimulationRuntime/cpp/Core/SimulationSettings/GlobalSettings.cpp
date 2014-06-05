@@ -63,6 +63,17 @@ void GlobalSettings::setOutputFormat(OutputFormat format)
 {
    _outputFormat=format;
 }
+
+ LogType GlobalSettings::getLogType()
+ {
+   return _log_type;
+ }
+ void GlobalSettings::setLogType(LogType type)
+ { 
+  _log_type  = type;
+ }
+
+
  ///< Write out results ([false,true]; default: true)
 bool GlobalSettings::getResultsOutput()
 {

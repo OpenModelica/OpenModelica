@@ -33,6 +33,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      int opt;
      int portnum;
       std::map<std::string,OutputFormat> outputFormatMap = map_list_of("csv", CSV)("mat", MAT)("empty",EMPTY);
+       std::map<std::string,LogType> logTypeMap = map_list_of("stats", STATS)("nls", NLS)("ode",ODE)("off",OFF);
      po::options_description desc("Allowed options");
      desc.add_options()
           ("help", "produce help message")
@@ -47,6 +48,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
           ("OutputFormat,o", po::value< string >()->default_value("csv"),  "output Format [csv,empty]")
           ("number-of-intervalls,v", po::value< int >()->default_value(500),  "number of intervalls")
           ("tollerance,y", po::value< double >()->default_value(1e-6),  "solver tollerance")
+          ("log-type,l", po::value< string >()->default_value("off"),  "log information: stats ,nls,ode,off")
           ;
      po::variables_map vm;
      po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -132,6 +134,9 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
 
      _library_path = libraries_path;
     _modelicasystem_path = modelica_path;
+    
+   
+     
      return settings;
 
 }

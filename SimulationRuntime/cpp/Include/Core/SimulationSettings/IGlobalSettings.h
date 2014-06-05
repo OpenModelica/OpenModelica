@@ -18,6 +18,7 @@ using std::string;
 #endif
 
 enum OutputFormat {CSV, MAT, EMPTY};
+enum LogType {OFF,STATS, NLS, ODE};
 class IGlobalSettings
 {
 
@@ -37,6 +38,9 @@ public:
     virtual void setResultsOutput(bool)=0;
     virtual OutputFormat getOutputFormat() = 0;
     virtual void setOutputFormat(OutputFormat) = 0;
+    virtual LogType getLogType() = 0;
+    virtual void setLogType(LogType) = 0;
+    
     virtual bool useEndlessSim()=0;
     virtual void useEndlessSim(bool)=0;
     ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)

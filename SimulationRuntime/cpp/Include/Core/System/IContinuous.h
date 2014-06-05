@@ -100,9 +100,9 @@ public:
 
     /// Update transfer behavior of the system of equations according to command given by solver
 
-    virtual bool evaluate(const UPDATETYPE command = UNDEF_UPDATE) = 0;  // vxworks
-
-
+    virtual bool evaluateAll(const UPDATETYPE command = UNDEF_UPDATE) = 0;  // vxworks
+    virtual void evaluateODE(const UPDATETYPE command = UNDEF_UPDATE) = 0;  // vxworks
+    virtual void evaluateZeroFuncs(const UPDATETYPE command = UNDEF_UPDATE)= 0; 
 
     virtual void stepCompleted(double time) = 0;
 

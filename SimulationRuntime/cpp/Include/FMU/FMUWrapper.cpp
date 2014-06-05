@@ -72,7 +72,7 @@ void FMUWrapper::updateModel()
   if(!_need_update)
     return;
 
-  _model->evaluate(); // This will calculate the values for derivate variables, algebraic variables
+  _model->evaluateAll(); // This will calculate the values for derivate variables, algebraic variables
   _need_update = false;
 }
 
@@ -136,7 +136,7 @@ fmiStatus FMUWrapper::initialize(fmiBoolean toleranceControlled, fmiReal relativ
   int iter=0;
   while(restart && !(iter++ > 10))
   {
-    _model->evaluate(IContinuous::ALL);
+    _model->evaluateAll(IContinuous::ALL);
     restart = _model->checkForDiscreteEvents();
   }
 

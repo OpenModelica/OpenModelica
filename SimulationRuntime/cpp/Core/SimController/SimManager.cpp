@@ -3,7 +3,26 @@
 #include <Policies/FactoryConfig.h>
 #include <OMCFactory/OMCFactory.h>
 #include "SimManager.h"
+/*
+#include <boost/log/common.hpp>
+#include <boost/log/expressions.hpp>
 
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/console.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+
+#include <boost/log/attributes/timer.hpp>
+#include <boost/log/attributes/named_scope.hpp>
+
+#include <boost/log/sources/logger.hpp>
+
+#include <boost/log/support/date_time.hpp>
+
+namespace logging = boost::log;
+namespace attrs = boost::log::attributes;
+namespace src = boost::log::sources;
+namespace keywords = boost::log::keywords;
+*/
 SimManager::SimManager(boost::shared_ptr<IMixedSystem> system,Configuration* config)
       :_mixed_system(system)
       ,_config(config)
@@ -77,9 +96,16 @@ void SimManager::initialize()
             _events                        = new bool[_dimZeroFunc];
             memset(_events,false,_dimZeroFunc*sizeof(bool));
       }
-
+      /*
+      //Log initialisieren
+      logging::add_console_log(std::clog, keywords::format = "%TimeStamp%: %Message%");
+      // Also let's add some commonly used attributes, like timestamp and record counter.
+      logging::add_common_attributes();
+      logging::core::get()->add_thread_attribute("Scope", attrs::named_scope());
+     */
       /* Logs vorübergehend deaktiviert
       BOOST_LOG_SEV(simmgr_lg::get(), simmgr_info) << "Assemble completed";*/
+      
 }
 void SimManager::runSimulation()
 {
@@ -157,10 +183,10 @@ void SimManager::writeProperties()
       BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Schritte insgesamt des Solvers:   " << _totStps.at(0);
       BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Akzeptierte Schritte des Solvers: " << _accStps.at(0);
       BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Verworfene Schritte  des Solvers: " << _rejStps.at(0);
-
+*/
       // Solver-Properties
-      _solver->writeSimulationInfo(os);
-
+      _solver->writeSimulationInfo();
+/*
       }
       else
       {
@@ -396,7 +422,7 @@ void SimManager::runSingleProcess()
           {
              timeevent_system->handleTimeEvent(_timeeventcounter);
           }
-            cont_system->evaluate(IContinuous::CONTINUOUS);      // vxworksupdate
+            cont_system->evaluateODE(IContinuous::CONTINUOUS);      // vxworksupdate
             event_system->getZeroFunc(zeroVal_new);
 
             for(int i=0;i<_dimZeroFunc;i++)
@@ -428,7 +454,7 @@ void SimManager::runSingleProcess()
                               startTime = endTime;
                               _timeeventcounter[iter->second]++;
                               timeevent_system->handleTimeEvent(_timeeventcounter);
-                              cont_system->evaluate(IContinuous::CONTINUOUS);   // vxworksupdate
+                              cont_system->evaluateODE(IContinuous::CONTINUOUS);   // vxworksupdate
                               event_system->getZeroFunc(zeroVal_new);
                               for(int i=0;i<_dimZeroFunc;i++)
                                     _events[i] = bool(zeroVal_new[i]);
@@ -454,7 +480,7 @@ void SimManager::runSingleProcess()
                               {
                                     _timeeventcounter[iter->second]++;
                                     timeevent_system->handleTimeEvent(_timeeventcounter);
-                                    cont_system->evaluate(IContinuous::CONTINUOUS);   // vxworksupdate
+                                    cont_system->evaluateODE(IContinuous::CONTINUOUS);   // vxworksupdate
                                     event_system->getZeroFunc(zeroVal_new);
                                     for(int i=0;i<_dimZeroFunc;i++)
                                           _events[i] = bool(zeroVal_new[i]);
@@ -517,7 +543,7 @@ void SimManager::runSingleProcess()
                               if(zeroVal_new)
                               {
                                     timeevent_system->handleTimeEvent(_timeeventcounter);
-                                    cont_system->evaluate(IContinuous::CONTINUOUS);   // vxworksupdate
+                                    cont_system->evaluateODE(IContinuous::CONTINUOUS);   // vxworksupdate
                                     event_system->getZeroFunc(zeroVal_new);
                                     for(int i=0;i<_dimZeroFunc;i++)
                                           _events[i] = bool(zeroVal_new[i]);

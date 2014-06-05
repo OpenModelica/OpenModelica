@@ -26,6 +26,8 @@ public:
     virtual void setInfoOutput(bool) {}
     virtual string    getOutputPath() { return "./"; }
     virtual OutputFormat getOutputFormat(){return CSV;}
+     virtual LogType getLogType() {return OFF;}
+    virtual void setLogType(LogType) {}
     virtual void setOutputFormat(OutputFormat) {}
     virtual void setOutputPath(string) {}
     virtual string    getSelectedSolver() { return "Euler"; }

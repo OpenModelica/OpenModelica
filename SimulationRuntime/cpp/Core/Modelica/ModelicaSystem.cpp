@@ -38,9 +38,13 @@ void Modelica::resetTimeEvents()
 }
 
 
-bool Modelica::evaluate(const UPDATETYPE command)
+bool Modelica::evaluateAll(const UPDATETYPE command)
 {
   return false;
+}
+void Modelica::evaluateODE(const UPDATETYPE command)
+{
+  
 }
 
 
@@ -157,7 +161,10 @@ void Modelica::setRHS(const double* f)
   SystemDefaultImplementation::setRHS(f);
 }
 
+void Modelica::evaluateZeroFuncs(const UPDATETYPE command)
+{
 
+}
 
 void Modelica::getZeroFunc(double* f)
 {

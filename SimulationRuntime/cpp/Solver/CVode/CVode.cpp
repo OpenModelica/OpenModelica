@@ -102,7 +102,7 @@ void Cvode::initialize()
     //
 
     // Set initial values for CVODE
-    _continuous_system->evaluate(IContinuous::CONTINUOUS);
+    _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
     _continuous_system->getContinuousStates(_zInit);
     memcpy(_z,_zInit,_dimSys*sizeof(double));
 
@@ -187,10 +187,12 @@ void Cvode::initialize()
 
     }
     _cvode_initialized = true;
+    
+ 
     //
     // CVODE is ready for integration
     //
-
+   // BOOST_LOG_SEV(cvode_lg::get(), cvode_info) << "CVode initialized";
   }
 }
 
@@ -299,7 +301,7 @@ void Cvode::CVodeCore()
   if(state_selection)
   {
     restart=true;
-    _continuous_system->evaluate(IContinuous::CONTINUOUS);
+    _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
   }
     _zeroFound = false;
 
@@ -335,7 +337,7 @@ void Cvode::CVodeCore()
       }
       _time_system->setTime(_tCurrent);
       _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
-      _continuous_system->evaluate(IContinuous::CONTINUOUS );
+      _continuous_system->evaluateODE(IContinuous::CONTINUOUS );
       // Zustände recorden bis hierher
       if (_cvodesettings->getEventOutput())
         writeToFile(0, _tCurrent, _h);
@@ -376,7 +378,7 @@ void Cvode::CVodeCore()
     {
       _time_system->setTime(_tEnd);
       _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
-      _continuous_system->evaluate(IContinuous::CONTINUOUS);
+      _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
        writeToFile(0, _tEnd, _h);
       _solverStatus = DONE;
       writeToFile(0, _tEnd, _h);
@@ -399,20 +401,20 @@ void Cvode::writeCVodeOutput(const double &time,const double &h,const int &stp)
         _idid = CVodeGetDky(_cvodeMem, _tLastWrite, 0, _CV_yWrite);
         _time_system->setTime(_tLastWrite);
         _continuous_system->setContinuousStates(NV_DATA_S(_CV_yWrite));
-        _continuous_system->evaluate(IContinuous::CONTINUOUS );
+        _continuous_system->evaluateAll(IContinuous::CONTINUOUS );
         SolverDefaultImplementation::writeToFile(stp, _tLastWrite, h);
       }//end if time -_tLastWritten
       if (_bWritten)
       {
         _time_system->setTime(time);
         _continuous_system->setContinuousStates(_z);
-        _continuous_system->evaluate(IContinuous::CONTINUOUS );
+        _continuous_system->evaluateAll(IContinuous::CONTINUOUS );
       }else if(time == _tEnd && _tLastWrite != time)
       {
         _idid = CVodeGetDky(_cvodeMem, time, 0, _CV_y);
         _time_system->setTime(time);
         _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
-        _continuous_system->evaluate(IContinuous::CONTINUOUS);
+        _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
         SolverDefaultImplementation::writeToFile(stp, _tEnd, h);
       }
     }
@@ -432,7 +434,7 @@ int Cvode::calcFunction(const double& time, const double* y, double* f)
   {
     _time_system->setTime(time);
     _continuous_system->setContinuousStates(y);
-    _continuous_system->evaluate(IContinuous::CONTINUOUS);
+    _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
     _continuous_system->getRHS(f);
 
 
@@ -459,7 +461,7 @@ void Cvode::giveZeroVal(const double &t,const double *y,double *zeroValue)
   _continuous_system->setContinuousStates(y);
 
   // System aktualisieren
-  _continuous_system->evaluate(IContinuous::CONTINUOUS);
+  _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
 
   _event_system->getZeroFunc(zeroValue);
 
@@ -496,7 +498,50 @@ const int Cvode::reportErrorMessage(ostream& messageStream)
 
 void Cvode::writeSimulationInfo()
 {
-  //// Solver
+
+/*
+
+	 src::logger lg;
+
+   
+
+    // Now, let's try logging with severity
+     src::severity_logger< cvodeseverity_level > slg;
+	
+	
+
+
+  long int nst, nfe, nsetups, nni, ncfn, netf;
+  long int nfQe, netfQ;
+  long int nfSe, nfeS, nsetupsS, nniS, ncfnS, netfS;
+  long int nfQSe, netfQS;
+
+  int qlast, qcur;
+  realtype h0u, hlast, hcur, tcur;
+
+  int flag;
+
+
+  flag = CVodeGetIntegratorStats(_cvodeMem, &nst, &nfe, &nsetups, &netf,
+                                 &qlast, &qcur,
+                                 &h0u, &hlast, &hcur,
+                                 &tcur);
+
+  flag = CVodeGetNonlinSolvStats(_cvodeMem, &nni, &ncfn);
+
+  BOOST_LOG_SEV(slg, cvode_normal) << " Number steps: " << nst;
+  BOOST_LOG_SEV(slg, cvode_normal) << " Function evaluations " << "f: " << nfe;
+  BOOST_LOG_SEV(slg, cvode_normal) << " Error test failures " <<  "netf: " << netfS;
+  BOOST_LOG_SEV(slg, cvode_normal) << " Linear solver setups " << "nsetups: " <<  nsetups;
+  BOOST_LOG_SEV(slg, cvode_normal) << " Nonlinear iterations " <<  "nni: "  << nni ;
+  BOOST_LOG_SEV(slg, cvode_normal) << " Convergence failures " <<  "ncfn: " <<  ncfn ;
+  
+
+*/
+
+
+	
+	//// Solver
   //outputStream  << "\nSolver: " << getName()
   //  << "\nVerfahren: ";
 

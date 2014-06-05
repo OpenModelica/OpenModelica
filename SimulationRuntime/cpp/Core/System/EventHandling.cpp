@@ -177,7 +177,7 @@ bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
     _event_system->getConditions(conditions0);
     //Handle all events
 
-    state_vars_reinitialized =     countinous_system->evaluate();
+    state_vars_reinitialized =     countinous_system->evaluateAll();
 
 
     //check if discrete variables changed

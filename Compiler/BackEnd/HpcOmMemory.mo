@@ -128,7 +128,7 @@ encapsulated package HpcOmMemory
     oMemoryMap := matchcontinue(iModelInfo, iTaskGraph, iTaskGraphMeta, iEqSystems, iFileNamePrefix, iSchedulerInfo, iSchedule, iSccSimEqMapping, iCriticalPaths, iCriticalPathsWoC, iCriticalPathInfo, iAllComponents)
       case(_,_,_,_,_,_,_,_,_,_,_,_)
         equation
-          true = Flags.isSet(Flags.HPCOM_ANALYZATION_MODE);
+          true = false;//Flags.isSet(Flags.HPCOM_ANALYZATION_MODE);
           //Create var hash table
           SimCode.MODELINFO(vars=simCodeVars) = iModelInfo;
           SimCode.SIMVARS(stateVars=stateVars, derivativeVars=derivativeVars, algVars=algVars, paramVars=paramVars) = simCodeVars;
