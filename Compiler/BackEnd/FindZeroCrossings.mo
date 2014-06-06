@@ -523,7 +523,7 @@ algorithm
         zeroCrossings = Util.if_(List.isEmpty(zc_lst), listAppend(zeroCrossings, {zc}), zeroCrossings);
         Debug.fcall(Flags.RELIDX, BackendDump.debugExpStr, (e_1, "\n"));
       then
-        ((e, false, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))));
+        ((e_1, false, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))));
     case (((e as DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))))
       equation
         Debug.fcall(Flags.RELIDX, print, "continues LBINARY: " +& intString(numRelations) +& "\n");
@@ -691,7 +691,7 @@ algorithm
         zeroCrossings = Util.if_(List.isEmpty(zc_lst), listAppend(zeroCrossings, {zc}), zeroCrossings);
         Debug.fcall(Flags.RELIDX, BackendDump.debugExpStr, (e_1, "\n"));
       then
-        ((e, false, (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))));
+        ((e_1, false, (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))));
     case (((e as DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2)), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))))
       equation
         Debug.fcall(Flags.RELIDX, print, "continues LBINARY: " +& intString(numRelations) +& "\n");
