@@ -135,11 +135,11 @@ void Kinsol::initialize()
             idid = KINSetNumMaxIters(_kinMem, 1000);
 
             _fnormtol  = 1.e-12;     /* function tolerance */
-            _scsteptol = 1.e-13;     /* step tolerance */
+            _scsteptol = 1.e-12;     /* step tolerance */
 
             idid = KINSetFuncNormTol(_kinMem, _fnormtol);
             idid = KINSetScaledStepTol(_kinMem, _scsteptol);
-      idid = KINSetRelErrFunc(_kinMem, 1e-14);
+			idid = KINSetRelErrFunc(_kinMem, 1e-13);
 
       _counter = 0;
 
@@ -335,7 +335,7 @@ int Kinsol::kin_fCallback(N_Vector y,N_Vector fval, void *user_data)
     if(((Kinsol*) user_data)->_fValid)
     return(0);
   else
-    return(-1);
+    return(1);
 }
 
 
@@ -421,7 +421,7 @@ void Kinsol::solveNLS()
         case KIN_STEP_LT_STPTOL:
             KINGetFuncNorm(_kinMem, &_fnorm);
             //if(_fnorm/euclidNorm(_dimSys,_yScale) < 1e-4)
-      if(_fnorm < 1e-7)
+      if(_fnorm < 1e-6)
             {
                 _iterationStatus = DONE;
             }else
@@ -521,7 +521,11 @@ void Kinsol::solveNLS()
         break;
       // Other failures (setup etc) -> directly break
             default:
-                _iterationStatus = SOLVERERROR;
+                KINGetFuncNorm(_kinMem, &_fnorm);
+				if(_fnorm < _fnormtol)				// Initial guess may be the solution
+					_iterationStatus = DONE;
+				else
+					_iterationStatus = SOLVERERROR;
                 break;
         }
     }

@@ -48,6 +48,7 @@ void Cvode::initialize()
   _event_system =  dynamic_cast<IEvent*>(_system);
   _mixed_system =  dynamic_cast<IMixedSystem*>(_system);
   _time_system =  dynamic_cast<ITime*>(_system);
+  IGlobalSettings* global_settings = dynamic_cast<ISolverSettings*>(_cvodesettings)->getGlobalSettings();
   // Kennzeichnung, dass initialize()() (vor der Integration) aufgerufen wurde
   _idid = 5000;
     _tLastEvent=0.0;
@@ -85,7 +86,7 @@ void Cvode::initialize()
     if(_cvodesettings->getDenseOutput())
     {
       // Ausgabeschrittweite
-      _hOut    = dynamic_cast<ISolverSettings*>(_cvodesettings)->getGlobalSettings()->gethOutput();
+      _hOut    = global_settings->gethOutput();
 
     }
 
@@ -154,7 +155,7 @@ void Cvode::initialize()
     if(_idid < 0)
       throw std::invalid_argument("CVode::initialize()");
 
-    _idid = CVodeSetMaxStep(_cvodeMem, dynamic_cast<ISolverSettings*>(_cvodesettings)->getUpperLimit());       // MAXIMUM STEPSIZE
+    _idid = CVodeSetMaxStep(_cvodeMem, global_settings->getEndTime()/100);       // MAXIMUM STEPSIZE
     if(_idid < 0)
       throw std::invalid_argument("CVode::initialize()");
 
@@ -301,7 +302,7 @@ void Cvode::CVodeCore()
   if(state_selection)
   {
     restart=true;
-    _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
+    _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
   }
     _zeroFound = false;
 
@@ -337,7 +338,7 @@ void Cvode::CVodeCore()
       }
       _time_system->setTime(_tCurrent);
       _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
-      _continuous_system->evaluateODE(IContinuous::CONTINUOUS );
+      _continuous_system->evaluateAll(IContinuous::CONTINUOUS );
       // Zustände recorden bis hierher
       if (_cvodesettings->getEventOutput())
         writeToFile(0, _tCurrent, _h);
@@ -378,7 +379,7 @@ void Cvode::CVodeCore()
     {
       _time_system->setTime(_tEnd);
       _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
-      _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
+      _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
        writeToFile(0, _tEnd, _h);
       _solverStatus = DONE;
       writeToFile(0, _tEnd, _h);
@@ -434,7 +435,7 @@ int Cvode::calcFunction(const double& time, const double* y, double* f)
   {
     _time_system->setTime(time);
     _continuous_system->setContinuousStates(y);
-    _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
+    _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
     _continuous_system->getRHS(f);
 
 
