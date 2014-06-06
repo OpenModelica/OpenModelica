@@ -302,7 +302,7 @@ void Cvode::CVodeCore()
   if(state_selection)
   {
     restart=true;
-    _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+    _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
   }
     _zeroFound = false;
 
@@ -338,7 +338,7 @@ void Cvode::CVodeCore()
       }
       _time_system->setTime(_tCurrent);
       _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
-      _continuous_system->evaluateAll(IContinuous::CONTINUOUS );
+      _continuous_system->evaluateODE(IContinuous::CONTINUOUS );
       // Zustände recorden bis hierher
       if (_cvodesettings->getEventOutput())
         writeToFile(0, _tCurrent, _h);
@@ -379,7 +379,7 @@ void Cvode::CVodeCore()
     {
       _time_system->setTime(_tEnd);
       _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
-      _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+      _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
        writeToFile(0, _tEnd, _h);
       _solverStatus = DONE;
       writeToFile(0, _tEnd, _h);
@@ -435,7 +435,7 @@ int Cvode::calcFunction(const double& time, const double* y, double* f)
   {
     _time_system->setTime(time);
     _continuous_system->setContinuousStates(y);
-    _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+    _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
     _continuous_system->getRHS(f);
 
 
