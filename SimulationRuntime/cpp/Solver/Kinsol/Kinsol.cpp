@@ -139,7 +139,7 @@ void Kinsol::initialize()
 
             idid = KINSetFuncNormTol(_kinMem, _fnormtol);
             idid = KINSetScaledStepTol(_kinMem, _scsteptol);
-			idid = KINSetRelErrFunc(_kinMem, 1e-13);
+      idid = KINSetRelErrFunc(_kinMem, 1e-13);
 
       _counter = 0;
 
@@ -522,10 +522,10 @@ void Kinsol::solveNLS()
       // Other failures (setup etc) -> directly break
             default:
                 KINGetFuncNorm(_kinMem, &_fnorm);
-				if(_fnorm < _fnormtol)				// Initial guess may be the solution
-					_iterationStatus = DONE;
-				else
-					_iterationStatus = SOLVERERROR;
+        if(_fnorm < _fnormtol)        // Initial guess may be the solution
+          _iterationStatus = DONE;
+        else
+          _iterationStatus = SOLVERERROR;
                 break;
         }
     }
