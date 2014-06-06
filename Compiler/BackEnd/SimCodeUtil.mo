@@ -7474,16 +7474,22 @@ end dumpSimEqSystem;
 public function dumpSimCode
   input SimCode.SimCode simCode;
 protected
-  list<SimCode.SimEqSystem> allEquations,jacobianEquations,equationsForZeroCrossings,algorithmAndEquationAsserts;
+  list<SimCode.SimEqSystem> allEquations,jacobianEquations,equationsForZeroCrossings,algorithmAndEquationAsserts,initialEquations;
+  SimCode.SimVars simVars;
   list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
 algorithm
-  SimCode.SIMCODE(allEquations = allEquations, odeEquations=odeEquations, algebraicEquations=algebraicEquations, algorithmAndEquationAsserts=algorithmAndEquationAsserts, equationsForZeroCrossings=equationsForZeroCrossings, jacobianEquations=jacobianEquations) := simCode;
+  SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(vars=simVars),allEquations = allEquations, odeEquations=odeEquations, algebraicEquations=algebraicEquations, algorithmAndEquationAsserts=algorithmAndEquationAsserts,
+  equationsForZeroCrossings=equationsForZeroCrossings, jacobianEquations=jacobianEquations,initialEquations=initialEquations) := simCode;
   print("allEquations: \n-----------------------\n");
   print(dumpSimEqSystemLst(allEquations)+&"\n");
   print("odeEquations ("+&intString(listLength(odeEquations))+&" systems): \n-----------------------\n");
   print(stringDelimitList(List.map(odeEquations,dumpSimEqSystemLst),"\n--------------\n")+&"\n");
   print("algebraicEquations: \n-----------------------\n");
   print(stringDelimitList(List.map(algebraicEquations,dumpSimEqSystemLst),"\n")+&"\n");
+  print("initialEquations: \n-----------------------\n");
+  print(dumpSimEqSystemLst(initialEquations)+&"\n");
+  print("SIMVARS: \n-----------------------\n");
+  dumpSimVars(simVars);
   /*
   print("algorithmAndEquationAsserts: \n-----------------------\n");
   print(dumpSimEqSystemLst(algorithmAndEquationAsserts)+&"\n");
@@ -12956,6 +12962,58 @@ algorithm
   end match;
 end addSimEqSysToODEquations;
 
+public function addSimEqSysToInitialEquations"adds the given simEqSys to both to the initialEquations"
+  input SimCode.SimEqSystem simEqSys;
+  input SimCode.SimCode simCodeIn;
+  output SimCode.SimCode simCodeOut;
+protected
+      SimCode.ModelInfo modelInfo;
+      list<DAE.Exp> literals;
+      list<SimCode.RecordDeclaration> recordDecls;
+      list<String> externalFunctionIncludes;
+      list<list<SimCode.SimEqSystem>> eqsTmp;
+      list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
+      list<SimCode.SimEqSystem> allEquations, residualEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, equationsForZeroCrossings;
+      list<SimCode.StateSet> stateSets;
+      Boolean useSymbolicInitialization, useHomotopy;
+      list<SimCode.SimEqSystem> initialEquations, odes;
+      list<DAE.Constraint> constraints;
+      list<DAE.ClassAttributes> classAttributes;
+      list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
+      list<SimCode.SimWhenClause> whenClauses;
+      list<DAE.ComponentRef> discreteModelVars;
+      SimCode.ExtObjInfo extObjInfo;
+      SimCode.MakefileParams makefileParams;
+      SimCode.DelayedExpression delayedExps;
+      list<SimCode.JacobianMatrix> jacobianMatrixes;
+      list<String> labels;
+      Option<SimCode.SimulationSettings> simulationSettingsOpt;
+      list<BackendDAE.TimeEvent> timeEvents;
+      String fileNamePrefix;
+      SimCode.HashTableCrefToSimVar crefToSimVarHT;
+      Absyn.Path name;
+      String description,directory;
+      SimCode.VarInfo varInfo;
+      SimCode.SimVars vars;
+      list<SimCode.Function> functions;
+      SimCode.Files files;
+      Option<HpcOmSimCode.Schedule> hpcOmSchedule;
+      Option<SimCode.BackendMapping> backendMapping;
+      Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
+algorithm
+  simCodeOut := match(simEqSys,simCodeIn)
+    case (_,SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+                 parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, crefToSimVarHT, backendMapping))
+      equation
+        initialEquations = listAppend(initialEquations,{simEqSys});
+      then
+        SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, crefToSimVarHT,backendMapping);
+  end match;
+end addSimEqSysToInitialEquations;
+
 public function replaceODEandALLequations"replaces both allEquations and odeEquations"
   input list<SimCode.SimEqSystem> allEqs;
   input list<list<SimCode.SimEqSystem>> odeEqs;
@@ -13108,6 +13166,8 @@ algorithm
   idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(startValueEquations,eqIndex),intMax,idx,idx);
   isNotEmpty := List.isNotEmpty(initialEquations) or not isNotEmpty;
   idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(initialEquations,eqIndex),intMax,idx,idx);
+  isNotEmpty := List.isNotEmpty(allEquations) or not isNotEmpty;
+  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(allEquations,eqIndex),intMax,idx,idx);
   idxOut := idx;
 end getMaxSimEqSystemIndex;
 

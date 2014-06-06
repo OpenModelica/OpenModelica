@@ -1680,15 +1680,15 @@ algorithm
         HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,rootNodes=rootNodes,nodeNames=nodeNames,nodeDescs=nodeDescs,exeCosts=exeCosts,commCosts=commCosts,nodeMark=nodeMark) = iTaskGraphMeta;
 
         //dumping stuff-------------------------
-        print("the simEqSysts1: \n"+&stringDelimitList(List.map(odes,SimCodeUtil.dumpSimEqSystemLst),"\n")+&"\n");
-        SimCodeUtil.dumpVarLst(algVars,"algVars1");
+        print("simCode1 \n");
+        SimCodeUtil.dumpSimCode(iSimCode);
         print("sccSimEqMap1\n");
         HpcOmSimCodeMain.dumpSccSimEqMapping(iSccSimEqMapping);
         print("inComps1\n");
         HpcOmSimCodeMain.dumpSccSimEqMapping(inComps);
         //--------------------------------------
 
-        // create new variables and equations for the duplicated tasks
+        // prepare everything  in order to create new variables and equations for the duplicated tasks
         sizeTasks = List.fold(List.map(clusters,listLength),intAdd,0);
         taskAss = arrayCreate(sizeTasks,-1);
         procAss = arrayCreate(listLength(clusters),{});
@@ -1697,34 +1697,25 @@ algorithm
         taskDuplAss = arrayCreate(sizeTasks,-1); // the original task for every task (for not duplicated tasks, its itself)
         threadTask = arrayCreate(numProc,{});
         schedule = HpcOmSimCode.THREADSCHEDULE(threadTask,{});
-        duplSccSimEqMap = {};
-        duplComps = {};
+        duplSccSimEqMap = {};  // a list that is later appended to the sccSimEqMapping
+        duplComps = {}; // a list that is later appended to the inComps
         threadIdx = 1;
-        compIdx = List.fold(List.flatten(arrayList(inComps)),intMax,0) +1;
+        compIdx = arrayLength(iSccSimEqMapping)+1;  // the next available component index
         taskIdx = arrayLength(iTaskGraph)+1;
-        simVarIdx = List.fold(List.map(algVars,SimCodeUtil.varIndex),intMax,0)+1;
-        simEqSysIdx = SimCodeUtil.getMaxSimEqSystemIndex(iSimCode)+1;
-        lsIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getLSindex),intMax,0)+1;
-        nlsIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getNLSindex),intMax,0)+1;
-        mIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getMixedindex),intMax,0)+1;
+        simVarIdx = List.fold(List.map(algVars,SimCodeUtil.varIndex),intMax,0)+1;// the next available simVar index
+        simEqSysIdx = SimCodeUtil.getMaxSimEqSystemIndex(iSimCode)+1;// the next available simEqSys index
+        print("highest simEqSysIdx: "+&intString(simEqSysIdx)+&"\n");
+        lsIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getLSindex),intMax,0)+1;// the next available linear system index
+        nlsIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getNLSindex),intMax,0)+1;// the next available nonlinear system index
+        mIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getMixedindex),intMax,0)+1;// the next available mixed system  index
 
-        print("TG before");
-        HpcOmTaskGraph.printTaskGraph(iTaskGraph);
+        //traverse the clusters and duplicate tasks if needed
         (taskAss,procAss,taskGraph,taskDuplAss,_,simCode,schedule,duplSccSimEqMap,duplComps) = createTDSduplicateTasks(clusters,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),iTaskGraph,taskGraph,taskDuplAss,iTaskGraphMeta,iSimCode,schedule,iSccSimEqMapping,duplSccSimEqMap,duplComps);
-        print("TG after");
-        HpcOmTaskGraph.printTaskGraph(taskGraph);
 
         //update stuff
         numDupl = List.fold(List.map(duplComps,listLength),intAdd,0);
         procAss = Util.arrayMap(procAss,listReverse);
-                print("duplSccSimEqMap\n");
-        HpcOmSimCodeMain.dumpSccSimEqMapping(listArray(duplSccSimEqMap));
-                print("iSccSimEqMapping\n");
-        HpcOmSimCodeMain.dumpSccSimEqMapping(iSccSimEqMapping);
         sccSimEqMap = Util.arrayAppend(iSccSimEqMapping,listArray(listReverse(duplSccSimEqMap)));
-        print("sccSimEqMap\n");
-        HpcOmSimCodeMain.dumpSccSimEqMapping(sccSimEqMap);
-
         comps = Util.arrayAppend(inComps,listArray(listReverse(duplComps)));
         varCompMapping = Util.arrayAppend(varCompMapping,arrayCreate(numDupl,(0,0,0)));
         eqCompMapping = Util.arrayAppend(eqCompMapping,arrayCreate(numDupl,(0,0,0)));
@@ -1735,10 +1726,8 @@ algorithm
         meta = HpcOmTaskGraph.TASKGRAPHMETA(comps,varCompMapping,eqCompMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
 
         //dumping stuff-------------------------
-        SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(vars=simVars), odeEquations=odes) = simCode;
-        print("the simEqSysts2: \n"+&stringDelimitList(List.map(odes,SimCodeUtil.dumpSimEqSystemLst),"\n")+&"\n");
-        SimCode.SIMVARS(algVars=algVars) = simVars;
-        SimCodeUtil.dumpVarLst(algVars,"algVars2");
+        print("simCode 2\n");
+        SimCodeUtil.dumpSimCode(simCode);
         print("sccSimEqMap2\n");
         HpcOmSimCodeMain.dumpSccSimEqMapping(sccSimEqMap);
         print("inComps2\n");
@@ -1902,9 +1891,6 @@ algorithm
         odes = List.map1r(odes,replaceSimEqSystemLstWithSameIndex,simEqSysts);
         simCode = SimCodeUtil.replaceODEandALLequations(allEqs,odes,simCodeIn);
 
-        print("the simEqSysts "+&SimCodeUtil.dumpSimEqSystemLst(simEqSysts)+&"\n");
-        print("the simEqSysts after cluster: "+&intString(threadIdx)+&"_"+&intString(node)+&" \n"+&stringDelimitList(List.map(odes,SimCodeUtil.dumpSimEqSystemLst),"\n")+&"\n");
-
         task = HpcOmSimCode.CALCTASK(1,node,0.0,-1.0,threadIdx,simEqs);
         thread = task::threadIn;
         taskDuplAss = arrayUpdate(taskDuplAssIn,node,node);
@@ -1941,8 +1927,8 @@ protected function createTDSduplicateTasks2"sets the information about the new t
   output list<list<Integer>> duplCompsOut;
 protected
   String crefAppend;
-  Integer threadIdx,compIdx,simVarIdx,simVarIdx2,simEqSysIdx,simEqSysIdx2,numVars,numEqs,taskIdx,lsIdx,nlsIdx,mIdx;
-  list<Integer> comps,simEqSysIdcs,simVarSysIdcs,simEqSysIdcs2,simVarSysIdcs2,thread,origSuccTasks,clSuccTasks;
+  Integer threadIdx,compIdx,simVarIdx,simVarIdx2,simEqSysIdx,simEqSysIdx2,simEqSysIdx3,numVars,numEqs,numInitEqs,taskIdx,lsIdx,nlsIdx,mIdx;
+  list<Integer> comps,simEqSysIdcs,simVarSysIdcs,simEqSysIdcs2,simEqSysIdcsInit,simVarSysIdcs2,thread,origSuccTasks,clSuccTasks;
   list<list<Integer>> simEqIdxLst,simVarIdxLst;
   array<list<Integer>> inComps;
   BackendVarTransform.VariableReplacements repl;
@@ -1951,11 +1937,13 @@ protected
   SimCode.ModelInfo modelinfo;
   SimCode.SimVars simVars;
   SimCode.SimCode simCode;
+  list<BackendDAE.Equation> eqs;
+  list<BackendDAE.Var> vars;
   list<DAE.ComponentRef> crefs,crefsDupl;
   list<list<DAE.ComponentRef>> crefLst;
   list<DAE.Exp> crefsDuplExp;
   list<SimCode.SimVar> simVarLst,simVarDupl,algVars;
-  list<SimCode.SimEqSystem> simEqSysts,simEqSystsDupl;
+  list<SimCode.SimEqSystem> simEqSysts,simEqSystsDupl,initEqs;
   list<list<SimCode.SimEqSystem>> odes;
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) := iTaskGraphMeta;
@@ -2000,21 +1988,30 @@ algorithm
   //BackendVarTransform.dumpReplacements(repl);
   numEqs := listLength(simEqSysts);
   simEqSysIdcs2 := List.intRange2(simEqSysIdx,simEqSysIdx+numEqs-1);
-
+  print("simEqSysIdcs2 :"+&intListString(simEqSysIdcs2)+&"\n");
   (simEqSystsDupl,_) := List.map1_2(simEqSysts,replaceExpsInSimEqSystem,repl);// replace the exps and crefs
   (simEqSystsDupl,(lsIdx,nlsIdx,mIdx)) := List.mapFold(simEqSystsDupl,replaceSystemIndex,(lsIdx,nlsIdx,mIdx));// udpate the indeces of th systems
   simEqSystsDupl := List.threadMap(simEqSystsDupl,simEqSysIdcs2,SimCodeUtil.replaceSimEqSysIndex);
   print("the simEqSystsDupl "+&SimCodeUtil.dumpSimEqSystemLst(simEqSystsDupl)+&"\n");
-  simCode := List.fold1(simEqSystsDupl,SimCodeUtil.addSimEqSysToODEquations,1,simCode);
   simEqSysIdx2 := simEqSysIdx + numEqs;
-  print("simEqSysIdcs2 :"+&intListString(simEqSysIdcs2)+&"\n");
-
-        SimCode.SIMCODE(odeEquations=odes) := simCode;
-        print("the simEqSysts after cluster: "+&intString(threadIdx)+&"_"+&intString(node)+&" \n"+&stringDelimitList(List.map(odes,SimCodeUtil.dumpSimEqSystemLst),"\n")+&"\n");
+  // update sccSimEqmapping for the duplicated
+  duplSccSimEqMapOut := listAppend(List.map(simEqSysIdcs2,List.create),duplSccSimEqMapIn);
+  simCode := List.fold1(simEqSystsDupl,SimCodeUtil.addSimEqSysToODEquations,1,simCode);
+  // set task in thread
+  threadOut := HpcOmSimCode.CALCTASK(1,taskIdx,0.0,-1.0,threadIdx,simEqSysIdcs2)::threadIn;
+  // add init eqs to simCode
+  numInitEqs := listLength(crefs);
+  simEqSysIdcsInit := List.intRange2(simEqSysIdx2,simEqSysIdx2+numInitEqs-1);
+  initEqs := List.thread3Map(crefsDupl,crefs,simEqSysIdcsInit,makeSEScrefAssignment);
+  print("the initEqs "+&SimCodeUtil.dumpSimEqSystemLst(initEqs)+&"\n");
+  simCode := List.fold(initEqs,SimCodeUtil.addSimEqSysToInitialEquations,simCode);
+  simEqSysIdx3 := simEqSysIdx2 + numInitEqs;
+    
+  SimCode.SIMCODE(odeEquations=odes) := simCode;
+  print("the simEqSysts after cluster: "+&intString(threadIdx)+&"_"+&intString(node)+&" \n"+&stringDelimitList(List.map(odes,SimCodeUtil.dumpSimEqSystemLst),"\n")+&"\n");
 
   //update duplSccSimEqMap, duplComps, taskAss, procAss for the new duplicates
-  duplSccSimEqMapOut := listAppend(List.map(simEqSysIdcs2,List.create),duplSccSimEqMapIn);
-  taskAssOut := arrayUpdate(taskAssIn,taskIdx,threadIdx);
+    taskAssOut := arrayUpdate(taskAssIn,taskIdx,threadIdx);
   thread := arrayGet(procAssIn,threadIdx);
   thread := taskIdx::thread;
   procAssOut := arrayUpdate(procAssIn,threadIdx,thread);
@@ -2022,9 +2019,6 @@ algorithm
   print("compsNew :"+&intListString(comps)+&"\n");
   compIdx := compIdx+listLength(comps);
   duplCompsOut := comps::duplCompsIn;
-
-  // set task in thread
-  threadOut := HpcOmSimCode.CALCTASK(1,taskIdx,0.0,-1.0,threadIdx,simEqSysIdcs2)::threadIn;
 
   // update taskGraph and taskDuplAss
   taskDuplAssOut := arrayUpdate(taskDuplAssIn,taskIdx,node);
@@ -2034,10 +2028,22 @@ algorithm
   taskGraph := arrayUpdate(taskGraphIn,node,origSuccTasks);
   taskGraphOut := arrayUpdate(taskGraph,taskIdx,clSuccTasks);
 
-  idcsOut := (threadIdx,taskIdx+1,compIdx,simVarIdx2,simEqSysIdx2,lsIdx,nlsIdx,mIdx);
+  idcsOut := (threadIdx,taskIdx+1,compIdx,simVarIdx2,simEqSysIdx3,lsIdx,nlsIdx,mIdx);
   simCodeOut := simCode;
   replOut := repl;
 end createTDSduplicateTasks2;
+
+protected function makeSEScrefAssignment
+  input DAE.ComponentRef lhs;
+  input DAE.ComponentRef rhs;
+  input Integer idx;
+  output SimCode.SimEqSystem sesOut;
+protected
+  DAE.Type ty;
+algorithm
+  ty := ComponentReference.crefType(rhs);
+  sesOut := SimCode.SES_SIMPLE_ASSIGN(idx,lhs,DAE.CREF(rhs,ty),DAE.emptyElementSource);
+end makeSEScrefAssignment;
 
 protected function replaceSimEqSystemLstWithSameIndex
   input list<SimCode.SimEqSystem> eqSystsIn;
@@ -2206,8 +2212,8 @@ algorithm
     then (simEqSys,changed);
     case(SimCode.SES_WHEN(index=idx,conditions=crefs,initialCall=ic,left=cref,right=exp,elseWhen=NONE(),source=source),_)
       equation
-        (crefs,bLst) = List.map1_2(crefs,replaceCref,replIn);
-        (cref,changed) = replaceCref(cref,replIn);
+        (crefs,bLst) = List.map1_2(crefs,BackendVarTransform.replaceCref,replIn);
+        (cref,changed) = BackendVarTransform.replaceCref(cref,replIn);
         changed = List.fold(bLst,boolOr,changed);
         (exp,changed1) = BackendVarTransform.replaceExp(exp,replIn,NONE());
         changed = boolOr(changed,changed1);
@@ -2215,8 +2221,8 @@ algorithm
     then (simEqSys,changed);
     case(SimCode.SES_WHEN(index=idx,conditions=crefs,initialCall=ic,left=cref,right=exp,elseWhen=SOME(simEqSys),source=source),_)
       equation
-        (crefs,bLst) = List.map1_2(crefs,replaceCref,replIn);
-        (cref,changed) = replaceCref(cref,replIn);
+        (crefs,bLst) = List.map1_2(crefs,BackendVarTransform.replaceCref,replIn);
+        (cref,changed) = BackendVarTransform.replaceCref(cref,replIn);
         changed = List.fold(bLst,boolOr,changed);
         (exp,changed1) = BackendVarTransform.replaceExp(exp,replIn,NONE());
         changed = boolOr(changed,changed1);
@@ -2230,24 +2236,6 @@ algorithm
     then fail();
   end matchcontinue;
 end replaceExpsInSimEqSystem;
-
-protected function replaceCref"replaces a cref.
-author: Waurich TUD 2014-06"
-  input DAE.ComponentRef crefIn;
-  input BackendVarTransform.VariableReplacements replIn;
-  output DAE.ComponentRef crefOut;
-  output Boolean changedOut;
-algorithm
-  (crefOut,changedOut) := matchcontinue(crefIn,replIn)
-    case(_,_)
-      equation
-        true = BackendVarTransform.hasReplacement(replIn,crefIn);
-        DAE.CREF(componentRef=crefOut) = BackendVarTransform.getReplacement(replIn,crefIn);
-      then (crefOut,true);
-    else
-      then (crefIn,false);
- end matchcontinue;
-end replaceCref;
 
 protected function replaceCrefInSimVar"performs replacements on a simVar structure.
 author: Waurich TUD 2014-06"

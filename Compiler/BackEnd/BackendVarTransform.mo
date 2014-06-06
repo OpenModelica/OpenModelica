@@ -1206,6 +1206,24 @@ algorithm
   end matchcontinue;
 end replaceExp;
 
+public function replaceCref"replaces a cref.
+author: Waurich TUD 2014-06"
+  input DAE.ComponentRef crefIn;
+  input VariableReplacements replIn;
+  output DAE.ComponentRef crefOut;
+  output Boolean changedOut;
+algorithm
+  (crefOut,changedOut) := matchcontinue(crefIn,replIn)
+    case(_,_)
+      equation
+        true = hasReplacement(replIn,crefIn);
+        DAE.CREF(componentRef=crefOut) = getReplacement(replIn,crefIn);
+      then (crefOut,true);
+    else
+      then (crefIn,false);
+ end matchcontinue;
+end replaceCref;
+
 protected function replaceCrefSubs
   input DAE.ComponentRef inCref;
   input VariableReplacements repl;
