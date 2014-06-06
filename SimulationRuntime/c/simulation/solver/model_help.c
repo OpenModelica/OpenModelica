@@ -174,7 +174,7 @@ void printAllVars(DATA *data, int ringSegment, int stream)
 
   if (!ACTIVE_STREAM(stream)) return;
 
-  infoStreamPrint(stream, 1, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
+  infoStreamPrint(stream, 1, "Print values for buffer segment %d regarding point in time : %g", ringSegment, data->localData[ringSegment]->timeValue);
 
   infoStreamPrint(stream, 1, "states variables");
   for(i=0; i<mData->nStates; ++i)
@@ -413,6 +413,39 @@ void overwriteOldSimulationData(DATA *data)
     memcpy(data->localData[i]->booleanVars, data->localData[i-1]->booleanVars, sizeof(modelica_boolean)*data->modelData.nVariablesBoolean);
     memcpy(data->localData[i]->stringVars, data->localData[i-1]->stringVars, sizeof(modelica_string)*data->modelData.nVariablesString);
   }
+
+  TRACE_POP
+}
+
+/*! \fn copyRingBufferSimulationData
+ *
+ *  Copy RingBuffer simulation data from DATA to a new ring buffer.
+ *
+ *  This function is used to initialize the ring buffer of dassl after events.
+ *
+ *  \param [in] [data]
+ *  \param [out] [destData]
+ *  \param [out] [destRing]
+ *
+ *
+ *  \author wbraun
+ */
+void copyRingBufferSimulationData(DATA *data, SIMULATION_DATA **destData, RINGBUFFER* destRing)
+{
+  long i;
+
+  TRACE_PUSH
+  assertStreamPrint(data->threadData, ringBufferLength(data->simulationData) == ringBufferLength(destRing), "copy ring buffer failed, because of different sizes.");
+
+  for(i=0; i<ringBufferLength(data->simulationData); ++i)
+  {
+    destData[i]->timeValue = data->localData[i]->timeValue;
+    memcpy(destData[i]->realVars, data->localData[i]->realVars, sizeof(modelica_real)*data->modelData.nVariablesReal);
+    memcpy(destData[i]->integerVars, data->localData[i]->integerVars, sizeof(modelica_integer)*data->modelData.nVariablesInteger);
+    memcpy(destData[i]->booleanVars, data->localData[i]->booleanVars, sizeof(modelica_boolean)*data->modelData.nVariablesBoolean);
+    memcpy(destData[i]->stringVars, data->localData[i]->stringVars, sizeof(modelica_string)*data->modelData.nVariablesString);
+  }
+
 
   TRACE_POP
 }

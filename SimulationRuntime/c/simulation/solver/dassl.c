@@ -136,6 +136,7 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
   /* work arrays for DASSL */
   int i;
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
+  SIMULATION_DATA tmpSimData;
 
   TRACE_PUSH
 
@@ -239,6 +240,36 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
     dasslData->atol[i] = data->simulationInfo.tolerance * data->modelData.realVarsData[i].attribute.nominal;
   }
 
+  /* setup internal ring buffer for dassl */
+
+  /* RingBuffer */
+  dasslData->simulationData = 0;
+  dasslData->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
+  if(!data->simulationData)
+  {
+    throwStreamPrint(data->threadData, "Your memory is not strong enough for our Ringbuffer!");
+  }
+
+  /* prepare RingBuffer */
+  for(i=0; i<SIZERINGBUFFER; i++)
+  {
+    /* set time value */
+    tmpSimData.timeValue = 0;
+    /* buffer for all variable values */
+    tmpSimData.realVars = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
+    assertStreamPrint(data->threadData, 0 != tmpSimData.realVars, "out of memory");
+    tmpSimData.integerVars = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
+    assertStreamPrint(data->threadData, 0 != tmpSimData.integerVars, "out of memory");
+    tmpSimData.booleanVars = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
+    assertStreamPrint(data->threadData, 0 != tmpSimData.booleanVars, "out of memory");
+    tmpSimData.stringVars = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
+    assertStreamPrint(data->threadData, 0 != tmpSimData.stringVars, "out of memory");
+    appendRingData(dasslData->simulationData, &tmpSimData);
+  }
+  dasslData->localData = (SIMULATION_DATA**) calloc(SIZERINGBUFFER, sizeof(SIMULATION_DATA*));
+  rotateRingBuffer(dasslData->simulationData, 0, (void**) dasslData->localData);
+
+
   TRACE_POP
   return 0;
 }
@@ -246,6 +277,7 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
 
 int dassl_deinitial(DASSL_DATA *dasslData)
 {
+  int i;
   TRACE_PUSH
 
   /* free work arrays for DASSL */
@@ -263,6 +295,18 @@ int dassl_deinitial(DASSL_DATA *dasslData)
   free(dasslData->stateDer);
   free(dasslData->dasslStatistics);
   free(dasslData->dasslStatisticsTmp);
+
+  for(i=0; i<SIZERINGBUFFER; i++){
+    SIMULATION_DATA* tmpSimData = (SIMULATION_DATA*) dasslData->localData[i];
+    /* free buffer for all variable values */
+    free(tmpSimData->realVars);
+    free(tmpSimData->integerVars);
+    free(tmpSimData->booleanVars);
+    free(tmpSimData->stringVars);
+  }
+  free(dasslData->localData);
+  freeRingBuffer(dasslData->simulationData);
+
   free(dasslData);
 
   TRACE_POP
@@ -282,15 +326,21 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
   unsigned int ui = 0;
   int retVal = 0;
 
-  SIMULATION_DATA *sData = (SIMULATION_DATA*) data->localData[0];
-  SIMULATION_DATA *sDataOld = (SIMULATION_DATA*) data->localData[1];
-  MODEL_DATA *mData = (MODEL_DATA*) &data->modelData;
   DASSL_DATA *dasslData = (DASSL_DATA*) solverInfo->solverData;
+
+  RINGBUFFER *ringBufferBackup = data->simulationData;
+  SIMULATION_DATA **localDataBackup = data->localData;
+
+  SIMULATION_DATA *sData = data->localData[0];
+  SIMULATION_DATA *sDataOld = data->localData[1];
+
+  MODEL_DATA *mData = (MODEL_DATA*) &data->modelData;
+
   modelica_real* stateDer = dasslData->stateDer;
 
   /* after rotation dassl expects the same states as before */
-  memcpy(sData->realVars, sDataOld->realVars, sizeof(double)*data->modelData.nStates);
-  memcpy(stateDer, sDataOld->realVars + data->modelData.nStates, sizeof(double)*data->modelData.nStates);
+  //memcpy(sData->realVars, sDataOld->realVars, sizeof(double)*data->modelData.nStates);
+  //memcpy(stateDer, sDataOld->realVars + data->modelData.nStates, sizeof(double)*data->modelData.nStates);
 
   dasslData->rpar[0] = (double*) (void*) data;
   dasslData->rpar[1] = (double*) (void*) dasslData;
@@ -300,12 +350,15 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
   assertStreamPrint(data->threadData, 0 != dasslData->rpar, "could not passed to DDASKR");
 
   /* If an event is triggered and processed restart dassl. */
-  if(solverInfo->didEventStep)
+  if(solverInfo->didEventStep || 0 == dasslData->idid)
   {
     debugStreamPrint(LOG_EVENTS_V, 0, "Event-management forced reset of DDASKR");
     /* obtain reset */
     dasslData->info[0] = 0;
     dasslData->idid = 0;
+
+    copyRingBufferSimulationData(data, dasslData->localData, dasslData->simulationData);
+    memcpy(stateDer, data->localData[1]->realVars + data->modelData.nStates, sizeof(double)*data->modelData.nStates);
   }
 
   /* Calculate steps until TOUT is reached */
@@ -336,6 +389,15 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
     return retVal;
   }
 
+  /* If dasslsteps is selected, we just use the outer ring buffer */
+  if  (dasslData->dasslMethod != DASSL_STEPS){
+    data->simulationData = dasslData->simulationData;
+    data->localData = dasslData->localData;
+  }
+
+  sData = (SIMULATION_DATA*) data->localData[0];
+  sDataOld = (SIMULATION_DATA*) data->localData[1];
+
   infoStreamPrint(LOG_DASSL, 0, "Calling DASSL from %.15g to %.15g", solverInfo->currentTime, tout);
   do
   {
@@ -347,7 +409,7 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
       sData = (SIMULATION_DATA*) data->localData[0];
       sDataOld = (SIMULATION_DATA*) data->localData[1];
       /* after rotation dassl expects the same states as before */
-      memcpy(sData->realVars, sDataOld->realVars, sizeof(double)*data->modelData.nStates);
+      //memcpy(sData->realVars, sDataOld->realVars, sizeof(double)*data->modelData.nStates);
     }
 
     /* read input vars */
@@ -410,10 +472,10 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
       fflush(stderr);
       fflush(stdout);
       retVal = continue_DASSL(&dasslData->idid, &data->simulationInfo.tolerance);
-      /* read input vars */
-      externalInputUpdate(data);
-      data->callback->input_function(data);
-      data->callback->functionODE(data);
+      /* take the states from the inner ring buffer to the outer one */
+      memcpy(localDataBackup[0]->realVars, data->localData[0]->realVars, sizeof(double)*data->modelData.nStates);
+      data->simulationData = ringBufferBackup;
+      data->localData = localDataBackup;
       warningStreamPrint(LOG_STDOUT, 0, "can't continue. time = %f", sData->timeValue);
       TRACE_POP
       return retVal;
@@ -432,9 +494,8 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
 
     } else if (dasslData->idid == 1){
       /* to be consistent we need to evaluate functionODE again,
-       * since dassl does not evalute functionODE with the freshest states.
+       * since dassl does not evaluate functionODE with the freshest states.
        */
-      sData->timeValue = solverInfo->currentTime;
       data->callback->functionODE(data);
       data->callback->function_ZeroCrossingsEquations(data);
     }
@@ -442,6 +503,14 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
   } while(dasslData->idid == 1 ||
           (dasslData->idid == -1 && solverInfo->currentTime <= data->simulationInfo.stopTime));
 
+  if  (dasslData->dasslMethod != DASSL_STEPS){
+    /* take the states from the inner ring buffer to the outer one */
+    memcpy(localDataBackup[0]->realVars, data->localData[0]->realVars, sizeof(double)*data->modelData.nStates);
+    data->simulationData = ringBufferBackup;
+    data->localData = localDataBackup;
+    /* set ringbuffer time to current time */
+    data->localData[0]->timeValue = solverInfo->currentTime;
+  }
 
   if(ACTIVE_STREAM(LOG_DASSL)) {
     infoStreamPrint(LOG_DASSL, 1, "dassl call staistics: ");

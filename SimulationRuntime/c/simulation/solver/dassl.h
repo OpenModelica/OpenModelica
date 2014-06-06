@@ -38,6 +38,7 @@
 static const unsigned int maxOrder = 5;
 static const unsigned int numStatistics = 5;
 static const unsigned int infoLength = 20;
+static const unsigned int SIZERINGBUFFER = 3;
 
 enum DASSL_METHOD
 {
@@ -84,6 +85,9 @@ typedef struct DASSL_DATA{
   double *newdelta;
   double *stateDer;
 
+  /* internal dassl ring buffer */
+  RINGBUFFER* simulationData;          /* RINGBUFFER of SIMULATION_DATA */
+  SIMULATION_DATA **localData;
 } DASSL_DATA;
 
 /* main dassl function to make a step */

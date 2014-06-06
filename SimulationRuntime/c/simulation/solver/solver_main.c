@@ -104,7 +104,7 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
     return retVal;
 
   case S_DASSL:
-    retVal = dassl_step(data, solverInfo);;
+    retVal = dassl_step(data, solverInfo);
     TRACE_POP
     return retVal;
 
