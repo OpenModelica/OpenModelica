@@ -4,6 +4,11 @@
 \begin_header
 \textclass article
 \use_default_options true
+\begin_modules
+theorems-ams
+eqs-within-sections
+figs-within-sections
+\end_modules
 \maintain_unincluded_children false
 \language english
 \language_package default
@@ -63,11 +68,19 @@
 \begin_body
 
 \begin_layout Title
-Comparison of mine to Saldamlis extension
+PDE extension
+\begin_inset Newline newline
+\end_inset
+
+Changes over Levon's extension
 \end_layout
 
-\begin_layout Title
-Changes over Levon's extension
+\begin_layout Author
+Jan Šilar
+\begin_inset Newline newline
+\end_inset
+
+jan.silar@lf1.cuni.cz
 \end_layout
 
 \begin_layout Standard
@@ -112,11 +125,11 @@ key "saldamli2006pdemodelica"
 Saldamli defines domain shape by listing its boundaries.
  Individual boundaries (points in 1D, curves in 2D resp.
  surfaces in 3D) are describes by shape-functions.
- Shape-function maps intervals ([0,1] in 2D -- boundary is a curve, [0,1]
+ Shape-function maps intervals ([0,1] for curves, [0,1]
 \begin_inset Formula $\times$
 \end_inset
 
-[0,1] in 3D -- a surface) onto the boundary.
+[0,1] for surfaces) onto the boundary.
 \end_layout
 
 \begin_layout Standard
@@ -424,7 +437,7 @@ end RectangularDomain;
 \end_layout
 
 \begin_layout Standard
-Example circular domain
+Example circular domain:
 \end_layout
 
 \begin_layout Standard
@@ -685,10 +698,14 @@ Problem
 \end_layout
 
 \begin_layout Standard
-This approach doesn't work well in 3D: if boundary is made of several surfaces,
- parameters (arguments) of shape-functions of these surfaces must be bounded
- not just in [0,1] intervals but in some more complex sets to compose continuous
- boundary, e.g.
+This approach doesn't work well in 3D: if boundary is composed of several
+ surfaces, parameters (arguments) of shape-function of these surfaces must
+ be bounded not just in 
+\begin_inset Formula $[0,1]\times[0,1]$
+\end_inset
+
+ interval but in some more complex set for each boundary surface so that
+ they form a continuous boundary, e.g.
  see fig.
  
 \begin_inset CommandInset ref
@@ -699,6 +716,11 @@ reference "fig:Boundary-in-3D"
 
 .
  And there is no way to write this in Levon's extension.
+\end_layout
+
+\begin_layout Standard
+Even if the syntax allowed this, it would be difficult for the user to compute
+ these sets where parameters are bounded.
 \end_layout
 
 \begin_layout Standard
@@ -764,15 +786,15 @@ key "fritzson2010principles"
 
 \end_inset
 
- -- 8.5.2, define interior and boundaries of domain (these elements we call
- 
+ -- 8.5.2, we define interior and boundaries of domain (these elements are
+ called 
 \emph on
 regions
 \emph default
  here) with one shape-function and for each region specify intervals for
  the shape-function arguments.
- This approach isn't more general, but is consistent in 1, 2 and 3D and
- (to me) is more natural.
+ This approach isn't more general (actually less), but is consistent in
+ 1, 2 and 3D and (to me) is more natural.
  Inner points may be generated using this shape-function.
 \end_layout
 
@@ -1090,7 +1112,7 @@ replaceable function shape;
 \begin_inset space ~
 \end_inset
 
-input Real u[ndim];
+input Real u[ndims];
 \end_layout
 
 \begin_layout Plain Layout
@@ -1373,7 +1395,8 @@ Modified version
 \end_layout
 
 \begin_layout Standard
-use equations instead of shape-function
+Here is equation instead of shape-function and new coordinate system instead
+ of parameters of shape-function:
 \end_layout
 
 \begin_layout Standard
@@ -2762,7 +2785,7 @@ Partial derivatives
 \end_layout
 
 \begin_layout Paragraph*
-Originaly
+Originally
 \begin_inset Newline newline
 \end_inset
 
@@ -2889,7 +2912,7 @@ Normal derivative and normal vector
 \end_layout
 
 \begin_layout Paragraph*
-Originaly
+Originally
 \begin_inset Newline newline
 \end_inset
 
@@ -2983,11 +3006,23 @@ field Real[3] flux;
 \begin_layout Standard
 
 \family typewriter
-flux*omega.boundary.n = 0 in omega.boundary; //*scalar product
+flux*omega.boundary.n = 0 in omega.boundary;
 \end_layout
 
 \begin_layout Subsection*
 Accessing coordinates and normal vector in der() operator
+\end_layout
+
+\begin_layout Paragraph*
+Originally
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+not discussed
 \end_layout
 
 \begin_layout Paragraph*
@@ -3015,7 +3050,7 @@ omega.x
 \end_layout
 
 \begin_layout Standard
-In the example in 4.3.2.2 the normal vactor 
+In the example in 4.3.2.2 the normal vector 
 \family typewriter
 n
 \family default
@@ -3024,7 +3059,7 @@ n
 domainName.
 
 \family default
- prefix eventhou it is defined in the domain
+ prefix even thou it is defined in the domain
 \family typewriter
 .
 
@@ -3048,7 +3083,7 @@ Fields are differentiated with respect to coordinates or normal vector only
 pder()
 \family default
  operator may be given only coordinates or normal vector.
- So variables in this positions may be treated specialy and coordinates
+ So variables in this positions may be treated specially and coordinates
  and normal vector of the domain of the field being differentiated may be
  accessed without the 
 \family typewriter
@@ -3090,6 +3125,18 @@ Start values of derivatives
 \end_layout
 
 \begin_layout Paragraph*
+Originally
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+not discussed
+\end_layout
+
+\begin_layout Paragraph*
 problem
 \begin_inset Newline newline
 \end_inset
@@ -3098,8 +3145,8 @@ problem
 \end_layout
 
 \begin_layout Standard
-Higher derivatives allowed for fileds thus we need to assign initial values
- to its derivatives sometimes.
+Higher derivatives are allowed for fields thus we need to assign initial
+ values to its derivatives sometimes.
 \end_layout
 
 \begin_layout Paragraph*
@@ -3119,11 +3166,11 @@ startPrime
 \family typewriter
 startSecond
 \family default
- (May be for 
+ (May be 
 \family typewriter
 startSecond
 \family default
- is not needed??) field variables are introduced.
+ is not needed??) for field variables are introduced.
  Usage e.g.:
 \end_layout
 
@@ -3143,25 +3190,6 @@ initial equation
  section.
 \end_layout
 
-\begin_layout Standard
-\begin_inset CommandInset bibtex
-LatexCommand bibtex
-bibfiles "bibliography"
-options "plain"
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset Note Note
-status open
-
-\begin_layout Part*
-Accessing field values
-\end_layout
-
 \begin_layout Part*
 Usage of 
 \family typewriter
@@ -3170,113 +3198,125 @@ in
  operator
 \end_layout
 
-\begin_layout Part*
-Coordinates and consequent changes
-\end_layout
-
 \begin_layout Section*
-Coordinates
+PDEs
 \end_layout
 
-\begin_layout Section*
-Field literal constructor
-\end_layout
-
-\begin_layout Plain Layout
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-Původní:
-\end_layout
-
+\begin_layout Paragraph*
+Originally
+\begin_inset Newline newline
 \end_inset
 
 
 \end_layout
 
-\begin_layout Plain Layout
-According to 4th chapter in theses of Levon Saldamli.
+\begin_layout Standard
+see 4.3.3
 \end_layout
 
-\begin_layout Plain Layout
+\begin_layout Standard
 
-\series bold
-4.2.1 Field Variables
-\series default
- -- used
-\end_layout
-
-\begin_layout Plain Layout
-
-\series bold
-4.2.2 Field Constructor
-\series default
- -- used, slightly modified -- 
 \family typewriter
-field(expr in domainName.regionName);
+in
 \family default
- in 
+ operator is used for BCs to specifie on which region they hold.
+ It is not used for PDEs.
+\end_layout
+
+\begin_layout Paragraph*
+problem
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+PDEs hold on particular regions (usualy 
 \family typewriter
-expr
+interior
 \family default
- appears only coordinate variables defined in 
+) as well.
+ Specification of region for BC but not for PDE is confusing.
+ Besides that, the domain may be splited into separate regions and different
+ PDE may hold on each region.
+\end_layout
+
+\begin_layout Paragraph*
+solution
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We suggest to use 
 \family typewriter
-domainName
+in
+\family default
+ operator also in PDEs to specifie the region, as it is also in 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "fritzson2010principles"
+
+\end_inset
+
+.
 \end_layout
 
-\begin_layout Plain Layout
-
-\series bold
-4.2.3 Field Type in Expressions
+\begin_layout Section*
+Accessing field values
 \end_layout
 
-\begin_layout Plain Layout
-- 4.2.3.1 
-\series bold
-Binary operators
-\series default
- -- used
+\begin_layout Paragraph*
+Originally
+\begin_inset Newline newline
+\end_inset
+
+
 \end_layout
 
-\begin_layout Plain Layout
-- 4.2.3.2 
-\series bold
-Special operators
-\series default
- -- for time derivative of field should be used pder operator instead of
- der 
+\begin_layout Standard
+see 4.2.4, in function-like style
 \end_layout
 
-\begin_layout Plain Layout
+\begin_layout Paragraph*
+problem
+\begin_inset Newline newline
+\end_inset
 
-\series bold
-4.2.4 Accessing Field Values
-\series default
- -- Accesing field values in function-like style should not be allowed,
- if possible, for two reasons:
+
 \end_layout
 
-\begin_layout Itemize
-it is not allowed in current Modelica for regular variables (unknown functions
- of time) 
+\begin_layout Standard
+It is not consistent with curent Modelica -- to access values of regular
+ variables in particular time in this function-like style is also not allowed.
 \end_layout
 
-\begin_layout Itemize
-If more then one coordinate system are defined in a domain, it is not clear
- which coordinates are used in the function-like expression
+\begin_layout Standard
+If more then one coordinate system are defined in a domain (discussed later),
+ it is not clear which coordinates are used in the function-like expression.
 \end_layout
 
-\begin_layout Plain Layout
+\begin_layout Paragraph*
+solution
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 Regions consisting of one point and the 
 \family typewriter
 in
 \family default
- operator will be used instead.
- e.g.
+ operator will be used instead to represent the particular point.
+ E.g.
 \end_layout
 
-\begin_layout Plain Layout
+\begin_layout Standard
 \begin_inset Box Frameless
 position "t"
 hor_pos "c"
@@ -3431,7 +3471,7 @@ Ts = T in room.sensorPosition;
 \begin_layout Plain Layout
 
 \family typewriter
-end heatPid;
+end heatPID;
 \end_layout
 
 \end_inset
@@ -3439,258 +3479,246 @@ end heatPid;
 
 \end_layout
 
-\begin_layout Plain Layout
+\begin_layout Standard
 
-\series bold
-4.3.1.
- Domains Geometry Definition
+\family typewriter
+in
+\family default
+ operator will be probably used also to match regions from different domains
+ and to write equations (boundary conditions) relating fields from different
+ domains.
+ The syntax is not developed yet.
 \end_layout
 
-\begin_layout Plain Layout
-Main difference: Saldamli describes boundary by curves in 2D resp.
- surfaces in 3D and thus specifies the domain shape.
+\begin_layout Standard
+Modifications presented below are not so important and are questionable.
  
 \end_layout
 
-\begin_layout Plain Layout
-This approach doesn't work very well in 3D.
- If boundary is made of several surfaces in 3D, parameters (arguments) of
- shape-functions of these surfaces would heve to be bounded not just in
- cartesian product of intervals but in some more complex sets to compose
- continuous boundary.
- And there is no way to write this in Levons extension.
+\begin_layout Part*
+Coordinates
 \end_layout
 
-\begin_layout Plain Layout
-I prefare the way used in Peters book -- write a function (or equation)
- that maps an cartesian product of intervals onto the interior and other
- regions of the domain.
- I don't think this approach can describe more complicated geometries in
- 3D, but is closer to the way how such a region (subsets of 
-\begin_inset Formula $R^{n}$
+\begin_layout Paragraph*
+Originally
+\begin_inset Newline newline
 \end_inset
 
-) is usualy described in mathematics.
- I think it will be aslo easier to generate the computational grid if we
- have a function or equation that maps cartesian product on the domain.
+
 \end_layout
 
-\begin_layout Plain Layout
-There are two ways for the seccond approach:
+\begin_layout Standard
+see 4.3.1.1 and 4.3.1.3
 \end_layout
 
-\begin_layout Itemize
-using shape-function (used in the book)
-\end_layout
-
-\begin_layout Itemize
-using equations holding coordinate transformations and define always some
- general coordinates that are bounded in cartesian product of intervals
-\end_layout
-
-\begin_layout Plain Layout
-For illustration see domain_comparison.lyx/pdf file.
-\end_layout
-
-\begin_layout Plain Layout
-This way of domain deffinition should be supplemented with Constructive
- Solid Geometry -- it is building more complex domains using union, intersection
- and difference of previously defined domains.
- This is not designed already.
- It should be also possible define domain in external file from some CAD
- app.
-\end_layout
-
-\begin_layout Plain Layout
-4.3.1.1 
-\series bold
-Domain type
-\series default
- similar (built-in) - In both cases all domains extends general built-in
- 
+\begin_layout Standard
+There are two arrays for coordinates predefined in the built-in 
 \family typewriter
 Domain
 \family default
  type.
- Saldamlis built-in 
+ 
 \family typewriter
-Domain
+cartesian
 \family default
- has different members.
- We have only 
+ for cartesian coordinates and 
 \family typewriter
-replaceable Region interior;
+coord
+\family default
+ for arbitrary coordinates specified by the user.
+ No other coordinates may be defined except aliases to elements of these
+ predefined arrays.
 \end_layout
 
-\begin_layout Plain Layout
-3.2.1.2 
-\series bold
-Boundary type
-\series default
- (built-in) -- we don't needed it.
- Here is 
-\family typewriter
-Region0D, Region1D, Region2D
-\family default
- and 
-\family typewriter
-Region3D
-\family default
- built-in type to describe boundaries, interior and other regions in the
- domain instead.
-\end_layout
-
-\begin_layout Plain Layout
-4.3.1.3 
-\series bold
-Coordinate Systems 
-\series default
-Saldamlis domain always has cartesian coordinates defined.
- I would not insist on this.
-\end_layout
-
-\begin_layout Plain Layout
-I'm not shure if we shell have a spetial data type 
-\family typewriter
-Coordinate
-\family default
-, or it should be of type 
-\family typewriter
-Real
-\family default
- and compiler itself would infere that a variable is a coordinate that must
- be treated in a special way.
- Other option is to consider the variable type as somethink different from
- a data type because coordinate variable indeed doesn't hold any data and
- has a symbolic meaning (somethink like 
-\family typewriter
-time
-\family default
-).
- Than coordinates could be perhaps defined using keyword with lower case:
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-coordinate x;
-\end_layout
-
-\begin_layout Plain Layout
-4.3.2.3 
-\series bold
-Vector notation 
-\series default
--- coordinate-free differential operators as 
-\family typewriter
-gradient
-\family default
-, 
-\family typewriter
-divergence, rotation
-\family default
- ...
- I didn't work up how to define this.
- Could be accepted.
-\end_layout
-
-\begin_layout Plain Layout
-
-\series bold
-4.3.3 Domain Specifier in Equations
-\end_layout
-
-\begin_layout Plain Layout
-keyword 
-\family typewriter
-in
-\family default
- accepted.
- Should be used not only for boundary conditions but also for PDE to specifie
- region and to acces field values in particular points (example above).
-\end_layout
-
-\begin_layout Plain Layout
-
-\series bold
-4.3.4 Field Reduction 
-\series default
--- integral operator.
- I didn't consider yet, coul'd be perhaps undertaken.
-\end_layout
-
-\begin_layout Plain Layout
-\begin_inset VSpace medskip
+\begin_layout Paragraph*
+Problem
+\begin_inset Newline newline
 \end_inset
 
 
 \end_layout
 
-\begin_layout Plain Layout
-
-\series bold
-Other notes:
-\end_layout
-
-\begin_layout Plain Layout
-Equations may be written within or outside domain class.
- Outside domain coordinates must be accesd of course 
-\family typewriter
-domainName.coordName
-\family default
-.
- To make a shortcut we introduced 
-\family typewriter
-region
-\family default
- and 
-\family typewriter
-domain
-\family default
- (or 
-\family typewriter
-dom
-\family default
-) keywords as an alias for domain and region specified after 
-\family typewriter
-in 
-\family default
-op.
+\begin_layout Standard
+May be this is not flexible enough.
+ User may need more different coordinate systems.
  
 \end_layout
 
-\begin_layout Plain Layout
-To acces region we can write
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-pder(u,region.n) = 0 in omega.boundary;
-\end_layout
-
-\begin_layout Plain Layout
-similarly for domain
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-pder(u,dom.x) in omega.interior;
-\end_layout
-
-\begin_layout Plain Layout
-\begin_inset VSpace medskip
+\begin_layout Paragraph*
+Solution
+\begin_inset Newline newline
 \end_inset
 
 
 \end_layout
 
-\begin_layout Plain Layout
-It shoud be possible to write equations that relates field defined in different
- domains.
- This is not designed yet.
+\begin_layout Standard
+new modifier 
+\family typewriter
+coordinate
+\family default
+ to define coordinates.
+ Usage e.g.
 \end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+"coordinate Real" coordName;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The array 
+\family typewriter
+coord
+\family default
+ in the built-in 
+\family typewriter
+Domain
+\family default
+ type may be left out then.
+\end_layout
+
+\begin_layout Part*
+Field literal constructor
+\end_layout
+
+\begin_layout Paragraph*
+originally
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+see 4.2.2, e.g.: 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+u = field(2*a+b for (a,b) in omega)
+\begin_inset Newline newline
+\end_inset
+
+
+\family default
+where iterator variables 
+\family typewriter
+(a,b)
+\family default
+ exist only in constructor expression and represent coordinates in omega
+ (probably 
+\family typewriter
+coord,
+\family default
+ but may be 
+\family typewriter
+cartesian,
+\family default
+ it is not clear from the document.)
+\end_layout
+
+\begin_layout Paragraph*
+problem
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+It allows to define the field values in terms of only one coordinate system.
+ There may be two (or more -- if 
+\family typewriter
+coordinate
+\family default
+ keyword admitted) coordinate systems defined and it may be useful to be
+ able to define fields using any of them.
+\end_layout
+
+\begin_layout Standard
+And the syntax suggested below is shorter and simpler anyway.
+\end_layout
+
+\begin_layout Paragraph*
+solution
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+modified syntax:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\begin_inset Quotes sld
+\end_inset
+
+field (” expr ”in” dom ”)”
+\begin_inset Newline newline
+\end_inset
+
+
+\family default
+or just shortcut 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+”{” expr ”in” dom ”}”
+\begin_inset Newline newline
+\end_inset
+
+
+\family default
+where 
+\family typewriter
+dom
+\family default
+ is a domain and 
+\family typewriter
+expr
+\family default
+ may depend on coordinates defined in this domain.
+ E.g.
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+field Real f = field(2*omega.x+omega.y in omega.interior);
+\end_layout
+
+\begin_layout Part*
+Further problems
+\end_layout
+
+\begin_layout Standard
+If more coordinates are defined, which are considered when defining a region?
+ This problem is solved, if we use equations instead of shape-functions.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "bibliography"
+options "plain"
 
 \end_inset
 
