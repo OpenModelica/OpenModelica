@@ -807,7 +807,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        // Solve for any remaining unknowns
        solve_for_initial_unknowns();
        selectStateVars();
-       calc_vars();
+       calc_vars(NULL,true);
        save_vars();
        <%(vars.stateVars |> SIMVAR(__) => 'q[<%index%>]=<%cref(name)%>;') ;separator="\n"%>
        atInit = false;
