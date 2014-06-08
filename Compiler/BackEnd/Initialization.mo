@@ -534,7 +534,7 @@ algorithm
     case (cr::rest, _, _, _) equation
       identType = ComponentReference.crefTypeConsiderSubs(cr);
       crefExp = DAE.CREF(cr, identType);
-      crefPreExp = Expression.makeBuiltinCall("pre", {crefExp}, DAE.T_BOOL_DEFAULT);
+      crefPreExp = Expression.makePureBuiltinCall("pre", {crefExp}, DAE.T_BOOL_DEFAULT);
       eqn = BackendDAE.EQUATION(crefExp, crefPreExp, inSource, false, BackendDAE.INITIAL_EQUATION());
       (eqns, vars) = generateInactiveWhenEquationForInitialization(rest, inSource, eqn::inEqns, iVars);
     then (eqns, vars);
@@ -923,7 +923,7 @@ algorithm
     case ((DAE.CALL(path = Absyn.IDENT(name="sample")), useHomotopy)) then ((DAE.BCONST(false), useHomotopy));
     case ((DAE.CALL(path = Absyn.IDENT(name="delay"), expLst = _::e1::_ ), useHomotopy)) then ((e1, useHomotopy));
     case ((DAE.CALL(path = Absyn.IDENT(name="homotopy"), expLst = actual::simplified::_ ), _)) equation
-      e1 = Expression.makeBuiltinCall("homotopyParameter", {}, DAE.T_REAL_DEFAULT);
+      e1 = Expression.makePureBuiltinCall("homotopyParameter", {}, DAE.T_REAL_DEFAULT);
       e2 = DAE.BINARY(e1, DAE.MUL(DAE.T_REAL_DEFAULT), actual);
       e3 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.T_REAL_DEFAULT), e1);
       e1 = DAE.BINARY(e3, DAE.MUL(DAE.T_REAL_DEFAULT), simplified);
@@ -1501,7 +1501,7 @@ algorithm
 
       e = Expression.crefExp(cref);
       tp = Expression.typeof(e);
-      startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
+      startExp = Expression.makePureBuiltinCall("$_start", {e}, tp);
 
       eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false, BackendDAE.INITIAL_EQUATION());
       eqns = BackendEquation.equationAdd(eqn, inEqns);
@@ -1521,7 +1521,7 @@ algorithm
 
       e = Expression.crefExp(cref);
       tp = Expression.typeof(e);
-      startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
+      startExp = Expression.makePureBuiltinCall("$_start", {e}, tp);
 
       eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false, BackendDAE.INITIAL_EQUATION());
       eqns = BackendEquation.equationAdd(eqn, inEqns);

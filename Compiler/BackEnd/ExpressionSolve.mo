@@ -233,7 +233,7 @@ algorithm
        equation
          true = ComponentReference.crefEqual(cr, cr1);
          false = Expression.expHasDerCref(inExp2, cr);
-         e2 = Expression.makeBuiltinCall("exp",{inExp2},DAE.T_REAL_DEFAULT);
+         e2 = Expression.makePureBuiltinCall("exp",{inExp2},DAE.T_REAL_DEFAULT);
        then
          (e2,{});
 
@@ -242,7 +242,7 @@ algorithm
        equation
          true = ComponentReference.crefEqual(cr, cr1);
          false = Expression.expHasDerCref(inExp1, cr);
-         e2 = Expression.makeBuiltinCall("exp",{inExp1},DAE.T_REAL_DEFAULT);
+         e2 = Expression.makePureBuiltinCall("exp",{inExp1},DAE.T_REAL_DEFAULT);
        then
          (e2,{});
 
@@ -251,7 +251,7 @@ algorithm
        equation
          true = ComponentReference.crefEqual(cr, cr1);
          false = Expression.expHasDerCref(inExp2, cr);
-         e2 = Expression.makeBuiltinCall("log",{inExp2},DAE.T_REAL_DEFAULT);
+         e2 = Expression.makePureBuiltinCall("log",{inExp2},DAE.T_REAL_DEFAULT);
        then
          (e2,{});
 
@@ -260,7 +260,7 @@ algorithm
        equation
          true = ComponentReference.crefEqual(cr, cr1);
          false = Expression.expHasDerCref(inExp1, cr);
-         e2 = Expression.makeBuiltinCall("log",{inExp1},DAE.T_REAL_DEFAULT);
+         e2 = Expression.makePureBuiltinCall("log",{inExp1},DAE.T_REAL_DEFAULT);
        then
          (e2,{});
 
@@ -476,8 +476,8 @@ algorithm
         a = Expression.expDiv(DAE.RCONST(1.0),a);
         rhs = DAE.BINARY(rhs,DAE.POW(tp1),a);
         tp = Expression.typeof(inExp3);
-        dere = Expression.makeBuiltinCall("pre",{inExp3},tp);
-        dere = Expression.makeBuiltinCall("sign",{dere},DAE.T_INTEGER_DEFAULT);
+        dere = Expression.makePureBuiltinCall("pre",{inExp3},tp);
+        dere = Expression.makePureBuiltinCall("sign",{dere},DAE.T_INTEGER_DEFAULT);
         dere = DAE.IFEXP(DAE.RELATION(dere,DAE.EQUAL(tp),DAE.RCONST(0.0),-1,NONE()),DAE.RCONST(1.0),dere);
         rhs = Expression.expMul(dere,rhs);
       then
@@ -623,7 +623,7 @@ algorithm
         // iExp >= e1 and iExp <= en
         e = DAE.LBINARY(DAE.RELATION(iExp,DAE.GREATEREQ(DAE.T_INTEGER_DEFAULT),e1,-1,NONE()),DAE.AND(DAE.T_BOOL_DEFAULT),
                                      DAE.RELATION(iExp,DAE.LESSEQ(DAE.T_INTEGER_DEFAULT),en,-1,NONE()));
-        es = Expression.makeBuiltinCall("String", {iExp,DAE.SCONST("d")}, DAE.T_STRING_DEFAULT);
+        es = Expression.makePureBuiltinCall("String", {iExp,DAE.SCONST("d")}, DAE.T_STRING_DEFAULT);
         es = DAE.BINARY(DAE.SCONST(estr),DAE.ADD(DAE.T_STRING_DEFAULT),es);
       then
         DAE.STMT_ASSERT(e,es,DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)::inAsserts;

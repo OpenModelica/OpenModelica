@@ -38,18 +38,18 @@ annotation(Documentation(info="<html>
 </html>"));
 end der;
 
-function initial
+impure function initial
   output Boolean isInitial;
 external "builtin";
-annotation(__OpenModelica_Impure = true, Documentation(info="<html>
+annotation(__OpenModelica_Impure=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'initial()'\">initial()</a>
 </html>"));
 end initial;
 
-function terminal
+impure function terminal
   output Boolean isTerminal;
 external "builtin";
-annotation(__OpenModelica_Impure = true, Documentation(info="<html>
+annotation(__OpenModelica_Impure=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'terminal()'\">terminal()</a>
 </html>"));
 end terminal;
@@ -76,12 +76,12 @@ external "builtin";
 annotation(version="Dymola / MSL 1.6");
 end constrain;
 
-function sample "Trigger time events"
+impure function sample "Trigger time events"
   parameter input Real start(fixed=false);
   parameter input Real interval(fixed=false);
   output Boolean isSample;
 external "builtin";
-annotation(__OpenModelica_Impure = true, Documentation(info="<html>
+annotation(__OpenModelica_Impure=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'sample()'\">sample()</a>
 </html>"));
 end sample;
@@ -369,9 +369,9 @@ end skew;
 // SCodeFlatten to define which builtin functions exist (SCodeFlatten doesn't
 // care how the functions are defined, only if they exist or not).
 
-function delay "Delay expression"
+impure function delay "Delay expression"
   external "builtin";
-  annotation(__OpenModelica_Impure = true, Documentation(info="<html>
+  annotation(__OpenModelica_Impure=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'delay()'\">delay()</a>
 </html>"));
 end delay;
@@ -639,10 +639,10 @@ encapsulated package Subtask
   end lastInterval;
 end Subtask;
 
-function print "Prints to stdout, useful for debugging."
+impure function print "Prints to stdout, useful for debugging."
   input String str;
 external "builtin";
-annotation(__OpenModelica_Impure = true, version="OpenModelica extension");
+annotation(__OpenModelica_Impure=true, version="OpenModelica extension");
 end print;
 
 function classDirectory "Non-standard operator"
@@ -983,7 +983,7 @@ external "builtin";
 annotation(preferredView="text");
 end loadFileInteractive;
 
-function system "Similar to system(3). Executes the given command in the system shell."
+impure function system "Similar to system(3). Executes the given command in the system shell."
   input String callStr "String to call: sh -c $callStr";
   input String outputFile := "" "The output is redirected to this file (unless already done by callStr)";
   output Integer retval "Return value of the system call; usually 0 on success";
@@ -991,7 +991,7 @@ external "builtin" annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
 end system;
 
-function system_parallel "Similar to system(3). Executes the given commands in the system shell, in parallel if omc was compiled using OpenMP."
+impure function system_parallel "Similar to system(3). Executes the given commands in the system shell, in parallel if omc was compiled using OpenMP."
   input String callStr[:] "String to call: sh -c $callStr";
   input Integer numThreads := numProcessors();
   output Integer retval[:] "Return value of the system call; usually 0 on success";
@@ -1398,7 +1398,7 @@ algorithm
   exists := Internal.stat(dirName) == Internal.FileType.Directory;
 end directoryExists;
 
-function readFile
+impure function readFile
   "The contents of the given file are returned.
   Note that if the function fails, the error message is returned as a string instead of multiple output or similar."
   input String fileName;
@@ -1407,7 +1407,7 @@ external "builtin" annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
 end readFile;
 
-function writeFile
+impure function writeFile
   "Write the data to file. Returns true on success."
   input String fileName;
   input String data;
@@ -1417,7 +1417,7 @@ external "builtin" annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
 end writeFile;
 
-function compareFilesAndMove
+impure function compareFilesAndMove
   input String newFile;
   input String oldFile;
   output Boolean success;
@@ -1427,7 +1427,7 @@ external "builtin" annotation(__OpenModelica_Impure=true,Documentation(info="<ht
 </html>"));
 end compareFilesAndMove;
 
-function alarm
+impure function alarm
   input Integer seconds;
   output Integer previousSeconds;
 external "builtin" annotation(__OpenModelica_Impure=true,Library = {"omcruntime"},Documentation(info="<html>

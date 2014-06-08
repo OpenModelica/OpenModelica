@@ -294,7 +294,7 @@ public function elabCallInteractive "This function elaborates the functions defi
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
       then
-        (cache,Expression.makeBuiltinCall("translateModel",simulationArgs,DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makePureBuiltinCall("translateModel",simulationArgs,DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
    case (cache,env,Absyn.CREF_IDENT(name = "modelEquationsUC"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
@@ -303,7 +303,7 @@ public function elabCallInteractive "This function elaborates the functions defi
         (cache,outputFile) = Static.getOptionalNamedArg(cache, env, SOME(st), impl, "outputFile", DAE.T_STRING_DEFAULT,args, DAE.SCONST(""),pre,info);
         (cache,dumpExtractionSteps) = Static.getOptionalNamedArg(cache,env,SOME(st),impl,"dumpSteps",DAE.T_BOOL_DEFAULT,args,DAE.BCONST(false),pre,info);
       then
-        (cache,Expression.makeBuiltinCall("modelEquationsUC",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),outputFile,dumpExtractionSteps},DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makePureBuiltinCall("modelEquationsUC",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),outputFile,dumpExtractionSteps},DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
    case (cache,env,Absyn.CREF_IDENT(name = "translateModelCPP"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
@@ -317,7 +317,7 @@ public function elabCallInteractive "This function elaborates the functions defi
          DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
           NONE(),DAE.emptyTypeSource);
       then
-        (cache,Expression.makeBuiltinCall("translateModelCPP",
+        (cache,Expression.makePureBuiltinCall("translateModelCPP",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "translateModelFMU"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
@@ -334,7 +334,7 @@ public function elabCallInteractive "This function elaborates the functions defi
            DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
            NONE(),DAE.emptyTypeSource);
       then
-        (cache,Expression.makeBuiltinCall("translateModelFMU",
+        (cache,Expression.makePureBuiltinCall("translateModelFMU",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),fmuversion,filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "translateModelXML"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
@@ -349,7 +349,7 @@ public function elabCallInteractive "This function elaborates the functions defi
            DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
            NONE(),DAE.emptyTypeSource);
       then
-        (cache,Expression.makeBuiltinCall("translateModelXML",
+        (cache,Expression.makePureBuiltinCall("translateModelXML",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "exportDAEtoMatlab"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
@@ -364,21 +364,21 @@ public function elabCallInteractive "This function elaborates the functions defi
            DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
            NONE(),DAE.emptyTypeSource);
       then
-        (cache,Expression.makeBuiltinCall("exportDAEtoMatlab",
+        (cache,Expression.makePureBuiltinCall("exportDAEtoMatlab",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_)
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
       then
-        (cache,Expression.makeBuiltinCall("buildModel",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
+        (cache,Expression.makePureBuiltinCall("buildModel",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
          DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)},DAE.emptyTypeSource),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_)
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
       then
-        (cache,Expression.makeBuiltinCall("buildModelBeast",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
+        (cache,Expression.makePureBuiltinCall("buildModelBeast",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
          DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)},DAE.emptyTypeSource),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
@@ -386,28 +386,28 @@ public function elabCallInteractive "This function elaborates the functions defi
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
         recordtype = CevalScript.getSimulationResultType();
       then
-        (cache,Expression.makeBuiltinCall("simulate",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makePureBuiltinCall("simulate",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulation"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
         recordtype = CevalScript.getDrModelicaSimulationResultType();
       then
-        (cache,Expression.makeBuiltinCall("simulation",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makePureBuiltinCall("simulation",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "linearize"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
         recordtype = CevalScript.getSimulationResultType();
       then
-        (cache,Expression.makeBuiltinCall("linearize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makePureBuiltinCall("linearize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "optimize"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
         recordtype = CevalScript.getSimulationResultType();
       then
-        (cache,Expression.makeBuiltinCall("optimize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makePureBuiltinCall("optimize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
 
     case (cache,env,Absyn.CREF_IDENT(name = "jacobian"),{Absyn.CREF(componentRef = cr)},_,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
@@ -415,13 +415,13 @@ public function elabCallInteractive "This function elaborates the functions defi
         (cache,cr_1) = Static.elabUntypedCref(cache,env,cr,impl,pre,info);
         crefExp = Expression.crefExp(cr_1);
       then
-        (cache,Expression.makeBuiltinCall("jacobian",{crefExp},DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makePureBuiltinCall("jacobian",{crefExp},DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "timing"),{exp},{},impl,SOME(st),pre,_)
       equation
         (cache,exp_1,_,st_1) = elabExp(cache,env, exp, impl, SOME(st),true,pre,info);
       then
-        (cache,Expression.makeBuiltinCall("timing",{exp_1},DAE.T_REAL_DEFAULT),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),st_1);
+        (cache,Expression.makePureBuiltinCall("timing",{exp_1},DAE.T_REAL_DEFAULT),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),st_1);
 
       // MathCore-specific. Should be in MathCoreBuiltin.mo :p
     case (cache,_,Absyn.CREF_IDENT(name = "checkExamplePackages"),{},args,_,SOME(st),_,_)
@@ -429,7 +429,7 @@ public function elabCallInteractive "This function elaborates the functions defi
         excludeList = Static.getOptionalNamedArgExpList("exclude", args);
         excludeListSize = listLength(excludeList);
       then
-        (cache,Expression.makeBuiltinCall("checkExamplePackages",
+        (cache,Expression.makePureBuiltinCall("checkExamplePackages",
         {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)},DAE.emptyTypeSource),false,excludeList)},
         DAE.T_STRING_DEFAULT),
         DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
@@ -439,7 +439,7 @@ public function elabCallInteractive "This function elaborates the functions defi
         excludeList = Static.getOptionalNamedArgExpList("exclude", args);
         excludeListSize = listLength(excludeList);
       then
-        (cache,Expression.makeBuiltinCall("checkExamplePackages",
+        (cache,Expression.makePureBuiltinCall("checkExamplePackages",
         {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)},DAE.emptyTypeSource),false,excludeList),DAE.SCONST(str)},
         DAE.T_STRING_DEFAULT),
         DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
@@ -450,7 +450,7 @@ public function elabCallInteractive "This function elaborates the functions defi
         excludeList = Static.getOptionalNamedArgExpList("exclude", args);
         excludeListSize = listLength(excludeList);
       then
-        (cache,Expression.makeBuiltinCall("checkExamplePackages",
+        (cache,Expression.makePureBuiltinCall("checkExamplePackages",
         {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)},DAE.emptyTypeSource),false,excludeList),
         DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT)},
         DAE.T_STRING_DEFAULT),
@@ -462,7 +462,7 @@ public function elabCallInteractive "This function elaborates the functions defi
         excludeList = Static.getOptionalNamedArgExpList("exclude", args);
         excludeListSize = listLength(excludeList);
       then
-        (cache,Expression.makeBuiltinCall("checkExamplePackages",
+        (cache,Expression.makePureBuiltinCall("checkExamplePackages",
         {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)},DAE.emptyTypeSource),false,excludeList),
          DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),DAE.SCONST(str)},
         DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));

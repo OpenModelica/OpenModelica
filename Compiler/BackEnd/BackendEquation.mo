@@ -1974,7 +1974,7 @@ algorithm
       // Create a sum for arrays...
     case (DAE.CREF(ty=DAE.T_ARRAY(ty=DAE.T_REAL(source=_))),_,_,(i,eqs))
       equation
-        e = Expression.makeBuiltinCall("sum",{DAE.TSUB(exp,i,DAE.T_REAL_DEFAULT)},DAE.T_REAL_DEFAULT);
+        e = Expression.makePureBuiltinCall("sum",{DAE.TSUB(exp,i,DAE.T_REAL_DEFAULT)},DAE.T_REAL_DEFAULT);
         eqs = BackendDAE.RESIDUAL_EQUATION(e,inSource,false,BackendDAE.UNKNOWN_EQUATION_KIND())::eqs;
       then ((i+1,eqs));
     case (_,_,_,(i,_))

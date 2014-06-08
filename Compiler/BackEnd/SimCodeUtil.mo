@@ -2853,7 +2853,7 @@ algorithm
         varexp = Expression.crefExp(cr);
         varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
         failure((_, _) = ExpressionSolve.solve(e1, e2, varexp));
-        prevarexp = Expression.makeBuiltinCall("pre", {varexp}, Expression.typeof(varexp));
+        prevarexp = Expression.makePureBuiltinCall("pre", {varexp}, Expression.typeof(varexp));
         prevarexp = Expression.expSub(varexp, prevarexp);
         ((e2, _)) = Expression.traverseExp(e2, replaceIFBrancheswithoutVar, (varexp, prevarexp));
         eqn = BackendDAE.EQUATION(e1, e2, source, false, BackendDAE.UNKNOWN_EQUATION_KIND());

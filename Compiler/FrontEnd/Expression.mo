@@ -7171,37 +7171,48 @@ algorithm
     then ((e, true));
 
     // workaround for builtin functions that are impure, but not marked as impure
-    case (((e as DAE.CALL(path = Absyn.IDENT(name="alarm"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="alarm"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
+      print("alarm: call is not marked as impure\n"); */
     then ((e, true));
-
-    case (((e as DAE.CALL(path = Absyn.IDENT(name="compareFilesAndMove"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="compareFilesAndMove"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
+      print("compareFilesAndMove: call is not marked as impure\n"); */
     then ((e, true));
-
-    case (((e as DAE.CALL(path = Absyn.IDENT(name="delay"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="delay"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
+      print("delay: call is not marked as impure\n"); */
     then ((e, true));
-
-    case (((e as DAE.CALL(path = Absyn.IDENT(name="initial"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="initial"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
+      print("initial: call is not marked as impure\n"); */
     then ((e, true));
-
-    case (((e as DAE.CALL(path = Absyn.IDENT(name="print"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="print"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
+      print("print: call is not marked as impure\n"); */
     then ((e, true));
-
-    case (((e as DAE.CALL(path = Absyn.IDENT(name="readFile"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="readFile"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
+      print("readFile: call is not marked as impure\n"); */
     then ((e, true));
-
-    case (((e as DAE.CALL(path = Absyn.IDENT(name="sample"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="sample"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
+      print("sample: call is not marked as impure\n"); */
     then ((e, true));
-
-    case (((e as DAE.CALL(path = Absyn.IDENT(name="system"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="system"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
+      print("system: call is not marked as impure\n"); */
     then ((e, true));
-
-    case (((e as DAE.CALL(path = Absyn.IDENT(name="system_parallel"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="system_parallel"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
+      print("system_parallel: call is not marked as impure\n"); */
     then ((e, true));
-
-    case (((e as DAE.CALL(path = Absyn.IDENT(name="terminal"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="terminal"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
+      print("terminal: call is not marked as impure\n"); */
     then ((e, true));
-
-    case (((e as DAE.CALL(path = Absyn.IDENT(name="writeFile"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="writeFile"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
+      print("writeFile: call is not marked as impure\n"); */
     then ((e, true));
 
     else
@@ -9450,11 +9461,34 @@ public function makeBuiltinCall
   input String name;
   input list<DAE.Exp> args;
   input DAE.Type result_type;
+  input Boolean isImpure;
   output DAE.Exp call;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  call := DAE.CALL(Absyn.IDENT(name),args,DAE.CALL_ATTR(result_type,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+  call := DAE.CALL(Absyn.IDENT(name),args,DAE.CALL_ATTR(result_type,false,true,isImpure,DAE.NO_INLINE(),DAE.NO_TAIL()));
 end makeBuiltinCall;
+
+public function makePureBuiltinCall
+  "Create a DAE.CALL with the given data for a call to a builtin function."
+  input String name;
+  input list<DAE.Exp> args;
+  input DAE.Type result_type;
+  output DAE.Exp call;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  call := makeBuiltinCall(name, args, result_type, false);
+end makePureBuiltinCall;
+
+public function makeImpureBuiltinCall
+  "Create a DAE.CALL with the given data for a call to a builtin function."
+  input String name;
+  input list<DAE.Exp> args;
+  input DAE.Type result_type;
+  output DAE.Exp call;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  call := makeBuiltinCall(name, args, result_type, true);
+end makeImpureBuiltinCall;
 
 public function reductionIterName
   input DAE.ReductionIterator iter;
@@ -10288,7 +10322,7 @@ algorithm
     // An expression with array type, but which is not an array expression. Such
     // an expression can't be promoted here, so we create a promote call instead.
     case (_, true, _, ty :: _)
-      then makeBuiltinCall("promote", {inExp, DAE.ICONST(inDims)}, ty);
+      then makePureBuiltinCall("promote", {inExp, DAE.ICONST(inDims)}, ty);
 
     // Any other expression, call promoteExp3.
     else promoteExp3(inExp, inTypes);

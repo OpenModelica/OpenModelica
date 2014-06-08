@@ -1550,7 +1550,7 @@ algorithm
       equation
         tp = Expression.typeof(exp);
         (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
-        exp_2 = Expression.makeBuiltinCall("cos", {exp}, tp);
+        exp_2 = Expression.makePureBuiltinCall("cos", {exp}, tp);
       then (DAE.BINARY(exp_2, DAE.MUL(tp), exp_1), funcs);
 
     // diff(cos(x)) = -sin(x)*der(x)
@@ -1558,7 +1558,7 @@ algorithm
       equation
         tp = Expression.typeof(exp);
         (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
-        exp_2 = Expression.makeBuiltinCall("sin", {exp}, tp);
+        exp_2 = Expression.makePureBuiltinCall("sin", {exp}, tp);
       then (DAE.BINARY(DAE.UNARY(DAE.UMINUS(tp),exp_2), DAE.MUL(tp), exp_1), funcs);
 
     // diff(tan(x)) = (2*der(x)/(cos(2*x)+1))
@@ -1566,7 +1566,7 @@ algorithm
       equation
         tp = Expression.typeof(exp);
         (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
-        exp_2 = Expression.makeBuiltinCall("cos", {DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(tp),exp)}, tp);
+        exp_2 = Expression.makePureBuiltinCall("cos", {DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(tp),exp)}, tp);
       then
         (DAE.BINARY(
           DAE.BINARY(DAE.RCONST(2.0), DAE.MUL(tp), exp_1), DAE.DIV(tp),
@@ -1577,7 +1577,7 @@ algorithm
       equation
         tp = Expression.typeof(exp);
         (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
-        exp_2 = Expression.makeBuiltinCall("sqrt", {DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(tp),DAE.BINARY(exp,DAE.MUL(tp),exp))}, tp);
+        exp_2 = Expression.makePureBuiltinCall("sqrt", {DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(tp),DAE.BINARY(exp,DAE.MUL(tp),exp))}, tp);
       then (DAE.BINARY(exp_1,DAE.DIV(tp),exp_2), funcs);
 
     // der(arccos(x)) = -der(x)/sqrt(1-x^2)
@@ -1585,7 +1585,7 @@ algorithm
       equation
         tp = Expression.typeof(exp);
         (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
-        exp_2 = Expression.makeBuiltinCall("sqrt", {DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(tp),DAE.BINARY(exp,DAE.MUL(tp),exp))}, tp);
+        exp_2 = Expression.makePureBuiltinCall("sqrt", {DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(tp),DAE.BINARY(exp,DAE.MUL(tp),exp))}, tp);
       then (DAE.UNARY(DAE.UMINUS(tp),DAE.BINARY(exp_1,DAE.DIV(tp),exp_2)), funcs);
 
     // der(arctan(x)) = der(x)/(1+x^2)
@@ -1600,7 +1600,7 @@ algorithm
       equation
         tp = Expression.typeof(exp);
         (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
-        exp_2 = Expression.makeBuiltinCall("cosh",{exp},tp);
+        exp_2 = Expression.makePureBuiltinCall("cosh",{exp},tp);
       then (DAE.BINARY(exp_1,DAE.MUL(tp),exp_2), funcs);
 
     // der(cosh(x)) => der(x)sinh(x)
@@ -1608,7 +1608,7 @@ algorithm
       equation
         tp = Expression.typeof(exp);
         (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
-        exp_2 = Expression.makeBuiltinCall("sinh",{exp},tp);
+        exp_2 = Expression.makePureBuiltinCall("sinh",{exp},tp);
       then (DAE.BINARY(exp_1,DAE.MUL(tp),exp_2), funcs);
 
     // der(tanh(x)) = der(x) / cosh(x)^2
@@ -1616,7 +1616,7 @@ algorithm
       equation
         tp = Expression.typeof(exp);
         (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType, inFuncs);
-        exp_2 = Expression.makeBuiltinCall("cosh", {exp}, tp);
+        exp_2 = Expression.makePureBuiltinCall("cosh", {exp}, tp);
       then (DAE.BINARY(exp_1, DAE.DIV(tp),
                       DAE.BINARY(exp_2, DAE.POW(tp), DAE.RCONST(2.0))), funcs);
 
@@ -1625,7 +1625,7 @@ algorithm
       equation
         tp = Expression.typeof(exp);
         (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
-        exp_2 = Expression.makeBuiltinCall("exp",{exp},tp);
+        exp_2 = Expression.makePureBuiltinCall("exp",{exp},tp);
       then (DAE.BINARY(exp_2, DAE.MUL(tp), exp_1), funcs);
 
     // diff(log(x)) = der(x)/x
@@ -1641,7 +1641,7 @@ algorithm
       equation
         tp = Expression.typeof(exp);
         (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
-        exp_2 = Expression.makeBuiltinCall("log",{DAE.RCONST(10.0)},tp);
+        exp_2 = Expression.makePureBuiltinCall("log",{DAE.RCONST(10.0)},tp);
       then
         (DAE.BINARY(exp_1, DAE.DIV(tp),
           DAE.BINARY(exp, DAE.MUL(tp), exp_2)), funcs);
@@ -1651,7 +1651,7 @@ algorithm
       equation
         tp = Expression.typeof(exp);
         (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
-        exp_2 = Expression.makeBuiltinCall("sqrt",{exp},tp);
+        exp_2 = Expression.makePureBuiltinCall("sqrt",{exp},tp);
       then
         (DAE.BINARY(exp_1, DAE.DIV(tp),
           DAE.BINARY(DAE.RCONST(2.0), DAE.MUL(tp), exp_2)), funcs);
@@ -1661,7 +1661,7 @@ algorithm
       equation
         tp = Expression.typeof(exp);
         (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
-        exp_2 = Expression.makeBuiltinCall("sign",{exp}, tp);
+        exp_2 = Expression.makePureBuiltinCall("sign",{exp}, tp);
       then (DAE.BINARY(exp_2, DAE.MUL(tp), exp_1), funcs);
 
     case ("sign",_,_,_,_,_)
@@ -1700,14 +1700,14 @@ algorithm
       equation
         (res1, funcs) = differentiateExp(e2,inDiffwrtCref,inInputData,inDiffType,inFunctionTree);
         e1 = Expression.expSub(DAE.ICONST(i), DAE.ICONST(1));
-        res2 = Util.if_(intGe(i,1), Expression.makeBuiltinCall("smooth", {e1, res1}, tp), res1);
+        res2 = Util.if_(intGe(i,1), Expression.makePureBuiltinCall("smooth", {e1, res1}, tp), res1);
       then
         (res2, funcs);
 
     case ("noEvent",{e1}, DAE.CALL_ATTR(ty=tp), _, _, _, _)
       equation
         (res1, funcs) = differentiateExp(e1,inDiffwrtCref,inInputData,inDiffType,inFunctionTree);
-        res1 = Expression.makeBuiltinCall("noEvent", {res1}, tp);
+        res1 = Expression.makePureBuiltinCall("noEvent", {res1}, tp);
       then
         (res1, funcs);
 
@@ -1739,14 +1739,14 @@ algorithm
       equation
         (dexpl, funcs) = List.map3Fold(expl, differentiateExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
       then
-        (Expression.makeBuiltinCall("transpose", dexpl, tp), funcs);
+        (Expression.makePureBuiltinCall("transpose", dexpl, tp), funcs);
 
     case ("cross", {e1,e2}, DAE.CALL_ATTR(ty=tp), _, _, _, _)
       equation
         (res1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (res2, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, funcs);
-        res2 = Expression.makeBuiltinCall("cross",{e1,res2},tp);
-        res1 = Expression.makeBuiltinCall("cross",{res1,e2},tp);
+        res2 = Expression.makePureBuiltinCall("cross",{e1,res2},tp);
+        res1 = Expression.makePureBuiltinCall("cross",{res1,e2},tp);
       then
         (DAE.BINARY(res2, DAE.ADD_ARR(tp), res1), funcs);
 
@@ -1760,7 +1760,7 @@ algorithm
     case ("max", expl as (_::_::_), DAE.CALL_ATTR(ty=tp), _, _, _, _)
       equation
         /* TODO: Implement Derivative of max(a,b,...,n)  */
-        res1 = Expression.makeBuiltinCall("max",expl,tp);
+        res1 = Expression.makePureBuiltinCall("max",expl,tp);
         e_str = ExpressionDump.printExpStr(res1);
         Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {e_str});
       then
@@ -1776,7 +1776,7 @@ algorithm
     case ("min", expl as (_::_::_), DAE.CALL_ATTR(ty=tp), _, _, _, _)
       equation
         /* TODO: Implement Derivative of min(a,b,...,n)  */
-        res1 = Expression.makeBuiltinCall("min",expl,tp);
+        res1 = Expression.makePureBuiltinCall("min",expl,tp);
         e_str = ExpressionDump.printExpStr(res1);
         Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {e_str});
       then
@@ -1990,7 +1990,7 @@ algorithm
       equation
         (de1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (de2, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        etmp = Expression.makeBuiltinCall("log", {e1}, tp);
+        etmp = Expression.makePureBuiltinCall("log", {e1}, tp);
         e = Expression.addNoEventToRelations(DAE.IFEXP(DAE.RELATION(e1, DAE.EQUAL(tp), DAE.RCONST(0.0), -1, NONE()),
                        DAE.RCONST(0.0), DAE.BINARY(DAE.BINARY(e1, DAE.POW(tp), DAE.BINARY(e2, DAE.SUB(tp), DAE.RCONST(1.0))),
                        DAE.MUL(tp), DAE.BINARY(DAE.BINARY(DAE.BINARY(e1, DAE.MUL(tp), etmp), DAE.MUL(tp), de2),

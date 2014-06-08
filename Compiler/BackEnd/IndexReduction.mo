@@ -1851,7 +1851,7 @@ protected function makeStartExp
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp := Expression.makeBuiltinCall("$_start", {inExp}, Expression.typeof(inExp));
+  outExp := Expression.makePureBuiltinCall("$_start", {inExp}, Expression.typeof(inExp));
 end makeStartExp;
 
 protected function setStartExp
@@ -2075,7 +2075,7 @@ algorithm
       equation
          false = intEq(System.strncmp(ComponentReference.crefFirstIdent(cr),"$DER",4),0);
          exp = Expression.crefExp(cr);
-         exp = Expression.makeBuiltinCall("der", {exp}, Expression.typeof(exp));
+         exp = Expression.makePureBuiltinCall("der", {exp}, Expression.typeof(exp));
          repl = BaseHashTable.add((dcr,exp),iRepl);
         (dummyVars,repl) = removeFirstOrderDerivatives(dummyVars,iVars,so,iAcc,repl);
       then

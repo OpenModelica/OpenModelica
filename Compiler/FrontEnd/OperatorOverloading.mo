@@ -791,7 +791,7 @@ algorithm
         DAE.T_ARRAY(ty=newType2_1,dims=dim2_1::{}) = inType2;
         DAE.T_ARRAY(ty=newType2,dims=dim2_2::{}) = newType2_1;
         true = Expression.dimensionsEqual(dim1_2,dim2_1);
-        transposed = Expression.makeBuiltinCall("transpose",{inExp2},Types.liftArray(Types.liftArray(newType2,dim2_1),dim2_2));
+        transposed = Expression.makePureBuiltinCall("transpose",{inExp2},Types.liftArray(Types.liftArray(newType2,dim2_1),dim2_2));
         iterName1 = Util.getTempVariableIndex();
         iterName2 = Util.getTempVariableIndex();
         iterName3 = Util.getTempVariableIndex();

@@ -851,7 +851,7 @@ algorithm
       equation
         tp_1 = List.fold(exps,Expression.unliftArrayIgnoreFirst,tp);
         e = DAE.CAST(tp_1,e);
-        e = Expression.makeBuiltinCall("fill",e::exps,tp);
+        e = Expression.makePureBuiltinCall("fill",e::exps,tp);
       then e;
 
     // cat(e, ...) can be simplified
@@ -859,7 +859,7 @@ algorithm
       equation
         DAE.DIM_UNKNOWN() = listGet(dims,n);
         exps = List.map1(exps,addCast,tp);
-      then Expression.makeBuiltinCall("cat",e::exps,tp);
+      then Expression.makePureBuiltinCall("cat",e::exps,tp);
 
     // expression already has a specified cast type.
     case(_,e,_)
@@ -910,7 +910,7 @@ algorithm
         e1 = Expression.makeScalarArray(expl, tp);
         false = Expression.expEqual(e, e1);
       then
-        Expression.makeBuiltinCall(name, {e1}, tp);
+        Expression.makePureBuiltinCall(name, {e1}, tp);
 
     // min/max function on arrays of only 1 element
     case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array={e})})) then e;
@@ -924,7 +924,7 @@ algorithm
         i2 = listLength(es);
         false = i1 == i2;
         e = Expression.makeScalarArray(es,tp);
-      then Expression.makeBuiltinCall("min",{e},tp);
+      then Expression.makePureBuiltinCall("min",{e},tp);
     case (DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
       equation
         i1 = listLength(es);
@@ -932,7 +932,7 @@ algorithm
         i2 = listLength(es);
         false = i1 == i2;
         e = Expression.makeScalarArray(es,tp);
-      then Expression.makeBuiltinCall("max",{e},tp);
+      then Expression.makePureBuiltinCall("max",{e},tp);
 
     case (DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
       equation
@@ -943,15 +943,15 @@ algorithm
         i2 = listLength(es);
         true = i2 < i1;
         e = Expression.makeScalarArray(es,tp);
-      then Expression.makeBuiltinCall("max",{e},tp);
+      then Expression.makePureBuiltinCall("max",{e},tp);
 
     case (DAE.CALL(path=Absyn.IDENT("min"),attr=DAE.CALL_ATTR(ty=tp),expLst={DAE.ARRAY(array={e1,e2})}))
       equation
-        e = Expression.makeBuiltinCall("min",{e1,e2},tp);
+        e = Expression.makePureBuiltinCall("min",{e1,e2},tp);
       then e;
     case (DAE.CALL(path=Absyn.IDENT("max"),attr=DAE.CALL_ATTR(ty=tp),expLst={DAE.ARRAY(array={e1,e2})}))
       equation
-        e = Expression.makeBuiltinCall("max",{e1,e2},tp);
+        e = Expression.makePureBuiltinCall("max",{e1,e2},tp);
       then e;
     case (DAE.CALL(path=Absyn.IDENT("min"),attr=DAE.CALL_ATTR(ty=DAE.T_BOOL(varLst = _)),expLst={e1,e2}))
       equation
@@ -976,7 +976,7 @@ algorithm
         true = Config.scalarizeMinMax();
         true = stringEq(name, "max") or stringEq(name, "min");
         e1 :: e2 :: expl = listReverse(expl);
-        e1 = Expression.makeBuiltinCall(name, {e2, e1}, tp);
+        e1 = Expression.makePureBuiltinCall(name, {e2, e1}, tp);
         e1 = List.fold2(expl, makeNestedReduction, name, tp, e1);
       then
         e1;
@@ -1016,7 +1016,7 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={DAE.BINARY(e1,DAE.POW(ty = DAE.T_REAL(source = _)),e2)})
       equation
         e = DAE.BINARY(e1,DAE.POW(DAE.T_REAL_DEFAULT),DAE.BINARY(DAE.RCONST(0.5),DAE.MUL(DAE.T_REAL_DEFAULT),e2));
-      then Expression.makeBuiltinCall("abs",{e},DAE.T_REAL_DEFAULT);
+      then Expression.makePureBuiltinCall("abs",{e},DAE.T_REAL_DEFAULT);
 
    // sqrt(sqrt(e)) => e ^ (0.25)
     case (DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1})}))
@@ -1026,8 +1026,8 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={DAE.BINARY(e1 as DAE.RCONST(r1),DAE.MUL(tp),e2)})
       equation
         true = r1 >=. 0.0;
-        e = Expression.makeBuiltinCall("sqrt",{e1},DAE.T_REAL_DEFAULT);
-        e3 =  Expression.makeBuiltinCall("sqrt",{e2},DAE.T_REAL_DEFAULT);
+        e = Expression.makePureBuiltinCall("sqrt",{e1},DAE.T_REAL_DEFAULT);
+        e3 =  Expression.makePureBuiltinCall("sqrt",{e2},DAE.T_REAL_DEFAULT);
       then DAE.BINARY(e,DAE.MUL(tp),e3);
 
    // exp(-log(x)) = 1/x
@@ -1050,13 +1050,13 @@ algorithm
    case (DAE.BINARY(DAE.CALL(path=Absyn.IDENT("exp"),expLst={e}),DAE.POW(ty = DAE.T_REAL(source = _)),e2))
      equation
       e3 = Expression.expMul(e,e2);
-   then Expression.makeBuiltinCall("exp",{e3},DAE.T_REAL_DEFAULT);
+   then Expression.makePureBuiltinCall("exp",{e3},DAE.T_REAL_DEFAULT);
 
    // log(x^n) = n*log(x)
    case (DAE.CALL(path=Absyn.IDENT("log"),expLst={DAE.BINARY(e1,DAE.POW(ty = DAE.T_REAL(source = _)), DAE.RCONST(r1))}))
      equation
        1.0 = realMod(r1,2.0);
-       e3 = Expression.makeBuiltinCall("log",{e1},DAE.T_REAL_DEFAULT);
+       e3 = Expression.makePureBuiltinCall("log",{e1},DAE.T_REAL_DEFAULT);
      then  Expression.expMul(DAE.RCONST(r1), e3);
 
    // smooth of constant expression
@@ -1075,20 +1075,20 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT("delay"),expLst={DAE.BINARY(e1,op,e2),e3,e4},attr=DAE.CALL_ATTR(ty=tp))
       equation
         true = Expression.isConst(e1);
-        e = Expression.makeBuiltinCall("delay",{e2,e3,e4},tp);
+        e = Expression.makeImpureBuiltinCall("delay",{e2,e3,e4},tp);
       then DAE.BINARY(e1,op,e);
 
     // delay of constant subexpression
     case DAE.CALL(path=Absyn.IDENT("delay"),expLst={DAE.BINARY(e1,op,e2),e3,e4},attr=DAE.CALL_ATTR(ty=tp))
       equation
         true = Expression.isConst(e2);
-        e = Expression.makeBuiltinCall("delay",{e1,e3,e4},tp);
+        e = Expression.makeImpureBuiltinCall("delay",{e1,e3,e4},tp);
       then DAE.BINARY(e,op,e2);
 
     // delay(-x) = -delay(x)
     case DAE.CALL(path=Absyn.IDENT("delay"),expLst={DAE.UNARY(op,e),e3,e4},attr=DAE.CALL_ATTR(ty=tp))
       equation
-        e = Expression.makeBuiltinCall("delay",{e,e3,e4},tp);
+        e = Expression.makeImpureBuiltinCall("delay",{e,e3,e4},tp);
       then DAE.UNARY(op,e);
 
     // To calculate sums, first try matrix concatenation
@@ -1102,7 +1102,7 @@ algorithm
         dim = listLength(es);
         tp1 = Expression.liftArrayLeft(tp1,DAE.DIM_INTEGER(dim));
         e = DAE.ARRAY(tp1,sc,es);
-        e = Expression.makeBuiltinCall("sum",{e},tp2);
+        e = Expression.makePureBuiltinCall("sum",{e},tp2);
         // print("Matrix sum: " +& boolString(sc) +& ExpressionDump.typeString(tp1) +& " " +& ExpressionDump.printExpStr(e) +& "\n");
       then e;
     // Then try array concatenation
@@ -1116,13 +1116,13 @@ algorithm
         dim = listLength(es);
         tp1 = Expression.liftArrayLeft(tp1,DAE.DIM_INTEGER(dim));
         e = DAE.ARRAY(tp1,sc,es);
-        e = Expression.makeBuiltinCall("sum",{e},tp2);
+        e = Expression.makePureBuiltinCall("sum",{e},tp2);
         // print("Array sum: " +& boolString(sc) +& ExpressionDump.typeString(tp1) +& " " +& ExpressionDump.printExpStr(e) +& "\n");
       then e;
     // Try to reduce the number of dimensions
     case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.ARRAY(array={e},scalar=false)},attr=DAE.CALL_ATTR(ty=tp2))
       equation
-        e = Expression.makeBuiltinCall("sum",{e},tp2);
+        e = Expression.makePureBuiltinCall("sum",{e},tp2);
       then e;
     // The sum of a single array is simply the sum of its elements
     case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.ARRAY(array=es,scalar=true)})
@@ -1136,7 +1136,7 @@ algorithm
       equation
         es = simplifyCat(i,es);
         i = listLength(es);
-        e = Expression.makeBuiltinCall("cat",DAE.ICONST(i)::es,tp);
+        e = Expression.makePureBuiltinCall("cat",DAE.ICONST(i)::es,tp);
       then e;
 
     // promote 1-dim to 2-dim
@@ -1193,9 +1193,9 @@ protected function simplifyScalar "Handle the scalar() operator"
 algorithm
   exp := match (inExp,tp)
     case (DAE.ARRAY(array={exp}),_)
-      then Expression.makeBuiltinCall("scalar", {exp}, tp);
+      then Expression.makePureBuiltinCall("scalar", {exp}, tp);
     case (DAE.MATRIX(matrix={{exp}}),_)
-      then Expression.makeBuiltinCall("scalar", {exp}, tp);
+      then Expression.makePureBuiltinCall("scalar", {exp}, tp);
     case (DAE.SIZE(exp=exp,sz=NONE()),_)
       equation
         (_,{_}) = Types.flattenArrayTypeOpt(Expression.typeof(inExp));
@@ -1214,7 +1214,7 @@ protected function makeNestedReduction
   input DAE.Exp inCall;
   output DAE.Exp outCall;
 algorithm
-  outCall := Expression.makeBuiltinCall(inName, {inExp, inCall}, inType);
+  outCall := Expression.makePureBuiltinCall(inName, {inExp, inCall}, inType);
 end makeNestedReduction;
 
 protected function simplifySymmetric
@@ -1397,7 +1397,7 @@ algorithm
       equation
         acc = listReverse(acc);
         exp = DAE.LIST(acc);
-      then Expression.makeBuiltinCall("stringAppendList",{exp},DAE.T_STRING_DEFAULT);
+      then Expression.makePureBuiltinCall("stringAppendList",{exp},DAE.T_STRING_DEFAULT);
     case (DAE.SCONST(s1)::rest,DAE.SCONST(s2)::acc,_)
       equation
         s = s2 +& s1;
@@ -3501,7 +3501,7 @@ algorithm
       equation
         true = Expression.expEqual(e1,e2);
         e = DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(DAE.T_REAL_DEFAULT),e1);
-        e = Expression.makeBuiltinCall("sin",{e},DAE.T_REAL_DEFAULT);
+        e = Expression.makePureBuiltinCall("sin",{e},DAE.T_REAL_DEFAULT);
       then DAE.BINARY(DAE.RCONST(0.5),DAE.MUL(DAE.T_REAL_DEFAULT),e);
 
       /* sin^2(x)+cos^2(x) = 1 */
@@ -3611,7 +3611,7 @@ algorithm
     case(DAE.DIV(ty),DAE.CALL(path=Absyn.IDENT("abs"),expLst={e1}),e2)
      equation
      true = Expression.expEqual(e1,e2);
-     res = Expression.makeBuiltinCall("sign",{e1},ty);
+     res = Expression.makePureBuiltinCall("sign",{e1},ty);
     then
      res;
 
@@ -3810,13 +3810,13 @@ algorithm
         true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
         Expression.operatorEqual(op2,DAE.MUL(ty));
         res = DAE.BINARY(e1, op2, e2);
-      then Expression.makeBuiltinCall("abs",{res},ty);
+      then Expression.makePureBuiltinCall("abs",{res},ty);
 /*
     // e1 / exp(e2) => e1*exp(-e2)
     case(_,DAE.DIV(ty),e1,DAE.CALL(path=Absyn.IDENT("exp"),expLst={e2}),_,_)
       equation
         e = DAE.UNARY(DAE.UMINUS(ty),e2);
-        e3 = Expression.makeBuiltinCall("exp",{e},ty);
+        e3 = Expression.makePureBuiltinCall("exp",{e},ty);
         res = DAE.BINARY(e,DAE.MUL(ty),e3);
       then res;
 */
@@ -3825,7 +3825,7 @@ algorithm
       equation
         false = Expression.isConst(e1) or Expression.isConst(e2);
         e = DAE.BINARY(e1, DAE.ADD(ty),e2);
-        res = Expression.makeBuiltinCall("exp",{e},ty);
+        res = Expression.makePureBuiltinCall("exp",{e},ty);
       then res;
 
     // (a+b)/c1 => a/c1+b/c1, for constant c1
@@ -4044,7 +4044,7 @@ algorithm
     case (_,DAE.DIV(ty = _),e1, DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e2}),_,_)
       equation
         true = Expression.expEqual(e1,e2);
-      then Expression.makeBuiltinCall("sqrt",{e1},DAE.T_REAL_DEFAULT);
+      then Expression.makePureBuiltinCall("sqrt",{e1},DAE.T_REAL_DEFAULT);
     // x^y/x => x^(y-1)
     case (_,DAE.DIV(ty = _),DAE.BINARY(e1,op1 as DAE.POW(ty), e2), e3,_,_)
        equation
@@ -4995,12 +4995,12 @@ algorithm
     case (Absyn.IDENT("min"),_,_,_,_,_,_)
       equation
         arr_exp = Expression.makeScalarArray(inExps, ty);
-      then Expression.makeBuiltinCall("min", {arr_exp}, ty);
+      then Expression.makePureBuiltinCall("min", {arr_exp}, ty);
 
     case (Absyn.IDENT("max"),_,_,_,_,_,_)
       equation
         arr_exp = Expression.makeScalarArray(inExps, ty);
-      then Expression.makeBuiltinCall("max", {arr_exp}, ty);
+      then Expression.makePureBuiltinCall("max", {arr_exp}, ty);
 
     case (_,SOME(_),_,_,_,{exp},_)
       then exp;

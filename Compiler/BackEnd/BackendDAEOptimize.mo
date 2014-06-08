@@ -2554,7 +2554,7 @@ algorithm
 
       e = Expression.crefExp(cref);
       tp = Expression.typeof(e);
-      startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
+      startExp = Expression.makePureBuiltinCall("$_start", {e}, tp);
       e1 = DAE.BINARY(crefExp, DAE.SUB(DAE.T_REAL_DEFAULT), startExp);
 
       eqn = BackendDAE.RESIDUAL_EQUATION(e1, DAE.emptyElementSource,false,BackendDAE.INITIAL_EQUATION());
@@ -6635,7 +6635,7 @@ algorithm
       type_ = Expression.arrayEltType(type_);
       (var::_, _) = BackendVariable.getVar(cref, inVars);
       b = BackendVariable.isVarDiscrete(var);
-      initExp = Expression.makeBuiltinCall(Util.if_(b, "pre", "$_start"), {out}, type_);
+      initExp = Expression.makePureBuiltinCall(Util.if_(b, "pre", "$_start"), {out}, type_);
       stmt = Algorithm.makeAssignment(DAE.CREF(cref, type_), DAE.PROP(type_, DAE.C_VAR()), initExp, DAE.PROP(type_, DAE.C_VAR()), DAE.dummyAttrVar, SCode.NON_INITIAL(), DAE.emptyElementSource);
     then expandAlgorithmStmts(stmt::statements, rest, inVars);
   end match;

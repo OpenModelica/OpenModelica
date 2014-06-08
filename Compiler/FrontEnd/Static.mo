@@ -2782,7 +2782,7 @@ algorithm
     case (expl)
       equation
         tp = Expression.typeof(List.first(expl));
-        res = Expression.makeBuiltinCall("cat", DAE.ICONST(2) :: expl, tp);
+        res = Expression.makePureBuiltinCall("cat", DAE.ICONST(2) :: expl, tp);
       then res;
   end matchcontinue;
 end elabMatrixCatTwo;
@@ -2854,7 +2854,7 @@ algorithm
     else
       equation
         ty = Expression.typeof(List.first(inExpLst));
-        res = Expression.makeBuiltinCall("cat", DAE.ICONST(1) :: inExpLst, ty);
+        res = Expression.makePureBuiltinCall("cat", DAE.ICONST(1) :: inExpLst, ty);
       then
         res;
   end matchcontinue;
@@ -3070,7 +3070,7 @@ algorithm
         (cache, exp_1, DAE.PROP(tp1, _), _) =
           elabExp(cache, env, exp, impl, NONE(), true, pre, info);
         tp1 = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, Types.getDimensions(tp1));
-        exp_1 = Expression.makeBuiltinCall("cardinality", {exp_1}, tp1);
+        exp_1 = Expression.makePureBuiltinCall("cardinality", {exp_1}, tp1);
       then
         (cache, exp_1, DAE.PROP(tp1, DAE.C_CONST()));
   end match;
@@ -3136,7 +3136,7 @@ algorithm
         b2 = Types.isRecordWithOnlyReals(tp);
         true = Util.boolOrList({b1,b2});
         etp = Types.simplifyType(tp);
-        exp = Expression.makeBuiltinCall("smooth", {p_1, expr_1}, etp);
+        exp = Expression.makePureBuiltinCall("smooth", {p_1, expr_1}, etp);
       then
         (cache,exp,DAE.PROP(tp,c));
 
@@ -3480,7 +3480,7 @@ algorithm
         sty = makeFillArgListType(sty, dimprops);
         exp_type = Types.simplifyType(sty);
         prop = DAE.PROP(sty, c1);
-        exp = Expression.makeBuiltinCall("fill", s_1 :: dims_1, exp_type);
+        exp = Expression.makePureBuiltinCall("fill", s_1 :: dims_1, exp_type);
      then
        (cache, exp, prop);
 
@@ -3495,7 +3495,7 @@ algorithm
         exp_type = Types.simplifyType(sty);
         c1 = Types.constAnd(c1, DAE.C_PARAM());
         prop = DAE.PROP(sty, c1);
-        exp = Expression.makeBuiltinCall("fill", s_1 :: dims_1, exp_type);
+        exp = Expression.makePureBuiltinCall("fill", s_1 :: dims_1, exp_type);
      then
        (cache, exp, prop);
 
@@ -3659,7 +3659,7 @@ algorithm
           = elabExp(cache,env, matexp, impl,NONE(),true,pre,info);
         newtp = DAE.T_ARRAY(DAE.T_ARRAY(eltp, {d1}, DAE.emptyTypeSource), {d2}, DAE.emptyTypeSource);
         tp = Types.simplifyType(newtp);
-        exp = Expression.makeBuiltinCall("symmetric", {exp_1}, tp);
+        exp = Expression.makePureBuiltinCall("symmetric", {exp_1}, tp);
         prop = DAE.PROP(newtp,c);
       then
         (cache,exp,prop);
@@ -3757,7 +3757,7 @@ algorithm
           = elabExpInExpression(cache,env, matexp, impl,NONE(),true,pre,info);
         newtp = DAE.T_ARRAY(DAE.T_ARRAY(eltp, {d1}, DAE.emptyTypeSource), {d2}, DAE.emptyTypeSource);
         tp = Types.simplifyType(newtp);
-        exp = Expression.makeBuiltinCall("transpose", {exp_1}, tp);
+        exp = Expression.makePureBuiltinCall("transpose", {exp_1}, tp);
         prop = DAE.PROP(newtp,c);
       then
         (cache,exp,prop);
@@ -3880,7 +3880,7 @@ algorithm
         estr = Dump.printExpStr(arrexp);
         tstr = Types.unparseType(t);
         Error.assertionOrAddSourceMessage(b,Error.SUM_EXPECTED_ARRAY,{estr,tstr},info);
-        exp_2 = Expression.makeBuiltinCall("sum", {exp_1}, etp);
+        exp_2 = Expression.makePureBuiltinCall("sum", {exp_1}, etp);
       then
         (cache,exp_2,DAE.PROP(tp,c));
   end match;
@@ -3940,7 +3940,7 @@ algorithm
         (cache,exp_1,DAE.PROP(t as DAE.T_ARRAY(dims = {_}, ty = tp),c),_) = elabExp(cache,env, arrexp, impl,NONE(),true,pre,info);
         tp = Types.arrayElementType(t);
         etp = Types.simplifyType(tp);
-        exp_2 = Expression.makeBuiltinCall("product", {exp_1}, etp);
+        exp_2 = Expression.makePureBuiltinCall("product", {exp_1}, etp);
         exp_2 = elabBuiltinProduct2(exp_2);
       then
         (cache,exp_2,DAE.PROP(tp,c));
@@ -4007,7 +4007,7 @@ algorithm
         t2 = Types.unliftArray(tp);
         etp = Types.simplifyType(t2);
 
-        call = Expression.makeBuiltinCall("pre", {exp_1}, etp);
+        call = Expression.makePureBuiltinCall("pre", {exp_1}, etp);
         exp_2 = elabBuiltinPreMatrix(call, t2);
       then
         (cache,exp_2,DAE.PROP(t,c));
@@ -4022,7 +4022,7 @@ algorithm
         t2 = Types.unliftArray(t);
         etp = Types.simplifyType(t2);
 
-        call = Expression.makeBuiltinCall("pre", {exp_1}, etp);
+        call = Expression.makePureBuiltinCall("pre", {exp_1}, etp);
         (expl_1,sc) = elabBuiltinPre2(call, t2);
 
         etp_org = Types.simplifyType(t);
@@ -4037,7 +4037,7 @@ algorithm
         (tp,_) = Types.flattenArrayType(tp);
         true = Types.basicType(tp);
         etp = Types.simplifyType(tp);
-        exp_2 = Expression.makeBuiltinCall("pre", {exp_1}, etp);
+        exp_2 = Expression.makePureBuiltinCall("pre", {exp_1}, etp);
       then
         (cache,exp_2,DAE.PROP(tp,c));
 
@@ -4206,7 +4206,7 @@ algorithm
         exp :: _ = Expression.flattenArrayExpToList(inExp);
         validateBuiltinStreamOperator(inCache, inEnv, exp, inType, inOperator, inInfo);
         et = Types.simplifyType(inType);
-        exp = Expression.makeBuiltinCall(inOperator, {exp}, et);
+        exp = Expression.makePureBuiltinCall(inOperator, {exp}, et);
       then
         exp;
 
@@ -4259,7 +4259,7 @@ algorithm
     case((exp_1 :: expl_1),_)
       equation
         ttt = Types.simplifyType(t);
-        exp_2 = Expression.makeBuiltinCall("pre", {exp_1}, ttt);
+        exp_2 = Expression.makePureBuiltinCall("pre", {exp_1}, ttt);
         (expl_2) = makePreLst(expl_1,t);
       then
         ((exp_2 :: expl_2));
@@ -4616,7 +4616,7 @@ algorithm
         elt_ty = Types.arrayElementType(ty);
         tp = Types.simplifyType(elt_ty);
         false = Types.isString(tp);
-        call = Expression.makeBuiltinCall(inFnName, {arrexp_1}, tp);
+        call = Expression.makePureBuiltinCall(inFnName, {arrexp_1}, tp);
       then
         (cache, call, DAE.PROP(elt_ty,c));
 
@@ -4637,7 +4637,7 @@ algorithm
         elt_ty = Types.arrayElementType(ty);
         tp = Types.simplifyType(elt_ty);
         false = Types.isString(tp);
-        call = Expression.makeBuiltinCall(inFnName, {arrexp_1}, tp);
+        call = Expression.makePureBuiltinCall(inFnName, {arrexp_1}, tp);
       then
         (cache, call, DAE.PROP(elt_ty,c));
 
@@ -4655,7 +4655,7 @@ algorithm
         c = Types.constAnd(c1, c2);
         tp = Types.simplifyType(ty);
         false = Types.isString(tp);
-        call = Expression.makeBuiltinCall(inFnName, {s1_1, s2_1}, tp);
+        call = Expression.makePureBuiltinCall(inFnName, {s1_1, s2_1}, tp);
       then
         (cache, call, DAE.PROP(ty,c));
 
@@ -4844,7 +4844,7 @@ algorithm
         true = Expression.dimensionKnown(dim);
         ty = DAE.T_ARRAY(DAE.T_ARRAY(arrType, {dim}, DAE.emptyTypeSource), {dim}, DAE.emptyTypeSource);
         tp = Types.simplifyType(ty);
-        res = Expression.makeBuiltinCall("diagonal", {s1_1}, tp);
+        res = Expression.makePureBuiltinCall("diagonal", {s1_1}, tp);
       then
         (cache, res, DAE.PROP(ty,c));
 
@@ -4937,7 +4937,7 @@ algorithm
         (gen_env,_) = Interactive.buildEnvFromSymboltable(symbol_table);
         (cache,s1_1,st,_) = elabExp(cache,gen_env, s1, impl,NONE(),true,pre,info);
         (cache,s2_1,st,_) = elabExp(cache,gen_env, s2, impl,NONE(),true,pre,info);
-        call = Expression.makeBuiltinCall("differentiate", {s1_1, s2_1}, DAE.T_REAL_DEFAULT);
+        call = Expression.makePureBuiltinCall("differentiate", {s1_1, s2_1}, DAE.T_REAL_DEFAULT);
       then
         (cache, call, st);
 
@@ -4984,7 +4984,7 @@ algorithm
           DAE.T_REAL_DEFAULT);
         (gen_env,_) = Interactive.buildEnvFromSymboltable(symbol_table);
         (cache,s1_1,st,_) = elabExp(cache,gen_env, s1, impl,NONE(),true,pre,info);
-        s1_1 = Expression.makeBuiltinCall("simplify", {s1_1}, DAE.T_REAL_DEFAULT);
+        s1_1 = Expression.makePureBuiltinCall("simplify", {s1_1}, DAE.T_REAL_DEFAULT);
       then
         (cache, s1_1, st);
     case (cache,_,{s1,Absyn.STRING(value = "Integer")},_,impl,pre,_)
@@ -4994,7 +4994,7 @@ algorithm
           DAE.T_INTEGER_DEFAULT);
         (gen_env,_) = Interactive.buildEnvFromSymboltable(symbol_table);
         (cache,s1_1,st,_) = elabExp(cache,gen_env, s1, impl,NONE(),true,pre,info);
-        s1_1 = Expression.makeBuiltinCall("simplify", {s1_1}, DAE.T_INTEGER_DEFAULT);
+        s1_1 = Expression.makePureBuiltinCall("simplify", {s1_1}, DAE.T_INTEGER_DEFAULT);
       then
         (cache, s1_1, st);
     else
@@ -5073,7 +5073,7 @@ algorithm
     case (cache,env,{exp},_,impl,pre,_)
       equation
         (cache,exp_1,prop,_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
-        exp_1 = Expression.makeBuiltinCall("noEvent", {exp_1}, DAE.T_BOOL_DEFAULT);
+        exp_1 = Expression.makePureBuiltinCall("noEvent", {exp_1}, DAE.T_BOOL_DEFAULT);
       then
         (cache, exp_1, prop);
   end match;
@@ -5108,7 +5108,7 @@ algorithm
     case (cache,env,{exp},_,impl,pre,_) /* Constness: C_VAR */
       equation
         (cache,exp_1,DAE.PROP(DAE.T_BOOL(varLst = _),DAE.C_VAR()),_) = elabExp(cache, env, exp, impl,NONE(),true,pre,info);
-        exp_2 = Expression.makeBuiltinCall("edge", {exp_1}, DAE.T_BOOL_DEFAULT);
+        exp_2 = Expression.makePureBuiltinCall("edge", {exp_1}, DAE.T_BOOL_DEFAULT);
       then
         (cache, exp_2, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
 
@@ -5185,7 +5185,7 @@ algorithm
         elem_ty = Types.arrayElementType(ety);
         true = Types.isRealOrSubTypeReal(elem_ty);
         expty = Types.simplifyType(ety);
-        e = Expression.makeBuiltinCall("der", {e}, expty);
+        e = Expression.makePureBuiltinCall("der", {e}, expty);
       then
         (cache, e, DAE.PROP(ety, c));
 
@@ -5293,7 +5293,7 @@ algorithm
       equation
         Types.simpleType(tp1);
         Types.discreteType(tp1);
-        exp_1 = Expression.makeBuiltinCall("change", {exp_1}, DAE.T_BOOL_DEFAULT);
+        exp_1 = Expression.makePureBuiltinCall("change", {exp_1}, DAE.T_BOOL_DEFAULT);
       then
         (cache, exp_1, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
 
@@ -5303,7 +5303,7 @@ algorithm
         failure(Types.discreteType(tp1));
         cr_1 = Expression.getCrefFromCrefOrAsub(exp_1);
         (cache,DAE.ATTR(variability = SCode.DISCRETE()),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
-        exp_1 = Expression.makeBuiltinCall("change", {exp_1}, DAE.T_BOOL_DEFAULT);
+        exp_1 = Expression.makePureBuiltinCall("change", {exp_1}, DAE.T_BOOL_DEFAULT);
       then
         (cache, exp_1, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
 
@@ -5386,7 +5386,7 @@ algorithm
         const2 = elabArrayConst(props);
         const = Types.constAnd(const1, const2);
         etp = Types.simplifyType(result_type_1);
-        exp = Expression.makeBuiltinCall("cat", dim_exp :: matrices_1, etp);
+        exp = Expression.makePureBuiltinCall("cat", dim_exp :: matrices_1, etp);
       then
         (cache,exp,DAE.PROP(result_type_1,const));
     case (cache,env,(dim_aexp :: _),_,impl,pre,_)
@@ -5490,7 +5490,7 @@ algorithm
         ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {dim_size, dim_size});
         ety = Types.simplifyType(ty);
         dim_exp = DAE.ICONST(size);
-        call = Expression.makeBuiltinCall("identity", {dim_exp}, ety);
+        call = Expression.makePureBuiltinCall("identity", {dim_exp}, ety);
       then
         (cache, call, DAE.PROP(ty,c));
 
@@ -5499,7 +5499,7 @@ algorithm
         (cache,dim_exp,DAE.PROP(DAE.T_INTEGER(varLst = _),c),_) = elabExp(cache,env,dim,impl,NONE(),true,pre,info);
         ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN(), DAE.DIM_UNKNOWN()});
         ety = Types.simplifyType(ty);
-        call = Expression.makeBuiltinCall("identity", {dim_exp}, ety);
+        call = Expression.makePureBuiltinCall("identity", {dim_exp}, ety);
       then
         (cache, call, DAE.PROP(ty,c));
 
@@ -5608,7 +5608,7 @@ algorithm
           elabExp(cache, env, aexp, inImpl, NONE(), true, inPrefix, inInfo);
         (scalar_tp,dims) = Types.flattenArrayTypeOpt(tp);
         List.map2_0(dims,checkTypeScalar,tp,inInfo);
-        e = Util.if_(List.isEmpty(dims), e, Expression.makeBuiltinCall("scalar", {e}, scalar_tp));
+        e = Util.if_(List.isEmpty(dims), e, Expression.makePureBuiltinCall("scalar", {e}, scalar_tp));
         (e,_) = ExpressionSimplify.simplify1(e);
       then
         (cache, e, DAE.PROP(scalar_tp, c));
@@ -5704,7 +5704,7 @@ algorithm
           slots);
         (cache,args_1,_,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, false, true/*checkTypes*/ ,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, NONE(), pre, info, DAE.T_UNKNOWN_DEFAULT, Absyn.IDENT("String"));
         c = List.fold(constlist, Types.constAnd, DAE.C_CONST());
-        exp = Expression.makeBuiltinCall("String", args_1, DAE.T_STRING_DEFAULT);
+        exp = Expression.makePureBuiltinCall("String", args_1, DAE.T_STRING_DEFAULT);
       then
         (cache, exp, DAE.PROP(DAE.T_STRING_DEFAULT,c));
 
@@ -5726,7 +5726,7 @@ algorithm
           slots);
         (cache,args_1,_,constlist,_) = elabInputArgs(cache, env, args, nargs, slots, false, true /*checkTypes*/, impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, NONE(), pre, info, DAE.T_UNKNOWN_DEFAULT, Absyn.IDENT("String"));
         c = List.fold(constlist, Types.constAnd, DAE.C_CONST());
-        exp = Expression.makeBuiltinCall("String", args_1, DAE.T_STRING_DEFAULT);
+        exp = Expression.makePureBuiltinCall("String", args_1, DAE.T_STRING_DEFAULT);
       then
         (cache, exp, DAE.PROP(DAE.T_STRING_DEFAULT,c));
   end matchcontinue;
@@ -5849,7 +5849,7 @@ algorithm
         (cache, exp, DAE.PROP(tp, c), _) = elabExp(cache, env, e, impl,NONE(), true, pre,info);
         tp = Types.liftArray(Types.arrayElementType(tp), DAE.DIM_UNKNOWN());
         etp = Types.simplifyType(tp);
-        exp = Expression.makeBuiltinCall("vector", {exp}, etp);
+        exp = Expression.makePureBuiltinCall("vector", {exp}, etp);
       then
         (cache, exp, DAE.PROP(tp, c));
   end matchcontinue;
