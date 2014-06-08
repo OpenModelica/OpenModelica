@@ -7174,43 +7174,43 @@ algorithm
     case (((e as DAE.CALL(path = Absyn.IDENT(name="alarm"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
       print("alarm: call is not marked as impure\n"); */
     then ((e, true));
-    
+
     case (((e as DAE.CALL(path = Absyn.IDENT(name="compareFilesAndMove"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
       print("compareFilesAndMove: call is not marked as impure\n"); */
     then ((e, true));
-    
+
     case (((e as DAE.CALL(path = Absyn.IDENT(name="delay"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
       print("delay: call is not marked as impure\n"); */
     then ((e, true));
-    
+
     case (((e as DAE.CALL(path = Absyn.IDENT(name="initial"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
       print("initial: call is not marked as impure\n"); */
     then ((e, true));
-    
+
     case (((e as DAE.CALL(path = Absyn.IDENT(name="print"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
       print("print: call is not marked as impure\n"); */
     then ((e, true));
-    
+
     case (((e as DAE.CALL(path = Absyn.IDENT(name="readFile"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
       print("readFile: call is not marked as impure\n"); */
     then ((e, true));
-    
+
     case (((e as DAE.CALL(path = Absyn.IDENT(name="sample"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
       print("sample: call is not marked as impure\n"); */
     then ((e, true));
-    
+
     case (((e as DAE.CALL(path = Absyn.IDENT(name="system"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
       print("system: call is not marked as impure\n"); */
     then ((e, true));
-    
+
     case (((e as DAE.CALL(path = Absyn.IDENT(name="system_parallel"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
       print("system_parallel: call is not marked as impure\n"); */
     then ((e, true));
-    
+
     case (((e as DAE.CALL(path = Absyn.IDENT(name="terminal"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
       print("terminal: call is not marked as impure\n"); */
     then ((e, true));
-    
+
     case (((e as DAE.CALL(path = Absyn.IDENT(name="writeFile"), attr=DAE.CALL_ATTR(builtin=true))), _)) /* equation
       print("writeFile: call is not marked as impure\n"); */
     then ((e, true));
