@@ -646,27 +646,96 @@ fmiStatus fmiSetTime(fmiComponent c, fmiReal time) {
 }
 
 fmiStatus fmiSetContinuousStates(fmiComponent c, const fmiReal x[], size_t nx) {
-  // TODO Write code here
+  ModelInstance *comp = (ModelInstance *)c;
+  int i;
+  if (invalidState(comp, "fmiSetContinuousStates", modelStepping))
+    return fmiError;
+  if (invalidNumber(comp, "fmiSetContinuousStates", "nx", nx, NUMBER_OF_STATES))
+    return fmiError;
+  if (nullPointer(comp, "fmiSetContinuousStates", "x[]", x))
+    return fmiError;
+#if NUMBER_OF_REALS>0
+  for (i = 0; i < nx; i++) {
+    fmiValueReference vr = vrStates[i];
+    FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiSetContinuousStates: #r%d#=%.16g", vr, x[i])
+    assert(vr >= 0 && vr < NUMBER_OF_REALS);
+    if (setReal(comp, vr, x[i]) != fmiOK) // to be implemented by the includer of this file
+      return fmiError;
+  }
+#endif
   return fmiOK;
 }
 
 fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
-  // TODO Write code here
+  int i;
+  ModelInstance* comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiGetDerivatives", modelInitialized|modelStepping|modelTerminated))
+    return fmiError;
+  if (invalidNumber(comp, "fmiGetDerivatives", "nx", nx, NUMBER_OF_STATES))
+    return fmiError;
+  if (nullPointer(comp, "fmiGetDerivatives", "derivatives[]", derivatives))
+    return fmiError;
+#if NUMBER_OF_STATES>0
+  for (i = 0; i < nx; i++) {
+    fmiValueReference vr = vrStates[i] + 1;
+    derivatives[i] = getReal(comp, vr); // to be implemented by the includer of this file
+    FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiGetDerivatives: #r%d# = %.16g", vr, derivatives[i])
+  }
+#endif
   return fmiOK;
 }
 
 fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_t nx) {
-  // TODO Write code here
+  int i;
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiGetEventIndicators", modelInitialized|modelStepping|modelTerminated))
+    return fmiError;
+  if (invalidNumber(comp, "fmiGetEventIndicators", "nx", nx, NUMBER_OF_EVENT_INDICATORS))
+    return fmiError;
+#if NUMBER_OF_EVENT_INDICATORS>0
+  /* eval needed equations*/
+  comp->fmuData->callback->function_ZeroCrossingsEquations(comp->fmuData);
+  comp->fmuData->callback->function_ZeroCrossings(comp->fmuData,comp->fmuData->simulationInfo.zeroCrossings);
+  for (i = 0; i < ni; i++) {
+    eventIndicators[i] = comp->fmuData->simulationInfo.zeroCrossings[i];
+    FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiGetEventIndicators: z%d = %.16g", i, eventIndicators[i])
+  }
+#endif
   return fmiOK;
 }
 
 fmiStatus fmiGetContinuousStates(fmiComponent c, fmiReal x[], size_t nx) {
-  // TODO Write code here
+  int i;
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiGetContinuousStates", modelInitialized|modelStepping|modelTerminated))
+    return fmiError;
+  if (invalidNumber(comp, "fmiGetContinuousStates", "nx", nx, NUMBER_OF_STATES))
+    return fmiError;
+  if (nullPointer(comp, "fmiGetContinuousStates", "states[]", x))
+    return fmiError;
+#if NUMBER_OF_REALS>0
+  for (i = 0; i < nx; i++) {
+    fmiValueReference vr = vrStates[i];
+    x[i] = getReal(comp, vr); // to be implemented by the includer of this file
+    FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiGetContinuousStates: #r%u# = %.16g", vr, x[i])
+  }
+#endif
   return fmiOK;
 }
 
 fmiStatus fmiGetNominalsOfContinuousStates(fmiComponent c, fmiReal x_nominal[], size_t nx) {
-  // TODO Write code here
+  int i;
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiGetNominalsOfContinuousStates", modelInstantiated|modelInitialized|modelStepping|modelTerminated))
+    return fmiError;
+  if (invalidNumber(comp, "fmiGetNominalsOfContinuousStates", "nx", nx, NUMBER_OF_STATES))
+    return fmiError;
+  if (nullPointer(comp, "fmiGetNominalsOfContinuousStates", "x_nominal[]", x_nominal))
+    return fmiError;
+  x_nominal[0] = 1;
+  FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiGetNominalsOfContinuousStates: x_nominal[0..%d] = 1.0", nx-1)
+  for (i = 0; i < nx; i++)
+    x_nominal[i] = 1;
   return fmiOK;
 }
 
