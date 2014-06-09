@@ -5351,6 +5351,7 @@ protected
 algorithm
   BackendDAE.SHARED(externalObjects=evars) := shared;
   evarLst := BackendVariable.varList(evars);
+  evarLst := listReverse(evarLst);
   (simvars, aliases) := extractExtObjInfo2(evarLst, evars, {}, {});
   extObjInfo := SimCode.EXTOBJINFO(simvars, aliases);
 end createExtObjInfo;
