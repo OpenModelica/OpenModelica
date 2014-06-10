@@ -615,6 +615,14 @@ template ModelStructure()
 ::=
   <<
   <ModelStructure>
+    <Outputs>
+    </Outputs>
+    <Derivatives>
+    </Derivatives>
+    <DiscreteStates>
+    </DiscreteStates>
+    <InitialUnknowns>
+    </InitialUnknowns>
   </ModelStructure>
   >>
 end ModelStructure;

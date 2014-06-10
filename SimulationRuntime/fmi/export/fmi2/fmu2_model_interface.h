@@ -38,10 +38,6 @@
 extern "C" {
 #endif
 
-// macros used to define variables
-#define pos(z) comp->isPositive[z]
-#define copy(vr, value) setString(comp, vr, value)
-
 // categories of logging supported by model.
 // Value is the index in logCategories of a ModelInstance.
 #define LOG_EVENTS                      0
