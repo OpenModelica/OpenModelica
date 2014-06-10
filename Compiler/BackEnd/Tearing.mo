@@ -295,6 +295,7 @@ protected
   DAE.FunctionTree funcs;
   array<Boolean> stackflag;
   list<Integer> asslst1, asslst2;
+  list<Integer> tSel_always, tSel_prefer, tSel_avoid, tSel_never;
 algorithm
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of omcTearing\n\n");
   // generate Subsystem to get the incidence matrix
@@ -326,12 +327,15 @@ algorithm
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nUnsolvable Vars:\n");
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, BackendDump.debuglst,(unsolvables,intString,", ","\n"));
   columark := arrayCreate(size,-1);
-
+  
+  // If '+showAnnotations=true': Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
+  ((tSel_always,tSel_prefer,tSel_avoid,tSel_never)) := tearingSelect(var_lst,{},{},{},{},1);
+  
   // determine tvars and do cheap matching until a maximum matching is there
   // if cheap matching stucks select additional tearing variable and continue
   // (mark+1 for every call of omcTearing3)
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of omcTearing2\n\n");
-  (tvars,mark) := omcTearing2(unsolvables,me,meT,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,1,{});
+  (tvars,mark) := omcTearing2(unsolvables,tSel_always,tSel_prefer,tSel_avoid,tSel_never,me,meT,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,1,{});
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of omcTearing2\n" +& BORDER +& "\n\n");
 
   // unassign tvars
@@ -773,6 +777,10 @@ end getTVarResiduals;
 protected function omcTearing2 " function to determine tvars and do cheap matching
   author: Frenkel TUD 2012-05"
   input list<Integer> unsolvables;
+  input list<Integer> tSel_always;
+  input list<Integer> tSel_prefer;
+  input list<Integer> tSel_avoid;
+  input list<Integer> tSel_never;
   input BackendDAE.AdjacencyMatrixEnhanced m;
   input BackendDAE.AdjacencyMatrixTEnhanced mt;
   input array<list<Integer>> mapEqnIncRow;
@@ -788,55 +796,105 @@ protected function omcTearing2 " function to determine tvars and do cheap matchi
   output list<Integer> outTVars;
   output Integer oMark;
 algorithm
-  (outTVars,oMark) := matchcontinue(unsolvables,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
+  (outTVars,oMark) := matchcontinue(unsolvables,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
     local
       Integer tvar;
-      list<Integer> unassigned,rest;
+      list<Integer> unassigned,rest,ass1List;
       BackendDAE.AdjacencyMatrixElementEnhanced vareqns;
     // if there are no unsolvables choose tvar by heuristic
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_)
+    case ({},{},_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // select tearing var
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of omcTearingSelectTearingVar\n\n\n");
-        tvar = omcTearingSelectTearingVar(vars,ass1,ass2,m,mt);
+        tvar = omcTearingSelectTearingVar(vars,ass1,ass2,m,mt,tSel_prefer,tSel_avoid,tSel_never);
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of omcTearingSelectTearingVar\n" +& BORDER +& "\n\n");
         // mark tearing var
         _ = arrayUpdate(ass1,tvar,size*2);
         // equations not yet assigned containing the tvar
         vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]);
-           Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Assignable equations containing tvar:\n");
+           Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Assignable equations containing new tvar:\n");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,BackendDump.dumpAdjacencyRowEnhanced,vareqns);Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"\n");
         // cheap matching
         tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
         // check for unassigned vars, if there some rerun
         unassigned = Matching.getUnassigned(size,ass1,{});
-        (outTVars,oMark) = omcTearing3(unassigned,{},m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
+        (outTVars,oMark) = omcTearing3(unassigned,{},tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
       then
         (outTVars,oMark);
     // if there are unsolvables choose unsolvables as tvars
-    case (tvar::rest,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (tvar::rest,{},_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-           Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"\ntVar: " +& intString(tvar) +& " (unsolvable in omcTearing2)\n\n");
+	       Debug.bcall(listMember(tvar,tSel_never), Error.addCompilerWarning, "There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
+	       Debug.fcall(Flags.TEARING_DUMP, print,"\nForced selection of Tearing Variable:\n" +& UNDERLINE +& "\n");
+           Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"tVar: " +& intString(tvar) +& " (unsolvable in omcTearing2)\n\n\n");
         // mark tearing var
         _ = arrayUpdate(ass1,tvar,size*2);
         // equations not yet assigned containing the tvar
         vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]);
-           Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Assignable equations containing tvar:\n");
+           Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Assignable equations containing new tvar:\n");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,BackendDump.dumpAdjacencyRowEnhanced,vareqns);Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"\n");
         // cheap matching
         tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
         // check for unassigned vars, if there some rerun
         unassigned = Matching.getUnassigned(size,ass1,{});
-        (outTVars,oMark) = omcTearing3(unassigned,rest,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
+        (outTVars,oMark) = omcTearing3(unassigned,rest,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
+      then
+        (outTVars,oMark);
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+	       Debug.fcall(Flags.TEARING_DUMP, print,"\nForced selection of Tearing Variables:\n" +& UNDERLINE +& "\n");
+           Debug.fcall(Flags.TEARING_DUMP, print,"Variables with annotation attribute 'always' as tVars: " +& stringDelimitList(List.map(tSel_always,intString),",")+&"\n");
+        // mark tearing var
+		ass1List = markTVars(tSel_always,arrayList(ass1));
+		ass1 = Util.arrayCopy(listArray(ass1List),ass1);
+        // equations not yet assigned containing the tvars
+		vareqns = findVareqns(ass2,isAssignedSaveEnhanced,mt,tSel_always,{});
+           Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Assignable equations containing new tvars:\n");
+           Debug.fcall(Flags.TEARING_DUMPVERBOSE,BackendDump.dumpAdjacencyRowEnhanced,vareqns);Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"\n");
+        // cheap matching
+        tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
+        // check for unassigned vars, if there some rerun
+        unassigned = Matching.getUnassigned(size,ass1,{});
+        (outTVars,oMark) = omcTearing3(unassigned,unsolvables,{},tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,listAppend(tSel_always,inTVars));
       then
         (outTVars,oMark);
     else
       equation
-        print("BackendDAEOptimize.omcTearing2 failed!");
+        print("Tearing.omcTearing2 failed!");
       then
         fail();
   end matchcontinue;
 end omcTearing2;
+
+
+protected function findVareqns
+ "Function returns equations not yet assigned containing the currently handled tvars.
+  author: ptaeuber FHB 2014-05"
+  input array<Integer> ass2In;
+  input CompFunc inCompFunc;
+  input BackendDAE.AdjacencyMatrixTEnhanced mt;
+  input list<Integer> tSel_alwaysIn;
+  input list<tuple<Integer,BackendDAE.Solvability>> vareqnsIn;
+  output list<tuple<Integer,BackendDAE.Solvability>> vareqnsOut;
+  partial function CompFunc
+    input array<Integer> inValue;
+    input tuple<Integer,BackendDAE.Solvability> inElement;
+    output Boolean outIsEqual;
+  end CompFunc;
+algorithm
+  vareqnsOut := matchcontinue(ass2In,inCompFunc,mt,tSel_alwaysIn,vareqnsIn)
+    local
+	  Integer tvar;
+      list<Integer> rest;
+      list<tuple<Integer,BackendDAE.Solvability>> vareqns; 
+	case(_,_,_,{},_)
+     then List.unique(vareqnsIn);
+	case(_,_,_,tvar::rest,_)
+	  equation
+	    vareqns = List.removeOnTrue(ass2In,inCompFunc,mt[tvar]);
+       then findVareqns(ass2In,inCompFunc,mt,rest,listAppend(vareqnsIn,vareqns));
+ end matchcontinue;
+end findVareqns;
 
 
 protected function omcTearingSelectTearingVar "  author: Frenkel TUD 2012-05"
@@ -845,11 +903,14 @@ protected function omcTearingSelectTearingVar "  author: Frenkel TUD 2012-05"
   input array<Integer> ass2;
   input BackendDAE.AdjacencyMatrixEnhanced m;
   input BackendDAE.AdjacencyMatrixTEnhanced mt;
+  input list<Integer> tSel_prefer;
+  input list<Integer> tSel_avoid;
+  input list<Integer> tSel_never;
   output Integer tearingVar;
 algorithm
-  tearingVar := matchcontinue(vars,ass1,ass2,m,mt)
+  tearingVar := matchcontinue(vars,ass1,ass2,m,mt,tSel_prefer,tSel_avoid,tSel_never)
     local
-      list<Integer> freeVars,eqns,unsolvables;
+      list<Integer> freeVars,eqns,unsolvables,pointsLst;
       Integer tvar;
       Integer size,varsize;
       array<Integer> points;
@@ -870,21 +931,26 @@ algorithm
 */
 
     // if there is a variable unsolvable select it
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_,_,_)
       equation
         unsolvables = getUnsolvableVarsConsiderMatching(1,BackendVariable.varsSize(vars),mt,ass1,ass2,{});
     false = List.isEmpty(unsolvables);
     tvar = listGet(unsolvables,1);
+	       Debug.bcall(listMember(tvar,tSel_never), Error.addCompilerWarning, "There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
+	       Debug.fcall(Flags.TEARING_DUMP, print,"\nForced selection of Tearing Variable:\n" +& UNDERLINE +& "\n");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"tVar: " +& intString(tvar) +& " (unsolvable in omcTearingSelectTearingVar)\n\n");
       then
         tvar;
 
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_,_,_)
       equation
         varsize = BackendVariable.varsSize(vars);
         // variables not assigned yet:
         freeVars = Matching.getUnassigned(varsize,ass1,{});
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,  print,"omcTearingSelectTearingVar Candidates(unassigned vars):\n");
+           Debug.fcall(Flags.TEARING_DUMPVERBOSE,  BackendDump.debuglst,(freeVars,intString,", ","\n"));
+		(_,freeVars,_) = List.intersection1OnTrue(freeVars,tSel_never,intEq);
+		   Debug.fcall(Flags.TEARING_DUMPVERBOSE,  print,"Candidates without variables with annotation attribute 'never':\n");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,  BackendDump.debuglst,(freeVars,intString,", ","\n"));
         size = listLength(freeVars);
         true = intGt(size,0);
@@ -901,10 +967,17 @@ algorithm
         // 3rd: only one-tenth of points for each discrete variable
         points = List.fold1(freeVars,discriminateDiscrete,vars,points);
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Points after 'discriminateDiscrete':\n" +& stringDelimitList(List.map(arrayList(points),intString),",") +& "\n\n");
-        tvar = selectVarWithMostPoints(freeVars,points,-1,-1);
+		// 4th: Prefer variables with annotation attribute 'tearingSelect=prefer'
+        pointsLst = preferAvoidVariables(freeVars, arrayList(points), tSel_prefer, 3.0, 1);
+           Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Points after preferring variables with attribute 'prefer':\n" +& stringDelimitList(List.map(pointsLst,intString),",") +& "\n\n");
+		// 5th: Avoid variables with annotation attribute 'tearingSelect=avoid'
+        pointsLst = preferAvoidVariables(freeVars, pointsLst, tSel_avoid, 0.334, 1);
+           Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Points after discrimination against variables with attribute 'avoid':\n" +& stringDelimitList(List.map(pointsLst,intString),",") +& "\n\n");
+        tvar = selectVarWithMostPoints(freeVars,pointsLst,-1,-1);
           // Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"VarsWithMostEqns:\n");
           // Debug.fcall(Flags.TEARING_DUMPVERBOSE,BackendDump.debuglst,(freeVars,intString,", ","\n"));
-           Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"tVar: " +& intString(tvar) +& " (" +& intString(points[tvar]) +& " points)\n\n");
+		   Debug.bcall(listMember(tvar,tSel_avoid), Error.addCompilerWarning, "The Tearing heuristic has chosen variables with annotation attribute 'tearingSelect = avoid'. Use +d=tearingdump and +d=tearingdumpV for more information.");
+           Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"tVar: " +& intString(tvar) +& " (" +& intString(listGet(pointsLst,tvar)) +& " points)\n\n");
       then
         tvar;
       else
@@ -1128,7 +1201,7 @@ end discriminateDiscrete;
 protected function selectVarWithMostPoints " returns one var with most points
   author: Frenkel TUD 2012-05"
   input list<Integer> vars;
-  input array<Integer> points;
+  input list<Integer> points;
   input Integer iVar;
   input Integer defp;
   output Integer oVar;
@@ -1141,7 +1214,7 @@ algorithm
     case (v::rest,_,_,_)
       equation
           // Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Var " +& intString(v));
-        p = points[v];
+        p = listGet(points,v);
           // Debug.fcall(Flags.TEARING_DUMPVERBOSE, print," has " +& intString(p) +& " Points\n");
         true = intGt(p,defp);
           // Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"max is  " +& intString(p) +& "\n");
@@ -1376,6 +1449,10 @@ protected function omcTearing3 " function to rerun omcTearing2 if there are stil
   author: Frenkel TUD 2012-05"
   input list<Integer> unassigend;
   input list<Integer> unsolvables;
+  input list<Integer> tSel_always;
+  input list<Integer> tSel_prefer;
+  input list<Integer> tSel_avoid;
+  input list<Integer> tSel_never;
   input BackendDAE.AdjacencyMatrixEnhanced m;
   input BackendDAE.AdjacencyMatrixTEnhanced mt;
   input array<list<Integer>> mapEqnIncRow;
@@ -1391,12 +1468,12 @@ protected function omcTearing3 " function to rerun omcTearing2 if there are stil
   output list<Integer> outTVars;
   output Integer oMark;
 algorithm
-  (outTVars,oMark) := match(unassigend,unsolvables,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
+  (outTVars,oMark) := match(unassigend,unsolvables,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
     local
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_) then (inTVars,mark);
+    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) then (inTVars,mark);
     else
       equation
-        (outTVars,oMark) = omcTearing2(unsolvables,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars);
+        (outTVars,oMark) = omcTearing2(unsolvables,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars);
       then
         (outTVars,oMark);
   end match;
@@ -1581,7 +1658,7 @@ algorithm
   discreteVars := findDiscrete(var_lst,{},1);
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "\nDiscrete Vars:\n" +& stringDelimitList(List.map(discreteVars,intString),",") +& "\n\n");
   // If '+showAnnotations=true': Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
-  ((tSel_always,tSel_prefer,tSel_avoid,tSel_never)) := Debug.bcallret6(Config.showAnnotations(),tearingSelect,var_lst,{},{},{},{},1,({},{},{},{}));
+  ((tSel_always,tSel_prefer,tSel_avoid,tSel_never)) := tearingSelect(var_lst,{},{},{},{},1);
   ass1 := List.fill(-1,size);
   ass2 := List.fill(-1,size);
   orderIn := {{},{}};
@@ -1809,9 +1886,9 @@ algorithm
       // First choose unsolvables and 'always'-vars as tVars
       tvars = List.unique(listAppend(Unsolvables,tSel_always));
     tVar_never = List.intersectionOnTrue(tvars,tSel_never,intEq);
-       Debug.bcall(listLength(tVar_never)<>0, Error.addCompilerWarning, "There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
+         Debug.bcall(listLength(tVar_never)<>0, Error.addCompilerWarning, "There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
          Debug.fcall(Flags.TEARING_DUMP, print,"\nForced selection of Tearing Variables:\n" +& UNDERLINE +& "\nUnsolvables as tVars: "+& stringDelimitList(List.map(Unsolvables,intString),",")+&"\n");
-         Debug.fcall(Flags.TEARING_DUMP, print,"Variables with annotation 'always' as tVars: "+& stringDelimitList(List.map(tSel_always,intString),",")+&"\n");
+         Debug.fcall(Flags.TEARING_DUMP, print,"Variables with annotation attribute 'always' as tVars: "+& stringDelimitList(List.map(tSel_always,intString),",")+&"\n");
     // mark tvars in ass1
       ass1 = markTVars(tvars,ass1In);
       // remove tearing var from incidence matrix and transposed inc matrix
@@ -2382,45 +2459,45 @@ protected
 algorithm
       (mapEqnIncRow,mapIncRowEqn) := mapInfo;
       (ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never) := varInfo;
-      // Cellier heuristic [MC3]
-      // 0. Consider only non-discrete Vars and vars without annotation attribute 'tearingSelect=never'
+    // Cellier heuristic [MC3]
+    // 0. Consider only non-discrete Vars and vars without annotation attribute 'tearingSelect=never'
       varlst := List.intRange(arrayLength(mt));
       ((_,_,selectedcols0)) := Util.arrayFold(mt,findNEntries,(0,1,{}));
       (_,selectedcols0,_) := List.intersection1OnTrue(varlst,selectedcols0,intEq);
       (_,selectedcols0,_) := List.intersection1OnTrue(selectedcols0,discreteVars,intEq);
-    (_,selectedcols0,_) := List.intersection1OnTrue(selectedcols0,tSel_never,intEq);
+      (_,selectedcols0,_) := List.intersection1OnTrue(selectedcols0,tSel_never,intEq);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: "+& stringDelimitList(List.map(selectedcols0,intString),",")+&"\n(All non-discrete left variables without attribute 'never')\n\n");
-       // 1. select the rows(eqs) from m which could be causalized by knowing one more Var
+    // 1. select the rows(eqs) from m which could be causalized by knowing one more Var
       ((_,assEq)) := List.fold(ass2In,getUnassigned,(1,{}));
       (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,m,mapEqnIncRow,mapIncRowEqn,1,{},{});
       selectedrows := listAppend(assEq_multi,assEq_single);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, stringDelimitList(List.map(selectedrows,intString),",")+&"\n(Equations which could be causalized by knowing one more Var)\n\n");
-      // 2. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
+    // 2. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
       mtsel := Util.arraySelect(mt,selectedcols0);
       ((_,_,_,_,_,_,_,counts1)) := Util.arrayFold(mtsel,selectCausalVars,(me,ass1In,selectedrows,selectedcols0,{},0,1,{}));
       counts1 := listReverse(counts1);
-      // 3. determine for each variable the number of impossible assignments and save them in counts2
+    // 3. determine for each variable the number of impossible assignments and save them in counts2
       (_,counts2,_) := countImpossibleAss(selectedcols0,ass2In,met,{},{},0);
       counts2 := listReverse(counts2);
-      // 4. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points
+    // 4. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points
       points := List.threadMap(counts1,counts2,intAdd);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nPoints: "+& stringDelimitList(List.map(points,intString),",")+&"\n(Sum of impossible assignments and causalizable equations)\n");
-      // 5. Prefer variables with annotation attribute 'tearingSelect=prefer'
-    points := preferAvoidVariables(selectedcols0, points, tSel_prefer, 3.0, 1);
+    // 5. Prefer variables with annotation attribute 'tearingSelect=prefer'
+      points := preferAvoidVariables(selectedcols0, points, tSel_prefer, 3.0, 1);
        Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Points: "+& stringDelimitList(List.map(points,intString),",")+&"\n(Points after preferring variables with attribute 'prefer')\n");
     // 6. Avoid variables with annotation attribute 'tearingSelect=avoid'
-    points := preferAvoidVariables(selectedcols0, points, tSel_avoid, 0.334, 1);
+      points := preferAvoidVariables(selectedcols0, points, tSel_avoid, 0.334, 1);
        Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Points: "+& stringDelimitList(List.map(points,intString),",")+&"\n(Points after discrimination against variables with attribute 'avoid')\n");
     // 7. Choose vars with most points and save them in selectedcols1
       selectedcols1 := maxListInt(points);
-    maxpoints := listGet(points,listGet(selectedcols1,1));
+      maxpoints := listGet(points,listGet(selectedcols1,1));
       selectedcols1 := selectFromList(selectedcols0,selectedcols1);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n2nd: "+& stringDelimitList(List.map(selectedcols1,intString),",")+&"\n(Variables from (1st) with most points [" +& intString(maxpoints) +& "])\n\n");
-      // 8. Choose vars with most occurrence in equations as potentials
+    // 8. Choose vars with most occurrence in equations as potentials
       mtsel := Util.arraySelect(mt,selectedcols1);
       ((edges,_,potentials)) := Util.arrayFold(mtsel,findMostEntries2,(0,1,{}));
       potentials := List.unique(potentials);
-      // 9. convert indexes from mtsel to indexes from mt
+    // 9. convert indexes from mtsel to indexes from mt
       potentials := selectFromList(selectedcols1,potentials);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"3rd: "+& stringDelimitList(List.map(potentials,intString),",")+&"\n(Variables from (2nd) with most occurrence in equations (" +& intString(edges) +&" times) - potentials)\n\n");
          Debug.bcall(listMember(listGet(potentials,1),tSel_avoid), Error.addCompilerWarning, "The Tearing heuristic has chosen variables with annotation attribute 'tearingSelect = avoid'. Use +d=tearingdump and +d=tearingdumpV for more information.");
@@ -2493,7 +2570,7 @@ end potentialsCellier11;
 
 
 protected function preferAvoidVariables
- "multiplies points of variables with annotation attribute 'tearingSelect=prefer' with three
+ "multiplies points of variables with annotation attribute 'tearingSelect=prefer' or 'tearingSelect=avoid' with factor
   author: ptaeuber FHB 2014-05"
   input list<Integer> varsIn;
   input list<Integer> pointsIn;
@@ -2738,7 +2815,7 @@ algorithm
   // select equations not assigned yet
   ((_,assEq)) := List.fold(ass2In,getUnassigned,(1,{}));
   (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,0,{},{});
-  assEq := listAppend(assEq_multi,listReverse(assEq_single));
+  assEq := listAppend(assEq_multi,assEq_single);
   // transform equationlist to equationlist with collective equations
   assEq_coll := List.map1r(assEq,arrayGet,mapIncRowEqn);
   assEq_coll := List.unique(assEq_coll);
