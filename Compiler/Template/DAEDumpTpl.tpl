@@ -565,19 +565,9 @@ template dumpInitialEquationSection(list<DAE.Element> ie)
   if ie then
     <<
     initial equation
-      <%ie |> ineq => dumpInitialEquation(ineq) ;separator="\n"%>
+      <%ie |> ineq => dumpEquationElement(ineq) ;separator="\n"%>
     >>
 end dumpInitialEquationSection;
-
-template dumpInitialEquation(DAE.Element lst )
-::=
-match lst
-  case INITIALDEFINE(__) then dumpDefine(componentRef, exp, source)
-  case INITIAL_ARRAY_EQUATION(__) then dumpEquation(exp, array, source)
-  case INITIAL_COMPLEX_EQUATION(__) then dumpEquation(lhs, rhs, source)
-  case INITIAL_IF_EQUATION(__) then dumpIfEquation(condition1, equations2, equations3, source)
-  case INITIALEQUATION(__) then dumpEquation(exp1, exp2, source)
-end dumpInitialEquation;
 
 /*****************************************************************************
  *     SECTION: EQUATION SECTION                                             *
@@ -606,6 +596,11 @@ match lst
   case TERMINATE(__) then dumpTerminate(message, source)
   case REINIT(__) then dumpReinit(componentRef, exp, source)
   case NORETCALL(__) then dumpNoRetCall(exp, source)
+  case INITIALDEFINE(__) then dumpDefine(componentRef, exp, source)
+  case INITIAL_ARRAY_EQUATION(__) then dumpEquation(exp, array, source)
+  case INITIAL_COMPLEX_EQUATION(__) then dumpEquation(lhs, rhs, source)
+  case INITIAL_IF_EQUATION(__) then dumpIfEquation(condition1, equations2, equations3, source)
+  case INITIALEQUATION(__) then dumpEquation(exp1, exp2, source)
   else 'UNKNOWN EQUATION TYPE'
 end dumpEquationElement;
 
