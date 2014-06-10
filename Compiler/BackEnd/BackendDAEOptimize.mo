@@ -5149,7 +5149,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       BackendDAE.StateSets stateSets;
-      
+
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets),shared as BackendDAE.SHARED(knownVars=knvars))
       equation
         // traverse the equations
@@ -5160,7 +5160,7 @@ algorithm
         syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
         shared = BackendEquation.requationsAddDAE(asserts,shared);
       then (syst,shared);
-      
+
     case (_,_)
     then (isyst,ishared);
   end matchcontinue;
@@ -5184,7 +5184,7 @@ algorithm
       Boolean b;
       BackendDAE.Equation eqn;
       BackendDAE.EquationKind eqKind;
-      
+
     case (BackendDAE.IF_EQUATION(conditions=explst, eqnstrue=eqnslstlst, eqnsfalse=eqnslst, source=source, kind=eqKind), knvars, (acc, asserts, _))
       equation
         // check conditions
@@ -5195,7 +5195,7 @@ algorithm
         asserts = listAppend(asserts,asserts1);
       then
         ((acc, asserts, true));
-        
+
     case (eqn,knvars,(acc,asserts,b))
       equation
         (eqn,(_,b)) = BackendEquation.traverseBackendDAEExpsEqn(eqn, simplifyIfExpevaluatedParamter, (knvars,b));
@@ -5367,7 +5367,7 @@ algorithm
         eqns = makeEquationsFromResiduals(conditions, tbsExp, fbsExp, source, inEqKind);
       then
         listAppend(eqns,inEqns);
-    
+
     else then BackendDAE.IF_EQUATION(conditions,theneqns,elseenqs,source,inEqKind)::inEqns;
   end matchcontinue;
 end simplifyIfEquation1;
@@ -5383,10 +5383,10 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp e,crexp;
       list<tuple<DAE.ComponentRef,DAE.Exp>> rest;
-    
-    case ({}, _, _) 
+
+    case ({}, _, _)
     then inEqns;
-    
+
     case ((cr,e)::rest,_, _)
       equation
         crexp = Expression.crefExp(cr);

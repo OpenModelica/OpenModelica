@@ -2114,7 +2114,7 @@ algorithm
   outEqKind := match inEquation
     local
       BackendDAE.EquationKind kind;
-      
+
     case BackendDAE.EQUATION(kind=kind) then kind;
     case BackendDAE.ARRAY_EQUATION(kind=kind) then kind;
     case BackendDAE.SOLVED_EQUATION(kind=kind) then kind;
