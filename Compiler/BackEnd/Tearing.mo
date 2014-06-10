@@ -327,10 +327,10 @@ algorithm
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nUnsolvable Vars:\n");
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, BackendDump.debuglst,(unsolvables,intString,", ","\n"));
   columark := arrayCreate(size,-1);
-  
+
   // If '+showAnnotations=true': Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
   ((tSel_always,tSel_prefer,tSel_avoid,tSel_never)) := tearingSelect(var_lst,{},{},{},{},1);
-  
+
   // determine tvars and do cheap matching until a maximum matching is there
   // if cheap matching stucks select additional tearing variable and continue
   // (mark+1 for every call of omcTearing3)
@@ -824,8 +824,8 @@ algorithm
     // if there are unsolvables choose unsolvables as tvars
     case (tvar::rest,{},_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-	       Debug.bcall(listMember(tvar,tSel_never), Error.addCompilerWarning, "There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
-	       Debug.fcall(Flags.TEARING_DUMP, print,"\nForced selection of Tearing Variable:\n" +& UNDERLINE +& "\n");
+         Debug.bcall(listMember(tvar,tSel_never), Error.addCompilerWarning, "There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
+         Debug.fcall(Flags.TEARING_DUMP, print,"\nForced selection of Tearing Variable:\n" +& UNDERLINE +& "\n");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"tVar: " +& intString(tvar) +& " (unsolvable in omcTearing2)\n\n\n");
         // mark tearing var
         _ = arrayUpdate(ass1,tvar,size*2);
@@ -842,13 +842,13 @@ algorithm
         (outTVars,oMark);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-	       Debug.fcall(Flags.TEARING_DUMP, print,"\nForced selection of Tearing Variables:\n" +& UNDERLINE +& "\n");
+         Debug.fcall(Flags.TEARING_DUMP, print,"\nForced selection of Tearing Variables:\n" +& UNDERLINE +& "\n");
            Debug.fcall(Flags.TEARING_DUMP, print,"Variables with annotation attribute 'always' as tVars: " +& stringDelimitList(List.map(tSel_always,intString),",")+&"\n");
         // mark tearing var
-		ass1List = markTVars(tSel_always,arrayList(ass1));
-		ass1 = Util.arrayCopy(listArray(ass1List),ass1);
+    ass1List = markTVars(tSel_always,arrayList(ass1));
+    ass1 = Util.arrayCopy(listArray(ass1List),ass1);
         // equations not yet assigned containing the tvars
-		vareqns = findVareqns(ass2,isAssignedSaveEnhanced,mt,tSel_always,{});
+    vareqns = findVareqns(ass2,isAssignedSaveEnhanced,mt,tSel_always,{});
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Assignable equations containing new tvars:\n");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,BackendDump.dumpAdjacencyRowEnhanced,vareqns);Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"\n");
         // cheap matching
@@ -884,14 +884,14 @@ protected function findVareqns
 algorithm
   vareqnsOut := matchcontinue(ass2In,inCompFunc,mt,tSel_alwaysIn,vareqnsIn)
     local
-	  Integer tvar;
+    Integer tvar;
       list<Integer> rest;
-      list<tuple<Integer,BackendDAE.Solvability>> vareqns; 
-	case(_,_,_,{},_)
+      list<tuple<Integer,BackendDAE.Solvability>> vareqns;
+  case(_,_,_,{},_)
      then List.unique(vareqnsIn);
-	case(_,_,_,tvar::rest,_)
-	  equation
-	    vareqns = List.removeOnTrue(ass2In,inCompFunc,mt[tvar]);
+  case(_,_,_,tvar::rest,_)
+    equation
+      vareqns = List.removeOnTrue(ass2In,inCompFunc,mt[tvar]);
        then findVareqns(ass2In,inCompFunc,mt,rest,listAppend(vareqnsIn,vareqns));
  end matchcontinue;
 end findVareqns;
@@ -936,8 +936,8 @@ algorithm
         unsolvables = getUnsolvableVarsConsiderMatching(1,BackendVariable.varsSize(vars),mt,ass1,ass2,{});
     false = List.isEmpty(unsolvables);
     tvar = listGet(unsolvables,1);
-	       Debug.bcall(listMember(tvar,tSel_never), Error.addCompilerWarning, "There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
-	       Debug.fcall(Flags.TEARING_DUMP, print,"\nForced selection of Tearing Variable:\n" +& UNDERLINE +& "\n");
+         Debug.bcall(listMember(tvar,tSel_never), Error.addCompilerWarning, "There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
+         Debug.fcall(Flags.TEARING_DUMP, print,"\nForced selection of Tearing Variable:\n" +& UNDERLINE +& "\n");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"tVar: " +& intString(tvar) +& " (unsolvable in omcTearingSelectTearingVar)\n\n");
       then
         tvar;
@@ -949,8 +949,8 @@ algorithm
         freeVars = Matching.getUnassigned(varsize,ass1,{});
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,  print,"omcTearingSelectTearingVar Candidates(unassigned vars):\n");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,  BackendDump.debuglst,(freeVars,intString,", ","\n"));
-		(_,freeVars,_) = List.intersection1OnTrue(freeVars,tSel_never,intEq);
-		   Debug.fcall(Flags.TEARING_DUMPVERBOSE,  print,"Candidates without variables with annotation attribute 'never':\n");
+    (_,freeVars,_) = List.intersection1OnTrue(freeVars,tSel_never,intEq);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE,  print,"Candidates without variables with annotation attribute 'never':\n");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,  BackendDump.debuglst,(freeVars,intString,", ","\n"));
         size = listLength(freeVars);
         true = intGt(size,0);
@@ -967,16 +967,16 @@ algorithm
         // 3rd: only one-tenth of points for each discrete variable
         points = List.fold1(freeVars,discriminateDiscrete,vars,points);
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Points after 'discriminateDiscrete':\n" +& stringDelimitList(List.map(arrayList(points),intString),",") +& "\n\n");
-		// 4th: Prefer variables with annotation attribute 'tearingSelect=prefer'
+    // 4th: Prefer variables with annotation attribute 'tearingSelect=prefer'
         pointsLst = preferAvoidVariables(freeVars, arrayList(points), tSel_prefer, 3.0, 1);
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Points after preferring variables with attribute 'prefer':\n" +& stringDelimitList(List.map(pointsLst,intString),",") +& "\n\n");
-		// 5th: Avoid variables with annotation attribute 'tearingSelect=avoid'
+    // 5th: Avoid variables with annotation attribute 'tearingSelect=avoid'
         pointsLst = preferAvoidVariables(freeVars, pointsLst, tSel_avoid, 0.334, 1);
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Points after discrimination against variables with attribute 'avoid':\n" +& stringDelimitList(List.map(pointsLst,intString),",") +& "\n\n");
         tvar = selectVarWithMostPoints(freeVars,pointsLst,-1,-1);
           // Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"VarsWithMostEqns:\n");
           // Debug.fcall(Flags.TEARING_DUMPVERBOSE,BackendDump.debuglst,(freeVars,intString,", ","\n"));
-		   Debug.bcall(listMember(tvar,tSel_avoid), Error.addCompilerWarning, "The Tearing heuristic has chosen variables with annotation attribute 'tearingSelect = avoid'. Use +d=tearingdump and +d=tearingdumpV for more information.");
+       Debug.bcall(listMember(tvar,tSel_avoid), Error.addCompilerWarning, "The Tearing heuristic has chosen variables with annotation attribute 'tearingSelect = avoid'. Use +d=tearingdump and +d=tearingdumpV for more information.");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"tVar: " +& intString(tvar) +& " (" +& intString(listGet(pointsLst,tvar)) +& " points)\n\n");
       then
         tvar;
