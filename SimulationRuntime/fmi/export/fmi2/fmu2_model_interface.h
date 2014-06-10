@@ -57,8 +57,8 @@ extern "C" {
 typedef enum {
   modelInstantiated       = 1<<0,
   modelInitializationMode = 1<<1,
-  modelInitialized        = 1<<2, // state just after fmiExitInitializationMode
-  modelStepping           = 1<<3, // state after initialization
+  modelEventMode          = 1<<2,
+  modelContinuousTimeMode = 1<<3,
   modelTerminated         = 1<<4,
   modelError              = 1<<5
 } ModelState;
