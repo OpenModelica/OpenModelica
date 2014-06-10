@@ -1892,7 +1892,7 @@ algorithm
         allEqs = replaceSimEqSystemLstWithSameIndex(simEqSysts,allEqs);
         odes = List.map1r(odes,replaceSimEqSystemLstWithSameIndex,simEqSysts);
         simCode = SimCodeUtil.replaceODEandALLequations(allEqs,odes,simCodeIn);
-        
+
         //update taskGraph
         clTasks = List.first(allCluster);// the current cluster
         print("clTasks :"+&intListString(clTasks)+&"\n");
@@ -2043,7 +2043,7 @@ algorithm
 
   // update taskDuplAss
   taskDuplAssOut := arrayUpdate(taskDuplAssIn,taskIdx,node);
-  
+
   //update taskGraph
   clTasks := List.first(allCluster);// the current cluster
   print("clTasks :"+&intListString(clTasks)+&"\n");
