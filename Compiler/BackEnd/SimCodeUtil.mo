@@ -7489,16 +7489,14 @@ algorithm
   print(stringDelimitList(List.map(algebraicEquations,dumpSimEqSystemLst),"\n")+&"\n");
   print("initialEquations: \n-----------------------\n");
   print(dumpSimEqSystemLst(initialEquations)+&"\n");
-  print("SIMVARS: \n-----------------------\n");
-  dumpSimVars(simVars);
-  /*
   print("algorithmAndEquationAsserts: \n-----------------------\n");
   print(dumpSimEqSystemLst(algorithmAndEquationAsserts)+&"\n");
   print("equationsForZeroCrossings: \n-----------------------\n");
   print(dumpSimEqSystemLst(equationsForZeroCrossings)+&"\n");
   print("jacobianEquations: \n-----------------------\n");
   print(dumpSimEqSystemLst(jacobianEquations)+&"\n");
-  */
+  print("SIMVARS: \n-----------------------\n");
+  dumpSimVars(simVars);
 end dumpSimCode;
 
 protected function isAliasVar
