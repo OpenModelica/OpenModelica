@@ -2107,6 +2107,28 @@ algorithm
   end match;
 end equationSize;
 
+public function equationKind "Retrieve the kind from a BackendDAE.BackendDAE equation"
+  input BackendDAE.Equation inEquation;
+  output BackendDAE.EquationKind outEqKind;
+algorithm
+  outEqKind := match inEquation
+    local
+      BackendDAE.EquationKind kind;
+      
+    case BackendDAE.EQUATION(kind=kind) then kind;
+    case BackendDAE.ARRAY_EQUATION(kind=kind) then kind;
+    case BackendDAE.SOLVED_EQUATION(kind=kind) then kind;
+    case BackendDAE.RESIDUAL_EQUATION(kind=kind) then kind;
+    case BackendDAE.WHEN_EQUATION(kind=kind) then kind;
+    case BackendDAE.ALGORITHM(kind=kind) then kind;
+    case BackendDAE.COMPLEX_EQUATION(kind=kind) then kind;
+    case BackendDAE.IF_EQUATION(kind=kind) then kind;
+    case (_) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"BackendEquation.equationKind failed!"});
+    then fail();
+  end match;
+end equationKind;
+
 public function equationOptSize
   input Option<BackendDAE.Equation> oeqn;
   output Integer size;

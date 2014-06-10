@@ -59,7 +59,6 @@ protected import BackendVariable;
 protected import ClassInf;
 protected import ComponentReference;
 protected import DAEDump;
-protected import DAEDumpTpl;
 protected import Debug;
 protected import Error;
 protected import Expression;
@@ -68,7 +67,6 @@ protected import ExpressionDump;
 protected import Flags;
 protected import Inline;
 protected import List;
-protected import Tpl;
 protected import Util;
 
 
@@ -384,8 +382,7 @@ algorithm
 end differentiateEquations;
 
 public function differentiateEquation
-"function: differentiateEquation
-  Differentiates an equation with respect to a cref."
+  "Differentiates an equation with respect to a cref."
   input BackendDAE.Equation inEquation;
   input DAE.ComponentRef inDiffwrtCref;
   input BackendDAE.DifferentiateInputData inInputData;
@@ -413,9 +410,10 @@ algorithm
       list<DAE.Statement> statementLst;
       DAE.Expand expand;
       BackendDAE.WhenEquation whenEqn;
+      BackendDAE.EquationKind eqKind;
 
     // equations
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source),_,_,_,_)
+    case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, kind=eqKind), _, _, _, _)
       equation
         (e1_1,funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (e1_1,_) = ExpressionSimplify.simplify(e1_1);
@@ -427,10 +425,10 @@ algorithm
         op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e2,e2_1);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
-        (BackendDAE.EQUATION(e1_1,e2_1,source,false,BackendDAE.UNKNOWN_EQUATION_KIND()), funcs);
+        (BackendDAE.EQUATION(e1_1,e2_1,source,false,eqKind), funcs);
 
     // solved equations
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cref, exp = e2,source=source),_,_,_,_)
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, kind=eqKind), _, _, _, _)
       equation
         e1 = Expression.crefExp(cref);
 
@@ -444,10 +442,10 @@ algorithm
         op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e2,e2_1);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
-        (BackendDAE.EQUATION(e1_1,e2_1,source,false,BackendDAE.UNKNOWN_EQUATION_KIND()), funcs);
+        (BackendDAE.EQUATION(e1_1,e2_1,source,false,eqKind), funcs);
 
     // RESIDUAL_EQUATION
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source),_,_,_,_)
+    case (BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source, kind=eqKind), _, _, _, _)
       equation
 
         (e1_1,funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
@@ -457,10 +455,10 @@ algorithm
         source = List.foldr({op1},DAEUtil.addSymbolicTransformation,source);
 
       then
-        (BackendDAE.RESIDUAL_EQUATION(e1_1,source,false,BackendDAE.UNKNOWN_EQUATION_KIND()), funcs);
+        (BackendDAE.RESIDUAL_EQUATION(e1_1,source,false,eqKind), funcs);
 
     // complex equations
-    case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source=source),_,_,_,_)
+    case (BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2, source=source, kind=eqKind), _, _, _, _)
       equation
         (e1_1,funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (e1_1,_) = ExpressionSimplify.simplify(e1_1);
@@ -472,10 +470,10 @@ algorithm
         op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e2,e2_1);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
-        (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,false,BackendDAE.UNKNOWN_EQUATION_KIND()), funcs);
+        (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,false,eqKind), funcs);
 
     // Array Equations
-    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source=source),_,_,_,_)
+    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=e1, right=e2, source=source, kind=eqKind), _, _, _, _)
       equation
         (e1_1,funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (e1_1,_) = ExpressionSimplify.simplify(e1_1);
@@ -487,10 +485,10 @@ algorithm
         op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e2,e2_1);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
-        (BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,false,BackendDAE.UNKNOWN_EQUATION_KIND()), funcs);
+        (BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,false,eqKind), funcs);
 
     // differentiate algorithm
-    case (BackendDAE.ALGORITHM(size = size, alg=DAE.ALGORITHM_STMTS(statementLst=statementLst),source=source, expand=expand),_,_,_,_)
+    case (BackendDAE.ALGORITHM(size=size, alg=DAE.ALGORITHM_STMTS(statementLst=statementLst), source=source, expand=expand, kind=eqKind), _, _, _, _)
       equation
         // get Allgorithm
         (statementLst, funcs) = differentiateStatements(statementLst, inDiffwrtCref, inInputData, inDiffType, {}, inFunctionTree);
@@ -500,21 +498,21 @@ algorithm
         //op1 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e1,e2);
         //source = DAEUtil.addSymbolicTransformation(source,op1);
        then
-        (BackendDAE.ALGORITHM(size, alg, source, expand,BackendDAE.UNKNOWN_EQUATION_KIND()), funcs);
+        (BackendDAE.ALGORITHM(size, alg, source, expand,eqKind), funcs);
 
     // if-equations
-    case (BackendDAE.IF_EQUATION(conditions=expExpLst, eqnstrue=eqnslst, eqnsfalse=eqns, source=source),_,_,_,_)
+    case (BackendDAE.IF_EQUATION(conditions=expExpLst, eqnstrue=eqnslst, eqnsfalse=eqns, source=source, kind=eqKind), _, _, _, _)
       equation
         (eqnslst, funcs) = differentiateEquationsLst(eqnslst, inDiffwrtCref, inInputData, inDiffType, {}, inFunctionTree);
         (eqns, funcs) = differentiateEquations(eqns, inDiffwrtCref, inInputData, inDiffType, {}, funcs);
       then
-        (BackendDAE.IF_EQUATION(expExpLst,eqnslst,eqns,source,BackendDAE.UNKNOWN_EQUATION_KIND()), funcs);
+        (BackendDAE.IF_EQUATION(expExpLst,eqnslst,eqns,source,eqKind), funcs);
 
-    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEqn, source=source), _, _, _, _)
+    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEqn, source=source, kind=eqKind), _, _, _, _)
        equation
         (whenEqn, funcs) = differentiateWhenEquations(whenEqn, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
       then
-        (BackendDAE.WHEN_EQUATION(size, whenEqn, source,BackendDAE.UNKNOWN_EQUATION_KIND()), funcs);
+        (BackendDAE.WHEN_EQUATION(size, whenEqn, source, eqKind), funcs);
 
     else
       equation

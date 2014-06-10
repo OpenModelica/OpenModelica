@@ -1790,14 +1790,14 @@ algorithm
         names = List.map(var_lst,BackendVariable.varCref);
         checkLinearSystem(linInfo,names,jacVals,rhsVals,eqn_lst);
         sources = List.map1(sources, DAEUtil.addSymbolicTransformation, DAE.LINEAR_SOLVED(names,jacVals,rhsVals,solvedVals));
-        (vars1,eqns2,shared) = changeconstantLinearSystemVars(var_lst,solvedVals,sources,var_indxs,vars,eqns,ishared);
+        (vars1,eqns2,shared) = changeConstantLinearSystemVars(var_lst,solvedVals,sources,var_indxs,vars,eqns,ishared);
         eqns = List.fold(eqn_indxs,BackendEquation.equationRemove,eqns2);
       then
         (BackendDAE.EQSYSTEM(vars1,eqns,NONE(),NONE(),matching,stateSets),shared);
   end match;
 end solveLinearSystem;
 
-protected function changeconstantLinearSystemVars
+protected function changeConstantLinearSystemVars
   input list<BackendDAE.Var> inVarLst;
   input list<Real> inSolvedVals;
   input list<DAE.ElementSource> inSources;
@@ -1831,7 +1831,7 @@ algorithm
         e = Expression.makeCrefExp(cref, tp);
         e = Expression.expDer(e);
         eqns = BackendEquation.equationAdd(BackendDAE.EQUATION(e, DAE.RCONST(r), DAE.emptyElementSource, false, BackendDAE.UNKNOWN_EQUATION_KIND()), eqns);
-        (vars2,eqns,shared) = changeconstantLinearSystemVars(varlst,rlst,slst,vindxs,vars,eqns,ishared);
+        (vars2,eqns,shared) = changeConstantLinearSystemVars(varlst,rlst,slst,vindxs,vars,eqns,ishared);
       then (vars2,eqns,shared);
     case (v::varlst,r::rlst,_::slst,indx::vindxs,vars,eqns,_)
       equation
@@ -1840,10 +1840,10 @@ algorithm
         // ToDo: merge source of var and equation
         (vars1,_) = BackendVariable.removeVar(indx, vars);
         shared = BackendVariable.addKnVarDAE(v1,ishared);
-        (vars2,eqns,shared) = changeconstantLinearSystemVars(varlst,rlst,slst,vindxs,vars1,eqns,shared);
+        (vars2,eqns,shared) = changeConstantLinearSystemVars(varlst,rlst,slst,vindxs,vars1,eqns,shared);
       then (vars2,eqns,shared);
   end match;
-end changeconstantLinearSystemVars;
+end changeConstantLinearSystemVars;
 
 public function evaluateConstantJacobian
   "Evaluate a constant jacobian so we can solve a linear system during runtime"
@@ -5130,7 +5130,7 @@ public function simplifyIfEquations "author: Frenkel TUD 2012-07
   input BackendDAE.BackendDAE dae;
   output BackendDAE.BackendDAE odae;
 algorithm
-  odae := BackendDAEUtil.mapEqSystem(dae,simplifyIfEquationsWork);
+  odae := BackendDAEUtil.mapEqSystem(dae, simplifyIfEquationsWork);
 end simplifyIfEquations;
 
 protected function simplifyIfEquationsWork "author: Frenkel TUD 2012-07
@@ -5141,7 +5141,7 @@ protected function simplifyIfEquationsWork "author: Frenkel TUD 2012-07
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
-  (osyst,oshared) := matchcontinue (isyst,ishared)
+  (osyst,oshared) := matchcontinue (isyst, ishared)
     local
       BackendDAE.Variables vars,knvars;
       BackendDAE.EquationArray eqns;
@@ -5149,6 +5149,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       BackendDAE.StateSets stateSets;
+      
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets),shared as BackendDAE.SHARED(knownVars=knvars))
       equation
         // traverse the equations
@@ -5159,8 +5160,9 @@ algorithm
         syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
         shared = BackendEquation.requationsAddDAE(asserts,shared);
       then (syst,shared);
+      
     case (_,_)
-      then (isyst,ishared);
+    then (isyst,ishared);
   end matchcontinue;
 end simplifyIfEquationsWork;
 
@@ -5181,16 +5183,19 @@ algorithm
       BackendDAE.Variables knvars;
       Boolean b;
       BackendDAE.Equation eqn;
-    case (BackendDAE.IF_EQUATION(conditions=explst, eqnstrue=eqnslstlst, eqnsfalse=eqnslst, source=source),knvars,(acc,asserts,_))
+      BackendDAE.EquationKind eqKind;
+      
+    case (BackendDAE.IF_EQUATION(conditions=explst, eqnstrue=eqnslstlst, eqnsfalse=eqnslst, source=source, kind=eqKind), knvars, (acc, asserts, _))
       equation
         // check conditions
-        ((explst,_)) = Expression.traverseExpList(explst, simplifyevaluatedParamter, (knvars,false));
+        ((explst,_)) = Expression.traverseExpList(explst, simplifyEvaluatedParamter, (knvars,false));
         explst = ExpressionSimplify.simplifyList(explst, {});
         // simplify if equation
-        (acc,asserts1) = simplifyIfEquation(explst,eqnslstlst,eqnslst,{},{},source,knvars,acc);
+        (acc,asserts1) = simplifyIfEquation(explst,eqnslstlst,eqnslst,{},{},source,knvars,acc,eqKind);
         asserts = listAppend(asserts,asserts1);
       then
-        ((acc,asserts,true));
+        ((acc, asserts, true));
+        
     case (eqn,knvars,(acc,asserts,b))
       equation
         (eqn,(_,b)) = BackendEquation.traverseBackendDAEExpsEqn(eqn, simplifyIfExpevaluatedParamter, (knvars,b));
@@ -5210,7 +5215,7 @@ algorithm
       Boolean b,b1;
     case ((e1 as DAE.IFEXP(expCond=cond, expThen=expThen, expElse=expElse),(knvars,b)))
       equation
-        ((cond,(_,b1))) = Expression.traverseExp(cond, simplifyevaluatedParamter, (knvars,false));
+        ((cond,(_,b1))) = Expression.traverseExp(cond, simplifyEvaluatedParamter, (knvars,false));
         e2 = Util.if_(b1,DAE.IFEXP(cond,expThen,expElse),e1);
         (e2,_) = ExpressionSimplify.condsimplify(b1,e2);
       then
@@ -5219,7 +5224,7 @@ algorithm
   end matchcontinue;
 end simplifyIfExpevaluatedParamter;
 
-protected function simplifyevaluatedParamter
+protected function simplifyEvaluatedParamter
   input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean>> tpl1;
   output tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean>> tpl2;
 algorithm
@@ -5238,7 +5243,7 @@ algorithm
         ((e,(knvars,true)));
     case _ then tpl1;
   end matchcontinue;
-end simplifyevaluatedParamter;
+end simplifyEvaluatedParamter;
 
 protected function simplifyIfEquation
 "author: Frenkel TUD 2012-07
@@ -5251,10 +5256,11 @@ protected function simplifyIfEquation
   input DAE.ElementSource source;
   input BackendDAE.Variables knvars;
   input list<BackendDAE.Equation> inEqns;
+  input BackendDAE.EquationKind inEqKind;
   output list<BackendDAE.Equation> outEqns;
   output list<BackendDAE.Equation> outAsserts;
 algorithm
-  (outEqns,outAsserts) := match(conditions,theneqns,elseenqs,conditions1,theneqns1,source,knvars,inEqns)
+  (outEqns,outAsserts) := match(conditions,theneqns,elseenqs,conditions1,theneqns1,source,knvars,inEqns,inEqKind)
     local
       DAE.Exp e;
       list<DAE.Exp> explst;
@@ -5262,14 +5268,14 @@ algorithm
       list<BackendDAE.Equation> eqns,elseenqs1,asserts;
 
     // no true case left with condition<>false
-    case ({},{},_,{},{},_,_,_)
+    case ({},{},_,{},{},_,_,_,_)
       equation
         // simplify nested if equations
         ((eqns,asserts,_)) = List.fold1(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, ({},{},false));
       then
         (listAppend(eqns,inEqns),asserts);
     // true case left with condition<>false
-    case ({},{},_,_,_,_,_,_)
+    case ({},{},_,_,_,_,_,_,_)
       equation
         explst = listReverse(conditions1);
         eqnslst = listReverse(theneqns1);
@@ -5277,18 +5283,18 @@ algorithm
         ((elseenqs1,asserts,_)) = List.fold1(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, ({},{},false));
         elseenqs1 = listAppend(elseenqs1,asserts);
         (eqnslst,elseenqs1,asserts) = simplifyIfEquationAsserts(explst,eqnslst,elseenqs1,{},{},{});
-        eqns = simplifyIfEquation1(explst,eqnslst,elseenqs1,source,knvars,inEqns);
+        eqns = simplifyIfEquation1(explst,eqnslst,elseenqs1,source,knvars,inEqns,inEqKind);
       then
         (eqns,asserts);
     // if true and first use it
-    case(DAE.BCONST(true)::_,eqns::_,_,{},_,_,_,_)
+    case(DAE.BCONST(true)::_,eqns::_,_,{},_,_,_,_,_)
       equation
         // simplify nested if equations
         ((eqns,asserts,_)) = List.fold1(listReverse(eqns), simplifyIfEquationsFinder, knvars, ({},{},false));
       then
         (listAppend(eqns,inEqns),asserts);
     // if true and not first use it as new else
-    case(DAE.BCONST(true)::_,eqns::_,_,_,_,_,_,_)
+    case(DAE.BCONST(true)::_,eqns::_,_,_,_,_,_,_,_)
       equation
         explst = listReverse(conditions1);
         eqnslst = listReverse(theneqns1);
@@ -5296,22 +5302,22 @@ algorithm
         ((elseenqs1,asserts,_)) = List.fold1(listReverse(eqns), simplifyIfEquationsFinder, knvars, ({},{},false));
         elseenqs1 = listAppend(elseenqs1,asserts);
         (eqnslst,elseenqs1,asserts) = simplifyIfEquationAsserts(explst,eqnslst,elseenqs1,{},{},{});
-        eqns = simplifyIfEquation1(explst,eqnslst,elseenqs1,source,knvars,inEqns);
+        eqns = simplifyIfEquation1(explst,eqnslst,elseenqs1,source,knvars,inEqns,inEqKind);
       then
         (eqns,asserts);
     // if false skip it
-    case(DAE.BCONST(false)::explst,_::eqnslst,_,_,_,_,_,_)
+    case(DAE.BCONST(false)::explst,_::eqnslst,_,_,_,_,_,_,_)
       equation
-        (eqns,asserts) = simplifyIfEquation(explst,eqnslst,elseenqs,conditions1,theneqns1,source,knvars,inEqns);
+        (eqns,asserts) = simplifyIfEquation(explst,eqnslst,elseenqs,conditions1,theneqns1,source,knvars,inEqns,inEqKind);
       then
         (eqns,asserts);
     // all other cases
-    case(e::explst,eqns::eqnslst,_,_,_,_,_,_)
+    case(e::explst,eqns::eqnslst,_,_,_,_,_,_,_)
       equation
         // simplify nested if equations
         ((eqns,asserts,_)) = List.fold1(listReverse(eqns), simplifyIfEquationsFinder, knvars, ({},{},false));
         eqns = listAppend(eqns,asserts);
-        (eqns,asserts) = simplifyIfEquation(explst,eqnslst,elseenqs,e::conditions1,eqns::theneqns1,source,knvars,inEqns);
+        (eqns,asserts) = simplifyIfEquation(explst,eqnslst,elseenqs,e::conditions1,eqns::theneqns1,source,knvars,inEqns,inEqKind);
       then
         (eqns,asserts);
   end match;
@@ -5326,9 +5332,10 @@ protected function simplifyIfEquation1
   input DAE.ElementSource source;
   input BackendDAE.Variables knvars;
   input list<BackendDAE.Equation> inEqns;
+  input BackendDAE.EquationKind inEqKind;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := matchcontinue(conditions,theneqns,elseenqs,source,knvars,inEqns)
+  outEqns := matchcontinue(conditions,theneqns,elseenqs,source,knvars,inEqns,inEqKind)
     local
       list<DAE.Exp> fbsExp;
       list<list<DAE.Exp>> tbsExp;
@@ -5337,7 +5344,7 @@ algorithm
       list<tuple<DAE.ComponentRef,DAE.Exp>> crexplst;
 
     // true case left with condition<>false
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_)
       equation
         _ = countEquationsInBranches(theneqns,elseenqs,source);
         // simplify if eqution
@@ -5348,42 +5355,43 @@ algorithm
         ht = simplifySolvedIfEqnsElse(elseenqs,ht);
         ht = simplifySolvedIfEqns(listReverse(conditions),listReverse(theneqns),ht);
         crexplst = BaseHashTable.hashTableList(ht);
-        eqns = simplifySolvedIfEqns2(crexplst,inEqns);
+        eqns = simplifySolvedIfEqns2(crexplst, inEqns, inEqKind);
         // ToDo: check if the same cref is not used more than once on the lhs, merge sources
       then
         eqns;
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_)
       equation
         _ = countEquationsInBranches(theneqns,elseenqs,source);
         fbsExp = makeEquationLstToResidualExpLst(elseenqs);
         tbsExp = List.map(theneqns, makeEquationLstToResidualExpLst);
-        eqns = makeEquationsFromResiduals(conditions, tbsExp, fbsExp, source);
+        eqns = makeEquationsFromResiduals(conditions, tbsExp, fbsExp, source, inEqKind);
       then
         listAppend(eqns,inEqns);
-    case (_,_,_,_,_,_)
-      then
-        BackendDAE.IF_EQUATION(conditions,theneqns,elseenqs,source,BackendDAE.UNKNOWN_EQUATION_KIND())::inEqns;
+    
+    else then BackendDAE.IF_EQUATION(conditions,theneqns,elseenqs,source,inEqKind)::inEqns;
   end matchcontinue;
 end simplifyIfEquation1;
 
 protected function simplifySolvedIfEqns2
   input list<tuple<DAE.ComponentRef,DAE.Exp>> crexplst;
   input list<BackendDAE.Equation> inEqns;
+  input BackendDAE.EquationKind inEqKind;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := match(crexplst,inEqns)
+  outEqns := match(crexplst, inEqns, inEqKind)
     local
       DAE.ComponentRef cr;
       DAE.Exp e,crexp;
       list<tuple<DAE.ComponentRef,DAE.Exp>> rest;
-    case ({},_)
-      then
-        inEqns;
-    case ((cr,e)::rest,_)
+    
+    case ({}, _, _) 
+    then inEqns;
+    
+    case ((cr,e)::rest,_, _)
       equation
         crexp = Expression.crefExp(cr);
       then
-       simplifySolvedIfEqns2(rest,BackendDAE.EQUATION(crexp,e,DAE.emptyElementSource,false,BackendDAE.UNKNOWN_EQUATION_KIND())::inEqns);
+       simplifySolvedIfEqns2(rest, BackendDAE.EQUATION(crexp, e, DAE.emptyElementSource, false, inEqKind)::inEqns, inEqKind);
   end match;
 end simplifySolvedIfEqns2;
 
@@ -5786,9 +5794,10 @@ protected function makeEquationsFromResiduals
   input list<list<DAE.Exp>> inExpLst2;
   input list<DAE.Exp> inExpLst3;
   input DAE.ElementSource source "the origin of the element";
+  input BackendDAE.EquationKind inEqKind;
   output list<BackendDAE.Equation> outExpLst;
 algorithm
-  outExpLst := match (inExp1, inExpLst2, inExpLst3, source)
+  outExpLst := match (inExp1, inExpLst2, inExpLst3, source, inEqKind)
     local
       list<list<DAE.Exp>> tbs,tbsRest;
       list<DAE.Exp> tbsFirst,fbs;
@@ -5798,20 +5807,20 @@ algorithm
       list<BackendDAE.Equation> rest_res;
       DAE.ElementSource src;
 
-    case (_, tbs, {}, _)
+    case (_, tbs, {}, _, _)
       equation
         List.map_0(tbs, List.assertIsEmpty);
       then {};
 
-    case (conds, tbs, fb::fbs, src)
+    case (conds, tbs, fb::fbs, src, _)
       equation
         tbsRest = List.map(tbs, List.rest);
-        rest_res = makeEquationsFromResiduals(conds, tbsRest, fbs, src);
+        rest_res = makeEquationsFromResiduals(conds, tbsRest, fbs, src, inEqKind);
 
         tbsFirst = List.map(tbs, List.first);
 
         ifexp = Expression.makeNestedIf(conds,tbsFirst,fb);
-        eq = BackendDAE.EQUATION(DAE.RCONST(0.0), ifexp, src, false, BackendDAE.UNKNOWN_EQUATION_KIND());
+        eq = BackendDAE.EQUATION(DAE.RCONST(0.0), ifexp, src, false, inEqKind);
       then (eq::rest_res);
   end match;
 end makeEquationsFromResiduals;
@@ -5960,7 +5969,7 @@ algorithm
         // y = semiLinear(x,sa,sb)
         eqn = BackendDAE.EQUATION(s1,DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{DAE.RELATION(x,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE())},DAE.callAttrBuiltinBool),sa,sb),source,diffed,eqKind);
         eqn1 = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source1,diffed,eqKind);
-        acc = semiLinearOptimize4(explst,(eqn1,index1)::iAcc);
+        acc = semiLinearOptimize4(explst,(eqn1,index1)::iAcc, eqKind);
       then
         semiLinearOptimize2(rest,iHt,IEqnsarray,(eqn,index)::acc);
     case (_::rest,_,_,_)
@@ -5974,22 +5983,23 @@ protected function semiLinearOptimize4
   helper for simplifysemiLinear"
   input list<tuple<DAE.Exp,Integer,DAE.ElementSource>> explst;
   input list<tuple<BackendDAE.Equation,Integer>> iAcc;
+  input BackendDAE.EquationKind inEqKind;
   output list<tuple<BackendDAE.Equation,Integer>> oAcc;
 algorithm
-  oAcc := match(explst,iAcc)
+  oAcc := match(explst, iAcc, inEqKind)
     local
       DAE.Exp s1,s2;
       list<tuple<DAE.Exp,Integer,DAE.ElementSource>> rest;
       Integer index;
       BackendDAE.Equation eqn;
       DAE.ElementSource source;
-    case ({},_) then iAcc;
-    case (_::{},_) then iAcc;
-    case((s2,index,source)::(rest as ((s1,_,_)::_)),_)
+    case ({}, _, _) then iAcc;
+    case (_::{}, _, _) then iAcc;
+    case((s2,index,source)::(rest as ((s1,_,_)::_)), _, _)
       equation
-        eqn = BackendDAE.EQUATION(s2,s1,source,false,BackendDAE.UNKNOWN_EQUATION_KIND());
+        eqn = BackendDAE.EQUATION(s2,s1,source,false,inEqKind);
       then
-        semiLinearOptimize4(rest,(eqn,index)::iAcc);
+        semiLinearOptimize4(rest, (eqn, index)::iAcc, inEqKind);
   end match;
 end semiLinearOptimize4;
 
