@@ -1726,7 +1726,7 @@ template functionInitialStateSets(list<StateSet> stateSets, String modelNamePref
        let statesvars = (states |> s hasindex i2 fromindex 0 => 'statesetData[<%i1%>].states[<%i2%>] = &<%cref(s)%>__varInfo;' ;separator="\n")
        let statescandidatesvars = (statescandidates |> cstate hasindex i2 fromindex 0 => 'statesetData[<%i1%>].statescandidates[<%i2%>] = &<%cref(cstate)%>__varInfo;' ;separator="\n")
        <<
-       assertStreamPrint(NULL, nStateSets > <%i1%>, "Internal Error: nStateSets mismatch!");       
+       assertStreamPrint(NULL, nStateSets > <%i1%>, "Internal Error: nStateSets mismatch!");
        statesetData[<%i1%>].nCandidates = <%nCandidates%>;
        statesetData[<%i1%>].nStates = <%nStates%>;
        statesetData[<%i1%>].nDummyStates = <%nCandidates%>-<%nStates%>;
