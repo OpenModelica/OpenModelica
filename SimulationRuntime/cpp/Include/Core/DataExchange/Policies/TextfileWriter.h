@@ -13,12 +13,13 @@ using std::ios;
 /**
 Policy class to write simulation results in a text file
 */
-template <unsigned long dim_1,unsigned long dim_2,unsigned long dim_3>
+template <unsigned long dim_1,unsigned long dim_2,unsigned long dim_3,unsigned long dim_4>
 struct TextFileWriter
 {
 public:
 typedef ublas::vector<double, ublas::bounded_array<double,dim_1> > value_type_v;
 typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv;
+typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
   TextFileWriter(unsigned long size,string output_path,string file_name)
     :_curser_position(0)
     ,_file_name(file_name)
@@ -66,22 +67,36 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv
     {
         //not supported for file output
 
-  }
+    }
+  
+  
+  /*writes pramater values to results file
+    @v_list values of parameter
+	@start_time
+	@end_time 
+  */
+   void write(const value_type_v& v_list,double start_time,double end_time)
+   {
+ 
+      //not supported for file output
+   }
 
 
-  void write(const std::vector<std::string>& s_list)
+  /*
+    writes header of results file with the variable names
+	@s_list name of variables
+	@s_desc_list description of variables
+	@s_parameter_list name of parameter
+	@s_desc_parameter_list description of parameter
+	*/
+  void write(const std::vector<std::string>& s_list,const std::vector<std::string>& s_desc_list,const std::vector<std::string>& s_parameter_list,const std::vector<std::string>& s_desc_parameter_list)
   {
+
     std::string s;
     _output_stream<<"\"time\""<<SEPERATOR;
 
     for(std::vector<std::string>::const_iterator it = s_list.begin(); it != s_list.end(); ++it)
       _output_stream<<"\""<<(*it)<<"\""<<SEPERATOR;
-
-//    BOOST_FOREACH(s, s_list)
-//    {
-//      _output_stream<<"\""<<s<<"\""<<SEPERATOR;
-//
-//    }
 
     _output_stream<<std::endl;
 
@@ -91,7 +106,12 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv
   {
     _output_stream<<c;
   }
-
+  /*
+  writes simulation results for a time step
+  @v_list variables and state vars
+  @v2_list derivatives vars
+  @time
+  */
   void write(const value_type_v& v_list,const value_type_dv& v2_list,double time)
   {
     _output_stream<<time<<SEPERATOR;
@@ -102,15 +122,6 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv
 
     for(typename value_type_dv::const_iterator it = v2_list.begin(); it != v2_list.end(); ++it)
       _output_stream<<(*it)<<SEPERATOR;
-
-//    BOOST_FOREACH(v, v_list)
-//    {
-//      _output_stream<<v<<SEPERATOR;
-//    }
-//    BOOST_FOREACH(v2, v2_list)
-//    {
-//      _output_stream<<v2<<SEPERATOR;
-//    }
 
     _output_stream<<std::endl;
   }

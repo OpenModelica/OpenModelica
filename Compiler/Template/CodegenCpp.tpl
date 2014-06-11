@@ -236,7 +236,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   else
   <<
 
-  typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0> HistoryImplType;
+  typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0,<%numParamVars(modelInfo)%>> HistoryImplType;
 
   >>%>
   /*****************************************************************************
@@ -266,7 +266,27 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        void writeBoolAliasVarsResultNames(vector<string>& names);
        void writeStateVarsResultNames(vector<string>& names);
        void writeDerivativeVarsResultNames(vector<string>& names);
-
+       void writeParametertNames(vector<string>& names);
+       void writeIntParameterNames(vector<string>& names);
+       void writeBoolParameterNames(vector<string>& names);
+       void writeStringParameterNames(vector<string>& names);
+       
+       void writeAlgVarsResultDescription(vector<string>& names);
+       void writeDiscreteAlgVarsResultDescription(vector<string>& names);
+       void writeIntAlgVarsResultDescription(vector<string>& names);
+       void writeBoolAlgVarsResultDescription(vector<string>& names);
+       void writeIntputVarsResultDescription(vector<string>& names);
+       void writeOutputVarsResultDescription(vector<string>& names);
+       void writeAliasVarsResultDescription(vector<string>& names);
+       void writeIntAliasVarsResultDescription(vector<string>& names);
+       void writeBoolAliasVarsResultDescription(vector<string>& names);
+       void writeStateVarsResultDescription(vector<string>& names);
+       void writeDerivativeVarsResultDescription(vector<string>& names);
+       void writeParameterDescription(vector<string>& names);
+       void writeIntParameterDescription(vector<string>& names);
+       void writeBoolParameterDescription(vector<string>& names);
+       void writeStringParameterDescription(vector<string>& names);
+       
        HistoryImplType* _historyImpl;
   };
  >>
@@ -3444,22 +3464,48 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //Write head line
     if (command & IWriteOutput::HEAD_LINE)
     {
-      vector<string> head;
-      writeAlgVarsResultNames(head);
-      writeDiscreteAlgVarsResultNames(head);
-      writeIntAlgVarsResultNames(head);
-      writeBoolAlgVarsResultNames(head);
-      writeIntputVarsResultNames(head);
-      writeOutputVarsResultNames(head);
-      writeAliasVarsResultNames(head);
-      writeIntAliasVarsResultNames(head);
-      writeBoolAliasVarsResultNames(head);
-      writeStateVarsResultNames(head);
-      writeDerivativeVarsResultNames(head);
+      vector<string> varsnames;
+      vector<string> vardescs;
+      vector<string> paramnames;
+      vector<string> paramdecs;
+      writeAlgVarsResultNames(varsnames);
+      writeDiscreteAlgVarsResultNames(varsnames);
+      writeIntAlgVarsResultNames(varsnames);
+      writeBoolAlgVarsResultNames(varsnames);
+      writeIntputVarsResultNames(varsnames);
+      writeOutputVarsResultNames(varsnames);
+      writeAliasVarsResultNames(varsnames);
+      writeIntAliasVarsResultNames(varsnames);
+      writeBoolAliasVarsResultNames(varsnames);
+      writeStateVarsResultNames(varsnames);
+      writeDerivativeVarsResultNames(varsnames);
+      writeParametertNames(paramnames);
+      writeIntParameterNames(paramnames);
+      writeBoolParameterNames(paramnames);
+      writeStringParameterNames(paramnames);
+      
+      
+      writeAlgVarsResultDescription(vardescs);
+      writeDiscreteAlgVarsResultDescription(vardescs);
+      writeIntAlgVarsResultDescription(vardescs);
+      writeBoolAlgVarsResultDescription(vardescs);
+      writeIntputVarsResultDescription(vardescs);
+      writeOutputVarsResultDescription(vardescs);
+      writeAliasVarsResultDescription(vardescs);
+      writeIntAliasVarsResultDescription(vardescs);
+      writeBoolAliasVarsResultDescription(vardescs);
+      writeStateVarsResultDescription(vardescs);
+      writeDerivativeVarsResultDescription(vardescs);
+      writeParameterDescription(paramdecs);
+      writeIntParameterDescription(paramdecs);
+      writeBoolParameterDescription(paramdecs);
+    
 
 
-
-      _historyImpl->write(head);
+      _historyImpl->write(varsnames,vardescs,paramnames,paramdecs);
+      HistoryImplType::value_type_p params(<%numParamVars(modelInfo)%>);
+       <%writeoutputparams(modelInfo,simCode)%>
+        _historyImpl->write(params,_global_settings.getStartTime(),_global_settings.getEndTime());
     }
     //Write the current values
     else
@@ -3638,7 +3684,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
     <%generateEquationMemberFuncDecls(allEquations)%>
-
+ 
+    
     /*! Equations Array. pointers to all the equation functions listed above stored in this
       array. It is used to randomly access and evaluate a single equation by index.
     */
@@ -5068,7 +5115,138 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
           'names += <%(vars.derivativeVars |> SIMVAR(__) =>
           '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
+        
+        
+        void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeParametertNames(vector<string>& names)
+        {
+         <% if vars.paramVars then
+          'names += <%(vars.paramVars |> SIMVAR(__) =>
+          '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+        
+         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntParameterNames(vector<string>& names)
+        {
+         <% if vars.intParamVars then
+          'names += <%(vars.intParamVars |> SIMVAR(__) =>
+          '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolParameterNames(vector<string>& names)
+        {
+         <% if vars.boolParamVars then
+          'names += <%(vars.boolParamVars |> SIMVAR(__) =>
+          '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+        void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeStringParameterNames(vector<string>& names)
+        {
+         <% if vars.stringParamVars then
+          'names += <%(vars.stringParamVars |> SIMVAR(__) =>
+          '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+        
+        
+        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAlgVarsResultDescription(vector<string>& description)
+       {
+        <% if vars.algVars then
+        'description += <%(vars.algVars |> SIMVAR(__) =>
+        '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
 
+       }
+       void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeDiscreteAlgVarsResultDescription(vector<string>& description)
+       {
+        <% if vars.discreteAlgVars then
+        'description += <%(vars.discreteAlgVars |> SIMVAR(__) =>
+        '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+
+       }
+       void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAlgVarsResultDescription(vector<string>& description)
+        {
+         <% if vars.intAlgVars then
+         'description += <%(vars.intAlgVars |> SIMVAR(__) =>
+           '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+        }
+        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAlgVarsResultDescription(vector<string>& description)
+        {
+        <% if vars.boolAlgVars then
+         'description +=<%(vars.boolAlgVars |> SIMVAR(__) =>
+           '"<%Util.escapeModelicaStringToXmlString(comment)%>"'  ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+        }
+
+        void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntputVarsResultDescription(vector<string>& description)
+        {
+          <% if vars.inputVars then
+          'description += <%(vars.inputVars |> SIMVAR(__) =>
+           '"<%Util.escapeModelicaStringToXmlString(comment)%>"'  ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+        }
+
+        void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeOutputVarsResultDescription(vector<string>& description)
+        {
+          <% if vars.outputVars then
+          'description += <%(vars.outputVars |> SIMVAR(__) =>
+           '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+        }
+
+        void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAliasVarsResultDescription(vector<string>& description)
+        {
+         <% if vars.aliasVars then
+         'description +=<%(vars.aliasVars |> SIMVAR(__) =>
+          '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += "  )%>;' %>
+        }
+
+       void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAliasVarsResultDescription(vector<string>& description)
+        {
+        <% if vars.intAliasVars then
+           'description += <%(vars.intAliasVars |> SIMVAR(__) =>
+            '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+        }
+
+        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAliasVarsResultDescription(vector<string>& description)
+        {
+          <% if vars.boolAliasVars then
+          'description += <%(vars.boolAliasVars |> SIMVAR(__) =>
+            '"<%Util.escapeModelicaStringToXmlString(comment)%>"';separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+        }
+
+        void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeStateVarsResultDescription(vector<string>& description)
+        {
+        <% if vars.stateVars then
+          'description += <%(vars.stateVars |> SIMVAR(__) =>
+           '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+        }
+
+        void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeDerivativeVarsResultDescription(vector<string>& description)
+        {
+         <% if vars.derivativeVars then
+          'description += <%(vars.derivativeVars |> SIMVAR(__) =>
+          '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+        }
+        
+         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeParameterDescription(vector<string>& names)
+        {
+         <% if vars.paramVars then
+          'names += <%(vars.paramVars |> SIMVAR(__) =>
+          '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+        
+         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntParameterDescription(vector<string>& names)
+        {
+         <% if vars.intParamVars then
+          'names += <%(vars.intParamVars |> SIMVAR(__) =>
+          '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+        
+         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolParameterDescription(vector<string>& names)
+        {
+         <% if vars.boolParamVars then
+          'names += <%(vars.boolParamVars |> SIMVAR(__) =>
+          '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+        
+         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeStringParameterDescription(vector<string>& names)
+        {
+         <% if vars.stringParamVars then
+          'names += <%(vars.stringParamVars |> SIMVAR(__) =>
+          '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
 
 
   >>
@@ -5129,6 +5307,17 @@ case MODELINFO(varInfo=VARINFO(__)) then
 <%varInfo.numAlgVars%>+<%varInfo.numDiscreteReal%>+<%varInfo.numIntAlgVars%>+<%varInfo.numBoolAlgVars%>
 >>
 end numAlgvars;
+
+template numParamVars(ModelInfo modelInfo)
+::=
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__)) then
+ let n_vars = intAdd(varInfo.numParams,intAdd(varInfo.numIntParams,varInfo.numBoolParams))
+<<
+<%n_vars%>
+>>
+end numParamVars;
+
 
 template numInOutvars(ModelInfo modelInfo)
 ::=
@@ -5261,6 +5450,7 @@ template getAliasVarName(AliasVariable aliasvar, SimCode simCode,Context context
     else 'noAlias'
 end getAliasVarName;
 
+//template for write  variables for each time step
 template writeoutput2(ModelInfo modelInfo,SimCode simCode)
 
 ::=
@@ -5298,6 +5488,31 @@ case MODELINFO(vars=SIMVARS(__)) then
 end writeoutput2;
 
 
+//template for write parameter values
+template writeoutputparams(ModelInfo modelInfo,SimCode simCode)
+
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(__)) then
+ let &varDeclsCref = buffer "" /*BUFD*/
+
+ <<
+     const int paramVarsStart = 0;
+     const int intParamVarsStart  = paramVarsStart       + <%varInfo.numParams%>;
+     const int boolparamVarsStart    = intParamVarsStart  + <%varInfo.numIntParams%>;
+     
+     
+
+     <%vars.paramVars         |> SIMVAR(__) hasindex i0 =>'params(paramVarsStart+<%i0%>)=<%cref(name)%>;';align=8 %>
+     <%vars.intParamVars |> SIMVAR(__) hasindex i0 =>'params(intParamVarsStart+<%i0%>)=<%cref(name)%>;';align=8 %>
+     <%vars.boolParamVars      |> SIMVAR(__) hasindex i1 =>'params(boolparamVarsStart+<%i1%>)=<%cref(name)%>;';align=8%>
+    
+
+   
+ >>
+end writeoutputparams;
+//const int stringParamVarsStart   = boolparamVarsStart    + <%varInfo.numBoolParams%>;
+ //<%vars.stringParamVars     |> SIMVAR(__) hasindex i2 =>'params(stringParamVarsStart+<%i2%>)=<%cref(name)%>;';align=8 %>
 template saveall(ModelInfo modelInfo, SimCode simCode)
 
 ::=
@@ -6044,9 +6259,11 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
 
 
   case e as SES_MIXED(__)
-  /*<%equationMixed(e, context, &varDecls, simCode)%>*/
+    /*<%equationMixed(e, context, &varDecls, simCode)%>*/
     then
     <<
+   
+   
         throw std::runtime_error("Mixed systems are not supported yet");
      >>
   else
@@ -6090,7 +6307,9 @@ template equation_function_create_single_func(SimEqSystem eq, Context context,  
   match eq
     case e as SES_SIMPLE_ASSIGN(__)
       then equationSimpleAssign(e, context,&varDeclsLocal,simCode)
-    case e as SES_ALGORITHM(__)
+    case e as SES_IFEQUATION(__)
+    then "SES_IFEQUATION"
+   case e as SES_ALGORITHM(__)
       then equationAlgorithm(e, context, &varDeclsLocal,simCode)
     case e as SES_WHEN(__)
       then equationWhen(e, context, &varDeclsLocal,simCode)
@@ -6103,6 +6322,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context,  
       /*<%equationMixed(e, context, &varDeclsLocal, simCode)%>*/
       then
       <<
+  
           throw std::runtime_error("Mixed systems are not supported yet");
        >>
     else
@@ -9278,6 +9498,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
   bool <%lastIdentOfPath(modelInfo.name)%>::handleSystemEvents(bool* events)
   {
     _callType = IContinuous::DISCRETE;
+ 
     bool restart=true;
     bool state_vars_reinitialized = false;
     int iter=0;
@@ -9299,7 +9520,8 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
 
     if(iter>100 && restart ){
      throw std::runtime_error("Number of event iteration steps exceeded at time: " + boost::lexical_cast<string>(_simTime) );}
-    _callType = IContinuous::CONTINUOUS;
+     _callType = IContinuous::CONTINUOUS;
+   
     return state_vars_reinitialized;
    }
   >>
@@ -9671,7 +9893,13 @@ template equationFunctions( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
  let equation_func_calls = (allEquationsPlusWhen |> eq  =>
                     equation_function_create_single_func(eq, context/*BUFC*/, simCode)
                     ;separator="\n")
+                    
+ 
+                    
+                    
+                    
 <<
+
  <%equation_func_calls%>
 >>
 end equationFunctions;

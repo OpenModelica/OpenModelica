@@ -35,6 +35,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings& global
 ,_time_conditions(NULL)
 ,_time_event_counter(NULL)
 ,_start_time(0.0)
+,_global_settings(globalSettings)
 {
 
 

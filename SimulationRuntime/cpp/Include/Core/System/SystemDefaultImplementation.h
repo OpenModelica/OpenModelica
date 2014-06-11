@@ -179,7 +179,7 @@ protected:
     buffer_type _time_buffer;
     double _delay_max;
     double _start_time;
-
+    IGlobalSettings&  _global_settings;
 };
 
 
