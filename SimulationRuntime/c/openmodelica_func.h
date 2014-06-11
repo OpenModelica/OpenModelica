@@ -66,7 +66,7 @@ void (*callExternalObjectDestructors)(DATA *_data);
  *
  *  \param [ref] [data]
  */
-void (*initialNonLinearSystem)(NONLINEAR_SYSTEM_DATA *data);
+void (*initialNonLinearSystem)(int nNonLinearSystems, NONLINEAR_SYSTEM_DATA *data);
 
 /*! \fn initialLinearSystem
  *
@@ -74,7 +74,7 @@ void (*initialNonLinearSystem)(NONLINEAR_SYSTEM_DATA *data);
  *
  *  \param [ref] [data]
  */
-void (*initialLinearSystem)(LINEAR_SYSTEM_DATA *data);
+void (*initialLinearSystem)(int nLinearSystems, LINEAR_SYSTEM_DATA *data);
 
 /*! \fn initialNonLinearSystem
  *
@@ -82,7 +82,7 @@ void (*initialLinearSystem)(LINEAR_SYSTEM_DATA *data);
  *
  *  \param [ref] [data]
  */
-void (*initialMixedSystem)(MIXED_SYSTEM_DATA *data);
+void (*initialMixedSystem)(int nMixedSystems, MIXED_SYSTEM_DATA *data);
 
 /*! \fn initialNonLinearSystem
  *
@@ -90,7 +90,7 @@ void (*initialMixedSystem)(MIXED_SYSTEM_DATA *data);
  *
  *  \param [ref] [data]
  */
-void (*initializeStateSets)(STATE_SET_DATA* statesetData, DATA *data);
+void (*initializeStateSets)(int nStateSets, STATE_SET_DATA* statesetData, DATA *data);
 
 /* functionODE contains those equations that are needed
  * to calculate the dynamic part of the system */

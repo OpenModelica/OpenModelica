@@ -618,10 +618,10 @@ template simulationFile(SimCode simCode, String guid)
     #include "<%simCode.fileNamePrefix%>_13opt.h"
     extern void <%symbolName(modelNamePrefixStr,"callExternalObjectConstructors")%>(DATA *data);
     extern void <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>(DATA *_data);
-    extern void <%symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>(NONLINEAR_SYSTEM_DATA *data);
-    extern void <%symbolName(modelNamePrefixStr,"initialLinearSystem")%>(LINEAR_SYSTEM_DATA *data);
-    extern void <%symbolName(modelNamePrefixStr,"initialMixedSystem")%>(MIXED_SYSTEM_DATA *data);
-    extern void <%symbolName(modelNamePrefixStr,"initializeStateSets")%>(STATE_SET_DATA* statesetData, DATA *data);
+    extern void <%symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>(int nNonLinearSystems, NONLINEAR_SYSTEM_DATA *data);
+    extern void <%symbolName(modelNamePrefixStr,"initialLinearSystem")%>(int nLinearSystems, LINEAR_SYSTEM_DATA *data);
+    extern void <%symbolName(modelNamePrefixStr,"initialMixedSystem")%>(int nMixedSystems, MIXED_SYSTEM_DATA *data);
+    extern void <%symbolName(modelNamePrefixStr,"initializeStateSets")%>(int nStateSets, STATE_SET_DATA* statesetData, DATA *data);
     extern int <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>(DATA *data);
     extern int <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>(DATA *data);
     extern int <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>(DATA *data);
@@ -1388,7 +1388,7 @@ template functionInitialMixedSystems(list<SimEqSystem> initialEquations, list<Si
   let jacobianbody = functionInitialMixedSystemsTemp(jacobianEquations)
   <<
   /* funtion initialize mixed systems */
-  void <%symbolName(modelNamePrefix,"initialMixedSystem")%>(MIXED_SYSTEM_DATA* mixedSystemData)
+  void <%symbolName(modelNamePrefix,"initialMixedSystem")%>(int nMixedSystems, MIXED_SYSTEM_DATA* mixedSystemData)
   {
     /* initial mixed systems */
     <%initbody%>
@@ -1409,6 +1409,7 @@ template functionInitialMixedSystemsTemp(list<SimEqSystem> allEquations)
      case eq as SES_MIXED(__) then
      let size = listLength(discVars)
      <<
+     assertStreamPrint(NULL, nMixedSystems > <%indexMixedSystem%>, "Internal Error: nMixedSystems mismatch!");
      mixedSystemData[<%indexMixedSystem%>].equationIndex = <%index%>;
      mixedSystemData[<%indexMixedSystem%>].size = <%size%>;
      mixedSystemData[<%indexMixedSystem%>].solveContinuousPart = updateContinuousPart<%index%>;
@@ -1485,7 +1486,7 @@ template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<S
   let jacobianbody = functionInitialLinearSystemsTemp(jacobianEquations)
   <<
   /* funtion initialize linear systems */
-  void <%symbolName(modelNamePrefix,"initialLinearSystem")%>(LINEAR_SYSTEM_DATA* linearSystemData)
+  void <%symbolName(modelNamePrefix,"initialLinearSystem")%>(int nLinearSystems, LINEAR_SYSTEM_DATA* linearSystemData)
   {
     /* initial linear systems */
     <%initbody%>
@@ -1508,6 +1509,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations)
      let size = listLength(vars)
      let nnz = listLength(simJac)
      <<
+     assertStreamPrint(NULL, nLinearSystems > <%indexLinearSystem%>, "Internal Error: nLinearSystems mismatch!");
      linearSystemData[<%indexLinearSystem%>].equationIndex = <%index%>;
      linearSystemData[<%indexLinearSystem%>].size = <%size%>;
      linearSystemData[<%indexLinearSystem%>].nnz = <%nnz%>;
@@ -1587,7 +1589,7 @@ template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, lis
   let jacbody = functionInitialNonLinearSystemsTemp(jacobianEquations,modelNamePrefix)
   <<
   /* funtion initialize non-linear systems */
-  void <%symbolName(modelNamePrefix,"initialNonLinearSystem")%>(NONLINEAR_SYSTEM_DATA* nonLinearSystemData)
+  void <%symbolName(modelNamePrefix,"initialNonLinearSystem")%>(int nNonLinearSystems, NONLINEAR_SYSTEM_DATA* nonLinearSystemData)
   {
     <%initbody%>
     <%parambody%>
@@ -1610,6 +1612,7 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations, Str
      let jacIndex = match jacobianMatrix case SOME((_,_,name,_,_,_)) then '<%symbolName(modelPrefixName,"INDEX_JAC_")%><%name%>' case NONE() then '-1'
      let innerEqs = functionInitialNonLinearSystemsTemp(eqs, modelPrefixName)
      <<
+     assertStreamPrint(NULL, nNonLinearSystems > <%indexNonLinearSystem%>, "Internal Error: nNonLinearSystems mismatch!");
      <%innerEqs%>
      nonLinearSystemData[<%indexNonLinearSystem%>].equationIndex = <%index%>;
      nonLinearSystemData[<%indexNonLinearSystem%>].size = <%size%>;
@@ -1709,7 +1712,7 @@ end functionNonLinearResiduals;
 // section for State Sets
 //
 // This section generates the followng c functions:
-//   - void initializeStateSets(STATE_SET_DATA* statesetData, DATA *data)
+//   - void initializeStateSets(int nStateSets, STATE_SET_DATA* statesetData, DATA *data)
 // =============================================================================
 
 template functionInitialStateSets(list<StateSet> stateSets, String modelNamePrefix)
@@ -1723,6 +1726,7 @@ template functionInitialStateSets(list<StateSet> stateSets, String modelNamePref
        let statesvars = (states |> s hasindex i2 fromindex 0 => 'statesetData[<%i1%>].states[<%i2%>] = &<%cref(s)%>__varInfo;' ;separator="\n")
        let statescandidatesvars = (statescandidates |> cstate hasindex i2 fromindex 0 => 'statesetData[<%i1%>].statescandidates[<%i2%>] = &<%cref(cstate)%>__varInfo;' ;separator="\n")
        <<
+       assertStreamPrint(NULL, nStateSets > <%i1%>, "Internal Error: nStateSets mismatch!");       
        statesetData[<%i1%>].nCandidates = <%nCandidates%>;
        statesetData[<%i1%>].nStates = <%nStates%>;
        statesetData[<%i1%>].nDummyStates = <%nCandidates%>-<%nStates%>;
@@ -1743,7 +1747,7 @@ template functionInitialStateSets(list<StateSet> stateSets, String modelNamePref
    ;separator="\n\n")
   <<
   /* funtion initialize state sets */
-  void <%symbolName(modelNamePrefix,"initializeStateSets")%>(STATE_SET_DATA* statesetData, DATA *data)
+  void <%symbolName(modelNamePrefix,"initializeStateSets")%>(int nStateSets, STATE_SET_DATA* statesetData, DATA *data)
   {
     <%body%>
   }

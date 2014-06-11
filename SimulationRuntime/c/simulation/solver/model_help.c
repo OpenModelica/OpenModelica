@@ -868,19 +868,19 @@ void initializeDataStruc(DATA *data)
 
   /* buffer for mixed systems */
   data->simulationInfo.mixedSystemData = (MIXED_SYSTEM_DATA*) malloc(data->modelData.nMixedSystems*sizeof(MIXED_SYSTEM_DATA));
-  data->callback->initialMixedSystem(data->simulationInfo.mixedSystemData);
+  data->callback->initialMixedSystem(data->modelData.nMixedSystems, data->simulationInfo.mixedSystemData);
 
   /* buffer for linear systems */
   data->simulationInfo.linearSystemData = (LINEAR_SYSTEM_DATA*) malloc(data->modelData.nLinearSystems*sizeof(LINEAR_SYSTEM_DATA));
-  data->callback->initialLinearSystem(data->simulationInfo.linearSystemData);
+  data->callback->initialLinearSystem(data->modelData.nLinearSystems, data->simulationInfo.linearSystemData);
 
   /* buffer for non-linear systems */
   data->simulationInfo.nonlinearSystemData = (NONLINEAR_SYSTEM_DATA*) malloc(data->modelData.nNonLinearSystems*sizeof(NONLINEAR_SYSTEM_DATA));
-  data->callback->initialNonLinearSystem(data->simulationInfo.nonlinearSystemData);
+  data->callback->initialNonLinearSystem(data->modelData.nNonLinearSystems, data->simulationInfo.nonlinearSystemData);
 
   /* buffer for state sets */
   data->simulationInfo.stateSetData = (STATE_SET_DATA*) malloc(data->modelData.nStateSets*sizeof(STATE_SET_DATA));
-  data->callback->initializeStateSets(data->simulationInfo.stateSetData, data);
+  data->callback->initializeStateSets(data->modelData.nStateSets, data->simulationInfo.stateSetData, data);
 
   /* buffer for analytical jacobains */
   data->simulationInfo.analyticJacobians = (ANALYTIC_JACOBIAN*) malloc(data->modelData.nJacobians*sizeof(ANALYTIC_JACOBIAN));
