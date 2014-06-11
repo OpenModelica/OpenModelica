@@ -814,7 +814,7 @@ algorithm
       list<list<BackendDAE.Equation>> eqnslst;
       Boolean b1,b2,b3,b4;
       BackendDAE.EquationKind eqKind;
-      
+
     case (BackendDAE.EQUATION(exp=e1,scalar = e2), _, _)
       equation
         ((_,b1,ext_arg_1)) = func((e1,inTypeA));
@@ -1086,7 +1086,7 @@ algorithm
       list<list<BackendDAE.Equation>> eqnsTrueLst, resteqns;
       DAE.ElementSource source_;
       BackendDAE.EquationKind eqKind;
-      
+
     case (BackendDAE.IF_EQUATION(conditions={}, eqnstrue={}, eqnsfalse=elseeqns, source=source_, kind=eqKind), _, _)
       equation
         (elseeqns,elseeqns1,ext_arg_1) = traverseBackendDAEExpsEqnListOutEqn(elseeqns,{},func,inTypeA);
@@ -1094,7 +1094,7 @@ algorithm
         elseeqns = Util.if_(bres,elseeqns1,elseeqns);
       then
         (BackendDAE.IF_EQUATION({},{},elseeqns,source_,eqKind),bres,ext_arg_1);
-        
+
     case (BackendDAE.IF_EQUATION(conditions=condition::restconditions, eqnstrue=eqnstrue::resteqns, eqnsfalse=elseeqns, source=source_, kind=eqKind), _, _)
       equation
         ((condition,bres,ext_arg_1)) = func((condition,inTypeA));
@@ -1971,21 +1971,21 @@ algorithm
       list<BackendDAE.Equation> eqs;
       String str;
       DAE.Exp e;
-      
+
     // Wild-card does not produce a residual
     case (DAE.CREF(componentRef=DAE.WILD()), _, _, _, (i,eqs))
     then ((i+1, eqs));
-    
+
     // 0-length arrays do not produce a residual
     case (DAE.ARRAY(array={}), _, _, _, (i,eqs))
     then ((i+1, eqs));
-    
+
     // A scalar real
     case (DAE.CREF(ty=DAE.T_REAL(source=_)), _, _, _, (i,eqs))
       equation
         eqs = BackendDAE.RESIDUAL_EQUATION(DAE.TSUB(exp,i,DAE.T_REAL_DEFAULT),inSource,false,inEqKind)::eqs;
       then ((i+1,eqs));
-    
+
     // Create a sum for arrays...
     case (DAE.CREF(ty=DAE.T_ARRAY(ty=DAE.T_REAL(source=_))), _, _, _, (i,eqs))
       equation
@@ -2015,7 +2015,7 @@ algorithm
       BackendDAE.Equation backendEq;
       Boolean diffed;
       BackendDAE.EquationKind eqKind;
-      
+
     case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, differentiated=diffed, kind=eqKind))
       equation
         //ExpressionDump.dumpExpWithTitle("equationToResidualForm 1\n",e2);
