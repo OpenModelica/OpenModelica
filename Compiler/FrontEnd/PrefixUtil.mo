@@ -706,7 +706,7 @@ algorithm
       equation
         (cache, crefExp) = prefixExpCref(cache, env, ih, inExp, pre);
       then
-        (cache, crefExp); 
+        (cache, crefExp);
 
     case (cache,env,ih,(DAE.ASUB(exp = e1, sub = expl)),pre)
       equation
@@ -900,7 +900,7 @@ protected
   Env.Cache cache;
   DAE.ComponentRef cr;
 algorithm
-  DAE.CREF(componentRef = cr) := inCref; 
+  DAE.CREF(componentRef = cr) := inCref;
   (is_iter, cache) := Lookup.isIterator(inCache, inEnv, cr);
   (outCache, outCref) := prefixExpCref2(cache, inEnv, inIH, is_iter, inCref, inPrefix);
 end prefixExpCref;
@@ -946,7 +946,7 @@ algorithm
 
   end match;
 end prefixExpCref2;
-  
+
 protected function prefixIterators
   input Env.Cache inCache;
   input Env.Env inEnv;
