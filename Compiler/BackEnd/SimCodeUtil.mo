@@ -6125,6 +6125,7 @@ algorithm
       String str;
       list<list<DAE.Subscript>> subslst;
       list<SimCode.SimVar> tempvars;
+      BackendDAE.EquationKind eqKind;
 
     case (_, BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source)::_, BackendDAE.VAR(varName = cr)::_, _, _, _) equation
       // We need to strip subs from the name since they are removed in cr.
@@ -6137,7 +6138,7 @@ algorithm
       (equation_, uniqueEqIndex) = createSingleArrayEqnCode2(cr_1, cr_1, e1, e2, iuniqueEqIndex, source);
     then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
 
-    case (_, BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source)::_, vars, _, _, _) equation
+    case (_, BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, kind=eqKind)::_, vars, _, _, _) equation
       true = Expression.isArray(e1) or Expression.isMatrix(e1);
       true = Expression.isArray(e2) or Expression.isMatrix(e2);
       e1 = Expression.replaceDerOpInExp(e1);
@@ -6146,7 +6147,7 @@ algorithm
       ea2 = Expression.flattenArrayExpToList(e2);
       ea1 = BackendDAEUtil.collateArrExpList(ea1, NONE());
       ea2 = BackendDAEUtil.collateArrExpList(ea2, NONE());
-      re = List.threadMap1(ea1, ea2, BackendEquation.generateEQUATION, source);
+      re = List.threadMap2(ea1, ea2, BackendEquation.generateEQUATION, source, eqKind);
       eqns_1 = BackendEquation.listEquation(re);
       av = BackendVariable.emptyVars();
       eeqns = BackendEquation.emptyEqns();
@@ -6161,7 +6162,7 @@ algorithm
       (equations_, noDiscequations, uniqueEqIndex, tempvars) = createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
     then (equations_, noDiscequations, uniqueEqIndex, tempvars);
 
-    case (_, BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source)::_, vars, _, _, _) equation
+    case (_, BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source, kind=eqKind)::_, vars, _, _, _) equation
       e1 = Expression.replaceDerOpInExp(e1);
       e2 = Expression.replaceDerOpInExp(e2);
       ad = List.map(ds, Util.makeOption);
@@ -6169,7 +6170,7 @@ algorithm
       subslst = BackendDAEUtil.rangesToSubscripts(subslst);
       ea1 = List.map1r(subslst, Expression.applyExpSubscripts, e1);
       ea2 = List.map1r(subslst, Expression.applyExpSubscripts, e2);
-      re = List.threadMap1(ea1, ea2, BackendEquation.generateEQUATION, source);
+      re = List.threadMap2(ea1, ea2, BackendEquation.generateEQUATION, source, eqKind);
       eqns_1 = BackendEquation.listEquation(re);
       av = BackendVariable.emptyVars();
       eeqns = BackendEquation.emptyEqns();

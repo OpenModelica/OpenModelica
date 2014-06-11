@@ -3286,7 +3286,7 @@ algorithm
       equation
         leftcref = ComponentReference.makeCrefIdent("$TMP_mayerTerm", DAE.T_REAL_DEFAULT, {});
         dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-        objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, mayer, DAE.emptyElementSource);
+        objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, mayer, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
         b = not List.isEmpty(objectEqn);
 
         v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
@@ -3294,7 +3294,7 @@ algorithm
 
         leftcref = ComponentReference.makeCrefIdent("$TMP_lagrangeTerm", DAE.T_REAL_DEFAULT, {});
         dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-        objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, lagrange, DAE.emptyElementSource);
+        objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, lagrange, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
         b = not List.isEmpty(objectEqn);
 
         v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);

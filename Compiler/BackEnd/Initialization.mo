@@ -312,10 +312,11 @@ algorithm
       HashTable.HashTable leftCrs;
       list<tuple<DAE.ComponentRef, Integer>> crintLst;
       DAE.Expand crefExpand;
+      BackendDAE.EquationKind eqKind;
 
     // when equation during initialization
-    case ((eqn as BackendDAE.WHEN_EQUATION(whenEquation=weqn, source=source), (vars, eqns))) equation
-      (eqns, vars) = inlineWhenForInitializationWhenEquation(weqn, source, eqns, vars);
+    case ((eqn as BackendDAE.WHEN_EQUATION(whenEquation=weqn, source=source, kind=eqKind), (vars, eqns))) equation
+      (eqns, vars) = inlineWhenForInitializationWhenEquation(weqn, source, eqKind, eqns, vars);
     then ((eqn, (vars, eqns)));
 
     // algorithm
@@ -351,12 +352,13 @@ protected function inlineWhenForInitializationWhenEquation "author: lochel
   This is a helper function for inlineWhenForInitializationEquation."
   input BackendDAE.WhenEquation inWEqn;
   input DAE.ElementSource source;
+  input BackendDAE.EquationKind inEqKind;
   input list<BackendDAE.Equation> iEqns;
   input BackendDAE.Variables iVars;
   output list<BackendDAE.Equation> oEqns;
   output BackendDAE.Variables oVars;
 algorithm
-  (oEqns, oVars) := matchcontinue(inWEqn, source, iEqns, iVars)
+  (oEqns, oVars) := matchcontinue(inWEqn, source, inEqKind, iEqns, iVars)
     local
       DAE.ComponentRef left;
       DAE.Exp condition, right, crexp;
@@ -367,23 +369,23 @@ algorithm
       BackendDAE.Variables vars;
 
     // active when equation during initialization
-    case (BackendDAE.WHEN_EQ(condition=condition, left=left, right=right), _, _, _) equation
+    case (BackendDAE.WHEN_EQ(condition=condition, left=left, right=right), _, _, _, _) equation
       true = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExp
       crexp = Expression.crefExp(left);
       identType = Expression.typeof(crexp);
-      eqn = BackendEquation.generateEquation(crexp, right, identType, source, false);
+      eqn = BackendEquation.generateEquation(crexp, right, identType, source, false, inEqKind);
     then (eqn::iEqns, iVars);
 
     // inactive when equation during initialization
-    case (BackendDAE.WHEN_EQ(condition=condition, left=left,  elsewhenPart=NONE()), _, _, _) equation
+    case (BackendDAE.WHEN_EQ(condition=condition, left=left,  elsewhenPart=NONE()), _, _, _, _) equation
       false = Expression.containsInitialCall(condition, false);
       (eqns,_) = generateInactiveWhenEquationForInitialization({left}, source, iEqns, iVars);
     then (eqns, iVars);
 
     // inactive when equation during initialization with else when part (no strict Modelica)
-    case (BackendDAE.WHEN_EQ(condition=condition,   elsewhenPart=SOME(weqn)), _, _, _) equation
+    case (BackendDAE.WHEN_EQ(condition=condition,   elsewhenPart=SOME(weqn)), _, _, _, _) equation
       false = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExp
-      (eqns, vars) = inlineWhenForInitializationWhenEquation(weqn, source, iEqns, iVars);
+      (eqns, vars) = inlineWhenForInitializationWhenEquation(weqn, source, inEqKind, iEqns, iVars);
     then (eqns, vars);
   end matchcontinue;
 end inlineWhenForInitializationWhenEquation;
