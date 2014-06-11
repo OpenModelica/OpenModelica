@@ -2978,6 +2978,7 @@ algorithm
       Option<Boolean> res;
       Option<DAE.Const> ic;
       Env.Frame frame;
+      Boolean b;
 
     // Look in the current scope.
     case (cache, Env.FRAME(clsAndVars = scope) :: _, _)
@@ -2987,8 +2988,9 @@ algorithm
         id = ComponentReference.crefFirstIdent(inCref);
         (cache, DAE.TYPES_VAR(constOfForIteratorRange = ic), _, _, _, _) =
           lookupVar2(cache, scope, id);
+        b = Util.isSome(ic);
       then
-        (SOME(Util.isSome(ic)), cache);
+        (SOME(b), cache);
 
     // If not found, look in the next scope only if the current scope is implicit.
     case (cache, frame :: env, _)
