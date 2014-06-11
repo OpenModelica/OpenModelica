@@ -41,6 +41,7 @@ public import HpcOmTaskGraph;
 public import HpcOmSimCode;
 public import SimCode;
 
+protected import Absyn;
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendVarTransform;
@@ -1657,23 +1658,23 @@ algorithm
     case(HpcOmSimCode.CALCTASK(index=idx,threadIdx=thr)::rest,_,_,_,_,(threads,lockIdc))
       equation
         task = List.first(threadsIn);
-        print("node "+&intString(idx)+&"\n");
+        //print("node "+&intString(idx)+&"\n");
         preds = arrayGet(iTaskGraphT,idx);
         succs = arrayGet(iTaskGraph,idx);
-        print("all preds "+&intListString(preds)+&"\n");
-        print("all succs "+&intListString(succs)+&"\n");
+        //print("all preds "+&intListString(preds)+&"\n");
+        //print("all succs "+&intListString(succs)+&"\n");
         predThr = List.map1(preds,Util.arrayGetIndexFirst,taskAss);
         succThr = List.map1(succs,Util.arrayGetIndexFirst,taskAss);
         (_,preds) = List.filter1OnTrueSync(predThr,intNe,thr,preds);
         (_,succs) = List.filter1OnTrueSync(succThr,intNe,thr,succs);
-        print("other preds "+&intListString(preds)+&"\n");
-        print("other succs "+&intListString(succs)+&"\n");
+        //print("other preds "+&intListString(preds)+&"\n");
+        //print("other succs "+&intListString(succs)+&"\n");
         relLockStrs = List.map(succs,intString);
         relLockStrs = List.map1r(relLockStrs,stringAppend,intString(idx)+&"_");
         assLockStrs = List.map(preds,intString);
         assLockStrs = List.map1(assLockStrs,stringAppend,"_"+&intString(idx));
-        print("assLockStrs "+&stringDelimitList(assLockStrs,"  ;  ")+&"\n");
-        print("relLockStrs "+&stringDelimitList(relLockStrs,"  ;  ")+&"\n");
+        //print("assLockStrs "+&stringDelimitList(assLockStrs,"  ;  ")+&"\n");
+        //print("relLockStrs "+&stringDelimitList(relLockStrs,"  ;  ")+&"\n");
         assLocks = List.map(assLockStrs,convertLockIdToAssignTask);
         relLocks = List.map(relLockStrs,convertLockIdToReleaseTask);
         //tasks = task::assLocks;
@@ -1682,7 +1683,7 @@ algorithm
         thread = Debug.bcallret1(List.isNotEmpty(threads),List.first,threads,{});
         thread = listAppend(tasks,thread);
         threads = Debug.bcallret3(List.isNotEmpty(threads),List.replaceAt,thread,0,threads,{thread});
-        _ = printThreadSchedule(thread,thr);
+        //_ = printThreadSchedule(thread,thr);
         lockIdc = listAppend(relLockStrs,lockIdc);
         lockIdc = listAppend(assLockStrs,lockIdc);
         ((threads,lockIdc)) = insertLocksInSchedule1(rest,iTaskGraph,iTaskGraphT,taskAss,procAss,(threads,lockIdc));
@@ -1714,10 +1715,12 @@ algorithm
       array<tuple<Integer,Real>> exeCosts;
       array<list<tuple<Integer,Integer,Integer>>> commCosts;
       array<tuple<Integer,Integer,Integer>> varCompMapping,eqCompMapping,mapDupl;
+      tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> idcs;
       list<Integer> order, rootNodes;
       array<String> nodeNames, nodeDescs;
       list<list<Integer>> clusters, duplSccSimEqMap, duplComps;
       HpcOmSimCode.Schedule schedule;
+      SimCode.ModelInfo modelInfo;
       HpcOmTaskGraph.TaskGraph taskGraph, taskGraphT;
       HpcOmTaskGraph.TaskGraphMeta meta;
       SimCode.SimCode simCode;
@@ -1789,9 +1792,10 @@ algorithm
         mIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getMixedindex),intMax,0)+1;// the next available mixed system  index
 
         //traverse the clusters and duplicate tasks if needed
-        (taskAss,procAss,taskGraph,taskDuplAss,_,simCode,schedule,duplSccSimEqMap,duplComps) = createTDSduplicateTasks(clusters,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),iTaskGraph,iTaskGraphT,taskGraph,taskDuplAss,iTaskGraphMeta,iSimCode,schedule,iSccSimEqMapping,duplSccSimEqMap,duplComps);
+        (taskAss,procAss,taskGraph,taskDuplAss,idcs,simCode,schedule,duplSccSimEqMap,duplComps) = createTDSduplicateTasks(clusters,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),iTaskGraph,iTaskGraphT,taskGraph,taskDuplAss,iTaskGraphMeta,iSimCode,schedule,iSccSimEqMapping,duplSccSimEqMap,duplComps);
 
-        //update stuff
+        //update stuff        
+        simCode = createTDSupdateModelInfo(simCode,idcs);
         numDupl = List.fold(List.map(duplComps,listLength),intAdd,0);
         procAss = Util.arrayMap(procAss,listReverse);
         sccSimEqMap = Util.arrayAppend(iSccSimEqMapping,listArray(listReverse(duplSccSimEqMap)));
@@ -1809,7 +1813,6 @@ algorithm
         schedule = insertLocksInSchedule(schedule,taskGraph,taskGraphT,taskAss,procAss);
 
         //dumping stuff-------------------------
-        /*
         print("simCode 2\n");
         SimCodeUtil.dumpSimCode(simCode);
         print("sccSimEqMap2\n");
@@ -1818,7 +1821,6 @@ algorithm
         HpcOmSimCodeMain.dumpSccSimEqMapping(comps);
         print("the taskAss2: "+&stringDelimitList(List.map(arrayList(taskAss),intString),"\n")+&"\n");
         print("the procAss2: "+&stringDelimitList(List.map(arrayList(procAss),intListString),"\n")+&"\n");
-        */
         printSchedule(schedule);
         //HpcOmTaskGraph.printTaskGraph(taskGraph);
         //--------------------------------------
@@ -1831,6 +1833,47 @@ algorithm
       then fail();
   end matchcontinue;
 end createTDSschedule1;
+
+protected function createTDSupdateModelInfo"updated information in the SimCode.ModelInfo e.g.the number of variables,numLS, numNLS,"
+  input SimCode.SimCode simCodeIn;
+  input tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> idcs;
+  output SimCode.SimCode simCodeOut;
+protected
+  Integer numZeroCrossings,numTimeEvents,numRelations,numMathEventFunctions,numStateVars,numAlgVars,numDiscreteReal,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,
+  numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,
+  numStringParamVars,numStringAliasVars,numEquations,numLinearSystems,numNonLinearSystems,numMixedSystems,numStateSets,numOptimizeConstraints;
+  Integer threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx;
+  SimCode.ModelInfo modelInfo;
+  Absyn.Path name;
+  String description;
+  String directory;
+  SimCode.VarInfo varInfo;
+  SimCode.SimVars vars;
+  list<SimCode.Function> functions;
+  list<SimCode.SimVar> algVars,stateVars;
+  list<String> labels;
+algorithm
+  // get the data
+  (threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx) := idcs;
+  SimCode.SIMCODE(modelInfo = modelInfo) := simCodeIn;
+  SimCode.MODELINFO(name,description,directory,varInfo,vars,functions,labels) := modelInfo;
+  SimCode.SIMVARS(stateVars=stateVars, algVars = algVars) := vars;
+  SimCode.VARINFO(numZeroCrossings,numTimeEvents,numRelations,numMathEventFunctions,numStateVars,numAlgVars,numDiscreteReal,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,
+  numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,numStringParamVars,
+  numStringAliasVars,numEquations,numLinearSystems,numNonLinearSystems,numMixedSystems,numStateSets,numOptimizeConstraints) := varInfo;
+  // get new values
+  numStateVars := listLength(stateVars);
+  numAlgVars := listLength(algVars);
+  numLinearSystems := Util.if_(intEq(numLinearSystems,0),0,lsIdx);
+  numNonLinearSystems := Util.if_(intEq(numNonLinearSystems,0),0,nlsIdx);
+  //numMixedSystems := mIdx;
+  //update objects
+  varInfo := SimCode.VARINFO(numZeroCrossings,numTimeEvents,numRelations,numMathEventFunctions,numStateVars,numAlgVars,numDiscreteReal,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,
+  numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,numStringParamVars,
+  numStringAliasVars,numEquations,numLinearSystems,numNonLinearSystems,numMixedSystems,numStateSets,numOptimizeConstraints);
+  modelInfo := SimCode.MODELINFO(name,description,directory,varInfo,vars,functions,labels);  
+  simCodeOut := SimCodeUtil.replaceModelInfo(modelInfo,simCodeIn);  
+end createTDSupdateModelInfo;
 
 protected function createTDSduplicateTasks"traverses the clusters, duplicate the tasks that have been assigned to another thread before.
 author: Waurich TUD 2014-05"

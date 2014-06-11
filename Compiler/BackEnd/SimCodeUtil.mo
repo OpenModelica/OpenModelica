@@ -13064,6 +13064,57 @@ algorithm
   end match;
 end replaceODEandALLequations;
 
+public function replaceModelInfo"replaces the ModelInfo in SimCode"
+  input SimCode.ModelInfo modelInfoIn;
+  input SimCode.SimCode simCodeIn;
+  output SimCode.SimCode simCodeOut;
+
+algorithm
+  simCodeOut := match(modelInfoIn,simCodeIn)
+    local
+      SimCode.ModelInfo modelInfo;
+      list<DAE.Exp> literals;
+      list<SimCode.RecordDeclaration> recordDecls;
+      list<String> externalFunctionIncludes;
+      list<list<SimCode.SimEqSystem>> eqsTmp;
+      list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
+      list<SimCode.SimEqSystem> allEquations, residualEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, equationsForZeroCrossings;
+      list<SimCode.StateSet> stateSets;
+      Boolean useSymbolicInitialization, useHomotopy;
+      list<SimCode.SimEqSystem> initialEquations, odes;
+      list<DAE.Constraint> constraints;
+      list<DAE.ClassAttributes> classAttributes;
+      list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
+      list<SimCode.SimWhenClause> whenClauses;
+      list<DAE.ComponentRef> discreteModelVars;
+      SimCode.ExtObjInfo extObjInfo;
+      SimCode.MakefileParams makefileParams;
+      SimCode.DelayedExpression delayedExps;
+      list<SimCode.JacobianMatrix> jacobianMatrixes;
+      list<String> labels;
+      Option<SimCode.SimulationSettings> simulationSettingsOpt;
+      list<BackendDAE.TimeEvent> timeEvents;
+      String fileNamePrefix;
+      SimCode.HashTableCrefToSimVar crefToSimVarHT;
+      Absyn.Path name;
+      String description,directory;
+      SimCode.VarInfo varInfo;
+      SimCode.SimVars vars;
+      list<SimCode.Function> functions;
+      SimCode.Files files;
+      Option<HpcOmSimCode.Schedule> hpcOmSchedule;
+      Option<SimCode.BackendMapping> backendMapping;
+      Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
+    case (_,SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+                 parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, crefToSimVarHT, backendMapping))
+      then
+        SimCode.SIMCODE(modelInfoIn, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, crefToSimVarHT,backendMapping);
+  end match;
+end replaceModelInfo;
+
 public function replaceSimEqSysIndex"updated the index of the given SimEqSysIn.
 author:Waurich TUD 2014-05"
   input SimCode.SimEqSystem simEqSysIn;
