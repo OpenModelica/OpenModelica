@@ -799,6 +799,7 @@ algorithm
   (outTVars,oMark) := matchcontinue(unsolvables,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
     local
       Integer tvar;
+      array<Integer> ass1_;
       list<Integer> unassigned,rest,ass1List;
       BackendDAE.AdjacencyMatrixElementEnhanced vareqns;
     // if there are no unsolvables choose tvar by heuristic
@@ -846,16 +847,16 @@ algorithm
            Debug.fcall(Flags.TEARING_DUMP, print,"Variables with annotation attribute 'always' as tVars: " +& stringDelimitList(List.map(tSel_always,intString),",")+&"\n");
         // mark tearing var
     ass1List = markTVars(tSel_always,arrayList(ass1));
-    ass1 = Util.arrayCopy(listArray(ass1List),ass1);
+    ass1_ = Util.arrayCopy(listArray(ass1List),ass1);
         // equations not yet assigned containing the tvars
     vareqns = findVareqns(ass2,isAssignedSaveEnhanced,mt,tSel_always,{});
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Assignable equations containing new tvars:\n");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,BackendDump.dumpAdjacencyRowEnhanced,vareqns);Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"\n");
         // cheap matching
-        tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
+        tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1_,ass2,columark,mark,{});
         // check for unassigned vars, if there some rerun
-        unassigned = Matching.getUnassigned(size,ass1,{});
-        (outTVars,oMark) = omcTearing3(unassigned,unsolvables,{},tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,listAppend(tSel_always,inTVars));
+        unassigned = Matching.getUnassigned(size,ass1_,{});
+        (outTVars,oMark) = omcTearing3(unassigned,unsolvables,{},tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1_,ass2,columark,mark+1,listAppend(tSel_always,inTVars));
       then
         (outTVars,oMark);
     else
