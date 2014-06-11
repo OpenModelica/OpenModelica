@@ -167,12 +167,12 @@ algorithm
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _, _, _, _, _, _, _, _) equation
 
       print(Util.if_(Flags.isSet(Flags.HPCOM_ANALYZATION_MODE), "Using analyzation mode\n", ""));
-      
+
       //Initial System
       //--------------
       (initDAE, _) = Initialization.solveInitialSystem(inBackendDAE);
       handleInitialSystem(initDAE, filenamePrefix);
-      
+
       //Setup
       //-----
       System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
@@ -304,10 +304,10 @@ algorithm
     case(SOME(initDAE), _)
       equation
         (tmpTaskGraph, tmpTaskGraphMeta) = HpcOmTaskGraph.createTaskGraph(initDAE,iFileNamePrefix);
-	      fileName = ("taskGraph"+&iFileNamePrefix+&"_init.graphml");
-	      schedulerInfo = arrayCreate(arrayLength(tmpTaskGraph), (-1,-1,-1.0));
-	      sccSimEqMapping = arrayCreate(arrayLength(tmpTaskGraph), {});
-	      HpcOmTaskGraph.dumpAsGraphMLSccLevel(tmpTaskGraph, tmpTaskGraphMeta, initDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);      
+        fileName = ("taskGraph"+&iFileNamePrefix+&"_init.graphml");
+        schedulerInfo = arrayCreate(arrayLength(tmpTaskGraph), (-1,-1,-1.0));
+        sccSimEqMapping = arrayCreate(arrayLength(tmpTaskGraph), {});
+        HpcOmTaskGraph.dumpAsGraphMLSccLevel(tmpTaskGraph, tmpTaskGraphMeta, initDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
       then ();
     else
       then ();

@@ -943,7 +943,7 @@ encapsulated package HpcOmMemory
         then ((iScVarTaskMapping,varIdx+1));
     end matchcontinue;
   end getSimCodeVarNodeMapping0;
-  
+
   protected function getModifiedVarName "author: marcusw
     Get the correct varName (if the variable is derived, the $DER-Prefix is added."
     input BackendDAE.Var iVar;
@@ -1274,7 +1274,7 @@ encapsulated package HpcOmMemory
     print("Node " +& intString(iNodeIdx) +& " solves sc-vars: " +& stringDelimitList(List.map(iMappingEntry, intString), ",") +& "\n");
     oNodeIdx := iNodeIdx + 1;
   end printNodeSimCodeVarMapping0;
-  
+
   protected function printScVarTaskMapping
     input array<Integer> iMapping;
   algorithm
@@ -1306,7 +1306,7 @@ encapsulated package HpcOmMemory
     print("Tasks that are writing to cacheline " +& intString(iCacheLineIdx) +& ": " +& stringDelimitList(List.map(iTasks, intString), ",") +& "\n");
     oCacheLineIdx := iCacheLineIdx + 1;
   end printCacheLineTaskMapping0;
-  
+
   protected function printSccNodeMapping
     input array<Integer> iMapping;
   algorithm
