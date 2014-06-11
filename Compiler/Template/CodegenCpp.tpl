@@ -270,7 +270,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        void writeIntParameterNames(vector<string>& names);
        void writeBoolParameterNames(vector<string>& names);
        void writeStringParameterNames(vector<string>& names);
-       
+
        void writeAlgVarsResultDescription(vector<string>& names);
        void writeDiscreteAlgVarsResultDescription(vector<string>& names);
        void writeIntAlgVarsResultDescription(vector<string>& names);
@@ -286,7 +286,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        void writeIntParameterDescription(vector<string>& names);
        void writeBoolParameterDescription(vector<string>& names);
        void writeStringParameterDescription(vector<string>& names);
-       
+
        HistoryImplType* _historyImpl;
   };
  >>
@@ -3483,8 +3483,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       writeIntParameterNames(paramnames);
       writeBoolParameterNames(paramnames);
       writeStringParameterNames(paramnames);
-      
-      
+
+
       writeAlgVarsResultDescription(vardescs);
       writeDiscreteAlgVarsResultDescription(vardescs);
       writeIntAlgVarsResultDescription(vardescs);
@@ -3499,7 +3499,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       writeParameterDescription(paramdecs);
       writeIntParameterDescription(paramdecs);
       writeBoolParameterDescription(paramdecs);
-    
+
 
 
       _historyImpl->write(varsnames,vardescs,paramnames,paramdecs);
@@ -3684,8 +3684,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
     <%generateEquationMemberFuncDecls(allEquations)%>
- 
-    
+
+
     /*! Equations Array. pointers to all the equation functions listed above stored in this
       array. It is used to randomly access and evaluate a single equation by index.
     */
@@ -5115,15 +5115,15 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
           'names += <%(vars.derivativeVars |> SIMVAR(__) =>
           '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
-        
-        
+
+
         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeParametertNames(vector<string>& names)
         {
          <% if vars.paramVars then
           'names += <%(vars.paramVars |> SIMVAR(__) =>
           '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
-        
+
          void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntParameterNames(vector<string>& names)
         {
          <% if vars.intParamVars then
@@ -5142,8 +5142,8 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
           'names += <%(vars.stringParamVars |> SIMVAR(__) =>
           '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
-        
-        
+
+
         void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAlgVarsResultDescription(vector<string>& description)
        {
         <% if vars.algVars then
@@ -5219,28 +5219,28 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
           'description += <%(vars.derivativeVars |> SIMVAR(__) =>
           '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
-        
+
          void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeParameterDescription(vector<string>& names)
         {
          <% if vars.paramVars then
           'names += <%(vars.paramVars |> SIMVAR(__) =>
           '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
-        
+
          void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntParameterDescription(vector<string>& names)
         {
          <% if vars.intParamVars then
           'names += <%(vars.intParamVars |> SIMVAR(__) =>
           '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
-        
+
          void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolParameterDescription(vector<string>& names)
         {
          <% if vars.boolParamVars then
           'names += <%(vars.boolParamVars |> SIMVAR(__) =>
           '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
-        
+
          void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeStringParameterDescription(vector<string>& names)
         {
          <% if vars.stringParamVars then
@@ -5500,15 +5500,15 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(__)) then
      const int paramVarsStart = 0;
      const int intParamVarsStart  = paramVarsStart       + <%varInfo.numParams%>;
      const int boolparamVarsStart    = intParamVarsStart  + <%varInfo.numIntParams%>;
-     
-     
+
+
 
      <%vars.paramVars         |> SIMVAR(__) hasindex i0 =>'params(paramVarsStart+<%i0%>)=<%cref(name)%>;';align=8 %>
      <%vars.intParamVars |> SIMVAR(__) hasindex i0 =>'params(intParamVarsStart+<%i0%>)=<%cref(name)%>;';align=8 %>
      <%vars.boolParamVars      |> SIMVAR(__) hasindex i1 =>'params(boolparamVarsStart+<%i1%>)=<%cref(name)%>;';align=8%>
-    
 
-   
+
+
  >>
 end writeoutputparams;
 //const int stringParamVarsStart   = boolparamVarsStart    + <%varInfo.numBoolParams%>;
@@ -6262,8 +6262,8 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     /*<%equationMixed(e, context, &varDecls, simCode)%>*/
     then
     <<
-   
-   
+
+
         throw std::runtime_error("Mixed systems are not supported yet");
      >>
   else
@@ -6322,7 +6322,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context,  
       /*<%equationMixed(e, context, &varDeclsLocal, simCode)%>*/
       then
       <<
-  
+
           throw std::runtime_error("Mixed systems are not supported yet");
        >>
     else
@@ -9498,7 +9498,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
   bool <%lastIdentOfPath(modelInfo.name)%>::handleSystemEvents(bool* events)
   {
     _callType = IContinuous::DISCRETE;
- 
+
     bool restart=true;
     bool state_vars_reinitialized = false;
     int iter=0;
@@ -9521,7 +9521,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
     if(iter>100 && restart ){
      throw std::runtime_error("Number of event iteration steps exceeded at time: " + boost::lexical_cast<string>(_simTime) );}
      _callType = IContinuous::CONTINUOUS;
-   
+
     return state_vars_reinitialized;
    }
   >>
@@ -9893,11 +9893,11 @@ template equationFunctions( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
  let equation_func_calls = (allEquationsPlusWhen |> eq  =>
                     equation_function_create_single_func(eq, context/*BUFC*/, simCode)
                     ;separator="\n")
-                    
- 
-                    
-                    
-                    
+
+
+
+
+
 <<
 
  <%equation_func_calls%>

@@ -68,27 +68,27 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
         //not supported for file output
 
     }
-  
-  
+
+
   /*writes pramater values to results file
     @v_list values of parameter
-	@start_time
-	@end_time 
+  @start_time
+  @end_time
   */
    void write(const value_type_v& v_list,double start_time,double end_time)
    {
- 
+
       //not supported for file output
    }
 
 
   /*
     writes header of results file with the variable names
-	@s_list name of variables
-	@s_desc_list description of variables
-	@s_parameter_list name of parameter
-	@s_desc_parameter_list description of parameter
-	*/
+  @s_list name of variables
+  @s_desc_list description of variables
+  @s_parameter_list name of parameter
+  @s_desc_parameter_list description of parameter
+  */
   void write(const std::vector<std::string>& s_list,const std::vector<std::string>& s_desc_list,const std::vector<std::string>& s_parameter_list,const std::vector<std::string>& s_desc_parameter_list)
   {
 
