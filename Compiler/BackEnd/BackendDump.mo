@@ -159,10 +159,12 @@ protected function printEquationList2 "Helper function for printEquationArray an
   output tuple<Integer,Integer> oInteger;
 protected
   Integer iscalar,i,size;
+  BackendDAE.EquationKind kind;
 algorithm
   (i,iscalar) := inInteger;
   size := BackendEquation.equationSize(inEquation);
-  print(intString(i) +& "/" +& intString(iscalar) +& " (" +& intString(size) +& "): " +& equationString(inEquation) +& "\n");
+  kind := BackendEquation.equationKind(inEquation);
+  print(intString(i) +& "/" +& intString(iscalar) +& " (" +& intString(size) +& "): " +& equationString(inEquation) +& "   [" +& equationKindString(kind) +& "]\n");
   oInteger := (i + 1,iscalar + size);
 end printEquationList2;
 
@@ -2746,6 +2748,7 @@ protected function equationKindString
   output String outString;
 algorithm
   outString:= match(inEqKind)
+    case BackendDAE.BINDING_EQUATION() then  "binding";
     case BackendDAE.DYNAMIC_EQUATION() then  "dynamic";
     case BackendDAE.INITIAL_EQUATION() then  "initial";
     case BackendDAE.UNKNOWN_EQUATION_KIND() then  "unknown";

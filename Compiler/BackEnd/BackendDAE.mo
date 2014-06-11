@@ -204,6 +204,7 @@ uniontype VarKind "variable kind"
 end VarKind;
 
 public uniontype EquationKind "equation kind"
+  record BINDING_EQUATION end BINDING_EQUATION;
   record DYNAMIC_EQUATION end DYNAMIC_EQUATION;
   record INITIAL_EQUATION end INITIAL_EQUATION;
   record UNKNOWN_EQUATION_KIND end UNKNOWN_EQUATION_KIND;
