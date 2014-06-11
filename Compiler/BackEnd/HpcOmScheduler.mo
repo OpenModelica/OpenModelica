@@ -1794,7 +1794,7 @@ algorithm
         //traverse the clusters and duplicate tasks if needed
         (taskAss,procAss,taskGraph,taskDuplAss,idcs,simCode,schedule,duplSccSimEqMap,duplComps) = createTDSduplicateTasks(clusters,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),iTaskGraph,iTaskGraphT,taskGraph,taskDuplAss,iTaskGraphMeta,iSimCode,schedule,iSccSimEqMapping,duplSccSimEqMap,duplComps);
 
-        //update stuff        
+        //update stuff
         simCode = createTDSupdateModelInfo(simCode,idcs);
         numDupl = List.fold(List.map(duplComps,listLength),intAdd,0);
         procAss = Util.arrayMap(procAss,listReverse);
@@ -1871,8 +1871,8 @@ algorithm
   varInfo := SimCode.VARINFO(numZeroCrossings,numTimeEvents,numRelations,numMathEventFunctions,numStateVars,numAlgVars,numDiscreteReal,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,
   numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,numStringParamVars,
   numStringAliasVars,numEquations,numLinearSystems,numNonLinearSystems,numMixedSystems,numStateSets,numOptimizeConstraints);
-  modelInfo := SimCode.MODELINFO(name,description,directory,varInfo,vars,functions,labels);  
-  simCodeOut := SimCodeUtil.replaceModelInfo(modelInfo,simCodeIn);  
+  modelInfo := SimCode.MODELINFO(name,description,directory,varInfo,vars,functions,labels);
+  simCodeOut := SimCodeUtil.replaceModelInfo(modelInfo,simCodeIn);
 end createTDSupdateModelInfo;
 
 protected function createTDSduplicateTasks"traverses the clusters, duplicate the tasks that have been assigned to another thread before.
