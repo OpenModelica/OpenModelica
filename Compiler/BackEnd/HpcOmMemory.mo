@@ -38,6 +38,7 @@ encapsulated package HpcOmMemory
   public import SimCode;
 
   protected import BackendDAEUtil;
+  protected import BackendDump;
   protected import BackendEquation;
   protected import BaseHashTable;
   protected import ComponentReference;
@@ -128,21 +129,30 @@ encapsulated package HpcOmMemory
     oMemoryMap := matchcontinue(iModelInfo, iTaskGraph, iTaskGraphMeta, iEqSystems, iFileNamePrefix, iSchedulerInfo, iSchedule, iSccSimEqMapping, iCriticalPaths, iCriticalPathsWoC, iCriticalPathInfo, iAllComponents)
       case(_,_,_,_,_,_,_,_,_,_,_,_)
         equation
-          true = false;//Flags.isSet(Flags.HPCOM_ANALYZATION_MODE);
+          true = Flags.isSet(Flags.HPCOM_ANALYZATION_MODE);
+          HpcOmTaskGraph.printTaskGraphMeta(iTaskGraphMeta);
           //Create var hash table
           SimCode.MODELINFO(vars=simCodeVars) = iModelInfo;
           SimCode.SIMVARS(stateVars=stateVars, derivativeVars=derivativeVars, algVars=algVars, paramVars=paramVars) = simCodeVars;
           allVarsMapping = SimCodeUtil.createIdxSCVarMapping(simCodeVars);
-          //SimCodeUtil.dumpIdxScVarMapping(allVarsMapping);
+          SimCodeUtil.dumpIdxScVarMapping(allVarsMapping);
+          print("--------------------------------\n");
           hashTable = HashTableCrILst.emptyHashTableSized(BaseHashTable.biggerBucketSize);
           hashTable = fillSimVarHashTable(stateVars,0,0,hashTable);
-          //hashTable = fillSimVarHashTable(derivativeVars,listLength(stateVars),0,hashTable);
+          hashTable = fillSimVarHashTable(derivativeVars,listLength(stateVars),0,hashTable);
           hashTable = fillSimVarHashTable(algVars,listLength(stateVars) + listLength(stateVars),0,hashTable);
           //hashTable = fillSimVarHashTable(paramVars,listLength(stateVars)*2 + listLength(algVars),0,hashTable);
+          print("-------------------------------------\n");
+          BaseHashTable.dumpHashTable(hashTable);
           //Create CacheMap
           sccNodeMapping = HpcOmTaskGraph.getSccNodeMapping(arrayLength(iSccSimEqMapping), iTaskGraphMeta);
+          printSccNodeMapping(sccNodeMapping);
           scVarTaskMapping = getSimCodeVarNodeMapping(iTaskGraphMeta,iEqSystems,listLength(stateVars)*2+listLength(algVars),sccNodeMapping,hashTable);
+          printScVarTaskMapping(scVarTaskMapping);
+          print("-------------------------------------\n");
           nodeSimCodeVarMapping = getNodeSimCodeVarMapping(iTaskGraphMeta, iEqSystems, hashTable);
+          printNodeSimCodeVarMapping(nodeSimCodeVarMapping);
+          print("-------------------------------------\n");
           (cacheMap,scVarCLMapping,numCL) = createCacheMapOptimized(allVarsMapping,stateVars,derivativeVars,algVars,paramVars,scVarTaskMapping,64,iAllComponents,iSchedule, nodeSimCodeVarMapping);
           eqSimCodeVarMapping = getEqSCVarMapping(iEqSystems,hashTable);
           (clTaskMapping,scVarTaskMapping) = getCacheLineTaskMapping(iTaskGraphMeta,iEqSystems,hashTable,numCL,scVarCLMapping);
@@ -247,7 +257,7 @@ encapsulated package HpcOmMemory
     oNumCL := numCL;
   end createCacheMapLevelOptimized;
 
-  protected function createCacheMapLevelOptimized0 "author: marcusw
+  protected function createCacheMapLevelOptimized0 "author: marcuswcase(_,_,_,_,_,_)
     Appends the variables which are written by the task list (iLevelTasks) to the info-structure. Only cachelines are used that
     are not written by the previous layer."
     input list<HpcOmSimCode.Task> iLevelTasks;
@@ -695,6 +705,7 @@ encapsulated package HpcOmMemory
     output HashTableCrILst.HashTable oHt;
   protected
     Integer index;
+    HashTableCrILst.HashTable tmpHt;
     DAE.ComponentRef name;
   algorithm
     SimCode.SIMVAR(name=name,index=index) := iSimVar;
@@ -746,6 +757,7 @@ encapsulated package HpcOmMemory
       case((compIdx,eqSysIdx,_),_,_,_,(iMapping,varIdx))
         equation
           nodeIdx = arrayGet(iCompNodeMapping, compIdx);
+          true = intGe(nodeIdx,0);
           //print("getNodeSimCodeVarMapping0: compIdx: " +& intString(compIdx) +& " -> nodeIdx: " +& intString(nodeIdx) +& "\n");
           eqSystem = listGet(iEqSystems,eqSysIdx);
           BackendDAE.EQSYSTEM(orderedVars=orderedVars) = eqSystem;
@@ -753,15 +765,22 @@ encapsulated package HpcOmMemory
           BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr) = varArr;
           SOME(var) = arrayGet(varOptArr,varIdx);
           BackendDAE.VAR(varName=varName) = var;
+          varName = getModifiedVarName(var);
           //print("  getNodeSimCodeVarMapping0: varIdx: " +& intString(varIdx) +& " (" +& ComponentReference.printComponentRefStr(varName) +& ")\n");
           scVarValues = BaseHashTable.get(varName,iSCVarNameHashTable);
           scVarIdx = List.first(scVarValues);
           scVarOffset = List.second(scVarValues);
           scVarIdx = scVarIdx + scVarOffset;
           //print("  getNodeSimCodeVarMapping0: scVarIdx: " +& intString(scVarIdx) +& " (including scVarOffset: " +& intString(scVarOffset) +& ")\n");
+          //print("getNodeSimCodeVarMapping0: NodeIdx = " +& intString(nodeIdx) +& " mappingLength: " +& intString(arrayLength(iMapping)) +& "\n");
           tmpMapping = arrayGet(iMapping,nodeIdx);
           tmpMapping = scVarIdx :: tmpMapping;
           iMapping = arrayUpdate(iMapping,nodeIdx,tmpMapping);
+        then ((iMapping,varIdx+1));
+      case((compIdx,eqSysIdx,_),_,_,_,(iMapping,varIdx))
+        equation
+          nodeIdx = arrayGet(iCompNodeMapping, compIdx);
+          false = intGe(nodeIdx,0);
         then ((iMapping,varIdx+1));
       case(_,_,_,_,(iMapping,varIdx))
         equation
@@ -894,6 +913,7 @@ encapsulated package HpcOmMemory
     BackendDAE.Var var;
     DAE.ComponentRef varName;
     list<Integer> scVarValues;
+    String varNameString;
   algorithm
     oScVarTaskMappingVarIdx := matchcontinue(iCompIdx,iEqSystems,iVarNameSCVarIdxMapping,iCompNodeMapping,iScVarTaskMappingVarIdx)
       case((compIdx,eqSysIdx,varOffset),_,_,_,(iScVarTaskMapping,varIdx))
@@ -905,13 +925,16 @@ encapsulated package HpcOmMemory
           BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr) = varArr;
           SOME(var) = arrayGet(varOptArr,varIdx-varOffset);
           BackendDAE.VAR(varName=varName) = var;
+          varName = getModifiedVarName(var);
           scVarValues = BaseHashTable.get(varName,iVarNameSCVarIdxMapping);
+          varNameString = ComponentReference.printComponentRefStr(varName);
+          //print("getSimCodeVarNodeMapping0: SCC-Idx: " +& intString(compIdx) +& " name: " +& varNameString +& "\n");
           scVarIdx = List.first(scVarValues);
           scVarOffset = List.second(scVarValues);
           scVarIdx = scVarIdx + scVarOffset;
           nodeIdx = arrayGet(iCompNodeMapping, compIdx);
           //oldVal = arrayGet(iClTaskMapping,clIdx);
-          //print("getCacheLineTaskMapping0 scVarIdx: " +& intString(scVarIdx) +& "\n");
+          //print("getCacheLineTaskMadumpComponentReferencepping0 scVarIdx: " +& intString(scVarIdx) +& "\n");
           iScVarTaskMapping = arrayUpdate(iScVarTaskMapping,scVarIdx,nodeIdx);
           //print("Variable " +& intString(varIdx) +& " (" +& ComponentReference.printComponentRefStr(varName) +& ") [SC-Var " +& intString(scVarIdx) +& "]: Node " +& intString(nodeIdx) +& "\n---------------------\n");
           //print("Part of CL " +& intString(clIdx) +& " solved by node " +& intString(nodeIdx) +& "\n\n");
@@ -920,6 +943,27 @@ encapsulated package HpcOmMemory
         then ((iScVarTaskMapping,varIdx+1));
     end matchcontinue;
   end getSimCodeVarNodeMapping0;
+  
+  protected function getModifiedVarName "author: marcusw
+    Get the correct varName (if the variable is derived, the $DER-Prefix is added."
+    input BackendDAE.Var iVar;
+    output DAE.ComponentRef oVarName;
+  protected
+    DAE.ComponentRef iVarName, tmpVarName;
+    BackendDAE.VarKind varKind;
+  algorithm
+    oVarName := match(iVar)
+      case(BackendDAE.VAR(varName=iVarName, varKind=BackendDAE.STATE(index=1)))
+        equation
+          tmpVarName = DAE.CREF_QUAL(DAE.derivativeNamePrefix,DAE.T_REAL({},{}),{},iVarName);
+        then tmpVarName;
+      case(BackendDAE.VAR(varName=iVarName,varKind=varKind))
+        equation
+          //BackendDump.dumpKind(varKind);
+          tmpVarName = iVarName;
+        then tmpVarName;
+    end match;
+  end getModifiedVarName;
 
   protected function getCacheLineTaskMapping "author: marcusw
     This method will create an array, which contains all tasks that are writing to the cacheline (arrayIndex)."
@@ -974,6 +1018,7 @@ encapsulated package HpcOmMemory
           BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr) = varArr;
           SOME(var) = arrayGet(varOptArr,varIdx-varOffset);
           BackendDAE.VAR(varName=varName) = var;
+          varName = getModifiedVarName(var);
           scVarValues = BaseHashTable.get(varName,iVarNameSCVarIdxMapping);
           scVarIdx = List.first(scVarValues);
           scVarOffset = List.second(scVarValues);
@@ -1229,6 +1274,23 @@ encapsulated package HpcOmMemory
     print("Node " +& intString(iNodeIdx) +& " solves sc-vars: " +& stringDelimitList(List.map(iMappingEntry, intString), ",") +& "\n");
     oNodeIdx := iNodeIdx + 1;
   end printNodeSimCodeVarMapping0;
+  
+  protected function printScVarTaskMapping
+    input array<Integer> iMapping;
+  algorithm
+    print("----------------------\nSCVar - Task - Mapping\n----------------------\n");
+    _ := Util.arrayFold(iMapping, printScVarTaskMapping0, 1);
+    print("\n");
+  end printScVarTaskMapping;
+
+  protected function printScVarTaskMapping0
+    input Integer iMappingEntry;
+    input Integer iScVarIdx;
+    output Integer oScVarIdx;
+  algorithm
+    print("SCVar " +& intString(iScVarIdx) +& " is solved in task: " +& intString(iMappingEntry) +& "\n");
+    oScVarIdx := iScVarIdx + 1;
+  end printScVarTaskMapping0;
 
   protected function printCacheLineTaskMapping
     input array<list<Integer>> iCacheLineTaskMapping;
@@ -1244,7 +1306,22 @@ encapsulated package HpcOmMemory
     print("Tasks that are writing to cacheline " +& intString(iCacheLineIdx) +& ": " +& stringDelimitList(List.map(iTasks, intString), ",") +& "\n");
     oCacheLineIdx := iCacheLineIdx + 1;
   end printCacheLineTaskMapping0;
+  
+  protected function printSccNodeMapping
+    input array<Integer> iMapping;
+  algorithm
+    print("--------------------\nScc - Node - Mapping\n--------------------\n");
+    _ := Util.arrayFold(iMapping, printSccNodeMapping0, 1);
+  end printSccNodeMapping;
 
+  protected function printSccNodeMapping0
+    input Integer iMappingEntry;
+    input Integer iIdx;
+    output Integer oIdx;
+  algorithm
+    print("Scc " +& intString(iIdx) +& " is solved by node " +& intString(iMappingEntry) +& "\n");
+    oIdx := iIdx + 1;
+  end printSccNodeMapping0;
 
   // -------------------------------------------
   // SUSAN
@@ -1258,8 +1335,7 @@ encapsulated package HpcOmMemory
     output Option<tuple<Integer,Integer>> oResult;
   protected
     List<Integer> idxList;
-    Integer idx;
-    tuple<Integer,Integer> elem;
+    Integer idx, elem1, elem2;
     array<tuple<Integer,Integer>> positionMapping;
     HashTableCrILst.HashTable scVarNameIdxMapping;
   algorithm
@@ -1269,8 +1345,10 @@ encapsulated package HpcOmMemory
           true = BaseHashTable.hasKey(iVarName, scVarNameIdxMapping);
           idxList = BaseHashTable.get(iVarName , scVarNameIdxMapping);
           idx = listGet(idxList, 1) + listGet(idxList, 2);
-          elem = arrayGet(positionMapping, idx);
-        then SOME(elem);
+          ((elem1,elem2)) = arrayGet(positionMapping, idx);
+          true = intGe(elem1,0);
+          true = intGe(elem2,0);
+        then SOME((elem1,elem2));
       else NONE();
     end matchcontinue;
   end getPositionMappingByArrayName;

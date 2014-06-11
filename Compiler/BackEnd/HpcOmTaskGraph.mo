@@ -69,7 +69,7 @@ public uniontype TaskGraphMeta   // stores all the metadata for the TaskGraph
     array<tuple<Integer,Integer,Integer>> eqCompMapping;  // maps each equation to <compIdx, eqSystemIdx, offset>. The offset is the sum of the eqNumber of all eqSystems with a minor index.
     list<Integer> rootNodes;  // all Nodes without predecessor
     array<String> nodeNames; // the name of the nodes for the graphml generation
-    array<String> nodeDescs;  // a description of the nodes for the graphml generation
+    array<String> nodeDescs;  // a description of the nodes for the graphml generation - this is a component-description
     array<tuple<Integer,Real>> exeCosts;  // the execution cost for the nodes <numberOfOperations, requiredCycles
     array<list<tuple<Integer,Integer,Integer>>> commCosts;  // the communication cost tuple(_,numberOfVars,requiredCycles) for an edge from array[parentNode] to tuple(childNode,_)
     array<Integer> nodeMark;  // used for level informations -> this is currently not a nodeMark, its a componentMark
@@ -186,7 +186,7 @@ algorithm
   oNumOfComps := iNumOfComps + listLength(comps);
 end getNumberOfEqSystemComponents;
 
-protected function getEmptyTaskGraph "generates an empty TaskGraph and empty TaskGraphMeta for a graph with numComps nodes.
+public function getEmptyTaskGraph "generates an empty TaskGraph and empty TaskGraphMeta for a graph with numComps nodes.
 author: Waurich TUD 2013-06"
   input Integer numComps;
   input Integer numVars;
@@ -1458,12 +1458,11 @@ protected function getSccNodeMapping0 "author: marcusw
   input tuple<array<Integer>, Integer> iArrayNodeIdx;
   output tuple<array<Integer>, Integer> oArrayNodeIdx;
 protected
-  Integer iNodeIdx;
-  Integer offset;
-  Integer nodeMark;
-  array<Integer> iMappingArray;
+  array<Integer> tmpMappingArray;
+  Integer nodeIdx;
 algorithm
-  oArrayNodeIdx := List.fold1(iCompsOfNode, getSccNodeMapping1, iNodeMarks, iArrayNodeIdx);
+  ((tmpMappingArray,nodeIdx)) := List.fold1(iCompsOfNode, getSccNodeMapping1, iNodeMarks, iArrayNodeIdx);
+  oArrayNodeIdx := (tmpMappingArray,nodeIdx+1);
 end getSccNodeMapping0;
 
 protected function getSccNodeMapping1 "author: marcusw
@@ -1484,9 +1483,9 @@ algorithm
         nodeMark = arrayGet(iNodeMark,iCompIdx);
         true = intNe(-1,nodeMark);
         iMappingArray = arrayUpdate(iMappingArray, iCompIdx, iNodeIdx);
-      then ((iMappingArray,iNodeIdx+1));
+      then ((iMappingArray,iNodeIdx));
     case(_,_,(iMappingArray,iNodeIdx))
-      then ((iMappingArray,iNodeIdx+1));
+      then ((iMappingArray,iNodeIdx));
   end matchcontinue;
 end getSccNodeMapping1;
 
@@ -2355,7 +2354,7 @@ algorithm
         primalComp = List.last(components);
         //print("node in the taskGraph (case 2) "+&intString(nodeIdx)+&" primalComp "+&intString(primalComp)+&"\n");
         compText = arrayGet(nodeNames,primalComp);
-        nodeDesc = arrayGet(nodeDescs,primalComp);
+        nodeDesc = stringDelimitList(List.map1(components, Util.arrayGetIndexFirst, nodeDescs), "\n");// arrayGet(nodeDescs,primalComp);
         annotationString = arrayGet(annotationInfo,nodeIdx);
         ((opCount,calcTime)) = List.fold1(components, addNodeToGraphML1, exeCosts, (0,0.0));
         calcTimeString = realString(calcTime);
@@ -2363,7 +2362,7 @@ algorithm
         childNodes = arrayGet(tGraphIn,nodeIdx);
         //componentsString = List.fold(components, addNodeToGraphML2, " ");
         componentsString = (" "+&intString(nodeIdx)+&" ");
-        simCodeEqs = arrayGet(sccSimEqMapping,primalComp);
+        simCodeEqs = List.flatten(List.map1(components, Util.arrayGetIndexFirst, sccSimEqMapping));
         simCodeEqString = stringDelimitList(List.map(simCodeEqs,intString),", ");
 
         ((schedulerThreadId,schedulerTaskNumber,taskFinishTime)) = arrayGet(schedulerInfo,nodeIdx);

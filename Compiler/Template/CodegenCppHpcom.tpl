@@ -120,13 +120,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
      //Variables:
-     /* <%addHpcomArrayHeaders%> */
+     <%addHpcomArrayHeaders%>
      <%addHpcomVarHeaders%>
 
      EventHandling _event_handling;
-     <%CodegenCpp.MemberVariable(modelInfo)%>
+     /* <%CodegenCpp.MemberVariable(modelInfo)%> */
 
-     /* <%MemberVariable(modelInfo, hpcOmMemory)%> */
+     <%MemberVariable(modelInfo, hpcOmMemory)%>
      <%conditionvariable(zeroCrossings,simCode)%>
      Functions _functions;
 
@@ -215,7 +215,7 @@ template getAddHpcomVarArrays(Option<MemoryMap> optHpcomMemoryMap)
             match hpcomMemoryMap
                 case(MEMORYMAP_ARRAY(__)) then
                     <<
-                    //double varArray1[<%floatArraySize%>]; //float variables
+                    double varArray1[<%floatArraySize%>]; //float variables
                     >>
                 else ''
             end match
@@ -448,7 +448,7 @@ template MemberVariableDefine3(Option<tuple<Integer,Integer>> optVarArrayAssignm
             match simVar
                 case SIMVAR(__) then
                     <<
-                    <%variableType(type_)%>& <%cref(name)%>;// = varArray<%arrayIdx%>[<%varIdx%>]
+                    <%variableType(type_)%>& <%cref(name)%> = varArray<%arrayIdx%>[<%varIdx%>];
                     >>
             end match
     else

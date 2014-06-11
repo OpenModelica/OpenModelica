@@ -52,6 +52,7 @@ protected import GlobalScript;
 protected import HpcOmMemory;
 protected import HpcOmScheduler;
 protected import HpcOmTaskGraph;
+protected import Initialization;
 protected import List;
 protected import SimCodeUtil;
 protected import System;
@@ -136,13 +137,10 @@ algorithm
       array<list<Integer>> sccSimEqMapping; //Maps each scc to a list of simEqs
       array<Integer> simeqCompMapping; //Maps each simEq to the scc
       list<BackendDAE.TimeEvent> timeEvents;
-      BackendDAE.StrongComponents allComps;
+      BackendDAE.StrongComponents allComps, initComps;
 
-      HpcOmTaskGraph.TaskGraph taskGraph;
-      HpcOmTaskGraph.TaskGraph taskGraphOde;
-      HpcOmTaskGraph.TaskGraph taskGraph1,taskGraph2;
-      HpcOmTaskGraph.TaskGraphMeta taskGraphData,taskGraphData1,taskGraphData2;
-      HpcOmTaskGraph.TaskGraphMeta taskGraphDataOde;
+      HpcOmTaskGraph.TaskGraph taskGraph, taskGraphOde, taskGraphSimplified, taskGraphDuplicatedTasks, taskGraphInit;
+      HpcOmTaskGraph.TaskGraphMeta taskGraphData, taskGraphDataOde, taskGraphDataSimplified,taskGraphDataDuplicatedTasks, taskGraphDataInit;
       String fileName, fileNamePrefix;
       Integer numProc;
       list<list<Integer>> parallelSets;
@@ -169,6 +167,12 @@ algorithm
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _, _, _, _, _, _, _, _) equation
 
       print(Util.if_(Flags.isSet(Flags.HPCOM_ANALYZATION_MODE), "Using analyzation mode\n", ""));
+      
+      //Initial System
+      //--------------
+      (initDAE, _) = Initialization.solveInitialSystem(inBackendDAE);
+      handleInitialSystem(initDAE, filenamePrefix);
+      
       //Setup
       //-----
       System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
@@ -210,7 +214,7 @@ algorithm
       taskGraphOde = arrayCopy(taskGraph);
       taskGraphDataOde = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
       (taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraphOde,taskGraphDataOde,inBackendDAE);
-      Debug.execStat("hpcom get ODE system", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
+      Debug.execStat("hpcom get ODE TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
 
       taskGraphMetaValid = HpcOmTaskGraph.validateTaskGraphMeta(taskGraphDataOde, inBackendDAE);
       taskGraphMetaMessage = Util.if_(taskGraphMetaValid, "TaskgraphMeta valid\n", "TaskgraphMeta invalid\n");
@@ -236,29 +240,29 @@ algorithm
 
       //Apply filters
       //-------------
-      taskGraphData1 = taskGraphDataOde;
-      taskGraph1 = taskGraphOde;
-      (taskGraph1,taskGraphData1) = applyFiltersToGraph(taskGraphOde,taskGraphDataOde,inBackendDAE,true); //TODO: Rename this to applyGRS or someting like that
+      taskGraphDataSimplified = taskGraphDataOde;
+      taskGraphSimplified = taskGraphOde;
+      (taskGraphSimplified,taskGraphDataSimplified) = applyFiltersToGraph(taskGraphOde,taskGraphDataOde,inBackendDAE,true); //TODO: Rename this to applyGRS or someting like that
       Debug.execStat("hpcom GRS", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
-      //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraph,taskGraph1);
-      //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraphMeta,taskGraphData1);
+      //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraph,taskGraphSimplified);
+      //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraphMeta,taskGraphDataSimplified);
 
 
       //Create schedule
       //---------------
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       (numProc,_) = setNumProc(numProc,cpCostsWoC,taskGraphDataOde);//in case n-flag is not set
-      (schedule,simCode,taskGraph2,taskGraphData2,sccSimEqMapping) = createSchedule(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,numProc,simCode);
-      //(schedule,numProc) = repeatScheduleWithOtherNumProc(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,cpCostsWoC,schedule,numProc,numFixed);
+      (schedule,simCode,taskGraphDuplicatedTasks,taskGraphDataDuplicatedTasks,sccSimEqMapping) = createSchedule(taskGraphSimplified,taskGraphDataSimplified,sccSimEqMapping,filenamePrefix,numProc,simCode);
+      //(schedule,numProc) = repeatScheduleWithOtherNumProc(taskGraphSimplified,taskGraphDataSimplified,sccSimEqMapping,filenamePrefix,cpCostsWoC,schedule,numProc,numFixed);
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
-      criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(schedule,numProc,taskGraph1,taskGraphData1);
+      criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(schedule,numProc,taskGraphSimplified,taskGraphDataSimplified);
       schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph2));
       Debug.execStat("hpcom create schedule", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
 
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule_duplic.graphml");
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph2, taskGraphData2, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDuplicatedTasks, taskGraphDataDuplicatedTasks, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphData1, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphSimplified, taskGraphDataSimplified, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
       //HpcOmScheduler.printSchedule(schedule);
 
       Debug.execStat("hpcom dump schedule TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
@@ -269,13 +273,13 @@ algorithm
       checkOdeSystemSize(taskGraphOde,odeEquations);
       Debug.execStat("hpcom check ODE system size", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
 
-      optTmpMemoryMap = HpcOmMemory.createMemoryMap(modelInfo, taskGraph1, taskGraphData1, eqs, filenamePrefix, schedulerInfo, schedule, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, allComps);
+      optTmpMemoryMap = HpcOmMemory.createMemoryMap(modelInfo, taskGraphSimplified, taskGraphDataSimplified, eqs, filenamePrefix, schedulerInfo, schedule, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, allComps);
 
       simCode = SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, SOME(schedule), optTmpMemoryMap, crefToSimVarHT, backendMapping);
 
-      //evaluateCacheBehaviour(schedulerInfo,taskGraphData1,clTaskMapping, transposeCacheLineTaskMapping(clTaskMapping, arrayLength(taskGraph1)));
+      //evaluateCacheBehaviour(schedulerInfo,taskGraphDataSimplified,clTaskMapping, transposeCacheLineTaskMapping(clTaskMapping, arrayLength(taskGraphSimplified)));
 
       print("HpcOm is still under construction.\n");
       then simCode;
@@ -284,6 +288,31 @@ algorithm
     then fail();
   end matchcontinue;
 end createSimCode;
+
+protected function handleInitialSystem
+  input Option<BackendDAE.BackendDAE> iInitDae;
+  input String iFileNamePrefix;
+protected
+  BackendDAE.BackendDAE initDAE;
+  HpcOmTaskGraph.TaskGraph tmpTaskGraph;
+  HpcOmTaskGraph.TaskGraphMeta tmpTaskGraphMeta;
+  String fileName;
+  array<list<Integer>> sccSimEqMapping;
+  array<tuple<Integer,Integer,Real>> schedulerInfo;
+algorithm
+  _ := match(iInitDae, iFileNamePrefix)
+    case(SOME(initDAE), _)
+      equation
+        (tmpTaskGraph, tmpTaskGraphMeta) = HpcOmTaskGraph.createTaskGraph(initDAE,iFileNamePrefix);
+	      fileName = ("taskGraph"+&iFileNamePrefix+&"_init.graphml");
+	      schedulerInfo = arrayCreate(arrayLength(tmpTaskGraph), (-1,-1,-1.0));
+	      sccSimEqMapping = arrayCreate(arrayLength(tmpTaskGraph), {});
+	      HpcOmTaskGraph.dumpAsGraphMLSccLevel(tmpTaskGraph, tmpTaskGraphMeta, initDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);      
+      then ();
+    else
+      then ();
+  end match;
+end handleInitialSystem;
 
 protected function setNumProc "sets the number of processors. its upper limit is the number of processsors provided by the system.
 if no n-flag is set, a ideal number is suggested but the simulation fails.
@@ -399,6 +428,13 @@ algorithm
         schedule =  HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
       then
         (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
+    case(_,_,_,_,_,_)
+      equation
+        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+        true = stringEq(flagValue, "mixed");
+        print("Using mixed Scheduler\n");
+        schedule = HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
+      then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
     case(_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
