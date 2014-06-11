@@ -1610,6 +1610,86 @@ algorithm
   (oSchedule,oSimCode,oTaskGraph,oTaskGraphMeta,oSccSimEqMapping) := createTDSschedule1(initClusters,iTaskGraph,taskGraphT,iTaskGraphMeta,tdsLevelArray,numProc,iSccSimEqMapping,iSimCode);
 end createTDSschedule;
 
+protected function insertLocksInSchedule
+  input HpcOmSimCode.Schedule iSchedule;
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraph iTaskGraphT;
+  input array<Integer> taskAss;
+  input array<list<Integer>> procAss;
+  output HpcOmSimCode.Schedule oSchedule;
+protected
+  array<list<HpcOmSimCode.Task>> threadTasks;
+  list<list<HpcOmSimCode.Task>> threads;
+  list<String> lockIdc;
+algorithm
+  HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks) := iSchedule;
+  threads := arrayList(threadTasks);
+  ((threads,lockIdc)) := List.fold4(threads,insertLocksInSchedule1,iTaskGraph,iTaskGraphT,taskAss,procAss,({},{}));
+  threads := List.filterOnTrue(threads,List.isNotEmpty);
+  threads := List.map(threads,listReverse);
+  threads := listReverse(threads);
+  threadTasks := listArray(threads);
+  lockIdc := List.unique(lockIdc);
+  oSchedule := HpcOmSimCode.THREADSCHEDULE(threadTasks, lockIdc);
+end insertLocksInSchedule;
+
+protected function insertLocksInSchedule1
+  input list<HpcOmSimCode.Task> threadsIn;
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraph iTaskGraphT;
+  input array<Integer> taskAss;
+  input array<list<Integer>> procAss;
+  input tuple<list<list<HpcOmSimCode.Task>>,list<String>> foldIn;
+  output tuple<list<list<HpcOmSimCode.Task>>,list<String>> foldOut;
+algorithm
+  foldOut := matchcontinue(threadsIn,iTaskGraph,iTaskGraphT,taskAss,procAss,foldIn)
+    local
+      Integer idx,thr;
+      list<Integer> preds,succs,predThr,succThr;
+      list<HpcOmSimCode.Task> thread,rest,relLocks,assLocks,tasks;
+      list<list<HpcOmSimCode.Task>> threads;
+      HpcOmSimCode.Task task;
+      list<String> lockIdc,assLockStrs,relLockStrs;
+    case({},_,_,_,_,(threads,lockIdc))
+      equation
+        threads = {}::threads;
+      then ((threads,lockIdc));
+    case(HpcOmSimCode.CALCTASK(index=idx,threadIdx=thr)::rest,_,_,_,_,(threads,lockIdc))
+      equation
+        task = List.first(threadsIn);
+        print("node "+&intString(idx)+&"\n");
+        preds = arrayGet(iTaskGraphT,idx);
+        succs = arrayGet(iTaskGraph,idx);
+        print("all preds "+&intListString(preds)+&"\n");
+        print("all succs "+&intListString(succs)+&"\n");
+        predThr = List.map1(preds,Util.arrayGetIndexFirst,taskAss);
+        succThr = List.map1(succs,Util.arrayGetIndexFirst,taskAss);
+        (_,preds) = List.filter1OnTrueSync(predThr,intNe,thr,preds);
+        (_,succs) = List.filter1OnTrueSync(succThr,intNe,thr,succs);
+        print("other preds "+&intListString(preds)+&"\n");
+        print("other succs "+&intListString(succs)+&"\n");
+        relLockStrs = List.map(succs,intString);
+        relLockStrs = List.map1r(relLockStrs,stringAppend,intString(idx)+&"_");
+        assLockStrs = List.map(preds,intString);
+        assLockStrs = List.map1(assLockStrs,stringAppend,"_"+&intString(idx));
+        print("assLockStrs "+&stringDelimitList(assLockStrs,"  ;  ")+&"\n");
+        print("relLockStrs "+&stringDelimitList(relLockStrs,"  ;  ")+&"\n");
+        assLocks = List.map(assLockStrs,convertLockIdToAssignTask);
+        relLocks = List.map(relLockStrs,convertLockIdToReleaseTask);
+        //tasks = task::assLocks;
+        tasks = listAppend(relLocks,{task});
+        tasks = listAppend(tasks,assLocks);
+        thread = Debug.bcallret1(List.isNotEmpty(threads),List.first,threads,{});
+        thread = listAppend(tasks,thread);
+        threads = Debug.bcallret3(List.isNotEmpty(threads),List.replaceAt,thread,0,threads,{thread});
+        _ = printThreadSchedule(thread,thr);
+        lockIdc = listAppend(relLockStrs,lockIdc);
+        lockIdc = listAppend(assLockStrs,lockIdc);  
+        ((threads,lockIdc)) = insertLocksInSchedule1(rest,iTaskGraph,iTaskGraphT,taskAss,procAss,(threads,lockIdc));
+      then ((threads,lockIdc));
+  end matchcontinue;
+end insertLocksInSchedule1;
+
 protected function createTDSschedule1"takes the initial Cluster and compactes or duplicates them to the given number of threads.
 author:Waurich TUD 2014-05"
   input list<list<Integer>> clustersIn;
@@ -1638,7 +1718,7 @@ algorithm
       array<String> nodeNames, nodeDescs;
       list<list<Integer>> clusters, duplSccSimEqMap, duplComps;
       HpcOmSimCode.Schedule schedule;
-      HpcOmTaskGraph.TaskGraph taskGraph;
+      HpcOmTaskGraph.TaskGraph taskGraph, taskGraphT;
       HpcOmTaskGraph.TaskGraphMeta meta;
       SimCode.SimCode simCode;
       SimCode.SimVars simVars;
@@ -1724,7 +1804,12 @@ algorithm
         nodeMark = Util.arrayAppend(nodeMark,arrayCreate(numDupl,-1));
         meta = HpcOmTaskGraph.TASKGRAPHMETA(comps,varCompMapping,eqCompMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
 
+        // insert Locks
+        taskGraphT = BackendDAEUtil.transposeMatrix(taskGraph,arrayLength(taskGraph));
+        schedule = insertLocksInSchedule(schedule,taskGraph,taskGraphT,taskAss,procAss);
+
         //dumping stuff-------------------------
+        /*
         print("simCode 2\n");
         SimCodeUtil.dumpSimCode(simCode);
         print("sccSimEqMap2\n");
@@ -1733,9 +1818,11 @@ algorithm
         HpcOmSimCodeMain.dumpSccSimEqMapping(comps);
         print("the taskAss2: "+&stringDelimitList(List.map(arrayList(taskAss),intString),"\n")+&"\n");
         print("the procAss2: "+&stringDelimitList(List.map(arrayList(procAss),intListString),"\n")+&"\n");
+        */
         printSchedule(schedule);
-        HpcOmTaskGraph.printTaskGraph(taskGraph);
+        //HpcOmTaskGraph.printTaskGraph(taskGraph);
         //--------------------------------------
+        
       then
         (schedule,simCode,taskGraph,meta,sccSimEqMap);
     else
