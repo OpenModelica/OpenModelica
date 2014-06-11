@@ -256,7 +256,7 @@ algorithm
       //(schedule,numProc) = repeatScheduleWithOtherNumProc(taskGraphSimplified,taskGraphDataSimplified,sccSimEqMapping,filenamePrefix,cpCostsWoC,schedule,numProc,numFixed);
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(schedule,numProc,taskGraphSimplified,taskGraphDataSimplified);
-      schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph2));
+      schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraphSimplified));
       Debug.execStat("hpcom create schedule", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
 
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule_duplic.graphml");
