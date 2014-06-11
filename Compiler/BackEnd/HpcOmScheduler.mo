@@ -1684,7 +1684,7 @@ algorithm
         threads = Debug.bcallret3(List.isNotEmpty(threads),List.replaceAt,thread,0,threads,{thread});
         _ = printThreadSchedule(thread,thr);
         lockIdc = listAppend(relLockStrs,lockIdc);
-        lockIdc = listAppend(assLockStrs,lockIdc);  
+        lockIdc = listAppend(assLockStrs,lockIdc);
         ((threads,lockIdc)) = insertLocksInSchedule1(rest,iTaskGraph,iTaskGraphT,taskAss,procAss,(threads,lockIdc));
       then ((threads,lockIdc));
   end matchcontinue;
@@ -1822,7 +1822,7 @@ algorithm
         printSchedule(schedule);
         //HpcOmTaskGraph.printTaskGraph(taskGraph);
         //--------------------------------------
-        
+
       then
         (schedule,simCode,taskGraph,meta,sccSimEqMap);
     else
