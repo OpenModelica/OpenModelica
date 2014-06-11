@@ -56,7 +56,7 @@
  */
 #ifndef NO_INTERACTIVE_DEPENDENCY
   #include "../../interactive/omi_ServiceInterface.h"
-  #include "../../../interactive/socket.h"
+  #include "../../interactive/socket.h"
   extern Socket sim_communication_port;
 #endif
 

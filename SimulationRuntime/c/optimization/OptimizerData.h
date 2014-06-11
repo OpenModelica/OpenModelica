@@ -31,7 +31,7 @@
 #ifndef _OPTIMIZER_DATA_H
 #define _OPTIMIZER_DATA_H
 
-#include "../../../../Compiler/runtime/config.h"
+#include "../../../Compiler/runtime/config.h"
 #include "simulation_data.h"
 #include "../simulation/solver/solver_main.h"
 #include <string.h>

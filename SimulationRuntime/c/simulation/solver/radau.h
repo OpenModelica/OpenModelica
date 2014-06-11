@@ -37,7 +37,7 @@
 
 #include "simulation_data.h"
 #include "solver_main.h"
-#include "../../Compiler/runtime/config.h"
+#include "../../../../Compiler/runtime/config.h"
 
 #ifdef WITH_SUNDIALS
   #include <math.h>

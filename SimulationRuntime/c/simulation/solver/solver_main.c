@@ -31,7 +31,7 @@
  /*! \file solver_main.c
  */
 
-#include "../../Compiler/runtime/config.h"
+#include "../../../../Compiler/runtime/config.h"
 #include "solver_main.h"
 #include "simulation_runtime.h"
 #include "simulation_result.h"

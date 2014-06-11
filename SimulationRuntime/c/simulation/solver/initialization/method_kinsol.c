@@ -31,7 +31,7 @@
 /*! \file kinsol_initialization.c
  */
 
-#include "../../../../Compiler/runtime/config.h"
+#include "../../../../../Compiler/runtime/config.h"
 #include "method_kinsol.h"
 #include "simulation_data.h"
 #include "util/omc_error.h"
