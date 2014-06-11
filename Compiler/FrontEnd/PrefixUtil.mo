@@ -702,32 +702,11 @@ algorithm
       then
         (cache,crefExp);
 
-    case (cache,env,ih,DAE.CREF(componentRef = cr,ty = t),pre)
+    case (cache, env, ih, DAE.CREF(componentRef = _), pre)
       equation
-        // adrpo: ask for NONE() here as if we have SOME(...) it means
-        //        this is a for iterator and WE SHOULD NOT PREFIX IT!
-        (cache,_,_,_,NONE(),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cr);
-        (cache,cr_1) = prefixCref(cache,env,ih,pre,cr);
-        (cache, t) = prefixExpressionsInType(cache, env, ih, pre, t);
-        crefExp = Expression.makeCrefExp(cr_1, t);
+        (cache, crefExp) = prefixExpCref(cache, env, ih, inExp, pre);
       then
-        (cache,crefExp);
-
-    case (cache,env,_,e as DAE.CREF(componentRef = cr,ty = _),_)
-      equation
-        // adrpo: do NOT prefix if we have a for iterator!
-        (cache,_,_,_,SOME(_),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cr);
-      then
-        (cache,e);
-
-    case (cache,env,ih,DAE.CREF(componentRef = cr,ty = t),pre)
-      equation
-        failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache, env, cr));
-        (cache, cr_1) = prefixSubscriptsInCref(cache, env, ih, pre, cr);
-        (cache, t) = prefixExpressionsInType(cache, env, ih, pre, t);
-        crefExp = Expression.makeCrefExp(cr_1, t);
-      then
-        (cache,crefExp);
+        (cache, crefExp); 
 
     case (cache,env,ih,(DAE.ASUB(exp = e1, sub = expl)),pre)
       equation
@@ -907,6 +886,67 @@ algorithm
   end matchcontinue;
 end prefixExp;
 
+protected function prefixExpCref
+  "Helper function to prefixExp for prefixing a cref expression."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InstanceHierarchy inIH;
+  input DAE.Exp inCref;
+  input Prefix.Prefix inPrefix;
+  output Env.Cache outCache;
+  output DAE.Exp outCref;
+protected
+  Option<Boolean> is_iter;
+  Env.Cache cache;
+  DAE.ComponentRef cr;
+algorithm
+  DAE.CREF(componentRef = cr) := inCref; 
+  (is_iter, cache) := Lookup.isIterator(inCache, inEnv, cr);
+  (outCache, outCref) := prefixExpCref2(cache, inEnv, inIH, is_iter, inCref, inPrefix);
+end prefixExpCref;
+
+protected function prefixExpCref2
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InstanceHierarchy inIH;
+  input Option<Boolean> inIsIter;
+  input DAE.Exp inCref;
+  input Prefix.Prefix inPrefix;
+  output Env.Cache outCache;
+  output DAE.Exp outCref;
+algorithm
+  (outCache, outCref) := match(inCache, inEnv, inIH, inIsIter, inCref, inPrefix)
+    local
+      Env.Cache cache;
+      DAE.ComponentRef cr;
+      DAE.Type ty;
+      DAE.Exp exp;
+
+    // A cref found in the current scope that's not an iterator.
+    case (cache, _, _, SOME(false), DAE.CREF(componentRef = cr, ty = ty), _)
+      equation
+        (cache, cr) = prefixCref(cache, inEnv, inIH, inPrefix, cr);
+        (cache, ty) = prefixExpressionsInType(cache, inEnv, inIH, inPrefix, ty);
+        exp = Expression.makeCrefExp(cr, ty);
+      then
+        (cache, exp);
+
+    // An iterator, shouldn't be prefixed.
+    case (_, _, _, SOME(true), _, _)
+      then (inCache, inCref);
+
+    // A cref not found in the current scope.
+    case (cache, _, _, NONE(), DAE.CREF(componentRef = cr, ty = ty), _)
+      equation
+        (cache, cr) = prefixSubscriptsInCref(cache, inEnv, inIH, inPrefix, cr);
+        (cache, ty) = prefixExpressionsInType(cache, inEnv, inIH, inPrefix, ty);
+        exp = Expression.makeCrefExp(cr, ty);
+      then
+        (cache, exp);
+
+  end match;
+end prefixExpCref2;
+  
 protected function prefixIterators
   input Env.Cache inCache;
   input Env.Env inEnv;

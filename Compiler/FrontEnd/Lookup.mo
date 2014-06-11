@@ -2959,5 +2959,48 @@ algorithm
   end matchcontinue;
 end splitEnv;
 
+public function isIterator
+  "Looks up a cref and returns SOME(true) if it references an iterator,
+   SOME(false) if it references an element in the current scope, and NONE() if
+   the name couldn't be found in the current scope at all."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.ComponentRef inCref;
+  output Option<Boolean> outIsIterator;
+  output Env.Cache outCache;
+algorithm
+  (outIsIterator, outCache) := matchcontinue(inCache, inEnv, inCref)
+    local
+      String id;
+      Env.Cache cache;
+      Env.Env env;
+      Env.AvlTree scope;
+      Option<Boolean> res;
+      Option<DAE.Const> ic;
+      Env.Frame frame;
+
+    // Look in the current scope.
+    case (cache, Env.FRAME(clsAndVars = scope) :: _, _)
+      equation
+        // Only look up the first part of the cref, we're only interested in if
+        // it exists and if it's an iterator or not.
+        id = ComponentReference.crefFirstIdent(inCref);
+        (cache, DAE.TYPES_VAR(constOfForIteratorRange = ic), _, _, _, _) =
+          lookupVar2(cache, scope, id);
+      then
+        (SOME(Util.isSome(ic)), cache);
+
+    // If not found, look in the next scope only if the current scope is implicit.
+    case (cache, frame :: env, _)
+      equation
+        true = frameIsImplAddedScope(frame);
+        (res, cache) = isIterator(cache, env, inCref);
+      then
+        (res, cache);
+
+    else (NONE(), inCache);
+  end matchcontinue;
+end isIterator;
+
 end Lookup;
 
