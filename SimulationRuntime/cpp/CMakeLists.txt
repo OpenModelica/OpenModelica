@@ -105,8 +105,8 @@ SET(Boost_USE_STATIC_RUNTIME OFF)
 
 find_package(Boost COMPONENTS thread)
 find_package(Threads)
-#find_package(Boost COMPONENTS filesystem system serialization program_options log REQUIRED)
-find_package(Boost COMPONENTS filesystem system program_options log log_setup REQUIRED)
+find_package(Boost COMPONENTS filesystem system serialization program_options  REQUIRED)
+#find_package(Boost COMPONENTS filesystem system program_options log log_setup REQUIRED)
 
 message(STATUS "Boost Libraries")
 message(STATUS ${Boost_LIBRARIES})
