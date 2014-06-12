@@ -215,7 +215,7 @@ template getAddHpcomVarArrays(Option<MemoryMap> optHpcomMemoryMap)
             match hpcomMemoryMap
                 case(MEMORYMAP_ARRAY(__)) then
                     <<
-                    double varArray1[<%floatArraySize%>]; //float variables
+                    <%if intGt(floatArraySize,0) then 'double varArray1[<%floatArraySize%>]; //float variables'%>
                     >>
                 else ''
             end match
@@ -474,14 +474,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let className = lastIdentOfPath(modelInfo.name)
   <<
    #include "Modelica.h"
-   #include <System/IMixedSystem.h>
-   #include <SimulationSettings/IGlobalSettings.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <System/IMixedSystem.h>
-   #include <System/IAlgLoop.h>
-   #include <Solver/IAlgLoopSolver.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <SimController/ISimData.h>
+   #include "ModelicaDefine.h"
    #include "OMCpp<%fileNamePrefix%>.h"
 
 
@@ -1385,7 +1378,7 @@ LINK=<%makefileParams.linker%>
 EXEEXT=<%makefileParams.exeext%>
 DLLEXT=<%makefileParams.dllext%>
 CFLAGS_BASED_ON_INIT_FILE=<%_extraCflags%> -I"<%makefileParams.omhome%>/../SimulationRuntime/cpp" -I"<%makefileParams.omhome%>/../SimulationRuntime/cpp/Core" -I"<%makefileParams.omhome%>/../SimulationRuntime/cpp/Include/SimCoreFactory" -I"<%makefileParams.omhome%>/../SimulationRuntime/cpp/Include/Core"
-CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
+CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
 LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"    -L"$(BOOST_LIBS)"
 CPP_RUNTIME_LIBS=<%analyzationLibs%>
 LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" <%simulationMainDLLib(simCode)%> -L"<%makefileParams.omhome%>/bin" $(CPP_RUNTIME_LIBS) -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_SERIALIZATION_LIB) $(BOOST_THREAD_LIB) $(LINUX_LIB_DL)
