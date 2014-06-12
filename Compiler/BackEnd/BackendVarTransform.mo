@@ -2523,6 +2523,82 @@ algorithm
 end replaceSTMT_IF;
 
 /*********************************************************/
+/* divide by zero  */
+/*********************************************************/
+
+public function divideByZeroReplacements
+  input VariableReplacements inVariableReplacements;
+  output Boolean divideByZero;
+  output Integer pos;
+  output DAE.Ident ident;
+protected
+  HashTable2.HashTable ht;
+  list<tuple<DAE.ComponentRef, DAE.Exp>> tplLst;
+algorithm
+  REPLACEMENTS(hashTable=ht) := inVariableReplacements;
+  (tplLst) := BaseHashTable.hashTableList(ht);
+  (divideByZero, pos, ident) := divideByZeroReplacements2(tplLst, 1, false, 0, "???");
+end divideByZeroReplacements;
+
+protected function divideByZeroReplacements2
+  input list<tuple<DAE.ComponentRef, DAE.Exp>> tplLst;
+  input Integer counter;
+  input Boolean InDivideByZero;
+  input Integer InPos;
+  input DAE.Ident InIdent;
+  output Boolean divideByZero;
+  output Integer pos;
+  output DAE.Ident ident;
+algorithm
+  (divideByZero, pos, ident) := matchcontinue (tplLst, counter, InDivideByZero, InPos, InIdent)
+    local
+      list<tuple<DAE.ComponentRef, DAE.Exp>> tplLst2;
+      DAE.Exp exp;
+      Boolean BooleanControlExp;
+      String str;
+      DAE.ComponentRef cr;
+
+    case({}, _, _, _, _)
+    then (InDivideByZero, 0, InIdent);
+
+    case ((cr, exp) :: tplLst2, _, false, _, _) equation
+      ((_, BooleanControlExp)) = Expression.traverseExp(exp, controlExp, false);
+      false = BooleanControlExp;
+
+      str = ComponentReference.printComponentRefStr(cr);
+
+      (divideByZero, pos, ident) = divideByZeroReplacements2(tplLst2, counter+1, BooleanControlExp, counter, str);
+    then (divideByZero, pos, ident);
+
+    case((cr, exp) :: tplLst2, _, _, _, _) equation
+      str = ComponentReference.printComponentRefStr(cr);
+    then (true, counter, str);
+  end matchcontinue;
+end divideByZeroReplacements2;
+
+protected function controlExp
+  input tuple<DAE.Exp, Boolean > inTuple;
+  output tuple<DAE.Exp, Boolean > outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp exp1 , exp2, exp3;
+      DAE.Operator operator;
+      Boolean b;
+
+    case ((_, true))
+    then inTuple;
+
+    case((exp3 as DAE.BINARY(exp1, DAE.DIV(_), exp2), false)) equation
+      b = Expression.isZero(exp2);
+    then((exp3, b));
+
+    case ((exp1, _))
+    then ((exp1, false));
+  end matchcontinue;
+end controlExp;
+
+/*********************************************************/
 /* dump replacements  */
 /*********************************************************/
 

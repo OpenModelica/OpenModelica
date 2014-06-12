@@ -739,16 +739,19 @@ algorithm
       Option< .DAE.VariableAttributes> values;
       DAE.Exp exp,exp1;
       Values.Value bindValue;
+
     case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindExp=SOME(exp)),(repl,vars)))
       equation
         ((exp1, _)) = Expression.traverseExp(exp, BackendDAEUtil.replaceCrefsWithValues, (vars, varName));
         repl_1 = BackendVarTransform.addReplacement(repl, varName, exp1,NONE());
       then ((v,(repl_1,vars)));
+
     case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindValue=SOME(bindValue)),(repl,vars)))
       equation
         exp = ValuesUtil.valueExp(bindValue);
         repl_1 = BackendVarTransform.addReplacement(repl, varName, exp,NONE());
       then ((v,(repl_1,vars)));
+
     case _ then inTpl;
   end matchcontinue;
 end removeParametersFinder;
