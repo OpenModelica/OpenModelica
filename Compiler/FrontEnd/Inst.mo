@@ -4959,9 +4959,9 @@ algorithm
         /*true = Flags.isSet(Flags.FAILTRACE);
         print(Absyn.pathString(path));print(" failed to make FQ in env:");
         print("\n");
-        print(Env.printEnvPathStr(env));
+        print(Env.printEnvPathStr(inEnv));
         print("\n");
-        //print(Env.printEnvStr(env));*/
+        // print(Env.printEnvStr(inEnv));*/
       then
         (cache,path);
   end matchcontinue;

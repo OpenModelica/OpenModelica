@@ -177,7 +177,7 @@ public function instantiateExternalObject
  This is done by instantiating the destructor and constructor
  functions and create a DAE element containing these two."
   input Env.Cache inCache;
-  input Env.Env env "environment";
+  input Env.Env inEnv "environment";
   input InnerOuter.InstHierarchy inIH;
   input list<SCode.Element> els "elements";
   input DAE.Mod inMod;
@@ -188,10 +188,10 @@ public function instantiateExternalObject
   output DAE.DAElist dae "resulting dae";
   output ClassInf.State ciState;
 algorithm
-  (outCache,outEnv,outIH,dae,ciState) := matchcontinue(inCache,env,inIH,els,inMod,impl)
+  (outCache,outEnv,outIH,dae,ciState) := matchcontinue(inCache,inEnv,inIH,els,inMod,impl)
     local
       SCode.Element destr,constr;
-      Env.Env env1;
+      Env.Env env,env1;
       Env.Cache cache;
       Ident className;
       Absyn.Path classNameFQ;
@@ -201,12 +201,14 @@ algorithm
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
       // Explicit instantiation, generate constructor and destructor and the function type.
-    case  (cache,_,ih,_,_,false)
+    case  (cache,env,ih,_,_,false)
       equation
         className=Env.getClassName(env); // The external object classname is in top frame of environment.
         checkExternalObjectMod(inMod, className);
         destr = SCode.getExternalObjectDestructor(els);
         constr = SCode.getExternalObjectConstructor(els);
+        env = Env.extendFrameC(env,destr);
+        env = Env.extendFrameC(env,constr);
         (cache,ih) = instantiateExternalObjectDestructor(cache,env,ih,destr);
         (cache,ih,functp) = instantiateExternalObjectConstructor(cache,env,ih,constr);
         SOME(classNameFQ)= Env.getEnvPath(env); // Fully qualified classname
@@ -223,9 +225,9 @@ algorithm
     // Implicit, do not instantiate constructor and destructor.
     case (cache,_,ih,_,_,true)
       equation
-        SOME(classNameFQ)= Env.getEnvPath(env); // Fully qualified classname
+        SOME(classNameFQ)= Env.getEnvPath(inEnv); // Fully qualified classname
       then
-        (cache,env,ih,DAE.emptyDae,ClassInf.EXTERNAL_OBJ(classNameFQ));
+        (cache,inEnv,ih,DAE.emptyDae,ClassInf.EXTERNAL_OBJ(classNameFQ));
 
     // failed
     else
@@ -455,6 +457,7 @@ algorithm
         (cache) = instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath,info);
 
         ty1 = InstUtil.setFullyQualifiedTypename(ty,fpath);
+        checkExtObjOutput(ty1,info);
         env_1 = Env.extendFrameT(env_1, n, ty1);
 
         // set the source of this element
@@ -481,7 +484,7 @@ algorithm
         List.map2_0(daeElts,InstUtil.checkFunctionElement,true,info);
         //env_11 = Env.extendFrameC(cenv,c);
         // Only created to be able to get FQ path.
-        (cache,fpath) = Inst.makeFullyQualified(cache,cenv, Absyn.IDENT(n));
+        (cache,fpath) = Inst.makeFullyQualified(cache,env,Absyn.IDENT(n));
 
         cmt = InstUtil.extractClassDefComment(cache, env, cd, cmt);
         derFuncs = InstUtil.getDeriveAnnotation(cd,cmt,fpath,cache,env,ih,pre,info);
@@ -489,6 +492,7 @@ algorithm
         (cache) = instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath,info);
 
         ty1 = InstUtil.setFullyQualifiedTypename(ty,fpath);
+        checkExtObjOutput(ty1,info);
         ((ty1,_)) = Types.traverseType((ty1,-1),Types.makeExpDimensionsUnknown);
         env_1 = Env.extendFrameT(cenv, n, ty1);
         vis = SCode.PUBLIC();
@@ -1043,5 +1047,44 @@ algorithm
     else true;
   end match;
 end isElementImportantForFunction;
+
+protected function checkExtObjOutput
+  input DAE.Type inType;
+  input Absyn.Info info;
+algorithm
+  _ := match (inType,info)
+    local
+      Absyn.Path path;
+      DAE.Type ty;
+    case (DAE.T_FUNCTION(funcResultType=ty,source={path}),_)
+      equation
+        ((_,(_,_,true))) = Types.traverseType((ty,(path,info,true)),checkExtObjOutputWork);
+      then ();
+  end match;
+end checkExtObjOutput;
+
+protected function checkExtObjOutputWork
+  input tuple<DAE.Type,tuple<Absyn.Path,Absyn.Info,Boolean>> inTpl;
+  output tuple<DAE.Type,tuple<Absyn.Path,Absyn.Info,Boolean>> outTpl;
+algorithm
+  outTpl := match inTpl
+    local
+      Absyn.Path path1,path2;
+      Absyn.Info info;
+      String str1,str2;
+      DAE.Type ty;
+      Boolean b;
+    case ((ty as DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(path1)),(path2,info,true)))
+      equation
+        path1 = Absyn.joinPaths(path1,Absyn.IDENT("constructor"));
+        str1 = Absyn.pathStringNoQual(path2);
+        str2 = Absyn.pathStringNoQual(path1);
+        b = Absyn.pathEqual(path1,path2);
+        Error.assertionOrAddSourceMessage(b, Error.FUNCTION_RETURN_EXT_OBJ, {str1,str2}, info);
+        outTpl = Util.if_(b,inTpl,(ty,(path2,info,false)));
+      then outTpl;
+    else inTpl;
+  end match;
+end checkExtObjOutputWork;
 
 end InstFunction;

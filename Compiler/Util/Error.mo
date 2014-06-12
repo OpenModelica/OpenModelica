@@ -736,6 +736,8 @@ public constant Message NORETCALL_INVALID_EXP = MESSAGE(544, TRANSLATION(), ERRO
   Util.gettext("Expression %s is not a valid statement - only function calls are allowed."));
 public constant Message INVALID_FLAG_TYPE_STRINGS = MESSAGE(545, SCRIPTING(), ERROR(),
   Util.gettext("Invalid type of flag %s, expected one of %s but got %s."));
+public constant Message FUNCTION_RETURN_EXT_OBJ = MESSAGE(546, TRANSLATION(), ERROR(),
+  Util.gettext("Function %s returns an external object, but the only function allowed to return this object is %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
