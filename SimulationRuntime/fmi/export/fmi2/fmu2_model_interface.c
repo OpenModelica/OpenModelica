@@ -120,8 +120,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiEventInfo* eventInfo)
 {
   int i;
   ModelInstance* comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmiEventUpdate", modelInitializationMode))
-    return fmiError;
+
   if (nullPointer(comp, "fmiEventUpdate", "eventInfo", eventInfo))
     return fmiError;
   eventInfo->valuesOfContinuousStatesChanged = fmiFalse;
@@ -397,9 +396,9 @@ fmiStatus fmiEnterInitializationMode(fmiComponent c) {
     /* Get next event time (sample calls)*/
     double nextSampleEvent = 0;
     nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
-    if (nextSampleEvent == -1){
+    if (nextSampleEvent == -1) {
       comp->eventInfo.nextEventTimeDefined = fmiFalse;
-    }else{
+    } else {
       comp->eventInfo.nextEventTimeDefined = fmiTrue;
       comp->eventInfo.nextEventTime = nextSampleEvent;
       fmiEventUpdate(comp, &(comp->eventInfo));
@@ -678,14 +677,27 @@ fmiStatus fmiNewDiscreteStates(fmiComponent c, fmiEventInfo* eventInfo) {
     return fmiError;
   FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiNewDiscreteStates")
 
+  eventInfo->newDiscreteStatesNeeded = fmiFalse;
+  eventInfo->terminateSimulation = fmiFalse;
+  eventInfo->nominalsOfContinuousStatesChanged = fmiFalse;
+  eventInfo->valuesOfContinuousStatesChanged = fmiFalse;
+  eventInfo->nextEventTimeDefined = fmiFalse;
+  eventInfo->nextEventTime = 0;
+
+  /* Get next event time (sample calls)*/
   double nextSampleEvent = 0;
   nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
-  if (nextSampleEvent == -1){
-    comp->eventInfo.nextEventTimeDefined = fmiFalse;
-  }else{
-    comp->eventInfo.nextEventTimeDefined = fmiTrue;
-    comp->eventInfo.nextEventTime = nextSampleEvent;
+  if (nextSampleEvent == -1) {
+    eventInfo->nextEventTimeDefined = fmiFalse;
+  } else {
+    eventInfo->nextEventTimeDefined = fmiTrue;
+    eventInfo->nextEventTime = nextSampleEvent;
     fmiEventUpdate(comp, eventInfo);
+  }
+
+  // set the state
+  if (eventInfo->newDiscreteStatesNeeded) {
+    comp->state = modelContinuousTimeMode;
   }
 
   return fmiOK;
