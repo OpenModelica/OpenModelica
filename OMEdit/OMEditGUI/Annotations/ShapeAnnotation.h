@@ -222,6 +222,7 @@ protected:
   QList<CornerItem*> mCornerItemsList;
   virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
+  virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
 };
 
 #endif // SHAPEANNOTATION_H

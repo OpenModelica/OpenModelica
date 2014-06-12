@@ -91,6 +91,8 @@ public slots:
   void handleComponentRotation();
   void updateConnectionAnnotation();
   void duplicate();
+protected:
+  virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
 };
 
 class ConnectionArray : public QDialog

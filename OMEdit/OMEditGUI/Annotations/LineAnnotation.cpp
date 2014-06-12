@@ -684,6 +684,32 @@ void LineAnnotation::duplicate()
   mpGraphicsView->setCanAddClassAnnotation(true);
 }
 
+/*!
+  Reimplementation of mousePressEvent.\n
+  Checks if user is making a connection then makes the Line unselectable.\n
+  \param event - QGraphicsSceneMouseEvent
+  \see ShapeAnnotation::mousePressEvent
+  */
+void LineAnnotation::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+  if ((mLineType == LineAnnotation::ConnectionType || mLineType == LineAnnotation::ShapeType) && mpGraphicsView)
+  {
+    if (mpGraphicsView->isCreatingConnection())
+    {
+      setFlag(QGraphicsItem::ItemIsSelectable, false);
+      setFlag(QGraphicsItem::ItemIsMovable, false);
+    }
+    else
+    {
+      setFlag(QGraphicsItem::ItemIsSelectable, true);
+      /* Only set the ItemIsMovable flag on shape if the class is not a system library class OR shape is not an inherited shape. */
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape())
+        setFlag(QGraphicsItem::ItemIsMovable, true);
+    }
+  }
+  QGraphicsItem::mousePressEvent(event);
+}
+
 ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent)
   : QDialog(pParent, Qt::WindowTitleHint), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation)
 {

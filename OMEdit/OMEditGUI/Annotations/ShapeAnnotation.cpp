@@ -1625,3 +1625,30 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
   }
   return value;
 }
+
+/*!
+  Reimplementation of mousePressEvent.\n
+  Checks if user is making a connection then makes all the shapes unselectable except Line.\n
+  Line shape is bit different so it is handled in its own class LineAnnotation.
+  \param event - QGraphicsSceneMouseEvent
+  \see LineAnnotation::mousePressEvent
+  */
+void ShapeAnnotation::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+  if (mpGraphicsView)
+  {
+    if (mpGraphicsView->isCreatingConnection())
+    {
+      setFlag(QGraphicsItem::ItemIsSelectable, false);
+      setFlag(QGraphicsItem::ItemIsMovable, false);
+    }
+    else
+    {
+      setFlag(QGraphicsItem::ItemIsSelectable, true);
+      /* Only set the ItemIsMovable flag on shape if the class is not a system library class OR shape is not an inherited shape. */
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape())
+        setFlag(QGraphicsItem::ItemIsMovable, true);
+    }
+  }
+  QGraphicsItem::mousePressEvent(event);
+}

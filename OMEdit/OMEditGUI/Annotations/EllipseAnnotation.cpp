@@ -38,7 +38,6 @@
 
 #include "EllipseAnnotation.h"
 
-
 EllipseAnnotation::EllipseAnnotation(QString annotation, Component *pParent)
   : ShapeAnnotation(pParent)
 {
