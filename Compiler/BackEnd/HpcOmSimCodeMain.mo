@@ -249,7 +249,7 @@ algorithm
 
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_merged.graphml");
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphSimplified, taskGraphDataSimplified, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
-      
+
       //Create schedule
       //---------------
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
