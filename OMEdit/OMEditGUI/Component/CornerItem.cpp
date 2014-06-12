@@ -167,16 +167,17 @@ QVariant CornerItem::itemChange(GraphicsItemChange change, const QVariant &value
 /*!
   \param pParent - pointer to QGraphicsItem.
   */
-ResizerItem::ResizerItem(QGraphicsItem *pParent)
-  : QGraphicsItem(pParent), mIsPressed(false)
+ResizerItem::ResizerItem(Component *pComponent)
+  : mIsPressed(false)
 {
   setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsSelectable);
   setCursor(Qt::ArrowCursor);
   setToolTip(Helper::clickAndDragToResize);
+  mpComponent = pComponent;
   mActivePen = QPen(Qt::red);
   mPassivePen = QPen(Qt::transparent);
   mRectangle = QRectF (-3, -3, 6, 6);
-  setPassive();
+  mPen = mPassivePen;
 }
 
 /*!
@@ -204,6 +205,7 @@ ResizerItem::ResizePositions ResizerItem::getResizePosition()
 void ResizerItem::setActive()
 {
   mPen = mActivePen;
+  setParentItem(mpComponent);
 }
 
 /*!
@@ -213,6 +215,8 @@ void ResizerItem::setActive()
 void ResizerItem::setPassive()
 {
   mPen = mPassivePen;
+  setParentItem(0);
+  mpComponent->getGraphicsView()->scene()->removeItem(this);
 }
 
 /*!

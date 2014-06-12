@@ -75,7 +75,7 @@ class ResizerItem : public QObject, public QGraphicsItem
   Q_INTERFACES(QGraphicsItem)
 public:
   enum ResizePositions {None, BottomLeft, TopLeft, TopRight, BottomRight};
-  ResizerItem(QGraphicsItem *pParent = 0);
+  ResizerItem(Component *pComponent);
   void setResizePosition(ResizePositions position);
   ResizePositions getResizePosition();
   void setActive();
@@ -84,6 +84,7 @@ public:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
   bool isPressed();
 private:
+  Component *mpComponent;
   QRectF mRectangle;
   int mIndex;
   QPen mPen;
