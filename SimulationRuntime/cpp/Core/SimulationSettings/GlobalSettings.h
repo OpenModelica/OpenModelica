@@ -65,5 +65,5 @@ private:
     OutputFormat _outputFormat;
     LogType _log_type;
 
-   
+
 };

@@ -132,7 +132,7 @@ initializes settings object by an xml file
 */
 void GlobalSettings::load(std::string xml_file)
  {
-   
+
 
 }
   void GlobalSettings::setRuntimeLibrarypath(string path)

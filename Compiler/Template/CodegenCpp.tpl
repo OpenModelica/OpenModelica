@@ -270,7 +270,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        void writeIntParameterNames(vector<string>& names);
        void writeBoolParameterNames(vector<string>& names);
        void writeStringParameterNames(vector<string>& names);
-       
+
        void writeAlgVarsResultDescription(vector<string>& names);
        void writeDiscreteAlgVarsResultDescription(vector<string>& names);
        void writeIntAlgVarsResultDescription(vector<string>& names);
@@ -3484,7 +3484,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       writeBoolParameterNames(paramnames);
       writeStringParameterNames(paramnames);
 
-    
+
       writeAlgVarsResultDescription(vardescs);
       writeDiscreteAlgVarsResultDescription(vardescs);
       writeIntAlgVarsResultDescription(vardescs);
