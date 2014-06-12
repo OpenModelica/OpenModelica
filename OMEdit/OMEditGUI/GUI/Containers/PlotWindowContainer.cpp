@@ -104,7 +104,7 @@ void PlotWindowContainer::addPlotWindow()
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
-    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/plotwindow.png"));
+    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/plot-window.svg"));
     pPlotWindow->show();
     pPlotWindow->setWindowState(Qt::WindowMaximized);
     setActiveSubWindow(pSubWindow);
@@ -116,18 +116,18 @@ void PlotWindowContainer::addPlotWindow()
   }
 }
 
-void PlotWindowContainer::addPlotParametricWindow()
+void PlotWindowContainer::addParametricPlotWindow()
 {
   try
   {
     PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this);
     pPlotWindow->setPlotType(PlotWindow::PLOTPARAMETRIC);
-    pPlotWindow->setWindowTitle(getUniqueName("Plot Parametric : "));
+    pPlotWindow->setWindowTitle(getUniqueName("Parametric Plot : "));
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
-    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/plotparametricwindow.png"));
+    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/parametric-plot-window.svg"));
     pPlotWindow->show();
     pPlotWindow->setWindowState(Qt::WindowMaximized);
     setActiveSubWindow(pSubWindow);

@@ -54,7 +54,7 @@ public:
   bool eventFilter(QObject *pObject, QEvent *pEvent);
 public slots:
   void addPlotWindow();
-  void addPlotParametricWindow();
+  void addParametricPlotWindow();
   void clearPlotWindow();
   void updatePlotWindows(QString variable);
 };

@@ -1635,9 +1635,9 @@ void MainWindow::addNewPlotWindow()
   mpPlotWindowContainer->addPlotWindow();
 }
 
-void MainWindow::addNewPlotParametricWindow()
+void MainWindow::addNewParametricPlotWindow()
 {
-  mpPlotWindowContainer->addPlotParametricWindow();
+  mpPlotWindowContainer->addParametricPlotWindow();
 }
 
 void MainWindow::clearPlotWindow()
@@ -2030,13 +2030,13 @@ void MainWindow::createActions()
     connect(mpModelSwitcherActions[i], SIGNAL(triggered()), this, SLOT(openRecentModelWidget()));
   }
   // new plot window action
-  mpNewPlotWindowAction = new QAction(QIcon(":/Resources/icons/plotwindow.png"), tr("New Plot Window"), this);
+  mpNewPlotWindowAction = new QAction(QIcon(":/Resources/icons/plot-window.svg"), tr("New Plot Window"), this);
   mpNewPlotWindowAction->setStatusTip(tr("Inserts new plot window"));
   connect(mpNewPlotWindowAction, SIGNAL(triggered()), SLOT(addNewPlotWindow()));
-  // new plot parametric action
-  mpNewPlotParametricWindowAction = new QAction(QIcon(":/Resources/icons/plotparametricwindow.png"), tr("New Plot Parametric Window"), this);
-  mpNewPlotParametricWindowAction->setStatusTip(tr("Inserts new plot parametric window"));
-  connect(mpNewPlotParametricWindowAction, SIGNAL(triggered()), SLOT(addNewPlotParametricWindow()));
+  // new parametric plot action
+  mpNewParametricPlotWindowAction = new QAction(QIcon(":/Resources/icons/parametric-plot-window.svg"), tr("New Parametric Plot Window"), this);
+  mpNewParametricPlotWindowAction->setStatusTip(tr("Inserts new parametric plot window"));
+  connect(mpNewParametricPlotWindowAction, SIGNAL(triggered()), SLOT(addNewParametricPlotWindow()));
   // clear plot window action
   mpClearPlotWindowAction = new QAction(QIcon(":/Resources/icons/clearmessages.png"), tr("Clear Plot Window"), this);
   mpClearPlotWindowAction->setStatusTip(tr("Clears all the curves from the plot window"));
@@ -2337,7 +2337,7 @@ void MainWindow::createToolbars()
   mpPlotToolBar->setEnabled(false);
   // add actions to Plot Toolbar
   mpPlotToolBar->addAction(mpNewPlotWindowAction);
-  mpPlotToolBar->addAction(mpNewPlotParametricWindowAction);
+  mpPlotToolBar->addAction(mpNewParametricPlotWindowAction);
   mpPlotToolBar->addAction(mpClearPlotWindowAction);
 }
 

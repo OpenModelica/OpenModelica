@@ -258,7 +258,7 @@ private:
   QAction *mpModelSwitcherActions[MaxRecentFiles];
   // Plot Toolbar Actions
   QAction *mpNewPlotWindowAction;
-  QAction *mpNewPlotParametricWindowAction;
+  QAction *mpNewParametricPlotWindowAction;
   QAction *mpClearPlotWindowAction;
   // Other Actions
   QAction *mpExportAsImageAction;
@@ -317,7 +317,7 @@ public slots:
   void toggleShapesButton();
   void openRecentModelWidget();
   void addNewPlotWindow();
-  void addNewPlotParametricWindow();
+  void addNewParametricPlotWindow();
   void clearPlotWindow();
   void showProgressBar();
   void hideProgressBar();
