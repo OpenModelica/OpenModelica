@@ -176,6 +176,8 @@ void SimulationDialog::setUpForm()
   // Output filename
   mpFileNameLabel = new Label(tr("File Name (Optional):"));
   mpFileNameTextBox = new QLineEdit;
+  mpFileNameTextBox->setToolTip(tr("The name is used as a prefix for the output files. This is just a name not the path.\n"
+                                   "If you want to change the output path then update the working directory in Options/Preferences."));
   // Variable filter
   mpVariableFilterLabel = new Label(tr("Variable Filter (Optional):"));
   mpVariableFilterTextBox = new QLineEdit;
