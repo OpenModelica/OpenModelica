@@ -71,29 +71,5 @@ private:
     _eventOutput;
 
 
-   //Serialization of settings class
-  /*friend class boost::serialization::access;     vxworkstodo
-    template<class archive>
-  void serialize(archive& ar, const unsigned int version)
-
-    {
-
-        try
-        {
-            using boost::serialization::make_nvp;
-            ar & make_nvp("HInit", _hInit);
-            ar & make_nvp("LowerLimit", _hLowerLimit);
-            ar & make_nvp("UpperLimit", _hUpperLimit);
-            ar &   make_nvp("EndTimeTol", _endTimeTol);
-            ar &   make_nvp("ZeroTol", _zeroTol);
-            ar &   make_nvp("ZeroTimeTol", _zeroTimeTol);
-
-        }
-        catch(std::exception& ex)
-        {
-            string error = ex.what();
-        }
-
-
-  }*/
+ 
 };

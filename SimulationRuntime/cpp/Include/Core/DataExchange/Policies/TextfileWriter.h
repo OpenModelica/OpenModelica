@@ -75,7 +75,7 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
   @start_time
   @end_time
   */
-   void write(const value_type_v& v_list,double start_time,double end_time)
+   void write(const value_type_p& v_list,double start_time,double end_time)
    {
 
       //not supported for file output

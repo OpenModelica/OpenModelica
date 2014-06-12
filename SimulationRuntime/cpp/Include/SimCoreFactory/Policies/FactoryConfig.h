@@ -26,8 +26,7 @@
     #include "Utils/extension/factory_map.hpp"
     #include <boost/filesystem/operations.hpp>
     #include <boost/filesystem/path.hpp>
-    //#include <boost/archive/xml_oarchive.hpp>
-    //#include <boost/archive/xml_iarchive.hpp>
+
 
     #include <boost/unordered_map.hpp>
 

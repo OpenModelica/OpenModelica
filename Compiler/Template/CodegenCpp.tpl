@@ -270,7 +270,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        void writeIntParameterNames(vector<string>& names);
        void writeBoolParameterNames(vector<string>& names);
        void writeStringParameterNames(vector<string>& names);
-
+       
        void writeAlgVarsResultDescription(vector<string>& names);
        void writeDiscreteAlgVarsResultDescription(vector<string>& names);
        void writeIntAlgVarsResultDescription(vector<string>& names);
@@ -3484,7 +3484,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       writeBoolParameterNames(paramnames);
       writeStringParameterNames(paramnames);
 
-
+    
       writeAlgVarsResultDescription(vardescs);
       writeDiscreteAlgVarsResultDescription(vardescs);
       writeIntAlgVarsResultDescription(vardescs);
@@ -5148,104 +5148,104 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
        {
         <% if vars.algVars then
         'description += <%(vars.algVars |> SIMVAR(__) =>
-        '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+        '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
 
        }
        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeDiscreteAlgVarsResultDescription(vector<string>& description)
        {
         <% if vars.discreteAlgVars then
         'description += <%(vars.discreteAlgVars |> SIMVAR(__) =>
-        '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+        '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
 
        }
        void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAlgVarsResultDescription(vector<string>& description)
         {
          <% if vars.intAlgVars then
          'description += <%(vars.intAlgVars |> SIMVAR(__) =>
-           '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+           '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
         void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAlgVarsResultDescription(vector<string>& description)
         {
         <% if vars.boolAlgVars then
          'description +=<%(vars.boolAlgVars |> SIMVAR(__) =>
-           '"<%Util.escapeModelicaStringToXmlString(comment)%>"'  ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+           '"<%Util.escapeModelicaStringToCString(comment)%>"'  ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
 
         void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntputVarsResultDescription(vector<string>& description)
         {
           <% if vars.inputVars then
           'description += <%(vars.inputVars |> SIMVAR(__) =>
-           '"<%Util.escapeModelicaStringToXmlString(comment)%>"'  ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+           '"<%Util.escapeModelicaStringToCString(comment)%>"'  ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
 
         void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeOutputVarsResultDescription(vector<string>& description)
         {
           <% if vars.outputVars then
           'description += <%(vars.outputVars |> SIMVAR(__) =>
-           '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+           '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
 
         void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAliasVarsResultDescription(vector<string>& description)
         {
          <% if vars.aliasVars then
          'description +=<%(vars.aliasVars |> SIMVAR(__) =>
-          '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += "  )%>;' %>
+          '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += "  )%>;' %>
         }
 
        void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAliasVarsResultDescription(vector<string>& description)
         {
         <% if vars.intAliasVars then
            'description += <%(vars.intAliasVars |> SIMVAR(__) =>
-            '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+            '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
 
         void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAliasVarsResultDescription(vector<string>& description)
         {
           <% if vars.boolAliasVars then
           'description += <%(vars.boolAliasVars |> SIMVAR(__) =>
-            '"<%Util.escapeModelicaStringToXmlString(comment)%>"';separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+            '"<%Util.escapeModelicaStringToCString(comment)%>"';separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
 
         void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeStateVarsResultDescription(vector<string>& description)
         {
         <% if vars.stateVars then
           'description += <%(vars.stateVars |> SIMVAR(__) =>
-           '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+           '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
 
         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeDerivativeVarsResultDescription(vector<string>& description)
         {
          <% if vars.derivativeVars then
           'description += <%(vars.derivativeVars |> SIMVAR(__) =>
-          '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+          '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
 
          void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeParameterDescription(vector<string>& names)
         {
          <% if vars.paramVars then
           'names += <%(vars.paramVars |> SIMVAR(__) =>
-          '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+          '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
 
          void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntParameterDescription(vector<string>& names)
         {
          <% if vars.intParamVars then
           'names += <%(vars.intParamVars |> SIMVAR(__) =>
-          '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+          '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
 
          void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolParameterDescription(vector<string>& names)
         {
          <% if vars.boolParamVars then
           'names += <%(vars.boolParamVars |> SIMVAR(__) =>
-          '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+          '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
 
          void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeStringParameterDescription(vector<string>& names)
         {
          <% if vars.stringParamVars then
           'names += <%(vars.stringParamVars |> SIMVAR(__) =>
-          '"<%Util.escapeModelicaStringToXmlString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+          '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
 
 

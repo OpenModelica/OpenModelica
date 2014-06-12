@@ -132,24 +132,7 @@ initializes settings object by an xml file
 */
 void GlobalSettings::load(std::string xml_file)
  {
-    /*try
-    {
-
-    std::ifstream ifs(xml_file.c_str());
-    if(!ifs.good())
-    cout<< "Settings file not found for :"  << xml_file << std::endl;
-    else
-    {
-    boost::archive::xml_iarchive xml(ifs);
-    xml >>boost::serialization::make_nvp("GlobalSettings", *this);
-    ifs.close();
-    }
-    }
-    catch(std::exception& ex)
-    {
-    std::string error = ex.what();
-    cout<< error <<std::endl;
-    }*/
+   
 
 }
   void GlobalSettings::setRuntimeLibrarypath(string path)
@@ -160,8 +143,4 @@ void GlobalSettings::load(std::string xml_file)
    {
    return _runtimeLibraryPath;
    }
- /* std::fstream ofs;
-    ofs.open("C:\\Temp\\GlobalSettings.xml", ios::out);
-    boost::archive::xml_oarchive xml(ofs);
-    xml << boost::serialization::make_nvp("GlobalSettings", *this);
-    ofs.close();*/
+

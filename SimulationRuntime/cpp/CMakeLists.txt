@@ -19,7 +19,8 @@ ENDIF(ANALYZATION_MODE)
 
 # on windows  boost,blas,lapack  and sundial solvers from omdev is used else the installed versions are used
 IF( WIN32 )
-SET(ENV{BOOST_ROOT} $ENV{OMDEV}"/lib/3rdParty/boost-1_49/")
+SET(ENV{BOOST_ROOT} $ENV{OMDEV}"/lib/3rdParty/boost-1_55/")
+#SET(ENV{BOOST_ROOT} $ENV{OMDEV}"/lib/3rdParty/boost-1_49/")
 SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
 SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
 SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
@@ -104,7 +105,11 @@ SET(Boost_USE_STATIC_RUNTIME OFF)
 
 find_package(Boost COMPONENTS thread)
 find_package(Threads)
-find_package(Boost COMPONENTS filesystem system serialization program_options REQUIRED)
+#find_package(Boost COMPONENTS filesystem system serialization program_options log REQUIRED)
+find_package(Boost COMPONENTS filesystem system program_options log log_setup REQUIRED)
+
+message(STATUS "Boost Libraries")
+message(STATUS ${Boost_LIBRARIES})
 
 # Lapack and Blas
 find_package( BLAS )
@@ -137,6 +142,10 @@ endif()
 
 message(STATUS "Lapack Libraries")
 message(STATUS ${LAPACK_LIBRARIES})
+
+
+
+
 # Sundials solvers
 if(USE_SUNDIALS)
 

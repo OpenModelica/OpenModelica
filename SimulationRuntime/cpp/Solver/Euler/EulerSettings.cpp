@@ -73,30 +73,8 @@ initializes settings object by an xml file
 */
 void EulerSettings::load(std::string xml_file)
 {
-   /* try
-    {
-
-        std::ifstream ifs(xml_file.c_str());
-        if(!ifs.good())
-            cout<< "Settings file not found for :"  << xml_file << std::endl;
-        else
-        {
-            boost::archive::xml_iarchive xml(ifs);
-            xml >>boost::serialization::make_nvp("EulerSettings", *this);
-            ifs.close();
-        }
-    }
-    catch(std::exception& ex)
-    {
-        std::string error = ex.what();
-        cout<< error <<std::endl;
-    }*/
+  
 
 }
 
 
- /* std::fstream ofs;
-    ofs.open("C:\\Temp\\EulerSettings.xml", ios::out);
-    boost::archive::xml_oarchive xml(ofs);
-    xml << boost::serialization::make_nvp("EulerSettings", *this);
-    ofs.close();*/

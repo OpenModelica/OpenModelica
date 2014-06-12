@@ -125,7 +125,7 @@ void SolverDefaultImplementation::initialize()
         _zeroValLastSuccess      = new double[_dimZeroFunc];
         _events                        = new bool[_dimZeroFunc];
         _zeroValInit                  = new double[_dimZeroFunc];
-
+        continous_system->evaluateZeroFuncs(IContinuous::CONTINUOUS);
         event_system->getZeroFunc(_zeroVal);
         memcpy(_zeroValLastSuccess,_zeroVal,_dimZeroFunc*sizeof(double));
         memcpy(_zeroValInit,_zeroVal,_dimZeroFunc*sizeof(double));

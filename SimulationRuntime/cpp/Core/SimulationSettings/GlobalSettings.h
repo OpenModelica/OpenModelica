@@ -1,7 +1,5 @@
 #pragma once
 
-#include <boost/archive/xml_oarchive.hpp>
-#include <boost/archive/xml_iarchive.hpp>
 
 #include <fstream>
 
@@ -67,33 +65,5 @@ private:
     OutputFormat _outputFormat;
     LogType _log_type;
 
-    //Serialization of settings class
-
-    /*friend class boost::serialization::access;
-    template<class archive>
-    void serialize(archive& ar, const unsigned int version)
-
-    {
-
-        try
-        {
-            using boost::serialization::make_nvp;
-            ar & make_nvp("SelectedSolver", _selected_solver);
-            ar & make_nvp("SelectedNonLinSolver", _selected_nonlin_solver);
-            ar & make_nvp("StartTime", _startTime);
-            ar & make_nvp("EndTime", _endTime);
-            ar & make_nvp("HOutput", _hOutput);
-            ar &   make_nvp("ResultsOutput", _resultsOutput);
-            ar &   make_nvp("InfoOutput", _infoOutput);
-            ar &   make_nvp("OutputPath", _output_path);
-
-        }
-        catch(std::exception& ex)
-        {
-            string error = ex.what();
-        }
-
-
-    }
-    */
+   
 };

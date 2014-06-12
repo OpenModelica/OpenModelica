@@ -66,34 +66,6 @@ private:
 
     double
         _iterTol;                ///< Tolerance for newton iteration (used when _useNewtonIteration=true) (default: 1e-8)
-/*
-    //Serialization of settings class
-    friend class boost::serialization::access;
-    template<class archive>
-    void serialize(archive& ar, const unsigned int version)
 
-    {
-
-        try
-        {
-            using boost::serialization::make_nvp;
-            // serialize base class information
-            //ar & boost::serialization::base_object<SolverSettings>(*this);
-            ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(SolverSettings);
-            ar & make_nvp("EulerMethod", _method);
-            ar & make_nvp("ZeroSearchMethod", _zeroSearchMethod);
-            ar & make_nvp("UseDenseOutput", _denseOutput);
-            ar & make_nvp("UseNewtonIteration", _useNewtonIteration);
-            ar & make_nvp("UseSturm", _useSturmSequence);
-
-        }
-        catch(std::exception& ex)
-        {
-            string error = ex.what();
-        }
-
-
-    }
-  */
 
 };
