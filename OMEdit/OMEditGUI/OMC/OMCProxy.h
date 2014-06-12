@@ -205,7 +205,7 @@ public:
   bool setIndexReductionMethod(QString method);
   bool setCommandLineOptions(QString options);
   bool clearCommandLineOptions();
-  QString makeDocumentationImagesUriToFileName(QString documentation);
+  QString makeDocumentationUriToFileName(QString documentation);
   QString uriToFilename(QString uri);
   QString getModelicaPath();
   QStringList getAvailableLibraries();

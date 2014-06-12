@@ -197,7 +197,6 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
   settings()->setFontFamily(QWebSettings::StandardFont, "Verdana");
   settings()->setFontSize(QWebSettings::DefaultFontSize, 10);
   settings()->setAttribute(QWebSettings::LocalStorageEnabled, true);
-  settings()->setDefaultTextEncoding(Helper::utf8);
   // set DocumentationViewer web page policy
   page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
   connect(page(), SIGNAL(linkClicked(QUrl)), SLOT(processLinkClick(QUrl)));
@@ -215,18 +214,23 @@ void DocumentationViewer::processLinkClick(QUrl url)
     QDesktopServices::openUrl(url);
   }
   // if the user has clicked on some Modelica Links like modelica://
-  else if (url.toString().startsWith("modelica", Qt::CaseInsensitive))
+  else if (url.scheme().compare("modelica") == 0)
   {
-    /*! @note QUrl converts the url to lowercase. We use the LibraryTreeWidget->getLibraryTreeNode() method to find the classname
-     * by doing the search using the Qt::CaseInsensitive.
-     * This will be wrong if we have Modelica classes like Modelica.ABC and Modelica.abc
-     */
-    // remove modelica:// from link
-    QString className = url.toString().mid(11, url.toString().length() - 1);
-    LibraryTreeNode *pLibraryTreeNode = mpDocumentationWidget->getMainWindow()->getLibraryTreeWidget()->getLibraryTreeNode(className, Qt::CaseInsensitive);
-    // send the new className to DocumentationWidget
-    if (pLibraryTreeNode)
-      mpDocumentationWidget->showDocumentation(pLibraryTreeNode->getNameStructure());
+    // remove modelica:/// from Qurl
+    QString resourceLink = url.toString().mid(12);
+    /* if the link is a resource e.g .html, .txt or .pdf */
+    if (resourceLink.endsWith(".html") || resourceLink.endsWith(".txt") || resourceLink.endsWith(".pdf"))
+    {
+      QString resourceAbsoluteFileName = mpDocumentationWidget->getMainWindow()->getOMCProxy()->uriToFilename("modelica://" + resourceLink);
+      QDesktopServices::openUrl("file:///" + resourceAbsoluteFileName);
+    }
+    else
+    {
+      LibraryTreeNode *pLibraryTreeNode = mpDocumentationWidget->getMainWindow()->getLibraryTreeWidget()->getLibraryTreeNode(resourceLink);
+      // send the new className to DocumentationWidget
+      if (pLibraryTreeNode)
+        mpDocumentationWidget->showDocumentation(pLibraryTreeNode->getNameStructure());
+    }
   }
   // if it is normal http request then check if its not redirected to https
   else

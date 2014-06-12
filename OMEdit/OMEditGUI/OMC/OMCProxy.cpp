@@ -1418,10 +1418,10 @@ QString OMCProxy::getDocumentationAnnotation(QString className)
       doc += "<p style=\"font-size:12px;\"><strong><u>Revisions</u></strong></p>";
     int i,j;
     /*
-       * Documentation may have the form
-       * text <HTML>...</html> text <html>...</HTML> [...]
-       * Nothing is standardized, but we will treat non-html tags as <pre>-formatted text
-       */
+     * Documentation may have the form
+     * text <HTML>...</html> text <html>...</HTML> [...]
+     * Nothing is standardized, but we will treat non-html tags as <pre>-formatted text
+     */
     while (1) {
       docElement = docElement.trimmed();
       i = docElement.indexOf("<html>", 0, Qt::CaseInsensitive);
@@ -1439,7 +1439,16 @@ QString OMCProxy::getDocumentationAnnotation(QString className)
       doc += "<pre>" + docElement.replace("<","&lt;").replace(">","&gt;") + "</pre>";
     }
   }
-  return makeDocumentationImagesUriToFileName(doc);
+  QString documentation = makeDocumentationUriToFileName(doc);
+  /*! @note We convert modelica:// to modelica:///.
+    * This tells QWebview that these links doesn't have any host.
+    * Why we are doing this. Because,
+    * QUrl converts the url host to lowercase. So if we use modelica:// then links like modelica://Modelica.Icons will be converted to
+    * modelica://modelica.Icons. We use the LibraryTreeWidget->getLibraryTreeNode() method to find the classname
+    * by doing the search using the Qt::CaseInsensitive. This will be wrong if we have Modelica classes like Modelica.Icons and modelica.Icons
+    * \see DocumentationViewer::processLinkClick
+    */
+  return documentation.replace("modelica://", "modelica:///");
 }
 
 /*!
@@ -2280,7 +2289,7 @@ bool OMCProxy::clearCommandLineOptions()
   \param documentation - in html form.
   \return New documentation in html form.
   */
-QString OMCProxy::makeDocumentationImagesUriToFileName(QString documentation)
+QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
 {
   QWebPage webPage;
   QWebFrame *pWebFrame = webPage.mainFrame();
@@ -2321,9 +2330,14 @@ QString OMCProxy::uriToFilename(QString uri)
   QString result = StringHandler::removeFirstLastBrackets(getResult());
   result = result.prepend("{").append("}");
   QStringList results = StringHandler::unparseStrings(result);
-  /* uriToFilename does not set errors.
-  printMessagesStringInternal();
-  */
+  /* the second argument of uriToFilename result is error string. */
+  if (results.size() > 1 && !results.at(1).isEmpty())
+  {
+    QString errorString = results.at(1);
+    mpMainWindow->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, errorString, Helper::scriptingKind,
+                                                                          Helper::errorLevel, 0,
+                                                                          mpMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
+  }
   if (results.size() > 0)
     return results.first();
   else
