@@ -1794,14 +1794,14 @@ algorithm
     true = intLe(counter,listLength(OrigIncidenceVec));
     true = intEq(indexVar,intVar);
     newIncidenceVec2=listDelete(OrigIncidenceVec,counter-1);
-    mIn = Util.arrayReplaceAtWithFill(EgInt,newIncidenceVec2,newIncidenceVec2,mIn);
-    mOut=manipulatedAdjacencyMatrix2(IncidenceVec2,OrigIncidenceVec,mIn,intVar,EgInt,counter+1);
+    mOut = Util.arrayReplaceAtWithFill(EgInt,newIncidenceVec2,newIncidenceVec2,mIn);
+    mOut = manipulatedAdjacencyMatrix2(IncidenceVec2,OrigIncidenceVec,mOut,intVar,EgInt,counter+1);
   then mOut;
 
   case(indexVar :: IncidenceVec2,_,_,_,_,_)equation
     true = intLe(counter,listLength(OrigIncidenceVec));
     mOut=manipulatedAdjacencyMatrix2(IncidenceVec2,OrigIncidenceVec,mIn,intVar,EgInt,counter+1);
-  then mIn;
+  then mOut;
  end matchcontinue;
 end manipulatedAdjacencyMatrix2;
 
