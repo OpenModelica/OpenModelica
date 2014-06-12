@@ -1459,14 +1459,15 @@ algorithm
       list<Integer> unassignedEqns2;
       Integer indexEq;
       BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> eqns_list2;
 
   case({},_,_,_) then eqns_list;
     case (indexEq :: unassignedEqns2, _, _,_ ) equation
     eqn = listGet(eqns_list, indexEq);
-    (eqns_1,_) = BackendVarTransform.replaceEquations({eqn}, repl,NONE());
+    (eqns_1,_) = BackendVarTransform.replaceEquations({eqn}, repl, NONE());
     eqn = listGet(eqns_1, 1);
-    eqns_list = List.set(eqns_list, indexEq, eqn);
-    eqns_1=removeEqswork(unassignedEqns2,eqns_list,vars,repl);
+    eqns_list2 = List.set(eqns_list, indexEq, eqn);
+    eqns_1 = removeEqswork(unassignedEqns2, eqns_list2, vars, repl);
     then eqns_1;
 
   end matchcontinue;
@@ -1492,13 +1493,13 @@ algorithm
     case (indexEq :: unassignedEqns2, _, _,_,_,_) equation
         listIncidenceMatrix = inM[indexEq];
         true = minimizationUnassignedEqns2(listIncidenceMatrix,vecVarToEqs,me);
-        origUnassignedEqns=listAppend(origUnassignedEqns,{indexEq});
-       (outUnassignedEqns,outResidualUnassignedEqns)= minimizationUnassignedEqns(unassignedEqns2,origUnassignedEqns,residualUnassignedEqns,inM,vecVarToEqs,me);
+        outUnassignedEqns = listAppend(origUnassignedEqns,{indexEq});
+       (outUnassignedEqns,outResidualUnassignedEqns) = minimizationUnassignedEqns(unassignedEqns2,outUnassignedEqns,residualUnassignedEqns,inM,vecVarToEqs,me);
     then (outUnassignedEqns,outResidualUnassignedEqns);
 
     case (indexEq :: unassignedEqns2, _, _,_,_,_) equation
-        residualUnassignedEqns=listAppend(residualUnassignedEqns,{indexEq});
-       (outUnassignedEqns,outResidualUnassignedEqns)= minimizationUnassignedEqns(unassignedEqns2,origUnassignedEqns,residualUnassignedEqns,inM,vecVarToEqs,me);
+        outResidualUnassignedEqns = listAppend(residualUnassignedEqns,{indexEq});
+       (outUnassignedEqns,outResidualUnassignedEqns) = minimizationUnassignedEqns(unassignedEqns2,origUnassignedEqns,outResidualUnassignedEqns,inM,vecVarToEqs,me);
     then (outUnassignedEqns,outResidualUnassignedEqns);
   end matchcontinue;
 end  minimizationUnassignedEqns;
@@ -1588,9 +1589,9 @@ algorithm
       case({},_,_) then unassignedEqns;
 
       case(indexEq :: inUnassignedEqns2, _, _) equation
-        index=mapIncRowEqn[indexEq];
-        unassignedEqns=listAppend(unassignedEqns,{index});
-        outUnassignedEqns=adaptUnassignedEqns(inUnassignedEqns2, unassignedEqns, mapIncRowEqn);
+        index = mapIncRowEqn[indexEq];
+        outUnassignedEqns = listAppend(unassignedEqns,{index});
+        outUnassignedEqns = adaptUnassignedEqns(inUnassignedEqns2, outUnassignedEqns, mapIncRowEqn);
       then outUnassignedEqns;
   end matchcontinue;
 end adaptUnassignedEqns;
@@ -1642,8 +1643,8 @@ algorithm
     Boolean boolUnassignedEqns, divideByZero;
     Integer pos;
     DAE.Ident ident;
-    BackendDAE.IncidenceMatrix mCopy;
-    BackendDAE.IncidenceMatrixT mtCopy;
+    BackendDAE.IncidenceMatrix mCopy, m2;
+    BackendDAE.IncidenceMatrixT mtCopy, mt2;
 
     case (_, _, _, _, _, _, _, _, _, _, _, _) equation
       nVars = BackendVariable.varsSize(vars);
@@ -1687,17 +1688,17 @@ algorithm
       outRepl = equationsReplaceEquations(flatComps, eqns_list, vars, vec2, repl, outMarkerComps);
 
       (divideByZero,pos,ident)=BackendVarTransform.divideByZeroReplacements(outRepl);
-      (inM,inMt)=manipulatedAdjacencyMatrix(divideByZero, ident, vars, 1, vec1,inM,inMt);
+      (m2,mt2)=manipulatedAdjacencyMatrix(divideByZero, ident, vars, 1, vec1, inM, inMt);
       //unassignedEqns=adaptUnassignedEqns(unassignedEqns, {}, mapIncRowEqn);
       eqns_1=removeEqswork(unassignedEqns,eqns_list,vars,outRepl);
       substEqns = BackendEquation.listEquation(eqns_1);
-      (outUnassignedEqns, true) = getConsistentEquations(unassignedEqns, substEqns, eqns, inM, vec1,vars, shared);
+      (outUnassignedEqns, true) = getConsistentEquations(unassignedEqns, substEqns, eqns, m2, vec1,vars, shared);
 
       // remove all unassigned equations
       substEqns = BackendEquation.equationDelete(substEqns, outUnassignedEqns);
       origEqns = BackendEquation.equationDelete(inOrigEqns, outUnassignedEqns);
 
-    then fixOverDeterminedInitialSystem(vars, substEqns, inOrigEqns, nUnassignedEqns, inMOrig, inM, inMt, me, meT, mapEqnIncRow, mapIncRowEqn, shared);
+    then fixOverDeterminedInitialSystem(vars, substEqns, inOrigEqns, nUnassignedEqns, inMOrig, m2, mt2, me, meT, mapEqnIncRow, mapIncRowEqn, shared);
 
     else // equation
       // Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function fixOverDeterminedInitialSystem failed");
@@ -1732,18 +1733,18 @@ algorithm
       cref = BackendVariable.varCref(var);
       DAE.CREF_IDENT(ident = identVar,subscriptLst = {})=cref;
       false = ident ==& identVar;
-      (mOut,mtOut)=manipulatedAdjacencyMatrix(divideByZero, ident, vars, counter+1, vecVartoEq, m, mt );
+      (mOut,mtOut) = manipulatedAdjacencyMatrix(divideByZero, ident, vars, counter+1, vecVartoEq, m, mt );
     then (mOut,mtOut);
 
     case(true, _, _, _, _, _, _) equation
       nVars = BackendVariable.varsSize(vars);
       true = intLe(counter,nVars);
-      intEg=vecVartoEq[counter];
-      IncidenceVec=m[intEg];
-      m=manipulatedAdjacencyMatrix2(IncidenceVec,IncidenceVec,m,counter,intEg,1);
-      IncidenceVec=mt[counter];
-      mt=manipulatedAdjacencyMatrixT2(IncidenceVec,IncidenceVec,mt,counter,intEg,1);
-    then(m,mt);
+      intEg = vecVartoEq[counter];
+      IncidenceVec = m[intEg];
+      mOut = manipulatedAdjacencyMatrix2(IncidenceVec,IncidenceVec,m,counter,intEg,1);
+      IncidenceVec = mt[counter];
+      mtOut = manipulatedAdjacencyMatrixT2(IncidenceVec,IncidenceVec,mt,counter,intEg,1);
+    then(mOut,mtOut);
   end matchcontinue;
 end manipulatedAdjacencyMatrix;
 
@@ -1764,15 +1765,15 @@ algorithm
   case(indexEq :: IncidenceVec2,_,_,_,_,_)equation
     true = intLe(counter,listLength(OrigIncidenceVec));
     true = intEq(indexEq,EgInt);
-    newIncidenceVec2=listDelete(OrigIncidenceVec,counter-1);
-    mtIn = Util.arrayReplaceAtWithFill(intVar,newIncidenceVec2,newIncidenceVec2,mtIn);
-    mtOut=manipulatedAdjacencyMatrixT2(IncidenceVec2,OrigIncidenceVec,mtIn,intVar,EgInt,counter+1);
+    newIncidenceVec2 = listDelete(OrigIncidenceVec,counter-1);
+    mtOut = Util.arrayReplaceAtWithFill(intVar,newIncidenceVec2,newIncidenceVec2,mtIn);
+    mtOut = manipulatedAdjacencyMatrixT2(IncidenceVec2,OrigIncidenceVec,mtOut,intVar,EgInt,counter+1);
   then mtOut;
 
   case(indexEq :: IncidenceVec2,_,_,_,_,_)equation
     true = intLe(counter,listLength(OrigIncidenceVec));
-    mtOut=manipulatedAdjacencyMatrixT2(IncidenceVec2,OrigIncidenceVec,mtIn,intVar,EgInt,counter+1);
-  then mtIn;
+    mtOut = manipulatedAdjacencyMatrixT2(IncidenceVec2,OrigIncidenceVec,mtIn,intVar,EgInt,counter+1);
+  then mtOut;
  end matchcontinue;
 end manipulatedAdjacencyMatrixT2;
 
@@ -1793,14 +1794,14 @@ algorithm
   case(indexVar :: IncidenceVec2,_,_,_,_,_)equation
     true = intLe(counter,listLength(OrigIncidenceVec));
     true = intEq(indexVar,intVar);
-    newIncidenceVec2=listDelete(OrigIncidenceVec,counter-1);
+    newIncidenceVec2 = listDelete(OrigIncidenceVec,counter-1);
     mOut = Util.arrayReplaceAtWithFill(EgInt,newIncidenceVec2,newIncidenceVec2,mIn);
     mOut = manipulatedAdjacencyMatrix2(IncidenceVec2,OrigIncidenceVec,mOut,intVar,EgInt,counter+1);
   then mOut;
 
   case(indexVar :: IncidenceVec2,_,_,_,_,_)equation
     true = intLe(counter,listLength(OrigIncidenceVec));
-    mOut=manipulatedAdjacencyMatrix2(IncidenceVec2,OrigIncidenceVec,mIn,intVar,EgInt,counter+1);
+    mOut = manipulatedAdjacencyMatrix2(IncidenceVec2,OrigIncidenceVec,mIn,intVar,EgInt,counter+1);
   then mOut;
  end matchcontinue;
 end manipulatedAdjacencyMatrix2;
