@@ -139,8 +139,8 @@ algorithm
       list<BackendDAE.TimeEvent> timeEvents;
       BackendDAE.StrongComponents allComps, initComps;
 
-      HpcOmTaskGraph.TaskGraph taskGraph, taskGraphOde, taskGraphSimplified, taskGraphDuplicatedTasks, taskGraphInit;
-      HpcOmTaskGraph.TaskGraphMeta taskGraphData, taskGraphDataOde, taskGraphDataSimplified,taskGraphDataDuplicatedTasks, taskGraphDataInit;
+      HpcOmTaskGraph.TaskGraph taskGraph, taskGraphOde, taskGraphSimplified, taskGraphScheduled, taskGraphInit;
+      HpcOmTaskGraph.TaskGraphMeta taskGraphData, taskGraphDataOde, taskGraphDataSimplified,taskGraphDataScheduled, taskGraphDataInit;
       String fileName, fileNamePrefix;
       Integer numProc;
       list<list<Integer>> parallelSets;
@@ -247,22 +247,22 @@ algorithm
       //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraph,taskGraphSimplified);
       //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraphMeta,taskGraphDataSimplified);
 
-
+      fileName = ("taskGraph"+&filenamePrefix+&"ODE_merged.graphml");
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphSimplified, taskGraphDataSimplified, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
+      
       //Create schedule
       //---------------
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       (numProc,_) = setNumProc(numProc,cpCostsWoC,taskGraphDataOde);//in case n-flag is not set
-      (schedule,simCode,taskGraphDuplicatedTasks,taskGraphDataDuplicatedTasks,sccSimEqMapping) = createSchedule(taskGraphSimplified,taskGraphDataSimplified,sccSimEqMapping,filenamePrefix,numProc,simCode);
+      (schedule,simCode,taskGraphScheduled,taskGraphDataScheduled,sccSimEqMapping) = createSchedule(taskGraphSimplified,taskGraphDataSimplified,sccSimEqMapping,filenamePrefix,numProc,simCode);
       //(schedule,numProc) = repeatScheduleWithOtherNumProc(taskGraphSimplified,taskGraphDataSimplified,sccSimEqMapping,filenamePrefix,cpCostsWoC,schedule,numProc,numFixed);
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
-      criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(schedule,numProc,taskGraphSimplified,taskGraphDataSimplified);
-      schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraphSimplified));
+      criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(schedule,numProc,taskGraphScheduled,taskGraphDataScheduled);
+      schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraphScheduled));
       Debug.execStat("hpcom create schedule", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
 
-      fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule_duplic.graphml");
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDuplicatedTasks, taskGraphDataDuplicatedTasks, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphSimplified, taskGraphDataSimplified, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphScheduled, taskGraphDataScheduled, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
       //HpcOmScheduler.printSchedule(schedule);
 
       Debug.execStat("hpcom dump schedule TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
