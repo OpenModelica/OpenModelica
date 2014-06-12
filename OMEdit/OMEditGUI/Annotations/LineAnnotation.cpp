@@ -82,6 +82,12 @@ LineAnnotation::LineAnnotation(Component *pStartComponent, GraphicsView *pGraphi
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
+  // use the linecolor of start component for the connection line.
+  if (pStartComponent->getShapesList().size() > 0)
+  {
+    ShapeAnnotation *pShapeAnnotation = pStartComponent->getShapesList().at(0);
+    mLineColor = pShapeAnnotation->getLineColor();
+  }
   // set the graphics view
   mpGraphicsView->scene()->addItem(this);
   // set the start component
