@@ -4064,83 +4064,6 @@ algorithm
   end matchcontinue;
 end replaceOrAddElementWithId;
 
-public function getElementWithId
-"returns the element from the program having the name as the id.
- if the element does not exist it fails"
-  input Program inProgram;
-  input Ident inId;
-  output Element outElement;
-algorithm
-  outElement := matchcontinue(inProgram, inId)
-    local
-      Program sp, rest;
-      Element c, e;
-      Absyn.Path p;
-      Absyn.Ident i, n;
-
-    case ((e as CLASS(name = n))::_, i)
-      equation
-        true = stringEq(n, i);
-      then
-        e;
-
-    case ((e as COMPONENT(name = n))::_, i)
-      equation
-        true = stringEq(n, i);
-      then
-        e;
-
-    case ((e as EXTENDS(baseClassPath = p))::_, i)
-      equation
-        true = stringEq(Absyn.pathString(p), i);
-      then
-        e;
-
-    case (_::rest, i)
-      then getElementWithId(rest, i);
-
-    // not found, fail
-    case ({}, i)
-      equation
-        print("SCode.getElementWithId: an element with name: " +& i +& " was not found in the given program.");
-      then
-        fail();
-  end matchcontinue;
-end getElementWithId;
-
-public function getElementWithPath
-"returns the element from the program having the name as the id.
- if the element does not exist it fails"
-  input Program inProgram;
-  input Absyn.Path inPath;
-  output Element outElement;
-algorithm
-  outElement := match(inProgram, inPath)
-    local
-      Program sp, rest;
-      Element c, e;
-      Absyn.Path p;
-      Absyn.Ident i, n;
-
-    case (_, Absyn.FULLYQUALIFIED(p))
-      then getElementWithPath(inProgram, p);
-
-    case (_, Absyn.IDENT(i))
-      equation
-        e = getElementWithId(inProgram, i);
-      then
-        e;
-
-    case (_, Absyn.QUALIFIED(i, p))
-      equation
-        e = getElementWithId(inProgram, i);
-        sp = getElementsFromElement(inProgram, e);
-        e = getElementWithPath(sp, p);
-      then
-        e;
-  end match;
-end getElementWithPath;
-
 public function getElementsFromElement
   input Program inProgram;
   input Element inElement;
@@ -4280,6 +4203,77 @@ algorithm
         (inClassDef, SOME(e));
   end matchcontinue;
 end replaceElementsInClassDef;
+
+protected function getElementWithId
+"returns the element from the program having the name as the id.
+ if the element does not exist it fails"
+  input Program inProgram;
+  input String inId;
+  output Element outElement;
+algorithm
+  outElement := matchcontinue(inProgram, inId)
+    local
+      Program sp, rest;
+      Element c, e;
+      Absyn.Path p;
+      Absyn.Ident i, n;
+
+    case ((e as CLASS(name = n))::_, i)
+      equation
+        true = stringEq(n, i);
+      then
+        e;
+
+    case ((e as COMPONENT(name = n))::_, i)
+      equation
+        true = stringEq(n, i);
+      then
+        e;
+
+    case ((e as EXTENDS(baseClassPath = p))::_, i)
+      equation
+        true = stringEq(Absyn.pathString(p), i);
+      then
+        e;
+
+    case (_::rest, i)
+      then getElementWithId(rest, i);
+
+  end matchcontinue;
+end getElementWithId;
+
+public function getElementWithPath
+"returns the element from the program having the name as the id.
+ if the element does not exist it fails"
+  input Program inProgram;
+  input Absyn.Path inPath;
+  output Element outElement;
+algorithm
+  outElement := match (inProgram, inPath)
+    local
+      Program sp, rest;
+      Element c, e;
+      Absyn.Path p;
+      Absyn.Ident i, n;
+
+    case (_, Absyn.FULLYQUALIFIED(p))
+      then getElementWithPath(inProgram, p);
+
+    case (_, Absyn.IDENT(i))
+      equation
+        e = getElementWithId(inProgram, i);
+      then
+        e;
+
+    case (_, Absyn.QUALIFIED(i, p))
+      equation
+        e = getElementWithId(inProgram, i);
+        sp = getElementsFromElement(inProgram, e);
+        e = getElementWithPath(sp, p);
+      then
+        e;
+  end match;
+end getElementWithPath;
 
 public function getElementName ""
   input Element e;

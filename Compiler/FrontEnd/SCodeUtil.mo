@@ -48,15 +48,16 @@ encapsulated package SCodeUtil
 public import Absyn;
 public import SCode;
 
+protected import Builtin;
 protected import Debug;
 protected import Error;
 protected import Flags;
 protected import Inst;
 protected import List;
 protected import MetaUtil;
+protected import SCodeDump;
 protected import System;
 protected import Util;
-protected import SCodeDump;
 
 public function translateAbsyn2SCode
 "This function takes an Absyn.Program
@@ -2617,5 +2618,29 @@ public function makeEnumComponents
 algorithm
   outSCodeElementLst := List.map1(inEnumLst, SCode.makeEnumType, info);
 end makeEnumComponents;
+
+public function getElementWithPathCheckBuiltin
+"returns the element from the program having the name as the id.
+ if the element does not exist it fails"
+  input SCode.Program inProgram;
+  input Absyn.Path inPath;
+  output SCode.Element outElement;
+algorithm
+  outElement := matchcontinue (inProgram, inPath)
+    local
+      SCode.Program sp, rest;
+      SCode.Element c, e;
+      Absyn.Path p;
+      Absyn.Ident i, n;
+
+    case (_, _)
+      then SCode.getElementWithPath(inProgram, inPath);
+
+    else
+      equation
+        (_,sp) = Builtin.getInitialFunctions();
+      then SCode.getElementWithPath(sp, inPath);
+  end matchcontinue;
+end getElementWithPathCheckBuiltin;
 
 end SCodeUtil;

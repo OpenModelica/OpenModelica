@@ -160,6 +160,16 @@ algorithm
   head := head + \"<span class=\\\"omc-h1\\\">\" + strs[end] + \"</span></h1>\";
 end head;
 
+record Item
+  String file;
+  String head;
+  String docInfo[2];
+  String contents;
+  String comment;
+  String interface;
+  String short;
+end Item;
+
 function itemString
   input Item item;
   input String version;
@@ -178,7 +188,9 @@ end itemString;
 
 function itemFile
   input Item item;
-  output String file := item.file;
+  output String file;
+algorithm
+  file := item.file;
 end itemFile;
 
 function toHtml
@@ -191,16 +203,6 @@ algorithm
   (n,matches) := OpenModelica.Scripting.regex(str,\"^[:space:]*<html>(.*)</html>[:space:]*\",caseInsensitive=true,maxMatches=2);
   ostr := if n==2 then matches[2] else OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(str,\"&\",\"&amp;\"),\"<\",\"&lt;\"),\">\",\"&gt;\");
 end toHtml;
-
-record Item
-  String file;
-  String head;
-  String docInfo[2];
-  String contents;
-  String comment;
-  String interface;
-  String short;
-end Item;
 ");
 
 "Start calculate items";
@@ -336,10 +338,9 @@ writeFile("FindFiles.sh","#!/bin/bash
 rm -f *.png *.pdf FindFiles.log
 touch FindFiles.log
 OMLIBRARY=\""+getInstallationDirectoryPath()+"/lib/omlibrary\"
-alias urldecode='python -c \"import sys, urllib as ul; print ul.unquote_plus(sys.argv[1])\"'
 for f in `sort -u tidy.links`; do
   link=`echo $f | cut '-d!' -f2-`
-  link=`urldecode $link`
+  link=`python -c \"import sys, urllib as ul; print ul.unquote_plus(sys.argv[1])\" \"$link\"`
   if test -f \"$OMLIBRARY/$link\"; then
     d=`dirname \"$link\"`
     mkdir -p \"$d\"
@@ -424,9 +425,9 @@ system("python Tidy.py 2> tidy.err");
 "FilterTidy.sh";
 system("bash FilterTidy.sh");
 
-system("rm -f Icons/*.json"); 
+system("rm -f Icons/*.json");
 if rmSymlinks then
-  system("for symlink in `find -type l`; do rm $symlink;  done"); 
+  system("for symlink in `find -type l`; do rm $symlink;  done");
 end if;
 
 "FindFiles.sh";

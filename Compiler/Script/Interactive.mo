@@ -16244,7 +16244,7 @@ algorithm
       Absyn.Path path;
 
     case (path,p) then getPathedClassInProgramWork(path, p);
-    case (path,_) then getPathedClassInProgramWork(path,Builtin.getInitialFunctions());
+    case (path,_) equation (p,_) = Builtin.getInitialFunctions(); then getPathedClassInProgramWork(path, p);
 
   end matchcontinue;
 end getPathedClassInProgram;

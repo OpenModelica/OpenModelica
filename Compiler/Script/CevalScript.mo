@@ -833,7 +833,7 @@ algorithm
       Option<list<SCode.Element>> fp;
       Env.Env env;
       GlobalScript.SymbolTable newst,st_1,st;
-      Absyn.Program p,pnew,newp,ptot;
+      Absyn.Program p,ip,pnew,newp,ptot;
       list<Absyn.Program> newps;
       list<GlobalScript.InstantiatedClass> ic,ic_1;
       list<GlobalScript.Variable> iv;
@@ -958,7 +958,8 @@ algorithm
 
     case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(_)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
-        p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
+        (ip,_) = Builtin.getInitialFunctions();
+        p = Debug.bcallret2(builtin,Interactive.updateProgram,p,ip,p);
         paths = Interactive.getTopClassnames(p);
         paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
@@ -967,7 +968,8 @@ algorithm
 
     case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(false),Values.BOOL(b),Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
-        p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
+        (ip,_) = Builtin.getInitialFunctions();
+        p = Debug.bcallret2(builtin,Interactive.updateProgram,p,ip,p);
         paths = Interactive.getClassnamesInPath(path, p, showProtected);
         paths = Debug.bcallret3(b,List.map1r,paths,Absyn.joinPaths,path,paths);
         paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
@@ -977,7 +979,8 @@ algorithm
 
     case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
-        p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
+        (ip,_) = Builtin.getInitialFunctions();
+        p = Debug.bcallret2(builtin,Interactive.updateProgram,p,ip,p);
         (_,paths) = Interactive.getClassNamesRecursive(NONE(),p,showProtected,{});
         paths = listReverse(paths);
         paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
@@ -987,7 +990,8 @@ algorithm
 
     case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
-        p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
+        (ip,_) = Builtin.getInitialFunctions();
+        p = Debug.bcallret2(builtin,Interactive.updateProgram,p,ip,p);
         (_,paths) = Interactive.getClassNamesRecursive(SOME(path),p,showProtected,{});
         paths = listReverse(paths);
         paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
@@ -1129,6 +1133,7 @@ algorithm
 
     case (cache,_,"list",{Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(b1),Values.BOOL(b2),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
+        false = valueEq(Absyn.IDENT("AllLoadedClasses"),className);
         (scodeP,st) = Interactive.symbolTableToSCode(st);
         name = Absyn.pathLastIdent(path);
         absynClass = Interactive.getPathedClassInProgram(className, p);
@@ -1137,7 +1142,7 @@ algorithm
         p = Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0));
         str = Debug.bcallret2(name ==& "Absyn", Dump.unparseStr, p, false, "");
         str = Debug.bcallret1(name ==& "Internal", System.anyStringCode, p, str);
-        cl = SCode.getElementWithPath(scodeP, className);
+        cl = SCodeUtil.getElementWithPathCheckBuiltin(scodeP, className);
         str = Debug.bcallret2(name ==& "SCode", SCodeDump.unparseElementStr, cl, SCodeDump.defaultOptions, str);
         str = Debug.bcallret2(name ==& "MetaModelicaInterface", SCodeDump.unparseElementStr, cl, SCodeDump.OPTIONS(true,false,true,true,true), str);
       then
@@ -3464,8 +3469,7 @@ algorithm
         // remove extends Modelica.Icons.*
         //scodeP = SCodeSimplify.simplifyProgram(scodeP);
 
-        p_builtin = Builtin.getInitialFunctions();
-        scode_builtin = SCodeUtil.translateAbsyn2SCode(p_builtin);
+        (p_builtin,scode_builtin) = Builtin.getInitialFunctions();
 
         nfenv = NFEnv.buildInitialEnv(scodeP, scode_builtin);
         (dae, funcs) = NFInst.instClass(className, nfenv);

@@ -1,10 +1,12 @@
 encapsulated package Figaro "Figaro support."
 
 // Imports
-public import SCode;
 public import Absyn;
 public import Error;
+public import SCode;
 public import System;
+
+protected import SCodeUtil;
 
 // Aliases
 public type Ident = Absyn.Ident;
@@ -28,7 +30,7 @@ protected
   String figaro, database, xml, xml2;
   list<String> sl;
 algorithm
-  program := SCode.getElementWithPath(inProgram, inPath);
+  program := SCodeUtil.getElementWithPathCheckBuiltin(inProgram, inPath);
 
   // Code for the Figaro objects.
   figaro := makeFigaro(program);

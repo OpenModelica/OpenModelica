@@ -667,8 +667,8 @@ algorithm
       env = initialEnvMetaModelica(env);
 
       // add the builtin classes from ModelicaBuiltin.mo and MetaModelicaBuiltin.mo
-      Absyn.PROGRAM(classes=initialClasses) = getInitialFunctions();
-      env = Env.extendFrameClasses(env, listReverse(List.fold(initialClasses, SCodeUtil.translate2, {})), SOME(Env.BUILTIN()));
+      (_,initialProgram) = getInitialFunctions();
+      env = Env.extendFrameClasses(env, initialProgram, SOME(Env.BUILTIN()));
       cache = Env.setCachedInitialEnv(cache,env);
       _ = getSetInitialEnv(SOME(env));
     then
@@ -698,12 +698,15 @@ end initialEnvMetaModelica;
 public function getInitialFunctions
 "Fetches the Absyn.Program representation of the functions (and other classes) in the initial environment"
   output Absyn.Program initialProgram;
+  output SCode.Program initialSCodeProgram;
 algorithm
-  initialProgram := matchcontinue ()
+  (initialProgram,initialSCodeProgram) := matchcontinue ()
     local
       String fileModelica,fileMetaModelica,fileParModelica;
-      list<tuple<Integer,Absyn.Program>> assocLst;
+      list<tuple<Integer,tuple<Absyn.Program,SCode.Program>>> assocLst;
       list<Absyn.Class> classes,classes1,classes2;
+      Absyn.Program p;
+      SCode.Program sp;
     case ()
       equation
         failure(_ = getGlobalRoot(Global.builtinIndex));
@@ -712,7 +715,8 @@ algorithm
     case ()
       equation
         assocLst = getGlobalRoot(Global.builtinIndex);
-      then Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst);
+        ((p,sp)) = Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst);
+      then (p,sp);
     case ()
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
@@ -723,10 +727,11 @@ algorithm
         Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8");
         Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(fileMetaModelica,"UTF-8");
         classes = listAppend(classes1,classes2);
-        initialProgram = Absyn.PROGRAM(classes,Absyn.TOP(),Absyn.dummyTimeStamp);
+        p = Absyn.PROGRAM(classes,Absyn.TOP(),Absyn.dummyTimeStamp);
+        sp = List.map(classes, SCodeUtil.translateClass);
         assocLst = getGlobalRoot(Global.builtinIndex);
-        setGlobalRoot(Global.builtinIndex, (Flags.METAMODELICA,initialProgram)::assocLst);
-      then initialProgram;
+        setGlobalRoot(Global.builtinIndex, (Flags.METAMODELICA,(p,sp))::assocLst);
+      then (p,sp);
     case ()
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
@@ -737,19 +742,21 @@ algorithm
         Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8");
         Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(fileParModelica,"UTF-8");
         classes = listAppend(classes1,classes2);
-        initialProgram = Absyn.PROGRAM(classes,Absyn.TOP(),Absyn.dummyTimeStamp);
+        p = Absyn.PROGRAM(classes,Absyn.TOP(),Absyn.dummyTimeStamp);
+        sp = List.map(classes, SCodeUtil.translateClass);
         assocLst = getGlobalRoot(Global.builtinIndex);
-        setGlobalRoot(Global.builtinIndex, (Flags.PARMODELICA,initialProgram)::assocLst);
-      then initialProgram;
+        setGlobalRoot(Global.builtinIndex, (Flags.PARMODELICA,(p,sp))::assocLst);
+      then (p,sp);
     case ()
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
         fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
-        initialProgram = Parser.parsebuiltin(fileModelica,"UTF-8");
+        (p as Absyn.PROGRAM(classes=classes)) = Parser.parsebuiltin(fileModelica,"UTF-8");
+        sp = List.map(classes, SCodeUtil.translateClass);
         assocLst = getGlobalRoot(Global.builtinIndex);
-        setGlobalRoot(Global.builtinIndex, (Flags.MODELICA,initialProgram)::assocLst);
-      then initialProgram;
+        setGlobalRoot(Global.builtinIndex, (Flags.MODELICA,(p,sp))::assocLst);
+      then (p,sp);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Builtin.getInitialFunctions failed."});
@@ -869,8 +876,7 @@ algorithm
 
       graph = initialFGraphMetaModelica(graph);
 
-      Absyn.PROGRAM(classes=initialClasses) = getInitialFunctions();
-      initialProgram = listReverse(List.fold(initialClasses, SCodeUtil.translate2, {}));
+      (_,initialProgram) = getInitialFunctions();
       // add the ModelicaBuiltin/MetaModelicaBuiltin classes in the initial graph
       graph = FGraphBuild.mkProgramGraph(initialProgram, FCore.BUILTIN(), graph);
 
