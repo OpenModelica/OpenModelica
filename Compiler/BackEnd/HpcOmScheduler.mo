@@ -2004,16 +2004,16 @@ algorithm
         // assign task
         (threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx) = idcsIn;
         HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) = iTaskGraphMeta;
-        print("node "+&intString(node)+&"\n" );
+        //print("node "+&intString(node)+&"\n" );
         taskAss = arrayUpdate(taskAssIn,node,threadIdx);
         taskLst = arrayGet(procAssIn,threadIdx);
         procAss = arrayUpdate(procAssIn,threadIdx,node::taskLst);
         comps = arrayGet(inComps,node);
-        print("comps :"+&intListString(comps)+&"\n");
+        //print("comps :"+&intListString(comps)+&"\n");
         simEqsLst = List.map1(comps,Util.arrayGetIndexFirst,sccSimEqMappingIn);
         simEqs = List.flatten(simEqsLst);
         simEqs = listReverse(simEqs);
-        print("simEqs :"+&intListString(simEqs)+&"\n");
+        //print("simEqs :"+&intListString(simEqs)+&"\n");
 
         //change the simEqSystems in odes and allEqs if there is a duplicated predecessor
         SimCode.SIMCODE(odeEquations=odes, allEquations=allEqs) = simCodeIn;
@@ -2025,19 +2025,19 @@ algorithm
 
         //update taskGraph
         clTasks = List.first(allCluster);// the current cluster
-        print("clTasks :"+&intListString(clTasks)+&"\n");
+        //print("clTasks :"+&intListString(clTasks)+&"\n");
         origPredTasks = arrayGet(taskGraphTOrig,node);
         (clPredTasks,origPredTasks,_) = List.intersection1OnTrue(origPredTasks,clTasks,intEq);
-        print("origPredTasks :"+&intListString(origPredTasks)+&"\n");
+        //print("origPredTasks :"+&intListString(origPredTasks)+&"\n");
         pos = List.map1(clPredTasks,List.position,clTasks);
         pos = List.map1(pos,intAdd,1);
         clTasks = arrayGet(procAssIn,threadIdx);
         clTasks = listReverse(clTasks);  // the current cluster with duplicated taskIdcs
-        print("clTasks :"+&intListString(clTasks)+&"\n");
+        //print("clTasks :"+&intListString(clTasks)+&"\n");
         clPredTasks = List.map1(pos,List.getIndexFirst,clTasks);
-        print("clPredTasks :"+&intListString(clPredTasks)+&"\n");
+        //print("clPredTasks :"+&intListString(clPredTasks)+&"\n");
         (duplPredTasks,_,_) = List.intersection1OnTrue(clPredTasks,clTasks,intEq);
-        print("duplPredTasks :"+&intListString(duplPredTasks)+&"\n");
+        //print("duplPredTasks :"+&intListString(duplPredTasks)+&"\n");
         taskGraph = List.fold1(duplPredTasks,Util.arrayListAppend,{node},taskGraphIn); // add edges from duplicated predecessors to task
         taskGraphOut = List.fold1(origPredTasks,Util.arrayListAppend,{node},taskGraph); // add edges from non duplicated predecessors to task
 
@@ -2102,34 +2102,32 @@ algorithm
   (threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx) := idcsIn;
 
   // get the vars(crefs) and equations of the node
-  print("node to duplicate "+&intString(node)+&"\n");
+  //print("node to duplicate "+&intString(node)+&"\n");
   comps := arrayGet(inComps,node);
   comps := listReverse(comps);
-  print("comps :"+&intListString(comps)+&"\n");
-  print("task :"+&intString(taskIdx)+&"\n");
+  //print("comps :"+&intListString(comps)+&"\n");
+  //print("task :"+&intString(taskIdx)+&"\n");
   simEqIdxLst := List.map1(comps,Util.arrayGetIndexFirst,sccSimEqMappingIn);
   simEqSysIdcs := List.flatten(simEqIdxLst);
-  print("simEqSysIdcs :"+&intListString(simEqSysIdcs)+&"\n");
+  //print("simEqSysIdcs :"+&intListString(simEqSysIdcs)+&"\n");
 
   crefLst := List.map1(simEqSysIdcs,SimCodeUtil.getAssignedCrefsOfSimEq,simCodeIn);
   crefs := List.flatten(crefLst);
   //print("crefs :\n"+&stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr),"\n")+&"\n");
-  //SimCodeUtil.dumpSimVars(simVars);
 
   simVarLst := List.map1(crefs,SimCodeUtil.get,ht);
   simEqSysts := List.map1(simEqSysIdcs,SimCodeUtil.getSimEqSysForIndex,List.flatten(odes));
-  SimCodeUtil.dumpVarLst(simVarLst,"the simVars");
 
   // build the new crefs, new simVars
   numVars := listLength(simVarLst);
   simVarSysIdcs2 := List.intRange2(simVarIdx,simVarIdx+numVars-1);
   crefAppend := "_thr"+&intString(threadIdx);
-  crefsDupl := List.map1(crefs,ComponentReference.joinCrefs,DAE.CREF_IDENT(crefAppend,DAE.T_UNKNOWN_DEFAULT,{}));
+  //crefsDupl := List.map1(crefs,ComponentReference.joinArrayCrefs,DAE.CREF_IDENT(crefAppend,DAE.T_UNKNOWN_DEFAULT,{}));
+  crefsDupl := List.map1r(crefs,ComponentReference.appendStringLastIdent,crefAppend);
   //print("crefs new :\n"+&stringDelimitList(List.map(crefsDupl,ComponentReference.debugPrintComponentRefTypeStr),"\n")+&"\n");
   crefsDuplExp := List.map(crefsDupl,Expression.crefExp);
   simVarDupl := List.threadMap(crefsDupl,simVarLst,SimCodeUtil.replaceSimVarName);
   simVarDupl := List.threadMap(simVarSysIdcs2,simVarDupl,SimCodeUtil.replaceSimVarIndex);
-  SimCodeUtil.dumpVarLst(simVarDupl,"the simVars duplicated");
   simCode := List.fold(simVarDupl,SimCodeUtil.addSimVarToAlgVars,simCodeIn);
   simVarIdx2 := simVarIdx + numVars;
 
@@ -2139,11 +2137,11 @@ algorithm
   //BackendVarTransform.dumpReplacements(repl);
   numEqs := listLength(simEqSysts);
   simEqSysIdcs2 := List.intRange2(simEqSysIdx,simEqSysIdx+numEqs-1);
-  print("simEqSysIdcs2 :"+&intListString(simEqSysIdcs2)+&"\n");
+  //print("simEqSysIdcs2 :"+&intListString(simEqSysIdcs2)+&"\n");
   (simEqSystsDupl,_) := List.map1_2(simEqSysts,replaceExpsInSimEqSystem,repl);// replace the exps and crefs
   (simEqSystsDupl,(lsIdx,nlsIdx,mIdx)) := List.mapFold(simEqSystsDupl,replaceSystemIndex,(lsIdx,nlsIdx,mIdx));// udpate the indeces of th systems
   simEqSystsDupl := List.threadMap(simEqSystsDupl,simEqSysIdcs2,SimCodeUtil.replaceSimEqSysIndex);
-  print("the simEqSystsDupl "+&SimCodeUtil.dumpSimEqSystemLst(simEqSystsDupl)+&"\n");
+  //print("the simEqSystsDupl "+&SimCodeUtil.dumpSimEqSystemLst(simEqSystsDupl)+&"\n");
   simEqSysIdx2 := simEqSysIdx + numEqs;
   // update sccSimEqmapping for the duplicated
   duplSccSimEqMapOut := listAppend(List.map(simEqSysIdcs2,List.create),duplSccSimEqMapIn);
@@ -2154,12 +2152,12 @@ algorithm
   numInitEqs := listLength(crefs);
   simEqSysIdcsInit := List.intRange2(simEqSysIdx2,simEqSysIdx2+numInitEqs-1);
   initEqs := List.thread3Map(crefsDupl,crefs,simEqSysIdcsInit,makeSEScrefAssignment);
-  print("the initEqs "+&SimCodeUtil.dumpSimEqSystemLst(initEqs)+&"\n");
+  //print("the initEqs "+&SimCodeUtil.dumpSimEqSystemLst(initEqs)+&"\n");
   simCode := List.fold(initEqs,SimCodeUtil.addSimEqSysToInitialEquations,simCode);
   simEqSysIdx3 := simEqSysIdx2 + numInitEqs;
 
   SimCode.SIMCODE(odeEquations=odes) := simCode;
-  print("the simEqSysts after cluster: "+&intString(threadIdx)+&"_"+&intString(node)+&" \n"+&stringDelimitList(List.map(odes,SimCodeUtil.dumpSimEqSystemLst),"\n")+&"\n");
+  //print("the simEqSysts after cluster: "+&intString(threadIdx)+&"_"+&intString(node)+&" \n"+&stringDelimitList(List.map(odes,SimCodeUtil.dumpSimEqSystemLst),"\n")+&"\n");
 
   //update duplSccSimEqMap, duplComps, taskAss, procAss for the new duplicates
   taskAssOut := arrayUpdate(taskAssIn,taskIdx,threadIdx);
@@ -2167,7 +2165,7 @@ algorithm
   thread := taskIdx::thread;
   procAssOut := arrayUpdate(procAssIn,threadIdx,thread);
   comps := List.intRange2(compIdx,compIdx+listLength(comps)-1);
-  print("compsNew :"+&intListString(comps)+&"\n");
+  //print("compsNew :"+&intListString(comps)+&"\n");
   compIdx := compIdx+listLength(comps);
   duplCompsOut := comps::duplCompsIn;
 
@@ -2176,19 +2174,19 @@ algorithm
 
   //update taskGraph
   clTasks := List.first(allCluster);// the current cluster
-  print("clTasks :"+&intListString(clTasks)+&"\n");
+  //print("clTasks :"+&intListString(clTasks)+&"\n");
   origPredTasks := arrayGet(taskGraphTOrig,node);
   (clPredTasks,origPredTasks,_) := List.intersection1OnTrue(origPredTasks,clTasks,intEq);
-  print("origPredTasks :"+&intListString(origPredTasks)+&"\n");
+  //print("origPredTasks :"+&intListString(origPredTasks)+&"\n");
   pos := List.map1(clPredTasks,List.position,clTasks);
   pos := List.map1(pos,intAdd,1);
   clTasks := arrayGet(procAssOut,threadIdx);
   clTasks := listReverse(clTasks);  // the current cluster with duplicated taskIdcs
-  print("clTasks :"+&intListString(clTasks)+&"\n");
+  //print("clTasks :"+&intListString(clTasks)+&"\n");
   clPredTasks := List.map1(pos,List.getIndexFirst,clTasks);
-  print("clPredTasks :"+&intListString(clPredTasks)+&"\n");
+  //print("clPredTasks :"+&intListString(clPredTasks)+&"\n");
   (duplPredTasks,_,_) := List.intersection1OnTrue(clPredTasks,clTasks,intEq);
-  print("duplPredTasks :"+&intListString(duplPredTasks)+&"\n");
+  //print("duplPredTasks :"+&intListString(duplPredTasks)+&"\n");
   taskGraph := List.fold1(duplPredTasks,Util.arrayListAppend,{taskIdx},taskGraphIn); // add edges from duplicated predecessors to task
   taskGraphOut := List.fold1(origPredTasks,Util.arrayListAppend,{taskIdx},taskGraph); // add edges from non duplicated predecessors to task
 

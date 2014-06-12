@@ -7370,21 +7370,26 @@ algorithm
   print("\n");
 end dumpVarLst;
 
-public function dumpSimVars"dumps the SimVars to stdout
+public function dumpModelInfo"dumps the SimVars to stdout
 author:Waurich TUD 2014-05"
-  input SimCode.SimVars simVars;
+  input SimCode.ModelInfo modelInfo;
 protected
+  Integer nsv,nalgv;
+  SimCode.VarInfo varInfo;
+  SimCode.SimVars simVars;
   list<SimCode.SimVar> stateVars;
   list<SimCode.SimVar> derivativeVars;
   list<SimCode.SimVar> algVars;
   list<SimCode.SimVar> discreteAlgVars;
 algorithm
+  SimCode.MODELINFO(vars=simVars, varInfo=varInfo) := modelInfo;
   SimCode.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,discreteAlgVars=discreteAlgVars) := simVars;
-  Debug.bcall2(List.isNotEmpty(stateVars),dumpVarLst,stateVars,"stateVars");
+  SimCode.VARINFO(numStateVars=nsv,numAlgVars=nalgv) := varInfo;
+  Debug.bcall2(List.isNotEmpty(stateVars),dumpVarLst,stateVars,"stateVars ("+&intString(nsv)+&")");
   Debug.bcall2(List.isNotEmpty(derivativeVars),dumpVarLst,derivativeVars,"derivativeVars");
-  Debug.bcall2(List.isNotEmpty(algVars),dumpVarLst,algVars,"algVars");
+  Debug.bcall2(List.isNotEmpty(algVars),dumpVarLst,algVars,"algVars ("+&intString(nalgv)+&")");
   Debug.bcall2(List.isNotEmpty(discreteAlgVars),dumpVarLst,discreteAlgVars,"discreteAlgVars");
-end dumpSimVars;
+end dumpModelInfo;
 
 public function dumpSimEqSystemLst
   input list<SimCode.SimEqSystem> eqSysLstIn;
@@ -7476,19 +7481,23 @@ end dumpSimEqSystem;
 public function dumpSimCode
   input SimCode.SimCode simCode;
 protected
+  Integer nls,nnls,nms,ninite,ninita,ninitr,ne;
   list<SimCode.SimEqSystem> allEquations,jacobianEquations,equationsForZeroCrossings,algorithmAndEquationAsserts,initialEquations;
-  SimCode.SimVars simVars;
+  SimCode.ModelInfo modelInfo;
+  SimCode.VarInfo varInfo;
   list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
 algorithm
-  SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(vars=simVars),allEquations = allEquations, odeEquations=odeEquations, algebraicEquations=algebraicEquations, algorithmAndEquationAsserts=algorithmAndEquationAsserts,
+  SimCode.SIMCODE(modelInfo = modelInfo,allEquations = allEquations, odeEquations=odeEquations, algebraicEquations=algebraicEquations, algorithmAndEquationAsserts=algorithmAndEquationAsserts,
   equationsForZeroCrossings=equationsForZeroCrossings, jacobianEquations=jacobianEquations,initialEquations=initialEquations) := simCode;
-  print("allEquations: \n-----------------------\n");
+  SimCode.MODELINFO(varInfo=varInfo) := modelInfo;
+  SimCode.VARINFO(numInitialEquations=ninite,numInitialAlgorithms=ninita,numInitialResiduals=ninitr,numEquations=ne,numLinearSystems=nls,numNonLinearSystems=nnls,numMixedSystems=nms) := varInfo;
+  print("allEquations:("+&intString(ne)+&"),numLS:("+&intString(nls)+&"),numNLS:("+&intString(nnls)+&"),numMS:("+&intString(nms)+&") \n-----------------------\n");
   print(dumpSimEqSystemLst(allEquations)+&"\n");
   print("odeEquations ("+&intString(listLength(odeEquations))+&" systems): \n-----------------------\n");
   print(stringDelimitList(List.map(odeEquations,dumpSimEqSystemLst),"\n--------------\n")+&"\n");
   print("algebraicEquations: \n-----------------------\n");
   print(stringDelimitList(List.map(algebraicEquations,dumpSimEqSystemLst),"\n")+&"\n");
-  print("initialEquations: \n-----------------------\n");
+  print("initialEquations: ("+&intString(ninite)+&"+"+&intString(ninita)+&"="+&intString(ninitr)+&")\n-----------------------\n");
   print(dumpSimEqSystemLst(initialEquations)+&"\n");
   print("algorithmAndEquationAsserts: \n-----------------------\n");
   print(dumpSimEqSystemLst(algorithmAndEquationAsserts)+&"\n");
@@ -7496,8 +7505,8 @@ algorithm
   print(dumpSimEqSystemLst(equationsForZeroCrossings)+&"\n");
   print("jacobianEquations: \n-----------------------\n");
   print(dumpSimEqSystemLst(jacobianEquations)+&"\n");
-  print("SIMVARS: \n-----------------------\n");
-  dumpSimVars(simVars);
+  print("modelInfo: \n-----------------------\n");
+  dumpModelInfo(modelInfo);
 end dumpSimCode;
 
 protected function isAliasVar

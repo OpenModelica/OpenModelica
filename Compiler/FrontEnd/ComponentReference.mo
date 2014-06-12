@@ -1918,6 +1918,40 @@ algorithm
   end match;
 end appendStringFirstIdent;
 
+public function appendStringLastIdent
+  "Appends a string to the last identifier of a cref."
+  input String inString;
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := match(inString, inCref)
+    local
+      DAE.Ident id;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cr;
+      DAE.Type ty;
+      Integer idx;
+
+    case (_, DAE.CREF_QUAL(id, ty, subs, cr))
+      equation
+        cr = appendStringLastIdent(inString,cr);
+      then DAE.CREF_QUAL(id, ty, subs, cr);
+
+    case (_, DAE.CREF_IDENT(id, ty, subs))
+      equation
+        id = stringAppend(id, inString);
+      then
+        DAE.CREF_IDENT(id, ty, subs);
+
+    case (_, DAE.CREF_ITER(id, idx, ty, subs))
+      equation
+        id = stringAppend(id, inString);
+      then
+        DAE.CREF_ITER(id, idx, ty, subs);
+
+  end match;
+end appendStringLastIdent;
+
 public function joinCrefs
 "Join two component references by concatenating them.
 
