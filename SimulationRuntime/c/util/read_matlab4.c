@@ -124,7 +124,8 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
 {
   typedef const char *_string;
   const int nMatrix=6;
-  _string matrixNames[6]={"Aclass","name","description","dataInfo","data_1","data_2"};
+  static const char *matrixNames[6]={"Aclass","name","description","dataInfo","data_1","data_2"};
+  static const char *matrixNamesMismatch[6]={"Matrix name mismatch: Aclass","Matrix name mismatch: name","Matrix name mismatch: description","Matrix name mismatch: dataInfo","Matrix name mismatch: data_1","Matrix name mismatch: data_2"};
   const int matrixTypes[6]={51,51,51,20,0,0};
   int i;
   char binTrans = 1;
@@ -162,8 +163,12 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     }
     /* fprintf(stderr, "  Name of matrix: %s\n", name); */
     matrix_length = hdr.mrows*hdr.ncols*(1+hdr.imagf)*element_length;
-    if(0 != strcmp(name,matrixNames[i])) return "Matrix name mismatch";
-    free(name); name=NULL;
+    if(0 != strcmp(name,matrixNames[i])) {
+      free(name);
+      return matrixNamesMismatch[i];
+    }
+    free(name);
+    name=NULL;
     switch (i) {
     case 0: {
       unsigned int k;
