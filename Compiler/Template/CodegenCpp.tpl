@@ -3701,18 +3701,35 @@ template generateEquationMemberFuncDecls(list<SimEqSystem> allEquations)
 ::=
   match allEquations
   case _ then
-    let equation_func_decls = (allEquations |> eq => 'void evaluate_<%equationIndex(eq)%>();' ;separator="\n")
+    let equation_func_decls = (allEquations |> eq => generateEquationMemberFuncDecls2(eq) ;separator="\n")
     <<
     /*! Index of the first equation. We use this to calculate the offset of an equation in the
-      equation array given the index of the equation.*/
-    int first_equation_index;
-
-    /*! Equations*/
-    <%equation_func_decls%>
-
+       equation array given the index of the equation.*/
+     int first_equation_index;
+      <%equation_func_decls%>
     >>
   end match
 end generateEquationMemberFuncDecls;
+
+
+
+template generateEquationMemberFuncDecls2(SimEqSystem eq)
+::=
+    match eq
+    case  e as SES_MIXED(__)
+    then
+     <<
+     /*! Equations*/
+     void evaluate_<%equationIndex(e.cont)%>();
+     void evaluate_<%equationIndex(eq)%>();
+     >>
+     else
+    <<
+      /*! Equations*/
+     void evaluate_<%equationIndex(eq)%>();
+    >>
+  end match
+end generateEquationMemberFuncDecls2;
 
  /*
  <%modelname%>Algloop<%index%>(
@@ -6303,44 +6320,91 @@ template equation_function_create_single_func(SimEqSystem eq, Context context,  
 ::=
   let ix_str = equationIndex(eq)
   let &varDeclsLocal = buffer "" /*BUFD*/
-  let body =
   match eq
     case e as SES_SIMPLE_ASSIGN(__)
-      then equationSimpleAssign(e, context,&varDeclsLocal,simCode)
+      then 
+      let body = equationSimpleAssign(e, context,&varDeclsLocal,simCode)
+       <<
+        /*
+        <%dumpEqs(fill(eq,1))%>
+        */
+        void <%lastIdentOfPathFromSimCode(simCode)%>::evaluate_<%ix_str%>()
+        {
+            <%varDeclsLocal%>
+            <%body%>
+        }
+      >>
     case e as SES_IFEQUATION(__)
     then "SES_IFEQUATION"
    case e as SES_ALGORITHM(__)
-      then equationAlgorithm(e, context, &varDeclsLocal,simCode)
+      then 
+      let body = equationAlgorithm(e, context, &varDeclsLocal,simCode)
+      <<
+        /*
+        <%dumpEqs(fill(eq,1))%>
+        */
+        void <%lastIdentOfPathFromSimCode(simCode)%>::evaluate_<%ix_str%>()
+        {
+            <%varDeclsLocal%>
+            <%body%>
+        }
+      >>
     case e as SES_WHEN(__)
-      then equationWhen(e, context, &varDeclsLocal,simCode)
+      then 
+      let body = equationWhen(e, context, &varDeclsLocal,simCode)
+      <<
+        /*
+        <%dumpEqs(fill(eq,1))%>
+        */
+        void <%lastIdentOfPathFromSimCode(simCode)%>::evaluate_<%ix_str%>()
+        {
+            <%varDeclsLocal%>
+            <%body%>
+        }
+      >>
     case e as SES_ARRAY_CALL_ASSIGN(__)
-      then equationArrayCallAssign(e, context, &varDeclsLocal,simCode)
+      then 
+      let body = equationArrayCallAssign(e, context, &varDeclsLocal,simCode)
+      <<
+        /*
+        <%dumpEqs(fill(eq,1))%>
+        */
+        void <%lastIdentOfPathFromSimCode(simCode)%>::evaluate_<%ix_str%>()
+        {
+            <%varDeclsLocal%>
+            <%body%>
+        }
+      >>
     case e as SES_LINEAR(__)
     case e as SES_NONLINEAR(__)
-      then equationLinearOrNonLinear(e, context, &varDeclsLocal,simCode)
-    case e as SES_MIXED(__)
-      /*<%equationMixed(e, context, &varDeclsLocal, simCode)%>*/
-      then
+      then 
+      let body = equationLinearOrNonLinear(e, context, &varDeclsLocal,simCode)
       <<
-
-          throw std::runtime_error("Mixed systems are not supported yet");
-       >>
+        /*
+        <%dumpEqs(fill(eq,1))%>
+        */
+        void <%lastIdentOfPathFromSimCode(simCode)%>::evaluate_<%ix_str%>()
+        {
+            <%varDeclsLocal%>
+            <%body%>
+        }
+      >>
+    case e as SES_MIXED(__)  then
+      /*<%equationMixed(e, context, &varDeclsLocal, simCode)%>*/
+    let body  = equation_function_create_single_func(e.cont,context,simCode)
+      <<
+        <%body%>
+        /*
+        <%dumpEqs(fill(eq,1))%>
+        */
+        void <%lastIdentOfPathFromSimCode(simCode)%>::evaluate_<%ix_str%>()
+        {
+            throw std::runtime_error("Mixed systems are not supported yet");
+        }
+      >>
     else
       "NOT IMPLEMENTED EQUATION"
   end match
-
-  <<
-  /*
-   <%dumpEqs(fill(eq,1))%>
-   */
-  void <%lastIdentOfPathFromSimCode(simCode)%>::evaluate_<%ix_str%>()
-  {
-    <%varDeclsLocal%>
-    <%body%>
-  }
-
-  >>
-
 end equation_function_create_single_func;
 
 
