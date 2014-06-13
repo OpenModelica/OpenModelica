@@ -1680,8 +1680,8 @@ algorithm
       marker=arrayCreate(nEqns,0);
       markerEq=arrayList(marker);
 
-      unassignedEqns=adaptUnassignedEqns(unassignedEqns, {}, mapIncRowEqn); // Test
       flatComps=adaptUnassignedEqns(flatComps, {}, mapIncRowEqn); // Test
+
       (outMarkerComps,outMarkerEq)=compsMarker(unassignedEqns, vec1, inMOrig, flatComps, marker_list, markerEq);
       eqns_list=BackendEquation.equationList(eqns);
       repl = BackendVarTransform.emptyReplacements();
@@ -1689,7 +1689,7 @@ algorithm
 
       (divideByZero,pos,ident)=BackendVarTransform.divideByZeroReplacements(outRepl);
       (m2,mt2)=manipulatedAdjacencyMatrix(divideByZero, ident, vars, 1, vec1, inM, inMt);
-      //unassignedEqns=adaptUnassignedEqns(unassignedEqns, {}, mapIncRowEqn);
+      unassignedEqns=adaptUnassignedEqns(unassignedEqns, {}, mapIncRowEqn);
       eqns_1=removeEqswork(unassignedEqns,eqns_list,vars,outRepl);
       substEqns = BackendEquation.listEquation(eqns_1);
       (outUnassignedEqns, true) = getConsistentEquations(unassignedEqns, substEqns, eqns, m2, vec1,vars, shared);
