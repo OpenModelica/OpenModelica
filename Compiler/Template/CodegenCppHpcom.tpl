@@ -146,7 +146,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     boost::array< EquFuncPtr, <%listLength(allEquations)%> > equations_array;
 
     void initialize_equations_array();
-
    };
   >>
 end generateClassDeclarationCode;
@@ -160,7 +159,7 @@ template getAddHpcomStructHeaders(Option<Schedule> hpcOmScheduleOpt)
             case ("openmp") then
                 <<
                 >>
-            else
+            case ("tbb") then
                 <<
                 struct VoidBody {
                     boost::function<void(void)> void_function;
@@ -171,6 +170,8 @@ template getAddHpcomStructHeaders(Option<Schedule> hpcOmScheduleOpt)
                     }
                 };
                 >>
+            else ""
+    else ""
 end getAddHpcomStructHeaders;
 
 template getAddHpcomFunctionHeaders(Option<Schedule> hpcOmScheduleOpt)
@@ -183,7 +184,7 @@ template getAddHpcomFunctionHeaders(Option<Schedule> hpcOmScheduleOpt)
                 <<
                 void evaluateThreadFunc0();
                 >>
-            else ''
+            else ""
     case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
         let locks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_createLock(idx, "lock", type); separator="\n"
 
@@ -201,11 +202,15 @@ template getAddHpcomFunctionHeaders(Option<Schedule> hpcOmScheduleOpt)
             case ("openmp") then
                 <<
                 >>
-            else
+            case ("tbb") then
                 let voidfuncs = hpcOmSchedule.tasks |> task => getAddHpcomFuncHeadersTaskDep(task); separator="\n"
                 <<
+                <%getAddHpcomStructHeaders(hpcOmScheduleOpt)%>
+                
                 <%voidfuncs%>
                 >>
+            else ""
+    else ""
 end getAddHpcomFunctionHeaders;
 
 template getAddHpcomVarArrays(Option<MemoryMap> optHpcomMemoryMap)
@@ -237,7 +242,7 @@ template getAddHpcomVarHeaders(Option<Schedule> hpcOmScheduleOpt)
                 bool finished;
                 UPDATETYPE command;
                 >>
-            else ''
+            else ""
     case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
         let locks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_createLock(idx, "lock", type); separator="\n"
         let threadDecl = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThreadHeaderDecl(i0, type); separator="\n"
@@ -263,10 +268,12 @@ template getAddHpcomVarHeaders(Option<Schedule> hpcOmScheduleOpt)
             case ("openmp") then
                 <<
                 >>
-            else
+            case ("tbb") then
                 <<
                     tbb::flow::graph tbb_graph;
                 >>
+            else ""
+     else ""
 end getAddHpcomVarHeaders;
 
 template getAddHpcomFuncHeadersTaskDep(tuple<Task,list<Integer>> taskIn)
@@ -477,9 +484,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    #include "ModelicaDefine.h"
    #include "OMCpp<%fileNamePrefix%>.h"
 
-
-
-
     /* Constructor */
     <%className%>::<%className%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
         :SystemDefaultImplementation(*globalSettings)
@@ -597,6 +601,7 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
                     <%threadAssignLocks%>
                     <%threadAssignLocks1%>
                 >>
+     else ""
 end getHpcomConstructorExtension;
 
 template MemberVariableAssign(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemory)
@@ -677,6 +682,7 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
                 <%joinThreads%>
                 <%destroylocks%>
                 >>
+    else ""
 end getHpcomDestructorExtension;
 
 
@@ -687,7 +693,7 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
 
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
-      let parCode = update2(allEquationsPlusWhen, modelInfo.name, whenClauses, simCode, hpcOmSchedule, context, lastIdentOfPath(modelInfo.name))
+      let parCode = update2(allEquationsPlusWhen, odeEquations, modelInfo.name, whenClauses, simCode, hpcOmSchedule, context, lastIdentOfPath(modelInfo.name))
       <<
        <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete)%>
 
@@ -699,7 +705,7 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
       >>
 end update;
 
-template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<SimWhenClause> whenClauses, SimCode simCode, Option<Schedule> hpcOmScheduleOpt, Context context, String modelNamePrefixStr)
+template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>> odeEquations, Absyn.Path name, list<SimWhenClause> whenClauses, SimCode simCode, Option<Schedule> hpcOmScheduleOpt, Context context, String modelNamePrefixStr)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   /* let all_equations = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
@@ -711,6 +717,10 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
   let type = getConfigString(HPCOM_CODE)
 
   match hpcOmScheduleOpt
+    case SOME(hpcOmSchedule as EMPTYSCHEDULE(__)) then
+        <<
+        <%CodegenCpp.createEvaluate(odeEquations, whenClauses, simCode, context)%>
+        >>
     case SOME(hpcOmSchedule as LEVELSCHEDULE(__)) then
       let odeEqs = hpcOmSchedule.tasksOfLevels |> tasks => function_HPCOM_Level(allEquationsPlusWhen, tasks, type, &varDecls, simCode); separator="\n"
       match type
@@ -827,7 +837,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
 
                 }
                 >>
-            else
+            case ("tbb") then
                 let taskNodes = function_HPCOM_TaskDep_tbb(hpcOmSchedule.tasks, allEquationsPlusWhen, type, name, &varDecls, simCode); separator="\n"
                 let taskFuncs = function_HPCOM_TaskDep_voidfunc(hpcOmSchedule.tasks, allEquationsPlusWhen,type, name, &varDecls, simCode); separator="\n"
                 <<
@@ -845,6 +855,8 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
                       <%taskNodes%>
                     }
                 >>
+            else ""
+    else ""
 end update2;
 
 template function_HPCOM_Level(list<SimEqSystem> allEquationsPlusWhen, list<Task> tasksOfLevel, String iType, Text &varDecls, SimCode simCode)
@@ -914,9 +926,6 @@ template function_HPCOM_TaskDep_tbb(list<tuple<Task,list<Integer>>> tasks, list<
         tbb_start.try_put(continue_msg());
         tbb_graph.wait_for_all();
         //End
-
-        return state_var_reinitialized;
-
   >>
 end function_HPCOM_TaskDep_tbb;
 
@@ -1283,6 +1292,7 @@ end simulationMainFileAnalyzation;
 template simulationMakefile(String target,SimCode simCode)
  "Generates the contents of the makefile for the simulation case."
 ::=
+let type = getConfigString(HPCOM_CODE)
 match target
 case "msvc" then
 match simCode
@@ -1364,6 +1374,7 @@ let _extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
 let extraCflags = '<%_extraCflags%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g"%>'
 
 let analyzationLibs = if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '$(LIBOMCPPOMCFACTORY) $(LIBOMCPPSIMCONTROLLER) $(LIBOMCPPSIMULATIONSETTINGS) $(LIBOMCPPSYSTEM) $(LIBOMCPPDATAEXCHANGE) $(LIBOMCPPNEWTON) $(LIBOMCPPKINSOL) $(LIBOMCPPCVODE) $(LIBOMCPPSOLVER) $(LIBOMCPPMATH) $(LIBOMCPPMODELICAUTILITIES) $(SUNDIALS_LIBS) $(LAPACK_LIBS) $(BASE_LIB)' else '-lOMCppOMCFactory $(BASE_LIB)'
+let schedulerLibs = if stringEq(type,"tbb") then "-ltbb" else ""
 let _extraCflags = if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '<%extraCflags%> -D ANALYZATION_MODE -I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"' else '<%extraCflags%>'
 <<
 # Makefile generated by OpenModelica
@@ -1381,7 +1392,7 @@ CFLAGS_BASED_ON_INIT_FILE=<%_extraCflags%> -I"<%makefileParams.omhome%>/../Simul
 CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
 LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"    -L"$(BOOST_LIBS)"
 CPP_RUNTIME_LIBS=<%analyzationLibs%>
-LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" <%simulationMainDLLib(simCode)%> -L"<%makefileParams.omhome%>/bin" $(CPP_RUNTIME_LIBS) -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_SERIALIZATION_LIB) $(BOOST_THREAD_LIB) $(LINUX_LIB_DL)
+LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" <%simulationMainDLLib(simCode)%> -L"<%makefileParams.omhome%>/bin" <%schedulerLibs%> $(CPP_RUNTIME_LIBS) -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_SERIALIZATION_LIB) $(BOOST_THREAD_LIB) $(LINUX_LIB_DL)
 CPPFLAGS = $(CFLAGS) -DOMC_BUILD -DBOOST_SYSTEM_NO_DEPRICATED
 SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
 FUNCTIONFILE=OMCpp<%fileNamePrefix%>Functions.cpp

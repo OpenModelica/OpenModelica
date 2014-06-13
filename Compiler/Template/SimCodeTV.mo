@@ -3148,6 +3148,8 @@ package HpcOmSimCode
     record TASKDEPSCHEDULE
       list<tuple<Task,list<Integer>>> tasks;
     end TASKDEPSCHEDULE;
+    record EMPTYSCHEDULE
+    end EMPTYSCHEDULE;
   end Schedule;
 
   uniontype MemoryMap

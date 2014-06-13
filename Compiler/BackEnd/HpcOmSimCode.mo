@@ -75,7 +75,7 @@ encapsulated package HpcOmSimCode
     record TASKDEPSCHEDULE
       list<tuple<Task,list<Integer>>> tasks; //topological sorted tasks with <taskIdx, parentTaskIdc>
     end TASKDEPSCHEDULE;
-    record EMPTYSCHEDULE  // a dummy schedule. used if there is no ODE-system
+    record EMPTYSCHEDULE  // a dummy schedule. used if there is no ODE-system or if the serial code should be produced
     end EMPTYSCHEDULE;
   end Schedule;
 

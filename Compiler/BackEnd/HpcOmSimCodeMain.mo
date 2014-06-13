@@ -425,7 +425,15 @@ algorithm
         true = arrayLength(iTaskGraph) == 0;
         print("There is no ODE system that can be parallelized!\n");
         // just did this because this works fine. TODO: make something reasonable here and do not use a scheduler.
-        schedule =  HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
+        schedule =  HpcOmScheduler.createEmptySchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
+      then
+        (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
+    case(_,_,_,_,_,_)
+      equation
+        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+        true = stringEq(flagValue, "none");
+        print("Using serial code\n");
+        schedule = HpcOmScheduler.createEmptySchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
       then
         (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
     case(_,_,_,_,_,_)
@@ -488,7 +496,7 @@ algorithm
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "taskdep");
-        print("Using OpenMP task dependencies\n");
+        print("Using dynamic task dependencies\n");
         schedule = HpcOmScheduler.createTaskDepSchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
     case(_,_,_,_,_,_)

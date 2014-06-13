@@ -59,6 +59,19 @@ protected import Util;
 
 public type TaskAssignment = array<Integer>; //the information which node <idx> is assigned to which processor <value>
 
+//--------------
+// No Scheduling
+//--------------
+public function createEmptySchedule "function createListSchedule
+  author: marcusw
+  Create a empty-schedule to produce the serial code."
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
+  output HpcOmSimCode.Schedule oSchedule;
+algorithm
+  oSchedule := HpcOmSimCode.EMPTYSCHEDULE();
+end createEmptySchedule;
 
 //----------------
 // List Scheduling
@@ -991,6 +1004,10 @@ protected
   array<list<HpcOmSimCode.Task>> threadTasks;
 algorithm
   oScheduleInfo := match(iSchedule,iTaskCount)
+    case(HpcOmSimCode.EMPTYSCHEDULE(),_)
+      equation
+        tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1,-1.0));
+      then tmpScheduleInfo;
     case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks),_)
       equation
         tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1,-1.0));
