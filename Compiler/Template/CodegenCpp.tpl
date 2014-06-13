@@ -8523,7 +8523,7 @@ case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
   let vars = var_lst |> v => daeExp(makeCrefRecordExp(cr,v), context, &preExp, &varDecls,simCode)
              ;separator=", "
   let record_type_name = underscorePath(ClassInf.getStateName(record_state))
-  let ret_type = '<%record_type_name%>'
+  let ret_type = '<%record_type_name%>RetType'
   let ret_var = tempDecl(ret_type, &varDecls)
   let &preExp += '<%ret_var%> = _functions.<%record_type_name%>(<%vars%>);<%\n%>'
   '<%ret_var%>'
