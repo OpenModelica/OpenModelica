@@ -206,7 +206,7 @@ template getAddHpcomFunctionHeaders(Option<Schedule> hpcOmScheduleOpt)
                 let voidfuncs = hpcOmSchedule.tasks |> task => getAddHpcomFuncHeadersTaskDep(task); separator="\n"
                 <<
                 <%getAddHpcomStructHeaders(hpcOmScheduleOpt)%>
-                
+
                 <%voidfuncs%>
                 >>
             else ""

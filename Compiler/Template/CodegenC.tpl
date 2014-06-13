@@ -2175,9 +2175,9 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
       void terminateHpcOmThreads()
       {
       }
-      
+
       <%functionXXX_system(derivativEquations,name,n,modelNamePrefixStr)%>
-      >>    
+      >>
     case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
       let taskEqs = functionXXX_system0_HPCOM_TaskDep(hpcOmSchedule.tasks, derivativEquations, type, name, modelNamePrefixStr); separator="\n"
       <<
