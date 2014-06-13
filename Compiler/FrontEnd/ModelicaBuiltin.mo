@@ -3484,12 +3484,18 @@ annotation(Documentation(info="<html>
   <body>Redirecting to the <a href=\"https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.8.1\">on-line release notes</a>.</body>
 </html>"));
 end '1.8.1';
-package '1.9.0' "Version 1.9.0 RC1 (2013-09-27)"
+package '1.9.0' "Version 1.9.0 (r17628, 2013-10-09)"
   annotation(Documentation(info = "<html>
   <head><meta http-equiv=\"refresh\" content=\"0; url=https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.9.0\"></head>
   <body>Redirecting to the <a href=\"https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.9.0\">on-line release notes</a>.</body>
 </html>"));
 end '1.9.0';
+package '1.9.1' "Version 1.9.1 Beta 2 (2014-03-08)"
+  annotation(Documentation(info = "<html>
+  <head><meta http-equiv=\"refresh\" content=\"0; url=https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.9.1\"></head>
+  <body>Redirecting to the <a href=\"https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.9.1\">on-line release notes</a>.</body>
+</html>"));
+end '1.9.1';
 package trunk "Development version"
 annotation(Documentation(info="<html>
 </html>"));
