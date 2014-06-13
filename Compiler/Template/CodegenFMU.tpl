@@ -475,6 +475,7 @@ case SIMVAR(__) then
   <<>>
   else if stringEq(FMUVersion, "2.0") then
   <<
+  <!-- Index of variable = <%index%> -->
   <ScalarVariable
     <%ScalarVariableAttribute2(simVar)%>>
     <%ScalarVariableType2(type_,unit,displayUnit,initialValue,varKind,index)%>

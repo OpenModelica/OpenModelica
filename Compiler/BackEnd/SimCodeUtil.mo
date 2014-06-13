@@ -7872,34 +7872,35 @@ algorithm
       list<SimCode.SimVar> stringConstVars;
       list<SimCode.SimVar> jacobianVars;
       list<SimCode.SimVar> realOptimizeConstraintsVars;
+      Integer index_;
 
     case (SimCode.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars,jacobianVars,realOptimizeConstraintsVars))
       equation
-        stateVars = rewriteIndex(stateVars, 0);
-        derivativeVars = rewriteIndex(derivativeVars, 0);
-        algVars = rewriteIndex(algVars, 0);
-        discreteAlgVars = rewriteIndex(discreteAlgVars, 0);
-        intAlgVars = rewriteIndex(intAlgVars, 0);
-        boolAlgVars = rewriteIndex(boolAlgVars, 0);
-        paramVars = rewriteIndex(paramVars, 0);
-        intParamVars = rewriteIndex(intParamVars, 0);
-        boolParamVars = rewriteIndex(boolParamVars, 0);
-        aliasVars = rewriteIndex(aliasVars, 0);
-        intAliasVars = rewriteIndex(intAliasVars, 0);
-        boolAliasVars = rewriteIndex(boolAliasVars, 0);
-        stringAlgVars = rewriteIndex(stringAlgVars, 0);
-        stringParamVars = rewriteIndex(stringParamVars, 0);
-        stringAliasVars = rewriteIndex(stringAliasVars, 0);
-        constVars = rewriteIndex(constVars, 0);
-        intConstVars = rewriteIndex(intConstVars, 0);
-        boolConstVars = rewriteIndex(boolConstVars, 0);
-        stringConstVars = rewriteIndex(stringConstVars, 0);
-        extObjVars = rewriteIndex(extObjVars, 0);
-        inputVars = rewriteIndex(inputVars, 0);
-        outputVars = rewriteIndex(outputVars, 0);
-        realOptimizeConstraintsVars = rewriteIndex(realOptimizeConstraintsVars, 0);
+        (stateVars, index_) = rewriteIndex(stateVars, 1);
+        (derivativeVars, index_) = rewriteIndex(derivativeVars, index_);
+        (algVars, index_) = rewriteIndex(algVars, index_);
+        (discreteAlgVars, index_) = rewriteIndex(discreteAlgVars, index_);
+        (intAlgVars, index_) = rewriteIndex(intAlgVars, index_);
+        (boolAlgVars, index_) = rewriteIndex(boolAlgVars, index_);
+        (paramVars, index_) = rewriteIndex(paramVars, index_);
+        (intParamVars, index_) = rewriteIndex(intParamVars, index_);
+        (boolParamVars, index_) = rewriteIndex(boolParamVars, index_);
+        (aliasVars, index_) = rewriteIndex(aliasVars, index_);
+        (intAliasVars, index_) = rewriteIndex(intAliasVars, index_);
+        (boolAliasVars, index_) = rewriteIndex(boolAliasVars, index_);
+        (stringAlgVars, index_) = rewriteIndex(stringAlgVars, index_);
+        (stringParamVars, index_) = rewriteIndex(stringParamVars, index_);
+        (stringAliasVars, index_) = rewriteIndex(stringAliasVars, index_);
+        (constVars, index_) = rewriteIndex(constVars, index_);
+        (intConstVars, index_) = rewriteIndex(intConstVars, index_);
+        (boolConstVars, index_) = rewriteIndex(boolConstVars, index_);
+        (stringConstVars, index_) = rewriteIndex(stringConstVars, index_);
+        (extObjVars, index_) = rewriteIndex(extObjVars, index_);
+        (inputVars, index_) = rewriteIndex(inputVars, index_);
+        (outputVars, index_) = rewriteIndex(outputVars, index_);
+        (realOptimizeConstraintsVars, index_) = rewriteIndex(realOptimizeConstraintsVars, index_);
         //jacobianVars don't need a index rewrite
       then SimCode.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars,
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
@@ -7909,21 +7910,16 @@ end fixIndex;
 
 protected function rewriteIndex
   input list<SimCode.SimVar> inVars;
-  input Integer iindex;
+  input Integer inIndex;
   output list<SimCode.SimVar> outVars;
+  output Integer outIndex;
 algorithm
-  outVars := rewriteIndexWork(inVars, iindex, {});
-end rewriteIndex;
-
-protected function rewriteIndexWork
-  input list<SimCode.SimVar> inVars;
-  input Integer iindex;
-  input list<SimCode.SimVar> inAcc;
-  output list<SimCode.SimVar> outVars;
-algorithm
-  outVars :=
-  match(inVars, iindex, inAcc)
+  (outVars, outIndex) := matchcontinue (inVars, inIndex)
     local
+      list<SimCode.SimVar> vars;
+      list<SimCode.SimVar> xs;
+      SimCode.SimVar var;
+      
       DAE.ComponentRef name;
       BackendDAE.VarKind kind;
       String comment, unit, displayUnit;
@@ -7933,20 +7929,26 @@ algorithm
       DAE.Type type_;
       Boolean isDiscrete, isValueChangeable;
       Option<DAE.ComponentRef> arrayCref;
-      Integer index_;
       SimCode.AliasVariable aliasvar;
-      list<SimCode.SimVar> rest, rest2;
       DAE.ElementSource source;
       SimCode.Causality causality;
       list<String> numArrayElement;
-      Integer index;
-      SimCode.SimVar var;
-
-    case ({}, _, _) then listReverse(inAcc);
-    case (SimCode.SIMVAR(name, kind, comment, unit, displayUnit, _, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement, isValueChangeable, isProtected)::rest, index_, _)
-      then rewriteIndexWork(rest, index_ + 1, SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index_, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement, isValueChangeable, isProtected)::inAcc);
-  end match;
-end rewriteIndexWork;
+      Integer index_;
+      
+    case ((SimCode.SIMVAR(name, kind, comment, unit, displayUnit, _, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement, isValueChangeable, isProtected) :: xs), index_)
+      equation
+        var = SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index_, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement, isValueChangeable, isProtected);
+        (vars, index_) = rewriteIndex(xs, index_ + 1);
+      then
+        ((var::vars), index_);
+    case ((_ :: xs), index_)
+      equation
+        (vars, index_) = rewriteIndex(xs, index_);
+      then
+        (vars, index_);
+    case ({}, index_) then ({}, index_);
+  end matchcontinue;
+end rewriteIndex;
 
 public function createCrefToSimVarHT
   input SimCode.ModelInfo modelInfo;
