@@ -102,7 +102,7 @@ static void XMLCALL startElement(void *voidData, const char *name, const char **
       maxVarsBuffer *= 2;
       varsBuffer = realloc(varsBuffer, sizeof(const char*)*maxVarsBuffer);
     }
-    varsBuffer[userData->xml->equationInfo[userData->curIndex].numVar++] = attr[1];
+    varsBuffer[userData->xml->equationInfo[userData->curIndex].numVar++] = strdup(attr[1]);
     return;
   }
   if(0==strcmp("info", name))
