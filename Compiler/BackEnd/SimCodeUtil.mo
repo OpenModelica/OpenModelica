@@ -7919,7 +7919,7 @@ algorithm
       list<SimCode.SimVar> vars;
       list<SimCode.SimVar> xs;
       SimCode.SimVar var;
-      
+
       DAE.ComponentRef name;
       BackendDAE.VarKind kind;
       String comment, unit, displayUnit;
@@ -7934,7 +7934,7 @@ algorithm
       SimCode.Causality causality;
       list<String> numArrayElement;
       Integer index_;
-      
+
     case ((SimCode.SIMVAR(name, kind, comment, unit, displayUnit, _, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement, isValueChangeable, isProtected) :: xs), index_)
       equation
         var = SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index_, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement, isValueChangeable, isProtected);
