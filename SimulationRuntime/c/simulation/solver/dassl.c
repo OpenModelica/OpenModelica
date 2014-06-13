@@ -38,6 +38,7 @@
 #include "util/omc_error.h"
 #include "util/memory_pool.h"
 
+#include "simulation/options.h"
 #include "simulation/simulation_runtime.h"
 #include "simulation/results/simulation_result.h"
 #include "simulation/solver/solver_main.h"
@@ -204,10 +205,26 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
   /*********************************************************************
    *info[3] = 1;  //go not past TSTOP
    *rwork[0] = stop;  //TSTOP
-   *********************************************************************
-   *info[6] = 1;  //prohibit code to decide max. stepsize on its own
-   *rwork[1] = *step;  //define max. stepsize
    *********************************************************************/
+  /* define maximum step size, which is dassl is allowed to go */
+  if (omc_flag[FLAG_MAX_STEP_SIZE]) {
+    double maxStepSize = atof(omc_flagValue[FLAG_MAX_STEP_SIZE]);
+
+    assertStreamPrint(data->threadData, maxStepSize >= DASSL_STEP_EPS, "Selected maximum step size %e is too small.", maxStepSize);
+
+    dasslData->rwork[1] = maxStepSize;
+    dasslData->info[6] = 1;
+  }
+
+  /* define maximum integration order of dassl */
+  if (omc_flag[FLAG_MAX_ORDER]) {
+    int maxOrder = atoi(omc_flagValue[FLAG_MAX_ORDER]);
+
+    assertStreamPrint(data->threadData, maxOrder >= 1 && maxOrder <= 5, "Selected maximum order %d is out of range (1-5).", maxOrder);
+
+    dasslData->iwork[2] = maxOrder;
+    dasslData->info[8] = 1;
+  }
 
   if(dasslData->dasslMethod == DASSL_SYMJAC ||
       dasslData->dasslMethod == DASSL_COLOREDSYMJAC ||
@@ -519,6 +536,8 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
     infoStreamPrint(LOG_DASSL, 0, "current integration time value: %0.4g", dasslData->rwork[3]);
     infoStreamPrint(LOG_DASSL, 0, "step size H to be attempted on next step: %0.4g", dasslData->rwork[2]);
     infoStreamPrint(LOG_DASSL, 0, "step size used on last successful step: %0.4g", dasslData->rwork[6]);
+    infoStreamPrint(LOG_DASSL, 0, "the order of the method used on the last step: %d", dasslData->iwork[7]);
+    infoStreamPrint(LOG_DASSL, 0, "the order of the method to be attempted on the next step: %d", dasslData->iwork[8]);
     infoStreamPrint(LOG_DASSL, 0, "number of steps taken so far: %d", (int)dasslData->iwork[10]);
     infoStreamPrint(LOG_DASSL, 0, "number of calls of functionODE() : %d", (int)dasslData->iwork[11]);
     infoStreamPrint(LOG_DASSL, 0, "number of calculation of jacobian : %d", (int)dasslData->iwork[12]);
