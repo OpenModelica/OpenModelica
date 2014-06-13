@@ -7704,10 +7704,10 @@ case CAST(__) then
     let from = expTypeFromExpShort(exp)
     let &preExp += 'cast_<%from%>_array_to_<%to%>(&<%expVar%>, &<%tvar%>);<%\n%>' /*test2*/
     '<%tvar%>'
-  
+
   //'(*((<%underscorePath(rec.path)%>*)&<%expVar%>))'
-  case T_COMPLEX(varLst=vl,complexClassType=rec as RECORD(__))   then 
-     
+  case T_COMPLEX(varLst=vl,complexClassType=rec as RECORD(__))   then
+
       let tvar = tempDecl(underscorePath(rec.path)+"Type", &varDecls /*BUFD*/)
       let &preExp += '<%structParams(expVar,tvar,vl)%><%\n%>' /*test2*/
      '<%tvar%>'
@@ -7718,8 +7718,8 @@ end daeExpCast;
 
 template structParams(String structName,String varName,list<Var>  exps)
 ::=
-   let  params = (exps |> e => match e 
-    case TYPES_VAR(__) then 
+   let  params = (exps |> e => match e
+    case TYPES_VAR(__) then
     '<%varName%>.<%name%>=<%structName%>.<%name%>;'
     ;separator="\n" )
   params
