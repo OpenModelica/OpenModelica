@@ -6322,7 +6322,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context,  
   let &varDeclsLocal = buffer "" /*BUFD*/
   match eq
     case e as SES_SIMPLE_ASSIGN(__)
-      then 
+      then
       let body = equationSimpleAssign(e, context,&varDeclsLocal,simCode)
        <<
         /*
@@ -6337,7 +6337,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context,  
     case e as SES_IFEQUATION(__)
     then "SES_IFEQUATION"
    case e as SES_ALGORITHM(__)
-      then 
+      then
       let body = equationAlgorithm(e, context, &varDeclsLocal,simCode)
       <<
         /*
@@ -6350,7 +6350,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context,  
         }
       >>
     case e as SES_WHEN(__)
-      then 
+      then
       let body = equationWhen(e, context, &varDeclsLocal,simCode)
       <<
         /*
@@ -6363,7 +6363,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context,  
         }
       >>
     case e as SES_ARRAY_CALL_ASSIGN(__)
-      then 
+      then
       let body = equationArrayCallAssign(e, context, &varDeclsLocal,simCode)
       <<
         /*
@@ -6377,7 +6377,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context,  
       >>
     case e as SES_LINEAR(__)
     case e as SES_NONLINEAR(__)
-      then 
+      then
       let body = equationLinearOrNonLinear(e, context, &varDeclsLocal,simCode)
       <<
         /*
