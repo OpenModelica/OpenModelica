@@ -9015,14 +9015,16 @@ case CAST(__) then
     let from = expTypeFromExpShort(exp)
     let &preExp += 'cast_<%from%>_array_to_<%to%>(&<%expVar%>, &<%tvar%>);<%\n%>'
     '<%tvar%>'
-  case T_COMPLEX(complexClassType=rec as RECORD(__)) then
-/*
- // TODO: Unify all records with the same fields into a single typedef so we don't need this
-    let tmp = tempDecl(expTypeFromExpModelica(exp),&varDecls)
-    let &preExp += '<%tmp%> = <%expVar%>;<%\n%>'
-    '(*((<%underscorePath(rec.path)%>*)&<%tmp%>))'
-*/
-    expVar
+  case ty1 as T_COMPLEX(complexClassType=rec as RECORD(__)) then
+    match typeof(exp)
+      case ty2 as T_COMPLEX(__) then
+        if intEq(listLength(ty1.varLst),listLength(ty2.varLst)) then expVar
+        else
+          let tmp = tempDecl(expTypeModelica(ty2),&varDecls)
+          let res = tempDecl(expTypeModelica(ty1),&varDecls)
+          let &preExp += '<%tmp%> = <%expVar%>;<%\n%>'
+          let &preExp += ty1.varLst |> var as DAE.TYPES_VAR() => '<%res%>._<%var.name%> = <%tmp%>._<%var.name%>;<%\n%>'
+          res
   else
     '(<%expVar%>) /* could not cast, using the variable as it is */'
 end daeExpCast;

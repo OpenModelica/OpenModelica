@@ -389,6 +389,8 @@ constant DebugFlag PRINT_STRUCTURAL = DEBUG_FLAG(111, "printStructuralParameters
   Util.gettext("Prints the structural parameters identified by the front-end"));
 constant DebugFlag ITERATION_VARS = DEBUG_FLAG(112, "iterationVars", false,
   Util.gettext("Shows a list of all iteration variables."));
+constant DebugFlag ALLOW_RECORD_TOO_MANY_FIELDS = DEBUG_FLAG(113, "acceptTooManyFields", false,
+  Util.gettext("Accepts passing records with more fields than expected to a function. This is not allowed, but is used in Fluid.Dissipation. See https://trac.modelica.org/Modelica/ticket/1245 for details."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -506,7 +508,8 @@ constant list<DebugFlag> allDebugFlags = {
   IMPL_ODE,
   EVAL_FUNC_DUMP,
   PRINT_STRUCTURAL,
-  ITERATION_VARS
+  ITERATION_VARS,
+  ALLOW_RECORD_TOO_MANY_FIELDS
 };
 
 // CONFIGURATION FLAGS
