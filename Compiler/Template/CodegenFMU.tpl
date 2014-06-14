@@ -475,6 +475,7 @@ case SIMVAR(__) then
   <<>>
   else if stringEq(FMUVersion, "2.0") then
   <<
+  <!-- Index of variable = <%getVariableIndex(variable_index)%> -->
   <ScalarVariable
     <%ScalarVariableAttribute2(simVar)%>>
     <%ScalarVariableType2(type_,unit,displayUnit,initialValue,varKind,index)%>
@@ -488,6 +489,14 @@ case SIMVAR(__) then
   </ScalarVariable>
   >>
 end ScalarVariable;
+
+template getVariableIndex(Option<Integer> variable_index)
+ "Returns the variable index of SimVar"
+::=
+match variable_index
+  case SOME(index) then index
+  else ""
+end getVariableIndex;
 
 template ScalarVariableAttribute(SimVar simVar)
  "Generates code for ScalarVariable Attribute file for FMU target."

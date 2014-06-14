@@ -7165,10 +7165,11 @@ algorithm
         ((varsOut, _, _)) = BackendVariable.traverseBackendDAEVars(extvars, extractVarsFromList, (varsOut, aliasVars, knvars));
         /* sort variables on index */
         varsOut = sortSimvars(varsOut);
-         varsOut = Util.if_(stringEqual(Config.simCodeTarget(), "Cpp"), extendIncompleteArray(varsOut), varsOut);
+        varsOut = Util.if_(stringEqual(Config.simCodeTarget(), "Cpp"), extendIncompleteArray(varsOut), varsOut);
         /* Index of algebraic and parameters need
          to fix due to separation of int Vars*/
         varsOut = fixIndex(varsOut);
+        varsOut = setVariableIndex(varsOut);
       then
         varsOut;
 
@@ -7947,6 +7948,115 @@ algorithm
       then rewriteIndexWork(rest, index_ + 1, SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index_, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement, isValueChangeable, isProtected)::inAcc);
   end match;
 end rewriteIndexWork;
+
+protected function setVariableIndex
+  input SimCode.SimVars inSimVars;
+  output SimCode.SimVars outSimVars;
+algorithm
+  outSimVars := match (inSimVars)
+    local
+      list<SimCode.SimVar> stateVars;
+      list<SimCode.SimVar> derivativeVars;
+      list<SimCode.SimVar> algVars;
+      list<SimCode.SimVar> discreteAlgVars;
+      list<SimCode.SimVar> intAlgVars;
+      list<SimCode.SimVar> boolAlgVars;
+      list<SimCode.SimVar> inputVars;
+      list<SimCode.SimVar> outputVars;
+      list<SimCode.SimVar> aliasVars;
+      list<SimCode.SimVar> intAliasVars;
+      list<SimCode.SimVar> boolAliasVars;
+      list<SimCode.SimVar> paramVars;
+      list<SimCode.SimVar> intParamVars;
+      list<SimCode.SimVar> boolParamVars;
+      list<SimCode.SimVar> stringAlgVars;
+      list<SimCode.SimVar> stringParamVars;
+      list<SimCode.SimVar> stringAliasVars;
+      list<SimCode.SimVar> extObjVars;
+      list<SimCode.SimVar> constVars;
+      list<SimCode.SimVar> intConstVars;
+      list<SimCode.SimVar> boolConstVars;
+      list<SimCode.SimVar> stringConstVars;
+      list<SimCode.SimVar> jacobianVars;
+      list<SimCode.SimVar> realOptimizeConstraintsVars;
+      Integer index_;
+
+    case (SimCode.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars,
+      outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
+      stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars,jacobianVars,realOptimizeConstraintsVars))
+      equation
+        (stateVars, index_) = setVariableIndexHelper(stateVars, 1);
+        (derivativeVars, index_) = setVariableIndexHelper(derivativeVars, index_);
+        (algVars, index_) = setVariableIndexHelper(algVars, index_);
+        (discreteAlgVars, index_) = setVariableIndexHelper(discreteAlgVars, index_);
+        (intAlgVars, index_) = setVariableIndexHelper(intAlgVars, index_);
+        (boolAlgVars, index_) = setVariableIndexHelper(boolAlgVars, index_);
+        (paramVars, index_) = setVariableIndexHelper(paramVars, index_);
+        (intParamVars, index_) = setVariableIndexHelper(intParamVars, index_);
+        (boolParamVars, index_) = setVariableIndexHelper(boolParamVars, index_);
+        (aliasVars, index_) = setVariableIndexHelper(aliasVars, index_);
+        (intAliasVars, index_) = setVariableIndexHelper(intAliasVars, index_);
+        (boolAliasVars, index_) = setVariableIndexHelper(boolAliasVars, index_);
+        (stringAlgVars, index_) = setVariableIndexHelper(stringAlgVars, index_);
+        (stringParamVars, index_) = setVariableIndexHelper(stringParamVars, index_);
+        (stringAliasVars, index_) = setVariableIndexHelper(stringAliasVars, index_);
+        (constVars, index_) = setVariableIndexHelper(constVars, index_);
+        (intConstVars, index_) = setVariableIndexHelper(intConstVars, index_);
+        (boolConstVars, index_) = setVariableIndexHelper(boolConstVars, index_);
+        (stringConstVars, index_) = setVariableIndexHelper(stringConstVars, index_);
+        (extObjVars, index_) = setVariableIndexHelper(extObjVars, index_);
+        (inputVars, index_) = setVariableIndexHelper(inputVars, index_);
+        (outputVars, index_) = setVariableIndexHelper(outputVars, index_);
+        (realOptimizeConstraintsVars, index_) = setVariableIndexHelper(realOptimizeConstraintsVars, index_);
+        //jacobianVars don't need a index rewrite
+      then SimCode.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars,
+        outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
+        stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars);
+  end match;
+end setVariableIndex;
+
+protected function setVariableIndexHelper
+  input list<SimCode.SimVar> inVars;
+  input Integer inIndex;
+  output list<SimCode.SimVar> outVars;
+  output Integer outIndex;
+algorithm
+  (outVars, outIndex) := matchcontinue (inVars, inIndex)
+    local
+      list<SimCode.SimVar> vars;
+      list<SimCode.SimVar> xs;
+      SimCode.SimVar var;
+
+      DAE.ComponentRef name;
+      BackendDAE.VarKind kind;
+      String comment, unit, displayUnit;
+      Integer index;
+      Option<DAE.Exp> minVal, maxVal;
+      Option<DAE.Exp> initVal, nomVal;
+      Boolean isFixed,isProtected;
+      DAE.Type type_;
+      Boolean isDiscrete, isValueChangeable;
+      Option<DAE.ComponentRef> arrayCref;
+      SimCode.AliasVariable aliasvar;
+      DAE.ElementSource source;
+      SimCode.Causality causality;
+      list<String> numArrayElement;
+      Integer index_;
+
+    case ((SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, _, numArrayElement, isValueChangeable, isProtected) :: xs), index_)
+      equation
+        var = SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, SOME(index_), numArrayElement, isValueChangeable, isProtected);
+        (vars, index_) = setVariableIndexHelper(xs, index_ + 1);
+      then
+        ((var::vars), index_);
+    case ((_ :: xs), index_)
+      equation
+        (vars, index_) = setVariableIndexHelper(xs, index_);
+      then
+        (vars, index_);
+    case ({}, index_) then ({}, index_);
+  end matchcontinue;
+end setVariableIndexHelper;
 
 public function createCrefToSimVarHT
   input SimCode.ModelInfo modelInfo;
