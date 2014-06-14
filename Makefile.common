@@ -350,11 +350,11 @@ install: install-dirs install-python
 	# Application directory (OSX)
 	if [ "$(APP)" = ".app" ]; then cp -rp ${builddir_app} $(INSTALL_APPDIR); fi
 	# Binaries
-	cp -rp ${builddir_bin}/* ${INSTALL_BINDIR}
+	cp -a ${builddir_bin}/* ${INSTALL_BINDIR}
 	# Libraries
-	cp -rp ${builddir_lib}/* ${INSTALL_LIBDIR}
+	cp -a ${builddir_lib}/* ${INSTALL_LIBDIR}
 	# Includes
-	cp -rp ${builddir_inc}/* ${INSTALL_INCLUDEDIR}
+	cp -a ${builddir_inc}/* ${INSTALL_INCLUDEDIR}
 	# License
 	cp -p COPYING ${INSTALL_DOCDIR}/omc/
 	# Documents
