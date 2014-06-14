@@ -12,8 +12,8 @@ includedir = @includedir@
 datadir = @datadir@
 datarootdir = @datarootdir@
 docdir = @docdir@
-CMAKE = CC=$(CC) CXX=$(CXX) cmake
-CMAKE_GCC = GCC_CC=$(CC) GCC_CXX=$(CXX) cmake
+CMAKE = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" cmake
+CMAKE_RPATH = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@RPATH_QMAKE@" cmake
 CMAKE_TARGET = "Unix Makefiles"
 OPENCL = @OPENCL@
 AR = @AR@
@@ -27,8 +27,6 @@ APP=@APP@
 
 CC=@CC@
 CXX=@CXX@
-GCC_CC=@CC@
-GCC_CXX=@CXX@
 CFLAGS=@CFLAGS@
 MSGPACK_CFLAGS =
 CPPFLAGS=@CPPFLAGS@
@@ -145,9 +143,12 @@ ifeq (@MODELICA3D@,)
 	@echo Skipping Modelica3D
 else
 	cd 3rdParty/modelica3d && mkdir -p build
-	cd 3rdParty/modelica3d/build && $(CMAKE_GCC) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DOSG_BACKEND=1 -DUSE_OMC=0 ..
+	cd 3rdParty/modelica3d/build && $(CMAKE_RPATH) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DOSG_BACKEND=1 -DUSE_OMC=0 ..
 	$(MAKE) -C 3rdParty/modelica3d/build
 	cp -p 3rdParty/modelica3d/build/backends/osg-gtk/libm3d-osg-gtk$(SHREXT) 3rdParty/modelica3d/build/lib/proc3d/libproc3d$(SHREXT) build/lib/
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libproc3d.dylib build/lib/libproc3d.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libm3d-osg-gtk.dylib build/lib/libm3d-osg-gtk.dylib
+	test ! `uname` = Darwin || install_name_tool -change "`pwd`/3rdParty/modelica3d/build/lib/proc3d/libproc3d.dylib" "@rpath/libproc3d.dylib" build/lib/libm3d-osg-gtk.dylib
 	cp -p 3rdParty/modelica3d/build/lib/modcount/libmodcount.a 3rdParty/modelica3d/build/lib/modbus/libmodbus.a build/lib/omc/
 	mkdir -p build/lib/omlibrary-modelica3d/blender2.59 build/lib/omlibrary-modelica3d/osg-gtk/
 	cp -p 3rdParty/modelica3d/examples/multibody/src/modelica/*.mo build/lib/omlibrary-modelica3d/
