@@ -22,7 +22,7 @@ simFlags := "-abortSlowSimulation -alarm=" + ulimitExe;
 runScript("CustomCommands.mos");
 
 customCommandsStr := if regularFileExists("CustomCommands.mos") then ("Flags: <pre>" + escapeXML(readFile("CustomCommands.mos")) + "</pre>") else "";
-library:=$TypeName(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.StraightPipe.kc_overall);
+library:=$TypeName(Modelica);
 libraryVersion:="default";
 
 setCommandLineOptions({"+g=Modelica","+d=nogen"});
