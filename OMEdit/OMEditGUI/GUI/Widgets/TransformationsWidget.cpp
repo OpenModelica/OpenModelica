@@ -403,6 +403,7 @@ TVariablesTreeView::TVariablesTreeView(TransformationsWidget *pTransformationsWi
   : QTreeView(pTransformationsWidget)
 {
   mpTransformationsWidget = pTransformationsWidget;
+  setObjectName("TreeWithBranches");
   setItemDelegate(new ItemDelegate(this));
   setTextElideMode(Qt::ElideMiddle);
   setIndentation(Helper::treeIndentation);
@@ -415,8 +416,7 @@ EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWid
   : QTreeWidget(pTransformationWidget), mpTransformationWidget(pTransformationWidget)
 {
   setItemDelegate(new ItemDelegate(this));
-  setObjectName("EquationsTree");
-  setIndentation(Helper::treeIndentation);
+  setIndentation(0);
   setColumnCount(7);
   setTextElideMode(Qt::ElideMiddle);
   setSortingEnabled(true);
@@ -535,8 +535,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   pOperationsLabel->setObjectName("LabelWithBorder");
   mpVariableOperationsTreeWidget = new QTreeWidget;
   mpVariableOperationsTreeWidget->setItemDelegate(new ItemDelegate(mpVariableOperationsTreeWidget));
-  mpVariableOperationsTreeWidget->setObjectName("VariableOperationsTree");
-  mpVariableOperationsTreeWidget->setIndentation(Helper::treeIndentation);
+  mpVariableOperationsTreeWidget->setIndentation(0);
   mpVariableOperationsTreeWidget->setColumnCount(1);
   mpVariableOperationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpVariableOperationsTreeWidget->setHeaderLabel(tr("Operations"));
@@ -552,6 +551,8 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   pEquationsBrowserLabel->setObjectName("LabelWithBorder");
   /* Equations tree widget */
   mpEquationsTreeWidget = new EquationTreeWidget(this);
+  mpEquationsTreeWidget->setObjectName("TreeWithBranches");
+  mpEquationsTreeWidget->setIndentation(Helper::treeIndentation);
   QGridLayout *pEquationsGridLayout = new QGridLayout;
   pEquationsGridLayout->setSpacing(1);
   pEquationsGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -564,7 +565,6 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   pDefinesLabel->setObjectName("LabelWithBorder");
   mpDefinesVariableTreeWidget = new QTreeWidget;
   mpDefinesVariableTreeWidget->setItemDelegate(new ItemDelegate(mpDefinesVariableTreeWidget));
-  mpDefinesVariableTreeWidget->setObjectName("DefinesTree");
   mpDefinesVariableTreeWidget->setIndentation(0);
   mpDefinesVariableTreeWidget->setColumnCount(1);
   mpDefinesVariableTreeWidget->setTextElideMode(Qt::ElideMiddle);
@@ -585,8 +585,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   pDependsLabel->setObjectName("LabelWithBorder");
   mpDependsVariableTreeWidget = new QTreeWidget;
   mpDependsVariableTreeWidget->setItemDelegate(new ItemDelegate(mpDependsVariableTreeWidget));
-  mpDependsVariableTreeWidget->setObjectName("DependsTree");
-  mpDependsVariableTreeWidget->setIndentation(Helper::treeIndentation);
+  mpDependsVariableTreeWidget->setIndentation(0);
   mpDependsVariableTreeWidget->setColumnCount(1);
   mpDependsVariableTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpDependsVariableTreeWidget->setSortingEnabled(true);
@@ -604,8 +603,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   pEquationOperationsLabel->setObjectName("LabelWithBorder");
   mpEquationOperationsTreeWidget = new QTreeWidget;
   mpEquationOperationsTreeWidget->setItemDelegate(new ItemDelegate(mpEquationOperationsTreeWidget));
-  mpEquationOperationsTreeWidget->setObjectName("EquationOperationsTree");
-  mpEquationOperationsTreeWidget->setIndentation(Helper::treeIndentation);
+  mpEquationOperationsTreeWidget->setIndentation(0);
   mpEquationOperationsTreeWidget->setColumnCount(1);
   mpEquationOperationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpEquationOperationsTreeWidget->setHeaderLabel(tr("Operations"));

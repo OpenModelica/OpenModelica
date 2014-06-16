@@ -667,6 +667,7 @@ VariablesTreeView::VariablesTreeView(VariablesWidget *pVariablesWidget)
   : QTreeView(pVariablesWidget)
 {
   mpVariablesWidget = pVariablesWidget;
+  setObjectName("TreeWithBranches");
   setItemDelegate(new ItemDelegate(this));
   setTextElideMode(Qt::ElideMiddle);
   setIndentation(Helper::treeIndentation);

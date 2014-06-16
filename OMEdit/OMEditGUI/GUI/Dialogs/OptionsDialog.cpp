@@ -1133,7 +1133,6 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
   // system libraries tree
   mpSystemLibrariesTree = new QTreeWidget;
   mpSystemLibrariesTree->setItemDelegate(new ItemDelegate(mpSystemLibrariesTree));
-  mpSystemLibrariesTree->setObjectName("SystemLibrariesTree");
   mpSystemLibrariesTree->setIndentation(0);
   mpSystemLibrariesTree->setColumnCount(2);
   mpSystemLibrariesTree->setTextElideMode(Qt::ElideMiddle);
@@ -1173,7 +1172,6 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
   // user libraries tree
   mpUserLibrariesTree = new QTreeWidget;
   mpUserLibrariesTree->setItemDelegate(new ItemDelegate(mpUserLibrariesTree));
-  mpUserLibrariesTree->setObjectName("UserLibrariesTree");
   mpUserLibrariesTree->setIndentation(0);
   mpUserLibrariesTree->setColumnCount(2);
   mpUserLibrariesTree->setTextElideMode(Qt::ElideMiddle);

@@ -262,7 +262,6 @@ MessagesTreeWidget::MessagesTreeWidget(MessagesWidget *pMessagesWidget)
   setItemDelegate(new ItemDelegate(this, true));
   setTextElideMode(Qt::ElideMiddle);
   setSelectionMode(QAbstractItemView::ExtendedSelection);
-  setObjectName("MessagesTree");
   setIndentation(0);
   setColumnCount(4);
   setIconSize(QSize(12, 12));

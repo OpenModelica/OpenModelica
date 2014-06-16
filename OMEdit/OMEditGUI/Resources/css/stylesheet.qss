@@ -7,45 +7,37 @@ QMainWindow::separator {
     height: 4px; /* when horizontal */
 }
 
-/* Library Widget Styles */
-QTreeWidget::branch,
-QTreeView::branch {
+/* Tree Widget Styles */
+QTreeWidget#TreeWithBranches::branch,
+QTreeView#TreeWithBranches::branch {
   border-image: url(:/Resources/icons/vline.png) 0;
 }
-QTreeWidget::branch:has-siblings:adjoins-item,
-QTreeView::branch:has-siblings:adjoins-item {
+QTreeWidget#TreeWithBranches::branch:has-siblings:adjoins-item,
+QTreeView#TreeWithBranches::branch:has-siblings:adjoins-item {
   border-image: url(:/Resources/icons/vline.png) 0;
   image: url(:/Resources/icons/branch-more.png);
 }
-QTreeWidget::branch:!has-children:!has-siblings:adjoins-item,
-QTreeView::branch:!has-children:!has-siblings:adjoins-item {
+QTreeWidget#TreeWithBranches::branch:!has-children:!has-siblings:adjoins-item,
+QTreeView#TreeWithBranches::branch:!has-children:!has-siblings:adjoins-item {
   border-image: url(:/Resources/icons/branch-end.png) 0;
 }
-QTreeWidget::branch:has-children:!has-siblings:closed,
-QTreeWidget::branch:closed:has-children:has-siblings,
-QTreeView::branch:has-children:!has-siblings:closed,
-QTreeView::branch:closed:has-children:has-siblings {
+QTreeWidget#TreeWithBranches::branch:has-children:!has-siblings:closed,
+QTreeWidget#TreeWithBranches::branch:closed:has-children:has-siblings,
+QTreeView#TreeWithBranches::branch:has-children:!has-siblings:closed,
+QTreeView#TreeWithBranches::branch:closed:has-children:has-siblings {
   border-image: none;
   image: url(:/Resources/icons/branch-closed.png);
 }
-QTreeWidget::branch:open:has-children:!has-siblings,
-QTreeWidget::branch:open:has-children:has-siblings,
-QTreeView::branch:open:has-children:!has-siblings,
-QTreeView::branch:open:has-children:has-siblings {
+QTreeWidget#TreeWithBranches::branch:open:has-children:!has-siblings,
+QTreeWidget#TreeWithBranches::branch:open:has-children:has-siblings,
+QTreeView#TreeWithBranches::branch:open:has-children:!has-siblings,
+QTreeView#TreeWithBranches::branch:open:has-children:has-siblings {
   border-image: none;
   image: url(:/Resources/icons/branch-open.png);
 }
 QTreeWidget::item,
 QTreeView::item {
   height: 22px;
-}
-QTreeWidget#SystemLibrariesTree::branch,
-QTreeWidget#UserLibrariesTree::branch,
-QTreeWidget#MessagesTree::branch,
-QTreeWidget#SearchedItemsTree::branch,
-QTreeWidget#VariablesTree::branch {
-  border-image: none;
-  image : none;
 }
 /* End of Library Widget Styles */
 

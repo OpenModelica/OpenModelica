@@ -56,11 +56,14 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Mo
   connect(mpFindClassTextBox, SIGNAL(textEdited(QString)), SLOT(findModelicaClasses()));
   connect(mpFindClassTextBox, SIGNAL(returnPressed()), SLOT(useModelicaClass()));
   mpLibraryBrowseTreeWidget = new QTreeWidget;
-  /*
-    note: this is needed to hide the icon of the tree item.
-    Since the icons of the tree items are only created when we expand the node. So its better to hide them here.
+  mpLibraryBrowseTreeWidget->setObjectName("TreeWithBranches");
+  /*! @note: this is needed to hide the icon of the tree item.
+      Since the icons of the tree items are only created when we expand the node. So its better to hide them here.
     */
-  mpLibraryBrowseTreeWidget->setIconSize(QSize(0,0));
+  //mpLibraryBrowseTreeWidget->setIconSize(QSize(0,0));
+  /*! @note: Commented the above line because Qt flush too many warnings if IconSize is 0.
+      We will see icons for the expanded models otherwise default icon is shown. Fair enough!
+    */
   mpLibraryBrowseTreeWidget->setItemDelegate(new ItemDelegate(mpLibraryBrowseTreeWidget));
   mpLibraryBrowseTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpLibraryBrowseTreeWidget->setHeaderLabel(Helper::libraries);

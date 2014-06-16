@@ -491,6 +491,7 @@ LibraryTreeWidget::LibraryTreeWidget(bool isSearchTree, MainWindow *pParent)
   : QTreeWidget(pParent)
 {
   mpMainWindow = pParent;
+  setObjectName("TreeWithBranches");
   setMinimumWidth(175);
   setItemDelegate(new ItemDelegate(this));
   setTextElideMode(Qt::ElideMiddle);
