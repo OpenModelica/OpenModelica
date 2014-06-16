@@ -4740,6 +4740,7 @@ template crefToCStr(ComponentRef cr)
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
 
+
 template subscriptsToCStr(list<Subscript> subscripts)
 ::=
   if subscripts then
@@ -4749,11 +4750,17 @@ end subscriptsToCStr;
 template subscriptToCStr(Subscript subscript)
 ::=
   match subscript
-  case INDEX(exp=ICONST(integer=i)) then i
   case SLICE(exp=ICONST(integer=i)) then i
   case WHOLEDIM(__) then "WHOLEDIM"
+  case INDEX(__) then
+   match exp
+    case ICONST(integer=i) then i
+    case ENUM_LITERAL(index=i) then i
+    end match
   else "UNKNOWN_SUBSCRIPT"
 end subscriptToCStr;
+
+
 
 template arraycref(ComponentRef cr)
 ::=
