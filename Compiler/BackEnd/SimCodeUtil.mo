@@ -13591,7 +13591,7 @@ algorithm
                                                           fmiDerivatives = SimCode.FMIDERIVATIVES(fmiUnknownsList = fmiUnknownsList_))))
       equation
         variableIndexOfStateVar =  getStateSimVarIndexFromIndex(stateVars_, index_);
-        /* FIXME! For now using fixed as default dependenciesKind. */  
+        /* FIXME! For now using fixed as default dependenciesKind. */
         fmiUnknown = SimCode.FMIUNKNOWN(variableIndex, {variableIndexOfStateVar}, {"fixed"});
         fmiUnknownsList_ = listAppend(fmiUnknownsList_, {fmiUnknown});
         fmiDerivatives_ = SimCode.FMIDERIVATIVES(fmiUnknownsList_);

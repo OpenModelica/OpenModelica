@@ -795,7 +795,7 @@ package SimCodeUtil
     input SimCode.SimVars inVars;
     output SimCode.FmiModelStructure outFmiModelStructure;
   end getFMIModelStructure;
-  
+
   function getStateSimVarIndexFromIndex
     input list<SimCode.SimVar> inStateVars;
     input Integer inIndex;
