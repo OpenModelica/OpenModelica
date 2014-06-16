@@ -104,7 +104,7 @@ case SIMCODE(__) then
     <%TypeDefinitions(modelInfo, "2.0")%>
     <%DefaultExperiment(simulationSettingsOpt)%>
     <%ModelVariables(modelInfo, "2.0")%>
-    <%ModelStructure()%>
+    <%ModelStructure(modelInfo)%>
   </fmiModelDescription>
   >>
 end fmi2ModelDescription;
@@ -619,22 +619,74 @@ template externalFunction(Function fn)
       >>
 end externalFunction;
 
-template ModelStructure()
- "Generates Model Structure definitions."
+template ModelStructure(ModelInfo modelInfo)
+ "Generates Model Structure."
 ::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
   <<
   <ModelStructure>
-    <Outputs>
-    </Outputs>
-    <Derivatives>
-    </Derivatives>
-    <DiscreteStates>
-    </DiscreteStates>
-    <InitialUnknowns>
-    </InitialUnknowns>
+    <%ModelStructureHelper(getFMIModelStructure(vars))%>
   </ModelStructure>
   >>
 end ModelStructure;
+
+template ModelStructureHelper(FmiModelStructure fmiModelStructure)
+ "Helper function to ModelStructure."
+::=
+match fmiModelStructure
+case FMIMODELSTRUCTURE(__) then
+  <<
+  <%ModelStructureOutputs(fmiOutputs)%>
+  <%ModelStructureDerivatives(fmiDerivatives)%>
+  <DiscreteStates>
+  </DiscreteStates>
+  <InitialUnknowns>
+  </InitialUnknowns>
+  >>
+end ModelStructureHelper;
+
+template ModelStructureOutputs(FmiOutputs fmiOutputs)
+ "Generates Model Structure Outputs."
+::=
+match fmiOutputs
+case FMIOUTPUTS(__) then
+  <<
+  <Outputs>
+    <%ModelStructureUnknowns(fmiUnknownsList)%>
+  </Outputs>
+  >>
+end ModelStructureOutputs;
+
+template ModelStructureDerivatives(FmiDerivatives fmiDerivatives)
+ "Generates Model Structure Derivatives."
+::=
+match fmiDerivatives
+case FMIDERIVATIVES(__) then
+  <<
+  <Derivatives>
+    <%ModelStructureUnknowns(fmiUnknownsList)%>
+  </Derivatives>
+  >>
+end ModelStructureDerivatives;
+
+template ModelStructureUnknowns(list<FmiUnknown> fmiUnknownsList)
+ "Generates Model Structure Unknowns"
+::=
+  <<
+  <%fmiUnknownsList |> fmiUnknown => FmiUnknownAttributes(fmiUnknown) ;separator="\n"%>
+  >>
+end ModelStructureUnknowns;
+
+template FmiUnknownAttributes(FmiUnknown fmiUnknown)
+ "Generates Model Structure Unknown attributes"
+::=
+match fmiUnknown
+case FMIUNKNOWN(__) then
+  <<
+  <Unknown index="<%index%>" />
+  >>
+end FmiUnknownAttributes;
 
 template fmumodel_identifierFile(SimCode simCode, String guid, String FMUVersion)
  "Generates code for ModelDescription file for FMU target."

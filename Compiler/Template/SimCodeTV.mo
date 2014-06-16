@@ -596,6 +596,33 @@ package SimCode
     end SIMEXTARGSIZE;
     record SIMNOEXTARG end SIMNOEXTARG;
   end SimExtArg;
+  
+  uniontype FmiUnknown
+    record FMIUNKNOWN
+      Integer index;
+      list<Integer> dependencies;
+      list<String> dependenciesKind;
+    end FMIUNKNOWN;
+  end FmiUnknown;
+
+  uniontype FmiOutputs
+    record FMIOUTPUTS
+      list<FmiUnknown> fmiUnknownsList;
+    end FMIOUTPUTS;
+  end FmiOutputs;
+  
+  uniontype FmiDerivatives
+    record FMIDERIVATIVES
+      list<FmiUnknown> fmiUnknownsList;
+    end FMIDERIVATIVES;
+  end FmiDerivatives;
+
+  uniontype FmiModelStructure
+    record FMIMODELSTRUCTURE
+      FmiOutputs fmiOutputs;
+      FmiDerivatives fmiDerivatives;
+    end FMIMODELSTRUCTURE;
+  end FmiModelStructure;
 
   constant Context contextSimulationNonDiscrete;
   constant Context contextSimulationDiscrete;
@@ -763,6 +790,11 @@ package SimCodeUtil
     input SimCode.SimVars inVars;
     output list<SimCode.SimVar> outVars;
   end getEnumerationTypes;
+  
+  function getFMIModelStructure
+    input SimCode.SimVars inVars;
+    output SimCode.FmiModelStructure outFmiModelStructure;
+  end getFMIModelStructure;
 
 end SimCodeUtil;
 

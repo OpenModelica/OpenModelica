@@ -7762,7 +7762,6 @@ algorithm
    end match;
 end extendIncompleteArray;
 
-
 protected function setArrayElementnoFirst
 "author: Frenkel TUD 2012-10"
   input SimCode.SimVar iVar;
@@ -13492,5 +13491,119 @@ algorithm
    s := intString(noIn)+&"): "+&intString(i2)+&" ---> "+&intString(i1);
    noOut := noIn+1;
 end dumpVarMappingTuple;
+
+public function getFMIModelStructure
+  input SimCode.SimVars inVars;
+  output SimCode.FmiModelStructure outFmiModelStructure;
+algorithm
+  outFmiModelStructure := matchcontinue(inVars)
+    local
+      list<SimCode.SimVar> stateVars;
+      list<SimCode.SimVar> derivativeVars;
+      list<SimCode.SimVar> algVars;
+      list<SimCode.SimVar> discreteAlgVars;
+      list<SimCode.SimVar> intAlgVars;
+      list<SimCode.SimVar> boolAlgVars;
+      list<SimCode.SimVar> inputVars;
+      list<SimCode.SimVar> outputVars;
+      list<SimCode.SimVar> aliasVars;
+      list<SimCode.SimVar> intAliasVars;
+      list<SimCode.SimVar> boolAliasVars;
+      list<SimCode.SimVar> paramVars;
+      list<SimCode.SimVar> intParamVars;
+      list<SimCode.SimVar> boolParamVars;
+      list<SimCode.SimVar> stringAlgVars;
+      list<SimCode.SimVar> stringParamVars;
+      list<SimCode.SimVar> stringAliasVars;
+      list<SimCode.SimVar> extObjVars;
+      list<SimCode.SimVar> constVars;
+      list<SimCode.SimVar> intConstVars;
+      list<SimCode.SimVar> boolConstVars;
+      list<SimCode.SimVar> stringConstVars;
+      list<SimCode.SimVar> jacobianVars;
+      list<SimCode.SimVar> realOptimizeConstraintsVars;
+      SimCode.FmiModelStructure fmiModelStructure;
+
+    case (SimCode.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars,
+      outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
+      stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars,jacobianVars,realOptimizeConstraintsVars))
+      equation
+        fmiModelStructure = SimCode.FMIMODELSTRUCTURE(SimCode.FMIOUTPUTS({}), SimCode.FMIDERIVATIVES({}));
+        fmiModelStructure = getFMIModelStructureHelper(stateVars, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(derivativeVars, fmiModelStructure);
+        /*(algVars, index_) = setVariableIndexHelper(algVars, index_);
+        (discreteAlgVars, index_) = setVariableIndexHelper(discreteAlgVars, index_);
+        (intAlgVars, index_) = setVariableIndexHelper(intAlgVars, index_);
+        (boolAlgVars, index_) = setVariableIndexHelper(boolAlgVars, index_);
+        (paramVars, index_) = setVariableIndexHelper(paramVars, index_);
+        (intParamVars, index_) = setVariableIndexHelper(intParamVars, index_);
+        (boolParamVars, index_) = setVariableIndexHelper(boolParamVars, index_);
+        (aliasVars, index_) = setVariableIndexHelper(aliasVars, index_);
+        (intAliasVars, index_) = setVariableIndexHelper(intAliasVars, index_);
+        (boolAliasVars, index_) = setVariableIndexHelper(boolAliasVars, index_);
+        (stringAlgVars, index_) = setVariableIndexHelper(stringAlgVars, index_);
+        (stringParamVars, index_) = setVariableIndexHelper(stringParamVars, index_);
+        (stringAliasVars, index_) = setVariableIndexHelper(stringAliasVars, index_);
+        (constVars, index_) = setVariableIndexHelper(constVars, index_);
+        (intConstVars, index_) = setVariableIndexHelper(intConstVars, index_);
+        (boolConstVars, index_) = setVariableIndexHelper(boolConstVars, index_);
+        (stringConstVars, index_) = setVariableIndexHelper(stringConstVars, index_);
+        (extObjVars, index_) = setVariableIndexHelper(extObjVars, index_);
+        (inputVars, index_) = setVariableIndexHelper(inputVars, index_);
+        (outputVars, index_) = setVariableIndexHelper(outputVars, index_);
+        (realOptimizeConstraintsVars, index_) = setVariableIndexHelper(realOptimizeConstraintsVars, index_);*/
+    then
+      fmiModelStructure;
+  end matchcontinue;
+end getFMIModelStructure;
+
+protected function getFMIModelStructureHelper
+  input list<SimCode.SimVar> inVars;
+  input SimCode.FmiModelStructure inFmiModelStructure;
+  output SimCode.FmiModelStructure outFmiModelStructure;
+algorithm
+  outFmiModelStructure := matchcontinue (inVars, inFmiModelStructure)
+    local
+      list<SimCode.SimVar> xs;
+      Integer index_;
+      SimCode.FmiModelStructure fmiModelStructure;
+      SimCode.FmiOutputs fmiOutputs_;
+      SimCode.FmiDerivatives fmiDerivatives_;
+      list<SimCode.FmiUnknown> fmiUnknownsList_;
+      SimCode.FmiUnknown fmiUnknown;
+
+    case ((SimCode.SIMVAR(causality = SimCode.OUTPUT(), variable_index = SOME(index_)) :: xs),
+          (fmiModelStructure as SimCode.FMIMODELSTRUCTURE(fmiOutputs = SimCode.FMIOUTPUTS(fmiUnknownsList = fmiUnknownsList_),
+                                                          fmiDerivatives = fmiDerivatives_)))
+      equation
+        fmiUnknown = SimCode.FMIUNKNOWN(index_, {}, {});
+        fmiUnknownsList_ = listAppend(fmiUnknownsList_, {fmiUnknown});
+        fmiOutputs_ = SimCode.FMIOUTPUTS(fmiUnknownsList_);
+        fmiModelStructure = SimCode.FMIMODELSTRUCTURE(fmiOutputs_, fmiDerivatives_);
+        fmiModelStructure = getFMIModelStructureHelper(xs, fmiModelStructure);
+      then
+        fmiModelStructure;
+        
+    case ((SimCode.SIMVAR(varKind=BackendDAE.STATE_DER(), variable_index = SOME(index_)) :: xs),
+          (fmiModelStructure as SimCode.FMIMODELSTRUCTURE(fmiOutputs = fmiOutputs_,
+                                                          fmiDerivatives = SimCode.FMIDERIVATIVES(fmiUnknownsList = fmiUnknownsList_))))
+      equation
+        fmiUnknown = SimCode.FMIUNKNOWN(index_, {}, {});
+        fmiUnknownsList_ = listAppend(fmiUnknownsList_, {fmiUnknown});
+        fmiDerivatives_ = SimCode.FMIDERIVATIVES(fmiUnknownsList_);
+        fmiModelStructure = SimCode.FMIMODELSTRUCTURE(fmiOutputs_, fmiDerivatives_);
+        fmiModelStructure = getFMIModelStructureHelper(xs, fmiModelStructure);
+      then
+        fmiModelStructure;
+        
+    case ((_ :: xs), fmiModelStructure)
+      equation
+        fmiModelStructure = getFMIModelStructureHelper(xs, fmiModelStructure);
+      then
+        fmiModelStructure;
+        
+    case ({}, fmiModelStructure) then fmiModelStructure;
+  end matchcontinue;
+end getFMIModelStructureHelper;
 
 end SimCodeUtil;

@@ -623,4 +623,33 @@ efficient manner"
     array<Option<tuple<Key,Value>>> valueArray "array of values";
   end VALUE_ARRAY;
 end ValueArray;
+
+/* FMI 2.0 Export */
+public uniontype FmiUnknown
+  record FMIUNKNOWN
+    Integer index;
+    list<Integer> dependencies;
+    list<String> dependenciesKind;
+  end FMIUNKNOWN;
+end FmiUnknown;
+
+public uniontype FmiOutputs
+  record FMIOUTPUTS
+    list<FmiUnknown> fmiUnknownsList;
+  end FMIOUTPUTS;
+end FmiOutputs;
+
+public uniontype FmiDerivatives
+  record FMIDERIVATIVES
+    list<FmiUnknown> fmiUnknownsList;
+  end FMIDERIVATIVES;
+end FmiDerivatives;
+
+public uniontype FmiModelStructure
+  record FMIMODELSTRUCTURE
+    FmiOutputs fmiOutputs;
+    FmiDerivatives fmiDerivatives;
+  end FMIMODELSTRUCTURE;
+end FmiModelStructure;
+
 end SimCode;
