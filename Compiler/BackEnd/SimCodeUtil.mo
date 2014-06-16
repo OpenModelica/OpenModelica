@@ -13574,7 +13574,7 @@ algorithm
       list<SimCode.FmiUnknown> fmiUnknownsList_;
       SimCode.FmiUnknown fmiUnknown;
 
-    case (inAllVars, (SimCode.SIMVAR(causality = SimCode.OUTPUT(), variable_index = SOME(variableIndex)) :: xs),
+    case (_, (SimCode.SIMVAR(causality = SimCode.OUTPUT(), variable_index = SOME(variableIndex)) :: xs),
           (fmiModelStructure as SimCode.FMIMODELSTRUCTURE(fmiOutputs = SimCode.FMIOUTPUTS(fmiUnknownsList = fmiUnknownsList_),
                                                           fmiDerivatives = fmiDerivatives_)))
       equation
@@ -13600,7 +13600,7 @@ algorithm
       then
         fmiModelStructure;
 
-    case (inAllVars, (_ :: xs), fmiModelStructure)
+    case (_, (_ :: xs), fmiModelStructure)
       equation
         fmiModelStructure = getFMIModelStructureHelper(inAllVars, xs, fmiModelStructure);
       then
