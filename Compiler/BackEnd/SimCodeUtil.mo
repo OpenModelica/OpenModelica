@@ -13583,7 +13583,7 @@ algorithm
         fmiModelStructure = getFMIModelStructureHelper(xs, fmiModelStructure);
       then
         fmiModelStructure;
-        
+
     case ((SimCode.SIMVAR(varKind=BackendDAE.STATE_DER(), variable_index = SOME(index_)) :: xs),
           (fmiModelStructure as SimCode.FMIMODELSTRUCTURE(fmiOutputs = fmiOutputs_,
                                                           fmiDerivatives = SimCode.FMIDERIVATIVES(fmiUnknownsList = fmiUnknownsList_))))
@@ -13595,13 +13595,13 @@ algorithm
         fmiModelStructure = getFMIModelStructureHelper(xs, fmiModelStructure);
       then
         fmiModelStructure;
-        
+
     case ((_ :: xs), fmiModelStructure)
       equation
         fmiModelStructure = getFMIModelStructureHelper(xs, fmiModelStructure);
       then
         fmiModelStructure;
-        
+
     case ({}, fmiModelStructure) then fmiModelStructure;
   end matchcontinue;
 end getFMIModelStructureHelper;

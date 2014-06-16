@@ -596,7 +596,7 @@ package SimCode
     end SIMEXTARGSIZE;
     record SIMNOEXTARG end SIMNOEXTARG;
   end SimExtArg;
-  
+
   uniontype FmiUnknown
     record FMIUNKNOWN
       Integer index;
@@ -610,7 +610,7 @@ package SimCode
       list<FmiUnknown> fmiUnknownsList;
     end FMIOUTPUTS;
   end FmiOutputs;
-  
+
   uniontype FmiDerivatives
     record FMIDERIVATIVES
       list<FmiUnknown> fmiUnknownsList;
@@ -790,7 +790,7 @@ package SimCodeUtil
     input SimCode.SimVars inVars;
     output list<SimCode.SimVar> outVars;
   end getEnumerationTypes;
-  
+
   function getFMIModelStructure
     input SimCode.SimVars inVars;
     output SimCode.FmiModelStructure outFmiModelStructure;
