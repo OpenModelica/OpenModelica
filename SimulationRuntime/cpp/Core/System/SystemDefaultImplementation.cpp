@@ -27,19 +27,29 @@ bool greaterTime( pair<unsigned int,double> t1, double t2)
    return t1.second > t2;
 }
 
-SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings& globalSettings)
+SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *globalSettings)
 : _simTime        (0.0)
 , __z        (NULL)
 , __zDot       (NULL)
 ,_conditions(NULL)
 ,_time_conditions(NULL)
+,_dimContinuousStates(0)
+,_dimRHS(0)
+,_dimReal(0)
+,_dimInteger(0)
+,_dimBoolean(0)
+,_dimString(0)
+,_dimZeroFunc(0)
+,_dimTimeEvent(0)
+,_dimAE(0)
 ,_time_event_counter(NULL)
+,_outputStream(NULL)
+,_callType(IContinuous::UNDEF_UPDATE)
+,_initial(false)
+,_delay_max(0.0)
 ,_start_time(0.0)
 ,_global_settings(globalSettings)
 {
-
-
-
 }
 /*
 template<class T>

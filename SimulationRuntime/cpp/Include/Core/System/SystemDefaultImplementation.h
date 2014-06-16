@@ -48,9 +48,9 @@ class InitVars
 class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
 {
 public:
-    SystemDefaultImplementation(IGlobalSettings& globalSettings);
+    SystemDefaultImplementation(IGlobalSettings* globalSettings);
 
-    ~SystemDefaultImplementation();
+    virtual ~SystemDefaultImplementation();
 
 
 
@@ -179,7 +179,7 @@ protected:
     buffer_type _time_buffer;
     double _delay_max;
     double _start_time;
-    IGlobalSettings&  _global_settings;
+    IGlobalSettings*  _global_settings; //this should be a reference, but this is not working if the libraries are linked statically
 };
 
 

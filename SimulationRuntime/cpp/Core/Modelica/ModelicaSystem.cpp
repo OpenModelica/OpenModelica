@@ -10,7 +10,7 @@
 
 
 Modelica::Modelica(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> )
-:SystemDefaultImplementation(*globalSettings)
+:SystemDefaultImplementation(globalSettings)
 
 {
     _dimBoolean =0;

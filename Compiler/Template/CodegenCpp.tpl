@@ -1386,7 +1386,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     /* Constructor */
     <%className%>::<%className%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
-        :SystemDefaultImplementation(*globalSettings)
+        :SystemDefaultImplementation(globalSettings)
         ,_algLoopSolverFactory(nonlinsolverfactory)
         ,_simData(simData)
         <%simulationInitFile(simCode)%>
@@ -3505,7 +3505,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       _historyImpl->write(varsnames,vardescs,paramnames,paramdecs);
       HistoryImplType::value_type_p params(<%numParamVars(modelInfo)%>);
        <%writeoutputparams(modelInfo,simCode)%>
-        _historyImpl->write(params,_global_settings.getStartTime(),_global_settings.getEndTime());
+        _historyImpl->write(params,_global_settings->getStartTime(),_global_settings->getEndTime());
     }
     //Write the current values
     else

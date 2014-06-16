@@ -20,5 +20,6 @@
 
 #endif
 
+#ifndef __GNUC__
 #pragma warning(  disable : 4297 )        // Issue warning 4297
-
+#endif

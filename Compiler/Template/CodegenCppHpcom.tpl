@@ -486,11 +486,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     /* Constructor */
     <%className%>::<%className%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
-        :SystemDefaultImplementation(*globalSettings)
+        :SystemDefaultImplementation(globalSettings)
         ,_algLoopSolverFactory(nonlinsolverfactory)
         ,_simData(simData)
         <%simulationInitFile(simCode)%>
     {
+    //I don't know why this line is necessary if we link statically, but without it a segfault occurs
+    _global_settings = globalSettings;
     //Number of equations
     <%dimension1(simCode)%>
     _dimZeroFunc= <%zerocrosslength(simCode)%>;

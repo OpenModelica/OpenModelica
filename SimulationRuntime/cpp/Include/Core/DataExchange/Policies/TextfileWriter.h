@@ -22,8 +22,8 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv
 typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
   TextFileWriter(unsigned long size,string output_path,string file_name)
     :_curser_position(0)
+	,_output_path(output_path)
     ,_file_name(file_name)
-    ,_output_path(output_path)
   {
 
 
@@ -115,7 +115,6 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
   void write(const value_type_v& v_list,const value_type_dv& v2_list,double time)
   {
     _output_stream<<time<<SEPERATOR;
-    double v,v2;
 
     for(typename value_type_v::const_iterator it = v_list.begin(); it != v_list.end(); ++it)
       _output_stream<<(*it)<<SEPERATOR;
