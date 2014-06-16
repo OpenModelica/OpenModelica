@@ -207,13 +207,13 @@ match varKind
       else "calculated"
 end hasStartValue;
 
-template ScalarVariableType2(DAE.Type type_, String unit, String displayUnit, Option<DAE.Exp> initialValue, VarKind varKind, Integer index)
+template ScalarVariableType2(list<SimVar> stateVars, DAE.Type type_, String unit, String displayUnit, Option<DAE.Exp> initialValue, VarKind varKind, Integer index)
  "Generates code for ScalarVariable Type file for FMU 2.0 target."
 ::=
 match type_
   case T_INTEGER(__) then '<Integer<%ScalarVariableTypeCommonAttribute2(initialValue)%>/>'
   /* Don't generate the units for now since it is wrong. If you generate a unit attribute here then we must add the UnitDefinitions tag section also. */
-  case T_REAL(__) then '<Real<%RealVariableTypeCommonAttribute2(initialValue, varKind, index)%>/>'
+  case T_REAL(__) then '<Real<%RealVariableTypeCommonAttribute2(stateVars, initialValue, varKind, index)%>/>'
   case T_BOOL(__) then '<Boolean<%ScalarVariableTypeCommonAttribute2(initialValue)%>/>'
   case T_STRING(__) then '<String<%StringVariableTypeCommonAttribute2(initialValue)%>/>'
   case T_ENUMERATION(__) then '<Enumeration declaredType="<%Absyn.pathString2NoLeadingDot(path, ".")%>"<%ScalarVariableTypeCommonAttribute2(initialValue)%>/>'
@@ -238,11 +238,11 @@ match initialValue
   case SOME(exp) then '<%StartString2(exp)%>'
 end ScalarVariableTypeCommonAttribute2;
 
-template RealVariableTypeCommonAttribute2(Option<DAE.Exp> initialValue, VarKind varKind, Integer index)
+template RealVariableTypeCommonAttribute2(list<SimVar> stateVars, Option<DAE.Exp> initialValue, VarKind varKind, Integer index)
  "Generates code for ScalarVariable Type file for FMU 2.0 target."
 ::=
 match varKind
-  case STATE_DER(__) then ' derivative="<%index%>"'
+  case STATE_DER(__) then ' derivative="<%getStateSimVarIndexFromIndex(stateVars, index)%>"'
   else
     match initialValue
       case SOME(exp) then ' start="<%initValXml(exp)%>"'
@@ -406,57 +406,57 @@ template ModelVariables(ModelInfo modelInfo, String FMUVersion)
  "Generates code for ModelVariables file for FMU target."
 ::=
 match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
+case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
   <<
   <ModelVariables>
   <%System.tmpTickReset(0)%>
   <%vars.stateVars |> var =>
-    ScalarVariable(var, FMUVersion)
+    ScalarVariable(stateVars, var, FMUVersion)
   ;separator="\n"%>
   <%vars.derivativeVars |> var =>
-    ScalarVariable(var, FMUVersion)
+    ScalarVariable(stateVars, var, FMUVersion)
   ;separator="\n"%>
   <%vars.algVars |> var =>
-    ScalarVariable(var, FMUVersion)
+    ScalarVariable(stateVars, var, FMUVersion)
   ;separator="\n"%>
   <%vars.discreteAlgVars |> var =>
-    ScalarVariable(var, FMUVersion)
+    ScalarVariable(stateVars, var, FMUVersion)
   ;separator="\n"%>
   <%vars.paramVars |> var =>
-    ScalarVariable(var, FMUVersion)
+    ScalarVariable(stateVars, var, FMUVersion)
   ;separator="\n"%>
   <%vars.aliasVars |> var =>
-    ScalarVariable(var, FMUVersion)
+    ScalarVariable(stateVars, var, FMUVersion)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.intAlgVars |> var =>
-    ScalarVariable(var, FMUVersion)
+    ScalarVariable(stateVars, var, FMUVersion)
   ;separator="\n"%>
   <%vars.intParamVars |> var =>
-    ScalarVariable(var, FMUVersion)
+    ScalarVariable(stateVars, var, FMUVersion)
   ;separator="\n"%>
   <%vars.intAliasVars |> var =>
-    ScalarVariable(var, FMUVersion)
+    ScalarVariable(stateVars, var, FMUVersion)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.boolAlgVars |> var =>
-    ScalarVariable(var, FMUVersion)
+    ScalarVariable(stateVars, var, FMUVersion)
   ;separator="\n"%>
   <%vars.boolParamVars |> var =>
-    ScalarVariable(var, FMUVersion)
+    ScalarVariable(stateVars, var, FMUVersion)
   ;separator="\n"%>
   <%vars.boolAliasVars |> var =>
-    ScalarVariable(var, FMUVersion)
+    ScalarVariable(stateVars, var, FMUVersion)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.stringAlgVars |> var =>
-    ScalarVariable(var, FMUVersion)
+    ScalarVariable(stateVars, var, FMUVersion)
   ;separator="\n"%>
   <%vars.stringParamVars |> var =>
-    ScalarVariable(var, FMUVersion)
+    ScalarVariable(stateVars, var, FMUVersion)
   ;separator="\n"%>
   <%vars.stringAliasVars |> var =>
-    ScalarVariable(var, FMUVersion)
+    ScalarVariable(stateVars, var, FMUVersion)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%externalFunctions(modelInfo)%>
@@ -464,7 +464,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   >>
 end ModelVariables;
 
-template ScalarVariable(SimVar simVar, String FMUVersion)
+template ScalarVariable(list<SimVar> stateVars, SimVar simVar, String FMUVersion)
  "Generates code for ScalarVariable file for FMU target."
 ::=
 match simVar
@@ -475,10 +475,10 @@ case SIMVAR(__) then
   <<>>
   else if stringEq(FMUVersion, "2.0") then
   <<
-  <!-- Index of variable = <%getVariableIndex(variable_index)%> -->
+  <!-- Index of variable = "<%getVariableIndex(simVar)%>" -->
   <ScalarVariable
     <%ScalarVariableAttribute2(simVar)%>>
-    <%ScalarVariableType2(type_,unit,displayUnit,initialValue,varKind,index)%>
+    <%ScalarVariableType2(stateVars, type_,unit,displayUnit,initialValue,varKind,index)%>
   </ScalarVariable>
   >>
   else
@@ -489,14 +489,6 @@ case SIMVAR(__) then
   </ScalarVariable>
   >>
 end ScalarVariable;
-
-template getVariableIndex(Option<Integer> variable_index)
- "Returns the variable index of SimVar"
-::=
-match variable_index
-  case SOME(index) then index
-  else ""
-end getVariableIndex;
 
 template ScalarVariableAttribute(SimVar simVar)
  "Generates code for ScalarVariable Attribute file for FMU target."
@@ -684,9 +676,25 @@ template FmiUnknownAttributes(FmiUnknown fmiUnknown)
 match fmiUnknown
 case FMIUNKNOWN(__) then
   <<
-  <Unknown index="<%index%>" />
+  <Unknown index="<%index%>"<%FmiUnknownDependencies(dependencies)%><%FmiUnknownDependenciesKind(dependenciesKind)%> />
   >>
 end FmiUnknownAttributes;
+
+template FmiUnknownDependencies(list<Integer> dependencies)
+::=
+  if intGt(listLength(dependencies), 0) then
+  <<
+   dependencies="<%dependencies |> dependency => dependency ;separator=" "%>"
+  >>
+end FmiUnknownDependencies;
+
+template FmiUnknownDependenciesKind(list<String> dependenciesKind)
+::=
+  if intGt(listLength(dependenciesKind), 0) then
+  <<
+   dependenciesKind="<%dependenciesKind |> dependencyKind => dependencyKind ;separator=" "%>"
+  >>
+end FmiUnknownDependenciesKind;
 
 template fmumodel_identifierFile(SimCode simCode, String guid, String FMUVersion)
  "Generates code for ModelDescription file for FMU target."

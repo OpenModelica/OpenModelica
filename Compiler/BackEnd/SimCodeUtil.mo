@@ -13529,8 +13529,8 @@ algorithm
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars,jacobianVars,realOptimizeConstraintsVars))
       equation
         fmiModelStructure = SimCode.FMIMODELSTRUCTURE(SimCode.FMIOUTPUTS({}), SimCode.FMIDERIVATIVES({}));
-        fmiModelStructure = getFMIModelStructureHelper(stateVars, fmiModelStructure);
-        fmiModelStructure = getFMIModelStructureHelper(derivativeVars, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inVars, stateVars, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inVars, derivativeVars, fmiModelStructure);
         /*(algVars, index_) = setVariableIndexHelper(algVars, index_);
         (discreteAlgVars, index_) = setVariableIndexHelper(discreteAlgVars, index_);
         (intAlgVars, index_) = setVariableIndexHelper(intAlgVars, index_);
@@ -13558,52 +13558,80 @@ algorithm
 end getFMIModelStructure;
 
 protected function getFMIModelStructureHelper
+  input SimCode.SimVars inAllVars;
   input list<SimCode.SimVar> inVars;
   input SimCode.FmiModelStructure inFmiModelStructure;
   output SimCode.FmiModelStructure outFmiModelStructure;
 algorithm
-  outFmiModelStructure := matchcontinue (inVars, inFmiModelStructure)
+  outFmiModelStructure := matchcontinue (inAllVars, inVars, inFmiModelStructure)
     local
+      list<SimCode.SimVar> stateVars_;
       list<SimCode.SimVar> xs;
-      Integer index_;
+      Integer index_, variableIndex, variableIndexOfStateVar;
       SimCode.FmiModelStructure fmiModelStructure;
       SimCode.FmiOutputs fmiOutputs_;
       SimCode.FmiDerivatives fmiDerivatives_;
       list<SimCode.FmiUnknown> fmiUnknownsList_;
       SimCode.FmiUnknown fmiUnknown;
 
-    case ((SimCode.SIMVAR(causality = SimCode.OUTPUT(), variable_index = SOME(index_)) :: xs),
+    case (inAllVars, (SimCode.SIMVAR(causality = SimCode.OUTPUT(), variable_index = SOME(variableIndex)) :: xs),
           (fmiModelStructure as SimCode.FMIMODELSTRUCTURE(fmiOutputs = SimCode.FMIOUTPUTS(fmiUnknownsList = fmiUnknownsList_),
                                                           fmiDerivatives = fmiDerivatives_)))
       equation
-        fmiUnknown = SimCode.FMIUNKNOWN(index_, {}, {});
+        fmiUnknown = SimCode.FMIUNKNOWN(variableIndex, {}, {}); /* empty dependencies & dependenciesKind list for outputs. */
         fmiUnknownsList_ = listAppend(fmiUnknownsList_, {fmiUnknown});
         fmiOutputs_ = SimCode.FMIOUTPUTS(fmiUnknownsList_);
         fmiModelStructure = SimCode.FMIMODELSTRUCTURE(fmiOutputs_, fmiDerivatives_);
-        fmiModelStructure = getFMIModelStructureHelper(xs, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inAllVars, xs, fmiModelStructure);
       then
         fmiModelStructure;
 
-    case ((SimCode.SIMVAR(varKind=BackendDAE.STATE_DER(), variable_index = SOME(index_)) :: xs),
+    case (SimCode.SIMVARS(stateVars = stateVars_), (SimCode.SIMVAR(varKind=BackendDAE.STATE_DER(), index = index_, variable_index = SOME(variableIndex)) :: xs),
           (fmiModelStructure as SimCode.FMIMODELSTRUCTURE(fmiOutputs = fmiOutputs_,
                                                           fmiDerivatives = SimCode.FMIDERIVATIVES(fmiUnknownsList = fmiUnknownsList_))))
       equation
-        fmiUnknown = SimCode.FMIUNKNOWN(index_, {}, {});
+        variableIndexOfStateVar =  getStateSimVarIndexFromIndex(stateVars_, index_);
+        /* FIXME! For now using fixed as default dependenciesKind. */  
+        fmiUnknown = SimCode.FMIUNKNOWN(variableIndex, {variableIndexOfStateVar}, {"fixed"});
         fmiUnknownsList_ = listAppend(fmiUnknownsList_, {fmiUnknown});
         fmiDerivatives_ = SimCode.FMIDERIVATIVES(fmiUnknownsList_);
         fmiModelStructure = SimCode.FMIMODELSTRUCTURE(fmiOutputs_, fmiDerivatives_);
-        fmiModelStructure = getFMIModelStructureHelper(xs, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inAllVars, xs, fmiModelStructure);
       then
         fmiModelStructure;
 
-    case ((_ :: xs), fmiModelStructure)
+    case (inAllVars, (_ :: xs), fmiModelStructure)
       equation
-        fmiModelStructure = getFMIModelStructureHelper(xs, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inAllVars, xs, fmiModelStructure);
       then
         fmiModelStructure;
 
-    case ({}, fmiModelStructure) then fmiModelStructure;
+    case (_, {}, fmiModelStructure) then fmiModelStructure;
   end matchcontinue;
 end getFMIModelStructureHelper;
+
+public function getStateSimVarIndexFromIndex
+  input list<SimCode.SimVar> inStateVars;
+  input Integer inIndex;
+  output Integer outVariableIndex;
+protected
+  SimCode.SimVar stateVar;
+algorithm
+  stateVar := listGet(inStateVars, inIndex + 1 /* SimVar indexes start from zero */);
+  outVariableIndex := getVariableIndex(stateVar);
+end getStateSimVarIndexFromIndex;
+
+public function getVariableIndex
+  input SimCode.SimVar inVar;
+  output Integer outVariableIndex;
+algorithm
+  outVariableIndex := match (inVar)
+    local
+      Integer variableIndex;
+    case (SimCode.SIMVAR(variable_index = SOME(variableIndex)))
+    then variableIndex;
+    else 0;
+  end match;
+end getVariableIndex;
 
 end SimCodeUtil;
