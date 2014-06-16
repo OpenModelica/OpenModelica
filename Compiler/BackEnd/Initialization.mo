@@ -1075,12 +1075,13 @@ protected function getConsistentEquations "author: mwenzler"
   input array<Integer> vecVarToEqs;
   input BackendDAE.Variables vars;
   input BackendDAE.Shared shared;
+  input Integer counter;
   output list<Integer> outUnassignedEqns;
   output Boolean outConsistent;
 algorithm
-  (outUnassignedEqns, outConsistent) := matchcontinue(inUnassignedEqns, inEqns, inEqnsOrig, inM,vecVarToEqs, vars, shared)
+  (outUnassignedEqns, outConsistent) := matchcontinue(inUnassignedEqns, inEqns, inEqnsOrig, inM,vecVarToEqs, vars, shared, counter)
     local
-      Integer currEqID, currVarID, currID;
+      Integer currEqID, currVarID, currID, nVars, nEqns;
       list<Integer> unassignedEqns, unassignedEqns2, listVar;
       list<BackendDAE.Equation> eqns_list;
       list<BackendDAE.Equation> eqns_list_new;
@@ -1099,10 +1100,13 @@ algorithm
       DAE.FunctionTree funcs;
       list<BackendDAE.Equation> list_inEqns;
 
-    case ({}, _, _, _, _, _, _)
+    case ({}, _, _, _, _, _, _, _)
     then ({}, true);
 
-    case (currID::unassignedEqns, _, _, _, _, _, _) equation
+    case (currID::unassignedEqns, _, _, _, _, _, _, _) equation
+      nVars = BackendVariable.varsSize(vars);
+      nEqns = BackendDAEUtil.equationSize(inEqnsOrig);
+      true = intLe(counter, nEqns-nVars);
       eqn = BackendEquation.equationNth1(inEqns, currID);
       BackendDAE.EQUATION(exp=lhs, scalar=rhs) = eqn;
       exp = DAE.BINARY(lhs, DAE.SUB(DAE.T_REAL_DEFAULT), rhs);
@@ -1114,10 +1118,10 @@ algorithm
       eqn = BackendEquation.equationNth1(inEqnsOrig, currID);
       Error.addCompilerNotification("The following equation is consistent and got removed from the initialization problem: " +& BackendDump.equationString(eqn));
 
-      (unassignedEqns2, consistent) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs, vars, shared);
+      (unassignedEqns2, consistent) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs, vars, shared, counter+1);
     then (currID::unassignedEqns2, consistent);
 
-    case (currID::unassignedEqns, _, _, _, _, _, _) equation
+    case (currID::unassignedEqns, _, _, _, _, _, _, _) equation
       true=emptyListOfIncidenceMatrix({currID},inM,vecVarToEqs, false);
       eqn = BackendEquation.equationNth1(inEqns, currID);
       BackendDAE.EQUATION(exp=lhs, scalar=rhs) = eqn;
@@ -1131,10 +1135,10 @@ algorithm
       eqn2 = BackendEquation.equationNth1(inEqnsOrig, currID);
       Error.addCompilerError("The initialization problem is inconsistent due to the following equation: " +& BackendDump.equationString(eqn2) +& " (" +& BackendDump.equationString(eqn) +& ")");
 
-      (unassignedEqns2, consistent) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs, vars, shared);
+      (unassignedEqns2, consistent) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs, vars, shared, counter);
     then ({}, false);
 
-    case (currID::unassignedEqns, _, _, _, _, _, _) equation
+    case (currID::unassignedEqns, _, _, _, _, _, _, _) equation
       true=emptyListOfIncidenceMatrix({currID},inM,vecVarToEqs, false);
       eqn = BackendEquation.equationNth1(inEqns, currID);
       BackendDAE.EQUATION(exp=lhs, scalar=rhs) = eqn;
@@ -1157,10 +1161,10 @@ algorithm
       eqn2 = BackendEquation.equationNth1(inEqnsOrig, currID);
       Error.addCompilerNotification("It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
 
-      (unassignedEqns2, consistent) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs, vars, shared);
+      (unassignedEqns2, consistent) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs, vars, shared, counter);
     then ({}, false);
 
-    case (currID::unassignedEqns, _, _, _, _, _, _) equation
+    case (currID::unassignedEqns, _, _, _, _, _, _, _) equation
       //true = intEq(listLength(inM[currID]), 0);
       true=emptyListOfIncidenceMatrix({currID},inM,vecVarToEqs, false);
       eqn = BackendEquation.equationNth1(inEqns, currID);
@@ -1177,9 +1181,9 @@ algorithm
 
      then ({}, false);
 
-    case (currID::unassignedEqns, _, _, _, _ , _, _) equation
+    case (currID::unassignedEqns, _, _, _, _ , _, _, _) equation
       false=emptyListOfIncidenceMatrix({currID},inM,vecVarToEqs, true);
-      (unassignedEqns2, consistent) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs,vars, shared);
+      (unassignedEqns2, consistent) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs,vars, shared, counter);
     then (unassignedEqns2, consistent);
   end matchcontinue;
 end getConsistentEquations;
@@ -1692,7 +1696,7 @@ algorithm
       unassignedEqns=adaptUnassignedEqns(unassignedEqns, {}, mapIncRowEqn);
       eqns_1=removeEqswork(unassignedEqns,eqns_list,vars,outRepl);
       substEqns = BackendEquation.listEquation(eqns_1);
-      (outUnassignedEqns, true) = getConsistentEquations(unassignedEqns, substEqns, eqns, m2, vec1,vars, shared);
+      (outUnassignedEqns, true) = getConsistentEquations(unassignedEqns, substEqns, eqns, m2, vec1,vars, shared, 1);
 
       // remove all unassigned equations
       substEqns = BackendEquation.equationDelete(substEqns, outUnassignedEqns);
