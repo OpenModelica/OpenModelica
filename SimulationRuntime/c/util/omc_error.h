@@ -149,6 +149,7 @@ void setStreamPrintXML(int isXML);
 #endif
 
 extern void (*messageClose)(int stream);
+extern void (*messageCloseWarning)(int stream);
 extern void infoStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 extern void infoStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
 extern void warningStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));

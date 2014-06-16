@@ -263,17 +263,35 @@ static void messageCloseXML(int stream)
   }
 }
 
+static void messageCloseTextWarning(int stream)
+{
+  if(ACTIVE_WARNING_STREAM(stream))
+    level[stream]--;
+}
+
+static void messageCloseXMLWarning(int stream)
+{
+  if(ACTIVE_WARNING_STREAM(stream))
+  {
+    fputs("</message>\n", stdout);
+    fflush(stdout);
+  }
+}
+
 static void (*messageFunction)(int type, int stream, int indentNext, char *msg, int subline, const int *indexes) = messageText;
 void (*messageClose)(int stream) = messageCloseText;
+void (*messageCloseWarning)(int stream) = messageCloseTextWarning;
 
 void setStreamPrintXML(int isXML)
 {
   if (isXML) {
     messageFunction = messageXML;
     messageClose = messageCloseXML;
+    messageCloseWarning = messageCloseXMLWarning;
   } else {
     messageFunction = messageText;
     messageClose = messageCloseText;
+    messageCloseWarning = messageCloseTextWarning;
   }
 }
 
