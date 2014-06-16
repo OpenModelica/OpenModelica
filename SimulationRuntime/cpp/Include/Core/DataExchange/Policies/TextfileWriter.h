@@ -22,7 +22,7 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv
 typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
   TextFileWriter(unsigned long size,string output_path,string file_name)
     :_curser_position(0)
-	,_output_path(output_path)
+  ,_output_path(output_path)
     ,_file_name(file_name)
   {
 

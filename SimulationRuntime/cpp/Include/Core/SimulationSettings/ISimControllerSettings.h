@@ -11,7 +11,7 @@ class ISimControllerSettings
 public:
     ISimControllerSettings(IGlobalSettings* globalSettings)
         : dHcpl                    (1e-3)
-		, dErrTol                (0.0)
+    , dErrTol                (0.0)
         , dK                    (-0.25)
         , dC                    (1.0)
         , dCmax                    (1.5)
@@ -20,11 +20,11 @@ public:
         , dHlowlim                (10.0 * UROUND)
         , dSingleStepTol        (1e-5)
         , dTendTol                (1e-6)
-		, iMaxRejSteps            (50)
-		, iSingleSteps            (0)
-		, bDynCouplingStepSize    (false)
+    , iMaxRejSteps            (50)
+    , iSingleSteps            (0)
+    , bDynCouplingStepSize    (false)
         , bCouplingOutput        (true)
-		, _globalSettings 		(globalSettings)
+    , _globalSettings     (globalSettings)
     {
     };
 
