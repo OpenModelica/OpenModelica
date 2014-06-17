@@ -5,8 +5,8 @@
 class UmfPackSettings : public ILinSolverSettings
 {
 public:
-	UmfPackSettings();
-	virtual ~UmfPackSettings();
+  UmfPackSettings();
+  virtual ~UmfPackSettings();
 
     virtual bool getUseSparseFormat();
     virtual void setUseSparseFormat(bool value);

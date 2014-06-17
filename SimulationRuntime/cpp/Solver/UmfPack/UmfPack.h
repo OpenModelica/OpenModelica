@@ -10,8 +10,8 @@
 class UmfPack : public IAlgLoopSolver
 {
 public:
-	UmfPack(IAlgLoop* algLoop,ILinSolverSettings* settings);
-	virtual ~UmfPack();
+  UmfPack(IAlgLoop* algLoop,ILinSolverSettings* settings);
+  virtual ~UmfPack();
 
     virtual void initialize();
 

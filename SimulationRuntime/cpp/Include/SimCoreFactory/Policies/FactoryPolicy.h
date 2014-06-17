@@ -35,7 +35,7 @@
     #include <Policies/SolverSettingsOMCFactory.h>
     #include <Policies/SystemOMCFactory.h>
     #include <Policies/NonLinSolverOMCFactory.h>
-	#include <Policies/LinSolverOMCFactory.h>
+  #include <Policies/LinSolverOMCFactory.h>
     /*Policy defines*/
     typedef SystemOMCFactory<OMCFactory> SimControllerPolicy;
     typedef SolverOMCFactory<OMCFactory> ConfigurationPolicy;

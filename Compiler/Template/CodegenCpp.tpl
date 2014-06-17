@@ -3072,8 +3072,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   case SES_NONLINEAR(__) then
    <<
      void <%modelname%>Algloop<%index%>::initialize()
-     {  
-        
+     {
+
         if(_useSparseFormat)
           <%modelname%>Algloop<%index%>::initialize(__Asparse);
         else
@@ -3882,7 +3882,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     double* __zDot;
     // A matrix
     boost::multi_array<double,2> *__A; //dense
-    
+
     typedef double** sparseType;
     sparseType *__Asparse; //sparse
 
@@ -3893,7 +3893,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     EventHandling& _event_handling;
 
      <%systemname%>* _system;
-     
+
      bool _useSparseFormat;
    };
   >>
@@ -4211,7 +4211,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual int getDimRHS() const    ;
      /// (Re-) initialize the system of equations
     virtual void initialize();
-    
+
     template <typename T>
     void initialize(T *__A);
 

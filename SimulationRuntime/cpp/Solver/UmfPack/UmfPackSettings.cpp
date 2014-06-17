@@ -8,11 +8,11 @@ UmfPackSettings::~UmfPackSettings() {
 }
 
 bool UmfPackSettings::getUseSparseFormat() {
-	return useSparse;
+  return useSparse;
 }
 
 void UmfPackSettings::setUseSparseFormat(bool value) {
-	useSparse = value;
+  useSparse = value;
 }
 
 void UmfPackSettings::load(std::string allocator)

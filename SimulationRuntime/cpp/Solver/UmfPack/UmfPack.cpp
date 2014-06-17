@@ -10,22 +10,22 @@ UmfPack::~UmfPack() {
 
 void UmfPack::initialize()
 {
-	_algLoop->setUseSparseFormat(_umfpackSettings->getUseSparseFormat());
-	_algLoop->initialize();
-	std::cerr << "Umfpack-initialize not implemented" << std::endl;
+  _algLoop->setUseSparseFormat(_umfpackSettings->getUseSparseFormat());
+  _algLoop->initialize();
+  std::cerr << "Umfpack-initialize not implemented" << std::endl;
 }
 
 void UmfPack::solve()
 {
-	std::cerr << "Umfpack-solve not implemented" << std::endl;
+  std::cerr << "Umfpack-solve not implemented" << std::endl;
 }
 
 IAlgLoopSolver::ITERATIONSTATUS UmfPack::getIterationStatus()
 {
-	return _iterationStatus;
+  return _iterationStatus;
 }
 
 void UmfPack::stepCompleted(double time)
 {
-	std::cerr << "Umfpack-step completed not implemented" << std::endl;
+  std::cerr << "Umfpack-step completed not implemented" << std::endl;
 }
