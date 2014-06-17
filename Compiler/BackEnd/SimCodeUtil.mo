@@ -12697,6 +12697,21 @@ algorithm
   simEqs := List.unique(simEqs);
 end getReqSimEqsForSimVar;
 
+public function getAssignedSimEqSysIdx"gets the index of the assigned simEqSys for the given simVar idx
+author:Waurich TUD 2014-06"
+  input Integer simVarIdx;
+  input SimCode.BackendMapping map;
+  output Integer simEqSysIdx;
+protected
+  Integer bVarIdx,bEqIdx;
+  array<Integer> varMatch;
+algorithm
+  bVarIdx := getBackendVarForSimVar(simVarIdx,map);
+  SimCode.BACKENDMAPPING(varMatch = varMatch) := map;
+  bEqIdx := arrayGet(varMatch,bVarIdx);
+  simEqSysIdx := getSimEqsForBackendEqs(bEqIdx,map);
+end getAssignedSimEqSysIdx;
+
 protected function collectReqSimEqs"gets the previously required equations from the tree and gets the required equations for them and so on
 author:Waurich TUD 2014-04"
   input Integer eq;
