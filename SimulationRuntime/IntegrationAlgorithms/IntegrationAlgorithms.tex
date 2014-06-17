@@ -1,0 +1,109 @@
+% /*
+%  * This file is part of OpenModelica.
+%  *
+%  * Copyright (c) 1998-2014, Linköpings University,
+%  * Department of Computer and Information Science,
+%  * SE-58183 Linköping, Sweden.
+%  *
+%  * All rights reserved.
+%  *
+%  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+%  * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+%  * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+%  * PUBLIC LICENSE.
+%  *
+%  * The OpenModelica software and the Open Source Modelica
+%  * Consortium (OSMC) Public License (OSMC-PL) are obtained
+%  * from Linköpings University, either from the above address,
+%  * from the URL: http://www.ida.liu.se/projects/OpenModelica
+%  * and in the OpenModelica distribution.
+%  *
+%  * This program is distributed  WITHOUT ANY WARRANTY; without
+%  * even the implied warranty of  MERCHANTABILITY or FITNESS
+%  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+%  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+%  * OF OSMC-PL.
+%  *
+%  * See the full OSMC Public License conditions for more details.
+%  *
+%  */
+\documentclass{article}
+\usepackage{amsmath, amssymb, amsfonts, amsthm, amsbsy}
+\usepackage{graphicx, color}
+\usepackage[utf8]{inputenc}
+\usepackage{caption}
+\usepackage{hyperref}
+
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+
+\fancyhead[L]{Integration Methods}
+\fancyhead[R]{\OpenModelica}
+
+
+\newcommand{\OpenModelica}[0]{
+\textcolor{cyan}{\textbf{Open}}\textbf{Modelica}}
+
+\newcommand{\true}[0]{
+\textcolor{green}{true}
+}
+\newcommand{\false}[0]{
+\textcolor{red}{false}
+}
+
+\newcommand{\pade}[2]{
+\mbox{$(#1,#2)$ Pad\'{e} $\leq 1$}
+}
+
+\newcommand{\MTabel}[6]{
+\begin{tabular}{ll}
+Name:& #1 \\
+Order:& #2\\
+Step Sizie Control:& #3\\
+Order Control:& #4 \\
+Backround: & #5 \\
+Stability Region:& #6
+\end{tabular} \\[1cm]
+}
+
+\title{
+Small Overview Of The Integration Methods In 
+\OpenModelica
+}
+
+\author{Vitalij Ruge, Willi Braun} 
+\date{\today}
+
+\begin{document}
+\maketitle
+\section{Methods}
+\MTabel{dassl}{1-5}{\true}{\true}{Adams Moulton; with colored numerical
+jacobian, with interval root finding}{variable; depend from order}
+\MTabel{dasslsteps}{1-5}{\true}{\true}{dassl as default, but without 
+									  consideration of numberOfIntervals or stepSize. \\& 
+									  Output point are internal dassl}
+									  {variable; depend from order}
+\MTabel{dasslwort}{1-5}{\true}{\true}{dassl; without internal root finding}{variable; depend from order}
+\MTabel{euler}{1}{\false}{\false}{explicit euler}{\pade{1}{0}}
+\MTabel{rungekutta}{4}{\false}{\false}{classical runge kutta
+method}{\pade{4}{0}}
+\MTabel{radau1}{1}{\false}{\false}{radau IIA with one point}{\pade{0}{1}}
+\MTabel{radau3}{3}{\false}{\false}{radau IIA with two points}{\pade{1}{2}}
+\MTabel{radau5}{5}{\false}{\false}{radau IIA with three points}{\pade{2}{3}}
+\MTabel{lobatto2}{2}{\false}{\false}{lobatto IIIA with two point}{\pade{2}{2}}
+\MTabel{lobatto4}{4}{\false}{\false}{lobatto IIIA with three
+points}{\pade{3}{3}}
+\MTabel{lobatto6}{6}{\false}{\false}{lobatto IIIA with four
+points}{\pade{4}{4}}
+
+\subsection*{Notes}
+simflags \verb+-maxStepSize+ and \verb+-maxIntegrationOrder+ specifies
+maximum absolute step size and maximum integration order, used by dassl solver.
+\\[1cm]
+General step sizie without control $\approx \cfrac{\mbox{stopTime} -
+\mbox{startTime}}{\mbox{numberOfIntervals}}$
+\\[1cm]
+For $(a,b)$ Pad\'{e} see \url{http://en.wikipedia.org/wiki/Pad%C3%A9_table}
+\end{document}
