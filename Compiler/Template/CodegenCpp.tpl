@@ -1478,6 +1478,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 match eq
     case SES_LINEAR(__)
     case SES_NONLINEAR(__) then
+
   <<
    #include "Modelica.h"
    #include "ModelicaDefine.h"
@@ -1493,40 +1494,23 @@ match eq
    ,_system(system)
    ,__z(z)
    ,__zDot(zDot)
-   ,__A(0)
-   ,__Asparse(0)
-   <%alocateLinearSystemConstructor(eq)%>
    ,_conditions(conditions)
    ,_event_handling(event_handling)
-   ,_useSparseFormat(false)
+   <%alocateLinearSystem(eq)%>
+
     {
+
       <%initAlgloopDimension(eq,varDecls)%>
 
     }
 
    <%modelname%>Algloop<%index%>::~<%modelname%>Algloop<%index%>()
     {
-       if(__Asparse != 0)
-          delete __Asparse;
-       if(__A != 0)
-          delete __A;
-    }
 
-    bool <%modelname%>Algloop<%index%>::getUseSparseFormat()
-    {
-       return _useSparseFormat;
     }
-
-    void <%modelname%>Algloop<%index%>::setUseSparseFormat(bool value)
-    {
-       _useSparseFormat = value;
-    }
-
    <%algloopRHSCode(simCode,eq)%>
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then algloopResiduals(simCode,eq)%>
    <%initAlgloop(simCode,eq,context)%>
-   <%initAlgloopTemplate(simCode,eq,context)%>
-   <%updateAlgloop(simCode,eq,context)%>
    <%upateAlgloopNonLinear(simCode,eq,context)%>
    <%upateAlgloopLinear(simCode,eq,context)%>
    <%AlgloopDefaultImplementationCode(simCode,eq,context)%>
@@ -1537,47 +1521,6 @@ match eq
     >>
 end algloopCppFile;
 
-template updateAlgloop(SimCode simCode,SimEqSystem eqn,Context context)
-::=
-match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
-    let modelname = lastIdentOfPath(modelInfo.name)
-    match eqn
-      case eq as SES_NONLINEAR(__) then
-        <<
-        void <%modelname%>Algloop<%index%>::evaluate()
-        {
-           if(_useSparseFormat)
-             evaluate(__Asparse);
-           else
-             evaluate(__A);
-        }
-        >>
-      case eq as SES_LINEAR(__) then
-        <<
-        void <%modelname%>Algloop<%index%>::evaluate()
-        {
-           if(_useSparseFormat)
-           {
-             if(__Asparse == 0)
-             {
-               //sometimes initialize was not called before
-               <%alocateLinearSystem(eq)%>
-             }
-             evaluate(__Asparse);
-           }
-           else
-           {
-             if(__A == 0)
-             {
-               //sometimes initialize was not called before
-               <%alocateLinearSystem(eq)%>
-             }
-             evaluate(__A);
-           }
-        }
-        >>
-end updateAlgloop;
 
 template upateAlgloopNonLinear( SimCode simCode,SimEqSystem eqn,Context context)
   "Generates functions in simulation file."
@@ -1609,8 +1552,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
   <<
-  template <typename T>
-  void <%modelname%>Algloop<%index%>::evaluate(T *__A)
+  void <%modelname%>Algloop<%index%>::evaluate()
   {
         <%varDecls%>
 
@@ -1665,7 +1607,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
  let Amatrix=
     (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
       let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode)
-      '<%preExp%>(*__A)[<%row%>][<%col%>]=<%expPart%>;'
+      '<%preExp%>__A[<%row%>][<%col%>]=<%expPart%>;'
   ;separator="\n")
 
 
@@ -1678,8 +1620,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
  <<
-  template <typename T>
-  void <%modelname%>Algloop<%index%>::evaluate(T* __A)
+   void <%modelname%>Algloop<%index%>::evaluate()
   {
       <%varDecls%>
       <%Amatrix%>
@@ -3067,40 +3008,6 @@ template initAlgloop(SimCode simCode,SimEqSystem eq,Context context)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
-
-  match eq
-  case SES_NONLINEAR(__) then
-   <<
-     void <%modelname%>Algloop<%index%>::initialize()
-     {
-
-        if(_useSparseFormat)
-          <%modelname%>Algloop<%index%>::initialize(__Asparse);
-        else
-          <%modelname%>Algloop<%index%>::initialize(__A);
-     }
-   >>
- case SES_LINEAR(__) then
-   <<
-     void <%modelname%>Algloop<%index%>::initialize()
-     {
-        <%alocateLinearSystem(eq)%>
-        if(_useSparseFormat)
-          <%modelname%>Algloop<%index%>::initialize(__Asparse);
-        else
-        {
-          fill_array(*__A,0.0);
-          <%modelname%>Algloop<%index%>::initialize(__A);
-        }
-     }
-   >>
-end initAlgloop;
-
-template initAlgloopTemplate(SimCode simCode,SimEqSystem eq,Context context)
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
-  let modelname = lastIdentOfPath(modelInfo.name)
   let &varDecls = buffer ""
   let &preExp = buffer ""
   let initalgvars = initAlgloopvars(preExp,varDecls,modelInfo,simCode,context)
@@ -3108,10 +3015,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   match eq
   case SES_NONLINEAR(__) then
   <<
-  template <typename T>
-  void <%modelname%>Algloop<%index%>::initialize(T *__A)
+  void <%modelname%>Algloop<%index%>::initialize()
   {
-       <%initAlgloopEquation(eq,varDecls,simCode,context)%>
+
+         <%initAlgloopEquation(eq,varDecls,simCode,context)%>
        AlgLoopDefaultImplementation::initialize();
 
     // Update the equations once before start of simulation
@@ -3120,15 +3027,16 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   >>
  case SES_LINEAR(__) then
    <<
-     template <typename T>
-     void <%modelname%>Algloop<%index%>::initialize(T *__A)
+     void <%modelname%>Algloop<%index%>::initialize()
      {
-        <%initAlgloopEquation(eq,varDecls,simCode,context)%>
+
+         <%initAlgloopEquation(eq,varDecls,simCode,context)%>
         // Update the equations once before start of simulation
         evaluate();
      }
    >>
-end initAlgloopTemplate;
+
+end initAlgloop;
 
 
 template getAMatrixCode(SimCode simCode,SimEqSystem eq)
@@ -3152,7 +3060,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
      void <%modelname%>Algloop<%index%>::getSystemMatrix(double* A_matrix)
      {
-          memcpy(A_matrix,__A->data(),_dimAEq*_dimAEq*sizeof(double));
+          memcpy(A_matrix,__A.data(),_dimAEq*_dimAEq*sizeof(double));
      }
    >>
 
@@ -3203,7 +3111,7 @@ match eq
 
     void <%modelname%>Algloop<%index%>::getRHS(double* vars)
     {
-        ublas::matrix<double> A=toMatrix(_dimAEq,_dimAEq,__A->data());
+        ublas::matrix<double> A=toMatrix(_dimAEq,_dimAEq,__A.data());
         double* doubleUnknowns = new double[_dimAEq];
         getReal(doubleUnknowns);
         ublas::vector<double> x=toVector(_dimAEq,doubleUnknowns);
@@ -3308,7 +3216,7 @@ case SES_NONLINEAR(__) then
  let Amatrix=
     (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
       let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode)
-      '<%preExp%>(*__A)[<%row%>][<%col%>]=<%expPart%>;'
+      '<%preExp%>__A[<%row%>][<%col%>]=<%expPart%>;'
   ;separator="\n")
 
  let bvector =  (beqs |> exp hasindex i0 =>
@@ -3490,6 +3398,7 @@ case SES_NONLINEAR(__) then
   <<
     // Number of unknowns/equations according to type (0: double, 1: int, 2: bool)
     _dimAEq = <%size%>;
+    fill_array(__A,0.0);
     fill_array(__b,0.0);
   >>
 
@@ -3501,24 +3410,12 @@ template alocateLinearSystem(SimEqSystem eq)
 match eq
 case SES_LINEAR(__) then
    let size = listLength(vars)
-   <<
-    if(_useSparseFormat)
-      __Asparse = 0;
-    else
-      __A = new boost::multi_array<double,2>(boost::extents[<%size%>][<%size%>],boost::fortran_storage_order());
-   >>
-end alocateLinearSystem;
-
-template alocateLinearSystemConstructor(SimEqSystem eq)
- "Generates a non linear equation system."
-::=
-match eq
-case SES_LINEAR(__) then
-   let size = listLength(vars)
   <<
+    ,__A(boost::extents[<%size%>][<%size%>],boost::fortran_storage_order())
    ,__b(boost::extents[<%size%>])
   >>
-end alocateLinearSystemConstructor;
+
+end alocateLinearSystem;
 
 template Update(SimCode simCode)
 ::=
@@ -3867,13 +3764,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
        <%generateAlgloopMethodDeclarationCode(simCode)%>
 
-      bool getUseSparseFormat();
-      void setUseSparseFormat(bool value);
-
-  protected:
-    template <typename T>
-    void evaluate(T* __A);
-
   private:
     Functions _functions;
     //states
@@ -3881,11 +3771,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //state derivatives
     double* __zDot;
     // A matrix
-    boost::multi_array<double,2> *__A; //dense
-
-    typedef double** sparseType;
-    sparseType *__Asparse; //sparse
-
+    boost::multi_array<double,2> __A;
     //b vector
     boost::multi_array<double,1> __b;
     bool* _conditions;
@@ -3893,8 +3779,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     EventHandling& _event_handling;
 
      <%systemname%>* _system;
-
-     bool _useSparseFormat;
    };
   >>
 end generateAlgloopClassDeclarationCode;
@@ -4211,10 +4095,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual int getDimRHS() const    ;
      /// (Re-) initialize the system of equations
     virtual void initialize();
-
-    template <typename T>
-    void initialize(T *__A);
-
     /// Provide variables with given index to the system
     virtual void getReal(double* vars)    ;
      /// Provide variables with given index to the system
@@ -5594,6 +5474,9 @@ template getAliasVarName(AliasVariable aliasvar, SimCode simCode,Context context
     else 'noAlias'
 end getAliasVarName;
 
+
+
+
 //template for write  variables for each time step
 template writeoutput2(ModelInfo modelInfo,SimCode simCode)
 
@@ -5973,10 +5856,11 @@ end initAliasValst;
 */
 template initAliasValst(Text &varDecls ,Text type,list<SimVar> varsLst, SimCode simCode, Context context) ::=
   varsLst |> sv as SIMVAR(__) =>
-      let &preExp = buffer "" /*BUFD*/
+     
       let &varDeclsCref = buffer "" /*BUFD*/
     match initialValue
       case SOME(v) then
+       let &preExp = buffer "" /*BUFD*/
       match daeExp(v, contextOther, &preExp, &varDecls,simCode)
       case vStr as "0"
       case vStr as "0.0"
@@ -5994,11 +5878,34 @@ template initAliasValst(Text &varDecls ,Text type,list<SimVar> varsLst, SimCode 
        set<%type%>StartValue(<%getAliasVarName(sv.aliasvar, simCode,context)%>,<%vStr%>,"<%cref(sv.name)%>");'
            end match
       else
+       let &preExp = buffer "" /*BUFD*/
+       let initval = getAliasInitVal(sv.aliasvar, contextOther, &preExp, &varDecls,simCode)
         '<%preExp%>
-         set<%type%>StartValue(<%getAliasVarName(sv.aliasvar, simCode,context)%>,<%startValue(sv.type_)%>,"<%cref(sv.name)%>");'
+         set<%type%>StartValue(<%getAliasVarName(sv.aliasvar, simCode,context)%>,<%initval%>,"<%cref(sv.name)%>");'
     ;separator="\n"
 end initAliasValst;
 
+template getAliasInitVal(AliasVariable aliasvar,Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/, SimCode simCode)
+ "Returns the alias Attribute of ScalarVariable."
+::=
+   match aliasvar
+    case NOALIAS(__) then 'noAlias'
+    case ALIAS(__) then  getAliasInitVal2(varName, context, preExp, varDecls,simCode)
+    case NEGATEDALIAS(__) then  getAliasInitVal2(varName,context, preExp , varDecls ,simCode)
+    else 'noAlias'
+ 
+end getAliasInitVal;
+
+template getAliasInitVal2(ComponentRef aliascref,Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/, SimCode simCode)
+ "Returns the alias Attribute of ScalarVariable."
+::=
+cref2simvar(aliascref, simCode) |> var  as SIMVAR(__)=>
+ match initialValue
+      case SOME(v) then
+     daeExp(v, context, &preExp, &varDecls,simCode)
+     else
+      startValue(var.type_)
+end getAliasInitVal2;
 
 
 //template initValst1(list<SimVar> varsLst, SimCode simCode) ::=
