@@ -755,12 +755,11 @@ fmiStatus fmiSetTime(fmiComponent c, fmiReal time) {
 fmiStatus fmiSetContinuousStates(fmiComponent c, const fmiReal x[], size_t nx) {
   ModelInstance *comp = (ModelInstance *)c;
   int i;
-  /*
-   * According to FMI specification fmiSetContinuousStates should only be allowed in Continuous-Time Mode.
-   * The following code is done only to make the FMUs compatible with Dymola becuase Dymola is trying to call fmiSetContinuousStates after fmiEnterInitializationMode.
+  /* According to FMI specification fmiSetContinuousStates should only be allowed in Continuous-Time Mode.
+   * The following code is done only to make the FMUs compatible with Dymola because Dymola is trying to call fmiSetContinuousStates after fmiEnterInitializationMode.
    */
-  /*if (invalidState(comp, "fmiSetContinuousStates", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode))*/
-  if (invalidState(comp, "fmiSetContinuousStates", modelContinuousTimeMode))
+  if (invalidState(comp, "fmiSetContinuousStates", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode))
+  /*if (invalidState(comp, "fmiSetContinuousStates", modelContinuousTimeMode))*/
     return fmiError;
   if (invalidNumber(comp, "fmiSetContinuousStates", "nx", nx, NUMBER_OF_STATES))
     return fmiError;
@@ -800,7 +799,11 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
 fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_t nx) {
   int i;
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmiGetEventIndicators", modelEventMode|modelContinuousTimeMode|modelTerminated|modelError))
+  /* According to FMI specification fmiGetEventIndicators should only be allowed in Event Mode, Continuous-Time Mode & terminated.
+   * The following code is done only to make the FMUs compatible with Dymola because Dymola is trying to call fmiGetEventIndicators after fmiEnterInitializationMode.
+   */
+  if (invalidState(comp, "fmiGetEventIndicators", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError))
+  /*if (invalidState(comp, "fmiGetEventIndicators", modelEventMode|modelContinuousTimeMode|modelTerminated|modelError))*/
     return fmiError;
   if (invalidNumber(comp, "fmiGetEventIndicators", "nx", nx, NUMBER_OF_EVENT_INDICATORS))
     return fmiError;
