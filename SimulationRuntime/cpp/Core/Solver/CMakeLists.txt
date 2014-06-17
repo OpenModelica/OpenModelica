@@ -14,6 +14,7 @@ target_link_libraries (${SolverName} ${MathName} ${Boost_LIBRARIES}  )
 install (TARGETS ${SolverName} DESTINATION lib/omc/${LIBINSTALLEXT})
 install (FILES
          ${CMAKE_SOURCE_DIR}/Include/Core/Solver/IAlgLoopSolver.h 
+         ${CMAKE_SOURCE_DIR}/Include/Core/Solver/ILinSolverSettings.h
          ${CMAKE_SOURCE_DIR}/Include/Core/Solver/INonLinSolverSettings.h
 		 ${CMAKE_SOURCE_DIR}/Include/Core/Solver/ISolver.h
 		   ${CMAKE_SOURCE_DIR}/Include/Core/Solver/ISolverSettings.h
