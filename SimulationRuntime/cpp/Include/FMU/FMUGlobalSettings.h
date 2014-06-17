@@ -33,9 +33,9 @@ public:
     virtual string    getSelectedSolver() { return "Euler"; }
     virtual void setSelectedSolver(string) {}
     virtual string    getSelectedLinSolver() { return "Newton"; }
-    virtual void setSelectedLinSSolver(string) {}
+    virtual void setSelectedLinSolver(string) {}
     virtual string    getSelectedNonLinSolver() { return "Newton"; }
-    virtual void setSelectedNonLinSSolver(string) {}
+    virtual void setSelectedNonLinSolver(string) {}
     virtual void load(std::string xml_file) {};
     virtual void setResultsFileName(string) {}
     virtual string getResultsFileName() { return "fmuresults.csv"; }
