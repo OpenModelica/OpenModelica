@@ -1,9 +1,9 @@
 % /*
 %  * This file is part of OpenModelica.
 %  *
-%  * Copyright (c) 1998-2014, Linköpings University,
+%  * Copyright (c) 1998-2014, LinkÃ¶pings University,
 %  * Department of Computer and Information Science,
-%  * SE-58183 Linköping, Sweden.
+%  * SE-58183 LinkÃ¶ping, Sweden.
 %  *
 %  * All rights reserved.
 %  *
@@ -14,7 +14,7 @@
 %  *
 %  * The OpenModelica software and the Open Source Modelica
 %  * Consortium (OSMC) Public License (OSMC-PL) are obtained
-%  * from Linköpings University, either from the above address,
+%  * from LinkÃ¶pings University, either from the above address,
 %  * from the URL: http://www.ida.liu.se/projects/OpenModelica
 %  * and in the OpenModelica distribution.
 %  *
@@ -27,6 +27,7 @@
 %  * See the full OSMC Public License conditions for more details.
 %  *
 %  */
+
 \documentclass{article}
 \usepackage{amsmath, amssymb, amsfonts, amsthm, amsbsy}
 \usepackage{graphicx, color}
@@ -61,33 +62,32 @@
 \begin{tabular}{ll}
 Name:& #1 \\
 Order:& #2\\
-Step Sizie Control:& #3\\
+Step Size Control:& #3\\
 Order Control:& #4 \\
-Backround: & #5 \\
+Background: & #5 \\
 Stability Region:& #6
 \end{tabular} \\[1cm]
 }
 
 \title{
-Small Overview Of The Integration Methods In 
-\OpenModelica
+Small Overview of the Integration Methods in \OpenModelica
 }
 
-\author{Vitalij Ruge, Willi Braun} 
+\author{Vitalij Ruge, Willi Braun}
 \date{\today}
 
 \begin{document}
 \maketitle
 \section{Methods}
-\MTabel{dassl}{1-5}{\true}{\true}{Adams Moulton; with colored numerical
-jacobian, with interval root finding}{variable; depend from order}
+\MTabel{dassl}{1-5}{\true}{\true}{Default integration method \\& Adams Moulton; with colored numerical
+Jacobian, with interval root finding}{variable; depend from order}
 \MTabel{dasslsteps}{1-5}{\true}{\true}{dassl as default, but without 
 									  consideration of numberOfIntervals or stepSize. \\& 
 									  Output point are internal dassl}
 									  {variable; depend from order}
 \MTabel{dasslwort}{1-5}{\true}{\true}{dassl; without internal root finding}{variable; depend from order}
 \MTabel{euler}{1}{\false}{\false}{explicit euler}{\pade{1}{0}}
-\MTabel{rungekutta}{4}{\false}{\false}{classical runge kutta
+\MTabel{rungekutta}{4}{\false}{\false}{classical Runge-Kutta
 method}{\pade{4}{0}}
 \MTabel{radau1}{1}{\false}{\false}{radau IIA with one point}{\pade{0}{1}}
 \MTabel{radau3}{3}{\false}{\false}{radau IIA with two points}{\pade{1}{2}}
@@ -99,10 +99,10 @@ points}{\pade{3}{3}}
 points}{\pade{4}{4}}
 
 \subsection*{Notes}
-simflags \verb+-maxStepSize+ and \verb+-maxIntegrationOrder+ specifies
+Simulation flags \verb+-maxStepSize=<value>+ and \verb+-maxIntegrationOrder=<value>+ specifies
 maximum absolute step size and maximum integration order, used by dassl solver.
 \\[1cm]
-General step sizie without control $\approx \cfrac{\mbox{stopTime} -
+General step size without control $\approx \cfrac{\mbox{stopTime} -
 \mbox{startTime}}{\mbox{numberOfIntervals}}$
 \\[1cm]
 For $(a,b)$ Pad\'{e} see \url{http://en.wikipedia.org/wiki/Pad%C3%A9_table}
