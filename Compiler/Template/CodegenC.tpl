@@ -3821,7 +3821,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
       /* check if solution process was sucessful */
       if (retValue > 0){
         int indexes[2] = {1,<%index%>};
-        throwStreamPrintWithEquationIndexes(threadData, indexes, "Solving non-linear system failed.\nFor more information please use -lv LOG_NLS.");
+        throwStreamPrintWithEquationIndexes(threadData, indexes, "Solving non-linear system failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", time);
       }
       /* write solution */
       <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
