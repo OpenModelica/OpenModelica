@@ -5856,7 +5856,7 @@ end initAliasValst;
 */
 template initAliasValst(Text &varDecls ,Text type,list<SimVar> varsLst, SimCode simCode, Context context) ::=
   varsLst |> sv as SIMVAR(__) =>
-     
+
       let &varDeclsCref = buffer "" /*BUFD*/
     match initialValue
       case SOME(v) then
@@ -5893,7 +5893,7 @@ template getAliasInitVal(AliasVariable aliasvar,Context context, Text &preExp /*
     case ALIAS(__) then  getAliasInitVal2(varName, context, preExp, varDecls,simCode)
     case NEGATEDALIAS(__) then  getAliasInitVal2(varName,context, preExp , varDecls ,simCode)
     else 'noAlias'
- 
+
 end getAliasInitVal;
 
 template getAliasInitVal2(ComponentRef aliascref,Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/, SimCode simCode)
