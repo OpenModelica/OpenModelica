@@ -45,6 +45,8 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
           ("stop-time,e", po::value< double >()->default_value(1.0),  "simulation stop time")
           ("step-size,f", po::value< double >()->default_value(1e-2),  "simulation step size")
           ("solver,i", po::value< string >()->default_value("euler"),  "solver method")
+          ("lin-solver,L", po::value< string >()->default_value("kinsol"),  "linear solver method")
+          ("non-lin-solver,N", po::value< string >()->default_value("kinsol"),  "non linear solver method")
           ("OutputFormat,o", po::value< string >()->default_value("csv"),  "output Format [csv,empty]")
           ("number-of-intervalls,v", po::value< int >()->default_value(500),  "number of intervalls")
           ("tollerance,y", po::value< double >()->default_value(1e-6),  "solver tollerance")
@@ -61,6 +63,8 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      double stepsize =  stoptime/vm["number-of-intervalls"].as<int>();
      double tollerance =vm["tollerance"].as<double>();
      string solver =  vm["solver"].as<string>();
+     string nonLinSolver =  vm["non-lin-solver"].as<string>();
+     string linSolver =  vm["lin-solver"].as<string>();
      if (vm.count("runtime-library"))
      {
           //cout << "runtime library path set to " << vm["runtime-library"].as<string>() << std::endl;
@@ -130,7 +134,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
         modelica_path.make_preferred();
 
 
-     SimSettings settings = {solver,"kinsol",starttime,stoptime,stepsize,1e-20,0.01,tollerance,resultsfilename,outputFomat};
+     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-20,0.01,tollerance,resultsfilename,outputFomat};
 
      _library_path = libraries_path;
     _modelicasystem_path = modelica_path;

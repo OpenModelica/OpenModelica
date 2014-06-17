@@ -39,7 +39,9 @@ public:
     virtual string    getSelectedSolver();
     virtual void setSelectedSolver(string);
     virtual string    getSelectedNonLinSolver();
-    virtual void setSelectedNonLinSSolver(string);
+    virtual void setSelectedNonLinSolver(string);
+    virtual string    getSelectedLinSolver();
+    virtual void setSelectedLinSolver(string);
     virtual void setResultsFileName(string);
     virtual string getResultsFileName();
     //initializes the settings object by an xml file
@@ -59,6 +61,7 @@ private:
     string
         _output_path,
         _selected_solver,
+        _selected_lin_solver,
         _selected_nonlin_solver,
         _resultsfile_name,
         _runtimeLibraryPath;

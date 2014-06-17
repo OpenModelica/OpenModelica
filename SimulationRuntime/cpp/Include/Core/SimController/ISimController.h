@@ -15,6 +15,7 @@ using std::string;
 struct SimSettings
 {
     string solver_name;
+    string linear_solver_name;
     string nonlinear_solver_name;
     double start_time;
     double end_time;

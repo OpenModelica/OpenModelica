@@ -12,7 +12,7 @@ AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings* global_settings,PATH
 }
 #else
 AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings* global_settings,PATH library_path,PATH modelicasystem_path)
-     :NonLinSolverPolicy(library_path,modelicasystem_path,library_path)
+     :NonLinSolverPolicy(library_path,modelicasystem_path,library_path),LinSolverPolicy(library_path,modelicasystem_path,library_path)
      ,_global_settings(global_settings)
 {
 }
@@ -29,20 +29,38 @@ boost::shared_ptr<IAlgLoopSolver> AlgLoopSolverFactory::createAlgLoopSolver(IAlg
 
     if(algLoop->getDimReal() > 0)
     {
+    	if(algLoop->isLinear())
+    	{
+    		try
+    		{
+				string linsolver_name = _global_settings->getSelectedLinSolver();
+				boost::shared_ptr<ILinSolverSettings> algsolversetting= createLinSolverSettings(linsolver_name);
+				_linalgsolversettings.push_back(algsolversetting);
 
-        string nonlinsolver_name = _global_settings->getSelectedNonLinSolver();
-         boost::shared_ptr<INonLinSolverSettings> algsolversetting= createNonLinSolverSettings(nonlinsolver_name);
-        _algsolversettings.push_back(algsolversetting);
+
+				boost::shared_ptr<IAlgLoopSolver> algsolver= createLinSolver(algLoop,linsolver_name,algsolversetting);
+				_algsolvers.push_back(algsolver);
+				return algsolver;
+    		}
+    		catch(std::invalid_argument &arg)
+    		{
+    			//the linear solver was not found -> take the nonlinear solver
+    		}
+    	}
+
+		string nonlinsolver_name = _global_settings->getSelectedNonLinSolver();
+		 boost::shared_ptr<INonLinSolverSettings> algsolversetting= createNonLinSolverSettings(nonlinsolver_name);
+		_algsolversettings.push_back(algsolversetting);
 
 
-        boost::shared_ptr<IAlgLoopSolver> algsolver= createNonLinSolver(algLoop,nonlinsolver_name,algsolversetting);
-        _algsolvers.push_back(algsolver);
-        return algsolver;
+		boost::shared_ptr<IAlgLoopSolver> algsolver= createNonLinSolver(algLoop,nonlinsolver_name,algsolversetting);
+		_algsolvers.push_back(algsolver);
+		return algsolver;
     }
     else
     {
         // TODO: Throw an error message here.
-        throw   std::invalid_argument("Nonlinear solver is not available");
+        throw   std::invalid_argument("AlgLoop solver is not available");
     }
 }
 

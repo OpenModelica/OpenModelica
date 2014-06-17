@@ -89,6 +89,7 @@ set(KinsolName ${LIBPREFIX}Kinsol)
 set(ModelicaName ${LIBPREFIX}Modelica)
 set(NewtonName ${LIBPREFIX}Newton)
 set(HybrjName ${LIBPREFIX}Hybrj)
+set(UmfPackName ${LIBPREFIX}UmfPack)
 set(DataExchangeName ${LIBPREFIX}DataExchange)
 set(ModelicaUtilitiesName ${LIBPREFIX}ModelicaUtilities)
 set(BasiLibName ${LIBPREFIX}Base)
@@ -224,7 +225,7 @@ include_directories ("Include/Solver")
 add_subdirectory (Solver/Euler)
 add_subdirectory (Solver/Newton)
 add_subdirectory (Solver/Hybrj)
-
+add_subdirectory (Solver/UmfPack)
 
 
 
@@ -259,6 +260,9 @@ endIf()
 
 GET_TARGET_PROPERTY(libNewton ${NewtonName} LOCATION)
 GET_FILENAME_COMPONENT(libNewtonName ${libNewton} NAME)
+
+GET_TARGET_PROPERTY(libUmfPack ${UmfPackName} LOCATION)
+GET_FILENAME_COMPONENT(libUmfPackName ${libUmfPack} NAME)
 
 GET_TARGET_PROPERTY(libEuler ${EulerName} LOCATION)
 GET_FILENAME_COMPONENT(libEulerName ${libEuler} NAME)
@@ -296,6 +300,7 @@ set (EULER_LIB ${libEulerName})
 set (SETTINGSFACTORY_LIB ${libSetFactoryName})
 set (MODELICASYSTEM_LIB ${libModelicaName})
 set (NEWTON_LIB ${libNewtonName})
+set (UMFPACK_LIB ${libUmfPackName})
 set (SYSTEM_LIB ${libSystemName})
 set (SOLVER_LIB ${libSolverName})
 set (MATH_LIB ${libMathName})

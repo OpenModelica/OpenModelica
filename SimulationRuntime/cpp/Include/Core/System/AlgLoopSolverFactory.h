@@ -10,7 +10,7 @@ non-linear) system of the Form F(x)=0.
 class AlgLoopSolverFactory : public IAlgLoopSolverFactory, public StaticNonLinSolverOMCFactory<OMCFactory>
 #else
 #include <Policies/FactoryPolicy.h>
-class AlgLoopSolverFactory : public IAlgLoopSolverFactory, public NonLinSolverPolicy
+class AlgLoopSolverFactory : public IAlgLoopSolverFactory, public NonLinSolverPolicy, public LinSolverPolicy
 #endif
 {
 public:
@@ -24,6 +24,7 @@ public:
 private:
   //std::vector<boost::shared_ptr<IKinsolSettings> > _algsolversettings;
   std::vector<boost::shared_ptr<INonLinSolverSettings> > _algsolversettings;
+  std::vector<boost::shared_ptr<ILinSolverSettings> > _linalgsolversettings;
   std::vector<boost::shared_ptr<IAlgLoopSolver> > _algsolvers;
   IGlobalSettings*  _global_settings;
 };

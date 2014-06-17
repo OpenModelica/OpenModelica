@@ -17,7 +17,7 @@ public:
 
 
     }
-    ~NonLinSolverOMCFactory()
+    virtual ~NonLinSolverOMCFactory()
     {
         ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
     }

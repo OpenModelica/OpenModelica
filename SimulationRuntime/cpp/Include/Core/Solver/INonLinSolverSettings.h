@@ -7,7 +7,7 @@
 /*****************************************************************************/
 /**
 
-Algeimeine Klasse zur Kapselung der Parameter (Einstellungen) für einen nicht linearen Solver
+Algemeine Klasse zur Kapselung der Parameter (Einstellungen) für einen nicht linearen Solver
 Hier werden default-Einstellungen entsprechend der allgemeinen Simulations-
 einstellugnen gemacht, diese können überprüft und ev. Fehleinstellungen korrigiert
 werden.
@@ -15,7 +15,7 @@ werden.
 class INonLinSolverSettings
 {
 public:
-    ~INonLinSolverSettings(){};
+    virtual ~INonLinSolverSettings(){};
 
     virtual long int    getNewtMax() = 0;
     virtual void        setNewtMax(long int)= 0;

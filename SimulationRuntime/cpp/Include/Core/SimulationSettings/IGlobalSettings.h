@@ -50,8 +50,10 @@ public:
     virtual void setOutputPath(string)=0;
     virtual string    getSelectedSolver()=0;
     virtual void setSelectedSolver(string)=0;
+    virtual string    getSelectedLinSolver()=0;
+    virtual void setSelectedLinSolver(string)=0;
     virtual string    getSelectedNonLinSolver()=0;
-    virtual void setSelectedNonLinSSolver(string)=0;
+    virtual void setSelectedNonLinSolver(string)=0;
     virtual void load(std::string xml_file)=0;
   virtual void setResultsFileName(string)=0;
   virtual string getResultsFileName()=0;

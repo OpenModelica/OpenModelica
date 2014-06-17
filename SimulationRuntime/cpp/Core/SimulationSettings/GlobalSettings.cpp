@@ -9,9 +9,12 @@ GlobalSettings::GlobalSettings()
 , _resultsOutput        (true)
 , _infoOutput        (true)
 , _selected_solver("Euler")
+, _selected_lin_solver("Newton")
 ,_selected_nonlin_solver("Newton")
 ,_resultsfile_name("results.csv")
 ,_endless_sim(false)
+, _outputFormat(EMPTY)
+,_log_type(OFF)
 {
 
 }
@@ -119,11 +122,19 @@ void GlobalSettings::setSelectedSolver(string solver)
 {
     _selected_solver = solver;
 }
+string   GlobalSettings::getSelectedLinSolver()
+{
+ return _selected_lin_solver;
+}
+void GlobalSettings::setSelectedLinSolver(string solver)
+{
+    _selected_lin_solver= solver;
+}
 string   GlobalSettings::getSelectedNonLinSolver()
 {
  return _selected_nonlin_solver;
 }
-void GlobalSettings::setSelectedNonLinSSolver(string solver)
+void GlobalSettings::setSelectedNonLinSolver(string solver)
 {
     _selected_nonlin_solver= solver;
 }

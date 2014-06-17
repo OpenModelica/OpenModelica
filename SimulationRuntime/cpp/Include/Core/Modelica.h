@@ -119,6 +119,7 @@ typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<
 #include <System/ITime.h>
 #include <System/IEvent.h>
 #include <Solver/INonLinSolverSettings.h>
+#include <Solver/ILinSolverSettings.h>
 #include <DataExchange/IHistory.h>
 #include <System/IMixedSystem.h>
 #include <SimulationSettings/IGlobalSettings.h>
