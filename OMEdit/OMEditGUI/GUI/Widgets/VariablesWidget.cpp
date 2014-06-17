@@ -52,9 +52,10 @@ using namespace OMPlot;
   2 -> name\n
   3 -> displayName\n
   4 -> value\n
-  5 -> displayUnit\n
-  6 -> description\n
-  7 -> tooltip
+  5 -> unit\n
+  6 -> displayUnit\n
+  7 -> description\n
+  8 -> tooltip
   */
 VariablesTreeItem::VariablesTreeItem(const QVector<QVariant> &variableItemData, VariablesTreeItem *pParent, bool isRootItem)
 {
@@ -66,9 +67,10 @@ VariablesTreeItem::VariablesTreeItem(const QVector<QVariant> &variableItemData, 
   mDisplayVariableName = variableItemData[3].toString();
   mValue = variableItemData[4].toString();
   mValueChanged = false;
-  mDisplayUnit = variableItemData[5].toString();
-  mDescription = variableItemData[6].toString();
-  mToolTip = variableItemData[7].toString();
+  mUnit = variableItemData[5].toString();
+  mDisplayUnit = variableItemData[6].toString();
+  mDescription = variableItemData[7].toString();
+  mToolTip = variableItemData[8].toString();
   mChecked = false;
   mEditable = false;
 }
@@ -179,7 +181,7 @@ QVariant VariablesTreeItem::data(int column, int role) const
       switch (role)
       {
         case Qt::DisplayRole:
-          return mDisplayUnit;
+          return mUnit;
         default:
           return QVariant();
       }
@@ -214,7 +216,7 @@ VariablesTreeModel::VariablesTreeModel(VariablesTreeView *pVariablesTreeView)
 {
   mpVariablesTreeView = pVariablesTreeView;
   QVector<QVariant> headers;
-  headers << "" << "" << Helper::variables << Helper::variables << tr("Value") << tr("Unit") << Helper::description << "";
+  headers << "" << "" << Helper::variables << Helper::variables << tr("Value") << tr("Unit") << "" << Helper::description << "";
   mpRootVariablesTreeItem = new VariablesTreeItem(headers, 0, true);
 }
 
@@ -396,6 +398,7 @@ QHash<QString, QString> VariablesTreeModel::parseScalarVariable(QXmlStreamReader
     {
       QXmlStreamAttributes attributes = xmlReader.attributes();
       scalarVariable["start"] = attributes.value("start").toString();
+      scalarVariable["unit"] = attributes.value("unit").toString();
       scalarVariable["displayUnit"] = attributes.value("displayUnit").toString();
     }
     xmlReader.readNext();
@@ -411,7 +414,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   QString text = QString(fileName).remove(resultTypeRegExp);
   QModelIndex index = variablesTreeItemIndex(mpRootVariablesTreeItem);
   QVector<QVariant> Variabledata;
-  Variabledata << filePath << fileName << fileName << text << "" << "" << "" << toolTip;
+  Variabledata << filePath << fileName << fileName << text << "" << "" << "" << "" << toolTip;
   VariablesTreeItem *pTopVariablesTreeItem = new VariablesTreeItem(Variabledata, mpRootVariablesTreeItem, true);
   pTopVariablesTreeItem->setSimulationOptions(simulationOptions);
   int row = rowCount();
@@ -506,11 +509,13 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       /* find the variable in the xml file */
       QString variableToFind = variableData[2].toString();
       variableToFind.remove(QRegExp(pTopVariablesTreeItem->getVariableName() + "."));
-      /* get the variable information i.e value, displayunit, description */
-      QString value, displayUnit, description;
+      /* get the variable information i.e value, unit, displayunit, description */
+      QString value, unit, displayUnit, description;
       bool changeAble = false;
-      getVariableInformation(&matReader, variableToFind, &value, &changeAble, &displayUnit, &description);
+      getVariableInformation(&matReader, variableToFind, &value, &changeAble, &unit, &displayUnit, &description);
       variableData << StringHandler::unparse(QString("\"").append(value).append("\""));
+      /* set the variable unit */
+      variableData << StringHandler::unparse(QString("\"").append(unit).append("\""));
       /* set the variable displayUnit */
       variableData << StringHandler::unparse(QString("\"").append(displayUnit).append("\""));
       /* set the variable description */
@@ -569,7 +574,7 @@ void VariablesTreeModel::unCheckVariables(VariablesTreeItem *pVariablesTreeItem)
 }
 
 void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble,
-                                                QString *displayUnit, QString *description)
+                                                QString *unit, QString *displayUnit, QString *description)
 {
   QHash<QString, QString> hash = mScalarVariablesList.value(variableToFind);
   if (hash["name"].compare(variableToFind) == 0)
@@ -604,6 +609,7 @@ void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, Q
         }
       }
     }
+    *unit = hash["unit"];
     *displayUnit = hash["displayUnit"];
     *description = hash["description"];
   }

@@ -83,6 +83,7 @@ private:
   QString mDisplayVariableName;
   QString mValue;
   bool mValueChanged;
+  QString mUnit;
   QString mDisplayUnit;
   QString mDescription;
   QString mToolTip;
@@ -119,8 +120,8 @@ private:
   VariablesTreeView *mpVariablesTreeView;
   VariablesTreeItem *mpRootVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesList;
-  void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble, QString *displayUnit,
-                              QString *description);
+  void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble, QString *unit,
+                              QString *displayUnit, QString *description);
 signals:
   void itemChecked(const QModelIndex &index, qreal curveThickness, int curveStyle);
   void variableTreeItemRemoved(QString variable);
