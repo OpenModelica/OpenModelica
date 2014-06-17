@@ -9,18 +9,18 @@ template<class CreationPolicy>
 struct LinSolverOMCFactory : public ObjectFactory<CreationPolicy> {
 
 public:
-	LinSolverOMCFactory(PATH library_path, PATH modelicasystem_path,PATH config_path)
-	:ObjectFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
-	,_last_selected_solver("empty")
-	{
+  LinSolverOMCFactory(PATH library_path, PATH modelicasystem_path,PATH config_path)
+  :ObjectFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
+  ,_last_selected_solver("empty")
+  {
 
-	}
-	virtual ~LinSolverOMCFactory()
-	{
-		ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
-	}
+  }
+  virtual ~LinSolverOMCFactory()
+  {
+    ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
+  }
 
-	virtual boost::shared_ptr<ILinSolverSettings> createLinSolverSettings(string lin_solver)
+  virtual boost::shared_ptr<ILinSolverSettings> createLinSolverSettings(string lin_solver)
     {
        string lin_solver_key;
 
