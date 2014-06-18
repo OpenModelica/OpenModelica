@@ -126,7 +126,7 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
     const int nJ = optData->dim.nJ;
     modelica_boolean upC;
     modelica_boolean upC2;
-    upC = obj_factor != 0; 
+    upC = obj_factor != 0;
     /*
     if(new_x){
       optData2ModelData(optData, vopt, 1);
@@ -199,7 +199,7 @@ static inline void num_hessian0(double * v, const double * const lambda,
   int * cindex = optData->s.indexCon2;
   modelica_real * realV[3];
 
-  
+
   for(l = 1; l<3; ++l){
     realV[l] = data->localData[l]->realVars;
     data->localData[l]->realVars = optData->v[i][j];
@@ -324,7 +324,7 @@ static inline void num_hessian1(double * v, const double * const lambda,
     for(jj = 0; jj <ii+1; ++jj){
       if(optData->s.H0[ii][jj]){
         for(l = 0; l < nx; ++l){
-          if(optData->s.Hg[l][ii][jj]) 
+          if(optData->s.Hg[l][ii][jj])
             optData->H[l][ii][jj] = (long double)(optData->tmpJ[l][jj] - optData->J[i][j][l][jj])*lambda[l]/h;
         }
         for(; l < nJ; ++l){

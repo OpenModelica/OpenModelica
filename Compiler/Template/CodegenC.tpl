@@ -10631,7 +10631,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
                      ;separator="\n"%>
                    >>
         <<
-           /* objectiveFunction */   
+           /* objectiveFunction */
            int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short * index_Dres)
             {
               <%varDecls%>

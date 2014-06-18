@@ -3177,7 +3177,7 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix A time: " +& realString(clock()) +& "\n");
 
         // Differentiate the System w.r.t states&inputs for matrices B
-        
+
         optimizer_vars = BackendVariable.mergeVariables(statesarr, conVars);
         object = checkObjectIsSet(outputvarsarr,"$TMP_lagrangeTerm");
         optimizer_vars = BackendVariable.mergeVariables(optimizer_vars, object);
@@ -3200,7 +3200,7 @@ algorithm
 
         // Differentiate the System w.r.t inputs for matrices D
         optimizer_vars = BackendVariable.emptyVars();
-        
+
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2, {}, statesarr, inputvarsarr, paramvarsarr, optimizer_vars, varlst, "D");
         functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
