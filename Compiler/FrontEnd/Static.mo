@@ -794,7 +794,7 @@ algorithm
         (cache,dess,tps,_) = elabExpListList(cache, env, ess, DAE.T_UNKNOWN_DEFAULT, impl, st,doVect,pre,info) "matrix expressions, e.g. {1,0;0,1} with elements of simple type." ;
         tps_1 = List.mapList(tps, Types.getPropType);
         tps_2 = List.flatten(tps_1);
-        nmax = matrixConstrMaxDim(tps_2);
+        nmax = matrixConstrMaxDim(tps_2, 2);
         havereal = Types.containReal(tps_2);
         (cache,mexp,DAE.PROP(t,c),dim1,dim2)
         = elabMatrixSemi(cache,env, dess, tps, impl, st, havereal, nmax,doVect,pre,info);
@@ -1168,27 +1168,6 @@ algorithm
   end matchcontinue;
 end fromEquationToAlgAssignment;
 
-protected function elabMatrixGetDimensions "Helper function to elab_exp (MATRIX). Calculates the dimensions of the
-  matrix by investigating the elaborated expression."
-  input DAE.Exp inExp;
-  output Integer outInteger1;
-  output Integer outInteger2;
-algorithm
-  (outInteger1,outInteger2):=
-  match (inExp)
-    local
-      Integer dim1,dim2;
-      list<DAE.Exp> lst2,lst;
-    case (DAE.ARRAY(array = lst))
-      equation
-        dim1 = listLength(lst);
-        (DAE.ARRAY(array = lst2) :: _) = lst;
-        dim2 = listLength(lst2);
-      then
-        (dim1,dim2);
-  end match;
-end elabMatrixGetDimensions;
-
 protected function elabMatrixToMatrixExp
   "Convert an 2-dimensional array expression to a matrix expression."
   input DAE.Exp inExp;
@@ -1203,10 +1182,9 @@ algorithm
       list<DAE.Exp> expl;
 
     // Convert a 2-dimensional array to a matrix.
-    case (DAE.ARRAY(ty = a as DAE.T_ARRAY(dims = _ :: _ :: {}),
-        array = expl))
+    case (DAE.ARRAY(ty = a as DAE.T_ARRAY(dims = _ :: _ :: {}), array = expl))
       equation
-        mexpl = elabMatrixToMatrixExp2(expl);
+        mexpl = List.map(expl, Expression.arrayContent);
         d1 = listLength(mexpl);
         true = Expression.typeBuiltin(Expression.unliftArray(Expression.unliftArray(a)));
       then
@@ -1217,55 +1195,34 @@ algorithm
   end matchcontinue;
 end elabMatrixToMatrixExp;
 
-protected function elabMatrixToMatrixExp2
-  "Helper function to elabMatrixToMatrixExp."
-  input list<DAE.Exp> inArrays;
-  output list<list<DAE.Exp>> outMatrix;
+protected function matrixConstrMaxDim
+  "Helper function to elabExp (MATRIX).
+   Determines the maximum dimension of the array arguments to the matrix
+   constructor as.
+   max(2, ndims(A), ndims(B), ndims(C),..) for matrix constructor arguments
+   A, B, C, ..."
+  input list<DAE.Type> inTypes;
+  input Integer inAccumMax;
+  output Integer outMaxDim;
 algorithm
-  outMatrix := match (inArrays)
+  outMaxDim := match(inTypes, inAccumMax)
     local
-      list<list<DAE.Exp>> es_1;
-      DAE.Type a;
-      list<DAE.Exp> expl,es;
-    case ({}) then {};
-    case ((DAE.ARRAY(ty = _,array = expl) :: es))
+      DAE.Type ty;
+      list<DAE.Type> rest_tys;
+      Integer dims;
+
+    case ({}, _) then inAccumMax;
+      
+    case (ty :: rest_tys, _)
       equation
-        es_1 = elabMatrixToMatrixExp2(es);
+        dims = Types.numberOfDimensions(ty);
+        dims = intMax(dims, inAccumMax);
       then
-        expl :: es_1;
+        matrixConstrMaxDim(rest_tys, dims);
+
   end match;
-end elabMatrixToMatrixExp2;
-
-protected function matrixConstrMaxDim "Helper function to elab_exp (MATRIX).
-  Determines the maximum dimension of the array arguments to the matrix
-  constructor as.
-  max(2, ndims(A), ndims(B), ndims(C),..) for matrix constructor arguments
-  A, B, C, ..."
-  input list<DAE.Type> inTypesTypeLst;
-  output Integer outInteger;
-algorithm
-  outInteger:=
-  matchcontinue (inTypesTypeLst)
-    local
-      Integer tn,tn2,res;
-      DAE.Type t;
-      list<DAE.Type> ts;
-    case ({}) then 2;
-    case ((t :: ts))
-      equation
-        tn = Types.numberOfDimensions(t);
-        tn2 = matrixConstrMaxDim(ts);
-        res = intMax(tn, tn2);
-      then
-        res;
-    else
-      equation
-        Debug.fprint(Flags.FAILTRACE, "-matrix_constr_max_dim failed\n");
-      then
-        fail();
-  end matchcontinue;
 end matrixConstrMaxDim;
-
+ 
 protected function elabCallReduction
 "This function elaborates reduction expressions that look like function
   calls. For example an array constructor."
@@ -1962,7 +1919,7 @@ algorithm
         (cache,dess,tps,_) = elabExpListList(cache,env,ess,DAE.T_UNKNOWN_DEFAULT,impl,NONE(),true,pre,info);
         tps_1 = List.mapList(tps, Types.getPropType);
         tps_2 = List.flatten(tps_1);
-        nmax = matrixConstrMaxDim(tps_2);
+        nmax = matrixConstrMaxDim(tps_2, 2);
         havereal = Types.containReal(tps_2);
         (cache,mexp,DAE.PROP(t,c),dim1,dim2) = elabMatrixSemi(cache,env,dess,tps,impl,NONE(),havereal,nmax,true,pre,info);
         _ = Types.simplifyType(t);
@@ -2341,7 +2298,7 @@ algorithm
 
     case(_,DAE.T_FUNCTION(args,resType,functionAttributes,ts))
       equation
-        args = stripExtraArgsFromType2(slots,args);
+        args = stripExtraArgsFromType2(slots, args, {});
       then
         DAE.T_FUNCTION(args,resType,functionAttributes,ts);
 
@@ -2354,26 +2311,29 @@ algorithm
 end stripExtraArgsFromType;
 
 protected function stripExtraArgsFromType2
-  input list<Slot> slots;
+  input list<Slot> inSlots;
   input list<DAE.FuncArg> inType;
+  input list<DAE.FuncArg> inAccumType;
   output list<DAE.FuncArg> outType;
 algorithm
-  outType := match(slots,inType)
+  outType := match(inSlots, inType, inAccumType)
     local
       list<Slot> slotsRest;
       list<DAE.FuncArg> rest;
       DAE.FuncArg arg;
-    case ({},{}) then {};
-    case (SLOT(slotFilled = true)::slotsRest,_::rest) then stripExtraArgsFromType2(slotsRest,rest);
-    case (SLOT(slotFilled = false)::slotsRest,arg::rest)
-      equation
-        rest = stripExtraArgsFromType2(slotsRest,rest);
-      then arg::rest;
+
+    case (SLOT(slotFilled = true) :: slotsRest, _ :: rest, _)
+      then stripExtraArgsFromType2(slotsRest, rest, inAccumType);
+
+    case (SLOT(slotFilled = false) :: slotsRest, arg :: rest, _)
+      then stripExtraArgsFromType2(slotsRest, rest, arg :: inAccumType);
+
+    case ({}, {}, _) then listReverse(inAccumType);
   end match;
 end stripExtraArgsFromType2;
 
 protected function elabArray
-"This function elaborates on array expressions.
+  "This function elaborates on array expressions.
 
   All types of an array should be equivalent. However, mixed Integer and Real
   elements are allowed in an array and in that case the Integer elements
@@ -2401,7 +2361,7 @@ algorithm
       then
         fail();
 
-    // impl array contains mixed Integer and Real types
+    // Array contains mixed Integer and Real types
     case (_ :: _, _, _, _)
       equation
         t = elabArrayHasMixedIntReals(inProps);
@@ -2420,8 +2380,8 @@ algorithm
 end elabArray;
 
 protected function elabArrayHasMixedIntReals
-"Helper function to elab_array, checks if expression list contains both
-  Integer and Real types."
+  "Helper function to elab_array, checks if expression list contains both
+   Integer and Real types."
   input list<DAE.Properties> props;
   output DAE.Type ty;
 algorithm
@@ -8124,8 +8084,10 @@ algorithm
       list<tuple<Slot, Integer>> slots;
       list<String> cyclic_slots;
 
+    // An already evaluated slot, return its binding.
     case ((slot as SLOT(arg = SOME(exp)), 2), _, _) then (exp, slot);
 
+    // A slot in the process of being evaluated => cyclic bindings.
     case ((SLOT(defaultArg = DAE.FUNCARG(name=id)), 1), _, _)
       equation
         Error.addSourceMessage(Error.CYCLIC_DEFAULT_VALUE,
@@ -8133,6 +8095,7 @@ algorithm
       then
         fail();
 
+    // A slot with an unevaluated binding, evaluate the binding and return it.
     case ((slot as SLOT(defaultArg = da as DAE.FUNCARG(defaultBinding=SOME(exp)), dims = dims, idx = idx), 0), _, _)
       equation
         _ = arrayUpdate(inSlotArray, idx, (slot, 1));
@@ -8146,6 +8109,8 @@ algorithm
 end fillDefaultSlot2;
 
 protected function evaluateSlotExp
+  "Evaluates a slot's binding by recursively replacing references to other slots
+   with their bindings."
   input DAE.Exp inExp;
   input array<tuple<Slot, Integer>> inSlotArray;
   input Absyn.Info inInfo;
@@ -8163,20 +8128,42 @@ algorithm
     local
       String id;
       array<tuple<Slot, Integer>> slots;
-      Slot slot;
-      DAE.Exp exp;
+      Option<Slot> slot;
+      DAE.Exp exp, orig_exp;
       Absyn.Info info;
 
-    case ((DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id)), (slots, info)))
+    // Only simple identifiers can be slot names.
+    case ((orig_exp as DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id)), (slots, info)))
       equation
-        ((slot, _), _) = Util.arrayGetMemberOnTrue(id, slots, isSlotNamed);
-        (exp, _) = fillDefaultSlot(slot, slots, info);
+        slot = lookupSlotInArray(id, slots);
+        exp = getOptSlotDefaultExp(slot, slots, info, orig_exp);
       then
         ((exp, (slots, info)));
 
     else inTuple;
   end match;
 end evaluateSlotExp_traverser;
+
+protected function lookupSlotInArray
+  "Looks up the given name in an array of slots, and returns either SOME(slot)
+   if a slot with that name was found, or NONE() if a slot couldn't be found."
+  input String inSlotName;
+  input array<tuple<Slot, Integer>> inSlots;
+  output Option<Slot> outSlot;
+algorithm
+  outSlot := matchcontinue(inSlotName, inSlots)
+    local
+      Slot slot;
+
+    case (_, _)
+      equation
+        ((slot, _), _) = Util.arrayGetMemberOnTrue(inSlotName, inSlots, isSlotNamed);
+      then
+        SOME(slot);
+
+    else NONE();
+  end matchcontinue;
+end lookupSlotInArray;
 
 protected function isSlotNamed
   input String inName;
@@ -8188,6 +8175,32 @@ algorithm
   (SLOT(defaultArg = DAE.FUNCARG(name=id)), _) := inSlot;
   outIsNamed := stringEq(id, inName);
 end isSlotNamed;
+
+protected function getOptSlotDefaultExp
+  "Takes an optional slot and tries to evaluate the slot's binding if it's SOME,
+   otherwise returns the original expression if it's NONE."
+  input Option<Slot> inSlot;
+  input array<tuple<Slot, Integer>> inSlots;
+  input Absyn.Info inInfo;
+  input DAE.Exp inOrigExp;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inSlot, inSlots, inInfo, inOrigExp)
+    local
+      Slot slot;
+      DAE.Exp exp;
+
+    // Got a slot, evaluate its binding and return it.
+    case (SOME(slot), _, _, _)
+      equation
+        (exp, _) = fillDefaultSlot(slot, inSlots, inInfo);
+      then
+        exp;
+
+    // No slot, return the original expression.
+    case (NONE(), _, _, _) then inOrigExp;
+  end match;
+end getOptSlotDefaultExp;
 
 protected function determineConstSpecialFunc "For the special functions constructor and destructor,
 in external object,

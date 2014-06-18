@@ -562,16 +562,10 @@ algorithm
 end getVarName;
 
 public function isReal "Returns true if type is Real"
-input DAE.Type tp;
-output Boolean res;
+  input DAE.Type tp;
+  output Boolean res;
 algorithm
- res := matchcontinue(tp)
-   case _
-     equation
-       DAE.T_REAL(varLst = _) = arrayElementType(tp);
-     then true;
-   else false;
- end matchcontinue;
+  res := isScalarReal(arrayElementType(tp));
 end isReal;
 
 public function isScalarReal
@@ -696,30 +690,43 @@ public function isInteger "Returns true if type is Integer"
   input DAE.Type tp;
   output Boolean res;
 algorithm
- res := matchcontinue(tp)
-   case _
-     equation
-       DAE.T_INTEGER(varLst = _) = arrayElementType(tp);
-     then true;
-
-   else false;
-
- end matchcontinue;
+  res := isScalarInteger(arrayElementType(tp));
 end isInteger;
+
+public function isScalarInteger
+  input DAE.Type inType;
+  output Boolean outIsScalarInteger;
+algorithm
+  outIsScalarInteger := match(inType)
+    local
+      Type ty;
+
+    case DAE.T_INTEGER(varLst = _) then true;
+    case DAE.T_SUBTYPE_BASIC(complexType = ty) then isScalarInteger(ty);
+    else false;
+  end match;
+end isScalarInteger;
 
 public function isBoolean "Returns true if type is Boolean"
   input DAE.Type tp;
   output Boolean res;
 algorithm
- res := matchcontinue(tp)
-   case _
-     equation
-       DAE.T_BOOL(varLst = _) = arrayElementType(tp);
-      then true;
-
-   else false;
- end matchcontinue;
+  res := isScalarBoolean(arrayElementType(tp));
 end isBoolean;
+
+public function isScalarBoolean
+  input DAE.Type inType;
+  output Boolean outIsScalarBoolean;
+algorithm
+  outIsScalarBoolean := match(inType)
+    local
+      Type ty;
+
+    case DAE.T_BOOL(varLst = _) then true;
+    case DAE.T_SUBTYPE_BASIC(complexType = ty) then isScalarBoolean(ty);
+    else false;
+  end match;
+end isScalarBoolean;
 
 public function integerOrReal "author: PA
   Succeeds for the builtin types Integer and Real

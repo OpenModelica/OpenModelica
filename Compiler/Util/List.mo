@@ -7418,140 +7418,154 @@ algorithm
 end isMemberOnTrue;
 
 public function exist
-  "Returns true if the and element is found on the list using a function. Example
+  "Returns true if a certain element exists in the given list as indicated by
+   the given predicate function.
+     Example:
        filter({1,2}, isEven) => true
        filter({1,3,5,7}, isEven) => false"
   input list<ElementType> inList;
   input FindFunc inFindFunc;
-  output Boolean outList;
+  output Boolean outExists;
 
   partial function FindFunc
     input ElementType inElement;
-    output Boolean out;
+    output Boolean outFound;
   end FindFunc;
 algorithm
-  outList := exist_work(false,inList,inFindFunc);
+  outExists := exist_tail(false, inList, inFindFunc);
 end exist;
 
-protected function exist_work
-  "Returns true if the and element is found on the list using a function. Example
-       filter({1,2}, isEven) => true
-       filter({1,3,5,7}, isEven) => false"
-  input Boolean found;
+protected function exist_tail
+  "Tail-recursive implementation of exist."
+  input Boolean inFound;
   input list<ElementType> inList;
   input FindFunc inFindFunc;
-  output Boolean outList;
+  output Boolean outExists;
 
   partial function FindFunc
     input ElementType inElement;
-    output Boolean out;
+    output Boolean outFound;
   end FindFunc;
 algorithm
-  outList := match (found,inList,inFindFunc)
+  outExists := match (inFound, inList, inFindFunc)
     local
       list<ElementType> t;
       ElementType h;
       Boolean ret,b;
-    case(true,_,_) then true;
-    case(_,{},_) then false;
-    case(_,h::t,_)
+
+    case(true, _, _) then true;
+
+    case(_, h :: t, _)
       equation
         b = inFindFunc(h);
-      then exist_work(b, t, inFindFunc);
+      then 
+        exist_tail(b, t, inFindFunc);
+
+    case(_, {}, _) then false;
   end match;
-end exist_work;
+end exist_tail;
 
 public function exist1
-  "Returns true if the and element is found on the list using a function and an extra argument."
+  "Returns true if a certain element exists in the given list as indicated by
+   the given predicate function. Also takes an extra argument that is passed to
+   the predicate function."
   input list<ElementType1> inList;
   input FindFunc inFindFunc;
   input ElementType2 inExtraArg;
-  output Boolean outList;
+  output Boolean outExists;
 
   partial function FindFunc
     input ElementType1 inElement;
     input ElementType2 inExtraArg;
-    output Boolean out;
+    output Boolean outFound;
   end FindFunc;
 algorithm
-  outList := exist1_work(false,inList,inFindFunc,inExtraArg);
+  outExists := exist1_tail(false, inList, inFindFunc, inExtraArg);
 end exist1;
 
-protected function exist1_work
-  "Returns true if the and element is found on the list using a function and an extra argument."
-  input Boolean found;
+protected function exist1_tail
+  "Tail-recursive implementation of exist1."
+  input Boolean inFound;
   input list<ElementType1> inList;
   input FindFunc inFindFunc;
   input ElementType2 inExtraArg;
-  output Boolean outList;
+  output Boolean outExists;
 
   partial function FindFunc
     input ElementType1 inElement;
     input ElementType2 inExtraArg;
-    output Boolean out;
+    output Boolean outFound;
   end FindFunc;
 algorithm
-  outList := match (found,inList,inFindFunc,inExtraArg)
+  outExists := match (inFound, inList, inFindFunc, inExtraArg)
     local
       list<ElementType1> t;
       ElementType1 h;
-      Boolean ret,b;
-    case(true,_,_,_) then true;
-    case(_,{},_,_) then false;
-    case(_,h::t,_,_)
+      Boolean ret, b;
+
+    case(true, _, _, _) then true;
+    case(_, h :: t, _, _)
       equation
         b = inFindFunc(h, inExtraArg);
-      then exist1_work(b, t, inFindFunc, inExtraArg);
+      then 
+        exist1_tail(b, t, inFindFunc, inExtraArg);
+
+    case(_, {}, _, _) then false;
   end match;
-end exist1_work;
+end exist1_tail;
 
 public function exist2
-  "Returns true if the and element is found on the list using a function and an extra argument."
+  "Returns true if a certain element exists in the given list as indicated by
+   the given predicate function. Also takes two extra arguments that is passed
+   to the predicate function."
   input list<ElementType1> inList;
   input FindFunc inFindFunc;
   input ElementType2 inExtraArg1;
   input ElementType3 inExtraArg2;
-  output Boolean outList;
+  output Boolean outExists;
 
   partial function FindFunc
     input ElementType1 inElement;
     input ElementType2 inExtraArg1;
     input ElementType3 inExtraArg2;
-    output Boolean out;
+    output Boolean outFound;
   end FindFunc;
 algorithm
-  outList := exist2_work(false,inList,inFindFunc,inExtraArg1,inExtraArg2);
+  outExists := exist2_tail(false, inList, inFindFunc, inExtraArg1, inExtraArg2);
 end exist2;
 
-protected function exist2_work
-  "Returns true if the and element is found on the list using a function and an extra argument."
-  input Boolean found;
+protected function exist2_tail
+  "Tail recursive implementation of exist2."
+  input Boolean inFound;
   input list<ElementType1> inList;
   input FindFunc inFindFunc;
   input ElementType2 inExtraArg1;
   input ElementType3 inExtraArg2;
-  output Boolean outList;
+  output Boolean outExists;
 
   partial function FindFunc
     input ElementType1 inElement;
     input ElementType2 inExtraArg1;
     input ElementType3 inExtraArg2;
-    output Boolean out;
+    output Boolean outFound;
   end FindFunc;
 algorithm
-  outList := match (found,inList,inFindFunc,inExtraArg1,inExtraArg2)
+  outExists := match (inFound, inList, inFindFunc, inExtraArg1, inExtraArg2)
     local
       list<ElementType1> t;
       ElementType1 h;
       Boolean ret,b;
-    case(true,_,_,_,_) then true;
-    case(_,{},_,_,_) then false;
-    case(_,h::t,_,_,_)
+
+    case(true, _, _, _, _) then true;
+    case(_, h :: t, _, _, _)
       equation
         b = inFindFunc(h, inExtraArg1, inExtraArg2);
-      then exist2_work(b, t, inFindFunc, inExtraArg1, inExtraArg2);
+      then
+        exist2_tail(b, t, inFindFunc, inExtraArg1, inExtraArg2);
+
+    case(_, {}, _, _, _) then false;
   end match;
-end exist2_work;
+end exist2_tail;
 
 public function extractOnTrue
   "Takes a list of values and a filter function over the values and returns a

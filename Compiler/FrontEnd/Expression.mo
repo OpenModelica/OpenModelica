@@ -10597,6 +10597,14 @@ algorithm
   end match;
 end arrayElements;
 
+public function arrayContent
+  "Returns the contents of an array expression, i.e. a list of expressions."
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outContent;
+algorithm
+  DAE.ARRAY(array = outContent) := inExp;
+end arrayContent;
+
 public function fromAbsynExp
 "@author: adrpo
  transform Absyn.Exp into DAE.Exp, uknown types are used"
