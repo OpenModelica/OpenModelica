@@ -47,7 +47,7 @@ ELSE(arg STREQUAL FORCEINCLUDE)
 SET(FORCEINCLUDE OFF)
 ENDIF(arg STREQUAL FORCEINCLUDE)
 ENDFOREACH(arg)
- 
+
 IF(MSVC)
 GET_FILENAME_COMPONENT(_name ${_input} NAME)
 GET_TARGET_PROPERTY(sources ${_targetName} SOURCES)
@@ -63,7 +63,7 @@ set(_compiler_FLAGS "/Od ${_compiler_FLAGS}")
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_compiler_FLAGS}")
 
 #only generate precompiled header in relase mode in debug mode precompiled header can not generated because of different pdb files
-IF(CMAKE_BUILD_TYPE MATCHES RELEASE) 
+IF(CMAKE_BUILD_TYPE MATCHES RELEASE)
 FOREACH(_source ${sources})
 SET(PCH_COMPILE_FLAGS "")
 IF(_source MATCHES \\.\(cc|cxx|cpp\)$)
@@ -88,10 +88,10 @@ MESSAGE(STATUS "install pch: ${CMAKE_BINARY_DIR}/${_inputWe}.pch" )
 install (FILES "${CMAKE_BINARY_DIR}/Core/Modelica/${_inputWe}.pch" DESTINATION include/omc/cpp)
 SET(PCH_FILE "${_inputWe}.pch")
 SET(H_FILE "${_name}")
-ENDIF(CMAKE_BUILD_TYPE MATCHES RELEASE) 
+ENDIF(CMAKE_BUILD_TYPE MATCHES RELEASE)
 GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
 #LIST(APPEND _compiler_FLAGS ${_directory_flags})
-set(_compiler_FLAGS "${_compiler_FLAGS} ${_directory_flags}") 
+set(_compiler_FLAGS "${_compiler_FLAGS} ${_directory_flags}")
 set(SYSTEM_CFLAGS ${_compiler_FLAGS})
 ENDIF(MSVC)
 
@@ -109,7 +109,7 @@ SET(_output "${_outdir}/${_name}.gch")
 STRING(TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" _flags_var_name)
 SET(_compiler_FLAGS ${${_flags_var_name}})
 #remove compiler flag for optimization becaus Modelica system is compiled without optimization
-string(REGEX REPLACE "O[1-9]" "O0" _compiler_FLAGS ${_compiler_FLAGS} )
+string(REGEX REPLACE "O[1-9]" "O0" _compiler_FLAGS "${_compiler_FLAGS}" )
 #string(REGEX REPLACE "-g" "" _compiler_FLAGS ${_compiler_FLAGS} )
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -119,7 +119,7 @@ set(_compiler_FLAGS "${_compiler_FLAGS} -DBOOST_ALL_DYN_LINK ")
 #SYSTEM_FLAGS variable for configuration file to set used compiler flags
 GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
 #LIST(APPEND _compiler_FLAGS ${_directory_flags})
-set(_compiler_FLAGS "${_compiler_FLAGS} ${_directory_flags}") 
+set(_compiler_FLAGS "${_compiler_FLAGS} ${_directory_flags}")
 set(SYSTEM_CFLAGS ${_compiler_FLAGS})
 GET_DIRECTORY_PROPERTY(_directory_flags INCLUDE_DIRECTORIES)
 
@@ -166,7 +166,7 @@ set(_compiler_FLAGS "${_compiler_FLAGS} -DBOOST_ALL_DYN_LINK ")
 #SYSTEM_FLAGS variable for configuration file to set used compiler flags
 GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
 #LIST(APPEND _compiler_FLAGS ${_directory_flags})
-set(_compiler_FLAGS "${_compiler_FLAGS} ${_directory_flags}") 
+set(_compiler_FLAGS "${_compiler_FLAGS} ${_directory_flags}")
 set(SYSTEM_CFLAGS ${_compiler_FLAGS})
 GET_DIRECTORY_PROPERTY(_directory_flags INCLUDE_DIRECTORIES)
 
