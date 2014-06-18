@@ -7458,7 +7458,7 @@ algorithm
     case(_, h :: t, _)
       equation
         b = inFindFunc(h);
-      then 
+      then
         exist_tail(b, t, inFindFunc);
 
     case(_, {}, _) then false;
@@ -7507,7 +7507,7 @@ algorithm
     case(_, h :: t, _, _)
       equation
         b = inFindFunc(h, inExtraArg);
-      then 
+      then
         exist1_tail(b, t, inFindFunc, inExtraArg);
 
     case(_, {}, _, _) then false;

@@ -1212,7 +1212,7 @@ algorithm
       Integer dims;
 
     case ({}, _) then inAccumMax;
-      
+
     case (ty :: rest_tys, _)
       equation
         dims = Types.numberOfDimensions(ty);
@@ -1222,7 +1222,7 @@ algorithm
 
   end match;
 end matrixConstrMaxDim;
- 
+
 protected function elabCallReduction
 "This function elaborates reduction expressions that look like function
   calls. For example an array constructor."
