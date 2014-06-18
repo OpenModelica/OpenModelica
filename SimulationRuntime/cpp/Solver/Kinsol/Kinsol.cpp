@@ -318,7 +318,13 @@ void Kinsol::calcFunction(const double *y, double *residual)
 {
      _fValid = true;
   _algLoop->setReal(y);
-    _algLoop->evaluate();
+    try
+    {
+        _algLoop->evaluate();
+    } catch (std::exception& ex)
+    {
+        _fValid = false;
+    }
     _algLoop->getRHS(residual);
 
    for(int i=0;i<_dimSys;i++)

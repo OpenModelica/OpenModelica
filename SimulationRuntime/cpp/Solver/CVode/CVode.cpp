@@ -349,8 +349,9 @@ void Cvode::CVodeCore()
         _events[i] = bool(_zeroSign[i]);
 
       //Event Iteration starten
+	   
       _mixed_system->handleSystemEvents(_events);
-      _event_system->getZeroFunc(_zeroVal);
+       _event_system->getZeroFunc(_zeroVal);
     }//EVENT Iteration beendet
 
     // Zustand aus dem System holen
@@ -462,7 +463,7 @@ void Cvode::giveZeroVal(const double &t,const double *y,double *zeroValue)
   _continuous_system->setContinuousStates(y);
 
   // System aktualisieren
-  _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+  _continuous_system->evaluateZeroFuncs(IContinuous::CONTINUOUS);
 
   _event_system->getZeroFunc(zeroValue);
 
@@ -500,8 +501,8 @@ const int Cvode::reportErrorMessage(ostream& messageStream)
 void Cvode::writeSimulationInfo()
 {
 
-/*
 
+/*
    src::logger lg;
 
 
@@ -538,8 +539,8 @@ void Cvode::writeSimulationInfo()
   BOOST_LOG_SEV(slg, cvode_normal) << " Convergence failures " <<  "ncfn: " <<  ncfn ;
 
 
-*/
 
+*/
 
 
   //// Solver
