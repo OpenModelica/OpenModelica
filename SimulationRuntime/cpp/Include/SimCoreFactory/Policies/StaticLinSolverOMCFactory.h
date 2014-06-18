@@ -27,8 +27,8 @@ public:
     {
         if(lin_solver.compare("umfpack")==0)
         {
-	   boost::shared_ptr<ILinSolverSettings> settings = boost::shared_ptr<ILinSolverSettings>(new UmfPackSettings());
-	   return settings;
+     boost::shared_ptr<ILinSolverSettings> settings = boost::shared_ptr<ILinSolverSettings>(new UmfPackSettings());
+     return settings;
         }
         else
            return LinSolverOMCFactory<CreationPolicy>::createLinSolverSettings(lin_solver);
