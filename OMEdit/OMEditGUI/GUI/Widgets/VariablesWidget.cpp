@@ -800,20 +800,21 @@ void VariablesWidget::variablesUpdated()
     {
       if (pPlotWindow->getPlotType() == PlotWindow::PLOT)
       {
-        QString curveNameStructure = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->title().text());
+        QString curveNameStructure = pPlotCurve->getNameStructure();
         VariablesTreeItem *pVariableTreeItem;
         pVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(curveNameStructure, mpVariablesTreeModel->getRootVariablesTreeItem());
-        pPlotWindow->getPlot()->removeCurve(pPlotCurve);
         pPlotCurve->detach();
-        pPlotWindow->fitInView();
-        pPlotWindow->getPlot()->updateLayout();
         if (pVariableTreeItem)
         {
           bool state = mpVariablesTreeModel->blockSignals(true);
           QModelIndex index = mpVariablesTreeModel->variablesTreeItemIndex(pVariableTreeItem);
           mpVariablesTreeModel->setData(index, Qt::Checked, Qt::CheckStateRole);
-          plotVariables(index, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), pPlotWindow);
+          plotVariables(index, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), pPlotCurve, pPlotWindow);
           mpVariablesTreeModel->blockSignals(state);
+        }
+        else
+        {
+          pPlotWindow->getPlot()->removeCurve(pPlotCurve);
         }
       }
       else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC)
@@ -824,26 +825,27 @@ void VariablesWidget::variablesUpdated()
         QString yVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getYVariable());
         VariablesTreeItem *pYVariableTreeItem;
         pYVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(yVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
+        pPlotCurve->detach();
         if (pXVariableTreeItem && pYVariableTreeItem)
         {
           bool state = mpVariablesTreeModel->blockSignals(true);
           QModelIndex xIndex = mpVariablesTreeModel->variablesTreeItemIndex(pXVariableTreeItem);
           mpVariablesTreeModel->setData(xIndex, Qt::Checked, Qt::CheckStateRole);
-          plotVariables(xIndex, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), pPlotWindow);
+          plotVariables(xIndex, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), pPlotCurve, pPlotWindow);
           QModelIndex yIndex = mpVariablesTreeModel->variablesTreeItemIndex(pYVariableTreeItem);
           mpVariablesTreeModel->setData(yIndex, Qt::Checked, Qt::CheckStateRole);
-          plotVariables(yIndex, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), pPlotWindow);
+          plotVariables(yIndex, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), pPlotCurve, pPlotWindow);
           mpVariablesTreeModel->blockSignals(state);
         }
         else
         {
           pPlotWindow->getPlot()->removeCurve(pPlotCurve);
           pPlotCurve->detach();
-          pPlotWindow->fitInView();
-          pPlotWindow->getPlot()->updateLayout();
         }
       }
     }
+    pPlotWindow->fitInView();
+    pPlotWindow->getPlot()->updateLayout();
   }
   updateVariablesTreeHelper(mpMainWindow->getPlotWindowContainer()->currentSubWindow());
 }
@@ -868,7 +870,7 @@ void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
     VariablesTreeItem *pVariablesTreeItem;
     if (pPlotWindow->getPlotType() == PlotWindow::PLOT)
     {
-      QString variable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->title().text());
+      QString variable = pPlotCurve->getNameStructure();
       pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(variable, mpVariablesTreeModel->getRootVariablesTreeItem());
       if (pVariablesTreeItem)
         mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem), Qt::Checked, Qt::CheckStateRole);
@@ -958,7 +960,8 @@ void VariablesWidget::findVariableAndUpdateValue(QDomDocument xmlDocument, QHash
   }
 }
 
-void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, PlotWindow *pPlotWindow)
+void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, PlotCurve *pPlotCurve,
+                                    PlotWindow *pPlotWindow)
 {
   if (index.column() > 0)
     return;
@@ -998,7 +1001,8 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         pPlotWindow->setCurveWidth(curveThickness);
         pPlotWindow->setCurveStyle(curveStyle);
         pPlotWindow->setVariablesList(QStringList(pVariablesTreeItem->getPlotVariable()));
-        pPlotWindow->plot();
+        pPlotWindow->setUnit(pVariablesTreeItem->getUnit());
+        pPlotWindow->plot(pPlotCurve);
         pPlotWindow->fitInView();
         pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
         pPlotWindow->getPlot()->updateLayout();
@@ -1008,7 +1012,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
       {
         foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList())
         {
-          QString curveTitle = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->title().text());
+          QString curveTitle = pPlotCurve->getNameStructure();
           if (curveTitle.compare(pVariablesTreeItem->getVariableName()) == 0)
           {
             pPlotWindow->getPlot()->removeCurve(pPlotCurve);
@@ -1029,13 +1033,13 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         // if mPlotParametricVariables is empty just add one QStringlist with 1 varibale to it
         if (mPlotParametricVariables.isEmpty())
         {
-          mPlotParametricVariables.append(QStringList(pVariablesTreeItem->getPlotVariable()));
+          mPlotParametricVariables.append(QStringList() << pVariablesTreeItem->getPlotVariable() << pVariablesTreeItem->getUnit());
           mFileName = pVariablesTreeItem->getFileName();
         }
         // if mPlotParametricVariables is not empty then add one string to its last element
         else
         {
-          if (mPlotParametricVariables.last().size() < 2)
+          if (mPlotParametricVariables.last().size() < 4)
           {
             if (mFileName.compare(pVariablesTreeItem->getFileName()) != 0)
             {
@@ -1046,16 +1050,32 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
               mpVariablesTreeModel->blockSignals(state);
               return;
             }
-            mPlotParametricVariables.last().append(QStringList(pVariablesTreeItem->getPlotVariable()));
+            mPlotParametricVariables.last().append(QStringList() << pVariablesTreeItem->getPlotVariable() << pVariablesTreeItem->getUnit());
             pPlotWindow->initializeFile(QString(pVariablesTreeItem->getFilePath()).append("/").append(pVariablesTreeItem->getFileName()));
             pPlotWindow->setCurveWidth(curveThickness);
             pPlotWindow->setCurveStyle(curveStyle);
-            pPlotWindow->setVariablesList(mPlotParametricVariables.last());
-            pPlotWindow->plotParametric();
-            if (mPlotParametricVariables.size() > 1)
+            pPlotWindow->setVariablesList(QStringList() << mPlotParametricVariables.last().at(0) << mPlotParametricVariables.last().at(2));
+            pPlotWindow->plotParametric(pPlotCurve);
+            if (pPlotWindow->getPlot()->getPlotCurvesList().size() > 1)
             {
               pPlotWindow->setXLabel("");
               pPlotWindow->setYLabel("");
+            }
+            else
+            {
+              QString xVariable = mPlotParametricVariables.last().at(0);
+              QString xUnit = mPlotParametricVariables.last().at(1);
+              QString yVariable = mPlotParametricVariables.last().at(2);
+              QString yUnit = mPlotParametricVariables.last().at(3);
+              if (xUnit.isEmpty())
+                pPlotWindow->setXLabel(xVariable);
+              else
+                pPlotWindow->setXLabel(xVariable + " [" + xUnit + "]");
+
+              if (yUnit.isEmpty())
+                pPlotWindow->setYLabel(yVariable);
+              else
+                pPlotWindow->setYLabel(yVariable + " [" + yUnit + "]");
             }
             pPlotWindow->fitInView();
             pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
@@ -1063,7 +1083,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           }
           else
           {
-            mPlotParametricVariables.append(QStringList(pVariablesTreeItem->getPlotVariable()));
+            mPlotParametricVariables.append(QStringList() << pVariablesTreeItem->getPlotVariable() << pVariablesTreeItem->getUnit());
             mFileName = pVariablesTreeItem->getFileName();
           }
         }
@@ -1077,7 +1097,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           if (list.contains(pVariablesTreeItem->getPlotVariable()))
           {
             // if list has only one variable then clear the list and return;
-            if (list.size() < 2)
+            if (list.size() < 4)
             {
               mPlotParametricVariables.removeOne(list);
               break;
@@ -1085,10 +1105,10 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             // if list has more than two variables then remove both and remove the curve
             else
             {
-              QString itemTitle = QString(list.last()).append("(").append(list.first()).append(")");
+              QString itemTitle = QString(pVariablesTreeItem->getFileName()).append(".").append(list.at(2)).append(" vs ").append(list.at(0));
               foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList())
               {
-                QString curveTitle = pPlotCurve->title().text();
+                QString curveTitle = pPlotCurve->getNameStructure();
                 if ((curveTitle.compare(itemTitle) == 0) && (pVariablesTreeItem->getFileName().compare(pPlotCurve->getFileName()) == 0))
                 {
                   bool state = mpVariablesTreeModel->blockSignals(true);
@@ -1112,12 +1132,23 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
                 }
               }
               mPlotParametricVariables.removeOne(list);
-              if (mPlotParametricVariables.size() == 1)
+              if (pPlotWindow->getPlot()->getPlotCurvesList().size() == 1)
               {
-                if (mPlotParametricVariables.last().size() > 1)
+                if (mPlotParametricVariables.last().size() > 3)
                 {
-                  pPlotWindow->setXLabel(mPlotParametricVariables.last().at(0));
-                  pPlotWindow->setYLabel(mPlotParametricVariables.last().at(1));
+                  QString xVariable = mPlotParametricVariables.last().at(0);
+                  QString xUnit = mPlotParametricVariables.last().at(1);
+                  QString yVariable = mPlotParametricVariables.last().at(2);
+                  QString yUnit = mPlotParametricVariables.last().at(3);
+                  if (xUnit.isEmpty())
+                    pPlotWindow->setXLabel(xVariable);
+                  else
+                    pPlotWindow->setXLabel(xVariable + " [" + xUnit + "]");
+
+                  if (yUnit.isEmpty())
+                    pPlotWindow->setYLabel(yVariable);
+                  else
+                    pPlotWindow->setYLabel(yVariable + " [" + yUnit + "]");
                 }
                 else
                 {

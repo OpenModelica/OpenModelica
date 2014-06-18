@@ -57,6 +57,7 @@ public:
   QString getPlotVariable();
   QString getVariableName() {return mVariableName;}
   bool isValueChanged() {return mValueChanged;}
+  QString getUnit() {return mUnit;}
   bool isChecked() const {return mChecked;}
   void setChecked(bool set) {mChecked = set;}
   bool isEditable() const {return mEditable;}
@@ -180,7 +181,8 @@ private:
   QString mFileName;
   QMdiSubWindow *mpLastActiveSubWindow;
 public slots:
-  void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, OMPlot::PlotWindow *pPlotWindow = 0);
+  void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, OMPlot::PlotCurve *pPlotCurve = 0,
+                     OMPlot::PlotWindow *pPlotWindow = 0);
   void updateVariablesTree(QMdiSubWindow *pSubWindow);
   void showContextMenu(QPoint point);
   void findVariables();
