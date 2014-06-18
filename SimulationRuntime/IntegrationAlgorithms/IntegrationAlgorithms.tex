@@ -55,7 +55,7 @@
 }
 
 \newcommand{\pade}[2]{
-\mbox{$(#1,#2)$ Pad\'{e} $\leq 1$}
+\mbox{$|(#1,#2)$ Pad\'{e} $|\leq 1$}
 }
 
 \newcommand{\MTabel}[6]{
@@ -73,7 +73,7 @@ Stability Region:& #6
 Small Overview of the Integration Methods in \OpenModelica
 }
 
-\author{Vitalij Ruge, Willi Braun}
+\author{Vitalij Ruge \and Willi Braun}
 \date{\today}
 
 \begin{document}
@@ -103,7 +103,8 @@ Simulation flags \verb+-maxStepSize=<value>+ and \verb+-maxIntegrationOrder=<val
 maximum absolute step size and maximum integration order, used by dassl solver.
 \\[1cm]
 General step size without control $\approx \cfrac{\mbox{stopTime} -
-\mbox{startTime}}{\mbox{numberOfIntervals}}$
+\mbox{startTime}}{\mbox{numberOfIntervals}}$. \\
+Events change the step size (see. \url{https://www.modelica.org/documents/ModelicaSpec33.pdf} p. 88).
 \\[1cm]
 For $(a,b)$ Pad\'{e} see \url{http://en.wikipedia.org/wiki/Pad%C3%A9_table}
 \end{document}
