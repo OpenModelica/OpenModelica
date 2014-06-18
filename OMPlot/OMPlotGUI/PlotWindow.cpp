@@ -79,7 +79,6 @@ void PlotWindow::setUpWidget()
   setTitle(tr("Plot by OpenModelica"));
   // set the plot grid
   setDetailedGrid(true);
-  setXLabel(tr("time"));
   setMinimumHeight(250);
   setMinimumWidth(250);
 }
@@ -106,6 +105,7 @@ void PlotWindow::initializePlot(QStringList arguments)
     throw PlotException("Invalid input" + arguments[7]);
   setXLabel(QString(arguments[7]));
   setYLabel(QString(arguments[8]));
+  setUnit("");
   setXRange(QString(arguments[9]).toDouble(), QString(arguments[10]).toDouble());
   setYRange(QString(arguments[11]).toDouble(), QString(arguments[12]).toDouble());
   setCurveWidth(QString(arguments[13]).toDouble());
@@ -245,7 +245,7 @@ void PlotWindow::setupToolbar()
   addToolBar(toolBar);
 }
 
-void PlotWindow::plot()
+void PlotWindow::plot(PlotCurve *pPlotCurve)
 {
   QString currentLine;
   if (mVariablesList.isEmpty() and getPlotType() == PlotWindow::PLOT)
@@ -281,8 +281,13 @@ void PlotWindow::plot()
         if (mVariablesList.contains(currentVariable) or getPlotType() == PlotWindow::PLOTALL)
         {
           variablesPlotted.append(currentVariable);
-          PlotCurve *pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), currentVariable, mpPlot);
-          mpPlot->addPlotCurve(pPlotCurve);
+          if (!pPlotCurve || getPlotType() == PlotWindow::PLOTALL) {
+            pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), currentVariable, getUnit(), mpPlot);
+            mpPlot->addPlotCurve(pPlotCurve);
+          }
+          // clear previous curve data
+          pPlotCurve->clearXAxisVector();
+          pPlotCurve->clearYAxisVector();
           // read the variable values now
           currentLine = mpTextStream->readLine();
           for(int j = 0; j < intervalSize; j++)
@@ -320,7 +325,9 @@ void PlotWindow::plot()
       throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
 
     //Read in timevector
-    double *timeVals = read_csv_dataset(csvReader, "time");
+    double *timeVals = (double*) malloc(csvReader->numsteps*sizeof(double));
+    memcpy(timeVals, read_csv_dataset(csvReader, "time"), csvReader->numsteps*sizeof(double));
+
     if (timeVals == NULL)
       throw NoVariableException("Variable doesnt exist: time");
     // read in all values
@@ -329,11 +336,17 @@ void PlotWindow::plot()
       if (mVariablesList.contains(csvReader->variables[i]) or getPlotType() == PlotWindow::PLOTALL)
       {
         variablesPlotted.append(csvReader->variables[i]);
-        double *vals = read_csv_dataset(csvReader, csvReader->variables[i]);
+        double *vals = (double*) malloc(csvReader->numsteps*sizeof(double));
+        memcpy(vals, read_csv_dataset(csvReader, csvReader->variables[i]), csvReader->numsteps*sizeof(double));
         if (vals == NULL)
           throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
-        PlotCurve *pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), csvReader->variables[i], mpPlot);
-        mpPlot->addPlotCurve(pPlotCurve);
+        if (!pPlotCurve || getPlotType() == PlotWindow::PLOTALL) {
+          pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), csvReader->variables[i], getUnit(), mpPlot);
+          mpPlot->addPlotCurve(pPlotCurve);
+        }
+        // clear previous curve data
+        pPlotCurve->clearXAxisVector();
+        pPlotCurve->clearYAxisVector();
         for (int i = 0 ; i < csvReader->numsteps ; i++)
         {
           pPlotCurve->addXAxisValue(timeVals[i]);
@@ -378,11 +391,16 @@ void PlotWindow::plot()
       {
         variablesPlotted.append(reader.allInfo[i].name);
         // create the plot curve for variable
-        PlotCurve *pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), reader.allInfo[i].name, mpPlot);
-        mpPlot->addPlotCurve(pPlotCurve);
+        if (!pPlotCurve || getPlotType() == PlotWindow::PLOTALL) {
+          pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), reader.allInfo[i].name, getUnit(), mpPlot);
+          mpPlot->addPlotCurve(pPlotCurve);
+        }
         counter++;
         // read the variable values
         var = omc_matlab4_find_var(&reader, reader.allInfo[i].name);
+        // clear previous curve data
+        pPlotCurve->clearXAxisVector();
+        pPlotCurve->clearYAxisVector();
         // if variable is not a parameter then
         if (!var->isParam)
         {
@@ -425,9 +443,9 @@ void PlotWindow::plot()
   }
 }
 
-void PlotWindow::plotParametric()
+void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
 {
-  QString currentLine, xVariable, yVariable;
+  QString xVariable, yVariable;
   if (mVariablesList.isEmpty())
     throw NoVariableException(QString("No variables specified!").toStdString().c_str());
   else if (mVariablesList.size() != 2)
@@ -441,6 +459,7 @@ void PlotWindow::plotParametric()
   //PLOT PLT
   if (mFile.fileName().endsWith("plt"))
   {
+    QString currentLine;
     // open the file
     mFile.open(QIODevice::ReadOnly);
     mpTextStream = new QTextStream(&mFile);
@@ -468,15 +487,18 @@ void PlotWindow::plotParametric()
         if (mVariablesList.contains(currentVariable))
         {
           variablesPlotted.append(currentVariable);
-          // create plot object if first variable is found
-          PlotCurve *pPlotCurve;
           if (variablesPlotted.size() == 1)
           {
-            pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + "(" + xVariable + ")", mpPlot);
-            pPlotCurve->setXVariable(xVariable);
-            pPlotCurve->setYVariable(yVariable);
-            mpPlot->addPlotCurve(pPlotCurve);
+            if (!pPlotCurve) {
+              pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + " vs " + xVariable, getUnit(), mpPlot);
+              pPlotCurve->setXVariable(xVariable);
+              pPlotCurve->setYVariable(yVariable);
+              mpPlot->addPlotCurve(pPlotCurve);
+            }
           }
+          // clear previous curve data
+          pPlotCurve->clearXAxisVector();
+          pPlotCurve->clearYAxisVector();
           // read the variable values now
           currentLine = mpTextStream->readLine();
           for(int j = 0; j < intervalSize; j++)
@@ -511,57 +533,56 @@ void PlotWindow::plotParametric()
   //PLOT CSV
   else if (mFile.fileName().endsWith("csv"))
   {
-    // open the file
-    mFile.open(QIODevice::ReadOnly);
-    mpTextStream = new QTextStream(&mFile);
-    currentLine = mpTextStream->readLine();
-    currentLine.remove(QChar('"'));
-
-    int xVariableIndex = 0;
-    int yVariableIndex = 0;
-    QStringList allVariables = currentLine.split(",");
-    allVariables.removeLast();
-
+    /* open the file */
     QStringList variablesPlotted;
-    for(int j = 0; j < allVariables.length(); j++)
+    struct csv_data *csvReader;
+    csvReader = read_csv(mFile.fileName().toStdString().c_str());
+    if (csvReader == NULL)
+      throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+
+    double *xVals, *yVals;
+    // read in all values
+    for (int i = 0; i < csvReader->numvars; i++)
     {
-      if(allVariables[j] == xVariable)
+      if ((xVariable.compare(csvReader->variables[i]) == 0))
       {
-        xVariableIndex = j;
-        variablesPlotted.append(allVariables[j]);
+        variablesPlotted.append(csvReader->variables[i]);
+        xVals = (double*) malloc(csvReader->numsteps*sizeof(double));
+        memcpy(xVals, read_csv_dataset(csvReader, csvReader->variables[i]), csvReader->numsteps*sizeof(double));
+        if (xVals == NULL)
+          throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
       }
-      if(allVariables[j] == yVariable)
+      if ((yVariable.compare(csvReader->variables[i]) == 0))
       {
-        yVariableIndex = j;
-        variablesPlotted.append(allVariables[j]);
+        variablesPlotted.append(csvReader->variables[i]);
+        yVals = (double*) malloc(csvReader->numsteps*sizeof(double));
+        memcpy(yVals, read_csv_dataset(csvReader, csvReader->variables[i]), csvReader->numsteps*sizeof(double));
+        if (yVals == NULL)
+          throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
       }
     }
 
-    // create plot curves
-    PlotCurve *pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + "(" + xVariable + ")", mpPlot);
-    pPlotCurve->setXVariable(xVariable);
-    pPlotCurve->setYVariable(yVariable);
-    mpPlot->addPlotCurve(pPlotCurve);
-
-    //Assign Values
-    while(!mpTextStream->atEnd())
-    {
-      currentLine = mpTextStream->readLine();
-      QStringList values = currentLine.split(",");
-      values.removeLast();
-
-      pPlotCurve->addXAxisValue(QString(values[xVariableIndex]).toDouble());
-      pPlotCurve->addYAxisValue(QString(values[yVariableIndex]).toDouble());
+    if (!pPlotCurve) {
+      pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + " vs " + xVariable, getUnit(), mpPlot);
+      pPlotCurve->setXVariable(xVariable);
+      pPlotCurve->setYVariable(yVariable);
+      mpPlot->addPlotCurve(pPlotCurve);
     }
-
-    pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(),
-                        pPlotCurve->getSize());
+    // clear previous curve data
+    pPlotCurve->clearXAxisVector();
+    pPlotCurve->clearYAxisVector();
+    for (int i = 0 ; i < csvReader->numsteps ; i++)
+    {
+      pPlotCurve->addXAxisValue(xVals[i]);
+      pPlotCurve->addYAxisValue(yVals[i]);
+    }
+    pPlotCurve->setData(xVals, yVals, csvReader->numsteps);
     pPlotCurve->attach(mpPlot);
     mpPlot->replot();
     // check which requested variables are not found in the file
     checkForErrors(mVariablesList, variablesPlotted);
     // close the file
-    mFile.close();
+    omc_free_csv_reader(csvReader);
   }
   //PLOT MAT
   else if(mFile.fileName().endsWith("mat"))
@@ -575,17 +596,19 @@ void PlotWindow::plotParametric()
     if(0 != (msg = omc_new_matlab4_reader(mFile.fileName().toStdString().c_str(), &reader)))
       throw PlotException(msg);
 
-    PlotCurve *pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + "(" + xVariable + ")", mpPlot);
-    pPlotCurve->setXVariable(xVariable);
-    pPlotCurve->setYVariable(yVariable);
-    mpPlot->addPlotCurve(pPlotCurve);
-    //Read in timevector
-    double startTime = omc_matlab4_startTime(&reader);
-    double stopTime =  omc_matlab4_stopTime(&reader);
+    if (!pPlotCurve) {
+      pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + " vs " + xVariable, getUnit(), mpPlot);
+      pPlotCurve->setXVariable(xVariable);
+      pPlotCurve->setYVariable(yVariable);
+      mpPlot->addPlotCurve(pPlotCurve);
+    }
     //Fill variable x with data
     var = omc_matlab4_find_var(&reader, xVariable.toStdString().c_str());
     if(!var)
       throw NoVariableException(QString("Variable doesn't exist : ").append(xVariable).toStdString().c_str());
+    // clear previous curve data
+    pPlotCurve->clearXAxisVector();
+    pPlotCurve->clearYAxisVector();
     // if variable is not a parameter then
     if (!var->isParam)
     {
@@ -601,9 +624,6 @@ void PlotWindow::plotParametric()
       double xval;
       if (omc_matlab4_val(&xval,&reader,var,0.0))
         throw NoVariableException(QString("Parameter doesn't have a value : ").append(xVariable).toStdString().c_str());
-      pPlotCurve->addXAxisValue(startTime);
-      pPlotCurve->addYAxisValue(xval);
-      pPlotCurve->addXAxisValue(stopTime);
       pPlotCurve->addYAxisValue(xval);
     }
     //Fill variable y with data
@@ -625,9 +645,6 @@ void PlotWindow::plotParametric()
       double yval;
       if (omc_matlab4_val(&yval,&reader,var,0.0))
         throw NoVariableException(QString("Parameter doesn't have a value : ").append(yVariable).toStdString().c_str());
-      pPlotCurve->addXAxisValue(startTime);
-      pPlotCurve->addYAxisValue(yval);
-      pPlotCurve->addXAxisValue(stopTime);
       pPlotCurve->addYAxisValue(yval);
     }
     pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
@@ -1072,6 +1089,7 @@ VariablePageWidget::VariablePageWidget(PlotCurve *pPlotCurve, SetupDialog *pSetu
   mpLegendLabel = new QLabel(tr("Legend"));
   mpLegendTextBox = new QLineEdit(mpPlotCurve->title().text());
   mpResetLabelButton = new QPushButton(tr("Reset"));
+  mpResetLabelButton->setAutoDefault(false);
   connect(mpResetLabelButton, SIGNAL(clicked()), SLOT(resetLabel()));
   mpFileLabel = new QLabel(tr("File"));
   mpFileTextBox = new QLabel(mpPlotCurve->getFileName());
@@ -1087,6 +1105,7 @@ VariablePageWidget::VariablePageWidget(PlotCurve *pPlotCurve, SetupDialog *pSetu
   mpAppearanceGroupBox = new QGroupBox(tr("Appearance"));
   mpColorLabel = new QLabel(tr("Color"));
   mpPickColorButton = new QPushButton(tr("Pick Color"));
+  mpPickColorButton->setAutoDefault(false);
   //mpPickColorButton->setAutoDefault(false);
   connect(mpPickColorButton, SIGNAL(clicked()), SLOT(pickColor()));
   mCurveColor = mpPlotCurve->pen().color();
@@ -1142,7 +1161,12 @@ void VariablePageWidget::setCurvePickColorButtonIcon()
 
 void VariablePageWidget::resetLabel()
 {
-  mpLegendTextBox->setText(mpPlotCurve->getName());
+  if (mpPlotCurve->getUnit().isEmpty()) {
+    mpLegendTextBox->setText(mpPlotCurve->getName());
+  } else {
+    mpLegendTextBox->setText(mpPlotCurve->getName() + " [" + mpPlotCurve->getUnit() + "]");
+  }
+
 }
 
 void VariablePageWidget::pickColor()

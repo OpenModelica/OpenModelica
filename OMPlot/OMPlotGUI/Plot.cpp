@@ -82,6 +82,16 @@ Plot::Plot(PlotWindow *pParent)
     axisWidget(QwtPlot::yLeft)->setMargin(0);
     axisWidget(QwtPlot::xBottom)->setMargin(0);
 #endif
+  // set the bottom axis title font size small.
+  QwtText bottomTitle = axisTitle(QwtPlot::xBottom);
+  QFont font = bottomTitle.font();
+  bottomTitle.setFont(QFont(font.family(), 11));
+  setAxisTitle(QwtPlot::xBottom, bottomTitle);
+  // set the left axis title font size small.
+  QwtText leftTitle = axisTitle(QwtPlot::yLeft);
+  font = leftTitle.font();
+  leftTitle.setFont(QFont(font.family(), 11));
+  setAxisTitle(QwtPlot::yLeft, leftTitle);
   // fill colors list
   fillColorsList();
   setAutoReplot(true);

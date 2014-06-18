@@ -41,14 +41,15 @@
 
 using namespace OMPlot;
 
-PlotCurve::PlotCurve(QString fileName, QString variableName, Plot *pParent)
+PlotCurve::PlotCurve(QString fileName, QString variableName, QString unit, Plot *pParent)
   : mCustomColor(false)
 {
   mName = variableName;
   mNameStructure = fileName + "." + variableName;
   mFileName = fileName;
   mCustomColor = false;
-  setTitle(variableName);
+  setUnit(unit);
+  setTitleLocal();
   mpParentPlot = pParent;
   /* set curve width and style */
   setCurveWidth(mpParentPlot->getParentPlotWindow()->getCurveWidth());
@@ -62,6 +63,15 @@ PlotCurve::PlotCurve(QString fileName, QString variableName, Plot *pParent)
 PlotCurve::~PlotCurve()
 {
 
+}
+
+void PlotCurve::setTitleLocal()
+{
+  if (getUnit().isEmpty()) {
+    QwtPlotItem::setTitle(getName());
+  } else {
+    QwtPlotItem::setTitle(getName() + " [" + getUnit() + "]");
+  }
 }
 
 Qt::PenStyle PlotCurve::getPenStyle(int style)

@@ -69,6 +69,7 @@ private:
   QStringList mVariablesList;
   PlotType mPlotType;
   QString mGridType;
+  QString mUnit;
   QString mXRangeMin;
   QString mXRangeMax;
   QString mYRangeMin;
@@ -86,8 +87,8 @@ public:
   PlotType getPlotType();
   void initializeFile(QString file);
   void setupToolbar();
-  void plot();
-  void plotParametric();
+  void plot(PlotCurve *pPlotCurve = 0);
+  void plotParametric(PlotCurve *pPlotCurve = 0);
   void setTitle(QString title);
   void setGrid(QString grid);
   QString getGrid();
@@ -95,6 +96,8 @@ public:
   QCheckBox* getLogYCheckBox();
   void setXLabel(QString label);
   void setYLabel(QString label);
+  void setUnit(QString unit) {mUnit = unit;}
+  QString getUnit() {return mUnit;}
   void setXRange(double min, double max);
   QString getXRangeMin();
   QString getXRangeMax();

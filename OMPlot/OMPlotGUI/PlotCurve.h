@@ -49,16 +49,20 @@ private:
   QString mXVariable;
   QString mYVariable;
   bool mCustomColor;
+  QString mUnit;
   qreal mWidth;
   int mStyle;
 
   Plot *mpParentPlot;
 public:
-  PlotCurve(QString fileName, QString variableName, Plot *pParent);
+  PlotCurve(QString fileName, QString variableName, QString unit, Plot *pParent);
   ~PlotCurve();
 
+  void setTitleLocal();
   Qt::PenStyle getPenStyle(int style);
   QwtPlotCurve::CurveStyle getCurveStyle(int style);
+  void setUnit(QString unit) {mUnit = unit;}
+  QString getUnit() {return mUnit;}
   void setCurveWidth(qreal width);
   qreal getCurveWidth() {return mWidth;}
   void setCurveStyle(int style);
@@ -67,10 +71,12 @@ public:
   void addXAxisValue(double value);
   const double* getXAxisVector() const;
   QVector<double> getXAxisData();
+  void clearXAxisVector() {mXAxisVector.clear();}
   void setYAxisVector(QVector<double> vector);
   QVector<double> getYAxisData();
   void addYAxisValue(double value);
   const double* getYAxisVector() const;
+  void clearYAxisVector() {mYAxisVector.clear();}
   int getSize();
   QString getName() {return mName;}
   void setFileName(QString fileName);
