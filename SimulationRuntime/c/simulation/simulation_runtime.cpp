@@ -936,7 +936,6 @@ static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, cons
   switch (threadData->currentErrorStage)
   {
   case ERROR_EVENTSEARCH:
-  case ERROR_OPTIMIZE:
   case ERROR_SIMULATION:
     va_start(ap,msg);
     fputs("Error: ",stderr);
@@ -972,6 +971,7 @@ static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, cons
     }
     longjmp(*threadData->simulationJumpBuffer,1);
     break;
+  case ERROR_OPTIMIZE:
   default:
     throwStreamPrint(threadData,"Unhandled Assertion-Error");
   }

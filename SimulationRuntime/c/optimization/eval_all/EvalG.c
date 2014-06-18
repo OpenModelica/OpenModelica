@@ -62,8 +62,6 @@ static inline void structJac3(const long double * const a, const modelica_real *
 static inline void structJacC(const modelica_real *const J, double *values,
     const int nv, int *k, const modelica_boolean * const Jj);
 
-static inline void updateDer(OptData *optData);
-
 static inline void printMaxError(Number *g, const int m, const int nx, const int nJ, long double **t,
     const int np, const int nsi, DATA * data);
 
@@ -88,7 +86,7 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
   int i, j, k, shift;
 
   if(new_x)
-    optData2ModelData(optData, vopt, 0);
+    optData2ModelData(optData, vopt, 1);
 
   v = optData->v;
 
@@ -195,13 +193,11 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
     const int nx = optData->dim.nx;
     const int nv = optData->dim.nv;
     const int nJ = optData->dim.nJ;
-    modelica_boolean ** J = optData->s.J[4];
-    int i, j, k, l, ii;
+    modelica_boolean ** J = optData->s.JderCon;
+    int i, j, k, l, ii, cindex;
 
     if(new_x)
-      optData2ModelData(optData, vopt, 4);
-    else
-      updateDer(optData);
+      optData2ModelData(optData, vopt, 1);
     if(np == 3){
       /*****************************/
       for(j = 0, k = 0; j < np; ++j){
@@ -222,7 +218,8 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
           }
         }
         for(; l< nJ; ++l){
-          structJacC(optData->J[0][j][l], values, nv, &k, J[l]);
+          cindex = optData->s.indexCon2[l-nx];
+          structJacC(optData->J[0][j][cindex], values, nv, &k, J[l]);
         }
       }
 
@@ -246,7 +243,11 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
             }
           }
           for(; l< nJ; ++l){
-              structJacC(optData->J[i][j][l], values, nv, &k, J[l]);
+            if(i + 1 == nsi && j + 1 == np)
+              cindex = optData->s.indexCon3[l-nx];
+            else
+              cindex = optData->s.indexCon2[l-nx];
+            structJacC(optData->J[i][j][cindex], values, nv, &k, J[l]);
           }
         }
       }
@@ -255,25 +256,54 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
       for(j = 0, k = 0; j < np; ++j){
         for(l = 0; l < nJ; ++l){
           for(ii = 0; ii < nv; ++ii)
-            if(J[l][ii])
-              values[k++] = (modelica_real)((ii == l && l < nx) ? optData->J[0][j][l][ii] - 1.0 : optData->J[0][j][l][ii]);
-
+            if(J[l][ii]){
+              if(l < nx){
+                values[k++] = (modelica_real)((ii == l) ? optData->J[0][j][l][ii] - 1.0 : optData->J[0][j][l][ii]);
+              }else{
+                cindex = optData->s.indexCon2[l-nx];
+                values[k++] = optData->J[0][j][cindex][ii];
+              }
+            }
+          }
         }
-      }
       /*****************************/
-      for(i = 1; i < nsi; ++i){
+      for(i = 1; i < nsi-1; ++i){
         for(j = 0; j < np; ++j){
           for(l = 0; l < nJ; ++l){
             if(l < nx)
               values[k++] = 1.0;
-            for(ii = 0; ii < nv; ++ii)
-              if(J[l][ii])
-                values[k++] = (modelica_real)((ii == l && l < nx) ? optData->J[i][j][l][ii] - 1.0 : optData->J[i][j][l][ii]);
 
+            for(ii = 0; ii < nv; ++ii){
+              if(J[l][ii]){
+                if(l < nx){
+                  values[k++] = (modelica_real)((ii == l) ? optData->J[i][j][l][ii] - 1.0 : optData->J[i][j][l][ii]);
+                }else{
+                  cindex = optData->s.indexCon2[l-nx];
+                  values[k++] = optData->J[i][j][cindex][ii];
+                }
+              }
+            }
           }
         }
       }
+      /*****************************/
+      for(j = 0; j < np; ++j){
+        for(l = 0; l < nJ; ++l){
+          if(l < nx)
+            values[k++] = 1.0;
 
+          for(ii = 0; ii < nv; ++ii){
+            if(J[l][ii]){
+              if(l < nx){
+                values[k++] = (modelica_real)((ii == l) ? optData->J[i][j][l][ii] - 1.0 : optData->J[i][j][l][ii]);
+              }else{
+                cindex = (j + 1 == np)? optData->s.indexCon3[l-nx] : optData->s.indexCon2[l-nx];
+                values[k++] = optData->J[i][j][cindex][ii];
+              }
+            }
+          }
+        }
+      }
     }
     /*****************************/
     /*
@@ -281,6 +311,11 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
     printf("\n\n%i = %i",njac,k);
     assert(0);
     }
+    */
+    /*
+    for(i = 0; i< njac; ++i)
+    printf("\nvalues[%i] = %g",i,values[i]);
+    assert(0);
     */
   }
 
@@ -475,7 +510,7 @@ static inline void generated_jac_struc(OptData * optData, int *iRow, int* iCol){
   const int np = optData->dim.np;
   const int npv = np*nv;
 
-  modelica_boolean **  J = optData->s.J[4];
+  modelica_boolean **  J = optData->s.JderCon;
   int r, c, tmp_r, tmp_c;
   int i, j, k;
 
@@ -598,43 +633,15 @@ static inline void generated_jac_struc(OptData * optData, int *iRow, int* iCol){
     }
 
   }
-  /*
+/*
   {
-      int njac = np*((nsi*np-1)*nJ+optData->dim.nJderx*nsi);
+      const int NJ = optData->dim.nJderx;
+      int njac = np*(NJ*nsi + nx*(np*nsi - 1));
       printf("\n\n%i = %i",njac,k);
       assert(0);
   }
-  */
+*/
 
-}
-
-
-/*!
- *  update jacobian matrix
- *  author: Vitalij Ruge
- **/
-static inline void updateDer(OptData *optData){
-  const int nsi = optData->dim.nsi;
-  const int np = optData->dim.np;
-
-  modelica_real * realVars[3];
-  int i, j;
-  DATA * data = optData->data;
-
-  for(i = 0; i < 3; ++i)
-    realVars[i] = data->localData[i]->realVars;
-
-  for(i = 0; i < nsi; ++i){
-    for(j = 0; j < np; ++j){
-      data->localData[0]->realVars = optData->v[i][j];
-      data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
-
-      diff_symColoredODE(optData, optData->J[i][j], 4, optData->bounds.scaldt[i]);
-    }
-  }
-
-  for(i = 0; i < 3; ++i)
-    data->localData[i]->realVars = realVars[i];
 }
 
 

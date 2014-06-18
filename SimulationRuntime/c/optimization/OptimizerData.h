@@ -93,7 +93,7 @@ typedef struct OptDataBounds{
   modelica_real *vnom;
   long double *scalF;
   long double **scaldt;
-  long double ***scalb;
+  long double **scalb;
 
   modelica_real *u0;
 }OptDataBounds;
@@ -122,12 +122,16 @@ typedef struct OptDataStructure{
   modelica_boolean **Hl;
   modelica_boolean lagrange;
   modelica_boolean mayer;
-  int derIndex[2];
+  short derIndex[3];
   unsigned int **lindex;
   modelica_real *pmayer;
   modelica_real *plagrange;
   modelica_real *** seedVec;
-
+  modelica_boolean ** JderCon;
+  modelica_boolean * gradM;
+  modelica_boolean * gradL;
+  int * indexCon2;
+  int * indexCon3;
 }OptDataStructure;
 
 

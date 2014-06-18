@@ -34,7 +34,6 @@
 #include "../OptimizerData.h"
 #include "../OptimizerLocalFunction.h"
 
-static inline void updateDer(OptData *optData);
 
 /* eval object function
  * author: Vitalij Ruge
@@ -50,7 +49,7 @@ Bool evalfF(Index n, Number * vopt, Bool new_x, Number *objValue, void * useData
   long double lagrange = 0.0;
 
   if(new_x)
-    optData2ModelData(optData, vopt, 0);
+    optData2ModelData(optData, vopt, 1);
 
   if(la){
     const int nsi = optData->dim.nsi;
@@ -116,33 +115,37 @@ Bool evalfDiffF(Index n, double * vopt, Bool new_x, Number *gradF, void * useDat
   const modelica_boolean ma = optData->s.mayer;
 
   if(new_x)
-    optData2ModelData(optData, vopt, 3);
-  else
-    updateDer(optData);
+    optData2ModelData(optData, vopt, 1);
 
   if(la){
 
-    const int k = optData->s.derIndex[0];
+    const int k = optData->s.derIndex[1];
     int i, j, ii;
     modelica_real * gradL;
 
-    for(i = 0, ii = 0; i < nsi; ++i){
+    for(i = 0, ii = 0; i < nsi - 1; ++i){
       for(j = 0; j < np; ++j, ii += nv){
         gradL = optData->J[i][j][k];
         memcpy(gradF + ii, gradL, nv*sizeof(modelica_real));
       }
     }
+
+    for(j = 0; j < np; ++j, ii += nv){
+      gradL = (j + 1 == np) ? optData->J[i][j][optData->s.derIndex[2]] : optData->J[i][j][k];
+      memcpy(gradF + ii, gradL, nv*sizeof(modelica_real));
+    }
+
   }else{
     memset(gradF,0.0,n*sizeof(Number));
   }
 
   if(ma){
-    const int k = optData->s.derIndex[1];
+    const int k = optData->s.derIndex[0];
     modelica_real * gradM = optData->J[nsi - 1][np -1][k];
     if(la){
-      int i, ii;
-      for(i = 0, ii = n - nv; i < nv; ++i, ++ii)
-        gradF[ii] += gradM[i];
+      int i;
+      for(i = 0; i < nv; ++i)
+        gradF[n-nv + i] += gradM[i];
     }else{
       memcpy(gradF + n - nv, gradM, nv*sizeof(modelica_real));
     }
@@ -150,59 +153,4 @@ Bool evalfDiffF(Index n, double * vopt, Bool new_x, Number *gradF, void * useDat
   }
 
   return TRUE;
-}
-
-
-/*!
- *  update jacobian matrix
- *  author: Vitalij Ruge
- **/
-static inline void updateDer(OptData *optData){
-  const int nsi = optData->dim.nsi;
-  const int np = optData->dim.np;
-  const modelica_boolean la = optData->s.lagrange;
-  const modelica_boolean ma = optData->s.mayer;
-  DATA * data = optData->data;
-  modelica_real * realV[3];
-
-  {
-    int i;
-    for(i = 0; i < 3; ++i)
-      realV[i] = data->localData[i]->realVars;
-  }
-
-  if(la){
-    const int index_la = optData->s.derIndex[0];
-    long double *** scalb = optData->bounds.scalb;
-    int i, j, ii;
-    for(i = 0; i < nsi; ++i){
-      for(j = 0; j < np; ++j){
-        for(ii = 0; ii < 3; ++ii)
-          data->localData[ii]->realVars = optData->v[i][j];
-
-        data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
-        diff_symColoredLagrange(optData, &optData->J[i][j][index_la], 2, scalb[i][j]);
-      }
-    }
-  }
-
-  if(ma){
-    const int index_ma = optData->s.derIndex[1];
-    const int i = nsi - 1;
-    const int j = np - 1;
-    int ii;
-
-    for(ii = 0; ii < 3; ++ii)
-      data->localData[ii]->realVars = optData->v[i][j];
-
-    data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
-    diff_symColoredMayer(optData, &optData->J[i][j][index_ma], 3);
-  }
-
-  {
-    int ii;
-    for(ii = 0; ii < 3; ++ii)
-      data->localData[ii]->realVars = realV[ii];
-  }
-
 }

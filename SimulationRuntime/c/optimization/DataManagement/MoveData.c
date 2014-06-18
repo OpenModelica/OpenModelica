@@ -293,20 +293,16 @@ static inline void calculatedScalingHelper(OptDataBounds * bounds, OptDataTime *
     for(j = 0; j < nx; ++j){
       bounds->scaldt[i][j] = bounds->scalF[j]*time->dt[0];
     }
-
-  i = nsi -1;
   for(j = 0; j < nx; ++j){
     bounds->scaldt[i][j] = bounds->scalF[j]*time->dt[1];
   }
 
-  bounds->scalb = (long double***)malloc(nsi*sizeof(long double**));
+  bounds->scalb = (long double**)malloc(nsi*sizeof(long double*));
   for(i = 0; i < nsi; ++i){
-    bounds->scalb[i] = (long double**)malloc(np*sizeof(long double*));
+    bounds->scalb[i] = (long double*)malloc(np*sizeof(long double));
     l = (i + 1 < nsi ) ? 0 : 1;
     for(j = 0; j < np; ++j){
-      bounds->scalb[i][j] = (long double*)malloc(nx*sizeof(long double));
-      for(k = 0; k < nx; ++k)
-        bounds->scalb[i][j][k] = time->dt[l]*rk->b[j];
+      bounds->scalb[i][j] = time->dt[l]*rk->b[j];
     }
   }
 }
@@ -525,7 +521,6 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
   const int index_la = optData->s.derIndex[0];
 
   const modelica_real * vnom = optData->bounds.vnom;
-  long double *** scalb = optData->bounds.scalb;
 
   modelica_real * realVars[3];
 
@@ -535,11 +530,12 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
   for(l = 0; l < 3; ++l)
     realVars[l] = data->localData[l]->realVars;
 
-  for(i = 0, shift = 0; i < nsi; ++i){
+  for(i = 0, shift = 0; i < nsi-1; ++i){
     for(j = 0; j < np; ++j, shift += nv){
 
       for(l = 0; l < 3; ++l){
         data->localData[l]->realVars = optData->v[i][j];
+        data->localData[l]->timeValue = (modelica_real) optData->time.t[i][j];
       }
 
       for(k = 0; k < nx; ++k)
@@ -549,22 +545,37 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
         data->simulationInfo.inputVars[k-nx] = (modelica_real) vopt[shift + k]*vnom[k];
       }
 
-      data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
-
       data->callback->input_function(data);
       data->callback->functionDAE(data);
 
-      if(index ==  4){
-        diff_symColoredODE(optData, optData->J[i][j], index,optData->bounds.scaldt[i]);
-      }else if(la && index == 3){
-        diff_symColoredLagrange(optData, &optData->J[i][j][index_la], 2, scalb[i][j]);
+      if(index){
+        diffSynColoredOptimizerSystem(optData, optData->J[i][j], i,j,2);
       }
 
     }
   }
-  if(ma && index == 3){
-    const int index_ma = optData->s.derIndex[1];
-    diff_symColoredMayer(optData, &optData->J[nsi-1][np-1][index_ma], 3);
+
+
+  for(j = 0; j < np; ++j, shift += nv){
+
+    for(l = 0; l < 3; ++l){
+      data->localData[l]->realVars = optData->v[i][j];
+      data->localData[l]->timeValue = (modelica_real) optData->time.t[i][j];
+    }
+
+    for(k = 0; k < nx; ++k)
+      data->localData[0]->realVars[k] = vopt[shift + k]*vnom[k];
+
+    for(; k <nv; ++k){
+      data->simulationInfo.inputVars[k-nx] = (modelica_real) vopt[shift + k]*vnom[k];
+    }
+
+    data->callback->input_function(data);
+    data->callback->functionDAE(data);
+
+    if(index){
+      diffSynColoredOptimizerSystem(optData, optData->J[i][j], i,j, (j+1 == np)? 3 : 2);
+    }
   }
 
   for(l = 0; l < 3; ++l)
@@ -573,99 +584,56 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
 }
 
 /*
- *  function calculates a symbolic colored jacobian matrix
+ *  function calculates a symbolic colored jacobian matrix of the optimization system
  *  authors: Willi Braun, Vitalij Ruge
  */
-void diff_symColoredODE(OptData *optData, modelica_real **J, const int index, const long double * const scaldt){
+void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const int m, const int n, const int index){
   DATA * data = optData->data;
   int i,j,l,ii;
 
+
+  const long double * scaldt = optData->bounds.scaldt[m];
   const unsigned int * const cC = data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
   const unsigned int * const lindex  = optData->s.lindex[index];
   const int nx = data->simulationInfo.analyticJacobians[index].sizeCols;
   const int Cmax = data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1;
   const int dnx = optData->dim.nx;
+  const int dnxnc = optData->dim.nJ;
+  const int index_ma = optData->s.derIndex[0];
+  const modelica_boolean la = optData->s.lagrange;
+  const modelica_boolean ma = optData->s.mayer;
   const modelica_real * const resultVars = data->simulationInfo.analyticJacobians[index].resultVars;
   const unsigned int * const sPindex = data->simulationInfo.analyticJacobians[index].sparsePattern.index;
+  long double  scalb = optData->bounds.scalb[m][n];
+
+  const short index_d_la =  optData->s.derIndex[index - 1];
 
   for(i = 1; i < Cmax; ++i){
     data->simulationInfo.analyticJacobians[index].seedVars = optData->s.seedVec[index][i];
-    data->callback->functionJacD_column(data);
 
+    if(index == 2){
+      data->callback->functionJacB_column(data);
+    }else if(index == 3){
+      data->callback->functionJacC_column(data);
+    }else
+      assert(0);
+    /*ToDo: shift index */
     for(ii = 0; ii < nx; ++ii){
       if(cC[ii] == i){
         for(j = lindex[ii]; j < lindex[ii + 1]; ++j){
           l = sPindex[j];
           if(l < dnx){
             J[l][ii] = (modelica_real) resultVars[l] * scaldt[l];
-          }else
+          }else if(l == index_d_la){
+            J[l][ii] = (modelica_real) resultVars[l] * scalb;
+          }else if(index == 3 && l == index_ma){
             J[l][ii] = (modelica_real) resultVars[l];
-        }
-      }
-    }
-
-  }
-}
-
-/*
- *  function calculates a symbolic colored jacobian matrix
- *  authors: Willi Braun, Vitalij Ruge
- */
-void diff_symColoredLagrange(OptData *optData, modelica_real **J, const int index, const long double * const scalb){
-  DATA * data = optData->data;
-  int i,j,l,ii;
-
-  const unsigned int * const cC = data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
-  const unsigned int * const lindex  = optData->s.lindex[index];
-  const int nx = data->simulationInfo.analyticJacobians[index].sizeCols;
-  const int Cmax = data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1;
-  const modelica_real * const resultVars = data->simulationInfo.analyticJacobians[index].resultVars;
-  const unsigned int * const sPindex = data->simulationInfo.analyticJacobians[index].sparsePattern.index;
-
-  for(i = 1; i < Cmax; ++i){
-    data->simulationInfo.analyticJacobians[index].seedVars = optData->s.seedVec[index][i];
-    data->callback->functionJacB_column(data);
-
-    for(ii = 0; ii < nx; ++ii){
-      if(cC[ii] == i){
-        for(j = lindex[ii]; j < lindex[ii + 1]; ++j){
-          l = sPindex[j];
-          J[l][ii] = (modelica_real) resultVars[l] * scalb[l];
+          }else{
+            J[l][ii] = (modelica_real) resultVars[l];
+          }
         }
       }
     }
   }
 }
-
-
-/*
- *  function calculates a symbolic colored jacobian matrix
- *  authors: Willi Braun, Vitalij Ruge
- */
-void diff_symColoredMayer(OptData *optData, modelica_real **J, const int index){
-  DATA * data = optData->data;
-  int i,j,l,ii;
-
-  const unsigned int * const cC = data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
-  const unsigned int * const lindex  = optData->s.lindex[index];
-  const int nx = data->simulationInfo.analyticJacobians[index].sizeCols;
-  const int Cmax = data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1;
-  const modelica_real * const resultVars = data->simulationInfo.analyticJacobians[index].resultVars;
-  const unsigned int * const sPindex = data->simulationInfo.analyticJacobians[index].sparsePattern.index;
-
-  for(i = 1; i < Cmax; ++i){
-    data->simulationInfo.analyticJacobians[index].seedVars = optData->s.seedVec[index][i];
-    data->callback->functionJacC_column(data);
-
-    for(ii = 0; ii < nx; ++ii){
-      if(cC[ii] == i){
-        for(j = lindex[ii]; j < lindex[ii + 1]; ++j){
-          l = sPindex[j];
-          J[l][ii] = (modelica_real) resultVars[l];
-        }
-      }
-    }
-  }
-}
-
 

@@ -38,8 +38,7 @@ static inline void num_hessian0(double * v, const double * const lambda, const d
 static inline void sumLagrange0(const int i, const int j, double * res,  const modelica_boolean upC, OptData *optData);
 static inline void num_hessian1(double * v, const double * const lambda, const double objFactor, OptData *optData, const int i, const int j);
 static inline void sumLagrange1(const int i, const int j, double * res,  const modelica_boolean upC, const modelica_boolean upC2, OptData *optData);
-static inline void updateDerF(OptData *optData);
-#define DF_STEP(v) ((1.0 + 1e-5*fmin(1.5e3,fabs(v)) + 1e-8) - 1.0)
+#define DF_STEP(v) (1e-5*fabs(v) + 1e-8)
 
 /* eval hessian
  * author: Vitalij Ruge
@@ -127,12 +126,12 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
     const int nJ = optData->dim.nJ;
     modelica_boolean upC;
     modelica_boolean upC2;
-    upC = obj_factor != 0;
+    upC = obj_factor != 0; 
+    /*
     if(new_x){
-      optData2ModelData(optData, vopt, 4);
-      if(upC)
-        updateDerF(optData);
+      optData2ModelData(optData, vopt, 1);
     }
+    */
     optData->dim.iter_updateHessian = 0;
     upC2 = upC && optData->s.mayer;
     upC = upC && optData->s.lagrange;
@@ -186,9 +185,7 @@ static inline void num_hessian0(double * v, const double * const lambda,
     const double objFactor , OptData *optData, const int i, const int j){
 
   const modelica_boolean la = optData->s.lagrange;
-  const int index_la = optData->s.derIndex[0];
   const modelica_boolean upCost = la && objFactor != 0;
-  const long double * const scalb = optData->bounds.scalb[i][j];
   DATA * data = optData->data;
 
   const int nv = optData->dim.nv;
@@ -199,53 +196,54 @@ static inline void num_hessian0(double * v, const double * const lambda,
 
   int ii,jj, l;
   long double v_save, h;
-
+  int * cindex = optData->s.indexCon2;
   modelica_real * realV[3];
 
+  
   for(l = 1; l<3; ++l){
     realV[l] = data->localData[l]->realVars;
     data->localData[l]->realVars = optData->v[i][j];
+    data->localData[l]->timeValue = (modelica_real) optData->time.t[i][j];
   }
+  data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
 
   for(ii = 0; ii < nv; ++ii){
     /********************/
     v_save = (long double) v[ii];
     h = (long double)DF_STEP(v_save);
-    if(v[ii] + h <= vmax[ii]){
-      v[ii] += h;
-    }else{
+    v[ii] += h;
+    if( v[ii] >  vmax[ii]){
       h *= -1.0;
-      v[ii] += h;
+      v[ii] = v_save + h;
     }
     /********************/
     for(l = 0; l < nx; ++l)
       data->localData[0]->realVars[l] = v[l]*vnom[l];
     for(; l <nv; ++l)
       data->simulationInfo.inputVars[l-nx] = (modelica_real) v[l]*vnom[l];
-    data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
     data->callback->input_function(data);
     data->callback->functionDAE(data);
     /********************/
-    v[ii] = (double)v_save;
+    diffSynColoredOptimizerSystem(optData, optData->tmpJ, i,j,2);
     /********************/
-    if(upCost)
-      diff_symColoredLagrange(optData, &optData->tmpJ[index_la], 2, scalb);
-    diff_symColoredODE(optData, optData->tmpJ, 4, optData->bounds.scaldt[i]);
+    v[ii] = (double)v_save;
     /********************/
     for(jj = 0; jj <ii+1; ++jj){
       if(optData->s.H0[ii][jj]){
-        for(l = 0; l < nJ; ++l){
+        for(l = 0; l < nx; ++l){
+          if(optData->s.Hg[l][ii][jj] && lambda[l] != 0)
+              optData->H[l][ii][jj] = (long double)(optData->tmpJ[l][jj] - optData->J[i][j][l][jj])*lambda[l]/h;
+        }
+        for(; l < nJ; ++l){
           if(optData->s.Hg[l][ii][jj] && lambda[l] != 0){
-            optData->H[l][ii][jj] = (long double)(optData->tmpJ[l][jj] - optData->J[i][j][l][jj])*lambda[l]/h;
-          }else{
-            optData->H[l][ii][jj] = (long double)0.0;
+            optData->H[l][ii][jj] = (long double)(optData->tmpJ[cindex[l-nx]][jj] - optData->J[i][j][cindex[l-nx]][jj])*lambda[l]/h;
           }
         }
       }
     }
     /********************/
     if(upCost){
-      const int index_la = optData->s.derIndex[0];
+      const int index_la = optData->s.derIndex[1];
       h = objFactor/h;
       for(jj = 0; jj <ii+1; ++jj){
         if(optData->s.Hl[ii][jj]){
@@ -276,65 +274,73 @@ static inline void num_hessian1(double * v, const double * const lambda,
   const modelica_boolean la = optData->s.lagrange;
   const modelica_boolean ma = optData->s.mayer;
   const modelica_boolean upCost = la && objFactor != 0;
-  const long double * const scalb = optData->bounds.scalb[i][j];
-  const int index_la = optData->s.derIndex[0];
+  const int index_la = optData->s.derIndex[1];
 
   const int nv = optData->dim.nv;
   const int nx = optData->dim.nx;
   const int np = optData->dim.np;
   const int nJ = optData->dim.nJ;
+  const int nsi = optData->dim.nsi;
   const modelica_real * const vmax = optData->bounds.vmax;
   const modelica_real * const vnom = optData->bounds.vnom;
-  const modelica_boolean upCost2 = objFactor != 0 && ma && np == j + 1;
-
-  int ii,jj, l;
+  const modelica_boolean upCost2 = objFactor != 0 && ma && np == j + 1 && nsi == i  +1;
+  const short indexJ = (upCost2) ? 3 : 2;
+  int * cindex = (upCost2) ? optData->s.indexCon3:optData->s.indexCon2;
+  int ii,jj, l,k;
   long double v_save, h;
   DATA * data = optData->data;
 
   modelica_real * realV[3];
 
+  data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
   for(l = 1; l<3; ++l){
     realV[l] = data->localData[l]->realVars;
     data->localData[l]->realVars = optData->v[i][j];
+    data->localData[l]->timeValue = (modelica_real) optData->time.t[i][j];
   }
 
   for(ii = 0; ii < nv; ++ii){
     /********************/
     v_save = (long double) v[ii];
     h = (long double)DF_STEP(v_save);
-    if(v[ii] + h <= vmax[ii]){
-      v[ii] += h;
-    }else{
+    v[ii] += h;
+    if(v[ii] > vmax[ii]){
       h *= -1.0;
-      v[ii] += h;
+      v[ii] = v_save + h;
     }
     /********************/
     for(l = 0; l < nx; ++l)
       data->localData[0]->realVars[l] = v[l]*vnom[l];
     for(; l <nv; ++l)
       data->simulationInfo.inputVars[l-nx] = (modelica_real) v[l]*vnom[l];
-    data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
+
     data->callback->input_function(data);
     data->callback->functionDAE(data);
     /********************/
-    v[ii] = (double)v_save;
+    diffSynColoredOptimizerSystem(optData, optData->tmpJ, i,j,indexJ);
     /********************/
-    if(upCost)
-      diff_symColoredLagrange(optData, &optData->tmpJ[index_la], 2, scalb);
-    diff_symColoredODE(optData, optData->tmpJ, 4, optData->bounds.scaldt[i]);
+    v[ii] = (double)v_save;
     /********************/
     for(jj = 0; jj <ii+1; ++jj){
       if(optData->s.H0[ii][jj]){
-        for(l = 0; l < nJ; ++l){
-          if(optData->s.Hg[l][ii][jj])
+        for(l = 0; l < nx; ++l){
+          if(optData->s.Hg[l][ii][jj]) 
             optData->H[l][ii][jj] = (long double)(optData->tmpJ[l][jj] - optData->J[i][j][l][jj])*lambda[l]/h;
+        }
+        for(; l < nJ; ++l){
+          if(optData->s.Hg[l][ii][jj])
+            optData->H[l][ii][jj] = (long double)(optData->tmpJ[cindex[l-nx]][jj] - optData->J[i][j][cindex[l-nx]][jj])*lambda[l]/h;
         }
       }
     }
     /********************/
     if(upCost){
-      const int index_la = optData->s.derIndex[0];
+      int index_la;
       long double hh;
+      if(np == j + 1 && nsi == i +1)
+        index_la = optData->s.derIndex[2];
+      else
+        index_la = optData->s.derIndex[1];
       hh = objFactor/h;
       for(jj = 0; jj <ii+1; ++jj){
         if(optData->s.Hl[ii][jj]){
@@ -344,9 +350,8 @@ static inline void num_hessian1(double * v, const double * const lambda,
     }
     /********************/
     if(upCost2){
-      const int index_ma = optData->s.derIndex[1];
+      const int index_ma = optData->s.derIndex[0];
       long double hh;
-      diff_symColoredMayer(optData, &optData->tmpJ[index_ma], 3);
       hh = objFactor/h;
       for(jj = 0; jj <ii+1; ++jj){
         if(optData->s.Hm[ii][jj]){
@@ -410,42 +415,6 @@ static inline void sumLagrange1(const int i, const int j, double * res,
     sum += optData->Hm[i][j];
 
   *res = (double) sum;
-
-}
-
-/*!
- *  update jacobian matrix C,B
- *  author: Vitalij Ruge
- **/
-static inline void updateDerF(OptData *optData){
-  const int nReal = optData->dim.nReal;
-  const int nsi = optData->dim.nsi;
-  const int np = optData->dim.np;
-  const modelica_boolean la = optData->s.lagrange;
-  const modelica_boolean ma = optData->s.mayer;
-  DATA * data = optData->data;
-
-  if(la){
-    const int index_la = optData->s.derIndex[0];
-    long double *** scalb = optData->bounds.scalb;
-    int i, j;
-    for(i = 0; i < nsi; ++i){
-      for(j = 0; j < np; ++j){
-        memcpy(data->localData[0]->realVars, optData->v[i][j], nReal*sizeof(double));
-        data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
-        diff_symColoredLagrange(optData, &optData->J[i][j][index_la], 2, scalb[i][j]);
-      }
-    }
-  }
-
-  if(ma){
-    const int index_ma = optData->s.derIndex[1];
-    const int i = nsi - 1;
-    const int j = np - 1;
-    memcpy(data->localData[0]->realVars, optData->v[i][j], nReal*sizeof(double));
-    data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
-    diff_symColoredMayer(optData, &optData->J[i][j][index_ma], 3);
-  }
 
 }
 

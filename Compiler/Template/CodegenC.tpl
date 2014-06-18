@@ -18,7 +18,7 @@
 //
 // - A line like this
 //     ..., Text var /*BUFP*/, ...
-//   declares that a template takes a text buffer as input parameter. In the
+//   declares that a template takes a tmext buffer as input parameter. In the
 //   new version of Susan it should be written like this instead:
 //     ..., Text &var, ...
 //
@@ -521,8 +521,8 @@ template simulationFile_opt_header(SimCode simCode, String guid)
     #if defined(__cplusplus)
       extern "C" {
     #endif
-      int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res);
-      int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res);
+      int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short*);
+      int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short *, short *);
       int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
     #if defined(__cplusplus)
     }
@@ -648,8 +648,8 @@ template simulationFile(SimCode simCode, String guid)
     extern int <%symbolName(modelNamePrefixStr,"functionJacC_column")%>(void* data);
     extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(void* data);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
-    extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res);
-    extern int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res);
+    extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short *);
+    extern int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short *, short *);
     extern int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
@@ -10582,8 +10582,8 @@ template optimizationComponents( list<DAE.ClassAttributes> classAttributes ,SimC
     match classAttributes
     case{} then
         <<
-        int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res){return -1;}
-        int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res){return -1;}
+        int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res,short *i){return -1;}
+        int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short * i1, short*i2){return -1;}
         int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt){return -1;}
         >>
       else
@@ -10604,6 +10604,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
         case SOME(exp) then
         <<
          *res =  &$P$TMP_mayerTerm;
+         *index_Dres = $P$TMP_mayerTerm$pDERC$indexdiffed;
          return 0;
         >>
       let startTimeOpt = match startTimeE
@@ -10616,6 +10617,8 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
       let objectiveIntegrand = match objectiveIntegrandE case SOME(exp) then
         <<
          *res =  &$P$TMP_lagrangeTerm;
+         *index_DresB = $P$TMP_lagrangeTerm$pDERB$indexdiffed;
+         *index_DresC = $P$TMP_lagrangeTerm$pDERC$indexdiffed;
          return 0;
         >>
       let inputBounds = match simCode
@@ -10624,13 +10627,12 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
                    case MODELINFO(vars=SIMVARS(__)) then
                    <<
                      <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
-                     'min[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.min;<%\n%>max[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.max;<%\n%>nominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.nominal;<%\n%>useNominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.useNominal;<%\n%>name[<%i0%>] = <%cref(name)%>__varInfo.name;<%\n%>start[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.start;'
+                     'min[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.min;<%\n%>max[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.max;<%\n%>nominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.nominal;<%\n%>useNominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.useNominal;<%\n%>name[<%i0%>] =(char *) <%cref(name)%>__varInfo.name;<%\n%>start[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.start;'
                      ;separator="\n"%>
                    >>
         <<
-            /* objectiveFunction */
-
-           int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res)
+           /* objectiveFunction */   
+           int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short * index_Dres)
             {
               <%varDecls%>
               <%preExp%>
@@ -10639,7 +10641,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
             }
 
             /* objectiveIntegrand */
-            int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res)
+            int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short * index_DresB, short *index_DresC)
             {
               <%varDecls1%>
               <%preExp1%>

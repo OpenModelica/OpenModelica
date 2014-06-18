@@ -210,8 +210,6 @@ static inline void freeOptimizerData(OptData*optData){
     free(optData->bounds.scaldt[i]);
   free(optData->bounds.scaldt);
   for(i = 0; i < nsi; ++i){
-    for(j = 0; j < np; ++j)
-      free(optData->bounds.scalb[i][j]);
     free(optData->bounds.scalb[i]);
   }
   free(optData->bounds.scalb);
@@ -224,11 +222,7 @@ static inline void freeOptimizerData(OptData*optData){
   free(optData->ipop.mult_x_L);
   free(optData->ipop.mult_x_U);
   /*************************/
-  /*ToDo */
-  for(j = 0; j < nJ; ++j){
-    free(optData->s.J[4][j]);
-  }
-  free(optData->s.J[4]);
+
   for(k = 0; k < nv; ++k){
     free(optData->s.H0[k]);
     free(optData->s.H1[k]);

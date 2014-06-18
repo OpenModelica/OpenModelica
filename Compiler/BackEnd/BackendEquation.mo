@@ -2298,10 +2298,6 @@ algorithm
       dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       (rhs, _) = ExpressionSimplify.simplify(DAE.BINARY(e2,DAE.SUB(DAE.T_REAL_DEFAULT),e1));
       then ({BackendDAE.SOLVED_EQUATION(lhs, rhs,Source,false,BackendDAE.UNKNOWN_EQUATION_KIND())},dummyVar);
-    else equation
-      lhs = ComponentReference.makeCrefIdent("$TMP_eq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
-      dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-    then ({},dummyVar);
   end match;
 end generateResidualfromRealtion;
 

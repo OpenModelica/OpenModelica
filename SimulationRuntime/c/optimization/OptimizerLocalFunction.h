@@ -43,11 +43,11 @@ void initial_guess_optimizer(OptData *optData, SOLVER_INFO* solverInfo);
 
 void res2file(OptData *optData, SOLVER_INFO* solverInfo,double * v);
 void optData2ModelData(OptData *optData, double *vopt, const int index);
-void diff_symColoredODE(OptData *optData, modelica_real **J, const int index, const long double * const scaldt);
-void diff_symColoredLagrange(OptData *optData, modelica_real **J, const int index, const long double * const scaldt);
-void diff_symColoredMayer(OptData *optData, modelica_real **J, const int index);
+
+void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const int i, const int j, const int index);
 
 /*ipopt*/
+
 #ifdef __cplusplus
 extern "C"
 {
