@@ -10,7 +10,7 @@ template<class T>
 struct ObjectFactory;
 
 template <class CreationPolicy> 
-class StaticNonLinSolverOMCFactory : public  NonLinSolverOMCFactory<CreationPolicy>
+class StaticNonLinSolverOMCFactory : public NonLinSolverOMCFactory<CreationPolicy>
 {
 
 public:

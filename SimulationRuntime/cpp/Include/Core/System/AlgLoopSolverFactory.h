@@ -7,7 +7,8 @@ non-linear) system of the Form F(x)=0.
 */
 #ifdef ANALYZATION_MODE
 #include <SimCoreFactory/Policies/StaticNonLinSolverOMCFactory.h>
-class AlgLoopSolverFactory : public IAlgLoopSolverFactory, public StaticNonLinSolverOMCFactory<OMCFactory>
+#include <SimCoreFactory/Policies/StaticLinSolverOMCFactory.h>
+class AlgLoopSolverFactory : public IAlgLoopSolverFactory, public StaticNonLinSolverOMCFactory<OMCFactory>, public StaticLinSolverOMCFactory<OMCFactory>
 #else
 #include <Policies/FactoryPolicy.h>
 class AlgLoopSolverFactory : public IAlgLoopSolverFactory, public NonLinSolverPolicy, public LinSolverPolicy

@@ -50,6 +50,7 @@
     #include <Policies/StaticSolverOMCFactory.h>
     #include <Policies/StaticSolverSettingsOMCFactory.h>
     #include <Policies/StaticSystemOMCFactory.h>
+    #include <Policies/StaticLinSolverOMCFactory.h>
     #include <Policies/StaticNonLinSolverOMCFactory.h>
     /*Policy defines*/
     typedef StaticSystemOMCFactory<OMCFactory> SimControllerPolicy;

@@ -10,9 +10,9 @@ IF(ANALYZATION_MODE)
 	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR}/kinsol ${SUNDIALS_INCLUDE_DIR})
 	
 	if (UNIX)
-		target_link_libraries( ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${NewtonName} ${KinsolName} ${CVodeName} ${SimControllerName} ${CMAKE_DL_LIBS})
+		target_link_libraries( ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${NewtonName} ${KinsolName} ${CVodeName} ${UmfPackName} ${SimControllerName} ${CMAKE_DL_LIBS})
 	else (UNIX)
-		target_link_libraries( ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${NewtonName} ${KinsolName} ${CVodeName} ${SimControllerName})
+		target_link_libraries( ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${NewtonName} ${KinsolName} ${CVodeName} ${UmfPackName} ${SimControllerName})
 	endif(UNIX)
 ELSE(ANALYZATION_MODE)
 	# add the system default implementation library

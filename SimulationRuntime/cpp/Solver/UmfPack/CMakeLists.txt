@@ -6,7 +6,7 @@ project(${UmfPackName})
 
 IF(ANALYZATION_MODE)
 	message(STATUS "Building UmfPack for analyzation")
-	add_library(${NewtonName} STATIC UmfPack.cpp UmfPackSettings.cpp FactoryExport )
+	add_library(${UmfPackName} STATIC UmfPack.cpp UmfPackSettings.cpp FactoryExport )
 	target_link_libraries( ${UmfPackName} ${MathName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
 ELSE(ANALYZATION_MODE)
 	add_library(${UmfPackName} SHARED UmfPack.cpp UmfPackSettings.cpp FactoryExport )
