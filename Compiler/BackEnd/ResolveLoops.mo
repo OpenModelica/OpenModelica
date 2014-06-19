@@ -1170,7 +1170,7 @@ algorithm
   (eqCrossLst,_,_) := List.intersection1OnTrue(loopVars,eqCrossLst,intEq);
   numInLoop := listLength(loopVars);
   numOutLoop := listLength(nonLoopVars);
-  resolve := intGe(numInLoop,numOutLoop-1);
+  resolve := intGe(numInLoop,numOutLoop-1) and intLe(numInLoop,6);
 end evaluateLoop;
 
 protected function sumUp2Equations "author:Waurich TUD 2013-12
