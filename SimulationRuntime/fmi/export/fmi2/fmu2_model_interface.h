@@ -31,7 +31,7 @@
 #ifndef __FMU2_MODEL_INTERFACE_H__
 #define __FMU2_MODEL_INTERFACE_H__
 
-#include "fmiFunctions.h"
+#include "fmi2Functions.h"
 #include "simulation_data.h"
 
 #ifdef __cplusplus
@@ -50,7 +50,7 @@ extern "C" {
 #define LOG_STATUSFATAL                 7
 #define LOG_STATUSPENDING               8
 #define LOG_ALL                         9
-#define LOG_FMI_CALL                    10
+#define LOG_FMI2_CALL                   10
 
 #define NUMBER_OF_CATEGORIES 11
 
@@ -64,22 +64,22 @@ typedef enum {
 } ModelState;
 
 typedef struct {
-  fmiString instanceName;
-  fmiType type;
-  fmiString GUID;
-  const fmiCallbackFunctions *functions;
-  fmiBoolean loggingOn;
-  fmiBoolean logCategories[NUMBER_OF_CATEGORIES];
-  fmiComponentEnvironment componentEnvironment;
+  fmi2String instanceName;
+  fmi2Type type;
+  fmi2String GUID;
+  const fmi2CallbackFunctions *functions;
+  fmi2Boolean loggingOn;
+  fmi2Boolean logCategories[NUMBER_OF_CATEGORIES];
+  fmi2ComponentEnvironment componentEnvironment;
   ModelState state;
-  fmiEventInfo eventInfo;
+  fmi2EventInfo eventInfo;
 
   DATA* fmuData;
-  fmiBoolean toleranceDefined;
-  fmiReal tolerance;
-  fmiReal startTime;
-  fmiBoolean stopTimeDefined;
-  fmiReal stopTime;
+  fmi2Boolean toleranceDefined;
+  fmi2Real tolerance;
+  fmi2Real startTime;
+  fmi2Boolean stopTimeDefined;
+  fmi2Real stopTime;
 } ModelInstance;
 
 #ifdef __cplusplus

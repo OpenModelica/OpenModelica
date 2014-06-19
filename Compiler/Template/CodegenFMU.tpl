@@ -722,9 +722,7 @@ case SIMCODE(__) then
   <%if stringEq(FMUVersion, "2.0") then
   '#include "fmu2_model_interface.h"'
   else
-  '#include "fmiModelTypes.h"
-  #include "fmiModelFunctions.h"
-  #include "fmu1_model_interface.h"'%>
+  '#include "fmu1_model_interface.h"'%>
 
   #ifdef __cplusplus
   extern "C" {
@@ -732,6 +730,20 @@ case SIMCODE(__) then
 
   void setStartValues(ModelInstance *comp);
   void setDefaultStartValues(ModelInstance *comp);
+  <%if stringEq(FMUVersion, "2.0") then
+  <<
+  void eventUpdate(ModelInstance* comp, fmi2EventInfo* eventInfo);
+  fmi2Real getReal(ModelInstance* comp, const fmi2ValueReference vr);
+  fmi2Status setReal(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Real value);
+  fmi2Integer getInteger(ModelInstance* comp, const fmi2ValueReference vr);
+  fmi2Status setInteger(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Integer value);
+  fmi2Boolean getBoolean(ModelInstance* comp, const fmi2ValueReference vr);
+  fmi2Status setBoolean(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Boolean value);
+  fmi2String getString(ModelInstance* comp, const fmi2ValueReference vr);
+  fmi2Status setExternalFunction(ModelInstance* c, const fmi2ValueReference vr, const void* value);
+  >>
+  else
+  <<
   void eventUpdate(ModelInstance* comp, fmiEventInfo* eventInfo);
   fmiReal getReal(ModelInstance* comp, const fmiValueReference vr);
   fmiStatus setReal(ModelInstance* comp, const fmiValueReference vr, const fmiReal value);
@@ -741,6 +753,8 @@ case SIMCODE(__) then
   fmiStatus setBoolean(ModelInstance* comp, const fmiValueReference vr, const fmiBoolean value);
   fmiString getString(ModelInstance* comp, const fmiValueReference vr);
   fmiStatus setExternalFunction(ModelInstance* c, const fmiValueReference vr, const void* value);
+  >>
+  %>
 
   <%ModelDefineData(modelInfo)%>
 
@@ -754,15 +768,31 @@ case SIMCODE(__) then
 
   <%setDefaultStartValues(modelInfo)%>
   <%setStartValues(modelInfo)%>
-  <%eventUpdateFunction(simCode)%>
-  <%getRealFunction(modelInfo)%>
-  <%setRealFunction(modelInfo)%>
-  <%getIntegerFunction(modelInfo)%>
-  <%setIntegerFunction(modelInfo)%>
-  <%getBooleanFunction(modelInfo)%>
-  <%setBooleanFunction(modelInfo)%>
-  <%getStringFunction(modelInfo)%>
-  <%setExternalFunction(modelInfo)%>
+  <%if stringEq(FMUVersion, "2.0") then
+  <<
+    <%eventUpdateFunction2(simCode)%>
+    <%getRealFunction2(modelInfo)%>
+    <%setRealFunction2(modelInfo)%>
+    <%getIntegerFunction2(modelInfo)%>
+    <%setIntegerFunction2(modelInfo)%>
+    <%getBooleanFunction2(modelInfo)%>
+    <%setBooleanFunction2(modelInfo)%>
+    <%getStringFunction2(modelInfo)%>
+    <%setExternalFunction2(modelInfo)%>
+  >>
+  else
+  <<
+    <%eventUpdateFunction(simCode)%>
+    <%getRealFunction(modelInfo)%>
+    <%setRealFunction(modelInfo)%>
+    <%getIntegerFunction(modelInfo)%>
+    <%setIntegerFunction(modelInfo)%>
+    <%getBooleanFunction(modelInfo)%>
+    <%setBooleanFunction(modelInfo)%>
+    <%getStringFunction(modelInfo)%>
+    <%setExternalFunction(modelInfo)%>
+  >>
+  %>
 
   #ifdef __cplusplus
   }
@@ -1179,6 +1209,197 @@ case MODELINFO(vars=SIMVARS(__)) then
 
   >>
 end setExternalFunction;
+
+template eventUpdateFunction2(SimCode simCode)
+ "Generates event update function for c file."
+::=
+match simCode
+case SIMCODE(__) then
+  <<
+  // Used to set the next time event, if any.
+  void eventUpdate(ModelInstance* comp, fmi2EventInfo* eventInfo) {
+  }
+
+  >>
+end eventUpdateFunction2;
+
+template getRealFunction2(ModelInfo modelInfo)
+ "Generates getReal function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars)) then
+  <<
+  fmi2Real getReal(ModelInstance* comp, const fmi2ValueReference vr) {
+    switch (vr) {
+        <%vars.stateVars |> var => SwitchVars(var, "realVars", 0) ;separator="\n"%>
+        <%vars.derivativeVars |> var => SwitchVars(var, "realVars", numStateVars) ;separator="\n"%>
+        <%vars.algVars |> var => SwitchVars(var, "realVars", intMul(2,numStateVars)) ;separator="\n"%>
+        <%vars.discreteAlgVars |> var => SwitchVars(var, "realVars", intAdd(intMul(2,numStateVars), numAlgVars)) ;separator="\n"%>
+        <%vars.paramVars |> var => SwitchParameters(var, "realParameter") ;separator="\n"%>
+        <%vars.aliasVars |> var => SwitchAliasVars(var, "Real","-") ;separator="\n"%>
+        default:
+            return fmi2Error;
+    }
+  }
+
+  >>
+end getRealFunction2;
+
+template setRealFunction2(ModelInfo modelInfo)
+ "Generates setReal function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars)) then
+  <<
+  fmi2Status setReal(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Real value) {
+    switch (vr) {
+        <%vars.stateVars |> var => SwitchVarsSet(var, "realVars", 0) ;separator="\n"%>
+        <%vars.derivativeVars |> var => SwitchVarsSet(var, "realVars", numStateVars) ;separator="\n"%>
+        <%vars.algVars |> var => SwitchVarsSet(var, "realVars", intMul(2,numStateVars)) ;separator="\n"%>
+        <%vars.discreteAlgVars |> var => SwitchVarsSet(var, "realVars", intAdd(intMul(2,numStateVars), numAlgVars)) ;separator="\n"%>
+        <%vars.paramVars |> var => SwitchParametersSet(var, "realParameter") ;separator="\n"%>
+        <%vars.aliasVars |> var => SwitchAliasVarsSet(var, "Real", "-") ;separator="\n"%>
+        default:
+            return fmi2Error;
+    }
+    return fmi2OK;
+  }
+
+  >>
+end setRealFunction2;
+
+template getIntegerFunction2(ModelInfo modelInfo)
+ "Generates setInteger function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  fmi2Integer getInteger(ModelInstance* comp, const fmi2ValueReference vr) {
+    switch (vr) {
+        <%vars.intAlgVars |> var => SwitchVars(var, "integerVars", 0) ;separator="\n"%>
+        <%vars.intParamVars |> var => SwitchParameters(var, "integerParameter") ;separator="\n"%>
+        <%vars.intAliasVars |> var => SwitchAliasVars(var, "Integer", "-") ;separator="\n"%>
+        default:
+            return 0;
+    }
+  }
+  >>
+end getIntegerFunction2;
+
+template setIntegerFunction2(ModelInfo modelInfo)
+ "Generates setInteger function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  fmi2Status setInteger(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Integer value) {
+    switch (vr) {
+        <%vars.intAlgVars |> var => SwitchVarsSet(var, "integerVars", 0) ;separator="\n"%>
+        <%vars.intParamVars |> var => SwitchParametersSet(var, "integerParameter") ;separator="\n"%>
+        <%vars.intAliasVars |> var => SwitchAliasVarsSet(var, "Integer", "-") ;separator="\n"%>
+        default:
+            return fmi2Error;
+    }
+    return fmi2OK;
+  }
+  >>
+end setIntegerFunction2;
+
+template getBooleanFunction2(ModelInfo modelInfo)
+ "Generates setBoolean function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  fmi2Boolean getBoolean(ModelInstance* comp, const fmi2ValueReference vr) {
+    switch (vr) {
+        <%vars.boolAlgVars |> var => SwitchVars(var, "booleanVars", 0) ;separator="\n"%>
+        <%vars.boolParamVars |> var => SwitchParameters(var, "booleanParameter") ;separator="\n"%>
+        <%vars.boolAliasVars |> var => SwitchAliasVars(var, "Boolean", "!") ;separator="\n"%>
+        default:
+            return 0;
+    }
+  }
+
+  >>
+end getBooleanFunction2;
+
+template setBooleanFunction2(ModelInfo modelInfo)
+ "Generates setBoolean function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  fmi2Status setBoolean(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Boolean value) {
+    switch (vr) {
+        <%vars.boolAlgVars |> var => SwitchVarsSet(var, "booleanVars", 0) ;separator="\n"%>
+        <%vars.boolParamVars |> var => SwitchParametersSet(var, "booleanParameter") ;separator="\n"%>
+        <%vars.boolAliasVars |> var => SwitchAliasVarsSet(var, "Boolean", "!") ;separator="\n"%>
+        default:
+            return fmi2Error;
+    }
+    return fmi2OK;
+  }
+
+  >>
+end setBooleanFunction2;
+
+template getStringFunction2(ModelInfo modelInfo)
+ "Generates setString function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  fmi2String getString(ModelInstance* comp, const fmi2ValueReference vr) {
+    switch (vr) {
+        <%vars.stringAlgVars |> var => SwitchVars(var, "stringVars", 0) ;separator="\n"%>
+        <%vars.stringParamVars |> var => SwitchParameters(var, "stringParameter") ;separator="\n"%>
+        <%vars.stringAliasVars |> var => SwitchAliasVars(var, "string", "") ;separator="\n"%>
+        default:
+            return 0;
+    }
+  }
+
+  >>
+end getStringFunction2;
+
+template setStringFunction2(ModelInfo modelInfo)
+ "Generates setString function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  fmi2String getString(ModelInstance* comp, const fmi2ValueReference vr) {
+    switch (vr) {
+        <%vars.stringAlgVars |> var => SwitchVarsSet(var, "stringVars", 0) ;separator="\n"%>
+        <%vars.stringParamVars |> var => SwitchParametersSet(var, "stringParameter") ;separator="\n"%>
+        <%vars.stringAliasVars |> var => SwitchAliasVarsSet(var, "String", "") ;separator="\n"%>
+        default:
+            return 0;
+    }
+  }
+
+  >>
+end setStringFunction2;
+
+template setExternalFunction2(ModelInfo modelInfo)
+ "Generates setString function for c file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  let externalFuncs = setExternalFunctionsSwitch(functions)
+  <<
+  fmi2Status setExternalFunction(ModelInstance* c, const fmi2ValueReference vr, const void* value){
+    switch (vr) {
+        <%externalFuncs%>
+        default:
+            return fmi2Error;
+    }
+    return fmi2OK;
+  }
+
+  >>
+end setExternalFunction2;
 
 template setExternalFunctionsSwitch(list<Function> functions)
  "Generates external function definitions."
