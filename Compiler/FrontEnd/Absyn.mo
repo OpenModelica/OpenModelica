@@ -2571,11 +2571,11 @@ algorithm
   outString := stringDelimitList(pathToStringList(path),delimiter);
 end pathString2NoLeadingDot;
 
-public function pathStringUnquoteReplaceDot 
+public function pathStringUnquoteReplaceDot
 " Changes a path to string. Uses the input string as separator.
-  If the separtor exists in the string then it is doubled (sep _ then 
+  If the separtor exists in the string then it is doubled (sep _ then
   a_b changes to a__b) before delimiting
-  (Replaces dots with that separator). And also unquotes each ident. 
+  (Replaces dots with that separator). And also unquotes each ident.
 "
   input Path inPath;
   input String repStr;

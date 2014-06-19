@@ -8053,7 +8053,7 @@ algorithm
           index_)
       equation
         next_index = index_ + 1;
-      then 
+      then
         (SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index,
          minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref,
          aliasvar, source, causality, SOME(index_), numArrayElement,
