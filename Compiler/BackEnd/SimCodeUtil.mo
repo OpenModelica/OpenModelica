@@ -8020,12 +8020,17 @@ protected function setVariableIndexHelper
   output list<SimCode.SimVar> outVars;
   output Integer outIndex;
 algorithm
-  (outVars, outIndex) := matchcontinue (inVars, inIndex)
-    local
-      list<SimCode.SimVar> vars;
-      list<SimCode.SimVar> xs;
-      SimCode.SimVar var;
+  (outVars, outIndex) := List.mapFold(inVars, setVariableIndexHelper2, inIndex);
+end setVariableIndexHelper;
 
+protected function setVariableIndexHelper2
+  input SimCode.SimVar inVar;
+  input Integer inIndex;
+  output SimCode.SimVar outVar;
+  output Integer outIndex;
+algorithm
+  (outVar, outIndex) := match(inVar, inIndex)
+    local
       DAE.ComponentRef name;
       BackendDAE.VarKind kind;
       String comment, unit, displayUnit;
@@ -8040,22 +8045,23 @@ algorithm
       DAE.ElementSource source;
       SimCode.Causality causality;
       list<String> numArrayElement;
-      Integer index_;
+      Integer index_, next_index;
 
-    case ((SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, _, numArrayElement, isValueChangeable, isProtected) :: xs), index_)
+    case (SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index, minVal,
+          maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar,
+          source, causality, _, numArrayElement, isValueChangeable, isProtected),
+          index_)
       equation
-        var = SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, SOME(index_), numArrayElement, isValueChangeable, isProtected);
-        (vars, index_) = setVariableIndexHelper(xs, index_ + 1);
-      then
-        ((var::vars), index_);
-    case ((_ :: xs), index_)
-      equation
-        (vars, index_) = setVariableIndexHelper(xs, index_);
-      then
-        (vars, index_);
-    case ({}, index_) then ({}, index_);
-  end matchcontinue;
-end setVariableIndexHelper;
+        next_index = index_ + 1;
+      then 
+        (SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index,
+         minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref,
+         aliasvar, source, causality, SOME(index_), numArrayElement,
+         isValueChangeable, isProtected), next_index);
+
+    else (inVar, inIndex);
+  end match;
+end setVariableIndexHelper2;
 
 public function createCrefToSimVarHT
   input SimCode.ModelInfo modelInfo;
