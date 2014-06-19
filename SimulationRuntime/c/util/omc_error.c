@@ -196,6 +196,7 @@ static void printEscapedXML(const char *msg)
     if (*msg == '&') fputs("&amp;", stdout);
     else if (*msg == '<') fputs("&lt;", stdout);
     else if (*msg == '>') fputs("&gt;", stdout);
+    else if (*msg == '"') fputs("&quot;", stdout);
     else fputc(*msg, stdout);
     msg++;
   }
