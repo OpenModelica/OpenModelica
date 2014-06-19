@@ -355,31 +355,35 @@ public constant Message IF_EQUATION_UNBALANCED = MESSAGE(114, TRANSLATION(), ERR
   Util.gettext("In equation %s. If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch."));
 public constant Message IF_EQUATION_MISSING_ELSE = MESSAGE(115, TRANSLATION(), ERROR(),
   Util.gettext("Missing else-clause in if-equation with non-parameter conditions."));
-public constant Message CONNECT_INCOMPATIBLE_TYPES = MESSAGE(117, TRANSLATION(), ERROR(),
+public constant Message CONNECT_IN_IF = MESSAGE(116, TRANSLATION(), ERROR(),
+  Util.gettext("connect may not be used inside if-equations with non-parametric conditions (found connect(%s, %s))."));
+public constant Message CONNECT_IN_WHEN = MESSAGE(117, TRANSLATION(), ERROR(),
+  Util.gettext("connect may not be used inside when-equations (found connect(%s, %s))."));
+public constant Message CONNECT_INCOMPATIBLE_TYPES = MESSAGE(118, TRANSLATION(), ERROR(),
   Util.gettext("Incompatible components in connect statement: connect(%s, %s)\n- %s has components %s\n- %s has components %s"));
-public constant Message CONNECT_OUTER_OUTER = MESSAGE(118, TRANSLATION(), ERROR(),
+public constant Message CONNECT_OUTER_OUTER = MESSAGE(119, TRANSLATION(), ERROR(),
   Util.gettext("Illegal connecting two outer connectors in statement connect(%s, %s)."));
-public constant Message CONNECTOR_ARRAY_NONCONSTANT = MESSAGE(119, TRANSLATION(), ERROR(),
+public constant Message CONNECTOR_ARRAY_NONCONSTANT = MESSAGE(120, TRANSLATION(), ERROR(),
   Util.gettext("in statement %s, subscript %s is not a parameter or constant."));
-public constant Message CONNECTOR_ARRAY_DIFFERENT = MESSAGE(120, TRANSLATION(), ERROR(),
+public constant Message CONNECTOR_ARRAY_DIFFERENT = MESSAGE(121, TRANSLATION(), ERROR(),
   Util.gettext("Unmatched dimension in equation connect(%s, %s), %s != %s."));
-public constant Message MODIFIER_NON_ARRAY_TYPE_WARNING = MESSAGE(121, TRANSLATION(), WARNING(),
+public constant Message MODIFIER_NON_ARRAY_TYPE_WARNING = MESSAGE(122, TRANSLATION(), WARNING(),
   Util.gettext("Non-array modification '%s' for array component, possibly due to missing 'each'."));
-public constant Message BUILTIN_VECTOR_INVALID_DIMENSIONS = MESSAGE(122, TRANSLATION(), ERROR(),
+public constant Message BUILTIN_VECTOR_INVALID_DIMENSIONS = MESSAGE(123, TRANSLATION(), ERROR(),
   Util.gettext("In scope %s, in component %s: Invalid dimensions %s in %s, no more than one dimension may have size > 1."));
-public constant Message UNROLL_LOOP_CONTAINING_WHEN = MESSAGE(123, TRANSLATION(), ERROR(),
+public constant Message UNROLL_LOOP_CONTAINING_WHEN = MESSAGE(124, TRANSLATION(), ERROR(),
   Util.gettext("Unable to unroll for loop containing when statements or equations: %s."));
-public constant Message CIRCULAR_PARAM = MESSAGE(124, TRANSLATION(), ERROR(),
+public constant Message CIRCULAR_PARAM = MESSAGE(125, TRANSLATION(), ERROR(),
   Util.gettext("Variable '%s' has a cyclic dependency and has variability %s."));
-public constant Message NESTED_WHEN = MESSAGE(125, TRANSLATION(), ERROR(),
+public constant Message NESTED_WHEN = MESSAGE(126, TRANSLATION(), ERROR(),
   Util.gettext("Nested when statements are not allowed."));
-public constant Message INVALID_ENUM_LITERAL = MESSAGE(126, TRANSLATION(), ERROR(),
+public constant Message INVALID_ENUM_LITERAL = MESSAGE(127, TRANSLATION(), ERROR(),
   Util.gettext("Invalid use of reserved attribute name %s as enumeration literal."));
-public constant Message UNEXPECTED_FUNCTION_INPUTS_WARNING = MESSAGE(127, TRANSLATION(), WARNING(),
+public constant Message UNEXPECTED_FUNCTION_INPUTS_WARNING = MESSAGE(128, TRANSLATION(), WARNING(),
   Util.gettext("Function %s has not the expected inputs. Expected inputs are %s."));
-public constant Message DUPLICATE_CLASSES_NOT_EQUIVALENT = MESSAGE(128, TRANSLATION(), ERROR(),
+public constant Message DUPLICATE_CLASSES_NOT_EQUIVALENT = MESSAGE(129, TRANSLATION(), ERROR(),
   Util.gettext("Duplicate class definitions (due to inheritance) not equivalent, first definition is: %s, second definition is: %s."));
-public constant Message HIGHER_VARIABILITY_BINDING = MESSAGE(129, TRANSLATION(), ERROR(),
+public constant Message HIGHER_VARIABILITY_BINDING = MESSAGE(130, TRANSLATION(), ERROR(),
   Util.gettext("Component %s of variability %s has binding %s of higher variability %s."));
 public constant Message IF_EQUATION_WARNING = MESSAGE(131, SYMBOLIC(), WARNING(),
   Util.gettext("If-equations are only partially supported. Ignoring %s."));

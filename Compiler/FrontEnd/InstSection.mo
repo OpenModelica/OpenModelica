@@ -562,11 +562,13 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
-        (cache,env_1,ih,daeLLst,_,ci_state_1,graph) = instIfTrueBranches(cache, env,ih, pre, csets, ci_state, tb, false, impl, graph);
-        (cache,_,ih,DAE.DAE(daeElts2),_,_,graph) = Inst.instList(cache,env_1,ih, pre, csets, ci_state, instEEquation, fb, impl, alwaysUnroll, graph) "There are no connections inside if-clauses." ;
+        // Instantiate all branches.
+        (cache, env, ih, ci_state, daeLLst) = instIfEqBranches(cache, env, ih, pre, ci_state, tb, impl, {});
+        (cache, env, ih, ci_state, daeElts2) = instIfEqBranch(cache, env, ih, pre, ci_state, fb, impl);
+
         dae = DAE.DAE({DAE.IF_EQUATION(expl1,daeLLst,daeElts2,source)});
       then
-        (cache,env_1,ih,dae,csets,ci_state_1,graph);
+        (cache,env,ih,dae,csets,ci_state,graph);
 
     // initial if equation  when condition is not constant
     case (cache,env,ih,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb, info = info),SCode.INITIAL(),impl,graph,_)
@@ -579,11 +581,12 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
-        (cache,env_1,ih,daeLLst,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, pre, csets, ci_state, tb, true, impl, graph);
-        (cache,_,ih,DAE.DAE(daeElts2),_,_,graph) = Inst.instList(cache,env_1,ih, pre, csets, ci_state, instEInitialEquation, fb, impl, alwaysUnroll, graph) "There are no connections inside if-clauses." ;
+        // Instantiate all branches.
+        (cache, env, ih, ci_state, daeLLst) = instInitialIfEqBranches(cache, env, ih, pre, ci_state, tb, impl, {});
+        (cache, env, ih, ci_state, daeElts2) = instInitialIfEqBranch(cache, env, ih, pre, ci_state, fb, impl); 
         dae = DAE.DAE({DAE.INITIAL_IF_EQUATION(expl1,daeLLst,daeElts2,source)});
       then
-        (cache,env_1,ih,dae,csets,ci_state_1,graph);
+        (cache,env,ih,dae,csets,ci_state,graph);
 
     // when equation statement
     // When statements are instantiated by evaluating the conditional expression.
@@ -2880,74 +2883,167 @@ algorithm
   end match;
 end rangeExpression;
 
-protected function instIfTrueBranches
-"Author: BZ, 2008-09
- Initialise a list of if-equations,
- if, elseif-1 ... elseif-n."
+protected function instIfEqBranch
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
-  input Connect.Sets inSets;
   input ClassInf.State inState;
-  input list<list<SCode.EEquation>> inTypeALst;
-  input Boolean inInitial;
-  input Boolean inBoolean;
-  input ConnectionGraph.ConnectionGraph inGraph;
+  input list<SCode.EEquation> inEquations;
+  input Boolean inImpl;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
-  output list<list<DAE.Element>> outDaeLst;
-  output Connect.Sets outSets;
   output ClassInf.State outState;
-  output ConnectionGraph.ConnectionGraph outGraph;
+  output list<DAE.Element> outEquations;
 algorithm
-  (outCache,outEnv,outIH,outDaeLst,outSets,outState,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inPrefix,inSets,inState,inTypeALst,inInitial,inBoolean,inGraph)
+  checkForConnectInIfBranch(inEquations);
+  (outCache, outEnv, outIH, DAE.DAE(outEquations), _, outState, _) :=
+    Inst.instList(inCache, inEnv, inIH, inPrefix, Connect.emptySet, inState,
+      instEEquation, inEquations, inImpl, alwaysUnroll, ConnectionGraph.EMPTY);
+end instIfEqBranch;
+
+protected function instIfEqBranches
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InnerOuter.InstHierarchy inIH;
+  input Prefix.Prefix inPrefix;
+  input ClassInf.State inState;
+  input list<list<SCode.EEquation>> inBranches;
+  input Boolean inImpl;
+  input list<list<DAE.Element>> inAccumEqs;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output InnerOuter.InstHierarchy outIH;
+  output ClassInf.State outState;
+  output list<list<DAE.Element>> outEquations;
+algorithm
+  (outCache, outEnv, outIH, outState, outEquations) :=
+  match(inCache, inEnv, inIH, inPrefix, inState, inBranches, inImpl, inAccumEqs)
     local
-      Env.Env env,env_1,env_2;
-      Prefix.Prefix pre;
-      Connect.Sets csets,csets_1,csets_2;
-      ClassInf.State ci_state,ci_state_1,ci_state_2;
-      Boolean impl;
-      list<list<DAE.Element>> llb;
-      list<list<SCode.EEquation>> es;
-      list<SCode.EEquation> e;
       Env.Cache cache;
-      ConnectionGraph.ConnectionGraph graph;
-      InstanceHierarchy ih;
-      list<DAE.Element> elts;
-
-    case (cache,env,ih,_,csets,ci_state,{},_,_,graph)
-      then
-        (cache,env,ih,{},csets,ci_state,graph);
-    case (cache,env,ih,pre,csets,ci_state,(e :: es),false,impl,graph)
+      Env.Env env;
+      InnerOuter.InstHierarchy ih;
+      ClassInf.State state;
+      list<SCode.EEquation> seq;
+      list<list<SCode.EEquation>> rest_seq;
+      list<DAE.Element> deq;
+      list<list<DAE.Element>> branches;
+      
+    case (cache, env, ih, _, state, seq :: rest_seq, _, _)
       equation
-        (cache,env_1,ih,DAE.DAE(elts),csets_1,ci_state_1,graph) =
-           Inst.instList(cache, env, ih, pre, csets, ci_state, instEEquation, e, impl, alwaysUnroll, graph);
-        (cache,env_2,ih,llb,csets_2,ci_state_2,graph) =
-           instIfTrueBranches(cache, env_1, ih, pre, csets_1, ci_state_1,  es, false, impl, graph);
+        (cache, env, ih, state, deq) =
+          instIfEqBranch(cache, env, ih, inPrefix, state, seq, inImpl);
+        (cache, env, ih, state, branches) =
+          instIfEqBranches(cache, env, ih, inPrefix, state, rest_seq, inImpl, deq :: inAccumEqs);
       then
-        (cache,env_2,ih,elts::llb,csets_2,ci_state_2,graph);
+        (cache, env, ih, state, branches);        
 
-    case (cache,env,ih,pre,csets,ci_state,(e :: es),true,impl,graph)
+    case (_, _, _, _, _, {}, _, _)
+      then (inCache, inEnv, inIH, inState, listReverse(inAccumEqs));
+
+  end match;
+end instIfEqBranches;
+
+protected function instInitialIfEqBranch
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InnerOuter.InstHierarchy inIH;
+  input Prefix.Prefix inPrefix;
+  input ClassInf.State inState;
+  input list<SCode.EEquation> inEquations;
+  input Boolean inImpl;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output InnerOuter.InstHierarchy outIH;
+  output ClassInf.State outState;
+  output list<DAE.Element> outEquations;
+algorithm
+  checkForConnectInIfBranch(inEquations);
+  (outCache, outEnv, outIH, DAE.DAE(outEquations), _, outState, _) :=
+    Inst.instList(inCache, inEnv, inIH, inPrefix, Connect.emptySet, inState,
+      instEInitialEquation, inEquations, inImpl, alwaysUnroll, ConnectionGraph.EMPTY);
+end instInitialIfEqBranch;
+
+protected function instInitialIfEqBranches
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InnerOuter.InstHierarchy inIH;
+  input Prefix.Prefix inPrefix;
+  input ClassInf.State inState;
+  input list<list<SCode.EEquation>> inBranches;
+  input Boolean inImpl;
+  input list<list<DAE.Element>> inAccumEqs;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output InnerOuter.InstHierarchy outIH;
+  output ClassInf.State outState;
+  output list<list<DAE.Element>> outEquations;
+algorithm
+  (outCache, outEnv, outIH, outState, outEquations) :=
+  match(inCache, inEnv, inIH, inPrefix, inState, inBranches, inImpl, inAccumEqs)
+    local
+      Env.Cache cache;
+      Env.Env env;
+      InnerOuter.InstHierarchy ih;
+      ClassInf.State state;
+      list<SCode.EEquation> seq;
+      list<list<SCode.EEquation>> rest_seq;
+      list<DAE.Element> deq;
+      list<list<DAE.Element>> branches;
+      
+    case (cache, env, ih, _, state, seq :: rest_seq, _, _)
       equation
-        (cache,env_1,ih,DAE.DAE(elts),csets_1,ci_state_1,graph) =
-           Inst.instList(cache, env, ih, pre, csets, ci_state, instEInitialEquation, e, impl, alwaysUnroll, graph);
-        (cache,env_2,ih,llb,csets_2,ci_state_2,graph) =
-           instIfTrueBranches(cache, env_1, ih, pre, csets_1, ci_state_1,  es, true, impl, graph);
+        (cache, env, ih, state, deq) =
+          instInitialIfEqBranch(cache, env, ih, inPrefix, state, seq, inImpl);
+        (cache, env, ih, state, branches) =
+          instInitialIfEqBranches(cache, env, ih, inPrefix, state, rest_seq, inImpl, deq :: inAccumEqs);
       then
-        (cache,env_2,ih,elts::llb,csets_2,ci_state_2,graph);
+        (cache, env, ih, state, branches);        
 
-    case (_,_,_,_,_,_,(e :: _),_,_,_)
+    case (_, _, _, _, _, {}, _, _)
+      then (inCache, inEnv, inIH, inState, listReverse(inAccumEqs));
+
+  end match;
+end instInitialIfEqBranches;
+
+protected function checkForConnectInIfBranch
+  "Checks if an if-branch (a list of equations) contains any connects, and prints
+   an error if it does. This is used to check that there are no connects in
+   if-equations with non-parameter conditions."
+  input list<SCode.EEquation> inEquations;
+algorithm
+  _ := List.map_0(inEquations, checkForConnectInIfBranch2);
+end checkForConnectInIfBranch;
+
+protected function checkForConnectInIfBranch2
+  input SCode.EEquation inEquation;
+algorithm
+  _ := match(inEquation)
+    local
+      Absyn.ComponentRef cr1, cr2;
+      Absyn.Info info;
+      list<SCode.EEquation> eqs;
+      String cr1_str, cr2_str;
+
+    case SCode.EQ_CONNECT(crefLeft = cr1, crefRight = cr2, info = info)
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "InstSection.instIfTrueBranches failed on equations: " +&
-                       stringDelimitList(List.map1(e, SCodeDump.equationStr, SCodeDump.defaultOptions), "\n"));
+        cr1_str = Dump.printComponentRefStr(cr1);
+        cr2_str = Dump.printComponentRefStr(cr2);
+        Error.addSourceMessage(Error.CONNECT_IN_IF, {cr1_str, cr2_str}, info);
       then
         fail();
-  end matchcontinue;
-end instIfTrueBranches;
+
+    case SCode.EQ_FOR(eEquationLst = eqs)
+      equation
+        checkForConnectInIfBranch(eqs);
+      then
+        ();
+
+    // No need to recurse into if- or when-equations, they will be checked anyway.
+    else ();
+  end match;
+end checkForConnectInIfBranch2;
 
 protected function instElseIfs
 "This function helps instStatement to handle elseif parts."
@@ -4667,30 +4763,22 @@ protected function checkWhenAlgorithm
 "
   input SCode.Statement inWhenAlgorithm;
 algorithm
-  checkForReinitInWhenInitialAlg(inWhenAlgorithm);
+  true := checkForReinitInWhenInitialAlg(inWhenAlgorithm);
   checkForNestedWhenInStatements(inWhenAlgorithm);
 end checkWhenAlgorithm;
 
 protected function checkForReinitInWhenInitialAlg
-"Fails if a when (initial()) alg contains
- reinit which is not allowed in Modelica."
+  "Fails if a when (initial()) alg contains
+   reinit which is not allowed in Modelica."
   input SCode.Statement inWhenAlgorithm;
+  output Boolean outOK;
 algorithm
-  _ := matchcontinue(inWhenAlgorithm)
+  outOK := matchcontinue(inWhenAlgorithm)
     local
       Boolean b1, b2;
       Absyn.Exp exp;
       Absyn.Info info;
       list<SCode.Statement> algs;
-
-    // do not add an error
-    case SCode.ALG_WHEN_A(branches = (exp, algs)::_ )
-      equation
-        b1 = Absyn.expContainsInitial(exp);
-        b2 = SCode.algorithmsContainReinit(algs);
-        false = boolAnd(b1, b2);
-      then
-        ();
 
     // add an error
     case SCode.ALG_WHEN_A(branches = (exp, algs)::_ , info = info)
@@ -4698,8 +4786,9 @@ algorithm
         true = Absyn.expContainsInitial(exp);
         true = SCode.algorithmsContainReinit(algs);
         Error.addSourceMessage(Error.REINIT_IN_WHEN_INITIAL, {}, info);
-      then
-        fail();
+      then false;
+
+    else true;
 
   end matchcontinue;
 end checkForReinitInWhenInitialAlg;
@@ -4743,16 +4832,17 @@ protected function checkWhenEquation
    end when;"
   input SCode.EEquation inWhenEq;
 algorithm
-  checkForReinitInWhenInitialEq(inWhenEq);
+  true := checkForReinitInWhenInitialEq(inWhenEq);
   checkForNestedWhenInEquation(inWhenEq);
 end checkWhenEquation;
 
 protected function checkForReinitInWhenInitialEq
-"Fails if a when (initial()) equation contains
- reinit which is not allowed in Modelica."
+  "Fails if a when (initial()) equation contains
+   reinit which is not allowed in Modelica."
   input SCode.EEquation inWhenEq;
+  output Boolean outOK;
 algorithm
-  _ := matchcontinue(inWhenEq)
+  outOK := matchcontinue(inWhenEq)
     local
       Boolean b1, b2;
       Absyn.Exp exp;
@@ -4760,23 +4850,16 @@ algorithm
       list<SCode.EEquation> el;
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> tpl_el;
 
-    // add an error for when initial() then reinit()
-    case SCode.EQ_WHEN(condition = exp, eEquationLst = el, elseBranches = _)
-      equation
-        b1 = Absyn.expContainsInitial(exp);
-        b2 = SCode.equationsContainReinit(el);
-        false = boolAnd(b1, b2);
-      then
-        ();
-
-    // add an error for when initial() then reinit()
+    // Add an error for when initial() then reinit().
     case SCode.EQ_WHEN(condition = exp, eEquationLst = el, elseBranches = _, info = info)
       equation
         true = Absyn.expContainsInitial(exp);
         true = SCode.equationsContainReinit(el);
         Error.addSourceMessage(Error.REINIT_IN_WHEN_INITIAL, {}, info);
       then
-        fail();
+        false;
+
+    else true;
 
   end matchcontinue;
 end checkForReinitInWhenInitialEq;
@@ -4787,7 +4870,7 @@ protected function checkForNestedWhenInEquation
    An error message is added when failing."
   input SCode.EEquation inWhenEq;
 algorithm
-  _ := matchcontinue(inWhenEq)
+  _ := match(inWhenEq)
     local
       Absyn.Info info;
       list<SCode.EEquation> eqs;
@@ -4803,14 +4886,7 @@ algorithm
       then
         ();
 
-    // print error if when equations are nested.
-    case (SCode.EQ_WHEN(info = info))
-      equation
-        Error.addSourceMessage(Error.NESTED_WHEN, {}, info);
-      then
-        fail();
-
-  end matchcontinue;
+  end match;
 end checkForNestedWhenInEquation;
 
 protected function checkForNestedWhenInEqList
@@ -4826,12 +4902,19 @@ protected function checkForNestedWhenInEq
   an equation."
   input SCode.EEquation inEq;
 algorithm
-  _ := matchcontinue(inEq)
+  _ := match(inEq)
     local
       list<SCode.EEquation> eqs;
       list<list<SCode.EEquation>> eqs_lst;
+      Absyn.ComponentRef cr1, cr2;
+      Absyn.Info info;
+      String cr1_str, cr2_str;
 
-    case SCode.EQ_WHEN(info = _) then fail();
+    case SCode.EQ_WHEN(info = info)
+      equation
+        Error.addSourceMessage(Error.NESTED_WHEN, {}, info);
+      then
+        fail();
 
     case SCode.EQ_IF(thenBranch = eqs_lst, elseBranch = eqs)
       equation
@@ -4847,7 +4930,16 @@ algorithm
         ();
 
     case SCode.EQ_EQUALS(info = _) then ();
-    case SCode.EQ_CONNECT(info = _) then ();
+
+    // connect is not allowed in when equations.
+    case SCode.EQ_CONNECT(crefLeft = cr1, crefRight = cr2, info = info)
+      equation
+        cr1_str = Dump.printComponentRefStr(cr1);
+        cr2_str = Dump.printComponentRefStr(cr2);
+        Error.addSourceMessage(Error.CONNECT_IN_WHEN, {cr1_str, cr2_str}, info);
+      then
+        fail();
+
     case SCode.EQ_ASSERT(info = _) then ();
     case SCode.EQ_TERMINATE(info = _) then ();
     case SCode.EQ_REINIT(info = _) then ();
@@ -4859,7 +4951,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end checkForNestedWhenInEq;
 
 protected function instAssignment
