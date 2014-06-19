@@ -583,7 +583,7 @@ algorithm
 
         // Instantiate all branches.
         (cache, env, ih, ci_state, daeLLst) = instInitialIfEqBranches(cache, env, ih, pre, ci_state, tb, impl, {});
-        (cache, env, ih, ci_state, daeElts2) = instInitialIfEqBranch(cache, env, ih, pre, ci_state, fb, impl); 
+        (cache, env, ih, ci_state, daeElts2) = instInitialIfEqBranch(cache, env, ih, pre, ci_state, fb, impl);
         dae = DAE.DAE({DAE.INITIAL_IF_EQUATION(expl1,daeLLst,daeElts2,source)});
       then
         (cache,env,ih,dae,csets,ci_state,graph);
@@ -2929,7 +2929,7 @@ algorithm
       list<list<SCode.EEquation>> rest_seq;
       list<DAE.Element> deq;
       list<list<DAE.Element>> branches;
-      
+
     case (cache, env, ih, _, state, seq :: rest_seq, _, _)
       equation
         (cache, env, ih, state, deq) =
@@ -2937,7 +2937,7 @@ algorithm
         (cache, env, ih, state, branches) =
           instIfEqBranches(cache, env, ih, inPrefix, state, rest_seq, inImpl, deq :: inAccumEqs);
       then
-        (cache, env, ih, state, branches);        
+        (cache, env, ih, state, branches);
 
     case (_, _, _, _, _, {}, _, _)
       then (inCache, inEnv, inIH, inState, listReverse(inAccumEqs));
@@ -2991,7 +2991,7 @@ algorithm
       list<list<SCode.EEquation>> rest_seq;
       list<DAE.Element> deq;
       list<list<DAE.Element>> branches;
-      
+
     case (cache, env, ih, _, state, seq :: rest_seq, _, _)
       equation
         (cache, env, ih, state, deq) =
@@ -2999,7 +2999,7 @@ algorithm
         (cache, env, ih, state, branches) =
           instInitialIfEqBranches(cache, env, ih, inPrefix, state, rest_seq, inImpl, deq :: inAccumEqs);
       then
-        (cache, env, ih, state, branches);        
+        (cache, env, ih, state, branches);
 
     case (_, _, _, _, _, {}, _, _)
       then (inCache, inEnv, inIH, inState, listReverse(inAccumEqs));
