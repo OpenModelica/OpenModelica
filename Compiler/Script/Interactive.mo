@@ -9356,7 +9356,7 @@ algorithm
     case (GlobalScript.CFunction(functionInCf,_,funcHandle,_,_) :: rest, _)
       equation
         true = Absyn.pathEqual(functionInCf, functionName);
-        _ = Absyn.pathStringReplaceDot(functionName, "_");
+        // _ = Absyn.pathStringUnquoteReplaceDot(functionName, "_");
         System.freeFunction(funcHandle, Flags.isSet(Flags.DYN_LOAD));
         res = removeCf(rest, functionName);
       then

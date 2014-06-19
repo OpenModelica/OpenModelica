@@ -2571,34 +2571,25 @@ algorithm
   outString := stringDelimitList(pathToStringList(path),delimiter);
 end pathString2NoLeadingDot;
 
-public function pathStringReplaceDot "Helper function to pathString."
+public function pathStringUnquoteReplaceDot 
+" Changes a path to string. Uses the input string as separator.
+  If the separtor exists in the string then it is doubled (sep _ then 
+  a_b changes to a__b) before delimiting
+  (Replaces dots with that separator). And also unquotes each ident. 
+"
   input Path inPath;
-  input String inString;
+  input String repStr;
   output String outString;
+protected
+  list<String> strlst;
+  String rep_rep;
 algorithm
-  outString:=
-  match (inPath,inString)
-    local
-      String s,ns,s1,ss,str,dstr,safe_s;
-      Path n;
-    case (IDENT(name = s),str)
-      equation
-        dstr = stringAppend(str, str);
-        safe_s = System.stringReplace(s, str, dstr);
-      then
-        safe_s;
-    case(FULLYQUALIFIED(n),str) then pathStringReplaceDot(n,str);
-    case (QUALIFIED(name = s,path = n),str)
-      equation
-        ns = pathStringReplaceDot(n, str);
-        dstr = stringAppend(str, str);
-        safe_s = System.stringReplace(s, str, dstr);
-        s1 = stringAppend(safe_s, str);
-        ss = stringAppend(s1, ns);
-      then
-        ss;
-  end match;
-end pathStringReplaceDot;
+  rep_rep := repStr +& repStr;
+  strlst := pathToStringList(inPath);
+  strlst := List.map2(strlst,System.stringReplace, repStr, rep_rep);
+  strlst := List.map(strlst,System.unquoteIdentifier);
+  outString := stringDelimitList(strlst,repStr);
+end pathStringUnquoteReplaceDot;
 
 public function stringPath
   "Converts a string into a qualified path."

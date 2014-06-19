@@ -5038,7 +5038,7 @@ protected function generateFunctionName
   input Absyn.Path functionPath;
   output String functionName;
 algorithm
-  functionName := System.unquoteIdentifier(Absyn.pathStringReplaceDot(functionPath, "_"));
+  functionName := Absyn.pathStringUnquoteReplaceDot(functionPath, "_");
 end generateFunctionName;
 
 protected function generateFunctionFileName
@@ -5051,8 +5051,7 @@ algorithm
     local String name, n1, n2; Integer len;
     case (_)
       equation
-        name = Absyn.pathStringReplaceDot(functionPath, "_");
-        name = System.unquoteIdentifier(name);
+        name = Absyn.pathStringUnquoteReplaceDot(functionPath, "_");
         len = stringLength(name);
         // not bigger than
         true = len > Global.maxFunctionFileLength;
@@ -5064,8 +5063,7 @@ algorithm
         name;
     case (_)
       equation
-        name = Absyn.pathStringReplaceDot(functionPath, "_");
-        name = System.unquoteIdentifier(name);
+        name = Absyn.pathStringUnquoteReplaceDot(functionPath, "_");
       then
         name;
   end matchcontinue;

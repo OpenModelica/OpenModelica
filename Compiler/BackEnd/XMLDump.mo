@@ -2356,7 +2356,7 @@ algorithm
   case (s :: remaining)
     equation
       s_path = Absyn.pathStringNoQual(s);
-      fn_name_str = Absyn.pathStringReplaceDot(s, "_");
+      fn_name_str = Absyn.pathStringUnquoteReplaceDot(s, "_");
       fn_name_str = stringAppend("_", fn_name_str);
       Print.printBuf("\n<");Print.printBuf(FUNCTION);
       Print.printBuf(" ");Print.printBuf(FUNCTION_ORIGNAME);Print.printBuf("=\"");Print.printBuf(s_path);Print.printBuf("\"");

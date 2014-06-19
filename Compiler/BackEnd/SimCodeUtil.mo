@@ -3175,7 +3175,7 @@ algorithm
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         (tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(e1);
         // tmp
-        ident = Absyn.pathStringReplaceDot(path, "_");
+        ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
         crtmp = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         tempvars = createTempVars(varLst, crtmp, itempvars);
         // 0 = a - tmp
@@ -3197,7 +3197,7 @@ algorithm
         // ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (NONE(), false)));
         (tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(e2);
         // tmp
-        ident = Absyn.pathStringReplaceDot(path, "_");
+        ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
         crtmp = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         tempvars = createTempVars(varLst, crtmp, itempvars);
         // 0 = a - tmp
@@ -3218,7 +3218,7 @@ algorithm
         ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (NONE(), false)));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
-        ident = Absyn.pathStringReplaceDot(path, "_");
+        ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
         cr = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         e1_1 = Expression.crefExp(cr);
         stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
@@ -3239,7 +3239,7 @@ algorithm
         ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (NONE(), false)));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
-        ident = Absyn.pathStringReplaceDot(path, "_");
+        ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
         cr = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         e2_1 = Expression.crefExp(cr);
         stms = DAE.STMT_ASSIGN(tp, e2_1, e1_1, source);
@@ -3259,7 +3259,7 @@ algorithm
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
         tp = Expression.typeof(e1);
-        ident = Absyn.pathStringReplaceDot(path, "_");
+        ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
         cr = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         crexplst = List.map1(expl, Expression.generateCrefsExpFromExp, cr);
         stms = DAE.STMT_TUPLE_ASSIGN(tp, crexplst, e2, source);
@@ -5234,7 +5234,7 @@ algorithm
 
     case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), varLst = varlst, source = {_}), accRecDecls, rt)
       equation
-        sname = Absyn.pathStringReplaceDot(name, "_");
+        sname = Absyn.pathStringUnquoteReplaceDot(name, "_");
         false = listMember(sname, rt);
         vars = List.map(varlst, typesVarNoBinding);
         vars = List.sort(vars,compareVariable);
@@ -5249,7 +5249,7 @@ algorithm
 
     case (DAE.T_METARECORD( fields = varlst, source = {path}), accRecDecls, rt)
       equation
-        sname = Absyn.pathStringReplaceDot(path, "_");
+        sname = Absyn.pathStringUnquoteReplaceDot(path, "_");
         false = listMember(sname, rt);
         fieldNames = List.map(varlst, generateVarName);
         accRecDecls = SimCode.RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
@@ -5327,7 +5327,7 @@ algorithm
     case ({}, accRecDecls, rt) then (accRecDecls, rt);
     case (DAE.METARECORDCALL(path=path, fieldNames=fieldNames)::rest, accRecDecls, rt)
       equation
-        name = Absyn.pathStringReplaceDot(path, "_");
+        name = Absyn.pathStringUnquoteReplaceDot(path, "_");
         b = listMember(name, rt);
         accRecDecls = List.consOnTrue(not b, SimCode.RECORD_DECL_DEF(path, fieldNames), accRecDecls);
         rt_1 = List.consOnTrue(not b, name, rt);
@@ -5946,7 +5946,7 @@ algorithm
         ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (NONE(), false)));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
-        ident = Absyn.pathStringReplaceDot(path, "_");
+        ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
         cr1 = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         e1_1 = Expression.crefExp(cr1);
         stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
@@ -5971,7 +5971,7 @@ algorithm
         ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((e1, (NONE(), false)));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
-        ident = Absyn.pathStringReplaceDot(path, "_");
+        ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
         cr1 = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         e2_1 = Expression.crefExp(cr1);
         stms = DAE.STMT_ASSIGN(tp, e2_1, e1_1, source);
@@ -12107,7 +12107,7 @@ algorithm
       String aliasStr;
     case (_,_,_)
       equation
-        aliasStr = Absyn.pathStringReplaceDot(BaseHashTable.get(str, inHt),"_");
+        aliasStr = Absyn.pathStringUnquoteReplaceDot(BaseHashTable.get(str, inHt),"_");
       then (SOME(aliasStr),inHt);
     else
       equation
