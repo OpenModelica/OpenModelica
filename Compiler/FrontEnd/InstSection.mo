@@ -96,7 +96,6 @@ public function instEquation
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -113,13 +112,12 @@ public function instEquation
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) :=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEquation,inBoolean,unrollForLoops,inGraph)
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inSets,inState,inEquation,inBoolean,unrollForLoops,inGraph)
     local
       Env.Env env;
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
-      DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.EEquation eq,eqn;
       Boolean impl;
@@ -128,13 +126,13 @@ algorithm
       InstanceHierarchy ih;
       String str;
 
-    case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQUATION(eEquation = eq),impl,_,graph) /* impl */
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQUATION(eEquation = eq),impl,_,graph) /* impl */
       equation
-        (cache,env,ih,dae,csets_1,ci_state_1,graph) = instEquationCommon(cache,env,ih, mods, pre, csets, ci_state, eq, SCode.NON_INITIAL(), impl,graph);
+        (cache,env,ih,dae,csets_1,ci_state_1,graph) = instEquationCommon(cache,env,ih, pre, csets, ci_state, eq, SCode.NON_INITIAL(), impl,graph);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
 
-    case (_,_,_,_,_,_,_,SCode.EQUATION(eEquation = eqn),_,_,_)
+    case (_,_,_,_,_,_,SCode.EQUATION(eEquation = eqn),_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str= SCodeDump.equationStr(eqn,SCodeDump.defaultOptions);
@@ -151,7 +149,6 @@ protected function instEEquation
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -168,28 +165,27 @@ protected function instEEquation
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (cache,outEnv,outIH,outDae,outSets,outState,outGraph) :=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inBoolean,unrollForLoops,inGraph)
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inSets,inState,inEEquation,inBoolean,unrollForLoops,inGraph)
     local
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
       Env.Env env;
-      DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.EEquation eq;
       Boolean impl;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
 
-    case (cache,env,ih,mods,pre,csets,ci_state,eq,impl,_,graph)
+    case (cache,env,ih,pre,csets,ci_state,eq,impl,_,graph)
       equation
         (cache,env,ih,dae,csets_1,ci_state_1,graph) =
-        instEquationCommon(cache,env,ih, mods, pre, csets, ci_state, eq, SCode.NON_INITIAL(), impl, graph);
+        instEquationCommon(cache,env,ih, pre, csets, ci_state, eq, SCode.NON_INITIAL(), impl, graph);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
 
     // failure
-    case(cache,_,_,_,_,_,_,eq,_,_,_)
+    case(cache,_,_,_,_,_,eq,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("Inst.instEEquation failed for " +& SCodeDump.equationStr(eq,SCodeDump.defaultOptions));
@@ -205,7 +201,6 @@ public function instInitialEquation
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -222,13 +217,12 @@ public function instInitialEquation
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEquation,inBoolean,unrollForLoops,inGraph)
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inSets,inState,inEquation,inBoolean,unrollForLoops,inGraph)
     local
       Env.Env env;
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
-      DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.EEquation eq;
       Boolean impl;
@@ -236,9 +230,9 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
 
-    case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQUATION(eEquation = eq),impl,_,graph)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQUATION(eEquation = eq),impl,_,graph)
       equation
-        (cache,env,ih,dae,csets_1,ci_state_1,graph) = instEquationCommon(cache, env, ih, mods, pre, csets, ci_state, eq, SCode.INITIAL(), impl, graph);
+        (cache,env,ih,dae,csets_1,ci_state_1,graph) = instEquationCommon(cache, env, ih, pre, csets, ci_state, eq, SCode.INITIAL(), impl, graph);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
 
@@ -256,7 +250,6 @@ protected function instEInitialEquation
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -273,13 +266,12 @@ protected function instEInitialEquation
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
-  match (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inBoolean,unrollForLoops,inGraph)
+  match (inCache,inEnv,inIH,inPrefix,inSets,inState,inEEquation,inBoolean,unrollForLoops,inGraph)
     local
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
       Env.Env env;
-      DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.EEquation eq;
       Boolean impl;
@@ -287,9 +279,9 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
 
-    case (cache,env,ih,mods,pre,csets,ci_state,eq,impl,_,graph) /* impl */
+    case (cache,env,ih,pre,csets,ci_state,eq,impl,_,graph) /* impl */
       equation
-        (cache,env,ih,dae,csets_1,ci_state_1,graph) = instEquationCommon(cache,env,ih, mods, pre, csets, ci_state, eq, SCode.INITIAL(), impl, graph);
+        (cache,env,ih,dae,csets_1,ci_state_1,graph) = instEquationCommon(cache,env,ih, pre, csets, ci_state, eq, SCode.INITIAL(), impl, graph);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
 
@@ -306,7 +298,6 @@ protected function instEquationCommon
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -323,7 +314,7 @@ protected function instEquationCommon
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
-  instEquationCommon2(inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,Error.getNumErrorMessages());
+  instEquationCommon2(inCache,inEnv,inIH,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,Error.getNumErrorMessages());
 end instEquationCommon;
 
 protected function instEquationCommon2
@@ -336,7 +327,6 @@ protected function instEquationCommon2
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -354,19 +344,19 @@ protected function instEquationCommon2
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
-  matchcontinue(inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,errorCount)
+  matchcontinue(inCache,inEnv,inIH,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,errorCount)
     local
       String s;
       ClassInf.State state;
 
-    case (_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_)
       equation
         state = ClassInf.trans(inState,ClassInf.FOUND_EQUATION());
-        (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) = instEquationCommonWork(inCache,inEnv,inIH,inMod,inPrefix,inSets,state,inEEquation,inInitial,inBoolean,inGraph,DAE.FLATTEN(inEEquation,NONE()));
+        (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) = instEquationCommonWork(inCache,inEnv,inIH,inPrefix,inSets,state,inEEquation,inInitial,inBoolean,inGraph,DAE.FLATTEN(inEEquation,NONE()));
         (outDae,_,_) = DAEUtil.traverseDAE(outDae,DAE.emptyFuncTree,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,(ExpressionSimplifyTypes.optionSimplifyOnly)));
       then (outCache,outEnv,outIH,outDae,outSets,outState,outGraph);
 
-    case (_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_)
       equation
         failure(_ = ClassInf.trans(inState,ClassInf.FOUND_EQUATION()));
         s = ClassInf.printStateStr(inState);
@@ -396,7 +386,6 @@ protected function instEquationCommonWork
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -414,14 +403,13 @@ protected function instEquationCommonWork
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,flattenOp)
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,flattenOp)
     local
       list<DAE.Properties> props;
       Connect.Sets csets_1,csets;
       DAE.DAElist dae;
       ClassInf.State ci_state_1,ci_state,ci_state_2;
       Env.Env env,env_1,env_2;
-      DAE.Mod mods,mod;
       Prefix.Prefix pre;
       Absyn.ComponentRef c1,c2,cr,cr1,cr2;
       SCode.Initial initial_;
@@ -464,15 +452,15 @@ algorithm
       SCode.Comment comment;
 
     // connect statements
-    case (cache,env,ih,_,pre,csets,ci_state,SCode.EQ_CONNECT(crefLeft = c1,crefRight = c2,info = info),initial_,impl,graph,_)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_CONNECT(crefLeft = c1,crefRight = c2,info = info),initial_,impl,graph,_)
       equation
-        (cache,env,ih,csets_1,dae,graph) = instConnect(cache,env,ih, csets,  pre, c1, c2, impl, graph, info);
+        (cache,env,ih,csets_1,dae,graph) = instConnect(cache,env,ih, csets, pre, c1, c2, impl, graph, info);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
 
     // equality equations e1 = e2
-    case (cache,env,ih,_,pre,csets,ci_state,SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info,comment=comment),initial_,impl,graph,_)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info,comment=comment),initial_,impl,graph,_)
       equation
          // Do static analysis and constant evaluation of expressions.
         // Gives expression and properties
@@ -510,7 +498,7 @@ algorithm
 
 
     /*
-    case (cache,env,ih,mods,pre,csets,ci_state,eqn as SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info),initial_,impl,graph)
+    case (cache,env,ih,pre,csets,ci_state,eqn as SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info),initial_,impl,graph)
       equation
         failure(checkTupleCallEquation(e1,e2));
         s = SCodeDump.equationStr(eqn);
@@ -518,8 +506,8 @@ algorithm
       then fail();*/
 
     // if-equation
-    // if the condition is constant this case will select the correct branch and remove the if-equation
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.NON_INITIAL(),impl,graph,_)
+    // If the condition is a parameter expression this case will select the correct branch and remove the if-equation.
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.NON_INITIAL(),impl,graph,_)
       equation
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         DAE.PROP(DAE.T_BOOL(varLst = _),cnst) = Types.propsAnd(props);
@@ -530,7 +518,7 @@ algorithm
         generateNoConstantBindingError(containsEmpty, info);
         blist = List.map(valList,ValuesUtil.valueBool);
         b = Util.selectList(blist, tb, fb);
-        (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, b, impl, alwaysUnroll, graph);
+        (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache, env, ih, pre, csets, ci_state, instEEquation, b, impl, alwaysUnroll, graph);
       then
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph);
 
@@ -539,19 +527,19 @@ algorithm
     // a parameter without a binding, and which DAEUtil.ifEqToExpr can't handle.
     // If the model would have been instantiated one of the branches would have
     // been chosen, so this case therefore chooses one of the branches.
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.NON_INITIAL(),impl,graph,_)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.NON_INITIAL(),impl,graph,_)
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
         (cache, _,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         DAE.PROP(DAE.T_BOOL(varLst = _),DAE.C_PARAM()) = Types.propsAnd(props);
         b = Util.selectList({true}, tb, fb);
-        (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, b, impl, alwaysUnroll, graph);
+        (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache, env, ih, pre, csets, ci_state, instEEquation, b, impl, alwaysUnroll, graph);
       then
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph);
 
     // initial if-equation
-    // if the condition is constant this case will select the correct branch and remove the initial if-equation
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.INITIAL(),impl,graph,_)
+    // If the condition is a parameter expression this case will select the correct branch and remove the initial if-equation.
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.INITIAL(),impl,graph,_)
       equation
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         DAE.PROP(DAE.T_BOOL(varLst = _),cnst) = Types.propsAnd(props);
@@ -559,12 +547,12 @@ algorithm
         (cache,valList,_) = Ceval.cevalList(cache, env, expl1, impl, NONE(), Absyn.NO_MSG(),0);
         blist = List.map(valList,ValuesUtil.valueBool);
         b = Util.selectList(blist, tb, fb);
-        (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEInitialEquation, b, impl, alwaysUnroll, graph);
+        (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, pre, csets, ci_state, instEInitialEquation, b, impl, alwaysUnroll, graph);
       then
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph);
 
-    // if equation when condition is not constant
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info = info),SCode.NON_INITIAL(),impl,graph,_)
+    // If equation when condition is not a constant or parameter expression.
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info = info),SCode.NON_INITIAL(),impl,graph,_)
       equation
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         DAE.PROP(DAE.T_BOOL(varLst = _),_) = Types.propsAnd(props);
@@ -574,14 +562,14 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
-        (cache,env_1,ih,daeLLst,_,ci_state_1,graph) = instIfTrueBranches(cache, env,ih, mod, pre, csets, ci_state, tb, false, impl, graph);
-        (cache,_,ih,DAE.DAE(daeElts2),_,_,graph) = Inst.instList(cache,env_1,ih, mod, pre, csets, ci_state, instEEquation, fb, impl, alwaysUnroll, graph) "There are no connections inside if-clauses." ;
+        (cache,env_1,ih,daeLLst,_,ci_state_1,graph) = instIfTrueBranches(cache, env,ih, pre, csets, ci_state, tb, false, impl, graph);
+        (cache,_,ih,DAE.DAE(daeElts2),_,_,graph) = Inst.instList(cache,env_1,ih, pre, csets, ci_state, instEEquation, fb, impl, alwaysUnroll, graph) "There are no connections inside if-clauses." ;
         dae = DAE.DAE({DAE.IF_EQUATION(expl1,daeLLst,daeElts2,source)});
       then
         (cache,env_1,ih,dae,csets,ci_state_1,graph);
 
     // initial if equation  when condition is not constant
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb, info = info),SCode.INITIAL(),impl,graph,_)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb, info = info),SCode.INITIAL(),impl,graph,_)
       equation
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         DAE.PROP(DAE.T_BOOL(varLst = _),_) = Types.propsAnd(props);
@@ -591,15 +579,15 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
-        (cache,env_1,ih,daeLLst,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, mod, pre, csets, ci_state, tb, true, impl, graph);
-        (cache,_,ih,DAE.DAE(daeElts2),_,_,graph) = Inst.instList(cache,env_1,ih, mod, pre, csets, ci_state, instEInitialEquation, fb, impl, alwaysUnroll, graph) "There are no connections inside if-clauses." ;
+        (cache,env_1,ih,daeLLst,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, pre, csets, ci_state, tb, true, impl, graph);
+        (cache,_,ih,DAE.DAE(daeElts2),_,_,graph) = Inst.instList(cache,env_1,ih, pre, csets, ci_state, instEInitialEquation, fb, impl, alwaysUnroll, graph) "There are no connections inside if-clauses." ;
         dae = DAE.DAE({DAE.INITIAL_IF_EQUATION(expl1,daeLLst,daeElts2,source)});
       then
         (cache,env_1,ih,dae,csets,ci_state_1,graph);
 
     // when equation statement
     // When statements are instantiated by evaluating the conditional expression.
-    case (cache,env,ih,mod,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,elseBranches = ((ee,eel) :: eex),info=info),(initial_ as SCode.NON_INITIAL()),impl,graph,_)
+    case (cache,env,ih,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,elseBranches = ((ee,eel) :: eex),info=info),(initial_ as SCode.NON_INITIAL()),impl,graph,_)
       equation
         checkWhenEquation(eq);
         (cache,e_1,prop1,_) = Static.elabExp(cache, env, e, impl, NONE(), true, pre, info);
@@ -610,9 +598,9 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
-        (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, el, impl, alwaysUnroll, graph);
+        (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache, env, ih, pre, csets, ci_state, instEEquation, el, impl, alwaysUnroll, graph);
         lhsCrefs = DAEUtil.verifyWhenEquation(daeElts1);
-        (cache,env_2,ih,DAE.DAE(daeElts3 as (daeElt2 :: _)),_,ci_state_1,graph) = instEquationCommon(cache,env_1,ih, mod, pre, csets, ci_state,
+        (cache,env_2,ih,DAE.DAE(daeElts3 as (daeElt2 :: _)),_,ci_state_1,graph) = instEquationCommon(cache,env_1,ih, pre, csets, ci_state,
           SCode.EQ_WHEN(ee,eel,eex,SCode.noComment,info), initial_, impl, graph);
         lhsCrefsRec = DAEUtil.verifyWhenEquation(daeElts3);
         i1 = listLength(lhsCrefs);
@@ -624,7 +612,7 @@ algorithm
       then
         (cache,env_2,ih,dae,csets,ci_state_2,graph);
 
-    case (cache,env,ih,mod,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,elseBranches = {}, info = info),(initial_ as SCode.NON_INITIAL()),impl,graph,_)
+    case (cache,env,ih,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,elseBranches = {}, info = info),(initial_ as SCode.NON_INITIAL()),impl,graph,_)
       equation
         checkWhenEquation(eq);
         (cache,e_1,prop1,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
@@ -635,7 +623,7 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
-        (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, alwaysUnroll, graph);
+        (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache,env,ih, pre, csets, ci_state, instEEquation, el, impl, alwaysUnroll, graph);
         _ = DAEUtil.verifyWhenEquation(daeElts1);
         // TODO: fix error reporting, print(" exps: " +& stringDelimitList(List.map(lhsCrefs,ComponentReference.printComponentRefStr),", ") +& "\n");
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
@@ -647,7 +635,7 @@ algorithm
     // The loop expression is evaluated to a constant array of integers, and then the loop is unrolled.
 
     // Implicit range
-    case (_,_,_,_,_,_,_,SCode.EQ_FOR(index = i,range = NONE(),eEquationLst = el,info=info),_,_,_,_)
+    case (_,_,_,_,_,_,SCode.EQ_FOR(index = i,range = NONE(),eEquationLst = el,info=info),_,_,_,_)
       equation
         ({}) = SCode.findIteratorInEEquationLst(i,el);
         Error.addSourceMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i},info);
@@ -655,7 +643,7 @@ algorithm
         fail();
 
     // for i loop ... end for; NOTE: This construct is encoded as range being NONE()
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = NONE(),eEquationLst = el, info=info),initial_,impl,graph,_)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = NONE(),eEquationLst = el, info=info),initial_,impl,graph,_)
       equation
         (lst as _::_)=SCode.findIteratorInEEquationLst(i,el);
         tpl=List.first(lst);
@@ -664,39 +652,39 @@ algorithm
           Static.elabExp(cache,env, e, impl,NONE(),true, pre, info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
         (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), Absyn.MSG(info), 0) "FIXME: Check bounds" ;
-        (cache,dae,csets_1,graph) = unroll(cache, env_1, ih, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl, graph);
+        (cache,dae,csets_1,graph) = unroll(cache, env_1, ih, pre, csets, ci_state, i, id_t, v, el, initial_, impl, graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
 
     // for i in <expr> loop .. end for;
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = SOME(e),eEquationLst = el,info=info),initial_,impl,graph,_)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = SOME(e),eEquationLst = el,info=info),initial_,impl,graph,_)
       equation
         (cache,e_1,DAE.PROP(type_ = DAE.T_ARRAY(ty = id_t), constFlag = cnst),_) = Static.elabExp(cache,env, e, impl,NONE(),true, pre, info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
         (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), Absyn.NO_MSG(), 0) "FIXME: Check bounds" ;
-        (cache,dae,csets_1,graph) = unroll(cache, env_1, ih, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl,graph);
+        (cache,dae,csets_1,graph) = unroll(cache, env_1, ih, pre, csets, ci_state, i, id_t, v, el, initial_, impl,graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
 
     // A for-equation with a parameter range without binding, which is ok when
     // doing checkModel. Use a range {1} to check that the loop can be instantiated.
-    case (cache, env, ih, mod, pre, csets, ci_state, SCode.EQ_FOR(index = i, range = SOME(e), eEquationLst = el,info=info), initial_, impl, graph,_)
+    case (cache, env, ih, pre, csets, ci_state, SCode.EQ_FOR(index = i, range = SOME(e), eEquationLst = el,info=info), initial_, impl, graph,_)
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
         (cache, _, DAE.PROP(type_ = DAE.T_ARRAY(ty = id_t), constFlag = cnst as DAE.C_PARAM()), _) =
           Static.elabExp(cache, env, e, impl,NONE(), true, pre,info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
         v = Values.ARRAY({Values.INTEGER(1)}, {1});
-        (cache, dae, csets_1, graph) = unroll(cache, env_1, ih, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl, graph);
+        (cache, dae, csets_1, graph) = unroll(cache, env_1, ih, pre, csets, ci_state, i, id_t, v, el, initial_, impl, graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache, env, ih, dae, csets_1, ci_state_1, graph);
 
     // for i in <expr> loop .. end for;
     // where <expr> is not constant or parameter expression
-    case (cache,env,_,_,pre,_,_,SCode.EQ_FOR(index = _,range = SOME(e),eEquationLst = _,info=info),_,impl,_,_)
+    case (cache,env,_,pre,_,_,SCode.EQ_FOR(index = _,range = SOME(e),eEquationLst = _,info=info),_,impl,_,_)
       equation
         (cache,e_1,DAE.PROP(type_ = DAE.T_ARRAY(ty = _), constFlag = DAE.C_VAR()),_)
           = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
@@ -707,7 +695,7 @@ algorithm
         fail();
 
     // assert statements
-    case (cache,env,ih,_,pre,csets,ci_state,SCode.EQ_ASSERT(condition = e1,message = e2,level = e3, info = info),_,impl,graph,_)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_ASSERT(condition = e1,message = e2,level = e3, info = info),_,impl,graph,_)
       equation
         (cache,e1_1,prop1 as DAE.PROP(DAE.T_BOOL(varLst = _),_),_) = Static.elabExp(cache,env, e1, impl,NONE(),true,pre,info) "assert statement" ;
         (cache,e2_1,prop2 as DAE.PROP(DAE.T_STRING(varLst = _),_),_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
@@ -730,7 +718,7 @@ algorithm
         (cache,env,ih,dae,csets,ci_state,graph);
 
     // terminate statements
-    case (cache,env,ih,_,pre,csets,ci_state,SCode.EQ_TERMINATE(message= e1, info=info),_,impl,graph,_)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_TERMINATE(message= e1, info=info),_,impl,graph,_)
       equation
         (cache,e1_1,prop1 as DAE.PROP(DAE.T_STRING(varLst = _),_),_) = Static.elabExp(cache,env, e1, impl,NONE(),true,pre,info);
         (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl, info);
@@ -745,7 +733,7 @@ algorithm
         (cache,env,ih,dae,csets,ci_state,graph);
 
     // reinit statement
-    case (cache,env,ih,_,pre,csets,ci_state,SCode.EQ_REINIT(cref = cr,expReinit = e2,info = info),initial_,impl,graph,_)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_REINIT(cref = cr,expReinit = e2,info = info),initial_,impl,graph,_)
       equation
         (cache,SOME((e1_1 as DAE.CREF(cr_1,t),tprop1,_))) =
           Static.elabCrefNoEval(cache,env, cr, impl,false,pre,info) "reinit statement" ;
@@ -768,7 +756,7 @@ algorithm
         (cache,env,ih,dae,csets,ci_state,graph);
 
     // Connections.root(cr)
-    case (cache,env,ih,_,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
               function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("root", {})),
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}))),_,_,graph,_)
       equation
@@ -780,7 +768,7 @@ algorithm
 
     // Connections.potentialRoot(cr)
     // TODO: Merge all cases for potentialRoot below using standard way of handling named/positional arguments and type conversion Integer->Real
-    case (cache,env,ih,_,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
               function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}))),_,_,graph,_)
       equation
@@ -791,7 +779,7 @@ algorithm
         (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
 
     // Connections.potentialRoot(cr,priority) - priority as Integer positinal argument
-    case (cache,env,ih,_,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
               function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr),Absyn.INTEGER(ipriority)}, {}))),_,_,graph,_)
       equation
@@ -802,7 +790,7 @@ algorithm
         (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
 
     // Connections.potentialRoot(cr,priority =prio ) - priority as named argument
-    case (cache,env,ih,_,_,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+    case (cache,env,ih,_,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
               function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(_)}, {Absyn.NAMEDARG("priority", Absyn.REAL(_))}))),_,_,graph,_)
       equation
@@ -812,7 +800,7 @@ algorithm
         (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
 
     // Connections.branch(cr1,cr2)
-    case (cache,env,ih,_,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
               function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("branch", {})),
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}))),_,_,graph,_)
       equation
@@ -825,7 +813,7 @@ algorithm
         (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
 
     // no return calls
-    case (cache,env,ih,_,pre,csets,ci_state,SCode.EQ_NORETCALL(exp = e, info = info),_,impl,graph,_)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(exp = e, info = info),_,impl,graph,_)
       equation
         (cache,exp,_,_) = Static.elabExp(cache,env,e,impl,NONE(),false,pre,info);
         // This is probably an external function call that the user wants to evaluat at runtime
@@ -841,7 +829,7 @@ algorithm
         (cache,env,ih,dae,csets,ci_state,graph);
 
     // failure
-    case (_,env,_,_,_,_,_,eqn,_,_,_,_)
+    case (_,env,_,_,_,_,eqn,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         s = SCodeDump.equationStr(eqn,SCodeDump.defaultOptions);
@@ -1125,7 +1113,6 @@ protected function unroll "Unrolling a loop is a way of removing the non-linear 
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -1142,13 +1129,12 @@ protected function unroll "Unrolling a loop is a way of removing the non-linear 
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outDae,outSets,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inIdent,inIteratorType,inValue,inSCodeEEquationLst,inInitial,inImplicit,inGraph)
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inSets,inState,inIdent,inIteratorType,inValue,inSCodeEEquationLst,inInitial,inImplicit,inGraph)
     local
       Connect.Sets csets,csets_1,csets_2;
       Env.Env env_1,env_2,env_3,env;
       DAE.DAElist dae1,dae2,dae;
       ClassInf.State ci_state_1,ci_state;
-      DAE.Mod mods;
       Prefix.Prefix pre;
       String i;
       Values.Value fst;
@@ -1163,11 +1149,11 @@ algorithm
       DAE.Type ty;
       InstanceHierarchy ih;
 
-    case (cache,_,_,_,_,csets,_,_,_,Values.ARRAY(valueLst = {}),_,_,_,graph)
+    case (cache,_,_,_,csets,_,_,_,Values.ARRAY(valueLst = {}),_,_,_,graph)
     then (cache,DAE.emptyDae,csets,graph);  /* impl */
 
     // array equation, use instEEquation
-    case (cache,env,ih,mods,pre,csets,ci_state,i,ty,Values.ARRAY(valueLst = (fst :: rest), dimLst = dim :: dims),eqs,(initial_ as SCode.NON_INITIAL()),impl,graph)
+    case (cache,env,ih,pre,csets,ci_state,i,ty,Values.ARRAY(valueLst = (fst :: rest), dimLst = dim :: dims),eqs,(initial_ as SCode.NON_INITIAL()),impl,graph)
       equation
         dim = dim-1;
         dims = dim::dims;
@@ -1176,14 +1162,14 @@ algorithm
         env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* use instEEquation*/
         (cache,_,_,dae1,csets_1,ci_state_1,graph) =
-          Inst.instList(cache, env_2, ih, mods, pre, csets, ci_state, instEEquation, eqs, impl, alwaysUnroll, graph);
-        (cache,dae2,csets_2,graph) = unroll(cache, env, ih, mods, pre, csets_1, ci_state_1, i, ty, Values.ARRAY(rest,dims), eqs, initial_, impl,graph);
+          Inst.instList(cache, env_2, ih, pre, csets, ci_state, instEEquation, eqs, impl, alwaysUnroll, graph);
+        (cache,dae2,csets_2,graph) = unroll(cache, env, ih, pre, csets_1, ci_state_1, i, ty, Values.ARRAY(rest,dims), eqs, initial_, impl,graph);
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
         (cache,dae,csets_2,graph);
 
      // initial array equation, use instEInitialEquation
-    case (cache,env,ih,mods,pre,csets,ci_state,i,ty,Values.ARRAY(valueLst = (fst :: rest), dimLst = dim :: dims),eqs,(initial_ as SCode.INITIAL()),impl,graph)
+    case (cache,env,ih,pre,csets,ci_state,i,ty,Values.ARRAY(valueLst = (fst :: rest), dimLst = dim :: dims),eqs,(initial_ as SCode.INITIAL()),impl,graph)
       equation
         dim = dim-1;
         dims = dim::dims;
@@ -1192,8 +1178,8 @@ algorithm
         env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         // Use instEInitialEquation
         (cache,_,_,dae1,csets_1,ci_state_1,graph) =
-          Inst.instList(cache, env_2, ih, mods, pre, csets, ci_state, instEInitialEquation, eqs, impl, alwaysUnroll, graph);
-        (cache,dae2,csets_2,graph) = unroll(cache, env, ih, mods, pre, csets_1, ci_state_1, i, ty, Values.ARRAY(rest,dims), eqs, initial_, impl,graph);
+          Inst.instList(cache, env_2, ih, pre, csets, ci_state, instEInitialEquation, eqs, impl, alwaysUnroll, graph);
+        (cache,dae2,csets_2,graph) = unroll(cache, env, ih, pre, csets_1, ci_state_1, i, ty, Values.ARRAY(rest,dims), eqs, initial_, impl,graph);
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
         (cache,dae,csets_2,graph);
@@ -2225,7 +2211,6 @@ public function instAlgorithm
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -2242,7 +2227,7 @@ public function instAlgorithm
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) :=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inAlgorithm,inBoolean,unrollForLoops,inGraph)
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inSets,inState,inAlgorithm,inBoolean,unrollForLoops,inGraph)
     local
       Env.Env env;
       list<DAE.Statement> statements_1;
@@ -2261,7 +2246,7 @@ algorithm
       String s;
       Absyn.Info info;
 
-    case (cache,env,ih,_,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,_,graph) /* impl */
+    case (cache,env,ih,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,_,graph) /* impl */
       equation
         // set the source of this element
         ci_state = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
@@ -2274,7 +2259,7 @@ algorithm
       then
         (cache,env,ih,dae,csets,ci_state,graph);
 
-    case (_,_,_,_,_,_,ci_state,SCode.ALGORITHM(statements = stmt::_),_,_,_)
+    case (_,_,_,_,_,ci_state,SCode.ALGORITHM(statements = stmt::_),_,_,_)
       equation
         failure(_ = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM()));
         s = ClassInf.printStateStr(ci_state);
@@ -2297,7 +2282,6 @@ public function instInitialAlgorithm
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -2314,7 +2298,7 @@ public function instInitialAlgorithm
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inAlgorithm,inBoolean,unrollForLoops,inGraph)
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inSets,inState,inAlgorithm,inBoolean,unrollForLoops,inGraph)
     local
       Env.Env env;
       list<DAE.Statement> statements_1;
@@ -2329,7 +2313,7 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       DAE.DAElist dae;
 
-    case (cache,env,ih,_,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,_,graph)
+    case (cache,env,ih,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,_,graph)
       equation
         // set the source of this element
         source = DAEUtil.createElementSource(Absyn.dummyInfo, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
@@ -2903,12 +2887,11 @@ protected function instIfTrueBranches
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input list<list<SCode.EEquation>> inTypeALst;
-  input Boolean IE;
+  input Boolean inInitial;
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
@@ -2920,10 +2903,9 @@ protected function instIfTrueBranches
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outDaeLst,outSets,outState,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inTypeALst,IE,inBoolean,inGraph)
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inSets,inState,inTypeALst,inInitial,inBoolean,inGraph)
     local
       Env.Env env,env_1,env_2;
-      DAE.Mod mod;
       Prefix.Prefix pre;
       Connect.Sets csets,csets_1,csets_2;
       ClassInf.State ci_state,ci_state_1,ci_state_2;
@@ -2936,28 +2918,28 @@ algorithm
       InstanceHierarchy ih;
       list<DAE.Element> elts;
 
-    case (cache,env,ih,_,_,csets,ci_state,{},_,_,graph)
+    case (cache,env,ih,_,csets,ci_state,{},_,_,graph)
       then
         (cache,env,ih,{},csets,ci_state,graph);
-    case (cache,env,ih,mod,pre,csets,ci_state,(e :: es),false,impl,graph)
+    case (cache,env,ih,pre,csets,ci_state,(e :: es),false,impl,graph)
       equation
         (cache,env_1,ih,DAE.DAE(elts),csets_1,ci_state_1,graph) =
-           Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, e, impl, alwaysUnroll, graph);
+           Inst.instList(cache, env, ih, pre, csets, ci_state, instEEquation, e, impl, alwaysUnroll, graph);
         (cache,env_2,ih,llb,csets_2,ci_state_2,graph) =
-           instIfTrueBranches(cache, env_1, ih, mod, pre, csets_1, ci_state_1,  es, false, impl, graph);
+           instIfTrueBranches(cache, env_1, ih, pre, csets_1, ci_state_1,  es, false, impl, graph);
       then
         (cache,env_2,ih,elts::llb,csets_2,ci_state_2,graph);
 
-    case (cache,env,ih,mod,pre,csets,ci_state,(e :: es),true,impl,graph)
+    case (cache,env,ih,pre,csets,ci_state,(e :: es),true,impl,graph)
       equation
         (cache,env_1,ih,DAE.DAE(elts),csets_1,ci_state_1,graph) =
-           Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEInitialEquation, e, impl, alwaysUnroll, graph);
+           Inst.instList(cache, env, ih, pre, csets, ci_state, instEInitialEquation, e, impl, alwaysUnroll, graph);
         (cache,env_2,ih,llb,csets_2,ci_state_2,graph) =
-           instIfTrueBranches(cache, env_1, ih, mod, pre, csets_1, ci_state_1,  es, true, impl, graph);
+           instIfTrueBranches(cache, env_1, ih, pre, csets_1, ci_state_1,  es, true, impl, graph);
       then
         (cache,env_2,ih,elts::llb,csets_2,ci_state_2,graph);
 
-    case (_,_,_,_,_,_,_,(e :: _),_,_,_)
+    case (_,_,_,_,_,_,(e :: _),_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprintln(Flags.FAILTRACE, "InstSection.instIfTrueBranches failed on equations: " +&

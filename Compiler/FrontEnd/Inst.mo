@@ -2366,22 +2366,22 @@ algorithm
 
         //Instantiate equations (see function "instEquation")
         (cache,env5,ih,dae2,csets2,ci_state3,graph) =
-          instList(cache, env5, ih, mods, pre, csets1, ci_state2, InstSection.instEquation, eqs_1, impl, InstTypes.alwaysUnroll, graph) ;
+          instList(cache, env5, ih, pre, csets1, ci_state2, InstSection.instEquation, eqs_1, impl, InstTypes.alwaysUnroll, graph) ;
 
         //Instantiate inital equations (see function "instInitialEquation")
         (cache,env5,ih,dae3,csets3,ci_state4,graph) =
-          instList(cache, env5, ih, mods, pre, csets2, ci_state3, InstSection.instInitialEquation, initeqs_1, impl, InstTypes.alwaysUnroll, graph);
+          instList(cache, env5, ih, pre, csets2, ci_state3, InstSection.instInitialEquation, initeqs_1, impl, InstTypes.alwaysUnroll, graph);
 
         // do NOT unroll for loops for functions!
         unrollForLoops = Util.if_(SCode.isFunctionRestriction(re), InstTypes.neverUnroll, InstTypes.alwaysUnroll);
 
         //Instantiate algorithms  (see function "instAlgorithm")
         (cache,env5,ih,dae4,csets4,ci_state5,graph) =
-          instList(cache,env5,ih, mods, pre, csets3, ci_state4, InstSection.instAlgorithm, alg_1, impl, unrollForLoops, graph);
+          instList(cache,env5,ih, pre, csets3, ci_state4, InstSection.instAlgorithm, alg_1, impl, unrollForLoops, graph);
 
         //Instantiate algorithms  (see function "instInitialAlgorithm")
         (cache,env5,ih,dae5,csets5,ci_state6,graph) =
-          instList(cache,env5,ih, mods, pre, csets4, ci_state5, InstSection.instInitialAlgorithm, initalg_1, impl, unrollForLoops, graph);
+          instList(cache,env5,ih, pre, csets4, ci_state5, InstSection.instInitialAlgorithm, initalg_1, impl, unrollForLoops, graph);
 
         //Instantiate/Translate class Attributes (currently only allowed for Optimica extensions)
         (cache,env5,dae6) =
@@ -4973,7 +4973,6 @@ public function instList
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -4993,7 +4992,6 @@ public function instList
     input Env.Cache inCache;
     input Env.Env inEnv;
     input InnerOuter.InstHierarchy inIH;
-    input DAE.Mod inMod;
     input Prefix.Prefix inPrefix;
     input Connect.Sets inSets;
     input ClassInf.State inState;
@@ -5013,7 +5011,7 @@ public function instList
   replaceable type Type_a subtypeof Any;
 algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
-  match (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,instFunc,inTypeALst,inBoolean,unrollForLoops,inGraph)
+  match (inCache,inEnv,inIH,inPrefix,inSets,inState,instFunc,inTypeALst,inBoolean,unrollForLoops,inGraph)
     local
       Env.Env env,env_1,env_2;
       DAE.Mod mod;
@@ -5028,13 +5026,13 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
 
-    case (cache,env,ih,_,_,csets,ci_state,_,{},_,_,graph)
+    case (cache,env,ih,_,csets,ci_state,_,{},_,_,graph)
       then (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
 
-    case (cache,env,ih,mod,pre,csets,ci_state,_,(e :: es),impl,_,graph)
+    case (cache,env,ih,pre,csets,ci_state,_,(e :: es),impl,_,graph)
       equation
-        (cache,env_1,ih,dae1,csets_1,ci_state_1,graph) = instFunc(cache, env, ih, mod, pre, csets, ci_state, e, impl, unrollForLoops, graph);
-        (cache,env_2,ih,dae2,csets_2,ci_state_2,graph) = instList(cache, env_1, ih, mod, pre, csets_1, ci_state_1, instFunc, es, impl, unrollForLoops, graph);
+        (cache,env_1,ih,dae1,csets_1,ci_state_1,graph) = instFunc(cache, env, ih, pre, csets, ci_state, e, impl, unrollForLoops, graph);
+        (cache,env_2,ih,dae2,csets_2,ci_state_2,graph) = instList(cache, env_1, ih, pre, csets_1, ci_state_1, instFunc, es, impl, unrollForLoops, graph);
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
         (cache,env_2,ih,dae,csets_2,ci_state_2,graph);
