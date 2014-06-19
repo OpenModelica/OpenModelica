@@ -1,4 +1,4 @@
-﻿#ifndef fmi2Functions_h
+#ifndef fmi2Functions_h
 #define fmi2Functions_h
 
 /* This header file must be utilized when compiling a FMU.
@@ -100,7 +100,7 @@
                     meeting with additional improvements (by Martin Otter, DLR).
    - Dec. 3 , 2008: First version by Martin Otter (DLR) and Hans Olsson (Dynasim).
 
-   Copyright (C) 2008-2011 MODELISAR consortium,
+   Copyright © 2008-2011 MODELISAR consortium,
                2012-2013 Modelica Association Project "FMI"
                All rights reserved.
    This file is licensed by the copyright holders under the BSD 2-Clause License
