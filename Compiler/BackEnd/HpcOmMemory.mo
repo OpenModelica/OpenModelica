@@ -38,7 +38,6 @@ encapsulated package HpcOmMemory
   public import SimCode;
 
   protected import BackendDAEUtil;
-  protected import BackendDump;
   protected import BackendEquation;
   protected import BaseHashTable;
   protected import ComponentReference;

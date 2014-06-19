@@ -42,7 +42,6 @@ public
 import Absyn;
 import FCore;
 import FNode;
-import FGraph;
 
 protected
 import List;

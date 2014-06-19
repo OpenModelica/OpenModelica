@@ -48,10 +48,7 @@ import FCore;
 protected
 import Builtin;
 import Env;
-import FNode;
 import FGraph;
-import FLookup;
-import FResolve;
 import FExpand;
 import FGraphBuild;
 import FGraphDump;

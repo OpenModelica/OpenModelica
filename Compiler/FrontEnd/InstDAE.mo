@@ -56,7 +56,6 @@ protected import Flags;
 protected import InstBinding;
 protected import InstUtil;
 protected import List;
-protected import NFInstUtil;
 protected import Types;
 
 protected type Ident = DAE.Ident "an identifier";

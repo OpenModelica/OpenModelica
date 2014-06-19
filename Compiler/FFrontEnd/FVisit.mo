@@ -45,11 +45,9 @@ import FNode;
 
 // protected imports
 protected
-import Global;
 import List;
 import Util;
 import Error;
-import System;
 
 public
 type Id = FCore.Id;

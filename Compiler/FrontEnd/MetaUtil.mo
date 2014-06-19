@@ -49,7 +49,6 @@ protected import Error;
 protected import Flags;
 protected import List;
 protected import Types;
-protected import Util;
 
 public function isList "author: KS
   Return true if list

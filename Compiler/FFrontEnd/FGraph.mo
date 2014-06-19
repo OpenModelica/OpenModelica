@@ -46,8 +46,6 @@ import FNode;
 import FVisit;
 
 protected
-import System;
-import Debug;
 import FGraphStream;
 
 public

@@ -43,7 +43,6 @@ public import SimCode;
 
 protected import Absyn;
 protected import BackendDAEUtil;
-protected import BackendDump;
 protected import BackendVarTransform;
 protected import ComponentReference;
 protected import DAE;

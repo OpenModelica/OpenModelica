@@ -41,17 +41,10 @@ encapsulated package FMod
 
 // public imports
 public
-import Absyn;
-import DAE;
-import SCode;
-import Util;
 import FCore;
 
 // protected imports
 protected
-import Error;
-import List;
-import FGraph;
 
 public
 type Name = FCore.Name;

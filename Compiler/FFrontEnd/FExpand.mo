@@ -42,11 +42,9 @@ encapsulated package FExpand
 public
 import Absyn;
 import FCore;
-import FNode;
 
 protected
 import System;
-import FLookup;
 import FResolve;
 import FGraph;
 import List;

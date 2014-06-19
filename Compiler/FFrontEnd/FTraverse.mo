@@ -46,7 +46,6 @@ public import FGraph;
 
 // protected imports
 protected
-import System;
 
 public
 type Ident = String " An identifier is just a string " ;
