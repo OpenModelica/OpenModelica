@@ -1,4 +1,4 @@
-#ifndef fmi2FunctionTypes_h
+ï»¿#ifndef fmi2FunctionTypes_h
 #define fmi2FunctionTypes_h
 
 #include "fmi2TypesPlatform.h"
@@ -46,7 +46,7 @@
    - Nov. 14, 2011: First public Version
 
 
-   Copyright © 2011 MODELISAR consortium,
+   Copyright (C) 2011 MODELISAR consortium,
                2012-2013 Modelica Association Project "FMI"
                All rights reserved.
    This file is licensed by the copyright holders under the BSD 2-Clause License
