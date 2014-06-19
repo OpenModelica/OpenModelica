@@ -3013,7 +3013,7 @@ protected function checkForConnectInIfBranch
    if-equations with non-parameter conditions."
   input list<SCode.EEquation> inEquations;
 algorithm
-  _ := List.map_0(inEquations, checkForConnectInIfBranch2);
+  List.map_0(inEquations, checkForConnectInIfBranch2);
 end checkForConnectInIfBranch;
 
 protected function checkForConnectInIfBranch2
