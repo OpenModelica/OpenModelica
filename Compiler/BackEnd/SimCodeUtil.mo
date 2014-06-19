@@ -3700,6 +3700,7 @@ algorithm
     case(cref::rest, _, _, _)
       equation
         ident = ComponentReference.printComponentRefStr(cref);
+        ident = System.unquoteIdentifier(ident);
         ident = System.stringReplace(ident, ".", "$P");
         ident = System.stringReplace(ident, "[", "$rB");
         ident = System.stringReplace(ident, "]", "$lB");
