@@ -159,7 +159,7 @@ int (*functionInitialEquations)(DATA *data);
 
 /*! \fn functionRemovedInitialEquations
  *
- * This function contains removed equations from the initialization problem, 
+ * This function contains removed equations from the initialization problem,
  * which need to be checked to verify the consistency of the initialization
  * problem.
  *

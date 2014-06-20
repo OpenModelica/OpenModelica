@@ -6403,7 +6403,7 @@ algorithm
       // generate equations from the alias variables
       ((uniqueEqIndex, aliasEquations)) = BackendVariable.traverseBackendDAEVars(aliasVars, traverseAliasVarsToSimEqSystem, (uniqueEqIndex, {}));
       allEquations = listAppend(allEquations, aliasEquations);
-      
+
       // generate equations from removed initial equations
       (removedInitialEquations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(inRemovedEqnLst, uniqueEqIndex, tempvars);
 
