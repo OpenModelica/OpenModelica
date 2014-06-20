@@ -3181,7 +3181,7 @@ end getTaskAssignmentMCP1;
 // quicksort with order
 //---------------------------
 
-protected function quicksortWithOrder "sorts a list of Reals with the quicksort algorithm and outputs an additional list with the changed order of the original indeces.
+public function quicksortWithOrder "sorts a list of Reals with the quicksort algorithm and outputs an additional list with the changed order of the original indeces.
 author: Waurich TUD 2013-11"
   input list<Real> lstIn;
   output list<Real> lstOut;

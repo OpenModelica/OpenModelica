@@ -50,7 +50,9 @@ protected import DAEDump;
 protected import Debug;
 protected import Expression;
 protected import ExpressionSolve;
+protected import Flags;
 protected import HpcOmBenchmark;
+protected import HpcOmScheduler;
 protected import List;
 protected import SCode;
 protected import System;
@@ -2846,15 +2848,16 @@ algorithm
   end matchcontinue;
 end printNodeMark;
 
-
 public function intLstString "function to print a list<Integer>
 author:Waurich TUD 2013-07"
   input list<Integer> lstIn;
   output String strOut;
+protected
+  String str;
 algorithm
-  strOut := stringDelimitList(List.map(lstIn,intString),",");
+  str := stringDelimitList(List.map(lstIn,intString),",");
+  strOut := Util.if_(List.isEmpty(lstIn),"---",str);
 end intLstString;
-
 
 public function printLevelInfo " prints the information about the level of the nodes.
 author: Waurich TUD 2013-07"
@@ -2954,6 +2957,174 @@ author: Waurich TUD 2013-07"
 algorithm
   print(intString(cpIdx)+&". path: "+&intLstString(listGet(criticalPathsIn,cpIdx))+&"\n");
 end printCriticalPathInfo1;
+
+
+
+// functions to merge single nodes
+//------------------------------------------
+//------------------------------------------
+
+public function mergeSingleNodes"merges all single nodes. the max number of remaining single ndoes is numProc."
+  input TaskGraph iTaskGraph;
+  input TaskGraphMeta iTaskGraphMeta;
+  output TaskGraph oTaskGraph;
+  output TaskGraphMeta oTaskGraphMeta;
+  output Boolean changed;
+protected
+  Integer numProc;
+  list<Integer> singleNodes,singleNodes1,pos;
+  list<list<Integer>> clusterLst;
+  list<Real> exeCosts;
+  array<Real> costs;
+  array<list<Integer>> cluster;
+  TaskGraph taskGraphT;
+algorithm
+  printTaskGraph(iTaskGraph);
+  printTaskGraphMeta(iTaskGraphMeta);
+  numProc := Flags.getConfigInt(Flags.NUM_PROC);
+  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+  //get the single nodes, sort them according to their exeCosts in decreasing order
+  (_,singleNodes) := List.filterOnTrueSync(arrayList(iTaskGraph),List.isEmpty,List.intRange(arrayLength(iTaskGraph)));  //nodes without successor
+  (_,singleNodes1) := List.filterOnTrueSync(arrayList(taskGraphT),List.isEmpty,List.intRange(arrayLength(taskGraphT))); //nodes without predecessor
+  (singleNodes,_,_) := List.intersection1OnTrue(singleNodes,singleNodes1,intEq);
+  exeCosts := List.map1(singleNodes,getExeCostReqCycles,iTaskGraphMeta);
+  (exeCosts,pos) := HpcOmScheduler.quicksortWithOrder(exeCosts);
+  singleNodes := List.map1(pos,List.getIndexFirst,singleNodes);
+  singleNodes := listReverse(singleNodes);
+  print("singleNodes "+&stringDelimitList(List.map(singleNodes,intString),"\n")+&"\n");
+  exeCosts := listReverse(exeCosts);
+  print("exeCosts "+&stringDelimitList(List.map(exeCosts,realString),"\n")+&"\n");
+  // cluster these singleNodes
+  (cluster,costs) := distributeToClusters(singleNodes,exeCosts,numProc);
+  print("cluster "+&stringDelimitList(List.map(arrayList(cluster),intLstString),"\n")+&"\n");
+  print("costs "+&stringDelimitList(List.map(arrayList(costs),realString),"\n")+&"\n");
+  //update taskgraph and taskgraphMeta
+  clusterLst := arrayList(cluster);
+  print("clusterLst "+&stringDelimitList(List.map(clusterLst,intLstString),"\n")+&"\n");
+  (oTaskGraph,oTaskGraphMeta) := contractNodesInGraph(clusterLst,iTaskGraph,iTaskGraphMeta);
+  printTaskGraph(oTaskGraph);
+  printTaskGraphMeta(oTaskGraphMeta);
+  changed := intGt(listLength(singleNodes),numProc);
+end mergeSingleNodes;
+
+protected function distributeToClusters"takes a list of items and corresponding values and clusters the items. The cluster are supposed to have an most equal distribuatin of added values.
+if the items list is shorter than the numProc, a cluster list containing empty lists is output
+author:Waurich TUD 2014-06"
+  input list<Integer> items;
+  input list<Real> values;
+  input Integer numClusters;
+  output array<list<Integer>> clustersOut;
+  output array<Real> clusterValuesOut;
+protected
+  Boolean b;
+  array<Integer> itemArr;
+  array<list<Integer>> itemsCopy, clusters;
+  array<Real> clusterValues;
+algorithm
+  b := intGt(listLength(items),numClusters);
+  clusters := listArray(List.map(List.intRange(listLength(items)),List.create));
+  clusterValues := listArray(values);
+  itemArr := listArray(items);
+  itemsCopy := Util.arrayMap(itemArr,List.create);
+  clusters := Debug.bcallret2(not b,Util.arrayCopy,itemsCopy,clusters,clusters);
+  clusterValues := Debug.bcallret2(not b,Util.arrayCopy,listArray(values),clusterValues,clusterValues);
+  (clustersOut,clusterValuesOut) := Debug.bcallret3_2(b,distributeToClusters1,(items,values),(clusters,clusterValues),numClusters,clusters,clusterValues);
+end distributeToClusters;
+
+protected function distributeToClusters1
+  input tuple<list<Integer>,list<Real>> tplIn;  //<items,values>
+  input tuple<array<list<Integer>>,array<Real>> tplFold;  // <<a item mapping :item-> included items>, <item: added costs of all included items>>
+  input Integer numClusters;
+  output array<list<Integer>> clustersOut;
+  output array<Real> clusterValuesOut;
+algorithm
+  (clusters,clusterValues) := matchcontinue(tplIn,tplFold,numClusters)
+    local
+      Integer numCl, diff;
+      list<Integer> itemsIn,lst1,lst2,lst1_1,lst1_2;
+      list<list<Integer>> entries;
+      list<Real> valuesIn,values,addValues;
+      array<list<Integer>> clusters, clustersFinal;
+      array<Real> clusterValues, clusterValuesFinal;
+  case((itemsIn,valuesIn),(clusters,clusterValues),_)
+    equation
+      true = listLength(itemsIn) <= numClusters; 
+      clustersFinal = Util.arraySelect(clusters,itemsIn);
+      clusterValuesFinal = Util.arraySelect(clusterValues,itemsIn);
+    then (clustersFinal,clusterValuesFinal);
+  case((itemsIn,valuesIn),(clusters,clusterValues),_)
+    equation
+      true = listLength(itemsIn) > numClusters; 
+      true = listLength(itemsIn)/2 <= numClusters; 
+      (lst1,lst2) = List.split(itemsIn,numClusters);  // split the list of items+dummies in the middle
+      lst2 = listReverse(lst2);
+      // update the clusters array
+      entries = List.map1(lst2,Util.arrayGetIndexFirst,clusters);
+      entries = List.threadMap(entries,lst1,List.consr);
+      List.threadMap1_0(lst1,entries,Util.arrayUpdateIndexFirst,clusters);
+      // update the clusterValues array
+      values = List.map1(lst1,Util.arrayGetIndexFirst,clusterValues);
+      addValues = List.map1(lst2,Util.arrayGetIndexFirst,clusterValues);
+      values = List.threadMap(values,addValues,realAdd);
+      List.threadMap1_0(lst1,values,Util.arrayUpdateIndexFirst,clusterValues);  
+      // finish
+      (clusters,clusterValues) = distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);     
+    then (clusters,clusterValues);
+  case((itemsIn,valuesIn),(clusters,clusterValues),_)
+    equation
+      true = listLength(itemsIn) > numClusters; 
+      true = listLength(itemsIn)/2 >numClusters; 
+      numCl = nextGreaterPowerOf2(intReal(listLength(itemsIn)));
+      (lst1,lst2) = List.split(itemsIn,intDiv(numCl,2));  // split the list of items+dummies in the middle
+      (lst1_1,lst1_2) = List.split(lst1,intDiv(numCl,2)-listLength(lst2));
+      lst2 = listReverse(lst2);
+      // update the clusters array
+      entries = List.map1(lst2,Util.arrayGetIndexFirst,clusters);
+      entries = List.threadMap(entries,lst1_2,List.consr);
+      List.threadMap1_0(lst1_2,entries,Util.arrayUpdateIndexFirst,clusters);
+      // update the clusterValues array
+      values = List.map1(lst1_2,Util.arrayGetIndexFirst,clusterValues);
+      addValues = List.map1(lst2,Util.arrayGetIndexFirst,clusterValues);
+      values = List.threadMap(values,addValues,realAdd);
+      List.threadMap1_0(lst1_2,values,Util.arrayUpdateIndexFirst,clusterValues);  
+      // again
+      (clusters,clusterValues) = distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);     
+    then (clusters,clusterValues);
+  else
+    equation
+      print("distributeToClusters failed!\n");
+    then fail();
+  end matchcontinue;
+end distributeToClusters1;
+
+protected function nextGreaterPowerOf2"finds the next greater power of 2.
+author :Waurich TUD 2014-06"
+  input Real n;
+  output Integer powOf2;
+algorithm
+  powOf2 := nextGreaterPowerOf2_impl(n,1);
+end nextGreaterPowerOf2;
+
+protected function nextGreaterPowerOf2_impl
+  input Real n;
+  input Integer pow;
+  output Integer powOf2;
+algorithm
+  powOf2 := matchcontinue(n,pow)
+  local
+    Integer n2;
+  case(_,_)
+    equation
+      true = n <=. realPow(2.0,intReal(pow));
+    then realInt(realPow(2.0,intReal(pow)));
+  case(_,_)
+    equation
+      true = n >. realPow(2.0,intReal(pow));
+      n2 = nextGreaterPowerOf2_impl(n,pow+1);
+    then n2;
+  end matchcontinue;     
+end nextGreaterPowerOf2_impl;
+
 
 // functions to merge simple nodes
 //------------------------------------------
