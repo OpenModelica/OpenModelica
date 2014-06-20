@@ -2959,7 +2959,6 @@ algorithm
 end printCriticalPathInfo1;
 
 
-
 // functions to merge single nodes
 //------------------------------------------
 //------------------------------------------
@@ -2979,8 +2978,6 @@ protected
   array<list<Integer>> cluster;
   TaskGraph taskGraphT;
 algorithm
-  printTaskGraph(iTaskGraph);
-  printTaskGraphMeta(iTaskGraphMeta);
   numProc := Flags.getConfigInt(Flags.NUM_PROC);
   taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
   //get the single nodes, sort them according to their exeCosts in decreasing order
