@@ -319,6 +319,7 @@ template simulationFile_inz(SimCode simCode, String guid)
 
     <%functionInitialResidual(residualEquations, modelNamePrefix(simCode))%>
     <%functionInitialEquations(useSymbolicInitialization, initialEquations, modelNamePrefix(simCode))%>
+    <%functionRemovedInitialEquations(useSymbolicInitialization, removedInitialEquations, modelNamePrefix(simCode))%>
 
     <%functionInitialMixedSystems(initialEquations, parameterEquations, allEquations, jacobianEquations, modelNamePrefix(simCode))%>
 
@@ -628,6 +629,7 @@ template simulationFile(SimCode simCode, String guid)
     extern const char* <%symbolName(modelNamePrefixStr,"initialResidualDescription")%>(int);
     extern int <%symbolName(modelNamePrefixStr,"initial_residual")%>(DATA *data, double* initialResiduals);
     extern int <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>(DATA *data);
+    extern int <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>(DATA *data);
     extern int <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>(DATA *data);
     extern int <%symbolName(modelNamePrefixStr,"checkForAsserts")%>(DATA *data);
     extern int <%symbolName(modelNamePrefixStr,"function_ZeroCrossingsEquations")%>(DATA *data);
@@ -673,6 +675,7 @@ template simulationFile(SimCode simCode, String guid)
        <%if useSymbolicInitialization then '1' else '0'%> /* useSymbolicInitialization */,
        <%if useHomotopy then '1' else '0'%> /* useHomotopy */,
        <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
+       <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>,
        <%symbolName(modelNamePrefixStr,"checkForAsserts")%>,
        <%symbolName(modelNamePrefixStr,"function_ZeroCrossingsEquations")%>,
@@ -1762,6 +1765,7 @@ end functionInitialStateSets;
 //   - int updateBoundVariableAttributes(DATA *data)
 //   - int initial_residual(DATA *data, double *initialResiduals)
 //   - int functionInitialEquations(DATA *data)
+//   - int functionRemovedInitialEquations(DATA *data)
 // =============================================================================
 
 template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquations, list<SimEqSystem> nominalValueEquations, list<SimEqSystem> minValueEquations, list<SimEqSystem> maxValueEquations, String modelNamePrefix)
@@ -1984,6 +1988,58 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
   }
   >>
 end functionInitialEquations;
+
+template functionRemovedInitialEquationsBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Text &eqs, String modelNamePrefix)
+ "Generates an equation."
+::=
+  match eq
+  case e as SES_RESIDUAL(__) then
+    match exp
+    case DAE.SCONST(__) then
+      'res = 0;'
+    else
+      let &preExp = buffer "" /*BUFD*/
+      let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      <<
+      <% if profileAll() then 'SIM_PROF_TICK_EQ(<%e.index%>);' %>
+      <%preExp%>res = <%expPart%>;
+      <% if profileAll() then 'SIM_PROF_ACC_EQ(<%e.index%>);' %>
+      if(fabs(res) > 1e-5)
+      {
+        errorStreamPrint(LOG_INIT, 0, "The initialization problem is inconsistent due to the following equation: 0 != %g = <%ExpressionDump.printExpStr(exp)%>", res);
+        return 1;
+      }
+      >>
+    end match
+  else
+  equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &eqs, modelNamePrefix)
+  end match
+end functionRemovedInitialEquationsBody;
+
+template functionRemovedInitialEquations(Boolean useSymbolicInitialization, list<SimEqSystem> removedInitalEquations, String modelNamePrefix)
+  "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let &tmp = buffer ""
+
+  let body = (removedInitalEquations |> eq2 =>
+       functionRemovedInitialEquationsBody(eq2, &varDecls /*BUFD*/, &tmp, modelNamePrefix)
+     ;separator="\n")
+
+  <<
+  <%tmp%>
+  int <%symbolName(modelNamePrefix,"functionRemovedInitialEquations")%>(DATA *data)
+  {
+    const int *equationIndexes = NULL;
+    double res = 0.0;
+    <%varDecls%>
+
+    <%body%>
+
+    return 0;
+  }
+  >>
+end functionRemovedInitialEquations;
 
 template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
   "Generates function in simulation file."

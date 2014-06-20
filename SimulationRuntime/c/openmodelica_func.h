@@ -157,6 +157,16 @@ const int useHomotopy;
  */
 int (*functionInitialEquations)(DATA *data);
 
+/*! \fn functionRemovedInitialEquations
+ *
+ * This function contains removed equations from the initialization problem, 
+ * which need to be checked to verify the consistency of the initialization
+ * problem.
+ *
+ *  \param [ref] [data]
+ */
+int (*functionRemovedInitialEquations)(DATA *data);
+
 /*! \fn updateBoundParameters
  *
  *  This function calculates bound parameters that depend on other parameters,

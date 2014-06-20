@@ -80,8 +80,9 @@ public function solveInitialSystem "author: lochel
   input BackendDAE.BackendDAE inDAE;
   output Option<BackendDAE.BackendDAE> outInitDAE;
   output Boolean outUseHomotopy;
+  output list<BackendDAE.Equation> outRemovedInitialEquations;
 algorithm
-  (outInitDAE, outUseHomotopy) := matchcontinue(inDAE)
+  (outInitDAE, outUseHomotopy, outRemovedInitialEquations) := matchcontinue(inDAE)
     local
       BackendDAE.BackendDAE dae;
       BackendDAE.Variables initVars;
@@ -105,6 +106,7 @@ algorithm
       Boolean useHomotopy;
       list<BackendDAE.Var> dumpVars, dumpVars2;
       BackendDAE.ExtraInfo ei;
+      list<BackendDAE.Equation> removedEqns;
 
     case(_) equation
       // inline all when equations, if active with body else with lhs=pre(lhs)
@@ -171,7 +173,7 @@ algorithm
       // initdae = BackendDAE.DAE({initsyst}, shared);
 
       // fix over- and under-constrained subsystems
-      (initdae, dumpVars2) = analyzeInitialSystem(initdae, dae, initVars);
+      (initdae, dumpVars2, removedEqns) = analyzeInitialSystem(initdae, dae, initVars);
       dumpVars = listAppend(dumpVars, dumpVars2);
 
       // some debug prints
@@ -206,9 +208,9 @@ algorithm
       Debug.bcall2(b, BackendDump.dumpEqnsSolved, initdae, "initial system: eqns in order");
 
       Debug.fcall(Flags.ITERATION_VARS, BackendDAEOptimize.listAllIterationVariables, initdae);
-    then (SOME(initdae), useHomotopy);
+    then (SOME(initdae), useHomotopy, removedEqns);
 
-    else (NONE(), false);
+    else (NONE(), false, {});
   end matchcontinue;
 end solveInitialSystem;
 
@@ -1063,8 +1065,9 @@ protected function analyzeInitialSystem "author: lochel
   input BackendDAE.Variables inInitVars;
   output BackendDAE.BackendDAE outDAE;
   output list<BackendDAE.Var> outDumpVars;
+  output list<BackendDAE.Equation> outRemovedEqns;
 algorithm
-  (outDAE, (_, _, outDumpVars)) := BackendDAEUtil.mapEqSystemAndFold(initDAE, analyzeInitialSystem2, (inDAE, inInitVars, {}));
+  (outDAE, (_, _, outDumpVars, outRemovedEqns)) := BackendDAEUtil.mapEqSystemAndFold(initDAE, analyzeInitialSystem2, (inDAE, inInitVars, {}, {}));
 end analyzeInitialSystem;
 
 protected function getConsistentEquations "author: mwenzler"
@@ -1078,8 +1081,9 @@ protected function getConsistentEquations "author: mwenzler"
   input Integer counter;
   output list<Integer> outUnassignedEqns;
   output Boolean outConsistent;
+  output list<BackendDAE.Equation> outRemovedEqns;
 algorithm
-  (outUnassignedEqns, outConsistent) := matchcontinue(inUnassignedEqns, inEqns, inEqnsOrig, inM,vecVarToEqs, vars, shared, counter)
+  (outUnassignedEqns, outConsistent, outRemovedEqns) := matchcontinue(inUnassignedEqns, inEqns, inEqnsOrig, inM,vecVarToEqs, vars, shared, counter)
     local
       Integer currEqID, currVarID, currID, nVars, nEqns;
       list<Integer> unassignedEqns, unassignedEqns2, listVar;
@@ -1098,10 +1102,10 @@ algorithm
       BackendDAE.IncidenceMatrix m;
       BackendDAE.EqSystem system;
       DAE.FunctionTree funcs;
-      list<BackendDAE.Equation> list_inEqns;
+      list<BackendDAE.Equation> list_inEqns, removedEqns;
 
     case ({}, _, _, _, _, _, _, _)
-    then ({}, true);
+    then ({}, true, {});
 
     case (currID::unassignedEqns, _, _, _, _, _, _, _) equation
       nVars = BackendVariable.varsSize(vars);
@@ -1118,8 +1122,8 @@ algorithm
       eqn = BackendEquation.equationNth1(inEqnsOrig, currID);
       Error.addCompilerNotification("The following equation is consistent and got removed from the initialization problem: " +& BackendDump.equationString(eqn));
 
-      (unassignedEqns2, consistent) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs, vars, shared, counter+1);
-    then (currID::unassignedEqns2, consistent);
+      (unassignedEqns2, consistent, removedEqns) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs, vars, shared, counter+1);
+    then (currID::unassignedEqns2, consistent, removedEqns);
 
     case (currID::unassignedEqns, _, _, _, _, _, _, _) equation
       true=emptyListOfIncidenceMatrix({currID},inM,vecVarToEqs, false);
@@ -1135,8 +1139,9 @@ algorithm
       eqn2 = BackendEquation.equationNth1(inEqnsOrig, currID);
       Error.addCompilerError("The initialization problem is inconsistent due to the following equation: " +& BackendDump.equationString(eqn2) +& " (" +& BackendDump.equationString(eqn) +& ")");
 
-      (unassignedEqns2, consistent) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs, vars, shared, counter);
-    then ({}, false);
+      // just to get all errors
+      (_, _, _) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs, vars, shared, counter);
+    then ({}, false, {});
 
     case (currID::unassignedEqns, _, _, _, _, _, _, _) equation
       true=emptyListOfIncidenceMatrix({currID},inM,vecVarToEqs, false);
@@ -1161,8 +1166,8 @@ algorithm
       eqn2 = BackendEquation.equationNth1(inEqnsOrig, currID);
       Error.addCompilerNotification("It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
 
-      (unassignedEqns2, consistent) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs, vars, shared, counter);
-    then ({}, false);
+      (_, _, _) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs, vars, shared, counter);
+    then ({}, false, {});
 
     case (currID::unassignedEqns, _, _, _, _, _, _, _) equation
       //true = intEq(listLength(inM[currID]), 0);
@@ -1177,14 +1182,15 @@ algorithm
       true=intGt(listLength(listParameter),0);
 
       eqn2 = BackendEquation.equationNth1(inEqnsOrig, currID);
-      Error.addCompilerError("It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters during compile time: " +& BackendDump.equationString(eqn2) +& " (" +& BackendDump.equationString(eqn) +& ")");
+      Error.addCompilerWarning("It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters during compile time: " +& BackendDump.equationString(eqn2) +& " (" +& BackendDump.equationString(eqn) +& ")");
 
-     then ({}, false);
+     (unassignedEqns2, consistent, removedEqns) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs, vars, shared, counter+1);
+    then (currID::unassignedEqns2, consistent, eqn::removedEqns);
 
     case (currID::unassignedEqns, _, _, _, _ , _, _, _) equation
       false=emptyListOfIncidenceMatrix({currID},inM,vecVarToEqs, true);
-      (unassignedEqns2, consistent) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs,vars, shared, counter);
-    then (unassignedEqns2, consistent);
+      (unassignedEqns2, consistent, removedEqns) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM, vecVarToEqs,vars, shared, counter);
+    then (unassignedEqns2, consistent, removedEqns);
   end matchcontinue;
 end getConsistentEquations;
 
@@ -1632,16 +1638,18 @@ protected function fixOverDeterminedInitialSystem "author: mwenzler"
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   input BackendDAE.Shared shared;
+  input list<BackendDAE.Equation> inRemovedEqns;
   output BackendDAE.EquationArray outEqns;
+  output list<BackendDAE.Equation> outRemovedEqns;
 algorithm
-  outEqns := matchcontinue(vars, eqns, inOrigEqns, inNUnassignedEqns, inMOrig, inM, inMt, me, meT, mapEqnIncRow, mapIncRowEqn, shared)
+  (outEqns, outRemovedEqns) := matchcontinue(vars, eqns, inOrigEqns, inNUnassignedEqns, inMOrig, inM, inMt, me, meT, mapEqnIncRow, mapIncRowEqn, shared, inRemovedEqns)
     local
     Integer nVars, nEqns, nUnassignedEqns;
     array<Integer> vec1, vec2, marker;
     list<Integer> vec1Lst, vec2Lst, flatComps, outMarkerComps, outMarkerEq, markerEq;
     list<Integer> unassignedEqns, outUnassignedEqns, resiUnassignedEqns, marker_list;
     list<list<Integer>> comps;
-    BackendDAE.EquationArray substEqns, origEqns;
+    BackendDAE.EquationArray substEqns, origEqns, eqns2;
     BackendVarTransform.VariableReplacements repl, outRepl;
     list<BackendDAE.Equation> eqns_list, eqns_1;
     Boolean boolUnassignedEqns, divideByZero;
@@ -1649,14 +1657,15 @@ algorithm
     DAE.Ident ident;
     BackendDAE.IncidenceMatrix mCopy, m2;
     BackendDAE.IncidenceMatrixT mtCopy, mt2;
+    list<BackendDAE.Equation> removedEqns;
 
-    case (_, _, _, _, _, _, _, _, _, _, _, _) equation
+    case (_, _, _, _, _, _, _, _, _, _, _, _, _) equation
       nVars = BackendVariable.varsSize(vars);
       nEqns = BackendDAEUtil.equationSize(eqns);
       true = intEq(nVars, nEqns);
-    then eqns;
+    then (eqns, inRemovedEqns);
 
-    case (_, _, _, _, _, _, _, _, _, _, _, _) equation
+    case (_, _, _, _, _, _, _, _, _, _, _, _, _) equation
       nVars = BackendVariable.varsSize(vars);
       nEqns = BackendDAEUtil.equationSize(eqns);
       true = intLt(nVars, nEqns);
@@ -1696,13 +1705,15 @@ algorithm
       unassignedEqns=adaptUnassignedEqns(unassignedEqns, {}, mapIncRowEqn);
       eqns_1=removeEqswork(unassignedEqns,eqns_list,vars,outRepl);
       substEqns = BackendEquation.listEquation(eqns_1);
-      (outUnassignedEqns, true) = getConsistentEquations(unassignedEqns, substEqns, eqns, m2, vec1,vars, shared, 1);
+      (outUnassignedEqns, true, removedEqns) = getConsistentEquations(unassignedEqns, substEqns, eqns, m2, vec1,vars, shared, 1);
 
       // remove all unassigned equations
       substEqns = BackendEquation.equationDelete(substEqns, outUnassignedEqns);
       origEqns = BackendEquation.equationDelete(inOrigEqns, outUnassignedEqns);
+      removedEqns = listAppend(removedEqns, inRemovedEqns);
 
-    then fixOverDeterminedInitialSystem(vars, substEqns, inOrigEqns, nUnassignedEqns, inMOrig, m2, mt2, me, meT, mapEqnIncRow, mapIncRowEqn, shared);
+      (eqns2, removedEqns) = fixOverDeterminedInitialSystem(vars, substEqns, inOrigEqns, nUnassignedEqns, inMOrig, m2, mt2, me, meT, mapEqnIncRow, mapIncRowEqn, shared, removedEqns);
+    then (eqns2, removedEqns);
 
     else // equation
       // Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function fixOverDeterminedInitialSystem failed");
@@ -1812,9 +1823,9 @@ end manipulatedAdjacencyMatrix2;
 
 protected function analyzeInitialSystem2 "author: lochel"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared, tuple<BackendDAE.BackendDAE, BackendDAE.Variables, list<BackendDAE.Var>>> sharedOptimized;
+  input tuple<BackendDAE.Shared, tuple<BackendDAE.BackendDAE, BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>>> sharedOptimized;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared, tuple<BackendDAE.BackendDAE, BackendDAE.Variables, list<BackendDAE.Var>>> osharedOptimized;
+  output tuple<BackendDAE.Shared, tuple<BackendDAE.BackendDAE, BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>>> osharedOptimized;
 algorithm
   (osyst, osharedOptimized) := matchcontinue(isyst, sharedOptimized)
     local
@@ -1832,9 +1843,10 @@ algorithm
       BackendDAE.AdjacencyMatrixTEnhanced meT;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
+      list<BackendDAE.Equation> removedEqns;
 
     // over-determined system [experimental support]
-    case(sys as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (shared, (inDAE, initVars, dumpVars))) equation
+    case(sys as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (shared, (inDAE, initVars, dumpVars, removedEqns))) equation
       nVars = BackendVariable.varsSize(vars);
       nEqns = BackendDAEUtil.equationSize(eqns);
       true = intGt(nEqns, nVars);
@@ -1853,12 +1865,12 @@ algorithm
       SOME(m1)=BackendDAEUtil.copyIncidenceMatrix(SOME(m));
       SOME(mt1)=BackendDAEUtil.copyIncidenceMatrix(SOME(mt));
 
-      origEqns=fixOverDeterminedInitialSystem(vars, eqns, eqns, nEqns, mOrig, m1, mt1, me, meT, mapEqnIncRow, mapIncRowEqn, shared);
+      (origEqns, removedEqns) = fixOverDeterminedInitialSystem(vars, eqns, eqns, nEqns, mOrig, m1, mt1, me, meT, mapEqnIncRow, mapIncRowEqn, shared, removedEqns);
       system = BackendDAE.EQSYSTEM(vars, origEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
-    then (system, (shared, (inDAE, initVars, dumpVars)));
+    then (system, (shared, (inDAE, initVars, dumpVars, removedEqns)));
 
     // under-determined system
-    case(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (shared, (inDAE, initVars, dumpVars))) equation
+    case(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (shared, (inDAE, initVars, dumpVars, removedEqns))) equation
       nVars = BackendVariable.varsSize(vars);
       nEqns = BackendDAEUtil.equationSize(eqns);
       true = intLt(nEqns, nVars);
@@ -1866,7 +1878,7 @@ algorithm
       (eqns, dumpVars2) = fixUnderDeterminedInitialSystem(inDAE, vars, eqns, initVars, shared);
       dumpVars = listAppend(dumpVars, dumpVars2);
       system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
-    then (system, (shared, (inDAE, initVars, dumpVars)));
+    then (system, (shared, (inDAE, initVars, dumpVars, removedEqns)));
 
     else (isyst, sharedOptimized);
   end matchcontinue;

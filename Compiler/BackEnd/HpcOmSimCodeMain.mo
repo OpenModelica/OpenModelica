@@ -95,6 +95,7 @@ algorithm
       Boolean useSymbolicInitialization;                    // true if a system to solve the initial problem symbolically is generated, otherwise false
       Boolean useHomotopy;                                  // true if homotopy(...) is used during initialization
       list<SimCode.SimEqSystem> initialEquations;           // --> initial_equations
+      list<SimCode.SimEqSystem> removedInitialEquations;    // --> functionRemovedInitialEquations
       list<SimCode.SimEqSystem> startValueEquations;        // --> updateBoundStartValues
       list<SimCode.SimEqSystem> nominalValueEquations;      // --> updateBoundNominalValues
       list<SimCode.SimEqSystem> minValueEquations;          // --> updateBoundMinValues
@@ -170,7 +171,8 @@ algorithm
 
       //Initial System
       //--------------
-      (initDAE, _) = Initialization.solveInitialSystem(inBackendDAE);
+      (initDAE, _, _) = Initialization.solveInitialSystem(inBackendDAE);
+      removedInitialEquations = {};
       handleInitialSystem(initDAE, filenamePrefix);
 
       //Setup
@@ -266,7 +268,7 @@ algorithm
       //HpcOmScheduler.printSchedule(schedule);
 
       Debug.execStat("hpcom dump schedule TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
-      SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+      SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, _, _, crefToSimVarHT, backendMapping) = simCode;
 
@@ -275,7 +277,7 @@ algorithm
 
       optTmpMemoryMap = HpcOmMemory.createMemoryMap(modelInfo, taskGraphSimplified, taskGraphDataSimplified, eqs, filenamePrefix, schedulerInfo, schedule, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, allComps);
 
-      simCode = SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+      simCode = SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, SOME(schedule), optTmpMemoryMap, crefToSimVarHT, backendMapping);
 

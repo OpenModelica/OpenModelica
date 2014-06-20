@@ -759,8 +759,9 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
     if(stateSelection(data, 1, 1) == 1)
       warningStreamPrint(LOG_STDOUT, 0, "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.");
   }
-
-  return 0;
+  
+  /* check for over-determined systems */
+  return data->callback->functionRemovedInitialEquations(data);
 }
 
 /*! \fn static char *mapToDymolaVars(const char *varname)
