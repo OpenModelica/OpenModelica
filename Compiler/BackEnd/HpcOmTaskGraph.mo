@@ -3048,14 +3048,14 @@ algorithm
       array<Real> clusterValues, clusterValuesFinal;
   case((itemsIn,valuesIn),(clusters,clusterValues),_)
     equation
-      true = listLength(itemsIn) <= numClusters; 
+      true = listLength(itemsIn) <= numClusters;
       clustersFinal = Util.arraySelect(clusters,itemsIn);
       clusterValuesFinal = Util.arraySelect(clusterValues,itemsIn);
     then (clustersFinal,clusterValuesFinal);
   case((itemsIn,valuesIn),(clusters,clusterValues),_)
     equation
-      true = listLength(itemsIn) > numClusters; 
-      true = listLength(itemsIn)/2 <= numClusters; 
+      true = listLength(itemsIn) > numClusters;
+      true = listLength(itemsIn)/2 <= numClusters;
       (lst1,lst2) = List.split(itemsIn,numClusters);  // split the list of items+dummies in the middle
       lst2 = listReverse(lst2);
       // update the clusters array
@@ -3066,14 +3066,14 @@ algorithm
       values = List.map1(lst1,Util.arrayGetIndexFirst,clusterValues);
       addValues = List.map1(lst2,Util.arrayGetIndexFirst,clusterValues);
       values = List.threadMap(values,addValues,realAdd);
-      List.threadMap1_0(lst1,values,Util.arrayUpdateIndexFirst,clusterValues);  
+      List.threadMap1_0(lst1,values,Util.arrayUpdateIndexFirst,clusterValues);
       // finish
-      (clusters,clusterValues) = distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);     
+      (clusters,clusterValues) = distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);
     then (clusters,clusterValues);
   case((itemsIn,valuesIn),(clusters,clusterValues),_)
     equation
-      true = listLength(itemsIn) > numClusters; 
-      true = listLength(itemsIn)/2 >numClusters; 
+      true = listLength(itemsIn) > numClusters;
+      true = listLength(itemsIn)/2 >numClusters;
       numCl = nextGreaterPowerOf2(intReal(listLength(itemsIn)));
       (lst1,lst2) = List.split(itemsIn,intDiv(numCl,2));  // split the list of items+dummies in the middle
       (lst1_1,lst1_2) = List.split(lst1,intDiv(numCl,2)-listLength(lst2));
@@ -3086,9 +3086,9 @@ algorithm
       values = List.map1(lst1_2,Util.arrayGetIndexFirst,clusterValues);
       addValues = List.map1(lst2,Util.arrayGetIndexFirst,clusterValues);
       values = List.threadMap(values,addValues,realAdd);
-      List.threadMap1_0(lst1_2,values,Util.arrayUpdateIndexFirst,clusterValues);  
+      List.threadMap1_0(lst1_2,values,Util.arrayUpdateIndexFirst,clusterValues);
       // again
-      (clusters,clusterValues) = distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);     
+      (clusters,clusterValues) = distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);
     then (clusters,clusterValues);
   else
     equation
@@ -3122,7 +3122,7 @@ algorithm
       true = n >. realPow(2.0,intReal(pow));
       n2 = nextGreaterPowerOf2_impl(n,pow+1);
     then n2;
-  end matchcontinue;     
+  end matchcontinue;
 end nextGreaterPowerOf2_impl;
 
 
