@@ -2991,19 +2991,16 @@ algorithm
   (exeCosts,pos) := HpcOmScheduler.quicksortWithOrder(exeCosts);
   singleNodes := List.map1(pos,List.getIndexFirst,singleNodes);
   singleNodes := listReverse(singleNodes);
-  print("singleNodes "+&stringDelimitList(List.map(singleNodes,intString),"\n")+&"\n");
+  //print("singleNodes "+&stringDelimitList(List.map(singleNodes,intString),"\n")+&"\n");
   exeCosts := listReverse(exeCosts);
-  print("exeCosts "+&stringDelimitList(List.map(exeCosts,realString),"\n")+&"\n");
+  //print("exeCosts "+&stringDelimitList(List.map(exeCosts,realString),"\n")+&"\n");
   // cluster these singleNodes
   (cluster,costs) := distributeToClusters(singleNodes,exeCosts,numProc);
-  print("cluster "+&stringDelimitList(List.map(arrayList(cluster),intLstString),"\n")+&"\n");
-  print("costs "+&stringDelimitList(List.map(arrayList(costs),realString),"\n")+&"\n");
+  //print("cluster "+&stringDelimitList(List.map(arrayList(cluster),intLstString),"\n")+&"\n");
+  //print("costs "+&stringDelimitList(List.map(arrayList(costs),realString),"\n")+&"\n");
   //update taskgraph and taskgraphMeta
   clusterLst := arrayList(cluster);
-  print("clusterLst "+&stringDelimitList(List.map(clusterLst,intLstString),"\n")+&"\n");
   (oTaskGraph,oTaskGraphMeta) := contractNodesInGraph(clusterLst,iTaskGraph,iTaskGraphMeta);
-  printTaskGraph(oTaskGraph);
-  printTaskGraphMeta(oTaskGraphMeta);
   changed := intGt(listLength(singleNodes),numProc);
 end mergeSingleNodes;
 
@@ -3038,7 +3035,7 @@ protected function distributeToClusters1
   output array<list<Integer>> clustersOut;
   output array<Real> clusterValuesOut;
 algorithm
-  (clusters,clusterValues) := matchcontinue(tplIn,tplFold,numClusters)
+  (clustersOut,clusterValuesOut) := matchcontinue(tplIn,tplFold,numClusters)
     local
       Integer numCl, diff;
       list<Integer> itemsIn,lst1,lst2,lst1_1,lst1_2;
