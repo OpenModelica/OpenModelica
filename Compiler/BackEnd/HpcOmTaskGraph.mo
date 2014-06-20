@@ -2859,39 +2859,6 @@ algorithm
   strOut := Util.if_(List.isEmpty(lstIn),"---",str);
 end intLstString;
 
-public function printLevelInfo " prints the information about the level of the nodes.
-author: Waurich TUD 2013-07"
-  input list<list<Integer>> parallelSetsIn;
-protected Integer foldValue;
-algorithm
-  print("\n");
-  print("--------------------------------\n");
-  print("LEVEL INFO\n");
-  print("--------------------------------\n");
-  print(intString(listLength(parallelSetsIn))+&" levels in the graph with "+&intString(listLength(List.flatten(parallelSetsIn)))+&" components all in all\n");
-  print("\n");
-  print("node-level:\n");
-  _ := List.fold1(List.intRange(listLength(parallelSetsIn)),printLevelInfo1,parallelSetsIn,0);
-  print("\n");
-end printLevelInfo;
-
-
-protected function printLevelInfo1 " folding function to print the information of one level
-author: Waurich TUD 2013-07"
-  input Integer levelIdx;
-  input list<list<Integer>> parallelSetsIn;
-  input Integer foldValueIn;
-  output Integer foldValueOut;
-protected
-  list<Integer> levelNodes;
-algorithm
-  levelNodes := listGet(parallelSetsIn,levelIdx);
-  print("level "+&intString(levelIdx)+&" includes nodes: ");
-  print(intLstString(levelNodes));
-  print("\n");
-  foldValueOut := foldValueIn;
-end printLevelInfo1;
-
 public function dumpCriticalPathInfo "author:marcusw
   dump the criticalPath and the costs to a string."
   input tuple<list<list<Integer>>,Real> iCriticalPaths; //<%criticalPath, criticalPathOpCost%>
@@ -3020,7 +2987,7 @@ algorithm
   clusterValues := listArray(values);
   itemArr := listArray(items);
   itemsCopy := Util.arrayMap(itemArr,List.create);
-  clusters := Debug.bcallret2(not b,Util.arrayCopy,itemsCopy,clusters,clusters);
+  clusters := Debug.bcallret2(true,Util.arrayCopy,itemsCopy,clusters,clusters);
   clusterValues := Debug.bcallret2(not b,Util.arrayCopy,listArray(values),clusterValues,clusterValues);
   (clustersOut,clusterValuesOut) := Debug.bcallret3_2(b,distributeToClusters1,(items,values),(clusters,clusterValues),numClusters,clusters,clusterValues);
 end distributeToClusters;
@@ -3035,52 +3002,63 @@ algorithm
   (clustersOut,clusterValuesOut) := matchcontinue(tplIn,tplFold,numClusters)
     local
       Integer numCl, diff;
-      list<Integer> itemsIn,lst1,lst2,lst1_1,lst1_2;
-      list<list<Integer>> entries;
+      list<Integer> itemsIn,lst1,lst2,lst1_1,lst1_2,idcsLst1_2,idcsLst2,idcsLst1;
+      list<list<Integer>> entries,entries2;
       list<Real> valuesIn,values,addValues;
       array<list<Integer>> clusters, clustersFinal;
       array<Real> clusterValues, clusterValuesFinal;
   case((itemsIn,valuesIn),(clusters,clusterValues),_)
     equation
       true = listLength(itemsIn) <= numClusters;
-      clustersFinal = Util.arraySelect(clusters,itemsIn);
-      clusterValuesFinal = Util.arraySelect(clusterValues,itemsIn);
+      idcsLst1 = List.intRange(numClusters);
+      clustersFinal = Util.arraySelect(clusters,idcsLst1);
+      clusterValuesFinal = Util.arraySelect(clusterValues,idcsLst1);
     then (clustersFinal,clusterValuesFinal);
   case((itemsIn,valuesIn),(clusters,clusterValues),_)
     equation
       true = listLength(itemsIn) > numClusters;
-      true = listLength(itemsIn)/2 <= numClusters;
+      true = listLength(itemsIn)/2 < numClusters;
       (lst1,lst2) = List.split(itemsIn,numClusters);  // split the list of items+dummies in the middle
       lst2 = listReverse(lst2);
+      diff = listLength(itemsIn) - numClusters;
+      (idcsLst1_2,_) = List.split(lst1,numClusters-diff);
+      idcsLst2 = List.intRange2(numClusters+1,listLength(itemsIn));
+      idcsLst1 = List.intRange2(numClusters-diff+1,numClusters);
       // update the clusters array
-      entries = List.map1(lst2,Util.arrayGetIndexFirst,clusters);
-      entries = List.threadMap(entries,lst1,List.consr);
-      List.threadMap1_0(lst1,entries,Util.arrayUpdateIndexFirst,clusters);
+      entries = List.map1(idcsLst2,Util.arrayGetIndexFirst,clusters);
+      entries = listReverse(entries);
+     entries2 = List.map1(idcsLst1_2,Util.arrayGetIndexFirst,clusters);
+     entries = List.threadMap(entries,entries2,listAppend);
+      List.threadMap1_0(idcsLst1,entries,Util.arrayUpdateIndexFirst,clusters);
       // update the clusterValues array
-      values = List.map1(lst1,Util.arrayGetIndexFirst,clusterValues);
-      addValues = List.map1(lst2,Util.arrayGetIndexFirst,clusterValues);
+      values = List.map1(idcsLst1,Util.arrayGetIndexFirst,clusterValues);
+      addValues = List.map1(idcsLst2,Util.arrayGetIndexFirst,clusterValues);
       values = List.threadMap(values,addValues,realAdd);
-      List.threadMap1_0(lst1,values,Util.arrayUpdateIndexFirst,clusterValues);
+      List.threadMap1_0(idcsLst1,values,Util.arrayUpdateIndexFirst,clusterValues);
       // finish
       (clusters,clusterValues) = distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);
     then (clusters,clusterValues);
   case((itemsIn,valuesIn),(clusters,clusterValues),_)
     equation
       true = listLength(itemsIn) > numClusters;
-      true = listLength(itemsIn)/2 >numClusters;
+      true = listLength(itemsIn)/2 >= numClusters;
       numCl = nextGreaterPowerOf2(intReal(listLength(itemsIn)));
       (lst1,lst2) = List.split(itemsIn,intDiv(numCl,2));  // split the list of items+dummies in the middle
       (lst1_1,lst1_2) = List.split(lst1,intDiv(numCl,2)-listLength(lst2));
       lst2 = listReverse(lst2);
       // update the clusters array
-      entries = List.map1(lst2,Util.arrayGetIndexFirst,clusters);
-      entries = List.threadMap(entries,lst1_2,List.consr);
-      List.threadMap1_0(lst1_2,entries,Util.arrayUpdateIndexFirst,clusters);
+      idcsLst2 = List.intRange2(intDiv(numCl,2)+1,listLength(itemsIn));
+      idcsLst1_2 = List.intRange2(intDiv(numCl,2)-listLength(idcsLst2)+1, intDiv(numCl,2));
+      entries = List.map1(idcsLst2,Util.arrayGetIndexFirst,clusters);  // the clustered task from  the second list
+      entries = listReverse(entries);
+      entries2 = List.map1(idcsLst1_2,Util.arrayGetIndexFirst,clusters);
+      entries = List.threadMap(entries,entries2,listAppend);
+      List.threadMap1_0(idcsLst1_2,entries,Util.arrayUpdateIndexFirst,clusters);
       // update the clusterValues array
-      values = List.map1(lst1_2,Util.arrayGetIndexFirst,clusterValues);
-      addValues = List.map1(lst2,Util.arrayGetIndexFirst,clusterValues);
+      values = List.map1(idcsLst1_2,Util.arrayGetIndexFirst,clusterValues);
+      addValues = List.map1(idcsLst2,Util.arrayGetIndexFirst,clusterValues);
       values = List.threadMap(values,addValues,realAdd);
-      List.threadMap1_0(lst1_2,values,Util.arrayUpdateIndexFirst,clusterValues);
+      List.threadMap1_0(idcsLst1_2,values,Util.arrayUpdateIndexFirst,clusterValues);
       // again
       (clusters,clusterValues) = distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);
     then (clusters,clusterValues);
