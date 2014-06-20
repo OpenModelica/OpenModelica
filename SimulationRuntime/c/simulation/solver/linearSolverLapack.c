@@ -123,6 +123,7 @@ int solveLapack(DATA *data, int sysNumber)
         sprintf(buffer, "%s%20.12g ", buffer, systemData->A[i + j*n]);
       infoStreamPrint(LOG_LS_V, 0, "%s", buffer);
     }
+    messageClose(LOG_LS_V);
 
   /* b vector */
     infoStreamPrint(LOG_LS_V, 1, "b vector [%d]", n);

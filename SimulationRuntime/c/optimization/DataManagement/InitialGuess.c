@@ -167,8 +167,10 @@ static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solver
  *  helper for initial_guess_optimizer (pick up clfag option)
  *  author: Vitalij Ruge
  **/
-static int initial_guess_ipopt_cflag(OptData *optData, char* cflags){
-  if(!strcmp(cflags,"const") || !strcmp(cflags,"CONST")){
+static int initial_guess_ipopt_cflag(OptData *optData, char* cflags)
+{
+  if(!strcmp(cflags,"const") || !strcmp(cflags,"CONST"))
+  {
     int i, j;
     const int nsi = optData->dim.nsi;
     const int np = optData->dim.np;
@@ -191,7 +193,7 @@ static int initial_guess_ipopt_cflag(OptData *optData, char* cflags){
     return 1;
   }
 
-  warningStreamPrint(LOG_STDOUT, 1, "not support ipopt_init=%s", cflags);
+  warningStreamPrint(LOG_STDOUT, 0, "not support ipopt_init=%s", cflags);
   return 1;
 
 }

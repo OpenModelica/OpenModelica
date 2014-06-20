@@ -55,10 +55,12 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   char * cflags;
 
   cflags = (char*)omc_flagValue[FLAG_UP_HESSIAN];
-  if(cflags){
+  if(cflags)
+  {
     optData->dim.updateHessian = atoi(cflags);
-    if(optData->dim.updateHessian < 0){
-      warningStreamPrint(LOG_STDOUT, 1, "not support %i for keep hessian-matrix constant.", optData->dim.updateHessian);
+    if(optData->dim.updateHessian < 0)
+    {
+      warningStreamPrint(LOG_STDOUT, 0, "not support %i for keep hessian-matrix constant.", optData->dim.updateHessian);
       optData->dim.updateHessian = 0;
     }
   }else{

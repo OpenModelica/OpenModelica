@@ -369,7 +369,8 @@ int initializeModel(DATA* data, const char* init_initMethod,
   {
     int success = 0;
     MMC_TRY_INTERNAL(simulationJumpBuffer)
-    if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps)) {
+    if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps))
+    {
       warningStreamPrint(LOG_STDOUT, 0, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
       simInfo->stopTime = simInfo->startTime;
       retValue = -1;
@@ -377,7 +378,8 @@ int initializeModel(DATA* data, const char* init_initMethod,
 
     success = 1;
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
-    if (!success) {
+    if (!success)
+    {
       retValue =  -1;
       infoStreamPrint(LOG_ASSERT, 0, "simulation terminated by an assertion at initialization");
     }
