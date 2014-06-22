@@ -589,7 +589,7 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
  */
 void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const int m, const int n, const int index){
   DATA * data = optData->data;
-  int i,j,l,ii;
+  int i,j,l,ii, ll;
 
 
   const long double * scaldt = optData->bounds.scaldt[m];
@@ -607,6 +607,8 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
   long double  scalb = optData->bounds.scalb[m][n];
 
   const short index_d_la =  optData->s.derIndex[index - 1];
+  int * index_J = (index == 3)? optData->s.indexJ3 : optData->s.indexJ2;
+  const int nJ1 = optData->dim.nJ + 1;
 
   for(i = 1; i < Cmax; ++i){
     data->simulationInfo.analyticJacobians[index].seedVars = optData->s.seedVec[index][i];
@@ -617,22 +619,24 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
       data->callback->functionJacC_column(data);
     }else
       assert(0);
-    /*ToDo: shift index */
+
     for(ii = 0; ii < nx; ++ii){
       if(cC[ii] == i){
         for(j = lindex[ii]; j < lindex[ii + 1]; ++j){
-          l = sPindex[j];
+          ll = sPindex[j];
+          l = index_J[ll];
           if(l < dnx){
-            J[l][ii] = (modelica_real) resultVars[l] * scaldt[l];
-          }else if(l == index_d_la){
-            J[l][ii] = (modelica_real) resultVars[l] * scalb;
-          }else if(index == 3 && l == index_ma){
-            J[l][ii] = (modelica_real) resultVars[l];
-          }else{
-            J[l][ii] = (modelica_real) resultVars[l];
+            J[l][ii] = (modelica_real) resultVars[ll] * scaldt[l];
+          }else if(l < dnxnc){
+            J[l][ii] = (modelica_real) resultVars[ll];
+          }else if(l == optData->dim.nJ && optData->s.lagrange){
+            J[l][ii] = (modelica_real) resultVars[ll]* scalb;
+          }else if(l == nJ1 && optData->s.mayer){
+            J[l][ii] = (modelica_real) resultVars[ll];
           }
         }
       }
+
     }
   }
 }

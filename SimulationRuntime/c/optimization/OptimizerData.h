@@ -132,6 +132,8 @@ typedef struct OptDataStructure{
   modelica_boolean * gradL;
   int * indexCon2;
   int * indexCon3;
+  int * indexJ2;
+  int * indexJ3;
 }OptDataStructure;
 
 

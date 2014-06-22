@@ -110,6 +110,8 @@ Bool evalfDiffF(Index n, double * vopt, Bool new_x, Number *gradF, void * useDat
   const int nv = optData->dim.nv;
   const int nsi = optData->dim.nsi;
   const int np = optData->dim.np;
+  const int nJ = optData->dim.nJ;
+  const int nJ1 = optData->dim.nJ + 1;
 
   const modelica_boolean la = optData->s.lagrange;
   const modelica_boolean ma = optData->s.mayer;
@@ -119,19 +121,18 @@ Bool evalfDiffF(Index n, double * vopt, Bool new_x, Number *gradF, void * useDat
 
   if(la){
 
-    const int k = optData->s.derIndex[1];
     int i, j, ii;
     modelica_real * gradL;
 
     for(i = 0, ii = 0; i < nsi - 1; ++i){
       for(j = 0; j < np; ++j, ii += nv){
-        gradL = optData->J[i][j][k];
+        gradL = optData->J[i][j][nJ];
         memcpy(gradF + ii, gradL, nv*sizeof(modelica_real));
       }
     }
 
     for(j = 0; j < np; ++j, ii += nv){
-      gradL = (j + 1 == np) ? optData->J[i][j][optData->s.derIndex[2]] : optData->J[i][j][k];
+      gradL = optData->J[i][j][nJ];;
       memcpy(gradF + ii, gradL, nv*sizeof(modelica_real));
     }
 
@@ -140,8 +141,7 @@ Bool evalfDiffF(Index n, double * vopt, Bool new_x, Number *gradF, void * useDat
   }
 
   if(ma){
-    const int k = optData->s.derIndex[0];
-    modelica_real * gradM = optData->J[nsi - 1][np -1][k];
+    modelica_real * gradM = optData->J[nsi - 1][np -1][nJ1];
     if(la){
       int i;
       for(i = 0; i < nv; ++i)

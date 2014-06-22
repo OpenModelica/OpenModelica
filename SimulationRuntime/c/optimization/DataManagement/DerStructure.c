@@ -286,6 +286,29 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
         s->gradM[j] = (modelica_boolean)1;
     }
 
+  s->indexJ2 = (int *) malloc((dim->nJ+1)* sizeof(int));
+  s->indexJ3 = (int *) malloc(dim->nJ2* sizeof(int));
+
+  j = 0;
+  for(i = 0; i < dim->nJ +1 ; ++i){
+    if(i == s->derIndex[1]){
+      s->indexJ2[i] = dim->nJ;
+    }else{
+      s->indexJ2[i] = j++;
+    }
+  }
+
+  j = 0;
+  for(i = 0; i < dim->nJ2 ; ++i){
+    if(i == s->derIndex[2]){
+      s->indexJ3[i] = dim->nJ;
+    }else if(i == s->derIndex[0]){
+      s->indexJ3[i] = dim->nJ + 1;
+    }else{
+      s->indexJ3[i] = j++;
+    }
+  }
+
 }
 
 /*

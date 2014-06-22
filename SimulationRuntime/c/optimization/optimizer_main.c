@@ -250,6 +250,11 @@ static inline void freeOptimizerData(OptData*optData){
   */
   free(optData->s.lindex);
   free(optData->s.seedVec);
+  free(optData->s.indexCon2);
+  free(optData->s.indexCon3);
+  free(optData->s.indexJ2);
+  free(optData->s.indexJ3);
+
   /*************************/
   for(i = 0; i < nsi; ++i){
     for(j = 0; j < np; ++j){

@@ -218,8 +218,7 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
           }
         }
         for(; l< nJ; ++l){
-          cindex = optData->s.indexCon2[l-nx];
-          structJacC(optData->J[0][j][cindex], values, nv, &k, J[l]);
+          structJacC(optData->J[0][j][l], values, nv, &k, J[l]);
         }
       }
 
@@ -243,11 +242,7 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
             }
           }
           for(; l< nJ; ++l){
-            if(i + 1 == nsi && j + 1 == np)
-              cindex = optData->s.indexCon3[l-nx];
-            else
-              cindex = optData->s.indexCon2[l-nx];
-            structJacC(optData->J[i][j][cindex], values, nv, &k, J[l]);
+            structJacC(optData->J[i][j][l], values, nv, &k, J[l]);
           }
         }
       }
@@ -257,48 +252,19 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
         for(l = 0; l < nJ; ++l){
           for(ii = 0; ii < nv; ++ii)
             if(J[l][ii]){
-              if(l < nx){
-                values[k++] = (modelica_real)((ii == l) ? optData->J[0][j][l][ii] - 1.0 : optData->J[0][j][l][ii]);
-              }else{
-                cindex = optData->s.indexCon2[l-nx];
-                values[k++] = optData->J[0][j][cindex][ii];
-              }
+              values[k++] = (modelica_real)((ii == l && l < nx) ? optData->J[0][j][l][ii] - 1.0 : optData->J[0][j][l][ii]);
             }
           }
         }
       /*****************************/
-      for(i = 1; i < nsi-1; ++i){
+      for(i = 1; i < nsi; ++i){
         for(j = 0; j < np; ++j){
           for(l = 0; l < nJ; ++l){
             if(l < nx)
               values[k++] = 1.0;
-
             for(ii = 0; ii < nv; ++ii){
               if(J[l][ii]){
-                if(l < nx){
-                  values[k++] = (modelica_real)((ii == l) ? optData->J[i][j][l][ii] - 1.0 : optData->J[i][j][l][ii]);
-                }else{
-                  cindex = optData->s.indexCon2[l-nx];
-                  values[k++] = optData->J[i][j][cindex][ii];
-                }
-              }
-            }
-          }
-        }
-      }
-      /*****************************/
-      for(j = 0; j < np; ++j){
-        for(l = 0; l < nJ; ++l){
-          if(l < nx)
-            values[k++] = 1.0;
-
-          for(ii = 0; ii < nv; ++ii){
-            if(J[l][ii]){
-              if(l < nx){
-                values[k++] = (modelica_real)((ii == l) ? optData->J[i][j][l][ii] - 1.0 : optData->J[i][j][l][ii]);
-              }else{
-                cindex = (j + 1 == np)? optData->s.indexCon3[l-nx] : optData->s.indexCon2[l-nx];
-                values[k++] = optData->J[i][j][cindex][ii];
+                values[k++] = (modelica_real)((ii == l && l < nx) ? optData->J[i][j][l][ii] - 1.0 : optData->J[i][j][l][ii]);
               }
             }
           }

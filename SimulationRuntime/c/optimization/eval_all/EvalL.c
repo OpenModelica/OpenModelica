@@ -196,7 +196,6 @@ static inline void num_hessian0(double * v, const double * const lambda,
 
   int ii,jj, l;
   long double v_save, h;
-  int * cindex = optData->s.indexCon2;
   modelica_real * realV[3];
 
 
@@ -230,24 +229,18 @@ static inline void num_hessian0(double * v, const double * const lambda,
     /********************/
     for(jj = 0; jj <ii+1; ++jj){
       if(optData->s.H0[ii][jj]){
-        for(l = 0; l < nx; ++l){
+        for(l = 0; l < nJ; ++l){
           if(optData->s.Hg[l][ii][jj] && lambda[l] != 0)
               optData->H[l][ii][jj] = (long double)(optData->tmpJ[l][jj] - optData->J[i][j][l][jj])*lambda[l]/h;
-        }
-        for(; l < nJ; ++l){
-          if(optData->s.Hg[l][ii][jj] && lambda[l] != 0){
-            optData->H[l][ii][jj] = (long double)(optData->tmpJ[cindex[l-nx]][jj] - optData->J[i][j][cindex[l-nx]][jj])*lambda[l]/h;
-          }
         }
       }
     }
     /********************/
     if(upCost){
-      const int index_la = optData->s.derIndex[1];
       h = objFactor/h;
       for(jj = 0; jj <ii+1; ++jj){
         if(optData->s.Hl[ii][jj]){
-          optData->Hl[ii][jj] = (long double)(optData->tmpJ[index_la][jj] - optData->J[i][j][index_la][jj])*h;
+          optData->Hl[ii][jj] = (long double)(optData->tmpJ[nJ][jj] - optData->J[i][j][nJ][jj])*h;
         }else{
           optData->Hl[ii][jj] = 0.0;
         }
@@ -274,18 +267,17 @@ static inline void num_hessian1(double * v, const double * const lambda,
   const modelica_boolean la = optData->s.lagrange;
   const modelica_boolean ma = optData->s.mayer;
   const modelica_boolean upCost = la && objFactor != 0;
-  const int index_la = optData->s.derIndex[1];
 
   const int nv = optData->dim.nv;
   const int nx = optData->dim.nx;
   const int np = optData->dim.np;
   const int nJ = optData->dim.nJ;
+  const int nJ1 = optData->dim.nJ + 1;
   const int nsi = optData->dim.nsi;
   const modelica_real * const vmax = optData->bounds.vmax;
   const modelica_real * const vnom = optData->bounds.vnom;
   const modelica_boolean upCost2 = objFactor != 0 && ma && np == j + 1 && nsi == i  +1;
   const short indexJ = (upCost2) ? 3 : 2;
-  int * cindex = (upCost2) ? optData->s.indexCon3:optData->s.indexCon2;
   int ii,jj, l,k;
   long double v_save, h;
   DATA * data = optData->data;
@@ -323,39 +315,29 @@ static inline void num_hessian1(double * v, const double * const lambda,
     /********************/
     for(jj = 0; jj <ii+1; ++jj){
       if(optData->s.H0[ii][jj]){
-        for(l = 0; l < nx; ++l){
+        for(l = 0; l < nJ; ++l){
           if(optData->s.Hg[l][ii][jj])
             optData->H[l][ii][jj] = (long double)(optData->tmpJ[l][jj] - optData->J[i][j][l][jj])*lambda[l]/h;
-        }
-        for(; l < nJ; ++l){
-          if(optData->s.Hg[l][ii][jj])
-            optData->H[l][ii][jj] = (long double)(optData->tmpJ[cindex[l-nx]][jj] - optData->J[i][j][cindex[l-nx]][jj])*lambda[l]/h;
         }
       }
     }
     /********************/
     if(upCost){
-      int index_la;
       long double hh;
-      if(np == j + 1 && nsi == i +1)
-        index_la = optData->s.derIndex[2];
-      else
-        index_la = optData->s.derIndex[1];
       hh = objFactor/h;
       for(jj = 0; jj <ii+1; ++jj){
         if(optData->s.Hl[ii][jj]){
-          optData->Hl[ii][jj] = (long double)(optData->tmpJ[index_la][jj] - optData->J[i][j][index_la][jj])*hh;
+          optData->Hl[ii][jj] = (long double)(optData->tmpJ[nJ][jj] - optData->J[i][j][nJ][jj])*hh;
         }
       }
     }
     /********************/
     if(upCost2){
-      const int index_ma = optData->s.derIndex[0];
       long double hh;
       hh = objFactor/h;
       for(jj = 0; jj <ii+1; ++jj){
         if(optData->s.Hm[ii][jj]){
-          optData->Hm[ii][jj] = (long double)(optData->tmpJ[index_ma][jj] - optData->J[i][j][index_ma][jj])*hh;
+          optData->Hm[ii][jj] = (long double)(optData->tmpJ[nJ1][jj] - optData->J[i][j][nJ1][jj])*hh;
         }
       }
     }
