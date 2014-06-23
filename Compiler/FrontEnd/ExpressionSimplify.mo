@@ -944,7 +944,7 @@ algorithm
         true = i2 < i1;
         e = Expression.makeScalarArray(es,tp);
       then Expression.makePureBuiltinCall("max",{e},tp);
-     
+
     case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
       equation
         i1 = listLength(es);
@@ -955,7 +955,7 @@ algorithm
         true = i2 < i1;
         e = Expression.makeScalarArray(es,tp);
       then Expression.makePureBuiltinCall("min",{e},tp);
-        
+
     case (DAE.CALL(path=Absyn.IDENT("min"),attr=DAE.CALL_ATTR(ty=tp),expLst={DAE.ARRAY(array={e1,e2})}))
       equation
         e = Expression.makePureBuiltinCall("min",{e1,e2},tp);
