@@ -3028,7 +3028,7 @@ algorithm
       idcsLst1 = List.intRange2(numClusters-diff+1,numClusters);
         //print("idcsLst1 "+&stringDelimitList(List.map(idcsLst1,intString),"\n")+&"\n");
         //print("idcsLst2 "+&stringDelimitList(List.map(idcsLst2,intString),"\n")+&"\n");
-      
+
       // update the clusters array
       entries = List.map1(idcsLst2,Util.arrayGetIndexFirst,clusters);
       entries = listReverse(entries);
@@ -3042,7 +3042,7 @@ algorithm
       List.threadMap1_0(idcsLst1,values,Util.arrayUpdateIndexFirst,clusterValues);
       // finish
         //print("clustersOut "+&stringDelimitList(List.map(arrayList(clusters),intLstString),"\n")+&"\n");
-      
+
       (clusters,clusterValues) = distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);
     then (clusters,clusterValues);
   case((itemsIn,valuesIn),(clusters,clusterValues),_)
@@ -3056,7 +3056,7 @@ algorithm
       lst2 = listReverse(lst2);
       // update the clusters array
             //print("clustersIn "+&stringDelimitList(List.map(arrayList(clusters),intLstString),"\n")+&"\n");
-      
+
       idcsLst2 = List.intRange2(intDiv(numCl,2)+1,listLength(itemsIn));
       idcsLst1_2 = List.intRange2(intDiv(numCl,2)-listLength(idcsLst2)+1, intDiv(numCl,2));
         //print("idcsLst2 "+&stringDelimitList(List.map(idcsLst2,intString),"\n")+&"\n");
