@@ -374,11 +374,6 @@ protected
   array<tuple<Integer,Integer>> schedulerInfo;
 algorithm
   (oTaskGraph,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphMeta,inBackendDAE,iApplyFilters)
-    case(_,_,_,_)
-      equation
-        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
-        true = stringEq(flagValue, "level");
-      then (iTaskGraph, iTaskGraphMeta);
     case(_,_,_,true)
       equation
         //Merge simple and parent nodes
@@ -387,7 +382,7 @@ algorithm
         (taskGraph1,taskGraphMeta1,changed1) = HpcOmTaskGraph.mergeSimpleNodes(taskGraph1,taskGraphMeta1,inBackendDAE);
         (taskGraph1,taskGraphMeta1,changed2) = HpcOmTaskGraph.mergeParentNodes(taskGraph1, taskGraphMeta1);
         (taskGraph1,taskGraphMeta1,changed3) = HpcOmTaskGraph.mergeSingleNodes(taskGraph1, taskGraphMeta1);
-
+        
         (taskGraph1,taskGraphMeta1) = applyFiltersToGraph(taskGraph1,taskGraphMeta1,inBackendDAE,changed1 or changed2 or changed3);
       then (taskGraph1,taskGraphMeta1);
     else (iTaskGraph, iTaskGraphMeta);
@@ -437,14 +432,14 @@ algorithm
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "mixed");
         print("Using mixed Scheduler\n");
-        schedule = HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
+        schedule = HpcOmScheduler.createLevelSchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
     case(_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "level");
         print("Using level Scheduler\n");
-        schedule = HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
+        schedule = HpcOmScheduler.createLevelSchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
     case(_,_,_,_,_,_)
       equation
