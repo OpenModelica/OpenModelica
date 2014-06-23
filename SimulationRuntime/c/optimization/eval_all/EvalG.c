@@ -249,22 +249,36 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
     }else if(np == 1){
       /*****************************/
       for(j = 0, k = 0; j < np; ++j){
-        for(l = 0; l < nJ; ++l){
+        for(l = 0; l < nx; ++l){
           for(ii = 0; ii < nv; ++ii)
             if(J[l][ii]){
-              values[k++] = (modelica_real)((ii == l && l < nx) ? optData->J[0][j][l][ii] - 1.0 : optData->J[0][j][l][ii]);
+              values[k++] = (modelica_real)((ii == l) ? optData->J[0][j][l][ii] - 1.0 : optData->J[0][j][l][ii]);
             }
           }
+        for(; l < nJ; ++l){
+          for(ii = 0; ii < nv; ++ii)
+            if(J[l][ii]){
+              values[k++] = (modelica_real)(optData->J[0][j][l][ii]);
+            }
+          }
+
         }
       /*****************************/
       for(i = 1; i < nsi; ++i){
         for(j = 0; j < np; ++j){
-          for(l = 0; l < nJ; ++l){
+          for(l = 0; l < nx; ++l){
             if(l < nx)
               values[k++] = 1.0;
             for(ii = 0; ii < nv; ++ii){
               if(J[l][ii]){
-                values[k++] = (modelica_real)((ii == l && l < nx) ? optData->J[i][j][l][ii] - 1.0 : optData->J[i][j][l][ii]);
+                values[k++] = (modelica_real)((ii == l) ? optData->J[i][j][l][ii] - 1.0 : optData->J[i][j][l][ii]);
+              }
+            }
+          }
+          for(; l < nJ; ++l){
+            for(ii = 0; ii < nv; ++ii){
+              if(J[l][ii]){
+                values[k++] = (modelica_real)(optData->J[i][j][l][ii]);
               }
             }
           }
