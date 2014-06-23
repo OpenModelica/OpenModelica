@@ -1,4 +1,5 @@
 // Note: Run with +g=MetaModelica
+// Some examples of CustomCommands.mos files are at the bottom of this file
 
 setCommandLineOptions("+d=nogen");
 if not regularFileExists("CustomCommands.mos") then
@@ -6,6 +7,8 @@ if not regularFileExists("CustomCommands.mos") then
 setMatchingAlgorithm(\"PFPlusExt\");
 setIndexReductionMethod(\"dynamicStateSelection\");";
   writeFile("CustomCommands.mos",customCommands);
+else
+  customCommands := readFile("CustomCommands.mos");
 end if;
 
 // May be overridde by CustomCommands.mos
@@ -18,12 +21,17 @@ ulimitExe:="480"; // 8 additional minutes to initialize and run the simulation
 ulimitMemory:="16000000";  // ~16GB memory at most
 javascript := false;
 simFlags := "-abortSlowSimulation -alarm=" + ulimitExe;
+customLibrary := false;
 
 runScript("CustomCommands.mos");
 
 customCommandsStr := if regularFileExists("CustomCommands.mos") then ("Flags: <pre>" + escapeXML(readFile("CustomCommands.mos")) + "</pre>") else "";
+
+if not customLibrary then
+// It is possible to change library in CustomCommands.mos only if customLibrary := true is set
 library:=$TypeName(Modelica);
 libraryVersion:="default";
+end if;
 
 setCommandLineOptions({"+g=Modelica","+d=nogen"});
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
@@ -35,14 +43,21 @@ reference_rangeDelta:=1e-3;
 loadModel(library,{libraryVersion});
 getErrorString();
 libraryVersionRevision:=getVersion(library);
-libraryVersionRevision := (if libraryVersionRevision == "" then libraryVersion else libraryVersionRevision) + (if regularFileExists(dirname(getSourceFile(library))+".last_change") then (" revision " + readFile(dirname(getSourceFile(library))+".last_change")) else "");
+libraryLastChange := "";
+if regularFileExists(dirname(getSourceFile(library))+".last_change") then
+  libraryLastChange := "( revision " + readFile(dirname(getSourceFile(library)))+".last_change";
+elseif 0 == system("svn info '" + dirname(getSourceFile(library)) + "' 2>&1 | egrep '^(URL|Last.Changed.Rev)' > svn.info") then
+  libraryLastChange := " " + readFile("svn.info");
+end if;
+
+libraryVersionRevision := (if libraryVersionRevision == "" then libraryVersion else libraryVersionRevision) + libraryLastChange;
 libraryString:=typeNameString(library);
 
 system("date +'%Y-%m-%d %H:%M:%S' > tmp.date");
 dateAndTime:=readFile("tmp.date");
 system("rm -f tmp.date");
 
-loadModelCommand:="\nrunScript(\"CustomCommands.mos\");\nloadModel("+libraryString+",{\""+libraryVersion+"\"});\n";
+loadModelCommand:="\n"+customCommands+"\nloadModel("+libraryString+",{\""+libraryVersion+"\"});\n";
 
 omc:=getInstallationDirectoryPath()+"/bin/omc";
 dygraphs:=getInstallationDirectoryPath()+"/share/doc/omc/testmodels/dygraph-combined.js";
@@ -119,6 +134,7 @@ writeFile(statFile + \".verify\", testcase(0,false,\"killed\"));getErrorString()
 
 outputFormat:=\"default\";
 javascript:="+String(javascript)+";
+mslRegressionOutput:=\"\";
 "+loadModelCommand+"
 reference_reltol:="+String(reference_reltol)+";
 reference_reltolDiffMinMax:="+String(reference_reltolDiffMinMax)+";
@@ -130,6 +146,10 @@ referenceFiles := \""+referenceFiles+"\";
 referenceCell := if referenceFiles == \"\" then \"\" else \"<td>&nbsp;</td>\";
 reference := \""+referenceFiles+"/"+OpenModelica.Scripting.stringReplace(s,".",referenceFileNameDelimiter)+"."+referenceFileExtension+"\";
 referenceExists := referenceFiles <> \"\" and regularFileExists(reference);
+if not referenceExists then
+  reference := \""+referenceFiles+"/"+OpenModelica.Scripting.stringReplace(s,".","/")+"/"+basename(OpenModelica.Scripting.stringReplace(s,".","/"))+"."+referenceFileExtension+"\";
+  referenceExists := referenceFiles <> \"\" and regularFileExists(reference);
+end if;
 
 // outputFormat can be overridden in CustomCommands.mos, so we set it to 'default' first
 outputFormat := if outputFormat == \"default\" then (if referenceExists then \"mat\" else \"empty\") else outputFormat;
@@ -181,6 +201,33 @@ if buildRes and javascript then
   system(\"cp " + s + ".js " + s + "_info.xml " + s + "_init.xml " + s + ".md files/\");
 end if;
 mdFile := if javascript then \""+s+".md\" else \"\";
+
+if mslRegressionOutput <> \"\" then
+  mslRegressionOutput := mslRegressionOutput + \"/"+OpenModelica.Scripting.stringReplace(s,".","/")+"/\";
+  mkdir(mslRegressionOutput);
+  simFailLog := mslRegressionOutput+\"simulate_failed.log\";
+  simSuccessLog := mslRegressionOutput+\"simulate_success.log\";
+  buildFailLog := mslRegressionOutput+\"translate_failed.log\";
+  buildSuccessLog := mslRegressionOutput+\"translate_success.log\";
+
+  system(\"rm -f \"+(if simRes then simFailLog else simSuccessLog));
+  system(\"rm -f \"+(if buildRes then buildFailLog else buildSuccessLog));
+
+  system(\"cp \"+simFile+\" \" + simFile + \".tmp\");
+  system(\"cp "+s+"_res.csv "+s+".csv\");
+  system(\"cp "+s+".mos "+s+".mos.tmp\");
+
+  if err == \"\" then
+    system(\"echo > \" + errFile + \".tmp\");
+  else
+    system(\"cp \" + errFile + \" \" + errFile + \".tmp\");
+  end if;
+
+  compareFilesAndMove(errFile + \".tmp\", if buildRes then buildSuccessLog else buildFailLog);
+  compareFilesAndMove(simFile + \".tmp\", if buildRes then simSuccessLog else simFailLog);
+  compareFilesAndMove(\""+s+".csv\", mslRegressionOutput+\""+s+".csv\");
+  compareFilesAndMove(\""+s+".mos.tmp\", mslRegressionOutput+\"creation.txt\");
+end if;
 
 system(\"sed -i '300,$ d' '\" + simFile + \"'\"); // Only keep the top 300 lines
 timeSim := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
@@ -319,3 +366,23 @@ system("chmod -R go+r BuildModelRecursive.html files tidy.err");getErrorString()
 system("chmod go+x files");getErrorString();
 system("tar czf BuildModelRecursive.tar.gz BuildModelRecursive.html files tidy.err");getErrorString();
 system("chmod go+r BuildModelRecursive.tar.gz");
+
+/* Some useful CustomCommands.mos examples:
+
+// MSL regression testing suite:
+setCommandLineOptions("+d=nogen,initialization,backenddaeinfo,discreteinfo,stateselection");
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+
+simFlags := "-abortSlowSimulation -alarm=480 -lv LOG_STATS";
+setModelicaPath("/home/marsj/dev/v3.2.1+build.2.release");
+referenceFileExtension:="csv";
+referenceFileNameDelimiter:="/";
+referenceFiles:="/path/to/RegressionTesting/ModelicaStandardLibrary/ReferenceResults/v3.2.1+build.2.release/";
+outputFormat:="csv";
+customLibrary:=true;
+library:=$TypeName(Modelica);
+libraryVersion:="default";
+mslRegressionOutput:="OpenModelica"; // Creates files under ./OpenModelica
+
+*/
