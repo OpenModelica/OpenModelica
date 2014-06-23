@@ -944,7 +944,18 @@ algorithm
         true = i2 < i1;
         e = Expression.makeScalarArray(es,tp);
       then Expression.makePureBuiltinCall("max",{e},tp);
-
+     
+    case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
+      equation
+        i1 = listLength(es);
+        SOME(e) = List.fold(es, minElement, NONE());
+        es = List.select(es, removeMinMaxFoldableValues);
+        es = e::es;
+        i2 = listLength(es);
+        true = i2 < i1;
+        e = Expression.makeScalarArray(es,tp);
+      then Expression.makePureBuiltinCall("min",{e},tp);
+        
     case (DAE.CALL(path=Absyn.IDENT("min"),attr=DAE.CALL_ATTR(ty=tp),expLst={DAE.ARRAY(array={e1,e2})}))
       equation
         e = Expression.makePureBuiltinCall("min",{e1,e2},tp);
@@ -5259,15 +5270,36 @@ algorithm
     local
       Real r1,r2;
       Integer i1,i2;
+      Boolean b1,b2;
     case (DAE.RCONST(_),NONE()) then SOME(e1);
     case (DAE.ICONST(_),NONE()) then SOME(e1);
     case (DAE.BCONST(_),NONE()) then SOME(e1);
     case (DAE.RCONST(r1),SOME(DAE.RCONST(r2))) equation r1=realMax(r1,r2); then SOME(DAE.RCONST(r1));
     case (DAE.ICONST(i1),SOME(DAE.ICONST(i2))) equation i1=intMax(i1,i2); then SOME(DAE.ICONST(i1));
-    case (DAE.BCONST(true),SOME(DAE.BCONST(false))) then SOME(DAE.BCONST(true));
+    case (DAE.BCONST(b1),SOME(DAE.BCONST(b2))) equation b1= b1 or b2; then SOME(DAE.BCONST(b1));
     else e2;
   end match;
 end maxElement;
+
+protected function minElement
+  input DAE.Exp e1;
+  input Option<DAE.Exp> e2;
+  output Option<DAE.Exp> elt;
+algorithm
+  elt := match (e1,e2)
+    local
+      Real r1,r2;
+      Integer i1,i2;
+      Boolean b1,b2;
+    case (DAE.RCONST(_),NONE()) then SOME(e1);
+    case (DAE.ICONST(_),NONE()) then SOME(e1);
+    case (DAE.BCONST(_),NONE()) then SOME(e1);
+    case (DAE.RCONST(r1),SOME(DAE.RCONST(r2))) equation r1=realMin(r1,r2); then SOME(DAE.RCONST(r1));
+    case (DAE.ICONST(i1),SOME(DAE.ICONST(i2))) equation i1=intMin(i1,i2); then SOME(DAE.ICONST(i1));
+    case (DAE.BCONST(b1),SOME(DAE.BCONST(b2))) equation b1= b1 and b2; then SOME(DAE.BCONST(b1));
+    else e2;
+  end match;
+end minElement;
 
 protected function removeMinMaxFoldableValues
   input DAE.Exp e;
