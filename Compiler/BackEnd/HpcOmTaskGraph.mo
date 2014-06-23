@@ -3031,7 +3031,7 @@ algorithm
       addValues = List.map1(idcsLst2,Util.arrayGetIndexFirst,clusterValues);
       values = List.threadMap(values,addValues,realAdd);
       List.threadMap1_0(idcsLst1,values,Util.arrayUpdateIndexFirst,clusterValues);
-      // finish     
+      // finish
       (clusters,clusterValues) = distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);
     then (clusters,clusterValues);
   case((itemsIn,valuesIn),(clusters,clusterValues),_)
