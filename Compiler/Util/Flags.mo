@@ -393,7 +393,7 @@ constant DebugFlag ALLOW_RECORD_TOO_MANY_FIELDS = DEBUG_FLAG(113, "acceptTooMany
   Util.gettext("Accepts passing records with more fields than expected to a function. This is not allowed, but is used in Fluid.Dissipation. See https://trac.modelica.org/Modelica/ticket/1245 for details."));
 constant DebugFlag HPCOM_MEMORY_OPT = DEBUG_FLAG(114, "hpcomMemoryOpt", false,
   Util.gettext("Optimize the memory structure regarding the selected scheduler"));
-  
+
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
 // initialization so that all flags are sorted by index (and thus have unique

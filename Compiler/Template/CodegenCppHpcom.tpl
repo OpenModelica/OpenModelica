@@ -733,7 +733,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
           <<
           static bool state_var_reinitialized = false;
           static bool firstRun = true;
-          
+
           void <%lastIdentOfPath(name)%>::evaluateThreadFunc0()
           {
             //if (omp_get_dynamic())
@@ -749,7 +749,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
                     int event[NUM_EVENTS] = {PAPI_L2_TCM};
                     long long values[NUM_EVENTS];
                     #endif
-                    
+
                     #pragma omp master
                     {
                         <%function_HPCOM_assignLock("startEvaluateLock","","pthreads")%>
@@ -761,15 +761,15 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
                         }
                         #endif
                     }
-                    
+
                     #pragma omp barrier
                     if(finished)
                         <%function_HPCOM_releaseLock("finishedEvaluateLock","","pthreads")%>
 
                     <%odeEqs%>
-                    
+
                     #pragma omp barrier
-                    
+
                     #pragma omp master
                     {
                         #ifdef MEASURE_PAPI
@@ -779,7 +779,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
                             exit(1);
                         }
                         std::cerr << "L2 Cache misses: " << values[0] << std::endl;
-                        
+
                         /* Stop counting events */
                         if (PAPI_stop_counters(values, NUM_EVENTS) != PAPI_OK) {
                             fprintf(stderr, "PAPI_stoped_counters - FAILED\n");
@@ -788,8 +788,8 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
                         #endif
                         <%function_HPCOM_releaseLock("finishedEvaluateLock","","pthreads")%>
                     }
-                    
-                    
+
+
                 }
             }
           }
@@ -816,19 +816,19 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
              #ifdef MEASURE_PAPI
              int event[NUM_EVENTS] = {PAPI_L2_TCM};
              long long values[NUM_EVENTS];
-             
+
              /* Start counting events */
              if (PAPI_start_counters(event, NUM_EVENTS) != PAPI_OK) {
                 fprintf(stderr, "PAPI_start_counters - FAILED\n");
                 exit(1);
              }
              #endif
-             
+
              #pragma omp parallel num_threads(<%getConfigInt(NUM_PROC)%>)
              {
                 <%odeEqs%>
              }
-             
+
              #ifdef MEASURE_PAPI
              /* Read the counters */
              if (PAPI_read_counters(values, NUM_EVENTS) != PAPI_OK) {
@@ -836,7 +836,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
                 exit(1);
              }
              std::cerr << "L2 Cache misses: " << values[0] << std::endl;
-                        
+
              /* Stop counting events */
              if (PAPI_stop_counters(values, NUM_EVENTS) != PAPI_OK) {
                 fprintf(stderr, "PAPI_stoped_counters - FAILED\n");
