@@ -881,7 +881,7 @@ author:Waurich TUD 2013-06"
   input list<Integer> list1;
   input array<tuple<Integer,Integer,Integer>> assign;
   output list<Integer> list2Out;
-protected 
+protected
   list<tuple<Integer,Integer,Integer>> tplLst;
 algorithm
    tplLst := List.map1(list1,Util.arrayGetIndexFirst,assign);
