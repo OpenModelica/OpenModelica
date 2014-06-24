@@ -7,8 +7,8 @@
 
 SystemStateSelection::SystemStateSelection(IMixedSystem* system)
       :_system(system)
-      ,_colPivot(NULL)
-      ,_rowPivot(NULL)
+      ,_colPivot()
+      ,_rowPivot()
       ,_initialized(false)
 {
       _state_selection = dynamic_cast<IStateSelection*>(system);

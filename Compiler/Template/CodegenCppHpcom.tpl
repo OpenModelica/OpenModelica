@@ -58,7 +58,7 @@ template simulationHeaderFile(SimCode simCode)
 match simCode
 case SIMCODE(__) then
   <<
-   <%generateHeaderInlcudeString(simCode)%>
+     <%generateHeaderIncludeString(simCode)%>
      #ifdef ANALYZATION_MODE
       #include <boost/shared_ptr.hpp>
       #include <boost/weak_ptr.hpp>
@@ -77,9 +77,12 @@ case SIMCODE(__) then
       #include <boost/numeric/ublas/matrix_sparse.hpp>
       typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
      #endif
-   <%generateHpcomSpecificIncludes(simCode)%>
-   <%generateClassDeclarationCode(simCode)%>
-
+     <%generateHpcomSpecificIncludes(simCode)%>
+     <%generateClassDeclarationCode(simCode)%>
+     #ifdef MEASURE_PAPI
+     #include <papi.h>
+     #define NUM_EVENTS 1
+     #endif
    >>
 end simulationHeaderFile;
 
@@ -296,7 +299,7 @@ template generateHpcomSpecificIncludes(SimCode simCode)
         >>
         case ("mixed") then
         <<
-        #include <omp.h>
+        #define NUM_EVENTS 1
         #include <boost/thread/mutex.hpp>
         #include <boost/thread.hpp>
         >>
@@ -730,6 +733,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
           <<
           static bool state_var_reinitialized = false;
           static bool firstRun = true;
+          
           void <%lastIdentOfPath(name)%>::evaluateThreadFunc0()
           {
             //if (omp_get_dynamic())
@@ -741,21 +745,51 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
             {
                 while(!finished)
                 {
+                    #ifdef MEASURE_PAPI
+                    int event[NUM_EVENTS] = {PAPI_L2_TCM};
+                    long long values[NUM_EVENTS];
+                    #endif
+                    
                     #pragma omp master
                     {
                         <%function_HPCOM_assignLock("startEvaluateLock","","pthreads")%>
+                        #ifdef MEASURE_PAPI
+                        /* Start counting events */
+                        if (PAPI_start_counters(event, NUM_EVENTS) != PAPI_OK) {
+                            fprintf(stderr, "PAPI_start_counters - FAILED\n");
+                            exit(1);
+                        }
+                        #endif
                     }
+                    
                     #pragma omp barrier
                     if(finished)
                         <%function_HPCOM_releaseLock("finishedEvaluateLock","","pthreads")%>
 
                     <%odeEqs%>
-
+                    
                     #pragma omp barrier
+                    
                     #pragma omp master
                     {
+                        #ifdef MEASURE_PAPI
+                        /* Read the counters */
+                        if (PAPI_read_counters(values, NUM_EVENTS) != PAPI_OK) {
+                            fprintf(stderr, "PAPI_read_counters - FAILED\n");
+                            exit(1);
+                        }
+                        std::cerr << "L2 Cache misses: " << values[0] << std::endl;
+                        
+                        /* Stop counting events */
+                        if (PAPI_stop_counters(values, NUM_EVENTS) != PAPI_OK) {
+                            fprintf(stderr, "PAPI_stoped_counters - FAILED\n");
+                            exit(1);
+                        }
+                        #endif
                         <%function_HPCOM_releaseLock("finishedEvaluateLock","","pthreads")%>
                     }
+                    
+                    
                 }
             }
           }
@@ -779,10 +813,36 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
           <<
           void <%lastIdentOfPath(name)%>::evaluateODE(const UPDATETYPE command)
           {
+             #ifdef MEASURE_PAPI
+             int event[NUM_EVENTS] = {PAPI_L2_TCM};
+             long long values[NUM_EVENTS];
+             
+             /* Start counting events */
+             if (PAPI_start_counters(event, NUM_EVENTS) != PAPI_OK) {
+                fprintf(stderr, "PAPI_start_counters - FAILED\n");
+                exit(1);
+             }
+             #endif
+             
              #pragma omp parallel num_threads(<%getConfigInt(NUM_PROC)%>)
              {
                 <%odeEqs%>
              }
+             
+             #ifdef MEASURE_PAPI
+             /* Read the counters */
+             if (PAPI_read_counters(values, NUM_EVENTS) != PAPI_OK) {
+                fprintf(stderr, "PAPI_read_counters - FAILED\n");
+                exit(1);
+             }
+             std::cerr << "L2 Cache misses: " << values[0] << std::endl;
+                        
+             /* Stop counting events */
+             if (PAPI_stop_counters(values, NUM_EVENTS) != PAPI_OK) {
+                fprintf(stderr, "PAPI_stoped_counters - FAILED\n");
+                exit(1);
+             }
+             #endif
           }
           >>
         else ""
@@ -1394,7 +1454,7 @@ CFLAGS_BASED_ON_INIT_FILE=<%_extraCflags%> -I"<%makefileParams.omhome%>/../Simul
 CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
 LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"    -L"$(BOOST_LIBS)"
 CPP_RUNTIME_LIBS=<%analyzationLibs%>
-LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" <%simulationMainDLLib(simCode)%> -L"<%makefileParams.omhome%>/bin" <%schedulerLibs%> $(CPP_RUNTIME_LIBS) -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_SERIALIZATION_LIB) $(BOOST_THREAD_LIB) $(LINUX_LIB_DL)
+LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" <%simulationMainDLLib(simCode)%> -L"<%makefileParams.omhome%>/bin" <%schedulerLibs%> $(CPP_RUNTIME_LIBS) -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_SERIALIZATION_LIB) $(BOOST_THREAD_LIB) $(LINUX_LIB_DL) -lpapi
 CPPFLAGS = $(CFLAGS) -DOMC_BUILD -DBOOST_SYSTEM_NO_DEPRICATED
 SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
 FUNCTIONFILE=OMCpp<%fileNamePrefix%>Functions.cpp

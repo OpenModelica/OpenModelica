@@ -391,7 +391,9 @@ constant DebugFlag ITERATION_VARS = DEBUG_FLAG(112, "iterationVars", false,
   Util.gettext("Shows a list of all iteration variables."));
 constant DebugFlag ALLOW_RECORD_TOO_MANY_FIELDS = DEBUG_FLAG(113, "acceptTooManyFields", false,
   Util.gettext("Accepts passing records with more fields than expected to a function. This is not allowed, but is used in Fluid.Dissipation. See https://trac.modelica.org/Modelica/ticket/1245 for details."));
-
+constant DebugFlag HPCOM_MEMORY_OPT = DEBUG_FLAG(114, "hpcomMemoryOpt", false,
+  Util.gettext("Optimize the memory structure regarding the selected scheduler"));
+  
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
 // initialization so that all flags are sorted by index (and thus have unique
@@ -509,7 +511,8 @@ constant list<DebugFlag> allDebugFlags = {
   EVAL_FUNC_DUMP,
   PRINT_STRUCTURAL,
   ITERATION_VARS,
-  ALLOW_RECORD_TOO_MANY_FIELDS
+  ALLOW_RECORD_TOO_MANY_FIELDS,
+  HPCOM_MEMORY_OPT
 };
 
 // CONFIGURATION FLAGS

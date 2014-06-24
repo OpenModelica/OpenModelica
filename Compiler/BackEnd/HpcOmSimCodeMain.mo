@@ -251,6 +251,7 @@ algorithm
 
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_merged.graphml");
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphSimplified, taskGraphDataSimplified, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
+      Debug.execStat("hpcom dump simplified TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
 
       //Create schedule
       //---------------
@@ -271,18 +272,24 @@ algorithm
       SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, _, _, crefToSimVarHT, backendMapping) = simCode;
-
+      
+      //Check ODE-System size
+      //---------------------
+      System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       checkOdeSystemSize(taskGraphOde,odeEquations);
       Debug.execStat("hpcom check ODE system size", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
-
+      
+      //Create Memory-Map and Sim-Code
+      //------------------------------
       optTmpMemoryMap = HpcOmMemory.createMemoryMap(modelInfo, taskGraphSimplified, taskGraphDataSimplified, eqs, filenamePrefix, schedulerInfo, schedule, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, allComps);
-
+      Debug.execStat("hpcom create memory map", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
+      
       simCode = SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, SOME(schedule), optTmpMemoryMap, crefToSimVarHT, backendMapping);
 
       //evaluateCacheBehaviour(schedulerInfo,taskGraphDataSimplified,clTaskMapping, transposeCacheLineTaskMapping(clTaskMapping, arrayLength(taskGraphSimplified)));
-
+      Debug.execStat("hpcom other", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       print("HpcOm is still under construction.\n");
       then simCode;
     else equation
@@ -374,6 +381,11 @@ protected
   array<tuple<Integer,Integer>> schedulerInfo;
 algorithm
   (oTaskGraph,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphMeta,inBackendDAE,iApplyFilters)
+    //case(_,_,_,_)
+    //  equation
+    //    flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+    //    true = stringEq(flagValue, "level");
+    //  then (iTaskGraph, iTaskGraphMeta);
     case(_,_,_,true)
       equation
         //Merge simple and parent nodes

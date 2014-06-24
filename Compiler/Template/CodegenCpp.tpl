@@ -53,7 +53,7 @@ template simulationHeaderFile(SimCode simCode)
 match simCode
 case SIMCODE(__) then
   <<
-   <%generateHeaderInlcudeString(simCode)%>
+   <%generateHeaderIncludeString(simCode)%>
    <%generateClassDeclarationCode(simCode)%>
 
 
@@ -3697,7 +3697,7 @@ template writeoutput4(Integer index, Integer myindex2)
  >>
 end writeoutput4;
 
-template generateHeaderInlcudeString(SimCode simCode)
+template generateHeaderIncludeString(SimCode simCode)
  "Generates header part of simulation file."
 ::=
 match simCode
@@ -3718,7 +3718,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   *
   *****************************************************************************/
    >>
-end generateHeaderInlcudeString;
+end generateHeaderIncludeString;
 
 
 
@@ -10066,16 +10066,15 @@ template checkForDiscreteEvents(list<ComponentRef> discreteModelVars,SimCode sim
 ::=
 
   let changediscreteVars = (discreteModelVars |> var => match var case CREF_QUAL(__) case CREF_IDENT(__) then
-       'if (_event_handling.changeDiscreteVar(<%cref(var)%>,"<%cref(var)%>")) {  restart=true; }'
+       'if (_event_handling.changeDiscreteVar(<%cref(var)%>,"<%cref(var)%>")) {  return true; }'
        ;separator="\n")
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
   bool <%lastIdentOfPath(modelInfo.name)%>::checkForDiscreteEvents()
   {
-    bool restart = false;
     <%changediscreteVars%>
-    return restart;
+    return false;
   }
   >>
 end checkForDiscreteEvents;

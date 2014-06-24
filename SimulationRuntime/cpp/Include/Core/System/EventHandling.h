@@ -12,7 +12,7 @@ class BOOST_EXTENSION_EVENTHANDLING_DECL EventHandling
 {
 public:
     EventHandling();
-    ~EventHandling(void);
+    virtual ~EventHandling(void);
     //Inits the event variables
     void initialize(IEvent* system,int dim,init_prevars_type init_prevars);
     //Returns the help vector
@@ -63,4 +63,9 @@ private:
      event_times_type _time_events;
      boost::multi_array<double,1> _pre_vars;
      boost::multi_array<double,1> _pre_discrete_vars;
+
+     IContinuous* _countinous_system; //just a cast of _event_system -> required in IterateEventQueue
+     IMixedSystem* _mixed_system; //just a cast of _event_system -> required in IterateEventQueue
+     bool* _conditions0;
+     bool* _conditions1;
 };

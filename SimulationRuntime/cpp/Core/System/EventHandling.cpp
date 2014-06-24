@@ -10,7 +10,7 @@ Constructor
 \param system Modelica system object
 \param dim Dimenson of help variables
 */
-EventHandling::EventHandling()
+EventHandling::EventHandling() : _countinous_system(NULL), _mixed_system(NULL), _conditions0(NULL), _conditions1(NULL)
 //:_h(NULL)
 {
 }
@@ -18,6 +18,10 @@ EventHandling::EventHandling()
 EventHandling::~EventHandling(void)
 {
    // if(_h) delete [] _h;
+  if(_conditions0)
+    delete[] _conditions0;
+  if(_conditions1)
+    delete[] _conditions1;
 }
 /**
 Inits the event variables
@@ -26,6 +30,9 @@ void EventHandling::initialize(IEvent* system,int dim,init_prevars_type init_pre
 {
    // _dimH=dim;
     _event_system=system;
+    _countinous_system = dynamic_cast<IContinuous*>(_event_system);
+    _mixed_system= dynamic_cast<IMixedSystem*>(_event_system);
+
     init_prevars(_pre_vars_idx,_pre_discrete_vars_idx);
     _pre_vars.resize((boost::extents[_pre_vars_idx.size()]));
     _pre_discrete_vars.resize((boost::extents[_pre_discrete_vars_idx.size()]));
@@ -37,6 +44,13 @@ void EventHandling::initialize(IEvent* system,int dim,init_prevars_type init_pre
         memset(_h,0,(_dimH)*sizeof(double));
     }
     */
+    if(_conditions0)
+      delete[] _conditions0;
+    if(_conditions1)
+      delete[] _conditions1;
+
+    _conditions0 = new bool[dim];
+    _conditions1 = new bool[dim];
 }
 /**
 Returns the help vector
@@ -165,29 +179,24 @@ Handles  all events occured a the same time. These are stored  the eventqueue
 
 bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
 {
-    IContinuous*  countinous_system = dynamic_cast<IContinuous*>(_event_system);
-    IMixedSystem* mixed_system= dynamic_cast<IMixedSystem*>(_event_system);
-
     //save discrete varibales
     _event_system->saveDiscreteVars(); // store values of discrete vars vor next check
 
     unsigned int dim = _event_system->getDimZeroFunc();
-    bool* conditions0 = new bool[dim];
-    bool* conditions1 = new bool[dim];
-    _event_system->getConditions(conditions0);
+
+    _event_system->getConditions(_conditions0);
     //Handle all events
 
-    state_vars_reinitialized =     countinous_system->evaluateAll();
+    state_vars_reinitialized = _countinous_system->evaluateAll();
 
 
     //check if discrete variables changed
     bool drestart= _event_system->checkForDiscreteEvents();
 
 
-    _event_system->getConditions(conditions1);
-    bool crestart = !std::equal (conditions1, conditions1+dim,conditions0);
-    delete[] conditions0;
-    delete [] conditions1;
+    _event_system->getConditions(_conditions1);
+    bool crestart = !std::equal (_conditions1, _conditions1+dim,_conditions0);
+
     return((drestart||crestart)); //returns true if new events occured
 }
 

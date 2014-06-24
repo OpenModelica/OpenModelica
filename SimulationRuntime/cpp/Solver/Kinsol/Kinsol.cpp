@@ -124,10 +124,10 @@ void Kinsol::initialize()
             //Set Options
             //idid = KINSetNumMaxIters(_kinMem, _kinsolSettings->getNewtMax());
             idid = KINInit(_kinMem, kin_fCallback, _Kin_y);
-            if (check_flag(&idid, "KINInit", 1))
+            if (check_flag(&idid, (char *)"KINInit", 1))
                 throw std::invalid_argument("Kinsol::initialize()");
             idid = KINSetUserData(_kinMem, _data);
-            if (check_flag(&idid, "KINSetUserData", 1))
+            if (check_flag(&idid, (char *)"KINSetUserData", 1))
                 throw std::invalid_argument("Kinsol::initialize()");
 
             idid = KINSetErrFile(_kinMem, NULL);

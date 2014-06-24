@@ -128,30 +128,30 @@ encapsulated package HpcOmMemory
     oMemoryMap := matchcontinue(iModelInfo, iTaskGraph, iTaskGraphMeta, iEqSystems, iFileNamePrefix, iSchedulerInfo, iSchedule, iSccSimEqMapping, iCriticalPaths, iCriticalPathsWoC, iCriticalPathInfo, iAllComponents)
       case(_,_,_,_,_,_,_,_,_,_,_,_)
         equation
-          true = Flags.isSet(Flags.HPCOM_ANALYZATION_MODE);
-          HpcOmTaskGraph.printTaskGraphMeta(iTaskGraphMeta);
+          true = Flags.isSet(Flags.HPCOM_MEMORY_OPT);
+          //HpcOmTaskGraph.printTaskGraphMeta(iTaskGraphMeta);
           //Create var hash table
           SimCode.MODELINFO(vars=simCodeVars) = iModelInfo;
           SimCode.SIMVARS(stateVars=stateVars, derivativeVars=derivativeVars, algVars=algVars, paramVars=paramVars) = simCodeVars;
           allVarsMapping = SimCodeUtil.createIdxSCVarMapping(simCodeVars);
-          SimCodeUtil.dumpIdxScVarMapping(allVarsMapping);
-          print("--------------------------------\n");
+          //SimCodeUtil.dumpIdxScVarMapping(allVarsMapping);
+          //print("--------------------------------\n");
           hashTable = HashTableCrILst.emptyHashTableSized(BaseHashTable.biggerBucketSize);
           hashTable = fillSimVarHashTable(stateVars,0,0,hashTable);
           hashTable = fillSimVarHashTable(derivativeVars,listLength(stateVars),0,hashTable);
           hashTable = fillSimVarHashTable(algVars,listLength(stateVars) + listLength(stateVars),0,hashTable);
           //hashTable = fillSimVarHashTable(paramVars,listLength(stateVars)*2 + listLength(algVars),0,hashTable);
-          print("-------------------------------------\n");
-          BaseHashTable.dumpHashTable(hashTable);
+          //print("-------------------------------------\n");
+          //BaseHashTable.dumpHashTable(hashTable);
           //Create CacheMap
           sccNodeMapping = HpcOmTaskGraph.getSccNodeMapping(arrayLength(iSccSimEqMapping), iTaskGraphMeta);
-          printSccNodeMapping(sccNodeMapping);
+          //printSccNodeMapping(sccNodeMapping);
           scVarTaskMapping = getSimCodeVarNodeMapping(iTaskGraphMeta,iEqSystems,listLength(stateVars)*2+listLength(algVars),sccNodeMapping,hashTable);
-          printScVarTaskMapping(scVarTaskMapping);
-          print("-------------------------------------\n");
+          //printScVarTaskMapping(scVarTaskMapping);
+          //print("-------------------------------------\n");
           nodeSimCodeVarMapping = getNodeSimCodeVarMapping(iTaskGraphMeta, iEqSystems, hashTable);
-          printNodeSimCodeVarMapping(nodeSimCodeVarMapping);
-          print("-------------------------------------\n");
+          //printNodeSimCodeVarMapping(nodeSimCodeVarMapping);
+          //print("-------------------------------------\n");
           (cacheMap,scVarCLMapping,numCL) = createCacheMapOptimized(allVarsMapping,stateVars,derivativeVars,algVars,paramVars,scVarTaskMapping,64,iAllComponents,iSchedule, nodeSimCodeVarMapping);
           eqSimCodeVarMapping = getEqSCVarMapping(iEqSystems,hashTable);
           (clTaskMapping,scVarTaskMapping) = getCacheLineTaskMapping(iTaskGraphMeta,iEqSystems,hashTable,numCL,scVarCLMapping);
