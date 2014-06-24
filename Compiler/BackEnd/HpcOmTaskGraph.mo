@@ -243,32 +243,22 @@ algorithm
       TaskGraphMeta graphDataIn;
       TaskGraphMeta graphDataTmp;
       array<list<tuple<Integer,Integer,Integer>>> commCosts;
-      array<list<Integer>> adjLst;
-      array<list<Integer>> adjLstOde;
       array<list<Integer>> inComps;
-      array<Integer> ass1;
-      array<Integer> ass2;
       array<tuple<Integer,Real>> exeCosts;
       array<Integer> nodeMark;
       array<tuple<Integer,Integer,Integer>> varCompMapping, eqCompMapping; //Map each variable to the scc that solves her
       array<String> nodeNames;
       array<String> nodeDescs;
-      list<Integer> eventEqLst;
-      list<Integer> eventVarLst;
-      list<Integer> rootNodes;
-      list<Integer> rootVars;
-      String fileName;
-      String fileNameOde;
-      Integer numberOfVars;
-      Integer numberOfEqs;
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=_), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=_)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(_,_,eqSysIdx))
+      list<Integer> eventEqLst, eventVarLst, rootNodes, rootVars;
+      Integer numberOfVars, numberOfEqs;
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(_,_,eqSysIdx))
       equation
         //Create Taskgraph for the first EqSystem
         //TASKGRAPHMETA(varCompMapping=varCompMapping,eqCompMapping=eqCompMapping) = graphDataIn;
         true = intEq(eqSysIdx,1);
         (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
         //print("createTaskGraph0 with " +& intString(listLength(comps)) +& " components, " +& intString(arrayLength(ass1)) +& " variables and " +& intString(arrayLength(ass2)) +& " equations\n");
-        (graphTmp,graphDataTmp) = getEmptyTaskGraph(listLength(comps), arrayLength(ass1), arrayLength(ass2));
+        (graphTmp,graphDataTmp) = getEmptyTaskGraph(listLength(comps), numberOfVars, numberOfEqs);
         TASKGRAPHMETA(inComps = inComps, rootNodes = rootNodes, nodeNames =nodeNames, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark, varCompMapping=varCompMapping,eqCompMapping=eqCompMapping) = graphDataTmp;
         //print("createTaskGraph0 try to get varCompMapping\n");
         (varCompMapping,eqCompMapping) = getVarEqCompMapping(comps, eqSysIdx, 0, 0, varCompMapping, eqCompMapping);
@@ -280,14 +270,14 @@ algorithm
         tplOut = ((graphTmp,graphDataTmp,eqSysIdx+1));
       then
         tplOut;
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=_), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=_)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(graphIn,graphDataIn,eqSysIdx))
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(graphIn,graphDataIn,eqSysIdx))
       equation
         //append the remaining equationsystems to the taskgraph
         //TASKGRAPHMETA(varCompMapping=varCompMapping,eqCompMapping=eqCompMapping) = graphDataIn;
         false = intEq(eqSysIdx,1);
         (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
         //print("createTaskGraph0_case2 with " +& intString(listLength(comps)) +& " components, " +& intString(arrayLength(ass1)) +& " variables and " +& intString(arrayLength(ass2)) +& " equations\n");
-        (graphTmp,graphDataTmp) = getEmptyTaskGraph(listLength(comps), arrayLength(ass1), arrayLength(ass2));
+        (graphTmp,graphDataTmp) = getEmptyTaskGraph(listLength(comps), numberOfVars, numberOfEqs);
         TASKGRAPHMETA(inComps = inComps, rootNodes = rootNodes, nodeNames =nodeNames, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark, varCompMapping=varCompMapping,eqCompMapping=eqCompMapping) = graphDataTmp;
         //print("createTaskGraph0 try to get varCompMapping\n");
         (varCompMapping,eqCompMapping) = getVarEqCompMapping(comps, eqSysIdx, 0, 0, varCompMapping, eqCompMapping);
@@ -821,11 +811,12 @@ author:Waurich TUD 2013-06"
   output list<Integer> eventNodes;
 protected
   list<Integer> eqLst;
+  list<tuple<Integer,Integer,Integer>> tplLst;
   BackendDAE.EqSystems systemsIn;
 algorithm
   BackendDAE.DAE(eqs=systemsIn) := systIn;
   ((eqLst,_)) := List.fold(systemsIn, getEventNodeEqs,({},0));
-  eventNodes := matchWithAssignmentsTuple(eqLst,eqCompMapping);
+  eventNodes := getArrayTuple31(eqLst,eqCompMapping);
 end getEventNodes;
 
 
@@ -885,41 +876,18 @@ algorithm
   end matchcontinue;
 end getEventNodeEqs1;
 
-protected function matchWithAssignmentsTuple " matches entries of list1 with the assigned values of assign to obtain the values
+protected function getArrayTuple31 " matches entries of list1 with the assigned values of assign to obtain the values
 author:Waurich TUD 2013-06"
   input list<Integer> list1;
   input array<tuple<Integer,Integer,Integer>> assign;
   output list<Integer> list2Out;
+protected 
+  list<tuple<Integer,Integer,Integer>> tplLst;
 algorithm
-  list2Out := matchWithAssignmentsTuple1(list1,assign,{});
-  list2Out := listReverse(list2Out);
-end matchWithAssignmentsTuple;
+   tplLst := List.map1(list1,Util.arrayGetIndexFirst,assign);
+   list2Out := List.map(tplLst,Util.tuple31);
+end getArrayTuple31;
 
-protected function matchWithAssignmentsTuple1" implementation of matchWithAssigments.
-author:Waurich TUD 2013-06"
-  input list<Integer> list1;
-  input array<tuple<Integer,Integer,Integer>> assign;
-  input list<Integer> list2In;
-  output list<Integer> list2Out;
-algorithm
-  list2Out := match(list1, assign, list2In)
-    local
-      Integer head;
-      Integer entry2;
-      list<Integer> rest;
-      list<Integer> entries2;
-    case(head::rest,_,_)
-      equation
-        ((entry2,_,_)) = arrayGet(assign,head);
-        entries2 = matchWithAssignmentsTuple1(rest,assign,entry2::list2In);
-      then
-        entries2;
-    case({},_,_)
-      equation
-        then
-          list2In;
-  end match;
-end matchWithAssignmentsTuple1;
 
 protected function isWhenEquation " checks if the comp is of type SINGLEWHENEQUATION.
 author:Waurich TUD 2013-06"
@@ -936,7 +904,6 @@ algorithm
       false;
   end matchcontinue;
 end isWhenEquation;
-
 
 protected function fillSccList "author: marcusw
   This function appends the scc, which solves the given variable, to the requiredsccs-list."
@@ -1353,15 +1320,9 @@ protected function getVarEqCompMapping0 "author: marcusw,waurich
 algorithm
   oSccIdx := matchcontinue(component, varCompMapping, eqCompMapping, iEqSysIdx, iVarEqOffset, iSccIdx)
     local
-      Integer compVarIdx, iVarOffset, iEqOffset;
-      Integer eq;
-      List<Integer> compVarIdc;
-      List<Integer> eqns;
-      List<Integer> residuals;
-      List<Integer> othereqs;
-      List<Integer> othervars;
-      array<tuple<Integer,Integer,Integer>> tmpvarCompMapping;
-      array<tuple<Integer,Integer,Integer>> tmpeqCompMapping;
+      Integer compVarIdx, iVarOffset, iEqOffset, eq;
+      list<Integer> compVarIdc,eqns,residuals,othereqs,othervars;
+      array<tuple<Integer,Integer,Integer>> tmpvarCompMapping,tmpeqCompMapping;
       list<tuple<Integer,list<Integer>>> tearEqVarTpl;
       BackendDAE.StrongComponent condSys;
       String helperStr;
@@ -1558,15 +1519,8 @@ author: Waurich TUD 2013-06"
   output TaskGraphMeta graphDataOdeOut;
 protected
   list<BackendDAE.Var> varLst;
-  list<Integer> statevarindx_lst;
-  list<Integer> stateVars;
-  list<Integer> stateNodes;
-  list<Integer> whenNodes;
-  list<Integer> whenChildren;
-  list<Integer> cutNodes;
-  list<Integer> cutNodeChildren;
-  array<tuple<Integer, Integer, Integer>> varCompMapping;
-  array<tuple<Integer, Integer, Integer>> eqCompMapping;
+  list<Integer> statevarindx_lst, stateVars, stateNodes, whenNodes, whenChildren, cutNodes, cutNodeChildren;
+  array<tuple<Integer, Integer, Integer>> varCompMapping, eqCompMapping;
   array<list<Integer>> inComps;
   String fileName;
   BackendDAE.Variables orderedVars;
@@ -1598,11 +1552,8 @@ author: Waurich TUD 2013-07"
 algorithm
   stateInfoOut := matchcontinue(systIn,varCompMapping,inComps,stateInfoIn)
     local
-      list<Integer> stateNodes;
-      list<Integer> stateNodesIn;
-      list<Integer> stateVars;
-      Integer varOffset;
-      Integer varOffsetNew;
+      list<Integer> stateNodes, stateNodesIn, stateVars;
+      Integer varOffset, varOffsetNew;
       BackendDAE.Variables orderedVars;
       list<BackendDAE.Var> varLst;
   case(_,_,_,((stateNodesIn,varOffset)))
@@ -1614,7 +1565,7 @@ algorithm
       //print("varCompMapping: " +& stringDelimitList(arrayList(Util.arrayMap(varCompMapping,tuple3ToString)),",") +& "\n");
       true = List.isNotEmpty(stateVars);
       stateVars = List.map1(stateVars,intAdd,varOffset);
-      stateNodes = matchWithAssignmentsTuple(stateVars,varCompMapping);
+      stateNodes = getArrayTuple31(stateVars,varCompMapping);
       //print("stateNodes: " +& stringDelimitList(List.map(stateNodes,intString),",") +& "\n");
       stateNodes = List.map3(stateNodes,getCompInComps,1,inComps,arrayCreate(arrayLength(inComps),0));
       stateNodes = listAppend(stateNodesIn,stateNodes);
