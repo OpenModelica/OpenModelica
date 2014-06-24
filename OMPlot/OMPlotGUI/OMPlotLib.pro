@@ -18,7 +18,6 @@ QMAKE_LFLAGS += -enable-auto-import
 SOURCES += ../../SimulationRuntime/c/util/read_matlab4.c \
     ../../SimulationRuntime/c/util/libcsv.c \
     ../../SimulationRuntime/c/util/read_csv.c \
-    ../../SimulationRuntime/c/util/string_util.c \
     Plot.cpp \
     PlotZoomer.cpp \
     Legend.cpp \
