@@ -35,6 +35,10 @@
 #include "read_matlab4.h"
 #include "libcsv.h"
 
+#if defined(__cplusplus)
+#include <sstream>
+#endif
+
 struct cell_row_count
 {
   int cell_count;
@@ -78,9 +82,9 @@ static void add_variable(void *data, size_t len, void *t)
   }
   if (head->size+1 >= head->buffer_size) {
     head->buffer_size = head->buffer_size ? 2*head->buffer_size : 512;
-    head->variables = realloc(head->variables, sizeof(char*)*head->buffer_size);
+    head->variables = (char**) realloc(head->variables, sizeof(char*)*head->buffer_size);
   }
-  head->variables[head->size++] = strdup(data ? data : "");
+  head->variables[head->size++] = strdup(data ? (char*) data : "");
 }
 
 static void row_count(int c, void *t)
@@ -149,6 +153,9 @@ static void add_cell(void *data, size_t len, void *t)
 {
   struct csv_body *body = (struct csv_body*) t;
   char *endptr = "";
+  if (body->error) {
+    return;
+  }
   if (!body->found_first_row) {
     body->cur_size++;
     body->row_length++;
@@ -159,11 +166,24 @@ static void add_cell(void *data, size_t len, void *t)
     body->buffer_size = body->buffer_size > 0 ? body->buffer_size : 1024;
     body->res = body->res ? (double*)realloc(body->res, sizeof(double)*body->buffer_size) : (double*) malloc(sizeof(double)*body->buffer_size);
   }
+  if (data == NULL) {
+    body->res[body->size++] = 0.0;
+    return;
+  }
+#if !defined(__cplusplus)
   body->res[body->size++] = data ? strtod((const char*)data,&endptr) : 0;
   if (*endptr) {
-    printf("Found non-double data in csv result-file: %s\n", (char*) data);
+    fprintf(stderr,"Found non-double data in csv result-file: %s\n", (char*) data);
     body->error = 1;
   }
+#else
+  std::istringstream str((const char*)data);
+  str >> body->res[body->size++];
+  if (!str.eof()) {
+    fprintf(stderr,"Found non-double data in csv result-file: %s\n", (char*) data);
+    body->error = 1;
+  }
+#endif
 }
 
 static void add_row(int c, void *t)
@@ -171,7 +191,7 @@ static void add_row(int c, void *t)
   struct csv_body *body = (struct csv_body*) t;
   body->found_first_row++;
   if (body->cur_size != body->row_length) {
-    printf("Did not find time points for all variables for row: %d\n", body->found_first_row);
+    fprintf(stderr,"Did not find time points for all variables for row: %d\n", body->found_first_row);
     body->error = 1;
     return;
   }
@@ -247,7 +267,7 @@ struct csv_data* read_csv(const char *filename)
   if (body.error) {
     return NULL;
   }
-  res = malloc(sizeof(struct csv_data));
+  res = (csv_data*) malloc(sizeof(struct csv_data));
   if (!res) {
     return NULL;
   }
