@@ -267,7 +267,7 @@ struct csv_data* read_csv(const char *filename)
   if (body.error) {
     return NULL;
   }
-  res = (csv_data*) malloc(sizeof(struct csv_data));
+  res = (struct csv_data*) malloc(sizeof(struct csv_data));
   if (!res) {
     return NULL;
   }
