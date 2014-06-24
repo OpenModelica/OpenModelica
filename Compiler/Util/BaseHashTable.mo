@@ -636,4 +636,20 @@ algorithm
   end match;
 end valueArrayNth;
 
+public function copy
+  "Makes a copy of a hashtable."
+  input HashTable inHashTable;
+  output HashTable outCopy;
+protected
+  HashVector hv;
+  Integer bs, sz, vs, ve;
+  FuncsTuple ft;
+  array<Option<HashEntry>> vae;
+algorithm
+  (hv, (vs, ve, vae), bs, sz, ft) := inHashTable;
+  hv := arrayCopy(hv);
+  vae := arrayCopy(vae);
+  outCopy := (hv, (vs, ve, vae), bs, sz, ft);
+end copy;
+
 end BaseHashTable;
