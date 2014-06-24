@@ -2936,34 +2936,41 @@ public function mergeSingleNodes"merges all single nodes. the max number of rema
   output TaskGraph oTaskGraph;
   output TaskGraphMeta oTaskGraphMeta;
   output Boolean changed;
-protected
-  Integer numProc;
-  list<Integer> singleNodes,singleNodes1,pos;
-  list<list<Integer>> clusterLst;
-  list<Real> exeCosts;
-  array<Real> costs;
-  array<list<Integer>> cluster;
-  TaskGraph taskGraphT;
 algorithm
-  numProc := Flags.getConfigInt(Flags.NUM_PROC);
-  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
-  //get the single nodes, sort them according to their exeCosts in decreasing order
-  (_,singleNodes) := List.filterOnTrueSync(arrayList(iTaskGraph),List.isEmpty,List.intRange(arrayLength(iTaskGraph)));  //nodes without successor
-  (_,singleNodes1) := List.filterOnTrueSync(arrayList(taskGraphT),List.isEmpty,List.intRange(arrayLength(taskGraphT))); //nodes without predecessor
-  (singleNodes,_,_) := List.intersection1OnTrue(singleNodes,singleNodes1,intEq);
-  exeCosts := List.map1(singleNodes,getExeCostReqCycles,iTaskGraphMeta);
-  (exeCosts,pos) := HpcOmScheduler.quicksortWithOrder(exeCosts);
-  singleNodes := List.map1(pos,List.getIndexFirst,singleNodes);
-  singleNodes := listReverse(singleNodes);
-    //print("singleNodes "+&stringDelimitList(List.map(singleNodes,intString),"\n")+&"\n");
-  exeCosts := listReverse(exeCosts);
-  // cluster these singleNodes
-  (cluster,costs) := distributeToClusters(singleNodes,exeCosts,numProc);
-    //print("cluster "+&stringDelimitList(List.map(arrayList(cluster),intLstString),"\n")+&"\n");
-  //update taskgraph and taskgraphMeta
-  clusterLst := arrayList(cluster);
-  (oTaskGraph,oTaskGraphMeta) := contractNodesInGraph(clusterLst,iTaskGraph,iTaskGraphMeta);
-  changed := intGt(listLength(singleNodes),numProc);
+  (oTaskGraph,oTaskGraphMeta,changed) := matchcontinue(iTaskGraph,iTaskGraphMeta)
+    local
+      Integer numProc;
+      list<Integer> singleNodes,singleNodes1,pos;
+      list<list<Integer>> clusterLst;
+      list<Real> exeCosts;
+      array<Real> costs;
+      array<list<Integer>> cluster;
+      TaskGraph taskGraphT;
+    case(_,_)
+      equation
+        numProc = Flags.getConfigInt(Flags.NUM_PROC);
+        taskGraphT = BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+        //get the single nodes, sort them according to their exeCosts in decreasing order
+        (_,singleNodes) = List.filterOnTrueSync(arrayList(iTaskGraph),List.isEmpty,List.intRange(arrayLength(iTaskGraph)));  //nodes without successor
+        (_,singleNodes1) = List.filterOnTrueSync(arrayList(taskGraphT),List.isEmpty,List.intRange(arrayLength(taskGraphT))); //nodes without predecessor
+        (singleNodes,_,_) = List.intersection1OnTrue(singleNodes,singleNodes1,intEq);
+        exeCosts = List.map1(singleNodes,getExeCostReqCycles,iTaskGraphMeta);
+        (exeCosts,pos) = HpcOmScheduler.quicksortWithOrder(exeCosts);
+        singleNodes = List.map1(pos,List.getIndexFirst,singleNodes);
+        singleNodes = listReverse(singleNodes);
+        //print("singleNodes "+&stringDelimitList(List.map(singleNodes,intString),"\n")+&"\n");
+        exeCosts = listReverse(exeCosts);
+        // cluster these singleNodes
+        (cluster,costs) = distributeToClusters(singleNodes,exeCosts,numProc);
+        //print("cluster "+&stringDelimitList(List.map(arrayList(cluster),intLstString),"\n")+&"\n");
+        //update taskgraph and taskgraphMeta
+        clusterLst = arrayList(cluster);
+        (oTaskGraph,oTaskGraphMeta) = contractNodesInGraph(clusterLst,iTaskGraph,iTaskGraphMeta);
+        changed = intGt(listLength(singleNodes),numProc);
+  then (oTaskGraph,oTaskGraphMeta,changed);
+  else
+    then (iTaskGraph,iTaskGraphMeta,false);
+  end matchcontinue;
 end mergeSingleNodes;
 
 protected function distributeToClusters"takes a list of items and corresponding values and clusters the items. The cluster are supposed to have an most equal distribuatin of added values.
@@ -3136,7 +3143,7 @@ end mergeSimpleNodes;
 
 
 public function mergeParentNodes "author: marcusw
-  Merges parent nodes into child if this produces a shorter execution time."
+  Merges parent nodes into child if this produces a shorter execution time. Only one merge set is determined. you have to repeat this function"
   input TaskGraph iGraph;
   input TaskGraphMeta iGraphData;
   output TaskGraph oGraph;
