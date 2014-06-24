@@ -371,8 +371,6 @@ void freeModelInfoXml(MODEL_DATA_XML* xml)
 #include <unistd.h>
 #endif
 
-#include "string_util.h"
-
 static inline const char* skipSpace(const char* str)
 {
   do {
@@ -467,7 +465,7 @@ static const char* skipValue(const char* str)
   case '9':
   {
     char *endptr = NULL;
-    double d = om_strtod(str,&endptr);
+    double d = strtod(str,&endptr);
     if (str == endptr) {
       throwStreamPrint(NULL, "Not a number, got %.20s\n", str);
     }

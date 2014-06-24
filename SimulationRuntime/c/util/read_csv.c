@@ -34,7 +34,6 @@
 #include "read_csv.h"
 #include "read_matlab4.h"
 #include "libcsv.h"
-#include "string_util.h"
 
 struct cell_row_count
 {
@@ -160,7 +159,7 @@ static void add_cell(void *data, size_t len, void *t)
     body->buffer_size = body->buffer_size > 0 ? body->buffer_size : 1024;
     body->res = body->res ? (double*)realloc(body->res, sizeof(double)*body->buffer_size) : (double*) malloc(sizeof(double)*body->buffer_size);
   }
-  body->res[body->size++] = data ? om_strtod((const char*)data,&endptr) : 0;
+  body->res[body->size++] = data ? strtod((const char*)data,&endptr) : 0;
   if (*endptr) {
     printf("Found non-double data in csv result-file: %s\n", (char*) data);
     body->error = 1;

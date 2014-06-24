@@ -202,7 +202,9 @@ if buildRes and javascript then
 end if;
 mdFile := if javascript then \""+s+".md\" else \"\";
 
-if mslRegressionOutput <> \"\" then
+resFile := \""+s+"_res.\" + outputFormat;
+
+if mslRegressionOutput <> \"\" and referenceExists then
   mslRegressionOutput := mslRegressionOutput + \"/"+OpenModelica.Scripting.stringReplace(s,".","/")+"/\";
   mkdir(mslRegressionOutput);
   simFailLog := mslRegressionOutput+\"simulate_failed.log\";
@@ -214,7 +216,12 @@ if mslRegressionOutput <> \"\" then
   system(\"rm -f \"+(if buildRes then buildFailLog else buildSuccessLog));
 
   system(\"cp \"+simFile+\" \" + simFile + \".tmp\");
-  system(\"cp "+s+"_res.csv "+s+".csv\");
+  if simRes then
+    system(\"cp \"+resFile+\" "+s+".csv\");
+    compareFilesAndMove(\""+s+".csv\", mslRegressionOutput+\""+s+".csv\");
+  else
+    system(\"rm -f \" + mslRegressionOutput + \""+s+".csv\");
+  end if;
   system(\"cp "+s+".mos "+s+".mos.tmp\");
 
   if err == \"\" then
@@ -225,7 +232,6 @@ if mslRegressionOutput <> \"\" then
 
   compareFilesAndMove(errFile + \".tmp\", if buildRes then buildSuccessLog else buildFailLog);
   compareFilesAndMove(simFile + \".tmp\", if buildRes then simSuccessLog else simFailLog);
-  compareFilesAndMove(\""+s+".csv\", mslRegressionOutput+\""+s+".csv\");
   compareFilesAndMove(\""+s+".mos.tmp\", mslRegressionOutput+\"creation.txt\");
 end if;
 
@@ -236,7 +242,7 @@ if simRes then
   prefix := \"files/"+s+".diff\";
   if referenceExists then
     OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
-    (referenceOK,diffVars) := diffSimulationResults(\""+s+"_res.\"+outputFormat,reference,prefix,relTol=reference_reltol,relTolDiffMinMax=reference_reltolDiffMinMax,rangeDelta=reference_rangeDelta);
+    (referenceOK,diffVars) := diffSimulationResults(resFile,reference,prefix,relTol=reference_reltol,relTolDiffMinMax=reference_reltolDiffMinMax,rangeDelta=reference_rangeDelta);
     if referenceOK then
       system(\"touch "+s+".verifysuccess\");
     end if;
