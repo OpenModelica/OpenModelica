@@ -2360,7 +2360,6 @@ algorithm
         e_lst = Expression.factors(e);
         e_lst_1 = simplifyMul(e_lst);
         res = Expression.makeProductLst(e_lst_1);
-        (res,_) = simplify1(res);
       then
         res;
 
@@ -2373,7 +2372,6 @@ algorithm
         e_lst = listAppend(e1_lst, e2_lst_1);
         e_lst_1 = simplifyMul(e_lst);
         res = Expression.makeProductLst(e_lst_1);
-        (res,_) = simplify1(res);
       then
         res;
 
