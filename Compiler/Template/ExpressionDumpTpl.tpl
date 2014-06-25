@@ -62,7 +62,7 @@ match exp
     'function <%func_str%>(<%argl%>)'
   case ARRAY(__) then
     let expl = dumpExpList(array, stringDelimiter, ", ")
-    '<%if typeinfo() then (if scalar then "/* scalar */ " else "/* non-scalar */ ")%>{<%expl%>}'
+    '<%if typeinfo() then (if scalar then '/* scalar <%unparseType(ty)%>*/' else '/* non-scalar <%unparseType(ty)%> */ ')%>{<%expl%>}'
   case MATRIX(__) then
     let mat_str = (matrix |> row => dumpExpList(row, stringDelimiter, ", ") ;separator="}, {")
     '<%if typeinfo() then '/* matrix <%unparseType(ty) %> */ '%>{{<%mat_str%>}}'

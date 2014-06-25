@@ -2714,6 +2714,10 @@ package Config
   function profileFunctions
     output Boolean outBoolean;
   end profileFunctions;
+
+  function typeinfo
+    output Boolean flag;
+  end typeinfo;
 end Config;
 
 package Flags

@@ -501,9 +501,18 @@ algorithm
       Integer c1,c2;
       Boolean b;
       String s1,s2,s3,s4;
+      DAE.Type ty1,ty2;
     case (false,_,_) then ();
     case (true,_,_)
       equation
+        ty1 = Expression.typeof(before);
+        ty2 = Expression.typeof(after);
+        b = valueEq(ty1,ty2);
+        s1 = Debug.bcallret1(not b,ExpressionDump.printExpStr,before,"");
+        s2 = Debug.bcallret1(not b,ExpressionDump.printExpStr,after,"");
+        s3 = Debug.bcallret1(not b,Types.unparseType,ty1,"");
+        s4 = Debug.bcallret1(not b,Types.unparseType,ty2,"");
+        Error.assertionOrAddSourceMessage(b, Error.SIMPLIFICATION_TYPE, {s1,s2,s3,s4}, Absyn.dummyInfo);
         c1 = Expression.complexity(before);
         c2 = Expression.complexity(after);
         b = c1 < c2;
@@ -1013,7 +1022,7 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT("fill"), expLst = e::expl))
       equation
         valueLst = List.map(expl, ValuesUtil.expValue);
-        (_,outExp,_) = Static.elabBuiltinFill2(Env.noCache(), Env.emptyEnv, e, DAE.T_UNKNOWN_DEFAULT, valueLst, DAE.C_CONST(), Prefix.NOPRE(), {}, Absyn.dummyInfo);
+        (_,outExp,_) = Static.elabBuiltinFill2(Env.noCache(), Env.emptyEnv, e, Expression.typeof(e), valueLst, DAE.C_CONST(), Prefix.NOPRE(), {}, Absyn.dummyInfo);
       then
         outExp;
 

@@ -4056,7 +4056,10 @@ template simulationLiteralsFile(String filePrefix, list<Exp> literals)
   extern "C" {
   #endif
 
-  <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n";empty%>
+  <%literals |> literal hasindex i0 fromindex 0 =>
+    (if typeinfo() then '/* <%Util.escapeModelicaStringToCString(printExpStr(literal))%> */<%\n%>') +
+    literalExpConst(literal,i0)
+    ; separator="\n";empty%>
 
   #ifdef __cplusplus
   }
@@ -6073,7 +6076,7 @@ case T_COMPLEX(varLst=vl, complexClassType=n) then
   >>
 end writeOutVarRecordMembers;
 
-template varInit(Variable var, String outStruct, Text &varDecls /*BUFP*/, Text &varInits /*BUFP*/, Text &varFrees /*BUFF*/)
+template varInit(Variable var, String outStruct, Text &varDecls, Text &varInits, Text &varFrees)
  "Generates code to initialize variables.
   Does not return anything: just appends declarations to buffers."
 ::=
@@ -6086,7 +6089,7 @@ case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
   let varName = contextCref(var.name,contextFunction)
   let &varInits += initRecordMembers(var)
   let instDimsInit = (instDims |> exp =>
-      daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
+      daeExp(exp, contextFunction, &varInits, &varDecls)
     ;separator=", ")
   if instDims then
     (match var.ty
@@ -6107,7 +6110,7 @@ case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
   else
     (match var.value
     case SOME(exp) then
-      let defaultValue = '<%contextCref(var.name,contextFunction)%> = <%daeExp(exp, contextFunction, &varInits  /*BUFC*/, &varDecls /*BUFD*/)%>;<%\n%>'
+      let defaultValue = '<%contextCref(var.name,contextFunction)%> = <%daeExp(exp, contextFunction, &varInits, &varDecls)%>;<%\n%>'
       let &varInits += defaultValue
 
       " "
@@ -6126,7 +6129,7 @@ else error(sourceInfo(), 'Unknown local variable type')
 end varInit;
 
 /* ParModelica Extension. */
-template parVarInit(Variable var, String outStruct, Text &varDecls /*BUFP*/, Text &varInits /*BUFP2*/, Text varFrees /*BUFPF*/)
+template parVarInit(Variable var, String outStruct, Text &varDecls, Text &varInits, Text varFrees)
  "Generates code to initialize ParModelica variables.
   Does not return anything: just appends declarations to buffers."
 ::=
@@ -6135,7 +6138,7 @@ case var as VARIABLE(parallelism = PARGLOBAL(__)) then
   let varName = '<%contextCref(var.name,contextFunction)%>'
 
   let instDimsInit = (instDims |> exp =>
-      daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
+      daeExp(exp, contextFunction, &varInits, &varDecls)
     ;separator=", ")
 
   if instDims then
@@ -6150,7 +6153,7 @@ case var as VARIABLE(parallelism = PARGLOBAL(__)) then
     (match var.value
     case SOME(exp) then
       let &varDecls += '<%varType(var)%> <%varName%>;<%\n%>'
-      let defaultValue = '<%contextCref(var.name,contextFunction)%> = <%daeExp(exp, contextFunction, &varInits  /*BUFC*/, &varDecls /*BUFD*/)%>;<%\n%>'
+      let defaultValue = '<%contextCref(var.name,contextFunction)%> = <%daeExp(exp, contextFunction, &varInits, &varDecls /*BUFD*/)%>;<%\n%>'
       let &varInits += defaultValue
 
       " "
