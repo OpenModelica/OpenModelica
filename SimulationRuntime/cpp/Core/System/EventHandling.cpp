@@ -49,8 +49,8 @@ void EventHandling::initialize(IEvent* system,int dim,init_prevars_type init_pre
     if(_conditions1)
       delete[] _conditions1;
 
-    _conditions0 = new bool[dim];
-    _conditions1 = new bool[dim];
+    _conditions0 = new bool[_event_system->getDimZeroFunc()];
+    _conditions1 = new bool[_event_system->getDimZeroFunc()];
 }
 /**
 Returns the help vector
