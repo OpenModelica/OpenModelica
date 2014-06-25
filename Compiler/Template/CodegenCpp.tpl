@@ -1615,7 +1615,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         <%varDecls%>
 
 
-        
+
         //prebody
         <%prebody%>
         //body
@@ -4026,11 +4026,11 @@ end DefaultImplementationCode;
 template getNominalStateValues( list<SimVar> stateVars,SimCode simCode)
 
 ::=
-  
+
   let nominalVars = stateVars |> SIMVAR(__) hasindex i0 =>
         match nominalValue
         case SOME(val)
-        then 
+        then
           let &preExp = buffer "" /*BUFD*/
           let &varDecls = buffer "" /*BUFD*/
           let value = '<%daeExp(val, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>'
