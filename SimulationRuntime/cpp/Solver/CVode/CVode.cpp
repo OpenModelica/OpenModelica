@@ -209,8 +209,8 @@ void Cvode::solve(const SOLVERCALL action)
       initialize();
       writeToFile(0, _tCurrent, _h);
       _tLastWrite = 0;
-	  
-	  return;
+
+    return;
     }
 
     if(action & RECORDCALL && !(action & FIRST_CALL))
@@ -224,9 +224,9 @@ void Cvode::solve(const SOLVERCALL action)
     {
       _firstStep = true;
        if (_cvodesettings->getEventOutput())
-			writeToFile(0, _tCurrent, _h);
-	   //else
-			writeCVodeOutput(_tCurrent,_h,_locStps);
+      writeToFile(0, _tCurrent, _h);
+     //else
+      writeCVodeOutput(_tCurrent,_h,_locStps);
     }
 
     // Solver soll fortfahren
