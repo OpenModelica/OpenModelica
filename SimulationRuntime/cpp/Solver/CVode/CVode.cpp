@@ -155,7 +155,7 @@ void Cvode::initialize()
     if(_idid < 0)
       throw std::invalid_argument("CVode::initialize()");
 
-    _idid = CVodeSetMaxStep(_cvodeMem, global_settings->getEndTime()/100);       // MAXIMUM STEPSIZE
+    _idid = CVodeSetMaxStep(_cvodeMem, global_settings->getEndTime()/10.0);       // MAXIMUM STEPSIZE
     if(_idid < 0)
       throw std::invalid_argument("CVode::initialize()");
 
@@ -209,10 +209,11 @@ void Cvode::solve(const SOLVERCALL action)
       initialize();
       writeToFile(0, _tCurrent, _h);
       _tLastWrite = 0;
-
+	  
+	  return;
     }
 
-    if(action & RECORDCALL)
+    if(action & RECORDCALL && !(action & FIRST_CALL))
     {
       writeToFile(_accStps, _tCurrent, _h);
       return;
@@ -222,9 +223,10 @@ void Cvode::solve(const SOLVERCALL action)
     if(action & RECALL)
     {
       _firstStep = true;
-      writeCVodeOutput(_tCurrent,_h,_locStps);
-      if (_cvodesettings->getEventOutput())
-        writeToFile(0, _tCurrent, _h);
+       if (_cvodesettings->getEventOutput())
+			writeToFile(0, _tCurrent, _h);
+	   //else
+			writeCVodeOutput(_tCurrent,_h,_locStps);
     }
 
     // Solver soll fortfahren
@@ -276,7 +278,7 @@ void Cvode::CVodeCore()
 {
   _idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
   _idid = CVodeSetStopTime(_cvodeMem, _tEnd);
-  _idid = CVodeSetInitStep(_cvodeMem, 1e-12);
+  _idid = CVodeSetInitStep(_cvodeMem, 1e-6);
   if(_idid <0)
     throw std::runtime_error("CVode::ReInit");
 
@@ -383,7 +385,6 @@ void Cvode::CVodeCore()
       _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
        writeToFile(0, _tEnd, _h);
       _solverStatus = DONE;
-      writeToFile(0, _tEnd, _h);
     }
   }
 }

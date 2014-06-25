@@ -394,8 +394,8 @@ void Kinsol::solveNLS()
     double
         maxStepsStart = 1e3*max(euclidNorm(_dimSys,_yScale),euclidNorm(_dimSys,_yScale)),
         maxSteps = maxStepsStart,
-        maxStepsHigh = 1e16,
-        maxStepsLow = 1e-3,
+        maxStepsHigh = 1e8,
+        maxStepsLow = 1,
         limit = maxStepsHigh;
 
     while(_iterationStatus == CONTINUE)
