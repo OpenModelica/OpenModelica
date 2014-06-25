@@ -61,7 +61,7 @@ public:
 
     /// Provide boolean variables
     virtual void getContinuousStates(double* z) = 0;
-
+    virtual void getNominalStates(double* z)   = 0 ;
     /// Provide integer variables
     virtual void getInteger(int* z) = 0;
 
