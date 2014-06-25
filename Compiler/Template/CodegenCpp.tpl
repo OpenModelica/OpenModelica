@@ -1590,13 +1590,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      //case eq as SES_MIXED(__) then functionExtraResiduals(fill(eq.cont,1),simCode)
      case eq as SES_NONLINEAR(__) then
      let &varDecls = buffer "" /*BUFD*/
-     let algs = (eq.eqs |> eq2 as SES_ALGORITHM(__) =>
-         equation_(eq2, context, &varDecls /*BUFD*/,simCode)
+     /*let algs = (eq.eqs |> eq2 as SES_ALGORITHM(__) =>
+         equation_(eq2, context, &varDecls ,simCode)
        ;separator="\n")
      let prebody = (eq.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
-         equation_(eq2, context, &varDecls /*BUFD*/,simCode)
-       ;separator="\n")
-      let extraresidual = (eq.eqs |> eq2 =>
+         equation_(eq2, context, &varDecls ,simCode)
+       ;separator="\n")*/
+      let prebody = (eq.eqs |> eq2 =>
          functionExtraResidualsPreBody(eq2, &varDecls /*BUFD*/,context,simCode)
       ;separator="\n")
      let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
@@ -1615,13 +1615,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         <%varDecls%>
 
 
-         <%algs%>
-         //extra residuals
-        <%extraresidual%>
+        
         //prebody
         <%prebody%>
         //body
-           <%body%>
+        <%body%>
 
 
   }
@@ -3905,7 +3903,7 @@ template DefaultImplementationCode(SimCode simCode)
 
 ::=
 match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
+case SIMCODE(modelInfo = MODELINFO(vars=SIMVARS(stateVars=states))) then
 <<
   // Release instance
 void <%lastIdentOfPath(modelInfo.name)%>::destroy()
@@ -3961,6 +3959,10 @@ int <%lastIdentOfPath(modelInfo.name)%>::getDimRHS() const
 void <%lastIdentOfPath(modelInfo.name)%>::getContinuousStates(double* z)
 {
     SystemDefaultImplementation::getContinuousStates(z);
+}
+void <%lastIdentOfPath(modelInfo.name)%>::getNominalStates(double* z)
+{
+   <%getNominalStateValues(states,simCode)%>
 }
 
 // Set variables with given index to the system
@@ -4019,6 +4021,35 @@ void <%lastIdentOfPath(modelInfo.name)%>::handleEvent(const bool* events)
 
 >>
 end DefaultImplementationCode;
+
+
+template getNominalStateValues( list<SimVar> stateVars,SimCode simCode)
+
+::=
+  
+  let nominalVars = stateVars |> SIMVAR(__) hasindex i0 =>
+        match nominalValue
+        case SOME(val)
+        then 
+          let &preExp = buffer "" /*BUFD*/
+          let &varDecls = buffer "" /*BUFD*/
+          let value = '<%daeExp(val, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>'
+          <<
+           <%varDecls%>
+           <%preExp%>
+           z[<%i0%>]=<%value%>;
+          >>
+        else
+          <<
+           z[<%i0%>]=1.0;
+          >>
+       ;separator="\n"
+<<
+ <%nominalVars%>
+>>
+end getNominalStateValues;
+
+
 
 
 template AlgloopDefaultImplementationCode(SimCode simCode,SimEqSystem eq,Context context)
@@ -4116,7 +4147,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     // Provide variables with given index to the system
     virtual void getContinuousStates(double* z);
-
+    virtual void getNominalStates(double* z);
     // Set variables with given index to the system
     virtual void setContinuousStates(const double* z);
 
