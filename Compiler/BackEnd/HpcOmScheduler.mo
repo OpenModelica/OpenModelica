@@ -1166,7 +1166,7 @@ algorithm
         sections = List.map(sectionComps,List.flatten);
         sectionSimEqSys = List.map1(sectionComps,getSimEqSysIdcsForNodeLst,iSccSimEqMapping);
         sectionSimEqSysIdcs = List.map(sectionSimEqSys,List.flatten);
-        taskLst = makeCalcLevelTaskLst2(sectionSimEqSysIdcs,level);
+        taskLst = makeCalcLevelTaskLst(sectionSimEqSysIdcs,level);
     then taskLst;
   end matchcontinue;
 end BLS_generateSchedule;
@@ -1414,7 +1414,7 @@ algorithm
   levelComps := List.mapList1_1(level,Util.arrayGetIndexFirst,inComps);
   levelComps := List.mapList1_1(levelComps,List.sort,intGt);
   SCCs := List.map1(levelComps,getSimEqSysIdcsForNodeLst,iSccSimEqMapping);
-  levelTasks := List.threadMap(SCCs,level,makeCalcLevelTaskLst);
+  levelTasks := List.threadMap(SCCs,List.map(level,List.create),makeCalcLevelTaskLst);
   oSchedule := HpcOmSimCode.LEVELSCHEDULE(levelTasks);
 
   //update nodeMark for graphml representation
@@ -1438,7 +1438,7 @@ end getLevelAssignment;
 
 protected function makeCalcLevelTaskLst"makes a list of CALCTASK_LEVEL for the given lists of simEqSyslst and corresponding node list"
   input list<list<Integer>> simEqsForNodes;
-  input list<Integer> nodeIdcs;
+  input list<list<Integer>> nodeIdcs;
   output list<HpcOmSimCode.Task> tasksOut;
 algorithm
   tasksOut := List.threadMap(simEqsForNodes,nodeIdcs,makeCalcLevelTask);
@@ -1446,27 +1446,11 @@ end makeCalcLevelTaskLst;
 
 protected function makeCalcLevelTask" makes a CALCTASK_LEVEL for the given list of SimEqSys and a nodeIdx"
   input list<Integer> simEqs;
-  input Integer nodeIdx;
+  input list<Integer> nodeIdx;
   output HpcOmSimCode.Task taskOut;
 algorithm
-  taskOut := HpcOmSimCode.CALCTASK_LEVEL(simEqs,{nodeIdx});
+  taskOut := HpcOmSimCode.CALCTASK_LEVEL(simEqs,nodeIdx);
 end makeCalcLevelTask;
-
-protected function makeCalcLevelTaskLst2"makes a list of CALCTASK_LEVEL for the given lists of simEqSyslst and corresponding node list"
-  input list<list<Integer>> simEqsForNodes;
-  input list<list<Integer>> nodeIdcs;
-  output list<HpcOmSimCode.Task> tasksOut;
-algorithm
-  tasksOut := List.threadMap(simEqsForNodes,nodeIdcs,makeCalcLevelTask2);
-end makeCalcLevelTaskLst2;
-
-protected function makeCalcLevelTask2" makes a CALCTASK_LEVEL for the given list of SimEqSys and a nodeIdx"
-  input list<Integer> simEqs;
-  input list<Integer> nodeIdcs;
-  output HpcOmSimCode.Task taskOut;
-algorithm
-  taskOut := HpcOmSimCode.CALCTASK_LEVEL(simEqs,nodeIdcs);
-end makeCalcLevelTask2;
 
 protected function getGraphLevel"gets the level for the graph
 author:Waurich TUD 2014-06"
