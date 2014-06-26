@@ -848,7 +848,7 @@ algorithm
         // mark tearing var
     ass1List = markTVars(tSel_always,arrayList(ass1));
     ass1_ = Util.arrayCopy(listArray(ass1List),ass1);
-	(_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tSel_always,intEq);
+  (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tSel_always,intEq);
         // equations not yet assigned containing the tvars
     vareqns = findVareqns(ass2,isAssignedSaveEnhanced,mt,tSel_always,{});
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Assignable equations containing new tvars:\n");
