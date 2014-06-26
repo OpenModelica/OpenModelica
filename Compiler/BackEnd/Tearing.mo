@@ -843,11 +843,12 @@ algorithm
         (outTVars,oMark);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-         Debug.fcall(Flags.TEARING_DUMP, print,"\nForced selection of Tearing Variables:\n" +& UNDERLINE +& "\n");
+           Debug.fcall(Flags.TEARING_DUMP, print,"\nForced selection of Tearing Variables:\n" +& UNDERLINE +& "\n");
            Debug.fcall(Flags.TEARING_DUMP, print,"Variables with annotation attribute 'always' as tVars: " +& stringDelimitList(List.map(tSel_always,intString),",")+&"\n");
         // mark tearing var
     ass1List = markTVars(tSel_always,arrayList(ass1));
     ass1_ = Util.arrayCopy(listArray(ass1List),ass1);
+	(_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tSel_always,intEq);
         // equations not yet assigned containing the tvars
     vareqns = findVareqns(ass2,isAssignedSaveEnhanced,mt,tSel_always,{});
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Assignable equations containing new tvars:\n");
