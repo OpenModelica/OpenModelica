@@ -1214,7 +1214,7 @@ algorithm
         (levelNodeClusterArr,levelNodeClusterCostsArr) = HpcOmTaskGraph.distributeToClusters(levelNodes,levelNodeCosts,numProc-1);  // if there are more task in the same level than 2*numproc, cluster them
         levelNodeCluster = arrayList(levelNodeClusterArr);
         levelNodeClusterCosts = arrayList(levelNodeClusterCostsArr);
-        
+
           print("levelNodeCluster: \n"+&stringDelimitList(List.map(levelNodeCluster,intListString)," ; ")+&"\n");
         (levelNodeCluster,levelAss) = BLS_fillParallelSections2(levelNodeCluster,iGraph,graphT,iMeta,maxCosts,levelAssIn,levelIdx,{});
           print("levelNodeCluster2: \n"+&stringDelimitList(List.map(levelNodeCluster,intListString)," ; ")+&"\n");
@@ -1265,7 +1265,7 @@ algorithm
       children = Debug.bcallret1(List.isNotEmpty(childCluster),List.first,childCluster,{});
       //print("children merged to target size: "+&stringDelimitList(List.map(children,intString)," ; ")+&"\n");
       cluster = listAppend(cluster,children);
-      
+
       // update levelAss
       List.map2_0(children,Util.arrayUpdateIndexFirst,levelIdx,levelAssIn);
       (nodeCluster,levelAss) = BLS_fillParallelSections2(clusterRest,iGraph,iGraphT,iMeta,targetCost,levelAssIn,levelIdx,cluster::nodeClusterIn);
@@ -1298,7 +1298,7 @@ algorithm
   ok1 := List.fold(List.map1(parentLevel,intLe,levelIdx),boolAnd,true);// its not alowed to merge nodes upwards that are dependent of nodes from their level
   (_,parents) := List.filter1OnTrueSync(parentLevel,intEq,levelIdx,parents);  // only the parents from the upper level
   //print("parents from upper level: "+&stringDelimitList(List.map(parents,intString)," ; ")+&"\n");
-  (_,parentsFromOtherCluster,_) := List.intersection1OnTrue(parents,cluster,intEq); 
+  (_,parentsFromOtherCluster,_) := List.intersection1OnTrue(parents,cluster,intEq);
   //print("parentsFromOtherCluster: "+&stringDelimitList(List.map(parentsFromOtherCluster,intString)," ; ")+&"\n");
   ok2 := List.isEmpty(parentsFromOtherCluster); // the parents from the current level have to be part of the same cluster(section)
   ok := ok1 and ok2;

@@ -2319,7 +2319,7 @@ algorithm
         componentsString = (" "+&intString(nodeIdx)+&" ");
         simCodeEqs = List.flatten(List.map1(components, Util.arrayGetIndexFirst, sccSimEqMapping));
         simCodeEqString = stringDelimitList(List.map(simCodeEqs,intString),", ");
-        
+
         ((schedulerThreadId,schedulerTaskNumber,taskFinishTime)) = arrayGet(schedulerInfo,nodeIdx);
         taskStartTime = realSub(taskFinishTime,calcTime);
         threadIdxString = "Th " +& intString(schedulerThreadId);
