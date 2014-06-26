@@ -1575,18 +1575,18 @@ public function topFrame "Returns the top frame."
   input Env inEnv;
   output Frame outFrame;
 algorithm
-  outFrame := match (inEnv)
-    local
-      Frame fr,elt;
-      Env lst;
-    case ({fr}) then fr;
-    case ((_ :: (lst as (_ :: _))))
-      equation
-        fr = topFrame(lst);
-      then
-        fr;
-  end match;
+  outFrame :: _ := listReverse(inEnv);
 end topFrame;
+
+public function topEnv
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Frame top_frame;
+algorithm
+  top_frame := topFrame(inEnv);
+  outEnv := {top_frame};
+end topEnv;
 
 public function getItemInEnv
 "@author: adrpo

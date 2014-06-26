@@ -539,7 +539,7 @@ public function liftArrayR "
   input DAE.Dimension n;
   output DAE.Type outTp;
 algorithm
-  outTp := matchcontinue(tp,n)
+  outTp := match(tp,n)
     local
       Type elt_tp;
       list<DAE.Dimension> dims;
@@ -553,7 +553,7 @@ algorithm
 
     else DAE.T_ARRAY(tp,{n},DAE.emptyTypeSource);
 
-  end matchcontinue;
+  end match;
 end liftArrayR;
 
 public function dimensionSizeExp
@@ -703,7 +703,7 @@ public function expAbs
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inExp)
+  outExp := match(inExp)
     local
       Integer i2,i;
       Real r2,r;
@@ -736,8 +736,8 @@ algorithm
       then
         DAE.BINARY(e1_1,op,e2_1);
 
-    case (e) then e;
-  end matchcontinue;
+    else inExp;
+  end match;
 end expAbs;
 
 public function stripNoEvent
@@ -753,11 +753,11 @@ traversal function for stripNoEvent"
   input tuple<DAE.Exp,Integer/*dummy*/> inTpl;
   output tuple<DAE.Exp,Integer> outTpl;
 algorithm
-  outTpl := matchcontinue(inTpl)
+  outTpl := match(inTpl)
     local DAE.Exp e; Integer i;
     case((DAE.CALL(path=Absyn.IDENT("noEvent"),expLst={e}),i)) then ((e,i));
-    case((e,i)) then ((e,i));
-  end matchcontinue;
+    else inTpl;
+  end match;
 end stripNoEventExp;
 
 public function addNoEventToRelations
@@ -773,11 +773,11 @@ traversal function for addNoEventToRelations"
   input tuple<DAE.Exp,Integer/*dummy*/> inTpl;
   output tuple<DAE.Exp,Integer> outTpl;
 algorithm
-  outTpl := matchcontinue(inTpl)
+  outTpl := match(inTpl)
   local DAE.Exp e; Integer i;
     case((e as DAE.RELATION(exp1=_),i)) then ((DAE.CALL(Absyn.IDENT("noEvent"),{e},DAE.callAttrBuiltinBool),i));
-    case((e,i)) then ((e,i));
-  end matchcontinue;
+    else inTpl;
+  end match;
 end addNoEventToRelationExp;
 
 public function addNoEventToRelationsAndConds
@@ -793,14 +793,14 @@ traversal function for addNoEventToRelationsAndConds"
   input tuple<DAE.Exp,Integer/*dummy*/> inTpl;
   output tuple<DAE.Exp,Integer> outTpl;
 algorithm
-  outTpl := matchcontinue(inTpl)
+  outTpl := match(inTpl)
     local
         DAE.Exp e,e1,e2;
        Integer i;
     case((e as DAE.RELATION(exp1=_),i)) then ((DAE.CALL(Absyn.IDENT("noEvent"),{e},DAE.callAttrBuiltinBool),i+1));
     case((DAE.IFEXP(e,e1,e2),i)) then ((DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{e},DAE.callAttrBuiltinBool),e1,e2),i+1));
-    case((e,i)) then ((e,i));
-  end matchcontinue;
+    else inTpl;
+  end match;
 end addNoEventToRelationandCondExp;
 
 public function addNoEventToEventTriggeringFunctions
@@ -822,7 +822,7 @@ algorithm
       equation
         true = isEventTriggeringFunctionExp(e);
       then ((DAE.CALL(Absyn.IDENT("noEvent"),{e},DAE.callAttrBuiltinBool),i));
-    case ((e,i)) then ((e,i));
+    else inTpl;
   end matchcontinue;
 end addNoEventToEventTriggeringFunctionsExp;
 
@@ -1023,7 +1023,7 @@ public function unliftArray
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue (inType)
+  outType := match(inType)
     local
       Type tp,t;
       DAE.Dimension d;
@@ -1034,8 +1034,8 @@ algorithm
       then tp;
     case (DAE.T_ARRAY(ty = tp,dims = (_ :: ds),source = ts))
       then DAE.T_ARRAY(tp,ds,ts);
-    case (t) then t;
-  end matchcontinue;
+    else inType;
+  end match;
 end unliftArray;
 
 public function unliftArrayIgnoreFirst
@@ -1051,7 +1051,7 @@ public function unliftExp
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(inExp)
+  outExp := match(inExp)
     local
       Type ty;
       DAE.ComponentRef cr;
@@ -1082,7 +1082,7 @@ algorithm
 
     else inExp;
 
-  end matchcontinue;
+  end match;
 end unliftExp;
 
 public function liftArrayRight "
@@ -1093,7 +1093,7 @@ This function has the same functionality as Types.liftArrayType but for DAE.Type
   input DAE.Dimension inDimension;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue (inType,inDimension)
+  outType := match(inType,inDimension)
     local
       Type ty_1,ty;
       DAE.Dimensions dims;
@@ -1106,9 +1106,9 @@ algorithm
       then
         DAE.T_ARRAY(ty_1,dims,ts);
 
-    case (ty,dim) then DAE.T_ARRAY(ty,{dim},DAE.emptyTypeSource);
+    else DAE.T_ARRAY(inType,{inDimension},DAE.emptyTypeSource);
 
-  end matchcontinue;
+  end match;
 end liftArrayRight;
 
 public function liftArrayLeft "
@@ -1119,7 +1119,7 @@ liftArrayRigth(Real[2,3],SOME(4)) => Real[4,2,3]"
   input DAE.Dimension inDimension;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue (inType,inDimension)
+  outType := match(inType,inDimension)
     local
       Type ty;
       DAE.Dimensions dims;
@@ -1128,9 +1128,9 @@ algorithm
 
     case (DAE.T_ARRAY(ty,dims,ts),dim) then DAE.T_ARRAY(ty,dim::dims,ts);
 
-    case (ty,dim)then DAE.T_ARRAY(ty,{dim},DAE.emptyTypeSource);
+    else DAE.T_ARRAY(inType,{inDimension},DAE.emptyTypeSource);
 
-  end matchcontinue;
+  end match;
 end liftArrayLeft;
 
 public function liftArrayLeftList
@@ -1163,7 +1163,7 @@ public function setOpType
   input DAE.Type inType;
   output DAE.Operator outOp;
 algorithm
-  outOp := matchcontinue(inOp, inType)
+  outOp := match(inOp, inType)
     case (DAE.ADD(ty = _), _) then DAE.ADD(inType);
     case (DAE.SUB(ty = _), _) then DAE.SUB(inType);
     case (DAE.MUL(ty = _), _) then DAE.MUL(inType);
@@ -1201,7 +1201,7 @@ algorithm
         Debug.fprintln(Flags.FAILTRACE,"- Expression.setOpType failed on unknown operator");
       then
         fail();
-  end matchcontinue;
+  end match;
 end setOpType;
 
 public function unliftOperator
@@ -1305,7 +1305,7 @@ public function subscriptsAppend
   input DAE.Exp inSubscript;
   output list<DAE.Subscript> outSubscriptLst;
 algorithm
-  outSubscriptLst := matchcontinue (inSubscriptLst,inSubscript)
+  outSubscriptLst := match(inSubscriptLst,inSubscript)
     local
       DAE.Exp e_1,e;
       Subscript s;
@@ -1327,7 +1327,7 @@ algorithm
         ss_1 = subscriptsAppend(ss, inSubscript);
       then
         (s :: ss_1);
-  end matchcontinue;
+  end match;
 end subscriptsAppend;
 
 public function subscriptsReplaceSlice
@@ -1380,7 +1380,7 @@ Unlifts a type with X dimensions..."
   input Integer x;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue(inType,x)
+  outType := match(inType,x)
     local Type ty;
 
     case (_,0) then inType;
@@ -1389,7 +1389,7 @@ algorithm
         ty = unliftArray(inType);
       then
         unliftArrayX(ty,x-1);
-  end matchcontinue;
+  end match;
 end unliftArrayX;
 
 public function arrayAppend
@@ -1618,33 +1618,18 @@ algorithm
         expLst = getComplexContents(exp);
       then
         expLst;
-    else
-    equation
-    then
-      {};
+    else {};
   end matchcontinue;
 end getComplexContents;
 
 protected function getComplexContentsInCall"gets the scalars for the complex expressions inside a function call"
   input DAE.Exp expIn;
   output list<DAE.Exp> expsOut;
+protected
+  list<DAE.Exp> expLst;
 algorithm
-  expsOut := matchcontinue(expIn)
-    local
-      list<DAE.Exp> expLst;
-    case(_)
-      equation
-         expLst = getComplexContents(expIn);
-         true = List.isEmpty(expLst);
-       then {expIn};
-    case(_)
-      equation
-         expLst = getComplexContents(expIn);
-         false = List.isEmpty(expLst);
-       then expLst;
-    else
-      then {};
-  end matchcontinue;
+  expLst := getComplexContents(expIn);
+  expsOut := Util.if_(List.isEmpty(expLst), {expIn}, expLst);
 end getComplexContentsInCall;
 
 public function getArrayOrRangeContents "returns the list of expressions in the array"
@@ -1728,12 +1713,12 @@ public function unboxExpType
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue(inType)
+  outType := match(inType)
     local
       Type ty;
     case(DAE.T_METABOXED(ty = ty)) then ty;
-    case(ty) then ty;
-  end matchcontinue;
+    else inType;
+  end match;
 end unboxExpType;
 
 public function unboxExp
@@ -1880,10 +1865,10 @@ Get dimension of array.
   input DAE.Type tp;
   output DAE.Dimensions dims;
 algorithm
-  dims := matchcontinue(tp)
+  dims := match(tp)
     case(DAE.T_ARRAY(dims = dims)) then dims;
     else {};
-  end matchcontinue;
+  end match;
 end arrayDimension;
 
 public function arrayTypeDimensions
@@ -1949,11 +1934,11 @@ public function arrayEltType
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue (inType)
+  outType := match(inType)
     local Type t;
     case (DAE.T_ARRAY(ty = t)) then arrayEltType(t);
-    case (t) then t;
-  end matchcontinue;
+    else inType;
+  end match;
 end arrayEltType;
 
 public function sizeOf
@@ -7591,11 +7576,10 @@ public function isConstFalse
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inExp)
+  outBoolean := match(inExp)
     case DAE.BCONST(false) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isConstFalse;
 
 public function isConstTrue
@@ -7603,11 +7587,10 @@ public function isConstTrue
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inExp)
+  outBoolean := match(inExp)
     case DAE.BCONST(true) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isConstTrue;
 
 public function isConstOne
@@ -7615,26 +7598,16 @@ public function isConstOne
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inExp)
+  outBoolean := match(inExp)
     local Real rval; Integer ival;
 
     // constant real 1.0
-    case DAE.RCONST(rval)
-      equation
-        true = realEq(rval, 1.0);
-      then
-        true;
-
+    case DAE.RCONST(rval) then realEq(rval, 1.0);
     // constant integer 1
-    case DAE.ICONST(ival)
-      equation
-        true = intEq(ival, 1);
-      then
-        true;
-
+    case DAE.ICONST(ival) then intEq(ival, 1);
     // anything else
     else false;
-  end matchcontinue;
+  end match;
 end isConstOne;
 
 public function isConstMinusOne
@@ -7642,26 +7615,16 @@ public function isConstMinusOne
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inExp)
+  outBoolean := match(inExp)
     local Real rval; Integer ival;
 
     // is real -1.0
-    case DAE.RCONST(rval)
-      equation
-        true = realEq(rval, -1.0);
-      then
-        true;
-
-    // is integer 1
-    case DAE.ICONST(ival)
-      equation
-         true = intEq(ival, -1);
-      then
-        true;
-
+    case DAE.RCONST(rval) then realEq(rval, -1.0);
+    // is integer -1
+    case DAE.ICONST(ival) then intEq(ival, -1);
     // anything else
     else false;
-  end matchcontinue;
+  end match;
 end isConstMinusOne;
 
 
@@ -8078,22 +8041,15 @@ algorithm
   end match;
 end isVector;
 
-public function isUnary "returns true if expression is an unary.
-"
+public function isUnary
+  "Returns true if expression is an unary."
   input DAE.Exp inExp;
   output Boolean outB;
 algorithm
-  outB:=
-  matchcontinue(inExp)
-    local
-      DAE.Exp exp1;
-    case(DAE.UNARY(operator =_))
-      then
-        true;
-    else
-    then
-      false;
-  end matchcontinue;
+  outB:= match(inExp)
+    case(DAE.UNARY(operator =_)) then true;
+    else false;
+  end match;
 end isUnary;
 
 public function isCref
