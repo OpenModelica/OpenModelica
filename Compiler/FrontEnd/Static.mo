@@ -10394,7 +10394,7 @@ algorithm
         expASUB = Expression.makeASUB(exp1,{exp2});
       then
         (cache,SOME((expASUB,DAE.PROP(t, const),attr)));
-        
+
     // a normal cref, fully-qualified and lookupVar failed in some weird way in the previous case
     case (cache,env,Absyn.CREF_FULLYQUALIFIED(c),impl,doVect,pre,_,_)
       equation
@@ -10413,7 +10413,7 @@ algorithm
         (exp,const) = evaluateEmptyVariable(hasZeroSizeDim and evalCref,exp,t,const);
       then
         (cache,SOME((exp,DAE.PROP(t, const),attr)));
-        
+
     // a normal cref
     case (cache,env,c,impl,doVect,pre,_,_)
       equation
