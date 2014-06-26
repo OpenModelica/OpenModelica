@@ -1138,7 +1138,7 @@ algorithm
         //Debug.fprint(Flags.FAILTRACE," FUN_CALL after argList stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
 
         (hasretval, stmt, mmexp, rettype, locals, intxt)
-          = statementFromFun(argvals, fname, iargs, oargs, tyVars, intxt, outtxt, locals, tplPackage);
+          = statementFromFun(argvals, fname, iargs, oargs, tyVars, intxt, outtxt, locals, tplPackage, sinfo);
         Debug.fprint(Flags.FAILTRACE," FUN_CALL stmt =\n" +& stmtsString({stmt}) +& "\n");
 
         rettype = deAliasedType(rettype, astDefs);
@@ -1155,7 +1155,7 @@ algorithm
     //    then ( stmt :: stmts, locals, scEnv, accMMDecls, intxt);
 
 
-    case ( (MATCH(matchExp = exp, cases = mcases), _), mmopts,
+    case ( (MATCH(matchExp = exp, cases = mcases), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
@@ -1166,11 +1166,11 @@ algorithm
         (argvals, fname, iargs, oargs, scEnv, accMMDecls)
           = makeMatchFun(argval, mcases, exp, true, scEnv, tplPackage, accMMDecls);
         (_, stmt, _, _, locals, intxt)
-          = statementFromFun(argvals, fname, iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
+          = statementFromFun(argvals, fname, iargs, oargs, {}, intxt, outtxt, locals, tplPackage, sinfo);
       then ( (stmt :: stmts),  locals, scEnv, accMMDecls, intxt);
 
     case ( (CONDITION( isNot = isnot, lhsExp = exp,
-                      rhsValue = rhsval, trueBranch = tbranch, elseBranch = ebranch), _), mmopts,
+                      rhsValue = rhsval, trueBranch = tbranch, elseBranch = ebranch), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
@@ -1185,7 +1185,7 @@ algorithm
         ( argvals, fname, iargs, oargs, scEnv, accMMDecls)
           = makeMatchFun(argval, mcases, exp, false, scEnv, tplPackage, accMMDecls);
         (_, stmt, _, _, locals, intxt)
-          = statementFromFun(argvals, fname, iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
+          = statementFromFun(argvals, fname, iargs, oargs, {}, intxt, outtxt, locals, tplPackage, sinfo);
       then ( (stmt :: stmts),  locals, scEnv, accMMDecls, intxt);
 
     case ( (MAP(argExp = argexp, ofBinding = ofbind, mapExp = mapexp, hasIndexIdentOpt = idxNmOpt), _), mmopts,
@@ -1353,7 +1353,7 @@ algorithm
         //Debug.fprint(Flags.FAILTRACE," NORET_CALL after argList stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
 
         (_, stmt,_,_, locals, intxt)
-          = statementFromFun(argvals, fname, iargs, oargs, tyVars, intxt, outtxt, locals, tplPackage);
+          = statementFromFun(argvals, fname, iargs, oargs, tyVars, intxt, outtxt, locals, tplPackage, sinfo2);
         Debug.fprint(Flags.FAILTRACE," NORET_CALL stmt =\n" +& stmtsString({stmt}) +& "\n");
         stmts = stmt::stmts;
 
@@ -1760,7 +1760,7 @@ algorithm
            = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);
         outtxt = textTempVarNamePrefix +& intString(listLength(locals));
         (_, stmt, mmexp, rettype, locals, outtxt)
-           = statementFromFun(argvals, fname, iargs, oargs, tyVars, emptyTxt, outtxt, locals, tplPackage);
+           = statementFromFun(argvals, fname, iargs, oargs, tyVars, emptyTxt, outtxt, locals, tplPackage, sinfo);
         Debug.fprint(Flags.FAILTRACE," arg FUN_CALL stmt =\n" +& stmtsString({stmt}) +& "\n");
         //if emptyList in case of non-template function, not to be included to locals
         locals = addLocalValue(outtxt, TEXT_TYPE(), locals);
@@ -1936,7 +1936,7 @@ algorithm
               emptyExpression, //ignore the argument
               true, scEnv, tplPackage, accMMDecls);
         (_, stmt, _, _, locals, intxt)
-          = statementFromFun(argvals, fname, iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
+          = statementFromFun(argvals, fname, iargs, oargs, {}, intxt, outtxt, locals, tplPackage, inSourceInfo);
       then
         ( (stmt :: stmts), locals, scEnv, accMMDecls, intxt);
 
@@ -2082,6 +2082,7 @@ public function statementFromFun
   input Ident inOutText;
   input TypedIdents inLocals;
   input TemplPackage inTplPackage;
+  input SourceInfo inInfo;
 
   output Boolean outHasRetValue;
   output MMExp outStmt;
@@ -2091,7 +2092,7 @@ public function statementFromFun
   output Ident outOutText;
 algorithm
   (outHasRetValue, outStmt, outRetMMExp, outRetType, outLocals, outOutText)
-    := matchcontinue (inArgValues, inFunName, inInArgs, inOutArgs, inTypeVars, inInText, inOutText, inLocals, inTplPackage)
+    := matchcontinue (inArgValues, inFunName, inInArgs, inOutArgs, inTypeVars, inInText, inOutText, inLocals, inTplPackage, inInfo)
     local
 
       PathIdent fname;
@@ -2113,7 +2114,7 @@ algorithm
     //simple template function - one implicit text argument
     //- make a template call statement and return the out argument
     case (argvals, fname, ( iarg  :: iargs ),  { oarg }, tyVars,
-          intxt, outtxt, locals, tplPackage as TEMPL_PACKAGE(astDefs = astDefs))
+          intxt, outtxt, locals, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), _)
       equation
         areTextInOutArgs(iarg, oarg, tplPackage); //texts and equal or equal without conventional prefixes in/out, i.e. inId = outId
         //equality(listLength(argvals) = listLength(iargs));
@@ -2128,7 +2129,7 @@ algorithm
     case (argvals, fname,
            ( iarg :: iargs ),
            ( oarg :: (oargs as (_::_)) ), tyVars,
-           intxt, outtxt, locals, tplPackage as TEMPL_PACKAGE(astDefs = astDefs))
+           intxt, outtxt, locals, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), _)
       equation
         areTextInOutArgs(iarg, oarg, tplPackage); //texts and equal or equal without conventional prefixes in/out, i.e. inId = outId
         //equality(listLength(argvals) = listLength(iargs));
@@ -2144,7 +2145,7 @@ algorithm
     //one return value
     //- make a locally bound return value and assign the function to it
     case (argvals, fname, iargs,  { (_, outtype) }, tyVars,
-         intxt, _, locals, TEMPL_PACKAGE(astDefs = astDefs))
+         intxt, _, locals, TEMPL_PACKAGE(astDefs = astDefs), _)
       equation
         //equality(listLength(argvals) = listLength(iargs));
         (mmargs, setTyVars) = typeAdaptMMArgsForFun(argvals, iargs, tyVars, {}, astDefs);
@@ -2162,7 +2163,7 @@ algorithm
     //no return value - i.e. an intrinsic call like <# fun(arg) #>
     //- inline it as it is
     case (argvals, fname, iargs,  {}, tyVars,
-          intxt, _, locals, TEMPL_PACKAGE(astDefs = astDefs))
+          intxt, _, locals, TEMPL_PACKAGE(astDefs = astDefs), _)
       equation
         //equality(listLength(argvals) = listLength(iargs));
         (mmargs,_) = typeAdaptMMArgsForFun(argvals, iargs, tyVars, {}, astDefs);
@@ -2171,25 +2172,18 @@ algorithm
         //perhaps, UNIT_TYPE() or VOID_TYPE will fit here better
         ( false, mmexp, mmexp, UNRESOLVED_TYPE("No return value."), locals, intxt );
 
-    case (argvals, fname, iargs,  oargs, _, _, _, _, _)
+    case (argvals, fname, iargs,  oargs, _, _, _, _, _, _)
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
         errArgVals = List.map(argvals, Util.tuple312);
-        str = "Error - cannot elaborate function\n  "
+        str = "Cannot elaborate function\n  "
           +& Tpl.tplString3(TplCodegen.sFunSignature, fname, iargs, oargs)
           +& "\n  for actual parameters  "
           +& Tpl.tplString(TplCodegen.sActualMMParams, errArgVals)
           +& "\n  --> Invalid types (cannot convert) or number of in/out arguments (text in/out arguments must match by order and name equality where prefixes 'in' and 'out' can be used; A function has valid template signature only if all text out params have corresponding in text arguments.).\n";
-        Debug.fprint(Flags.FAILTRACE, str);
+        addSusanError(str,inInfo);
       then
         fail();
 
-    //should not ever happen
-    case ( _, _, _, _, _, _ ,_ , _, _)
-      equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!mmExpFromFun failed\n");
-      then
-        fail();
   end matchcontinue;
 end statementFromFun;
 
@@ -2632,6 +2626,7 @@ algorithm
       list<Ident> lhsArgs, assignedIdents;
       Option <Ident> hasIndexIdentOpt;
       list<tuple<Ident, Ident>> localNames;
+      SourceInfo sinfo;
 
     //all args was mapped, the popIter() at last
     case ( _, {}, MAP_CONTEXT( useIter = true ),
@@ -2648,7 +2643,7 @@ algorithm
     //List map - elaborate the list-mapping function
     case ( isfirst, (argtomap as (_,argtype,_)) :: restargs,
              MAP_CONTEXT(ofBinding = ofbind,
-                         mapExp = mapexp,
+                         mapExp = mapexp as (_,sinfo),
                          iterMMExpOptions = iopts,
                          hasIndexIdentOpt = hasIndexIdentOpt,
                          useIter = useiter),
@@ -2738,7 +2733,7 @@ algorithm
         extargvals = List.map(localArgs, makeMMArgValue);
         //call the elaborated function
         (_, stmt, _, _, locals, intxt)
-          = statementFromFun(argtomap :: extargvals, IDENT(fname), iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
+          = statementFromFun(argtomap :: extargvals, IDENT(fname), iargs, oargs, {}, intxt, outtxt, locals, tplPackage, sinfo);
 
         (stmts, locals, scEnv, accMMDecls, intxt)
           = statementsFromMapExp(false, restargs, mapctx, stmt::stmts, intxt, outtxt, locals, scEnv, tplPackage, mmFun :: accMMDecls);
@@ -2748,7 +2743,7 @@ algorithm
     //TODO: try to inline or eliminate this at all ... design problems with mixed list/scalar arguments in { }, i.e. MAP_ARG_LIST
     case ( isfirst, (argtomap as (_,argtype,_)) :: restargs,
              MAP_CONTEXT(ofBinding = ofbind,
-                         mapExp = mapexp,
+                         mapExp = mapexp as (_,sinfo),
                          iterMMExpOptions = iopts,
                          hasIndexIdentOpt = hasIndexIdentOpt,
                          useIter = useiter),
@@ -2821,7 +2816,7 @@ algorithm
         extargvals = List.map(localArgs, makeMMArgValue);
         //call the elaborated function
         (_, stmt, _, _, locals, intxt)
-          = statementFromFun(argtomap :: extargvals, IDENT(fname), iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
+          = statementFromFun(argtomap :: extargvals, IDENT(fname), iargs, oargs, {}, intxt, outtxt, locals, tplPackage, sinfo);
 
         (stmts, locals, scEnv, accMMDecls, intxt)
           = statementsFromMapExp(false, restargs, mapctx, stmt::stmts, intxt, outtxt, locals, scEnv, tplPackage, mmFun :: accMMDecls);
