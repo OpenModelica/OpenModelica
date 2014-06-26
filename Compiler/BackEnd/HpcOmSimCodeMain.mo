@@ -195,21 +195,20 @@ algorithm
       //Create TaskGraph
       //----------------
       (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
-
       Debug.execStat("hpcom createTaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
-      fileName = ("taskGraph"+&filenamePrefix+&".graphml");
-      schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1,-1.0));
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
-      Debug.execStat("hpcom dump TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
-
-      HpcOmTaskGraph.TASKGRAPHMETA(varCompMapping=varCompMapping,eqCompMapping=eqCompMapping) = taskGraphData;
-      //HpcOmTaskGraph.printvarCompMapping(varCompMapping,1);
-      //HpcOmTaskGraph.printeqCompMapping(eqCompMapping,1);
 
       //Create Costs
       //------------
       taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix +& "_eqs_prof" , simeqCompMapping, taskGraphData);
       Debug.execStat("hpcom create costs", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
+      
+      fileName = ("taskGraph"+&filenamePrefix+&".graphml");
+      schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1,-1.0));
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
+      Debug.execStat("hpcom dump TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
+      
+      //HpcOmTaskGraph.printTaskGraph(taskGraph);
+      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);
 
       //Get ODE System
       //--------------
@@ -444,15 +443,15 @@ algorithm
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "mixed");
         print("Using mixed Scheduler\n");
-        schedule = HpcOmScheduler.createLevelSchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
-      then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
+        (schedule,taskGraphMeta1) = HpcOmScheduler.createLevelSchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
+      then (schedule,iSimCode,iTaskGraph,taskGraphMeta1,iSccSimEqMapping);
     case(_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "level");
         print("Using level Scheduler\n");
-        schedule = HpcOmScheduler.createLevelSchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
-      then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
+        (schedule,taskGraphMeta1) = HpcOmScheduler.createLevelSchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
+      then (schedule,iSimCode,iTaskGraph,taskGraphMeta1,iSccSimEqMapping);
     case(_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
@@ -509,6 +508,13 @@ algorithm
         print("Using Task Duplication-based Scheduling\n");
         (schedule,simCode,taskGraph1,taskGraphMeta1,sccSimEqMap) = HpcOmScheduler.createTDSschedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping,iSimCode);
       then (schedule,simCode,taskGraph1,taskGraphMeta1,sccSimEqMap);
+    case(_,_,_,_,_,_)
+      equation
+        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+        true = stringEq(flagValue, "bls");
+        print("Using Balanced Level Scheduling\n");
+        (schedule,taskGraphMeta1) = HpcOmScheduler.createBalancedLevelScheduling(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
+      then (schedule,iSimCode,iTaskGraph,taskGraphMeta1,iSccSimEqMapping);
     case(_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);

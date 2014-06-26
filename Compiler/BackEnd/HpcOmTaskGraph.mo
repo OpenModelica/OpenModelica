@@ -2265,7 +2265,7 @@ algorithm
         ((_,calcTime)) = arrayGet(exeCosts,primalComp);
         ((opCount,calcTime)) = arrayGet(exeCosts,primalComp);
         calcTimeString = realString(calcTime);
-        yCoord = arrayGet(nodeMark,primalComp)*80;
+        yCoord = arrayGet(nodeMark,nodeIdx)*100;
         calcTimeString = realString(calcTime);
         opCountString = intString(opCount);
         yCoordString = intString(yCoord);
@@ -2308,6 +2308,8 @@ algorithm
         //print("node in the taskGraph (case 2) "+&intString(nodeIdx)+&" primalComp "+&intString(primalComp)+&"\n");
         compText = arrayGet(nodeNames,primalComp);
         nodeDesc = stringDelimitList(List.map1(components, Util.arrayGetIndexFirst, nodeDescs), "\n");// arrayGet(nodeDescs,primalComp);
+        yCoord = arrayGet(nodeMark,nodeIdx)*100;
+        yCoordString = intString(yCoord);
         annotationString = arrayGet(annotationInfo,nodeIdx);
         ((opCount,calcTime)) = List.fold1(components, addNodeToGraphML1, exeCosts, (0,0.0));
         calcTimeString = realString(calcTime);
@@ -2317,7 +2319,7 @@ algorithm
         componentsString = (" "+&intString(nodeIdx)+&" ");
         simCodeEqs = List.flatten(List.map1(components, Util.arrayGetIndexFirst, sccSimEqMapping));
         simCodeEqString = stringDelimitList(List.map(simCodeEqs,intString),", ");
-
+        
         ((schedulerThreadId,schedulerTaskNumber,taskFinishTime)) = arrayGet(schedulerInfo,nodeIdx);
         taskStartTime = realSub(taskFinishTime,calcTime);
         threadIdxString = "Th " +& intString(schedulerThreadId);
@@ -2333,7 +2335,7 @@ algorithm
                                       nodeLabels,
                                       GraphML.RECTANGLE(),
                                       SOME(nodeDesc),
-                                      {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)), ((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString)),((annotationAttIdx,annotationString))},
+                                      {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((yCoordAttIdx,yCoordString)),((taskIdAttIdx,componentsString)), ((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString)),((annotationAttIdx,annotationString))},
                                       graphIdx,
                                       tmpGraph);
         tmpGraph = List.fold4(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, (commCostAttIdx, commVarsAttIdx), (criticalPath,criticalPathWoC), tmpGraph);
@@ -2775,7 +2777,7 @@ algorithm
 end printCommCosts;
 
 
-protected function printNodeMark " prints the information about additional NodeMark
+public function printNodeMark " prints the information about additional NodeMark
 author: Waurich TUD 2013-07"
   input array<Integer> nodeMark;
   input Integer compIdx;
@@ -2924,7 +2926,7 @@ algorithm
   end matchcontinue;
 end mergeSingleNodes;
 
-protected function distributeToClusters"takes a list of items and corresponding values and clusters the items. The cluster are supposed to have an most equal distribuatin of added values.
+public function distributeToClusters"takes a list of items and corresponding values and clusters the items. The cluster are supposed to have an most equal distribution of accumulated values.
 if the items list is shorter than the numProc, a cluster list containing empty lists is output
 author:Waurich TUD 2014-06"
   input list<Integer> items;

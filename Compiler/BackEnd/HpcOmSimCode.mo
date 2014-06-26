@@ -54,6 +54,10 @@ encapsulated package HpcOmSimCode
       list<Integer> eqIdc;
       list<Integer> nodeIdc; //indices of the graph-node
     end CALCTASK_LEVEL;
+    record CALCTASK_LEVEL_SERIAL
+      list<Integer> eqIdc;
+      list<Integer> nodeIdc; //indices of the graph-node
+    end CALCTASK_LEVEL_SERIAL;
     record ASSIGNLOCKTASK //Task which assignes a lock
       String lockId;
     end ASSIGNLOCKTASK;

@@ -974,6 +974,8 @@ algorithm
       then ("Calculation task with index " +& intString(index) +& " including the equations: "+&stringDelimitList(List.map(eqIdc,intString),", ")+& " is finished at  " +& realString(timeFinished) +& "\n");
     case(HpcOmSimCode.CALCTASK_LEVEL(eqIdc=eqIdc, nodeIdc=nodeIdc))
       then ("Calculation task ("+&stringDelimitList(List.map(nodeIdc,intString),", ")+&") including the equations: "+&stringDelimitList(List.map(eqIdc,intString),", ")+&"\n");
+    case(HpcOmSimCode.CALCTASK_LEVEL_SERIAL(eqIdc=eqIdc, nodeIdc=nodeIdc))
+      then ("Serial Calculation task ("+&stringDelimitList(List.map(nodeIdc,intString),", ")+&") including the equations: "+&stringDelimitList(List.map(eqIdc,intString),", ")+&"\n");
     case(HpcOmSimCode.ASSIGNLOCKTASK(lockId=lockId))
       then ("Assign lock task with id " +& lockId +& "\n");
     case(HpcOmSimCode.RELEASELOCKTASK(lockId=lockId))
@@ -1056,6 +1058,326 @@ algorithm
   end match;
 end convertScheduleStrucToInfo1;
 
+
+//-----------------
+// Balanced Level Scheduling
+//-----------------
+public function createBalancedLevelScheduling "function createLevelSchedule
+  author: waurich TUD
+  Creates a level scheduling for the given graph"
+  input HpcOmTaskGraph.TaskGraph iGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iMeta;
+  input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
+  output HpcOmSimCode.Schedule oSchedule;
+  output HpcOmTaskGraph.TaskGraphMeta oMeta;
+protected
+  Integer size;
+  Real cpCostsWoC, targetCost;
+  array<Integer> levelAss;
+  list<Integer> startNodes, critPathNodes;
+  list<Real> critPathCosts, sectionCosts;
+  list<list<Integer>> level, critPathSections;
+  list<list<list<Integer>>> allSections;
+  list<list<Real>> costs;
+  list<list<list<Integer>>> levelComps,SCCs;  //level<node<tasks<components or simEqSys>>>
+  array<list<Integer>> inComps;
+  HpcOmTaskGraph.TaskGraph graphT;
+  list<list<HpcOmSimCode.Task>> levelTasks;
+algorithm
+  targetCost := 1000.0;
+  HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) := iMeta;
+  graphT := BackendDAEUtil.transposeMatrix(iGraph,arrayLength(iGraph));
+  // assign initial level
+  (_,startNodes) := List.filterOnTrueSync(arrayList(graphT),List.isEmpty,List.intRange(arrayLength(graphT)));
+  level := getGraphLevel(iGraph,{startNodes});
+    print("level: \n"+&stringDelimitList(List.map(level,intListString),"\n")+&"\n");
+  costs := List.mapList1_1(level,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
+  levelAss := arrayCreate(arrayLength(inComps),-1);
+  ((_,levelAss)) := List.fold(level,getLevelAssignment,(1,levelAss));
+
+  // get critical path and merge the criPathNodes to target size tasks
+  (_,(critPathNodes::_,_),_) := HpcOmTaskGraph.longestPathMethod(iGraph,iMeta);  // without communication costs
+    print("critPathNodes: \n"+&stringDelimitList(List.map(critPathNodes,intString),"\n")+&"\n");
+  critPathCosts := List.map1(critPathNodes,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
+  (critPathSections,sectionCosts) := BLS_mergeToTargetSize(critPathNodes,critPathCosts,targetCost,{});
+  print("critPathSections: \n"+&stringDelimitList(List.map(critPathSections,intListString)," ; ")+&"\n");
+
+  //try to fill the parallel sections
+  allSections := BLS_fillParallelSections(level,levelAss,critPathSections,1,iGraph,iMeta,{});
+    print("allSections1: \n"+&stringDelimitList(List.map(allSections,intListListString)," \n ")+&"\n");
+  allSections := List.map2(allSections,BLS_mergeSmallSections,iMeta,targetCost);
+    print("allSections2: \n"+&stringDelimitList(List.map(allSections,intListListString)," \n ")+&"\n");
+
+  //generate schedule
+  levelTasks := List.map2(allSections,BLS_generateSchedule,iMeta,iSccSimEqMapping);
+  oSchedule := HpcOmSimCode.LEVELSCHEDULE(levelTasks);
+  oMeta := iMeta;
+end createBalancedLevelScheduling;
+
+protected function BLS_mergeSmallSections"traverses the sections in a level and merges them if they are to small"
+  input list<list<Integer>> sectionsIn;
+  input HpcOmTaskGraph.TaskGraphMeta iMeta;
+  input Real targetCosts;
+  output list<list<Integer>> sectionsOut;
+algorithm
+sectionsOut := matchcontinue(sectionsIn,iMeta,targetCosts)
+  local
+    list<list<Real>> costs;
+    list<list<Integer>> mergedSectionIdcs, sectionsNew;
+    list<list<list<Integer>>> sectionsNewUnflattened;
+    list<Real> sectionCosts;
+  case(_,_,_)
+    equation
+      costs = List.mapList1_1(sectionsIn,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
+      sectionCosts = List.map(costs,realSum);
+      (mergedSectionIdcs,_) = BLS_mergeToTargetSize(List.intRange(listLength(sectionsIn)),sectionCosts,targetCosts,{});
+      sectionsNewUnflattened = List.mapList1_1(mergedSectionIdcs,List.getIndexFirst,sectionsIn);
+      sectionsNew = List.map(sectionsNewUnflattened,List.flatten);
+      sectionsNew = List.map1(sectionsNew,List.sort,intGt);  // restore the calculation order
+  then sectionsNew;
+  end matchcontinue;
+end BLS_mergeSmallSections;
+
+protected function BLS_generateSchedule"generates a level schedule for the given levels. if a level contains only one section"
+  input list<list<Integer>> level;
+  input HpcOmTaskGraph.TaskGraphMeta iMeta;
+  input array<list<Integer>> iSccSimEqMapping;
+  output list<HpcOmSimCode.Task> taskLstOut;
+algorithm
+  taskLstOut := matchcontinue(level,iMeta,iSccSimEqMapping)
+    local
+      list<Integer> section,simEqSysIdcs, compLst;
+      list<list<Integer>> sections, sectionSimEqSysIdcs;
+      list<list<list<Integer>>> sectionComps, sectionSimEqSys;
+      array<list<Integer>> inComps;
+      HpcOmSimCode.Task task;
+      list<HpcOmSimCode.Task> taskLst;
+    case({section},HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps),_)
+      equation
+        // generate a serial section
+        compLst = List.flatten(List.map1(section,Util.arrayGetIndexFirst,inComps));
+        simEqSysIdcs = getSimEqSysIdcsForCompLst(compLst,iSccSimEqMapping);
+        task = HpcOmSimCode.CALCTASK_LEVEL(simEqSysIdcs,section);
+    then {task};
+    case(section::_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps),_)
+      equation
+        // generate parallel sections
+        sectionComps = List.mapList1_1(level,Util.arrayGetIndexFirst,inComps);
+        sections = List.map(sectionComps,List.flatten);
+        sectionSimEqSys = List.map1(sectionComps,getSimEqSysIdcsForNodeLst,iSccSimEqMapping);
+        sectionSimEqSysIdcs = List.map(sectionSimEqSys,List.flatten);
+        taskLst = makeCalcLevelTaskLst2(sectionSimEqSysIdcs,level);
+    then taskLst;
+  end matchcontinue;
+end BLS_generateSchedule;
+
+protected function BLS_fillParallelSections"cluster the task from the current level to reasonable sections. if there are to small tasks, merge them with tasks from the next section"
+  input list<list<Integer>> levelIn;
+  input array<Integer> levelAssIn;
+  input list<list<Integer>> critPathSections;
+  input Integer levelIdx;
+  input HpcOmTaskGraph.TaskGraph iGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iMeta;
+  input list<list<list<Integer>>> sectionsIn;  //level:section::tasks
+  output list<list<list<Integer>>> sectionsOut;
+algorithm
+  sectionsOut := matchcontinue(levelIn,levelAssIn,critPathSections,levelIdx,iGraph,iMeta,sectionsIn)
+    local
+      Real maxCosts;
+      Integer numProc;
+      array<Integer> levelAss;
+      array<Real> levelNodeClusterCostsArr;
+      array<list<Integer>> levelNodeClusterArr;
+      list<Integer> section,levelNodes,pos;
+      list<Real> levelNodeCosts,levelNodeClusterCosts;
+      list<list<Integer>> level,restCritPathSections, levelNodeCluster, levelNodeChildren;
+      list<list<list<Integer>>> sectionLst;
+      HpcOmTaskGraph.TaskGraph graphT;
+    case(_,_,{},_,_,_,_)
+    then listReverse(sectionsIn);
+    case(_,_,section::restCritPathSections,_,_,_,_)
+      equation
+        graphT = BackendDAEUtil.transposeMatrix(iGraph,arrayLength(iGraph));
+        numProc = Flags.getConfigInt(Flags.NUM_PROC);
+          print("section: \n"+&stringDelimitList(List.map(section,intString)," ; ")+&"\n");
+        maxCosts = List.fold(List.map1(section,HpcOmTaskGraph.getExeCostReqCycles,iMeta),realAdd,0.0);
+
+         // get all nodes in the same level like the merged critPathNodes and sort them according to their exeCosts
+        levelNodes = List.flatten(List.map1(List.unique(List.map1(section,Util.arrayGetIndexFirst,levelAssIn)),List.getIndexFirst,levelIn));
+        (_,levelNodes,_) = List.intersection1OnTrue(levelNodes,section,intEq);
+        levelNodeCosts = List.map1(levelNodes,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
+        (levelNodeCosts,pos) = quicksortWithOrder(levelNodeCosts);
+        levelNodes = List.map1(pos,List.getIndexFirst,levelNodes);
+          print("levelNodes: \n"+&stringDelimitList(List.map(levelNodes,intString)," ; ")+&"\n");
+
+        // cluster the levelNodes to maximum maxCosts
+        (levelNodeClusterArr,levelNodeClusterCostsArr) = HpcOmTaskGraph.distributeToClusters(levelNodes,levelNodeCosts,numProc-1);  // if there are more task in the same level than 2*numproc, cluster them
+        levelNodeCluster = arrayList(levelNodeClusterArr);
+        levelNodeClusterCosts = arrayList(levelNodeClusterCostsArr);
+        
+          print("levelNodeCluster: \n"+&stringDelimitList(List.map(levelNodeCluster,intListString)," ; ")+&"\n");
+        (levelNodeCluster,levelAss) = BLS_fillParallelSections2(levelNodeCluster,iGraph,graphT,iMeta,maxCosts,levelAssIn,levelIdx,{});
+          print("levelNodeCluster2: \n"+&stringDelimitList(List.map(levelNodeCluster,intListString)," ; ")+&"\n");
+        levelNodeCluster = section::levelNodeCluster;
+        sectionLst = BLS_fillParallelSections(levelIn,levelAss,restCritPathSections,levelIdx+1,iGraph,iMeta,levelNodeCluster::sectionsIn);
+    then sectionLst;
+  end matchcontinue;
+end BLS_fillParallelSections;
+
+protected function BLS_fillParallelSections2"get nodes from the next level to fill the cluster"
+  input list<list<Integer>> allNodeCluster;
+  input HpcOmTaskGraph.TaskGraph iGraph;
+  input HpcOmTaskGraph.TaskGraph iGraphT;
+  input HpcOmTaskGraph.TaskGraphMeta iMeta;
+  input Real targetCost;
+  input array<Integer> levelAssIn;
+  input Integer levelIdx;
+  input list<list<Integer>> nodeClusterIn;
+  output list<list<Integer>> nodeClusterOut;
+  output array<Integer> levelAssOut;
+algorithm
+  (nodeClusterOut,levelAssOut) := matchcontinue(allNodeCluster,iGraph,iGraphT,iMeta,targetCost,levelAssIn,levelIdx,nodeClusterIn)
+  local
+    Boolean isNotLastLevel;
+    Real clusterCost;
+    list<Integer> cluster, clusterLevel, children, childrenParents, currLevel, nextLevel;
+    list<Real> childrenCost;
+    list<list<Integer>> clusterRest, nodeCluster, level, childCluster;
+    array<Integer> levelAss;
+  case({},_,_,_,_,_,_,_)
+    equation
+      nodeCluster = listReverse(nodeClusterIn);
+  then (nodeCluster,levelAssIn);
+ case(cluster::clusterRest,_,_,_,_,_,_,_)
+    equation
+      //get only the cluster that are currently still in the level and have not been moved upwards, get the costs for them
+      clusterLevel = List.map1(cluster,Util.arrayGetIndexFirst,levelAssIn);
+      (_,cluster) = List.filter1OnTrueSync(clusterLevel,intGe,levelIdx,cluster);
+      clusterCost = List.fold(List.map1(cluster,HpcOmTaskGraph.getExeCostReqCycles,iMeta),realAdd,0.0);
+      //checks if the children are suited to be merged with the cluster nodes,  if so, gather these, that fill the cluster up to targetSize
+      //print("cluster: "+&stringDelimitList(List.map(cluster,intString)," ; ")+&" costs: "+&realString(clusterCost)+&" targetCosts: "+&realString(targetCost)+&"\n");
+      children = List.flatten(List.map1(cluster,Util.arrayGetIndexFirst,iGraph));
+      //print("children: "+&stringDelimitList(List.map(children,intString)," ; ")+&"\n");
+      children = List.filter1OnTrue(children,BLS_canBeMergedToCluster,(iGraphT,cluster,levelAssIn,levelIdx));
+      //print("children can be merged: "+&stringDelimitList(List.map(children,intString)," ; ")+&"\n");
+      childrenCost = List.map1(children,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
+      (childCluster,_) = BLS_mergeToTargetSize(children,childrenCost,realSub(targetCost,clusterCost),{});
+      children = Debug.bcallret1(List.isNotEmpty(childCluster),List.first,childCluster,{});
+      //print("children merged to target size: "+&stringDelimitList(List.map(children,intString)," ; ")+&"\n");
+      cluster = listAppend(cluster,children);
+      
+      // update levelAss
+      List.map2_0(children,Util.arrayUpdateIndexFirst,levelIdx,levelAssIn);
+      (nodeCluster,levelAss) = BLS_fillParallelSections2(clusterRest,iGraph,iGraphT,iMeta,targetCost,levelAssIn,levelIdx,cluster::nodeClusterIn);
+    then
+      (nodeCluster,levelAss);
+  else
+    equation
+      print("BLS_fillParallelSections2 failed!\n");
+    then fail();
+  end matchcontinue;
+end BLS_fillParallelSections2;
+
+protected function BLS_canBeMergedToCluster  "evaluates if a child node from the next level can be merged with its parent node and so lifted to the upper level.
+author: Waurich TUD 2014-06"
+  input Integer child;
+  input tuple<HpcOmTaskGraph.TaskGraph,list<Integer>,array<Integer>,Integer>  tplIn;
+  output Boolean ok;
+protected
+  Boolean ok1, ok2;
+  HpcOmTaskGraph.TaskGraph iGraphT;
+  list<Integer> cluster, parents, parentLevel, parentsFromOtherCluster;
+  array<Integer> levelAss;
+  Integer levelIdx;
+algorithm
+  (iGraphT,cluster,levelAss,levelIdx) := tplIn;
+  //print("child: "+&intString(child)+&"\n");
+  parents := arrayGet(iGraphT,child);
+  //print("parents: "+&stringDelimitList(List.map(parents,intString)," ; ")+&"\n");
+  parentLevel := List.map1(parents,Util.arrayGetIndexFirst,levelAss);
+  ok1 := List.fold(List.map1(parentLevel,intLe,levelIdx),boolAnd,true);// its not alowed to merge nodes upwards that are dependent of nodes from their level
+  (_,parents) := List.filter1OnTrueSync(parentLevel,intEq,levelIdx,parents);  // only the parents from the upper level
+  //print("parents from upper level: "+&stringDelimitList(List.map(parents,intString)," ; ")+&"\n");
+  (_,parentsFromOtherCluster,_) := List.intersection1OnTrue(parents,cluster,intEq); 
+  //print("parentsFromOtherCluster: "+&stringDelimitList(List.map(parentsFromOtherCluster,intString)," ; ")+&"\n");
+  ok2 := List.isEmpty(parentsFromOtherCluster); // the parents from the current level have to be part of the same cluster(section)
+  ok := ok1 and ok2;
+  //print("ok: "+&boolString(ok)+&"\n");
+end BLS_canBeMergedToCluster;
+
+protected function BLS_mergeToTargetSize"collect the largest groups of nodes that are smaller than the targetSize"
+  input list<Integer> nodesIn;
+  input list<Real> costsIn;
+  input Real targetSize;
+  input list<tuple<list<Integer>,Real>> mergedNodesIn;
+  output list<list<Integer>> clustersOut;
+  output list<Real> clusterCostsOut;
+algorithm
+  (clustersOut,clusterCostsOut) := matchcontinue(nodesIn,costsIn,targetSize,mergedNodesIn)
+    local
+      Integer node;
+      Real cost, clusterCost;
+      list<Integer> nodeRest, cluster;
+      list<list<Integer>> clusterTmp;
+      list<Real> costRest, clusterCostsTmp;
+      tuple<list<Integer>,Real> group;
+      list<tuple<list<Integer>,Real>> mergedNodes,restGroups;
+  case({},{},_,{})
+    then ({},{});
+  case({},{},_,_)
+    equation
+      // finished
+      clusterCostsTmp = List.map(mergedNodesIn,Util.tuple22);
+      clusterTmp = listReverse(List.map(mergedNodesIn,Util.tuple21));
+      cluster::clusterTmp = clusterTmp;  // reverse the first cluster if there is only one cluster
+      cluster = Util.if_(List.isEmpty(clusterTmp),listReverse(cluster),cluster);
+      clusterTmp = cluster::clusterTmp;
+    then (clusterTmp,clusterCostsTmp);
+   case(node::nodeRest,cost::costRest,_, {})
+    equation
+      // first cluster
+      (clusterTmp,clusterCostsTmp) = BLS_mergeToTargetSize(nodeRest,costRest,targetSize,{({node},cost)});
+    then (clusterTmp,clusterCostsTmp);
+  case(node::nodeRest,cost::costRest,_, group::restGroups)
+    equation
+      // add to previous Cluster
+      (cluster,clusterCost) = group;
+      true = clusterCost +. cost <. targetSize;
+      group = (node::cluster,cost +. clusterCost);
+      (clusterTmp,clusterCostsTmp) = BLS_mergeToTargetSize(nodeRest,costRest,targetSize,group::restGroups);
+    then (clusterTmp,clusterCostsTmp);
+  case(node::nodeRest,cost::costRest,_,group::restGroups)
+    equation
+      // start a new cluster
+      (cluster,clusterCost) = group;
+      true = clusterCost +. cost >=. targetSize;
+      cluster = listReverse(cluster);
+      restGroups = (cluster,clusterCost)::restGroups;  // reverse the cluster
+      group = ({node},cost);
+      (clusterTmp,clusterCostsTmp) = BLS_mergeToTargetSize(nodeRest,costRest,targetSize,group::restGroups);
+    then (clusterTmp,clusterCostsTmp);
+  else
+    equation
+      print("BLS_mergeToTargetSize failed!");
+    then fail();
+  end matchcontinue;
+end BLS_mergeToTargetSize;
+
+protected function realSum
+  input list<Real> reals;
+  output Real sum;
+algorithm
+ sum := List.fold(reals,realAdd,0.0);
+end realSum;
+
+protected function isMemberOfIntLst
+  input Integer int;
+  input list<Integer> lst;
+  output Boolean isMem;
+algorithm
+  isMem := List.isMemberOnTrue(int,lst,intEq);
+end isMemberOfIntLst;
+
 //-----------------
 // Level Scheduling
 //-----------------
@@ -1066,29 +1388,53 @@ public function createLevelSchedule "function createLevelSchedule
   input HpcOmTaskGraph.TaskGraphMeta iMeta;
   input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
   output HpcOmSimCode.Schedule oSchedule;
+  output HpcOmTaskGraph.TaskGraphMeta oMeta;
 protected
-  list<Integer> startNodes;
+  list<Integer> startNodes, levelAss;
   list<list<Integer>> level;
   list<list<list<Integer>>> levelComps,SCCs;  //level<node<tasks<components or simEqSys>>>
   array<list<Integer>> inComps;
   list<list<HpcOmSimCode.Task>> levelTasks;
   HpcOmTaskGraph.TaskGraph graphT;
+  array<tuple<Integer,Real>> exeCosts;
+  array<Integer> nodeMark;
+  list<Integer> rootNodes;
+  array<list<tuple<Integer,Integer,Integer>>> commCosts;
+  array<tuple<Integer,Integer,Integer>> varCompMapping, eqCompMapping; //Map each variable to the scc that solves her
+  array<String> nodeNames, nodeDescs;
 algorithm
-  //HpcOmTaskGraph.printTaskGraph(iGraph);
-  //HpcOmTaskGraph.printTaskGraphMeta(iMeta);
-  HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) := iMeta;
+  HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,rootNodes=rootNodes,nodeNames=nodeNames,nodeDescs=nodeDescs,exeCosts=exeCosts, commCosts=commCosts) := iMeta;
+
   graphT := BackendDAEUtil.transposeMatrix(iGraph,arrayLength(iGraph));
   (_,startNodes) := List.filterOnTrueSync(arrayList(graphT),List.isEmpty,List.intRange(arrayLength(graphT)));
-  //print("startnodes "+&stringDelimitList(List.map(startNodes,intString),",")+&"\n");
+    //print("startnodes "+&stringDelimitList(List.map(startNodes,intString),",")+&"\n");
   level := getGraphLevel(iGraph,{startNodes});
-  //print("level: \n"+&stringDelimitList(List.map(level,intListString),"\n")+&"\n");
+  Debug.fcall(Flags.HPCOM_DUMP,print,"number of level: "+&intString(listLength(level))+&"\n");
+    //print("level: \n"+&stringDelimitList(List.map(level,intListString),"\n")+&"\n");
   levelComps := List.mapList1_1(level,Util.arrayGetIndexFirst,inComps);
   levelComps := List.mapList1_1(levelComps,List.sort,intGt);
   SCCs := List.map1(levelComps,getSimEqSysIdcsForNodeLst,iSccSimEqMapping);
-  //print("SCCs: \n"+&stringDelimitList(List.map(SCCs,intListListString),"\n")+&"\n");
   levelTasks := List.threadMap(SCCs,level,makeCalcLevelTaskLst);
   oSchedule := HpcOmSimCode.LEVELSCHEDULE(levelTasks);
+
+  //update nodeMark for graphml representation
+  nodeMark := arrayCreate(arrayLength(inComps),-1);
+  ((_,nodeMark)) := List.fold(level,getLevelAssignment,(1,nodeMark));
+  oMeta := HpcOmTaskGraph.TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
 end createLevelSchedule;
+
+protected function getLevelAssignment"folding function to get a levelassignment for each node"
+  input list<Integer> level;
+  input tuple<Integer,array<Integer>> tplIn; //<levelIndex,assignmentArrayIn>
+  output tuple<Integer,array<Integer>> tplOut;
+protected
+  Integer idx;
+  array<Integer> ass;
+algorithm
+  (idx,ass) := tplIn;
+  List.map2_0(level,Util.arrayUpdateIndexFirst,idx,ass);
+  tplOut := (idx+1,ass);
+end getLevelAssignment;
 
 protected function makeCalcLevelTaskLst"makes a list of CALCTASK_LEVEL for the given lists of simEqSyslst and corresponding node list"
   input list<list<Integer>> simEqsForNodes;
@@ -1105,6 +1451,22 @@ protected function makeCalcLevelTask" makes a CALCTASK_LEVEL for the given list 
 algorithm
   taskOut := HpcOmSimCode.CALCTASK_LEVEL(simEqs,{nodeIdx});
 end makeCalcLevelTask;
+
+protected function makeCalcLevelTaskLst2"makes a list of CALCTASK_LEVEL for the given lists of simEqSyslst and corresponding node list"
+  input list<list<Integer>> simEqsForNodes;
+  input list<list<Integer>> nodeIdcs;
+  output list<HpcOmSimCode.Task> tasksOut;
+algorithm
+  tasksOut := List.threadMap(simEqsForNodes,nodeIdcs,makeCalcLevelTask2);
+end makeCalcLevelTaskLst2;
+
+protected function makeCalcLevelTask2" makes a CALCTASK_LEVEL for the given list of SimEqSys and a nodeIdx"
+  input list<Integer> simEqs;
+  input list<Integer> nodeIdcs;
+  output HpcOmSimCode.Task taskOut;
+algorithm
+  taskOut := HpcOmSimCode.CALCTASK_LEVEL(simEqs,nodeIdcs);
+end makeCalcLevelTask2;
 
 protected function getGraphLevel"gets the level for the graph
 author:Waurich TUD 2014-06"
@@ -1163,7 +1525,6 @@ protected function printLevelSchedule "function printLevelSchedule
   input list<HpcOmSimCode.Task> iLevelInfo;
   input Integer iLevel;
   output Integer oLevel;
-
 algorithm
   print("Level " +& intString(iLevel) +& ":\n");
   printTaskList(iLevelInfo);
@@ -4145,5 +4506,12 @@ protected function intListString
 algorithm
   s := stringDelimitList(List.map(lstIn,intString)," , ");
 end intListString;
+
+protected function intListListString
+  input list<list<Integer>> lstIn;
+  output String s;
+algorithm
+  s := stringDelimitList(List.map(lstIn,intListString)," | ");
+end intListListString;
 
 end HpcOmScheduler;
