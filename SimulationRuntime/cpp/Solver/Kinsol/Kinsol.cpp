@@ -134,6 +134,8 @@ void Kinsol::initialize()
 
             idid = KINSetNumMaxIters(_kinMem, 1000);
 
+            idid = KINSetEtaForm(_kinMem, KIN_ETACHOICE2);
+
             _fnormtol  = 1.e-12;     /* function tolerance */
             _scsteptol = 1.e-12;     /* step tolerance */
 
@@ -397,7 +399,8 @@ void Kinsol::solveNLS()
         maxSteps = maxStepsStart,
         maxStepsHigh = 1e8,
         maxStepsLow = 1,
-        limit = maxStepsHigh;
+        limit = maxStepsHigh,
+        locTol = 1e-9;
 
     while(_iterationStatus == CONTINUE)
     {
@@ -428,7 +431,7 @@ void Kinsol::solveNLS()
         case KIN_STEP_LT_STPTOL:
             KINGetFuncNorm(_kinMem, &_fnorm);
             //if(_fnorm/euclidNorm(_dimSys,_yScale) < 1e-4)
-      if(_fnorm < 1e-6)
+            if(_fnorm < locTol)
             {
                 _iterationStatus = DONE;
             }else
@@ -447,6 +450,12 @@ void Kinsol::solveNLS()
 
             // MaxStep too low
         case KIN_MXNEWT_5X_EXCEEDED:
+            KINGetFuncNorm(_kinMem, &_fnorm);
+            if(_fnorm < locTol)
+            {
+                _iterationStatus = DONE;
+            }else
+            {
                 check4EventRetry(_y);
                 if(method == KIN_NONE)
                 {
@@ -483,10 +492,18 @@ void Kinsol::solveNLS()
                     }else
                         maxSteps *= 10;
                 }
-                break;
+            }
+            break;
 
-                // Max Iterations exceeded
-            case KIN_MAXITER_REACHED:
+            // Max Iterations exceeded
+        case KIN_MAXITER_REACHED:
+            KINGetFuncNorm(_kinMem, &_fnorm);
+            if(_fnorm < locTol)
+            {
+                _iterationStatus = DONE;
+            }else
+            {
+
                 check4EventRetry(_y);
                 // Try Linesearch
                 if(method == KIN_NONE)
@@ -506,34 +523,42 @@ void Kinsol::solveNLS()
                 {
                     _iterationStatus = SOLVERERROR;
                 }
-                break;
+            }
+            break;
 
-                // Linesearch did not converge
-            case KIN_LINESEARCH_NONCONV:
+            // Linesearch did not converge
+        case KIN_LINESEARCH_NONCONV:
+            KINGetFuncNorm(_kinMem, &_fnorm);
+			if(_fnorm < locTol)
+            {
+                _iterationStatus = DONE;
+            }else
+            {
                 check4EventRetry(_y);
                 // Try diffent maxStsps
                 if (maxSteps > limit)
+                {
+                    // The starting maxSteps is reached again -> Solvererror
+                    if (maxSteps > maxStepsStart)
                     {
-                        // The starting maxSteps is reached again -> Solvererror
-                        if (maxSteps > maxStepsStart)
-                        {
-                            _iterationStatus = SOLVERERROR;
-                        } else // Try lower maxStep values
-                        {
-                            maxSteps = maxStepsLow;
-                            limit = maxStepsLow;
-                        }
-                    }else
-                        maxSteps *= 10;
-        break;
-      // Other failures (setup etc) -> directly break
-            default:
-                KINGetFuncNorm(_kinMem, &_fnorm);
-        if(_fnorm < _fnormtol)        // Initial guess may be the solution
-          _iterationStatus = DONE;
-        else
-          _iterationStatus = SOLVERERROR;
-                break;
+                        _iterationStatus = SOLVERERROR;
+                    } else // Try lower maxStep values
+                    {
+                        maxSteps = maxStepsLow;
+                        limit = maxStepsLow;
+                    }
+                }else
+                    maxSteps *= 10;
+            }
+            break;
+            // Other failures (setup etc) -> directly break
+        default:
+            KINGetFuncNorm(_kinMem, &_fnorm);
+            if(_fnorm < _fnormtol)        // Initial guess may be the solution
+                _iterationStatus = DONE;
+            else
+                _iterationStatus = SOLVERERROR;
+            break;
         }
     }
 }
