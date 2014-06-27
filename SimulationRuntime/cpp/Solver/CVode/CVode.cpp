@@ -15,6 +15,7 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
   , _hOut          (0.0)
   , _tOut          (0.0)
   , _zeroSign        (NULL)
+  , _absTol (NULL)
   ,_cvode_initialized(false)
   ,_tLastEvent(0.0)
   ,_event_n(0)
@@ -31,11 +32,14 @@ Cvode::~Cvode()
     delete [] _zInit;
   if(_zeroSign)
     delete [] _zeroSign;
+  if(_absTol)
+    delete [] _absTol;
   if(_cvode_initialized)
   {
     N_VDestroy_Serial(_CV_y0);
     N_VDestroy_Serial(_CV_y);
     N_VDestroy_Serial(_CV_yWrite);
+	N_VDestroy_Serial(_CV_absTol);
     CVodeFree(&_cvodeMem);
   }
 }
@@ -69,12 +73,14 @@ void Cvode::initialize()
     if(_zInit)      delete [] _zInit;
     if(_zWrite)      delete [] _zWrite;
     if(_zeroSign)    delete [] _zeroSign;
+	if(_absTol)    delete [] _absTol;
 
 
     _z        = new double[_dimSys];
     _zInit      = new double[_dimSys];
     _zWrite        = new double[_dimSys];
     _zeroSign    = new int[_dimZeroFunc];
+	 _absTol    = new double[_dimSys];
 
     memset(_z,0,_dimSys*sizeof(double));
     memset(_zInit,0,_dimSys*sizeof(double));
@@ -107,9 +113,17 @@ void Cvode::initialize()
     _continuous_system->getContinuousStates(_zInit);
     memcpy(_z,_zInit,_dimSys*sizeof(double));
 
+	// Get nominal values
+	_continuous_system->getNominalStates(_absTol);
+	for(int i=0;i<_dimSys;i++)
+		_absTol[i]*= dynamic_cast<ISolverSettings*>(_cvodesettings)->getATol();
+
+
     _CV_y0 = N_VMake_Serial(_dimSys, _zInit);
     _CV_y = N_VMake_Serial(_dimSys, _z);
     _CV_yWrite = N_VMake_Serial(_dimSys, _zWrite);
+	_CV_absTol = N_VMake_Serial(_dimSys, _absTol);
+
     if(check_flag((void*)_CV_y0, "N_VMake_Serial", 0))
     {
       _idid = -5;
@@ -125,7 +139,7 @@ void Cvode::initialize()
     }
 
     // Set Tolerances
-    _idid = CVodeSStolerances(_cvodeMem,dynamic_cast<ISolverSettings*>(_cvodesettings)->getRTol(),dynamic_cast<ISolverSettings*>(_cvodesettings)->getATol());// RTOL and ATOL
+    _idid = CVodeSVtolerances(_cvodeMem,dynamic_cast<ISolverSettings*>(_cvodesettings)->getRTol(),_CV_absTol);// RTOL and ATOL
     if(_idid < 0)
       throw std::invalid_argument("CVode::initialize()");
 
@@ -278,7 +292,7 @@ void Cvode::CVodeCore()
 {
   _idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
   _idid = CVodeSetStopTime(_cvodeMem, _tEnd);
-  _idid = CVodeSetInitStep(_cvodeMem, 1e-6);
+  _idid = CVodeSetInitStep(_cvodeMem, 1e-12);
   if(_idid <0)
     throw std::runtime_error("CVode::ReInit");
 
@@ -287,7 +301,7 @@ void Cvode::CVodeCore()
     _cv_rt = CVode(_cvodeMem, _tEnd, _CV_y, &_tCurrent, CV_ONE_STEP);
 
     _idid = CVodeGetNumSteps(_cvodeMem, &_locStps);
-    _accStps +=_locStps;
+    
     _idid = CVodeGetLastStep(_cvodeMem,&_h);
     //Ausgabe
     writeCVodeOutput(_tCurrent,_h,_locStps);
@@ -384,6 +398,7 @@ void Cvode::CVodeCore()
       _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
       _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
        writeToFile(0, _tEnd, _h);
+	   _accStps +=_locStps;
       _solverStatus = DONE;
     }
   }

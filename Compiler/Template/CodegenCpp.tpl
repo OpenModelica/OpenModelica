@@ -7383,12 +7383,14 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
         double* algloop<%index%>Vars = new double[dim<%index%>];
         _algLoop<%index%>->getReal(algloop<%index%>Vars );
         bool restatDiscrete<%index%>= false;
-        try
+        IContinuous::UPDATETYPE calltype = _callType;
+		try
         {
-            _algLoop<%index%>->evaluate();
-
+            
+			
             if( _callType == IContinuous::DISCRETE )
             {
+				_algLoop<%index%>->evaluate();
                 while(restart<%index%> && !(iterations<%index%>++>500))
                 {
 
@@ -7420,7 +7422,6 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
         {
             try
             {  //workaround: try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
-                IContinuous::UPDATETYPE calltype = _callType;
                 _callType = IContinuous::DISCRETE;
                 _algLoop<%index%>->setReal(algloop<%index%>Vars );
                 _algLoopSolver<%index%>->solve();
@@ -9886,30 +9887,30 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
       case LESS(__) then
       <<
          if(_conditions[<%zerocrossingIndex%>])
-                f[<%index1%>]=(<%e1%> -EPSILON - <%e2%>);
+                f[<%index1%>]=(<%e1%> - 10000*EPSILON - <%e2%>);
            else
-                f[<%index1%>]=(<%e2%> - <%e1%> -  10*EPSILON);
+                f[<%index1%>]=(<%e2%> - <%e1%> -  10000*EPSILON);
        >>
       case LESSEQ(__) then
        <<
          if(_conditions[<%zerocrossingIndex%>])
-                f[<%index1%>]=(<%e1%> - EPSILON - <%e2%>);
+                f[<%index1%>]=(<%e1%> - 10000*EPSILON - <%e2%>);
            else
-                f[<%index1%>]=(<%e2%> - <%e1%> - EPSILON);
+                f[<%index1%>]=(<%e2%> - <%e1%> - 10000*EPSILON);
        >>
       case GREATER(__) then
        <<
          if(_conditions[<%zerocrossingIndex%>])
-                f[<%index1%>]=(<%e2%> - <%e1%> - EPSILON);
+                f[<%index1%>]=(<%e2%> - <%e1%> - 10000*EPSILON);
            else
-                f[<%index1%>]=(<%e1%> -10*EPSILON - <%e2%>);
+                f[<%index1%>]=(<%e1%> - 10000*EPSILON - <%e2%>);
          >>
       case GREATEREQ(__) then
         <<
          if(_conditions[<%zerocrossingIndex%>])
-                f[<%index1%>]=(<%e2%> - <%e1%> - EPSILON);
+                f[<%index1%>]=(<%e2%> - <%e1%> - 10000*EPSILON);
            else
-                f[<%index1%>]=(<%e1%> - EPSILON - <%e2%>);
+                f[<%index1%>]=(<%e1%> - 10000*EPSILON - <%e2%>);
          >>
     else
        <<
@@ -9939,17 +9940,17 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Sim
         case LESSEQ(__) then
        <<
          if(_event_handling.pre(_condition<%zerocrossingIndex%>,"_condition<%zerocrossingIndex%>"))
-                f[<%index1%>]=(<%e1%>-EPSILON-<%e2%>);
+                f[<%index1%>]=(<%e1%>-10000*EPSILON-<%e2%>);
            else
-                f[<%index1%>]=(<%e2%>-<%e1%>-EPSILON);
+                f[<%index1%>]=(<%e2%>-<%e1%>-10000*EPSILON);
       >>
       case GREATER(__)
       case GREATEREQ(__) then
         <<
          if(_event_handling.pre(_condition<%zerocrossingIndex%>,"_condition<%zerocrossingIndex%>"))
-                f[<%index1%>]=(<%e2%>-<%e1%>-EPSILON);
+                f[<%index1%>]=(<%e2%>-<%e1%>-10000*EPSILON);
            else
-                f[<%index1%>]=(<%e1%>-EPSILON-<%e2%>);
+                f[<%index1%>]=(<%e1%>-10000*EPSILON-<%e2%>);
          >>
      end match
 end giveZeroFunc3;

@@ -7,6 +7,7 @@
 #include <cvodes/cvodes.h>
 #include <nvector/nvector_serial.h>
 #include <cvodes/cvodes_dense.h>
+#include <cvodes/cvodes_spgmr.h>
 
 /*
 #include <boost/log/core.hpp>
@@ -162,9 +163,10 @@ private:
 
 
   double
-    *_z,            ///< Output      - (Current) State vector
-    *_zInit,          ///< Temp      - Initial state vector
-    *_zWrite;                   ///< Temp      - Zustand den das System rausschreibt
+    *_z,						///< Output      - (Current) State vector
+    *_zInit,					///< Temp      - Initial state vector
+    *_zWrite,                   ///< Temp      - Zustand den das System rausschreibt
+	*_absTol;					///			   - Vektor für absolute Toleranzen
 
   double
     _hOut;            ///< Temp      - Ouput step size for dense output
@@ -189,7 +191,11 @@ double
   N_Vector
     _CV_y0,                  ///< Temp      - Initial values in the Cvode Format
     _CV_y,                  ///< Temp      - State in Cvode Format
-      _CV_yWrite;                ///< Temp      - Vector for dense out
+    _CV_yWrite,				///< Temp      - Vector for dense out
+    _CV_absTol;
+
+
+
   bool _cvode_initialized;
 
 
