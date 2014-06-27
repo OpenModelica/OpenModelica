@@ -1150,6 +1150,12 @@ package DAE
       list<String> comp;
       Type ty;
     end RECORD;
+    record PARTEVALFUNCTION
+      Absyn.Path path;
+      list<Exp> expList;
+      Type ty;
+      Type origType;
+    end PARTEVALFUNCTION;
     record ARRAY
       Type ty;
       Boolean scalar;
@@ -1243,6 +1249,7 @@ package DAE
       Type ty "The type of the return value, if several return values this is undefined";
       Boolean tuple_ "tuple" ;
       Boolean builtin "builtin Function call" ;
+      Boolean isFunctionPointerCall;
       InlineType inlineType;
       TailCall tailCall "Input variables of the function if the call is tail-recursive";
     end CALL_ATTR;
@@ -1629,6 +1636,7 @@ package DAE
     end T_SUBTYPE_BASIC;
 
     record T_FUNCTION
+      list<FuncArg> funcArg;
       Type funcResultType "Only single-result" ;
       FunctionAttributes functionAttributes;
       TypeSource source;
@@ -1737,6 +1745,16 @@ package DAE
     record DIM_UNKNOWN
     end DIM_UNKNOWN;
   end Dimension;
+
+  uniontype FuncArg
+    record FUNCARG
+      String name;
+      Type ty;
+      Const const;
+      VarParallelism par;
+      Option<Exp> defaultBinding;
+    end FUNCARG;
+  end FuncArg;
 
   uniontype Subscript
     record WHOLEDIM end WHOLEDIM;
@@ -2538,6 +2556,13 @@ package List
     output Boolean outIsEmpty;
   end isEmpty;
 
+  function setDifference
+    replaceable type ElementType subtypeof Any;
+    input list<ElementType> inList1;
+    input list<ElementType> inList2;
+    output list<ElementType> outDifference;
+  end setDifference;
+
 end List;
 
 package ComponentReference
@@ -2989,6 +3014,11 @@ package Types
     input list<DAE.Var> vars;
     output Integer index;
   end findVarIndex;
+ function liftArrayListExp
+    input DAE.Type inType;
+    input list<DAE.Exp> inDimensionLst;
+    output DAE.Type outType;
+  end liftArrayListExp;
 end Types;
 
 package FMI

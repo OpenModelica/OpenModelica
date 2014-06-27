@@ -796,7 +796,7 @@ algorithm
       then
         outBinds;
 
-    case (DAE.PARTEVALFUNCTION(p1a, exps1a, _), DAE.PARTEVALFUNCTION(p1b, exps1b, _), _)
+    case (DAE.PARTEVALFUNCTION(p1a, exps1a, _, _), DAE.PARTEVALFUNCTION(p1b, exps1b, _, _), _)
       equation
         true = Absyn.pathEqual(p1a, p1b);
         outBinds = matchesExpLstBackEnd(exps1a, exps1b, inAcc);

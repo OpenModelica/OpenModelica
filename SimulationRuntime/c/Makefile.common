@@ -49,6 +49,7 @@ RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/delay.h \
 ./simulation/solver/solver_main.h
 
 RUNTIMEMETA_HEADERS = ./meta/meta_modelica_builtin_boxptr.h \
+./meta/meta_modelica_builtin_boxvar.h \
 ./meta/meta_modelica_builtin.h \
 ./meta/meta_modelica.h \
 ./meta/meta_modelica_mk_box.h \

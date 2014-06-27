@@ -3419,7 +3419,7 @@ protected
   DAE.Type tp;
 algorithm
   tp := Expression.typeof(inExp);
-  outExp := DAE.CALL(Absyn.IDENT("der"),{inExp},DAE.CALL_ATTR(tp,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+  outExp := DAE.CALL(Absyn.IDENT("der"),{inExp},DAE.CALL_ATTR(tp,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 end makeder;
 
 protected function generateVar

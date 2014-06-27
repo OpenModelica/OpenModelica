@@ -1108,7 +1108,7 @@ algorithm
       equation
         expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         (expl_1, outFunctionTree) = List.map3Fold(expl, differentiateExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        res = DAE.CALL(path,expl_1,DAE.CALL_ATTR(tp,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+        res = DAE.CALL(path,expl_1,DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nExp-Cref\n records " +& se1);
@@ -1228,7 +1228,7 @@ algorithm
 
         //({BackendDAE.VAR(varKind = BackendDAE.STATE(index=_))},_) = BackendVariable.getVar(cr, timevars);
         ({_},_) = BackendVariable.getVar(cr, timevars);
-        res = DAE.CALL(Absyn.IDENT("der"),{e},DAE.CALL_ATTR(tp,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+        res = DAE.CALL(Absyn.IDENT("der"),{e},DAE.CALL_ATTR(tp,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nresults to exp: " +& se1);
@@ -2073,7 +2073,7 @@ algorithm
         (dexpl, outFunctionTree) = List.map3Fold(expl1, differentiateExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         expl1 = listAppend(expl,dexpl);
       then
-        (DAE.CALL(dpath,expl1,DAE.CALL_ATTR(ty,b,c,isImpure,dinl,tc)),outFunctionTree);
+        (DAE.CALL(dpath,expl1,DAE.CALL_ATTR(ty,b,c,isImpure,false,dinl,tc)),outFunctionTree);
 
     case (DAE.CALL(path=path,expLst=expl), _, _, BackendDAE.DIFFERENTIATION_TIME(), _)
       equation
@@ -2199,7 +2199,7 @@ algorithm
         //print("Start creation of partial Der\n");
         //print("Diffed ExpList: \n");
         //print(stringDelimitList(List.map(dexpl, ExpressionDump.printExpStr), ", ") +& "\n");
-        e = DAE.CALL(dpath,expl1,DAE.CALL_ATTR(ty,b,c,isImpure,dinl,tc));
+        e = DAE.CALL(dpath,expl1,DAE.CALL_ATTR(ty,b,c,isImpure,false,dinl,tc));
         e = createPartialArguments(ty, dexpl, dexplZero, expl, e);
       then
         (e,functions);
@@ -2267,7 +2267,7 @@ algorithm
         //print("Diffed ExpList: \n");
         //print(stringDelimitList(List.map(dexpl, ExpressionDump.printExpStr), ", ") +& "\n");
         //print(" output Type: "  +& Types.printTypeStr(ty) +& "\n");
-        e = DAE.CALL(dpath,dexpl,DAE.CALL_ATTR(ty,b,false,isImpure,DAE.NO_INLINE(),tc));
+        e = DAE.CALL(dpath,dexpl,DAE.CALL_ATTR(ty,b,false,isImpure,false,DAE.NO_INLINE(),tc));
         exp = createPartialArguments(ty, dexpl, dexplZero, expl, e);
 
         // debug

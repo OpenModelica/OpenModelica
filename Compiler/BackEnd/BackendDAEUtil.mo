@@ -2606,7 +2606,7 @@ algorithm outExp := matchcontinue(inExp)
         expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         i = listLength(expl);
         true = intGt(i,0);
-        e_new = DAE.CALL(name,expl,DAE.CALL_ATTR(t,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+        e_new = DAE.CALL(name,expl,DAE.CALL_ATTR(t,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
         restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
     then
       (restpl);

@@ -2059,31 +2059,31 @@ algorithm
       DAE.Const c;
 
     case (Absyn.BINARY(_,_,_), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2), _)
-      then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
     case (Absyn.BINARY(_,_,_), e1, _, SOME(e2), _)
       then DAE.BINARY(e1, inOper, e2);
 
     case (Absyn.UNARY(_, _), e1, DAE.USERDEFINED(fqName = funcname), NONE(), _)
-      then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
     case (Absyn.UNARY(_, _), e1, _, NONE(), _)
         then DAE.UNARY(inOper,e1);
 
     case (Absyn.LBINARY(_, _, _), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2), _)
-       then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+       then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
     case (Absyn.LBINARY(_,_,_), e1, _, SOME(e2), _)
       then DAE.LBINARY(e1, inOper, e2);
 
     case (Absyn.LUNARY(_, _), e1, DAE.USERDEFINED(fqName = funcname), NONE(),_)
-      then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
     case (Absyn.LUNARY(_, _), e1, _, NONE(), _)
         then DAE.LUNARY(inOper,e1);
 
     case (Absyn.RELATION(_, _, _), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2),_)
-      then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
     case (Absyn.RELATION(_,_,_), e1, _, SOME(e2), _)
       then DAE.RELATION(e1, inOper, e2, -1, NONE());

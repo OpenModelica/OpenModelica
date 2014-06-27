@@ -1122,12 +1122,12 @@ algorithm
         (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
         (DAE.CALL(path,expl_1,attr),true);
-    case ((e as DAE.PARTEVALFUNCTION(path = path,expList = expl,ty = tp)),repl,cond)
+    case ((e as DAE.PARTEVALFUNCTION(path,expl,tp,t)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
         (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
-        (DAE.PARTEVALFUNCTION(path,expl_1,tp),true);
+        (DAE.PARTEVALFUNCTION(path,expl_1,tp,t),true);
     case ((e as DAE.ARRAY(ty = tp,scalar = c,array = expl)),repl,cond)
       equation
         true = replaceExpCond(cond, e);

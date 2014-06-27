@@ -66,7 +66,16 @@ void* mmc_mk_rcon(double d)
     return MMC_TAGPTR(p);
 }
 
-void *mmc_mk_box_arr(int slots, unsigned int ctor, void** args)
+void* mmc_mk_modelica_array(base_array_t arr)
+{
+  base_array_t *cpy = mmc_alloc_words(sizeof(arr)/sizeof(void*) + 1);
+  memcpy(cpy, &arr, sizeof(base_array_t));
+  clone_base_array_spec(&arr, cpy);
+  /* Note: The data is hopefully not stack-allocated and can be passed this way */
+  return cpy;
+}
+
+void* mmc_mk_box_arr(int slots, unsigned int ctor, void** args)
 {
     int i;
     struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words(slots + 1);

@@ -949,7 +949,7 @@ algorithm
       list<DAE.Exp> fixedArgs;
       list<Element> inputs, outputs;
       list<DAE.Type> inputTypes, outputTypes;
-      Boolean isTuple, isBuiltin, isImpure;
+      Boolean isTuple, isBuiltin, isImpure, isFunctionPointerCall;
       DAE.InlineType inlineType;
       DAE.TailCall tailCall;
       DAE.CallAttributes attrs;
@@ -969,8 +969,8 @@ algorithm
           (retType, isTuple) = NFTypeCheck.makeCallReturnType(outputTypes);
 
           // create the call attributes. retType + isTuple
-          DAE.CALL_ATTR( _, _, isBuiltin, isImpure, inlineType, tailCall) = inAttrs;
-          attrs = DAE.CALL_ATTR(retType, isTuple, isBuiltin, isImpure, inlineType, tailCall);
+          DAE.CALL_ATTR( _, _, isBuiltin, isImpure, isFunctionPointerCall, inlineType, tailCall) = inAttrs;
+          attrs = DAE.CALL_ATTR(retType, isTuple, isBuiltin, isImpure, isFunctionPointerCall, inlineType, tailCall);
 
           // See if we need to vectorize the call i.e. if we have 'forEachDim' then
           // we return an array exp other wise a call exp.
@@ -997,8 +997,8 @@ algorithm
           // (retType, isTuple) = NFTypeCheck.makeCallReturnType(outputTypes);
 
           // create the call attributes. retType + isTuple
-          DAE.CALL_ATTR( _, _, isBuiltin, isImpure, inlineType, tailCall) = inAttrs;
-          attrs = DAE.CALL_ATTR(retType, false, isBuiltin, isImpure, inlineType, tailCall);
+          DAE.CALL_ATTR( _, _, isBuiltin, isImpure, isFunctionPointerCall, inlineType, tailCall) = inAttrs;
+          attrs = DAE.CALL_ATTR(retType, false, isBuiltin, isImpure, isFunctionPointerCall, inlineType, tailCall);
 
           // See if we need to vectorize the call i.e. if we have 'forEachDim' then
           // we return an array exp other wise a call exp.

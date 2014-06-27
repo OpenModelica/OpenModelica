@@ -232,7 +232,7 @@ algorithm
         acref = Absyn.pathToCref(path);
       then Absyn.CALL(acref,Absyn.FUNCTIONARGS(aexpl,{}));
 
-    case(DAE.PARTEVALFUNCTION(path,expl,_))
+    case(DAE.PARTEVALFUNCTION(path,expl,_,_))
       equation
         aexpl = List.map(expl,unelabExp);
         acref = Absyn.pathToCref(path);
@@ -3572,7 +3572,7 @@ protected
   Type tp;
 algorithm
   tp := typeof(e1);
-  outExp := DAE.CALL(Absyn.IDENT("max"),{e1,e2},DAE.CALL_ATTR(tp,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+  outExp := DAE.CALL(Absyn.IDENT("max"),{e1,e2},DAE.CALL_ATTR(tp,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 end expMaxScalar;
 
 public function expMinScalar "author: Frenkel TUD 2011-04
@@ -3585,7 +3585,7 @@ protected
   Boolean b;
 algorithm
   tp := typeof(e1);
-  outExp := DAE.CALL(Absyn.IDENT("min"),{e1,e2},DAE.CALL_ATTR(tp,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+  outExp := DAE.CALL(Absyn.IDENT("min"),{e1,e2},DAE.CALL_ATTR(tp, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
 end expMinScalar;
 
 public function makeProductVector "takes and expression e1 and a list of expressisions {v1,v2,...,vn} and returns
@@ -4306,7 +4306,7 @@ algorithm
       list<DAE.Exp> expl_1,expl;
       Absyn.Path fn;
       Boolean scalar;
-      Type tp;
+      Type tp,t;
       Integer i;
       list<list<DAE.Exp>> lstexpl_1,lstexpl;
       Integer dim;
@@ -4436,10 +4436,10 @@ algorithm
       then
         ((e,ext_arg_2));
 
-    case (DAE.PARTEVALFUNCTION(path = fn, expList = expl, ty = tp),rel,ext_arg)
+    case (DAE.PARTEVALFUNCTION(fn, expl, tp, t),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
-        e = Util.if_(referenceEq(expl,expl_1),inExp,DAE.PARTEVALFUNCTION(fn,expl_1,tp));
+        e = Util.if_(referenceEq(expl,expl_1),inExp,DAE.PARTEVALFUNCTION(fn,expl_1,tp,t));
         ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
@@ -4668,7 +4668,7 @@ algorithm
       list<DAE.Exp> expl_1,expl;
       Absyn.Path fn;
       Boolean scalar;
-      Type tp;
+      Type tp, t;
       Integer i;
       list<list<DAE.Exp>> lstexpl_1,lstexpl;
       Integer dim;
@@ -4798,10 +4798,10 @@ algorithm
       then
         ((e,ext_arg_2));
 
-    case (DAE.PARTEVALFUNCTION(path = fn, expList = expl, ty = tp),rel,ext_arg)
+    case (DAE.PARTEVALFUNCTION(fn, expl, tp, t),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpDerPreStartList(expl, rel, ext_arg);
-        e = Util.if_(referenceEq(expl,expl_1),inExp,DAE.PARTEVALFUNCTION(fn,expl_1,tp));
+        e = Util.if_(referenceEq(expl,expl_1),inExp,DAE.PARTEVALFUNCTION(fn,expl_1,tp,t));
         ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
@@ -5146,7 +5146,7 @@ algorithm
       list<DAE.Exp> expl_1,expl;
       Absyn.Path fn;
       Boolean scalar;
-      Type tp;
+      Type tp,t;
       Integer i;
       list<list<DAE.Exp>> lstexpl_1,lstexpl;
       Integer dim;
@@ -5259,10 +5259,10 @@ algorithm
       then
         ((e,ext_arg_2));
 
-    case (DAE.PARTEVALFUNCTION(path = fn, expList = expl, ty = tp),rel,ext_arg)
+    case (DAE.PARTEVALFUNCTION(fn, expl, tp, t),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpWithoutRelationsList(expl, rel, ext_arg);
-        e = Util.if_(referenceEq(expl,expl_1),inExp,DAE.PARTEVALFUNCTION(fn,expl_1,tp));
+        e = Util.if_(referenceEq(expl,expl_1),inExp,DAE.PARTEVALFUNCTION(fn,expl_1,tp,t));
         ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
@@ -5568,7 +5568,7 @@ algorithm
       list<DAE.Exp> expl_1,expl;
       Absyn.Path fn;
       Boolean scalar;
-      Type tp,et;
+      Type tp,et,t;
       Integer i;
       String str;
       list<String> fieldNames;
@@ -5656,11 +5656,11 @@ algorithm
       then
         ((DAE.RECORD(fn,expl_1,fieldNames,tp),ext_arg_1));
 
-    case ((DAE.PARTEVALFUNCTION(path = fn, expList = expl, ty = tp)),rel,ext_arg)
+    case ((DAE.PARTEVALFUNCTION(fn, expl, tp, t)),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpListTopDown(expl, rel, ext_arg);
       then
-        ((DAE.PARTEVALFUNCTION(fn,expl_1,tp),ext_arg_1));
+        ((DAE.PARTEVALFUNCTION(fn,expl_1,tp,t),ext_arg_1));
 
     case ((DAE.ARRAY(ty = tp,scalar = scalar,array = expl)),rel,ext_arg)
       equation
@@ -6461,7 +6461,7 @@ algorithm
       Option<tuple<DAE.Exp, Integer, Integer>> opt_exp_asub;
       Absyn.Path path;
       Boolean b1;
-      Type ty;
+      Type ty,t;
       list<String> strl;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
@@ -6534,11 +6534,11 @@ algorithm
       then
         (DAE.RECORD(path, expl, strl, ty), tup);
 
-    case (DAE.PARTEVALFUNCTION(path = path, expList = expl, ty = ty), tup)
+    case (DAE.PARTEVALFUNCTION(path, expl, ty, t), tup)
       equation
         (expl, tup) = traverseExpListBidir(expl, tup);
       then
-        (DAE.PARTEVALFUNCTION(path, expl, ty), tup);
+        (DAE.PARTEVALFUNCTION(path, expl, ty, t), tup);
 
     case (DAE.ARRAY(ty = ty, scalar = b1, array = expl), tup)
       equation
@@ -9421,7 +9421,7 @@ public function makeBuiltinCall
   output DAE.Exp call;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  call := DAE.CALL(Absyn.IDENT(name),args,DAE.CALL_ATTR(result_type,false,true,isImpure,DAE.NO_INLINE(),DAE.NO_TAIL()));
+  call := DAE.CALL(Absyn.IDENT(name),args,DAE.CALL_ATTR(result_type,false,true,isImpure,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 end makeBuiltinCall;
 
 public function makePureBuiltinCall
@@ -10668,7 +10668,7 @@ algorithm
       equation
         exps = fargsToExps(fargs);
         p = Absyn.crefToPath(acr);
-        e = DAE.PARTEVALFUNCTION(p, exps, DAE.T_UNKNOWN_DEFAULT);
+        e = DAE.PARTEVALFUNCTION(p, exps, DAE.T_UNKNOWN_DEFAULT, DAE.T_UNKNOWN_DEFAULT);
       then
         e;
 

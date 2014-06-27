@@ -399,6 +399,7 @@ match eq
 case SES_LINEAR(__) then
 let &preExp = buffer "" /*BUFD*/
 let &varDecls = buffer "" /*BUFD*/
+let &auxFunctionIgnore = buffer ""
 <<
 
 gsl_matrix *A<%index%>,*invA<%index%>;
@@ -443,7 +444,7 @@ void fsolve<%index%>(<%
     'gsl_vector_set(b<%index%>,<%i0%>,<%
       System.stringReplace(CodegenC.daeExp(
         BackendQSS.replaceVarsInputs(exp,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs)),
-        contextOther,&preExp,&varDecls),"$P","") %>);';separator=\n%>
+        contextOther,&preExp,&varDecls,&auxFunctionIgnore),"$P","") %>);';separator=\n%>
 
   /* Invert matrix if necesary */
   if (invert_matrix)
@@ -453,7 +454,7 @@ void fsolve<%index%>(<%
     <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
      'gsl_matrix_set(A<%index%>, <%row%>, <%col%>,<%  System.stringReplace(CodegenC.daeExp(
         BackendQSS.replaceVarsInputs(eq.exp,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs)),
-        contextOther,&preExp,&varDecls),"$P","") %>);'
+        contextOther,&preExp,&varDecls,&auxFunctionIgnore),"$P","") %>);'
     ;separator="\n"%>
     gsl_linalg_LU_decomp(A<%index%>, p<%index%>, &signum);
     gsl_linalg_LU_invert(A<%index%>, p<%index%> ,invA<%index%>);

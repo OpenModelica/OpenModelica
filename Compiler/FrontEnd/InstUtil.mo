@@ -8102,7 +8102,7 @@ algorithm
         name = SCode.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
         inlineType = isInlineFunc(cl);
         isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
-      then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,DAE.FUNCTION_BUILTIN(SOME(name)),DAE.FP_NON_PARALLEL()));
+      then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,false,DAE.FUNCTION_BUILTIN(SOME(name)),DAE.FP_NON_PARALLEL()));
 
     //parallel functions: There are some builtin functions.
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION())),_)
@@ -8112,7 +8112,7 @@ algorithm
         name = SCode.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
         inlineType = isInlineFunc(cl);
         isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
-      then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,DAE.FUNCTION_BUILTIN(SOME(name)),DAE.FP_PARALLEL_FUNCTION()));
+      then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,false,DAE.FUNCTION_BUILTIN(SOME(name)),DAE.FP_PARALLEL_FUNCTION()));
 
     //parallel functions: non-builtin
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION())),_)
@@ -8120,11 +8120,11 @@ algorithm
         inlineType = isInlineFunc(cl);
         isBuiltin = Util.if_(SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_BuiltinPtr"), DAE.FUNCTION_BUILTIN_PTR(), DAE.FUNCTION_NOT_BUILTIN());
         isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
-      then DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,isBuiltin,DAE.FP_PARALLEL_FUNCTION());
+      then DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,false,isBuiltin,DAE.FP_PARALLEL_FUNCTION());
 
     //kernel functions: never builtin and never inlined.
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION())),_)
-      then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(),true,false,DAE.FUNCTION_NOT_BUILTIN(),DAE.FP_KERNEL_FUNCTION());
+      then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), true, false, false, DAE.FUNCTION_NOT_BUILTIN(),DAE.FP_KERNEL_FUNCTION());
 
     case (SCode.CLASS(restriction=restriction),_)
       equation
@@ -8132,7 +8132,7 @@ algorithm
         isBuiltin = Util.if_(SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_BuiltinPtr"), DAE.FUNCTION_BUILTIN_PTR(), DAE.FUNCTION_NOT_BUILTIN());
         isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
         isImpure = SCode.isRestrictionImpure(restriction);
-      then DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,isBuiltin,DAE.FP_NON_PARALLEL());
+      then DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,false,isBuiltin,DAE.FP_NON_PARALLEL());
   end matchcontinue;
 end getFunctionAttributes;
 
@@ -8437,7 +8437,7 @@ algorithm
       Absyn.Path path1,path2;
       String str;
       DAE.InlineType i;
-      Boolean b1,b2,b3;
+      Boolean b1,b2,b3,b4;
       DAE.Type tp,et;
       list<DAE.Exp> es,inputs;
       DAE.Exp e1,e2,e3;
@@ -8445,12 +8445,12 @@ algorithm
       DAE.MatchType matchType;
       list<DAE.MatchCase> cases;
       list<list<String>> aliases;
-    case (path1,DAE.CALL(path=path2,expLst=es,attr=DAE.CALL_ATTR(tp,b1,b2,b3,i,DAE.NO_TAIL())),_,_)
+    case (path1,DAE.CALL(path=path2,expLst=es,attr=DAE.CALL_ATTR(tp,b1,b2,b3,b4,i,DAE.NO_TAIL())),_,_)
       equation
         true = Absyn.pathEqual(path1,path2);
         str = "Tail recursion of: " +& ExpressionDump.printExpStr(rhs) +& " with input vars: " +& stringDelimitList(vars,",");
         Debug.bcall3(Flags.isSet(Flags.TAIL),Error.addSourceMessage,Error.COMPILER_NOTIFICATION,{str},DAEUtil.getElementSourceFileInfo(source));
-      then (DAE.CALL(path2,es,DAE.CALL_ATTR(tp,b1,b2,b3,i,DAE.TAIL(vars))),true);
+      then (DAE.CALL(path2,es,DAE.CALL_ATTR(tp,b1,b2,b3,b4,i,DAE.TAIL(vars))),true);
     case (_,DAE.IFEXP(e1,e2,e3),_,_)
       equation
         (e2,b1) = optimizeStatementTail3(path,e2,vars,source);

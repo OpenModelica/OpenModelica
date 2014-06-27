@@ -737,7 +737,6 @@ algorithm
       then
         (cache,e_1,prop,st_1);
 
-    // stefan
     case (cache,env,e1 as Absyn.PARTEVALFUNCTION(function_ = _),impl,st,doVect,pre,_,_)
       equation
         (cache,e1_1,prop,st_1) = elabPartEvalFunction(cache,env,e1,st,impl,doVect,pre,info);
@@ -2239,7 +2238,7 @@ protected function elabPartEvalFunction
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> outSymbolTableOption;
 algorithm
-  (outCache,outExp,outProperties,outSymbolTableOption) := matchcontinue(inCache,inEnv,inExp,inSymbolTableOption,inImpl,inVect,inPrefix,info)
+  (outCache,outExp,outProperties,outSymbolTableOption) := match (inCache,inEnv,inExp,inSymbolTableOption,inImpl,inVect,inPrefix,info)
     local
       Env.Cache cache;
       Env.Env env;
@@ -2257,12 +2256,18 @@ algorithm
       list<Slot> slots;
       list<DAE.Const> consts;
       DAE.Const c;
+      DAE.Exp exp;
 
-    case(cache,env,Absyn.PARTEVALFUNCTION(cref,Absyn.FUNCTIONARGS(posArgs,namedArgs)),st,impl,_,pre,_)
+    case (cache,env,Absyn.PARTEVALFUNCTION(cref,Absyn.FUNCTIONARGS({},{})),st,impl,_,pre,_)
+      equation
+        (cache,exp,prop_1,st) = elabExp(cache, env, Absyn.CREF(cref), impl, st, true, pre, info);
+      then (cache,exp,prop_1,st);
+
+    case (cache,env,Absyn.PARTEVALFUNCTION(cref,Absyn.FUNCTIONARGS(posArgs,namedArgs)),st,impl,_,pre,_)
       equation
         p = Absyn.crefToPath(cref);
         (cache,{tty}) = Lookup.lookupFunctionsInEnv(cache, env, p, info);
-        tty = Types.unboxedFunctionType(tty);
+        tty = Types.makeFunctionPolymorphicReference(tty);
         (cache,args,consts,_,tty,_,slots) = elabTypes(cache, env, posArgs, namedArgs, {tty}, true, true, impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), NONE(), pre, info);
         // {p} = Types.getTypeSource(tty);
         (cache, p) = Inst.makeFullyQualified(cache, env, p);
@@ -2272,15 +2277,11 @@ algorithm
         c = List.fold(consts,Types.constAnd,DAE.C_CONST());
         prop_1 = DAE.PROP(tty_1,c);
         (cache,Util.SUCCESS()) = instantiateDaeFunction(cache, env, p, false, NONE(), true);
+        tty = Types.simplifyType(tty);
       then
-        (cache,DAE.PARTEVALFUNCTION(p,args,ty),prop_1,st);
+        (cache,DAE.PARTEVALFUNCTION(p,args,ty,tty),prop_1,st);
 
-    else
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"Static.elabPartEvalFunction failed");
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end elabPartEvalFunction;
 
 protected function stripExtraArgsFromType
@@ -7231,7 +7232,7 @@ algorithm
         //tyconst = elabConsts(outtype, const);
         //prop = getProperties(outtype, tyconst);
       then
-        (cache,SOME((DAE.CALL(fn,args_2,DAE.CALL_ATTR(tp,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),DAE.PROP(DAE.T_UNKNOWN_DEFAULT,DAE.C_CONST()))));
+        (cache,SOME((DAE.CALL(fn,args_2,DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),DAE.PROP(DAE.T_UNKNOWN_DEFAULT,DAE.C_CONST()))));
 
     // adrpo: deal with function call via an instance: MultiBody world.gravityAcceleration
     case (cache, env, fn, args, nargs, impl, _, st,pre,_,_)
@@ -7310,7 +7311,7 @@ algorithm
         tyconst = elabConsts(outtype, const);
         prop = getProperties(outtype, tyconst);
 
-        callExp = DAE.CALL(path,args_2,DAE.CALL_ATTR(outtype,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+        callExp = DAE.CALL(path,args_2,DAE.CALL_ATTR(outtype,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
         (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, newslots2, prop, info);
         expProps = SOME((call_exp,prop_1));
@@ -7509,7 +7510,7 @@ protected
   Util.Status status;
   Env.Cache cache;
   Boolean didInline;
-  Boolean b,onlyOneFunction;
+  Boolean b,onlyOneFunction,isFunctionPointer;
   IsExternalObject isExternalObject;
 algorithm
   onlyOneFunction := listLength(typelist) == 1;
@@ -7522,6 +7523,7 @@ algorithm
    functype as DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isOpenModelicaPure=isPure,
                                                                          isImpure=isImpure,
                                                                          inline=inlineType,
+                                                                         isFunctionPointer=isFunctionPointer,
                                                                          functionParallelism=funcParal)),
    vect_dims,
    slots) := elabTypes(cache, inEnv, args, nargs, typelist, onlyOneFunction, true/* Check types*/, impl,isExternalObject,st,pre,info)
@@ -7545,7 +7547,7 @@ algorithm
   (args_2, slots2) := addDefaultArgs(slots, info);
   // DO NOT CHECK IF ALL SLOTS ARE FILLED!
   true := List.fold(slots2, slotAnd, true);
-  callExp := DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,isImpure,inlineType,DAE.NO_TAIL()));
+  callExp := DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,isImpure,isFunctionPointer,inlineType,DAE.NO_TAIL()));
   //ExpressionDump.dumpExpWithTitle("function elabCallArgs3: ", callExp);
 
   // create a replacement for input variables -> their binding

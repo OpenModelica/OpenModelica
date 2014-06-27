@@ -432,7 +432,7 @@ algorithm
       DAE.Exp e;
       Boolean b;
       DAE.Type ty;
-    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("pre"),{e},DAE.CALL_ATTR(ty,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL())),false,true));
+    case ((e as DAE.CREF(ty=ty),_)) then ((Expression.makeBuiltinCall("pre",{e},ty,false),false,true));
     case ((e as DAE.CALL(path=Absyn.IDENT("pre")),b)) then ((e,false,b));
     case ((e,b)) then ((e,not b,b));
   end match;
@@ -447,7 +447,7 @@ algorithm
       DAE.Exp e;
       Boolean b;
       DAE.Type ty;
-    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("change"),{e},DAE.CALL_ATTR(ty,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL())),false,true));
+    case ((e as DAE.CREF(ty=ty),_)) then ((Expression.makeBuiltinCall("change",{e},ty,false),false,true));
     case ((e as DAE.CALL(path=Absyn.IDENT("change")),b)) then ((e,false,b));
     case ((e,b)) then ((e,not b,b));
   end match;
@@ -462,7 +462,7 @@ algorithm
       DAE.Exp e;
       Boolean b;
       DAE.Type ty;
-    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("edge"),{e},DAE.CALL_ATTR(ty,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL())),false,true));
+    case ((e as DAE.CREF(ty=ty),_)) then ((Expression.makeBuiltinCall("edge",{e},ty,false),false,true));
     case ((e as DAE.CALL(path=Absyn.IDENT("edge")),b)) then ((e,false,b));
     case ((e,b)) then ((e,not b,b));
   end match;
@@ -850,7 +850,7 @@ algorithm
     case (_,DAE.CALL(p1,exps,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p3)))
       equation
         true = Absyn.pathEqual(p1,p2) "It is a record constructor since it has the same path called as its output type";
-      then DAE.CALL(p3,exps,DAE.CALL_ATTR(tp,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(p3,exps,DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
     case (_,DAE.RECORD(_,exps,fieldNames,_),DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p3)))
       then DAE.RECORD(p3,exps,fieldNames,tp);
@@ -5202,16 +5202,6 @@ algorithm
     else (exp,source);
   end match;
 end condSimplifyAddSymbolicOperation;
-
-protected function makeDaeCall
-  input DAE.Exp inArg1;
-  input DAE.Exp inArg2;
-  input Absyn.Path funcPath;
-  output DAE.Exp outExp;
-algorithm
-  /* mahge: TODO: Fix the type of the call attributes. Type should propagate and reach here from handleMatMultOfRecords*/
-  outExp := DAE.CALL(funcPath,{inArg1,inArg2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-end makeDaeCall;
 
 protected function simplifySize
   input DAE.Exp origExp;

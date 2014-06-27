@@ -6858,20 +6858,20 @@ public function replaceCallAttrType  "replaces the type in the geiven DAE.CALL_A
 algorithm
   caOut := match(caIn,typeIn)
     local
-      Boolean tpl,bi,impure_;
+      Boolean tpl,bi,impure_,isFunctionPointerCall;
       DAE.CallAttributes ca;
       DAE.InlineType iType;
       DAE.Type ty;
       DAE.TailCall tailCall;
-    case(DAE.CALL_ATTR(tuple_=_,builtin=bi,isImpure=impure_,inlineType=iType,tailCall=tailCall),DAE.T_TUPLE(_,_))
+    case(DAE.CALL_ATTR(tuple_=_, builtin=bi, isImpure=impure_, isFunctionPointerCall=isFunctionPointerCall, inlineType=iType,tailCall=tailCall),DAE.T_TUPLE(_,_))
       equation
-        ca = DAE.CALL_ATTR(typeIn,true,bi,impure_,iType,tailCall);
+        ca = DAE.CALL_ATTR(typeIn,true,bi,impure_,isFunctionPointerCall,iType,tailCall);
       then
         ca;
     else
       equation
-        DAE.CALL_ATTR(tuple_=tpl,builtin=bi,isImpure=impure_,inlineType=iType,tailCall=tailCall) = caIn;
-        ca = DAE.CALL_ATTR(typeIn,tpl,bi,impure_,iType,tailCall);
+        DAE.CALL_ATTR(tuple_=tpl, builtin=bi, isImpure=impure_, inlineType=iType, isFunctionPointerCall=isFunctionPointerCall, tailCall=tailCall) = caIn;
+        ca = DAE.CALL_ATTR(typeIn,tpl,bi,impure_,isFunctionPointerCall,iType,tailCall);
       then
         ca;
   end match;

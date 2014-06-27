@@ -1228,9 +1228,9 @@ protected function dumpParallelismStr
   output String outString;
 algorithm
   outString := match(inType)
-    case (DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(_, _, _, _, DAE.FP_NON_PARALLEL()), _)) then "";
-    case (DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(_, _, _, _, DAE.FP_PARALLEL_FUNCTION()), _)) then "parallel ";
-    case (DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(_, _, _, _, DAE.FP_KERNEL_FUNCTION()), _)) then "kernel ";
+    case (DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_NON_PARALLEL()), _)) then "";
+    case (DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_PARALLEL_FUNCTION()), _)) then "parallel ";
+    case (DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_KERNEL_FUNCTION()), _)) then "kernel ";
     else "#dumpParallelismStr failed#";
 end match;
 end dumpParallelismStr;

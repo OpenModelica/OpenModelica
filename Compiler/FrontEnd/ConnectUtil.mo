@@ -2998,17 +2998,7 @@ protected
   DAE.Type ty;
 algorithm
   ty := Expression.typeof(inStreamExp);
-  outInStreamCall :=
-    DAE.CALL(
-      Absyn.IDENT("inStream"),
-      {inStreamExp},
-      DAE.CALL_ATTR(
-        ty,
-        false,
-        false,
-        false,
-        DAE.NO_INLINE(),
-        DAE.NO_TAIL()));
+  outInStreamCall := Expression.makeBuiltinCall("inStream",{inStreamExp},ty,false);
 end makeInStreamCall;
 
 protected function makePositiveMaxCall
@@ -3028,6 +3018,7 @@ algorithm
           ty,
           false,
           true,
+          false,
           false,
           DAE.NO_INLINE(),
           DAE.NO_TAIL()));

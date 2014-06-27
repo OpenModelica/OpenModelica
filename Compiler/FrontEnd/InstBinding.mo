@@ -814,7 +814,7 @@ algorithm
         accumNames = listReverse(inAccumNames);
 
         ety = Types.simplifyType(Types.arrayElementType(inRecordType));
-        exp = DAE.CALL(inRecordName, accumExps, DAE.CALL_ATTR(ety, false, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL()));
+        exp = DAE.CALL(inRecordName, accumExps, DAE.CALL_ATTR(ety, false, false, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL()));
         val = Values.RECORD(inRecordName, accumVals, accumNames, -1);
         (exp, val) = InstUtil.liftRecordBinding(inRecordType, exp, val);
         binding = DAE.EQBOUND(exp, SOME(val), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());

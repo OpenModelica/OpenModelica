@@ -2014,7 +2014,7 @@ algorithm
       DAE.Exp e;
       Absyn.Path path;
       list<DAE.Exp> expLst;
-      Boolean tuple_,b, isImpure;
+      Boolean tuple_,b, isImpure, isFunctionPointerCall;
       DAE.Type ty,ty2;
       DAE.InlineType inlineType;
       DAE.TailCall tc;
@@ -2031,25 +2031,26 @@ algorithm
         _ = BaseHashTable.get(cref,checkcr);
       then
         ((e,(argmap,checkcr,false)));
-    case ((DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,inlineType,tc)),ty),(argmap,checkcr,true)))
+    case ((DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,_,inlineType,tc)),ty),(argmap,checkcr,true)))
       equation
         cref = ComponentReference.pathToCref(path);
-        (e as DAE.CREF(componentRef=cref)) = getExpFromArgMap(argmap,cref);
+        (e as DAE.CREF(componentRef=cref,ty=ty2)) = getExpFromArgMap(argmap,cref);
         path = ComponentReference.crefToPath(cref);
         expLst = List.map(expLst,Expression.unboxExp);
         b = Expression.isBuiltinFunctionReference(e);
-        e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty,tuple_,b,isImpure,inlineType,tc));
+        isFunctionPointerCall = Types.isFunctionReferenceVar(ty2);
+        e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty,tuple_,b,isImpure,isFunctionPointerCall,inlineType,tc));
         (e,_) = ExpressionSimplify.simplify(e);
       then
         ((e,(argmap,checkcr,true)));
-    case ((e as DAE.UNBOX(DAE.CALL(path,_,DAE.CALL_ATTR(_,_,false,_,_,_)),_),(argmap,checkcr,true)))
+    case ((e as DAE.UNBOX(DAE.CALL(path,_,DAE.CALL_ATTR(builtin=false)),_),(argmap,checkcr,true)))
       equation
         cref = ComponentReference.pathToCref(path);
         _ = BaseHashTable.get(cref,checkcr);
       then
         ((e,(argmap,checkcr,false)));
         /* TODO: Use the inlineType of the function reference! */
-    case((DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,isImpure,_,tc)),(argmap,checkcr,true)))
+    case((DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,isImpure,_,_,tc)),(argmap,checkcr,true)))
       equation
         cref = ComponentReference.pathToCref(path);
         (e as DAE.CREF(componentRef=cref,ty=ty)) = getExpFromArgMap(argmap,cref);
@@ -2057,11 +2058,12 @@ algorithm
         expLst = List.map(expLst,Expression.unboxExp);
         b = Expression.isBuiltinFunctionReference(e);
         (ty2,inlineType) = functionReferenceType(ty);
-        e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty2,tuple_,b,isImpure,inlineType,tc));
+        isFunctionPointerCall = Types.isFunctionReferenceVar(ty2);
+        e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty2,tuple_,b,isImpure,isFunctionPointerCall,inlineType,tc));
         e = boxIfUnboxedFunRef(e,ty);
         (e,_) = ExpressionSimplify.simplify(e);
       then ((e,(argmap,checkcr,true)));
-    case((e as DAE.CALL(path,_,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),_,false,_,_,_)),(argmap,checkcr,true)))
+    case((e as DAE.CALL(path,_,DAE.CALL_ATTR(ty=DAE.T_METATYPE(ty = _),builtin=false)),(argmap,checkcr,true)))
       equation
         cref = ComponentReference.pathToCref(path);
         _ = BaseHashTable.get(cref,checkcr);
@@ -2279,7 +2281,7 @@ algorithm
       equation
         crs = List.map1(List.map(vars,Types.varName),ComponentReference.appendStringCref,cr);
         exps = List.map1r(crs, VarTransform.getReplacement, repl);
-      then DAE.CALL(path,exps,DAE.CALL_ATTR(ty,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(path,exps,DAE.CALL_ATTR(ty,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
   end matchcontinue;
 end getReplacementCheckComplex;
 

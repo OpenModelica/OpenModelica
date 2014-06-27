@@ -971,9 +971,9 @@ public uniontype CodeType
   end C_VARIABLENAMES;
 end CodeType;
 
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,FUNCTION_BUILTIN(NONE()),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,true,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,false,FUNCTION_BUILTIN(NONE()),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,true,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
 
 public
 uniontype FunctionAttributes
@@ -981,6 +981,7 @@ uniontype FunctionAttributes
     InlineType inline;
     Boolean isOpenModelicaPure "if the function has __OpenModelica_Impure";
     Boolean isImpure "if the function has prefix *impure* is true, else false";
+    Boolean isFunctionPointer "if the function is a local variable";
     FunctionBuiltin isBuiltin;
     FunctionParallelism functionParallelism;
   end FUNCTION_ATTRIBUTES;
@@ -1262,6 +1263,7 @@ uniontype Exp "Expressions
     Absyn.Path path;
     list<Exp> expList;
     Type ty;
+    Type origType;
   end PARTEVALFUNCTION;
 
   record ARRAY
@@ -1403,11 +1405,11 @@ public uniontype TailCall
   end TAIL;
 end TailCall;
 
-public constant CallAttributes callAttrBuiltinBool = CALL_ATTR(T_BOOL_DEFAULT,false,true,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinInteger = CALL_ATTR(T_INTEGER_DEFAULT,false,true,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinReal = CALL_ATTR(T_REAL_DEFAULT,false,true,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinString = CALL_ATTR(T_STRING_DEFAULT,false,true,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinOther = CALL_ATTR(T_UNKNOWN_DEFAULT,false,true,false,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinBool = CALL_ATTR(T_BOOL_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinInteger = CALL_ATTR(T_INTEGER_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinReal = CALL_ATTR(T_REAL_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinString = CALL_ATTR(T_STRING_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinOther = CALL_ATTR(T_UNKNOWN_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
 
 public
 uniontype CallAttributes
@@ -1416,6 +1418,7 @@ uniontype CallAttributes
     Boolean tuple_ "tuple" ;
     Boolean builtin "builtin Function call" ;
     Boolean isImpure "if the function has prefix *impure* is true, else false";
+    Boolean isFunctionPointerCall;
     InlineType inlineType;
     TailCall tailCall "Input variables of the function if the call is tail-recursive";
   end CALL_ATTR;

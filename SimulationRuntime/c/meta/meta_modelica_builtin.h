@@ -84,6 +84,7 @@ extern modelica_metatype boxptr_substring(threadData_t *,metamodelica_string_con
 
 #define System_stringHashDjb2Mod stringHashDjb2Mod
 #define boxptr_System_stringHashDjb2Mod boxptr_stringHashDjb2Mod
+#define boxvar_System_stringHashDjb2Mod boxvar_stringHashDjb2Mod
 
 extern modelica_metatype boxptr_stringHashDjb2Mod(threadData_t*,modelica_metatype v,modelica_metatype mod);
 
@@ -165,6 +166,8 @@ extern modelica_integer intMaxLit(void);
 
 extern modelica_boolean setStackOverflowSignal(modelica_boolean);
 extern metamodelica_string referenceDebugString(modelica_metatype fnptr);
+
+#include "meta_modelica_builtin_boxvar.h"
 
 #if defined(__cplusplus)
 }

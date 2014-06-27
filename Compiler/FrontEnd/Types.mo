@@ -1891,6 +1891,22 @@ algorithm
   end match;
 end liftArrayListDims;
 
+public function liftArrayListExp "
+  This function turns a type into an array of that type."
+  input DAE.Type inType;
+  input list<DAE.Exp> inDimensionLst;
+  output DAE.Type outType;
+algorithm
+  outType := match (inType,inDimensionLst)
+    local
+      Type ty;
+      DAE.Exp d;
+      list<DAE.Exp> rest;
+    case (ty,{}) then ty;
+    case (ty,d::rest) then liftArray(liftArrayListExp(ty,rest),DAE.DIM_EXP(d));
+  end match;
+end liftArrayListExp;
+
 public function liftArrayRight "This function adds an array dimension to *the right* of the passed type."
   input DAE.Type inType;
   input DAE.Dimension inIntegerOption;
@@ -4792,7 +4808,7 @@ algorithm
         (e_1,_) = matchType(e,t1,t2,printFailtrace);
         t = simplifyType(t2);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},DAE.CALL_ATTR(t,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL())),t2);
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},DAE.CALL_ATTR(t,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),t2);
 
   end matchcontinue;
 end typeConvert;
@@ -8017,7 +8033,7 @@ algorithm
   DAE.FUNCTION_ATTRIBUTES(isBuiltin=builtin,isImpure=isImpure,inline=inline) := attr;
   isT := isTuple(ty);
   isB := isBuiltin(builtin);
-  callAttr := DAE.CALL_ATTR(ty,isT,isB,isImpure,inline,DAE.NO_TAIL());
+  callAttr := DAE.CALL_ATTR(ty,isT,isB,isImpure,false,inline,DAE.NO_TAIL());
 end makeCallAttr;
 
 public function getFuncArg
@@ -8120,5 +8136,36 @@ public function makeDefaultFuncArg
 algorithm
   arg := DAE.FUNCARG(name,ty,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE());
 end makeDefaultFuncArg;
+
+public function setIsFunctionPointer
+  input tuple<DAE.Type,Integer> inTpl;
+  output tuple<DAE.Type,Integer> outTpl;
+algorithm
+  outTpl := match inTpl
+    local
+      list<DAE.FuncArg> funcArg "funcArg" ;
+      DAE.Type funcResultType "Only single-result" ;
+      DAE.FunctionAttributes functionAttributes;
+      DAE.TypeSource source;
+      DAE.InlineType inline;
+      Boolean isOpenModelicaPure,isImpure;
+      DAE.FunctionBuiltin isBuiltin;
+      DAE.FunctionParallelism functionParallelism;
+
+    case ((DAE.T_FUNCTION(funcArg,funcResultType,DAE.FUNCTION_ATTRIBUTES(inline,isOpenModelicaPure,isImpure,false,isBuiltin,functionParallelism),source),_))
+      then ((DAE.T_FUNCTION(funcArg,funcResultType,DAE.FUNCTION_ATTRIBUTES(inline,isOpenModelicaPure,isImpure,true,isBuiltin,functionParallelism),source),1));
+    else inTpl;
+  end match;
+end setIsFunctionPointer;
+
+public function isFunctionReferenceVar
+  input DAE.Type ty;
+  output Boolean b;
+algorithm
+  b := match ty
+    case DAE.T_FUNCTION_REFERENCE_VAR(source=_) then true;
+    else false;
+  end match;
+end isFunctionReferenceVar;
 
 end Types;

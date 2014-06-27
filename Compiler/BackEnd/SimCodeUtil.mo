@@ -86,7 +86,6 @@ protected import Initialization;
 protected import Inline;
 protected import List;
 protected import Mod;
-protected import PartFn;
 protected import PriorityQueue;
 protected import Settings;
 protected import SimCodeDump;
@@ -507,13 +506,7 @@ algorithm
     case (_, dae, dlow as BackendDAE.DAE(shared=BackendDAE.SHARED(functionTree=functionTree)), _)
       equation
         // get all the used functions from the function tree
-
         funcelems = DAEUtil.getFunctionList(functionTree);
-        part_func_elems = PartFn.createPartEvalFunctions(funcelems);
-        (dae, part_func_elems) = PartFn.partEvalDAE(dae, part_func_elems);
-        part_func_elems = PartFn.partEvalBackendDAE(dlow, part_func_elems);
-        funcelems = List.union(part_func_elems, part_func_elems);
-        // funcelems = List.union(funcelems, part_func_elems);
         funcelems = Inline.inlineCallsInFunctions(funcelems, (NONE(), {DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}), {});
         (funcelems, literals as (_, _, lits)) = simulationFindLiterals(dlow, funcelems);
         (fns, recordDecls, includes2, includeDirs2, libs2) = elaborateFunctions(inProgram, funcelems, {}, lits, {}); // Do we need metarecords here as well?
@@ -710,7 +703,7 @@ algorithm
       partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
       equation
 
-        DAE.FUNCTION_ATTRIBUTES(_, _, _, _, DAE.FP_NON_PARALLEL()) = funAttrs;
+        DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_NON_PARALLEL()) = funAttrs;
 
         outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
         funArgs = List.map(args, typesSimFunctionArg);
@@ -730,7 +723,7 @@ algorithm
       partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
       equation
 
-        DAE.FUNCTION_ATTRIBUTES(_, _, _, _, DAE.FP_KERNEL_FUNCTION()) = funAttrs;
+        DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_KERNEL_FUNCTION()) = funAttrs;
 
         outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
         funArgs = List.map(args, typesSimFunctionArg);
@@ -750,7 +743,7 @@ algorithm
       partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
       equation
 
-        DAE.FUNCTION_ATTRIBUTES(_, _, _, _, DAE.FP_PARALLEL_FUNCTION()) = funAttrs;
+        DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_PARALLEL_FUNCTION()) = funAttrs;
 
         outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
         funArgs = List.map(args, typesSimFunctionArg);
@@ -9409,7 +9402,7 @@ algorithm
         false = Expression.isZero(e2);
       then ((e, source ));
     case( (DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty), exp2 = e2), source))
-      then ((DAE.CALL(Absyn.IDENT("DIVISION"), {e1, e2}, DAE.CALL_ATTR(ty, false, true, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source ));
+      then ((DAE.CALL(Absyn.IDENT("DIVISION"), {e1, e2}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source ));
 
     case( (e as DAE.BINARY(exp1 = _, operator = DAE.DIV_ARRAY_SCALAR(_), exp2 = e2), source))
       equation
@@ -9417,7 +9410,7 @@ algorithm
         false = Expression.isZero(e2);
       then ((e, source ));
     case( (DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty), exp2 = e2), source))
-      then ((DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1, e2}, DAE.CALL_ATTR(ty, false, true, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source ));
+      then ((DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1, e2}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source ));
 
     case( (e as DAE.BINARY(exp1 = _, operator = DAE.DIV_SCALAR_ARRAY(_), exp2 = e2), source))
       equation
@@ -9425,7 +9418,7 @@ algorithm
         false = Expression.isZero(e2);
       then ((e, source ));
     case( (DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty), exp2 = e2), source))
-      then ((DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1, e2}, DAE.CALL_ATTR(ty, false, true, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source));
+      then ((DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1, e2}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source));
     case _ then (inExp);
   end matchcontinue;
 end traversingDivExpFinder;
