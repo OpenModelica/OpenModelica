@@ -5830,8 +5830,8 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
   let &auxFunctionIgnore = buffer ""
   let outputs = ( List.restOrEmpty(outvars) |> var hasindex i1 fromindex 1 =>
     match var
-      case VARIABLE(__) then
-        if mmcConstructorType(ty) then
+      case v as VARIABLE(__) then
+        if mmcConstructorType(liftArrayListExp(v.ty,v.instDims)) then
           let _ = varInit(var, "", &varDecls, &outputAllocIgnore, &varFreesIgnore, &auxFunctionIgnore)
           ", &" + funArgName(var)
         else
