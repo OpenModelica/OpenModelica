@@ -167,7 +167,7 @@ void Kinsol::solve()
         long int irtrn  = 0;          // Retrun-flag of Fortran code        _algLoop->getReal(_y);
 
         _algLoop->evaluate();
-		_algLoop->getRHS(_f);
+    _algLoop->getRHS(_f);
         _algLoop->getSystemMatrix(_jac);
         dgesv_(&dimSys,&dimRHS,_jac,&dimSys,_helpArray,_f,&dimSys,&irtrn);
         memcpy(_y,_f,_dimSys*sizeof(double));
