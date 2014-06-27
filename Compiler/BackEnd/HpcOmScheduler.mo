@@ -1414,7 +1414,7 @@ algorithm
   levelComps := List.mapList1_1(level,Util.arrayGetIndexFirst,inComps);
   levelComps := List.mapList1_1(levelComps,List.sort,intGt);
   SCCs := List.map1(levelComps,getSimEqSysIdcsForNodeLst,iSccSimEqMapping);
-  levelTasks := List.threadMap(SCCs,List.map(level,List.create),makeCalcLevelTaskLst);
+  levelTasks := List.threadMap(SCCs,List.mapList(level,List.create),makeCalcLevelTaskLst);
   oSchedule := HpcOmSimCode.LEVELSCHEDULE(levelTasks);
 
   //update nodeMark for graphml representation
