@@ -529,7 +529,7 @@ void Kinsol::solveNLS()
             // Linesearch did not converge
         case KIN_LINESEARCH_NONCONV:
             KINGetFuncNorm(_kinMem, &_fnorm);
-			if(_fnorm < locTol)
+      if(_fnorm < locTol)
             {
                 _iterationStatus = DONE;
             }else
