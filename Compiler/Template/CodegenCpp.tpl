@@ -7384,13 +7384,13 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
         _algLoop<%index%>->getReal(algloop<%index%>Vars );
         bool restatDiscrete<%index%>= false;
         IContinuous::UPDATETYPE calltype = _callType;
-    try
+        try
         {
 
 
             if( _callType == IContinuous::DISCRETE )
             {
-        _algLoop<%index%>->evaluate();
+                _algLoop<%index%>->evaluate();
                 while(restart<%index%> && !(iterations<%index%>++>500))
                 {
 
