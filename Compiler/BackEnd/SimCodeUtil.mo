@@ -520,31 +520,6 @@ algorithm
   end matchcontinue;
 end createFunctions;
 
-public function getCalledFunctionReferences
-"Goes through the BackendDAE structure, finds all function references calls,
- and returns them in a list. Removes duplicates."
-  input DAE.DAElist dae;
-  input BackendDAE.BackendDAE dlow;
-  output list<Absyn.Path> res;
-protected
-  list<DAE.Exp> explist, fcallexps;
-  list<Absyn.Path> calledfuncs;
-algorithm
-  res := matchcontinue(dae, dlow)
-    case (_, _)
-      equation
-        false = Config.acceptMetaModelicaGrammar();
-      then {};
-    case (_, _)
-      equation
-        true = Config.acceptMetaModelicaGrammar();
-        fcallexps = BackendDAEUtil.traverseBackendDAEExps(dlow, matchFnRefs, {});
-        calledfuncs = List.map(fcallexps, getCallPath);
-        res = removeDuplicatePaths(calledfuncs);
-      then res;
-  end matchcontinue;
-end getCalledFunctionReferences;
-
 protected function orderRecordDecls
   input SimCode.RecordDeclaration decl1;
   input SimCode.RecordDeclaration decl2;
@@ -8411,7 +8386,7 @@ algorithm
         els = DAEUtil.getFunctionElements(funcelem);
         // SimCode.Function reference variables are filtered out
         varfuncs = List.fold(els, DAEUtil.collectFunctionRefVarPaths, {});
-        (_, (_, varfuncs)) = DAEUtil.traverseDAE2(Util.if_(Config.acceptMetaModelicaGrammar(), els, {}), Expression.traverseSubexpressionsHelper, (DAEUtil.collectValueblockFunctionRefVars, varfuncs));
+        (_, (_, varfuncs)) = DAEUtil.traverseDAE2(els, Expression.traverseSubexpressionsHelper, (DAEUtil.collectValueblockFunctionRefVars, varfuncs));
         (_, (_, (calledfuncs, _))) = DAEUtil.traverseDAE2(els, Expression.traverseSubexpressionsHelper, (matchNonBuiltinCallsAndFnRefPaths, ({}, varfuncs)));
         ht = BaseHashTable.add((pathstr, path), ht);
         ht = addDestructor(funcelem, ht);
@@ -9291,32 +9266,6 @@ algorithm
     else false;
   end matchcontinue;
 end generateExtFunctionDynamicLoad;
-
-protected function matchFnRefs "Used together with getMatchingExps"
-  input tuple<DAE.Exp, list<DAE.Exp>> itpl;
-  output tuple<DAE.Exp, list<DAE.Exp>> otpl;
-algorithm
-  otpl := matchcontinue itpl
-    local
-      DAE.Exp e, e2;
-      list<DAE.Exp> acc;
-      DAE.ComponentRef cref;
-      Absyn.Path p;
-      DAE.Type ty;
-
-    case ((e as DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(builtin = false)), acc)) then ((e, e::acc));
-
-    case ((e as DAE.PARTEVALFUNCTION(ty = ty as DAE.T_FUNCTION_REFERENCE_VAR(source = _), path=p), acc))
-      equation
-        cref = ComponentReference.pathToCref(p);
-        e2 = Expression.makeCrefExp(cref, ty);
-      then
-        ((e, e2::acc));
-
-    else itpl;
-
-  end matchcontinue;
-end matchFnRefs;
 
 public function getImplicitRecordConstructors
   "If a record instance is sent to a function we need to generate code for the

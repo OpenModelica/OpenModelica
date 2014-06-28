@@ -1578,11 +1578,24 @@ algorithm
     case ((e as DAE.CALL(path = path),(func,usefuncs)))
       equation
          _ = DAEUtil.avlTreeGet(usefuncs, path);
-      then
-        ((e, (func,usefuncs)));
+      then inTuple;
 
     // add it
     case ((e as DAE.CALL(path = path),(func,usefuncs)))
+      equation
+         (f,body) = getFunctionAndBody(path,func);
+         usefuncs1 = DAEUtil.avlTreeAdd(usefuncs, path, f);
+         // print("add function " +& Absyn.pathStringNoQual(path) +& "\n");
+         (_,(_,usefuncs2)) = DAEUtil.traverseDAE2(body,checkUnusedFunctions,(func,usefuncs1));
+      then
+        ((e, (func,usefuncs2)));
+
+    case ((e as DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(functionType=DAE.T_FUNCTION(source={path}))),(func,usefuncs)))
+      equation
+         _ = DAEUtil.avlTreeGet(usefuncs, path);
+      then inTuple;
+
+    case ((e as DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(functionType=DAE.T_FUNCTION(source={path}))),(func,usefuncs)))
       equation
          (f,body) = getFunctionAndBody(path,func);
          usefuncs1 = DAEUtil.avlTreeAdd(usefuncs, path, f);
@@ -1595,8 +1608,7 @@ algorithm
     case ((e as DAE.PARTEVALFUNCTION(path = path),(func,usefuncs)))
       equation
          _ = DAEUtil.avlTreeGet(usefuncs, path);
-      then
-        ((e, (func,usefuncs)));
+      then inTuple;
 
     // add it
     case ((e as DAE.PARTEVALFUNCTION(path = path),(func,usefuncs)))
@@ -1607,7 +1619,7 @@ algorithm
       then
         ((e, (func,usefuncs1)));
 
-    case _ then inTuple;
+    else inTuple;
   end matchcontinue;
 end checkUnusedFunctionsExp;
 
