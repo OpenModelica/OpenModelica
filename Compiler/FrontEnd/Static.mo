@@ -2247,7 +2247,7 @@ algorithm
       list<Absyn.NamedArg> namedArgs;
       Option<GlobalScript.SymbolTable> st;
       Boolean impl,doVect;
-      Absyn.Path p;
+      Absyn.Path p,p2;
       list<DAE.Exp> args;
       DAE.Type ty;
       DAE.Properties prop_1;
@@ -2257,10 +2257,11 @@ algorithm
       list<DAE.Const> consts;
       DAE.Const c;
       DAE.Exp exp;
+      Boolean isFunctionPointer;
 
     case (cache,env,Absyn.PARTEVALFUNCTION(cref,Absyn.FUNCTIONARGS({},{})),st,impl,_,pre,_)
       equation
-        (cache,exp,prop_1,st) = elabExp(cache, env, Absyn.CREF(cref), impl, st, true, pre, info);
+        (cache,exp,prop_1,st) = elabExp(cache, env, Absyn.CREF(cref), impl, st, inVect, pre, info);
       then (cache,exp,prop_1,st);
 
     case (cache,env,Absyn.PARTEVALFUNCTION(cref,Absyn.FUNCTIONARGS(posArgs,namedArgs)),st,impl,_,pre,_)
@@ -2268,15 +2269,16 @@ algorithm
         p = Absyn.crefToPath(cref);
         (cache,{tty}) = Lookup.lookupFunctionsInEnv(cache, env, p, info);
         tty = Types.makeFunctionPolymorphicReference(tty);
-        (cache,args,consts,_,tty,_,slots) = elabTypes(cache, env, posArgs, namedArgs, {tty}, true, true, impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), NONE(), pre, info);
+        (cache,args,consts,_,tty as DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isFunctionPointer=isFunctionPointer)),_,slots) = elabTypes(cache, env, posArgs, namedArgs, {tty}, true, true, impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), NONE(), pre, info);
         // {p} = Types.getTypeSource(tty);
-        (cache, p) = Inst.makeFullyQualified(cache, env, p);
+        (cache, p2) = Inst.makeFullyQualified(cache, env, Util.if_(isFunctionPointer,Absyn.FULLYQUALIFIED(Absyn.IDENT("sin")),p));
+        p = Util.if_(isFunctionPointer,p,p2); // RML hacks because it doesn't have if statements
         tty_1 = stripExtraArgsFromType(slots,tty);
         tty_1 = Types.makeFunctionPolymorphicReference(tty_1);
         ty = Types.simplifyType(tty_1);
         c = List.fold(consts,Types.constAnd,DAE.C_CONST());
         prop_1 = DAE.PROP(tty_1,c);
-        (cache,Util.SUCCESS()) = instantiateDaeFunction(cache, env, p, false, NONE(), true);
+        (cache,Util.SUCCESS()) = instantiateDaeFunction(cache, env, p2, false, NONE(), true);
         tty = Types.simplifyType(tty);
       then
         (cache,DAE.PARTEVALFUNCTION(p,args,ty,tty),prop_1,st);

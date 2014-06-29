@@ -8482,7 +8482,7 @@ end daeExpRecord;
 template daeExpPartEvalFunction(Exp exp, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 ::=
   match exp
-    case PARTEVALFUNCTION(ty=T_FUNCTION_REFERENCE_VAR(functionType = t as T_FUNCTION(__)),origType=T_FUNCTION_REFERENCE_VAR(functionType = orig as T_FUNCTION(source={name}))) then
+    case PARTEVALFUNCTION(ty=T_FUNCTION_REFERENCE_VAR(functionType = t as T_FUNCTION(__)),origType=T_FUNCTION_REFERENCE_VAR(functionType = orig as T_FUNCTION(functionAttributes=attr as FUNCTION_ATTRIBUTES(__), source={name}))) then
       let &varDeclInner = buffer ""
       let &ret = buffer ""
       let retInput = match t.funcResultType
@@ -8494,15 +8494,31 @@ template daeExpPartEvalFunction(Exp exp, Context context, Text &preExp, Text &va
       let func = 'closure<%System.tmpTickIndex(2/*auxFunction*/)%>_<%underscorePath(name)%>'
       let return = match t.funcResultType case T_NORETCALL(__) then "" else "return "
       let closure = tempDecl("modelica_metatype",&varDecls)
-      let createClosure = expList |> e => ', <%daeExp(e,context,&preExp,&varDecls,&auxFunction)%>'
-      let &preExp += '<%closure%> = mmc_mk_box<%daeExpMetaHelperBoxStart(listLength(expList))%>0<%createClosure%>);<%\n%>'
+      let createClosure = (expList |> e => ', <%daeExp(e,context,&preExp,&varDecls,&auxFunction)%>') + (if attr.isFunctionPointer then ', _<%underscorePath(name)%>')
+      let &preExp += '<%closure%> = mmc_mk_box<%if attr.isFunctionPointer then daeExpMetaHelperBoxStart(incrementInt(listLength(expList),1)) else daeExpMetaHelperBoxStart(listLength(expList))%>0<%createClosure%>);<%\n%>'
       let &auxFunction +=
       <<
       static <%match t.funcResultType case T_NORETCALL(__) then "void" else "modelica_metatype"%> <%func%>(threadData_t *thData, modelica_metatype closure<%t.funcArg |> a as FUNCARG(__) => ', <%expTypeArrayIf(a.ty)%> <%a.name%>'%><%retInput%>)
       {
         <%varDeclInner%>
         <%setDifference(orig.funcArg,t.funcArg) |> a as FUNCARG(__) hasindex i1 fromindex 1 => '<%expTypeArrayIf(a.ty)%> <%a.name%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(closure),<%i1%>));<%\n%>'%>
-        <%return%>boxptr_<%underscorePath(name)%>(thData<%orig.funcArg |> a as FUNCARG(__) => ', <%a.name%>'%><%ret%>);
+        <%
+        if attr.isFunctionPointer then
+          let fname = '_<%underscorePath(name)%>'
+          let func = '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%fname%>), 1)))'
+          let typeCast1 = generateTypeCastFromType(orig, true)
+          let typeCast2 = generateTypeCastFromType(orig, false)
+          <<
+          modelica_fnptr <%fname%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(closure),<%incrementInt(listLength(setDifference(orig.funcArg,t.funcArg)),1)%>));
+          if (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%fname%>),2))) {
+            <%return%> (<%typeCast1%> <%func%>) (thData, MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%fname%>),2))<%orig.funcArg |> a as FUNCARG(__) => ', <%a.name%>'%><%ret%>);
+          } else { /* No closure in the called variable */
+            <%return%> (<%typeCast2%> <%func%>) (thData<%orig.funcArg |> a as FUNCARG(__) => ', <%a.name%>'%><%ret%>);
+          }
+          >>
+        else
+          '<%return%>boxptr_<%underscorePath(name)%>(thData<%orig.funcArg |> a as FUNCARG(__) => ', <%a.name%>'%><%ret%>);'
+        %>
       }
       >>
       '(modelica_fnptr) mmc_mk_box2(0,<%func%>,<%closure%>)'
@@ -8907,6 +8923,19 @@ template generateTypeCast(Type ty, list<DAE.Exp> es, Boolean isClosure)
     case T_TUPLE(tupleType=_::tys) then (tys |> t => ', <%expTypeArrayIf(t)%>')
   '(<%ret%>(*)(threadData_t*<%if isClosure then ", modelica_metatype"%><%inputs%><%outputs%>))'
 end generateTypeCast;
+
+template generateTypeCastFromType(Type ty, Boolean isClosure)
+::=
+  let ret = (match ty
+    case T_FUNCTION(funcResultType=T_NORETCALL(__)) then "void"
+    else "modelica_metatype")
+  let inputs = match ty
+    case T_FUNCTION(__) then
+      (funcArg |> fa as FUNCARG(__) => ', <%expTypeArrayIf(fa.ty)%>')
+  let outputs = match ty
+    case T_FUNCTION(funcResultType=T_TUPLE(tupleType=_::tys)) then (tys |> t => ', <%expTypeArrayIf(t)%>')
+  '(<%ret%>(*)(threadData_t*<%if isClosure then ", modelica_metatype"%><%inputs%><%outputs%>))'
+end generateTypeCastFromType;
 
 template daeExpTailCall(list<DAE.Exp> es, list<String> vs, Context context, Text &preExp, Text &postExp, Text &varDecls, Text &auxFunction)
 ::=
@@ -10615,7 +10644,6 @@ end getCausality;
 
 template addRootsTempArray()
 ::=
-  let() = System.tmpTickResetIndex(0, 2)
   match System.tmpTickMaximum(1)
     case 0 then ""
     case i then /* TODO: Find out where we add tmpIndex but discard its use causing us to generate unused tmpMeta with size 1 */

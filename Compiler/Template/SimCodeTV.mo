@@ -1746,6 +1746,12 @@ package DAE
     end DIM_UNKNOWN;
   end Dimension;
 
+  uniontype FunctionAttributes
+    record FUNCTION_ATTRIBUTES
+      Boolean isFunctionPointer;
+    end FUNCTION_ATTRIBUTES;
+  end FunctionAttributes;
+
   uniontype FuncArg
     record FUNCARG
       String name;
