@@ -170,7 +170,6 @@ public:
   QSplitter* getEquationsHorizontalSplitter() {return mpEquationsHorizontalSplitter;}
   QSplitter* getTransformationsVerticalSplitter() {return mpTransformationsVerticalSplitter;}
   QSplitter* getTransformationsHorizontalSplitter() {return mpTransformationsHorizontalSplitter;}
-  bool eventFilter(QObject *pObject, QEvent *pEvent);
   void loadTransformations();
   void fetchDefinedInEquations(OMVariable &variable);
   void fetchUsedInEquations(OMVariable &variable);

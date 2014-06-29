@@ -86,7 +86,6 @@ private:
 public:
   SearchClassWidget(MainWindow *pMainWindow);
   QLineEdit* getSearchClassTextBox();
-  bool eventFilter(QObject *pObject, QEvent *pEvent);
 public slots:
   void searchClasses();
 };

@@ -50,7 +50,6 @@ class LibraryBrowseDialog : public QDialog
   Q_OBJECT
 public:
   LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, ModelicaClassDialog *pParent);
-  bool eventFilter(QObject *pObject, QEvent *pEvent);
   void unHideChildItems(QTreeWidgetItem *pItem);
 private:
   QLineEdit *mpLineEdit;

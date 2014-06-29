@@ -163,7 +163,6 @@ public:
   void insertVariablesItemsToTree(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   void variablesUpdated();
   void updateVariablesTreeHelper(QMdiSubWindow *pSubWindow);
-  bool eventFilter(QObject *pObject, QEvent *pEvent);
   void readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName,
                                  QHash<QString, QHash<QString, QString> > *variables);
   void findVariableAndUpdateValue(QDomDocument xmlDocument, QHash<QString, QHash<QString, QString> > variables);

@@ -51,8 +51,8 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Mo
   resize(250, 500);
   mpLineEdit = pLineEdit;
   mpModelicaClassDialog = pParent;
-  mpFindClassTextBox = new QLineEdit(Helper::findClasses);
-  mpFindClassTextBox->installEventFilter(this);
+  mpFindClassTextBox = new QLineEdit;
+  mpFindClassTextBox->setPlaceholderText(Helper::findClasses);
   connect(mpFindClassTextBox, SIGNAL(textEdited(QString)), SLOT(findModelicaClasses()));
   connect(mpFindClassTextBox, SIGNAL(returnPressed()), SLOT(useModelicaClass()));
   mpLibraryBrowseTreeWidget = new QTreeWidget;
@@ -115,23 +115,6 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Mo
   pMainLayout->addWidget(mpLibraryBrowseTreeWidget, 1, 0);
   pMainLayout->addWidget(mpButtonBox, 2, 0, 1, 1, Qt::AlignRight);
   setLayout(pMainLayout);
-}
-
-bool LibraryBrowseDialog::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-  if (pObject != mpFindClassTextBox)
-    return false;
-  if (pEvent->type() == QEvent::FocusIn)
-  {
-    if (mpFindClassTextBox->text().compare(Helper::findClasses) == 0)
-      mpFindClassTextBox->setText("");
-  }
-  if (pEvent->type() == QEvent::FocusOut)
-  {
-    if (mpFindClassTextBox->text().isEmpty())
-      mpFindClassTextBox->setText(Helper::findClasses);
-  }
-  return false;
 }
 
 void LibraryBrowseDialog::unHideChildItems(QTreeWidgetItem *pTreeWidgetItem)

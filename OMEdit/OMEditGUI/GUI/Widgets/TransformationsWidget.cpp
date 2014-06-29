@@ -465,8 +465,8 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   Label *pVariablesBrowserLabel = new Label(Helper::variablesBrowser);
   pVariablesBrowserLabel->setObjectName("LabelWithBorder");
   // create the find text box
-  mpFindVariablesTextBox = new QLineEdit(Helper::findVariables);
-  mpFindVariablesTextBox->installEventFilter(this);
+  mpFindVariablesTextBox = new QLineEdit;
+  mpFindVariablesTextBox->setPlaceholderText(Helper::findVariables);
   connect(mpFindVariablesTextBox, SIGNAL(returnPressed()), SLOT(findVariables()));
   connect(mpFindVariablesTextBox, SIGNAL(textEdited(QString)), SLOT(findVariables()));
   // create the case sensitivity checkbox
@@ -747,23 +747,6 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
     mpTransformationsHorizontalSplitter->restoreState(settings.value("transformationsHorizontalSplitter").toByteArray());
     settings.endGroup();
   }
-}
-
-bool TransformationsWidget::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-  if (pObject != mpFindVariablesTextBox)
-    return false;
-  if (pEvent->type() == QEvent::FocusIn)
-  {
-    if (mpFindVariablesTextBox->text().compare(Helper::findVariables) == 0)
-      mpFindVariablesTextBox->setText("");
-  }
-  if (pEvent->type() == QEvent::FocusOut)
-  {
-    if (mpFindVariablesTextBox->text().isEmpty())
-      mpFindVariablesTextBox->setText(Helper::findVariables);
-  }
-  return false;
 }
 
 void TransformationsWidget::loadTransformations()

@@ -719,8 +719,8 @@ VariablesWidget::VariablesWidget(MainWindow *pMainWindow)
   setMinimumWidth(175);
   mpMainWindow = pMainWindow;
   // create the find text box
-  mpFindVariablesTextBox = new QLineEdit(Helper::findVariables);
-  mpFindVariablesTextBox->installEventFilter(this);
+  mpFindVariablesTextBox = new QLineEdit;
+  mpFindVariablesTextBox->setPlaceholderText(Helper::findVariables);
   connect(mpFindVariablesTextBox, SIGNAL(returnPressed()), SLOT(findVariables()));
   connect(mpFindVariablesTextBox, SIGNAL(textEdited(QString)), SLOT(findVariables()));
   // create the case sensitivity checkbox
@@ -892,23 +892,6 @@ void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
   mpVariablesTreeModel->blockSignals(state);
   /* invalidate the view so that the items show the updated values. */
   mpVariableTreeProxyModel->invalidate();
-}
-
-bool VariablesWidget::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-  if (pObject != mpFindVariablesTextBox)
-    return false;
-  if (pEvent->type() == QEvent::FocusIn)
-  {
-    if (mpFindVariablesTextBox->text().compare(Helper::findVariables) == 0)
-      mpFindVariablesTextBox->setText("");
-  }
-  if (pEvent->type() == QEvent::FocusOut)
-  {
-    if (mpFindVariablesTextBox->text().isEmpty())
-      mpFindVariablesTextBox->setText(Helper::findVariables);
-  }
-  return false;
 }
 
 void VariablesWidget::readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName,
@@ -1217,7 +1200,7 @@ void VariablesWidget::showContextMenu(QPoint point)
 void VariablesWidget::findVariables()
 {
   QString findText = mpFindVariablesTextBox->text();
-  if (mpFindVariablesTextBox->text().isEmpty() || (mpFindVariablesTextBox->text().compare(Helper::findVariables) == 0))
+  if (mpFindVariablesTextBox->text().isEmpty())
   {
     findText = "";
   }

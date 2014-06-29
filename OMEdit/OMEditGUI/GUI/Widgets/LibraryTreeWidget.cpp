@@ -216,8 +216,8 @@ SearchClassWidget::SearchClassWidget(MainWindow *pMainWindow)
   : QWidget(pMainWindow)
 {
   mpMainWindow = pMainWindow;
-  mpSearchClassTextBox = new QLineEdit(Helper::searchModelicaClass);
-  mpSearchClassTextBox->installEventFilter(this);
+  mpSearchClassTextBox = new QLineEdit;
+  mpSearchClassTextBox->setPlaceholderText(Helper::searchModelicaClass);
   connect(mpSearchClassTextBox, SIGNAL(returnPressed()), SLOT(searchClasses()));
   mpSearchClassButton = new QPushButton(Helper::search);
   connect(mpSearchClassButton, SIGNAL(clicked()), SLOT(searchClasses()));
@@ -240,23 +240,6 @@ SearchClassWidget::SearchClassWidget(MainWindow *pMainWindow)
 QLineEdit* SearchClassWidget::getSearchClassTextBox()
 {
   return mpSearchClassTextBox;
-}
-
-bool SearchClassWidget::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-  if (pObject != mpSearchClassTextBox)
-    return false;
-  if (pEvent->type() == QEvent::FocusIn)
-  {
-    if (mpSearchClassTextBox->text().compare(Helper::searchModelicaClass) == 0)
-      mpSearchClassTextBox->setText("");
-  }
-  if (pEvent->type() == QEvent::FocusOut)
-  {
-    if (mpSearchClassTextBox->text().isEmpty())
-      mpSearchClassTextBox->setText(Helper::searchModelicaClass);
-  }
-  return false;
 }
 
 void SearchClassWidget::searchClasses()
