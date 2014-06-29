@@ -839,6 +839,8 @@ public constant Message UNKNOWN_FMU_VERSION = MESSAGE(7008, SCRIPTING(), ERROR()
 // FIGARO_ERROR added by Alexander Carlqvist
 public constant Message FIGARO_ERROR = MESSAGE(7009, SCRIPTING(), ERROR(),
   Util.notrans("Figaro: %s."));
+public constant Message SUSAN_NOTIFY = MESSAGE(7010, TRANSLATION(), NOTIFICATION(),
+  Util.notrans("%s"));
 
 protected import ErrorExt;
 
