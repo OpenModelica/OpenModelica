@@ -1369,8 +1369,8 @@ algorithm
         //Debug.fprint(Flags.FAILTRACE," after fname = " +& pathIdentString(fname) +& "\n");
         (_::_) = oargs;
 
-        Debug.fprint(Flags.FAILTRACE,"Error - NORET_CALL with a '" +& pathIdentString(fname)
-          +& "' template or function that has output argument(s).\n");
+        addSusanError("Error - NORET_CALL with a '" +& pathIdentString(fname)
+          +& "' template or function that has output argument(s).", sinfo2);
       then fail();
 
     case (_,_,_,_,_, _,_,_,_)
@@ -1447,7 +1447,6 @@ algorithm
     //warning - more options than expected
     case ( (optid,_) ::_ )
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprint(Flags.FAILTRACE, "Error - more options specified than expected for an expression (first option is '" +& optid +& "').\n");
        then fail();
 
@@ -5619,17 +5618,13 @@ algorithm
 
     case (NONE(), typeident, {} )
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "Error - getTypeInfo failed to lookup the type '" +& typeident +& "' after looking up all AST definitions.\n");
-      then
-        fail();
+        addSusanError("Error - getTypeInfo failed to lookup the type '" +& typeident +& "' after looking up all AST definitions.", dummySourceInfo);
+      then fail();
 
     case ( SOME(typepckg), typeident, {} )
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "Error - getTypeInfo failed to lookup the type '" +& pathIdentString(typepckg) +& "." +& typeident +& "' after looking up all AST definitions.\n");
-      then
-        fail();
+        addSusanError("getTypeInfo failed to lookup the type '" +& pathIdentString(typepckg) +& "." +& typeident +& "' after looking up all AST definitions.", dummySourceInfo);
+      then fail();
 
   end matchcontinue;
 end getTypeInfo;
