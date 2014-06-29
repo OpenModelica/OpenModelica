@@ -10471,7 +10471,7 @@ algorithm
         // This is not done by lookup - only elabCall. So we should do it here.
         (cache,Util.SUCCESS()) = instantiateDaeFunction(cache,env,path,isBuiltinFn,NONE(),true);
       then
-        (cache,SOME((exp,DAE.PROP(t,DAE.C_CONST()),DAE.dummyAttrConst /* RO */)));
+        (cache,SOME((exp,DAE.PROP(t,DAE.C_VAR()),DAE.dummyAttrConst /* RO */)));
 
     // MetaModelica extension
     case (cache,_,Absyn.CREF_IDENT("NONE",{}),_,_,_,_,_)

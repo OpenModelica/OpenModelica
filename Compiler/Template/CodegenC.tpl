@@ -9914,10 +9914,11 @@ template expTypeShort(DAE.Type type)
                       then "complex"
   case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>'
   case T_METATYPE(__) case T_METABOXED(__)    then "metatype"
+  case T_FUNCTION(__)
   case T_FUNCTION_REFERENCE_FUNC(__)
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   case T_UNKNOWN(__) then if acceptMetaModelicaGrammar() /* TODO: Don't do this to me! */
-                          then "complex /* assumming void* for uknown type! when +g=MetaModelica */ "
+                          then "complex /* assumming void* for unknown type! when +g=MetaModelica */ "
                           else "real /* assumming real for uknown type! */"
   case T_ANYTYPE(__) then "complex" /* TODO: Don't do this to me! */
   else error(sourceInfo(),'expTypeShort: <%unparseType(type)%>')
