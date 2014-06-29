@@ -1369,8 +1369,8 @@ algorithm
         //Debug.fprint(Flags.FAILTRACE," after fname = " +& pathIdentString(fname) +& "\n");
         (_::_) = oargs;
 
-        addSusanError("Error - NORET_CALL with a '" +& pathIdentString(fname)
-          +& "' template or function that has output argument(s).", sinfo2);
+        Debug.fprint(Flags.FAILTRACE,"Error - NORET_CALL with a '" +& pathIdentString(fname)
+          +& "' template or function that has output argument(s).\n");
       then fail();
 
     case (_,_,_,_,_, _,_,_,_)
@@ -1447,6 +1447,7 @@ algorithm
     //warning - more options than expected
     case ( (optid,_) ::_ )
       equation
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprint(Flags.FAILTRACE, "Error - more options specified than expected for an expression (first option is '" +& optid +& "').\n");
        then fail();
 
@@ -5618,12 +5619,12 @@ algorithm
 
     case (NONE(), typeident, {} )
       equation
-        addSusanError("Error - getTypeInfo failed to lookup the type '" +& typeident +& "' after looking up all AST definitions.", dummySourceInfo);
+        addSusanNotification("Error - getTypeInfo failed to lookup the type '" +& typeident +& "' after looking up all AST definitions.", dummySourceInfo);
       then fail();
 
     case ( SOME(typepckg), typeident, {} )
       equation
-        addSusanError("getTypeInfo failed to lookup the type '" +& pathIdentString(typepckg) +& "." +& typeident +& "' after looking up all AST definitions.", dummySourceInfo);
+        addSusanNotification("getTypeInfo failed to lookup the type '" +& pathIdentString(typepckg) +& "." +& typeident +& "' after looking up all AST definitions.", dummySourceInfo);
       then fail();
 
   end matchcontinue;
@@ -6635,6 +6636,12 @@ algorithm
   Error.addSourceMessage(Error.SUSAN_ERROR, {inErrMsg}, inInfo);
 end addSusanError;
 
+protected function addSusanNotification
+  input String inErrMsg;
+  input Absyn.Info inInfo;
+algorithm
+  Error.addSourceMessage(Error.SUSAN_NOTIFY, {inErrMsg}, inInfo);
+end addSusanNotification;
 
 public function canBeEscapedUnquoted
     input list<String> inStringList;
