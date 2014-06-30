@@ -2283,7 +2283,7 @@ algorithm
         varlst = List.map(varlst, BackendVariable.transformXToXd);
         (equations1, uniqueEqIndex, tempvars) = createSingleComplexEqnCode(listGet(eqnlst, 1), varlst, iuniqueEqIndex, itempvars);
 
-        tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+        tmpEqSccMapping = appendSccIdx(uniqueEqIndex-1, isccIndex, ieqSccMapping);
         tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, e, ieqBackendSimCodeMapping);
         tmpBackendMapping = iBackendMapping;
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping) =
@@ -7437,12 +7437,14 @@ algorithm
 
     case(SimCode.SES_LINEAR(index=idx,partOfMixed=_,indexLinearSystem=idxLS,beqs = beqs))
       equation
-        s = intString(idx) +&": "+& " (LINEAR) index:"+&intString(idxLS);
+        s = intString(idx) +&": "+& " (LINEAR) index:"+&intString(idxLS)+&" size :"+&intString(listLength(beqs))+&"\n";
     then (s);
 
-    case(SimCode.SES_NONLINEAR(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=_,linearTearing=_,eqs=eqs))
+    case(SimCode.SES_NONLINEAR(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=_,linearTearing=_,eqs=eqs, crefs=crefs))
       equation
-        s = intString(idx) +&": "+& " (NONLINEAR) index:"+&intString(idxNLS);
+        s = intString(idx) +&": "+& " (NONLINEAR) index:"+&intString(idxNLS)+&"\n";
+        s = s +&"\t\tcrefs: "+&stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr)," , ")+&"\n";
+        s = s +& "\t"+&stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n\t"); 
     then (s);
 
     case(SimCode.SES_MIXED(index=idx,indexMixedSystem=idxMS))
@@ -13395,6 +13397,7 @@ protected
 algorithm
   SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping,eqMatch=eqMatch,varMatch=varMatch,eqTree=tree) := mapIn;
   dumpEqMapping(eqMapping);
+  /*
   dumpVarMapping(varMapping);
   print("\nthe incidence Matrix (backendIndices)\n");
   BackendDump.dumpIncidenceMatrix(m);
@@ -13403,6 +13406,7 @@ algorithm
   BackendDump.dumpMatching(varMatch);
   print("\nequations tree (rows:backendEqs, entrys: list of required backend equations)");
   BackendDump.dumpIncidenceMatrix(tree);
+  */
 end dumpBackendMapping;
 
 protected function dumpEqMapping"dump function for the equation mapping
