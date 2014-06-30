@@ -162,7 +162,7 @@ algorithm
       equation
         Debug.fprint(Flags.FAILTRACE, "-ExpressionSolve.solve failed\n");
         //print("solve ");print(ExpressionDump.printExpStr(inExp1));print(" = ");print(ExpressionDump.printExpStr(inExp2));
-        //print(" w.r.t ");print(ExpressionDump.printExpStr(inExp3));print(" failed\n");
+        //print("\t w.r.t ");print(ExpressionDump.printExpStr(inExp3));print(" failed\n");
       then
         fail();
   end matchcontinue;
@@ -184,7 +184,7 @@ algorithm
     local
       DAE.ComponentRef cr,cr1;
       DAE.Type tp;
-      DAE.Exp e1,e2;
+      DAE.Exp e1,e2,res;
       Real r;
       list<DAE.Statement> asserts;
 
@@ -228,41 +228,38 @@ algorithm
       then
         (inExp1,{});
 
-    // log(a) = b => a = exp(b)
-    case (DAE.CALL(path = Absyn.IDENT(name = "log"),expLst = {DAE.CREF(componentRef = cr1)}),_,DAE.CREF(componentRef = cr))
+    // log(f(a)) = g(b) => f(a) = exp(g(b))
+    case (DAE.CALL(path = Absyn.IDENT(name = "log"),expLst = {e1}),_,DAE.CREF(componentRef = cr))
        equation
-         true = ComponentReference.crefEqual(cr, cr1);
-         false = Expression.expHasDerCref(inExp2, cr);
+         true = Expression.expHasCref(e1, cr);
+         false = Expression.expHasCref(inExp2, cr);
          e2 = Expression.makePureBuiltinCall("exp",{inExp2},DAE.T_REAL_DEFAULT);
-       then
-         (e2,{});
-
-    // b = log(a)=> a = exp(b)
-    case (_,DAE.CALL(path = Absyn.IDENT(name = "log"),expLst = {DAE.CREF(componentRef = cr1)}),DAE.CREF(componentRef = cr))
+         (res, asserts) = solve(e1,e2,inExp3);
+       then (res, asserts);
+    // g(b) = log(f(a)) => f(a) = exp(g(b))
+    case (_,DAE.CALL(path = Absyn.IDENT(name = "log"),expLst = {e1}),DAE.CREF(componentRef = cr))
        equation
-         true = ComponentReference.crefEqual(cr, cr1);
-         false = Expression.expHasDerCref(inExp1, cr);
+         true = Expression.expHasCref(inExp2, cr);
+         false = Expression.expHasCref(inExp1, cr);
          e2 = Expression.makePureBuiltinCall("exp",{inExp1},DAE.T_REAL_DEFAULT);
-       then
-         (e2,{});
-
-    // exp(a) = b => a = log(b)
-    case (DAE.CALL(path = Absyn.IDENT(name = "exp"),expLst = {DAE.CREF(componentRef = cr1)}),_,DAE.CREF(componentRef = cr))
+         (res, asserts) = solve(e1,e2,inExp3);
+       then (res, asserts);
+    // exp(f(a)) = g(b) => f(a) = log(g(b))
+    case (DAE.CALL(path = Absyn.IDENT(name = "exp"),expLst = {e1}),_,DAE.CREF(componentRef = cr))
        equation
-         true = ComponentReference.crefEqual(cr, cr1);
-         false = Expression.expHasDerCref(inExp2, cr);
+         true = Expression.expHasCref(inExp1, cr);
+         false = Expression.expHasCref(inExp2, cr);
          e2 = Expression.makePureBuiltinCall("log",{inExp2},DAE.T_REAL_DEFAULT);
-       then
-         (e2,{});
-
-    // b = exp(a)=> a = exp(b)
-    case (_,DAE.CALL(path = Absyn.IDENT(name = "exp"),expLst = {DAE.CREF(componentRef = cr1)}),DAE.CREF(componentRef = cr))
+         (res, asserts) = solve(e1,e2,inExp3);
+       then (res, asserts);
+    // g(b) = exp(f(a)) => f(a) = log(g(b))
+    case (_,DAE.CALL(path = Absyn.IDENT(name = "exp"),expLst = {e1}),DAE.CREF(componentRef = cr))
        equation
-         true = ComponentReference.crefEqual(cr, cr1);
-         false = Expression.expHasDerCref(inExp1, cr);
+         true = Expression.expHasCref(inExp2, cr);
+         false = Expression.expHasCref(inExp1, cr);
          e2 = Expression.makePureBuiltinCall("log",{inExp1},DAE.T_REAL_DEFAULT);
-       then
-         (e2,{});
+         (res, asserts) = solve(e1,e2,inExp3);
+       then (res, asserts);
 
     // a^n = c => a = c^-n
     // where n is odd
