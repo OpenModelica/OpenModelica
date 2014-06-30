@@ -1157,7 +1157,7 @@ algorithm
         // generate a serial section
         compLst = List.flatten(List.map1(section,Util.arrayGetIndexFirst,inComps));
         simEqSysIdcs = getSimEqSysIdcsForCompLst(compLst,iSccSimEqMapping);
-        task = HpcOmSimCode.CALCTASK_LEVEL(simEqSysIdcs,section);
+        task = HpcOmSimCode.CALCTASK_LEVEL_SERIAL(simEqSysIdcs,section);
     then {task};
     case(section::_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps),_)
       equation
@@ -3926,7 +3926,7 @@ algorithm
         levelSectionCosts = List.mapList1_1(levels, getLevelTaskCosts,taskGraphMetaIn);
         serTime = realSum(List.map(levelSectionCosts,realSum));
         serTime = HpcOmTaskGraph.roundReal(serTime,2);
-        levelCosts = List.map1(levelSectionCosts,getLevelParallelTime,arrayCreate(numProcIn,0.0));
+        levelCosts = List.map1(levelSectionCosts,getLevelParallelTime,numProcIn);
         parTime = List.fold(levelCosts,realAdd,0.0);
         parTime = HpcOmTaskGraph.roundReal(parTime,2);
         criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
@@ -3962,19 +3962,19 @@ end analyseScheduledTaskGraph;
 protected function getLevelParallelTime"computes the the time for the parallel computation of a parallel section
 author:Waurich TUD 2014-06"
   input list<Real> sectionCosts;
-  input array<Real> threadWorkLoadIn;
+  input Integer numProc;
   output Real levelCost;
 protected
   array<Real> workload;
 algorithm
-  workload := List.fold1(sectionCosts,getLevelParallelTime1,arrayLength(threadWorkLoadIn),threadWorkLoadIn);
-  levelCost := Util.arrayFold(workload,realMax,0.0);
+  workload := arrayCreate(numProc,0.0);
+  workload := List.fold(sectionCosts,getLevelParallelTime1,workload);
+  levelCost := Util.arrayFold(workload,realMax,0.0);  
 end getLevelParallelTime;
 
 protected function getLevelParallelTime1"helper function for getLevelParallelTime. distributes the current section to the thread with the least workload
 author:Waurich TUD 2014-06"
   input Real sectionCost;
-  input Integer size;
   input array<Real> threadWorkLoadIn;
   output array<Real> threadWorkLoadOut;
 protected
@@ -4001,6 +4001,16 @@ algorithm
         nodeCosts = List.map1(nodeIdc,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
         costs = List.fold(nodeCosts,realAdd,0.0);
       then costs;
+    case(HpcOmSimCode.CALCTASK_LEVEL_SERIAL(nodeIdc=nodeIdc),_)
+      equation
+        nodeCosts = List.map1(nodeIdc,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
+        costs = List.fold(nodeCosts,realAdd,0.0);
+      then costs;
+    else
+      equation
+        print("getLevelTaskCosts failed!\n");
+      then
+        fail();
   end match;
 end getLevelTaskCosts;
 
