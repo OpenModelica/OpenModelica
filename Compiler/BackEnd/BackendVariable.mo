@@ -2395,10 +2395,9 @@ algorithm
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),_)
       equation
         print("- vararrayAdd failed\nn: " +& intString(n) +& ", size: " +& intString(size) +& " arraysize: " +& intString(arrayLength(arr)) +& "\n");
-        Debug.execStat("vararrayAdd",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then
         fail();
-    case (_,_)
+    else
       equation
         print("- vararrayAdd failed!\n");
       then

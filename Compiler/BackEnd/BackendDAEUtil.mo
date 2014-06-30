@@ -92,6 +92,7 @@ protected import OnRelaxation;
 protected import RemoveSimpleEquations;
 protected import ResolveLoops;
 protected import SCode;
+protected import SimCodeUtil;
 protected import System;
 protected import Tearing;
 protected import Types;
@@ -8266,12 +8267,11 @@ algorithm
 
   Debug.fcall2(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE, "dumpdaelow");
   Debug.bcall2(Flags.isSet(Flags.DUMP_DAE_LOW) and Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP), BackendDump.graphvizIncidenceMatrix, inDAE, "dumpdaelow");
-  System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
 
   // pre-optimization phase
   // Frenkel TUD: why is this neccesarray? it only consumes time!
   _ := traverseBackendDAEExpsNoCopyWithUpdate(inDAE, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
-  Debug.execStat("preOpt SimplifyAllExp", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  SimCodeUtil.execStat("preOpt SimplifyAllExp");
   (optdae, Util.SUCCESS()) := preOptimizeDAE(inDAE, preOptModules);
 
   // transformation phase (matching and sorting using index reduction method)
@@ -8281,11 +8281,11 @@ algorithm
   // post-optimization phase
   (optsode, Util.SUCCESS()) := postOptimizeDAE(sode, postOptModules, matchingAlgorithm, daeHandler);
   sode1 := FindZeroCrossings.findZeroCrossings(optsode);
-  Debug.execStat("findZeroCrossings", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  SimCodeUtil.execStat("findZeroCrossings");
   _ := traverseBackendDAEExpsNoCopyWithUpdate(sode1, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
-  Debug.execStat("postOpt SimplifyAllExp", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  SimCodeUtil.execStat("postOpt SimplifyAllExp");
   outSODE := calculateValues(sode1);
-  Debug.execStat("calculateValue", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  SimCodeUtil.execStat("calculateValue");
 
   Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
   Debug.bcall2(Flags.isSet(Flags.DUMP_INDX_DAE) and Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP), BackendDump.graphvizBackendDAE, outSODE, "dumpindxdae");
@@ -8333,14 +8333,14 @@ algorithm
       BackendDAE.DAE(systs, shared) = optModule(inDAE);
       systs = filterEmptySystems(systs);
       dae = BackendDAE.DAE(systs, shared);
-      Debug.execStat("preOpt " +& moduleStr, GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+      SimCodeUtil.execStat("preOpt " +& moduleStr);
       Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\npre-optimization module ", moduleStr, ":\n\n"}));
       Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
       (dae1,status) = preOptimizeDAE(dae, rest);
     then (dae1, status);
 
     case (_, (_, moduleStr, b)::rest) equation
-      Debug.execStat("<failed> preOpt " +& moduleStr, GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+      SimCodeUtil.execStat("<failed> preOpt " +& moduleStr);
       str = stringAppendList({"pre-optimization module ", moduleStr, " failed."});
       Debug.bcall2(not b, Error.addMessage, Error.INTERNAL_ERROR, {str});
       (dae,status) = preOptimizeDAE(inDAE,rest);
@@ -8382,6 +8382,7 @@ algorithm
   BackendDAE.DAE(systs,shared) := inDAE;
   // reduce index
   (systs,shared,args,causalized) := mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,{},{},false);
+  SimCodeUtil.execStat("matching");
   // do late inline
   outDAE := Debug.bcallret1(dolateinline,Inline.lateInlineFunction,BackendDAE.DAE(systs,shared),BackendDAE.DAE(systs,shared));
   // do state selection
@@ -8389,6 +8390,7 @@ algorithm
   // sort assigned equations to blt form
   (systs,shared) := mapSortEqnsDAE(systs,shared,{});
   outDAE := BackendDAE.DAE(systs,shared);
+  SimCodeUtil.execStat("sorting");
 end causalizeDAE;
 
 protected function mapCausalizeDAE "
@@ -8470,10 +8472,10 @@ algorithm
         nvars = BackendVariable.daenumVariables(syst);
         neqns = systemSize(syst);
         syst = Causalize.singularSystemCheck(nvars,neqns,syst,match_opts,matchingAlgorithm,arg,ishared);
-        Debug.execStat("transformDAE -> singularSystemCheck " +& mAmethodstr,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        // SimCodeUtil.execStat("transformDAE -> singularSystemCheck " +& mAmethodstr);
         // match the system and reduce index if neccessary
         (syst,shared,arg) = matchingAlgorithmfunc(syst, ishared, false, match_opts, sssHandler, arg);
-        Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        // SimCodeUtil.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1);
       then (syst,shared,SOME(arg),true);
 
     case (_,_,_,(_,mAmethodstr),(_,str1,_,_),_)
@@ -8506,7 +8508,7 @@ algorithm
       equation
         // do state selection
         outDAE = sDfunc(BackendDAE.DAE(systs,shared),args);
-        Debug.execStat("transformDAE -> state selection " +& methodstr,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        SimCodeUtil.execStat("transformDAE -> state selection " +& methodstr);
       then
          outDAE;
     else inDAE;
@@ -8566,7 +8568,6 @@ algorithm
         (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL(), SOME(funcs));
         (syst,_) = BackendDAETransform.strongComponentsScalar(syst, ishared,mapEqnIncRow,mapIncRowEqn);
         dumpStrongComponents(syst,ishared);
-        Debug.execStat("transformDAE -> sort components",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,ishared);
 
     else
@@ -8622,27 +8623,30 @@ algorithm
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
 
-    case (_, {}, _, _) equation
-      Debug.fcall(Flags.OPT_DAE_DUMP, print, "post-optimization done.\n");
-    then (inDAE,Util.SUCCESS());
+    case (_, {}, _, _)
+      equation
+        Debug.fcall(Flags.OPT_DAE_DUMP, print, "post-optimization done.\n");
+      then (inDAE,Util.SUCCESS());
 
-    case (_, (optModule, moduleStr, _)::rest, _, _) equation
-      BackendDAE.DAE(systs, shared) = optModule(inDAE);
-      systs = filterEmptySystems(systs);
-      dae = BackendDAE.DAE(systs, shared);
-      Debug.execStat("postOpt " +& moduleStr,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-      Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\npost-optimization module ", moduleStr, ":\n\n"}));
-      Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
-      dae1 = causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, false);
-      (dae2, status) = postOptimizeDAE(dae1, rest, matchingAlgorithm, daeHandler);
-    then (dae2, status);
+    case (_, (optModule, moduleStr, _)::rest, _, _)
+      equation
+        BackendDAE.DAE(systs, shared) = optModule(inDAE);
+        systs = filterEmptySystems(systs);
+        dae = BackendDAE.DAE(systs, shared);
+        SimCodeUtil.execStat("postOpt " +& moduleStr);
+        Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\npost-optimization module ", moduleStr, ":\n\n"}));
+        Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
+        dae1 = causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, false);
+        (dae2, status) = postOptimizeDAE(dae1, rest, matchingAlgorithm, daeHandler);
+      then (dae2, status);
 
-    case (_, (_, moduleStr, b)::rest, _, _) equation
-      Debug.execStat("postOpt <failed> " +& moduleStr, GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-      str = stringAppendList({"post-optimization module ", moduleStr, " failed."});
-      Debug.bcall2(not b,Error.addMessage, Error.INTERNAL_ERROR, {str});
-      (dae,status) = postOptimizeDAE(inDAE,rest,matchingAlgorithm,daeHandler);
-    then (dae, Util.if_(b, Util.FAILURE(), status));
+    case (_, (_, moduleStr, b)::rest, _, _)
+      equation
+        SimCodeUtil.execStat("postOpt <failed> " +& moduleStr);
+        str = stringAppendList({"post-optimization module ", moduleStr, " failed."});
+        Debug.bcall2(not b,Error.addMessage, Error.INTERNAL_ERROR, {str});
+        (dae,status) = postOptimizeDAE(inDAE,rest,matchingAlgorithm,daeHandler);
+      then (dae, Util.if_(b, Util.FAILURE(), status));
   end matchcontinue;
 end postOptimizeDAE;
 

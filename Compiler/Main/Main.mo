@@ -69,6 +69,7 @@ protected import Print;
 protected import Settings;
 protected import SimCode;
 protected import SimCodeMain;
+protected import SimCodeUtil;
 protected import Socket;
 protected import System;
 protected import TplMain;
@@ -504,8 +505,8 @@ algorithm
     case (f :: libs)
       equation
         //print("Class to instantiate: " +& Config.classToInstantiate() +& "\n");
-        System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
-        Debug.execStat("Enter Main",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
+        System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT);
+        System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_CUMULATIVE);
         // Check that it's a .mo-file.
         isModelicaFile(f);
         // Parse the first file.
@@ -526,7 +527,7 @@ algorithm
 
         p = transformFlatProgram(p,f);
 
-        Debug.execStat("Parsed file",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
+        SimCodeUtil.execStat("Parsed file");
 
         // Instantiate the program.
         (cache, env, d, cname) = instantiate(p);
@@ -536,12 +537,12 @@ algorithm
         funcs = Env.getFunctionTree(cache);
 
         Print.clearBuf();
-        Debug.execStat("Transformations before Dump",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
+        SimCodeUtil.execStat("Transformations before Dump");
         s = DAEDump.dumpStr(d, funcs);
-        Debug.execStat("DAEDump done",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
+        SimCodeUtil.execStat("DAEDump done");
         Print.printBuf(s);
         Debug.fcall(Flags.DAE_DUMP_GRAPHV, DAEDump.dumpGraphviz, d);
-        Debug.execStat("Misc Dump",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
+        SimCodeUtil.execStat("Misc Dump");
 
         // Do any transformations required before going into code generation, e.g. if-equations to expressions.
         d = Debug.bcallret3(boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)),DAEUtil.transformationsBeforeBackend,cache,env,d,d);
@@ -550,7 +551,7 @@ algorithm
         silent = Config.silent();
         notsilent = boolNot(silent);
         Debug.bcall(notsilent, print, str);
-        Debug.execStat("Transformations before backend",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
+        SimCodeUtil.execStat("Transformations before backend");
 
         // Run the backend.
         optimizeDae(cache, env, d, p, cname);
@@ -691,7 +692,6 @@ algorithm
         description = DAEUtil.daeDescription(dae);
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(),NONE(),NONE(),NONE());
-        Debug.execStat("Lowering Done",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
         simcodegen(dlow_1,classname,ap,dae);
       then
         ();
@@ -729,7 +729,7 @@ algorithm
         simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","mat",".*","");
         _ = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND); // Is this necessary?
         (_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
-        Debug.execStat("Codegen Done",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
+        SimCodeUtil.execStat("Codegen Done");
       then
         ();
 
@@ -746,7 +746,7 @@ algorithm
         simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 1, 1e-6,"dassl","","plt",".*","");
         _ = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND); // Is this necessary?
         (_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
-        Debug.execStat("Codegen Done",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
+        SimCodeUtil.execStat("Codegen Done");
       then
         ();
 

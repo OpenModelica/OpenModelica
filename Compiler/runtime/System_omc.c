@@ -662,10 +662,10 @@ extern const char* System_openModelicaPlatform()
   return CONFIG_OPENMODELICA_SPEC_PLATFORM;
 }
 
-extern void System_getGCStatus(int *used, int *allocated)
+extern void System_getGCStatus(double *used, double *allocated)
 {
-  *used = -1;
-  *allocated = -1;
+  *allocated = GC_get_heap_size();
+  *used = *allocated - GC_get_free_bytes();
 }
 
 extern void System_getLoadModelPath(const char *className, void *prios, void *mps, const char **dir, char **name, int *isDir) __attribute__ ((nonnull));

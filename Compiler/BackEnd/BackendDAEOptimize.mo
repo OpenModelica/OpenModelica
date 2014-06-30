@@ -81,6 +81,7 @@ protected import IndexReduction;
 protected import List;
 protected import RewriteRules;
 protected import SCode;
+protected import SimCodeUtil;
 protected import System;
 protected import Types;
 protected import Util;
@@ -3272,13 +3273,12 @@ algorithm
         _ = List.map(seedlst, BackendVariable.varCref);
         s1 =  intString(listLength(inVars));
 
-        Debug.execStat("analytical Jacobians -> starting to generate the jacobian. DiffVars:"
-                       +& s +& " diffed equations: " +&  s1 +& "\n", GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+        SimCodeUtil.execStat("analytical Jacobians -> starting to generate the jacobian. DiffVars:" +& s +& " diffed equations: " +&  s1);
 
         // Differentiate the ODE system w.r.t states for jacobian
         (backendDAE as BackendDAE.DAE(shared=shared), funcs) = generateSymbolicJacobian(inBackendDAE, inDiffVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated equations for Jacobian " +& inName +& " time: " +& realString(clock()) +& "\n");
-        Debug.execStat("analytical Jacobians -> generated jacobian equations", GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+        SimCodeUtil.execStat("analytical Jacobians -> generated jacobian equations");
 
         knvars1 = BackendVariable.daeKnVars(shared);
         knvarsTmp = BackendVariable.varList(knvars1);
@@ -3294,11 +3294,11 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> sorted know vars(" +& intString(listLength(knvarsTmp)) +& ") for Jacobian DAE time: " +& realString(clock()) +& "\n");
         knvars = BackendVariable.listVar1(knvarsTmp);
         backendDAE = BackendDAEUtil.addBackendDAEKnVars(knvars,backendDAE);
-        Debug.execStat("analytical Jacobians -> generated optimized jacobians", GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+        SimCodeUtil.execStat("analytical Jacobians -> generated optimized jacobians");
 
         // generate sparse pattern
         (sparsepattern,colsColors) = generateSparsePattern(inBackendDAE, inDiffVars, diffedVars);
-        Debug.execStat("analytical Jacobians -> generated generateSparsePattern", GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+        SimCodeUtil.execStat("analytical Jacobians -> generated generateSparsePattern");
      then
         ((backendDAE, inName, inDiffVars, diffedVars, inVars), sparsepattern, colsColors, funcs);
     else

@@ -68,6 +68,7 @@ protected import HashTable;
 protected import HashTableCrToExpSourceTpl;
 protected import Inline;
 protected import List;
+protected import SimCodeUtil;
 protected import SCode;
 protected import System;
 protected import Types;
@@ -107,10 +108,8 @@ protected
   list<BackendDAE.TimeEvent> timeEvents;
   String neqStr,nvarStr;
 algorithm
-  System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   // reset dumped file sequence number
   System.tmpTickResetIndex(0, Global.backendDAE_fileSequence);
-  Debug.execStat("Enter Backend", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   functionTree := Env.getFunctionTree(inCache);
   (DAE.DAE(elems), functionTree, timeEvents) := processBuiltinExpressions(lst, functionTree);
   vars := BackendVariable.emptyVars();
@@ -152,7 +151,7 @@ algorithm
   neqStr := intString(BackendDAEUtil.equationSize(eqnarr));
   nvarStr := intString(BackendVariable.varsSize(vars_1));
   Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.DUMP_BACKENDDAE_INFO),Error.BACKENDDAEINFO_LOWER,{neqStr,nvarStr},Absyn.dummyInfo);
-  Debug.execStat("generate Backend Data Structure", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  SimCodeUtil.execStat("Generate backend data structure");
 end lower;
 
 protected function lower2

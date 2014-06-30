@@ -46,6 +46,7 @@ encapsulated package Debug
 
 public import Flags;
 // protected imports
+protected import Error;
 protected import Print;
 protected import System;
 
@@ -876,55 +877,4 @@ algorithm
   end matchcontinue;
 end printList;
 
-public function execStat
-  "Prints an execution stat on the format:
-  *** %name% -> time: %time%, memory %memory%
-  Where you provide name, and time is the time since the last call using this
-  index (the clock is reset after each call). The memory is the total memory
-  consumed by the compiler at this point in time.
-  "
-  input String name;
-  input Integer clockIndex;
-algorithm
-  execStat2(Flags.isSet(Flags.EXEC_STAT),name,clockIndex);
-end execStat;
-
-protected function execStat2
-  input Boolean cond;
-  input String name;
-  input Integer clockIndex;
-algorithm
-  _ := match (cond,name,clockIndex)
-    local
-      Real t;
-      Integer used,allocated;
-    case (false,_,_) then ();
-    case (_,_,_)
-      equation
-        t = System.realtimeTock(clockIndex);
-        (used,allocated) = System.getGCStatus();
-        print("*** ");
-        print(name);
-        print(" -> time: ");
-        print(realString(t));
-        print(", memory: ");
-        print(bytesToRealMBString(used));
-        print("/");
-        print(bytesToRealMBString(allocated));
-        print(" MB (");
-        print(realString(realMul(100.0,realDiv(intReal(used),intReal(allocated)))));
-        print("%)\n");
-        System.realtimeTick(clockIndex);
-      then ();
-  end match;
-end execStat2;
-
-protected function bytesToRealMBString
-  input Integer bytes;
-  output String str;
-algorithm
-  str := realString(realDiv(intReal(bytes),realMul(1024.0,1024.0)));
-end bytesToRealMBString;
-
 end Debug;
-

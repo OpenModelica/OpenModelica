@@ -1643,8 +1643,8 @@ RML_BEGIN_LABEL(System__getGCStatus)
   long used = RML_SIZE_INT*((unsigned long)(rml_state_young_next - rml_young_region)
              + (unsigned long)(rml_current_next - rml_current_region));
   long allocated = RML_SIZE_INT*(rml_older_size + rml_young_size);
-  rmlA0 = mk_icon(used);
-  rmlA1 = mk_icon(allocated);
+  rmlA0 = mk_rcon(used);
+  rmlA1 = mk_rcon(allocated);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

@@ -4503,7 +4503,6 @@ algorithm
     local
     case (_, _, _)
       equation
-        System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
         // b = Flags.disableDebug(Flags.EXEC_STAT);
         // The jacobian code requires single systems;
         // I did not rewrite it to take advantage of any parallelism in the code
@@ -4511,8 +4510,7 @@ algorithm
         // if optModule is not activated add dummy matrices
         res = addLinearizationMatrixes(res);
         // _ = Flags.set(Flags.EXEC_STAT, b);
-        Debug.execStat("generated analytical Jacobians SimCode. : ", GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
-        _ = System.realtimeTock(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+        execStat("SimCode generated analytical Jacobians");
       then (res,ouniqueEqIndex);
     else
       equation
@@ -13611,5 +13609,49 @@ algorithm
     else 0;
   end match;
 end getVariableIndex;
+
+public function execStat
+  "Prints an execution stat on the format:
+  *** %name% -> time: %time%, memory %memory%
+  Where you provide name, and time is the time since the last call using this
+  index (the clock is reset after each call). The memory is the total memory
+  consumed by the compiler at this point in time.
+  "
+  input String name;
+algorithm
+  execStat2(Flags.isSet(Flags.EXEC_STAT),name);
+end execStat;
+
+protected function execStat2
+  input Boolean cond;
+  input String name;
+algorithm
+  _ := match (cond,name)
+    local
+      Real t,total,used,allocated;
+      String timeStr,totalTimeStr,usedStr,allocatedStr,fractionStr;
+    case (false,_) then ();
+    else
+      equation
+        t = System.realtimeTock(GlobalScript.RT_CLOCK_EXECSTAT);
+        total = System.realtimeTock(GlobalScript.RT_CLOCK_EXECSTAT_CUMULATIVE);
+        (used,allocated) = System.getGCStatus();
+        timeStr = System.snprintff("%.4g",20,t);
+        totalTimeStr = System.snprintff("%.4g",20,total);
+        usedStr = bytesToRealMBString(used);
+        allocatedStr = bytesToRealMBString(allocated);
+        fractionStr = System.snprintff("%.4g%%",20,realMul(100.0,realDiv(used,allocated)));
+        Error.addMessage(Error.EXEC_STAT,{name,timeStr,totalTimeStr,usedStr,allocatedStr,fractionStr});
+        System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT);
+      then ();
+  end match;
+end execStat2;
+
+protected function bytesToRealMBString
+  input Real bytes;
+  output String str;
+algorithm
+  str := System.snprintff("%.4g",20,realDiv(bytes,realMul(1024.0,1024.0)));
+end bytesToRealMBString;
 
 end SimCodeUtil;

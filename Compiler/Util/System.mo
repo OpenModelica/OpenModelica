@@ -890,8 +890,8 @@ public function openModelicaPlatform "
 end openModelicaPlatform;
 
 public function getGCStatus
-  output Integer used;
-  output Integer allocated;
+  output Real used;
+  output Real allocated;
   external "C" System_getGCStatus(used,allocated) annotation(Library = "omcruntime");
 end getGCStatus;
 
