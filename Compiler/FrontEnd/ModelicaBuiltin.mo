@@ -1857,13 +1857,7 @@ external "builtin";
 annotation(preferredView="text");
 end save;
 
-function saveTotalSCode
-  input String fileName;
-  input TypeName className;
-  output Boolean success;
-external "builtin";
-annotation(preferredView="text");
-end saveTotalSCode;
+function saveTotalSCode = saveTotalModel;
 
 function translateGraphics
   input TypeName className;

@@ -647,6 +647,16 @@ match modifier
     '<%submod_str%><%binding_str%>'
 end dumpModifier;
 
+template dumpAnnotationModifier(SCode.Mod modifier, SCodeDumpOptions options)
+::=
+match modifier
+  case MOD(__) then
+    let binding_str = dumpModifierBinding(binding)
+    let text = subModLst |> submod => dumpAnnotationSubModifier(submod, options) ;separator=", "
+    let submod_str = if text then '(<%text%>)'
+    '<%submod_str%><%binding_str%>'
+end dumpAnnotationModifier;
+
 template dumpModifierPrefix(SCode.Mod modifier)
 ::=
 match modifier
@@ -680,6 +690,27 @@ match submod
   case NAMEMOD(A = REDECL(__)) then
     '<%dumpRedeclModifier(A,options)%>'
 end dumpSubModifier;
+
+template dumpAnnotationSubModifier(SCode.SubMod submod, SCodeDumpOptions options)
+::=
+match submod
+  case NAMEMOD(A = nameMod as MOD(__)) then
+    (if Config.showAnnotations() then
+      '<%dumpModifierPrefix(A)%><%ident%><%dumpAnnotationModifier(nameMod,options)%>'
+    else
+      match ident
+      case "choices"
+      case "Documentation"
+      case "Dialog"
+      case "Diagram"
+      case "Icon"
+      case "Line"
+      case "Placement"
+        then ""
+      else '<%dumpModifierPrefix(nameMod)%><%ident%><%dumpAnnotationModifier(nameMod,options)%>')
+  case NAMEMOD(A = REDECL(__)) then
+    '<%dumpRedeclModifier(A,options)%>'
+end dumpAnnotationSubModifier;
 
 template dumpAttributes(SCode.Attributes attributes)
 ::=
@@ -731,12 +762,10 @@ end dumpAnnotationOpt;
 
 template dumpAnnotation(SCode.Annotation annotation, SCodeDumpOptions options)
 ::=
-if Config.showAnnotations() then
   match annotation
     case ANNOTATION(__) then
-     let modifStr = '<%dumpModifier(modification,options)%>'
-     let annStr = if modifStr then modifStr else '()'
-     ' annotation<%annStr%>'
+     let modifStr = dumpAnnotationModifier(modification,options)
+     if modifStr then ' annotation<%modifStr%>'
 end dumpAnnotation;
 
 template dumpAnnotationElement(SCode.Annotation annotation, SCodeDumpOptions options)
@@ -768,7 +797,6 @@ end dumpCommentOpt;
 
 template dumpComment(SCode.Comment comment, SCodeDumpOptions options)
 ::=
-if Config.showAnnotations() then
   match comment
     case COMMENT(__) then
       let ann_str = dumpAnnotationOpt(annotation_, options)
@@ -777,7 +805,9 @@ if Config.showAnnotations() then
 end dumpComment;
 
 template dumpCommentStr(Option<String> comment)
-::= match comment
+::=
+if Config.showAnnotations() then
+  match comment
     case SOME(cmt) then ' "<%cmt%>"'
     else ''
 end dumpCommentStr;

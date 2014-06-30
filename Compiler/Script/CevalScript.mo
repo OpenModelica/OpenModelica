@@ -103,6 +103,7 @@ protected import List;
 protected import Lookup;
 protected import MetaUtil;
 protected import Mod;
+protected import NFSCodeLookup;
 protected import Prefix;
 protected import Parser;
 protected import Print;
@@ -1126,7 +1127,7 @@ algorithm
         name = Absyn.pathLastIdent(path);
         str = Debug.bcallret2(name ==& "Absyn", Dump.unparseStr, p, false, "");
         str = Debug.bcallret2(name ==& "SCode", SCodeDump.programStr, scodeP, SCodeDump.defaultOptions, str);
-        str = Debug.bcallret2(name ==& "MetaModelicaInterface", SCodeDump.programStr, scodeP, SCodeDump.OPTIONS(true,false,true,true,true), str);
+        str = Debug.bcallret2(name ==& "MetaModelicaInterface", SCodeDump.programStr, scodeP, SCodeDump.OPTIONS(true,false,true,true,true,true), str);
         str = Debug.bcallret1(name ==& "Internal", System.anyStringCode, p, str);
       then
         (cache,Values.STRING(str),st);
@@ -1144,7 +1145,7 @@ algorithm
         str = Debug.bcallret1(name ==& "Internal", System.anyStringCode, p, str);
         cl = SCodeUtil.getElementWithPathCheckBuiltin(scodeP, className);
         str = Debug.bcallret2(name ==& "SCode", SCodeDump.unparseElementStr, cl, SCodeDump.defaultOptions, str);
-        str = Debug.bcallret2(name ==& "MetaModelicaInterface", SCodeDump.unparseElementStr, cl, SCodeDump.OPTIONS(true,false,true,true,true), str);
+        str = Debug.bcallret2(name ==& "MetaModelicaInterface", SCodeDump.unparseElementStr, cl, SCodeDump.OPTIONS(true,false,true,true,true,true), str);
       then
         (cache,Values.STRING(str),st);
 
@@ -2216,16 +2217,6 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
 
-    case (cache,_,"saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))},(st as GlobalScript.SYMBOLTABLE(ast = _)),_)
-      equation
-        (scodeP, st) = Interactive.symbolTableToSCode(st);
-        (scodeP, _) = NFSCodeFlatten.flattenClassInProgram(classpath, scodeP);
-        scodeP = SCode.removeBuiltinsFromTopScope(scodeP);
-        str = SCodeDump.programStr(scodeP,SCodeDump.defaultOptions);
-        System.writeFile(filename, str);
-      then
-        (cache,Values.BOOL(true),st);
-
     case (cache,_,"save",{Values.CODE(Absyn.C_TYPENAME(className))},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         (newp,filename) = Interactive.getContainedClassAndFile(className, p);
@@ -2272,19 +2263,14 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache, _, "saveTotalSCode",
-        {Values.STRING(filename), Values.CODE(Absyn.C_TYPENAME(classpath))}, st, _)
+    case (cache,_,"saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))},st,_)
       equation
-        (scodeP, st) = Interactive.symbolTableToSCode(st);
-        (scodeP, _) = NFSCodeFlatten.flattenClassInProgram(classpath, scodeP);
-        scodeP = SCode.removeBuiltinsFromTopScope(scodeP);
-        str = SCodeDump.programStr(scodeP,SCodeDump.defaultOptions);
-        System.writeFile(filename, str);
+        st = saveTotalModel(filename,classpath,st);
       then
-        (cache, Values.BOOL(true), st);
+        (cache,Values.BOOL(true),st);
 
-    case (cache, _, "saveTotalSCode", _, st, _)
-      then (cache, Values.BOOL(false), st);
+    case (cache,_,"saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))},(st as GlobalScript.SYMBOLTABLE(ast = _)),_)
+      then (cache,Values.BOOL(false),st);
 
     case (cache,_,"getDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
@@ -7691,5 +7677,28 @@ algorithm
     else false;
   end match;
 end checkFMUVersion;
+
+protected function saveTotalModel
+  input String filename;
+  input Absyn.Path classpath;
+  input GlobalScript.SymbolTable st;
+  output GlobalScript.SymbolTable outSt;
+protected
+  SCode.Program scodeP;
+  String str,str1,str2;
+  NFSCodeEnv.Env env;
+  SCode.Comment cmt;
+algorithm
+  (scodeP, outSt) := Interactive.symbolTableToSCode(st);
+  (scodeP, env) := NFSCodeFlatten.flattenClassInProgram(classpath, scodeP);
+  (NFSCodeEnv.CLASS(cls=SCode.CLASS(cmt=cmt)),_,_) := NFSCodeLookup.lookupClassName(classpath, env, Absyn.dummyInfo);
+  scodeP := SCode.removeBuiltinsFromTopScope(scodeP);
+  str := SCodeDump.programStr(scodeP,SCodeDump.defaultOptions);
+  str1 := Absyn.pathLastIdent(classpath);
+  str2 := SCodeDump.printCommentStr(cmt,SCodeDump.defaultOptions);
+  str2 := Util.if_(stringEq(str2,""), "", " " +& str2 +& ";\n");
+  str1 := "\nmodel " +& str1 +& "\n  extends " +& Absyn.pathString(classpath) +& ";\n"+str2+"end " +& str1 +& ";\n";
+  System.writeFile(filename, str +& str1);
+end saveTotalModel;
 
 end CevalScript;

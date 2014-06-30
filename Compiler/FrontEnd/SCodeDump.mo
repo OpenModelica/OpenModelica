@@ -46,7 +46,7 @@ protected import List;
 protected import SCodeDumpTpl;
 protected import Tpl;
 
-public constant SCodeDumpOptions defaultOptions = OPTIONS(false,false,false,false,true);
+public constant SCodeDumpOptions defaultOptions = OPTIONS(false,false,false,false,true,true);
 
 public uniontype SCodeDumpOptions
   record OPTIONS
@@ -55,6 +55,7 @@ public uniontype SCodeDumpOptions
     Boolean stripProtectedClasses;
     Boolean stripProtectedComponents;
     Boolean stripMetaRecords "The automatically generated records that change scope from uniontype to the package";
+    Boolean stripGraphicalAnnotations;
   end OPTIONS;
 end SCodeDumpOptions;
 
@@ -98,6 +99,15 @@ public function printModStr
 algorithm
   outString := Tpl.tplString2(SCodeDumpTpl.dumpModifier, inMod, options);
 end printModStr;
+
+public function printCommentStr
+"Prints SCode.Mod to a string."
+  input SCode.Comment inComment;
+  input SCodeDumpOptions options;
+  output String outString;
+algorithm
+  outString := Tpl.tplString2(SCodeDumpTpl.dumpComment, inComment, options);
+end printCommentStr;
 
 public function restrString
 "Prints SCode.Restriction to a string."
