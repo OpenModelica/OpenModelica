@@ -503,6 +503,32 @@ algorithm
         e3 = DAE.BINARY(e2,DAE.DIV(tp),inExp2);
         (res,asserts) = solve(e1,e3,inExp3);
        then(res, asserts);
+    // lhs = g(a)/f(a)  => f(a)*lhs - g(a) = 0  solve for a
+    case(DAE.BINARY(e2,DAE.DIV(tp),e1),_,DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e1, cr);
+        true = Expression.expHasCref(e2, cr);
+        false = Expression.expHasCref(inExp2, cr);
+        (e1,_) = ExpressionSimplify.simplify1(e1);
+        (e2,_) = ExpressionSimplify.simplify1(e2);
+        e3 = DAE.BINARY(e1,DAE.MUL(tp),inExp2);
+        (e3,_) = ExpressionSimplify.simplify1(e3);
+        e1 = Expression.makeConstZero(tp);
+        (res,asserts) = solve(e3,e1,inExp3);
+       then(res, asserts);
+    // g(a)/f(a) = rhs  => f(a)*rhs - g(a) = 0  solve for a
+    case(_,DAE.BINARY(e2,DAE.DIV(tp),e1),DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e1, cr);
+        true = Expression.expHasCref(e2, cr);
+        false = Expression.expHasCref(inExp1, cr);
+        (e1,_) = ExpressionSimplify.simplify1(e1);
+        (e2,_) = ExpressionSimplify.simplify1(e2);
+        e3 = DAE.BINARY(e1,DAE.MUL(tp),inExp1);
+        (e3,_) = ExpressionSimplify.simplify1(e3);
+        e1 = Expression.makeConstZero(tp);
+        (res,asserts) = solve(e3,e1,inExp3);
+       then(res, asserts);
     // 0 = a*(b-c)  solve for b
     case (_,_,DAE.CREF(componentRef = _),_)
       equation
