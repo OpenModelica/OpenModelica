@@ -254,7 +254,7 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
   for(i=0;i<data->modelData.nStates;++i)
   {
     dasslData->rtol[i] = data->simulationInfo.tolerance;
-    dasslData->atol[i] = data->simulationInfo.tolerance * data->modelData.realVarsData[i].attribute.nominal;
+    dasslData->atol[i] = data->simulationInfo.tolerance * fmax(fabs(data->modelData.realVarsData[i].attribute.nominal),1e-32);
   }
 
   /* setup internal ring buffer for dassl */
