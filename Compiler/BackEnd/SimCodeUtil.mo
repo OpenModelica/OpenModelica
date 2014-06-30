@@ -7442,7 +7442,7 @@ algorithm
       equation
         s = intString(idx) +&": "+& " (NONLINEAR) index:"+&intString(idxNLS)+&"\n";
         s = s +&"\t\tcrefs: "+&stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr)," , ")+&"\n";
-        s = s +& "\t"+&stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n\t"); 
+        s = s +& "\t"+&stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n\t");
     then (s);
 
     case(SimCode.SES_MIXED(index=idx,indexMixedSystem=idxMS))
