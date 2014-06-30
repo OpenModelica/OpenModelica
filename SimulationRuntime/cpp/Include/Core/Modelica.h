@@ -134,6 +134,7 @@ typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<
 #include <Math/Functions.h>
 #include <Math/ArrayOperations.h>
 #include <Math/Utility.h>
+#include <Math/SparseMatrix.h>
 #include "HistoryImpl.h"
 #include "DataExchange/Policies/TextfileWriter.h"
 

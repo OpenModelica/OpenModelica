@@ -8,14 +8,18 @@ builddir_bin=$(top_builddir)/build/bin
 builddir_lib=$(top_builddir)/build/lib/omc
 builddir_inc=$(top_builddir)/build/include/omc
 
+ANALYZATION_MODE_COMMAND="-DANALYZATION_MODE=ON"
+USE_UMFPACK_COMMAND="-DUSE_UMFPACK=ON"
+
 runtimeCpp: clean
-ifeq ("$(ANALYZATION_MODE)","true")
-	cd ./Build && echo "change to Build" && cmake -DANALYZATION_MODE=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
-	$(MAKE) -C Build;
-else
-	cd ./Build && echo "change to Build" &&	cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo -D CMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
-	$(MAKE) -C Build;
+ifneq ("$(ANALYZATION_MODE)","true")
+	$(eval ANALYZATION_MODE_COMMAND="")
 endif
+ifneq ("$(USE_UMFPACK)","true")
+	$(eval USE_UMFPACK_COMMAND="")
+endif
+	cd ./Build && echo "change to Build" && cmake $(ANALYZATION_MODE) $(USE_UMFPACK_COMMAND) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
+	$(MAKE) -C Build;
 
 install: runtimeCpp
 	(cd Build; $(MAKE) install)

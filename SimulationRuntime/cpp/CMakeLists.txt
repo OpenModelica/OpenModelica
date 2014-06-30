@@ -9,6 +9,7 @@ ENDIF(NOT ANALYZATION_MODE)
 
 
 option(ANALYZATION_MODE "ANALYZATION_MODE" OFF)
+option(USE_UMFPACK "USE_UMFPACK" OFF)
 
 IF(ANALYZATION_MODE)
 	message(STATUS "Using analyzation mode")
@@ -174,6 +175,19 @@ add_definitions(-DPMC_USE_SUNDIALS)
 # On Windows we need to install those libraries along with the SimManager
 INSTALL(FILES ${SUNDIALS_LIBS} DESTINATION bin)
 endif()
+
+if(USE_UMFPACK)
+	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/Solver/UmfPack/")
+	find_package(SuiteSparse)
+	message(STATUS "Using UmfPack")
+	list(FIND SUITESPARSE_LIBRARIES "umfpack" umfpack_found)
+	if(umfpack_found EQUAL -1)
+		message(FATAL_ERROR "Umfpack not found")
+	endif(umfpack_found EQUAL -1)
+	add_definitions(-DUSE_UMFPACK)
+else(USE_UMFPACK)
+	message(STATUS "UmfPack disabled")
+endif(USE_UMFPACK)
 
 #Mico corba
 if(USE_MICO)
