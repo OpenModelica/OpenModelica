@@ -3969,7 +3969,7 @@ protected
 algorithm
   workload := arrayCreate(numProc,0.0);
   workload := List.fold(sectionCosts,getLevelParallelTime1,workload);
-  levelCost := Util.arrayFold(workload,realMax,0.0);  
+  levelCost := Util.arrayFold(workload,realMax,0.0);
 end getLevelParallelTime;
 
 protected function getLevelParallelTime1"helper function for getLevelParallelTime. distributes the current section to the thread with the least workload
