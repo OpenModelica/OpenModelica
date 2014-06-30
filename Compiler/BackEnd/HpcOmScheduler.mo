@@ -1096,7 +1096,7 @@ algorithm
   ((_,levelAss)) := List.fold(level,getLevelAssignment,(1,levelAss));
 
   // get critical path and merge the criPathNodes to target size tasks
-  (_,(critPathNodes::_,_),_) := HpcOmTaskGraph.longestPathMethod(iGraph,iMeta);  // without communication costs
+  (_,(critPathNodes::_,_),_) := HpcOmTaskGraph.getCriticalPaths(iGraph,iMeta);  // without communication costs
     print("critPathNodes: \n"+&stringDelimitList(List.map(critPathNodes,intString),"\n")+&"\n");
   critPathCosts := List.map1(critPathNodes,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
   (critPathSections,sectionCosts) := BLS_mergeToTargetSize(critPathNodes,critPathCosts,targetCost,{});
@@ -1409,7 +1409,7 @@ algorithm
   (_,startNodes) := List.filterOnTrueSync(arrayList(graphT),List.isEmpty,List.intRange(arrayLength(graphT)));
     //print("startnodes "+&stringDelimitList(List.map(startNodes,intString),",")+&"\n");
   level := getGraphLevel(iGraph,{startNodes});
-  Debug.fcall(Flags.HPCOM_DUMP,print,"number of level: "+&intString(listLength(level))+&"\n");
+  Debug.fcall(Flags.HPCOM_DUMP,print,"number of level: "+&intString(listLength(level))+&"\nnumber of processors :"+&intString(Flags.getConfigInt(Flags.NUM_PROC))+&"\n");
     //print("level: \n"+&stringDelimitList(List.map(level,intListString),"\n")+&"\n");
   levelComps := List.mapList1_1(level,Util.arrayGetIndexFirst,inComps);
   levelComps := List.mapList1_1(levelComps,List.sort,intGt);
@@ -1452,7 +1452,7 @@ algorithm
   taskOut := HpcOmSimCode.CALCTASK_LEVEL(simEqs,nodeIdx);
 end makeCalcLevelTask;
 
-protected function getGraphLevel"gets the level for the graph
+public function getGraphLevel"gets the level for the graph
 author:Waurich TUD 2014-06"
   input HpcOmTaskGraph.TaskGraph iGraph;
   input list<list<Integer>> levelIn;  // inlcuding rootNodes as startvalues
@@ -3910,25 +3910,36 @@ algorithm
   criticalPathInfoOut := match(scheduleIn,numProcIn,taskGraphIn,taskGraphMetaIn)
     local
       list<String> lockIdc;
+      list<Real> levelCosts;
       list<list<HpcOmSimCode.Task>> levels;
       list<list<Integer>> parallelSets;
       list<list<Integer>> criticalPaths, criticalPathsWoC;
+      list<list<Real>> levelSectionCosts;
       array<list<HpcOmSimCode.Task>> threadTasks;
       Real cpCosts, cpCostsWoC, serTime, parTime, speedUp, speedUpMax;
       String criticalPathInfo;
-    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=_),_,_,_)
+    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=levels),_,_,_)
       equation
         //get the criticalPath
-        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),_) = HpcOmTaskGraph.longestPathMethod(taskGraphIn,taskGraphMetaIn);
+        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),_) = HpcOmTaskGraph.getCriticalPaths(taskGraphIn,taskGraphMetaIn);
+        // predict speedUp
+        levelSectionCosts = List.mapList1_1(levels, getLevelTaskCosts,taskGraphMetaIn);
+        serTime = realSum(List.map(levelSectionCosts,realSum));
+        serTime = HpcOmTaskGraph.roundReal(serTime,2);
+        levelCosts = List.map1(levelSectionCosts,getLevelParallelTime,arrayCreate(numProcIn,0.0));
+        parTime = List.fold(levelCosts,realAdd,0.0);
+        parTime = HpcOmTaskGraph.roundReal(parTime,2);
         criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
-        Debug.fcall(Flags.HPCOM_DUMP,print,criticalPathInfo);
+        Debug.fcall(Flags.HPCOM_DUMP,print,"the serialCosts: "+&realString(serTime)+&"\n");
+        Debug.fcall(Flags.HPCOM_DUMP,print,"the parallelCosts: "+&realString(parTime)+&"\n");
+        printPredictedExeTimeInfo(serTime,parTime,realDiv(serTime,parTime),realDiv(serTime,cpCostsWoC),numProcIn);
       then
         criticalPathInfo;
     case(HpcOmSimCode.THREADSCHEDULE(lockIdc=lockIdc),_,_,_)
       equation
         Debug.fcall(Flags.HPCOM_DUMP,print,"the number of locks: "+&intString(listLength(lockIdc))+&"\n");
         //get the criticalPath
-        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),_) = HpcOmTaskGraph.longestPathMethod(taskGraphIn,taskGraphMetaIn);
+        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),_) = HpcOmTaskGraph.getCriticalPaths(taskGraphIn,taskGraphMetaIn);
         criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
         //predict speedup etc.
         (serTime,parTime,speedUp,speedUpMax) = predictExecutionTime(scheduleIn,SOME(cpCostsWoC),numProcIn,taskGraphIn,taskGraphMetaIn);
@@ -3947,6 +3958,51 @@ algorithm
         "";
   end match;
 end analyseScheduledTaskGraph;
+
+protected function getLevelParallelTime"computes the the time for the parallel computation of a parallel section
+author:Waurich TUD 2014-06"
+  input list<Real> sectionCosts;
+  input array<Real> threadWorkLoadIn;
+  output Real levelCost;
+protected
+  array<Real> workload;
+algorithm
+  workload := List.fold1(sectionCosts,getLevelParallelTime1,arrayLength(threadWorkLoadIn),threadWorkLoadIn);
+  levelCost := Util.arrayFold(workload,realMax,0.0);
+end getLevelParallelTime;
+
+protected function getLevelParallelTime1"helper function for getLevelParallelTime. distributes the current section to the thread with the least workload
+author:Waurich TUD 2014-06"
+  input Real sectionCost;
+  input Integer size;
+  input array<Real> threadWorkLoadIn;
+  output array<Real> threadWorkLoadOut;
+protected
+  Real minWorkLoad;
+  Integer minWLThread;
+algorithm
+  minWorkLoad := Util.arrayFold(threadWorkLoadIn,realMin,arrayGet(threadWorkLoadIn,1));
+  minWLThread := List.position(minWorkLoad,arrayList(threadWorkLoadIn))+1;
+  threadWorkLoadOut := arrayUpdate(threadWorkLoadIn,minWLThread,minWorkLoad +. sectionCost);
+end getLevelParallelTime1;
+
+protected function getLevelTaskCosts
+  input HpcOmSimCode.Task levelTask;
+  input HpcOmTaskGraph.TaskGraphMeta iMeta;
+  output Real costsOut;
+algorithm
+  costsOut := match(levelTask,iMeta)
+    local
+      list<Integer> nodeIdc;
+      list<Real> nodeCosts;
+      Real costs;
+    case(HpcOmSimCode.CALCTASK_LEVEL(nodeIdc=nodeIdc),_)
+      equation
+        nodeCosts = List.map1(nodeIdc,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
+        costs = List.fold(nodeCosts,realAdd,0.0);
+      then costs;
+  end match;
+end getLevelTaskCosts;
 
 public function predictExecutionTime  "computes the theoretically execution time for the serial simulation and the parallel. a speedup ratio is determined by su=serTime/parTime.
 the max speedUp is computed via the serTime/criticalPathCosts.

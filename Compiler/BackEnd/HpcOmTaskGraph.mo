@@ -4483,9 +4483,7 @@ end compareComponents;
 //------------------------------------------
 //------------------------------------------
 
-
-public function longestPathMethod " function to assign levels to the nodes of a graph and compute the criticalPath.
-for every set of rootNodes set the next minimal levelValue and the costs. Assign to their childNodes the next minimal levelValue and the highest costs and choose them as new rootNodes.
+public function getCriticalPaths " function to assign levels to the nodes of a graph and compute the criticalPath.
 author: Waurich TUD 2013-07"
   input TaskGraph graphIn;
   input TaskGraphMeta graphDataIn;
@@ -4495,32 +4493,22 @@ author: Waurich TUD 2013-07"
 algorithm
   (criticalPathOut,criticalPathOutWoC,parallelSetsOut) := matchcontinue(graphIn,graphDataIn)
     local
-      TaskGraph graphInT;
-      Real cpCostsTmp, cpCostsTmpWoC;
-      Integer rootParent;
+      TaskGraph graphT;
       list<Integer> rootNodes;
-      list<list<Integer>> parallelSets;
-      list<list<Integer>> criticalPathTmp, criticalPathTmpWoC;
-      array<Integer> nodeMark;
-      array<list<Integer>> inComps;
-      array<tuple<Integer,Real,Integer>> nodeInfo; //array[nodeIdx]--> tuple(levelValue,costValue,parentCount)
-      array<tuple<Integer,Integer>> nodeCoords;
+      list<list<Integer>> cpWCpaths,CpWoCpaths, level;
+      Real cpWCcosts,cpWoCcosts;
     case(_,_)
       equation
         true = arrayLength(graphIn) <> 0;
-        TASKGRAPHMETA(inComps = inComps, nodeMark=nodeMark) = graphDataIn;
-        rootNodes = getRootNodes(graphIn);
-        nodeInfo = arrayCreate(arrayLength(graphIn),(-1,-1.0,0));
-        nodeInfo = List.fold1(List.intRange(arrayLength(graphIn)),setParentCount,graphIn,nodeInfo);
-        nodeInfo = longestPathMethod1(graphIn,graphDataIn,rootNodes,List.fill(0,listLength(rootNodes)),nodeInfo);
-        parallelSets = gatherParallelSets(nodeInfo);
-        nodeCoords = getNodeCoords(parallelSets,graphIn);
-        nodeMark = List.fold2(List.intRange(arrayLength(graphIn)),setLevelInNodeMark,inComps,nodeCoords,nodeMark);
-        (criticalPathTmp,cpCostsTmp) = getCriticalPath(graphIn,graphDataIn,rootNodes, true);
-        (criticalPathTmpWoC,cpCostsTmpWoC) = getCriticalPath(graphIn,graphDataIn,rootNodes, false);
-        //print("the critical paths: "+&stringDelimitList(List.map(criticalPathTmp,intLstString)," ; ")+&" with the costs "+&realString(cpCostsTmp)+&"\n");
+        graphT = BackendDAEUtil.transposeMatrix(graphIn,arrayLength(graphIn));
+        (_,rootNodes) = List.filterOnTrueSync(arrayList(graphT),List.isEmpty,List.intRange(arrayLength(graphT)));
+        level = HpcOmScheduler.getGraphLevel(graphIn,{rootNodes});
+        (cpWCpaths,cpWCcosts) = getCriticalPath(graphIn,graphDataIn,rootNodes,true);
+        (CpWoCpaths,cpWoCcosts) = getCriticalPath(graphIn,graphDataIn,rootNodes,false);
+        cpWCcosts = roundReal(cpWCcosts,2);
+        cpWoCcosts = roundReal(cpWoCcosts,2);
       then
-        ((criticalPathTmp,cpCostsTmp),(criticalPathTmpWoC,cpCostsTmpWoC),parallelSets);
+        ((cpWCpaths,cpWCcosts),(CpWoCpaths,cpWoCcosts),level);
     case(_,_)
       equation
         true = arrayLength(graphIn) == 0;
@@ -4528,205 +4516,11 @@ algorithm
         (({{}},0.0),({{}},0.0),{});
     else
       equation
-        print("longestPathMethod failed!\n");
+        print("getCriticalPaths failed!\n");
       then
         (({{}},0.0),({{}},0.0),{});
   end matchcontinue;
-end longestPathMethod;
-
-
-protected function longestPathMethod1 "fills the nodeInfo-array for sets of Nodes without predecessor(i.e. rootNodes)
-author: Waurich TUD 2013-07"
-  input TaskGraph graphIn;
-  input TaskGraphMeta graphDataIn;
-  input list<Integer> rootNodesIn;
-  input list<Integer> rootParentsIn;
-  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
-  output array<tuple<Integer,Real,Integer>> nodeInfoOut;
-algorithm
-    nodeInfoOut := matchcontinue(graphIn,graphDataIn,rootNodesIn,rootParentsIn,nodeInfoIn)
-      local
-        array<tuple<Integer,Real,Integer>> nodeInfo;
-        list<Integer> parentLst;
-        list<Integer> rootNodes;
-        list<Integer> rootIdcs;
-        list<list<Integer>> childLst;
-        list<Integer> childLstFlat;
-    case(_,_,_,_,_)
-      equation
-        // check the set of rootNodes and continue with their childNodes
-        false = List.isEmpty(rootNodesIn);
-        rootIdcs = List.intRange(listLength(rootNodesIn));
-        ((childLst,_)) = List.fold3(rootIdcs,longestPathMethod2,graphIn,graphDataIn,(rootNodesIn,rootParentsIn),({},nodeInfoIn));
-        childLst = listReverse(childLst);
-        childLstFlat = List.flatten(childLst);
-        parentLst = List.fold2(rootIdcs,getRootParentLst,rootNodesIn,childLst,{});
-        nodeInfo = longestPathMethod1(graphIn,graphDataIn,childLstFlat,parentLst,nodeInfoIn);
-     then
-       nodeInfo;
-    case(_,_,_,_,_)
-      equation
-        // all done
-        true = List.isEmpty(rootNodesIn);
-     then
-       nodeInfoIn;
-  end matchcontinue;
-end longestPathMethod1;
-
-
-protected function longestPathMethod2 "gets the childNodes for the analysed rootNode and updates the nodeInfoArray for the rootNodes // TODO:remove double pairs of rootnode and rootparents (see getRootParents2)
-author: Waurich TUD 2013-07"
-  input Integer rootIdx;
-  input TaskGraph graphIn;
-  input TaskGraphMeta graphDataIn;
-  input tuple<list<Integer>,list<Integer>> rootNodeInfo;
-  input tuple<list<list<Integer>>,array<tuple<Integer,Real,Integer>>> foldIn;  // the childNodes of all rootNodes and the array with the nodeInfos
-  output tuple<list<list<Integer>>,array<tuple<Integer,Real,Integer>>> foldOut;
-algorithm
-  foldOut := matchcontinue(rootIdx,graphIn,graphDataIn,rootNodeInfo,foldIn)
-    local
-      Real costValue1;
-      Real costValue2;
-      Real costValueParent;
-      Integer levelValue1;
-      Integer levelValue2;
-      Integer levelValueParent;
-      Integer parentCount1;
-      Integer parentCount2;
-      Integer parentNode;
-      Integer rootNode;
-      Integer rootParent;
-      list<Integer> childNodes;
-      list<Integer> rootNodes;
-      list<Integer> rootParents;
-      list<list<Integer>> childNodesIn;
-      list<list<Integer>> childNodesTmp;
-      list<list<Integer>> childNodesOut;
-      tuple<Integer,Real,Integer> rootInfo;
-      tuple<Integer,Integer> parentInfo;
-      array<list<Integer>> inComps;
-      array<tuple<Integer,Real>> exeCosts;
-      array<tuple<Integer,Real,Integer>> nodeInfoIn;
-      array<tuple<Integer,Real,Integer>> nodeInfoOut;
-      array<tuple<Integer,Real,Integer>> nodeInfoTmp;
-      array<list<tuple<Integer,Integer,Integer>>> commCosts;
-      tuple<list<list<Integer>>,array<tuple<Integer,Real,Integer>>> foldTmp;
-    case(_,_,_,_,_)
-      equation
-        // check the first rootnode
-        (childNodesIn,nodeInfoIn) = foldIn;
-        (rootNodes,rootParents) = rootNodeInfo;
-        rootNode = listGet(rootNodes,rootIdx);
-        rootParent = listGet(rootParents,rootIdx);
-        rootInfo = arrayGet(nodeInfoIn,rootNode);
-        (levelValue1,costValue1,parentCount1) = rootInfo;
-        true = rootParent == 0;
-        true = parentCount1 == 0;
-        true = levelValue1 == -1 and costValue1 ==. -1.0;
-        //print("rootNode "+&intString(rootNode)+&" with level "+&intString(levelValue1)+&" and costs "+&realString(costValue1)+&" and parentCount "+&intString(parentCount1)+&"\n");
-        TASKGRAPHMETA(inComps = inComps, exeCosts = exeCosts, commCosts = commCosts) = graphDataIn;
-        costValue2 = getCostsForNode(0,rootNode,inComps,exeCosts,commCosts);
-        rootInfo = (1,costValue2,parentCount1);
-        nodeInfoTmp = arrayUpdate(nodeInfoIn,rootNode,rootInfo);
-        childNodes = arrayGet(graphIn,rootNode);
-        childNodesTmp = childNodes::childNodesIn;
-        //print(" set level "+&intString(1)+&" and costs "+&realString(costValue2)+&" and childLst: "+&stringDelimitList(List.map(childNodes,intString),",")+&"\n");
-        foldTmp = (childNodesTmp,nodeInfoTmp);
-      then
-        foldTmp;
-    case(_,_,_,_,_)
-      equation
-        // check nextlevelNode and do append the childLst
-        (childNodesIn,nodeInfoIn) = foldIn;
-        (rootNodes,rootParents) = rootNodeInfo;
-        rootNode = listGet(rootNodes,rootIdx);
-        rootParent = listGet(rootParents,rootIdx);
-        rootInfo = arrayGet(nodeInfoIn,rootNode);
-        (levelValue1,costValue1,parentCount1) = rootInfo;
-        true = rootParent > 0;
-        true = parentCount1 == 1;
-        //print("next node "+&intString(rootNode)+&" with level "+&intString(levelValue1)+&" and costs "+&realString(costValue1)+&" and parentCount "+&intString(parentCount1)+&"\n");
-        ((levelValueParent,costValueParent,_)) = arrayGet(nodeInfoIn,rootParent);
-        TASKGRAPHMETA(inComps = inComps, exeCosts = exeCosts, commCosts = commCosts) = graphDataIn;
-        costValue2 = getCostsForNode(rootParent,rootNode,inComps,exeCosts,commCosts);
-        costValue2 = costValueParent +. costValue2;
-        costValue2 = realMax(costValue1,costValue2);
-        levelValue2 = intMax(levelValueParent+1,levelValue1);
-        rootInfo = (levelValue2,costValue2,parentCount1);
-        nodeInfoTmp = arrayUpdate(nodeInfoIn,rootNode,rootInfo);
-        childNodes = arrayGet(graphIn,rootNode);
-        //print(" set level "+&intString(levelValue2)+&" and costs "+&realString(costValue2)+&" and parentCount "+&intString(parentCount2)+&" and childLst: "+&stringDelimitList(List.map(childNodes,intString),",")+&"\n");
-        childNodesTmp = childNodes::childNodesIn;
-        foldTmp = (childNodesTmp,nodeInfoTmp);
-      then
-        foldTmp;
-    case(_,_,_,_,_)
-      equation
-        // check nextlevelNode and do NOT append the childLst
-        (childNodesIn,nodeInfoIn) = foldIn;
-        (rootNodes,rootParents) = rootNodeInfo;
-        rootNode = listGet(rootNodes,rootIdx);
-        rootParent = listGet(rootParents,rootIdx);
-        rootInfo = arrayGet(nodeInfoIn,rootNode);
-        (levelValue1,costValue1,parentCount1) = rootInfo;
-        true = rootParent > 0;
-        true = parentCount1 > 1;
-        //print("next node "+&intString(rootNode)+&" with level "+&intString(levelValue1)+&" and costs "+&realString(costValue1)+&" and parentCount "+&intString(parentCount1)+&"\n");
-        ((levelValueParent,costValueParent,_)) = arrayGet(nodeInfoIn,rootParent);
-        TASKGRAPHMETA(inComps = inComps, exeCosts = exeCosts, commCosts = commCosts) = graphDataIn;
-        costValue2 = getCostsForNode(rootParent,rootNode,inComps,exeCosts,commCosts);
-        costValue2 = costValueParent +. costValue2;
-        costValue2 = realMax(costValue1,costValue2);
-        levelValue2 = intMax(levelValueParent+1,levelValue1);
-        rootInfo = (levelValue2,costValue2,parentCount1-1);
-        nodeInfoTmp = arrayUpdate(nodeInfoIn,rootNode,rootInfo);
-        _ = arrayGet(graphIn,rootNode);
-        //print(" set level "+&intString(levelValue2)+&" and costs "+&realString(costValue2)+&" and parentCount "+&intString(parentCount2)+&"\n");
-        childNodesTmp = {}::childNodesIn;
-        foldTmp = (childNodesTmp,nodeInfoTmp);
-      then
-        foldTmp;
-    else
-      equation
-        (rootNodes,rootParents) = rootNodeInfo;
-        rootNode = listGet(rootNodes,rootIdx);
-        rootParent = listGet(rootParents,rootIdx);
-        print("longestPathMethod2-failed! RootIdx: " +& intString(rootNode) +& " RootParent: " +& intString(rootParent) +& "\n");
-        then
-          fail();
-  end matchcontinue;
-end longestPathMethod2;
-
-
-protected function setParentCount "sets the parentCount in the nodeinfo. i.e. the number of parentnodes of each node.
-author: Waurich TUD 2013-07"
-  input Integer parentIdx;
-  input TaskGraph graphIn;
-  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
-  output array<tuple<Integer,Real,Integer>> nodeInfoOut;
-protected
-  list<Integer> childLst;
-  array<tuple<Integer,Real,Integer>> nodeInfoTmp;
-algorithm
-  childLst := arrayGet(graphIn,parentIdx);
-  nodeInfoTmp := List.fold(childLst,setParentCount1,nodeInfoIn);
-  nodeInfoOut := nodeInfoTmp;
-end setParentCount;
-
-
-protected function setParentCount1 " folding function for setParentCount1
-author: Waurich TUD 2013-07"
-  input Integer childNode;
-  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
-  output array<tuple<Integer,Real,Integer>> nodeInfoOut;
-protected
-  Real costValue;
-  Integer levelValue;
-  Integer parentCount;
-algorithm
-  ((levelValue,costValue,parentCount)) := arrayGet(nodeInfoIn,childNode);
-  nodeInfoOut := arrayUpdate(nodeInfoIn,childNode,(levelValue,costValue,parentCount+1));
-end setParentCount1;
+end getCriticalPaths;
 
 protected function getCriticalPath "function getCriticalPath
   author: marcusw
