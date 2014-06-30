@@ -1,6 +1,20 @@
 // Note: Run with +g=MetaModelica
 // Some examples of CustomCommands.mos files are at the bottom of this file
 
+settings := checkSettings();
+configure := settings.CONFIGURE_CMDLINE;
+if 0 == system("lsb_release -ds > lsb.release") then
+  system("uname -p > arch");
+  systemInfo := stringReplace(readFile("lsb.release") + " " + readFile("arch"), "\n", "");
+else
+  systemInfo := settings.SYSTEM_INFO;
+end if;
+
+settingsStr :=
+  "// OpenModelica " + getVersion() + "\n" +
+  "// " + configure + "\n" +
+  "// " + systemInfo
+  ;
 setCommandLineOptions("+d=nogen");
 if not regularFileExists("CustomCommands.mos") then
   customCommands := "setCommandLineOptions(\"+d=nogen,initialization,backenddaeinfo,discreteinfo,stateselection\");
@@ -77,7 +91,7 @@ mkdir("files");
 
 /*** This is the stuff executed for each model ***/
 
-min(writeFile(s + ".mos","
+min(writeFile(s + ".mos",settingsStr + "
 \""+s+"\";
 echo(false);
 alarm("+ulimitOmc+");
