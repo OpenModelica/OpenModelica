@@ -45,7 +45,7 @@ getErrorString();
 libraryVersionRevision:=getVersion(library);
 libraryLastChange := "";
 if regularFileExists(dirname(getSourceFile(library))+".last_change") then
-  libraryLastChange := "( revision " + readFile(dirname(getSourceFile(library)))+".last_change";
+  libraryLastChange := "( revision " + readFile(dirname(getSourceFile(library))+".last_change") + ")";
 elseif 0 == system("svn info '" + dirname(getSourceFile(library)) + "' 2>&1 | egrep '^(URL|Last.Changed.Rev)' > svn.info") then
   libraryLastChange := " " + readFile("svn.info");
 end if;
