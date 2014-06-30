@@ -430,7 +430,7 @@ algorithm
         rhs = Expression.makeProductLst(e::factors);
         false = Expression.expHasCrefNoPreorDer(rhs, cr);
       then (rhs,{});
-        
+
     // f(a)*b = rhs  => f(a) = rhs/b solve for a
     case(DAE.BINARY(e1,DAE.MUL(tp),e2),_,DAE.CREF(componentRef = cr),_)
       equation
