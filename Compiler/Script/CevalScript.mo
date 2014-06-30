@@ -7697,7 +7697,7 @@ algorithm
   str1 := Absyn.pathLastIdent(classpath);
   str2 := SCodeDump.printCommentStr(cmt,SCodeDump.defaultOptions);
   str2 := Util.if_(stringEq(str2,""), "", " " +& str2 +& ";\n");
-  str1 := "\nmodel " +& str1 +& "\n  extends " +& Absyn.pathString(classpath) +& ";\n"+str2+"end " +& str1 +& ";\n";
+  str1 := "\nmodel " +& str1 +& "\n  extends " +& Absyn.pathString(classpath) +& ";\n" +& str2 +& "end " +& str1 +& ";\n";
   System.writeFile(filename, str +& str1);
 end saveTotalModel;
 
