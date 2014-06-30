@@ -391,7 +391,7 @@ algorithm
     local
       DAE.Exp dere,rhs,e,z,a;
       DAE.ComponentRef cr;
-      DAE.Exp invCr;
+      DAE.Exp invCr,e1,e2,e3,res;
       DAE.Type tp;
       list<DAE.Exp> factors;
       list<DAE.Statement> asserts;
@@ -430,7 +430,79 @@ algorithm
         rhs = Expression.makeProductLst(e::factors);
         false = Expression.expHasCrefNoPreorDer(rhs, cr);
       then (rhs,{});
-
+        
+    // f(a)*b = rhs  => f(a) = rhs/b solve for a
+    case(DAE.BINARY(e1,DAE.MUL(tp),e2),_,DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e1, cr);
+        false = Expression.expHasCref(e2, cr);
+        false = Expression.expHasCref(inExp2, cr);
+        e3 = DAE.BINARY(inExp2,DAE.DIV(tp),e2);
+        (res,asserts) = solve(e1,e3,inExp3);
+       then (res, asserts);
+    // b*f(a) = rhs  => f(a) = rhs/b solve for a
+    case(DAE.BINARY(e2,DAE.MUL(tp),e1),_,DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e1, cr);
+        false = Expression.expHasCref(e2, cr);
+        false = Expression.expHasCref(inExp2, cr);
+        e3 = DAE.BINARY(inExp2,DAE.DIV(tp),e2);
+        (res,asserts) = solve(e1,e3,inExp3);
+       then(res, asserts);
+    // f(a)/b = rhs  => f(a) = rhs*b solve for a
+    case(DAE.BINARY(e1,DAE.DIV(tp),e2),_,DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e1, cr);
+        false = Expression.expHasCref(e2, cr);
+        false = Expression.expHasCref(inExp2, cr);
+        e3 = DAE.BINARY(inExp2,DAE.MUL(tp),e2);
+        (res,asserts) = solve(e1,e3,inExp3);
+       then (res, asserts);
+    // b/f(a) = rhs  => f(a) = b/rhs solve for a
+    case(DAE.BINARY(e2,DAE.DIV(tp),e1),_,DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e1, cr);
+        false = Expression.expHasCref(e2, cr);
+        false = Expression.expHasCref(inExp2, cr);
+        e3 = DAE.BINARY(e2,DAE.DIV(tp),inExp2);
+        (res,asserts) = solve(e1,e3,inExp3);
+       then(res, asserts);
+    // lhs = f(a)*b   => f(a) = lhs/b solve for a
+    case(_,DAE.BINARY(e1,DAE.MUL(tp),e2),DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e1, cr);
+        false = Expression.expHasCref(e2, cr);
+        false = Expression.expHasCref(inExp1, cr);
+        e3 = DAE.BINARY(inExp1,DAE.DIV(tp),e2);
+        (res,asserts) = solve(e1,e3,inExp3);
+       then (res, asserts);
+    // lhs = b*f(a)  => f(a) = lhs/b solve for a
+    case(_,DAE.BINARY(e2,DAE.MUL(tp),e1),DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e1, cr);
+        false = Expression.expHasCref(e2, cr);
+        false = Expression.expHasCref(inExp1, cr);
+        e3 = DAE.BINARY(inExp1,DAE.DIV(tp),e2);
+        (res,asserts) = solve(e1,e3,inExp3);
+       then(res, asserts);
+    // lhs = f(a)/b  => f(a) = lhs*b solve for a
+    case(_,DAE.BINARY(e1,DAE.DIV(tp),e2),DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e1, cr);
+        false = Expression.expHasCref(e2, cr);
+        false = Expression.expHasCref(inExp1, cr);
+        e3 = DAE.BINARY(inExp1,DAE.MUL(tp),e2);
+        (res,asserts) = solve(e1,e3,inExp3);
+       then (res, asserts);
+    // lhs = b/f(a)  => f(a) = b/lhs solve for a
+    case(DAE.BINARY(e2,DAE.DIV(tp),e1),_,DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e1, cr);
+        false = Expression.expHasCref(e2, cr);
+        false = Expression.expHasCref(inExp2, cr);
+        e3 = DAE.BINARY(e2,DAE.DIV(tp),inExp2);
+        (res,asserts) = solve(e1,e3,inExp3);
+       then(res, asserts);
     // 0 = a*(b-c)  solve for b
     case (_,_,DAE.CREF(componentRef = _),_)
       equation
