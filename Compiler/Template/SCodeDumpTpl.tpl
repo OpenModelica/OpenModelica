@@ -720,7 +720,7 @@ match attributes
     let prl_str = dumpParallelism(parallelism)
     let var_str = dumpVariability(variability)
     let dir_str = dumpDirection(direction)
-    '<%prl_str%><%dir_str%><%var_str%><%ct_str%>'
+    '<%prl_str%><%var_str%><%dir_str%><%ct_str%>'
 end dumpAttributes;
 
 template dumpConnectorType(SCode.ConnectorType connectorType)
