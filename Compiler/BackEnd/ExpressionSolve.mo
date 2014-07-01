@@ -260,7 +260,26 @@ algorithm
          e2 = Expression.makePureBuiltinCall("log",{inExp1},DAE.T_REAL_DEFAULT);
          (res, asserts) = solve(e1,e2,inExp3);
        then (res, asserts);
-
+    // sqrt(f(a)) = g(b) => f(a) = (g(b))^2
+    case (DAE.CALL(path = Absyn.IDENT(name = "sqrt"),expLst = {e1}),_,DAE.CREF(componentRef = cr))
+       equation
+         true = Expression.expHasCref(e1, cr);
+         false = Expression.expHasCref(inExp2, cr);
+         tp = DAE.T_REAL_DEFAULT;
+         res = DAE.RCONST(2.0); 
+         e2 = DAE.BINARY(inExp2,DAE.POW(tp),res);
+         (res, asserts) = solve(e1,e2,inExp3);
+       then (res, asserts);
+    // g(b) = sqrt(f(a)) => f(a) = (g(b))^2
+    case (_,DAE.CALL(path = Absyn.IDENT(name = "sqrt"),expLst = {e1}),DAE.CREF(componentRef = cr))
+       equation
+         true = Expression.expHasCref(inExp2, cr);
+         false = Expression.expHasCref(inExp1, cr);
+         tp = DAE.T_REAL_DEFAULT;
+         res = DAE.RCONST(2.0); 
+         e2 = DAE.BINARY(inExp1,DAE.POW(tp),res);
+         (res, asserts) = solve(e1,e2,inExp3);  
+       then (res, asserts);
     // f(a)^n = c => f(a) = c^-n
     // where n is odd
     case (DAE.BINARY(e1,DAE.POW(tp),DAE.RCONST(r)), _, DAE.CREF(componentRef = cr))
