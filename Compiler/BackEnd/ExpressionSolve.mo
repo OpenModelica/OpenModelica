@@ -261,31 +261,32 @@ algorithm
          (res, asserts) = solve(e1,e2,inExp3);
        then (res, asserts);
 
-    // a^n = c => a = c^-n
+    // f(a)^n = c => f(a) = c^-n
     // where n is odd
-    case (DAE.BINARY(DAE.CREF(componentRef = cr1),DAE.POW(tp),DAE.RCONST(r)), _, DAE.CREF(componentRef = cr))
+    case (DAE.BINARY(e1,DAE.POW(tp),DAE.RCONST(r)), _, DAE.CREF(componentRef = cr))
        equation
          1.0 = realMod(r,2.0);
-         true = ComponentReference.crefEqual(cr, cr1);
-         false = Expression.expHasDerCref(inExp2, cr);
+         false = Expression.expHasCref(inExp2, cr);
+         true = Expression.expHasCref(e1, cr);
          r = realNeg(r);
-         e1 = DAE.RCONST(r);
-         e2 = DAE.BINARY(inExp2,DAE.POW(tp),e1);
+         res = DAE.RCONST(r);
+         e2 = DAE.BINARY(inExp2,DAE.POW(tp),res);
+         (res, asserts) = solve(e1,e2,inExp3);
        then
-         (e2,{});
-
-    // c = a^n  => a = c^-n
+         (res,asserts);
+    // f(a)^n = c => f(a) = c^-n
     // where n is odd
-    case (_, DAE.BINARY(DAE.CREF(componentRef = cr1),DAE.POW(tp),DAE.RCONST(r)), DAE.CREF(componentRef = cr))
+    case (_,DAE.BINARY(e1,DAE.POW(tp),DAE.RCONST(r)), DAE.CREF(componentRef = cr))
        equation
          1.0 = realMod(r,2.0);
-         true = ComponentReference.crefEqual(cr, cr1);
-         false = Expression.expHasDerCref(inExp1, cr);
+         false = Expression.expHasCref(inExp1, cr);
+         true = Expression.expHasCref(e1, cr);
          r = realNeg(r);
-         e1 = DAE.RCONST(r);
-         e2 = DAE.BINARY(inExp1,DAE.POW(tp),e1);
+         res = DAE.RCONST(r);
+         e2 = DAE.BINARY(inExp2,DAE.POW(tp),res);
+         (res, asserts) = solve(e1,e2,inExp3);
        then
-         (e2,{});
+         (res,asserts);
 
     // -cr = exp
     case (DAE.UNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
