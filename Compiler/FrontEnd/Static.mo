@@ -3654,7 +3654,7 @@ algorithm
   end match;
 end elabBuiltinClassDirectory;
 
-protected function elabBuiltinTranspose 
+protected function elabBuiltinTranspose
   "Elaborates the builtin operator transpose."
   input Env.Cache inCache;
   input Env.Env inEnv;
