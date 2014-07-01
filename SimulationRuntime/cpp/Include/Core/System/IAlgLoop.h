@@ -1,5 +1,7 @@
 #pragma once
 
+struct sparse_matrix;
+
 /*****************************************************************************/
 /**
 
@@ -12,6 +14,8 @@ Abstract interface class for algebraic loop in equations in open modelica.
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
+
+
 class IAlgLoop
 {
 public:
@@ -52,6 +56,7 @@ public:
   virtual void getRHS(double* res) = 0;
 
   virtual void getSystemMatrix(double* A_matrix) = 0;
+  virtual void getSystemMatrix(sparse_matrix * ) {};
 
   virtual bool isLinear() = 0;
   virtual bool isLinearTearing()=0;
@@ -69,3 +74,4 @@ public:
   void addConstraint(double& constr_value);
   */
 };
+

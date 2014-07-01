@@ -1,6 +1,6 @@
 #include "UmfPackSettings.h"
 
-UmfPackSettings::UmfPackSettings() : ILinSolverSettings(), useSparse(false) {
+UmfPackSettings::UmfPackSettings() : ILinSolverSettings(), useSparse(true) {
 
 }
 

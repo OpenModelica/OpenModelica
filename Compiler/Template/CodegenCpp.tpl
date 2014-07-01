@@ -3145,12 +3145,20 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   {
 
    }
+  void <%modelname%>Algloop<%index%>::getSystemMatrix(sparse_matrix* A_matrix)
+  {
+
+   }
   >>
  case SES_LINEAR(__) then
    <<
      void <%modelname%>Algloop<%index%>::getSystemMatrix(double* A_matrix)
      {
           memcpy(A_matrix,__A->data(),_dimAEq*_dimAEq*sizeof(double));
+     }
+     void <%modelname%>Algloop<%index%>::getSystemMatrix(sparse_matrix* A_matrix)
+     {
+          A_matrix->build(*__Asparse);
      }
    >>
 
@@ -3501,7 +3509,7 @@ case SES_LINEAR(__) then
    let size = listLength(vars)
    <<
     if(_useSparseFormat)
-      __Asparse = 0;
+      __Asparse = new sparse_inserter;
     else
       __A = new boost::multi_array<double,2>(boost::extents[<%size%>][<%size%>],boost::fortran_storage_order());
    >>
@@ -3881,8 +3889,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     // A matrix
     boost::multi_array<double,2> *__A; //dense
 
-    typedef double** sparseType;
-    sparseType *__Asparse; //sparse
+    sparse_inserter *__Asparse; //sparse
 
     //b vector
     boost::multi_array<double,1> __b;
@@ -4265,6 +4272,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     >>%>
     /// Output routine (to be called by the solver after every successful integration step)
     virtual void getSystemMatrix(double* A_matrix);
+    virtual void getSystemMatrix(sparse_matrix* A_matrix);
     virtual bool isLinear();
      virtual bool isLinearTearing();
     virtual bool isConsistent();

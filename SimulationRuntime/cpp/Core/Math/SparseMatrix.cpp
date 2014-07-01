@@ -40,4 +40,13 @@ int sparse_matrix::solve(const double* b, double * x) {
     umfpack_di_free_numeric (&Numeric);
     return 0;
 }
+#else
+void sparse_matrix::build(sparse_inserter& ins) {
+        throw std::runtime_error("no umfpack");
+    }
+
+int sparse_matrix::solve(const double* b, double * x) {
+        throw std::runtime_error("no umfpack");
+}
+
 #endif

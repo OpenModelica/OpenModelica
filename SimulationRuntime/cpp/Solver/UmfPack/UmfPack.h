@@ -3,6 +3,7 @@
 #include <System/IAlgLoop.h>                // Interface to AlgLoo
 #include <Solver/IAlgLoopSolver.h>        // Export function from dll
 #include <Solver/ILinSolverSettings.h>
+#include <Math/SparseMatrix.h>
 #include "UmfPackSettings.h"
 #include <iostream>
 
@@ -26,4 +27,7 @@ private:
     ITERATIONSTATUS _iterationStatus;
     ILinSolverSettings *_umfpackSettings;
     IAlgLoop *_algLoop;
+    sparse_matrix * _jac;
+    double * _rhs;
+    double * _x;
 };

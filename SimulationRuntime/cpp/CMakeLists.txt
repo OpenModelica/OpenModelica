@@ -32,7 +32,7 @@ if (MSVC)
 else()
 	STRING(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
 	STRING(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
-endif()    
+endif()
 
 
 #set mico paths
@@ -55,17 +55,17 @@ if(MSVC)
     SET(CMinpack_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install/msvc")
 else(MSVC)
     SET(CMinpack_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install")
-endif(MSVC)    
+endif(MSVC)
 
 FIND_PATH(CMINPACK_INCLUDE_DIR cminpack.h
           HINTS ${CMinpack_Path}
           PATH_SUFFIXES include include/cminpack include/cminpack-1)
 
-FIND_LIBRARY(CMINPACK_LIBRARY 
+FIND_LIBRARY(CMINPACK_LIBRARY
              NAMES cminpack
              HINTS ${CMinpack_Path}
              PATH_SUFFIXES lib lib64)
-             
+
 include_directories(${CMINPACK_INCLUDE_DIR})
 
 set(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../libraries/Resources/C-Sources")
@@ -180,7 +180,7 @@ if(USE_UMFPACK)
 	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/Solver/UmfPack/")
 	find_package(SuiteSparse)
 	message(STATUS "Using UmfPack")
-	list(FIND SUITESPARSE_LIBRARIES "umfpack" umfpack_found)
+#	list(FIND SUITESPARSE_LIBRARIES "umfpack" umfpack_found)
 	if(umfpack_found EQUAL -1)
 		message(FATAL_ERROR "Umfpack not found")
 	endif(umfpack_found EQUAL -1)
