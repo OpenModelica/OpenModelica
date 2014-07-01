@@ -54,10 +54,6 @@ encapsulated package HpcOmSimCode
       list<Integer> eqIdc;
       list<Integer> nodeIdc; //indices of the graph-node
     end CALCTASK_LEVEL;
-    record CALCTASK_LEVEL_SERIAL
-      list<Integer> eqIdc;
-      list<Integer> nodeIdc; //indices of the graph-node
-    end CALCTASK_LEVEL_SERIAL;
     record ASSIGNLOCKTASK //Task which assignes a lock
       String lockId;
     end ASSIGNLOCKTASK;
@@ -67,10 +63,20 @@ encapsulated package HpcOmSimCode
     record TASKEMPTY //Dummy Task
     end TASKEMPTY;
   end Task;
-
+  
+  public uniontype TaskList
+    record PARALLELTASKLIST
+      list<Task> tasks;
+    end PARALLELTASKLIST;
+    record SERIALTASKLIST
+      list<Task> tasks;
+    end SERIALTASKLIST;
+  end TaskList;
+  
+  //TODO: Use the TaskList for the other schedulers, too
   public uniontype Schedule   // stores all scheduling-informations
     record LEVELSCHEDULE
-      list<list<Task>> tasksOfLevels; //List of tasks solved in the same level in parallel
+      list<TaskList> tasksOfLevels; //List of tasks solved in the same level in parallel
     end LEVELSCHEDULE;
     record THREADSCHEDULE
       array<list<Task>> threadTasks; //List of tasks assigned to the thread <%idx%>

@@ -3221,9 +3221,18 @@ package HpcOmSimCode
     end RELEASELOCKTASK;
   end Task;
 
+  uniontype TaskList
+    record PARALLELTASKLIST
+      list<Task> tasks;
+    end PARALLELTASKLIST;
+    record SERIALTASKLIST
+      list<Task> tasks;
+    end SERIALTASKLIST;
+  end TaskList;
+
   uniontype Schedule
     record LEVELSCHEDULE
-      list<list<Task>> tasksOfLevels;
+      list<TaskList> tasksOfLevels;
     end LEVELSCHEDULE;
     record THREADSCHEDULE
       array<list<Task>> threadTasks;

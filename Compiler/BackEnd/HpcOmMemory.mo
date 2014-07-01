@@ -206,7 +206,7 @@ encapsulated package HpcOmMemory
     CacheMap cacheMap;
     array<tuple<Integer,Integer>> scVarCLMapping;
     Integer numCL;
-    list<list<HpcOmSimCode.Task>> tasksOfLevels;
+    list<HpcOmSimCode.TaskList> tasksOfLevels;
     array<tuple<Integer,Integer>> simCodeVarTypes;
   algorithm
     (oCacheMap,oScVarCLMapping,oNumCL) := match(iAllSCVarsMapping,iStateVars,iDerivativeVars,iAlgVars,iParamVars,iScVarTaskMapping,iCacheLineSize,iAllComponents,iSchedule, iNodeSimCodeVarMapping)
@@ -234,7 +234,7 @@ encapsulated package HpcOmMemory
     input array<Integer> iScVarTaskMapping;
     input Integer iCacheLineSize;
     input BackendDAE.StrongComponents iAllComponents;
-    input list<list<HpcOmSimCode.Task>> iTasksOfLevels; //Schedule
+    input list<HpcOmSimCode.TaskList> iTasksOfLevels; //Schedule
     input array<list<Integer>> iNodeSimCodeVarMapping;
     output CacheMap oCacheMap;
     output array<tuple<Integer,Integer>> oScVarCLMapping; //mapping for each scVar -> <CLIdx,varType>
@@ -259,7 +259,7 @@ encapsulated package HpcOmMemory
   protected function createCacheMapLevelOptimized0 "author: marcuswcase(_,_,_,_,_,_)
     Appends the variables which are written by the task list (iLevelTasks) to the info-structure. Only cachelines are used that
     are not written by the previous layer."
-    input list<HpcOmSimCode.Task> iLevelTasks;
+    input HpcOmSimCode.TaskList iLevelTasks;
     input array<Option<SimCode.SimVar>> iAllSCVarsMapping;
     input array<list<Integer>> iNodeSimCodeVarMapping;
     input array<tuple<Integer,Integer>> iSimCodeVarTypes; //<type, numberOfBytesRequired>
@@ -284,7 +284,7 @@ encapsulated package HpcOmMemory
     detailedCacheLineInfo := createDetailedCacheMapInformations(availableCLold, cacheLinesFloat, cacheLineSize);
     detailedCacheLineInfo := listReverse(detailedCacheLineInfo);
     //print("createCacheMapLevelOptimized0: clCandidates: " +& stringDelimitList(List.map(List.map(detailedCacheLineInfo,Util.tuple21),intString), ",") +& "\n");
-    ((cacheMap,createdCL,detailedCacheLineInfo)) := List.fold4(iLevelTasks, createCacheMapLevelOptimizedForTask, iAllSCVarsMapping, iNodeSimCodeVarMapping, iSimCodeVarTypes, iScVarCLMapping, (cacheMap,0,detailedCacheLineInfo));
+    ((cacheMap,createdCL,detailedCacheLineInfo)) := List.fold4(getTaskListTasks(iLevelTasks), createCacheMapLevelOptimizedForTask, iAllSCVarsMapping, iNodeSimCodeVarMapping, iSimCodeVarTypes, iScVarCLMapping, (cacheMap,0,detailedCacheLineInfo));
     availableCL := List.map(detailedCacheLineInfo, Util.tuple21);
     //append the used cachelines to the writtenCL-list
     //print("createCacheMapLevelOptimized0: New cacheLines created: " +& intString(createdCL) +& "\n");
@@ -1352,6 +1352,28 @@ encapsulated package HpcOmMemory
     end matchcontinue;
   end getPositionMappingByArrayName;
 
+
+  // -------------------------------------------
+  // UTIL
+  // -------------------------------------------
+
+  protected function getTaskListTasks
+    input HpcOmSimCode.TaskList iTaskList;
+    output list<HpcOmSimCode.Task> oTasks;
+  protected
+    list<HpcOmSimCode.Task> tasks;
+  algorithm
+    oTasks := match(iTaskList)
+      case(HpcOmSimCode.PARALLELTASKLIST(tasks=tasks))
+      then tasks;
+      case(HpcOmSimCode.PARALLELTASKLIST(tasks=tasks))
+      then tasks;
+      else
+       equation
+         print("getTaskListTasks failed!\n");
+      then {};
+    end match;
+  end getTaskListTasks;
 
   // -------------------------------------------
   // UNUSED

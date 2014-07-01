@@ -2229,7 +2229,11 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
       //using type: <%type%>
       void function<%name%>_system<%n%>(DATA *data)
       {
-        <%odeEqs%>
+        omp_set_dynamic(0);
+        #pragma omp parallel num_threads(<%getConfigInt(NUM_PROC)%>)
+        {
+            <%odeEqs%>
+        }
       }
       >>
    case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
@@ -2392,20 +2396,41 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
 
 end functionXXX_system_HPCOM;
 
-template functionXXX_system0_HPCOM_Level(list<SimEqSystem> derivativEquations, String name, list<Task> tasksOfLevel, String iType, String modelNamePrefixStr)
+template functionXXX_system0_HPCOM_Level(list<SimEqSystem> derivativEquations, String name, TaskList tasksOfLevel, String iType, String modelNamePrefixStr)
 ::=
-  let odeEqs = tasksOfLevel |> task => functionXXX_system0_HPCOM_Level0(derivativEquations,name,task,iType,modelNamePrefixStr); separator="\n"
-  <<
-  if (omp_get_dynamic())
-    omp_set_dynamic(0);
-  #pragma omp parallel sections num_threads(<%getConfigInt(NUM_PROC)%>)
-  {
-     <%odeEqs%>
-  }
-  >>
+  match(tasksOfLevel)
+    case(PARALLELTASKLIST(__)) then
+      let odeEqs = tasks |> task => functionXXX_system0_HPCOM_Level0Section(derivativEquations,name,task,iType,modelNamePrefixStr); separator="\n"
+      <<
+      #pragma omp sections
+      {
+         <%odeEqs%>
+      }
+      #pragma omp barrier //I'm not sure if this is required
+      >>
+    case(SERIALTASKLIST(__)) then
+      let odeEqs = tasks |> task => functionXXX_system0_HPCOM_Level0(derivativEquations,name,task,iType,modelNamePrefixStr); separator="\n"
+      <<
+      #pragma omp master
+      {
+         <%odeEqs%>
+      }
+      #pragma omp barrier
+      >>
+    else
+      <<
+      
+      >>
 end functionXXX_system0_HPCOM_Level;
 
 template functionXXX_system0_HPCOM_Level0(list<SimEqSystem> derivativEquations, String name, Task iTask, String iType, String modelNamePrefixStr)
+::=
+  <<
+    <%function_HPCOM_Task(derivativEquations,name,iTask,iType,modelNamePrefixStr)%>
+  >>
+end functionXXX_system0_HPCOM_Level0;
+
+template functionXXX_system0_HPCOM_Level0Section(list<SimEqSystem> derivativEquations, String name, Task iTask, String iType, String modelNamePrefixStr)
 ::=
   <<
   #pragma omp section
@@ -2413,7 +2438,7 @@ template functionXXX_system0_HPCOM_Level0(list<SimEqSystem> derivativEquations, 
     <%function_HPCOM_Task(derivativEquations,name,iTask,iType,modelNamePrefixStr)%>
   }
   >>
-end functionXXX_system0_HPCOM_Level0;
+end functionXXX_system0_HPCOM_Level0Section;
 
 template functionXXX_system0_HPCOM_TaskDep(list<tuple<Task,list<Integer>>> tasks, list<SimEqSystem> derivativEquations, String iType, String name, String modelNamePrefixStr)
 ::=

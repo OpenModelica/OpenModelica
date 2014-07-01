@@ -921,15 +921,30 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
     else ""
 end update2;
 
-template function_HPCOM_Level(list<SimEqSystem> allEquationsPlusWhen, list<Task> tasksOfLevel, String iType, Text &varDecls, SimCode simCode)
+template function_HPCOM_Level(list<SimEqSystem> allEquationsPlusWhen, TaskList tasksOfLevel, String iType, Text &varDecls, SimCode simCode)
 ::=
-  let odeEqs = tasksOfLevel |> task => function_HPCOM_Level0(allEquationsPlusWhen,task,iType, &varDecls, simCode); separator="\n"
-  <<
-  #pragma omp sections
-  {
-    <%odeEqs%>
-  }
-  >>
+  match(tasksOfLevel)
+    case(PARALLELTASKLIST(__)) then
+      let odeEqs = tasks |> task => function_HPCOM_Level0(allEquationsPlusWhen,task,iType, &varDecls, simCode); separator="\n"
+      <<
+      #pragma omp sections
+      {
+        <%odeEqs%>
+      }
+      >>
+    case(SERIALTASKLIST(__)) then
+      let odeEqs = tasks |> task => function_HPCOM_Level0(allEquationsPlusWhen,task,iType, &varDecls, simCode); separator="\n"
+      <<
+      #pragma omp master
+      {
+        <%odeEqs%>
+      }
+      #pragma omp barrier
+      >>
+    else
+      <<
+      
+      >>
 end function_HPCOM_Level;
 
 template function_HPCOM_Level0(list<SimEqSystem> allEquationsPlusWhen, Task iTask, String iType, Text &varDecls, SimCode simCode)

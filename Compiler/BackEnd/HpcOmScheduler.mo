@@ -974,8 +974,6 @@ algorithm
       then ("Calculation task with index " +& intString(index) +& " including the equations: "+&stringDelimitList(List.map(eqIdc,intString),", ")+& " is finished at  " +& realString(timeFinished) +& "\n");
     case(HpcOmSimCode.CALCTASK_LEVEL(eqIdc=eqIdc, nodeIdc=nodeIdc))
       then ("Calculation task ("+&stringDelimitList(List.map(nodeIdc,intString),", ")+&") including the equations: "+&stringDelimitList(List.map(eqIdc,intString),", ")+&"\n");
-    case(HpcOmSimCode.CALCTASK_LEVEL_SERIAL(eqIdc=eqIdc, nodeIdc=nodeIdc))
-      then ("Serial Calculation task ("+&stringDelimitList(List.map(nodeIdc,intString),", ")+&") including the equations: "+&stringDelimitList(List.map(eqIdc,intString),", ")+&"\n");
     case(HpcOmSimCode.ASSIGNLOCKTASK(lockId=lockId))
       then ("Assign lock task with id " +& lockId +& "\n");
     case(HpcOmSimCode.RELEASELOCKTASK(lockId=lockId))
@@ -1082,7 +1080,7 @@ protected
   list<list<list<Integer>>> levelComps,SCCs;  //level<node<tasks<components or simEqSys>>>
   array<list<Integer>> inComps;
   HpcOmTaskGraph.TaskGraph graphT;
-  list<list<HpcOmSimCode.Task>> levelTasks;
+  list<HpcOmSimCode.TaskList> levelTasks;
 algorithm
   targetCost := 1000.0;
   HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) := iMeta;
@@ -1142,7 +1140,7 @@ protected function BLS_generateSchedule"generates a level schedule for the given
   input list<list<Integer>> level;
   input HpcOmTaskGraph.TaskGraphMeta iMeta;
   input array<list<Integer>> iSccSimEqMapping;
-  output list<HpcOmSimCode.Task> taskLstOut;
+  output HpcOmSimCode.TaskList taskLstOut;
 algorithm
   taskLstOut := matchcontinue(level,iMeta,iSccSimEqMapping)
     local
@@ -1151,14 +1149,15 @@ algorithm
       list<list<list<Integer>>> sectionComps, sectionSimEqSys;
       array<list<Integer>> inComps;
       HpcOmSimCode.Task task;
-      list<HpcOmSimCode.Task> taskLst;
+      HpcOmSimCode.TaskList taskLst;
     case({section},HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps),_)
       equation
         // generate a serial section
         compLst = List.flatten(List.map1(section,Util.arrayGetIndexFirst,inComps));
         simEqSysIdcs = getSimEqSysIdcsForCompLst(compLst,iSccSimEqMapping);
-        task = HpcOmSimCode.CALCTASK_LEVEL_SERIAL(simEqSysIdcs,section);
-    then {task};
+        task = HpcOmSimCode.CALCTASK_LEVEL(simEqSysIdcs,section);
+        taskLst = HpcOmSimCode.SERIALTASKLIST({task});
+    then taskLst;
     case(section::_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps),_)
       equation
         // generate parallel sections
@@ -1166,7 +1165,7 @@ algorithm
         sections = List.map(sectionComps,List.flatten);
         sectionSimEqSys = List.map1(sectionComps,getSimEqSysIdcsForNodeLst,iSccSimEqMapping);
         sectionSimEqSysIdcs = List.map(sectionSimEqSys,List.flatten);
-        taskLst = makeCalcLevelTaskLst(sectionSimEqSysIdcs,level);
+        taskLst = makeCalcLevelParTaskLst(sectionSimEqSysIdcs,level);
     then taskLst;
   end matchcontinue;
 end BLS_generateSchedule;
@@ -1394,7 +1393,7 @@ protected
   list<list<Integer>> level;
   list<list<list<Integer>>> levelComps,SCCs;  //level<node<tasks<components or simEqSys>>>
   array<list<Integer>> inComps;
-  list<list<HpcOmSimCode.Task>> levelTasks;
+  list<HpcOmSimCode.TaskList> levelTasks;
   HpcOmTaskGraph.TaskGraph graphT;
   array<tuple<Integer,Real>> exeCosts;
   array<Integer> nodeMark;
@@ -1414,7 +1413,7 @@ algorithm
   levelComps := List.mapList1_1(level,Util.arrayGetIndexFirst,inComps);
   levelComps := List.mapList1_1(levelComps,List.sort,intGt);
   SCCs := List.map1(levelComps,getSimEqSysIdcsForNodeLst,iSccSimEqMapping);
-  levelTasks := List.threadMap(SCCs,List.mapList(level,List.create),makeCalcLevelTaskLst);
+  levelTasks := List.threadMap(SCCs,List.mapList(level,List.create),makeCalcLevelParTaskLst);
   oSchedule := HpcOmSimCode.LEVELSCHEDULE(levelTasks);
 
   //update nodeMark for graphml representation
@@ -1436,13 +1435,16 @@ algorithm
   tplOut := (idx+1,ass);
 end getLevelAssignment;
 
-protected function makeCalcLevelTaskLst"makes a list of CALCTASK_LEVEL for the given lists of simEqSyslst and corresponding node list"
+protected function makeCalcLevelParTaskLst "makes a parallel list of CALCTASK_LEVEL-Tasks out of the given lists of simEqSyslst and corresponding node list"
   input list<list<Integer>> simEqsForNodes;
   input list<list<Integer>> nodeIdcs;
-  output list<HpcOmSimCode.Task> tasksOut;
+  output HpcOmSimCode.TaskList tasksOut;
+protected
+  list<HpcOmSimCode.Task> tmpList;
 algorithm
-  tasksOut := List.threadMap(simEqsForNodes,nodeIdcs,makeCalcLevelTask);
-end makeCalcLevelTaskLst;
+  tmpList := List.threadMap(simEqsForNodes,nodeIdcs, makeCalcLevelTask);
+  tasksOut := HpcOmSimCode.PARALLELTASKLIST(tmpList);
+end makeCalcLevelParTaskLst;
 
 protected function makeCalcLevelTask" makes a CALCTASK_LEVEL for the given list of SimEqSys and a nodeIdx"
   input list<Integer> simEqs;
@@ -1506,13 +1508,28 @@ end getGraphLevel_removeDoubles;
 protected function printLevelSchedule "function printLevelSchedule
   author: marcusw
   Helper function to print one level."
-  input list<HpcOmSimCode.Task> iLevelInfo;
+  input HpcOmSimCode.TaskList iLevelInfo;
   input Integer iLevel;
   output Integer oLevel;
+protected
+  list<HpcOmSimCode.Task> tasks;
 algorithm
-  print("Level " +& intString(iLevel) +& ":\n");
-  printTaskList(iLevelInfo);
-  oLevel := iLevel + 1;
+  oLevel := match(iLevelInfo, iLevel)
+    case(HpcOmSimCode.PARALLELTASKLIST(tasks=tasks),_)
+      equation
+        print("Level " +& intString(iLevel) +& ":\n");
+        printTaskList(tasks);
+      then iLevel + 1;
+    case(HpcOmSimCode.SERIALTASKLIST(tasks=tasks),_)
+      equation
+        print("Level " +& intString(iLevel) +& ":\n");
+        printTaskList(tasks);
+      then iLevel + 1;
+    else
+      equation
+        print("printLevelSchedule failed!\n");
+      then iLevel + 1;
+   end match;
 end printLevelSchedule;
 
 //---------------------------
@@ -3879,7 +3896,7 @@ public function printSchedule
   input HpcOmSimCode.Schedule iSchedule;
 protected
   array<list<HpcOmSimCode.Task>> threadTasks;
-  list<list<HpcOmSimCode.Task>> tasksOfLevels;
+  list<HpcOmSimCode.TaskList> tasksOfLevels;
   list<tuple<HpcOmSimCode.Task, list<Integer>>> taskDepTasks;
 algorithm
   _ := match(iSchedule)
@@ -3911,7 +3928,7 @@ algorithm
     local
       list<String> lockIdc;
       list<Real> levelCosts;
-      list<list<HpcOmSimCode.Task>> levels;
+      list<HpcOmSimCode.TaskList> levels;
       list<list<Integer>> parallelSets;
       list<list<Integer>> criticalPaths, criticalPathsWoC;
       list<list<Real>> levelSectionCosts;
@@ -3923,7 +3940,7 @@ algorithm
         //get the criticalPath
         ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),_) = HpcOmTaskGraph.getCriticalPaths(taskGraphIn,taskGraphMetaIn);
         // predict speedUp
-        levelSectionCosts = List.mapList1_1(levels, getLevelTaskCosts,taskGraphMetaIn);
+        levelSectionCosts = List.map1(levels, getLevelListTaskCosts, taskGraphMetaIn);
         serTime = realSum(List.map(levelSectionCosts,realSum));
         serTime = HpcOmTaskGraph.roundReal(serTime,2);
         levelCosts = List.map1(levelSectionCosts,getLevelParallelTime,numProcIn);
@@ -3986,6 +4003,30 @@ algorithm
   threadWorkLoadOut := arrayUpdate(threadWorkLoadIn,minWLThread,minWorkLoad +. sectionCost);
 end getLevelParallelTime1;
 
+protected function getLevelListTaskCosts
+  input HpcOmSimCode.TaskList iTaskList;
+  input HpcOmTaskGraph.TaskGraphMeta iMeta;
+  output list<Real> costsOut;
+protected
+  list<HpcOmSimCode.Task> tasks;
+  list<Real> costs;
+algorithm
+  costsOut := match(iTaskList, iMeta)
+    case(HpcOmSimCode.PARALLELTASKLIST(tasks=tasks),_)
+      equation
+        costs = List.map1(tasks,getLevelTaskCosts,iMeta);
+      then costs;
+    case(HpcOmSimCode.SERIALTASKLIST(tasks=tasks),_)
+      equation
+        costs = List.map1(tasks,getLevelTaskCosts,iMeta);
+      then costs;
+    else
+      equation
+        print("getLevelTaskCosts failed!\n");
+      then {};
+  end match;    
+end getLevelListTaskCosts;
+
 protected function getLevelTaskCosts
   input HpcOmSimCode.Task levelTask;
   input HpcOmTaskGraph.TaskGraphMeta iMeta;
@@ -3997,11 +4038,6 @@ algorithm
       list<Real> nodeCosts;
       Real costs;
     case(HpcOmSimCode.CALCTASK_LEVEL(nodeIdc=nodeIdc),_)
-      equation
-        nodeCosts = List.map1(nodeIdc,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
-        costs = List.fold(nodeCosts,realAdd,0.0);
-      then costs;
-    case(HpcOmSimCode.CALCTASK_LEVEL_SERIAL(nodeIdc=nodeIdc),_)
       equation
         nodeCosts = List.map1(nodeIdc,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
         costs = List.fold(nodeCosts,realAdd,0.0);
