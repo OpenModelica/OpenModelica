@@ -2,7 +2,9 @@
 
 
 #include "Modelica.h"
+#ifdef USE_UMFPACK
 #include "umfpack.h"
+#endif USE_UMFPACK
 
 using std::map;
 using std::pair;
