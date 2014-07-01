@@ -40,6 +40,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <math.h>
+#include <float.h>
 
 static inline modelica_real *real_ptrget(const real_array_t *a, size_t i)
 {
@@ -1488,7 +1489,7 @@ void linspace_real_array(modelica_real x1, modelica_real x2, int n,
 modelica_real max_real_array(const real_array_t a)
 {
     size_t nr_of_elements;
-    modelica_real max_element = 0;
+    modelica_real max_element = DBL_MIN;
 
     assert(base_array_ok(&a));
 
@@ -1510,7 +1511,7 @@ modelica_real max_real_array(const real_array_t a)
 modelica_real min_real_array(const real_array_t a)
 {
     size_t nr_of_elements;
-    modelica_real min_element = 0;
+    modelica_real min_element = DBL_MAX;
 
     assert(base_array_ok(&a));
 
