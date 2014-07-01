@@ -1569,6 +1569,31 @@ algorithm
   DAE.ARRAY(array=es) := e;
 end getArrayContents;
 
+public function getArrayOrMatrixContents
+  "Returns the contents of an array or matrix as a list of expressions."
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outContents;
+algorithm
+  outContents := match(inExp)
+    local
+      list<DAE.Exp> expl;
+      list<list<DAE.Exp>> mat;
+      DAE.Type ty, el_ty;
+      DAE.Dimensions dims;
+      DAE.TypeSource src;
+      Boolean sc;
+
+    case DAE.ARRAY(array = expl) then expl;
+    case DAE.MATRIX(ty = DAE.T_ARRAY(el_ty, _ :: dims, src), matrix = mat)
+      equation
+        ty = DAE.T_ARRAY(el_ty, dims, src);
+        sc = Types.basicType(el_ty);
+      then
+        List.map2(mat, Expression.makeArray, ty, sc);
+
+  end match;
+end getArrayOrMatrixContents;
+
 public function getComplexContents "returns the list of expressions from a complex structure like array,record,call,tuple...
 author:Waurich TUD 2014-04"
   input DAE.Exp e;
@@ -10482,29 +10507,32 @@ algorithm
     local
       DAE.Type ty, row_ty;
       DAE.Dimension dim1, dim2;
+      DAE.Dimensions rest_dims;
       DAE.TypeSource ty_src;
       list<Exp> expl;
       list<list<Exp>> matrix;
       Integer i;
 
-    case DAE.ARRAY(DAE.T_ARRAY(ty, {dim1, dim2}, ty_src), _, {})
-      then (DAE.ARRAY(DAE.T_ARRAY(ty, {dim2, dim1}, ty_src), false, {}), true);
+    // Empty array, just transpose the type.
+    case DAE.ARRAY(DAE.T_ARRAY(ty, dim1 :: dim2 :: rest_dims, ty_src), _, {})
+      then (DAE.ARRAY(DAE.T_ARRAY(ty, dim2 :: dim1 :: rest_dims, ty_src), false, {}), true);
 
-    case DAE.ARRAY(DAE.T_ARRAY(ty, {dim1, dim2}, ty_src), _, expl)
+    case DAE.ARRAY(DAE.T_ARRAY(ty, dim1 :: dim2 :: rest_dims, ty_src), _, expl)
       equation
-        row_ty = DAE.T_ARRAY(ty, {dim1}, ty_src);
-        matrix = List.map(expl, getArrayContents);
+        row_ty = DAE.T_ARRAY(ty, dim1 :: rest_dims, ty_src);
+        matrix = List.map(expl, getArrayOrMatrixContents);
         matrix = List.transposeList(matrix);
         expl = List.map2(matrix, makeArray, row_ty, true);
       then
-        (DAE.ARRAY(DAE.T_ARRAY(ty, {dim2, dim1}, ty_src), false, expl), true);
+        (DAE.ARRAY(DAE.T_ARRAY(ty, dim2 :: dim1 :: rest_dims, ty_src), false, expl), true);
 
     case DAE.MATRIX (matrix=matrix,ty=DAE.T_ARRAY(ty, {dim1, dim2}, ty_src))
       equation
         matrix = List.transposeList(matrix);
         ty = DAE.T_ARRAY(ty, {dim2, dim1}, ty_src);
         i = listLength(matrix);
-      then (DAE.MATRIX(ty,i,matrix), true);
+      then
+        (DAE.MATRIX(ty,i,matrix), true);
 
     else (inArray, false);
 

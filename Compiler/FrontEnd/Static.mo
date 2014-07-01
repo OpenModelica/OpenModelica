@@ -3654,158 +3654,38 @@ algorithm
   end match;
 end elabBuiltinClassDirectory;
 
-protected function elabBuiltinTranspose "This function elaborates the builtin operator transpose
-  The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env"
+protected function elabBuiltinTranspose 
+  "Elaborates the builtin operator transpose."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.Exp> inPosArgs;
   input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
+  input Boolean inImpl;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input Absyn.Info inInfo;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  Env.Cache cache;
+  Absyn.Exp aexp;
+  DAE.Exp exp;
+  DAE.Type ty, el_ty;
+  DAE.Const c;
+  DAE.Dimension d1, d2;
+  DAE.TypeSource src1, src2;
 algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Type tp;
-      Boolean sc, impl;
-      list<DAE.Exp> expl,exp_2;
-      DAE.Dimension d1,d2;
-      DAE.Type eltp,newtp;
-      Integer dim1,dim2,dimMax;
-      DAE.Properties prop;
-      DAE.Const c;
-      Env.Env env;
-      Absyn.Exp matexp;
-      DAE.Exp exp_1,exp;
-      Env.Cache cache;
-      Prefix.Prefix pre;
-      list<list<DAE.Exp>> mexpl,mexp_2;
-      Integer i;
-
-    // try symbolically transpose the ARRAY expression
-    case (cache,env,{matexp},_,impl,pre,_)
-      equation
-        (cache,DAE.ARRAY(tp,sc,expl),DAE.PROP(DAE.T_ARRAY(ty = DAE.T_ARRAY(ty = eltp, dims = {d2}), dims = {d1}), c),_)
-          = elabExpInExpression(cache,env, matexp, impl,NONE(),true,pre,info);
-        dim1 = Expression.dimensionSize(d1);
-        exp_2 = elabBuiltinTranspose2(expl, 1, dim1);
-        newtp = DAE.T_ARRAY(DAE.T_ARRAY(eltp, {d1}, DAE.emptyTypeSource), {d2}, DAE.emptyTypeSource);
-        prop = DAE.PROP(newtp,c);
-        tp = transposeExpType(tp);
-      then
-        (cache,DAE.ARRAY(tp,sc,exp_2),prop);
-
-    // try symbolically transpose the MATRIX expression
-    case (cache,env,{matexp},_,impl,pre,_)
-      equation
-        (cache,DAE.MATRIX(tp,i,mexpl),DAE.PROP(DAE.T_ARRAY(dims = {d1}, ty = DAE.T_ARRAY(dims = {d2}, ty = eltp)),c),_)
-          = elabExpInExpression(cache,env, matexp, impl,NONE(),true,pre,info);
-        dim1 = Expression.dimensionSize(d1);
-        dim2 = Expression.dimensionSize(d2);
-        dimMax = intMax(dim1, dim2);
-        mexp_2 = elabBuiltinTranspose3(mexpl, 1, dimMax);
-        newtp = DAE.T_ARRAY(DAE.T_ARRAY(eltp, {d1}, DAE.emptyTypeSource), {d2}, DAE.emptyTypeSource);
-        prop = DAE.PROP(newtp,c);
-        tp = transposeExpType(tp);
-      then
-        (cache,DAE.MATRIX(tp,i,mexp_2),prop);
-
-    // .. otherwise create transpose call
-    case (cache,env,{matexp},_,impl,pre,_)
-      equation
-        (cache,exp_1,DAE.PROP(DAE.T_ARRAY(dims = {d1}, ty = DAE.T_ARRAY(dims = {d2}, ty = eltp)), c),_)
-          = elabExpInExpression(cache,env, matexp, impl,NONE(),true,pre,info);
-        newtp = DAE.T_ARRAY(DAE.T_ARRAY(eltp, {d1}, DAE.emptyTypeSource), {d2}, DAE.emptyTypeSource);
-        tp = Types.simplifyType(newtp);
-        exp = Expression.makePureBuiltinCall("transpose", {exp_1}, tp);
-        prop = DAE.PROP(newtp,c);
-      then
-        (cache,exp,prop);
-  end matchcontinue;
+  {aexp} := inPosArgs;
+  (outCache, exp, DAE.PROP(ty, c), _) :=
+    elabExp(inCache, inEnv, aexp, inImpl, NONE(), true, inPrefix, inInfo);
+  // Transpose the type.
+  DAE.T_ARRAY(DAE.T_ARRAY(el_ty, {d1}, src1), {d2}, src2) := ty;
+  ty := DAE.T_ARRAY(DAE.T_ARRAY(el_ty, {d2}, src1), {d1}, src2);
+  outProperties := DAE.PROP(ty, c);
+  // Simplify the type and make a call to transpose.
+  ty := Types.simplifyType(ty);
+  outExp := Expression.makePureBuiltinCall("transpose", {exp}, ty);
 end elabBuiltinTranspose;
-
-protected function transposeExpType
-  "Helper function to elabBuiltinTranspose. Transposes an array type, i.e. swaps
-  the first two dimensions."
-  input DAE.Type inType;
-  output DAE.Type outType;
-algorithm
-  outType := match(inType)
-    local
-      DAE.Type ty;
-      DAE.Dimension dim1, dim2;
-      DAE.Dimensions dim_rest;
-      DAE.TypeSource ts;
-
-    case (DAE.T_ARRAY(ty = ty, dims = dim1 :: dim2 :: dim_rest, source = ts))
-      then
-        DAE.T_ARRAY(ty, dim2 :: dim1 :: dim_rest, ts);
-  end match;
-end transposeExpType;
-
-protected function elabBuiltinTranspose2 "author: PA
-  Helper function to elab_builtin_transpose.
-  Tries to symbolically transpose a matrix expression in ARRAY form."
-  input list<DAE.Exp> inExpExpLst1;
-  input Integer inInteger2;
-  input Integer inInteger3;
-  output list<DAE.Exp> outExpExpLst;
-algorithm
-  outExpExpLst := matchcontinue (inExpExpLst1,inInteger2,inInteger3)
-    local
-      DAE.Exp e;
-      list<DAE.Exp> es,rest,elst;
-      DAE.Type tp;
-      Integer indx_1,indx,dim1;
-
-    case (elst,indx,dim1)
-      equation
-        (indx <= dim1) = true;
-        indx_1 = indx - 1;
-        (e :: es) = List.map1(elst, Expression.nthArrayExp, indx_1);
-        tp = Expression.typeof(e);
-        indx_1 = indx + 1;
-        rest = elabBuiltinTranspose2(elst, indx_1, dim1);
-      then
-        (DAE.ARRAY(tp,false,(e :: es)) :: rest);
-
-    else {};
-  end matchcontinue;
-end elabBuiltinTranspose2;
-
-protected function elabBuiltinTranspose3 "author: PA
-  Helper function to elab_builtin_transpose. Tries to symbolically transpose
-  a MATRIX expression list"
-  input list<list<DAE.Exp>> inMatrix;
-  input Integer inInteger2;
-  input Integer inInteger3;
-  output list<list<DAE.Exp>> outMatrix;
-algorithm
-  outMatrix := matchcontinue (inMatrix,inInteger2,inInteger3)
-    local
-      Integer indx_1,indx,dim1;
-      DAE.Exp e;
-      list<DAE.Exp> es;
-      DAE.Exp e_1;
-      DAE.Type tp;
-      list<list<DAE.Exp>> rest,res,elst;
-    case (elst,indx,dim1)
-      equation
-        (indx <= dim1) = true;
-        (e :: es) = List.map1(elst, listGet, indx);
-        e_1 = e;
-        _ = Expression.typeof(e_1);
-        indx_1 = indx + 1;
-        rest = elabBuiltinTranspose3(elst, indx_1, dim1);
-        res = listAppend({(e :: es)}, rest);
-      then
-        res;
-    else {};
-  end matchcontinue;
-end elabBuiltinTranspose3;
 
 protected function elabBuiltinSum "This function elaborates the builtin operator sum.
   The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env"

@@ -1132,7 +1132,6 @@ algorithm
     case "min" then cevalBuiltinMin;
     case "rem" then cevalBuiltinRem;
     case "diagonal" then cevalBuiltinDiagonal;
-    case "transpose" then cevalBuiltinTranspose;
     case "differentiate" then cevalBuiltinDifferentiate;
     case "simplify" then cevalBuiltinSimplify;
     case "sign" then cevalBuiltinSign;
@@ -4297,48 +4296,6 @@ algorithm
         fail();
   end matchcontinue;
 end cevalBuiltinCross;
-
-protected function cevalBuiltinTranspose "This function transposes the two first dimension of an array A."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<DAE.Exp> inExpExpLst;
-  input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inST;
-  input Absyn.Msg inMsg;
-  input Integer numIter;
-  output Env.Cache outCache;
-  output Values.Value outValue;
-  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
-  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
-    local
-      list<Values.Value> vlst,vlst2,vlst_1;
-      Integer i1,i2;
-      list<Integer> il;
-      Env.Env env;
-      DAE.Exp exp;
-      Boolean impl;
-      Option<GlobalScript.SymbolTable> st;
-      Absyn.Msg msg;
-      Env.Cache cache;
-      Absyn.Info info;
-
-    case (cache,env,{exp},impl,st,msg,_)
-      equation
-        (cache,Values.ARRAY(vlst,i1::_),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
-        (Values.ARRAY(valueLst = _, dimLst = i2::il) :: _) = vlst;
-        vlst_1 = cevalBuiltinTranspose2(vlst, 1, i2::i1::il);
-      then
-        (cache,Values.ARRAY(vlst_1,i2::i1::il),st);
-    case (_,_,_,_,_,Absyn.MSG(info = info),_)
-      equation
-        Error.addSourceMessage(Error.COMPILER_ERROR,
-          {"Could not evaluate transpose. Celab.cevalBuildinTranspose failed."}, info);
-      then
-        fail();
-  end matchcontinue;
-end cevalBuiltinTranspose;
 
 protected function cevalBuiltinTranspose2 "author: PA
   Helper function to cevalBuiltinTranspose"
