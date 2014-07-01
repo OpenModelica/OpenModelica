@@ -266,7 +266,7 @@ algorithm
          true = Expression.expHasCref(e1, cr);
          false = Expression.expHasCref(inExp2, cr);
          tp = DAE.T_REAL_DEFAULT;
-         res = DAE.RCONST(2.0); 
+         res = DAE.RCONST(2.0);
          e2 = DAE.BINARY(inExp2,DAE.POW(tp),res);
          (res, asserts) = solve(e1,e2,inExp3);
        then (res, asserts);
@@ -276,9 +276,9 @@ algorithm
          true = Expression.expHasCref(inExp2, cr);
          false = Expression.expHasCref(inExp1, cr);
          tp = DAE.T_REAL_DEFAULT;
-         res = DAE.RCONST(2.0); 
+         res = DAE.RCONST(2.0);
          e2 = DAE.BINARY(inExp1,DAE.POW(tp),res);
-         (res, asserts) = solve(e1,e2,inExp3);  
+         (res, asserts) = solve(e1,e2,inExp3);
        then (res, asserts);
     // f(a)^n = c => f(a) = c^-n
     // where n is odd
