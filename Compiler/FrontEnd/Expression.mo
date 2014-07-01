@@ -1589,7 +1589,7 @@ algorithm
         ty = DAE.T_ARRAY(el_ty, dims, src);
         sc = Types.basicType(el_ty);
       then
-        List.map2(mat, Expression.makeArray, ty, sc);
+        List.map2(mat, makeArray, ty, sc);
 
   end match;
 end getArrayOrMatrixContents;
