@@ -1427,7 +1427,7 @@ void linspace_integer_array(modelica_integer x1, modelica_integer x2, int n,
 modelica_integer max_integer_array(const integer_array_t a)
 {
     size_t nr_of_elements;
-    modelica_integer max_element = 0;
+    modelica_integer max_element = LONG_MIN;
 
     assert(base_array_ok(&a));
 
@@ -1449,7 +1449,7 @@ modelica_integer max_integer_array(const integer_array_t a)
 modelica_integer min_integer_array(const integer_array_t a)
 {
   size_t nr_of_elements;
-  modelica_integer min_element = -LONG_MAX;
+  modelica_integer min_element = LONG_MAX;
 
   assert(base_array_ok(&a));
 
