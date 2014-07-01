@@ -283,7 +283,7 @@ algorithm
          true = Expression.expHasCref(e1, cr);
          r = realNeg(r);
          res = DAE.RCONST(r);
-         e2 = DAE.BINARY(inExp2,DAE.POW(tp),res);
+         e2 = DAE.BINARY(inExp1,DAE.POW(tp),res);
          (res, asserts) = solve(e1,e2,inExp3);
        then
          (res,asserts);
