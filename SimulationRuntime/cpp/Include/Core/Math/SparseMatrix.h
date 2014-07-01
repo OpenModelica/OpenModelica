@@ -1,10 +1,7 @@
 #pragma once
 
-//#include <map>
-//#include <vector>
-#include "Modelica.h"
-//#include <stdexcept>
 
+#include "Modelica.h"
 #ifdef USE_UMFPACK
 #include "umfpack.h"
 
@@ -52,5 +49,12 @@ struct sparse_matrix {
     void build(sparse_inserter& ins);
     int solve(const double* b,double* x);
 };
+#else
+struct sparse_inserter {
+};
 
+struct sparse_matrix {
+    void build(sparse_inserter& ins);
+    int solve(const double* b,double* x);
+};
 #endif
