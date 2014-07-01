@@ -2,7 +2,6 @@
 
 
 #include "Modelica.h"
-#ifdef USE_UMFPACK
 #include "umfpack.h"
 
 using std::map;
@@ -27,8 +26,8 @@ struct sparse_inserter {
         t2 operator[](size_t j) {
             t2 res(i,j,content);
             return res;
-    }
-};
+        }
+    };
 
 
     map< pair<int,int>, double> content;
@@ -49,12 +48,4 @@ struct sparse_matrix {
     void build(sparse_inserter& ins);
     int solve(const double* b,double* x);
 };
-#else
-struct sparse_inserter {
-};
 
-struct sparse_matrix {
-    void build(sparse_inserter& ins);
-    int solve(const double* b,double* x);
-};
-#endif
