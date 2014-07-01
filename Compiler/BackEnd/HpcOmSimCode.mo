@@ -63,7 +63,7 @@ encapsulated package HpcOmSimCode
     record TASKEMPTY //Dummy Task
     end TASKEMPTY;
   end Task;
-  
+
   public uniontype TaskList
     record PARALLELTASKLIST
       list<Task> tasks;
@@ -72,7 +72,7 @@ encapsulated package HpcOmSimCode
       list<Task> tasks;
     end SERIALTASKLIST;
   end TaskList;
-  
+
   //TODO: Use the TaskList for the other schedulers, too
   public uniontype Schedule   // stores all scheduling-informations
     record LEVELSCHEDULE

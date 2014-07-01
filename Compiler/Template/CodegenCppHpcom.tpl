@@ -943,7 +943,7 @@ template function_HPCOM_Level(list<SimEqSystem> allEquationsPlusWhen, TaskList t
       >>
     else
       <<
-      
+
       >>
 end function_HPCOM_Level;
 

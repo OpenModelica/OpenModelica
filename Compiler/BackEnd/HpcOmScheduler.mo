@@ -4024,7 +4024,7 @@ algorithm
       equation
         print("getLevelTaskCosts failed!\n");
       then {};
-  end match;    
+  end match;
 end getLevelListTaskCosts;
 
 protected function getLevelTaskCosts
