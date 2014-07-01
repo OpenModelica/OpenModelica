@@ -397,7 +397,7 @@ const int
   NM   = <%varInfo.numMathEventFunctions%>,
   NG_SAM = <%varInfo.numTimeEvents%>,
   NX = <%varInfo.numStateVars%>,
-  NY = <%varInfo.numAlgVars + varInfo.numDiscreteReal%>,
+  NY = <%varInfo.numAlgVars%> + <%varInfo.numDiscreteReal%>,
   NA = <%varInfo.numAlgAliasVars%>, // number of alias variables
   NP = <%varInfo.numParams%>,
   NO = <%varInfo.numOutVars%>,
@@ -466,8 +466,10 @@ static <%lastIdentOfPath(name)%>() {
   <%{
         varInfos("State",     vars.stateVars,    varInfo.numStateVars, simCode),
         varInfos("StateDer",  vars.derivativeVars, varInfo.numStateVars, simCode),
-        varInfos("Algebraic",    vars.algVars,      varInfo.numAlgVars, simCode),
-        varInfos("Algebraic",    vars.discreteAlgVars,      varInfo.numAlgVars, simCode),
+        varInfosAlgebraic("Algebraic",    vars.algVars, vars.discreteAlgVars, varInfo.numAlgVars, varInfo.numDiscreteReal, simCode),
+		//may be later:
+		//varInfos("Algebraic",    vars.algVars, varInfo.numAlgVars, simCode),
+		//varInfos("AlgebraicDiscrete",    vars.discreteAlgVars, varInfo.numDiscreteReal, simCode),
         varInfos("AlgebraicInt",    vars.intAlgVars,  varInfo.numIntAlgVars, simCode),
         varInfos("AlgebraicBool",   vars.boolAlgVars,  varInfo.numBoolAlgVars, simCode),
         varInfos("AlgebraicString", vars.stringAlgVars, varInfo.numStringAlgVars, simCode),
@@ -559,6 +561,33 @@ template varInfos(String regionName, list<SimVar> varsLst, Integer varsCnt, SimC
    #endregion<%\n%>
    >>
 end varInfos;
+
+template varInfosAlgebraic(String regionName, list<SimVar> varsLstAlg, list<SimVar> varsLstDisc, Integer varsCntAlg, Integer varsCntDisc, SimCode simCode) ::=
+//A hack to temorarily handle discrete algebraics 
+//TODO: fix it
+  //if varsLst then
+  //we need all of them to initialize also empty arrays
+   <<
+   #region *** (<%varsCntAlg%> + <%varsCntDisc%>) algebraic and discrete algebraic variable data ***
+   vd = new VarData[<%varsCntAlg%> + <%varsCntDisc%>];
+   <% varsLstAlg |> sv as SIMVAR(__) =>
+      <<
+      vd[<%index%>] = new VarData("<%crefStrWithDerOnLast(name, simCode)%>", "<%Util.escapeModelicaStringToCString(comment)%>"<%noaliasSimVarInfoRest(sv)%>);
+      >>
+      ;separator="\n"
+   %>
+   <% varsLstDisc |> sv as SIMVAR(__) =>
+      <<
+      vd[<%varsCntAlg%> + <%index%>] = new VarData("<%crefStrWithDerOnLast(name, simCode)%>", "<%Util.escapeModelicaStringToCString(comment)%>"<%noaliasSimVarInfoRest(sv)%>);
+      >>
+      ;separator="\n"
+   %>
+   
+   varData[(int)SimVarType.<%regionName%>] = vd;
+   #endregion<%\n%>
+   >>
+end varInfosAlgebraic;
+
 
 //rather hacky ... when more attributes, use named members initalization
 template noaliasSimVarInfoRest(SimVar simVar) ::=
@@ -1509,16 +1538,41 @@ end equationElseWhen;
 
 template crefRepresentationArrayAndIndex(ComponentRef cr, Text &indexTxt, SimCode simCode) ::=
   match cr
-  //deprecated: case CREF_IDENT(ident = "xloc") then crefStr(cr, simCode) //TODO: ??xloc
-  case CREF_IDENT(ident = "time") then "Time" //no index
-  case CREF_IDENT(ident = "$_lambda") then "_lambda" //no index
-  //??is this a HACK (on the SimCode level) ??
-  case CREF_QUAL(ident = "$PRE") then
-    'pre<%crefRepresentationArrayAndIndex(componentRef, &indexTxt, simCode)%>'
-  else
-    (cref2simvar(cr, simCode) |> SIMVAR(__) =>
-      let &indexTxt += index
-      representationArrayName(varKind, type_))
+    //deprecated: case CREF_IDENT(ident = "xloc") then crefStr(cr, simCode) //TODO: ??xloc
+    case CREF_IDENT(ident = "time") then "Time" //no index
+    case CREF_IDENT(ident = "$_lambda") then "_lambda" //no index
+    //??is this a HACK (on the SimCode level) ??
+    case CREF_QUAL(ident = "$PRE") then
+      'pre<%crefRepresentationArrayAndIndex(componentRef, &indexTxt, simCode)%>'
+    else
+//    (cref2simvar(cr, simCode) |> SIMVAR(__) =>
+//      let &indexTxt += index
+//      representationArrayName(varKind, type_))
+
+      match cref2simvar(cr, simCode)
+      case SIMVAR(varKind = DISCRETE()) then
+        let offset = match simCode
+          case SIMCODE(__) then 
+            match modelInfo
+            case MODELINFO(__) then 
+              match varInfo
+              case VARINFO(__) then numAlgVars
+        let &indexTxt += index + ' + ' + offset
+        representationArrayName(varKind, type_)
+      case SIMVAR(__) then
+        let &indexTxt += index
+        representationArrayName(varKind, type_)
+        
+//      match cref2simvar(cr, simCode)
+//      case SIMVAR(varKind = DISCRETE()) then
+//        let offset = 
+//          match simCode
+//            case (simCode = SIMCODE(modelInfo = MODELINFO(varInfo = VARINFO(__)))) then numAlgVars
+//        let &indexTxt += index + ' + ' + offset
+//        representationArrayName(varKind, type_)
+//      case SIMVAR(__) then
+//        let &indexTxt += index
+//        representationArrayName(varKind, type_)
 end crefRepresentationArrayAndIndex;
 
 template representationArrayName(VarKind varKind, Type type_) ::=
@@ -2604,34 +2658,30 @@ template daeExpCall(Exp inExp, Context context, Text &preExp, SimCode simCode) :
   match inExp
   // special builtins
   case CALL(path=IDENT(name="DIVISION"),
-            expLst={e1, e2, e3}) then
+            expLst={e1, e2}) then
 
     let var1 = daeExp(e1, context, &preExp, simCode)
     let var2 = daeExp(e2, context, &preExp, simCode)
-    /*
-    let string =
-       //TODO: a local hack here to retrieve the shared litral ... make more like it was designed to
-       match simCode
-       case SIMCODE(__) then
-              match listNth(literals, e3.index)
-              case DAE.SCONST(__) then string
-              else "TemplErr:division msg string not recognized"
-
-    let msg = Util.escapeModelicaStringToCString(string)
-    */
+    
     match e2
     case RCONST(__) then
          //match rr case 0.0 then 'DivBy0(<%var1%>,0.0,"<%msg%>")'
          //else
          '<%var1%> / <%var2%>'
     case _ then
-         let msg = daeExp(e3, context, &preExp, simCode)
-         //let msg = Util.escapeModelicaStringToCString(string)
+         let msg = Util.escapeModelicaStringToCString(printExpStr(e2))
          let &tmpVar2 = buffer ""
          let &preExp +=
-            '<%tempDecl("var", &tmpVar2)%> = <%var2%>; if (<%tmpVar2%> == 0.0) throw new DivideByZeroException(<%msg%>);<%\n%>'
+            '<%tempDecl("var", &tmpVar2)%> = <%var2%>; if (<%tmpVar2%> == 0.0) throw new DivideByZeroException("<%msg%>");<%\n%>'
          '<%var1%> / <%tmpVar2%>'
     end match
+    
+  case CALL(path=IDENT(name="DIVISION"),
+    expLst={e1, e2, e3}) then
+    <<
+      DEPRECATED DIVISION STYLE
+    >>
+
 
 
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
