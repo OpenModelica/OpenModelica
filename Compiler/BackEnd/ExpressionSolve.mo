@@ -513,6 +513,7 @@ algorithm
         (e2,_) = ExpressionSimplify.simplify1(e2);
         e3 = DAE.BINARY(e1,DAE.MUL(tp),inExp2);
         (e3,_) = ExpressionSimplify.simplify1(e3);
+        e3 = DAE.BINARY(e3,DAE.SUB(tp),e2);
         e1 = Expression.makeConstZero(tp);
         (res,asserts) = solve(e3,e1,inExp3);
        then(res, asserts);
@@ -526,6 +527,7 @@ algorithm
         (e2,_) = ExpressionSimplify.simplify1(e2);
         e3 = DAE.BINARY(e1,DAE.MUL(tp),inExp1);
         (e3,_) = ExpressionSimplify.simplify1(e3);
+        e3 = DAE.BINARY(e3,DAE.SUB(tp),e2);
         e1 = Expression.makeConstZero(tp);
         (res,asserts) = solve(e3,e1,inExp3);
        then(res, asserts);
