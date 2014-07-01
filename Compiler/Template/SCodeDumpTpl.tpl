@@ -153,7 +153,7 @@ match classDef
     let ieq_str = dumpEquations(initialEquationLst, "initial equation", options)
     let nal_str = match options case OPTIONS(stripAlgorithmSections=false) then dumpAlgorithmSections(p.normalAlgorithmLst, "algorithm", options)
     let ial_str = match options case OPTIONS(stripAlgorithmSections=false) then dumpAlgorithmSections(p.initialAlgorithmLst, "initial algorithm", options)
-    let extdecl_str = dumpExternalDeclOpt(p.externalDecl)
+    let extdecl_str = dumpExternalDeclOpt(p.externalDecl, options)
     let cdef_str =
       <<
       <%el_str%>
@@ -775,11 +775,11 @@ template dumpAnnotationElement(SCode.Annotation annotation, SCodeDumpOptions opt
     '<%annstr%>;'
 end dumpAnnotationElement;
 
-template dumpExternalDeclOpt(Option<ExternalDecl> externalDecl)
-::= match externalDecl case SOME(extdecl) then dumpExternalDecl(extdecl)
+template dumpExternalDeclOpt(Option<ExternalDecl> externalDecl, SCodeDumpOptions options)
+::= match externalDecl case SOME(extdecl) then dumpExternalDecl(extdecl, options)
 end dumpExternalDeclOpt;
 
-template dumpExternalDecl(ExternalDecl externalDecl)
+template dumpExternalDecl(ExternalDecl externalDecl, SCodeDumpOptions options)
 ::=
 match externalDecl
   case EXTERNALDECL(__) then
@@ -787,8 +787,9 @@ match externalDecl
     let func_args_str = (args |> arg => AbsynDumpTpl.dumpExp(arg) ;separator=", ")
     let func_str = if func_name_str then ' <%func_name_str%>(<%func_args_str%>)'
     let lang_str = match lang case SOME(l) then ' "<%l%>"'
+    let ann_str = dumpAnnotationOpt(annotation_, options)
     let output_str = match output_ case SOME(name) then ' <%AbsynDumpTpl.dumpCref(name)%> ='
-    'external<%lang_str%><%output_str%><%func_str%>;'
+    'external<%lang_str%><%output_str%><%func_str%><%ann_str%>;'
 end dumpExternalDecl;
 
 template dumpCommentOpt(Option<SCode.Comment> comment, SCodeDumpOptions options)
