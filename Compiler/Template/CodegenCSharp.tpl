@@ -467,9 +467,9 @@ static <%lastIdentOfPath(name)%>() {
         varInfos("State",     vars.stateVars,    varInfo.numStateVars, simCode),
         varInfos("StateDer",  vars.derivativeVars, varInfo.numStateVars, simCode),
         varInfosAlgebraic("Algebraic",    vars.algVars, vars.discreteAlgVars, varInfo.numAlgVars, varInfo.numDiscreteReal, simCode),
-		//may be later:
-		//varInfos("Algebraic",    vars.algVars, varInfo.numAlgVars, simCode),
-		//varInfos("AlgebraicDiscrete",    vars.discreteAlgVars, varInfo.numDiscreteReal, simCode),
+    //may be later:
+    //varInfos("Algebraic",    vars.algVars, varInfo.numAlgVars, simCode),
+    //varInfos("AlgebraicDiscrete",    vars.discreteAlgVars, varInfo.numDiscreteReal, simCode),
         varInfos("AlgebraicInt",    vars.intAlgVars,  varInfo.numIntAlgVars, simCode),
         varInfos("AlgebraicBool",   vars.boolAlgVars,  varInfo.numBoolAlgVars, simCode),
         varInfos("AlgebraicString", vars.stringAlgVars, varInfo.numStringAlgVars, simCode),
@@ -563,7 +563,7 @@ template varInfos(String regionName, list<SimVar> varsLst, Integer varsCnt, SimC
 end varInfos;
 
 template varInfosAlgebraic(String regionName, list<SimVar> varsLstAlg, list<SimVar> varsLstDisc, Integer varsCntAlg, Integer varsCntDisc, SimCode simCode) ::=
-//A hack to temorarily handle discrete algebraics 
+//A hack to temorarily handle discrete algebraics
 //TODO: fix it
   //if varsLst then
   //we need all of them to initialize also empty arrays
@@ -582,7 +582,7 @@ template varInfosAlgebraic(String regionName, list<SimVar> varsLstAlg, list<SimV
       >>
       ;separator="\n"
    %>
-   
+
    varData[(int)SimVarType.<%regionName%>] = vd;
    #endregion<%\n%>
    >>
@@ -1552,9 +1552,9 @@ template crefRepresentationArrayAndIndex(ComponentRef cr, Text &indexTxt, SimCod
       match cref2simvar(cr, simCode)
       case SIMVAR(varKind = DISCRETE()) then
         let offset = match simCode
-          case SIMCODE(__) then 
+          case SIMCODE(__) then
             match modelInfo
-            case MODELINFO(__) then 
+            case MODELINFO(__) then
               match varInfo
               case VARINFO(__) then numAlgVars
         let &indexTxt += index + ' + ' + offset
@@ -1562,10 +1562,10 @@ template crefRepresentationArrayAndIndex(ComponentRef cr, Text &indexTxt, SimCod
       case SIMVAR(__) then
         let &indexTxt += index
         representationArrayName(varKind, type_)
-        
+
 //      match cref2simvar(cr, simCode)
 //      case SIMVAR(varKind = DISCRETE()) then
-//        let offset = 
+//        let offset =
 //          match simCode
 //            case (simCode = SIMCODE(modelInfo = MODELINFO(varInfo = VARINFO(__)))) then numAlgVars
 //        let &indexTxt += index + ' + ' + offset
@@ -2662,7 +2662,7 @@ template daeExpCall(Exp inExp, Context context, Text &preExp, SimCode simCode) :
 
     let var1 = daeExp(e1, context, &preExp, simCode)
     let var2 = daeExp(e2, context, &preExp, simCode)
-    
+
     match e2
     case RCONST(__) then
          //match rr case 0.0 then 'DivBy0(<%var1%>,0.0,"<%msg%>")'
@@ -2675,7 +2675,7 @@ template daeExpCall(Exp inExp, Context context, Text &preExp, SimCode simCode) :
             '<%tempDecl("var", &tmpVar2)%> = <%var2%>; if (<%tmpVar2%> == 0.0) throw new DivideByZeroException("<%msg%>");<%\n%>'
          '<%var1%> / <%tmpVar2%>'
     end match
-    
+
   case CALL(path=IDENT(name="DIVISION"),
     expLst={e1, e2, e3}) then
     <<
