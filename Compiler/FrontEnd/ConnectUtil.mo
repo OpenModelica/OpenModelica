@@ -3684,6 +3684,8 @@ algorithm
     // The size of a complex type with an equalityConstraint function is
     // determined by the size of the return value of that function.
     case (DAE.T_COMPLEX(equalityConstraint = SOME((_, n, _)))) then n;
+    // The size of a basic subtype is the size of the extended type.
+    case (DAE.T_SUBTYPE_BASIC(complexType = t)) then sizeOfVariable2(t);
     // Anything we forgot?
     case t
       equation
