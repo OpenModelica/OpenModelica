@@ -25,7 +25,8 @@ void UmfPack::initialize()
 void UmfPack::solve()
 {
 #ifdef USE_UMFPACK
-
+  _algLoop->evaluate();
+  _algLoop->getRHS(_rhs);
   _algLoop->getSystemMatrix(_jac);
 
   int status=_jac->solve(_rhs,_x);

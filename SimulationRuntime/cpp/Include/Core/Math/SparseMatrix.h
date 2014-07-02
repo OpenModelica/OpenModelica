@@ -4,7 +4,7 @@
 #include "Modelica.h"
 #ifdef USE_UMFPACK
 #include "umfpack.h"
-#endif USE_UMFPACK
+#endif
 
 using std::map;
 using std::pair;
