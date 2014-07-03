@@ -513,19 +513,20 @@ void SimulationDialog::compileModel()
   mpProgressDialog->getCancelSimulationButton()->setEnabled(true);
   mpProgressDialog->setText(tr("Compiling <b>%1</b>.<br />Please wait for a while.").arg(mpLibraryTreeNode->getNameStructure()));
   QString numProcs;
-  if (mpNumberOfProcessorsSpinBox->value() == 0)
+  if (mpNumberOfProcessorsSpinBox->value() == 0) {
     numProcs = mpMainWindow->getOMCProxy()->numProcessors();
-  else
+  } else {
     numProcs = QString::number(mpNumberOfProcessorsSpinBox->value());
+  }
   QStringList args;
   QString fileName;
-  if (mpFileNameTextBox->text().isEmpty())
+  if (mpFileNameTextBox->text().isEmpty()) {
     fileName = mpLibraryTreeNode->getNameStructure();
-  else
+  } else {
     fileName = mpFileNameTextBox->text();
+  }
   int numProcsInt = numProcs.toInt();
-  if (numProcsInt > 1)
-  {
+  if (numProcsInt > 1) {
     args << "-j" + numProcs;
   }
   args << "-f" << fileName + ".makefile";
@@ -537,10 +538,10 @@ void SimulationDialog::compileModel()
   mpCompilationProcess->start("make", args);
   writeCompilationOutput(QString("%1 %2\n").arg("make").arg(args.join(" ")), Qt::blue);
 #endif
-  while (mpCompilationProcess->state() == QProcess::Starting || mpCompilationProcess->state() == QProcess::Running)
-  {
-    if (!mIsCompilationProcessRunning)
+  while (mpCompilationProcess->state() == QProcess::Starting || mpCompilationProcess->state() == QProcess::Running) {
+    if (!mIsCompilationProcessRunning) {
       break;
+    }
     QEventLoop eventLoop;
     QTimer timer;
     connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
@@ -767,8 +768,7 @@ void SimulationDialog::runSimulationExecutable(SimulationOptions simulationOptio
 {
   mSimulationOptions = simulationOptions;
   QFileInfo resultFileInfo(QString(simulationOptions.getWorkingDirectory()).append("/").append(simulationOptions.getOutputFileName()));
-  if (resultFileInfo.exists())
-  {
+  if (resultFileInfo.exists()) {
     mLastModifiedDateTime = resultFileInfo.lastModified();
   }
   QString fileName = QString(simulationOptions.getOutputFileName()).remove(QRegExp("(_res.mat|_res.plt|_res.csv)"));
@@ -777,14 +777,11 @@ void SimulationDialog::runSimulationExecutable(SimulationOptions simulationOptio
 #ifdef WIN32
   QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
   const char *OMDEV = getenv("OMDEV");
-  if (QString(OMDEV).isEmpty())
-  {
+  if (QString(OMDEV).isEmpty()) {
     QString OMHOME = QString(Helper::OpenModelicaHome).replace("/", "\\");
     QString MinGWBin = OMHOME + "\\MinGW\\bin";
     environment.insert("PATH", MinGWBin + ";" + environment.value("PATH"));
-  }
-  else
-  {
+  } else {
     QString qOMDEV = QString(OMDEV).replace("/", "\\");
     QString MinGWBin = qOMDEV + "\\tools\\mingw\\bin";
     environment.insert("PATH", MinGWBin + ";" + environment.value("PATH"));
@@ -793,18 +790,14 @@ void SimulationDialog::runSimulationExecutable(SimulationOptions simulationOptio
 #endif
   mpSimulationProcess->setWorkingDirectory(simulationOptions.getWorkingDirectory());
   SimulationOutputWidget *pSimulationOutputWidget;
-  if (simulationOptions.isReSimulate())
-  {
+  if (simulationOptions.isReSimulate()) {
     pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions.getClassName(), fileName,
                                                          simulationOptions.getShowGeneratedFiles(), mpMainWindow);
     mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
-  }
-  else
-  {
+  } else {
     pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
   }
-  if (pSimulationOutputWidget)
-  {
+  if (pSimulationOutputWidget) {
     connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(writeSimulationStandardOutput()));
     connect(mpSimulationProcess, SIGNAL(readyReadStandardError()), SLOT(writeSimulationStandardError()));
     connect(mpSimulationProcess, SIGNAL(readyRead()), SLOT(showSimulationOutputWidget()));
@@ -816,8 +809,9 @@ void SimulationDialog::runSimulationExecutable(SimulationOptions simulationOptio
   // set progress bar range
   mpProgressDialog->getProgressBar()->setRange(0, 100);       // the simulation runtime sends double value until 100.
   mpProgressDialog->getProgressBar()->setTextVisible(true);
-  if (simulationOptions.isReSimulate())
+  if (simulationOptions.isReSimulate()) {
     mpProgressDialog->show();
+  }
   // start the executable with the tcp server so it can listen to the simulation progress messages
   QTcpSocket *sock = 0;
   QTcpServer server;
@@ -838,8 +832,9 @@ void SimulationDialog::runSimulationExecutable(SimulationOptions simulationOptio
   writeSimulationOutput(QString("%1 %2\n").arg(fileName).arg(args.join(" ")), Qt::blue, true);
   while (mpSimulationProcess->state() == QProcess::Starting || mpSimulationProcess->state() == QProcess::Running)
   {
-    if (!mIsSimulationProcessRunning)
+    if (!mIsSimulationProcessRunning) {
       break;
+    }
     if (!sock && server.hasPendingConnections()) {
       sock = server.nextPendingConnection();
     } else if (!sock) {
@@ -866,7 +861,9 @@ void SimulationDialog::runSimulationExecutable(SimulationOptions simulationOptio
     }
     qApp->processEvents();
   }
-  if (sock) delete sock;
+  if (sock) {
+    delete sock;
+  }
   server.close();
 }
 
@@ -1110,9 +1107,7 @@ void SimulationDialog::compilationProcessFinished(int exitCode, QProcess::ExitSt
       mpMainWindow->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getFileNamePrefix() + "_info.xml");
     /* run the simulation */
     runSimulationExecutable(simulationOptions);
-  }
-  else if (!mIsCancelled)
-  {
+  } else if (!mIsCancelled) {
     QString exitCodeStr = tr("Compilation process exited with code %1").arg(QString::number(exitCode));
     if (mpCompilationProcess->error() == QProcess::UnknownError)
       writeCompilationOutput(exitCodeStr, Qt::red);
@@ -1169,39 +1164,36 @@ void SimulationDialog::simulationProcessFinished(int exitCode, QProcess::ExitSta
 {
   mIsSimulationProcessRunning = false;
   // If user has cancelled the simulation then don't show the plotting view.
-  if (mIsCancelled)
+  if (mIsCancelled) {
     return;
-  if (exitStatus == QProcess::CrashExit || exitCode != 0)
-  {
-    QString exitCodeStr = tr("Simulation process exited with code %1").arg(QString::number(exitCode));
-    if (mpSimulationProcess->error() == QProcess::UnknownError)
-      writeSimulationOutput(exitCodeStr, Qt::red, true);
-    else
-      writeSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, Qt::red, true);
   }
-  else
-  {
-    if (mSimulationOptions.isProfiling())
-    {
+  if (exitStatus == QProcess::CrashExit || exitCode != 0) {
+    QString exitCodeStr = tr("Simulation process exited with code %1").arg(QString::number(exitCode));
+    if (mpSimulationProcess->error() == QProcess::UnknownError) {
+      writeSimulationOutput(exitCodeStr, Qt::red, true);
+    } else {
+      writeSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, Qt::red, true);
+    }
+  } else {
+    if (mSimulationOptions.isProfiling()) {
       mpMainWindow->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getFileNamePrefix() + "_info.xml");
     }
   }
   /* if it is a re-simulation then we need to hide the progress dialog */
-  if (mSimulationOptions.isReSimulate())
+  if (mSimulationOptions.isReSimulate()) {
     mpProgressDialog->hide();
+  }
   QString workingDirectory = mSimulationOptions.getWorkingDirectory();
   // read the result file
   QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(mSimulationOptions.getOutputFileName()));
   QRegExp regExp("\\b(mat|plt|csv)\\b");
-  if (regExp.indexIn(mSimulationOptions.getOutputFileName()) != -1 && resultFileInfo.exists() && mLastModifiedDateTime < resultFileInfo.lastModified())
-  {
+  if (regExp.indexIn(mSimulationOptions.getOutputFileName()) != -1 && resultFileInfo.exists() && mLastModifiedDateTime < resultFileInfo.lastModified()) {
     VariablesWidget *pVariablesWidget = mpMainWindow->getVariablesWidget();
     OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
     QStringList list = pOMCProxy->readSimulationResultVars(mSimulationOptions.getOutputFileName());
     // close the simulation result file.
     pOMCProxy->closeSimulationResultFile();
-    if (list.size() > 0)
-    {
+    if (list.size() > 0) {
       mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
       pVariablesWidget->insertVariablesItemsToTree(mSimulationOptions.getOutputFileName(), workingDirectory, list, mSimulationOptions);
       mpMainWindow->getVariablesDockWidget()->show();
