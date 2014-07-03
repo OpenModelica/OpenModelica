@@ -1145,7 +1145,8 @@ sectionsOut := matchcontinue(sectionsIn,iMeta,targetCosts)
   end matchcontinue;
 end BLS_mergeSmallSections;
 
-protected function BLS_generateSchedule"generates a level schedule for the given levels. if a level contains only one section build a serial task
+protected function BLS_generateSchedule"generates a level schedule for the given levels. if a level contains only one section build a serial task.
+all simEqSys indexes are sorted according to their idx
 author: Waurich TUD 2014-07"
   input list<list<Integer>> level;
   input HpcOmTaskGraph.TaskGraphMeta iMeta;
@@ -1164,8 +1165,8 @@ algorithm
       equation
         // generate a serial section
         compLst = List.flatten(List.map1(section,Util.arrayGetIndexFirst,inComps));
-        compLst = List.sort(compLst,intGt);
         simEqSysIdcs = getSimEqSysIdcsForCompLst(compLst,iSccSimEqMapping);
+        simEqSysIdcs = List.sort(simEqSysIdcs,intGt);
         task = HpcOmSimCode.CALCTASK_LEVEL(simEqSysIdcs,section);
         taskLst = HpcOmSimCode.SERIALTASKLIST({task});
     then taskLst;
@@ -1176,6 +1177,7 @@ algorithm
         sectionComps = List.mapList1_1(sectionComps,List.sort,intGt);
         sectionSimEqSys = List.map1(sectionComps,getSimEqSysIdcsForNodeLst,iSccSimEqMapping);
         sectionSimEqSysIdcs = List.map(sectionSimEqSys,List.flatten);
+        sectionSimEqSysIdcs = List.map1(sectionSimEqSysIdcs,List.sort,intGt);
         taskLst = makeCalcLevelParTaskLst(sectionSimEqSysIdcs,level);
     then taskLst;
   end matchcontinue;
@@ -1204,20 +1206,25 @@ algorithm
       array<list<Integer>> levelNodeClusterArr;
       array<Real> levelNodeClusterCostsArr;
       list<Integer> section,restCritNodes,levelNodes,unassNodes               ,pos,necessaryPredecessors;
-      list<list<Integer>> level, levelNodeCluster, levelNodeChildren;
+      list<list<Integer>> level, levelNodeCluster, levelNodeChildren, followingLevel;
       list<list<list<Integer>>> sectionLst;
       list<Real> necPredCosts,levelNodeClusterCosts,                       levelNodeCosts;
     case(_,_,{},_,_,_,_,_,_,_)
       equation
+        print("done\n");
     then listReverse(sectionsIn);
     case(_,_,critPathNode::{},_,_,_,_,_,_,_)
       equation
         critPathCost = HpcOmTaskGraph.getExeCostReqCycles(critPathNode,iMeta);
         critNodeLevel = arrayGet(levelAssIn,critPathNode);
+        print("critPathNode (last): \n"+&intString(critPathNode)+&" of level: "+&intString(critNodeLevel)+&"\n");
 
         // the last level: build the section, collect unassigned nodes and level nodes and put everything in this section
-        levelNodes = List.flatten(List.map1(List.intRange2(levelIdx,critNodeLevel),List.getIndexFirst,levelIn));
-          print("levelNodes: \n"+&stringDelimitList(List.map(levelNodes,intString)," ; ")+&" of level: "+&intString(critNodeLevel)+&"\n");
+        //levelNodes = List.flatten(List.map1(List.intRange2(levelIdx,critNodeLevel),List.getIndexFirst,levelIn));
+        (_,followingLevel) =  List.split(levelIn,critNodeLevel-1);
+        levelNodes = List.flatten(followingLevel);
+          print("levelNodes: \n"+&stringDelimitList(List.map(levelNodes,intString)," ; ")+&"\n");
+
         unassNodes = listAppend(levelNodes,unassNodesIn);
         levelNodeCluster = BLS_mergeDependentLevelTask(unassNodes,iGraph,iGraphT,{});
           print("section: \n"+&stringDelimitList(List.map(levelNodeCluster,intListString),"  |  ")+&"\n");
