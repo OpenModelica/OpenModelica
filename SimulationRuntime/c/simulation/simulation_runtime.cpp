@@ -645,8 +645,12 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
   long i;
   long solverID = S_UNKNOWN;
   const char* outVars = (outputVariablesAtEnd.size() == 0) ? NULL : outputVariablesAtEnd.c_str();
+  threadData_t *threadData = simData->threadData;
 
   TRACE_PUSH
+
+  MMC_TRY_INTERNAL(mmc_jumper)
+  MMC_TRY_INTERNAL(globalJumpBuffer)
 
   if(initializeResultData(simData, result_file_cstr, cpuTime))
   {
@@ -690,6 +694,9 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
 #endif
       retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, solverID, outVars);
   }
+
+  MMC_CATCH_INTERNAL(mmc_jumper)
+  MMC_CATCH_INTERNAL(globalJumpBuffer)
 
   sim_result.free(&sim_result, simData);
 

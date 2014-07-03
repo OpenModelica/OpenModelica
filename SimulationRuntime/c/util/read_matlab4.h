@@ -34,16 +34,6 @@
 #include <stdio.h>
 #include <stdint.h>
 
-extern const char *omc_mat_Aclass;
-
-typedef struct {
-  uint32_t type;
-  uint32_t mrows;
-  uint32_t ncols;
-  uint32_t imagf;
-  uint32_t namelen;
-} MHeader_t;
-
 typedef struct {
   char *name,*descr;
   int isParam;

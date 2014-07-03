@@ -35,6 +35,16 @@
 #include <assert.h>
 #include "read_matlab4.h"
 
+extern const char *omc_mat_Aclass;
+
+typedef struct {
+  uint32_t type;
+  uint32_t mrows;
+  uint32_t ncols;
+  uint32_t imagf;
+  uint32_t namelen;
+} MHeader_t;
+
 /* Make Visual Studio not complain about deprecated items */
 #ifdef _MSC_VER
 #define strdup _strdup
@@ -364,7 +374,8 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     case 5: { /* "data_2" */
       if(binTrans==1) {
         reader->nrows = hdr.ncols;
-        if(reader->nrows < 2) return "Too few rows in data_2 matrix";
+        /* Allow empty matrix; it's not a complete file, but ok... */
+        /* if(reader->nrows < 2) return "Too few rows in data_2 matrix"; */
         reader->nvar = hdr.mrows;
         reader->var_offset = ftell(reader->file);
         reader->vars = (double**) calloc(reader->nvar*2,sizeof(double*));
@@ -373,7 +384,8 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       if(binTrans==0) {
         unsigned int k,j;
         reader->nrows = hdr.mrows;
-        if(reader->nrows < 2) return "Too few rows in data_2 matrix";
+        /* Allow empty matrix; it's not a complete file, but ok... */
+        /* if(reader->nrows < 2) return "Too few rows in data_2 matrix"; */
         reader->nvar = hdr.ncols;
         reader->var_offset = ftell(reader->file);
         reader->vars = (double**) calloc(reader->nvar*2,sizeof(double*));
