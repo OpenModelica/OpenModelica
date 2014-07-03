@@ -181,6 +181,30 @@ protected function solveSimple
   output list<DAE.Statement> outAsserts;
 algorithm
   (outExp,outAsserts) := matchcontinue (inExp1,inExp2,inExp3)
+    case (_,_,_)
+      equation
+        (outExp,outAsserts) = solveSimple2(inExp1,inExp2,inExp3);
+      then (outExp,outAsserts);
+    else /* swap arguments */
+      equation
+        (outExp,outAsserts) = solveSimple2(inExp2,inExp1,inExp3);
+      then (outExp,outAsserts);
+  end matchcontinue;
+end solveSimple;
+
+protected function solveSimple2
+"Solves simple equations like
+  a = f(..)
+  der(a) = f(..)
+  -a = f(..)
+  -der(a) = f(..)"
+  input DAE.Exp inExp1 "lhs";
+  input DAE.Exp inExp2 "rhs";
+  input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
+  output DAE.Exp outExp;
+  output list<DAE.Statement> outAsserts;
+algorithm
+  (outExp,outAsserts) := matchcontinue (inExp1,inExp2,inExp3)
     local
       DAE.ComponentRef cr,cr1;
       DAE.Type tp;
@@ -214,34 +238,20 @@ algorithm
       then
         (inExp2,{});
 
-    // special case when already solved, lhs = cr1, otherwise division by zero  when dividing with derivative
-    case (_,DAE.CREF(componentRef = cr1),DAE.CREF(componentRef = cr))
-      equation
-        true = ComponentReference.crefEqual(cr, cr1);
-        false = Expression.expHasCrefNoPreorDer(inExp1, cr);
-      then
-        (inExp1,{});
-    case (_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)}),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
-      equation
-        true = ComponentReference.crefEqual(cr, cr1);
-        false = Expression.expHasDerCref(inExp2, cr);
-      then
-        (inExp1,{});
-
+    // log10(f(a)) = g(b) => f(a) = 10^(g(b))
+    case (DAE.CALL(path = Absyn.IDENT(name = "log10"),expLst = {e1}),_,DAE.CREF(componentRef = cr))
+       equation
+         true = Expression.expHasCref(e1, cr);
+         false = Expression.expHasCref(inExp2, cr);
+         e2 = DAE.BINARY(DAE.RCONST(10.0),DAE.POW(DAE.T_REAL_DEFAULT),inExp2);
+         (res, asserts) = solve(e1,e2,inExp3);
+       then (res, asserts);
     // log(f(a)) = g(b) => f(a) = exp(g(b))
     case (DAE.CALL(path = Absyn.IDENT(name = "log"),expLst = {e1}),_,DAE.CREF(componentRef = cr))
        equation
          true = Expression.expHasCref(e1, cr);
          false = Expression.expHasCref(inExp2, cr);
          e2 = Expression.makePureBuiltinCall("exp",{inExp2},DAE.T_REAL_DEFAULT);
-         (res, asserts) = solve(e1,e2,inExp3);
-       then (res, asserts);
-    // g(b) = log(f(a)) => f(a) = exp(g(b))
-    case (_,DAE.CALL(path = Absyn.IDENT(name = "log"),expLst = {e1}),DAE.CREF(componentRef = cr))
-       equation
-         true = Expression.expHasCref(inExp2, cr);
-         false = Expression.expHasCref(inExp1, cr);
-         e2 = Expression.makePureBuiltinCall("exp",{inExp1},DAE.T_REAL_DEFAULT);
          (res, asserts) = solve(e1,e2,inExp3);
        then (res, asserts);
     // exp(f(a)) = g(b) => f(a) = log(g(b))
@@ -252,14 +262,6 @@ algorithm
          e2 = Expression.makePureBuiltinCall("log",{inExp2},DAE.T_REAL_DEFAULT);
          (res, asserts) = solve(e1,e2,inExp3);
        then (res, asserts);
-    // g(b) = exp(f(a)) => f(a) = log(g(b))
-    case (_,DAE.CALL(path = Absyn.IDENT(name = "exp"),expLst = {e1}),DAE.CREF(componentRef = cr))
-       equation
-         true = Expression.expHasCref(inExp2, cr);
-         false = Expression.expHasCref(inExp1, cr);
-         e2 = Expression.makePureBuiltinCall("log",{inExp1},DAE.T_REAL_DEFAULT);
-         (res, asserts) = solve(e1,e2,inExp3);
-       then (res, asserts);
     // sqrt(f(a)) = g(b) => f(a) = (g(b))^2
     case (DAE.CALL(path = Absyn.IDENT(name = "sqrt"),expLst = {e1}),_,DAE.CREF(componentRef = cr))
        equation
@@ -268,16 +270,6 @@ algorithm
          tp = DAE.T_REAL_DEFAULT;
          res = DAE.RCONST(2.0);
          e2 = DAE.BINARY(inExp2,DAE.POW(tp),res);
-         (res, asserts) = solve(e1,e2,inExp3);
-       then (res, asserts);
-    // g(b) = sqrt(f(a)) => f(a) = (g(b))^2
-    case (_,DAE.CALL(path = Absyn.IDENT(name = "sqrt"),expLst = {e1}),DAE.CREF(componentRef = cr))
-       equation
-         true = Expression.expHasCref(inExp2, cr);
-         false = Expression.expHasCref(inExp1, cr);
-         tp = DAE.T_REAL_DEFAULT;
-         res = DAE.RCONST(2.0);
-         e2 = DAE.BINARY(inExp1,DAE.POW(tp),res);
          (res, asserts) = solve(e1,e2,inExp3);
        then (res, asserts);
     // f(a)^n = c => f(a) = c^-n
@@ -293,20 +285,6 @@ algorithm
          (res, asserts) = solve(e1,e2,inExp3);
        then
          (res,asserts);
-    // f(a)^n = c => f(a) = c^-n
-    // where n is odd
-    case (_,DAE.BINARY(e1,DAE.POW(tp),DAE.RCONST(r)), DAE.CREF(componentRef = cr))
-       equation
-         1.0 = realMod(r,2.0);
-         false = Expression.expHasCref(inExp1, cr);
-         true = Expression.expHasCref(e1, cr);
-         r = realNeg(r);
-         res = DAE.RCONST(r);
-         e2 = DAE.BINARY(inExp1,DAE.POW(tp),res);
-         (res, asserts) = solve(e1,e2,inExp3);
-       then
-         (res,asserts);
-
     // -cr = exp
     case (DAE.UNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
       equation
@@ -337,36 +315,6 @@ algorithm
       then
         (Expression.negate(inExp2),{});
 
-    // exp = -cr
-    case (_,DAE.LUNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr))
-      equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasCrefNoPreorDer(inExp1,cr);
-      then
-        (Expression.negate(inExp1),{});
-    case (_,DAE.LUNARY(operator = DAE.UMINUS_ARR(ty=_), exp = DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr))
-      equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasCrefNoPreorDer(inExp1,cr);
-      then
-        (Expression.negate(inExp1),{});
-    case (_,DAE.UNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)})),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
-      equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasDerCref(inExp1,cr);
-      then
-        (Expression.negate(inExp1),{});
-    case (_,DAE.UNARY(operator = DAE.UMINUS_ARR(ty=_), exp = DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)})),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
-      equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasDerCref(inExp1,cr);
-      then
-        (Expression.negate(inExp1),{});
-
     // !cr = exp
     case (DAE.LUNARY(operator = DAE.NOT(ty=_), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
       equation
@@ -375,14 +323,6 @@ algorithm
         false = Expression.expHasCrefNoPreorDer(inExp2,cr);
       then
         (Expression.negate(inExp2),{});
-    // exp = !cr
-    case (_,DAE.LUNARY(operator = DAE.NOT(ty=_), exp = DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr))
-      equation
-        true = ComponentReference.crefEqual(cr1,cr);
-        // cr not in e2
-        false = Expression.expHasCrefNoPreorDer(inExp1,cr);
-      then
-        (Expression.negate(inExp1),{});
 
     // Integer(enumcr) = ...
     case (DAE.CALL(path = Absyn.IDENT(name = "Integer"),expLst={DAE.CREF(componentRef = cr1)}),_,DAE.CREF(componentRef = cr,ty=tp))
@@ -391,13 +331,34 @@ algorithm
         // cr not in e2
         false = Expression.expHasCrefNoPreorDer(inExp2,cr);
         asserts = generateAssertType(tp,cr,inExp3,{});
-      then
-        (DAE.CAST(tp,inExp2),asserts);
+      then (DAE.CAST(tp,inExp2),asserts);
   end matchcontinue;
-end solveSimple;
-
+end solveSimple2;
 
 protected function solve2
+"This function solves an equation e1 = e2 with
+  respect to the variable given as an expression e3"
+  input DAE.Exp inExp1 "lhs";
+  input DAE.Exp inExp2 "rhs";
+  input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
+  input Boolean linearExps;
+  output DAE.Exp outExp;
+  output list<DAE.Statement> outAsserts;
+algorithm
+  (outExp,outAsserts) := matchcontinue (inExp1,inExp2,inExp3,linearExps)
+    case (_,_,_,_)
+      equation
+        (outExp,outAsserts) = solve2_1(inExp1,inExp2,inExp3,linearExps);
+      then (outExp,outAsserts);
+    else /* swap arguments */
+      equation
+        (outExp,outAsserts) = solve2_1(inExp2,inExp1,inExp3,linearExps);
+      then (outExp,outAsserts);
+
+  end matchcontinue;
+end solve2;
+
+protected function solve2_1
 "This function solves an equation e1 = e2 with
   respect to the variable given as an expression e3"
   input DAE.Exp inExp1;
@@ -715,7 +676,7 @@ algorithm
         fail();
      */
   end matchcontinue;
-end solve2;
+end solve2_1;
 
 // protected function traversingVarOnlyinPow "
 // @author: Frenkel TUD 2011-04
