@@ -646,20 +646,26 @@ if varsLst then
 <%
   varsLst |> sv as SIMVAR(__) =>
     match initialValue
-      case SOME(v) then
-      let &preExp = buffer "" //dummy ... the value should be always a constant
-      match daeExp(v, contextOther, &preExp, simCode)
-      case vStr as "0"
-      case vStr as "0.0"
-      case vStr as "false"
-      case vStr as "(0)" then
-        '//<%arrName%>[<%sv.index%>] = <%vStr%>; //<%crefStr(sv.name, simCode)%> --> zero val'
-      //case "true" then //a hack for now
-      // '<%arrName%>[<%sv.index%>] = 1.0; //true //<%crefStr(sv.name, simCode)%>'
-      case vStr then
-       '<%arrName%>[(int)SimVarType.<%typName%>+(<%sv.index%><<4)] = <%vStr%>; //<%crefStr(sv.name, simCode)%>'
-      end match
-    else '//<%arrName%>[<%sv.index%>] = 0.0; //<%crefStr(sv.name, simCode)%> --> default val'
+    case SOME(v) then
+      match v
+      case ICONST(__) 
+      case RCONST(__)
+      case SCONST(__)
+      case BCONST(__)
+      case ENUM_LITERAL(__) then
+        let &preExp = buffer "" //dummy ... the value should be always a constant
+        match daeExp(v, contextOther, &preExp, simCode)
+        case vStr as "0"
+        case vStr as "0.0"
+        case vStr as "false"
+        case vStr as "(0)" then
+          '//<%arrName%>[<%sv.index%>] = <%vStr%>; //<%crefStr(sv.name, simCode)%> --> zero val'
+        //case "true" then //a hack for now
+        // '<%arrName%>[<%sv.index%>] = 1.0; //true //<%crefStr(sv.name, simCode)%>'
+        case vStr then
+          '<%arrName%>[(int)SimVarType.<%typName%>+(<%sv.index%><<4)] = <%vStr%>; //<%crefStr(sv.name, simCode)%>'
+        end match
+    else '//<%arrName%>[<%sv.index%>] = 0.0; //<%crefStr(sv.name, simCode)%> --> default val'   
   ;separator="\n"
 %>
 #endregion
