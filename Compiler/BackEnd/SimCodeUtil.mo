@@ -13278,7 +13278,7 @@ author:Waurich TUD 2014-06"
   output Integer idxOut;
 protected
   Integer idx;
-  Boolean isNotEmpty;
+  list<Integer> simEqSysIdcs;
   list<SimCode.SimEqSystem> allEquations,jacobianEquations,equationsForZeroCrossings,algorithmAndEquationAsserts,removedEquations,parameterEquations,maxValueEquations,minValueEquations,nominalValueEquations,startValueEquations,initialEquations;
   list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
 algorithm
@@ -13287,31 +13287,30 @@ algorithm
                     parameterEquations=parameterEquations, removedEquations=removedEquations, algorithmAndEquationAsserts=algorithmAndEquationAsserts,
                    equationsForZeroCrossings=equationsForZeroCrossings, jacobianEquations=jacobianEquations) := simCode;
   idx := 0;
-  isNotEmpty := List.isNotEmpty(jacobianEquations);
-  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(jacobianEquations,eqIndex),intMax,idx,idx);
-  isNotEmpty := List.isNotEmpty(equationsForZeroCrossings) or not isNotEmpty;
-  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(equationsForZeroCrossings,eqIndex),intMax,idx,idx);
-  isNotEmpty := List.isNotEmpty(algorithmAndEquationAsserts) or not isNotEmpty;
-  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(algorithmAndEquationAsserts,eqIndex),intMax,idx,idx);
-  isNotEmpty := List.isNotEmpty(removedEquations) or not isNotEmpty;
-  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(removedEquations,eqIndex),intMax,idx,idx);
-  isNotEmpty := List.isNotEmpty(parameterEquations) or not isNotEmpty;
-  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(parameterEquations,eqIndex),intMax,idx,idx);
-  isNotEmpty := List.isNotEmpty(maxValueEquations) or not isNotEmpty;
-  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(maxValueEquations,eqIndex),intMax,idx,idx);
-  isNotEmpty := List.isNotEmpty(minValueEquations) or not isNotEmpty;
-  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(minValueEquations,eqIndex),intMax,idx,idx);
-  isNotEmpty := List.isNotEmpty(nominalValueEquations) or not isNotEmpty;
-  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(nominalValueEquations,eqIndex),intMax,idx,idx);
-  isNotEmpty := List.isNotEmpty(nominalValueEquations) or not isNotEmpty;
-  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(nominalValueEquations,eqIndex),intMax,idx,idx);
-  isNotEmpty := List.isNotEmpty(startValueEquations) or not isNotEmpty;
-  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(startValueEquations,eqIndex),intMax,idx,idx);
-  isNotEmpty := List.isNotEmpty(initialEquations) or not isNotEmpty;
-  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(initialEquations,eqIndex),intMax,idx,idx);
-  isNotEmpty := List.isNotEmpty(allEquations) or not isNotEmpty;
-  idx := Debug.bcallret3(isNotEmpty,List.fold,List.map(allEquations,eqIndex),intMax,idx,idx);
-  idxOut := idx;
+  simEqSysIdcs := List.map(jacobianEquations,eqIndex);
+  idx := List.fold(simEqSysIdcs,intMax,idx);
+  simEqSysIdcs := List.map(equationsForZeroCrossings,eqIndex);
+  idx := List.fold(simEqSysIdcs,intMax,idx);
+  simEqSysIdcs := List.map(algorithmAndEquationAsserts,eqIndex);
+  idx := List.fold(simEqSysIdcs,intMax,idx);
+  simEqSysIdcs := List.map(removedEquations,eqIndex);
+  idx := List.fold(simEqSysIdcs,intMax,idx);
+  simEqSysIdcs := List.map(parameterEquations,eqIndex);
+  idx := List.fold(simEqSysIdcs,intMax,idx);
+  simEqSysIdcs := List.map(maxValueEquations,eqIndex);
+  idx := List.fold(simEqSysIdcs,intMax,idx);
+  simEqSysIdcs := List.map(minValueEquations,eqIndex);
+  idx := List.fold(simEqSysIdcs,intMax,idx);
+  simEqSysIdcs := List.map(nominalValueEquations,eqIndex);
+  idx := List.fold(simEqSysIdcs,intMax,idx);
+  simEqSysIdcs := List.map(nominalValueEquations,eqIndex);
+  idx := List.fold(simEqSysIdcs,intMax,idx);
+  simEqSysIdcs := List.map(startValueEquations,eqIndex);
+  idx := List.fold(simEqSysIdcs,intMax,idx);
+  simEqSysIdcs := List.map(initialEquations,eqIndex);
+  idx := List.fold(simEqSysIdcs,intMax,idx);
+  simEqSysIdcs := List.map(allEquations,eqIndex);
+  idxOut := List.fold(simEqSysIdcs,intMax,idx);
 end getMaxSimEqSystemIndex;
 
 public function getLSindex"outputs the index of the SES_LINEAR or -1"
