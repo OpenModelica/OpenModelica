@@ -1221,6 +1221,7 @@ algorithm
 
         // the last level: build the section, collect unassigned nodes and level nodes and put everything in this section
         //levelNodes = List.flatten(List.map1(List.intRange2(levelIdx,critNodeLevel),List.getIndexFirst,levelIn));
+        critNodeLevel = intMin(levelIdx,critNodeLevel);
         (_,followingLevel) =  List.split(levelIn,critNodeLevel-1);
         levelNodes = List.flatten(followingLevel);
           print("levelNodes: \n"+&stringDelimitList(List.map(levelNodes,intString)," ; ")+&"\n");
