@@ -648,7 +648,7 @@ if varsLst then
     match initialValue
     case SOME(v) then
       match v
-      case ICONST(__) 
+      case ICONST(__)
       case RCONST(__)
       case SCONST(__)
       case BCONST(__)
@@ -665,7 +665,7 @@ if varsLst then
         case vStr then
           '<%arrName%>[(int)SimVarType.<%typName%>+(<%sv.index%><<4)] = <%vStr%>; //<%crefStr(sv.name, simCode)%>'
         end match
-    else '//<%arrName%>[<%sv.index%>] = 0.0; //<%crefStr(sv.name, simCode)%> --> default val'   
+    else '//<%arrName%>[<%sv.index%>] = 0.0; //<%crefStr(sv.name, simCode)%> --> default val'
   ;separator="\n"
 %>
 #endregion
