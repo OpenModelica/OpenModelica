@@ -257,8 +257,8 @@ algorithm
       (schedule,simCode,taskGraphScheduled,taskGraphDataScheduled,sccSimEqMapping) = createSchedule(taskGraphSimplified,taskGraphDataSimplified,sccSimEqMapping,filenamePrefix,numProc,simCode);
       //(schedule,numProc) = repeatScheduleWithOtherNumProc(taskGraphSimplified,taskGraphDataSimplified,sccSimEqMapping,filenamePrefix,cpCostsWoC,schedule,numProc,numFixed);
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
-      //criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(schedule,numProc,taskGraphScheduled,taskGraphDataScheduled);
-      //schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraphScheduled));
+      criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(schedule,numProc,taskGraphScheduled,taskGraphDataScheduled);
+      schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraphScheduled));
       SimCodeUtil.execStat("hpcom create schedule");
 
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");
