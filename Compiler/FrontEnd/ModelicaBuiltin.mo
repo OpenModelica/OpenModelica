@@ -1875,7 +1875,7 @@ end codeToString;
 
 function dumpXMLDAE "Outputs the DAE system corresponding to a specific model."
   input TypeName className;
-  input String translationLevel := "flat";
+  input String translationLevel := "flat" "flat, optimiser, backEnd, or stateSpace";
   input Boolean addOriginalIncidenceMatrix := false;
   input Boolean addSolvingInfo := false;
   input Boolean addMathMLCode := false;
@@ -1885,7 +1885,9 @@ function dumpXMLDAE "Outputs the DAE system corresponding to a specific model."
   output Boolean success "if the function succeeded true/false";
   output String xmlfileName "the Xml file";
 external "builtin";
-annotation(preferredView="text");
+annotation(Documentation(info="<html>
+<p>Valid translationLevel strings are: <em>flat</em>, <em>optimiser</em> (runs the backend until sorting/matching), <em>backEnd</em>, or <em>stateSpace</em>.</p>
+</html>"),preferredView="text");
 end dumpXMLDAE;
 
 function convertUnits
