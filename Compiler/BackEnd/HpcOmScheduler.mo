@@ -3984,6 +3984,10 @@ algorithm
       equation
         List.map_0(taskDepTasks,printTaskDepSchedule);
       then ();
+    case(HpcOmSimCode.EMPTYSCHEDULE())
+      equation
+        print("EMPTYSCHEDULE\n");
+      then ();
     else fail();
   end match;
 end printSchedule;
