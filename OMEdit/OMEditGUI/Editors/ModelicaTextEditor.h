@@ -36,8 +36,8 @@
  *
  */
 
-#ifndef MODELICATEXTWIDGET_H
-#define MODELICATEXTWIDGET_H
+#ifndef MODELICATEXTEDITOR_H
+#define MODELICATEXTEDITOR_H
 
 #include <QToolButton>
 #include <QSyntaxHighlighter>
@@ -136,4 +136,4 @@ public slots:
   void settingsChanged();
 };
 
-#endif // MODELICATEXTWIDGET_H
+#endif // MODELICATEXTEDITOR_H
