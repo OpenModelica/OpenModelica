@@ -2,8 +2,8 @@
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o LinkÃ¶pings universitet, Department of Computer and Information Science,
- * SE-58183 LinkÃ¶ping, Sweden.
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
