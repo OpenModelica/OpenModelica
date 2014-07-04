@@ -55,7 +55,6 @@ TransformationsEditor::TransformationsEditor(TransformationsWidget *pTransformat
 }
 
 //! Slot activated when TSourceEditor's QTextDocument contentsChanged SIGNAL is raised.
-//! Sets the model as modified so that user knows that his current model is not saved.
 void TransformationsEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
 {
   Q_UNUSED(position);

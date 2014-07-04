@@ -38,7 +38,7 @@
 #include "FindReplaceDialog.h"
 #include "Helper.h"
 
-FindReplaceDialog::FindReplaceDialog (QWidget *pParent)
+FindReplaceDialog::FindReplaceDialog(QWidget *pParent)
   : QDialog(pParent, Qt::WindowTitleHint)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Find/Replace")));

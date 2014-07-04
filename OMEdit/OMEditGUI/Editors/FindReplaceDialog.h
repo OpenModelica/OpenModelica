@@ -47,7 +47,7 @@ class FindReplaceDialog : public QDialog
   Q_OBJECT
 public:
   FindReplaceDialog(QWidget *pParent);
-  enum { MaxFindTexts = 20};
+  enum {MaxFindTexts = 20};
   void show();
   void setTextEdit(BaseEditor *pBaseEditor);
   void readFindTextFromSettings();

@@ -163,7 +163,7 @@ void BaseEditor::highlightCurrentLine()
 }
 
 //! @class GotoLineWidget
-//! @brief An interface to goto a specific line in ModelicaEditor.
+//! @brief An interface to goto a specific line in BaseEditor.
 
 //! Constructor
 GotoLineDialog::GotoLineDialog(BaseEditor *pBaseEditor, QWidget *pParent)
