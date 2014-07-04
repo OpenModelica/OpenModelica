@@ -41,6 +41,7 @@
 
 #include "MainWindow.h"
 #include "OMDumpXML.h"
+#include "TransformationsEditor.h"
 
 class MainWindow;
 class TransformationsWidget;
@@ -152,7 +153,7 @@ private:
 };
 
 class InfoBar;
-class TSourceEditor;
+class TransformationsEditor;
 class TransformationsWidget : public QWidget
 {
   Q_OBJECT
@@ -204,7 +205,7 @@ private:
   QTreeWidget *mpEquationOperationsTreeWidget;
   Label *mpTSourceEditorFileLabel;
   InfoBar *mpTSourceEditorInfoBar;
-  TSourceEditor *mpTSourceEditor;
+  TransformationsEditor *mpTransformationsEditor;
   QSplitter *mpVariablesNestedHorizontalSplitter;
   QSplitter *mpVariablesNestedVerticalSplitter;
   QSplitter *mpVariablesHorizontalSplitter;

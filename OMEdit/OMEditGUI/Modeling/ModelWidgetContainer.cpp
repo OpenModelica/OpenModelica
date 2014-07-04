@@ -1903,11 +1903,11 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   mpDiagramGraphicsView->hide();
   // create a modelica text editor for modelica text
   mpCursorPositionLabel = new Label;
-  mpModelicaTextWidget = new ModelicaTextWidget(this);
+  mpModelicaTextEditor = new ModelicaTextEditor(this);
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
   mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(),
-                                                          pMainWindow, mpModelicaTextWidget->getModelicaTextEdit()->document());
-  mpModelicaTextWidget->hide(); // set it hidden so that Find/Replace action can get correct value.
+                                                          pMainWindow, mpModelicaTextEditor->document());
+  mpModelicaTextEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
   connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
   // set Project Status Bar lables
   mpReadOnlyLabel = mpLibraryTreeNode->isReadOnly() ? new Label(Helper::readOnly) : new Label(tr("Writeable"));
@@ -2013,63 +2013,13 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   pMainLayout->addWidget(mpModelStatusBar);
   pMainLayout->addWidget(mpDiagramGraphicsView, 1);
   pMainLayout->addWidget(mpIconGraphicsView, 1);
-  pMainLayout->addWidget(mpModelicaTextWidget, 1);
+  pMainLayout->addWidget(mpModelicaTextEditor, 1);
   setLayout(pMainLayout);
-}
-
-LibraryTreeNode* ModelWidget::getLibraryTreeNode()
-{
-  return mpLibraryTreeNode;
-}
-
-ModelWidgetContainer* ModelWidget::getModelWidgetContainer()
-{
-  return mpModelWidgetContainer;
-}
-
-GraphicsView* ModelWidget::getDiagramGraphicsView()
-{
-  return mpDiagramGraphicsView;
-}
-
-GraphicsView* ModelWidget::getIconGraphicsView()
-{
-  return mpIconGraphicsView;
-}
-
-ModelicaTextWidget* ModelWidget::getModelicaTextWidget()
-{
-  return mpModelicaTextWidget;
-}
-
-QToolButton* ModelWidget::getIconViewToolButton()
-{
-  return mpIconViewToolButton;
-}
-
-QToolButton* ModelWidget::getDiagramViewToolButton()
-{
-  return mpDiagramViewToolButton;
-}
-
-QToolButton* ModelWidget::getModelicaTextViewToolButton()
-{
-  return mpModelicaTextViewToolButton;
-}
-
-QToolButton* ModelWidget::getDocumentationViewToolButton()
-{
-  return mpDocumentationViewToolButton;
 }
 
 void ModelWidget::setModelFilePathLabel(QString path)
 {
   mpModelFilePathLabel->setText(path);
-}
-
-Label* ModelWidget::getCursorPositionLabel()
-{
-  return mpCursorPositionLabel;
 }
 
 void ModelWidget::setModelModified()
@@ -2116,10 +2066,10 @@ void ModelWidget::updateParentModelsText(QString className)
     {
       // clean up the OMC cache for this particular model classname.
       mpModelWidgetContainer->getMainWindow()->getOMCProxy()->removeCachedOMCCommand(className);
-      if (pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->isVisible())
+      if (pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->isVisible())
       {
         mpModelWidgetContainer->getMainWindow()->getOMCProxy()->enableCanUseEventLoop(false);
-        pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->setPlainText(mpModelWidgetContainer->getMainWindow()->getOMCProxy()->list(className));
+        pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->setPlainText(mpModelWidgetContainer->getMainWindow()->getOMCProxy()->list(className));
         mpModelWidgetContainer->getMainWindow()->getOMCProxy()->enableCanUseEventLoop(true);
       }
     }
@@ -2523,7 +2473,7 @@ void ModelWidget::showIconView(bool checked)
   // validate the modelica text before switching to icon view
   if (checked)
   {
-    if (!mpModelicaTextWidget->getModelicaTextEdit()->validateModelicaText())
+    if (!mpModelicaTextEditor->validateModelicaText())
     {
       mpModelicaTextViewToolButton->setChecked(true);
       return;
@@ -2537,7 +2487,7 @@ void ModelWidget::showIconView(bool checked)
     return;
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Icon));
   mpDiagramGraphicsView->hide();
-  mpModelicaTextWidget->hide();
+  mpModelicaTextEditor->hide();
   mpModelWidgetContainer->getMainWindow()->getFindReplaceAction()->setEnabled(false);
   mpModelWidgetContainer->getMainWindow()->getGotoLineNumberAction()->setEnabled(false);
   mpIconGraphicsView->show();
@@ -2549,7 +2499,7 @@ void ModelWidget::showDiagramView(bool checked)
   // validate the modelica text before switching to diagram view
   if (checked)
   {
-    if (!mpModelicaTextWidget->getModelicaTextEdit()->validateModelicaText())
+    if (!mpModelicaTextEditor->validateModelicaText())
     {
       mpModelicaTextViewToolButton->setChecked(true);
       return;
@@ -2563,7 +2513,7 @@ void ModelWidget::showDiagramView(bool checked)
     return;
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Diagram));
   mpIconGraphicsView->hide();
-  mpModelicaTextWidget->hide();
+  mpModelicaTextEditor->hide();
   mpModelWidgetContainer->getMainWindow()->getFindReplaceAction()->setEnabled(false);
   mpModelWidgetContainer->getMainWindow()->getGotoLineNumberAction()->setEnabled(false);
   mpDiagramGraphicsView->show();
@@ -2575,27 +2525,27 @@ void ModelWidget::showModelicaTextView(bool checked)
   QMdiSubWindow *pSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow();
   if (pSubWindow)
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeltext.png"));
-  if (!checked or (checked and mpModelicaTextWidget->isVisible()))
+  if (!checked or (checked and mpModelicaTextEditor->isVisible()))
     return;
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ModelicaText));
   // get the modelica text of the model
-  mpModelicaTextWidget->blockSignals(true);
-  mpModelicaTextWidget->getModelicaTextEdit()->setPlainText(mpModelWidgetContainer->getMainWindow()->getOMCProxy()->list(getLibraryTreeNode()->getNameStructure()));
-  mpModelicaTextWidget->blockSignals(false);
-  mpModelicaTextWidget->getModelicaTextEdit()->setLastValidText(mpModelicaTextWidget->getModelicaTextEdit()->toPlainText());
+  mpModelicaTextEditor->blockSignals(true);
+  mpModelicaTextEditor->setPlainText(mpModelWidgetContainer->getMainWindow()->getOMCProxy()->list(getLibraryTreeNode()->getNameStructure()));
+  mpModelicaTextEditor->blockSignals(false);
+  mpModelicaTextEditor->setLastValidText(mpModelicaTextEditor->toPlainText());
   mpIconGraphicsView->hide();
   mpDiagramGraphicsView->hide();
-  mpModelicaTextWidget->show();
+  mpModelicaTextEditor->show();
   mpModelWidgetContainer->getMainWindow()->getFindReplaceAction()->setEnabled(true);
   mpModelWidgetContainer->getMainWindow()->getGotoLineNumberAction()->setEnabled(true);
-  mpModelicaTextWidget->getModelicaTextEdit()->setFocus();
+  mpModelicaTextEditor->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::ModelicaText);
 }
 
 void ModelWidget::showDocumentationView()
 {
   // validate the modelica text before switching to documentation view
-  if (!mpModelicaTextWidget->getModelicaTextEdit()->validateModelicaText())
+  if (!mpModelicaTextEditor->validateModelicaText())
   {
     mpModelicaTextViewToolButton->setChecked(true);
     return;
@@ -2607,7 +2557,7 @@ void ModelWidget::showDocumentationView()
 bool ModelWidget::modelicaEditorTextChanged()
 {
   QString errorString;
-  QStringList classNames = mpModelicaTextWidget->getModelicaTextEdit()->getClassNames(&errorString);
+  QStringList classNames = mpModelicaTextEditor->getClassNames(&errorString);
   LibraryTreeWidget *pLibraryTreeWidget = mpModelWidgetContainer->getMainWindow()->getLibraryTreeWidget();
   OMCProxy *pOMCProxy = mpModelWidgetContainer->getMainWindow()->getOMCProxy();
   if (classNames.size() == 0)
@@ -2621,7 +2571,7 @@ bool ModelWidget::modelicaEditorTextChanged()
     return false;
   }
   /* if no errors are found with the Modelica Text then load it in OMC */
-  QString modelicaText = mpModelicaTextWidget->getModelicaTextEdit()->toPlainText();
+  QString modelicaText = mpModelicaTextEditor->toPlainText();
   if (mpLibraryTreeNode->getParentName().isEmpty())
   {
     if (!pOMCProxy->loadString(StringHandler::escapeString(modelicaText)))
@@ -2679,9 +2629,9 @@ bool ModelWidget::modelicaEditorTextChanged()
         {
           pCurrentParentLibraryTreeNode->getModelWidget()->setModelModified();
           /* update the text of the class */
-          ModelicaTextWidget *pModelicaTextWidget = pCurrentParentLibraryTreeNode->getModelWidget()->getModelicaTextWidget();
-          if (pModelicaTextWidget->isVisible())
-            pModelicaTextWidget->getModelicaTextEdit()->setPlainText(pOMCProxy->list(pCurrentParentLibraryTreeNode->getNameStructure()));
+          ModelicaTextEditor *pModelicaTextEditor = pCurrentParentLibraryTreeNode->getModelWidget()->getModelicaTextEditor();
+          if (pModelicaTextEditor->isVisible())
+            pModelicaTextEditor->setPlainText(pOMCProxy->list(pCurrentParentLibraryTreeNode->getNameStructure()));
         }
       }
       else
@@ -2695,9 +2645,9 @@ bool ModelWidget::modelicaEditorTextChanged()
       {
         pNewParentLibraryTreeNode->getModelWidget()->setModelModified();
         /* update the text of the class */
-        ModelicaTextWidget *pModelicaTextWidget = pNewParentLibraryTreeNode->getModelWidget()->getModelicaTextWidget();
-        if (pModelicaTextWidget->isVisible())
-          pModelicaTextWidget->getModelicaTextEdit()->setPlainText(pOMCProxy->list(pNewParentLibraryTreeNode->getNameStructure()));
+        ModelicaTextEditor *pModelicaTextEditor = pNewParentLibraryTreeNode->getModelWidget()->getModelicaTextEditor();
+        if (pModelicaTextEditor->isVisible())
+          pModelicaTextEditor->setPlainText(pOMCProxy->list(pNewParentLibraryTreeNode->getNameStructure()));
       }
     }
     /* set the LibraryTreeNode name & text */
@@ -3063,7 +3013,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   /* enable/disable the find/replace and goto line actions depending on the text editor visibility. */
   if (pModelWidget)
   {
-    if (pModelWidget->getModelicaTextWidget()->isVisible())
+    if (pModelWidget->getModelicaTextEditor()->isVisible())
       enabled = true;
     else
       enabled = false;
@@ -3087,10 +3037,10 @@ void ModelWidgetContainer::saveModelWidget()
     return;
   }
   /* if Modelica text is changed manually by user then validate it before saving. */
-  if (!pModelWidget->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+  if (!pModelWidget->getModelicaTextEditor()->validateModelicaText())
     return;
-  if (pModelWidget->getModelicaTextWidget()->isVisible())
-    pModelWidget->getModelicaTextWidget()->getModelicaTextEdit()->setPlainText(mpMainWindow->getOMCProxy()->list(pModelWidget->getLibraryTreeNode()->getNameStructure()));
+  if (pModelWidget->getModelicaTextEditor()->isVisible())
+    pModelWidget->getModelicaTextEditor()->setPlainText(mpMainWindow->getOMCProxy()->list(pModelWidget->getLibraryTreeNode()->getNameStructure()));
   mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(pModelWidget->getLibraryTreeNode());
 }
 
@@ -3105,7 +3055,7 @@ void ModelWidgetContainer::saveAsModelWidget()
     return;
   }
   /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
-  if (!pModelWidget->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+  if (!pModelWidget->getModelicaTextEditor()->validateModelicaText())
     return;
   SaveAsClassDialog *pSaveAsClassDialog = new SaveAsClassDialog(pModelWidget, mpMainWindow);
   pSaveAsClassDialog->exec();
@@ -3123,10 +3073,10 @@ void ModelWidgetContainer::saveTotalModelWidget()
     return;
   }
   /* if Modelica text is changed manually by user then validate it before saving. */
-  if (!pModelWidget->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+  if (!pModelWidget->getModelicaTextEditor()->validateModelicaText())
     return;
-  if (pModelWidget->getModelicaTextWidget()->isVisible())
-    pModelWidget->getModelicaTextWidget()->getModelicaTextEdit()->setPlainText(mpMainWindow->getOMCProxy()->list(pModelWidget->getLibraryTreeNode()->getNameStructure()));
+  if (pModelWidget->getModelicaTextEditor()->isVisible())
+    pModelWidget->getModelicaTextEditor()->setPlainText(mpMainWindow->getOMCProxy()->list(pModelWidget->getLibraryTreeNode()->getNameStructure()));
   /* save total model */
   LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
   mpMainWindow->getStatusBar()->showMessage(QString(tr("Saving")).append(" ").append(pLibraryTreeNode->getNameStructure()));
@@ -3140,7 +3090,7 @@ void ModelWidgetContainer::saveTotalModelWidget()
   /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
   if (pLibraryTreeNode->getModelWidget())
   {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
       return;
   }
   // save the model through OMC
@@ -3156,9 +3106,9 @@ void ModelWidgetContainer::printModel()
   {
     QPrinter printer(QPrinter::ScreenResolution);
 
-    if (pModelWidget->getModelicaTextWidget()->isVisible())
+    if (pModelWidget->getModelicaTextEditor()->isVisible())
     {
-      ModelicaTextEdit  *pModelicaTextEdit = pModelWidget->getModelicaTextWidget()->getModelicaTextEdit();
+      ModelicaTextEditor  *pModelicaTextEdit = pModelWidget->getModelicaTextEditor();
       QPrintDialog *pPrintDialog = new QPrintDialog(&printer, this);
       pPrintDialog->setWindowTitle(tr("Print Document"));
       if (pModelicaTextEdit->textCursor().hasSelection())

@@ -622,10 +622,10 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   mpTSourceEditorFileLabel->hide();
   mpTSourceEditorInfoBar = new InfoBar(mpMainWindow);
   mpTSourceEditorInfoBar->hide();
-  mpTSourceEditor = new TSourceEditor(this);
+  mpTransformationsEditor = new TransformationsEditor(this);
   ModelicaTextHighlighter *pModelicaTextHighlighter;
   pModelicaTextHighlighter = new ModelicaTextHighlighter(mpMainWindow->getOptionsDialog()->getModelicaTextSettings(), mpMainWindow,
-                                                         mpTSourceEditor->document());
+                                                         mpTransformationsEditor->document());
   connect(mpMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
   QVBoxLayout *pTSourceEditorVerticalLayout = new QVBoxLayout;
   pTSourceEditorVerticalLayout->setSpacing(1);
@@ -633,7 +633,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   pTSourceEditorVerticalLayout->addWidget(pTSourceEditorBrowserLabel);
   pTSourceEditorVerticalLayout->addWidget(mpTSourceEditorFileLabel);
   pTSourceEditorVerticalLayout->addWidget(mpTSourceEditorInfoBar);
-  pTSourceEditorVerticalLayout->addWidget(mpTSourceEditor);
+  pTSourceEditorVerticalLayout->addWidget(mpTransformationsEditor);
   QFrame *pTSourceEditorFrame = new QFrame;
   pTSourceEditorFrame->setLayout(pTSourceEditorVerticalLayout);
   /* variables nested horizontal splitter */
@@ -954,10 +954,10 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
     mpTSourceEditorFileLabel->setText(file.fileName());
     mpTSourceEditorFileLabel->show();
     file.open(QIODevice::ReadOnly);
-    mpTSourceEditor->setPlainText(QString(file.readAll()));
+    mpTransformationsEditor->setPlainText(QString(file.readAll()));
     mpTSourceEditorInfoBar->hide();
     file.close();
-    mpTSourceEditor->goToLineNumber(equation->info.lineStart);
+    mpTransformationsEditor->goToLineNumber(equation->info.lineStart);
   }
 
 }
@@ -1065,7 +1065,7 @@ void TransformationsWidget::reloadTransformations()
   /* clear TSourceEditor */
   mpTSourceEditorFileLabel->setText("");
   mpTSourceEditorFileLabel->hide();
-  mpTSourceEditor->clear();
+  mpTransformationsEditor->clear();
   mpTSourceEditorInfoBar->hide();
   /* Clear the equations tree. */
   clearTreeWidgetItems(mpEquationsTreeWidget);
@@ -1115,10 +1115,10 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
     mpTSourceEditorFileLabel->setText(file.fileName());
     mpTSourceEditorFileLabel->show();
     file.open(QIODevice::ReadOnly);
-    mpTSourceEditor->setPlainText(QString(file.readAll()));
+    mpTransformationsEditor->setPlainText(QString(file.readAll()));
     mpTSourceEditorInfoBar->hide();
     file.close();
-    mpTSourceEditor->goToLineNumber(variable.info.lineStart);
+    mpTransformationsEditor->goToLineNumber(variable.info.lineStart);
   }
 }
 

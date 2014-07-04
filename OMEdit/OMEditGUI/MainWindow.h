@@ -58,8 +58,9 @@
 #include "DocumentationWidget.h"
 //#include "SimulationBrowserWidget.h"
 #include "SimulationDialog.h"
-#include "GUI/Containers/PlotWindowContainer.h"
+#include "Plotting/PlotWindowContainer.h"
 #include "ModelWidgetContainer.h"
+#include "FindReplaceDialog.h"
 #include "ImportFMUDialog.h"
 #include "NotificationsDialog.h"
 

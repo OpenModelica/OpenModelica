@@ -46,10 +46,10 @@
 #include "MainWindow.h"
 #include "Helper.h"
 #include "Utilities.h"
+#include "BaseEditor.h"
 
 class ModelWidget;
 class LineNumberArea;
-class ModelicaTextWidget;
 
 class CommentDefinition
 {
@@ -73,35 +73,17 @@ private:
   QString m_multiLineEnd;
 };
 
-class BaseEditor : public QPlainTextEdit
+class ModelicaTextEditor : public BaseEditor
 {
   Q_OBJECT
 public:
-  BaseEditor(QWidget *pParent);
-  int lineNumberAreaWidth();
-  void lineNumberAreaPaintEvent(QPaintEvent *event);
-  void goToLineNumber(int lineNumber);
-private:
-  LineNumberArea *mpLineNumberArea;
-protected:
-  virtual void resizeEvent(QResizeEvent *pEvent);
-public slots:
-  void updateLineNumberAreaWidth(int newBlockCount);
-  void updateLineNumberArea(const QRect &rect, int dy);
-  void highlightCurrentLine();
-};
-
-class ModelicaTextEdit : public BaseEditor
-{
-  Q_OBJECT
-public:
-  ModelicaTextEdit(ModelicaTextWidget *pParent);
+  ModelicaTextEditor(ModelWidget *pParent);
   void createActions();
   void setLastValidText(QString validText);
   QStringList getClassNames(QString *errorString);
   bool validateModelicaText();
 private:
-  ModelicaTextWidget *mpModelicaTextWidget;
+  ModelWidget *mpModelWidget;
   QString mLastValidText;
   bool mTextChanged;
   QAction *mpToggleCommentSelectionAction;
@@ -117,19 +99,6 @@ public slots:
   void contentsHasChanged(int position, int charsRemoved, int charsAdded);
   void setLineWrapping();
   void toggleCommentSelection();
-};
-
-class TransformationsWidget;
-class TSourceEditor : public BaseEditor
-{
-  Q_OBJECT
-public:
-  TSourceEditor(TransformationsWidget *pTransformationsWidget);
-private:
-  TransformationsWidget *mpTransformationsWidget;
-public slots:
-  void contentsHasChanged(int position, int charsRemoved, int charsAdded);
-  void setLineWrapping();
 };
 
 class ModelicaTextSettings;
@@ -167,92 +136,4 @@ public slots:
   void settingsChanged();
 };
 
-class LineNumberArea : public QWidget
-{
-public:
-  LineNumberArea(BaseEditor *pEditor)
-    : QWidget(pEditor)
-  {
-    mpEditor = pEditor;
-  }
-  QSize sizeHint() const
-  {
-    return QSize(mpEditor->lineNumberAreaWidth(), 0);
-  }
-protected:
-  virtual void paintEvent(QPaintEvent *event)
-  {
-    mpEditor->lineNumberAreaPaintEvent(event);
-  }
-private:
-  BaseEditor *mpEditor;
-};
-
-class GotoLineDialog : public QDialog
-{
-  Q_OBJECT
-public:
-  GotoLineDialog(ModelicaTextEdit *pModelicaEditor, MainWindow *pMainWindow);
-  void show();
-
-  ModelicaTextEdit *mpModelicaEditor;
-private:
-  Label *mpLineNumberLabel;
-  QLineEdit *mpLineNumberTextBox;
-  QPushButton *mpOkButton;
-private slots:
-  void goToLineNumber();
-};
-
-class ModelicaTextWidget : public QWidget
-{
-  Q_OBJECT
-public:
-  ModelicaTextWidget(ModelWidget *pParent);
-  ModelWidget* getModelWidget();
-  ModelicaTextEdit* getModelicaTextEdit();
-private:
-  ModelWidget *mpModelWidget;
-  ModelicaTextEdit *mpModelicaTextEdit;
-};
-
-class FindReplaceDialog : public QDialog
-{
-  Q_OBJECT
-public:
-  FindReplaceDialog(QWidget *pParent);
-  enum { MaxFindTexts = 20};
-  void show();
-  void setTextEdit(ModelicaTextEdit *pModelicaTextEdit);
-  void readFindTextFromSettings();
-  void saveFindTextToSettings(QString textToFind);
-private:
-  ModelicaTextEdit *mpModelicaTextEdit;
-  Label *mpFindLabel;
-  QComboBox *mpFindComboBox;
-  Label *mpReplaceWithLabel;
-  QLineEdit *mpReplaceWithTextBox;
-  QGroupBox *mpDirectionGroupBox;
-  QRadioButton *mpForwardRadioButton;
-  QRadioButton *mpBackwardRadioButton;
-  QGroupBox *mpOptionsBox;
-  QCheckBox *mpCaseSensitiveCheckBox;
-  QCheckBox *mpWholeWordCheckBox;
-  QCheckBox *mpRegularExpressionCheckBox;
-  QPushButton *mpFindButton;
-  QPushButton *mpReplaceButton;
-  QPushButton *mpReplaceAllButton;
-  QPushButton *mpCloseButton;
-  QSettings *mSettings;
-public slots:
-  void find();
-  void findText(bool next);
-  void replace();
-  void replaceAll();
-  void updateButtons();
-protected slots:
-  void validateRegularExpression(const QString &text);
-  void regularExpressionSelected(bool selected);
-  void textToFindChanged();
-};
 #endif // MODELICATEXTWIDGET_H

@@ -51,7 +51,7 @@
 #include "StringHandler.h"
 #include "Helper.h"
 #include "Utilities.h"
-#include "ModelicaTextWidget.h"
+#include "ModelicaTextEditor.h"
 
 class ModelWidget;
 class ComponentInfo;
@@ -279,7 +279,7 @@ private slots:
 
 class LibraryTreeNode;
 class ModelWidgetContainer;
-class ModelicaTextWidget;
+class ModelicaTextEditor;
 class ModelicaTextHighlighter;
 class Label;
 class ModelWidget : public QWidget
@@ -287,17 +287,17 @@ class ModelWidget : public QWidget
   Q_OBJECT
 public:
   ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer *pParent);
-  LibraryTreeNode* getLibraryTreeNode();
-  ModelWidgetContainer* getModelWidgetContainer();
-  GraphicsView* getDiagramGraphicsView();
-  GraphicsView* getIconGraphicsView();
-  ModelicaTextWidget* getModelicaTextWidget();
-  QToolButton* getIconViewToolButton();
-  QToolButton* getDiagramViewToolButton();
-  QToolButton* getModelicaTextViewToolButton();
-  QToolButton* getDocumentationViewToolButton();
+  LibraryTreeNode* getLibraryTreeNode() {return mpLibraryTreeNode;}
+  ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
+  GraphicsView* getDiagramGraphicsView() {return mpDiagramGraphicsView;}
+  GraphicsView* getIconGraphicsView() {return mpIconGraphicsView;}
+  ModelicaTextEditor* getModelicaTextEditor() {return mpModelicaTextEditor;}
+  QToolButton* getIconViewToolButton() {return mpIconViewToolButton;}
+  QToolButton* getDiagramViewToolButton() {return mpDiagramViewToolButton;}
+  QToolButton* getModelicaTextViewToolButton() {return mpModelicaTextViewToolButton;}
+  QToolButton* getDocumentationViewToolButton() {return mpDocumentationViewToolButton;}
   void setModelFilePathLabel(QString path);
-  Label* getCursorPositionLabel();
+  Label* getCursorPositionLabel() {return mpCursorPositionLabel;}
   void setModelModified();
   void updateParentModelsText(QString className);
   void getModelComponents(QString className, bool inheritedCycle = false);
@@ -313,7 +313,7 @@ private:
   GraphicsScene *mpDiagramGraphicsScene;
   GraphicsView *mpIconGraphicsView;
   GraphicsScene *mpIconGraphicsScene;
-  ModelicaTextWidget *mpModelicaTextWidget;
+  ModelicaTextEditor *mpModelicaTextEditor;
   ModelicaTextHighlighter *mpModelicaTextHighlighter;
   QStatusBar *mpModelStatusBar;
   QButtonGroup *mpViewsButtonGroup;

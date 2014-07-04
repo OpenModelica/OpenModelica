@@ -56,19 +56,22 @@ evil_hack_to_fool_lupdate {
 }
 
 SOURCES += main.cpp\
-    backtrace.c \
+    Util/backtrace.c \
     Util/Helper.cpp \
-    GUI/MainWindow.cpp \
+    MainWindow.cpp \
     omc_communication.cc \
     OMC/OMCProxy.cpp \
     Util/StringHandler.cpp \
-    GUI/Widgets/MessagesWidget.cpp \
-    GUI/Widgets/LibraryTreeWidget.cpp \
-    GUI/Containers/ModelWidgetContainer.cpp \
-    GUI/Dialogs/ModelicaClassDialog.cpp \
-    GUI/Dialogs/OptionsDialog.cpp \
-    GUI/Widgets/ModelicaTextWidget.cpp \
-    GUI/Containers/PlotWindowContainer.cpp \
+    Modeling/MessagesWidget.cpp \
+    Modeling/LibraryTreeWidget.cpp \
+    Modeling/ModelWidgetContainer.cpp \
+    Modeling/ModelicaClassDialog.cpp \
+    Options/OptionsDialog.cpp \
+    Editors/BaseEditor.cpp \
+    Editors/FindReplaceDialog.cpp \
+    Editors/ModelicaTextEditor.cpp \
+    Editors/TransformationsEditor.cpp \
+    Plotting/PlotWindowContainer.cpp \
     Component/Component.cpp \
     Annotations/ShapeAnnotation.cpp \
     Component/CornerItem.cpp \
@@ -78,33 +81,36 @@ SOURCES += main.cpp\
     Annotations/EllipseAnnotation.cpp \
     Annotations/TextAnnotation.cpp \
     Annotations/BitmapAnnotation.cpp \
-    GUI/Dialogs/ComponentProperties.cpp \
+    Component/ComponentProperties.cpp \
     Component/Transformation.cpp \
-    GUI/Widgets/DocumentationWidget.cpp \
-    GUI/Dialogs/SimulationDialog.cpp \
-    GUI/Dialogs/ImportFMUDialog.cpp \
-    GUI/Widgets/VariablesWidget.cpp \
-    GUI/Dialogs/NotificationsDialog.cpp \
-    GUI/Dialogs/ShapePropertiesDialog.cpp \
+    Modeling/DocumentationWidget.cpp \
+    Simulation/SimulationDialog.cpp \
+    FMI/ImportFMUDialog.cpp \
+    Plotting/VariablesWidget.cpp \
+    Options/NotificationsDialog.cpp \
+    Annotations/ShapePropertiesDialog.cpp \
     Util/OMDumpXML.cpp \
     Util/Utilities.cpp \
     Util/diff_match_patch.cpp \
-    GUI/Widgets/TransformationsWidget.cpp
-#    GUI/Widgets/SimulationBrowserWidget.cpp
+    TransformationalDebugger/TransformationsWidget.cpp
+#    Simulation/SimulationBrowserWidget.cpp
 
-HEADERS  += backtrace.h \
+HEADERS  += Util/backtrace.h \
     Util/Helper.h \
-    GUI/MainWindow.h \
+    MainWindow.h \
     omc_communication.h \
     OMC/OMCProxy.h \
     Util/StringHandler.h \
-    GUI/Widgets/MessagesWidget.h \
-    GUI/Widgets/LibraryTreeWidget.h \
-    GUI/Containers/ModelWidgetContainer.h \
-    GUI/Dialogs/ModelicaClassDialog.h \
-    GUI/Dialogs/OptionsDialog.h \
-    GUI/Widgets/ModelicaTextWidget.h \
-    GUI/Containers/PlotWindowContainer.h \
+    Modeling/MessagesWidget.h \
+    Modeling/LibraryTreeWidget.h \
+    Modeling/ModelWidgetContainer.h \
+    Modeling/ModelicaClassDialog.h \
+    Options/OptionsDialog.h \
+    Editors/BaseEditor.h \
+    Editors/FindReplaceDialog.h \
+    Editors/ModelicaTextEditor.h \
+    Editors/TransformationsEditor.h \
+    Plotting/PlotWindowContainer.h \
     Component/Component.h \
     Annotations/ShapeAnnotation.h \
     Component/CornerItem.h \
@@ -114,19 +120,19 @@ HEADERS  += backtrace.h \
     Annotations/EllipseAnnotation.h \
     Annotations/TextAnnotation.h \
     Annotations/BitmapAnnotation.h \
-    GUI/Dialogs/ComponentProperties.h \
+    Component/ComponentProperties.h \
     Component/Transformation.h \
-    GUI/Widgets/DocumentationWidget.h \
-    GUI/Dialogs/SimulationDialog.h \
-    GUI/Dialogs/ImportFMUDialog.h \
-    GUI/Widgets/VariablesWidget.h \
-    GUI/Dialogs/NotificationsDialog.h \
-    GUI/Dialogs/ShapePropertiesDialog.h \
+    Modeling/DocumentationWidget.h \
+    Simulation/SimulationDialog.h \
+    FMI/ImportFMUDialog.h \
+    Plotting/VariablesWidget.h \
+    Options/NotificationsDialog.h \
+    Annotations/ShapePropertiesDialog.h \
     Util/OMDumpXML.cpp \
     Util/Utilities.h \
     Util/diff_match_patch.h \
-    GUI/Widgets/TransformationsWidget.h
-#    GUI/Widgets/SimulationBrowserWidget.h
+    TransformationalDebugger/TransformationsWidget.h
+#    Simulation/SimulationBrowserWidget.h
 
 # Windows libraries and includes
 win32 {
@@ -172,11 +178,14 @@ INCLUDEPATH += ../../3rdParty/qjson-0.8.1/build/include
 INCLUDEPATH += . \
                 Annotations \
                 Component \
-                GUI \
-                GUI/Containers \
-                GUI/Widgets \
-                GUI/Dialogs \
+                Editors \
+                FMI \
+                Modeling \
                 OMC \
+                Options \
+                Plotting \
+                Simulation \
+                TransformationalDebugger \
                 Util
 
 OTHER_FILES += Resources/css/stylesheet.qss

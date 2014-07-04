@@ -689,7 +689,7 @@ void MainWindow::simulate(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget())
   {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
       return;
   }
   mpSimulationDialog->directSimulate(pLibraryTreeNode, false);
@@ -700,7 +700,7 @@ void MainWindow::simulationSetup(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget())
   {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
       return;
   }
   mpSimulationDialog->show(pLibraryTreeNode, false);
@@ -711,7 +711,7 @@ void MainWindow::instantiatesModel(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget())
   {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
       return;
   }
   // set the status message.
@@ -744,7 +744,7 @@ void MainWindow::checkModel(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget())
   {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
       return;
   }
   // set the status message.
@@ -777,7 +777,7 @@ void MainWindow::checkAllModels(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget())
   {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
       return;
   }
   // set the status message.
@@ -810,7 +810,7 @@ void MainWindow::exportModelFMU(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget())
   {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
       return;
   }
   // set the status message.
@@ -836,7 +836,7 @@ void MainWindow::exportModelXML(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget())
   {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
       return;
   }
   // set the status message.
@@ -862,7 +862,7 @@ void MainWindow::exportModelFigaro(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget())
   {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
       return;
   }
   // set the status message.
@@ -892,7 +892,7 @@ void MainWindow::exportModelToOMNotebook(LibraryTreeNode *pLibraryTreeNode)
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget())
   {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
       return;
   }
   QString omnotebookFileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::exportToOMNotebook),
@@ -1160,7 +1160,7 @@ void MainWindow::showFindReplaceDialog()
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget)
   {
-    mpFindReplaceDialog->setTextEdit(pModelWidget->getModelicaTextWidget()->getModelicaTextEdit());
+    mpFindReplaceDialog->setTextEdit(pModelWidget->getModelicaTextEditor());
     mpFindReplaceDialog->show();
     mpFindReplaceDialog->raise();
     mpFindReplaceDialog->activateWindow();
@@ -1172,7 +1172,7 @@ void MainWindow::showGotoLineNumberDialog()
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget)
   {
-    GotoLineDialog *pGotoLineWidget = new GotoLineDialog(pModelWidget->getModelicaTextWidget()->getModelicaTextEdit(), this);
+    GotoLineDialog *pGotoLineWidget = new GotoLineDialog(pModelWidget->getModelicaTextEditor(), this);
     pGotoLineWidget->show();
   }
 }
