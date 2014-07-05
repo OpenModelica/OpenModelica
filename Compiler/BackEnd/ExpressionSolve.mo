@@ -378,7 +378,7 @@ algorithm
       then
         (rhs,{});
 
-     // a*(1/b)*c*...*n = rhs 
+     // a*(1/b)*c*...*n = rhs
     case(_,_,DAE.CREF(componentRef = cr),_)
       equation
         ({_},factors) = List.split1OnTrue(Expression.factors(inExp1),isInverseCref,cr);
@@ -462,7 +462,7 @@ algorithm
         false = Expression.expHasCref(e1, cr);
         true = Expression.expHasCref(e2, cr);
         false = Expression.expHasCref(inExp2, cr);
-        e3 =  Expression.makeDiff(inExp2,e2);  
+        e3 =  Expression.makeDiff(inExp2,e2);
         (e3,_) = ExpressionSimplify.simplify(e3);
         (res,asserts) = solve(e1,e3,inExp3);
       then(res, asserts);
@@ -489,9 +489,9 @@ algorithm
       then
         (rhs,asserts);
     //  f(a) if(g(b)) then f1(a) else f2(a) =>
-    //  lhs = solve(f(a),f1(a)) for a 
-    //  rhs = solve(f(a),f2(a)) for a 
-    //  => a = if g(b) then a1 else a2    
+    //  lhs = solve(f(a),f1(a)) for a
+    //  rhs = solve(f(a),f2(a)) for a
+    //  => a = if g(b) then a1 else a2
     case (DAE.IFEXP(e1,e2,e3),_,DAE.CREF(componentRef = cr),_)
       equation
         false = Expression.expHasCref(e1, cr);
@@ -763,10 +763,10 @@ protected function isCrefInIFEXP " Returns true if expression is DAE.IFEXP(f(cr)
   algorithm
   res := match(e,incr)
   local DAE.Exp e1;
-    
+
     case(DAE.IFEXP(e1,_,_),_)
       then Expression.expHasCref(e1, incr);
-    else 
+    else
       then false;
   end match;
 end isCrefInIFEXP;
