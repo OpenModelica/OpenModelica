@@ -284,7 +284,7 @@ static inline void calculatedScalingHelper(OptDataBounds * bounds, OptDataTime *
   const int np = dim->np;
 
   int i, j, k, l;
-
+  assert(nsi > 0);
   bounds->scaldt = (long double**)malloc(nsi*sizeof(long double*));
   for(i = 0; i < nsi; ++i)
     bounds->scaldt[i] = (long double*) malloc(nx*sizeof(long double));
@@ -516,9 +516,6 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
   const int nv = optData->dim.nv;
   const int nsi = optData->dim.nsi;
   const int np = optData->dim.np;
-  const modelica_boolean la = optData->s.lagrange;
-  const modelica_boolean ma = optData->s.mayer;
-  const int index_la = optData->s.derIndex[0];
 
   const modelica_real * vnom = optData->bounds.vnom;
 
@@ -599,9 +596,6 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
   const int Cmax = data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1;
   const int dnx = optData->dim.nx;
   const int dnxnc = optData->dim.nJ;
-  const int index_ma = optData->s.derIndex[0];
-  const modelica_boolean la = optData->s.lagrange;
-  const modelica_boolean ma = optData->s.mayer;
   const modelica_real * const resultVars = data->simulationInfo.analyticJacobians[index].resultVars;
   const unsigned int * const sPindex = data->simulationInfo.analyticJacobians[index].sparsePattern.index;
   long double  scalb = optData->bounds.scalb[m][n];

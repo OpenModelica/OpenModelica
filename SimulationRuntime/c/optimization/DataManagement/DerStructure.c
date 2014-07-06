@@ -50,7 +50,6 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   const int np = dim->np;
   const int nJ = dim->nJ;
   const int nJ2 = dim->nJ2;
-  const int nx = dim->nx;
   int i, j, k;
   char * cflags;
 
@@ -174,15 +173,11 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
  *  author: Vitalij Ruge
  */
 static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStructure *s, const modelica_real * const vnom){
-  const int nJ = dim->nJ;
   int sizeCols;
   int maxColors;
-  int i, ii, j, l, index, tmp_index, jj, k, tmpnJ;
+  int i,ii, j, l, index, tmp_index, tmpnJ;
   unsigned int* lindex, *cC, *pindex;
 
-
-  short index_d_la;
-  const short index_d_ma = s->derIndex[0];
   s->lindex = (unsigned int**)malloc(5*sizeof(unsigned int*));
   s->seedVec = (modelica_real ***)malloc(5*sizeof(modelica_real**));
 
@@ -196,7 +191,6 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
   s->indexCon3 = (int *)malloc(dim->nc* sizeof(int));
 
   for(index = 2; index < 4; ++index){
-    index_d_la = s->derIndex[index - 1];
 
     if(s->matrix[index]){
       tmp_index = index-2;
@@ -212,8 +206,6 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
       lindex = s->lindex[index];
       s->seedVec[index] = (modelica_real **)malloc((maxColors)*sizeof(modelica_real*));
       free(data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex);
-      jj = 0;
-      k = 0;
       /**********************/
       if(sizeCols > 0){
         for(ii = 1; ii < maxColors; ++ii){
@@ -317,7 +309,6 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
  */
 static inline void print_local_jac_struct(DATA * data, OptDataDim * dim, OptDataStructure *s){
 
-  modelica_boolean **J;
   const int nv = dim->nv;
   const int nJ = dim->nJ;
 
@@ -345,7 +336,6 @@ static inline void print_local_jac_struct(DATA * data, OptDataDim * dim, OptData
     printf("\nmayer");
     printf("\n-------------------------------------------------------");
     printf("\n");
-    J = s->J[1];
     for(j = 0; j < nv; ++j)
       printf("%s ", (s->gradM[j])? "*":"0");
   }
@@ -424,7 +414,6 @@ static inline void local_hessian_struct(DATA * data, OptDataDim * dim, OptDataSt
 
   /***********************************/
   if(s->mayer){
-    J = s->J[1];
     for(i = 0; i< nv; ++i){
       for(j = 0; j <nv; ++j){
         if(s->gradM[i]*s->gradM[j])
