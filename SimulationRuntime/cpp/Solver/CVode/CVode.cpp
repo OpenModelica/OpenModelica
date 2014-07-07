@@ -160,7 +160,7 @@ void Cvode::initialize()
     if(_idid < 0)
       throw std::invalid_argument("CVoder::initialize()");
 
-    _idid = CVodeSetStabLimDet(_cvodeMem, FALSE);       // Stability Detection
+    _idid = CVodeSetStabLimDet(_cvodeMem, TRUE);       // Stability Detection
     if(_idid < 0)
       throw std::invalid_argument("CVoder::initialize()");
 

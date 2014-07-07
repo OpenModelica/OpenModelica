@@ -69,7 +69,8 @@ private:
   *_jac,
   *_yHelp,                    ///< Temp        - Auxillary variables
   *_fHelp,                    ///< Temp        - Auxillary variables
-  *_zeroVec;
+  *_zeroVec,
+  *_currentIterate;
 
   double  _fnormtol,
       _scsteptol;
@@ -77,9 +78,10 @@ private:
 
   N_Vector
     _Kin_y,      ///< Temp     - Initial values in the Sundials Format
-  _Kin_y0,
+	_Kin_y0,
     _Kin_yScale,
     _Kin_fScale;
+
   void
     *_kinMem,         ///< Temp     - Memory for the solver
     *_data;           ///< Temp     - User data. Contains pointer to Kinsol
