@@ -771,7 +771,7 @@ protected function isCrefInIFEXP " Returns true if expression is DAE.IFEXP(f(cr)
       then Expression.expHasCref(e1, incr);
     case(DAE.CAST(exp =e1),_)
       then isCrefInIFEXP(e1,incr);
-    else 
+    else
       then false;
   end match;
 end isCrefInIFEXP;
