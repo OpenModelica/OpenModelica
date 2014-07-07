@@ -262,9 +262,9 @@ algorithm
          false = Expression.expHasCref(inExp2, cr);
          true = Expression.expHasCref(e1, cr);
          false = Expression.expHasCref(e2, cr);
-         e2 = Expression.expDiv(DAE.RCONST(1.0),e2);
-         e2 = Expression.expPow(inExp2,e2);
-         (res, asserts) = solve(e1,e2,inExp3);
+         res = Expression.expDiv(DAE.RCONST(1.0),e2);
+         res = Expression.expPow(inExp2,res);
+         (res, asserts) = solve(e1,res,inExp3);
        then
          (res,asserts);
     // b^(f(a)) = c => f(a) = log(|c|)/log(|b|)
