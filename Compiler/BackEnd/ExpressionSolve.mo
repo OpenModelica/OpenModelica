@@ -190,7 +190,7 @@ algorithm
     local
       DAE.ComponentRef cr,cr1;
       DAE.Type tp;
-      DAE.Exp e1,e2,e3,res;
+      DAE.Exp e1,e2,res;
       Real r;
       list<DAE.Statement> asserts;
 
@@ -261,24 +261,9 @@ algorithm
          1.0 = realMod(r,2.0);
          false = Expression.expHasCref(inExp2, cr);
          true = Expression.expHasCref(e1, cr);
-         false = Expression.expHasCref(e2, cr);
          res = Expression.expDiv(DAE.RCONST(1.0),e2);
          res = Expression.expPow(inExp2,res);
          (res, asserts) = solve(e1,res,inExp3);
-       then
-         (res,asserts);
-    // b^(f(a)) = c => f(a) = log(|c|)/log(|b|)
-    case (DAE.BINARY(e1,DAE.POW(tp),e2), _, DAE.CREF(componentRef = cr))
-       equation
-         false = Expression.expHasCref(inExp2, cr);
-         true = Expression.expHasCref(e1, cr);
-         true = Expression.expHasCref(e2, cr);
-         e1 = Expression.makePureBuiltinCall("abs",{e1},tp);
-         e1 = Expression.makePureBuiltinCall("log",{e1},tp);
-         e3 = Expression.makePureBuiltinCall("abs",{inExp2},tp);
-         e3 = Expression.makePureBuiltinCall("log",{e3},tp);
-         e3 = Expression.expDiv(e3,e1);
-         (res, asserts) = solve(e2,e3,inExp3);
        then
          (res,asserts);
 
