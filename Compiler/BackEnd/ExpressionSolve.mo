@@ -281,7 +281,7 @@ algorithm
          (res, asserts) = solve(e2,e3,inExp3);
        then
          (res,asserts);
-    
+
     // -cr = exp
     case (DAE.UNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
       equation
