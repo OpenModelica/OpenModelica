@@ -1532,11 +1532,13 @@ algorithm
   levelOut := matchcontinue(iGraph,levelIn)
     local
       Boolean notFinished;
+      Integer numNodes;
+      array<Integer> nodeAssign;
       list<Integer> prevLevel, nextLevel;
       list<list<Integer>> nodeSuccs,level;
     case(_,prevLevel::_)
       equation
-        // one assign successors to next level
+        // assign successors to next level
         nodeSuccs = List.map1(prevLevel,Util.arrayGetIndexFirst,iGraph);
         nextLevel = List.flatten(nodeSuccs);
         true  = List.isNotEmpty(nextLevel);
@@ -1548,8 +1550,10 @@ algorithm
         nodeSuccs = List.map1(prevLevel,Util.arrayGetIndexFirst,iGraph);
         nextLevel = List.flatten(nodeSuccs);
         true  = List.isEmpty(nextLevel);
-        level = List.map(levelIn,List.unique);
-        (level,_) = List.mapFold(level,getGraphLevel_removeDoubles,{});
+        //level = List.map(levelIn,List.unique);  too memory intensive
+        numNodes = arrayLength(iGraph);
+        nodeAssign = arrayCreate(numNodes,-1);
+        (level,_) = List.mapFold(levelIn,getGraphLevel_removeDoubles,nodeAssign);
         level = List.filterOnTrue(level,List.isNotEmpty);
         level = listReverse(level);
     then level;
@@ -1563,16 +1567,27 @@ end getGraphLevel;
 protected function getGraphLevel_removeDoubles"removes the entries in the levels that are various times in different levels. Only the tasks in the latest levels remain.
 author:Waurich TUD 2014-06"
   input list<Integer> levelIn;
-  input list<Integer> assignedIn;
+  input array<Integer> assignedIn;
   output list<Integer> levelOut;
-  output list<Integer> assignedOut;
+  output array<Integer> assignedOut;
 protected
-  list<Integer> doubles,uniques;
+  list<Integer> uniques;
 algorithm
-  (doubles,uniques,_) := List.intersection1OnTrue(levelIn,assignedIn,intEq);
-  assignedOut := listAppend(uniques,assignedIn);
+  uniques := List.filter1OnTrue(levelIn,arrayIntIsNegative,assignedIn);
+  uniques := List.unique(uniques);
+  List.map2_0(uniques,Util.arrayUpdateIndexFirst,2,assignedIn);  // assign something >=0 to the arrayvalue
   levelOut := uniques;
+  assignedOut := assignedIn;
 end getGraphLevel_removeDoubles;
+
+protected function arrayIntIsNegative"outputs true if the indexed value in the array is lower than 0
+author:Waurich TUD 2014-07"
+  input Integer node;
+  input array<Integer> ass;
+  output Boolean isAss;
+algorithm
+  isAss := intLt(arrayGet(ass,node),0);
+end arrayIntIsNegative;
 
 protected function printLevelSchedule "function printLevelSchedule
   author: marcusw
