@@ -363,8 +363,9 @@ algorithm
      // cr = (e1-e2)/(der(e1-e2,cr))
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
-        false = isCrefInIFEXP(inExp1,cr) or isCrefInIFEXP(inExp2,cr);
         false = hasOnlyFactors(inExp1,inExp2);
+        ({},_) = List.split1OnTrue(Expression.factors(inExp1),isCrefInIFEXP,cr); // check: differentiateExpSolve is allowed
+        ({},_) = List.split1OnTrue(Expression.factors(inExp2),isCrefInIFEXP,cr); // check: differentiateExpSolve is allowed
         e = Expression.makeDiff(inExp1,inExp2);
         dere = Differentiate.differentiateExpSolve(e, cr);
         (dere,_) = ExpressionSimplify.simplify(dere);
@@ -756,7 +757,7 @@ algorithm
   end matchcontinue;
 end hasOnlyFactors;
 
-protected function isCrefInIFEXP " Returns true if expression is DAE.IFEXP(f(cr)) for cr = incr"
+protected function isCrefInIFEXP " Returns true if expression is DAE.IFEXP(f(cr)) or sign(f(cr)) for cr = incr"
   input DAE.Exp e;
   input DAE.ComponentRef incr;
   output Boolean res;
@@ -766,7 +767,11 @@ protected function isCrefInIFEXP " Returns true if expression is DAE.IFEXP(f(cr)
 
     case(DAE.IFEXP(e1,_,_),_)
       then Expression.expHasCref(e1, incr);
-    else
+    case(DAE.CALL(path = Absyn.IDENT(name = "sign"),expLst = {e1}),_)
+      then Expression.expHasCref(e1, incr);
+    case(DAE.CAST(exp =e1),_)
+      then isCrefInIFEXP(e1,incr);
+    else 
       then false;
   end match;
 end isCrefInIFEXP;
