@@ -190,7 +190,7 @@ algorithm
     local
       DAE.ComponentRef cr,cr1;
       DAE.Type tp;
-      DAE.Exp e1,e2,res;
+      DAE.Exp e1,e2,e3,res;
       Real r;
       list<DAE.Statement> asserts;
 
@@ -254,19 +254,34 @@ algorithm
          e2 = DAE.BINARY(inExp2,DAE.POW(tp),res);
          (res, asserts) = solve(e1,e2,inExp3);
        then (res, asserts);
-    // f(a)^n = c => f(a) = c^-n
+    // f(a)^n = c => f(a) = c^(1/n)
     // where n is odd
-    case (DAE.BINARY(e1,DAE.POW(tp),DAE.RCONST(r)), _, DAE.CREF(componentRef = cr))
+    case (DAE.BINARY(e1,DAE.POW(tp),e2 as DAE.RCONST(r)), _, DAE.CREF(componentRef = cr))
        equation
          1.0 = realMod(r,2.0);
          false = Expression.expHasCref(inExp2, cr);
          true = Expression.expHasCref(e1, cr);
-         r = realNeg(r);
-         res = DAE.RCONST(r);
-         e2 = Expression.expPow(inExp2,res);
+         false = Expression.expHasCref(e2, cr);
+         e2 = Expression.expDiv(DAE.RCONST(1.0),e2);
+         e2 = Expression.expPow(inExp2,e2);
          (res, asserts) = solve(e1,e2,inExp3);
        then
          (res,asserts);
+    // b^(f(a)) = c => f(a) = log(|c|)/log(|b|)
+    case (DAE.BINARY(e1,DAE.POW(tp),e2), _, DAE.CREF(componentRef = cr))
+       equation
+         false = Expression.expHasCref(inExp2, cr);
+         true = Expression.expHasCref(e1, cr);
+         true = Expression.expHasCref(e2, cr);
+         e1 = Expression.makePureBuiltinCall("abs",{e1},tp);
+         e1 = Expression.makePureBuiltinCall("log",{e1},tp);
+         e3 = Expression.makePureBuiltinCall("abs",{inExp2},tp);
+         e3 = Expression.makePureBuiltinCall("log",{e3},tp);
+         e3 = Expression.expDiv(e3,e1);
+         (res, asserts) = solve(e2,e3,inExp3);
+       then
+         (res,asserts);
+    
     // -cr = exp
     case (DAE.UNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
       equation
