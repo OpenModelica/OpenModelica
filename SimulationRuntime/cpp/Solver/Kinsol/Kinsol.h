@@ -78,7 +78,7 @@ private:
 
   N_Vector
     _Kin_y,      ///< Temp     - Initial values in the Sundials Format
-	_Kin_y0,
+  _Kin_y0,
     _Kin_yScale,
     _Kin_fScale;
 
