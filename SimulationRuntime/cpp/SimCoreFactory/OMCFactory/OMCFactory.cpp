@@ -134,7 +134,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
         modelica_path.make_preferred();
 
 
-     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-20,0.01,tollerance,resultsfilename,outputFomat};
+     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tollerance,resultsfilename,outputFomat};
 
      _library_path = libraries_path;
     _modelicasystem_path = modelica_path;
