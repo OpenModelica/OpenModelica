@@ -92,6 +92,7 @@ algorithm
       Integer numSimpEqs, numVars, numSimpVars, sysIdx;
       list<Integer> eqMapping, varMapping, nonLoopVarIdcs, nonLoopEqIdcs, loopEqIdcs, loopVarIdcs, eqCrossLst, varCrossLst;
       list<list<Integer>> partitions, loops;
+      list<tuple<Boolean,String>> varAtts,eqAtts;
       BackendDAE.Variables vars,simpVars;
       BackendDAE.EquationArray eqs,simpEqs;
       BackendDAE.EqSystem eqSys;
@@ -114,7 +115,10 @@ algorithm
         m = arrayCreate(numSimpEqs, {});
         mT = arrayCreate(numVars, {});
         (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE());
-        HpcOmEqSystems.dumpEquationSystemGraphML1(vars,eqs,m,{},{},"whole System_"+&intString(sysIdx));
+        
+        varAtts = List.threadMap(List.fill(false,listLength(varLst)),List.fill("",listLength(varLst)),Util.makeTuple);
+        eqAtts = List.threadMap(List.fill(false,listLength(eqLst)),List.fill("",listLength(eqLst)),Util.makeTuple);
+        HpcOmEqSystems.dumpEquationSystemGraphML1(vars,eqs,m,varAtts,eqAtts,"whole System_"+&intString(sysIdx));
           //BackendDump.dumpEquationArray(eqs,"the complete DAE");
 
         // get the linear equations and their vars
@@ -132,7 +136,10 @@ algorithm
         m = arrayCreate(numSimpEqs, {});
         mT = arrayCreate(numVars, {});
         (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE());
-        HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m,{},{},"rL_simpEqs_"+&intString(sysIdx));
+        
+        varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
+        eqAtts = List.threadMap(List.fill(false,numSimpEqs),List.fill("",numSimpEqs),Util.makeTuple);
+        HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m,varAtts,eqAtts,"rL_simpEqs_"+&intString(sysIdx));
 
         //partition graph
         partitions = arrayList(partitionBipartiteGraph(m,mT));
@@ -143,7 +150,10 @@ algorithm
         m_cut = arrayCopy(m);
         mT_cut = arrayCopy(mT);
         (_,_,nonLoopEqIdcs,_) = resolveLoops_cutNodes(m_cut,mT_cut,eqMapping,varMapping,varLst,eqLst);
-        HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_cut,{},{},"rL_loops_"+&intString(sysIdx));
+        
+        varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
+        eqAtts = List.threadMap(List.fill(false,numSimpEqs),List.fill("",numSimpEqs),Util.makeTuple);
+        HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_cut,varAtts,eqAtts,"rL_loops_"+&intString(sysIdx));
 
         // handle the partitions separately, resolve the loops in the partitions, insert the resolved equation
         eqLst = resolveLoops_resolvePartitions(partitions,m_cut,mT_cut,m,mT,eqMapping,varMapping,eqLst,varLst,nonLoopEqIdcs);
@@ -158,7 +168,10 @@ algorithm
         m_after = arrayCreate(numSimpEqs, {});
         _ = arrayCreate(numVars, {});
         (m_after,_) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE());
-        HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_after,{},{},"rL_after_"+&intString(sysIdx));
+        
+        varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
+        eqAtts = List.threadMap(List.fill(false,numSimpEqs),List.fill("",numSimpEqs),Util.makeTuple);
+        HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_after,varAtts,eqAtts,"rL_after_"+&intString(sysIdx));
 
         eqSys = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
       then
