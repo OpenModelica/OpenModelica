@@ -115,7 +115,7 @@ algorithm
         m = arrayCreate(numSimpEqs, {});
         mT = arrayCreate(numVars, {});
         (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE());
-        
+
         varAtts = List.threadMap(List.fill(false,listLength(varLst)),List.fill("",listLength(varLst)),Util.makeTuple);
         eqAtts = List.threadMap(List.fill(false,listLength(eqLst)),List.fill("",listLength(eqLst)),Util.makeTuple);
         HpcOmEqSystems.dumpEquationSystemGraphML1(vars,eqs,m,varAtts,eqAtts,"whole System_"+&intString(sysIdx));
@@ -136,7 +136,7 @@ algorithm
         m = arrayCreate(numSimpEqs, {});
         mT = arrayCreate(numVars, {});
         (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE());
-        
+
         varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
         eqAtts = List.threadMap(List.fill(false,numSimpEqs),List.fill("",numSimpEqs),Util.makeTuple);
         HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m,varAtts,eqAtts,"rL_simpEqs_"+&intString(sysIdx));
@@ -150,7 +150,7 @@ algorithm
         m_cut = arrayCopy(m);
         mT_cut = arrayCopy(mT);
         (_,_,nonLoopEqIdcs,_) = resolveLoops_cutNodes(m_cut,mT_cut,eqMapping,varMapping,varLst,eqLst);
-        
+
         varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
         eqAtts = List.threadMap(List.fill(false,numSimpEqs),List.fill("",numSimpEqs),Util.makeTuple);
         HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_cut,varAtts,eqAtts,"rL_loops_"+&intString(sysIdx));
@@ -168,7 +168,7 @@ algorithm
         m_after = arrayCreate(numSimpEqs, {});
         _ = arrayCreate(numVars, {});
         (m_after,_) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE());
-        
+
         varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
         eqAtts = List.threadMap(List.fill(false,numSimpEqs),List.fill("",numSimpEqs),Util.makeTuple);
         HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_after,varAtts,eqAtts,"rL_after_"+&intString(sysIdx));
