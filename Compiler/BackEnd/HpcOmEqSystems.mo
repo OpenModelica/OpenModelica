@@ -2162,7 +2162,6 @@ algorithm
   (graphInfo,(_,nameAttIdx)) := GraphML.addAttribute("", "Name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
   graphInfo := buildGraphInfoDAG(graphIn,graphInfo,graphIdx,{nameAttIdx});
   GraphML.dumpGraph(graphInfo, fileName+&".graphml");
-  GraphML.printGraphInfo(graphInfo);
 end dumpTornSystemDAGgraphML;
 
 protected function buildGraphInfoDAG
