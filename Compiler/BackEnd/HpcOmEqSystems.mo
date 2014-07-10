@@ -2075,7 +2075,7 @@ algorithm
       m = arrayCreate(numEqs, {});
       mT = arrayCreate(numVars, {});
       (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(otherVars,otherEqs,{},mT, 0, numEqs, intLt(0, numEqs), BackendDAE.ABSOLUTE(), NONE());
-      
+
       // build task graph
       (graph,meta) = HpcOmTaskGraph.getEmptyTaskGraph(numEqs,numEqs,numVars);
       graph = buildMatchedGraphForTornSystem(1,eqIdcsSys,varIdcLstSys,m,mT,graph);
@@ -2083,7 +2083,7 @@ algorithm
       // dump graphs
       dumpTornSystemBipartiteGraphML(comp,eqsIn,varsIn,"tornSys_bipartite_"+&intString(compIdxIn));
       dumpTornSystemDAGgraphML(graph,"tornSys_matched_"+&intString(compIdxIn));
-      
+
       compIdx = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,compIdxIn+1);
     then compIdx;
   case(comp::rest,_,_,_)
