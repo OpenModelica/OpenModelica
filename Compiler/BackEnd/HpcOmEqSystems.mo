@@ -40,6 +40,7 @@ encapsulated package HpcOmEqSystems
 
 public import BackendDAE;
 public import DAE;
+public import HpcOmTaskGraph;
 
 // protected imports
 protected import BackendDump;
@@ -54,7 +55,6 @@ protected import Debug;
 protected import Expression;
 protected import Flags;
 protected import GraphML;
-protected import HpcOmTaskGraph;
 protected import List;
 protected import Matching;
 protected import Util;
@@ -181,7 +181,7 @@ algorithm
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
         Debug.fcall(Flags.HPCOM_DUMP,print,"handle linear torn systems of size: "+&intString(listLength(tvarIdcs)+listLength(otherEqnVarTpl))+&"\n");
-        Debug.fcall2(Flags.HPCOM_DUMP,dumpEquationSystemGraphML,(systIn,tornSysIdxIn),comp);
+        //Debug.fcall2(Flags.HPCOM_DUMP,dumpEquationSystemGraphML,(systIn,tornSysIdxIn),comp);
            //print("handle tornsystem with compnumber:"+&intString(compIdx)+&"\n");
            //BackendDump.dumpEqSystem(systIn,"the original system");
         // build the new components, the new variables and the new equations
@@ -1750,98 +1750,12 @@ end oneSideConstant;
 // functions to dump the equation system as .graphml
 //-------------------------------------------------//
 
-protected function dumpEquationSystemGraphML  "dumps the torn system or the equationsystem as graphml.
-author:Waurich TUD 2013-12"
-  input tuple<BackendDAE.EqSystem,Integer> tplIn;
-  input BackendDAE.StrongComponent tornSysCompIn;
-algorithm
-  _ := match(tplIn,tornSysCompIn)
-    local
-      BackendDAE.IncidenceMatrix m, mT, mEqSys, mEqSysT;
-      BackendDAE.Variables vars, orderedVars;
-      BackendDAE.EquationArray eqs, orderedEqs;
-      BackendDAE.EqSystem eqSysIn;
-      GraphML.GraphInfo graphInfo;
-      Integer graphIdx;
-      list<BackendDAE.Var> varLst;
-      list<BackendDAE.Equation> eqLst;
-      Integer nameAttIdx, typeAttIdx, numberOfEqs, numberOfVars, sysIdx;
-      list<Integer> tvars, resEqs, otherEqs, otherVars, allVars, allEqs, varRange, eqRange;
-      list<list<Integer>> otherVarsLst;
-      list<tuple<Integer,list<Integer>>> otherEqVarTpl;
-      Boolean lin;
-    case(_,BackendDAE.TORNSYSTEM(tearingvars=tvars,residualequations=resEqs, otherEqnVarTpl=otherEqVarTpl, linear=_))
-      equation
-        (eqSysIn,sysIdx) = tplIn;
-        BackendDAE.EQSYSTEM(orderedVars,orderedEqs,_,_,_,_) = eqSysIn;
-        otherEqs = List.map(otherEqVarTpl,Util.tuple21);
-        allEqs = listAppend(resEqs,otherEqs);
-        eqLst = BackendEquation.getEqns(allEqs,orderedEqs);
-        eqs = BackendEquation.listEquation(eqLst);
-        otherVarsLst = List.map(otherEqVarTpl,Util.tuple22);
-        otherVars = List.flatten(otherVarsLst);
-        allVars = listAppend(tvars,otherVars);
-        varLst = BackendVariable.varList(orderedVars);
-        varLst = List.map1(allVars,List.getIndexFirst,varLst);
-        vars = BackendVariable.listVar(varLst);
-        mEqSys = arrayCreate(listLength(allVars), {});
-        numberOfEqs = BackendDAEUtil.equationArraySize(eqs);
-        numberOfVars = listLength(allVars);
-        (mEqSys,mEqSysT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mEqSys, 0, numberOfEqs, intLt(0, numberOfEqs), BackendDAE.ABSOLUTE(), NONE());
-        BackendDump.dumpVariables(vars, "vars of the torn system");
-        BackendDump.dumpEquationArray(eqs,"eqs of the torn system");
-        BackendDump.dumpIncidenceMatrix(mEqSys);
-        BackendDump.dumpIncidenceMatrixT(mEqSysT);
-        varRange = List.intRange(numberOfVars);
-        eqRange = List.intRange(numberOfEqs);
-        graphInfo = GraphML.createGraphInfo();
-        (graphInfo,(_,graphIdx)) = GraphML.addGraph("TornSystemGraph", true, graphInfo);
-        (graphInfo,(_,typeAttIdx)) = GraphML.addAttribute("", "type", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,nameAttIdx)) = GraphML.addAttribute("", "name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
-        ((graphInfo,_)) = List.fold2(varRange,addVarNodeToGraph,vars,{nameAttIdx,typeAttIdx}, (graphInfo,graphIdx));
-        ((graphInfo,_)) = List.fold2(eqRange,addEqNodeToGraph,eqs,{nameAttIdx,typeAttIdx}, (graphInfo,graphIdx));
-        graphInfo = List.fold1(eqRange,addEdgeToGraph,mEqSys,graphInfo);
-        GraphML.dumpGraph(graphInfo,"TornSystemGraph"+&intString(sysIdx)+&".graphml");
-      then
-        ();
-case(_,BackendDAE.EQUATIONSYSTEM(eqns=allEqs,vars=allVars, jac=_, jacType=_))
-      equation
-        (eqSysIn,sysIdx) = tplIn;
-        BackendDAE.EQSYSTEM(orderedVars,orderedEqs,_,_,_,_) = eqSysIn;
-        eqLst = BackendEquation.getEqns(allEqs,orderedEqs);
-        eqs = BackendEquation.listEquation(eqLst);
-        varLst = BackendVariable.varList(orderedVars);
-        varLst = List.map1(allVars,List.getIndexFirst,varLst);
-        vars = BackendVariable.listVar(varLst);
-        mEqSys = arrayCreate(listLength(allVars), {});
-        //mEqSysT = arrayCreate(listLength(allVars), {});
-        numberOfEqs = BackendDAEUtil.equationArraySize(eqs);
-        numberOfVars = listLength(allVars);
-        (mEqSys,_) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mEqSys, 0, numberOfEqs, intLt(0, numberOfEqs), BackendDAE.ABSOLUTE(), NONE());
-        //(mEqSys,mEqSysT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mEqSysT, 0, numberOfEqs, intLt(0, numberOfEqs), BackendDAE.ABSOLUTE(), NONE());
-        BackendDump.dumpVariables(vars, "vars of the torn system");
-        BackendDump.dumpEquationArray(eqs,"eqs of the torn system");
-        BackendDump.dumpIncidenceMatrix(mEqSys);
-        varRange = List.intRange(numberOfVars);
-        eqRange = List.intRange(numberOfEqs);
-        graphInfo = GraphML.createGraphInfo();
-        (graphInfo,(_,graphIdx)) = GraphML.addGraph("EqSystemGraph", true, graphInfo);
-        (graphInfo,(_,typeAttIdx)) = GraphML.addAttribute("", "type", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,nameAttIdx)) = GraphML.addAttribute("", "name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
-        ((graphInfo,_)) = List.fold2(varRange,addVarNodeToGraph,vars,{nameAttIdx,typeAttIdx}, (graphInfo,graphIdx));
-        ((graphInfo,_)) = List.fold2(eqRange,addEqNodeToGraph,eqs,{nameAttIdx,typeAttIdx}, (graphInfo,graphIdx));
-        graphInfo = List.fold1(eqRange,addEdgeToGraph,mEqSys,graphInfo);
-        GraphML.dumpGraph(graphInfo,"EqSystemGraph"+&intString(sysIdx)+&".graphml");
-      then
-        ();
-  end match;
-end dumpEquationSystemGraphML;
-
-
 public function dumpEquationSystemGraphML1
   input BackendDAE.Variables varsIn;
   input BackendDAE.EquationArray eqsIn;
   input BackendDAE.IncidenceMatrix mIn;
+  input list<tuple<Boolean,String>> varAtts;  //<isTornVar,"something else">
+  input list<tuple<Boolean,String>> eqAtts;  //<isResEq,"something else">
   input String name;
 protected
   Integer nameAttIdx,typeAttIdx, numberOfVars,numberOfEqs;
@@ -1858,12 +1772,96 @@ algorithm
   (graphInfo,(_,graphIdx)) := GraphML.addGraph("EqSystemGraph", true, graphInfo);
   (graphInfo,(_,typeAttIdx)) := GraphML.addAttribute("", "type", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
   (graphInfo,(_,nameAttIdx)) := GraphML.addAttribute("", "name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
-  ((graphInfo,_)) := List.fold2(varRange,addVarNodeToGraph,varsIn,{nameAttIdx,typeAttIdx}, (graphInfo,graphIdx));
-  ((graphInfo,_)) := List.fold2(eqRange,addEqNodeToGraph,eqsIn,{nameAttIdx,typeAttIdx}, (graphInfo,graphIdx));
+  ((graphInfo,_)) := List.fold3(varRange,addVarNodeToGraph,varsIn,varAtts,{nameAttIdx,typeAttIdx}, (graphInfo,graphIdx));
+  ((graphInfo,_)) := List.fold3(eqRange,addEqNodeToGraph,eqsIn,eqAtts,{nameAttIdx,typeAttIdx}, (graphInfo,graphIdx));
   graphInfo := List.fold1(eqRange,addEdgeToGraph,mIn,graphInfo);
   GraphML.dumpGraph(graphInfo,name+&".graphml");
 end dumpEquationSystemGraphML1;
 
+public function dumpTornSystemBipartiteGraphML
+  input BackendDAE.StrongComponent inComps;
+  input list<BackendDAE.Equation> eqsIn;
+  input list<BackendDAE.Var> varsIn;
+  input String graphName;
+algorithm
+  () := matchcontinue(inComps,eqsIn,varsIn,graphName)
+    local
+      Integer numEqs, numVars, compIdx;
+      list<Boolean> tornInfo;
+      list<String> addInfo;
+      list<Integer> eqIdcs,varIdcs,tVarIdcs,rEqIdcs, tVarIdcsNew, rEqIdcsNew;
+      list<tuple<Integer,list<Integer>>> otherEqnVarTplIdcs;
+      list<tuple<Boolean,String>> varAtts,eqAtts;
+      BackendDAE.EquationArray compEqs;
+      BackendDAE.Variables compVars;
+      BackendDAE.StrongComponent comp;
+      BackendDAE.IncidenceMatrix m,mT;
+      list<BackendDAE.Equation> compEqLst;
+      list<BackendDAE.Var> compVarLst;
+  case((comp as BackendDAE.EQUATIONSYSTEM(eqns=eqIdcs,vars=varIdcs)),_,_,_)
+    equation
+      compEqLst = List.map1(eqIdcs,List.getIndexFirst,eqsIn);
+      compVarLst = List.map1(varIdcs,List.getIndexFirst,varsIn);
+      compVars = BackendVariable.listVar1(compVarLst);
+      compEqs = BackendEquation.listEquation(compEqLst);
+
+      numEqs = listLength(compEqLst);
+      numVars = listLength(compVarLst);
+      m = arrayCreate(numEqs, {});
+      mT = arrayCreate(numVars, {});
+      (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(compVars,compEqs,{},mT, 0, numEqs, intLt(0, numEqs), BackendDAE.ABSOLUTE(), NONE());
+
+      varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
+      eqAtts = List.threadMap(List.fill(false,numEqs),List.fill("",numEqs),Util.makeTuple);
+      dumpEquationSystemGraphML1(compVars,compEqs,m,varAtts,eqAtts,"rL_eqSys_"+&graphName);
+    then ();
+  case((comp as BackendDAE.TORNSYSTEM(residualequations=rEqIdcs,tearingvars=tVarIdcs,otherEqnVarTpl=otherEqnVarTplIdcs)),_,_,_)
+    equation
+      eqIdcs = List.map(otherEqnVarTplIdcs,Util.tuple21);
+      eqIdcs = listAppend(rEqIdcs,eqIdcs);
+      varIdcs = List.flatten(List.map(otherEqnVarTplIdcs,Util.tuple22));
+      varIdcs = listAppend(tVarIdcs,varIdcs);
+
+      compEqLst = List.map1(eqIdcs,List.getIndexFirst,eqsIn);
+      compVarLst = List.map1(varIdcs,List.getIndexFirst,varsIn);
+      compVars = BackendVariable.listVar1(compVarLst);
+      compEqs = BackendEquation.listEquation(compEqLst);
+      numEqs = listLength(compEqLst);
+      numVars = listLength(compVarLst);
+      m = arrayCreate(numEqs, {});
+      mT = arrayCreate(numVars, {});
+      (m,_) = BackendDAEUtil.incidenceMatrixDispatch(compVars,compEqs,{},mT, 0, numEqs, intLt(0, numEqs), BackendDAE.ABSOLUTE(), NONE());
+      tVarIdcsNew = List.intRange(listLength(tVarIdcs));
+      rEqIdcsNew = List.intRange(listLength(rEqIdcs));
+
+      // add tearing info to graph object and dump graph
+      addInfo = List.fill("",numVars);
+      tornInfo = List.fill(false,numVars);
+      tornInfo = List.fold1(tVarIdcsNew,List.replaceAtIndexFirst,true,tornInfo);
+      varAtts = List.threadMap(tornInfo,addInfo,Util.makeTuple);
+      addInfo = List.fill("",numEqs);
+      tornInfo = List.fill(false,numEqs);
+      tornInfo = List.fold1(rEqIdcsNew,List.replaceAtIndexFirst,true,tornInfo);
+      eqAtts = List.threadMap(tornInfo,addInfo,Util.makeTuple);
+
+      dumpEquationSystemGraphML1(compVars,compEqs,m,varAtts,eqAtts,"eqSys_bipartite"+&graphName);
+    then ();
+  else
+   equation
+     print("dumpTornSystemBipartiteGraphML1 failed!\n");
+    then();
+  end matchcontinue;
+end dumpTornSystemBipartiteGraphML;
+
+protected function genSystemVarIdcs
+  input list<Integer> idcsIn;
+  input Integer idx;
+  output list<Integer> idcsOut;
+  output Integer idx2;
+algorithm
+  idx2 := listLength(idcsIn)+idx;
+  idcsOut := List.intRange2(idx,idx2-1);
+end genSystemVarIdcs;
 
 protected function addEdgeToGraph "adds an edge to the graph by traversing the incidence matrix.
 author:Waurich TUD 2013-12"
@@ -1877,7 +1875,6 @@ algorithm
   varLst := arrayGet(m,eqIdx);
   graphInfoOut := List.fold1(varLst,addEdgeToGraph2,eqIdx,graphInfoIn);
 end addEdgeToGraph;
-
 
 protected function addEdgeToGraph2 "helper for addEdgeToGraph.
 author:Waurich TUD 2013-12"
@@ -1893,7 +1890,6 @@ algorithm
   (graphInfoOut,_) := GraphML.addEdge("Edge_"+&intString(varIdx)+&"_"+&intString(eqIdx),varNodeId,eqNodeId,GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,false,{},(GraphML.ARROWNONE(),GraphML.ARROWNONE()),{}, graphInfoIn);
 end addEdgeToGraph2;
 
-
 protected function getVarNodeIdx "outputs the identifier string for the given varIdx.
 author:Waurich TUD 2013-12"
   input Integer idx;
@@ -1901,7 +1897,6 @@ author:Waurich TUD 2013-12"
 algorithm
   varString := "varNode"+&intString(idx);
 end getVarNodeIdx;
-
 
 protected function getEqNodeIdx "outputs the identifier string for the given varIdx.
 author:Waurich TUD 2013-12"
@@ -1911,25 +1906,28 @@ algorithm
   varString := "eqNode"+&intString(idx);
 end getEqNodeIdx;
 
-
 protected function addVarNodeToGraph "adds a node for a variable to the graph.
 author:Waurich TUD 2013-12"
   input Integer indx;
   input BackendDAE.Variables vars;
+  input list<tuple<Boolean,String>> attsIn; //<isTearingVar,"dummy for further attributes">
   input list<Integer> attributeIdcs;//<name,type>
   input tuple<GraphML.GraphInfo,Integer> graphInfoIn;
   output tuple<GraphML.GraphInfo,Integer> graphInfoOut;
 protected
   BackendDAE.Var var;
+  Boolean isTearVar;
   Integer nameAttrIdx,typeAttIdx, graphIdx;
-  String varString, varNodeId, idxString;
+  String varString, varNodeId, idxString, typeStr;
   list<String> varChars;
   GraphML.GraphInfo graphInfo;
   GraphML.NodeLabel nodeLabel;
 algorithm
   (graphInfo,graphIdx) := graphInfoIn;
   nameAttrIdx := listGet(attributeIdcs,1);
-  typeAttIdx := listGet(attributeIdcs,2); // if its a tearingvar or residual or an other
+  typeAttIdx := listGet(attributeIdcs,2); // if its a tearingvar or not
+  isTearVar := Util.tuple21(listGet(attsIn,indx));
+  typeStr := Util.if_(isTearVar,"tearingVar","otherVar");
   var := BackendVariable.getVarAt(vars,indx);
   varString := BackendDump.varString(var);
   varChars := stringListStringChar(varString);
@@ -1938,28 +1936,32 @@ algorithm
   varNodeId := getVarNodeIdx(indx);
   idxString := intString(indx);
   nodeLabel := GraphML.NODELABEL_INTERNAL(idxString,NONE(),GraphML.FONTPLAIN());
-  (graphInfo,_) := GraphML.addNode(varNodeId, GraphML.COLOR_ORANGE2, {nodeLabel},GraphML.ELLIPSE(),SOME(varString),{(nameAttrIdx,varString)},graphIdx,graphInfo);
+  (graphInfo,_) := GraphML.addNode(varNodeId, GraphML.COLOR_ORANGE2, {nodeLabel},GraphML.ELLIPSE(),SOME(varString),{(nameAttrIdx,varString),(typeAttIdx,typeStr)},graphIdx,graphInfo);
   graphInfoOut := (graphInfo,graphIdx);
 end addVarNodeToGraph;
-
 
 protected function addEqNodeToGraph "adds a node for an equation to the graph.
 author:Waurich TUD 2013-12"
   input Integer indx;
   input BackendDAE.EquationArray eqs;
-  input list<Integer> attributeIdcs;//<name>
+  input list<tuple<Boolean,String>> attsIn; // <isResEq,"dummy for further attributes">
+  input list<Integer> attributeIdcs;//<name,type>
   input tuple<GraphML.GraphInfo,Integer> graphInfoIn;
   output tuple<GraphML.GraphInfo,Integer> graphInfoOut;
 protected
   BackendDAE.Equation eq;
-  Integer nameAttrIdx, graphIdx;
-  String eqString, eqNodeId, idxString;
+  Boolean isResEq;
+  Integer nameAttrIdx,typeAttrIdx,  graphIdx;
+  String eqString, eqNodeId, idxString, typeStr;
   list<String> eqChars;
   GraphML.GraphInfo graphInfo;
   GraphML.NodeLabel nodeLabel;
 algorithm
   (graphInfo,graphIdx) := graphInfoIn;
   nameAttrIdx := listGet(attributeIdcs,1);
+  typeAttrIdx := listGet(attributeIdcs,2); // if its a residual or not
+  isResEq := Util.tuple21(listGet(attsIn,indx));
+  typeStr := Util.if_(isResEq,"residualEq","otherEq");
   {eq} := BackendEquation.getEqns({indx}, eqs);
   eqString := BackendDump.equationString(eq);
   eqChars := stringListStringChar(eqString);
@@ -1968,103 +1970,297 @@ algorithm
   eqNodeId := getEqNodeIdx(indx);
   idxString := intString(indx);
   nodeLabel := GraphML.NODELABEL_INTERNAL(idxString,NONE(),GraphML.FONTPLAIN());
-  (graphInfo,_) := GraphML.addNode(eqNodeId,GraphML.COLOR_GREEN2,{nodeLabel},GraphML.RECTANGLE(),SOME(eqString),{(nameAttrIdx,eqString)},graphIdx,graphInfo);
+  (graphInfo,_) := GraphML.addNode(eqNodeId,GraphML.COLOR_GREEN2,{nodeLabel},GraphML.RECTANGLE(),SOME(eqString),{(nameAttrIdx,eqString),(typeAttrIdx,typeStr)},graphIdx,graphInfo);
   graphInfoOut := (graphInfo,graphIdx);
 end addEqNodeToGraph;
 
 //--------------------------------------------------//
-// resolveLinearSystem
+// solve torn systems in parallel
 //-------------------------------------------------//
 
-protected function resolveLinearSystem  "traverses all StrongComponents for tornSystems and tries to resolve the loops.
-author: Waurich TUD 2014-01"
-  input Integer compIdx;
-  input BackendDAE.StrongComponents compsIn;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
-  input BackendDAE.EqSystem systIn;
-  input BackendDAE.Shared sharedIn;
-  input Integer tornSysIdxIn;
-  output BackendDAE.EqSystem systOut;
-  output Integer tornSysIdxOut;
+public function parallelizeTornSystems"analyse torn systems.
+author:Waurich TUD 2014-07"
+  input HpcOmTaskGraph.TaskGraph graphIn;
+  input HpcOmTaskGraph.TaskGraphMeta metaIn;
+  input array<list<Integer>> sccSimEqMapping;
+  input BackendDAE.BackendDAE inDAE;
+  output HpcOmTaskGraph.TaskGraph graphOut;
+  output HpcOmTaskGraph.TaskGraphMeta  metaOut;
 algorithm
-  (systOut,tornSysIdxOut) := matchcontinue(compIdx,compsIn,ass1,ass2,systIn,sharedIn,tornSysIdxIn)
+  (graphOut,metaOut) := matchcontinue(graphIn,metaIn,sccSimEqMapping,inDAE)
     local
-      Boolean linear;
-      Integer numEqs, numVars, tornSysIdx;
-      list<Integer> tvarIdcs, varIdcs, eqIdcs, resEqIdcs, otherEqsIdcs, otherVarsIdcs;
-      list<list<Integer>> otherVarsIntsLst;
-      list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
-      BackendDAE.EquationArray daeEqs, eqs;
-      BackendDAE.EqSystem systTmp;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mT;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.StrongComponent comp;
-      BackendDAE.Variables daeVars, vars;
-
-      list<BackendDAE.Equation> eqLst, daeEqLst;
-      list<BackendDAE.Var> varLst, daeVarLst;
-    case(_,_,_,_,_,_,_)
-      equation
-        // completed
-        true = listLength(compsIn) < compIdx;
-          //print("finished at:"+&intString(compIdx)+&"\n");
-      then
-        (systIn,tornSysIdxIn);
-    case(_,_,_,_,_,_,_)
-      equation
-        // strongComponent is a linear tornSystem
-        true = listLength(compsIn) >= compIdx;
-        comp = listGet(compsIn,compIdx);
-        BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
-        true = linear;
-        print("we found a linear EQSYS\n");
-        BackendDAE.EQSYSTEM(orderedVars = daeVars, orderedEqs = daeEqs) = systIn;
-        _ = BackendVariable.varList(daeVars);
-        _ = BackendEquation.equationList(daeEqs);
-
-        // collect the vars of the loop
-        otherVarsIntsLst = List.map(otherEqnVarTpl, Util.tuple22);
-        otherVarsIdcs = List.unionList(otherVarsIntsLst);
-        varIdcs = listAppend(tvarIdcs,otherVarsIdcs);
-        varLst = List.map1r(varIdcs, BackendVariable.getVarAt, daeVars);
-        vars = BackendVariable.listVar(varLst);
-        varIdcs = listReverse(varIdcs);
-
-        // collect the eqs of the loops
-        otherEqsIdcs = List.map(otherEqnVarTpl, Util.tuple21);
-        eqIdcs = listAppend(resEqIdcs,otherEqsIdcs);
-        eqLst = BackendEquation.getEqns(eqIdcs,daeEqs);
-        eqs = BackendEquation.listEquation(eqLst);
-
-        // build the incidenceMatrix, dump eqSystem as graphML
-        numEqs = BackendDAEUtil.equationArraySize(eqs);
-        numVars = BackendVariable.numVariables(vars);
-        m = arrayCreate(numEqs, {});
-        mT = arrayCreate(numVars, {});
-        (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mT, 0, numEqs, intLt(0, numEqs), BackendDAE.ABSOLUTE(), NONE());
-        dumpEquationSystemGraphML1(vars,eqs,m,"linSystem"+&intString(tornSysIdxIn));
-
-        print("START RESOLVING THE COMPONENT\n");
-        //daeEqLst = BackendDAEOptimize.resolveLoops12(m,mT,eqIdcs,varIdcs,daeVarLst,daeEqLst,{});
-        //daeEqs = BackendEquation.listEquation(daeEqLst);
-
-        //systTmp = BackendDAE.EQSYSTEM(daeVars,daeEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
-        //(systTmp,tornSysIdx) = resolveLinearSystem(compIdx+1,compsIn,ass1,ass2,systTmp,sharedIn,tornSysIdxIn+1);
-      then
-        (systIn,tornSysIdxIn);
+      BackendDAE.EqSystems eqSysts;
+      BackendDAE.Shared shared;
+    case (_,_,_,_) equation
+      BackendDAE.DAE(eqs=eqSysts, shared=shared) = inDAE;
+      _ = pts_traverseEqSystems(eqSysts, 1);
+    then (graphIn,metaIn);
     else
-      // go to next StrongComponent
-      equation
-        //print("no torn system in comp:"+&intString(compIdx)+&"\n");
-        (systTmp,tornSysIdx) = resolveLinearSystem(compIdx+1,compsIn,ass1,ass2,systIn,sharedIn,tornSysIdxIn);
-      then
-        (systTmp,tornSysIdx);
+    then (graphIn,metaIn);
   end matchcontinue;
-end resolveLinearSystem;
+end parallelizeTornSystems;
+
+protected function pts_traverseEqSystems "
+author: Waurich TUD 2014-07"
+  input BackendDAE.EqSystems eqSysIn;
+  input Integer compIdxIn;
+  output Integer compIdxOut;
+algorithm
+  (compIdxOut) := matchcontinue(eqSysIn,compIdxIn)
+    local
+      Integer compIdx;
+      BackendDAE.EquationArray eqs;
+      BackendDAE.EqSystems eqSysRest;
+      BackendDAE.Variables vars;
+      BackendDAE.StrongComponents comps;
+      list<BackendDAE.Equation> eqLst;
+      list<BackendDAE.Var> varLst;
+    case(BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,matching = BackendDAE.MATCHING(comps=comps))::eqSysRest,_)
+      equation
+        eqLst = BackendEquation.equationList(eqs);
+        varLst = BackendVariable.varList(vars);
+        (compIdx) = pts_traverseCompsAndParallelize(comps,eqLst,varLst,compIdxIn);
+        (compIdx) = pts_traverseEqSystems(eqSysRest, compIdx);
+      then compIdx;
+   case({},_)
+     then compIdxIn;
+    else
+      equation
+        print("pts_traverseEqSystems failed\n");
+      then fail();
+  end matchcontinue;
+end pts_traverseEqSystems;
+
+protected function pts_traverseCompsAndParallelize"
+author:Waurich TUD 2014-07"
+  input list<BackendDAE.StrongComponent> inComps;
+  input list<BackendDAE.Equation> eqsIn;
+  input list<BackendDAE.Var> varsIn;
+  input Integer compIdxIn;
+  output Integer compIdxOut;
+algorithm
+  compIdxOut := matchcontinue(inComps,eqsIn,varsIn,compIdxIn)
+    local
+      Integer numEqs, numVars, compIdx;
+      list<Integer> eqIdcs,varIdcs,eqIdcsSys;
+      list<list<Integer>> varIdcLstSys, varIdcsLsts;
+      list<tuple<Integer,list<Integer>>> otherEqnVarTplIdcs;
+      BackendDAE.EquationArray otherEqs;
+      BackendDAE.StrongComponent comp;
+      BackendDAE.Variables otherVars;
+      BackendDAE.IncidenceMatrix m,mT;
+      list<BackendDAE.Equation> otherEqLst;
+      list<BackendDAE.Var> otherVarLst;
+      list<BackendDAE.StrongComponent> rest;
+      HpcOmTaskGraph.TaskGraph graph;
+      HpcOmTaskGraph.TaskGraphMeta meta;
+  case({},_,_,_)
+    equation
+    then compIdxIn;
+  case((comp as BackendDAE.TORNSYSTEM(residualequations=_,tearingvars=_,otherEqnVarTpl=otherEqnVarTplIdcs))::rest,_,_,_)
+    equation
+      eqIdcs = List.map(otherEqnVarTplIdcs,Util.tuple21);
+      varIdcsLsts = List.map(otherEqnVarTplIdcs,Util.tuple22);
+      varIdcs = List.flatten(varIdcsLsts);
+      numEqs = listLength(eqIdcs);
+      numVars = listLength(varIdcs);
+      eqIdcsSys = List.intRange(numEqs);
+      (varIdcLstSys,_) = List.mapFold(varIdcsLsts,genSystemVarIdcs,1);
+
+      // create incidence matrix
+      otherEqLst = List.map1(eqIdcs,List.getIndexFirst,eqsIn);
+      otherVarLst = List.map1(varIdcs,List.getIndexFirst,varsIn);
+      otherVars = BackendVariable.listVar1(otherVarLst);
+      otherEqs = BackendEquation.listEquation(otherEqLst);
+      m = arrayCreate(numEqs, {});
+      mT = arrayCreate(numVars, {});
+      (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(otherVars,otherEqs,{},mT, 0, numEqs, intLt(0, numEqs), BackendDAE.ABSOLUTE(), NONE());
+      
+      // build task graph
+      (graph,meta) = HpcOmTaskGraph.getEmptyTaskGraph(numEqs,numEqs,numVars);
+      graph = buildMatchedGraphForTornSystem(1,eqIdcsSys,varIdcLstSys,m,mT,graph);
+
+      // dump graphs
+      dumpTornSystemBipartiteGraphML(comp,eqsIn,varsIn,"tornSys_bipartite_"+&intString(compIdxIn));
+      dumpTornSystemDAGgraphML(graph,"tornSys_matched_"+&intString(compIdxIn));
+      
+      compIdx = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,compIdxIn+1);
+    then compIdx;
+  case(comp::rest,_,_,_)
+    equation
+      compIdx = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,compIdxIn+1);
+    then compIdx;
+  end matchcontinue;
+end pts_traverseCompsAndParallelize;
+
 //--------------------------------------------------//
-//
+// dump torn system of equations as a directed acyclic graph (the matched system)
 //-------------------------------------------------//
+/*
+public function dumpTornSystemDAGgraphML "dumps a graphml for torn systems with matched nodes. tearing vars and resiudals are not included"
+  input BackendDAE.StrongComponent inComps;
+  input list<BackendDAE.Equation> eqsIn;
+  input list<BackendDAE.Var> varsIn;
+  input String graphName;
+algorithm
+  () := matchcontinue(inComps,eqsIn,varsIn,graphName)
+    local
+      Integer numEqs, numVars;
+      list<Integer> eqIdcs,varIdcs, eqIdcsSys;
+      list<list<Integer>> varIdcsLsts, varIdcLstSys;
+      list<tuple<Integer,list<Integer>>> otherEqnVarTplIdcs;
+      HpcOmTaskGraph.TaskGraph graph;
+      HpcOmTaskGraph.TaskGraphMeta graphMeta;
+      BackendDAE.StrongComponent comp;
+      BackendDAE.EquationArray otherEqs;
+      BackendDAE.Variables otherVars;
+      BackendDAE.IncidenceMatrix m, mT;
+      list<BackendDAE.Equation> otherEqLst;
+      list<BackendDAE.Var> otherVarLst;
+      array<tuple<Integer,Integer,Real>> schedulerInfo;
+      array<list<Integer>> sccSimEqMapping;
+  case((comp as BackendDAE.TORNSYSTEM(residualequations=_,tearingvars=_,otherEqnVarTpl=otherEqnVarTplIdcs)),_,_,_)
+    equation
+      eqIdcs = List.map(otherEqnVarTplIdcs,Util.tuple21);
+      varIdcsLsts = List.map(otherEqnVarTplIdcs,Util.tuple22);
+      varIdcs = List.flatten(varIdcsLsts);
+      numEqs = listLength(eqIdcs);
+      numVars = listLength(varIdcs);
+      eqIdcsSys = List.intRange(numEqs);
+      (varIdcLstSys,_) = List.mapFold(varIdcsLsts,genSystemVarIdcs,1);
+
+      // create incidence matrix
+      otherEqLst = List.map1(eqIdcs,List.getIndexFirst,eqsIn);
+      otherVarLst = List.map1(varIdcs,List.getIndexFirst,varsIn);
+      otherVars = BackendVariable.listVar1(otherVarLst);
+      otherEqs = BackendEquation.listEquation(otherEqLst);
+      m = arrayCreate(numEqs, {});
+      mT = arrayCreate(numVars, {});
+      (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(otherVars,otherEqs,{},mT, 0, numEqs, intLt(0, numEqs), BackendDAE.ABSOLUTE(), NONE());
+
+      (graph,graphMeta) = HpcOmTaskGraph.getEmptyTaskGraph(numEqs,numEqs,numVars);
+      graph = buildMatchedGraphForTornSystem(1,eqIdcsSys,varIdcLstSys,m,mT,graph);
+
+      dumpTornSystemDAGgraphML1(graph,graphName+&".graphml");
+    then ();
+  else
+   equation
+     print("dumpTornSystemDAGgraphML failed!\n");
+    then();
+  end matchcontinue;
+end dumpTornSystemDAGgraphML;
+*/
+protected function dumpTornSystemDAGgraphML
+  input HpcOmTaskGraph.TaskGraph graphIn;
+  input String fileName;
+protected
+  Integer graphIdx, nameAttIdx;
+  GraphML.GraphInfo graphInfo;
+algorithm
+  graphInfo := GraphML.createGraphInfo();
+  (graphInfo, (_,graphIdx)) := GraphML.addGraph("TornSystemGraph", true, graphInfo);
+  (graphInfo,(_,nameAttIdx)) := GraphML.addAttribute("", "Name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
+  graphInfo := buildGraphInfoDAG(graphIn,graphInfo,graphIdx,{nameAttIdx});
+  GraphML.dumpGraph(graphInfo, fileName+&".graphml");
+  GraphML.printGraphInfo(graphInfo);
+end dumpTornSystemDAGgraphML;
+
+protected function buildGraphInfoDAG
+  input HpcOmTaskGraph.TaskGraph graphIn;
+  input GraphML.GraphInfo graphInfoIn;
+  input Integer graphIdx;
+  input list<Integer> attIdcs;
+  output GraphML.GraphInfo graphInfoOut;
+protected
+  GraphML.GraphInfo graphInfo;
+  list<Integer> nodeIdcs;
+  list<GraphML.Node> nodes;
+  Integer nameAttIdx;
+algorithm
+  nameAttIdx := List.first(attIdcs);
+  nodeIdcs := List.intRange(arrayLength(graphIn));
+  graphInfoOut := List.fold3(nodeIdcs,addNodeToDAG,graphIn,graphIdx,{(nameAttIdx,"bla")},graphInfoIn);
+  GraphML.GRAPHINFO(nodes=nodes) := graphInfoOut;
+end buildGraphInfoDAG;
+
+protected function addNodeToDAG"add a node to a DAG.
+author:Waurich TUD 2014-07"
+  input Integer nodeIdx;
+  input HpcOmTaskGraph.TaskGraph graphIn;
+  input Integer graphIdx;
+  input list<tuple<Integer,String>> atts;
+  input GraphML.GraphInfo graphInfoIn;
+  output GraphML.GraphInfo graphInfoOut;
+protected
+  GraphML.GraphInfo tmpGraph;
+  Integer nameAttIdx;
+  list<Integer> childNodes;
+  GraphML.NodeLabel nodeLabel;
+  String nodeString, nameAttString;
+algorithm
+  nodeString := intString(nodeIdx);
+  ((nameAttIdx,nameAttString)) := listGet(atts,1);
+  nodeLabel := GraphML.NODELABEL_INTERNAL(nodeString,NONE(),GraphML.FONTPLAIN());
+  (tmpGraph,(_,_)) := GraphML.addNode("Node"+&intString(nodeIdx),
+                                              GraphML.COLOR_ORANGE,
+                                              {nodeLabel},
+                                              GraphML.RECTANGLE(),
+                                              SOME("description"),
+                                              {(nameAttIdx,"name")},
+                                              graphIdx,
+                                              graphInfoIn);
+  childNodes := arrayGet(graphIn,nodeIdx);
+  graphInfoOut := List.fold1(childNodes, addDirectedEdge, nodeIdx, tmpGraph);
+end addNodeToDAG;
+
+protected function addDirectedEdge"add a directed edge from child to parent
+author: Waurich TUD 2014-07"
+  input Integer child;
+  input Integer parent;
+  input GraphML.GraphInfo graphInfoIn;
+  output GraphML.GraphInfo graphInfoOut;
+algorithm
+  (graphInfoOut,(_,_)) := GraphML.addEdge( "Edge" +& intString(parent)+&intString(child),
+                                      "Node" +& intString(child),
+                                      "Node" +& intString(parent),
+                                      GraphML.COLOR_BLACK,
+                                      GraphML.LINE(),
+                                      GraphML.LINEWIDTH_STANDARD,
+                                      false,{},
+                                      (GraphML.ARROWNONE(),GraphML.ARROWSTANDART()),
+                                      {},
+                                      graphInfoIn);
+end addDirectedEdge;
+
+protected function buildMatchedGraphForTornSystem
+  input Integer idx;
+  input list<Integer> eqsIn;
+  input list<list<Integer>> varsIn;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mt;
+  input array<list<Integer>> graphIn;
+  output array<list<Integer>> graphOut;
+algorithm
+  graphOut := matchcontinue(idx,eqsIn,varsIn,m,mt,graphIn)
+    local
+      Integer eq;
+      list<Integer> vars, depVars,depEqs;
+      array<list<Integer>> graph;
+    case(_,_,_,_,_,_)
+      equation
+        true = listLength(eqsIn) >= idx;
+        vars = listGet(varsIn,idx);
+        eq = listGet(eqsIn,idx);
+        depEqs = List.flatten(List.map1(vars,Util.arrayGetIndexFirst,mt));
+        depEqs = List.deleteMember(depEqs,eq);
+        graph = arrayUpdate(graphIn,eq,depEqs);
+        graph = buildMatchedGraphForTornSystem(idx+1,eqsIn,varsIn,m,mt,graph);
+    then graph;
+    case(_,_,_,_,_,_)
+      equation
+        false = listLength(eqsIn) > idx;
+      then graphIn;
+  end matchcontinue;
+end buildMatchedGraphForTornSystem;
 
 end HpcOmEqSystems;

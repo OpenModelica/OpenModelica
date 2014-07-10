@@ -1437,7 +1437,7 @@ algorithm
  sum := List.fold(reals,realAdd,0.0);
 end realSum;
 
-protected function deleteIntListMembers"deletes all entries of lst2 in lst2.
+public function deleteIntListMembers"deletes all entries of lst2 in lst1.
 author: Waurich TUD 2014-07"
   input list<Integer> lst1;
   input list<Integer> lst2;

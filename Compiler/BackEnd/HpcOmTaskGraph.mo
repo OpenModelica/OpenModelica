@@ -1960,7 +1960,7 @@ algorithm
 end removeContinuousEntriesTuple1;
 
 
-protected function removeEntriesInGraph "deletes given entries from adjacencyLst.
+public function removeEntriesInGraph "deletes given entries from adjacencyLst.
   author: Waurich TUD 2013-06"
   input array<list<Integer>> inArray;
   input list<Integer> noStates;

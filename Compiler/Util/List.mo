@@ -8778,6 +8778,23 @@ algorithm
   end match;
 end replaceAt;
 
+public function replaceAtIndexFirst
+  "Takes an element, a position and a list, and replaces the value at the given
+   position in the list. Position is an integer between 1 and n for a list of
+   n elements.
+     Example: replaceAt('A', 2, {'a', 'b', 'c'}) => {'a', 'A', 'c'}"
+  input Integer inPosition;
+  input ElementType inElement;
+  input list<ElementType> inList;
+  output list<ElementType> outList;
+protected
+  array<ElementType> arr;
+algorithm
+  arr := listArray(inList);
+  arr := arrayUpdate(arr,inPosition,inElement);
+  outList := arrayList(arr);
+end replaceAtIndexFirst;
+
 public function replaceAtWithList
   "Takes an list, a position and a list, and replaces the element at the given
   position with the first list in the second list. Position is an integer

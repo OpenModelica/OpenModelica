@@ -52,6 +52,7 @@ protected import GlobalScript;
 protected import HpcOmMemory;
 protected import HpcOmScheduler;
 protected import HpcOmTaskGraph;
+protected import HpcOmEqSystems;
 protected import Initialization;
 protected import List;
 protected import SimCodeUtil;
@@ -249,6 +250,10 @@ algorithm
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_merged.graphml");
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphSimplified, taskGraphDataSimplified, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
       SimCodeUtil.execStat("hpcom dump simplified TaskGraph");
+
+      // Analyse Systems of Equations
+      //-------------
+      //(taskGraphSimplified,taskGraphDataSimplified) = HpcOmEqSystems.parallelizeTornSystems(taskGraphSimplified,taskGraphDataSimplified,sccSimEqMapping,inBackendDAE);
 
       //Create schedule
       //---------------
