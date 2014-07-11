@@ -2087,7 +2087,7 @@ algorithm
       meta = buildTaskgraphMetaForTornSystem(graph,otherEqLst,otherVarLst,meta);
         HpcOmTaskGraph.printTaskGraph(graph);
         HpcOmTaskGraph.printTaskGraphMeta(meta);
-      
+
       //get simEqSysIdcs and otherSimEqMapping
       simEqSysIdcs = arrayGet(sccSimEqMapping,compIdxIn);
       resSimEqSysIdcs = List.map1r(List.intRange(numResEqs),intSub,List.first(simEqSysIdcs));
@@ -2100,12 +2100,12 @@ algorithm
       // dump graphs
       dumpTornSystemBipartiteGraphML(comp,eqsIn,varsIn,"tornSys_bipartite_"+&intString(compIdxIn));
       dumpTornSystemDAGgraphML(graph,meta,"tornSys_matched_"+&intString(compIdxIn));
-      
+
       //GRS
       //graphMerged = arrayCopy(graph);
       //metaMerged = HpcOmTaskGraph.copyTaskGraphMeta(meta);
-      (graphMerged,metaMerged) = HpcOmSimCodeMain.applyFiltersToGraph(graph,meta,true); 
-      
+      (graphMerged,metaMerged) = HpcOmSimCodeMain.applyFiltersToGraph(graph,meta,true);
+
       dumpTornSystemDAGgraphML(graphMerged,metaMerged,"tornSys_matched2_"+&intString(compIdxIn));
         HpcOmTaskGraph.printTaskGraph(graphMerged);
         HpcOmTaskGraph.printTaskGraphMeta(metaMerged);
@@ -2113,7 +2113,7 @@ algorithm
       //Schedule
       schedule = HpcOmScheduler.createListSchedule(graphMerged,metaMerged,2,otherSimEqMapping);
       HpcOmScheduler.printSchedule(schedule);
-      
+
       //transform into scheduled task object
       task = pts_transformScheduleToTask(schedule,resSimEqSysIdcs,compIdxIn);
       HpcOmScheduler.printTask(task);
@@ -2155,7 +2155,7 @@ algorithm
         lockIdcsEnd = List.map1r(List.map(List.intRange(numThreads),intString),stringAppend,"lock_comp"+&intString(compIdx)+&"_th");
         lockIdc = listAppend(lockIdc,lockIdcsEnd);
         threadTasks = Util.arrayMap1(threadTasks,appendStringToLockIdcs,lockSuffix);
-        
+
         assLocks = List.map(lockIdcsEnd,HpcOmScheduler.getAssignLockTask);
         relLocks = List.map(lockIdcsEnd,HpcOmScheduler.getReleaseLockTask);
         schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,lockIdc);
@@ -2188,12 +2188,12 @@ algorithm
       String lockId;
     case(HpcOmSimCode.ASSIGNLOCKTASK(lockId=lockId),_)
       equation
-        lockId = stringAppend(lockId,suffix);    
+        lockId = stringAppend(lockId,suffix);
     then HpcOmSimCode.ASSIGNLOCKTASK(lockId);
      case(HpcOmSimCode.RELEASELOCKTASK(lockId=lockId),_)
       equation
-        lockId = stringAppend(lockId,suffix);    
-    then HpcOmSimCode.RELEASELOCKTASK(lockId);    
+        lockId = stringAppend(lockId,suffix);
+    then HpcOmSimCode.RELEASELOCKTASK(lockId);
     else
       then taskIn;
   end match;
