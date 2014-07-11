@@ -2003,9 +2003,10 @@ protected
   BackendDAE.EquationArray eqns;
   list<BackendDAE.EqSystem> eqlist;
   BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedEqs=eqns,m=m,mT=mT,matching=matching,stateSets=stateSets)::eqlist,shared) := systIn;
-  sysOut := BackendDAE.DAE(BackendDAE.EQSYSTEM(newVarsIn,eqns,m,mT,matching,stateSets)::eqlist,shared);
+  BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedEqs=eqns,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind)::eqlist,shared) := systIn;
+  sysOut := BackendDAE.DAE(BackendDAE.EQSYSTEM(newVarsIn,eqns,m,mT,matching,stateSets,partitionKind)::eqlist,shared);
 end setDaeVars;
 
 public function setDaeEqns "set the equations of a dae
@@ -2044,15 +2045,16 @@ algorithm
     BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used";
     BackendDAE.SymbolicJacobians symjacs;
     BackendDAE.StateSets stateSets;
+    BackendDAE.BaseClockPartitionKind partitionKind;
     BackendDAE.ExtraInfo ei;
 
     case(BackendDAE.DAE(
-      (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,m=m,mT=mT,matching=matching,stateSets=stateSets))::systList,
+      (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind))::systList,
       (shared as BackendDAE.SHARED(
                                    functionTree=_,
                                    info=_))),_,false)
     equation
-       syst = BackendDAE.EQSYSTEM(orderedVars,eqns,m,mT,matching,stateSets);
+       syst = BackendDAE.EQSYSTEM(orderedVars,eqns,m,mT,matching,stateSets,partitionKind);
     then
        BackendDAE.DAE(syst::systList,shared);
 
@@ -2107,17 +2109,18 @@ algorithm
     BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used";
     BackendDAE.SymbolicJacobians symjacs;
     BackendDAE.StateSets stateSets;
+    BackendDAE.BaseClockPartitionKind partitionKind;
     BackendDAE.ExtraInfo ei;
 
     case(BackendDAE.DAE(
-      (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching,stateSets=stateSets))::systList,
+      (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind))::systList,
       (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
                                    removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,cache=cache,env=env,
                                    functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs,info=ei))),_,_,_)
     equation
        orderedVars = BackendVariable.listVar1(replaceVars(BackendVariable.varList(orderedVars),repl,func,replaceVariables));
        (orderedEqs,_) = BackendVarTransform.replaceEquationsArr(orderedEqs,repl,NONE());
-       syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets);
+       syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind);
        shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs,ei);
     then
        BackendDAE.DAE(syst::systList,shared);

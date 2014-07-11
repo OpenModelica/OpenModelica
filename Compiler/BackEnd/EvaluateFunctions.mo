@@ -176,9 +176,10 @@ protected
   list<BackendDAE.Var> varLst;
   list<BackendDAE.Equation> eqLst, addEqs;
   BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
   (sharedIn,sysIdx,changed) := tplIn;
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,matching=matching,stateSets=stateSets) := eqSysIn;
+  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := eqSysIn;
   eqLst := BackendEquation.equationList(eqs);
   varLst := BackendVariable.varList(vars);
 
@@ -186,7 +187,7 @@ algorithm
   (eqLst,(shared,addEqs,_,changed)) := List.mapFold(eqLst,evalFunctions_findFuncs,(sharedIn,{},1,changed));
   eqLst := listAppend(eqLst,addEqs);
   eqs := BackendEquation.listEquation(eqLst);
-  eqSysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets);
+  eqSysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
 
   tplOut := (shared,sysIdx+1,changed);
 end evalFunctions_main;
@@ -2733,8 +2734,9 @@ protected
   list<DAE.ComponentRef> derVars,ssVars,derVarsInit;
   Option<BackendDAE.IncidenceMatrix> m;
   Option<BackendDAE.IncidenceMatrixT> mT;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,matching=matching,stateSets=stateSets) := sysIn;
+  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := sysIn;
   varLst := BackendVariable.varList(vars);
   initEqs := BackendEquation.daeInitialEqns(shared);
   states := List.filterOnTrue(varLst,BackendVariable.isStateorStateDerVar);
@@ -2747,7 +2749,7 @@ algorithm
   derVars := listAppend(derVars,ssVars);
   derVars := List.unique(derVars);
   (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setVarKindForStates,derVars);
-  sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets);
+  sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
 end updateVarKinds_eqSys;
 
 protected function varSSisPreferOrHigher"outputs true if the stateSelect attribute is prefer or always

@@ -514,11 +514,12 @@ protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
   BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqns, stateSets = stateSets)  := eqsys;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqns, stateSets = stateSets, partitionKind=partitionKind)  := eqsys;
   vars := stripCorrelationVars(vars);
   eqns := stripCorrelationEqns(eqns);
-  outEqsys := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
+  outEqsys := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
 end stripCorrelationVarsAndEqns;
 
 protected function stripCorrelationEqns "help function "

@@ -123,11 +123,13 @@ algorithm
       BackendDAE.Matching matching;
       BackendDAE.Shared shared;
       BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets),(shared as BackendDAE.SHARED(knownVars = knvars,aliasVars = aliasvars), _))
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind),(shared as BackendDAE.SHARED(knownVars = knvars,aliasVars = aliasvars), _))
       equation
         ((_,_,true)) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs,traversersimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
       then
-        (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets),(shared,true));
+        (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind),(shared,true));
     else
       (isyst,sharedChanged);
   end matchcontinue;
@@ -714,14 +716,16 @@ algorithm
       list<BackendDAE.Equation> eqns_1,lsteqns;
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(vars,eqns,_,_,matching,stateSets),_)
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case (BackendDAE.EQSYSTEM(vars,eqns,_,_,matching,stateSets,partitionKind),_)
       equation
         lsteqns = BackendEquation.equationList(eqns);
         (vars,_) = replaceFinalVars(1,vars,repl); // replacing variable attributes (e.g start) in unknown vars
         (eqns_1,_) = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
         eqns1 = BackendEquation.listEquation(eqns_1);
       then
-        BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching,stateSets);
+        BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching,stateSets,partitionKind);
   end match;
 end removeParameterswork;
 
@@ -906,12 +910,14 @@ algorithm
       list<BackendDAE.Equation> eqns_1,lsteqns;
       Boolean b;
       BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets),_)
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),_)
       equation
         lsteqns = BackendEquation.equationList(eqns);
         (eqns_1,b) = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
         eqns1 = Debug.bcallret1(b, BackendEquation.listEquation,eqns_1,eqns);
-        syst = Util.if_(b,BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),isyst);
+        syst = Util.if_(b,BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind),isyst);
       then
         syst;
   end match;
@@ -981,8 +987,9 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.StateSets stateSets;
       DAE.FunctionTree funcs;
+      BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets),shared)
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared)
       equation
         funcs = BackendDAEUtil.getFunctions(shared);
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),SOME(funcs));
@@ -990,7 +997,7 @@ algorithm
         (m_1,(mT_1,_,_,changed)) = traverseIncidenceMatrix(m,removeEqualFunctionCallFinder,(mT,vars,eqns,{}));
         _ = List.isNotEmpty(changed);
         // update arrayeqns and algorithms, collect info for wrappers
-        syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m_1),SOME(mT_1),BackendDAE.NO_MATCHING(),stateSets);
+        syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m_1),SOME(mT_1),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
         syst = BackendDAEUtil.updateIncidenceMatrix(syst,BackendDAE.NORMAL(),NONE(),changed);
       then (syst,shared);
   end match;
@@ -1705,15 +1712,17 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       BackendDAE.StateSets stateSets;
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
     case (false,_) then isyst;
 //    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.NO_MATCHING()))
-    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets))
+    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind))
       equation
         // remove empty entries from vars/eqns
         vars = BackendVariable.listVar1(BackendVariable.varList(vars));
         eqns = BackendEquation.listEquation(BackendEquation.equationList(eqns));
       then
-        BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
+        BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
 /*    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2,comps=comps)))
       then
         updateEquationSystemMatching(vars,eqns,ass1,ass2,comps);
@@ -1794,7 +1803,9 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.Shared shared;
       BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching,stateSets=stateSets),BackendDAE.SHARED(functionTree=funcs),_,_,_,_,_)
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching,stateSets=stateSets,partitionKind=partitionKind),BackendDAE.SHARED(functionTree=funcs),_,_,_,_,_)
       equation
         eqns1 = BackendEquation.listEquation(eqn_lst);
         v = BackendVariable.listVar1(var_lst);
@@ -1809,7 +1820,7 @@ algorithm
         (vars1,eqns2,shared) = changeConstantLinearSystemVars(var_lst,solvedVals,sources,var_indxs,vars,eqns,ishared);
         eqns = List.fold(eqn_indxs,BackendEquation.equationRemove,eqns2);
       then
-        (BackendDAE.EQSYSTEM(vars1,eqns,NONE(),NONE(),matching,stateSets),shared);
+        (BackendDAE.EQSYSTEM(vars1,eqns,NONE(),NONE(),matching,stateSets,partitionKind),shared);
   end match;
 end solveLinearSystem;
 
@@ -2731,7 +2742,7 @@ algorithm
       //BackendDump.dumpBackendDAEEqnList(initialEquationList, "initial equations", false);
       //BackendDump.dumpBackendDAEVarList(initialVariableList, "initial vars");
 
-      initEqSystem = BackendDAE.EQSYSTEM(initialVars, initialEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
+      initEqSystem = BackendDAE.EQSYSTEM(initialVars, initialEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
 
       // redirect output to bidir
       DAE = BackendDAEUtil.copyBackendDAE(DAE);                         // to avoid side effects from arrays
@@ -2740,7 +2751,7 @@ algorithm
       (orderedVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(orderedVars, redirectOutputToBiDir, 1);
 
       // add initial equations and $res-variables
-      DAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),{}), initEqSystem}, shared);
+      DAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION()), initEqSystem}, shared);
       DAE = BackendDAEUtil.copyBackendDAE(DAE);                         // to avoid side effects from arrays
 
       DAE = collapseIndependentBlocks(DAE);                             // merge everything together
@@ -2811,7 +2822,7 @@ algorithm
       //BackendDump.dumpBackendDAEEqnList(initialEquationList, "initial equations", false);
       //BackendDump.dumpBackendDAEVarList(initialVariableList, "initial vars");
 
-      initEqSystem = BackendDAE.EQSYSTEM(initialVars, initialEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
+      initEqSystem = BackendDAE.EQSYSTEM(initialVars, initialEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
 
       // redirect output to bidir
       DAE = BackendDAEUtil.copyBackendDAE(DAE);                         // to avoid side effects from arrays
@@ -2820,7 +2831,7 @@ algorithm
       (orderedVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(orderedVars, redirectOutputToBiDir, 1);
 
       // add initial equations and $res-variables
-      DAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),{}), initEqSystem}, shared);
+      DAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION()), initEqSystem}, shared);
       DAE = BackendDAEUtil.copyBackendDAE(DAE);                         // to avoid side effects from arrays
 
       DAE = collapseIndependentBlocks(DAE);                             // merge everything together
@@ -2882,7 +2893,7 @@ algorithm
       //BackendDump.dumpBackendDAEEqnList(initialEquationList, "initial equations", false);
       //BackendDump.dumpBackendDAEVarList(initialVariableList, "initial vars");
 
-      initEqSystem = BackendDAE.EQSYSTEM(initialVars, initialEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
+      initEqSystem = BackendDAE.EQSYSTEM(initialVars, initialEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
 
       // redirect output to bidir
       DAE = BackendDAEUtil.copyBackendDAE(DAE);                         // to avoid side effects from arrays
@@ -2891,7 +2902,7 @@ algorithm
       (orderedVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(orderedVars, redirectOutputToBiDir, 1);
 
       // add initial equations and $res-variables
-      DAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),{}), initEqSystem}, shared);
+      DAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION()), initEqSystem}, shared);
       DAE = BackendDAEUtil.copyBackendDAE(DAE);                         // to avoid side effects from arrays
 
       DAE = collapseIndependentBlocks(DAE);                             // merge everything together
@@ -3330,17 +3341,18 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> om,omT;
       Boolean b;
       BackendDAE.StateSets stateSets;
+      BackendDAE.BaseClockPartitionKind partitionKind;
 
-      case (BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=e,m=om,mT=omT,stateSets=stateSets)::{},shared),{},_)
+      case (BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=e,m=om,mT=omT,stateSets=stateSets,partitionKind=partitionKind)::{},shared),{},_)
         equation
           v = BackendVariable.listVar({});
           ea = listArray({});
-        then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT,BackendDAE.MATCHING(ea,ea,{}),stateSets)::{},shared));
-      case (BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=e,m=om,mT=omT,stateSets=stateSets)::{},shared),_,{})
+        then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT,BackendDAE.MATCHING(ea,ea,{}),stateSets,partitionKind)::{},shared));
+      case (BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=e,m=om,mT=omT,stateSets=stateSets,partitionKind=partitionKind)::{},shared),_,{})
         equation
           v = BackendVariable.listVar({});
           ea = listArray({});
-        then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT,BackendDAE.MATCHING(ea,ea,{}),stateSets)::{},shared));
+        then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT,BackendDAE.MATCHING(ea,ea,{}),stateSets,partitionKind)::{},shared));
       case (backendDAE,_,_)
         equation
           Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> optimize jacobians time: " +& realString(clock()) +& "\n");
@@ -3435,11 +3447,10 @@ algorithm
       jacEventInfo = BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0);
       jacExtObjClasses = {};
 
-      jacobian = BackendDAE.DAE({BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),{})}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, {}, {}, cache, env, functions, jacEventInfo, jacExtObjClasses,BackendDAE.JACOBIAN(),{},ei));
+      jacobian = BackendDAE.DAE({BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, {}, {}, cache, env, functions, jacEventInfo, jacExtObjClasses,BackendDAE.JACOBIAN(),{},ei));
     then (jacobian, DAE.emptyFuncTree);
 
     case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, cache=cache,env=env,  functionTree=functions, info=ei)), diffVars, diffedVars, _, _, _, _, matrixName) equation
-
       // Generate tmp varibales
       dummyVarName = ("dummyVar" +& matrixName);
       x = DAE.CREF_IDENT(dummyVarName,DAE.T_REAL_DEFAULT,{});
@@ -3480,8 +3491,7 @@ algorithm
       jacEventInfo = BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0);
       jacExtObjClasses = {};
 
-      jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),{})::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, {}, {}, cache, env, DAE.emptyFuncTree, jacEventInfo, jacExtObjClasses, BackendDAE.JACOBIAN(),{}, ei));
-
+      jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, {}, {}, cache, env, DAE.emptyFuncTree, jacEventInfo, jacExtObjClasses, BackendDAE.JACOBIAN(),{}, ei));
     then (jacobian, functions);
 
     case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars,   functionTree=functions, info=_)), diffVars, diffedVars, _, _, _, _, matrixName) equation
@@ -3857,11 +3867,12 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
       BackendDAE.StateSets stateSets;
+      BackendDAE.BaseClockPartitionKind partitionKind;
 
-      case (BackendDAE.EQSYSTEM(vars, eqns, m, mT, BackendDAE.MATCHING(ass1,ass2,comps), stateSets), shared)
+      case (BackendDAE.EQSYSTEM(vars, eqns, m, mT, BackendDAE.MATCHING(ass1,ass2,comps), stateSets, partitionKind), shared)
         equation
           (comps, shared) = calculateJacobiansComponents(comps, vars, eqns, shared, {});
-      then (BackendDAE.EQSYSTEM(vars, eqns, m, mT, BackendDAE.MATCHING(ass1,ass2,comps), stateSets), shared);
+      then (BackendDAE.EQSYSTEM(vars, eqns, m, mT, BackendDAE.MATCHING(ass1,ass2,comps), stateSets, partitionKind), shared);
   end match;
 end calculateEqSystemJacobians;
 
@@ -4082,7 +4093,7 @@ algorithm
         emptyVars =  BackendVariable.emptyVars();
         emptyEqns = BackendEquation.listEquation({});
         cache = Env.emptyCache();
-        backendDAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(dependentVars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {})},
+        backendDAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(dependentVars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())},
           BackendDAE.SHARED(knvars, emptyVars, emptyVars,
             emptyEqns, emptyEqns, {}, {},
             cache, {}, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0),
@@ -4149,12 +4160,13 @@ algorithm
       Option<BackendDAE.IncidenceMatrixT> mT;
       BackendDAE.StateSets stateSets;
       BackendDAE.Matching matching;
+      BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (syst as BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets), shared)
+    case (syst as BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind), shared)
       equation
         comps = BackendDAEUtil.getStrongComponents(syst);
         (stateSets, shared) = calculateStateSetsJacobian(stateSets, vars, eqns, comps, shared, {});
-      then (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets), shared);
+      then (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind), shared);
   end match;
 end calculateEqSystemStateSetsJacobians;
 
@@ -4399,26 +4411,22 @@ end createResidualSetEquations;
 
 
 // =============================================================================
-// parallel backend stuff
+// parallel back end stuff (TLM)
 //
 // =============================================================================
-public function collapseIndependentBlocks
-  "Finds independent partitions of the equation system by "
-  input BackendDAE.BackendDAE dlow;
-  output BackendDAE.BackendDAE outDlow;
-algorithm
-  outDlow := match (dlow)
-    local
-      BackendDAE.EqSystem syst;
-      list<BackendDAE.EqSystem> systs;
-      BackendDAE.Shared shared;
 
-    case (BackendDAE.DAE(systs,shared))
-      equation
-        // We can use listReduce as if there is no eq-system something went terribly wrong
-        syst = List.reduce(systs,mergeIndependentBlocks);
-      then BackendDAE.DAE({syst},shared);
-  end match;
+public function collapseIndependentBlocks
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystem syst;
+  list<BackendDAE.EqSystem> systs;
+  BackendDAE.Shared shared;
+algorithm
+  BackendDAE.DAE(systs, shared) := inDAE;
+  // We can use listReduce as if there is no eq-system something went terribly wrong
+  syst := List.reduce(systs, mergeIndependentBlocks);
+  outDAE := BackendDAE.DAE({syst}, shared);
 end collapseIndependentBlocks;
 
 protected function mergeIndependentBlocks
@@ -4426,16 +4434,16 @@ protected function mergeIndependentBlocks
   input BackendDAE.EqSystem syst2;
   output BackendDAE.EqSystem syst;
 protected
-  BackendDAE.Variables vars,vars1,vars2;
-  BackendDAE.EquationArray eqs,eqs1,eqs2;
-  BackendDAE.StateSets stateSets,statSets1;
+  BackendDAE.Variables vars, vars1, vars2;
+  BackendDAE.EquationArray eqs, eqs1, eqs2;
+  BackendDAE.StateSets stateSets, statSets1;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqs1,stateSets=stateSets) := syst1;
-  BackendDAE.EQSYSTEM(orderedVars=vars2,orderedEqs=eqs2,stateSets=statSets1) := syst2;
-  vars := BackendVariable.addVars(BackendVariable.varList(vars2),vars1);
-  eqs := BackendEquation.addEquations(BackendEquation.equationList(eqs2),eqs1);
-  stateSets := listAppend(stateSets,statSets1);
-  syst := BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
+  BackendDAE.EQSYSTEM(orderedVars=vars1, orderedEqs=eqs1, stateSets=stateSets) := syst1;
+  BackendDAE.EQSYSTEM(orderedVars=vars2, orderedEqs=eqs2, stateSets=statSets1) := syst2;
+  vars := BackendVariable.addVars(BackendVariable.varList(vars2), vars1);
+  eqs := BackendEquation.addEquations(BackendEquation.equationList(eqs2), eqs1);
+  stateSets := listAppend(stateSets, statSets1);
+  syst := BackendDAE.EQSYSTEM(vars, eqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, BackendDAE.UNKNOWN_PARTITION());
 end mergeIndependentBlocks;
 
 public function partitionIndependentBlocks
@@ -4486,7 +4494,7 @@ algorithm
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),SOME(funcs));
         ixs = arrayCreate(arrayLength(m),0);
         // ixsT = arrayCreate(arrayLength(mT),0);
-        i = partitionIndependentBlocks0(arrayLength(m),0,mT,m,ixs);
+        i = partitionIndependentBlocks0(arrayLength(m),0,m,mT,ixs);
         // i2 = partitionIndependentBlocks0(arrayLength(mT),0,mT,m,ixsT);
         b = i > 1;
         // Debug.bcall2(b,BackendDump.dumpBackendDAE,BackendDAE.DAE({syst},shared), "partitionIndependentBlocksHelper");
@@ -4502,145 +4510,76 @@ algorithm
   end matchcontinue;
 end partitionIndependentBlocksHelper;
 
-protected function partitionIndependentBlocksSplitBlocks
-  "Partitions the independent blocks into list<array<...>> by first constructing an array<list<...>> structure for the algorithm complexity"
-  input Integer n;
-  input BackendDAE.EqSystem syst;
-  input array<Integer> ixs;
-  input BackendDAE.IncidenceMatrix mT;
-  input Boolean throwNoError;
-  output list<BackendDAE.EqSystem> systs;
+
+// =============================================================================
+// clock partitioning
+//
+// =============================================================================
+
+public function clockPartitioning
+  "Finds independent partitions of the equation system by base-clock partitioning and TLM."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
 algorithm
-  systs := match (n,syst,ixs,mT,throwNoError)
+  outDAE := match inDAE
     local
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray arr;
-      array<list<BackendDAE.Equation>> ea;
-      array<list<BackendDAE.Var>> va;
-      list<list<BackendDAE.Equation>> el;
-      list<list<BackendDAE.Var>> vl;
-      Integer i1,i2;
-      String s1,s2;
-      Boolean b;
-    case (_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=arr),_,_,_)
-      equation
-        ea = arrayCreate(n,{});
-        va = arrayCreate(n,{});
-        i1 = BackendDAEUtil.equationSize(arr);
-        i2 = BackendVariable.numVariables(vars);
-        s1 = intString(i1);
-        s2 = intString(i2);
-        Error.assertionOrAddSourceMessage((i1 == i2) or throwNoError,
-          Util.if_(i1 > i2, Error.OVERDET_EQN_SYSTEM, Error.UNDERDET_EQN_SYSTEM),
-          {s1,s2}, Absyn.dummyInfo);
+      BackendDAE.EqSystem syst;
+      list<BackendDAE.EqSystem> systs;
+      BackendDAE.Shared shared;
 
-        partitionEquations(BackendDAEUtil.equationArraySize(arr),arr,ixs,ea);
-        partitionVars(i2,arr,vars,ixs,mT,va);
-        el = arrayList(ea);
-        vl = arrayList(va);
-        (systs,(b,_)) = List.threadMapFold(el,vl,createEqSystem,(true,throwNoError));
-        true = throwNoError or b;
-      then systs;
+    case (BackendDAE.DAE({syst}, shared)) equation
+      systs = clockPartitioning1(syst, shared);
+    then BackendDAE.DAE(systs, shared);
+
+    // TODO: Improve support for partitioned systems of equations
+    else equation
+      BackendDAE.DAE({syst}, shared) = collapseIndependentBlocks(inDAE);
+      systs = clockPartitioning1(syst, shared);
+    then BackendDAE.DAE(systs,shared);
   end match;
-end partitionIndependentBlocksSplitBlocks;
+end clockPartitioning;
 
-protected function createEqSystem
-  input list<BackendDAE.Equation> el;
-  input list<BackendDAE.Var> vl;
-  input tuple<Boolean,Boolean> iTpl;
-  output BackendDAE.EqSystem syst;
-  output tuple<Boolean,Boolean> oTpl;
+protected function clockPartitioning1
+  input BackendDAE.EqSystem inSyst;
+  input BackendDAE.Shared inShared;
+  output list<BackendDAE.EqSystem> outSysts;
 protected
-  BackendDAE.EquationArray arr;
+  list<BackendDAE.EqSystem> systs;
+  BackendDAE.IncidenceMatrix m,mT;
+  array<Integer> ixs;
+  Boolean b;
+  Integer i;
+  BackendDAE.Shared shared;
+  BackendDAE.EqSystem syst;
+  DAE.FunctionTree funcs;
   BackendDAE.Variables vars;
-  Integer i1,i2;
-  String s1,s2,s3,s4;
-  list<String> crs;
-  Boolean success,throwNoError;
+  BackendDAE.EquationArray eqs;
+  BackendDAE.StateSets stateSets;
 algorithm
-  (success,throwNoError) := iTpl;
-  vars := BackendVariable.listVar1(vl);
-  arr := BackendEquation.listEquation(el);
-  i1 := BackendDAEUtil.equationSize(arr);
-  i2 := BackendVariable.numVariables(vars);
-  s1 := intString(i1);
-  s2 := intString(i2);
-  crs := Debug.bcallret3(i1<>i2,List.mapMap,vl,BackendVariable.varCref,ComponentReference.printComponentRefStr,{});
-  s3 := stringDelimitList(crs,"\n");
-  s4 := Debug.bcallret1(i1<>i2,BackendDump.dumpEqnsStr,el,"");
-  // Can this even be triggered? We check that all variables are defined somewhere, so everything should be balanced already?
-  Debug.bcall3((i1<>i2) and not throwNoError,Error.addSourceMessage,Error.IMBALANCED_EQUATIONS,{s1,s2,s3,s4},Absyn.dummyInfo);
-  syst := BackendDAE.EQSYSTEM(vars,arr,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
-  success := success and i1==i2;
-  oTpl := (success,throwNoError);
-end createEqSystem;
+  funcs := BackendDAEUtil.getFunctions(inShared);
 
-protected function partitionEquations
-  input Integer n;
-  input BackendDAE.EquationArray arr;
-  input array<Integer> ixs;
-  input array<list<BackendDAE.Equation>> ea;
-algorithm
-  _ := match (n,arr,ixs,ea)
-    local
-      Integer ix;
-      list<BackendDAE.Equation> lst;
-      BackendDAE.Equation eq;
-    case (0,_,_,_) then ();
-    case (_,_,_,_)
-      equation
-        ix = ixs[n];
-        lst = ea[ix];
-        eq = BackendEquation.equationNth0(arr,n-1);
-        lst = eq::lst;
-        // print("adding eq " +& intString(n) +& " to group " +& intString(ix) +& "\n");
-        _ = arrayUpdate(ea,ix,lst);
-        partitionEquations(n-1,arr,ixs,ea);
-      then ();
-  end match;
-end partitionEquations;
+  BackendDAE.EQSYSTEM(vars, eqs, _, _, _, stateSets, _) := inSyst;
+  syst := BackendDAE.EQSYSTEM(vars, eqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, BackendDAE.UNKNOWN_PARTITION());
+  (syst, m, mT) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.BASECLOCK(), SOME(funcs));
 
-protected function partitionVars
-  input Integer n;
-  input BackendDAE.EquationArray arr;
-  input BackendDAE.Variables vars;
-  input array<Integer> ixs;
-  input BackendDAE.IncidenceMatrix mT;
-  input array<list<BackendDAE.Var>> va;
-algorithm
-  _ := match (n,arr,vars,ixs,mT,va)
-    local
-      Integer ix,eqix;
-      list<BackendDAE.Var> lst;
-      BackendDAE.Var v;
-      Boolean b;
-      DAE.ComponentRef cr;
-      String name;
-      Absyn.Info info;
-    case (0,_,_,_,_,_) then ();
-    case (_,_,_,_,_,_)
-      equation
-        v = BackendVariable.getVarAt(vars,n);
-        cr = BackendVariable.varCref(v);
-        // Select any equation that could define this variable
-        b = not List.isEmpty(mT[n]);
-        name = Debug.bcallret1(not b,ComponentReference.printComponentRefStr,cr,"");
-        info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(v));
-        Error.assertionOrAddSourceMessage(b,Error.EQUATIONS_VAR_NOT_DEFINED,{name},info);
-        // print("adding var " +& intString(n) +& " to group ???\n");
-        eqix::_ = mT[n];
-        eqix = intAbs(eqix);
-        // print("var " +& intString(n) +& " has eq " +& intString(eqix) +& "\n");
-        // That's the index of the indep.system
-        ix = ixs[eqix];
-        lst = va[ix];
-        lst = v::lst;
-        // print("adding var " +& intString(n) +& " to group " +& intString(ix) +& " (comes from eq: "+& intString(eqix) +&")\n");
-        _ = arrayUpdate(va,ix,lst);
-        partitionVars(n-1,arr,vars,ixs,mT,va);
-      then ();
-  end match;
-end partitionVars;
+  //print("base-clock partitioning\n");
+  //print("=======================\n");
+  //BackendDump.dumpEqSystem(syst, "System (before base-clock partitioning)");
+  //BackendDump.dumpIncidenceMatrix(m);
+
+  ixs := arrayCreate(arrayLength(m), 0);
+  i := partitionIndependentBlocks0(arrayLength(m), 0, m, mT, ixs);
+  b := i > 1;
+
+  //print("Got partition!\n");
+  //print(stringDelimitList(List.map(arrayList(ixs), intString), ","));
+  //print("\n");
+
+  outSysts := Debug.bcallret5(b, partitionIndependentBlocksSplitBlocks, i, syst, ixs, mT, false, {syst});
+
+  //print("Number of partitioned systems: " +& intString(listLength(outSysts)) +& "\n");
+  //List.map1_0(outSysts, BackendDump.dumpEqSystem, "System (after base-clock partitioning)");
+end clockPartitioning1;
 
 protected function partitionIndependentBlocks0
   input Integer n;
@@ -4650,14 +4589,14 @@ protected function partitionIndependentBlocks0
   input array<Integer> ixs;
   output Integer on;
 algorithm
-  on := match (n,n2,m,mT,ixs)
+  on := match (n, n2, m, mT, ixs)
     local
       Boolean b;
-    case (0,_,_,_,_) then n2;
-    case (_,_,_,_,_)
-      equation
-        b = partitionIndependentBlocks1(n,n2+1,m,mT,ixs);
-      then partitionIndependentBlocks0(n-1,Util.if_(b,n2+1,n2),m,mT,ixs);
+
+    case (0, _, _, _, _) then n2;
+    case (_, _, _, _, _) equation
+      b = partitionIndependentBlocks1(n, n2+1, m, mT, ixs);
+    then partitionIndependentBlocks0(n-1, Util.if_(b, n2+1, n2), m, mT, ixs);
   end match;
 end partitionIndependentBlocks0;
 
@@ -4669,7 +4608,7 @@ protected function partitionIndependentBlocks1
   input array<Integer> ixs;
   output Boolean ochange;
 algorithm
-  ochange := partitionIndependentBlocks2(ixs[ix] == 0,ix,n,m,mT,ixs);
+  ochange := partitionIndependentBlocks2(ixs[ix] == 0, ix, n, m, mT, ixs);
 end partitionIndependentBlocks1;
 
 protected function partitionIndependentBlocks2
@@ -4681,57 +4620,182 @@ protected function partitionIndependentBlocks2
   input array<Integer> inIxs;
   output Boolean change;
 algorithm
-  change := match (b,ix,n,m,mT,inIxs)
+  change := match (b, ix, n, m, mT, inIxs)
     local
       list<Integer> lst;
       list<list<Integer>> lsts;
       array<Integer> ixs;
 
-    case (false,_,_,_,_,_) then false;
-    case (true,_,_,_,_,ixs)
-      equation
-        // i = ixs[ix];
-        // print(intString(ix) +& "; update crap\n");
-        // print("mark\n");
-        ixs = arrayUpdate(ixs,ix,n);
-        // print("mark OK\n");
-        lst = List.map(mT[ix],intAbs);
-        // print(stringDelimitList(List.map(lst,intString),",") +& "\n");
-        // print("len:" +& intString(arrayLength(m)) +& "\n");
-        lsts = List.map1r(lst,arrayGet,m);
-        // print("arrayNth OK\n");
-        lst = List.map(List.flatten(lsts),intAbs);
-        // print(stringDelimitList(List.map(lst,intString),",") +& "\n");
-        // print("lst get\n");
-        _ = List.map4(lst,partitionIndependentBlocks1,n,m,mT,ixs);
-      then true;
+    case (false, _, _, _, _, _)
+    then false;
+
+    case (true, _, _, _, _, ixs) equation
+      // i = ixs[ix];
+      // print(intString(ix) +& "; update crap\n");
+      // print("mark\n");
+      ixs = arrayUpdate(ixs, ix, n);
+      // print("mark OK\n");
+      lst = List.map(m[ix], intAbs);
+      // print(stringDelimitList(List.map(lst, intString), ", ") +& "\n");
+      // print("len:" +& intString(arrayLength(mT)) +& "\n");
+      lsts = List.map1r(lst, arrayGet, mT);
+      // print("arrayNth OK\n");
+      lst = List.map(List.flatten(lsts), intAbs);
+      // print(stringDelimitList(List.map(lst, intString), ", ") +& "\n");
+      // print("lst get\n");
+      _ = List.map4(lst, partitionIndependentBlocks1, n, m, mT, ixs);
+    then true;
   end match;
 end partitionIndependentBlocks2;
 
-// protected function arrayUpdateForPartition
-//   input Integer ix;
-//   input array<Integer> ixs;
-//   input Integer val;
-//   output array<Integer> oixs;
-// algorithm
-//   // print("arrayUpdate("+&intString(ix+1)+&","+&intString(val)+&")\n");
-//   oixs := arrayUpdate(ixs,ix+1,val);
-// end arrayUpdateForPartition;
+protected function partitionIndependentBlocksSplitBlocks
+  "Partitions the independent blocks into list<array<...>> by first constructing an array<list<...>> structure for the algorithm complexity"
+  input Integer n;
+  input BackendDAE.EqSystem syst;
+  input array<Integer> ixs;
+  input BackendDAE.IncidenceMatrix mT;
+  input Boolean throwNoError;
+  output list<BackendDAE.EqSystem> systs;
+algorithm
+  systs := match (n, syst, ixs, mT, throwNoError)
+    local
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray arr;
+      array<list<BackendDAE.Equation>> ea;
+      array<list<BackendDAE.Var>> va;
+      list<list<BackendDAE.Equation>> el;
+      list<list<BackendDAE.Var>> vl;
+      Integer i1, i2;
+      String s1, s2;
+      Boolean b;
+      
+    case (_, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=arr), _, _, _) equation
+      ea = arrayCreate(n, {});
+      va = arrayCreate(n, {});
+      i1 = BackendDAEUtil.equationSize(arr);
+      i2 = BackendVariable.numVariables(vars);
+      s1 = intString(i1);
+      s2 = intString(i2);
+      Error.assertionOrAddSourceMessage((i1 == i2) or throwNoError, 
+        Util.if_(i1 > i2, Error.OVERDET_EQN_SYSTEM, Error.UNDERDET_EQN_SYSTEM), 
+        {s1, s2}, Absyn.dummyInfo);
 
-// protected function printPartition
-//   input Boolean b;
-//   input array<Integer> ixs;
-// algorithm
-//   _ := match (b,ixs)
-//     case (true,_)
-//       equation
-//         print("Got partition!\n");
-//         print(stringDelimitList(List.map(arrayList(ixs), intString), ","));
-//         print("\n");
-//       then ();
-//     else ();
-//   end match;
-// end printPartition;
+      partitionEquations(BackendDAEUtil.equationArraySize(arr), arr, ixs, ea);
+      partitionVars(i2, arr, vars, ixs, mT, va);
+      el = arrayList(ea);
+      vl = arrayList(va);
+      (systs, (b, _)) = List.threadMapFold(el, vl, createEqSystem, (true, throwNoError));
+      true = throwNoError or b;
+    then systs;
+  end match;
+end partitionIndependentBlocksSplitBlocks;
+
+protected function createEqSystem
+  input list<BackendDAE.Equation> el;
+  input list<BackendDAE.Var> vl;
+  input tuple<Boolean, Boolean> iTpl;
+  output BackendDAE.EqSystem syst;
+  output tuple<Boolean, Boolean> oTpl;
+protected
+  BackendDAE.EquationArray arr;
+  BackendDAE.Variables vars;
+  Integer i1, i2;
+  String s1, s2, s3, s4;
+  list<String> crs;
+  Boolean success, throwNoError;
+algorithm
+  (success, throwNoError) := iTpl;
+  vars := BackendVariable.listVar1(vl);
+  arr := BackendEquation.listEquation(el);
+  i1 := BackendDAEUtil.equationSize(arr);
+  i2 := BackendVariable.numVariables(vars);
+  s1 := intString(i1);
+  s2 := intString(i2);
+  crs := Debug.bcallret3(i1<>i2, List.mapMap, vl, BackendVariable.varCref, ComponentReference.printComponentRefStr, {});
+  s3 := stringDelimitList(crs, "\n");
+  s4 := Debug.bcallret1(i1<>i2, BackendDump.dumpEqnsStr, el, "");
+  // Can this even be triggered? We check that all variables are defined somewhere, so everything should be balanced already?
+  Debug.bcall3((i1<>i2) and not throwNoError, Error.addSourceMessage, Error.IMBALANCED_EQUATIONS, {s1, s2, s3, s4}, Absyn.dummyInfo);
+  syst := BackendDAE.EQSYSTEM(vars, arr, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
+  success := success and i1==i2;
+  oTpl := (success, throwNoError);
+end createEqSystem;
+
+protected function partitionEquations
+  input Integer n;
+  input BackendDAE.EquationArray arr;
+  input array<Integer> ixs;
+  input array<list<BackendDAE.Equation>> ea;
+algorithm
+  _ := match (n, arr, ixs, ea)
+    local
+      Integer ix;
+      list<BackendDAE.Equation> lst;
+      BackendDAE.Equation eq;
+      
+    case (0, _, _, _)
+    then ();
+    
+    case (_, _, _, _) equation
+      ix = ixs[n];
+      lst = ea[ix];
+      eq = BackendEquation.equationNth0(arr, n-1);
+      lst = eq::lst;
+      // print("adding eq " +& intString(n) +& " to group " +& intString(ix) +& "\n");
+      _ = arrayUpdate(ea, ix, lst);
+      partitionEquations(n-1, arr, ixs, ea);
+    then ();
+  end match;
+end partitionEquations;
+
+protected function partitionVars
+  input Integer n;
+  input BackendDAE.EquationArray arr;
+  input BackendDAE.Variables vars;
+  input array<Integer> ixs;
+  input BackendDAE.IncidenceMatrix mT;
+  input array<list<BackendDAE.Var>> va;
+algorithm
+  _ := match (n, arr, vars, ixs, mT, va)
+    local
+      Integer ix, eqix;
+      list<BackendDAE.Var> lst;
+      BackendDAE.Var v;
+      Boolean b;
+      DAE.ComponentRef cr;
+      String name;
+      Absyn.Info info;
+      
+    case (0, _, _, _, _, _)
+    then ();
+    
+    case (_, _, _, _, _, _) equation
+      v = BackendVariable.getVarAt(vars, n);
+      cr = BackendVariable.varCref(v);
+      // Select any equation that could define this variable
+      b = not List.isEmpty(mT[n]);
+      name = Debug.bcallret1(not b, ComponentReference.printComponentRefStr, cr, "");
+      info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(v));
+      Error.assertionOrAddSourceMessage(b, Error.EQUATIONS_VAR_NOT_DEFINED, {name}, info);
+      // print("adding var " +& intString(n) +& " to group ???\n");
+      eqix::_ = mT[n];
+      eqix = intAbs(eqix);
+      // print("var " +& intString(n) +& " has eq " +& intString(eqix) +& "\n");
+      // That's the index of the indep.system
+      ix = ixs[eqix];
+      lst = va[ix];
+      lst = v::lst;
+      // print("adding var " +& intString(n) +& " to group " +& intString(ix) +& " (comes from eq: "+& intString(eqix) +&")\n");
+      _ = arrayUpdate(va, ix, lst);
+      partitionVars(n-1, arr, vars, ixs, mT, va);
+    then ();
+  end match;
+end partitionVars;
+
+// =============================================================================
+// residual stuff ... for whatever reason
+//
+// =============================================================================
 
 public function residualForm
   "Puts equations like x=y in the form of 0=x-y"
@@ -5171,15 +5235,16 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       BackendDAE.StateSets stateSets;
+      BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets),shared as BackendDAE.SHARED(knownVars=knvars))
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared as BackendDAE.SHARED(knownVars=knvars))
       equation
         // traverse the equations
         eqnslst = BackendEquation.equationList(eqns);
         // traverse equations in reverse order, than branch equations of if equaitions need no reverse
         ((eqnslst,asserts,true)) = List.fold1(listReverse(eqnslst), simplifyIfEquationsFinder, knvars, ({},{},false));
         eqns = BackendEquation.listEquation(eqnslst);
-        syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
+        syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
         shared = BackendEquation.requationsAddDAE(asserts,shared);
       then (syst,shared);
 
@@ -5878,7 +5943,9 @@ algorithm
       HashTableExpToIndex.HashTable ht;
       array<list<tuple<BackendDAE.Equation,Integer>>> eqnsarray;
       BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets),shared)
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared)
       equation
         // traverse the equations and collect all semiLinear calls  y=semiLinear(x,sa,sb)
         (eqns,(eqnslst,_,true)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,simplifysemiLinearFinder,({},0,false));
@@ -5903,7 +5970,7 @@ algorithm
         eqnslst = List.fold(arrayList(eqnsarray),semiLinearOptimize,{});
         // replace the equations in the system
         eqns = List.fold(eqnslst,semiLinearReplaceEqns,eqns);
-        syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
+        syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
       then (syst,shared);
     case (_,_)
       then (isyst,ishared);
@@ -6343,13 +6410,15 @@ algorithm
       list<DAE.Exp> explst;
       String s;
       BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets),(shared, _))
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind),(shared, _))
       equation
         ((_,explst as _::_)) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs,traverserinputDerivativesUsed,(BackendVariable.daeKnVars(shared),{}));
         s = stringDelimitList(List.map(explst,ExpressionDump.printExpStr),"\n");
         Error.addMessage(Error.DERIVATIVE_INPUT,{s});
       then
-        (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets),(shared,true));
+        (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind),(shared,true));
     else
       (isyst,sharedChanged);
   end matchcontinue;
@@ -6446,13 +6515,14 @@ protected
   list<BackendDAE.Equation> eqns_1, lsteqns;
   Boolean b;
   BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets) := inEqSystem;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets, partitionKind=partitionKind) := inEqSystem;
   (vars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, replaceFinalVarTraverser, (repl, 0));
   lsteqns := BackendEquation.equationList(eqns);
   (eqns_1, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
   eqns1 := Debug.bcallret1(b, BackendEquation.listEquation, eqns_1, eqns);
-  outEqSystem := Util.if_(b, BackendDAE.EQSYSTEM(vars, eqns1, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets), inEqSystem);
+  outEqSystem := Util.if_(b, BackendDAE.EQSYSTEM(vars, eqns1, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), inEqSystem);
 end removeConstantsWork;
 
 protected function removeConstantsFinder "author: Frenkel TUD 2012-10"
@@ -6505,10 +6575,11 @@ algorithm
       BackendDAE.Matching matching;
       BackendDAE.Shared shared;
       BackendDAE.StateSets stateSets;
+      BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets), (shared, _)) equation
+    case (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), (shared, _)) equation
       _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserreplaceEdgeChange, false);
-    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets), (shared, true));
+    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), (shared, true));
 
     else (isyst, sharedChanged);
   end matchcontinue;
@@ -6754,7 +6825,7 @@ algorithm
   ((removedEqs, vars, eqns, index, ht)) := BackendEquation.traverseBackendDAEEqns(removedEqs, encapsulateWhenConditions2, (BackendEquation.emptyEqns(), vars, eqns, index, ht));
   vars_ := BackendVariable.listVar(vars);
   eqns_ := BackendEquation.listEquation(eqns);
-  systs := listAppend(systs, {BackendDAE.EQSYSTEM(vars_, eqns_, NONE(), NONE(), BackendDAE.NO_MATCHING(), {})});
+  systs := listAppend(systs, {BackendDAE.EQSYSTEM(vars_, eqns_, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())});
 
   eventInfo := BackendDAE.EVENT_INFO(timeEvents,
                                      whenClauseLst,
@@ -6834,8 +6905,10 @@ protected
   list<BackendDAE.Equation> eqnLst;
   Integer index;
   HashTableExpToIndex.HashTable ht;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets) := inEqSystem;
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) := inEqSystem;
   (index, ht) := inTpl;
 
   ((orderedEqs, varLst, eqnLst, index, ht)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, encapsulateWhenConditions2, (BackendEquation.emptyEqns(), {}, {}, index, ht));
@@ -6844,7 +6917,7 @@ algorithm
   orderedEqs := BackendEquation.addEquations(eqnLst, orderedEqs);
 
   outTpl := (index, ht);
-  outEqSystem := BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets);
+  outEqSystem := BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
 end encapsulateWhenConditions1;
 
 protected function encapsulateWhenConditions2 "author: lochel
@@ -7293,12 +7366,14 @@ algorithm
       Env.Env env;
       BackendDAE.StateSets stateSets;
       BackendDAE.ExtraInfo ei;
-    case (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets), BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs,ei))
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind), BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs,ei))
       equation
         (eqns1, (vars1, _)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns, traverserexpandDerEquation, (vars, shared));
         (inieqns1, (vars2, _)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns, traverserexpandDerEquation, (vars1, shared));
       then
-        (BackendDAE.EQSYSTEM(vars2, eqns1, m, mT, matching, stateSets), BackendDAE.SHARED(knvars, exobj, av, inieqns1, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs,ei));
+        (BackendDAE.EQSYSTEM(vars2, eqns1, m, mT, matching, stateSets, partitionKind), BackendDAE.SHARED(knvars, exobj, av, inieqns1, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs,ei));
   end match;
 end expandDerOperatorWork;
 
@@ -7653,13 +7728,14 @@ algorithm
       BackendDAE.StateSets stateSets;
       Env.Cache cache;
       Env.Env env;
+      BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets), (shared, _))
+    case (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), (shared, _))
       equation
         _ = BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(orderedVars, traverserapplyRewriteRulesBackend, false);
         _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserapplyRewriteRulesBackend, false);
     then
-      (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets), (shared, true));
+      (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), (shared, true));
 
     else (isyst, sharedChanged);
   end matchcontinue;

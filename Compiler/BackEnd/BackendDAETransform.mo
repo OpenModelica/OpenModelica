@@ -96,7 +96,9 @@ algorithm
       BackendDAE.Variables vars;
       array<Integer> markarray;
       BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(vars,eqs,SOME(_),SOME(mt),BackendDAE.MATCHING(ass1=ass1,ass2=ass2),stateSets=stateSets),_,_,_)
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case (BackendDAE.EQSYSTEM(vars,eqs,SOME(_),SOME(mt),BackendDAE.MATCHING(ass1=ass1,ass2=ass2),stateSets=stateSets,partitionKind=partitionKind),_,_,_)
       equation
         comps = tarjanAlgorithm(mt,ass2);
         markarray = arrayCreate(BackendDAEUtil.equationArraySize(eqs),-1);
@@ -105,7 +107,7 @@ algorithm
         //noscalass2 = eqnAssignmentNonScalar(1,arrayLength(mapEqnIncRow),mapEqnIncRow,ass2,{});
       then
         // Frenkel TUD: Do not hand over the scalar incidence Matrix because following modules does not check if scalar or not
-        (BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.MATCHING(ass1,ass2,comps1),stateSets),comps1);
+        (BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.MATCHING(ass1,ass2,comps1),stateSets,partitionKind),comps1);
     else
       equation
       Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function strongComponentsScalar failed
@@ -296,12 +298,14 @@ algorithm
       BackendDAE.EquationArray eqs;
       BackendDAE.Variables vars;
       BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1=ass1,ass2=ass2),stateSets=stateSets),_)
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1=ass1,ass2=ass2),stateSets=stateSets,partitionKind=partitionKind),_)
       equation
         comps = tarjanAlgorithm(mt,ass2);
         comps1 = analyseStrongComponents(comps,syst,shared,ass1,ass2,{});
       then
-        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,comps1),stateSets),comps1);
+        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,comps1),stateSets,partitionKind),comps1);
     else
       equation
         Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function strongComponents failed
@@ -360,6 +364,7 @@ algorithm
       list<BackendDAE.Equation> eqn_lst;
       BackendDAE.EquationArray eqns;
       BackendDAE.StrongComponent compX;
+      
     case (comp,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,ass1,ass2)
       equation
         (eqn_lst,var_varindx_lst) = List.map3_2(comp, getEquationAndSolvedVar_Internal, eqns, vars, ass2);
@@ -465,7 +470,7 @@ algorithm
         var_lst_1 = List.map(var_lst, transformXToXd);
         vars_1 = BackendVariable.listVar1(var_lst_1);
         eqns_1 = BackendEquation.listEquation(eqn_lst1);
-        syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
+        syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE(),NONE());
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         (jac,shared) = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, true, shared);

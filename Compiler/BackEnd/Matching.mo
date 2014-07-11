@@ -6118,7 +6118,9 @@ algorithm
      BackendDAE.IncidenceMatrixT mT;
      BackendDAE.EqSystem syst;
      BackendDAE.StateSets stateSets;
-   case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets),_)
+     BackendDAE.BaseClockPartitionKind partitionKind;
+     
+   case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),_)
      equation
        ne = BackendDAEUtil.systemSize(isyst);
        nv = BackendVariable.daenumVariables(isyst);
@@ -6128,7 +6130,7 @@ algorithm
        setrandArray(nv,randarr1);
        eqns1 = randSortSystem1(ne,-1,randarr,eqns,BackendEquation.listEquation({}),BackendEquation.equationNth0,BackendEquation.equationAdd);
        vars1 = randSortSystem1(nv,0,randarr1,vars,BackendVariable.emptyVars(),BackendVariable.getVarAt,BackendVariable.addVar);
-       (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),BackendDAE.NORMAL(),NONE());
+       (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind),BackendDAE.NORMAL(),NONE());
      then
        syst;
   end match;

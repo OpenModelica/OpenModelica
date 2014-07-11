@@ -164,7 +164,7 @@ algorithm
                                  ei);
 
       // generate initial system and pre-balance it
-      initsyst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
+      initsyst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
       (initsyst, dumpVars) = preBalanceInitialSystem(initsyst);
 
       // split the initial system into independend subsystems
@@ -286,14 +286,15 @@ protected
   BackendDAE.EquationArray orderedEqs;
   BackendDAE.EquationArray eqns;
   BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
   list<BackendDAE.Equation> eqnlst;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets) := inEqSystem;
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) := inEqSystem;
 
   ((orderedVars, eqnlst)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, inlineWhenForInitializationEquation, (orderedVars, {}));
   eqns := BackendEquation.listEquation(eqnlst);
 
-  outEqSystem := BackendDAE.EQSYSTEM(orderedVars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets);
+  outEqSystem := BackendDAE.EQSYSTEM(orderedVars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
 end inlineWhenForInitializationSystem;
 
 protected function inlineWhenForInitializationEquation "author: lochel
@@ -954,13 +955,14 @@ protected
   BackendDAE.EquationArray orderedEqs;
   BackendDAE.Matching matching;
   BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
   Boolean b;
   BackendDAE.IncidenceMatrix mt;
 algorithm
   (_, _, mt) := BackendDAEUtil.getIncidenceMatrix(inSystem, BackendDAE.NORMAL(), NONE());
-  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets) := inSystem;
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) := inSystem;
   (orderedVars, orderedEqs, b, outDumpVars) := preBalanceInitialSystem1(arrayLength(mt), mt, orderedVars, orderedEqs, false, {});
-  outSystem := Util.if_(b, BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets), inSystem);
+  outSystem := Util.if_(b, BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), inSystem);
 end preBalanceInitialSystem;
 
 protected function preBalanceInitialSystem1 "author: lochel"
@@ -1158,7 +1160,7 @@ algorithm
       list_inEqns = List.set(list_inEqns, currID, eqn);
       eqns = BackendEquation.listEquation(list_inEqns);
       funcs = BackendDAEUtil.getFunctions(shared);
-      system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
+      system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
       (_, m, _, _, _) = BackendDAEUtil.getIncidenceMatrixScalar(system, BackendDAE.NORMAL(), SOME(funcs));
       listVar=m[currID];
       false=intEq(0,listLength(listVar));
@@ -1854,7 +1856,7 @@ algorithm
       Error.addCompilerNotification("Trying to fix over-determined initial system with " +& intString(nVars) +& " variables and " +& intString(nEqns) +& " equations... [experimental support]");
 
       funcs = BackendDAEUtil.getFunctions(shared);
-      system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
+      system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
       (system, m, mt, mapEqnIncRow, mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(system, BackendDAE.NORMAL(), SOME(funcs));
       (me, meT, _, _)= BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(system, shared);
 
@@ -1866,7 +1868,7 @@ algorithm
       SOME(mt1)=BackendDAEUtil.copyIncidenceMatrix(SOME(mt));
 
       (origEqns, removedEqns) = fixOverDeterminedInitialSystem(vars, eqns, eqns, nEqns, mOrig, m1, mt1, me, meT, mapEqnIncRow, mapIncRowEqn, shared, removedEqns);
-      system = BackendDAE.EQSYSTEM(vars, origEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
+      system = BackendDAE.EQSYSTEM(vars, origEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
     then (system, (shared, (inDAE, initVars, dumpVars, removedEqns)));
 
     // under-determined system
@@ -1877,7 +1879,7 @@ algorithm
 
       (eqns, dumpVars2) = fixUnderDeterminedInitialSystem(inDAE, vars, eqns, initVars, shared);
       dumpVars = listAppend(dumpVars, dumpVars2);
-      system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
+      system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
     then (system, (shared, (inDAE, initVars, dumpVars, removedEqns)));
 
     else (isyst, sharedOptimized);
@@ -1905,7 +1907,7 @@ algorithm
   // match the system
   nVars := BackendVariable.varsSize(inVars);
   nEqns := BackendDAEUtil.equationSize(inEqns);
-  syst := BackendDAE.EQSYSTEM(inVars, inEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
+  syst := BackendDAE.EQSYSTEM(inVars, inEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
   funcs := BackendDAEUtil.getFunctions(inShared);
   (syst, m, mt, _, _) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs));
   // BackendDump.printEqSystem(syst);
@@ -3038,10 +3040,11 @@ protected
   BackendDAE.Matching matching;
   Boolean b;
   BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets) := inSyst;
+  BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind) := inSyst;
   (vars, (_, b)) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, optimizeInitialAliasesFinder, (initalAliases, false));
-  outSyst := Util.if_(b, BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets), inSyst);
+  outSyst := Util.if_(b, BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind), inSyst);
 end optimizeInitialAliases;
 
 protected function optimizeInitialAliasesFinder "author: Frenkel TUD 2011-03"

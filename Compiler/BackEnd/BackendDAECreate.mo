@@ -61,7 +61,6 @@ protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
 protected import Global;
-protected import GlobalScript;
 protected import HashTableExpToExp;
 protected import HashTableExpToIndex;
 protected import HashTable;
@@ -132,7 +131,7 @@ algorithm
                                                       eqnarr,
                                                       NONE(),
                                                       NONE(),
-                                                      BackendDAE.NO_MATCHING(), {})::{},
+                                                      BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())::{},
                                   BackendDAE.SHARED(knvars,
                                                     extVars,
                                                     aliasVars,

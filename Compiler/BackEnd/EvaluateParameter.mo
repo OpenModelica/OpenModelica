@@ -980,10 +980,11 @@ protected
   Option<BackendDAE.IncidenceMatrixT> mT;
   BackendDAE.Matching matching;
   BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=m,mT=mT,matching=matching,stateSets=stateSets) := isyst;
+  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := isyst;
   (vars,outTypeA) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,replaceEvaluatedParameterTraverser,inTypeA);
-  osyst := BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,stateSets);
+  osyst := BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,stateSets,partitionKind);
 end replaceEvaluatedParametersSystem;
 
 protected function replaceEvaluatedParameterTraverser
@@ -1093,12 +1094,13 @@ protected
   list<BackendDAE.Equation> eqns_1,lsteqns;
   Boolean b;
   BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets) := isyst;
+  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind) := isyst;
   lsteqns := BackendEquation.equationList(eqns);
   (eqns_1,b) := BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
   eqns1 := Debug.bcallret1(b, BackendEquation.listEquation,eqns_1,eqns);
-  osyst := Util.if_(b,BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),isyst);
+  osyst := Util.if_(b,BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind),isyst);
 end replaceEvaluatedParametersSystemEqns;
 
 end EvaluateParameter;

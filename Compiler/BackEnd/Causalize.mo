@@ -168,14 +168,15 @@ protected
   list<list<Integer>> comps;
   array<Integer> ass1,ass2;
   BackendDAEFunc.matchingAlgorithmFunc matchingFunc;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(m),mT=SOME(mT),stateSets=stateSets) := iSyst;
+  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(m),mT=SOME(mT),stateSets=stateSets,partitionKind=partitionKind) := iSyst;
   (matchingFunc,_) :=  matchingAlgorithm;
   // get absolute Incidence Matrix
   m := BackendDAEUtil.absIncidenceMatrix(m);
   mT := BackendDAEUtil.absIncidenceMatrix(mT);
   // try to match
-  outSyst := BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets);
+  outSyst := BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
   // do matching
   (outSyst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),_,_) := matchingFunc(outSyst,iShared,true,(BackendDAE.INDEX_REDUCTION(),eqnConstr),foundSingularSystem,arg);
   outSyst := BackendDAEUtil.setEqSystemMatching(iSyst,BackendDAE.MATCHING(ass1,ass2,{}));

@@ -168,6 +168,7 @@ algorithm
       BackendDAE.Variables vars;
       list<BackendDAE.Equation> eqLst, eqsNew, eqsOld, resEqs;
       list<BackendDAE.Var> varLst, varsNew, varsOld, tvars;
+      BackendDAE.BaseClockPartitionKind partitionKind;
     case(_,_,_,_,_,_,_)
       equation
         // completed
@@ -193,7 +194,7 @@ algorithm
 
         BackendDAE.MATCHING(ass1=ass1New, ass2=ass2New, comps=compsNew) = matchingNew;
         // add the new vars and equations to the original EqSystem
-        BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs, stateSets = stateSets) = systIn;
+        BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs, stateSets = stateSets, partitionKind=partitionKind) = systIn;
         varsOld = BackendVariable.varList(vars);
         eqsOld = BackendEquation.equationList(eqs);
 
@@ -226,7 +227,7 @@ algorithm
         matching = BackendDAE.MATCHING(ass1All, ass2All, compsTmp);
 
         //build new EqSystem
-        systTmp = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),matching,stateSets);
+        systTmp = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),matching,stateSets,partitionKind);
         (systTmp,_,_) = BackendDAEUtil.getIncidenceMatrix(systTmp, BackendDAE.NORMAL(),NONE());
           //BackendDump.dumpEqSystem(systTmp,"the whole new system");
         (systTmp,tornSysIdx) = reduceLinearTornSystem1(compIdx+1+numNewSingleEqs,compsTmp,ass1All,ass2All,systTmp,sharedIn,tornSysIdxIn+1);
@@ -742,7 +743,7 @@ algorithm
         // get the EQSYSTEM, the incidenceMatrix and a matching
         vars = BackendVariable.listVar1(inVars);
         eqArr = BackendEquation.listEquation(inEqs);
-        sysTmp = BackendDAE.EQSYSTEM(vars,eqArr,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
+        sysTmp = BackendDAE.EQSYSTEM(vars,eqArr,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
         (sysTmp,m,mt) = BackendDAEUtil.getIncidenceMatrix(sysTmp,BackendDAE.NORMAL(),NONE());
         nVars = listLength(inVars);
         nEqs = listLength(inEqs);
@@ -752,7 +753,7 @@ algorithm
         BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
         BackendDAEEXT.getAssignment(ass2, ass1);
         matching = BackendDAE.MATCHING(ass1, ass2, {});
-        sysTmp = BackendDAE.EQSYSTEM(vars,eqArr,SOME(m),SOME(mt),matching,{});
+        sysTmp = BackendDAE.EQSYSTEM(vars,eqArr,SOME(m),SOME(mt),matching,{},BackendDAE.UNKNOWN_PARTITION());
 
         // perform BLT to order the StrongComponents
         mapIncRowEqn = listArray(List.intRange(nEqs));

@@ -170,8 +170,9 @@ protected
   Env.Env env;
   BackendDAE.StateSets stateSets;
   BackendDAE.ExtraInfo ei;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets) := syst;
+  BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind) := syst;
   (BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs,
     cache, env, funcs, einfo as BackendDAE.EVENT_INFO(timeEvents=timeEvents, zeroCrossingLst=zero_crossings,
     sampleLst=sampleLst, whenClauseLst=whenclauses, relationsLst=relations,
@@ -186,7 +187,7 @@ algorithm
   eqns1 := BackendEquation.listEquation(eqs_lst1);
   einfo1 := BackendDAE.EVENT_INFO(timeEvents, whenclauses, zero_crossings, sampleLst, relations, countRelations, countMathFunctions);
   allvars := listAppend(allvars, BackendVariable.varList(vars));
-  osyst := BackendDAE.EQSYSTEM(vars, eqns1, m, mT, matching, stateSets);
+  osyst := BackendDAE.EQSYSTEM(vars, eqns1, m, mT, matching, stateSets, partitionKind);
   oshared := (BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo1, eoc, btp, symjacs, ei), allvars);
 end findZeroCrossings1;
 

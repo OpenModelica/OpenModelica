@@ -103,9 +103,10 @@ algorithm
       list<DAE.ComponentRef> crefs;
       list<BackendDAE.Equation> eqLst,simpEqLst,resolvedEqs;
       list<BackendDAE.Var> varLst,simpVarLst;
+      BackendDAE.BaseClockPartitionKind partitionKind;
     case(_,(sharedIn,sysIdx))
       equation
-        BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=_,mT=_,stateSets=stateSets) = eqSysIn;
+        BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=_,mT=_,stateSets=stateSets,partitionKind=partitionKind) = eqSysIn;
         eqLst = BackendEquation.equationList(eqs);
         varLst = BackendVariable.varList(vars);
 
@@ -173,7 +174,7 @@ algorithm
         eqAtts = List.threadMap(List.fill(false,numSimpEqs),List.fill("",numSimpEqs),Util.makeTuple);
         HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_after,varAtts,eqAtts,"rL_after_"+&intString(sysIdx));
 
-        eqSys = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
+        eqSys = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
       then
         (eqSys,(sharedIn,sysIdx+1));
     else

@@ -56,7 +56,6 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
-protected import GlobalScript;
 protected import HashSet;
 protected import List;
 protected import System;
@@ -2940,10 +2939,12 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
-    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets=stateSets))
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets=stateSets,partitionKind=partitionKind))
       equation
         (ordvars1,outVar) = removeVar(inVarPos,ordvars);
-      then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,stateSets),outVar);
+      then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,stateSets,partitionKind),outVar);
   end match;
 end removeVarDAE;
 
@@ -3132,10 +3133,12 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
-    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets))
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets,partitionKind))
       equation
         ordvars1 = addVar(inVar,ordvars);
-      then BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,stateSets);
+      then BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,stateSets,partitionKind);
   end match;
 end addVarDAE;
 
@@ -3377,10 +3380,12 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
-    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets))
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets,partitionKind))
       equation
         ordvars1 = expandVars(needed,ordvars);
-      then BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,stateSets);
+      then BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,stateSets,partitionKind);
   end match;
 end expandVarsDAE;
 

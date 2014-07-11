@@ -512,8 +512,7 @@ public  function copyBackendDAEEqSystem
   output BackendDAE.EqSystem outSysts;
   output BackendDAE.Shared outShared;
 algorithm
-  (outSysts, outShared) :=
-  match (inSysts,inShared)
+  (outSysts, outShared) := match (inSysts,inShared)
     local
       BackendDAE.Variables ordvars,ordvars1;
       EquationArray eqns,eqns1;
@@ -521,7 +520,9 @@ algorithm
       BackendDAE.Matching matching,matching1;
       BackendDAE.Shared shared;
       BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets),shared)
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case (BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets,partitionKind),shared)
       equation
         // copy varibales
         ordvars1 = BackendVariable.copyVariables(ordvars);
@@ -531,7 +532,7 @@ algorithm
         mT1 = copyIncidenceMatrix(mT);
         matching1 = copyMatching(matching);
       then
-        (BackendDAE.EQSYSTEM(ordvars1,eqns1,m1,mT1,matching1,stateSets),shared);
+        (BackendDAE.EQSYSTEM(ordvars1,eqns1,m1,mT1,matching1,stateSets,partitionKind),shared);
   end match;
 end copyBackendDAEEqSystem;
 
@@ -783,10 +784,12 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, stateSets),_)
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case (BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, stateSets, partitionKind),_)
       equation
         vars = BackendVariable.addVars(varlst, vars);
-      then BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, stateSets);
+      then BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, stateSets, partitionKind);
   end match;
 end addVarsToEqSystem;
 
@@ -870,7 +873,7 @@ algorithm
   eqns := BackendEquation.listEquation({eqn});
   // generate equationsystem
   ass := listArray({1});
-  syst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.MATCHING(ass,ass,{BackendDAE.SINGLEEQUATION(1,1)}),{});
+  syst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.MATCHING(ass,ass,{BackendDAE.SINGLEEQUATION(1,1)}),{},BackendDAE.UNSPECIFIED_PARTITION());
   // add system to list of systems
   osysts := syst::isysts;
 end addDummyState;
@@ -3184,7 +3187,6 @@ algorithm
     // leave as it is
     case (_, _) then inLst;
 
-
   end match;
 end applyIndexType;
 
@@ -3614,8 +3616,8 @@ algorithm
 end incidenceRow1;
 
 public function incidenceRowExp "author: PA
-  Helper function to incidenceRow, investigates expressions for
-  variables, returning variable indexes."
+  Helper function to incidenceRow, investigates expressions for variables,
+  returning variable indexes."
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
   input list<Integer> inIntegerLst;
@@ -3623,26 +3625,27 @@ public function incidenceRowExp "author: PA
   input BackendDAE.IndexType inIndexType;
   output list<Integer> outIntegerLst;
 algorithm
-  outIntegerLst := match (inExp,inVariables,inIntegerLst,functionTree,inIndexType)
+  outIntegerLst := match (inExp, inVariables, inIntegerLst, functionTree, inIndexType)
     local
       list<Integer> vallst;
-  case(_,_,_,_,BackendDAE.SPARSE())
-    equation
-      ((_,(_,vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinderwithInput, (inVariables,inIntegerLst));
-      then
-        vallst;
-  case(_,_,_,_,BackendDAE.SOLVABLE())
-    equation
-      ((_,(_,vallst,_))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpSolvableFinder, (inVariables,inIntegerLst,functionTree));
-      then
-        vallst;
-  case(_,_,_,_,_)
-    equation
-      ((_,(_,vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinder, (inVariables,inIntegerLst));
+
+    case (_, _, _, _, BackendDAE.SPARSE()) equation
+      ((_, (_, vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinderwithInput, (inVariables, inIntegerLst));
+    then vallst;
+
+    case (_, _, _, _, BackendDAE.SOLVABLE()) equation
+      ((_, (_, vallst, _))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpSolvableFinder, (inVariables, inIntegerLst, functionTree));
+    then vallst;
+
+    case (_, _, _, _, BackendDAE.BASECLOCK()) equation
+      ((_, (_, vallst))) = Expression.traverseExpTopDown(inExp, traversingIncidenceRowExpFinderBaseClock, (inVariables, inIntegerLst));
+    then vallst;
+
+    case (_, _, _, _, _) equation
+      ((_, (_, vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinder, (inVariables, inIntegerLst));
       // only absolute indexes?
       vallst = applyIndexType(vallst, inIndexType);
-    then
-      vallst;
+    then vallst;
   end match;
 end incidenceRowExp;
 
@@ -3747,6 +3750,64 @@ algorithm
     case ((e,tpl)) then ((e,true,tpl));
   end matchcontinue;
 end traversingincidenceRowExpSolvableFinder;
+
+public function traversingIncidenceRowExpFinderBaseClock "author: lochel
+  This is used for base-clock partitioning."
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables, list<Integer>>> inTpl;
+  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables, list<Integer>>> outTpl;
+algorithm
+  outTpl := matchcontinue inTpl
+    local
+      list<Integer> p, pa, res;
+      DAE.ComponentRef cr;
+      BackendDAE.Variables vars;
+      DAE.Exp e, e1, e2;
+      list<BackendDAE.Var> varslst;
+      Boolean b;
+
+    case (((e as DAE.CREF(componentRef=cr), (vars, pa)))) equation
+      (varslst, p) = BackendVariable.getVar(cr, vars);
+      res = incidenceRowExp1(varslst, p, pa, 0);
+    then ((e, true, (vars, res)));
+
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}), (vars, pa)))) equation
+      (varslst, p) = BackendVariable.getVar(cr, vars);
+      res = incidenceRowExp1(varslst, p, pa, 1);
+      /* check also indizes of cr */
+      (_, (_, res)) = Expression.traverseExpTopDownCrefHelper(cr, traversingincidenceRowExpFinder, (vars, res));
+    then ((e, false, (vars, res)));
+
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}), (vars, pa)))) equation
+      cr = ComponentReference.crefPrefixDer(cr);
+      (varslst, p) = BackendVariable.getVar(cr, vars);
+      res = incidenceRowExp1(varslst, p, pa, 1);
+      /* check also indizes of cr */
+      (_, (_, res)) = Expression.traverseExpTopDownCrefHelper(cr, traversingincidenceRowExpFinder, (vars, res));
+    then ((e, false, (vars, res)));
+
+    // lochel: internally generated call start(v) depends not on v
+    case ((e as DAE.CALL(path=Absyn.IDENT(name="$_start")), (vars, pa)))
+    then ((e, false, (vars, pa)));
+
+    /* pre(v) is considered a known variable */
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=_)}), (vars, pa))))
+    then ((e, false, (vars, pa)));
+
+    /* delay(e) can be used to break algebraic loops given some solver options */
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="delay"), expLst={_, _, e1, e2}), (vars, pa)))) equation
+      b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1, e2);
+    then ((e, not b, (vars, pa)));
+
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="sample"), expLst={_, _, _}), (vars, pa))))
+    then ((e, false, (vars, pa)));
+
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="hold")), (vars, pa))))
+    then ((e, false, (vars, pa)));
+
+    case ((e, (vars, pa)))
+    then ((e, true, (vars, pa)));
+  end matchcontinue;
+end traversingIncidenceRowExpFinderBaseClock;
 
 public function traversingincidenceRowExpFinder "
   author: Frenkel TUD 2010-11
@@ -4045,11 +4106,13 @@ algorithm
       EquationArray daeeqns;
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets),_,_,_)
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets,partitionKind),_,_,_)
       equation
         (m,mt) = updateIncidenceMatrix1(vars,daeeqns,inIndxType,functionTree,m,mt,inIntegerLst);
       then
-        BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets);
+        BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets,partitionKind);
 
     else
       equation
@@ -4136,7 +4199,9 @@ algorithm
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
       BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets),_,_,_,_,_)
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets,partitionKind),_,_,_,_,_)
       equation
         // extend the mapping arrays
         oldsize = arrayLength(iMapEqnIncRow);
@@ -4155,7 +4220,7 @@ algorithm
         eqns = List.removeOnTrue(oldsize, intLt, inIntegerLst);
         (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar1(vars,daeeqns,m,mt,eqns,mapEqnIncRow,mapIncRowEqn,inIndxType,functionTree);
       then
-        (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets),mapEqnIncRow,mapIncRowEqn);
+        (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets,partitionKind),mapEqnIncRow,mapIncRowEqn);
 
     else
       equation
@@ -4394,35 +4459,33 @@ algorithm
   oshared := shared;
 end getIncidenceMatrixfromOptionForMapEqSystem;
 
-public function getIncidenceMatrixfromOption "function getIncidenceMatrixfromOption"
-  input BackendDAE.EqSystem syst;
+public function getIncidenceMatrixfromOption
+  input BackendDAE.EqSystem inSyst;
   input BackendDAE.IndexType inIndxType;
-  input Option<DAE.FunctionTree> functionTree;
-  output BackendDAE.EqSystem osyst;
+  input Option<DAE.FunctionTree> inFunctionTree;
+  output BackendDAE.EqSystem outSyst;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
 algorithm
-  (osyst,outM,outMT):=
-  match (syst,inIndxType, functionTree)
+  (outSyst, outM, outMT) := match (inSyst, inIndxType, inFunctionTree)
     local
-      BackendDAE.IncidenceMatrix m,mT;
+      BackendDAE.IncidenceMatrix m, mT;
       BackendDAE.Variables v;
-      EquationArray eq;
+      BackendDAE.EquationArray eq;
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
-    case(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,m=NONE(),matching=matching,stateSets=stateSets),_,_)
-      equation
-        (m,mT) = incidenceMatrix(syst, inIndxType, functionTree);
-      then
-        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching,stateSets),m,mT);
-    case(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,m=SOME(m),mT=NONE(),matching=matching,stateSets=stateSets),_,_)
-      equation
-        mT = transposeMatrix(m,BackendVariable.varsSize(v));
-      then
-        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching,stateSets),m,mT);
-    case(BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT)),_,_)
-      then
-        (syst,m,mT);
+      BackendDAE.BaseClockPartitionKind partitionKind;
+
+    case(BackendDAE.EQSYSTEM(orderedVars=v, orderedEqs=eq, m=NONE(), matching=matching, stateSets=stateSets, partitionKind=partitionKind), _, _) equation
+      (m, mT) = incidenceMatrix(inSyst, inIndxType, inFunctionTree);
+    then (BackendDAE.EQSYSTEM(v, eq, SOME(m), SOME(mT), matching, stateSets, partitionKind), m, mT);
+
+    case(BackendDAE.EQSYSTEM(orderedVars=v, orderedEqs=eq, m=SOME(m), mT=NONE(), matching=matching, stateSets=stateSets, partitionKind=partitionKind), _, _) equation
+      mT = transposeMatrix(m, BackendVariable.varsSize(v));
+    then (BackendDAE.EQSYSTEM(v, eq, SOME(m), SOME(mT), matching, stateSets, partitionKind), m, mT);
+
+    case(BackendDAE.EQSYSTEM(m=SOME(m), mT=SOME(mT)), _, _)
+    then (inSyst, m, mT);
   end match;
 end getIncidenceMatrixfromOption;
 
@@ -4439,10 +4502,11 @@ protected
   EquationArray eq;
   BackendDAE.Matching matching;
   BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,matching=matching,stateSets=stateSets) := inEqSystem;
+  BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := inEqSystem;
   (outM, outMT) := incidenceMatrix(inEqSystem, inIndxType,functionTree);
-  outEqSystem := BackendDAE.EQSYSTEM(v, eq, SOME(outM), SOME(outMT), matching, stateSets);
+  outEqSystem := BackendDAE.EQSYSTEM(v, eq, SOME(outM), SOME(outMT), matching, stateSets,partitionKind);
 end getIncidenceMatrix;
 
 public function getIncidenceMatrixScalar "function getIncidenceMatrixScalar"
@@ -4459,10 +4523,11 @@ protected
   EquationArray eq;
   BackendDAE.Matching matching;
   BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,matching=matching,stateSets=stateSets) := syst;
+  BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := syst;
   (outM,outMT,outMapEqnIncRow,outMapIncRowEqn) := incidenceMatrixScalar(syst, inIndxType, functionTree);
-  osyst := BackendDAE.EQSYSTEM(v, eq, SOME(outM), SOME(outMT), matching, stateSets);
+  osyst := BackendDAE.EQSYSTEM(v, eq, SOME(outM), SOME(outMT), matching, stateSets, partitionKind);
 end getIncidenceMatrixScalar;
 
 
@@ -8931,15 +8996,16 @@ algorithm
                        (BackendDAEOptimize.removeProtectedParameters, "removeProtectedParameters", false),
                        (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", false),
                        (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables", false),
+                       (BackendDAEOptimize.clockPartitioning, "clockPartitioning", true),
                        (BackendDAEOptimize.partitionIndependentBlocks, "partitionIndependentBlocks", true),
                        (BackendDAEOptimize.collapseIndependentBlocks, "collapseIndependentBlocks", true),
                        (BackendDAEOptimize.expandDerOperator, "expandDerOperator", false),
-                       (IndexReduction.findStateOrder,"findStateOrder",false),
+                       (IndexReduction.findStateOrder,"findStateOrder", false),
                        (BackendDAEOptimize.simplifyIfEquations, "simplifyIfEquations", false),
                        (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange", false),
                        (BackendDAEOptimize.residualForm, "residualForm", false),
-                       (ResolveLoops.resolveLoops, "resolveLoops",false),
-                       (EvaluateFunctions.evalFunctions, "evalFunc",false)
+                       (ResolveLoops.resolveLoops, "resolveLoops", false),
+                       (EvaluateFunctions.evalFunctions, "evalFunc", false)
                        };
   strPreOptModules := getPreOptModulesString();
   strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);
@@ -9296,9 +9362,10 @@ protected
   Option<BackendDAE.IncidenceMatrix> m;
   Option<BackendDAE.IncidenceMatrixT> mT;
   BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,stateSets=stateSets) := syst;
-  osyst := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets);
+  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,stateSets=stateSets,partitionKind=partitionKind) := syst;
+  osyst := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
 end setEqSystemMatching;
 
 public function filterEmptySystems

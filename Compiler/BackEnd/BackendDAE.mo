@@ -76,8 +76,17 @@ uniontype EqSystem "An independent system of equations (and their corresponding 
     Option<IncidenceMatrixT> mT;
     Matching matching;
     StateSets stateSets "the statesets of the system";
+    BaseClockPartitionKind partitionKind;
   end EQSYSTEM;
 end EqSystem;
+
+public
+uniontype BaseClockPartitionKind
+  record UNKNOWN_PARTITION end UNKNOWN_PARTITION;
+  record CLOCKED_PARTITION end CLOCKED_PARTITION;
+  record CONTINUOUS_TIME_PARTITION end CONTINUOUS_TIME_PARTITION;
+  record UNSPECIFIED_PARTITION "treated as CONTINUOUS_TIME_PARTITION" end UNSPECIFIED_PARTITION;
+end BaseClockPartitionKind;
 
 public
 uniontype Shared "Data shared for all equation-systems"
@@ -556,10 +565,11 @@ end Solvability;
 
 public
 uniontype IndexType
-  record ABSOLUTE "produce incidence matrix with absolute indexes"          end ABSOLUTE;
-  record NORMAL   "produce incidence matrix with positive/negative indexes" end NORMAL;
+  record ABSOLUTE "produce incidence matrix with absolute indexes" end ABSOLUTE;
+  record NORMAL "produce incidence matrix with positive/negative indexes" end NORMAL;
   record SOLVABLE "procude incidence matrix with only solvable entries, for example {a,b,c}[d] then d is skipped" end SOLVABLE;
-  record SPARSE   "produce incidence matrix as normal, but add for Inputs also a value" end SPARSE;
+  record BASECLOCK "produce incidence matrix for base-clock partitioning" end BASECLOCK;
+  record SPARSE "produce incidence matrix as normal, but add for Inputs also a value" end SPARSE;
 end IndexType;
 
 //

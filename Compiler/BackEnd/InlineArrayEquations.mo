@@ -80,12 +80,13 @@ algorithm
       BackendDAE.Shared shared;
       list<BackendDAE.Equation> eqnLst;
       BackendDAE.StateSets stateSets;
+      BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets), (shared, _)) equation
+    case (BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind), (shared, _)) equation
       eqnLst = BackendEquation.equationList(orderedEqs);
       (eqnLst, true) = getScalarArrayEqns(eqnLst);
       orderedEqs = BackendEquation.listEquation(eqnLst);
-    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets), (shared, true));
+    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), (shared, true));
 
     else
     then (inEqSystem, inSharedOptimized);
