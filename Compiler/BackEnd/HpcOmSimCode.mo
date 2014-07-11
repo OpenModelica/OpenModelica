@@ -42,6 +42,9 @@ encapsulated package HpcOmSimCode
   end MemoryMap;
 
   public uniontype Task
+    record SCHEDULED_TASK
+      Schedule taskSchedule;
+    end SCHEDULED_TASK;
     record CALCTASK //Task which calculates something
       Integer weighting;
       Integer index;

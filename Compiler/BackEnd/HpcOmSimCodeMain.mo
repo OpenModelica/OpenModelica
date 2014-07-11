@@ -42,6 +42,7 @@ public import BackendDAE;
 public import DAE;
 public import HashTableExpToIndex;
 public import HpcOmSimCode;
+public import HpcOmTaskGraph;
 public import SimCode;
 
 // protected imports
@@ -51,7 +52,6 @@ protected import Flags;
 protected import GlobalScript;
 protected import HpcOmMemory;
 protected import HpcOmScheduler;
-protected import HpcOmTaskGraph;
 protected import HpcOmEqSystems;
 protected import Initialization;
 protected import List;
@@ -242,7 +242,7 @@ algorithm
       //-------------
       taskGraphDataSimplified = taskGraphDataOde;
       taskGraphSimplified = taskGraphOde;
-      (taskGraphSimplified,taskGraphDataSimplified) = applyFiltersToGraph(taskGraphOde,taskGraphDataOde,inBackendDAE,true); //TODO: Rename this to applyGRS or someting like that
+      (taskGraphSimplified,taskGraphDataSimplified) = applyFiltersToGraph(taskGraphOde,taskGraphDataOde,true); //TODO: Rename this to applyGRS or someting like that
       SimCodeUtil.execStat("hpcom GRS");
       //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraph,taskGraphSimplified);
       //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraphMeta,taskGraphDataSimplified);
@@ -365,10 +365,9 @@ algorithm
   end match;
 end setNumProc;
 
-protected function applyFiltersToGraph
+public function applyFiltersToGraph
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
-  input BackendDAE.BackendDAE inBackendDAE;
   input Boolean iApplyFilters;
   output HpcOmTaskGraph.TaskGraph oTaskGraph;
   output HpcOmTaskGraph.TaskGraphMeta oTaskGraphMeta;
@@ -382,22 +381,22 @@ protected
   BackendDAE.StrongComponents allComps;
   array<tuple<Integer,Integer>> schedulerInfo;
 algorithm
-  (oTaskGraph,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphMeta,inBackendDAE,iApplyFilters)
+  (oTaskGraph,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphMeta,iApplyFilters)
     //case(_,_,_,_)
     //  equation
     //    flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
     //    true = stringEq(flagValue, "level");
     //  then (iTaskGraph, iTaskGraphMeta);
-    case(_,_,_,true)
+    case(_,_,true)
       equation
         //Merge simple and parent nodes
         taskGraph1 = arrayCopy(iTaskGraph);
         taskGraphMeta1 = HpcOmTaskGraph.copyTaskGraphMeta(iTaskGraphMeta);
-        (taskGraph1,taskGraphMeta1,changed1) = HpcOmTaskGraph.mergeSimpleNodes(taskGraph1,taskGraphMeta1,inBackendDAE);
+        (taskGraph1,taskGraphMeta1,changed1) = HpcOmTaskGraph.mergeSimpleNodes(taskGraph1,taskGraphMeta1);
         (taskGraph1,taskGraphMeta1,changed2) = HpcOmTaskGraph.mergeParentNodes(taskGraph1, taskGraphMeta1);
         (taskGraph1,taskGraphMeta1,changed3) = HpcOmTaskGraph.mergeSingleNodes(taskGraph1, taskGraphMeta1);
 
-        (taskGraph1,taskGraphMeta1) = applyFiltersToGraph(taskGraph1,taskGraphMeta1,inBackendDAE,changed1 or changed2 or changed3);
+        (taskGraph1,taskGraphMeta1) = applyFiltersToGraph(taskGraph1,taskGraphMeta1,changed1 or changed2 or changed3);
       then (taskGraph1,taskGraphMeta1);
     else (iTaskGraph, iTaskGraphMeta);
   end matchcontinue;

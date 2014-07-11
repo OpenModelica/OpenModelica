@@ -41,6 +41,7 @@ encapsulated package HpcOmEqSystems
 public import BackendDAE;
 public import DAE;
 public import HpcOmTaskGraph;
+public import HpcOmSimCode;
 
 // protected imports
 protected import BackendDump;
@@ -55,6 +56,8 @@ protected import Debug;
 protected import Expression;
 protected import Flags;
 protected import GraphML;
+protected import HpcOmSimCodeMain;
+protected import HpcOmScheduler;
 protected import List;
 protected import Matching;
 protected import Util;
@@ -1930,9 +1933,7 @@ algorithm
   typeStr := Util.if_(isTearVar,"tearingVar","otherVar");
   var := BackendVariable.getVarAt(vars,indx);
   varString := BackendDump.varString(var);
-  varChars := stringListStringChar(varString);
-  varChars := List.map(varChars,HpcOmTaskGraph.prepareXML);
-  varString := stringCharListString(varChars);
+  varString := HpcOmTaskGraph.prepareXML(varString);
   varNodeId := getVarNodeIdx(indx);
   idxString := intString(indx);
   nodeLabel := GraphML.NODELABEL_INTERNAL(idxString,NONE(),GraphML.FONTPLAIN());
@@ -1964,9 +1965,7 @@ algorithm
   typeStr := Util.if_(isResEq,"residualEq","otherEq");
   {eq} := BackendEquation.getEqns({indx}, eqs);
   eqString := BackendDump.equationString(eq);
-  eqChars := stringListStringChar(eqString);
-  eqChars := List.map(eqChars,HpcOmTaskGraph.prepareXML);
-  eqString := stringCharListString(eqChars);
+  eqString := HpcOmTaskGraph.prepareXML(eqString);
   eqNodeId := getEqNodeIdx(indx);
   idxString := intString(indx);
   nodeLabel := GraphML.NODELABEL_INTERNAL(idxString,NONE(),GraphML.FONTPLAIN());
@@ -1993,7 +1992,7 @@ algorithm
       BackendDAE.Shared shared;
     case (_,_,_,_) equation
       BackendDAE.DAE(eqs=eqSysts, shared=shared) = inDAE;
-      _ = pts_traverseEqSystems(eqSysts, 1);
+      _ = pts_traverseEqSystems(eqSysts,sccSimEqMapping,1);
     then (graphIn,metaIn);
     else
     then (graphIn,metaIn);
@@ -2003,10 +2002,11 @@ end parallelizeTornSystems;
 protected function pts_traverseEqSystems "
 author: Waurich TUD 2014-07"
   input BackendDAE.EqSystems eqSysIn;
+  input array<list<Integer>> sccSimEqMapping;
   input Integer compIdxIn;
   output Integer compIdxOut;
 algorithm
-  (compIdxOut) := matchcontinue(eqSysIn,compIdxIn)
+  (compIdxOut) := matchcontinue(eqSysIn,sccSimEqMapping,compIdxIn)
     local
       Integer compIdx;
       BackendDAE.EquationArray eqs;
@@ -2015,14 +2015,14 @@ algorithm
       BackendDAE.StrongComponents comps;
       list<BackendDAE.Equation> eqLst;
       list<BackendDAE.Var> varLst;
-    case(BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,matching = BackendDAE.MATCHING(comps=comps))::eqSysRest,_)
+    case(BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,matching = BackendDAE.MATCHING(comps=comps))::eqSysRest,_,_)
       equation
         eqLst = BackendEquation.equationList(eqs);
         varLst = BackendVariable.varList(vars);
-        (compIdx) = pts_traverseCompsAndParallelize(comps,eqLst,varLst,compIdxIn);
-        (compIdx) = pts_traverseEqSystems(eqSysRest, compIdx);
+        (compIdx) = pts_traverseCompsAndParallelize(comps,eqLst,varLst,sccSimEqMapping,compIdxIn);
+        (compIdx) = pts_traverseEqSystems(eqSysRest,sccSimEqMapping,compIdx);
       then compIdx;
-   case({},_)
+   case({},_,_)
      then compIdxIn;
     else
       equation
@@ -2036,34 +2036,39 @@ author:Waurich TUD 2014-07"
   input list<BackendDAE.StrongComponent> inComps;
   input list<BackendDAE.Equation> eqsIn;
   input list<BackendDAE.Var> varsIn;
+  input array<list<Integer>> sccSimEqMapping;
   input Integer compIdxIn;
   output Integer compIdxOut;
 algorithm
-  compIdxOut := matchcontinue(inComps,eqsIn,varsIn,compIdxIn)
+  compIdxOut := matchcontinue(inComps,eqsIn,varsIn,sccSimEqMapping,compIdxIn)
     local
-      Integer numEqs, numVars, compIdx;
-      list<Integer> eqIdcs,varIdcs,eqIdcsSys;
+      Integer numEqs, numVars, compIdx, numResEqs;
+      list<Integer> eqIdcs, varIdcs, tVars, resEqs, eqIdcsSys, simEqSysIdcs,resSimEqSysIdcs,otherSimEqSysIdcs;
       list<list<Integer>> varIdcLstSys, varIdcsLsts;
       list<tuple<Integer,list<Integer>>> otherEqnVarTplIdcs;
+      array<list<Integer>> otherSimEqMapping;
       BackendDAE.EquationArray otherEqs;
+      BackendDAE.IncidenceMatrix m,mT;
       BackendDAE.StrongComponent comp;
       BackendDAE.Variables otherVars;
-      BackendDAE.IncidenceMatrix m,mT;
+      HpcOmTaskGraph.TaskGraph graph, graphMerged;
+      HpcOmTaskGraph.TaskGraphMeta meta, metaMerged;
+      HpcOmSimCode.Schedule schedule;
+      HpcOmSimCode.Task task;
       list<BackendDAE.Equation> otherEqLst;
       list<BackendDAE.Var> otherVarLst;
       list<BackendDAE.StrongComponent> rest;
-      HpcOmTaskGraph.TaskGraph graph;
-      HpcOmTaskGraph.TaskGraphMeta meta;
-  case({},_,_,_)
+  case({},_,_,_,_)
     equation
     then compIdxIn;
-  case((comp as BackendDAE.TORNSYSTEM(residualequations=_,tearingvars=_,otherEqnVarTpl=otherEqnVarTplIdcs))::rest,_,_,_)
+  case((comp as BackendDAE.TORNSYSTEM(residualequations=resEqs,tearingvars=tVars,otherEqnVarTpl=otherEqnVarTplIdcs))::rest,_,_,_,_)
     equation
       eqIdcs = List.map(otherEqnVarTplIdcs,Util.tuple21);
       varIdcsLsts = List.map(otherEqnVarTplIdcs,Util.tuple22);
       varIdcs = List.flatten(varIdcsLsts);
       numEqs = listLength(eqIdcs);
       numVars = listLength(varIdcs);
+      numResEqs = listLength(resEqs);
       eqIdcsSys = List.intRange(numEqs);
       (varIdcLstSys,_) = List.mapFold(varIdcsLsts,genSystemVarIdcs,1);
 
@@ -2076,22 +2081,200 @@ algorithm
       mT = arrayCreate(numVars, {});
       (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(otherVars,otherEqs,{},mT, 0, numEqs, intLt(0, numEqs), BackendDAE.ABSOLUTE(), NONE());
 
-      // build task graph
+      // build task graph and taskgraphmeta
       (graph,meta) = HpcOmTaskGraph.getEmptyTaskGraph(numEqs,numEqs,numVars);
       graph = buildMatchedGraphForTornSystem(1,eqIdcsSys,varIdcLstSys,m,mT,graph);
+      meta = buildTaskgraphMetaForTornSystem(graph,otherEqLst,otherVarLst,meta);
+        HpcOmTaskGraph.printTaskGraph(graph);
+        HpcOmTaskGraph.printTaskGraphMeta(meta);
+      
+      //get simEqSysIdcs and otherSimEqMapping
+      simEqSysIdcs = arrayGet(sccSimEqMapping,compIdxIn);
+      resSimEqSysIdcs = List.map1r(List.intRange(numResEqs),intSub,List.first(simEqSysIdcs));
+      otherSimEqSysIdcs = List.map1r(List.intRange2(numResEqs+1,numResEqs+numEqs),intSub,List.first(simEqSysIdcs));
+      otherSimEqMapping = listArray(List.map(otherSimEqSysIdcs,List.create));
+      print("simEqSysIdcs "+&stringDelimitList(List.map(simEqSysIdcs,intString),",")+&"\n");
+      print("resSimEqSysIdcs "+&stringDelimitList(List.map(resSimEqSysIdcs,intString),",")+&"\n");
+      print("otherSimEqSysIdcs "+&stringDelimitList(List.map(otherSimEqSysIdcs,intString),",")+&"\n");
 
       // dump graphs
       dumpTornSystemBipartiteGraphML(comp,eqsIn,varsIn,"tornSys_bipartite_"+&intString(compIdxIn));
-      dumpTornSystemDAGgraphML(graph,"tornSys_matched_"+&intString(compIdxIn));
+      dumpTornSystemDAGgraphML(graph,meta,"tornSys_matched_"+&intString(compIdxIn));
+      
+      //GRS
+      //graphMerged = arrayCopy(graph);
+      //metaMerged = HpcOmTaskGraph.copyTaskGraphMeta(meta);
+      (graphMerged,metaMerged) = HpcOmSimCodeMain.applyFiltersToGraph(graph,meta,true); 
+      
+      dumpTornSystemDAGgraphML(graphMerged,metaMerged,"tornSys_matched2_"+&intString(compIdxIn));
+        HpcOmTaskGraph.printTaskGraph(graphMerged);
+        HpcOmTaskGraph.printTaskGraphMeta(metaMerged);
 
-      compIdx = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,compIdxIn+1);
+      //Schedule
+      schedule = HpcOmScheduler.createListSchedule(graphMerged,metaMerged,2,otherSimEqMapping);
+      HpcOmScheduler.printSchedule(schedule);
+      
+      //transform into scheduled task object
+      task = pts_transformScheduleToTask(schedule,resSimEqSysIdcs,compIdxIn);
+      HpcOmScheduler.printTask(task);
+
+      compIdx = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,sccSimEqMapping,compIdxIn+1);
     then compIdx;
-  case(comp::rest,_,_,_)
+  case(comp::rest,_,_,_,_)
     equation
-      compIdx = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,compIdxIn+1);
+      compIdx = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,sccSimEqMapping,compIdxIn+1);
     then compIdx;
   end matchcontinue;
 end pts_traverseCompsAndParallelize;
+
+protected function pts_transformScheduleToTask
+  input HpcOmSimCode.Schedule otherEqSys;
+  input list<Integer> resSimEqs;
+  input Integer compIdx;
+  output HpcOmSimCode.Task task;
+algorithm
+  task := matchcontinue(otherEqSys,resSimEqs,compIdx)
+    local
+      Integer numThreads;
+      list<String> lockIdc, lockIdcsEnd;
+      String lockSuffix;
+      HpcOmSimCode.Schedule schedule;
+      list<HpcOmSimCode.TaskList> levelTasks;
+      list<HpcOmSimCode.Task> assLocks,relLocks, resEqTasks;
+      array<list<HpcOmSimCode.Task>> threadTasks;
+    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=levelTasks),_,_)
+      equation
+      then
+        HpcOmSimCode.SCHEDULED_TASK(otherEqSys);
+    case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_)
+      equation
+        numThreads = arrayLength(threadTasks);
+        // rename locks, get locks before residual equations
+        lockSuffix = "_"+&intString(compIdx);
+        lockIdc = List.map1(lockIdc,stringAppend,lockSuffix);
+        lockIdcsEnd = List.map1r(List.map(List.intRange(numThreads),intString),stringAppend,"lock_comp"+&intString(compIdx)+&"_th");
+        lockIdc = listAppend(lockIdc,lockIdcsEnd);
+        threadTasks = Util.arrayMap1(threadTasks,appendStringToLockIdcs,lockSuffix);
+        
+        assLocks = List.map(lockIdcsEnd,HpcOmScheduler.getAssignLockTask);
+        relLocks = List.map(lockIdcsEnd,HpcOmScheduler.getReleaseLockTask);
+        schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,lockIdc);
+      then
+        HpcOmSimCode.SCHEDULED_TASK(schedule);
+    else
+      equation
+        print("pts_transformScheduleToTask failed\n");
+      then fail();
+  end matchcontinue;
+end pts_transformScheduleToTask;
+
+protected function appendStringToLockIdcs"appends the suffix to the lockIds of the given tasks
+author: Waurich TUD 2014-07"
+  input list<HpcOmSimCode.Task> taskLstIn;
+  input String suffix;
+  output list<HpcOmSimCode.Task> taskLstOut;
+algorithm
+  taskLstOut := List.map1(taskLstIn,appendStringToLockIdcs1,suffix);
+end appendStringToLockIdcs;
+
+protected function appendStringToLockIdcs1"appends the suffix to the lockIds of the given tasks
+author: Waurich TUD 2014-07"
+  input HpcOmSimCode.Task taskIn;
+  input String suffix;
+  output HpcOmSimCode.Task taskOut;
+algorithm
+  taskOut := match(taskIn,suffix)
+    local
+      String lockId;
+    case(HpcOmSimCode.ASSIGNLOCKTASK(lockId=lockId),_)
+      equation
+        lockId = stringAppend(lockId,suffix);    
+    then HpcOmSimCode.ASSIGNLOCKTASK(lockId);
+     case(HpcOmSimCode.RELEASELOCKTASK(lockId=lockId),_)
+      equation
+        lockId = stringAppend(lockId,suffix);    
+    then HpcOmSimCode.RELEASELOCKTASK(lockId);    
+    else
+      then taskIn;
+  end match;
+end appendStringToLockIdcs1;
+
+protected function buildMatchedGraphForTornSystem
+  input Integer idx;
+  input list<Integer> eqsIn;
+  input list<list<Integer>> varsIn;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mt;
+  input array<list<Integer>> graphIn;
+  output array<list<Integer>> graphOut;
+algorithm
+  graphOut := matchcontinue(idx,eqsIn,varsIn,m,mt,graphIn)
+    local
+      Integer eq;
+      list<Integer> vars, depVars,depEqs;
+      array<list<Integer>> graph;
+    case(_,_,_,_,_,_)
+      equation
+        true = listLength(eqsIn) >= idx;
+        vars = listGet(varsIn,idx);
+        eq = listGet(eqsIn,idx);
+        depEqs = List.flatten(List.map1(vars,Util.arrayGetIndexFirst,mt));
+        depEqs = List.deleteMember(depEqs,eq);
+        graph = arrayUpdate(graphIn,eq,depEqs);
+        graph = buildMatchedGraphForTornSystem(idx+1,eqsIn,varsIn,m,mt,graph);
+    then graph;
+    case(_,_,_,_,_,_)
+      equation
+        false = listLength(eqsIn) > idx;
+      then graphIn;
+  end matchcontinue;
+end buildMatchedGraphForTornSystem;
+
+protected function buildTaskgraphMetaForTornSystem"creates a preliminary task graph meta object
+author:Waurich TUD 2014-07"
+  input HpcOmTaskGraph.TaskGraph graph;
+  input list<BackendDAE.Equation> eqLst;
+  input list<BackendDAE.Var> varLst;
+  input HpcOmTaskGraph.TaskGraphMeta metaIn;
+  output HpcOmTaskGraph.TaskGraphMeta metaOut;
+protected
+  Integer numNodes;
+  list<String> eqStrings, varStrings, descLst;
+  array<tuple<Integer,Integer,Integer>> eqCompMapping, varCompMapping;
+  list<list<String>> eqCharsLst;
+  array<Integer> nodeMark;
+  array<String> nodeDescs, nodeNames;
+  array<list<Integer>> inComps;
+  array<tuple<Integer,Real>> exeCosts;
+  array<list<tuple<Integer,Integer,Integer>>> commCosts;
+algorithm
+  HpcOmTaskGraph.TASKGRAPHMETA(varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, nodeMark=nodeMark) := metaIn;
+  numNodes := arrayLength(graph);
+  // get the inComps
+  inComps := listArray(List.map(List.intRange(numNodes),List.create));
+  // get the nodeNames
+  nodeNames := listArray(List.map(List.intRange(numNodes),intString));
+  //get the exeCost
+  exeCosts := arrayCreate(numNodes,(3,20.0));
+  //get the commCosts
+  commCosts := Util.arrayMap(graph,buildDummyCommCosts);
+  //get the node description
+  eqStrings := List.map(eqLst,BackendDump.equationString);
+  eqStrings := List.map(eqStrings,HpcOmTaskGraph.prepareXML);
+  varStrings := List.map(varLst,HpcOmTaskGraph.getVarString);
+  descLst := List.map1(eqStrings,stringAppend," FOR ");
+  descLst := List.threadMap(descLst,varStrings,stringAppend);
+  nodeDescs := listArray(descLst);
+  metaOut := HpcOmTaskGraph.TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,{},nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
+end buildTaskgraphMetaForTornSystem;
+
+protected function buildDummyCommCosts"generates preliminary commCosts for a children list.
+author:Waurich TUD 2014-07"
+  input list<Integer> childNodes;
+  output list<tuple<Integer,Integer,Integer>> commCosts;
+algorithm
+  commCosts := List.map2(childNodes,Util.make3Tuple,1,70);
+end buildDummyCommCosts;
 
 //--------------------------------------------------//
 // dump torn system of equations as a directed acyclic graph (the matched system)
@@ -2152,6 +2335,7 @@ end dumpTornSystemDAGgraphML;
 */
 protected function dumpTornSystemDAGgraphML
   input HpcOmTaskGraph.TaskGraph graphIn;
+  input HpcOmTaskGraph.TaskGraphMeta metaIn;
   input String fileName;
 protected
   Integer graphIdx, nameAttIdx;
@@ -2160,12 +2344,13 @@ algorithm
   graphInfo := GraphML.createGraphInfo();
   (graphInfo, (_,graphIdx)) := GraphML.addGraph("TornSystemGraph", true, graphInfo);
   (graphInfo,(_,nameAttIdx)) := GraphML.addAttribute("", "Name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
-  graphInfo := buildGraphInfoDAG(graphIn,graphInfo,graphIdx,{nameAttIdx});
+  graphInfo := buildGraphInfoDAG(graphIn,metaIn,graphInfo,graphIdx,{nameAttIdx});
   GraphML.dumpGraph(graphInfo, fileName+&".graphml");
 end dumpTornSystemDAGgraphML;
 
 protected function buildGraphInfoDAG
   input HpcOmTaskGraph.TaskGraph graphIn;
+  input HpcOmTaskGraph.TaskGraphMeta metaIn;
   input GraphML.GraphInfo graphInfoIn;
   input Integer graphIdx;
   input list<Integer> attIdcs;
@@ -2178,7 +2363,7 @@ protected
 algorithm
   nameAttIdx := List.first(attIdcs);
   nodeIdcs := List.intRange(arrayLength(graphIn));
-  graphInfoOut := List.fold3(nodeIdcs,addNodeToDAG,graphIn,graphIdx,{(nameAttIdx,"bla")},graphInfoIn);
+  graphInfoOut := List.fold4(nodeIdcs,addNodeToDAG,graphIn,metaIn,graphIdx,{nameAttIdx},graphInfoIn);
   GraphML.GRAPHINFO(nodes=nodes) := graphInfoOut;
 end buildGraphInfoDAG;
 
@@ -2186,26 +2371,32 @@ protected function addNodeToDAG"add a node to a DAG.
 author:Waurich TUD 2014-07"
   input Integer nodeIdx;
   input HpcOmTaskGraph.TaskGraph graphIn;
+  input HpcOmTaskGraph.TaskGraphMeta metaIn;
   input Integer graphIdx;
-  input list<tuple<Integer,String>> atts;
+  input list<Integer> atts; //{nameAtt}
   input GraphML.GraphInfo graphInfoIn;
   output GraphML.GraphInfo graphInfoOut;
 protected
   GraphML.GraphInfo tmpGraph;
   Integer nameAttIdx;
   list<Integer> childNodes;
+  array<String> nodeDescs;
+  array<list<Integer>> inComps;
   GraphML.NodeLabel nodeLabel;
-  String nodeString, nameAttString;
+  String nodeString, nodeDesc, nodeName;
 algorithm
+  HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeDescs=nodeDescs) := metaIn;
+  nodeDesc := arrayGet(nodeDescs,nodeIdx);
   nodeString := intString(nodeIdx);
-  ((nameAttIdx,nameAttString)) := listGet(atts,1);
+  nodeName := stringDelimitList(List.map(arrayGet(inComps,nodeIdx),intString),",");
+  nameAttIdx := listGet(atts,1);
   nodeLabel := GraphML.NODELABEL_INTERNAL(nodeString,NONE(),GraphML.FONTPLAIN());
   (tmpGraph,(_,_)) := GraphML.addNode("Node"+&intString(nodeIdx),
                                               GraphML.COLOR_ORANGE,
                                               {nodeLabel},
                                               GraphML.RECTANGLE(),
-                                              SOME("description"),
-                                              {(nameAttIdx,"name")},
+                                              SOME(nodeDesc),
+                                              {(nameAttIdx,nodeName)},
                                               graphIdx,
                                               graphInfoIn);
   childNodes := arrayGet(graphIn,nodeIdx);
@@ -2230,36 +2421,5 @@ algorithm
                                       {},
                                       graphInfoIn);
 end addDirectedEdge;
-
-protected function buildMatchedGraphForTornSystem
-  input Integer idx;
-  input list<Integer> eqsIn;
-  input list<list<Integer>> varsIn;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
-  input array<list<Integer>> graphIn;
-  output array<list<Integer>> graphOut;
-algorithm
-  graphOut := matchcontinue(idx,eqsIn,varsIn,m,mt,graphIn)
-    local
-      Integer eq;
-      list<Integer> vars, depVars,depEqs;
-      array<list<Integer>> graph;
-    case(_,_,_,_,_,_)
-      equation
-        true = listLength(eqsIn) >= idx;
-        vars = listGet(varsIn,idx);
-        eq = listGet(eqsIn,idx);
-        depEqs = List.flatten(List.map1(vars,Util.arrayGetIndexFirst,mt));
-        depEqs = List.deleteMember(depEqs,eq);
-        graph = arrayUpdate(graphIn,eq,depEqs);
-        graph = buildMatchedGraphForTornSystem(idx+1,eqsIn,varsIn,m,mt,graph);
-    then graph;
-    case(_,_,_,_,_,_)
-      equation
-        false = listLength(eqsIn) > idx;
-      then graphIn;
-  end matchcontinue;
-end buildMatchedGraphForTornSystem;
 
 end HpcOmEqSystems;

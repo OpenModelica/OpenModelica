@@ -599,9 +599,7 @@ algorithm
        eqnLst = BackendEquation.equationList(orderedEqs);
        eqn = listGet(eqnLst,i);
        eqString = BackendDump.equationString(eqn);
-       eqDescLst = stringListStringChar(eqString);
-       eqDescLst = List.map(eqDescLst,prepareXML);
-       eqString =stringCharListString(eqDescLst);
+       eqString = prepareXML(eqString);
        //get the variable string
        varLst = BackendVariable.varList(orderedVars);
        var = listGet(varLst,v);
@@ -630,9 +628,7 @@ algorithm
       eqnLst = BackendEquation.equationList(orderedEqs);
       eqn = listGet(eqnLst,i);
       eqString = BackendDump.equationString(eqn);
-      eqDescLst = stringListStringChar(eqString);
-      eqDescLst = List.map(eqDescLst,prepareXML);
-      eqString =stringCharListString(eqDescLst);
+      eqString = prepareXML(eqString);
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -648,9 +644,7 @@ algorithm
       eqnLst = BackendEquation.equationList(orderedEqs);
       eqn = listGet(eqnLst,i);
       eqString = BackendDump.equationString(eqn);
-      eqDescLst = stringListStringChar(eqString);
-      eqDescLst = List.map(eqDescLst,prepareXML);
-      eqString = stringCharListString(eqDescLst);
+      eqString = prepareXML(eqString);
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -666,9 +660,7 @@ algorithm
       eqnLst = BackendEquation.equationList(orderedEqs);
       eqn = listGet(eqnLst,i);
       eqString = BackendDump.equationString(eqn);
-      eqDescLst = stringListStringChar(eqString);
-      eqDescLst = List.map(eqDescLst,prepareXML);
-      eqString = stringCharListString(eqDescLst);
+      eqString = prepareXML(eqString);
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -684,9 +676,7 @@ algorithm
       eqnLst = BackendEquation.equationList(orderedEqs);
       eqn = listGet(eqnLst,i);
       eqString = BackendDump.equationString(eqn);
-      eqDescLst = stringListStringChar(eqString);
-      eqDescLst = List.map(eqDescLst,prepareXML);
-      eqString =stringCharListString(eqDescLst);
+      eqString = prepareXML(eqString);
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -702,9 +692,7 @@ algorithm
       eqnLst = BackendEquation.equationList(orderedEqs);
       eqn = listGet(eqnLst,i);
       eqString = BackendDump.equationString(eqn);
-      eqDescLst = stringListStringChar(eqString);
-      eqDescLst = List.map(eqDescLst,prepareXML);
-      eqString = stringCharListString(eqDescLst);
+      eqString = prepareXML(eqString);
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -740,7 +728,7 @@ algorithm
 end getEquationStrings2;
 
 
-protected function getVarString "get the var string for a given variable. shortens the String. if necessary insert der operator
+public function getVarString "get the var string for a given variable. shortens the String. if necessary insert der operator
 author:waurich TUD 2013-06"
   input BackendDAE.Var inVar;
   output String varString;
@@ -771,14 +759,27 @@ algorithm
   end matchcontinue;
 end getVarString;
 
-//TODO: Replace with CDATA, Check if this can be removed
 public function prepareXML " map-function for deletion of forbidden chars from given string
+author:Waurich TUD 2013-06"
+  input String iString;
+  output String oString;
+protected
+  list<String> lst;
+algorithm
+  lst := stringListStringChar(iString);
+  lst := List.map(lst,prepareXML1);
+  oString := stringCharListString(lst);
+end prepareXML;
+
+//TODO: Replace with CDATA, Check if this can be removed
+protected function prepareXML1 " map-function for deletion of forbidden chars from given string
 author:Waurich TUD 2013-06"
   input String iString;
   output String oString;
 algorithm
   oString := matchcontinue(iString)
     local
+      String string;
     case(_)
       equation
       true = stringEq(iString, ">");
@@ -790,9 +791,9 @@ algorithm
     else
     then iString;
   end matchcontinue;
-end prepareXML;
+end prepareXML1;
 
-protected function shortenVarString " terminates var string at :
+public function shortenVarString " terminates var string at :
 author:Waurich TUD 2013-06"
   input List<String> iString;
   output List<String> oString;
@@ -3061,7 +3062,6 @@ public function mergeSimpleNodes " merges all nodes in the graph that have only 
 author: Waurich TUD 2013-07"
   input TaskGraph graphIn;
   input TaskGraphMeta graphDataIn;
-  input BackendDAE.BackendDAE daeIn;
   output TaskGraph graphOut;
   output TaskGraphMeta graphDataOut;
   output Boolean oChanged;
@@ -3075,7 +3075,6 @@ protected
   array<tuple<Integer,Real>> exeCosts;
   array<list<tuple<Integer,Integer,Integer>>> commCosts;
   array<Integer> nodeMark;
-  BackendDAE.EqSystems systs;
   TaskGraph graphTmp;
   TaskGraphMeta graphDataTmp;
   list<Integer> noMerging;
@@ -3084,16 +3083,13 @@ protected
   String fileName;
 algorithm
   TASKGRAPHMETA(inComps = inComps, varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, rootNodes = rootNodes, nodeNames =nodeNames,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
-  BackendDAE.DAE(eqs = systs) := daeIn;
   allTheNodes := List.intRange(arrayLength(graphIn));  // to traverse the node indeces
   oneChildren := findOneChildParents(allTheNodes,graphIn,{{}},0);  // paths of nodes with just one successor per node (extended: and endnodes with just one parent node)
   oneChildren := listDelete(oneChildren,listLength(oneChildren)-1); // remove the empty startValue {}
   oneChildren := List.removeOnTrue(1,compareListLengthOnTrue,oneChildren);  // remove paths of length 1
-  //oneChildren := List.fold1(List.intRange(listLength(oneChildren)),checkParentNode,graphIn,oneChildren);  // deletes the lists with just one entry that have more than one parent
   (graphOut,graphDataOut) := contractNodesInGraph(oneChildren,graphIn,graphDataIn);
   oChanged := List.isNotEmpty(oneChildren);
 end mergeSimpleNodes;
-
 
 public function mergeParentNodes "author: marcusw
   Merges parent nodes into child if this produces a shorter execution time. Only one merge set is determined. you have to repeat this function"

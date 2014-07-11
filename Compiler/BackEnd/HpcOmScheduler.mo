@@ -978,6 +978,8 @@ algorithm
       then ("Assign lock task with id " +& lockId +& "\n");
     case(HpcOmSimCode.RELEASELOCKTASK(lockId=lockId))
       then ("Release lock task with id " +& lockId +& "\n");
+    case(HpcOmSimCode.SCHEDULED_TASK(taskSchedule=_))
+      then "Scheduled Task----\n";
     case(HpcOmSimCode.TASKEMPTY())
       then ("empty task\n");
     else
@@ -986,6 +988,50 @@ algorithm
       then fail();
   end match;
 end dumpTask;
+
+public function printTask
+  input HpcOmSimCode.Task iTask;
+protected
+  Integer weighting, index;
+  Real calcTime, timeFinished;
+  Integer threadIdx;
+  list<Integer> eqIdc, nodeIdc;
+  String lockId;
+  HpcOmSimCode.Schedule taskSchedule;
+algorithm
+  _ := match(iTask)
+    case(HpcOmSimCode.CALCTASK(weighting=weighting,timeFinished=timeFinished, index=index, eqIdc=eqIdc))
+      equation
+      print("Calculation task with index " +& intString(index) +& " including the equations: "+&stringDelimitList(List.map(eqIdc,intString),", ")+& " is finished at  " +& realString(timeFinished) +& "\n");
+      then();
+    case(HpcOmSimCode.CALCTASK_LEVEL(eqIdc=eqIdc, nodeIdc=nodeIdc))
+      equation
+      print("Calculation task ("+&stringDelimitList(List.map(nodeIdc,intString),", ")+&") including the equations: "+&stringDelimitList(List.map(eqIdc,intString),", ")+&"\n");
+      then();
+    case(HpcOmSimCode.ASSIGNLOCKTASK(lockId=lockId))
+      equation
+      print("Assign lock task with id " +& lockId +& "\n");
+      then();
+    case(HpcOmSimCode.RELEASELOCKTASK(lockId=lockId))
+      equation
+      print("Release lock task with id " +& lockId +& "\n");
+      then();
+    case(HpcOmSimCode.SCHEDULED_TASK(taskSchedule=taskSchedule))
+      equation
+      print("Scheduled Task:\n ________________________________\n");
+      printSchedule(taskSchedule);
+      print("________________________________:\n");
+      then();
+    case(HpcOmSimCode.TASKEMPTY())
+      equation
+      print("empty task\n");
+      then();
+    else
+      equation
+        print("HpcOmScheduler.printTask failed\n");
+      then fail();
+  end match;
+end printTask;
 
 
 public function convertScheduleStrucToInfo "author: marcusw
@@ -3456,7 +3502,7 @@ algorithm
   arrayOut := arrayUpdate(arrayIn,value,valueLst);
 end listIndecesForValues;
 
-protected function getAssignLockTask "outputs a AssignLockTsk for the given lockId.
+public function getAssignLockTask "outputs a AssignLockTsk for the given lockId.
 author:Waurich TUD 2013-11"
   input String lockId;
   output HpcOmSimCode.Task taskOut;
@@ -3464,7 +3510,7 @@ algorithm
   taskOut := HpcOmSimCode.ASSIGNLOCKTASK(lockId);
 end getAssignLockTask;
 
-protected function getReleaseLockTask "outputs a ReleaseLockTsk for the given lockId.
+public function getReleaseLockTask "outputs a ReleaseLockTsk for the given lockId.
 author:Waurich TUD 2013-11"
   input String lockId;
   output HpcOmSimCode.Task taskOut;
