@@ -2940,7 +2940,7 @@ algorithm
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets=stateSets,partitionKind=partitionKind))
       equation
         (ordvars1,outVar) = removeVar(inVarPos,ordvars);
@@ -3134,7 +3134,7 @@ algorithm
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets,partitionKind))
       equation
         ordvars1 = addVar(inVar,ordvars);
@@ -3381,7 +3381,7 @@ algorithm
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets,partitionKind))
       equation
         ordvars1 = expandVars(needed,ordvars);

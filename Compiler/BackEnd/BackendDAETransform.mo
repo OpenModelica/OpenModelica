@@ -97,7 +97,7 @@ algorithm
       array<Integer> markarray;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (BackendDAE.EQSYSTEM(vars,eqs,SOME(_),SOME(mt),BackendDAE.MATCHING(ass1=ass1,ass2=ass2),stateSets=stateSets,partitionKind=partitionKind),_,_,_)
       equation
         comps = tarjanAlgorithm(mt,ass2);
@@ -299,7 +299,7 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1=ass1,ass2=ass2),stateSets=stateSets,partitionKind=partitionKind),_)
       equation
         comps = tarjanAlgorithm(mt,ass2);
@@ -364,7 +364,7 @@ algorithm
       list<BackendDAE.Equation> eqn_lst;
       BackendDAE.EquationArray eqns;
       BackendDAE.StrongComponent compX;
-      
+
     case (comp,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,ass1,ass2)
       equation
         (eqn_lst,var_varindx_lst) = List.map3_2(comp, getEquationAndSolvedVar_Internal, eqns, vars, ass2);

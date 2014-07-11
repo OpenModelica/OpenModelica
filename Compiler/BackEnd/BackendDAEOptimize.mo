@@ -124,7 +124,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind),(shared as BackendDAE.SHARED(knownVars = knvars,aliasVars = aliasvars), _))
       equation
         ((_,_,true)) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs,traversersimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
@@ -717,7 +717,7 @@ algorithm
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (BackendDAE.EQSYSTEM(vars,eqns,_,_,matching,stateSets,partitionKind),_)
       equation
         lsteqns = BackendEquation.equationList(eqns);
@@ -911,7 +911,7 @@ algorithm
       Boolean b;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),_)
       equation
         lsteqns = BackendEquation.equationList(eqns);
@@ -1713,7 +1713,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (false,_) then isyst;
 //    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.NO_MATCHING()))
     case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind))
@@ -1804,7 +1804,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching,stateSets=stateSets,partitionKind=partitionKind),BackendDAE.SHARED(functionTree=funcs),_,_,_,_,_)
       equation
         eqns1 = BackendEquation.listEquation(eqn_lst);
@@ -4668,7 +4668,7 @@ algorithm
       Integer i1, i2;
       String s1, s2;
       Boolean b;
-      
+
     case (_, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=arr), _, _, _) equation
       ea = arrayCreate(n, {});
       va = arrayCreate(n, {});
@@ -4676,8 +4676,8 @@ algorithm
       i2 = BackendVariable.numVariables(vars);
       s1 = intString(i1);
       s2 = intString(i2);
-      Error.assertionOrAddSourceMessage((i1 == i2) or throwNoError, 
-        Util.if_(i1 > i2, Error.OVERDET_EQN_SYSTEM, Error.UNDERDET_EQN_SYSTEM), 
+      Error.assertionOrAddSourceMessage((i1 == i2) or throwNoError,
+        Util.if_(i1 > i2, Error.OVERDET_EQN_SYSTEM, Error.UNDERDET_EQN_SYSTEM),
         {s1, s2}, Absyn.dummyInfo);
 
       partitionEquations(BackendDAEUtil.equationArraySize(arr), arr, ixs, ea);
@@ -4732,10 +4732,10 @@ algorithm
       Integer ix;
       list<BackendDAE.Equation> lst;
       BackendDAE.Equation eq;
-      
+
     case (0, _, _, _)
     then ();
-    
+
     case (_, _, _, _) equation
       ix = ixs[n];
       lst = ea[ix];
@@ -4765,10 +4765,10 @@ algorithm
       DAE.ComponentRef cr;
       String name;
       Absyn.Info info;
-      
+
     case (0, _, _, _, _, _)
     then ();
-    
+
     case (_, _, _, _, _, _) equation
       v = BackendVariable.getVarAt(vars, n);
       cr = BackendVariable.varCref(v);
@@ -5944,7 +5944,7 @@ algorithm
       array<list<tuple<BackendDAE.Equation,Integer>>> eqnsarray;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared)
       equation
         // traverse the equations and collect all semiLinear calls  y=semiLinear(x,sa,sb)
@@ -6411,7 +6411,7 @@ algorithm
       String s;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind),(shared, _))
       equation
         ((_,explst as _::_)) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs,traverserinputDerivativesUsed,(BackendVariable.daeKnVars(shared),{}));
@@ -6906,7 +6906,7 @@ protected
   Integer index;
   HashTableExpToIndex.HashTable ht;
   BackendDAE.BaseClockPartitionKind partitionKind;
-  
+
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) := inEqSystem;
   (index, ht) := inTpl;
@@ -7367,7 +7367,7 @@ algorithm
       BackendDAE.StateSets stateSets;
       BackendDAE.ExtraInfo ei;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind), BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs,ei))
       equation
         (eqns1, (vars1, _)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns, traverserexpandDerEquation, (vars, shared));

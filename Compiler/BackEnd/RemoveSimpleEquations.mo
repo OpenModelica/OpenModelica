@@ -328,7 +328,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets, partitionKind=partitionKind), (shared, (repl, unReplaceable, b1)))
       equation
         // transform to list, this is later not neccesary because the acausal system should save the equations as list
@@ -394,7 +394,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, matching=BackendDAE.MATCHING(comps=comps), stateSets=stateSets, partitionKind=partitionKind), (shared, (repl, unReplaceable, b1)))
       equation
         mT = arrayCreate(BackendVariable.varsSize(vars), {});
@@ -3491,7 +3491,7 @@ algorithm
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
       Option<BackendVarTransform.VariableReplacements> statesetrepl1;
-      
+
     case ({}, _, _, _, _) then inSysts1;
     case ((syst as BackendDAE.EQSYSTEM(orderedVars=v, orderedEqs=eqns, stateSets=stateSets, partitionKind=partitionKind))::rest, _, _, _, _)
       equation

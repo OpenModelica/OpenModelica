@@ -2189,7 +2189,7 @@ algorithm
       list<BackendDAE.Equation> eqnslst1;
       list<tuple<DAE.ComponentRef, Integer>> states,dstates;
       DAE.FunctionTree funcs;
-      
+
     // number of free states equal to number of differentiated equations -> no state selection necessary, all dummy states
     case (_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation

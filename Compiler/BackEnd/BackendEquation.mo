@@ -1525,7 +1525,7 @@ algorithm
       Option<BackendDAE.IncidenceMatrixT> mT;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,stateSets=stateSets,partitionKind=partitionKind))
       equation
         eqns1 = equationAdd(inEquation,eqns);
@@ -1547,7 +1547,7 @@ algorithm
       Option<BackendDAE.IncidenceMatrixT> mT;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,stateSets=stateSets,partitionKind=partitionKind))
       equation
         eqns1 = List.fold(inEquations,equationAdd,eqns);
@@ -1604,7 +1604,7 @@ algorithm
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (_, _,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets,partitionKind))
       equation
         eqns1 = equationSetnth(eqns,inInteger,inEquation);

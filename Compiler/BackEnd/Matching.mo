@@ -6119,7 +6119,7 @@ algorithm
      BackendDAE.EqSystem syst;
      BackendDAE.StateSets stateSets;
      BackendDAE.BaseClockPartitionKind partitionKind;
-     
+
    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),_)
      equation
        ne = BackendDAEUtil.systemSize(isyst);

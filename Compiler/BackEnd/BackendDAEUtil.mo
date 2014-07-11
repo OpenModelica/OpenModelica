@@ -521,7 +521,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets,partitionKind),shared)
       equation
         // copy varibales
@@ -785,7 +785,7 @@ algorithm
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, stateSets, partitionKind),_)
       equation
         vars = BackendVariable.addVars(varlst, vars);
@@ -4107,7 +4107,7 @@ algorithm
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets,partitionKind),_,_,_)
       equation
         (m,mt) = updateIncidenceMatrix1(vars,daeeqns,inIndxType,functionTree,m,mt,inIntegerLst);
@@ -4200,7 +4200,7 @@ algorithm
       array<Integer> mapIncRowEqn;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets,partitionKind),_,_,_,_,_)
       equation
         // extend the mapping arrays
