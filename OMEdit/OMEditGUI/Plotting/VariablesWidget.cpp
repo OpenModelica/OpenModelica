@@ -477,7 +477,12 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       {
         pParentVariablesTreeItem = pTopVariablesTreeItem;
       }
-      QString findVariable = parentVariable.isEmpty() ? fileName + "." + variable : fileName + "." + parentVariable + "." + variable;
+      QString findVariable;
+      /* if last item */
+      if (variables.size() == count && plotVariable.startsWith("der("))
+        findVariable = parentVariable.isEmpty() ? fileName + ".der(" + variable + ")" : fileName + "." + parentVariable + ".der(" + variable + ")";
+      else
+        findVariable = parentVariable.isEmpty() ? fileName + "." + variable : fileName + "." + parentVariable + "." + variable;
       if (pParentVariablesTreeItem = findVariablesTreeItem(findVariable, pParentVariablesTreeItem))
       {
         if (count == 1)
