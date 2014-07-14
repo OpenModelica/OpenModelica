@@ -96,6 +96,7 @@ typedef struct OptDataBounds{
   long double **scalb;
 
   modelica_real *u0;
+  double preSim;
 }OptDataBounds;
 
 typedef struct OptDataRK{
@@ -154,6 +155,7 @@ typedef struct OptData{
   long double **Hl;
   long double **Hm;
   DATA *data;
+  FILE * pFile;
 
   double *oldH;
 

@@ -42,7 +42,7 @@
 
 
 static int initial_guess_ipopt_cflag(OptData *optData, char* cflags);
-static inline void smallIntSolverStep(DATA* data, SOLVER_INFO* solverInfo, double tstop);
+static inline void smallIntSolverStep(DATA* data, SOLVER_INFO* solverInfo, const double tstop);
 static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo);
 static inline void init_ipopt_data(OptData *optData);
 
@@ -55,6 +55,16 @@ inline void initial_guess_optimizer(OptData *optData, SOLVER_INFO* solverInfo){
   char *cflags;
   int opt = 1;
   int i, j;
+  char buffer[4096];
+  const int nu = optData->dim.nu;
+
+  optData->pFile = fopen("optimizeInput.csv", "wt");
+  fprintf(optData->pFile, "%s ", "time");
+  for(i=0; i < nu; ++i){
+    sprintf(buffer, "%s", optData->dim.inputName[i]);
+    fprintf(optData->pFile, "%s ", buffer);
+  }
+  fprintf(optData->pFile, "%s", "\n");
 
   cflags = (char*)omc_flagValue[FLAG_IPOPT_INIT];
 
@@ -87,7 +97,6 @@ static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solver
   const int nsi = optData->dim.nsi;
   const int nReal = optData->dim.nReal;
 
-
   DATA* data = optData->data;
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
@@ -115,6 +124,39 @@ static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solver
        data->simulationInfo.inputVars[i] = u0[i]/*optData->bounds.scalF[i + nx]*/;
 
    printGuess = (short)(ACTIVE_STREAM(LOG_INIT) && !ACTIVE_STREAM(LOG_SOLVER));
+
+   if((double)data->simulationInfo.startTime < optData->time.t0){
+     double t = data->simulationInfo.startTime;
+     FILE * pFile = optData->pFile;
+     fprintf(pFile, "%lf ",(double)t);
+     for(i = 0; i < nu; ++i){
+       fprintf(pFile, "%lf ", (float)data->simulationInfo.inputVars[i]);
+     }
+     fprintf(pFile, "%s", "\n");
+     if(1){
+       printf("\nPreSim");
+       printf("\n========================================================\n");
+       printf("\ndone: time[%i] = %g",0,(double)data->simulationInfo.startTime);
+     }
+     while(t < optData->time.t0){
+       externalInputUpdate(data);
+       smallIntSolverStep(data, solverInfo, fmin(t += optData->time.dt[0], optData->time.t0));
+       printf("\ndone: time[%i] = %g",0,(double)solverInfo->currentTime);
+       sim_result.emit(&sim_result,data);
+       fprintf(pFile, "%lf ",(double)t);
+       for(i = 0; i < nu; ++i){
+         fprintf(pFile, "%lf ", (float)data->simulationInfo.inputVars[i]);
+       }
+       fprintf(pFile, "%s", "\n");
+     }
+     memcpy(optData->v0, data->localData[1]->realVars, nReal*sizeof(modelica_real));
+     if(1){
+       printf("\n--------------------------------------------------------");
+       printf("\nfinished: PreSim");
+       printf("\n========================================================\n");
+     }
+   }
+
 
    if(printGuess){
      printf("\nInitial Guess");
@@ -254,7 +296,7 @@ static inline void init_ipopt_data(OptData *optData){
 
 }
 
-static inline void smallIntSolverStep(DATA* data, SOLVER_INFO* solverInfo, double tstop){
+static inline void smallIntSolverStep(DATA* data, SOLVER_INFO* solverInfo, const double tstop){
   long double a;
   int iter;
   int err;

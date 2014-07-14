@@ -37,7 +37,7 @@
 #include "../../simulation/options.h"
 
 static inline void pickUpDim(OptDataDim * dim, DATA* data);
-static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data);
+static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, const double preSimTime);
 static inline void pickUpBounds(OptDataBounds * bounds, OptDataDim * dim, DATA* data);
 static inline void check_nominal(OptDataBounds * bounds, const double min, const double max,
                                  const double nominal, const modelica_boolean set, const int i, const double x0);
@@ -57,8 +57,8 @@ int pickUpModelData(DATA* data, SOLVER_INFO* solverInfo)
   OptDataDim *dim;
 
   pickUpDim(&optData->dim, data);
-  pickUpTime(&optData->time, &optData->dim, data);
   pickUpBounds(&optData->bounds, &optData->dim, data);
+  pickUpTime(&optData->time, &optData->dim, data, optData->bounds.preSim);
   setRKCoeff(&optData->rk, optData->dim.np);
   calculatedScalingHelper(&optData->bounds,&optData->time, &optData->dim, &optData->rk);
   messageClose(LOG_SOLVER);
@@ -119,7 +119,7 @@ static inline void pickUpDim(OptDataDim * dim, DATA* data){
 /* pick up information(startTime, stopTime, dt) from model data to optimizer struct
  * author: Vitalij Ruge
  */
-static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data){
+static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, const double preSimTime){
   const int nsi = dim->nsi;
   const int np = dim->np;
   const int np1 = np - 1;
@@ -128,7 +128,7 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data){
   int i, k;
   double t;
 
-  time->t0 = (long double)data->simulationInfo.startTime;
+  time->t0 = (long double)fmax(data->simulationInfo.startTime, preSimTime);
   time->tf = (long double)data->simulationInfo.stopTime;
 
   time->dt[0] = (time->tf - time->t0)/nsi;
@@ -178,7 +178,7 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data){
  */
 static inline void pickUpBounds(OptDataBounds * bounds, OptDataDim * dim, DATA* data){
   char ** inputName;
-  double min, max, nominal, x0, tmpOptTime;
+  double min, max, nominal, x0;
   double *umin, *umax, *unom;
   modelica_boolean nominalWasSet;
   modelica_boolean * nominalWasSetInput;
@@ -209,7 +209,7 @@ static inline void pickUpBounds(OptDataBounds * bounds, OptDataDim * dim, DATA* 
   umax = bounds->vmax + nx;
   unom = bounds->vnom + nx;
 
-  data->callback->pickUpBoundsForInputsInOptimization(data,umin, umax, unom, nominalWasSetInput, inputName, bounds->u0, &tmpOptTime);
+  data->callback->pickUpBoundsForInputsInOptimization(data,umin, umax, unom, nominalWasSetInput, inputName, bounds->u0, &bounds->preSim);
 
   for(i = 0; i < nx; ++i){
     min = data->modelData.realVarsData[i].attribute.min;
@@ -435,7 +435,7 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
   DATA * data = optData->data;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
 
-  FILE * pFile;
+  FILE * pFile = optData->pFile;
   double * v0 = optData->v0;
   double *vnom = optData->bounds.vnom;
   long double **t = optData->time.t;
@@ -456,14 +456,6 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
   optData2ModelData(optData, vopt, 0);
 
   /******************/
-  pFile = fopen("optimizeInput.csv", "wt");
-  fprintf(pFile, "%s ", "time");
-  for(i=0; i < nu; ++i){
-    sprintf(buffer, "%s", optData->dim.inputName[i]);
-    fprintf(pFile, "%s ", buffer);
-  }
-  fprintf(pFile, "%s", "\n");
-
   fprintf(pFile, "%lf ",(double)t0);
 
   for(i=0,j = nx; i < nu; ++i,++j){
