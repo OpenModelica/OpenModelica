@@ -1733,7 +1733,7 @@ algorithm
 end markRemovedNodes;
 
 
-protected function getCompInComps "finds the node in the current task graph which contains that component(index from the original task graph). nodeMark is needed to check for deleted components
+public function getCompInComps "finds the node in the current task graph which contains that component(index from the original task graph). nodeMark is needed to check for deleted components
 author: Waurich TUD 2013-07"
   input Integer compIn;
   input Integer compIdx;  // start idx for iteration

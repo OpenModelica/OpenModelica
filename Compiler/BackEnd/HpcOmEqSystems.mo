@@ -1984,30 +1984,54 @@ author:Waurich TUD 2014-07"
   input HpcOmTaskGraph.TaskGraphMeta metaIn;
   input array<list<Integer>> sccSimEqMapping;
   input BackendDAE.BackendDAE inDAE;
-  output HpcOmTaskGraph.TaskGraph graphOut;
-  output HpcOmTaskGraph.TaskGraphMeta  metaOut;
+  output list<HpcOmSimCode.Task> scheduledTasks;
+  output list<Integer> odeNodeIdcs;
 algorithm
-  (graphOut,metaOut) := matchcontinue(graphIn,metaIn,sccSimEqMapping,inDAE)
+  (scheduledTasks,odeNodeIdcs) := matchcontinue(graphIn,metaIn,sccSimEqMapping,inDAE)
     local
       BackendDAE.EqSystems eqSysts;
       BackendDAE.Shared shared;
+      list<HpcOmSimCode.Task> taskLst;
+      list<Integer> odeNodes;
+      array<list<Integer>> inComps;
+      array<Integer> nodeMark;
     case (_,_,_,_) equation
+      true = false;
+      true = Flags.isSet(Flags.LINEAR_TEARING);
       BackendDAE.DAE(eqs=eqSysts, shared=shared) = inDAE;
-      _ = pts_traverseEqSystems(eqSysts,sccSimEqMapping,1);
-    then (graphIn,metaIn);
+      (_,taskLst) = pts_traverseEqSystems(eqSysts,sccSimEqMapping,1,{});
+
+      // calculate the node idcs for the ode-task-gaph
+      odeNodes = List.map(taskLst,getScheduledTaskCompIdx);
+      HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = metaIn;
+      odeNodes = List.map3(odeNodes,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
+    then (taskLst,odeNodes);
     else
-    then (graphIn,metaIn);
+    then ({},{});
   end matchcontinue;
 end parallelizeTornSystems;
+
+protected function getScheduledTaskCompIdx
+  input HpcOmSimCode.Task taskIn;
+  output Integer compIdx;
+algorithm
+  compIdx := match(taskIn)
+    local
+  case(HpcOmSimCode.SCHEDULED_TASK(compIdx=compIdx))
+    then compIdx;
+  end match;
+end getScheduledTaskCompIdx;
 
 protected function pts_traverseEqSystems "
 author: Waurich TUD 2014-07"
   input BackendDAE.EqSystems eqSysIn;
   input array<list<Integer>> sccSimEqMapping;
   input Integer compIdxIn;
+  input list<HpcOmSimCode.Task> taskLstIn;
   output Integer compIdxOut;
+  output list<HpcOmSimCode.Task> taskLstOut;
 algorithm
-  (compIdxOut) := matchcontinue(eqSysIn,sccSimEqMapping,compIdxIn)
+  (compIdxOut,taskLstOut) := matchcontinue(eqSysIn,sccSimEqMapping,compIdxIn,taskLstIn)
     local
       Integer compIdx;
       BackendDAE.EquationArray eqs;
@@ -2016,15 +2040,16 @@ algorithm
       BackendDAE.StrongComponents comps;
       list<BackendDAE.Equation> eqLst;
       list<BackendDAE.Var> varLst;
-    case(BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,matching = BackendDAE.MATCHING(comps=comps))::eqSysRest,_,_)
+      list<HpcOmSimCode.Task> taskLst;
+    case(BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,matching = BackendDAE.MATCHING(comps=comps))::eqSysRest,_,_,_)
       equation
         eqLst = BackendEquation.equationList(eqs);
         varLst = BackendVariable.varList(vars);
-        (compIdx) = pts_traverseCompsAndParallelize(comps,eqLst,varLst,sccSimEqMapping,compIdxIn);
-        (compIdx) = pts_traverseEqSystems(eqSysRest,sccSimEqMapping,compIdx);
-      then compIdx;
-   case({},_,_)
-     then compIdxIn;
+        (compIdx,taskLst) = pts_traverseCompsAndParallelize(comps,eqLst,varLst,sccSimEqMapping,compIdxIn,taskLstIn);
+        (compIdx,taskLst) = pts_traverseEqSystems(eqSysRest,sccSimEqMapping,compIdx,taskLst);
+      then (compIdx,taskLst);
+   case({},_,_,_)
+     then (compIdxIn,taskLstIn);
     else
       equation
         print("pts_traverseEqSystems failed\n");
@@ -2039,9 +2064,11 @@ author:Waurich TUD 2014-07"
   input list<BackendDAE.Var> varsIn;
   input array<list<Integer>> sccSimEqMapping;
   input Integer compIdxIn;
+  input list<HpcOmSimCode.Task> taskLstIn;
   output Integer compIdxOut;
+  output list<HpcOmSimCode.Task> taskLstOut;
 algorithm
-  compIdxOut := matchcontinue(inComps,eqsIn,varsIn,sccSimEqMapping,compIdxIn)
+  (compIdxOut,taskLstOut) := matchcontinue(inComps,eqsIn,varsIn,sccSimEqMapping,compIdxIn,taskLstIn)
     local
       Integer numEqs, numVars, compIdx, numResEqs;
       list<Integer> eqIdcs, varIdcs, tVars, resEqs, eqIdcsSys, simEqSysIdcs,resSimEqSysIdcs,otherSimEqSysIdcs;
@@ -2056,13 +2083,14 @@ algorithm
       HpcOmTaskGraph.TaskGraphMeta meta, metaMerged;
       HpcOmSimCode.Schedule schedule;
       HpcOmSimCode.Task task;
+      list<HpcOmSimCode.Task> taskLst;
       list<BackendDAE.Equation> otherEqLst;
       list<BackendDAE.Var> otherVarLst;
       list<BackendDAE.StrongComponent> rest;
-  case({},_,_,_,_)
+  case({},_,_,_,_,_)
     equation
-    then compIdxIn;
-  case((comp as BackendDAE.TORNSYSTEM(residualequations=resEqs,tearingvars=tVars,otherEqnVarTpl=otherEqnVarTplIdcs))::rest,_,_,_,_)
+    then (compIdxIn,taskLstIn);
+  case((comp as BackendDAE.TORNSYSTEM(residualequations=resEqs,tearingvars=tVars,otherEqnVarTpl=otherEqnVarTplIdcs))::rest,_,_,_,_,_)
     equation
       eqIdcs = List.map(otherEqnVarTplIdcs,Util.tuple21);
       varIdcsLsts = List.map(otherEqnVarTplIdcs,Util.tuple22);
@@ -2086,45 +2114,42 @@ algorithm
       (graph,meta) = HpcOmTaskGraph.getEmptyTaskGraph(numEqs,numEqs,numVars);
       graph = buildMatchedGraphForTornSystem(1,eqIdcsSys,varIdcLstSys,m,mT,graph);
       meta = buildTaskgraphMetaForTornSystem(graph,otherEqLst,otherVarLst,meta);
-        HpcOmTaskGraph.printTaskGraph(graph);
-        HpcOmTaskGraph.printTaskGraphMeta(meta);
+        //HpcOmTaskGraph.printTaskGraph(graph);
+        //HpcOmTaskGraph.printTaskGraphMeta(meta);
 
       //get simEqSysIdcs and otherSimEqMapping
       simEqSysIdcs = arrayGet(sccSimEqMapping,compIdxIn);
       resSimEqSysIdcs = List.map1r(List.intRange(numResEqs),intSub,List.first(simEqSysIdcs));
       otherSimEqSysIdcs = List.map1r(List.intRange2(numResEqs+1,numResEqs+numEqs),intSub,List.first(simEqSysIdcs));
       otherSimEqMapping = listArray(List.map(otherSimEqSysIdcs,List.create));
-      print("simEqSysIdcs "+&stringDelimitList(List.map(simEqSysIdcs,intString),",")+&"\n");
-      print("resSimEqSysIdcs "+&stringDelimitList(List.map(resSimEqSysIdcs,intString),",")+&"\n");
-      print("otherSimEqSysIdcs "+&stringDelimitList(List.map(otherSimEqSysIdcs,intString),",")+&"\n");
+        //print("simEqSysIdcs "+&stringDelimitList(List.map(simEqSysIdcs,intString),",")+&"\n");
+        //print("resSimEqSysIdcs "+&stringDelimitList(List.map(resSimEqSysIdcs,intString),",")+&"\n");
+        //print("otherSimEqSysIdcs "+&stringDelimitList(List.map(otherSimEqSysIdcs,intString),",")+&"\n");
 
       // dump graphs
       dumpTornSystemBipartiteGraphML(comp,eqsIn,varsIn,"tornSys_bipartite_"+&intString(compIdxIn));
       dumpTornSystemDAGgraphML(graph,meta,"tornSys_matched_"+&intString(compIdxIn));
 
       //GRS
-      //graphMerged = arrayCopy(graph);
-      //metaMerged = HpcOmTaskGraph.copyTaskGraphMeta(meta);
-      (graphMerged,metaMerged) = HpcOmSimCodeMain.applyFiltersToGraph(graph,meta,true);
+      (graphMerged,metaMerged) = HpcOmSimCodeMain.applyFiltersToGraph(graph,meta,true,{});
 
       dumpTornSystemDAGgraphML(graphMerged,metaMerged,"tornSys_matched2_"+&intString(compIdxIn));
-        HpcOmTaskGraph.printTaskGraph(graphMerged);
-        HpcOmTaskGraph.printTaskGraphMeta(metaMerged);
+        //HpcOmTaskGraph.printTaskGraph(graphMerged);
+        //HpcOmTaskGraph.printTaskGraphMeta(metaMerged);
 
       //Schedule
       schedule = HpcOmScheduler.createListSchedule(graphMerged,metaMerged,2,otherSimEqMapping);
-      HpcOmScheduler.printSchedule(schedule);
+      //HpcOmScheduler.printSchedule(schedule);
 
       //transform into scheduled task object
       task = pts_transformScheduleToTask(schedule,resSimEqSysIdcs,compIdxIn);
-      HpcOmScheduler.printTask(task);
-
-      compIdx = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,sccSimEqMapping,compIdxIn+1);
-    then compIdx;
-  case(comp::rest,_,_,_,_)
+      //HpcOmScheduler.printTask(task);
+      (compIdx,taskLst) = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,sccSimEqMapping,compIdxIn+1,task::taskLstIn);
+    then (compIdx,taskLst);
+  case(comp::rest,_,_,_,_,_)
     equation
-      compIdx = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,sccSimEqMapping,compIdxIn+1);
-    then compIdx;
+      (compIdx,taskLst) = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,sccSimEqMapping,compIdxIn+1,taskLstIn);
+    then (compIdx,taskLst);
   end matchcontinue;
 end pts_traverseCompsAndParallelize;
 
@@ -2140,13 +2165,16 @@ algorithm
       list<String> lockIdc, lockIdcsEnd;
       String lockSuffix;
       HpcOmSimCode.Schedule schedule;
+      HpcOmSimCode.Task resEqsTask;
       list<HpcOmSimCode.TaskList> levelTasks;
-      list<HpcOmSimCode.Task> assLocks,relLocks, resEqTasks;
+      list<HpcOmSimCode.Task> assLocks,relLocks, firstThread;
       array<list<HpcOmSimCode.Task>> threadTasks;
+      list<list<HpcOmSimCode.Task>> threadTasksLst;
     case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=levelTasks),_,_)
       equation
+        print("levelScheduling is not supported for heterogenious scheduling\n");
       then
-        HpcOmSimCode.SCHEDULED_TASK(otherEqSys);
+        fail();
     case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_)
       equation
         numThreads = arrayLength(threadTasks);
@@ -2157,11 +2185,22 @@ algorithm
         lockIdc = listAppend(lockIdc,lockIdcsEnd);
         threadTasks = Util.arrayMap1(threadTasks,appendStringToLockIdcs,lockSuffix);
 
+        // build missing residual tasks and locks
         assLocks = List.map(lockIdcsEnd,HpcOmScheduler.getAssignLockTask);
         relLocks = List.map(lockIdcsEnd,HpcOmScheduler.getReleaseLockTask);
+        resEqsTask = HpcOmSimCode.CALCTASK(0,-1,-1.0,-1.0,1,resSimEqs);
+
+        threadTasksLst = arrayList(threadTasks);
+        threadTasksLst = List.threadMap(threadTasksLst,List.map(relLocks,List.create),listAppend);
+        firstThread::threadTasksLst = threadTasksLst;
+        firstThread = listAppend(firstThread,assLocks);
+        firstThread = listAppend(firstThread,{resEqsTask});
+        threadTasksLst = firstThread::threadTasksLst;
+        threadTasks = listArray(threadTasksLst);
+
         schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,lockIdc);
       then
-        HpcOmSimCode.SCHEDULED_TASK(schedule);
+        HpcOmSimCode.SCHEDULED_TASK(compIdx,numThreads,schedule);
     else
       equation
         print("pts_transformScheduleToTask failed\n");

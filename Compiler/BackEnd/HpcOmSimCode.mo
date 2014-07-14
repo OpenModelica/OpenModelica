@@ -43,6 +43,8 @@ encapsulated package HpcOmSimCode
 
   public uniontype Task
     record SCHEDULED_TASK
+      Integer compIdx;
+      Integer numThreads;
       Schedule taskSchedule;
     end SCHEDULED_TASK;
     record CALCTASK //Task which calculates something

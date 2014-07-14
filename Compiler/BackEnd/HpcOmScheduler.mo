@@ -917,57 +917,56 @@ algorithm
   end match;
 end compareTaskWithThreadIdx;
 
-protected function printThreadSchedule
+protected function dumpThreadSchedule
   input list<HpcOmSimCode.Task> iTaskList;
   input Integer iThreadIdx;
+  output String str;
   output Integer oThreadIdx;
 algorithm
-  print("--------------\n");
-  print("Thread " +& intString(iThreadIdx) +& "\n");
-  print("--------------\n");
-  printTaskList(iTaskList);
+  str := "--------------\n";
+  str := str +& "Thread " +& intString(iThreadIdx) +& "\n";
+  str := str +&"--------------\n";
+  str := str +& dumpTaskList(iTaskList);
   oThreadIdx := iThreadIdx+1;
-end printThreadSchedule;
+end dumpThreadSchedule;
 
-protected function printTaskDepSchedule
+protected function dumpTaskDepSchedule
   input tuple<HpcOmSimCode.Task,list<Integer>> iTaskInfo;
+  output String str;
 protected
+  String s;
   HpcOmSimCode.Task iTask;
   list<Integer> iDependencies;
 algorithm
   (iTask,iDependencies) := iTaskInfo;
-  print("Task: \n");
-  print(dumpTask(iTask) +& "\n");
-  print("-> Parents: " +& stringDelimitList(List.map(iDependencies,intString),",") +& "\n");
-  print("---------------------\n");
-end printTaskDepSchedule;
+  s := "Task: \n";
+  s := s +& dumpTask(iTask) +& "\n";
+  s := s +& "-> Parents: " +& stringDelimitList(List.map(iDependencies,intString),",") +& "\n";
+  str := s +& "---------------------\n";
+end dumpTaskDepSchedule;
 
-protected function printTaskList
+public function printTaskList
   input list<HpcOmSimCode.Task> iTaskList;
-protected
-  HpcOmSimCode.Task head;
-  list<HpcOmSimCode.Task> rest;
 algorithm
-  _ := match(iTaskList)
-    case(head::rest)
-      equation
-        print(dumpTask(head));
-        printTaskList(rest);
-      then ();
-    else
-      then ();
-  end match;
+  print(dumpTaskList(iTaskList));
 end printTaskList;
+
+protected function dumpTaskList
+  input list<HpcOmSimCode.Task> iTaskList;
+  output String str;
+algorithm
+  str := stringDelimitList(List.map(iTaskList,dumpTask),"");
+end dumpTaskList;
 
 protected function dumpTask
   input HpcOmSimCode.Task iTask;
   output String oString;
 protected
-  Integer weighting, index;
-  Real calcTime, timeFinished;
-  Integer threadIdx;
+  Integer weighting, index, threadIdx, compIdx, numThreads;
   list<Integer> eqIdc, nodeIdc;
-  String lockId;
+  Real calcTime, timeFinished;
+  String lockId, s;
+  HpcOmSimCode.Schedule taskSchedule;
 algorithm
   oString := match(iTask)
     case(HpcOmSimCode.CALCTASK(weighting=weighting,timeFinished=timeFinished, index=index, eqIdc=eqIdc))
@@ -978,10 +977,14 @@ algorithm
       then ("Assign lock task with id " +& lockId +& "\n");
     case(HpcOmSimCode.RELEASELOCKTASK(lockId=lockId))
       then ("Release lock task with id " +& lockId +& "\n");
-    case(HpcOmSimCode.SCHEDULED_TASK(taskSchedule=_))
-      then "Scheduled Task----\n";
+    case(HpcOmSimCode.SCHEDULED_TASK(compIdx=compIdx,numThreads=numThreads,taskSchedule=taskSchedule))
+      equation
+      s = "Scheduled Task (comp: "+&intString(compIdx)+&", numThreads: "+&intString(numThreads)+&"):\n------------------------------------------------------\n";
+      s = s +&"\t"+& System.stringReplace(dumpSchedule(taskSchedule),"\n","\n\t");
+      s = s +& "------------------------------------------------------\n";
+      then s;
     case(HpcOmSimCode.TASKEMPTY())
-      then ("empty task\n");
+      then "empty task\n";
     else
       equation
         print("HpcOmScheduler.dumpTask failed\n");
@@ -991,48 +994,9 @@ end dumpTask;
 
 public function printTask
   input HpcOmSimCode.Task iTask;
-protected
-  Integer weighting, index;
-  Real calcTime, timeFinished;
-  Integer threadIdx;
-  list<Integer> eqIdc, nodeIdc;
-  String lockId;
-  HpcOmSimCode.Schedule taskSchedule;
 algorithm
-  _ := match(iTask)
-    case(HpcOmSimCode.CALCTASK(weighting=weighting,timeFinished=timeFinished, index=index, eqIdc=eqIdc))
-      equation
-      print("Calculation task with index " +& intString(index) +& " including the equations: "+&stringDelimitList(List.map(eqIdc,intString),", ")+& " is finished at  " +& realString(timeFinished) +& "\n");
-      then();
-    case(HpcOmSimCode.CALCTASK_LEVEL(eqIdc=eqIdc, nodeIdc=nodeIdc))
-      equation
-      print("Calculation task ("+&stringDelimitList(List.map(nodeIdc,intString),", ")+&") including the equations: "+&stringDelimitList(List.map(eqIdc,intString),", ")+&"\n");
-      then();
-    case(HpcOmSimCode.ASSIGNLOCKTASK(lockId=lockId))
-      equation
-      print("Assign lock task with id " +& lockId +& "\n");
-      then();
-    case(HpcOmSimCode.RELEASELOCKTASK(lockId=lockId))
-      equation
-      print("Release lock task with id " +& lockId +& "\n");
-      then();
-    case(HpcOmSimCode.SCHEDULED_TASK(taskSchedule=taskSchedule))
-      equation
-      print("Scheduled Task:\n ________________________________\n");
-      printSchedule(taskSchedule);
-      print("________________________________:\n");
-      then();
-    case(HpcOmSimCode.TASKEMPTY())
-      equation
-      print("empty task\n");
-      then();
-    else
-      equation
-        print("HpcOmScheduler.printTask failed\n");
-      then fail();
-  end match;
+  print(dumpTask(iTask));
 end printTask;
-
 
 public function convertScheduleStrucToInfo "author: marcusw
   Convert the given schedule-information into an node-array of informations."
@@ -1635,32 +1599,34 @@ algorithm
   isAss := intLt(arrayGet(ass,node),0);
 end arrayIntIsNegative;
 
-protected function printLevelSchedule "function printLevelSchedule
+protected function dumpLevelSchedule "function printLevelSchedule
   author: marcusw
   Helper function to print one level."
   input HpcOmSimCode.TaskList iLevelInfo;
   input Integer iLevel;
+  output String levelStr;
   output Integer oLevel;
 protected
+  String s;
   list<HpcOmSimCode.Task> tasks;
 algorithm
-  oLevel := match(iLevelInfo, iLevel)
+  (levelStr,oLevel) := match(iLevelInfo, iLevel)
     case(HpcOmSimCode.PARALLELTASKLIST(tasks=tasks),_)
       equation
-        print("Parallel Level " +& intString(iLevel) +& ":\n");
-        printTaskList(tasks);
-      then iLevel + 1;
+        s = "Parallel Level " +& intString(iLevel) +& ":\n";
+        s = s +& dumpTaskList(tasks);
+      then (s,iLevel + 1);
     case(HpcOmSimCode.SERIALTASKLIST(tasks=tasks),_)
       equation
-        print("Serial Level " +& intString(iLevel) +& ":\n");
-        printTaskList(tasks);
-      then iLevel + 1;
+        s = "Serial Level " +& intString(iLevel) +& ":\n";
+        s = s +& dumpTaskList(tasks);
+      then (s,iLevel + 1);
     else
       equation
         print("printLevelSchedule failed!\n");
-      then iLevel + 1;
+      then fail();
    end match;
-end printLevelSchedule;
+end dumpLevelSchedule;
 
 //---------------------------
 // Task dependency Scheduling
@@ -4028,31 +3994,43 @@ end realSubr;
 
 public function printSchedule
   input HpcOmSimCode.Schedule iSchedule;
+algorithm
+  print(dumpSchedule(iSchedule));
+end printSchedule;
+
+public function dumpSchedule
+  input HpcOmSimCode.Schedule iSchedule;
+  output String str;
 protected
+  String s;
+  list<String> sLst;
   array<list<HpcOmSimCode.Task>> threadTasks;
   list<HpcOmSimCode.TaskList> tasksOfLevels;
   list<tuple<HpcOmSimCode.Task, list<Integer>>> taskDepTasks;
 algorithm
-  _ := match(iSchedule)
+  str := match(iSchedule)
     case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks))
       equation
-        _ = Util.arrayFold(threadTasks, printThreadSchedule, 1);
-      then ();
+        (sLst,_) = List.mapFold(arrayList(threadTasks), dumpThreadSchedule, 1);
+        s = stringDelimitList(sLst,"\n");
+        s = "THREADSCHEDULE\n"+&s;
+      then s;
     case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels))
       equation
-        _ = List.fold(tasksOfLevels,printLevelSchedule,1);
-      then ();
+        (sLst,_) = List.mapFold(tasksOfLevels,dumpLevelSchedule,1);
+        s = stringDelimitList(sLst,"\n");
+        s = "LEVELSCHEDULE\n"+&s;
+      then s;
     case(HpcOmSimCode.TASKDEPSCHEDULE(tasks=taskDepTasks))
       equation
-        List.map_0(taskDepTasks,printTaskDepSchedule);
-      then ();
+        s = stringDelimitList(List.map(taskDepTasks,dumpTaskDepSchedule),"\n")+&"\n";
+        s = "TASKDEPSCHEDULE\n"+&s;
+      then s;
     case(HpcOmSimCode.EMPTYSCHEDULE())
-      equation
-        print("EMPTYSCHEDULE\n");
-      then ();
+      then "EMPTYSCHEDULE\n";
     else fail();
   end match;
-end printSchedule;
+end dumpSchedule;
 
 public function analyseScheduledTaskGraph"functions to analyse the scheduled task graph can be applied in here.
 author:Waurich TUD 2013-12"
