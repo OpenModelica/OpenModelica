@@ -18568,6 +18568,45 @@ algorithm
   end matchcontinue;
 end getClassNamesRecursive;
 
+public function getSCodeClassNamesRecursive
+"Returns a string with all the classes for a given path."
+  input SCode.Program inProgram;
+  output list<Absyn.Path> paths;
+algorithm
+  paths := List.fold1(inProgram,getSCodeClassNamesRecursiveWork,NONE(),{});
+end getSCodeClassNamesRecursive;
+
+protected function getSCodeClassNamesRecursiveWork
+"Returns a string with all the classes for a given path."
+  input SCode.Element inElement;
+  input Option<Absyn.Path> inPath;
+  input list<Absyn.Path> inAcc;
+  output list<Absyn.Path> paths;
+algorithm
+  paths := match (inElement,inPath,inAcc)
+    local
+      list<SCode.Element> classes;
+      list<Absyn.Path> acc;
+      Absyn.Path path;
+      String name;
+    case (SCode.CLASS(name=name),NONE(),acc)
+      equation
+        path = Absyn.IDENT(name);
+        acc = path::acc;
+        classes = SCode.getClassElements(inElement);
+        acc = List.fold1(classes,getSCodeClassNamesRecursiveWork,SOME(path),acc);
+      then acc;
+    case (SCode.CLASS(name=name),SOME(path),acc)
+      equation
+        path = Absyn.suffixPath(path,name);
+        acc = path::acc;
+        classes = SCode.getClassElements(inElement);
+        acc = List.fold1(classes,getSCodeClassNamesRecursiveWork,SOME(path),acc);
+      then acc;
+    else inAcc;
+  end match;
+end getSCodeClassNamesRecursiveWork;
+
 public function getPathedComponentElementInProgram "Returns a component given a path and a program. See also getPathedClassInProgram"
   input Absyn.Path path;
   input Absyn.Program prg;

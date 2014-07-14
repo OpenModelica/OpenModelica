@@ -1950,6 +1950,20 @@ algorithm
   end match;
 end getClassComponents;
 
+public function getClassElements
+"This function returns the components from a class"
+  input Element cl;
+  output list<Element> elts;
+algorithm
+  elts := match (cl)
+    case (CLASS(classDef = PARTS(elementLst = elts)))
+      then elts;
+    case (CLASS(classDef = CLASS_EXTENDS(composition = PARTS(elementLst = elts))))
+      then elts;
+    else {};
+  end match;
+end getClassElements;
+
 public function makeEnumType
   "Creates an EnumType element from an enumeration literal and an optional
   comment."

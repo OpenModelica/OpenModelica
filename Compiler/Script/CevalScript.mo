@@ -1000,6 +1000,19 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(vals),st);
 
+    case (cache,env,"getUsedClassNames",{Values.CODE(Absyn.C_TYPENAME(path))},st as GlobalScript.SYMBOLTABLE(ast = p),_)
+      equation
+        (sp, st) = Interactive.symbolTableToSCode(st);
+        (sp, _) = NFSCodeFlatten.flattenClassInProgram(path, sp);
+        sp = SCode.removeBuiltinsFromTopScope(sp);
+        paths = Interactive.getSCodeClassNamesRecursive(sp);
+        // paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
+        vals = List.map(paths,ValuesUtil.makeCodeTypeName);
+      then (cache,ValuesUtil.makeArray(vals),st);
+
+    case (cache,env,"getUsedClassNames",_,st as GlobalScript.SYMBOLTABLE(ast = p),_)
+      then (cache,ValuesUtil.makeArray({}),st);
+
     case (cache,_,"getClassComment",{Values.CODE(Absyn.C_TYPENAME(path))},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
         Absyn.CLASS(_,_,_,_,_,cdef,_) = Interactive.getPathedClassInProgram(path, p);

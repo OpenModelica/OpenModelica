@@ -2285,6 +2285,13 @@ external "builtin";
 annotation(preferredView="text");
 end getClassNames;
 
+function getUsedClassNames "Returns the list of class names used in the total program defined by the class."
+  input TypeName className;
+  output TypeName classNames[:];
+external "builtin";
+annotation(preferredView="text");
+end getUsedClassNames;
+
 function getPackages "Returns the list of packages defined in the class."
   input TypeName class_ := $TypeName(AllLoadedClasses);
   output TypeName classNames[:];

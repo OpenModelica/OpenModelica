@@ -1163,6 +1163,7 @@ algorithm
     case "listReverse" equation true = Config.acceptMetaModelicaGrammar(); then cevalListReverse;
     case "listHead" equation true = Config.acceptMetaModelicaGrammar(); then cevalListFirst;
     case "listRest" equation true = Config.acceptMetaModelicaGrammar(); then cevalListRest;
+    case "listMember" equation true = Config.acceptMetaModelicaGrammar(); then cevalListMember;
     case "anyString" equation true = Config.acceptMetaModelicaGrammar(); then cevalAnyString;
     case "numBits" then cevalNumBits;
     case "integerMax" then cevalIntegerMax;
@@ -2585,6 +2586,40 @@ algorithm
         (cache,Values.LIST(valList1),st);
   end match;
 end cevalListRest;
+
+protected function cevalListMember
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<GlobalScript.SymbolTable> inST;
+  input Absyn.Msg inMsg;
+  input Integer numIter;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
+    local
+      Env.Env env;
+      DAE.Exp exp1,exp2;
+      Boolean impl;
+      Option<GlobalScript.SymbolTable> st;
+      Absyn.Msg msg;
+      Env.Cache cache;
+      list<Values.Value> vals;
+      Values.Value val;
+      Boolean b;
+    case (cache,env,{exp1,exp2},impl,st,msg,_)
+      equation
+        (cache,val,st) = ceval(cache,env,exp1,impl,st,msg,numIter+1);
+        (cache,Values.LIST(vals),st) = ceval(cache,env,exp2,impl,st,msg,numIter+1);
+        b = listMember(val,vals);
+      then
+        (cache,Values.BOOL(b),st);
+  end match;
+end cevalListMember;
 
 protected function cevalAnyString
   input Env.Cache inCache;
