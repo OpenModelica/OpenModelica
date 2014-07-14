@@ -307,7 +307,12 @@ void TVariablesTreeModel::insertTVariablesItems()
       {
         pParentTVariablesTreeItem = mpRootTVariablesTreeItem;
       }
-      QString findVariable = parentTVariable.isEmpty() ? tVariable : parentTVariable + "." + tVariable;
+      QString findVariable;
+      /* if last item */
+      if (tVariables.size() == count && variable.name.startsWith("der("))
+        findVariable = parentTVariable.isEmpty() ? "der(" + tVariable + ")" : parentTVariable + ".der(" + tVariable + ")";
+      else
+        findVariable = parentTVariable.isEmpty() ? tVariable : parentTVariable + "." + tVariable;
       if (pParentTVariablesTreeItem = findTVariablesTreeItem(findVariable, pParentTVariablesTreeItem))
       {
         if (count == 1)
@@ -1005,10 +1010,10 @@ void TransformationsWidget::fetchOperations(OMEquation *equation)
     {
       QString toolTip = op->toString();
       QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem();
-      QLabel *text = new QLabel("<html>" + op->toHtml() + "</html>");
+      Label *opText = new Label("<html><div style=\"margin:3px;\">" + op->toHtml() + "</div></html>");
       pOperationTreeItem->setToolTip(0, toolTip);
       mpEquationOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
-      mpEquationOperationsTreeWidget->setItemWidget(pOperationTreeItem, 0, text);
+      mpEquationOperationsTreeWidget->setItemWidget(pOperationTreeItem, 0, opText);
     }
   }
   else
