@@ -631,8 +631,6 @@ case FMIMODELSTRUCTURE(__) then
   <<
   <%ModelStructureOutputs(fmiOutputs)%>
   <%ModelStructureDerivatives(fmiDerivatives)%>
-  <DiscreteStates>
-  </DiscreteStates>
   <InitialUnknowns>
   </InitialUnknowns>
   >>

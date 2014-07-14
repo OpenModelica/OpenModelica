@@ -13507,27 +13507,19 @@ algorithm
         fmiModelStructure = SimCode.FMIMODELSTRUCTURE(SimCode.FMIOUTPUTS({}), SimCode.FMIDERIVATIVES({}));
         fmiModelStructure = getFMIModelStructureHelper(inVars, stateVars, fmiModelStructure);
         fmiModelStructure = getFMIModelStructureHelper(inVars, derivativeVars, fmiModelStructure);
-        /*(algVars, index_) = setVariableIndexHelper(algVars, index_);
-        (discreteAlgVars, index_) = setVariableIndexHelper(discreteAlgVars, index_);
-        (intAlgVars, index_) = setVariableIndexHelper(intAlgVars, index_);
-        (boolAlgVars, index_) = setVariableIndexHelper(boolAlgVars, index_);
-        (paramVars, index_) = setVariableIndexHelper(paramVars, index_);
-        (intParamVars, index_) = setVariableIndexHelper(intParamVars, index_);
-        (boolParamVars, index_) = setVariableIndexHelper(boolParamVars, index_);
-        (aliasVars, index_) = setVariableIndexHelper(aliasVars, index_);
-        (intAliasVars, index_) = setVariableIndexHelper(intAliasVars, index_);
-        (boolAliasVars, index_) = setVariableIndexHelper(boolAliasVars, index_);
-        (stringAlgVars, index_) = setVariableIndexHelper(stringAlgVars, index_);
-        (stringParamVars, index_) = setVariableIndexHelper(stringParamVars, index_);
-        (stringAliasVars, index_) = setVariableIndexHelper(stringAliasVars, index_);
-        (constVars, index_) = setVariableIndexHelper(constVars, index_);
-        (intConstVars, index_) = setVariableIndexHelper(intConstVars, index_);
-        (boolConstVars, index_) = setVariableIndexHelper(boolConstVars, index_);
-        (stringConstVars, index_) = setVariableIndexHelper(stringConstVars, index_);
-        (extObjVars, index_) = setVariableIndexHelper(extObjVars, index_);
-        (inputVars, index_) = setVariableIndexHelper(inputVars, index_);
-        (outputVars, index_) = setVariableIndexHelper(outputVars, index_);
-        (realOptimizeConstraintsVars, index_) = setVariableIndexHelper(realOptimizeConstraintsVars, index_);*/
+        fmiModelStructure = getFMIModelStructureHelper(inVars, algVars, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inVars, discreteAlgVars, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inVars, paramVars, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inVars, aliasVars, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inVars, intAlgVars, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inVars, intParamVars, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inVars, intAliasVars, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inVars, boolAlgVars, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inVars, boolParamVars, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inVars, boolAliasVars, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inVars, stringAlgVars, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inVars, stringParamVars, fmiModelStructure);
+        fmiModelStructure = getFMIModelStructureHelper(inVars, stringAliasVars, fmiModelStructure);
     then
       fmiModelStructure;
   end matchcontinue;
@@ -13554,7 +13546,7 @@ algorithm
           (fmiModelStructure as SimCode.FMIMODELSTRUCTURE(fmiOutputs = SimCode.FMIOUTPUTS(fmiUnknownsList = fmiUnknownsList_),
                                                           fmiDerivatives = fmiDerivatives_)))
       equation
-        fmiUnknown = SimCode.FMIUNKNOWN(variableIndex, {}, {}); /* empty dependencies & dependenciesKind list for outputs. */
+        fmiUnknown = SimCode.FMIUNKNOWN(variableIndex, {}, {"fixed"}); /* empty dependencies & dependenciesKind list for outputs. */
         fmiUnknownsList_ = listAppend(fmiUnknownsList_, {fmiUnknown});
         fmiOutputs_ = SimCode.FMIOUTPUTS(fmiUnknownsList_);
         fmiModelStructure = SimCode.FMIMODELSTRUCTURE(fmiOutputs_, fmiDerivatives_);
