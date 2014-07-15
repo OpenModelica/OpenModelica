@@ -5829,7 +5829,7 @@ algorithm
     case (cache,env,SCode.EXTERNALDECL(funcName = _,lang = lang,output_ = _,args = absexps),impl,pre,_)
       equation
         (cache,exps,props,_) = elabExpListExt(cache,env, absexps, impl,NONE(),pre,info);
-        (cache,extargs) = instExtGetFargs2(cache, env, exps, props, lang, info);
+        (cache,extargs) = instExtGetFargs2(cache, env, absexps, exps, props, lang, info);
       then
         (cache,extargs);
     else
@@ -5845,6 +5845,7 @@ protected function instExtGetFargs2
   Helper function to instExtGetFargs"
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input list<Absyn.Exp> absynExps;
   input list<DAE.Exp> inExpExpLst;
   input list<DAE.Properties> inTypesPropertiesLst;
   input Option<String> lang;
@@ -5852,7 +5853,7 @@ protected function instExtGetFargs2
   output Env.Cache outCache;
   output list<DAE.ExtArg> outDAEExtArgLst;
 algorithm
-  (outCache,outDAEExtArgLst) := match (inCache,inEnv,inExpExpLst,inTypesPropertiesLst,lang,info)
+  (outCache,outDAEExtArgLst) := match (inCache,inEnv,absynExps,inExpExpLst,inTypesPropertiesLst,lang,info)
     local
       list<DAE.ExtArg> extargs;
       DAE.ExtArg extarg;
@@ -5862,11 +5863,13 @@ algorithm
       DAE.Properties p;
       list<DAE.Properties> props;
       Env.Cache cache;
-    case (cache,_,{},_,_,_) then (cache,{});
-    case (cache,env,(e :: exps),(p :: props),_,_)
+      Absyn.Exp ae;
+      list<Absyn.Exp> aes;
+    case (cache,_,_,{},_,_,_) then (cache,{});
+    case (cache,env,ae :: aes, e :: exps,p :: props,_,_)
       equation
-        (cache,SOME(extarg)) = instExtGetFargsSingle(cache, env, e, p, lang, info);
-        (cache,extargs) = instExtGetFargs2(cache, env, exps, props, lang, info);
+        (cache,SOME(extarg)) = instExtGetFargsSingle(cache, env, ae, e, p, lang, info);
+        (cache,extargs) = instExtGetFargs2(cache, env, aes, exps, props, lang, info);
       then
         (cache,extarg :: extargs);
   end match;
@@ -5877,6 +5880,7 @@ protected function instExtGetFargsSingle
   Helper function to instExtGetFargs2, does the work for one argument."
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input Absyn.Exp absynExp;
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
   input Option<String> lang;
@@ -5884,7 +5888,7 @@ protected function instExtGetFargsSingle
   output Env.Cache outCache;
   output Option<DAE.ExtArg> outExtArg;
 algorithm
-  (outCache,outExtArg) := matchcontinue (inCache,inEnv,inExp,inProperties,lang,info)
+  (outCache,outExtArg) := matchcontinue (inCache,inEnv,absynExp,inExp,inProperties,lang,info)
     local
       DAE.Attributes attr, fattr;
       DAE.Type ty,varty;
@@ -5901,7 +5905,7 @@ algorithm
       Values.Value val;
       String str;
 
-    case (_, _, DAE.CREF(componentRef = cref as DAE.CREF_QUAL(ident = _)),
+    case (_, _, _, DAE.CREF(componentRef = cref as DAE.CREF_QUAL(ident = _)),
         DAE.PROP(constFlag = DAE.C_VAR()), _, _)
       equation
         (cache, attr, ty,_, _, _, _, _, _) = Lookup.lookupVarLocal(inCache, inEnv, cref);
@@ -5914,14 +5918,14 @@ algorithm
       then
         (cache, SOME(DAE.EXTARG(cref, attr, ty)));
 
-    case (_, _, DAE.CREF(componentRef = cref as DAE.CREF_IDENT(ident = _)),
+    case (_, _, _, DAE.CREF(componentRef = cref as DAE.CREF_IDENT(ident = _)),
         DAE.PROP(constFlag = DAE.C_VAR()), _, _)
       equation
         (cache, attr, ty,_, _, _, _, _, _) = Lookup.lookupVarLocal(inCache, inEnv, cref);
       then
         (cache,SOME(DAE.EXTARG(cref, attr, ty)));
 
-    case (cache,env,DAE.CREF(componentRef = cref),DAE.PROP(constFlag = _),_,_)
+    case (cache,env,_,DAE.CREF(componentRef = cref),DAE.PROP(constFlag = _),_,_)
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,cref));
         crefstr = ComponentReference.printComponentRefStr(cref);
@@ -5930,27 +5934,30 @@ algorithm
       then
         (cache, NONE());
 
-    case (cache,env,DAE.SIZE(exp = DAE.CREF(componentRef = cref,ty = _),sz = SOME(dim)),DAE.PROP(type_ = _),_,_)
+    case (cache,env,_,DAE.SIZE(exp = DAE.CREF(componentRef = cref,ty = _),sz = SOME(dim)),DAE.PROP(type_ = _),_,_)
       equation
         (cache,attr,varty,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref);
       then
         (cache,SOME(DAE.EXTARGSIZE(cref,attr,varty,dim)));
 
     // adrpo: these can be non-local if they are constants or parameters!
-    case (cache,env,_,DAE.PROP(type_ = ty,constFlag = DAE.C_CONST()),_,_)
+    case (cache,env,_,_,DAE.PROP(type_ = ty,constFlag = DAE.C_CONST()),_,_)
       equation
         (cache, exp,_) = Ceval.cevalIfConstant(cache, env, inExp, inProperties, false, info);
         true = Expression.isScalarConst(exp);
       then
         (cache,SOME(DAE.EXTARGEXP(exp, ty)));
 
-    case (cache,_,_,DAE.PROP(type_ = ty),SOME("builtin"),_)
+    case (cache,_,_,_,DAE.PROP(type_ = ty),SOME("builtin"),_)
       then (cache,SOME(DAE.EXTARGEXP(inExp, ty)));
 
-    case (cache,_,DAE.CALL(attr = DAE.CALL_ATTR(builtin = true)),DAE.PROP(type_ = ty),_,_)
+    case (cache,_,_,DAE.CALL(attr = DAE.CALL_ATTR(builtin = true)),DAE.PROP(type_ = ty),_,_)
       then (cache,SOME(DAE.EXTARGEXP(inExp, ty)));
 
-    case (cache,_,exp,DAE.PROP(type_ = _,constFlag = _),_,_)
+    case (cache,_,Absyn.CREF(_),_,DAE.PROP(type_ = ty),_,_)
+      then (cache,SOME(DAE.EXTARGEXP(inExp, ty)));
+
+    case (cache,_,_,exp,DAE.PROP(type_ = _,constFlag = _),_,_)
       equation
         str = ExpressionDump.printExpStr(exp);
         Error.addSourceMessage(Error.EXTERNAL_ARG_WRONG_EXP,{str},info);
@@ -5991,7 +5998,7 @@ algorithm
     case (cache,env,SCode.EXTERNALDECL(funcName = _,lang = lang,output_ = SOME(cref)),impl,pre,_)
       equation
         (cache,SOME((exp,prop,_))) = Static.elabCref(cache,env,cref,impl,false /* Do NOT vectorize arrays; we require a CREF */,pre,info);
-        (cache,SOME(extarg)) = instExtGetFargsSingle(cache,env,exp,prop,lang,info);
+        (cache,SOME(extarg)) = instExtGetFargsSingle(cache,env,Absyn.CREF(cref),exp,prop,lang,info);
         assertExtArgOutputIsCrefVariable(lang,extarg,Types.getPropType(prop),Types.propAllConst(prop),info);
       then
         (cache,extarg);

@@ -6686,10 +6686,7 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls, Text &auxFunc
     let &preExp += '<%tvar%> = <%texp%>;<%\n%>'
     '(char*)<%tvar%>'
   case SIMEXTARGEXP(__) then
-    let texp = daeExp(exp, contextFunction, &preExp, &varDecls, &auxFunction)
-    let tvar = tempDecl(expTypeFromExpFlag(exp,8),&varDecls)
-    let &preExp += '<%tvar%> = <%texp%>;<%\n%>'
-    '&<%tvar%>'
+    daeExternalF77Exp(exp, contextFunction, &preExp, &varDecls, &auxFunction)
   case SIMEXTARGSIZE(cref=c) then
     // Fortran functions only takes references to variables, so we must store
     // the result from size_of_dimension_<type>_array in a temporary variable.
@@ -7677,6 +7674,20 @@ template daeExternalCExp(Exp exp, Context context, Text &preExp, Text &varDecls,
       '(<%extType(typeof(exp),true,true)%>) data_of_<%shortTypeStr%>_array(&<%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>)'
     else daeExp(exp, context, &preExp, &varDecls, &auxFunction)
 end daeExternalCExp;
+
+template daeExternalF77Exp(Exp exp, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+  "Like daeExp, but also converts the type to external C"
+::=
+  match typeof(exp)
+    case T_ARRAY(__) then  // Array-expressions
+      let shortTypeStr = expTypeShort(typeof(exp))
+      '(<%extType(typeof(exp),true,true)%>) data_of_<%shortTypeStr%>_array(&<%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>)'
+    else
+      let texp = daeExp(exp, contextFunction, &preExp, &varDecls, &auxFunction)
+      let tvar = tempDecl(expTypeFromExpFlag(exp,8),&varDecls)
+      let &preExp += '<%tvar%> = <%texp%>;<%\n%>'
+      '&<%tvar%>'
+end daeExternalF77Exp;
 
 template daeExpSconst(String string)
  "Generates code for a string constant."
@@ -10058,9 +10069,17 @@ template expTypeFlag(DAE.Type ty, Integer flag)
     '<%expTypeShort(ty)%>_array'
   case 4 then
     // we want the "array type" only if type is array, otherwise "modelica type"
-    match ty
+    (match ty
     case T_ARRAY(__) then '<%expTypeShort(ty)%>_array'
-    else expTypeFlag(ty, 2)
+    else expTypeFlag(ty, 2))
+  case 8 then
+    (match ty
+    case T_ARRAY(__) then '<%expTypeFlag(ty,8)%>*'
+    case T_INTEGER(__) then 'int'
+    case T_BOOL(__) then 'int'
+    case T_REAL(__) then 'double'
+    case T_STRING(__) then 'const char*'
+    else error(sourceInfo(),'I do not know the external type of <%unparseType(ty)%>'))
 end expTypeFlag;
 
 
