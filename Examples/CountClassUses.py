@@ -25,5 +25,6 @@ for cls in [glob.glob('%s/files/*.uses' % cl) for cl in argv[1:]]:
       if c in all_classes:
         all_classes[c].append(name)
 
+print(argv[1],'coverage using example models in',', '.join(argv[1:]))
 for cl in sorted(all_classes, key = lambda cl: (len(all_classes[cl]),cl)):
   print(len(all_classes[cl]),cl)
