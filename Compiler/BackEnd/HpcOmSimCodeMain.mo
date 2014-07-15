@@ -373,29 +373,40 @@ public function applyFiltersToGraph
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input Boolean iApplyFilters;
-  input list<Integer> doNotMerge; // dont merge these nodes
+  input list<Integer> doNotMergeIn; // dont merge these nodes
   output HpcOmTaskGraph.TaskGraph oTaskGraph;
   output HpcOmTaskGraph.TaskGraphMeta oTaskGraphMeta;
 protected
   String flagValue;
   Boolean changed1,changed2,changed3;
+  list<Integer> doNotMerge;
   HpcOmTaskGraph.TaskGraph taskGraph1;
   HpcOmTaskGraph.TaskGraphMeta taskGraphMeta1;
-  array<list<Integer>> sccSimEqMapping;
+  array<Integer> nodeMark;
+  array<list<Integer>> sccSimEqMapping, inComps;
   BackendDAE.StrongComponents allComps;
   array<tuple<Integer,Integer>> schedulerInfo;
 algorithm
-  (oTaskGraph,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphMeta,iApplyFilters,doNotMerge)
+  (oTaskGraph,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphMeta,iApplyFilters,doNotMergeIn)
     case(_,_,true,_)
       equation
-        //Merge simple and parent nodes
+        //Merge nodes
         taskGraph1 = arrayCopy(iTaskGraph);
         taskGraphMeta1 = HpcOmTaskGraph.copyTaskGraphMeta(iTaskGraphMeta);
-        (taskGraph1,taskGraphMeta1,changed1) = HpcOmTaskGraph.mergeSimpleNodes(taskGraph1,taskGraphMeta1);
-        (taskGraph1,taskGraphMeta1,changed2) = HpcOmTaskGraph.mergeParentNodes(taskGraph1, taskGraphMeta1);
-        (taskGraph1,taskGraphMeta1,changed3) = HpcOmTaskGraph.mergeSingleNodes(taskGraph1, taskGraphMeta1);
 
-        (taskGraph1,taskGraphMeta1) = applyFiltersToGraph(taskGraph1,taskGraphMeta1,changed1 or changed2 or changed3,doNotMerge);
+        HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = taskGraphMeta1;
+        doNotMerge = List.map3(doNotMergeIn,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
+        (taskGraph1,taskGraphMeta1,changed1) = HpcOmTaskGraph.mergeSimpleNodes(taskGraph1, taskGraphMeta1, doNotMerge);
+
+        HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = taskGraphMeta1;
+        doNotMerge = List.map3(doNotMergeIn,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
+        (taskGraph1,taskGraphMeta1,changed2) = HpcOmTaskGraph.mergeParentNodes(taskGraph1, taskGraphMeta1, doNotMerge);
+
+        HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = taskGraphMeta1;
+        doNotMerge = List.map3(doNotMergeIn,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
+        (taskGraph1,taskGraphMeta1,changed3) = HpcOmTaskGraph.mergeSingleNodes(taskGraph1, taskGraphMeta1, doNotMerge);
+
+        (taskGraph1,taskGraphMeta1) = applyFiltersToGraph(taskGraph1,taskGraphMeta1,changed1 or changed2 or changed3,doNotMergeIn);
       then (taskGraph1,taskGraphMeta1);
     else (iTaskGraph, iTaskGraphMeta);
   end matchcontinue;

@@ -1985,14 +1985,14 @@ author:Waurich TUD 2014-07"
   input array<list<Integer>> sccSimEqMapping;
   input BackendDAE.BackendDAE inDAE;
   output list<HpcOmSimCode.Task> scheduledTasks;
-  output list<Integer> odeNodeIdcs;
+  output list<Integer> daeNodeIdcs;
 algorithm
-  (scheduledTasks,odeNodeIdcs) := matchcontinue(graphIn,metaIn,sccSimEqMapping,inDAE)
+  (scheduledTasks,daeNodeIdcs) := matchcontinue(graphIn,metaIn,sccSimEqMapping,inDAE)
     local
       BackendDAE.EqSystems eqSysts;
       BackendDAE.Shared shared;
       list<HpcOmSimCode.Task> taskLst;
-      list<Integer> odeNodes;
+      list<Integer> daeNodes;
       array<list<Integer>> inComps;
       array<Integer> nodeMark;
     case (_,_,_,_) equation
@@ -2001,11 +2001,11 @@ algorithm
       BackendDAE.DAE(eqs=eqSysts, shared=shared) = inDAE;
       (_,taskLst) = pts_traverseEqSystems(eqSysts,sccSimEqMapping,1,{});
 
-      // calculate the node idcs for the ode-task-gaph
-      odeNodes = List.map(taskLst,getScheduledTaskCompIdx);
-      HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = metaIn;
-      odeNodes = List.map3(odeNodes,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
-    then (taskLst,odeNodes);
+      // calculate the node idcs for the dae-task-gaph
+      daeNodes = List.map(taskLst,getScheduledTaskCompIdx);
+      //HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = metaIn;
+      //odeNodes = List.map3(odeNodes,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
+    then (taskLst,daeNodes);
     else
     then ({},{});
   end matchcontinue;

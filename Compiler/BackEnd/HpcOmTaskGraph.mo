@@ -1925,12 +1925,10 @@ algorithm
       entry = List.getMemberOnTrue(entryIn,deleteEntriesIn,intGe);
       offset = listLength(deleteEntriesIn)-List.position(entry,deleteEntriesIn);
       entry = entryIn-offset;
-    then
-      entry;
+    then entry;
   else
     equation
-    then
-      entryIn;
+    then entryIn;
   end matchcontinue;
 end removeContinuousEntries1;
 
@@ -2593,7 +2591,7 @@ algorithm
 end printTaskGraphMeta;
 
 
-protected function printInComps " prints the information about the assigned components to a taskgraph node.
+public function printInComps " prints the information about the assigned components to a taskgraph node.
 author:Waurich TUD 2013-06"
   input array<list<Integer>> inComps;
   input Integer compIdx;
@@ -2887,20 +2885,21 @@ end printCriticalPathInfo1;
 public function mergeSingleNodes"merges all single nodes. the max number of remaining single ndoes is numProc."
   input TaskGraph iTaskGraph;
   input TaskGraphMeta iTaskGraphMeta;
+  input list<Integer> doNotMergeIn;
   output TaskGraph oTaskGraph;
   output TaskGraphMeta oTaskGraphMeta;
   output Boolean changed;
 algorithm
-  (oTaskGraph,oTaskGraphMeta,changed) := matchcontinue(iTaskGraph,iTaskGraphMeta)
+  (oTaskGraph,oTaskGraphMeta,changed) := matchcontinue(iTaskGraph,iTaskGraphMeta,doNotMergeIn)
     local
       Integer numProc;
-      list<Integer> singleNodes,singleNodes1,pos;
+      list<Integer> singleNodes,singleNodes1,pos,doNotMerge;
       list<list<Integer>> clusterLst;
       list<Real> exeCosts;
       array<Real> costs;
       array<list<Integer>> cluster;
       TaskGraph taskGraphT;
-    case(_,_)
+    case(_,_,_)
       equation
         numProc = Flags.getConfigInt(Flags.NUM_PROC);
         taskGraphT = BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
@@ -2908,6 +2907,7 @@ algorithm
         (_,singleNodes) = List.filterOnTrueSync(arrayList(iTaskGraph),List.isEmpty,List.intRange(arrayLength(iTaskGraph)));  //nodes without successor
         (_,singleNodes1) = List.filterOnTrueSync(arrayList(taskGraphT),List.isEmpty,List.intRange(arrayLength(taskGraphT))); //nodes without predecessor
         (singleNodes,_,_) = List.intersection1OnTrue(singleNodes,singleNodes1,intEq);
+        (_,singleNodes,_) = List.intersection1OnTrue(singleNodes,doNotMergeIn,intEq);
         exeCosts = List.map1(singleNodes,getExeCostReqCycles,iTaskGraphMeta);
         (exeCosts,pos) = HpcOmScheduler.quicksortWithOrder(exeCosts);
         singleNodes = List.map1(pos,List.getIndexFirst,singleNodes);
@@ -3062,6 +3062,7 @@ public function mergeSimpleNodes " merges all nodes in the graph that have only 
 author: Waurich TUD 2013-07"
   input TaskGraph graphIn;
   input TaskGraphMeta graphDataIn;
+  input list<Integer> doNotMerge;
   output TaskGraph graphOut;
   output TaskGraphMeta graphDataOut;
   output Boolean oChanged;
@@ -3084,9 +3085,10 @@ protected
 algorithm
   TASKGRAPHMETA(inComps = inComps, varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, rootNodes = rootNodes, nodeNames =nodeNames,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
   allTheNodes := List.intRange(arrayLength(graphIn));  // to traverse the node indeces
-  oneChildren := findOneChildParents(allTheNodes,graphIn,{{}},0);  // paths of nodes with just one successor per node (extended: and endnodes with just one parent node)
+  oneChildren := findOneChildParents(allTheNodes,graphIn,doNotMerge,{{}},0);  // paths of nodes with just one successor per node (extended: and endnodes with just one parent node)
   oneChildren := listDelete(oneChildren,listLength(oneChildren)-1); // remove the empty startValue {}
   oneChildren := List.removeOnTrue(1,compareListLengthOnTrue,oneChildren);  // remove paths of length 1
+  //print("oneChildren "+&stringDelimitList(List.map(oneChildren,intLstString),"\n")+&"\n");
   (graphOut,graphDataOut) := contractNodesInGraph(oneChildren,graphIn,graphDataIn);
   oChanged := List.isNotEmpty(oneChildren);
 end mergeSimpleNodes;
@@ -3095,6 +3097,7 @@ public function mergeParentNodes "author: marcusw
   Merges parent nodes into child if this produces a shorter execution time. Only one merge set is determined. you have to repeat this function"
   input TaskGraph iGraph;
   input TaskGraphMeta iGraphData;
+  input list<Integer> doNotMerge;
   output TaskGraph oGraph;
   output TaskGraphMeta oGraphData;
   output Boolean oChanged; //true if the structure has changed
@@ -3103,7 +3106,7 @@ protected
   list<list<Integer>> mergedNodes;
 algorithm
   iGraphT := transposeTaskGraph(iGraph);
-  mergedNodes := mergeParentNodes0(iGraph, iGraphT, iGraphData, 1, {});
+  mergedNodes := mergeParentNodes0(iGraph, iGraphT, iGraphData, doNotMerge, 1, {});
   (oGraph,oGraphData) := contractNodesInGraph(mergedNodes, iGraph, iGraphData);
   oChanged := List.isNotEmpty(mergedNodes);
 end mergeParentNodes;
@@ -3112,6 +3115,7 @@ protected function mergeParentNodes0
   input TaskGraph iGraph;
   input TaskGraph iGraphT;
   input TaskGraphMeta iGraphData;
+  input list<Integer> doNotMerge;
   input Integer iNodeIdx;
   input list<list<Integer>> iMergedNodes;
   output list<list<Integer>> oMergedNodes;
@@ -3129,11 +3133,13 @@ protected
   list<list<Integer>> parentChilds;
   list<list<Integer>> tmpMergedNodes;
 algorithm
-  oMergedNodes := matchcontinue(iGraph, iGraphT, iGraphData, iNodeIdx, iMergedNodes)
-    case(_,_,TASKGRAPHMETA(exeCosts=exeCosts, commCosts=commCosts),_,_)
+  oMergedNodes := matchcontinue(iGraph, iGraphT, iGraphData, doNotMerge,  iNodeIdx, iMergedNodes)
+    case(_,_,TASKGRAPHMETA(exeCosts=exeCosts, commCosts=commCosts),_,_,_)
       equation
         true = intLe(iNodeIdx, arrayLength(iGraphT)); //Current index is in range
+        true = List.notMember(iNodeIdx,doNotMerge);
         parentNodes = arrayGet(iGraphT, iNodeIdx);
+        false = List.exist1(parentNodes,listMember,doNotMerge);
         //print("HpcOmTaskGraph.mergeParentNodes0: looking at node " +& intString(iNodeIdx) +& "\n");
         parentCommCosts = List.map2(parentNodes, getCommCostBetweenNodes, iNodeIdx, iGraphData);
         ((_,_,highestCommCost)) = getHighestCommCost(parentCommCosts, (-1,-1,-1));
@@ -3152,10 +3158,10 @@ algorithm
         tmpMergedNodes = mergeNodeList :: iMergedNodes;
         //tmpMergedNodes = mergeParentNodes0(iGraph,iGraphT,iGraphData,iNodeIdx+1,tmpMergedNodes);
       then tmpMergedNodes;
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_)
       equation
         true = intLe(iNodeIdx, arrayLength(iGraphT)); //Current index is in range
-        tmpMergedNodes = mergeParentNodes0(iGraph,iGraphT,iGraphData,iNodeIdx+1,iMergedNodes);
+        tmpMergedNodes = mergeParentNodes0(iGraph,iGraphT,iGraphData,doNotMerge,iNodeIdx+1,iMergedNodes);
       then tmpMergedNodes;
     else iMergedNodes;
   end matchcontinue;
@@ -3546,11 +3552,12 @@ extended: adds endnodes without successor as well
 author: Waurich TUD 2013-07"
   input list<Integer> allNodes;
   input TaskGraph graphIn;
+  input list<Integer> doNotMerge;  // these nodes cannot be chosen
   input list<list<Integer>> lstIn;
   input Integer inPath;  // the current nodeIndex in a path of only cildren. if no path then 0.
   output list<list<Integer>> lstOut;
 algorithm
-  lstOut := matchcontinue(allNodes,graphIn,lstIn,inPath)
+  lstOut := matchcontinue(allNodes,graphIn,doNotMerge,lstIn,inPath)
     local
       Integer child;
       Integer head;
@@ -3559,21 +3566,40 @@ algorithm
       list<Integer> pathLst;
       list<Integer> rest;
       list<list<Integer>> lstTmp;
-    case({},_,_,_)
+    case({},_,_,_,_)
       //checked all nodes
       equation
         then
           lstIn;
-    case((head::rest),_,_,_)
-      //check new node that has more children
+    case((head::rest),_,_,_,_)
+      //check new node that has several children
       equation
         true = intEq(inPath,0);
         nodeChildren = arrayGet(graphIn,head);
         false = listLength(nodeChildren) == 1;
-        lstTmp = findOneChildParents(rest,graphIn,lstIn,0);
+        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstIn,0);
       then
         lstTmp;
-    case((head::rest),_,_,_)
+    case((head::rest),_,_,_,_)
+      //check new node that is excluded
+      equation
+        true = intEq(inPath,0);
+        true = listMember(head,doNotMerge);
+        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstIn,0);
+      then
+        lstTmp;
+    case((head::rest),_,_,_,_)
+      // check new node that has only one child but this is excluded
+      equation
+        true = intEq(inPath,0);
+        nodeChildren = arrayGet(graphIn,head);
+        true = listLength(nodeChildren) == 1;
+        child = listGet(nodeChildren,1);
+        true = listMember(child,doNotMerge);
+        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstIn,child);
+      then
+        lstTmp;
+    case((head::rest),_,_,_,_)
       // check new node that has only one child , follow the path
       equation
         true = intEq(inPath,0);
@@ -3581,10 +3607,18 @@ algorithm
         true = listLength(nodeChildren) == 1;
         child = listGet(nodeChildren,1);
         lstTmp = {head}::lstIn;
-        lstTmp = findOneChildParents(rest,graphIn,lstTmp,child);
+        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,child);
       then
         lstTmp;
-    case(_,_,_,_)
+    case(_,_,_,_,_)
+      // dont follow because the path contains excluded nodes
+      equation
+        false = intEq(inPath,0);
+        true = listMember(inPath,doNotMerge);
+        lstTmp = findOneChildParents(allNodes,graphIn,doNotMerge,lstIn,0);
+      then
+        lstTmp;
+    case(_,_,_,_,_)
       // follow path and check that there is still only one child with just one parent
       equation
         false = intEq(inPath,0);
@@ -3596,10 +3630,10 @@ algorithm
         pathLst = inPath::pathLst;
         lstTmp = List.replaceAt(pathLst,0,lstIn);
         rest = List.deleteMember(allNodes,inPath);
-        lstTmp = findOneChildParents(rest,graphIn,lstTmp,child);
+        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,child);
       then
         lstTmp;
-    case(_,_,_,_)
+    case(_,_,_,_,_)
       // follow path and check that there is an endnode without successor that will be added to the path
       equation
         false = intEq(inPath,0);
@@ -3610,19 +3644,16 @@ algorithm
         pathLst = inPath::pathLst;
         lstTmp = List.replaceAt(pathLst,0,lstIn);
         rest = List.deleteMember(allNodes,inPath);
-        lstTmp = findOneChildParents(rest,graphIn,lstTmp,0);
+        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,0);
       then
         lstTmp;
-    case(_,_,_,_)
+    case(_,_,_,_,_)
       // follow path and check that there are more children or a child with more parents. end path before this node
       equation
         false = intEq(inPath,0);
         nodeChildren = arrayGet(graphIn,inPath);
         parents = getParentNodes(inPath,graphIn);
-        true = listLength(nodeChildren) <> 1 or listLength(parents) <> 1;
-        //rest = List.deleteMember(allNodes,inPath);
-        //lstTmp = findOneChildParents(rest,graphIn,lstIn,0);
-        lstTmp = findOneChildParents(allNodes,graphIn,lstIn,0);
+        lstTmp = findOneChildParents(allNodes,graphIn,doNotMerge,lstIn,0);
       then
         lstTmp;
     else
