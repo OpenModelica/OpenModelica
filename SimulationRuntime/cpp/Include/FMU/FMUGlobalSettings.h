@@ -28,6 +28,8 @@ public:
     virtual OutputFormat getOutputFormat(){return CSV;}
      virtual LogType getLogType() {return OFF;}
     virtual void setLogType(LogType) {}
+    virtual OutputPointType getOutputPointType() { return ALL; };
+    virtual void setOutputPointType(OutputPointType) {};
     virtual void setOutputFormat(OutputFormat) {}
     virtual void setOutputPath(string) {}
     virtual string    getSelectedSolver() { return "Euler"; }
