@@ -1653,7 +1653,8 @@ algorithm
         ((_,nodeLevelMap)) = Util.arrayFold3(taskGraphT, createNodeLevelMapping, nodeMark, inComps, iSccSimEqMapping, (1,{}));
         nodeLevelMap = List.sort(nodeLevelMap, sortNodeLevelMapping);
         filteredNodeLevelMap = List.map(nodeLevelMap, filterNodeLevelMapping);
-        tmpSchedule = HpcOmSimCode.TASKDEPSCHEDULE(listReverse(filteredNodeLevelMap));
+        filteredNodeLevelMap = listReverse(filteredNodeLevelMap);
+        tmpSchedule = HpcOmSimCode.TASKDEPSCHEDULE(filteredNodeLevelMap);
       then tmpSchedule;
     else
       equation
