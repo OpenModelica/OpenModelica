@@ -145,6 +145,7 @@ writeFile(statFile + \".flat\", testcase(0,false,\"killed\"));getErrorString();
 writeFile(statFile + \".compile\", testcase(0,false,\"killed\"));getErrorString();
 writeFile(statFile + \".sim\", testcase(0,false,\"killed\"));getErrorString();
 writeFile(statFile + \".verify\", testcase(0,false,\"killed\"));getErrorString();
+writeFile(\"files/" + s + ".uses\", \"\");getErrorString();
 
 outputFormat:=\"default\";
 javascript:="+String(javascript)+";
@@ -176,6 +177,8 @@ else
   variableFilter := \"\";
   outputFormat := \"empty\";
 end if;
+
+writeFile(\"files/" + s + ".uses\", sum(typeNameString(c) + \"\n\" for c in OpenModelica.Scripting.getUsedClassNames("+s+")));getErrorString();
 
 // Use twice as many output points as the experiment annotation suggests. Else aim for 5000 points.
 (startTime,stopTime,tolerance,numberOfIntervals,stepSize):=getSimulationOptions("+s+",defaultTolerance="+String(default_tolerance)+",defaultNumberOfIntervals=2500);
@@ -376,6 +379,7 @@ a.messagesWarning {color:#FFCC66;}
 writeFile(log,"<table><tr><th>Model</th>"+(if referenceFiles == "" then "" else "<th>Verified</th>")+"<th>Simulate</th><th>Total buildModel</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Compile</th></tr>\n",append=true);getErrorString();
 writeFile(log,sum(readFile(s + ".stat") + "\n" for s in a),append=true);getErrorString();
 writeFile(log,"</table><hr /><p><a href=\"BuildModelRecursive.tar.gz\">Offline version</a></p></body></html>",append=true);getErrorString();
+writeFile("files/" + typeNameString(library) + ".classes",sum(typeNameString(c) + "\n" for c in getClassNames(library, recursive=true)));
 
 {writeFile("BuildModelRecursive." + phase + ".xml.tmp", "<testsuite>\n" + sum(readFile(s + ".stat." + phase) for s in a) + "</testsuite>\n") for phase in {"flat","compile","sim","verify"}};getErrorString();
 {system("iconv -f utf8 -t utf8 -c BuildModelRecursive." + phase + ".xml.tmp -o BuildModelRecursive." + phase + ".xml") for phase in {"flat","compile","sim","verify"}};getErrorString();
