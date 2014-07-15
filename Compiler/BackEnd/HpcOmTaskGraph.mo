@@ -2217,9 +2217,9 @@ algorithm
         //print("Component " +& intString(sccIdx) +& "\n");
         true = BackendDAEUtil.traverseBackendDAEExpsOptEqn(SOME(eq), getComponentsIncludingTime1, false);
         resultList = sccIdx::resultList;
-      then (eq, (offset,resultList,eqCompMapping,eqIdx+1));
+      then ((eq, (offset,resultList,eqCompMapping,eqIdx+1)));
     case((eq, (offset,resultList,eqCompMapping,eqIdx)))
-      then (eq, (offset,resultList,eqCompMapping,eqIdx+1));
+      then ((eq, (offset,resultList,eqCompMapping,eqIdx+1)));
   end matchcontinue;
 end getComponentsIncludingTime0;
 
