@@ -511,6 +511,7 @@ end setIncidenceMatrix1;
 //   - dumpComponentsAdvanced
 //   - dumpEqnsSolved
 //   - dumpEqSystem
+//   - dumpEqSystems
 //   - dumpEquation
 //   - dumpEquationArray
 //   - dumpEquationList
@@ -551,6 +552,15 @@ algorithm
   printEqSystem(inEqSystem);
   print("\n");
 end dumpEqSystem;
+
+public function dumpEqSystems
+  input BackendDAE.EqSystems inEqSystems;
+  input String heading;
+algorithm
+  print("\n" +& heading +& " (" +& intString(listLength(inEqSystems)) +& " partitions)\n" +& UNDERLINE +& "\n");
+  List.map_0(inEqSystems, printEqSystem);
+  print("\n");
+end dumpEqSystems;
 
 public function dumpVariables "function dumpVariables"
   input BackendDAE.Variables inVars;

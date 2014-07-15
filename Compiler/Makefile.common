@@ -180,6 +180,7 @@ ResolveLoops.mo \
 SimCode.mo \
 SimCodeMain.mo \
 SimCodeUtil.mo \
+SynchronousFeatures.mo \
 Tearing.mo \
 Uncertainties.mo \
 XMLDump.mo

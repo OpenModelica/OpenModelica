@@ -393,6 +393,8 @@ constant DebugFlag ALLOW_RECORD_TOO_MANY_FIELDS = DEBUG_FLAG(113, "acceptTooMany
   Util.gettext("Accepts passing records with more fields than expected to a function. This is not allowed, but is used in Fluid.Dissipation. See https://trac.modelica.org/Modelica/ticket/1245 for details."));
 constant DebugFlag HPCOM_MEMORY_OPT = DEBUG_FLAG(114, "hpcomMemoryOpt", false,
   Util.gettext("Optimize the memory structure regarding the selected scheduler"));
+constant DebugFlag DUMP_SYNCHRONOUS = DEBUG_FLAG(115, "dumpSynchronous", false,
+  Util.gettext("Dumps information of the clock partitioning."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -512,7 +514,8 @@ constant list<DebugFlag> allDebugFlags = {
   PRINT_STRUCTURAL,
   ITERATION_VARS,
   ALLOW_RECORD_TOO_MANY_FIELDS,
-  HPCOM_MEMORY_OPT
+  HPCOM_MEMORY_OPT,
+  DUMP_SYNCHRONOUS
 };
 
 // CONFIGURATION FLAGS
@@ -570,8 +573,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "evaluateReplaceProtectedFinalEvaluateParameters",
     "simplifyIfEquations",
     "removeEqualFunctionCalls",
-    //"clockPartitioning",
-    "partitionIndependentBlocks",
+    "clockPartitioning",
     "expandDerOperator",
     "findStateOrder",
     "replaceEdgeChange",
@@ -597,8 +599,6 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system.")),
     ("removeUnusedVariables", Util.gettext("Strips all variables not present in the equations from the system.")),
     ("clockPartitioning", Util.gettext("Does the clock partitioning.")),
-    ("partitionIndependentBlocks", Util.gettext("Partitions the equation system into independent equation systems (which can then be simulated in parallel or used to speed up subsequent optimizations).")),
-    ("collapseIndependentBlocks", Util.gettext("Collapses all equation systems back into one big system again (undo partitionIndependentBlocks).")),
     ("expandDerOperator", Util.notrans("DESCRIBE ME")),
     ("simplifyIfEquations", Util.gettext("Tries to simplify if equations by use of information from evaluated parameters.")),
     ("replaceEdgeChange", Util.gettext("Replace edge(b) = b and not pre(b) and change(b) = v <> pre(v).")),
@@ -690,7 +690,6 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("dumpComponentsGraphStr", Util.notrans("DESCRIBE ME")),
     ("generateSymbolicJacobian", Util.gettext("Generates symbolic jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be used to simulate with dasslColorSymJac.")),
     ("generateSymbolicLinearization", Util.gettext("Generates symbolic linearization matrixes A,B,C,D for linear model:\n\t\t\\dot x = Ax + Bu\n\t\ty = Cx +Du")),
-    ("collapseIndependentBlocks", Util.gettext("Collapses all equation systems back into one big system again (undo partitionIndependentBlocks).")),
     ("removeUnusedFunctions", Util.gettext("Removed all unused functions from functionTree.")),
     ("simplifyTimeIndepFuncCalls", Util.gettext("Simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false.")),
     ("inputDerivativesUsed", Util.gettext("Checks if derivatives of inputs are need to calculate the model.")),
@@ -700,7 +699,6 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("detectJacobianSparsePattern", Util.gettext("Detects the sparse pattern for Jacobian A.")),
     ("calculateStrongComponentJacobians", Util.gettext("Generates analytical jacobian for non-linear strong components.")),
     ("calculateStateSetsJacobians", Util.gettext("Generates analytical jacobian for dynamic state selection sets.")),
-    ("partitionIndependentBlocks", Util.gettext("Partitions the equation system into independent equation systems (which can then be simulated in parallel or used to speed up subsequent optimizations).")),
     ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs."))
     })),
   Util.gettext("Sets the post optimization modules to use in the back end. See +help=optmodules for more info."));

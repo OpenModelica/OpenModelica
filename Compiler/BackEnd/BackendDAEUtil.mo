@@ -94,6 +94,7 @@ protected import ResolveLoops;
 protected import SCode;
 protected import SimCodeUtil;
 protected import System;
+protected import SynchronousFeatures;
 protected import Tearing;
 protected import Types;
 protected import Values;
@@ -8996,9 +8997,7 @@ algorithm
                        (BackendDAEOptimize.removeProtectedParameters, "removeProtectedParameters", false),
                        (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", false),
                        (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables", false),
-                       (BackendDAEOptimize.clockPartitioning, "clockPartitioning", true),
-                       (BackendDAEOptimize.partitionIndependentBlocks, "partitionIndependentBlocks", true),
-                       (BackendDAEOptimize.collapseIndependentBlocks, "collapseIndependentBlocks", true),
+                       (SynchronousFeatures.clockPartitioning, "clockPartitioning", true),
                        (BackendDAEOptimize.expandDerOperator, "expandDerOperator", false),
                        (IndexReduction.findStateOrder,"findStateOrder", false),
                        (BackendDAEOptimize.simplifyIfEquations, "simplifyIfEquations", false),
@@ -9047,7 +9046,6 @@ algorithm
                         (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr",false),
                         (BackendDAEOptimize.generateSymbolicJacobianPast,"generateSymbolicJacobian",false),
                         (BackendDAEOptimize.generateSymbolicLinearizationPast,"generateSymbolicLinearization",false),
-                        (BackendDAEOptimize.collapseIndependentBlocks,"collapseIndependentBlocks",true),
                         (BackendDAEOptimize.removeUnusedFunctions,"removeUnusedFunctions",false),
                         (BackendDAEOptimize.simplifyTimeIndepFuncCalls,"simplifyTimeIndepFuncCalls",false),
                         (BackendDAEOptimize.inputDerivativesUsed,"inputDerivativesUsed",false),
@@ -9055,7 +9053,6 @@ algorithm
                         (BackendDAEOptimize.removeConstants,"removeConstants",false),
                         (Initialization.optimizeInitialSystem,"optimizeInitialSystem",false),
                         (BackendDAEOptimize.detectSparsePatternODE,"detectJacobianSparsePattern",false),
-                        (BackendDAEOptimize.partitionIndependentBlocks, "partitionIndependentBlocks", true),
                         (Tearing.tearingSystem, "tearingSystem", false),
                         (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false),
                         (BackendDAEOptimize.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false),

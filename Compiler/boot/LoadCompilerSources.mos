@@ -159,6 +159,7 @@ if true then /* Suppress output */
     "../BackEnd/SimCode.mo",
     "../BackEnd/SimCodeMain.mo",
     "../BackEnd/SimCodeUtil.mo",
+    "../BackEnd/SynchronousFeatures.mo",
     "../BackEnd/Tearing.mo",
     "../BackEnd/Uncertainties.mo",
     "../BackEnd/XMLDump.mo",
