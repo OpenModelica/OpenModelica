@@ -1,15 +1,29 @@
-cmake_minimum_required (VERSION 2.6)
+# This skript will build and install all required libraries of the C++ Simulation-runtime
+#
+# The following conditional defines are passed to the c++ compiler:
+#     if the Boost_log and Boost_setup_log libraries were found ->   -DUSE_BOOST_LOG
+#     if the Boost_thread library was found ->                       -DUSE_BOOST_THREAD
+#     if the Umfpack library of SuiteSparse was found ->             -DUSE_UMFPACK
+#     if the Sundials libraries were found ->                        -DPMC_USE_SUNDIALS
+#     if the runtime is build for the omc ->                         -DOMC_BUILD
+#
+# Additionally it is possible to link all libraries statically (experimental), therefor -DANALYZATION_MODE=ON musst be passed to cmake
+#
+# The used defines are stored in the ADDITIONAL_DEFINES variable, which is passed to the ModelicaConfig.inc
 
+
+
+
+cmake_minimum_required (VERSION 2.6)
 project(CppSolverInterface)
+
 IF(NOT ANALYZATION_MODE)
 	#Precompiled header produces problems if the compiler is not "g++" but "scorep g++"
 	include(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
 ENDIF(NOT ANALYZATION_MODE)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-
 option(ANALYZATION_MODE "ANALYZATION_MODE" OFF)
-option(USE_UMFPACK "USE_UMFPACK" OFF)
 
 IF(ANALYZATION_MODE)
 	message(STATUS "Using analyzation mode")
@@ -105,11 +119,33 @@ SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREADED ON)
 SET(Boost_USE_STATIC_RUNTIME OFF)
 
-find_package(Boost COMPONENTS thread)
-find_package(Threads)
-find_package(Boost COMPONENTS filesystem system serialization program_options  REQUIRED)
-#find_package(Boost COMPONENTS filesystem system program_options log log_setup REQUIRED)
 
+# The optional boost libraries must be searched separately, otherwise no library is found if just one is missing. 
+# Additionaly the Boost_LIBRARIES variable is overwritten each time find_package(Boost ...) is called, thus it must be rescued
+find_package(Boost COMPONENTS log log_setup)
+SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
+find_package(Boost COMPONENTS thread)
+SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
+find_package(Threads)
+
+find_package(Boost COMPONENTS filesystem system serialization program_options REQUIRED)
+SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
+
+IF(Boost_LOG_LIBRARY AND Boost_LOG_SETUP_LIBRARY)
+	add_definitions(-DUSE_BOOST_LOG)
+	message(STATUS "Using boost log")
+ELSE(Boost_LOG_LIBRARY AND Boost_LOG_SETUP_LIBRARY)
+	message(STATUS "Boost log disabled")
+ENDIF(Boost_LOG_LIBRARY AND Boost_LOG_SETUP_LIBRARY)
+
+IF(Boost_THREAD_LIBRARY)
+	add_definitions(-DUSE_BOOST_THREAD)
+	message(STATUS "Using boost thread")
+ELSE(Boost_THREAD_LIBRARY)
+	message(STATUS "Boost thread disabled")
+ENDIF(Boost_THREAD_LIBRARY)
+
+SET(Boost_LIBRARIES ${Boost_LIBRARIES_TMP})
 message(STATUS "Boost Libraries")
 message(STATUS ${Boost_LIBRARIES})
 
@@ -176,18 +212,15 @@ add_definitions(-DPMC_USE_SUNDIALS)
 INSTALL(FILES ${SUNDIALS_LIBS} DESTINATION bin)
 endif()
 
-if(USE_UMFPACK)
-	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/Solver/UmfPack/")
-	find_package(SuiteSparse)
-	message(STATUS "Using UmfPack")
-#	list(FIND SUITESPARSE_LIBRARIES "umfpack" umfpack_found)
-	if(umfpack_found EQUAL -1)
-		message(FATAL_ERROR "Umfpack not found")
-	endif(umfpack_found EQUAL -1)
-	add_definitions(-DUSE_UMFPACK)
-else(USE_UMFPACK)
+#Handle umfpack
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/Solver/UmfPack/")
+FIND_PACKAGE(SuiteSparse)
+IF(umfpack_found EQUAL -1)
 	message(STATUS "UmfPack disabled")
-endif(USE_UMFPACK)
+ELSE(umfpack_found EQUAL -1)
+	message(STATUS "Using UmfPack")
+	add_definitions(-DUSE_UMFPACK)
+ENDIF(umfpack_found EQUAL -1)
 
 #Mico corba
 if(USE_MICO)
@@ -199,7 +232,9 @@ if(USE_MICO)
   message(STATUS ${MICO_INCLUDE_DIR})
 endif()
 
-
+#Write the defines into the ADDITIONAL_DEFINES variable
+GET_DIRECTORY_PROPERTY(ADDITIONAL_DEFINES DEFINITIONS)
+message(STATUS "Generated compile definitions: ${ADDITIONAL_DEFINES}")
 
 link_directories ( ${Boost_LIBRARY_DIRS} )
 
@@ -325,7 +360,6 @@ set (SIMCONRTOLLER_LIB ${libSimControllerName})
 
 # configure a header file to pass some library names
 # to the source code which are used to dynamic load and instantiate
-
 configure_file (
   "${PROJECT_SOURCE_DIR}/LibrariesConfig.h.in"
   "${PROJECT_BINARY_DIR}/LibrariesConfig.h"

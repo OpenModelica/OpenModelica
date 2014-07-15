@@ -1,7 +1,7 @@
 #include "UmfPack.h"
 
 
-UmfPack::UmfPack(IAlgLoop* algLoop, ILinSolverSettings* settings) : _iterationStatus(CONTINUE), _umfpackSettings(settings), _algLoop(algLoop), _jac(NULL), _rhs(NULL)
+UmfPack::UmfPack(IAlgLoop* algLoop, ILinSolverSettings* settings) : _iterationStatus(CONTINUE), _umfpackSettings(settings), _algLoop(algLoop), _jac(NULL), _rhs(NULL), _x(NULL)
 {
 }
 

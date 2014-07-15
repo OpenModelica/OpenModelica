@@ -8092,7 +8092,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsEqnsWithUpdate;
 
-protected function traverseBackendDAEExpsOptEqn "author: Frenkel TUD 2010-11
+public function traverseBackendDAEExpsOptEqn "author: Frenkel TUD 2010-11
   Helper for traverseBackendDAEExpsEqn."
   replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Equation> inEquation;

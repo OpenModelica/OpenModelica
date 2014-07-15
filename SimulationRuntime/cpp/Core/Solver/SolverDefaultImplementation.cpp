@@ -104,7 +104,8 @@ void SolverDefaultImplementation::initialize()
     //    // Write a line break into output stream
     //    *_outputStream << std::endl;
     //}
-   writeoutput_system->writeOutput(IWriteOutput::HEAD_LINE);
+    if(_settings->getGlobalSettings()->getOutputPointType() != NONE)
+      writeoutput_system->writeOutput(IWriteOutput::HEAD_LINE);
 
     // Allocate array with values of zero functions
     if (_dimZeroFunc != event_system->getDimZeroFunc())

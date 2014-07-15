@@ -89,7 +89,7 @@ void SimManager::initialize()
       _tEnd      =_config->getGlobalSettings()->getEndTime();
       //// Task: WRITE und FIRST_CALL+LAST_CALL, da es nur einen Solver (und somit keine Koppelschritte) gibt
       _solverTask = ISolver::SOLVERCALL(ISolver::FIRST_CALL);
-      if (_dimZeroFunc= event_system->getDimZeroFunc() )
+      if (_dimZeroFunc==event_system->getDimZeroFunc() )
       {
             if(_events)
                   delete [] _events;
@@ -117,7 +117,7 @@ void SimManager::runSimulation()
             runSingleProcess();
             // Zeit messen, Ausgabe der SimInfos
             ISolver::SOLVERSTATUS  status = _solver->getSolverStatus();
-            if(status & ISolver::DONE ||  status & ISolver::USER_STOP)
+            if((status & ISolver::DONE) ||  (status & ISolver::USER_STOP))
             {
                   /* Logs temporarily disabled
                   BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) << "Simulation done at t= " << _tEnd;
@@ -143,6 +143,8 @@ void SimManager::runSimulation()
 }
 void SimManager::writeProperties()
 {
+  if(_config->getGlobalSettings()->getLogType() != STATS)
+    return;
       /* Logs temporarily disabled
 
       {
@@ -428,6 +430,7 @@ void SimManager::runSingleProcess()
             for(int i=0;i<_dimZeroFunc;i++)
                   _events[i] = bool(zeroVal_new[i]);
             _mixed_system->handleSystemEvents(_events);
+            //cont_system->evaluateODE(IContinuous::CONTINUOUS);
       // Reset the time-events
       if (_dimtimeevent)
           {
@@ -459,6 +462,7 @@ void SimManager::runSingleProcess()
                               for(int i=0;i<_dimZeroFunc;i++)
                                     _events[i] = bool(zeroVal_new[i]);
                               _mixed_system->handleSystemEvents(_events);
+                              //cont_system->evaluateODE(IContinuous::CONTINUOUS);
                 //reset time-events
                 timeevent_system->handleTimeEvent(_timeeventcounter);
                         }
@@ -485,6 +489,7 @@ void SimManager::runSingleProcess()
                                     for(int i=0;i<_dimZeroFunc;i++)
                                           _events[i] = bool(zeroVal_new[i]);
                                     _mixed_system->handleSystemEvents(_events);
+                                    //cont_system->evaluateODE(IContinuous::CONTINUOUS);
                   //reset time-events
                     timeevent_system->handleTimeEvent(_timeeventcounter);
                               }
@@ -548,6 +553,7 @@ void SimManager::runSingleProcess()
                                     for(int i=0;i<_dimZeroFunc;i++)
                                           _events[i] = bool(zeroVal_new[i]);
                                     _mixed_system->handleSystemEvents(_events);
+                                    //cont_system->evaluateODE(IContinuous::CONTINUOUS);
                   //reset time-events
                   timeevent_system->handleTimeEvent(_timeeventcounter);
                               }

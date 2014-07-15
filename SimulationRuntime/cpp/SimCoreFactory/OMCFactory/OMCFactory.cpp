@@ -32,8 +32,9 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
 {
      int opt;
      int portnum;
-      std::map<std::string,OutputFormat> outputFormatMap = map_list_of("csv", CSV)("mat", MAT)("empty",EMPTY);
-       std::map<std::string,LogType> logTypeMap = map_list_of("stats", STATS)("nls", NLS)("ode",ODE)("off",OFF);
+     std::map<std::string,OutputFormat> outputFormatMap = map_list_of("csv", CSV)("mat", MAT)("empty",EMPTY);
+     std::map<std::string,LogType> logTypeMap = map_list_of("stats", STATS)("nls", NLS)("ode",ODE)("off",OFF);
+     std::map<std::string,OutputPointType> outputPointTypeMap = map_list_of("all", ALL)("step", STEP)("none",NONE);
      po::options_description desc("Allowed options");
      desc.add_options()
           ("help", "produce help message")
@@ -48,9 +49,10 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
           ("lin-solver,L", po::value< string >()->default_value("kinsol"),  "linear solver method")
           ("non-lin-solver,N", po::value< string >()->default_value("kinsol"),  "non linear solver method")
           ("OutputFormat,o", po::value< string >()->default_value("csv"),  "output Format [csv,empty]")
-          ("number-of-intervalls,v", po::value< int >()->default_value(500),  "number of intervalls")
-          ("tollerance,y", po::value< double >()->default_value(1e-6),  "solver tollerance")
+          ("number-of-intervals,v", po::value< int >()->default_value(500),  "number of intervals")
+          ("tolerance,y", po::value< double >()->default_value(1e-6),  "solver tolerance")
           ("log-type,l", po::value< string >()->default_value("off"),  "log information: stats ,nls,ode,off")
+          ("output-type,O", po::value< string >()->default_value("all"),  "the points in time written to result file: all (output steps + events), step (just output points), none")
           ;
      po::variables_map vm;
      po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -60,8 +62,9 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      string modelica_lib_path;
      double starttime =  vm["start-time"].as<double>();
      double stoptime = vm["stop-time"].as<double>();
-     double stepsize =  stoptime/vm["number-of-intervalls"].as<int>();
-     double tollerance =vm["tollerance"].as<double>();
+
+     double stepsize =  stoptime/vm["number-of-intervals"].as<int>();
+     double tolerance =vm["tolerance"].as<double>();
      string solver =  vm["solver"].as<string>();
      string nonLinSolver =  vm["non-lin-solver"].as<string>();
      string linSolver =  vm["lin-solver"].as<string>();
@@ -73,7 +76,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      }
      else
      {
-          throw  std::invalid_argument("runtime  libraries path is not set");
+          throw  std::invalid_argument("runtime libraries path is not set");
 
      }
 
@@ -97,7 +100,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      }
      else
      {
-          throw std::invalid_argument("resultsfilename  is not set");
+          throw std::invalid_argument("results-filename is not set");
 
      }
      string outputFormat_str;
@@ -115,8 +118,20 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      }
      else
      {
-          throw std::invalid_argument("resultsfilename  is not set");
+          throw std::invalid_argument("results-filename  is not set");
+     }
 
+     string outputPointType_str;
+     OutputPointType outputPointType;
+     if (vm.count("output-type"))
+     {
+          //cout << "results file: " << vm["results-file"].as<string>() << std::endl;
+          outputPointType_str = vm["output-type"].as<string>();
+          outputPointType = outputPointTypeMap[outputPointType_str];
+     }
+     else
+     {
+          throw std::invalid_argument("results-filename  is not set");
      }
 
      /*fs::path results_file_path = fs::path( resultsfilename) ;
@@ -126,15 +141,15 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
           throw  std::invalid_argument(eception_msg.c_str());
 
     }*/
-      fs::path libraries_path = fs::path( runtime_lib_path) ;
+     fs::path libraries_path = fs::path( runtime_lib_path) ;
 
-        fs::path modelica_path = fs::path( modelica_lib_path) ;
+     fs::path modelica_path = fs::path( modelica_lib_path) ;
 
-           libraries_path.make_preferred();
-        modelica_path.make_preferred();
+     libraries_path.make_preferred();
+     modelica_path.make_preferred();
 
 
-     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tollerance,resultsfilename,outputFomat};
+     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,outputFomat,outputPointType};
 
      _library_path = libraries_path;
     _modelicasystem_path = modelica_path;

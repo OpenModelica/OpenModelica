@@ -1534,7 +1534,7 @@ algorithm
   BackendDAE.DAE(systs,shared) := systIn;
   ((stateNodes,_)) := List.fold2(systs,getAllStateNodes,varCompMapping,inComps,({},0));
   whenNodes := getEventNodes(systIn,eqCompMapping);
-  graphTmp := arrayCopy(graphIn);
+  graphTmp := graphIn; //arrayCopy(graphIn);
   (graphTmp,cutNodes) := cutTaskGraph(graphTmp,stateNodes,whenNodes,{});
   cutNodeChildren := List.flatten(List.map1(listAppend(cutNodes,whenNodes),Util.arrayGetIndexFirst,graphIn)); // for computing new root-nodes when cutting out when-equations
   (_,cutNodeChildren,_) := List.intersection1OnTrue(cutNodeChildren,cutNodes,intEq);
@@ -2119,6 +2119,284 @@ algorithm
         noChildrenIn;
   end matchcontinue;
 end getLeaves;
+
+//Functions to get the event-graph
+//------------------------------------------
+//------------------------------------------
+public function getEventSystem "gets the graph and the adjacencyLst only for the EventSystem. This means that all branches which leads to a node solving 
+a whencondition or another boolean condition will remain.
+author: marcusw"
+  input TaskGraph iTaskGraph;
+  input TaskGraphMeta iTaskGraphMeta;
+  input BackendDAE.BackendDAE iSyst;
+  input list<BackendDAE.ZeroCrossing> iZeroCrossings;
+  input array<Integer> iSimCodeEqCompMapping;
+  output TaskGraph oTaskGraph;
+  output TaskGraphMeta oTaskGraphMeta;
+protected
+  array<tuple<Integer, Integer, Integer>> varCompMapping, eqCompMapping;
+  array<list<Integer>> inComps;
+  list<Integer> discreteNodes, cutNodes, cutNodeChildren, zeroCrossingNodes;
+  list<Integer> sccsContainingTime;
+  BackendDAE.EqSystems systs;
+  BackendDAE.Shared shared;
+  TaskGraph graphTmp;
+  TaskGraphMeta graphDataTmp;
+algorithm
+  TASKGRAPHMETA(varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, inComps=inComps) := iTaskGraphMeta;
+  BackendDAE.DAE(systs,shared) := iSyst;
+  discreteNodes := getDiscreteNodes(iSyst,eqCompMapping);
+  zeroCrossingNodes := List.flatten(List.map1(iZeroCrossings, getComponentsOfZeroCrossing, iSimCodeEqCompMapping));
+  ((_,sccsContainingTime)) := List.fold1(systs, getComponentsIncludingTime, eqCompMapping, (0,{}));
+  //print("Nodes containing time as variable: " +& stringDelimitList(List.map(sccsContainingTime, intString), ",") +& " (len: " +& intString(listLength(sccsContainingTime)) +& ")\n");
+  discreteNodes := listAppend(discreteNodes, sccsContainingTime);
+  discreteNodes := listAppend(discreteNodes, zeroCrossingNodes);
+  discreteNodes := List.unique(discreteNodes);
+  //print("Discrete nodes: " +& stringDelimitList(List.map(discreteNodes, intString), ",") +& " (len: " +& intString(listLength(discreteNodes)) +& ")\n");
+  graphTmp := iTaskGraph; //arrayCopy(graphIn);
+  (graphTmp,cutNodes) := cutTaskGraph(graphTmp,discreteNodes,{},{});
+  cutNodeChildren := List.flatten(List.map1(cutNodes,Util.arrayGetIndexFirst,iTaskGraph)); // for computing new root-nodes when cutting out nodes
+  (_,cutNodeChildren,_) := List.intersection1OnTrue(cutNodeChildren,cutNodes,intEq);
+  oTaskGraphMeta := getOdeSystemData(iTaskGraphMeta,cutNodes,cutNodeChildren);
+  oTaskGraph := graphTmp;
+end getEventSystem;
+
+protected function getComponentsOfZeroCrossing
+  input BackendDAE.ZeroCrossing iZeroCrossing;
+  input array<Integer> iSimCodeEqCompMapping;
+  output list<Integer> oCompIdc;
+protected
+  list<Integer> occurEquLst, tmpCompIdc;
+  Integer sccIdx;
+algorithm
+  oCompIdc := match(iZeroCrossing, iSimCodeEqCompMapping)
+    case(BackendDAE.ZERO_CROSSING(occurEquLst=occurEquLst), _)
+      equation
+        sccIdx = arrayGet(iSimCodeEqCompMapping, List.first(occurEquLst));
+        //print("Equations of zero crossing: " +& stringDelimitList(List.map(occurEquLst, intString), ",") +& "\n");
+        //print("SCCs of zero crossing: " +& intString(sccIdx) +& "\n");
+        tmpCompIdc = List.map1(occurEquLst, Util.arrayGetIndexFirst, iSimCodeEqCompMapping);
+      then tmpCompIdc;
+    else then {};
+  end match;
+end getComponentsOfZeroCrossing;
+
+
+protected function getComponentsIncludingTime "get the scc-idc that have an equation containing 'time' as variable
+author: marcusw"
+  input BackendDAE.EqSystem iSystem;
+  input array<tuple<Integer,Integer,Integer>> iEqCompMapping;
+  input tuple<Integer,list<Integer>> iOffsetResList; //<offset, resultList>
+  output tuple<Integer,list<Integer>> oOffsetResList;
+protected
+  BackendDAE.EquationArray orderedEqs;
+  Integer offset;
+  list<Integer> resultList;
+algorithm
+  BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) := iSystem;
+  (offset, resultList) := iOffsetResList;
+  ((offset, resultList, _, _)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, getComponentsIncludingTime0, (offset, resultList, iEqCompMapping, 1));
+  oOffsetResList := (offset, resultList);
+end getComponentsIncludingTime;
+
+protected function getComponentsIncludingTime0 "get the scc-idc that have an equation containing 'time' as variable
+author: marcusw"
+  input tuple<BackendDAE.Equation,tuple<Integer, list<Integer>, array<tuple<Integer,Integer,Integer>>, Integer>> iOffsetResList; //<equation, <offset, resultList, eqCompMapping, eqIdx>>
+  output tuple<BackendDAE.Equation,tuple<Integer, list<Integer>, array<tuple<Integer,Integer,Integer>>, Integer>> oOffsetResList;
+protected
+  BackendDAE.Equation eq;
+  Integer offset, eqIdx, sccIdx;
+  list<Integer> resultList;
+  array<tuple<Integer, Integer, Integer>> eqCompMapping;
+  Boolean timeIsPartOfEquation;
+algorithm
+  oOffsetResList := matchcontinue(iOffsetResList)
+    case((eq, (offset,resultList,eqCompMapping,eqIdx)))
+      equation
+        ((sccIdx,_,_)) = arrayGet(eqCompMapping, eqIdx+offset);
+        //print("Component " +& intString(sccIdx) +& "\n");
+        true = BackendDAEUtil.traverseBackendDAEExpsOptEqn(SOME(eq), getComponentsIncludingTime1, false);
+        resultList = sccIdx::resultList;
+      then (eq, (offset,resultList,eqCompMapping,eqIdx+1));
+    case((eq, (offset,resultList,eqCompMapping,eqIdx)))
+      then (eq, (offset,resultList,eqCompMapping,eqIdx+1));
+  end matchcontinue;
+end getComponentsIncludingTime0;
+
+protected function getComponentsIncludingTime1
+  input tuple<DAE.Exp, Boolean> inTpl;
+  output tuple<DAE.Exp, Boolean> outTpl;
+protected
+  DAE.Exp e;
+  String expStr;
+  Boolean res;
+algorithm
+  outTpl := match(inTpl)
+    case(e,false)
+      equation 
+        res = Expression.traverseCrefsFromExp(e, getComponentsIncludingTime2, false);
+      then ((e,res));
+    else then inTpl;
+  end match;
+end getComponentsIncludingTime1;
+
+protected function getComponentsIncludingTime2
+  input DAE.ComponentRef iRef;
+  input Boolean iIncludingTime;
+  output Boolean oIncludingTime;
+algorithm
+  oIncludingTime := match(iRef, iIncludingTime)
+    case (DAE.CREF_IDENT(ident="time"),_)
+      equation
+        //BackendDump.debugCrefStr((iRef, "\n"));
+      then true;
+    else
+      equation
+        //BackendDump.debugCrefStr((iRef, "\n"));
+      then (false or iIncludingTime);
+  end match;
+end getComponentsIncludingTime2;
+
+protected function getDiscreteNodes " get the taskgraph nodes that solves discrete values
+author: marcusw"
+  input BackendDAE.BackendDAE systIn;
+  input array<tuple<Integer,Integer,Integer>> eqCompMapping;
+  output list<Integer> eventNodes;
+protected
+  list<Integer> eqLst;
+  list<tuple<Integer,Integer,Integer>> tplLst;
+  BackendDAE.EqSystems systemsIn;
+algorithm
+  BackendDAE.DAE(eqs=systemsIn) := systIn;
+  ((eqLst,_)) := List.fold(systemsIn, getDiscreteNodesEqs,({},0));
+  eventNodes := getArrayTuple31(eqLst,eqCompMapping);
+end getDiscreteNodes;
+
+
+protected function getDiscreteNodesEqs
+  input BackendDAE.EqSystem systIn;
+  input tuple<list<Integer>,Integer> eventInfoIn;
+  output tuple<list<Integer>,Integer> eventInfoOut;
+protected
+  BackendDAE.StrongComponents comps;
+  BackendDAE.Variables orderedVars;
+  list<Integer> eventEqs;
+  list<Integer> eventEqsIn;
+  Integer numOfEqs;
+  Integer offset;
+algorithm
+  BackendDAE.EQSYSTEM(orderedEqs = BackendDAE.EQUATION_ARRAY(numberOfElement=numOfEqs),orderedVars=orderedVars,matching=BackendDAE.MATCHING(comps = comps)) := systIn;
+  (eventEqsIn,offset) := eventInfoIn;
+  eventEqs := getDiscreteNodesEqs1(comps,offset,orderedVars,{});
+  offset := offset+numOfEqs;
+  eventEqs := listAppend(eventEqs,eventEqsIn);
+  eventInfoOut := (eventEqs,offset);
+end getDiscreteNodesEqs;
+
+
+protected function getDiscreteNodesEqs1
+  input BackendDAE.StrongComponents comps;
+  input Integer offset;
+  input BackendDAE.Variables iOrderedVars;
+  input list<Integer> discreteEqsIn;
+  output list<Integer> discreteEqsOut;
+algorithm
+  discreteEqsOut := matchcontinue(comps,offset,iOrderedVars,discreteEqsIn)
+    local
+      Integer eqn;
+      Integer sysCount;
+      list<Integer> eventEqs;
+      list<Integer> condVars;
+      BackendDAE.StrongComponents rest;
+      BackendDAE.StrongComponent head;
+    case((head::rest),_,_,_)
+      equation
+        (true,eqn) = solvesDiscreteValue(head, iOrderedVars);
+        eqn = eqn+offset;
+        eventEqs = getDiscreteNodesEqs1(rest,offset,iOrderedVars,eqn::discreteEqsIn);
+      then
+        eventEqs;
+    case((head::rest),_,_,_)
+      equation
+        eventEqs = getDiscreteNodesEqs1(rest,offset,iOrderedVars,discreteEqsIn);
+      then
+        eventEqs;
+    case({},_,_,_)
+      then
+        discreteEqsIn;
+  end matchcontinue;
+end getDiscreteNodesEqs1;
+
+
+protected function solvesDiscreteValue
+  input BackendDAE.StrongComponent inComp;
+  input BackendDAE.Variables iOrderedVars;
+  output Boolean oSolvesDiscreteValue;
+  output Integer oFirstEqIdx;
+algorithm
+  (oSolvesDiscreteValue,oFirstEqIdx) := matchcontinue(inComp,iOrderedVars)
+    local 
+      Integer eqn, var;
+      list<Integer> vars, eqns;
+      list<BackendDAE.Var> backendVars;
+      BackendDAE.Var backendVar;
+      Boolean solvesDiscreteValue;
+    case(BackendDAE.SINGLEEQUATION(var=var,eqn=eqn),_)
+      equation
+        //print("Var of single equation: " +& intString(var) +& "\n");
+        backendVar = BackendVariable.getVarAt(iOrderedVars, var);
+        solvesDiscreteValue = BackendVariable.isVarDiscrete(backendVar);
+      then (solvesDiscreteValue,eqn);
+    case(BackendDAE.EQUATIONSYSTEM(vars=vars,eqns=eqns),_)
+      equation
+        //print("Vars of single equation system: " +& stringDelimitList(List.map(vars, intString), ",") +& "\n");
+        backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
+        solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
+        eqn = List.first(eqns);
+      then (solvesDiscreteValue,eqn);
+    case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_vars=vars,disc_eqns=eqns),_)
+      equation
+        //print("Vars of mixed equation system: " +& stringDelimitList(List.map(vars, intString), ",") +& "\n");
+        backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
+        solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
+        eqn = List.first(eqns);
+      then (solvesDiscreteValue,eqn); 
+    case(BackendDAE.SINGLEARRAY(vars=vars,eqn=eqn),_)
+      equation
+        //print("Vars of single array: " +& stringDelimitList(List.map(vars, intString), ",") +& "\n");
+        backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
+        solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
+      then (solvesDiscreteValue,eqn);
+    case(BackendDAE.SINGLEWHENEQUATION(vars=vars,eqn=eqn),_)
+      equation
+        //print("Vars of single when equation: " +& stringDelimitList(List.map(vars, intString), ",") +& "\n");
+        backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
+        solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
+      then (solvesDiscreteValue,eqn);
+    case(BackendDAE.SINGLECOMPLEXEQUATION(vars=vars,eqn=eqn),_)
+      equation
+        //print("Vars of single complex equation: " +& stringDelimitList(List.map(vars, intString), ",") +& "\n");
+        backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
+        solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
+      then (solvesDiscreteValue,eqn);
+    case(BackendDAE.SINGLEALGORITHM(vars=vars,eqn=eqn),_)
+      equation
+        //print("Vars of single algorithm: " +& stringDelimitList(List.map(vars, intString), ",") +& "\n");
+        backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
+        solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
+      then (solvesDiscreteValue,eqn);
+    case(BackendDAE.SINGLEIFEQUATION(vars=vars,eqn=eqn),_)
+      equation
+        //print("Vars of single if equation: " +& stringDelimitList(List.map(vars, intString), ",") +& "\n");
+        backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
+        solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
+      then (solvesDiscreteValue,eqn);   
+  else
+    then
+      (false,-1);
+  end matchcontinue;
+end solvesDiscreteValue;
+
 
 //Methods to write blt-structure as xml-file
 //------------------------------------------

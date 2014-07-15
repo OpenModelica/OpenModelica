@@ -1015,12 +1015,13 @@ algorithm
       Option<HpcOmSimCode.Schedule> hpcOmSchedule;
       Option<SimCode.BackendMapping> backendMapping;
       Option<HpcOmSimCode.MemoryMap> hpOmMemoryMap;
-
+      list<SimCode.SimEqSystem> equationsForConditions;
+      
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
           algebraicEquations,residualEquations,useSymbolicInitialization,useHomotopy,initialEquations,removedInitialEquations,startValueEquations,nominalValueEquations,minValueEquations,maxValueEquations,
           parameterEquations,removedEquations,algorithmAndEquationAsserts,equationsForZeroCrossings,jacobianEquations,stateSets,constraints,classAttributes,zeroCrossings,relations,
           timeEvents,whenClauses,discreteModelVars,extObjInfo,makefileParams,
-          delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,hpcOmSchedule,hpOmMemoryMap,crefToSimVarHT,backendMapping),_)
+          delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,hpcOmSchedule,hpOmMemoryMap,equationsForConditions,crefToSimVarHT,backendMapping),_)
     equation
       {eqs} = odeEquations;
       eqs = List.map1(eqs,replaceZC,zc_exps);
@@ -1029,7 +1030,7 @@ algorithm
                          initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations,
                          removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes,
                          zeroCrossings, relations, timeEvents, whenClauses, discreteModelVars, extObjInfo,
-                         makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpOmMemoryMap, crefToSimVarHT,backendMapping);
+                         makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpOmMemoryMap, equationsForConditions, crefToSimVarHT,backendMapping);
 
   end match;
 end replaceDiscontsInOde;

@@ -93,7 +93,8 @@ public:
     /// Provide real variables
     virtual void setString(const std::string* z) = 0;
 
-
+    /// Provide the right hand side
+    virtual void setRHS(const double* f) = 0;
 
 
 
@@ -103,6 +104,7 @@ public:
     virtual bool evaluateAll(const UPDATETYPE command = UNDEF_UPDATE) = 0;  // vxworks
     virtual void evaluateODE(const UPDATETYPE command = UNDEF_UPDATE) = 0;  // vxworks
     virtual void evaluateZeroFuncs(const UPDATETYPE command = UNDEF_UPDATE)= 0;
+    virtual bool evaluateConditions(const UPDATETYPE command = UNDEF_UPDATE)= 0;
 
     virtual void stepCompleted(double time) = 0;
 

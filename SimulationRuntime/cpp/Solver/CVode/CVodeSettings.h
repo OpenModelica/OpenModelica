@@ -13,12 +13,6 @@ public:
   */
    virtual bool getDenseOutput();
    virtual void setDenseOutput(bool);
-   virtual bool getEventOutput();
-   virtual void setEventOutput(bool);
 private:
-     bool
-    _denseOutput,      ///< Equidistant output(by interpolation polynominal) ([true,false]; default: false)
-    _eventOutput;
-
-
+   bool _denseOutput;      ///< Equidistant output(by interpolation polynominal) ([true,false]; default: false)
 };

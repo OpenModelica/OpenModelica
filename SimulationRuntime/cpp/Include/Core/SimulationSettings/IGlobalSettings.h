@@ -19,6 +19,7 @@ using std::string;
 
 enum OutputFormat {CSV, MAT, EMPTY};
 enum LogType {OFF,STATS, NLS, ODE};
+enum OutputPointType {ALL,STEP,NONE};
 class IGlobalSettings
 {
 
@@ -38,6 +39,8 @@ public:
     virtual void setResultsOutput(bool)=0;
     virtual OutputFormat getOutputFormat() = 0;
     virtual void setOutputFormat(OutputFormat) = 0;
+    virtual OutputPointType getOutputPointType() = 0;
+    virtual void setOutputPointType(OutputPointType) = 0;
     virtual LogType getLogType() = 0;
     virtual void setLogType(LogType) = 0;
 

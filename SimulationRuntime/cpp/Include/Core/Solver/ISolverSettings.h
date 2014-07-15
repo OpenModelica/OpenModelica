@@ -17,7 +17,6 @@ Copyright (c) 2008, OSMC
 class ISolverSettings
 {
 public:
-
   virtual ~ISolverSettings()  {};
   /// Initial step size (default: 1e-2)
   virtual double gethInit() = 0;
@@ -33,17 +32,14 @@ public:
   virtual void setEndTimeTol(double) = 0;
   //DenseOut
   virtual bool getDenseOutput() = 0;
-   virtual void setDenseOutput(bool) = 0;
-   //Event Output
-   virtual bool getEventOutput() = 0;
-   virtual void setEventOutput(bool) = 0;
+  virtual void setDenseOutput(bool) = 0;
 
-   virtual double getATol() = 0;
+  virtual double getATol() = 0;
   virtual void setATol(double) = 0;
-   virtual double getRTol() = 0;
+  virtual double getRTol() = 0;
   virtual void setRTol(double) = 0;
 
-    ///  Global simulation settings
-    virtual IGlobalSettings* getGlobalSettings()=0;
-    virtual void load(string)=0;
+  ///  Global simulation settings
+  virtual IGlobalSettings* getGlobalSettings()=0;
+  virtual void load(string)=0;
 };

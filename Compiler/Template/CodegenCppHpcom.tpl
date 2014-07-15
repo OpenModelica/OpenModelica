@@ -108,6 +108,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        <%generateMethodDeclarationCode(simCode)%>
      virtual  bool getCondition(unsigned int index);
      virtual void initPreVars(unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&);
+     
   protected:
 
     //Methods:
@@ -528,7 +529,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        <%hpcomDestructorExtension%>
     }
 
-
     <%InitializeEquationsArray(allEquations, className)%>
 
    <%Update(simCode)%>
@@ -690,7 +690,6 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
     else ""
 end getHpcomDestructorExtension;
 
-
 template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context)
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -705,10 +704,30 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
        <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther)%>
 
        <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode,contextOther) %>
-
+    
+       <%createEvaluateConditions(simCode, allEquationsPlusWhen, whenClauses, modelInfo.name, context)%>
       <%parCode%>
       >>
 end update;
+
+template createEvaluateConditions(SimCode simCode, list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, Absyn.Path name, Context context)
+::=
+  match simCode
+    case SIMCODE(__) then
+    let &varDecls = buffer "" /*BUFD*/
+    let eqs = equationsForConditions |> eq => equation_function_call(eq,contextSimulationNonDiscrete,&varDecls, simCode); separator="\n"
+    let reinit = (whenClauses |> when hasindex i0 => genreinits(when, &varDecls,i0,simCode,context) ;separator="\n";empty)
+    <<
+    bool <%lastIdentOfPath(name)%>::evaluateConditions(const UPDATETYPE command)
+    {
+        bool state_var_reinitialized = false;
+        //length: <%listLength(equationsForConditions)%>
+        <%eqs%>
+        <%reinit%>
+        return state_var_reinitialized;        
+    }    
+    >>
+end createEvaluateConditions;
 
 template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>> odeEquations, Absyn.Path name, list<SimWhenClause> whenClauses, SimCode simCode, Option<Schedule> hpcOmScheduleOpt, Context context, String modelNamePrefixStr)
 ::=

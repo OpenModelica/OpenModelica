@@ -10,11 +10,12 @@ GlobalSettings::GlobalSettings()
 , _infoOutput        (true)
 , _selected_solver("Euler")
 , _selected_lin_solver("Newton")
-,_selected_nonlin_solver("Newton")
-,_resultsfile_name("results.csv")
-,_endless_sim(false)
+, _selected_nonlin_solver("Newton")
+, _resultsfile_name("results.csv")
+, _endless_sim(false)
 , _outputFormat(EMPTY)
-,_log_type(OFF)
+, _outputPointType(ALL)
+, _log_type(OFF)
 {
 
 }
@@ -65,6 +66,15 @@ OutputFormat GlobalSettings::getOutputFormat()
 void GlobalSettings::setOutputFormat(OutputFormat format)
 {
    _outputFormat=format;
+}
+
+OutputPointType GlobalSettings::getOutputPointType()
+{
+    return _outputPointType;
+}
+void GlobalSettings::setOutputPointType(OutputPointType type)
+{
+    _outputPointType = type;
 }
 
  LogType GlobalSettings::getLogType()

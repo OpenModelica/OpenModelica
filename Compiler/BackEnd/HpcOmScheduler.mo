@@ -1653,7 +1653,7 @@ algorithm
         ((_,nodeLevelMap)) = Util.arrayFold3(taskGraphT, createNodeLevelMapping, nodeMark, inComps, iSccSimEqMapping, (1,{}));
         nodeLevelMap = List.sort(nodeLevelMap, sortNodeLevelMapping);
         filteredNodeLevelMap = List.map(nodeLevelMap, filterNodeLevelMapping);
-        tmpSchedule = HpcOmSimCode.TASKDEPSCHEDULE(filteredNodeLevelMap);
+        tmpSchedule = HpcOmSimCode.TASKDEPSCHEDULE(listReverse(filteredNodeLevelMap));
       then tmpSchedule;
     else
       equation
@@ -1691,7 +1691,8 @@ algorithm
   oNodeInfo := ((nodeIdx+1,nodeLevelMap));
 end createNodeLevelMapping;
 
-protected function sortNodeLevelMapping
+protected function sortNodeLevelMapping "author: marcusw
+  Sort the tuple elements regarding their level (second tuple-argument)."
   input tuple<HpcOmSimCode.Task,Integer,list<Integer>> iElem1;
   input tuple<HpcOmSimCode.Task,Integer,list<Integer>> iElem2;
   output Boolean oResult;
@@ -1705,7 +1706,8 @@ algorithm
   oResult := intGe(elemLvl1,elemLvl2);
 end sortNodeLevelMapping;
 
-protected function filterNodeLevelMapping
+protected function filterNodeLevelMapping "author: marcusw
+  Remove the second tuple argument (level number)."
   input tuple<HpcOmSimCode.Task,Integer,list<Integer>> iElem;
   output tuple<HpcOmSimCode.Task,list<Integer>> oElem;
 protected

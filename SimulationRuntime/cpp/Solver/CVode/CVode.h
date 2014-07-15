@@ -5,11 +5,12 @@
 
 #include <Solver/SolverDefaultImplementation.h>
 #include <cvodes/cvodes.h>
+#include <cvode/cvode.h>
 #include <nvector/nvector_serial.h>
 #include <cvodes/cvodes_dense.h>
 #include <cvodes/cvodes_spgmr.h>
 
-/*
+#ifdef USE_BOOST_LOG
 #include <boost/log/core.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/sources/basic_logger.hpp>
@@ -56,7 +57,7 @@ BOOST_LOG_INLINE_GLOBAL_LOGGER_INIT(cvode_lg, my_logger_mt)
     // Specify the channel name on construction, similarly as with the channel_logger
     return my_logger_mt(keywords::channel = "solver.CVode");
 }
-*/
+#endif
 
 
 /*BOOST_LOG_INLINE_GLOBAL_LOGGER_CTOR_ARGS(

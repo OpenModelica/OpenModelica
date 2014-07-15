@@ -194,6 +194,7 @@ package SimCode
       String fileNamePrefix;
       Option<HpcOmSimCode.Schedule> hpcOmSchedule;
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
+      list<SimEqSystem> equationsForConditions;
     end SIMCODE;
 
   end SimCode;

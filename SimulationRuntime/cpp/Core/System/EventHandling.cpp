@@ -174,7 +174,7 @@ bool EventHandling::changeDiscreteVar(double var,string key)
 
 
 /**
-Handles  all events occured a the same time. These are stored  the eventqueue
+Handles all events occurred a the same time.
 */
 
 bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
@@ -187,11 +187,13 @@ bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
     _event_system->getConditions(_conditions0);
     //Handle all events
 
-    state_vars_reinitialized = _countinous_system->evaluateAll();
-
+	state_vars_reinitialized = _countinous_system->evaluateConditions();
+    //state_vars_reinitialized = evaluateAll();
+    //_countinous_system->evaluateODE();
+    //state_vars_reinitialized = _countinous_system->evaluateConditions();
 
     //check if discrete variables changed
-    bool drestart= _event_system->checkForDiscreteEvents();
+    bool drestart= _event_system->checkForDiscreteEvents(); //discrete time conditions
 
 
     _event_system->getConditions(_conditions1);

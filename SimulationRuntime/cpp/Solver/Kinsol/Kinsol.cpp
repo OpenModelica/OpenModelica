@@ -597,10 +597,10 @@ bool Kinsol::isfinite(double* u, int dim)
 void Kinsol::calcJacobian(double* f,double* y)
 {
     double y_old;
+    memcpy(_yHelp,y,_dimSys*sizeof(double));
     for(int j=0; j<_dimSys; ++j)
     {
         // Reset variables for every column
-        memcpy(_yHelp,y,_dimSys*sizeof(double));
         double stepsize=1;//+(1.e-6*_yHelp[j]);
 
         y_old=_yHelp[j];

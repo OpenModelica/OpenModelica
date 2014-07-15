@@ -78,7 +78,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   {
      public:
     <%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
-    ~<%lastIdentOfPath(modelInfo.name)%>Initialize();
+    virtual ~<%lastIdentOfPath(modelInfo.name)%>Initialize();
     virtual bool initial();
     virtual void setInitial(bool);
     virtual void initialize();
@@ -132,7 +132,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     %>
      public:
     <%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
-    ~<%lastIdentOfPath(modelInfo.name)%>Jacobian();
+    virtual ~<%lastIdentOfPath(modelInfo.name)%>Jacobian();
    protected:
     void initialize();
     <%
@@ -197,7 +197,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   {
      public:
     <%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
-    ~<%lastIdentOfPath(modelInfo.name)%>StateSelection();
+    virtual ~<%lastIdentOfPath(modelInfo.name)%>StateSelection();
     int getDimStateSets() const;
     int getDimStates(unsigned int index) const;
     int getDimCanditates(unsigned int index) const ;
@@ -248,7 +248,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   {
      public:
     <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
-    ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput();
+    virtual ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput();
      /// Output routine (to be called by the solver after every successful integration step)
     virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
     virtual IHistory* getHistory();
@@ -313,7 +313,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   {
      public:
     <%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
-    ~<%lastIdentOfPath(modelInfo.name)%>Extension();
+    virtual ~<%lastIdentOfPath(modelInfo.name)%>Extension();
     ///Intialization mehtods from ISystemInitialization
     virtual bool initial();
     virtual void setInitial(bool);
@@ -1276,7 +1276,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   !ELSE
   CFLAGS=  $(SYSTEM_CFLAGS) /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" -I. <%makefileParams.includes%>  -I"$(BOOST_INCLUDE)" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  /Fp<%makefileParams.omhome%>/include/omc/cpp/$(PCH_FILE)  /Yu$(H_FILE)
   !ENDIF
-  CPPFLAGS = /DOMC_BUILD
+  CPPFLAGS = $(ADDITIONAL_DEFINES)
   # /ZI enable Edit and Continue debug info
   CDFLAGS = /ZI
 
@@ -1330,9 +1330,9 @@ CXX=<%makefileParams.cxxcompiler%>
 LINK=<%makefileParams.linker%>
 EXEEXT=<%makefileParams.exeext%>
 DLLEXT=<%makefileParams.dllext%>
-CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
+CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%> $(ADDITIONAL_DEFINES)
 CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>  <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
-LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" $(BASE_LIB)  -lOMCppOMCFactory -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath  -L"$(BOOST_LIBS)"  $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL)
+LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" $(BASE_LIB)  -lOMCppOMCFactory -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath  -L"$(BOOST_LIBS)"  $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_LOG_LIB) $(BOOST_THREAD_LIB) $(LINUX_LIB_DL)
 LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"   -L"<%makefileParams.omhome%>/bin"  -lOMCppOMCFactory -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL)
 CPPFLAGS = $(CFLAGS) -DOMC_BUILD -DBOOST_SYSTEM_NO_DEPRICATED
 SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
@@ -3535,6 +3535,7 @@ case SIMCODE(__) then
   <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther)%>
   <%createEvaluate(odeEquations,whenClauses,simCode,contextOther)%>
   <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode,contextOther)%>
+  <%createEvaluateConditions(allEquations,whenClauses,simCode,contextOther)%>
   >>
 end Update;
 /*<%update(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>*/
@@ -3621,6 +3622,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     {
       HistoryImplType::value_type_v v(<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>);
       HistoryImplType::value_type_dv v2(<%numDerivativevars(modelInfo)%>);
+      /* HistoryImplType::value_type_v *vP = new HistoryImplType::value_type_v(<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>);
+      HistoryImplType::value_type_dv *v2P = new HistoryImplType::value_type_dv(<%numDerivativevars(modelInfo)%>);
+      HistoryImplType::value_type_v &v = *vP;
+      HistoryImplType::value_type_dv &v2 = *v2P;*/
       <%writeoutput2(modelInfo,simCode)%>
       <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<
@@ -3629,10 +3634,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode));separator=","%>};
       for(int i=0;i<<%numResidues(allEquations)%>;i++) v3(i) = residues[i];
       _historyImpl->write(v,v2,v3,_simTime);
+      /* delete vP;
+      delete v2P; */
       >>
     else
       <<
       _historyImpl->write(v,v2,_simTime);
+      //_historyImpl->write(vP,v2P,_simTime);
       >>
     %>
     }
@@ -3760,7 +3768,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   public:
       <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor,boost::shared_ptr<ISimData>);
 
-      ~<%lastIdentOfPath(modelInfo.name)%>();
+      virtual ~<%lastIdentOfPath(modelInfo.name)%>();
 
        <%generateMethodDeclarationCode(simCode)%>
      virtual  bool getCondition(unsigned int index);
@@ -3869,7 +3877,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
                                         ,double* z,double* zDot, bool* conditions
                                        ,EventHandling& event_handling
                                       );
-      ~<%modelname%>Algloop<%index%>();
+      virtual ~<%modelname%>Algloop<%index%>();
 
        <%generateAlgloopMethodDeclarationCode(simCode)%>
 
@@ -3997,8 +4005,10 @@ else
 >>%>
 }
 
-
-
+void <%lastIdentOfPath(modelInfo.name)%>::setRHS(const double* f)
+{
+    SystemDefaultImplementation::setRHS(f);
+}
 
 bool <%lastIdentOfPath(modelInfo.name)%>::isStepEvent()
 {
@@ -4162,11 +4172,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual bool evaluateAll(const UPDATETYPE command =IContinuous::UNDEF_UPDATE);
     virtual void evaluateODE(const UPDATETYPE command =IContinuous::UNDEF_UPDATE);
     virtual void evaluateZeroFuncs(const UPDATETYPE command =IContinuous::UNDEF_UPDATE);
-
+    virtual bool evaluateConditions(const UPDATETYPE command);
 
     // Provide the right hand side (according to the index)
     virtual void getRHS(double* f);
 
+    virtual void setRHS(const double* f);
 
      //Provide number (dimension) of zero functions
     virtual int getDimZeroFunc();
@@ -9774,8 +9785,6 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
     bool state_vars_reinitialized = false;
     int iter=0;
 
-
-
     while(restart && !(iter++ > 100))
     {
             bool st_vars_reinit = false;
@@ -9784,9 +9793,6 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
             state_vars_reinitialized = state_vars_reinitialized || st_vars_reinit;
 
             saveAll();
-
-
-
      }
 
     if(iter>100 && restart ){
@@ -10203,7 +10209,35 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
  >>
 end createEvaluateAll;
 
+template createEvaluateConditions( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context)
+::=
+  let className = lastIdentOfPathFromSimCode(simCode)
+  let &varDecls = buffer "" /*BUFD*/
 
+  let &eqfuncs = buffer ""
+  let equation_all_func_calls = (allEquationsPlusWhen |> eq  =>
+                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode)
+                    ;separator="\n")
+
+
+  let reinit = (whenClauses |> when hasindex i0 =>
+         genreinits(when, &varDecls,i0,simCode,context)
+    ;separator="\n";empty)
+
+  <<
+  bool <%className%>::evaluateConditions(const UPDATETYPE command)
+  {
+    //the same as evaluateAll at the moment
+    bool state_var_reinitialized = false;
+    <%varDecls%>
+    /* Evaluate Equations*/
+    <%equation_all_func_calls%>
+    /* Reinits */
+    <%reinit%>
+    return state_var_reinitialized;
+  }
+ >>
+end createEvaluateConditions;
 
 template createEvaluate(list<list<SimEqSystem>> odeEquations,list<SimWhenClause> whenClauses, SimCode simCode, Context context)
 ::=

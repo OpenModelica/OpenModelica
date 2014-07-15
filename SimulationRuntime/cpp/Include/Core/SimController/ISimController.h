@@ -25,7 +25,7 @@ struct SimSettings
     double tolerance;
     string outputfile_name;
     OutputFormat outputFormat;
-
+    OutputPointType outputPointType;
 };
 
 /*SimController to start and stop the simulation*/

@@ -32,6 +32,9 @@ public:
     virtual OutputFormat getOutputFormat();
     virtual void setOutputFormat(OutputFormat format);
 
+    virtual OutputPointType getOutputPointType();
+    virtual void setOutputPointType(OutputPointType);
+
      virtual LogType getLogType();
     virtual void setLogType(LogType);
 
@@ -66,6 +69,7 @@ private:
         _resultsfile_name,
         _runtimeLibraryPath;
     OutputFormat _outputFormat;
+    OutputPointType _outputPointType;
     LogType _log_type;
 
 

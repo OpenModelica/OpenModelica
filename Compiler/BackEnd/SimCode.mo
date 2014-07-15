@@ -115,6 +115,7 @@ uniontype SimCode
     String fileNamePrefix;
     Option<HpcOmSimCode.Schedule> hpcOmSchedule;
     Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
+    list<SimEqSystem> equationsForConditions;
     //*** a protected section *** not exported to SimCodeTV
     HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
     Option<BackendMapping> backendMapping;

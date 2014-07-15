@@ -141,8 +141,8 @@ algorithm
       list<BackendDAE.TimeEvent> timeEvents;
       BackendDAE.StrongComponents allComps, initComps;
 
-      HpcOmTaskGraph.TaskGraph taskGraph, taskGraphOde, taskGraphSimplified, taskGraphScheduled, taskGraphInit;
-      HpcOmTaskGraph.TaskGraphMeta taskGraphData, taskGraphDataOde, taskGraphDataSimplified,taskGraphDataScheduled, taskGraphDataInit;
+      HpcOmTaskGraph.TaskGraph taskGraph, taskGraphOde, taskGraphEvent, taskGraphSimplified, taskGraphScheduled, taskGraphInit;
+      HpcOmTaskGraph.TaskGraphMeta taskGraphData, taskGraphDataOde, taskGraphDataEvent, taskGraphDataSimplified,taskGraphDataScheduled, taskGraphDataInit;
       String fileName, fileNamePrefix;
       Integer numProc;
       list<list<Integer>> parallelSets;
@@ -168,6 +168,9 @@ algorithm
       Integer graphOps;
       Option<SimCode.BackendMapping> backendMapping;
       Option<HpcOmSimCode.MemoryMap> optTmpMemoryMap;
+      list<HpcOmSimCode.Task> eventSystemTaskList;
+      list<tuple<HpcOmSimCode.Task, list<Integer>>> eventSystemTasks;
+      list<SimCode.SimEqSystem> equationsForConditions;
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _, _, _, _, _, _, _, _) equation
 
       print(Util.if_(Flags.isSet(Flags.HPCOM_ANALYZATION_MODE), "Using analyzation mode\n", ""));
@@ -176,12 +179,17 @@ algorithm
       //--------------
       (initDAE, _, _) = Initialization.solveInitialSystem(inBackendDAE);
       removedInitialEquations = {};
-      handleInitialSystem(initDAE, filenamePrefix);
+      createAndExportInitialSystemTaskGraph(initDAE, filenamePrefix);
 
       //Setup
       //-----
       System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       (simCode,(lastEqMappingIdx,equationSccMapping)) = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+      
+      SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+                 parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, _, _, _, crefToSimVarHT, backendMapping) = simCode;
+      
       (allComps,_) = HpcOmTaskGraph.getSystemComponents(inBackendDAE);
       highestSccIdx = findHighestSccIdxInMapping(equationSccMapping,-1);
       compCountPlusDummy = listLength(allComps)+1;
@@ -191,6 +199,7 @@ algorithm
 
       sccSimEqMapping = convertToSccSimEqMapping(equationSccMapping, listLength(allComps));
       simeqCompMapping = convertToSimeqCompMapping(equationSccMapping, lastEqMappingIdx);
+      //dumpSimEqSCCMapping(simeqCompMapping);
       SimCodeUtil.execStat("hpcom setup");
 
       //dumpSccSimEqMapping(sccSimEqMapping);
@@ -212,6 +221,19 @@ algorithm
 
       //HpcOmTaskGraph.printTaskGraph(taskGraph);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);
+
+      //Get Event System
+      taskGraphEvent = arrayCopy(taskGraph);
+      taskGraphDataEvent = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
+      (taskGraphEvent,taskGraphDataEvent) = HpcOmTaskGraph.getEventSystem(taskGraphEvent,taskGraphDataEvent,inBackendDAE, zeroCrossings, simeqCompMapping);
+      
+      fileName = ("taskGraph"+&filenamePrefix+&"_event.graphml");
+      schedulerInfo = arrayCreate(arrayLength(taskGraphEvent), (-1,-1,-1.0));
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphEvent, taskGraphDataEvent,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
+      SimCodeUtil.execStat("hpcom create and dump event task graph");
+
+      HpcOmSimCode.TASKDEPSCHEDULE(tasks=eventSystemTasks) = HpcOmScheduler.createTaskDepSchedule(taskGraphEvent, taskGraphDataEvent, sccSimEqMapping);
+      eventSystemTaskList = List.map(eventSystemTasks, Util.tuple21);
 
       //Get ODE System
       //--------------
@@ -275,9 +297,6 @@ algorithm
       //HpcOmScheduler.printSchedule(schedule);
 
       SimCodeUtil.execStat("hpcom dump schedule TaskGraph");
-      SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
-                 parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, _, _, crefToSimVarHT, backendMapping) = simCode;
 
       //Check ODE-System size
       //---------------------
@@ -290,9 +309,11 @@ algorithm
       optTmpMemoryMap = HpcOmMemory.createMemoryMap(modelInfo, taskGraphSimplified, taskGraphDataSimplified, eqs, filenamePrefix, schedulerInfo, schedule, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, allComps);
       SimCodeUtil.execStat("hpcom create memory map");
 
+      equationsForConditions = getSimCodeEqsByTaskList(eventSystemTaskList, allEquations);
+      
       simCode = SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, SOME(schedule), optTmpMemoryMap, crefToSimVarHT, backendMapping);
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, SOME(schedule), optTmpMemoryMap, equationsForConditions, crefToSimVarHT, backendMapping);
 
       //evaluateCacheBehaviour(schedulerInfo,taskGraphDataSimplified,clTaskMapping, transposeCacheLineTaskMapping(clTaskMapping, arrayLength(taskGraphSimplified)));
       SimCodeUtil.execStat("hpcom other");
@@ -304,7 +325,8 @@ algorithm
   end matchcontinue;
 end createSimCode;
 
-protected function handleInitialSystem
+protected function createAndExportInitialSystemTaskGraph "author: marcusw
+  Create the task graph for the initial system and write it to graphML."
   input Option<BackendDAE.BackendDAE> iInitDae;
   input String iFileNamePrefix;
 protected
@@ -327,7 +349,7 @@ algorithm
     else
       then ();
   end match;
-end handleInitialSystem;
+end createAndExportInitialSystemTaskGraph;
 
 protected function setNumProc "sets the number of processors. its upper limit is the number of processsors provided by the system.
 if no n-flag is set, a ideal number is suggested but the simulation fails.
@@ -609,14 +631,38 @@ algorithm
   oMapping := arrayUpdate(iMapping,simEqIdx,sccIdx);
 end convertToSimeqCompMapping1;
 
+public function dumpSimEqSCCMapping "author: marcusw
+  Prints the given mapping out to the console."
+  input array<Integer> iSccMapping;
+protected
+  String text;
+algorithm
+  text := "SimEqToSCCMapping";
+  ((_,text)) := Util.arrayFold(iSccMapping, dumpSimEqSCCMapping1, (1,text));
+  print(text +& "\n");
+end dumpSimEqSCCMapping;
+
+protected function dumpSimEqSCCMapping1 "author: marcusw
+  Helper function of dumpSimEqSCCMapping to print one mapping entry."
+  input Integer iMapping;
+  input tuple<Integer,String> iIndexText;
+  output tuple<Integer,String> oIndexText;
+protected
+  Integer iIndex;
+  String text, iText;
+algorithm
+  (iIndex,iText) := iIndexText;
+  text := intString(iMapping);
+  text := iText +& "\nSimEq " +& intString(iIndex) +& ": {" +& text +& "}";
+  oIndexText := (iIndex+1,text);
+end dumpSimEqSCCMapping1;
+
 public function dumpSccSimEqMapping "function dumpSccSimEqMapping
   author: marcusw
   Prints the given mapping out to the console."
   input array<list<Integer>> iSccMapping;
-
 protected
   String text;
-
 algorithm
   text := "SccToSimEqMapping";
   ((_,text)) := Util.arrayFold(iSccMapping, dumpSccSimEqMapping1, (1,text));
@@ -629,11 +675,9 @@ protected function dumpSccSimEqMapping1 "function dumpSccSimEqMapping1
   input list<Integer> iMapping;
   input tuple<Integer,String> iIndexText;
   output tuple<Integer,String> oIndexText;
-
 protected
   Integer iIndex;
   String text, iText;
-
 algorithm
   (iIndex,iText) := iIndexText;
   text := List.fold(iMapping, dumpSccSimEqMapping2, " ");
@@ -652,6 +696,38 @@ algorithm
   oText := iText +& intString(iIndex) +& " ";
 
 end dumpSccSimEqMapping2;
+
+protected function getSimCodeEqsByTaskList
+  input list<HpcOmSimCode.Task> iTaskList;
+  input list<SimCode.SimEqSystem> iAllSimEqs;
+  output list<SimCode.SimEqSystem> oSimEqs;
+protected
+  list<list<SimCode.SimEqSystem>> tmpSimEqs;
+algorithm
+  tmpSimEqs := List.map1(iTaskList, getSimCodeEqsByTaskList0, iAllSimEqs);
+  oSimEqs := List.flatten(tmpSimEqs);
+end getSimCodeEqsByTaskList;
+
+protected function getSimCodeEqsByTaskList0
+  input HpcOmSimCode.Task iTask;
+  input list<SimCode.SimEqSystem> iAllSimEqs;
+  output list<SimCode.SimEqSystem> oSimEqs;
+protected
+  list<Integer> eqIdc;
+  list<SimCode.SimEqSystem> tmpSimEqs;
+algorithm
+  oSimEqs := match(iTask, iAllSimEqs)
+    case(HpcOmSimCode.CALCTASK(eqIdc=eqIdc),_)
+      equation
+        tmpSimEqs = List.map1r(eqIdc, getSimCodeEqByIndex, iAllSimEqs);
+      then tmpSimEqs;
+    case(HpcOmSimCode.CALCTASK_LEVEL(eqIdc=eqIdc),_)
+      equation
+        tmpSimEqs = List.map1r(eqIdc, getSimCodeEqByIndex, iAllSimEqs);
+      then tmpSimEqs;
+    else then {};
+  end match;
+end getSimCodeEqsByTaskList0;
 
 public function getSimCodeEqByIndex "function getSimCodeEqByIndex
   author: marcusw

@@ -13,7 +13,6 @@ SolverSettings::SolverSettings( IGlobalSettings* globalSettings)
   ,_dRtol(1e-6)
   ,_dAtol(1e-6)
   ,_denseOutput(false)
-  ,_eventOutput(false)
 {
     _globalSettings = globalSettings ;
 }
@@ -75,17 +74,6 @@ bool SolverSettings::getDenseOutput()
 void SolverSettings::setDenseOutput(bool dense)
 {
   _denseOutput = dense;
-}
-
-
-bool SolverSettings::getEventOutput()
-{
-  return _eventOutput;
-}
-
-void SolverSettings::setEventOutput(bool eventOutput)
-{
-  _eventOutput = eventOutput;
 }
 
 IGlobalSettings* SolverSettings::getGlobalSettings()
