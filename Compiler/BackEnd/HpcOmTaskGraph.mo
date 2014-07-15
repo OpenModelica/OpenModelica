@@ -2232,7 +2232,7 @@ protected
   Boolean res;
 algorithm
   outTpl := match(inTpl)
-    case(e,false)
+    case((e,false))
       equation
         res = Expression.traverseCrefsFromExp(e, getComponentsIncludingTime2, false);
       then ((e,res));
