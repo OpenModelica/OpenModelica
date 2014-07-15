@@ -213,14 +213,14 @@ INSTALL(FILES ${SUNDIALS_LIBS} DESTINATION bin)
 endif()
 
 #Handle umfpack
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/Solver/UmfPack/")
-FIND_PACKAGE(SuiteSparse)
-IF(umfpack_found EQUAL -1)
-	message(STATUS "UmfPack disabled")
-ELSE(umfpack_found EQUAL -1)
-	message(STATUS "Using UmfPack")
-	#add_definitions(-DUSE_UMFPACK)
-ENDIF(umfpack_found EQUAL -1)
+#SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/Solver/UmfPack/")
+#FIND_PACKAGE(SuiteSparse)
+#IF(umfpack_found EQUAL -1)
+#	message(STATUS "UmfPack disabled")
+#ELSE(umfpack_found EQUAL -1)
+#	message(STATUS "Using UmfPack")
+#	#add_definitions(-DUSE_UMFPACK)
+#ENDIF(umfpack_found EQUAL -1)
 
 #Mico corba
 if(USE_MICO)

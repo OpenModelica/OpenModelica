@@ -225,15 +225,15 @@ algorithm
       //Get Event System
       taskGraphEvent = arrayCopy(taskGraph);
       taskGraphDataEvent = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
-      (taskGraphEvent,taskGraphDataEvent) = HpcOmTaskGraph.getEventSystem(taskGraphEvent,taskGraphDataEvent,inBackendDAE, zeroCrossings, simeqCompMapping);
+      //(taskGraphEvent,taskGraphDataEvent) = HpcOmTaskGraph.getEventSystem(taskGraphEvent,taskGraphDataEvent,inBackendDAE, zeroCrossings, simeqCompMapping);
 
-      fileName = ("taskGraph"+&filenamePrefix+&"_event.graphml");
-      schedulerInfo = arrayCreate(arrayLength(taskGraphEvent), (-1,-1,-1.0));
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphEvent, taskGraphDataEvent,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
-      SimCodeUtil.execStat("hpcom create and dump event task graph");
+      //fileName = ("taskGraph"+&filenamePrefix+&"_event.graphml");
+      //schedulerInfo = arrayCreate(arrayLength(taskGraphEvent), (-1,-1,-1.0));
+      //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphEvent, taskGraphDataEvent,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
+      //SimCodeUtil.execStat("hpcom create and dump event task graph");
 
-      HpcOmSimCode.TASKDEPSCHEDULE(tasks=eventSystemTasks) = HpcOmScheduler.createTaskDepSchedule(taskGraphEvent, taskGraphDataEvent, sccSimEqMapping);
-      eventSystemTaskList = List.map(eventSystemTasks, Util.tuple21);
+      //HpcOmSimCode.TASKDEPSCHEDULE(tasks=eventSystemTasks) = HpcOmScheduler.createTaskDepSchedule(taskGraphEvent, taskGraphDataEvent, sccSimEqMapping);
+      //eventSystemTaskList = List.map(eventSystemTasks, Util.tuple21);
 
       //Get ODE System
       //--------------
@@ -309,7 +309,7 @@ algorithm
       optTmpMemoryMap = HpcOmMemory.createMemoryMap(modelInfo, taskGraphSimplified, taskGraphDataSimplified, eqs, filenamePrefix, schedulerInfo, schedule, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, allComps);
       SimCodeUtil.execStat("hpcom create memory map");
 
-      equationsForConditions = getSimCodeEqsByTaskList(eventSystemTaskList, allEquations);
+      equationsForConditions = allEquations;//getSimCodeEqsByTaskList(eventSystemTaskList, allEquations);
 
       simCode = SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
