@@ -108,7 +108,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        <%generateMethodDeclarationCode(simCode)%>
      virtual  bool getCondition(unsigned int index);
      virtual void initPreVars(unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&);
-     
+
   protected:
 
     //Methods:
@@ -704,7 +704,7 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
        <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther)%>
 
        <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode,contextOther) %>
-    
+
        <%createEvaluateConditions(simCode, allEquationsPlusWhen, whenClauses, modelInfo.name, context)%>
       <%parCode%>
       >>
@@ -724,8 +724,8 @@ template createEvaluateConditions(SimCode simCode, list<SimEqSystem> allEquation
         //length: <%listLength(equationsForConditions)%>
         <%eqs%>
         <%reinit%>
-        return state_var_reinitialized;        
-    }    
+        return state_var_reinitialized;
+    }
     >>
 end createEvaluateConditions;
 

@@ -187,7 +187,7 @@ bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
     _event_system->getConditions(_conditions0);
     //Handle all events
 
-	state_vars_reinitialized = _countinous_system->evaluateConditions();
+  state_vars_reinitialized = _countinous_system->evaluateConditions();
     //state_vars_reinitialized = evaluateAll();
     //_countinous_system->evaluateODE();
     //state_vars_reinitialized = _countinous_system->evaluateConditions();

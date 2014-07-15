@@ -2123,7 +2123,7 @@ end getLeaves;
 //Functions to get the event-graph
 //------------------------------------------
 //------------------------------------------
-public function getEventSystem "gets the graph and the adjacencyLst only for the EventSystem. This means that all branches which leads to a node solving 
+public function getEventSystem "gets the graph and the adjacencyLst only for the EventSystem. This means that all branches which leads to a node solving
 a whencondition or another boolean condition will remain.
 author: marcusw"
   input TaskGraph iTaskGraph;
@@ -2233,7 +2233,7 @@ protected
 algorithm
   outTpl := match(inTpl)
     case(e,false)
-      equation 
+      equation
         res = Expression.traverseCrefsFromExp(e, getComponentsIncludingTime2, false);
       then ((e,res));
     else then inTpl;
@@ -2335,7 +2335,7 @@ protected function solvesDiscreteValue
   output Integer oFirstEqIdx;
 algorithm
   (oSolvesDiscreteValue,oFirstEqIdx) := matchcontinue(inComp,iOrderedVars)
-    local 
+    local
       Integer eqn, var;
       list<Integer> vars, eqns;
       list<BackendDAE.Var> backendVars;
@@ -2360,7 +2360,7 @@ algorithm
         backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
         solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
         eqn = List.first(eqns);
-      then (solvesDiscreteValue,eqn); 
+      then (solvesDiscreteValue,eqn);
     case(BackendDAE.SINGLEARRAY(vars=vars,eqn=eqn),_)
       equation
         //print("Vars of single array: " +& stringDelimitList(List.map(vars, intString), ",") +& "\n");
@@ -2390,7 +2390,7 @@ algorithm
         //print("Vars of single if equation: " +& stringDelimitList(List.map(vars, intString), ",") +& "\n");
         backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
         solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
-      then (solvesDiscreteValue,eqn);   
+      then (solvesDiscreteValue,eqn);
   else
     then
       (false,-1);

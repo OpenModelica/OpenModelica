@@ -1016,7 +1016,7 @@ algorithm
       Option<SimCode.BackendMapping> backendMapping;
       Option<HpcOmSimCode.MemoryMap> hpOmMemoryMap;
       list<SimCode.SimEqSystem> equationsForConditions;
-      
+
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
           algebraicEquations,residualEquations,useSymbolicInitialization,useHomotopy,initialEquations,removedInitialEquations,startValueEquations,nominalValueEquations,minValueEquations,maxValueEquations,
           parameterEquations,removedEquations,algorithmAndEquationAsserts,equationsForZeroCrossings,jacobianEquations,stateSets,constraints,classAttributes,zeroCrossings,relations,
