@@ -219,7 +219,7 @@ IF(umfpack_found EQUAL -1)
 	message(STATUS "UmfPack disabled")
 ELSE(umfpack_found EQUAL -1)
 	message(STATUS "Using UmfPack")
-	add_definitions(-DUSE_UMFPACK)
+	#add_definitions(-DUSE_UMFPACK)
 ENDIF(umfpack_found EQUAL -1)
 
 #Mico corba
