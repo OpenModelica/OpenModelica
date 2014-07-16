@@ -649,8 +649,6 @@ public function isBuiltInClass "
 Author: BZ, this function identifies built in classes."
   input String className;
   output Boolean b;
-protected
-  Boolean b;
 algorithm
   b := match(className)
     case("Real") then true;
@@ -658,10 +656,7 @@ algorithm
     case("String") then true;
     case("Boolean") then true;
     // BTH
-    case("Clock") equation
-      b = Util.if_(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true, false);
-    then b;
-    
+    case("Clock") then Util.if_(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true, false);
     else false;
   end match;
 end isBuiltInClass;
