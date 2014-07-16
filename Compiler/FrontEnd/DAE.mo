@@ -444,6 +444,12 @@ uniontype VariableAttributes
     Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
   end VAR_ATTR_BOOL;
 
+  // BTH
+  record VAR_ATTR_CLOCK
+    Option<Boolean> isProtected;
+    Option<Boolean> finalPrefix;
+  end VAR_ATTR_CLOCK;
+
   record VAR_ATTR_STRING
     Option<Exp> quantity "quantity";
     Option<Exp> start "start value";
@@ -784,6 +790,8 @@ public constant Type T_REAL_DEFAULT        = T_REAL({}, emptyTypeSource);
 public constant Type T_INTEGER_DEFAULT     = T_INTEGER({}, emptyTypeSource);
 public constant Type T_STRING_DEFAULT      = T_STRING({}, emptyTypeSource);
 public constant Type T_BOOL_DEFAULT        = T_BOOL({}, emptyTypeSource);
+// BTH
+public constant Type T_CLOCK_DEFAULT       = T_CLOCK({}, emptyTypeSource);
 public constant Type T_ENUMERATION_DEFAULT = T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}, emptyTypeSource);
 public constant Type T_REAL_BOXED          = T_METABOXED(T_REAL_DEFAULT, emptyTypeSource);
 public constant Type T_INTEGER_BOXED       = T_METABOXED(T_INTEGER_DEFAULT, emptyTypeSource);
@@ -806,6 +814,7 @@ public constant Type T_ARRAY_INT_NODIM     = T_ARRAY(T_INTEGER_DEFAULT,{DIM_UNKN
 public constant Type T_ARRAY_BOOL_NODIM    = T_ARRAY(T_BOOL_DEFAULT,{DIM_UNKNOWN()}, emptyTypeSource);
 public constant Type T_ARRAY_STRING_NODIM  = T_ARRAY(T_STRING_DEFAULT,{DIM_UNKNOWN()}, emptyTypeSource);
 
+
 public uniontype Type "models the different front-end and back-end types"
 
   record T_INTEGER
@@ -827,6 +836,11 @@ public uniontype Type "models the different front-end and back-end types"
     list<Var> varLst;
     TypeSource source;
   end T_BOOL;
+
+  record T_CLOCK
+    list<Var> varLst; // BTH Since Clock type has no attributes, this is not really needed, but at the moment kept for unified treatment of fundamental types
+    TypeSource source;
+  end T_CLOCK;
 
   record T_ENUMERATION "If the list of names is empty, this is the super-enumeration that is the super-class of all enumerations"
     Option<Integer> index "the enumeration value index, SOME for element, NONE() for type" ;
@@ -974,6 +988,8 @@ end CodeType;
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,false,FUNCTION_BUILTIN(NONE()),FP_NON_PARALLEL());
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,true,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
+//BTH
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,true,false,FUNCTION_BUILTIN(NONE()),FP_NON_PARALLEL());
 
 public
 uniontype FunctionAttributes
@@ -1196,6 +1212,11 @@ uniontype Exp "Expressions
   record BCONST
     Boolean bool "Bool constants" ;
   end BCONST;
+
+  // BTH
+  record CLKCONST
+    Absyn.ClockKind clk "Clock constants" ;
+  end CLKCONST;
 
   record ENUM_LITERAL "Enumeration literal"
     Absyn.Path name;

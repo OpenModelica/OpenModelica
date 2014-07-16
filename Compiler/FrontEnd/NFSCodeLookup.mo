@@ -369,6 +369,12 @@ public constant Item BUILTIN_EXTERNALOBJECT = NFSCodeEnv.CLASS(
       SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
       SCode.noComment, Absyn.dummyInfo), NFSCodeEnv.emptyEnv, NFSCodeEnv.BASIC_TYPE());
 
+public constant Item BUILTIN_CLOCK = NFSCodeEnv.CLASS(
+  SCode.CLASS("Clock", SCode.defaultPrefixes,
+      SCode.NOT_ENCAPSULATED(), SCode.PARTIAL(), SCode.R_CLASS(),
+      SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
+      SCode.noComment, Absyn.dummyInfo), NFSCodeEnv.emptyEnv, NFSCodeEnv.BASIC_TYPE());
+
 public function lookupSimpleName
   "Looks up a simple identifier in the environment and returns the environment
   item, the path, and the enclosing scope of the name."
@@ -1271,6 +1277,10 @@ algorithm
     case "String" then BUILTIN_STRING;
     case "StateSelect" then BUILTIN_STATESELECT;
     case "ExternalObject" then BUILTIN_EXTERNALOBJECT;
+    case "Clock" 
+      equation
+        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
+      then BUILTIN_CLOCK;
     case "$RealType" then BUILTIN_REALTYPE_ITEM;
     case "$IntegerType" then BUILTIN_INTEGERTYPE_ITEM;
     case "$BooleanType" then BUILTIN_BOOLEANTYPE_ITEM;

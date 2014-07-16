@@ -124,6 +124,10 @@ uniontype State "- Machine states, the string contains the classname."
   record TYPE_BOOL
     Absyn.Path path;
   end TYPE_BOOL;
+  // BTH
+  record TYPE_CLOCK
+    Absyn.Path path;
+  end TYPE_CLOCK;
 
   record TYPE_ENUM
     Absyn.Path path;
@@ -211,6 +215,8 @@ algorithm
     case TYPE_REAL(path = _) then "Real";
     case TYPE_STRING(path = _) then "String";
     case TYPE_BOOL(path = _) then "Boolean";
+    // BTH
+    case TYPE_CLOCK(path = _) then "Clock";
     case HAS_RESTRICTIONS(path = _, hasEquations = false, hasAlgorithms = false, hasConstraints = false) then "new def";
     case HAS_RESTRICTIONS(path = _, hasEquations = b1, hasAlgorithms = b2, hasConstraints = _)
       then "has" +& Util.if_(b1," equations","") +& Util.if_(b2," algorithms","") +& Util.if_(b1," constraints","");
@@ -317,6 +323,13 @@ algorithm
         Print.printBuf(Absyn.pathString(p));
       then
         ();
+    // BTH
+    case TYPE_CLOCK(path = p)
+      equation
+        Print.printBuf("TYPE_CLOCK ");
+        Print.printBuf(Absyn.pathString(p));
+      then
+        ();
     case HAS_RESTRICTIONS(path = p)
       equation
         Print.printBuf("HAS_RESTRICTIONS ");
@@ -348,6 +361,8 @@ algorithm
     case TYPE_REAL(path = p) then p;
     case TYPE_STRING(path = p) then p;
     case TYPE_BOOL(path = p) then p;
+    // BTH
+    case TYPE_CLOCK(path = p) then p;
     case TYPE_ENUM(path = p) then p;
 
     case EXTERNAL_OBJ(p) then p;
@@ -416,6 +431,11 @@ algorithm
     case (SCode.R_PREDEFINED_REAL(),p) then TYPE_REAL(p);
     case (SCode.R_PREDEFINED_STRING(),p) then TYPE_STRING(p);
     case (SCode.R_PREDEFINED_BOOLEAN(),p) then TYPE_BOOL(p);
+    // BTH
+    case (SCode.R_PREDEFINED_CLOCK(),p) 
+      equation
+        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);   
+      then TYPE_CLOCK(p);
     case (SCode.R_PREDEFINED_ENUMERATION(),p) then TYPE_ENUM(p);
      /* Meta Modelica extensions */
     case (SCode.R_UNIONTYPE(),p) then META_UNIONTYPE(p);
@@ -453,6 +473,8 @@ algorithm
     case (TYPE_REAL(path = _),NEWDEF()) then inState;
     case (TYPE_STRING(path = _),NEWDEF()) then inState;
     case (TYPE_BOOL(path = _),NEWDEF()) then inState;
+    // BTH
+    case (TYPE_CLOCK(path = _),NEWDEF()) then inState;
     case (TYPE_ENUM(path = _),NEWDEF()) then inState;
     case (META_UNIONTYPE(path = _),NEWDEF()) then inState;  // Added 2009-05-11. sjoelund
     case (META_RECORD(path = _),NEWDEF()) then inState;  // Added 2009-08-18. sjoelund
@@ -481,6 +503,7 @@ algorithm
     case (TYPE_REAL(path = _),FOUND_COMPONENT(name = _)) then inState;
     case (TYPE_STRING(path = _),FOUND_COMPONENT(name = _)) then inState;
     case (TYPE_BOOL(path = _),FOUND_COMPONENT(name = _)) then inState;
+    case (TYPE_CLOCK(path = _),FOUND_COMPONENT(name = _)) then inState;
     case (TYPE_ENUM(path = _),FOUND_COMPONENT(name = _)) then inState;
     case (META_RECORD(path = _),FOUND_COMPONENT(name = _)) then inState;  // Added 2009-08-19. sjoelund
 
@@ -552,6 +575,8 @@ algorithm
     case (TYPE_REAL(path = _),SCode.R_CONNECTOR(_)) then ();
     case (TYPE_STRING(path = _),SCode.R_CONNECTOR(_)) then ();
     case (TYPE_BOOL(path = _),SCode.R_CONNECTOR(_)) then ();
+    // BTH
+    case (TYPE_CLOCK(path = _),SCode.R_CONNECTOR(_)) then ();
     case (TYPE_ENUM(path = _),SCode.R_CONNECTOR(_)) then (); // used in Modelica.Electrical.Digital where we have an enum as a connector
     case (ENUMERATION(_),SCode.R_CONNECTOR(_)) then ();      // used in Modelica.Electrical.Digital where we have an enum as a connector
 
@@ -560,6 +585,8 @@ algorithm
     case (TYPE_REAL(path = _),SCode.R_TYPE()) then ();
     case (TYPE_STRING(path = _),SCode.R_TYPE()) then ();
     case (TYPE_BOOL(path = _),SCode.R_TYPE()) then ();
+    // BTH
+    case (TYPE_CLOCK(path = _),SCode.R_TYPE()) then ();
     case (TYPE_ENUM(path = _),SCode.R_TYPE()) then ();
     case (ENUMERATION(_),SCode.R_TYPE()) then ();
 
@@ -657,6 +684,8 @@ algorithm
     case (TYPE_REAL(path = _),(TYPE_REAL(path = _) :: _)) then true;
     case (TYPE_STRING(path = _),(TYPE_STRING(path = _) :: _)) then true;
     case (TYPE_BOOL(path = _),(TYPE_BOOL(path = _) :: _)) then true;
+    // BTH
+    case (TYPE_CLOCK(path = _),(TYPE_CLOCK(path = _) :: _)) then true;
     case (TYPE_ENUM(path = _),(TYPE_ENUM(path = _) :: _)) then true;
     case (st,(_ :: rest))
       equation
@@ -757,6 +786,8 @@ algorithm
     case TYPE_REAL(p) then (SCode.R_PREDEFINED_REAL(),p);
     case TYPE_STRING(p) then (SCode.R_PREDEFINED_STRING(),p);
     case TYPE_BOOL(p) then (SCode.R_PREDEFINED_BOOLEAN(),p);
+    // BTH
+    case TYPE_CLOCK(p) then (SCode.R_PREDEFINED_CLOCK(),p);
     case TYPE_ENUM(p) then (SCode.R_PREDEFINED_ENUMERATION(),p);
      /* Meta Modelica extensions */
     case META_UNIONTYPE(p) then (SCode.R_UNIONTYPE(),p);

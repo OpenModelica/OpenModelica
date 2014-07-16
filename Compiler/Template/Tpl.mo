@@ -1372,7 +1372,6 @@ algorithm
   end match;
 end booleanString;
 
-
 public function strTokText
   input StringToken inStringToken;
   output Text outText;

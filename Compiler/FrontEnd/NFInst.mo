@@ -556,6 +556,11 @@ algorithm
     case ("Integer", _) then DAE.T_INTEGER(inAttributes, DAE.emptyTypeSource);
     case ("String", _) then DAE.T_STRING(inAttributes, DAE.emptyTypeSource);
     case ("Boolean", _) then DAE.T_BOOL(inAttributes, DAE.emptyTypeSource);
+    // BTH
+    case ("Clock", _) 
+      equation
+        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);   
+      then DAE.T_CLOCK(inAttributes, DAE.emptyTypeSource);
     case ("StateSelect", _) then DAE.T_ENUMERATION_DEFAULT;
   end match;
 end instBasicType;

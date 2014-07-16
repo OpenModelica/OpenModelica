@@ -385,6 +385,11 @@ algorithm
         startOrigin = instStartOrigin(mod, varLst, "start");
       then
         (cache,SOME(DAE.VAR_ATTR_BOOL(quantity_str,start_val,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
+        
+    // BTH Clock
+    case (cache,_,mod,tp as DAE.T_CLOCK(varLst = varLst, source = _),index_list)
+      then
+        (cache,SOME(DAE.VAR_ATTR_CLOCK(NONE(),NONE())));        
 
     // String
     case (cache,_,mod,tp as DAE.T_STRING(varLst = varLst, source = _),index_list)

@@ -76,16 +76,6 @@ external "builtin";
 annotation(version="Dymola / MSL 1.6");
 end constrain;
 
-impure function sample "Trigger time events"
-  parameter input Real start(fixed=false);
-  parameter input Real interval(fixed=false);
-  output Boolean isSample;
-external "builtin";
-annotation(__OpenModelica_Impure=true, Documentation(info="<html>
-  See <a href=\"modelica://ModelicaReference.Operators.'sample()'\">sample()</a>
-</html>"));
-end sample;
-
 function ceil "Round a real number towards plus infinity"
   input Real x;
   output Real y;
@@ -489,6 +479,69 @@ function pre "Refer to left limit"
   See <a href=\"modelica://ModelicaReference.Operators.'pre()'\">pre()</a>
 </html>"));
 end pre;
+
+function sample "Overloaded operator to either trigger time events or to convert between continuous-time and clocked-time representation"
+external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'sample()'\">sample()</a>
+</html>"));
+end sample;
+
+function previous "Access previous value of a clocked variable"
+  external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'previous()'\">previous()</a>
+</html>"));
+end previous;
+
+function hold "Conversion from clocked discrete-time to continous time"
+  external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'hold()'\">hold()</a>
+</html>"));
+end hold;
+
+impure function subSample "Conversion from faster clock to slower clock"
+  external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'subSample()'\">subSample()</a>
+</html>"));
+end subSample;
+
+function superSample "Conversion from slower clock to faster clock"
+  external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'superSample()'\">superSample()</a>
+</html>"));
+end superSample;
+
+function shiftSample "First activation of clock is shifted in time"
+  external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'shiftSample()'\">shiftSample()</a>
+</html>"));
+end shiftSample;
+
+function backSample "First activation of clock is shifted in time before activation of u"
+  external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'backSample()'\">backSample()</a>
+</html>"));
+end backSample;
+
+function noClock "Clock of y=Clock(u) is always inferred"
+  external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'noClock()'\">noClock()</a>
+</html>"));
+end noClock;
+
+function interval "Returns the interval between the previous and present tick of the clock of its argument"
+  external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'interval()'\">interval()</a>
+</html>"));
+end interval;
 
 function change "Indicate discrete variable changing"
   external "builtin";

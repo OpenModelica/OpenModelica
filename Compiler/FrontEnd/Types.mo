@@ -91,6 +91,8 @@ algorithm
     case (DAE.T_INTEGER(varLst = _)) then ();
     case (DAE.T_STRING(varLst = _)) then ();
     case (DAE.T_BOOL(varLst = _)) then ();
+    // BTH
+    case (DAE.T_CLOCK(varLst = _)) then ();
     case (DAE.T_ENUMERATION(names = _)) then ();
     case (DAE.T_SUBTYPE_BASIC(complexType = ty))
       equation
@@ -295,6 +297,8 @@ algorithm
     case (DAE.T_INTEGER(varLst = _)) then true;
     case (DAE.T_STRING(varLst = _)) then true;
     case (DAE.T_BOOL(varLst = _)) then true;
+    // BTH
+    case (DAE.T_CLOCK(varLst = _)) then true;
     case (DAE.T_ENUMERATION(path = _)) then true;
     else false;
   end match;
@@ -1076,6 +1080,8 @@ algorithm
     case (Values.REAL(real = _)) then (DAE.T_REAL_DEFAULT);
     case (Values.STRING(string = _)) then (DAE.T_STRING_DEFAULT);
     case (Values.BOOL(boolean = _)) then (DAE.T_BOOL_DEFAULT);
+    // BTH
+    case (Values.CLOCK(clk = _)) then (DAE.T_CLOCK_DEFAULT);
     case (Values.ENUM_LITERAL(name = path, index = index))
       equation
         path = Absyn.pathPrefix(path);
@@ -1174,6 +1180,8 @@ algorithm
     case (DAE.T_REAL(source = _)) then true;
     case (DAE.T_STRING(source = _)) then true;
     case (DAE.T_BOOL(source = _)) then true;
+    // BTH
+    case (DAE.T_CLOCK(source = _)) then true;
     case (DAE.T_ENUMERATION(source = _)) then true;
     else false;
   end match;
@@ -1394,6 +1402,8 @@ algorithm
     case (DAE.T_REAL(varLst = _),DAE.T_REAL(varLst = _),_) then true;
     case (DAE.T_STRING(varLst = _),DAE.T_STRING(varLst = _),_) then true;
     case (DAE.T_BOOL(varLst = _),DAE.T_BOOL(varLst = _),_) then true;
+    // BTH
+    case (DAE.T_CLOCK(varLst = _),DAE.T_CLOCK(varLst = _),_) then true;
 
     case (DAE.T_ENUMERATION(names = {}),DAE.T_ENUMERATION(names = _),_) then true;
     case (DAE.T_ENUMERATION(names = _),DAE.T_ENUMERATION(names = {}),_) then true;
@@ -2076,6 +2086,8 @@ algorithm
     case (DAE.T_REAL(varLst = {})) then "Real";
     case (DAE.T_STRING(varLst = {})) then "String";
     case (DAE.T_BOOL(varLst = {})) then "Boolean";
+    // BTH
+    case (DAE.T_CLOCK(varLst = _)) then "Clock";
 
     case (DAE.T_INTEGER(varLst = vs))
       equation
@@ -2331,6 +2343,13 @@ algorithm
     case (DAE.T_BOOL(varLst = vars))
       equation
         s1 = List.toString(vars, printVarStr, "Boolean", "(", ", ", ")", false);
+        str = s1 +& printTypeSourceStr(getTypeSource(inType));
+      then
+        str;
+
+    case (DAE.T_CLOCK(varLst = vars))
+      equation
+        s1 = List.toString(vars, printVarStr, "Clock", "(", ", ", ")", false);
         str = s1 +& printTypeSourceStr(getTypeSource(inType));
       then
         str;
@@ -3482,6 +3501,8 @@ algorithm
     case (DAE.T_REAL(varLst = _)) then "Real";
     case (DAE.T_STRING(varLst = _)) then "String";
     case (DAE.T_BOOL(varLst = _)) then "Boolean";
+    // BTH
+    case (DAE.T_CLOCK(varLst = _)) then "Clock";
     case (DAE.T_COMPLEX(complexClassType = st))
       equation
         n = Absyn.pathString(ClassInf.getStateName(st));
@@ -3841,6 +3862,8 @@ algorithm
     case (DAE.T_INTEGER(source = _)) then DAE.T_INTEGER_DEFAULT;
     case (DAE.T_REAL(source = _)) then DAE.T_REAL_DEFAULT;
     case (DAE.T_BOOL(source = _)) then DAE.T_BOOL_DEFAULT;
+    // BTH watch out: Due to simplification some type info is lost here
+    case (DAE.T_CLOCK(source = _)) then DAE.T_CLOCK_DEFAULT;
     case (DAE.T_STRING(source = _)) then DAE.T_STRING_DEFAULT;
     case (DAE.T_NORETCALL(source = _)) then DAE.T_NORETCALL_DEFAULT;
     case (DAE.T_TUPLE(tupleType = tys))
@@ -5364,6 +5387,8 @@ algorithm
     case DAE.T_REAL(varLst = vars)    then getAllExpsVars(vars);
     case DAE.T_STRING(varLst = vars)  then getAllExpsVars(vars);
     case DAE.T_BOOL(varLst = vars)    then getAllExpsVars(vars);
+    // BTH return empty list for clock since it doesn't have attributes
+    case DAE.T_CLOCK(varLst = _) then {};
     case DAE.T_ENUMERATION(names = _, literalVarLst = vars, attributeLst = attrs)
       equation
         exps = getAllExpsVars(vars);
@@ -6880,6 +6905,8 @@ algorithm
     case ((DAE.T_REAL(source = _),_),_) equation tpl = fn(itpl); then tpl;
     case ((DAE.T_STRING(source = _),_),_) equation tpl = fn(itpl); then tpl;
     case ((DAE.T_BOOL(source = _),_),_) equation tpl = fn(itpl); then tpl;
+    // BTH
+    case ((DAE.T_CLOCK(source = _),_),_) equation tpl = fn(itpl); then tpl;
     case ((DAE.T_ENUMERATION(source = _),_),_) equation tpl = fn(itpl); then tpl;
 
     case ((DAE.T_NORETCALL(source = _),_),_) equation tpl = fn(itpl); then tpl;
@@ -7534,6 +7561,8 @@ algorithm
     case (DAE.T_REAL(source =  source)) then source;
     case (DAE.T_STRING(source =  source)) then source;
     case (DAE.T_BOOL(source =  source)) then source;
+    // BTH
+    case (DAE.T_CLOCK(source =  source)) then source;
     case (DAE.T_ENUMERATION(source =  source)) then source;
 
     case (DAE.T_ARRAY(source =  source)) then source;
@@ -7882,6 +7911,8 @@ algorithm
     case (DAE.T_INTEGER(_, src), _) then DAE.T_INTEGER(inVars, src);
     case (DAE.T_STRING(_, src), _) then DAE.T_STRING(inVars, src);
     case (DAE.T_BOOL(_, src), _) then DAE.T_BOOL(inVars, src);
+    // BTH
+    case (DAE.T_CLOCK(_, src), _) then DAE.T_CLOCK(inVars, src);
     case (DAE.T_ENUMERATION(i, p, n, vars, _, src), _)
       then DAE.T_ENUMERATION(i, p, n, vars, inVars, src);
 

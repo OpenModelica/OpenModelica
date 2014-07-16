@@ -1062,7 +1062,7 @@ algorithm
     //    BackendDAE.VARIABLE();
     case (_, _, _, _)
       equation
-        print("lowerKnownVarkind failed\n");
+        Error.addInternalError("./Compiler/BackEnd/BackendDAECreate.mo: function lowerKnownVarkind failed");
       then
         fail();
   end matchcontinue;
@@ -1079,6 +1079,7 @@ algorithm
     case (DAE.T_INTEGER(varLst = _)) then DAE.T_INTEGER_DEFAULT;
     case (DAE.T_BOOL(varLst = _)) then DAE.T_BOOL_DEFAULT;
     case (DAE.T_STRING(varLst = _)) then DAE.T_STRING_DEFAULT;
+    case (DAE.T_CLOCK(varLst = _)) then DAE.T_CLOCK_DEFAULT;
     case (DAE.T_ENUMERATION(names = _)) then inType;
     case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path=_)))
       then inType;

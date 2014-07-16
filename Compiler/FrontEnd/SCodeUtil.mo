@@ -320,6 +320,8 @@ algorithm
     case (_,Absyn.R_PREDEFINED_REAL()) then SCode.R_PREDEFINED_REAL();
     case (_,Absyn.R_PREDEFINED_STRING()) then SCode.R_PREDEFINED_STRING();
     case (_,Absyn.R_PREDEFINED_BOOLEAN()) then SCode.R_PREDEFINED_BOOLEAN();
+    // BTH
+    case (_,Absyn.R_PREDEFINED_CLOCK()) then SCode.R_PREDEFINED_CLOCK();
     case (_,Absyn.R_PREDEFINED_ENUMERATION()) then SCode.R_PREDEFINED_ENUMERATION();
 
     case (_,Absyn.R_METARECORD(name,index,singleton)) //MetaModelica extension, added by x07simbj

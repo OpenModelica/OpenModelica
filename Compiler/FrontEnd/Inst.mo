@@ -483,10 +483,10 @@ algorithm
     case (_, _, _, _, Absyn.IDENT(name = name), _)
       equation
         cls = InstUtil.lookupTopLevelClass(name, inProgram, true);
+
         (cache, env, ih, _, dae, _, _, _, _, _) = instClass(inCache, inEnv,
           inIH, UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(),
           cls, {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
-
         dae = InstUtil.reEvaluateInitialIfEqns(cache, env, dae, true);
         elts = DAEUtil.daeElements(dae);
 
@@ -697,14 +697,12 @@ algorithm
         //print("\nConnect equations and the OverConstrained graph in one step");
         dae = ConnectUtil.equations(callscope_1, csets, dae1_1, graph, Absyn.pathString(Absyn.makeNotFullyQualified(fq_class)));
         //System.stopTimer();
-        //print("\nConnect and Overconstrained: " +& realString(System.getTimerIntervalTime()));
-
+        //print("\nConnect and Overconstrained: " +& realString(System.getTimerIntervalTime()) + "\n");
         ty = InstUtil.mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint, c);
         dae = InstUtil.updateDeducedUnits(callscope_1,store,dae);
 
         // Fixes partial functions.
         ty = InstUtil.fixInstClassType(ty,isPartialFn);
-
         //env_3 = Env.updateEnv(env_3);
       then
         (cache,env_3,ih,store,dae,csets,ty,ci_state_1,oDA,graph);
@@ -1030,7 +1028,6 @@ algorithm
         //System.startTimer();
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) =
           instClassIn_dispatch(inCache,inEnv,inIH,store,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,implicitInstantiation,callscope,inGraph,inSets,instSingleCref);
-
         envPathOpt = Env.getEnvPath(inEnv);
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
 
@@ -1299,6 +1296,11 @@ algorithm
     case "Integer" then DAE.T_INTEGER_DEFAULT;
     case "String" then DAE.T_STRING_DEFAULT;
     case "Boolean" then DAE.T_BOOL_DEFAULT;
+    // BTH
+    case "Clock" 
+      equation
+        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);  
+      then DAE.T_CLOCK_DEFAULT;
   end match;
 end getBasicTypeType;
 
@@ -1311,6 +1313,11 @@ algorithm
     case "Integer" then getIntAttributeType;
     case "String" then getStringAttributeType;
     case "Boolean" then getBoolAttributeType;
+    // BTH
+    case "Clock" 
+      equation
+        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
+      then getClockAttributeType;
   end match;
 end getBasicTypeAttrTyper;
 
@@ -1401,6 +1408,22 @@ algorithm
         fail();
   end match;
 end getBoolAttributeType;
+
+
+protected function getClockAttributeType "
+Author: BTH
+This function is supposed to fail since clock variables don't have attributes.
+"
+  input String inAttrName;
+  input DAE.Type inBaseType;
+  input Absyn.Info inInfo;
+  output DAE.Type outType;
+algorithm
+  outType := match(inAttrName, inBaseType, inInfo)
+    case (_, _, _) then fail();
+  end match;
+end getClockAttributeType;
+
 
 protected function getEnumAttributeType
   input String inAttrName;
@@ -1857,6 +1880,13 @@ algorithm
 
     case (cache,env,ih,_,_,ci_state,(SCode.CLASS(name = "Boolean")),_,_,_,_)
       equation
+        System.setPartialInstantiation(partialInst);
+      then (cache,env,ih,ci_state,{});
+
+    // BTH 
+    case (cache,env,ih,_,_,ci_state,(SCode.CLASS(name = "Clock")),_,_,_,_)
+      equation
+        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
         System.setPartialInstantiation(partialInst);
       then (cache,env,ih,ci_state,{});
 

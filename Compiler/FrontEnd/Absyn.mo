@@ -692,6 +692,62 @@ type ArrayDim = list<Subscript> "Component attributes are
   of a component or a type definition.
 - Array dimensions" ;
 
+// BTH
+public
+uniontype ClockKind
+
+  record INFERREDCLOCK end INFERREDCLOCK;
+
+  record INTEGERCLOCK
+    Integer intervalCounter;
+    Integer resolution;
+  end INTEGERCLOCK;
+
+  record REALCLOCK
+    Real interval;
+  end REALCLOCK;
+
+  record BOOLEANCLOCK
+    Boolean condition;
+    Real startInterval;
+  end BOOLEANCLOCK;
+
+  record SOLVERCLOCK
+    ClockKind c;
+    String solverMethod;
+  end SOLVERCLOCK;
+end ClockKind;
+
+public function clockKindString
+  input ClockKind inClockKind;
+  output String outString;
+algorithm
+  outString := match inClockKind
+    local
+      Real interval, startInterval;
+      Integer intervalCounter, resolution;
+      Boolean condition;
+      String solverMethod;
+      ClockKind c;
+
+    case INFERREDCLOCK()
+    then "Clock()";
+
+    case INTEGERCLOCK(intervalCounter=intervalCounter, resolution=resolution)
+    then "Clock(" +& intString(intervalCounter) +& ", " +& intString(resolution) +& ")";
+
+    case REALCLOCK(interval=interval)
+    then "Clock(" +& realString(interval) +& ")";
+
+    case BOOLEANCLOCK(condition=condition, startInterval=startInterval)
+    then "Clock(" +& boolString(condition) +& ", " +& realString(startInterval) +& ")";
+      
+    case SOLVERCLOCK(c=c, solverMethod=solverMethod)
+    then "Clock(" +& clockKindString(c) +& ", " +& solverMethod +& ")";
+  end match;
+end clockKindString;
+
+
 public
 uniontype Exp "The Exp uniontype is the container of a Modelica expression.
   - Expressions"
@@ -714,6 +770,11 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
   record BOOL
     Boolean value;
   end BOOL;
+
+  // BTH
+  record CLOCK
+    ClockKind value;
+  end CLOCK;
 
   record BINARY   "Binary operations, e.g. a*b"
     Exp exp1;
@@ -1026,6 +1087,8 @@ uniontype Restriction "These constructors each correspond to a different kind of
   record R_PREDEFINED_STRING end R_PREDEFINED_STRING;
   record R_PREDEFINED_BOOLEAN end R_PREDEFINED_BOOLEAN;
   record R_PREDEFINED_ENUMERATION end R_PREDEFINED_ENUMERATION;
+  // BTH
+  record R_PREDEFINED_CLOCK end R_PREDEFINED_CLOCK;
 
   // MetaModelica
   record R_UNIONTYPE "MetaModelica uniontype" end R_UNIONTYPE;
@@ -4031,6 +4094,8 @@ algorithm
     case R_PREDEFINED_REAL() then "PREDEFINED_REAL";
     case R_PREDEFINED_STRING() then "PREDEFINED_STRING";
     case R_PREDEFINED_BOOLEAN() then "PREDEFINED_BOOL";
+    // BTH
+    case R_PREDEFINED_CLOCK() then "PREDEFINED_CLOCK";
 
     /* MetaModelica restriction */
     case R_UNIONTYPE() then "UNIONTYPE";

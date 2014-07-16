@@ -80,6 +80,8 @@ uniontype Restriction
   record R_PREDEFINED_STRING      "predefined StringType"  end R_PREDEFINED_STRING;
   record R_PREDEFINED_BOOLEAN     "predefined BooleanType" end R_PREDEFINED_BOOLEAN;
   record R_PREDEFINED_ENUMERATION "predefined EnumType"    end R_PREDEFINED_ENUMERATION;
+  // BTH
+  record R_PREDEFINED_CLOCK       "predefined ClockType"   end R_PREDEFINED_CLOCK;
 
   // MetaModelica extensions
   record R_METARECORD "Metamodelica extension"
@@ -1131,6 +1133,8 @@ algorithm
     case (R_PREDEFINED_REAL(),R_PREDEFINED_REAL()) then true;
     case (R_PREDEFINED_STRING(),R_PREDEFINED_STRING()) then true;
     case (R_PREDEFINED_BOOLEAN(),R_PREDEFINED_BOOLEAN()) then true;
+    // BTH
+    case (R_PREDEFINED_CLOCK(),R_PREDEFINED_CLOCK()) then true;
     case (R_PREDEFINED_ENUMERATION(),R_PREDEFINED_ENUMERATION()) then true;
     else false;
    end match;

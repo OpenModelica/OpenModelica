@@ -142,6 +142,8 @@ algorithm
     case SCode.R_PREDEFINED_REAL() then "Real";
     case SCode.R_PREDEFINED_STRING() then "String";
     case SCode.R_PREDEFINED_BOOLEAN() then "Boolean";
+    // BTH
+    case SCode.R_PREDEFINED_CLOCK() then "Clock";
     case SCode.R_PREDEFINED_ENUMERATION() then "enumeration";
   end match;
 end restrString;

@@ -115,6 +115,8 @@ algorithm
     case(Values.INTEGER(_)) then DAE.T_INTEGER_DEFAULT;
     case(Values.REAL(_)) then DAE.T_REAL_DEFAULT;
     case(Values.BOOL(_)) then DAE.T_BOOL_DEFAULT;
+    // BTH
+    case(Values.CLOCK(_)) then DAE.T_CLOCK_DEFAULT;
     case(Values.STRING(_)) then DAE.T_STRING_DEFAULT;
     case(Values.ENUM_LITERAL(name = path, index = _))
       equation
@@ -865,6 +867,7 @@ algorithm
       Integer ix;
       Absyn.Path path;
       Absyn.CodeNode code;
+      Absyn.ClockKind ck;
       Values.Value valType;
       DAE.Type ety;
 
@@ -872,6 +875,8 @@ algorithm
     case (Values.REAL(real = r))       then DAE.RCONST(r);
     case (Values.STRING(string = s))   then DAE.SCONST(s);
     case (Values.BOOL(boolean = b))    then DAE.BCONST(b);
+    //BTH
+    case (Values.CLOCK(clk = ck))    then DAE.CLKCONST(ck);
     case (Values.ENUM_LITERAL(name = path, index = i)) then DAE.ENUM_LITERAL(path, i);
 
     case (Values.ARRAY(valueLst = vallist, dimLst = int_dims)) then valueExpArray(vallist,int_dims);
@@ -1991,6 +1996,7 @@ algorithm
       Values.Value r;
       Absyn.CodeNode c;
       Absyn.Path p, recordPath;
+      Absyn.ClockKind ck;
       list<String> ids;
       Absyn.ComponentRef cr;
       Absyn.Path path;
@@ -2022,6 +2028,12 @@ algorithm
     case Values.BOOL(boolean = true)
       equation
         Print.printBuf("true");
+      then
+        ();
+    // BTH
+    case Values.CLOCK(clk = ck)
+      equation
+        Print.printBuf(Absyn.clockKindString(ck));
       then
         ();
     case Values.ENUM_LITERAL(name = p)

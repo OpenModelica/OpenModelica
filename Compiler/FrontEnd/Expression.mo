@@ -358,6 +358,8 @@ protected function unleabZeroExpFromType
 algorithm
   outExp := match ty
     case DAE.T_BOOL(source=_) then Absyn.BOOL(false);
+    // BTH
+    case DAE.T_CLOCK(source=_) then Absyn.CLOCK(Absyn.INFERREDCLOCK());
     case DAE.T_STRING(source=_) then Absyn.STRING("");
     case DAE.T_INTEGER(source=_) then Absyn.INTEGER(0);
     case DAE.T_REAL(source=_) then Absyn.REAL("0.0");
@@ -4374,6 +4376,11 @@ algorithm
         res = rel((e,ext_arg));
       then res;
 
+    case ((e as DAE.CLKCONST(_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+
     case ((e as DAE.ENUM_LITERAL(index=_)),rel,ext_arg)
       equation
         res = rel((e,ext_arg));
@@ -7481,6 +7488,8 @@ algorithm b := matchcontinue(t1,t2)
   case(DAE.T_REAL(varLst = _),DAE.T_REAL(varLst = _)) then true;
   case(DAE.T_STRING(varLst = _),DAE.T_STRING(varLst = _)) then true;
   case(DAE.T_BOOL(varLst = _),DAE.T_BOOL(varLst = _)) then true;
+  // BTH
+  case(DAE.T_CLOCK(varLst = _),DAE.T_CLOCK(varLst = _)) then true;
 
   case(DAE.T_COMPLEX(varLst = vars1), DAE.T_COMPLEX(varLst = vars2))
        then equalTypesComplexVars(vars1,vars2);
@@ -7533,6 +7542,8 @@ algorithm
     case (DAE.T_REAL(varLst = _)) then true;
     case (DAE.T_STRING(varLst = _)) then true;
     case (DAE.T_BOOL(varLst = _)) then true;
+    // BTH
+    case (DAE.T_CLOCK(varLst = _)) then true;
     else false;
   end matchcontinue;
 end typeBuiltin;

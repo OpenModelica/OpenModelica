@@ -369,6 +369,11 @@ algorithm
     case(Absyn.IDENT("Real")) then DAE.T_REAL_DEFAULT;
     case(Absyn.IDENT("String")) then DAE.T_STRING_DEFAULT;
     case(Absyn.IDENT("Boolean")) then DAE.T_BOOL_DEFAULT;
+    // BTH
+    case(Absyn.IDENT("Clock")) 
+      equation
+        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);   
+      then DAE.T_CLOCK_DEFAULT;
   end match;
 end reparseType;
 

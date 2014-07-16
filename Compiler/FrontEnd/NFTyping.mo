@@ -808,6 +808,9 @@ algorithm
 
     case (DAE.BCONST(bool = _), _, _, st, _)
       then (inExp, DAE.T_BOOL_DEFAULT, DAE.C_CONST(), st);
+    // BTH
+    case (DAE.CLKCONST(clk = _), _, _, st, _)
+      then (inExp, DAE.T_CLOCK_DEFAULT, DAE.C_CONST(), st);
 
     case (DAE.ENUM_LITERAL(name = name), _, _, st, _)
       equation

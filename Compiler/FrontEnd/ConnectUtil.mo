@@ -1909,11 +1909,11 @@ algorithm
 
     case (true, _, _, _, _)
       equation
-        //print(printSetsStr(inSets) +& "\n");
+        // print(printSetsStr(inSets) +& "\n");
         set_array = generateSetArray(inSets);
         sets = arrayList(set_array);
-        //print("Sets:\n");
-        //print(stringDelimitList(List.map(sets, printSetStr), "\n") +& "\n");
+        // print("Sets:\n");
+        // print(stringDelimitList(List.map(sets, printSetStr), "\n") +& "\n");
 
         has_expandable = daeHasExpandableConnectors(inDae);
         (sets, dae) = removeUnusedExpandableVariablesAndConnections(sets, inDae, has_expandable);
@@ -1921,13 +1921,11 @@ algorithm
         // send in the connection graph and build the connected/broken connects
         // we do this here so we do it once and not for every EQU set.
         (dae, connected, broken) = ConnectionGraph.handleOverconstrainedConnections(inConnectionGraph, inModelNameQualified, dae);
-
         // adrpo: FIXME: maybe we should just remove them from the sets then send the updates sets further
         dae = List.fold2(sets, equationsDispatch, connected, broken, dae);
         has_stream = System.getHasStreamConnectors();
         has_cardinality = System.getUsesCardinality();
         dae = evaluateConnectionOperators(has_stream, has_cardinality, inSets, set_array, dae);
-
         // add the equality constraint equations to the dae.
         dae = ConnectionGraph.addBrokenEqualityConstraintEquations(dae, broken);
       then

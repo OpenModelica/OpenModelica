@@ -478,6 +478,7 @@ algorithm
         (cache,e2_1,prop2,_) = Static.elabExp(cache, env, e2, impl, NONE(), true /*do vectorization*/, pre, info);
         (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl, info);
         (cache, e2_1, prop2) = Ceval.cevalIfConstant(cache, env, e2_1, prop2, impl, info);
+
         (cache,e1_1,e2_1,prop1) = condenseArrayEquation(cache,env,e1,e2,e1_1,e2_1,prop1,prop2,impl,pre,info);
 
         (cache,e1_2) = PrefixUtil.prefixExp(cache,env, ih, e1_1, pre);
@@ -1391,6 +1392,12 @@ algorithm
       then
         dae;
     case (e1,e2,DAE.T_BOOL(varLst = _),_,_,initial_)
+      equation
+        dae = makeDaeEquation(e1, e2, source, initial_);
+      then
+        dae;
+    //BTH
+    case (e1,e2,DAE.T_CLOCK(varLst = _),_,_,initial_)
       equation
         dae = makeDaeEquation(e1, e2, source, initial_);
       then

@@ -501,6 +501,8 @@ algorithm
     case Absyn.R_PREDEFINED_REAL() equation Print.printBuf("Absyn.R_PREDEFINED_REAL"); then ();
     case Absyn.R_PREDEFINED_STRING() equation Print.printBuf("Absyn.R_PREDEFINED_STRING"); then ();
     case Absyn.R_PREDEFINED_BOOLEAN() equation Print.printBuf("Absyn.R_PREDEFINED_BOOLEAN"); then ();
+    // BTH
+    case Absyn.R_PREDEFINED_CLOCK() equation Print.printBuf("Absyn.R_PREDEFINED_CLOCK"); then ();
     case Absyn.R_PREDEFINED_ENUMERATION() equation Print.printBuf("Absyn.R_PREDEFINED_ENUMERATION"); then ();
     case Absyn.R_UNIONTYPE() equation Print.printBuf("Absyn.R_UNIONTYPE"); then ();
     case _ equation Print.printBuf("/* UNKNOWN RESTRICTION! FIXME! */"); then ();
@@ -3493,6 +3495,12 @@ algorithm
     case Absyn.R_PREDEFINED_BOOLEAN()
       equation
         Print.printBuf("record Absyn.R_PREDEFINED_BOOLEAN end Absyn.R_PREDEFINED_BOOLEAN;");
+      then ();
+
+    // BTH
+    case Absyn.R_PREDEFINED_CLOCK()
+      equation
+        Print.printBuf("record Absyn.R_PREDEFINED_CLOCK end Absyn.R_PREDEFINED_CLOCK;");
       then ();
 
     case Absyn.R_PREDEFINED_ENUMERATION()

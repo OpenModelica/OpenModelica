@@ -111,6 +111,8 @@ algorithm
     case(DAE.T_INTEGER(varLst = _)) then true;
     case(DAE.T_STRING(varLst = _)) then true;
     case(DAE.T_BOOL(varLst = _)) then true;
+    // BTH
+    case(DAE.T_CLOCK(varLst = _)) then true;
     case(DAE.T_ENUMERATION(path=_)) then true;
     else false;
   end match;
@@ -1242,6 +1244,9 @@ algorithm
       then SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,distOpt,eb,ip,SOME(finalPrefix),so));
     case (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,ip,_,so)),_)
       then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,ip,SOME(finalPrefix),so));
+    // BTH
+    case (SOME(DAE.VAR_ATTR_CLOCK(ip,_)),_)
+      then SOME(DAE.VAR_ATTR_CLOCK(ip,SOME(finalPrefix)));
     case (SOME(DAE.VAR_ATTR_STRING(q,i,eb,ip,_,so)),_)
       then SOME(DAE.VAR_ATTR_STRING(q,i,eb,ip,SOME(finalPrefix),so));
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,ip,_,so)),_)
@@ -4611,6 +4616,9 @@ algorithm
           (start,extraArg) = traverseDAEOptExp(start,func,extraArg);
           (fixed,extraArg) = traverseDAEOptExp(fixed,func,extraArg);
         then (SOME(DAE.VAR_ATTR_BOOL(quantity,start,fixed,eb,ip,fn,so)),extraArg);
+      // BTH
+      case(SOME(DAE.VAR_ATTR_CLOCK(ip,fn)),_,extraArg)
+        then (attr,extraArg);
 
       case(SOME(DAE.VAR_ATTR_STRING(quantity,start,eb,ip,fn,so)),_,extraArg)
         equation
@@ -4625,6 +4633,7 @@ algorithm
         then (SOME(DAE.VAR_ATTR_ENUMERATION(quantity,min,max,start,fixed,eb,ip,fn,so)),extraArg);
 
       case (NONE(),_,extraArg) then (NONE(),extraArg);
+
   end match;
 end traverseDAEVarAttr;
 

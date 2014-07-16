@@ -64,6 +64,11 @@ uniontype Value
     Boolean boolean;
   end BOOL;
 
+  // BTH
+  record CLOCK
+    Absyn.ClockKind clk;
+  end CLOCK;
+
   record ENUM_LITERAL
     Absyn.Path name;
     Integer index;

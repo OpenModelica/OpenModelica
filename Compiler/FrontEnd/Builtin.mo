@@ -269,6 +269,10 @@ protected constant SCode.Element stringType = SCode.CLASS("String",commonPrefixe
 protected constant SCode.Element booleanType = SCode.CLASS("Boolean",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_BOOLEAN(),
           SCode.PARTS({quantity,booleanStart,fixed,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `Boolean\' type" ;
 
+// BTH The Clock type
+protected constant SCode.Element clockType = SCode.CLASS("Clock",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_CLOCK(),
+          SCode.PARTS({},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `Clock\' type" ;
+
 // The builtin variable time. See also variableIsBuiltin
 protected constant DAE.Var timeVar = DAE.TYPES_VAR("time",
           DAE.dummyAttrInput,
@@ -600,6 +604,7 @@ algorithm
                integerType,
                stringType,
                booleanType,
+               clockType,
                stateSelectType,
                uncertaintyType},
                SOME(Env.BASIC_TYPE()));
@@ -864,6 +869,7 @@ algorithm
          integerType,
          stringType,
          booleanType,
+         clockType,
          stateSelectType,
          uncertaintyType},
          FCore.BASIC_TYPE(),

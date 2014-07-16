@@ -192,6 +192,11 @@ algorithm
       equation
         finst_dims = List.flatten(inst_dims);
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_BOOL_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
+    // BTH
+    case (vn,DAE.T_CLOCK(varLst=_),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+      equation
+        finst_dims = List.flatten(inst_dims);
+      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_CLOCK_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
     case (vn,DAE.T_STRING(varLst = _),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
       equation

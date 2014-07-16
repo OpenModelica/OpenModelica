@@ -608,9 +608,8 @@ public function prefixEqualUnlessBasicType
   input Prefix.Prefix pre2;
   input SCode.Element cls;
 algorithm
-  _ := match (pre1, pre2, cls)
-    local
-
+  _ := matchcontinue (pre1, pre2, cls)
+    local      
     // adrpo: TODO! FIXME!, I think here we should have pre1 = Prefix.CLASSPRE(variability1) == pre2 = Prefix.CLASSPRE(variability2)
 
     // don't care about prefix for:
@@ -624,31 +623,45 @@ algorithm
     case (_, _, SCode.CLASS(restriction = SCode.R_PREDEFINED_REAL())) then ();
     case (_, _, SCode.CLASS(restriction = SCode.R_PREDEFINED_STRING())) then ();
     case (_, _, SCode.CLASS(restriction = SCode.R_PREDEFINED_BOOLEAN())) then ();
+    // BTH
+    case (_, _, SCode.CLASS(restriction = SCode.R_PREDEFINED_CLOCK())) then ();
     // don't care about prefix for:
     // - Real, String, Integer, Boolean
     case (_, _, SCode.CLASS(name = "Real")) then ();
     case (_, _, SCode.CLASS(name = "Integer")) then ();
     case (_, _, SCode.CLASS(name = "String")) then ();
     case (_, _, SCode.CLASS(name = "Boolean")) then ();
+    // BTH
+    case (_, _, SCode.CLASS(name = "Clock"))
+      equation
+        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);   
+      then ();
 
     // anything else, check for equality!
     else
       equation
         equality(pre1 = pre2);
       then ();
-  end match;
+  end matchcontinue;
 end prefixEqualUnlessBasicType;
 
 public function isBuiltInClass "
 Author: BZ, this function identifies built in classes."
   input String className;
   output Boolean b;
+protected
+  Boolean b;
 algorithm
   b := match(className)
     case("Real") then true;
     case("Integer") then true;
     case("String") then true;
     case("Boolean") then true;
+    // BTH
+    case("Clock") equation
+      b = Util.if_(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true, false);
+    then b;
+    
     else false;
   end match;
 end isBuiltInClass;
@@ -851,6 +864,14 @@ algorithm
         true = listMember(r, {SCode.R_TYPE(), SCode.R_CONNECTOR(false), SCode.R_CONNECTOR(true)});
         true = listMember(id, {"Real", "Integer", "Boolean", "String"});
       then ();
+        
+    //BTH same as above but extended with Clock type if Flags.SYNCHRONOUS_FEATURES == true
+    case (_, _, _, r, {SCode.EXTENDS(baseClassPath=Absyn.IDENT(id))})
+      equation
+        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
+        true = listMember(r, {SCode.R_TYPE(), SCode.R_CONNECTOR(false), SCode.R_CONNECTOR(true)});
+        true = listMember(id, {"Real", "Integer", "Boolean", "String", "Clock"});
+      then ();
 
     // we haven't found the class, do nothing
     case (_, _, _, _, {SCode.EXTENDS(baseClassPath=p)})
@@ -882,10 +903,20 @@ public function checkDerivedRestriction
   output Boolean b;
 protected
   Boolean b1, b2, b3, b4;
+  list<String> strLst;
+  list<SCode.Restriction> rstLst;
 algorithm
-  b1 := listMember(childName, {"Real", "Integer", "String", "Boolean"});
-
-  b2 := listMember(childRestriction, {SCode.R_TYPE(), SCode.R_PREDEFINED_INTEGER(), SCode.R_PREDEFINED_REAL(), SCode.R_PREDEFINED_STRING(), SCode.R_PREDEFINED_BOOLEAN()});
+  // BTH add Clock type to both lists if Flags.SYNCHRONOUS_FEATURES == true
+  strLst := Util.if_(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES),
+      {"Real", "Integer", "String", "Boolean", "Clock"},
+      {"Real", "Integer", "String", "Boolean"});
+  b1 := listMember(childName, strLst);
+  
+  rstLst := Util.if_(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES),
+      {SCode.R_TYPE(), SCode.R_PREDEFINED_INTEGER(), SCode.R_PREDEFINED_REAL(), SCode.R_PREDEFINED_STRING(), SCode.R_PREDEFINED_BOOLEAN(), SCode.R_PREDEFINED_CLOCK()},
+      {SCode.R_TYPE(), SCode.R_PREDEFINED_INTEGER(), SCode.R_PREDEFINED_REAL(), SCode.R_PREDEFINED_STRING(), SCode.R_PREDEFINED_BOOLEAN()});
+  b2 := listMember(childRestriction, rstLst);
+                   
   b3 := valueEq(parentRestriction, SCode.R_TYPE());
 
   //b2 := listMember(childRestriction, {SCode.R_TYPE(), SCode.R_ENUMERATION(), SCode.R_PREDEFINED_INTEGER(), SCode.R_PREDEFINED_REAL(), SCode.R_PREDEFINED_STRING(), SCode.R_PREDEFINED_BOOLEAN(), SCode.R_PREDEFINED_ENUMERATION()});
@@ -3749,6 +3780,11 @@ algorithm
     case (cache, _, _, _, cl as SCode.CLASS(name = "Integer"), _, _) then (cache,{},cl,DAE.NOMOD());
     case (cache, _, _, _, cl as SCode.CLASS(name = "String"), _, _) then (cache,{},cl,DAE.NOMOD());
     case (cache, _, _, _, cl as SCode.CLASS(name = "Boolean"), _, _) then (cache,{},cl,DAE.NOMOD());
+    // BTH
+    case (cache, _, _, _, cl as SCode.CLASS(name = "Clock"), _, _) 
+      equation
+        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
+      then (cache,{},cl,DAE.NOMOD());
 
     case (cache, _, _, _, cl as SCode.CLASS(restriction = SCode.R_RECORD(_),
                                         classDef = SCode.PARTS(elementLst = _)), _, _) then (cache,{},cl,DAE.NOMOD());
@@ -6134,6 +6170,14 @@ algorithm
       then
         DAE.T_BOOL(v, ts);
 
+    // BTH
+    case (p,ClassInf.TYPE_CLOCK(path = _),v,_,_,_)
+      equation
+        somep = getOptPath(p);
+        ts = Types.mkTypeSource(somep);
+      then
+        DAE.T_CLOCK(v, ts);
+
     case (p,ClassInf.TYPE_ENUM(path = _),_,_,_,_)
       equation
         somep = getOptPath(p);
@@ -6210,6 +6254,8 @@ algorithm
     case (DAE.T_REAL(varLst = _)) then ClassInf.TYPE_REAL(Absyn.IDENT(""));
     case (DAE.T_STRING(varLst = _)) then ClassInf.TYPE_STRING(Absyn.IDENT(""));
     case (DAE.T_BOOL(varLst = _)) then ClassInf.TYPE_BOOL(Absyn.IDENT(""));
+    // BTH FIXME Dont understand for what this function is good to. Just adding clock anyway
+    case (DAE.T_CLOCK(varLst = _)) then ClassInf.TYPE_CLOCK(Absyn.IDENT(""));
     case (DAE.T_ARRAY(ty = t))
       equation
         cs = arrayTTypeToClassInfState(t);
@@ -6276,6 +6322,14 @@ algorithm
         ts = Types.mkTypeSource(somep);
       then
         DAE.T_BOOL(v, ts);
+
+    // BTH
+    case (p,ClassInf.TYPE_CLOCK(path = _),v,_,_)
+      equation
+        somep = getOptPath(p);
+        ts = Types.mkTypeSource(somep);
+      then
+        DAE.T_CLOCK(v, ts);
 
     case (p,ClassInf.TYPE_ENUM(path = _),_,_,_)
       equation
@@ -8265,18 +8319,27 @@ public function redeclareBasicType
   input DAE.Mod mod;
   output Boolean isRedeclareOfBasicType;
 algorithm
-  isRedeclareOfBasicType := matchcontinue(mod)
+  isRedeclareOfBasicType := matchcontinue mod
     local
       String name;
       Absyn.Path path;
     // you cannot redeclare a basic type, only the properties and the binding, i.e.
     // redeclare constant Boolean standardOrderComponents = true
-    case (DAE.REDECL(_, _, {(SCode.COMPONENT(typeSpec = Absyn.TPATH(path = path)),_)}))
-      equation
-        name = Absyn.pathFirstIdent(path);
-        true = listMember(name, {"Real", "Integer", "Boolean", "String"});
-      then
-        true;
+    case (DAE.REDECL(_, _, {(SCode.COMPONENT(typeSpec=Absyn.TPATH(path=path)), _)})) equation
+      true = Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES);
+      
+      name = Absyn.pathFirstIdent(path);
+      // BTH
+      true = listMember(name, {"Real", "Integer", "Boolean", "String", "Clock"});
+    then true;
+    
+    case (DAE.REDECL(_, _, {(SCode.COMPONENT(typeSpec=Absyn.TPATH(path=path)), _)})) equation
+      false = Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES);
+      
+      name = Absyn.pathFirstIdent(path);
+      // BTH
+      true = listMember(name, {"Real", "Integer", "Boolean", "String"});
+    then true;
 
     else false;
   end matchcontinue;
