@@ -7,6 +7,8 @@ import CodegenUtil.*;
 
 
 
+
+
 template translateModel(SimCode simCode) ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -1164,7 +1166,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
   <%externalFunctionIncludes(includes)%>
 
-   Functions::Functions()
+   Functions::Functions(double& simTime)
+   :_simTime(simTime)
    {
      <%literals |> literal hasindex i0 fromindex 0 => literalExpConstImpl(literal,i0) ; separator="\n";empty%>
    }
@@ -1181,6 +1184,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   >>
 
 end simulationFunctionsFile;
+
+
 
 
 template externalFunctionIncludes(list<String> includes)
@@ -1220,7 +1225,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   class Functions
      {
       public:
-        Functions();
+        Functions(double& simTime);
        ~Functions();
        //Modelica functions
        <%functionHeaderBodies2(functions,simCode)%>
@@ -1233,6 +1238,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
        //Function return variables
        <%functionHeaderBodies3(functions,simCode)%>
+       double& _simTime;
 
      };
   >>
@@ -1434,7 +1440,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      <%arrayReindex(modelInfo)%>
     //Initialize array elements
     <%initializeArrayElements(simCode)%>
-
+    _functions = boost::shared_ptr<Functions>(new Functions(_simTime));
     /*Initialize the equations array. Point to each equation function*/
     initialize_equations_array();
 
@@ -2163,7 +2169,7 @@ match exp case exp as SHARED_LITERAL(__) then
  match context case FUNCTION_CONTEXT(__) then
  ' _OMC_LIT<%exp.index%>'
  else
-'_functions._OMC_LIT<%exp.index%>'
+'_functions->_OMC_LIT<%exp.index%>'
 end daeExpSharedLiteral;
 
 
@@ -3812,7 +3818,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
      <%MemberVariable(modelInfo)%>
      <%conditionvariable(zeroCrossings,simCode)%>
-     Functions _functions;
+     boost::shared_ptr<Functions> _functions;
 
 
      boost::shared_ptr<IAlgLoopSolverFactory>
@@ -3912,7 +3918,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     void evaluate(T* __A);
 
   private:
-    Functions _functions;
     //states
     double* __z;
     //state derivatives
@@ -4959,7 +4964,7 @@ template arraycref(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
-  case CREF_IDENT(ident = "time") then "time"
+  case CREF_IDENT(ident = "time") then "_simTime"
   case WILD(__) then ''
   else "_"+crefToCStr1(cr)
 end arraycref;
@@ -5040,6 +5045,7 @@ template crefStr(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(ident = "xloc") then '__xd<%subscriptsStr(subscriptLst)%>'
+  case CREF_IDENT(ident = "time") then "_simTime"
   case CREF_IDENT(__) then '<%ident%><%subscriptsStr(subscriptLst)%>'
   // Are these even needed? Function context should only have CREF_IDENT :)
   case CREF_QUAL(ident = "$DER") then 'der(<%crefStr(componentRef)%>)'
@@ -6176,6 +6182,7 @@ end contextArrayCref;
 template arrayCrefStr(ComponentRef cr)
 ::=
   match cr
+  case CREF_IDENT(ident = "time") then "_simTime"
   case CREF_IDENT(__) then '<%ident%>'
   case CREF_QUAL(__) then '<%ident%>.<%arrayCrefStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
@@ -8326,7 +8333,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     '<%tvar%>'
   case CALL(path=IDENT(name="$_start"), expLst={arg}) then
     daeExpCallStart(arg, context, preExp, varDecls,simCode)
-
+  
+  
   case CALL(path=IDENT(name="cat"), expLst=dim::a0::arrays, attr=attr as CALL_ATTR(__)) then
     let dim_exp = daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let& dimstr = buffer ""
@@ -8479,7 +8487,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let arraytpye =  'multi_array_ref<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
     let &preExp += match context
                         case FUNCTION_CONTEXT(__) then 'assign_array(<%retVar%>,<%funName%>(<%argStr%>));<%\n%>'
-                        else 'assign_array(<%retVar%> ,_functions.<%funName%>(<%argStr%>));<%\n%>'
+                        else 'assign_array(<%retVar%> ,_functions-><%funName%>(<%argStr%>));<%\n%>'
 
 
     '<%retVar%>'
@@ -8502,7 +8510,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retType = '<%funName%>RetType /* undefined */'
     let retVar = tempDecl(retType, &varDecls)
     let &preExp += match context case FUNCTION_CONTEXT(__) then'<%if retVar then '<%retVar%> = '%><%funName%>(<%argStr%>);<%\n%>'
-    else '<%if retVar then '<%retVar%> = '%>(_functions.<%funName%>(<%argStr%>));<%\n%>'
+    else '<%if retVar then '<%retVar%> = '%>(_functions-><%funName%>(<%argStr%>));<%\n%>'
      '<%retVar%>'
 
 end daeExpCall;
@@ -8813,7 +8821,7 @@ case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
   let record_type_name = underscorePath(ClassInf.getStateName(record_state))
   let ret_type = '<%record_type_name%>RetType'
   let ret_var = tempDecl(ret_type, &varDecls)
-  let &preExp += '<%ret_var%> = _functions.<%record_type_name%>(<%vars%>);<%\n%>'
+  let &preExp += '<%ret_var%> = _functions-><%record_type_name%>(<%vars%>);<%\n%>'
   '<%ret_var%>'
 end daeExpRecordCrefRhs;
 
