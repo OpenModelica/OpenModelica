@@ -8333,8 +8333,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     '<%tvar%>'
   case CALL(path=IDENT(name="$_start"), expLst={arg}) then
     daeExpCallStart(arg, context, preExp, varDecls,simCode)
-  
-  
+
+
   case CALL(path=IDENT(name="cat"), expLst=dim::a0::arrays, attr=attr as CALL_ATTR(__)) then
     let dim_exp = daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let& dimstr = buffer ""
