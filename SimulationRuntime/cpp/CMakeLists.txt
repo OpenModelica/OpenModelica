@@ -9,7 +9,7 @@
 #
 # Additionally it is possible to link all libraries statically (experimental), therefor -DANALYZATION_MODE=ON musst be passed to cmake
 #
-# The used defines are stored in the ADDITIONAL_DEFINES variable, which is passed to the ModelicaConfig.inc
+# The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
 
 
@@ -126,6 +126,8 @@ find_package(Boost COMPONENTS log log_setup)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
 find_package(Boost COMPONENTS thread)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
+find_package(Boost COMPONENTS atomic)
+SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
 find_package(Threads)
 
 find_package(Boost COMPONENTS filesystem system serialization program_options REQUIRED)
@@ -138,12 +140,12 @@ ELSE(Boost_LOG_LIBRARY AND Boost_LOG_SETUP_LIBRARY)
 	message(STATUS "Boost log disabled")
 ENDIF(Boost_LOG_LIBRARY AND Boost_LOG_SETUP_LIBRARY)
 
-IF(Boost_THREAD_LIBRARY)
+IF(Boost_THREAD_LIBRARY AND Boost_ATOMIC_LIBRARY)
 	add_definitions(-DUSE_BOOST_THREAD)
 	message(STATUS "Using boost thread")
-ELSE(Boost_THREAD_LIBRARY)
+ELSE(Boost_THREAD_LIBRARY AND Boost_ATOMIC_LIBRARY)
 	message(STATUS "Boost thread disabled")
-ENDIF(Boost_THREAD_LIBRARY)
+ENDIF(Boost_THREAD_LIBRARY AND Boost_ATOMIC_LIBRARY)
 
 SET(Boost_LIBRARIES ${Boost_LIBRARIES_TMP})
 message(STATUS "Boost Libraries")
@@ -180,8 +182,6 @@ endif()
 
 message(STATUS "Lapack Libraries")
 message(STATUS ${LAPACK_LIBRARIES})
-
-
 
 
 # Sundials solvers
@@ -233,8 +233,8 @@ if(USE_MICO)
 endif()
 
 #Write the defines into the ADDITIONAL_DEFINES variable
-GET_DIRECTORY_PROPERTY(ADDITIONAL_DEFINES DEFINITIONS)
-message(STATUS "Generated compile definitions: ${ADDITIONAL_DEFINES}")
+# GET_DIRECTORY_PROPERTY(ADDITIONAL_DEFINES DEFINITIONS)
+# message(STATUS "Generated compile definitions: ${ADDITIONAL_DEFINES}")
 
 link_directories ( ${Boost_LIBRARY_DIRS} )
 
@@ -365,8 +365,6 @@ configure_file (
   "${PROJECT_BINARY_DIR}/LibrariesConfig.h"
   )
 
-
-
 if(INSTALL_OMDEV_LIBS)
   #if(USE_SUNDIALS)
   #  install (FILES "${SUNDIALS_NVECSERIAL_LIB}"  "${SUNDIALS_IDAS_LIB}" "${SUNDIALS_IDA_LIB}" "${SUNDIALS_CVODES_LIB}" DESTINATION bin)
@@ -435,4 +433,3 @@ install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc
         Include/FMU/FMUWrapper.cpp
         Include/FMU/FMUWrapper.h)
    INSTALL_HEADERS_WITH_DIRECTORY(HS)
-
