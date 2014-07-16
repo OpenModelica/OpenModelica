@@ -2091,6 +2091,29 @@ algorithm
   end match;
 end crefSetLastSubs;
 
+public function crefSetType "
+sets the type of a cref."
+  input DAE.ComponentRef inRef;
+  input DAE.Type newType;
+  output DAE.ComponentRef outRef;
+algorithm
+  outRef := match (inRef,newType)
+    local
+      DAE.Type ty;
+      DAE.ComponentRef child;
+      list<DAE.Subscript> subs;
+      DAE.Ident id;
+
+    case(DAE.CREF_IDENT(id,_,subs),_)
+      then
+        makeCrefIdent(id,newType,subs);
+
+    case(DAE.CREF_QUAL(id,ty,subs,child),_)
+      then
+        makeCrefQual(id,newType,subs,child);
+  end match;
+end crefSetType;
+
 public function crefSetLastType "
 sets the 'last' type of a cref."
   input DAE.ComponentRef inRef;
@@ -2719,6 +2742,7 @@ algorithm
     local
       DAE.Ident id;
       DAE.Type ty,correctTy;
+      DAE.TypeSource source;
       list<DAE.Dimension> dims;
       list<DAE.Subscript> subs;
       DAE.ComponentRef cref;
@@ -2767,14 +2791,16 @@ algorithm
 
 
     // A qualified cref with array type.
-    case (DAE.CREF_QUAL(id, ty as DAE.T_ARRAY(ty = _), subs, cref),_)
+    case (DAE.CREF_QUAL(id, ty as DAE.T_ARRAY(ty = _ ,dims=dims, source=source), subs, cref),_)
       equation
         // Expand the rest of the cref.
         crefs = expandCref_impl(cref,expandRecord);
         // Create a simple identifier for the head of the cref and expand it.
+        ty = DAE.T_ARRAY(DAE.T_NONE_DEFAULT,dims,source);
         cref = DAE.CREF_IDENT(id, ty, subs);
         crefs2 = expandCref_impl(cref,expandRecord);
         crefs2 = listReverse(crefs2);
+        crefs2 = List.map1(crefs2,crefSetType,ty);
         // Create all combinations of the two lists.
         crefs = expandCrefQual(crefs2, crefs, {});
       then
