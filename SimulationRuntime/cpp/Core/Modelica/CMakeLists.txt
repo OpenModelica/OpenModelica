@@ -40,8 +40,6 @@ set (BOOST_INCLUDE ${Boost_INCLUDE_DIRS})
 set (BOOST_LIBS ${Boost_LIBRARY_DIRS})
 set (MODELICA_SYSTEM_LIB_EXT ${libModelicaSystemNameExt})
 
-
-
 #Fix to enable debugging for gcc
 #Problem: The ModelicaConfig.inc file contains something like "optimized;<lib>;debug;<lib>" if the debug or relwithdebinfo -flag is set. The gcc is not able to handle this after the linker-flag (-L).
 #Quick Fix: Pick the debug libraries out of the list if the debug or relwithdebinfo -flag is set.
@@ -123,8 +121,6 @@ configure_file (
  "ModelicaLibraryConfig.inc.in"
  "${PROJECT_BINARY_DIR}/ModelicaLibraryConfig.inc"
  )
- 
-
  
 install (FILES
 				${PROJECT_BINARY_DIR}/ModelicaConfig.inc

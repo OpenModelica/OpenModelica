@@ -82,6 +82,8 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
           (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode,contextAlgloopJacobian) ;separator="")
          ;separator="")
   let algs = algloopfiles(listAppend(allEquations,initialEquations),simCode,contextAlgloop)
+  let()= textFile(algloopMainfile(listAppend(allEquations,initialEquations),simCode,contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
+  let()= textFile(calcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
  ""
    // Return empty result since result written to files directly
 end translateModel;
@@ -521,14 +523,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   PLATFORM="<%platformstr%>"
   SRC=OMCpp<%modelName%>.cpp
   SRC+= OMCpp<%modelName%>FMU.cpp
-  SRC+= OMCpp<%fileNamePrefix%>Initialize.cpp
-  SRC+= OMCpp<%fileNamePrefix%>FactoryExport.cpp
-  SRC+= OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp
-  SRC+= OMCpp<%fileNamePrefix%>Extension.cpp
-  SRC+= OMCpp<%fileNamePrefix%>WriteOutput.cpp
-  SRC+= OMCpp<%fileNamePrefix%>Jacobian.cpp
-  SRC+= <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
-  SRC+=  OMCpp<%fileNamePrefix%>StateSelection.cpp
+  SRC+= OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
+  SRC+= OMCpp<%fileNamePrefix%>AlgLoopMain.cpp 
   LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory $(BASE_LIB)
   LIBS+= $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_SERIALIZATION_LIB)
   LIBS+= $(LINUX_LIB_DL)

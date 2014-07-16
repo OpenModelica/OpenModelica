@@ -32,7 +32,9 @@ template translateModel(SimCode simCode) ::=
   let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
           (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode,contextAlgloopJacobian) ;separator="")
          ;separator="")
-  let algs = algloopfiles(listAppend(allEquations,initialEquations),simCode,contextAlgloop)
+  let alg = algloopfiles(listAppend(allEquations,initialEquations),simCode,contextAlgloop)
+  let()= textFile(algloopMainfile(listAppend(allEquations,initialEquations),simCode,contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
+  let()= textFile(calcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
  ""
   // empty result of the top-level template .., only side effects
 end translateModel;
@@ -356,9 +358,9 @@ template simulationFactoryFile(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
-   #include "Modelica.h"
+   /* #include "Modelica.h"
    #include "ModelicaDefine.h"
-   #include "OMCpp<%fileNamePrefix%>Extension.h"
+   #include "OMCpp<%fileNamePrefix%>Extension.h" */
 
 
 
@@ -378,9 +380,9 @@ template simulationInitCppFile(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-   #include "Modelica.h"
+   /* #include "Modelica.h"
    #include "ModelicaDefine.h"
-   #include "OMCpp<%fileNamePrefix%>Initialize.h"
+   #include "OMCpp<%fileNamePrefix%>Initialize.h" */
    <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
    {
@@ -405,9 +407,9 @@ template simulationJacobianCppFile(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-   #include "Modelica.h"
+   /* #include "Modelica.h"
    #include "ModelicaDefine.h"
-   #include "OMCpp<%fileNamePrefix%>Jacobian.h"
+   #include "OMCpp<%fileNamePrefix%>Jacobian.h" */
    <%lastIdentOfPath(modelInfo.name)%>Jacobian::<%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
    {
@@ -431,9 +433,9 @@ template simulationStateSelectionCppFile(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-   #include "Modelica.h"
+   /* #include "Modelica.h"
    #include "ModelicaDefine.h"
-   #include "OMCpp<%fileNamePrefix%>StateSelection.h"
+   #include "OMCpp<%fileNamePrefix%>StateSelection.h" */
    <%lastIdentOfPath(modelInfo.name)%>StateSelection::<%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
    {
@@ -460,9 +462,9 @@ template simulationWriteOutputCppFile(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-   #include "Modelica.h"
+   /* #include "Modelica.h"
    #include "ModelicaDefine.h"
-   #include "OMCpp<%fileNamePrefix%>WriteOutput.h"
+   #include "OMCpp<%fileNamePrefix%>WriteOutput.h" */
 
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
@@ -505,9 +507,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
   <<
-   #include "Modelica.h"
+   /* #include "Modelica.h"
    #include "ModelicaDefine.h"
-   #include "OMCpp<%fileNamePrefix%>Extension.h"
+   #include "OMCpp<%fileNamePrefix%>Extension.h" */
    <%lastIdentOfPath(modelInfo.name)%>Extension::<%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
    , <%lastIdentOfPath(modelInfo.name)%>WriteOutput(globalSettings,nonlinsolverfactory,simData)
@@ -1113,6 +1115,31 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
 end simulationMainFile;
 
 
+template calcHelperMainfile(SimCode simCode)
+::=
+  match simCode
+    case SIMCODE(modelInfo = MODELINFO(__)) then
+    <<
+    /* This file is produced to speed-up the compile time */
+    #include "Modelica.h"
+    #include "ModelicaDefine.h"
+    
+    #include "OMCpp<%fileNamePrefix%>Extension.h"
+    #include "OMCpp<%fileNamePrefix%>Extension.cpp"
+    #include "OMCpp<%fileNamePrefix%>FactoryExport.cpp"
+    #include "OMCpp<%fileNamePrefix%>Functions.h"
+    #include "OMCpp<%fileNamePrefix%>Functions.cpp"
+    #include "OMCpp<%fileNamePrefix%>Initialize.h"
+    #include "OMCpp<%fileNamePrefix%>Initialize.cpp"
+    #include "OMCpp<%fileNamePrefix%>Jacobian.h"
+    #include "OMCpp<%fileNamePrefix%>Jacobian.cpp"
+    #include "OMCpp<%fileNamePrefix%>StateSelection.h"
+    #include "OMCpp<%fileNamePrefix%>StateSelection.cpp"
+    #include "OMCpp<%fileNamePrefix%>WriteOutput.h"
+    #include "OMCpp<%fileNamePrefix%>WriteOutput.cpp"
+    >>
+end calcHelperMainfile;
+
 template algloopHeaderFile(SimCode simCode,SimEqSystem eq, Context context)
  "Generates code for header file for simulation target."
 ::=
@@ -1131,9 +1158,9 @@ template simulationFunctionsFile(SimCode simCode, list<Function> functions, list
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
-  #include "Modelica.h"
+  /* #include "Modelica.h"
   #include "ModelicaDefine.h"
-  #include "OMCpp<%fileNamePrefix%>Functions.h"
+  #include "OMCpp<%fileNamePrefix%>Functions.h" */
 
   <%externalFunctionIncludes(includes)%>
 
@@ -1276,7 +1303,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   !ELSE
   CFLAGS=  $(SYSTEM_CFLAGS) /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" -I. <%makefileParams.includes%>  -I"$(BOOST_INCLUDE)" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  /Fp<%makefileParams.omhome%>/include/omc/cpp/$(PCH_FILE)  /Yu$(H_FILE)
   !ENDIF
-  CPPFLAGS = $(ADDITIONAL_DEFINES)
+  CPPFLAGS = 
   # /ZI enable Edit and Continue debug info
   CDFLAGS = /ZI
 
@@ -1304,10 +1331,13 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
   MAINOBJ=OMCpp<%fileNamePrefix%>Main$(EXEEXT)
   SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
-  GENERATEDFILES=$(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%>
+  
+  CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
+  ALGLOOPMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp 
+  GENERATEDFILES=$(MAINFILE) $(FUNCTIONFILE) $(ALGLOOPMAINFILE)
 
   $(MODELICA_SYSTEM_LIB)$(DLLEXT):
-  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(FUNCTIONFILE)  <%(jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 => (mat |> (eqs,_,_) =>  algloopcppfilenames(eqs,simCode) ;separator="") ;separator="")%>  <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(INITFILE) $(FACTORYFILE)  $(EXTENSIONFILE) $(WRITEOUTPUTFILE) $(JACOBIANFILE) $(STATESELECTIONFILE) $(CFLAGS)     $(LDSYTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
+  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(CALCHELPERMAINFILE) $(ALGLOOPMAINFILE) $(CFLAGS) $(LDSYTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
    <%\t%>$(CXX) $(CPPFLAGS) /Fe$(MAINOBJ)  $(MAINFILE)   $(CFLAGS) $(LDMAINFLAGS)
   >>
 end match
@@ -1330,28 +1360,21 @@ CXX=<%makefileParams.cxxcompiler%>
 LINK=<%makefileParams.linker%>
 EXEEXT=<%makefileParams.exeext%>
 DLLEXT=<%makefileParams.dllext%>
-CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%> $(ADDITIONAL_DEFINES)
+CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
 CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>  <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
 LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" $(BASE_LIB)  -lOMCppOMCFactory -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath  -L"$(BOOST_LIBS)"  $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_LOG_LIB) $(BOOST_THREAD_LIB) $(LINUX_LIB_DL)
 LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"   -L"<%makefileParams.omhome%>/bin"  -lOMCppOMCFactory -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL)
-CPPFLAGS = $(CFLAGS) -DOMC_BUILD -DBOOST_SYSTEM_NO_DEPRICATED
+CPPFLAGS = $(CFLAGS) #-DOMC_BUILD -DBOOST_SYSTEM_NO_DEPRICATED
 SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
-FUNCTIONFILE=OMCpp<%fileNamePrefix%>Functions.cpp
-INITFILE=OMCpp<%fileNamePrefix%>Initialize.cpp
-EXTENSIONFILE=OMCpp<%fileNamePrefix%>Extension.cpp
-WRITEOUTPUTFILE=OMCpp<%fileNamePrefix%>WriteOutput.cpp
-JACOBIANFILE=OMCpp<%fileNamePrefix%>Jacobian.cpp
-STATESELECTIONFILE=OMCpp<%fileNamePrefix%>StateSelection.cpp
-FACTORYFILE=OMCpp<%fileNamePrefix%>FactoryExport.cpp
 MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
 MAINOBJ=OMCpp<%fileNamePrefix%>Main$(EXEEXT)
 SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
-ALGLOOPSOBJ=<%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
-JACALGLOOPSOBJ = <%(jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 => (mat |> (eqs,_,_) =>  algloopcppfilenames(eqs,simCode) ;separator="") ;separator="")%>
+
+CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
+ALGLOOPSMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
 
 
-
-CPPFILES=$(SYSTEMFILE) $(FUNCTIONFILE) $(INITFILE) $(WRITEOUTPUTFILE) $(EXTENSIONFILE) $(FACTORYFILE) $(JACOBIANFILE) $(STATESELECTIONFILE)  <%(jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 => (mat |> (eqs,_,_) =>  algloopcppfilenames(eqs,simCode) ;separator="") ;separator="")%> <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
+CPPFILES=$(SYSTEMFILE) $(CALCHELPERMAINFILE) $(ALGLOOPSMAINFILE)
 OFILES=$(CPPFILES:.cpp=.o)
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
@@ -1479,11 +1502,11 @@ match eq
     case SES_LINEAR(__)
     case SES_NONLINEAR(__) then
   <<
-   #include "Modelica.h"
+   /* #include "Modelica.h"
    #include "ModelicaDefine.h"
    #include "OMCpp<%fileNamePrefix%>Extension.h"
    #include "OMCpp<%filename%>Algloop<%index%>.h"
-   #include "OMCpp<%modelfilename%>.h"
+   #include "OMCpp<%modelfilename%>.h" */
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then '#include "Math/ArrayOperations.h"'%>
 
 
@@ -7022,8 +7045,6 @@ template algloopfiles(list<SimEqSystem> allEquations, SimCode simCode,Context co
 end algloopfiles;
 
 
-
-
 template algloopfiles2(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
@@ -7051,6 +7072,55 @@ template algloopfiles2(SimEqSystem eq, Context context, Text &varDecls, SimCode 
   else
     " "
  end algloopfiles2;
+
+template algloopMainfile(list<SimEqSystem> allEquations, SimCode simCode,Context context)
+::=
+  match(simCode)
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+    let modelname =  lastIdentOfPath(modelInfo.name)
+    let filename = fileNamePrefix
+    let modelfilename =  match context case  ALGLOOP_CONTEXT(genInitialisation=false,genJacobian=true)  then '<%filename%>Jacobian' else '<%filename%>'
+
+    let jacfiles = (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 => (mat |> (eqs,_,_) =>  algloopMainfile1(eqs,simCode,filename) ;separator="") ;separator="")
+    let algloopfiles = (listAppend(allEquations,initialEquations) |> eqs => algloopMainfile2(eqs, simCode, filename) ;separator="\n")
+
+    <<
+    /* This file is produced to speed-up the compile time */
+    
+    #include "Modelica.h"
+    #include "ModelicaDefine.h"
+    #include "OMCpp<%fileNamePrefix%>Extension.h"
+    #include "OMCpp<%modelfilename%>.h"
+   
+    //jac files
+    <%jacfiles%>
+    //alg loop files
+    <%algloopfiles%>
+    >>
+end algloopMainfile;
+
+template algloopMainfile1(list<SimEqSystem> allEquations, SimCode simCode, String filename)
+::=
+  let algloopfiles = (allEquations |> eqs => algloopMainfile2(eqs, simCode, filename); separator="\n")
+  <<
+  <%algloopfiles%>
+  >>
+end algloopMainfile1;
+
+template algloopMainfile2(SimEqSystem eq, SimCode simCode, String filename)
+::=
+  match eq
+  case SES_LINEAR(__)
+  case e as SES_NONLINEAR(__) then
+    let num = index
+    <<
+    #include "OMCpp<%filename%>Algloop<%index%>.h"
+    #include "OMCpp<%filename%>Algloop<%index%>.cpp"
+    >>
+  else 
+    <<
+    >> 
+end algloopMainfile2;
 
 template algloopfilesindex(SimEqSystem eq)
 "Generates an index for algloopfile.
