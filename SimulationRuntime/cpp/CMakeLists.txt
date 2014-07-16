@@ -214,14 +214,14 @@ INSTALL(FILES ${SUNDIALS_LIBS} DESTINATION bin)
 endif()
 
 #Handle umfpack
-FIND_PACKAGE(SuiteSparse HINTS "${CMAKE_SOURCE_DIR}/Solver/UmfPack/")
-IF(SuiteSparse_found)
-	message(STATUS "Using UmfPack")
-	include_directories(${SUITESPARSE_INCLUDE_DIRS})
-	add_definitions(-DUSE_UMFPACK)
-ELSE()
-	message(STATUS "UmfPack disabled")
-ENDIF()
+#FIND_PACKAGE(SuiteSparse HINTS "${CMAKE_SOURCE_DIR}/Solver/UmfPack/")
+#IF(SuiteSparse_found)
+#	message(STATUS "Using UmfPack")
+#	include_directories(${SUITESPARSE_INCLUDE_DIRS})
+#	add_definitions(-DUSE_UMFPACK)
+#ELSE()
+#	message(STATUS "UmfPack disabled")
+#ENDIF()
 
 #Mico corba
 if(USE_MICO)
