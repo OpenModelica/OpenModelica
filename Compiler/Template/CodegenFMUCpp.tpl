@@ -524,7 +524,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   SRC=OMCpp<%modelName%>.cpp
   SRC+= OMCpp<%modelName%>FMU.cpp
   SRC+= OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
-  SRC+= OMCpp<%fileNamePrefix%>AlgLoopMain.cpp 
+  SRC+= OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
   LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory $(BASE_LIB)
   LIBS+= $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_SERIALIZATION_LIB)
   LIBS+= $(LINUX_LIB_DL)

@@ -1123,7 +1123,7 @@ template calcHelperMainfile(SimCode simCode)
     /* This file is produced to speed-up the compile time */
     #include "Modelica.h"
     #include "ModelicaDefine.h"
-    
+
     #include "OMCpp<%fileNamePrefix%>Extension.h"
     #include "OMCpp<%fileNamePrefix%>Extension.cpp"
     #include "OMCpp<%fileNamePrefix%>FactoryExport.cpp"
@@ -1303,7 +1303,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   !ELSE
   CFLAGS=  $(SYSTEM_CFLAGS) /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" -I. <%makefileParams.includes%>  -I"$(BOOST_INCLUDE)" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  /Fp<%makefileParams.omhome%>/include/omc/cpp/$(PCH_FILE)  /Yu$(H_FILE)
   !ENDIF
-  CPPFLAGS = 
+  CPPFLAGS =
   # /ZI enable Edit and Continue debug info
   CDFLAGS = /ZI
 
@@ -1331,9 +1331,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
   MAINOBJ=OMCpp<%fileNamePrefix%>Main$(EXEEXT)
   SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
-  
+
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
-  ALGLOOPMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp 
+  ALGLOOPMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
   GENERATEDFILES=$(MAINFILE) $(FUNCTIONFILE) $(ALGLOOPMAINFILE)
 
   $(MODELICA_SYSTEM_LIB)$(DLLEXT):
@@ -7086,12 +7086,12 @@ template algloopMainfile(list<SimEqSystem> allEquations, SimCode simCode,Context
 
     <<
     /* This file is produced to speed-up the compile time */
-    
+
     #include "Modelica.h"
     #include "ModelicaDefine.h"
     #include "OMCpp<%fileNamePrefix%>Extension.h"
     #include "OMCpp<%modelfilename%>.h"
-   
+
     //jac files
     <%jacfiles%>
     //alg loop files
@@ -7117,9 +7117,9 @@ template algloopMainfile2(SimEqSystem eq, SimCode simCode, String filename)
     #include "OMCpp<%filename%>Algloop<%index%>.h"
     #include "OMCpp<%filename%>Algloop<%index%>.cpp"
     >>
-  else 
+  else
     <<
-    >> 
+    >>
 end algloopMainfile2;
 
 template algloopfilesindex(SimEqSystem eq)
