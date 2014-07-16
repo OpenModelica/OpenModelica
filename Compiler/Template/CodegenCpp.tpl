@@ -1364,7 +1364,7 @@ CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
 CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>  <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
 LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" $(BASE_LIB)  -lOMCppOMCFactory -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath  -L"$(BOOST_LIBS)"  $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_LOG_LIB) $(BOOST_THREAD_LIB) $(LINUX_LIB_DL)
 LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"   -L"<%makefileParams.omhome%>/bin"  -lOMCppOMCFactory -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL)
-CPPFLAGS = $(CFLAGS) #-DOMC_BUILD -DBOOST_SYSTEM_NO_DEPRICATED
+CPPFLAGS = $(CFLAGS)
 SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
 MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
 MAINOBJ=OMCpp<%fileNamePrefix%>Main$(EXEEXT)
