@@ -329,14 +329,13 @@ void Cvode::CVodeCore()
      _cv_rt = 2;
      }*/
 
-    //MW: This code is just reached, if an output-step was performed, because state selection is just evaluated in evaluateAll / evaluateCondition
-//    bool state_selection = stateSelection();
-//    bool restart = false;
-//    if (state_selection)
-//    {
-//      restart = true;
-//      _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
-//    }
+    bool state_selection = stateSelection();
+    //bool restart = false;
+    if (state_selection)
+    {
+      //restart = true;
+      //_continuous_system->evaluateODE(IContinuous::CONTINUOUS);
+    }
     _zeroFound = false;
 
     // Check, ob Schritt erfolgreich
@@ -371,9 +370,9 @@ void Cvode::CVodeCore()
         throw std::runtime_error("Number of events exceeded  in time interval " + boost::lexical_cast<string>(_abs) + " at time " + boost::lexical_cast<string>(_tCurrent));
       }
 
-      //MW: CVode has interpolated the states at time 'tCurrent'.
-      //    Now the system-values are not up to date, but nobody needs them.
-      //_time_system->setTime(_tCurrent);
+      //MW: CVode has interpolated the states at time 'tCurrent'
+
+      _time_system->setTime(_tCurrent);
       //_continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
       //_continuous_system->evaluateODE(IContinuous::CONTINUOUS);
 
@@ -389,25 +388,28 @@ void Cvode::CVodeCore()
         _events[i] = bool(_zeroSign[i]);
 
       //Event Iteration starten
-      _mixed_system->handleSystemEvents(_events);
+      if(_mixed_system->handleSystemEvents(_events))
+      {
+        // State variables were reinitialized, thus we have to give these values to the cvode-solver
+        // Take care about the memory regions, _z is the same like _CV_y
+        _continuous_system->getContinuousStates(_z);
+      }
       //_event_system->getZeroFunc(_zeroVal);
       //EVENT Iteration beendet
     }
 
     // Zustand aus dem System holen
     //_continuous_system->getContinuousStates(_z);
-    if (_zeroFound)// || restart)
+    if (_zeroFound || state_selection)//restart)
     {
       //restart = false; //true if state selection was performed
       //Zustände nach der Ereignisbehandlung aufnehmen
       if (writeEventOutput)
       {
         //MW: If we want to write the event-results, we should evaluate the whole system
-        _time_system->setTime(_tCurrent);
         _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
         writeToFile(0, _tCurrent, _h);
       }
-
       _idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
       if (_idid < 0)
         throw std::runtime_error("CVode::ReInit()");
