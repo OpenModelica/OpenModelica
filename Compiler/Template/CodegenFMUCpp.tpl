@@ -493,9 +493,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   MAINFILEFMU=OMCpp<%lastIdentOfPath(modelInfo.name)%>FMU.cpp
   STATESELECTIONFILE=OMCpp<%fileNamePrefix%>StateSelection.cpp
   MAINOBJ=$(MODELICA_SYSTEM_LIB)
-  
+
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
-  ALGLOOPMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp 
+  ALGLOOPMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
   GENERATEDFILES=$(MAINFILEFMU) $(MAINFILE) $(FUNCTIONFILE) $(ALGLOOPMAINFILE)
 
   $(MODELICA_SYSTEM_LIB)$(DLLEXT):
