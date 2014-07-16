@@ -1,52 +1,41 @@
-	list(APPEND AMDIS_INCLUDE_DIRS ${AMDIS_UMFPACK_PATH})
-	find_library(UMFPACK_LIB umfpack
+set(SuiteSparse_found true)
+find_file(UMFPACK_H umfpack.h)
+if(UMFPACK_H)
+	get_filename_component(SUITESPARSE_INCLUDE_DIRS "${UMFPACK_H}" PATH)
+endif()
+find_library(UMFPACK_LIB umfpack
 		HINTS ENV LIBRARY_PATH
 		DOC "The UMFPACK library")
 	if(UMFPACK_LIB)
-		list(APPEND AMDIS_LIBRARIES ${UMFPACK_LIB})
-		SET(UMFPACK_FOUND 1)
+		list(APPEND SUITESPARSE_LIBRARIES ${UMFPACK_LIB})
 	else()
-		message(FATAL_ERROR "Could not find the UMFPACK library")
+		message("Could not find the UMFPACK library")
+		set(SuiteSparse_found false)
 	endif()
-	if("$ENV{BLA_VENDOR}" STREQUAL "ACML")
-	  find_library(ACML_LIBRARY acml HINTS ENV ACML_LIB)
-	  if(ACML_LIBRARY)
-	    list(APPEND AMDIS_LIBRARIES ${ACML_LIBRARY}) #fortran ffio m rt) #needed for open64
-	  else()
-	    message(FATAL_ERROR "could not find the acml libraries, required by acml blas")
-	  endif(ACML_LIBRARY)
-	else()
-	  find_library(BLAS_LIBRARY NAMES "blas" "goto" "mkl"
-		HINTS ENV MKL_LIB
-		DOC "The BLAS library")
-	  if(BLAS_LIBRARY)
-		list(APPEND AMDIS_LIBRARIES ${BLAS_LIBRARY})
-		list(APPEND AMDIS_LIBRARY_DIRS ${BLAS_LIBRARY_DIR})
-	  else()
-		find_package(BLAS)
-		if(BLAS_FOUND)
-			list(APPEND AMDIS_LIBRARIES ${BLAS_LIBRARIES})
-		else()
-			message(STATUS "Could not find the BLAS library. Please set the variable BLAS_LIBRARY to the blas library with full path")
-		endif()
-	  endif()
-	endif("$ENV{BLA_VENDOR}" STREQUAL "ACML")
+    find_package(BLAS)
+    if(BLAS_FOUND)
+        list(APPEND SUITESPARSE_LIBRARIES ${BLAS_LIBRARIES})
+    else()
+        message(STATUS "Could not find the BLAS library. Please set the variable BLAS_LIBRARY to the blas library with full path")
+    endif()
+
 
 	find_library(AMD_LIB amd
 		HINTS ENV LIBRARY_PATH
 		DOC "The AMD library")
 	if(AMD_LIB)
-		list(APPEND AMDIS_LIBRARIES ${AMD_LIB})
+		list(APPEND SUITESPARSE_LIBRARIES ${AMD_LIB})
 	else()
-		message(FATAL_ERROR "Could not find the AMD library.")
+		message("Could not find the AMD library.")
+		set(SuiteSparse_found false)
 	endif()
 	#check for if we need cholmod
 	set(_CHOLMOD_TEST_DIR ${CMAKE_BINARY_DIR}/CMakeFiles/cholmodTest/)
 	file(WRITE ${_CHOLMOD_TEST_DIR}/CMakeLists.txt "project(cholmodTest)
 			cmake_minimum_required(VERSION 2.8)
-			include_directories(${AMDIS_INCLUDE_DIRS})
+			include_directories(${SUITESPARSE_INCLUDE_DIRS})
 			add_executable(cholmodTest cholmodTest.cpp)
-			target_link_libraries(cholmodTest ${AMDIS_LIBRARIES})")
+			target_link_libraries(cholmodTest ${SUITESPARSE_LIBRARIES})")
 	file(WRITE ${_CHOLMOD_TEST_DIR}/cholmodTest.cpp "#include <stdio.h>
 
 #include \"umfpack.h\"
@@ -102,14 +91,16 @@ return (0) ;
 	  find_library(COLAMD_LIB colamd)
 
 	  if(CHOLMOD_LIB)
-	    list(APPEND AMDIS_LIBRARIES ${CHOLMOD_LIB})
+	    list(APPEND SUITESPARSE_LIBRARIES ${CHOLMOD_LIB})
 	  else()
-	    message(FATAL_ERROR "your umfpack seems to need cholmod, but cmake could not find it")
+	    message("your umfpack seems to need cholmod, but cmake could not find it")
+	    set(SuiteSparse_found false)
 	  endif()
 	  if(COLAMD_LIB)
-	    list(APPEND AMDIS_LIBRARIES ${COLAMD_LIB})
+	    list(APPEND SUITESPARSE_LIBRARIES ${COLAMD_LIB})
 	  else()
-	    message(FATAL_ERROR "your umfpack seems to need colamd, but cmake could not find it")
+	    message("your umfpack seems to need colamd, but cmake could not find it")
+	    set(SuiteSparse_found false)
 	  endif()
 
 	  #test with cholmod and colamd..
@@ -124,11 +115,11 @@ return (0) ;
 	    file(APPEND ${CMAKE_BINARY_DIR}/CMakeFiles/CMakeError.log "cholmodTest2-output: \n ${CHOLMOD_OUT}")
 	    find_library(SUITESPARSECONFIG_LIB suitesparseconfig)
 	    if(SUITESPARSECONFIG_LIB)
-	      list(APPEND AMDIS_LIBRARIES ${SUITESPARSECONFIG_LIB})
+	      list(APPEND SUITESPARSE_LIBRARIES ${SUITESPARSECONFIG_LIB})
 	    else()
 	      message(STATUS "your umfpack seems to need suitesparseconfig, but cmake could not find it")
+	      set(SuiteSparse_found false)
 	    endif()
 	  endif()
-
 	endif()
 

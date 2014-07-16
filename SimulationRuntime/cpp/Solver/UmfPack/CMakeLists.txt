@@ -11,7 +11,7 @@ IF(ANALYZATION_MODE)
 	target_link_libraries( ${UmfPackName} ${MathName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
 ELSE(ANALYZATION_MODE)
 	add_library(${UmfPackName} SHARED UmfPack.cpp UmfPackSettings.cpp FactoryExport)
-	target_link_libraries( ${UmfPackName} ${UmfPack_LIBRARY} ${MathName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
+	target_link_libraries( ${UmfPackName}  ${MathName}  ${SUITESPARSE_LIBRARIES} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} $ENV{UMFPACK_RT})
 ENDIF(ANALYZATION_MODE)
 
 install (TARGETS ${UmfPackName} DESTINATION lib/omc/${LIBINSTALLEXT})

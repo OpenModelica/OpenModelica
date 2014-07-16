@@ -1,7 +1,6 @@
 #include "UmfPack.h"
 
-
-UmfPack::UmfPack(IAlgLoop* algLoop, ILinSolverSettings* settings) : _iterationStatus(CONTINUE), _umfpackSettings(settings), _algLoop(algLoop), _jac(NULL), _rhs(NULL), _x(NULL)
+UmfPack::UmfPack(IAlgLoop* algLoop, ILinSolverSettings* settings) : _iterationStatus(CONTINUE), _umfpackSettings(settings), _algLoop(algLoop), _jac(NULL), _rhs(NULL), _firstuse(true)
 {
 }
 
@@ -14,6 +13,7 @@ UmfPack::~UmfPack() {
 void UmfPack::initialize()
 {
 #ifdef USE_UMFPACK
+  _firstuse=false;
   _algLoop->setUseSparseFormat(_umfpackSettings->getUseSparseFormat());
   _algLoop->initialize();
   _jac = new sparse_matrix;
@@ -25,6 +25,7 @@ void UmfPack::initialize()
 void UmfPack::solve()
 {
 #ifdef USE_UMFPACK
+  if(_firstuse) initialize();
   _algLoop->evaluate();
   _algLoop->getRHS(_rhs);
   _algLoop->getSystemMatrix(_jac);

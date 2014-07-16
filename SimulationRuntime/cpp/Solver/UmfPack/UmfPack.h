@@ -30,4 +30,5 @@ private:
     sparse_matrix * _jac;
     double * _rhs;
     double * _x;
+    bool _firstuse;
 };

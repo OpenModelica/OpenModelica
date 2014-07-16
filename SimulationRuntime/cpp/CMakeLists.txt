@@ -120,7 +120,7 @@ SET(Boost_USE_MULTITHREADED ON)
 SET(Boost_USE_STATIC_RUNTIME OFF)
 
 
-# The optional boost libraries must be searched separately, otherwise no library is found if just one is missing. 
+# The optional boost libraries must be searched separately, otherwise no library is found if just one is missing.
 # Additionaly the Boost_LIBRARIES variable is overwritten each time find_package(Boost ...) is called, thus it must be rescued
 find_package(Boost COMPONENTS log log_setup)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
@@ -138,6 +138,7 @@ IF(Boost_LOG_LIBRARY AND Boost_LOG_SETUP_LIBRARY)
 	message(STATUS "Using boost log")
 ELSE(Boost_LOG_LIBRARY AND Boost_LOG_SETUP_LIBRARY)
 	message(STATUS "Boost log disabled")
+	unset(Boost_LOG_LIBRARY)
 ENDIF(Boost_LOG_LIBRARY AND Boost_LOG_SETUP_LIBRARY)
 
 IF(Boost_THREAD_LIBRARY AND Boost_ATOMIC_LIBRARY)
@@ -213,14 +214,14 @@ INSTALL(FILES ${SUNDIALS_LIBS} DESTINATION bin)
 endif()
 
 #Handle umfpack
-#SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/Solver/UmfPack/")
-#FIND_PACKAGE(SuiteSparse)
-#IF(umfpack_found EQUAL -1)
-#	message(STATUS "UmfPack disabled")
-#ELSE(umfpack_found EQUAL -1)
-#	message(STATUS "Using UmfPack")
-#	#add_definitions(-DUSE_UMFPACK)
-#ENDIF(umfpack_found EQUAL -1)
+FIND_PACKAGE(SuiteSparse HINTS "${CMAKE_SOURCE_DIR}/Solver/UmfPack/")
+IF(SuiteSparse_found)
+	message(STATUS "Using UmfPack")
+	include_directories(${SUITESPARSE_INCLUDE_DIRS})
+	add_definitions(-DUSE_UMFPACK)
+ELSE()
+	message(STATUS "UmfPack disabled")
+ENDIF()
 
 #Mico corba
 if(USE_MICO)
