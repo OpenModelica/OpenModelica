@@ -432,9 +432,9 @@ algorithm
     case (SCode.R_PREDEFINED_STRING(),p) then TYPE_STRING(p);
     case (SCode.R_PREDEFINED_BOOLEAN(),p) then TYPE_BOOL(p);
     // BTH
-    case (SCode.R_PREDEFINED_CLOCK(),p) 
+    case (SCode.R_PREDEFINED_CLOCK(),p)
       equation
-        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);   
+        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
       then TYPE_CLOCK(p);
     case (SCode.R_PREDEFINED_ENUMERATION(),p) then TYPE_ENUM(p);
      /* Meta Modelica extensions */

@@ -741,7 +741,7 @@ algorithm
 
     case BOOLEANCLOCK(condition=condition, startInterval=startInterval)
     then "Clock(" +& boolString(condition) +& ", " +& realString(startInterval) +& ")";
-      
+
     case SOLVERCLOCK(c=c, solverMethod=solverMethod)
     then "Clock(" +& clockKindString(c) +& ", " +& solverMethod +& ")";
   end match;

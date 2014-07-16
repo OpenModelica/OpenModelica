@@ -1150,8 +1150,8 @@ algorithm
     case "fill" then cevalBuiltinFill;
     case "Modelica.Utilities.Strings.substring" then cevalBuiltinSubstring;
     case "print" then cevalBuiltinPrint;
-    // BTH 
-    case "Clock" 
+    // BTH
+    case "Clock"
       equation
         true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
       then cevalBuiltinClock;

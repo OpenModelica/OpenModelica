@@ -598,7 +598,7 @@ algorithm
     // BTH
     case (cache,_,Absyn.CLOCK(value = ck),_,st,_,_,_,_)
       equation
-        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true); 
+        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
       then
         (cache,DAE.CLKCONST(ck),DAE.PROP(DAE.T_CLOCK_DEFAULT,DAE.C_CONST()),st);
 
@@ -4619,7 +4619,7 @@ algorithm
 
         call = Expression.makePureBuiltinCall("Clock", {}, ty);
       then (cache, call, DAE.PROP(DAE.T_CLOCK_DEFAULT, DAE.C_CONST()));
-      
+
     // clock with Integer interval "Clock(intervalCounter)"
     case (cache,env,{aintervalCounter},{},impl,pre,_)
       equation
@@ -6889,35 +6889,35 @@ algorithm
     case "getInstanceName" then elabBuiltinGetInstanceName;
     case "classDirectory" then elabBuiltinClassDirectory;
     case "sample" then elabBuiltinSample;
-    case "Clock" 
+    case "Clock"
       equation
         true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
       then elabBuiltinClock;
-    case "previous" 
+    case "previous"
       equation
         true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
       then elabBuiltinPrevious;
-    case "hold" 
+    case "hold"
       equation
         true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
       then elabBuiltinHold;
-    case "subSample" 
+    case "subSample"
       equation
         true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
       then elabBuiltinSubSample;
-    case "superSample" 
+    case "superSample"
       equation
         true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
       then elabBuiltinSuperSample;
-    case "shiftSample" 
+    case "shiftSample"
       equation
         true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
       then elabBuiltinShiftSample;
-    case "backSample" 
+    case "backSample"
       equation
         true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
       then elabBuiltinBackSample;
-    case "noClock" 
+    case "noClock"
       equation
         true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
       then elabBuiltinNoClock;

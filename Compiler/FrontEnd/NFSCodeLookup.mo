@@ -1277,7 +1277,7 @@ algorithm
     case "String" then BUILTIN_STRING;
     case "StateSelect" then BUILTIN_STATESELECT;
     case "ExternalObject" then BUILTIN_EXTERNALOBJECT;
-    case "Clock" 
+    case "Clock"
       equation
         true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
       then BUILTIN_CLOCK;

@@ -1297,9 +1297,9 @@ algorithm
     case "String" then DAE.T_STRING_DEFAULT;
     case "Boolean" then DAE.T_BOOL_DEFAULT;
     // BTH
-    case "Clock" 
+    case "Clock"
       equation
-        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);  
+        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
       then DAE.T_CLOCK_DEFAULT;
   end match;
 end getBasicTypeType;
@@ -1314,7 +1314,7 @@ algorithm
     case "String" then getStringAttributeType;
     case "Boolean" then getBoolAttributeType;
     // BTH
-    case "Clock" 
+    case "Clock"
       equation
         true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
       then getClockAttributeType;
@@ -1883,7 +1883,7 @@ algorithm
         System.setPartialInstantiation(partialInst);
       then (cache,env,ih,ci_state,{});
 
-    // BTH 
+    // BTH
     case (cache,env,ih,_,_,ci_state,(SCode.CLASS(name = "Clock")),_,_,_,_)
       equation
         true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
