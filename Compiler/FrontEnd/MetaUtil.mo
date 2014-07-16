@@ -370,9 +370,9 @@ algorithm
     case(Absyn.IDENT("String")) then DAE.T_STRING_DEFAULT;
     case(Absyn.IDENT("Boolean")) then DAE.T_BOOL_DEFAULT;
     // BTH
-    case(Absyn.IDENT("Clock"))
+    case(Absyn.IDENT("Clock")) 
       equation
-        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);   
       then DAE.T_CLOCK_DEFAULT;
   end match;
 end reparseType;

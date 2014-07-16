@@ -1153,7 +1153,7 @@ algorithm
     // BTH
     case "Clock"
       equation
-        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then cevalBuiltinClock;
     // MetaModelica type conversions
     case "intString" equation true = Config.acceptMetaModelicaGrammar(); then cevalIntString;

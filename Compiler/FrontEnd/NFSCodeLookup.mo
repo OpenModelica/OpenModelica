@@ -1279,7 +1279,7 @@ algorithm
     case "ExternalObject" then BUILTIN_EXTERNALOBJECT;
     case "Clock"
       equation
-        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then BUILTIN_CLOCK;
     case "$RealType" then BUILTIN_REALTYPE_ITEM;
     case "$IntegerType" then BUILTIN_INTEGERTYPE_ITEM;

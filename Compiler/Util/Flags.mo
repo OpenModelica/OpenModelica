@@ -899,10 +899,6 @@ constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(58, "profiling",
     })),
   Util.gettext("Sets the profiling level to use. Profiled equations and functions record execution time and count for each time step taken by the integrator."));
 
-constant ConfigFlag SYNCHRONOUS_FEATURES = CONFIG_FLAG(59, "synchronousFeatures",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Activate support for the synchronous language elements of Modelica 3.3, Chapter 16."));
-
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
 // sorted by index (and thus have unique indices).
@@ -964,8 +960,7 @@ constant list<ConfigFlag> allConfigFlags = {
   GENERATE_SYMBOLIC_JACOBIAN,
   GENERATE_SYMBOLIC_LINEARIZATION,
   INT_ENUM_CONVERSION,
-  PROFILING_LEVEL,
-  SYNCHRONOUS_FEATURES
+  PROFILING_LEVEL
 };
 
 public function new

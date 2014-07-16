@@ -9602,9 +9602,9 @@ algorithm
     case (Absyn.IDENT(name = "Boolean"),_,_) then (Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOLEAN(),
           Absyn.dummyParts,Absyn.dummyInfo),Absyn.IDENT("Boolean"));
     // BTH
-    case (Absyn.IDENT(name = "Clock"),_,_)
+    case (Absyn.IDENT(name = "Clock"),_,_) 
       equation
-        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33); 
       then (Absyn.CLASS("Clock",false,false,false,Absyn.R_PREDEFINED_CLOCK(),
           Absyn.dummyParts,Absyn.dummyInfo),Absyn.IDENT("Clock"));
 

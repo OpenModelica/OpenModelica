@@ -609,7 +609,7 @@ public function prefixEqualUnlessBasicType
   input SCode.Element cls;
 algorithm
   _ := matchcontinue (pre1, pre2, cls)
-    local
+    local      
     // adrpo: TODO! FIXME!, I think here we should have pre1 = Prefix.CLASSPRE(variability1) == pre2 = Prefix.CLASSPRE(variability2)
 
     // don't care about prefix for:
@@ -634,7 +634,7 @@ algorithm
     // BTH
     case (_, _, SCode.CLASS(name = "Clock"))
       equation
-        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);   
       then ();
 
     // anything else, check for equality!
@@ -656,7 +656,7 @@ algorithm
     case("String") then true;
     case("Boolean") then true;
     // BTH
-    case("Clock") then Util.if_(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true, false);
+    case("Clock") then Util.if_(intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33), true, false);
     else false;
   end match;
 end isBuiltInClass;
@@ -859,11 +859,11 @@ algorithm
         true = listMember(r, {SCode.R_TYPE(), SCode.R_CONNECTOR(false), SCode.R_CONNECTOR(true)});
         true = listMember(id, {"Real", "Integer", "Boolean", "String"});
       then ();
-
+        
     //BTH same as above but extended with Clock type if Flags.SYNCHRONOUS_FEATURES == true
     case (_, _, _, r, {SCode.EXTENDS(baseClassPath=Absyn.IDENT(id))})
       equation
-        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
         true = listMember(r, {SCode.R_TYPE(), SCode.R_CONNECTOR(false), SCode.R_CONNECTOR(true)});
         true = listMember(id, {"Real", "Integer", "Boolean", "String", "Clock"});
       then ();
@@ -902,16 +902,16 @@ protected
   list<SCode.Restriction> rstLst;
 algorithm
   // BTH add Clock type to both lists if Flags.SYNCHRONOUS_FEATURES == true
-  strLst := Util.if_(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES),
+  strLst := Util.if_(intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33),
       {"Real", "Integer", "String", "Boolean", "Clock"},
       {"Real", "Integer", "String", "Boolean"});
   b1 := listMember(childName, strLst);
-
-  rstLst := Util.if_(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES),
+  
+  rstLst := Util.if_(intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33),
       {SCode.R_TYPE(), SCode.R_PREDEFINED_INTEGER(), SCode.R_PREDEFINED_REAL(), SCode.R_PREDEFINED_STRING(), SCode.R_PREDEFINED_BOOLEAN(), SCode.R_PREDEFINED_CLOCK()},
       {SCode.R_TYPE(), SCode.R_PREDEFINED_INTEGER(), SCode.R_PREDEFINED_REAL(), SCode.R_PREDEFINED_STRING(), SCode.R_PREDEFINED_BOOLEAN()});
   b2 := listMember(childRestriction, rstLst);
-
+                   
   b3 := valueEq(parentRestriction, SCode.R_TYPE());
 
   //b2 := listMember(childRestriction, {SCode.R_TYPE(), SCode.R_ENUMERATION(), SCode.R_PREDEFINED_INTEGER(), SCode.R_PREDEFINED_REAL(), SCode.R_PREDEFINED_STRING(), SCode.R_PREDEFINED_BOOLEAN(), SCode.R_PREDEFINED_ENUMERATION()});
@@ -3776,9 +3776,9 @@ algorithm
     case (cache, _, _, _, cl as SCode.CLASS(name = "String"), _, _) then (cache,{},cl,DAE.NOMOD());
     case (cache, _, _, _, cl as SCode.CLASS(name = "Boolean"), _, _) then (cache,{},cl,DAE.NOMOD());
     // BTH
-    case (cache, _, _, _, cl as SCode.CLASS(name = "Clock"), _, _)
+    case (cache, _, _, _, cl as SCode.CLASS(name = "Clock"), _, _) 
       equation
-        true = boolEq(Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES), true);
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then (cache,{},cl,DAE.NOMOD());
 
     case (cache, _, _, _, cl as SCode.CLASS(restriction = SCode.R_RECORD(_),
@@ -8321,16 +8321,16 @@ algorithm
     // you cannot redeclare a basic type, only the properties and the binding, i.e.
     // redeclare constant Boolean standardOrderComponents = true
     case (DAE.REDECL(_, _, {(SCode.COMPONENT(typeSpec=Absyn.TPATH(path=path)), _)})) equation
-      true = Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES);
-
+      true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+      
       name = Absyn.pathFirstIdent(path);
       // BTH
       true = listMember(name, {"Real", "Integer", "Boolean", "String", "Clock"});
     then true;
-
+    
     case (DAE.REDECL(_, _, {(SCode.COMPONENT(typeSpec=Absyn.TPATH(path=path)), _)})) equation
-      false = Flags.getConfigBool(Flags.SYNCHRONOUS_FEATURES);
-
+      false = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+      
       name = Absyn.pathFirstIdent(path);
       // BTH
       true = listMember(name, {"Real", "Integer", "Boolean", "String"});
