@@ -609,7 +609,7 @@ public function prefixEqualUnlessBasicType
   input SCode.Element cls;
 algorithm
   _ := matchcontinue (pre1, pre2, cls)
-    local      
+    local
     // adrpo: TODO! FIXME!, I think here we should have pre1 = Prefix.CLASSPRE(variability1) == pre2 = Prefix.CLASSPRE(variability2)
 
     // don't care about prefix for:
@@ -634,7 +634,7 @@ algorithm
     // BTH
     case (_, _, SCode.CLASS(name = "Clock"))
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);   
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then ();
 
     // anything else, check for equality!
@@ -859,7 +859,7 @@ algorithm
         true = listMember(r, {SCode.R_TYPE(), SCode.R_CONNECTOR(false), SCode.R_CONNECTOR(true)});
         true = listMember(id, {"Real", "Integer", "Boolean", "String"});
       then ();
-        
+
     //BTH same as above but extended with Clock type if Flags.SYNCHRONOUS_FEATURES == true
     case (_, _, _, r, {SCode.EXTENDS(baseClassPath=Absyn.IDENT(id))})
       equation
@@ -906,12 +906,12 @@ algorithm
       {"Real", "Integer", "String", "Boolean", "Clock"},
       {"Real", "Integer", "String", "Boolean"});
   b1 := listMember(childName, strLst);
-  
+
   rstLst := Util.if_(intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33),
       {SCode.R_TYPE(), SCode.R_PREDEFINED_INTEGER(), SCode.R_PREDEFINED_REAL(), SCode.R_PREDEFINED_STRING(), SCode.R_PREDEFINED_BOOLEAN(), SCode.R_PREDEFINED_CLOCK()},
       {SCode.R_TYPE(), SCode.R_PREDEFINED_INTEGER(), SCode.R_PREDEFINED_REAL(), SCode.R_PREDEFINED_STRING(), SCode.R_PREDEFINED_BOOLEAN()});
   b2 := listMember(childRestriction, rstLst);
-                   
+
   b3 := valueEq(parentRestriction, SCode.R_TYPE());
 
   //b2 := listMember(childRestriction, {SCode.R_TYPE(), SCode.R_ENUMERATION(), SCode.R_PREDEFINED_INTEGER(), SCode.R_PREDEFINED_REAL(), SCode.R_PREDEFINED_STRING(), SCode.R_PREDEFINED_BOOLEAN(), SCode.R_PREDEFINED_ENUMERATION()});
@@ -3776,7 +3776,7 @@ algorithm
     case (cache, _, _, _, cl as SCode.CLASS(name = "String"), _, _) then (cache,{},cl,DAE.NOMOD());
     case (cache, _, _, _, cl as SCode.CLASS(name = "Boolean"), _, _) then (cache,{},cl,DAE.NOMOD());
     // BTH
-    case (cache, _, _, _, cl as SCode.CLASS(name = "Clock"), _, _) 
+    case (cache, _, _, _, cl as SCode.CLASS(name = "Clock"), _, _)
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then (cache,{},cl,DAE.NOMOD());
@@ -8322,15 +8322,15 @@ algorithm
     // redeclare constant Boolean standardOrderComponents = true
     case (DAE.REDECL(_, _, {(SCode.COMPONENT(typeSpec=Absyn.TPATH(path=path)), _)})) equation
       true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
-      
+
       name = Absyn.pathFirstIdent(path);
       // BTH
       true = listMember(name, {"Real", "Integer", "Boolean", "String", "Clock"});
     then true;
-    
+
     case (DAE.REDECL(_, _, {(SCode.COMPONENT(typeSpec=Absyn.TPATH(path=path)), _)})) equation
       false = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
-      
+
       name = Absyn.pathFirstIdent(path);
       // BTH
       true = listMember(name, {"Real", "Integer", "Boolean", "String"});

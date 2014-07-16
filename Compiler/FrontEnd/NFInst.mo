@@ -557,9 +557,9 @@ algorithm
     case ("String", _) then DAE.T_STRING(inAttributes, DAE.emptyTypeSource);
     case ("Boolean", _) then DAE.T_BOOL(inAttributes, DAE.emptyTypeSource);
     // BTH
-    case ("Clock", _) 
+    case ("Clock", _)
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);   
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then DAE.T_CLOCK(inAttributes, DAE.emptyTypeSource);
     case ("StateSelect", _) then DAE.T_ENUMERATION_DEFAULT;
   end match;

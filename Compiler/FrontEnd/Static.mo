@@ -598,7 +598,7 @@ algorithm
     // BTH
     case (cache,_,Absyn.CLOCK(value = ck),_,st,_,_,_,_)
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33); 
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then
         (cache,DAE.CLKCONST(ck),DAE.PROP(DAE.T_CLOCK_DEFAULT,DAE.C_CONST()),st);
 
@@ -4619,7 +4619,7 @@ algorithm
 
         call = Expression.makePureBuiltinCall("Clock", {}, ty);
       then (cache, call, DAE.PROP(DAE.T_CLOCK_DEFAULT, DAE.C_CONST()));
-      
+
     // clock with Integer interval "Clock(intervalCounter)"
     case (cache,env,{aintervalCounter},{},impl,pre,_)
       equation
@@ -6889,35 +6889,35 @@ algorithm
     case "getInstanceName" then elabBuiltinGetInstanceName;
     case "classDirectory" then elabBuiltinClassDirectory;
     case "sample" then elabBuiltinSample;
-    case "Clock" 
+    case "Clock"
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then elabBuiltinClock;
-    case "previous" 
+    case "previous"
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then elabBuiltinPrevious;
-    case "hold" 
+    case "hold"
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then elabBuiltinHold;
-    case "subSample" 
+    case "subSample"
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then elabBuiltinSubSample;
-    case "superSample" 
+    case "superSample"
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then elabBuiltinSuperSample;
-    case "shiftSample" 
+    case "shiftSample"
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then elabBuiltinShiftSample;
-    case "backSample" 
+    case "backSample"
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then elabBuiltinBackSample;
-    case "noClock" 
+    case "noClock"
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then elabBuiltinNoClock;
