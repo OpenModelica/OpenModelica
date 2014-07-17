@@ -942,6 +942,11 @@ package DAE
       TypeSource source;
     end T_BOOL;
 
+    record T_CLOCK
+      list<Var> varLst;
+      TypeSource source;
+    end T_CLOCK;
+
     record T_ENUMERATION "If the list of names is empty, this is the super-enumeration that is the super-class of all enumerations"
       Option<Integer> index "the enumeration value index, SOME for element, NONE() for type" ;
       Absyn.Path path "enumeration path" ;

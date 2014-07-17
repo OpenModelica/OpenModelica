@@ -26,6 +26,14 @@ package Absyn
       Path path;
     end FULLYQUALIFIED;
   end Path;
+
+  uniontype ClockKind
+  end ClockKind;
+
+  function clockKindString
+    input ClockKind inClockKind;
+    output String outString;
+  end clockKindString;
 end Absyn;
 
 package ClassInf
@@ -200,6 +208,10 @@ package DAE
     record BCONST
       Boolean bool;
     end BCONST;
+
+    record CLKCONST
+      Absyn.ClockKind clk;
+    end CLKCONST;
 
     record ENUM_LITERAL
       Absyn.Path name;

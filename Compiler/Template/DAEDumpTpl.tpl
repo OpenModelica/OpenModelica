@@ -284,16 +284,19 @@ template dumpType(Type ty, Text &attributes)
   match ty
     case T_INTEGER(__) then
       let &attributes += dumpVarAttributes(varLst)
-      'Integer'
+      "Integer"
     case T_REAL(__) then
       let &attributes += dumpVarAttributes(varLst)
-      'Real'
+      "Real"
     case T_STRING(__) then
       let &attributes += dumpVarAttributes(varLst)
-      'String'
+      "String"
     case T_BOOL(__) then
       let &attributes += dumpVarAttributes(varLst)
-      'Boolean'
+      "Boolean"
+    case T_CLOCK(__) then
+      let &attributes += dumpVarAttributes(varLst)
+      "Clock"
     case T_ENUMERATION(__) then
       let lit_str = names ;separator=", "
       'enumeration(<%lit_str%>)'

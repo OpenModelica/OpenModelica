@@ -13,6 +13,7 @@ match exp
     let str = escapedString(string,false)
     '<%stringDelimiter%><%str%><%stringDelimiter%>'
   case BCONST(__) then bool
+  case CLKCONST(__) then clockKindString(clk)
   case ENUM_LITERAL(__) then
     (if typeinfo() then '/* <%index%> */') + AbsynDumpTpl.dumpPath(name)
   case CREF(__) then (if typeinfo() then '/*<%unparseType(ty)%>*/ ') + dumpCref(componentRef)
