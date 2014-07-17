@@ -2174,7 +2174,7 @@ algorithm
       then
         fail();
     case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_)
-      equation      
+      equation
         numThreads = arrayLength(threadTasks);
         // rename locks, get locks before residual equations
         lockSuffix = "_"+&intString(compIdx);
@@ -2189,17 +2189,17 @@ algorithm
         resEqsTask = HpcOmSimCode.CALCTASK(0,-1,-1.0,-1.0,1,resSimEqs);
 
         threadTasksLst = arrayList(threadTasks);
-        
+
         threadTasksLst = List.threadMap(threadTasksLst,List.map(relLocks,List.create),listAppend);
         firstThread::threadTasksLst = threadTasksLst;
-        
+
         firstThread = listAppend(firstThread,assLocks);
         firstThread = listAppend(firstThread,{resEqsTask});
-        
+
         threadTasksLst = firstThread::threadTasksLst;
         threadTasks = listArray(threadTasksLst);
         schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,lockIdc,{});
-        
+
       then
         HpcOmSimCode.SCHEDULED_TASK(compIdx,numThreads,schedule);
     else
