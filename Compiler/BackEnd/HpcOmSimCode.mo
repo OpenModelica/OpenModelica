@@ -86,6 +86,7 @@ encapsulated package HpcOmSimCode
     record THREADSCHEDULE
       array<list<Task>> threadTasks; //List of tasks assigned to the thread <%idx%>
       list<String> lockIdc;
+      list<Task> scheduledTasks;
     end THREADSCHEDULE;
     record TASKDEPSCHEDULE
       list<tuple<Task,list<Integer>>> tasks; //topological sorted tasks with <taskIdx, parentTaskIdc>

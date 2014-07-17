@@ -1997,10 +1997,8 @@ algorithm
       array<Integer> nodeMark;
     case (_,_,_,_) equation
       true = false;
-      true = Flags.isSet(Flags.LINEAR_TEARING);
       BackendDAE.DAE(eqs=eqSysts, shared=shared) = inDAE;
       (_,taskLst) = pts_traverseEqSystems(eqSysts,sccSimEqMapping,1,{});
-
       // calculate the node idcs for the dae-task-gaph
       daeNodes = List.map(taskLst,getScheduledTaskCompIdx);
       //HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = metaIn;
@@ -2139,7 +2137,7 @@ algorithm
 
       //Schedule
       schedule = HpcOmScheduler.createListSchedule(graphMerged,metaMerged,2,otherSimEqMapping);
-      //HpcOmScheduler.printSchedule(schedule);
+      HpcOmScheduler.printSchedule(schedule);
 
       //transform into scheduled task object
       task = pts_transformScheduleToTask(schedule,resSimEqSysIdcs,compIdxIn);
@@ -2176,7 +2174,7 @@ algorithm
       then
         fail();
     case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_)
-      equation
+      equation      
         numThreads = arrayLength(threadTasks);
         // rename locks, get locks before residual equations
         lockSuffix = "_"+&intString(compIdx);
@@ -2191,14 +2189,17 @@ algorithm
         resEqsTask = HpcOmSimCode.CALCTASK(0,-1,-1.0,-1.0,1,resSimEqs);
 
         threadTasksLst = arrayList(threadTasks);
+        
         threadTasksLst = List.threadMap(threadTasksLst,List.map(relLocks,List.create),listAppend);
         firstThread::threadTasksLst = threadTasksLst;
+        
         firstThread = listAppend(firstThread,assLocks);
         firstThread = listAppend(firstThread,{resEqsTask});
+        
         threadTasksLst = firstThread::threadTasksLst;
         threadTasks = listArray(threadTasksLst);
-
-        schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,lockIdc);
+        schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,lockIdc,{});
+        
       then
         HpcOmSimCode.SCHEDULED_TASK(compIdx,numThreads,schedule);
     else
@@ -2315,6 +2316,31 @@ author:Waurich TUD 2014-07"
 algorithm
   commCosts := List.map2(childNodes,Util.make3Tuple,1,70);
 end buildDummyCommCosts;
+
+public function createSingleBlockSchedule
+  input HpcOmTaskGraph.TaskGraph graphIn;
+  input HpcOmTaskGraph.TaskGraphMeta metaIn;
+  input list<HpcOmSimCode.Task> scheduledTasks;
+  input array<list<Integer>> sccSimEqMapping;
+  output HpcOmSimCode.Schedule schedule;
+protected
+  list<Integer> nodes, schedTaskComps;
+  list<list<Integer>> comps,simEqSys;
+  list<HpcOmSimCode.Task> thread1;
+  array<list<HpcOmSimCode.Task>> threadTasks;
+  array<list<Integer>> inComps;
+  list<String> lockIdc;
+algorithm
+  HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) := metaIn;
+  nodes := List.intRange(arrayLength(graphIn));
+  comps := List.map1(nodes,Util.arrayGetIndexFirst,inComps);
+  simEqSys := HpcOmScheduler.getSimEqSysIdcsForNodeLst(comps,sccSimEqMapping);
+  simEqSys := List.map1(simEqSys,List.sort,intGt);
+  thread1 := List.threadMap1(simEqSys,nodes,HpcOmScheduler.makeCalcTask,1);
+  threadTasks := arrayCreate(4,{});
+  threadTasks := arrayUpdate(threadTasks,1,thread1);
+  schedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,{},scheduledTasks);
+end createSingleBlockSchedule;
 
 //--------------------------------------------------//
 // dump torn system of equations as a directed acyclic graph (the matched system)

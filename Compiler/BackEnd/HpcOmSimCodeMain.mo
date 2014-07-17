@@ -43,6 +43,7 @@ public import DAE;
 public import HashTableExpToIndex;
 public import HpcOmSimCode;
 public import HpcOmTaskGraph;
+public import HpcOmEqSystems;
 public import SimCode;
 
 // protected imports
@@ -52,7 +53,6 @@ protected import Flags;
 protected import GlobalScript;
 protected import HpcOmMemory;
 protected import HpcOmScheduler;
-protected import HpcOmEqSystems;
 protected import Initialization;
 protected import List;
 protected import SimCodeUtil;
@@ -149,7 +149,7 @@ algorithm
       list<list<Integer>> criticalPaths, criticalPathsWoC;
       Real cpCosts, cpCostsWoC, serTime, parTime, speedUp, speedUpMax;
       list<HpcOmSimCode.Task> scheduledTasks;
-      list<Integer> odeNodes;
+      list<Integer> scheduledDAENodes;
 
       //Additional informations to append SimCode
       list<DAE.Exp> simCodeLiterals;
@@ -264,14 +264,14 @@ algorithm
 
       // Analyse Systems of Equations
       //-------------
-      (scheduledTasks,odeNodes) = HpcOmEqSystems.parallelizeTornSystems(taskGraphOde,taskGraphDataOde,sccSimEqMapping,inBackendDAE);
+      (scheduledTasks,scheduledDAENodes) = HpcOmEqSystems.parallelizeTornSystems(taskGraphOde,taskGraphDataOde,sccSimEqMapping,inBackendDAE);
       HpcOmScheduler.printTaskList(scheduledTasks);
 
       //Apply filters
       //-------------
       taskGraphDataSimplified = taskGraphDataOde;
       taskGraphSimplified = taskGraphOde;
-      (taskGraphSimplified,taskGraphDataSimplified) = applyFiltersToGraph(taskGraphOde,taskGraphDataOde,true,odeNodes); //TODO: Rename this to applyGRS or someting like that
+      (taskGraphSimplified,taskGraphDataSimplified) = applyFiltersToGraph(taskGraphOde,taskGraphDataOde,true,scheduledDAENodes); //TODO: Rename this to applyGRS or someting like that
       SimCodeUtil.execStat("hpcom GRS");
       //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraph,taskGraphSimplified);
       //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraphMeta,taskGraphDataSimplified);
@@ -549,6 +549,13 @@ algorithm
         print("Using Balanced Level Scheduling\n");
         (schedule,taskGraphMeta1) = HpcOmScheduler.createBalancedLevelScheduling(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
       then (schedule,iSimCode,iTaskGraph,taskGraphMeta1,iSccSimEqMapping);
+    case(_,_,_,_,_,_,_)
+      equation
+        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+        true = stringEq(flagValue, "sbs");
+        print("Using Single Block Schedule\n");
+        schedule = HpcOmEqSystems.createSingleBlockSchedule(iTaskGraph,iTaskGraphMeta,scheduledTasks,iSccSimEqMapping);
+      then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
     case(_,_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
