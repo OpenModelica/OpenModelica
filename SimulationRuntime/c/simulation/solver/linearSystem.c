@@ -62,6 +62,16 @@ int allocatelinearSystem(DATA *data)
     linsys[i].x = (double*) malloc(size*sizeof(double));
     linsys[i].b = (double*) malloc(size*sizeof(double));
 
+    /* check if analytical jacobian is created */
+    if (1 == linsys[i].method){
+      if(linsys[i].jacobianIndex != -1){
+        assertStreamPrint(data->threadData, 0 != linsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
+      }
+      if(linsys[i].initialAnalyticalJacobian(data))
+      {
+        linsys[i].jacobianIndex = -1;
+      }
+    }
     /* allocate solver data */
     /* the implementation of matrix A is solver-specific */
     switch(data->simulationInfo.lsMethod){
@@ -119,7 +129,7 @@ int freelinearSystem(DATA *data)
 /*! \fn solve non-linear systems
  *
  *  \param [in]  [data]
- *                [sysNumber] index of corresponding non-linear System
+ *               [sysNumber] index of corresponding non-linear System
  *
  *  \author wbraun
  */

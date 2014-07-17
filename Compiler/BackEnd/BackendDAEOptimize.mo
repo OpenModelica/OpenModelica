@@ -2621,18 +2621,18 @@ algorithm
   end matchcontinue;
 end generateImplicitInitialEquationsForParameters;
 
-public function convertInitialResidualsIntoInitialEquations "author: lochel
-  This function converts initial residuals into initial equations of the following form:
+public function convertResidualsIntoSolvedEquations "author: lochel
+  This function converts residuals into solved equations of the following form:
     e.g.: 0 = a+b -> $res1 = a+b"
   input list<BackendDAE.Equation> inResidualList;
   output list<BackendDAE.Equation> outEquationList;
   output list<BackendDAE.Var> outVariableList;
 algorithm
-  (outEquationList, outVariableList) := convertInitialResidualsIntoInitialEquations2(inResidualList, 1, {}, {});
-end convertInitialResidualsIntoInitialEquations;
+  (outEquationList, outVariableList) := convertResidualsIntoSolvedEquations2(inResidualList, 1, {}, {});
+end convertResidualsIntoSolvedEquations;
 
-protected function convertInitialResidualsIntoInitialEquations2 "author: lochel
-  This is a helper function of convertInitialResidualsIntoInitialEquations."
+protected function convertResidualsIntoSolvedEquations2 "author: lochel
+  This is a helper function of convertResidualsIntoSolvedEquations."
   input list<BackendDAE.Equation> inEquationList;
   input Integer inIndex;
   input list<BackendDAE.Equation> iEquationList;
@@ -2668,19 +2668,19 @@ algorithm
 
       currVariable = BackendDAE.VAR(componentRef, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
 
-      (equationList, variableList) = convertInitialResidualsIntoInitialEquations2(restEquationList, index+1,currEquation::iEquationList,currVariable::iVariableList);
+      (equationList, variableList) = convertResidualsIntoSolvedEquations2(restEquationList, index+1,currEquation::iEquationList,currVariable::iVariableList);
     then (equationList, variableList);
 
     case(currEquation::_, _,_,_) equation
-      errorMessage = "./Compiler/BackEnd/BackendDAEOptimize.mo: function convertInitialResidualsIntoInitialEquations2 failed: " +& BackendDump.equationString(currEquation);
+      errorMessage = "./Compiler/BackEnd/BackendDAEOptimize.mo: function convertResidualsIntoSolvedEquations2 failed: " +& BackendDump.equationString(currEquation);
       Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
     then fail();
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function convertInitialResidualsIntoInitialEquations2 failed"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function convertResidualsIntoSolvedEquations2 failed"});
     then fail();
   end matchcontinue;
-end convertInitialResidualsIntoInitialEquations2;
+end convertResidualsIntoSolvedEquations2;
 
 protected function redirectOutputToBiDir "author: lochel
   This is a helper function of generateInitialMatrices."
@@ -2737,7 +2737,7 @@ algorithm
       initialEqs_lst = BackendEquation.traverseBackendDAEEqns(BackendEquation.listEquation(initialEqs_lst), BackendDAEUtil.traverseEquationToScalarResidualForm, {});  // ugly
       //BackendDump.dumpBackendDAEEqnList(initialEqs_lst, "initial residuals 2", false);
 
-      (initialEquationList, initialVariableList) = convertInitialResidualsIntoInitialEquations(initialEqs_lst);
+      (initialEquationList, initialVariableList) = convertResidualsIntoSolvedEquations(initialEqs_lst);
       initialEqs = BackendEquation.listEquation(initialEquationList);
       initialVars = BackendVariable.listVar1(initialVariableList);
       //BackendDump.dumpBackendDAEEqnList(initialEquationList, "initial equations", false);
@@ -2817,7 +2817,7 @@ algorithm
       initialEqs_lst = BackendEquation.traverseBackendDAEEqns(BackendEquation.listEquation(initialEqs_lst), BackendDAEUtil.traverseEquationToScalarResidualForm, {});  // ugly
       //BackendDump.dumpBackendDAEEqnList(initialEqs_lst, "initial residuals 2", false);
 
-      (initialEquationList, initialVariableList) = convertInitialResidualsIntoInitialEquations(initialEqs_lst);
+      (initialEquationList, initialVariableList) = convertResidualsIntoSolvedEquations(initialEqs_lst);
       initialEqs = BackendEquation.listEquation(initialEquationList);
       initialVars = BackendVariable.listVar1(initialVariableList);
       //BackendDump.dumpBackendDAEEqnList(initialEquationList, "initial equations", false);
@@ -2888,7 +2888,7 @@ algorithm
       initialEqs_lst = BackendEquation.traverseBackendDAEEqns(BackendEquation.listEquation(initialEqs_lst), BackendDAEUtil.traverseEquationToScalarResidualForm, {});  // ugly
 
       //BackendDump.dumpBackendDAEEqnList(initialEqs_lst, "initial residuals", false);
-      (initialEquationList, initialVariableList) = convertInitialResidualsIntoInitialEquations(initialEqs_lst);
+      (initialEquationList, initialVariableList) = convertResidualsIntoSolvedEquations(initialEqs_lst);
       initialEqs = BackendEquation.listEquation(initialEquationList);
       initialVars = BackendVariable.listVar1(initialVariableList);
       //BackendDump.dumpBackendDAEEqnList(initialEquationList, "initial equations", false);
@@ -3367,7 +3367,8 @@ algorithm
                                                                    SOME({"inlineArrayEqn",
                                                                          "constantLinearSystem",
                                                                          "removeSimpleEquations",
-                                                                         "tearingSystem"}));
+                                                                         "tearingSystem",
+                                                                         "calculateStrongComponentJacobians"}));
           _ = Flags.set(Flags.EXEC_STAT, b);
           Debug.fcall(Flags.JAC_DUMP, BackendDump.bltdump, ("Symbolic Jacobian",backendDAE2));
         then backendDAE2;
@@ -3842,7 +3843,6 @@ algorithm
 
     case (dae)
       equation
-        true = Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN);
         dae = BackendDAEUtil.mapEqSystem(dae, calculateEqSystemJacobians);
       then dae;
     case (_) then dlow;
@@ -3931,6 +3931,7 @@ algorithm
 
       case (BackendDAE.TORNSYSTEM(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl, linear=b), _, _, _)
         equation
+          true = (Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) and not b) or b;
           // get iteration vars
           iterationvars = List.map1r(iterationvarsInts, BackendVariable.getVarAt, inVars);
           iterationvars = List.map(iterationvars, BackendVariable.transformXToXd);
@@ -3943,19 +3944,21 @@ algorithm
           // create  residual equations
           reqns = BackendEquation.traverseBackendDAEEqns(eqns, BackendDAEUtil.traverseEquationToScalarResidualForm, {});
           reqns = listReverse(reqns);
-          (reqns, resVarsLst) = convertInitialResidualsIntoInitialEquations(reqns);
+          (reqns, resVarsLst) = convertResidualsIntoSolvedEquations(reqns);
           resVars = BackendVariable.listVar1(resVarsLst);
           eqns = BackendEquation.listEquation(reqns);
 
           // get other eqns
           otherEqnsInts = List.map(otherEqnVarTpl, Util.tuple21);
           otherEqnsLst = BackendEquation.getEqns(otherEqnsInts, inEqns);
+          otherEqnsLst = BackendEquation.replaceDerOpInEquationList(otherEqnsLst);
           oeqns = BackendEquation.listEquation(otherEqnsLst);
 
           // get other vars
           otherVarsIntsLst = List.map(otherEqnVarTpl, Util.tuple22);
           otherVarsInts = List.unionList(otherVarsIntsLst);
           ovarsLst = List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
+          ovarsLst = List.map(ovarsLst, BackendVariable.transformXToXd);
           ovars = BackendVariable.listVar1(ovarsLst);
 
           //generate jacobian name
@@ -3972,6 +3975,7 @@ algorithm
 
       case (BackendDAE.EQUATIONSYSTEM(eqns=residualequations, vars=iterationvarsInts), _, _, _)
         equation
+          true = Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN);
           // get iteration vars
           iterationvars = List.map1r(iterationvarsInts, BackendVariable.getVarAt, inVars);
           iterationvars = List.map(iterationvars, BackendVariable.transformXToXd);
@@ -3985,7 +3989,7 @@ algorithm
           // create  residual equations
           reqns = BackendEquation.traverseBackendDAEEqns(eqns, BackendDAEUtil.traverseEquationToScalarResidualForm, {});
           reqns = listReverse(reqns);
-          (reqns, resVarsLst) = convertInitialResidualsIntoInitialEquations(reqns);
+          (reqns, resVarsLst) = convertResidualsIntoSolvedEquations(reqns);
           resVars = BackendVariable.listVar1(resVarsLst);
           eqns = BackendEquation.listEquation(reqns);
 

@@ -847,7 +847,7 @@ algorithm
       list<SimCode.SimEqSystem> ret_0;
 
     case ( txt,
-           SOME(({(i_eqns, _, _)}, _, _, _, _, _)),
+           SOME(({(i_eqns, _, _)}, _, _, _, _, _, _)),
            a_withOperations )
       equation
         ret_0 = SimCodeUtil.sortEqSystems(i_eqns);

@@ -32,7 +32,7 @@ template translateModel(SimCode simCode) ::=
   let()= textFile(simulationWriteOutputCppFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
   let()= textFile(simulationFactoryFile(simCode),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
   let()= textFile(simulationMainRunScript(simCode), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode)%>')
-  let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
+  let jac =  (jacobianMatrixes |> (mat, _, _, _, _, _, _) =>
           (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode,contextAlgloopJacobian) ;separator="")
          ;separator="")
   let alg = algloopfiles(listAppend(allEquations,initialEquations),simCode,contextAlgloop)
@@ -119,7 +119,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
 
 
-    <% (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
+    <% (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 =>
        (mat |> (eqs,_,_) =>  algloopfilesInclude(eqs,simCode) ;separator="\n")
      ;separator="")
     %>
@@ -132,7 +132,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   {
 
 
-    <% (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
+    <% (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 =>
        (mat |> (eqs,_,_) =>  generatefriendAlgloops(eqs,simCode) ;separator="\n")
      ;separator="")
     %>
@@ -142,7 +142,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
    protected:
     void initialize();
     <%
-    let jacobianfunctions = (jacobianMatrixes |> (_,_, name, _, _, _) hasindex index0 =>
+    let jacobianfunctions = (jacobianMatrixes |> (_,_, name, _, _, _, _) hasindex index0 =>
     <<
      void initialAnalytic<%name%>Jacobian();
      void calc<%name%>JacobianColumn();
@@ -158,7 +158,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
 
     <%
-    let jacobianvars = (jacobianMatrixes |> (_,_, name, _, _, _) hasindex index0 =>
+    let jacobianvars = (jacobianMatrixes |> (_,_, name, _, _, _, _) hasindex index0 =>
     <<
      SparseMatrix _<%name%>jacobian;
      ublas::vector<double> _<%name%>jac_y;
@@ -175,7 +175,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
 
 
-    <% (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
+    <% (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 =>
        (mat |> (eqs,_,_) =>  generateAlgloopsolverVariables(eqs,simCode) ;separator="\n")
      ;separator="")
     %>
@@ -565,7 +565,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        {
          <%(stateSets |> set hasindex i1 fromindex 0 => (match set
          case set as SES_STATESET(__) then
-         match jacobianMatrix case (_,_,name,_,_,_) then
+         match jacobianMatrix case (_,_,name,_,_,_,_) then
          <<
           case <%i1%>:
              get<%name%>Jacobian(matrix);
@@ -7158,7 +7158,7 @@ template algloopMainfile(list<SimEqSystem> allEquations, SimCode simCode,Context
     let filename = fileNamePrefix
     let modelfilename =  match context case  ALGLOOP_CONTEXT(genInitialisation=false,genJacobian=true)  then '<%filename%>Jacobian' else '<%filename%>'
 
-    let jacfiles = (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 => (mat |> (eqs,_,_) =>  algloopMainfile1(eqs,simCode,filename) ;separator="") ;separator="")
+    let jacfiles = (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 => (mat |> (eqs,_,_) =>  algloopMainfile1(eqs,simCode,filename) ;separator="") ;separator="")
     let algloopfiles = (listAppend(allEquations,initialEquations) |> eqs => algloopMainfile2(eqs, simCode, filename) ;separator="\n")
 
     <<
@@ -10633,15 +10633,15 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes, SimCod
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   let classname =  lastIdentOfPath(modelInfo.name)
-  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, _) hasindex index0 =>
-    initialAnalyticJacobians(index0, mat, vars, name, sparsepattern, colorList,simCode)
+  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, _, jacIndex) =>
+    initialAnalyticJacobians(jacIndex, mat, vars, name, sparsepattern, colorList,simCode)
     ;separator="\n\n";empty)
- let jacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, maxColor) hasindex index0  =>
-    generateMatrix(index0, mat, vars, name, sparsepattern, colorList, maxColor,simCode)
+ let jacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, maxColor, jacIndex) =>
+    generateMatrix(jacIndex, mat, vars, name, sparsepattern, colorList, maxColor,simCode)
     ;separator="\n\n";empty)
  let initialStateSetJac = (stateSets |> set hasindex i1 fromindex 0 => (match set
        case set as SES_STATESET(__) then
-              match jacobianMatrix case (_,_,name,_,_,_) then
+              match jacobianMatrix case (_,_,name,_,_,_,_) then
             'initialAnalytic<%name%>Jacobian();') ;separator="\n\n")
 
 
@@ -10652,11 +10652,11 @@ void <%classname%>Jacobian::initialize()
 {
 
     <%initialStateSetJac%>
-   <% (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
+   <% (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 =>
        (mat |> (eqs,_,_) =>  generateAlgloopsolvers(eqs,simCode) ;separator="")
      ;separator="")
     %>
-     <% (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
+     <% (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 =>
        (mat |> (eqs,_,_) =>  initAlgloopsolver(eqs,simCode) ;separator="")
      ;separator="")
     %>
@@ -10702,7 +10702,7 @@ template generateMatrix(Integer indexJacobian, list<JacobianColumn> jacobianColu
 
    match simCode
    case SIMCODE(modelInfo = MODELINFO(__)) then
-         generateJacobianMatrix(modelInfo,indexJacobian, jacobianColumn, seedVars, matrixname, sparsepattern, colorList, maxColor, simCode)
+         generateJacobianMatrix(modelInfo, indexJacobian, jacobianColumn, seedVars, matrixname, sparsepattern, colorList, maxColor, simCode)
    end match
 
 
@@ -10712,7 +10712,7 @@ end generateMatrix;
 
 
 
-template generateJacobianMatrix(ModelInfo modelInfo,Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixName, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>>colorList, Integer maxColor, SimCode simCode)
+template generateJacobianMatrix(ModelInfo modelInfo, Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixName, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>>colorList, Integer maxColor, SimCode simCode)
  "Generates Matrixes for Linear Model."
 ::=
 match simCode
@@ -10791,8 +10791,8 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes,SimC
  "Generates defines for jacobian vars."
 ::=
 
-  let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,(diffVars,diffedVars)), _, _) hasindex index0 =>
-    let varsDef = variableDefinitionsJacobians2(index0, jacColumn, seedVars, name,simCode)
+  let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,(diffVars,diffedVars)), _, _, jacIndex) =>
+    let varsDef = variableDefinitionsJacobians2(jacIndex, jacColumn, seedVars, name,simCode)
     let sparseDef = defineSparseIndexes(diffVars, diffedVars, name,simCode)
     <<
     <%varsDef%>
@@ -10811,7 +10811,7 @@ template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColum
  "Generates Matrixes for Linear Model."
 ::=
   let seedVarsResult = (seedVars |> var hasindex index0 =>
-    jacobianVarDefine(var, "jacobianVarsSeed", indexJacobian, index0,name,simCode)
+    jacobianVarDefine(var, "jacobianVarsSeed", indexJacobian, index0, name,simCode)
     ;separator="\n";empty)
   let columnVarsResult = (jacobianColumn |> (_,vars,_) =>
       (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0,name,simCode)

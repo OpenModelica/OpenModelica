@@ -33,7 +33,7 @@ template translateModel(SimCode simCode) ::=
   let()= textFile(simulationWriteOutputCppFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
   let()= textFile(simulationFactoryFile(simCode),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
   let()= textFile(simulationMainRunScript(simCode), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode)%>')
-  let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
+  let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _,_) =>
           (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode,contextAlgloopJacobian) ;separator="")
          ;separator="")
   let algs = algloopfiles(listAppend(allEquations,initialEquations),simCode,contextAlgloop)

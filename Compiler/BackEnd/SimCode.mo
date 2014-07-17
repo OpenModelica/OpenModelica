@@ -67,7 +67,8 @@ type JacobianMatrix = tuple<list<JacobianColumn>,                         // col
                             String,                                       // matrix name
                             tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimVar>,list<SimVar>>>,    // sparse pattern
                             list<list<DAE.ComponentRef>>,                 // colored cols
-                            Integer>;                                     // max color used
+                            Integer,                                      // max color used
+                            Integer>;                                     // jacobian index
 
 
 public constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
@@ -217,6 +218,7 @@ uniontype VarInfo "Number of variables of various types in a Modelica model."
     Integer numNonLinearSystems;
     Integer numMixedSystems;
     Integer numStateSets;
+    Integer numJacobians;
     Integer numOptimizeConstraints;
   end VARINFO;
 end VarInfo;
@@ -451,15 +453,21 @@ uniontype SimEqSystem
     list<DAE.Statement> statements;
   end SES_ALGORITHM;
 
-  record SES_LINEAR
-    Integer index;
-    Boolean partOfMixed;
-    list<SimVar> vars;
-    list<DAE.Exp> beqs;
-    list<DAE.ElementSource> sources;
-    list<tuple<Integer, Integer, SimEqSystem>> simJac;
-    Integer indexLinearSystem;
-  end SES_LINEAR;
+    record SES_LINEAR
+      Integer index;
+      Boolean partOfMixed;
+      
+      list<SimVar> vars;
+      list<DAE.Exp> beqs;
+      list<tuple<Integer, Integer, SimEqSystem>> simJac;
+      /* solver linear tearing system */
+      list<SimEqSystem> residual;
+      Option<JacobianMatrix> jacobianMatrix;
+    
+      
+      list<DAE.ElementSource> sources;
+      Integer indexLinearSystem;
+    end SES_LINEAR;
 
   record SES_NONLINEAR
     Integer index;

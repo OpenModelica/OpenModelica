@@ -208,12 +208,12 @@ algorithm
     case ({}, _, _, _, _, _)
     then (listReverse(iAcc), iRunMatching);
 
-    // don't tear linear system as long as we do not handle them
-    // as linear system while the runtime
     case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType))::comps, _, _, _, _, _) equation
       equality(jacType = BackendDAE.JAC_TIME_VARYING());
       Debug.fcall(Flags.TEARING_DUMP, print, "\nCase linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
       true = Flags.isSet(Flags.LINEAR_TEARING);
+      // TODO: Remove when cpp runtime ready for doLinearTearing 
+      false = stringEqual(Config.simCodeTarget(), "Cpp");
       Debug.fcall(Flags.TEARING_DUMP, print, "Flag 'doLinearTearing' is set\n\n");
       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Jacobian:\n" +& BackendDump.dumpJacobianStr(ojac) +& "\n\n");
       (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType);

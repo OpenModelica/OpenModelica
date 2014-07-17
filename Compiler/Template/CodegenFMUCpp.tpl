@@ -79,7 +79,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationStateSelectionHeaderFile(simCode),'OMCpp<%fileNamePrefix%>StateSelection.h')
   let()= textFile(fmudeffile(simCode,"1.0"), '<%name%>.def')
   let()= textFile(fmuMakefile(target,simCode), '<%fileNamePrefix%>_FMU.makefile')
-  let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
+  let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _,_)  =>
           (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode,contextAlgloopJacobian) ;separator="")
          ;separator="")
   let algs = algloopfiles(listAppend(allEquations,initialEquations),simCode,contextAlgloop)

@@ -151,7 +151,8 @@ package SimCode
                             String,                 // matrix name
                             tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimVar>,list<SimVar>>>,    // sparse pattern
                             list<list<DAE.ComponentRef>>,    // colored cols
-                            Integer>;               // max color used
+                            Integer,                         // max color used
+                            Integer>;                        // jacobian index
 
   uniontype SimCode
     record SIMCODE
@@ -336,15 +337,21 @@ package SimCode
       list<DAE.Statement> statements;
     end SES_ALGORITHM;
 
-    record SES_LINEAR
-      Integer index;
-      Boolean partOfMixed;
-      list<SimVar> vars;
-      list<DAE.Exp> beqs;
-      list<DAE.ElementSource> sources;
+		record SES_LINEAR
+		  Integer index;
+		  Boolean partOfMixed;
+		  
+		  list<SimVar> vars;
+		  list<DAE.Exp> beqs;
       list<tuple<Integer, Integer, SimEqSystem>> simJac;
-      Integer indexLinearSystem;
-    end SES_LINEAR;
+      /* solver linear tearing system */
+      list<SimEqSystem> residual;
+      Option<JacobianMatrix> jacobianMatrix;
+    
+		  
+		  list<DAE.ElementSource> sources;
+		  Integer indexLinearSystem;
+		end SES_LINEAR;
 
     record SES_NONLINEAR
       Integer index;
@@ -439,6 +446,7 @@ package SimCode
       Integer numNonLinearSystems;
       Integer numMixedSystems;
       Integer numStateSets;
+      Integer numJacobians;
       Integer numOptimizeConstraints;
       end VARINFO;
   end VarInfo;

@@ -320,6 +320,12 @@ typedef struct LINEAR_SYSTEM_DATA
 
   void (*setAElement)(int row, int col, double value, int nth, void *data);
 
+  int (*analyticalJacobianColumn)(void*);
+  int (*initialAnalyticalJacobian)(void*);
+  modelica_integer jacobianIndex;
+
+  void (*residualFunc)(void*, const double*, double*, const int*);
+
   modelica_integer nnz;                 /* number of nonzero entries */
   modelica_integer size;
   modelica_integer equationIndex;       /* index for EQUATION_INFO */

@@ -323,7 +323,7 @@ constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(78, "showStartOrigin", false,
 // The flags mixedTearing are only needed as long tearing of mixed system in not default.
 constant DebugFlag MIXED_TEARING = DEBUG_FLAG(79, "MixedTearing", true,
   Util.gettext("Disables tearing of mixed system."));
-constant DebugFlag LINEAR_TEARING = DEBUG_FLAG(80, "doLinearTearing", false,
+constant DebugFlag LINEAR_TEARING = DEBUG_FLAG(80, "doLinearTearing", true,
   Util.gettext("Enables tearing of linear systems, but for now they aren't handled efficent in the runtime."));
 constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(81, "dumpinitialsystem", false,
   Util.gettext("Dumps the initial equation system."));

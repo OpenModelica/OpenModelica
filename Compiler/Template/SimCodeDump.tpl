@@ -216,6 +216,8 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
       >>
     case e as SES_LINEAR(__) then
       <<
+      <%dumpEqs(SimCodeUtil.sortEqSystems(e.residual),e.index,withOperations)%>
+      <%match e.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),e.index,withOperations) else ''%>
       <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <linear size="<%listLength(e.vars)%>" nnz="<%listLength(simJac)%>">
           <%e.vars |> SIMVAR(name=cr) => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
@@ -231,6 +233,12 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
             >>
             %>
           </matrix>
+          <residuals>
+          <%e.residual |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
+          </residuals>
+          <jacobian>
+          <%match e.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then (eqns |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n") else ''%>
+          </jacobian>
           <%e.sources |> source => dumpElementSource(source,withOperations) %>
         </linear>
       </equation><%\n%>
@@ -238,7 +246,7 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
     case e as SES_NONLINEAR(__) then
       <<
       <%dumpEqs(SimCodeUtil.sortEqSystems(e.eqs),e.index,withOperations)%>
-      <%match e.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),e.index,withOperations) else ''%>
+      <%match e.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),e.index,withOperations) else ''%>
       <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <nonlinear indexNonlinear="<%indexNonLinearSystem%>">
           <%e.crefs |> cr => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>

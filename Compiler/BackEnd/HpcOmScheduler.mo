@@ -2257,7 +2257,7 @@ protected function createTDSupdateModelInfo"updated information in the SimCode.M
 protected
   Integer numZeroCrossings,numTimeEvents,numRelations,numMathEventFunctions,numStateVars,numAlgVars,numDiscreteReal,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,
   numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,
-  numStringParamVars,numStringAliasVars,numEquations,numLinearSystems,numNonLinearSystems,numMixedSystems,numStateSets,numOptimizeConstraints;
+  numStringParamVars,numStringAliasVars,numEquations,numLinearSystems,numNonLinearSystems,numMixedSystems,numStateSets,numJacobians,numOptimizeConstraints;
   Integer threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx;
   SimCode.ModelInfo modelInfo;
   Absyn.Path name;
@@ -2276,7 +2276,7 @@ algorithm
   SimCode.SIMVARS(stateVars=stateVars, algVars = algVars) := vars;
   SimCode.VARINFO(numZeroCrossings,numTimeEvents,numRelations,numMathEventFunctions,numStateVars,numAlgVars,numDiscreteReal,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,
   numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,numStringParamVars,
-  numStringAliasVars,numEquations,numLinearSystems,numNonLinearSystems,numMixedSystems,numStateSets,numOptimizeConstraints) := varInfo;
+  numStringAliasVars,numEquations,numLinearSystems,numNonLinearSystems,numMixedSystems,numStateSets,numJacobians,numOptimizeConstraints) := varInfo;
   // get new values
   numStateVars := listLength(stateVars);
   numAlgVars := listLength(algVars);
@@ -2286,7 +2286,7 @@ algorithm
   //update objects
   varInfo := SimCode.VARINFO(numZeroCrossings,numTimeEvents,numRelations,numMathEventFunctions,numStateVars,numAlgVars,numDiscreteReal,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,
   numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,numStringParamVars,
-  numStringAliasVars,numEquations,numLinearSystems,numNonLinearSystems,numMixedSystems,numStateSets,numOptimizeConstraints);
+  numStringAliasVars,numEquations,numLinearSystems,numNonLinearSystems,numMixedSystems,numStateSets,numJacobians,numOptimizeConstraints);
   modelInfo := SimCode.MODELINFO(name,description,directory,varInfo,vars,functions,labels);
   simCodeOut := SimCodeUtil.replaceModelInfo(modelInfo,simCodeIn);
 end createTDSupdateModelInfo;
@@ -2671,10 +2671,10 @@ algorithm
       list<DAE.ElementSource> sources;
       list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
       Option<SimCode.JacobianMatrix> jac;
-    case(SimCode.SES_LINEAR(index=idx,partOfMixed=pom,vars=simVars,beqs=expLst,sources=sources,simJac=simJac),_)
+    case(SimCode.SES_LINEAR(index=idx,partOfMixed=pom,vars=simVars,beqs=expLst,sources=sources,simJac=simJac,residual=simEqSysLst,jacobianMatrix=jac),_)
       equation
         (lsIdx,nlsIdx,mIdx) = idcsIn;
-        simEqSys = SimCode.SES_LINEAR(idx,pom,simVars,expLst,sources,simJac,lsIdx);
+        simEqSys = SimCode.SES_LINEAR(idx,pom,simVars,expLst,simJac,simEqSysLst,jac,sources,lsIdx);
       then (simEqSys,(lsIdx+1,nlsIdx,mIdx));
     case(SimCode.SES_NONLINEAR(index=idx,eqs=simEqSysLst,crefs=crefs,jacobianMatrix=jac,linearTearing=lt),_)
       equation
@@ -2763,13 +2763,13 @@ algorithm
         (stmts,changed) = BackendVarTransform.replaceStatementLst(stmts,replIn,NONE(),{},false);
         simEqSys = SimCode.SES_ALGORITHM(idx,stmts);
     then (simEqSys,changed);
-    case(SimCode.SES_LINEAR(index=idx,partOfMixed=pom,vars=simVars,beqs=expLst,sources=sources,simJac=simJac,indexLinearSystem=idxLS),_)
+    case(SimCode.SES_LINEAR(index=idx,partOfMixed=pom,vars=simVars,beqs=expLst,sources=sources,simJac=simJac,residual=simEqSysLst,jacobianMatrix=jac,indexLinearSystem=idxLS),_)
       equation
         (simVars,bLst) = List.map1_2(simVars,replaceCrefInSimVar,replIn);
         (expLst,changed) = BackendVarTransform.replaceExpList(expLst,replIn,NONE(),{},false);
         changed = List.fold(bLst,boolOr,changed);
         simJac = List.map1(simJac,replaceInSimJac,replIn);
-        simEqSys = SimCode.SES_LINEAR(idx,pom,simVars,expLst,sources,simJac,idxLS);
+        simEqSys = SimCode.SES_LINEAR(idx,pom,simVars,expLst,simJac,simEqSysLst,jac,sources,idxLS);
     then (simEqSys,changed);
     case(SimCode.SES_NONLINEAR(index=idx,eqs=simEqSysLst,crefs=crefs,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,linearTearing=lt),_)
       equation

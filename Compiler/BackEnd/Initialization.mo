@@ -710,8 +710,7 @@ algorithm
       BackendDAE.StrongComponents rest;
       list<BackendDAE.Var> varlst;
       list<Integer> vlst;
-      Boolean linear, b;
-      String str;
+      Boolean b;
 
     case ({}, _) then false;
 
@@ -751,13 +750,12 @@ algorithm
       _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
     then true;
 
-    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, linear=linear)::rest, _) equation
+    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, linear=false)::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       varlst = filterVarsWithoutStartValue(varlst);
       false = List.isEmpty(varlst);
 
-      str = Util.if_(linear, "linear", "nonlinear");
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in torn " +& str +& " equation system:\n" +& warnAboutVars2(varlst));
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in torn nonlinear equation system:\n" +& warnAboutVars2(varlst));
       _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
     then true;
 
