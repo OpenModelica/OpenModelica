@@ -3633,7 +3633,7 @@ algorithm
     local
       DAE.Exp sub_exp;
       list<DAE.Subscript> rest,res;
-      Boolean b,const;
+      Boolean b,const,calcRange;
 
     case ({}, _) then (inSubscript,iPerformed);
     case (DAE.WHOLEDIM()::rest, _)
@@ -3651,12 +3651,12 @@ algorithm
 
     case (DAE.INDEX(exp = sub_exp)::rest, _)
       equation
+        (sub_exp,calcRange) = computeRangeExps(sub_exp); // the fact that if it can be calculated, we can take the wholedim is a bit weird, anyway, the whole function is weird
         (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
         const = Expression.isConst(sub_exp);
         res = Util.if_(const,DAE.INDEX(sub_exp)::rest,DAE.WHOLEDIM()::rest);
       then
-        (res, b or not const);
-
+        (res, b or not const or calcRange);
     case (DAE.WHOLE_NONEXP(exp = sub_exp)::rest, _)
       equation
         (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
@@ -3666,6 +3666,26 @@ algorithm
         (res, b or not const);
   end match;
 end replaceVarWithWholeDimSubs;
+
+protected function computeRangeExps"computes the maximal range expression for calculated ranges like [i1+i2]."
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
+  output Boolean isCalculated;
+algorithm
+  (outExp,isCalculated) := matchcontinue(inExp)
+    local
+      Integer stop1,stop2;
+      DAE.Exp exp;
+      DAE.Type ty;
+  case(DAE.BINARY(exp1=DAE.RANGE(ty=ty,start=DAE.ICONST(integer=1),stop=DAE.ICONST(integer=stop1)), operator=DAE.ADD(ty=_), exp2=DAE.RANGE(start=DAE.ICONST(integer=1),stop=DAE.ICONST(integer=stop2))))
+    equation
+      stop2= stop1+stop2;
+      exp = DAE.RANGE(ty,DAE.ICONST(1),NONE(),DAE.ICONST(stop2));
+    then (exp,true);
+   else
+     then (inExp,false);
+  end matchcontinue;
+end computeRangeExps;
 
 public function getVarLst
   input list<DAE.ComponentRef> inComponentRefLst;
