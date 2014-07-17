@@ -212,7 +212,7 @@ algorithm
       equality(jacType = BackendDAE.JAC_TIME_VARYING());
       Debug.fcall(Flags.TEARING_DUMP, print, "\nCase linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
       true = Flags.isSet(Flags.LINEAR_TEARING);
-      // TODO: Remove when cpp runtime ready for doLinearTearing 
+      // TODO: Remove when cpp runtime ready for doLinearTearing
       false = stringEqual(Config.simCodeTarget(), "Cpp");
       Debug.fcall(Flags.TEARING_DUMP, print, "Flag 'doLinearTearing' is set\n\n");
       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Jacobian:\n" +& BackendDump.dumpJacobianStr(ojac) +& "\n\n");

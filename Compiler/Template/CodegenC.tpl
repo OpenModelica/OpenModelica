@@ -1551,7 +1551,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
          linearSystemData[<%eq.indexLinearSystem%>].setA = NULL;//setLinearMatrixA<%eq.index%>;
          linearSystemData[<%eq.indexLinearSystem%>].setb = NULL; //setLinearVectorb<%eq.index%>;
          >>
-       else 
+       else
        error(sourceInfo(), ' No jacobian create for linear system <%eq.index%>.')
      end match
    )

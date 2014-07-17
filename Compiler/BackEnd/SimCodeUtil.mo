@@ -1554,7 +1554,7 @@ algorithm
       (LinearMatrices,uniqueEqIndex) = createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
       LinearMatrices = jacG::LinearMatrices;
 
-      // collect jacobian equation only for equantion info file 
+      // collect jacobian equation only for equantion info file
       jacobianEquations = collectAllJacobianEquations(LinearMatrices, {});
 
       // collect symbolic jacobians in linear loops of the overall jacobians
@@ -2002,7 +2002,7 @@ algorithm
         (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
         (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(index, eqs, crefs, inNonLinSysIndex, NONE(), linearTearing)::inEqnsAcc, inSymJacsAcc);
       then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-        
+
     case(SimCode.SES_NONLINEAR(index, eqs, crefs, _, SOME(symJac), linearTearing)::rest, _, _, _, _, _, _, _)
       equation
         (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
@@ -4074,9 +4074,9 @@ algorithm
        Option<SimCode.JacobianMatrix> jacobianMatrix;
        list<Integer> otherEqnsInts, otherVarsInts;
        list<list<Integer>> otherVarsIntsLst;
-       
-       
-       
+
+
+
 /*
        BackendDAE.EquationArray eqns1;
        BackendDAE.Variables v;
@@ -4084,12 +4084,12 @@ algorithm
        list<DAE.Exp> beqs;
        list<DAE.ElementSource> sources;
        BackendVarTransform.VariableReplacements repl;
-       
+
        BackendDAE.IncidenceMatrix m;
        list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
        list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
-       
-       
+
+
        // for the linear case we could try just to evaluate all equation
      case(true, _, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(knownVars=kv, functionTree=functree), _, _)
        equation
@@ -4130,7 +4130,7 @@ algorithm
 */
      case(true, _, _, _, _, _,BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(knownVars=kv, functionTree=_), _, _)
        equation
-         // TODO: Remove when cpp runtime ready for doLinearTearing 
+         // TODO: Remove when cpp runtime ready for doLinearTearing
          //false = stringEqual(Config.simCodeTarget(), "Cpp");
          // get tearing vars
          tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
@@ -4493,9 +4493,9 @@ algorithm
       Integer numJac;
       Integer index;
       Integer nCandidates;
-      Integer nStates; 
+      Integer nStates;
       list<DAE.ComponentRef> states;
-      list<DAE.ComponentRef> statescandidates; 
+      list<DAE.ComponentRef> statescandidates;
       DAE.ComponentRef crA;
     case ({}, _, _, _) then (listReverse(inSetsAccum), listReverse(inSymJacs), iNumJac);
     case((set as SimCode.SES_STATESET(index=index, nCandidates=nCandidates, nStates=nStates, states=states, statescandidates=statescandidates, crA=crA, jacobianMatrix=symJac))::sets, _, _, _)

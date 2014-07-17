@@ -345,7 +345,7 @@ int solveLapack(DATA *data, int sysNumber)
   }
 
   if (success == 1){
-  
+
     /* take the solution */
     memcpy(systemData->x, systemData->b, systemData->size*(sizeof(double)));
 
