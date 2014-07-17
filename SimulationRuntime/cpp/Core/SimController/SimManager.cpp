@@ -87,7 +87,8 @@ void SimManager::initialize()
             _dimtimeevent =0;
       _tStart      = _config->getGlobalSettings()->getStartTime();
       _tEnd      =_config->getGlobalSettings()->getEndTime();
-      //// Task: WRITE und FIRST_CALL+LAST_CALL, da es nur einen Solver (und somit keine Koppelschritte) gibt
+      _dimZeroFunc=event_system->getDimZeroFunc();
+	  //// Task: WRITE und FIRST_CALL+LAST_CALL, da es nur einen Solver (und somit keine Koppelschritte) gibt
       _solverTask = ISolver::SOLVERCALL(ISolver::FIRST_CALL);
       if (_dimZeroFunc==event_system->getDimZeroFunc() )
       {
