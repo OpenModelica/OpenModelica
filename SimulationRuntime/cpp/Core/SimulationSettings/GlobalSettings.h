@@ -18,9 +18,6 @@ public:
     ///< Output step size (default: 20 ms)
     virtual double gethOutput();
     virtual void sethOutput(double);
-    ///< Write out results ([false,true]; default: true)
-    virtual bool getResultsOutput();
-    virtual void setResultsOutput(bool);
     ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
     virtual bool getInfoOutput();
     virtual void setInfoOutput(bool);

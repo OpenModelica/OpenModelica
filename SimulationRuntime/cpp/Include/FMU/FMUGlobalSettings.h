@@ -17,8 +17,6 @@ public:
     virtual double gethOutput() { return 20; }
     virtual void sethOutput(double) {}
     ///< Write out results ([false,true]; default: true)
-    virtual bool getResultsOutput() { return false; }
-    virtual void setResultsOutput(bool) {}
     virtual bool useEndlessSim() {return true; }
     virtual void useEndlessSim(bool) {}
     ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)

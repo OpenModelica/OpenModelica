@@ -35,8 +35,6 @@ public:
     virtual double gethOutput()=0;
     virtual void sethOutput(double)=0;
     ///< Write out results ([false,true]; default: true)
-    virtual bool getResultsOutput()=0;
-    virtual void setResultsOutput(bool)=0;
     virtual OutputFormat getOutputFormat() = 0;
     virtual void setOutputFormat(OutputFormat) = 0;
     virtual OutputPointType getOutputPointType() = 0;

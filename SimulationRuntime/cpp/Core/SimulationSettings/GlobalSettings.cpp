@@ -86,17 +86,6 @@ void GlobalSettings::setOutputPointType(OutputPointType type)
   _log_type  = type;
  }
 
-
- ///< Write out results ([false,true]; default: true)
-bool GlobalSettings::getResultsOutput()
-{
-    return _resultsOutput;
-}
-void GlobalSettings::setResultsOutput(bool output)
-{
-    _resultsOutput  =output;
-}
-
  void  GlobalSettings::setResultsFileName(string name)
  {
      _resultsfile_name = name;

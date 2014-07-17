@@ -63,6 +63,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationCppFile(simCode), 'OMCpp<%name%>.cpp')
   let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.h')
   let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals,externalFunctionIncludes), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp')
+  let()= textFile(simulationTypesHeaderFile(simCode,modelInfo.functions,literals), 'OMCpp<%fileNamePrefix%>Types.h')
   let()= textFile(fmuModelWrapperFile(simCode,guid,name), 'OMCpp<%name%>FMU.cpp')
   let()= textFile(fmuModelDescriptionFileCpp(simCode,guid), 'modelDescription.xml')
   let()= textFile(simulationInitHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Initialize.h')
