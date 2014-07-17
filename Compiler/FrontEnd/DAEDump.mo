@@ -664,7 +664,7 @@ algorithm
 
     case (NONE()) then "";
 
-    else "unknown VariableAttributes";
+    else "(unknown VariableAttributes)";
   end matchcontinue;
 end dumpVariableAttributesStr;
 
