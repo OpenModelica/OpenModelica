@@ -122,11 +122,11 @@ SET(Boost_USE_STATIC_RUNTIME OFF)
 
 # The optional boost libraries must be searched separately, otherwise no library is found if just one is missing.
 # Additionaly the Boost_LIBRARIES variable is overwritten each time find_package(Boost ...) is called, thus it must be rescued
-find_package(Boost COMPONENTS log log_setup)
+find_package(Boost 1.54 COMPONENTS log log_setup)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
-find_package(Boost COMPONENTS thread)
+find_package(Boost 1.54 COMPONENTS thread)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
-find_package(Boost COMPONENTS atomic)
+find_package(Boost 1.54 COMPONENTS atomic)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
 find_package(Threads)
 
