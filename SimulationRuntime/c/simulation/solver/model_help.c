@@ -833,6 +833,7 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.nlsMethod = NLS_HYBRID;
   data->simulationInfo.lsMethod = LS_LAPACK;
   data->simulationInfo.mixedMethod = MIXED_SEARCH;
+  data->simulationInfo.newtonStrategy = NEWTON_PURE;
 
   data->simulationInfo.zeroCrossings = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
   data->simulationInfo.zeroCrossingsPre = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));

@@ -51,35 +51,55 @@ typedef struct DATA_NEWTON
   double* resScaling;
   double* fvecScaled;
 
-  integer n;
+  int n;
   double* x;
   double* fvec;
   double xtol;
   double ftol;
-  integer nfev;
-  integer maxfev;
-  integer info;
+  int nfev;
+  int maxfev;
+  int info;
   double epsfcn;
   double* fjac;
   double* rwork;
-  integer* iwork;
+  int* iwork;
+  int numberOfIterations; /* over the whole simulation time */
+  int numberOfFunctionEvaluations; /* over the whole simulation time */
 
   /* damped newton */
   double* x_new;
   double* x_increment;
+  double* f_old;
+  double* fvec_minimum;
+  double* delta_f;
+  double* delta_x_vec;
+
+
 } DATA_NEWTON;
 
 
-static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double* fdeps, integer* maxfev,
-                       integer* nfev, int(*f)(integer*, double*, double*, integer*, void*, int),
-                       double* fjac, double* rwork, integer* iwork,
-                       integer* info, void* userdata, int sysNumber);
+static int _omc_newton(int* n, double *x, double *fvec, double* eps, double* fdeps, int* maxfev,
+                       int(*f)(int*, double*, double*, int*, void*, int), double* fjac,
+                       double* rwork, int* iwork, int* info, void* userdata, int sysNumber);
+
+
+int solveLinearSystem(int* n, int* iwork, double* fvec, double *fjac, DATA_NEWTON* solverData);
+void calculatingErrors(DATA_NEWTON* solverData, double* delta_x, double* delta_x_scaled, double* delta_f, double* error_f,
+        double* scaledError_f, int* n, double* x, double* fvec);
+void scaling_residual_vector(DATA_NEWTON* solverData);
+void damping_heuristic(void* userdata, int sysNumber, double* x, int(*f)(int*, double*, double*, int*, void*, int),
+        double current_fvec_enorm, int* n, double* fvec, double* lambda, int* k);
+void damping_heuristic2(double damping_parameter, void* userdata, int sysNumber, double* x, int(*f)(int*, double*, double*, int*, void*, int),
+        double current_fvec_enorm, int* n, double* fvec, int* k);
+void LineSearch(void* userdata, int sysNumber, double* x, int(*f)(int*, double*, double*, int*, void*, int),
+        double current_fvec_enorm, int* n, double* fvec, int* k);
+void printErrors(double delta_x, double delta_x_scaled, double delta_f, double error_f, double scaledError_f, double* eps);
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int dgesv_(integer *n, integer *nrhs, doublereal *a, integer *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info);
+extern int dgesv_(int *n, int *nrhs, doublereal *a, int *lda, int *ipiv, doublereal *b, int *ldb, int *info);
 
 #ifdef __cplusplus
 }
@@ -109,11 +129,16 @@ int allocateNewtonData(int size, void** voiddata)
   data->fjac = (double*) malloc((size*size)*sizeof(double));
 
   data->rwork = (double*) malloc((size)*sizeof(double));
-  data->iwork = (integer*) malloc(size*sizeof(integer));
+  data->iwork = (int*) malloc(size*sizeof(int));
 
   /* damped newton */
   data->x_new = (double*) malloc(size*sizeof(double));
   data->x_increment = (double*) malloc(size*sizeof(double));
+  data->f_old = (double*) calloc(size,sizeof(double));
+  data->fvec_minimum = (double*) calloc(size,sizeof(double));
+  data->delta_f = (double*) calloc(size,sizeof(double));
+  data->delta_x_vec = (double*) calloc(size,sizeof(double));
+
 
   assertStreamPrint(NULL, 0 != *voiddata, "allocationNewtonData() voiddata failed!");
   return 0;
@@ -128,6 +153,9 @@ int freeNewtonData(void **voiddata)
 {
   DATA_NEWTON* data = (DATA_NEWTON*) *voiddata;
 
+  infoStreamPrint(LOG_STATS_V, 0, ":number of function evaluations: %d", (data->numberOfFunctionEvaluations));
+  infoStreamPrint(LOG_STATS_V, 0, ":number of iterations: %d", data->numberOfIterations);
+
   free(data->resScaling);
   free(data->fvecScaled);
   free(data->x);
@@ -139,6 +167,10 @@ int freeNewtonData(void **voiddata)
   /* damped newton */
   free(data->x_new);
   free(data->x_increment);
+  free(data->f_old);
+  free(data->fvec_minimum);
+  free(data->delta_f);
+  free(data->delta_x_vec);
 
   return 0;
 }
@@ -203,7 +235,7 @@ int getAnalyticalJacobianNewton(DATA* data, double* jac, int sysNumber)
  *
  *
  */
-static int wrapper_fvec_newton(integer* n, double* x, double* f, integer* iflag, void* data, int sysNumber)
+static int wrapper_fvec_newton(int* n, double* x, double* f, int* iflag, void* data, int sysNumber)
 {
   int currentSys = sysNumber;
   /* NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]); */
@@ -216,7 +248,7 @@ static int wrapper_fvec_newton(integer* n, double* x, double* f, integer* iflag,
 /*! \fn solve non-linear system with newton method
  *
  *  \param [in]  [data]
- *               [sysNumber] index of the corresponding non-linear system
+ *                [sysNumber] index of the corresponding non-linear system
  *
  *  \author wbraun
  */
@@ -282,7 +314,7 @@ int solveNewton(DATA *data, int sysNumber)
 
     giveUp = 1;
     _omc_newton(&solverData->n, solverData->x, solverData->fvec, &local_tol,
-                &solverData->epsfcn, &solverData->maxfev, &solverData->nfev,
+                &solverData->epsfcn, &solverData->maxfev,
                 wrapper_fvec_newton, solverData->fjac, solverData->rwork,
                 solverData->iwork, &solverData->info, data, sysNumber);
 
@@ -293,8 +325,8 @@ int solveNewton(DATA *data, int sysNumber)
     if(solverData->info > 0)
     {
       /* evaluate with discontinuities */
-      if(data->simulationInfo.discreteCall){
-
+      if(data->simulationInfo.discreteCall)
+      {
         ((DATA*)data)->simulationInfo.solveContinuous = 0;
         wrapper_fvec_newton(&solverData->n, solverData->x, solverData->fvec, &iflag, data, sysNumber);
 
@@ -379,8 +411,8 @@ int solveNewton(DATA *data, int sysNumber)
       }
     }
   }
-
-  messageClose(LOG_NLS);
+  if(ACTIVE_STREAM(LOG_NLS))
+      messageClose(LOG_NLS);
 
   return success;
 }
@@ -390,7 +422,7 @@ int solveNewton(DATA *data, int sysNumber)
  *  function calculates a jacobian matrix by
  *  numerical method finite differences
  */
-static int fdjac(integer* n, int(*f)(int*, double*, double*, int*, void*, int), double *x,
+static int fdjac(int* n, int(*f)(int*, double*, double*, int*, void*, int), double *x,
        double* fvec, double *fjac, double* eps, int* iflag, double* wa,
        void* userdata, int sysNumber)
 {
@@ -440,57 +472,61 @@ static int fdjac(integer* n, int(*f)(int*, double*, double*, int*, void*, int), 
  *                [info]
  *
  */
-static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double* fdeps, integer* maxfev,
-                       integer* nfev, int(*f)(integer*, double*, double*, integer*, void*, int),
-                       double* fjac, double* work, integer* iwork, integer* info, void* userdata, int sysNumber)
+static int _omc_newton(int* n, double *x, double *fvec, double* eps, double* fdeps, int* maxfev,
+                       int(*f)(int*, double*, double*, int*, void*, int),
+                       double* fjac, double* work, int* iwork, int* info, void* userdata, int sysNumber)
 {
-  int currentSys = sysNumber;
-  NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)userdata)->simulationInfo.nonlinearSystemData[currentSys]);
+  DATA* data = (DATA*) userdata;
+  NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)userdata)->simulationInfo.nonlinearSystemData[sysNumber]);
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
 
-  int i, j, l;
-  integer iflag;
-  double error_x, error_f, scaledError_f;
-  double tol_x = *eps, tol_f = solverData->ftol;
-  double *wa;
-  integer nrsh = 1;
-  integer lapackinfo = 1;
-
-  double lambda=1, current_fvec_enorm, enorm_2;
-
-
-  wa = work;
-  l = *maxfev;
-  error_x = 1.0 + tol_x;
-  error_f = 1.0 + tol_f;
-  scaledError_f = 1.0 + tol_f;
+  int i, j, k = 0, l = 0, iflag, nrsh = 1;
+  double error_f  = 1.0 + *eps, scaledError_f = 1.0 + *eps, delta_x = 1.0 + *eps, delta_f = 1.0 + *eps, delta_x_scaled = 1.0 + *eps, lambda = 1.0;
+  double current_fvec_enorm, enorm_new;
 
   if(ACTIVE_STREAM(LOG_NLS_V))
   {
-    infoStreamPrint(LOG_NLS_V, 0, "######### Start Newton maxfev: %d #########", (int)*maxfev);
+    infoStreamPrint(LOG_NLS_V, 1, "######### Start Newton maxfev: %d #########", (int)*maxfev);
+
+    infoStreamPrint(LOG_NLS_V, 1, "x vector");
     for(i=0; i<*n; i++)
       infoStreamPrint(LOG_NLS_V, 0, "x[%d]: %e ", i, x[i]);
+    messageClose(LOG_NLS_V);
   }
+
   *info = 1;
 
-  while(*info >= 0)
-  {
-    infoStreamPrint(LOG_NLS_V, 0, "**** start Iteration: %d  *****", (int) *maxfev-l);
-    /* calculate the function values */
-    (*f)(n, x, fvec, &iflag, userdata,currentSys);
-    (*nfev)++;
+  /* calculate the function values */
+  (*f)(n, x, fvec, &iflag, userdata,sysNumber);
+  solverData->nfev++;
 
-    /*  Debug output */
+  /* save current fvec in f_old*/
+  memcpy(solverData->f_old, fvec, *n*sizeof(double));
+
+  error_f = current_fvec_enorm = enorm_(n, fvec);
+
+  while(error_f > *eps && scaledError_f > *eps  &&  delta_x > *eps  &&  delta_f > *eps  && delta_x_scaled > *eps  )
+  {
     if(ACTIVE_STREAM(LOG_NLS_V))
-      for(i=0; i<*n; i++)
-        infoStreamPrint(LOG_NLS_V, 0, "fvec[%d]: %e: ", i, fvec[i]);
+    {
+        infoStreamPrint(LOG_NLS_V, 0, "\n**** start Iteration: %d  *****", (int) l);
+
+       /*  Debug output */
+       infoStreamPrint(LOG_NLS_V, 1, "function values");
+       for(i=0; i<*n; i++)
+         infoStreamPrint(LOG_NLS_V, 0, "fvec[%d]: %e ", i, fvec[i]);
+       messageClose(LOG_NLS_V);
+    }
 
     /* calculate jacobian */
-    if(systemData->jacobianIndex != -1){
-      getAnalyticalJacobianNewton(userdata, fjac, currentSys);
-    } else {
-      fdjac(n, f, x, fvec, fjac, fdeps, &iflag, wa, userdata, currentSys);
-      (*nfev)=(*nfev)+*n;
+    if(systemData->jacobianIndex != -1)
+    {
+      getAnalyticalJacobianNewton(userdata, fjac, sysNumber);
+    }
+    else
+    {
+      fdjac(n, f, x, fvec, fjac, fdeps, &iflag, work, userdata, sysNumber);
+      solverData->nfev=solverData->nfev+*n;
     }
 
     /* debug output */
@@ -509,126 +545,363 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
       messageClose(LOG_NLS_JAC);
     }
 
-    /* scaling residual vector */
+    if (solveLinearSystem(n, iwork, fvec, fjac, solverData) != 0)
     {
-      int i,j,l=0;
-      for(i=0; i<solverData->n; ++i)
-      {
-        solverData->resScaling[i] = 1e-16;
-        for(j=0; j<solverData->n; ++j)
-        {
-          solverData->resScaling[i] = (fabs(solverData->fjac[l]) > solverData->resScaling[i])
-              ? fabs(solverData->fjac[l]) : solverData->resScaling[i];
-          l++;
-        }
-        solverData->fvecScaled[i] = solverData->fvec[i] * (1 / solverData->resScaling[i]);
-      }
-    }
-
-    /* calculate error by 2-norm */
-    scaledError_f = enorm_(n, solverData->fvecScaled);
-    error_f = enorm_(n, fvec);
-    debugStreamPrint(LOG_NLS_V, 0, "Newton scaled error = %e", scaledError_f);
-    debugStreamPrint(LOG_NLS_V, 0, "Newton error = %e", error_f);
-    if(scaledError_f <= tol_f) break;
-    if(error_f <= tol_f) break;
-
-    current_fvec_enorm=enorm_(n,fvec);
-
-    /* solve J*(x_{n+1} - x_n)=f */
-    dgesv_(n, &nrsh, fjac, n, iwork, fvec, n, &lapackinfo);
-
-    if(ACTIVE_STREAM(LOG_NLS_V))
-    {
-      infoStreamPrint(LOG_NLS_V, 0, "Solved J*x=b");
-      for(i=0; i<*n; i++)
-        infoStreamPrint(LOG_NLS_V, 0, "b[%d] = %e ", i, fvec[i]);
-    }
-
-    /* save current fvec */
-    memcpy(solverData->x_increment, fvec, *n*sizeof(double));
-
-    if(lapackinfo > 0)
-    {
-      *info = -1;
-      warningStreamPrint(LOG_NLS, 0, "Jacobian Matrix singular!");
-    }
-    else if(lapackinfo < 0)
-    {
-      *info = -1;
-      warningStreamPrint(LOG_NLS, 0, "illegal  input in argument %d", (int)lapackinfo);
+        *info=-1;
+        break;
     }
     else
     {
-      for (i=0; i<*n; i++)
-        solverData->x_new[i]=x[i]-lambda*solverData->x_increment[i];
 
-      (*f)(n,solverData->x_new,fvec,&iflag,userdata,currentSys);
-      (*nfev)++;
+        for (i =0; i<*n; i++)
+            solverData->x_new[i]=x[i]-solverData->x_increment[i];
 
-      enorm_2=enorm_(n,fvec);
 
-      /* damping heuristic */
-      if (enorm_2<current_fvec_enorm){
-        /* increase lambda */
-        lambda *= 2;
-      }
-      else if (lambda<=1e-4) {
-        /* do nothing, just continue */
-      }
-      else
-      {
-        while (enorm_2>=current_fvec_enorm)
-        {
-          /* decrease lambda */
-          lambda *= 0.5;
-          infoStreamPrint(LOG_NLS_V, 0, "lambda= %e ", lambda);
+        infoStreamPrint(LOG_NLS_V,1,"x_increment");
+              for(i=0; i<*n; i++)
+                infoStreamPrint(LOG_NLS_V, 0, "x_increment[%d] = %e ", i, solverData->x_increment[i]);
+        messageClose(LOG_NLS_V);
 
-          for (i=0; i<*n; i++)
-            solverData->x_new[i]=x[i]-lambda*solverData->x_increment[i];
 
-          (*f)(n,solverData->x_new,fvec,&iflag,userdata,currentSys);
-          (*nfev)++;
-          infoStreamPrint(LOG_NLS_V, 0, "nfev= %d ", *nfev);
-
-          enorm_2=enorm_(n,fvec);
-
-          if (lambda<=1e-2)
-          {
-            warningStreamPrint(LOG_NLS_V, 0, "Warning: lamdba reached a threshold.");
-            for (i=0; i<*n; i++)
-              solverData->x_new[i]=x[i]-solverData->x_increment[i];
-            break;
-          }
+        if (data->simulationInfo.newtonStrategy == NEWTON_DAMPED){
+          damping_heuristic(userdata, sysNumber, x, f, current_fvec_enorm, n, fvec, &lambda, &k);
+        } else if (data->simulationInfo.newtonStrategy == NEWTON_DAMPED2){
+          damping_heuristic2(0.75, userdata, sysNumber, x, f, current_fvec_enorm, n, fvec, &k);
+        } else if (data->simulationInfo.newtonStrategy == NEWTON_DAMPED_LS){
+          LineSearch(userdata, sysNumber, x, f, current_fvec_enorm, n, fvec, &k);
+        } else {
+          /* calculate new function values */
+          (*f)(n,solverData->x_new,fvec,&iflag,userdata,sysNumber);
+          solverData->nfev++;
         }
-      }
 
-      for (i=0; i<*n; i++){
-        solverData->x_increment[i] = solverData->x_new[i] - x[i];
-        x[i]=solverData->x_new[i];
-      }
+        calculatingErrors(solverData, &delta_x, &delta_x_scaled, &delta_f, &error_f, &scaledError_f, n, x, fvec);
 
-      /* break if x doesn't improve further */
-      error_x = enorm_(n, solverData->x_increment);
-      if(error_x <= tol_x)
-        break;
+        /* updating x */
+        memcpy(x, solverData->x_new, *n*sizeof(double));
+
+        /* updating f_old */
+        memcpy(solverData->f_old, fvec, *n*sizeof(double));
+
+        current_fvec_enorm = error_f;
+
+        /* check if maximum iteration is reached */
+        if (++l > *maxfev)
+        {
+            *info = -1;
+            warningStreamPrint(LOG_NLS_V, 0, "Warning: maximal number of iteration reached but no root found");
+            break;
+        }
     }
 
     if(ACTIVE_STREAM(LOG_NLS_V))
     {
+      infoStreamPrint(LOG_NLS_V,1,"x vector");
       for(i=0; i<*n; i++)
-      {
         infoStreamPrint(LOG_NLS_V, 0, "x[%d] = %e ", i, x[i]);
-      }
+      messageClose(LOG_NLS_V);
+      printErrors(delta_x, delta_x_scaled, delta_f, error_f, scaledError_f, eps);
     }
 
-    /* check if maximum iteration is reached */
-    l--;
-    if(l < 0)
-    {
-      *info = -1;
-      break;
-    }
   }
+
+  solverData->numberOfIterations += l;
+  solverData->numberOfFunctionEvaluations += solverData->nfev;
+
   return 0;
+}
+
+
+void printErrors(double delta_x, double delta_x_scaled, double delta_f, double error_f, double scaledError_f, double* eps)
+{
+    infoStreamPrint(LOG_NLS_V, 1, "errors ");
+    infoStreamPrint(LOG_NLS_V, 0, "delta_x = %e \ndelta_x_scaled = %e \ndelta_f = %e \nerror_f = %e \nscaledError_f = %e", delta_x, delta_x_scaled, delta_f, error_f, scaledError_f);
+
+    if (delta_x < *eps)
+        infoStreamPrint(LOG_NLS_V, 0, "delta_x reached eps");
+    if (delta_x_scaled < *eps)
+            infoStreamPrint(LOG_NLS_V, 0, "delta_x_scaled reached eps");
+    if (delta_f < *eps)
+            infoStreamPrint(LOG_NLS_V, 0, "delta_f reached eps");
+    if (error_f < *eps)
+            infoStreamPrint(LOG_NLS_V, 0, "error_f reached eps");
+    if (scaledError_f < *eps)
+            infoStreamPrint(LOG_NLS_V, 0, "scaledError_f reached eps");
+
+    messageClose(LOG_NLS_V);
+}
+
+int solveLinearSystem(int* n, int* iwork, double* fvec, double *fjac, DATA_NEWTON* solverData)
+{
+   int i, nrsh=1, lapackinfo=1;
+
+   /* solve J*(x_{n+1} - x_n)=f */
+   dgesv_(n, &nrsh, fjac, n, iwork, fvec, n, &lapackinfo);
+
+   if(lapackinfo > 0)
+   {
+        warningStreamPrint(LOG_NLS, 0, "Jacobian Matrix singular!");
+        return -1;
+   }
+   else if(lapackinfo < 0)
+   {
+        warningStreamPrint(LOG_NLS, 0, "illegal  input in argument %d", (int)lapackinfo);
+        return -1;
+   }
+   else
+   {
+       /* save solution of J*(x_{n+1} - x_n)=f */
+       memcpy(solverData->x_increment, fvec, *n*sizeof(double));
+   }
+
+   return 0;
+}
+
+void calculatingErrors(DATA_NEWTON* solverData, double* delta_x, double* delta_x_scaled, double* delta_f, double* error_f,
+        double* scaledError_f, int* n, double* x, double* fvec)
+{
+    int i=0;
+    double scaling_factor;
+
+    /* delta_x = || x_new-x_old || */
+    for (i=0; i<*n; i++)
+            solverData->delta_x_vec[i] = x[i]-solverData->x_new[i];
+
+    *delta_x = enorm_(n,solverData->delta_x_vec);
+
+    scaling_factor = enorm_(n,x);
+    if (scaling_factor > 1)
+        *delta_x_scaled = *delta_x * 1./ scaling_factor;
+    else
+        *delta_x_scaled = *delta_x;
+
+    /* delta_f = || f_old - f_new || */
+    for (i=0; i<*n; i++)
+        solverData->delta_f[i] = solverData->f_old[i]-fvec[i];
+
+    *delta_f=enorm_(n, solverData->delta_f);
+
+    *error_f = enorm_(n,fvec);
+
+    /* scaling residual vector */
+    scaling_residual_vector(solverData);
+
+    for (i=0; i<*n; i++)
+        solverData->fvecScaled[i]=fvec[i]/solverData->resScaling[i];
+    *scaledError_f = enorm_(n,solverData->fvecScaled);
+
+}
+
+void scaling_residual_vector(DATA_NEWTON* solverData)
+{
+    int i,j,k=0;
+    for(i=0; i<solverData->n; i++)
+    {
+        solverData->resScaling[i] = 1e-16;
+        for(j=0; j<solverData->n; j++)
+        {
+          solverData->resScaling[i] = (fabs(solverData->fjac[k]) > solverData->resScaling[i])
+              ? fabs(solverData->fjac[k]) : solverData->resScaling[i];
+          k++;
+        }
+        solverData->fvecScaled[i] = solverData->fvec[i] * (1 / solverData->resScaling[i]);
+    }
+}
+
+void damping_heuristic(void* userdata, int sysNumber, double* x, int(*f)(int*, double*, double*, int*, void*, int),
+        double current_fvec_enorm, int* n, double* fvec, double* lambda, int* k)
+{
+    int i,j=0, iflag;
+    double enorm_new, treshold = 1e-2;
+
+
+    NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)userdata)->simulationInfo.nonlinearSystemData[sysNumber]);
+    DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
+
+
+    /* calculate new function values */
+    (*f)(n,solverData->x_new,fvec,&iflag,userdata,sysNumber);
+    solverData->nfev++;
+
+    enorm_new=enorm_(n,fvec);
+
+    if (enorm_new >= current_fvec_enorm)
+        infoStreamPrint(LOG_NLS_V, 1, "Start Damping: enorm_new : %e; current_fvec_enorm: %e ", enorm_new, current_fvec_enorm);
+
+    while (enorm_new >= current_fvec_enorm)
+    {
+        j++;
+
+        *lambda*=0.5;
+
+
+        for (i=0; i<*n; i++)
+            solverData->x_new[i]=x[i]-*lambda*solverData->x_increment[i];
+
+
+        /* calculate new function values */
+        (*f)(n,solverData->x_new,fvec,&iflag,userdata,sysNumber);
+        solverData->nfev++;
+
+        enorm_new=enorm_(n,fvec);
+
+        if (*lambda <= treshold)
+        {
+            warningStreamPrint(LOG_NLS_V, 0, "Warning: lambda reached a threshold.");
+
+            /* if damping is without success, trying full newton step; after 5 full newton steps try a very little step */
+            if (*k >= 5)
+                for (i=0; i<*n; i++)
+                    solverData->x_new[i]=x[i]-*lambda*solverData->x_increment[i];
+            else
+                for (i=0; i<*n; i++)
+                    solverData->x_new[i]=x[i]-solverData->x_increment[i];
+
+            /* calculate new function values */
+            (*f)(n,solverData->x_new,fvec,&iflag,userdata,sysNumber);
+            solverData->nfev++;
+
+            (*k)++;
+
+            break;
+        }
+    }
+
+    *lambda = 1;
+
+
+   messageClose(LOG_NLS_V);
+}
+
+void damping_heuristic2(double damping_parameter, void* userdata, int sysNumber, double* x, int(*f)(int*, double*, double*, int*, void*, int),
+        double current_fvec_enorm, int* n, double* fvec, int* k)
+{
+    int i,j=0, iflag;
+    double enorm_new, treshold = 1e-4, lambda=1;
+
+
+    NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)userdata)->simulationInfo.nonlinearSystemData[sysNumber]);
+    DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
+
+
+    /* calculate new function values */
+    (*f)(n,solverData->x_new,fvec,&iflag,userdata,sysNumber);
+    solverData->nfev++;
+
+    enorm_new=enorm_(n,fvec);
+
+    if (enorm_new >= current_fvec_enorm)
+        infoStreamPrint(LOG_NLS_V, 1, "StartDamping: ");
+
+    while (enorm_new >= current_fvec_enorm)
+    {
+        j++;
+
+        lambda*=damping_parameter;
+
+        infoStreamPrint(LOG_NLS_V, 0, "lambda = %e, k = %d", lambda, *k);
+
+        for (i=0; i<*n; i++)
+            solverData->x_new[i]=x[i]-lambda*solverData->x_increment[i];
+
+
+        /* calculate new function values */
+        (*f)(n,solverData->x_new,fvec,&iflag,userdata,sysNumber);
+        solverData->nfev++;
+
+        enorm_new=enorm_(n,fvec);
+
+        if (lambda <= treshold)
+        {
+            warningStreamPrint(LOG_NLS_V, 0, "Warning: lambda reached a threshold.");
+
+            /* if damping is without success, trying full newton step; after 5 full newton steps try a very little step */
+            if (*k >= 5)
+                for (i=0; i<*n; i++)
+                        solverData->x_new[i]=x[i]-lambda*solverData->x_increment[i];
+            else
+                for (i=0; i<*n; i++)
+                    solverData->x_new[i]=x[i]-solverData->x_increment[i];
+
+            /* calculate new function values */
+            (*f)(n,solverData->x_new,fvec,&iflag,userdata,sysNumber);
+            solverData->nfev++;
+
+            (*k)++;
+
+            break;
+        }
+    }
+
+    lambda = 1;
+
+   messageClose(LOG_NLS_V);
+}
+
+void LineSearch(void* userdata, int sysNumber, double* x, int(*f)(int*, double*, double*, int*, void*, int),
+        double current_fvec_enorm, int* n, double* fvec, int* k)
+{
+    int i,j, iflag;
+    double enorm_new, treshold = 1e-2, enorm_minimum=current_fvec_enorm, lambda_minimum=0;
+    double lambda[5]={1.25,1,0.75,0.5,0.25};
+
+
+    NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)userdata)->simulationInfo.nonlinearSystemData[sysNumber]);
+    DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
+
+    for (j=0; j<5; j++)
+    {
+        for (i=0; i<*n; i++)
+             solverData->x_new[i]=x[i]-lambda[j]*solverData->x_increment[i];
+
+        /* calculate new function values */
+        (*f)(n,solverData->x_new,fvec,&iflag,userdata,sysNumber);
+        solverData->nfev++;
+
+        enorm_new=enorm_(n,fvec);
+
+        /* searching minimal enorm */
+        if (enorm_new < enorm_minimum)
+        {
+            enorm_minimum = enorm_new;
+            lambda_minimum = lambda[j];
+            memcpy(solverData->fvec_minimum, fvec,*n*sizeof(double));
+        }
+    }
+
+    infoStreamPrint(LOG_NLS_V,0,"lambda_minimum = %e", lambda_minimum);
+
+    if (lambda_minimum == 0)
+    {
+        warningStreamPrint(LOG_NLS_V, 0, "Warning: lambda_minimum = 0 ");
+
+        /* if damping is without success, trying full newton step; after 5 full newton steps try a very little step */
+        if (*k >= 5)
+        {
+            lambda_minimum = 0.125;
+
+            /* calculate new function values */
+            (*f)(n,solverData->x_new,fvec,&iflag,userdata,sysNumber);
+            solverData->nfev++;
+        }
+        else
+        {
+            lambda_minimum = 1;
+
+            /* calculate new function values */
+            (*f)(n,solverData->x_new,fvec,&iflag,userdata,sysNumber);
+            solverData->nfev++;
+        }
+
+        (*k)++;
+    }
+    else
+    {
+        /* save new function values */
+        memcpy(fvec, solverData->fvec_minimum, *n*sizeof(double));
+    }
+
+    for (i=0; i<*n; i++)
+        solverData->x_new[i]=x[i]-lambda_minimum*solverData->x_increment[i];
+
 }

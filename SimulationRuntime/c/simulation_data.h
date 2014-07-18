@@ -473,6 +473,7 @@ typedef struct SIMULATION_INFO
   int lsMethod;                        /* linear solver */
   int mixedMethod;                     /* mixed solver */
   int nlsMethod;                       /* nonlinear solver */
+  int newtonStrategy;                  /* newton damping strategy solver */
 
   double lambda;                       /* homotopy parameter E [0, 1.0] */
 

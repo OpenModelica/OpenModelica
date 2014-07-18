@@ -286,6 +286,29 @@ int getlinearSolverMethod(int argc, char**argv)
   return LS_NONE;
 }
 
+int getNewtonStrategy(int argc, char**argv)
+{
+  int i;
+  const char *cflags = omc_flagValue[FLAG_NEWTON_STRATEGY];
+  const string *method = cflags ? new string(cflags) : NULL;
+
+  if(!method)
+    return NEWTON_DAMPED2; /* default method */
+
+  for(i=1; i<NEWTON_MAX; ++i)
+    if(*method == NEWTONSTRATEGY_NAME[i])
+      return i;
+
+  warningStreamPrint(LOG_STDOUT, 1, "unrecognized option -nls=%s, current options are:", method->c_str());
+  for(i=1; i<NEWTON_MAX; ++i)
+    warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", NEWTONSTRATEGY_NAME[i], NEWTONSTRATEGY_DESC[i]);
+  messageClose(LOG_STDOUT);
+  throwStreamPrint(NULL,"see last warning");
+
+  return NEWTON_NONE;
+
+}
+
 /**
  * Signals the type of the simulation
  * retuns true for interactive and false for non-interactive
@@ -802,6 +825,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
 
   data->simulationInfo.nlsMethod = getNonlinearSolverMethod(argc, argv);
   data->simulationInfo.lsMethod = getlinearSolverMethod(argc, argv);
+  data->simulationInfo.newtonStrategy = getNewtonStrategy(argc, argv);
 
   rt_tick(SIM_TIMER_INIT_XML);
   read_input_xml(&(data->modelData), &(data->simulationInfo));
