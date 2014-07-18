@@ -235,7 +235,7 @@ int freeNonlinearSystem(DATA *data)
 int solve_nonlinear_system(DATA *data, int sysNumber)
 {
   /* NONLINEAR_SYSTEM_DATA* system = &(data->simulationInfo.nonlinearSystemData[sysNumber]); */
-  int success, saveJumpState;
+  int success = 0, saveJumpState;
   NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
   threadData_t *threadData = data->threadData;
   struct dataNewtonAndHybrid *mixedSolverData;
@@ -320,15 +320,14 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
  */
 int check_nonlinear_solutions(DATA *data, int printFailingSystems)
 {
-  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
   long i;
-  int retVal = 0;
 
   for(i=0; i<data->modelData.nNonLinearSystems; ++i) {
-    retVal = retVal  + check_nonlinear_solution(data, printFailingSystems, i);
+     if(check_nonlinear_solution(data, printFailingSystems, i))
+       return 1;
   }
 
-  return retVal;
+  return 0;
 }
 
 /*! \fn check_nonlinear_solution
