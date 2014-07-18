@@ -163,26 +163,21 @@ static int fdjacLinear(modelica_integer* n, int(*f)(double*, double*, int*, void
        double* fvec, double *fjac, double* eps, int* iflag, double* wa,
        void* userdata, int sysNumber)
 {
-  double delta_h = sqrt(*eps);
-  double delta_hh;
-  double delta_hhh;
   double xsave;
 
   int i,j,l;
 
-  for(i = 0; i < *n; i++) {
-    /* delta_h == 1, since linear case */
-    delta_hh = 1;
+  for(i = 0,l = 0; i < *n; i++) {
     xsave = x[i];
-    x[i] += delta_hh;
-    delta_hh = 1. / delta_hh;
+    /* delta_h == 1, since linear case */
+    x[i] += 1.0;
     f(x, wa, iflag, userdata, sysNumber);
+    x[i] = xsave;
 
     for(j = 0; j < *n; j++) {
-      l = i * *n + j;
-      fjac[l] = (wa[j] - fvec[j]) * delta_hh;
+      fjac[l++] = wa[j] - fvec[j];
     }
-    x[i] = xsave;
+
   }
 
   /* debug output */
