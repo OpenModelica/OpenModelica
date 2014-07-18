@@ -119,6 +119,10 @@ algorithm
   //print("\n");
 
   outSysts := Debug.bcallret5(b, partitionIndependentBlocksSplitBlocks, i, syst, ixs, mT, false, {syst});
+
+  // analyze partition kind
+  outSysts := List.map(outSysts, analyzePartitionKind);
+
   Debug.fcall2(Flags.DUMP_SYNCHRONOUS, BackendDump.dumpEqSystems, outSysts, "base-clock partitioning");
 end clockPartitioning1;
 
@@ -333,5 +337,249 @@ algorithm
     then ();
   end match;
 end partitionVars;
+
+protected function analyzePartitionKind "author: lochel
+  A variable u in sample(u) and a variable y in y = hold(ud) is in a
+  continuous-time partition.
+
+  Correspondingly, variables u and y in y = sample(uc), y = subSample(u),
+  y = superSample(u), y = shiftSample(u), y = backSample(u), y = previous(u),
+  are in a clocked partition. Equations in a clocked when clause are also in a
+  clocked partition.
+
+  Other partitions where none of the variables in the partition are associated
+  with any of the operators above have an unspecified partition kind and are
+  considered continuous-time partitions.
+
+  BackendDAE.CONTINUOUS_TIME_PARTITION():
+    * sample(u)
+    * y = hold(...)
+
+  BackendDAE.CLOCKED_PARTITION():
+    * y = sample(...)
+    * y = subSample(u)
+    * y = superSample(u)
+    * y = shiftSample(u)
+    * y = backSample(u)
+    * y = previous(u)"
+  input BackendDAE.EqSystem inEqSystem;
+  output BackendDAE.EqSystem outEqSystem;
+protected
+  BackendDAE.Variables orderedVars;
+  BackendDAE.EquationArray orderedEqs;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  list<DAE.ComponentRef> continuousTimeVars, clockedVars;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets) := inEqSystem;
+
+  //((continuousTimeVars, clockedVars)) := BackendDAEUtil.traverseBackendDAEExpsEqSystem(inEqSystem, getVariableLists, ({}, {}));
+  (continuousTimeVars, clockedVars) := getVariableLists2(BackendEquation.equationList(orderedEqs));
+
+// print("continuousTimeVars (pre):\n");
+// BackendDump.debuglst((continuousTimeVars, ComponentReference.printComponentRefStr, "\n", "\n"));
+// print("clockedVars (pre):\n");
+// BackendDump.debuglst((clockedVars, ComponentReference.printComponentRefStr, "\n", "\n"));
+
+  (continuousTimeVars, clockedVars) := filterVariables(orderedVars, continuousTimeVars, clockedVars);
+// print("continuousTimeVars (post):\n");
+// BackendDump.debuglst((continuousTimeVars, ComponentReference.printComponentRefStr, "\n", "\n"));
+// print("clockedVars (post):\n");
+// BackendDump.debuglst((clockedVars, ComponentReference.printComponentRefStr, "\n", "\n"));
+
+  partitionKind := getPartitionKind(continuousTimeVars, clockedVars);
+  outEqSystem := BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
+end analyzePartitionKind;
+
+protected function getVariableLists
+  input tuple<DAE.Exp, tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>>> inTpl;
+  output tuple<DAE.Exp, tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>>> outTpl;
+algorithm
+  outTpl := match(inTpl)
+    local
+      DAE.Exp exp;
+      list<DAE.ComponentRef> continuousTimeVars, clockedVars;
+      DAE.ComponentRef cr;
+
+    case ((exp as DAE.CALL(path=Absyn.IDENT(name="sample"), expLst=_::DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars)))
+    then ((exp, (cr::continuousTimeVars, clockedVars)));
+
+    case ((exp as DAE.CALL(path=Absyn.IDENT(name="subSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars)))
+    then ((exp, (continuousTimeVars, cr::clockedVars)));
+
+    case ((exp as DAE.CALL(path=Absyn.IDENT(name="superSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars)))
+    then ((exp, (continuousTimeVars, cr::clockedVars)));
+
+    case ((exp as DAE.CALL(path=Absyn.IDENT(name="shiftSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars)))
+    then ((exp, (continuousTimeVars, cr::clockedVars)));
+
+    case ((exp as DAE.CALL(path=Absyn.IDENT(name="backSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars)))
+    then ((exp, (continuousTimeVars, cr::clockedVars)));
+
+    case ((exp as DAE.CALL(path=Absyn.IDENT(name="previous"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars)))
+    then ((exp, (continuousTimeVars, cr::clockedVars)));
+
+    else then inTpl;
+  end match;
+end getVariableLists;
+
+protected function getVariableLists2
+  input list<BackendDAE.Equation> inEqnLst;
+  output list<DAE.ComponentRef> outContinuousTimeVars;
+  output list<DAE.ComponentRef> outClockedVars;
+algorithm
+  (outContinuousTimeVars, outClockedVars) := matchcontinue(inEqnLst)
+    local
+      DAE.Exp exp;
+      list<DAE.ComponentRef> continuousTimeVars1, clockedVars1;
+      list<DAE.ComponentRef> continuousTimeVars2, clockedVars2;
+      DAE.ComponentRef cr;
+      DAE.ComponentRef cr1;
+      DAE.ComponentRef cr2;
+      BackendDAE.Equation curr;
+      list<BackendDAE.Equation> rest;
+
+    case ({}) then ({}, {});
+
+    // y = sample(u)
+    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr1), scalar=DAE.CALL(path=Absyn.IDENT(name="sample"), expLst=_::DAE.CREF(componentRef=cr2)::_))::rest) equation
+      clockedVars1 = {cr1};
+      continuousTimeVars1 = {cr2};
+      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
+    then (listAppend(continuousTimeVars1, continuousTimeVars2), listAppend(clockedVars1, clockedVars2));
+
+    // sample(u) = y
+    case (BackendDAE.EQUATION(scalar=DAE.CREF(componentRef=cr1), exp=DAE.CALL(path=Absyn.IDENT(name="sample"), expLst=_::DAE.CREF(componentRef=cr2)::_))::rest) equation
+      clockedVars1 = {cr1};
+      continuousTimeVars1 = {cr2};
+      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
+    then (listAppend(continuousTimeVars1, continuousTimeVars2), listAppend(clockedVars1, clockedVars2));
+
+    // y = hold(...)
+    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr1), scalar=DAE.CALL(path=Absyn.IDENT(name="hold")))::rest) equation
+      continuousTimeVars1 = {cr1};
+      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
+    then (listAppend(continuousTimeVars1, continuousTimeVars2), clockedVars2);
+
+    // hold(...) = y
+    case (BackendDAE.EQUATION(scalar=DAE.CREF(componentRef=cr1), exp=DAE.CALL(path=Absyn.IDENT(name="hold")))::rest) equation
+      continuousTimeVars1 = {cr1};
+      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
+    then (listAppend(continuousTimeVars1, continuousTimeVars2), clockedVars2);
+
+    // y = subSample(u)
+    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr1), scalar=DAE.CALL(path=Absyn.IDENT(name="subSample"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
+      clockedVars1 = {cr1, cr2};
+      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
+    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
+
+    // subSample(u) = y
+    case (BackendDAE.EQUATION(scalar=DAE.CREF(componentRef=cr1), exp=DAE.CALL(path=Absyn.IDENT(name="subSample"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
+      clockedVars1 = {cr1, cr2};
+      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
+    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
+
+    // y = superSample(u)
+    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr1), scalar=DAE.CALL(path=Absyn.IDENT(name="superSample"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
+      clockedVars1 = {cr1, cr2};
+      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
+    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
+
+    // superSample(u) = y
+    case (BackendDAE.EQUATION(scalar=DAE.CREF(componentRef=cr1), exp=DAE.CALL(path=Absyn.IDENT(name="superSample"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
+      clockedVars1 = {cr1, cr2};
+      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
+    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
+
+    // y = shiftSample(u)
+    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr1), scalar=DAE.CALL(path=Absyn.IDENT(name="shiftSample"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
+      clockedVars1 = {cr1, cr2};
+      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
+    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
+
+    // shiftSample(u) = y
+    case (BackendDAE.EQUATION(scalar=DAE.CREF(componentRef=cr1), exp=DAE.CALL(path=Absyn.IDENT(name="shiftSample"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
+      clockedVars1 = {cr1, cr2};
+      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
+    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
+
+    // y = backSample(u)
+    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr1), scalar=DAE.CALL(path=Absyn.IDENT(name="backSample"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
+      clockedVars1 = {cr1, cr2};
+      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
+    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
+
+    // backSample(u) = y
+    case (BackendDAE.EQUATION(scalar=DAE.CREF(componentRef=cr1), exp=DAE.CALL(path=Absyn.IDENT(name="backSample"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
+      clockedVars1 = {cr1, cr2};
+      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
+    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
+
+    // y = previous(u)
+    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr1), scalar=DAE.CALL(path=Absyn.IDENT(name="previous"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
+      clockedVars1 = {cr1, cr2};
+      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
+    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
+
+    // previous(u) = y
+    case (BackendDAE.EQUATION(scalar=DAE.CREF(componentRef=cr1), exp=DAE.CALL(path=Absyn.IDENT(name="previous"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
+      clockedVars1 = {cr1, cr2};
+      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
+    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
+
+    case (curr::rest) equation
+      (_, (continuousTimeVars1, clockedVars1)) = BackendEquation.traverseBackendDAEExpsEqn(curr, getVariableLists, ({}, {}));
+      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
+    then (listAppend(continuousTimeVars1, continuousTimeVars2), listAppend(clockedVars1, clockedVars2));
+  end matchcontinue;
+end getVariableLists2;
+
+protected function getPartitionKind
+  input list<DAE.ComponentRef> inContinuousTimeVars;
+  input list<DAE.ComponentRef> inClockedVars;
+  output BackendDAE.BaseClockPartitionKind outPartitionKind;
+algorithm
+  outPartitionKind := match(inContinuousTimeVars, inClockedVars)
+    case ({}, {}) then BackendDAE.UNSPECIFIED_PARTITION();
+    case ({}, _) then BackendDAE.CLOCKED_PARTITION();
+    case (_, {}) then BackendDAE.CONTINUOUS_TIME_PARTITION();
+    case (_, _) then BackendDAE.UNKNOWN_PARTITION();
+  end match;
+end getPartitionKind;
+
+protected function filterVariables
+  input BackendDAE.Variables inVars;
+  input list<DAE.ComponentRef> inContinuousTimeVars;
+  input list<DAE.ComponentRef> inClockedVars;
+  output list<DAE.ComponentRef> outContinuousTimeVars;
+  output list<DAE.ComponentRef> outClockedVars;
+algorithm
+  (outContinuousTimeVars, outClockedVars) := matchcontinue(inVars, inContinuousTimeVars, inClockedVars)
+    local
+      list<DAE.ComponentRef> continuousTimeVars;
+      list<DAE.ComponentRef> clockedVars;
+      DAE.ComponentRef curr;
+      list<DAE.ComponentRef> rest;
+    case (_, {}, {}) then ({}, {});
+
+    case (_, {}, curr::rest) equation
+      (_, _) = BackendVariable.getVar(curr, inVars);
+      (_, clockedVars) = filterVariables(inVars, {}, rest);
+    then ({}, curr::clockedVars);
+
+    case (_, {}, curr::rest) equation
+      (_, clockedVars) = filterVariables(inVars, {}, rest);
+    then ({}, clockedVars);
+
+    case (_, curr::rest, _) equation
+      (_, _) = BackendVariable.getVar(curr, inVars);
+      (continuousTimeVars, clockedVars) = filterVariables(inVars, rest, inClockedVars);
+    then (curr::continuousTimeVars, clockedVars);
+
+    case (_, curr::rest, _) equation
+      (continuousTimeVars, clockedVars) = filterVariables(inVars, rest, inClockedVars);
+    then (continuousTimeVars, clockedVars);
+  end matchcontinue;
+end filterVariables;
 
 end SynchronousFeatures;

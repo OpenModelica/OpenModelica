@@ -116,14 +116,17 @@ protected
   Option<BackendDAE.IncidenceMatrix> mT;
   BackendDAE.Matching matching;
   BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars,
                       orderedEqs=orderedEqs,
                       m=m,
                       mT=mT,
                       matching=matching,
-                      stateSets=stateSets) := inEqSystem;
+                      stateSets=stateSets,
+                      partitionKind=partitionKind) := inEqSystem;
 
+  print("\n" +& partitionKindString(partitionKind) +& " partition\n" +& UNDERLINE +& "\n");
   dumpVariables(orderedVars, "Variables");
   dumpEquationArray(orderedEqs, "Equations");
   dumpStateSets(stateSets, "State Sets");
@@ -132,6 +135,7 @@ algorithm
 
   print("\n");
   dumpFullMatching(matching);
+  print("\n");
 end printEqSystem;
 
 public function printEquation "author: PA
@@ -557,7 +561,7 @@ public function dumpEqSystems
   input BackendDAE.EqSystems inEqSystems;
   input String heading;
 algorithm
-  print("\n" +& heading +& " (" +& intString(listLength(inEqSystems)) +& " partitions)\n" +& UNDERLINE +& "\n");
+  print("\n" +& BORDER +& "\n" +& heading +& " (" +& intString(listLength(inEqSystems)) +& " partitions)\n" +& BORDER +& "\n\n");
   List.map_0(inEqSystems, printEqSystem);
   print("\n");
 end dumpEqSystems;
@@ -2753,15 +2757,28 @@ algorithm
   end match;
 end optStateSelectionString;
 
+protected function partitionKindString
+  input BackendDAE.BaseClockPartitionKind inPartitionKind;
+  output String outString;
+algorithm
+  outString := match(inPartitionKind)
+    case BackendDAE.CLOCKED_PARTITION() then "clocked";
+    case BackendDAE.CONTINUOUS_TIME_PARTITION() then "continuous time";
+    case BackendDAE.UNSPECIFIED_PARTITION() then "unspecified";
+    case BackendDAE.UNKNOWN_PARTITION() then "unknown";
+    else "???";
+  end match;
+end partitionKindString;
+
 protected function equationKindString
   input BackendDAE.EquationKind inEqKind;
   output String outString;
 algorithm
-  outString:= match(inEqKind)
-    case BackendDAE.BINDING_EQUATION() then  "binding";
-    case BackendDAE.DYNAMIC_EQUATION() then  "dynamic";
-    case BackendDAE.INITIAL_EQUATION() then  "initial";
-    case BackendDAE.UNKNOWN_EQUATION_KIND() then  "unknown";
+  outString := match(inEqKind)
+    case BackendDAE.BINDING_EQUATION() then "binding";
+    case BackendDAE.DYNAMIC_EQUATION() then "dynamic";
+    case BackendDAE.INITIAL_EQUATION() then "initial";
+    case BackendDAE.UNKNOWN_EQUATION_KIND() then "unknown";
     else "???";
   end match;
 end equationKindString;
