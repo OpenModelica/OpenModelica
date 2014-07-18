@@ -3679,8 +3679,10 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data)
   {
     const int equationIndexes[2] = {1,<%ix%>};
+    TRACE_PUSH
     <%&varD%>
     <%x%>
+    TRACE_POP
   }
   >>
   <<
@@ -3741,8 +3743,10 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, S
   void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data)
   {
     const int equationIndexes[2] = {1,<%ix%>};
+    TRACE_PUSH
     <%&varD%>
     <%x%>
+    TRACE_POP
   }
   >>
   <<
@@ -5466,9 +5470,11 @@ case FUNCTION(__) then
   {
     <%varDecls%>
     _tailrecursive: OMC_LABEL_UNUSED
+    TRACE_PUSH
     <%outVarInits%>
     <%varInits%>
     <%bodyPart%>
+    TRACE_POP
     _return: OMC_LABEL_UNUSED
     <%outVarCopy%>
     <%outVarAssign%>
