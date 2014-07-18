@@ -396,7 +396,7 @@ double extraPolate(DATA *data, double old1, double old2)
 {
   double retValue;
 
-  if(data->localData[1]->timeValue == data->localData[2]->timeValue)
+  if(data->localData[1]->timeValue == data->localData[2]->timeValue || old1 == old2)
   {
     retValue = old1;
   }
