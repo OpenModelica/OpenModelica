@@ -5474,13 +5474,14 @@ case FUNCTION(__) then
     <%outVarInits%>
     <%varInits%>
     <%bodyPart%>
-    TRACE_POP
     _return: OMC_LABEL_UNUSED
     <%outVarCopy%>
     <%outVarAssign%>
     <%if acceptParModelicaGrammar() then
     '/* Free GPU/OpenCL CPU memory */<%\n%><%varFrees%>'%>
-    <%freeConstructedExternalObjects%><%match outVars
+    <%freeConstructedExternalObjects%>
+    TRACE_POP
+    <%match outVars
        case {} then 'return;'
        case v::_ then 'return <%funArgName(v)%>;'
     %>
