@@ -480,14 +480,14 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
     {
       memcpy(states_b, data->localData[0]->realVars, data->modelData.nStates * sizeof(double));
       *b = c;
-      memcpy(data->simulationInfo.zeroCrossingsPre, data->simulationInfo.zeroCrossings, data->modelData.nZeroCrossings * sizeof(double));
-      memcpy(data->simulationInfo.zeroCrossings, backup_gout, data->modelData.nZeroCrossings * sizeof(double));
+      memcpy(backup_gout, data->simulationInfo.zeroCrossings, data->modelData.nZeroCrossings * sizeof(double));
     }
     else  /*else Zerocrossing in right Section */
     {
       memcpy(states_a, data->localData[0]->realVars, data->modelData.nStates * sizeof(double));
       *a = c;
-      memcpy(backup_gout, data->simulationInfo.zeroCrossings, data->modelData.nZeroCrossings * sizeof(double));
+      memcpy(data->simulationInfo.zeroCrossingsPre, data->simulationInfo.zeroCrossings, data->modelData.nZeroCrossings * sizeof(double));
+      memcpy(data->simulationInfo.zeroCrossings, backup_gout, data->modelData.nZeroCrossings * sizeof(double));
     }
   }
   free(backup_gout);
