@@ -592,8 +592,7 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
   const unsigned int * const sPindex = data->simulationInfo.analyticJacobians[index].sparsePattern.index;
   long double  scalb = optData->bounds.scalb[m][n];
 
-  const short index_d_la =  optData->s.derIndex[index - 1];
-  int * index_J = (index == 3)? optData->s.indexJ3 : optData->s.indexJ2;
+  const int * index_J = (index == 3)? optData->s.indexJ3 : optData->s.indexJ2;
   const int nJ1 = optData->dim.nJ + 1;
 
   for(i = 1; i < Cmax; ++i){
