@@ -413,7 +413,7 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
   }
 
   sData = (SIMULATION_DATA*) data->localData[0];
-  sDataOld = (SIMULATION_DATA*) data->localData[1];
+  /*sDataOld = (SIMULATION_DATA*) data->localData[1];*/
 
   infoStreamPrint(LOG_DASSL, 0, "Calling DASSL from %.15g to %.15g", solverInfo->currentTime, tout);
   do
@@ -424,7 +424,7 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
       /* rotate RingBuffer before step is calculated */
       rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
       sData = (SIMULATION_DATA*) data->localData[0];
-      sDataOld = (SIMULATION_DATA*) data->localData[1];
+      /*sDataOld = (SIMULATION_DATA*) data->localData[1];*/
       /* after rotation dassl expects the same states as before */
       //memcpy(sData->realVars, sDataOld->realVars, sizeof(double)*data->modelData.nStates);
     }
