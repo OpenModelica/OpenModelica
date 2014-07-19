@@ -351,11 +351,8 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
   }
 
   /* write states to work arrays */
-  for(i=0; i < data->modelData.nStates; i++)
-  {
-    states_left[i] = data->simulationInfo.realVarsOld[i];
-    states_right[i] = data->localData[0]->realVars[i];
-  }
+  memcpy(states_left,  data->simulationInfo.realVarsOld, data->modelData.nStates * sizeof(double));
+  memcpy(states_right, data->localData[0]->realVars    , data->modelData.nStates * sizeof(double));
 
   /* Search for event time and event_id with bisection method */
   *eventTime = bisection(data, &time_left, &time_right, states_left, states_right, tmpEventList, eventList);
@@ -446,7 +443,6 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
 {
   double TTOL = 1e-9;
   double c;
-  int right = 0;
   long i=0;
 
   double *backup_gout = (double*) malloc(data->modelData.nZeroCrossings * sizeof(double));
@@ -455,23 +451,20 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
 
   assert(backup_gout);
 
-  for(i=0; i < data->modelData.nZeroCrossings; i++)
-  {
-    backup_gout[i] = data->simulationInfo.zeroCrossings[i];
-  }
+  memcpy(backup_gout, data->simulationInfo.zeroCrossings, data->modelData.nZeroCrossings * sizeof(double));
 
   infoStreamPrint(LOG_ZEROCROSSINGS, 0, "bisection method starts in interval [%e, %e]", *a, *b);
   infoStreamPrint(LOG_ZEROCROSSINGS, 0, "TTOL is set to: %e", TTOL);
 
   while(fabs(*b - *a) > TTOL)
   {
-    c = (*a + *b) / 2.0;
+    c = 0.5* (*a + *b);
     data->localData[0]->timeValue = c;
 
     /*calculates states at time c */
     for(i=0; i < data->modelData.nStates; i++)
     {
-      data->localData[0]->realVars[i] = (states_a[i] + states_b[i]) / 2.0;
+      data->localData[0]->realVars[i] = 0.5*(states_a[i] + states_b[i]);
     }
 
     /*calculates Values dependents on new states*/
@@ -485,40 +478,20 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
 
     if(checkZeroCrossings(data, tmpEventList, eventList))  /* If Zerocrossing in left Section */
     {
-      for(i=0; i < data->modelData.nStates; i++)
-      {
-        states_b[i] = data->localData[0]->realVars[i];
-      }
+      memcpy(states_b, data->localData[0]->realVars, data->modelData.nStates * sizeof(double));
       *b = c;
-      right = 0;
+      memcpy(data->simulationInfo.zeroCrossingsPre, data->simulationInfo.zeroCrossings, data->modelData.nZeroCrossings * sizeof(double));
+      memcpy(data->simulationInfo.zeroCrossings, backup_gout, data->modelData.nZeroCrossings * sizeof(double));
     }
     else  /*else Zerocrossing in right Section */
     {
-      for(i=0; i < data->modelData.nStates; i++)
-      {
-        states_a[i] = data->localData[0]->realVars[i];
-      }
+      memcpy(states_a, data->localData[0]->realVars, data->modelData.nStates * sizeof(double));
       *a = c;
-      right = 1;
-    }
-    if(right)
-    {
-      for(i=0; i < data->modelData.nZeroCrossings; i++)
-      {
-        data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
-        data->simulationInfo.zeroCrossings[i] = backup_gout[i];
-      }
-    }
-    else
-    {
-      for(i=0; i < data->modelData.nZeroCrossings; i++)
-      {
-        backup_gout[i] = data->simulationInfo.zeroCrossings[i];
-      }
+      memcpy(backup_gout, data->simulationInfo.zeroCrossings, data->modelData.nZeroCrossings * sizeof(double));
     }
   }
   free(backup_gout);
-  c = (*a + *b) / 2.0;
+  c = 0.5*(*a + *b);
 
   TRACE_POP
   return c;
