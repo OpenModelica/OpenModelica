@@ -694,17 +694,19 @@ void calculatingErrors(DATA_NEWTON* solverData, double* delta_x, double* delta_x
 
 void scaling_residual_vector(DATA_NEWTON* solverData)
 {
-    int i,j,k=0;
-    for(i=0; i<solverData->n; i++)
+    int i,j,k;
+    for(i=0, k=0; i<solverData->n; i++)
     {
-        solverData->resScaling[i] = 1e-16;
-        for(j=0; j<solverData->n; j++)
+        solverData->resScaling[i] = 0.0;
+        for(j=0; j<solverData->n; j++, ++k)
         {
-          solverData->resScaling[i] = (fabs(solverData->fjac[k]) > solverData->resScaling[i])
-              ? fabs(solverData->fjac[k]) : solverData->resScaling[i];
-          k++;
+          solverData->resScaling[i] = fmax(fabs(solverData->fjac[k]), solverData->resScaling[i]); 
         }
-        solverData->fvecScaled[i] = solverData->fvec[i] * (1 / solverData->resScaling[i]);
+        if(solverData->resScaling[i] <= 0.0){
+          warningStreamPrint(LOG_NLS_V, 1, "Jacobian matrix is singular.");
+          solverData->resScaling[i] = 1e-16;
+        }
+        solverData->fvecScaled[i] = solverData->fvec[i] / solverData->resScaling[i];
     }
 }
 
@@ -832,8 +834,6 @@ void damping_heuristic2(double damping_parameter, void* userdata, int sysNumber,
             break;
         }
     }
-
-    lambda = 1;
 
    messageClose(LOG_NLS_V);
 }
