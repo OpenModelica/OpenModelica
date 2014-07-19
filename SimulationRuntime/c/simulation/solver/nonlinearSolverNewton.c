@@ -700,7 +700,7 @@ void scaling_residual_vector(DATA_NEWTON* solverData)
         solverData->resScaling[i] = 0.0;
         for(j=0; j<solverData->n; j++, ++k)
         {
-          solverData->resScaling[i] = fmax(fabs(solverData->fjac[k]), solverData->resScaling[i]); 
+          solverData->resScaling[i] = fmax(fabs(solverData->fjac[k]), solverData->resScaling[i]);
         }
         if(solverData->resScaling[i] <= 0.0){
           warningStreamPrint(LOG_NLS_V, 1, "Jacobian matrix is singular.");
