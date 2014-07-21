@@ -43,5 +43,7 @@ public:
     virtual string getResultsFileName() { return "fmuresults.csv"; }
     virtual void setRuntimeLibrarypath(string) {}
     virtual string getRuntimeLibrarypath() { return "";}
+    virtual void setAlarmTime(unsigned int) {}
+    virtual unsigned int getAlarmTime() {return 0;}
 private:
 };
