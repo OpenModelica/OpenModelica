@@ -4,8 +4,8 @@ typedef std::vector<std::pair<double,double> > time_event_type;
 class ITime
 {
 public:
-  virtual ~ITime(){};
 
+  virtual ~ITime() {};
   virtual int getDimTimeEvent() const  = 0;
   //gibt die Time events (Startzeit und Frequenz) zurück
   virtual void getTimeEvent(time_event_type& time_events) = 0;

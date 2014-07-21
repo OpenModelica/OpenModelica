@@ -10,6 +10,7 @@
 #include <Solver/ISolver.h>        // Solver interface
 #include <Solver/ISolverSettings.h>      // SolverSettings interface
 #include <Solver/SystemStateSelection.h>
+#include <Solver/SimulationMonitor.h>
 /// typedef to hand over (callback) functions to fortran routines
 typedef int (*U_fp)(...);
 
@@ -32,12 +33,10 @@ Copyright (c) 2008, OSMC
 #undef BOOST_EXTENSION_SOLVER_DECL
 #define BOOST_EXTENSION_SOLVER_DECL
 #endif
-class BOOST_EXTENSION_SOLVER_DECL SolverDefaultImplementation
+class BOOST_EXTENSION_SOLVER_DECL SolverDefaultImplementation : public SimulationMonitor
 {
 public:
     void updateEventState();
-
-
     SolverDefaultImplementation(IMixedSystem* system, ISolverSettings* settings);
     virtual ~SolverDefaultImplementation();
 
@@ -60,7 +59,7 @@ public:
     /// Determines current status of a all zero functions (checks for a change in sign in any of all zero functions)
     void setZeroState();
 
-
+   
     /// Called by solver after every successfull integration step (calls writeOutput)
     void writeToFile(const int& stp, const double& t, const double& h);
   virtual bool stateSelection();
@@ -120,7 +119,7 @@ protected:
 
     IWriteOutput::OUTPUT
         _outputCommand;          ///< Controls the output
-
+    
 private:
     /// Definition of signum function
     inline static int sgn (const double &c)

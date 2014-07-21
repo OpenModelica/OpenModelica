@@ -9,6 +9,8 @@ import CodegenUtil.*;
 
 
 
+
+
 template translateModel(SimCode simCode) ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -183,6 +185,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   };
  >>
 end simulationJacobianHeaderFile;
+
+
 
 
 
@@ -398,7 +402,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%lastIdentOfPath(modelInfo.name)%>Initialize::~<%lastIdentOfPath(modelInfo.name)%>Initialize()
     {
-
+       
     }
 
 
@@ -425,7 +429,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%lastIdentOfPath(modelInfo.name)%>Jacobian::~<%lastIdentOfPath(modelInfo.name)%>Jacobian()
     {
-
+       
     }
     <%functionAnalyticJacobians(jacobianMatrixes,simCode)%>
  >>
@@ -451,7 +455,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%lastIdentOfPath(modelInfo.name)%>StateSelection::~<%lastIdentOfPath(modelInfo.name)%>StateSelection()
     {
-
+        
     }
    <%functionDimStateSets(stateSets, simCode)%>
    <%functionStateSets(stateSets, simCode)%>
@@ -482,6 +486,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::~<%lastIdentOfPath(modelInfo.name)%>WriteOutput()
     {
+        
         delete _historyImpl;
     }
     IHistory* <%lastIdentOfPath(modelInfo.name)%>WriteOutput::getHistory()
@@ -529,7 +534,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    }
    <%lastIdentOfPath(modelInfo.name)%>Extension::~<%lastIdentOfPath(modelInfo.name)%>Extension()
     {
-
+          
     }
 
 
@@ -1105,7 +1110,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
 
 
         //create Modelica system
-            std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
+            std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
 
             simulation.first->Start(system.first,simulation.second);
 

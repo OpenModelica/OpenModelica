@@ -50,7 +50,7 @@ public:
 
     /// Write out statistical information (statistical information of last simulation, e.g. time, number of steps, etc.)
      virtual void writeSimulationInfo();
-
+    virtual void setTimeOut(unsigned int time_out);
     /// Indicates whether a solver error occurred during integration, returns type of error and provides error message
     virtual const int reportErrorMessage(ostream& messageStream);
     virtual bool stateSelection();

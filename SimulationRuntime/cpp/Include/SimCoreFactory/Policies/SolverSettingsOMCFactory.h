@@ -26,7 +26,8 @@ public:
   virtual ~SolverSettingsOMCFactory()
     {
        delete _solver_type_map;
-        ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
+       ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
+		
     }
 
   virtual boost::shared_ptr<ISolverSettings> createSolverSettings(string solvername,boost::shared_ptr<IGlobalSettings> globalSettings)

@@ -10,7 +10,7 @@ struct ObjectFactory
     {
     _factory = boost::shared_ptr<T>(new T(library_path,modelicasystem_path));
   }
-
+    virtual ~ObjectFactory() {};
     protected:
     boost::shared_ptr<T>  _factory;
     PATH _library_path;

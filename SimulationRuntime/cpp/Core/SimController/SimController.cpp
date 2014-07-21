@@ -15,9 +15,10 @@ SimController::SimController(PATH library_path,PATH modelicasystem_path) : SimCo
 SimController::~SimController()
 {
 
+	_systems.clear();
 }
 
-std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > SimController::LoadSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), string modelKey)
+std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > SimController::LoadSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), string modelKey)
 {
     //if the model is already loaded
     std::map<string, std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> >  > ::iterator iter = _systems.find(modelKey);
@@ -32,7 +33,7 @@ std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > SimControlle
     return system;
 }
 
-std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > SimController::LoadSystem(string modelLib,string modelKey)
+std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > SimController::LoadSystem(string modelLib,string modelKey)
 {
   //if the model is already loaded
   std::map<string, std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> >  > ::iterator iter = _systems.find(modelKey);
@@ -47,7 +48,7 @@ std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > SimControlle
   return system;
 }
 
-std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > SimController::LoadModelicaSystem(PATH modelica_path,string modelKey)
+std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > SimController::LoadModelicaSystem(PATH modelica_path,string modelKey)
 {
   if(_use_modelica_compiler)
   {
@@ -67,7 +68,7 @@ std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > SimControlle
 
 }
 
-void SimController::Start(boost::weak_ptr<IMixedSystem> mixedsystem,SimSettings simsettings/*,ISimData* simData*/)
+void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem,SimSettings simsettings/*,ISimData* simData*/)
 {
 
   try
@@ -85,8 +86,12 @@ void SimController::Start(boost::weak_ptr<IMixedSystem> mixedsystem,SimSettings 
     global_settings->setSelectedNonLinSolver(simsettings.nonlinear_solver_name);
     global_settings->setSelectedSolver(simsettings.solver_name);
     global_settings->setOutputFormat(simsettings.outputFormat);
+
+    global_settings->setAlarmTime(simsettings.timeOut);
+    
     global_settings->setOutputPointType(simsettings.outputPointType);
-    simMgr = boost::shared_ptr<SimManager>(new SimManager(mixedsystem.lock(),_config.get()));
+    simMgr = boost::shared_ptr<SimManager>(new SimManager(mixedsystem,_config.get()));
+
     ISolverSettings* solver_settings = _config->getSolverSettings();
     solver_settings->setLowerLimit(simsettings.lower_limit);
     solver_settings->sethInit(simsettings.lower_limit);

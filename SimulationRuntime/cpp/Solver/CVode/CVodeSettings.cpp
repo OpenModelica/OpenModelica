@@ -7,7 +7,10 @@ CVodeSettings::CVodeSettings(IGlobalSettings* globalSettings)
   ,_denseOutput(true)
 {
 };
+ CVodeSettings::~CVodeSettings()
+ {
 
+ }
 bool CVodeSettings::getDenseOutput()
 {
   return _denseOutput;

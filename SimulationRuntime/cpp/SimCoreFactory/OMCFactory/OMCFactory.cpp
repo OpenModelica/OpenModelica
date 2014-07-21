@@ -52,8 +52,10 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
           ("number-of-intervals,v", po::value< int >()->default_value(500),  "number of intervals")
           ("tolerance,y", po::value< double >()->default_value(1e-6),  "solver tolerance")
           ("log-type,l", po::value< string >()->default_value("off"),  "log information: stats ,nls,ode,off")
+          ("alarm,a", po::value<unsigned int >()->default_value(360),  "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"),  "the points in time written to result file: all (output steps + events), step (just output points), none")
           ;
+     po::command_line_parser(argc, argv).options(desc).allow_unregistered().run();      
      po::variables_map vm;
      po::store(po::parse_command_line(argc, argv, desc), vm);
      po::notify(vm);
@@ -68,6 +70,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      string solver =  vm["solver"].as<string>();
      string nonLinSolver =  vm["non-lin-solver"].as<string>();
      string linSolver =  vm["lin-solver"].as<string>();
+     unsigned int time_out =  vm["alarm"].as<unsigned int>();;
      if (vm.count("runtime-library"))
      {
           //cout << "runtime library path set to " << vm["runtime-library"].as<string>() << std::endl;
@@ -149,7 +152,9 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      modelica_path.make_preferred();
 
 
-     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,outputFomat,outputPointType};
+
+     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,outputFomat,time_out,outputPointType};
+
 
      _library_path = libraries_path;
     _modelicasystem_path = modelica_path;

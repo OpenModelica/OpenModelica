@@ -79,6 +79,7 @@ using namespace std;
 #include <boost/unordered_map.hpp>
 #include <boost/program_options.hpp>
 #include <boost/assign/list_inserter.hpp>
+#include <boost/timer/timer.hpp>
     /*Namespaces*/
 using namespace boost::extensions;
 namespace fs = boost::filesystem;
@@ -105,7 +106,9 @@ using std::string;
 using std::vector;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
-
+using boost::timer::cpu_timer;
+using boost::timer::cpu_times;
+using boost::timer::nanosecond_type;
 typedef ublas::shallow_array_adaptor<double> adaptor_t;
 typedef ublas::vector<double, adaptor_t> shared_vector_t;
 typedef ublas::matrix<double, adaptor_t> shared_matrix_t;

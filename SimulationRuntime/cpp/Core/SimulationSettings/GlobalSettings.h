@@ -18,6 +18,9 @@ public:
     ///< Output step size (default: 20 ms)
     virtual double gethOutput();
     virtual void sethOutput(double);
+    ///< Write out results ([false,true]; default: true)
+    virtual bool getResultsOutput();
+    virtual void setResultsOutput(bool);
     ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
     virtual bool getInfoOutput();
     virtual void setInfoOutput(bool);
@@ -48,6 +51,8 @@ public:
     void load(std::string xml_file);
     virtual void setRuntimeLibrarypath(string);
     virtual string getRuntimeLibrarypath();
+    virtual void setAlarmTime(unsigned int);
+    virtual unsigned int getAlarmTime();
 private:
     double
         _startTime,///< Start time of integration (default: 0.0)
@@ -68,6 +73,7 @@ private:
     OutputFormat _outputFormat;
     OutputPointType _outputPointType;
     LogType _log_type;
+    unsigned int _alarm_time;
 
 
 };

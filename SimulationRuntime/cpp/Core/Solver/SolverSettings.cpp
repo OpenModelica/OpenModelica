@@ -16,6 +16,10 @@ SolverSettings::SolverSettings( IGlobalSettings* globalSettings)
 {
     _globalSettings = globalSettings ;
 }
+SolverSettings::~SolverSettings()
+{
+
+}
 double SolverSettings::gethInit()
 {
     return _hInit;

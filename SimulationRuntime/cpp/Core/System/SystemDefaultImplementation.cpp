@@ -1,7 +1,6 @@
 #include "Modelica.h"
 #include "FactoryExport.h"
 #include <Policies/FactoryConfig.h>
-#include <OMCFactory/OMCFactory.h>
 #include <System/EventHandling.h>
 #include <System/SystemDefaultImplementation.h>
 #include <System/AlgLoopSolverFactory.h>

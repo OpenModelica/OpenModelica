@@ -25,7 +25,7 @@ class BOOST_EXTENSION_SOLVERSETTINGS_DECL SolverSettings : public ISolverSetting
 {
 public:
   SolverSettings( IGlobalSettings* globalSettings);
-
+	 virtual ~SolverSettings();
   /// Initial step size (default: 1e-2)
   virtual double gethInit();
   virtual void sethInit(double);

@@ -22,6 +22,7 @@ public:
     {
         delete _system_type_map;
         ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
+		
     }
 
     virtual boost::shared_ptr<IAlgLoopSolverFactory> createAlgLoopSolverFactory(IGlobalSettings* globalSettings)

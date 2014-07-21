@@ -10,6 +10,7 @@
 #include <Policies/FactoryConfig.h>
 #include <OMCFactory/OMCFactory.h>
 #include "FactoryExport.h"
+
 #include <Solver/SolverDefaultImplementation.h>
 #include <Solver/SolverSettings.h>
 

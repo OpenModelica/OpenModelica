@@ -16,6 +16,7 @@ GlobalSettings::GlobalSettings()
 , _outputFormat(EMPTY)
 , _outputPointType(ALL)
 , _log_type(OFF)
+,_alarm_time(0)
 {
 
 }
@@ -86,6 +87,17 @@ void GlobalSettings::setOutputPointType(OutputPointType type)
   _log_type  = type;
  }
 
+
+ ///< Write out results ([false,true]; default: true)
+bool GlobalSettings::getResultsOutput()
+{
+    return _resultsOutput;
+}
+void GlobalSettings::setResultsOutput(bool output)
+{
+    _resultsOutput  =output;
+}
+
  void  GlobalSettings::setResultsFileName(string name)
  {
      _resultsfile_name = name;
@@ -153,4 +165,11 @@ void GlobalSettings::load(std::string xml_file)
    {
    return _runtimeLibraryPath;
    }
-
+   void GlobalSettings::setAlarmTime(unsigned int t)
+   {
+   _alarm_time = t;
+   }
+     unsigned int GlobalSettings::getAlarmTime()
+     {
+        return _alarm_time;
+     }

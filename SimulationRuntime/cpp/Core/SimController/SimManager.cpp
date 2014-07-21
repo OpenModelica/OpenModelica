@@ -32,7 +32,7 @@ SimManager::SimManager(boost::shared_ptr<IMixedSystem> system,Configuration* con
 
       _solver = _config->createSelectedSolver(system.get());
 
-      _initialization = new Initialization(boost::dynamic_pointer_cast<ISystemInitialization>(_mixed_system),_solver);
+      _initialization = boost::shared_ptr<Initialization>(new Initialization(boost::dynamic_pointer_cast<ISystemInitialization>(_mixed_system),_solver));
 
 }
 SimManager::~SimManager()
@@ -41,6 +41,7 @@ SimManager::~SimManager()
             delete _timeeventcounter;
       if(_events)
             delete [] _events;
+	
 }
 
 void SimManager::initialize()
@@ -87,8 +88,8 @@ void SimManager::initialize()
             _dimtimeevent =0;
       _tStart      = _config->getGlobalSettings()->getStartTime();
       _tEnd      =_config->getGlobalSettings()->getEndTime();
+      // _solver->setTimeOut(_config->getGlobalSettings()->getAlarmTime());
       _dimZeroFunc=event_system->getDimZeroFunc();
-    //// Task: WRITE und FIRST_CALL+LAST_CALL, da es nur einen Solver (und somit keine Koppelschritte) gibt
       _solverTask = ISolver::SOLVERCALL(ISolver::FIRST_CALL);
       if (_dimZeroFunc==event_system->getDimZeroFunc() )
       {

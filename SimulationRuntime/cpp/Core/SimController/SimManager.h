@@ -72,5 +72,5 @@ private:
     _H,                                    ///< Input, Output      - Koppelschrittweite
         _tStart,
         _tEnd;
-      Initialization* _initialization;
+      boost::shared_ptr<Initialization> _initialization;
 };

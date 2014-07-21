@@ -6,7 +6,7 @@
 Policy class to create nonlin solver object
 */
 template <class CreationPolicy>
-struct NonLinSolverOMCFactory : public  ObjectFactory<CreationPolicy>
+struct NonLinSolverOMCFactory : virtual public  ObjectFactory<CreationPolicy>
 {
 
 public:
@@ -15,11 +15,13 @@ public:
         ,_last_selected_solver("empty")
     {
 
-
+		_non_linsolver_type_map= new type_map();
     }
     virtual ~NonLinSolverOMCFactory()
     {
-        ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
+       
+		delete _non_linsolver_type_map;
+		ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
     }
 
    virtual boost::shared_ptr<INonLinSolverSettings> createNonLinSolverSettings(string nonlin_solver)
@@ -32,7 +34,7 @@ public:
              PATH newton_path = ObjectFactory<CreationPolicy>::_library_path;
             PATH newton_name(NEWTON_LIB);
             newton_path/=newton_name;
-            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(newton_path.string(),_non_linsolver_type_map);
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(newton_path.string(),*_non_linsolver_type_map);
             if (result != LOADER_SUCCESS)
             {
             
@@ -45,7 +47,7 @@ public:
               PATH kinsol_path = ObjectFactory<CreationPolicy>::_library_path;
             PATH kinsol_name(KINSOL_LIB);
             kinsol_path/=kinsol_name;
-            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(kinsol_path.string(),_non_linsolver_type_map);
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(kinsol_path.string(),*_non_linsolver_type_map);
             if (result != LOADER_SUCCESS)
             {
             
@@ -58,7 +60,7 @@ public:
             PATH hybrj_path = ObjectFactory<CreationPolicy>::_library_path;
             PATH hybrj_name(HYBRJ_LIB);
             hybrj_path/=hybrj_name;
-            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(hybrj_path.string(),_non_linsolver_type_map);
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(hybrj_path.string(),*_non_linsolver_type_map);
             if (result != LOADER_SUCCESS)
             {
             
@@ -71,7 +73,7 @@ public:
         _last_selected_solver =  nonlin_solver;
         string nonlinsolversettings = nonlin_solver.append("Settings");
         std::map<std::string, factory<INonLinSolverSettings> >::iterator iter;
-        std::map<std::string, factory<INonLinSolverSettings> >& nonLinSolversettingsfactory(_non_linsolver_type_map.get());
+        std::map<std::string, factory<INonLinSolverSettings> >& nonLinSolversettingsfactory(_non_linsolver_type_map->get());
         iter = nonLinSolversettingsfactory.find(nonlinsolversettings);
         if (iter ==nonLinSolversettingsfactory.end()) 
         {
@@ -87,7 +89,7 @@ public:
        if(_last_selected_solver.compare(solver_name)==0)
        {
             std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> >::iterator iter;
-            std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> >& nonlinSolverFactory(_non_linsolver_type_map.get());
+            std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> >& nonlinSolverFactory(_non_linsolver_type_map->get());
             iter = nonlinSolverFactory.find(solver_name);
             if (iter ==nonlinSolverFactory.end()) 
             {
@@ -102,5 +104,5 @@ public:
 protected:
      string _last_selected_solver;
 private:
-    type_map _non_linsolver_type_map;
+    type_map* _non_linsolver_type_map;
 };

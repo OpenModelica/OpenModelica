@@ -74,6 +74,7 @@ initializes settings object by an xml file
 void EulerSettings::load(std::string xml_file)
 {
 
+      
 
 }
 

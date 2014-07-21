@@ -6,18 +6,19 @@
  Policy class to create lin solver object
  */
 template<class CreationPolicy>
-struct LinSolverOMCFactory : public ObjectFactory<CreationPolicy> {
+struct LinSolverOMCFactory : virtual public ObjectFactory<CreationPolicy> {
 
 public:
   LinSolverOMCFactory(PATH library_path, PATH modelicasystem_path,PATH config_path)
   :ObjectFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
   ,_last_selected_solver("empty")
   {
-
+	  _linsolver_type_map = new type_map();
   }
   virtual ~LinSolverOMCFactory()
   {
-    ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
+      delete _linsolver_type_map;
+	 // ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs(); todo solver lib wird in linsolver factory entlanden
   }
 
   virtual boost::shared_ptr<ILinSolverSettings> createLinSolverSettings(string lin_solver)
@@ -30,7 +31,7 @@ public:
             PATH umfpack_path = ObjectFactory<CreationPolicy>::_library_path;
             PATH umfpack_name(UMFPACK_LIB);
             umfpack_path/=umfpack_name;
-            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(umfpack_path.string(),_linsolver_type_map);
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(umfpack_path.string(),*_linsolver_type_map);
             if (result != LOADER_SUCCESS)
             {
                 throw std::runtime_error("Failed loading umfpack solver library!");
@@ -43,7 +44,7 @@ public:
         _last_selected_solver =  lin_solver;
         string linsolversettings = lin_solver.append("Settings");
         std::map<std::string, factory<ILinSolverSettings> >::iterator iter;
-        std::map<std::string, factory<ILinSolverSettings> >& linSolversettingsfactory(_linsolver_type_map.get());
+        std::map<std::string, factory<ILinSolverSettings> >& linSolversettingsfactory(_linsolver_type_map->get());
         iter = linSolversettingsfactory.find(linsolversettings);
         if (iter == linSolversettingsfactory.end())
         {
@@ -58,7 +59,7 @@ public:
        if(_last_selected_solver.compare(solver_name)==0)
        {
             std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, ILinSolverSettings*> >::iterator iter;
-            std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, ILinSolverSettings*> >& linSolverFactory(_linsolver_type_map.get());
+            std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, ILinSolverSettings*> >& linSolverFactory(_linsolver_type_map->get());
             iter = linSolverFactory.find(solver_name);
             if (iter == linSolverFactory.end())
             {
@@ -74,5 +75,5 @@ public:
 protected:
      string _last_selected_solver;
 private:
-    type_map _linsolver_type_map;
+    type_map* _linsolver_type_map;
 };

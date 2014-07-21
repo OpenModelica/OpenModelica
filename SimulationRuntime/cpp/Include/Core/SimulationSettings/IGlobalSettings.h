@@ -35,12 +35,16 @@ public:
     virtual double gethOutput()=0;
     virtual void sethOutput(double)=0;
     ///< Write out results ([false,true]; default: true)
+    virtual bool getResultsOutput()=0;
+    virtual void setResultsOutput(bool)=0;
     virtual OutputFormat getOutputFormat() = 0;
     virtual void setOutputFormat(OutputFormat) = 0;
     virtual OutputPointType getOutputPointType() = 0;
     virtual void setOutputPointType(OutputPointType) = 0;
     virtual LogType getLogType() = 0;
     virtual void setLogType(LogType) = 0;
+     virtual void setAlarmTime(unsigned int) = 0;
+    virtual unsigned int getAlarmTime() = 0;
 
     virtual bool useEndlessSim()=0;
     virtual void useEndlessSim(bool)=0;

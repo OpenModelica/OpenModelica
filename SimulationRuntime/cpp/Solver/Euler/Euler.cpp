@@ -130,6 +130,11 @@ void Euler::initialize()
     }
     }
 }
+  void Euler::setTimeOut(unsigned int time_out)
+  {
+       SimulationMonitor::setTimeOut(time_out);
+  }
+
 
 /// Set start t for numerical solution
 void Euler::setStartTime(const double& t)
@@ -176,7 +181,7 @@ void Euler::solve(const SOLVERCALL command)
         // Reset status flag
         _solverStatus = ISolver::CONTINUE;
 
-        while ( _solverStatus & ISolver::CONTINUE )
+        while ( _solverStatus & ISolver::CONTINUE && !_interrupt )
         {
 
             // Zuvor wurde assemble aufgerufen und hat funktioniert => RESET IDID
@@ -218,7 +223,8 @@ void Euler::solve(const SOLVERCALL command)
         }
 
         _firstCall = false;
-
+        if(_interrupt)
+          throw std::invalid_argument("Euler::solve() time out reached");
 
     }
     else

@@ -8,6 +8,7 @@ class CVodeSettings :  public  SolverSettings
 
 public:
   CVodeSettings(IGlobalSettings* globalSettings);
+  virtual ~CVodeSettings();
   /**
   Equidistant output(by interpolation polynominal) ([true,false]; default: false)
   */

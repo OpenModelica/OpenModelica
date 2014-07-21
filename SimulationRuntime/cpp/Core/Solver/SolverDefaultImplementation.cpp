@@ -1,15 +1,13 @@
 #include "Modelica.h"
 #include "FactoryExport.h"
-
-
 #include <Solver/SolverDefaultImplementation.h>
 #include <Solver/SolverSettings.h>
 #include <SimulationSettings/IGlobalSettings.h>
-
 #include <Math/Constants.h>
 
 SolverDefaultImplementation::SolverDefaultImplementation(IMixedSystem* system, ISolverSettings* settings)
-: _system                        (system)
+: SimulationMonitor()
+, _system                        (system)
 , _settings                        (settings)
 
 , _tInit                (0.0)
@@ -82,10 +80,11 @@ bool SolverDefaultImplementation::stateSelection()
 }
 void SolverDefaultImplementation::initialize()
 {
+    SimulationMonitor::initialize();
     IContinuous* continous_system = dynamic_cast<IContinuous*>(_system);
     IEvent* event_system =  dynamic_cast<IEvent*>(_system);
     ITime* timeevent_system = dynamic_cast<ITime*>(_system);
-  IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
+    IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
     // Set current start time to the system
     timeevent_system->setTime(_tCurrent);
 
@@ -144,7 +143,7 @@ void SolverDefaultImplementation::initialize()
     _rejStps    = 0;
     _zeroStps    = 0;
     _zeros        = 0;
-
+   
     // Set initial step size
     //_h = _settings->_globalSettings->_hOutput;
 }
@@ -183,14 +182,15 @@ void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, c
 {
    if(_settings->getGlobalSettings()->getOutputFormat()!= EMPTY)
    {
-    IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
+      IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
 
-    if(_outputCommand & IWriteOutput::WRITEOUT)
-    {
-        writeoutput_system->writeOutput(_outputCommand);
+        if(_outputCommand & IWriteOutput::WRITEOUT)
+        {
+            writeoutput_system->writeOutput(_outputCommand);
 
+        }
     }
-    }
+    checkTimeout();
 }
 void SolverDefaultImplementation::updateEventState()
 {
