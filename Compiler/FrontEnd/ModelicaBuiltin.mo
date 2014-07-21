@@ -2943,15 +2943,15 @@ algorithm
   end if;
 end setInitXmlStartValue;
 
-//Rakhi - added function ngspicetoModelica. converts ngspice netlist to Modelica code. Modelica file is created in the same directory as netlist file.
-function ngspicetoModelica
+function ngspicetoModelica "Converts ngspice netlist to Modelica code. Modelica file is created in the same directory as netlist file."
   input String netlistfileName;
   output Boolean success := false;
 protected
   String command;
 algorithm
-    command := "python " + getInstallationDirectoryPath() + "/share/omc/scripts/ngspicetoModelica.py " + netlistfileName;
-    success := 0 == system(command);
+  command := "python " + getInstallationDirectoryPath() + "/share/omc/scripts/ngspicetoModelica.py " + netlistfileName;
+  success := 0 == system(command);
+annotation(preferredView="text");
 end ngspicetoModelica;
 
 function isExperiment "An experiment is defined as having annotation Experiment(stopTime=...)"
