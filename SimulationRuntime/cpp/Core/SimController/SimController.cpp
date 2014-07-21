@@ -15,7 +15,7 @@ SimController::SimController(PATH library_path,PATH modelicasystem_path) : SimCo
 SimController::~SimController()
 {
 
-	_systems.clear();
+  _systems.clear();
 }
 
 std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > SimController::LoadSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), string modelKey)
@@ -88,7 +88,7 @@ void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem,SimSetting
     global_settings->setOutputFormat(simsettings.outputFormat);
 
     global_settings->setAlarmTime(simsettings.timeOut);
-    
+
     global_settings->setOutputPointType(simsettings.outputPointType);
     simMgr = boost::shared_ptr<SimManager>(new SimManager(mixedsystem,_config.get()));
 

@@ -27,7 +27,7 @@ public:
        delete _solver_type_map;
        delete _settings_type_map;
        ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
-	
+
     }
 
     virtual boost::shared_ptr<ISettingsFactory> createSettingsFactory()

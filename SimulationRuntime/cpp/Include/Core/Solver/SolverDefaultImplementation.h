@@ -59,7 +59,7 @@ public:
     /// Determines current status of a all zero functions (checks for a change in sign in any of all zero functions)
     void setZeroState();
 
-   
+
     /// Called by solver after every successfull integration step (calls writeOutput)
     void writeToFile(const int& stp, const double& t, const double& h);
   virtual bool stateSelection();
@@ -119,7 +119,7 @@ protected:
 
     IWriteOutput::OUTPUT
         _outputCommand;          ///< Controls the output
-    
+
 private:
     /// Definition of signum function
     inline static int sgn (const double &c)

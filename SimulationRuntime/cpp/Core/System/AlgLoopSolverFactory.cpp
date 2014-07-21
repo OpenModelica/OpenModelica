@@ -6,26 +6,26 @@
 
 #ifdef ANALYZATION_MODE
 AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings* global_settings,PATH library_path,PATH modelicasystem_path)
-	:ObjectFactory<OMCFactory>(library_path,modelicasystem_path,library_path) 
-	 ,StaticNonLinSolverOMCFactory<OMCFactory>(library_path,modelicasystem_path,library_path),
+  :ObjectFactory<OMCFactory>(library_path,modelicasystem_path,library_path)
+   ,StaticNonLinSolverOMCFactory<OMCFactory>(library_path,modelicasystem_path,library_path),
      ,StaticLinSolverOMCFactory<OMCFactory>(library_path,modelicasystem_path,library_path)
      ,_global_settings(global_settings)
 {
 }
 #else
 AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings* global_settings,PATH library_path,PATH modelicasystem_path)
-    :ObjectFactory<OMCFactory>(library_path,modelicasystem_path,library_path)  
-	,NonLinSolverPolicy(library_path,modelicasystem_path,library_path)
-	 ,LinSolverPolicy(library_path,modelicasystem_path,library_path)
-	 ,_global_settings(global_settings)
+    :ObjectFactory<OMCFactory>(library_path,modelicasystem_path,library_path)
+  ,NonLinSolverPolicy(library_path,modelicasystem_path,library_path)
+   ,LinSolverPolicy(library_path,modelicasystem_path,library_path)
+   ,_global_settings(global_settings)
 {
-	
+
 }
 #endif
 
 AlgLoopSolverFactory::~AlgLoopSolverFactory()
 {
-  
+
 }
 
 /// Creates a solver according to given system of equations of type algebraic loop

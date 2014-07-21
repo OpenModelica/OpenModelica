@@ -15,13 +15,13 @@ public:
         ,_last_selected_solver("empty")
     {
 
-		_non_linsolver_type_map= new type_map();
+    _non_linsolver_type_map= new type_map();
     }
     virtual ~NonLinSolverOMCFactory()
     {
-       
-		delete _non_linsolver_type_map;
-		ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
+
+    delete _non_linsolver_type_map;
+    ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
     }
 
    virtual boost::shared_ptr<INonLinSolverSettings> createNonLinSolverSettings(string nonlin_solver)

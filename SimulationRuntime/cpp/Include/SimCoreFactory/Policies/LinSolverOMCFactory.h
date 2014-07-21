@@ -13,12 +13,12 @@ public:
   :ObjectFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
   ,_last_selected_solver("empty")
   {
-	  _linsolver_type_map = new type_map();
+    _linsolver_type_map = new type_map();
   }
   virtual ~LinSolverOMCFactory()
   {
       delete _linsolver_type_map;
-	 // ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs(); todo solver lib wird in linsolver factory entlanden
+   // ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs(); todo solver lib wird in linsolver factory entlanden
   }
 
   virtual boost::shared_ptr<ILinSolverSettings> createLinSolverSettings(string lin_solver)

@@ -34,5 +34,4 @@ void SimulationMonitor::setTimeOut(unsigned int time_out)
     }
  */
  }
- 
- 
+

@@ -41,7 +41,7 @@ SimManager::~SimManager()
             delete _timeeventcounter;
       if(_events)
             delete [] _events;
-	
+
 }
 
 void SimManager::initialize()

@@ -143,7 +143,7 @@ void SolverDefaultImplementation::initialize()
     _rejStps    = 0;
     _zeroStps    = 0;
     _zeros        = 0;
-   
+
     // Set initial step size
     //_h = _settings->_globalSettings->_hOutput;
 }

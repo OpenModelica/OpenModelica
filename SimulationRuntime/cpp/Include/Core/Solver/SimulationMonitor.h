@@ -10,8 +10,8 @@ public:
    void checkTimeout();
  protected:
      /*nanosecond_type _time_out;*/
-  
+
      bool _interrupt;
      /*cpu_timer _timer;*/
-    
+
 };

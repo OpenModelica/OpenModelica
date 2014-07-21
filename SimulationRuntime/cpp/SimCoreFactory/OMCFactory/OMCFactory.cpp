@@ -55,7 +55,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
           ("alarm,a", po::value<unsigned int >()->default_value(360),  "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"),  "the points in time written to result file: all (output steps + events), step (just output points), none")
           ;
-     po::command_line_parser(argc, argv).options(desc).allow_unregistered().run();      
+     po::command_line_parser(argc, argv).options(desc).allow_unregistered().run();
      po::variables_map vm;
      po::store(po::parse_command_line(argc, argv, desc), vm);
      po::notify(vm);

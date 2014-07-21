@@ -402,7 +402,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%lastIdentOfPath(modelInfo.name)%>Initialize::~<%lastIdentOfPath(modelInfo.name)%>Initialize()
     {
-       
+
     }
 
 
@@ -429,7 +429,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%lastIdentOfPath(modelInfo.name)%>Jacobian::~<%lastIdentOfPath(modelInfo.name)%>Jacobian()
     {
-       
+
     }
     <%functionAnalyticJacobians(jacobianMatrixes,simCode)%>
  >>
@@ -455,7 +455,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%lastIdentOfPath(modelInfo.name)%>StateSelection::~<%lastIdentOfPath(modelInfo.name)%>StateSelection()
     {
-        
+
     }
    <%functionDimStateSets(stateSets, simCode)%>
    <%functionStateSets(stateSets, simCode)%>
@@ -486,7 +486,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::~<%lastIdentOfPath(modelInfo.name)%>WriteOutput()
     {
-        
+
         delete _historyImpl;
     }
     IHistory* <%lastIdentOfPath(modelInfo.name)%>WriteOutput::getHistory()
@@ -534,7 +534,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    }
    <%lastIdentOfPath(modelInfo.name)%>Extension::~<%lastIdentOfPath(modelInfo.name)%>Extension()
     {
-          
+
     }
 
 
