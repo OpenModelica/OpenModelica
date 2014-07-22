@@ -79,7 +79,7 @@ using namespace std;
 #include <boost/unordered_map.hpp>
 #include <boost/program_options.hpp>
 #include <boost/assign/list_inserter.hpp>
-#include <boost/timer/timer.hpp>
+//#include <boost/timer/timer.hpp>
     /*Namespaces*/
 using namespace boost::extensions;
 namespace fs = boost::filesystem;
