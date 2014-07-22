@@ -334,6 +334,7 @@ void Cvode::CVodeCore()
     if (state_selection)
     {
       //restart = true;
+      _continuous_system->getContinuousStates(_z);
       //_continuous_system->evaluateODE(IContinuous::CONTINUOUS);
     }
     _zeroFound = false;
@@ -520,7 +521,7 @@ void Cvode::giveZeroVal(const double &t, const double *y, double *zeroValue)
   _continuous_system->setContinuousStates(y);
 
   // System aktualisieren
-  _continuous_system->evaluateZeroFuncs(IContinuous::CONTINUOUS);
+  _continuous_system->evaluateZeroFuncs(IContinuous::DISCRETE);
 
   _event_system->getZeroFunc(zeroValue);
 
