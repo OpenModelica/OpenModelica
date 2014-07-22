@@ -112,7 +112,7 @@ extern void print_integer_array(const integer_array_t * source);
  a[1:3] := b;
 
 */
-extern void indexed_assign_integer_array(const integer_array_t * source,
+extern void indexed_assign_integer_array(const integer_array_t source,
                                          integer_array_t* dest,
                                          const index_spec_t* dest_spec);
 extern void simple_indexed_assign_integer_array1(const integer_array_t * source,

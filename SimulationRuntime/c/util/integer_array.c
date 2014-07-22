@@ -297,16 +297,15 @@ void simple_indexed_assign_integer_array2(const integer_array_t * source,
     integer_set(dest, index, integer_get(*source, index));
 }
 
-void indexed_assign_integer_array(const integer_array_t * source,
+void indexed_assign_integer_array(const integer_array_t source,
                                   integer_array_t* dest,
                                   const index_spec_t* dest_spec)
 {
     _index_t* idx_vec1;
-    _index_t* idx_vec2;
     _index_t* idx_size;
     int i,j;
 
-    assert(base_array_ok(source));
+    assert(base_array_ok(&source));
     assert(base_array_ok(dest));
     assert(index_spec_ok(dest_spec));
     assert(index_spec_fit_base_array(dest_spec, dest));
@@ -315,10 +314,10 @@ void indexed_assign_integer_array(const integer_array_t * source,
             ++j;
         }
     }
-    assert(j == source->ndims);
+    assert(j == source.ndims);
 
     idx_vec1 = size_alloc(dest->ndims);
-    idx_vec2 = size_alloc(source->ndims);
+    // idx_vec2 = size_alloc(source->ndims);
     idx_size = size_alloc(dest_spec->ndims);
 
     for(i = 0; i < dest_spec->ndims; ++i) {
@@ -331,20 +330,16 @@ void indexed_assign_integer_array(const integer_array_t * source,
         }
     }
 
+    j = 0;
     do {
-        for(i = 0,j=0; i < dest_spec->ndims; ++i) {
-            if(dest_spec->dim_size[i] != 0) {
-                idx_vec2[j] = idx_vec1[i];
-                ++j;
-            }
-        }
-
-        integer_set(dest, calc_base_index_spec(dest->ndims, idx_vec1, dest,
-                                               dest_spec),
-                    integer_get(*source, calc_base_index(source->ndims, idx_vec2,
-                                                        source)));
+        integer_set(dest,
+                 calc_base_index_spec(dest->ndims, idx_vec1, dest, dest_spec),
+                 integer_get(source, j));
+        j++;
 
     } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
+    
+    assert(j == base_array_nr_of_elements(source));
 }
 
 /*
