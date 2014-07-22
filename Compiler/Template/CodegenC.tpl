@@ -7669,7 +7669,7 @@ template scalarLhsCref(Exp ecr, Context context, Text &preExp, Text &varDecls, T
   case ecr as CREF(componentRef=cr as CREF_QUAL(__)) then
     if crefIsScalar(cr, context) then
       contextCref(cr, context, &auxFunction)
-    else 
+    else
       let arrName = contextCref(crefStripSubs(cr), context, &auxFunction)
       <<
       (&<%arrName%>)[<%threadDimSubList(crefDims(cr),crefSubs(cr),context,&preExp,&varDecls,&auxFunction)%> - 1]
@@ -7905,14 +7905,14 @@ template threadDimSubList(list<Dimension> dims, list<Subscript> subs, Context co
 ::=
   match subs
   case {} then error(sourceInfo(),"Empty dimensions in indexing cref?")
-  
-  case {sub as INDEX(__)} then 
+
+  case {sub as INDEX(__)} then
     match dims
     case {dim} then
       let estr = daeExp(sub.exp, context, &preExp, &varDecls, &auxFunction)
       '<%estr%>'
     else error(sourceInfo(),"Less subscripts that dimensions in indexing cref? That's odd!")
-    
+
   case (sub as INDEX(__))::subrest then
     match dims
       case _::dimrest
@@ -8070,7 +8070,7 @@ template daeExpCrefLhs2(Exp ecr, Context context, Text &afterExp,
                   case et as T_ARRAY(__) then
                   /* subtract one for indexing a C-array*/
                   /*FIXME: preExp should come from outside. generation for indeices might need it*/
-                  let &preExp = buffer "" 
+                  let &preExp = buffer ""
                   <<
                   (&<%arrName%>)[<%threadDimSubList(crefDims(cr),crefSubs(cr),context,&preExp,&varDecls,&auxFunction)%> - 1]
                   >>

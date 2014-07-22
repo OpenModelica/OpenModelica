@@ -2586,7 +2586,7 @@ package ComponentReference
     input String ident;
     output DAE.ComponentRef outCrefIdent;
   end makeUntypedCrefIdent;
-  
+
   function crefDims
     input DAE.ComponentRef cref;
     output list<DAE.Dimension> dims;
@@ -2596,7 +2596,7 @@ package ComponentReference
     input DAE.ComponentRef inComponentRef;
     output DAE.ComponentRef outComponentRef;
   end crefStripLastSubs;
-  
+
   function crefStripSubs
     input DAE.ComponentRef inComponentRef;
     output DAE.ComponentRef outComponentRef;
