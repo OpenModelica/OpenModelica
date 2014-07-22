@@ -338,7 +338,7 @@ void indexed_assign_integer_array(const integer_array_t source,
         j++;
 
     } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
-    
+
     assert(j == base_array_nr_of_elements(source));
 }
 
