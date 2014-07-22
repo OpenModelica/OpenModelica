@@ -1583,6 +1583,30 @@ algorithm
   end match;
 end crefLastType;
 
+public function crefDims "
+function: crefDims
+  Return the all dimension (contained in the types) of a ComponentRef"
+  input DAE.ComponentRef inComponentRef;
+  output list<DAE.Dimension> outDimensionLst;
+algorithm
+  outDimensionLst := match (inComponentRef)
+    local
+      list<DAE.Dimension> dims,res;
+      DAE.Type idType;
+      DAE.ComponentRef cr;
+
+    case (DAE.CREF_IDENT(identType = idType)) then Types.getDimensions(idType);
+
+    case (DAE.CREF_QUAL(componentRef = cr, identType = idType))
+      equation
+        dims = Types.getDimensions(idType);
+        res = crefDims(cr);
+        res = listAppend(dims,res);
+      then
+        res;
+  end match;
+end crefDims;
+
 public function crefSubs "
 function: crefSubs
   Return the all subscripts of a ComponentRef"

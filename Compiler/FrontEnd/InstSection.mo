@@ -1962,105 +1962,11 @@ algorithm
         // do not unroll if it doesn't contain a when statement!
         false = containsWhenStatements(sl);
         (cache,stmts) = instForStatement_dispatch(cache,env,ih,pre,ci_state,iterator,range,sl,info,source,initial_,impl,unrollForLoops);
-        stmts = replaceLoopDependentCrefs(stmts, iterator, range);
       then
         (cache,stmts);
 
   end matchcontinue;
 end instForStatement;
-
-protected function replaceLoopDependentCrefs
-  "Replaces all DAE.CREFs that are dependent on a loop variable with a
-  DAE.ASUB."
-  input list<DAE.Statement> inStatements;
-  input String iterator;
-  input Option<Absyn.Exp> range;
-  output list<DAE.Statement> outStatements;
-algorithm
-  (outStatements, _) := DAEUtil.traverseDAEEquationsStmts(inStatements,
-      replaceLoopDependentCrefInExp, {Absyn.ITERATOR(iterator,NONE(),range)});
-end replaceLoopDependentCrefs;
-
-protected function replaceLoopDependentCrefInExp
-  "Helper function for replaceLoopDependentCrefs."
-  input tuple<DAE.Exp,Absyn.ForIterators> itpl;
-  output tuple<DAE.Exp,Absyn.ForIterators> otpl;
-algorithm
-  otpl := matchcontinue itpl
-    local
-      DAE.Exp cr_exp,expCref;
-      DAE.ComponentRef cr;
-      DAE.Type cr_type;
-      list<DAE.Subscript> cref_subs;
-      list<DAE.Exp> exp_subs;
-      Absyn.ForIterators fi;
-
-    case ((DAE.CREF(componentRef = cr), fi))
-      equation
-        cref_subs = ComponentReference.crefSubs(cr);
-        exp_subs = List.map(cref_subs, Expression.subscriptIndexExp);
-        true = isSubsLoopDependent(exp_subs, fi);
-        cr = ComponentReference.crefStripSubs(cr);
-        cr_type = ComponentReference.crefLastType(cr);
-        expCref = Expression.makeCrefExp(cr, cr_type);
-      then
-        ((Expression.makeASUB(expCref, exp_subs), fi));
-    case _ then itpl;
-  end matchcontinue;
-end replaceLoopDependentCrefInExp;
-
-protected function isSubsLoopDependent
-  "Checks if a list of subscripts contain any of a list of iterators."
-  input list<DAE.Exp> subscripts;
-  input Absyn.ForIterators iterators;
-  output Boolean loopDependent;
-algorithm
-  loopDependent := matchcontinue(subscripts, iterators)
-    local
-      Absyn.Ident iter_name;
-      DAE.Exp iter_exp;
-      DAE.ComponentRef cref_;
-      Absyn.ForIterators rest_iters;
-      Boolean res;
-    case (_, {}) then false;
-    case (_, Absyn.ITERATOR(name = iter_name) :: _)
-      equation
-        cref_ = ComponentReference.makeCrefIdent(iter_name, DAE.T_INTEGER_DEFAULT, {});
-        iter_exp = Expression.makeCrefExp(cref_, DAE.T_INTEGER_DEFAULT);
-        true = isSubsLoopDependentHelper(subscripts, iter_exp);
-      then
-        true;
-    case (_, _ :: rest_iters)
-      equation
-        res = isSubsLoopDependent(subscripts, rest_iters);
-      then
-        res;
-  end matchcontinue;
-end isSubsLoopDependent;
-
-protected function isSubsLoopDependentHelper
-  "Helper for isLoopDependent.
-  Checks if a list of subscripts contains a certain iterator expression."
-  input list<DAE.Exp> subscripts;
-  input DAE.Exp iteratorExp;
-  output Boolean isDependent;
-algorithm
-  isDependent := matchcontinue(subscripts, iteratorExp)
-    local
-      DAE.Exp subscript;
-      list<DAE.Exp> rest;
-    case ({}, _) then false;
-    case (subscript :: _, _)
-      equation
-        true = Expression.expContains(subscript, iteratorExp);
-      then true;
-    case (_ :: rest, _)
-      equation
-        true = isSubsLoopDependentHelper(rest, iteratorExp);
-      then true;
-    else false;
-  end matchcontinue;
-end isSubsLoopDependentHelper;
 
 protected function instForStatement_dispatch
 "function for instantiating a for statement"
@@ -5297,7 +5203,6 @@ algorithm
         // do not unroll if it doesn't contain a when statement!
         false = containsWhenStatements(sl);
         (cache,stmts) = instParForStatement_dispatch(cache,env,ih,pre,ci_state,iterator,range,sl,info,source,initial_,impl,unrollForLoops);
-        stmts = replaceLoopDependentCrefs(stmts, iterator, range);
       then
         (cache,stmts);
 
