@@ -62,11 +62,11 @@ extern int initializeResultData(DATA* simData, std::string result_file_cstr, int
 
 extern int measure_time_flag;
 
-extern int modelTermination; /* Becomes non-zero when simulation terminates. */
+extern int modelTermination;     /* Becomes non-zero when simulation terminates. */
 extern int terminationTerminate; /* Becomes non-zero when user terminates simulation. */
-extern int terminationAssert; /* Becomes non-zero when model call assert simulation. */
-extern int warningLevelAssert; /* Becomes non-zero when model call assert with warning level. */
-extern FILE_INFO TermInfo; /* message for termination. */
+extern int terminationAssert;    /* Becomes non-zero when model call assert simulation. */
+extern int warningLevelAssert;   /* Becomes non-zero when model call assert with warning level. */
+extern FILE_INFO TermInfo;       /* message for termination. */
 
 extern char* TermMsg; /* message for termination. */
 
@@ -79,11 +79,13 @@ extern const char* getNameString(const char** ptr);
 extern double getSimulationStepSize();
 extern void printSimulationStepSize(double in_stepSize, double time);
 
+extern void communicateStatus(const char *phase, double completionPercent);
+extern void communicateMsg(char id, unsigned int size, const char *data);
+
 /* the main function of the simulation runtime!
  * simulation runtime no longer has main, is defined by the generated model code which calls this function.
  */
 extern int _main_SimulationRuntime(int argc, char**argv, DATA *data);
-extern void communicateStatus(const char *phase, double completionPercent);
 
 #ifdef __cplusplus
 }

@@ -21,15 +21,16 @@ Socket::Socket()
 
 Socket::~Socket()
 {
-  if(is_valid()) ::close(m_sock);
+  if(is_valid())
+    ::close(m_sock);
 }
 
 bool Socket::create()
 {
   if((m_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
   {
-         std::cerr << "Failed to create TCP socket: " << strerror(errno) << std::endl;
-         exit(1);
+    std::cerr << "Failed to create TCP socket: " << strerror(errno) << std::endl;
+    exit(1);
   }
 
   m_socket_type = SOCK_STREAM;
@@ -40,8 +41,8 @@ bool Socket::UDP_create()
 {
   if((m_sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
   {
-         std::cerr << "Failed to create UDP socket: " << strerror(errno) << std::endl;
-         exit(1);
+    std::cerr << "Failed to create UDP socket: " << strerror(errno) << std::endl;
+    exit(1);
   }
 
   m_socket_type = SOCK_DGRAM;
@@ -86,9 +87,8 @@ bool Socket::connect(const std::string &host, const int port)
 
   if(::connect(m_sock, res->ai_addr, res->ai_addrlen) == -1)
   {
-         std::cerr << "Failed to connect to " << host << " on port " << port << ": "
-                << strerror(errno) << std::endl;
-         return false;
+    std::cerr << "Failed to connect to " << host << " on port " << port << ": " << strerror(errno) << std::endl;
+    return false;
   }
   return true;
 }
@@ -96,6 +96,12 @@ bool Socket::connect(const std::string &host, const int port)
 bool Socket::send(const std::string &s) const
 {
   return ::send(m_sock, s.c_str(), s.size(), 0) != -1;
+}
+
+// transmit data via TCP
+bool Socket::sendBytes(char* msg, int size) const
+{
+  return ::send(m_sock, msg, size, 0) != -1;
 }
 
 int Socket::recv(std::string &s) const
@@ -106,11 +112,14 @@ int Socket::recv(std::string &s) const
 
   int bytes_sent = ::recv(m_sock, buf, MAXRECV, 0);
 
-  if(bytes_sent < 0) {
-         std::cerr << "Error in Socket::recv: " << strerror(errno) << std::endl;
-         exit(1);
-         return 0;
-  } else if (bytes_sent == 0) {
+  if(bytes_sent < 0)
+  {
+    std::cerr << "Error in Socket::recv: " << strerror(errno) << std::endl;
+    exit(1);
+    return 0;
+  }
+  else if (bytes_sent == 0)
+  {
     exit(0);
   }
 
@@ -118,8 +127,7 @@ int Socket::recv(std::string &s) const
   return bytes_sent;
 }
 
-bool Socket::UDP_send(const std::string &addr, const std::string &s,
-         const int port) const
+bool Socket::UDP_send(const std::string &addr, const std::string &s, const int port) const
 {
   struct addrinfo hints, *res;
 
@@ -131,9 +139,8 @@ bool Socket::UDP_send(const std::string &addr, const std::string &s,
 
   if(sendto(m_sock, s.c_str(), s.size(), 0, res->ai_addr, res->ai_addrlen) < 0)
   {
-         std::cerr << "Couldn't send UDP package to " << addr << " on port "
-                << port << ": " << strerror(errno) << std::endl;
-         exit(1);
+    std::cerr << "Couldn't send UDP package to " << addr << " on port " << port << ": " << strerror(errno) << std::endl;
+    exit(1);
   }
 
   return true;
@@ -152,9 +159,9 @@ int Socket::UDP_recv(std::string &s) const
 
   if(n <= 0)
   {
-         std::cerr << "Error in Socket::UDP_recv: " << strerror(errno) << std::endl;
-         exit(1);
-         return 0;
+    std::cerr << "Error in Socket::UDP_recv: " << strerror(errno) << std::endl;
+    exit(1);
+    return 0;
   }
 
   s = buf;

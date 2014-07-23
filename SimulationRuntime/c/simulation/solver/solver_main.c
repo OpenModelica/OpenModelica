@@ -429,7 +429,11 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
 
     data->simulationInfo.terminal = 0;
   }
-  communicateStatus("Finished", 1);
+  
+  if(0 != strcmp("ia", data->simulationInfo.outputFormat))
+  {
+    communicateStatus("Finished", 1);
+  }
 
   /* we have output variables in the command line -output a,b,c */
   if(outputVariablesAtEnd)

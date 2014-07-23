@@ -73,6 +73,7 @@
 #include "simulation_result_csv.h"
 #include "simulation_result_mat.h"
 #include "simulation_result_wall.h"
+#include "simulation_result_ia.h"
 #include "solver_main.h"
 #include "simulation_info_xml.h"
 #include "modelinfo.h"
@@ -641,6 +642,14 @@ int initializeResultData(DATA* simData, string result_file_cstr, int cpuTime)
     sim_result.emit = plt_emit;
     /* sim_result.writeParameterData = plt_writeParameterData; */
     sim_result.free = plt_free;
+  }
+  //NEW interactive
+  else if(0 == strcmp("ia", simData->simulationInfo.outputFormat))
+  {
+    sim_result.init = ia_init;
+    sim_result.emit = ia_emit;
+    //sim_result.writeParameterData = ia_writeParameterData;
+    sim_result.free = ia_free;
   } else {
     cerr << "Unknown output format: " << simData->simulationInfo.outputFormat << endl;
     return 1;
@@ -869,7 +878,11 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     sim_communication_port_open = 1;
     sim_communication_port_open &= sim_communication_port.create();
     sim_communication_port_open &= sim_communication_port.connect("127.0.0.1", port);
-    communicateStatus("Starting", 0.0);
+
+    if(0 != strcmp("ia", data->simulationInfo.outputFormat))
+    {
+      communicateStatus("Starting", 0.0);
+    }
   }
 #endif
 
@@ -905,11 +918,28 @@ void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*
 #endif
 }
 
+void communicateMsg(char id, unsigned int size, const char *data)
+{
+#ifndef NO_INTERACTIVE_DEPENDENCY
+  if(sim_communication_port_open)
+  {
+    int msgSize = sizeof(char) + sizeof(unsigned int) + size;
+    char* msg = new char[msgSize];
+    memcpy(msg+0, &id, sizeof(char));
+    memcpy(msg+sizeof(char), &size, sizeof(unsigned int));
+    memcpy(msg+sizeof(char)+sizeof(unsigned int), data, size);
+    sim_communication_port.sendBytes(msg, msgSize);
+    delete[] msg;
+  }
+#endif
+}
+
+
 /* \brief main function for simulator
  *
  * The arguments for the main function are:
  * -v verbose = debug
- * -vf=flags set verbosity flags
+ * -vf = flags set verbosity flags
  * -f init_file.txt use input data from init file.
  * -r res.plt write result to file.
  */
