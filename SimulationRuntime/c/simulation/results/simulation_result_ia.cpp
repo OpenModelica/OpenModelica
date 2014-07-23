@@ -72,7 +72,7 @@ void ia_init(simulation_result *self, DATA *data)
   self->storage = iaData;
 
   const MODEL_DATA *mData = &(data->modelData);
-	int i;
+  int i;
   unsigned int strLength = 0;
   iaData->nReal = 0;
   iaData->nInteger = 0;
@@ -294,7 +294,7 @@ void ia_emit(simulation_result *self, DATA *data)
 void ia_free(simulation_result *self, DATA *data)
 {
   TRACE_PUSH
-	rt_tick(SIM_TIMER_OUTPUT);
+  rt_tick(SIM_TIMER_OUTPUT);
 
   delete (IA_DATA*)self->storage;
   communicateMsg(6, 0, 0);

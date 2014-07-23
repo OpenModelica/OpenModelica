@@ -49,27 +49,27 @@ public:
   // virtual destructor
   virtual ~Socket();
 
-  
+
   bool create();      // Create Socket - TCP
   bool UDP_create();  // Create Socket - UDP
   bool bind(const int port);
   bool listen() const;
   bool accept( Socket& ) const;
   bool connect(const std::string &host, const int port );
-  
+
   // Data transmission - TCP
   bool send( const std::string& ) const;
   bool sendBytes(char* msg, int size) const;
   int recv ( std::string& ) const;
-  
+
   // Data transmission - UDP
   bool UDP_send( const std::string&, const std::string&,
   const int port ) const;
   int UDP_recv( std::string& ) const;
-  
+
   //  Close Socket
   bool close() const;
-  
+
   // WSAcleanup()
   void cleanup() const;
   bool is_valid() const { return m_sock != -1; }
