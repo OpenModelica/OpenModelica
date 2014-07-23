@@ -10,7 +10,8 @@ import os.path
 from string import maketrans
 
 def readNetlist(filename):
-    """Read Ngspice Netlist"""
+    """Read Ngspice Netlist and remove + from the start of lines"""
+    netlist = []
     if os.path.exists(filename):
         try:
             f = open(filename)
@@ -22,20 +23,24 @@ def readNetlist(filename):
         sys.exit()
 
     data = f.read()
-#    data = data.translate(maketrans('\n+', '  '))
+    data = data.splitlines()
     f.close()
-    return data.splitlines()
+    for eachline in data:
+      eachline=eachline.strip()
+      if len(eachline)>1:
+        if eachline[0]=='+':
+	  netlist.append(netlist.pop()+eachline.replace('+',' ',1))
+        else:
+          netlist.append(eachline)  
+    return netlist
 
-
-def separateNetlistInfo(data):
+def separateNetlistInfo(netlist):
   """ Separate schematic data and option data"""
   optionInfo=[]
   schematicInfo=[]
  
-  for eachline in data:
+  for eachline in netlist:
     if len(eachline) > 1:
-##     if eachline[0] == '+':
-##       eachline=eachline.translate(maketrans('\n+','  '))
      if eachline[0]=='*':
        continue
      elif eachline[0]=='.':
@@ -51,7 +56,7 @@ def addModel(optionInfo, dir_name):
    modelInfo = {}
    subcktName = []
    paramInfo = []
-   #modelInfo['paramInfo'] = {}
+   transInfo = {}
    for eachline in optionInfo:
     words = eachline.split()
     if words[0] == '.include':
@@ -60,12 +65,30 @@ def addModel(optionInfo, dir_name):
         modelName.append(name[0])
       if name[1] == 'sub':
   	subcktName.append(name[0])
+    elif words[0] == '.model':
+      model = words[1]
+      modelInfo[model] = {}
+      eachline = eachline.replace(' = ','=')
+      eachline = eachline.replace('= ','=')
+      eachline = eachline.replace(' =','=')
+      eachline = eachline.split('(')
+      templine = eachline[0].split()
+      trans = templine[1]
+      transInfo[trans] = []
+      if templine[2] in ['npn', 'pnp', 'pmos', 'nmos']:
+        transInfo[trans] = templine[2]
+      eachline = eachline[1].split()
+      for eachitem in eachline:
+        if len(eachitem) > 1:
+         eachitem = eachitem.replace(')','')
+         iteminfo = eachitem.split('=')
+         for each in iteminfo:
+          modelInfo[model][iteminfo[0]] = iteminfo[1]
     elif words[0] == '.param':
       paramInfo.append(eachline) 
    for eachmodel in modelName:
      filename = eachmodel + '.lib'
      filename = os.path.join(dir_name, filename)
-     #print filename
      if os.path.exists(filename):
         try:
             f = open(filename)
@@ -78,20 +101,28 @@ def addModel(optionInfo, dir_name):
 
      data = f.read()
      data = data.lower()
+     data = data.replace('+', '')
+     data = data.replace('\n','')
+     data = data.replace(' = ','=')
+     data = data.replace('= ','=')
+     data = data.replace(' =','=')
      newdata = data.split('(')
+     templine_f = newdata[0].split()
+     trans_f = templine_f[1]
+     transInfo[trans_f] = []
+     if templine_f[2] in ['npn', 'pnp', 'pmos', 'nmos']:
+       transInfo[trans_f] = templine_f[2]
      newdata = newdata[1].split()
      modelInfo[eachmodel] = {}
      for eachline in newdata:
        if len(eachline) > 1:
+        eachline = eachline.replace(')','')
         info = eachline.split('=')
-       # modelInfo[eachmodel][info[0]] = {}
         for eachitem in info:
-         modelInfo[eachmodel][info[0]] = info[1] #dic within a dic
-     #modelInfo[eachmodel] = modelInfo[eachmodel].split()
-    # modelInfo[eachmodel] = modelInfo[eachmodel].lower()
+         modelInfo[eachmodel][info[0]] = info[1] #dictn within a dictn
      f.close()
           
-   return modelName, modelInfo, subcktName, paramInfo     
+   return modelName, modelInfo, subcktName, paramInfo, transInfo     
      
 
 def processParam(paramInfo):
@@ -164,11 +195,19 @@ def splitIntoVal(val):
          value = val
    return value
 
-      
-def compInit(compInfo, node, modelInfo, subcktName, dir_name):
+def tryExists(wordNo, key,default):
+    """ checks if entry for key exists in dictionary, else returns default"""
+    try:
+       keyval = modelInfo[words[wordNo]][key]
+    except KeyError:
+       keyval = str(default)
+    return keyval
+    
+def compInit(compInfo, node, modelInfo, subcktName, dir_name, transInfo):
    """For each component in the netlist initialise it acc to Modelica format"""
 #### initial processign to check if MOSFET is present. If so, library to be used is BondLib
    modelicaCompInit = []
+   mosInfo = {}
    numNodesSub = {} 
    IfMOS = '0'
    for eachline in compInfo:
@@ -223,18 +262,88 @@ def compInit(compInfo, node, modelInfo, subcktName, dir_name):
        else:
         stat = 'Analog.Semiconductors.Diode ' + words[0] +';'
        modelicaCompInit.append(stat)
+     elif eachline[0] == 'q':
+       trans = transInfo[words[4]]
+       if trans == 'npn':
+          start = 'Analog.Semiconductors.NPN '
+       else:
+          start = 'Analog.Semiconductors.PNP '
+       inv_vak = float(tryExists(4, 'vaf', 50))
+       vak_temp = 1/inv_vak
+       vak = str(vak_temp)
+       bf = tryExists(4, 'bf', 50)
+       br = tryExists(4, 'br', 0.1)
+       Is = tryExists(4, 'is', 1e-16)
+       tf = tryExists(4, 'tf', 1.2e-10)
+       tr = tryExists(4, 'tr', 5e-9)
+       cjs = tryExists(4, 'cjs', 1e-12)
+       cje = tryExists(4, 'cje', 4e-13)
+       cjc = tryExists(4, 'cjc', 5e-13)
+       vje = tryExists(4, 'vje', 0.8)
+       mje = tryExists(4, 'mje', 0.4)
+       vjc = tryExists(4, 'vjc', 0.8)
+       mjc = tryExists(4, 'mjc', 0.333)
+       stat = start + words[0] +'(Bf = ' + bf + ', Br = ' + br + ', Is = ' + splitIntoVal(Is) + ', Vak = ' + vak + ', Tauf = ' + splitIntoVal(tf) + ', Taur = ' + splitIntoVal(tr) + ', Ccs = ' + splitIntoVal(cjs) + ', Cje = ' + splitIntoVal(cje) + ', Cjc = ' + splitIntoVal(cjc) + ', Phie = ' + vje + ', Me = ' + mje + ', Phic = ' + vjc + ', Mc = ' + mjc + ');'
+       modelicaCompInit.append(stat)
      elif eachline[0] == 'm':
-       line_l = words[7].split('=')
-       line_w = words[8].split('=')
-       line_pd = words[9].split('=')
-       line_ps = words[10].split('=')
-       line_ad = words[11].split('=')
-       line_as = words[12].split('=')
-       if words[5] == "mos_n" or words[5] == "mosfet_n":
+       eachline = eachline.split(words[5])
+       eachline = eachline[1]
+       eachline = eachline.strip()
+       eachline = eachline.replace(' = ', '=')
+       eachline = eachline.replace('= ','=')
+       eachline = eachline.replace(' =','=')
+       eachline = eachline.replace(' * ', '*')
+       eachline = eachline.replace(' + ', '+')
+       eachline = eachline.replace(' { ', '')
+       eachline = eachline.replace(' } ', '')
+       eachline = eachline.split()
+       mosInfo[words[0]] = {}
+       for each in eachline:
+         if len(each) > 1:
+           each  = each.split('=')
+           mosInfo[words[0]][each[0]] = each[1]
+       trans = transInfo[words[5]]
+       if trans == 'nmos':
           start = 'BondLib.Electrical.Analog.Spice.Mn '
-       if words[5] == "mos_p" or words[5] == "mosfet_p":
+       else:
           start = 'BondLib.Electrical.Analog.Spice.Mp '
-       stat = start + words[0] + '(Tnom = 300, VT0 = ' + modelInfo[words[5]]['vto'] + ', GAMMA = ' + modelInfo[words[5]]['gamma'] + ', PHI = ' + modelInfo[words[5]]['phi'] + ', LD = ' + splitIntoVal(modelInfo[words[5]]['ld']) + ', U0 = ' + str(float(splitIntoVal(modelInfo[words[5]]['uo']))*0.0001) + ', LAMBDA = ' + modelInfo[words[5]]['lambda'] + ', TOX = ' + splitIntoVal(modelInfo[words[5]]['tox']) + ', PB = ' + modelInfo[words[5]]['pb'] + ', CJ = ' + splitIntoVal(modelInfo[words[5]]['cj']) + ', CJSW = ' + splitIntoVal(modelInfo[words[5]]['cjsw']) + ', MJ = ' + modelInfo[words[5]]['mj'] + ', MJSW = ' + modelInfo[words[5]]['mjsw'] + ', CGD0 = ' + splitIntoVal(modelInfo[words[5]]['cgdo']) + ', JS = ' + splitIntoVal(modelInfo[words[5]]['js']) + ', CGB0 = ' + splitIntoVal(modelInfo[words[5]]['cgbo']) + ', CGS0 = ' + splitIntoVal(modelInfo[words[5]]['cgso']) + ', L = ' + splitIntoVal(line_l[1]) + ', W = ' + line_w[1] + ', Level = 1' + ', AD = ' + line_ad[1] + ', AS = ' + line_as[1] + ', PD = ' + line_pd[1] + ', PS = ' + line_pd[1] + ');'
+       vto = tryExists(5, 'vto', 0)
+       gam = tryExists(5, 'gamma', 0)
+       phi = tryExists(5, 'phi', 0)
+       ld = tryExists(5, 'ld', 0)
+       uo = tryExists(5, 'uo', 0)
+       lam  = tryExists(5, 'lambda', 0)
+       tox = tryExists(5, 'tox', 3e-9)
+       pb = tryExists(5, 'pb', 0.8)
+       cj = tryExists(5, 'cj', 0)
+       cjsw = tryExists(5, 'cjsw', 1e-9)
+       mj = tryExists(5, 'mj', 0.33)
+       mjsw = tryExists(5, 'mjsw', 0.33)
+       cgdo = tryExists(5, 'cgdo', 0)
+       js = tryExists(5, 'js', 0)
+       cgbo = tryExists(5, 'cgbo', 0)
+       cgso = tryExists(5, 'cgso', 0)
+       try:
+         l = mosInfo[words[0]]['l']
+       except KeyError:
+         l = '1e-6'
+       try:
+         w = mosInfo[words[0]]['w']
+       except KeyError:
+         w = '100e-6'
+       try:
+         As = mosInfo[words[0]]['as']
+         ad = mosInfo[words[0]]['ad']
+       except KeyError:
+         As = '0'
+         ad = '0'
+       try:
+         ps = mosInfo[words[0]]['ps']
+         pd = mosInfo[words[0]]['pd']
+       except KeyError:
+         ps = '0'
+         pd = '0'
+       stat = start + words[0] + '(Tnom = 300, VT0 = ' + vto + ', GAMMA = ' + gam + ', PHI = ' + phi + ', LD = ' + splitIntoVal(ld) + ', U0 = ' + str(float(splitIntoVal(uo))*0.0001) + ', LAMBDA = ' + lam + ', TOX = ' + splitIntoVal(tox) + ', PB = ' + pb + ', CJ = ' + splitIntoVal(cj) + ', CJSW = ' + splitIntoVal(cjsw) + ', MJ = ' + mj + ', MJSW = ' + mjsw + ', CGD0 = ' + splitIntoVal(cgdo) + ', JS = ' + splitIntoVal(js) + ', CGB0 = ' + splitIntoVal(cgbo) + ', CGS0 = ' + splitIntoVal(cgso) + ', L = ' + splitIntoVal(l) + ', W = ' + w + ', Level = 1' + ', AD = ' + ad + ', AS = ' + As + ', PD = ' + pd + ', PS = ' + ps + ');'
        stat = stat.translate(maketrans('{}', '  '))
        modelicaCompInit.append(stat)
      elif eachline[0] == 'v':
@@ -413,6 +522,13 @@ def connectInfo(compInfo, node, nodeDic, numNodesSub):
        connInfo.append(conn)
        conn = 'connect(' + words[0] + '.n,' + nodeDic[words[2]] + ');'
        connInfo.append(conn)
+     elif eachline[0] == 'q':
+       conn = 'connect(' + words[0] + '.C,' + nodeDic[words[1]] + ');'
+       connInfo.append(conn)
+       conn = 'connect(' + words[0] + '.B,' + nodeDic[words[2]] + ');'
+       connInfo.append(conn)
+       conn = 'connect(' + words[0] + '.E,' + nodeDic[words[3]] + ');'
+       connInfo.append(conn)
      elif eachline[0] == 'm':
        conn = 'connect(' + words[0] + '.D,' + nodeDic[words[1]] + ');'
        connInfo.append(conn)
@@ -478,7 +594,7 @@ file_basename = os.path.basename(filename)
 # get all the required info
 lines=readNetlist(filename)
 optionInfo, schematicInfo=separateNetlistInfo(lines)
-modelName, modelInfo, subcktName, paramInfo = addModel(optionInfo, dir_name)
+modelName, modelInfo, subcktName, paramInfo, transInfo = addModel(optionInfo, dir_name)
 modelicaParamInit = processParam(paramInfo)
 compInfo, plotInfo = separatePlot(schematicInfo)
 IfMOS = '0'
@@ -502,7 +618,7 @@ if len(subcktName) > 0:
     IfMOS = '1'
     break
 node, nodeDic, pinInit, pinProtectedInit = nodeSeparate(compInfo, '0', [], subcktName)
-modelicaCompInit, numNodesSub  = compInit(compInfo,node, modelInfo, subcktName, dir_name)
+modelicaCompInit, numNodesSub  = compInit(compInfo,node, modelInfo, subcktName, dir_name, transInfo)
 connInfo = connectInfo(compInfo, node, nodeDic, numNodesSub)
 
 ####Extract subckt data
@@ -535,7 +651,7 @@ def procesSubckt(subcktName, dir_name):
        intLine = newline[1].split()
        for i in range(0,len(intLine),1):
          nodeSubInterface.append(intLine[i])
-     subModel, subModelInfo, subsubName, subParamInfo = addModel(subOptionInfo, dir_name)
+     subModel, subModelInfo, subsubName, subParamInfo, subtransInfo = addModel(subOptionInfo, dir_name)
      IfMOSsub = '0'
      for eachline in subSchemInfo:
 #      words = eachline.split()
@@ -557,7 +673,7 @@ def procesSubckt(subcktName, dir_name):
          break
      modelicaSubParam =  processParam(subParamInfo)
      nodeSub, nodeDicSub, pinInitSub, pinProtectedInitSub = nodeSeparate(subSchemInfo, '1', eachsub, subsubName)
-     modelicaSubCompInit, numNodesSubsub = compInit(subSchemInfo, nodeSub, subModelInfo, subsubName, dir_name)
+     modelicaSubCompInit, numNodesSubsub = compInit(subSchemInfo, nodeSub, subModelInfo, subsubName, dir_name, subtransInfo)
      modelicaSubParamNew = getSubParamLine(eachsub, numNodesSub, modelicaSubParam, dir_name)
      connSubInfo = connectInfo(subSchemInfo, nodeSub, nodeDicSub, numNodesSubsub)
      newname = basename.split('.')
