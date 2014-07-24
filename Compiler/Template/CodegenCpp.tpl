@@ -5267,7 +5267,7 @@ case MODELINFO(vars = vars as SIMVARS(__))
   >>
 end arrayReindex;
 
-template arrayReindex1(list<SimVar> varsLst, Boolean useFlatArrayNotation) 
+template arrayReindex1(list<SimVar> varsLst, Boolean useFlatArrayNotation)
 ::=
   if(boolNot(useFlatArrayNotation)) then (varsLst |> SIMVAR(arrayCref=SOME(_),numArrayElement=_::_) => '<%arraycref(name, useFlatArrayNotation)%>.reindex(1);';separator="\n")
 end arrayReindex1;

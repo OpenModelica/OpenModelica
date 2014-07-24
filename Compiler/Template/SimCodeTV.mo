@@ -2508,10 +2508,10 @@ package List
     replaceable type Type_a subtypeof Any;
   end fill;
 
-	function intRange
-	  input Integer inStop;
-	  output list<Integer> outRange;
-	end intRange;
+  function intRange
+    input Integer inStop;
+    output list<Integer> outRange;
+  end intRange;
 
   function flatten
     input list<list<ElementType>> inList;
@@ -2538,12 +2538,12 @@ package List
     output list<Type_a> outTypeALst;
     replaceable type Type_a subtypeof Any;
   end lastN;
-  
-	function first
-	  input list<Type_a> inList;
-	  output Type_a outFirst;
-	  replaceable type Type_a subtypeof Any;
-	end first;
+
+  function first
+    input list<Type_a> inList;
+    output Type_a outFirst;
+    replaceable type Type_a subtypeof Any;
+  end first;
 
   function threadTuple
     replaceable type Type_b subtypeof Any;

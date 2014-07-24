@@ -172,7 +172,7 @@ algorithm
       list<tuple<HpcOmSimCode.Task, list<Integer>>> eventSystemTasks;
       list<SimCode.SimEqSystem> equationsForConditions;
       array<Option<SimCode.SimEqSystem>> simEqIdxSimEqMapping;
-      
+
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _, _, _, _, _, _, _, _) equation
 
       print(Util.if_(Flags.isSet(Flags.HPCOM_ANALYZATION_MODE), "Using analyzation mode\n", ""));
@@ -203,7 +203,7 @@ algorithm
       sccSimEqMapping = convertToSccSimEqMapping(equationSccMapping, listLength(allComps));
       simeqCompMapping = convertToSimeqCompMapping(equationSccMapping, lastEqMappingIdx);
       simEqIdxSimEqMapping = getSimEqIdxSimEqMapping(allEquations, arrayLength(simeqCompMapping));
-      
+
       //dumpSimEqSCCMapping(simeqCompMapping);
       SimCodeUtil.execStat("hpcom setup");
 
@@ -663,7 +663,7 @@ algorithm
         simEqIdx = getIndexBySimCodeEq(iEquation);
         tmpMapping = arrayUpdate(iMapping, simEqIdx, SOME(iEquation));
       then tmpMapping;
-    else 
+    else
       equation
         simEqIdx = getIndexBySimCodeEq(iEquation);
         //print("getSimEqIdxSimEqMapping1: Can't access idx " +& intString(simEqIdx) +& "\n");

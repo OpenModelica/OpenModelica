@@ -163,7 +163,7 @@ encapsulated package HpcOmMemory
           notOptimizedVars = getNotOptimizedVarsByCacheLineMapping(scVarCLMapping, allVarsMapping);
           //notOptimizedVars = listAppend(notOptimizedVars, aliasVars);
           print("Not optimized vars:\n\t");
-          print(stringDelimitList(List.map(notOptimizedVars, dumpSimCodeVar), ",") +& "\n"); 
+          print(stringDelimitList(List.map(notOptimizedVars, dumpSimCodeVar), ",") +& "\n");
 
           //Append cache line nodes to graph
           //--------------------------------
@@ -189,12 +189,12 @@ encapsulated package HpcOmMemory
           memoryPositionMapping = arrayCreate(0,(-1,-1));
           SimCode.MODELINFO(vars=simCodeVars) = iModelInfo;
           SimCode.SIMVARS(stateVars=stateVars, derivativeVars=derivativeVars, algVars=algVars, paramVars=paramVars, aliasVars=aliasVars) = simCodeVars;
-          
+
           notOptimizedVars = stateVars;
           notOptimizedVars = listAppend(notOptimizedVars, derivativeVars);
           notOptimizedVars = listAppend(notOptimizedVars, algVars);
           notOptimizedVars = listAppend(notOptimizedVars, paramVars);
-          
+
           tmpMemoryMap = HpcOmSimCode.MEMORYMAP_ARRAY(memoryPositionMapping,0,hashTable,{});
         then SOME(tmpMemoryMap);
       else
@@ -698,15 +698,15 @@ encapsulated package HpcOmMemory
   end convertCacheMapToMemoryMap3;
 
 
-	protected function getNotOptimizedVarsByCacheLineMapping "author: marcusw
+  protected function getNotOptimizedVarsByCacheLineMapping "author: marcusw
     Get all sim code variables that have no valid cl-mapping."
-	  input array<tuple<Integer,Integer>> iScVarCLMapping;
-	  input array<Option<SimCode.SimVar>> iAllVarsMapping;
-	  output list<SimCode.SimVar> oNotOptimizedVars;
+    input array<tuple<Integer,Integer>> iScVarCLMapping;
+    input array<Option<SimCode.SimVar>> iAllVarsMapping;
+    output list<SimCode.SimVar> oNotOptimizedVars;
   algorithm
     ((oNotOptimizedVars,_)) := Util.arrayFold1(iScVarCLMapping, getNotOptimizedVarsByCacheLineMapping0, iAllVarsMapping, ({},1));
-	end getNotOptimizedVarsByCacheLineMapping;
-	
+  end getNotOptimizedVarsByCacheLineMapping;
+
   protected function getNotOptimizedVarsByCacheLineMapping0 "author: marcusw
     Add the sc-variable to the output list if it has no valid mapping."
     input tuple<Integer,Integer> iScVarCLMapping;
@@ -1311,7 +1311,7 @@ encapsulated package HpcOmMemory
     DAE.ComponentRef name;
   algorithm
     SimCode.SIMVAR(name=name) := iVar;
-    oString := ComponentReference.printComponentRefStr(name);    
+    oString := ComponentReference.printComponentRefStr(name);
   end dumpSimCodeVar;
 
   protected function printNodeSimCodeVarMapping

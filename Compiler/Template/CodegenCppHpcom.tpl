@@ -417,7 +417,7 @@ end MemberVariableDefine;
 template MemberVariableDefine2(SimVar simVar, String arrayName, Option<MemoryMap> hpcOmMemoryOpt, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
 ::=
 /*
-If an array is used as a whole during computation, all array-values are calculated by one and the same component. Thus the array-elements 
+If an array is used as a whole during computation, all array-values are calculated by one and the same component. Thus the array-elements
 are stored consecutively and a pointer to the first array-element is passed to the calc-functions.
 */
 match simVar
@@ -473,7 +473,7 @@ template MemberVariableDefine3(Option<tuple<Integer,Integer>> optVarArrayAssignm
             match simVar
                 case SIMVAR(__) then
                     <<
-                    <%if createConstructorDeclaration then ',<%cref(name, useFlatArrayNotation)%>(varArray<%arrayIdx%>[<%varIdx%>])' 
+                    <%if createConstructorDeclaration then ',<%cref(name, useFlatArrayNotation)%>(varArray<%arrayIdx%>[<%varIdx%>])'
                       else '<%variableType(type_)%>& <%cref(name, useFlatArrayNotation)%>;// = varArray<%arrayIdx%>[<%varIdx%>]' %>
                     >>
             end match
@@ -492,9 +492,9 @@ template MemberVariableDefine4(Option<tuple<Integer,Integer>> optVarArrayAssignm
   match optVarArrayAssignment
     case SOME((varIdx, arrayIdx)) then
         match simVar
-            case SIMVAR(__) then    
+            case SIMVAR(__) then
                 <<
-                <%if createConstructorDeclaration then ',<%arrayName%>_<%idx%>(varArray<%arrayIdx%>[<%varIdx%> + <%idx%>])' 
+                <%if createConstructorDeclaration then ',<%arrayName%>_<%idx%>(varArray<%arrayIdx%>[<%varIdx%> + <%idx%>])'
                   else '<%variableType(type_)%>& <%arrayName%>_<%idx%> = varArray<%arrayIdx%>[<%varIdx%> + <%idx%>];' %>
                 >>
         end match
@@ -1209,7 +1209,7 @@ template equationHPCOM_(SimEqSystem eq, Integer idx, Context context, Text &varD
   Residual equations are handled differently."
 ::=
   match eq
-  case e as SES_SIMPLE_ASSIGN(__) then 
+  case e as SES_SIMPLE_ASSIGN(__) then
     let &varDeclsLocal = buffer "" /*BUFL*/
     let eqText = equation_(eq,context,&varDeclsLocal,simCode, useFlatArrayNotation)
     <<
