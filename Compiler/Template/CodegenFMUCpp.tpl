@@ -59,30 +59,30 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let guid = getUUIDStr()
   let target  = simulationCodeTarget()
   let name = lastIdentOfPath(modelInfo.name)
-  let()= textFile(simulationHeaderFile(simCode), 'OMCpp<%name%>.h')
-  let()= textFile(simulationCppFile(simCode), 'OMCpp<%name%>.cpp')
-  let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.h')
-  let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals,externalFunctionIncludes), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp')
+  let()= textFile(simulationHeaderFile(simCode,false), 'OMCpp<%name%>.h')
+  let()= textFile(simulationCppFile(simCode,false), 'OMCpp<%name%>.cpp')
+  let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals,false), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.h')
+  let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals,externalFunctionIncludes,false), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp')
   let()= textFile(simulationTypesHeaderFile(simCode,modelInfo.functions,literals), 'OMCpp<%fileNamePrefix%>Types.h')
   let()= textFile(fmuModelWrapperFile(simCode,guid,name), 'OMCpp<%name%>FMU.cpp')
   let()= textFile(fmuModelDescriptionFileCpp(simCode,guid), 'modelDescription.xml')
   let()= textFile(simulationInitHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Initialize.h')
-  let()= textFile(simulationInitCppFile(simCode),'OMCpp<%fileNamePrefix%>Initialize.cpp')
+  let()= textFile(simulationInitCppFile(simCode,false),'OMCpp<%fileNamePrefix%>Initialize.cpp')
   let()= textFile(simulationFactoryFile(simCode),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
   let()= textFile(simulationExtensionHeaderFile(simCode),'OMCpp<%fileNamePrefix%>Extension.h')
   let()= textFile(simulationExtensionCppFile(simCode),'OMCpp<%fileNamePrefix%>Extension.cpp')
   let()= textFile(simulationJacobianHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Jacobian.h')
-  let()= textFile(simulationJacobianCppFile(simCode),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
+  let()= textFile(simulationJacobianCppFile(simCode,false),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
   let()= textFile(simulationWriteOutputHeaderFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.h')
-  let()= textFile(simulationWriteOutputCppFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
-  let()= textFile(simulationStateSelectionCppFile(simCode), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
+  let()= textFile(simulationWriteOutputCppFile(simCode,false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
+  let()= textFile(simulationStateSelectionCppFile(simCode,false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
   let()= textFile(simulationStateSelectionHeaderFile(simCode),'OMCpp<%fileNamePrefix%>StateSelection.h')
   let()= textFile(fmudeffile(simCode,"1.0"), '<%name%>.def')
   let()= textFile(fmuMakefile(target,simCode), '<%fileNamePrefix%>_FMU.makefile')
   let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _,_)  =>
-          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode,contextAlgloopJacobian) ;separator="")
+          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode,contextAlgloopJacobian,false) ;separator="")
          ;separator="")
-  let algs = algloopfiles(listAppend(allEquations,initialEquations),simCode,contextAlgloop)
+  let algs = algloopfiles(listAppend(allEquations,initialEquations),simCode,contextAlgloop,false)
   let()= textFile(algloopMainfile(listAppend(allEquations,initialEquations),simCode,contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
   let()= textFile(calcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
  ""
@@ -203,7 +203,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(stateVars = listStates)) then
   >>
 end ModelDefineData;
 
-template DefineVariables(SimVar simVar)
+template DefineVariables(SimVar simVar, Boolean useFlatArrayNotation)
  "Generates code for defining variables in c file for FMU target. "
 ::=
 match simVar
@@ -215,7 +215,7 @@ match simVar
   <<>>
   else
   <<
-  #define <%cref(name)%>_ <%System.tmpTick()%> <%description%>
+  #define <%cref(name,useFlatArrayNotation)%>_ <%System.tmpTick()%> <%description%>
   >>
 end DefineVariables;
 

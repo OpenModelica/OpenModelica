@@ -227,7 +227,7 @@ void Cvode::solve(const SOLVERCALL action)
     if ((action & RECORDCALL) && (action & FIRST_CALL))
     {
       initialize();
-      if(writeOutput)
+      if (writeOutput)
         writeToFile(0, _tCurrent, _h);
       _tLastWrite = 0;
 
@@ -246,7 +246,7 @@ void Cvode::solve(const SOLVERCALL action)
       _firstStep = true;
       if (writeEventOutput)
         writeToFile(0, _tCurrent, _h);
-      if(writeOutput)
+      if (writeOutput)
         writeCVodeOutput(_tCurrent, _h, _locStps);
     }
 
@@ -304,53 +304,47 @@ void Cvode::CVodeCore()
 
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == ALL);
   bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == NONE);
+
   while (_solverStatus & ISolver::CONTINUE)
   {
     _cv_rt = CVode(_cvodeMem, _tEnd, _CV_y, &_tCurrent, CV_ONE_STEP);
 
     _idid = CVodeGetNumSteps(_cvodeMem, &_locStps);
-    if(_idid != CV_SUCCESS)
+    if (_idid != CV_SUCCESS)
       throw std::runtime_error("CVodeGetNumSteps failed. The cvode mem pointer is NULL");
 
     _idid = CVodeGetLastStep(_cvodeMem, &_h);
-    if(_idid != CV_SUCCESS)
+    if (_idid != CV_SUCCESS)
       throw std::runtime_error("CVodeGetLastStep failed. The cvode mem pointer is NULL");
 
     //Check if there was at least one output-point within the last solver interval
     //  -> Write output if true
-    if(writeOutput)
+    if (writeOutput)
       writeCVodeOutput(_tCurrent, _h, _locStps);
 
     _continuous_system->stepCompleted(_tCurrent);
-    /*_continuous_system->stepCompleted(_tCurrent);   */
-    /*ToDo
-     if(dynamic_cast<IStepEvent*>(_system)->isStepEvent())
-     {
-     _cv_rt = 2;
-     }*/
 
+    // Perform state selection
     bool state_selection = stateSelection();
-    //bool restart = false;
     if (state_selection)
-    {
-      //restart = true;
       _continuous_system->getContinuousStates(_z);
-      //_continuous_system->evaluateODE(IContinuous::CONTINUOUS);
-    }
+
     _zeroFound = false;
 
-    // Check, ob Schritt erfolgreich
+    // Check if step was successful
     if (check_flag(&_cv_rt, "CVode", 1))
     {
       _solverStatus = ISolver::SOLVERERROR;
       break;
     }
 
-    // A root is found
-    if ((_cv_rt == CV_ROOT_RETURN)) //CVode is setting _tCurrent to the time where the first event occurres
+    // A root was found
+    if ((_cv_rt == CV_ROOT_RETURN))
     {
+      // CVode is setting _tCurrent to the time where the first event occurred
       double _abs = fabs(_tLastEvent - _tCurrent);
       _zeroFound = true;
+
       if ((_abs < 1e-3) && _event_n == 0)
       {
         _tLastEvent = _tCurrent;
@@ -367,50 +361,51 @@ void Cvode::CVodeCore()
         _event_n = 0;
       }
       else
-      {
         throw std::runtime_error("Number of events exceeded  in time interval " + boost::lexical_cast<string>(_abs) + " at time " + boost::lexical_cast<string>(_tCurrent));
-      }
 
-      //MW: CVode has interpolated the states at time 'tCurrent'
-
+      // CVode has interpolated the states at time 'tCurrent'
       _time_system->setTime(_tCurrent);
-      //_continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
-      //_continuous_system->evaluateODE(IContinuous::CONTINUOUS);
 
-      //Zustände recorden bis hierher
+      // To get steep steps in the result file, two value points (P1 and P2) must be added
+      //
+      // Y |   (P2) X...........
+      //   |        :
+      //   |        :
+      //   |........X (P1)
+      //   |---------------------------------->
+      //   |        ^                         t
+      //        _tCurrent
 
-      //MW: Not all variables are up to date, thus this is done after evaluateAll (see next if-statement)
-      //if (_cvodesettings->getEventOutput())
-      //  writeToFile(0, _tCurrent, _h);
+      // Write the values of (P1)
+      if (writeEventOutput)
+      {
+        _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+        writeToFile(0, _tCurrent, _h);
+      }
 
       _idid = CVodeGetRootInfo(_cvodeMem, _zeroSign);
 
       for (int i = 0; i < _dimZeroFunc; i++)
         _events[i] = bool(_zeroSign[i]);
 
-      //Event Iteration starten
-      if(_mixed_system->handleSystemEvents(_events))
+      if (_mixed_system->handleSystemEvents(_events))
       {
         // State variables were reinitialized, thus we have to give these values to the cvode-solver
         // Take care about the memory regions, _z is the same like _CV_y
         _continuous_system->getContinuousStates(_z);
       }
-      //_event_system->getZeroFunc(_zeroVal);
-      //EVENT Iteration beendet
     }
 
-    // Zustand aus dem System holen
-    //_continuous_system->getContinuousStates(_z);
-    if (_zeroFound || state_selection)//restart)
+    if (_zeroFound || state_selection)
     {
-      //restart = false; //true if state selection was performed
-      //Zustände nach der Ereignisbehandlung aufnehmen
+      // Write the values of (P2)
       if (writeEventOutput)
       {
-        //MW: If we want to write the event-results, we should evaluate the whole system
+        // If we want to write the event-results, we should evaluate the whole system again
         _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
         writeToFile(0, _tCurrent, _h);
       }
+
       _idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
       if (_idid < 0)
         throw std::runtime_error("CVode::ReInit()");
@@ -449,7 +444,7 @@ void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp
       //We have to find all output-points within the last solver step
       while (_tLastWrite + dynamic_cast<ISolverSettings*>(_cvodesettings)->getGlobalSettings()->gethOutput() <= time)
       {
-        if(!_bWritten)
+        if (!_bWritten)
         {
           //Rescue the calculated derivatives
           oldValues = new double[_continuous_system->getDimRHS()];
@@ -559,34 +554,31 @@ const int Cvode::reportErrorMessage(ostream& messageStream)
 void Cvode::writeSimulationInfo()
 {
 #ifdef USE_BOOST_LOG
-   src::logger lg;
+  src::logger lg;
 
-   // Now, let's try logging with severity
-   src::severity_logger< cvodeseverity_level > slg;
+  // Now, let's try logging with severity
+  src::severity_logger<cvodeseverity_level> slg;
 
-   long int nst, nfe, nsetups, nni, ncfn, netf;
-   long int nfQe, netfQ;
-   long int nfSe, nfeS, nsetupsS, nniS, ncfnS, netfS;
-   long int nfQSe, netfQS;
+  long int nst, nfe, nsetups, nni, ncfn, netf;
+  long int nfQe, netfQ;
+  long int nfSe, nfeS, nsetupsS, nniS, ncfnS, netfS;
+  long int nfQSe, netfQS;
 
-   int qlast, qcur;
-   realtype h0u, hlast, hcur, tcur;
+  int qlast, qcur;
+  realtype h0u, hlast, hcur, tcur;
 
-   int flag;
+  int flag;
 
-   flag = CVodeGetIntegratorStats(_cvodeMem, &nst, &nfe, &nsetups, &netf,
-   &qlast, &qcur,
-   &h0u, &hlast, &hcur,
-   &tcur);
+  flag = CVodeGetIntegratorStats(_cvodeMem, &nst, &nfe, &nsetups, &netf, &qlast, &qcur, &h0u, &hlast, &hcur, &tcur);
 
-   flag = CVodeGetNonlinSolvStats(_cvodeMem, &nni, &ncfn);
+  flag = CVodeGetNonlinSolvStats(_cvodeMem, &nni, &ncfn);
 
-   BOOST_LOG_SEV(slg, cvode_normal) << " Number steps: " << nst;
-   BOOST_LOG_SEV(slg, cvode_normal) << " Function evaluations " << "f: " << nfe;
-   BOOST_LOG_SEV(slg, cvode_normal) << " Error test failures " <<  "netf: " << netfS;
-   BOOST_LOG_SEV(slg, cvode_normal) << " Linear solver setups " << "nsetups: " <<  nsetups;
-   BOOST_LOG_SEV(slg, cvode_normal) << " Nonlinear iterations " <<  "nni: "  << nni ;
-   BOOST_LOG_SEV(slg, cvode_normal) << " Convergence failures " <<  "ncfn: " <<  ncfn ;
+  BOOST_LOG_SEV(slg, cvode_normal)<< " Number steps: " << nst;
+  BOOST_LOG_SEV(slg, cvode_normal)<< " Function evaluations " << "f: " << nfe;
+  BOOST_LOG_SEV(slg, cvode_normal)<< " Error test failures " << "netf: " << netfS;
+  BOOST_LOG_SEV(slg, cvode_normal)<< " Linear solver setups " << "nsetups: " << nsetups;
+  BOOST_LOG_SEV(slg, cvode_normal)<< " Nonlinear iterations " << "nni: " << nni;
+  BOOST_LOG_SEV(slg, cvode_normal)<< " Convergence failures " << "ncfn: " << ncfn;
 
 #endif
   //// Solver

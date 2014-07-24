@@ -171,6 +171,8 @@ algorithm
       list<HpcOmSimCode.Task> eventSystemTaskList;
       list<tuple<HpcOmSimCode.Task, list<Integer>>> eventSystemTasks;
       list<SimCode.SimEqSystem> equationsForConditions;
+      array<Option<SimCode.SimEqSystem>> simEqIdxSimEqMapping;
+      
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _, _, _, _, _, _, _, _) equation
 
       print(Util.if_(Flags.isSet(Flags.HPCOM_ANALYZATION_MODE), "Using analyzation mode\n", ""));
@@ -191,6 +193,7 @@ algorithm
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, _, _, _, crefToSimVarHT, backendMapping) = simCode;
 
       (allComps,_) = HpcOmTaskGraph.getSystemComponents(inBackendDAE);
+      //print("All components size: " +& intString(listLength(allComps)) +& "\n");
       highestSccIdx = findHighestSccIdxInMapping(equationSccMapping,-1);
       compCountPlusDummy = listLength(allComps)+1;
       equationSccMapping1 = removeDummyStateFromMapping(equationSccMapping);
@@ -199,6 +202,8 @@ algorithm
 
       sccSimEqMapping = convertToSccSimEqMapping(equationSccMapping, listLength(allComps));
       simeqCompMapping = convertToSimeqCompMapping(equationSccMapping, lastEqMappingIdx);
+      simEqIdxSimEqMapping = getSimEqIdxSimEqMapping(allEquations, arrayLength(simeqCompMapping));
+      
       //dumpSimEqSCCMapping(simeqCompMapping);
       SimCodeUtil.execStat("hpcom setup");
 
@@ -225,15 +230,15 @@ algorithm
       //Get Event System
       taskGraphEvent = arrayCopy(taskGraph);
       taskGraphDataEvent = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
-      //(taskGraphEvent,taskGraphDataEvent) = HpcOmTaskGraph.getEventSystem(taskGraphEvent,taskGraphDataEvent,inBackendDAE, zeroCrossings, simeqCompMapping);
+      (taskGraphEvent,taskGraphDataEvent) = HpcOmTaskGraph.getEventSystem(taskGraphEvent,taskGraphDataEvent,inBackendDAE, zeroCrossings, simeqCompMapping);
 
-      //fileName = ("taskGraph"+&filenamePrefix+&"_event.graphml");
-      //schedulerInfo = arrayCreate(arrayLength(taskGraphEvent), (-1,-1,-1.0));
-      //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphEvent, taskGraphDataEvent,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
-      //SimCodeUtil.execStat("hpcom create and dump event task graph");
+      fileName = ("taskGraph"+&filenamePrefix+&"_event.graphml");
+      schedulerInfo = arrayCreate(arrayLength(taskGraphEvent), (-1,-1,-1.0));
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphEvent, taskGraphDataEvent,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
+      SimCodeUtil.execStat("hpcom create and dump event task graph");
 
-      //HpcOmSimCode.TASKDEPSCHEDULE(tasks=eventSystemTasks) = HpcOmScheduler.createTaskDepSchedule(taskGraphEvent, taskGraphDataEvent, sccSimEqMapping);
-      //eventSystemTaskList = List.map(eventSystemTasks, Util.tuple21);
+      HpcOmSimCode.TASKDEPSCHEDULE(tasks=eventSystemTasks) = HpcOmScheduler.createTaskDepSchedule(taskGraphEvent, taskGraphDataEvent, sccSimEqMapping);
+      eventSystemTaskList = List.map(eventSystemTasks, Util.tuple21);
 
       //Get ODE System
       //--------------
@@ -309,7 +314,7 @@ algorithm
       optTmpMemoryMap = HpcOmMemory.createMemoryMap(modelInfo, taskGraphSimplified, taskGraphDataSimplified, eqs, filenamePrefix, schedulerInfo, schedule, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, allComps);
       SimCodeUtil.execStat("hpcom create memory map");
 
-      equationsForConditions = allEquations;//getSimCodeEqsByTaskList(eventSystemTaskList, allEquations);
+      equationsForConditions = allEquations; //getSimCodeEqsByTaskList(eventSystemTaskList, simEqIdxSimEqMapping);
 
       simCode = SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
@@ -638,6 +643,41 @@ algorithm
   oMapping := arrayUpdate(iMapping,simEqIdx,sccIdx);
 end convertToSimeqCompMapping1;
 
+protected function getSimEqIdxSimEqMapping "author: marcusw
+  Get a mapping from simEqIdx -> option(simEq)."
+  input list<SimCode.SimEqSystem> iAllEquations;
+  input Integer iSimEqSystemHighestIdx;
+  output array<Option<SimCode.SimEqSystem>> oMapping;
+protected
+  array<Option<SimCode.SimEqSystem>> tmpMapping;
+algorithm
+  tmpMapping := arrayCreate(iSimEqSystemHighestIdx, NONE());
+  oMapping := List.fold(iAllEquations, getSimEqIdxSimEqMapping1, tmpMapping);
+end getSimEqIdxSimEqMapping;
+
+protected function getSimEqIdxSimEqMapping1 "author: marcusw
+  Helper function that adds the index of the given equation to the mapping."
+  input SimCode.SimEqSystem iEquation;
+  input array<Option<SimCode.SimEqSystem>> iMapping;
+  output array<Option<SimCode.SimEqSystem>> oMapping;
+protected
+  Integer simEqIdx;
+  array<Option<SimCode.SimEqSystem>> tmpMapping;
+algorithm
+  oMapping := matchcontinue(iEquation, iMapping)
+    case(_,_)
+      equation
+        simEqIdx = getIndexBySimCodeEq(iEquation);
+        tmpMapping = arrayUpdate(iMapping, simEqIdx, SOME(iEquation));
+      then tmpMapping;
+    else 
+      equation
+        simEqIdx = getIndexBySimCodeEq(iEquation);
+        //print("getSimEqIdxSimEqMapping1: Can't access idx " +& intString(simEqIdx) +& "\n");
+      then iMapping;
+  end matchcontinue;
+end getSimEqIdxSimEqMapping1;
+
 public function dumpSimEqSCCMapping "author: marcusw
   Prints the given mapping out to the console."
   input array<Integer> iSccMapping;
@@ -704,37 +744,70 @@ algorithm
 
 end dumpSccSimEqMapping2;
 
-protected function getSimCodeEqsByTaskList
+protected function getSimCodeEqsByTaskList "author: marcusw
+  Get the simCode.SimEqSystem - objects references by the given tasks."
   input list<HpcOmSimCode.Task> iTaskList;
-  input list<SimCode.SimEqSystem> iAllSimEqs;
+  input array<Option<SimCode.SimEqSystem>> iSimEqIdxSimEqMapping;
   output list<SimCode.SimEqSystem> oSimEqs;
 protected
   list<list<SimCode.SimEqSystem>> tmpSimEqs;
 algorithm
-  tmpSimEqs := List.map1(iTaskList, getSimCodeEqsByTaskList0, iAllSimEqs);
+  tmpSimEqs := List.map1(iTaskList, getSimCodeEqsByTaskList0, iSimEqIdxSimEqMapping);
   oSimEqs := List.flatten(tmpSimEqs);
 end getSimCodeEqsByTaskList;
 
-protected function getSimCodeEqsByTaskList0
+protected function getSimCodeEqsByTaskList0 "author: marcusw
+  Get the simCode.SimEqSystem - objects references by the given task."
   input HpcOmSimCode.Task iTask;
-  input list<SimCode.SimEqSystem> iAllSimEqs;
+  input array<Option<SimCode.SimEqSystem>> iSimEqIdxSimEqMapping;
   output list<SimCode.SimEqSystem> oSimEqs;
 protected
   list<Integer> eqIdc;
   list<SimCode.SimEqSystem> tmpSimEqs;
 algorithm
-  oSimEqs := match(iTask, iAllSimEqs)
+  oSimEqs := match(iTask, iSimEqIdxSimEqMapping)
     case(HpcOmSimCode.CALCTASK(eqIdc=eqIdc),_)
       equation
-        tmpSimEqs = List.map1r(eqIdc, getSimCodeEqByIndex, iAllSimEqs);
+        tmpSimEqs = List.map1r(eqIdc, getSimCodeEqByIndexAndMapping, iSimEqIdxSimEqMapping);
       then tmpSimEqs;
     case(HpcOmSimCode.CALCTASK_LEVEL(eqIdc=eqIdc),_)
       equation
-        tmpSimEqs = List.map1r(eqIdc, getSimCodeEqByIndex, iAllSimEqs);
+        tmpSimEqs = List.map1r(eqIdc, getSimCodeEqByIndexAndMapping, iSimEqIdxSimEqMapping);
       then tmpSimEqs;
     else then {};
   end match;
 end getSimCodeEqsByTaskList0;
+
+public function getSimCodeEqByIndexAndMapping "author: marcusw
+  Returns the SimEqSystem which has the given Index."
+  input array<Option<SimCode.SimEqSystem>> iSimEqIdxSimEqMapping; //All SimEqSystems
+  input Integer iIdx; //The index of the required system
+  output SimCode.SimEqSystem oSimEqSystem;
+protected
+  Option<SimCode.SimEqSystem> tmpSimEqSystem;
+algorithm
+  tmpSimEqSystem := arrayGet(iSimEqIdxSimEqMapping, iIdx);
+  oSimEqSystem := getSimCodeEqByIndexAndMapping1(tmpSimEqSystem, iIdx);
+end getSimCodeEqByIndexAndMapping;
+
+protected function getSimCodeEqByIndexAndMapping1 "author: marcusw
+  Returns the SimEqSystem if it's not NONE()."
+  input Option<SimCode.SimEqSystem> iSimEqSystem;
+  input Integer iIdx;
+  output SimCode.SimEqSystem oSimEqSystem;
+protected
+  SimCode.SimEqSystem tmpSys;
+algorithm
+  oSimEqSystem := match(iSimEqSystem,iIdx)
+    case(SOME(tmpSys),_)
+      then tmpSys;
+    else
+      equation
+        print("getSimCodeEqByIndexAndMapping1 failed. Looking for Index " +& intString(iIdx) +& "\n");
+        //print(" -- available indices: " +& stringDelimitList(List.map(List.map(iEqs,getIndexBySimCodeEq), intString), ",") +& "\n");
+      then fail();
+  end match;
+end getSimCodeEqByIndexAndMapping1;
 
 public function getSimCodeEqByIndex "function getSimCodeEqByIndex
   author: marcusw
@@ -760,6 +833,7 @@ algorithm
     else
       equation
         print("getSimCodeEqByIndex failed. Looking for Index " +& intString(iIdx) +& "\n");
+        //print(" -- available indices: " +& stringDelimitList(List.map(List.map(iEqs,getIndexBySimCodeEq), intString), ",") +& "\n");
       then fail();
   end matchcontinue;
 end getSimCodeEqByIndex;

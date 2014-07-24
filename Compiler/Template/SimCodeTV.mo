@@ -117,6 +117,11 @@ package builtin
     output Boolean b;
   end stringEq;
 
+  function stringInt
+    input String s1;
+    output Integer i;
+  end stringInt;
+
   function listAppend
     replaceable type TypeVar subtypeof Any;
     input list<TypeVar> lst;
@@ -2503,6 +2508,11 @@ package List
     replaceable type Type_a subtypeof Any;
   end fill;
 
+	function intRange
+	  input Integer inStop;
+	  output list<Integer> outRange;
+	end intRange;
+
   function flatten
     input list<list<ElementType>> inList;
     output list<ElementType> outList;
@@ -2520,7 +2530,6 @@ package List
     input list<Type_a> inTypeALst2;
     output list<Type_a> outTypeALst;
     replaceable type Type_a subtypeof Any;
-
   end union;
 
   function lastN
@@ -2528,8 +2537,13 @@ package List
      input Integer inN;
     output list<Type_a> outTypeALst;
     replaceable type Type_a subtypeof Any;
-
   end lastN;
+  
+	function first
+	  input list<Type_a> inList;
+	  output Type_a outFirst;
+	  replaceable type Type_a subtypeof Any;
+	end first;
 
   function threadTuple
     replaceable type Type_b subtypeof Any;

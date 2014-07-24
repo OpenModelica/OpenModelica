@@ -145,7 +145,7 @@ algorithm
         tmpSystMapping = List.fold2(comps, getSystemComponents1, isyst, currentIdx, tmpSystMapping);
         //print(stringDelimitList(List.map(comps, BackendDump.printComponent),","));
         tmpComps = listAppend(tmpComps,comps);
-        //print("--getSystemComponents0 end\n");
+        //print("--getSystemComponents0 end (found " +& intString(listLength(comps)) +& " of " +& intString(numberOfElement) +& " components)\n");
       then ((tmpComps, tmpSystMapping, currentIdx+1));
     else
       equation
@@ -257,7 +257,7 @@ algorithm
         //TASKGRAPHMETA(varCompMapping=varCompMapping,eqCompMapping=eqCompMapping) = graphDataIn;
         true = intEq(eqSysIdx,1);
         (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
-        //print("createTaskGraph0 with " +& intString(listLength(comps)) +& " components, " +& intString(arrayLength(ass1)) +& " variables and " +& intString(arrayLength(ass2)) +& " equations\n");
+        //print("createTaskGraph0 with " +& intString(listLength(comps)) +& " components\n");
         (graphTmp,graphDataTmp) = getEmptyTaskGraph(listLength(comps), numberOfVars, numberOfEqs);
         TASKGRAPHMETA(inComps = inComps, rootNodes = rootNodes, nodeNames =nodeNames, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark, varCompMapping=varCompMapping,eqCompMapping=eqCompMapping) = graphDataTmp;
         //print("createTaskGraph0 try to get varCompMapping\n");
@@ -276,7 +276,7 @@ algorithm
         //TASKGRAPHMETA(varCompMapping=varCompMapping,eqCompMapping=eqCompMapping) = graphDataIn;
         false = intEq(eqSysIdx,1);
         (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
-        //print("createTaskGraph0_case2 with " +& intString(listLength(comps)) +& " components, " +& intString(arrayLength(ass1)) +& " variables and " +& intString(arrayLength(ass2)) +& " equations\n");
+        //print("createTaskGraph0_case2 with " +& intString(listLength(comps)) +& " components\n");
         (graphTmp,graphDataTmp) = getEmptyTaskGraph(listLength(comps), numberOfVars, numberOfEqs);
         TASKGRAPHMETA(inComps = inComps, rootNodes = rootNodes, nodeNames =nodeNames, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark, varCompMapping=varCompMapping,eqCompMapping=eqCompMapping) = graphDataTmp;
         //print("createTaskGraph0 try to get varCompMapping\n");
@@ -2167,18 +2167,17 @@ protected function getComponentsOfZeroCrossing
   output list<Integer> oCompIdc;
 protected
   list<Integer> occurEquLst, tmpCompIdc;
-  Integer sccIdx;
 algorithm
-  oCompIdc := match(iZeroCrossing, iSimCodeEqCompMapping)
+  oCompIdc := matchcontinue(iZeroCrossing, iSimCodeEqCompMapping)
     case(BackendDAE.ZERO_CROSSING(occurEquLst=occurEquLst), _)
       equation
-        sccIdx = arrayGet(iSimCodeEqCompMapping, List.first(occurEquLst));
-        //print("Equations of zero crossing: " +& stringDelimitList(List.map(occurEquLst, intString), ",") +& "\n");
-        //print("SCCs of zero crossing: " +& intString(sccIdx) +& "\n");
+        occurEquLst = List.filter1OnTrue(occurEquLst, intGt, 0);
+        //print("getComponentsOfZeroCrossing: simEqs: " +& stringDelimitList(List.map(occurEquLst, intString), ",") +& "\n");
         tmpCompIdc = List.map1(occurEquLst, Util.arrayGetIndexFirst, iSimCodeEqCompMapping);
+        //print("getComponentsOfZeroCrossing: components: " +& stringDelimitList(List.map(tmpCompIdc, intString), ",") +& "\n");
       then tmpCompIdc;
     else then {};
-  end match;
+  end matchcontinue;
 end getComponentsOfZeroCrossing;
 
 
@@ -2356,7 +2355,7 @@ algorithm
       then (solvesDiscreteValue,eqn);
     case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_vars=vars,disc_eqns=eqns),_)
       equation
-        //print("Vars of mixed equation system: " +& stringDelimitList(List.map(vars, intString), ",") +& "\n");
+        //print("Vars of mixed equation system (" +& intString(List.first(eqns)) +& "):" +& stringDelimitList(List.map(vars, intString), ",") +& "\n");
         backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
         solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
         eqn = List.first(eqns);

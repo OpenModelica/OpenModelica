@@ -1180,7 +1180,7 @@ algorithm
         simEqSysIdcs = getSimEqSysIdcsForCompLst(compLst,iSccSimEqMapping);
         simEqSysIdcs = List.sort(simEqSysIdcs,intGt);
         task = HpcOmSimCode.CALCTASK_LEVEL(simEqSysIdcs,section);
-        taskLst = HpcOmSimCode.SERIALTASKLIST({task});
+        taskLst = HpcOmSimCode.SERIALTASKLIST({task}, true);
     then taskLst;
     case(section::_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps),_)
       equation

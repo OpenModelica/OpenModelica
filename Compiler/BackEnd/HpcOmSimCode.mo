@@ -32,12 +32,14 @@
 encapsulated package HpcOmSimCode
 
   public import HashTableCrILst;
+  public import SimCode;
 
   public uniontype MemoryMap //stores information to organize the memory for the parallel code in an efficient way
     record MEMORYMAP_ARRAY
       array<tuple<Integer,Integer>> positionMapping; //map each simCodeVar to a memory (array) position and to arrayIdx
       Integer floatArraySize; //arrayIdx: 1
       HashTableCrILst.HashTable scVarNameIdxMapping; //maps each var-name to the scVar-idx
+      list<SimCode.SimVar> otherVars; //a list of not optimized variables
     end MEMORYMAP_ARRAY;
   end MemoryMap;
 
@@ -65,6 +67,10 @@ encapsulated package HpcOmSimCode
     record RELEASELOCKTASK //Task which releases a lock
       String lockId;
     end RELEASELOCKTASK;
+    record PREFETCHTASK //This task will load variables in the cache
+      list<Integer> varIdc;
+      Integer varArrayidx;
+    end PREFETCHTASK;
     record TASKEMPTY //Dummy Task
     end TASKEMPTY;
   end Task;
@@ -75,6 +81,7 @@ encapsulated package HpcOmSimCode
     end PARALLELTASKLIST;
     record SERIALTASKLIST
       list<Task> tasks;
+      Boolean masterOnly; //Set to true if only the master thread should calculate the tasks in the list
     end SERIALTASKLIST;
   end TaskList;
 
