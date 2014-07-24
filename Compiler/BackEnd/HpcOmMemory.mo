@@ -163,7 +163,7 @@ encapsulated package HpcOmMemory
           notOptimizedVars = getNotOptimizedVarsByCacheLineMapping(scVarCLMapping, allVarsMapping);
           //notOptimizedVars = listAppend(notOptimizedVars, aliasVars);
           print("Not optimized vars:\n\t");
-          print(stringDelimitList(List.map(notOptimizedVars, dumpSimCodeVar), ",") + "\n"); 
+          print(stringDelimitList(List.map(notOptimizedVars, dumpSimCodeVar), ",") +& "\n"); 
 
           //Append cache line nodes to graph
           //--------------------------------
