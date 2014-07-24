@@ -175,11 +175,12 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
 static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStructure *s, const modelica_real * const vnom){
   int sizeCols;
   int maxColors;
-  int i,ii, j, l, index, tmp_index, tmpnJ;
+  int i, ii, j, jj, l, index, tmpnJ;
   unsigned int* lindex, *cC, *pindex;
+  const int indexBC[2] = {data->callback->INDEX_JAC_B, data->callback->INDEX_JAC_C}; 
 
-  s->lindex = (unsigned int**)malloc(5*sizeof(unsigned int*));
-  s->seedVec = (modelica_real ***)malloc(5*sizeof(modelica_real**));
+  s->lindex = (unsigned int**)malloc(2*sizeof(unsigned int*));
+  s->seedVec = (modelica_real ***)malloc(2*sizeof(modelica_real**));
 
   s->JderCon = (modelica_boolean **)malloc(dim->nJ*sizeof(modelica_boolean*));
   for(i = 0; i < dim->nJ; ++i)
@@ -189,22 +190,22 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
   s->gradL = (modelica_boolean *)calloc(dim->nv, sizeof(modelica_boolean));
   s->indexCon2 = (int *)malloc(dim->nc* sizeof(int));
   s->indexCon3 = (int *)malloc(dim->nc* sizeof(int));
-
-  for(index = 2; index < 4; ++index){
-
-    if(s->matrix[index]){
-      tmp_index = index-2;
+  
+  for(index = 0; index < 2; ++index){
+    jj = indexBC[index];
+    if(s->matrix[index + 2]){
       /******************************/
-      sizeCols = data->simulationInfo.analyticJacobians[index].sizeCols;
-      maxColors = data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1;
-      cC = (unsigned int*) data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
-      lindex = (unsigned int*) data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
-      pindex = data->simulationInfo.analyticJacobians[index].sparsePattern.index;
+      sizeCols = data->simulationInfo.analyticJacobians[jj].sizeCols;
+      maxColors = data->simulationInfo.analyticJacobians[jj].sparsePattern.maxColors + 1;
+      cC = (unsigned int*) data->simulationInfo.analyticJacobians[jj].sparsePattern.colorCols;
+      lindex = (unsigned int*) data->simulationInfo.analyticJacobians[jj].sparsePattern.leadindex;
+      pindex = data->simulationInfo.analyticJacobians[jj].sparsePattern.index;
 
       s->lindex[index] = (unsigned int*)calloc((sizeCols+1), sizeof(unsigned int));
       memcpy(&s->lindex[index][1], lindex, sizeCols*sizeof(unsigned int));
       lindex = s->lindex[index];
       s->seedVec[index] = (modelica_real **)malloc((maxColors)*sizeof(modelica_real*));
+      free(data->simulationInfo.analyticJacobians[jj].sparsePattern.leadindex);
       /**********************/
       if(sizeCols > 0){
         for(ii = 1; ii < maxColors; ++ii){
@@ -214,7 +215,7 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
               s->seedVec[index][ii][i] = vnom[i];
               for(j = lindex[i]; j < lindex[i + 1]; ++j){
                 l = pindex[j];
-                s->J[tmp_index][l][i] = (modelica_boolean)1;
+                s->J[index][l][i] = (modelica_boolean)1;
               }
             }
           }
@@ -222,31 +223,18 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
 
         tmpnJ = dim->nJ;
         if(s->lagrange) ++tmpnJ;
-        if(s->mayer && index == 3) ++tmpnJ;
+        if(s->mayer && index) ++tmpnJ;
 
         for(ii = dim->nx, j= 0; ii < tmpnJ; ++ii){
-          if(index == 2 && ii != s->derIndex[1])
+          if(!index && ii != s->derIndex[1])
             s->indexCon2[j++] = ii;
-          else if(index == 3 && ii != s->derIndex[2] && ii != s->derIndex[0])
+          else if(index && ii != s->derIndex[2] && ii != s->derIndex[0])
             s->indexCon3[j++] = ii;
         }
       }
       /**********************/
-    }
   }
 
-
-/*
-  for(i = 0; i< dim->nc; ++i)
-    printf("\ns->indexCon2[%i] = %i",i,s->indexCon2[i]);
-  for(i = 0; i< dim->nc; ++i)
-    printf("\ns->indexCon3[%i] = %i",i,s->indexCon3[i]);
-
-  printf("\ns->derIndex[0] = %i",s->derIndex[0]);
-  printf("\ns->derIndex[1] = %i",s->derIndex[1]);
-  printf("\ns->derIndex[2] = %i",s->derIndex[2]);
-
-*/
 
   for(i = 0; i < dim->nJ ; ++i){
     for(j = 0; j < dim->nv; ++j){

@@ -223,7 +223,7 @@ static inline void num_hessian0(double * v, const double * const lambda,
     data->callback->input_function(data);
     data->callback->functionDAE(data);
     /********************/
-    diffSynColoredOptimizerSystem(optData, optData->tmpJ, i,j,2);
+    diffSynColoredOptimizerSystem(optData, optData->tmpJ, i,j,0);
     /********************/
     v[ii] = (double)v_save;
     /********************/
@@ -277,7 +277,7 @@ static inline void num_hessian1(double * v, const double * const lambda,
   const modelica_real * const vmax = optData->bounds.vmax;
   const modelica_real * const vnom = optData->bounds.vnom;
   const modelica_boolean upCost2 = objFactor != 0 && ma && np == j + 1 && nsi == i  +1;
-  const short indexJ = (upCost2) ? 3 : 2;
+  const short indexJ = (upCost2) ? 1 : 0;
   int ii,jj, l,k;
   long double v_save, h;
   DATA * data = optData->data;
