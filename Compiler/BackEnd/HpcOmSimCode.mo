@@ -32,14 +32,13 @@
 encapsulated package HpcOmSimCode
 
   public import HashTableCrILst;
-  public import SimCode;
 
   public uniontype MemoryMap //stores information to organize the memory for the parallel code in an efficient way
     record MEMORYMAP_ARRAY
       array<tuple<Integer,Integer>> positionMapping; //map each simCodeVar to a memory (array) position and to arrayIdx
       Integer floatArraySize; //arrayIdx: 1
       HashTableCrILst.HashTable scVarNameIdxMapping; //maps each var-name to the scVar-idx
-      list<SimCode.SimVar> otherVars; //a list of not optimized variables
+      list<Integer> otherVars; //a list of not optimized variables
     end MEMORYMAP_ARRAY;
   end MemoryMap;
 

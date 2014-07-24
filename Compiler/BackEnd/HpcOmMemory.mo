@@ -195,7 +195,7 @@ encapsulated package HpcOmMemory
           notOptimizedVars = listAppend(notOptimizedVars, algVars);
           notOptimizedVars = listAppend(notOptimizedVars, paramVars);
           
-          tmpMemoryMap = HpcOmSimCode.MEMORYMAP_ARRAY(memoryPositionMapping,0,hashTable,notOptimizedVars);
+          tmpMemoryMap = HpcOmSimCode.MEMORYMAP_ARRAY(memoryPositionMapping,0,hashTable,{});
         then SOME(tmpMemoryMap);
       else
         equation
@@ -616,7 +616,7 @@ encapsulated package HpcOmMemory
           positionMappingArray = arrayCreate(intMax(0, highestIdx),(-1,-1));
           List.map1_0(positionMappingList, convertCacheMapToMemoryMap3, positionMappingArray);
           floatArraySize = listLength(cacheLinesFloat)*8;
-          tmpMemoryMap = HpcOmSimCode.MEMORYMAP_ARRAY(positionMappingArray, floatArraySize, iScVarNameIdxMapping, iNotOptimizedVars);
+          tmpMemoryMap = HpcOmSimCode.MEMORYMAP_ARRAY(positionMappingArray, floatArraySize, iScVarNameIdxMapping, {});
         then tmpMemoryMap;
       else
         equation
