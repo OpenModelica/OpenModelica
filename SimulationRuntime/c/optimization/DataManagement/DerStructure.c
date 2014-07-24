@@ -286,7 +286,7 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
       s->indexJ3[i] = j++;
     }
   }
-
+ }
 }
 
 /*
