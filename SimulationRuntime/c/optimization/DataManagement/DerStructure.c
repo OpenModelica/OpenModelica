@@ -177,7 +177,7 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
   int maxColors;
   int i, ii, j, jj, l, index, tmpnJ;
   unsigned int* lindex, *cC, *pindex;
-  const int indexBC[2] = {data->callback->INDEX_JAC_B, data->callback->INDEX_JAC_C}; 
+  const int indexBC[2] = {data->callback->INDEX_JAC_B, data->callback->INDEX_JAC_C};
 
   s->lindex = (unsigned int**)malloc(2*sizeof(unsigned int*));
   s->seedVec = (modelica_real ***)malloc(2*sizeof(modelica_real**));
@@ -190,7 +190,7 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
   s->gradL = (modelica_boolean *)calloc(dim->nv, sizeof(modelica_boolean));
   s->indexCon2 = (int *)malloc(dim->nc* sizeof(int));
   s->indexCon3 = (int *)malloc(dim->nc* sizeof(int));
-  
+
   for(index = 0; index < 2; ++index){
     jj = indexBC[index];
     if(s->matrix[index + 2]){

@@ -580,7 +580,7 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
   DATA * data = optData->data;
   int i,j,l,ii, ll;
   const int indexBC[2] = {data->callback->INDEX_JAC_B, data->callback->INDEX_JAC_C};
-  const int jj = indexBC[index]; 
+  const int jj = indexBC[index];
 
   const long double * scaldt = optData->bounds.scaldt[m];
   const unsigned int * const cC = data->simulationInfo.analyticJacobians[jj].sparsePattern.colorCols;
