@@ -595,4 +595,40 @@ algorithm
   oGraphInfo := GRAPHINFOARR(graphsArr,nodesArr,edges,attributes,graphNodeKey,graphEdgeKey);
 end convertToGraphInfoArr;
 
+// -------------------------
+// debug prints
+// -------------------------
+public function printGraphInfo
+  input GraphInfo iGraphInfo;
+protected
+    list<Graph> graphs;
+    Integer graphCount; //number of graphs in the graphs list
+    list<Node> nodes;
+    Integer nodeCount; //number of nodes in the nodes list
+    list<Edge> edges;
+    Integer edgeCount; //number of edges in the edge list
+    list<Attribute> attributes;
+    String graphNodeKey;
+    String graphEdgeKey;
+algorithm
+  GRAPHINFO(graphs=graphs,graphCount=graphCount,nodes=nodes,nodeCount=nodeCount,attributes=attributes,graphNodeKey=graphNodeKey,graphEdgeKey=graphEdgeKey) := iGraphInfo;
+  List.map_0(nodes,printNode);
+  print("nodeCount: "+&intString(nodeCount)+&"\n");
+  print("graphCount: "+&intString(graphCount)+&"\n");
+end printGraphInfo;
+
+protected function printNode
+  input Node node;
+protected
+    String id;
+    String color;
+    list<NodeLabel> nodeLabels;
+    ShapeType shapeType;
+    Option<String> optDesc;
+    list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
+algorithm
+  NODE(id=id) := node;
+  print("node: "+&id+&"\n");
+end printNode;
+
 end GraphML;

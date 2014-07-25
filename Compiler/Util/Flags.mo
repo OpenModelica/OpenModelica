@@ -843,7 +843,7 @@ constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(49, "corbaObj
 
 constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(50, "hpcomScheduler",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
-  Util.gettext("Sets the scheduler for task graph scheduling (list | listr | level | ext | mcp | taskdep | tds | none). Default: list."));
+  Util.gettext("Sets the scheduler for task graph scheduling (list | listr | level | ext | mcp | taskdep | tds | bls | none). Default: list."));
 
 constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(51, "tearingHeuristic",
   NONE(), EXTERNAL(), STRING_FLAG("MC3"),

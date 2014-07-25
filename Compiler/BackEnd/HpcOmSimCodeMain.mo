@@ -136,13 +136,13 @@ algorithm
       list<SimCode.StateSet> stateSets;
       array<Integer> systemIndexMap;
       list<tuple<Integer,Integer>> equationSccMapping, equationSccMapping1; //Maps each simEq to the scc
-      array<list<Integer>> sccSimEqMapping; //Maps each scc to a list of simEqs
+      array<list<Integer>> sccSimEqMapping, daeSccMapping; //Maps each scc to a list of simEqs
       array<Integer> simeqCompMapping; //Maps each simEq to the scc
       list<BackendDAE.TimeEvent> timeEvents;
       BackendDAE.StrongComponents allComps, initComps;
 
-      HpcOmTaskGraph.TaskGraph taskGraph, taskGraphOde, taskGraphEvent, taskGraphSimplified, taskGraphScheduled, taskGraphInit;
-      HpcOmTaskGraph.TaskGraphMeta taskGraphData, taskGraphDataOde, taskGraphDataEvent, taskGraphDataSimplified,taskGraphDataScheduled, taskGraphDataInit;
+      HpcOmTaskGraph.TaskGraph taskGraph, taskGraphDAE, taskGraphOde, taskGraphEvent, taskGraphSimplified, taskGraphScheduled, taskGraphInit;
+      HpcOmTaskGraph.TaskGraphMeta taskGraphData, taskGraphDataDAE, taskGraphDataOde, taskGraphDataEvent, taskGraphDataSimplified,taskGraphDataScheduled, taskGraphDataInit;
       String fileName, fileNamePrefix;
       Integer numProc;
       list<list<Integer>> parallelSets;
@@ -192,6 +192,8 @@ algorithm
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, _, _, _, crefToSimVarHT, backendMapping) = simCode;
 
+      //get SCC to simEqSys-mappping
+      //----------------------------
       (allComps,_) = HpcOmTaskGraph.getSystemComponents(inBackendDAE);
       //print("All components size: " +& intString(listLength(allComps)) +& "\n");
       highestSccIdx = findHighestSccIdxInMapping(equationSccMapping,-1);
@@ -199,35 +201,50 @@ algorithm
       equationSccMapping1 = removeDummyStateFromMapping(equationSccMapping);
       //the mapping can contain a dummy state as first scc
       equationSccMapping = Util.if_(intEq(highestSccIdx, compCountPlusDummy), equationSccMapping1, equationSccMapping);
-
       sccSimEqMapping = convertToSccSimEqMapping(equationSccMapping, listLength(allComps));
       simeqCompMapping = convertToSimeqCompMapping(equationSccMapping, lastEqMappingIdx);
       simEqIdxSimEqMapping = getSimEqIdxSimEqMapping(allEquations, arrayLength(simeqCompMapping));
 
       //dumpSimEqSCCMapping(simeqCompMapping);
-      SimCodeUtil.execStat("hpcom setup");
-
       //dumpSccSimEqMapping(sccSimEqMapping);
 
-      //Create TaskGraph
-      //----------------
+      //Create TaskGraph for all strongly connected components
+      //------------------------------------------------------
       (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
       SimCodeUtil.execStat("hpcom createTaskGraph");
-
+     
       //Create Costs
       //------------
       taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix +& "_eqs_prof" , simeqCompMapping, taskGraphData);
       SimCodeUtil.execStat("hpcom create costs");
-
+      
       fileName = ("taskGraph"+&filenamePrefix+&".graphml");
       schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1,-1.0));
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
       SimCodeUtil.execStat("hpcom dump TaskGraph");
-
+      
+      //print("DAE_onlySCCs\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraph);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);
+      
+      //Get complete DAE System
+      //-----------------------
+      taskGraphDAE = arrayCopy(taskGraph);
+      taskGraphDataDAE = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
+      (taskGraphDAE,taskGraphDataDAE) = HpcOmTaskGraph.appendRemovedEquations(inBackendDAE,taskGraphDAE,taskGraphDataDAE);
+     
+      fileName = ("taskGraph"+&filenamePrefix+&"DAE.graphml");
+      daeSccMapping = listArray(List.map(SimCodeUtil.getRemovedEquationSimEqSysIdxes(simCode),List.create));
+      daeSccMapping = Util.arrayAppend(sccSimEqMapping,daeSccMapping);
+      schedulerInfo = arrayCreate(arrayLength(taskGraphDAE), (-1,-1,-1.0));
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDAE, taskGraphDataDAE,inBackendDAE, fileName, "", {}, {}, daeSccMapping ,schedulerInfo);
+     
+      //print("DAE\n");
+      //HpcOmTaskGraph.printTaskGraph(taskGraphDAE);
+      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataDAE);
 
       //Get Event System
+      //----------------
       taskGraphEvent = arrayCopy(taskGraph);
       taskGraphDataEvent = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
       (taskGraphEvent,taskGraphDataEvent) = HpcOmTaskGraph.getEventSystem(taskGraphEvent,taskGraphDataEvent,inBackendDAE, zeroCrossings, simeqCompMapping);
@@ -251,6 +268,7 @@ algorithm
       taskGraphMetaMessage = Util.if_(taskGraphMetaValid, "TaskgraphMeta valid\n", "TaskgraphMeta invalid\n");
       print(taskGraphMetaMessage);
 
+      //print("ODE\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde);
 
@@ -258,7 +276,7 @@ algorithm
       //----------------------------------
       ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),_) = HpcOmTaskGraph.getCriticalPaths(taskGraphOde,taskGraphDataOde);
       criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
-      ((graphOps,graphCosts)) = HpcOmTaskGraph.sumUpExecCosts(taskGraphDataOde);
+      ((graphOps,graphCosts)) = HpcOmTaskGraph.sumUpExeCosts(taskGraphOde,taskGraphDataOde);
       graphCosts = HpcOmTaskGraph.roundReal(graphCosts,2);
       criticalPathInfo = criticalPathInfo +& " sum: (" +& realString(graphCosts) +& " ; " +& intString(graphOps) +& ")";
       fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");
@@ -268,9 +286,9 @@ algorithm
       SimCodeUtil.execStat("hpcom dump ODE TaskGraph");
 
       // Analyse Systems of Equations
-      //-------------
+      //-----------------------------
       (scheduledTasks,scheduledDAENodes) = HpcOmEqSystems.parallelizeTornSystems(taskGraphOde,taskGraphDataOde,sccSimEqMapping,inBackendDAE);
-      HpcOmScheduler.printTaskList(scheduledTasks);
+      //HpcOmScheduler.printTaskList(scheduledTasks);
 
       //Apply filters
       //-------------

@@ -13488,6 +13488,17 @@ algorithm
   end match;
 end getMixedindex;
 
+public function getRemovedEquationSimEqSysIdxes"gets the simEqSystem - indeces for teh removedEquations
+author: Waurich TUD 2014-07"
+  input SimCode.SimCode simCode;
+  output list<Integer> simEqSysIdcs;
+protected 
+  list<SimCode.SimEqSystem> remEqs;
+algorithm
+  SimCode.SIMCODE(removedEquations=remEqs) := simCode;
+  simEqSysIdcs := List.map(remEqs,eqIndex);
+end getRemovedEquationSimEqSysIdxes;
+
 public function dumpIdxScVarMapping
   input array<Option<SimCode.SimVar>> iMapping;
 algorithm

@@ -467,6 +467,16 @@ algorithm
   (_,outExpComponentRefLst) := traverseBackendDAEExpsEqnList(inEquationLst,extractCrefsFromExp,{});
 end equationsCrefs;
 
+public function equationCrefs
+"author: PA
+  From one equation return all
+  occuring component references."
+  input BackendDAE.Equation inEquation;
+  output list<DAE.ComponentRef> outExpComponentRefLst;
+algorithm
+  (_,outExpComponentRefLst) := traverseBackendDAEExpsEqnList({inEquation},extractCrefsFromExp,{});
+end equationCrefs;
+
 public function getAllCrefFromEquations
   input BackendDAE.EquationArray inEqns;
   output list<DAE.ComponentRef> cr_lst;

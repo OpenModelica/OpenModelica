@@ -3321,6 +3321,78 @@ algorithm
   end match;
 end map2_2_tail;
 
+public function map2_3
+  "Takes a list, a function and two extra argument, and creates three new lists
+   by applying the function to each element of the list."
+  input list<ElementInType> inList;
+  input MapFunc inFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  output list<ElementOutType1> outList1;
+  output list<ElementOutType2> outList2;
+  output list<ElementOutType3> outList3;
+
+  partial function MapFunc
+    input ElementInType inElement;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    output ElementOutType1 outElement1;
+    output ElementOutType2 outElement2;
+    output ElementOutType3 outElement3;
+  end MapFunc;
+algorithm
+  (outList1, outList2, outList3) := map2_3_tail(inList, inFunc, inArg1, inArg2, {}, {},{});
+  outList1 := listReverse(outList1);
+  outList2 := listReverse(outList2);
+  outList3 := listReverse(outList3);
+end map2_3;
+
+protected function map2_3_tail
+  "Tail-recursive implementation of map2_3"
+  input list<ElementInType> inList;
+  input MapFunc inFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input list<ElementOutType1> inAccumList1;
+  input list<ElementOutType2> inAccumList2;
+  input list<ElementOutType3> inAccumList3;
+  output list<ElementOutType1> outList1;
+  output list<ElementOutType2> outList2;
+  output list<ElementOutType3> outList3;
+
+  partial function MapFunc
+    input ElementInType inElement;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    output ElementOutType1 outElement1;
+    output ElementOutType2 outElement2;
+    output ElementOutType3 outElement3;
+  end MapFunc;
+algorithm
+  (outList1, outList2, outList3) :=
+  match(inList, inFunc, inArg1, inArg2, inAccumList1, inAccumList2, inAccumList3)
+    local
+      ElementInType head;
+      ElementOutType1 new_head1;
+      ElementOutType2 new_head2;
+      ElementOutType3 new_head3;
+      list<ElementInType> rest;
+      list<ElementOutType1> accum1;
+      list<ElementOutType2> accum2;
+      list<ElementOutType3> accum3;
+
+    case ({}, _, _, _, _, _, _) then (inAccumList1, inAccumList2, inAccumList3);
+
+    case (head :: rest, _, _, _, _, _, _)
+      equation
+        (new_head1, new_head2, new_head3) = inFunc(head, inArg1, inArg2);
+        (accum1, accum2, accum3) = map2_3_tail(rest, inFunc, inArg1, inArg2,
+          new_head1 :: inAccumList1, new_head2 :: inAccumList2, new_head3 :: inAccumList3);
+      then
+        (accum1, accum2, accum3);
+  end match;
+end map2_3_tail;
+
 public function map3
   "Takes a list, a function and three extra arguments, and creates a new list
    by applying the function to each element of the list."
