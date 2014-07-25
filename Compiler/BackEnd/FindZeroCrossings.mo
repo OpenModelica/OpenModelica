@@ -492,7 +492,7 @@ algorithm
       equation
         zc_lst = makeZeroCrossings({e}, {eq_count}, {wc_count});
         samples = listAppend(samples, zc_lst);
-        samples = mergeZeroCrossings(samples);
+        samples = mergeZeroCrossings(samples, {});
         //itmp = (listLength(zc_lst)-listLength(zeroCrossings));
         //indx = indx + (listLength(zc_lst) - listLength(zeroCrossings));
         Debug.fcall(Flags.RELIDX, print, "sample index: " +& intString(listLength(samples)) +& "\n");
@@ -663,7 +663,7 @@ algorithm
       equation
         zc_lst = makeZeroCrossings({e}, {alg_indx}, {});
         samples = listAppend(samples, zc_lst);
-        samples = mergeZeroCrossings(samples);
+        samples = mergeZeroCrossings(samples, {});
        // Debug.fcall(Flags.RELIDX, print, "sample index algotihm: " +& intString(indx) +& "\n");
       then ((e, true, (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))));
     case (((e as DAE.LUNARY(operator = _, exp = e1)), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))))
@@ -831,7 +831,7 @@ algorithm
         eqs = {alg_indx};
         zc_lst = makeZeroCrossings({e}, eqs, {});
         samples = listAppend(samples, zc_lst);
-        samples = mergeZeroCrossings(samples);
+        samples = mergeZeroCrossings(samples, {});
         Debug.fcall(Flags.RELIDX, print, "collectZCAlgsFor sample" +& "\n");
       then ((e, true, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))));
     case (((e as DAE.LUNARY(operator = _, exp = e1)), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))))
@@ -852,16 +852,17 @@ algorithm
     // coditions that are zerocrossings.
     case (((e as DAE.LUNARY(exp = e1, operator = op)), (iterator, inExpLst, range as DAE.RANGE(start=_, step=_), (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))))
       equation
-        Debug.fcall(Flags.RELIDX, print, "continues LUNARY: " +& intString(numRelations) +& "\n");
         true = Expression.expContains(e, iterator);
+        Debug.fcall(Flags.RELIDX, print, "continues LUNARY with Iterator: " +& intString(numRelations) +& "\n");
         ((e1, (iterator, inExpLst, range2, (_, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
         e_1 = DAE.LUNARY(op, e1);
         (explst, itmp) = replaceIteratorwithStaticValues(e_1, iterator, inExpLst, numRelations);
         zc_lst = makeZeroCrossings(explst, {alg_indx}, {});
         zc_lst = listAppend(zeroCrossings, zc_lst);
-        zc_lst = mergeZeroCrossings(zc_lst);
+        zc_lst = mergeZeroCrossings(zc_lst, {});
         itmp = (listLength(zc_lst)-listLength(zeroCrossings));
         zeroCrossings = Util.if_(itmp>0, zc_lst, zeroCrossings);
+        Debug.fcall(Flags.RELIDX, print, "collectZCAlgsFor LUNARY with Iterator result zc : ");
         Debug.fcall(Flags.RELIDX, BackendDump.debugExpStr, (e_1, "\n"));
       then
         ((e_1, false, (iterator, inExpLst, range2, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))));
@@ -874,6 +875,7 @@ algorithm
         {zc} = makeZeroCrossings({e_1}, {alg_indx}, {});
         zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
         zeroCrossings = Util.if_(List.isEmpty(zc_lst), listAppend(zeroCrossings, {zc}), zeroCrossings);
+        Debug.fcall(Flags.RELIDX, print, "collectZCAlgsFor LUNARY result zc : ");
         Debug.fcall(Flags.RELIDX, BackendDump.debugExpStr, (e_1, "\n"));
       then
         ((e_1, false, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))));
@@ -891,10 +893,11 @@ algorithm
         (explst, itmp) = replaceIteratorwithStaticValues(e_1, iterator, inExpLst, numRelations1);
         zc_lst = makeZeroCrossings(explst, {alg_indx}, {});
         zc_lst = listAppend(zeroCrossings, zc_lst);
-        zc_lst = mergeZeroCrossings(zc_lst);
+        zc_lst = mergeZeroCrossings(zc_lst, {});
         itmp = (listLength(zc_lst)-listLength(zeroCrossings));
         zeroCrossings = Util.if_(itmp>0, zc_lst, zeroCrossings);
-        print(Debug.fcallret1(Flags.RELIDX, BackendDump.zeroCrossingListString, zeroCrossings, ""));
+        Debug.fcall(Flags.RELIDX, print, "collectZCAlgsFor LBINARY1 result zc : ");
+        Debug.fcall(Flags.RELIDX, print, BackendDump.zeroCrossingListString(zeroCrossings));
       then
         ((e_1, false, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations1, numMathFunctions), (alg_indx, vars, knvars))));
     case (((e as DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2)), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))))
@@ -908,7 +911,8 @@ algorithm
         {zc} = makeZeroCrossings({e_1}, {alg_indx}, {});
         zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
         zeroCrossings = Util.if_(List.isEmpty(zc_lst), listAppend(zeroCrossings, {zc}), zeroCrossings);
-        print(Debug.fcallret1(Flags.RELIDX, BackendDump.zeroCrossingListString, zeroCrossings, ""));
+        Debug.fcall(Flags.RELIDX, print, "collectZCAlgsFor LBINARY2 result zc : ");
+        Debug.fcall(Flags.RELIDX, print, BackendDump.zeroCrossingListString(zeroCrossings));
       then
         ((e_1, false, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations1, numMathFunctions), (alg_indx, vars, knvars))));
     // function with discrete expressions generate no zerocrossing.
@@ -932,14 +936,14 @@ algorithm
         Debug.fcall(Flags.RELIDX, print, " number of new zc : " +& intString(listLength(explst)) +& "\n");
         zcLstNew = makeZeroCrossings(explst, {alg_indx}, {});
         zc_lst = listAppend(relations, zcLstNew);
-        zc_lst = mergeZeroCrossings(zc_lst);
+        zc_lst = mergeZeroCrossings(zc_lst, {});
         Debug.fcall(Flags.RELIDX, print, " number of new zc : " +& intString(listLength(zc_lst)) +& "\n");
         itmp = (listLength(zc_lst)-listLength(relations));
         Debug.fcall(Flags.RELIDX, print, " itmp : " +& intString(itmp) +& "\n");
         numRelations = intAdd(itmp, numRelations);
         eres = Util.if_((itmp>0), e_1, e);
         zeroCrossings = listAppend(zeroCrossings, zcLstNew);
-        zeroCrossings = mergeZeroCrossings(zeroCrossings);
+        zeroCrossings = mergeZeroCrossings(zeroCrossings, {});
         Debug.fcall(Flags.RELIDX, print, "collectZCAlgsFor result zc : "  +& ExpressionDump.printExpStr(eres)+& " index:"  +& intString(numRelations) +& "\n");
       then ((eres, true, (iterator, inExpLst, range, (zeroCrossings, zc_lst, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))));
     // All other functions generate zerocrossing.
@@ -951,12 +955,12 @@ algorithm
         e_1 = DAE.RELATION(e1, op, e2, numRelations, NONE());
         zcLstNew = makeZeroCrossings({e_1}, {alg_indx}, {});
         zc_lst = listAppend(relations, zcLstNew);
-        zc_lst = mergeZeroCrossings(zc_lst);
+        zc_lst = mergeZeroCrossings(zc_lst, {});
         itmp = (listLength(zc_lst)-listLength(relations));
         numRelations = numRelations + itmp;
         eres = Util.if_((itmp>0), e_1, e);
         zeroCrossings = listAppend(zeroCrossings, zcLstNew);
-        zeroCrossings = mergeZeroCrossings(zeroCrossings);
+        zeroCrossings = mergeZeroCrossings(zeroCrossings, {});
         Debug.fcall(Flags.RELIDX, print, "collectZCAlgsFor result zc : "  +& ExpressionDump.printExpStr(eres)+& " index:"  +& intString(numRelations) +& "\n");
       then ((eres, true, (iterator, inExpLst, range, (zeroCrossings, zc_lst, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))));
     case ((e, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))))
@@ -1078,22 +1082,28 @@ protected function mergeZeroCrossings
   function expressions they are merged into one zerocrossing.
   In the resulting list all zerocrossing have uniq function expressions."
   input list<BackendDAE.ZeroCrossing> inZeroCrossingLst;
+  input list<BackendDAE.ZeroCrossing> inAccum;
   output list<BackendDAE.ZeroCrossing> outZeroCrossingLst;
 algorithm
   outZeroCrossingLst:=
-  matchcontinue (inZeroCrossingLst)
+  matchcontinue (inZeroCrossingLst, inAccum)
     local
       BackendDAE.ZeroCrossing zc, same_1;
-      list<BackendDAE.ZeroCrossing> samezc, diff, diff_1, xs;
-    case {} then {};
-    case {zc} then {zc};
-    case (zc::xs)
+      list<BackendDAE.ZeroCrossing> samezc, diff, res, xs;
+    case ({}, _) then listReverse(inAccum);
+    case (zc::xs, _)
       equation
         (samezc, diff) = List.split1OnTrue(xs, sameZeroCrossing, zc);
-        diff_1 = mergeZeroCrossings(diff);
         same_1 = List.fold(samezc, mergeZeroCrossing, zc);
+        res = mergeZeroCrossings(diff, same_1::inAccum);
       then
-        (same_1::diff_1);
+        res;
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- FindZeroCrossings.mergeZeroCrossings failed!");
+      then
+        fail();
   end matchcontinue;
 end mergeZeroCrossings;
 
@@ -1111,28 +1121,61 @@ algorithm
   matchcontinue (inZeroCrossing1, inZeroCrossing2)
     local
       list<Integer> eq, wc, eq1, wc1, eq2, wc2;
-      DAE.Exp e1, e2;
-      Integer index1, index2;
-    case (BackendDAE.ZERO_CROSSING(relation_ = e1 as DAE.RELATION(index=index1), occurEquLst = eq1, occurWhenLst = wc1), BackendDAE.ZERO_CROSSING(relation_ = DAE.RELATION(index=index2), occurEquLst = eq2, occurWhenLst = wc2))
+      DAE.Exp e1, e2, res;
+    case (BackendDAE.ZERO_CROSSING(relation_ = e1, occurEquLst = eq1, occurWhenLst = wc1), BackendDAE.ZERO_CROSSING(relation_ = e2, occurEquLst = eq2, occurWhenLst = wc2))
       equation
-        true = intLt(index1, index2);
+        res = getMinZeroCrossings(e1, e2);
         eq = List.union(eq1, eq2);
         wc = List.union(wc1, wc2);
       then
-        BackendDAE.ZERO_CROSSING(e1, eq, wc);
-    case (BackendDAE.ZERO_CROSSING(relation_ = DAE.RELATION(index=_), occurEquLst = eq1, occurWhenLst = wc1), BackendDAE.ZERO_CROSSING(relation_ = e2 as DAE.RELATION(index=_), occurEquLst = eq2, occurWhenLst = wc2))
-      equation
-        eq = List.union(eq1, eq2);
-        wc = List.union(wc1, wc2);
-      then BackendDAE.ZERO_CROSSING(e2, eq, wc);
-    case (BackendDAE.ZERO_CROSSING(relation_ = DAE.RELATION(index=_), occurEquLst = _, occurWhenLst = _), BackendDAE.ZERO_CROSSING(relation_ = DAE.RELATION(index=_), occurEquLst = _, occurWhenLst = _))
+        BackendDAE.ZERO_CROSSING(res, eq, wc);
+    case (BackendDAE.ZERO_CROSSING(relation_ = e1, occurEquLst = _, occurWhenLst = _), BackendDAE.ZERO_CROSSING(relation_ = e2, occurEquLst = _, occurWhenLst = _))
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- FindZeroCrossings.mergeZeroCrossing failed!");
+        Debug.traceln("- FindZeroCrossings.mergeZeroCrossing failed for " +& ExpressionDump.printExpStr(e1) +& " and "  +& ExpressionDump.printExpStr(e2) +& "\n");
       then
         fail();
   end matchcontinue;
 end mergeZeroCrossing;
+
+protected function getMinZeroCrossings
+"Return the expression with lower index in relation of zero-crossings."
+  input DAE.Exp inZCexp1;
+  input DAE.Exp inZCexp2;
+  output DAE.Exp outMinZC;
+algorithm
+  outMinZC :=
+  matchcontinue (inZCexp1, inZCexp2)
+    local
+      DAE.Exp e1, e2, e3, e4, res, res2;
+      DAE.Operator op;
+      Integer index1, index2;
+      Boolean b;
+    case (e1 as DAE.RELATION(index=index1), e2 as DAE.RELATION(index=index2))
+      equation
+        b = intLe(index1, index2);
+        res = Util.if_(b, e1, e2);
+      then
+        res;
+    case (DAE.LUNARY(operator = op, exp = e1), DAE.LUNARY(exp = e2))
+      equation
+        res = getMinZeroCrossings(e1, e2);
+      then
+        DAE.LUNARY(op, res);
+    case (DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2), DAE.LBINARY(exp1 = e3, exp2 = e4))
+      equation
+        res = getMinZeroCrossings(e1, e2);
+        res2 = getMinZeroCrossings(e3, e4);
+      then
+        DAE.LBINARY(res, op, res2);
+    case (e1, e2)
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- FindZeroCrossings.getMinZeroCrossings failed for " +& ExpressionDump.printExpStr(e1) +& " and "  +& ExpressionDump.printExpStr(e2) +& "\n");
+      then
+        fail();
+  end matchcontinue;
+end getMinZeroCrossings;
 
 protected function sameZeroCrossing "
   Returns true if both zero crossings have the same function expression
