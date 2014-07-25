@@ -212,33 +212,33 @@ algorithm
       //------------------------------------------------------
       (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
       SimCodeUtil.execStat("hpcom createTaskGraph");
-     
+
       //Create Costs
       //------------
       taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix +& "_eqs_prof" , simeqCompMapping, taskGraphData);
       SimCodeUtil.execStat("hpcom create costs");
-      
+
       fileName = ("taskGraph"+&filenamePrefix+&".graphml");
       schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1,-1.0));
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
       SimCodeUtil.execStat("hpcom dump TaskGraph");
-      
+
       //print("DAE_onlySCCs\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraph);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);
-      
+
       //Get complete DAE System
       //-----------------------
       taskGraphDAE = arrayCopy(taskGraph);
       taskGraphDataDAE = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
       (taskGraphDAE,taskGraphDataDAE) = HpcOmTaskGraph.appendRemovedEquations(inBackendDAE,taskGraphDAE,taskGraphDataDAE);
-     
+
       fileName = ("taskGraph"+&filenamePrefix+&"DAE.graphml");
       daeSccMapping = listArray(List.map(SimCodeUtil.getRemovedEquationSimEqSysIdxes(simCode),List.create));
       daeSccMapping = Util.arrayAppend(sccSimEqMapping,daeSccMapping);
       schedulerInfo = arrayCreate(arrayLength(taskGraphDAE), (-1,-1,-1.0));
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDAE, taskGraphDataDAE,inBackendDAE, fileName, "", {}, {}, daeSccMapping ,schedulerInfo);
-     
+
       //print("DAE\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraphDAE);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataDAE);

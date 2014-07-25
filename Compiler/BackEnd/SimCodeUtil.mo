@@ -13492,7 +13492,7 @@ public function getRemovedEquationSimEqSysIdxes"gets the simEqSystem - indeces f
 author: Waurich TUD 2014-07"
   input SimCode.SimCode simCode;
   output list<Integer> simEqSysIdcs;
-protected 
+protected
   list<SimCode.SimEqSystem> remEqs;
 algorithm
   SimCode.SIMCODE(removedEquations=remEqs) := simCode;
