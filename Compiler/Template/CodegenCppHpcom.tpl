@@ -134,7 +134,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         #define VARARRAY_ALIGN_PRE __declspec(align(64))
         #define VARARRAY_ALIGN_POST
      #endif
-     
+
      <%addHpcomArrayHeaders%>
      <%addHpcomVarHeaders%>
 
@@ -649,7 +649,7 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
                     <%assignLocks%>
                     <%threadAssignLocks%>
                     <%threadAssignLocks1%>
-                    
+
                     <%threadFuncs%>
                 >>
      else ""
