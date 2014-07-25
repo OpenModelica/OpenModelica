@@ -50,6 +50,7 @@ protected import Debug;
 protected import Expression;
 protected import Flags;
 protected import HpcOmSchedulerExt;
+protected import HpcOmSimCodeMain;
 protected import List;
 protected import SimCodeUtil;
 protected import System;
@@ -2191,9 +2192,9 @@ algorithm
         print("simCode1 \n");
         SimCodeUtil.dumpSimCode(iSimCode);
         print("sccSimEqMap1\n");
-        //HpcOmSimCodeMain.dumpSccSimEqMapping(iSccSimEqMapping);
+        HpcOmSimCodeMain.dumpSccSimEqMapping(iSccSimEqMapping);
         print("inComps1\n");
-        //HpcOmSimCodeMain.dumpSccSimEqMapping(inComps);
+        HpcOmSimCodeMain.dumpSccSimEqMapping(inComps);
         //--------------------------------------
 
         // prepare everything  in order to create new variables and equations for the duplicated tasks
@@ -2242,9 +2243,9 @@ algorithm
         print("simCode 2\n");
         SimCodeUtil.dumpSimCode(simCode);
         print("sccSimEqMap2\n");
-        //HpcOmSimCodeMain.dumpSccSimEqMapping(sccSimEqMap);
+        HpcOmSimCodeMain.dumpSccSimEqMapping(sccSimEqMap);
         print("inComps2\n");
-        //HpcOmSimCodeMain.dumpSccSimEqMapping(comps);
+        HpcOmSimCodeMain.dumpSccSimEqMapping(comps);
         print("the taskAss2: "+&stringDelimitList(List.map(arrayList(taskAss),intString),"\n")+&"\n");
         print("the procAss2: "+&stringDelimitList(List.map(arrayList(procAss),intListString),"\n")+&"\n");
         printSchedule(schedule);

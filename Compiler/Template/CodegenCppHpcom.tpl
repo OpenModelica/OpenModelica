@@ -127,6 +127,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
      //Variables:
+     #ifdef __GNUC__
+        #define VARARRAY_ALIGN_PRE
+        #define VARARRAY_ALIGN_POST __attribute__((aligned(0x40)))
+     #else
+        #define VARARRAY_ALIGN_PRE __declspec(align(64))
+        #define VARARRAY_ALIGN_POST
+     #endif
+     
      <%addHpcomArrayHeaders%>
      <%addHpcomVarHeaders%>
 
@@ -227,7 +235,7 @@ template getAddHpcomVarArrays(Option<MemoryMap> optHpcomMemoryMap)
             match hpcomMemoryMap
                 case(MEMORYMAP_ARRAY(__)) then
                     <<
-                    <%if intGt(floatArraySize,0) then 'double varArray1[<%floatArraySize%>]; //float variables'%>
+                    <%if intGt(floatArraySize,0) then 'VARARRAY_ALIGN_PRE double varArray1[<%floatArraySize%>] VARARRAY_ALIGN_POST ; //float variables'%>
                     >>
                 else ''
             end match
@@ -634,8 +642,6 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
                     terminateThreads = false;
                     command = IContinuous::UNDEF_UPDATE;
 
-                    <%threadFuncs%>
-
                     <%initlocks%>
                     <%threadLocksInit%>
                     <%threadLocksInit1%>
@@ -643,6 +649,8 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
                     <%assignLocks%>
                     <%threadAssignLocks%>
                     <%threadAssignLocks1%>
+                    
+                    <%threadFuncs%>
                 >>
      else ""
 end getHpcomConstructorExtension;
@@ -713,18 +721,21 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
             else ""
     case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
         let destroylocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_destroyLock(idx, "lock", type); separator="\n"
-        let destroyThreads = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_destroyThread(i0, type); separator="\n"
+        let destroyThreads = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_destroyThread(i0, type); separator="\n"
         match type
             case ("openmp") then
                 <<
                 <%destroylocks%>
                 >>
             else
-                let joinThreads = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_joinThread(i0, type); separator="\n"
+                let joinThreads = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_joinThread(i0, type); separator="\n"
+                let threadReleaseLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseLock(i0, "th_lock", type); separator="\n"
                 <<
                 terminateThreads = true;
+                <%threadReleaseLocks%>
                 <%joinThreads%>
                 <%destroylocks%>
+                <%destroyThreads%>
                 >>
     else ""
 end getHpcomDestructorExtension;
@@ -822,8 +833,10 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
 
                     #pragma omp barrier
                     if(finished)
+                    {
                         <%function_HPCOM_releaseLock("finishedEvaluateLock","","pthreads")%>
-
+                        break;
+                    }
                     <%odeEqs%>
 
                     #pragma omp barrier
