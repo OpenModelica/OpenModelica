@@ -2144,7 +2144,8 @@ algorithm
   BackendDAE.DAE(systs,shared) := iSyst;
   discreteNodes := getDiscreteNodes(iSyst,eqCompMapping);
   zeroCrossingNodes := List.flatten(List.map1(iZeroCrossings, getComponentsOfZeroCrossing, iSimCodeEqCompMapping));
-  ((_,sccsContainingTime)) := List.fold1(systs, getComponentsIncludingTime, eqCompMapping, (0,{}));
+  //((_,sccsContainingTime)) := List.fold1(systs, getComponentsIncludingTime, eqCompMapping, (0,{}));
+  sccsContainingTime := {};
   //print("Nodes containing time as variable: " +& stringDelimitList(List.map(sccsContainingTime, intString), ",") +& " (len: " +& intString(listLength(sccsContainingTime)) +& ")\n");
   discreteNodes := listAppend(discreteNodes, sccsContainingTime);
   discreteNodes := listAppend(discreteNodes, zeroCrossingNodes);

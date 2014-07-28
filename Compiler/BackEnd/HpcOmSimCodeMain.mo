@@ -213,7 +213,7 @@ algorithm
       //Create TaskGraph for all strongly connected components
       //------------------------------------------------------
       (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
-      SimCodeUtil.execStat("hpcom createTaskGraph");
+      SimCodeUtil.execStat("hpcom create TaskGraph");
 
 
       //Create Costs
@@ -257,7 +257,7 @@ algorithm
       fileName = ("taskGraph"+&filenamePrefix+&"_event.graphml");
       schedulerInfo = arrayCreate(arrayLength(taskGraphEvent), (-1,-1,-1.0));
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphEvent, taskGraphDataEvent,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
-      SimCodeUtil.execStat("hpcom create and dump event task graph");
+      SimCodeUtil.execStat("hpcom create and dump event TaskGraph");
 
       HpcOmSimCode.TASKDEPSCHEDULE(tasks=eventSystemTasks) = HpcOmScheduler.createTaskDepSchedule(taskGraphEvent, taskGraphDataEvent, sccSimEqMapping);
       eventSystemTaskList = List.map(eventSystemTasks, Util.tuple21);
@@ -268,7 +268,7 @@ algorithm
       taskGraphOde = arrayCopy(taskGraph);
       taskGraphDataOde = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
       (taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraphOde,taskGraphDataOde,inBackendDAE);
-      SimCodeUtil.execStat("hpcom get ODE TaskGraph");
+      SimCodeUtil.execStat("hpcom create ODE TaskGraph");
 
       taskGraphMetaValid = HpcOmTaskGraph.validateTaskGraphMeta(taskGraphDataOde, inBackendDAE);
       taskGraphMetaMessage = Util.if_(taskGraphMetaValid, "TaskgraphMeta valid\n", "TaskgraphMeta invalid\n");
