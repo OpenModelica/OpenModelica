@@ -132,7 +132,7 @@ ELSE(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
 	unset(Boost_LOG_LIBRARY)
 ENDIF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
 
-find_package(Boost COMPONENTS thread atomic)
+find_package(Boost 1.54 COMPONENTS thread atomic)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
 find_package(Threads)
 IF(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
