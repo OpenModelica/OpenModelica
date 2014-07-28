@@ -182,7 +182,7 @@ algorithm
       (initDAE, _, _) = Initialization.solveInitialSystem(inBackendDAE);
       removedInitialEquations = {};
       createAndExportInitialSystemTaskGraph(initDAE, filenamePrefix);
-
+      
       //Setup
       //-----
       System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
@@ -191,6 +191,7 @@ algorithm
       SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, _, _, _, crefToSimVarHT, backendMapping) = simCode;
+
 
       //get SCC to simEqSys-mappping
       //----------------------------
@@ -208,10 +209,12 @@ algorithm
       //dumpSimEqSCCMapping(simeqCompMapping);
       //dumpSccSimEqMapping(sccSimEqMapping);
 
+
       //Create TaskGraph for all strongly connected components
       //------------------------------------------------------
       (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
       SimCodeUtil.execStat("hpcom createTaskGraph");
+
 
       //Create Costs
       //------------
@@ -226,6 +229,7 @@ algorithm
       //print("DAE_onlySCCs\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraph);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);
+
 
       //Get complete DAE System
       //-----------------------
@@ -243,6 +247,7 @@ algorithm
       //HpcOmTaskGraph.printTaskGraph(taskGraphDAE);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataDAE);
 
+
       //Get Event System
       //----------------
       taskGraphEvent = arrayCopy(taskGraph);
@@ -256,6 +261,7 @@ algorithm
 
       HpcOmSimCode.TASKDEPSCHEDULE(tasks=eventSystemTasks) = HpcOmScheduler.createTaskDepSchedule(taskGraphEvent, taskGraphDataEvent, sccSimEqMapping);
       eventSystemTaskList = List.map(eventSystemTasks, Util.tuple21);
+
 
       //Get ODE System
       //--------------
@@ -272,9 +278,10 @@ algorithm
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde);
 
-      //Assign levels and get critcal path
+
+      //Get critical path
       //----------------------------------
-      ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),_) = HpcOmTaskGraph.getCriticalPaths(taskGraphOde,taskGraphDataOde);
+      ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC)) = HpcOmTaskGraph.getCriticalPaths(taskGraphOde,taskGraphDataOde);
       criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
       ((graphOps,graphCosts)) = HpcOmTaskGraph.sumUpExeCosts(taskGraphOde,taskGraphDataOde);
       graphCosts = HpcOmTaskGraph.roundReal(graphCosts,2);
@@ -285,10 +292,12 @@ algorithm
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde,inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
       SimCodeUtil.execStat("hpcom dump ODE TaskGraph");
 
+
       // Analyse Systems of Equations
       //-----------------------------
       (scheduledTasks,scheduledDAENodes) = HpcOmEqSystems.parallelizeTornSystems(taskGraphOde,taskGraphDataOde,sccSimEqMapping,inBackendDAE);
       //HpcOmScheduler.printTaskList(scheduledTasks);
+
 
       //Apply filters
       //-------------

@@ -1110,7 +1110,7 @@ algorithm
     print("level: \n"+&stringDelimitList(List.map(level,intListString),"\n")+&"\n");
 
   // get critical path and merge the criPathNodes to target size tasks
-  (_,(critPathNodes::_,_),_) := HpcOmTaskGraph.getCriticalPaths(iGraph,iMeta);  // without communication costs
+  (_,(critPathNodes::_,_)) := HpcOmTaskGraph.getCriticalPaths(iGraph,iMeta);  // without communication costs
   critPathCosts := List.map1(critPathNodes,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
     print("critPathNodes: \n"+&stringDelimitList(List.map(critPathNodes,intString)," \n ")+&"\n");
 
@@ -4070,7 +4070,7 @@ algorithm
     case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=levels),_,_,_)
       equation
         //get the criticalPath
-        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),_) = HpcOmTaskGraph.getCriticalPaths(taskGraphIn,taskGraphMetaIn);
+        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC)) = HpcOmTaskGraph.getCriticalPaths(taskGraphIn,taskGraphMetaIn);
         // predict speedUp
         levelSectionCosts = List.map1(levels, getLevelListTaskCosts, taskGraphMetaIn);
         serTime = realSum(List.map(levelSectionCosts,realSum));
@@ -4088,7 +4088,7 @@ algorithm
       equation
         Debug.fcall(Flags.HPCOM_DUMP,print,"the number of locks: "+&intString(listLength(lockIdc))+&"\n");
         //get the criticalPath
-        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),_) = HpcOmTaskGraph.getCriticalPaths(taskGraphIn,taskGraphMetaIn);
+        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC)) = HpcOmTaskGraph.getCriticalPaths(taskGraphIn,taskGraphMetaIn);
         criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
         //predict speedup etc.
         (serTime,parTime,speedUp,speedUpMax) = predictExecutionTime(scheduleIn,SOME(cpCostsWoC),numProcIn,taskGraphIn,taskGraphMetaIn);

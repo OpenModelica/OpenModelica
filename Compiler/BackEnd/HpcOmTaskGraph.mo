@@ -4060,7 +4060,6 @@ public function createCosts "author: marcusw
   input array<Integer> simeqCompMapping; //Map each simEq to the scc
   input TaskGraphMeta iTaskGraphMeta;
   output TaskGraphMeta oTaskGraphMeta;
-
 protected
   array<BackendDAE.EqSystem> compMapping;
   array<tuple<BackendDAE.EqSystem,Integer>> compMapping_withIdx;
@@ -4074,7 +4073,6 @@ protected
   array<Real> reqTimeOp; //Calculation time for each scc
   array<list<Integer>> inComps;
   array<list<tuple<Integer, Integer, Integer>>> commCosts;
-
 algorithm
   oTaskGraphMeta := matchcontinue(iDae,benchFilePrefix,simeqCompMapping,iTaskGraphMeta)
     case(BackendDAE.DAE(shared=shared),_,_,TASKGRAPHMETA(inComps=inComps, commCosts=commCosts))
@@ -4756,12 +4754,11 @@ author: Waurich TUD 2013-07"
   input TaskGraphMeta graphDataIn;
   output tuple<list<list<Integer>>,Real> criticalPathOut; //criticalPath with communication costs <%paths, opCost%>
   output tuple<list<list<Integer>>,Real> criticalPathOutWoC; //criticalPath without communication costs <%paths, opCost%>
-  output list<list<Integer>> parallelSetsOut;
 algorithm
-  (criticalPathOut,criticalPathOutWoC,parallelSetsOut) := matchcontinue(graphIn,graphDataIn)
+  (criticalPathOut,criticalPathOutWoC) := matchcontinue(graphIn,graphDataIn)
     local
       TaskGraph graphT;
-      list<Integer> rootNodes,rootMarks;
+      list<Integer> rootNodes;
       list<list<Integer>> cpWCpaths,CpWoCpaths, level;
       Real cpWCcosts,cpWoCcosts;
       array<Integer> nodeMark;
@@ -4770,26 +4767,23 @@ algorithm
         true = arrayLength(graphIn) <> 0;
         graphT = BackendDAEUtil.transposeMatrix(graphIn,arrayLength(graphIn));
         (_,rootNodes) = List.filterOnTrueSync(arrayList(graphT),List.isEmpty,List.intRange(arrayLength(graphT)));
-        rootMarks = List.map1(rootNodes,Util.arrayGetIndexFirst,nodeMark);
-        (_,rootNodes) = List.filter1OnTrueSync(rootMarks,intNe,-2,rootNodes);  // dont consider assert nodes
-        level = HpcOmScheduler.getGraphLevel(graphIn,{rootNodes});
-        (cpWCpaths,cpWCcosts) = getCriticalPath(graphIn,graphDataIn,rootNodes,true);
 
+        (cpWCpaths,cpWCcosts) = getCriticalPath(graphIn,graphDataIn,rootNodes,true);
         (CpWoCpaths,cpWoCcosts) = getCriticalPath(graphIn,graphDataIn,rootNodes,false);
         cpWCcosts = roundReal(cpWCcosts,2);
         cpWoCcosts = roundReal(cpWoCcosts,2);
       then
-        ((cpWCpaths,cpWCcosts),(CpWoCpaths,cpWoCcosts),level);
+        ((cpWCpaths,cpWCcosts),(CpWoCpaths,cpWoCcosts));
     case(_,_)
       equation
         true = arrayLength(graphIn) == 0;
       then
-        (({{}},0.0),({{}},0.0),{});
+        (({{}},0.0),({{}},0.0));
     else
       equation
         print("getCriticalPaths failed!\n");
       then
-        (({{}},0.0),({{}},0.0),{});
+        (({{}},0.0),({{}},0.0));
   end matchcontinue;
 end getCriticalPaths;
 
