@@ -182,7 +182,7 @@ algorithm
       (initDAE, _, _) = Initialization.solveInitialSystem(inBackendDAE);
       removedInitialEquations = {};
       createAndExportInitialSystemTaskGraph(initDAE, filenamePrefix);
-      
+
       //Setup
       //-----
       System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
