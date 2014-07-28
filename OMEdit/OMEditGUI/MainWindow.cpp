@@ -1489,7 +1489,7 @@ void MainWindow::importNgspiceNetlist()
   if (fileName.isEmpty())
     return;
   // create a progress bar
-  int endtime = 0;    
+  int endtime = 0;
   int value = 1;
   // show the progress bar and set the message in status bar
   mpStatusBar->showMessage(tr("Importing ngspice netlist and converting to Modelica code"));

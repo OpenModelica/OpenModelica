@@ -2051,15 +2051,15 @@ QString OMCProxy::checkModel(QString className)
   return getResult();
 }
 
-/*! 
-  Converts a given ngspice netlist to equivalent Modelica code. 
-  Filename is the name of the ngspice netlist. Subcircuit and device model (.lib) files 
-  are to be present in the same directory. The Modelica model is created in the same directory 
+/*!
+  Converts a given ngspice netlist to equivalent Modelica code.
+  Filename is the name of the ngspice netlist. Subcircuit and device model (.lib) files
+  are to be present in the same directory. The Modelica model is created in the same directory
   as that of netlist file. - added by Rakhi
   */
 bool OMCProxy::ngspicetoModelica(QString fileName)
 {
-  fileName = fileName.replace('\\', '/'); 
+  fileName = fileName.replace('\\', '/');
   sendCommand("ngspicetoModelica(\"" + fileName + "\")");
   return StringHandler::unparseBool(getResult());
 }
