@@ -1077,7 +1077,7 @@ protected function convertScheduleStrucToInfoLevel
   input array<tuple<Integer,Integer,Real>> iScheduleInfo;
   output array<tuple<Integer,Integer,Real>> oScheduleInfo;
 algorithm
-  oSCheduleInfo := matchcontinue(taskLst,sectionsNumber,iScheduleInfo)
+  oScheduleInfo := matchcontinue(taskLst,sectionsNumber,iScheduleInfo)
     local
       array<tuple<Integer,Integer,Real>> scheduleInfo;
       list<HpcOmSimCode.Task> tasks;
@@ -1162,18 +1162,18 @@ algorithm
   level := getGraphLevel(iGraph,{startNodes});
   levelAss := arrayCreate(arrayLength(inComps),-1);
   ((_,levelAss)) := List.fold(level,getLevelAssignment,(1,levelAss));
-    print("level: \n"+&stringDelimitList(List.map(level,intListString),"\n")+&"\n");
+    //print("level: \n"+&stringDelimitList(List.map(level,intListString),"\n")+&"\n");
 
   // get critical path and merge the criPathNodes to target size tasks
   (_,(critPathNodes::_,_)) := HpcOmTaskGraph.getCriticalPaths(iGraph,iMeta);  // without communication costs
   critPathCosts := List.map1(critPathNodes,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
-    print("critPathNodes: \n"+&stringDelimitList(List.map(critPathNodes,intString)," \n ")+&"\n");
+    //print("critPathNodes: \n"+&stringDelimitList(List.map(critPathNodes,intString)," \n ")+&"\n");
 
   //try to fill the parallel sections
   allSections := BLS_fillParallelSections(level,levelAss,critPathNodes,1,targetCost,iGraph,graphT,iMeta,{},{});
-    print("allSections1: \n"+&stringDelimitList(List.map(allSections,intListListString)," \n ")+&"\n");
+    //print("allSections1: \n"+&stringDelimitList(List.map(allSections,intListListString)," \n ")+&"\n");
   allSections := List.map2(allSections,BLS_mergeSmallSections,iMeta,targetCost);
-    print("allSections2: \n"+&stringDelimitList(List.map(allSections,intListListString)," \n ")+&"\n");
+    //print("allSections2: \n"+&stringDelimitList(List.map(allSections,intListListString)," \n ")+&"\n");
 
   //generate schedule
   levelTasks := List.map2(allSections,BLS_generateSchedule,iMeta,iSccSimEqMapping);
@@ -1278,24 +1278,24 @@ algorithm
       list<Real> necPredCosts,levelNodeClusterCosts,                       levelNodeCosts;
     case(_,_,{},_,_,_,_,_,_,_)
       equation
-        print("done\n");
+        //print("done\n");
     then listReverse(sectionsIn);
     case(_,_,critPathNode::{},_,_,_,_,_,_,_)
       equation
         critPathCost = HpcOmTaskGraph.getExeCostReqCycles(critPathNode,iMeta);
         critNodeLevel = arrayGet(levelAssIn,critPathNode);
-        print("critPathNode (last): \n"+&intString(critPathNode)+&" of level: "+&intString(critNodeLevel)+&"\n");
+        //print("critPathNode (last): \n"+&intString(critPathNode)+&" of level: "+&intString(critNodeLevel)+&"\n");
 
         // the last level: build the section, collect unassigned nodes and level nodes and put everything in this section
         //levelNodes = List.flatten(List.map1(List.intRange2(levelIdx,critNodeLevel),List.getIndexFirst,levelIn));
         critNodeLevel = intMin(levelIdx,critNodeLevel);
         (_,followingLevel) =  List.split(levelIn,critNodeLevel-1);
         levelNodes = List.flatten(followingLevel);
-          print("levelNodes: \n"+&stringDelimitList(List.map(levelNodes,intString)," ; ")+&"\n");
+          //print("levelNodes: \n"+&stringDelimitList(List.map(levelNodes,intString)," ; ")+&"\n");
 
         unassNodes = listAppend(levelNodes,unassNodesIn);
         levelNodeCluster = BLS_mergeDependentLevelTask(unassNodes,iGraph,iGraphT,{});
-          print("section: \n"+&stringDelimitList(List.map(levelNodeCluster,intListString),"  |  ")+&"\n");
+          //print("section: \n"+&stringDelimitList(List.map(levelNodeCluster,intListString),"  |  ")+&"\n");
         sectionLst = levelNodeCluster::sectionsIn;
         sectionLst = BLS_fillParallelSections(levelIn,levelAssIn,{},critNodeLevel+1,targetCosts,iGraph,iGraphT,iMeta,unassNodes,sectionLst);
       then sectionLst;
@@ -1306,16 +1306,16 @@ algorithm
 
         // the critical path node in this section is to SMALL, gather as few as possible nodes in this level (onyl the necessary ones)
         true = critPathCost <. targetCosts;
-          print("critPathNode (small): \n"+&intString(critPathNode)+&" of level: "+&intString(critNodeLevel)+&"\n");
+          //print("critPathNode (small): \n"+&intString(critPathNode)+&" of level: "+&intString(critNodeLevel)+&"\n");
 
         // get the nodes that are necessary to compute the next critical path node, collect unassigned
         levelNodes = List.flatten(List.map1(List.intRange2(levelIdx,critNodeLevel),List.getIndexFirst,levelIn));
         levelNodes = List.deleteMember(levelNodes,critPathNode);
-          print("levelNodes: \n"+&stringDelimitList(List.map(levelNodes,intString)," ; ")+&"\n");
+          //print("levelNodes: \n"+&stringDelimitList(List.map(levelNodes,intString)," ; ")+&"\n");
         necessaryPredecessors = arrayGet(iGraphT,List.first(restCritNodes));
-          print("necessaryPredecessors: "+&stringDelimitList(List.map(necessaryPredecessors,intString)," ; ")+&"\n");
+          //print("necessaryPredecessors: "+&stringDelimitList(List.map(necessaryPredecessors,intString)," ; ")+&"\n");
         unassNodes = listAppend(levelNodes,unassNodesIn);  // to check for unassNodesIn
-          print("unassNodes: \n"+&stringDelimitList(List.map(unassNodes,intString)," ; ")+&"\n");
+          //print("unassNodes: \n"+&stringDelimitList(List.map(unassNodes,intString)," ; ")+&"\n");
         necessaryPredecessors = List.flatten(List.map4(List.map(necessaryPredecessors,List.create),BLS_getDependentGroups,iGraph,iGraphT,unassNodes,{}));  // get all unassigned dependents for the necessary predecessors
         necessaryPredecessors = List.unique(necessaryPredecessors);
         (necessaryPredecessors,_,unassNodes) = List.intersection1OnTrue(necessaryPredecessors,unassNodes,intEq);
@@ -1324,13 +1324,13 @@ algorithm
         section = critPathNode::necessaryPredecessors;
         section = List.unique(section);
         sectionLst = {section}::sectionsIn;
-          print("section: \n"+&stringDelimitList(List.map(section,intString),"  ,  ")+&"\n");
+          //print("section: \n"+&stringDelimitList(List.map(section,intString),"  ,  ")+&"\n");
 
         // update levelAss and levelIn
         List.map2_0(section,Util.arrayUpdateIndexFirst,critNodeLevel,levelAssIn);
         level = List.map1(levelIn,deleteIntListMembers,section);
         level = List.set(level,critNodeLevel,section);
-          print("level: \n"+&stringDelimitList(List.map(level,intListString),"\n")+&"\n");
+          //print("level: \n"+&stringDelimitList(List.map(level,intListString),"\n")+&"\n");
 
         sectionLst = BLS_fillParallelSections(level,levelAssIn,restCritNodes,critNodeLevel+1,targetCosts,iGraph,iGraphT,iMeta,unassNodes,sectionLst);
       then sectionLst;
@@ -1342,29 +1342,29 @@ algorithm
         // the critical path node in this section is BIG enough, gather as much as possible nodes in this level
         true = critPathCost >=. targetCosts;
         numProc = Flags.getConfigInt(Flags.NUM_PROC);
-          print("critPathNode (big): \n"+&intString(critPathNode)+&" of level: "+&intString(critNodeLevel)+&"\n");
+          //print("critPathNode (big): \n"+&intString(critPathNode)+&" of level: "+&intString(critNodeLevel)+&"\n");
 
         // get the nodes that are necessary to compute the next critical path node
         levelNodes = List.flatten(List.map1(List.intRange2(levelIdx,critNodeLevel),List.getIndexFirst,levelIn));
         (levelNodes,_) = List.deleteMemberOnTrue(critPathNode,levelNodes,intEq);
         necessaryPredecessors = arrayGet(iGraphT,List.first(restCritNodes));
-          print("necessaryPredecessors: \n"+&stringDelimitList(List.map(necessaryPredecessors,intString)," ; ")+&"\n");
+          //print("necessaryPredecessors: \n"+&stringDelimitList(List.map(necessaryPredecessors,intString)," ; ")+&"\n");
 
         // use the unassigned nodes first to fill the sections
         unassNodes = listAppend(unassNodesIn,levelNodes);
-          print("unassNodes: \n"+&stringDelimitList(List.map(unassNodes,intString)," ; ")+&"\n");
+          //print("unassNodes: \n"+&stringDelimitList(List.map(unassNodes,intString)," ; ")+&"\n");
         unassNodes = critPathNode::unassNodes;
         unassNodes = List.unique(unassNodes);
         levelNodeCluster = BLS_mergeDependentLevelTask(unassNodes,iGraph,iGraphT,{});
         (_,unassNodes,_) = List.intersection1OnTrue(unassNodes,List.flatten(levelNodeCluster),intEq);
         sectionLst = levelNodeCluster::sectionsIn;
-          print("section: \n"+&stringDelimitList(List.map(levelNodeCluster,intListString),"  |  ")+&"\n");
+          //print("section: \n"+&stringDelimitList(List.map(levelNodeCluster,intListString),"  |  ")+&"\n");
 
         // update levelAss and levelIn
         List.map2_0(List.flatten(levelNodeCluster),Util.arrayUpdateIndexFirst,critNodeLevel,levelAssIn);
         level = List.map1(levelIn,deleteIntListMembers,List.flatten(levelNodeCluster));
         level = List.set(level,critNodeLevel,List.flatten(levelNodeCluster));
-          print("level: \n"+&stringDelimitList(List.map(level,intListString),"\n")+&"\n");
+          //print("level: \n"+&stringDelimitList(List.map(level,intListString),"\n")+&"\n");
 
         sectionLst = BLS_fillParallelSections(level,levelAssIn,restCritNodes,critNodeLevel+1,targetCosts,iGraph,iGraphT,iMeta,{},sectionLst);
       then sectionLst;
