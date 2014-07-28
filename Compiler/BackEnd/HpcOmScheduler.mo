@@ -1004,10 +1004,12 @@ public function convertScheduleStrucToInfo "author: marcusw
   Convert the given schedule-information into an node-array of informations."
   input HpcOmSimCode.Schedule iSchedule;
   input Integer iTaskCount;
-  output array<tuple<Integer,Integer,Real>> oScheduleInfo; //array which contains <threadId,taskNumber,finishTime> for each node (index)
+  output array<tuple<Integer,Integer,Real>> oScheduleInfo; //for threadScheduling: array which contains <threadId,taskNumber,finishTime> for each node (index)
+                                                           //for levelScheduling: array which contains <sectionIdx.,sectionsNumber,finishTime> for each node (index)
 protected
   array<tuple<Integer,Integer,Real>> tmpScheduleInfo;
   array<list<HpcOmSimCode.Task>> threadTasks;
+  list<HpcOmSimCode.TaskList> tasksOfLevels;
 algorithm
   oScheduleInfo := match(iSchedule,iTaskCount)
     case(HpcOmSimCode.EMPTYSCHEDULE(),_)
@@ -1019,9 +1021,10 @@ algorithm
         tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1,-1.0));
         tmpScheduleInfo = Util.arrayFold(threadTasks,convertScheduleStrucToInfo0,tmpScheduleInfo);
       then tmpScheduleInfo;
-    case(HpcOmSimCode.LEVELSCHEDULE(_),_)
+    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels),_)
       equation
         tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1,-1.0));
+        tmpScheduleInfo = convertScheduleStrucToInfoLevel(tasksOfLevels,1,tmpScheduleInfo);
       then tmpScheduleInfo;
     case(HpcOmSimCode.TASKDEPSCHEDULE(_),_)
       equation
@@ -1068,6 +1071,58 @@ algorithm
   end match;
 end convertScheduleStrucToInfo1;
 
+protected function convertScheduleStrucToInfoLevel
+  input list<HpcOmSimCode.TaskList> taskLst;
+  input Integer sectionsNumber;
+  input array<tuple<Integer,Integer,Real>> iScheduleInfo;
+  output array<tuple<Integer,Integer,Real>> oScheduleInfo;
+algorithm
+  oSCheduleInfo := matchcontinue(taskLst,sectionsNumber,iScheduleInfo)
+    local
+      array<tuple<Integer,Integer,Real>> scheduleInfo;
+      list<HpcOmSimCode.Task> tasks;
+      list<HpcOmSimCode.TaskList> rest;
+    case({},_,_)
+      then iScheduleInfo;
+    case(HpcOmSimCode.PARALLELTASKLIST(tasks=tasks)::rest,_,_)
+      equation
+        scheduleInfo = convertScheduleStrucToInfoLevel1(tasks,sectionsNumber,1,iScheduleInfo);
+      then convertScheduleStrucToInfoLevel(rest,sectionsNumber+1,scheduleInfo);
+    case(HpcOmSimCode.SERIALTASKLIST(tasks=tasks)::rest,_,_)
+      equation
+        scheduleInfo = convertScheduleStrucToInfoLevel1(tasks,sectionsNumber,1,iScheduleInfo);
+      then convertScheduleStrucToInfoLevel(rest,sectionsNumber+1,scheduleInfo);
+    else
+    equation
+      print("convertScheduleStrucToInfoLevel failed\n");
+    then fail();
+  end matchcontinue;
+end convertScheduleStrucToInfoLevel;
+
+protected function convertScheduleStrucToInfoLevel1
+  input list<HpcOmSimCode.Task> tasks;
+  input Integer sectionsNumber;
+  input Integer sectionIdx;
+  input array<tuple<Integer,Integer,Real>> iScheduleInfo;
+  output array<tuple<Integer,Integer,Real>> oScheduleInfo;
+algorithm
+  oScheduleInfo := matchcontinue(tasks,sectionsNumber,sectionIdx,iScheduleInfo)
+    local
+      Integer numNodes;
+      list<Integer> nodeIdc;
+      array<tuple<Integer,Integer,Real>> scheduleInfo;
+      list<tuple<Integer,Integer,Real>> tuplLst;
+      list<HpcOmSimCode.Task> rest;
+    case({},_,_,_)
+      then iScheduleInfo;
+    case(HpcOmSimCode.CALCTASK_LEVEL(nodeIdc=nodeIdc)::rest,_,_,_)
+      equation
+        numNodes = listLength(nodeIdc);
+        tuplLst = List.threadMap1(List.fill(sectionsNumber,numNodes),List.fill(sectionIdx,numNodes),Util.make3Tuple,0.0);
+        List.threadMap1_0(nodeIdc,tuplLst,Util.arrayUpdateIndexFirst,iScheduleInfo);
+      then convertScheduleStrucToInfoLevel1(rest,sectionsNumber,sectionIdx+1,iScheduleInfo);
+  end matchcontinue;
+end convertScheduleStrucToInfoLevel1;
 
 //-----------------
 // Balanced Level Scheduling
