@@ -138,6 +138,7 @@ public:
   QAction* getExportAsImageAction();
   QAction* getExportToOMNotebookAction();
   QAction* getImportFromOMNotebookAction();
+  QAction* getImportNgspiceNetlistAction();
   QAction* getConnectModeAction();
   QAction* getFindReplaceAction();
   QAction* getClearFindReplaceTextsAction();
@@ -236,6 +237,7 @@ private:
   QAction *mpShowOMCLoggerWidgetAction;
   QAction *mpExportToOMNotebookAction;
   QAction *mpImportFromOMNotebookAction;
+  QAction *mpImportNgspiceNetlistAction;
   QAction *mpOptionsAction;
   // Help Menu
   QAction *mpUsersGuideAction;
@@ -306,6 +308,7 @@ public slots:
   void exportModelFigaro();
   void exportModelToOMNotebook();
   void importModelfromOMNotebook();
+  void importNgspiceNetlist();
   void exportModelAsImage();
   void openConfigurationOptions();
   void openUsersGuide();

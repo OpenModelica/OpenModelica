@@ -60,6 +60,7 @@ public:
   static QString OMCServerName;
   static QString omFileTypes;
   static QString omnotebookFileTypes;
+  static QString ngspiceNetlistFileTypes;
   static QString imageFileTypes;
   static QString bitmapFileTypes;
   static QString fmuFileTypes;
@@ -145,7 +146,9 @@ public:
   static QString exportToOMNotebook;
   static QString exportToOMNotebookTip;
   static QString importFromOMNotebook;
+  static QString importNgspiceNetlist;
   static QString importFromOMNotebookTip;
+  static QString importNgspiceNetlistTip;
   static QString exportAsImage;
   static QString exportAsImageTip;
   static QString exportFigaro;

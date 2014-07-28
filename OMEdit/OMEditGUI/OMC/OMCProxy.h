@@ -191,6 +191,7 @@ public:
   QStringList readSimulationResultVars(QString fileName);
   bool closeSimulationResultFile();
   QString checkModel(QString className);
+  bool ngspicetoModelica(QString fileName);
   QString checkAllModelsRecursive(QString className);
   bool isExperiment(QString className);
   QStringList getSimulationOptions(QString className, double defaultTolerance = 1e-4);

@@ -483,6 +483,11 @@ QAction* MainWindow::getImportFromOMNotebookAction()
   return mpImportFromOMNotebookAction;
 }
 
+QAction* MainWindow::getImportNgspiceNetlistAction()
+{
+  return mpImportNgspiceNetlistAction;
+}
+
 QAction* MainWindow::getConnectModeAction()
 {
   return mpConnectModeAction;
@@ -1476,6 +1481,32 @@ void MainWindow::importModelfromOMNotebook()
   hideProgressBar();
 }
 
+// Tool to convert ngspice netlist to modelica code - added by Rakhi
+void MainWindow::importNgspiceNetlist()
+{
+  QString fileName = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::importNgspiceNetlist),
+                                                    NULL, Helper::ngspiceNetlistFileTypes);
+  if (fileName.isEmpty())
+    return;
+  // create a progress bar
+  int endtime = 0;    
+  int value = 1;
+  // show the progress bar and set the message in status bar
+  mpStatusBar->showMessage(tr("Importing ngspice netlist and converting to Modelica code"));
+  mpProgressBar->setRange(0, endtime);
+  showProgressBar();
+  bool importNgspiceResult = mpOMCProxy->ngspicetoModelica(fileName);
+  // hide the progress bar and clear the message in status bar
+  if (importNgspiceResult)
+  {
+  QString ModelicaFile = fileName.split(".",QString::SkipEmptyParts).at(0);
+  ModelicaFile = ModelicaFile + ".mo";
+  mpLibraryTreeWidget->openFile(ModelicaFile, Helper::utf8, true, true);
+  }
+  mpStatusBar->clearMessage();
+  hideProgressBar();
+}
+
 //! Exports the current model as image
 void MainWindow::exportModelAsImage()
 {
@@ -1947,6 +1978,10 @@ void MainWindow::createActions()
   mpImportFromOMNotebookAction = new QAction(QIcon(":/Resources/icons/import-omnotebook.svg"), Helper::importFromOMNotebook, this);
   mpImportFromOMNotebookAction->setStatusTip(Helper::importFromOMNotebookTip);
   connect(mpImportFromOMNotebookAction, SIGNAL(triggered()), SLOT(importModelfromOMNotebook()));
+    // import ngspice netlist action
+  mpImportNgspiceNetlistAction = new QAction(QIcon(":/Resources/icons/import-omnotebook.svg"), Helper::importNgspiceNetlist, this);
+  mpImportNgspiceNetlistAction->setStatusTip(Helper::importNgspiceNetlistTip);
+  connect(mpImportNgspiceNetlistAction, SIGNAL(triggered()), SLOT(importNgspiceNetlist()));
   // open options action
   mpOptionsAction = new QAction(QIcon(":/Resources/icons/options.png"), tr("Options"), this);
   mpOptionsAction->setStatusTip(tr("Shows the options window"));
@@ -2186,6 +2221,8 @@ void MainWindow::createMenus()
   pToolsMenu->addSeparator();
   pToolsMenu->addAction(mpExportToOMNotebookAction);
   pToolsMenu->addAction(mpImportFromOMNotebookAction);
+  pToolsMenu->addSeparator();
+  pToolsMenu->addAction(mpImportNgspiceNetlistAction);
   pToolsMenu->addSeparator();
   pToolsMenu->addAction(mpOptionsAction);
   // add Tools menu to menu bar
