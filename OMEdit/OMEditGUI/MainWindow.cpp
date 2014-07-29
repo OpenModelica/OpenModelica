@@ -1495,14 +1495,13 @@ void MainWindow::importNgspiceNetlist()
   mpStatusBar->showMessage(tr("Importing ngspice netlist and converting to Modelica code"));
   mpProgressBar->setRange(0, endtime);
   showProgressBar();
-  bool importNgspiceResult = mpOMCProxy->ngspicetoModelica(fileName);
-  // hide the progress bar and clear the message in status bar
-  if (importNgspiceResult)
+  if (mpOMCProxy->ngspicetoModelica(fileName))
   {
-  QString ModelicaFile = fileName.split(".",QString::SkipEmptyParts).at(0);
-  ModelicaFile = ModelicaFile + ".mo";
-  mpLibraryTreeWidget->openFile(ModelicaFile, Helper::utf8, true, true);
+    QFileInfo fileInfo(fileName);
+    QString modelicaFile = QString(fileInfo.absoluteDir().absolutePath()).append("/").append(fileInfo.baseName()).append(".mo");
+    mpLibraryTreeWidget->openFile(modelicaFile, Helper::utf8, true, true);
   }
+  // hide the progress bar and clear the message in status bar
   mpStatusBar->clearMessage();
   hideProgressBar();
 }
@@ -1979,7 +1978,7 @@ void MainWindow::createActions()
   mpImportFromOMNotebookAction->setStatusTip(Helper::importFromOMNotebookTip);
   connect(mpImportFromOMNotebookAction, SIGNAL(triggered()), SLOT(importModelfromOMNotebook()));
     // import ngspice netlist action
-  mpImportNgspiceNetlistAction = new QAction(QIcon(":/Resources/icons/import-omnotebook.svg"), Helper::importNgspiceNetlist, this);
+  mpImportNgspiceNetlistAction = new QAction(Helper::importNgspiceNetlist, this);
   mpImportNgspiceNetlistAction->setStatusTip(Helper::importNgspiceNetlistTip);
   connect(mpImportNgspiceNetlistAction, SIGNAL(triggered()), SLOT(importNgspiceNetlist()));
   // open options action
