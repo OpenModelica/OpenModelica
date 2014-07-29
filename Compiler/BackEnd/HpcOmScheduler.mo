@@ -2592,7 +2592,7 @@ algorithm
   simEqIdxLst := List.map1(comps,Util.arrayGetIndexFirst,sccSimEqMappingIn);
   simEqSysIdcs := List.flatten(simEqIdxLst);
   print("simEqSysIdcs :"+&intListString(simEqSysIdcs)+&"\n");
-  
+
   crefLst := List.map1(simEqSysIdcs,SimCodeUtil.getAssignedCrefsOfSimEq,simCodeIn);
   crefs := List.flatten(crefLst);
   print("crefs :\n"+&stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr),"\n")+&"\n");
@@ -2623,7 +2623,7 @@ algorithm
   simEqSystsDupl := List.threadMap(simEqSystsDupl,simEqSysIdcs2,SimCodeUtil.replaceSimEqSysIndex);
   print("the simEqSystsDupl "+&SimCodeUtil.dumpSimEqSystemLst(simEqSystsDupl)+&"\n");
   simEqSysIdx2 := simEqSysIdx + numEqs;
-  
+
   //duplicate the equations inside a system of equations
   (simEqSystsDupl,simEqSysIdx2) := TDS_duplicateSystemOfEquations(simEqSystsDupl,simEqSysIdx2,repl,{});
   print("the simEqSystsDupl after EqSys "+&SimCodeUtil.dumpSimEqSystemLst(simEqSystsDupl)+&"\n");
