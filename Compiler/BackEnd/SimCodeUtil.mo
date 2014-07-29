@@ -7522,7 +7522,7 @@ algorithm
       SimCode.SimEqSystem cont;
       list<DAE.ComponentRef> crefs,conds;
       list<DAE.Statement> stmts;
-      list<SimCode.SimEqSystem> elsebranch,discEqs,eqs;
+      list<SimCode.SimEqSystem> elsebranch,discEqs,eqs,residual;
       list<SimCode.SimVar> vars,discVars;
       list<DAE.Exp> beqs;
       list<tuple<DAE.Exp,list<SimCode.SimEqSystem>>> ifbranches;
@@ -7558,9 +7558,10 @@ algorithm
         s = intString(idx) +&": "+& List.fold(sLst,stringAppend,"");
     then (s);
 
-    case(SimCode.SES_LINEAR(index=idx,partOfMixed=_,indexLinearSystem=idxLS,beqs = beqs))
+    case(SimCode.SES_LINEAR(index=idx,partOfMixed=_,indexLinearSystem=idxLS,beqs = beqs, residual=residual))
       equation
-        s = intString(idx) +&": "+& " (LINEAR) index:"+&intString(idxLS)+&" size :"+&intString(listLength(beqs))+&"\n";
+        s = intString(idx) +&": "+& " (LINEAR) index:"+&intString(idxLS)+&"\n";
+        s = s+&"\t"+&stringDelimitList(List.map(residual,dumpSimEqSystem),"\n\t");
     then (s);
 
     case(SimCode.SES_NONLINEAR(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=_,linearTearing=_,eqs=eqs, crefs=crefs))
@@ -7586,12 +7587,12 @@ public function dumpSimCode
   input SimCode.SimCode simCode;
 protected
   Integer nls,nnls,nms,ninite,ninita,ninitr,ne;
-  list<SimCode.SimEqSystem> allEquations,jacobianEquations,equationsForZeroCrossings,algorithmAndEquationAsserts,initialEquations;
+  list<SimCode.SimEqSystem> allEquations,jacobianEquations,equationsForZeroCrossings,algorithmAndEquationAsserts,initialEquations,residualEquations;
   SimCode.ModelInfo modelInfo;
   SimCode.VarInfo varInfo;
   list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
 algorithm
-  SimCode.SIMCODE(modelInfo = modelInfo,allEquations = allEquations, odeEquations=odeEquations, algebraicEquations=algebraicEquations, algorithmAndEquationAsserts=algorithmAndEquationAsserts,
+  SimCode.SIMCODE(modelInfo = modelInfo,allEquations = allEquations, odeEquations=odeEquations, algebraicEquations=algebraicEquations,residualEquations=residualEquations, algorithmAndEquationAsserts=algorithmAndEquationAsserts,
   equationsForZeroCrossings=equationsForZeroCrossings, jacobianEquations=jacobianEquations,initialEquations=initialEquations) := simCode;
   SimCode.MODELINFO(varInfo=varInfo) := modelInfo;
   SimCode.VARINFO(numInitialEquations=ninite,numInitialAlgorithms=ninita,numInitialResiduals=ninitr,numEquations=ne,numLinearSystems=nls,numNonLinearSystems=nnls,numMixedSystems=nms) := varInfo;
@@ -7601,6 +7602,8 @@ algorithm
   print(stringDelimitList(List.map(odeEquations,dumpSimEqSystemLst),"\n--------------\n")+&"\n");
   print("algebraicEquations: \n-----------------------\n");
   print(stringDelimitList(List.map(algebraicEquations,dumpSimEqSystemLst),"\n")+&"\n");
+  print("residualEquations: \n-----------------------\n");
+  print(dumpSimEqSystemLst(residualEquations)+&"\n");
   print("initialEquations: ("+&intString(ninite)+&"+"+&intString(ninita)+&"="+&intString(ninitr)+&")\n-----------------------\n");
   print(dumpSimEqSystemLst(initialEquations)+&"\n");
   print("algorithmAndEquationAsserts: \n-----------------------\n");
@@ -12972,8 +12975,9 @@ algorithm
   crefsOut := match(simEqSys)
     local
       DAE.ComponentRef cref;
-      list<DAE.ComponentRef> crefs;
+      list<DAE.ComponentRef> crefs,crefs2;
       list<SimCode.SimVar> simVars;
+      list<SimCode.SimEqSystem> residual;
     case(SimCode.SES_RESIDUAL(index=_,exp=_,source=_))
       equation
         print("implement SES_RESIDUAL in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
@@ -12992,9 +12996,11 @@ algorithm
       equation
         print("implement SES_ALGORITHM in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
     then {};
-    case(SimCode.SES_LINEAR(index=_,partOfMixed=_,vars=simVars,beqs=_,sources=_,simJac=_,indexLinearSystem=_))
+    case(SimCode.SES_LINEAR(index=_,partOfMixed=_,vars=simVars,beqs=_,sources=_,simJac=_,indexLinearSystem=_,residual=residual))
       equation
+        crefs2 = List.flatten(List.map(residual,getSimEqSystemCrefsLHS));
         crefs = List.map(simVars,varName);
+        crefs = listAppend(crefs,crefs2);
     then crefs;
     case(SimCode.SES_NONLINEAR(index=_,eqs=_,crefs=crefs,indexNonLinearSystem=_,jacobianMatrix=_,linearTearing=_))
       equation

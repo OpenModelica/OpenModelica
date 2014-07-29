@@ -2561,7 +2561,7 @@ protected function createTDSduplicateTasks2"sets the information about the new t
 protected
   String crefAppend;
   Integer threadIdx,compIdx,simVarIdx,simVarIdx2,simEqSysIdx,simEqSysIdx2,simEqSysIdx3,numVars,numEqs,numInitEqs,taskIdx,lsIdx,nlsIdx,mIdx;
-  list<Integer> comps,simVarSysIdcs,simVarSysIdcs2,simEqSysIdcs,simEqSysIdcs2,simEqSysIdcsInit,thread,clTasks,origPredTasks,clPredTasks,duplPredTasks,pos;
+  list<Integer> comps,simVarSysIdcs,simVarSysIdcs2,simEqSysIdcs,simEqSysIdcs2,systSimEqSysIdcs2,simEqSysIdcsInit,thread,clTasks,origPredTasks,clPredTasks,duplPredTasks,pos;
   list<list<Integer>> simEqIdxLst,simVarIdxLst;
   array<list<Integer>> inComps;
   BackendVarTransform.VariableReplacements repl;
@@ -2576,7 +2576,7 @@ protected
   list<list<DAE.ComponentRef>> crefLst;
   list<DAE.Exp> crefsDuplExp;
   list<SimCode.SimVar> simVarLst,simVarDupl,algVars;
-  list<SimCode.SimEqSystem> simEqSysts,simEqSystsDupl,initEqs;
+  list<SimCode.SimEqSystem> simEqSysts,simEqSystsDupl,systemSimEqSys,systemSimEqSysDupl,initEqs;
   list<list<SimCode.SimEqSystem>> odes;
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) := iTaskGraphMeta;
@@ -2587,26 +2587,23 @@ algorithm
   //print("node to duplicate "+&intString(node)+&"\n");
   comps := arrayGet(inComps,node);
   comps := listReverse(comps);
-  //print("comps :"+&intListString(comps)+&"\n");
-  //print("task :"+&intString(taskIdx)+&"\n");
+  print("comps :"+&intListString(comps)+&"\n");
+  print("task :"+&intString(taskIdx)+&"\n");
   simEqIdxLst := List.map1(comps,Util.arrayGetIndexFirst,sccSimEqMappingIn);
   simEqSysIdcs := List.flatten(simEqIdxLst);
-  //print("simEqSysIdcs :"+&intListString(simEqSysIdcs)+&"\n");
-
+  print("simEqSysIdcs :"+&intListString(simEqSysIdcs)+&"\n");
+  
   crefLst := List.map1(simEqSysIdcs,SimCodeUtil.getAssignedCrefsOfSimEq,simCodeIn);
   crefs := List.flatten(crefLst);
-  //print("crefs :\n"+&stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr),"\n")+&"\n");
-
+  print("crefs :\n"+&stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr),"\n")+&"\n");
   simVarLst := List.map1(crefs,SimCodeUtil.get,ht);
-  simEqSysts := List.map1(simEqSysIdcs,SimCodeUtil.getSimEqSysForIndex,List.flatten(odes));
 
   // build the new crefs, new simVars
   numVars := listLength(simVarLst);
   simVarSysIdcs2 := List.intRange2(simVarIdx,simVarIdx+numVars-1);
   crefAppend := "_thr"+&intString(threadIdx);
-  //crefsDupl := List.map1(crefs,ComponentReference.joinArrayCrefs,DAE.CREF_IDENT(crefAppend,DAE.T_UNKNOWN_DEFAULT,{}));
   crefsDupl := List.map1r(crefs,ComponentReference.appendStringLastIdent,crefAppend);
-  //print("crefs new :\n"+&stringDelimitList(List.map(crefsDupl,ComponentReference.debugPrintComponentRefTypeStr),"\n")+&"\n");
+  print("crefs new :\n"+&stringDelimitList(List.map(crefsDupl,ComponentReference.debugPrintComponentRefTypeStr),"\n")+&"\n");
   crefsDuplExp := List.map(crefsDupl,Expression.crefExp);
   simVarDupl := List.threadMap(crefsDupl,simVarLst,SimCodeUtil.replaceSimVarName);
   simVarDupl := List.threadMap(simVarSysIdcs2,simVarDupl,SimCodeUtil.replaceSimVarIndex);
@@ -2617,14 +2614,20 @@ algorithm
   ht := List.fold(simVarDupl,SimCodeUtil.addSimVarToHashTable,ht);
   repl := BackendVarTransform.addReplacements(replIn,crefs,crefsDuplExp,NONE());
   //BackendVarTransform.dumpReplacements(repl);
+  simEqSysts := List.map1(simEqSysIdcs,SimCodeUtil.getSimEqSysForIndex,List.flatten(odes));
   numEqs := listLength(simEqSysts);
   simEqSysIdcs2 := List.intRange2(simEqSysIdx,simEqSysIdx+numEqs-1);
-  //print("simEqSysIdcs2 :"+&intListString(simEqSysIdcs2)+&"\n");
+  print("simEqSysIdcs2 :"+&intListString(simEqSysIdcs2)+&"\n");
   (simEqSystsDupl,_) := List.map1_2(simEqSysts,replaceExpsInSimEqSystem,repl);// replace the exps and crefs
   (simEqSystsDupl,(lsIdx,nlsIdx,mIdx)) := List.mapFold(simEqSystsDupl,replaceSystemIndex,(lsIdx,nlsIdx,mIdx));// udpate the indeces of th systems
   simEqSystsDupl := List.threadMap(simEqSystsDupl,simEqSysIdcs2,SimCodeUtil.replaceSimEqSysIndex);
-  //print("the simEqSystsDupl "+&SimCodeUtil.dumpSimEqSystemLst(simEqSystsDupl)+&"\n");
+  print("the simEqSystsDupl "+&SimCodeUtil.dumpSimEqSystemLst(simEqSystsDupl)+&"\n");
   simEqSysIdx2 := simEqSysIdx + numEqs;
+  
+  //duplicate the equations inside a system of equations
+  (simEqSystsDupl,simEqSysIdx2) := TDS_duplicateSystemOfEquations(simEqSystsDupl,simEqSysIdx2,repl,{});
+  print("the simEqSystsDupl after EqSys "+&SimCodeUtil.dumpSimEqSystemLst(simEqSystsDupl)+&"\n");
+
   // update sccSimEqmapping for the duplicated
   duplSccSimEqMapOut := listAppend(List.map(simEqSysIdcs2,List.create),duplSccSimEqMapIn);
   simCode := List.fold1(simEqSystsDupl,SimCodeUtil.addSimEqSysToODEquations,1,simCode);
@@ -2676,6 +2679,50 @@ algorithm
   simCodeOut := simCode;
   replOut := repl;
 end createTDSduplicateTasks2;
+
+protected function TDS_duplicateSystemOfEquations
+  input list<SimCode.SimEqSystem> simEqsIn;
+  input Integer simEqSysIdxIn;
+  input BackendVarTransform.VariableReplacements repl;
+  input list<SimCode.SimEqSystem> simEqsFold;
+  output list<SimCode.SimEqSystem> simEqsOut;
+  output Integer simEqSysIdxOut;
+algorithm
+  (simEqsOut,simEqSysIdxOut) := matchcontinue(simEqsIn,simEqSysIdxIn,repl,simEqsFold)
+    local
+      Integer simEqSysIdx, index, numEqs;
+      Boolean partOfMixed;
+      list<Integer> systSimEqSysIdcs2;
+      SimCode.SimEqSystem simEqSys;
+      list<SimCode.SimEqSystem> rest,duplicated,residual;
+      list<SimCode.SimVar> vars;
+      list<DAE.Exp> beqs;
+      list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
+      Option<SimCode.JacobianMatrix> jacobianMatrix;
+      list<DAE.ElementSource> sources;
+      Integer indexLinearSystem;
+   case({},_,_,_)
+     then (listReverse(simEqsFold),simEqSysIdxIn);
+   case((simEqSys as SimCode.SES_LINEAR(index=index,partOfMixed=partOfMixed,vars=vars,beqs=beqs,simJac=simJac,jacobianMatrix=jacobianMatrix, residual=residual,sources=sources,indexLinearSystem=indexLinearSystem))::rest,_,_,_)
+     equation
+       //print("the systemSimEqSys "+&SimCodeUtil.dumpSimEqSystemLst(residual)+&"\n");
+       numEqs = listLength(residual);
+       systSimEqSysIdcs2 = Util.if_(intEq(numEqs,0),{},List.intRange2(simEqSysIdxIn,simEqSysIdxIn+numEqs-1));
+       //print("systSimEqSysIdcs2 :"+&intListString(systSimEqSysIdcs2)+&"\n");
+       (duplicated,_) = List.map1_2(residual,replaceExpsInSimEqSystem,repl);// replace the exps and crefs
+       duplicated = List.threadMap(duplicated,systSimEqSysIdcs2,SimCodeUtil.replaceSimEqSysIndex);
+       //print("the systemSimEqSysDupl "+&SimCodeUtil.dumpSimEqSystemLst(duplicated)+&"\n");
+       simEqSys = SimCode.SES_LINEAR(index,partOfMixed,vars,beqs,simJac,duplicated,jacobianMatrix,sources,indexLinearSystem);
+       simEqSysIdx = simEqSysIdxIn + numEqs;
+       (duplicated,simEqSysIdx)  = TDS_duplicateSystemOfEquations(rest,simEqSysIdx,repl,simEqSys::simEqsFold);
+     then (duplicated,simEqSysIdx);
+   else
+     equation
+       simEqSys::rest = simEqsIn;
+       (duplicated,simEqSysIdx)  = TDS_duplicateSystemOfEquations(rest,simEqSysIdxIn,repl,simEqSys::simEqsFold);
+     then (duplicated,simEqSysIdx);
+  end matchcontinue;
+end TDS_duplicateSystemOfEquations;
 
 protected function makeSEScrefAssignment
   input DAE.ComponentRef lhs;
