@@ -2703,7 +2703,7 @@ protected function generateEquation
   input DAE.ElementSource source;
   output BackendDAE.Equation out;
 algorithm
-  out := BackendDAE.SOLVED_EQUATION(cr, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN());
+  out := BackendDAE.SOLVED_EQUATION(cr, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
 end generateEquation;
 
 protected function createReplacementsAndEquationsForSet
