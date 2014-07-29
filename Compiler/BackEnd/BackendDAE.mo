@@ -268,7 +268,7 @@ uniontype Equation
   record ALGORITHM
     Integer size "size of equation" ;
     .DAE.Algorithm alg;
-    .DAE.ElementSource source "origin of equation";
+    .DAE.ElementSource source "origin of algorithm";
     .DAE.Expand expand "this algorithm was translated from an equation. we should not expand array crefs!";
     EquationAttributes attr;
   end ALGORITHM;

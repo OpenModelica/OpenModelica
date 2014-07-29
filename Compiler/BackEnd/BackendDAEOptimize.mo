@@ -2585,7 +2585,7 @@ algorithm
       startExp = Expression.makePureBuiltinCall("$_start", {e}, tp);
       e1 = DAE.BINARY(crefExp, DAE.SUB(DAE.T_REAL_DEFAULT), startExp);
 
-      eqn = BackendDAE.RESIDUAL_EQUATION(e1, DAE.emptyElementSource, BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.INITIAL_EQUATION(), BackendDAE.UNKNOWN_SUB_PARTITION()));
+      eqn = BackendDAE.RESIDUAL_EQUATION(e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
     then ((var,eqn::eqns));
 
     else inTpl;
@@ -2614,7 +2614,7 @@ algorithm
       _ = Expression.crefExp(cref);
       e1 = DAE.BINARY(crefExp, DAE.SUB(DAE.T_REAL_DEFAULT), bindExp);
 
-      eqn = BackendDAE.RESIDUAL_EQUATION(e1, DAE.emptyElementSource, BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.INITIAL_EQUATION(), BackendDAE.UNKNOWN_SUB_PARTITION()));
+      eqn = BackendDAE.RESIDUAL_EQUATION(e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
     then ((var,eqn::eqns));
 
     else inTpl;
@@ -6804,7 +6804,7 @@ algorithm
 
       var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       var = BackendVariable.setVarFixed(var, true);
-      eqn = BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), condition, inSource, BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.DYNAMIC_EQUATION(), BackendDAE.UNKNOWN_SUB_PARTITION()));
+      eqn = BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), condition, inSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
 
       condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
     then (condition, {var}, {eqn}, index+1, ht);
