@@ -1825,11 +1825,11 @@ algorithm
         expderset = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrdset),listGet(expcrdset,1));
         source = DAE.SOURCE(Absyn.INFO("stateselection",false,0,0,0,0,Absyn.dummyTimeStamp),{},NONE(),{},{},{},{});
         // set.x = set.A*set.statecandidates
-        eqn  = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},expset,mulAstates,source,false,BackendDAE.DYNAMIC_EQUATION()),
-                                      BackendDAE.EQUATION(expset,mulAstates,source,false,BackendDAE.DYNAMIC_EQUATION()));
+        eqn  = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},expset,mulAstates,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC),
+                                      BackendDAE.EQUATION(expset,mulAstates,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC));
         // der(set.x) = set.A*der(set.candidates)
-        deqn  = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},expderset,mulAdstates,DAE.emptyElementSource,false,BackendDAE.DYNAMIC_EQUATION()),
-                                      BackendDAE.EQUATION(expderset,mulAdstates,DAE.emptyElementSource,false,BackendDAE.DYNAMIC_EQUATION()));
+        deqn  = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},expderset,mulAdstates,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC),
+                                      BackendDAE.EQUATION(expderset,mulAdstates,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC));
         // start values for the set
         expsetstart = DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrstatesstart));
         ((expsetstart,(_,_))) = BackendDAEUtil.extendArrExp((expsetstart,(NONE(),false)));
@@ -5073,7 +5073,7 @@ algorithm
         ecr = Expression.makeCrefExp(inCr,DAE.T_REAL_DEFAULT);
         edcr = Expression.makeCrefExp(inDCr,DAE.T_REAL_DEFAULT);
         c = DAE.CALL(Absyn.IDENT("der"),{ecr},DAE.callAttrBuiltinReal);
-        eqns1 = BackendEquation.equationAdd(BackendDAE.EQUATION(edcr,c,DAE.emptyElementSource,false,BackendDAE.DYNAMIC_EQUATION()),inEqns);
+        eqns1 = BackendEquation.equationAdd(BackendDAE.EQUATION(edcr,c,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC),inEqns);
         so = addStateOrder(inCr,inDCr,inSo);
         eqnindxs = List.map(mt[i], intAbs);
         // get from scalar eqns indexes the indexes in the equation array

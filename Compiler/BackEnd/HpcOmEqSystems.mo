@@ -454,7 +454,7 @@ algorithm
   cref := BackendVariable.varCref(elem);
   exp := DAE.CREF(cref,DAE.T_REAL_DEFAULT);
   exp := DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),exp);
-  eq := BackendDAE.RESIDUAL_EQUATION(exp,DAE.emptyElementSource,false,BackendDAE.UNKNOWN_EQUATION_KIND());
+  eq := BackendDAE.RESIDUAL_EQUATION(exp,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
   entry := (colIdx,rowIdx,eq);
   outJac := entry::inJac;
 end buildLinearJacobian2;
@@ -630,7 +630,7 @@ algorithm
         rhs = buildNewResidualEquation2(1,aCoeffs,tvars,DAE.RCONST(0.0)); // the start value is random and will be rejected
         rhs = DAE.BINARY(rhs, DAE.ADD(ty), a0Exp);
         lhs = DAE.RCONST(0.0);
-        hs = BackendDAE.EQUATION(lhs,rhs,DAE.emptyElementSource,false,BackendDAE.UNKNOWN_EQUATION_KIND());
+        hs = BackendDAE.EQUATION(lhs,rhs,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
         eqLstTmp = hs::resEqsIn;
         eqLstTmp = buildNewResidualEquation(resIdx+1,aCoeffLst,a0CoeffLst,tvars,eqLstTmp);
       then
@@ -875,7 +875,7 @@ algorithm
         r_ii = listGet(resVal_iIn,resIdx1);
         lhs = varExp(r_ii);
         rhs = varExp(a_ii);
-        hs_ii = BackendDAE.EQUATION(lhs,rhs,DAE.emptyElementSource,false,BackendDAE.UNKNOWN_EQUATION_KIND());
+        hs_ii = BackendDAE.EQUATION(lhs,rhs,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
         // update th a_i_lst and the hs_i_lst
         a_i_lstTmp = Debug.bcallret1(List.isEmpty(a_i_lstIn), List.create, {a_ii},varInFrontList(a_ii,a_i_lstIn));
         hs_i_lstTmp = Debug.bcallret1(List.isEmpty(hs_i_lstIn), List.create, {hs_ii}, eqInFrontList(hs_ii,hs_i_lstIn));
@@ -902,7 +902,7 @@ algorithm
         rhs = DAE.BINARY(aExp,DAE.ADD(ty),dExp);
         r_ii = listGet(resVal_iIn,resIdx1);
         lhs = varExp(r_ii);
-        hs_ii = BackendDAE.EQUATION(lhs,rhs,DAE.emptyElementSource,false,BackendDAE.UNKNOWN_EQUATION_KIND());
+        hs_ii = BackendDAE.EQUATION(lhs,rhs,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
         // update th a_i_lst and the hs_i_lst
         a_i_lstTmp = Debug.bcallret1(List.isEmpty(a_i_lstIn), List.create, {a_ii},varInFrontList(a_ii, a_i_lstIn));
         hs_i_lstTmp = Debug.bcallret1(List.isEmpty(hs_i_lstIn), List.create, {hs_ii}, eqInFrontList(hs_ii, hs_i_lstIn));

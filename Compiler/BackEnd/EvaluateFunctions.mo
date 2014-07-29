@@ -201,16 +201,16 @@ algorithm
   (eqOut,tplOut) := matchcontinue(eqIn,tplIn)
     local
       Integer sizeL,sizeR,size,idx;
-      Boolean b1,b2,diff,changed, changed1;
+      Boolean b1,b2,changed, changed1;
       BackendDAE.Equation eq;
-      BackendDAE.EquationKind kind;
+      BackendDAE.EquationAttributes attr;
       BackendDAE.Shared shared;
       DAE.Exp exp1,exp2,lhsExp,rhsExp;
       DAE.ElementSource source;
       DAE.FunctionTree funcs;
       list<BackendDAE.Equation> addEqs, addEqs1, addEqs2;
       list<DAE.Exp> lhs;
-    case(BackendDAE.EQUATION(exp=exp1, scalar=exp2,source=source,differentiated=diff,kind=kind),_)
+    case(BackendDAE.EQUATION(exp=exp1, scalar=exp2,source=source,attr=attr),_)
       equation
         b1 = Expression.containFunctioncall(exp1);
         b2 = Expression.containFunctioncall(exp2);
@@ -223,15 +223,15 @@ algorithm
         changed = changed1 or changed;
         addEqs = listAppend(addEqs1,addEqs);
         addEqs = listAppend(addEqs2,addEqs);
-        eq = BackendDAE.EQUATION(lhsExp,rhsExp,source,diff,kind);
+        eq = BackendDAE.EQUATION(lhsExp,rhsExp,source,attr);
       then
         (eq,(shared,addEqs,idx+1,changed));
-    case(BackendDAE.ARRAY_EQUATION(dimSize =_, left=_, right=_,  differentiated=_),_)
+    case(BackendDAE.ARRAY_EQUATION(dimSize=_),_)
       equation
         Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"this is an array equation. update evalFunctions_findFuncs\n");
       then
         (eqIn,tplIn);
-    case(BackendDAE.COMPLEX_EQUATION(size =_, left=exp1, right=exp2, source=source, differentiated=diff,kind=kind),_)
+    case(BackendDAE.COMPLEX_EQUATION(left=exp1, right=exp2, source=source, attr=attr),_)
       equation
         b1 = Expression.containFunctioncall(exp1);
         b2 = Expression.containFunctioncall(exp2);
@@ -248,7 +248,7 @@ algorithm
         sizeL = getScalarExpSize(lhsExp);
         sizeR = getScalarExpSize(rhsExp);
         size = intMax(sizeR,sizeL);
-        eq = Util.if_(intEq(size,0),BackendDAE.EQUATION(lhsExp,rhsExp,source,diff,kind),BackendDAE.COMPLEX_EQUATION(size,lhsExp,rhsExp,source,diff,kind));
+        eq = Util.if_(intEq(size,0),BackendDAE.EQUATION(lhsExp,rhsExp,source,attr),BackendDAE.COMPLEX_EQUATION(size,lhsExp,rhsExp,source,attr));
         //since tuple=tuple is not supported, these equations are converted into a list of simple equations
         (eq,addEqs) = convertTupleEquations(eq,addEqs);
       then
@@ -1330,7 +1330,7 @@ algorithm
         eqsIn;
     case(lhs::lrest,rhs::rrest,_)
       equation
-        eq = BackendDAE.EQUATION(lhs,rhs,DAE.emptyElementSource,false,BackendDAE.DYNAMIC_EQUATION());
+        eq = BackendDAE.EQUATION(lhs,rhs,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
         eqs = generateConstEqs(lrest,rrest,eq::eqsIn);
       then
         eqs;
@@ -1791,7 +1791,7 @@ algorithm
       DAE.ElementSource source;
       DAE.Exp rhs,lhs;
       DAE.Type typ;
-    case(BackendDAE.EQUATION(exp=lhs,scalar=rhs,source=source,differentiated=_))
+    case(BackendDAE.EQUATION(exp=lhs,scalar=rhs,source=source))
       equation
         typ = Expression.typeof(lhs);
       then
@@ -2035,7 +2035,7 @@ algorithm
       DAE.ElementSource source;
       DAE.Exp lhs,rhs;
       DAE.Type typ;
-    case(BackendDAE.EQUATION(exp=lhs,scalar=rhs,source=source,differentiated=_))
+    case(BackendDAE.EQUATION(exp=lhs,scalar=rhs,source=source))
       equation
         typ = expType(lhs);
         then
@@ -2830,42 +2830,41 @@ end findDerVarCrefs1;
 //
 // =============================================================================
 
-protected function convertTupleEquations"converts an equation tupleExp=tupleExp to several simple equations of exp=const.
-author:Waurich TUD 2014-04"
+protected function convertTupleEquations "author:Waurich TUD 2014-04
+  converts an equation tupleExp=tupleExp to several simple equations of exp=const"
   input BackendDAE.Equation eqIn;
   input list<BackendDAE.Equation> addEqsIn;
   output BackendDAE.Equation eqOut;
   output list<BackendDAE.Equation> addEqsOut;
 algorithm
-  (eqOut,addEqsOut) := matchcontinue(eqIn,addEqsIn)
+  (eqOut, addEqsOut) := matchcontinue (eqIn, addEqsIn)
     local
       BackendDAE.Equation eq;
-      DAE.Exp lhsExp,rhsExp;
-      list<DAE.Exp> lhs,rhs;
+      DAE.Exp lhsExp, rhsExp;
+      list<DAE.Exp> lhs, rhs;
       list<BackendDAE.Equation> eqs;
-    case(BackendDAE.COMPLEX_EQUATION(size=_,left=lhsExp,right=rhsExp,source=_,differentiated=_),_)
-      equation
-        DAE.TUPLE(lhs) = lhsExp;
-        DAE.TUPLE(rhs) = rhsExp;
-        eqs = makeBackendEquation(lhs,rhs,{});
-        eq::eqs = eqs;
-        eqs = listAppend(eqs,addEqsIn);
-     then
-       (eq,eqs);
-   else
-     then
-       (eqIn,addEqsIn);
+
+    case (BackendDAE.COMPLEX_EQUATION(left=lhsExp, right=rhsExp), _) equation
+      DAE.TUPLE(lhs) = lhsExp;
+      DAE.TUPLE(rhs) = rhsExp;
+      eqs = makeBackendEquation(lhs, rhs, {});
+      eq::eqs = eqs;
+      eqs = listAppend(eqs, addEqsIn);
+    then (eq, eqs);
+
+    else
+    then (eqIn, addEqsIn);
   end matchcontinue;
 end convertTupleEquations;
 
-protected function makeBackendEquation"builds backendEquations for the list of lhs-exps and rhs-exps.
-author:Waurich TUD 2014-04"
+protected function makeBackendEquation "author:Waurich TUD 2014-04
+  builds backendEquations for the list of lhs-exps and rhs-exps"
   input list<DAE.Exp> ls;
   input list<DAE.Exp> rs;
   input list<BackendDAE.Equation> eqLstIn;
   output list<BackendDAE.Equation> eqLstOut;
 algorithm
-  eqLstOut := matchcontinue(ls,rs,eqLstIn)
+  eqLstOut := match(ls, rs, eqLstIn)
     local
       list<DAE.Exp> lrest;
       list<DAE.Exp> rrest;
@@ -2873,17 +2872,16 @@ algorithm
       list<BackendDAE.Equation> eqLst;
       DAE.Exp l;
       DAE.Exp r;
-    case({},{},_)
-      then
-        eqLstIn;
-    case(l::lrest,r::rrest,_)
-      equation
-        eq = BackendDAE.EQUATION(r,l,DAE.emptyElementSource,false,BackendDAE.DYNAMIC_EQUATION());
-        eqLst = eq::eqLstIn;
-       eqLst = makeBackendEquation(lrest,rrest,eqLst);
-      then
-        eqLst;
-  end matchcontinue;
+
+    case ({}, {}, _)
+    then eqLstIn;
+
+    case (l::lrest, r::rrest, _) equation
+      eq = BackendDAE.EQUATION(r, l, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+      eqLst = eq::eqLstIn;
+      eqLst = makeBackendEquation(lrest, rrest, eqLst);
+    then eqLst;
+  end match;
 end makeBackendEquation;
 
 end EvaluateFunctions;

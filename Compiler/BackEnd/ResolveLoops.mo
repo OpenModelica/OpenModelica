@@ -1194,16 +1194,16 @@ protected function sumUp2Equations "author:Waurich TUD 2013-12
   input BackendDAE.Equation eq2;
   output BackendDAE.Equation eqOut;
 protected
-  DAE.Exp exp1,exp2,exp3,exp4;
+  DAE.Exp exp1, exp2, exp3, exp4;
 algorithm
-  BackendDAE.EQUATION(exp=exp1,scalar=exp2) := eq1;
-  BackendDAE.EQUATION(exp=exp3,scalar=exp4) := eq2;
-  exp1 := sumUp2Expressions(sumUp,exp1,exp3);
-  exp2 := sumUp2Expressions(sumUp,exp2,exp4);
-  exp2 := sumUp2Expressions(false,exp2,exp1);
-  (exp2,_) := ExpressionSimplify.simplify(exp2);
+  BackendDAE.EQUATION(exp=exp1, scalar=exp2) := eq1;
+  BackendDAE.EQUATION(exp=exp3, scalar=exp4) := eq2;
+  exp1 := sumUp2Expressions(sumUp, exp1, exp3);
+  exp2 := sumUp2Expressions(sumUp, exp2, exp4);
+  exp2 := sumUp2Expressions(false, exp2, exp1);
+  (exp2, _) := ExpressionSimplify.simplify(exp2);
   exp1 := DAE.RCONST(0.0);
-  eqOut := BackendDAE.EQUATION(exp1,exp2,DAE.emptyElementSource,false,BackendDAE.UNKNOWN_EQUATION_KIND());
+  eqOut := BackendDAE.EQUATION(exp1, exp2, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
 end sumUp2Equations;
 
 protected function CRefIsPosOnRHS "author:Waurich TUD 2013-12
@@ -1214,22 +1214,20 @@ protected function CRefIsPosOnRHS "author:Waurich TUD 2013-12
   input BackendDAE.Equation eqIn;
   output Boolean isPos;
 algorithm
-  isPos := matchcontinue(crefIn,eqIn)
+  isPos := matchcontinue(crefIn, eqIn)
     local
-      Boolean exists1, exists2 ,sign1, sign2;
-      DAE.Exp e1,e2;
-    case(_,BackendDAE.EQUATION(exp = e1,scalar = e2,source=_,differentiated=_))
-      equation
-        (exists1,sign1) = expIsCref(e1,crefIn);
-        (_,sign2) = expIsCref(e2,crefIn);
-        sign1 = Util.if_(exists1,not sign1,sign2);
-     then
-       sign1;
-    else
-      equation
-        print("add a case to CRefIsPosOnRHS\n");
-      then
-        fail();
+      Boolean exists1, exists2 , sign1, sign2;
+      DAE.Exp e1, e2;
+
+  case(_, BackendDAE.EQUATION(exp=e1, scalar=e2)) equation
+    (exists1, sign1) = expIsCref(e1, crefIn);
+    (_, sign2) = expIsCref(e2, crefIn);
+    sign1 = Util.if_(exists1, not sign1, sign2);
+  then sign1;
+
+  else equation
+    print("add a case to CRefIsPosOnRHS\n");
+    then fail();
   end matchcontinue;
 end CRefIsPosOnRHS;
 

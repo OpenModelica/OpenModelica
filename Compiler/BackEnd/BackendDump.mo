@@ -768,7 +768,8 @@ algorithm
       BackendDAE.EquationKind eqKind;
 
     case ({}, _) then ();
-    case (BackendDAE.EQUATION(e1, e2, _, _, eqKind)::res, _) equation /*done*/
+
+    case (BackendDAE.EQUATION(exp=e1, scalar=e2, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation /*done*/
       str = "EQUATION: ";
       str = str +& ExpressionDump.printExpStr(e1);
       str = str +& " = ";
@@ -786,7 +787,8 @@ algorithm
 
       dumpBackendDAEEqnList2(res, printExpTree);
     then ();
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, kind=eqKind)::res, _) equation /*done*/
+
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation /*done*/
       str = "COMPLEX_EQUATION: ";
       str = str +& ExpressionDump.printExpStr(e1);
       str = str +& " = ";
@@ -804,7 +806,8 @@ algorithm
 
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
-    case (BackendDAE.SOLVED_EQUATION(componentRef=_,exp=e,kind=eqKind)::res,_) equation
+
+    case (BackendDAE.SOLVED_EQUATION(componentRef=_, exp=e, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) equation
       print("SOLVED_EQUATION: ");
       str = ExpressionDump.printExpStr(e);
       print(str);
@@ -815,7 +818,8 @@ algorithm
       print("\n");
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
-    case (BackendDAE.RESIDUAL_EQUATION(exp=e,kind=eqKind)::res, _) equation /*done*/
+
+    case (BackendDAE.RESIDUAL_EQUATION(exp=e, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation /*done*/
       str = "RESIDUAL_EQUATION: ";
       str = str +& ExpressionDump.printExpStr(e);
       str = str +& " (" +& equationKindString(eqKind) +& ")\n";
@@ -828,7 +832,8 @@ algorithm
 
       dumpBackendDAEEqnList2(res, printExpTree);
     then ();
-    case (BackendDAE.ARRAY_EQUATION(left=e1,kind=eqKind)::res,_) equation
+
+    case (BackendDAE.ARRAY_EQUATION(left=e1, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) equation
       print("ARRAY_EQUATION: ");
       str = ExpressionDump.printExpStr(e1);
       print(str);
@@ -839,13 +844,15 @@ algorithm
       print("\n");
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
-    case (BackendDAE.ALGORITHM(alg=alg,kind=eqKind)::res,_) equation
+
+    case (BackendDAE.ALGORITHM(alg=alg, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) equation
       print("ALGORITHM: ");
       dumpAlgorithms({alg},0);
       print(" (" +& equationKindString(eqKind) +& ")\n");
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
-    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(right=e/*TODO handle elsewhe also*/),source=source,kind=eqKind)::res, _) equation
+
+    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(right=e/*TODO handle elsewhe also*/), source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation
       print("WHEN_EQUATION: ");
       str = ExpressionDump.printExpStr(e);
       print(str);
@@ -856,6 +863,7 @@ algorithm
       print("\n");
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
+
     case (_::res, _) equation
       print("SKIPED EQUATION\n");
       dumpBackendDAEEqnList2(res, printExpTree);

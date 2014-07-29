@@ -2861,7 +2861,7 @@ algorithm
         prevarexp = Expression.makePureBuiltinCall("pre", {varexp}, Expression.typeof(varexp));
         prevarexp = Expression.expSub(varexp, prevarexp);
         ((e2, _)) = Expression.traverseExp(e2, replaceIFBrancheswithoutVar, (varexp, prevarexp));
-        eqn = BackendDAE.EQUATION(e1, e2, source, false, BackendDAE.UNKNOWN_EQUATION_KIND());
+        eqn = BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars);
         cr = Debug.bcallret1(BackendVariable.isStateVar(v), ComponentReference.crefPrefixDer, cr, cr);
       then
@@ -6231,7 +6231,7 @@ algorithm
       (equation_, uniqueEqIndex) = createSingleArrayEqnCode2(cr_1, cr_1, e1, e2, iuniqueEqIndex, source);
     then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
 
-    case (_, BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, kind=eqKind)::_, vars, _, _, _) equation
+    case (_, BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::_, vars, _, _, _) equation
       true = Expression.isArray(e1) or Expression.isMatrix(e1);
       true = Expression.isArray(e2) or Expression.isMatrix(e2);
       e1 = Expression.replaceDerOpInExp(e1);
@@ -6255,7 +6255,7 @@ algorithm
       (equations_, noDiscequations, uniqueEqIndex, tempvars) = createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
     then (equations_, noDiscequations, uniqueEqIndex, tempvars);
 
-    case (_, BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source, kind=eqKind)::_, vars, _, _, _) equation
+    case (_, BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::_, vars, _, _, _) equation
       e1 = Expression.replaceDerOpInExp(e1);
       e2 = Expression.replaceDerOpInExp(e2);
       ad = List.map(ds, Util.makeOption);
@@ -6907,7 +6907,7 @@ algorithm
         startv = BackendVariable.varStartValueFail(var);
         false = Expression.isConst(startv);
         SimCode.NOALIAS() = getAliasVar(var, SOME(av));
-        initialEquation = BackendDAE.SOLVED_EQUATION(name, startv, source, false, BackendDAE.UNKNOWN_EQUATION_KIND());
+        initialEquation = BackendDAE.SOLVED_EQUATION(name, startv, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
       then
         ((var, (initialEquation :: eqns, av)));
 
@@ -6933,7 +6933,7 @@ algorithm
       nominalv = BackendVariable.varNominalValueFail(var);
       false = Expression.isConst(nominalv);
       SimCode.NOALIAS() = getAliasVar(var, SOME(av));
-      initialEquation = BackendDAE.SOLVED_EQUATION(name, nominalv, source, false, BackendDAE.UNKNOWN_EQUATION_KIND());
+      initialEquation = BackendDAE.SOLVED_EQUATION(name, nominalv, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
     then ((var, (initialEquation :: eqns, av)));
 
     case _ then inTpl;
@@ -6958,7 +6958,7 @@ algorithm
       minv = BackendVariable.varMinValueFail(var);
       false = Expression.isConst(minv);
       SimCode.NOALIAS() = getAliasVar(var, SOME(av));
-      initialEquation = BackendDAE.SOLVED_EQUATION(name, minv, source, false, BackendDAE.UNKNOWN_EQUATION_KIND());
+      initialEquation = BackendDAE.SOLVED_EQUATION(name, minv, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
     then ((var, (initialEquation :: eqns, av)));
 
     case _ then inTpl;
@@ -6983,10 +6983,10 @@ algorithm
       maxv = BackendVariable.varMaxValueFail(var);
       false = Expression.isConst(maxv);
       SimCode.NOALIAS() = getAliasVar(var, SOME(av));
-      initialEquation = BackendDAE.SOLVED_EQUATION(name, maxv, source, false, BackendDAE.UNKNOWN_EQUATION_KIND());
+      initialEquation = BackendDAE.SOLVED_EQUATION(name, maxv, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
     then ((var, (initialEquation :: eqns, av)));
 
-    case _ then inTpl;
+    else then inTpl;
   end matchcontinue;
 end createInitialAssignmentsFromMax;
 
@@ -7020,7 +7020,7 @@ algorithm
         // if not parameter use it, else use it only if not constant
         true = (not b1) or (b1 and not b2);
         cre = Expression.crefExp(cr);
-        initialEquation = BackendDAE.EQUATION(cre, e, source, false, BackendDAE.UNKNOWN_EQUATION_KIND());
+        initialEquation = BackendDAE.EQUATION(cre, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
         var1 = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       then
         ((var, (initialEquation :: eqns, var1::v, kn, pos::v1, pos::v2, pos+1)));

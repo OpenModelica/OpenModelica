@@ -1959,7 +1959,7 @@ algorithm
       mvars_1 = BaseHashTable.add((cr1,0),mvars);
       (eqns_1,seqns_1,mvars_2,repl_2) = eliminateVariablesDAE2(eqns, eqnIndex + 1, vars, knvars, mvars_1, repl_1, inDoubles, m, elimVarIndexList_1, failCheck);
     then
-      (eqns_1,(BackendDAE.SOLVED_EQUATION(cr1,e2,source,false,BackendDAE.UNKNOWN_EQUATION_KIND()) :: seqns_1),mvars_2,repl_2);
+      (eqns_1,(BackendDAE.SOLVED_EQUATION(cr1,e2,source,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN) :: seqns_1),mvars_2,repl_2);
 
     // Next equation.
     case ((e :: eqns),_,_,_,_,_,_,_,_,false)
@@ -2703,16 +2703,7 @@ protected function generateEquation
   input DAE.ElementSource source;
   output BackendDAE.Equation out;
 algorithm
-  out := match (cr,e,source)
-    local
-      Boolean differentiated;
-    case (_,_,_)
-      equation
-        // These values are temporary
-        differentiated=false;
-      then
-        BackendDAE.SOLVED_EQUATION(cr,e,source,differentiated,BackendDAE.UNKNOWN_EQUATION_KIND());
-  end match;
+  out := BackendDAE.SOLVED_EQUATION(cr, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN());
 end generateEquation;
 
 protected function createReplacementsAndEquationsForSet

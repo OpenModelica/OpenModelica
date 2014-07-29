@@ -32,7 +32,7 @@
 encapsulated package BackendDAE
 " file:        BackendDAE.mo
   package:     BackendDAE
-  description: BackendDAE contains the datatypes used by the backend.
+  description: BackendDAE contains the data-types used by the backend.
 
   RCS: $Id$
 "
@@ -64,8 +64,7 @@ uniontype BackendDAE "THE LOWERED DAE consist of variables and equations. The va
 end BackendDAE;
 
 public
-type EqSystems = list<EqSystem>
-"NOTE: BackEnd does not yet support lists with different size than 1 everywhere (anywhere)";
+type EqSystems = list<EqSystem>;
 
 public
 uniontype EqSystem "An independent system of equations (and their corresponding variables)"
@@ -87,6 +86,11 @@ uniontype BaseClockPartitionKind
   record CONTINUOUS_TIME_PARTITION end CONTINUOUS_TIME_PARTITION;
   record UNSPECIFIED_PARTITION "treated as CONTINUOUS_TIME_PARTITION" end UNSPECIFIED_PARTITION;
 end BaseClockPartitionKind;
+
+public
+uniontype SubClockPartitionKind
+  record UNKNOWN_SUB_PARTITION end UNKNOWN_SUB_PARTITION;
+end SubClockPartitionKind;
 
 public
 uniontype Shared "Data shared for all equation-systems"
@@ -115,8 +119,8 @@ uniontype Shared "Data shared for all equation-systems"
   end SHARED;
 end Shared;
 
-uniontype ExtraInfo "extra information that we should send arround with the DAE"
-  record EXTRA_INFO "extra information that we should send arround with the DAE"
+uniontype ExtraInfo "extra information that we should send around with the DAE"
+  record EXTRA_INFO "extra information that we should send around with the DAE"
     String description "the model description string";
     String fileNamePrefix "the model name to be used in the dumps";
   end EXTRA_INFO;
@@ -124,9 +128,9 @@ end ExtraInfo;
 
 public
 uniontype BackendDAEType "BackendDAEType to indicate different types of BackendDAEs.
-  For example for simulation, initialization, jacobian, algebraic loops etc."
+  For example for simulation, initialization, Jacobian, algebraic loops etc."
   record SIMULATION      "Type for the normal BackendDAE.DAE for simulation" end SIMULATION;
-  record JACOBIAN        "Type for jacobian BackendDAE.DAE"                  end JACOBIAN;
+  record JACOBIAN        "Type for Jacobian BackendDAE.DAE"                  end JACOBIAN;
   record ALGEQSYSTEM     "Type for algebraic loop BackendDAE.DAE"            end ALGEQSYSTEM;
   record ARRAYSYSTEM     "Type for multidim equation arrays BackendDAE.DAE"  end ARRAYSYSTEM;
   record PARAMETERSYSTEM "Type for parameter system BackendDAE.DAE"          end PARAMETERSYSTEM;
@@ -182,12 +186,12 @@ uniontype Var "variables"
     VarKind varKind "Kind of variable" ;
     .DAE.VarDirection varDirection "input, output or bidirectional" ;
     .DAE.VarParallelism varParallelism "parallelism of the variable. parglobal, parlocal or non-parallel";
-    Type varType "builtin type or enumeration" ;
+    Type varType "built-in type or enumeration" ;
     Option< .DAE.Exp> bindExp "Binding expression e.g. for parameters" ;
     Option<Values.Value> bindValue "binding value for parameters" ;
-    .DAE.InstDims arryDim "array dimensions on nonexpanded var" ;
+    .DAE.InstDims arryDim "array dimensions of non-expanded var" ;
     .DAE.ElementSource source "origin of variable" ;
-    Option< .DAE.VariableAttributes> values "values on builtin attributes" ;
+    Option< .DAE.VariableAttributes> values "values on built-in attributes" ;
     Option<SCode.Comment> comment "this contains the comment and annotation from Absyn" ;
     .DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
   end VAR;
@@ -219,62 +223,69 @@ public uniontype EquationKind "equation kind"
   record UNKNOWN_EQUATION_KIND end UNKNOWN_EQUATION_KIND;
 end EquationKind;
 
+public uniontype EquationAttributes
+  record EQUATION_ATTRIBUTES
+    Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
+    EquationKind kind;
+    SubClockPartitionKind subPartitionKind;
+  end EQUATION_ATTRIBUTES;
+end EquationAttributes;
+
+public constant EquationAttributes EQ_ATTR_DEFAULT_DYNAMIC = EQUATION_ATTRIBUTES(false, DYNAMIC_EQUATION(), UNKNOWN_SUB_PARTITION());
+public constant EquationAttributes EQ_ATTR_DEFAULT_INITIAL = EQUATION_ATTRIBUTES(false, INITIAL_EQUATION(), UNKNOWN_SUB_PARTITION());
+public constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(false, UNKNOWN_EQUATION_KIND(), UNKNOWN_SUB_PARTITION());
+
 public
 uniontype Equation
   record EQUATION
     .DAE.Exp exp;
     .DAE.Exp scalar;
     .DAE.ElementSource source "origin of equation";
-    Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
-    EquationKind kind;
+    EquationAttributes attr;
   end EQUATION;
 
   record ARRAY_EQUATION
     list<Integer> dimSize "dimension sizes" ;
     .DAE.Exp left "lhs" ;
     .DAE.Exp right "rhs" ;
-    .DAE.ElementSource source "the element source";
-    Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
-    EquationKind kind;
+    .DAE.ElementSource source "origin of equation";
+    EquationAttributes attr;
   end ARRAY_EQUATION;
 
   record SOLVED_EQUATION
     .DAE.ComponentRef componentRef;
     .DAE.Exp exp;
     .DAE.ElementSource source "origin of equation";
-    Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
-    EquationKind kind;
+    EquationAttributes attr;
   end SOLVED_EQUATION;
 
   record RESIDUAL_EQUATION
     .DAE.Exp exp "not present from FrontEnd" ;
     .DAE.ElementSource source "origin of equation";
-     Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
-     EquationKind kind;
+    EquationAttributes attr;
   end RESIDUAL_EQUATION;
 
   record ALGORITHM
     Integer size "size of equation" ;
     .DAE.Algorithm alg;
-    .DAE.ElementSource source "origin of algorithm";
+    .DAE.ElementSource source "origin of equation";
     .DAE.Expand expand "this algorithm was translated from an equation. we should not expand array crefs!";
-    EquationKind kind;
+    EquationAttributes attr;
   end ALGORITHM;
 
   record WHEN_EQUATION
     Integer size "size of equation";
     WhenEquation whenEquation;
     .DAE.ElementSource source "origin of equation";
-    EquationKind kind;
+    EquationAttributes attr;
   end WHEN_EQUATION;
 
   record COMPLEX_EQUATION "complex equations: recordX = function call(x, y, ..);"
      Integer size "size of equation" ;
     .DAE.Exp left "lhs" ;
     .DAE.Exp right "rhs" ;
-    .DAE.ElementSource source "the element source";
-     Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
-     EquationKind kind;
+    .DAE.ElementSource source "origin of equation";
+    EquationAttributes attr;
   end COMPLEX_EQUATION;
 
   record IF_EQUATION "an if-equation"
@@ -282,7 +293,7 @@ uniontype Equation
     list<list<Equation>> eqnstrue "Equations of true branch";
     list<Equation> eqnsfalse "Equations of false branch";
     .DAE.ElementSource source "origin of equation";
-    EquationKind kind;
+    EquationAttributes attr;
   end IF_EQUATION;
 end Equation;
 
@@ -368,7 +379,7 @@ uniontype StrongComponent
 
   record EQUATIONSYSTEM
     list<Integer> eqns;
-    list<Integer> vars "be carefule with states, this are solved for der(x)";
+    list<Integer> vars "be careful with states, this are solved for der(x)";
     Jacobian jac;
     JacobianType jacType;
   end EQUATIONSYSTEM;
@@ -381,27 +392,27 @@ uniontype StrongComponent
 
   record SINGLEARRAY
     Integer eqn;
-    list<Integer> vars "be carefule with states, this are solved for der(x)";
+    list<Integer> vars "be careful with states, this are solved for der(x)";
   end SINGLEARRAY;
 
   record SINGLEALGORITHM
     Integer eqn;
-    list<Integer> vars "be carefule with states, this are solved for der(x)";
+    list<Integer> vars "be careful with states, this are solved for der(x)";
   end SINGLEALGORITHM;
 
   record SINGLECOMPLEXEQUATION
     Integer eqn;
-    list<Integer> vars "be carefule with states, this are solved for der(x)";
+    list<Integer> vars "be careful with states, this are solved for der(x)";
   end SINGLECOMPLEXEQUATION;
 
   record SINGLEWHENEQUATION
     Integer eqn;
-    list<Integer> vars "be carefule with states, this are solved for der(x)";
+    list<Integer> vars "be careful with states, this are solved for der(x)";
   end SINGLEWHENEQUATION;
 
   record SINGLEIFEQUATION
     Integer eqn;
-    list<Integer> vars "be carefule with states, this are solved for der(x)";
+    list<Integer> vars "be careful with states, this are solved for der(x)";
   end SINGLEIFEQUATION;
 
   record TORNSYSTEM
@@ -441,8 +452,8 @@ public
 uniontype EventInfo
   record EVENT_INFO
     list<TimeEvent> timeEvents         "stores all information regarding time events" ;
-    list<WhenClause> whenClauseLst     "list of when clauses. The WhenEquation datatype refer to this list by position" ;
-    list<ZeroCrossing> zeroCrossingLst "list of zero crossing coditions";
+    list<WhenClause> whenClauseLst     "list of when clauses. The WhenEquation data type refer to this list by position" ;
+    list<ZeroCrossing> zeroCrossingLst "list of zero crossing conditions";
     // TODO: sampleLst and relationsLst could be removed if cpp runtime is prepared to handle zero crossing conditions
     list<ZeroCrossing> sampleLst       "list of sample as before, used by cpp runtime";
     list<ZeroCrossing> relationsLst    "list of zero crossing function as before, used by cpp runtime";
@@ -466,13 +477,13 @@ uniontype WhenOperator
     .DAE.ElementSource source "the origin of the component/equation/algorithm";
   end ASSERT;
 
-  record TERMINATE "The Modelica builtin terminate(msg)"
+  record TERMINATE "The Modelica built-in terminate(msg)"
     .DAE.Exp message;
     .DAE.ElementSource source "the origin of the component/equation/algorithm";
   end TERMINATE;
 
   record NORETCALL "call with no return value, i.e. no equation.
-    Typically sideeffect call of external function but also
+    Typically side effect call of external function but also
     Connections.* i.e. Connections.root(...) functions."
     .DAE.Exp exp;
     .DAE.ElementSource source "the origin of the component/equation/algorithm";
@@ -558,18 +569,19 @@ uniontype Solvability
   record SOLVABILITY_TIMEVARYING "Coefficient contains variables, is time varying"
     Boolean b "false if the partial derivative is zero";
   end SOLVABILITY_TIMEVARYING;
-  record SOLVABILITY_NONLINEAR "The variable occurse nonlinear in the equation." end SOLVABILITY_NONLINEAR;
-  record SOLVABILITY_UNSOLVABLE "The variable occurse in the equation, but it is not posible to solve
+  record SOLVABILITY_NONLINEAR "The variable occurs non-linear in the equation." end SOLVABILITY_NONLINEAR;
+  record SOLVABILITY_UNSOLVABLE "The variable occurs in the equation, but it is not possible to solve
                      the equation for it." end SOLVABILITY_UNSOLVABLE;
 end Solvability;
 
 public
 uniontype IndexType
-  record ABSOLUTE "produce incidence matrix with absolute indexes" end ABSOLUTE;
-  record NORMAL "produce incidence matrix with positive/negative indexes" end NORMAL;
-  record SOLVABLE "procude incidence matrix with only solvable entries, for example {a,b,c}[d] then d is skipped" end SOLVABLE;
-  record BASECLOCK "produce incidence matrix for base-clock partitioning" end BASECLOCK;
-  record SPARSE "produce incidence matrix as normal, but add for Inputs also a value" end SPARSE;
+  record ABSOLUTE "incidence matrix with absolute indexes" end ABSOLUTE;
+  record NORMAL "incidence matrix with positive/negative indexes" end NORMAL;
+  record SOLVABLE "incidence matrix with only solvable entries, for example {a,b,c}[d] then d is skipped" end SOLVABLE;
+  record BASECLOCK "incidence matrix for base-clock partitioning" end BASECLOCK;
+  record SUBCLOCK "incidence matrix for sub-clock partitioning" end SUBCLOCK;
+  record SPARSE "incidence matrix as normal, but add for inputs also a value" end SPARSE;
 end IndexType;
 
 //
@@ -578,18 +590,18 @@ end IndexType;
 
 public
 uniontype JacobianType
-  record JAC_CONSTANT "If jacobian has only constant values, for system
+  record JAC_CONSTANT "If Jacobian has only constant values, for system
                of equations this means that it can be solved statically." end JAC_CONSTANT;
 
-  record JAC_TIME_VARYING "If jacobian has time varying parts, like parameters or
+  record JAC_TIME_VARYING "If Jacobian has time varying parts, like parameters or
                   algebraic variables" end JAC_TIME_VARYING;
 
-  record JAC_NONLINEAR "If jacobian contains variables that are solved for,
-              means that a nonlinear system of equations needs to be
+  record JAC_NONLINEAR "If Jacobian contains variables that are solved for,
+              means that a non-linear system of equations needs to be
               solved" end JAC_NONLINEAR;
-  record JAC_GENERIC "GENERIC_JACOBIAN jacobian available" end JAC_GENERIC;
+  record JAC_GENERIC "GENERIC_JACOBIAN Jacobian available" end JAC_GENERIC;
 
-  record JAC_NO_ANALYTIC "No analytic jacobian available" end JAC_NO_ANALYTIC;
+  record JAC_NO_ANALYTIC "No analytic Jacobian available" end JAC_NO_ANALYTIC;
 end JacobianType;
 
 public constant Integer SymbolicJacobianAIndex = 1;
@@ -636,7 +648,7 @@ type SparsePattern = tuple<list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRe
                                  list< .DAE.ComponentRef>>>;                          // diffed vars
 
 public
-type SparseColoring = list<list< .DAE.ComponentRef>>;   // coloring
+type SparseColoring = list<list< .DAE.ComponentRef>>;   // colouring
 
 
 public
@@ -658,21 +670,21 @@ public
 type DifferentiateInputArguments = tuple< .DAE.ComponentRef, DifferentiateInputData, DifferentiationType, .DAE.FunctionTree>;
 
 public
-uniontype DifferentiationType "Define the behavoir of differentiation method for (e.g. index reduction, ...)"
+uniontype DifferentiationType "Define the behaviour of differentiation method for (e.g. index reduction, ...)"
   record DIFFERENTIATION_TIME "Used for index reduction differentiation w.r.t. time (e.g. create dummy derivative variables)"
   end DIFFERENTIATION_TIME;
 
-  record SIMPLE_DIFFERENTIATION "Used to solve expression for a cref or by the older jacobian generation, differentiation w.r.t. a given cref"
+  record SIMPLE_DIFFERENTIATION "Used to solve expression for a cref or by the older Jacobian generation, differentiation w.r.t. a given cref"
   end SIMPLE_DIFFERENTIATION;
 
   record DIFFERENTIATION_FUNCTION "Used to differentiate a function call w.r.t. a given cref, which need to expand the input arguments
                                   by differentiate arguments."
   end DIFFERENTIATION_FUNCTION;
 
-  record DIFF_FULL_JACOBIAN "Used to generate a full jacobian matrix"
+  record DIFF_FULL_JACOBIAN "Used to generate a full Jacobian matrix"
   end DIFF_FULL_JACOBIAN;
 
-  record GENERIC_GRADIENT "Used to generate a generic gradient for generation the jacobian matrix while the runtime."
+  record GENERIC_GRADIENT "Used to generate a generic gradient for generation the Jacobian matrix while the runtime."
   end GENERIC_GRADIENT;
 end DifferentiationType;
 
