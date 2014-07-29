@@ -4696,9 +4696,17 @@ algorithm
     // if only sparsity pattern is generated
     case (((NONE(), (sparsepattern, (diffCompRefs, diffedCompRefs)), colsColors))::rest, SimCode.MODELINFO(vars=simvars), _, name::restnames)
       equation
-        (_, (_, seedVars)) = traveseSimVars(simvars, findSimVars, (diffCompRefs, {}));
+        
+        (_, (_, seedVars)) = traveseSimVars(simvars, findSimVarsCompare, (diffCompRefs, {}));
+        Debug.fcall(Flags.JAC_DUMP2, print, "diffCrefs: " +& ComponentReference.printComponentRefListStr(diffCompRefs) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++  seedVars +++---\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
 
-        (_, (_, indexVars)) = traveseSimVars(simvars, findSimVars, (diffedCompRefs, {}));
+        
+        (_, (_, indexVars)) = traveseSimVars(simvars, findSimVarsCompare, (diffedCompRefs, {}));
+        Debug.fcall(Flags.JAC_DUMP2, print, "diffedCrefs: " +& ComponentReference.printComponentRefListStr(diffedCompRefs) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++  indexVars +++---\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
 
         maxColor = listLength(colsColors);
         s = intString(listLength(diffedCompRefs));
@@ -4738,8 +4746,16 @@ algorithm
 
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
 
-        (_, (_, seedVars)) = traveseSimVars(simvars, findSimVars, (diffCompRefs, {}));
+        (_, (_, seedVars)) = traveseSimVars(simvars, findSimVarsCompare, (diffCompRefs, {}));
+        Debug.fcall(Flags.JAC_DUMP2, print, "diffCrefs: " +& ComponentReference.printComponentRefListStr(diffCompRefs) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++  seedVars +++---\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
+        
         (_, (_, indexVars)) = traveseSimVars(simvars, findSimVarsCompare, (diffedCompRefs, {}));
+        Debug.fcall(Flags.JAC_DUMP2, print, "diffedCrefs: " +& ComponentReference.printComponentRefListStr(diffedCompRefs) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++  indexVars +++---\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
+        
         maxColor = listLength(colsColors);
         s =  intString(listLength(diffedVars));
 
@@ -4756,25 +4772,6 @@ algorithm
         fail();
   end matchcontinue;
 end createSymbolicJacobianssSimCode;
-
-protected function findSimVars
-  input tuple<SimCode.SimVar, tuple<list<DAE.ComponentRef>, list<SimCode.SimVar>>> inTuple;
-  output tuple<SimCode.SimVar, tuple<list<DAE.ComponentRef>, list<SimCode.SimVar>>> outTuple;
-algorithm
-  outTuple := matchcontinue(inTuple)
-  local
-    DAE.ComponentRef cref;
-    list<DAE.ComponentRef> crefs;
-    list<SimCode.SimVar> simvars;
-    SimCode.SimVar var;
-  case((var as (SimCode.SIMVAR(name=cref)), (crefs, simvars)))
-    equation
-      true = listMember(cref, crefs);
-      true = List.notMember(var, simvars);
-    then ((var, (crefs, listAppend(simvars, {var}))));
-  case(_) then inTuple;
-  end matchcontinue;
-end findSimVars;
 
 protected function findSimVarsCompare
    input tuple<SimCode.SimVar, tuple<list<DAE.ComponentRef>, list<SimCode.SimVar>>> inTuple;
