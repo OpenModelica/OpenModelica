@@ -227,6 +227,9 @@ end simulationStateSelectionHeaderFile;
 
 
 
+
+
+
 template simulationWriteOutputHeaderFile(SimCode simCode)
  "Generates code for header file for simulation target."
 ::=
@@ -245,16 +248,18 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   >>
   else
   <<
-
-  typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0,<%numParamVars(modelInfo)%>> HistoryImplType;
-
+   #include "DataExchange/Policies/MatfileWriter.h"
+  typedef HistoryImpl<MatFileWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0,<%numParamVars(modelInfo)%>> HistoryImplType;
+  //typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0,<%numParamVars(modelInfo)%>> HistoryImplType;
   >>%>
   /*****************************************************************************
   *
   * Simulation code to write simulation file
   *
   *****************************************************************************/
-  class <%lastIdentOfPath(modelInfo.name)%>WriteOutput: virtual public  <%lastIdentOfPath(modelInfo.name)%>
+  
+	
+	class <%lastIdentOfPath(modelInfo.name)%>WriteOutput: virtual public  <%lastIdentOfPath(modelInfo.name)%>
   {
      public:
     <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);

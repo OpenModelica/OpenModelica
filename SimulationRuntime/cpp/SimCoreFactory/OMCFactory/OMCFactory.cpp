@@ -113,9 +113,9 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
           //cout << "results file: " << vm["results-file"].as<string>() << std::endl;
           outputFormat_str = vm["OutputFormat"].as<string>();
           outputFomat = outputFormatMap[outputFormat_str];
-          if((outputFomat!=CSV) && (outputFomat!=EMPTY))
+          if(!((outputFomat==CSV) || (outputFomat==EMPTY)||(outputFomat==MAT)))
           {
-            std::string eception_msg = "The output format is not supported yet. Please use outputFormat=\"csv\" or  outputFormat=\"empty\" in simulate command ";
+            std::string eception_msg = "The output format is not supported yet. Please use outputFormat=\"csv\" or  outputFormat=\"empty\" or  outputFormat=\"matlab\"in simulate command ";
             throw  std::invalid_argument(eception_msg.c_str());
           }
      }
