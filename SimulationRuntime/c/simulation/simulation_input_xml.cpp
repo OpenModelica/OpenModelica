@@ -748,6 +748,11 @@ inline void read_value(std::string s, int* res)
     *res = atoi(s.c_str());
 }
 
+std::string& ltrim(std::string& str) {
+    size_t i = 0;
+    while(i < str.size() && isspace(str[i])) { ++i; };
+    return str.erase(0, i);
+}
 
 void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override, const char* overrideFile)
 {
@@ -771,13 +776,25 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
       throwStreamPrint(NULL, "simulation_input_xml.cpp: could not open the file given to -overrideFile=%s", overrideFile);
     }
 
-    std::string line;
-    // get the first line
-    std::getline(infile, line);
-    std::string overrideLine(line);
-    // get the rest of the lines
-    while(std::getline(infile, line)) {
-      overrideLine += "," + line;
+    std::string line, tline;
+    std::string overrideLine;
+    // get the lines
+    while(std::getline(infile, line)) 
+    {
+      tline = ltrim(line);
+      // if is comment //, ignore line 
+      if (tline.size() > 2 && tline[0] == '/' && tline[1] == '/')
+        continue;
+      
+      if (overrideLine.empty())
+      {
+        overrideLine += line;
+      }
+      else
+      {
+        overrideLine += "," + line;
+      }
+    
     }
 
     overrideStr = strdup(overrideLine.c_str());
