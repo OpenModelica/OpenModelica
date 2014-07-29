@@ -779,13 +779,13 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
     std::string line, tline;
     std::string overrideLine;
     // get the lines
-    while(std::getline(infile, line)) 
+    while(std::getline(infile, line))
     {
       tline = ltrim(line);
-      // if is comment //, ignore line 
+      // if is comment //, ignore line
       if (tline.size() > 2 && tline[0] == '/' && tline[1] == '/')
         continue;
-      
+
       if (overrideLine.empty())
       {
         overrideLine += line;
@@ -794,7 +794,7 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
       {
         overrideLine += "," + line;
       }
-    
+
     }
 
     overrideStr = strdup(overrideLine.c_str());
