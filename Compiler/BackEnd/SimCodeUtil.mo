@@ -4696,13 +4696,13 @@ algorithm
     // if only sparsity pattern is generated
     case (((NONE(), (sparsepattern, (diffCompRefs, diffedCompRefs)), colsColors))::rest, SimCode.MODELINFO(vars=simvars), _, name::restnames)
       equation
-        
+
         (_, (_, seedVars)) = traveseSimVars(simvars, findSimVarsCompare, (diffCompRefs, {}));
         Debug.fcall(Flags.JAC_DUMP2, print, "diffCrefs: " +& ComponentReference.printComponentRefListStr(diffCompRefs) +& "\n");
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++  seedVars +++---\n");
         Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
 
-        
+
         (_, (_, indexVars)) = traveseSimVars(simvars, findSimVarsCompare, (diffedCompRefs, {}));
         Debug.fcall(Flags.JAC_DUMP2, print, "diffedCrefs: " +& ComponentReference.printComponentRefListStr(diffedCompRefs) +& "\n");
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++  indexVars +++---\n");
@@ -4750,12 +4750,12 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP2, print, "diffCrefs: " +& ComponentReference.printComponentRefListStr(diffCompRefs) +& "\n");
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++  seedVars +++---\n");
         Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
-        
+
         (_, (_, indexVars)) = traveseSimVars(simvars, findSimVarsCompare, (diffedCompRefs, {}));
         Debug.fcall(Flags.JAC_DUMP2, print, "diffedCrefs: " +& ComponentReference.printComponentRefListStr(diffedCompRefs) +& "\n");
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++  indexVars +++---\n");
         Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
-        
+
         maxColor = listLength(colsColors);
         s =  intString(listLength(diffedVars));
 

@@ -2208,27 +2208,27 @@ algorithm
       DAE.Dimensions dims;
       list<Integer> ds;
       Boolean b1, b2;
-      
+
     // complex types to complex equations
     case (_, _, _, _, _) equation
       true = DAEUtil.expTypeComplex(ty);
       size = Expression.sizeOf(ty);
     then BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source, inEqAttr);
-    
+
     // array types to array equations
     case (_, _, _, _, _) equation
       true = DAEUtil.expTypeArray(ty);
       dims = Expression.arrayDimension(ty);
       ds = Expression.dimensionsSizes(dims);
     then BackendDAE.ARRAY_EQUATION(ds, lhs, rhs, source, inEqAttr);
-      
+
     // other types
     case (_, _, _, _, _) equation
       b1 = DAEUtil.expTypeComplex(ty);
       b2 = DAEUtil.expTypeArray(ty);
       false = b1 or b2;
     then BackendDAE.EQUATION(lhs, rhs, source, inEqAttr);
-      
+
     else equation
       // show only on failtrace!
       true = Flags.isSet(Flags.FAILTRACE);
