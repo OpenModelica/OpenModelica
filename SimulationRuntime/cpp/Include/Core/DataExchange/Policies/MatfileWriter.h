@@ -32,6 +32,19 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
   }
   ~MatFileWriter()
   {
+		// free memory and initialize pointer
+		delete [] doubleMatrixData1;
+		delete [] doubleMatrixData2;
+		delete [] stringMatrix;
+		delete [] pacString;
+		delete [] intMatrix;
+		
+		doubleMatrixData1 = NULL;
+		doubleMatrixData2 = NULL;
+		stringMatrix      = NULL;
+		pacString         = NULL;
+		intMatrix         = NULL;
+		
     if(_output_stream.is_open())
      _output_stream.close();
   }
@@ -183,7 +196,7 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     if(strcmp(name, "data_2") == 0)
     {
       _output_stream.write((const char*)matrixData, (size)*rows*1);
-      dataDummy = _output_stream.tellp(); // workaround: because with gcc compiled, sporadicaly the last simulation data is not written to file
+      //dataDummy = _output_stream.tellp(); // workaround: because with gcc compiled, sporadicaly the last simulation data is not written to file
     }
     else // standard write routine
     {
@@ -231,10 +244,15 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     writeMatVer4Matrix("Aclass", 4, 11, Aclass, sizeof(char));
 
     // initialize help variables
-    uiValueCount = 0;
-    dataHdrPos = 0;
-    dataEofPos = 0;
-  }
+    uiValueCount      = 0;
+    dataHdrPos        = 0;
+    dataEofPos        = 0;
+		doubleMatrixData1 = NULL;
+		doubleMatrixData2 = NULL;
+		stringMatrix      = NULL;
+		pacString         = NULL;
+		intMatrix         = NULL;
+	}
 
   /*=={function}===================================================================================*/
   /*!
@@ -262,13 +280,12 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
   void write(const value_type_p& v_list,double start_time,double end_time)
   {
     unsigned int uiParCount = v_list.size() + 1;  // all variables + time
-    double *doubleMatrix = NULL;
-    double *doubleHelpMatrix = NULL;
+		double *doubleHelpMatrix = NULL;
 
     // get memory and reset to zero
-    doubleMatrix = new double[2*uiParCount];
-    memset(doubleMatrix, 0, sizeof(double)*2*uiParCount);
-    doubleHelpMatrix = doubleMatrix;
+    doubleMatrixData1 = new double[2*uiParCount];
+    memset(doubleMatrixData1, 0, sizeof(double)*2*uiParCount);
+    doubleHelpMatrix = doubleMatrixData1;
 
     // first we have to put in start and stop time...
     *doubleHelpMatrix = start_time;
@@ -284,11 +301,9 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     }
 
     // if matrix is complete, write to file!
-    writeMatVer4Matrix("data_1", uiParCount, 2, doubleMatrix, sizeof(double));
+    writeMatVer4Matrix("data_1", uiParCount, 2, doubleMatrixData1, sizeof(double));
 
-    // free memory and initialize pointer
-    delete [] doubleMatrix;
-    doubleMatrix      = NULL;
+    // initialize pointer
     doubleHelpMatrix = NULL;
 
     // remember file position. it's the position of the "data_2" header
@@ -331,12 +346,9 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     unsigned int uiVarCount = s_list.size() + s_parameter_list.size() + 1;  // all variables, all parameters + time
     unsigned int uiIndex = 2;
     int iCols = 0;
-    char *stringMatrix = NULL;
     char *stringHelpMatrix = NULL;
-    int *intMatrix = NULL;
-    int *intHelpMatrix = NULL;
-    char *pacString = NULL;
-    char *pacHelpString = NULL;
+    int  *intHelpMatrix    = NULL;
+    char *pacHelpString    = NULL;
 
     // get longest string of the variable names
     for(std::vector<std::string>::const_iterator it = s_list.begin(); it != s_list.end(); ++it)
@@ -433,12 +445,8 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     // write matrix to file
     writeMatVer4Matrix("description", (int)uilongestDesc, (int)uiVarCount, stringMatrix, sizeof(char));
 
-    // free memory and initialize pointer
-    delete [] stringMatrix;
-    delete [] pacString;
-    stringMatrix     = NULL;
+    // initialize pointer
     stringHelpMatrix = NULL;
-    pacString         = NULL;
     pacHelpString    = NULL;
 
     // get memory and reset to zero
@@ -512,9 +520,7 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     // write matrix to file
     writeMatVer4Matrix("dataInfo", 4, uiVarCount, intMatrix, sizeof(int));
 
-    // free memory and initialize pointer
-    delete [] intMatrix;
-    intMatrix     = NULL;
+    // initialize pointer
     intHelpMatrix = NULL;
   }
 
@@ -544,15 +550,15 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
   void write(const value_type_v& v_list,const value_type_dv& v2_list,double time)
   {
     unsigned int uiVarCount = v_list.size() + v2_list.size() + 1;  // alle Variablen, alle abgeleiteten Variablen und die Zeit
-    double *doubleMatrix = NULL;
+    double *doubleMatrixData2 = NULL;
     double *doubleHelpMatrix = NULL;
 
     uiValueCount++;
 
     // get memory and reset to zero
-    doubleMatrix = new double[uiVarCount];
-    memset(doubleMatrix, 0, sizeof(double)*uiVarCount);
-    doubleHelpMatrix = doubleMatrix;
+    doubleMatrixData2 = new double[uiVarCount];
+    memset(doubleMatrixData2, 0, sizeof(double)*uiVarCount);
+    doubleHelpMatrix = doubleMatrixData2;
 
     // first time ist written to "data_2" matrix...
     *doubleHelpMatrix = time;
@@ -573,11 +579,10 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     }
 
     // write matrix to file
-    writeMatVer4Matrix("data_2", uiVarCount, uiValueCount, doubleMatrix, sizeof(double));
+    writeMatVer4Matrix("data_2", uiVarCount, uiValueCount, doubleMatrixData2, sizeof(double));
 
-    // free memory and initialize pointer
-    delete [] doubleMatrix;
-    doubleMatrix = NULL;
+    // initialize pointer
+    doubleMatrixData2 = NULL;
   }
 
   /*=================================================================================*/
@@ -631,9 +636,13 @@ protected:
   std::ofstream _output_stream;
   std::ofstream::pos_type dataHdrPos;
   std::ofstream::pos_type dataEofPos;
-  std::ofstream::pos_type dataDummy;
   unsigned int _curser_position;
   unsigned int  uiValueCount;
   std::string _output_path;
   std::string _file_name;
+	double *doubleMatrixData1;
+	double *doubleMatrixData2;
+	char *stringMatrix;
+	char *pacString;
+	int *intMatrix;
 };
