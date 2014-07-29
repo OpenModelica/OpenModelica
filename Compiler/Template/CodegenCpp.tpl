@@ -257,9 +257,9 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   * Simulation code to write simulation file
   *
   *****************************************************************************/
-  
-	
-	class <%lastIdentOfPath(modelInfo.name)%>WriteOutput: virtual public  <%lastIdentOfPath(modelInfo.name)%>
+
+
+  class <%lastIdentOfPath(modelInfo.name)%>WriteOutput: virtual public  <%lastIdentOfPath(modelInfo.name)%>
   {
      public:
     <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
