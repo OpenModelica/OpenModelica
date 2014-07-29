@@ -325,6 +325,7 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
   /*========================================================================================{end}==*/
   void write(const std::vector<std::string>& s_list,const std::vector<std::string>& s_desc_list,const std::vector<std::string>& s_parameter_list,const std::vector<std::string>& s_desc_parameter_list)
   {
+		unsigned int uilongest     = 12;	// help variable for temp buffer size
     unsigned int uilongestName = 5;    // because of "Time"
     unsigned int uilongestDesc = 12;  // because of "Time in [s]"
     unsigned int uiVarCount = s_list.size() + s_parameter_list.size() + 1;  // all variables, all parameters + time
@@ -365,13 +366,16 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
         uilongestDesc = it->size();
     }
 
-    // get memory and reset to zero
-    stringMatrix = new char[uiVarCount*uilongestName];
-    memset(stringMatrix, 0, sizeof(char)*uiVarCount*uilongestName);
-    stringHelpMatrix = stringMatrix;
-    pacString = new char[uilongestName+1];
-    memset(pacString, 0, sizeof(char)*(uilongestName+1));
-    pacHelpString = pacString;
+    // get longest string. is needed for temp buffer
+		uilongest = max(uilongestName, uilongestDesc);
+		
+		// get memory and reset to zero
+		stringMatrix = new char[uiVarCount*uilongest];
+		memset(stringMatrix, 0, sizeof(char)*uiVarCount*uilongest);
+		stringHelpMatrix = stringMatrix;
+		pacString = new char[uilongest+1];
+		memset(pacString, 0, sizeof(char)*(uilongest+1));
+		pacHelpString = pacString;
 
     // first time ist written to "name" matrix...
     strncpy(stringHelpMatrix, "time", uilongestName);
@@ -398,17 +402,11 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     // write matrix to file
     writeMatVer4Matrix("name", (int)uilongestName, (int)uiVarCount, stringMatrix, sizeof(char));
 
-    // free memory
-    delete [] stringMatrix;
-    delete [] pacString;
-
-    // get memory and reset to zero
-    stringMatrix = new char[uiVarCount*uilongestDesc];
-    memset(stringMatrix, 0, sizeof(char)*uiVarCount*uilongestDesc);
-    stringHelpMatrix = stringMatrix;
-    pacString = new char[uilongestDesc+1];
-    memset(pacString, 0, sizeof(char)*(uilongestDesc+1));
-    pacHelpString = pacString;
+    // initialize pointer and reset to zero
+		memset(stringMatrix, 0, sizeof(char)*uiVarCount*uilongest);
+		stringHelpMatrix = stringMatrix;
+		memset(pacString, 0, sizeof(char)*(uilongest+1));
+		pacHelpString = pacString;
 
     // first description of time ist written to "name" matrix...
     strncpy(stringHelpMatrix, "Time in [s]", uilongestDesc);
