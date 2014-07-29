@@ -332,7 +332,7 @@ algorithm
       crintLst = BaseHashTable.hashTableList(leftCrs);
       crefLst = List.fold(crintLst, selectSecondZero, {});
       (eqns, vars) = generateInactiveWhenEquationForInitialization(crefLst, source, eqns, vars);
-      eqns = List.consOnTrue(List.isNotEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source, crefExpand, BackendDAE.EQ_ATTR_DEFAULT_INITIAL()), eqns);
+      eqns = List.consOnTrue(List.isNotEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source, crefExpand, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
     then ((eqn, (vars, eqns)));
 
     case ((eqn, (vars, eqns)))
