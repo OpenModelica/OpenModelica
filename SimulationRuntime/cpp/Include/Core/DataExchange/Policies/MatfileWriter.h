@@ -32,19 +32,19 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
   }
   ~MatFileWriter()
   {
-		// free memory and initialize pointer
-		delete [] doubleMatrixData1;
-		delete [] doubleMatrixData2;
-		delete [] stringMatrix;
-		delete [] pacString;
-		delete [] intMatrix;
-		
-		doubleMatrixData1 = NULL;
-		doubleMatrixData2 = NULL;
-		stringMatrix      = NULL;
-		pacString         = NULL;
-		intMatrix         = NULL;
-		
+    // free memory and initialize pointer
+    delete [] doubleMatrixData1;
+    delete [] doubleMatrixData2;
+    delete [] stringMatrix;
+    delete [] pacString;
+    delete [] intMatrix;
+
+    doubleMatrixData1 = NULL;
+    doubleMatrixData2 = NULL;
+    stringMatrix      = NULL;
+    pacString         = NULL;
+    intMatrix         = NULL;
+
     if(_output_stream.is_open())
      _output_stream.close();
   }
@@ -247,12 +247,12 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     uiValueCount      = 0;
     dataHdrPos        = 0;
     dataEofPos        = 0;
-		doubleMatrixData1 = NULL;
-		doubleMatrixData2 = NULL;
-		stringMatrix      = NULL;
-		pacString         = NULL;
-		intMatrix         = NULL;
-	}
+    doubleMatrixData1 = NULL;
+    doubleMatrixData2 = NULL;
+    stringMatrix      = NULL;
+    pacString         = NULL;
+    intMatrix         = NULL;
+  }
 
   /*=={function}===================================================================================*/
   /*!
@@ -280,7 +280,7 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
   void write(const value_type_p& v_list,double start_time,double end_time)
   {
     unsigned int uiParCount = v_list.size() + 1;  // all variables + time
-		double *doubleHelpMatrix = NULL;
+    double *doubleHelpMatrix = NULL;
 
     // get memory and reset to zero
     doubleMatrixData1 = new double[2*uiParCount];
@@ -640,9 +640,9 @@ protected:
   unsigned int  uiValueCount;
   std::string _output_path;
   std::string _file_name;
-	double *doubleMatrixData1;
-	double *doubleMatrixData2;
-	char *stringMatrix;
-	char *pacString;
-	int *intMatrix;
+  double *doubleMatrixData1;
+  double *doubleMatrixData2;
+  char *stringMatrix;
+  char *pacString;
+  int *intMatrix;
 };
