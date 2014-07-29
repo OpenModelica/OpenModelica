@@ -1397,7 +1397,7 @@ algorithm
         (beqns,breqns,bieqns) = lowerEqns(elseenqs,functionTree,{},{},{});
         beqns = List.flatten({beqns,breqns,bieqns});
       then
-        BackendDAE.IF_EQUATION(explst, beqnslst, beqns, inSource, BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.UNKNOWN_EQUATION_KIND(), BackendDAE.UNKNOWN_SUB_PARTITION()))::inEquations;
+        BackendDAE.IF_EQUATION(explst, beqnslst, beqns, inSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)::inEquations;
 
     // all other cases
     case(e::explst, eqns::eqnslst, _, _, _, _, _, _)
@@ -1443,7 +1443,7 @@ algorithm
         (beqns,breqns,bieqns) = lowerEqns(theneqn,functionTree,{},{},{});
         beqns = List.flatten({beqns,breqns,bieqns});
       then
-        BackendDAE.IF_EQUATION(explst, beqnslst, beqns, source, BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.UNKNOWN_EQUATION_KIND(), BackendDAE.UNKNOWN_SUB_PARTITION()))::inEqns;
+        BackendDAE.IF_EQUATION(explst, beqnslst, beqns, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)::inEqns;
 
     // if false skip it
     case(DAE.BCONST(false), _, _, _, _, _, _, _, _, _)

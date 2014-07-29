@@ -870,7 +870,7 @@ algorithm
    * adrpo: after a bit of talk with Francesco Casella & Peter Aronsson we will add der($dummy) = 0;
    */
   exp := Expression.crefExp(cr);
-  eqn := BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{exp},DAE.callAttrBuiltinReal),DAE.RCONST(0.0), DAE.emptyElementSource, BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.UNKNOWN_EQUATION_KIND(), BackendDAE.UNKNOWN_SUB_PARTITION()));
+  eqn := BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{exp},DAE.callAttrBuiltinReal),DAE.RCONST(0.0), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
   eqns := BackendEquation.listEquation({eqn});
   // generate equationsystem
   ass := listArray({1});
@@ -6628,7 +6628,7 @@ algorithm
       then
         iAcc;
     else
-      (eqn_indx,vindx,BackendDAE.RESIDUAL_EQUATION(inExp,source,BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.UNKNOWN_EQUATION_KIND(), BackendDAE.UNKNOWN_SUB_PARTITION())))::iAcc;
+      (eqn_indx,vindx,BackendDAE.RESIDUAL_EQUATION(inExp,source,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN))::iAcc;
   end matchcontinue;
 end calculateJacobianRow3;
 

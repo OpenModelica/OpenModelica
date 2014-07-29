@@ -2282,27 +2282,27 @@ algorithm
       lhs = ComponentReference.makeCrefIdent("$TMP_ineq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
       dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       (rhs, _) = ExpressionSimplify.simplify(DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2));
-    then ({BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,BackendDAE.EQUATION_ATTRIBUTES(false,BackendDAE.UNKNOWN_EQUATION_KIND(),BackendDAE.UNKNOWN_SUB_PARTITION()))},dummyVar);
+    then ({BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)},dummyVar);
     case (_,DAE.RELATION(e1,DAE.LESSEQ(_),e2, _, _), _) equation
       lhs = ComponentReference.makeCrefIdent("$TMP_ineq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
       dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       (rhs, _) = ExpressionSimplify.simplify(DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2));
-      then ({BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,BackendDAE.EQUATION_ATTRIBUTES(false,BackendDAE.UNKNOWN_EQUATION_KIND(),BackendDAE.UNKNOWN_SUB_PARTITION()))},dummyVar);
+      then ({BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)},dummyVar);
     case (_,DAE.RELATION(e1,DAE.GREATER(_),e2, _, _), _) equation
       lhs = ComponentReference.makeCrefIdent("$TMP_ineq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
       dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       (rhs, _) = ExpressionSimplify.simplify(DAE.BINARY(e2,DAE.SUB(DAE.T_REAL_DEFAULT),e1));
-      then ({BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,BackendDAE.EQUATION_ATTRIBUTES(false,BackendDAE.UNKNOWN_EQUATION_KIND(),BackendDAE.UNKNOWN_SUB_PARTITION()))},dummyVar);
+      then ({BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)},dummyVar);
     case (_,DAE.RELATION(e1,DAE.GREATEREQ(_),e2, _, _), _) equation
       lhs = ComponentReference.makeCrefIdent("$TMP_ineq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
       dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       (rhs, _) = ExpressionSimplify.simplify(DAE.BINARY(e2,DAE.SUB(DAE.T_REAL_DEFAULT),e1));
-      then ({BackendDAE.SOLVED_EQUATION(lhs, rhs,Source,BackendDAE.EQUATION_ATTRIBUTES(false,BackendDAE.UNKNOWN_EQUATION_KIND(),BackendDAE.UNKNOWN_SUB_PARTITION()))},dummyVar);
+      then ({BackendDAE.SOLVED_EQUATION(lhs, rhs,Source,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)},dummyVar);
     case (_,DAE.RELATION(e1,DAE.EQUAL(_),e2, _, _), _) equation
       lhs = ComponentReference.makeCrefIdent("$TMP_eq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
       dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       (rhs, _) = ExpressionSimplify.simplify(DAE.BINARY(e2,DAE.SUB(DAE.T_REAL_DEFAULT),e1));
-      then ({BackendDAE.SOLVED_EQUATION(lhs, rhs,Source,BackendDAE.EQUATION_ATTRIBUTES(false,BackendDAE.UNKNOWN_EQUATION_KIND(),BackendDAE.UNKNOWN_SUB_PARTITION()))},dummyVar);
+      then ({BackendDAE.SOLVED_EQUATION(lhs, rhs,Source,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)},dummyVar);
   end match;
 end generateResidualfromRealtion;
 

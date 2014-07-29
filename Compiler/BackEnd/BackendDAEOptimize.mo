@@ -1858,7 +1858,7 @@ algorithm
       equation
         e = Expression.makeCrefExp(cref, tp);
         e = Expression.expDer(e);
-        eqns = BackendEquation.equationAdd(BackendDAE.EQUATION(e, DAE.RCONST(r), DAE.emptyElementSource, BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.UNKNOWN_EQUATION_KIND(), BackendDAE.UNKNOWN_SUB_PARTITION())), eqns);
+        eqns = BackendEquation.equationAdd(BackendDAE.EQUATION(e, DAE.RCONST(r), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), eqns);
         (vars2,eqns,shared) = changeConstantLinearSystemVars(varlst,rlst,slst,vindxs,vars,eqns,ishared);
       then (vars2,eqns,shared);
     case (v::varlst,r::rlst,_::slst,indx::vindxs,vars,eqns,_)
