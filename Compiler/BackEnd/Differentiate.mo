@@ -1480,7 +1480,7 @@ algorithm
 
     // differentiate builtin calls with N arguments with match
     // der(arctan2(y,0)) = der(sign(y)*pi/2) = 0
-    case (DAE.CALL(path=Absyn.IDENT("atan"),attr=DAE.CALL_ATTR(builtin=true),expLst={e1,_}), _, _, _, _)
+    case (DAE.CALL(path=Absyn.IDENT("atan2"),attr=DAE.CALL_ATTR(builtin=true),expLst={e1,_}), _, _, _, _)
       equation
         true = Expression.isZero(e1);
         (res,_) = Expression.makeZeroExpression({});
