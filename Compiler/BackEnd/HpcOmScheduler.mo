@@ -2292,17 +2292,17 @@ algorithm
 
         print("simCode 12\n");
         SimCodeUtil.dumpSimCode(simCode);
-        
+
         //assign new simEqSysIndexes
         newIdxAss = arrayCreate(SimCodeUtil.getMaxSimEqSystemIndex(simCode),-1);
         print("MAX IDX "+&intString(SimCodeUtil.getMaxSimEqSystemIndex(simCode))+&"\n");
         (simCode,newIdxAss) = TDS_assignNewSimEqSysIdxs(simCode,newIdxAss);
-        
+
         // insert Locks
         taskGraphT = BackendDAEUtil.transposeMatrix(taskGraph,arrayLength(taskGraph));
         schedule = insertLocksInSchedule(schedule,taskGraph,taskGraphT,taskAss,procAss);
         schedule = TDS_replaceSimEqSysIdxsInSchedule(schedule,newIdxAss);
-        
+
         //dumping stuff-------------------------
         print("simCode 2\n");
         SimCodeUtil.dumpSimCode(simCode);
@@ -2433,7 +2433,7 @@ algorithm
   SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy,
     initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, removedEquations,
     algorithmAndEquationAsserts,equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses, discreteModelVars, extObjInfo,
-    makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping):=simCodeIn; 
+    makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping):=simCodeIn;
   SimCode.MODELINFO(name=name,description=description,directory=directory,varInfo=varInfo,vars=vars,functions=functions,labels=labels) := modelInfo;
   SimCode.VARINFO(numZeroCrossings=numZeroCrossings, numTimeEvents=numTimeEvents, numRelations=numRelations, numMathEventFunctions=numMathEventFunctions, numStateVars=numStateVars,
     numAlgVars=numAlgVars, numDiscreteReal=numDiscreteReal, numIntAlgVars=numIntAlgVars, numBoolAlgVars=numBoolAlgVars, numAlgAliasVars=numAlgAliasVars, numIntAliasVars=numIntAliasVars,
@@ -2441,26 +2441,26 @@ algorithm
     numInitialEquations=numInitialEquations, numInitialAlgorithms=numInitialAlgorithms, numInitialResiduals=numInitialResiduals, numExternalObjects=numExternalObjects,
     numStringAlgVars=numStringAlgVars, numStringParamVars=numStringParamVars, numStringAliasVars=numStringAliasVars, numEquations=numEquations, numLinearSystems=numLinearSystems,
     numNonLinearSystems=numNonLinearSystems, numMixedSystems=numMixedSystems, numStateSets=numStateSets, numJacobians=numJacobians, numOptimizeConstraints=numOptimizeConstraints) := varInfo;
-  
+
   (initialEquations,(idx,ass)) := List.mapFold(initialEquations,TDS_replaceSimEqSysIndexWithUpdate,(1,idxAssIn));
   (allEquations,(idx,ass)) := List.mapFold(allEquations,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass));
   (parameterEquations,(idx,ass)) := List.mapFold(parameterEquations,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass));
-   
-  print("ass out "+&stringDelimitList(List.map(arrayList(ass),intString),"\n")+&"\n"); 
+
+  print("ass out "+&stringDelimitList(List.map(arrayList(ass),intString),"\n")+&"\n");
 
   odeEquations := List.mapList1_1(odeEquations,TDS_replaceSimEqSysIndex,ass);
   algebraicEquations := List.mapList1_1(algebraicEquations,TDS_replaceSimEqSysIndex,ass);
-  
+
   jacObts := List.map(jacobianMatrixes,Util.makeOption);
   jacObts := List.map1(jacObts,TDS_replaceSimEqSysIdxInJacobianMatrix,ass);
   jacobianMatrixes := List.map(jacObts,Util.getOption);
-  
+
   print("numEqs2 "+&intString(idx)+&"\n");
   numEquations := idx;
-    
+
   varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams, numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars, numStringParamVars,
     numStringAliasVars, numEquations, numLinearSystems, numNonLinearSystems, numMixedSystems, numStateSets, numJacobians, numOptimizeConstraints);
-  modelInfo := SimCode.MODELINFO(name,description,directory,varInfo,vars,functions,labels); 
+  modelInfo := SimCode.MODELINFO(name,description,directory,varInfo,vars,functions,labels);
   simCodeOut := SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
     parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
     discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping);
@@ -2493,7 +2493,7 @@ algorithm
         newIdx = arrayGet(assIn,oldIdx);
         jacobianMatrix = TDS_replaceSimEqSysIdxInJacobianMatrix(jacobianMatrix,assIn);
         simEqSys = SimCode.SES_NONLINEAR(newIdx,eqs,crefs,indexNonLinearSystem,jacobianMatrix,linearTearing);
-   then simEqSys; 
+   then simEqSys;
     case(SimCode.SES_LINEAR(partOfMixed=partOfMixed,vars=vars,beqs=beqs,simJac=simJac,residual=eqs,jacobianMatrix=jacobianMatrix,sources=sources,indexLinearSystem=indexLinearSystem),ass)
       equation
         eqs = List.map1(eqs,TDS_replaceSimEqSysIndex,ass);
@@ -2501,14 +2501,14 @@ algorithm
         newIdx = arrayGet(ass,oldIdx);
         jacobianMatrix = TDS_replaceSimEqSysIdxInJacobianMatrix(jacobianMatrix,ass);
         simEqSys = SimCode.SES_LINEAR(newIdx,partOfMixed,vars,beqs,simJac,eqs,jacobianMatrix,sources,indexLinearSystem);
-   then simEqSys; 
+   then simEqSys;
     case(_,ass)
       equation
         oldIdx = SimCodeUtil.eqIndex(simEqIn);
         newIdx = arrayGet(ass,oldIdx);
         simEqSys = SimCodeUtil.replaceSimEqSysIndex(simEqIn,newIdx);
    then simEqSys;
-  end matchcontinue;   
+  end matchcontinue;
 end TDS_replaceSimEqSysIndex;
 
 protected function TDS_replaceSimEqSysIndexWithUpdate"replaces the index with the new index and updates the assignment in a simEqSystem
@@ -2538,7 +2538,7 @@ algorithm
         (jacobianMatrix,(newIdx,ass)) = TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate(jacobianMatrix,(newIdx,ass));
         ass = arrayUpdate(ass,oldIdx,newIdx);
         simEqSys = SimCode.SES_NONLINEAR(newIdx,eqs,crefs,indexNonLinearSystem,jacobianMatrix,linearTearing);
-   then (simEqSys,(newIdx+1,ass)); 
+   then (simEqSys,(newIdx+1,ass));
     case(SimCode.SES_LINEAR(partOfMixed=partOfMixed,vars=vars,beqs=beqs,simJac=simJac,residual=eqs,jacobianMatrix=jacobianMatrix,sources=sources,indexLinearSystem=indexLinearSystem),(newIdx,ass))
       equation
         (eqs,(newIdx,ass)) = List.mapFold(eqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
@@ -2547,14 +2547,14 @@ algorithm
         (jacobianMatrix,(newIdx,ass)) = TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate(jacobianMatrix,(newIdx,ass));
         ass = arrayUpdate(ass,oldIdx,newIdx);
         simEqSys = SimCode.SES_LINEAR(newIdx,partOfMixed,vars,beqs,simJac,eqs,jacobianMatrix,sources,indexLinearSystem);
-   then (simEqSys,(newIdx+1,ass)); 
+   then (simEqSys,(newIdx+1,ass));
     case(_,(newIdx,ass))
       equation
         oldIdx = SimCodeUtil.eqIndex(simEqIn);
         ass = arrayUpdate(ass,oldIdx,newIdx);
         simEqSys = SimCodeUtil.replaceSimEqSysIndex(simEqIn,newIdx);
    then (simEqSys,(newIdx+1,ass));
-  end matchcontinue;   
+  end matchcontinue;
 end TDS_replaceSimEqSysIndexWithUpdate;
 
 protected function TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate"replaces the index with the new index and updates the assignment one in a jacobian matrix.
@@ -2580,7 +2580,7 @@ algorithm
    then (SOME((jacCols,vars,name,sparsePatt,colCols,maxCol,jacIdx)),(newIdx,ass));
    else
      then(jacIn,tplIn);
-  end matchcontinue;   
+  end matchcontinue;
 end TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate;
 
 protected function TDS_replaceSimEqSysIdxInJacobianColumnWithUpdate"replaces the index with the new index and updates the assignment one in a jacobian column.
@@ -2603,7 +2603,7 @@ algorithm
    then((simEqs,simVars,colLen),(newIdx,ass));
    else
      then(jacIn,tplIn);
-  end matchcontinue;   
+  end matchcontinue;
 end TDS_replaceSimEqSysIdxInJacobianColumnWithUpdate;
 
 protected function TDS_replaceSimEqSysIdxInJacobianMatrix"replaces the index with the assigned one in a jacobian matrix.
@@ -2630,7 +2630,7 @@ algorithm
    then SOME((jacCols,vars,name,sparsePatt,colCols,maxCol,jacIdx));
    else
      then jacIn;
-  end matchcontinue;   
+  end matchcontinue;
 end TDS_replaceSimEqSysIdxInJacobianMatrix;
 
 protected function TDS_replaceSimEqSysIdxInJacobianColumn"replaces the index with the assigned one in a jacobian column.
@@ -2652,7 +2652,7 @@ algorithm
    then ((simEqs,simVars,colLen));
    else
      then jacIn;
-  end matchcontinue;   
+  end matchcontinue;
 end TDS_replaceSimEqSysIdxInJacobianColumn;
 
 protected function TDS_updateModelInfo"updated information in the SimCode.ModelInfo e.g.the number of variables,numLS, numNLS,"
