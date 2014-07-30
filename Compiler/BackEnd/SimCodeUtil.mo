@@ -7551,19 +7551,22 @@ algorithm
     case(SimCode.SES_ALGORITHM(index=idx,statements=stmts))
       equation
         sLst = List.map(stmts,DAEDump.ppStatementStr);
-        sLst = List.map1(sLst, stringAppend, "\n");
+        sLst = List.map1(sLst, stringAppend, "\t");
         s = intString(idx) +&": "+& List.fold(sLst,stringAppend,"");
     then (s);
 
-    case(SimCode.SES_LINEAR(index=idx,partOfMixed=_,indexLinearSystem=idxLS,beqs = beqs, residual=residual))
+    case(SimCode.SES_LINEAR(index=idx,partOfMixed=_,indexLinearSystem=idxLS,beqs = beqs, residual=residual, jacobianMatrix=jac, simJac=simJac))
       equation
-        s = intString(idx) +&": "+& " (LINEAR) index:"+&intString(idxLS)+&"\n";
-        s = s+&"\t"+&stringDelimitList(List.map(residual,dumpSimEqSystem),"\n\t");
+        s = intString(idx) +&": "+& " (LINEAR) index:"+&intString(idxLS)+&" jacobian: "+&boolString(Util.isSome(jac))+&"\n";
+        s = s+&"\t"+&stringDelimitList(List.map(residual,dumpSimEqSystem),"\n\t")+&"\n";
+        eqs = List.map(simJac,Util.tuple33);
+        s = s+&"\tsimJac:\n"+&stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n");
+        s = s+&dumpJacobianMatrix(jac)+&"\n";
     then (s);
 
-    case(SimCode.SES_NONLINEAR(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=_,linearTearing=_,eqs=eqs, crefs=crefs))
+    case(SimCode.SES_NONLINEAR(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,linearTearing=_,eqs=eqs, crefs=crefs))
       equation
-        s = intString(idx) +&": "+& " (NONLINEAR) index:"+&intString(idxNLS)+&"\n";
+        s = intString(idx) +&": "+& " (NONLINEAR) index:"+&intString(idxNLS)+&" jacobian: "+&boolString(Util.isSome(jac))+&"\n";
         s = s +&"\t\tcrefs: "+&stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr)," , ")+&"\n";
         s = s +& "\t"+&stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n\t");
     then (s);
@@ -7580,17 +7583,44 @@ algorithm
   end match;
 end dumpSimEqSystem;
 
+protected function dumpJacobianMatrix
+  input Option<SimCode.JacobianMatrix> jacOpt;
+  output String sOut;
+algorithm
+  sOut := match(jacOpt)
+    local
+      Integer idx;
+      String s;
+      SimCode.JacobianMatrix jac;
+      list<SimCode.JacobianColumn> cols;
+      list<SimCode.SimEqSystem> colEqs;
+    case(SOME(jac))
+      equation
+        (cols,_,_,_,_,_,idx) = jac;
+        colEqs = List.flatten(List.map(cols,Util.tuple31));
+        s = stringDelimitList(List.map(colEqs,dumpSimEqSystem),"\n\t\t");
+        s = "jacobian idx: "+&intString(idx)+&"\n\t"+&s;
+      then s;
+    case(NONE())
+      then "";
+  end match;
+end dumpJacobianMatrix;
+
 public function dumpSimCode
   input SimCode.SimCode simCode;
 protected
   Integer nls,nnls,nms,ninite,ninita,ninitr,ne;
-  list<SimCode.SimEqSystem> allEquations,jacobianEquations,equationsForZeroCrossings,algorithmAndEquationAsserts,initialEquations,residualEquations;
+  list<SimCode.SimEqSystem> allEquations,jacobianEquations,equationsForZeroCrossings,algorithmAndEquationAsserts,initialEquations,residualEquations,parameterEquations,
+  removedInitialEquations,startValueEquations,nominalValueEquations,minValueEquations,maxValueEquations;
   SimCode.ModelInfo modelInfo;
   SimCode.VarInfo varInfo;
   list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
+  list<SimCode.JacobianMatrix> jacobianMatrixes;
+  list<Option<SimCode.JacobianMatrix>> jacObs;
 algorithm
-  SimCode.SIMCODE(modelInfo = modelInfo,allEquations = allEquations, odeEquations=odeEquations, algebraicEquations=algebraicEquations,residualEquations=residualEquations, algorithmAndEquationAsserts=algorithmAndEquationAsserts,
-  equationsForZeroCrossings=equationsForZeroCrossings, jacobianEquations=jacobianEquations,initialEquations=initialEquations) := simCode;
+  SimCode.SIMCODE(modelInfo = modelInfo,allEquations = allEquations, odeEquations=odeEquations, algebraicEquations=algebraicEquations,residualEquations=residualEquations, initialEquations=initialEquations, removedInitialEquations=removedInitialEquations,
+  startValueEquations=startValueEquations,nominalValueEquations=nominalValueEquations, minValueEquations=minValueEquations, maxValueEquations=maxValueEquations,  algorithmAndEquationAsserts=algorithmAndEquationAsserts, parameterEquations=parameterEquations,
+  equationsForZeroCrossings=equationsForZeroCrossings, jacobianEquations=jacobianEquations ,jacobianMatrixes=jacobianMatrixes) := simCode;
   SimCode.MODELINFO(varInfo=varInfo) := modelInfo;
   SimCode.VARINFO(numInitialEquations=ninite,numInitialAlgorithms=ninita,numInitialResiduals=ninitr,numEquations=ne,numLinearSystems=nls,numNonLinearSystems=nnls,numMixedSystems=nms) := varInfo;
   print("allEquations:("+&intString(ne)+&"),numLS:("+&intString(nls)+&"),numNLS:("+&intString(nnls)+&"),numMS:("+&intString(nms)+&") \n-----------------------\n");
@@ -7603,12 +7633,27 @@ algorithm
   print(dumpSimEqSystemLst(residualEquations)+&"\n");
   print("initialEquations: ("+&intString(ninite)+&"+"+&intString(ninita)+&"="+&intString(ninitr)+&")\n-----------------------\n");
   print(dumpSimEqSystemLst(initialEquations)+&"\n");
+  print("removedInitialEquations: \n-----------------------\n");
+  print(dumpSimEqSystemLst(removedInitialEquations)+&"\n");
+  print("startValueEquations: \n-----------------------\n");
+  print(dumpSimEqSystemLst(startValueEquations)+&"\n");
+  print("nominalValueEquations: \n-----------------------\n");
+  print(dumpSimEqSystemLst(nominalValueEquations)+&"\n");
+  print("minValueEquations: \n-----------------------\n");
+  print(dumpSimEqSystemLst(minValueEquations)+&"\n");
+  print("maxValueEquations: \n-----------------------\n");
+  print(dumpSimEqSystemLst(maxValueEquations)+&"\n");
+  print("parameterEquations: \n-----------------------\n");
+  print(dumpSimEqSystemLst(parameterEquations)+&"\n");
   print("algorithmAndEquationAsserts: \n-----------------------\n");
   print(dumpSimEqSystemLst(algorithmAndEquationAsserts)+&"\n");
   print("equationsForZeroCrossings: \n-----------------------\n");
   print(dumpSimEqSystemLst(equationsForZeroCrossings)+&"\n");
   print("jacobianEquations: \n-----------------------\n");
   print(dumpSimEqSystemLst(jacobianEquations)+&"\n");
+  print("jacobianMatrixes: \n-----------------------\n");
+  jacObs := List.map(jacobianMatrixes,Util.makeOption);
+  print(stringDelimitList(List.map(jacObs,dumpJacobianMatrix),"\n")+&"\n");
   print("modelInfo: \n-----------------------\n");
   dumpModelInfo(modelInfo);
 end dumpSimCode;

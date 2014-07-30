@@ -570,7 +570,7 @@ algorithm
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "tds");
         print("Using Task Duplication-based Scheduling\n");
-        (schedule,simCode,taskGraph1,taskGraphMeta1,sccSimEqMap) = HpcOmScheduler.createTDSschedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping,iSimCode);
+        (schedule,simCode,taskGraph1,taskGraphMeta1,sccSimEqMap) = HpcOmScheduler.TDS_schedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping,iSimCode);
       then (schedule,simCode,taskGraph1,taskGraphMeta1,sccSimEqMap);
     case(_,_,_,_,_,_,_)
       equation

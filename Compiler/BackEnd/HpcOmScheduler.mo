@@ -2054,7 +2054,7 @@ end createExtSchedule1;
 // Task Duplication-based Scheduler
 //---------------------------------
 
-public function createTDSschedule"task duplication schedule by Samantha Ranaweera and Dharma P. Agrawal,
+public function TDS_schedule"task duplication schedule by Samantha Ranaweera and Dharma P. Agrawal,
 see:
 'A Task Duplication Based Scheduling Algorithm for Heterogeneous Systems'
 or
@@ -2088,10 +2088,10 @@ algorithm
   (_,lastArray,lactArray,tdsLevelArray) := computeGraphValuesTopDown(iTaskGraph,iTaskGraphMeta);
   fpredArray := computeFavouritePred(iTaskGraph,iTaskGraphMeta,ectArray); //the favourite predecessor of each node
   (levels,queue) := quicksortWithOrder(arrayList(tdsLevelArray));
-  initClusters := createTDSInitialCluster(iTaskGraph,taskGraphT,iTaskGraphMeta,lastArray,lactArray,fpredArray,queue);
+  initClusters := TDS_InitialCluster(iTaskGraph,taskGraphT,iTaskGraphMeta,lastArray,lactArray,fpredArray,queue);
   //print("initClusters:\n"+&stringDelimitList(List.map(initClusters,intListString),"\n")+&"\n");
-  (oSchedule,oSimCode,oTaskGraph,oTaskGraphMeta,oSccSimEqMapping) := createTDSschedule1(initClusters,iTaskGraph,taskGraphT,iTaskGraphMeta,tdsLevelArray,numProc,iSccSimEqMapping,iSimCode);
-end createTDSschedule;
+  (oSchedule,oSimCode,oTaskGraph,oTaskGraphMeta,oSccSimEqMapping) := TDS_schedule1(initClusters,iTaskGraph,taskGraphT,iTaskGraphMeta,tdsLevelArray,numProc,iSccSimEqMapping,iSimCode);
+end TDS_schedule;
 
 protected function insertLocksInSchedule
   input HpcOmSimCode.Schedule iSchedule;
@@ -2173,7 +2173,7 @@ algorithm
   end matchcontinue;
 end insertLocksInSchedule1;
 
-protected function createTDSschedule1"takes the initial Cluster and compactes or duplicates them to the given number of threads.
+protected function TDS_schedule1"takes the initial Cluster and compactes or duplicates them to the given number of threads.
 author:Waurich TUD 2014-05"
   input list<list<Integer>> clustersIn;
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
@@ -2192,7 +2192,7 @@ algorithm
   (oSchedule,oSimCode,oTaskGraph,oTaskGraphMeta,oSccSimEqMapping) := matchcontinue(clustersIn,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,numProc,iSccSimEqMapping,iSimCode)
     local
       Integer sizeTasks, numDupl, threadIdx, compIdx, simVarIdx, simEqSysIdx, taskIdx, lsIdx, nlsIdx, mIdx;
-      array<Integer> taskAss,taskDuplAss,nodeMark;
+      array<Integer> taskAss,taskDuplAss,nodeMark,newIdxAss;
       array<list<Integer>> procAss, sccSimEqMap, inComps, comps;
       array<tuple<Integer,Real>> exeCosts;
       array<list<tuple<Integer,Integer,Integer>>> commCosts;
@@ -2219,15 +2219,15 @@ algorithm
         print("There are less initial clusters than processors. we need duplication, but since this is a rare case, it is not done. Less processors are used.\n");
         clusters = List.map(clustersIn,listReverse);
         Flags.setConfigInt(Flags.NUM_PROC,listLength(clustersIn));
-        (schedule,simCode,taskGraph,meta,sccSimEqMap) = createTDSschedule1(clusters,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,listLength(clustersIn),iSccSimEqMapping,iSimCode);
+        (schedule,simCode,taskGraph,meta,sccSimEqMap) = TDS_schedule1(clusters,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,listLength(clustersIn),iSccSimEqMapping,iSimCode);
       then
         (schedule,simCode,taskGraph,meta,sccSimEqMap);
     case(_,_,_,_,_,_,_,_)
       equation
         // we need cluster compaction, repeat until numProc=num(clusters)
         true = listLength(clustersIn) > numProc;
-        clusters = createTDSCompactClusters(clustersIn,iTaskGraph,iTaskGraphMeta,TDSLevel,numProc);
-        (schedule,simCode,taskGraph,meta,sccSimEqMap) = createTDSschedule1(clusters,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,numProc,iSccSimEqMapping,iSimCode);
+        clusters = TDS_CompactClusters(clustersIn,iTaskGraph,iTaskGraphMeta,TDSLevel,numProc);
+        (schedule,simCode,taskGraph,meta,sccSimEqMap) = TDS_schedule1(clusters,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,numProc,iSccSimEqMapping,iSimCode);
       then
         (schedule,simCode,taskGraph,meta,sccSimEqMap);
     case(_,_,_,_,_,_,_,_)
@@ -2235,7 +2235,7 @@ algorithm
         // the clusters can be scheduled,
         true = listLength(clustersIn) == numProc;
         // order the tasks in the clusters
-        clusters = List.map1(clustersIn,createTDSSortCompactClusters,TDSLevel);
+        clusters = List.map1(clustersIn,TDS_SortCompactClusters,TDSLevel);
         print("clusters:\n"+&stringDelimitList(List.map(clusters,intListString),"\n")+&"\n");
 
         // extract object stuff
@@ -2274,10 +2274,10 @@ algorithm
         mIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getMixedindex),intMax,0)+1;// the next available mixed system  index
 
         //traverse the clusters and duplicate tasks if needed
-        (taskAss,procAss,taskGraph,taskDuplAss,idcs,simCode,schedule,duplSccSimEqMap,duplComps) = createTDSduplicateTasks(clusters,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),iTaskGraph,iTaskGraphT,taskGraph,taskDuplAss,iTaskGraphMeta,iSimCode,schedule,iSccSimEqMapping,duplSccSimEqMap,duplComps);
+        (taskAss,procAss,taskGraph,taskDuplAss,idcs,simCode,schedule,duplSccSimEqMap,duplComps) = TDS_duplicateTasks(clusters,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),iTaskGraph,iTaskGraphT,taskGraph,taskDuplAss,iTaskGraphMeta,iSimCode,schedule,iSccSimEqMapping,duplSccSimEqMap,duplComps);
 
         //update stuff
-        simCode = createTDSupdateModelInfo(simCode,idcs);
+        simCode = TDS_updateModelInfo(simCode,idcs);
         numDupl = List.fold(List.map(duplComps,listLength),intAdd,0);
         procAss = Util.arrayMap(procAss,listReverse);
         sccSimEqMap = Util.arrayAppend(iSccSimEqMapping,listArray(listReverse(duplSccSimEqMap)));
@@ -2290,10 +2290,19 @@ algorithm
         nodeMark = Util.arrayAppend(nodeMark,arrayCreate(numDupl,-1));
         meta = HpcOmTaskGraph.TASKGRAPHMETA(comps,varCompMapping,eqCompMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
 
+        print("simCode 12\n");
+        SimCodeUtil.dumpSimCode(simCode);
+        
+        //assign new simEqSysIndexes
+        newIdxAss = arrayCreate(SimCodeUtil.getMaxSimEqSystemIndex(simCode),-1);
+        print("MAX IDX "+&intString(SimCodeUtil.getMaxSimEqSystemIndex(simCode))+&"\n");
+        (simCode,newIdxAss) = TDS_assignNewSimEqSysIdxs(simCode,newIdxAss);
+        
         // insert Locks
         taskGraphT = BackendDAEUtil.transposeMatrix(taskGraph,arrayLength(taskGraph));
         schedule = insertLocksInSchedule(schedule,taskGraph,taskGraphT,taskAss,procAss);
-
+        schedule = TDS_replaceSimEqSysIdxsInSchedule(schedule,newIdxAss);
+        
         //dumping stuff-------------------------
         print("simCode 2\n");
         SimCodeUtil.dumpSimCode(simCode);
@@ -2311,12 +2320,342 @@ algorithm
         (schedule,simCode,taskGraph,meta,sccSimEqMap);
     else
       equation
-        print("createTDSschedule1 failed!\n");
+        print("TDS_schedule1 failed!\n");
       then fail();
   end matchcontinue;
-end createTDSschedule1;
+end TDS_schedule1;
 
-protected function createTDSupdateModelInfo"updated information in the SimCode.ModelInfo e.g.the number of variables,numLS, numNLS,"
+protected function TDS_replaceSimEqSysIdxsInSchedule"replaces the simEqSys indexes with the assigned ones in a schedule
+author:Waurich TUD 2014-07"
+  input HpcOmSimCode.Schedule scheduleIn;
+  input array<Integer> assIn;
+  output HpcOmSimCode.Schedule scheduleOut;
+algorithm
+  scheduleOut := matchcontinue(scheduleIn,assIn)
+    local
+      array<list<HpcOmSimCode.Task>> threadTasks;
+      list<String> lockIdc;
+      list<HpcOmSimCode.Task> scheduledTasks;
+  case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc,scheduledTasks=scheduledTasks),_)
+    equation
+      scheduledTasks = List.map1(scheduledTasks,TDS_replaceSimEqSysIdxsInTask,assIn);
+      threadTasks = Util.arrayMap1(threadTasks,TDS_replaceSimEqSysIdxsInTaskLst,assIn);
+    then HpcOmSimCode.THREADSCHEDULE(threadTasks,lockIdc,scheduledTasks);
+  end matchcontinue;
+end TDS_replaceSimEqSysIdxsInSchedule;
+
+protected function TDS_replaceSimEqSysIdxsInTask"replaces the simEqSys indexes with the assigned ones in a tasks
+author:Waurich TUD 2014-07"
+  input HpcOmSimCode.Task taskIn;
+  input array<Integer> assIn;
+  output HpcOmSimCode.Task taskOut;
+algorithm
+  taskOut := matchcontinue(taskIn,assIn)
+    local
+      Integer weighting,index,threadIdx;
+      Real calcTime,timeFinished;
+      list<Integer> eqIdc;
+  case(HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,timeFinished=timeFinished,threadIdx=threadIdx,eqIdc=eqIdc),_)
+    equation
+      eqIdc = List.map1(eqIdc,Util.arrayGetIndexFirst,assIn);
+    then HpcOmSimCode.CALCTASK(weighting,index,calcTime,timeFinished,threadIdx,eqIdc);
+  else
+    then taskIn;
+  end matchcontinue;
+end TDS_replaceSimEqSysIdxsInTask;
+
+protected function TDS_replaceSimEqSysIdxsInTaskLst"replaces the simEqSys indexes with the assigned ones in a list of tasks
+author:Waurich TUD 2014-07"
+  input list<HpcOmSimCode.Task> taskLstIn;
+  input array<Integer> assIn;
+  output list<HpcOmSimCode.Task> taskLstOut;
+algorithm
+  taskLstOut := List.map1(taskLstIn,TDS_replaceSimEqSysIdxsInTask,assIn);
+end TDS_replaceSimEqSysIdxsInTaskLst;
+
+protected function TDS_assignNewSimEqSysIdxs"replaces the simEqSys indexes with new ones and built an assignemnt in the simCode
+author:Waurich TUD 2014-07"
+  input SimCode.SimCode simCodeIn;
+  input array<Integer> idxAssIn;
+  output SimCode.SimCode simCodeOut;
+  output array<Integer> idxAssOut;
+protected
+  Integer idx;
+  array<Integer> ass;
+  list<SimCode.SimEqSystem> ode1, alg1;
+  list<Option<SimCode.JacobianMatrix>> jacObts;
+  // the simCode stuff
+  SimCode.ModelInfo modelInfo;
+  list<DAE.Exp> literals;
+  list<SimCode.RecordDeclaration> recordDecls;
+  list<String> externalFunctionIncludes;
+  list<list<SimCode.SimEqSystem>> eqsTmp;
+  list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
+  list<SimCode.SimEqSystem> allEquations, residualEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, equationsForZeroCrossings;
+  list<SimCode.StateSet> stateSets;
+  Boolean useSymbolicInitialization, useHomotopy;
+  list<SimCode.SimEqSystem> initialEquations, removedInitialEquations, odes;
+  list<DAE.Constraint> constraints;
+  list<DAE.ClassAttributes> classAttributes;
+  list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
+  list<SimCode.SimWhenClause> whenClauses;
+  list<DAE.ComponentRef> discreteModelVars;
+  SimCode.ExtObjInfo extObjInfo;
+  SimCode.MakefileParams makefileParams;
+  SimCode.DelayedExpression delayedExps;
+  list<SimCode.JacobianMatrix> jacobianMatrixes;
+  list<String> labels;
+  Option<SimCode.SimulationSettings> simulationSettingsOpt;
+  list<BackendDAE.TimeEvent> timeEvents;
+  String fileNamePrefix;
+  SimCode.HashTableCrefToSimVar crefToSimVarHT;
+  Absyn.Path name;
+  String description,directory;
+  SimCode.VarInfo varInfo;
+  SimCode.SimVars vars;
+  list<SimCode.Function> functions;
+  SimCode.Files files;
+  Option<HpcOmSimCode.Schedule> hpcOmSchedule;
+  Option<SimCode.BackendMapping> backendMapping;
+  Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
+  list<SimCode.SimEqSystem> equationsForConditions;
+  //modelinfo stuff
+  SimCode.ModelInfo modelInfo;
+  Absyn.Path name;
+  String description,directory;
+  SimCode.VarInfo varInfo;
+  SimCode.SimVars vars;
+  list<SimCode.Function> functions;
+  list<String> labels;
+  Integer  numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams, numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars, numStringParamVars,
+  numStringAliasVars, numEquations, numLinearSystems, numNonLinearSystems, numMixedSystems, numStateSets, numJacobians, numOptimizeConstraints;
+algorithm
+  SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy,
+    initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, removedEquations,
+    algorithmAndEquationAsserts,equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses, discreteModelVars, extObjInfo,
+    makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping):=simCodeIn; 
+  SimCode.MODELINFO(name=name,description=description,directory=directory,varInfo=varInfo,vars=vars,functions=functions,labels=labels) := modelInfo;
+  SimCode.VARINFO(numZeroCrossings=numZeroCrossings, numTimeEvents=numTimeEvents, numRelations=numRelations, numMathEventFunctions=numMathEventFunctions, numStateVars=numStateVars,
+    numAlgVars=numAlgVars, numDiscreteReal=numDiscreteReal, numIntAlgVars=numIntAlgVars, numBoolAlgVars=numBoolAlgVars, numAlgAliasVars=numAlgAliasVars, numIntAliasVars=numIntAliasVars,
+    numBoolAliasVars=numBoolAliasVars, numParams=numParams, numIntParams=numIntParams, numBoolParams=numBoolParams, numOutVars=numOutVars, numInVars=numInVars,
+    numInitialEquations=numInitialEquations, numInitialAlgorithms=numInitialAlgorithms, numInitialResiduals=numInitialResiduals, numExternalObjects=numExternalObjects,
+    numStringAlgVars=numStringAlgVars, numStringParamVars=numStringParamVars, numStringAliasVars=numStringAliasVars, numEquations=numEquations, numLinearSystems=numLinearSystems,
+    numNonLinearSystems=numNonLinearSystems, numMixedSystems=numMixedSystems, numStateSets=numStateSets, numJacobians=numJacobians, numOptimizeConstraints=numOptimizeConstraints) := varInfo;
+  
+  (initialEquations,(idx,ass)) := List.mapFold(initialEquations,TDS_replaceSimEqSysIndexWithUpdate,(1,idxAssIn));
+  (allEquations,(idx,ass)) := List.mapFold(allEquations,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass));
+  (parameterEquations,(idx,ass)) := List.mapFold(parameterEquations,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass));
+   
+  print("ass out "+&stringDelimitList(List.map(arrayList(ass),intString),"\n")+&"\n"); 
+
+  odeEquations := List.mapList1_1(odeEquations,TDS_replaceSimEqSysIndex,ass);
+  algebraicEquations := List.mapList1_1(algebraicEquations,TDS_replaceSimEqSysIndex,ass);
+  
+  jacObts := List.map(jacobianMatrixes,Util.makeOption);
+  jacObts := List.map1(jacObts,TDS_replaceSimEqSysIdxInJacobianMatrix,ass);
+  jacobianMatrixes := List.map(jacObts,Util.getOption);
+  
+  print("numEqs2 "+&intString(idx)+&"\n");
+  numEquations := idx;
+    
+  varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams, numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars, numStringParamVars,
+    numStringAliasVars, numEquations, numLinearSystems, numNonLinearSystems, numMixedSystems, numStateSets, numJacobians, numOptimizeConstraints);
+  modelInfo := SimCode.MODELINFO(name,description,directory,varInfo,vars,functions,labels); 
+  simCodeOut := SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+    parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
+    discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping);
+  idxAssOut := ass;
+end TDS_assignNewSimEqSysIdxs;
+
+protected function TDS_replaceSimEqSysIndex"replaces the index with the assigned index  in a simEqSystem
+author:Waurich TUD 2014-07"
+  input SimCode.SimEqSystem simEqIn;
+  input array<Integer> assIn;
+  output SimCode.SimEqSystem simEqOut;
+algorithm
+  simEqOut := matchcontinue(simEqIn,assIn)
+    local
+  Boolean linearTearing,partOfMixed;
+  Integer newIdx, oldIdx, indexNonLinearSystem, indexLinearSystem;
+  array<Integer> ass;
+  SimCode.SimEqSystem simEqSys;
+  list<SimCode.SimEqSystem> eqs;
+  list<SimCode.SimVar> vars;
+  list<DAE.ComponentRef> crefs;
+  list<DAE.Exp> beqs;
+  list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
+  Option<SimCode.JacobianMatrix> jacobianMatrix;
+  list<DAE.ElementSource> sources;
+    case(SimCode.SES_NONLINEAR(eqs=eqs,crefs=crefs,indexNonLinearSystem=indexNonLinearSystem,jacobianMatrix=jacobianMatrix,linearTearing=linearTearing),ass)
+      equation
+        eqs = List.map1(eqs,TDS_replaceSimEqSysIndex,assIn);
+        oldIdx = SimCodeUtil.eqIndex(simEqIn);
+        newIdx = arrayGet(assIn,oldIdx);
+        jacobianMatrix = TDS_replaceSimEqSysIdxInJacobianMatrix(jacobianMatrix,assIn);
+        simEqSys = SimCode.SES_NONLINEAR(newIdx,eqs,crefs,indexNonLinearSystem,jacobianMatrix,linearTearing);
+   then simEqSys; 
+    case(SimCode.SES_LINEAR(partOfMixed=partOfMixed,vars=vars,beqs=beqs,simJac=simJac,residual=eqs,jacobianMatrix=jacobianMatrix,sources=sources,indexLinearSystem=indexLinearSystem),ass)
+      equation
+        eqs = List.map1(eqs,TDS_replaceSimEqSysIndex,ass);
+        oldIdx = SimCodeUtil.eqIndex(simEqIn);
+        newIdx = arrayGet(ass,oldIdx);
+        jacobianMatrix = TDS_replaceSimEqSysIdxInJacobianMatrix(jacobianMatrix,ass);
+        simEqSys = SimCode.SES_LINEAR(newIdx,partOfMixed,vars,beqs,simJac,eqs,jacobianMatrix,sources,indexLinearSystem);
+   then simEqSys; 
+    case(_,ass)
+      equation
+        oldIdx = SimCodeUtil.eqIndex(simEqIn);
+        newIdx = arrayGet(ass,oldIdx);
+        simEqSys = SimCodeUtil.replaceSimEqSysIndex(simEqIn,newIdx);
+   then simEqSys;
+  end matchcontinue;   
+end TDS_replaceSimEqSysIndex;
+
+protected function TDS_replaceSimEqSysIndexWithUpdate"replaces the index with the new index and updates the assignment in a simEqSystem
+author:Waurich TUD 2014-07"
+  input SimCode.SimEqSystem simEqIn;
+  input tuple<Integer,array<Integer>> tplIn;
+  output SimCode.SimEqSystem simEqOut;
+  output tuple<Integer,array<Integer>> tplOut;
+algorithm
+  (simEqOut,tplOut) := matchcontinue(simEqIn,tplIn)
+    local
+  Boolean linearTearing,partOfMixed;
+  Integer newIdx, oldIdx, indexNonLinearSystem, indexLinearSystem;
+  array<Integer> ass;
+  SimCode.SimEqSystem simEqSys;
+  list<SimCode.SimEqSystem> eqs;
+  list<SimCode.SimVar> vars;
+  list<DAE.ComponentRef> crefs;
+  list<DAE.Exp> beqs;
+  list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
+  Option<SimCode.JacobianMatrix> jacobianMatrix;
+  list<DAE.ElementSource> sources;
+    case(SimCode.SES_NONLINEAR(eqs=eqs,crefs=crefs,indexNonLinearSystem=indexNonLinearSystem,jacobianMatrix=jacobianMatrix,linearTearing=linearTearing),(newIdx,ass))
+      equation
+        (eqs,(newIdx,ass)) = List.mapFold(eqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
+        oldIdx = SimCodeUtil.eqIndex(simEqIn);
+        (jacobianMatrix,(newIdx,ass)) = TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate(jacobianMatrix,(newIdx,ass));
+        ass = arrayUpdate(ass,oldIdx,newIdx);
+        simEqSys = SimCode.SES_NONLINEAR(newIdx,eqs,crefs,indexNonLinearSystem,jacobianMatrix,linearTearing);
+   then (simEqSys,(newIdx+1,ass)); 
+    case(SimCode.SES_LINEAR(partOfMixed=partOfMixed,vars=vars,beqs=beqs,simJac=simJac,residual=eqs,jacobianMatrix=jacobianMatrix,sources=sources,indexLinearSystem=indexLinearSystem),(newIdx,ass))
+      equation
+        (eqs,(newIdx,ass)) = List.mapFold(eqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
+        oldIdx = SimCodeUtil.eqIndex(simEqIn);
+        print("oldIdx "+&intString(oldIdx)+&" newIdx "+&intString(newIdx)+&"\n");
+        (jacobianMatrix,(newIdx,ass)) = TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate(jacobianMatrix,(newIdx,ass));
+        ass = arrayUpdate(ass,oldIdx,newIdx);
+        simEqSys = SimCode.SES_LINEAR(newIdx,partOfMixed,vars,beqs,simJac,eqs,jacobianMatrix,sources,indexLinearSystem);
+   then (simEqSys,(newIdx+1,ass)); 
+    case(_,(newIdx,ass))
+      equation
+        oldIdx = SimCodeUtil.eqIndex(simEqIn);
+        ass = arrayUpdate(ass,oldIdx,newIdx);
+        simEqSys = SimCodeUtil.replaceSimEqSysIndex(simEqIn,newIdx);
+   then (simEqSys,(newIdx+1,ass));
+  end matchcontinue;   
+end TDS_replaceSimEqSysIndexWithUpdate;
+
+protected function TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate"replaces the index with the new index and updates the assignment one in a jacobian matrix.
+author:Waurich TUD 2014-07"
+  input Option<SimCode.JacobianMatrix> jacIn;
+  input tuple<Integer,array<Integer>> tplIn;
+  output Option<SimCode.JacobianMatrix> jacOut;
+  output tuple<Integer,array<Integer>> tplOut;
+algorithm
+  (jacOut,tplOut) := matchcontinue(jacIn,tplIn)
+    local
+      Integer maxCol,jacIdx;
+      list<SimCode.JacobianColumn> jacCols;
+      list<SimCode.SimVar> vars;
+      String name;
+      tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimCode.SimVar>,list<SimCode.SimVar>>> sparsePatt;
+      list<list<DAE.ComponentRef>> colCols;
+      array<Integer> ass;
+      Integer newIdx;
+    case(SOME((jacCols,vars,name,sparsePatt,colCols,maxCol,jacIdx)),(newIdx,ass))
+      equation
+        (jacCols,(newIdx,ass)) = List.mapFold(jacCols,TDS_replaceSimEqSysIdxInJacobianColumnWithUpdate,(newIdx,ass));
+   then (SOME((jacCols,vars,name,sparsePatt,colCols,maxCol,jacIdx)),(newIdx,ass));
+   else
+     then(jacIn,tplIn);
+  end matchcontinue;   
+end TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate;
+
+protected function TDS_replaceSimEqSysIdxInJacobianColumnWithUpdate"replaces the index with the new index and updates the assignment one in a jacobian column.
+author:Waurich TUD 2014-07"
+  input SimCode.JacobianColumn jacIn;
+  input tuple<Integer,array<Integer>> tplIn;
+  output SimCode.JacobianColumn jacOut;
+  output tuple<Integer,array<Integer>> tplOut;
+algorithm
+  (jacOut,tplOut) := matchcontinue(jacIn,tplIn)
+    local
+      list<SimCode.SimEqSystem> simEqs;
+      list<SimCode.SimVar> simVars;
+      String colLen;
+      array<Integer> ass;
+      Integer newIdx;
+    case((simEqs,simVars,colLen),(newIdx,ass))
+      equation
+        (simEqs,(newIdx,ass)) = List.mapFold(simEqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
+   then((simEqs,simVars,colLen),(newIdx,ass));
+   else
+     then(jacIn,tplIn);
+  end matchcontinue;   
+end TDS_replaceSimEqSysIdxInJacobianColumnWithUpdate;
+
+protected function TDS_replaceSimEqSysIdxInJacobianMatrix"replaces the index with the assigned one in a jacobian matrix.
+author:Waurich TUD 2014-07"
+  input Option<SimCode.JacobianMatrix> jacIn;
+  input array<Integer> assIn;
+  output Option<SimCode.JacobianMatrix> jacOut;
+algorithm
+  jacOut := matchcontinue(jacIn,assIn)
+    local
+      Integer maxCol,jacIdx;
+      list<SimCode.JacobianColumn> jacCols;
+      list<SimCode.SimVar> vars;
+      String name;
+      tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimCode.SimVar>,list<SimCode.SimVar>>> sparsePatt;
+      list<list<DAE.ComponentRef>> colCols;
+      array<Integer> ass;
+      Integer newIdx;
+    case(SOME((jacCols,vars,name,sparsePatt,colCols,maxCol,jacIdx)),_)
+      equation
+        print("jacIdx "+&intString(jacIdx)+&"\n");
+        jacCols = List.map1(jacCols,TDS_replaceSimEqSysIdxInJacobianColumn,assIn);
+        print("jacIdx "+&intString(jacIdx)+&"\n");
+   then SOME((jacCols,vars,name,sparsePatt,colCols,maxCol,jacIdx));
+   else
+     then jacIn;
+  end matchcontinue;   
+end TDS_replaceSimEqSysIdxInJacobianMatrix;
+
+protected function TDS_replaceSimEqSysIdxInJacobianColumn"replaces the index with the assigned one in a jacobian column.
+author:Waurich TUD 2014-07"
+  input SimCode.JacobianColumn jacIn;
+  input array<Integer> assIn;
+  output SimCode.JacobianColumn jacOut;
+algorithm
+  jacOut := matchcontinue(jacIn,assIn)
+    local
+      list<SimCode.SimEqSystem> simEqs;
+      list<SimCode.SimVar> simVars;
+      String colLen;
+      array<Integer> ass;
+      Integer newIdx;
+    case((simEqs,simVars,colLen),_)
+      equation
+        simEqs = List.map1(simEqs,TDS_replaceSimEqSysIndex,assIn);
+   then ((simEqs,simVars,colLen));
+   else
+     then jacIn;
+  end matchcontinue;   
+end TDS_replaceSimEqSysIdxInJacobianColumn;
+
+protected function TDS_updateModelInfo"updated information in the SimCode.ModelInfo e.g.the number of variables,numLS, numNLS,"
   input SimCode.SimCode simCodeIn;
   input tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> idcs;
   output SimCode.SimCode simCodeOut;
@@ -2355,9 +2694,9 @@ algorithm
   numStringAliasVars,numEquations,numLinearSystems,numNonLinearSystems,numMixedSystems,numStateSets,numJacobians,numOptimizeConstraints);
   modelInfo := SimCode.MODELINFO(name,description,directory,varInfo,vars,functions,labels);
   simCodeOut := SimCodeUtil.replaceModelInfo(modelInfo,simCodeIn);
-end createTDSupdateModelInfo;
+end TDS_updateModelInfo;
 
-protected function createTDSduplicateTasks"traverses the clusters, duplicate the tasks that have been assigned to another thread before.
+protected function TDS_duplicateTasks"traverses the clusters, duplicate the tasks that have been assigned to another thread before.
 author: Waurich TUD 2014-05"
   input list<list<Integer>> clustersIn;
   input array<Integer> taskAssIn;
@@ -2408,7 +2747,7 @@ algorithm
       equation
         repl = BackendVarTransform.emptyReplacements();
         //traverse the cluster and build schedule
-        (taskAss,procAss,taskGraph,taskDuplAss,thread,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),simCode,duplSccSimEqMap,duplComps) = createTDSduplicateTasks1(cluster,clustersIn,repl,taskAssIn,procAssIn,{},idcsIn,taskGraphOrig,taskGraphTOrig,taskGraphIn,taskDuplAssIn,iTaskGraphMeta,simCodeIn,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn);
+        (taskAss,procAss,taskGraph,taskDuplAss,thread,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),simCode,duplSccSimEqMap,duplComps) = TDS_duplicateTasks1(cluster,clustersIn,repl,taskAssIn,procAssIn,{},idcsIn,taskGraphOrig,taskGraphTOrig,taskGraphIn,taskDuplAssIn,iTaskGraphMeta,simCodeIn,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn);
         SimCode.SIMCODE(odeEquations=odes) = simCode;
         print("the simEqSysts after cluster: "+&intString(threadIdx)+&" \n"+&stringDelimitList(List.map(odes,SimCodeUtil.dumpSimEqSystemLst),"\n")+&"\n");
 
@@ -2417,13 +2756,13 @@ algorithm
         threadTasks = arrayUpdate(threadTasks,threadIdx,listReverse(thread));
         schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,lockIdc,{});
         threadIdx = threadIdx+1;
-        (taskAss,procAss,taskGraph,taskDuplAss,idcs,simCode,schedule,duplSccSimEqMap,duplComps) = createTDSduplicateTasks(rest,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),taskGraphOrig,taskGraphTOrig,taskGraph,taskDuplAss,iTaskGraphMeta,simCode,schedule,sccSimEqMappingIn,duplSccSimEqMap,duplComps);
+        (taskAss,procAss,taskGraph,taskDuplAss,idcs,simCode,schedule,duplSccSimEqMap,duplComps) = TDS_duplicateTasks(rest,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),taskGraphOrig,taskGraphTOrig,taskGraph,taskDuplAss,iTaskGraphMeta,simCode,schedule,sccSimEqMappingIn,duplSccSimEqMap,duplComps);
       then
         (taskAssIn,procAssIn,taskGraph,taskDuplAss,idcs,simCode,schedule,duplSccSimEqMap,duplComps);
   end matchcontinue;
-end createTDSduplicateTasks;
+end TDS_duplicateTasks;
 
-protected function createTDSduplicateTasks1"traverses one cluster.No locks are added.
+protected function TDS_duplicateTasks1"traverses one cluster.No locks are added.
 author: Waurich TUD 2014-05"
   input list<Integer> clusterIn;
   input list<list<Integer>> allCluster;
@@ -2475,8 +2814,8 @@ algorithm
         ass = arrayGet(taskAssIn,node);
         true = intNe(ass,-1);
         //duplicate it
-        (repl,taskAss,procAss,taskGraph,taskDuplAss,thread,idcs,simCode,duplSccSimEqMap,duplComps) = createTDSduplicateTasks2(node,allCluster,replIn,taskAssIn,procAssIn,threadIn,idcsIn,taskGraphOrig,taskGraphTOrig,taskGraphIn,taskDuplAssIn,iTaskGraphMeta,simCodeIn,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn);
-        (taskAss,procAss,taskGraph,taskDuplAss,thread,idcs,simCode,duplSccSimEqMap,duplComps) = createTDSduplicateTasks1(rest,allCluster,repl,taskAss,procAss,thread,idcs,taskGraphOrig,taskGraphTOrig,taskGraph,taskDuplAss,iTaskGraphMeta,simCode,sccSimEqMappingIn,duplSccSimEqMap,duplComps);
+        (repl,taskAss,procAss,taskGraph,taskDuplAss,thread,idcs,simCode,duplSccSimEqMap,duplComps) = TDS_duplicateTasks2(node,allCluster,replIn,taskAssIn,procAssIn,threadIn,idcsIn,taskGraphOrig,taskGraphTOrig,taskGraphIn,taskDuplAssIn,iTaskGraphMeta,simCodeIn,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn);
+        (taskAss,procAss,taskGraph,taskDuplAss,thread,idcs,simCode,duplSccSimEqMap,duplComps) = TDS_duplicateTasks1(rest,allCluster,repl,taskAss,procAss,thread,idcs,taskGraphOrig,taskGraphTOrig,taskGraph,taskDuplAss,iTaskGraphMeta,simCode,sccSimEqMappingIn,duplSccSimEqMap,duplComps);
       then (taskAss,procAss,taskGraph,taskDuplAss,thread,idcs,simCode,duplSccSimEqMap,duplComps);
     case(node::rest,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
@@ -2526,12 +2865,12 @@ algorithm
         task = HpcOmSimCode.CALCTASK(1,node,0.0,-1.0,threadIdx,simEqs);
         thread = task::threadIn;
         taskDuplAss = arrayUpdate(taskDuplAssIn,node,node);
-        (taskAss,procAss,taskGraph,taskDuplAss,thread,idcs,simCode,duplSccSimEqMap,duplComps) = createTDSduplicateTasks1(rest,allCluster,replIn,taskAss,procAss,thread,idcsIn,taskGraphOrig,taskGraphTOrig,taskGraph,taskDuplAss,iTaskGraphMeta,simCode,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn);
+        (taskAss,procAss,taskGraph,taskDuplAss,thread,idcs,simCode,duplSccSimEqMap,duplComps) = TDS_duplicateTasks1(rest,allCluster,replIn,taskAss,procAss,thread,idcsIn,taskGraphOrig,taskGraphTOrig,taskGraph,taskDuplAss,iTaskGraphMeta,simCode,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn);
       then (taskAss,procAss,taskGraph,taskDuplAss,thread,idcs,simCode,duplSccSimEqMap,duplComps);
   end matchcontinue;
-end createTDSduplicateTasks1;
+end TDS_duplicateTasks1;
 
-protected function createTDSduplicateTasks2"sets the information about the new task in simCode,dae,sccMapping ect."
+protected function TDS_duplicateTasks2"sets the information about the new task in simCode,dae,sccMapping ect."
   input Integer node;
   input list<list<Integer>> allCluster;
   input BackendVarTransform.VariableReplacements replIn;
@@ -2678,7 +3017,7 @@ algorithm
   idcsOut := (threadIdx,taskIdx+1,compIdx,simVarIdx2,simEqSysIdx3,lsIdx,nlsIdx,mIdx);
   simCodeOut := simCode;
   replOut := repl;
-end createTDSduplicateTasks2;
+end TDS_duplicateTasks2;
 
 protected function TDS_duplicateSystemOfEquations
   input list<SimCode.SimEqSystem> simEqsIn;
@@ -2991,7 +3330,7 @@ algorithm
   List.map2_0(procTasks,Util.arrayUpdateIndexFirst,procIdx,taskAssIn);
 end TDS_getTaskAssignment;
 
-protected function createTDSCompactClusters"performs compaction to the cluster set. the least crowded (lowest exe costs) cluster is marged with the crowded cluster and so on.
+protected function TDS_CompactClusters"performs compaction to the cluster set. the least crowded (lowest exe costs) cluster is marged with the crowded cluster and so on.
 it is possible that several tasks are assigned to multiple threads. thats because duplication is needed.
 author:Waurich TUD 2015-05"
   input list<list<Integer>> clustersIn;
@@ -3006,7 +3345,7 @@ protected
   list<Integer> clusterOrder;
   list<list<Integer>> firstClusters,lastClusters, middleCluster,clusters, mergedClusters;
 algorithm
-  clusterExeCosts := List.map1(clustersIn,createTDScomputeClusterCosts,iTaskGraphMeta);
+  clusterExeCosts := List.map1(clustersIn,TDS_computeClusterCosts,iTaskGraphMeta);
   (_,clusterOrder) := quicksortWithOrder(clusterExeCosts);
   clusterOrder := listReverse(clusterOrder);
   clusters := List.map1(clusterOrder,List.getIndexFirst,clustersIn);  // the clusters, sorted in descending order of their accumulated execution costs
@@ -3017,9 +3356,9 @@ algorithm
   mergedClusters := List.threadMap(firstClusters,lastClusters,listAppend);
   clustersOut := listAppend(mergedClusters,middleCluster);
   //print("mergedClustersOut:\n"+&stringDelimitList(List.map(clustersOut,intListString),"\n")+&"\n");
-end createTDSCompactClusters;
+end TDS_CompactClusters;
 
-protected function createTDSSortCompactClusters"sorts the tasks in the cluster to descending order of their tds level value.
+protected function TDS_SortCompactClusters"sorts the tasks in the cluster to descending order of their tds level value.
 author:Waurich TUD 2014-05"
   input list<Integer> clusterIn;
   input array<Real> tdsLevelIn;
@@ -3033,9 +3372,9 @@ algorithm
   (_,order) := quicksortWithOrder(tdsLevels);
   order := listReverse(order);
   clusterOut :=List.map1(order,List.getIndexFirst,cluster);
-end createTDSSortCompactClusters;
+end TDS_SortCompactClusters;
 
-protected function createTDScomputeClusterCosts"accumulates the execution costs of all tasks in one cluster.
+protected function TDS_computeClusterCosts"accumulates the execution costs of all tasks in one cluster.
 author:Waurich TUD 2014-05"
   input list<Integer> clusters;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
@@ -3045,9 +3384,9 @@ protected
 algorithm
   nodeCosts := List.map1(clusters,HpcOmTaskGraph.getExeCostReqCycles,iTaskGraphMeta);
   costs := List.fold(nodeCosts,realAdd,0.0);
-end createTDScomputeClusterCosts;
+end TDS_computeClusterCosts;
 
-protected function createTDSInitialCluster"creates the initial Clusters for the task duplication scheduler.
+protected function TDS_InitialCluster"creates the initial Clusters for the task duplication scheduler.
 author: waurich TUD 2014-05"
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraph iTaskGraphT;
@@ -3063,10 +3402,10 @@ protected
 algorithm
   taskAssignments := arrayCreate(arrayLength(iTaskGraph),-1);
   rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
-  clustersOut := createTDSInitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssignments,1,queue,{{}});
-end createTDSInitialCluster;
+  clustersOut := TDS_InitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssignments,1,queue,{{}});
+end TDS_InitialCluster;
 
-protected function createTDSInitialCluster1"implementation of function createTDSInitialCluster.
+protected function TDS_InitialCluster1"implementation of function TDS_InitialCluster.
 author: waurich TUD 2014-05"
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraph iTaskGraphT;
@@ -3105,7 +3444,7 @@ algorithm
         clusters = List.replaceAt(thread,currThread-1,clustersIn);
         //print("cluster: "+&intListString(thread)+&"\n");
         clusters = listAppend(clusters,{{}});
-        clusters = createTDSInitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssIn,currThread+1,rest,clusters);
+        clusters = TDS_InitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssIn,currThread+1,rest,clusters);
       then clusters;
     case(_,_,_,_,_,_,_,_,_,front::rest,_)
       equation
@@ -3123,7 +3462,7 @@ algorithm
         // go to predecessor
         rest = List.removeOnTrue(fpred,intEq,rest);
         rest = fpred::rest;
-        clusters = createTDSInitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssIn,currThread,rest,clusters);
+        clusters = TDS_InitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssIn,currThread,rest,clusters);
       then clusters;
     case(_,_,_,_,_,_,_,_,_,front::rest,_)
       equation
@@ -3151,15 +3490,15 @@ algorithm
         // go to predecessor
         rest = List.removeOnTrue(fpred,intEq,rest);
         rest = fpred::rest;
-        clusters = createTDSInitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssIn,currThread,rest,clusters);
+        clusters = TDS_InitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssIn,currThread,rest,clusters);
       then clusters;
     else
      equation
-       print("createTDSInitialCluster1 failed\n");
+       print("TDS_InitialCluster1 failed\n");
      then
        fail();
   end matchcontinue;
-end createTDSInitialCluster1;
+end TDS_InitialCluster1;
 
 protected function TDSpredIsCritical"calculates the criteria if the predecessor is critical"
   input Integer node;
