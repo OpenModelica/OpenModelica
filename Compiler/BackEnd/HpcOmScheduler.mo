@@ -2089,7 +2089,7 @@ algorithm
   fpredArray := computeFavouritePred(iTaskGraph,iTaskGraphMeta,ectArray); //the favourite predecessor of each node
   (levels,queue) := quicksortWithOrder(arrayList(tdsLevelArray));
   initClusters := TDS_InitialCluster(iTaskGraph,taskGraphT,iTaskGraphMeta,lastArray,lactArray,fpredArray,queue);
-  print("initClusters:\n"+&stringDelimitList(List.map(initClusters,intListString),"\n")+&"\n");
+  //print("initClusters:\n"+&stringDelimitList(List.map(initClusters,intListString),"\n")+&"\n");
   (oSchedule,oSimCode,oTaskGraph,oTaskGraphMeta,oSccSimEqMapping) := TDS_schedule1(initClusters,iTaskGraph,taskGraphT,iTaskGraphMeta,tdsLevelArray,numProc,iSccSimEqMapping,iSimCode);
 end TDS_schedule;
 
@@ -2236,12 +2236,13 @@ algorithm
         true = listLength(clustersIn) == numProc;
         // order the tasks in the clusters
         clusters = List.map1(clustersIn,TDS_SortCompactClusters,TDSLevel);
-        print("clusters:\n"+&stringDelimitList(List.map(clusters,intListString),"\n")+&"\n");
+        //print("clusters:\n"+&stringDelimitList(List.map(clusters,intListString),"\n")+&"\n");
 
         // extract object stuff
         SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(vars=simVars), odeEquations=odes, jacobianEquations=jacobianEquations) = iSimCode;
         SimCode.SIMVARS(algVars=algVars) = simVars;
         HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,rootNodes=rootNodes,nodeNames=nodeNames,nodeDescs=nodeDescs,exeCosts=exeCosts,commCosts=commCosts,nodeMark=nodeMark) = iTaskGraphMeta;
+        /*
         //dumping stuff-------------------------
         print("simCode1 \n");
         SimCodeUtil.dumpSimCode(iSimCode);
@@ -2250,7 +2251,7 @@ algorithm
         print("inComps1\n");
         HpcOmSimCodeMain.dumpSccSimEqMapping(inComps);
         //--------------------------------------
-
+*/
         // prepare everything  in order to create new variables and equations for the duplicated tasks
         sizeTasks = List.fold(List.map(clusters,listLength),intAdd,0);
         taskAss = arrayCreate(sizeTasks,-1);
@@ -2294,7 +2295,7 @@ algorithm
         taskGraphT = BackendDAEUtil.transposeMatrix(taskGraph,arrayLength(taskGraph));
         schedule = insertLocksInSchedule(schedule,taskGraph,taskGraphT,taskAss,procAss);
         schedule = TDS_replaceSimEqSysIdxsInSchedule(schedule,newIdxAss);
-
+/*
         //dumping stuff-------------------------
         print("simCode 2\n");
         SimCodeUtil.dumpSimCode(simCode);
@@ -2307,7 +2308,7 @@ algorithm
         printSchedule(schedule);
         //HpcOmTaskGraph.printTaskGraph(taskGraph);
         //--------------------------------------
-
+*/
       then
         (schedule,simCode,taskGraph,meta,sccSimEqMap);
     else
@@ -2922,11 +2923,11 @@ algorithm
   (threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx) := idcsIn;
 
   // get the vars(crefs) and equations of the node
-  print("node to duplicate "+&intString(node)+&"\n");
+  //print("node to duplicate "+&intString(node)+&"\n");
   comps := arrayGet(inComps,node);
   comps := listReverse(comps);
   //print("comps :"+&intListString(comps)+&"\n");
-  print("task :"+&intString(taskIdx)+&"\n");
+  //print("task :"+&intString(taskIdx)+&"\n");
   simEqIdxLst := List.map1(comps,Util.arrayGetIndexFirst,sccSimEqMappingIn);
   simEqSysIdcs := List.flatten(simEqIdxLst);
   //print("simEqSysIdcs :"+&intListString(simEqSysIdcs)+&"\n");
@@ -2953,7 +2954,7 @@ algorithm
   repl := BackendVarTransform.addReplacements(replIn,crefs,crefsDuplExp,NONE());
   //BackendVarTransform.dumpReplacements(repl);
   simEqSysts := List.map1(simEqSysIdcs,SimCodeUtil.getSimEqSysForIndex,List.flatten(odes));
-  print("the simEqSysts to be duplicated "+&SimCodeUtil.dumpSimEqSystemLst(simEqSysts)+&"\n");
+  //print("the simEqSysts to be duplicated "+&SimCodeUtil.dumpSimEqSystemLst(simEqSysts)+&"\n");
 
   numEqs := listLength(simEqSysts);
   simEqSysIdcs2 := List.intRange2(simEqSysIdx,simEqSysIdx+numEqs-1);
@@ -2961,7 +2962,7 @@ algorithm
   (simEqSystsDupl,_) := List.map1_2(simEqSysts,replaceExpsInSimEqSystem,repl);// replace the exps and crefs
   (simEqSystsDupl,(lsIdx,nlsIdx,mIdx)) := List.mapFold(simEqSystsDupl,replaceSystemIndex,(lsIdx,nlsIdx,mIdx));// udpate the indeces of th systems
   simEqSystsDupl := List.threadMap(simEqSystsDupl,simEqSysIdcs2,SimCodeUtil.replaceSimEqSysIndex);
-  print("the simEqSystsDupl "+&SimCodeUtil.dumpSimEqSystemLst(simEqSystsDupl)+&"\n");
+  //print("the simEqSystsDupl "+&SimCodeUtil.dumpSimEqSystemLst(simEqSystsDupl)+&"\n");
   simEqSysIdx2 := simEqSysIdx + numEqs;
 
   //duplicate the equations inside a system of equations
@@ -3226,9 +3227,11 @@ algorithm
     then (simEqSys,changed);
     case(SimCode.SES_NONLINEAR(index=idx,eqs=simEqSysLst,crefs=crefs,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,linearTearing=lt),_)
       equation
-        print("TODO:replace crefs\n");
+        expLst = List.map(crefs,Expression.crefExp);
+        (expLst,changed) = BackendVarTransform.replaceExpList(expLst,replIn,NONE(),{},false);
+        crefs = List.map(expLst,Expression.expCref);    
         (simEqSysLst,bLst) = List.map1_2(simEqSysLst,replaceExpsInSimEqSystem,replIn);
-        changed = List.fold(bLst,boolOr,false);
+        changed = changed or List.fold(bLst,boolOr,false);
         print("implement Jacobian replacement for SES_NONLINEAR in HpcOmScheduler.replaceExpsInSimEqSystems!\n");
         simEqSys = SimCode.SES_NONLINEAR(idx,simEqSysLst,crefs,idxNLS,NONE(),lt);
     then (simEqSys,changed);
@@ -3351,15 +3354,12 @@ algorithm
   clusterOrder := listReverse(clusterOrder);
   clusters := List.map1(clusterOrder,List.getIndexFirst,clustersIn);  // the clusters, sorted in descending order of their accumulated execution costs
   numMergeClusters := intMin(intDiv(listLength(clustersIn),2),intSub(listLength(clustersIn),numProc));
-  print("clusters:\n"+&stringDelimitList(List.map(clusters,intListString),"\n")+&"\n");
-
-  print("numMergCluster "+&intString(numMergeClusters)+&"\n");
   (firstClusters,lastClusters) := List.split(clusters,numMergeClusters);
   (middleCluster,lastClusters) := List.split(lastClusters,intSub(listLength(lastClusters),numMergeClusters));
   lastClusters := listReverse(lastClusters);
   mergedClusters := List.threadMap(firstClusters,lastClusters,listAppend);
   clustersOut := listAppend(mergedClusters,middleCluster);
-  print("mergedClustersOut:\n"+&stringDelimitList(List.map(clustersOut,intListString),"\n")+&"\n");
+  //print("mergedClustersOut:\n"+&stringDelimitList(List.map(clustersOut,intListString),"\n")+&"\n");
 end TDS_CompactClusters;
 
 protected function TDS_SortCompactClusters"sorts the tasks in the cluster to descending order of their tds level value.
