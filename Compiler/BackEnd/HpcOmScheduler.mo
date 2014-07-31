@@ -2438,12 +2438,12 @@ algorithm
   (residualEquations,(idx,ass)) := List.mapFold(residualEquations,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass));
   (allEquations,(idx,ass)) := List.mapFold(allEquations,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass));
   (parameterEquations,(idx,ass)) := List.mapFold(parameterEquations,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass));
-   
+
 
   odeEquations := List.mapList1_1(odeEquations,TDS_replaceSimEqSysIndex,ass);
   algebraicEquations := List.mapList1_1(algebraicEquations,TDS_replaceSimEqSysIndex,ass);
   equationsForZeroCrossings := List.map1(equationsForZeroCrossings,TDS_replaceSimEqSysIndex,ass);
-  
+
   jacObts := List.map(jacobianMatrixes,Util.makeOption);
   jacObts := List.map1(jacObts,TDS_replaceSimEqSysIdxInJacobianMatrix,ass);
   jacobianMatrixes := List.map(jacObts,Util.getOption);
@@ -2543,7 +2543,7 @@ algorithm
         (eqs,(newIdx,ass)) = List.mapFold(eqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
         ass = arrayUpdate(ass,oldIdx,newIdx);
         simEqSys = SimCode.SES_MIXED(newIdx,cont,discVars,eqs,indexMixedSystem);
-   then (simEqSys,(newIdx+1,ass)); 
+   then (simEqSys,(newIdx+1,ass));
     case(_,(newIdx,ass))
       equation
         oldIdx = SimCodeUtil.eqIndex(simEqIn);
@@ -2948,7 +2948,7 @@ algorithm
   //BackendVarTransform.dumpReplacements(repl);
   simEqSysts := List.map1(simEqSysIdcs,SimCodeUtil.getSimEqSysForIndex,List.flatten(odes));
   print("the simEqSysts to be duplicated "+&SimCodeUtil.dumpSimEqSystemLst(simEqSysts)+&"\n");
-  
+
   numEqs := listLength(simEqSysts);
   simEqSysIdcs2 := List.intRange2(simEqSysIdx,simEqSysIdx+numEqs-1);
   //print("simEqSysIdcs2 :"+&intListString(simEqSysIdcs2)+&"\n");
@@ -3346,7 +3346,7 @@ algorithm
   clusters := List.map1(clusterOrder,List.getIndexFirst,clustersIn);  // the clusters, sorted in descending order of their accumulated execution costs
   numMergeClusters := intMin(intDiv(listLength(clustersIn),2),intSub(listLength(clustersIn),numProc));
   print("clusters:\n"+&stringDelimitList(List.map(clusters,intListString),"\n")+&"\n");
-  
+
   print("numMergCluster "+&intString(numMergeClusters)+&"\n");
   (firstClusters,lastClusters) := List.split(clusters,numMergeClusters);
   (middleCluster,lastClusters) := List.split(lastClusters,intSub(listLength(lastClusters),numMergeClusters));
