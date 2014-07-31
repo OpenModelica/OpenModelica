@@ -2800,6 +2800,13 @@ annotation(Documentation(info = "<html>
 </html>"));
 end getTimeStamp;
 
+function stringTypeName
+  input String str;
+  output TypeName cl;
+external "builtin";
+annotation(preferredView="text");
+end stringTypeName;
+
 function typeNameString
   input TypeName cl;
   output String out;

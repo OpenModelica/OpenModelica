@@ -1995,6 +1995,11 @@ algorithm
         v = Values.TUPLE({v1,v2});
       then (cache,v,st);
 
+    case (cache,_,"stringTypeName",{Values.STRING(str)},st,_)
+      equation
+        path = Parser.stringPath(str);
+      then (cache,Values.CODE(Absyn.C_TYPENAME(path)),st);
+
     case (cache,_,"typeNameString",{Values.CODE(A=Absyn.C_TYPENAME(path=path))},st,_)
       equation
         str = Absyn.pathString(path);

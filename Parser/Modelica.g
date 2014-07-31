@@ -1307,6 +1307,13 @@ component_reference__function_call returns [void* ast]
     }
   ;
 
+name_path_end returns [void* ast] :
+  np=name_path EOF
+  {
+    $ast = np;
+  }
+  ;
+
 name_path returns [void* ast]
 @init{ dot = 0; np = 0; } :
   (dot=DOT)? np=name_path2

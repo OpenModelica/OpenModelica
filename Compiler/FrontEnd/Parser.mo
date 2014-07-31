@@ -95,5 +95,13 @@ algorithm
   outStatements := ParserExt.parsestringexp(str,infoFilename,
     Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
 end parsestringexp;
+
+public function stringPath
+  input String str;
+  output Absyn.Path path;
+algorithm
+  path := ParserExt.stringPath(str, "<internal>", Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
+end stringPath;
+
 end Parser;
 

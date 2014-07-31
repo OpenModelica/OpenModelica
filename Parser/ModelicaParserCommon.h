@@ -72,6 +72,7 @@ typedef struct antlr_members_struct {
 #define PARSE_CODE_EXPRESSION 1<<3
 #define PARSE_PARMODELICA     1<<4
 #define PARSE_OPTIMICA        1<<5
+#define PARSE_PATH            1<<6
 #define metamodelica_enabled() (ModelicaParser_flags&PARSE_META_MODELICA)
 #define parmodelica_enabled() (ModelicaParser_flags&PARSE_PARMODELICA)
 #define optimica_enabled() (ModelicaParser_flags&PARSE_OPTIMICA)

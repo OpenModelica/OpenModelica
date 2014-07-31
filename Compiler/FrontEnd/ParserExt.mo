@@ -84,5 +84,16 @@ public function parsestringexp "Parse a string as if it was a sequence of statem
   output GlobalScript.Statements outStatements;
   external "C" outStatements=ParserExt_parsestringexp(str,infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parsestringexp;
+
+public function stringPath
+  input String str;
+  input String infoFilename;
+  input Integer acceptedGram;
+  input Integer languageStandardInt;
+  input Boolean runningTestsuite;
+  output Absyn.Path path;
+  external "C" path=ParserExt_stringPath(str, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
+end stringPath;
+
 end ParserExt;
 

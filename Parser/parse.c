@@ -323,21 +323,25 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int langStd, int runningTes
 
   /* if (ModelicaParser_flags & PARSE_FLAT)
     res = psr->flat_class(psr);
-  else */ if (ModelicaParser_flags & PARSE_EXPRESSION)
+  else */
+  if (ModelicaParser_flags & PARSE_EXPRESSION) {
     res = psr->interactive_stmt(psr);
-  else
+  } else if (ModelicaParser_flags & PARSE_PATH) {
+    res = psr->name_path(psr);
+  } else {
     res = psr->stored_definition(psr);
+  }
 
-  if (ModelicaParser_lexerError || pLexer->rec->state->failed || psr->pParser->rec->state->failed) // Some parts of the AST are NULL if errors are used...
+  if (ModelicaParser_lexerError || pLexer->rec->state->failed || psr->pParser->rec->state->failed) { // Some parts of the AST are NULL if errors are used...
     res = NULL;
+  }
   psr->free(psr);
   psr = (pModelicaParser) NULL;
   tstream->free(tstream);
   tstream = (pANTLR3_COMMON_TOKEN_STREAM) NULL;
   if (ModelicaParser_flags & PARSE_META_MODELICA) {
     ((pMetaModelica_Lexer)lxr)->free((pMetaModelica_Lexer)lxr);
-  }
-  else if (ModelicaParser_flags & PARSE_PARMODELICA) {
+  } else if (ModelicaParser_flags & PARSE_PARMODELICA) {
     ((pParModelica_Lexer)lxr)->free((pParModelica_Lexer)lxr);
   } else {
     ((pModelica_3_Lexer)lxr)->free((pModelica_3_Lexer)lxr);
