@@ -414,7 +414,7 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT("atan"),expLst={DAE.CALL(path=Absyn.IDENT("tan"),expLst={e})}))
       then e;
     // atan2(y,0) = sign(y)*pi/2
-    case (DAE.CALL(path=Absyn.IDENT("atan2"),expLst={e1,e2})) 
+    case (DAE.CALL(path=Absyn.IDENT("atan2"),expLst={e1,e2}))
      equation
       true = Expression.isZero(e2);
       e = Expression.makePureBuiltinCall("sign", {e1}, DAE.T_REAL_DEFAULT);
