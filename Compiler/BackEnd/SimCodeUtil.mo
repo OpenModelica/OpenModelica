@@ -7571,9 +7571,11 @@ algorithm
         s = s +& "\t"+&stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n\t");
     then (s);
 
-    case(SimCode.SES_MIXED(index=idx,indexMixedSystem=idxMS))
+    case(SimCode.SES_MIXED(index=idx,indexMixedSystem=idxMS, cont=cont, discEqs=eqs))
       equation
         s = intString(idx) +&": "+& " (MIXED) index:"+&intString(idxMS)+&"\n";
+        s = s+&"\t"+&dumpSimEqSystem(cont)+&"\n";
+        s = s+&"\tdiscEqs:\n\t"+&stringDelimitList(List.map(eqs,dumpSimEqSystem),"\t\n");
     then (s);
 
     case(SimCode.SES_WHEN(index=idx,conditions=_,initialCall=_))
