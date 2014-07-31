@@ -72,7 +72,9 @@ template simulationInitHeaderFile(SimCode simCode)
  "Generates code for header file for simulation target."
 ::=
 match simCode
-case SIMCODE(modelInfo=MODELINFO(__)) then
+case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),fileNamePrefix=fileNamePrefix) then
+  match modelInfo
+  case modelInfo as MODELINFO(vars=SIMVARS(__)) then
   <<
    #pragma once
    #include "OMCpp<%fileNamePrefix%>.h"
@@ -100,11 +102,15 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     void initializeAliasVars();
     void initializeIntAliasVars();
     void initializeBoolAliasVars();
+    
+    <%List.partition(vars.paramVars, 100) |> ls hasindex idx => 'void initializeParameterVars_<%idx%>();';separator="\n"%>
+    
     void initializeParameterVars();
     void initializeStateVars();
     void initializeDerVars();
   };
- >>
+  >>
+  end match
 end simulationInitHeaderFile;
 
 
@@ -3018,7 +3024,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    let init7  =initAliasValst(varDecls7,"Real",vars.aliasVars, simCode,contextOther,useFlatArrayNotation)
    let init8  =initAliasValst(varDecls8,"Int",vars.intAliasVars, simCode,contextOther,useFlatArrayNotation)
    let init9  =initValst(varDecls9,"Bool",vars.boolAliasVars, simCode,contextOther,useFlatArrayNotation)
-   let init10  =initValst(varDecls10,"Real",vars.paramVars, simCode,contextOther,useFlatArrayNotation)
+   let init10  =initValstWithSplit(varDecls10,"Real",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeParameterVars',vars.paramVars, simCode,contextOther,useFlatArrayNotation)
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeStateVars()
    {
@@ -3066,11 +3072,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
        <%init9%>
     }
 
-    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeParameterVars()
-    {
-       <%varDecls10%>
-       <%init10%>
-    }
+    <%init10%>
    >>
 end init2;
 
@@ -6006,6 +6008,31 @@ template isOutput(Causality c, Boolean useFlatArrayNotation)
 match c
   case OUTPUT(__) then "output"
 end isOutput;
+
+template initValstWithSplit(Text &varDecls /*BUFP*/, Text type ,Text funcNamePrefix, list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation) ::=
+  let &funcCalls = buffer "" /*BUFD*/
+  let extraFuncs = List.partition(varsLst, 100) |> ls hasindex idx =>
+    let &varDecls = buffer "" /*BUFD*/
+    let &funcCalls += '<%funcNamePrefix%>_<%idx%>();'
+    let init = initValst(varDecls, type, ls, simCode, context, useFlatArrayNotation)
+    <<
+    void <%funcNamePrefix%>_<%idx%>()
+    {
+       <%varDecls%>
+       <%init%>
+    }
+    >>
+    ;separator="\n"
+    
+  <<
+  <%extraFuncs%>
+  
+  void <%funcNamePrefix%>()
+  {
+    <%funcCalls%>
+  }
+  >>
+end initValstWithSplit;
 
 template initValst(Text &varDecls /*BUFP*/,Text type, list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation) ::=
   varsLst |> sv as SIMVAR(__) =>

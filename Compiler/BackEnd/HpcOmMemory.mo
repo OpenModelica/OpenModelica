@@ -136,7 +136,7 @@ encapsulated package HpcOmMemory
           SimCode.MODELINFO(vars=simCodeVars) = iModelInfo;
           SimCode.SIMVARS(stateVars=stateVars, derivativeVars=derivativeVars, algVars=algVars, paramVars=paramVars, aliasVars=aliasVars) = simCodeVars;
           allVarsMapping = SimCodeUtil.createIdxSCVarMapping(simCodeVars);
-          SimCodeUtil.dumpIdxScVarMapping(allVarsMapping);
+          //SimCodeUtil.dumpIdxScVarMapping(allVarsMapping);
           //print("--------------------------------\n");
           hashTable = HashTableCrILst.emptyHashTableSized(BaseHashTable.biggerBucketSize);
           hashTable = fillSimVarHashTable(stateVars,0,0,hashTable);
@@ -149,7 +149,7 @@ encapsulated package HpcOmMemory
           sccNodeMapping = HpcOmTaskGraph.getSccNodeMapping(arrayLength(iSccSimEqMapping), iTaskGraphMeta);
           //printSccNodeMapping(sccNodeMapping);
           scVarTaskMapping = getSimCodeVarNodeMapping(iTaskGraphMeta,iEqSystems,listLength(stateVars)*2+listLength(algVars),sccNodeMapping,hashTable);
-          printScVarTaskMapping(scVarTaskMapping);
+          //printScVarTaskMapping(scVarTaskMapping);
           //print("-------------------------------------\n");
           nodeSimCodeVarMapping = getNodeSimCodeVarMapping(iTaskGraphMeta, iEqSystems, hashTable);
           //printNodeSimCodeVarMapping(nodeSimCodeVarMapping);
@@ -158,7 +158,7 @@ encapsulated package HpcOmMemory
           eqSimCodeVarMapping = getEqSCVarMapping(iEqSystems,hashTable);
           (clTaskMapping,scVarTaskMapping) = getCacheLineTaskMapping(iTaskGraphMeta,iEqSystems,hashTable,numCL,scVarCLMapping);
 
-          //Get not optimized variabels
+          //Get not optimized variables
           //---------------------------
           notOptimizedVars = getNotOptimizedVarsByCacheLineMapping(scVarCLMapping, allVarsMapping);
           //notOptimizedVars = listAppend(notOptimizedVars, aliasVars);
@@ -309,6 +309,9 @@ encapsulated package HpcOmMemory
     //print("createCacheMapLevelOptimized0: Written CL_0: " +& stringDelimitList(List.map(writtenCL,intString), ",") +& " -- numCL: " +& intString(numCL) +& "\n");
     writtenCL := listAppend(writtenCL, Util.if_(intLe(numCL+1, numCL+createdCL), List.intRange2(numCL+1, numCL+createdCL), {}));
     //print("createCacheMapLevelOptimized0: Written CL_1: " +& stringDelimitList(List.map(writtenCL,intString), ",") +& "\n");
+    //print("======================================\n");
+    //printCacheMap(cacheMap);
+    //print("======================================\n");
     oInfo := (writtenCL,cacheMap,numCL+createdCL);
   end createCacheMapLevelOptimized0;
 
@@ -434,14 +437,14 @@ encapsulated package HpcOmMemory
     oInfo := matchcontinue(iSCVarIdx, iAllSCVarsMapping, iSimCodeVarTypes, iScVarCLMapping, iInfo)
       case(_,_,_,_,(cacheMap as CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat),numNewCL,cacheLineCandidates,writtenCL,currentCLCandidateIdx))
         equation //case 1: current CL-candidate has enough space to store variable
-          //print("appendSCVarToCacheMap scVarIdx: " +& intString(iSCVarIdx) +& "\n");
-          //print("  -- CachelineCandidates: " +& intString(listLength(cacheLineCandidates)) +& " currentCLCandidateidx: " +& intString(currentCLCandidateIdx) +& "\n");
           true = intGe(listLength(cacheLineCandidates), currentCLCandidateIdx);
           currentCLCandidate = listGet(cacheLineCandidates, currentCLCandidateIdx);
           ((varType,numBytesRequired)) = arrayGet(iSimCodeVarTypes,iSCVarIdx);
           true = doesSCVarFitIntoCL(currentCLCandidate, numBytesRequired);
           //print("  -- candidateCL has enough space\n");
           (currentCLCandidateCLIdx,currentCLCandidateFreeBytes) = currentCLCandidate;
+          //print("appendSCVarToCacheMap scVarIdx: " +& intString(iSCVarIdx) +& "\n");
+          //print("  -- CachelineCandidates: " +& intString(listLength(cacheLineCandidates)) +& " currentCLCandidateidx: " +& intString(currentCLCandidateIdx) +& " with " +& intString(currentCLCandidateFreeBytes) +& "free bytes\n");
           cacheLine = listGet(cacheLinesFloat, listLength(cacheLinesFloat) - currentCLCandidateCLIdx + 1);
           CACHELINEMAP(idx=clIdx,entries=CLentries) = cacheLine;
           //print("  -- writing to CL " +& intString(clIdx) +& " (free bytes: " +& intString(currentCLCandidateFreeBytes) +& ")\n");
@@ -545,8 +548,10 @@ encapsulated package HpcOmMemory
     oCacheLines := matchcontinue(iCacheLineIdx, iCacheLinesArray, iCacheLineSize, iCacheLines)
       case(_,_,_,_)
         equation
-          cacheLineEntry = arrayGet(iCacheLinesArray, iCacheLineIdx);
+          //print("createDetailedCacheMapInformations0: CacheLineIdx: " +& intString(iCacheLineIdx) +& "\n");
+          cacheLineEntry = arrayGet(iCacheLinesArray, arrayLength(iCacheLinesArray) - iCacheLineIdx + 1);
           numBytesFree = iCacheLineSize-getNumOfUsedBytesByCacheLine(cacheLineEntry);
+          //print("\tNumber of free bytes: " +& intString(numBytesFree) +& "\n");
           true = intGt(numBytesFree,0);
           cacheLines = (iCacheLineIdx,numBytesFree)::iCacheLines;
         then cacheLines;
@@ -565,7 +570,9 @@ encapsulated package HpcOmMemory
   algorithm
     CACHELINEMAP(entries=entries) := iCacheLineMap;
     entries := List.sort(entries, sortCacheLineEntriesByPos);
-    CACHELINEENTRY(start=firstEntryStart,size=firstEntrySize) := List.first(entries);
+    //print("getNumOfUsedBytesByCacheLine:\n");
+    //printCacheLineMapClean(iCacheLineMap);
+    CACHELINEENTRY(start=firstEntryStart,size=firstEntrySize) := List.last(entries);
     oNumBytes := firstEntryStart + firstEntrySize;
   end getNumOfUsedBytesByCacheLine;
 
@@ -1278,6 +1285,21 @@ encapsulated package HpcOmMemory
     print("    " +& iBytesString +& "\n");
     print("\n");
   end printCacheLineMap;
+  
+  protected function printCacheLineMapClean
+    input CacheLineMap iCacheLineMap;
+  protected
+    Integer idx;
+    list<CacheLineEntry> entries;
+    String iVarsString, iBytesString;
+  algorithm
+    CACHELINEMAP(idx=idx, entries=entries) := iCacheLineMap;
+    print("  CacheLineMap " +& intString(idx) +& " (" +& intString(listLength(entries)) +& " entries)\n");
+    ((iVarsString, iBytesString)) := List.fold(entries, cacheLineEntryToStringClean, ("",""));
+    print("    " +& iVarsString +& "\n");
+    print("    " +& iBytesString +& "\n");
+    print("\n");
+  end printCacheLineMapClean;
 
   protected function cacheLineEntryToString
     input CacheLineEntry iCacheLineEntry;
@@ -1303,6 +1325,28 @@ encapsulated package HpcOmMemory
     iBytesString := iBytesString +& iBytesStringNew;
     oString := (iVarsString,iBytesString);
   end cacheLineEntryToString;
+
+  protected function cacheLineEntryToStringClean
+    input CacheLineEntry iCacheLineEntry;
+    input tuple<String,String> iString; //<variable names seperated by |, byte positions string>
+    output tuple<String,String> oString;
+  protected
+    Integer start;
+    Integer dataType;
+    Integer size;
+    Integer scVarIdx;
+    String scVarStr;
+    String iVarsString, iBytesString, iBytesStringNew, byteStartString;
+  algorithm
+    (iVarsString, iBytesString) := iString;
+    CACHELINEENTRY(start=start,dataType=dataType,size=size,scVarIdx=scVarIdx) := iCacheLineEntry;
+    scVarStr := intString(scVarIdx);
+    iVarsString := iVarsString +& "| " +& scVarStr +& " ";
+    iBytesStringNew := intString(start);
+    iBytesStringNew := Util.stringPadRight(iBytesStringNew, 3 + stringLength(scVarStr), " ");
+    iBytesString := iBytesString +& iBytesStringNew;
+    oString := (iVarsString,iBytesString);
+  end cacheLineEntryToStringClean;
 
   protected function dumpSimCodeVar
     input SimCode.SimVar iVar;
@@ -1408,7 +1452,102 @@ encapsulated package HpcOmMemory
       else NONE();
     end matchcontinue;
   end getPositionMappingByArrayName;
+  
+  public function expandCref
+	  input DAE.ComponentRef iCref;
+	  input list<String> iNumArrayElems;
+	  output list<DAE.ComponentRef> oCrefs;
+	protected
+	  Integer elems, dims;
+	  list<Integer> dimElemCount;
+	algorithm
+	  dimElemCount := List.map(iNumArrayElems,stringInt);
+	  elems := List.reduce(dimElemCount, intMul);
+	  dims := listLength(iNumArrayElems);
+	  oCrefs := expandCref1(iCref, elems, dimElemCount);
+	end expandCref;
 
+  protected function expandCref1
+    input DAE.ComponentRef iCref;
+    input Integer iElems;
+    input list<Integer> iDimElemCount;
+    output list<DAE.ComponentRef> oCrefs;
+  protected
+    list<DAE.ComponentRef> tmpCrefs;
+    list<Integer> idxList;
+  algorithm
+    oCrefs := matchcontinue(iCref, iElems, iDimElemCount)
+      case(_,_,_)
+        equation
+          tmpCrefs = ComponentReference.expandCref(iCref, false);
+          true = intEq(listLength(tmpCrefs), iElems);
+        then tmpCrefs;
+      else
+        equation
+          //print("expandCref: " +& ComponentReference.printComponentRefStr(iCref) +& " elems: " +& intString(iElems) +& " dims: " +& intString(listLength(iDimElemCount)) +& "\n");
+          idxList = List.intRange(List.reduce(iDimElemCount, intMul));
+          //ComponentReference.printComponentRefList(List.map2(idxList, createArrayIndexCref, iDimElemCount, iCref));
+          tmpCrefs = List.map2(idxList, createArrayIndexCref, iDimElemCount, iCref);
+        then tmpCrefs;
+    end matchcontinue;
+  end expandCref1;
+  
+  protected function createArrayIndexCref
+    input Integer iIdx;
+    input list<Integer> iDimElemCount;
+    input DAE.ComponentRef iCref;
+    output DAE.ComponentRef oCref;
+  algorithm
+    ((oCref,_)) := createArrayIndexCref_impl(iIdx, iDimElemCount, (iCref,1));
+  end createArrayIndexCref;
+  
+  protected function createArrayIndexCref_impl
+    input Integer iIdx;
+    input list<Integer> iDimElemCount;
+    input tuple<DAE.ComponentRef, Integer> iRefCurrentDim; //<ref, currentDim>
+    output tuple<DAE.ComponentRef, Integer> oRefCurrentDim;
+  protected
+    DAE.Ident ident;
+    DAE.Type identType;
+    list<DAE.Subscript> subscriptLst;
+    DAE.ComponentRef componentRef;
+    Integer currentDim, idxValue, dimElemsPre, dimElems;
+  algorithm
+    oRefCurrentDim := matchcontinue(iIdx, iDimElemCount, iRefCurrentDim)
+      case(_,_,(DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef),1)) //the first dimension represents the last c-array-index 
+        equation
+          true = intLe(1, listLength(iDimElemCount));
+          //print("createArrayIndexCref_impl case1 " +& ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) +& " currentDim " +& intString(1) +& "\n");
+          ((componentRef,_)) = createArrayIndexCref_impl(iIdx, iDimElemCount, (componentRef,1));
+        then ((DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef),2));
+          
+      case(_,_,(DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef),currentDim))
+        equation
+          true = intLe(currentDim, listLength(iDimElemCount));
+          //print("createArrayIndexCref_impl case2 " +& ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) +& " currentDim " +& intString(currentDim) +& "\n");
+          ((componentRef,_)) = createArrayIndexCref_impl(iIdx, iDimElemCount, (componentRef,currentDim));
+        then ((DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef),currentDim+1));
+          
+      case(_,_,(DAE.CREF_IDENT(ident,identType,subscriptLst),1))
+        equation
+          true = intLe(1, listLength(iDimElemCount));
+          //print("createArrayIndexCref_impl case3 | len(subscriptList)= " +& intString(listLength(subscriptLst)) +& " " +& ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) +& " currentDim " +& intString(1) +& "\n");
+          idxValue = intMod(iIdx-1,List.last(iDimElemCount)) + 1; 
+          subscriptLst = DAE.INDEX(DAE.ICONST(idxValue))::subscriptLst;
+        then createArrayIndexCref_impl(iIdx, iDimElemCount, (DAE.CREF_IDENT(ident,identType,subscriptLst),2));
+       
+       case(_,_,(DAE.CREF_IDENT(ident,identType,subscriptLst),currentDim))
+        equation
+          true = intLe(currentDim, listLength(iDimElemCount));
+          //print("createArrayIndexCref_impl case4 | len(subscriptList)= " +& intString(listLength(subscriptLst)) +& " " +& ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) +& " currentDim " +& intString(currentDim) +& "\n");
+          dimElemsPre = List.reduce(List.sublist(iDimElemCount, listLength(iDimElemCount) - currentDim + 2, currentDim - 1), intMul);
+          dimElems = listGet(iDimElemCount, currentDim);
+          idxValue = intMod(intDiv(iIdx - 1, dimElemsPre),dimElems) + 1;
+          subscriptLst = DAE.INDEX(DAE.ICONST(idxValue))::subscriptLst;
+        then createArrayIndexCref_impl(iIdx, iDimElemCount, (DAE.CREF_IDENT(ident,identType,subscriptLst),currentDim+1));
+      else then iRefCurrentDim;
+    end matchcontinue;
+  end createArrayIndexCref_impl;
 
   // -------------------------------------------
   // UTIL

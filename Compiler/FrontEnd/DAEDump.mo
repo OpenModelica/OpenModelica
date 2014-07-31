@@ -3193,7 +3193,7 @@ algorithm
   end match;
 end dumpVarsStream;
 
-protected function printTypeStr
+public function printTypeStr
   input DAE.Type inType;
   output String outTypeStr;
   output String outTypeAttrStr;
