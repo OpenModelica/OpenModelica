@@ -1988,7 +1988,7 @@ algorithm
     // If we get a scalar we just update the value.
     case (cr as DAE.CREF_IDENT(subscriptLst = {}), _, _, _, st)
       equation
-        (ty, _) = getVariableTypeAndBinding(cr, inEnv);
+        ty = Types.unflattenArrayType(Expression.typeof(ValuesUtil.valueExp(inNewValue))); // In case of zero-dimensions, update the dimensions; they are all known now
         env = updateVariableBinding(cr, inEnv, ty, inNewValue);
       then
         (inCache, env, st);
