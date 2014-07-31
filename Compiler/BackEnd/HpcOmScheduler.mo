@@ -3229,7 +3229,7 @@ algorithm
       equation
         expLst = List.map(crefs,Expression.crefExp);
         (expLst,changed) = BackendVarTransform.replaceExpList(expLst,replIn,NONE(),{},false);
-        crefs = List.map(expLst,Expression.expCref);    
+        crefs = List.map(expLst,Expression.expCref);
         (simEqSysLst,bLst) = List.map1_2(simEqSysLst,replaceExpsInSimEqSystem,replIn);
         changed = changed or List.fold(bLst,boolOr,false);
         print("implement Jacobian replacement for SES_NONLINEAR in HpcOmScheduler.replaceExpsInSimEqSystems!\n");
