@@ -2433,7 +2433,7 @@ algorithm
     numInitialEquations=numInitialEquations, numInitialAlgorithms=numInitialAlgorithms, numInitialResiduals=numInitialResiduals, numExternalObjects=numExternalObjects,
     numStringAlgVars=numStringAlgVars, numStringParamVars=numStringParamVars, numStringAliasVars=numStringAliasVars, numEquations=numEquations, numLinearSystems=numLinearSystems,
     numNonLinearSystems=numNonLinearSystems, numMixedSystems=numMixedSystems, numStateSets=numStateSets, numJacobians=numJacobians, numOptimizeConstraints=numOptimizeConstraints) := varInfo;
-  
+
   //reassign new indexes
   (initialEquations,(idx,ass)) := List.mapFold(initialEquations,TDS_replaceSimEqSysIndexWithUpdate,(1,idxAssIn));
   (residualEquations,(idx,ass)) := List.mapFold(residualEquations,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass));
@@ -2443,8 +2443,8 @@ algorithm
   (minValueEquations,(idx,ass)) := List.mapFold(minValueEquations,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass));
   (maxValueEquations,(idx,ass)) := List.mapFold(maxValueEquations,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass));
   (parameterEquations,(idx,ass)) := List.mapFold(parameterEquations,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass));
-  (algorithmAndEquationAsserts,(idx,ass)) := List.mapFold(algorithmAndEquationAsserts,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass)); 
-  
+  (algorithmAndEquationAsserts,(idx,ass)) := List.mapFold(algorithmAndEquationAsserts,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass));
+
   //for collected groups
   odeEquations := List.mapList1_1(odeEquations,TDS_replaceSimEqSysIndex,ass);
   algebraicEquations := List.mapList1_1(algebraicEquations,TDS_replaceSimEqSysIndex,ass);
