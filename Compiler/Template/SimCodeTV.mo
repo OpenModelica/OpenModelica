@@ -2591,13 +2591,13 @@ package List
     input list<ElementType> inList2;
     output list<ElementType> outDifference;
   end setDifference;
-  
+
   function partition
     replaceable type ElementType subtypeof Any;
-	  input list<ElementType> inList;
-	  input Integer inPartitionLength;
-	  output list<list<ElementType>> outPartitions;
-	end partition;
+    input list<ElementType> inList;
+    input Integer inPartitionLength;
+    output list<list<ElementType>> outPartitions;
+  end partition;
 end List;
 
 package ComponentReference
@@ -2648,17 +2648,17 @@ package ComponentReference
     input DAE.ComponentRef inCref;
     output DAE.ComponentRef outCref;
   end appendStringFirstIdent;
-  
+
   function expandArrayCref
-	  input DAE.ComponentRef inCr;
-	  input DAE.Dimensions dims;
-	  output list<DAE.ComponentRef> outCrefs;   
+    input DAE.ComponentRef inCr;
+    input DAE.Dimensions dims;
+    output list<DAE.ComponentRef> outCrefs;
   end expandArrayCref;
-  
+
   function expandCref
-	  input DAE.ComponentRef inCref;
-	  input Boolean expandRecord;
-	  output list<DAE.ComponentRef> outCref;
+    input DAE.ComponentRef inCref;
+    input Boolean expandRecord;
+    output list<DAE.ComponentRef> outCref;
   end expandCref;
 end ComponentReference;
 
@@ -3311,7 +3311,7 @@ package HpcOmMemory
     input DAE.ComponentRef iVarName;
     output Option<tuple<Integer,Integer>> oResult;
   end getPositionMappingByArrayName;
-  
+
   function expandCref
     input DAE.ComponentRef iCref;
     input list<String> iNumArrayElems;

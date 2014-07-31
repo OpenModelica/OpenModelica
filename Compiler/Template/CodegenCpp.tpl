@@ -102,9 +102,9 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),fileNamePrefix=fileNamePrefix
     void initializeAliasVars();
     void initializeIntAliasVars();
     void initializeBoolAliasVars();
-    
+
     <%List.partition(vars.paramVars, 100) |> ls hasindex idx => 'void initializeParameterVars_<%idx%>();';separator="\n"%>
-    
+
     void initializeParameterVars();
     void initializeStateVars();
     void initializeDerVars();
@@ -6023,10 +6023,10 @@ template initValstWithSplit(Text &varDecls /*BUFP*/, Text type ,Text funcNamePre
     }
     >>
     ;separator="\n"
-    
+
   <<
   <%extraFuncs%>
-  
+
   void <%funcNamePrefix%>()
   {
     <%funcCalls%>
