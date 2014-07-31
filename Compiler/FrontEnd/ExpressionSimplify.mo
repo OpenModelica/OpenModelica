@@ -413,6 +413,12 @@ algorithm
       then e;
     case (DAE.CALL(path=Absyn.IDENT("atan"),expLst={DAE.CALL(path=Absyn.IDENT("tan"),expLst={e})}))
       then e;
+    // atan2(y,0) = sign(y)*pi/2
+    case (DAE.CALL(path=Absyn.IDENT("atan2"),expLst={e1,e2})) 
+     equation
+      true = Expression.isZero(e2);
+      e = Expression.makePureBuiltinCall("sign", {e1}, DAE.T_REAL_DEFAULT);
+     then DAE.BINARY(DAE.RCONST(1.570796326794896619231321691639751442),DAE.MUL(DAE.T_REAL_DEFAULT),e);
 
     // MetaModelica builtin operators are calls
     case _
