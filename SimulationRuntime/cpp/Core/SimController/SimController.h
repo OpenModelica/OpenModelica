@@ -20,7 +20,7 @@ public:
   virtual std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > LoadSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), string modelKey);
     virtual std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > LoadModelicaSystem(PATH modelica_path,string modelKey);
     /// Starts the simulation
-    virtual void Start(boost::shared_ptr<IMixedSystem> mixedsystem,SimSettings simsettings/*,ISimData* simData*/);
+    virtual void Start(boost::shared_ptr<IMixedSystem> mixedsystem,SimSettings simsettings,string modelKey);
     /// Stops the simulation
     virtual void Stop();
 private:

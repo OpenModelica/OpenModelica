@@ -12,7 +12,7 @@
      /*Defines*/
     #define PATH fs::path
 
-     #include <Genericfactory/Factory.h>
+     #include <Genericfactory/GenericFactory.h>
 #elif defined(OMC_BUILD)
 
 #ifdef ANALYZATION_MODE

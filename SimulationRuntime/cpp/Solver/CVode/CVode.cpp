@@ -499,7 +499,7 @@ int Cvode::calcFunction(const double& time, const double* y, double* f)
   {
     std::string error = ex.what();
     cerr << "CVode integration error: " << error;
-    return -1;
+    return 1;
   }
   return 0;
 }

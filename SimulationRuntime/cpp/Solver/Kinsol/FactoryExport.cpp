@@ -6,7 +6,8 @@
 
 #elif defined(SIMSTER_BUILD)
 
-#include "CVode.h"
+#include "Kinsol.h"
+#include "KinsolSettings.h"
 
 
 /*Simster factory*/

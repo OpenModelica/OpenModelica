@@ -12,6 +12,8 @@
 #elif defined(SIMSTER_BUILD)
 
 #include "Modelica.h"
+#include <Policies/FactoryConfig.h>
+#include <SimController/ISimController.h>
 #include "SimController.h"
 /*Simster factory*/
 extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_simcontroller(boost::extensions::factory_map & fm)

@@ -104,8 +104,13 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),fileNamePrefix=fileNamePrefix
     void initializeBoolAliasVars();
 
     <%List.partition(vars.paramVars, 100) |> ls hasindex idx => 'void initializeParameterVars_<%idx%>();';separator="\n"%>
-
+    <%List.partition(vars.intParamVars, 100) |> ls hasindex idx => 'void initializeIntParameterVars_<%idx%>();';separator="\n"%>
+    <%List.partition(vars.boolParamVars, 100) |> ls hasindex idx => 'void initializeBoolParameterVars_<%idx%>();';separator="\n"%>
+ 
+    
     void initializeParameterVars();
+    void initializeIntParameterVars();
+    void initializeBoolParameterVars();
     void initializeStateVars();
     void initializeDerVars();
   };
@@ -240,24 +245,15 @@ template simulationWriteOutputHeaderFile(SimCode simCode)
  "Generates code for header file for simulation target."
 ::=
 match simCode
-case SIMCODE(modelInfo=MODELINFO(__)) then
+case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
+  let outputtype = match   settings.outputFormat case "mat" then "MatFileWriter" else "TextFileWriter"
   <<
    #pragma once
     #include "OMCpp<%fileNamePrefix%>.h"
-
-    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
-  <<
-  #include "ReduceDAE/Interfaces/IReduceDAE.h"
-  #include "DataExchange/Policies/BufferReaderWriter.h"
-  typedef HistoryImpl<BufferReaderWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,<%numResidues(allEquations)%>> HistoryImplType;
-
-  >>
-  else
-  <<
-   #include "DataExchange/Policies/MatfileWriter.h"
-  typedef HistoryImpl<MatFileWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0,<%numParamVars(modelInfo)%>> HistoryImplType;
-  //typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0,<%numParamVars(modelInfo)%>> HistoryImplType;
-  >>%>
+    typedef HistoryImpl<<%outputtype%>,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0,<%numParamVars(modelInfo)%>> HistoryImplType;
+    
+   
+ 
   /*****************************************************************************
   *
   * Simulation code to write simulation file
@@ -1123,7 +1119,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
         //create Modelica system
             std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
 
-            simulation.first->Start(system.first,simulation.second);
+            simulation.first->Start(system.first,simulation.second,"<%lastIdentOfPath(modelInfo.name)%>");
 
 
       }
@@ -1372,6 +1368,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /MDd link with MSVCRTD.LIB debug lib
   # lib names should not be appended with a d just switch to lib/omc/cpp
 
+ 
 
   FILEPREFIX=<%fileNamePrefix%>
   FUNCTIONFILE=OMCpp<%fileNamePrefix%>Functions.cpp
@@ -1495,6 +1492,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     }
 
+    
+    
     /* Destructor */
     <%className%>::~<%className%>()
     {
@@ -2966,6 +2965,8 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     initializeIntAliasVars();
     initializeBoolAliasVars();
     initializeParameterVars();
+    initializeIntParameterVars();
+    initializeBoolParameterVars();
     initializeStateVars();
     initializeDerVars();
     <%initFunctions%>
@@ -3015,6 +3016,9 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    let &varDecls8 = buffer "" /*BUFD*/
    let &varDecls9 = buffer "" /*BUFD*/
    let &varDecls10 = buffer "" /*BUFD*/
+   let &varDecls11 = buffer "" /*BUFD*/
+   let &varDecls12 = buffer "" /*BUFD*/
+   let &varDecls13 = buffer "" /*BUFD*/
    let init1  = initValst(varDecls1,"Real",vars.stateVars, simCode,contextOther,useFlatArrayNotation)
    let init2  = initValst(varDecls2,"Real",vars.derivativeVars, simCode,contextOther,useFlatArrayNotation)
    let init3  = initValst(varDecls3,"Real",vars.algVars, simCode,contextOther,useFlatArrayNotation)
@@ -3025,6 +3029,9 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    let init8  =initAliasValst(varDecls8,"Int",vars.intAliasVars, simCode,contextOther,useFlatArrayNotation)
    let init9  =initValst(varDecls9,"Bool",vars.boolAliasVars, simCode,contextOther,useFlatArrayNotation)
    let init10  =initValstWithSplit(varDecls10,"Real",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeParameterVars',vars.paramVars, simCode,contextOther,useFlatArrayNotation)
+   let init11  =initValstWithSplit(varDecls11,"Int",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntParameterVars',vars.intParamVars, simCode,contextOther,useFlatArrayNotation)
+   let init12  =initValstWithSplit(varDecls12,"Bool",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolParameterVars',vars.boolParamVars, simCode,contextOther,useFlatArrayNotation)
+   
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeStateVars()
    {
@@ -3073,6 +3080,9 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
     }
 
     <%init10%>
+    <%init11%>
+    <%init12%>
+    
    >>
 end init2;
 
@@ -3681,8 +3691,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
       _historyImpl->write(varsnames,vardescs,paramnames,paramdecs);
-      HistoryImplType::value_type_p params(<%numParamVars(modelInfo)%>);
+      
+       /* workarround ced*/    
+  
+       HistoryImplType::value_type_p params(<%numParamVars(modelInfo)%>);
        <%writeoutputparams(modelInfo,simCode,useFlatArrayNotation)%>
+     
         _historyImpl->write(params,_global_settings->getStartTime(),_global_settings->getEndTime());
     }
     //Write the current values
@@ -5124,15 +5138,13 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__)))
   then
   <<
+
   <%if (boolNot(useFlatArrayNotation)) then arrayConstruct(modelInfo, useFlatArrayNotation) else ""%>
   <%initconstVals(vars.constVars,simCode,useFlatArrayNotation)%>
   <%initconstVals(vars.intConstVars,simCode,useFlatArrayNotation)%>
   <%initconstVals(vars.boolConstVars,simCode,useFlatArrayNotation)%>
   <%initconstVals(vars.stringConstVars,simCode,useFlatArrayNotation)%>
-  <%initconstVals(vars.paramVars,simCode,useFlatArrayNotation)%>
-  <%initconstVals(vars.intParamVars,simCode,useFlatArrayNotation)%>
-  <%initconstVals(vars.boolParamVars,simCode,useFlatArrayNotation)%>
-  <%initconstVals(vars.stringParamVars,simCode,useFlatArrayNotation)%>
+   <%initconstVals(vars.stringParamVars,simCode,useFlatArrayNotation)%>
   >>
 end simulationInitFile;
 
@@ -5199,10 +5211,6 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as S
   <%initValsArray(vars.intConstVars,simCode,useFlatArrayNotation)%>
   <%initValsArray(vars.boolConstVars,simCode,useFlatArrayNotation)%>
   <%initValsArray(vars.stringConstVars,simCode,useFlatArrayNotation)%>
-  <%initValsArray(vars.paramVars,simCode,useFlatArrayNotation)%>
-  <%initValsArray(vars.intParamVars,simCode,useFlatArrayNotation)%>
-  <%initValsArray(vars.boolParamVars,simCode,useFlatArrayNotation)%>
-  <%initValsArray(vars.stringParamVars,simCode,useFlatArrayNotation)%>
   >>
 end initializeArrayElements;
 
@@ -5385,9 +5393,12 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
 
         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeParametertNames(vector<string>& names)
         {
+         /*workarround ced*/
+         
          <% if vars.paramVars then
           'names += <%(vars.paramVars |> SIMVAR(__) =>
           '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+         
         }
 
          void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntParameterNames(vector<string>& names)
@@ -5488,9 +5499,11 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
 
          void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeParameterDescription(vector<string>& names)
         {
+         /*workarround ced*/
          <% if vars.paramVars then
           'names += <%(vars.paramVars |> SIMVAR(__) =>
           '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+          
         }
 
          void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntParameterDescription(vector<string>& names)
@@ -6009,6 +6022,8 @@ match c
   case OUTPUT(__) then "output"
 end isOutput;
 
+
+
 template initValstWithSplit(Text &varDecls /*BUFP*/, Text type ,Text funcNamePrefix, list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation) ::=
   let &funcCalls = buffer "" /*BUFD*/
   let extraFuncs = List.partition(varsLst, 100) |> ls hasindex idx =>
@@ -6033,6 +6048,7 @@ template initValstWithSplit(Text &varDecls /*BUFP*/, Text type ,Text funcNamePre
   }
   >>
 end initValstWithSplit;
+
 
 template initValst(Text &varDecls /*BUFP*/,Text type, list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation) ::=
   varsLst |> sv as SIMVAR(__) =>
@@ -8707,7 +8723,7 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
   <%preExpCond%>
   <%preExpMsg%>
   <%if msgVar then 'Assert(<%condVar%>,<%msgVar%>);' else 'Assert(<%condVar%>,"");'%>
-   >>
+  >>
 
 end assertCommon;
 
@@ -10907,6 +10923,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls,SimCod
 ::=
   let res = match stmt
   case s as STMT_ASSIGN(exp1=PATTERN(__)) then "STMT_ASSIGN Pattern not supported yet"
+
   case s as STMT_ASSIGN(__)         then algStmtAssign(s, context, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
   case s as STMT_ASSIGN_ARR(__)     then algStmtAssignArr(s, context, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
   case s as STMT_TUPLE_ASSIGN(__)   then algStmtTupleAssign(s, context, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)

@@ -24,11 +24,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_system(boost::exten
 
 }
 
-extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_modelica(boost::extensions::factory_map & fm)
-{
 
-    fm.get<IMixedSystem,int,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory>,boost::shared_ptr<ISimData> >()[2].set<Modelica>();
-}
 
 #elif defined(OMC_BUILD)
 #include "Modelica.h"

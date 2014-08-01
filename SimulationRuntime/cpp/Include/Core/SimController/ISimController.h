@@ -47,7 +47,7 @@ public:
     modelKey: Modelica model name
     modelica_path: path to Modelica system dll
     */
-    virtual void Start(boost::shared_ptr<IMixedSystem> mixedsystem,SimSettings simsettings/*,ISimData* simData*/)=0;
+    virtual void Start(boost::shared_ptr<IMixedSystem> mixedsystem,SimSettings simsettings,string modelKey)=0;
 
     /// Stops the simulation
     virtual void Stop()= 0;

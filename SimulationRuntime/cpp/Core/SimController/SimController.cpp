@@ -68,7 +68,7 @@ std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > SimContr
 
 }
 
-void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem,SimSettings simsettings/*,ISimData* simData*/)
+void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem,SimSettings simsettings,string modelKey)
 {
 
   try
