@@ -1429,7 +1429,6 @@ algorithm
 
       Integer i;
       Boolean b;
-      Real r;
 
       list<Boolean> blst;
       list<DAE.ComponentRef> crefs;
@@ -1479,16 +1478,13 @@ algorithm
         //print("\nresults to exp: " +& s1);
       then (res,  funcs);
 
-    /*
-    // simplication done in ExpressionSimply
+
     // differentiate builtin calls with N arguments with match
     // der(arctan2(y,0)) = der(sign(y)*pi/2) = 0
-    case (DAE.CALL(path=Absyn.IDENT("atan2"),attr=DAE.CALL_ATTR(builtin=true),expLst={_,e1 as  DAE.RCONST(r)}), _, _, _, _)
-      equation
-        0.0 = r; // match -> matchcontinue?
+    case (DAE.CALL(path=Absyn.IDENT("atan2"),attr=DAE.CALL_ATTR(builtin=true),expLst={_,e1 as  DAE.RCONST(real=0.0)}), _, _, _, _)
       then
         (e1,  inFunctionTree);
-    */
+
     // differentiate builtin calls with N arguments as match
     case (DAE.CALL(path=Absyn.IDENT(name),attr=(attr as DAE.CALL_ATTR(builtin=true)),expLst= (expl as (_::_::_))), _, _, _, _)
       equation
