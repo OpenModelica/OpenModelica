@@ -2497,7 +2497,7 @@ package Util
     input String str;
     output Boolean b;
   end isCIdentifier;
-  
+
   function isSome
     replaceable type Type_a subtypeof Any;
     input Option<Type_a> inOption;
