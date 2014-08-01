@@ -1479,14 +1479,16 @@ algorithm
         //print("\nresults to exp: " +& s1);
       then (res,  funcs);
 
+    /*
+    // simplication done in ExpressionSimply
     // differentiate builtin calls with N arguments with match
     // der(arctan2(y,0)) = der(sign(y)*pi/2) = 0
     case (DAE.CALL(path=Absyn.IDENT("atan2"),attr=DAE.CALL_ATTR(builtin=true),expLst={_,e1 as  DAE.RCONST(r)}), _, _, _, _)
       equation
-        0.0 = r;
+        0.0 = r; // match -> matchcontinue?
       then
         (e1,  inFunctionTree);
-
+    */
     // differentiate builtin calls with N arguments as match
     case (DAE.CALL(path=Absyn.IDENT(name),attr=(attr as DAE.CALL_ATTR(builtin=true)),expLst= (expl as (_::_::_))), _, _, _, _)
       equation
@@ -1965,7 +1967,16 @@ algorithm
                        DAE.MUL(tp),de1);
       then
         (e, funcs);
-
+    // x^i 
+	case (DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.ICONST(integer = i))), _, _, _, _)
+      equation
+        (de1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
+        i = i - 1;
+        e = DAE.BINARY(DAE.BINARY(e2,DAE.MUL(tp),
+                       DAE.BINARY(e1,DAE.POW(tp),DAE.ICONST(i))),
+                       DAE.MUL(tp),de1);
+      then
+        (e, funcs);
     // der(0^x) = 0
     case (DAE.BINARY(exp1 = (DAE.RCONST(real=0.0)),operator = DAE.POW(tp),exp2 = _), _, _, _, _)
       equation

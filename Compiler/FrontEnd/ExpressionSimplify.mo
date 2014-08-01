@@ -2238,7 +2238,7 @@ algorithm
         DAE.ARRAY(ty, true, expl1);
 
     // Vector-matrix multiplication, c[m] = a[n] * b[n, m].
-    case (DAE.ARRAY(ty = DAE.T_ARRAY(dims = {_}), array = expl1),
+    case (DAE.ARRAY(ty = DAE.T_ARRAY(dims = {_}), array = _),
           DAE.ARRAY(ty = DAE.T_ARRAY(ty, {m, _}, tp), array = expl2))
       equation
         // c[i] = a * b[:, i] for i in 1:m
@@ -4303,7 +4303,6 @@ algorithm
           DAE.BINARY(e_4,DAE.MUL(_),e_5),_,_,
           _,_,_,true /*e2==e4==e_3==e_6*/,_,false /*isConst(e2==e_3)*/,_,true /*op2==op3*/)
       equation
-        ty = Expression.typeof(e_1);
 
         true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
                Expression.operatorEqual(op1,DAE.ADD(ty));
@@ -4325,7 +4324,6 @@ algorithm
         false = Expression.isConst(e_2);
         true = Expression.expEqual(e_2,e_6);
         true = Expression.operatorEqual(op2,op3);
-        ty = Expression.typeof(e_1);
 
         true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
                Expression.operatorEqual(op1,DAE.ADD(ty));
@@ -4347,7 +4345,6 @@ algorithm
         false = Expression.isConst(e_2);
         true = Expression.expEqual(e_2,e_5);
         true = Expression.operatorEqual(op2,op3);
-        ty = Expression.typeof(e_1);
 
         true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
                Expression.operatorEqual(op1,DAE.ADD(ty));
@@ -4368,7 +4365,6 @@ algorithm
       equation
         true = Expression.expEqual(e_3,e_5);
         true = Expression.operatorEqual(op2,op3);
-        ty = Expression.typeof(e1);
 
         true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
                Expression.operatorEqual(op1,DAE.ADD(ty));
