@@ -129,7 +129,6 @@ IF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
 	message(STATUS "Using boost log")
 ELSE(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
 	message(STATUS "Boost log disabled")
-	unset(Boost_LOG_LIBRARY)
 ENDIF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
 
 find_package(Boost 1.54 COMPONENTS thread atomic)
