@@ -184,23 +184,11 @@ encapsulated package HpcOmMemory
         then SOME(tmpMemoryMap);
       case(_,_,_,_,_,_,_,_,_,_,_,_)
         equation
-          false = Flags.isSet(Flags.HPCOM_ANALYZATION_MODE);
-          hashTable = HashTableCrILst.emptyHashTableSized(1);
-          memoryPositionMapping = arrayCreate(0,(-1,-1));
-          SimCode.MODELINFO(vars=simCodeVars) = iModelInfo;
-          SimCode.SIMVARS(stateVars=stateVars, derivativeVars=derivativeVars, algVars=algVars, paramVars=paramVars, aliasVars=aliasVars) = simCodeVars;
-
-          notOptimizedVars = stateVars;
-          notOptimizedVars = listAppend(notOptimizedVars, derivativeVars);
-          notOptimizedVars = listAppend(notOptimizedVars, algVars);
-          notOptimizedVars = listAppend(notOptimizedVars, paramVars);
-
-          tmpMemoryMap = HpcOmSimCode.MEMORYMAP_ARRAY(memoryPositionMapping,0,hashTable,{});
-        then SOME(tmpMemoryMap);
-      else
-        equation
+          true = Flags.isSet(Flags.HPCOM_MEMORY_OPT);
           print("CreateMemoryMap failed!\n");
-      then NONE();
+        then NONE();
+      else
+        then NONE();
     end matchcontinue;
   end createMemoryMap;
 

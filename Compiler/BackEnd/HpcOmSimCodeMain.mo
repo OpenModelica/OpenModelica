@@ -213,7 +213,6 @@ algorithm
       //Create TaskGraph for all strongly connected components
       //------------------------------------------------------
       (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
-      SimCodeUtil.execStat("hpcom create TaskGraph");
 
 
       //Create Costs
@@ -224,7 +223,8 @@ algorithm
       fileName = ("taskGraph"+&filenamePrefix+&".graphml");
       schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1,-1.0));
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
-      SimCodeUtil.execStat("hpcom dump TaskGraph");
+      SimCodeUtil.execStat("hpcom setup");
+
 
       //print("DAE_onlySCCs\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraph);
@@ -242,6 +242,7 @@ algorithm
       daeSccMapping = Util.arrayAppend(sccSimEqMapping,daeSccMapping);
       schedulerInfo = arrayCreate(arrayLength(taskGraphDAE), (-1,-1,-1.0));
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDAE, taskGraphDataDAE,inBackendDAE, fileName, "", {}, {}, daeSccMapping ,schedulerInfo);
+      SimCodeUtil.execStat("hpcom create and dump DAE TaskGraph");
 
       //print("DAE\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraphDAE);
