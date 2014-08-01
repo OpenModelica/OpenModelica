@@ -1223,6 +1223,7 @@ algorithm
   (syst, m_, _, _, mapIncRowEqn) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs));
 //BackendDump.dumpEqSystem(syst, "fixInitialSystem");
 //BackendDump.dumpVariables(inInitVars, "selected initialization variables");
+//BackendDump.dumpIncidenceMatrix(m_);
 
   // get state-index list
   stateIndices := BackendVariable.getVarIndexFromVar(inInitVars, inVars);
@@ -1239,15 +1240,13 @@ algorithm
   // modify incidence matrix for under-determined systems
   nAddEqs := intMax(nVars-nEqns + inIndex, inIndex);
 //print("nAddEqs: " +& intString(nAddEqs) +& "\n");
-  m := fixUnderDeterminedSystem(m_, stateIndices, nEqns, nAddEqs);
-//BackendDump.dumpIncidenceMatrix(m);
+  m_ := fixUnderDeterminedSystem(m_, stateIndices, nEqns, nAddEqs);
+  SOME(m) := BackendDAEUtil.copyIncidenceMatrix(SOME(m_)) "deep copy" ;
 
   // modify incidence matrix for over-determined systems
   nAddVars := intMax(nEqns-nVars + inIndex, inIndex);
 //print("nAddVars: " +& intString(nAddVars) +& "\n");
   m := fixOverDeterminedSystem(m, initEqsIndices, nVars, nAddVars);
-//BackendDump.dumpIncidenceMatrix(m);
-//BackendDump.dumpIncidenceMatrix(m_);
 
   // match the system (nVars+nAddVars == nEqns+nAddEqs)
   vec1 := arrayCreate(nVars+nAddVars, -1);
@@ -1271,7 +1270,7 @@ algorithm
 
   // symbolic consistency check
   (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, inShared);
-  (_, _, _) := consistencyCheck(redundantEqns, inEqns, inVars, inShared, nAddVars, m, me, vec1, vec2, mapIncRowEqn);
+  (_, _, _) := consistencyCheck(redundantEqns, inEqns, inVars, inShared, nAddVars, m_, me, vec1, vec2, mapIncRowEqn);
 
   // remove all unassigned equations
   outEqns := BackendEquation.compressEquations(inEqns);
@@ -1484,11 +1483,8 @@ algorithm
     //BackendDump.dumpList(inRedundantEqns, "inRedundantEqns: ");
     //BackendDump.dumpIncidenceMatrix(inM);
 
-      // remove unnecessary temporary edges from incidence matrix
-      // TODO: The result should be the original incidence matrix. So, why don't we use it?
-      m = removeTempEdges(inM, nVars, nAddVars, 1);
-      mT = BackendDAEUtil.transposeMatrix(m, nVars+nAddVars);
-    //BackendDump.dumpIncidenceMatrix(m);
+      mT = BackendDAEUtil.transposeMatrix(inM, nVars+nAddVars);
+    //BackendDump.dumpIncidenceMatrix(inM);
 
       // get the sorting and algebraic loops
       comps = BackendDAETransform.tarjanAlgorithm(mT, vecEqsToVar);
@@ -1511,7 +1507,7 @@ algorithm
       marker_list = List.fill(0, listLength(flatComps));
       markerEq = List.fill(0, nEqns);
 
-      (markedComps, markedComps2, true, markedComps3) = compsMarker(currRedundantEqn, vecVarToEqs, m, flatComps, marker_list, markerEq, outLoopListComps);
+      (markedComps, markedComps2, true, markedComps3) = compsMarker(currRedundantEqn, vecVarToEqs, inM, flatComps, marker_list, markerEq, outLoopListComps);
     //BackendDump.dumpList(markedComps, "markedComps: ");
     //BackendDump.dumpList(markedComps2, "markedComps2: ");
     //BackendDump.dumpList(markedComps3, "markedComps3: ");
@@ -1521,7 +1517,7 @@ algorithm
     //BackendVarTransform.dumpReplacements(repl);
       substEqns = applyVarReplacements(redundantEqn, inEqns, repl);
 
-      (outRange, true, uncheckedEquations) = getConsistentEquation(redundantEqn, substEqns, inEqns, m, vecVarToEqs, inVars, inShared, 1);
+      (outRange, true, uncheckedEquations) = getConsistentEquation(redundantEqn, substEqns, inEqns, inM, vecVarToEqs, inVars, inShared, 1);
       (consistentEquations, inconsistentEquations, uncheckedEquations2) = consistencyCheck(restRedundantEqns, inEqns, inVars, inShared, nAddVars, inM, me, vecVarToEqs, vecEqsToVar, mapIncRowEqn);
 
       consistentEquations = listAppend(consistentEquations, outRange);
@@ -1568,62 +1564,6 @@ algorithm
     then b;
   end matchcontinue;
 end isVarExplicitSolvable;
-
-
-protected function removeTempEdges "
-  This function removes all the unneeded edges of the additionally introduced
-  variables.
-  TODO: This function is probably not needed..."
-  input BackendDAE.IncidenceMatrix inM;
-  input Integer inNVars "number of actual variables" ;
-  input Integer inNAddVars "number of tmp variables" ;
-  input Integer inCounter "initially call this with 1" ;
-  output BackendDAE.IncidenceMatrix outM;
-algorithm
-  outM := matchcontinue(inM, inNVars, inNAddVars, inCounter)
-    local
-      BackendDAE.IncidenceMatrix m;
-      list<Integer> oldIndices, newIndices;
-
-    case (_, _, _, _) equation
-      false = intLe(inCounter, inNVars+inNAddVars);
-    then inM;
-
-    case (_, _, _, _) equation
-      true = intLe(inCounter, inNVars+inNAddVars) "just to be careful" ;
-      oldIndices = inM[inCounter];
-      newIndices = removeTempEdges2(oldIndices, inNVars, inCounter);
-      m = arrayUpdate(inM, inCounter, newIndices);
-      m = removeTempEdges(m, inNVars, inNAddVars, inCounter+1);
-    then m;
-  end matchcontinue;
-end removeTempEdges;
-
-protected function removeTempEdges2
-   input list<Integer> inIndices;
-   input Integer inSize "number of actual variables" ;
-   input Integer inCounter;
-   output list<Integer> outListInteger;
-algorithm
-  outListInteger := matchcontinue (inIndices, inSize, inCounter)
-    local
-      Integer oldIndex;
-      list<Integer> oldIndices, newIndices;
-
-    case ({}, _, _)
-    then {};
-
-    case (oldIndex::oldIndices, _, _) equation
-      true = intGt(oldIndex, inSize);
-      newIndices = removeTempEdges2(oldIndices, inSize, inCounter);
-    then newIndices;
-
-    case (oldIndex::oldIndices, _, _) equation
-      false = intGt(oldIndex, inSize) "just to be careful" ;
-      newIndices = removeTempEdges2(oldIndices, inSize, inCounter);
-    then oldIndex::newIndices;
-  end matchcontinue;
-end removeTempEdges2;
 
 protected function splitStrongComponents "author: mwenzler"
   input list<list<Integer>> inComps "list of strong components" ;
