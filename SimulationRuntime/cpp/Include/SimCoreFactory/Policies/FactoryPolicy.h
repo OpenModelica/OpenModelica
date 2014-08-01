@@ -22,14 +22,14 @@
     #include <Policies/SolverSettingsFactory.h>
     #include <Policies/SystemFactory.h>
     #include <Policies/NonLinSolverFactory.h>
-	#include <Policies/LinSolverFactory.h>
+  #include <Policies/LinSolverFactory.h>
     /*Policy defines*/
     typedef SystemFactory<GenericFactory> SimControllerPolicy;
     typedef SolverFactory<GenericFactory> ConfigurationPolicy;
     //typedef LinSolverFactory<GenericFactory> ConfigurationPolicy;
     typedef NonLinSolverFactory<GenericFactory> NonLinSolverPolicy;
     typedef SolverSettingsFactory<GenericFactory> SolverSettingsPolicy;
-	typedef LinSolverFactory<GenericFactory> LinSolverPolicy;
+  typedef LinSolverFactory<GenericFactory> LinSolverPolicy;
 #elif defined(OMC_BUILD) && !defined(ANALYZATION_MODE)
    /*Policy include*/
 

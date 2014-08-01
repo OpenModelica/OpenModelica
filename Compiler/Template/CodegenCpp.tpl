@@ -106,8 +106,8 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),fileNamePrefix=fileNamePrefix
     <%List.partition(vars.paramVars, 100) |> ls hasindex idx => 'void initializeParameterVars_<%idx%>();';separator="\n"%>
     <%List.partition(vars.intParamVars, 100) |> ls hasindex idx => 'void initializeIntParameterVars_<%idx%>();';separator="\n"%>
     <%List.partition(vars.boolParamVars, 100) |> ls hasindex idx => 'void initializeBoolParameterVars_<%idx%>();';separator="\n"%>
- 
-    
+
+
     void initializeParameterVars();
     void initializeIntParameterVars();
     void initializeBoolParameterVars();
@@ -251,9 +251,9 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
    #pragma once
     #include "OMCpp<%fileNamePrefix%>.h"
     typedef HistoryImpl<<%outputtype%>,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0,<%numParamVars(modelInfo)%>> HistoryImplType;
-    
-   
- 
+
+
+
   /*****************************************************************************
   *
   * Simulation code to write simulation file
@@ -1368,7 +1368,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /MDd link with MSVCRTD.LIB debug lib
   # lib names should not be appended with a d just switch to lib/omc/cpp
 
- 
+
 
   FILEPREFIX=<%fileNamePrefix%>
   FUNCTIONFILE=OMCpp<%fileNamePrefix%>Functions.cpp
@@ -1492,8 +1492,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     }
 
-    
-    
+
+
     /* Destructor */
     <%className%>::~<%className%>()
     {
@@ -3031,7 +3031,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    let init10  =initValstWithSplit(varDecls10,"Real",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeParameterVars',vars.paramVars, simCode,contextOther,useFlatArrayNotation)
    let init11  =initValstWithSplit(varDecls11,"Int",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntParameterVars',vars.intParamVars, simCode,contextOther,useFlatArrayNotation)
    let init12  =initValstWithSplit(varDecls12,"Bool",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolParameterVars',vars.boolParamVars, simCode,contextOther,useFlatArrayNotation)
-   
+
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeStateVars()
    {
@@ -3082,7 +3082,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
     <%init10%>
     <%init11%>
     <%init12%>
-    
+
    >>
 end init2;
 
@@ -3691,12 +3691,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
       _historyImpl->write(varsnames,vardescs,paramnames,paramdecs);
-      
-       /* workarround ced*/    
-  
+
+       /* workarround ced*/
+
        HistoryImplType::value_type_p params(<%numParamVars(modelInfo)%>);
        <%writeoutputparams(modelInfo,simCode,useFlatArrayNotation)%>
-     
+
         _historyImpl->write(params,_global_settings->getStartTime(),_global_settings->getEndTime());
     }
     //Write the current values
@@ -5394,11 +5394,11 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeParametertNames(vector<string>& names)
         {
          /*workarround ced*/
-         
+
          <% if vars.paramVars then
           'names += <%(vars.paramVars |> SIMVAR(__) =>
           '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
-         
+
         }
 
          void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntParameterNames(vector<string>& names)
@@ -5503,7 +5503,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
          <% if vars.paramVars then
           'names += <%(vars.paramVars |> SIMVAR(__) =>
           '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
-          
+
         }
 
          void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntParameterDescription(vector<string>& names)
