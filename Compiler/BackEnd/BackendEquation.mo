@@ -226,18 +226,17 @@ algorithm
 end getZeroCrossingIndicesFromWhenClause2;
 
 
-public function copyEquationArray
-"author: wbraun"
-  input BackendDAE.EquationArray inEquations;
-  output BackendDAE.EquationArray outEquations;
+public function copyEquationArray "author: wbraun"
+  input BackendDAE.EquationArray inEquationArray;
+  output BackendDAE.EquationArray outEquationArray;
 protected
-  Integer n,size,arrsize;
-  array<Option<BackendDAE.Equation>> arr,arr_1;
+  Integer numberOfElement, size, arrSize;
+  array<Option<BackendDAE.Equation>> equOptArr, newEquOptArr;
 algorithm
-  BackendDAE.EQUATION_ARRAY(size=size,numberOfElement = n,arrSize = arrsize,equOptArr = arr) := inEquations;
-  arr_1 := arrayCreate(arrsize, NONE());
-  arr_1 := Util.arrayCopy(arr, arr_1);
-  outEquations := BackendDAE.EQUATION_ARRAY(size,n,arrsize,arr_1);
+  BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr) := inEquationArray;
+  newEquOptArr := arrayCreate(arrSize, NONE());
+  newEquOptArr := Util.arrayCopy(equOptArr, newEquOptArr);
+  outEquationArray := BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, newEquOptArr);
 end copyEquationArray;
 
 public function equationsLstVarsWithoutRelations
@@ -1619,8 +1618,9 @@ algorithm
   end match;
 end equationSetnthDAE;
 
-public function equationSetnth
-  "Sets the nth array element of an EquationArray."
+public function equationSetnth "
+  Sets the nth array element of an EquationArray.
+  Please note: zero-based indexing"
   input BackendDAE.EquationArray inEquationArray;
   input Integer inInteger;
   input BackendDAE.Equation inEquation;
