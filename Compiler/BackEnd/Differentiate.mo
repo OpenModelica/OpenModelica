@@ -1967,8 +1967,8 @@ algorithm
                        DAE.MUL(tp),de1);
       then
         (e, funcs);
-    // x^i 
-	case (DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.ICONST(integer = i))), _, _, _, _)
+    // x^i
+  case (DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.ICONST(integer = i))), _, _, _, _)
       equation
         (de1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         i = i - 1;
