@@ -2136,6 +2136,26 @@ algorithm
   end match;
 end equationSize;
 
+public function isInitialEquation
+  input BackendDAE.Equation inEquation;
+  output Boolean outBool;
+protected
+  BackendDAE.EquationKind eqKind;
+algorithm
+  eqKind := equationKind(inEquation);
+  outBool := isInitialEqKind(eqKind);
+end isInitialEquation;
+
+public function isInitialEqKind
+  input BackendDAE.EquationKind inEqKind;
+  output Boolean outBool;
+algorithm
+  outBool := match(inEqKind)
+    case(BackendDAE.INITIAL_EQUATION()) then true;
+    else then false;
+  end match;
+end isInitialEqKind;
+
 public function equationKind "Retrieve the kind from a BackendDAE.BackendDAE equation"
   input BackendDAE.Equation inEquation;
   output BackendDAE.EquationKind outEqKind;

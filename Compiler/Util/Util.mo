@@ -1138,7 +1138,7 @@ algorithm
       equation
         alen = arrayLength(arr) "Replacing element with index in range of the array" ;
         (pos <= alen) = true;
-        res = arrayUpdate(arr, pos , x);
+        res = arrayUpdate(arr, pos, x);
       then
         res;
     case (pos,x,fillv,arr)
@@ -1146,7 +1146,7 @@ algorithm
         //Replacing element out of range of array, create new array, and copy elts.
         newarr = arrayCreate(pos, fillv);
         res = arrayCopy(arr, newarr);
-        res_1 = arrayUpdate(res, pos , x);
+        res_1 = arrayUpdate(res, pos, x);
       then
         res_1;
     case (_,_,_,_)

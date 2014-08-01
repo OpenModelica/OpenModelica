@@ -6227,4 +6227,12 @@ algorithm
   oAcc := List.consOnTrue(b,i,iAcc);
 end getAssignedVars;
 
+public function getAssignedValue
+  input Integer inPos;
+  input array<Integer> ass;
+  output Integer outAssignment;
+algorithm
+  outAssignment := ass[inPos];
+end getAssignedValue;
+
 end Matching;

@@ -46,6 +46,7 @@ public import Values;
 
 protected import Absyn;
 protected import BackendDAEUtil;
+protected import BackendDump;
 protected import BaseHashSet;
 protected import BaseHashTable;
 protected import ComponentReference;
@@ -3443,6 +3444,7 @@ algorithm
         v;
     case (BackendDAE.VARIABLES(varArr = _),_)
       equation
+        BackendDump.printVariables(inVariables);
         Error.addInternalError("BackendVariable.getVarAt failed to get the variable at index: " +& intString(inInteger));
       then
         fail();
@@ -3885,35 +3887,30 @@ algorithm
 end mergeVariables1;
 
 public function traverseBackendDAEVars "author: Frenkel TUD
-
-  traverse all vars of a BackenDAE.Variables array.
-"
-  replaceable type Type_a subtypeof Any;
+  traverse all vars of a BackenDAE.Variables array."
   input BackendDAE.Variables inVariables;
   input FuncExpType func;
   input Type_a inTypeA;
   output Type_a outTypeA;
+  replaceable type Type_a subtypeof Any;
   partial function FuncExpType
     input tuple<BackendDAE.Var, Type_a> inTpl;
     output tuple<BackendDAE.Var, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  outTypeA:=
-  matchcontinue (inVariables,func,inTypeA)
+  outTypeA := matchcontinue (inVariables,func,inTypeA)
     local
       array<Option<BackendDAE.Var>> varOptArr;
       Integer n;
       Type_a ext_arg_1;
-    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=n,varOptArr=varOptArr)),_,_)
-      equation
-        ext_arg_1 = BackendDAEUtil.traverseBackendDAEArrayNoCopy(varOptArr,func,traverseBackendDAEVar,1,n,inTypeA);
-      then
-        ext_arg_1;
-    case (_,_,_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVars failed");
-      then
-        fail();
+
+    case (BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(numberOfElements=n, varOptArr=varOptArr)), _, _) equation
+      ext_arg_1 = BackendDAEUtil.traverseBackendDAEArrayNoCopy(varOptArr, func, traverseBackendDAEVar, 1, n, inTypeA);
+    then ext_arg_1;
+    
+    case (_, _, _) equation
+      Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVars failed");
+    then fail();
   end matchcontinue;
 end traverseBackendDAEVars;
 
