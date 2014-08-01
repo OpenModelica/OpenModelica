@@ -1461,14 +1461,14 @@ protected function consistencyCheck "
 algorithm
   (outConsistentEquations, outInconsistentEquations, outUncheckedEquations) := matchcontinue(inRedundantEqns, inEqns, inVars, inShared, nAddVars, inM, me, vecVarToEqs, vecEqsToVar, mapIncRowEqn)
     local
-      list<Integer> outRange, resiRange, flatComps, marker_list, markerEq, markedComps;
+      list<Integer> outRange, resiRange, flatComps, marker_list, markerEq, markedComps, markedComps2, markedComps3;
       list<Integer> outListComps, outLoopListComps, restRedundantEqns;
       list<Integer> consistentEquations, inconsistentEquations, uncheckedEquations, uncheckedEquations2;
       BackendDAE.IncidenceMatrix m;
       Integer nVars, nEqns, currRedundantEqn, redundantEqn;
       list<list<Integer>> comps;
       BackendDAE.IncidenceMatrixT mT;
-      BackendVarTransform.VariableReplacements repl, outRepl;
+      BackendVarTransform.VariableReplacements repl;
       BackendDAE.EquationArray substEqns;
 
     case ({}, _, _, _, _, _, _, _, _, _)
@@ -1511,15 +1511,15 @@ algorithm
       marker_list = List.fill(0, listLength(flatComps));
       markerEq = List.fill(0, nEqns);
 
-      (markedComps, _, true) = compsMarker(currRedundantEqn, vecVarToEqs, m, flatComps, marker_list, markerEq, outLoopListComps);
+      (markedComps, markedComps2, true, markedComps3) = compsMarker(currRedundantEqn, vecVarToEqs, m, flatComps, marker_list, markerEq, outLoopListComps);
     //BackendDump.dumpList(markedComps, "markedComps: ");
+    //BackendDump.dumpList(markedComps2, "markedComps2: ");
+    //BackendDump.dumpList(markedComps3, "markedComps3: ");
 
       repl = BackendVarTransform.emptyReplacements();
-
-      outRepl = equationsReplaceEquations(flatComps, inEqns, inVars, vecEqsToVar, repl, markedComps, mapIncRowEqn, me);
-    //BackendVarTransform.dumpReplacements(outRepl);
-
-      substEqns = applyVarReplacements(redundantEqn, inEqns, outRepl);
+      repl = setupVarReplacements(markedComps3, inEqns, inVars, vecEqsToVar, repl, mapIncRowEqn, me);
+    //BackendVarTransform.dumpReplacements(repl);
+      substEqns = applyVarReplacements(redundantEqn, inEqns, repl);
 
       (outRange, true, uncheckedEquations) = getConsistentEquation(redundantEqn, substEqns, inEqns, m, vecVarToEqs, inVars, inShared, 1);
       (consistentEquations, inconsistentEquations, uncheckedEquations2) = consistencyCheck(restRedundantEqns, inEqns, inVars, inShared, nAddVars, inM, me, vecVarToEqs, vecEqsToVar, mapIncRowEqn);
@@ -1668,7 +1668,8 @@ algorithm
   outIndices := List.map1(inIndices, mapIndex, inMapping);
 end mapIndices;
 
-protected function compsMarker "author: mwenzler"
+protected function compsMarker "author: mwenzler
+  TODO: revise this function!"
   input Integer unassignedEqn;
   input array<Integer> vecVarToEq;
   input BackendDAE.IncidenceMatrix m;
@@ -1676,26 +1677,26 @@ protected function compsMarker "author: mwenzler"
   input list<Integer> markerComps;
   input list<Integer> markerEq;
   input list<Integer> InLoopListComps;
-  output list<Integer> outMarkerComps; // Marker list Comps
-  output list<Integer> outMarkerEq;  // Marker 1...n
+  output list<Integer> outMarkerComps "obsolete" ; // Marker list Comps
+  output list<Integer> outMarkerEq "obsolete" ;  // Marker 1...n
   output Boolean outBool;
-
+  output list<Integer> outMarkedEqns "contains all the indices of the equations that need to be considered" ;
 algorithm
-  (outMarkerComps, outMarkerEq, outBool) := matchcontinue (unassignedEqn, vecVarToEq, m, flatComps, markerComps, markerEq, InLoopListComps)
+  (outMarkerComps, outMarkerEq, outBool, outMarkedEqns) := matchcontinue (unassignedEqn, vecVarToEq, m, flatComps, markerComps, markerEq, InLoopListComps)
     local
       list<Integer> var_list;
 
     case (_, _, _, _, _, _, _) equation
       false = listMember(unassignedEqn, InLoopListComps);
       var_list = m[unassignedEqn];
-      (outMarkerComps, outMarkerEq) = compsMarker2(var_list, vecVarToEq, m, flatComps, markerComps, markerEq);
+      (outMarkerComps, outMarkerEq, outMarkedEqns) = compsMarker2(var_list, vecVarToEq, m, flatComps, markerComps, markerEq, {});
 
-      (outMarkerComps, outMarkerEq) = downCompsMarker(listReverse(flatComps), vecVarToEq, m, flatComps, outMarkerComps, outMarkerEq);
-   then (outMarkerComps, outMarkerEq, true);
+      (outMarkerComps, outMarkerEq, outMarkedEqns) = downCompsMarker(listReverse(flatComps), vecVarToEq, m, flatComps, outMarkerComps, outMarkerEq, outMarkedEqns);
+   then (outMarkerComps, outMarkerEq, true, outMarkedEqns);
 
     case (_, _, _, _, _, _, _) equation
       Error.addCompilerNotification("It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
-    then ({}, {}, false);
+    then ({}, {}, false, {});
   end matchcontinue;
 end compsMarker;
 
@@ -1706,29 +1707,31 @@ protected function downCompsMarker
   input list<Integer> flatComps;
   input list<Integer> markerComps;
   input list<Integer> markerEq;
+  input list<Integer> inMarkedEqns;
   output list<Integer> outMarkerComps;
   output list<Integer> outMarkerEq;
+  output list<Integer> outMarkedEqns;
 algorithm
-  (outMarkerComps, outMarkerEq) := matchcontinue (unassignedEqns, vecVarToEq, m, flatComps, markerComps, markerEq)
+  (outMarkerComps, outMarkerEq, outMarkedEqns) := matchcontinue (unassignedEqns, vecVarToEq, m, flatComps, markerComps, markerEq, inMarkedEqns)
     local
       list<Integer> unassignedEqns2, var_list;
       Integer indexUnassigned, marker;
+      list<Integer> markedEqns;
 
-    case ({}, _, _, _, _, _)
-    then (markerComps, markerEq);
+    case ({}, _, _, _, _, _, _)
+    then (markerComps, markerEq, inMarkedEqns);
 
-    case (indexUnassigned::unassignedEqns2, _, _, _, _, _) equation
-
+    case (indexUnassigned::unassignedEqns2, _, _, _, _, _, _) equation
       marker = listGet(markerEq, indexUnassigned);
       true = intEq(marker, 1);
       var_list = m[indexUnassigned];
-      (outMarkerComps, outMarkerEq) = compsMarker2(var_list, vecVarToEq, m, flatComps, markerComps, markerEq);
-      (outMarkerComps, outMarkerEq) = downCompsMarker(unassignedEqns2, vecVarToEq, m, flatComps, outMarkerComps, outMarkerEq);
-    then (outMarkerComps, outMarkerEq);
+      (outMarkerComps, outMarkerEq, markedEqns) = compsMarker2(var_list, vecVarToEq, m, flatComps, markerComps, markerEq, inMarkedEqns);
+      (outMarkerComps, outMarkerEq, markedEqns) = downCompsMarker(unassignedEqns2, vecVarToEq, m, flatComps, outMarkerComps, outMarkerEq, markedEqns);
+    then (outMarkerComps, outMarkerEq, markedEqns);
 
-    case (indexUnassigned::unassignedEqns2, _, _, _, _, _) equation
-      (outMarkerComps, outMarkerEq) = downCompsMarker(unassignedEqns2, vecVarToEq, m, flatComps, markerComps, markerEq);
-    then (outMarkerComps, outMarkerEq);
+    case (indexUnassigned::unassignedEqns2, _, _, _, _, _, _) equation
+      (outMarkerComps, outMarkerEq, markedEqns) = downCompsMarker(unassignedEqns2, vecVarToEq, m, flatComps, markerComps, markerEq, inMarkedEqns);
+    then (outMarkerComps, outMarkerEq, markedEqns);
   end matchcontinue;
 end downCompsMarker;
 
@@ -1739,22 +1742,25 @@ protected function compsMarker2
   input list<Integer> flatComps;
   input list<Integer> markerComps;
   input list<Integer> markerEq;
+  input list<Integer> inMarkedEqns;
   output list<Integer> outMarkerComps;
   output list<Integer> outMarkerEq;
+  output list<Integer> outMarkedEqns;
 algorithm
-  (outMarkerComps, outMarkerEq) := matchcontinue (var_list, vecVarToEq, m, flatComps, markerComps, markerEq)
+  (outMarkerComps, outMarkerEq, outMarkedEqns) := matchcontinue (var_list, vecVarToEq, m, flatComps, markerComps, markerEq, inMarkedEqns)
     local
       Integer indexVar, indexEq;
       list<Integer> var_list2, var_list3;
+      list<Integer> markedEqns;
 
-    case ({}, _, _, _, _, _) equation
-    then (markerComps, markerEq);
+    case ({}, _, _, _, _, _, _) equation
+    then (markerComps, markerEq, inMarkedEqns);
 
-    case (indexVar::var_list2, _, _, _, _, _) equation
+    case (indexVar::var_list2, _, _, _, _, _, _) equation
       indexEq=vecVarToEq[indexVar];
-      (outMarkerComps, outMarkerEq)=compsMarker3(flatComps, markerComps, indexEq, 1, markerEq);
-      (outMarkerComps, outMarkerEq)=compsMarker2(var_list2, vecVarToEq, m, flatComps, outMarkerComps, outMarkerEq);
-    then (outMarkerComps, outMarkerEq);
+      (outMarkerComps, outMarkerEq, markedEqns) = compsMarker3(flatComps, markerComps, indexEq, 1, markerEq, inMarkedEqns);
+      (outMarkerComps, outMarkerEq, markedEqns) = compsMarker2(var_list2, vecVarToEq, m, flatComps, outMarkerComps, outMarkerEq, markedEqns);
+    then (outMarkerComps, outMarkerEq, markedEqns);
   end matchcontinue;
 end compsMarker2;
 
@@ -1764,19 +1770,22 @@ protected function compsMarker3
   input Integer indexEq;
   input Integer counter;
   input list<Integer> markerEq;
+  input list<Integer> inMarkedEqns;
   output list<Integer> outMarkerComps;
   output list<Integer> outMarkerEq;
+  output list<Integer> outMarkedEqns;
 algorithm
-  (outMarkerComps, outMarkerEq) := matchcontinue (flatComps, markerComps, indexEq, counter, markerEq)
+  (outMarkerComps, outMarkerEq, outMarkedEqns) := matchcontinue (flatComps, markerComps, indexEq, counter, markerEq, inMarkedEqns)
     local
       Integer indexComp, marker;
       list<Integer> flatComps2;
       array<Integer> marker_array;
+      list<Integer> markedEqns;
 
-    case ({}, _, _, _, _)equation
-    then (markerComps, markerEq);
+    case ({}, _, _, _, _, _)
+    then (markerComps, markerEq, inMarkedEqns);
 
-    case (indexComp::flatComps2, _, _, _, _) equation
+    case (indexComp::flatComps2, _, _, _, _, _) equation
       true = intLe(counter, listLength(markerComps));
       true = intEq(indexComp, indexEq);
       marker=listGet(markerComps, counter);
@@ -1788,72 +1797,66 @@ algorithm
       marker_array = listArray(markerEq);
       marker_array = arrayUpdate(marker_array, indexEq, 1);
       outMarkerEq = arrayList(marker_array);
-      (outMarkerComps, outMarkerEq) = compsMarker3(flatComps2, outMarkerComps, indexEq, counter+1, outMarkerEq);
-    then (outMarkerComps, outMarkerEq);
+      (outMarkerComps, outMarkerEq, markedEqns) = compsMarker3(flatComps2, outMarkerComps, indexEq, counter+1, outMarkerEq, indexComp::inMarkedEqns);
+    then (outMarkerComps, outMarkerEq, markedEqns);
 
-    case (indexComp::flatComps2, _, _, _, _) equation
+    case (indexComp::flatComps2, _, _, _, _, _) equation
       true = intLe(counter, listLength(markerComps));
-      (outMarkerComps, outMarkerEq) = compsMarker3(flatComps2, markerComps, indexEq, counter+1, markerEq);
-    then (outMarkerComps, outMarkerEq);
+      (outMarkerComps, outMarkerEq, markedEqns) = compsMarker3(flatComps2, markerComps, indexEq, counter+1, markerEq, inMarkedEqns);
+    then (outMarkerComps, outMarkerEq, markedEqns);
   end matchcontinue;
 end compsMarker3;
 
-protected function equationsReplaceEquations "author: mwenzler"
-  input list<Integer> flatComps;
+protected function setupVarReplacements
+  input list<Integer> inMarkedEqns;
   input BackendDAE.EquationArray inEqns;
   input BackendDAE.Variables inVars;
-  input array<Integer> vecEqToVar;
-  input BackendVarTransform.VariableReplacements repl;
-  input list<Integer> markerComps;
-  input array<Integer> mapIncRowEqn;
-  input BackendDAE.AdjacencyMatrixEnhanced meIn;
-  output BackendVarTransform.VariableReplacements outRepl;
+  input array<Integer> inVecEqToVar "matching" ;
+  input BackendVarTransform.VariableReplacements inRepls "initially call this with empty replacements" ;
+  input array<Integer> inMapIncRowEqn;
+  input BackendDAE.AdjacencyMatrixEnhanced inME;
+  output BackendVarTransform.VariableReplacements outRepls;
 algorithm
-  outRepl := matchcontinue(flatComps, inEqns, inVars, vecEqToVar, repl, markerComps, mapIncRowEqn, meIn)
+  outRepls := matchcontinue (inMarkedEqns, inEqns, inVars, inVecEqToVar, inRepls, inMapIncRowEqn, inME)
     local
-      list<Integer> flatComps2, markerComps2;
-      Integer indexEq, indexVar, indexMarker, indexEq2;
-      BackendVarTransform.VariableReplacements repl_1, repl1, repl2;
-      BackendDAE.Variables knvars;
+      Integer markedEqn;
+      list<Integer> markedEqns;
+      Integer indexVar, indexEq;
+      BackendVarTransform.VariableReplacements repls;
       BackendDAE.Var var;
-      BackendDAE.VarKind varKind;
       DAE.ComponentRef varName;
-      DAE.VarDirection varDirection;
-      DAE.VarParallelism varParallelism;
-      DAE.Type varType;
       BackendDAE.Equation eqn;
       DAE.ComponentRef cref;
       BackendDAE.Type type_;
       DAE.Exp exp, exp1, x;
 
-    case ({}, _, _, _, _, _, _, _) then repl;
+    case ({}, _, _, _, _, _, _)
+    then inRepls;
 
-    case (indexEq::flatComps2, _, _, _, _, indexMarker::markerComps2, _, _) equation
-      true = intEq(indexMarker, 1);
-
-      indexVar = vecEqToVar[indexEq];
+    case (markedEqn::markedEqns, _, _, _, _,  _, _) equation
+      indexVar = inVecEqToVar[markedEqn];
+      true = isVarExplicitSolvable(inME[markedEqn], indexVar);
       var = BackendVariable.getVarAt(inVars, indexVar);
 
-      true = isVarExplicitSolvable(meIn[indexEq], indexVar);
-
-      indexEq2=mapIncRowEqn[indexEq];
-      eqn = BackendEquation.equationNth1(inEqns, indexEq2);
+      indexEq = inMapIncRowEqn[markedEqn];
+      eqn = BackendEquation.equationNth1(inEqns, indexEq);
 
       cref = BackendVariable.varCref(var);
       type_ = BackendVariable.varType(var);
       x = DAE.CREF(cref, type_);
-      BackendDAE.VAR(varName=varName)=var;
       (eqn as BackendDAE.EQUATION(scalar=exp)) = BackendEquation.solveEquation(eqn, x);
-      ((exp1, _)) = Expression.traverseExp(exp, BackendDAEUtil.replaceCrefsWithValues, (inVars, varName));
-      repl_1 = BackendVarTransform.addReplacement(repl, varName, exp1, NONE());
-      outRepl=equationsReplaceEquations(flatComps2, inEqns, inVars, vecEqToVar, repl_1, markerComps2, mapIncRowEqn, meIn);
-    then outRepl;
 
-    case (indexEq::flatComps2, _, _, _, _, indexMarker::markerComps2, _, _) equation
-      outRepl=equationsReplaceEquations(flatComps2, inEqns, inVars, vecEqToVar, repl, markerComps2, mapIncRowEqn, meIn);
-    then outRepl;
+      varName = BackendVariable.varCref(var);
+      ((exp1, _)) = Expression.traverseExp(exp, BackendDAEUtil.replaceCrefsWithValues, (inVars, varName));
+      repls = BackendVarTransform.addReplacement(inRepls, varName, exp1, NONE());
+      repls = setupVarReplacements(markedEqns, inEqns, inVars, inVecEqToVar, repls, inMapIncRowEqn, inME);
+    then repls;
+
+    case (_::markedEqns, _, _, _, _, _, _) equation
+      repls = setupVarReplacements(markedEqns, inEqns, inVars, inVecEqToVar, inRepls, inMapIncRowEqn, inME);
+    then repls;
   end matchcontinue;
-end equationsReplaceEquations;
+end setupVarReplacements;
 
 protected function applyVarReplacements "author: lochel
   This function applies variable replacements to one equation out of an equation

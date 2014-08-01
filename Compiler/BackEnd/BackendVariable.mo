@@ -962,18 +962,12 @@ algorithm
   end match;
 end varNominal;
 
-public function varCref
-"author: PA
-  extracts the ComponentRef of a variable."
+public function varCref "author: PA
+  extracts the ComponentRef of a variable"
   input BackendDAE.Var inVar;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  outComponentRef:=
-  match (inVar)
-    local
-      DAE.ComponentRef cr;
-    case (BackendDAE.VAR(varName = cr)) then cr;
-  end match;
+  BackendDAE.VAR(varName=outComponentRef) := inVar;
 end varCref;
 
 public function isStateVar
