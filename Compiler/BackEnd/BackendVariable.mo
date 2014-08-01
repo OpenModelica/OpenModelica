@@ -3907,7 +3907,7 @@ algorithm
     case (BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(numberOfElements=n, varOptArr=varOptArr)), _, _) equation
       ext_arg_1 = BackendDAEUtil.traverseBackendDAEArrayNoCopy(varOptArr, func, traverseBackendDAEVar, 1, n, inTypeA);
     then ext_arg_1;
-    
+
     case (_, _, _) equation
       Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVars failed");
     then fail();
