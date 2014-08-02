@@ -254,6 +254,15 @@ algorithm
          e2 = DAE.BINARY(inExp2,DAE.POW(tp),res);
          (res, asserts) = solve(e1,e2,inExp3);
        then (res, asserts);
+    // f(a)^n = 0 => f(a) = 0
+    // where n is odd
+    case (DAE.BINARY(e1,DAE.POW(tp),e2), DAE.RCONST(real = 0.0), DAE.CREF(componentRef = cr))
+       equation
+         false = Expression.expHasCref(e2, cr);
+         true = Expression.expHasCref(e1, cr);
+         (res, asserts) = solve(e1,inExp2,inExp3);
+       then
+         (res,asserts);
     // f(a)^n = c => f(a) = c^(1/n)
     // where n is odd
     case (DAE.BINARY(e1,DAE.POW(tp),e2 as DAE.RCONST(r)), _, DAE.CREF(componentRef = cr))
