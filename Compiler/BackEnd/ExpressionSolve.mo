@@ -191,7 +191,7 @@ algorithm
       DAE.ComponentRef cr,cr1;
       DAE.Type tp;
       DAE.Exp e1,e2,res;
-      Real r;
+      Real r, r2;
       list<DAE.Statement> asserts;
 
     // special case for inital system when already solved, cr1 = $_start(...)
@@ -254,9 +254,21 @@ algorithm
          e2 = DAE.BINARY(inExp2,DAE.POW(tp),res);
          (res, asserts) = solve(e1,e2,inExp3);
        then (res, asserts);
-    // f(a)^n = 0 => f(a) = 0
-    // where n is odd
-    case (DAE.BINARY(e1,DAE.POW(tp),e2), DAE.RCONST(real = 0.0), DAE.CREF(componentRef = cr))
+    // (r1)^f(a) = r2 => f(a)  = ln(r2)/ln(r1)
+    case (DAE.BINARY(e1 as DAE.RCONST(r),DAE.POW(_),e2), DAE.RCONST(r2), DAE.CREF(componentRef = cr))
+       equation
+         true = r2 >. 0.0;
+         true = r >. 0.0;
+         false = Expression.isConstOne(e1);
+         true = Expression.expHasCref(e2, cr);
+         e1 = Expression.makePureBuiltinCall("log",{e1},DAE.T_REAL_DEFAULT);
+         res = Expression.makePureBuiltinCall("log",{inExp2},DAE.T_REAL_DEFAULT);
+         res = Expression.makeDiv(res,e1);
+         (res, asserts) = solve(e2,res,inExp3);
+       then
+         (res,asserts);
+    // f(a)^b = 0 => f(a) = 0
+    case (DAE.BINARY(e1,DAE.POW(_),e2), DAE.RCONST(real = 0.0), DAE.CREF(componentRef = cr))
        equation
          false = Expression.expHasCref(e2, cr);
          true = Expression.expHasCref(e1, cr);
@@ -265,7 +277,7 @@ algorithm
          (res,asserts);
     // f(a)^n = c => f(a) = c^(1/n)
     // where n is odd
-    case (DAE.BINARY(e1,DAE.POW(tp),e2 as DAE.RCONST(r)), _, DAE.CREF(componentRef = cr))
+    case (DAE.BINARY(e1,DAE.POW(_),e2 as DAE.RCONST(r)), _, DAE.CREF(componentRef = cr))
        equation
          1.0 = realMod(r,2.0);
          false = Expression.expHasCref(inExp2, cr);
