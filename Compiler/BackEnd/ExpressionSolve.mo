@@ -408,7 +408,16 @@ algorithm
         rhs = Expression.makeProductLst(e::factors);
         false = Expression.expHasCrefNoPreorDer(rhs, cr);
       then (rhs,{});
-
+    // f(a) = g(a) => f(a) - g(a) = 0
+    case(_,_,DAE.CREF(componentRef = cr),_)
+     equation
+        true = Expression.expHasCref(inExp1, cr);
+        true = Expression.expHasCref(inExp2, cr);
+        lhs = Expression.expSub(inExp1,inExp2);
+        tp = Expression.typeof(inExp2);
+        rhs = Expression.makeConstZero(tp);
+        (res,asserts) = solve(lhs,rhs,inExp3);
+       then (res, asserts);
     // f(a)*b = rhs  => f(a) = rhs/b solve for a
     case(DAE.BINARY(e1,DAE.MUL(tp),e2),_,DAE.CREF(componentRef = cr),_)
       equation
@@ -523,6 +532,15 @@ algorithm
         asserts2 = listAppend(asserts,asserts1);
       then
         (res,asserts2);
+    // f(a) = 0  => simplify(f(a)) = 0.0
+    case(_,DAE.RCONST(real = 0.0),DAE.CREF(componentRef = cr),_)
+     equation
+        true = Expression.expHasCref(inExp1, cr);
+        false = Expression.expHasCref(inExp2, cr);
+        (lhs,true) = ExpressionSimplify.simplify(inExp1);
+        (res,asserts) = solve(lhs,inExp2,inExp3);
+       then (res, asserts);
+
 
     // a^b = f(..) -> a = (if pre(a)==0 then 1 else sign(pre(a)))*(f(...)^(1/b))
     // does not work because not all have pre in code generation
