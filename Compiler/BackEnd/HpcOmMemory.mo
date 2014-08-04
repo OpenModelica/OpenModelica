@@ -1450,10 +1450,46 @@ encapsulated package HpcOmMemory
     list<Integer> dimElemCount;
   algorithm
     dimElemCount := List.map(iNumArrayElems,stringInt);
+    print("expandCref: dimElemCount " +& stringDelimitList(List.map(dimElemCount, intString), ",") +& "\n");
     elems := List.reduce(dimElemCount, intMul);
     dims := listLength(iNumArrayElems);
+    print("expandCref: " +& ComponentReference.printComponentRefStr(iCref) +& " dims: " +& intString(dims) +& "[" +& intString(getCrefDims(iCref)) +& "] elems: " +& intString(elems) +& "\n");
     oCrefs := expandCref1(iCref, elems, dimElemCount);
   end expandCref;
+  
+  protected function getNumArrayElems
+    input list<String> iNumArrayElems;
+    input Integer iDims;
+    output Integer oNumArrayElems;
+  protected
+    list<Integer> dimList;
+  algorithm
+    dimList := List.intRange(iDims);
+    //oNumArrayElems := List.flatten(List.map(dimList, List.getIndexFirst, iNumArrayElems), intAdd);
+    oNumArrayElems := 0;
+  end getNumArrayElems;
+  
+  protected function getCrefDims
+    input DAE.ComponentRef iCref;
+    output Integer oDims;
+  protected
+    DAE.ComponentRef componentRef;
+    list<DAE.Subscript> subscriptLst;
+    Integer tmpDims;
+  algorithm
+    oDims := match(iCref)
+      case(DAE.CREF_QUAL(componentRef=componentRef))
+        then getCrefDims(componentRef);
+      case(DAE.CREF_IDENT(subscriptLst=subscriptLst))
+        equation
+          tmpDims = listLength(subscriptLst);
+        then tmpDims;
+      else
+        equation
+          print("HpcOmMemory.getCrefDims failed!\n");
+        then 0;
+    end match;
+  end getCrefDims;
 
   protected function expandCref1
     input DAE.ComponentRef iCref;
