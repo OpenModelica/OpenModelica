@@ -1622,11 +1622,11 @@ algorithm
     // add it
     case ((e as DAE.PARTEVALFUNCTION(path = path),(func,usefuncs)))
       equation
-         (f as SOME(_)) = DAEUtil.avlTreeGet(func, path);
+         (f,body) = getFunctionAndBody(path,func);
          usefuncs1 = DAEUtil.avlTreeAdd(usefuncs, path, f);
-         // print("add partial function " +& Absyn.pathStringNoQual(path) +& "\n");
+         (_,(_,usefuncs2)) = DAEUtil.traverseDAE2(body,checkUnusedFunctions,(func,usefuncs1));
       then
-        ((e, (func,usefuncs1)));
+        ((e, (func,usefuncs2)));
 
     else inTuple;
   end matchcontinue;
