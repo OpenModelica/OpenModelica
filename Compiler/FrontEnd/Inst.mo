@@ -643,10 +643,11 @@ algorithm
 
     // adrpo: ONLY when running checkModel we should be able to instantiate partial classes
     case (cache,_,_,store,_,_,
-          SCode.CLASS(name=n, partialPrefix = SCode.PARTIAL(), info = info),
+          SCode.CLASS(name=n, partialPrefix = SCode.PARTIAL(), restriction = r, info = info),
           _,_,_,_,_)
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
+        false = SCode.isFunctionRestriction(r); // Partial functions are handled below (used for partially evaluated functions; do not want the checkModel warning)
         c = SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), inClass);
         // add a warning
         Error.addSourceMessage(Error.INST_PARTIAL_CLASS_CHECK_MODEL_WARNING, {n}, info);
