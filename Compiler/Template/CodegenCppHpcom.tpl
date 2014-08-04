@@ -1517,7 +1517,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
        case "inline-euler" then "-D_OMC_INLINE_EULER "
        case "inline-rungekutta" then "-D_OMC_INLINE_RK "
        case "dassljac" then "-D_OMC_JACOBIAN "%>'
-       
+
   let &extraCflags += if stringEq(type,"openmp") then " /openmp" else ""
   let &extraCflags += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then ' /DANALYZATION_MODE /I"$(SUNDIALS_INCLUDE)" /I"$(SUNDIALS_INCLUDE)/kinsol" /I"$(SUNDIALS_INCLUDE)/nvector"' else ""
   <<

@@ -1456,7 +1456,7 @@ encapsulated package HpcOmMemory
     print("expandCref: " +& ComponentReference.printComponentRefStr(iCref) +& " dims: " +& intString(dims) +& "[" +& intString(getCrefDims(iCref)) +& "] elems: " +& intString(elems) +& "\n");
     oCrefs := expandCref1(iCref, elems, dimElemCount);
   end expandCref;
-  
+
   protected function getNumArrayElems
     input list<String> iNumArrayElems;
     input Integer iDims;
@@ -1468,7 +1468,7 @@ encapsulated package HpcOmMemory
     //oNumArrayElems := List.flatten(List.map(dimList, List.getIndexFirst, iNumArrayElems), intAdd);
     oNumArrayElems := 0;
   end getNumArrayElems;
-  
+
   protected function getCrefDims
     input DAE.ComponentRef iCref;
     output Integer oDims;
