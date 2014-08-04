@@ -524,7 +524,7 @@ protected constant SCode.Element objectiveVarComp =
             Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
             SCode.noComment, NONE(), Absyn.dummyInfo);
 
-protected constant list<SCode.ELement> basicTypes = {clockType, rlType, intType, strType, boolType, enumType, ExternalObjectType, realType, integerType, stringType, booleanType, stateSelectType, uncertaintyType};
+protected constant list<SCode.Element> basicTypes = {clockType, rlType, intType, strType, boolType, enumType, ExternalObjectType, realType, integerType, stringType, booleanType, stateSelectType, uncertaintyType};
 
 public function variableIsBuiltin
  "Returns true if cref is a builtin variable.
