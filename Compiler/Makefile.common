@@ -191,6 +191,7 @@ Global.mo
 TEMPLATE = \
 AbsynDumpTpl.mo \
 CodegenAdevs.mo \
+CodegenSparseFMI.mo \
 CodegenC.mo \
 CodegenCpp.mo \
 CodegenCppHpcom.mo \

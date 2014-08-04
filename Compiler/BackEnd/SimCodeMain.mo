@@ -63,6 +63,7 @@ protected import CodegenFMU;
 protected import CodegenFMUCpp;
 protected import CodegenQSS;
 protected import CodegenAdevs;
+protected import CodegenSparseFMI;
 protected import CodegenCSharp;
 protected import CodegenCpp;
 protected import CodegenCppHpcom;
@@ -455,6 +456,10 @@ algorithm
 
     case (_, _, "Adevs") equation
       Tpl.tplNoret(CodegenAdevs.translateModel, simCode);
+    then ();
+
+    case (_, _, "sfmi") equation
+      Tpl.tplNoret2(CodegenSparseFMI.translateModel, simCode, "2.0");
     then ();
 
     case (_, outIndexedBackendDAE, "QSS") equation
