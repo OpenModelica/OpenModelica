@@ -92,8 +92,8 @@ case SIMCODE(__) then
   {
       fmi2Real real_vars[NUMBER_OF_REALS];
       fmi2Integer int_vars[NUMBER_OF_INTEGERS];
-	  fmi2Boolean bool_vars[NUMBER_OF_BOOLEANS];
-	  std::string str_vars[NUMBER_OF_STRINGS];
+    fmi2Boolean bool_vars[NUMBER_OF_BOOLEANS];
+    std::string str_vars[NUMBER_OF_STRINGS];
   };
 
   // implementation of the Model Exchange functions
@@ -137,17 +137,17 @@ template InstantiateFunction2()
   <<
   fmi2Component
   fmi2Instantiate(
-	  fmi2String instanceName,
-	  fmi2Type fmuType,
-	  fmi2String fmuGUID,
-	  fmi2String fmuResourceLocation,
-	  const fmi2CallbackFunctions* functions,
-	  fmi2Boolean visible,
-	  fmi2Boolean loggingOn)
+    fmi2String instanceName,
+    fmi2Type fmuType,
+    fmi2String fmuGUID,
+    fmi2String fmuResourceLocation,
+    const fmi2CallbackFunctions* functions,
+    fmi2Boolean visible,
+    fmi2Boolean loggingOn)
   {
       FMI2_FUNCTION_PREFIX_model_data_t* data = new FMI2_FUNCTION_PREFIX_model_data_t();
-	  setDefaultStartValues(data);
-	  return static_cast<fmi2Component>(data);
+    setDefaultStartValues(data);
+    return static_cast<fmi2Component>(data);
   }
 
   >>
@@ -161,7 +161,7 @@ template FreeFunction2()
   fmi2FreeInstance(fmi2Component c)
   {
       FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
-	  if (data != NULL) delete data;
+    if (data != NULL) delete data;
   }
 
   >>
@@ -439,8 +439,8 @@ template getRealFunction2()
   {
       FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
       if (data == NULL) return fmi2Error;
-	  for (size_t i = 0; i < nvr; i++)
-	  {
+    for (size_t i = 0; i < nvr; i++)
+    {
           if (vr[i] >= NUMBER_OF_REALS) return fmi2Error;
           value[i] = data->real_vars[vr[i]];
       }
@@ -459,8 +459,8 @@ template setRealFunction2()
   {
       FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
       if (data == NULL) return fmi2Error;
-	  for (size_t i = 0; i < nvr; i++)
-	  {
+    for (size_t i = 0; i < nvr; i++)
+    {
           if (vr[i] >= NUMBER_OF_REALS) return fmi2Error;
           data->real_vars[vr[i]] = value[i];
       }
@@ -476,11 +476,11 @@ template getIntegerFunction2()
   <<
   fmi2Status
   fmi2GetInteger(fmi2Component c, const fmi2ValueReference* vr, size_t nvr, fmi2Integer* value)
-  { 
+  {
       FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
       if (data == NULL) return fmi2Error;
-	  for (size_t i = 0; i < nvr; i++)
-	  {
+    for (size_t i = 0; i < nvr; i++)
+    {
           if (vr[i] >= NUMBER_OF_INTEGERS) return fmi2Error;
           value[i] = data->int_vars[vr[i]];
       }
@@ -499,8 +499,8 @@ template setIntegerFunction2()
   {
       FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
       if (data == NULL) return fmi2Error;
-	  for (size_t i = 0; i < nvr; i++)
-	  {
+    for (size_t i = 0; i < nvr; i++)
+    {
           if (vr[i] >= NUMBER_OF_INTEGERS) return fmi2Error;
           data->int_vars[vr[i]] = value[i];
       }
@@ -519,8 +519,8 @@ template getBooleanFunction2()
   {
       FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
       if (data == NULL) return fmi2Error;
-	  for (size_t i = 0; i < nvr; i++)
-	  {
+    for (size_t i = 0; i < nvr; i++)
+    {
           if (vr[i] >= NUMBER_OF_BOOLEANS) return fmi2Error;
           value[i] = data->bool_vars[vr[i]];
       }
@@ -539,8 +539,8 @@ template setBooleanFunction2()
   {
       FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
       if (data == NULL) return fmi2Error;
-	  for (size_t i = 0; i < nvr; i++)
-	  {
+    for (size_t i = 0; i < nvr; i++)
+    {
           if (vr[i] >= NUMBER_OF_BOOLEANS) return fmi2Error;
           data->bool_vars[vr[i]] = value[i];
       }
@@ -559,8 +559,8 @@ template getStringFunction2()
   {
       FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
       if (data == NULL) return fmi2Error;
-	  for (size_t i = 0; i < nvr; i++)
-	  {
+    for (size_t i = 0; i < nvr; i++)
+    {
           if (vr[i] >= NUMBER_OF_STRINGS) return fmi2Error;
           value[i] = data->str_vars[vr[i]].c_str();
       }
@@ -579,8 +579,8 @@ template setStringFunction2()
   {
       FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
       if (data == NULL) return fmi2Error;
-	  for (size_t i = 0; i < nvr; i++)
-	  {
+    for (size_t i = 0; i < nvr; i++)
+    {
           if (vr[i] >= NUMBER_OF_STRINGS) return fmi2Error;
           data->str_vars[vr[i]] = value[i];
       }
