@@ -524,6 +524,8 @@ protected constant SCode.Element objectiveVarComp =
             Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
             SCode.noComment, NONE(), Absyn.dummyInfo);
 
+protected constant list<SCode.ELement> basicTypes = {clockType, rlType, intType, strType, boolType, enumType, ExternalObjectType, realType, integerType, stringType, booleanType, stateSelectType, uncertaintyType};
+
 public function variableIsBuiltin
  "Returns true if cref is a builtin variable.
   Currently only 'time' is a builtin variable."
@@ -577,6 +579,7 @@ algorithm
     local
       list<Absyn.Class> initialClasses;
       SCode.Program initialProgram;
+      list<SCode.Element> types;
 
     // First look for cached version
     case (cache) equation
@@ -591,23 +594,10 @@ algorithm
         (cache, env);
 
     // if no cached version found create initial env.
-    case (cache) equation
+    case (cache)
+      equation
       env = Env.openScope(Env.emptyEnv, SCode.NOT_ENCAPSULATED(), NONE(), NONE());
-      env = Env.extendFrameClasses(env,
-              {rlType,
-               intType,
-               strType,
-               boolType,
-               enumType,
-               ExternalObjectType,
-               realType,
-               integerType,
-               stringType,
-               booleanType,
-               clockType,
-               stateSelectType,
-               uncertaintyType},
-               SOME(Env.BASIC_TYPE()));
+      env = Env.extendFrameClasses(env, basicTypes, SOME(Env.BASIC_TYPE()));
 
       env = Env.extendFrameV(
               env,
@@ -841,6 +831,7 @@ algorithm
     local
       list<Absyn.Class> initialClasses;
       SCode.Program initialProgram;
+      list<SCode.Element> types;
 
     /*/ First look for cached version
     case (cache) equation
@@ -858,22 +849,7 @@ algorithm
     case (cache)
       equation
         graph = FGraph.new(FCore.dummyTopModel);
-        graph = FGraphBuild.mkProgramGraph(
-        {rlType,
-         intType,
-         strType,
-         boolType,
-         enumType,
-         ExternalObjectType,
-         realType,
-         integerType,
-         stringType,
-         booleanType,
-         clockType,
-         stateSelectType,
-         uncertaintyType},
-         FCore.BASIC_TYPE(),
-         graph);
+        graph = FGraphBuild.mkProgramGraph(basicTypes, FCore.BASIC_TYPE(), graph);
 
 
       graph = FGraphBuild.mkCompNode(timeComp, FGraph.top(graph), FCore.BUILTIN(), graph);
