@@ -254,10 +254,10 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     pacString         = NULL;
     intMatrix         = NULL;
 
-    // allocate temp buffer for simulation data:  
+    // allocate temp buffer for simulation data:
     // dim_1 (number of variables) + dim_2 (number of der. variables) + 1 (time)
     doubleMatrixData2 = new double[dim_1 + dim_2 + 1];
-	}
+  }
 
   /*=={function}===================================================================================*/
   /*!
@@ -558,7 +558,7 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     double *doubleHelpMatrix = NULL;
 
     uiValueCount++;
-   
+
     // reset tempbuffer to zero
     memset(doubleMatrixData2, 0, sizeof(double)*uiVarCount);
     doubleHelpMatrix = doubleMatrixData2;
