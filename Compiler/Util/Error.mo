@@ -661,6 +661,8 @@ public constant Message NOTIFY_FRONTEND_STRUCTURAL_PARAMETERS = MESSAGE(248, TRA
   Util.gettext("The following structural parameters were evaluated in the front-end: %s\nStructural parameters are parameters used to calculate array dimensions or branch selection in certain if-equations or if-expressions among other things."));
 public constant Message SIMPLIFICATION_TYPE = MESSAGE(249, TRANSLATION(), NOTIFICATION(),
   Util.gettext("Expression simplification '%s' → '%s' changed the type from %s to %s."));
+public constant Message VECTORIZE_CALL_DIM_MISMATCH = MESSAGE(250, TRANSLATION(), ERROR(),
+  Util.gettext("Failed to vectorize function call argument %s=%s because its dimensions %s mismatch %s (dimension from earlier argument)."));
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));

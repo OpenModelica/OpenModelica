@@ -7985,7 +7985,7 @@ algorithm
         (cache,_,newslots,constInputArgs,_) = elabInputArgs(cache,env, args, nargs, slots,true,true,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),  {},st,pre,info,tp1,path);
 
         (args_2, newslots2) = addDefaultArgs(newslots, info);
-        vect_dims = slotsVectorizable(newslots2);
+        vect_dims = slotsVectorizable(newslots2, info);
 
         constlist = constInputArgs;
         const = List.fold(constlist, Types.constAnd, DAE.C_CONST());
@@ -9356,7 +9356,7 @@ algorithm
         // Check the sanity of function parameters whose types are dependent on other parameters.
         // e.g. input Integer i; input Integer a[i];  // type of 'a' depends on te value 'i'
         (params, restype) = applyArgTypesToFuncType(newslots, params, restype, env, checkTypes, info);
-        dims = slotsVectorizable(newslots);
+        dims = slotsVectorizable(newslots, info);
         polymorphicBindings = Types.solvePolymorphicBindings(polymorphicBindings,info,ts);
         restype = Types.fixPolymorphicRestype(restype, polymorphicBindings, info);
         t = DAE.T_FUNCTION(params,restype,functionAttributes,ts);
@@ -9837,22 +9837,23 @@ protected function slotsVectorizable
   confirms that they all are of same dimension,or no dimension, i.e. not
   vectorized. The uniform vectorized array dimension is returned."
   input list<Slot> inSlotLst;
+  input Absyn.Info info;
   output DAE.Dimensions outTypesArrayDimLst;
 algorithm
   outTypesArrayDimLst:=
-  matchcontinue (inSlotLst)
+  matchcontinue (inSlotLst,info)
     local
       DAE.Dimensions ad;
       list<Slot> rest;
-    case ({}) then {};
-    case ((SLOT(dims = (ad as (_ :: _))) :: rest))
+    case ({},_) then {};
+    case ((SLOT(dims = (ad as (_ :: _))) :: rest),_)
       equation
-        sameSlotsVectorizable(rest, ad);
+        sameSlotsVectorizable(rest, ad, info);
       then
         ad;
-    case ((SLOT(dims = {}) :: rest))
+    case ((SLOT(dims = {}) :: rest),_)
       equation
-        ad = slotsVectorizable(rest);
+        ad = slotsVectorizable(rest, info);
       then
         ad;
     else
@@ -9871,22 +9872,25 @@ protected function sameSlotsVectorizable
   dimensions."
   input list<Slot> inSlotLst;
   input DAE.Dimensions inTypesArrayDimLst;
+  input Absyn.Info info;
 algorithm
   _:=
-  match (inSlotLst,inTypesArrayDimLst)
+  match (inSlotLst,inTypesArrayDimLst, info)
     local
       DAE.Dimensions slot_ad,ad;
       list<Slot> rest;
-    case ({},_) then ();
-    case ((SLOT(dims = (slot_ad as (_ :: _))) :: rest),ad) /* arraydim must match */
+      DAE.Exp exp;
+      String name;
+    case ({},_,_) then ();
+    case ((SLOT(defaultArg = DAE.FUNCARG(name=name), arg = SOME(exp), dims = (slot_ad as (_ :: _))) :: rest),ad,_) /* arraydim must match */
       equation
-        sameArraydimLst(ad, slot_ad);
-        sameSlotsVectorizable(rest, ad);
+        sameArraydimLst(ad, slot_ad, name, exp, info);
+        sameSlotsVectorizable(rest, ad, info);
       then
         ();
-    case ((SLOT(dims = {}) :: rest),ad) /* empty arradim matches too */
+    case ((SLOT(dims = {}) :: rest),ad,_) /* empty arradim matches too */
       equation
-        sameSlotsVectorizable(rest, ad);
+        sameSlotsVectorizable(rest, ad, info);
       then
         ();
   end match;
@@ -9897,41 +9901,43 @@ protected function sameArraydimLst
   Helper function to sameSlotsVectorizable. "
   input DAE.Dimensions inTypesArrayDimLst1;
   input DAE.Dimensions inTypesArrayDimLst2;
+  input String name;
+  input DAE.Exp exp;
+  input Absyn.Info info;
 algorithm
   _:=
-  matchcontinue (inTypesArrayDimLst1,inTypesArrayDimLst2)
+  matchcontinue (inTypesArrayDimLst1,inTypesArrayDimLst2,name,exp,info)
     local
       Integer i1,i2;
       DAE.Dimensions ads1,ads2;
       DAE.Exp e1,e2;
       DAE.Dimension ad1,ad2;
-      String str1,str2,str;
-    case ({},{}) then ();
-    case ((DAE.DIM_INTEGER(integer = i1) :: ads1),(DAE.DIM_INTEGER(integer = i2) :: ads2))
+      String str1,str2,str3,str;
+    case ({},{},_,_,_) then ();
+    case ((DAE.DIM_INTEGER(integer = i1) :: ads1),(DAE.DIM_INTEGER(integer = i2) :: ads2),_,_,_)
       equation
         true = intEq(i1, i2);
-        sameArraydimLst(ads1, ads2);
+        sameArraydimLst(ads1, ads2, name, exp, info);
       then
         ();
-    case (DAE.DIM_UNKNOWN() :: ads1,DAE.DIM_UNKNOWN() :: ads2)
+    case (DAE.DIM_UNKNOWN() :: ads1,DAE.DIM_UNKNOWN() :: ads2,_,_,_)
       equation
-        sameArraydimLst(ads1, ads2);
+        sameArraydimLst(ads1, ads2, name, exp, info);
       then
         ();
-    case (DAE.DIM_EXP(e1) :: ads1,DAE.DIM_EXP(e2) :: ads2)
+    case (DAE.DIM_EXP(e1) :: ads1,DAE.DIM_EXP(e2) :: ads2, _, _, _)
       equation
         true = Expression.expEqual(e1,e2);
-        sameArraydimLst(ads1, ads2);
+        sameArraydimLst(ads1, ads2, name, exp, info);
       then
         ();
-    case (ad1 :: _,ad2 :: _)
+    case (ad1 :: _,ad2 :: _, _, _, _)
       equation
-        str1 = ExpressionDump.dimensionString(ad1);
-        str2 = ExpressionDump.dimensionString(ad2);
-        str = "Could not vectorize function because dimensions "+&str1+&" and "+&str2+&"mismatch.";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then
-        fail();
+        str1 = ExpressionDump.printExpStr(exp);
+        str2 = ExpressionDump.dimensionString(ad1);
+        str3 = ExpressionDump.dimensionString(ad2);
+        Error.addSourceMessage(Error.VECTORIZE_CALL_DIM_MISMATCH, {name,str1,str2,str3}, info);
+      then fail();
   end matchcontinue;
 end sameArraydimLst;
 
