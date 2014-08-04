@@ -247,12 +247,17 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     uiValueCount      = 0;
     dataHdrPos        = 0;
     dataEofPos        = 0;
+
     doubleMatrixData1 = NULL;
     doubleMatrixData2 = NULL;
     stringMatrix      = NULL;
     pacString         = NULL;
     intMatrix         = NULL;
-  }
+
+    // allocate temp buffer for simulation data:  
+    // dim_1 (number of variables) + dim_2 (number of der. variables) + 1 (time)
+    doubleMatrixData2 = new double[dim_1 + dim_2 + 1];
+	}
 
   /*=={function}===================================================================================*/
   /*!
@@ -354,28 +359,28 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     for(std::vector<std::string>::const_iterator it = s_list.begin(); it != s_list.end(); ++it)
     {
       if(it->size() > uilongestName)
-        uilongestName = it->size();
+        uilongestName = it->size() + 1;  // +1 because of string end
     }
 
     // get longest string of the parameter names
     for(std::vector<std::string>::const_iterator it = s_parameter_list.begin(); it != s_parameter_list.end(); ++it)
     {
       if(it->size() > uilongestName)
-        uilongestName = it->size();
+        uilongestName = it->size() + 1;  // +1 because of string end
     }
 
     // get longest string of the variable descriptions
     for(std::vector<std::string>::const_iterator it = s_desc_list.begin(); it != s_desc_list.end(); ++it)
     {
       if(it->size() > uilongestDesc)
-        uilongestDesc = it->size();
+        uilongestDesc = it->size() + 1;  // +1 because of string end
     }
 
     // get longest string of the parameter descriptions
     for(std::vector<std::string>::const_iterator it = s_desc_parameter_list.begin(); it != s_desc_parameter_list.end(); ++it)
     {
       if(it->size() > uilongestDesc)
-        uilongestDesc = it->size();
+        uilongestDesc = it->size() + 1;  // +1 because of string end
     }
 
     // get longest string. is needed for temp buffer
@@ -385,8 +390,8 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     stringMatrix = new char[uiVarCount*uilongest];
     memset(stringMatrix, 0, sizeof(char)*uiVarCount*uilongest);
     stringHelpMatrix = stringMatrix;
-    pacString = new char[uilongest+1];
-    memset(pacString, 0, sizeof(char)*(uilongest+1));
+    pacString = new char[uilongest];
+    memset(pacString, 0, sizeof(char)*(uilongest));
     pacHelpString = pacString;
 
     // first time ist written to "name" matrix...
@@ -396,7 +401,7 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     // ...followed by variable names...
     for(std::vector<std::string>::const_iterator it = s_list.begin(); it != s_list.end(); ++it)
     {
-      strncpy(pacHelpString,it->c_str(),uilongestName+1);
+      strncpy(pacHelpString,it->c_str(),uilongestName);
       vFixVarName(pacHelpString,it->size());
       strncpy(stringHelpMatrix,pacHelpString,uilongestName);
       stringHelpMatrix += uilongestName;
@@ -405,7 +410,7 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     // ...followed by parameter names
     for(std::vector<std::string>::const_iterator it = s_parameter_list.begin(); it != s_parameter_list.end(); ++it)
     {
-      strncpy(pacHelpString,it->c_str(),uilongestName+1);
+      strncpy(pacHelpString,it->c_str(),uilongestName);
       vFixVarName(pacHelpString,it->size());
       strncpy(stringHelpMatrix,pacHelpString,uilongestName);
       stringHelpMatrix += uilongestName;
@@ -417,7 +422,7 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     // initialize pointer and reset to zero
     memset(stringMatrix, 0, sizeof(char)*uiVarCount*uilongest);
     stringHelpMatrix = stringMatrix;
-    memset(pacString, 0, sizeof(char)*(uilongest+1));
+    memset(pacString, 0, sizeof(char)*(uilongest));
     pacHelpString = pacString;
 
     // first description of time ist written to "name" matrix...
@@ -427,7 +432,7 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     // ...followed by variable descriptions...
     for(std::vector<std::string>::const_iterator it = s_desc_list.begin(); it != s_desc_list.end(); ++it)
     {
-      strncpy(pacHelpString,it->c_str(),uilongestDesc+1);
+      strncpy(pacHelpString,it->c_str(),uilongestDesc);
       vFixVarName(pacHelpString,it->size());
       strncpy(stringHelpMatrix,pacHelpString,uilongestDesc);
       stringHelpMatrix += uilongestDesc;
@@ -436,7 +441,7 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     // ...followed by parameter descriptions...
     for(std::vector<std::string>::const_iterator it = s_desc_parameter_list.begin(); it != s_desc_parameter_list.end(); ++it)
     {
-      strncpy(pacHelpString,it->c_str(),uilongestDesc+1);
+      strncpy(pacHelpString,it->c_str(),uilongestDesc);
       vFixVarName(pacHelpString,it->size());
       strncpy(stringHelpMatrix,pacHelpString,uilongestDesc);
       stringHelpMatrix += uilongestDesc;
@@ -550,13 +555,11 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
   void write(const value_type_v& v_list,const value_type_dv& v2_list,double time)
   {
     unsigned int uiVarCount = v_list.size() + v2_list.size() + 1;  // alle Variablen, alle abgeleiteten Variablen und die Zeit
-    double *doubleMatrixData2 = NULL;
     double *doubleHelpMatrix = NULL;
 
     uiValueCount++;
-
-    // get memory and reset to zero
-    doubleMatrixData2 = new double[uiVarCount];
+   
+    // reset tempbuffer to zero
     memset(doubleMatrixData2, 0, sizeof(double)*uiVarCount);
     doubleHelpMatrix = doubleMatrixData2;
 
@@ -582,7 +585,7 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
     writeMatVer4Matrix("data_2", uiVarCount, uiValueCount, doubleMatrixData2, sizeof(double));
 
     // initialize pointer
-    doubleMatrixData2 = NULL;
+    doubleHelpMatrix = NULL;
   }
 
   /*=================================================================================*/
