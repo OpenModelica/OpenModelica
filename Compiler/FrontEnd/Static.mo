@@ -3448,7 +3448,7 @@ algorithm
         (cache, dims_1, dimprops, _) = elabExpList(cache, env, dims, impl, NONE(), true, pre, info);
         (dims_1,_) = Types.matchTypes(dims_1, List.map(dimprops,Types.getPropType), DAE.T_INTEGER_DEFAULT, false);
         sty = Types.getPropType(prop);
-        sty = makeFillArgListType(sty, dimprops);
+        sty = Types.liftArrayListExp(sty, dims_1);
         exp_type = Types.simplifyType(sty);
         prop = DAE.PROP(sty, c1);
         exp = Expression.makePureBuiltinCall("fill", s_1 :: dims_1, exp_type);
@@ -3462,7 +3462,7 @@ algorithm
         false = Config.splitArrays();
         (cache, s_1, DAE.PROP(sty, c1), _) = elabExp(cache, env, s, impl,NONE(), true, pre, info);
         (cache, dims_1, dimprops, _) = elabExpList(cache, env, dims, impl,NONE(), true, pre, info);
-        sty = makeFillArgListType(sty, dimprops);
+        sty = Types.liftArrayListExp(sty, dims_1);
         exp_type = Types.simplifyType(sty);
         c1 = Types.constAnd(c1, DAE.C_PARAM());
         prop = DAE.PROP(sty, c1);
@@ -3572,31 +3572,6 @@ algorithm
         fail();
   end matchcontinue;
 end elabBuiltinFill2;
-
-protected function makeFillArgListType
-  "Helper function to elabBuiltinFill. Takes the type of the fill expression and
-    the properties of the dimensions, and constructs the result type of the fill
-    function."
-  input DAE.Type fillType;
-  input list<DAE.Properties> dimProps;
-  output DAE.Type resType;
-algorithm
-  resType := match(fillType, dimProps)
-    local
-      DAE.Properties prop;
-      list<DAE.Properties> rest_props;
-      DAE.Type t;
-
-    case (_, {}) then fillType;
-
-    case (_, _ :: rest_props)
-      equation
-        t = makeFillArgListType(fillType, rest_props);
-        t = DAE.T_ARRAY(t, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource);
-      then
-        t;
-  end match;
-end makeFillArgListType;
 
 protected function elabBuiltinSymmetric "This function elaborates the builtin operator symmetric"
   input Env.Cache inCache;
@@ -8946,14 +8921,14 @@ protected function vectorizeCall "author: PA
   foo(1:2,{1,2;3,4}) vectorizes with arraydim [2] to
   {foo(1,{1,2}),foo(2,{3,4})}"
   input DAE.Exp inExp;
-  input DAE.Dimensions inTypesArrayDimLst;
+  input DAE.Dimensions inDims;
   input list<Slot> inSlotLst;
   input DAE.Properties inProperties;
   input Absyn.Info info;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outExp,outProperties) := matchcontinue (inExp,inTypesArrayDimLst,inSlotLst,inProperties,info)
+  (outExp,outProperties) := matchcontinue (inExp,inDims,inSlotLst,inProperties,info)
     local
       DAE.Exp e,vect_exp,vect_exp_1,dimexp;
       DAE.Type tp,tp0;
@@ -8972,6 +8947,8 @@ algorithm
       DAE.ReductionInfo rinfo;
       DAE.ReductionIterator riter;
       String foldName,resultName;
+      list<DAE.ReductionIterator> riters;
+      DAE.ReductionIterType iterType;
 
     case (e,{},_,prop,_) then (e,prop);
 
@@ -8984,33 +8961,6 @@ algorithm
         (vect_exp_1, prop) = vectorizeCall(e, DAE.DIM_INTEGER(1) :: ad, slots, prop, info);
       then
         (vect_exp_1, prop);
-
-    /* Single dimension is possible to change to a reduction */
-    case (DAE.CALL(fn,es,attr),{dim},slots,prop as DAE.PROP(tp,c),_)
-      equation
-        true = Types.dimNotFixed(dim);
-        (es,vect_exp) = vectorizeCallUnknownDimension(es,slots,{},NONE(),info);
-        tp0 = Types.liftArrayRight(tp, DAE.DIM_INTEGER(0));
-        tp = Types.liftArrayRight(tp, DAE.DIM_UNKNOWN());
-        prop = DAE.PROP(tp,c);
-        e = DAE.CALL(fn,es,attr);
-        _ = Types.simplifyType(tp0);
-        foldName = Util.getTempVariableIndex();
-        resultName = Util.getTempVariableIndex();
-        rinfo = DAE.REDUCTIONINFO(Absyn.IDENT("array"),DAE.COMBINE(),tp,SOME(Values.ARRAY({},{0})),foldName,resultName,NONE());
-        tp = Types.expTypetoTypesType(Expression.typeof(vect_exp));
-        riter = DAE.REDUCTIONITER(vectorizeArg,vect_exp,NONE(),tp);
-        e = DAE.REDUCTION(rinfo,e,{riter});
-      then
-        (e,prop);
-
-    /* Scalar expression, non-constant but known dimensions */
-    case (DAE.CALL(path = _),(DAE.DIM_EXP(exp=dimexp) :: _),_,DAE.PROP(_,_),_)
-      equation
-        str = "Cannot vectorize call with dimension [" +& ExpressionDump.printExpStr(dimexp) +& "]";
-        Error.addSourceMessage(Error.INTERNAL_ERROR,{str},info);
-      then
-        fail();
 
     /* Scalar expression, i.e function call */
     case (e as DAE.CALL(path = _),(dim :: ad),slots,DAE.PROP(tp,c),_)
@@ -9034,6 +8984,32 @@ algorithm
       then
         (vect_exp_1,prop);
 
+    /* Multiple dimensions are possible to change to a reduction, like:
+     * f(arr1,arr2) => array(f(x,y) thread for x in arr1, y in arr2)
+     * f(mat1,mat2) => array(array(f(x,y) thread for x in arr1, y in arr2) thread for arr1 in mat1, arr2 in mat2
+     */
+    case (DAE.CALL(fn,es,attr),dim::ad,slots,prop as DAE.PROP(tp,c),_)
+      equation
+        (es,riters) = vectorizeCallUnknownDimension(es,slots,{},{},info);
+        tp = Types.liftArrayRight(tp, dim);
+        prop = DAE.PROP(tp,c);
+        e = DAE.CALL(fn,es,attr);
+        (e,prop) = vectorizeCall(e,ad,slots,prop,info); // Recurse...
+        foldName = Util.getTempVariableIndex();
+        resultName = Util.getTempVariableIndex();
+        iterType = Util.if_(listLength(riters)>1,DAE.THREAD(),DAE.COMBINE());
+        rinfo = DAE.REDUCTIONINFO(Absyn.IDENT("array"),iterType,tp,SOME(Values.ARRAY({},{0})),foldName,resultName,NONE());
+        e = DAE.REDUCTION(rinfo,e,riters);
+      then (e,prop);
+
+    /* Scalar expression, non-constant but known dimensions */
+    case (DAE.CALL(path = _),(DAE.DIM_EXP(exp=dimexp) :: _),_,DAE.PROP(_,_),_)
+      equation
+        str = "Cannot vectorize call with dimensions [" +& ExpressionDump.dimensionsString(inDims) +& "]";
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{str},info);
+      then
+        fail();
+
     case (_,dim::_,_,_,_)
       equation
         str = ExpressionDump.dimensionString(dim);
@@ -9048,10 +9024,10 @@ protected function vectorizeCallUnknownDimension
   input list<DAE.Exp> inEs;
   input list<Slot> inSlots;
   input list<DAE.Exp> inAcc;
-  input Option<DAE.Exp> found;
+  input list<DAE.ReductionIterator> found;
   input Absyn.Info info;
   output list<DAE.Exp> oes;
-  output DAE.Exp ofound;
+  output list<DAE.ReductionIterator> ofound;
 algorithm
   (oes,ofound) := match (inEs,inSlots,inAcc,found,info)
     local
@@ -9060,25 +9036,24 @@ algorithm
       list<DAE.Exp> es;
       list<Slot> slots;
       list<DAE.Exp> acc;
-
-    case ({},{},acc,SOME(e),_) then (listReverse(acc),e);
-    case ({},{},_,NONE(),_)
+      String name;
+      DAE.Type ty,tp;
+      DAE.ReductionIterator riter;
+    case ({},{},_,{},_)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR,{"Static.vectorizeCallUnknownDimension could not find any slot to vectorize"},info);
       then fail();
+    case ({},{},acc,_,_) then (listReverse(acc),listReverse(found));
     case (e::es,SLOT(dims={})::slots,acc,_,_)
       equation
         (oes,ofound) = vectorizeCallUnknownDimension(es,slots,e::acc,found,info);
       then (oes,ofound);
-    case (e1::_,_,_,SOME(e2),_)
+    case (e::es,SLOT(defaultArg=DAE.FUNCARG(ty=ty))::slots,acc,_,_)
       equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        Error.addSourceMessage(Error.VECTORIZE_TWO_UNKNOWN,{s1,s2},info);
-      then fail();
-    case (e::es,_::slots,acc,_,_)
-      equation
-        (oes,ofound) = vectorizeCallUnknownDimension(es,slots,DAE.CREF(DAE.CREF_IDENT(vectorizeArg,DAE.T_REAL_DEFAULT,{}),DAE.T_REAL_DEFAULT)::acc,SOME(e),info);
+        name = Util.getTempVariableIndex();
+        tp = Types.expTypetoTypesType(Expression.typeof(e)); // Maybe raise the type from the SLOT instead?
+        riter = DAE.REDUCTIONITER(name,e,NONE(),tp);
+        (oes,ofound) = vectorizeCallUnknownDimension(es,slots,DAE.CREF(DAE.CREF_IDENT(name,ty,{}),ty)::acc,riter::found,info);
       then (oes,ofound);
   end match;
 end vectorizeCallUnknownDimension;
@@ -9845,10 +9820,12 @@ algorithm
     local
       DAE.Dimensions ad;
       list<Slot> rest;
+      DAE.Exp exp;
+      String name;
     case ({},_) then {};
-    case ((SLOT(dims = (ad as (_ :: _))) :: rest),_)
+    case ((SLOT(defaultArg = DAE.FUNCARG(name=name), arg = SOME(exp), dims = (ad as (_ :: _))) :: rest),_)
       equation
-        sameSlotsVectorizable(rest, ad, info);
+        sameSlotsVectorizable(rest, ad, name, exp, info);
       then
         ad;
     case ((SLOT(dims = {}) :: rest),_)
@@ -9872,25 +9849,27 @@ protected function sameSlotsVectorizable
   dimensions."
   input list<Slot> inSlotLst;
   input DAE.Dimensions inTypesArrayDimLst;
+  input String name;
+  input DAE.Exp exp;
   input Absyn.Info info;
 algorithm
   _:=
-  match (inSlotLst,inTypesArrayDimLst, info)
+  match (inSlotLst,inTypesArrayDimLst, name, exp, info)
     local
       DAE.Dimensions slot_ad,ad;
       list<Slot> rest;
-      DAE.Exp exp;
-      String name;
-    case ({},_,_) then ();
-    case ((SLOT(defaultArg = DAE.FUNCARG(name=name), arg = SOME(exp), dims = (slot_ad as (_ :: _))) :: rest),ad,_) /* arraydim must match */
+      DAE.Exp exp2;
+      String name2;
+    case ({},_,_,_,_) then ();
+    case ((SLOT(defaultArg = DAE.FUNCARG(name=name2), arg = SOME(exp2), dims = (slot_ad as (_ :: _))) :: rest),ad,_,_,_) /* arraydim must match */
       equation
-        sameArraydimLst(ad, slot_ad, name, exp, info);
-        sameSlotsVectorizable(rest, ad, info);
+        sameArraydimLst(ad, name, exp, slot_ad, name2, exp2, info);
+        sameSlotsVectorizable(rest, ad, name, exp, info);
       then
         ();
-    case ((SLOT(dims = {}) :: rest),ad,_) /* empty arradim matches too */
+    case ((SLOT(dims = {}) :: rest),ad,_,_,_) /* empty arradim matches too */
       equation
-        sameSlotsVectorizable(rest, ad, info);
+        sameSlotsVectorizable(rest, ad, name, exp, info);
       then
         ();
   end match;
@@ -9900,43 +9879,46 @@ protected function sameArraydimLst
 "author: PA
   Helper function to sameSlotsVectorizable. "
   input DAE.Dimensions inTypesArrayDimLst1;
+  input String name1;
+  input DAE.Exp exp1;
   input DAE.Dimensions inTypesArrayDimLst2;
-  input String name;
-  input DAE.Exp exp;
+  input String name2;
+  input DAE.Exp exp2;
   input Absyn.Info info;
 algorithm
   _:=
-  matchcontinue (inTypesArrayDimLst1,inTypesArrayDimLst2,name,exp,info)
+  matchcontinue (inTypesArrayDimLst1,name1,exp1,inTypesArrayDimLst2,name2,exp2,info)
     local
       Integer i1,i2;
       DAE.Dimensions ads1,ads2;
       DAE.Exp e1,e2;
       DAE.Dimension ad1,ad2;
-      String str1,str2,str3,str;
-    case ({},{},_,_,_) then ();
-    case ((DAE.DIM_INTEGER(integer = i1) :: ads1),(DAE.DIM_INTEGER(integer = i2) :: ads2),_,_,_)
+      String str1,str2,str3,str4,str;
+    case ({},_,_,{},_,_,_) then ();
+    case ((DAE.DIM_INTEGER(integer = i1) :: ads1),_,_,(DAE.DIM_INTEGER(integer = i2) :: ads2),_,_,_)
       equation
         true = intEq(i1, i2);
-        sameArraydimLst(ads1, ads2, name, exp, info);
+        sameArraydimLst(ads1, name1, exp1, ads2, name2, exp2, info);
       then
         ();
-    case (DAE.DIM_UNKNOWN() :: ads1,DAE.DIM_UNKNOWN() :: ads2,_,_,_)
+    case (DAE.DIM_UNKNOWN() :: ads1,_,_,DAE.DIM_UNKNOWN() :: ads2,_,_,_)
       equation
-        sameArraydimLst(ads1, ads2, name, exp, info);
+        sameArraydimLst(ads1, name1, exp1, ads2, name2, exp2, info);
       then
         ();
-    case (DAE.DIM_EXP(e1) :: ads1,DAE.DIM_EXP(e2) :: ads2, _, _, _)
+    case (DAE.DIM_EXP(e1) :: ads1,_, _, DAE.DIM_EXP(e2) :: ads2, _, _, _)
       equation
         true = Expression.expEqual(e1,e2);
-        sameArraydimLst(ads1, ads2, name, exp, info);
+        sameArraydimLst(ads1, name1, exp1, ads2, name2, exp2, info);
       then
         ();
-    case (ad1 :: _,ad2 :: _, _, _, _)
+    case (ad1 :: _, _, _, ad2 :: _, _, _, _)
       equation
-        str1 = ExpressionDump.printExpStr(exp);
-        str2 = ExpressionDump.dimensionString(ad1);
-        str3 = ExpressionDump.dimensionString(ad2);
-        Error.addSourceMessage(Error.VECTORIZE_CALL_DIM_MISMATCH, {name,str1,str2,str3}, info);
+        str1 = ExpressionDump.printExpStr(exp1);
+        str2 = ExpressionDump.printExpStr(exp2);
+        str3 = ExpressionDump.dimensionString(ad1);
+        str4 = ExpressionDump.dimensionString(ad2);
+        Error.addSourceMessage(Error.VECTORIZE_CALL_DIM_MISMATCH, {name1,str1,name2,str2,str3,str4}, info);
       then fail();
   end matchcontinue;
 end sameArraydimLst;

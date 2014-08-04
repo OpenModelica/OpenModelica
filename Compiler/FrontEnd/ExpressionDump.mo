@@ -1665,6 +1665,14 @@ algorithm
   end match;
 end dimensionString;
 
+public function dimensionsString
+  "Returns a string representation of an array dimension."
+  input DAE.Dimensions dims;
+  output String str;
+algorithm
+  str := stringDelimitList(List.map(dims,dimensionString),",");
+end dimensionsString;
+
 public function dumpExpWithTitle
   input String title;
   input DAE.Exp exp;

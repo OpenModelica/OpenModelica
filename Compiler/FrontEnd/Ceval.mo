@@ -207,6 +207,7 @@ algorithm
       list<Values.Value> orderd;
       list<String> comp;
       Absyn.ClockKind ck;
+      DAE.ReductionIterType iterType;
 
     // uncomment for debugging
     // case (cache,env,inExp,_,st,_,_)
@@ -859,17 +860,17 @@ algorithm
       then
         (cache,v,stOpt);
 
-    case (cache, env, DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = path, foldName=foldName, resultName=resultName, foldExp = foldExp, defaultValue = ov, exprType = ty), expr = daeExp, iterators = iterators), impl, stOpt, msg,_)
+    case (cache, env, DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(iterType = iterType, path = path, foldName=foldName, resultName=resultName, foldExp = foldExp, defaultValue = ov, exprType = ty), expr = daeExp, iterators = iterators), impl, stOpt, msg,_)
       equation
         env = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forScopeName), NONE());
         (cache, valMatrix, names, dims, tys, stOpt) = cevalReductionIterators(cache, env, iterators, impl, stOpt,msg,numIter+1);
         // print("Before:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") +& "\n");
-        valMatrix = Util.allCombinations(valMatrix,SOME(100000),Absyn.dummyInfo);
+        valMatrix = makeReductionAllCombinations(valMatrix,iterType);
         // print("After:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") +& "\n");
         // print("Start cevalReduction: " +& Absyn.pathString(path) +& " " +& ValuesUtil.valString(startValue) +& " " +& ValuesUtil.valString(Values.TUPLE(vals)) +& " " +& ExpressionDump.printExpStr(daeExp) +& "\n");
         (cache, ov, stOpt) = cevalReduction(cache, env, path, ov, daeExp, ty, foldName, resultName, foldExp, names, listReverse(valMatrix), tys, impl, stOpt,msg,numIter+1);
         value = Util.getOptionOrDefault(ov, Values.META_FAIL());
-        value = backpatchArrayReduction(path, value, dims);
+        value = backpatchArrayReduction(path, iterType, value, dims);
       then (cache, value, stOpt);
 
     // ceval can fail and that is ok, caught by other rules...
@@ -5673,16 +5674,17 @@ end extendFrameForIterators;
 
 protected function backpatchArrayReduction
   input Absyn.Path path;
+  input DAE.ReductionIterType iterType;
   input Values.Value inValue;
   input list<Integer> dims;
   output Values.Value outValue;
 algorithm
-  outValue := match (path,inValue,dims)
+  outValue := match (path,iterType,inValue,dims)
     local
       list<Values.Value> vals;
       Values.Value value;
-    case (_,value,{_}) then value;
-    case (Absyn.IDENT("array"),Values.ARRAY(valueLst=vals),_)
+    case (_,_,value,{_}) then value;
+    case (Absyn.IDENT("array"),DAE.COMBINE(),Values.ARRAY(valueLst=vals),_)
       equation
         value = backpatchArrayReduction3(vals,listReverse(dims));
         // print(ValuesUtil.valString(value));print("\n");
@@ -6224,6 +6226,17 @@ algorithm
 
   end match;
 end cevalDimension;
+
+protected function makeReductionAllCombinations
+  input list<list<Values.Value>> inValMatrix;
+  input DAE.ReductionIterType rtype;
+  output list<list<Values.Value>> valMatrix;
+algorithm
+  valMatrix := match (inValMatrix,rtype)
+    case (_,DAE.COMBINE()) then Util.allCombinations(inValMatrix,SOME(100000),Absyn.dummyInfo);
+    case (_,DAE.THREAD()) then List.transposeList(inValMatrix);
+  end match;
+end makeReductionAllCombinations;
 
 end Ceval;
 

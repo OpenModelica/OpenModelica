@@ -662,7 +662,7 @@ public constant Message NOTIFY_FRONTEND_STRUCTURAL_PARAMETERS = MESSAGE(248, TRA
 public constant Message SIMPLIFICATION_TYPE = MESSAGE(249, TRANSLATION(), NOTIFICATION(),
   Util.gettext("Expression simplification '%s' → '%s' changed the type from %s to %s."));
 public constant Message VECTORIZE_CALL_DIM_MISMATCH = MESSAGE(250, TRANSLATION(), ERROR(),
-  Util.gettext("Failed to vectorize function call argument %s=%s because its dimensions %s mismatch %s (dimension from earlier argument)."));
+  Util.gettext("Failed to vectorize function call because arguments %s=%s and %s=%s have mismatched dimensions %s and %s."));
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
