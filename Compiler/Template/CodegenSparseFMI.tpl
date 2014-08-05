@@ -97,10 +97,10 @@ case SIMCODE(__) then
       fmi2Integer int_vars[NUMBER_OF_INTEGERS];
     fmi2Boolean bool_vars[NUMBER_OF_BOOLEANS];
     std::string str_vars[NUMBER_OF_STRINGS];
-	  // Map from variable addresses to addresses of functions that have the variable for input
-	  map<void*,list<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*)> > input_info;
-	  // Map from addresses of functions to variables they modify 
-	  map<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*),list<void*> > output_info;
+    // Map from variable addresses to addresses of functions that have the variable for input
+    map<void*,list<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*)> > input_info;
+    // Map from addresses of functions to variables they modify
+    map<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*),list<void*> > output_info;
   };
 
   // equation functions
@@ -112,7 +112,7 @@ case SIMCODE(__) then
   <%setDefaultStartValues(modelInfo)%>
 
   // model exchange functions
- 
+
   <%setTime2()%>
   <%getRealFunction2()%>
   <%setRealFunction2()%>
@@ -277,7 +277,7 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars
   // Set values for all variables that define a start value
   static void setDefaultStartValues(FMI2_FUNCTION_PREFIX_model_data_t *comp)
   {
-	  comp->Time = 0.0;
+    comp->Time = 0.0;
       <%vars.stateVars |> var => initValsDefault(var,"real") ;separator="\n"%>
       <%vars.derivativeVars |> var => initValsDefault(var,"real") ;separator="\n"%>
       <%vars.algVars |> var => initValsDefault(var,"real") ;separator="\n"%>
@@ -456,12 +456,12 @@ template setTime2()
   {
       FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
       if (data == NULL) return fmi2Error;
-	  data->Time = t;
-	  return fmi2OK;
+    data->Time = t;
+    return fmi2OK;
   }
 
   >>
-end setTime2; 
+end setTime2;
 
 template getRealFunction2()
  "Generates getReal function for c file."
@@ -843,19 +843,19 @@ template EquationGraphHelper(DAE.Exp exp,String ix)
     >>
   case BINARY(__) then
     <<
-	<%EquationGraphHelper(exp1,ix)%>
-	<%EquationGraphHelper(exp2,ix)%>
+  <%EquationGraphHelper(exp1,ix)%>
+  <%EquationGraphHelper(exp2,ix)%>
     >>
   case UNARY(__) then
     <<
-	<%EquationGraphHelper(exp,ix)%>
-	>>
+  <%EquationGraphHelper(exp,ix)%>
+  >>
   else "EXPRESSION NOT SUPPORTED"
 end EquationGraphHelper;
 
 template EquationGraph(SimEqSystem eq)
 ::=
-  let ix = equationIndex(eq) 
+  let ix = equationIndex(eq)
   match eq
   case e as SES_SIMPLE_ASSIGN(__)
     then
