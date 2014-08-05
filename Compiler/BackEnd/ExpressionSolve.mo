@@ -544,7 +544,7 @@ algorithm
         lhs =  Expression.makeDiff(lhs,e2);
         (res,asserts) = solve(lhs,rhs,inExp3);
       then(res, asserts);
-    // f(a)/c - g(a) = d => g(a)*c - f(a) = d*c 
+    // f(a)/c - g(a) = d => f(a) - g(a)*c  = d*c 
     case(DAE.BINARY(DAE.BINARY(e2,DAE.DIV(_),e3),DAE.SUB(_),e1),_,DAE.CREF(componentRef = cr),_)
       equation
         true = Expression.expHasCref(e1, cr);
@@ -553,7 +553,7 @@ algorithm
         false = Expression.expHasCref(inExp2, cr);
         rhs =  Expression.expMul(inExp2,e3);
         lhs =  Expression.expMul(e1,e3);
-        lhs =  Expression.makeDiff(lhs,e2);
+        lhs =  Expression.makeDiff(e2, lhs);
         (res,asserts) = solve(lhs,rhs,inExp3);
       then(res, asserts);
 
