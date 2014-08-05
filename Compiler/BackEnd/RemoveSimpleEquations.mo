@@ -434,7 +434,7 @@ algorithm
     case ({}, _, _, _) then inTypeA;
     case (BackendDAE.SINGLEEQUATION(eqn=e)::rest, _, _, _)
       equation
-        eqn = BackendEquation.equationNth0(iEqns, e-1);
+        eqn = BackendEquation.equationNth1(iEqns, e);
         arg = inFunc({eqn}, inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);
@@ -456,31 +456,31 @@ algorithm
         traverseComponents(rest, iEqns, inFunc, arg);
     case (BackendDAE.SINGLEARRAY(eqn=e)::rest, _, _, _)
       equation
-        eqn = BackendEquation.equationNth0(iEqns, e-1);
+        eqn = BackendEquation.equationNth1(iEqns, e);
         arg = inFunc({eqn}, inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);
     case (BackendDAE.SINGLEIFEQUATION(eqn=e)::rest, _, _, _)
       equation
-        eqn = BackendEquation.equationNth0(iEqns, e-1);
+        eqn = BackendEquation.equationNth1(iEqns, e);
         arg = inFunc({eqn}, inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);
     case (BackendDAE.SINGLEALGORITHM(eqn=e)::rest, _, _, _)
       equation
-        eqn = BackendEquation.equationNth0(iEqns, e-1);
+        eqn = BackendEquation.equationNth1(iEqns, e);
         arg = inFunc({eqn}, inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e)::rest, _, _, _)
       equation
-        eqn = BackendEquation.equationNth0(iEqns, e-1);
+        eqn = BackendEquation.equationNth1(iEqns, e);
         arg = inFunc({eqn}, inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);
     case (BackendDAE.SINGLEWHENEQUATION(eqn=e)::rest, _, _, _)
       equation
-        eqn = BackendEquation.equationNth0(iEqns, e-1);
+        eqn = BackendEquation.equationNth1(iEqns, e);
         arg = inFunc({eqn}, inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);

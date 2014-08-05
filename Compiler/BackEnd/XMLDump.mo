@@ -1201,7 +1201,7 @@ algorithm
     case (BackendDAE.SINGLEEQUATION(eqn=e,var=v)::rest,_,_,_)
       equation
         var = BackendVariable.getVarAt(vars,v);
-        eqn = BackendEquation.equationNth0(eqns,e-1);
+        eqn = BackendEquation.equationNth1(eqns,e);
         result = listAppend(inAccum,{({eqn},{var})});
         result = getOrderedEqs2(rest,eqns,vars,result);
       then
@@ -1226,7 +1226,7 @@ algorithm
     case (BackendDAE.SINGLEARRAY(eqn=e,vars=vlst)::rest,_,_,_)
       equation
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        eqn = BackendEquation.equationNth0(eqns,e-1);
+        eqn = BackendEquation.equationNth1(eqns,e);
         result = listAppend(inAccum,{({eqn},varlst)});
         result = getOrderedEqs2(rest,eqns,vars,result);
       then
@@ -1234,7 +1234,7 @@ algorithm
     case (BackendDAE.SINGLEIFEQUATION(eqn=e,vars=vlst)::rest,_,_,_)
       equation
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        eqn = BackendEquation.equationNth0(eqns,e-1);
+        eqn = BackendEquation.equationNth1(eqns,e);
         result = listAppend(inAccum,{({eqn},varlst)});
         result = getOrderedEqs2(rest,eqns,vars,result);
       then
@@ -1242,7 +1242,7 @@ algorithm
     case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst)::rest,_,_,_)
       equation
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        eqn = BackendEquation.equationNth0(eqns,e-1);
+        eqn = BackendEquation.equationNth1(eqns,e);
         result = listAppend(inAccum,{({eqn},varlst)});
         result = getOrderedEqs2(rest,eqns,vars,result);
       then
@@ -1250,7 +1250,7 @@ algorithm
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst)::rest,_,_,_)
       equation
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        eqn = BackendEquation.equationNth0(eqns,e-1);
+        eqn = BackendEquation.equationNth1(eqns,e);
         result = listAppend(inAccum,{({eqn},varlst)});
         result = getOrderedEqs2(rest,eqns,vars,result);
       then
@@ -1258,7 +1258,7 @@ algorithm
     case (BackendDAE.SINGLEWHENEQUATION(eqn=e,vars=vlst)::rest,_,_,_)
       equation
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        eqn = BackendEquation.equationNth0(eqns,e-1);
+        eqn = BackendEquation.equationNth1(eqns,e);
         result = listAppend(inAccum,{({eqn},varlst)});
         result = getOrderedEqs2(rest,eqns,vars,result);
       then

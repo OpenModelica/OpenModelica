@@ -4141,7 +4141,7 @@ algorithm
     local
       BackendDAE.IncidenceMatrix m_1,m_2;
       BackendDAE.IncidenceMatrixT mt_1,mt_2,mt_3;
-      Integer e_1,e,abse;
+      Integer e,abse;
       BackendDAE.Equation eqn;
       list<Integer> row,invars,outvars,eqns,oldvars;
 
@@ -4150,8 +4150,7 @@ algorithm
     case (_,_,_,_,_,_,(e::eqns))
       equation
         abse = intAbs(e);
-        e_1 = abse - 1;
-        eqn = BackendEquation.equationNth0(daeeqns, e_1);
+        eqn = BackendEquation.equationNth1(daeeqns, abse);
         (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,{});
         oldvars = getOldVars(m,abse);
         m_1 = Util.arrayReplaceAtWithFill(abse,row,{},m);
@@ -4253,7 +4252,7 @@ algorithm
     local
       BackendDAE.IncidenceMatrix m_1,m_2;
       BackendDAE.IncidenceMatrixT mt_1,mt_2,mt_3;
-      Integer e_1,e,abse,size;
+      Integer e,abse,size;
       BackendDAE.Equation eqn;
       list<Integer> row,invars,outvars,eqns,oldvars,scalarindxs;
       array<list<Integer>> mapEqnIncRow;
@@ -4264,8 +4263,7 @@ algorithm
     case (_,_,_,_,e::eqns,_,_,_,_)
       equation
         abse = intAbs(e);
-        e_1 = abse - 1;
-        eqn = BackendEquation.equationNth0(daeeqns, e_1);
+        eqn = BackendEquation.equationNth1(daeeqns, abse);
         _ = BackendEquation.equationSize(eqn);
         (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,{});
         scalarindxs = iMapEqnIncRow[abse];
@@ -4304,7 +4302,7 @@ algorithm
     local
       BackendDAE.IncidenceMatrix m1;
       BackendDAE.IncidenceMatrixT mt1;
-      Integer e_1,abse,rowsize,new_size;
+      Integer abse,rowsize,new_size;
       BackendDAE.Equation eqn;
       list<Integer> row,scalarindxs;
       array<list<Integer>> mapEqnIncRow;
@@ -4314,8 +4312,7 @@ algorithm
       equation
         false = intGt(index,n);
         abse = intAbs(index);
-        e_1 = abse - 1;
-        eqn = BackendEquation.equationNth0(daeeqns, e_1);
+        eqn = BackendEquation.equationNth1(daeeqns, abse);
         rowsize = BackendEquation.equationSize(eqn);
         (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,{});
         new_size = size+rowsize;

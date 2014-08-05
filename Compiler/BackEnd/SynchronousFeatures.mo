@@ -285,7 +285,7 @@ algorithm
     case (_, _, _, _) equation
       ix = ixs[n];
       lst = ea[ix];
-      eq = BackendEquation.equationNth0(arr, n-1);
+      eq = BackendEquation.equationNth1(arr, n);
       lst = eq::lst;
       // print("adding eq " +& intString(n) +& " to group " +& intString(ix) +& "\n");
       _ = arrayUpdate(ea, ix, lst);

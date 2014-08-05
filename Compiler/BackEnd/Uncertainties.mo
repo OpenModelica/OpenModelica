@@ -246,13 +246,11 @@ algorithm
               printSep(equationsToMathematicaGrid(setC,allEqs,allVars,sharedVars,mapIncRowEqn));
 
 
-        setC=List.map1r(setC,listGet,arrayList(mapIncRowEqn));
-        setC=List.unique(List.map1(setC,intAdd,-1));
-        setS=List.map1r(setS,listGet,arrayList(mapIncRowEqn));
-        setS=List.unique(List.map1(setS,intAdd,-1));
+        setC = List.map1r(setC, listGet, arrayList(mapIncRowEqn));
+        setS = List.map1r(setS, listGet, arrayList(mapIncRowEqn));
 
-        setC_eq=List.map1r(setC,BackendEquation.equationNth0,allEqs);
-        setS_eq=List.map1r(setS,BackendEquation.equationNth0,allEqs);
+        setC_eq = List.map1r(setC, BackendEquation.equationNth1, allEqs);
+        setS_eq = List.map1r(setS, BackendEquation.equationNth1, allEqs);
 
        //eqnLst = BackendEquation.equationList(eqns);
 
@@ -373,10 +371,10 @@ protected function equationsToMathematicaGrid
   list<String> eqsString;
   list<Integer> eqns;
 algorithm
-  eqns:=List.unique(List.map1r(equIndices,listGet,arrayList(mapIncRowEqn)));
-  eqList:=List.map1r(List.map1(eqns,intAdd,-1),BackendEquation.equationNth0,allEqs);
-  eqsString:=List.map1(eqList,MathematicaDump.printMmaEqnStr,(variables,knownVariables));
-  out:="Grid[{"+&numerateListIndex(eqsString,eqns)+&"},Frame -> All]";
+  eqns:=List.unique(List.map1r(equIndices, listGet, arrayList(mapIncRowEqn)));
+  eqList:=List.map1r(eqns, BackendEquation.equationNth1, allEqs);
+  eqsString:=List.map1(eqList, MathematicaDump.printMmaEqnStr, (variables, knownVariables));
+  out:="Grid[{"+&numerateListIndex(eqsString, eqns)+&"}, Frame -> All]";
 end equationsToMathematicaGrid;
 
 
@@ -432,7 +430,7 @@ out:=matchcontinue(equations,allEqs,variables,knownVariables,mapIncRowEqn)
     then s::r;
   case(eqn::eqn_t,_,_,_,_)
     equation
-      e = BackendEquation.equationNth0(allEqs,eqn-1);
+      e = BackendEquation.equationNth1(allEqs,eqn);
       r = getEquationStringOrNothing(eqn_t,allEqs,variables,knownVariables,mapIncRowEqn);
       s = MathematicaDump.printMmaEqnStr(e,(variables,knownVariables));
     then s::r;

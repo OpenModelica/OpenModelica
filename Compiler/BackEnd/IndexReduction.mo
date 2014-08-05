@@ -723,7 +723,7 @@ protected function differentiateSetEqns
 algorithm
   (outEqnTpl, oshared) := matchcontinue (inEqns,inNextEqns,vars,eqns,ass1,mapIncRowEqn,mark,markarr,ishared,inEqnTpl)
     local
-      Integer e_1,e;
+      Integer e;
       BackendDAE.Equation eqn,eqn_1;
       list<Integer> es,elst;
       list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> eqntpl;
@@ -738,8 +738,7 @@ algorithm
         (eqntpl, shared);
     case (e::es,_,_,_,_,_,_,_,_,_)
       equation
-        e_1 = e - 1;
-        eqn = BackendEquation.equationNth0(eqns, e_1);
+        eqn = BackendEquation.equationNth1(eqns, e);
         true = BackendEquation.isDifferentiated(eqn);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrEqnStr,("Skipp allready differentiated equation\n",eqn,"\n"));
         (eqntpl, shared) = differentiateSetEqns(es,inNextEqns,vars,eqns,ass1,mapIncRowEqn,mark,markarr,ishared,(e,NONE(),eqn)::inEqnTpl);
@@ -747,8 +746,7 @@ algorithm
         (eqntpl, shared);
     case (e::es,_,_,_,_,_,_,_,_,_)
       equation
-        e_1 = e - 1;
-        eqn = BackendEquation.equationNth0(eqns, e_1);
+        eqn = BackendEquation.equationNth1(eqns, e);
         //Debug.fcall(Flags.BLT_DUMP, print, "differentiat equation " +& intString(e) +& " " +& BackendDump.equationString(eqn) +& "\n");
         (eqn_1, shared) = Differentiate.differentiateEquationTime(eqn, vars, ishared);
         //Debug.fcall(Flags.BLT_DUMP, print, "differentiated equation " +& intString(e) +& " " +& BackendDump.equationString(eqn_1) +& "\n");
@@ -842,7 +840,7 @@ protected function differentiateEqnsLst
 algorithm
   (outEqnTpl, oshared) := matchcontinue (inEqns,vars,eqns,ishared,inEqnTpl)
     local
-      Integer e_1,e;
+      Integer e;
       BackendDAE.Equation eqn,eqn_1;
       list<Integer> es;
       BackendDAE.Shared shared;
@@ -850,8 +848,7 @@ algorithm
     case ({},_,_,_,_) then (inEqnTpl, ishared);
     case (e::es,_,_,_,_)
       equation
-        e_1 = e - 1;
-        eqn = BackendEquation.equationNth0(eqns, e_1);
+        eqn = BackendEquation.equationNth1(eqns, e);
         true = BackendEquation.isDifferentiated(eqn);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrEqnStr,("Skip already differentiated equation\n",eqn,"\n"));
         (eqntpl, shared) = differentiateEqnsLst(es,vars,eqns,ishared,(e,NONE(),eqn)::inEqnTpl);
@@ -859,8 +856,7 @@ algorithm
         (eqntpl, shared);
     case (e::es,_,_,_,_)
       equation
-        e_1 = e - 1;
-        eqn = BackendEquation.equationNth0(eqns, e_1);
+        eqn = BackendEquation.equationNth1(eqns, e);
         // Debug.fcall(Flags.BLT_DUMP, print, "differentiate equation " +& intString(e) +& " " +& BackendDump.equationString(eqn) +& "\n");
         (eqn_1, shared) = Differentiate.differentiateEquationTime(eqn, vars, ishared);
         // Debug.fcall(Flags.BLT_DUMP, print, "differentiated equation " +& intString(e) +& " " +& BackendDump.equationString(eqn_1) +& "\n");
@@ -893,7 +889,7 @@ algorithm
   matchcontinue (inEqnTplLst,vars,eqns,inStateOrd,mt,imapIncRowEqn,inChangedVars,inOrgEqnsLst)
     local
       list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> rest;
-      Integer e_1,e;
+      Integer e;
       list<Integer> changedVars;
       BackendDAE.Equation eqn,eqn_1;
       BackendDAE.EquationArray eqns1;
@@ -906,8 +902,7 @@ algorithm
         (eqn_1,_) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn_1, replaceStateOrderExp,vars);
         (eqn_1,(vars1,eqns1,_,changedVars,_,_,_)) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn_1,changeDerVariablestoStates,(vars,eqns,inStateOrd,inChangedVars,e,imapIncRowEqn,mt));
         Debug.fcall(Flags.BLT_DUMP, debugdifferentiateEqns,(eqn,eqn_1));
-        e_1 = e - 1;
-        eqns1 = BackendEquation.equationSetnth(eqns1,e_1,eqn_1);
+        eqns1 = BackendEquation.setAtIndex(eqns1, e, eqn_1);
         orgEqnsLst = addOrgEqn(inOrgEqnsLst,e,eqn);
         (outVars,outEqns,outStateOrd,outChangedVars,outOrgEqnsLst) =
            replaceDifferentiatedEqns(rest,vars1,eqns1,inStateOrd,mt,imapIncRowEqn,changedVars,orgEqnsLst);
@@ -1217,26 +1212,24 @@ end handleundifferntiableMSS;
 protected function replaceFinalVars
   input Integer e;
   input BackendDAE.Variables vars;
-  input tuple<BackendDAE.EquationArray,list<Integer>,BackendVarTransform.VariableReplacements> inTpl;
-  output tuple<BackendDAE.EquationArray,list<Integer>,BackendVarTransform.VariableReplacements> outTpl;
+  input tuple<BackendDAE.EquationArray, list<Integer>, BackendVarTransform.VariableReplacements> inTpl;
+  output tuple<BackendDAE.EquationArray, list<Integer>, BackendVarTransform.VariableReplacements> outTpl;
 protected
   BackendDAE.EquationArray eqns;
   list<Integer> changedEqns;
   BackendDAE.Equation eqn;
-  Integer e1;
   Boolean b;
   BackendVarTransform.VariableReplacements repl;
 algorithm
-  (eqns,changedEqns,repl) := inTpl;
+  (eqns, changedEqns, repl) := inTpl;
   // get the equation
-  e1 := e-1;
-  eqn := BackendEquation.equationNth0(eqns, e1);
+  eqn := BackendEquation.equationNth1(eqns, e);
   // reaplace final vars
-  (eqn,(_,b,repl)) := BackendEquation.traverseBackendDAEExpsEqn(eqn,replaceFinalVarsEqn,(vars,false,repl));
+  (eqn, (_, b, repl)) := BackendEquation.traverseBackendDAEExpsEqn(eqn, replaceFinalVarsEqn, (vars, false, repl));
   // if replaced set eqn
-  eqns := Debug.bcallret3(b,BackendEquation.equationSetnth,eqns,e1,eqn,eqns);
-  changedEqns := List.consOnTrue(b,e,changedEqns);
-  outTpl := (eqns,changedEqns,repl);
+  eqns := Debug.bcallret3(b, BackendEquation.setAtIndex, eqns, e, eqn, eqns);
+  changedEqns := List.consOnTrue(b, e, changedEqns);
+  outTpl := (eqns, changedEqns, repl);
 end replaceFinalVars;
 
 protected function replaceFinalVarsEqn
@@ -1318,8 +1311,7 @@ algorithm
   end matchcontinue;
 end replaceFinalVarsGetExp;
 
-protected function replaceAliasState
-"author: Frenkel TUD 2012-06"
+protected function replaceAliasState "author: Frenkel TUD 2012-06"
   input list<Integer> inEqsLst;
   input DAE.Exp inCrExp;
   input DAE.Exp indCrExp;
@@ -1327,24 +1319,23 @@ protected function replaceAliasState
   input BackendDAE.EquationArray inEqns;
   output BackendDAE.EquationArray outEqns;
 algorithm
-  outEqns:=
-  match (inEqsLst,inCrExp,indCrExp,inACr,inEqns)
+  outEqns := match (inEqsLst, inCrExp, indCrExp, inACr, inEqns)
     local
       BackendDAE.EquationArray eqns;
-      BackendDAE.Equation eqn,eqn1;
-      Integer pos,pos_1;
+      BackendDAE.Equation eqn, eqn1;
+      Integer pos;
       list<Integer> rest;
-    case (pos::rest,_,_,_,_)
-      equation
-        // replace in eqn
-        pos_1 = pos-1;
-        eqn = BackendEquation.equationNth0(inEqns,pos_1);
-        (eqn1,_) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn, replaceAliasStateExp,(inACr,inCrExp,indCrExp));
-        eqns =  BackendEquation.equationSetnth(inEqns,pos_1,eqn1);
-        //  print("Replace in Eqn:\n" +& BackendDump.equationString(eqn) +& "\nto\n" +& BackendDump.equationString(eqn1) +& "\n");
-      then
-        replaceAliasState(rest,inCrExp,indCrExp,inACr,eqns);
-    case ({},_,_,_,_) then inEqns;
+
+    case ({}, _, _, _, _)
+    then inEqns;
+
+    case (pos::rest, _, _, _, _) equation
+      // replace in eqn
+      eqn = BackendEquation.equationNth1(inEqns, pos);
+      (eqn1, _) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn, replaceAliasStateExp, (inACr, inCrExp, indCrExp));
+      eqns =  BackendEquation.setAtIndex(inEqns, pos, eqn1);
+      // print("Replace in Eqn:\n" +& BackendDump.equationString(eqn) +& "\nto\n" +& BackendDump.equationString(eqn1) +& "\n");
+    then replaceAliasState(rest, inCrExp, indCrExp, inACr, eqns);
   end match;
 end replaceAliasState;
 
@@ -2807,8 +2798,8 @@ algorithm
         true = flag[e];
         true = intGt(vec1[e],0);
         e1 = inMapIncRowEqn[e];
-        // print("BackendEquation.equationNth0 " +& intString(e1) +& "\n");
-        eqn = BackendEquation.equationNth0(iEqnsArr,e1-1);
+        // print("BackendEquation.equationNth1 " +& intString(e1) +& "\n");
+        eqn = BackendEquation.equationNth1(iEqnsArr,e1);
         eqnarr = BackendEquation.equationRemove(e1,iEqnsArr);
         eqns = inMapEqnIncRow[e1];
         _ = List.fold1r(eqns,arrayUpdate,false,flag);
@@ -5411,7 +5402,7 @@ algorithm
   outGraph := match(inNode, eqns, mapIncRowEqn, numberMode, inGraph)
     case(_,_,_,false,(graphInfo,graph))
       equation
-        eqn = BackendEquation.equationNth0(eqns, mapIncRowEqn[inNode]-1);
+        eqn = BackendEquation.equationNth1(eqns, mapIncRowEqn[inNode]);
         str = BackendDump.equationString(eqn);
         //str := intString(inNode);
         str = intString(inNode) +& ": " +& BackendDump.equationString(eqn);
@@ -5421,7 +5412,7 @@ algorithm
       then ((graphInfo,graph));
     case(_,_,_,true,(graphInfo,graph))
       equation
-        eqn = BackendEquation.equationNth0(eqns, mapIncRowEqn[inNode]-1);
+        eqn = BackendEquation.equationNth1(eqns, mapIncRowEqn[inNode]);
         str = BackendDump.equationString(eqn);
         //str := intString(inNode);
         //str = intString(inNode) +& ": " +& BackendDump.equationString(eqn);
@@ -5475,7 +5466,7 @@ algorithm
       equation
         e = mapIncRowEqn[inNode];
         false = eqnsflag[e];
-       eqn = BackendEquation.equationNth0(eqns, mapIncRowEqn[inNode]-1);
+       eqn = BackendEquation.equationNth1(eqns, mapIncRowEqn[inNode]);
        str = BackendDump.equationString(eqn);
        str = intString(e) +& ": " +&  str;
        //str = intString(inNode);
@@ -5488,7 +5479,7 @@ algorithm
       equation
         e = mapIncRowEqn[inNode];
         false = eqnsflag[e];
-       eqn = BackendEquation.equationNth0(eqns, mapIncRowEqn[inNode]-1);
+       eqn = BackendEquation.equationNth1(eqns, mapIncRowEqn[inNode]);
        str = BackendDump.equationString(eqn);
        //str = intString(e) +& ": " +&  str;
        //str = intString(inNode);

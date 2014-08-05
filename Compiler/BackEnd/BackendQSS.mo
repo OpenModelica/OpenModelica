@@ -518,7 +518,7 @@ algorithm
         Integer p;
        case (_,{h},_,_,_,_,true,_,_)
        equation
-         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty = DAE.T_BOOL(_,_)),scalar=scalar) = BackendEquation.equationNth0(eqs,h-1);
+         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty = DAE.T_BOOL(_,_)),scalar=scalar) = BackendEquation.equationNth1(eqs,h);
          s = stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
          s = stringAppend(s," := ");
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(1.0));
@@ -527,7 +527,7 @@ algorithm
        then s;
        case (_,{h},_,_,_,_,true,_,_)
        equation
-         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty = DAE.T_INTEGER(_,_)),scalar=scalar) = BackendEquation.equationNth0(eqs,h-1);
+         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty = DAE.T_INTEGER(_,_)),scalar=scalar) = BackendEquation.equationNth1(eqs,h);
          s = stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
          s = stringAppend(s," := ");
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(1.0));
@@ -537,7 +537,7 @@ algorithm
 
        case (_,{h},_,_,_,_,true,_,_)
        equation
-         BackendDAE.EQUATION(scalar=_) = BackendEquation.equationNth0(eqs,h-1);
+         BackendDAE.EQUATION(scalar=_) = BackendEquation.equationNth1(eqs,h);
          s = stringAppend("/* We are adding a new discrete variable for ","");
          s = stringAppend(s,ExpressionDump.printExpStr(condition));
          s = stringAppend(s,"*/\n");
@@ -549,7 +549,7 @@ algorithm
 
        case (_,{h},_,_,_,_,false,_,_)
        equation
-         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty=DAE.T_BOOL(_,_)),scalar=scalar) = BackendEquation.equationNth0(eqs,h-1);
+         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty=DAE.T_BOOL(_,_)),scalar=scalar) = BackendEquation.equationNth1(eqs,h);
          s= stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
          s= stringAppend(s," := ");
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
@@ -559,7 +559,7 @@ algorithm
        then s;
        case (_,{h},_,_,_,_,false,_,_)
        equation
-         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty=DAE.T_INTEGER(_,_)),scalar=scalar) = BackendEquation.equationNth0(eqs,h-1);
+         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty=DAE.T_INTEGER(_,_)),scalar=scalar) = BackendEquation.equationNth1(eqs,h);
          s= stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
          s= stringAppend(s," := ");
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
@@ -569,7 +569,7 @@ algorithm
        then s;
        case (_,{h},_,_,_,_,false,_,_)
        equation
-         BackendDAE.EQUATION(scalar=_) = BackendEquation.equationNth0(eqs,h-1);
+         BackendDAE.EQUATION(scalar=_) = BackendEquation.equationNth1(eqs,h);
          s = stringAppend("/* We are adding a new discrete variable for ","");
          s = stringAppend(s,ExpressionDump.printExpStr(condition));
          s = stringAppend(s,"*/\n");
@@ -963,7 +963,7 @@ end getEquationsWithDiscont;
 
 function getEquations
   input BackendDAE.EquationArray eqsdae;
-  input list<Integer> indx;
+  input list<Integer> indx "zero-based indexing" ;
   output list<BackendDAE.Equation> outEquationLst;
 algorithm
   outEquationLst := match (eqsdae,indx)
@@ -975,7 +975,7 @@ algorithm
     case (_,{}) then {};
     case (_,p::tail)
     equation
-      eq = BackendEquation.equationNth0(eqsdae,p);
+      eq = BackendEquation.equationNth1(eqsdae,p+1);
       res = listAppend({eq},getEquations(eqsdae,tail));
     then res;
   end match;

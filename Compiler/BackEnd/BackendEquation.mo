@@ -1594,52 +1594,22 @@ algorithm
   end match;
 end requationsAddDAE;
 
-public function equationSetnthDAE
-  "Note: Does not update the incidence matrix (just like equationSetnth).
-  Call BackendDAEUtil.updateIncidenceMatrix if the inc.matrix changes."
-  input Integer inInteger;
-  input BackendDAE.Equation inEquation;
-  input BackendDAE.EqSystem syst;
-  output BackendDAE.EqSystem osyst;
-algorithm
-  osyst := match (inInteger,inEquation,syst)
-    local
-      BackendDAE.Variables ordvars;
-      BackendDAE.EquationArray eqns,eqns1;
-      Option<BackendDAE.IncidenceMatrix> m,mT;
-      BackendDAE.Matching matching;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
-
-    case (_, _,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets,partitionKind))
-      equation
-        eqns1 = equationSetnth(eqns,inInteger,inEquation);
-      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,matching,stateSets,partitionKind);
-  end match;
-end equationSetnthDAE;
-
-public function equationSetnth "
-  Sets the nth array element of an EquationArray.
-  Please note: zero-based indexing"
+public function setAtIndex "author: lochel
+  Sets the n-th array element of an EquationArray.
+  Please note: one-based indexing"
   input BackendDAE.EquationArray inEquationArray;
-  input Integer inInteger;
+  input Integer inPos "one-based indexing" ;
   input BackendDAE.Equation inEquation;
   output BackendDAE.EquationArray outEquationArray;
+protected
+  array<Option<BackendDAE.Equation>> equOptArr, newEquOptArr;
+  Integer size, numberOfElement, arrSize;
 algorithm
-  outEquationArray := match (inEquationArray,inInteger,inEquation)
-    local
-      array<Option<BackendDAE.Equation>> arr_1,arr;
-      Integer n,arrsize,pos,size;
-      BackendDAE.Equation eqn;
-    case (BackendDAE.EQUATION_ARRAY(size=size,numberOfElement = n,arrSize = arrsize,equOptArr = arr),pos,eqn)
-      equation
-        pos = pos+1;
-        size = size - equationOptSize(arr[pos]) + equationSize(eqn);
-        arr_1 = arrayUpdate(arr, pos, SOME(eqn));
-      then
-        BackendDAE.EQUATION_ARRAY(size,n,arrsize,arr_1);
-  end match;
-end equationSetnth;
+  BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr) := inEquationArray;
+  size := size - equationOptSize(equOptArr[inPos]) + equationSize(inEquation);
+  newEquOptArr := arrayUpdate(equOptArr, inPos, SOME(inEquation));
+  outEquationArray := BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, newEquOptArr);
+end setAtIndex;
 
 public function getEqns "author: Frenkel TUD 2011-05
   returns the equations given by the list of indexes"

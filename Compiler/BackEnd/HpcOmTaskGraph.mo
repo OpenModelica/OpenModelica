@@ -4504,7 +4504,7 @@ algorithm
   operations := matchcontinue(icomp,isyst,ishared)
     case(BackendDAE.SINGLEEQUATION(eqn=eqnIdx,var=varIdx), BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _)
       equation
-        BackendDAE.EQUATION(exp=e1, scalar=e2, source=source) = BackendEquation.equationNth0(eqns, eqnIdx-1);
+        BackendDAE.EQUATION(exp=e1, scalar=e2, source=source) = BackendEquation.equationNth1(eqns, eqnIdx);
         (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varIdx);
         varexp = Expression.crefExp(cr);
         varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);

@@ -220,7 +220,7 @@ algorithm
   (outComp,omark):=
   match (inComp,syst,shared,inAss1,inAss2,mapEqnIncRow,mapIncRowEqn,imark,markarray)
     local
-      list<Integer> comp,vlst,eqngetlst;
+      list<Integer> comp,vlst;
       list<BackendDAE.Var> varlst;
       list<tuple<BackendDAE.Var,Integer>> var_varindx_lst;
       array<Integer> ass1,ass2;
@@ -238,8 +238,7 @@ algorithm
         comp = List.map1r(comp,arrayGet,mapIncRowEqn);
         comp = List.fold2(comp,uniqueComp,imark,markarray,{});
         //comp = List.unique(comp);
-        eqngetlst = List.map1(comp,intSub,1);
-        eqn_lst = List.map1r(eqngetlst,BackendEquation.equationNth0,eqns);
+        eqn_lst = List.map1r(comp,BackendEquation.equationNth1,eqns);
         compX = analyseStrongComponentBlock(comp,eqn_lst,var_varindx_lst,syst,shared,ass1,ass2,false);
       then
         (compX,imark+1);
@@ -654,8 +653,7 @@ algorithm
   end matchcontinue;
 end replaceDerOpInExpTraverser;
 
-public function getEquationAndSolvedVar
-"author: PA
+public function getEquationAndSolvedVar "author: PA
   Retrieves the equation and the variable solved in that equation
   given an equation number and the variable assignments2"
   input BackendDAE.StrongComponent inComp;
@@ -665,90 +663,84 @@ public function getEquationAndSolvedVar
   output list<BackendDAE.Var> outVar;
   output Integer outIndex;
 algorithm
-  (outEquation,outVar,outIndex):=
-  matchcontinue (inComp,inEquationArray,inVariables)
+  (outEquation, outVar, outIndex) := matchcontinue (inComp, inEquationArray, inVariables)
     local
-      Integer e_1,v,e;
-      list<Integer> elst,vlst;
+      Integer v, e;
+      list<Integer> elst, vlst;
       BackendDAE.Equation eqn;
       BackendDAE.Var var;
-      list<BackendDAE.Equation> eqnlst,eqnlst1;
-      list<BackendDAE.Var> varlst,varlst1;
+      list<BackendDAE.Equation> eqnlst, eqnlst1;
+      list<BackendDAE.Var> varlst, varlst1;
       BackendDAE.EquationArray eqns;
       BackendDAE.Variables vars;
       BackendDAE.StrongComponent comp;
-      list<tuple<Integer,list<Integer>>> eqnvartpllst;
-    case (BackendDAE.SINGLEEQUATION(eqn=e,var=v),eqns,vars)
+      list<tuple<Integer, list<Integer>>> eqnvartpllst;
+      
+    case (BackendDAE.SINGLEEQUATION(eqn=e, var=v), eqns, vars)
       equation
-        e_1 = e - 1;
-        eqn = BackendEquation.equationNth0(eqns, e_1);
+        eqn = BackendEquation.equationNth1(eqns, e);
         var = BackendVariable.getVarAt(vars, v);
       then
-        ({eqn},{var},e);
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=elst,disc_vars=vlst),eqns,vars)
+        ({eqn}, {var}, e);
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp, disc_eqns=elst, disc_vars=vlst), eqns, vars)
       equation
-        eqnlst1 = BackendEquation.getEqns(elst,eqns);
+        eqnlst1 = BackendEquation.getEqns(elst, eqns);
         varlst1 = List.map1r(vlst, BackendVariable.getVarAt, vars);
         e = List.first(elst);
-        (eqnlst,varlst,_) = getEquationAndSolvedVar(comp,eqns,vars);
-        eqnlst = listAppend(eqnlst,eqnlst1);
-        varlst = listAppend(varlst,varlst1);
+        (eqnlst, varlst, _) = getEquationAndSolvedVar(comp, eqns, vars);
+        eqnlst = listAppend(eqnlst, eqnlst1);
+        varlst = listAppend(varlst, varlst1);
       then
-        (eqnlst,varlst,e);
-    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst),eqns,vars)
+        (eqnlst, varlst, e);
+    case (BackendDAE.EQUATIONSYSTEM(eqns=elst, vars=vlst), eqns, vars)
       equation
-        eqnlst = BackendEquation.getEqns(elst,eqns);
+        eqnlst = BackendEquation.getEqns(elst, eqns);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         e = List.first(elst);
       then
-        (eqnlst,varlst,e);
-    case (BackendDAE.SINGLEARRAY(eqn=e,vars=vlst),eqns,vars)
+        (eqnlst, varlst, e);
+    case (BackendDAE.SINGLEARRAY(eqn=e, vars=vlst), eqns, vars)
       equation
-        e_1 = e - 1;
-        eqn = BackendEquation.equationNth0(eqns, e_1);
+        eqn = BackendEquation.equationNth1(eqns, e);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       then
-        ({eqn},varlst,e);
-    case (BackendDAE.SINGLEIFEQUATION(eqn=e,vars=vlst),eqns,vars)
+        ({eqn}, varlst, e);
+    case (BackendDAE.SINGLEIFEQUATION(eqn=e, vars=vlst), eqns, vars)
       equation
-        e_1 = e - 1;
-        eqn = BackendEquation.equationNth0(eqns, e_1);
+        eqn = BackendEquation.equationNth1(eqns, e);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       then
-        ({eqn},varlst,e);
-    case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst),eqns,vars)
+        ({eqn}, varlst, e);
+    case (BackendDAE.SINGLEALGORITHM(eqn=e, vars=vlst), eqns, vars)
       equation
-        e_1 = e - 1;
-        eqn = BackendEquation.equationNth0(eqns, e_1);
+        eqn = BackendEquation.equationNth1(eqns, e);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       then
-        ({eqn},varlst,e);
-    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst),eqns,vars)
+        ({eqn}, varlst, e);
+    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e, vars=vlst), eqns, vars)
       equation
-        e_1 = e - 1;
-        eqn = BackendEquation.equationNth0(eqns, e_1);
+        eqn = BackendEquation.equationNth1(eqns, e);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       then
-        ({eqn},varlst,e);
-    case (BackendDAE.SINGLEWHENEQUATION(eqn=e,vars=vlst),eqns,vars)
+        ({eqn}, varlst, e);
+    case (BackendDAE.SINGLEWHENEQUATION(eqn=e, vars=vlst), eqns, vars)
       equation
-        e_1 = e - 1;
-        eqn = BackendEquation.equationNth0(eqns, e_1);
+        eqn = BackendEquation.equationNth1(eqns, e);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       then
-        ({eqn},varlst,e);
-    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, residualequations=elst, otherEqnVarTpl=eqnvartpllst),eqns,vars)
+        ({eqn}, varlst, e);
+    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, residualequations=elst, otherEqnVarTpl=eqnvartpllst), eqns, vars)
       equation
-        eqnlst = BackendEquation.getEqns(elst,eqns);
+        eqnlst = BackendEquation.getEqns(elst, eqns);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        eqnlst1 = BackendEquation.getEqns(List.map(eqnvartpllst,Util.tuple21),eqns);
-        varlst1 = List.map1r(List.flatten(List.map(eqnvartpllst,Util.tuple22)), BackendVariable.getVarAt, vars);
-        eqnlst = listAppend(eqnlst,eqnlst1);
-        varlst = listAppend(varlst,varlst1);
+        eqnlst1 = BackendEquation.getEqns(List.map(eqnvartpllst, Util.tuple21), eqns);
+        varlst1 = List.map1r(List.flatten(List.map(eqnvartpllst, Util.tuple22)), BackendVariable.getVarAt, vars);
+        eqnlst = listAppend(eqnlst, eqnlst1);
+        varlst = listAppend(varlst, varlst1);
         e = List.first(elst);
       then
-        (eqnlst,varlst,e);
-    case (_,_,_)
+        (eqnlst, varlst, e);
+    case (_, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("BackendDAETransform.getEquationAndSolvedVar failed!");
@@ -771,7 +763,7 @@ algorithm
   (outEquation,outVar):=
   matchcontinue (inInteger,inEquationArray,inVariables,inIntegerArray)
     local
-      Integer e_1,v,e;
+      Integer v,e;
       BackendDAE.Equation eqn;
       BackendDAE.Var var;
       BackendDAE.EquationArray eqns;
@@ -779,8 +771,7 @@ algorithm
       array<Integer> ass2;
     case (e,eqns,vars,ass2) /* equation no. assignments2 */
       equation
-        e_1 = e - 1;
-        eqn = BackendEquation.equationNth0(eqns, e_1);
+        eqn = BackendEquation.equationNth1(eqns, e);
         v = ass2[e];
         var = BackendVariable.getVarAt(vars, v);
       then

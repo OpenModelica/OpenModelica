@@ -1764,7 +1764,7 @@ algorithm
   outEqnList := BackendEquation.copyEquationArray(inEqnList) "avoid side-effects" ;
   eqn := BackendEquation.equationNth1(outEqnList, inEqnIndex);
   ({eqn}, _) := BackendVarTransform.replaceEquations({eqn}, inVarRepls, NONE());
-  outEqnList := BackendEquation.equationSetnth(outEqnList, inEqnIndex-1, eqn) "Please note: zero-based indexing" ;
+  outEqnList := BackendEquation.setAtIndex(outEqnList, inEqnIndex, eqn);
 end applyVarReplacements;
 
 protected function getConsistentEquation "author: mwenzler"

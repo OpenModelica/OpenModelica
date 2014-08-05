@@ -502,24 +502,30 @@ end traverserExpreplaceFinalParameter;
 protected function replaceEquationsAddNew
   input list<Integer> inEqnIndxes;
   input list<BackendDAE.Equation> inEqns;
-  input BackendDAE.EqSystem isyst;
-  output BackendDAE.EqSystem osyst;
+  input BackendDAE.EqSystem inEqSystem;
+  output BackendDAE.EqSystem outEqSystem;
 algorithm
-  osyst := match(inEqnIndxes,inEqns,isyst)
+  outEqSystem := match(inEqnIndxes, inEqns, inEqSystem)
     local
-      Integer i;
-      list<Integer> indxs;
+      Integer index;
+      list<Integer> indices;
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqns;
-      BackendDAE.EqSystem syst;
-    case ({},_,_)
-      then
-       BackendEquation.equationsAddDAE(inEqns,isyst);
-    case (i::indxs,eqn::eqns,_)
-      equation
-        syst = BackendEquation.equationSetnthDAE(i-1, eqn, isyst);
-      then
-        replaceEquationsAddNew(indxs,eqns,syst);
+      BackendDAE.EqSystem eqSystem;
+      BackendDAE.Variables orderedVars;
+      BackendDAE.EquationArray orderedEqs;
+      Option<BackendDAE.IncidenceMatrix> m, mT;
+      BackendDAE.Matching matching;
+      BackendDAE.StateSets stateSets;
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      
+    case ({}, _, _)
+    then BackendEquation.equationsAddDAE(inEqns, inEqSystem);
+    
+    case (index::indices, eqn::eqns, BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind)) equation
+      orderedEqs = BackendEquation.setAtIndex(orderedEqs, index, eqn);
+      eqSystem = BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind);
+    then replaceEquationsAddNew(indices, eqns, eqSystem);
   end match;
 end replaceEquationsAddNew;
 
@@ -1691,7 +1697,7 @@ algorithm
     case (e::_,_,_)
       equation
         len = listLength(ass[e]);
-        size = BackendEquation.equationSize(BackendEquation.equationNth0(eqnsarr, e-1));
+        size = BackendEquation.equationSize(BackendEquation.equationNth1(eqnsarr, e));
         true = intLt(len,size);
       then
         e;
@@ -2141,7 +2147,7 @@ algorithm
     case ((r,c,BackendDAE.RESIDUAL_EQUATION(exp = e))::rest,_,_,_,_,_,_)
       equation
         i = mapIncRowEqn[r];
-        eqn = BackendEquation.equationNth0(eqns, i-1);
+        eqn = BackendEquation.equationNth1(eqns, i);
         b1 = BackendEquation.isArrayEquation(eqn);
         b = func(e);
         lst = List.consOnTrue(b and b1, c, m[r]);
@@ -2371,7 +2377,7 @@ protected
 algorithm
  (eqns,vars,ass2,eqnssort,varssort) := inTpl;
  // get Eqn
- e := BackendEquation.equationNth0(eqns,indx-1);
+ e := BackendEquation.equationNth1(eqns,indx);
  // add equation
  eqnssort := BackendEquation.equationAdd(e, eqnssort);
  // get vars of equations
