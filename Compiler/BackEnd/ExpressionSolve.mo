@@ -385,9 +385,9 @@ algorithm
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
         false = hasOnlyFactors(inExp1,inExp2);
-        ({},_) = List.split1OnTrue(Expression.factors(inExp1),isCrefInIFEXP,cr); // check: differentiateExpSolve is allowed
-        ({},_) = List.split1OnTrue(Expression.factors(inExp2),isCrefInIFEXP,cr); // check: differentiateExpSolve is allowed
         e = Expression.makeDiff(inExp1,inExp2);
+        (e,_) = ExpressionSimplify.simplify(e);
+        ({},_) = List.split1OnTrue(Expression.factors(e),isCrefInIFEXP,cr); // check: differentiateExpSolve is allowed
         dere = Differentiate.differentiateExpSolve(e, cr);
         (dere,_) = ExpressionSimplify.simplify(dere);
         false = Expression.isZero(dere);
@@ -532,13 +532,14 @@ algorithm
         asserts2 = listAppend(asserts,asserts1);
       then
         (res,asserts2);
-    // f(a) = 0  => simplify(f(a)) = 0.0
-    case(_,DAE.RCONST(real = 0.0),DAE.CREF(componentRef = cr),_)
+    // f(a) = b  => simplify1(f(a)) = b
+    case(_,_,DAE.CREF(componentRef = cr),_)
      equation
         true = Expression.expHasCref(inExp1, cr);
         false = Expression.expHasCref(inExp2, cr);
-        (lhs,true) = ExpressionSimplify.simplify(inExp1);
-        (res,asserts) = solve(lhs,inExp2,inExp3);
+        (lhs,true) = ExpressionSimplify.simplify1(inExp1);
+        (rhs,_) = ExpressionSimplify.simplify1(inExp2);
+        (res,asserts) = solve(lhs,rhs,inExp3);
        then (res, asserts);
 
 
