@@ -247,7 +247,9 @@ algorithm
 
 
         setC = List.map1r(setC, listGet, arrayList(mapIncRowEqn));
+        setC = List.unique(setC);
         setS = List.map1r(setS, listGet, arrayList(mapIncRowEqn));
+        setS = List.unique(setS);
 
         setC_eq = List.map1r(setC, BackendEquation.equationNth1, allEqs);
         setS_eq = List.map1r(setS, BackendEquation.equationNth1, allEqs);
