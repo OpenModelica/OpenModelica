@@ -186,6 +186,7 @@ if true then /* Suppress output */
     "../Template/CodegenJS.mo",
     "../Template/CodegenModelica.mo",
     "../Template/CodegenQSS.mo",
+    "../Template/CodegenSparseFMI.mo",
     "../Template/CodegenUtil.mo",
     "../Template/CodegenXML.mo",
     "../Template/DAEDumpTpl.mo",
