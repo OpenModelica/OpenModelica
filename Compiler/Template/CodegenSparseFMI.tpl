@@ -84,22 +84,36 @@ case SIMCODE(__) then
   #include <cstring>
   #include <cassert>
   #include <string>
+  #include <map>
+  #include <list>
   using namespace std;
 
   <%ModelDefineData(modelInfo)%>
 
   struct FMI2_FUNCTION_PREFIX_model_data_t
   {
+      fmi2Real Time;
       fmi2Real real_vars[NUMBER_OF_REALS];
       fmi2Integer int_vars[NUMBER_OF_INTEGERS];
     fmi2Boolean bool_vars[NUMBER_OF_BOOLEANS];
     std::string str_vars[NUMBER_OF_STRINGS];
+	  // Map from variable addresses to addresses of functions that have the variable for input
+	  map<void*,list<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*)> > input_info;
+	  // Map from addresses of functions to variables they modify 
+	  map<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*),list<void*> > output_info;
   };
 
-  // implementation of the Model Exchange functions
+  // equation functions
 
   <%generateEquations(allEquations)%>
+
+  <%generateEquationGraph(allEquations)%>
+
   <%setDefaultStartValues(modelInfo)%>
+
+  // model exchange functions
+ 
+  <%setTime2()%>
   <%getRealFunction2()%>
   <%setRealFunction2()%>
   <%getIntegerFunction2()%>
@@ -187,25 +201,26 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolParam
   #define NUMBER_OF_EXTERNALFUNCTIONS <%countDynamicExternalFunctions(functions)%>
 
   // define variable data for model
+  #define time (data->Time)
   <%System.tmpTickReset(0)%>
-  <%vars.stateVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.derivativeVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.algVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.discreteAlgVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.paramVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.aliasVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.stateVars |> var => DefineVariables(var,"real") ;separator="\n"%>
+  <%vars.derivativeVars |> var => DefineVariables(var,"real") ;separator="\n"%>
+  <%vars.algVars |> var => DefineVariables(var,"real") ;separator="\n"%>
+  <%vars.discreteAlgVars |> var => DefineVariables(var,"real") ;separator="\n"%>
+  <%vars.paramVars |> var => DefineVariables(var,"real") ;separator="\n"%>
+  <%vars.aliasVars |> var => DefineVariables(var,"real") ;separator="\n"%>
   <%System.tmpTickReset(0)%>
-  <%vars.intAlgVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.intParamVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.intAliasVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.intAlgVars |> var => DefineVariables(var,"int") ;separator="\n"%>
+  <%vars.intParamVars |> var => DefineVariables(var,"int") ;separator="\n"%>
+  <%vars.intAliasVars |> var => DefineVariables(var,"int") ;separator="\n"%>
   <%System.tmpTickReset(0)%>
-  <%vars.boolAlgVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.boolParamVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.boolAliasVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.boolAlgVars |> var => DefineVariables(var,"bool") ;separator="\n"%>
+  <%vars.boolParamVars |> var => DefineVariables(var,"bool") ;separator="\n"%>
+  <%vars.boolAliasVars |> var => DefineVariables(var,"bool") ;separator="\n"%>
   <%System.tmpTickReset(0)%>
-  <%vars.stringAlgVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.stringParamVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.stringAliasVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.stringAlgVars |> var => DefineVariables(var,"str") ;separator="\n"%>
+  <%vars.stringParamVars |> var => DefineVariables(var,"str") ;separator="\n"%>
+  <%vars.stringAliasVars |> var => DefineVariables(var,"str") ;separator="\n"%>
 
   // define initial state vector as vector of value references
   #define STATES { <%vars.stateVars |> SIMVAR(__) => if stringEq(crefStr(name),"$dummy") then '' else '<%cref(name)%>_'  ;separator=", "%> }
@@ -223,7 +238,7 @@ template dervativeNameCStyle(ComponentRef cr)
   case CREF_QUAL(ident = "$DER") then 'der_<%crefStr(componentRef)%>_'
 end dervativeNameCStyle;
 
-template DefineVariables(SimVar simVar)
+template DefineVariables(SimVar simVar, String arrayName)
  "Generates code for defining variables in c file for FMU target. "
 ::=
 match simVar
@@ -234,8 +249,10 @@ match simVar
   else if stringEq(crefStr(name),"der($dummy)") then
   <<>>
   else
+  let idx = System.tmpTick()
   <<
-  #define <%cref(name)%>_ <%System.tmpTick()%> <%description%>
+  #define <%cref(name)%>_ <%idx%> <%description%>
+  #define <%cref(name)%> (data-><%arrayName%>_vars[<%idx%>]) <%description%>
   >>
 end DefineVariables;
 
@@ -260,6 +277,7 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars
   // Set values for all variables that define a start value
   static void setDefaultStartValues(FMI2_FUNCTION_PREFIX_model_data_t *comp)
   {
+	  comp->Time = 0.0;
       <%vars.stateVars |> var => initValsDefault(var,"real") ;separator="\n"%>
       <%vars.derivativeVars |> var => initValsDefault(var,"real") ;separator="\n"%>
       <%vars.algVars |> var => initValsDefault(var,"real") ;separator="\n"%>
@@ -429,6 +447,21 @@ case SIMCODE(__) then
 
   >>
 end eventUpdateFunction2;
+
+template setTime2()
+::=
+  <<
+  fmi2Status
+  fmi2SetTime(fmi2Component c, fmi2Real t)
+  {
+      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      if (data == NULL) return fmi2Error;
+	  data->Time = t;
+	  return fmi2OK;
+  }
+
+  >>
+end setTime2; 
 
 template getRealFunction2()
  "Generates getReal function for c file."
@@ -787,13 +820,10 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, S
   /*
    <%dumpEqs(fill(eq,1))%>
    */
-  void <%CodegenC.symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data)
+  static void eqFunction_<%ix%>(FMI2_FUNCTION_PREFIX_model_data_t *data)
   {
-    const int equationIndexes[2] = {1,<%ix%>};
-    TRACE_PUSH
-    <%&varD%>
-    <%x%>
-    TRACE_POP
+      <%&varD%>
+      <%x%>
   }
   >>
   <<
@@ -803,6 +833,68 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, S
   >>
   )
 end equation_;
+
+template EquationGraphHelper(DAE.Exp exp,String ix)
+::=
+  match exp
+  case CREF(__) then
+    <<
+    data->input_info[&<%cref(componentRef)%>].push_back(eqFunction_<%ix%>);
+    >>
+  case BINARY(__) then
+    <<
+	<%EquationGraphHelper(exp1,ix)%>
+	<%EquationGraphHelper(exp2,ix)%>
+    >>
+  case UNARY(__) then
+    <<
+	<%EquationGraphHelper(exp,ix)%>
+	>>
+  else "EXPRESSION NOT SUPPORTED"
+end EquationGraphHelper;
+
+template EquationGraph(SimEqSystem eq)
+::=
+  let ix = equationIndex(eq) 
+  match eq
+  case e as SES_SIMPLE_ASSIGN(__)
+    then
+    <<
+    data->output_info[eqFunction_<%ix%>].push_back(&<%cref(cref)%>);
+    <%EquationGraphHelper(exp,ix)%>
+    >>
+  case e as SES_ARRAY_CALL_ASSIGN(__)
+    then "ARRAY_CALL"
+  case e as SES_IFEQUATION(__)
+    then "IF EQN"
+  case e as SES_ALGORITHM(__)
+    then "ALG"
+  case e as SES_LINEAR(__)
+    then "LINEAR"
+  case e as SES_NONLINEAR(__)
+    then "NONLINEAR"
+  case e as SES_WHEN(__)
+    then "WHEN"
+  case e as SES_RESIDUAL(__)
+    then "NOT IMPLEMENTED EQUATION SES_RESIDUAL"
+  case e as SES_MIXED(__)
+    then "MIXED"
+  else
+    "NOT IMPLEMENTED EQUATION equation_"
+end EquationGraph;
+
+template generateEquationGraph(list<SimEqSystem> allEquations)
+ "Generate dependency graphs for all equations and variables in the model."
+::=
+  let xx = (allEquations |> eq hasindex i0 => EquationGraph(eq)
+      ;separator="\n")
+  <<
+  static void setupEquationGraph(FMI2_FUNCTION_PREFIX_model_data_t *data)
+  {
+      <%xx%>
+  }
+  >>
+end generateEquationGraph;
 
 end CodegenSparseFMI;
 
