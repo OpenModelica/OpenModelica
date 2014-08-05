@@ -49,6 +49,8 @@ runScript("loadModel.mos");
 getErrorString();
 getClassNames();
 
+loadModel(ModelicaReference);
+
 // rmSymlinks
 // (false) should we keep readable names (nice online, if the server handles symbolic links), or
 // (true) use the hashed names in the links (nice if you want a zipped version to work on Windows). This removes the readable names, keeping only the hashed and de-duped images.
@@ -275,7 +277,7 @@ if genBuiltin then
   end for;
   writeFile(filetmp, "</table>\n", append = true);
 end if;
-writeFile(filetmp, version + " (<a href=\"ModelicaDocumentation.tar.xz\">Offline version</a>)", append = true);
+writeFile(filetmp, version + ". <a title=\"Tarball for case-sensitive file systems that support symbolic links\" href=\"ModelicaDocumentation.tar.xz\">Offline version (tar.xz)</a> <a title=\"Case-insensitive version for Windows and some Mac systems. Icons are duplicated since zip does not support symlinks.\" href=\"ModelicaDocumentation.zip\">(zip)</div></a>.", append = true);
 writeFile(filetmp, "</body>\n</html>", append = true);
 
 writeFile("Tidy.py","#!/usr/bin/env python
@@ -430,6 +432,47 @@ if rmSymlinks then
   system("for symlink in `find -type l`; do rm $symlink;  done");
 end if;
 
+writeFile("fix-case-sensitive.py","#!/usr/bin/env python
+# Finds files *.html that have the same case-insensitive names and renames one or more of them
+# Example: Ab.html AB.html ab.html becomes: Ab.1.html ab.2.html AB.html
+
+import os
+import glob
+from subprocess import call
+
+def getFiles():
+  files = [f for f in glob.glob('*.html') if os.path.isfile(f)]
+  files.sort()
+  return files
+
+def makeCaseSensitive():
+  files = getFiles()
+  visited = {}
+  for file in files:
+    upper = file.upper()
+    if upper in visited:
+      nfile = file.split('.')
+      # Add a .1, .2, .3, etc to the name, before the .html
+      try:
+        nfile[-2] = str(int(nfile[-2]) + 1)
+      except:
+        nfile.insert(len(nfile)-1,'1')
+      nfile = '.'.join(nfile)
+      print('Renaming file %s to %s' % (file,nfile))
+      if os.path.isfile(nfile):
+        raise Exception('File already exists: ' + nfile)
+      call(['sed','-i','s/%s/%s/' % (file,nfile)] + files)
+      os.rename(file,nfile)
+      return False
+    visited[upper] = file
+  return True
+
+print('Running Python script: makeCaseSensitive')
+while not makeCaseSensitive():
+  pass
+");
+
+// Make tarball (case-sensitive)
 "FindFiles.sh";
 system("bash FindFiles.sh");
 system("rm -f ModelicaDocumentation.tar.xz");
@@ -437,6 +480,19 @@ system("mkdir -p " + dirs);
 system("cp '" + py + "' '" + self + "' .");
 "tar";
 dirs;
-cmd := "tar cJf ModelicaDocumentation.tar.xz --dereference style.css *.html Icons " + dirs + " GenerateDoc.mos generate_icons.py FindFiles.log tidy.filtered tidy.links";
+cmd := "tar cJf ModelicaDocumentation.tar.xz --dereference style.css *.html Icons " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links";
+system(cmd);
+getErrorString();
+
+// Make zip (case-insensitive)
+system("python ./fix-case-sensitive.py");
+"FindFiles.sh";
+system("bash FindFiles.sh");
+system("rm -f ModelicaDocumentation.zip");
+system("mkdir -p " + dirs);
+system("cp '" + py + "' '" + self + "' .");
+"tar";
+dirs;
+cmd := "zip -qr ModelicaDocumentation.zip style.css *.html Icons " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links";
 system(cmd);
 getErrorString();
