@@ -4103,6 +4103,16 @@ algorithm
       equation
         true = Expression.isConstOne(e1);
       then e1;
+        
+    // (if b then x1 else y1) op  (if b then x2 else y2)
+    // => (if b then x1 op x2 else y1 op y2)
+    case (_,op1,DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),DAE.IFEXP(expCond = e4,expThen = e5,expElse = e6),_,_)
+      equation
+        true = Expression.expEqual(e1,e4);
+        e = DAE.BINARY(e2,op1,e5);
+        res = DAE.BINARY(e3,op1,e6);
+      then DAE.IFEXP(e1,e,res);
+     
 
     // (a1a2...an)^e2 => a1^e2a2^e2..an^e2
     case (_,DAE.POW(ty = _),e1,e2,_,true)
