@@ -386,7 +386,7 @@ algorithm
       equation
         false = hasOnlyFactors(inExp1,inExp2);
         e = Expression.makeDiff(inExp1,inExp2);
-        (e,_) = ExpressionSimplify.simplify(e);
+        (e,_) = ExpressionSimplify.simplify1(e);
         ({},_) = List.split1OnTrue(Expression.factors(e),isCrefInIFEXP,cr); // check: differentiateExpSolve is allowed
         dere = Differentiate.differentiateExpSolve(e, cr);
         (dere,_) = ExpressionSimplify.simplify(dere);
@@ -419,7 +419,7 @@ algorithm
         (res,asserts) = solve(lhs,rhs,inExp3);
        then (res, asserts);
     // f(a)*b = rhs  => f(a) = rhs/b solve for a
-    case(DAE.BINARY(e1,DAE.MUL(tp),e2),_,DAE.CREF(componentRef = cr),_)
+    case(DAE.BINARY(e1,DAE.MUL(_),e2),_,DAE.CREF(componentRef = cr),_)
       equation
         true = Expression.expHasCref(e1, cr);
         false = Expression.expHasCref(e2, cr);
@@ -428,7 +428,7 @@ algorithm
         (res,asserts) = solve(e1,e3,inExp3);
        then (res, asserts);
     // b*f(a) = rhs  => f(a) = rhs/b solve for a
-    case(DAE.BINARY(e2,DAE.MUL(tp),e1),_,DAE.CREF(componentRef = cr),_)
+    case(DAE.BINARY(e2,DAE.MUL(_),e1),_,DAE.CREF(componentRef = cr),_)
       equation
         true = Expression.expHasCref(e1, cr);
         false = Expression.expHasCref(e2, cr);
@@ -437,7 +437,7 @@ algorithm
         (res,asserts) = solve(e1,e3,inExp3);
        then(res, asserts);
     // f(a)/b = rhs  => f(a) = rhs*b solve for a
-    case(DAE.BINARY(e1,DAE.DIV(tp),e2),_,DAE.CREF(componentRef = cr),_)
+    case(DAE.BINARY(e1,DAE.DIV(_),e2),_,DAE.CREF(componentRef = cr),_)
       equation
         true = Expression.expHasCref(e1, cr);
         false = Expression.expHasCref(e2, cr);
@@ -446,7 +446,7 @@ algorithm
         (res,asserts) = solve(e1,e3,inExp3);
        then (res, asserts);
     // b/f(a) = rhs  => f(a) = b/rhs solve for a
-    case(DAE.BINARY(e2,DAE.DIV(tp),e1),_,DAE.CREF(componentRef = cr),_)
+    case(DAE.BINARY(e2,DAE.DIV(_),e1),_,DAE.CREF(componentRef = cr),_)
       equation
         true = Expression.expHasCref(e1, cr);
         false = Expression.expHasCref(e2, cr);
@@ -469,7 +469,7 @@ algorithm
         (res,asserts) = solve(e3,e1,inExp3);
        then(res, asserts);
     // f(a) + b = c => f(a) = c - b
-    case(DAE.BINARY(e1,DAE.ADD(tp),e2),_,DAE.CREF(componentRef = cr),_)
+    case(DAE.BINARY(e1,DAE.ADD(_),e2),_,DAE.CREF(componentRef = cr),_)
       equation
         true = Expression.expHasCref(e1, cr);
         false = Expression.expHasCref(e2, cr);
@@ -479,7 +479,7 @@ algorithm
         (res,asserts) = solve(e1,e3,inExp3);
       then(res, asserts);
     // f(a) - b = c => f(a) = c + b
-    case(DAE.BINARY(e1,DAE.SUB(tp),e2),_,DAE.CREF(componentRef = cr),_)
+    case(DAE.BINARY(e1,DAE.SUB(_),e2),_,DAE.CREF(componentRef = cr),_)
       equation
         true = Expression.expHasCref(e1, cr);
         false = Expression.expHasCref(e2, cr);
@@ -488,7 +488,7 @@ algorithm
         (res,asserts) = solve(e1,e3,inExp3);
       then(res, asserts);
     // b + f(a) = c => f(a) = c - b
-    case(DAE.BINARY(e2,DAE.ADD(tp),e1),_,DAE.CREF(componentRef = cr),_)
+    case(DAE.BINARY(e2,DAE.ADD(_),e1),_,DAE.CREF(componentRef = cr),_)
       equation
         false = Expression.expHasCref(e1, cr);
         true = Expression.expHasCref(e2, cr);
@@ -498,7 +498,7 @@ algorithm
         (res,asserts) = solve(e1,e3,inExp3);
       then(res, asserts);
     // b - f(a) = c => f(a) = b - c
-    case(DAE.BINARY(e2,DAE.SUB(tp),e1),_,DAE.CREF(componentRef = cr),_)
+    case(DAE.BINARY(e2,DAE.SUB(_),e1),_,DAE.CREF(componentRef = cr),_)
       equation
         true = Expression.expHasCref(e1, cr);
         false = Expression.expHasCref(e2, cr);
@@ -506,6 +506,55 @@ algorithm
         e3 =  Expression.makeDiff(e2,inExp2);
         (e3,_) = ExpressionSimplify.simplify(e3);
         (res,asserts) = solve(e1,e3,inExp3);
+       then(res, asserts);
+    // g(a) + f(a)/c = d => g(a)*c + f(a) = d*c 
+    case(DAE.BINARY(e1,DAE.ADD(_),
+      DAE.BINARY(e2,DAE.DIV(_),e3)),_,DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e1, cr);
+        true = Expression.expHasCref(e2, cr);
+        false = Expression.expHasCref(e3, cr);
+        false = Expression.expHasCref(inExp2, cr);
+        rhs =  Expression.expMul(inExp2,e3);
+        lhs =  Expression.expMul(e1,e3);
+        lhs =  Expression.expAdd(lhs,e2);
+        (res,asserts) = solve(lhs,rhs,inExp3);
+      then(res, asserts);
+    // f(a)/c + g(a) = d => g(a)*c + f(a) = d*c 
+    case(DAE.BINARY(DAE.BINARY(e2,DAE.DIV(_),e3),DAE.ADD(_),e1),_,DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e1, cr);
+        true = Expression.expHasCref(e2, cr);
+        false = Expression.expHasCref(e3, cr);
+        false = Expression.expHasCref(inExp2, cr);
+        rhs =  Expression.expMul(inExp2,e3);
+        lhs =  Expression.expMul(e1,e3);
+        lhs =  Expression.expAdd(lhs,e2);
+        (res,asserts) = solve(lhs,rhs,inExp3);
+      then(res, asserts);
+    // g(a) - f(a)/c = d => g(a)*c - f(a) = d*c 
+    case(DAE.BINARY(e1,DAE.SUB(_),DAE.BINARY(e2,DAE.DIV(_),e3)),_,DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e1, cr);
+        true = Expression.expHasCref(e2, cr);
+        false = Expression.expHasCref(e3, cr);
+        false = Expression.expHasCref(inExp2, cr);
+        rhs =  Expression.expMul(inExp2,e3);
+        lhs =  Expression.expMul(e1,e3);
+        lhs =  Expression.makeDiff(lhs,e2);
+        (res,asserts) = solve(lhs,rhs,inExp3);
+      then(res, asserts);
+    // f(a)/c - g(a) = d => g(a)*c - f(a) = d*c 
+    case(DAE.BINARY(DAE.BINARY(e2,DAE.DIV(_),e3),DAE.SUB(_),e1),_,DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e1, cr);
+        true = Expression.expHasCref(e2, cr);
+        false = Expression.expHasCref(e3, cr);
+        false = Expression.expHasCref(inExp2, cr);
+        rhs =  Expression.expMul(inExp2,e3);
+        lhs =  Expression.expMul(e1,e3);
+        lhs =  Expression.makeDiff(lhs,e2);
+        (res,asserts) = solve(lhs,rhs,inExp3);
       then(res, asserts);
 
     // 0 = a*(b-c)  solve for b
