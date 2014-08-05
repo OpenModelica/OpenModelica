@@ -507,7 +507,7 @@ algorithm
         (e3,_) = ExpressionSimplify.simplify(e3);
         (res,asserts) = solve(e1,e3,inExp3);
        then(res, asserts);
-    // g(a) + f(a)/c = d => g(a)*c + f(a) = d*c 
+    // g(a) + f(a)/c = d => g(a)*c + f(a) = d*c
     case(DAE.BINARY(e1,DAE.ADD(_),
       DAE.BINARY(e2,DAE.DIV(_),e3)),_,DAE.CREF(componentRef = cr),_)
       equation
@@ -520,7 +520,7 @@ algorithm
         lhs =  Expression.expAdd(lhs,e2);
         (res,asserts) = solve(lhs,rhs,inExp3);
       then(res, asserts);
-    // f(a)/c + g(a) = d => g(a)*c + f(a) = d*c 
+    // f(a)/c + g(a) = d => g(a)*c + f(a) = d*c
     case(DAE.BINARY(DAE.BINARY(e2,DAE.DIV(_),e3),DAE.ADD(_),e1),_,DAE.CREF(componentRef = cr),_)
       equation
         true = Expression.expHasCref(e1, cr);
@@ -532,7 +532,7 @@ algorithm
         lhs =  Expression.expAdd(lhs,e2);
         (res,asserts) = solve(lhs,rhs,inExp3);
       then(res, asserts);
-    // g(a) - f(a)/c = d => g(a)*c - f(a) = d*c 
+    // g(a) - f(a)/c = d => g(a)*c - f(a) = d*c
     case(DAE.BINARY(e1,DAE.SUB(_),DAE.BINARY(e2,DAE.DIV(_),e3)),_,DAE.CREF(componentRef = cr),_)
       equation
         true = Expression.expHasCref(e1, cr);
@@ -544,7 +544,7 @@ algorithm
         lhs =  Expression.makeDiff(lhs,e2);
         (res,asserts) = solve(lhs,rhs,inExp3);
       then(res, asserts);
-    // f(a)/c - g(a) = d => f(a) - g(a)*c  = d*c 
+    // f(a)/c - g(a) = d => f(a) - g(a)*c  = d*c
     case(DAE.BINARY(DAE.BINARY(e2,DAE.DIV(_),e3),DAE.SUB(_),e1),_,DAE.CREF(componentRef = cr),_)
       equation
         true = Expression.expHasCref(e1, cr);
