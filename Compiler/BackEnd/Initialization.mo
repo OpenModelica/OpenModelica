@@ -1460,7 +1460,7 @@ protected function consistencyCheck "
 algorithm
   (outConsistentEquations, outInconsistentEquations, outUncheckedEquations) := matchcontinue(inRedundantEqns, inEqns, inVars, inShared, nAddVars, inM, me, vecVarToEqs, vecEqsToVar, mapIncRowEqn)
     local
-      list<Integer> outRange, resiRange, flatComps, marker_list, markerEq, markedComps, markedComps2, markedComps3;
+      list<Integer> outRange, resiRange, flatComps, marker_list, markerEq, markedComps;
       list<Integer> outListComps, outLoopListComps, restRedundantEqns;
       list<Integer> consistentEquations, inconsistentEquations, uncheckedEquations, uncheckedEquations2;
       BackendDAE.IncidenceMatrix m;
@@ -1507,13 +1507,11 @@ algorithm
       marker_list = List.fill(0, listLength(flatComps));
       markerEq = List.fill(0, nEqns);
 
-      (markedComps, markedComps2, true, markedComps3) = compsMarker(currRedundantEqn, vecVarToEqs, inM, flatComps, marker_list, markerEq, outLoopListComps);
+      markedComps = compsMarker(currRedundantEqn, vecVarToEqs, inM, flatComps, marker_list, markerEq, outLoopListComps);
     //BackendDump.dumpList(markedComps, "markedComps: ");
-    //BackendDump.dumpList(markedComps2, "markedComps2: ");
-    //BackendDump.dumpList(markedComps3, "markedComps3: ");
 
       repl = BackendVarTransform.emptyReplacements();
-      repl = setupVarReplacements(markedComps3, inEqns, inVars, vecEqsToVar, repl, mapIncRowEqn, me);
+      repl = setupVarReplacements(markedComps, inEqns, inVars, vecEqsToVar, repl, mapIncRowEqn, me);
     //BackendVarTransform.dumpReplacements(repl);
       substEqns = applyVarReplacements(redundantEqn, inEqns, repl);
 
@@ -1608,144 +1606,93 @@ algorithm
   outIndices := List.map1(inIndices, mapIndex, inMapping);
 end mapIndices;
 
-protected function compsMarker "author: mwenzler
-  TODO: revise this function!"
-  input Integer unassignedEqn;
-  input array<Integer> vecVarToEq;
-  input BackendDAE.IncidenceMatrix m;
-  input list<Integer> flatComps;
-  input list<Integer> markerComps;
-  input list<Integer> markerEq;
-  input list<Integer> InLoopListComps;
-  output list<Integer> outMarkerComps "obsolete" ; // Marker list Comps
-  output list<Integer> outMarkerEq "obsolete" ;  // Marker 1...n
-  output Boolean outBool;
+protected function compsMarker "author: mwenzler"
+  input Integer inUnassignedEqn;
+  input array<Integer> inVecVarToEq;
+  input BackendDAE.IncidenceMatrix inM;
+  input list<Integer> inFlatComps;
+  input list<Integer> inMarkerComps;
+  input list<Integer> inMarkerEq;
+  input list<Integer> inLoopListComps "not used yet" ;
   output list<Integer> outMarkedEqns "contains all the indices of the equations that need to be considered" ;
+protected
+  list<Integer> varList;
+  list<Integer> markedEqns;
 algorithm
-  (outMarkerComps, outMarkerEq, outBool, outMarkedEqns) := matchcontinue (unassignedEqn, vecVarToEq, m, flatComps, markerComps, markerEq, InLoopListComps)
-    local
-      list<Integer> var_list;
+  varList := inM[inUnassignedEqn];
+  markedEqns := compsMarker2(varList, inVecVarToEq, inM, inFlatComps, {}, inLoopListComps);
 
-    case (_, _, _, _, _, _, _) equation
-      false = listMember(unassignedEqn, InLoopListComps);
-      var_list = m[unassignedEqn];
-      (outMarkerComps, outMarkerEq, outMarkedEqns) = compsMarker2(var_list, vecVarToEq, m, flatComps, markerComps, markerEq, {});
-
-      (outMarkerComps, outMarkerEq, outMarkedEqns) = downCompsMarker(listReverse(flatComps), vecVarToEq, m, flatComps, outMarkerComps, outMarkerEq, outMarkedEqns);
-   then (outMarkerComps, outMarkerEq, true, outMarkedEqns);
-
-    case (_, _, _, _, _, _, _) equation
-      Error.addCompilerNotification("It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
-    then ({}, {}, false, {});
-  end matchcontinue;
+  outMarkedEqns := downCompsMarker(listReverse(inFlatComps), inVecVarToEq, inM, inFlatComps, markedEqns, inLoopListComps);
 end compsMarker;
+
+protected function compsMarker2
+  input list<Integer> inVarList;
+  input array<Integer> inVecVarToEq;
+  input BackendDAE.IncidenceMatrix inM;
+  input list<Integer> inFlatComps;
+  input list<Integer> inMarkedEqns;
+  input list<Integer> inLoopListComps;
+  output list<Integer> outMarkedEqns;
+algorithm
+  outMarkedEqns := matchcontinue (inVarList, inVecVarToEq, inM, inFlatComps, inMarkedEqns, inLoopListComps)
+    local
+      Integer indexVar, indexEq;
+      list<Integer> var_list2, var_list3;
+      list<Integer> markedEqns;
+
+    case ({}, _, _, _, _, _) equation
+    then inMarkedEqns;
+
+    case (indexVar::var_list2, _, _, _, _, _) equation
+      indexEq = inVecVarToEq[indexVar];
+      false = listMember(indexEq, inLoopListComps);
+      false = listMember(indexEq, inMarkedEqns);
+      markedEqns = compsMarker2(var_list2, inVecVarToEq, inM, inFlatComps, inMarkedEqns, inLoopListComps);
+    then indexEq::markedEqns;
+
+    case (indexVar::var_list2, _, _, _, _, _) equation
+      indexEq = inVecVarToEq[indexVar];
+      false = listMember(indexEq, inLoopListComps);
+      true = listMember(indexEq, inMarkedEqns);
+      markedEqns = compsMarker2(var_list2, inVecVarToEq, inM, inFlatComps, inMarkedEqns, inLoopListComps);
+    then markedEqns;
+
+    else equation
+      Error.addCompilerNotification("It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
+    then fail();
+  end matchcontinue;
+end compsMarker2;
 
 protected function downCompsMarker
   input list<Integer> unassignedEqns;
   input array<Integer> vecVarToEq;
   input BackendDAE.IncidenceMatrix m;
   input list<Integer> flatComps;
-  input list<Integer> markerComps;
-  input list<Integer> markerEq;
   input list<Integer> inMarkedEqns;
-  output list<Integer> outMarkerComps;
-  output list<Integer> outMarkerEq;
+  input list<Integer> inLoopListComps;
   output list<Integer> outMarkedEqns;
 algorithm
-  (outMarkerComps, outMarkerEq, outMarkedEqns) := matchcontinue (unassignedEqns, vecVarToEq, m, flatComps, markerComps, markerEq, inMarkedEqns)
+  outMarkedEqns := matchcontinue (unassignedEqns, vecVarToEq, m, flatComps, inMarkedEqns, inLoopListComps)
     local
       list<Integer> unassignedEqns2, var_list;
       Integer indexUnassigned, marker;
       list<Integer> markedEqns;
 
-    case ({}, _, _, _, _, _, _)
-    then (markerComps, markerEq, inMarkedEqns);
+    case ({}, _, _, _, _, _)
+    then inMarkedEqns;
 
-    case (indexUnassigned::unassignedEqns2, _, _, _, _, _, _) equation
-      marker = listGet(markerEq, indexUnassigned);
-      true = intEq(marker, 1);
+    case (indexUnassigned::unassignedEqns2, _, _, _, _, _) equation
+      true = listMember(indexUnassigned, inMarkedEqns);
       var_list = m[indexUnassigned];
-      (outMarkerComps, outMarkerEq, markedEqns) = compsMarker2(var_list, vecVarToEq, m, flatComps, markerComps, markerEq, inMarkedEqns);
-      (outMarkerComps, outMarkerEq, markedEqns) = downCompsMarker(unassignedEqns2, vecVarToEq, m, flatComps, outMarkerComps, outMarkerEq, markedEqns);
-    then (outMarkerComps, outMarkerEq, markedEqns);
+      markedEqns = compsMarker2(var_list, vecVarToEq, m, flatComps, inMarkedEqns, inLoopListComps);
+      markedEqns = downCompsMarker(unassignedEqns2, vecVarToEq, m, flatComps, markedEqns, inLoopListComps);
+    then markedEqns;
 
-    case (indexUnassigned::unassignedEqns2, _, _, _, _, _, _) equation
-      (outMarkerComps, outMarkerEq, markedEqns) = downCompsMarker(unassignedEqns2, vecVarToEq, m, flatComps, markerComps, markerEq, inMarkedEqns);
-    then (outMarkerComps, outMarkerEq, markedEqns);
+    case (indexUnassigned::unassignedEqns2, _, _, _, _, _) equation
+      markedEqns = downCompsMarker(unassignedEqns2, vecVarToEq, m, flatComps, inMarkedEqns, inLoopListComps);
+    then markedEqns;
   end matchcontinue;
 end downCompsMarker;
-
-protected function compsMarker2
-  input list<Integer> var_list;
-  input array<Integer> vecVarToEq;
-  input BackendDAE.IncidenceMatrix m;
-  input list<Integer> flatComps;
-  input list<Integer> markerComps;
-  input list<Integer> markerEq;
-  input list<Integer> inMarkedEqns;
-  output list<Integer> outMarkerComps;
-  output list<Integer> outMarkerEq;
-  output list<Integer> outMarkedEqns;
-algorithm
-  (outMarkerComps, outMarkerEq, outMarkedEqns) := matchcontinue (var_list, vecVarToEq, m, flatComps, markerComps, markerEq, inMarkedEqns)
-    local
-      Integer indexVar, indexEq;
-      list<Integer> var_list2, var_list3;
-      list<Integer> markedEqns;
-
-    case ({}, _, _, _, _, _, _) equation
-    then (markerComps, markerEq, inMarkedEqns);
-
-    case (indexVar::var_list2, _, _, _, _, _, _) equation
-      indexEq=vecVarToEq[indexVar];
-      (outMarkerComps, outMarkerEq, markedEqns) = compsMarker3(flatComps, markerComps, indexEq, 1, markerEq, inMarkedEqns);
-      (outMarkerComps, outMarkerEq, markedEqns) = compsMarker2(var_list2, vecVarToEq, m, flatComps, outMarkerComps, outMarkerEq, markedEqns);
-    then (outMarkerComps, outMarkerEq, markedEqns);
-  end matchcontinue;
-end compsMarker2;
-
-protected function compsMarker3
-  input list<Integer> flatComps;
-  input list<Integer> markerComps;
-  input Integer indexEq;
-  input Integer counter;
-  input list<Integer> markerEq;
-  input list<Integer> inMarkedEqns;
-  output list<Integer> outMarkerComps;
-  output list<Integer> outMarkerEq;
-  output list<Integer> outMarkedEqns;
-algorithm
-  (outMarkerComps, outMarkerEq, outMarkedEqns) := matchcontinue (flatComps, markerComps, indexEq, counter, markerEq, inMarkedEqns)
-    local
-      Integer indexComp, marker;
-      list<Integer> flatComps2;
-      array<Integer> marker_array;
-      list<Integer> markedEqns;
-
-    case ({}, _, _, _, _, _)
-    then (markerComps, markerEq, inMarkedEqns);
-
-    case (indexComp::flatComps2, _, _, _, _, _) equation
-      true = intLe(counter, listLength(markerComps));
-      true = intEq(indexComp, indexEq);
-      marker=listGet(markerComps, counter);
-      true = intEq(marker, 0);
-      marker_array = listArray(markerComps);
-      marker_array = arrayUpdate(marker_array, counter, 1);
-      outMarkerComps = arrayList(marker_array);
-      marker=listGet(markerEq, indexEq);
-      marker_array = listArray(markerEq);
-      marker_array = arrayUpdate(marker_array, indexEq, 1);
-      outMarkerEq = arrayList(marker_array);
-      (outMarkerComps, outMarkerEq, markedEqns) = compsMarker3(flatComps2, outMarkerComps, indexEq, counter+1, outMarkerEq, indexComp::inMarkedEqns);
-    then (outMarkerComps, outMarkerEq, markedEqns);
-
-    case (indexComp::flatComps2, _, _, _, _, _) equation
-      true = intLe(counter, listLength(markerComps));
-      (outMarkerComps, outMarkerEq, markedEqns) = compsMarker3(flatComps2, markerComps, indexEq, counter+1, markerEq, inMarkedEqns);
-    then (outMarkerComps, outMarkerEq, markedEqns);
-  end matchcontinue;
-end compsMarker3;
 
 protected function setupVarReplacements
   input list<Integer> inMarkedEqns;

@@ -1037,7 +1037,7 @@ public function tarjanAlgorithm "author: PA
   assignments and the incidence matrix as input and identifies strong
   components, i.e. subsystems of equations.
 
-  inputs:  (IncidenceMatrix, BackendDAE.IncidenceMatrixT, int vector, int vector)
+  inputs:  (BackendDAE.IncidenceMatrixT, int vector)
   outputs: (int list list /* list of components */ )
 "
   input BackendDAE.IncidenceMatrixT mt;
