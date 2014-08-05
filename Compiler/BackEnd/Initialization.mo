@@ -1460,7 +1460,7 @@ protected function consistencyCheck "
 algorithm
   (outConsistentEquations, outInconsistentEquations, outUncheckedEquations) := matchcontinue(inRedundantEqns, inEqns, inVars, inShared, nAddVars, inM, me, vecVarToEqs, vecEqsToVar, mapIncRowEqn)
     local
-      list<Integer> outRange, resiRange, flatComps, marker_list, markerEq, markedComps;
+      list<Integer> outRange, resiRange, flatComps, markedComps;
       list<Integer> outListComps, outLoopListComps, restRedundantEqns;
       list<Integer> consistentEquations, inconsistentEquations, uncheckedEquations, uncheckedEquations2;
       BackendDAE.IncidenceMatrix m;
@@ -1504,10 +1504,7 @@ algorithm
     //BackendDump.dumpList(flatComps, "flatComps: ");
     //BackendDump.dumpList(arrayList(mapIncRowEqn), "mapIncRowEqn: ");
 
-      marker_list = List.fill(0, listLength(flatComps));
-      markerEq = List.fill(0, nEqns);
-
-      markedComps = compsMarker(currRedundantEqn, vecVarToEqs, inM, flatComps, marker_list, markerEq, outLoopListComps);
+      markedComps = compsMarker(currRedundantEqn, vecVarToEqs, inM, flatComps, outLoopListComps);
     //BackendDump.dumpList(markedComps, "markedComps: ");
 
       repl = BackendVarTransform.emptyReplacements();
@@ -1611,18 +1608,26 @@ protected function compsMarker "author: mwenzler"
   input array<Integer> inVecVarToEq;
   input BackendDAE.IncidenceMatrix inM;
   input list<Integer> inFlatComps;
-  input list<Integer> inMarkerComps;
-  input list<Integer> inMarkerEq;
   input list<Integer> inLoopListComps "not used yet" ;
   output list<Integer> outMarkedEqns "contains all the indices of the equations that need to be considered" ;
 protected
   list<Integer> varList;
   list<Integer> markedEqns;
 algorithm
-  varList := inM[inUnassignedEqn];
-  markedEqns := compsMarker2(varList, inVecVarToEq, inM, inFlatComps, {}, inLoopListComps);
+  outMarkedEqns := matchcontinue (inUnassignedEqn, inVecVarToEq, inM, inFlatComps, inLoopListComps)
+    case (_, _, _, _, _) equation
+      false = listMember(inUnassignedEqn, inLoopListComps);
+      varList = inM[inUnassignedEqn];
+      markedEqns = compsMarker2(varList, inVecVarToEq, inM, inFlatComps, {}, inLoopListComps);
 
-  outMarkedEqns := downCompsMarker(listReverse(inFlatComps), inVecVarToEq, inM, inFlatComps, markedEqns, inLoopListComps);
+      outMarkedEqns = downCompsMarker(listReverse(inFlatComps), inVecVarToEq, inM, inFlatComps, markedEqns, inLoopListComps);
+    then outMarkedEqns;
+
+    else equation
+      // TODO: change the message
+      Error.addCompilerNotification("It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
+    then fail();
+  end matchcontinue;
 end compsMarker;
 
 protected function compsMarker2
