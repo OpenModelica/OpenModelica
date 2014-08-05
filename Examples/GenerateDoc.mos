@@ -49,8 +49,6 @@ runScript("loadModel.mos");
 getErrorString();
 getClassNames();
 
-loadModel(ModelicaReference);
-
 // rmSymlinks
 // (false) should we keep readable names (nice online, if the server handles symbolic links), or
 // (true) use the hashed names in the links (nice if you want a zipped version to work on Windows). This removes the readable names, keeping only the hashed and de-duped images.
