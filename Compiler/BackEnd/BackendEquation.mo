@@ -1613,57 +1613,37 @@ end setAtIndex;
 
 public function getEqns "author: Frenkel TUD 2011-05
   returns the equations given by the list of indexes"
-  input list<Integer> inIndxes;
+  input list<Integer> inIndices "one-based indexing" ;
   input BackendDAE.EquationArray inEquationArray;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := List.map1r(inIndxes, equationNth1, inEquationArray);
+  outEqns := List.map1r(inIndices, equationNth1, inEquationArray);
 end getEqns;
-
-public function equationNth0 "author: PA
-  Return the n-th equation from the expandable equation array
-  indexed from 0..N-1.
-
-  inputs:  (EquationArray, int /* n */)
-  outputs:  Equation"
-  input BackendDAE.EquationArray inEquationArray;
-  input Integer pos;
-  output BackendDAE.Equation outEquation;
-algorithm
-  outEquation := equationNth1(inEquationArray, pos+1);
-end equationNth0;
 
 public function equationNth1 "author: PA
   Return the n-th equation from the expandable equation array
-  indexed from 1..N.
-
-  inputs:  (EquationArray, int /* n */)
-  outputs:  Equation"
+  indexed from 1..N."
   input BackendDAE.EquationArray inEquationArray;
-  input Integer pos;
+  input Integer inPos "one-based indexing" ;
   output BackendDAE.Equation outEquation;
 algorithm
-  outEquation:=
-  matchcontinue (inEquationArray,pos)
+  outEquation := matchcontinue (inEquationArray, inPos)
     local
       BackendDAE.Equation e;
       Integer n;
       array<Option<BackendDAE.Equation>> arr;
       String str;
 
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n,equOptArr = arr), _)
-      equation
-        true = intLe(pos,n);
-        SOME(e) = arr[pos];
-      then
-        e;
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n), _)
-      equation
-        str = "BackendEquation.equationNth1 failed; numberOfElement=" +& intString(n) +& "; pos=" +& intString(pos);
-        print(str +& "\n");
-        Error.addMessage(Error.INTERNAL_ERROR,{str});
-      then
-        fail();
+    case (BackendDAE.EQUATION_ARRAY(numberOfElement=n, equOptArr=arr), _) equation
+      true = intLe(inPos, n);
+      SOME(e) = arr[inPos];
+    then e;
+
+    case (BackendDAE.EQUATION_ARRAY(numberOfElement=n), _) equation
+      str = "BackendEquation.equationNth1 failed; numberOfElement=" +& intString(n) +& "; pos=" +& intString(inPos);
+      print(str +& "\n");
+      Error.addMessage(Error.INTERNAL_ERROR, {str});
+    then fail();
   end matchcontinue;
 end equationNth1;
 
@@ -2050,13 +2030,13 @@ end equationInfo;
 
 public function markedEquationSource
   input BackendDAE.EqSystem syst;
-  input Integer i;
+  input Integer inPos "one-based indexing" ;
   output DAE.ElementSource source;
 protected
   BackendDAE.EquationArray eqns;
 algorithm
-  BackendDAE.EQSYSTEM(orderedEqs = eqns) := syst;
-  source := equationSource(equationNth0(eqns,i-1));
+  BackendDAE.EQSYSTEM(orderedEqs=eqns) := syst;
+  source := equationSource(equationNth1(eqns, inPos));
 end markedEquationSource;
 
 public function equationSource "Retrieve the source from a BackendDAE.BackendDAE equation"

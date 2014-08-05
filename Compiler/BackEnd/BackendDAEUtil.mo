@@ -3220,11 +3220,12 @@ algorithm
 
     // i < n
     case (_, _, iArr, iArrT, _, _, true, _, _) equation
+      i1 = index+1;
+
       // get the equation
-      e = BackendEquation.equationNth0(inEqsArr, index);
+      e = BackendEquation.equationNth1(inEqsArr, i1);
       // compute the row
       (row, _) = incidenceRow(e, vars, inIndexType, functionTree, {});
-      i1 = index+1;
       // put it in the arrays
       iArr = row::iArr;
       iArrT = fillincidenceMatrixT(row, {i1}, iArrT);
@@ -3269,13 +3270,14 @@ algorithm
     // i < n
     case (_, _, iArr, iArrT, _, _, true, _, _, _, _, _)
       equation
+        i1 = index+1;
+
         // get the equation
-        e = BackendEquation.equationNth0(inEqsArr, index);
+        e = BackendEquation.equationNth1(inEqsArr, i1);
         // compute the row
         (row,size) = incidenceRow(e, vars, inIndexType, functionTree, {});
         rowSize = inRowSize + size;
         rowindxs = List.intRange2(inRowSize+1, rowSize);
-        i1 = index+1;
         mapIncRowEqn = List.consN(size,i1,imapIncRowEqn);
         // put it in the arrays
         iArr = List.consN(size,row,iArr);
@@ -4827,10 +4829,11 @@ algorithm
     // index < numberOfEqs
     case (_, _, iArr, _, _, _, true, _, _, _, _ , _)
       equation
-        // get the equation
-        e = BackendEquation.equationNth0(eqArr, index);
-        // compute the row
         i1 = index+1;
+
+        // get the equation
+        e = BackendEquation.equationNth1(eqArr, i1);
+        // compute the row
         (row,size) = adjacencyRowEnhanced(vars, e, i1, rowmark, kvars);
         rowSize = inRowSize + size;
         rowindxs = List.intRange2(inRowSize+1, rowSize);
@@ -4911,15 +4914,17 @@ algorithm
       Integer i1;
 
     // index = numberOfEqs (we reach the end)
-    case (_, _, _, _, _, _,  false, _, _) then (inIncidenceArray, inIncidenceArrayT);
+    case (_, _, _, _, _, _,  false, _, _)
+    then (inIncidenceArray, inIncidenceArrayT);
 
     // index < numberOfEqs
     case (_, _, _, _, _, _, true, _, _)
       equation
-        // get the equation
-        e = BackendEquation.equationNth0(eqArr, index);
-        // compute the row
         i1 = index+1;
+
+        // get the equation
+        e = BackendEquation.equationNth1(eqArr, i1);
+        // compute the row
         (row,_) = adjacencyRowEnhanced(vars, e, i1, rowmark, kvars);
         // put it in the arrays
         iArr = arrayUpdate(inIncidenceArray, i1, row);
