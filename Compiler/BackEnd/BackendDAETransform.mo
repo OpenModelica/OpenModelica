@@ -675,7 +675,7 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.StrongComponent comp;
       list<tuple<Integer, list<Integer>>> eqnvartpllst;
-      
+
     case (BackendDAE.SINGLEEQUATION(eqn=e, var=v), eqns, vars)
       equation
         eqn = BackendEquation.equationNth1(eqns, e);

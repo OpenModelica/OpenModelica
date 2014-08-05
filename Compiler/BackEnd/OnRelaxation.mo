@@ -518,10 +518,10 @@ algorithm
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
     case ({}, _, _)
     then BackendEquation.equationsAddDAE(inEqns, inEqSystem);
-    
+
     case (index::indices, eqn::eqns, BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind)) equation
       orderedEqs = BackendEquation.setAtIndex(orderedEqs, index, eqn);
       eqSystem = BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind);
