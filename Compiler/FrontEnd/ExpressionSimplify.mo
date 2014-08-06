@@ -4125,7 +4125,7 @@ algorithm
               Expression.operatorEqual(op3,DAE.DIV(ty));
        true = Expression.expEqual(e2,e5);
      then DAE.BINARY(e5, oper, DAE.BINARY(DAE.BINARY(e1,op2,e3),op1,DAE.BINARY(e4,op3,e6)));
-       
+
     // a*x op1 c*x op3 d
     // x *(a op1 c op3 d)
     case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(ty),e2), DAE.BINARY(e4,DAE.MUL(_),DAE.BINARY(e5,op3,e6)),false,false)
@@ -4136,7 +4136,7 @@ algorithm
               Expression.operatorEqual(op3,DAE.DIV(ty));
        true = Expression.expEqual(e2,e5);
      then DAE.BINARY(e5, oper, DAE.BINARY(e1,op1,DAE.BINARY(e4,op3,e6)));
-    
+
     // a*x op2 b op1 c*x
     // x *(a op2 b op1 c)
     case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(ty),DAE.BINARY(e2,op2,e3)), DAE.BINARY(e4,DAE.MUL(_),e5),false,false)
