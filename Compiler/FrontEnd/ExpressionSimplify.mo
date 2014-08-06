@@ -1129,7 +1129,7 @@ algorithm
         tp1 = Expression.liftArrayLeft(tp1,DAE.DIM_INTEGER(dim));
         e = DAE.ARRAY(tp1,sc,es);
         e = Expression.makePureBuiltinCall("sum",{e},tp2);
-        // print("Matrix sum: " +& boolString(sc) +& ExpressionDump.typeString(tp1) +& " " +& ExpressionDump.printExpStr(e) +& "\n");
+        // print("Matrix sum: " +& boolString(sc) +& Types.unparseType(tp1) +& " " +& ExpressionDump.printExpStr(e) +& "\n");
       then e;
     // Then try array concatenation
     case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.ARRAY(array=es,ty=tp1,scalar=false)},attr=DAE.CALL_ATTR(ty=tp2))
@@ -1143,7 +1143,7 @@ algorithm
         tp1 = Expression.liftArrayLeft(tp1,DAE.DIM_INTEGER(dim));
         e = DAE.ARRAY(tp1,sc,es);
         e = Expression.makePureBuiltinCall("sum",{e},tp2);
-        // print("Array sum: " +& boolString(sc) +& ExpressionDump.typeString(tp1) +& " " +& ExpressionDump.printExpStr(e) +& "\n");
+        // print("Array sum: " +& boolString(sc) +& Types.unparseType(tp1) +& " " +& ExpressionDump.printExpStr(e) +& "\n");
       then e;
     // Try to reduce the number of dimensions
     case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.ARRAY(array={e},scalar=false)},attr=DAE.CALL_ATTR(ty=tp2))
@@ -5046,13 +5046,15 @@ algorithm
     local
       Values.Value val;
       DAE.Exp arr_exp,foldExp;
-      DAE.Type aty;
+      DAE.Type aty,ty2;
       list<DAE.Exp> exps;
 
     case (Absyn.IDENT("array"),_,_,_,_,_,_)
       equation
-        aty = Types.unliftArray(ty);
-      then Expression.makeScalarArray(inExps, aty);
+        aty = Types.unliftArray(Types.expTypetoTypesType(ty));
+        ty2 = Types.liftArray(aty, DAE.DIM_INTEGER(listLength(inExps))); // The size can be unknown before the reduction...
+        exp = Expression.makeArray(inExps, ty2, not Types.isArray(aty,{}));
+      then exp;
 
     case (_,_,_,_,_,{},SOME(val)) then ValuesUtil.valueExp(val);
     case (_,_,_,_,_,{},NONE()) then fail();

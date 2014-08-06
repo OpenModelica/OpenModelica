@@ -1348,9 +1348,7 @@ algorithm
         info = DAEUtil.getElementSourceFileInfo(source);
         Types.typeErrorSanityCheck(t1_str, t2_str, info);
         Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, info);
-        Debug.fprintln(Flags.FAILTRACE, "- InstSection.instEqEquation failed with type mismatch in equation: " +& s1 +& " tys: " +& s2);
-      then
-        fail();
+      then fail();
   end matchcontinue;
 end instEqEquation;
 

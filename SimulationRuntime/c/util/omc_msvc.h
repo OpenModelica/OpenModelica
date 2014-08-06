@@ -36,6 +36,10 @@ extern "C" {
 
 #include <math.h> /* Make sure we try to get INFINITY and NAN from the system. They are way cooler */
 
+#ifndef NaN
+#define NaN NAN
+#endif
+
 union MSVC_FLOAT_HACK
 {
    unsigned char Bytes[4];
