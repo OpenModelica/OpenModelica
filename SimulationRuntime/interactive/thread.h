@@ -47,6 +47,7 @@ class Thread
          Thread& operator= (const Thread&);
 
   private:
+         int running;
          THREAD_HANDLE thread_handle;
 };
 

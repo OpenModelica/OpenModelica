@@ -15,22 +15,30 @@ void delay(unsigned milliseconds)
 Thread::Thread()
   : thread_handle(NULL)
 {
+  running = 0;
 }
 
 Thread::~Thread()
 {
-  CloseHandle(thread_handle);
+  if (thread_handle) {
+    CloseHandle(thread_handle);
+  }
 }
 
 bool Thread::Create(THREAD_RET_TYPE (*func)(THREAD_PARAM_TYPE))
 {
   thread_handle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)*func, NULL, 0, NULL);
-  return thread_handle != NULL;
+  return running = thread_handle != NULL;
 }
 
 bool Thread::Join()
 {
-  return WaitForSingleObject(thread_handle, INFINITE) != WAIT_FAILED;
+  if (running) {
+    bool res = WaitForSingleObject(thread_handle, INFINITE) != WAIT_FAILED;
+    running = 0;
+    return res;
+  }
+  return 0;
 }
 
 
@@ -107,21 +115,29 @@ void delay(unsigned milliseconds)
 
 Thread::Thread()
 {
+  running = 0;
 }
 
 Thread::~Thread()
 {
-  pthread_exit(NULL);
+  if (running) {
+    pthread_cancel(thread_handle);
+  }
 }
 
 bool Thread::Create(THREAD_RET_TYPE (*func)(THREAD_PARAM_TYPE))
 {
-  return pthread_create(&thread_handle, NULL, func, NULL) == 0;
+  return running = (pthread_create(&thread_handle, NULL, func, NULL) == 0);
 }
 
 bool Thread::Join()
 {
-  return pthread_join(thread_handle, NULL) == 0;
+  if (running) {
+    bool res = pthread_join(thread_handle, NULL) == 0;
+    running = 0;
+    return res;
+  }
+  return 0;
 }
 
 
