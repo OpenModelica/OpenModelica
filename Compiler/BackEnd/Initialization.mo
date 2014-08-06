@@ -1273,11 +1273,9 @@ algorithm
   (_, _, _) := consistencyCheck(redundantEqns, inEqns, inVars, inShared, nAddVars, m_, me, vec1, vec2, mapIncRowEqn);
 
   // remove all unassigned equations
-  outEqns := BackendEquation.compressEquations(inEqns);
-  outRemovedEqns := BackendEquation.getEqns(redundantEqns, outEqns);
+  outRemovedEqns := BackendEquation.getEqns(redundantEqns, inEqns);
 //BackendDump.dumpEquationList(outRemovedEqns, "removed equations");
-  outEqns := BackendEquation.equationDelete(outEqns, redundantEqns);
-  outEqns := BackendEquation.compressEquations(outEqns);
+  outEqns := BackendEquation.equationDelete(inEqns, redundantEqns);
 //BackendDump.dumpEquationArray(outEqns, "remaining equations");
 
   // map to variables
@@ -1289,7 +1287,6 @@ algorithm
   // introduce additional initial equations
   initVarList := List.map1r(range, BackendVariable.getVarAt, inVars);
   (outEqns, outDumpVars) := addStartValueEquations(initVarList, outEqns, {});
-  outEqns := BackendEquation.compressEquations(outEqns);
 //BackendDump.dumpEquationArray(outEqns, "remaining equations");
 end fixInitialSystem;
 
