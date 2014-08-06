@@ -5048,11 +5048,13 @@ algorithm
       DAE.Exp arr_exp,foldExp;
       DAE.Type aty,ty2;
       list<DAE.Exp> exps;
+      Integer length;
 
     case (Absyn.IDENT("array"),_,_,_,_,_,_)
       equation
         aty = Types.unliftArray(Types.expTypetoTypesType(ty));
-        ty2 = Types.liftArray(aty, DAE.DIM_INTEGER(listLength(inExps))); // The size can be unknown before the reduction...
+        length = listLength(inExps);
+        ty2 = Types.liftArray(aty, DAE.DIM_INTEGER(length)); // The size can be unknown before the reduction...
         exp = Expression.makeArray(inExps, ty2, not Types.isArray(aty,{}));
       then exp;
 
