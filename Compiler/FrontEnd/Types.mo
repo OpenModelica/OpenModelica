@@ -1159,6 +1159,9 @@ algorithm
     case Values.CODE(A=Absyn.C_TYPENAME(path=_))
       then DAE.T_CODE(DAE.C_TYPENAME(), {});
 
+    case Values.CODE(A=Absyn.C_VARIABLENAME(componentRef=_))
+      then DAE.T_CODE(DAE.C_VARIABLENAME(), {});
+
     case Values.CODE(A=Absyn.C_EXPRESSION(exp=_))
       then DAE.T_CODE(DAE.C_EXPRESSION(), {});
 

@@ -95,5 +95,15 @@ public function stringPath
   external "C" path=ParserExt_stringPath(str, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
 end stringPath;
 
+public function stringCref
+  input String str;
+  input String infoFilename;
+  input Integer acceptedGram;
+  input Integer languageStandardInt;
+  input Boolean runningTestsuite;
+  output Absyn.ComponentRef cref;
+  external "C" cref=ParserExt_stringCref(str, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
+end stringCref;
+
 end ParserExt;
 

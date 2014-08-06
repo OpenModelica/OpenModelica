@@ -136,6 +136,27 @@ RML_BEGIN_LABEL(ParserExt__stringPath)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(ParserExt__stringCref)
+{
+  int flags = PARSE_CREF;
+  const char *data = RML_STRINGDATA(rmlA0);
+  const char *filename = RML_STRINGDATA(rmlA1);
+  int acceptedGrammar = RML_UNTAGFIXNUM(rmlA2);
+  int langStd = RML_UNTAGFIXNUM(rmlA3);
+  int runningTestsuite = RML_UNTAGFIXNUM(rmlA4);
+  if(acceptedGrammar == 2) flags |= PARSE_META_MODELICA;
+  else if(acceptedGrammar == 3) flags |= PARSE_PARMODELICA;
+  else if(acceptedGrammar == 4) flags |= PARSE_OPTIMICA;
+
+  rmlA0 = parseString(data, filename, flags, langStd, runningTestsuite);
+  if (rmlA0) {
+    RML_TAILCALLK(rmlSC);
+  } else {
+    RML_TAILCALLK(rmlFC);
+  }
+}
+RML_END_LABEL
+
 #ifdef __cplusplusend
 }
 #endif

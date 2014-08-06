@@ -104,3 +104,18 @@ void* ParserExt_stringPath(const char* data, const char* filename, int acceptedG
     MMC_THROW();
   }
 }
+
+void* ParserExt_stringCref(const char* data, const char* filename, int acceptedGrammar, int langStd, int runningTestsuite)
+{
+  int flags = PARSE_CREF;
+  if(acceptedGrammar == 2) flags |= PARSE_META_MODELICA;
+  else if(acceptedGrammar == 3) flags |= PARSE_PARMODELICA;
+  else if(acceptedGrammar == 4) flags |= PARSE_OPTIMICA;
+
+  void *res = parseString(data, filename, flags, langStd, runningTestsuite);
+  if (res != NULL) {
+    return res;
+  } else {
+    MMC_THROW();
+  }
+}

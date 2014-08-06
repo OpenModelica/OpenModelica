@@ -2807,6 +2807,13 @@ external "builtin";
 annotation(preferredView="text");
 end stringTypeName;
 
+function stringVariableName
+  input String str;
+  output VariableName cl;
+external "builtin";
+annotation(preferredView="text");
+end stringVariableName;
+
 function typeNameString
   input TypeName cl;
   output String out;

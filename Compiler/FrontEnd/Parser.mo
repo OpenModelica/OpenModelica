@@ -103,5 +103,12 @@ algorithm
   path := ParserExt.stringPath(str, "<internal>", Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
 end stringPath;
 
+public function stringCref
+  input String str;
+  output Absyn.ComponentRef cref;
+algorithm
+  cref := ParserExt.stringCref(str, "<internal>", Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
+end stringCref;
+
 end Parser;
 

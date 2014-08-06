@@ -853,7 +853,7 @@ algorithm
       array<list<Integer>> m,mt;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       Values.Value ret_val,simValue,value,v,cvar,cvar2,v1,v2,v3;
-      Absyn.ComponentRef cr_1;
+      Absyn.ComponentRef cr,cr_1;
       Integer size,resI,i,i1,i2,i3,n,curveStyle,numberOfIntervals;
       Option<Integer> fmiContext, fmiInstance, fmiModelVariablesInstance; /* void* implementation: DO NOT UNBOX THE POINTER AS THAT MIGHT CHANGE IT. Just treat this as an opaque type. */
       Integer fmiLogLevel;
@@ -1999,6 +1999,11 @@ algorithm
       equation
         path = Parser.stringPath(str);
       then (cache,Values.CODE(Absyn.C_TYPENAME(path)),st);
+
+    case (cache,_,"stringVariableName",{Values.STRING(str)},st,_)
+      equation
+        cr = Parser.stringCref(str);
+      then (cache,Values.CODE(Absyn.C_VARIABLENAME(cr)),st);
 
     case (cache,_,"typeNameString",{Values.CODE(A=Absyn.C_TYPENAME(path=path))},st,_)
       equation

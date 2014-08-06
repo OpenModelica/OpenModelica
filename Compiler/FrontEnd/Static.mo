@@ -10605,7 +10605,7 @@ algorithm
 
     case (cache, env, e, DAE.FUNCARG(name=id,ty = vt as DAE.T_CODE(ct,_),par=pr), _, slots, _, true, _, _, polymorphicBindings,_,pre,_,_,_)
       equation
-        e_1 = elabCodeExp(e,cache,env,ct,info);
+        e_1 = elabCodeExp(e,cache,env,ct,st,info);
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,checkTypes,pre,info);
       then
         (cache,slots_1,DAE.C_VAR(),polymorphicBindings);
@@ -10780,7 +10780,7 @@ algorithm
       equation
         (vt as DAE.T_CODE(ty=ct)) = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
-        e_1 = elabCodeExp(e,cache,env,ct,info);
+        e_1 = elabCodeExp(e,cache,env,ct,st,info);
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,checkTypes,pre,info);
       then (cache,slots_1,DAE.C_VAR(),polymorphicBindings);
 
@@ -13512,10 +13512,11 @@ public function elabCodeExp
   input Env.Cache cache;
   input Env.Env env;
   input DAE.CodeType ct;
+  input Option<GlobalScript.SymbolTable> st;
   input Absyn.Info info;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (exp,cache,env,ct,info)
+  outExp := matchcontinue (exp,cache,env,ct,st,info)
     local
       String s1,s2;
       Absyn.ComponentRef cr;
@@ -13525,36 +13526,55 @@ algorithm
       DAE.Type et;
       Integer i;
       DAE.Exp dexp;
+      DAE.Properties prop;
+      DAE.Type ty;
+      DAE.CodeType ct2;
+
+    // First; try to elaborate the exp (maybe there is a binding in the environment that says v is a VariableName, etc...
+    case (_,_,_,_,_,_)
+      equation
+        ErrorExt.setCheckpoint("elabCodeExp");
+        (_,dexp,prop,_) = elabExp(cache,env,exp,false,st,false,Prefix.NOPRE(),info);
+        DAE.T_CODE(ty=ct2) = Types.getPropType(prop);
+        true = valueEq(ct,ct2);
+        ErrorExt.delCheckpoint("elabCodeExp");
+        // print(ExpressionDump.printExpStr(dexp) + " " + Types.unparseType(ty) + "\n");
+      then dexp;
+
+    case (_,_,_,_,_,_)
+      equation
+        ErrorExt.rollBack("elabCodeExp");
+      then fail();
 
     // Expression
-    case (_,_,_,DAE.C_EXPRESSION(),_)
+    case (_,_,_,DAE.C_EXPRESSION(),_,_)
       then DAE.CODE(Absyn.C_EXPRESSION(exp),DAE.T_UNKNOWN_DEFAULT);
 
     // Type Name
-    case (Absyn.CREF(componentRef=cr),_,_,DAE.C_TYPENAME(),_)
+    case (Absyn.CREF(componentRef=cr),_,_,DAE.C_TYPENAME(),_,_)
       equation
         path = Absyn.crefToPath(cr);
       then DAE.CODE(Absyn.C_TYPENAME(path),DAE.T_UNKNOWN_DEFAULT);
 
     // Variable Names
-    case (Absyn.ARRAY(es),_,_,DAE.C_VARIABLENAMES(),_)
+    case (Absyn.ARRAY(es),_,_,DAE.C_VARIABLENAMES(),_,_)
       equation
-        es_1 = List.map4(es,elabCodeExp,cache,env,DAE.C_VARIABLENAME(),info);
+        es_1 = List.map5(es,elabCodeExp,cache,env,DAE.C_VARIABLENAME(),st,info);
         i = listLength(es);
         et = DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(i)}, DAE.emptyTypeSource);
       then DAE.ARRAY(et,false,es_1);
 
-    case (_,_,_,DAE.C_VARIABLENAMES(),_)
+    case (_,_,_,DAE.C_VARIABLENAMES(),_,_)
       equation
         et = DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(1)}, DAE.emptyTypeSource);
-        dexp = elabCodeExp(exp,cache,env,DAE.C_VARIABLENAME(),info);
+        dexp = elabCodeExp(exp,cache,env,DAE.C_VARIABLENAME(),st,info);
       then DAE.ARRAY(et,false,{dexp});
 
     // Variable Name
-    case (Absyn.CREF(componentRef=cr),_,_,DAE.C_VARIABLENAME(),_)
+    case (Absyn.CREF(componentRef=cr),_,_,DAE.C_VARIABLENAME(),_,_)
       then DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.T_UNKNOWN_DEFAULT);
 
-    case (Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS(args={Absyn.CREF(componentRef=_)},argNames={})),_,_,DAE.C_VARIABLENAME(),_)
+    case (Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS(args={Absyn.CREF(componentRef=_)},argNames={})),_,_,DAE.C_VARIABLENAME(),_,_)
       then DAE.CODE(Absyn.C_EXPRESSION(exp),DAE.T_UNKNOWN_DEFAULT);
 
     // failure

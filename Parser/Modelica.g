@@ -1364,6 +1364,13 @@ name_path_group returns [void* ast]
     }
   ;
 
+component_reference_end returns [void* ast] :
+  cr=component_reference EOF
+  {
+    $ast = cr.ast;
+  }
+  ;
+
 component_reference returns [void* ast, int isNone]
 @init{ cr.ast = 0; dot = 0; cr.isNone = 0; } :
   (dot=DOT)? cr=component_reference2
