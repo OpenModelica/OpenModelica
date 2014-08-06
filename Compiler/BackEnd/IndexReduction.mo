@@ -1047,7 +1047,7 @@ algorithm
         ilst = List.fold1(unassignedStates, statesWithUnusedDerivative, mt, {});
         ilst = List.select1(ilst, isStateonIndex, v);
         // check also initial equations (this could be done also once before)
-        ((ilst,_)) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.daeInitialEqns(ishared),searchDerivativesEqn,(ilst,v));
+        ((ilst,_)) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.getInitialEqnsFromShared(ishared),searchDerivativesEqn,(ilst,v));
         Debug.fcall(Flags.BLT_DUMP,print,"states without used derivative:\n");
         Debug.fcall(Flags.BLT_DUMP,BackendDump.debuglst,(ilst,intString,", ","\n"));
         (syst,shared,ass1,ass2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn) =
@@ -1187,7 +1187,7 @@ algorithm
         ilst = List.fold1(ilst, statesWithUnusedDerivative, mt, {});
         varlst = List.map1r(ilst,BackendVariable.getVarAt,v);
         // check also initial equations (this could be done alse once before
-        ((ilst,_)) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.daeInitialEqns(ishared),searchDerivativesEqn,(ilst,v));
+        ((ilst,_)) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.getInitialEqnsFromShared(ishared),searchDerivativesEqn,(ilst,v));
         // check if there are states with unused derivative
         _::_ = ilst;
         Debug.fcall(Flags.BLT_DUMP, print, "All unassignedStates without Derivative: " +& stringDelimitList(List.map(ilst,intString),", ")  +& "\n");
@@ -1392,7 +1392,7 @@ algorithm
   ht := HashTableCG.emptyHashTable();
   dht := HashTable3.emptyHashTable();
   so := BackendDAE.STATEORDER(ht,dht);
-  eqns := BackendEquation.daeEqns(isyst);
+  eqns := BackendEquation.getEqnsFromEqSystem(isyst);
   Debug.fcall(Flags.BLT_DUMP, dumpStateOrder, so);
   outArg := (so,{},mapEqnIncRow,mapIncRowEqn,BackendDAEUtil.equationArraySize(eqns));
 end getStructurallySingularSystemHandlerArg;
@@ -1828,8 +1828,8 @@ algorithm
         // add set states
         vars = BackendVariable.addVars(setVars,iVars);
         // add equations
-        eqns = BackendEquation.equationAdd(eqn, iEqns);
-        eqns = BackendEquation.equationAdd(deqn, eqns);
+        eqns = BackendEquation.addEquation(eqn, iEqns);
+        eqns = BackendEquation.addEquation(deqn, eqns);
         // set varkind to dummy_state
         stateCandidates = List.map1(stateCandidates,BackendVariable.setVarKind,BackendDAE.DUMMY_STATE());
         otherVars = List.map1(otherVars,BackendVariable.setVarKind,BackendDAE.DUMMY_STATE());
@@ -5064,7 +5064,7 @@ algorithm
         ecr = Expression.makeCrefExp(inCr,DAE.T_REAL_DEFAULT);
         edcr = Expression.makeCrefExp(inDCr,DAE.T_REAL_DEFAULT);
         c = DAE.CALL(Absyn.IDENT("der"),{ecr},DAE.callAttrBuiltinReal);
-        eqns1 = BackendEquation.equationAdd(BackendDAE.EQUATION(edcr,c,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC),inEqns);
+        eqns1 = BackendEquation.addEquation(BackendDAE.EQUATION(edcr,c,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC),inEqns);
         so = addStateOrder(inCr,inDCr,inSo);
         eqnindxs = List.map(mt[i], intAbs);
         // get from scalar eqns indexes the indexes in the equation array
@@ -5182,7 +5182,7 @@ algorithm
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,NONE(),_,_)
       equation
         vars = BackendVariable.daeVars(isyst);
-        eqns = BackendEquation.daeEqns(isyst);
+        eqns = BackendEquation.getEqnsFromEqSystem(isyst);
         funcs = BackendDAEUtil.getFunctions(ishared);
         (_,m,_) = BackendDAEUtil.getIncidenceMatrix(isyst,BackendDAE.NORMAL(),SOME(funcs));
         mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
@@ -5200,7 +5200,7 @@ algorithm
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(_),matching=BackendDAE.NO_MATCHING()),_,NONE(),_,_)
       equation
         vars = BackendVariable.daeVars(isyst);
-        eqns = BackendEquation.daeEqns(isyst);
+        eqns = BackendEquation.getEqnsFromEqSystem(isyst);
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(numberMode,1,(graphInfo,graph)));
@@ -5216,7 +5216,7 @@ algorithm
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=vec1,ass2=vec2,comps={})),_,NONE(),_,_)
       equation
         vars = BackendVariable.daeVars(isyst);
-        eqns = BackendEquation.daeEqns(isyst);
+        eqns = BackendEquation.getEqnsFromEqSystem(isyst);
         funcs = BackendDAEUtil.getFunctions(ishared);
         //(_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(funcs));
         //mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
@@ -5238,7 +5238,7 @@ algorithm
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=_,ass2=vec2,comps={})),_,SOME(vec3),_,_)
       equation
         vars = BackendVariable.daeVars(isyst);
-        eqns = BackendEquation.daeEqns(isyst);
+        eqns = BackendEquation.getEqnsFromEqSystem(isyst);
         funcs = BackendDAEUtil.getFunctions(ishared);
         (_,m,_,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL(), SOME(funcs));
         graphInfo = GraphML.createGraphInfo();
@@ -5254,7 +5254,7 @@ algorithm
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=_,ass2=_,comps=comps)),_,NONE(),_,_)
       equation
         vars = BackendVariable.daeVars(isyst);
-        _ = BackendEquation.daeEqns(isyst);
+        _ = BackendEquation.getEqnsFromEqSystem(isyst);
         funcs = BackendDAEUtil.getFunctions(ishared);
         (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(funcs));
         graphInfo = GraphML.createGraphInfo();
@@ -5752,7 +5752,7 @@ algorithm
     case (_,_,_,_)
       equation
         vars = BackendVariable.daeVars(isyst);
-        eqns = BackendEquation.daeEqns(isyst);
+        eqns = BackendEquation.getEqnsFromEqSystem(isyst);
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(false,1,(graphInfo,graph)));

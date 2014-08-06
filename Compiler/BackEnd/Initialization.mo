@@ -1396,7 +1396,7 @@ algorithm
       startExp = Expression.makePureBuiltinCall("$_start", {e}, tp);
 
       eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
-      eqns = BackendEquation.equationAdd(eqn, inEqns);
+      eqns = BackendEquation.addEquation(eqn, inEqns);
 
       dumpVar = BackendVariable.copyVarNewName(cref, var);
       // crStr = BackendDump.varString(dumpVar);
@@ -1416,7 +1416,7 @@ algorithm
       startExp = Expression.makePureBuiltinCall("$_start", {e}, tp);
 
       eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
-      eqns = BackendEquation.equationAdd(eqn, inEqns);
+      eqns = BackendEquation.addEquation(eqn, inEqns);
 
       // crStr = BackendDump.varString(var);
       // Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " +& crStr);
@@ -1975,7 +1975,7 @@ algorithm
       eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), startValue, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
 
       vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
-      eqns = Debug.bcallret2(preUsed and isFixed, BackendEquation.equationAdd, eqn, eqns, eqns);
+      eqns = Debug.bcallret2(preUsed and isFixed, BackendEquation.addEquation, eqn, eqns, eqns);
     then ((var, (vars, fixvars, eqns, hs)));
 
     // discrete-time
@@ -2066,7 +2066,7 @@ algorithm
 
       startExp = BackendVariable.varStartValue(var);
       eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
-      eqns = Debug.bcallret2(isFixed, BackendEquation.equationAdd, eqn, eqns, eqns);
+      eqns = Debug.bcallret2(isFixed, BackendEquation.addEquation, eqn, eqns, eqns);
 
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
 
@@ -2089,7 +2089,7 @@ algorithm
       vars = BackendVariable.addVar(derVar, vars);
       vars = BackendVariable.addVar(var, vars);
       vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
-      eqns = Debug.bcallret2(preUsed, BackendEquation.equationAdd, eqn, eqns, eqns);
+      eqns = Debug.bcallret2(preUsed, BackendEquation.addEquation, eqn, eqns, eqns);
     then ((var, (vars, fixvars, eqns, hs)));
 
     // discrete (preUsed=true)
@@ -2112,7 +2112,7 @@ algorithm
 
       vars = BackendVariable.addVar(var, vars);
       vars = BackendVariable.addVar(preVar, vars);
-      eqns = BackendEquation.equationAdd(eqn, eqns);
+      eqns = BackendEquation.addEquation(eqn, eqns);
     then ((var, (vars, fixvars, eqns, hs)));
 
     // discrete
@@ -2163,7 +2163,7 @@ algorithm
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING, {s, s, str}, info);
 
       eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), bindExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
-      eqns = BackendEquation.equationAdd(eqn, eqns);
+      eqns = BackendEquation.addEquation(eqn, eqns);
 
       vars = BackendVariable.addVar(var, vars);
     then ((var, (vars, fixvars, eqns, hs)));
@@ -2246,7 +2246,7 @@ algorithm
       vars = Debug.bcallret2(not isInput, BackendVariable.addVar, var, vars, vars);
       fixvars = Debug.bcallret2(isInput, BackendVariable.addVar, var, fixvars, fixvars);
       vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
-      eqns = BackendEquation.equationAdd(eqn, eqns);
+      eqns = BackendEquation.addEquation(eqn, eqns);
 
       // Error.addCompilerNotification("VARIABLE (fixed=true): " +& BackendDump.varString(var));
     then ((var, (vars, fixvars, eqns, hs)));
@@ -2301,8 +2301,8 @@ algorithm
   size := BackendEquation.equationSize(eqn1);
   b := intGt(size, 0);
 
-  eqns := Debug.bcallret2(b, BackendEquation.equationAdd, eqn1, eqns, eqns);
-  reeqns := Debug.bcallret2(not b, BackendEquation.equationAdd, eqn1, reeqns, reeqns);
+  eqns := Debug.bcallret2(b, BackendEquation.addEquation, eqn1, eqns, eqns);
+  reeqns := Debug.bcallret2(not b, BackendEquation.addEquation, eqn1, reeqns, reeqns);
   outTpl := (eqn, (eqns, reeqns));
 end collectInitialEqns;
 
@@ -2370,7 +2370,7 @@ algorithm
     case ((var as BackendDAE.VAR(varName=cr, bindExp=SOME(bindExp), varType=ty, source=source), (eqns, reeqns))) equation
       crefExp = DAE.CREF(cr, ty);
       eqn = BackendDAE.EQUATION(crefExp, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
-      eqns = BackendEquation.equationAdd(eqn, eqns);
+      eqns = BackendEquation.addEquation(eqn, eqns);
     then ((var, (eqns, reeqns)));
 
     case ((var, _)) equation

@@ -200,7 +200,7 @@ algorithm
          In the dummy derivative method this equation is added and the original equation
          u1=u2 is kept. This is not the case for the original pantilides algorithm, where
          the original equation is removed from the system." ;
-        eqns = BackendEquation.daeEqns(syst);
+        eqns = BackendEquation.getEqnsFromEqSystem(syst);
         nf_1 = BackendDAEUtil.equationSize(eqns) "and try again, restarting. This could be optimized later. It should not
                                    be necessary to restart the matching, according to Bernard Bachmann. Instead one
                                    could continue the matching as usual. This was tested (2004-11-22) and it does not
@@ -6128,7 +6128,7 @@ algorithm
        setrandArray(ne,randarr);
        randarr1 = listArray(List.intRange(nv));
        setrandArray(nv,randarr1);
-       eqns1 = randSortSystem1(ne,0,randarr,eqns,BackendEquation.listEquation({}),BackendEquation.equationNth1,BackendEquation.equationAdd);
+       eqns1 = randSortSystem1(ne,0,randarr,eqns,BackendEquation.listEquation({}),BackendEquation.equationNth1,BackendEquation.addEquation);
        vars1 = randSortSystem1(nv,0,randarr1,vars,BackendVariable.emptyVars(),BackendVariable.getVarAt,BackendVariable.addVar);
        (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind),BackendDAE.NORMAL(),NONE());
      then

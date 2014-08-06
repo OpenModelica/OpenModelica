@@ -150,7 +150,7 @@ algorithm
         esize = listLength(eindex);
         ass1 = arrayCreate(size,-1);
         ass2 = arrayCreate(size,-1);
-        eqn_lst = BackendEquation.getEqns(eindex,BackendEquation.daeEqns(isyst));
+        eqn_lst = BackendEquation.getEqns(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
         eqns = BackendEquation.listEquation(eqn_lst);
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
         vars = BackendVariable.listVar1(var_lst);
@@ -1982,7 +1982,7 @@ algorithm
       sb = intString(b);
       cr = ComponentReference.makeCrefIdent(stringAppendList({"$tmp",sa,"_",sb}),DAE.T_REAL_DEFAULT,{});
       cexp = Expression.crefExp(cr);
-      eqns = BackendEquation.equationAdd(BackendDAE.EQUATION(cexp,e,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN),inEqns);
+      eqns = BackendEquation.addEquation(BackendDAE.EQUATION(cexp,e,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN),inEqns);
       v = BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR());
       vars = BackendVariable.addVar(v,inVars);
     then
@@ -2379,7 +2379,7 @@ algorithm
  // get Eqn
  e := BackendEquation.equationNth1(eqns,indx);
  // add equation
- eqnssort := BackendEquation.equationAdd(e, eqnssort);
+ eqnssort := BackendEquation.addEquation(e, eqnssort);
  // get vars of equations
  vindxs := ass2[indx];
  vlst := List.map1r(vindxs,BackendVariable.getVarAt,vars);

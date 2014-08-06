@@ -1157,7 +1157,7 @@ protected function getEqsList
 protected
   list<BackendDAE.Equation> eqnsl;
 algorithm
-  eqnsl := BackendEquation.equationList(BackendEquation.daeEqns(syst));
+  eqnsl := BackendEquation.equationList(BackendEquation.getEqnsFromEqSystem(syst));
   outEqns := listAppend(inEqns,eqnsl);
 end getEqsList;
 

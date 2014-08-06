@@ -10590,7 +10590,7 @@ algorithm outOrder := matchcontinue(inDlow, syst)
     equation
       Debug.fcall(Flags.FAILTRACE, print, " set variabale der index"+& "\n");
       dovars = BackendVariable.daeVars(syst);
-      deqns = BackendEquation.daeEqns(syst);
+      deqns = BackendEquation.getEqnsFromEqSystem(syst);
       vars = BackendVariable.varList(dovars);
       eqns = BackendEquation.equationList(deqns);
       derExps = makeCallDerExp(vars);

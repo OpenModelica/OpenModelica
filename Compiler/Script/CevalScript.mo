@@ -1198,7 +1198,7 @@ algorithm
         (BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimizeBackendDAE(daelow,NONE());
         (syst,m,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),NONE());
         vars = BackendVariable.daeVars(syst);
-        eqnarr = BackendEquation.daeEqns(syst);
+        eqnarr = BackendEquation.getEqnsFromEqSystem(syst);
         (jac, _) = BackendDAEUtil.calculateJacobian(vars, eqnarr, m, false,shared);
         res = BackendDump.dumpJacobianStr(jac);
       then

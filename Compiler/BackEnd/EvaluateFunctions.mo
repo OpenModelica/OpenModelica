@@ -2738,7 +2738,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := sysIn;
   varLst := BackendVariable.varList(vars);
-  initEqs := BackendEquation.daeInitialEqns(shared);
+  initEqs := BackendEquation.getInitialEqnsFromShared(shared);
   states := List.filterOnTrue(varLst,BackendVariable.isStateorStateDerVar);
   derVarsInit := BackendDAEUtil.traverseBackendDAEExpsEqns(initEqs,findDerVarCrefs,{});
   derVars := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs,findDerVarCrefs,derVarsInit);

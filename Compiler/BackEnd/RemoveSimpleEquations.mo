@@ -3881,7 +3881,7 @@ protected function addUnreplaceableFromWhensSystem "author: Frenkel TUD 2012-12
 protected
   BackendDAE.EquationArray eqns;
 algorithm
-  eqns := BackendEquation.daeEqns(isyst);
+  eqns := BackendEquation.getEqnsFromEqSystem(isyst);
   outUnreplaceable := BackendEquation.traverseBackendDAEEqns(eqns, addUnreplaceableFromWhenEqn, inUnreplaceable);
 end addUnreplaceableFromWhensSystem;
 

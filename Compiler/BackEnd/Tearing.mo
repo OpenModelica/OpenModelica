@@ -300,7 +300,7 @@ algorithm
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of omcTearing\n\n");
   // generate Subsystem to get the incidence matrix
   size := listLength(vindx);
-  eqn_lst := BackendEquation.getEqns(eindex,BackendEquation.daeEqns(isyst));
+  eqn_lst := BackendEquation.getEqns(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
   eqns := BackendEquation.listEquation(eqn_lst);
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendVariable.listVar1(var_lst);
@@ -1632,7 +1632,7 @@ algorithm
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of CellierTearing\n\n");
   // Generate Subsystem to get the incidence matrix
   size := listLength(vindx);
-  eqn_lst := BackendEquation.getEqns(eindex,BackendEquation.daeEqns(isyst));
+  eqn_lst := BackendEquation.getEqns(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
   eqns := BackendEquation.listEquation(eqn_lst);
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendVariable.listVar1(var_lst);
