@@ -3994,7 +3994,7 @@ algorithm
         false = Expression.isZero(e2);
       then res;
 
-    // exp / r = exp * (1/r)
+    // exp / r = (1/r)*exp 
     case(_, DAE.DIV(ty=tp), e1, DAE.RCONST(real=r1), _, _)
       equation
         true = realAbs(r1) >. 0.0;
@@ -4003,7 +4003,14 @@ algorithm
         0.0 = realMod(r1, 1.0);
         e3 = DAE.BINARY(DAE.RCONST(r),DAE.MUL(tp),e1);
       then e3;
-
+    // x / (r*y) = (1/r)*x/y
+    case(_, op2 as DAE.DIV(ty=tp), e1, DAE.BINARY(DAE.RCONST(real=r1),DAE.MUL(_),e3), _, _)
+      equation
+        true = realAbs(r1) >. 0.0;
+        r = 1.0 /. r1;
+        r1 = 1e12 *. r;
+        0.0 = realMod(r1, 1.0);
+        then DAE.BINARY(DAE.BINARY(DAE.RCONST(r),DAE.MUL(tp),e1),op2,e3);
     // -a / -b = a / b
     case (_,DAE.DIV(ty = ty),DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e1),DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e2),_,_)
       then DAE.BINARY(e1,DAE.DIV(ty),e2);
