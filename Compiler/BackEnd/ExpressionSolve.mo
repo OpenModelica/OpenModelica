@@ -835,9 +835,9 @@ algorithm
     // swapped args
     case(_,_)
       equation
-        true = Expression.isZero(e1);
-        _::_::_ = Expression.factors(e2);
-        _::_::_ = Expression.extractCrefsFromExp(e2);
+        true = Expression.isZero(e2);
+        _::_::_ = Expression.factors(e1);
+        _::_::_ = Expression.extractCrefsFromExp(e1);
       then
         true;
 
