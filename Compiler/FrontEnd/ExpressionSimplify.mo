@@ -4112,7 +4112,7 @@ algorithm
         e = DAE.BINARY(e2,op1,e5);
         res = DAE.BINARY(e3,op1,e6);
       then DAE.IFEXP(e1,e,res);
-        
+
     // a*x op2 b op1 c*x op3 d
     // x *(a op2 b op1 c op3 d)
     case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(ty),DAE.BINARY(e2,op2,e3)), DAE.BINARY(e4,DAE.MUL(_),DAE.BINARY(e5,op3,e6)),false,false)
