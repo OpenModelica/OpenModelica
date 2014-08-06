@@ -3994,7 +3994,7 @@ algorithm
         false = Expression.isZero(e2);
       then res;
 
-    // exp / r = (1/r)*exp 
+    // exp / r = (1/r)*exp
     case(_, DAE.DIV(ty=tp), e1, DAE.RCONST(real=r1), _, _)
       equation
         true = realAbs(r1) >. 0.0;
