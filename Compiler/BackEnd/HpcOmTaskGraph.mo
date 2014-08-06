@@ -3379,7 +3379,7 @@ protected
   TaskGraph iGraphT;
   list<list<Integer>> mergedNodes;
 algorithm
-  iGraphT := transposeTaskGraph(iGraph);
+  iGraphT := BackendDAEUtil.transposeMatrix(iGraph,arrayLength(iGraph));
   mergedNodes := mergeParentNodes0(iGraph, iGraphT, iGraphData, doNotMerge, 1, {});
   (oGraph,oGraphData) := contractNodesInGraph(mergedNodes, iGraph, iGraphData);
   oChanged := List.isNotEmpty(mergedNodes);
@@ -3566,7 +3566,7 @@ protected
   TaskGraph graphTmp;
 algorithm
   //This function contracts all nodes into the startNode
-  graphInT := transposeTaskGraph(graphIn);
+  graphInT := BackendDAEUtil.transposeMatrix(graphIn,arrayLength(graphIn));
   //print("HpcOmTaskGraph.contractNodesInGraph1 contractNodes: " +& stringDelimitList(List.map(contractNodes,intString),",") +& "\n");
   //print("HpcOmTaskGraph.contractNodesInGraph1 startNode: " +& intString(List.last(contractNodes)) +& "\n");
   startNode := List.last(contractNodes);
@@ -5231,47 +5231,6 @@ algorithm
     then ("(" +& intString(int1) +& "," +& realString(real1) +&" , "+& intString(int2) +& ")");
   end match;
 end tupleToStringIntRealInt;
-
-public function transposeTaskGraph "author: marcusw
-  Returns the given task graph as transposed version."
-  input TaskGraph iTaskGraph;
-  output TaskGraph oTaskGraphT;
-protected
-  TaskGraph transposedGraph;
-algorithm
-  transposedGraph := arrayCreate(arrayLength(iTaskGraph), {});
-  ((transposedGraph,_)) := Util.arrayFold(iTaskGraph, transposeTaskGraph0, (transposedGraph,1));
-  oTaskGraphT := transposedGraph;
-end transposeTaskGraph;
-
-protected function transposeTaskGraph0 "author: marcusw
-  Helper function of transposeTaskGraph. Handles the parentlist of a child node."
-  input list<Integer> iParentNodes;
-  input tuple<TaskGraph,Integer> iGraph; //current graph and childIdx
-  output tuple<TaskGraph,Integer> oGraph;
-protected
-  TaskGraph tmpGraph;
-  Integer index;
-algorithm
-  (tmpGraph,index) := iGraph;
-  tmpGraph := List.fold1(iParentNodes, transposeTaskGraph1, index, tmpGraph);
-  oGraph := (tmpGraph,index+1);
-end transposeTaskGraph0;
-
-protected function transposeTaskGraph1 "author: marcusw
-  Helper function of transposeTaskGraph0. Adds the childIdx to the parent-array-entry."
-  input Integer iParentIdx;
-  input Integer iChildIdx;
-  input TaskGraph iTaskGraph;
-  output TaskGraph oTaskGraph;
-protected
-  TaskGraph tmpGraph;
-  list<Integer> tmpList;
-algorithm
-  tmpList := arrayGet(iTaskGraph,iParentIdx);
-  tmpList := iChildIdx::tmpList;
-  oTaskGraph := arrayUpdate(iTaskGraph,iParentIdx,tmpList);
-end transposeTaskGraph1;
 
 public function transposeCommCosts "author: marcusw
   Returns the given communication costs as transposed version."

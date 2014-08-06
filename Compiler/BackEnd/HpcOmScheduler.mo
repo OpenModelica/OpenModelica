@@ -95,7 +95,7 @@ protected
   HpcOmSimCode.Schedule tmpSchedule;
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts) := iTaskGraphMeta;
-  taskGraphT := HpcOmTaskGraph.transposeTaskGraph(iTaskGraph);
+  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
   rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
   allTasks := convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
   nodeList_refCount := List.map1(rootNodes, getTaskByIndex, allTasks);
@@ -257,7 +257,7 @@ protected
   list<String> lockIdc;
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts) := iTaskGraphMeta;
-  taskGraphT := HpcOmTaskGraph.transposeTaskGraph(iTaskGraph);
+  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
   //() := HpcOmTaskGraph.printTaskGraph(taskGraphT);
   commCostsT := HpcOmTaskGraph.transposeCommCosts(commCosts);
   leaveNodes := HpcOmTaskGraph.getLeafNodes(iTaskGraph);
@@ -1715,7 +1715,7 @@ algorithm
   oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping)
     case(_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark),_)
       equation
-        taskGraphT = HpcOmTaskGraph.transposeTaskGraph(iTaskGraph);
+        taskGraphT = BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
         ((_,nodeLevelMap)) = Util.arrayFold3(taskGraphT, createNodeLevelMapping, nodeMark, inComps, iSccSimEqMapping, (1,{}));
         nodeLevelMap = List.sort(nodeLevelMap, sortNodeLevelMapping);
         filteredNodeLevelMap = List.map(nodeLevelMap, filterNodeLevelMapping);
@@ -1819,7 +1819,7 @@ algorithm
         print("External scheduling info: " +& stringDelimitList(List.map(extInfo, intString), ",") +& "\n");
         true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
 
-        taskGraphT = HpcOmTaskGraph.transposeTaskGraph(iTaskGraph);
+        taskGraphT = BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
         rootNodes = HpcOmTaskGraph.getRootNodes(iTaskGraph);
         allTasks = convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
         nodeList_refCount = List.map1(rootNodes, getTaskByIndex, allTasks);
@@ -1869,7 +1869,7 @@ algorithm
         print("External scheduling info: " +& stringDelimitList(List.map(extInfo, intString), ",") +& "\n");
         true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
 
-        taskGraphT = HpcOmTaskGraph.transposeTaskGraph(iTaskGraph);
+        taskGraphT = BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
         rootNodes = HpcOmTaskGraph.getRootNodes(iTaskGraph);
         allTasks = convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
         nodeList_refCount = List.map1(rootNodes, getTaskByIndex, allTasks);
@@ -1918,7 +1918,7 @@ algorithm
         extInfoArr = listArray(extInfo);
         true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
         //print("External scheduling info: " +& stringDelimitList(List.map(extInfo, intString), ",") +& "\n");
-        taskGraphT = HpcOmTaskGraph.transposeTaskGraph(iTaskGraph);
+        taskGraphT = BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
         rootNodes = HpcOmTaskGraph.getRootNodes(iTaskGraph);
         allTasks = convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
         nodeList_refCount = List.map1(rootNodes, getTaskByIndex, allTasks);
