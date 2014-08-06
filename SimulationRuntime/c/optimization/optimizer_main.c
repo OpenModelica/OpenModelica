@@ -239,15 +239,6 @@ static inline void freeOptimizerData(OptData*optData){
     free(optData->s.Hg[j]);
   }
   free(optData->s.Hg);
-  /* ToDo
-  for(i=2; i < 5; ++i){
-    free(optData->s.lindex[i]);
-    j = optData->data->simulationInfo.analyticJacobians[i].sizeCols;
-    for(k = 0; k < j; ++k)
-      free(optData->s.seedVec[i][k]);
-    free(optData->s.seedVec[k]);
-  }
-  */
   free(optData->s.lindex);
   free(optData->s.seedVec);
   free(optData->s.indexCon2);
@@ -292,4 +283,22 @@ static inline void freeOptimizerData(OptData*optData){
   if(optData->dim.updateHessian > 0)
     free(optData->oldH);
 
+  free(optData->dim.inputName);
+
+  for(k = 0; k < 2; ++k){
+    for(i = 0; i< nsi; ++i){
+      for(j = 0; j< np; ++j){
+        free(optData->dim.analyticJacobians_tmpVars[k][i][j]);
+      }
+      free(optData->dim.analyticJacobians_tmpVars[k][i]);
+    }
+    free(optData->dim.analyticJacobians_tmpVars[k]);
+  }
+  free(optData->dim.analyticJacobians_tmpVars);
+
+  for(i = 0; i< optData->dim.nJ; ++i)
+    free(optData->s.JderCon[i]);
+  free(optData->s.JderCon);
+  free(optData->s.gradM);
+  free(optData->s.gradL);
 }

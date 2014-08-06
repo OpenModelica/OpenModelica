@@ -149,6 +149,7 @@ typedef struct ANALYTIC_JACOBIAN
 {
     unsigned int sizeCols;
     unsigned int sizeRows;
+    unsigned int sizeTmpVars;
     SPARSE_PATTERN sparsePattern;
     modelica_real* seedVars;
     modelica_real* tmpVars;

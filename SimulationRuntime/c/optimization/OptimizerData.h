@@ -74,6 +74,10 @@ typedef struct OptDataDim{
  int updateHessian;
  int iter_updateHessian;
 
+ modelica_real **** analyticJacobians_tmpVars;
+
+ int dim_tmpVars[2];
+
 }OptDataDim;
 
 typedef struct OptDataTime{

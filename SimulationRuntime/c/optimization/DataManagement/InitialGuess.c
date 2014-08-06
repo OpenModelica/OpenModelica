@@ -141,9 +141,9 @@ static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solver
      while(t < optData->time.t0){
        externalInputUpdate(data);
        smallIntSolverStep(data, solverInfo, fmin(t += optData->time.dt[0], optData->time.t0));
-       printf("\ndone: time[%i] = %g",0,(double)solverInfo->currentTime);
+       printf("\ndone: time[%i] = %g",0,(double)data->localData[0]->timeValue);
        sim_result.emit(&sim_result,data);
-       fprintf(pFile, "%lf ",(double)t);
+       fprintf(pFile, "%lf ",(double)data->localData[0]->timeValue);
        for(i = 0; i < nu; ++i){
          fprintf(pFile, "%lf ", (float)data->simulationInfo.inputVars[i]);
        }
@@ -173,7 +173,6 @@ static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solver
          printf("\ndone: time[%i] = %g", k, (double)optData->time.t[i][j]);
 
        memcpy(v[i][j], data->localData[0]->realVars, nReal*sizeof(double));
-
        for(l = 0; l < nx; ++l){
 
          if( ((double) v[i][j][l] < (double)optData->bounds.vmin[l]*optData->bounds.vnom[l])

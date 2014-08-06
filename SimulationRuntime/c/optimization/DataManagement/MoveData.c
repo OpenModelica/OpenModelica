@@ -511,13 +511,21 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
 
   const modelica_real * vnom = optData->bounds.vnom;
 
+
   modelica_real * realVars[3];
+  modelica_real * tmpVars[2];
 
   int i, j, k, shift, l;
   DATA * data = optData->data;
+  const int indexBC[2] = {data->callback->INDEX_JAC_B, data->callback->INDEX_JAC_C};
+  OptDataDim * dim = &optData->dim;
 
   for(l = 0; l < 3; ++l)
     realVars[l] = data->localData[l]->realVars;
+
+  for(l = 0; l< 2; ++l){
+    tmpVars[l] = data->simulationInfo.analyticJacobians[indexBC[l]].tmpVars;
+  }
 
   for(i = 0, shift = 0; i < nsi-1; ++i){
     for(j = 0; j < np; ++j, shift += nv){
@@ -526,6 +534,8 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
         data->localData[l]->realVars = optData->v[i][j];
         data->localData[l]->timeValue = (modelica_real) optData->time.t[i][j];
       }
+      for(l = 0; l < 2; ++l)
+        data->simulationInfo.analyticJacobians[indexBC[l]].tmpVars = dim->analyticJacobians_tmpVars[l][i][j];
 
       for(k = 0; k < nx; ++k)
         data->localData[0]->realVars[k] = vopt[shift + k]*vnom[k];
@@ -554,6 +564,8 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
 
     for(k = 0; k < nx; ++k)
       data->localData[0]->realVars[k] = vopt[shift + k]*vnom[k];
+    for(l = 0; l < 2; ++l)
+      data->simulationInfo.analyticJacobians[indexBC[l]].tmpVars = dim->analyticJacobians_tmpVars[l][i][j];
 
     for(; k <nv; ++k){
       data->simulationInfo.inputVars[k-nx] = (modelica_real) vopt[shift + k]*vnom[k];
@@ -569,6 +581,9 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
 
   for(l = 0; l < 3; ++l)
     data->localData[l]->realVars = realVars[l];
+
+  for(l = 0; l< 2; ++l)
+    data->simulationInfo.analyticJacobians[indexBC[l]].tmpVars = tmpVars[l];
 
 }
 

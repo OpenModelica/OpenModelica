@@ -40,6 +40,7 @@ static inline void print_local_jac_struct(DATA * data, OptDataDim * dim, OptData
 static inline void local_hessian_struct(DATA * data, OptDataDim * dim, OptDataStructure *s);
 static inline void print_local_hessian_struct(DATA * data, OptDataDim * dim, OptDataStructure *s);
 static inline void update_local_jac_struct(OptDataDim * dim, OptDataStructure *s);
+static inline void copy_JacVars(OptData *optData);
 
 /* pick up jac struct
  * author: Vitalij Ruge
@@ -52,7 +53,7 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   const int nJ2 = dim->nJ2;
   int i, j, k;
   char * cflags;
-
+  const int indexBC[2] = {data->callback->INDEX_JAC_B, optData->data->callback->INDEX_JAC_C};
   cflags = (char*)omc_flagValue[FLAG_UP_HESSIAN];
   if(cflags)
   {
@@ -93,6 +94,7 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
     s->plagrange = NULL;
 
   local_jac_struct(data, dim, s, optData->bounds.vnom);
+  copy_JacVars(optData);
 
   if(ACTIVE_STREAM(LOG_IPOPT_JAC) || ACTIVE_STREAM(LOG_IPOPT_HESSE))
     print_local_jac_struct(data, dim, s);
@@ -164,7 +166,6 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   }
 
   optData->dim.iter_updateHessian = optData->dim.updateHessian-1;
-
 }
 
 
@@ -286,7 +287,35 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
       s->indexJ3[i] = j++;
     }
   }
+
  }
+}
+
+/*
+ *  copy analytic jacobians vars for each subintervall
+ *  author: Vitalij Ruge
+ */
+static inline void copy_JacVars(OptData *optData){
+  int i,j,l;
+
+  DATA* data = optData->data;
+  const int indexBC[2] = {data->callback->INDEX_JAC_B, data->callback->INDEX_JAC_C};
+  OptDataDim * dim = &optData->dim;
+  const int np = dim->np;
+  const int nsi = dim->nsi;
+
+  dim->analyticJacobians_tmpVars = (modelica_real ****) malloc(2*sizeof(modelica_real***));
+  for(l = 0; l < 2 ; ++l){
+    dim->dim_tmpVars[l] = data->simulationInfo.analyticJacobians[indexBC[l]].sizeTmpVars;
+    dim->analyticJacobians_tmpVars[l] = (modelica_real ***) malloc(nsi*sizeof(modelica_real**));
+    for(i = 0; i< nsi; ++i){
+      dim->analyticJacobians_tmpVars[l][i] = (modelica_real **) malloc(np*sizeof(modelica_real*));
+      for(j = 0; j< np; ++j){
+        dim->analyticJacobians_tmpVars[l][i][j] = (modelica_real *) malloc(dim->dim_tmpVars[l]*sizeof(modelica_real));
+        memcpy(dim->analyticJacobians_tmpVars[l][i][j],data->simulationInfo.analyticJacobians[indexBC[l]].tmpVars,dim->dim_tmpVars[l]*sizeof(modelica_real));
+      }
+    }
+  }
 }
 
 /*
