@@ -843,13 +843,13 @@ template EquationGraphHelper(DAE.Exp exp,String ix)
     >>
   case BINARY(__) then
     <<
-  <%EquationGraphHelper(exp1,ix)%>
-  <%EquationGraphHelper(exp2,ix)%>
+    <%EquationGraphHelper(exp1,ix)%>
+    <%EquationGraphHelper(exp2,ix)%>
     >>
   case UNARY(__) then
     <<
-  <%EquationGraphHelper(exp,ix)%>
-  >>
+    <%EquationGraphHelper(exp,ix)%>
+    >>
   else "EXPRESSION NOT SUPPORTED"
 end EquationGraphHelper;
 
