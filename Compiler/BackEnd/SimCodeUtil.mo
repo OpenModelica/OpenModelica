@@ -203,6 +203,27 @@ algorithm
   outInt := inInt - decrement;
 end decrementInt;
 
+
+public function protectedVars
+    input list<SimCode.SimVar> InSimVars;
+    output list<SimCode.SimVar> OutSimVars;
+   algorithm
+   OutSimVars:= List.filterOnTrue(InSimVars,isNotProtected);
+end protectedVars;
+
+protected function isNotProtected
+    input SimCode.SimVar simVar;
+    output Boolean outIsProtected;
+   algorithm
+   isProtected:= match(simVar)
+   case(SimCode.SIMVAR(isProtected=true))
+      then false;
+   else
+    true;
+  end match;
+end isProtected;
+
+
 public function makeCrefRecordExp
 "Helper function to generate records."
   input DAE.ComponentRef inCRefRecord;
