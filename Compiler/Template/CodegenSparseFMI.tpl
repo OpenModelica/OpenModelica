@@ -102,7 +102,7 @@ case SIMCODE(__) then
       map<void*,list<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*)> > input_info;
       // Map from addresses of functions to variables they modify
       map<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*),list<void*> > output_info;
-      // List of variables that have been modified 
+      // List of variables that have been modified
       set<void*> modified_vars;
   };
 
@@ -123,15 +123,15 @@ case SIMCODE(__) then
           void* var = *next_var;
           // Remove it from the list of modified variables
           data->modified_vars.erase(next_var);
-          // Get the list of equations that have this variable as input 
+          // Get the list of equations that have this variable as input
           map<void*,list<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*)> >::iterator map_iter =
               data->input_info.find(var);
-          // If there are any such equations, recalculate them 
+          // If there are any such equations, recalculate them
           if (map_iter != data->input_info.end())
           {
-              // Get the list of equations 
+              // Get the list of equations
               list<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*)>& eqns = (*map_iter).second;
-              // Calculate each one  
+              // Calculate each one
               list<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*)>::iterator eqns_iter = eqns.begin();
               for (; eqns_iter != eqns.end(); eqns_iter++)
               {
@@ -148,7 +148,7 @@ case SIMCODE(__) then
                   }
               }
           }
-      }      
+      }
   }
 
   static void updateAll(FMI2_FUNCTION_PREFIX_model_data_t* data)
@@ -176,7 +176,7 @@ case SIMCODE(__) then
   }
 
   fmi2Status fmi2ExitInitializationMode(fmi2Component c)
-  { 
+  {
       FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
       if (data == NULL) return fmi2Error;
       updateSome(data);
@@ -212,7 +212,7 @@ case SIMCODE(__) then
       FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
       if (data == NULL || nvr > NUMBER_OF_STATES) return fmi2Error;
       for (size_t i = 0; i < nvr; i++) der[i] = data->real_vars[STATESDERIVATIVES[i]];
-      return fmi2OK; 
+      return fmi2OK;
   }
 
   fmi2Status fmi2GetEventIndicators(fmi2Component, fmi2Real[], size_t)
@@ -226,7 +226,7 @@ case SIMCODE(__) then
       FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
       if (data == NULL || nvr > NUMBER_OF_STATES) return fmi2Error;
       for (size_t i = 0; i < nvr; i++) states[i] = data->real_vars[STATES[i]];
-      return fmi2OK; 
+      return fmi2OK;
   }
 
   fmi2Status fmi2SetContinuousStates(fmi2Component c, const fmi2Real* states, size_t nvr)
@@ -238,7 +238,7 @@ case SIMCODE(__) then
           data->real_vars[STATES[i]] = states[i];
           data->modified_vars.insert(&(data->real_vars[STATES[i]]));
       }
-      return fmi2OK; 
+      return fmi2OK;
   }
 
   fmi2Status fmi2GetNominalsOfContinuousStates(fmi2Component c, fmi2Real* nominals, size_t nvr)
@@ -246,7 +246,7 @@ case SIMCODE(__) then
       FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
       if (data == NULL || nvr > NUMBER_OF_STATES) return fmi2Error;
       for (size_t i = 0; i < nvr; i++) nominals[i] = 1.0;
-      return fmi2OK; 
+      return fmi2OK;
   }
 
    fmi2Status fmi2EnterEventMode(fmi2Component)
