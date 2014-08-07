@@ -7262,10 +7262,11 @@ end threadMapFold_tail;
 public function position
   "Takes a value and a list, and returns the position of the first list element
   that whose value is equal to the given value. The index starts at zero.
-    Example: position(2, {0, 1, 2, 3}) => 2"
+    Example: position(2, {0, 1, 2, 3}) => 2
+  TODO: make the index start at one"
   input ElementType inElement;
   input list<ElementType> inList;
-  output Integer outPosition;
+  output Integer outPosition "zero-based index" ;
 algorithm
   outPosition := position_impl(inElement, inList, 0);
 end position;
@@ -8649,6 +8650,16 @@ algorithm
           consOnTrue(res, e, inAccum));
   end match;
 end select2_tail;
+
+public function delete
+  "This is a wrapper of the built-in function listDelete as a workaround. It
+   will be removed as soon as the rml version got removed."
+  input list<ElementType> lst;
+  input Integer index "one-based index" ;
+  output list<ElementType> result;
+algorithm
+  result := listDelete(lst, index-1);
+end delete;
 
 public function deleteMember
   "Takes a list and a value, and deletes the first occurence of the value in the

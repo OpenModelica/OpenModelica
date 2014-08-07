@@ -1053,7 +1053,7 @@ algorithm
         varTpl = listGet(varLstIn,varIdx);
         (var,_) = varTpl;
         true = List.isMemberOnTrue(var,eventVarLst,intEq);
-        varLst = listDelete(varLstIn,varIdx-1);
+        varLst = List.delete(varLstIn,varIdx);
         varLst = removeEventVars(eventVarLst,varLst,varIdx);
       then
         varLst;
@@ -3360,7 +3360,7 @@ algorithm
   TASKGRAPHMETA(inComps = inComps, varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, rootNodes = rootNodes, nodeNames =nodeNames,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
   allTheNodes := List.intRange(arrayLength(graphIn));  // to traverse the node indeces
   oneChildren := findOneChildParents(allTheNodes,graphIn,doNotMerge,{{}},0);  // paths of nodes with just one successor per node (extended: and endnodes with just one parent node)
-  oneChildren := listDelete(oneChildren,listLength(oneChildren)-1); // remove the empty startValue {}
+  oneChildren := List.delete(oneChildren,listLength(oneChildren)); // remove the empty startValue {}
   oneChildren := List.removeOnTrue(1,compareListLengthOnTrue,oneChildren);  // remove paths of length 1
   //print("oneChildren "+&stringDelimitList(List.map(oneChildren,intLstString),"\n")+&"\n");
   (graphOut,graphDataOut) := contractNodesInGraph(oneChildren,graphIn,graphDataIn);

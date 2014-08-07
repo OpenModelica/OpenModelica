@@ -2456,8 +2456,8 @@ algorithm
       equation
         (v::{},i::{}) = BackendVariable.getVar(cr,vars);
         p = List.position(i, vindxs);
-        ilst = listDelete(vindxs,p);
-        vlst = listDelete(inVarLst,p);
+        ilst = List.delete(vindxs, p+1);
+        vlst = List.delete(inVarLst, p+1);
         _ = arrayUpdate(vararray,index,SOME(v));
       then
         sortVarsforOrder1(rest,index+1,vlst,ilst,vararray,vars);
