@@ -2804,14 +2804,18 @@ function stringTypeName
   input String str;
   output TypeName cl;
 external "builtin";
-annotation(preferredView="text");
+annotation(Documentation(info = "<html>
+<p>stringTypeName is used to make it simpler to create some functionality when scripting. The basic use-case is calling functions like simulate when you do not know the name of the class a priori simulate(stringTypeName(readFile(\"someFile\"))).</p>
+</html>"),preferredView="text");
 end stringTypeName;
 
 function stringVariableName
   input String str;
   output VariableName cl;
 external "builtin";
-annotation(preferredView="text");
+annotation(Documentation(info = "<html>
+<p>stringVariableName is used to make it simpler to create some functionality when scripting. The basic use-case is calling functions like val when you do not know the name of the variable a priori val(stringVariableName(readFile(\"someFile\"))).</p>
+</html>"),preferredView="text");
 end stringVariableName;
 
 function typeNameString
