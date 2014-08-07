@@ -221,7 +221,7 @@ protected function isNotProtected
    else
     true;
   end match;
-end isProtected;
+end isNotProtected;
 
 
 public function makeCrefRecordExp
