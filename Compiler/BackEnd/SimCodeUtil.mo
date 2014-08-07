@@ -212,15 +212,11 @@ public function protectedVars
 end protectedVars;
 
 protected function isNotProtected
-    input SimCode.SimVar simVar;
-    output Boolean outIsProtected;
-   algorithm
-   isProtected:= match(simVar)
-   case(SimCode.SIMVAR(isProtected=true))
-      then false;
-   else
-    true;
-  end match;
+  input SimCode.SimVar simVar;
+  output Boolean isProtected;
+algorithm
+  SimCode.SIMVAR(isProtected=isProtected) := simVar;
+  isProtected := not isProtected;
 end isNotProtected;
 
 

@@ -2001,23 +2001,13 @@ function isValidMatrixProductDims
   input DAE.Dimension dim2;
   output Boolean res;
 algorithm
-  res := matchcontinue(dim1, dim2)
-    // The dimensions are both known and equal.
-    case (_, _)
-      equation
-        true = Expression.dimensionsKnownAndEqual(dim1, dim2);
-      then
-        true;
-    // If checkModel is used we might get unknown dimensions. So use
-    // dimensionsEqual instead, which matches anything against DIM_UNKNOWN.
-    case (_, _)
-      equation
-        true = Flags.getConfigBool(Flags.CHECK_MODEL);
-        true = Expression.dimensionsEqual(dim1, dim2);
-      then
-        true;
-    else false;
-  end matchcontinue;
+  res := // Naturally dimensions 1 and 1 are equal
+         Expression.dimensionsKnownAndEqual(dim1, dim2)
+         // We need run-time checks for DIM_EXP=DIM_EXP
+         or (not (Expression.dimensionKnown(dim1) or Expression.dimensionKnown(dim2)))
+         // If checkModel is used we might get unknown dimensions. So use
+         // dimensionsEqual instead, which matches anything against DIM_UNKNOWN.
+         or (Flags.getConfigBool(Flags.CHECK_MODEL) and Expression.dimensionsEqual(dim1, dim2));
 end isValidMatrixProductDims;
 
 function elementType "Returns the element type of a type, i.e. for arrays, return the
