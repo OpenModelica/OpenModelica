@@ -3527,7 +3527,7 @@ algorithm
         // adrpo: do not add it to the instantiated classes, it just consumes memory for nothing.
         ic_1 = ic;
         // ic_1 = Interactive.addInstantiatedClass(ic, GlobalScript.INSTCLASS(className,dae,env));
-
+        _ = DAEUtil.getFunctionList(Env.getFunctionTree(cache)); // Make sure that the functions are valid before returning success
       then (cache,env,dae,GlobalScript.SYMBOLTABLE(p,fp,ic_1,iv,cf,lf));
 
     case (cache,env,_,st as GlobalScript.SYMBOLTABLE(ast=p),_,_)

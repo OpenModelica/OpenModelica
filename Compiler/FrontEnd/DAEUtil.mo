@@ -3619,8 +3619,8 @@ algorithm
     case _
       equation
         lst = avlTreeToList(ft);
-      then
-        List.mapMap(lst, Util.tuple22, Util.getOption);
+        fns = List.mapMap(lst, Util.tuple22, Util.getOption);
+      then fns;
     case _
       equation
         lst = avlTreeToList(ft);
