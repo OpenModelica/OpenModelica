@@ -2785,7 +2785,7 @@ algorithm
      then (ass1In,ass2In,mIn,mtIn,orderOut,true);
    case(_,_,_,_,_,_,_,_,_,_,true)
      equation
-	      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nTarjanAssignment:\n");
+        Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nTarjanAssignment:\n");
        (eqQueue,ass1,ass2,m,mt,order,ass) = TarjanAssignment(eqQueueIn,mIn,mtIn,meIn,metIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn);
        (ass1Out,ass2Out,mOut,mtOut,orderOut,causal)= Tarjan(m,mt,meIn,metIn,ass1,ass2,order,eqQueue,mapEqnIncRow,mapIncRowEqn,ass);
        then (ass1Out,ass2Out,mOut,mtOut,orderOut,causal);
@@ -2811,7 +2811,7 @@ author:Waurich TUD 2012-11, enhanced: ptaeuber FHB 2013-10"
   output list<list<Integer>> orderOut;
   output Boolean assignable;
 protected
-  list<Integer> assEq,assEq_multi,assEq_single,assEq_coll,eqns,vars;  
+  list<Integer> assEq,assEq_multi,assEq_single,assEq_coll,eqns,vars;
 algorithm
   // select equations not assigned yet
   ((_,assEq)) := List.fold(ass2In,getUnassigned,(1,{}));
@@ -2828,9 +2828,9 @@ algorithm
   // choose only equations from assEq_coll which are not already in queue
   (_,assEq_coll,_) := List.intersection1OnTrue(assEq_coll,eqQueueIn,intEq);
   eqQueueOut := listAppend(eqQueueOut,assEq_coll);
-	 Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"eqQueue: {" +& stringDelimitList(List.map(eqQueueOut,intString),",") +& "}\n");
-  // NOTE: For tearing of strong components with the same number of equations and variables and with a late choice of the 
-  //       residual equation it is not possible to match starting from the variables, so this case is not considered. 
+   Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"eqQueue: {" +& stringDelimitList(List.map(eqQueueOut,intString),",") +& "}\n");
+  // NOTE: For tearing of strong components with the same number of equations and variables and with a late choice of the
+  //       residual equation it is not possible to match starting from the variables, so this case is not considered.
   //       For other tearing structures this case has to be added.
   (eqQueueOut,eqns,vars,orderOut,assignable) := TarjanGetAssignable(eqQueueOut,mIn,mtIn,meIn,metIn,ass1In,ass2In,mapEqnIncRow,mapIncRowEqn,orderIn);
   ((ass1Out,ass2Out,mOut,mtOut)) := makeAssignment(eqns,vars,ass1In,ass2In,mIn,mtIn);
