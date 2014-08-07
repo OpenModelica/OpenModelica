@@ -286,7 +286,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
        void writeParametertNames(vector<string>& names);
        void writeIntParameterNames(vector<string>& names);
        void writeBoolParameterNames(vector<string>& names);
-     
+
 
        void writeAlgVarsResultDescription(vector<string>& names);
        void writeDiscreteAlgVarsResultDescription(vector<string>& names);
@@ -300,7 +300,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
        void writeParameterDescription(vector<string>& names);
        void writeIntParameterDescription(vector<string>& names);
        void writeBoolParameterDescription(vector<string>& names);
-       
+
        HistoryImplType* _historyImpl;
   };
  >>
@@ -5342,7 +5342,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
            '"<%crefStr(name)%>"'  ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
 
-      
+
         void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAliasVarsResultNames(vector<string>& names)
         {
          <% if  protectedVars(vars.aliasVars) then
@@ -5401,7 +5401,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
           'names += <%(vars.boolParamVars |> SIMVAR(isProtected=false) =>
           '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
-       
+
 
 
         void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAlgVarsResultDescription(vector<string>& description)
@@ -5431,7 +5431,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
            '"<%Util.escapeModelicaStringToCString(comment)%>"'  ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
 
-       
+
 
         void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAliasVarsResultDescription(vector<string>& description)
         {
@@ -5491,7 +5491,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
           '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
 
-      
+
 
 
   >>
@@ -5836,11 +5836,11 @@ case MODELINFO(vars=SIMVARS(__)) then
      <%vars.discreteAlgVars |> SIMVAR(isProtected=false) hasindex i0 =>'v(discrAlgVarsStart+<%i0%>)=<%cref(name, useFlatArrayNotation)%>;';align=8 %>
      <%vars.intAlgVars      |> SIMVAR(isProtected=false) hasindex i1 =>'v(intAlgVarsStart+<%i1%>)=<%cref(name, useFlatArrayNotation)%>;';align=8%>
      <%vars.boolAlgVars     |> SIMVAR(isProtected=false) hasindex i2 =>'v(boolAlgVarsStart+<%i2%>)=<%cref(name, useFlatArrayNotation)%>;';align=8 %>
-                                     
+
      <%vars.aliasVars       |> SIMVAR(isProtected=false) hasindex i5 =>'v(aliasVarsStart+<%i5%>)=<%getAliasVar(aliasvar, simCode,contextOther, useFlatArrayNotation)%>;';align=8 %>
      <%vars.intAliasVars    |> SIMVAR(isProtected=false) hasindex i6 =>'v(intAliasVarsStart+<%i6%>)=<%getAliasVar(aliasvar, simCode,contextOther, useFlatArrayNotation)%>;';align=8 %>
      <%vars.boolAliasVars   |> SIMVAR(isProtected=false) hasindex i7 =>'v(boolAliasVarsStart+<%i7%>)=<%getAliasVar(aliasvar, simCode,contextOther, useFlatArrayNotation)%>;';align=8 %>
-                                    
+
      <%(vars.stateVars      |> SIMVAR() hasindex i8 =>'v(stateVarsStart+<%i8%>)=__z[<%index%>]; ';align=8 )%>
      <%(vars.derivativeVars |> SIMVAR() hasindex i9 =>'v2(<%i9%>)=__zDot[<%index%>]; ';align=8 )%>
  >>
@@ -6515,7 +6515,7 @@ case CREF_QUAL(ident = "$PRE") then
  else
   let &varDeclsCref = buffer "" /*BUFD*/
   match context
-  case FUNCTION_CONTEXT(__) then System.unquoteIdentifier(crefStr(cr)) 
+  case FUNCTION_CONTEXT(__) then System.unquoteIdentifier(crefStr(cr))
   else '<%cref1(cr,simCode,context,varDeclsCref,useFlatArrayNotation)%>'
 end contextCref;
 

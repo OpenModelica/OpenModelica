@@ -695,7 +695,7 @@ package SimCodeUtil
     input Integer decrement;
     output Integer outInt;
   end decrementInt;
-  
+
   function isProtected
     input SimCode.SimVar simVar;
     output Boolean isProtected;
@@ -705,7 +705,7 @@ package SimCodeUtil
     input list<SimCode.SimVar> InSimVars;
     output list<SimCode.SimVar> OutSimVars;
   end protectedVars;
-  
+
   function makeCrefRecordExp
     input DAE.ComponentRef inCRefRecord;
     input DAE.Var inVar;
