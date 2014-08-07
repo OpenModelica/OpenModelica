@@ -4539,17 +4539,6 @@ algorithm
       then
         (e_1,DAE.T_ARRAY(t_1,{DAE.DIM_UNKNOWN()},ts2));
 
-    // Arbitrary expressions, expression dimension [:] expected dimension [:]
-    case (e,
-          DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()},ty = ty1),
-          DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()},ty = ty2,source = ts2),
-          _)
-      equation
-        (e_1,t_1) = typeConvert(e, ty1, ty2, printFailtrace);
-        e_1 = liftExpType(e_1,DAE.DIM_UNKNOWN());
-      then
-        (e_1,DAE.T_ARRAY(t_1,{DAE.DIM_UNKNOWN()},ts2));
-
     // Arbitrary expression, expression dimension [dim1] expected dimension [:]
     case (e,
           DAE.T_ARRAY(dims = {dim1},ty = ty1),
@@ -4560,6 +4549,19 @@ algorithm
         e_1 = liftExpType(e_1,dim1);
       then
         (e_1,DAE.T_ARRAY(t_1,{dim1},ts2));
+
+    // Arbitrary expressions, expression dimension [:] expected dimension [:]
+    case (e,
+          DAE.T_ARRAY(dims = {dim1},ty = ty1),
+          DAE.T_ARRAY(dims = {dim2},ty = ty2,source = ts2),
+          _)
+      equation
+        false = Expression.dimensionKnown(dim1);
+        false = Expression.dimensionKnown(dim2);
+        (e_1,t_1) = typeConvert(e, ty1, ty2, printFailtrace);
+        e_1 = liftExpType(e_1,DAE.DIM_UNKNOWN());
+      then
+        (e_1,DAE.T_ARRAY(t_1,{DAE.DIM_UNKNOWN()},ts2));
 
     // Tuple
     case (DAE.TUPLE(PR = elist),
