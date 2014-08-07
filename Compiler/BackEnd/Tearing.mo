@@ -328,7 +328,7 @@ algorithm
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, BackendDump.debuglst,(unsolvables,intString,", ","\n"));
   columark := arrayCreate(size,-1);
 
-  // If '+showAnnotations=true': Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
+  // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
   ((tSel_always,tSel_prefer,tSel_avoid,tSel_never)) := tearingSelect(var_lst,{},{},{},{},1);
 
   // determine tvars and do cheap matching until a maximum matching is there
@@ -1871,7 +1871,7 @@ algorithm
       tvars = tvar::tvarsIn;
       // assign vars to eqs until complete or partially causalisation(and restart algorithm)
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of Tarjan\n\n");
-      (ass1,ass2,m,mt,order,causal) = Tarjan(m,mt,meIn,meTIn,ass1,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,true);
+      (ass1,ass2,m,mt,order,causal) = Tarjan(m,mt,meIn,meTIn,ass1,ass2In,orderIn,{},mapEqnIncRow,mapIncRowEqn,true);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of Tarjan\n" +& BORDER +& "\n\n");
          Debug.fcall(Flags.TEARING_DUMP, print,"\n" +& BORDER +& "\n* TARJAN RESULTS:\n* ass1: " +& stringDelimitList(List.map(ass1,intString),",")+&"\n");
          Debug.fcall(Flags.TEARING_DUMP, print,"* ass2: "+&stringDelimitList(List.map(ass2,intString),",")+&"\n");
@@ -1902,7 +1902,7 @@ algorithm
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n###END print Incidence Matrix w/o tvars#############\n(Function: TearingSystemCellier)\n\n\n");
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of Tarjan\n\n");
       tvars = listAppend(tvars,tvarsIn);
-      (ass1,ass2,m,mt,order,causal) = Tarjan(m,mt,meIn,meTIn,ass1,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,true);
+      (ass1,ass2,m,mt,order,causal) = Tarjan(m,mt,meIn,meTIn,ass1,ass2In,orderIn,{},mapEqnIncRow,mapIncRowEqn,true);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of Tarjan\n" +& BORDER +& "\n\n");
          Debug.fcall(Flags.TEARING_DUMP, print,"\n" +& BORDER +& "\n* TARJAN RESULTS:\n* ass1: " +& stringDelimitList(List.map(ass1,intString),",")+&"\n");
          Debug.fcall(Flags.TEARING_DUMP, print,"* ass2: "+&stringDelimitList(List.map(ass2,intString),",")+&"\n");
@@ -2742,7 +2742,7 @@ algorithm
 end countImpossibleAss3;
 
 
-public function Tarjan "Tarjan assignment.
+public function Tarjan "Modified matching algorithm according to Tarjan.
   author: Waurich TUD 2012-11, enhanced: ptaeuber 2013-10"
   input BackendDAE.IncidenceMatrix mIn;
   input BackendDAE.IncidenceMatrixT mtIn;
@@ -2750,6 +2750,7 @@ public function Tarjan "Tarjan assignment.
   input BackendDAE.AdjacencyMatrixTEnhanced metIn;
   input list<Integer> ass1In,ass2In;
   input list<list<Integer>> orderIn;
+  input list<Integer> eqQueueIn;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   input Boolean assignable;
@@ -2759,20 +2760,20 @@ public function Tarjan "Tarjan assignment.
   output list<list<Integer>> orderOut;
   output Boolean causal;
 algorithm
-   (ass1Out,ass2Out,mOut,mtOut,orderOut,causal):= matchcontinue(mIn,mtIn,meIn,metIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,assignable)
+   (ass1Out,ass2Out,mOut,mtOut,orderOut,causal):= matchcontinue(mIn,mtIn,meIn,metIn,ass1In,ass2In,orderIn,eqQueueIn,mapEqnIncRow,mapIncRowEqn,assignable)
    local
-     list<Integer> ass1,ass2,subOrder,unassigned;
+     list<Integer> ass1,ass2,subOrder,unassigned,eqQueue;
      list<list<Integer>> order;
      BackendDAE.IncidenceMatrix m;
      BackendDAE.IncidenceMatrixT mt;
      Boolean ass;
-   case(_,_,_,_,_,_,_,_,_,false)
+   case(_,_,_,_,_,_,_,_,_,_,false)
      equation
      ((_,unassigned)) = List.fold(ass1In,getUnassigned,(1,{}));
        false = List.isEmpty(unassigned);
           Debug.fcall(Flags.TEARING_DUMP, print,"\nnoncausal\n");
      then (ass1In,ass2In,mIn,mtIn,orderIn,false);
-   case(_,_,_,_,_,_,_,_,_,false)
+   case(_,_,_,_,_,_,_,_,_,_,false)
      equation
        ((_,unassigned)) = List.fold(ass1In,getUnassigned,(1,{}));
        true = List.isEmpty(unassigned);
@@ -2782,13 +2783,11 @@ algorithm
        order = List.deletePositions(orderIn,{0});
        orderOut = subOrder::order;
      then (ass1In,ass2In,mIn,mtIn,orderOut,true);
-   case(_,_,_,_,_,_,_,_,_,true)
+   case(_,_,_,_,_,_,_,_,_,_,true)
      equation
-          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nTarjanAssignment:\n");
-       (ass1,ass2,m,mt,order,ass) = TarjanAssignment(mIn,mtIn,meIn,metIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn);
-         //print("ass1 "+&stringDelimitList(List.map(ass1,intString),",")+&"\n");
-         //print("ass2 "+&stringDelimitList(List.map(ass2,intString),",")+&"\n");
-       (ass1Out,ass2Out,mOut,mtOut,orderOut,causal)= Tarjan(m,mt,meIn,metIn,ass1,ass2,order,mapEqnIncRow,mapIncRowEqn,ass);
+	      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nTarjanAssignment:\n");
+       (eqQueue,ass1,ass2,m,mt,order,ass) = TarjanAssignment(eqQueueIn,mIn,mtIn,meIn,metIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn);
+       (ass1Out,ass2Out,mOut,mtOut,orderOut,causal)= Tarjan(m,mt,meIn,metIn,ass1,ass2,order,eqQueue,mapEqnIncRow,mapIncRowEqn,ass);
        then (ass1Out,ass2Out,mOut,mtOut,orderOut,causal);
    end matchcontinue;
 end Tarjan;
@@ -2796,6 +2795,7 @@ end Tarjan;
 
 protected function TarjanAssignment"
 author:Waurich TUD 2012-11, enhanced: ptaeuber FHB 2013-10"
+  input list<Integer> eqQueueIn;
   input BackendDAE.IncidenceMatrix mIn;
   input BackendDAE.IncidenceMatrixT mtIn;
   input BackendDAE.AdjacencyMatrixEnhanced meIn;
@@ -2804,83 +2804,70 @@ author:Waurich TUD 2012-11, enhanced: ptaeuber FHB 2013-10"
   input list<list<Integer>> orderIn;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
+  output list<Integer> eqQueueOut;
   output list<Integer> ass1Out,ass2Out;
   output BackendDAE.IncidenceMatrix mOut;
   output BackendDAE.IncidenceMatrixT mtOut;
   output list<list<Integer>> orderOut;
   output Boolean assignable;
 protected
-  list<Integer> assEq,assEq_multi,assEq_single,assEq_coll,assVar,tvars,eqns,vars;
-  Integer indx;
-  list<Integer> markVar,markEq;
+  list<Integer> assEq,assEq_multi,assEq_single,assEq_coll,eqns,vars;  
 algorithm
   // select equations not assigned yet
   ((_,assEq)) := List.fold(ass2In,getUnassigned,(1,{}));
+  // find equations with one variable
   (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,0,{},{});
   assEq := listAppend(assEq_multi,assEq_single);
   // transform equationlist to equationlist with collective equations
   assEq_coll := List.map1r(assEq,arrayGet,mapIncRowEqn);
   assEq_coll := List.unique(assEq_coll);
-  ((_,_,assVar)) := Util.arrayFold(mtIn,findNEntries,(1,1,{}));
-  markVar := List.unique(ass2In);
-  (_,assVar,_) := List.intersection1OnTrue(assVar,markVar,intEq);
-     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"assEq: "+&stringDelimitList(List.map(assEq,intString),",")+&"\n");
-     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"assEq_coll: "+&stringDelimitList(List.map(assEq_coll,intString),",")+&"\n");
-     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"assVar: "+&stringDelimitList(List.map(assVar,intString),",")+&"\n");
-     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nTarjanGetAssignable:\n");
-  (eqns,vars,orderOut,assignable) := TarjanGetAssignable(mIn,mtIn,meIn,metIn,assEq_coll,assVar,ass1In,ass2In,mapEqnIncRow,mapIncRowEqn,orderIn);
+     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"New assEq: "+&stringDelimitList(List.map(assEq,intString),",")+&"\n");
+     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"New assEq_coll: "+&stringDelimitList(List.map(assEq_coll,intString),",")+&"\n");
+  // leave only equations in queue which are still not assigned
+  (eqQueueOut,_,_) := List.intersection1OnTrue(eqQueueIn,assEq_coll,intEq);
+  // choose only equations from assEq_coll which are not already in queue
+  (_,assEq_coll,_) := List.intersection1OnTrue(assEq_coll,eqQueueIn,intEq);
+  eqQueueOut := listAppend(eqQueueOut,assEq_coll);
+	 Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"eqQueue: {" +& stringDelimitList(List.map(eqQueueOut,intString),",") +& "}\n");
+  // NOTE: For tearing of strong components with the same number of equations and variables and with a late choice of the 
+  //       residual equation it is not possible to match starting from the variables, so this case is not considered. 
+  //       For other tearing structures this case has to be added.
+  (eqQueueOut,eqns,vars,orderOut,assignable) := TarjanGetAssignable(eqQueueOut,mIn,mtIn,meIn,metIn,ass1In,ass2In,mapEqnIncRow,mapIncRowEqn,orderIn);
   ((ass1Out,ass2Out,mOut,mtOut)) := makeAssignment(eqns,vars,ass1In,ass2In,mIn,mtIn);
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"order: "+&stringDelimitList(List.map(listReverse(listGet(orderOut,1)),intString),",")+&"\n\n");
-     // Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "\n\n###BEGIN print updated Incidence Matrix#############\n(Function: TarjanAssignment)\n");
-     // Debug.fcall(Flags.TEARING_DUMPVERBOSE, BackendDump.dumpIncidenceMatrix, mOut);
-     // Debug.fcall(Flags.TEARING_DUMPVERBOSE, BackendDump.dumpIncidenceMatrixT, mtOut);
-     // Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "\n###END print updated Incidence Matrix###############\n(Function: TarjanAssignment)\n\n\n");
 end TarjanAssignment;
 
 
 protected function TarjanGetAssignable " selects assignable Var and Equation.
   author: Waurich TUD 2012-11, enhanced: ptaeuber FHB 2013-10"
+  input list<Integer> eqQueueIn;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mt;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input BackendDAE.AdjacencyMatrixTEnhanced met;
-  input list<Integer> assEq_coll,assVar,ass1,ass2;
+  input list<Integer> ass1,ass2;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   input list<list<Integer>> orderIn;
+  output list<Integer> eqQueueOut;
   output list<Integer> eqnsOut,varsOut;
   output list<list<Integer>> orderOut;
   output Boolean assignable;
 algorithm
-  (eqnsOut,varsOut,orderOut,assignable) := matchcontinue(m,mt,me,met,assEq_coll,assVar,ass1,ass2,mapEqnIncRow,mapIncRowEqn,orderIn)
+  (eqQueueOut,eqnsOut,varsOut,orderOut,assignable) := matchcontinue(eqQueueIn,m,mt,me,met,ass1,ass2,mapEqnIncRow,mapIncRowEqn,orderIn)
   local
-    Integer eq_coll,eq;
-  list<Integer> eqns,vars;
-    list<Integer> order;
-    case(_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = List.isNotEmpty(assEq_coll);
-           Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"assign from m\n");
-        ((eq_coll,eqns,vars)) = getpossibleEqnorVar((assEq_coll,m,me,listArray(ass1),listArray(ass2),mapEqnIncRow,1));
-        order = listGet(orderIn,1);
-        order = eq_coll::order;
-        orderOut = List.replaceAt(order,0,orderIn);
-      then (eqns,vars,orderOut,true);
-    case(_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = List.isEmpty(assEq_coll);
-        true = List.isNotEmpty(assVar);
-           Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"assign from mt\n");
-        ((_,vars,eqns)) = getpossibleEqnorVar((assVar,mt,met,listArray(ass1),listArray(ass2),mapEqnIncRow,2));
-        eq = listGet(eqns,1);
-        eq_coll = mapIncRowEqn[eq];
-        order = listGet(orderIn,2);
-        order = eq_coll::order;
-        orderOut = List.replaceAt(order,1,orderIn);
-      then (eqns,vars,orderOut,true);
-    else
-   equation
-      then ({},{},orderIn,false);
+    Integer eq_coll;
+    list<Integer> eqns,vars;
+    list<Integer> order,eqQueue;
+  case(_,_,_,_,_,_,_,_,_,_)
+    equation
+      ((eqQueue,eq_coll,eqns,vars)) = getpossibleEqn((eqQueueIn,m,me,listArray(ass1),listArray(ass2),mapEqnIncRow));
+      order = listGet(orderIn,1);
+      order = eq_coll::order;
+      orderOut = List.replaceAt(order,0,orderIn);
+    then (eqQueue,eqns,vars,orderOut,true);
+  else
+    then ({},{},{},orderIn,false);
   end matchcontinue;
 end TarjanGetAssignable;
 
@@ -3007,41 +2994,34 @@ algorithm
 end assignOtherEqnVarTpl;
 
 
-protected function getpossibleEqnorVar " finds equation (findEqorVar=1) or
-varibale (findEqorVar=2) that can be matched
+protected function getpossibleEqn " finds equation that can be matched
   author: ptaeuber FHB 2013-08"
-  input tuple<list<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.AdjacencyMatrixEnhanced,array<Integer>,array<Integer>,array<list<Integer>>,Integer> inTpl;
-  output tuple<Integer,list<Integer>,list<Integer>> EqnsAndVars;
+  input tuple<list<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.AdjacencyMatrixEnhanced,array<Integer>,array<Integer>,array<list<Integer>>> inTpl;
+  output tuple<list<Integer>,Integer,list<Integer>,list<Integer>> EqnsAndVars;
 algorithm
   EqnsAndVars := match(inTpl)
     local
-      Integer eqn,eqn_coll,var;
+      Integer eqn,eqn_coll;
       list<Integer> eqns,vars,rest;
-      BackendDAE.IncidenceMatrix m_mt;
-    BackendDAE.AdjacencyMatrixElementEnhanced vars_enh,eqn_enh;
-      BackendDAE.AdjacencyMatrixEnhanced me_met;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.AdjacencyMatrixElementEnhanced vars_enh;
+      BackendDAE.AdjacencyMatrixEnhanced me;
       array<Integer> ass1,ass2;
       array<list<Integer>> mapEqnIncRow;
       Boolean b;
-    case(({},_,_,_,_,_,_))
+    case(({},_,_,_,_,_))
       then fail();
-    case((eqn_coll::rest,m_mt,me_met,ass1,ass2,mapEqnIncRow,1))
+    case((eqn_coll::rest,m,me,ass1,ass2,mapEqnIncRow))
       equation
         eqns = mapEqnIncRow[eqn_coll];
         eqn = listGet(eqns,1);
-        vars = arrayGet(m_mt,eqn);
-        vars_enh = List.removeOnTrue(ass1, isAssignedSaveEnhanced,me_met[eqn]);
+        vars = arrayGet(m,eqn);
+        vars_enh = List.removeOnTrue(ass1, isAssignedSaveEnhanced,me[eqn]);
         b = solvableLst(vars_enh);
-       then Debug.bcallret1(boolNot(b),getpossibleEqnorVar,(rest,m_mt,me_met,ass1,ass2,mapEqnIncRow,1),(eqn_coll,eqns,vars));
-    case((var::rest,m_mt,me_met,ass1,ass2,mapEqnIncRow,2))
-      equation
-        eqn = listGet(arrayGet(m_mt,var),1);
-        eqn_enh = List.removeOnTrue(ass2, isAssignedSaveEnhanced,me_met[var]);
-        b = solvableLst(eqn_enh);
-       then Debug.bcallret1(boolNot(b),getpossibleEqnorVar,(rest,m_mt,me_met,ass1,ass2,mapEqnIncRow,2),(eqn,{var},{eqn}));
+       then Debug.bcallret1(boolNot(b),getpossibleEqn,(rest,m,me,ass1,ass2,mapEqnIncRow),(rest,eqn_coll,eqns,vars));
     else fail();
    end match;
-end getpossibleEqnorVar;
+end getpossibleEqn;
 
 
 protected function markTVars
