@@ -9232,7 +9232,11 @@ public function dimensionsKnownAndEqual
   input DAE.Dimension dim2;
   output Boolean res;
 algorithm
-  res := expEqual(dimensionSizeExp(dim1), dimensionSizeExp(dim2));
+  res := match (dim1,dim2)
+    case (DAE.DIM_UNKNOWN(),_) then false; // dimensionSizeExp fails on DIM_UNKNOWN...
+    case (_,DAE.DIM_UNKNOWN()) then false;
+    else expEqual(dimensionSizeExp(dim1), dimensionSizeExp(dim2));
+  end match;
 end dimensionsKnownAndEqual;
 
 public function dimensionKnown
