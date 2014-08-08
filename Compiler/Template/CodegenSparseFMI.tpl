@@ -83,28 +83,11 @@ case SIMCODE(__) then
   #include <cstdio>
   #include <cstring>
   #include <cassert>
-  #include <string>
-  #include <map>
-  #include <list>
-  #include <set>
+  #include "sfmi_runtime.h"
   using namespace std;
+  using namespace sfmi;
 
   <%ModelDefineData(modelInfo)%>
-
-  struct FMI2_FUNCTION_PREFIX_model_data_t
-  {
-      fmi2Real Time;
-      fmi2Real real_vars[NUMBER_OF_REALS];
-      fmi2Integer int_vars[NUMBER_OF_INTEGERS];
-      fmi2Boolean bool_vars[NUMBER_OF_BOOLEANS];
-      std::string str_vars[NUMBER_OF_STRINGS];
-      // Map from variable addresses to addresses of functions that have the variable for input
-      map<void*,list<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*)> > input_info;
-      // Map from addresses of functions to variables they modify
-      map<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*),list<void*> > output_info;
-      // List of variables that have been modified
-      set<void*> modified_vars;
-  };
 
   // equation functions
 
@@ -114,44 +97,7 @@ case SIMCODE(__) then
 
   <%setDefaultStartValues(modelInfo)%>
 
-  static void updateSome(FMI2_FUNCTION_PREFIX_model_data_t* data)
-  {
-      while (!(data->modified_vars.empty()))
-      {
-          // Get the variable that was modified
-          set<void*>::iterator next_var = data->modified_vars.begin();
-          void* var = *next_var;
-          // Remove it from the list of modified variables
-          data->modified_vars.erase(next_var);
-          // Get the list of equations that have this variable as input
-          map<void*,list<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*)> >::iterator map_iter =
-              data->input_info.find(var);
-          // If there are any such equations, recalculate them
-          if (map_iter != data->input_info.end())
-          {
-              // Get the list of equations
-              list<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*)>& eqns = (*map_iter).second;
-              // Calculate each one
-              list<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*)>::iterator eqns_iter = eqns.begin();
-              for (; eqns_iter != eqns.end(); eqns_iter++)
-              {
-                  (*eqns_iter)(data);
-                  // Get the variables that are modified by this eqn and put them into the modified list
-                  map<void (*)(FMI2_FUNCTION_PREFIX_model_data_t*),list<void*> >::iterator map_iter_2 =
-                      data->output_info.find(*eqns_iter);
-                  if (map_iter_2 != data->output_info.end())
-                  {
-                      list<void*>& vars = (*map_iter_2).second;
-                      list<void*>::iterator var_iter = vars.begin();
-                      for (; var_iter != vars.end(); var_iter++)
-                          data->modified_vars.insert(*var_iter);
-                  }
-              }
-          }
-      }
-  }
-
-  static void updateAll(FMI2_FUNCTION_PREFIX_model_data_t* data)
+  static void updateAll(model_data* data)
   {
       <%AllEquations(allEquations)%>
   }
@@ -177,9 +123,9 @@ case SIMCODE(__) then
 
   fmi2Status fmi2ExitInitializationMode(fmi2Component c)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data == NULL) return fmi2Error;
-      updateSome(data);
+      data->update();
       return fmi2OK;
   }
 
@@ -190,7 +136,7 @@ case SIMCODE(__) then
 
   fmi2Status fmi2Reset(fmi2Component c)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data == NULL) return fmi2Error;
       setDefaultStartValues(data);
       updateAll(data);
@@ -209,7 +155,7 @@ case SIMCODE(__) then
 
   fmi2Status fmi2GetDerivatives(fmi2Component c, fmi2Real* der, size_t nvr)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data == NULL || nvr > NUMBER_OF_STATES) return fmi2Error;
       for (size_t i = 0; i < nvr; i++) der[i] = data->real_vars[STATESDERIVATIVES[i]];
       return fmi2OK;
@@ -223,7 +169,7 @@ case SIMCODE(__) then
 
   fmi2Status fmi2GetContinuousStates(fmi2Component c, fmi2Real* states, size_t nvr)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data == NULL || nvr > NUMBER_OF_STATES) return fmi2Error;
       for (size_t i = 0; i < nvr; i++) states[i] = data->real_vars[STATES[i]];
       return fmi2OK;
@@ -231,19 +177,19 @@ case SIMCODE(__) then
 
   fmi2Status fmi2SetContinuousStates(fmi2Component c, const fmi2Real* states, size_t nvr)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data == NULL || nvr > NUMBER_OF_STATES) return fmi2Error;
       for (size_t i = 0; i < nvr; i++)
       {
           data->real_vars[STATES[i]] = states[i];
-          data->modified_vars.insert(&(data->real_vars[STATES[i]]));
+          data->modify(&(data->real_vars[STATES[i]]));
       }
       return fmi2OK;
   }
 
   fmi2Status fmi2GetNominalsOfContinuousStates(fmi2Component c, fmi2Real* nominals, size_t nvr)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data == NULL || nvr > NUMBER_OF_STATES) return fmi2Error;
       for (size_t i = 0; i < nvr; i++) nominals[i] = 1.0;
       return fmi2OK;
@@ -266,9 +212,9 @@ case SIMCODE(__) then
    fmi2Status fmi2CompletedIntegratorStep(fmi2Component c, fmi2Boolean,
        fmi2Boolean* enterEventMode, fmi2Boolean* terminateSimulation)
    {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data == NULL || enterEventMode == NULL || terminateSimulation == NULL) return fmi2Error;
-      updateSome(data);
+      data->update();
       *enterEventMode = fmi2False;
       *terminateSimulation = fmi2False;
       return fmi2OK;
@@ -285,11 +231,7 @@ case SIMCODE(__) then
   <%setStringFunction2()%>
   <%InstantiateFunction2()%>
   <%FreeFunction2()%>
-  /* TODO
-  <%setStartValues(modelInfo)%>
-  <%eventUpdateFunction2(simCode)%>
 
-  <%setExternalFunction2(modelInfo)%> */
   >>
 end fmumodel_identifierFile;
 
@@ -332,7 +274,8 @@ template InstantiateFunction2()
     fmi2Boolean visible,
     fmi2Boolean loggingOn)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = new FMI2_FUNCTION_PREFIX_model_data_t();
+      model_data* data = new model_data(
+          NUMBER_OF_REALS,NUMBER_OF_INTEGERS,NUMBER_OF_STRINGS,NUMBER_OF_BOOLEANS);
       setupEquationGraph(data);
       setDefaultStartValues(data);
       updateAll(data);
@@ -349,7 +292,7 @@ template FreeFunction2()
   void
   fmi2FreeInstance(fmi2Component c)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data != NULL) delete data;
   }
 
@@ -450,7 +393,7 @@ match modelInfo
 case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars),vars=SIMVARS(__)) then
   <<
   // Set values for all variables that define a start value
-  static void setDefaultStartValues(FMI2_FUNCTION_PREFIX_model_data_t *comp)
+  static void setDefaultStartValues(model_data *comp)
   {
       comp->Time = 0.0;
       <%vars.stateVars |> var => initValsDefault(var,"real") ;separator="\n"%>
@@ -629,10 +572,10 @@ template setTime2()
   fmi2Status
   fmi2SetTime(fmi2Component c, fmi2Real t)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data == NULL) return fmi2Error;
       data->Time = t;
-      data->modified_vars.insert(&(data->Time));
+      data->modify(&(data->Time));
       return fmi2OK;
   }
 
@@ -646,7 +589,7 @@ template getRealFunction2()
   fmi2Status
   fmi2GetReal(fmi2Component c, const fmi2ValueReference* vr, size_t nvr, fmi2Real* value)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data == NULL) return fmi2Error;
       for (size_t i = 0; i < nvr; i++)
       {
@@ -666,13 +609,13 @@ template setRealFunction2()
   fmi2Status
   fmi2SetReal(fmi2Component c, const fmi2ValueReference* vr, size_t nvr, const fmi2Real* value)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data == NULL) return fmi2Error;
       for (size_t i = 0; i < nvr; i++)
       {
           if (vr[i] >= NUMBER_OF_REALS) return fmi2Error;
           data->real_vars[vr[i]] = value[i];
-          data->modified_vars.insert((&data->real_vars[vr[i]]));
+          data->modify((&data->real_vars[vr[i]]));
       }
       return fmi2OK;
   }
@@ -687,7 +630,7 @@ template getIntegerFunction2()
   fmi2Status
   fmi2GetInteger(fmi2Component c, const fmi2ValueReference* vr, size_t nvr, fmi2Integer* value)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data == NULL) return fmi2Error;
       for (size_t i = 0; i < nvr; i++)
       {
@@ -707,13 +650,13 @@ template setIntegerFunction2()
   fmi2Status
   fmi2SetInteger(fmi2Component c, const fmi2ValueReference* vr, size_t nvr, const fmi2Integer* value)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data == NULL) return fmi2Error;
       for (size_t i = 0; i < nvr; i++)
       {
           if (vr[i] >= NUMBER_OF_INTEGERS) return fmi2Error;
           data->int_vars[vr[i]] = value[i];
-          data->modified_vars.insert((&data->int_vars[vr[i]]));
+          data->modify((&data->int_vars[vr[i]]));
       }
       return fmi2OK;
   }
@@ -728,7 +671,7 @@ template getBooleanFunction2()
   fmi2Status
   fmi2GetBoolean(fmi2Component c, const fmi2ValueReference* vr, size_t nvr, fmi2Boolean* value)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data == NULL) return fmi2Error;
       for (size_t i = 0; i < nvr; i++)
       {
@@ -748,13 +691,13 @@ template setBooleanFunction2()
   fmi2Status
   fmi2SetBoolean(fmi2Component c, const fmi2ValueReference* vr, size_t nvr, const fmi2Boolean* value)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data == NULL) return fmi2Error;
       for (size_t i = 0; i < nvr; i++)
       {
           if (vr[i] >= NUMBER_OF_BOOLEANS) return fmi2Error;
           data->bool_vars[vr[i]] = value[i];
-          data->modified_vars.insert((&data->bool_vars[vr[i]]));
+          data->modify((&data->bool_vars[vr[i]]));
       }
       return fmi2OK;
   }
@@ -769,7 +712,7 @@ template getStringFunction2()
   fmi2Status
   fmi2GetString(fmi2Component c, const fmi2ValueReference* vr, size_t nvr, fmi2String* value)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data == NULL) return fmi2Error;
       for (size_t i = 0; i < nvr; i++)
       {
@@ -789,13 +732,13 @@ template setStringFunction2()
   fmi2Status
   fmi2SetString(fmi2Component c, const fmi2ValueReference* vr, size_t nvr, const fmi2String* value)
   {
-      FMI2_FUNCTION_PREFIX_model_data_t* data = static_cast<FMI2_FUNCTION_PREFIX_model_data_t*>(c);
+      model_data* data = static_cast<model_data*>(c);
       if (data == NULL) return fmi2Error;
       for (size_t i = 0; i < nvr; i++)
       {
           if (vr[i] >= NUMBER_OF_STRINGS) return fmi2Error;
           data->str_vars[vr[i]] = value[i];
-          data->modified_vars.insert((&data->str_vars[vr[i]]));
+          data->modify((&data->str_vars[vr[i]]));
       }
       return fmi2OK;
   }
@@ -1000,8 +943,9 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, S
   /*
    <%dumpEqs(fill(eq,1))%>
    */
-  static void eqFunction_<%ix%>(FMI2_FUNCTION_PREFIX_model_data_t *data)
+  static void eqFunction_<%ix%>(model_data *data)
   {
+      static const int equationIndexes = <%ix%>;
       <%&varD%>
       <%x%>
   }
@@ -1017,9 +961,14 @@ end equation_;
 template EquationGraphHelper(DAE.Exp exp,String ix)
 ::=
   match exp
+  case ICONST(__) then ""
+  case RCONST(__) then ""
+  case SCONST(__) then ""
+  case BCONST(__) then ""
+  case ENUM_LITERAL(__) then ""
   case CREF(__) then
     <<
-    data->input_info[&<%cref(componentRef)%>].push_back(eqFunction_<%ix%>);
+    data->link(&<%cref(componentRef)%>,eqFunction_<%ix%>);
     >>
   case BINARY(__) then
     <<
@@ -1030,6 +979,40 @@ template EquationGraphHelper(DAE.Exp exp,String ix)
     <<
     <%EquationGraphHelper(exp,ix)%>
     >>
+  case LUNARY(__) then
+    <<
+    <%EquationGraphHelper(exp,ix)%>
+    >>
+  case RELATION(__) then "RELATIONS NOT SUPPORTED"
+  case IFEXP(__) then "IF NOT SUPPORTED"
+  case CALL(__) then
+    let call_exp = (expLst |> eq => EquationGraphHelper(eq,ix)
+      ;separator="\n")
+    <<
+    <%call_exp%>
+    >>
+  case RECORD(__) then "RECORD NOT SUPPORTED"
+  case PARTEVALFUNCTION(__) then "PARTEVALFUNCTION NOT SUPPORTED"
+  case ARRAY(__) then "ARRAY NOT SUPPORTED"
+  case MATRIX(__) then "MATRIX NOT SUPPORTED"
+  case RANGE(__) then "RANGE NOT SUPPORTED"
+  case TUPLE(__) then "TUPLE NOT SUPPORTED"
+  case CAST(__) then "CAST NOT SUPPORTED"
+  case ASUB(__) then "ASUB NOT SUPPORTED"
+  case TSUB(__) then "TSUB NOT SUPPORTED"
+  case SIZE(__) then "SIZE NOT SUPPORTED"
+  case CODE(__) then "CODE NOT SUPPORTED"
+  case REDUCTION(__) then "REDUCTION NOT SUPPORTED"
+  case LIST(__) then "LIST NOT SUPPORTED"
+  case CONS(__) then "CONS NOT SUPPORTED"
+  case META_TUPLE(__) then "META_TUPLE NOT SUPPORTED"
+  case META_OPTION(__) then "META_OPTION NOT SUPPORTED"
+  case METARECORDCALL(__) then "METARECORDCALL NOT SUPPORTED"
+  case MATCHEXPRESSION(__) then "MATCHEXPRESSION NOT SUPPORTED"
+  case BOX(__) then "BOX NOT SUPPORTED"
+  case UNBOX(__) then "UNBOX NOT SUPPORTED"
+  case SHARED_LITERAL(__) then "SHARED_LITERAL NOT SUPPORTED"
+  case PATTERN(__) then "PATTERN NOT SUPPORTED"
   else "EXPRESSION NOT SUPPORTED"
 end EquationGraphHelper;
 
@@ -1040,7 +1023,7 @@ template EquationGraph(SimEqSystem eq)
   case e as SES_SIMPLE_ASSIGN(__)
     then
     <<
-    data->output_info[eqFunction_<%ix%>].push_back(&<%cref(cref)%>);
+    data->link(eqFunction_<%ix%>,&<%cref(cref)%>);
     <%EquationGraphHelper(exp,ix)%>
     >>
   case e as SES_ARRAY_CALL_ASSIGN(__)
@@ -1069,7 +1052,7 @@ template generateEquationGraph(list<SimEqSystem> allEquations)
   let xx = (allEquations |> eq hasindex i0 => EquationGraph(eq)
       ;separator="\n")
   <<
-  static void setupEquationGraph(FMI2_FUNCTION_PREFIX_model_data_t *data)
+  static void setupEquationGraph(model_data *data)
   {
       <%xx%>
   }
