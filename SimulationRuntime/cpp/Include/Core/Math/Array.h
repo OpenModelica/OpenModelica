@@ -101,7 +101,7 @@ public:
 
   void assign( BaseArray<T>& otherArray)
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v = otherArray.getDims();
     for(unsigned int i = 1; i <= min(v[0],size); i++)
     {
@@ -171,7 +171,7 @@ public:
   void assign( BaseArray<T>& otherArray)
   {
 
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v = otherArray.getDims();
     for(int i = 1; i <= min(v[0],size1); i++)
     {
@@ -257,7 +257,7 @@ public:
 
   void assign( BaseArray<T>& otherArray)
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v = otherArray.getDims();
     for(int i = 1; i <= min(v[0],size1); i++)
     {
@@ -358,7 +358,7 @@ public:
 
   void assign( BaseArray<T>& otherArray)
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v = otherArray.getDims();
     for(int i = 1; i <= min(v[0],size1); i++)
     {
@@ -472,7 +472,7 @@ public:
 
   void assign( BaseArray<T>& otherArray)
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v = otherArray.getDims();
     for(int i = 1; i <= min(v[0],size1); i++)
     {
