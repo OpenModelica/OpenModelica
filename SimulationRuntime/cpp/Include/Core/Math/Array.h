@@ -37,9 +37,9 @@ public:
     T a ;
     return a;
   };
-  virtual std::vector<unsigned int> getDims() const
+  virtual std::vector<size_t> getDims() const
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     return v;
   };
 
@@ -53,7 +53,7 @@ public:
     return 0;
   };
 
-  virtual void setDims(std::vector<unsigned int> v)
+  virtual void setDims(std::vector<size_t> v)
   {
   }
 
@@ -120,9 +120,9 @@ public:
     return _real_array[index - 1];
   }
 
-  virtual std::vector<unsigned int> getDims() const
+  virtual std::vector<size_t> getDims() const
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v.push_back(size);
     return v;
   }
@@ -193,9 +193,9 @@ public:
     return _real_array[size2*(i - 1) + j - 1];
   }
 
-  virtual std::vector<unsigned int> getDims() const
+  virtual std::vector<size_t> getDims() const
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v.push_back(size1);
     v.push_back(size2);
     return v;
@@ -285,9 +285,9 @@ public:
     }
   }
 
-  virtual std::vector<unsigned int> getDims() const
+  virtual std::vector<size_t> getDims() const
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v.push_back(size1);
     v.push_back(size2);
     v.push_back(size3);
@@ -392,9 +392,9 @@ public:
     }
   }
 
-  virtual std::vector<unsigned int> getDims() const
+  virtual std::vector<size_t> getDims() const
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v.push_back(size1);
     v.push_back(size2);
     v.push_back(size3);
@@ -513,9 +513,9 @@ public:
     }
   }
 
-  virtual std::vector<unsigned int> getDims() const
+  virtual std::vector<size_t> getDims() const
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v.push_back(size1);
     v.push_back(size2);
     v.push_back(size3);
@@ -567,7 +567,7 @@ public:
 
   DynArrayDim1(unsigned int size1)
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v.push_back(size1);
     _multi_array.resize(v);//
     _multi_array.reindex(1);
@@ -575,7 +575,7 @@ public:
 
   DynArrayDim1(const BaseArray<T>& otherArray)
   {
-    std::vector<unsigned int> v = otherArray.getDims();
+    std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
     for (int i = 1; i <= v[0]; i++)
@@ -600,7 +600,7 @@ public:
   */
   void assign(const BaseArray<T>& otherArray)
   {
-    std::vector<unsigned int> v = otherArray.getDims();
+    std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
     for (int i = 1; i <= v[0]; i++)
@@ -629,22 +629,22 @@ public:
 
   void setDims(unsigned int size1)
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v.push_back(size1);
     _multi_array.resize(v);
     _multi_array.reindex(1);
   }
 
-  virtual void setDims(std::vector<unsigned int> v)
+  virtual void setDims(std::vector<size_t> v)
   {
     _multi_array.resize(v);
     _multi_array.reindex(1);
   }
 
-  virtual std::vector<unsigned int> getDims() const
+  virtual std::vector<size_t> getDims() const
   {
-    const unsigned int* shape = _multi_array.shape();
-    std::vector<unsigned int> ex;
+    const size_t* shape = _multi_array.shape();
+    std::vector<size_t> ex;
     ex.assign( shape, shape + 1 );
     return ex;
   }
@@ -682,7 +682,7 @@ public:
 
   DynArrayDim2(unsigned int size1, unsigned int size2)
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v.push_back(size1);
     v.push_back(size2);
     _multi_array.resize(v);//
@@ -700,7 +700,7 @@ public:
 
   void assign(BaseArray<T>& otherArray)
   {
-    std::vector<unsigned int> v = otherArray.getDims();
+    std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
 
@@ -725,23 +725,23 @@ public:
 
   void setDims(unsigned int size1, unsigned int size2)
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v.push_back(size1);
     v.push_back(size2);
     _multi_array.resize(v);
     _multi_array.reindex(1);
   }
 
-  virtual void setDims(std::vector<unsigned int> v)
+  virtual void setDims(std::vector<size_t> v)
   {
     _multi_array.resize(v);
     _multi_array.reindex(1);
   }
 
-  virtual std::vector<unsigned int> getDims() const
+  virtual std::vector<size_t> getDims() const
   {
     const unsigned int* shape = _multi_array.shape();
-    std::vector<unsigned int> ex;
+    std::vector<size_t> ex;
     ex.assign( shape, shape + 2 );
     return ex;
   }
@@ -770,7 +770,7 @@ public:
 
   DynArrayDim3(unsigned int size1, unsigned int size2, unsigned int size3)
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v.push_back(size1);
     v.push_back(size2);
     v.push_back(size3);
@@ -790,7 +790,7 @@ public:
 
   void assign(BaseArray<T>& otherArray)
   {
-    std::vector<unsigned int> v = otherArray.getDims();
+    std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
 
@@ -813,7 +813,7 @@ public:
 
   void setDims(unsigned int size1, unsigned int size2, unsigned int size3)
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v.push_back(size1);
     v.push_back(size2);
     v.push_back(size3);
@@ -821,16 +821,16 @@ public:
     _multi_array.reindex(1);
   }
 
-  virtual void setDims(std::vector<unsigned int> v)
+  virtual void setDims(std::vector<size_t> v)
   {
     _multi_array.resize(v);
     _multi_array.reindex(1);
   }
 
-  virtual std::vector<unsigned int> getDims() const
+  virtual std::vector<size_t> getDims() const
   {
     const unsigned int* shape = _multi_array.shape();
-    std::vector<unsigned int> ex;
+    std::vector<size_t> ex;
     ex.assign( shape, shape + 3 );
     return ex;
   }
@@ -864,7 +864,7 @@ public:
 
   DynArrayDim4(unsigned int size1, unsigned int size2, unsigned int size3, unsigned int size4)
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v.push_back(size1);
     v.push_back(size2);
     v.push_back(size3);
@@ -885,7 +885,7 @@ public:
 
   void assign(BaseArray<T>& otherArray)
   {
-    std::vector<unsigned int> v = otherArray.getDims();
+    std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
 
@@ -911,7 +911,7 @@ public:
 
   void setDims(unsigned int size1, unsigned int size2, unsigned int size3, unsigned int size4)
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v.push_back(size1);
     v.push_back(size2);
     v.push_back(size3);
@@ -920,16 +920,16 @@ public:
     _multi_array.reindex(1);
   }
 
-  virtual void setDims(std::vector<unsigned int> v)
+  virtual void setDims(std::vector<size_t> v)
   {
     _multi_array.resize(v);
     _multi_array.reindex(1);
   }
 
-  virtual std::vector<unsigned int> getDims() const
+  virtual std::vector<size_t> getDims() const
   {
     const unsigned int* shape = _multi_array.shape();
-    std::vector<unsigned int> ex;
+    std::vector<size_t> ex;
     ex.assign( shape, shape + 4 );
     return ex;
   }
@@ -965,7 +965,7 @@ public:
 
   DynArrayDim5(unsigned int size1, unsigned int size2, unsigned int size3, unsigned int size4, unsigned int size5)
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v.push_back(size1);
     v.push_back(size2);
     v.push_back(size3);
@@ -987,7 +987,7 @@ public:
 
   void assign(BaseArray<T>& otherArray)
   {
-    std::vector<unsigned int> v = otherArray.getDims();
+    std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
 
@@ -1016,7 +1016,7 @@ public:
 
   void setDims(unsigned int size1, unsigned int size2, unsigned int size3, unsigned int size4, unsigned int size5)
   {
-    std::vector<unsigned int> v;
+    std::vector<size_t> v;
     v.push_back(size1);
     v.push_back(size2);
     v.push_back(size3);
@@ -1026,16 +1026,16 @@ public:
     _multi_array.reindex(1);
   }
 
-  virtual void setDims(std::vector<unsigned int> v)
+  virtual void setDims(std::vector<size_t> v)
   {
     _multi_array.resize(v);
     _multi_array.reindex(1);
   }
 
-  std::vector<unsigned int> getDims() const
+  std::vector<size_t> getDims() const
   {
     const unsigned int* shape = _multi_array.shape();
-    std::vector<unsigned int> ex;
+    std::vector<size_t> ex;
     ex.assign( shape, shape + 5 );
     return ex;
   }
