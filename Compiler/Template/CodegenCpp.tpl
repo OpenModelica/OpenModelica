@@ -11558,7 +11558,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     let varPart = scalarLhsCref(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
     let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     <<
-  <%preExp%>
+    <%preExp%>
     <%varPart%> = (modelica_fnptr) <%expPart%>;
     >>
     /* Records need to be traversed, assigning each component by itself */
