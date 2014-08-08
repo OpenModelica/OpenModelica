@@ -73,6 +73,7 @@ template simulationInitHeaderFile(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),fileNamePrefix=fileNamePrefix) then
+let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
   match modelInfo
   case modelInfo as MODELINFO(vars=SIMVARS(__)) then
   <<
@@ -94,7 +95,7 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),fileNamePrefix=fileNamePrefix
     virtual void initialize();
     virtual  void initEquations();
    private:
-
+    <%initeqs%>
     void initializeAlgVars();
     void initializeDiscreteAlgVars();
     void initializeIntAlgVars();
@@ -1483,8 +1484,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //Initialize array elements
     <%initializeArrayElements(simCode, useFlatArrayNotation)%>
     _functions = new Functions(_simTime);
-    /*Initialize the equations array. Point to each equation function*/
-    initialize_equations_array();
+  
 
 
     }
@@ -1498,7 +1498,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             delete _functions;
     }
 
-    <%InitializeEquationsArray(allEquations, className)%>
+   
 
    <%Update(simCode,useFlatArrayNotation)%>
 
@@ -1525,9 +1525,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%initPrevars(modelInfo,simCode,useFlatArrayNotation)%>
    <%savediscreteVars(modelInfo,simCode,useFlatArrayNotation)%>
    <%LabeledDAE(modelInfo.labels,simCode, useFlatArrayNotation)%>
-    <%giveVariables(modelInfo, useFlatArrayNotation)%>
+    <%giveVariables(modelInfo, useFlatArrayNotation,simCode)%>
    >>
 end simulationCppFile;
+   /*Initialize the equations array. Point to each equation function*/
+    /*initialize_equations_array();*/
+ /*<%InitializeEquationsArray(allEquations, className)%>*/
+
+
 /* <%saveConditions(simCode)%>*/
   /*<%arrayInit(simCode)%>*/
 
@@ -2989,8 +2994,11 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
 
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initEquations()
    {
-    <%initialequations%>
+      <%(initialEquations |> eq  =>
+                    equation_function_call(eq,  contextOther, &varDecls /*BUFC*/, simCode,"initEquation")
+                    ;separator="\n")%>
    }
+   <%initialequations%>
    <%init2(simCode,modelInfo,useFlatArrayNotation)%>
     >>
 end init;
@@ -3120,18 +3128,17 @@ end functionCallExternalObjectConstructors;
 template functionInitialEquations(list<SimEqSystem> initalEquations, SimCode simCode, Boolean useFlatArrayNotation)
   "Generates function in simulation file."
 ::=
-
-  let &varDecls = buffer "" /*BUFD*/
+        let equation_func_calls = (initalEquations |> eq  =>
+                    equation_function_create_single_func(eq, contextOther/*BUFC*/, simCode, "initEquation","Initialize",useFlatArrayNotation)
+                    ;separator="\n")
+  /*
+  let &varDecls = buffer "" 
   let body = (initalEquations |> eq  =>
-      equation_(eq, contextAlgloopInitialisation, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
+      equation_(eq, contextAlgloopInitialisation, &varDecls ,simCode, useFlatArrayNotation)
     ;separator="\n")
+  */
   <<
-    <%varDecls%>
-  /*Initial equations*/
-    <%body%>
-   /*Initial equations end*/
-
-
+   <%equation_func_calls%>
   >>
 end functionInitialEquations;
 
@@ -3846,12 +3853,24 @@ template generateClassDeclarationCode(SimCode simCode, Boolean useFlatArrayNotat
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
+
+let frindeqs = generatefriendAlgloops(listAppend(allEquations,initialEquations),simCode)
+let algloopsolver = generateAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode )
+let memberfuncs = generateEquationMemberFuncDecls(allEquations,"evaluate")
+let conditionvariables =  conditionvariable(zeroCrossings,simCode)
+  
+match modelInfo
+  case MODELINFO(vars=SIMVARS(__)) then
+  let getrealvars =(List.partition(listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), 100) |> ls hasindex idx => 'void getReal_<%idx%>(double* z);
+                                                                                                                                             void setReal_<%idx%>(const double* z);'
+                                                                                                                                             ;separator="\n")
+ 
   <<
   class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent,  public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
   {
 
-   <%generatefriendAlgloops(listAppend(allEquations,initialEquations),simCode)%>
-
+   
+  <%frindeqs%>
   public:
       <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor,boost::shared_ptr<ISimData>);
 
@@ -3862,7 +3881,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      virtual void initPreVars(unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&);
   protected:
     //Methods:
-
+    <%getrealvars%>
+    
      bool isConsistent();
     //Called to handle all  events occured at same time
     bool handleSystemEvents( bool* events);
@@ -3875,36 +3895,41 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      EventHandling _event_handling;
 
      <%MemberVariable(modelInfo, useFlatArrayNotation)%>
-     <%conditionvariable(zeroCrossings,simCode)%>
+    <%conditionvariables%>
      Functions* _functions;
 
 
      boost::shared_ptr<IAlgLoopSolverFactory> _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
-     <%generateAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode)%>
+     <%algloopsolver%>
 
     boost::shared_ptr<ISimData> _simData;
 
 
 
-    <%generateEquationMemberFuncDecls(allEquations)%>
+    <%memberfuncs%>
+  
 
-
-    /*! Equations Array. pointers to all the equation functions listed above stored in this
-      array. It is used to randomly access and evaluate a single equation by index.
-    */
-    typedef void (<%lastIdentOfPath(modelInfo.name)%>::*EquFuncPtr)();
-    boost::array< EquFuncPtr, <%listLength(allEquations)%> > equations_array;
-
-    void initialize_equations_array();
+   
    };
   >>
+   /*! Equations Array. pointers to all the equation functions listed above stored in this
+      array. It is used to randomly access and evaluate a single equation by index.
+    */
+    
+
+    //void initialize_equations_array();
+  /*
+  
+  typedef void (<%lastIdentOfPath(modelInfo.name)%>::*EquFuncPtr)();
+    boost::array< EquFuncPtr, <%listLength(allEquations)%> > equations_array;
+  */
 end generateClassDeclarationCode;
 
-template generateEquationMemberFuncDecls(list<SimEqSystem> allEquations)
+template generateEquationMemberFuncDecls(list<SimEqSystem> allEquations,Text method)
 ::=
   match allEquations
   case _ then
-    let equation_func_decls = (allEquations |> eq => generateEquationMemberFuncDecls2(eq) ;separator="\n")
+    let equation_func_decls = (allEquations |> eq => generateEquationMemberFuncDecls2(eq,method) ;separator="\n")
     <<
     /*! Index of the first equation. We use this to calculate the offset of an equation in the
        equation array given the index of the equation.*/
@@ -3916,20 +3941,20 @@ end generateEquationMemberFuncDecls;
 
 
 
-template generateEquationMemberFuncDecls2(SimEqSystem eq)
+template generateEquationMemberFuncDecls2(SimEqSystem eq,Text method)
 ::=
     match eq
     case  e as SES_MIXED(__)
     then
      <<
      /*! Equations*/
-     void evaluate_<%equationIndex(e.cont)%>();
-     void evaluate_<%equationIndex(eq)%>();
+     void <%method%>_<%equationIndex(e.cont)%>();
+     void <%method%>_<%equationIndex(eq)%>();
      >>
      else
     <<
       /*! Equations*/
-     void evaluate_<%equationIndex(eq)%>();
+     void <%method%>_<%equationIndex(eq)%>();
     >>
   end match
 end generateEquationMemberFuncDecls2;
@@ -6691,27 +6716,24 @@ end equation_;
 
 
 
-template equation_function_call(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode)
+template equation_function_call(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode,Text method)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
-  match eq
-  case _ then
+  
     let ix_str = equationIndex(eq)
-
-    let &varDeclsLocal = buffer "" /*BUFL*/
-    <<
-      evaluate_<%ix_str%>();
+     <<
+      <%method%>_<%ix_str%>();
     >>
-  end match
+  
 end equation_function_call;
 /*
 <<
       (this->*equations_array[<%arrayIndex%>])();
     >>
     */
-template equation_function_create_single_func(SimEqSystem eq, Context context,  SimCode simCode, Boolean useFlatArrayNotation)
+template equation_function_create_single_func(SimEqSystem eq, Context context,  SimCode simCode,Text method,Text classnameext, Boolean useFlatArrayNotation)
 ::=
   let ix_str = equationIndex(eq)
   let &varDeclsLocal = buffer "" /*BUFD*/
@@ -6723,7 +6745,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context,  
         /*
         <%dumpEqs(fill(eq,1))%>
         */
-        void <%lastIdentOfPathFromSimCode(simCode)%>::evaluate_<%ix_str%>()
+        void <%lastIdentOfPathFromSimCode(simCode)%><%classnameext%>::<%method%>_<%ix_str%>()
         {
             <%varDeclsLocal%>
             <%body%>
@@ -6738,7 +6760,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context,  
         /*
         <%dumpEqs(fill(eq,1))%>
         */
-        void <%lastIdentOfPathFromSimCode(simCode)%>::evaluate_<%ix_str%>()
+        void <%lastIdentOfPathFromSimCode(simCode)%><%classnameext%>::<%method%>_<%ix_str%>()
         {
             <%varDeclsLocal%>
             <%body%>
@@ -6751,7 +6773,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context,  
         /*
         <%dumpEqs(fill(eq,1))%>
         */
-        void <%lastIdentOfPathFromSimCode(simCode)%>::evaluate_<%ix_str%>()
+        void <%lastIdentOfPathFromSimCode(simCode)%><%classnameext%>::<%method%>_<%ix_str%>()
         {
             <%varDeclsLocal%>
             <%body%>
@@ -6764,7 +6786,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context,  
         /*
         <%dumpEqs(fill(eq,1))%>
         */
-        void <%lastIdentOfPathFromSimCode(simCode)%>::evaluate_<%ix_str%>()
+        void <%lastIdentOfPathFromSimCode(simCode)%><%classnameext%>::<%method%>_<%ix_str%>()
         {
             <%varDeclsLocal%>
             <%body%>
@@ -6778,7 +6800,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context,  
         /*
         <%dumpEqs(fill(eq,1))%>
         */
-        void <%lastIdentOfPathFromSimCode(simCode)%>::evaluate_<%ix_str%>()
+        void <%lastIdentOfPathFromSimCode(simCode)%><%classnameext%>::<%method%>_<%ix_str%>()
         {
             <%varDeclsLocal%>
             <%body%>
@@ -6786,13 +6808,13 @@ template equation_function_create_single_func(SimEqSystem eq, Context context,  
       >>
     case e as SES_MIXED(__)  then
       /*<%equationMixed(e, context, &varDeclsLocal, simCode)%>*/
-    let body  = equation_function_create_single_func(e.cont,context,simCode, useFlatArrayNotation)
+    let body  = equation_function_create_single_func(e.cont,context,simCode,method, classnameext,useFlatArrayNotation)
       <<
         <%body%>
         /*
         <%dumpEqs(fill(eq,1))%>
         */
-        void <%lastIdentOfPathFromSimCode(simCode)%>::evaluate_<%ix_str%>()
+        void <%lastIdentOfPathFromSimCode(simCode)%><%classnameext%>::<%method%>_<%ix_str%>()
         {
             throw std::runtime_error("Mixed systems are not supported yet");
         }
@@ -10444,7 +10466,7 @@ template equationFunctions( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
 ::=
 
  let equation_func_calls = (allEquationsPlusWhen |> eq  =>
-                    equation_function_create_single_func(eq, context/*BUFC*/, simCode, useFlatArrayNotation)
+                    equation_function_create_single_func(eq, context/*BUFC*/, simCode,"evaluate","", useFlatArrayNotation)
                     ;separator="\n")
 
 
@@ -10464,7 +10486,7 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
 
   let &eqfuncs = buffer ""
   let equation_all_func_calls = (allEquationsPlusWhen |> eq  =>
-                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode)
+                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode,"evaluate")
                     ;separator="\n")
 
 
@@ -10493,7 +10515,7 @@ template createEvaluateConditions( list<SimEqSystem> allEquationsPlusWhen,list<S
 
   let &eqfuncs = buffer ""
   let equation_all_func_calls = (allEquationsPlusWhen |> eq  =>
-                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode)
+                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode,"evaluate")
                     ;separator="\n")
 
 
@@ -10525,7 +10547,7 @@ template createEvaluate(list<list<SimEqSystem>> odeEquations,list<SimWhenClause>
 
 
    let equation_ode_func_calls = (odeEquations |> eqs => (eqs |> eq  =>
-                    equation_function_call(eq, context, &varDecls /*BUFC*/, simCode);separator="\n")
+                    equation_function_call(eq, context, &varDecls /*BUFC*/, simCode,"evaluate");separator="\n")
                    )
 
   <<
@@ -10547,7 +10569,7 @@ template createEvaluateZeroFuncs( list<SimEqSystem> equationsForZeroCrossings, S
 
   let &eqfuncs = buffer ""
   let equation_zero_func_calls = (equationsForZeroCrossings |> eq  =>
-                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode)
+                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode,"evaluate")
                     ;separator="\n")
 
 
@@ -11473,19 +11495,97 @@ template functionStoreDelay(DelayedExpression delayed,SimCode simCode, Boolean u
 end functionStoreDelay;
 // generate Member Function get Real
 
-template giveVariables(ModelInfo modelInfo, Boolean useFlatArrayNotation)
+
+template giveVariablesWithSplit(Text funcNamePrefix, Text funcArgs,Text funcParams,list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation) ::=
+  let &funcCalls = buffer "" /*BUFD*/
+  let extraFuncs = List.partition(varsLst, 100) |> ls hasindex idx =>
+    let &varDecls = buffer "" /*BUFD*/
+    let &funcCalls += '<%funcNamePrefix%>_<%idx%>(<%funcParams%>);'
+    let init = giveVariablesWithSplit2(ls, simCode, context, useFlatArrayNotation)
+    <<
+    void <%funcNamePrefix%>_<%idx%>(<%funcArgs%>)
+    {
+       <%varDecls%>
+       <%init%>
+    }
+    >>
+    ;separator="\n"
+
+  <<
+  <%extraFuncs%>
+
+  void <%funcNamePrefix%>(<%funcArgs%>)
+  {
+    <%funcCalls%>
+  }
+  >>
+end giveVariablesWithSplit;
+
+
+template giveVariablesWithSplit2(list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation) 
+::=
+<<
+ <%varsLst |>
+        var hasindex i0 fromindex 0 => giveVariablesDefault(var, i0, useFlatArrayNotation)
+        ;separator="\n"%>
+ >>
+end giveVariablesWithSplit2;
+
+
+
+template setVariablesWithSplit(Text funcNamePrefix, Text funcArgs,Text funcParams,list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation) ::=
+  let &funcCalls = buffer "" /*BUFD*/
+  let extraFuncs = List.partition(varsLst, 100) |> ls hasindex idx =>
+    let &varDecls = buffer "" /*BUFD*/
+    let &funcCalls += '<%funcNamePrefix%>_<%idx%>(<%funcParams%>);'
+    let init = setVariablesWithSplit2(ls, simCode, context, useFlatArrayNotation)
+    <<
+    void <%funcNamePrefix%>_<%idx%>(<%funcArgs%>)
+    {
+       <%varDecls%>
+       <%init%>
+    }
+    >>
+    ;separator="\n"
+
+  <<
+  <%extraFuncs%>
+
+  void <%funcNamePrefix%>(<%funcArgs%>)
+  {
+    <%funcCalls%>
+  }
+  >>
+end setVariablesWithSplit;
+
+
+template setVariablesWithSplit2(list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation) 
+::=
+<<
+ <%varsLst|>
+        var hasindex i0 fromindex 0 => setVariablesDefault(var, i0, useFlatArrayNotation)
+        ;separator="\n"%>
+        
+ >>
+end setVariablesWithSplit2;
+
+
+
+
+template giveVariables(ModelInfo modelInfo, Boolean useFlatArrayNotation,SimCode simCode)
  "Define Memeber Function getReal off Cpp Target"
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
+   
+   
+  let getrealvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getReal","double* z","z",listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), simCode, contextOther, useFlatArrayNotation)
+  let setrealvariable = setVariablesWithSplit(lastIdentOfPath(name)+ "::setReal","const double* z","z",listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), simCode, contextOther, useFlatArrayNotation)     
+  
   <<
-
-  void <%lastIdentOfPath(name)%>::getReal(double* z)
-  {
-    <%listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ) |>
-        var hasindex i0 fromindex 0 => giveVariablesDefault(var, i0, useFlatArrayNotation)
-        ;separator="\n"%>
-  }
+  
+  <%getrealvariable%>
+  <%setrealvariable%>
 
   void <%lastIdentOfPath(name)%>::getInteger(int* z)
   {
@@ -11511,13 +11611,7 @@ case MODELINFO(vars=SIMVARS(__)) then
 
   }
 
-  void <%lastIdentOfPath(name)%>::setReal(const double* z)
-  {
-    <%listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars) |>
-        var hasindex i0 fromindex 0 => setVariablesDefault(var, i0, useFlatArrayNotation)
-        ;separator="\n"%>
-  }
-
+  
   void <%lastIdentOfPath(name)%>::setInteger(const int* z)
   {
     <%listAppend( listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ) |>

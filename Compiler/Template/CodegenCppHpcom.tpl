@@ -153,8 +153,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     boost::shared_ptr<ISimData> _simData;
 
-    <%generateEquationMemberFuncDecls(allEquations)%>
-
+    <%generateEquationMemberFuncDecls(allEquations,"evaluate")%>
+  
+    
     /*! Equations Array. pointers to all the equation functions listed above stored in this
       array. It is used to randomly access and evaluate a single equation by index.
     */
@@ -650,7 +651,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%initPrevars(modelInfo,simCode,useFlatArrayNotation)%>
    <%savediscreteVars(modelInfo,simCode,useFlatArrayNotation)%>
    <%LabeledDAE(modelInfo.labels,simCode,useFlatArrayNotation)%>
-    <%giveVariables(modelInfo,useFlatArrayNotation)%>
+    <%giveVariables(modelInfo,useFlatArrayNotation,simCode)%>
    >>
 end simulationCppFile;
 
@@ -813,7 +814,7 @@ template createEvaluateConditions(SimCode simCode, list<SimEqSystem> allEquation
   match simCode
     case SIMCODE(__) then
     let &varDecls = buffer "" /*BUFD*/
-    let eqs = equationsForConditions |> eq => equation_function_call(eq,contextSimulationNonDiscrete,&varDecls, simCode); separator="\n"
+    let eqs = equationsForConditions |> eq => equation_function_call(eq,contextSimulationNonDiscrete,&varDecls, simCode,"evaluate"); separator="\n"
     let reinit = (whenClauses |> when hasindex i0 => genreinits(when, &varDecls,i0,simCode,context,useFlatArrayNotation) ;separator="\n";empty)
     <<
     bool <%lastIdentOfPath(name)%>::evaluateConditions(const UPDATETYPE command)
