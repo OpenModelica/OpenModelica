@@ -740,7 +740,7 @@ public:
 
   virtual std::vector<size_t> getDims() const
   {
-    const unsigned int* shape = _multi_array.shape();
+    const size_t* shape = _multi_array.shape();
     std::vector<size_t> ex;
     ex.assign( shape, shape + 2 );
     return ex;
@@ -829,7 +829,7 @@ public:
 
   virtual std::vector<size_t> getDims() const
   {
-    const unsigned int* shape = _multi_array.shape();
+    const size_t* shape = _multi_array.shape();
     std::vector<size_t> ex;
     ex.assign( shape, shape + 3 );
     return ex;
@@ -928,7 +928,7 @@ public:
 
   virtual std::vector<size_t> getDims() const
   {
-    const unsigned int* shape = _multi_array.shape();
+    const size_t* shape = _multi_array.shape();
     std::vector<size_t> ex;
     ex.assign( shape, shape + 4 );
     return ex;
@@ -1032,9 +1032,9 @@ public:
     _multi_array.reindex(1);
   }
 
-  std::vector<size_t> getDims() const
+  virtual std::vector<size_t> getDims() const
   {
-    const unsigned int* shape = _multi_array.shape();
+    const size_t* shape = _multi_array.shape();
     std::vector<size_t> ex;
     ex.assign( shape, shape + 5 );
     return ex;
