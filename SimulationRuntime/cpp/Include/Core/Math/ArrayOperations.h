@@ -89,7 +89,6 @@ boost::multi_array< T, NumDims > multiply_array( boost::multi_array_ref< T, NumD
   return  op_cp_array<T>( a, std::bind2nd( std::multiplies< T >(), b ) );
 };
 
-
 /**
 Divides an array with a scalar value (a type as template parameter)
 */

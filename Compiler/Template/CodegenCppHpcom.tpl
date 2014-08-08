@@ -11,7 +11,9 @@ import interface SimCodeTV;
 import CodegenUtil.*;
 import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 
-template translateModel(SimCode simCode) ::=
+
+
+template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__), makefileParams= MAKEFILE_PARAMS(__)) then
   let target  = simulationCodeTarget()
@@ -20,7 +22,7 @@ template translateModel(SimCode simCode) ::=
   let()= textFile(simulationCppFile(simCode,Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.cpp')
   let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals,false), 'OMCpp<%fileNamePrefix%>Functions.h')
   let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals,externalFunctionIncludes,false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
-  let()= textFile(simulationTypesHeaderFile(simCode,modelInfo.functions,literals), 'OMCpp<%fileNamePrefix%>Types.h')
+  let()= textFile(simulationTypesHeaderFile(simCode,modelInfo.functions,literals,useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
   let()= textFile(simulationMakefile(target,simCode), '<%fileNamePrefix%>.makefile')
   let()= textFile(simulationInitHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Initialize.h')
   let()= textFile(simulationInitCppFile(simCode,Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Initialize.cpp')
@@ -606,7 +608,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     SystemDefaultImplementation::initialize();
     //Instantiate auxiliary object for event handling functionality
     _event_handling.getCondition =  boost::bind(&<%className%>::getCondition, this, _1);
-     <%arrayReindex(modelInfo,useFlatArrayNotation)%>
+     //Todo: arrayReindex(modelInfo,useFlatArrayNotation)
     //Initialize array elements
     <%initializeArrayElements(simCode,useFlatArrayNotation)%>
 

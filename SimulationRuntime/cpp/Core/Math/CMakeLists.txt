@@ -16,4 +16,5 @@ install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/Math/Functions.h
 	  ${CMAKE_SOURCE_DIR}/Include/Core/Math/SparseMatrix.h
 	  ${CMAKE_SOURCE_DIR}/Include/Core/Math/ILapack.h
           ${CMAKE_SOURCE_DIR}/Include/Core/Math/OMAPI.h
+		   ${CMAKE_SOURCE_DIR}/Include/Core/Math/Array.h
          DESTINATION include/omc/cpp/Core/Math)

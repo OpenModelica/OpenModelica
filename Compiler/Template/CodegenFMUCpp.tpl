@@ -45,12 +45,14 @@
 
 package CodegenFMUCpp
 
+
+
 import interface SimCodeTV;
 import CodegenUtil.*;
 import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 import CodegenFMU.*;
 
-template translateModel(SimCode simCode)
+template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
  "Generates C code and Makefile for compiling a FMU of a
   Modelica model."
 ::=
@@ -63,7 +65,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationCppFile(simCode,false), 'OMCpp<%name%>.cpp')
   let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals,false), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.h')
   let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals,externalFunctionIncludes,false), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp')
-  let()= textFile(simulationTypesHeaderFile(simCode,modelInfo.functions,literals), 'OMCpp<%fileNamePrefix%>Types.h')
+  let()= textFile(simulationTypesHeaderFile(simCode,modelInfo.functions,literals, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
   let()= textFile(fmuModelWrapperFile(simCode,guid,name), 'OMCpp<%name%>FMU.cpp')
   let()= textFile(fmuModelDescriptionFileCpp(simCode,guid), 'modelDescription.xml')
   let()= textFile(simulationInitHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Initialize.h')

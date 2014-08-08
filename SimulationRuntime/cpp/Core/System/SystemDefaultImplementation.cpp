@@ -69,7 +69,7 @@ SystemDefaultImplementation::~SystemDefaultImplementation()
   if(__z) delete [] __z;
   if(__zDot) delete [] __zDot;
 }
-void SystemDefaultImplementation::Assert(bool cond,string msg)
+void SystemDefaultImplementation::Assert(bool cond,const string& msg)
 {
     if(!cond)
         throw std::runtime_error(msg);

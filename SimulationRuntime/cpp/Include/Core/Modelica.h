@@ -79,7 +79,11 @@ using namespace std;
 #include <boost/unordered_map.hpp>
 #include <boost/program_options.hpp>
 #include <boost/assign/list_inserter.hpp>
+
+#include <boost/array.hpp>
+
 //#include <boost/timer/timer.hpp>
+
     /*Namespaces*/
 using namespace boost::extensions;
 namespace fs = boost::filesystem;
@@ -138,6 +142,7 @@ typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<
 #include <Math/ArrayOperations.h>
 #include <Math/Utility.h>
 #include <Math/SparseMatrix.h>
+#include <Math/Array.h>
 #include "HistoryImpl.h"
 #include "DataExchange/Policies/TextfileWriter.h"
 #include "DataExchange/Policies/MatfileWriter.h"

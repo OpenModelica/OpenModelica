@@ -121,7 +121,7 @@ public:
      void setTime(const double& t);
 
 protected:
-     void Assert(bool cond,string msg);
+     void Assert(bool cond, const string& msg);
      void Terminate(string msg);
      void intDelay(vector<unsigned int> expr,vector<double> delay_max);
      void storeDelay(unsigned int expr_id,double expr_value,double time);
