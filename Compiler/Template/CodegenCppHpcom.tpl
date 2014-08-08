@@ -154,8 +154,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     boost::shared_ptr<ISimData> _simData;
 
     <%generateEquationMemberFuncDecls(allEquations,"evaluate")%>
-  
-    
+
+
     /*! Equations Array. pointers to all the equation functions listed above stored in this
       array. It is used to randomly access and evaluate a single equation by index.
     */

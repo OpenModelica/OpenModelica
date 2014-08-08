@@ -1484,7 +1484,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //Initialize array elements
     <%initializeArrayElements(simCode, useFlatArrayNotation)%>
     _functions = new Functions(_simTime);
-  
+
 
 
     }
@@ -1498,7 +1498,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             delete _functions;
     }
 
-   
+
 
    <%Update(simCode,useFlatArrayNotation)%>
 
@@ -3132,7 +3132,7 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, SimCode sim
                     equation_function_create_single_func(eq, contextOther/*BUFC*/, simCode, "initEquation","Initialize",useFlatArrayNotation)
                     ;separator="\n")
   /*
-  let &varDecls = buffer "" 
+  let &varDecls = buffer ""
   let body = (initalEquations |> eq  =>
       equation_(eq, contextAlgloopInitialisation, &varDecls ,simCode, useFlatArrayNotation)
     ;separator="\n")
@@ -3858,18 +3858,18 @@ let frindeqs = generatefriendAlgloops(listAppend(allEquations,initialEquations),
 let algloopsolver = generateAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode )
 let memberfuncs = generateEquationMemberFuncDecls(allEquations,"evaluate")
 let conditionvariables =  conditionvariable(zeroCrossings,simCode)
-  
+
 match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
   let getrealvars =(List.partition(listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), 100) |> ls hasindex idx => 'void getReal_<%idx%>(double* z);
                                                                                                                                              void setReal_<%idx%>(const double* z);'
                                                                                                                                              ;separator="\n")
- 
+
   <<
   class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent,  public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
   {
 
-   
+
   <%frindeqs%>
   public:
       <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor,boost::shared_ptr<ISimData>);
@@ -3882,7 +3882,7 @@ match modelInfo
   protected:
     //Methods:
     <%getrealvars%>
-    
+
      bool isConsistent();
     //Called to handle all  events occured at same time
     bool handleSystemEvents( bool* events);
@@ -3907,19 +3907,19 @@ match modelInfo
 
 
     <%memberfuncs%>
-  
 
-   
+
+
    };
   >>
    /*! Equations Array. pointers to all the equation functions listed above stored in this
       array. It is used to randomly access and evaluate a single equation by index.
     */
-    
+
 
     //void initialize_equations_array();
   /*
-  
+
   typedef void (<%lastIdentOfPath(modelInfo.name)%>::*EquFuncPtr)();
     boost::array< EquFuncPtr, <%listLength(allEquations)%> > equations_array;
   */
@@ -6721,12 +6721,12 @@ template equation_function_call(SimEqSystem eq, Context context, Text &varDecls,
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
-  
+
     let ix_str = equationIndex(eq)
      <<
       <%method%>_<%ix_str%>();
     >>
-  
+
 end equation_function_call;
 /*
 <<
@@ -11522,7 +11522,7 @@ template giveVariablesWithSplit(Text funcNamePrefix, Text funcArgs,Text funcPara
 end giveVariablesWithSplit;
 
 
-template giveVariablesWithSplit2(list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation) 
+template giveVariablesWithSplit2(list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation)
 ::=
 <<
  <%varsLst |>
@@ -11559,13 +11559,13 @@ template setVariablesWithSplit(Text funcNamePrefix, Text funcArgs,Text funcParam
 end setVariablesWithSplit;
 
 
-template setVariablesWithSplit2(list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation) 
+template setVariablesWithSplit2(list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation)
 ::=
 <<
  <%varsLst|>
         var hasindex i0 fromindex 0 => setVariablesDefault(var, i0, useFlatArrayNotation)
         ;separator="\n"%>
-        
+
  >>
 end setVariablesWithSplit2;
 
@@ -11577,13 +11577,13 @@ template giveVariables(ModelInfo modelInfo, Boolean useFlatArrayNotation,SimCode
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
-   
-   
+
+
   let getrealvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getReal","double* z","z",listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), simCode, contextOther, useFlatArrayNotation)
-  let setrealvariable = setVariablesWithSplit(lastIdentOfPath(name)+ "::setReal","const double* z","z",listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), simCode, contextOther, useFlatArrayNotation)     
-  
+  let setrealvariable = setVariablesWithSplit(lastIdentOfPath(name)+ "::setReal","const double* z","z",listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), simCode, contextOther, useFlatArrayNotation)
+
   <<
-  
+
   <%getrealvariable%>
   <%setrealvariable%>
 
@@ -11611,7 +11611,7 @@ case MODELINFO(vars=SIMVARS(__)) then
 
   }
 
-  
+
   void <%lastIdentOfPath(name)%>::setInteger(const int* z)
   {
     <%listAppend( listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ) |>
