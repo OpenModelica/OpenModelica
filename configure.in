@@ -175,6 +175,15 @@ fi
 
 fi
 
+else # Is Darwin
+
+AC_LANG([C++])
+OLD_CXXFLAGS=$CXXFLAGS
+for flag in -stdlib=libstdc++; do
+  AC_TRY_LINK([], [return 0;], [CXXFLAGS="$OLD_CXXFLAGS $flag"],[CXXFLAGS="$OLD_CXXFLAGS"])
+done
+AC_LANG([C])
+
 fi
 
 if test "`getconf LONG_BIT`" = "32"; then

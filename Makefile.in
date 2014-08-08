@@ -13,7 +13,7 @@ datadir = @datadir@
 datarootdir = @datarootdir@
 docdir = @docdir@
 CMAKE = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" cmake
-CMAKE_RPATH = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@RPATH_QMAKE@" cmake
+CMAKE_RPATH = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@RPATH_QMAKE@" cmake
 CMAKE_TARGET = "Unix Makefiles"
 OPENCL = @OPENCL@
 AR = @AR@
