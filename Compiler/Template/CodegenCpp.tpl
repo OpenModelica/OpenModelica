@@ -220,10 +220,10 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     void getStates(unsigned int index,double* z);
     void setStates(unsigned int index,const double* z);
     void getStateCanditates(unsigned int index,double* z);
-    bool getAMatrix(unsigned int index,multi_array<int,2> & A) ;
-    void setAMatrix(unsigned int index,multi_array<int,2>& A);
-     bool getAMatrix(unsigned int index,multi_array<int,1> & A) ;
-    void setAMatrix(unsigned int index,multi_array<int,1>& A);
+    bool getAMatrix(unsigned int index,DynArrayDim2<int> & A) ;
+    void setAMatrix(unsigned int index ,DynArrayDim2<int>& A);
+     bool getAMatrix(unsigned int index,DynArrayDim1<int> & A) ;
+    void setAMatrix(unsigned int index,DynArrayDim1<int>& A);
     protected:
      void  initialize();
   };
@@ -346,10 +346,10 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     virtual void getStates(unsigned int index,double* z);
     virtual void setStates(unsigned int index,const double* z);
     virtual void getStateCanditates(unsigned int index,double* z);
-    virtual bool getAMatrix(unsigned int index,multi_array<int,2>& A);
-    virtual void setAMatrix(unsigned int index,multi_array<int,2>& A);
-    virtual bool getAMatrix(unsigned int index,multi_array<int,1>& A);
-    virtual void setAMatrix(unsigned int index,multi_array<int,1>& A);
+    virtual bool getAMatrix(unsigned int index,DynArrayDim2<int>& A);
+    virtual void setAMatrix(unsigned int index, DynArrayDim2<int>& A);
+    virtual bool getAMatrix(unsigned int index,DynArrayDim1<int>& A);
+    virtual void setAMatrix(unsigned int index,DynArrayDim1<int>& A);
 
 
   };
@@ -644,21 +644,21 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       <%lastIdentOfPath(modelInfo.name)%>StateSelection::getStateCanditates(index,z);
    }
 
-   bool <%lastIdentOfPath(modelInfo.name)%>Extension::getAMatrix(unsigned int index,multi_array<int,2> & A)
+   bool <%lastIdentOfPath(modelInfo.name)%>Extension::getAMatrix(unsigned int index,DynArrayDim2<int> & A)
    {
       return <%lastIdentOfPath(modelInfo.name)%>StateSelection::getAMatrix(index,A);
    }
 
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::setAMatrix(unsigned int index,multi_array<int,2> & A)
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::setAMatrix(unsigned int index,DynArrayDim2<int> & A)
    {
       <%lastIdentOfPath(modelInfo.name)%>StateSelection::setAMatrix(index,A);
    }
-   bool <%lastIdentOfPath(modelInfo.name)%>Extension::getAMatrix(unsigned int index,multi_array<int,1> & A)
+   bool <%lastIdentOfPath(modelInfo.name)%>Extension::getAMatrix(unsigned int index,DynArrayDim1<int> & A)
    {
       return <%lastIdentOfPath(modelInfo.name)%>StateSelection::getAMatrix(index,A);
    }
 
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::setAMatrix(unsigned int index,multi_array<int,1> & A)
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::setAMatrix(unsigned int index,DynArrayDim1<int> & A)
    {
       <%lastIdentOfPath(modelInfo.name)%>StateSelection::setAMatrix(index,A);
    }
@@ -772,7 +772,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            let arrayname1 = arraycref(crA, useFlatArrayNotation)
            match nStates  case 1 then
              'case <%i1%>:
-               assign_array(A,<%arrayname1%>);
+              A.assign(<%arrayname1%>);
                return true;
             '
             else ""
@@ -783,7 +783,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            let arrayname1 = arraycref(crA, useFlatArrayNotation)
            match nStates  case 1 then "" else
              'case <%i1%>:
-               assign_array(A,<%arrayname1%>);
+               A.assign(<%arrayname1%>);
               return true;
             '
 
@@ -794,7 +794,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            let arrayname1 = arraycref(crA, useFlatArrayNotation)
            match nStates  case 1 then
              'case <%i1%>:
-               assign_array(<%arrayname1%>,A);
+               <%arrayname1%>.assign(A);
                break;
             '
             else ""
@@ -805,7 +805,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            let arrayname1 = arraycref(crA, useFlatArrayNotation)
            match nStates  case 1 then "" else
              'case <%i1%>:
-               assign_array(<%arrayname1%>,A);
+               <%arrayname1%>.assign(A);
                break;
             '
 
@@ -830,21 +830,21 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
      {
 
      }
-     bool  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,2> & A)
+     bool  <%classname%>StateSelection::getAMatrix(unsigned int index,DynArrayDim2<int> & A)
      {
 
         return false;
      }
-      bool  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,1> & A)
+      bool  <%classname%>StateSelection::getAMatrix(unsigned int index,DynArrayDim1<int> & A)
      {
 
        return false;
      }
-     void  <%classname%>StateSelection::setAMatrix(unsigned int index,multi_array<int,2>& A)
+     void  <%classname%>StateSelection::setAMatrix(unsigned int index,DynArrayDim2<int>& A)
      {
 
      }
-      void  <%classname%>StateSelection::setAMatrix(unsigned int index,multi_array<int,1>& A)
+      void  <%classname%>StateSelection::setAMatrix(unsigned int index,DynArrayDim1<int>& A)
      {
 
      }
@@ -920,7 +920,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        }
 
 
-       bool  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,2> & A)
+       bool  <%classname%>StateSelection::getAMatrix(unsigned int index,DynArrayDim2<int> & A)
         {
         <%match getAMatrix2 case "" then 'return false;' else
         <<
@@ -933,7 +933,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        >>
        %>
        }
-       bool  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,1> & A)
+       bool  <%classname%>StateSelection::getAMatrix(unsigned int index,DynArrayDim1<int> & A)
         {
        <%match getAMatrix1 case "" then 'return false;' else
         <<
@@ -947,7 +947,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        %>
        }
 
-       void  <%classname%>StateSelection::setAMatrix(unsigned int index,multi_array<int,2> & A)
+       void  <%classname%>StateSelection::setAMatrix(unsigned int index,DynArrayDim2<int> & A)
         {
         <%match setAMatrix2 case "" then '' else
         <<
@@ -960,7 +960,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        >>
        %>
        }
-       void  <%classname%>StateSelection::setAMatrix(unsigned int index,multi_array<int,1> & A)
+       void  <%classname%>StateSelection::setAMatrix(unsigned int index,DynArrayDim1<int> & A)
         {
        <%match setAMatrix1 case "" then '' else
         <<
@@ -2577,7 +2577,7 @@ template extArg(SimExtArg extArg, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/
   case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t) then
     let name = if oi then 'out.targTest5<%oi%>' else contextCref2(c,contextFunction)
     let shortTypeStr = expTypeShort(t)
-    ' <%name%>.data()'
+    ' <%name%>.getData()'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
     let cr = '<%contextCref2(c,contextFunction)%>'
     if acceptMetaModelicaGrammar() then
@@ -9082,7 +9082,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += match context
                         case FUNCTION_CONTEXT(__) then '<%retVar%>.assign(<%funName%>(<%argStr%>));<%\n%>'
             /*multi_array else 'assign_array(<%retVar%> ,_functions.<%funName%>(<%argStr%>));<%\n%>'*/
-                        else '<%retVar%>.assign(_functions-><%funName%>(<%argStr%>));<%\n%>'
+                        else '<%retVar%>= _functions-><%funName%>(<%argStr%>);<%\n%>'
 
 
 

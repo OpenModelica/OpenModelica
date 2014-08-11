@@ -118,6 +118,7 @@ typedef ublas::vector<double, adaptor_t> shared_vector_t;
 typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 typedef boost::function<bool (unsigned int)> getCondition_type;
 typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&)> init_prevars_type;
+#include <Math/Array.h>
 #include <System/IStateSelection.h>
 #include <System/ISystemProperties.h>
 #include <System/ISystemInitialization.h>
@@ -142,7 +143,6 @@ typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<
 #include <Math/ArrayOperations.h>
 #include <Math/Utility.h>
 #include <Math/SparseMatrix.h>
-#include <Math/Array.h>
 #include "HistoryImpl.h"
 #include "DataExchange/Policies/TextfileWriter.h"
 #include "DataExchange/Policies/MatfileWriter.h"

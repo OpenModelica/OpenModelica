@@ -110,8 +110,8 @@ void SystemStateSelection::setAMatrix(int* newEnable,unsigned int index)
 {
       int col;
       int row=0;
-      boost::multi_array<int,2> A2;
-      boost::multi_array<int,1> A1;
+      DynArrayDim2<int> A2;
+      DynArrayDim1<int> A1;
       double* states;//states
       double* states2;//state candidates
       states = new double[_dimStates[index]];
@@ -128,7 +128,7 @@ void SystemStateSelection::setAMatrix(int* newEnable,unsigned int index)
                   if(newEnable[col]==2)
                   {
                         /* set A[row, col] */
-                        A2[row+1][col+1] = 1;
+                        A2(row+1,col+1) = 1;
                         ///* reinit state */
                         states[row] =states2[col];
                         row++;
@@ -146,7 +146,7 @@ void SystemStateSelection::setAMatrix(int* newEnable,unsigned int index)
                   if(newEnable[col]==2)
                   {
                         /* set A[row, col] */
-                        A1[row+col+1] = 1;
+                        A1(row+col+1) = 1;
                         ///* reinit state */
                         states[row] =states2[col];
                         row++;

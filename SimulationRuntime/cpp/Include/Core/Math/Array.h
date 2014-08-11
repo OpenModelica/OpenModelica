@@ -9,52 +9,46 @@ public:
 
   virtual T& operator()(unsigned int i)
   {
-    T a;
-    return a;
+     throw std::invalid_argument("Wrong virtual Array operator call");
   };
   virtual const T& operator()(unsigned int i) const
   {
-    T a;
-    return a;
+     throw std::invalid_argument("Wrong virtual Array operator call");
   };
   virtual T& operator()(const unsigned int  i, const unsigned int j)
   {
-    T a;
-    return a;
+    throw std::invalid_argument("Wrong virtual Array operator call");
   };
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
   {
-    T a;
-    return a;
+    throw std::invalid_argument("Wrong virtual Array operator call");
   };
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k, unsigned int l)
   {
-    T a;
-    return a;
+    throw std::invalid_argument("Wrong virtual Array operator call");
   };
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k, unsigned int l, unsigned int m)
   {
-    T a ;
-    return a;
+    throw std::invalid_argument("Wrong virtual Array operator call");
   };
   virtual std::vector<size_t> getDims() const
   {
-    std::vector<size_t> v;
-    return v;
+    throw std::invalid_argument("Wrong virtual Array getDims call");
   };
 
   virtual T* getData()
   {
-    return NULL;
+     throw std::invalid_argument("Wrong virtual Array getData call");
   };
 
   virtual unsigned int getNumElems()
   {
-    return 0;
+    throw std::invalid_argument("Wrong virtual Array getNumElems call");
   };
 
   virtual void setDims(std::vector<size_t> v)
   {
+    throw std::invalid_argument("Wrong virtual Array setDims call");
   }
 
 };
@@ -70,7 +64,7 @@ public:
 
   StatArrayDim1(const StatArrayDim1<T,size>& otherarray)
   {
-    _real_array = otherarray._real_array;
+     _real_array = otherarray._real_array;
   }
 
   StatArrayDim1()
@@ -88,15 +82,22 @@ public:
   //{
   //  _real_array = otherArray._real_array;
   //}
-
+ StatArrayDim1<T,size>& operator=(const StatArrayDim1<T,size>& rhs)
+ {
+  if (this != &rhs)  //oder if (*this != rhs)
+  {
+      _real_array= rhs._real_array;
+  }
+  return *this; 
+ }
   void assign(const T* data)
   {
   for(int i= 0; i < size; i++)
     {
       _real_array[i] = data[i];
     }
-
-  }
+   
+ }
 
 
   void assign( BaseArray<T>& otherArray)
@@ -157,9 +158,16 @@ public:
 
   StatArrayDim2(const StatArrayDim2<T,size1,size2>& otherarray)
   {
-    _real_array = otherarray._real_array;
+     _real_array = otherarray._real_array;
   }
-
+ StatArrayDim2<T,size1,size2>& operator=(const StatArrayDim2<T,size1,size2>& rhs)
+ {
+  if (this != &rhs)  //oder if (*this != rhs)
+  {
+     _real_array = rhs._real_array;
+  }
+  return *this; 
+ }
 
   ~StatArrayDim2(){}
 
@@ -293,6 +301,14 @@ public:
     v.push_back(size3);
     return v;
   }
+ StatArrayDim3<T,size1,size2,size3>& operator=(const StatArrayDim3<T,size1,size2,size3>& rhs)
+ {
+  if (this != &rhs)  //oder if (*this != rhs)
+  {
+      _real_array = rhs._real_array;
+  }
+  return *this; 
+ }
 
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
   {
