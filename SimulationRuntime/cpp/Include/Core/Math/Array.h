@@ -216,12 +216,12 @@ public:
   {
     return size1 + size2;
   }
-  
+
   virtual T* getData()
   {
     return _real_array.data();
   }
-  
+
   virtual void setDims(std::vector<size_t> v)
   {
 
