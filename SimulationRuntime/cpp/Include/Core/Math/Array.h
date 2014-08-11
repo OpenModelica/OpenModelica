@@ -88,7 +88,7 @@ public:
   {
       _real_array= rhs._real_array;
   }
-  return *this; 
+  return *this;
  }
   void assign(const T* data)
   {
@@ -96,7 +96,7 @@ public:
     {
       _real_array[i] = data[i];
     }
-   
+
  }
 
 
@@ -166,7 +166,7 @@ public:
   {
      _real_array = rhs._real_array;
   }
-  return *this; 
+  return *this;
  }
 
   ~StatArrayDim2(){}
@@ -307,7 +307,7 @@ public:
   {
       _real_array = rhs._real_array;
   }
-  return *this; 
+  return *this;
  }
 
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
