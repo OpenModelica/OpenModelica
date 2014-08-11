@@ -88,7 +88,7 @@ public:
   {
       _real_array= rhs._real_array;
   }
-  return *this; 
+  return *this;
  }
   void assign(const T* data)
   {
@@ -96,7 +96,7 @@ public:
     {
       _real_array[i] = data[i];
     }
-   
+
  }
 
 
@@ -139,7 +139,7 @@ public:
   }
   virtual void setDims(std::vector<size_t> v)
   {
-    
+
   }
   private:
     boost::array<T,size> _real_array;
@@ -169,7 +169,7 @@ public:
   {
      _real_array = rhs._real_array;
   }
-  return *this; 
+  return *this;
  }
 
   ~StatArrayDim2(){}
@@ -218,7 +218,7 @@ public:
   }
   virtual void setDims(std::vector<size_t> v)
   {
-    
+
   }
 private:
   //boost::array< boost::array<T, size2>, size1> _real_array;
@@ -313,7 +313,7 @@ public:
   {
       _real_array = rhs._real_array;
   }
-  return *this; 
+  return *this;
  }
 
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
@@ -327,7 +327,7 @@ public:
   }
   virtual void setDims(std::vector<size_t> v)
   {
-    
+
   }
 private:
   boost::array< boost::array< boost::array<T,size3> ,size2>,size1> _real_array;
@@ -440,7 +440,7 @@ public:
   }
   virtual void setDims(std::vector<size_t> v)
   {
-    
+
   }
 private:
   boost::array< boost::array< boost::array<boost::array<T,size4>,size3>,size2>,size1> _real_array;
@@ -565,7 +565,7 @@ public:
   }
   virtual void setDims(std::vector<size_t> v)
   {
-    
+
   }
 private:
   boost::array< boost::array< boost::array< boost::array<boost::array<T,size5>,size4>,size3>,size2>,size1> _real_array;
@@ -637,8 +637,8 @@ public:
     std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
-    
-	for (int i = 1; i <= v[0]; i++)
+
+  for (int i = 1; i <= v[0]; i++)
     {
       //double tmp =  otherArray(i);
       _multi_array[i] = otherArray(i);
@@ -669,9 +669,9 @@ public:
      _multi_array.resize(v);
      _multi_array.reindex(1);
      _multi_array = rhs._multi_array;
-    
+
    }
-   return *this; 
+   return *this;
   }
   void setDims(unsigned int size1)
   {
@@ -749,15 +749,15 @@ public:
     std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
-    
-	for (int i = 1; i <= v[0]; i++)
+
+  for (int i = 1; i <= v[0]; i++)
     {
       for (int j = 1; i <= v[1]; i++)
       {
         _multi_array[i][j] = otherArray(i,j);
       }
     }
-  
+
   }
   DynArrayDim2<T>& operator=(const DynArrayDim2<T>& rhs)
   {
@@ -767,9 +767,9 @@ public:
      _multi_array.resize(v);
      _multi_array.reindex(1);
      _multi_array = rhs._multi_array;
-    
+
    }
-   return *this; 
+   return *this;
   }
   void assign(const T& data)
   {
@@ -854,7 +854,7 @@ public:
     std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
-  
+
     for (int i = 1; i <= v[0]; i++)
     {
       for (int j = 1; i <= v[1]; i++)
@@ -865,7 +865,7 @@ public:
         }
       }
     }
-    
+
   }
   DynArrayDim3<T>& operator=(const DynArrayDim3<T>& rhs)
   {
@@ -875,9 +875,9 @@ public:
      _multi_array.resize(v);
      _multi_array.reindex(1);
      _multi_array = rhs._multi_array;
-    
+
    }
-   return *this; 
+   return *this;
   }
   void assign(const T& data)
   {
