@@ -88,7 +88,7 @@ public:
   {
       _real_array= rhs._real_array;
   }
-  return *this;
+  return *this; 
  }
   void assign(const T* data)
   {
@@ -96,7 +96,7 @@ public:
     {
       _real_array[i] = data[i];
     }
-
+   
  }
 
 
@@ -137,7 +137,10 @@ public:
   {
     return size;
   }
-
+  virtual void setDims(std::vector<size_t> v)
+  {
+    
+  }
   private:
     boost::array<T,size> _real_array;
 };
@@ -166,7 +169,7 @@ public:
   {
      _real_array = rhs._real_array;
   }
-  return *this;
+  return *this; 
  }
 
   ~StatArrayDim2(){}
@@ -213,7 +216,10 @@ public:
   {
     return size1 + size2;
   }
-
+  virtual void setDims(std::vector<size_t> v)
+  {
+    
+  }
 private:
   //boost::array< boost::array<T, size2>, size1> _real_array;
   boost::array<T, size2 * size1> _real_array;
@@ -307,7 +313,7 @@ public:
   {
       _real_array = rhs._real_array;
   }
-  return *this;
+  return *this; 
  }
 
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
@@ -318,6 +324,10 @@ public:
   virtual unsigned int getNumElems()
   {
     return size1 + size2 + size3;
+  }
+  virtual void setDims(std::vector<size_t> v)
+  {
+    
   }
 private:
   boost::array< boost::array< boost::array<T,size3> ,size2>,size1> _real_array;
@@ -427,6 +437,10 @@ public:
   virtual unsigned int getNumElems()
   {
     return size1 + size2 + size3 + size4;
+  }
+  virtual void setDims(std::vector<size_t> v)
+  {
+    
   }
 private:
   boost::array< boost::array< boost::array<boost::array<T,size4>,size3>,size2>,size1> _real_array;
@@ -549,6 +563,10 @@ public:
   {
     return size1 + size2 + size3 + size4 + size5;
   }
+  virtual void setDims(std::vector<size_t> v)
+  {
+    
+  }
 private:
   boost::array< boost::array< boost::array< boost::array<boost::array<T,size5>,size4>,size3>,size2>,size1> _real_array;
 };
@@ -619,7 +637,8 @@ public:
     std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
-    for (int i = 1; i <= v[0]; i++)
+    
+	for (int i = 1; i <= v[0]; i++)
     {
       //double tmp =  otherArray(i);
       _multi_array[i] = otherArray(i);
@@ -642,7 +661,18 @@ public:
     //double tmp = _multi_array[index];
     return _multi_array[index];
   }
-
+  DynArrayDim1<T>& operator=(const DynArrayDim1<T>& rhs)
+  {
+   if (this != &rhs)  //oder if (*this != rhs)
+   {
+      std::vector<size_t> v = rhs.getDims();
+     _multi_array.resize(v);
+     _multi_array.reindex(1);
+     _multi_array = rhs._multi_array;
+    
+   }
+   return *this; 
+  }
   void setDims(unsigned int size1)
   {
     std::vector<size_t> v;
@@ -719,16 +749,28 @@ public:
     std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
-
-    for (int i = 1; i <= v[0]; i++)
+    
+	for (int i = 1; i <= v[0]; i++)
     {
       for (int j = 1; i <= v[1]; i++)
       {
         _multi_array[i][j] = otherArray(i,j);
       }
     }
+  
   }
-
+  DynArrayDim2<T>& operator=(const DynArrayDim2<T>& rhs)
+  {
+   if (this != &rhs)  //oder if (*this != rhs)
+   {
+      std::vector<size_t> v = rhs.getDims();
+     _multi_array.resize(v);
+     _multi_array.reindex(1);
+     _multi_array = rhs._multi_array;
+    
+   }
+   return *this; 
+  }
   void assign(const T& data)
   {
     _multi_array.assign(data, data + _multi_array.num_elements() );
@@ -766,7 +808,10 @@ public:
   {
     return _multi_array.num_elements();
   }
-
+  virtual T* getData()
+  {
+    return _multi_array.data();
+  }
 private:
   boost::multi_array<T, 2> _multi_array;
 };
@@ -809,7 +854,7 @@ public:
     std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
-
+  
     for (int i = 1; i <= v[0]; i++)
     {
       for (int j = 1; i <= v[1]; i++)
@@ -820,8 +865,20 @@ public:
         }
       }
     }
+    
   }
-
+  DynArrayDim3<T>& operator=(const DynArrayDim3<T>& rhs)
+  {
+   if (this != &rhs)  //oder if (*this != rhs)
+   {
+      std::vector<size_t> v = rhs.getDims();
+     _multi_array.resize(v);
+     _multi_array.reindex(1);
+     _multi_array = rhs._multi_array;
+    
+   }
+   return *this; 
+  }
   void assign(const T& data)
   {
     _multi_array.assign(data, data + _multi_array.num_elements() );
