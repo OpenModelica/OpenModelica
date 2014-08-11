@@ -5299,6 +5299,29 @@ template subscriptsToCStrForArray(list<Subscript> subscripts)
   if subscripts then
     '<%subscripts |> s => subscriptToCStr(s) ;separator="$c"%>'
 end subscriptsToCStrForArray;
+/*
+tempalte for writing output variable names in mat or csv files
+*/
+template crefStrForWriteOutput(ComponentRef cr)
+::=
+  match cr
+  case CREF_IDENT(ident = "xloc") then '__xd<%subscriptsStrForWriteOutput(subscriptLst)%>'
+  case CREF_IDENT(ident = "time") then "_simTime"
+  case CREF_IDENT(__) then '<%ident%><%subscriptsStrForWriteOutput(subscriptLst)%>'
+  // Are these even needed? Function context should only have CREF_IDENT :)
+  case CREF_QUAL(ident = "$DER") then 'der(<%crefStrForWriteOutput(componentRef)%>)'
+  case CREF_QUAL(__) then '<%ident%><%subscriptsStrForWriteOutput(subscriptLst)%>.<%crefStrForWriteOutput(componentRef)%>'
+  else "CREF_NOT_IDENT_OR_QUAL"
+end crefStrForWriteOutput;
+
+template subscriptsStrForWriteOutput(list<Subscript> subscripts)
+ "Generares subscript part of the name."
+::=
+  if subscripts then
+    '[<%subscripts |> s => subscriptStr(s) ;separator=","%>]'//previous multi_array     '[<%subscripts |> s => subscriptStr(s) ;separator=","%>]'
+end subscriptsStrForWriteOutput;
+
+
 
 template crefStr(ComponentRef cr)
 ::=
@@ -5517,27 +5540,27 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
        {
         <% if protectedVars(vars.algVars) then
         'names += <%(vars.algVars |> SIMVAR(isProtected=false) =>
-        '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
 
        }
        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeDiscreteAlgVarsResultNames(vector<string>& names)
        {
         <% if  protectedVars(vars.discreteAlgVars) then
         'names += <%(vars.discreteAlgVars |> SIMVAR(isProtected=false) =>
-        '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
 
        }
        void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAlgVarsResultNames(vector<string>& names)
         {
          <% if  protectedVars(vars.intAlgVars) then
          'names += <%(vars.intAlgVars |> SIMVAR(isProtected=false) =>
-           '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+           '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
         void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAlgVarsResultNames(vector<string>& names)
         {
         <% if  protectedVars(vars.boolAlgVars) then
          'names +=<%(vars.boolAlgVars |> SIMVAR(isProtected=false) =>
-           '"<%crefStr(name)%>"'  ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+           '"<%crefStrForWriteOutput(name)%>"'  ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
 
 
@@ -5545,35 +5568,35 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
         {
          <% if  protectedVars(vars.aliasVars) then
          'names +=<%(vars.aliasVars |> SIMVAR(isProtected=false) =>
-          '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += "  )%>;' %>
+          '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += "  )%>;' %>
         }
 
        void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAliasVarsResultNames(vector<string>& names)
         {
         <% if  protectedVars(vars.intAliasVars) then
            'names += <%(vars.intAliasVars |> SIMVAR(isProtected=false) =>
-            '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+            '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
 
         void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAliasVarsResultNames(vector<string>& names)
         {
           <% if  protectedVars(vars.boolAliasVars) then
           'names += <%(vars.boolAliasVars |> SIMVAR(isProtected=false) =>
-            '"<%crefStr(name)%>"';separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+            '"<%crefStrForWriteOutput(name)%>"';separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
 
         void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeStateVarsResultNames(vector<string>& names)
         {
         <% if vars.stateVars then
           'names += <%(vars.stateVars |> SIMVAR(__) =>
-           '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+           '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
 
         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeDerivativeVarsResultNames(vector<string>& names)
         {
          <% if  vars.derivativeVars then
           'names += <%(vars.derivativeVars |> SIMVAR(__) =>
-          '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+          '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
 
 
@@ -5583,7 +5606,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
 
          <% if  protectedVars(vars.paramVars) then
           'names += <%(vars.paramVars |> SIMVAR(isProtected=false) =>
-          '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+          '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
 
         }
 
@@ -5591,13 +5614,13 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
         {
          <% if  protectedVars(vars.intParamVars) then
           'names += <%(vars.intParamVars |> SIMVAR(isProtected=false) =>
-          '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+          '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
          void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolParameterNames(vector<string>& names)
         {
          <% if  protectedVars(vars.boolParamVars) then
           'names += <%(vars.boolParamVars |> SIMVAR(isProtected=false) =>
-          '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+          '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
 
 
