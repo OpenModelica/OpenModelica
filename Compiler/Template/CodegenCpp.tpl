@@ -2592,7 +2592,7 @@ template extArg(SimExtArg extArg, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/
     let typeStr = expTypeShort(type_)
     let name = if outputIndex then 'out.targTest4<%outputIndex%>' else contextCref2(c,contextFunction)
     let dim = daeExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
-    '<%name%>.shape()[<%dim%> - 1]'
+    '<%name%>.getDims()[<%dim%> - 1]'
 
 end extArg;
 
