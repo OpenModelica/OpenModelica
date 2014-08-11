@@ -548,7 +548,7 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
       data->callback->functionDAE(data);
 
       if(index){
-        diffSynColoredOptimizerSystem(optData, optData->J[i][j], i,j,0);
+        diffSynColoredOptimizerSystem(optData, optData->J[i][j], i,j,2);
       }
 
     }
@@ -575,7 +575,7 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
     data->callback->functionDAE(data);
 
     if(index){
-      diffSynColoredOptimizerSystem(optData, optData->J[i][j], i,j, (j+1 == np)? 1 : 0);
+      diffSynColoredOptimizerSystem(optData, optData->J[i][j], i,j, (j+1 == np)? 3 : 2);
     }
   }
 
@@ -594,30 +594,33 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
 void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const int m, const int n, const int index){
   DATA * data = optData->data;
   int i,j,l,ii, ll;
-  const int indexBC[2] = {data->callback->INDEX_JAC_B, data->callback->INDEX_JAC_C};
-  const int jj = indexBC[index];
 
+  const h_index = optData->s.indexABCD[index];
   const long double * scaldt = optData->bounds.scaldt[m];
-  const unsigned int * const cC = data->simulationInfo.analyticJacobians[jj].sparsePattern.colorCols;
+  const unsigned int * const cC = data->simulationInfo.analyticJacobians[h_index].sparsePattern.colorCols;
   const unsigned int * const lindex  = optData->s.lindex[index];
-  const int nx = data->simulationInfo.analyticJacobians[jj].sizeCols;
-  const int Cmax = data->simulationInfo.analyticJacobians[jj].sparsePattern.maxColors + 1;
+  const int nx = data->simulationInfo.analyticJacobians[h_index].sizeCols;
+  const int Cmax = data->simulationInfo.analyticJacobians[h_index].sparsePattern.maxColors + 1;
   const int dnx = optData->dim.nx;
   const int dnxnc = optData->dim.nJ;
-  const modelica_real * const resultVars = data->simulationInfo.analyticJacobians[jj].resultVars;
-  const unsigned int * const sPindex = data->simulationInfo.analyticJacobians[jj].sparsePattern.index;
+  const modelica_real * const resultVars = data->simulationInfo.analyticJacobians[h_index].resultVars;
+  const unsigned int * const sPindex = data->simulationInfo.analyticJacobians[h_index].sparsePattern.index;
   long double  scalb = optData->bounds.scalb[m][n];
 
-  const int * index_J = (index)? optData->s.indexJ3 : optData->s.indexJ2;
+  const int * index_J = (index == 3)? optData->s.indexJ3 : optData->s.indexJ2;
   const int nJ1 = optData->dim.nJ + 1;
+ 
+  modelica_real **sV = optData->s.seedVec[index];
+ 
   for(i = 1; i < Cmax; ++i){
-    data->simulationInfo.analyticJacobians[jj].seedVars = optData->s.seedVec[index][i];
+    data->simulationInfo.analyticJacobians[h_index].seedVars = sV[i];
 
-    if(index){
-      data->callback->functionJacC_column(data);
-    }else{
+    if(index == 2){
       data->callback->functionJacB_column(data);
-    }
+    }else if(index == 3){
+      data->callback->functionJacC_column(data);
+    }else
+      assert(0);
 
     for(ii = 0; ii < nx; ++ii){
       if(cC[ii] == i){

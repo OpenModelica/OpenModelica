@@ -139,6 +139,7 @@ typedef struct OptDataStructure{
   int * indexCon3;
   int * indexJ2;
   int * indexJ3;
+  int indexABCD[5];
 }OptDataStructure;
 
 
