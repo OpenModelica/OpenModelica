@@ -752,7 +752,7 @@ public:
 
   for (int i = 1; i <= v[0]; i++)
     {
-      for (int j = 1; i <= v[1]; i++)
+      for (int j = 1; j <= v[1]; j++)
       {
         _multi_array[i][j] = otherArray(i,j);
       }
@@ -857,9 +857,9 @@ public:
 
     for (int i = 1; i <= v[0]; i++)
     {
-      for (int j = 1; i <= v[1]; i++)
+      for (int j = 1; j <= v[1]; i++)
       {
-        for (int k = 1; i <= v[1]; i++)
+        for (int k = 1; k <= v[1]; i++)
         {
           _multi_array[i][j][k] = otherArray(i,j,k);
         }
