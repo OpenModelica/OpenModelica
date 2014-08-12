@@ -761,8 +761,22 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
  end functionDimStateSets;
 
 
+template createAssignArray(DAE.ComponentRef sourceArrayCref, String targetArrayName, SimCode simCode, Boolean useFlatArrayNotation)
+::=
+  match SimCodeUtil.cref2simvar(sourceArrayCref, simCode)
+    case v as SIMVAR(numArrayElement=num) then 
+      let arrayname1 = arraycref(sourceArrayCref, useFlatArrayNotation)
+      if useFlatArrayNotation then (
+        <<
+        <%HpcOmMemory.getSubscriptListOfArrayCref(sourceArrayCref, num) |> ai => '<%targetArrayName%><%subscriptsToCStr(ai,false)%> = <%arrayname1%><%subscriptsToCStr(ai,true)%>;';separator="\n"%>
+        >>
+      )
+      else (
+        'assign_array(<%targetArrayName%>,<%arrayname1%>);'
+      )
+end createAssignArray;
 
- template functionStateSets(list<StateSet> stateSets,SimCode simCode, Boolean useFlatArrayNotation)
+template functionStateSets(list<StateSet> stateSets,SimCode simCode, Boolean useFlatArrayNotation)
   "Generates functions in simulation file to initialize the stateset data."
 ::=
 match simCode
@@ -772,7 +786,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            let arrayname1 = arraycref(crA, useFlatArrayNotation)
            match nStates  case 1 then
              'case <%i1%>:
-              A.assign(<%arrayname1%>);
+               <%createAssignArray(crA, "A", simCode, useFlatArrayNotation)%>
                return true;
             '
             else ""
@@ -783,8 +797,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            let arrayname1 = arraycref(crA, useFlatArrayNotation)
            match nStates  case 1 then "" else
              'case <%i1%>:
-               A.assign(<%arrayname1%>);
-              return true;
+               <%createAssignArray(crA, "A", simCode, useFlatArrayNotation)%>
+               return true;
             '
 
          ) ;separator="\n")
@@ -794,7 +808,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            let arrayname1 = arraycref(crA, useFlatArrayNotation)
            match nStates  case 1 then
              'case <%i1%>:
-               <%arrayname1%>.assign(A);
+               <%createAssignArray(crA, "A", simCode, useFlatArrayNotation)%>
                break;
             '
             else ""
@@ -805,7 +819,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            let arrayname1 = arraycref(crA, useFlatArrayNotation)
            match nStates  case 1 then "" else
              'case <%i1%>:
-               <%arrayname1%>.assign(A);
+               <%createAssignArray(crA, "A", simCode, useFlatArrayNotation)%>
                break;
             '
 
@@ -3992,7 +4006,7 @@ template generateClassDeclarationCode(SimCode simCode, Boolean useFlatArrayNotat
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
 
-let frindeqs = generatefriendAlgloops(listAppend(allEquations,initialEquations),simCode)
+let friendclasses = generatefriendAlgloops(listAppend(allEquations,initialEquations),simCode)
 let algloopsolver = generateAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode )
 let memberfuncs = generateEquationMemberFuncDecls(allEquations,"evaluate")
 let conditionvariables =  conditionvariable(zeroCrossings,simCode)
@@ -4007,8 +4021,7 @@ match modelInfo
   class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent,  public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
   {
 
-
-  <%frindeqs%>
+  <%friendclasses%>
   public:
       <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor,boost::shared_ptr<ISimData>);
 
@@ -4033,18 +4046,18 @@ match modelInfo
      EventHandling _event_handling;
 
      <%MemberVariable(modelInfo, useFlatArrayNotation)%>
-    <%conditionvariables%>
+     <%conditionvariables%>
      Functions* _functions;
 
 
      boost::shared_ptr<IAlgLoopSolverFactory> _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
      <%algloopsolver%>
 
-    boost::shared_ptr<ISimData> _simData;
+     boost::shared_ptr<ISimData> _simData;
 
 
 
-    <%memberfuncs%>
+     <%memberfuncs%>
 
 
 

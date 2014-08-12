@@ -85,6 +85,14 @@ encapsulated package HpcOmMemory
       Integer scVarIdx; //see CacheMap.cacheVariables
     end CACHELINEENTRY;
   end CacheLineEntry;
+  
+  protected uniontype CacheMapMeta
+    record CACHEMAPMETA
+      array<Option<SimCode.SimVar>> allSCVarsMapping;
+      array<tuple<Integer, Integer>> simCodeVarTypes; //<type, numberOfBytesRequired>
+      array<tuple<Integer, Integer>> scVarCLMapping; //mapping for each scVar -> <CLIdx,varType>
+    end CACHEMAPMETA;
+  end CacheMapMeta;
 
   // -------------------------------------------
   // FUNCTIONS
@@ -218,23 +226,60 @@ encapsulated package HpcOmMemory
       case(_,_,_,_,_,_,_,_,HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels),_)
         equation
           simCodeVarTypes = arrayCreate(listLength(iStateVars) + listLength(iDerivativeVars) + listLength(iAlgVars) + listLength(iParamVars), (1,8));
-          (cacheMap,scVarCLMapping,numCL) = createCacheMapLevelOptimized(iAllSCVarsMapping,iStateVars,iDerivativeVars,iAlgVars,iParamVars,simCodeVarTypes,iScVarTaskMapping,iCacheLineSize,iAllComponents,tasksOfLevels,iNodeSimCodeVarMapping);
+          (cacheMap,scVarCLMapping,numCL) = createCacheMapLevelOptimized(iAllSCVarsMapping,simCodeVarTypes,iScVarTaskMapping,iCacheLineSize,iAllComponents,tasksOfLevels,iNodeSimCodeVarMapping);
         then (cacheMap,scVarCLMapping,numCL);
       else
         equation
           print("No optimized cache map for the selected scheduler avaiable. Using default cacheMap!\n");
-          (cacheMap,scVarCLMapping,numCL) = createCacheMapDefault(iAllSCVarsMapping,iStateVars,iDerivativeVars,iAlgVars,iCacheLineSize);
+          (cacheMap,scVarCLMapping,numCL) = createCacheMapDefault(iAllSCVarsMapping,iCacheLineSize);
         then (cacheMap,scVarCLMapping,numCL);
      end match;
   end createCacheMapOptimized;
+  
+  protected function appendParamsToCacheMap "author: marcusw
+    Append all parameters to new cachelines (dense) at the end of the cachemap."
+    input CacheMap iCacheMap;
+    input Integer iNumCL;
+    input list<SimCode.SimVar> iParamVars;
+    input CacheMapMeta iCacheMapMeta;
+    output CacheMap oCacheMap;
+    output CacheMapMeta oCacheMapMeta;
+    output Integer oNumCL;
+  algorithm
+    ((oCacheMap,oCacheMapMeta,oNumCL,_)) := List.fold(iParamVars, appendParamToCacheMap, (iCacheMap, iCacheMapMeta, iNumCL, {}));
+  end appendParamsToCacheMap;
+  
+  protected function appendParamToCacheMap "author: marcusw
+    Append all parameters to new cachelines at the end of the cachemap."
+    input SimCode.SimVar iParamVar;    
+    input tuple<CacheMap, CacheMapMeta, Integer, list<tuple<Integer, Integer>>> iCacheInfoTpl; //<CacheMap, CacheMapMeta, numCL, cacheLineCandidates
+    output tuple<CacheMap, CacheMapMeta, Integer, list<tuple<Integer, Integer>>> oCacheInfoTpl;
+  protected
+    Integer index, tmpNumNewCL;
+    CacheMap tmpCacheMap;
+    CacheMapMeta tmpCacheMapMeta;
+    list<tuple<Integer, Integer>> tmpCacheLineCandidates, detailedWrittenCacheLines;
+    list<Integer> tmpWrittenCLs;
+    Integer cacheLineSize;
+    list<CacheLineMap> cacheLinesFloat;
+  algorithm
+    oCacheInfoTpl := match(iParamVar, iCacheInfoTpl)
+      case(SimCode.SIMVAR(index=index),(tmpCacheMap, tmpCacheMapMeta, tmpNumNewCL, tmpCacheLineCandidates))
+        equation
+          ((tmpCacheMap as CACHEMAP(cacheLinesFloat=cacheLinesFloat,cacheLineSize=cacheLineSize),tmpCacheMapMeta,tmpNumNewCL,tmpCacheLineCandidates,tmpWrittenCLs,_)) = appendSCVarToCacheMap(index,(tmpCacheMap,tmpCacheMapMeta,0,{},{},1));
+          detailedWrittenCacheLines = createDetailedCacheMapInformations(tmpWrittenCLs,cacheLinesFloat,cacheLineSize);
+          tmpCacheLineCandidates = listAppend(tmpCacheLineCandidates, detailedWrittenCacheLines);
+        then ((tmpCacheMap,tmpCacheMapMeta,tmpNumNewCL,tmpCacheLineCandidates));
+      else 
+        equation
+          print("HpcOmMemory.appendParamToCacheMap failed!\n");
+      then iCacheInfoTpl;
+    end match;
+  end appendParamToCacheMap;
 
   protected function createCacheMapLevelOptimized "author: marcusw
     Create the optimized cache map for the level-scheduler."
     input array<Option<SimCode.SimVar>> iAllSCVarsMapping;
-    input list<SimCode.SimVar> iStateVars; //float
-    input list<SimCode.SimVar> iDerivativeVars; //float
-    input list<SimCode.SimVar> iAlgVars; //float
-    input list<SimCode.SimVar> iParamVars; //float
     input array<tuple<Integer,Integer>> iSimCodeVarTypes; //<type, numberOfBytesRequired>
     input array<Integer> iScVarTaskMapping;
     input Integer iCacheLineSize;
@@ -246,6 +291,7 @@ encapsulated package HpcOmMemory
     output Integer oNumCL;
   protected
     CacheMap cacheMap;
+    CacheMapMeta cacheMapMeta;
     Integer numCL;
     array<tuple<Integer,Integer>> scVarCLMapping;
     array<list<CacheLineMap>> threadCacheLines; //cache lines of the threads (arrayIdx)
@@ -253,24 +299,21 @@ encapsulated package HpcOmMemory
     cacheMap := CACHEMAP(iCacheLineSize,{},{});
     scVarCLMapping := arrayCreate(arrayLength(iAllSCVarsMapping),(-1,-1));
     numCL := 0;
+    cacheMapMeta := CACHEMAPMETA(iAllSCVarsMapping, iSimCodeVarTypes, scVarCLMapping);
     //Iterate over levels
-    ((_,cacheMap,numCL)) := List.fold4(iTasksOfLevels, createCacheMapLevelOptimized0, iAllSCVarsMapping, iNodeSimCodeVarMapping, iSimCodeVarTypes, scVarCLMapping, ({},cacheMap,numCL));
-    //(oCacheMap,oNumCL,_) := appendParamsToCacheMap(cacheMap, numCL, iParamVars,0);
+    ((_,cacheMap,cacheMapMeta,numCL)) := List.fold1(iTasksOfLevels, createCacheMapLevelOptimized0, iNodeSimCodeVarMapping, ({},cacheMap,cacheMapMeta,numCL));
     oCacheMap := cacheMap;
-    oScVarCLMapping := scVarCLMapping;
+    CACHEMAPMETA(scVarCLMapping=oScVarCLMapping) := cacheMapMeta;
     oNumCL := numCL;
   end createCacheMapLevelOptimized;
 
-  protected function createCacheMapLevelOptimized0 "author: marcuswcase(_,_,_,_,_,_)
+  protected function createCacheMapLevelOptimized0 "author: marcusw
     Appends the variables which are written by the task list (iLevelTasks) to the info-structure. Only cachelines are used that
     are not written by the previous layer."
     input HpcOmSimCode.TaskList iLevelTasks;
-    input array<Option<SimCode.SimVar>> iAllSCVarsMapping;
     input array<list<Integer>> iNodeSimCodeVarMapping;
-    input array<tuple<Integer,Integer>> iSimCodeVarTypes; //<type, numberOfBytesRequired>
-    input array<tuple<Integer,Integer>> iScVarCLMapping; //will be updated: mapping scVar (arrayIdx) -> <clIdx,varType>
-    input tuple<list<Integer>,CacheMap,Integer> iInfo; //<cacheLinesUsedByPreviousLayer,CacheMap,numCL>
-    output tuple<list<Integer>,CacheMap,Integer> oInfo;
+    input tuple<list<Integer>,CacheMap,CacheMapMeta,Integer> iInfo; //<cacheLinesUsedByPreviousLayer,CacheMap,numCL>
+    output tuple<list<Integer>,CacheMap,CacheMapMeta,Integer> oInfo;
   protected
     Integer createdCL, numCL, cacheLineSize; //number of CL created for this level
     list<Integer> allCL;
@@ -278,9 +321,10 @@ encapsulated package HpcOmMemory
     list<Integer> cacheLinesPrevLevel; //all cache lines written in previous level
     list<tuple<Integer,Integer>> detailedCacheLineInfo;
     CacheMap cacheMap;
+    CacheMapMeta cacheMapMeta;
     list<CacheLineMap> cacheLinesFloat;
   algorithm
-    (cacheLinesPrevLevel, cacheMap, numCL) := iInfo;
+    (cacheLinesPrevLevel, cacheMap, cacheMapMeta, numCL) := iInfo;
     allCL := List.intRange(numCL);
     CACHEMAP(cacheLinesFloat=cacheLinesFloat,cacheLineSize=cacheLineSize) := cacheMap;
     //print("createCacheMapLevelOptimized0: Handling new level. CL used by previous layer: " +& stringDelimitList(List.map(cacheLinesPrevLevel,intString), ",") +& " Number of CL: " +& intString(numCL) +& "\n");
@@ -289,7 +333,7 @@ encapsulated package HpcOmMemory
     detailedCacheLineInfo := createDetailedCacheMapInformations(availableCLold, cacheLinesFloat, cacheLineSize);
     detailedCacheLineInfo := listReverse(detailedCacheLineInfo);
     //print("createCacheMapLevelOptimized0: clCandidates: " +& stringDelimitList(List.map(List.map(detailedCacheLineInfo,Util.tuple21),intString), ",") +& "\n");
-    ((cacheMap,createdCL,detailedCacheLineInfo)) := List.fold4(getTaskListTasks(iLevelTasks), createCacheMapLevelOptimizedForTask, iAllSCVarsMapping, iNodeSimCodeVarMapping, iSimCodeVarTypes, iScVarCLMapping, (cacheMap,0,detailedCacheLineInfo));
+    ((cacheMap,cacheMapMeta,createdCL,detailedCacheLineInfo)) := List.fold1(getTaskListTasks(iLevelTasks), createCacheMapLevelOptimizedForTask, iNodeSimCodeVarMapping, (cacheMap,cacheMapMeta, 0,detailedCacheLineInfo));
     availableCL := List.map(detailedCacheLineInfo, Util.tuple21);
     //append the used cachelines to the writtenCL-list
     //print("createCacheMapLevelOptimized0: New cacheLines created: " +& intString(createdCL) +& "\n");
@@ -300,26 +344,23 @@ encapsulated package HpcOmMemory
     //print("======================================\n");
     //printCacheMap(cacheMap);
     //print("======================================\n");
-    oInfo := (writtenCL,cacheMap,numCL+createdCL);
+    oInfo := (writtenCL,cacheMap,cacheMapMeta,numCL+createdCL);
   end createCacheMapLevelOptimized0;
 
   protected function createCacheMapLevelOptimizedForTask "author: marcusw
     Append the variables that are solved by the given task to the cachelines."
     input HpcOmSimCode.Task iTask;
-    input array<Option<SimCode.SimVar>> iAllSCVarsMapping;
     input array<list<Integer>> iNodeSimCodeVarMapping;
-    input array<tuple<Integer,Integer>> iSimCodeVarTypes; //<type, numberOfBytesRequired>
-    input array<tuple<Integer,Integer>> iScVarCLMapping; //will be updated: mapping scVar (arrayIdx) -> <clIdx,varType>
-    input tuple<CacheMap,Integer,list<tuple<Integer,Integer>>> iInfo; //<CacheMap,numNewCL,clCandidates>
-    output tuple<CacheMap,Integer,list<tuple<Integer,Integer>>> oInfo;
+    input tuple<CacheMap,CacheMapMeta,Integer,list<tuple<Integer,Integer>>> iInfo; //<CacheMap,CacheMapMeta,numNewCL,clCandidates>
+    output tuple<CacheMap,CacheMapMeta,Integer,list<tuple<Integer,Integer>>> oInfo;
   protected
     list<Integer> nodeIdc;
-    tuple<CacheMap,Integer,list<tuple<Integer,Integer>>> tmpInfo;
+    tuple<CacheMap,CacheMapMeta,Integer,list<tuple<Integer,Integer>>> tmpInfo;
   algorithm
-    oInfo := match(iTask, iAllSCVarsMapping,iNodeSimCodeVarMapping, iSimCodeVarTypes, iScVarCLMapping, iInfo)
-      case(HpcOmSimCode.CALCTASK_LEVEL(nodeIdc=nodeIdc),_,_,_,_,_)
+    oInfo := match(iTask ,iNodeSimCodeVarMapping, iInfo)
+      case(HpcOmSimCode.CALCTASK_LEVEL(nodeIdc=nodeIdc),_,_)
         equation
-          tmpInfo = List.fold4(nodeIdc, appendNodeVarsToCacheMap, iAllSCVarsMapping, iNodeSimCodeVarMapping, iSimCodeVarTypes, iScVarCLMapping, iInfo);
+          tmpInfo = List.fold1(nodeIdc, appendNodeVarsToCacheMap, iNodeSimCodeVarMapping, iInfo);
         then tmpInfo;
       else
         equation
@@ -331,10 +372,6 @@ encapsulated package HpcOmMemory
   protected function createCacheMapDefault "author: marcusw
     Create a default cacheMap without optimization."
     input array<Option<SimCode.SimVar>> iAllSCVars;
-    input list<SimCode.SimVar> iStateVars; //float
-    input list<SimCode.SimVar> iDerivativeVars; //float
-    input list<SimCode.SimVar> iAlgVars; //float
-    //input list<SimCode.SimVar> iParamVars; //float
     input Integer iCacheLineSize;
     output CacheMap oCacheMap;
     output array<tuple<Integer,Integer>> oScVarCLMapping; //mapping for each scVar -> CLIdx
@@ -352,26 +389,24 @@ encapsulated package HpcOmMemory
   protected function appendNodeVarsToCacheMap "author: marcusw
     Append the variables that are solved by the given node to the cachelines. The used CL are removed from the candidate list."
     input Integer iNodeIdx;
-    input array<Option<SimCode.SimVar>> iAllSCVarsMapping;
     input array<list<Integer>> iNodeSimCodeVarMapping;
-    input array<tuple<Integer,Integer>> iSimCodeVarTypes; //<type, numberOfBytesRequired>
-    input array<tuple<Integer,Integer>> iScVarCLMapping; //will be updated: mapping scVar (arrayIdx) -> <clIdx,varType>
-    input tuple<CacheMap, Integer, list<tuple<Integer,Integer>>> iInfo; //<CacheMap,numNewCL, clCandidates <ClIdx,freeBytes>>
-    output tuple<CacheMap, Integer, list<tuple<Integer,Integer>>> oInfo;
+    input tuple<CacheMap, CacheMapMeta, Integer, list<tuple<Integer,Integer>>> iInfo; //<CacheMap,numNewCL, clCandidates <ClIdx,freeBytes>>
+    output tuple<CacheMap, CacheMapMeta, Integer, list<tuple<Integer,Integer>>> oInfo;
   protected
     list<Integer> simCodeVars, writtenCL;
     CacheMap iCacheMap;
+    CacheMapMeta iCacheMapMeta;
     Integer iNumNewCL;
     String varsString;
     list<tuple<Integer,Integer>> clCandidates;
   algorithm
     simCodeVars := arrayGet(iNodeSimCodeVarMapping, iNodeIdx);
-    (iCacheMap,iNumNewCL,clCandidates) := iInfo;
+    ((iCacheMap,iCacheMapMeta,iNumNewCL,clCandidates)) := iInfo;
     varsString := stringDelimitList(List.map(simCodeVars, intString), ",");
     //print("appendNodeVarsToCacheMap: Handling node " +& intString(iNodeIdx) +& " clCandidates: " +& intString(listLength(clCandidates)) +& " simCodeVars: " +& varsString +& "\n");
-    ((iCacheMap,iNumNewCL,clCandidates,writtenCL,_)) := List.fold3(simCodeVars,appendSCVarToCacheMap,iAllSCVarsMapping,iSimCodeVarTypes,iScVarCLMapping,(iCacheMap,iNumNewCL,clCandidates,{},1));
+    ((iCacheMap, iCacheMapMeta, iNumNewCL,clCandidates,writtenCL,_)) := List.fold(simCodeVars, appendSCVarToCacheMap, (iCacheMap, iCacheMapMeta, iNumNewCL,clCandidates,{},1));
     clCandidates := List.removeOnTrue(writtenCL, appendNodeVarsToCacheMap0, clCandidates);
-    oInfo := (iCacheMap,iNumNewCL,clCandidates);
+    oInfo := (iCacheMap,iCacheMapMeta,iNumNewCL,clCandidates);
   end appendNodeVarsToCacheMap;
 
   protected function appendNodeVarsToCacheMap0 "author: marcusw
@@ -400,14 +435,14 @@ encapsulated package HpcOmMemory
   end appendNodeVarsToCacheMap0;
 
   protected function appendSCVarToCacheMap "author: marcusw
-    Mark the cachelines with 'false' that are already full or part of the iWrittenCLs-list."
+    Add the given sc-var to the cacheMap and update the information of cacheMapMeta. If the currentCLCandidate-index is not in range [1,len(cacheLineCandidates)], a new cacheline is added."
     input Integer iSCVarIdx;
-    input array<Option<SimCode.SimVar>> iAllSCVarsMapping;
-    input array<tuple<Integer,Integer>> iSimCodeVarTypes; //<type, numberOfBytesRequired>
-    input array<tuple<Integer,Integer>> iScVarCLMapping; //will be updated: mapping scVar (arrayIdx) -> <clIdx,varType>
-    input tuple<CacheMap, Integer, list<tuple<Integer,Integer>>, list<Integer>, Integer> iInfo; //<CacheMap, numNewCL, cacheLineCandidates <ClIdx,freeBytes>, writtenCL, currentCLCandidate>
-    output tuple<CacheMap, Integer, list<tuple<Integer,Integer>>, list<Integer>, Integer> oInfo;
+    input tuple<CacheMap, CacheMapMeta, Integer, list<tuple<Integer,Integer>>, list<Integer>, Integer> iInfo; //<CacheMap, CacheMapMeta, numNewCL, cacheLineCandidates <ClIdx,freeBytes>, writtenCL, currentCLCandidate>
+    output tuple<CacheMap, CacheMapMeta, Integer, list<tuple<Integer,Integer>>, list<Integer>, Integer> oInfo;
   protected
+    array<Option<SimCode.SimVar>> iAllSCVarsMapping;
+    array<tuple<Integer,Integer>> iSimCodeVarTypes; //<type, numberOfBytesRequired>
+    array<tuple<Integer,Integer>> iScVarCLMapping; //will be updated: mapping scVar (arrayIdx) -> <clIdx,varType>
     Integer currentCLCandidateIdx, currentCLCandidateCLIdx, clIdx, currentCLCandidateFreeBytes, cacheLineSize, numNewCL, varType, numBytesRequired, entryStart;
     tuple<Integer,Integer> currentCLCandidate;
     list<tuple<Integer,Integer>> cacheLineCandidates;
@@ -418,12 +453,13 @@ encapsulated package HpcOmMemory
     SimCode.SimVar scVar;
     Integer numCacheVars, freeSpace;
     CacheMap cacheMap;
+    CacheMapMeta cacheMapMeta;
     list<Integer> writtenCL;
     String varText;
-    tuple<CacheMap, Integer, list<tuple<Integer,Integer>>, list<Integer>, Integer> tmpInfo;
+    tuple<CacheMap, CacheMapMeta, Integer, list<tuple<Integer,Integer>>, list<Integer>, Integer> tmpInfo;
   algorithm
-    oInfo := matchcontinue(iSCVarIdx, iAllSCVarsMapping, iSimCodeVarTypes, iScVarCLMapping, iInfo)
-      case(_,_,_,_,(cacheMap as CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat),numNewCL,cacheLineCandidates,writtenCL,currentCLCandidateIdx))
+    oInfo := matchcontinue(iSCVarIdx, iInfo)
+      case(_,(cacheMap as CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat), cacheMapMeta as CACHEMAPMETA(iAllSCVarsMapping, iSimCodeVarTypes, iScVarCLMapping), numNewCL, cacheLineCandidates, writtenCL, currentCLCandidateIdx))
         equation //case 1: current CL-candidate has enough space to store variable
           true = intGe(listLength(cacheLineCandidates), currentCLCandidateIdx);
           currentCLCandidate = listGet(cacheLineCandidates, currentCLCandidateIdx);
@@ -443,7 +479,7 @@ encapsulated package HpcOmMemory
           cacheLine = CACHELINEMAP(clIdx,CLentries);
           cacheLinesFloat = List.set(cacheLinesFloat, listLength(cacheLinesFloat) - currentCLCandidateCLIdx + 1, cacheLine);
           //update scVarCL-Mapping
-          _ = arrayUpdate(iScVarCLMapping,iSCVarIdx,(clIdx,varType));
+          iScVarCLMapping = arrayUpdate(iScVarCLMapping,iSCVarIdx,(clIdx,varType));
           //append variable
           SOME(scVar) = arrayGet(iAllSCVarsMapping,iSCVarIdx);
 
@@ -456,16 +492,17 @@ encapsulated package HpcOmMemory
           currentCLCandidate = (currentCLCandidateCLIdx,currentCLCandidateFreeBytes-numBytesRequired);
           cacheLineCandidates = List.set(cacheLineCandidates, currentCLCandidateIdx, currentCLCandidate);
           cacheMap = CACHEMAP(cacheLineSize,cacheVariables,cacheLinesFloat);
+          cacheMapMeta = CACHEMAPMETA(iAllSCVarsMapping, iSimCodeVarTypes, iScVarCLMapping);
           //printCacheMap(cacheMap);
           //print("  appendSCVarToCacheMap: Done\n");
-        then ((cacheMap,numNewCL,cacheLineCandidates,writtenCL,currentCLCandidateIdx));
-      case(_,_,_,_,(cacheMap as CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat),numNewCL,cacheLineCandidates,writtenCL,currentCLCandidateIdx))
+        then ((cacheMap, cacheMapMeta, numNewCL, cacheLineCandidates, writtenCL, currentCLCandidateIdx));
+      case(_,(cacheMap as CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat), cacheMapMeta as CACHEMAPMETA(iAllSCVarsMapping, iSimCodeVarTypes, iScVarCLMapping), numNewCL, cacheLineCandidates, writtenCL, currentCLCandidateIdx))
         equation //case 2: current CL-candidate has not enough space to store variable
           true = intGe(listLength(cacheLineCandidates), currentCLCandidateIdx);
           ((varType,numBytesRequired)) = arrayGet(iSimCodeVarTypes,iSCVarIdx);
-          tmpInfo = appendSCVarToCacheMap(iSCVarIdx, iAllSCVarsMapping, iSimCodeVarTypes, iScVarCLMapping, (cacheMap,numNewCL,cacheLineCandidates,writtenCL,currentCLCandidateIdx+1));
+          tmpInfo = appendSCVarToCacheMap(iSCVarIdx, (cacheMap, cacheMapMeta, numNewCL,cacheLineCandidates,writtenCL,currentCLCandidateIdx+1));
         then tmpInfo;
-      case(_,_,_,_,(cacheMap as CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat),numNewCL,cacheLineCandidates,writtenCL,currentCLCandidateIdx))
+      case(_,(cacheMap as CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat), CACHEMAPMETA(iAllSCVarsMapping, iSimCodeVarTypes, iScVarCLMapping), numNewCL, cacheLineCandidates, writtenCL, currentCLCandidateIdx))
         equation //case 3: no CL-candidates available
           //print("--appendSCVarToCacheMap: Handling variable " +& intString(iSCVarIdx) +& "\n");
 
@@ -477,7 +514,7 @@ encapsulated package HpcOmMemory
           cacheLine = CACHELINEMAP(clIdx,CLentries);
           cacheLinesFloat = cacheLine::cacheLinesFloat;
           //update scVarCL-Mapping
-          _ = arrayUpdate(iScVarCLMapping,iSCVarIdx,(clIdx,varType));
+          iScVarCLMapping = arrayUpdate(iScVarCLMapping,iSCVarIdx,(clIdx,varType));
           //append variable
           SOME(scVar) = arrayGet(iAllSCVarsMapping,iSCVarIdx);
           cacheVariables = scVar::cacheVariables;
@@ -486,8 +523,9 @@ encapsulated package HpcOmMemory
           //print("  -- writing new CL (idx: " +& intString(clIdx) +& "; freeSpace: " +& intString(freeSpace) +& ")\n");
           cacheLineCandidates = listAppend(cacheLineCandidates,{(clIdx,freeSpace)});
           cacheMap = CACHEMAP(cacheLineSize,cacheVariables,cacheLinesFloat);
+          cacheMapMeta = CACHEMAPMETA(iAllSCVarsMapping, iSimCodeVarTypes, iScVarCLMapping);
           //printCacheMap(cacheMap);
-        then ((cacheMap,numNewCL+1,cacheLineCandidates,writtenCL,currentCLCandidateIdx));
+        then ((cacheMap, cacheMapMeta, numNewCL+1, cacheLineCandidates, writtenCL, currentCLCandidateIdx));
       else
         equation
           print("appendSCVarToCacheMap failed! Variable skipped.\n");
@@ -1441,6 +1479,17 @@ encapsulated package HpcOmMemory
     end matchcontinue;
   end getPositionMappingByArrayName;
 
+  public function getSubscriptListOfArrayCref
+    input DAE.ComponentRef iCref;
+    input list<String> iNumArrayElems;
+    output list<list<DAE.Subscript>> oSubscriptList;
+  protected
+    list<DAE.ComponentRef> tmpCrefs;
+  algorithm
+    tmpCrefs := expandCref(iCref, iNumArrayElems);
+    oSubscriptList := List.map(tmpCrefs, ComponentReference.crefLastSubs);
+  end getSubscriptListOfArrayCref;
+
   public function expandCref
     input DAE.ComponentRef iCref;
     input list<String> iNumArrayElems;
@@ -1448,26 +1497,55 @@ encapsulated package HpcOmMemory
   protected
     Integer elems, dims;
     list<Integer> dimElemCount;
+    DAE.ComponentRef cref;
   algorithm
-    dimElemCount := List.map(iNumArrayElems,stringInt);
-    print("expandCref: dimElemCount " +& stringDelimitList(List.map(dimElemCount, intString), ",") +& "\n");
+    cref := removeSubscripts(iCref);
+    print("expandCref: " +& ComponentReference.printComponentRefStr(cref) +& "\n");
+    dims := getCrefDims(iCref);
+    dimElemCount := getDimElemCount(listReverse(iNumArrayElems),dims);
+    //print("expandCref: numArrayElems " +& intString(getNumArrayElems(iNumArrayElems, getCrefDims(iCref))) +& "\n");
     elems := List.reduce(dimElemCount, intMul);
-    dims := listLength(iNumArrayElems);
-    print("expandCref: " +& ComponentReference.printComponentRefStr(iCref) +& " dims: " +& intString(dims) +& "[" +& intString(getCrefDims(iCref)) +& "] elems: " +& intString(elems) +& "\n");
-    oCrefs := expandCref1(iCref, elems, dimElemCount);
+    print("expandCref: " +& ComponentReference.printComponentRefStr(iCref) +& " dims: " +& intString(dims) +& " elems: " +& intString(elems) +& "\n");
+    //dims := listLength(iNumArrayElems);
+    //print("expandCref: " +& ComponentReference.printComponentRefStr(iCref) +& " dims: " +& intString(dims) +& "[" +& intString(getCrefDims(iCref)) +& "] elems: " +& intString(elems) +& "\n");
+    oCrefs := expandCref1(cref, elems, dimElemCount);
   end expandCref;
 
-  protected function getNumArrayElems
+  protected function removeSubscripts
+    input DAE.ComponentRef iCref;
+    output DAE.ComponentRef oCref;
+  protected
+    DAE.Ident ident;
+    DAE.Type identType "type of the identifier, without considering the subscripts";
+    list<DAE.Subscript> subscriptLst;
+    DAE.ComponentRef componentRef;
+    Integer index;
+  algorithm
+    oCref := match(iCref)
+      case(DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef))
+        then DAE.CREF_QUAL(ident,identType,subscriptLst,removeSubscripts(componentRef));
+      case(DAE.CREF_IDENT(ident,identType,subscriptLst))
+        then DAE.CREF_IDENT(ident,identType,{});
+      case(DAE.CREF_ITER(ident,index,identType,subscriptLst))
+        then DAE.CREF_ITER(ident,index,identType,{});
+      else then iCref;
+    end match;
+  end removeSubscripts;
+  
+  protected function getDimElemCount
     input list<String> iNumArrayElems;
     input Integer iDims;
-    output Integer oNumArrayElems;
+    output list<Integer> oNumArrayElems;
   protected
-    list<Integer> dimList;
+    list<Integer> dimList, intNumArrayElems;
+    Integer dims;
   algorithm
-    dimList := List.intRange(iDims);
-    //oNumArrayElems := List.flatten(List.map(dimList, List.getIndexFirst, iNumArrayElems), intAdd);
-    oNumArrayElems := 0;
-  end getNumArrayElems;
+    dims := Util.if_(intLe(iDims,0), listLength(iNumArrayElems), iDims);
+    dimList := List.intRange(dims);
+    intNumArrayElems := List.map(iNumArrayElems,stringInt);
+    print("getDimElemCount: dims=" +& intString(dims) +& " elems=" +& intString(listLength(iNumArrayElems)) +& "\n");
+    oNumArrayElems := List.map1(dimList, List.getIndexFirst, intNumArrayElems);
+  end getDimElemCount;
 
   protected function getCrefDims
     input DAE.ComponentRef iCref;
@@ -1510,8 +1588,10 @@ encapsulated package HpcOmMemory
         equation
           //print("expandCref: " +& ComponentReference.printComponentRefStr(iCref) +& " elems: " +& intString(iElems) +& " dims: " +& intString(listLength(iDimElemCount)) +& "\n");
           idxList = List.intRange(List.reduce(iDimElemCount, intMul));
+          print("expandCref1 idxList-count: " +& intString(listLength(idxList)) +& "\n");
           //ComponentReference.printComponentRefList(List.map2(idxList, createArrayIndexCref, iDimElemCount, iCref));
           tmpCrefs = List.map2(idxList, createArrayIndexCref, iDimElemCount, iCref);
+          ComponentReference.printComponentRefList(tmpCrefs);
         then tmpCrefs;
     end matchcontinue;
   end expandCref1;
@@ -1541,30 +1621,32 @@ encapsulated package HpcOmMemory
       case(_,_,(DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef),1)) //the first dimension represents the last c-array-index
         equation
           true = intLe(1, listLength(iDimElemCount));
-          //print("createArrayIndexCref_impl case1 " +& ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) +& " currentDim " +& intString(1) +& "\n");
+          print("createArrayIndexCref_impl case1 " +& ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) +& " currentDim " +& intString(1) +& "\n");
           ((componentRef,_)) = createArrayIndexCref_impl(iIdx, iDimElemCount, (componentRef,1));
         then ((DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef),2));
 
       case(_,_,(DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef),currentDim))
         equation
           true = intLe(currentDim, listLength(iDimElemCount));
-          //print("createArrayIndexCref_impl case2 " +& ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) +& " currentDim " +& intString(currentDim) +& "\n");
+          print("createArrayIndexCref_impl case2 " +& ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) +& " currentDim " +& intString(currentDim) +& "\n");
           ((componentRef,_)) = createArrayIndexCref_impl(iIdx, iDimElemCount, (componentRef,currentDim));
         then ((DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef),currentDim+1));
 
       case(_,_,(DAE.CREF_IDENT(ident,identType,subscriptLst),1))
         equation
           true = intLe(1, listLength(iDimElemCount));
-          //print("createArrayIndexCref_impl case3 | len(subscriptList)= " +& intString(listLength(subscriptLst)) +& " " +& ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) +& " currentDim " +& intString(1) +& "\n");
-          idxValue = intMod(iIdx-1,List.last(iDimElemCount)) + 1;
+          print("createArrayIndexCref_impl case3 | len(subscriptList)= " +& intString(listLength(subscriptLst)) +& " " +& ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) +& " currentDim " +& intString(1) +& "\n");
+          idxValue = intMod(iIdx-1,List.first(iDimElemCount)) + 1;
           subscriptLst = DAE.INDEX(DAE.ICONST(idxValue))::subscriptLst;
         then createArrayIndexCref_impl(iIdx, iDimElemCount, (DAE.CREF_IDENT(ident,identType,subscriptLst),2));
 
        case(_,_,(DAE.CREF_IDENT(ident,identType,subscriptLst),currentDim))
         equation
           true = intLe(currentDim, listLength(iDimElemCount));
-          //print("createArrayIndexCref_impl case4 | len(subscriptList)= " +& intString(listLength(subscriptLst)) +& " " +& ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) +& " currentDim " +& intString(currentDim) +& "\n");
-          dimElemsPre = List.reduce(List.sublist(iDimElemCount, listLength(iDimElemCount) - currentDim + 2, currentDim - 1), intMul);
+          //dimElemsPre = List.reduce(List.sublist(iDimElemCount, listLength(iDimElemCount) - currentDim + 2, currentDim - 1), intMul);
+          print("createArrayIndexCref_impl case4: listLen=" +& intString(listLength(iDimElemCount)) +& " currentDim= " +& intString(currentDim) +& "\n");
+          dimElemsPre = List.reduce(List.sublist(iDimElemCount, 0, listLength(iDimElemCount) - currentDim + 1), intMul);
+          print("createArrayIndexCref_impl case4 | len(subscriptList)= " +& intString(listLength(subscriptLst)) +& " " +& ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) +& " currentDim " +& intString(currentDim) +& " dimElemsPre: " +& intString(dimElemsPre) +& "\n");
           dimElems = listGet(iDimElemCount, currentDim);
           idxValue = intMod(intDiv(iIdx - 1, dimElemsPre),dimElems) + 1;
           subscriptLst = DAE.INDEX(DAE.ICONST(idxValue))::subscriptLst;
@@ -1598,20 +1680,6 @@ encapsulated package HpcOmMemory
   // -------------------------------------------
   // UNUSED
   // -------------------------------------------
-
-  protected function appendParamsToCacheMap
-    input CacheMap iCacheMap;
-    input Integer iNumCL;
-    input list<SimCode.SimVar> iParamVars; //float
-    input Integer iNumBytesUsedLastCL;
-    output CacheMap oCacheMap;
-    output Integer oNumCL;
-    output Integer oNumBytesUsedLastCL;
-  protected
-
-  algorithm
-    ((oCacheMap,oNumCL,oNumBytesUsedLastCL)) := List.fold(iParamVars, appendFloatVarToCacheMap, (iCacheMap,iNumCL,iNumBytesUsedLastCL));
-  end appendParamsToCacheMap;
 
   protected function appendFloatVarToCacheMap
     input SimCode.SimVar iFloatVar;

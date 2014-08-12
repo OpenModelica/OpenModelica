@@ -96,77 +96,80 @@ template generateClassDeclarationCode(SimCode simCode, Boolean useFlatArrayNotat
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
-  let addHpcomFunctionHeaders = getAddHpcomFunctionHeaders(hpcOmSchedule)
-  let addHpcomVarHeaders = getAddHpcomVarHeaders(hpcOmSchedule)
-  let addHpcomArrayHeaders = getAddHpcomVarArrays(hpcOmMemory)
-  <<
-  class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent,  public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
-  {
-
-   <%generatefriendAlgloops(listAppend(allEquations,initialEquations),simCode)%>
-
-  public:
-      <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor,boost::shared_ptr<ISimData>);
-
-      virtual ~<%lastIdentOfPath(modelInfo.name)%>();
-
-       <%generateMethodDeclarationCode(simCode)%>
-     virtual  bool getCondition(unsigned int index);
-     virtual void initPreVars(unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&);
-
-  protected:
-
-    //Methods:
-
-    <%addHpcomFunctionHeaders%>
-
-     bool isConsistent();
-    //Called to handle all  events occured at same time
-    bool handleSystemEvents( bool* events);
-     //Saves all variables before an event is handled, is needed for the pre, edge and change operator
-    void saveAll();
-    void getJacobian(SparseMatrix& matrix);
-
-
-     //Variables:
-     #ifdef __GNUC__
-        #define VARARRAY_ALIGN_PRE
-        #define VARARRAY_ALIGN_POST __attribute__((aligned(0x40)))
-     #else
-        #define VARARRAY_ALIGN_PRE __declspec(align(64))
-        #define VARARRAY_ALIGN_POST
-     #endif
-
-     <%addHpcomArrayHeaders%>
-     <%addHpcomVarHeaders%>
-
-     EventHandling _event_handling;
-     /* <%CodegenCpp.MemberVariable(modelInfo,useFlatArrayNotation)%> */
-
-     <%MemberVariable(modelInfo, hpcOmMemory,useFlatArrayNotation,false)%>
-     <%conditionvariable(zeroCrossings,simCode)%>
-
-     Functions* _functions;
-
-
-     boost::shared_ptr<IAlgLoopSolverFactory>
-        _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
-     <%generateAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode)%>
-
-    boost::shared_ptr<ISimData> _simData;
-
-    <%generateEquationMemberFuncDecls(allEquations,"evaluate")%>
-
-
-    /*! Equations Array. pointers to all the equation functions listed above stored in this
-      array. It is used to randomly access and evaluate a single equation by index.
-    */
-    typedef void (<%lastIdentOfPath(modelInfo.name)%>::*EquFuncPtr)();
-    boost::array< EquFuncPtr, <%listLength(allEquations)%> > equations_array;
-
-    void initialize_equations_array();
-   };
-  >>
+    let addHpcomFunctionHeaders = getAddHpcomFunctionHeaders(hpcOmSchedule)
+    let addHpcomVarHeaders = getAddHpcomVarHeaders(hpcOmSchedule)
+    let addHpcomArrayHeaders = getAddHpcomVarArrays(hpcOmMemory)
+  
+    let friendclasses = generatefriendAlgloops(listAppend(allEquations,initialEquations),simCode)
+    let algloopsolver = generateAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode )
+    let memberfuncs = generateEquationMemberFuncDecls(allEquations,"evaluate")
+    let conditionvariables =  conditionvariable(zeroCrossings,simCode)
+  
+    match modelInfo
+      case MODELINFO(vars=SIMVARS(__)) then
+          let getrealvars =(List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), 100) |> ls hasindex idx => 'void getReal_<%idx%>(double* z);
+                                                                                                                                                     void setReal_<%idx%>(const double* z);'
+                                                                                                                                                     ;separator="\n")
+          <<
+          class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent,  public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
+          {
+        
+           <%friendclasses%>
+        
+          public:
+              <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor,boost::shared_ptr<ISimData>);
+        
+              virtual ~<%lastIdentOfPath(modelInfo.name)%>();
+        
+               <%generateMethodDeclarationCode(simCode)%>
+             virtual  bool getCondition(unsigned int index);
+             virtual void initPreVars(unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&);
+        
+          protected:
+            //Methods:
+            <%getrealvars%>
+        
+            <%addHpcomFunctionHeaders%>
+        
+             bool isConsistent();
+            //Called to handle all  events occured at same time
+            bool handleSystemEvents( bool* events);
+             //Saves all variables before an event is handled, is needed for the pre, edge and change operator
+            void saveAll();
+            void getJacobian(SparseMatrix& matrix);
+        
+        
+             //Variables:
+             #ifdef __GNUC__
+                #define VARARRAY_ALIGN_PRE
+                #define VARARRAY_ALIGN_POST __attribute__((aligned(0x40)))
+             #else
+                #define VARARRAY_ALIGN_PRE __declspec(align(64))
+                #define VARARRAY_ALIGN_POST
+             #endif
+        
+             <%addHpcomArrayHeaders%>
+             <%addHpcomVarHeaders%>
+        
+             EventHandling _event_handling;
+             /* <%CodegenCpp.MemberVariable(modelInfo,useFlatArrayNotation)%> */
+        
+             <%MemberVariable(modelInfo, hpcOmMemory,useFlatArrayNotation,false)%>
+             <%conditionvariables%>
+        
+             Functions* _functions;
+        
+        
+             boost::shared_ptr<IAlgLoopSolverFactory> _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
+             <%algloopsolver%>
+        
+             boost::shared_ptr<ISimData> _simData;
+        
+        
+        
+             <%memberfuncs%>
+           };
+          >>
 end generateClassDeclarationCode;
 
 template getAddHpcomStructHeaders(Option<Schedule> hpcOmScheduleOpt)
@@ -452,7 +455,7 @@ match simVar
             case SOME(hpcOmMemory) then
               let varDeclarations = HpcOmMemory.expandCref(arrayCrefLocal,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
               <<
-              // case 3 MemberVariableDefine <%num%> * <%dims%> [<%listLength(HpcOmMemory.expandCref(arrayCrefLocal,num))%>]
+              // case 3 MemberVariableDefine dims:<%dims%> nums:<%num%>
               <%varDeclarations%>
               >>
             else
@@ -479,7 +482,7 @@ match simVar
         match(hpcOmMemoryOpt)
             case SOME(hpcOmMemory) then
               <<
-              <%if createConstructorDeclaration then '' else MemberVariableDefine3(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,varName), simVar, useFlatArrayNotation, createConstructorDeclaration)%>
+              <%MemberVariableDefine3(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,varName), simVar, useFlatArrayNotation, createConstructorDeclaration)%>
               >>
             else
               <<
@@ -508,7 +511,7 @@ match simVar
             case SOME(hpcOmMemory) then
               let varDeclarations = HpcOmMemory.expandCref(name,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
               <<
-              // case 3 MemberVariableDefine2 dims:<%dims%>
+              // case 3 MemberVariableDefine2 dims:<%dims%> nums:<%num%>
               <%varDeclarations%>
               >>
             else
@@ -536,14 +539,14 @@ template MemberVariableDefine3(Option<tuple<Integer,Integer>> optVarArrayAssignm
                 case SIMVAR(__) then
                     <<
                     <%if createConstructorDeclaration then ',<%cref(name, useFlatArrayNotation)%>(varArray<%arrayIdx%>[<%varIdx%>])'
-                      else '<%variableType(type_)%>& <%cref(name, useFlatArrayNotation)%>;// = varArray<%arrayIdx%>[<%varIdx%>]' %>
+                      else '<%variableType(type_)%>& <%cref(name, useFlatArrayNotation)%>;// = varArray<%arrayIdx%>[<%varIdx%>] - MemberVariableDefine3' %>
                     >>
             end match
-    else
+        else
             match simVar
                 case SIMVAR(__) then
                 <<
-                <%if createConstructorDeclaration then '' else '<%variableType(type_)%> <%cref(name, useFlatArrayNotation)%>; //not optimized' %>
+                <%if createConstructorDeclaration then '/* no varIdx found for variable <%cref(name,useFlatArrayNotation)%> */' else '<%variableType(type_)%> <%cref(name, useFlatArrayNotation)%>; //not optimized' %>
                 >>
             end match
   end match
@@ -555,11 +558,11 @@ template MemberVariableDefine4(Option<tuple<Integer,Integer>> optVarArrayAssignm
     case SOME((varIdx, arrayIdx)) then
         <<
         <%if createConstructorDeclaration then ',<%cref(varName,useFlatArrayNotation)%>(varArray<%arrayIdx%>[<%varIdx%>])'
-        else '<%variableType(type_)%>& <%cref(varName,useFlatArrayNotation)%>;// = varArray<%arrayIdx%>[<%varIdx%>];' %>
+        else '<%variableType(type_)%>& <%cref(varName,useFlatArrayNotation)%>;// = varArray<%arrayIdx%>[<%varIdx%>] - MemberVariableDefine4' %>
         >>
     else
         <<
-        <%if createConstructorDeclaration then '' else '<%variableType(type_)%> <%cref(varName,useFlatArrayNotation)%>;'%>
+        <%if createConstructorDeclaration then '/* no varIdx found for variable <%cref(varName,useFlatArrayNotation)%> */' else '<%variableType(type_)%> <%cref(varName,useFlatArrayNotation)%>;'%>
         >>
   end match
 end MemberVariableDefine4;
@@ -613,8 +616,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%initializeArrayElements(simCode,useFlatArrayNotation)%>
 
     _functions = new Functions(_simTime);
-    /*Initialize the equations array. Point to each equation function*/
-    initialize_equations_array();
 
     <%hpcomConstructorExtension%>
 
@@ -625,8 +626,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             delete _functions;
         <%hpcomDestructorExtension%>
     }
-
-    <%InitializeEquationsArray(allEquations, className)%>
 
    <%Update(simCode,useFlatArrayNotation)%>
 
