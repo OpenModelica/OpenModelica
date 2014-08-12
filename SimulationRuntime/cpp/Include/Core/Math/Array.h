@@ -69,10 +69,6 @@ public:
 
   StatArrayDim1()
   {
-    for(int i = 0; i < size; i++)
-    {
-      _real_array[i] = 0.0;
-    }
     //_real_array.assign(0.0);
   }
 
@@ -152,7 +148,6 @@ public:
   StatArrayDim2(const T* data) //const T (&data)     const T (&data)[size1*size2]
   {
     std::copy(data,data+size1*size2,_real_array.begin());
-
   }
 
   StatArrayDim2()
