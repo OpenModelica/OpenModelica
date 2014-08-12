@@ -764,7 +764,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 template createAssignArray(DAE.ComponentRef sourceArrayCref, String targetArrayName, SimCode simCode, Boolean useFlatArrayNotation)
 ::=
   match SimCodeUtil.cref2simvar(sourceArrayCref, simCode)
-    case v as SIMVAR(numArrayElement=num) then 
+    case v as SIMVAR(numArrayElement=num) then
       let arrayname1 = arraycref(sourceArrayCref, useFlatArrayNotation)
       if useFlatArrayNotation then (
         <<

@@ -85,7 +85,7 @@ encapsulated package HpcOmMemory
       Integer scVarIdx; //see CacheMap.cacheVariables
     end CACHELINEENTRY;
   end CacheLineEntry;
-  
+
   protected uniontype CacheMapMeta
     record CACHEMAPMETA
       array<Option<SimCode.SimVar>> allSCVarsMapping;
@@ -235,7 +235,7 @@ encapsulated package HpcOmMemory
         then (cacheMap,scVarCLMapping,numCL);
      end match;
   end createCacheMapOptimized;
-  
+
   protected function appendParamsToCacheMap "author: marcusw
     Append all parameters to new cachelines (dense) at the end of the cachemap."
     input CacheMap iCacheMap;
@@ -248,10 +248,10 @@ encapsulated package HpcOmMemory
   algorithm
     ((oCacheMap,oCacheMapMeta,oNumCL,_)) := List.fold(iParamVars, appendParamToCacheMap, (iCacheMap, iCacheMapMeta, iNumCL, {}));
   end appendParamsToCacheMap;
-  
+
   protected function appendParamToCacheMap "author: marcusw
     Append all parameters to new cachelines at the end of the cachemap."
-    input SimCode.SimVar iParamVar;    
+    input SimCode.SimVar iParamVar;
     input tuple<CacheMap, CacheMapMeta, Integer, list<tuple<Integer, Integer>>> iCacheInfoTpl; //<CacheMap, CacheMapMeta, numCL, cacheLineCandidates
     output tuple<CacheMap, CacheMapMeta, Integer, list<tuple<Integer, Integer>>> oCacheInfoTpl;
   protected
@@ -270,7 +270,7 @@ encapsulated package HpcOmMemory
           detailedWrittenCacheLines = createDetailedCacheMapInformations(tmpWrittenCLs,cacheLinesFloat,cacheLineSize);
           tmpCacheLineCandidates = listAppend(tmpCacheLineCandidates, detailedWrittenCacheLines);
         then ((tmpCacheMap,tmpCacheMapMeta,tmpNumNewCL,tmpCacheLineCandidates));
-      else 
+      else
         equation
           print("HpcOmMemory.appendParamToCacheMap failed!\n");
       then iCacheInfoTpl;
@@ -1531,7 +1531,7 @@ encapsulated package HpcOmMemory
       else then iCref;
     end match;
   end removeSubscripts;
-  
+
   protected function getDimElemCount
     input list<String> iNumArrayElems;
     input Integer iDims;

@@ -3333,7 +3333,7 @@ package HpcOmMemory
     input list<String> iNumArrayElems;
     output list<DAE.ComponentRef> oCrefs;
   end expandCref;
-  
+
   function getSubscriptListOfArrayCref
     input DAE.ComponentRef iCref;
     input list<String> iNumArrayElems;

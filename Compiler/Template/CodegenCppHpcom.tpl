@@ -99,12 +99,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     let addHpcomFunctionHeaders = getAddHpcomFunctionHeaders(hpcOmSchedule)
     let addHpcomVarHeaders = getAddHpcomVarHeaders(hpcOmSchedule)
     let addHpcomArrayHeaders = getAddHpcomVarArrays(hpcOmMemory)
-  
+
     let friendclasses = generatefriendAlgloops(listAppend(allEquations,initialEquations),simCode)
     let algloopsolver = generateAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode )
     let memberfuncs = generateEquationMemberFuncDecls(allEquations,"evaluate")
     let conditionvariables =  conditionvariable(zeroCrossings,simCode)
-  
+
     match modelInfo
       case MODELINFO(vars=SIMVARS(__)) then
           let getrealvars =(List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), 100) |> ls hasindex idx => 'void getReal_<%idx%>(double* z);
@@ -113,32 +113,32 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           <<
           class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent,  public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
           {
-        
+
            <%friendclasses%>
-        
+
           public:
               <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor,boost::shared_ptr<ISimData>);
-        
+
               virtual ~<%lastIdentOfPath(modelInfo.name)%>();
-        
+
                <%generateMethodDeclarationCode(simCode)%>
              virtual  bool getCondition(unsigned int index);
              virtual void initPreVars(unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&);
-        
+
           protected:
             //Methods:
             <%getrealvars%>
-        
+
             <%addHpcomFunctionHeaders%>
-        
+
              bool isConsistent();
             //Called to handle all  events occured at same time
             bool handleSystemEvents( bool* events);
              //Saves all variables before an event is handled, is needed for the pre, edge and change operator
             void saveAll();
             void getJacobian(SparseMatrix& matrix);
-        
-        
+
+
              //Variables:
              #ifdef __GNUC__
                 #define VARARRAY_ALIGN_PRE
@@ -147,26 +147,26 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
                 #define VARARRAY_ALIGN_PRE __declspec(align(64))
                 #define VARARRAY_ALIGN_POST
              #endif
-        
+
              <%addHpcomArrayHeaders%>
              <%addHpcomVarHeaders%>
-        
+
              EventHandling _event_handling;
              /* <%CodegenCpp.MemberVariable(modelInfo,useFlatArrayNotation)%> */
-        
+
              <%MemberVariable(modelInfo, hpcOmMemory,useFlatArrayNotation,false)%>
              <%conditionvariables%>
-        
+
              Functions* _functions;
-        
-        
+
+
              boost::shared_ptr<IAlgLoopSolverFactory> _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
              <%algloopsolver%>
-        
+
              boost::shared_ptr<ISimData> _simData;
-        
-        
-        
+
+
+
              <%memberfuncs%>
            };
           >>
