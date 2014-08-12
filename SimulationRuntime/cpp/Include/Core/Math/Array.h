@@ -86,7 +86,7 @@ public:
   }
   return *this;
  }
-  
+
   void assign(const T* data)
   {
       std::copy(data,data+size,_real_array.begin());
@@ -160,7 +160,7 @@ public:
   }
  StatArrayDim2<T,size1,size2>& operator=(const StatArrayDim2<T,size1,size2>& rhs)
  {
-  if (this != &rhs)  
+  if (this != &rhs)
   {
      _real_array = rhs._real_array;
   }
@@ -289,7 +289,7 @@ public:
   }
  StatArrayDim3<T,size1,size2,size3>& operator=(const StatArrayDim3<T,size1,size2,size3>& rhs)
  {
-  if (this != &rhs)  
+  if (this != &rhs)
   {
       _real_array = rhs._real_array;
   }
@@ -648,7 +648,7 @@ public:
   }
   DynArrayDim1<T>& operator=(const DynArrayDim1<T>& rhs)
   {
-   if (this != &rhs)  
+   if (this != &rhs)
    {
       std::vector<size_t> v = rhs.getDims();
      _multi_array.resize(v);
@@ -912,7 +912,7 @@ private:
 
 
 
-/*cd 
+/*cd
 
 template<typename T> class DynArrayDim4 : public BaseArray<T>
 {
