@@ -401,7 +401,7 @@ encapsulated package HpcOmMemory
     list<tuple<Integer,Integer>> clCandidates;
   algorithm
     simCodeVars := arrayGet(iNodeSimCodeVarMapping, iNodeIdx);
-    ((iCacheMap,iCacheMapMeta,iNumNewCL,clCandidates)) := iInfo;
+    (iCacheMap,iCacheMapMeta,iNumNewCL,clCandidates) := iInfo;
     varsString := stringDelimitList(List.map(simCodeVars, intString), ",");
     //print("appendNodeVarsToCacheMap: Handling node " +& intString(iNodeIdx) +& " clCandidates: " +& intString(listLength(clCandidates)) +& " simCodeVars: " +& varsString +& "\n");
     ((iCacheMap, iCacheMapMeta, iNumNewCL,clCandidates,writtenCL,_)) := List.fold(simCodeVars, appendSCVarToCacheMap, (iCacheMap, iCacheMapMeta, iNumNewCL,clCandidates,{},1));
