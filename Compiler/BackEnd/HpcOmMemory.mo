@@ -1523,7 +1523,9 @@ encapsulated package HpcOmMemory
   algorithm
     oCref := match(iCref)
       case(DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef))
-        then DAE.CREF_QUAL(ident,identType,subscriptLst,removeSubscripts(componentRef));
+        equation
+          componentRef = removeSubscripts(componentRef);
+        then DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef);
       case(DAE.CREF_IDENT(ident,identType,subscriptLst))
         then DAE.CREF_IDENT(ident,identType,{});
       case(DAE.CREF_ITER(ident,index,identType,subscriptLst))
