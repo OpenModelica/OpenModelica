@@ -772,7 +772,7 @@ template createAssignArray(DAE.ComponentRef sourceArrayCref, String targetArrayN
         >>
       )
       else (
-        'assign_array(<%targetArrayName%>,<%arrayname1%>);'
+        '<%targetArrayName%>.assign(<%arrayname1%>);'
       )
 end createAssignArray;
 
