@@ -451,6 +451,8 @@ match simVar
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(arrayCrefLocal),numArrayElement=num,type_=varType) then
       let &dims = buffer "" /*BUFD*/
       let arrayName = arraycref2(name,dims)
+      let typeString = variableType(type_)
+      let arraysize = arrayextentDims(name,v.numArrayElement)
       match(hpcOmMemoryOpt)
             case SOME(hpcOmMemory) then
               let varDeclarations = HpcOmMemory.expandCref(arrayCrefLocal,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
@@ -460,7 +462,7 @@ match simVar
               >>
             else
               <<
-              <%if createConstructorDeclaration then '' else 'multi_array<<%variableType(v.type_)%>,<%dims%>>  <%arrayName%>; //no cacheMap defined' %>
+              <%if createConstructorDeclaration then '' else 'StatArrayDim<%dims%><<%variableType(v.type_)%>,<%arraysize%>>  <%arrayName%>; //no cacheMap defined' %>
               >>
       end match
     case SIMVAR(numArrayElement=_::_) then
@@ -492,6 +494,8 @@ match simVar
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(arrayCrefLocal),numArrayElement=num,type_=varType) then
         let &dims = buffer "" /*BUFD*/
         let arrayName = arraycref2(name,dims)
+        let typeString = variableType(type_)
+        let arraysize = arrayextentDims(name,v.numArrayElement)
         match(hpcOmMemoryOpt)
             case SOME(hpcOmMemory) then
               let varDeclarations = HpcOmMemory.expandCref(arrayCrefLocal,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
@@ -501,12 +505,14 @@ match simVar
               >>
             else
               <<
-              <%if createConstructorDeclaration then '' else 'multi_array<<%variableType(v.type_)%>,<%dims%>>  <%arrayName%>; //no cacheMap defined' %>
+              <%if createConstructorDeclaration then '' else 'StatArrayDim<%dims%><<%typeString%>,<%arraysize%>> <%arrayName%>; //no cacheMap defined' %>
               >>
         end match
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(arrayCrefLocal),numArrayElement=num,type_=varType) then
       let &dims = buffer "" /*BUFD*/
       let arrayName = arraycref2(name,dims)
+      let typeString = variableType(type_)
+      let arraysize = arrayextentDims(name,v.numArrayElement)
       match(hpcOmMemoryOpt)
             case SOME(hpcOmMemory) then
               let varDeclarations = HpcOmMemory.expandCref(name,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
@@ -516,7 +522,7 @@ match simVar
               >>
             else
               <<
-              <%if createConstructorDeclaration then '' else 'multi_array<<%variableType(v.type_)%>,<%dims%>>  <%arrayName%>; //no cacheMap defined' %>
+              <%if createConstructorDeclaration then '' else 'StatArrayDim<%dims%><<%typeString%>, <%arraysize%>> <%arrayName%>; //no cacheMap defined' %>
               >>
       end match
    /*special case for varibales that marked as array but are not arrays */

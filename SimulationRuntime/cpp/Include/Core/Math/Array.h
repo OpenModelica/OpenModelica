@@ -7,6 +7,8 @@ template<class T>class BaseArray
 public:
   BaseArray(){};
 
+  virtual ~BaseArray(){}
+
   virtual T& operator()(unsigned int i)
   {
      throw std::invalid_argument("Wrong virtual Array operator call");
@@ -72,7 +74,7 @@ public:
      _real_array.assign(0.0);
   }
 
-  ~StatArrayDim1() {}
+  virtual ~StatArrayDim1() {}
 
   //void assign(StatArrayDim1<T,size> otherArray)
   //{
@@ -167,7 +169,7 @@ public:
   return *this;
  }
 
-  ~StatArrayDim2(){}
+  virtual ~StatArrayDim2(){}
 
   /*
   void assign(const StatArrayDim2<T,size1,size2> otherArray)
@@ -249,7 +251,7 @@ public:
     _real_array.assign(0.0);
   }
 
-  ~StatArrayDim3(){}
+  virtual ~StatArrayDim3(){}
 
   /*void assign(StatArrayDim3<T,size1,size2,size3> otherArray)
   {
@@ -603,7 +605,7 @@ public:
 
   }
 
-  ~DynArrayDim1()
+  virtual ~DynArrayDim1()
   {
   }
 
@@ -719,7 +721,8 @@ public:
     _multi_array.resize(v);//
     _multi_array.reindex(1);
   }
-  ~DynArrayDim2(){}
+
+  virtual ~DynArrayDim2(){}
 
   /*void assign(DynArrayDim2<T> otherArray)
   {
@@ -825,7 +828,7 @@ public:
     _multi_array.reindex(1);
   }
 
-  ~DynArrayDim3(){}
+  virtual ~DynArrayDim3(){}
 
   void assign(DynArrayDim3<T> otherArray)
   {

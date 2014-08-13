@@ -761,13 +761,13 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
  end functionDimStateSets;
 
 
-template createAssignArray(DAE.ComponentRef sourceOrTargetArrayCref, String sourceArrayName, String targetArrayName, SimCode simCode, Boolean useFlatArrayNotation)
+template createAssignArray(DAE.ComponentRef sourceOrTargetArrayCref, String sourceArrayName, String targetArrayName, SimCode simCode, Boolean useFlatArrayNotationSource, Boolean useFlatArrayNotationTarget)
 ::=
   match SimCodeUtil.cref2simvar(sourceOrTargetArrayCref, simCode)
     case v as SIMVAR(numArrayElement=num) then
-      if useFlatArrayNotation then (
+      if boolOr(useFlatArrayNotationSource,useFlatArrayNotationTarget) then (
         <<
-        <%HpcOmMemory.getSubscriptListOfArrayCref(sourceOrTargetArrayCref, num) |> ai => '<%targetArrayName%><%subscriptsToCStr(ai,false)%> = <%sourceArrayName%><%subscriptsToCStr(ai,true)%>;';separator="\n"%>
+        <%HpcOmMemory.getSubscriptListOfArrayCref(sourceOrTargetArrayCref, num) |> ai => '<%targetArrayName%><%subscriptsToCStr(ai,useFlatArrayNotationTarget)%> = <%sourceArrayName%><%subscriptsToCStr(ai,useFlatArrayNotationSource)%>;';separator="\n"%>
         >>
       )
       else (
@@ -785,7 +785,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            let arrayname1 = arraycref(crA, useFlatArrayNotation)
            match nStates  case 1 then
              'case <%i1%>:
-               <%createAssignArray(crA, arrayname1, "A", simCode, useFlatArrayNotation)%>
+               <%createAssignArray(crA, arrayname1, "A", simCode, useFlatArrayNotation, false)%>
                return true;
             '
             else ""
@@ -796,7 +796,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            let arrayname1 = arraycref(crA, useFlatArrayNotation)
            match nStates  case 1 then "" else
              'case <%i1%>:
-               <%createAssignArray(crA, arrayname1, "A", simCode, useFlatArrayNotation)%>
+               <%createAssignArray(crA, arrayname1, "A", simCode, useFlatArrayNotation, false)%>
                return true;
             '
 
@@ -807,7 +807,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            let arrayname1 = arraycref(crA, useFlatArrayNotation)
            match nStates  case 1 then
              'case <%i1%>:
-               <%createAssignArray(crA, "A", arrayname1, simCode, useFlatArrayNotation)%>
+               <%createAssignArray(crA, "A", arrayname1, simCode, false, useFlatArrayNotation)%>
                break;
             '
             else ""
@@ -818,7 +818,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            let arrayname1 = arraycref(crA, useFlatArrayNotation)
            match nStates  case 1 then "" else
              'case <%i1%>:
-               <%createAssignArray(crA, "A", arrayname1, simCode, useFlatArrayNotation)%>
+               <%createAssignArray(crA, "A", arrayname1, simCode, false, useFlatArrayNotation)%>
                break;
             '
 
