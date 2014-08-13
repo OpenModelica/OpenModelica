@@ -2098,12 +2098,13 @@ match fn
  case RECORD_CONSTRUCTOR(__) then
       let fname = underscorePath(name)
       let funArgsStr = (funArgs |> var as VARIABLE(__) =>
-          '<%varType2(var,simCode, useFlatArrayNotation)%> <%crefStr(name)%>'
+          '<%varType1(var,simCode)%> <%crefStr(name)%>/*testfunc*/'
         ;separator=", ")
       <<
       <%fname%>Type <%fname%>(<%funArgsStr%>);
       >>
 end functionHeaderRecordConstruct;
+
 
 template functionHeaderExternFunction(Function fn,SimCode simCode)
 ::=
@@ -2199,7 +2200,7 @@ case RECORD_CONSTRUCTOR(__) then
   let structVar = tempDecl(structType, &varDecls /*BUFD*/)
 
   <<
-  <%retType%> Functions::<%fname%>(<%funArgs |> var as  VARIABLE(__) => '<%varType2(var,simCode, useFlatArrayNotation)%> <%crefStr(name)%>' ;separator=", "%>)
+  <%retType%> Functions::<%fname%>(<%funArgs |> var as  VARIABLE(__) => '<%varType1(var,simCode)%> <%crefStr(name)%>' ;separator=", "%>)
   {
 
     <%varDecls%>
@@ -2962,7 +2963,7 @@ end funArgDefinition;
 template funArgDefinition2(Variable var,SimCode simCode, Boolean useFlatArrayNotation)
 ::=
   match var
-  case VARIABLE(__) then '<%varType3(var, simCode)%> <%contextCref(name,contextFunction,simCode,useFlatArrayNotation)%>'
+  case VARIABLE(__) then '<%varType3(var, simCode)%> <%contextCref(name,contextFunction,simCode,useFlatArrayNotation)%>/*testtype2*/'
   case FUNCTION_PTR(__) then 'modelica_fnptr <%name%>'
 end funArgDefinition2;
 
@@ -3019,8 +3020,12 @@ case var as VARIABLE(__) then
      /* previous multi_array
    if instDims then 'multi_array<<%expTypeShort(var.ty)%>,<%listLength(instDims)%>> ' else expTypeFlag(var.ty, 6)
       */
-     let &varDecls = buffer "" /*should be empty herer*/
-     let &varInits = buffer "" /*should be empty herer*/
+     
+     /*Always use BaseArray as function array argument types */
+     if instDims then 'BaseArray<<%expTypeShort(ty)%>>&' else expTypeFlag(var.ty, 8)
+     /* uses StatArrray if possible else Dynarray as function array argument types 
+     let &varDecls = buffer "" 
+     let &varInits = buffer "" 
      let testinstDimsInit = (instDims |> exp => testDaeDimensionExp(exp);separator="")
 
      match testinstDimsInit
@@ -3031,7 +3036,9 @@ case var as VARIABLE(__) then
      if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>> ' else expTypeFlag(var.ty, 8)
 
      end match
+     */
 end varType1;
+
 
 template varType2(Variable var,SimCode simCode, Boolean useFlatArrayNotation)
 ::=
@@ -3040,14 +3047,17 @@ case var as VARIABLE(__) then
      /* previous multi_array
    if instDims then 'multi_array_ref<<%expTypeShort(var.ty)%>,<%listLength(instDims)%>> ' else expTypeFlag(var.ty, 5)
    */
-     let &varDecls = buffer "" /*should be empty here*/
-     let &varInits = buffer "" /*should be empty here*/
+   
+       
+      /*uses StatArrray if possible else Dynarray as function array argument types  */
+     let &varDecls = buffer "" 
+     let &varInits = buffer "" 
      let DimsTest = (instDims |> exp => daeDimensionExp(exp);separator="")
      let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits , &varDecls,simCode,useFlatArrayNotation);separator=",")
      match DimsTest
      case "" then if instDims then 'StatArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>, <%instDimsInit%>>& ' else expTypeFlag(var.ty, 5)
      else if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>>&' else expTypeFlag(var.ty, 5)
-
+  
 end varType2;
 
 template varType3(Variable var,SimCode simCode)
@@ -8290,6 +8300,8 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   else error(sourceInfo(), 'Code generation does not support multiple iterators: <%printExpStr(exp)%>')
 end daeExpReduction;
 
+
+
 template daeExpSize(Exp exp, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/,SimCode simCode,Boolean useFlatArrayNotation)
  "Generates code for a size expression."
@@ -8381,7 +8393,7 @@ template daeExpMatrixRow(list<Exp> row,
       let expVar = daeExp(e, context, &preExp , &varDecls ,simCode,useFlatArrayNotation)
       '<%expVar%>'
     ;separator=",")
-  varLstStr + "/*testmatrix*/"
+  varLstStr 
 end daeExpMatrixRow;
 /////////////////////////////////////////////////NonCED functions
 

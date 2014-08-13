@@ -7,8 +7,6 @@ template<class T>class BaseArray
 public:
   BaseArray(){};
 
-  virtual ~BaseArray(){}
-
   virtual T& operator()(unsigned int i)
   {
      throw std::invalid_argument("Wrong virtual Array operator call");
@@ -74,15 +72,32 @@ public:
      _real_array.assign(0.0);
   }
 
-  virtual ~StatArrayDim1() {}
+  ~StatArrayDim1() {}
 
   //void assign(StatArrayDim1<T,size> otherArray)
   //{
   //  _real_array = otherArray._real_array;
   //}
+  
+  StatArrayDim1<T,size>& operator=(BaseArray<T>& rhs)
+ {
+  if (this != &rhs)  
+  {
+      try
+      {
+         StatArrayDim1<T,size>&  a = dynamic_cast<StatArrayDim1<T,size>&  >(rhs);
+         _real_array = a._real_array;
+      }
+      catch(std::bad_exception & be)
+      {
+        throw std::runtime_error("Wrong array type assign");
+      }
+  }
+  return *this;
+ }
  StatArrayDim1<T,size>& operator=(const StatArrayDim1<T,size>& rhs)
  {
-  if (this != &rhs)  //oder if (*this != rhs)
+  if (this != &rhs)  
   {
       _real_array= rhs._real_array;
   }
@@ -168,8 +183,25 @@ public:
   }
   return *this;
  }
+ 
+  StatArrayDim2<T,size1,size2>& operator=(BaseArray<T>& rhs)
+ {
+  if (this != &rhs) 
+  {
+      try
+      {
+         StatArrayDim2<T,size1,size2>& a = dynamic_cast<StatArrayDim2<T,size1,size2>& >(rhs);
+         _real_array = a._real_array;
+      }
+      catch(std::bad_exception & be)
+      {
+        throw std::runtime_error("Wrong array type assign");
+      }
+  }
+  return *this;
+ }
 
-  virtual ~StatArrayDim2(){}
+  ~StatArrayDim2(){}
 
   /*
   void assign(const StatArrayDim2<T,size1,size2> otherArray)
@@ -251,7 +283,7 @@ public:
     _real_array.assign(0.0);
   }
 
-  virtual ~StatArrayDim3(){}
+  ~StatArrayDim3(){}
 
   /*void assign(StatArrayDim3<T,size1,size2,size3> otherArray)
   {
@@ -605,7 +637,7 @@ public:
 
   }
 
-  virtual ~DynArrayDim1()
+  ~DynArrayDim1()
   {
   }
 
@@ -721,8 +753,7 @@ public:
     _multi_array.resize(v);//
     _multi_array.reindex(1);
   }
-
-  virtual ~DynArrayDim2(){}
+  ~DynArrayDim2(){}
 
   /*void assign(DynArrayDim2<T> otherArray)
   {
@@ -828,7 +859,7 @@ public:
     _multi_array.reindex(1);
   }
 
-  virtual ~DynArrayDim3(){}
+  ~DynArrayDim3(){}
 
   void assign(DynArrayDim3<T> otherArray)
   {
