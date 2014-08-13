@@ -3020,12 +3020,12 @@ case var as VARIABLE(__) then
      /* previous multi_array
    if instDims then 'multi_array<<%expTypeShort(var.ty)%>,<%listLength(instDims)%>> ' else expTypeFlag(var.ty, 6)
       */
-     
+
      /*Always use BaseArray as function array argument types */
      if instDims then 'BaseArray<<%expTypeShort(ty)%>>&' else expTypeFlag(var.ty, 8)
-     /* uses StatArrray if possible else Dynarray as function array argument types 
-     let &varDecls = buffer "" 
-     let &varInits = buffer "" 
+     /* uses StatArrray if possible else Dynarray as function array argument types
+     let &varDecls = buffer ""
+     let &varInits = buffer ""
      let testinstDimsInit = (instDims |> exp => testDaeDimensionExp(exp);separator="")
 
      match testinstDimsInit
@@ -3047,17 +3047,17 @@ case var as VARIABLE(__) then
      /* previous multi_array
    if instDims then 'multi_array_ref<<%expTypeShort(var.ty)%>,<%listLength(instDims)%>> ' else expTypeFlag(var.ty, 5)
    */
-   
-       
+
+
       /*uses StatArrray if possible else Dynarray as function array argument types  */
-     let &varDecls = buffer "" 
-     let &varInits = buffer "" 
+     let &varDecls = buffer ""
+     let &varInits = buffer ""
      let DimsTest = (instDims |> exp => daeDimensionExp(exp);separator="")
      let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits , &varDecls,simCode,useFlatArrayNotation);separator=",")
      match DimsTest
      case "" then if instDims then 'StatArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>, <%instDimsInit%>>& ' else expTypeFlag(var.ty, 5)
      else if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>>&' else expTypeFlag(var.ty, 5)
-  
+
 end varType2;
 
 template varType3(Variable var,SimCode simCode)
@@ -8393,7 +8393,7 @@ template daeExpMatrixRow(list<Exp> row,
       let expVar = daeExp(e, context, &preExp , &varDecls ,simCode,useFlatArrayNotation)
       '<%expVar%>'
     ;separator=",")
-  varLstStr 
+  varLstStr
 end daeExpMatrixRow;
 /////////////////////////////////////////////////NonCED functions
 

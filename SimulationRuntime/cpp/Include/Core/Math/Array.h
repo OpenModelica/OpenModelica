@@ -78,10 +78,10 @@ public:
   //{
   //  _real_array = otherArray._real_array;
   //}
-  
+
   StatArrayDim1<T,size>& operator=(BaseArray<T>& rhs)
  {
-  if (this != &rhs)  
+  if (this != &rhs)
   {
       try
       {
@@ -97,7 +97,7 @@ public:
  }
  StatArrayDim1<T,size>& operator=(const StatArrayDim1<T,size>& rhs)
  {
-  if (this != &rhs)  
+  if (this != &rhs)
   {
       _real_array= rhs._real_array;
   }
@@ -183,10 +183,10 @@ public:
   }
   return *this;
  }
- 
+
   StatArrayDim2<T,size1,size2>& operator=(BaseArray<T>& rhs)
  {
-  if (this != &rhs) 
+  if (this != &rhs)
   {
       try
       {
