@@ -20,13 +20,13 @@ using std::ios;
 /**
 Policy class to write simulation results in a text file
 */
-template <unsigned long dim_1,unsigned long dim_2,unsigned long dim_3,unsigned long dim_4>
+template <size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4>
 struct TextFileWriter
 {
  public:
-   typedef ublas::vector<double, ublas::bounded_array<double,dim_1> > value_type_v;
-   typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv;
-   typedef ublas::vector<double, ublas::bounded_array<double,dim_4> > value_type_p;
+   typedef StatArrayDim1<double,dim_1> value_type_v;
+   typedef StatArrayDim1<double,dim_2> value_type_dv;
+   typedef StatArrayDim1<double,dim_4> value_type_p;
 
   TextFileWriter(unsigned long size,string output_path,string file_name)
     :_curser_position(0)
@@ -149,7 +149,7 @@ struct TextFileWriter
   @v2_list derivatives vars
   @time
   */
-  void write(const value_type_v& v_list,const value_type_dv& v2_list,double time)
+  void write(value_type_v& v_list,value_type_dv& v2_list,double time)
   {
     _output_stream<<time<<SEPERATOR;
 

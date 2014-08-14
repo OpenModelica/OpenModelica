@@ -240,7 +240,7 @@ template simulationWriteOutputHeaderFile(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
-  let n = numParamVars(modelInfo)
+  let n = numProtectedParamVars(modelInfo)
   let outputtype = match   settings.outputFormat case "mat" then "MatFileWriter" else "TextFileWriter"
   let numparams = match   settings.outputFormat case "csv" then "1" else n
   <<
@@ -3859,12 +3859,12 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       match   settings.outputFormat case "mat"
       then
       <<
-        HistoryImplType::value_type_p params(<%numParamvars%>);
+        HistoryImplType::value_type_p params;
        <%writeoutputparams(modelInfo,simCode,useFlatArrayNotation)%>
       >>
       else
       <<
-       HistoryImplType::value_type_p params(1);
+       HistoryImplType::value_type_p params;
       >>
       %>
        _historyImpl->write(params,_global_settings->getStartTime(),_global_settings->getEndTime());
@@ -3872,8 +3872,8 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
     //Write the current values
     else
     {
-      HistoryImplType::value_type_v v(<%numProtectedAlgvars(modelInfo)%>+<%numProtectedAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>);
-      HistoryImplType::value_type_dv v2(<%numDerivativevars(modelInfo)%>);
+      HistoryImplType::value_type_v v;
+      HistoryImplType::value_type_dv v2;
       /* HistoryImplType::value_type_v *vP = new HistoryImplType::value_type_v(<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>);
       HistoryImplType::value_type_dv *v2P = new HistoryImplType::value_type_dv(<%numDerivativevars(modelInfo)%>);
       HistoryImplType::value_type_v &v = *vP;
@@ -3881,7 +3881,7 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       <%writeoutput2(modelInfo,simCode,useFlatArrayNotation)%>
       <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<
-      HistoryImplType::value_type_r v3(<%numResidues(allEquations)%>);
+      HistoryImplType::value_type_r v3;
       <%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode));separator="\n")%>
       double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode, useFlatArrayNotation));separator=","%>};
       for(int i=0;i<<%numResidues(allEquations)%>;i++) v3(i) = residues[i];
@@ -6067,7 +6067,7 @@ case MODELINFO(vars=SIMVARS(__)) then
  let &varDeclsCref = buffer "" /*BUFD*/
 
  <<
-     const int algVarsStart = 0;
+     const int algVarsStart = 1;
      const int discrAlgVarsStart  = algVarsStart       + <%numProtectedRealAlgvars(modelInfo)%>;
      const int intAlgVarsStart    = discrAlgVarsStart  + <%numProtectedDiscreteAlgVars(modelInfo)%>;
      const int boolAlgVarsStart   = intAlgVarsStart    + <%numProtectedIntAlgvars(modelInfo)%>;
@@ -6086,7 +6086,7 @@ case MODELINFO(vars=SIMVARS(__)) then
      <%vars.boolAliasVars   |> SIMVAR(isProtected=false) hasindex i7 =>'v(boolAliasVarsStart+<%i7%>)=<%getAliasVar(aliasvar, simCode,contextOther, useFlatArrayNotation)%>;';align=8 %>
 
      <%(vars.stateVars      |> SIMVAR() hasindex i8 =>'v(stateVarsStart+<%i8%>)=__z[<%index%>]; ';align=8 )%>
-     <%(vars.derivativeVars |> SIMVAR() hasindex i9 =>'v2(<%i9%>)=__zDot[<%index%>]; ';align=8 )%>
+     <%(vars.derivativeVars |> SIMVAR() hasindex i9  fromindex 1=>'v2(<%i9%>)=__zDot[<%index%>]; ';align=8 )%>
  >>
 end writeoutput2;
 
@@ -6100,7 +6100,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(__)) then
  let &varDeclsCref = buffer "" /*BUFD*/
 
  <<
-     const int paramVarsStart = 0;
+     const int paramVarsStart = 1;
      const int intParamVarsStart  = paramVarsStart       + <%numProtectedRealParamVars(modelInfo)%>;
      const int boolparamVarsStart    = intParamVarsStart  + <%numProtectedIntParamVars(modelInfo)%>;
 
