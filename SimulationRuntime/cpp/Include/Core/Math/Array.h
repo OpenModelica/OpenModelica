@@ -154,7 +154,7 @@ public:
   }
   typedef typename boost::array<T,size>::const_iterator                              const_iterator;
   typedef typename  boost::array<T,size>::iterator                                   iterator;
-  iterator begin() 
+  iterator begin()
   {
     return   _real_array.begin();
   }
@@ -162,7 +162,7 @@ public:
    {
     return   _real_array.end();
    }
-   
+
   private:
     boost::array<T,size> _real_array;
 };
