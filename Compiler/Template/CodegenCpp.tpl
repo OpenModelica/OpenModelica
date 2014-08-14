@@ -2101,7 +2101,7 @@ match fn
           '<%varType1(var,simCode)%> <%crefStr(name)%>/*testfunc*/'
         ;separator=", ")
       <<
-      void /*RecordTypetest*/ <%fname%>(<%funArgsStr%>,<%fname%>Type &output );
+      void /*RecordTypetest*/ <%fname%>(<%funArgsStr%><%if funArgs then "," else ""%><%fname%>Type &output );
       >>
 end functionHeaderRecordConstruct;
 
@@ -2201,7 +2201,7 @@ case RECORD_CONSTRUCTOR(__) then
 
 
   <<
-  void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var as  VARIABLE(__) => '<%varType1(var,simCode)%> <%crefStr(name)%>' ;separator=", "%>,<%retType%>& output )
+  void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var as  VARIABLE(__) => '<%varType1(var,simCode)%> <%crefStr(name)%>' ;separator=", "%><%if funArgs then "," else ""%><%retType%>& output )
   {
     <%funArgs |> VARIABLE(__) => '(output.<%crefStr(name)%>) = (<%crefStr(name)%>);' ;separator="\n"%>
     //output = <%structVar%>;
@@ -2236,13 +2236,13 @@ case FUNCTION(outVars=_) then
   let fname = underscorePath(name)
   <<
         /* functionHeaderRegularFunction2 */
-        void /*<%fname%>RetType*/ <%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%>, <%fname%>RetType& output);
+        void /*<%fname%>RetType*/ <%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%><%if functionArguments then "," else ""%> <%fname%>RetType& output);
   >>
 case EXTERNAL_FUNCTION(outVars=var::_) then
 let fname = underscorePath(name)
    <<
         /* functionHeaderRegularFunction2 */
-        void /*<%fname%>RetType*/ <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%>, <%fname%>RetType output);
+        void /*<%fname%>RetType*/ <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%><%if funArgs then "," else ""%> <%fname%>RetType output);
    >>
 case EXTERNAL_FUNCTION(outVars={}) then
 let fname = underscorePath(name)
@@ -2314,7 +2314,7 @@ case FUNCTION(__) then
   //let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
   //if outvars missing
-  void /*<%retType%>*/ Functions::<%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%> <%if outVars then ', <%retType%>& output' %> )
+  void /*<%retType%>*/ Functions::<%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%><%if functionArguments then if outVars then "," else ""%><%if outVars then '<%retType%>& output' %> )
   {
     //functionBodyRegularFunction
     <%varDecls%>
@@ -2370,7 +2370,7 @@ case efn as EXTERNAL_FUNCTION(__) then
           )
 
   let fnBody = <<
-  void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%>  <%if retVar then ",<%retType%>& output"%>)/*function2*/
+  void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%><%if funArgs then if outVars then "," else ""%> <%if retVar then "<%retType%>& output"%>)/*function2*/
   {
     /* functionBodyExternalFunction: varDecls */
     <%varDecls%>
