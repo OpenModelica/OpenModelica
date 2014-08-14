@@ -2370,7 +2370,7 @@ case efn as EXTERNAL_FUNCTION(__) then
           )
 
   let fnBody = <<
-  void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%> ,<%retType%>& output)/*function2*/
+  void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%>  <%if retVar then ",<%retType%>& output"%>)/*function2*/
   {
     /* functionBodyExternalFunction: varDecls */
     <%varDecls%>
@@ -2381,7 +2381,7 @@ case efn as EXTERNAL_FUNCTION(__) then
     /* functionBodyExternalFunction: callPart */
     <%callPart%>
      /* functionBodyExternalFunction: return */
-     output = <%retVar%>;
+    <%if retVar then "output = <%retVar%>;" %>
   }
   >>
   <<
@@ -9322,7 +9322,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
             //previous multi_array multi_array<double,<%listLength(dims)%>>
                         else match dimensions
                 case "" then 'DynArrayDim<%listLength(dims)%><double>'
-                else 'StatArrayDim<%listLength(dims)%><double, dimensions>'
+                else 'StatArrayDim<%listLength(dims)%><double, <%dimensions%> >'
 
 
 
@@ -9341,7 +9341,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
                         case T_ARRAY(ty=T_ENUMERATION(__)) then 'multi_array<int,<%listLength(dims)%>>'
                         else match dimensions
                 case "" then 'DynArrayDim<%listLength(dims)%><double>'
-                else 'StatArrayDim<%listLength(dims)%><double, dimensions>'
+                else 'StatArrayDim<%listLength(dims)%><double, <%dimensions%> >'
     let type1 = match ty case T_ARRAY(ty=T_INTEGER(__)) then "int"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "int"
                         else "double"
@@ -9357,7 +9357,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
                         else 'double'
     let var =  match dimensions
             case "" then tempDecl('DynArrayDim<%listLength(dims)%><<%type%>>', &varDecls /*BUFD*/)
-            else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, dimensions>> ', &varDecls /*BUFD*/)
+            else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, <%dimensions%> > ', &varDecls /*BUFD*/)
 
     //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
     let &preExp += 'assign_array(<%var%>,divide_array<<%type%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
@@ -9369,7 +9369,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
                         else 'double'
   let var =  match dimensions
         case "" then tempDecl('DynArrayDim<%listLength(dims)%><<%type%>>', &varDecls /*BUFD*/)
-        else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, dimensions>> ', &varDecls /*BUFD*/)
+        else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, <%dimensions%> > ', &varDecls /*BUFD*/)
     //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
     //let &preExp += 'assign_array(<%var%>,divide_array<<%type%>,<%listLength(dims)%>>(<%e2%>, <%e1%>));<%\n%>'
     '<%var%>'
@@ -9383,7 +9383,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
                         else "double"
   let var =  match dimensions
           case "" then tempDecl('DynArrayDim<%listLength(dims)%><<%type%>>', &varDecls /*BUFD*/)
-          else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, dimensions>> ', &varDecls /*BUFD*/)
+          else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, <%dimensions%> > ', &varDecls /*BUFD*/)
     //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
     let &preExp += 'assign_array(<%var%>,add_array<<%type%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
     '<%var%>'
@@ -9394,7 +9394,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
                         else "double"
   let var =  match dimensions
         case "" then tempDecl('DynArrayDim<%listLength(dims)%><<%type%>>', &varDecls /*BUFD*/)
-        else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, dimensions>> ', &varDecls /*BUFD*/)
+        else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, <%dimensions%>> ', &varDecls /*BUFD*/)
 
     //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
     let &preExp += 'subtract_array<<%type%>,<%listLength(dims)%>>(<%e1%>, <%e2%>, <%var%>);<%\n%>'

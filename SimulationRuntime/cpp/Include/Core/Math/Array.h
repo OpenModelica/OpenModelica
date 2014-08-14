@@ -40,7 +40,10 @@ public:
   {
      throw std::invalid_argument("Wrong virtual Array getData call");
   };
-
+  virtual const T* getData() const
+  {
+     throw std::invalid_argument("Wrong virtual Array getData call");
+  }
   virtual unsigned int getNumElems()
   {
     throw std::invalid_argument("Wrong virtual Array getNumElems call");
@@ -138,12 +141,20 @@ public:
     v.push_back(size);
     return v;
   }
-
+ /*
+  access to data 
+  */
   virtual T* getData()
   {
-    return _real_array.data();
+    return _real_array.c_array();
   }
-
+  /*
+  access to data (read-only)
+  */
+  virtual const T* getData() const
+  {
+     return _real_array.data();
+  }
   virtual unsigned int getNumElems()
   {
     return size;
@@ -258,12 +269,20 @@ public:
   {
     return size1 + size2;
   }
-
+   /*
+  access to data 
+  */
   virtual T* getData()
   {
-    return _real_array.data();
+    return _real_array. c_array();
   }
-
+  /*
+  access to data (read-only)
+  */
+  virtual const T* getData() const
+  {
+     return _real_array.data();
+  }
   virtual void setDims(std::vector<size_t> v)
   {
 
@@ -350,6 +369,20 @@ public:
   virtual void setDims(std::vector<size_t> v)
   {
 
+  }
+   /*
+  access to data 
+  */
+  virtual T* getData()
+  {
+    return _real_array.c_array();
+  }
+   /*
+  access to data (read-only)
+  */
+  virtual const T* getData() const
+  {
+     return _real_array.data();
   }
 private:
     boost::array<T, size2 * size1*size3> _real_array;
@@ -629,21 +662,16 @@ public:
     _multi_array.resize(v);//
     _multi_array.reindex(1);
   }
-
-  DynArrayDim1(const BaseArray<T>& otherArray)
+ 
+  DynArrayDim1(BaseArray<T>& otherArray)
   {
     std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
     const T* data_otherarray = otherArray.getData();
     _multi_array.assign(data_otherarray,data_otherarray+v[0]);
-    /*for (int i = 1; i <= v[0]; i++)
-    {
-      //double tmp =  otherArray(i);
-      _multi_array[i] = otherArray(i);
-    }*/
-
-  }
+   }
+  
 
   ~DynArrayDim1()
   {
@@ -657,12 +685,12 @@ public:
     _multi_array.assign(data, data + otherArray._multi_array.num_elements());
   }
   */
-  void assign(BaseArray<T>& otherArray)
+  void assign(const BaseArray<T>& otherArray)
   {
     std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
-     T* data_otherarray = otherArray.getData();
+     const T* data_otherarray = otherArray.getData();
     _multi_array.assign(data_otherarray,data_otherarray+ v[0]);
     /*for (int i = 1; i <= v[0]; i++)
     {
@@ -721,12 +749,20 @@ public:
     ex.assign( shape, shape + 1 );
     return ex;
   }
-
+  /*
+  access to data (read-only)
+  */
   virtual T* getData()
   {
     return _multi_array.data();
   }
-
+ /*
+  access to data (read-only)
+  */
+  virtual const T* getData() const
+  {
+     return _multi_array.data();
+  }
   virtual unsigned int getNumElems()
   {
     return _multi_array.num_elements();
@@ -771,12 +807,12 @@ public:
     _multi_array.assign(data, data + otherArray._multi_array.num_elements());
   }
  */
-  void assign(BaseArray<T>& otherArray)
+  void assign(const BaseArray<T>& otherArray)
   {
     std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
-     T* data = otherArray.getData();
+     const T* data = otherArray.getData();
     _multi_array.assign(data, data + v[0]*v[1]);
    /*for (int i = 1; i <= v[0]; i++)
     {
@@ -836,9 +872,19 @@ public:
   {
     return _multi_array.num_elements();
   }
+  /*
+  access to data 
+  */
   virtual T* getData()
   {
     return _multi_array.data();
+  }
+  /*
+  access to data (read-only)
+  */
+  virtual const T* getData() const
+  {
+     return _multi_array.data();
   }
 private:
   boost::multi_array<T, 2> _multi_array;
@@ -878,7 +924,7 @@ public:
     _multi_array.assign(data, data + v[0]*v[1]*v[2]);
   }
 
-  void assign(BaseArray<T>& otherArray)
+  void assign(const BaseArray<T>& otherArray)
   {
     std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
@@ -947,7 +993,20 @@ public:
   {
     return _multi_array.num_elements();
   }
-
+   /*
+  access to data 
+  */
+  virtual T* getData()
+  {
+    return _multi_array.data();
+  }
+  /*
+  access to data (read-only)
+  */
+  virtual const T* getData() const
+  {
+     return _multi_array.data();
+  }
 private:
   boost::multi_array<T, 3> _multi_array;
 };
