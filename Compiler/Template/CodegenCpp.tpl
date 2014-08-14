@@ -2203,7 +2203,7 @@ case RECORD_CONSTRUCTOR(__) then
   <<
   void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var as  VARIABLE(__) => '<%varType1(var,simCode)%> <%crefStr(name)%>' ;separator=", "%>,<%retType%>& output )
   {
-    <%funArgs |> VARIABLE(__) => 'output.<%crefStr(name)%> = <%crefStr(name)%>;' ;separator="\n"%>
+    <%funArgs |> VARIABLE(__) => '(output.<%crefStr(name)%>) = (<%crefStr(name)%>);' ;separator="\n"%>
     //output = <%structVar%>;
   //return <%structVar%>;
   }
@@ -2381,7 +2381,7 @@ case efn as EXTERNAL_FUNCTION(__) then
     /* functionBodyExternalFunction: callPart */
     <%callPart%>
      /* functionBodyExternalFunction: return */
-     return <%retVar%>;
+     output = <%retVar%>;
   }
   >>
   <<
