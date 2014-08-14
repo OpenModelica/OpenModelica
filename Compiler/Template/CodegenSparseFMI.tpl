@@ -78,7 +78,7 @@ case SIMCODE(__) then
   // define class name and unique id
   #ifdef FMI_FROM_SOURCE
   #define FMI2_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_
-  #endif 
+  #endif
   #include <fmi2TypesPlatform.h>
   #include <fmi2Functions.h>
   #define MODEL_GUID "{<%guid%>}"
