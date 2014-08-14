@@ -2042,7 +2042,7 @@ case FUNCTION(outVars= vars as _::_) then
 
  let fname = underscorePath(name)
   << /*tuple return type*/
-    struct <%fname%>Type
+    struct <%fname%>Type/*RecordTypeTest*/
     {
        typedef boost::tuple< <%vars |> var => funReturnDefinition1(var,simCode) ;separator=", "%> > TUPLE_ARRAY;
 
@@ -2053,7 +2053,7 @@ case FUNCTION(outVars= vars as _::_) then
       }
       TUPLE_ARRAY data;
     };
-    typedef <%fname%>Type <%fname%>RetType /* functionHeaderRegularFunction1 */;
+    typedef <%fname%>Type/*RecordTypeTest*/ <%fname%>RetType /* functionHeaderRegularFunction1 */;
   >>
 
  case RECORD_CONSTRUCTOR(__) then
@@ -2101,7 +2101,7 @@ match fn
           '<%varType1(var,simCode)%> <%crefStr(name)%>/*testfunc*/'
         ;separator=", ")
       <<
-      <%fname%>Type <%fname%>(<%funArgsStr%>);
+      void /*RecordTypetest*/ <%fname%>(<%funArgsStr%>,<%fname%>Type &output );
       >>
 end functionHeaderRecordConstruct;
 
@@ -2199,13 +2199,13 @@ case RECORD_CONSTRUCTOR(__) then
   let structType = '<%fname%>Type'
   let structVar = tempDecl(structType, &varDecls /*BUFD*/)
 
-  <<
-  <%retType%> Functions::<%fname%>(<%funArgs |> var as  VARIABLE(__) => '<%varType1(var,simCode)%> <%crefStr(name)%>' ;separator=", "%>)
-  {
 
-    <%varDecls%>
-    <%funArgs |> VARIABLE(__) => '<%structVar%>.<%crefStr(name)%> = <%crefStr(name)%>;' ;separator="\n"%>
-    return <%structVar%>;
+  <<
+  void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var as  VARIABLE(__) => '<%varType1(var,simCode)%> <%crefStr(name)%>' ;separator=", "%>,<%retType%>& output )
+  {
+    <%funArgs |> VARIABLE(__) => 'output.<%crefStr(name)%> = <%crefStr(name)%>;' ;separator="\n"%>
+    //output = <%structVar%>;
+	//return <%structVar%>;
   }
 
 
@@ -2236,13 +2236,13 @@ case FUNCTION(outVars=_) then
   let fname = underscorePath(name)
   <<
         /* functionHeaderRegularFunction2 */
-        <%fname%>RetType <%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%>);
+        void /*<%fname%>RetType*/ <%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%>, <%fname%>RetType& output);
   >>
 case EXTERNAL_FUNCTION(outVars=var::_) then
 let fname = underscorePath(name)
    <<
         /* functionHeaderRegularFunction2 */
-        <%fname%>RetType <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%>);
+        void /*<%fname%>RetType*/ <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%>, <%fname%>RetType output);
    >>
 case EXTERNAL_FUNCTION(outVars={}) then
 let fname = underscorePath(name)
@@ -2277,7 +2277,7 @@ match fn
 case FUNCTION(__) then
   let()= System.tmpTickReset(1)
   let fname = underscorePath(name)
-  let retType = if outVars then '<%fname%>RetType /* functionBodyRegularFunction */' else "void"
+  let retType = if outVars then '<%fname%>RetType ' else "void" /* functionBodyRegularFunction */
   let &varDecls = buffer "" /*BUFD*/
   let &varInits = buffer "" /*BUFD*/
   //let retVar = if outVars then tempDecl(retType, &varDecls /*BUFD*/)
@@ -2313,7 +2313,8 @@ case FUNCTION(__) then
 
   //let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
-  <%retType%> Functions::<%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%>)
+  //if outvars missing
+  void /*<%retType%>*/ Functions::<%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%> <%if outVars then ', <%retType%>& output' %> )
   {
     //functionBodyRegularFunction
     <%varDecls%>
@@ -2325,7 +2326,7 @@ case FUNCTION(__) then
     }
     while(false);
     <%outVarAssign%>
-    return <%if outVars then '_<%fname%>' %>;
+	<%if outVars then 'output = _<%fname%>;' %>
   }
 
   <% if inFunc then
@@ -2369,7 +2370,7 @@ case efn as EXTERNAL_FUNCTION(__) then
           )
 
   let fnBody = <<
-  <%retType%> Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%>)
+  void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%> ,<%retType%>& output)/*function2*/
   {
     /* functionBodyExternalFunction: varDecls */
     <%varDecls%>
@@ -2670,7 +2671,7 @@ case var as VARIABLE(ty = T_STRING(__)) then
         >>
       ""
     else
-      let &varAssign += '_<%fname%>= <%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>;<%\n%>'
+      let &varAssign += '_<%fname%>=/*test21*/ <%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>;<%\n%>'
       ""
 case var as VARIABLE(__) then
   let marker = '<%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>'
@@ -2694,11 +2695,11 @@ case var as VARIABLE(__) then
     ""
 */
  if instDims then
- let &varAssign += '_<%fname%>.assign(<%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>);<%\n%>'
+ let &varAssign += '_<%fname%>.assign(<%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>)/*test21*/;<%\n%>'
  //let &varAssign += '<%contextCref(var.name,contextFunction,simCode)%>;<%\n%>'
  ""
  else
- let &varAssign += '_<%fname%> = <%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>;<%\n%>'
+ let &varAssign += '_<%fname%> =/*test22*/ <%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>;<%\n%>'
  //let &varAssign += '<%contextCref(var.name,contextFunction,simCode)%>;<%\n%>'
  ""
 case var as FUNCTION_PTR(__) then
@@ -9127,9 +9128,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = tempDecl(retType, &varDecls)
     let arraytpye =  'multi_array_ref<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
     let &preExp += match context
-                        case FUNCTION_CONTEXT(__) then '<%retVar%>.assign(<%funName%>(<%argStr%>));<%\n%>'
+                        case FUNCTION_CONTEXT(__) then '(<%funName%>(<%argStr%>,<%retVar%>));<%\n%>'
             /*multi_array else 'assign_array(<%retVar%> ,_functions.<%funName%>(<%argStr%>));<%\n%>'*/
-                        else '<%retVar%>= _functions-><%funName%>(<%argStr%>);<%\n%>'
+                        else '_functions-><%funName%>(<%argStr%>, <%retVar%>);<%\n%>'
 
 
 
@@ -9152,8 +9153,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let argStr = (explist |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)%>' ;separator=", ")
     let retType = '<%funName%>RetType /* undefined */'
     let retVar = tempDecl(retType, &varDecls)
-    let &preExp += match context case FUNCTION_CONTEXT(__) then'<%if retVar then '<%retVar%> = '%><%funName%>(<%argStr%>);<%\n%>'
-    else '<%if retVar then '<%retVar%> = '%>(_functions-><%funName%>(<%argStr%>));<%\n%>'
+    let &preExp += match context case FUNCTION_CONTEXT(__) then'<%funName%>(<%argStr%><%if retVar then ',<%retVar%>'%>);<%\n%>'
+    else '_functions-><%funName%>(<%argStr%><%if retVar then ',<%retVar%>'%>);<%\n%>'
      '<%retVar%>'
 
 end daeExpCall;
@@ -9508,7 +9509,7 @@ case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
   let record_type_name = underscorePath(ClassInf.getStateName(record_state))
   let ret_type = '<%record_type_name%>RetType'
   let ret_var = tempDecl(ret_type, &varDecls)
-  let &preExp += '<%ret_var%> = _functions-><%record_type_name%>(<%vars%>);<%\n%>'
+  let &preExp += '_functions-><%record_type_name%>(<%vars%>,<%ret_var%>);<%\n%>'
   '<%ret_var%>'
 end daeExpRecordCrefRhs;
 
