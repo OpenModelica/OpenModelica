@@ -2205,7 +2205,7 @@ case RECORD_CONSTRUCTOR(__) then
   {
     <%funArgs |> VARIABLE(__) => 'output.<%crefStr(name)%> = <%crefStr(name)%>;' ;separator="\n"%>
     //output = <%structVar%>;
-	//return <%structVar%>;
+  //return <%structVar%>;
   }
 
 
@@ -2326,7 +2326,7 @@ case FUNCTION(__) then
     }
     while(false);
     <%outVarAssign%>
-	<%if outVars then 'output = _<%fname%>;' %>
+  <%if outVars then 'output = _<%fname%>;' %>
   }
 
   <% if inFunc then
