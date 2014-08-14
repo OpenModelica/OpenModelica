@@ -76,7 +76,9 @@ match simCode
 case SIMCODE(__) then
   <<
   // define class name and unique id
+  #ifdef FMI_FROM_SOURCE
   #define FMI2_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_
+  #endif 
   #include <fmi2TypesPlatform.h>
   #include <fmi2Functions.h>
   #define MODEL_GUID "{<%guid%>}"
@@ -89,18 +91,25 @@ case SIMCODE(__) then
 
   <%ModelDefineData(modelInfo)%>
 
-  // equation functions
+  // dynamic equation functions
 
   <%generateEquations(allEquations)%>
 
+  // Dependency graph for sparse updates
   <%generateEquationGraph(allEquations)%>
+
+  // initial condition equations
+
+  <%generateEquations(initialEquations)%>
 
   <%setDefaultStartValues(modelInfo)%>
 
-  static void updateAll(model_data* data)
+  // Solve for unknowns in the model's initial equations
+  static void initialEquations(model_data* data)
   {
-      <%AllEquations(allEquations)%>
+      <%AllEquations(initialEquations)%>
   }
+
   // model exchange functions
 
   const char* fmi2GetTypesPlatform() { return fmi2TypesPlatform; }
@@ -125,7 +134,7 @@ case SIMCODE(__) then
   {
       model_data* data = static_cast<model_data*>(c);
       if (data == NULL) return fmi2Error;
-      data->update();
+      initialEquations(data);
       return fmi2OK;
   }
 
@@ -139,7 +148,7 @@ case SIMCODE(__) then
       model_data* data = static_cast<model_data*>(c);
       if (data == NULL) return fmi2Error;
       setDefaultStartValues(data);
-      updateAll(data);
+      initialEquations(data);
       return fmi2OK;
   }
 
@@ -201,8 +210,14 @@ case SIMCODE(__) then
       return fmi2Error;
    }
 
-   fmi2Status fmi2NewDiscreteStates(fmi2Component, fmi2EventInfo*)
+   fmi2Status fmi2NewDiscreteStates(fmi2Component, fmi2EventInfo* event_info)
    {
+      event_info->newDiscreteStatesNeeded = fmi2False;
+      event_info->terminateSimulation = fmi2False;
+      event_info->nominalsOfContinuousStatesChanged = fmi2False;
+      event_info->valuesOfContinuousStatesChanged = fmi2False;
+      event_info->nextEventTimeDefined = fmi2False;
+      event_info->nextEventTime = 0.0;
       if (NUMBER_OF_EVENT_INDICATORS == 0) return fmi2OK;
       return fmi2Error;
    }
@@ -278,7 +293,7 @@ template InstantiateFunction2()
           NUMBER_OF_REALS,NUMBER_OF_INTEGERS,NUMBER_OF_STRINGS,NUMBER_OF_BOOLEANS);
       setupEquationGraph(data);
       setDefaultStartValues(data);
-      updateAll(data);
+      initialEquations(data);
       return static_cast<fmi2Component>(data);
   }
 
@@ -327,6 +342,8 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolParam
   <%vars.discreteAlgVars |> var => DefineVariables(var,"real") ;separator="\n"%>
   <%vars.paramVars |> var => DefineVariables(var,"real") ;separator="\n"%>
   <%vars.aliasVars |> var => DefineVariables(var,"real") ;separator="\n"%>
+  <%vars.stateVars |> var => DefineDummyVariables(var,"real") ;separator="\n"%>
+  <%vars.derivativeVars |> var => DefineDummyVariables(var,"real") ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.intAlgVars |> var => DefineVariables(var,"int") ;separator="\n"%>
   <%vars.intParamVars |> var => DefineVariables(var,"int") ;separator="\n"%>
@@ -355,6 +372,28 @@ template dervativeNameCStyle(ComponentRef cr)
   match cr
   case CREF_QUAL(ident = "$DER") then 'der_<%crefStr(componentRef)%>_'
 end dervativeNameCStyle;
+
+template DefineDummyVariables(SimVar simVar, String arrayName)
+ "Generates code for defining variables in c file for FMU target. "
+::=
+match simVar
+  case SIMVAR(__) then
+  let description = if comment then '// "<%comment%>"'
+  if stringEq(crefStr(name),"$dummy") then
+  let idx = System.tmpTick()
+  <<
+  #define <%cref(name)%>_ <%idx%> <%description%>
+  #define <%cref(name)%> (data-><%arrayName%>_vars[<%idx%>]) <%description%>
+  >>
+  else if stringEq(crefStr(name),"der($dummy)") then
+  let idx = System.tmpTick()
+  <<
+  #define <%cref(name)%>_ <%idx%> <%description%>
+  #define <%cref(name)%> (data-><%arrayName%>_vars[<%idx%>]) <%description%>
+  >>
+  else
+  <<>>
+end DefineDummyVariables;
 
 template DefineVariables(SimVar simVar, String arrayName)
  "Generates code for defining variables in c file for FMU target. "
@@ -435,28 +474,6 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars
   }
   >>
 end setStartValues;
-
-template initializeFunction(list<SimEqSystem> allEquations)
-  "Generates initialize function for c file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let eqPart = ""/* (allEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls)
-    ;separator="\n") */
-  <<
-  // Used to set the first time event, if any.
-  void initialize(ModelInstance* comp, fmiEventInfo* eventInfo) {
-
-    <%varDecls%>
-
-    <%eqPart%>
-    <%allEquations |> SES_SIMPLE_ASSIGN(__) =>
-      'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", <%cref(cref)%>); }'
-    ;separator="\n"%>
-
-  }
-  >>
-end initializeFunction;
 
 
 template initVals(SimVar var, String arrayName, Integer offset) ::=
