@@ -205,10 +205,11 @@ void SystemDefaultImplementation::getString(string* z)
 
 void SystemDefaultImplementation::getContinuousStates(double* z)
 {
-    for(int i=0; i< _dimContinuousStates; ++i)
+	std::copy(__z ,__z + _dimContinuousStates, z);
+    /*for(int i=0; i< _dimContinuousStates; ++i)
     {
         z[i] = __z[i];
-    }
+    }*/
 
 };
  bool SystemDefaultImplementation::isConsistent()
@@ -293,19 +294,21 @@ void SystemDefaultImplementation::setReal(const double* z)
 
 void SystemDefaultImplementation::setContinuousStates(const double* z)
 {
-    for(int i=0; i<_dimContinuousStates; ++i)
+	std::copy(z ,z + _dimContinuousStates,__z);
+    /*for(int i=0; i<_dimContinuousStates; ++i)
     {
       __z[i] = z[i];
-    }
+    }*/
 
 };
 
 void SystemDefaultImplementation::setRHS(const double* f)
 {
-    for(int i=0; i<_dimRHS; ++i)
+	std::copy(f ,f + _dimRHS, __zDot);
+    /*for(int i=0; i<_dimRHS; ++i)
     {
       __zDot[i] = f[i];
-    }
+    }*/
 
 };
 
@@ -313,10 +316,9 @@ void SystemDefaultImplementation::setRHS(const double* f)
 /// Provide the right hand side (according to the index)
 void SystemDefaultImplementation::getRHS(double* f)
 {
-
-     for(int i=0; i<_dimRHS; ++i)
-      f[i] = __zDot[i];
-
+	std:copy(__zDot, __zDot+_dimRHS, f);
+//     for(int i=0; i<_dimRHS; ++i)
+//      f[i] = __zDot[i];
 };
 void  SystemDefaultImplementation::intDelay(vector<unsigned int> expr,vector<double> delay_max)
 {
