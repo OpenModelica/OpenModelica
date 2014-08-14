@@ -69,7 +69,6 @@ public:
 
   StatArrayDim1()
   {
-     _real_array.assign(0.0);
   }
 
   ~StatArrayDim1() {}
@@ -168,7 +167,6 @@ public:
 
   StatArrayDim2()
   {
-    _real_array.assign(0.0);
   }
 
   StatArrayDim2(const StatArrayDim2<T,size1,size2>& otherarray)
@@ -280,7 +278,6 @@ public:
 
   StatArrayDim3()
   {
-    _real_array.assign(0.0);
   }
 
   ~StatArrayDim3(){}
