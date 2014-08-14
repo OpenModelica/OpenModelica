@@ -142,7 +142,7 @@ public:
     return v;
   }
  /*
-  access to data 
+  access to data
   */
   virtual T* getData()
   {
@@ -270,7 +270,7 @@ public:
     return size1 + size2;
   }
    /*
-  access to data 
+  access to data
   */
   virtual T* getData()
   {
@@ -371,7 +371,7 @@ public:
 
   }
    /*
-  access to data 
+  access to data
   */
   virtual T* getData()
   {
@@ -662,7 +662,7 @@ public:
     _multi_array.resize(v);//
     _multi_array.reindex(1);
   }
- 
+
   DynArrayDim1(BaseArray<T>& otherArray)
   {
     std::vector<size_t> v = otherArray.getDims();
@@ -671,7 +671,7 @@ public:
     const T* data_otherarray = otherArray.getData();
     _multi_array.assign(data_otherarray,data_otherarray+v[0]);
    }
-  
+
 
   ~DynArrayDim1()
   {
@@ -873,7 +873,7 @@ public:
     return _multi_array.num_elements();
   }
   /*
-  access to data 
+  access to data
   */
   virtual T* getData()
   {
@@ -994,7 +994,7 @@ public:
     return _multi_array.num_elements();
   }
    /*
-  access to data 
+  access to data
   */
   virtual T* getData()
   {
