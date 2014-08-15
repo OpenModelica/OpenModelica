@@ -4265,7 +4265,7 @@ algorithm
   (asapOut,estOut,ectOut) := computeGraphValuesBottomUp1(rootNodes,iTaskGraph,taskGraphT,iTaskGraphMeta,asap,est,ect);
 end computeGraphValuesBottomUp;
 
-protected function computeGraphValuesBottomUp1"implementation of computeGraphValuesBottomUp"
+protected function computeGraphValuesBottomUp1 "implementation of computeGraphValuesBottomUp"
   input list<Integer> parentsIn;
   input HpcOmTaskGraph.TaskGraph graph;
   input HpcOmTaskGraph.TaskGraph graphT;
@@ -4277,14 +4277,43 @@ protected function computeGraphValuesBottomUp1"implementation of computeGraphVal
   output array<Real> estOut;
   output array<Real> ectOut;
 algorithm
-  (asapOut,estOut,ectOut) := matchcontinue(parentsIn,graph,graphT,iTaskGraphMeta,asapIn,estIn,ectIn)
+  (asapOut,estOut,ectOut) := match (parentsIn,graph,graphT,iTaskGraphMeta,asapIn,estIn,ectIn)
     local
       Integer node;
       Real maxASAP, maxEct, exeCost;
       array<Real> asap, ect, est;
       list<Integer> rest, parents, children;
       list<Real> parentEcts, parentAsaps, parentAsaps2, parentsExeCosts, commCosts, ectsWithComm; //ect: earliestCompletionTime
-  case(node::rest,_,_,_,_,_,_)
+  case (node::rest,_,_,_,asap,est,ect)
+    equation
+      (asap,est,ect,children) = computeGraphValuesBottomUp2(node,graph,graphT,iTaskGraphMeta,asap,est,ect);
+      (asap,est,ect) = computeGraphValuesBottomUp1(listAppend(rest,children) /* If speed is needed, create a second work list */,graph,graphT,iTaskGraphMeta,asap,est,ect);
+    then (asap,est,ect);
+  case({},_,_,_,_,_,_)
+    then (asapIn,estIn,ectIn);
+  end match;
+end computeGraphValuesBottomUp1;
+
+protected function computeGraphValuesBottomUp2 "implementation of computeGraphValuesBottomUp"
+  input Integer node;
+  input HpcOmTaskGraph.TaskGraph graph;
+  input HpcOmTaskGraph.TaskGraph graphT;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input array<Real> asapIn;
+  input array<Real> estIn;
+  input array<Real> ectIn;
+  output array<Real> asapOut;
+  output array<Real> estOut;
+  output array<Real> ectOut;
+  output list<Integer> children;
+algorithm
+  (asapOut,estOut,ectOut,children) := matchcontinue(node,graph,graphT,iTaskGraphMeta,asapIn,estIn,ectIn)
+    local
+      Real maxASAP, maxEct, exeCost;
+      array<Real> asap, ect, est;
+      list<Integer> rest, parents;
+      list<Real> parentEcts, parentAsaps, parentAsaps2, parentsExeCosts, commCosts, ectsWithComm; //ect: earliestCompletionTime
+  case (_,_,_,_,_,_,_)
     equation
       // all parents have been investigated, update this node
       parents = arrayGet(graphT,node);
@@ -4302,27 +4331,21 @@ algorithm
       est = arrayUpdate(estIn,node,maxEct);
       ect = arrayUpdate(ectIn,node,realAdd(maxEct,exeCost));
       children = arrayGet(graph,node);
-      rest = listAppend(rest,children);
-      (asap,est,ect) = computeGraphValuesBottomUp1(rest,graph,graphT,iTaskGraphMeta,asap,est,ect);
-    then (asap,est,ect);
-  case(node::rest,_,_,_,_,_,_)
+    then (asap,est,ect,children);
+  case (_,_,_,_,_,_,_)
     equation
       // some parents have not been investigated, skip this node
       parents = arrayGet(graphT,node);
       parentAsaps = List.map1(parents,Util.arrayGetIndexFirst,asapIn);
       true = List.isMemberOnTrue(-1.0,parentAsaps,realEq);
-      rest = listAppend(rest,{node});
-      (asap,est,ect) = computeGraphValuesBottomUp1(rest,graph,graphT,iTaskGraphMeta,asapIn,estIn,ectIn);
     then
-      (asap,est,ect);
-  case({},_,_,_,_,_,_)
-    then (asapIn,estIn,ectIn);
+      (asapIn,estIn,ectIn,{node});
   else
     equation
-      print("computeGraphValuesBottomUp1 failed!\n");
+      print("computeGraphValuesBottomUp2 failed!\n");
     then fail();
   end matchcontinue;
-end computeGraphValuesBottomUp1;
+end computeGraphValuesBottomUp2;
 
 //----------------------------
 // traverse the task graph top down (beginning at the leaf nodes)

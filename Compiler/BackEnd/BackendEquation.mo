@@ -1094,17 +1094,24 @@ protected function findFirstUnusedEquOptEntry
   input array<Option<BackendDAE.Equation>> inEquOptArr;
   output Integer outIndex;
 algorithm
-  outIndex := matchcontinue (inPos, inSize, inEquOptArr)
-    case (_, _, _) equation
-      true = intLe(inPos, inSize);
-      NONE() = inEquOptArr[inPos];
-    then inPos;
-
-    case (_, _, _) equation
-      true = intLe(inPos, inSize);
-    then findFirstUnusedEquOptEntry(inPos+1, inSize, inEquOptArr);
-  end matchcontinue;
+  outIndex := findFirstUnusedEquOptEntryWork(inPos, inSize, inEquOptArr[inPos], inEquOptArr);
 end findFirstUnusedEquOptEntry;
+
+protected function findFirstUnusedEquOptEntryWork
+  input Integer inPos "initially call this with 1" ;
+  input Integer inSize;
+  input Option<BackendDAE.Equation> thisValue;
+  input array<Option<BackendDAE.Equation>> inEquOptArr;
+  output Integer outIndex;
+algorithm
+  outIndex := match (inPos, inSize, thisValue, inEquOptArr)
+    case (_, _, NONE(), _)
+      then inPos;
+
+    case (_, _, _, _)
+      then findFirstUnusedEquOptEntryWork(inPos+1, inSize, arrayGet(inEquOptArr,inPos+1), inEquOptArr);
+  end match;
+end findFirstUnusedEquOptEntryWork;
 
 public function addEquation "author: PA
   Adds an equation to an EquationArray."
