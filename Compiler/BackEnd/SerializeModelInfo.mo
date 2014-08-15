@@ -489,7 +489,7 @@ algorithm
         serializeEquation(file,listGet(eqs,1),section,withOperations,first=true);
         min(serializeEquation(file,e,section,withOperations) for e in List.rest(eqs));
         jeqs = match eq.jacobianMatrix
-          case SOME(({(jeqs,_,_)},_,_,_,_,_)) then SimCodeUtil.sortEqSystems(jeqs);
+          case SOME(({(jeqs,_,_)},_,_,_,_,_,_)) then SimCodeUtil.sortEqSystems(jeqs);
           else {};
         end match;
         min(serializeEquation(file,e,section,withOperations) for e in jeqs);

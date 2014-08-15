@@ -3011,6 +3011,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
 
   int <%symbolName(modelNamePrefix,"functionDAE")%>(DATA *data)
   {
+    int equationIndexes[1] = {0};<%/*reinits may use equation indexes, even though it has no equation...*/%>
     <%varDecls%>
 
     TRACE_PUSH
@@ -10484,14 +10485,24 @@ end expToFormatString;
 
 template assertCommonVar(Text condVar, Text msgVar, Context context, Text &preExpMsg, Text &varDecls, Info info)
 ::=
-  <<
-  if(!<%condVar%>)
-  {
-      <%preExpMsg%>
-      FILE_INFO info = {<%infoArgs(info)%>};
-      omc_assert(threadData, info, <%msgVar%>);
-  }<%\n%>
-  >>
+  match context
+  case FUNCTION_CONTEXT(__) then
+    <<
+    if(!<%condVar%>)
+    {
+        <%preExpMsg%>
+        FILE_INFO info = {<%infoArgs(info)%>};
+        omc_assert(threadData, info, <%msgVar%>);
+    }<%\n%>
+    >>
+  else
+    <<
+    if(!<%condVar%>)
+    {
+        <%preExpMsg%>
+        throwStreamPrintWithEquationIndexes(threadData, equationIndexes, <%msgVar%>);
+    }<%\n%>
+    >>
 end assertCommonVar;
 
 template literalExpConst(Exp lit, Integer index) "These should all be declared static X const"

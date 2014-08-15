@@ -382,13 +382,28 @@ void debugStreamPrintWithEquationIndexes(int stream, int indentNext, const int *
 
 #endif
 
+static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
+{
+  switch (threadData->currentErrorStage) {
+  case ERROR_EVENTSEARCH:
+  case ERROR_SIMULATION:
+  case ERROR_NONLINEARSOLVER:
+  case ERROR_INTEGRATOR:
+#ifndef OMC_EMCC
+    return threadData->simulationJumpBuffer;
+#endif
+  default:
+    return threadData->globalJumpBuffer;
+  }
+}
+
 void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list args)
 {
   char logBuffer[SIZE_LOG_BUFFER];
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, NULL);
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
-  longjmp(*threadData->globalJumpBuffer, 1);
+  longjmp(*getBestJumpBuffer(threadData), 1);
 }
 
 void throwStreamPrint(threadData_t *threadData, const char *format, ...)
@@ -408,5 +423,5 @@ void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const int *in
   va_end(args);
   messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, indexes);
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
-  longjmp(*threadData->globalJumpBuffer, 1);
+  longjmp(*getBestJumpBuffer(threadData), 1);
 }
