@@ -24,6 +24,7 @@ ENDIF(NOT ANALYZATION_MODE)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
 option(ANALYZATION_MODE "ANALYZATION_MODE" OFF)
+option(USE_THREADS "USE_THREADS" OFF)
 
 IF(ANALYZATION_MODE)
 	message(STATUS "Using analyzation mode")
@@ -132,6 +133,7 @@ ELSE(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
 	message(STATUS "Boost log disabled")
 ENDIF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
 
+IF(USE_THREADS)
 find_package(Boost 1.54 COMPONENTS thread atomic)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
 find_package(Threads)
@@ -141,6 +143,7 @@ IF(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
 ELSE(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
 	message(STATUS "Boost thread disabled")
 ENDIF(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
+ENDIF(USE_THREADS)
 
 find_package(Boost COMPONENTS filesystem system serialization program_options REQUIRED)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
