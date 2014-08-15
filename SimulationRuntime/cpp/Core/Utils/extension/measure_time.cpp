@@ -1,5 +1,6 @@
 #include "Core/Utils/extension/measure_time.hpp"
 
+MeasureTime * MeasureTime::instance = 0;
 
 MeasureTime* MeasureTime::getInstance()
 {
@@ -8,44 +9,41 @@ MeasureTime* MeasureTime::getInstance()
 
 void MeasureTime::deinitialize()
 {
-  if(instance != 0)
+  if (instance != 0)
     delete instance;
 }
 
 unsigned long long MeasureTime::getTime()
 {
-  if(instance == 0)
+  if (instance == 0)
     return 0;
 
   return instance->getTimeP();
 }
 
 void MeasureTime::writeTimeToJason(std::string model_name, std::vector<data> times)
+{
+  std::stringstream date;
+  date.str("");
+  time_t sec = time(NULL);
+  tm * date_t = localtime(&sec);
+  date << date_t->tm_year + 1900 << "-" << date_t->tm_mon + 1 << "-" << date_t->tm_mday << " " << date_t->tm_hour << ":" << date_t->tm_min << ":" << date_t->tm_sec;
+  std::ofstream os;
+  os.open((model_name + std::string("_prof.json")).c_str());
+  os << "{\n\"name\":\"" << model_name << "\",\n";
+  os << "\"prefix\":\"" << model_name << "\",\n";
+  os << "\"date\":\"" << date.str() << "\",\n";
+
+  os << "\"functions\":[\n],\n";
+  os << "\"profileBlocks\":[\n";
+
+  for (unsigned i = 0; i < times.size(); ++i)
   {
-    std::stringstream date;
-    date.str("");
-    time_t sec = time(NULL);
-    tm * date_t = localtime(&sec);
-    date << date_t->tm_year+1900 << "-" << date_t->tm_mon+1 << "-" << date_t->tm_mday << " " << date_t->tm_hour << ":" << date_t->tm_min << ":" << date_t->tm_sec;
-    std::ofstream os;
-    os.open((model_name+std::string("_prof.json")).c_str());
-    os << "{\n\"name\":\"" << model_name << "\",\n";
-    os << "\"prefix\":\"" << model_name << "\",\n";
-    os << "\"date\":\"" << date.str() << "\",\n";
-
-    os << "\"functions\":[\n],\n";
-    os << "\"profileBlocks\":[\n";
-
-    for(unsigned i=0;i<times.size();++i)
-    {
-      os << "{\"id\":" << i << ",\"ncall\":" << times[i].num_calcs << ",\"time\":" << times[i].sum_time
-         << ",\"maxTime\":" << times[i].max_time << "},\n";
-    }
-    os << "]\n}";
-    os.close();
+    os << "{\"id\":" << i << ",\"ncall\":" << times[i].num_calcs << ",\"time\":" << times[i].sum_time << ",\"maxTime\":" << times[i].max_time << "},\n";
   }
-
-MeasureTime * MeasureTime::instance = 0;
+  os << "]\n}";
+  os.close();
+}
 
 unsigned long long RDTSC_MeasureTime::getTimeP()
 {
@@ -56,7 +54,6 @@ void RDTSC_MeasureTime::initialize()
 {
   instance = new RDTSC_MeasureTime();
 }
-
 
 #if defined(_MSC_VER)
 
@@ -77,7 +74,7 @@ unsigned long long RDTSC_MeasureTime::RDTSC()
 unsigned long long RDTSC_MeasureTime::RDTSC()
 {
   unsigned long long res;
-  asm volatile (".byte 0x0f, 0x31" : "=A" (res)));
+  asm volatile (".byte 0x0f, 0x31" : "=A" (res));
   return res;
 }
 
@@ -86,7 +83,7 @@ unsigned long long RDTSC_MeasureTime::RDTSC()
 {
   unsigned hi, lo;
   __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
-  return ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
+  return ((unsigned long long) lo) | (((unsigned long long) hi) << 32);
 }
 
 #else
