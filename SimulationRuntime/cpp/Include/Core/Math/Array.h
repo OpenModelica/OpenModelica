@@ -126,11 +126,11 @@ public:
 
 
 
-  virtual T& operator()(unsigned int index)
+  inline virtual T& operator()(unsigned int index)
   {
     return _real_array[index - 1];
   }
-  virtual const T& operator()(unsigned int index) const
+  inline virtual const T& operator()(unsigned int index) const
   {
     return _real_array[index - 1];
   }
@@ -252,7 +252,7 @@ public:
 
   }
 
-  virtual T& operator()(const unsigned int i, const unsigned  int j)
+  inline virtual T& operator()(const unsigned int i, const unsigned  int j)
   {
     return _real_array[size2*(i - 1) + j - 1];
   }
@@ -357,7 +357,7 @@ public:
   return *this;
  }
 
-  virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
+ inline virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
   {
     return _real_array[size3 * size2 * (i - 1) + size2 * (j - 1) + (k - 1)];
   }
@@ -706,12 +706,12 @@ public:
     _multi_array.assign(data, data + _multi_array.num_elements() );
   }
 
-  virtual T& operator()(unsigned int index)
+  inline virtual T& operator()(unsigned int index)
   {
     //double tmp = _multi_array[index];
     return _multi_array[index];
   }
-  virtual const T& operator()(unsigned int index) const
+  inline virtual const T& operator()(unsigned int index) const
   {
     //double tmp = _multi_array[index];
     return _multi_array[index];
@@ -840,7 +840,7 @@ public:
     _multi_array.assign(data, data + _multi_array.num_elements() );
   }
 
-  virtual T& operator()(const unsigned  int i, const unsigned  int j)
+  inline virtual T& operator()(const unsigned  int i, const unsigned  int j)
   {
     return _multi_array[i][j];
   }
@@ -984,7 +984,7 @@ public:
     return ex;
   }
 
-  virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
+  inline virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
   {
     return _multi_array[i][j][k];
   }

@@ -1507,7 +1507,7 @@ encapsulated package HpcOmMemory
     elems := List.reduce(dimElemCount, intMul);
     print("expandCref: " +& ComponentReference.printComponentRefStr(iCref) +& " dims: " +& intString(dims) +& " elems: " +& intString(elems) +& "\n");
     //dims := listLength(iNumArrayElems);
-    //print("expandCref: " +& ComponentReference.printComponentRefStr(iCref) +& " dims: " +& intString(dims) +& "[" +& intString(getCrefDims(iCref)) +& "] elems: " +& intString(elems) +& "\n");
+    print("expandCref: " +& ComponentReference.printComponentRefStr(iCref) +& " dims: " +& intString(dims) +& "[" +& intString(getCrefDims(iCref)) +& "] elems: " +& intString(elems) +& "\n");
     oCrefs := expandCref1(cref, elems, dimElemCount);
   end expandCref;
 

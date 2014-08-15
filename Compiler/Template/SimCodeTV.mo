@@ -2829,6 +2829,7 @@ package Flags
   constant DebugFlag HPCOM_ANALYZATION_MODE;
   constant ConfigFlag NUM_PROC;
   constant ConfigFlag HPCOM_CODE;
+  constant ConfigFlag PROFILING_LEVEL;
 
   function isSet
     input DebugFlag inFlag;

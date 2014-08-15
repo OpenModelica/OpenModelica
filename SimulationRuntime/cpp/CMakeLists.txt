@@ -107,6 +107,7 @@ set(HybrjName ${LIBPREFIX}Hybrj)
 set(UmfPackName ${LIBPREFIX}UmfPack)
 set(DataExchangeName ${LIBPREFIX}DataExchange)
 set(ModelicaUtilitiesName ${LIBPREFIX}ModelicaUtilities)
+set(ExtensionUtilitiesName ${LIBPREFIX}ExtensionUtilities)
 set(BasiLibName ${LIBPREFIX}Base)
 
 SET(USE_MICO OFF)
@@ -253,6 +254,7 @@ include_directories ("Include/SimCoreFactory")
 add_subdirectory (Core/Math)
 
 add_subdirectory (Core/Utils/Modelica)
+add_subdirectory (Core/Utils/extension)
 add_subdirectory (Core/DataExchange)
 add_subdirectory (SimCoreFactory/OMCFactory)
 
@@ -354,6 +356,7 @@ set (HYBRJ_LIB ${libHybrjName})
 set (SIMOBJFACTORY_LIB ${libSimObjFactoryName})
 set (DATAEXCHANGE_LIB ${libDataExchangeName})
 set (SIMCONRTOLLER_LIB ${libSimControllerName})
+set (EXTENSIONUTILITIES_LIB ${libExtensionUtilitiesName})
 
 # configure a header file to pass some library names
 # to the source code which are used to dynamic load and instantiate

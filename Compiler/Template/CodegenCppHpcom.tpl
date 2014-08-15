@@ -455,7 +455,7 @@ match simVar
       let arraysize = arrayextentDims(name,v.numArrayElement)
       match(hpcOmMemoryOpt)
             case SOME(hpcOmMemory) then
-              let varDeclarations = HpcOmMemory.expandCref(arrayCrefLocal,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
+              let varDeclarations = HpcOmMemory.expandCref(name,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
               <<
               // case 3 MemberVariableDefine dims:<%dims%> nums:<%num%>
               <%varDeclarations%>
@@ -687,7 +687,6 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
                 <<
                 <%threadFuncs%>
                 <%initlocks%>
-                <%assignLocks%>
                 >>
             else
                 let threadLocksInit = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLock(i0, "th_lock", type); separator="\n"
@@ -982,13 +981,8 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
           //using type: <%type%>
           void <%lastIdentOfPath(name)%>::evaluateODE(const UPDATETYPE command)
           {
-
-            omp_set_dynamic(0);
-
             <%&varDecls%>
             <%taskEqs%>
-
-
           }
           >>
         else
@@ -1172,17 +1166,27 @@ template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<lis
 ::=
   match iType
     case ("openmp") then
-      let odeEqs = arrayList(threadTasks) |> tt => function_HPCOM_Thread0(allEquationsPlusWhen,tt,iType,&varDecls,simCode, useFlatArrayNotation); separator="\n"
+      let odeEqs = arrayList(threadTasks) |> tt hasindex i0 => function_HPCOM_Thread0(allEquationsPlusWhen,tt,i0,iType,&varDecls,simCode, useFlatArrayNotation); separator="\n"
+      let threadAssignLocks = arrayList(threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignThreadLocks(arrayGet(threadTasks, intAdd(i0, 1)), "lock", i0, iType); separator="\n"
+      let threadReleaseLocks = arrayList(threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseThreadLocks(arrayGet(threadTasks, intAdd(i0, 1)), "lock", i0, iType); separator="\n"
       <<
       if (omp_get_dynamic())
         omp_set_dynamic(0);
-      #pragma omp parallel sections num_threads(<%arrayLength(threadTasks)%>)
+      #pragma omp parallel num_threads(<%arrayLength(threadTasks)%>)
       {
+         int threadNum = omp_get_thread_num();
+         
+         //Assign locks first
+         <%threadAssignLocks%>
+         #pragma omp barrier
          <%odeEqs%>
+         #pragma omp barrier
+         //Release locks after calculation
+         <%threadReleaseLocks%>
       }
       >>
     else
-      let odeEqs = arrayList(threadTasks) |> tt => function_HPCOM_Thread0(allEquationsPlusWhen,tt,iType,&varDecls,simCode, useFlatArrayNotation); separator="\n"
+      let odeEqs = arrayList(threadTasks) |> tt hasindex i0 => function_HPCOM_Thread0(allEquationsPlusWhen,tt,i0,iType,&varDecls,simCode, useFlatArrayNotation); separator="\n"
       <<
       <%odeEqs%>
       >>
@@ -1192,7 +1196,7 @@ end function_HPCOM_Thread;
 template generateThreadFunc(list<SimEqSystem> allEquationsPlusWhen, array<list<Task>> threadTasks, String iType, Integer idx, String modelNamePrefixStr, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
 ::=
   let &varDeclsLoc = buffer "" /*BUFD*/
-  let taskEqs = function_HPCOM_Thread0(allEquationsPlusWhen, arrayGet(threadTasks,intAdd(idx,1)), iType, &varDeclsLoc, simCode, useFlatArrayNotation); separator="\n"
+  let taskEqs = function_HPCOM_Thread0(allEquationsPlusWhen, arrayGet(threadTasks,intAdd(idx,1)), idx, iType, &varDeclsLoc, simCode, useFlatArrayNotation); separator="\n"
   let assLock = function_HPCOM_assignLock(idx, "th_lock", iType); separator="\n"
   let relLock = function_HPCOM_releaseLock(idx, "th_lock1", iType); separator="\n"
   <<
@@ -1212,13 +1216,45 @@ template generateThreadFunc(list<SimEqSystem> allEquationsPlusWhen, array<list<T
   >>
 end generateThreadFunc;
 
-template function_HPCOM_Thread0(list<SimEqSystem> allEquationsPlusWhen, list<Task> threadTaskList, String iType, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
+template function_HPCOM_assignThreadLocks(list<Task> iThreadTasks, String iLockPrefix, Integer iThreadNum, String iType)
+::=
+  let lockAssign = iThreadTasks |> tt => '<%(
+    match(tt)
+        case(RELEASELOCKTASK(__)) then
+            function_HPCOM_assignLock(lockId, iLockPrefix, iType)
+        else ""
+    end match)%>'; separator="\n"
+  <<
+  if(threadNum == <%iThreadNum%>)
+  {
+    <%lockAssign%>
+  }
+  >>
+end function_HPCOM_assignThreadLocks;
+
+template function_HPCOM_releaseThreadLocks(list<Task> iThreadTasks, String iLockPrefix, Integer iThreadNum, String iType)
+::=
+  let lockAssign = iThreadTasks |> tt => '<%(
+    match(tt)
+        case(ASSIGNLOCKTASK(__)) then
+            function_HPCOM_releaseLock(lockId, iLockPrefix, iType)
+        else ""
+    end match)%>'; separator="\n"
+  <<
+  if(threadNum == <%iThreadNum%>)
+  {
+    <%lockAssign%>
+  }
+  >>
+end function_HPCOM_releaseThreadLocks;
+
+template function_HPCOM_Thread0(list<SimEqSystem> allEquationsPlusWhen, list<Task> threadTaskList, Integer iThreadNum, String iType, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
 ::=
   let threadTasks = threadTaskList |> tt => function_HPCOM_Task(allEquationsPlusWhen,tt,iType,&varDecls,simCode,useFlatArrayNotation); separator="\n"
   match iType
     case ("openmp") then
       <<
-      #pragma omp section
+      if(threadNum == <%iThreadNum%>)
       {
         <%threadTasks%>
       }
