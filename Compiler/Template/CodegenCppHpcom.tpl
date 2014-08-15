@@ -1175,7 +1175,7 @@ template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<lis
       #pragma omp parallel num_threads(<%arrayLength(threadTasks)%>)
       {
          int threadNum = omp_get_thread_num();
-         
+
          //Assign locks first
          <%threadAssignLocks%>
          #pragma omp barrier

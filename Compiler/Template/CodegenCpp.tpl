@@ -1125,8 +1125,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
             std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
 
             simulation.first->Start(system.first,simulation.second,"<%lastIdentOfPath(modelInfo.name)%>");
-			<% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then 'RDTSC_MeasureTime::deinitialize();' %>
-			return 0;
+      <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then 'RDTSC_MeasureTime::deinitialize();' %>
+      return 0;
 
       }
       catch(std::exception& ex)
@@ -1372,7 +1372,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   #LDSYTEMFLAGS=/MD /Debug  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib   OMCppOMCFactory.lib
   LDSYTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib   OMCppOMCFactory.lib <%timeMeasureLink%>
   #LDMAINFLAGS=/MD /Debug  /link /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" OMCppOMCFactory.lib  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
-  LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" OMCppOMCFactory.lib <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" 
+  LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" OMCppOMCFactory.lib <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
   # /MDd link with MSVCRTD.LIB debug lib
   # lib names should not be appended with a d just switch to lib/omc/cpp
 
@@ -1486,13 +1486,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     %>
     <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-	  	<<
-	  	  MeasureTime::data ref;
-	  	  ref.max_time = 0;
-	  	  ref.num_calcs = 0;
-	  	  ref.sum_time = 0;
-	  	  measureTimeArray = std::vector<MeasureTime::data>(<%listLength(simCode.allEquations)%>,ref);
-	  	>>
+      <<
+        MeasureTime::data ref;
+        ref.max_time = 0;
+        ref.num_calcs = 0;
+        ref.sum_time = 0;
+        measureTimeArray = std::vector<MeasureTime::data>(<%listLength(simCode.allEquations)%>,ref);
+      >>
     %>
     //DAE's are not supported yet, Index reduction is enabled
     _dimAE = 0; // algebraic equations
@@ -1515,13 +1515,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     {
         if(_functions != NULL)
             delete _functions;
-        
+
         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-	  		let n = listLength(simCode.allEquations) 
-	  		<<
-	  	  	  MeasureTime::getInstance()->writeTimeToJason("<%dotPath(modelInfo.name)%>",measureTimeArray);
-	  		>>
-    	%>
+        let n = listLength(simCode.allEquations)
+        <<
+            MeasureTime::getInstance()->writeTimeToJason("<%dotPath(modelInfo.name)%>",measureTimeArray);
+        >>
+      %>
     }
 
 
@@ -3818,7 +3818,7 @@ template InitializeEquationsArray(list<SimEqSystem> allEquations, String classNa
       first_equation_index = <%equationIndex(feq)%>;
 
       <%equation_inits%>
-    } 
+    }
     >>
   end match
 end InitializeEquationsArray;
@@ -4084,7 +4084,7 @@ match modelInfo
 
      boost::shared_ptr<ISimData> _simData;
 
-	<% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then 'std::vector<MeasureTime::data> measureTimeArray;' %>
+  <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then 'std::vector<MeasureTime::data> measureTimeArray;' %>
 
      <%memberfuncs%>
 
@@ -7031,24 +7031,24 @@ end equation_function_call;
       (this->*equations_array[<%arrayIndex%>])();
     >>
     */
-    
+
 template measureTimeStart(Integer eq_number)
 ::=
-	<<
-		long long unsigned startMeasure_t, endMeasure_t,measure_t;
-		startMeasure_t = MeasureTime::getInstance()->getTime();
-	>>
+  <<
+    long long unsigned startMeasure_t, endMeasure_t,measure_t;
+    startMeasure_t = MeasureTime::getInstance()->getTime();
+  >>
 end measureTimeStart;
 
 template measureTimeStop(Integer eq_number)
 ::=
-	<<
-		endMeasure_t = MeasureTime::getInstance()->getTime();
-		measure_t = endMeasure_t - startMeasure_t;
-		if(measure_t > measureTimeArray[<%eq_number%>].max_time) measureTimeArray[<%eq_number%>].max_time = measure_t;
-		measureTimeArray[<%eq_number%>].sum_time += measure_t;
-		++(measureTimeArray[<%eq_number%>].num_calcs);
-	>>
+  <<
+    endMeasure_t = MeasureTime::getInstance()->getTime();
+    measure_t = endMeasure_t - startMeasure_t;
+    if(measure_t > measureTimeArray[<%eq_number%>].max_time) measureTimeArray[<%eq_number%>].max_time = measure_t;
+    measureTimeArray[<%eq_number%>].sum_time += measure_t;
+    ++(measureTimeArray[<%eq_number%>].num_calcs);
+  >>
 end measureTimeStop;
 
 template equation_function_create_single_func(SimEqSystem eq, Context context, SimCode simCode,Text method,Text classnameext, Boolean useFlatArrayNotation, Boolean createMeasureTime, Integer equa_number)
@@ -7058,7 +7058,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
   let &additionalFuncs = buffer "" /*BUFD*/
   let &measureTimeStartVar = buffer "" /*BUFD*/
   let &measureTimeEndVar = buffer "" /*BUFD*/
- 
+
   let body = match eq
    case e as SES_SIMPLE_ASSIGN(__)
      then
@@ -7078,30 +7078,30 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     case e as SES_NONLINEAR(__)
       then
       equationLinearOrNonLinear(e, context, &varDeclsLocal,simCode)
-    case e as SES_MIXED(__)  
+    case e as SES_MIXED(__)
       then
       /*<%equationMixed(e, context, &varDeclsLocal, simCode)%>*/
       let &additionalFuncs += equation_function_create_single_func(e.cont,context,simCode,method,classnameext, useFlatArrayNotation, false, 0)
       "throw std::runtime_error(\"Mixed systems are not supported yet\");"
     else
       "NOT IMPLEMENTED EQUATION"
-  end match 
+  end match
   let &measureTimeStartVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then measureTimeStart(equa_number) //else ""
   let &measureTimeEndVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then measureTimeStop(equa_number) //else ""
   <<
-  	<%additionalFuncs%>
+    <%additionalFuncs%>
     /*
     <%dumpEqs(fill(eq,1))%>
     */
     void <%lastIdentOfPathFromSimCode(simCode)%><%classnameext%>::<%method%>_<%ix_str%>()
     {
-	  <%measureTimeStartVar%>
+    <%measureTimeStartVar%>
       <%varDeclsLocal%>
       <%body%>
-	  <%measureTimeEndVar%>
+    <%measureTimeEndVar%>
     }
   >>
-    
+
 end equation_function_create_single_func;
 
 template equationMixed(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, SimCode simCode, Boolean useFlatArrayNotation)
