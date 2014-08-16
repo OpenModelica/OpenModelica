@@ -7462,8 +7462,36 @@ protected
 algorithm
   e :: rest := inList;
   b := inCompFunc(inValue, e);
-  outElement := Debug.bcallret3(boolNot(b), getMemberOnTrue, inValue, rest, inCompFunc, e);
+  outElement := getMemberOnTrueWork(b, e, inValue, rest, inCompFunc);
 end getMemberOnTrue;
+
+public function getMemberOnTrueWork
+  "Needed due to no if-expressions..."
+  input Boolean inBool;
+  input ElementType inElement;
+  input ValueType inValue;
+  input list<ElementType> inList;
+  input CompFunc inCompFunc;
+  output ElementType outElement;
+
+  partial function CompFunc
+    input ValueType inValue;
+    input ElementType inElement;
+    output Boolean outIsEqual;
+  end CompFunc;
+algorithm
+  outElement := match (inBool,inElement,inValue,inList,inCompFunc)
+    local
+      ElementType e;
+      list<ElementType> rest;
+      Boolean b;
+    case (true,_,_,_,_) then inElement;
+    case (_,_,_,e::rest,_)
+      equation
+        b = inCompFunc(inValue, e);
+      then getMemberOnTrueWork(b, e, inValue, rest, inCompFunc);
+  end match;
+end getMemberOnTrueWork;
 
 public function notMember
   "Returns true if a list does not contain the given element, otherwise false."
