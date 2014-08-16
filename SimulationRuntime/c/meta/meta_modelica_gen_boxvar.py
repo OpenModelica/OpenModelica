@@ -11,6 +11,7 @@ functions = [
 'boolEq',
 'boolNot',
 'boolOr',
+'cons',
 'equality',
 'getGlobalRoot',
 'intAbs',

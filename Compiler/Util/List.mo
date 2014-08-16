@@ -460,6 +460,15 @@ algorithm
   end matchcontinue;
 end isPrefixOnTrue;
 
+public function prepend
+  "The same as the builtin cons operator, but RML does not want to pass it as a pointer or name other functions 'cons'."
+  input ElementType inElement;
+  input list<ElementType> inList;
+  output list<ElementType> outList;
+algorithm
+  outList := inElement :: inList;
+end prepend;
+
 public function consr
   "The same as the builtin cons operator, but with the order of the arguments
   swapped."

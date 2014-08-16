@@ -428,7 +428,7 @@ protected function getVariableLists2
   output list<DAE.ComponentRef> outContinuousTimeVars;
   output list<DAE.ComponentRef> outClockedVars;
 algorithm
-  (outContinuousTimeVars, outClockedVars) := matchcontinue(inEqnLst)
+  (outContinuousTimeVars, outClockedVars) := match (inEqnLst)
     local
       DAE.Exp exp;
       list<DAE.ComponentRef> continuousTimeVars1, clockedVars1;
@@ -531,7 +531,7 @@ algorithm
       (_, (continuousTimeVars1, clockedVars1)) = BackendEquation.traverseBackendDAEExpsEqn(curr, getVariableLists, ({}, {}));
       (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
     then (listAppend(continuousTimeVars1, continuousTimeVars2), listAppend(clockedVars1, clockedVars2));
-  end matchcontinue;
+  end match;
 end getVariableLists2;
 
 protected function getPartitionKind

@@ -1684,14 +1684,13 @@ algorithm
     match(isyst,sharedChanged)
     local
       BackendDAE.StrongComponents comps;
-      Boolean b,b1,b2;
+      Boolean b;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
-    case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared, b1))
+    case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared, b))
       equation
-        (syst,shared,b2) = constantLinearSystem1(syst,shared,comps);
-        syst = constantLinearSystem2(b2,syst);
-        b = b1 or b2;
+        (syst,shared,b) = constantLinearSystem1(syst,shared,comps,b);
+        syst = constantLinearSystem2(b,syst);
       then
         (syst,(shared,b));
   end match;
@@ -1728,12 +1727,13 @@ protected function constantLinearSystem1
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.StrongComponents inComps;
+  input Boolean inRunMatching;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
-  output Boolean outRunMatching;
+  output Boolean runMatching;
 algorithm
-  (osyst,oshared,outRunMatching):=
-  matchcontinue (isyst,ishared,inComps)
+  (osyst,oshared,runMatching):=
+  match (isyst,ishared,inComps,inRunMatching)
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
@@ -1747,29 +1747,52 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
 
-    case (syst,shared,{})
-      then (syst,shared,false);
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,(BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=BackendDAE.FULL_JACOBIAN(SOME(jac)),jacType=BackendDAE.JAC_CONSTANT()))::comps)
+    case (syst,shared,{},_)
+      then (syst,shared,inRunMatching);
+    case (syst,shared,comp::comps,runMatching)
+      equation
+        (syst,shared,b) = constantLinearSystemWork(syst,shared,comp);
+        (syst,shared,runMatching) = constantLinearSystem1(syst,shared,comps,b or runMatching);
+      then (syst,shared,runMatching);
+  end match;
+end constantLinearSystem1;
+
+protected function constantLinearSystemWork
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input BackendDAE.StrongComponent comp;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+  output Boolean outRunMatching;
+algorithm
+  (osyst,oshared,outRunMatching):=
+  matchcontinue (isyst,ishared,comp)
+    local
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.StrongComponents comps;
+      BackendDAE.StrongComponent comp1;
+      Boolean b,b1;
+      list<BackendDAE.Equation> eqn_lst;
+      list<BackendDAE.Var> var_lst;
+      list<Integer> eindex,vindx;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,(BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=BackendDAE.FULL_JACOBIAN(SOME(jac)),jacType=BackendDAE.JAC_CONSTANT())))
       equation
         eqn_lst = BackendEquation.getEqns(eindex,eqns);
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, vars);
         (syst,shared) = solveLinearSystem(syst,shared,eqn_lst,eindex,var_lst,vindx,jac);
-        (syst,shared,_) = constantLinearSystem1(syst,shared,comps);
-      then
-        (syst,shared,true);
-    case (syst,shared,(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps)
+      then (syst,shared,true);
+    case (syst,shared,(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1)))
       equation
-        (syst,shared,b) = constantLinearSystem1(syst,shared,{comp1});
-        (syst,shared,b1) = constantLinearSystem1(syst,shared,comps);
-      then
-        (syst,shared,b1 or b);
-    case (syst,shared,_::comps)
-      equation
-        (syst,shared,b) = constantLinearSystem1(syst,shared,comps);
-      then
-        (syst,shared,b);
+        (syst,shared,b) = constantLinearSystemWork(syst,shared,comp1);
+      then (syst,shared,b);
+    else (isyst,ishared,false);
   end matchcontinue;
-end constantLinearSystem1;
+end constantLinearSystemWork;
 
 protected function solveLinearSystem
 "function constantLinearSystem1"

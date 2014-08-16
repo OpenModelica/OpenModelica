@@ -196,7 +196,7 @@ protected function traverseComponents "author: Frenkel TUD 2012-05"
   output BackendDAE.StrongComponents oComps;
   output Boolean outRunMatching;
 algorithm
-  (oComps, outRunMatching) := matchcontinue (inComps, isyst, ishared, inMethod, iAcc, iRunMatching)
+  (oComps, outRunMatching) := match (inComps, isyst, ishared, inMethod, iAcc, iRunMatching)
     local
       list<Integer> eindex, vindx;
       Boolean b, b1;
@@ -208,7 +208,32 @@ algorithm
     case ({}, _, _, _, _, _)
     then (listReverse(iAcc), iRunMatching);
 
-    case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType))::comps, _, _, _, _, _) equation
+    case (comp::comps, _, _, _, _, _)
+      equation
+        (comp, b1) = traverseComponents1(comp, isyst, ishared, inMethod);
+        (acc, b1) = traverseComponents(comps, isyst, ishared, inMethod, comp::iAcc, b1 or iRunMatching);
+      then (acc, b1);
+  end match;
+end traverseComponents;
+
+protected function traverseComponents1 "author: Frenkel TUD 2012-05"
+  input BackendDAE.StrongComponent inComp;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input TearingMethod inMethod;
+  output BackendDAE.StrongComponent oComp;
+  output Boolean outRunMatching;
+algorithm
+  (oComp, outRunMatching) := matchcontinue (inComp, isyst, ishared, inMethod)
+    local
+      list<Integer> eindex, vindx;
+      Boolean b, b1;
+      BackendDAE.StrongComponents comps, acc;
+      BackendDAE.StrongComponent comp, comp1;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
+      BackendDAE.JacobianType jacType;
+
+    case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType)), _, _, _) equation
       equality(jacType = BackendDAE.JAC_TIME_VARYING());
       Debug.fcall(Flags.TEARING_DUMP, print, "\nCase linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
       true = Flags.isSet(Flags.LINEAR_TEARING);
@@ -217,42 +242,36 @@ algorithm
       Debug.fcall(Flags.TEARING_DUMP, print, "Flag 'doLinearTearing' is set\n\n");
       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Jacobian:\n" +& BackendDump.dumpJacobianStr(ojac) +& "\n\n");
       (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType);
-      (acc, b1) = traverseComponents(comps, isyst, ishared, inMethod, comp1::iAcc, true);
-    then (acc, b1);
+    then (comp1, true);
 
     // tearing of non-linear systems
-    case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType))::comps, _, _, _, _, _) equation
+    case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType)), _, _, _) equation
       failure(equality(jacType = BackendDAE.JAC_TIME_VARYING()));
       Debug.fcall(Flags.TEARING_DUMP, print, "\nCase non-linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Jacobian:\n" +& BackendDump.dumpJacobianStr(ojac) +& "\n\n");
       (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType);
-      (acc, b1) = traverseComponents(comps, isyst, ishared, inMethod, comp1::iAcc, true);
-    then (acc, b1);
+    then (comp1, true);
 
     // only continues part of a mixed system
-    case ((BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1, disc_eqns=eindex, disc_vars=vindx))::comps, _, _, _, _, _) equation
+    case ((BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1, disc_eqns=eindex, disc_vars=vindx)), _, _, _) equation
       Debug.fcall(Flags.TEARING_DUMP, print, "\nCase mixed in traverseComponents\nUse '+d=tearingdumpV' for more details\n\n");
       false = Flags.isSet(Flags.MIXED_TEARING);
       Debug.fcall(Flags.TEARING_DUMP, print, "Flag 'MixedTearing' is not set\n(disabled by user)\n\n");
-      (comp1::{}, true) = traverseComponents({comp1}, isyst, ishared, inMethod, {}, false);
-      (acc, b1) = traverseComponents(comps, isyst, ishared, inMethod, BackendDAE.MIXEDEQUATIONSYSTEM(comp1, eindex, vindx)::iAcc, true);
-    then (acc, b1);
+      (comp1, true) = traverseComponents1(comp1, isyst, ishared, inMethod);
+    then (BackendDAE.MIXEDEQUATIONSYSTEM(comp1, eindex, vindx), true);
 
     // mixed and continues part
-    case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1, disc_eqns=eindex, disc_vars=vindx))::comps, _, _, _, _, _) equation
+    case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1, disc_eqns=eindex, disc_vars=vindx)), _, _, _) equation
       true = Flags.isSet(Flags.MIXED_TEARING);
       Debug.fcall(Flags.TEARING_DUMP, print, "Flag 'MixedTearing' is set\n(enabled by default)\n\n");
       (eindex, vindx) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
       (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, NONE(), BackendDAE.JAC_NO_ANALYTIC());
-      (acc, b1) = traverseComponents(comps, isyst, ishared, inMethod, comp1::iAcc, true);
-    then (acc, b1);
+    then (comp1, true);
 
     // no component for tearing
-    case (comp::comps, _, _, _, _, _) equation
-      (acc, b) = traverseComponents(comps, isyst, ishared, inMethod, comp::iAcc, iRunMatching);
-    then (acc, b);
+    else (inComp, false);
   end matchcontinue;
-end traverseComponents;
+end traverseComponents1;
 
 
 

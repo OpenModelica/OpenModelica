@@ -19,6 +19,8 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_boolNot,2,0) {(modelica_metatype)boxptr
 #define boxvar_boolNot MMC_REFSTRUCTLIT(boxvar_lit_boolNot)
 static const MMC_DEFSTRUCTLIT(boxvar_lit_boolOr,2,0) {(modelica_metatype)boxptr_boolOr,0}};
 #define boxvar_boolOr MMC_REFSTRUCTLIT(boxvar_lit_boolOr)
+static const MMC_DEFSTRUCTLIT(boxvar_lit_cons,2,0) {(modelica_metatype)boxptr_cons,0}};
+#define boxvar_cons MMC_REFSTRUCTLIT(boxvar_lit_cons)
 static const MMC_DEFSTRUCTLIT(boxvar_lit_equality,2,0) {(modelica_metatype)boxptr_equality,0}};
 #define boxvar_equality MMC_REFSTRUCTLIT(boxvar_lit_equality)
 static const MMC_DEFSTRUCTLIT(boxvar_lit_getGlobalRoot,2,0) {(modelica_metatype)boxptr_getGlobalRoot,0}};
