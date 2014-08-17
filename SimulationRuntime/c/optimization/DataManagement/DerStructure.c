@@ -53,7 +53,6 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   const int nJ2 = dim->nJ2;
   int i, j, k;
   char * cflags;
-  const int indexBC[2] = {data->callback->INDEX_JAC_B, optData->data->callback->INDEX_JAC_C};
   cflags = (char*)omc_flagValue[FLAG_UP_HESSIAN];
   if(cflags)
   {

@@ -517,7 +517,7 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
 
   int i, j, k, shift, l;
   DATA * data = optData->data;
-  const int indexBC[2] = {data->callback->INDEX_JAC_B, data->callback->INDEX_JAC_C};
+  const int * indexBC = optData->s.indexABCD + 3;
   OptDataDim * dim = &optData->dim;
 
   for(l = 0; l < 3; ++l)

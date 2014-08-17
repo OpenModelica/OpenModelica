@@ -313,7 +313,7 @@ static inline void smallIntSolverStep(DATA* data, SOLVER_INFO* solverInfo, const
       if(++iter >  10){
         printf("\n");
         warningStreamPrint(LOG_STDOUT, 0, "Initial guess failure at time %.12g", solverInfo->currentTime);
-        break;
+        assert(0);
       }
     }while(err < 0);
 
