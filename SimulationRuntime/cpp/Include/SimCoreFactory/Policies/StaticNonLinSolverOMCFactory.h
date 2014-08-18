@@ -15,7 +15,8 @@ class StaticNonLinSolverOMCFactory : public NonLinSolverOMCFactory<CreationPolic
 
 public:
     StaticNonLinSolverOMCFactory(PATH library_path,PATH modelicasystem_path,PATH config_path)
-        :NonLinSolverOMCFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
+        :ObjectFactory<CreationPolicy>(library_path,modelicasystem_path,config_path),
+        NonLinSolverOMCFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
     {
     }
   

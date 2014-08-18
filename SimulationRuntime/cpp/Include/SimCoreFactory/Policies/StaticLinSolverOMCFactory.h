@@ -13,8 +13,9 @@ struct StaticLinSolverOMCFactory : public LinSolverOMCFactory<CreationPolicy> {
 
 public:
   StaticLinSolverOMCFactory(PATH library_path, PATH modelicasystem_path,PATH config_path)
-  :LinSolverOMCFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
-  ,_last_selected_solver("empty")
+  :ObjectFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
+   ,LinSolverOMCFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
+   ,_last_selected_solver("empty")
   {
 
   }

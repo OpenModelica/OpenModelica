@@ -14,7 +14,7 @@ runtimeCpp: clean
 ifneq ("$(ANALYZATION_MODE)","true")
 	$(eval ANALYZATION_MODE_COMMAND="")
 endif
-	cd ./Build && echo "change to Build" && cmake $(ANALYZATION_MODE) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
+	cd ./Build && echo "change to Build" && cmake $(ANALYZATION_MODE_COMMAND) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
 	$(MAKE) -C Build;
 
 install: runtimeCpp
