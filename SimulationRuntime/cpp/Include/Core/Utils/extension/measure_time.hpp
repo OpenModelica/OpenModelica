@@ -26,7 +26,7 @@ public:
 
 	static MeasureTime* getInstance();
 
-	virtual unsigned long long getTime();
+	static unsigned long long getTime();
 
 	static void deinitialize();
 
@@ -55,6 +55,10 @@ public:
 private:
 	static unsigned long long RDTSC();
 
-
 };
+
+//class PAPI_MeasureTime : public MeasureTime
+//{
+//
+//};
 #endif // MEASURE_TIME_HPP

@@ -7036,14 +7036,14 @@ template measureTimeStart(Integer eq_number)
 ::=
   <<
     long long unsigned startMeasure_t, endMeasure_t,measure_t;
-    startMeasure_t = MeasureTime::getInstance()->getTime();
+    startMeasure_t = MeasureTime::getTime();
   >>
 end measureTimeStart;
 
 template measureTimeStop(Integer eq_number)
 ::=
   <<
-    endMeasure_t = MeasureTime::getInstance()->getTime();
+    endMeasure_t = MeasureTime::getTime();
     measure_t = endMeasure_t - startMeasure_t;
     if(measure_t > measureTimeArray[<%eq_number%>].max_time) measureTimeArray[<%eq_number%>].max_time = measure_t;
     measureTimeArray[<%eq_number%>].sum_time += measure_t;

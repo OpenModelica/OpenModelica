@@ -4366,6 +4366,7 @@ protected
   list<Integer> endNodes;
   array<Real> alap, lact, last, tdsLevel;
   array<list<Integer>> taskGraphT;
+  array<Boolean> visitedNodes;
 algorithm
   size := arrayLength(iTaskGraph);
   // traverse the taskGraph topdown to get the alap times
@@ -4375,7 +4376,8 @@ algorithm
   last := arrayCreate(size,-1.0);
   lact := arrayCreate(size,-1.0);
   tdsLevel := arrayCreate(size,-1.0);
-  (alap,last,lact,tdsLevelOut) := computeGraphValuesTopDown1(endNodes,iTaskGraph,taskGraphT,iTaskGraphMeta,alap,last,lact,tdsLevel);
+  visitedNodes := arrayCreate(size,false);
+  (alap,last,lact,tdsLevelOut) := computeGraphValuesTopDown1(endNodes,iTaskGraph,taskGraphT,iTaskGraphMeta,alap,last,lact,tdsLevel,visitedNodes);
   cpWithComm := Util.arrayFold(alap,realMax,0.0);
   lastNodeInCP := Util.arrayMemberNoOpt(alap,size,cpWithComm);
   lastExeCost := HpcOmTaskGraph.getExeCostReqCycles(lastNodeInCP,iTaskGraphMeta);
@@ -4385,7 +4387,7 @@ algorithm
   lastOut := Util.arrayMap1(last,realSubr,cp);
 end computeGraphValuesTopDown;
 
-protected function computeGraphValuesTopDown1 "traverses the taskGraph topdown starting with the end nodes of the original non-transposed graph.
+protected function computeGraphValuesTopDown1 "traverses the taskGraph topdown starting with the leaf nodes of the original non-transposed graph.
 author: Waurich TUD 2013-10"
   input list<Integer> nodesIn;
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
@@ -4395,12 +4397,13 @@ author: Waurich TUD 2013-10"
   input array<Real> lastIn;
   input array<Real> lactIn;
   input array<Real> tdsLevelIn;
+  input array<Boolean> visitedNodes;
   output array<Real> alapOut;
   output array<Real> lastOut;
   output array<Real> lactOut;
   output array<Real> tdsLevelOut;
 algorithm
-  (alapOut,lastOut,lactOut,tdsLevelOut) := matchcontinue(nodesIn,iTaskGraph,iTaskGraphT,iTaskGraphMeta,alapIn,lastIn,lactIn,tdsLevelIn)
+  (alapOut,lastOut,lactOut,tdsLevelOut) := matchcontinue(nodesIn,iTaskGraph,iTaskGraphT,iTaskGraphMeta,alapIn,lastIn,lactIn,tdsLevelIn,visitedNodes)
     local
       Boolean computeValues;
       Integer nodeIdx, pos;
@@ -4408,9 +4411,15 @@ algorithm
       list<Integer> rest, parentNodes, childNodes;
       list<Real> childTDSLevels, childAlaps, childLasts, childLacts, commCostsToChilds;
       array<Real> alap,last,lact,tdsLevel;
-  case({},_,_,_,_,_,_,_)
+  case({},_,_,_,_,_,_,_,_)
     then (alapIn,lastIn,lactIn,tdsLevelIn);
-  case(nodeIdx::rest,_,_,_,_,_,_,_)
+  case(nodeIdx::rest,_,_,_,_,_,_,_,_)
+    equation
+      // the current Node was already handled by another branch
+      true = arrayGet(visitedNodes, nodeIdx);
+      (alap,last,lact,tdsLevel) = computeGraphValuesTopDown1(rest,iTaskGraph,iTaskGraphT,iTaskGraphMeta,alapIn,lastIn,lactIn,tdsLevelIn,visitedNodes);
+    then (alap,last,lact,tdsLevel);
+  case(nodeIdx::rest,_,_,_,_,_,_,_,_)
     equation
       // the current Node is a leaf node
       childNodes = arrayGet(iTaskGraph,nodeIdx);
@@ -4422,9 +4431,9 @@ algorithm
       tdsLevel = arrayUpdate(tdsLevelIn,nodeIdx,nodeExeCost);
       parentNodes = arrayGet(iTaskGraphT,nodeIdx);
       rest = listAppend(rest,parentNodes);
-      (alap,last,lact,tdsLevel) = computeGraphValuesTopDown1(rest,iTaskGraph,iTaskGraphT,iTaskGraphMeta,alap,last,lact,tdsLevel);
+      (alap,last,lact,tdsLevel) = computeGraphValuesTopDown1(rest,iTaskGraph,iTaskGraphT,iTaskGraphMeta,alap,last,lact,tdsLevel,visitedNodes);
     then (alap,last,lact,tdsLevel);
-  case(nodeIdx::rest,_,_,_,_,_,_,_)
+  case(nodeIdx::rest,_,_,_,_,_,_,_,_)
     equation
       // all of the childNodes of the current Node have been investigated
       childNodes = arrayGet(iTaskGraph,nodeIdx);
@@ -4446,16 +4455,17 @@ algorithm
       lact = arrayUpdate(lactIn,nodeIdx,maxLast);
       parentNodes = arrayGet(iTaskGraphT,nodeIdx);
       rest = listAppend(rest,parentNodes);
-      (alap,last,lact,tdsLevel) = computeGraphValuesTopDown1(rest,iTaskGraph,iTaskGraphT,iTaskGraphMeta,alap,last,lact,tdsLevel);
+      _ = arrayUpdate(visitedNodes, nodeIdx, true);
+      (alap,last,lact,tdsLevel) = computeGraphValuesTopDown1(rest,iTaskGraph,iTaskGraphT,iTaskGraphMeta,alap,last,lact,tdsLevel,visitedNodes);
     then (alap,last,lact,tdsLevel);
-  case(nodeIdx::rest,_,_,_,_,_,_,_)
+  case(nodeIdx::rest,_,_,_,_,_,_,_,_)
     equation
       // not all of the childNodes of the current Node have been investigated
       childNodes = arrayGet(iTaskGraph,nodeIdx);
       childTDSLevels = List.map1(childNodes,Util.arrayGetIndexFirst,tdsLevelIn);
       true = List.isMemberOnTrue(-1.0,childTDSLevels,realEq);
       rest = listAppend(rest,{nodeIdx});
-      (alap,last,lact,tdsLevel) = computeGraphValuesTopDown1(rest,iTaskGraph,iTaskGraphT,iTaskGraphMeta,alapIn,lastIn,lactIn,tdsLevelIn);
+      (alap,last,lact,tdsLevel) = computeGraphValuesTopDown1(rest,iTaskGraph,iTaskGraphT,iTaskGraphMeta,alapIn,lastIn,lactIn,tdsLevelIn,visitedNodes);
     then (alap,last,lact,tdsLevel);
   else
     equation
