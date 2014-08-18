@@ -51,10 +51,10 @@ release: omc-diff omc
 
 bootstrap-dependencies: omc-diff interactive docs fmi fmil opencl_rt lis graphstream
 	# NOTE: OpenModelicaBootstrappingHeader.h has to be regenerated without any other process writing to so/etc or you get bus errors
-	$(MAKE) -C Compiler OpenModelicaBootstrappingHeader.h
-	$(MAKE) -C Compiler/runtime install
-	$(MAKE) -C Compiler builtin install_scripts
-	$(MAKE) -C Parser install
+	$(MAKE) -f $(defaultMakefileTarget) -C Compiler OpenModelicaBootstrappingHeader.h
+	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/runtime install
+	$(MAKE) -f $(defaultMakefileTarget) -C Compiler builtin install_scripts
+	$(MAKE) -f $(defaultMakefileTarget) -C Parser install
 
 install-python:
 	(time $(MAKE) -C PythonInterface -f $(defaultMakefileTarget))
