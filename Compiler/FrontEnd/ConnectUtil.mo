@@ -1559,7 +1559,7 @@ algorithm
         _, Connect.SET_TRIE_NODE(name, el_cr, nodes, cc), _)
       equation
         id = ComponentReference.printComponentRef2Str(id, subs);
-        nodes = setTrieUpdateNode(id, inCref, rest_cref, inArg, nodes, inUpdateFunc);
+        nodes = setTrieUpdateNode(firstElementIsTrieNodeNamed(nodes, id), id, inCref, rest_cref, inArg, nodes, inUpdateFunc, {});
       then
         Connect.SET_TRIE_NODE(name, el_cr, nodes, cc);
 
@@ -1576,12 +1576,14 @@ end setTrieUpdate;
 
 protected function setTrieUpdateNode
   "Helper function to setTrieUpdate, updates a node in the trie."
+  input Boolean firstMatches;
   input String inId;
   input DAE.ComponentRef wholeCref;
   input DAE.ComponentRef inCref;
   input Arg inArg;
   input list<SetTrieNode> inNodes;
   input UpdateFunc inUpdateFunc;
+  input list<SetTrieNode> acc;
   output list<SetTrieNode> outNodes;
 
   replaceable type Arg subtypeof Any;
@@ -1592,32 +1594,27 @@ protected function setTrieUpdateNode
     output SetTrieNode outNode;
   end UpdateFunc;
 algorithm
-  outNodes := matchcontinue(inId, wholeCref, inCref, inArg, inNodes, inUpdateFunc)
+  outNodes := match (firstMatches, inId, wholeCref, inCref, inArg, inNodes, inUpdateFunc, acc)
     local
       SetTrieNode node,node2;
       list<SetTrieNode> rest_nodes;
       String id;
 
-    case (_, _, _, _, {}, _)
-      equation
-        node = setTrieUpdateNode2(wholeCref, inArg, inUpdateFunc);
-      then
-        {node};
+    case (_, _, _, _, _, {}, _, _)
+      then setTrieUpdateNode2(wholeCref, inArg, inUpdateFunc, acc);
 
-    case (_, _, _, _, (node as Connect.SET_TRIE_NODE(name = id)) :: rest_nodes, _)
+    case (true, _, _, _, _, node :: rest_nodes, _, _)
       equation
-        true = stringEqual(inId, id);
         node2 = setTrieUpdate(inCref, inArg, node, inUpdateFunc);
-      then
-        node2 :: rest_nodes;
+        outNodes = listAppend(acc, node2 :: rest_nodes);
+      then outNodes;
 
-    case (_, _, _, _, node :: rest_nodes, _)
+    case (_, _, _, _, _, node :: rest_nodes, _, _)
       equation
-        rest_nodes = setTrieUpdateNode(inId, wholeCref, inCref, inArg, rest_nodes, inUpdateFunc);
-      then
-        node :: rest_nodes;
+        rest_nodes = setTrieUpdateNode(firstElementIsTrieNodeNamed(rest_nodes, inId), inId, wholeCref, inCref, inArg, rest_nodes, inUpdateFunc, node::acc);
+      then rest_nodes;
 
-  end matchcontinue;
+  end match;
 end setTrieUpdateNode;
 
 protected function setTrieUpdateNode2
@@ -1625,7 +1622,8 @@ protected function setTrieUpdateNode2
   input DAE.ComponentRef inCref;
   input Arg inArg;
   input UpdateFunc inUpdateFunc;
-  output SetTrieNode outNode;
+  input list<SetTrieNode> acc;
+  output list<SetTrieNode> nodes;
 
   replaceable type Arg subtypeof Any;
 
@@ -1635,27 +1633,27 @@ protected function setTrieUpdateNode2
     output SetTrieNode outNode;
   end UpdateFunc;
 algorithm
-  outNode := match(inCref, inArg, inUpdateFunc)
+  nodes := match(inCref, inArg, inUpdateFunc, acc)
     local
       String id;
       DAE.ComponentRef cr, rest_cr;
       SetTrieNode node;
 
-    case (DAE.CREF_IDENT(ident = _), _, _)
+    case (DAE.CREF_IDENT(ident = _), _, _, _)
       equation
         id = ComponentReference.printComponentRefStr(inCref);
         node = Connect.SET_TRIE_LEAF(id, NONE(), NONE(), NONE(), 0);
         node = inUpdateFunc(inArg, node);
       then
-        node;
+        node :: acc;
 
-    case (DAE.CREF_QUAL(componentRef = rest_cr), _, _)
+    case (DAE.CREF_QUAL(componentRef = rest_cr), _, _, _)
       equation
         cr = ComponentReference.crefFirstCref(inCref);
         id = ComponentReference.printComponentRefStr(cr);
-        node = setTrieUpdateNode2(rest_cr, inArg, inUpdateFunc);
+        nodes = setTrieUpdateNode2(rest_cr, inArg, inUpdateFunc, {});
       then
-        Connect.SET_TRIE_NODE(id, cr, {node}, 0);
+        Connect.SET_TRIE_NODE(id, cr, nodes, 0) :: acc;
 
   end match;
 end setTrieUpdateNode2;
@@ -4097,6 +4095,19 @@ algorithm
         (sets, dae);
   end match;
 end removeUnusedExpandableVariablesAndConnections;
+
+protected function firstElementIsTrieNodeNamed
+  input list<SetTrieNode> nodes;
+  input String name;
+  output Boolean b;
+algorithm
+  b := match (nodes,name)
+    local
+      String named;
+    case (Connect.SET_TRIE_NODE(name = named)::_,_) then stringEq(name,named);
+    else false;
+  end match;
+end firstElementIsTrieNodeNamed;
 
 end ConnectUtil;
 
