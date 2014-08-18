@@ -2261,7 +2261,7 @@ case EXTERNAL_FUNCTION(outVars=var::_) then
 let fname = underscorePath(name)
    <<
         /* functionHeaderRegularFunction2 */
-        void /*<%fname%>RetType*/ <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%><%if funArgs then "," else ""%> <%fname%>RetType output);
+        void /*<%fname%>RetType*/ <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%><%if funArgs then "," else ""%> <%fname%>RetType& output);
    >>
 case EXTERNAL_FUNCTION(outVars={}) then
 let fname = underscorePath(name)
@@ -2389,7 +2389,7 @@ case efn as EXTERNAL_FUNCTION(__) then
           )
 
   let fnBody = <<
-  void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%><%if funArgs then if outVars then "," else ""%> <%if retVar then "<%retType%>& output"%>)/*function2*/
+  void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%><%if funArgs then if outVars then "," else ""%> <%if retVar then '<%retType%>& output' %>)/*function2*/
   {
     /* functionBodyExternalFunction: varDecls */
     <%varDecls%>
@@ -2400,7 +2400,7 @@ case efn as EXTERNAL_FUNCTION(__) then
     /* functionBodyExternalFunction: callPart */
     <%callPart%>
      /* functionBodyExternalFunction: return */
-    <%if retVar then "output = <%retVar%>;" %>
+    <%if retVar then 'output = <%retVar%>;' %>
   }
   >>
   <<
@@ -9130,9 +9130,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = tempDecl(retType, &varDecls)
     let arraytpye =  'multi_array_ref<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
     let &preExp += match context
-                        case FUNCTION_CONTEXT(__) then '(<%funName%>(<%argStr%>,<%retVar%>));<%\n%>'
+                        case FUNCTION_CONTEXT(__) then '(<%funName%>(<%argStr%><%if expLst then if retVar then "," %><%retVar%>));<%\n%>/*funccall*/'
             /*multi_array else 'assign_array(<%retVar%> ,_functions.<%funName%>(<%argStr%>));<%\n%>'*/
-                        else '_functions-><%funName%>(<%argStr%>, <%retVar%>);<%\n%>'
+                        else '_functions-><%funName%>(<%argStr%><%if expLst then if retVar then "," %><%retVar%>);<%\n%>'
 
 
 
@@ -9155,8 +9155,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let argStr = (explist |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)%>' ;separator=", ")
     let retType = '<%funName%>RetType /* undefined */'
     let retVar = tempDecl(retType, &varDecls)
-    let &preExp += match context case FUNCTION_CONTEXT(__) then'<%funName%>(<%argStr%><%if retVar then ',<%retVar%>'%>);<%\n%>'
-    else '_functions-><%funName%>(<%argStr%><%if retVar then ',<%retVar%>'%>);<%\n%>'
+    let &preExp += match context case FUNCTION_CONTEXT(__) then'<%funName%>(<%argStr%><%if explist then if retVar then "," %><%if retVar then '<%retVar%>'%>);<%\n%>'
+    else '_functions-><%funName%>(<%argStr%><%if explist then if retVar then "," %> <%if retVar then '<%retVar%>'%>);<%\n%>'
      '<%retVar%>'
 
 end daeExpCall;
