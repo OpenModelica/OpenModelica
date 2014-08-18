@@ -34,6 +34,7 @@ bootstrap-from-compiled: make-separate
 make-bootstrap-tarball:
 	rm -rf $(GEN_DIR)
 	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps
+	rm -rf $(GEN_DIR)/*.mo $(GEN_DIR)/tmp $(GEN_DIR)/*.deps $(GEN_DIR)/*.mos $(GEN_DIR)/*.stamp
 	tar cJf bootstrap-sources.tar.xz $(GEN_DIR) Makefile.sources
 
 templates:
