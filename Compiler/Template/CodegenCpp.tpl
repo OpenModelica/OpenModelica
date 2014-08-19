@@ -9054,11 +9054,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let typeStr = expTypeFromExpShort(e1)
     'modelica_rem_<%typeStr%>(<%var1%>,<%var2%>)'
 
-	
+
    case CALL(path=IDENT(name="String"),
              expLst={s, format}) then
     let emptybuf = ""
-	let tvar = tempDecl("string", &varDecls /*BUFD*/)
+  let tvar = tempDecl("string", &varDecls /*BUFD*/)
     let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     let formatExp = daeExp(format, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     let typeStr = expTypeFromExpModelica(s)
@@ -9076,11 +9076,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += 'string <%tvar%> = lexical_cast<string>(<%sExp%>);<%\n%>'
     '<%tvar%>'
 
-	
-	//hierhier todo
+
+  //hierhier todo
   case CALL(path=IDENT(name="String"),
             expLst={s, minlen, leftjust, signdig}) then
-	let emptybuf = ""
+  let emptybuf = ""
     let tvar = tempDecl("string", &emptybuf /*BUFD*/)
     let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
