@@ -4019,6 +4019,12 @@ algorithm
     // -a/(b-c) = a/(c -b)
     case (_,op2 as DAE.DIV(ty = ty),DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e1),DAE.BINARY(e2, op1 as DAE.SUB(_),e3),_,_)
       then DAE.BINARY(e1,op2,DAE.BINARY(e3,op1,e2));
+    // a*(-b-c) = (-a)*(c + b)
+    case (_,op2 as DAE.MUL(ty = _),e1,DAE.BINARY(DAE.UNARY(operator = op3 as DAE.UMINUS(ty = _),exp = e2), DAE.SUB(ty = ty), e3),_,_)
+    then DAE.BINARY(DAE.UNARY(op3,e1),op2,DAE.BINARY(e2, DAE.ADD(ty),e3));
+    // a/(-b-c) = (-a)/(c + b)
+    case (_,op2 as DAE.DIV(ty = _),e1,DAE.BINARY(DAE.UNARY(operator = op3 as DAE.UMINUS(ty = _),exp = e2), DAE.SUB(ty = ty), e3),_,_)
+    then DAE.BINARY(DAE.UNARY(op3,e1),op2,DAE.BINARY(e2, DAE.ADD(ty),e3));
 
     // e1 / -e2  => -e1 / e2
     case (_,DAE.DIV(ty = ty),e1,DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e2),_,_)
