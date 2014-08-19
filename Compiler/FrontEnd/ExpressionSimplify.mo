@@ -4170,6 +4170,16 @@ algorithm
               Expression.operatorEqual(op2,DAE.DIV(ty));
        true = Expression.expEqual(e2,e5);
      then DAE.BINARY(e5, oper, DAE.BINARY(DAE.BINARY(e1,op2,e3),op1,e4));
+    // a*x op2 b op1 x*c
+    // x *(a op2 b op1 c)
+    case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(ty),DAE.BINARY(e2,op2,e3)), DAE.BINARY(e5,DAE.MUL(_),e4),false,false)
+     equation
+       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
+              Expression.operatorEqual(op1,DAE.ADD(ty));
+       true = Expression.operatorEqual(op2,DAE.MUL(ty)) or
+              Expression.operatorEqual(op2,DAE.DIV(ty));
+       true = Expression.expEqual(e2,e5);
+     then DAE.BINARY(e5, oper, DAE.BINARY(DAE.BINARY(e1,op2,e3),op1,e4));
 
     // (a1a2...an)^e2 => a1^e2a2^e2..an^e2
     case (_,DAE.POW(ty = _),e1,e2,_,true)
