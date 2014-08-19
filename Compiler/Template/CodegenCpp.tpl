@@ -4,6 +4,7 @@ import interface SimCodeTV;
 import CodegenUtil.*;
 // SECTION: SIMULATION TARGET, ROOT TEMPLATE
 
+
 template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -9053,33 +9054,39 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let typeStr = expTypeFromExpShort(e1)
     'modelica_rem_<%typeStr%>(<%var1%>,<%var2%>)'
 
+	
    case CALL(path=IDENT(name="String"),
              expLst={s, format}) then
-    let tvar = tempDecl("string", &varDecls /*BUFD*/)
+    let emptybuf = ""
+	let tvar = tempDecl("string", &varDecls /*BUFD*/)
     let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     let formatExp = daeExp(format, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     let typeStr = expTypeFromExpModelica(s)
-    let &preExp += '<%tvar%> = lexical_cast<std::string>(<%sExp%>);<%\n%>'
+    let &preExp += 'string <%tvar%> = lexical_cast<std::string>(<%sExp%>);<%\n%>'
     '<%tvar%>'
 
    case CALL(path=IDENT(name="String"),
              expLst={s, minlen, leftjust}) then
-    let tvar = tempDecl("string", &varDecls /*BUFD*/)
+    let emptybuf = ""
+    let tvar = tempDecl("string", &emptybuf /*BUFD*/)
     let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     let leftjustExp = daeExp(leftjust, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     let typeStr = expTypeFromExpModelica(s)
-    let &preExp += '<%tvar%> = lexical_cast<string>(<%sExp%>);<%\n%>'
+    let &preExp += 'string <%tvar%> = lexical_cast<string>(<%sExp%>);<%\n%>'
     '<%tvar%>'
 
+	
+	//hierhier todo
   case CALL(path=IDENT(name="String"),
             expLst={s, minlen, leftjust, signdig}) then
-    let tvar = tempDecl("string", &varDecls /*BUFD*/)
+	let emptybuf = ""
+    let tvar = tempDecl("string", &emptybuf /*BUFD*/)
     let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     let leftjustExp = daeExp(leftjust, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     let signdigExp = daeExp(signdig, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
-    let &preExp += '<%tvar%> = lexical_cast<string>(<%sExp%>);<%\n%>'
+    let &preExp +=  'string <%tvar%> = lexical_cast<string>(<%sExp%>);<%\n%>'
     '<%tvar%>'
 
   case CALL(path=IDENT(name="delay"),
