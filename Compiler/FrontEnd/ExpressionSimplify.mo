@@ -3545,8 +3545,8 @@ algorithm
     // a + ((-b) op2 c) = a - (b op2 c)
     case (DAE.ADD(ty = tp),e1,DAE.BINARY(DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e2), op2, e3))
       equation
-        true = Expression.operatorEqual(op2,DAE.DIV(tp));
-              //or  Expression.operatorEqual(op2,MUL.DIV(tp));
+        true = Expression.operatorEqual(op2,DAE.DIV(tp))
+               or  Expression.operatorEqual(op2, DAE.MUL(tp));
          e = DAE.BINARY(e1, DAE.SUB(tp), DAE.BINARY(e2,op2,e3));
       then e;
 
@@ -3829,15 +3829,14 @@ algorithm
         Expression.operatorEqual(op2,DAE.MUL(ty));
         res = DAE.BINARY(e1, op2, e2);
       then Expression.makePureBuiltinCall("abs",{res},ty);
-/*
     // e1 / exp(e2) => e1*exp(-e2)
     case(_,DAE.DIV(ty),e1,DAE.CALL(path=Absyn.IDENT("exp"),expLst={e2}),_,_)
       equation
         e = DAE.UNARY(DAE.UMINUS(ty),e2);
+        (e,_) = simplify1(e);
         e3 = Expression.makePureBuiltinCall("exp",{e},ty);
-        res = DAE.BINARY(e,DAE.MUL(ty),e3);
+        res = DAE.BINARY(e1,DAE.MUL(ty),e3);
       then res;
-*/
     // exp(e1) * exp(e2) => exp(e1 + e2)
     case(_,DAE.MUL(ty),DAE.CALL(path=Absyn.IDENT("exp"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("exp"),expLst={e2}),_,_)
       equation
@@ -4014,6 +4013,12 @@ algorithm
     // -a / -b = a / b
     case (_,DAE.DIV(ty = ty),DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e1),DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e2),_,_)
       then DAE.BINARY(e1,DAE.DIV(ty),e2);
+    // -a*(b-c) = a*(c -b)
+    case (_,op2 as DAE.MUL(ty = ty),DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e1),DAE.BINARY(e2, op1 as DAE.SUB(_),e3),_,_)
+      then DAE.BINARY(e1,op2,DAE.BINARY(e3,op1,e2));
+    // -a/(b-c) = a/(c -b)
+    case (_,op2 as DAE.DIV(ty = ty),DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e1),DAE.BINARY(e2, op1 as DAE.SUB(_),e3),_,_)
+      then DAE.BINARY(e1,op2,DAE.BINARY(e3,op1,e2));
 
     // e1 / -e2  => -e1 / e2
     case (_,DAE.DIV(ty = ty),e1,DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e2),_,_)
@@ -4097,12 +4102,6 @@ algorithm
        true = realLt(r,0.0);
        r = realNeg(r);
      then DAE.BINARY(DAE.BINARY(e2,op1,e1),op2,DAE.RCONST(r));
-    //x^y/x^z => x^(y-z)
-    case (_,DAE.DIV(ty = _),DAE.BINARY(e3,DAE.POW(_),e5), DAE.BINARY(e1,op1 as DAE.POW(ty), e2),_,_)
-       equation
-         true = Expression.expEqual(e1,e3);
-         e4 = DAE.BINARY(e5,DAE.SUB(ty), e2);
-       then DAE.BINARY(e1,op1, e4);
 
 
     // 1 ^ e => 1
@@ -4119,6 +4118,17 @@ algorithm
         e = DAE.BINARY(e2,op1,e5);
         res = DAE.BINARY(e3,op1,e6);
       then DAE.IFEXP(e1,e,res);
+
+    // (-x) * y - x * z = (-x)*(y+z)
+    // (-x) / y - x / z = (-x)/(y+z)
+    case (_,DAE.SUB(ty), DAE.BINARY(e as DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e1), op2, e2), DAE.BINARY(e3,op3,e4) ,false,false)
+      equation
+       true = Expression.operatorEqual(op2, DAE.MUL(ty)) or
+              Expression.operatorEqual(op2, DAE.DIV(ty));
+       true = Expression.operatorEqual(op3, op2);
+       true = Expression.expEqual(e1,e3);
+       res = DAE.BINARY(e, op2, DAE.BINARY(e2, DAE.ADD(ty),e4));
+      then res;
 
     // a*x op2 b op1 c*x op3 d
     // x *(a op2 b op1 c op3 d)
