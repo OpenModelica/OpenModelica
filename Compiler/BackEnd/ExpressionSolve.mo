@@ -557,7 +557,7 @@ algorithm
         (res,asserts) = solve(lhs,rhs,inExp3);
       then(res, asserts);
     // -f(a) = b => f(a) = -b
-    case(DAE.UNARY(DAE.UMINUS(ty=tp), e1),_,DAE.CREF(componentRef = cr),_)  
+    case(DAE.UNARY(DAE.UMINUS(ty=tp), e1),_,DAE.CREF(componentRef = cr),_)
       equation
         true = Expression.expHasCref(e1, cr);
         false = Expression.expHasCref(inExp2, cr);
