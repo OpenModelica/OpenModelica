@@ -948,10 +948,9 @@ Unless it is a complex var that not inherites a basic type. In that case DAE.Equ
   input DAE.Const const;
   input Prefix.Prefix pre;
   input String name;
-  input DAE.ElementSource source;
   output Option<DAE.Exp> eOpt;
 algorithm
-  eOpt := matchcontinue(tp,mod,const,pre,name,source)
+  eOpt := matchcontinue(tp,mod,const,pre,name)
     local
       DAE.Exp e,e1;
       DAE.Properties p;
@@ -963,21 +962,21 @@ algorithm
       Absyn.Info info;
 
     case (DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(_)),
-        DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = e))),_,_,_,_)
+        DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = e))),_,_,_)
       then
         SOME(e);
 
-    case(_,_,c,pr,n,_)
+    case(_,_,c,pr,n)
       equation
-        SOME(DAE.TYPED(e,_,p,_,_)) = Mod.modEquation(mod);
+        SOME(DAE.TYPED(modifierAsExp=e,properties=p,info=info)) = Mod.modEquation(mod);
         (e1,DAE.PROP(_,c1)) = Types.matchProp(e,p,DAE.PROP(tp,c),true);
-        InstUtil.checkHigherVariability(c,c1,pr,n,e,source);
+        InstUtil.checkHigherVariability(c,c1,pr,n,e,info);
       then
         SOME(e1);
 
     // An empty array such as x[:] = {} will cause Types.matchProp to fail, but we
     // shouldn't print an error.
-    case (_, _, _, _, _, _)
+    case (_, _, _, _, _)
       equation
         SOME(DAE.TYPED(_,_,DAE.PROP(type_ = bt),_,_)) = Mod.modEquation(mod);
         true = Types.isEmptyArray(bt);
@@ -985,15 +984,14 @@ algorithm
         NONE();
 
     // If Types.matchProp fails, print an error.
-    case (_, _, c, _, n, _)
+    case (_, _, c, _, n)
       equation
-        SOME(DAE.TYPED(e,_,p as DAE.PROP(type_ = bt),_,_)) = Mod.modEquation(mod);
+        SOME(DAE.TYPED(modifierAsExp=e,properties=p as DAE.PROP(type_ = bt),info=info)) = Mod.modEquation(mod);
         failure((_,DAE.PROP(_,_)) = Types.matchProp(e, p, DAE.PROP(tp, c), true));
         v_str = n;
         b_str = ExpressionDump.printExpStr(e);
         et_str = Types.unparseType(tp);
         bt_str = Types.unparseType(bt);
-        info = DAEUtil.getElementSourceFileInfo(source);
         Types.typeErrorSanityCheck(et_str, bt_str, info);
         Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
         {v_str, b_str, et_str, bt_str}, info);

@@ -3664,9 +3664,9 @@ Helper to makeVariableBinding. Author -- alleb"
   input Prefix.Prefix pre;
   input String name;
   input DAE.Exp binding;
-  input DAE.ElementSource source;
+  input Absyn.Info info;
 algorithm
-  _ := matchcontinue(compConst,bindConst,pre,name,binding,source)
+  _ := matchcontinue(compConst,bindConst,pre,name,binding,info)
   local
     DAE.Const c,c1;
     Ident n;
@@ -3692,7 +3692,7 @@ algorithm
       sc = DAEUtil.constStr(c);
       sc1 = DAEUtil.constStr(c1);
       se = ExpressionDump.printExpStr(e);
-      Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,{sn,sc,se,sc1}, DAEUtil.getElementSourceFileInfo(source));
+      Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,{sn,sc,se,sc1}, info);
     then
       fail();
   end matchcontinue;

@@ -581,7 +581,7 @@ algorithm
         false = Types.isExternalObject(Types.arrayElementType(ty));
         false = Types.isComplexType(Types.arrayElementType(ty));
         (dims as _::_) = Types.getDimensions(ty);
-        SOME(exp) = InstBinding.makeVariableBinding(ty, mod, const, pre, n, source);
+        SOME(exp) = InstBinding.makeVariableBinding(ty, mod, const, pre, n);
         cr = ComponentReference.makeCrefIdent(n,ty,{});
         (cache,cr) = PrefixUtil.prefixCref(inCache,inEnv,inIH,pre,cr);
         eq = DAE.ARRAY_EQUATION(dims, DAE.CREF(cr,ty), exp, source);
@@ -1002,7 +1002,7 @@ algorithm
 
         // Instantiate the components binding.
         mod = Util.if_(List.isNotEmpty(inSubscripts) and not SCode.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings(),DAE.NOMOD(),inMod);
-        opt_binding = InstBinding.makeVariableBinding(ty, mod, NFInstUtil.toConst(vt), inPrefix, inName, source);
+        opt_binding = InstBinding.makeVariableBinding(ty, mod, NFInstUtil.toConst(vt), inPrefix, inName);
         start = InstBinding.instStartBindingExp(inMod /* Yup, let's keep the start-binding. It seems sane. */, ty, vt);
 
         // Propagate the final prefix from the modifier.
