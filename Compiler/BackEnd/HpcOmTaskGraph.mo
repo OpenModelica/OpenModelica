@@ -2019,12 +2019,12 @@ protected
   list<list<Integer>> tmpLevelNodes;
   list<Integer> zeroRefNodes;
 algorithm
-  oLevelNodes := match(iRefCounter, iNodesWithRefZero, iLevelNodes)
-    case(_,{},_)
+  oLevelNodes := match(iTaskGraph,iRefCounter, iNodesWithRefZero, iLevelNodes)
+    case(_,_,{},_)
       equation //no nodes with refCount = 0 -> all nodes handled
         tmpLevelNodes = listReverse(iLevelNodes);
       then tmpLevelNodes;
-    case(_,zeroRefNodes,_)
+    case(_,_,zeroRefNodes,_)
       equation
         //append all nodes with refCount = zero as new level
         tmpLevelNodes = zeroRefNodes :: iLevelNodes;
