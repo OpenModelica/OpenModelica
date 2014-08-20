@@ -1,7 +1,7 @@
 #pragma once
 
 #include "SimManager.h"
-#include <Policies/FactoryPolicy.h>
+#include <SimCoreFactory/Policies/FactoryPolicy.h>
 
 #ifdef ANALYZATION_MODE
 #include <boost/function.hpp>

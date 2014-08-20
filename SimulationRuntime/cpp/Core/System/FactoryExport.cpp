@@ -11,7 +11,7 @@
 
 #elif defined(SIMSTER_BUILD)
 #include "Modelica.h"
-#include <Policies/FactoryConfig.h>
+#include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <OMCFactory/OMCFactory.h>
 #include "FactoryExport.h"
 #include "ModelicaSystem.h"
@@ -28,7 +28,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_system(boost::exten
 
 #elif defined(OMC_BUILD)
 #include "Modelica.h"
-#include <Policies/FactoryConfig.h>
+#include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <OMCFactory/OMCFactory.h>
 #include "FactoryExport.h"
 #include <System/AlgLoopSolverFactory.h>

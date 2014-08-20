@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Modelica.h>
-#include <Policies/FactoryConfig.h>
+#include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/SimController/SimController.h>
 #include <Core/SimulationSettings/ISimControllerSettings.h>

@@ -3,10 +3,10 @@
 #if defined(__vxworks)
 
       /*Policy include*/
-    #include <Policies/SolverVxWorksFactory.h>
-    #include <Policies/SolverSettingsVxWorksFactory.h>
-    #include <Policies/SystemVxWorksFactory.h>
-    #include <Policies/NonLinSolverVxWorksFactory.h>
+    #include <SimCoreFactory/Policies/SolverVxWorksFactory.h>
+    #include <SimCoreFactory/Policies/SolverSettingsVxWorksFactory.h>
+    #include <SimCoreFactory/Policies/SystemVxWorksFactory.h>
+    #include <SimCoreFactory/Policies/NonLinSolverVxWorksFactory.h>
     /*Policy defines*/
     typedef SystemVxWorksFactory<VxWorksFactory> SimControllerPolicy;
     typedef SolverVxWorksFactory<VxWorksFactory> ConfigurationPolicy;
@@ -18,11 +18,11 @@
 
       /*Policy include*/
 
-    #include <Policies/SolverFactory.h>
-    #include <Policies/SolverSettingsFactory.h>
-    #include <Policies/SystemFactory.h>
-    #include <Policies/NonLinSolverFactory.h>
-  #include <Policies/LinSolverFactory.h>
+    #include <SimCoreFactory/Policies/SolverFactory.h>
+    #include <SimCoreFactory/Policies/SolverSettingsFactory.h>
+    #include <SimCoreFactory/Policies/SystemFactory.h>
+    #include <SimCoreFactory/Policies/NonLinSolverFactory.h>
+  #include <SimCoreFactory/Policies/LinSolverFactory.h>
     /*Policy defines*/
     typedef SystemFactory<GenericFactory> SimControllerPolicy;
     typedef SolverFactory<GenericFactory> ConfigurationPolicy;
@@ -33,11 +33,11 @@
 #elif defined(OMC_BUILD) && !defined(ANALYZATION_MODE)
    /*Policy include*/
 
-    #include <Policies/SolverOMCFactory.h>
-    #include <Policies/SolverSettingsOMCFactory.h>
-    #include <Policies/SystemOMCFactory.h>
-    #include <Policies/NonLinSolverOMCFactory.h>
-  #include <Policies/LinSolverOMCFactory.h>
+    #include <SimCoreFactory/Policies/SolverOMCFactory.h>
+    #include <SimCoreFactory/Policies/SolverSettingsOMCFactory.h>
+    #include <SimCoreFactory/Policies/SystemOMCFactory.h>
+    #include <SimCoreFactory/Policies/NonLinSolverOMCFactory.h>
+  #include <SimCoreFactory/Policies/LinSolverOMCFactory.h>
     /*Policy defines*/
     typedef SystemOMCFactory<OMCFactory> SimControllerPolicy;
     typedef SolverOMCFactory<OMCFactory> ConfigurationPolicy;
@@ -49,11 +49,11 @@
 
    /*Policy include*/
 
-    #include <Policies/StaticSolverOMCFactory.h>
-    #include <Policies/StaticSolverSettingsOMCFactory.h>
-    #include <Policies/StaticSystemOMCFactory.h>
-    #include <Policies/StaticLinSolverOMCFactory.h>
-    #include <Policies/StaticNonLinSolverOMCFactory.h>
+    #include <SimCoreFactory/Policies/StaticSolverOMCFactory.h>
+    #include <SimCoreFactory/Policies/StaticSolverSettingsOMCFactory.h>
+    #include <SimCoreFactory/Policies/StaticSystemOMCFactory.h>
+    #include <SimCoreFactory/Policies/StaticLinSolverOMCFactory.h>
+    #include <SimCoreFactory/Policies/StaticNonLinSolverOMCFactory.h>
     /*Policy defines*/
     typedef StaticSystemOMCFactory<OMCFactory> SimControllerPolicy;
     typedef StaticSolverOMCFactory<OMCFactory> ConfigurationPolicy;

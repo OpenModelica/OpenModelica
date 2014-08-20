@@ -10,7 +10,7 @@ non-linear) system of the Form F(x)=0.
 #include <SimCoreFactory/Policies/StaticLinSolverOMCFactory.h>
 class AlgLoopSolverFactory : public IAlgLoopSolverFactory, public StaticNonLinSolverOMCFactory<OMCFactory>, public StaticLinSolverOMCFactory<OMCFactory>
 #else
-#include <Policies/FactoryPolicy.h>
+#include <SimCoreFactory/Policies/FactoryPolicy.h>
 class AlgLoopSolverFactory : public IAlgLoopSolverFactory, public NonLinSolverPolicy, public LinSolverPolicy
 #endif
 {

@@ -6,7 +6,7 @@
 #include <SimulationSettings/ISettingsFactory.h>
 #include <Solver/ISolver.h>
 #include <DataExchange/SimData.h>
-#include <Policies/FactoryConfig.h>
+#include <SimCoreFactory/Policies/FactoryConfig.h>
 /*end workarround*/
 #include "FMU/FMUWrapper.h"
 #include "System/AlgLoopSolverFactory.h"

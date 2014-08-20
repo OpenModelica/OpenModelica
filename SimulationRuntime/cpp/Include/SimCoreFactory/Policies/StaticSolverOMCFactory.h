@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Policies/SolverOMCFactory.h>
+#include <SimCoreFactory/Policies/SolverOMCFactory.h>
 #include <SimulationSettings/ISettingsFactory.h>
 #include <Solver/ISolver.h>
 #include <Solver/ISolverSettings.h>

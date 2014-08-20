@@ -1,5 +1,5 @@
 #include "Modelica.h"
-#include <Policies/FactoryConfig.h>
+#include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <OMCFactory/OMCFactory.h>
 #include "Euler.h"
 #include "EulerSettings.h"

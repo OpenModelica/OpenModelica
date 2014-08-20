@@ -26,7 +26,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_simulation_settings
 #elif defined(OMC_BUILD)
 
 #include "Modelica.h"
-#include <Policies/FactoryConfig.h>
+#include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <OMCFactory/OMCFactory.h>
 #include "Factory.h"
 

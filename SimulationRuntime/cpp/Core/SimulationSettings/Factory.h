@@ -2,11 +2,11 @@
 
 #ifdef ANALYZATION_MODE
 #include <SimulationSettings/ISettingsFactory.h>
-#include <Policies/StaticSolverSettingsOMCFactory.h>
+#include <SimCoreFactory/Policies/StaticSolverSettingsOMCFactory.h>
 class  SettingsFactory : public ISettingsFactory
                        , public StaticSolverSettingsOMCFactory<OMCFactory>
 #else
-#include <Policies/FactoryPolicy.h>
+#include <SimCoreFactory/Policies/FactoryPolicy.h>
 class  SettingsFactory : public ISettingsFactory
                        , public SolverSettingsPolicy
 #endif

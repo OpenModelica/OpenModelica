@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Policies/SolverSettingsOMCFactory.h>
+#include <SimCoreFactory/Policies/SolverSettingsOMCFactory.h>
 #include <Solver/SolverSettings.h>
 #include <boost/shared_ptr.hpp>
 #include <SimulationSettings/IGlobalSettings.h>
