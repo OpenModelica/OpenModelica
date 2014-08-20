@@ -1,4 +1,4 @@
-#include <OMCFactory/StaticOMCFactory.h>
+#include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
 
 StaticOMCFactory::StaticOMCFactory() : OMCFactory()
 {

@@ -32,7 +32,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_euler(boost::extens
 #elif defined(OMC_BUILD)
 #include "Modelica.h"
 #include <SimCoreFactory/Policies/FactoryConfig.h>
-#include <OMCFactory/OMCFactory.h>
+#include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include "Euler.h"
 #include "EulerSettings.h"
 

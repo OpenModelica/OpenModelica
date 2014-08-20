@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ObjectFactory.h>
+#include <SimCoreFactory/ObjectFactory.h>
 #include <Solver/ISolver.h>
 #include <SimulationSettings/ISettingsFactory.h>
 

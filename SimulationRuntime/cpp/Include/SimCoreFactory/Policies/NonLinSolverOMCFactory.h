@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ObjectFactory.h>
+#include <SimCoreFactory/ObjectFactory.h>
 
 /*
 Policy class to create nonlin solver object

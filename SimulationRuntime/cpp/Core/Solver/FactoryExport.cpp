@@ -8,7 +8,7 @@
 
 #include "Modelica.h"
 #include <SimCoreFactory/Policies/FactoryConfig.h>
-#include <OMCFactory/OMCFactory.h>
+#include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include "FactoryExport.h"
 
 #include <Solver/SolverDefaultImplementation.h>

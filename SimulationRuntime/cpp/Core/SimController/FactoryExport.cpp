@@ -27,7 +27,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_simcontroller(boost
 
 #include "Modelica.h"
 #include <SimCoreFactory/Policies/FactoryConfig.h>
-#include <OMCFactory/OMCFactory.h>
+#include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <SimController/ISimController.h>
 #include "SimController.h"
 

@@ -1,4 +1,4 @@
-#include <ObjectFactory.h>
+#include <SimCoreFactory/ObjectFactory.h>
 
 #if defined(__vxworks)
 

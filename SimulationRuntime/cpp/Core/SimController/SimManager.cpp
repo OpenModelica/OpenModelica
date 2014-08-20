@@ -1,7 +1,7 @@
 
 #include "Modelica.h"
 #include <SimCoreFactory/Policies/FactoryConfig.h>
-#include <OMCFactory/OMCFactory.h>
+#include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include "SimManager.h"
 /*
 #include <boost/log/common.hpp>
