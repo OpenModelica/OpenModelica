@@ -210,15 +210,15 @@ algorithm
     case(DAE.TUPLE_CONST(tc1::tcxl))
       equation
         c1 = propertiesListToConst2(tc1);
-        c2 = propertiesListToConst3(tcxl);
+        c2 = tupleConstListToConst(tcxl);
         c1 = constAnd(c1, c2);
       then
         c1;
   end match;
 end propertiesListToConst2;
 
-protected function propertiesListToConst3 ""
-  input list<TupleConst> t;
+public function tupleConstListToConst ""
+  input list<DAE.TupleConst> t;
   output DAE.Const c;
 algorithm
   c := match (t)
@@ -231,7 +231,7 @@ algorithm
 
     case((DAE.SINGLE_CONST(c1))::tcxl)
       equation
-        c2 = propertiesListToConst3(tcxl);
+        c2 = tupleConstListToConst(tcxl);
         c1 = constAnd(c1, c2);
       then
         c1;
@@ -239,12 +239,12 @@ algorithm
     case((p1 as DAE.TUPLE_CONST(_))::tcxl)
       equation
         c1 = propertiesListToConst2(p1);
-        c2 = propertiesListToConst3(tcxl);
+        c2 = tupleConstListToConst(tcxl);
         c1 = constAnd(c1, c2);
       then
         c1;
   end match;
-end propertiesListToConst3;
+end tupleConstListToConst;
 
 public function externalObjectType
 "author: PA

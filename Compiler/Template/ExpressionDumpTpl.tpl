@@ -138,7 +138,7 @@ match exp
     'unbox(<%dumpExp(exp, stringDelimiter)%>)'
   case SHARED_LITERAL(__) then
     if typeinfo() then '/* Shared literal <%index%> */ <%dumpExp(exp, stringDelimiter)%>' else dumpExp(exp, stringDelimiter)
-  case PATTERN(__) then dumpPattern(pattern)
+  case PATTERN(__) then (if typeinfo() then '/*pattern*/') + dumpPattern(pattern)
   else errorMsg("ExpressionDumpTpl.dumpExp: Unknown expression.")
 end dumpExp;
 

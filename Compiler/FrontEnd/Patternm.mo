@@ -1937,6 +1937,7 @@ algorithm
         ((_,useTree)) = Expression.traverseExp(DAE.META_OPTION(dPatternGuard), useLocalCref, useTree);
         (elabPatterns,_) = traversePatternList(elabPatterns, checkDefUsePattern, (localsTree,useTree,patternInfo));
         elabCase = DAE.CASE(elabPatterns, dPatternGuard, caseDecls, body, elabResult, resultInfo, 0, info);
+        (elabResult,resType) = makeTupleFromMetaTuple(elabResult,resType);
       then (cache,elabCase,elabResult,resType,st);
 
       // ELSE is the same as CASE, but without pattern
@@ -2754,5 +2755,25 @@ algorithm
   b := Algorithm.isNotDummyStatement(statement);
   Error.assertionOrAddSourceMessage(b or not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_DEAD_CODE,{"Statement optimised away"},DAEUtil.getElementSourceFileInfo(Algorithm.getStatementSource(statement)));
 end isNotDummyStatement;
+
+protected function makeTupleFromMetaTuple
+  input Option<DAE.Exp> inExp;
+  input Option<DAE.Type> inType;
+  output Option<DAE.Exp> exp;
+  output Option<DAE.Type> ty;
+algorithm
+  (exp,ty) := match (inExp,inType)
+    local
+      list<DAE.Exp> exps;
+      list<DAE.Type> tys,tys2;
+      list<Absyn.Path> source;
+    case (SOME(DAE.META_TUPLE(exps)),SOME(DAE.T_METATUPLE(types=tys,source=source)))
+      equation
+        tys2 = List.map(tys, Types.unboxedType);
+        (exps,tys2) = Types.matchTypeTuple(exps, tys, tys2, false);
+      then (SOME(DAE.TUPLE(exps)),SOME(DAE.T_TUPLE(tys2,source)));
+    else (inExp,inType);
+  end match;
+end makeTupleFromMetaTuple;
 
 end Patternm;

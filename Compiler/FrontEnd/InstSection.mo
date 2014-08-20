@@ -462,7 +462,7 @@ algorithm
     // equality equations e1 = e2
     case (cache,env,ih,pre,csets,ci_state,SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info,comment=comment),initial_,impl,graph,_)
       equation
-         // Do static analysis and constant evaluation of expressions.
+        // Do static analysis and constant evaluation of expressions.
         // Gives expression and properties
         // (Type  bool | (Type  Const as (bool | Const list))).
         // For a function, it checks the funtion name.
@@ -476,6 +476,7 @@ algorithm
         //  Returns the output parameters from the function.
         (cache,e1_1,prop1,_) = Static.elabExp(cache, env, e1, impl, NONE(), true /*do vectorization*/, pre, info);
         (cache,e2_1,prop2,_) = Static.elabExp(cache, env, e2, impl, NONE(), true /*do vectorization*/, pre, info);
+
         (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl, info);
         (cache, e2_1, prop2) = Ceval.cevalIfConstant(cache, env, e2_1, prop2, impl, info);
 
