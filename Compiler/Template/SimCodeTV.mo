@@ -2746,6 +2746,11 @@ package Expression
     input list<DAE.Statement> inStmts;
     output tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>> ocrefs;
   end extractUniqueCrefsFromStatmentS;
+  
+  function isCrefListWithEqualIdents
+    input list<DAE.Exp> iExpressions;
+    output Boolean oCrefWithEqualIdents;
+  end isCrefListWithEqualIdents;
 
 end Expression;
 

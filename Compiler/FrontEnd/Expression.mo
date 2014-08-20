@@ -10899,4 +10899,32 @@ algorithm
   outExp := DAE.BINARY(inLhs, inOp, inRhs);
 end makeBinaryExp;
 
+public function isCrefListWithEqualIdents
+  "Checks if all expressions in the given list are crefs with the same identifiers.
+    e.g.  {A[1],A[2],…,A[n]} -> true
+          {A[1],B[1]} -> false"
+  input list<DAE.Exp> iExpressions;
+  output Boolean oCrefWithEqualIdents;
+protected
+  list<Boolean> boolHelperList;
+  list<DAE.ComponentRef> crefs;
+  DAE.Exp head;
+  DAE.ComponentRef headCref;
+algorithm
+  oCrefWithEqualIdents := matchcontinue(iExpressions)
+    case(head::_)
+      equation
+        boolHelperList = List.map(iExpressions, isCref);
+        true = List.reduce(boolHelperList,boolAnd);
+        crefs = List.map(iExpressions, expCref);
+        headCref = expCref(head);
+        boolHelperList = List.map1(crefs, ComponentReference.crefEqual, headCref);
+      then List.reduce(boolHelperList,boolAnd);
+    case({})
+      then true;
+    else
+      then false;
+  end matchcontinue;
+end isCrefListWithEqualIdents;
+
 end Expression;
