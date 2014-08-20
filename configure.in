@@ -940,7 +940,6 @@ OMOptim/build/OMOptim.config \
 OMOptimBasis/build/Makefile.unix \
 OMOptimBasis/build/OMOptimBasis.config \
 OMVisualize/OMVisualizeGUI/OMVisualizeGUI.config \
-testsuite/openmodelica/bootstrapping/LinkMain.makefile \
 SimulationRuntime/c/Makefile \
 SimulationRuntime/c/simulation/libf2c/makefile.u \
 SimulationRuntime/ParModelica/explicit/openclrt/Makefile \
