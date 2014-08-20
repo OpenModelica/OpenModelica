@@ -2008,7 +2008,7 @@ algorithm
 end getLevelNodes;
 
 protected function getLevelNodes0 "author: marcusw
-  Adds all nodes in list iNodesWithRefZero as a new level to the result list. After that, the reference counter 
+  Adds all nodes in list iNodesWithRefZero as a new level to the result list. After that, the reference counter
   of all child nodes is decremented and the function is invoked again with the new referenceCount=0 nodes."
   input TaskGraph iTaskGraph;
   input array<Integer> iRefCounter;
@@ -2016,7 +2016,7 @@ protected function getLevelNodes0 "author: marcusw
   input list<list<Integer>> iLevelNodes; //list of nodes for each level
   output list<list<Integer>> oLevelNodes;
 protected
-  list<list<Integer>> tmpLevelNodes; 
+  list<list<Integer>> tmpLevelNodes;
   list<Integer> zeroRefNodes;
 algorithm
   oLevelNodes := match(iRefCounter, iNodesWithRefZero, iLevelNodes)
@@ -2035,7 +2035,7 @@ algorithm
 end getLevelNodes0;
 
 protected function getLevelNodes1 "author: marcusw
-  Decrements the reference counter of all child nodes of the node (iNodeIdx). 
+  Decrements the reference counter of all child nodes of the node (iNodeIdx).
   If the child node has a reference counter of zero after decrementation, the child is added to the result list."
   input Integer iNodeIdx;
   input TaskGraph iTaskGraph;
@@ -2068,7 +2068,7 @@ algorithm
         true = intEq(refCounter, 0);
         tmpNodesWithRefZero = iNodeIdx::tmpNodesWithRefZero;
       then tmpNodesWithRefZero;
-    else 
+    else
       then iNodesWithRefZero;
   end matchcontinue;
 end getLevelNodes2;
@@ -4121,7 +4121,7 @@ algorithm
   commCostsOut := createCommCosts(commCostsIn,1,reqTimeCom);
 end getCommCostsOnly;
 
-protected function checkForExecutionCosts 
+protected function checkForExecutionCosts
   "checks if every entry in exeCosts is > 0.0"
   input TaskGraphMeta dataIn;
   output Boolean isFine;
