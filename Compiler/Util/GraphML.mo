@@ -93,7 +93,7 @@ public uniontype GraphInfo
     array<Graph> graphs;
     array<Node> nodes;
     list<Edge> edges;
-    list<Attribute> attributes;
+    array<Attribute> attributes;
     String graphNodeKey;
     String graphEdgeKey;
   end GRAPHINFOARR;
@@ -401,11 +401,9 @@ public function addAttribute "author: marcusw
   input GraphInfo iGraphInfo;
   output GraphInfo oGraphInfo;
   output tuple<Attribute,Integer> oAttribute; //attribute with attributeIdx
-
 protected
   Attribute tmpAttribute;
   Integer attIdx;
-
   //values of graphinfo
   list<Graph> graphs;
   Integer graphCount; //number of graphs in the graphs list
@@ -586,13 +584,15 @@ protected
   list<Edge> edges;
   Integer edgeCount; //number of edges in the edge list
   list<Attribute> attributes;
+  array<Attribute> attributesArr;
   String graphNodeKey;
   String graphEdgeKey;
 algorithm
   GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey) := iGraphInfo;
   graphsArr := listArray(graphs);
   nodesArr := listArray(nodes);
-  oGraphInfo := GRAPHINFOARR(graphsArr,nodesArr,edges,attributes,graphNodeKey,graphEdgeKey);
+  attributesArr := listArray(listReverse(attributes));
+  oGraphInfo := GRAPHINFOARR(graphsArr,nodesArr,edges,attributesArr,graphNodeKey,graphEdgeKey);
 end convertToGraphInfoArr;
 
 // -------------------------

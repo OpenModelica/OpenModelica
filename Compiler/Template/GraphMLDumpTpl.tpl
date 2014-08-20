@@ -17,8 +17,8 @@ template dumpGraphInfoInternal(GraphML.GraphInfo graphInfo)
 ::=
     match graphInfo
         case graphInfo as GRAPHINFOARR(__) then
-            let attDefDump = attributes |> att => dumpAttDef(att) ; separator="\n"
-            let edgeDump = edges |> edge => dumpEdge(edge, graphInfo.graphEdgeKey) ; separator="\n"
+            let attDefDump = arrayList(attributes) |> att => dumpAttDef(att) ; separator="\n"
+            let edgeDump = edges |> edge => dumpEdge(edge, graphInfo.graphEdgeKey,attributes) ; separator="\n"
             <<
             <?xml version="1.0" encoding="UTF-8" standalone="no"?>
             <graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:y="http://www.yworks.com/xml/graphml" xmlns:yed="http://www.yworks.com/xml/yed/3" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd">
@@ -30,18 +30,18 @@ template dumpGraphInfoInternal(GraphML.GraphInfo graphInfo)
                 <%attDefDump%>
 
                 <!-- Graph Idx: <%arrayLength(graphs)%> -->
-                <%dumpGraph(arrayGet(graphs,arrayLength(graphs)), graphs, nodes, edgeDump, graphNodeKey)%>
+                <%dumpGraph(arrayGet(graphs,arrayLength(graphs)), graphs, nodes, edgeDump, graphNodeKey,attributes)%>
             </graphml>
             >>
     end match
 end dumpGraphInfoInternal;
 
-template dumpGraph(GraphML.Graph graph, array<GraphML.Graph> allGraphs, array<GraphML.Node> allNodes, String edgeDesc, String graphNodeKey)
+template dumpGraph(GraphML.Graph graph, array<GraphML.Graph> allGraphs, array<GraphML.Node> allNodes, String edgeDesc, String graphNodeKey, array<Attribute> graphAttributes)
 ::=
     match graph
         case GRAPH() then
-            let graphNodes = nodeIdc |> idc => dumpNode(arrayGet(allNodes,intAdd(1,intSub(arrayLength(allNodes),idc))),allGraphs,allNodes,graphNodeKey) ; separator="\n"
-            let attKeys = attValues |> val => dumpAttKey(val) ; separator="\n"
+            let graphNodes = nodeIdc |> idc => dumpNode(arrayGet(allNodes,intAdd(1,intSub(arrayLength(allNodes),idc))),allGraphs,allNodes,graphNodeKey,graphAttributes) ; separator="\n"
+            let attKeys = attValues |> val => dumpAttKey(val,graphAttributes) ; separator="\n"
             <<
             <graph edgedefault="<%dumpDirected(directed)%>" id="<%id%>">
                 <%attKeys%>
@@ -53,16 +53,16 @@ template dumpGraph(GraphML.Graph graph, array<GraphML.Graph> allGraphs, array<Gr
     end match
 end dumpGraph;
 
-template dumpNode(GraphML.Node node, array<GraphML.Graph> allGraphs, array<GraphML.Node> allNodes, String graphNodeKey)
+template dumpNode(GraphML.Node node, array<GraphML.Graph> allGraphs, array<GraphML.Node> allNodes, String graphNodeKey, array<Attribute> graphAttributes)
 ::=
     match node
         case NODE() then
             let nodeLabelDump = nodeLabels |> label => dumpNodeLabel(label) ; separator="\n"
-            let attKeys = attValues |> val => dumpAttKey(val) ; separator="\n"
+            let attKeys = attValues |> val => dumpAttKey(val, graphAttributes) ; separator="\n"
             <<
             <node id="<%id%>">
                 <%attKeys%>
-                <data key="ddesc"><%optDesc%></data>
+                <data key="ddesc"><![CDATA[<%optDesc%>]]></data>
                 <data key="<%graphNodeKey%>">
                     <y:ShapeNode>
                       <y:Fill color="#<%color%>" transparent="false"/>
@@ -103,18 +103,18 @@ template dumpNode(GraphML.Node node, array<GraphML.Graph> allGraphs, array<Graph
                 </y:ProxyAutoBoundsNode>
               </data>
               <!-- Graph Idx: <%intAdd(1,intSub(arrayLength(allGraphs), internalGraphIdx))%> -->
-              <%dumpGraph(arrayGet(allGraphs,intAdd(1,intSub(arrayLength(allGraphs), internalGraphIdx))), allGraphs, allNodes, "", graphNodeKey)%>
+              <%dumpGraph(arrayGet(allGraphs,intAdd(1,intSub(arrayLength(allGraphs), internalGraphIdx))), allGraphs, allNodes, "", graphNodeKey, graphAttributes)%>
             </node>
             >>
     end match
 end dumpNode;
 
-template dumpEdge(GraphML.Edge edge, String graphEdgeKey)
+template dumpEdge(GraphML.Edge edge, String graphEdgeKey, array<Attribute> graphAttributes)
 ::=
     match edge
         case EDGE() then
             let edgeLabelDump = edgeLabels |> label => dumpEdgeLabel(label) ; separator="\n"
-            let attKeys = attValues |> val => dumpAttKey(val) ; separator="\n"
+            let attKeys = attValues |> val => dumpAttKey(val,graphAttributes) ; separator="\n"
             <<
             <edge id="<%id%>" source="<%source%>" target="<%target%>">
               <%attKeys%>
@@ -159,13 +159,22 @@ template dumpNodeLabel(GraphML.NodeLabel nodeLabel)
     end match
 end dumpNodeLabel;
 
-template dumpAttKey(tuple<Integer,String> key)
+template dumpAttKey(tuple<Integer,String> key, array<Attribute> graphAttributes)
+/*  author: marcusw
+    Prints a attribute key-value-pair in a data element. If the attribute is a string, a CDATA-tag is added around the value. */
 ::=
     match key
         case(idx,val) then
-            <<
-            <data key="cust<%idx%>"><%val%></data>
-            >>
+            match arrayGet(graphAttributes, idx)
+                case ATTRIBUTE(attType=TYPE_STRING(__)) then
+                <<
+                <data key="cust<%idx%>"><![CDATA[<%val%>]]></data>
+                >>
+                else
+                <<
+                <data key="cust<%idx%>"><%val%></data>
+                >>
+            end match
     end match
 end dumpAttKey;
 

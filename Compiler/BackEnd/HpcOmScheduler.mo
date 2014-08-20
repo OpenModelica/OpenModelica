@@ -1158,8 +1158,9 @@ algorithm
   graphT := BackendDAEUtil.transposeMatrix(iGraph,arrayLength(iGraph));
 
   // assign initial level
-  (_,startNodes) := List.filterOnTrueSync(arrayList(graphT),List.isEmpty,List.intRange(arrayLength(graphT)));
-  level := getGraphLevel(iGraph,{startNodes});
+  //(_,startNodes) := List.filterOnTrueSync(arrayList(graphT),List.isEmpty,List.intRange(arrayLength(graphT)));
+  //level := getGraphLevel(iGraph,{startNodes});
+  level := HpcOmTaskGraph.getLevelNodes(iGraph);
   levelAss := arrayCreate(arrayLength(inComps),-1);
   ((_,levelAss)) := List.fold(level,getLevelAssignment,(1,levelAss));
     //print("level: \n"+&stringDelimitList(List.map(level,intListString),"\n")+&"\n");
@@ -1541,11 +1542,13 @@ algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,rootNodes=rootNodes,nodeNames=nodeNames,nodeDescs=nodeDescs,exeCosts=exeCosts, commCosts=commCosts) := iMeta;
 
   graphT := BackendDAEUtil.transposeMatrix(iGraph,arrayLength(iGraph));
-  (_,startNodes) := List.filterOnTrueSync(arrayList(graphT),List.isEmpty,List.intRange(arrayLength(graphT)));
-    //print("startnodes "+&stringDelimitList(List.map(startNodes,intString),",")+&"\n");
-  level := getGraphLevel(iGraph,{startNodes});
+  //(_,startNodes) := List.filterOnTrueSync(arrayList(graphT),List.isEmpty,List.intRange(arrayLength(graphT)));
+  //startNodes := HpcOmTaskGraph.getRootNodes(iGraph);
+  //print("startnodes "+&stringDelimitList(List.map(startNodes,intString),",")+&"\n");
+  //level := getGraphLevel(iGraph,{startNodes});
+  level := HpcOmTaskGraph.getLevelNodes(iGraph);
+  //print("level: \n"+&stringDelimitList(List.map(level,intListString),"\n")+&"\n");
   Debug.fcall(Flags.HPCOM_DUMP,print,"number of level: "+&intString(listLength(level))+&"\nnumber of processors :"+&intString(Flags.getConfigInt(Flags.NUM_PROC))+&"\n");
-    //print("level: \n"+&stringDelimitList(List.map(level,intListString),"\n")+&"\n");
   levelComps := List.mapList1_1(level,Util.arrayGetIndexFirst,inComps);
   levelComps := List.mapList1_1(levelComps,List.sort,intGt);
   SCCs := List.map1(levelComps,getSimEqSysIdcsForNodeLst,iSccSimEqMapping);
@@ -1598,63 +1601,6 @@ public function makeCalcTask" makes a CALCTASK for the given list of SimEqSys an
 algorithm
   taskOut := HpcOmSimCode.CALCTASK(0,node,1.0,1.0,threadIdx,simEqs);
 end makeCalcTask;
-
-public function getGraphLevel"gets the level for the graph
-author:Waurich TUD 2014-06"
-  input HpcOmTaskGraph.TaskGraph iGraph;
-  input list<list<Integer>> levelIn;  // inlcuding rootNodes as startvalues
-  output list<list<Integer>> levelOut;
-algorithm
-  levelOut := matchcontinue(iGraph,levelIn)
-    local
-      Boolean notFinished;
-      Integer numNodes;
-      array<Integer> nodeAssign;
-      list<Integer> prevLevel, nextLevel;
-      list<list<Integer>> nodeSuccs,level;
-    case(_,prevLevel::_)
-      equation
-        // assign successors to next level
-        nodeSuccs = List.map1(prevLevel,Util.arrayGetIndexFirst,iGraph);
-        nextLevel = List.flatten(nodeSuccs);
-        true  = List.isNotEmpty(nextLevel);
-        level = getGraphLevel(iGraph,nextLevel::levelIn);
-    then level;
-    case(_,prevLevel::_)
-      equation
-        // done, remove doubles, revert order, filter empty levels
-        nodeSuccs = List.map1(prevLevel,Util.arrayGetIndexFirst,iGraph);
-        nextLevel = List.flatten(nodeSuccs);
-        true  = List.isEmpty(nextLevel);
-        //level = List.map(levelIn,List.unique);  too memory intensive
-        numNodes = arrayLength(iGraph);
-        nodeAssign = arrayCreate(numNodes,-1);
-        (level,_) = List.mapFold(levelIn,getGraphLevel_removeDoubles,nodeAssign);
-        level = List.filterOnTrue(level,List.isNotEmpty);
-        level = listReverse(level);
-    then level;
-    else
-      equation
-        print("getGraphLevel failed!\n");
-      then fail();
-   end matchcontinue;
-end getGraphLevel;
-
-protected function getGraphLevel_removeDoubles"removes the entries in the levels that are various times in different levels. Only the tasks in the latest levels remain.
-author:Waurich TUD 2014-06"
-  input list<Integer> levelIn;
-  input array<Integer> assignedIn;
-  output list<Integer> levelOut;
-  output array<Integer> assignedOut;
-protected
-  list<Integer> uniques;
-algorithm
-  uniques := List.filter1OnTrue(levelIn,arrayIntIsNegative,assignedIn);
-  uniques := List.unique(uniques);
-  List.map2_0(uniques,Util.arrayUpdateIndexFirst,2,assignedIn);  // assign something >=0 to the arrayvalue
-  levelOut := uniques;
-  assignedOut := assignedIn;
-end getGraphLevel_removeDoubles;
 
 protected function arrayIntIsNegative"outputs true if the indexed value in the array is lower than 0
 author:Waurich TUD 2014-07"
@@ -1729,7 +1675,8 @@ algorithm
   end matchcontinue;
 end createTaskDepSchedule;
 
-protected function createNodeLevelMapping
+protected function createNodeLevelMapping "author: marcusw
+  Create a mapping for each node, which stores the task, the level-index and a list of all parents."
   input list<Integer> iNodeDependenciesT; //dependencies of node
   input array<Integer> nodeMarks;
   input array<list<Integer>> inComps;
@@ -1785,11 +1732,11 @@ algorithm
   oElem := ((task,childTasks));
 end filterNodeLevelMapping;
 
-//----------------------
-// External-C Scheduling
-//----------------------
-public function createExtCSchedule "function createExtSchedule
-  author: marcusw
+//-----------------
+// Metis Scheduling
+//-----------------
+public function createMetisSchedule
+  "author: marcusw
   Creates a scheduling by passing the arguments to metis."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
@@ -1812,7 +1759,7 @@ algorithm
     case(_,_,_,_)
       equation
         print("Funktionsaufruf!");
-        (xadj,adjncy,vwgt,adjwgt) = HpcOmTaskGraph.prepareMetis(iTaskGraph,iTaskGraphMeta);
+        (xadj,adjncy,vwgt,adjwgt) = prepareMetis(iTaskGraph,iTaskGraphMeta);
         extInfo = HpcOmSchedulerExt.scheduleMetis(xadj, adjncy, vwgt, adjwgt, iNumberOfThreads);
         extInfoArr = listArray(extInfo);
         print("Hier geht MetaModelica los!\n");
@@ -1833,12 +1780,12 @@ algorithm
       then tmpSchedule;
     else
       equation
-        print("HpcOmScheduler.createExtCSchedule not every node has a scheduler-info.\n");
+        print("HpcOmScheduler.createMetisSchedule not every node has a scheduler-info.\n");
       then fail();
   end matchcontinue;
-end createExtCSchedule;
+end createMetisSchedule;
 
-public function createhmetSchedule "function createExtSchedule
+public function createHMetisSchedule "function createExtSchedule
   author: marcusw
   Creates a scheduling by passing the arguments to hmetis."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
@@ -1862,7 +1809,7 @@ algorithm
     case(_,_,_,_)
       equation
         print("Funktionsaufruf!");
-        (xadj,adjncy,vwgt,adjwgt) = HpcOmTaskGraph.preparehMetis(iTaskGraph,iTaskGraphMeta);
+        (xadj,adjncy,vwgt,adjwgt) = preparehMetis(iTaskGraph,iTaskGraphMeta);
         extInfo = HpcOmSchedulerExt.schedulehMetis(xadj, adjncy, vwgt, adjwgt, iNumberOfThreads);
         extInfoArr = listArray(extInfo);
         print("Hier geht MetaModelica los!\n");
@@ -1883,10 +1830,203 @@ algorithm
       then tmpSchedule;
     else
       equation
-        print("HpcOmScheduler.createExtCSchedule not every node has a scheduler-info.\n");
+        print("HpcOmScheduler.createHMetisSchedule not every node has a scheduler-info.\n");
       then fail();
   end matchcontinue;
-end createhmetSchedule;
+end createHMetisSchedule;
+
+protected function sumEdge
+  input list<Integer> edges;
+  input Integer innumedge;
+  output Integer outnumedge;
+algorithm
+  outnumedge := innumedge+listLength(edges);
+ end sumEdge;
+
+protected function getSingleRelations
+  input Integer edge;
+  input Integer n;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input list<tuple<Integer,Integer,Integer>> irelations;
+  output list<tuple<Integer,Integer,Integer>> orelations;
+protected
+  tuple<Integer,Integer,Integer> data;
+  Integer costs;
+algorithm
+  data := HpcOmTaskGraph.getCommCostBetweenNodes(n,edge,iTaskGraphMeta);
+  (_,_,costs) := data;
+  orelations := listAppend(irelations,{(edge,n,costs)});
+  orelations := listAppend(orelations,{(n,edge,costs)});
+end getSingleRelations;
+
+protected function getRelations
+  input list<Integer> edges;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input tuple<list<tuple<Integer,Integer,Integer>>,Integer> irelations;
+  output tuple<list<tuple<Integer,Integer,Integer>>,Integer> orelations;
+protected
+  Integer n;
+  list<tuple<Integer,Integer,Integer>> relations;
+  list<tuple<Integer,Integer,Integer>> orel;
+algorithm
+  (relations,n) := irelations;
+  orel := List.fold2(edges,getSingleRelations,n,iTaskGraphMeta,relations);
+  orelations := (orel, n+1);
+end getRelations;
+
+protected function sortEdgeHelp
+  input tuple<Integer,Integer,Integer> edge;
+  input Integer actnode;
+  input array<Integer> adjncy;
+  input array<Integer> adjwgt;
+  input Integer imarker;
+  output Integer omarker;
+algorithm
+  omarker := matchcontinue (edge,actnode,adjncy,adjwgt,imarker)
+    local
+      Integer tonode;
+      Integer fromnode;
+      Integer cost;
+    case ((fromnode,tonode,cost),_,_,_,_)
+      equation
+        true = intEq(fromnode,actnode);
+        _ = arrayUpdate(adjwgt,imarker,cost);
+        _ = arrayUpdate(adjncy,imarker,tonode-1);
+      then
+        imarker+1;
+    case (_,_,_,_,_)
+      then imarker;
+  end matchcontinue;
+end sortEdgeHelp;
+
+protected function sortEdge
+  input Integer actnode;
+  input array<Integer> xadj;
+  input array<Integer> adjncy;
+  input array<Integer> adjwgt;
+  input list<tuple<Integer,Integer,Integer>> help;
+  input Integer imarker;
+  output Integer omarker;
+protected
+  Integer position;
+algorithm
+  omarker := List.fold3(help,sortEdgeHelp,actnode,adjncy,adjwgt,imarker);
+  _ := arrayUpdate(xadj,actnode+1,omarker-1);
+end sortEdge;
+
+protected function setVwgt
+  input Integer node;
+  input array<Integer> vwgt;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+protected
+  tuple<Integer,Real> value;
+  Real rv;
+algorithm
+  value:=HpcOmTaskGraph.getExeCost(node,iTaskGraphMeta);
+  (_,rv):=value;
+  _:=arrayUpdate(vwgt,node,realInt(rv));
+end setVwgt;
+
+protected function prepareMetis
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  output array<Integer> xadj;
+  output array<Integer> adjncy;
+  output array<Integer> vwgt;
+  output array<Integer> adjwgt;
+protected
+  Integer n;
+  Integer m;
+  tuple<list<tuple<Integer,Integer,Integer>>,Integer> adjundirected;
+  list<tuple<Integer,Integer,Integer>> help;
+  list<Integer> allTheNodes;
+  array<list<Integer>> inComps;
+algorithm
+  help := {};
+  n := arrayLength(iTaskGraph);
+  xadj := arrayCreate(n+1,0);
+  m := List.fold(arrayList(iTaskGraph),sumEdge,0);
+  adjwgt := arrayCreate(2*m,0);
+  adjundirected := List.fold1(arrayList(iTaskGraph),getRelations,iTaskGraphMeta,({},1));
+  (help,_) := adjundirected;
+  allTheNodes := List.intRange(n);
+  adjncy := arrayCreate(2*m,0);
+  xadj := arrayUpdate(xadj,1,0);
+  _ := List.fold4(allTheNodes,sortEdge,xadj,adjncy,adjwgt,help,1);
+  vwgt := arrayCreate(n,0);
+  List.map2_0(allTheNodes,setVwgt,vwgt,iTaskGraphMeta);
+end prepareMetis;
+
+protected function listNodes
+  input Integer node;
+  input list<Integer> l_eint;
+  output list<Integer> l_eint_out;
+protected
+  Integer actnode;
+algorithm
+  actnode := node-1;
+  l_eint_out := listAppend(l_eint, {actnode});
+  print("l_eint length:" +& intString(listLength(l_eint_out))+&"\n");
+end listNodes;
+
+protected function getHedge
+  input list<Integer> childnodes;
+  //input TaskGraphMeta iTaskGraphMeta;
+  input tuple<Integer,Integer,list<Integer>,list<Integer>,list<Integer>> actnode;
+  output tuple<Integer,Integer,list<Integer>,list<Integer>,list<Integer>> actnode_out;
+algorithm
+    actnode_out := match (childnodes,actnode)
+    local
+        Integer n;
+        Integer node;
+        Integer position;
+        list<Integer> l_eptr;
+        list<Integer> l_eint;
+        list<Integer> l_hewgts;
+        tuple<Integer,Integer,list<Integer>,list<Integer>,list<Integer>> help;
+    case ({},(node,position,l_eptr,l_eint,l_hewgts))
+        equation
+            help=(node+1,position,l_eptr,l_eint,l_hewgts);
+        then help;
+    case (_,(node,position,l_eptr,l_eint,l_hewgts))
+        equation
+            n=node-1;
+            l_eint = listAppend(l_eint,{n});
+            l_eint = List.fold(childnodes,listNodes,l_eint);
+            n=position+listLength(childnodes)+1;
+            l_eptr = listAppend(l_eptr,{n});
+            help = (node+1,n,l_eptr,l_eint,l_hewgts);
+        then help;
+    end match;
+end getHedge;
+
+protected function preparehMetis
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  output array<Integer> vwgts;
+  output array<Integer> eptr;
+  output array<Integer> eint;
+  output array<Integer> hewgts;
+protected
+  Integer n;
+  Integer m;
+  list<Integer> l_eptr;
+  list<Integer> l_eint;
+  list<Integer> l_hewgts;
+  list<Integer> allTheNodes;
+  tuple<Integer,Integer,list<Integer>,list<Integer>,list<Integer>> result;
+algorithm
+  n := arrayLength(iTaskGraph);
+  result := List.fold(arrayList(iTaskGraph),getHedge,(1,0,{0},{},{}));
+  (_,_,l_eptr,l_eint,l_hewgts) := result;
+  print("Diagnostic length: " +& intString(listLength(l_eptr)) +& " " +& intString(listLength(l_eint)) +& "\n");
+  allTheNodes := List.intRange(n);
+  vwgts := arrayCreate(n,0);
+  List.map2_0(allTheNodes,setVwgt,vwgts,iTaskGraphMeta);
+  eptr := listArray(l_eptr);
+  eint := listArray(l_eint);
+  hewgts := listArray(l_hewgts);
+end preparehMetis;
 
 //--------------------
 // External Scheduling //TODO: Rename to Yed Scheduling

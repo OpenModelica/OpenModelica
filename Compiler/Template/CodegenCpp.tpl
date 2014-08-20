@@ -12220,4 +12220,3 @@ template subscriptToCStrWithoutIndexOperator(Subscript subscript)
 end subscriptToCStrWithoutIndexOperator;
 
 end CodegenCpp;
-

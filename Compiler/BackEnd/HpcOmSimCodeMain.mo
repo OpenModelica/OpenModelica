@@ -529,14 +529,14 @@ algorithm
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "metis");
         print("Using METIS Scheduler\n");
-        schedule = HpcOmScheduler.createExtCSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping);
+        schedule = HpcOmScheduler.createMetisSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
     case(_,_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "hmet");
         print("Using hMETIS Scheduler\n");
-        schedule = HpcOmScheduler.createhmetSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping);
+        schedule = HpcOmScheduler.createHMetisSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
     case(_,_,_,_,_,_,_)
       equation

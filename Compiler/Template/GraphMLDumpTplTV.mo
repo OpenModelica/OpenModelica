@@ -141,22 +141,11 @@ interface package GraphMLDumpTplTV
 
   package GraphML
     uniontype GraphInfo
-      record GRAPHINFO
-        list<Graph> graphs;
-        Integer graphCount; //number of graphs in the graphs list
-        list<Node> nodes;
-        Integer nodeCount; //number of nodes in the nodes list
-        list<Edge> edges;
-        Integer edgeCount; //number of edges in the edge list
-        list<Attribute> attributes;
-        String graphNodeKey;
-        String graphEdgeKey;
-      end GRAPHINFO;
       record GRAPHINFOARR
         array<Graph> graphs;
         array<Node> nodes;
         list<Edge> edges;
-        list<Attribute> attributes;
+        array<Attribute> attributes;
         String graphNodeKey;
         String graphEdgeKey;
       end GRAPHINFOARR;

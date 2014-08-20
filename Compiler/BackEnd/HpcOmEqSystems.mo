@@ -1934,7 +1934,6 @@ algorithm
   typeStr := Util.if_(isTearVar,"tearingVar","otherVar");
   var := BackendVariable.getVarAt(vars,indx);
   varString := BackendDump.varString(var);
-  varString := HpcOmTaskGraph.prepareXML(varString);
   varNodeId := getVarNodeIdx(indx);
   idxString := intString(indx);
   nodeLabel := GraphML.NODELABEL_INTERNAL(idxString,NONE(),GraphML.FONTPLAIN());
@@ -1966,7 +1965,6 @@ algorithm
   typeStr := Util.if_(isResEq,"residualEq","otherEq");
   {eq} := BackendEquation.getEqns({indx}, eqs);
   eqString := BackendDump.equationString(eq);
-  eqString := HpcOmTaskGraph.prepareXML(eqString);
   eqNodeId := getEqNodeIdx(indx);
   idxString := intString(indx);
   nodeLabel := GraphML.NODELABEL_INTERNAL(idxString,NONE(),GraphML.FONTPLAIN());
@@ -2301,7 +2299,6 @@ algorithm
   commCosts := Util.arrayMap(graph,buildDummyCommCosts);
   //get the node description
   eqStrings := List.map(eqLst,BackendDump.equationString);
-  eqStrings := List.map(eqStrings,HpcOmTaskGraph.prepareXML);
   varStrings := List.map(varLst,HpcOmTaskGraph.getVarString);
   descLst := List.map1(eqStrings,stringAppend," FOR ");
   descLst := List.threadMap(descLst,varStrings,stringAppend);
