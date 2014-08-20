@@ -5,7 +5,7 @@
 #include <vector>
 #endif
 
-#ifdef USE_BOOST_THREAD
+#ifdef USE_PARALLEL_OUTPUT
 #include <boost/lockfree/queue.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
@@ -32,7 +32,7 @@ struct TextFileWriter
     :_curser_position(0)
     ,_output_path(output_path)
     ,_file_name(file_name)
-    #ifdef USE_BOOST_THREAD
+    #ifdef USE_PARALLEL_OUTPUT
       ,_queue(0)
       ,_mutex(1)
       ,_nempty(10)
@@ -45,7 +45,7 @@ struct TextFileWriter
   }
   ~TextFileWriter()
   {
-    #ifdef USE_BOOST_THREAD
+    #ifdef USE_PARALLEL_OUTPUT
       //wait until the writer-thread has written all results
       while(true)
       {
@@ -164,7 +164,7 @@ struct TextFileWriter
 
   void write(value_type_v *v_list, value_type_dv *v2_list,double time)
   {
-    #ifdef USE_BOOST_THREAD
+    #ifdef USE_PARALLEL_OUTPUT
       if(!_threadRunning)
       {
         _queue = std::deque<boost::tuple<value_type_v*, value_type_dv*, double>* >();
@@ -213,7 +213,7 @@ struct TextFileWriter
 protected:
   void writeThread()
   {
-    #ifdef USE_BOOST_THREAD
+    #ifdef USE_PARALLEL_OUTPUT
       boost::tuple<value_type_v*,value_type_dv*,double> *elem;
       value_type_v *v_list;
       value_type_dv *v2_list;
@@ -260,7 +260,7 @@ protected:
   unsigned int _curser_position;       ///< Controls current Curser-Position
   std::string _output_path;
   std::string _file_name;
-  #ifdef USE_BOOST_THREAD
+  #ifdef USE_PARALLEL_OUTPUT
     std::deque<boost::tuple<value_type_v*, value_type_dv*, double>* > _queue;
     boost::interprocess::interprocess_semaphore _mutex;
     boost::interprocess::interprocess_semaphore _nempty;

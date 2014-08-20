@@ -24,7 +24,7 @@ ENDIF(NOT ANALYZATION_MODE)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
 option(ANALYZATION_MODE "ANALYZATION_MODE" OFF)
-option(USE_THREADS "USE_THREADS" OFF)
+option(USE_THREADS "USE_PARALLEL_OUTPUT" OFF)
 
 IF(ANALYZATION_MODE)
 	message(STATUS "Using analyzation mode")
@@ -32,6 +32,10 @@ IF(ANALYZATION_MODE)
 ELSE(ANALYZATION_MODE)
 	message(STATUS "Analyzation mode disabled")
 ENDIF(ANALYZATION_MODE)
+
+IF(USE_PARALLEL_OUTPUT)
+	add_definitions(-DUSE_PARALLEL_OUTPUT)
+ENDIF(USE_PARALLEL_OUTPUT)
 
 # on windows  boost,blas,lapack  and sundial solvers from omdev is used else the installed versions are used
 IF( WIN32 )
@@ -133,8 +137,7 @@ ELSE(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
 	message(STATUS "Boost log disabled")
 ENDIF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
 
-IF(USE_THREADS)
-find_package(Boost 1.54 COMPONENTS thread atomic)
+find_package(Boost COMPONENTS thread atomic)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
 find_package(Threads)
 IF(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
@@ -143,7 +146,6 @@ IF(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
 ELSE(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
 	message(STATUS "Boost thread disabled")
 ENDIF(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
-ENDIF(USE_THREADS)
 
 find_package(Boost COMPONENTS filesystem system serialization program_options REQUIRED)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
