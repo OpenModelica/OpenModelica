@@ -167,7 +167,7 @@ algorithm
       then
         scodeClass;
 
-    case (Absyn.CLASS(name = n,partialPrefix = _,finalPrefix = _,encapsulatedPrefix = _,restriction = _,body = _,info = file_info), _)
+    case (Absyn.CLASS(name = n,info = file_info), _)
       equation
         // Print out an internal error msg only if no other errors have already
         // been printed.
@@ -200,12 +200,16 @@ algorithm
       list<Absyn.Annotation> aann;
       Option<SCode.Annotation> ann;
 
-  case (Absyn.PARTS(classParts = parts,ann=aann, comment = cmtString),_,_)
+    case (Absyn.PARTS(classParts = parts,ann=aann, comment = cmtString),_,_)
       equation
         els = translateClassdefElements(parts);
         cmt = translateCommentList(aann,cmtString);
       then
         (SCode.PARTS(els,{},{},{},{},{},{},NONE()),cmt);
+    else
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Could not translate operator to SCode because it is not using class parts."}, info);
+      then fail();
   end match;
 end translateOperatorDef;
 
@@ -1144,7 +1148,7 @@ algorithm
       Option<SCode.ConstrainClass> scc;
 
 
-    case (_,_,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = _,encapsulatedPrefix = e,restriction = Absyn.R_OPERATOR(),body = de,info = i))),_)
+    case (_,_,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (Absyn.CLASS(name = n,partialPrefix = pa,encapsulatedPrefix = e,restriction = Absyn.R_OPERATOR(),body = de,info = i))),_)
       equation
         (de_1,cmt) = translateOperatorDef(de,n,i);
         (_, redecl) = translateRedeclarekeywords(repl);
@@ -1162,7 +1166,7 @@ algorithm
         {cls};
 
 
-    case (_,_,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = _,encapsulatedPrefix = e,restriction = re,body = de,info = i))),_)
+    case (_,_,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,encapsulatedPrefix = e,restriction = re,body = de,info = i))),_)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating local class: " +& n);
         re_1 = translateRestriction(cl, re); // uniontype will not get translated!
@@ -1231,6 +1235,11 @@ algorithm
         xs_1 = translateImports(imp,vis,info);
       then
         xs_1;
+
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"SCodeUtil.translateElementspec failed"});
+      then fail();
   end match;
 end translateElementspec;
 
