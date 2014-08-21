@@ -5316,7 +5316,6 @@ algorithm
       equation
         (cache,v1,_) = ceval(cache,env, e1, impl,NONE(),msg,numIter+1);
         e1_1 = ValuesUtil.valueExp(v1);
-        true = dimensionSliceInRange(v1,dim);
       then
         (cache,DAE.SLICE(e1_1));
 

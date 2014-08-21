@@ -287,8 +287,8 @@ public constant Message NO_SUCH_ARGUMENT = MESSAGE(80, TRANSLATION(), ERROR(),
   Util.gettext("Function %s has no argument named %s."));
 public constant Message CONSTANT_OR_PARAM_WITH_NONCONST_BINDING = MESSAGE(81, TRANSLATION(), ERROR(),
   Util.gettext("%s is a constant or parameter with a non-constant initializer %s."));
-public constant Message SUBSCRIPT_NOT_INT_OR_INT_ARRAY = MESSAGE(82, TRANSLATION(), ERROR(),
-  Util.gettext("Subscript is not an integer or integer array in %s which is of type %s, in component %s."));
+public constant Message WRONG_DIMENSION_TYPE = MESSAGE(82, TRANSLATION(), ERROR(),
+  Util.gettext("Subscript %s of type %s is not a subtype of Integer, Boolean or enumeration."));
 public constant Message TYPE_MISMATCH_IF_EXP = MESSAGE(83, TRANSLATION(), ERROR(),
   Util.gettext("Type mismatch in if-expression in component %s. True branch: %s has type %s, false branch: %s has type %s."));
 public constant Message UNRESOLVABLE_TYPE = MESSAGE(84, TRANSLATION(), ERROR(),
@@ -322,7 +322,7 @@ public constant Message MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR = MESSAGE(97, T
 public constant Message ASSERT_CONSTANT_FALSE_ERROR = MESSAGE(98, SYMBOLIC(), ERROR(),
   Util.gettext("Assertion triggered during translation: %s."));
 public constant Message ARRAY_INDEX_OUT_OF_BOUNDS = MESSAGE(99, TRANSLATION(), ERROR(),
-  Util.gettext("Index out of bounds. Addressing position: %s, while array length is: %s."));
+  Util.gettext("Subscript '%s' for dimension %s (size = %s) of %s is out of bounds."));
 public constant Message COMPONENT_CONDITION_VARIABILITY = MESSAGE(100, TRANSLATION(), ERROR(),
   Util.gettext("Component condition must be parameter or constant expression (in %s)."));
 public constant Message FOUND_CLASS_NAME_VIA_COMPONENT = MESSAGE(101, TRANSLATION(), ERROR(),
@@ -425,6 +425,8 @@ public constant Message ZERO_STEP_IN_ARRAY_CONSTRUCTOR = MESSAGE(152, TRANSLATIO
   Util.gettext("Step equals 0 in array constructor %s."));
 public constant Message RECURSIVE_SHORT_CLASS_DEFINITION = MESSAGE(153, TRANSLATION(), ERROR(),
   Util.gettext("Recursive short class definition of %s in terms of %s."));
+public constant Message WRONG_NUMBER_OF_SUBSCRIPTS = MESSAGE(154, TRANSLATION(), ERROR(),
+  Util.gettext("Wrong number of subscripts in %s (%s subscripts for %s dimensions)."));
 public constant Message FUNCTION_ELEMENT_WRONG_KIND = MESSAGE(155, TRANSLATION(), ERROR(),
   Util.gettext("Element is not allowed in function context: %s"));
 public constant Message DUPLICATE_CLASSES_TOP_LEVEL = MESSAGE(157, TRANSLATION(), ERROR(),

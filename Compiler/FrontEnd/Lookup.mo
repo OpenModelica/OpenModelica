@@ -2497,8 +2497,6 @@ algorithm
         sz = Expression.dimensionSize(dim);
         t_1 = checkSubscripts(t, ys);
         dim_int = listLength(se) "FIXME: Check range IMPLEMENTED 2007-05-18 BZ" ;
-        true = (dim_int <= sz);
-        true = checkSubscriptsRange(se,sz);
       then
         DAE.T_ARRAY(t_1,{DAE.DIM_INTEGER(dim_int)},ts);
 
@@ -2567,69 +2565,6 @@ algorithm
         fail();
   end matchcontinue;
 end checkSubscripts;
-
-protected function checkSubscriptsRange "
-Checks that each subscript stays in the dimensional range.
-"
-  input list<DAE.Exp> inExpSubscriptLst;
-  input Integer dimensions;
-  output Boolean inRange;
-algorithm
-  inRange:=
-  matchcontinue(inExpSubscriptLst, dimensions)
-    local
-      DAE.Exp exp;
-      list<DAE.Exp> expl;
-      Integer dims;
-      Boolean res;
-      String str1,str2;
-    case(expl,dims)
-      equation
-        res = checkSubscriptsRange2(expl,dims);
-      then res;
-    case(expl,dims)
-      equation
-        str2 = intString(dims);
-        str1 = stringDelimitList(List.map(expl,ExpressionDump.printExpStr)," and position " );
-        Error.addMessage(Error.ARRAY_INDEX_OUT_OF_BOUNDS,{str1,str2});
-      then
-        false;
-  end matchcontinue;
-end checkSubscriptsRange;
-
-protected function checkSubscriptsRange2
-""
-  input list<DAE.Exp> inExpSubscriptLst;
-  input Integer dimensions;
-  output Boolean inRange;
-algorithm
-  inRange := matchcontinue(inExpSubscriptLst, dimensions)
-    local
-      DAE.Exp exp;
-      list<DAE.Exp> expl;
-      Integer x,dims;
-
-    case({},_) then true;
-
-    // Constant index
-    case (exp :: expl, dims)
-      equation
-        x = Expression.expInt(exp);
-        true = (x<=dims);
-        true = checkSubscriptsRange2(expl,dims);
-      then
-        true;
-
-    // Variable index, can't check at compile time.
-    case (exp :: expl, dims)
-      equation
-        failure(_ = Expression.expInt(exp));
-        true = checkSubscriptsRange2(expl, dims);
-      then
-        true;
-
-   end matchcontinue;
-end checkSubscriptsRange2;
 
 protected function lookupVarF
 "This function looks in a frame to find a declared variable.  If

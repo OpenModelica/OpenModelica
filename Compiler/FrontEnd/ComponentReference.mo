@@ -48,6 +48,7 @@ protected import ClassInf;
 protected import Config;
 protected import Debug;
 protected import Dump;
+protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
@@ -2797,13 +2798,13 @@ algorithm
         // Create a list of : subscripts to generate all elements.
         subs = List.fill(DAE.WHOLEDIM(), listLength(dims));
       then
-        expandCref2(id, Util.if_(Flags.getConfigBool(Flags.CORRECT_CREF_TYPES),correctTy,ty), subs, dims);
+        expandCref2(id, correctTy, subs, dims);
 
     // A simple cref with subscripts and array type.
     case (DAE.CREF_IDENT(id, correctTy as DAE.T_ARRAY(ty = ty as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims = dims), subs),true)
       equation
         // Use the subscripts to generate only the wanted elements.
-         crefs = expandCref2(id, Util.if_(Flags.getConfigBool(Flags.CORRECT_CREF_TYPES),correctTy,ty), subs, dims);
+         crefs = expandCref2(id, correctTy, subs, dims);
       then
         expandCrefLst(crefs,varLst,{});
 
@@ -2811,7 +2812,7 @@ algorithm
     case (DAE.CREF_IDENT(id, correctTy as DAE.T_ARRAY(ty = ty, dims = dims), subs),_)
         // Use the subscripts to generate only the wanted elements.
       then
-        expandCref2(id,  Util.if_(Flags.getConfigBool(Flags.CORRECT_CREF_TYPES),correctTy,ty), subs, dims);
+        expandCref2(id, correctTy, subs, dims);
 
 
     // A qualified cref with array type.
@@ -3268,6 +3269,157 @@ algorithm
     else inAccumCount + 1;
   end match;
 end identifierCount_tail;
+
+public function checkCrefSubscriptsBounds
+  "Checks that the subscripts in a cref are valid given the dimensions of the
+   cref's type. Prints an error if they are not."
+  input DAE.ComponentRef inCref;
+  input Absyn.Info inInfo;
+algorithm
+  checkCrefSubscriptsBounds2(inCref, inCref, inInfo);
+end checkCrefSubscriptsBounds;
+
+protected function checkCrefSubscriptsBounds2
+  input DAE.ComponentRef inCref;
+  input DAE.ComponentRef inWholeCref;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inCref, inWholeCref, inInfo)
+    local
+      DAE.Type ty;
+      list<DAE.Subscript> subs;
+      list<DAE.Dimension> dims;
+      DAE.ComponentRef rest_cr;
+
+    case (DAE.CREF_QUAL(identType = ty, subscriptLst = subs, componentRef = rest_cr), _, _)
+      equation
+        checkCrefSubscriptsBounds3(ty, subs, inWholeCref, inInfo);
+        checkCrefSubscriptsBounds2(rest_cr, inWholeCref, inInfo);
+      then
+        ();
+
+    case (DAE.CREF_IDENT(identType = ty, subscriptLst = subs), _, _)
+      equation
+        checkCrefSubscriptsBounds3(ty, subs, inWholeCref, inInfo);
+      then
+        ();
+
+    case (DAE.CREF_ITER(identType = ty, subscriptLst = subs), _, _)
+      equation
+        checkCrefSubscriptsBounds3(ty, subs, inWholeCref, inInfo);
+      then
+        ();
+
+  end match;
+end checkCrefSubscriptsBounds2;
+
+protected function checkCrefSubscriptsBounds3
+  input DAE.Type inCrefType;
+  input list<DAE.Subscript> inSubscripts;
+  input DAE.ComponentRef inWholeCref;
+  input Absyn.Info inInfo;
+protected
+  list<DAE.Dimension> dims;
+  list<DAE.Subscript> subs;
+algorithm
+  dims := Types.getDimensions(inCrefType);
+  // The type might contain dimensions from the cref part's prefix here, so
+  // reverse the lists and check them from the back to pair up each subscript
+  // with the correct dimension.
+  dims := listReverse(dims);
+  subs := listReverse(inSubscripts);
+  checkCrefSubscriptsBounds4(subs, dims, 1, inWholeCref, inInfo);
+end checkCrefSubscriptsBounds3;
+
+protected function checkCrefSubscriptsBounds4
+  input list<DAE.Subscript> inSubscripts;
+  input list<DAE.Dimension> inDimensions;
+  input Integer inIndex;
+  input DAE.ComponentRef inWholeCref;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inSubscripts, inDimensions, inIndex, inWholeCref, inInfo)
+    local
+      DAE.Subscript sub;
+      list<DAE.Subscript> rest_subs;
+      DAE.Dimension dim;
+      list<DAE.Dimension> rest_dims;
+
+    case (sub :: rest_subs, dim :: rest_dims, _, _, _)
+      equation
+        true = checkCrefSubscriptBounds(sub, dim, inIndex, inWholeCref, inInfo);
+        checkCrefSubscriptsBounds4(rest_subs, rest_dims, inIndex + 1, inWholeCref, inInfo);
+      then
+        ();
+
+    case ({}, _, _, _, _) then ();
+  end match;
+end checkCrefSubscriptsBounds4;
+
+protected function checkCrefSubscriptBounds
+  input DAE.Subscript inSubscript;
+  input DAE.Dimension inDimension;
+  input Integer inIndex;
+  input DAE.ComponentRef inWholeCref;
+  input Absyn.Info inInfo;
+  output Boolean outIsValid;
+algorithm
+  outIsValid := matchcontinue(inSubscript, inDimension, inIndex, inWholeCref, inInfo)
+    local
+      Integer idx, idx2, dim;
+      list<DAE.Exp> expl;
+      DAE.Exp exp;
+
+    case (DAE.INDEX(exp = exp as DAE.ICONST(integer = idx)),
+          DAE.DIM_INTEGER(integer = dim), _, _, _)
+      equation
+        false = idx > 0 and idx <= dim;
+        printSubscriptBoundsError(exp, inDimension, inIndex, inWholeCref, inInfo);
+      then
+        false;
+
+    case (DAE.SLICE(exp = DAE.ARRAY(array = expl)),
+          DAE.DIM_INTEGER(integer = dim), _, _, _)
+      equation
+        exp = List.getMemberOnTrue(dim, expl, subscriptExpOutOfBounds);
+        printSubscriptBoundsError(exp, inDimension, inIndex, inWholeCref, inInfo);
+      then
+        false;
+        
+    else true;
+  end matchcontinue;
+end checkCrefSubscriptBounds;
+
+protected function subscriptExpOutOfBounds
+  input Integer inDimSize;
+  input DAE.Exp inSubscriptExp;
+  output Boolean outOutOfBounds;
+algorithm
+  outOutOfBounds := match(inDimSize, inSubscriptExp)
+    local
+      Integer i;
+
+    case (_, DAE.ICONST(integer = i)) then i < 1 or i > inDimSize;
+    else false;
+  end match;
+end subscriptExpOutOfBounds;
+
+protected function printSubscriptBoundsError
+  input DAE.Exp inSubscriptExp;
+  input DAE.Dimension inDimension;
+  input Integer inIndex;
+  input DAE.ComponentRef inCref;
+  input Absyn.Info inInfo;
+protected
+  String sub_str, dim_str, idx_str, cref_str;
+algorithm
+  sub_str := ExpressionDump.printExpStr(inSubscriptExp);
+  dim_str := ExpressionDump.dimensionString(inDimension);
+  idx_str := intString(inIndex);
+  cref_str := printComponentRefStr(inCref);
+  Error.addSourceMessage(Error.ARRAY_INDEX_OUT_OF_BOUNDS,
+    {sub_str, idx_str, dim_str, cref_str}, inInfo);
+end printSubscriptBoundsError;
 
 end ComponentReference;
 

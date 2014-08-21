@@ -3962,6 +3962,8 @@ protected
   Absyn.InnerOuter lhs_io, rhs_io;
   SCode.Visibility lhs_vis, rhs_vis;
 algorithm
+  ComponentReference.checkCrefSubscriptsBounds(inLhsCref, inInfo);
+  ComponentReference.checkCrefSubscriptsBounds(inRhsCref, inInfo);
   DAE.ATTR(connectorType = lhs_ct, direction = lhs_dir, innerOuter = lhs_io,
     visibility = lhs_vis) := inLhsAttributes;
   DAE.ATTR(connectorType = rhs_ct, direction = rhs_dir, innerOuter = rhs_io,

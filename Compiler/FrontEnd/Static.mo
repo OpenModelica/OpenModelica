@@ -12563,7 +12563,7 @@ algorithm
       Boolean impl, hasZeroSizeDim;
       DAE.ComponentRef cr;
       Absyn.ComponentRef absynCr;
-      DAE.Type ty;
+      DAE.Type ty, id_ty;
       list<DAE.Subscript> ss_1;
       Absyn.ComponentRef restCref,absynCref;
       Env.Cache cache;
@@ -12577,15 +12577,17 @@ algorithm
         // Debug.traceln("Try elabSucscriptsDims " +& id);
         (cache,cr) = PrefixUtil.prefixCref(cache,crefEnv,InnerOuter.emptyInstHierarchy,crefPrefix,
                                            ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
-        (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache, crefEnv, cr);
+        (cache,_,t,_,_,InstTypes.SPLICEDEXPDATA(identType = id_ty),_,_,_) = Lookup.lookupVar(cache, crefEnv, cr);
         // false = Types.isUnknownType(t);
         // print("elabCrefSubs type of: " +& id +& " is " +& Types.printTypeStr(t) +& "\n");
         // Debug.traceln("    elabSucscriptsDims " +& id +& " got var");
         ty = Types.simplifyType(t);
-        hasZeroSizeDim = Types.isZeroLengthArray(ty);
-        sl = Types.getDimensions(t);
+        id_ty = Types.simplifyType(id_ty);
+        hasZeroSizeDim = Types.isZeroLengthArray(id_ty);
+        sl = Types.getDimensions(id_ty);
         // Constant evaluate subscripts on form x[1,p,q] where p,q are constants or parameters
-        (cache,ss_1,const) = elabSubscriptsDims(cache, crefSubs, ss, sl, impl, topPrefix, info);
+        (cache,ss_1,const) = elabSubscriptsDims(cache, crefSubs, ss, sl, impl,
+            topPrefix, inComponentRef, info);
       then
         (cache,ComponentReference.makeCrefIdent(id,ty,ss_1),const,hasZeroSizeDim);
 
@@ -12615,10 +12617,12 @@ algorithm
       equation
         (cache,cr) = PrefixUtil.prefixCref(cache,crefEnv,InnerOuter.emptyInstHierarchy,crefPrefix,
                                            ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
-        (cache,DAE.ATTR(variability = vt),t,_,_,_,_,_,_) = Lookup.lookupVar(cache, crefEnv, cr);
-        sl = Types.getDimensions(t);
+        (cache,DAE.ATTR(variability = vt),t,_,_,InstTypes.SPLICEDEXPDATA(identType = id_ty),_,_,_) = Lookup.lookupVar(cache, crefEnv, cr);
         ty = Types.simplifyType(t);
-        (cache,ss_1,const1) = elabSubscriptsDims(cache, crefSubs, ss, sl, impl, topPrefix, info);
+        id_ty = Types.simplifyType(id_ty);
+        sl = Types.getDimensions(id_ty);
+        (cache,ss_1,const1) = elabSubscriptsDims(cache, crefSubs, ss, sl, impl,
+            topPrefix, inComponentRef, info);
         crefPrefix = PrefixUtil.prefixAdd(id, ss_1, crefPrefix, vt, ClassInf.UNKNOWN(Absyn.IDENT("")));
         (cache,cr,const2,hasZeroSizeDim) = elabCrefSubs(cache, crefEnv, crefSubs, restCref, topPrefix, crefPrefix, impl, hasZeroSizeDim, info);
         const = Types.constAnd(const1, const2);
@@ -12687,41 +12691,21 @@ algorithm
 end elabSubscripts;
 
 protected function elabSubscriptsDims
-"Helper function to elabSubscripts"
+  "Elaborates a list of subscripts and checks that they are valid for the given dimensions."
   input Env.Cache cache;
   input Env.Env env;
   input list<Absyn.Subscript> subs;
   input DAE.Dimensions dims;
   input Boolean impl;
   input Prefix.Prefix inPrefix;
+  input Absyn.ComponentRef inCref;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Subscript> outSubs;
   output DAE.Const outConst;
 algorithm
-  (outCache,outSubs,outConst) := matchcontinue (cache,env,subs,dims,impl,inPrefix,info)
-    local
-      String s1,s2,sp;
-      Prefix.Prefix pre;
-
-    case (_,_,_,_,_,pre,_)
-      equation
-        ErrorExt.setCheckpoint("elabSubscriptsDims");
-        (outCache, outSubs, outConst) = elabSubscriptsDims2(cache, env, subs, dims, impl, pre, info, DAE.C_CONST(), {});
-        ErrorExt.rollBack("elabSubscriptsDims");
-      then (outCache,outSubs,outConst);
-
-    case (_,_,_,_,_,pre,_)
-      equation
-        // ErrorExt.delCheckpoint("elabSubscriptsDims");
-        ErrorExt.rollBack("elabSubscriptsDims");
-        s1 = Dump.printSubscriptsStr(subs);
-        s2 = Types.printDimensionsStr(dims);
-        sp = PrefixUtil.printPrefixStr3(pre);
-        //print(" adding error for {{" +& s1 +& "}},,{{" +& s2 +& "}} ");
-        Error.addSourceMessage(Error.ILLEGAL_SUBSCRIPT,{s1,s2,sp},info);
-      then fail();
-    end matchcontinue;
+  (outCache, outSubs, outConst) := elabSubscriptsDims2(cache, env, subs, dims,
+    impl, inPrefix, inCref, info, DAE.C_CONST(), {});
 end elabSubscriptsDims;
 
 protected function elabSubscriptsDims2
@@ -12732,6 +12716,7 @@ protected function elabSubscriptsDims2
   input DAE.Dimensions inDimensions;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
+  input Absyn.ComponentRef inCref;
   input Absyn.Info inInfo;
   input DAE.Const inConst;
   input list<DAE.Subscript> inElabSubscripts;
@@ -12741,7 +12726,7 @@ protected function elabSubscriptsDims2
 algorithm
   (outCache, outSubscripts, outConst) :=
   match(inCache, inEnv, inSubscripts, inDimensions, inImpl, inPrefix,
-      inInfo, inConst, inElabSubscripts)
+      inCref, inInfo, inConst, inElabSubscripts)
     local
       Absyn.Subscript asub;
       list<Absyn.Subscript> rest_asub;
@@ -12752,19 +12737,41 @@ algorithm
       DAE.Const const;
       Env.Cache cache;
       Option<DAE.Properties> prop;
+      Integer subl, diml, esubl;
+      String subl_str, diml_str, cref_str;
 
-    case (_, _, {}, _, _, _, _, _, _)
-      then (inCache, listReverse(inElabSubscripts), inConst);
-
-    case (_, _, asub :: rest_asub, dim :: rest_dims, _, _, _, _, _)
+    case (_, _, asub :: rest_asub, dim :: rest_dims, _, _, _, _, _, _)
       equation
         (cache, dsub, const, prop) = elabSubscript(inCache, inEnv, asub, inImpl, inPrefix, inInfo);
         const = Types.constAnd(const, inConst);
-        (cache, dsub) = elabSubscriptsDims3(cache, inEnv, dsub, dim, const, prop, inImpl, inInfo);
+        (cache, dsub) = elabSubscriptsDims3(cache, inEnv, dsub, dim, const, prop, inImpl, inCref, inInfo);
         elabed_subs = dsub :: inElabSubscripts;
-        (cache, elabed_subs, const) = elabSubscriptsDims2(cache, inEnv, rest_asub, rest_dims, inImpl, inPrefix, inInfo, const, elabed_subs);
+        (cache, elabed_subs, const) = elabSubscriptsDims2(cache, inEnv, rest_asub, rest_dims, inImpl, inPrefix, inCref, inInfo, const, elabed_subs);
       then
         (cache, elabed_subs, const);
+
+    case (_, _, {}, {}, _, _, _, _, _, _)
+      then (inCache, listReverse(inElabSubscripts), inConst);
+
+    case (_, _, {}, _, _, _, _, _, _, {})
+      then (inCache, {}, inConst);
+
+    // Check for wrong number of subscripts. The number of subscripts must be
+    // either the same as the number of dimensions, or no subscripts at all.
+    else
+      equation
+        subl = listLength(inSubscripts);
+        diml = listLength(inDimensions);
+        true = subl <> diml;
+        // Add the number of already elaborated subscripts to get the correct count.
+        esubl = listLength(inElabSubscripts);
+        subl_str = intString(subl + esubl);
+        diml_str = intString(diml + esubl);
+        cref_str = Dump.printComponentRefStr(inCref);
+        Error.addSourceMessage(Error.WRONG_NUMBER_OF_SUBSCRIPTS,
+          {cref_str, subl_str, diml_str}, inInfo);
+      then
+        fail();
 
   end match;
 end elabSubscriptsDims2;
@@ -12778,12 +12785,13 @@ protected function elabSubscriptsDims3
   input DAE.Const inConst;
   input Option<DAE.Properties> inProperties;
   input Boolean inImpl;
+  input Absyn.ComponentRef inCref;
   input Absyn.Info inInfo;
   output Env.Cache outCache;
   output DAE.Subscript outSubscript;
 algorithm
   (outCache, outSubscript) := matchcontinue(inCache, inEnv,
-      inSubscript, inDimension, inConst, inProperties, inImpl, inInfo)
+      inSubscript, inDimension, inConst, inProperties, inImpl, inCref, inInfo)
     local
       Env.Cache cache;
       DAE.Subscript sub;
@@ -12791,13 +12799,14 @@ algorithm
       DAE.Properties prop;
       DAE.Type ty;
       DAE.Exp e;
+      String sub_str, dim_str, cref_str;
 
     // If in for iterator loop scope the subscript should never be evaluated to
     // a value (since the parameter/const value of iterator variables are not
     // available until expansion, which happens later on)
     // Note that for loops are expanded 'on the fly' and should therefore not be
     // treated in this way.
-    case (_, _, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _, _)
       equation
         true = Env.inForOrParforIterLoopScope(inEnv);
         true = Expression.dimensionKnown(inDimension);
@@ -12805,7 +12814,7 @@ algorithm
         (inCache, inSubscript);
 
     // Keep non-fixed parameters.
-    case (_, _, _, _, _, SOME(prop), _, _)
+    case (_, _, _, _, _, SOME(prop), _, _, _)
       equation
         true = Types.isParameter(inConst);
         ty = Types.getPropType(prop);
@@ -12816,7 +12825,7 @@ algorithm
     /*/ Keep parameters as they are:
     // adrpo 2012-12-02 this does not work as we need to evaluate final parameters!
     //                  and we have now way yet of knowing which ones those are
-    case (_, _, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _, _)
       equation
         true = Types.isParameter(inConst);
       then
@@ -12824,7 +12833,7 @@ algorithm
 
     // If the subscript contains a const then it should be evaluated to
     // the value.
-    case (_, _, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _, _)
       equation
         int_dim = Expression.dimensionSize(inDimension);
         true = Types.isParameterOrConstant(inConst);
@@ -12832,7 +12841,7 @@ algorithm
       then
         (cache, sub);
 
-    case (_, _, _, DAE.DIM_EXP(exp=e), _, _, _, _)
+    case (_, _, _, DAE.DIM_EXP(exp=e), _, _, _, _, _)
       equation
         true = Types.isParameterOrConstant(inConst);
         (_, Values.INTEGER(integer=int_dim), _) = Ceval.ceval(inCache,inEnv,e,true,NONE(),Absyn.MSG(inInfo),0);
@@ -12842,7 +12851,7 @@ algorithm
 
     // If the previous case failed and we're just checking the model, try again
     // but skip the constant evaluation.
-    case (_, _, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _, _)
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
         true = Types.isParameterOrConstant(inConst);
@@ -12850,7 +12859,7 @@ algorithm
         (inCache, inSubscript);
 
     // If not constant, keep as is.
-    case (_, _, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _, _)
       equation
         true = Expression.dimensionKnown(inDimension);
         false = Types.isParameterOrConstant(inConst);
@@ -12858,10 +12867,19 @@ algorithm
         (inCache, inSubscript);
 
     // For unknown dimensions, ':', keep as is.
-    case (_, _, _, DAE.DIM_UNKNOWN(), _, _, _, _)
+    case (_, _, _, DAE.DIM_UNKNOWN(), _, _, _, _, _)
       then (inCache, inSubscript);
-    case (_, _, _, DAE.DIM_EXP(_), _, _, _, _)
+    case (_, _, _, DAE.DIM_EXP(_), _, _, _, _, _)
       then (inCache, inSubscript);
+
+    case (_, _, _, _, _, _, _, _, _)
+      equation
+        sub_str = ExpressionDump.printSubscriptStr(inSubscript);
+        dim_str = ExpressionDump.dimensionString(inDimension);
+        cref_str = Dump.printComponentRefStr(inCref);
+        Error.addSourceMessage(Error.ILLEGAL_SUBSCRIPT, {sub_str, dim_str, cref_str}, inInfo);
+      then
+        fail();
 
   end matchcontinue;
 end elabSubscriptsDims3;
@@ -12904,7 +12922,7 @@ algorithm
           elabExpInExpression(cache, env, sub, impl, NONE(), true, pre, info);
         (cache, sub_1, prop as DAE.PROP(type_ = ty)) =
           Ceval.cevalIfConstant(cache, env, sub_1, prop, impl, info);
-        sub_2 = elabSubscriptType(ty, sub, sub_1, pre, env);
+        sub_2 = elabSubscriptType(ty, sub, sub_1, info);
       then
         (cache, sub_2, const, SOME(prop));
 
@@ -12920,39 +12938,36 @@ algorithm
   end matchcontinue;
 end elabSubscript;
 
-protected function elabSubscriptType "This function is used to find the correct constructor for
-  DAE.Subscript to use for an indexing expression.  If an integer
-  is given as index, DAE.INDEX() is used, and if an integer array
-  is given, DAE.SLICE() is used."
-  input DAE.Type inType1;
-  input Absyn.Exp inExp2;
-  input DAE.Exp inExp3;
-  input Prefix.Prefix inPrefix;
-  input Env.Env inEnv;
+protected function elabSubscriptType
+  "This function is used to find the correct constructor for DAE.Subscript to
+   use for an indexing expression.  If a scalar is given as index, DAE.INDEX()
+   is used, and if an array is given, DAE.SLICE() is used."
+  input DAE.Type inType;
+  input Absyn.Exp inAbsynExp;
+  input DAE.Exp inDaeExp;
+  input Absyn.Info inInfo;
   output DAE.Subscript outSubscript;
 algorithm
-  outSubscript := matchcontinue (inType1,inExp2,inExp3,inPrefix,inEnv)
+  outSubscript := match(inType, inAbsynExp, inDaeExp, inInfo)
     local
       DAE.Exp sub;
       String e_str,t_str,p_str;
-      DAE.Type t;
-      Absyn.Exp e;
-      Prefix.Prefix pre;
 
-    case (DAE.T_INTEGER(varLst = _),_,sub,_,_) then DAE.INDEX(sub);
-    case (DAE.T_ENUMERATION(path = _),_,sub,_,_) then DAE.INDEX(sub);
-    case (DAE.T_BOOL(varLst = _),_,sub,_,_) then DAE.INDEX(sub);
-    case (DAE.T_ARRAY(ty = DAE.T_INTEGER(varLst = _)),_,sub,_,_) then DAE.SLICE(sub);
+    case (DAE.T_INTEGER(varLst = _), _, _, _) then DAE.INDEX(inDaeExp);
+    case (DAE.T_ENUMERATION(path = _), _, _, _) then DAE.INDEX(inDaeExp);
+    case (DAE.T_BOOL(varLst = _), _, _, _) then DAE.INDEX(inDaeExp);
+    case (DAE.T_ARRAY(ty = DAE.T_INTEGER(varLst = _)), _, _, _) then DAE.SLICE(inDaeExp);
+    case (DAE.T_ARRAY(ty = DAE.T_ENUMERATION(path = _)), _, _, _) then DAE.SLICE(inDaeExp);
+    case (DAE.T_ARRAY(ty = DAE.T_BOOL(varLst = _)), _, _, _) then DAE.SLICE(inDaeExp);
 
-    case (t,e,_,pre,_)
+    else
       equation
-        e_str = Dump.printExpStr(e);
-        t_str = Types.unparseType(t);
-        p_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addMessage(Error.SUBSCRIPT_NOT_INT_OR_INT_ARRAY, {e_str,t_str,p_str});
+        e_str = Dump.printExpStr(inAbsynExp);
+        t_str = Types.unparseType(inType);
+        Error.addSourceMessage(Error.WRONG_DIMENSION_TYPE, {e_str, t_str}, inInfo);
       then
         fail();
-  end matchcontinue;
+  end match;
 end elabSubscriptType;
 
 protected function subscriptCrefType

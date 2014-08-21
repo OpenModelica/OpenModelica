@@ -829,23 +829,19 @@ constant ConfigFlag RUNNING_WSM_TESTSUITE = CONFIG_FLAG(46, "wsm-testsuite",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Used when running the WSM testsuite."));
 
-constant ConfigFlag CORRECT_CREF_TYPES = CONFIG_FLAG(47, "correctCrefTypes",
-  NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Set to true to set correct types in component references. Doesn't work for OpenModelica back-end."));
-
-constant ConfigFlag SCALARIZE_BINDINGS = CONFIG_FLAG(48, "scalarizeBindings",
+constant ConfigFlag SCALARIZE_BINDINGS = CONFIG_FLAG(47, "scalarizeBindings",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Always scalarizes bindings if set."));
 
-constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(49, "corbaObjectReferenceFilePath",
+constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(48, "corbaObjectReferenceFilePath",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Sets the path for corba object reference file if +d=interactiveCorba is used."));
 
-constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(50, "hpcomScheduler",
+constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(49, "hpcomScheduler",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Sets the scheduler for task graph scheduling (list | listr | level | ext | mcp | taskdep | tds | bls | none). Default: list."));
 
-constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(51, "tearingHeuristic",
+constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(50, "tearingHeuristic",
   NONE(), EXTERNAL(), STRING_FLAG("MC3"),
   SOME(STRING_DESC_OPTION({
     ("MC1", Util.gettext("Original cellier with consideration of impossible assignments and discrete Vars.")),
@@ -861,15 +857,15 @@ constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(51, "tearingHeuristic",
     ("MC4", Util.gettext("Modified cellier, use all heuristics, choose var that occurs most in potential sets"))})),
     Util.gettext("Sets the tearing heuristic to use for Cellier-tearing."));
 
-constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(52, "hpcomCode",
+constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(51, "hpcomCode",
   NONE(), EXTERNAL(), STRING_FLAG("openmp"), NONE(),
   Util.gettext("Sets the code-type produced by hpcom (openmp | pthreads | pthreads_spin | mixed). Default: openmp."));
 
-constant ConfigFlag REWRITE_RULES_FILE = CONFIG_FLAG(53, "rewriteRulesFile", NONE(), EXTERNAL(),
+constant ConfigFlag REWRITE_RULES_FILE = CONFIG_FLAG(52, "rewriteRulesFile", NONE(), EXTERNAL(),
   STRING_FLAG(""), NONE(),
   Util.gettext("Activates user given rewrite rules for Absyn expressions. The rules are read from the given file and are of the form rewrite(fromExp, toExp);"));
 
-constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(54, "replaceHomotopy",
+constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(53, "replaceHomotopy",
   NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
     ("none", Util.gettext("Default, do not replace homotopy.")),
@@ -878,19 +874,19 @@ constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(54, "replaceHomotopy",
     })),
     Util.gettext("Replaces homotopy(actual, simplified) with the actual expression or the simplified expression. Good for debugging models which use homotopy. The default is to not replace homotopy."));
 
-constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN = CONFIG_FLAG(55, "generateSymbolicJacobian",
+constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN = CONFIG_FLAG(54, "generateSymbolicJacobian",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Generates symbolic jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be used to simulate with dasslColorSymJac."));
 
-constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(56, "generateSymbolicLinearization",
+constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(55, "generateSymbolicLinearization",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Generates symbolic linearization matrixes A,B,C,D for linear model:\n\t\t\\dot x = Ax + Bu\n\t\ty = Cx +Du"));
 
-constant ConfigFlag INT_ENUM_CONVERSION = CONFIG_FLAG(57, "intEnumConversion",
+constant ConfigFlag INT_ENUM_CONVERSION = CONFIG_FLAG(56, "intEnumConversion",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Allow Integer to enumeration conversion."));
 
-constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(58, "profiling",
+constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(57, "profiling",
   NONE(), EXTERNAL(), STRING_FLAG("none"), SOME(STRING_DESC_OPTION({
     ("none",Util.gettext("Generate code without profiling")),
     ("blocks",Util.gettext("Generate code for profiling function calls as well as linear and non-linear systems of equations")),
@@ -949,7 +945,6 @@ constant list<ConfigFlag> allConfigFlags = {
   TEARING_METHOD,
   SCALARIZE_MINMAX,
   RUNNING_WSM_TESTSUITE,
-  CORRECT_CREF_TYPES,
   SCALARIZE_BINDINGS,
   CORBA_OBJECT_REFERENCE_FILE_PATH,
   HPCOM_SCHEDULER,

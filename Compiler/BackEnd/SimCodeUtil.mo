@@ -3776,7 +3776,7 @@ algorithm
         ident = System.stringReplace(ident, ".", "$P");
         ident = System.stringReplace(ident, "[", "$rB");
         ident = System.stringReplace(ident, "]", "$lB");
-        tp = ComponentReference.crefLastType(cref);
+        tp = Types.arrayElementType(ComponentReference.crefLastType(cref));
         crtmp = ComponentReference.makeCrefIdent("$TMP_" +& ident +& "_" +& intString(iuniqueEqIndex), tp, {});
         repl = BackendVarTransform.addReplacement(iRepl, cref, DAE.CREF(crtmp, tp), SOME(BackendVarTransform.skipPreOperator));
         (result, repl) = createTmpCrefs(rest, iuniqueEqIndex, crtmp::inCrefsAcc, repl);
