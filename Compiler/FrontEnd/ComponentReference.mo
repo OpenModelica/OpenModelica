@@ -3385,7 +3385,7 @@ algorithm
         printSubscriptBoundsError(exp, inDimension, inIndex, inWholeCref, inInfo);
       then
         false;
-        
+
     else true;
   end matchcontinue;
 end checkCrefSubscriptBounds;
