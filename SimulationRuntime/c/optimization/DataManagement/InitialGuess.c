@@ -149,7 +149,7 @@ static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solver
        }
        fprintf(pFile, "%s", "\n");
      }
-     memcpy(optData->v0, data->localData[1]->realVars, nReal*sizeof(modelica_real));
+     memcpy(optData->v0, data->localData[0]->realVars, nReal*sizeof(modelica_real));
      if(1){
        printf("\n--------------------------------------------------------");
        printf("\nfinished: PreSim");
