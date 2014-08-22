@@ -736,16 +736,20 @@ key "saldamli2006pdemodelica"
  Defining domains using curves (that have one parameter) to build up the
  boundary works very well in 2D.
  Parameters of these curves are bounded in one dimensional interval.
- In 3D we have to use surfaces (heaving two parameters) instead of curves.
- Parameters must be bounded in some subsets of R2 now.
+ In 3D we have to use surfaces (haveing two parameters) instead of curves.
+ Parameters must be bounded in some subsets of 
+\begin_inset Formula $R^{2}$
+\end_inset
+
+ now.
  If the boundary is composed of several surfaces, parameters of these surfaces
  must be often bounded not just in Cartesian product of two intervals but
  in some more complex sets so that these surfaces are continuously connected.
  There is no way to write this in the current extension.
  It is possible to just slightly generalize this method and allow specification
  of more general sets for these parameters.
- But this is questionable, as user would have to calculate bound- aries
- where surfaces mutually intersect.
+ But this is questionable, as user would have to calculate boundaries where
+ surfaces mutually intersect.
  This could be often quite hard.
 \end_layout
 

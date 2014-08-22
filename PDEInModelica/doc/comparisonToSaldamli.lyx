@@ -437,7 +437,14 @@ end RectangularDomain;
 \end_layout
 
 \begin_layout Standard
-Example circular domain:
+Example half-circular domain according to 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "saldamli2006pdemodelica"
+
+\end_inset
+
+:
 \end_layout
 
 \begin_layout Standard
@@ -465,7 +472,7 @@ status open
 \begin_layout Plain Layout
 
 \family typewriter
-class Circle
+class Arc
 \end_layout
 
 \begin_layout Plain Layout
@@ -493,6 +500,24 @@ parameter Point c = {0,0};
 \end_inset
 
 parameter Real r = 1;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real a_start = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real a_end = 2*Pi;
 \end_layout
 
 \begin_layout Plain Layout
@@ -589,7 +614,32 @@ algorithm
 \begin_inset space \quad{}
 \end_inset
 
-coord := c + r * { cos(2*Pi*tau), sin(2*Pi*tau) };
+coord := c + r * { cos(a_start + (a_end - a_start) * tau),
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset Phantom Phantom
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+coord := c + r * { 
+\end_layout
+
+\end_inset
+
+sin(a_start + (a_end - a_start) * tau) };
 \end_layout
 
 \begin_layout Plain Layout
@@ -604,7 +654,7 @@ end shape;
 \begin_layout Plain Layout
 
 \family typewriter
-end Circle;
+end Arc;
 \end_layout
 
 \end_inset
@@ -637,7 +687,7 @@ status open
 \begin_layout Plain Layout
 
 \family typewriter
-type CircularDomain
+class Line
 \end_layout
 
 \begin_layout Plain Layout
@@ -646,7 +696,7 @@ type CircularDomain
 \begin_inset space \quad{}
 \end_inset
 
-extends Cartesian2D(boundary = {circle});
+extends Boundary(ndims=2);
 \end_layout
 
 \begin_layout Plain Layout
@@ -655,7 +705,7 @@ extends Cartesian2D(boundary = {circle});
 \begin_inset space \quad{}
 \end_inset
 
-parameter Point center;
+parameter Point p1 = {0,0};
 \end_layout
 
 \begin_layout Plain Layout
@@ -664,7 +714,7 @@ parameter Point center;
 \begin_inset space \quad{}
 \end_inset
 
-parameter Real radius;
+parameter Point p2 = {1,0};
 \end_layout
 
 \begin_layout Plain Layout
@@ -673,13 +723,176 @@ parameter Real radius;
 \begin_inset space \quad{}
 \end_inset
 
-parameter Circle circle (c = center, r = radius);
+redeclare function shape
 \end_layout
 
 \begin_layout Plain Layout
 
 \family typewriter
-end CircularDomain;
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+input Real h;
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+//h in [0,1]
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+output Real coord[2];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+algorithm
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+coord := p1 + (p2 - p1) * h;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+end shape;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end Line;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "80text%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+type Half-circularDomain
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+extends Cartesian2D(boundary = {arc, line});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Arc arc (c = {0,0}, r = 2, a_start = Pi/2, a_end = Pi*3/2);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Line line (p1 = {0,-2}, p2 = {0,2});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end Half-circularDomain;
 \end_layout
 
 \end_inset
@@ -1168,6 +1381,58 @@ end Region;
 \end_layout
 
 \begin_layout Standard
+\align center
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "80text%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+type Region1D
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+extends Region(ndimr = 1);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end Region1D;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 Example circular domain:
 \end_layout
 
@@ -1196,7 +1461,7 @@ status open
 \begin_layout Plain Layout
 
 \family typewriter
-class DomainCircular2D
+class DomainHalf-circle
 \end_layout
 
 \begin_layout Plain Layout
@@ -1222,7 +1487,7 @@ extends Domain;
 \begin_inset space ~
 \end_inset
 
-parameter Real radius;
+parameter Real radius = 2;
 \end_layout
 
 \begin_layout Plain Layout
@@ -1324,7 +1589,39 @@ algorithm
 \begin_inset space ~
 \end_inset
 
-coord := c + radius * r * { cos(2*Pi*v), sin(2*Pi*v) };
+coord := c + radius * r * { cos(Pi*(1/2 + v), 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset Phantom Phantom
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+coord := c + radius * r * { 
+\end_layout
+
+\end_inset
+
+sin(Pi*(1/2 + v) };
 \end_layout
 
 \begin_layout Plain Layout
@@ -1363,13 +1660,26 @@ Region2D interior(shape = shapeFunc, interval = {{O,1},{O,1}});
 \begin_inset space ~
 \end_inset
 
-Region1D boundary(shape = shapeFunc, interval = {1,{0,1}});
+Region1D arc(shape = shapeFunc, interval = {1,{0,1}});
 \end_layout
 
 \begin_layout Plain Layout
 
 \family typewriter
-end DomainCircular2D;
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D line(shape = shapeFunc, interval = {{-1,1},0});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end DomainHalf-circle;
 \end_layout
 
 \end_inset
@@ -1384,6 +1694,12 @@ end DomainCircular2D;
 
 \end_layout
 
+\begin_layout Standard
+Shape-function is not a pure function and thus it is not supported in current
+ Modelica.
+ To avoid this problem modified version was designed:
+\end_layout
+
 \begin_layout Paragraph*
 
 \series bold
@@ -1395,8 +1711,9 @@ Modified version
 \end_layout
 
 \begin_layout Standard
-Here is equation instead of shape-function and new coordinate system instead
- of parameters of shape-function:
+Shape-function is replaced by equation and parameters of shape-function
+ by new general coordinate system (that may not have a good physical meaning
+ for some domains) here:
 \end_layout
 
 \begin_layout Standard
@@ -1450,7 +1767,7 @@ extends Domain;
 \begin_inset space ~
 \end_inset
 
-parameter Real radius = 1;
+parameter Real radius = 2;
 \end_layout
 
 \begin_layout Plain Layout
@@ -1463,7 +1780,7 @@ parameter Real radius = 1;
 \begin_inset space ~
 \end_inset
 
-parameter Real c = {0,0};
+parameter Real[2] c = {0,0};
 \end_layout
 
 \begin_layout Plain Layout
@@ -1476,7 +1793,7 @@ parameter Real c = {0,0};
 \begin_inset space ~
 \end_inset
 
-Real r, theta;
+Real r, v;
 \end_layout
 
 \begin_layout Plain Layout
@@ -1489,7 +1806,7 @@ Real r, theta;
 \begin_inset space ~
 \end_inset
 
-Region2D interior(theta in (O,2*C.pi), r in (O,radius));
+Region2D interior(v in {0,1}, r in {O,1});
 \end_layout
 
 \begin_layout Plain Layout
@@ -1502,7 +1819,20 @@ Region2D interior(theta in (O,2*C.pi), r in (O,radius));
 \begin_inset space ~
 \end_inset
 
-Region1D boundary(theta in (O,2*C.pi), r = radius);
+Region1D arc(v in {0,1}, r = 1);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D line(v = 0, r in {-1,1});
 \end_layout
 
 \begin_layout Plain Layout
@@ -1534,7 +1864,7 @@ equation
 \begin_inset space ~
 \end_inset
 
-coord = c + r * { cos(theta), sin(theta) }; 
+coord = c + radius * r * { cos(Pi*(1/2 + v), sin(Pi*(1/2 + v) };
 \end_layout
 
 \begin_layout Plain Layout
@@ -1553,6 +1883,10 @@ end DomainCircular2D;
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+One of these approches should be chosen.
 \end_layout
 
 \begin_layout Standard
@@ -2879,11 +3213,10 @@ Alternative approach
 
 \family typewriter
  pder(u,time)
-\end_layout
+\begin_inset Newline newline
+\end_inset
 
-\begin_layout Standard
 
-\family typewriter
 \begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial y}$
 \end_inset
 
@@ -2983,18 +3316,35 @@ n
 \end_layout
 
 \begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 
 \family typewriter
 pder(u,omega.boundary.n) = 0 in omega.boundary;
 \end_layout
 
 \begin_layout Standard
-some shortcuts suggested later.
+\begin_inset VSpace defskip
+\end_inset
+
+A shorten notation is suggested in next section.
 \end_layout
 
 \begin_layout Standard
 Using normal vector outside differential operators should be also possible
  e.g.:
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -3007,6 +3357,13 @@ field Real[3] flux;
 
 \family typewriter
 flux*omega.boundary.n = 0 in omega.boundary;
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection*
@@ -3050,7 +3407,14 @@ omega.x
 \end_layout
 
 \begin_layout Standard
-In the example in 4.3.2.2 the normal vector 
+In the example in 4.3.2.2 in 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "saldamli2006pdemodelica"
+
+\end_inset
+
+ the normal vector 
 \family typewriter
 n
 \family default
@@ -3094,12 +3458,19 @@ domainName.
 \end_layout
 
 \begin_layout Standard
-If coordinates or normal vector is used in different way (not in place of
- second and following operands of 
+If coordinates or normal vector is used in different context (not in place
+ of second and following operands of 
 \family typewriter
 pder()
 \family default
 ), an alias for it may be defined in the model, e.g.
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -3109,15 +3480,41 @@ Real x = omega.x;
 \end_layout
 
 \begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 or
 \family typewriter
  (discussed later)
 \end_layout
 
 \begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 
 \family typewriter
 coordinate Real x = omega.x;
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Perhaps usage of this shortened notation was intended even in the original
+ extension but was not mentioned.
 \end_layout
 
 \begin_layout Part*
@@ -3491,6 +3888,13 @@ in
 \end_layout
 
 \begin_layout Standard
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 Modifications presented below are not so important and are questionable.
  
 \end_layout
@@ -3710,8 +4114,8 @@ Further problems
 \end_layout
 
 \begin_layout Standard
-If more coordinates are defined, which are considered when defining a region?
- This problem is solved, if we use equations instead of shape-functions.
+How to write equations (mainly BC) connecting fields defined in different
+ domains (some kind of distributed connectors)?
 \end_layout
 
 \begin_layout Standard
