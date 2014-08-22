@@ -254,6 +254,11 @@ algorithm
          e2 = DAE.BINARY(inExp2,DAE.POW(tp),res);
          (res, asserts) = solve(e1,e2,inExp3);
        then (res, asserts);
+    // semiLinear(0, a, b) = 0 => a = b // rule 1
+    case (DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {DAE.RCONST(real = 0.0), e1, e2}),DAE.RCONST(real = 0.0),DAE.CREF(componentRef = cr))
+       equation
+         (res, asserts) = solve(e1,e2,inExp3);
+       then (res, asserts);
     // (r1)^f(a) = r2 => f(a)  = ln(r2)/ln(r1)
     case (DAE.BINARY(e11 as DAE.RCONST(r),DAE.POW(_),e2), DAE.RCONST(r2), DAE.CREF(componentRef = cr))
        equation
