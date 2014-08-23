@@ -1861,7 +1861,7 @@ algorithm
   outAttr := match inEqn
     local
       BackendDAE.EquationAttributes attr;
-    
+
     case BackendDAE.EQUATION(attr=attr) then attr;
     case BackendDAE.ARRAY_EQUATION(attr=attr) then attr;
     case BackendDAE.SOLVED_EQUATION(attr=attr) then attr;
@@ -1870,7 +1870,7 @@ algorithm
     case BackendDAE.WHEN_EQUATION(attr=attr) then attr;
     case BackendDAE.COMPLEX_EQUATION(attr=attr) then attr;
     case BackendDAE.IF_EQUATION(attr=attr) then attr;
-    
+
     else equation
       Error.addInternalError("./Compiler/BackEnd/BackendEquation.mo: function getEquationAttributes failed");
     then fail();
@@ -1886,7 +1886,7 @@ protected
   BackendDAE.EquationKind kind;
 algorithm
   BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=kind) := inAttr;
-  outAttr := BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, inSubClockPartitionKind); 
+  outAttr := BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, inSubClockPartitionKind);
 public uniontype EquationAttributes
 
   record EQUATION_ATTRIBUTES
@@ -1916,31 +1916,31 @@ algorithm
       list< .DAE.Exp> conditions;
       list<list<BackendDAE.Equation>> eqnstrue;
       list<BackendDAE.Equation> eqnsfalse;
-    
+
     case (BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source), _)
     then BackendDAE.EQUATION(lhs, rhs, source, inAttr);
-    
+
     case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=lhs, right=rhs, source=source), _)
     then BackendDAE.ARRAY_EQUATION(dimSize, lhs, rhs, source, inAttr);
-    
+
     case (BackendDAE.SOLVED_EQUATION(componentRef=componentRef, exp=rhs, source=source), _)
     then BackendDAE.SOLVED_EQUATION(componentRef, rhs, source, inAttr);
-    
+
     case (BackendDAE.RESIDUAL_EQUATION(exp=rhs, source=source), _)
     then BackendDAE.RESIDUAL_EQUATION(rhs, source, inAttr);
-    
+
     case (BackendDAE.ALGORITHM(size=size, alg=alg, source=source, expand=expand), _)
     then BackendDAE.ALGORITHM(size, alg, source, expand, inAttr);
-    
+
     case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEquation, source=source), _)
     then BackendDAE.WHEN_EQUATION(size, whenEquation, source, inAttr);
-    
+
     case (BackendDAE.COMPLEX_EQUATION(size=size, left=lhs, right=rhs, source=source), _)
     then BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source, inAttr);
-    
+
     case (BackendDAE.IF_EQUATION(conditions=conditions, eqnstrue=eqnstrue, eqnsfalse=eqnsfalse, source=source), _)
     then BackendDAE.IF_EQUATION(conditions, eqnstrue, eqnsfalse, source, inAttr);
-    
+
     else equation
       Error.addInternalError("./Compiler/BackEnd/BackendEquation.mo: function setEquationAttributes failed");
     then fail();
