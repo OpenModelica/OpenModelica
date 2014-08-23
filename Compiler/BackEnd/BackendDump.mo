@@ -2773,7 +2773,9 @@ algorithm
     case BackendDAE.CONTINUOUS_TIME_PARTITION() then "continuous time";
     case BackendDAE.UNSPECIFIED_PARTITION() then "unspecified";
     case BackendDAE.UNKNOWN_PARTITION() then "unknown";
-    else "???";
+    else equation
+      Error.addInternalError("./Compiler/BackEnd/BackendDump.mo: function partitionKindString failed");
+    then fail();
   end match;
 end partitionKindString;
 
@@ -2785,7 +2787,9 @@ protected
   BackendDAE.SubClockPartitionKind subPartitionKind;
 algorithm
   BackendDAE.EQUATION_ATTRIBUTES(kind=kind, subPartitionKind=subPartitionKind) := inEqAttr;
-  outString := "[" +& equationKindString(kind) +& ", sub-partition index: " +& subPartitionString(subPartitionKind) +& "]";
+  outString := "[" +& equationKindString(kind);
+  outString := Util.if_(Flags.isSet(Flags.DUMP_SYNCHRONOUS), outString +& ", sub-partition index: " +& subPartitionString(subPartitionKind), outString);
+  outString := outString +& "]";
 end equationAttrString;
 
 protected function subPartitionString
@@ -2798,7 +2802,9 @@ algorithm
 
     case BackendDAE.SUB_PARTITION(index=index) then intString(index);
     case BackendDAE.UNKNOWN_SUB_PARTITION() then "unknown";
-    else "???";
+    else equation
+      Error.addInternalError("./Compiler/BackEnd/BackendDump.mo: function subPartitionString failed");
+    then fail();
   end match;
 end subPartitionString;
 
@@ -2811,7 +2817,9 @@ algorithm
     case BackendDAE.DYNAMIC_EQUATION() then "dynamic";
     case BackendDAE.INITIAL_EQUATION() then "initial";
     case BackendDAE.UNKNOWN_EQUATION_KIND() then "unknown";
-    else "???";
+    else equation
+      Error.addInternalError("./Compiler/BackEnd/BackendDump.mo: function equationKindString failed");
+    then fail();
   end match;
 end equationKindString;
 

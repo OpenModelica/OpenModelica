@@ -3817,7 +3817,8 @@ algorithm
 end traversingIncidenceRowExpFinderBaseClock;
 
 public function traversingIncidenceRowExpFinderSubClock "author: lochel
-  This is used for base-clock partitioning."
+  This is used for sub-clock partitioning.
+  TODO: avoid code duplicates, cf. function traversingIncidenceRowExpFinderBaseClock"
   input tuple<DAE.Exp, tuple<BackendDAE.Variables, list<Integer>>> inTpl;
   output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables, list<Integer>>> outTpl;
 algorithm
