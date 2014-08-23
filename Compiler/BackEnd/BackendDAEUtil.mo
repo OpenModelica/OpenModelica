@@ -3644,6 +3644,10 @@ algorithm
       ((_, (_, vallst))) = Expression.traverseExpTopDown(inExp, traversingIncidenceRowExpFinderBaseClock, (inVariables, inIntegerLst));
     then vallst;
 
+    case (_, _, _, _, BackendDAE.SUBCLOCK()) equation
+      ((_, (_, vallst))) = Expression.traverseExpTopDown(inExp, traversingIncidenceRowExpFinderSubClock, (inVariables, inIntegerLst));
+    then vallst;
+
     case (_, _, _, _, _) equation
       ((_, (_, vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinder, (inVariables, inIntegerLst));
       // only absolute indexes?
@@ -3811,6 +3815,73 @@ algorithm
     then ((e, true, (vars, pa)));
   end matchcontinue;
 end traversingIncidenceRowExpFinderBaseClock;
+
+public function traversingIncidenceRowExpFinderSubClock "author: lochel
+  This is used for base-clock partitioning."
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables, list<Integer>>> inTpl;
+  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables, list<Integer>>> outTpl;
+algorithm
+  outTpl := matchcontinue inTpl
+    local
+      list<Integer> p, pa, res;
+      DAE.ComponentRef cr;
+      BackendDAE.Variables vars;
+      DAE.Exp e, e1, e2;
+      list<BackendDAE.Var> varslst;
+      Boolean b;
+
+    case (((e as DAE.CREF(componentRef=cr), (vars, pa)))) equation
+      (varslst, p) = BackendVariable.getVar(cr, vars);
+      res = incidenceRowExp1(varslst, p, pa, 0);
+    then ((e, true, (vars, res)));
+
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}), (vars, pa)))) equation
+      (varslst, p) = BackendVariable.getVar(cr, vars);
+      res = incidenceRowExp1(varslst, p, pa, 1);
+      /* check also indizes of cr */
+      (_, (_, res)) = Expression.traverseExpTopDownCrefHelper(cr, traversingincidenceRowExpFinder, (vars, res));
+    then ((e, false, (vars, res)));
+
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}), (vars, pa)))) equation
+      cr = ComponentReference.crefPrefixDer(cr);
+      (varslst, p) = BackendVariable.getVar(cr, vars);
+      res = incidenceRowExp1(varslst, p, pa, 1);
+      /* check also indizes of cr */
+      (_, (_, res)) = Expression.traverseExpTopDownCrefHelper(cr, traversingincidenceRowExpFinder, (vars, res));
+    then ((e, false, (vars, res)));
+
+    // lochel: internally generated call start(v) depends not on v
+    case ((e as DAE.CALL(path=Absyn.IDENT(name="$_start")), (vars, pa)))
+    then ((e, false, (vars, pa)));
+
+    /* pre(v) is considered a known variable */
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=_)}), (vars, pa))))
+    then ((e, false, (vars, pa)));
+
+    /* delay(e) can be used to break algebraic loops given some solver options */
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="delay"), expLst={_, _, e1, e2}), (vars, pa)))) equation
+      b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1, e2);
+    then ((e, not b, (vars, pa)));
+
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="subSample")), (vars, pa))))
+    then ((e, false, (vars, pa)));
+
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="superSample")), (vars, pa))))
+    then ((e, false, (vars, pa)));
+
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="shiftSample")), (vars, pa))))
+    then ((e, false, (vars, pa)));
+
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="backSample")), (vars, pa))))
+    then ((e, false, (vars, pa)));
+
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="noClock")), (vars, pa))))
+    then ((e, false, (vars, pa)));
+
+    case ((e, (vars, pa)))
+    then ((e, true, (vars, pa)));
+  end matchcontinue;
+end traversingIncidenceRowExpFinderSubClock;
 
 public function traversingincidenceRowExpFinder "
   author: Frenkel TUD 2010-11

@@ -90,6 +90,9 @@ end BaseClockPartitionKind;
 public
 uniontype SubClockPartitionKind
   record UNKNOWN_SUB_PARTITION end UNKNOWN_SUB_PARTITION;
+  record SUB_PARTITION
+    Integer index;
+  end SUB_PARTITION;
 end SubClockPartitionKind;
 
 public

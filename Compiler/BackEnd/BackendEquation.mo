@@ -1842,6 +1842,111 @@ algorithm
   outEqn := BackendDAE.EQUATION(iLhs, iRhs, Source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.UNKNOWN_SUB_PARTITION()));
 end generateEQUATION;
 
+public function setSubPartition "author: lochel"
+  input BackendDAE.Equation inEqn;
+  input BackendDAE.SubClockPartitionKind inSubClockPartitionKind;
+  output BackendDAE.Equation outEqn;
+protected
+  BackendDAE.EquationAttributes attr;
+algorithm
+  attr := getEquationAttributes(inEqn);
+  attr := setSubClockPartitionKind(attr, inSubClockPartitionKind);
+  outEqn := setEquationAttributes(inEqn, attr);
+end setSubPartition;
+
+public function getEquationAttributes
+  input BackendDAE.Equation inEqn;
+  output BackendDAE.EquationAttributes outAttr;
+algorithm
+  outAttr := match inEqn
+    local
+      BackendDAE.EquationAttributes attr;
+    
+    case BackendDAE.EQUATION(attr=attr) then attr;
+    case BackendDAE.ARRAY_EQUATION(attr=attr) then attr;
+    case BackendDAE.SOLVED_EQUATION(attr=attr) then attr;
+    case BackendDAE.RESIDUAL_EQUATION(attr=attr) then attr;
+    case BackendDAE.ALGORITHM(attr=attr) then attr;
+    case BackendDAE.WHEN_EQUATION(attr=attr) then attr;
+    case BackendDAE.COMPLEX_EQUATION(attr=attr) then attr;
+    case BackendDAE.IF_EQUATION(attr=attr) then attr;
+    
+    else equation
+      Error.addInternalError("./Compiler/BackEnd/BackendEquation.mo: function getEquationAttributes failed");
+    then fail();
+  end match;
+end getEquationAttributes;
+
+public function setSubClockPartitionKind
+  input BackendDAE.EquationAttributes inAttr;
+  input BackendDAE.SubClockPartitionKind inSubClockPartitionKind;
+  output BackendDAE.EquationAttributes outAttr;
+protected
+  Boolean differentiated;
+  BackendDAE.EquationKind kind;
+algorithm
+  BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=kind) := inAttr;
+  outAttr := BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, inSubClockPartitionKind); 
+public uniontype EquationAttributes
+
+  record EQUATION_ATTRIBUTES
+    Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
+    EquationKind kind;
+    SubClockPartitionKind subPartitionKind;
+  end EQUATION_ATTRIBUTES;
+end EquationAttributes;
+end setSubClockPartitionKind;
+
+public function setEquationAttributes
+  input BackendDAE.Equation inEqn;
+  input BackendDAE.EquationAttributes inAttr;
+  output BackendDAE.Equation outEqn;
+algorithm
+  outEqn := match (inEqn, inAttr)
+    local
+      DAE.ElementSource source;
+      list<Integer> dimSize;
+      DAE.Exp lhs;
+      DAE.Exp rhs;
+      DAE.ComponentRef componentRef;
+      Integer size;
+      DAE.Algorithm alg;
+      DAE.Expand expand;
+      BackendDAE.WhenEquation whenEquation;
+      list< .DAE.Exp> conditions;
+      list<list<BackendDAE.Equation>> eqnstrue;
+      list<BackendDAE.Equation> eqnsfalse;
+    
+    case (BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source), _)
+    then BackendDAE.EQUATION(lhs, rhs, source, inAttr);
+    
+    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=lhs, right=rhs, source=source), _)
+    then BackendDAE.ARRAY_EQUATION(dimSize, lhs, rhs, source, inAttr);
+    
+    case (BackendDAE.SOLVED_EQUATION(componentRef=componentRef, exp=rhs, source=source), _)
+    then BackendDAE.SOLVED_EQUATION(componentRef, rhs, source, inAttr);
+    
+    case (BackendDAE.RESIDUAL_EQUATION(exp=rhs, source=source), _)
+    then BackendDAE.RESIDUAL_EQUATION(rhs, source, inAttr);
+    
+    case (BackendDAE.ALGORITHM(size=size, alg=alg, source=source, expand=expand), _)
+    then BackendDAE.ALGORITHM(size, alg, source, expand, inAttr);
+    
+    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEquation, source=source), _)
+    then BackendDAE.WHEN_EQUATION(size, whenEquation, source, inAttr);
+    
+    case (BackendDAE.COMPLEX_EQUATION(size=size, left=lhs, right=rhs, source=source), _)
+    then BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source, inAttr);
+    
+    case (BackendDAE.IF_EQUATION(conditions=conditions, eqnstrue=eqnstrue, eqnsfalse=eqnsfalse, source=source), _)
+    then BackendDAE.IF_EQUATION(conditions, eqnstrue, eqnsfalse, source, inAttr);
+    
+    else equation
+      Error.addInternalError("./Compiler/BackEnd/BackendEquation.mo: function setEquationAttributes failed");
+    then fail();
+  end match;
+end setEquationAttributes;
+
 public function generateSolvedEqnsfromOption "author: Frenkel TUD 2010-05"
   input DAE.ComponentRef inLhs;
   input Option<DAE.Exp> inRhs;

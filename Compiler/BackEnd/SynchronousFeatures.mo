@@ -121,7 +121,7 @@ algorithm
   outSysts := Debug.bcallret5(b, partitionIndependentBlocksSplitBlocks, i, syst, ixs, mT, false, {syst});
 
   // analyze partition kind
-  outSysts := List.map(outSysts, analyzePartitionKind);
+  outSysts := List.map1(outSysts, analyzePartitionKind, inShared);
 
   Debug.fcall2(Flags.DUMP_SYNCHRONOUS, BackendDump.dumpEqSystems, outSysts, "base-clock partitioning");
 end clockPartitioning1;
@@ -363,6 +363,7 @@ protected function analyzePartitionKind "author: lochel
     * y = backSample(u)
     * y = previous(u)"
   input BackendDAE.EqSystem inEqSystem;
+  input BackendDAE.Shared inShared;
   output BackendDAE.EqSystem outEqSystem;
 protected
   BackendDAE.Variables orderedVars;
@@ -389,7 +390,71 @@ algorithm
 
   partitionKind := getPartitionKind(continuousTimeVars, clockedVars);
   outEqSystem := BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
+
+  outEqSystem := subClockPartitioning(outEqSystem, inShared);
 end analyzePartitionKind;
+
+protected function subClockPartitioning
+  input BackendDAE.EqSystem inEqSystem;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.EqSystem outEqSystem;
+protected
+  list<BackendDAE.EqSystem> systs;
+  BackendDAE.IncidenceMatrix m,mT;
+  array<Integer> ixs;
+  Boolean b;
+  Integer i;
+  BackendDAE.Shared shared;
+  BackendDAE.EqSystem syst;
+  DAE.FunctionTree funcs;
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqs;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  list<BackendDAE.Equation> eqLst;
+algorithm
+  funcs := BackendDAEUtil.getFunctions(inShared);
+
+  BackendDAE.EQSYSTEM(vars, eqs, _, _, _, stateSets, partitionKind) := inEqSystem;
+  syst := BackendDAE.EQSYSTEM(vars, eqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, BackendDAE.UNKNOWN_PARTITION());
+  (syst, m, mT) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.SUBCLOCK(), SOME(funcs));
+
+  ixs := arrayCreate(arrayLength(m), 0);
+  i := partitionIndependentBlocks0(arrayLength(m), 0, m, mT, ixs);
+
+  // print("Got sub-partitioning!\n");
+  // print(stringDelimitList(List.map(arrayList(ixs), intString), ","));
+  // print("\n");
+
+  // TODO: make this better
+  eqLst := BackendEquation.equationList(eqs);
+  eqLst := setSubClockPartition(eqLst, listReverse(arrayList(ixs)));
+  eqs := BackendEquation.listEquation(eqLst);
+
+  outEqSystem := BackendDAE.EQSYSTEM(vars, eqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
+end subClockPartitioning;
+
+protected function setSubClockPartition
+  input list<BackendDAE.Equation> inEqnLst;
+  input list<Integer> inPartionIndices;
+  output list<BackendDAE.Equation> outEqnLst;
+algorithm
+  outEqnLst := match (inEqnLst, inPartionIndices)
+    local
+      Integer index;
+      list<Integer> indices;
+      BackendDAE.Equation eq;
+      list<BackendDAE.Equation> eqs;
+
+    case ({}, {})
+    then {};
+
+    case (eq::eqs, index::indices) equation
+      eq = BackendEquation.setSubPartition(eq, BackendDAE.SUB_PARTITION(index));
+      eqs = setSubClockPartition(eqs, indices);
+    then eq::eqs;
+  end match;
+end setSubClockPartition;
 
 protected function getVariableLists
   input tuple<DAE.Exp, tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>>> inTpl;

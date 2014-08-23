@@ -163,12 +163,12 @@ protected function printEquationList2 "Helper function for printEquationArray an
   output tuple<Integer,Integer> oInteger;
 protected
   Integer iscalar,i,size;
-  BackendDAE.EquationKind kind;
+  BackendDAE.EquationAttributes attr;
 algorithm
   (i,iscalar) := inInteger;
   size := BackendEquation.equationSize(inEquation);
-  kind := BackendEquation.equationKind(inEquation);
-  print(intString(i) +& "/" +& intString(iscalar) +& " (" +& intString(size) +& "): " +& equationString(inEquation) +& "   [" +& equationKindString(kind) +& "]\n");
+  attr := BackendEquation.getEquationAttributes(inEquation);
+  print(intString(i) +& "/" +& intString(iscalar) +& " (" +& intString(size) +& "): " +& equationString(inEquation) +& "   " +& equationAttrString(attr) +& "\n");
   oInteger := (i + 1,iscalar + size);
 end printEquationList2;
 
@@ -2776,6 +2776,31 @@ algorithm
     else "???";
   end match;
 end partitionKindString;
+
+protected function equationAttrString
+  input BackendDAE.EquationAttributes inEqAttr;
+  output String outString;
+protected
+  BackendDAE.EquationKind kind;
+  BackendDAE.SubClockPartitionKind subPartitionKind;
+algorithm
+  BackendDAE.EQUATION_ATTRIBUTES(kind=kind, subPartitionKind=subPartitionKind) := inEqAttr;
+  outString := "[" +& equationKindString(kind) +& ", sub-partition index: " +& subPartitionString(subPartitionKind) +& "]";
+end equationAttrString;
+
+protected function subPartitionString
+  input BackendDAE.SubClockPartitionKind inSubPartitionKind;
+  output String outString;
+algorithm
+  outString := match inSubPartitionKind
+    local
+      Integer index;
+
+    case BackendDAE.SUB_PARTITION(index=index) then intString(index);
+    case BackendDAE.UNKNOWN_SUB_PARTITION() then "unknown";
+    else "???";
+  end match;
+end subPartitionString;
 
 protected function equationKindString
   input BackendDAE.EquationKind inEqKind;
