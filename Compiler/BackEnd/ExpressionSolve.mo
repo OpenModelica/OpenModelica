@@ -96,7 +96,7 @@ algorithm
     local
       DAE.Exp rhs,lhs,res,e1,e2,e3,crexp;
       DAE.ComponentRef cr,cr1;
-      list<DAE.Statement> asserts,asserts1;
+      list<DAE.Statement> asserts,asserts1,asserts2;
 /*
     case(_,_,_,_) // FOR DEBBUGING...
       equation
@@ -114,6 +114,24 @@ algorithm
         (res,_) = ExpressionSimplify.simplify1(res);
       then
         (res,asserts);
+
+    case (_,DAE.IFEXP(e1,e2,e3),_,_)
+      equation
+        (lhs,asserts) = solve_work(inExp1,e2,inExp3,linearExps);
+        (rhs,asserts1) = solve_work(inExp1,e3,inExp3,linearExps);
+        (res,_) = ExpressionSimplify.simplify1(DAE.IFEXP(e1,lhs,rhs));
+        asserts2 = listAppend(asserts,asserts1);
+      then
+        (res,asserts2);
+
+    case (DAE.IFEXP(e1,e2,e3),_,_,_)
+      equation
+        (lhs,asserts) = solve_work(e2,inExp2,inExp3,linearExps);
+        (rhs,asserts1) = solve_work(e3,inExp2,inExp3,linearExps);
+        (res,_) = ExpressionSimplify.simplify1(DAE.IFEXP(e1,lhs,rhs));
+        asserts2 = listAppend(asserts,asserts1);
+      then
+        (res,asserts2);
 
     // solving linear equation system using newton iteration ( converges directly )
     case (_,_,DAE.CREF(componentRef = _),_)
