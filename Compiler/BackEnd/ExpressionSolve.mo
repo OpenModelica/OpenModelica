@@ -859,24 +859,43 @@ algorithm
   end matchcontinue;
 end hasOnlyFactors;
 
-protected function isCrefInIFEXP " Returns true if expression is DAE.IFEXP(f(cr)) or sign(f(cr)) for cr = incr"
+
+protected function isCrefInIFEXP " Returns true if expression is DAE.IFEXP(f(cr)) or e.g. sign(f(cr)) for cr = incr"
   input DAE.Exp e;
   input DAE.ComponentRef incr;
   output Boolean res;
   algorithm
-  res := match(e,incr)
-  local DAE.Exp e1;
-
-    case(DAE.IFEXP(e1,_,_),_)
-      then Expression.expHasCref(e1, incr);
-    case(DAE.CALL(path = Absyn.IDENT(name = "sign"),expLst = {e1}),_)
-      then Expression.expHasCref(e1, incr);
-    case(DAE.CAST(exp =e1),_)
-      then isCrefInIFEXP(e1,incr);
-    else
-      then false;
-  end match;
+  res := isCrefInIFEXPwork(e, incr, false);
 end isCrefInIFEXP;
+
+protected function isCrefInIFEXPwork " helper for isCrefInIFEXP"
+  input DAE.Exp e;
+  input DAE.ComponentRef incr;
+  input Boolean inres;
+  output Boolean res;
+  algorithm
+  res := match(e,incr, inres)
+  local DAE.Exp e1, e2; Boolean b;
+
+    case(_,_,true) then true;
+    case(DAE.BINARY(e1, DAE.ADD(_),e2),_,_)
+      equation
+        b = isCrefInIFEXPwork(e1,incr, inres);
+        b = isCrefInIFEXPwork(e2,incr, b);
+      then b;
+    case(DAE.BINARY(e1, DAE.SUB(_),e2),_,_)
+      equation
+        b = isCrefInIFEXPwork(e1,incr, inres);
+        b = isCrefInIFEXPwork(e2,incr, b);
+      then b;
+    case(DAE.IFEXP(e1,_,_),_,_) then Expression.expHasCref(e1, incr);
+    case(DAE.CALL(path = Absyn.IDENT(name = "sign"),expLst = {e1}),_,_) then Expression.expHasCref(e1, incr);
+    case(DAE.CALL(path = Absyn.IDENT(name = "smooth"),expLst = {_,e1}),_,_) then isCrefInIFEXPwork(e1,incr,inres);
+    case(DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {e1,_,_}),_,_)then Expression.expHasCref(e1,incr);
+    case(DAE.CAST(exp =e1),_,_) then isCrefInIFEXPwork(e1,incr,inres);
+    case(_,_,_) then false;
+  end match;
+end isCrefInIFEXPwork;
 
 protected function isInverseCref " Returns true if expression is 1/cr for a ComponentRef cr"
   input DAE.Exp e;
