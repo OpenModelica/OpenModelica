@@ -6691,8 +6691,20 @@ template expTypeFlag(DAE.Type ty, Integer flag)
   case 8 then
     match ty
   case T_ARRAY(dims=dims) then'BaseArray<<%expTypeShort(ty)%>>&'
-  else expTypeFlag(ty, 2)
+  else expTypeFlag(ty, 9)
     end match
+	
+  case 9 then
+	// we want the "modelica type"
+	match ty case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
+	  '<%expTypeShort(ty)%>'
+	else match ty case T_COMPLEX(complexClassType=RECORD(path=rname)) then
+	  '<%underscorePath(rname)%>Type &'
+	else match ty case T_COMPLEX(__) then
+	  '<%underscorePath(ClassInf.getStateName(complexClassType))%> &'
+	 else
+	  '<%expTypeShort(ty)%>'
+
 
 end expTypeFlag;
 
@@ -8530,6 +8542,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
   case ASUB(exp=ASUB(__)) then
     error(sourceInfo(),'Nested array subscripting *should* have been handled by the routine creating the asub, but for some reason it was not: <%printExpStr(exp)%>')
 
+	
   // Faster asub: Do not construct a whole new array just to access one subscript
   case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
     let res = tempDecl(expTypeFromExpModelica(exp),&varDecls)
