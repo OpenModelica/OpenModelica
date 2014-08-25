@@ -3846,7 +3846,7 @@ algorithm
     local
       ComponentRef cref;
       Ident id;
-      
+
     case CREF_IDENT(name = id) then id;
     case CREF_QUAL(componentRef = cref) then crefLastIdent(cref);
     case CREF_FULLYQUALIFIED(componentRef = cref) then crefLastIdent(cref);
