@@ -83,7 +83,7 @@ using namespace std;
 #include <boost/array.hpp>
 
 //#include <boost/timer/timer.hpp>
-
+#include <boost/noncopyable.hpp>
     /*Namespaces*/
 using namespace boost::extensions;
 namespace fs = boost::filesystem;

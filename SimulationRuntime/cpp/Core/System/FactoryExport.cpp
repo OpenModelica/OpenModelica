@@ -14,8 +14,7 @@
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include "FactoryExport.h"
-#include "ModelicaSystem.h"
-#include "AlgLoopSolverFactory.h"
+#include <System/AlgLoopSolverFactory.h>
 
 /*Simster factory*/
 extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_system(boost::extensions::factory_map & fm)

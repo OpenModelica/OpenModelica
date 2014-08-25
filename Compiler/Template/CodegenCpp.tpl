@@ -5,6 +5,8 @@ import CodegenUtil.*;
 // SECTION: SIMULATION TARGET, ROOT TEMPLATE
 
 
+
+
 template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -6402,8 +6404,9 @@ end initValstWithSplit;
 
 
 template initValst(Text &varDecls /*BUFP*/,Text type, list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation) ::=
-  varsLst |> sv as SIMVAR(__) =>
-      let &preExp = buffer "" /*BUFD*/
+   varsLst |> sv as SIMVAR(__) =>
+   //varsLst |> sv as SIMVAR(numArrayElement={}) =>
+     let &preExp = buffer "" /*BUFD*/
       let &varDeclsCref = buffer "" /*BUFD*/
     match initialValue
       case SOME(v) then
@@ -6691,20 +6694,8 @@ template expTypeFlag(DAE.Type ty, Integer flag)
   case 8 then
     match ty
   case T_ARRAY(dims=dims) then'BaseArray<<%expTypeShort(ty)%>>&'
-  else expTypeFlag(ty, 9)
+  else expTypeFlag(ty, 2)
     end match
-
-  case 9 then
-  // we want the "modelica type"
-  match ty case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
-    '<%expTypeShort(ty)%>'
-  else match ty case T_COMPLEX(complexClassType=RECORD(path=rname)) then
-    '<%underscorePath(rname)%>Type &'
-  else match ty case T_COMPLEX(__) then
-    '<%underscorePath(ClassInf.getStateName(complexClassType))%> &'
-   else
-    '<%expTypeShort(ty)%>'
-
 
 end expTypeFlag;
 
@@ -8367,7 +8358,7 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp /*BUFP*/,
     <%arrayVar%>.assign(<%arrayVar%>_data,<%arrayVar%>_data+ (<%listLength(m.matrix)%> * <%dim_cols%>));<%\n%>'
   */
 
-
+/*
 /////////////////////////////////////////////////NonCED
     let params = (m.matrix |> row =>
         let vars = daeExpMatrixRow(row, context, &varDecls,&preExp,simCode,useFlatArrayNotation)
@@ -8377,29 +8368,64 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp /*BUFP*/,
     <%StatArrayDim%><%arrayVar%>;
     <%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
     <%arrayVar%>.assign( <%arrayVar%>_data );<%\n%>'
+   arrayVar
 /////////////////////////////////////////////////NonCED
+*/
 
-/*
 ///////////////////////////////////////////////CED
-  let matrixassign = match m.matrix
+ let matrixassign = match m.matrix
     case row::_ then
-        let vars = daeExpMatrixRow(row)
-          '<%vars%>'
+        let vars = daeExpMatrixRow(row,context)
+        match vars
+        case "NO_ASSIGN"
+        then
+           let params = (m.matrix |> row =>
+           let vars = daeExpMatrixRow2(row, context, &varDecls,&preExp,simCode,useFlatArrayNotation)
+              '<%vars%>'
+           ;separator=",")
+           let &preExp += '
+           //default matrix assign
+           <%StatArrayDim%><%arrayVar%>;
+           <%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
+           <%arrayVar%>.assign( <%arrayVar%>_data );<%\n%>'
+           ''
+        else
+           let &preExp += '
+            //optimized matrix assign/
+            <%StatArrayDim%><%arrayVar%>;
+            <%arrayVar%>.assign( <%vars%> );<%\n%>'
+        ''    
   end match
 
-  let &preExp += '
-    <%StatArrayDim%><%arrayVar%>;
-    <%arrayVar%>.assign( <%matrixassign%> );<%\n%>'
-/////////////////////////////////////////////////CED
-*/
+ 
+  //let &preExp += '
+ //  <%StatArrayDim%><%arrayVar%>;
+ //   <%arrayVar%>.assign( <%matrixassign%> );<%\n%>'
+
+  
      arrayVar
 end daeExpMatrix;
 
 
+template daeExpMatrixRow2(list<Exp> row,
+                         Context context,
+                         Text &varDecls ,Text &preExp ,SimCode simCode,Boolean useFlatArrayNotation)
+ "Helper to daeExpMatrix."
+::=
+
+   let varLstStr = (row |> e =>
+
+      let expVar = daeExp(e, context, &preExp , &varDecls ,simCode,useFlatArrayNotation)
+      '<%expVar%>'
+    ;separator=",")
+  varLstStr
+end daeExpMatrixRow2;  
+/////////////////////////////////////////////////CED
+
+/*
 /////////////////////////////////////////////////NonCED functions
 template daeExpMatrixRow(list<Exp> row,
                          Context context,
-
                          Text &varDecls ,Text &preExp ,SimCode simCode,Boolean useFlatArrayNotation)
  "Helper to daeExpMatrix."
 ::=
@@ -8412,32 +8438,37 @@ template daeExpMatrixRow(list<Exp> row,
   varLstStr
 end daeExpMatrixRow;
 /////////////////////////////////////////////////NonCED functions
-
-
-
-
-/*
+*/
+ 
 ////////////////////////////////////////////////////////////////////////CED Functions
-template daeExpMatrixRow(list<Exp> row)
+template daeExpMatrixRow(list<Exp> row,Context context)
  "Helper to daeExpMatrix."
 ::=
+ /*
+ if isCrefListWithEqualIdents(row) then
   match row
   case firstelem::_ then
-  daeExpMatrixName(firstelem)
+      daeExpMatrixName(firstelem,context)
   else
-  "error"
+   "NO_ASSIGN"
+   end match
+  else
+   "NO_ASSIGN"
+ */
+   "NO_ASSIGN"
 end daeExpMatrixRow;
 
-
-
-
-template daeExpMatrixName(Exp name)
+template daeExpMatrixName(Exp name,Context context)
 ::=
   match name
   case CREF(componentRef = cr) then
-  "_"+daeExpMatrixName2(cr)
+   match context
+   case FUNCTION_CONTEXT(__) then   
+      daeExpMatrixName2(cr)
+   else
+   "_"+daeExpMatrixName2(cr)
   else
-  "error"
+  "NO_ASSIGN"
 end daeExpMatrixName;
 
 
@@ -8453,7 +8484,7 @@ template daeExpMatrixName2(ComponentRef cr)
   else "CREF_NOT_IDENT_OR_QUAL"
 end daeExpMatrixName2;
 ////////////////////////////////////////////////////////////////////////CED Functions
-*/
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template daeExpArray(Exp exp, Context context, Text &preExp /*BUFP*/,
@@ -8474,7 +8505,7 @@ case ARRAY(array=_::_, ty = arraytype) then
     '<%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)%>';separator=", ")
                else
                 (array |> e hasindex i0 fromindex 1 =>
-                '<%arrayVar%>(<%i0%>)=<%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)%>;'//previous multiarray'<%arrayVar%>[<%i0%>)=<%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)%>;'
+                '<%arrayVar%>.append(<%i0%>,<%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)%>);' //previous multiarray'<%arrayVar%>[<%i0%>)=<%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)%>;'
                 ;separator="\n")
 
   // previous mulit_array
@@ -8488,10 +8519,12 @@ case ARRAY(array=_::_, ty = arraytype) then
  */
    let arrayassign =  if scalar then '<%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
 <%arraydefine%> <%arrayVar%>(<%arrayVar%>_data);<%\n%>'
-                      else    '<%params%>'
+                      else    '<%ArrayType%> <%arrayVar%>;
+                               <%params%>'
 
    let &preExp += '
    //tmp array1
+   
    <%arrayassign%>
   '
   arrayVar
@@ -8541,7 +8574,6 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
 
   case ASUB(exp=ASUB(__)) then
     error(sourceInfo(),'Nested array subscripting *should* have been handled by the routine creating the asub, but for some reason it was not: <%printExpStr(exp)%>')
-
 
   // Faster asub: Do not construct a whole new array just to access one subscript
   case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
@@ -10716,30 +10748,30 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
       case LESS(__) then
       <<
          if(_conditions[<%zerocrossingIndex%>])
-                f[<%index1%>]=(<%e1%> - 10000*EPSILON - <%e2%>);
+                f[<%index1%>]=(<%e1%> - 1e-11 - <%e2%>);
            else
-                f[<%index1%>]=(<%e2%> - <%e1%> -  10000*EPSILON);
+                f[<%index1%>]=(<%e2%> - <%e1%> -  1e-11);
        >>
       case LESSEQ(__) then
        <<
          if(_conditions[<%zerocrossingIndex%>])
-                f[<%index1%>]=(<%e1%> - 10000*EPSILON - <%e2%>);
+                f[<%index1%>]=(<%e1%> - 1e-11 - <%e2%>);
            else
-                f[<%index1%>]=(<%e2%> - <%e1%> - 10000*EPSILON);
+                f[<%index1%>]=(<%e2%> - <%e1%> - 1e-11);
        >>
       case GREATER(__) then
        <<
          if(_conditions[<%zerocrossingIndex%>])
-                f[<%index1%>]=(<%e2%> - <%e1%> - 10000*EPSILON);
+                f[<%index1%>]=(<%e2%> - <%e1%> - 1e-11);
            else
-                f[<%index1%>]=(<%e1%> - 10000*EPSILON - <%e2%>);
+                f[<%index1%>]=(<%e1%> - 1e-11 - <%e2%>);
          >>
       case GREATEREQ(__) then
         <<
          if(_conditions[<%zerocrossingIndex%>])
-                f[<%index1%>]=(<%e2%> - <%e1%> - 10000*EPSILON);
+                f[<%index1%>]=(<%e2%> - <%e1%> - 1e-11);
            else
-                f[<%index1%>]=(<%e1%> - 10000*EPSILON - <%e2%>);
+                f[<%index1%>]=(<%e1%> - 1e-11 - <%e2%>);
          >>
     else
        <<
@@ -10769,17 +10801,17 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Sim
         case LESSEQ(__) then
        <<
          if(_event_handling.pre(_condition<%zerocrossingIndex%>,"_condition<%zerocrossingIndex%>"))
-                f[<%index1%>]=(<%e1%>-10000*EPSILON-<%e2%>);
+                f[<%index1%>]=(<%e1%>-1e-11-<%e2%>);
            else
-                f[<%index1%>]=(<%e2%>-<%e1%>-10000*EPSILON);
+                f[<%index1%>]=(<%e2%>-<%e1%>-1e-11);
       >>
       case GREATER(__)
       case GREATEREQ(__) then
         <<
          if(_event_handling.pre(_condition<%zerocrossingIndex%>,"_condition<%zerocrossingIndex%>"))
-                f[<%index1%>]=(<%e2%>-<%e1%>-10000*EPSILON);
+                f[<%index1%>]=(<%e2%>-<%e1%>-1e-11);
            else
-                f[<%index1%>]=(<%e1%>-10000*EPSILON-<%e2%>);
+                f[<%index1%>]=(<%e1%>-1e-11-<%e2%>);
          >>
      end match
 end giveZeroFunc3;
