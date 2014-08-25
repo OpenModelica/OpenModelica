@@ -6696,6 +6696,16 @@ template expTypeFlag(DAE.Type ty, Integer flag)
   case T_ARRAY(dims=dims) then'BaseArray<<%expTypeShort(ty)%>>&'
   else expTypeFlag(ty, 2)
     end match
+  case 9 then
+  // we want the "modelica type"
+  match ty case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
+    '<%expTypeShort(ty)%>'
+  else match ty case T_COMPLEX(complexClassType=RECORD(path=rname)) then
+    '<%underscorePath(rname)%>Type &'
+  else match ty case T_COMPLEX(__) then
+    '<%underscorePath(ClassInf.getStateName(complexClassType))%> &'
+   else
+    '<%expTypeShort(ty)%>'
 
 end expTypeFlag;
 
