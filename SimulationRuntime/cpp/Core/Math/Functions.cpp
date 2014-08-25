@@ -24,14 +24,14 @@
 #define min(a,b) ((a > b) ? (b) : (a))
 #endif
 
-double division (const double &a,const double &b,std::string text)
+double division (const double &a,const double &b, const char* text)
 {
   if(b != 0)
     return a/b ;
     else
     {
         std::string error_msg = "Division by zeror: ";
-      throw std::invalid_argument(error_msg+text);
+      throw std::invalid_argument(error_msg+string(text));
    }
 }
 
