@@ -251,6 +251,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
   if (mVariablesList.isEmpty() and getPlotType() == PlotWindow::PLOT)
     throw NoVariableException(QString("No variables specified!").toStdString().c_str());
 
+  bool editCase = pPlotCurve ? true : false;
   //PLOT PLT
   if (mFile.fileName().endsWith("plt"))
   {
@@ -281,7 +282,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
         if (mVariablesList.contains(currentVariable) or getPlotType() == PlotWindow::PLOTALL)
         {
           variablesPlotted.append(currentVariable);
-          if (!pPlotCurve || getPlotType() == PlotWindow::PLOTALL) {
+          if (!editCase) {
             pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), currentVariable, getUnit(), mpPlot);
             mpPlot->addPlotCurve(pPlotCurve);
           }
@@ -340,7 +341,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
         memcpy(vals, read_csv_dataset(csvReader, csvReader->variables[i]), csvReader->numsteps*sizeof(double));
         if (vals == NULL)
           throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
-        if (!pPlotCurve || getPlotType() == PlotWindow::PLOTALL) {
+        if (!editCase) {
           pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), csvReader->variables[i], getUnit(), mpPlot);
           mpPlot->addPlotCurve(pPlotCurve);
         }
@@ -384,18 +385,16 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     memcpy(timeVals, omc_matlab4_read_vals(&reader,1), reader.nrows*sizeof(double));
 
     // read in all values
-    int counter = 0;
     for (int i = 0; i < reader.nall; i++)
     {
       if (mVariablesList.contains(reader.allInfo[i].name) or getPlotType() == PlotWindow::PLOTALL)
       {
         variablesPlotted.append(reader.allInfo[i].name);
         // create the plot curve for variable
-        if (!pPlotCurve || getPlotType() == PlotWindow::PLOTALL) {
+        if (!editCase) {
           pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), reader.allInfo[i].name, getUnit(), mpPlot);
           mpPlot->addPlotCurve(pPlotCurve);
         }
-        counter++;
         // read the variable values
         var = omc_matlab4_find_var(&reader, reader.allInfo[i].name);
         // clear previous curve data
