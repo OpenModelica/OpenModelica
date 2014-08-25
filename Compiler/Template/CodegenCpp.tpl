@@ -6694,7 +6694,7 @@ template expTypeFlag(DAE.Type ty, Integer flag)
   case 8 then
     match ty
   case T_ARRAY(dims=dims) then'BaseArray<<%expTypeShort(ty)%>>&'
-  else expTypeFlag(ty, 2)
+  else expTypeFlag(ty, 9)
     end match
   case 9 then
   // we want the "modelica type"
@@ -9449,7 +9449,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
           case "" then tempDecl('DynArrayDim<%listLength(dims)%><<%type%>>', &varDecls /*BUFD*/)
           else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, <%dimensions%> > ', &varDecls /*BUFD*/)
     //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
-    let &preExp += 'assign_array(<%var%>,add_array<<%type%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
+    let &preExp += 'add_array<<%type%>,<%listLength(dims)%>>(<%e1%>, <%e2%>,<%var%>);<%\n%>'
     '<%var%>'
   case SUB_ARR(ty=T_ARRAY(dims=dims)) then
   let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")

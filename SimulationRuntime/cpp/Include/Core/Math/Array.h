@@ -114,11 +114,11 @@ public:
   }
 
 
-  void assign(BaseArray<T>& otherArray)
+  void assign(const BaseArray<T>& otherArray)
   {
     std::vector<size_t> v;
     v = otherArray.getDims();
-    T* data_otherarray = otherArray.getData();
+    const T* data_otherarray = otherArray.getData();
     //std::copy(data_otherarray,data_otherarray+size,_real_array.begin());
     memcpy( _real_array.begin(), data_otherarray, size * sizeof( T ) );
     /*for(unsigned int i = 1; i <= min(v[0],size); i++)
@@ -240,12 +240,12 @@ public:
       throw std::runtime_error("Wrong array dimension");
 
   }
-  void assign(BaseArray<T>& otherArray)
+  void assign(const BaseArray<T>& otherArray)
   {
 
     std::vector<size_t> v;
     v = otherArray.getDims();
-    T* data_otherarray = otherArray.getData();
+    const T* data_otherarray = otherArray.getData();
      //std::copy(data_otherarray,data_otherarray+size1*size2,_real_array.begin());
      memcpy( _real_array.begin(), data_otherarray, size1*size2 * sizeof( T ) );
     /*for(int i = 1; i <= min(v[0],size1); i++)
@@ -336,11 +336,11 @@ public:
     _real_array = otherArray._real_array;
   }
   */
-  void assign(BaseArray<T>& otherArray)
+  void assign(const BaseArray<T>& otherArray)
   {
     std::vector<size_t> v;
     v = otherArray.getDims();
-     T* data_otherarray = otherArray.getData();
+     const T* data_otherarray = otherArray.getData();
      //std::copy(data_otherarray,data_otherarray+size1*size2*size3,_real_array.begin());
       memcpy( _real_array.begin(), data_otherarray, size1*size2*size3 * sizeof( T ) );
     /*for(int i = 1; i <= min(v[0],size1); i++)
