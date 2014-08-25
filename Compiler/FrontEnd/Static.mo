@@ -678,7 +678,7 @@ algorithm
     // adrpo: deal with EnumToInteger(E) -> transform to Integer(E)
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,_,pre,_,_)
       equation
-        s = Absyn.pathLastIdent(Absyn.crefToPathIgnoreSubs(fn));
+        s = Absyn.crefLastIdent(fn);
         true = stringEq(s, "EnumToInteger");
         (cache,e_1,prop,st_1) = elabCall(cache, env, Absyn.CREF_IDENT("Integer", {}), args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
         _ = Types.propAllConst(prop);

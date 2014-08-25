@@ -3837,6 +3837,22 @@ algorithm str := match(inComponentRef)
 end match;
 end crefFirstIdent;
 
+public function crefLastIdent
+  "Returns the last identifier in a component reference."
+  input ComponentRef inComponentRef;
+  output Ident outIdent;
+algorithm
+  outIdent := match(inComponentRef)
+    local
+      ComponentRef cref;
+      Ident id;
+      
+    case CREF_IDENT(name = id) then id;
+    case CREF_QUAL(componentRef = cref) then crefLastIdent(cref);
+    case CREF_FULLYQUALIFIED(componentRef = cref) then crefLastIdent(cref);
+  end match;
+end crefLastIdent;
+
 public function crefFirstIdentNoSubs
   "Returns the basename of the component reference, but fails if it encounters
   any subscripts."
