@@ -145,7 +145,7 @@ public:
     return v;
   }
  /*
-  access to data 
+  access to data
   */
   virtual T* getData()
   {
@@ -229,7 +229,7 @@ public:
 
   void append(size_t i,const StatArrayDim1<T,size2>& rhs)
   {
-    
+
     if(rhs.getDims()[0]==size2)
     {
         const T* data = rhs.getData();
@@ -238,7 +238,7 @@ public:
     }
     else
       throw std::runtime_error("Wrong array dimension");
-    
+
   }
   void assign(BaseArray<T>& otherArray)
   {
@@ -274,7 +274,7 @@ public:
     return _real_array[size2*(i - 1) + j - 1];
   }
 
-  
+
   virtual std::vector<size_t> getDims() const
   {
     std::vector<size_t> v;
@@ -288,7 +288,7 @@ public:
     return size1 + size2;
   }
    /*
-  access to data 
+  access to data
   */
   virtual T* getData()
   {
@@ -392,7 +392,7 @@ public:
 
   }
    /*
-  access to data 
+  access to data
   */
   virtual T* getData()
   {
@@ -683,7 +683,7 @@ public:
     _multi_array.resize(v);//
     _multi_array.reindex(1);
   }
- 
+
   DynArrayDim1(const BaseArray<T>& otherArray)
   {
     std::vector<size_t> v = otherArray.getDims();
@@ -694,7 +694,7 @@ public:
     const T* data_otherarray = otherArray.getData();
     _multi_array.assign(data_otherarray,data_otherarray+v[0]);
    }
-  
+
 
   ~DynArrayDim1()
   {
@@ -906,7 +906,7 @@ public:
     return _multi_array.num_elements();
   }
   /*
-  access to data 
+  access to data
   */
   virtual T* getData()
   {
@@ -987,7 +987,7 @@ public:
   }
   DynArrayDim3<T>& operator=(const DynArrayDim3<T>& rhs)
   {
-   if (this != &rhs) 
+   if (this != &rhs)
    {
       std::vector<size_t> v = rhs.getDims();
      _multi_array.resize(v);
@@ -1036,7 +1036,7 @@ public:
     return _multi_array.num_elements();
   }
    /*
-  access to data 
+  access to data
   */
   virtual T* getData()
   {

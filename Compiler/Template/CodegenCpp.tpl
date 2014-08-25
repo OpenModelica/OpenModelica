@@ -8394,15 +8394,15 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp /*BUFP*/,
             //optimized matrix assign/
             <%StatArrayDim%><%arrayVar%>;
             <%arrayVar%>.assign( <%vars%> );<%\n%>'
-        ''    
+        ''
   end match
 
- 
+
   //let &preExp += '
  //  <%StatArrayDim%><%arrayVar%>;
  //   <%arrayVar%>.assign( <%matrixassign%> );<%\n%>'
 
-  
+
      arrayVar
 end daeExpMatrix;
 
@@ -8419,7 +8419,7 @@ template daeExpMatrixRow2(list<Exp> row,
       '<%expVar%>'
     ;separator=",")
   varLstStr
-end daeExpMatrixRow2;  
+end daeExpMatrixRow2;
 /////////////////////////////////////////////////CED
 
 /*
@@ -8439,7 +8439,7 @@ template daeExpMatrixRow(list<Exp> row,
 end daeExpMatrixRow;
 /////////////////////////////////////////////////NonCED functions
 */
- 
+
 ////////////////////////////////////////////////////////////////////////CED Functions
 template daeExpMatrixRow(list<Exp> row,Context context)
  "Helper to daeExpMatrix."
@@ -8463,7 +8463,7 @@ template daeExpMatrixName(Exp name,Context context)
   match name
   case CREF(componentRef = cr) then
    match context
-   case FUNCTION_CONTEXT(__) then   
+   case FUNCTION_CONTEXT(__) then
       daeExpMatrixName2(cr)
    else
    "_"+daeExpMatrixName2(cr)
@@ -8524,7 +8524,7 @@ case ARRAY(array=_::_, ty = arraytype) then
 
    let &preExp += '
    //tmp array1
-   
+
    <%arrayassign%>
   '
   arrayVar
