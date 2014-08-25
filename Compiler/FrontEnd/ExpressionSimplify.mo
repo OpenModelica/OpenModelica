@@ -4949,10 +4949,10 @@ algorithm
       Values.Value v;
       String str;
       Option<DAE.Exp> foldExp;
-      DAE.Type ty;
-      DAE.Type ety;
+      DAE.Type ty,ty1,ety;
+      DAE.ReductionIterator iter;
       list<DAE.ReductionIterator> iterators;
-      String foldName,resultName;
+      String foldName,resultName,foldName2,resultName2;
       Absyn.Path path;
 
     case DAE.REDUCTION(iterators = iterators, reductionInfo=DAE.REDUCTIONINFO(defaultValue = SOME(v)))
@@ -4989,6 +4989,25 @@ algorithm
         values = List.fold(iterators, getIteratorValues, values);
         // And fold
         expr = simplifyReductionFoldPhase(path,foldExp,foldName,resultName,ety,values,defaultValue);
+      then expr;
+
+    // array can handle multiple iterators
+    case DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = path as Absyn.IDENT("array"), iterType = DAE.COMBINE(), foldName=foldName, resultName=resultName, exprType = ty), expr = expr, iterators = iter::(iterators as _::_))
+      equation
+        foldName2 = Util.getTempVariableIndex();
+        resultName2 = Util.getTempVariableIndex();
+        ty1 = Types.unliftArray(ty);
+        expr = DAE.REDUCTION(DAE.REDUCTIONINFO(path,DAE.COMBINE(),ty1,NONE(),foldName,resultName,NONE()),expr,iterators);
+        expr = DAE.REDUCTION(DAE.REDUCTIONINFO(path,DAE.COMBINE(),ty,NONE(),foldName2,resultName2,NONE()),expr,{iter});
+      then expr;
+    // rest can also handle multiple iterators
+    case DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = path, iterType = DAE.COMBINE(), foldName=foldName, resultName=resultName, exprType = ty, foldExp=foldExp, defaultValue = defaultValue), expr = expr, iterators = iter::(iterators as _::_))
+      equation
+        // foldName2 = Util.getTempVariableIndex();
+        // resultName2 = Util.getTempVariableIndex();
+        // TODO: Rename foldName, resultName in foldExp of the inner reduction?
+        expr = DAE.REDUCTION(DAE.REDUCTIONINFO(path,DAE.COMBINE(),ty,defaultValue,foldName,resultName,foldExp),expr,{iter});
+        expr = DAE.REDUCTION(DAE.REDUCTIONINFO(path,DAE.COMBINE(),ty,defaultValue,foldName,resultName,foldExp),expr,iterators);
       then expr;
 
     else inReduction;
