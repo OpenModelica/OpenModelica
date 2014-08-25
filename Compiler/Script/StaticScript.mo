@@ -42,6 +42,7 @@ protected type Ident = String;
 protected import Ceval;
 protected import CevalScript;
 protected import ClassInf;
+protected import ComponentReference;
 protected import Error;
 protected import ErrorExt;
 protected import Expression;
@@ -299,7 +300,7 @@ public function elabCallInteractive "This function elaborates the functions defi
    case (cache,env,Absyn.CREF_IDENT(name = "modelEquationsUC"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
         (cache,cr_1) = Static.elabUntypedCref(cache,env,cr,impl,pre,info);
-        className = Static.componentRefToPath(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;
+        className = ComponentReference.crefToPathIgnoreSubs(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;
         (cache,outputFile) = Static.getOptionalNamedArg(cache, env, SOME(st), impl, "outputFile", DAE.T_STRING_DEFAULT,args, DAE.SCONST(""),pre,info);
         (cache,dumpExtractionSteps) = Static.getOptionalNamedArg(cache,env,SOME(st),impl,"dumpSteps",DAE.T_BOOL_DEFAULT,args,DAE.BCONST(false),pre,info);
       then

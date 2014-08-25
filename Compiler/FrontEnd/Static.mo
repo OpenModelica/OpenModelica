@@ -7225,7 +7225,7 @@ algorithm
     case (Absyn.CREF(componentRef = absynCr) :: absynRest)
       equation
         absynPath = Absyn.crefToPath(absynCr);
-        daeCr = pathToComponentRef(absynPath);
+        daeCr = ComponentReference.pathToCref(absynPath);
         daeExpList = absynExpListToDaeExpList(absynRest);
         crefExp = Expression.crefExp(daeCr);
       then
@@ -7320,45 +7320,6 @@ algorithm
         (cache,ComponentReference.makeCrefQual(id,DAE.T_UNKNOWN_DEFAULT,subs_1,cr_1));
   end match;
 end elabUntypedCref;
-
-protected function pathToComponentRef "This function translates a typename to a variable name.
-"
-  input Absyn.Path inPath;
-  output DAE.ComponentRef outComponentRef;
-algorithm
-  outComponentRef:=
-  match (inPath)
-    local
-      String id;
-      DAE.ComponentRef cref;
-      Absyn.Path path;
-    case (Absyn.FULLYQUALIFIED(path)) then pathToComponentRef(path);
-    case (Absyn.IDENT(name = id)) then ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{});
-    case (Absyn.QUALIFIED(name = id,path = path))
-      equation
-        cref = pathToComponentRef(path);
-      then
-        ComponentReference.makeCrefQual(id,DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), DAE.emptyTypeSource),{},cref);
-  end match;
-end pathToComponentRef;
-
-public function componentRefToPath "This function translates a variable name to a type name."
-  input DAE.ComponentRef inComponentRef;
-  output Absyn.Path outPath;
-algorithm
-  outPath := match (inComponentRef)
-    local
-      String s,id;
-      Absyn.Path path;
-      DAE.ComponentRef cref;
-    case (DAE.CREF_IDENT(ident = s,subscriptLst = {})) then Absyn.IDENT(s);
-    case (DAE.CREF_QUAL(ident = id,componentRef = cref))
-      equation
-        path = componentRefToPath(cref);
-      then
-        Absyn.QUALIFIED(id,path);
-  end match;
-end componentRefToPath;
 
 public function needToRebuild
   input String newFile;
@@ -8590,7 +8551,7 @@ algorithm
     // call to function reference variable
     case (cache,env,name,_,NONE(),_,_,_,_)
       equation
-        cref = pathToComponentRef(name);
+        cref = ComponentReference.pathToCref(name);
         (cache,_,DAE.T_FUNCTION(funcArg = _),_,_,_,env,_,_) = Lookup.lookupVar(cache,env,cref);
       then (cache,Util.SUCCESS());
 
