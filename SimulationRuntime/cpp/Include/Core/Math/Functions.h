@@ -30,7 +30,7 @@ inline static int sgn (const double &c)
 }
 
 /// Definition of Signum function
-double division (const double &a,const double &b,std::string text);
+double division (const double &a,const double &b, const char * text);
 
 inline static int modelica_mod_int(int v1, int v2)
 {
