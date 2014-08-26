@@ -55,6 +55,7 @@ class LineStylePage;
 class FillStylePage;
 class CurveStylePage;
 class FigaroPage;
+class DebuggerPage;
 
 class OptionsDialog : public QDialog
 {
@@ -73,6 +74,7 @@ public:
   void readFillStyleSettings();
   void readCurveStyleSettings();
   void readFigaroSettings();
+  void readDebuggerSettings();
   void saveGeneralSettings();
   void saveLibrariesSettings();
   void saveModelicaTextSettings();
@@ -83,6 +85,7 @@ public:
   void saveFillStyleSettings();
   void saveCurveStyleSettings();
   void saveFigaroSettings();
+  void saveDebuggerSettings();
   void setUpDialog();
   void addListItems();
   void createPages();
@@ -97,6 +100,7 @@ public:
   FillStylePage* getFillStylePage();
   CurveStylePage* getCurveStylePage();
   FigaroPage* getFigaroPage();
+  DebuggerPage* getDebuggerPage();
 signals:
   void modelicaTextSettingsChanged();
   void updateLineWrapping();
@@ -117,6 +121,7 @@ private:
   FillStylePage *mpFillStylePage;
   CurveStylePage *mpCurveStylePage;
   FigaroPage *mpFigaroPage;
+  DebuggerPage *mpDebuggerPage;
   QSettings mSettings;
   QListWidget *mpOptionsList;
   QStackedWidget *mpPagesWidget;
@@ -282,6 +287,12 @@ public:
   QColor getQuotesRuleColor();
   void setCommentRuleColor(QColor color);
   QColor getCommentRuleColor();
+  void setTLMTagRuleColor(QColor color);
+  QColor getTLMTagRuleColor();
+  void setTLMElementRuleColor(QColor color);
+  QColor getTLMElementRuleColor();
+  void setTLMQuotesRuleColor(QColor color);
+  QColor getTLMQuotesRuleColor();
 private:
   QString mFontFamily;
   double mFontSize;
@@ -292,6 +303,9 @@ private:
   QColor mFunctionRuleColor;
   QColor mQuotesRuleColor;
   QColor mCommentRuleColor;
+  QColor mTLMTagRuleColor;
+  QColor mTLMElementRuleColor;
+  QColor mTLMQuotesRuleColor;
 };
 
 class ModelicaTextEditorPage : public QWidget
@@ -327,6 +341,9 @@ private:
   QListWidgetItem *mpFunctionItem;
   QListWidgetItem *mpQuotesItem;
   QListWidgetItem *mpCommentItem;
+  QListWidgetItem *mpTLMTagItem;
+  QListWidgetItem *mpTLMElementItem;
+  QListWidgetItem *mpTLMQuotesItem;
 signals:
   void updatePreview();
 public slots:
@@ -424,8 +441,6 @@ public:
   QComboBox* getIndexReductionMethodComboBox();
   QLineEdit* getOMCFlagsTextBox();
   QCheckBox *getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
-  QCheckBox* getAlwaysShowTransformationsCheckBox() {return mpAlwaysShowTransformationsCheckBox;}
-  QCheckBox* getGenerateOperationsCheckBox() {return mpGenerateOperationsCheckBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpSimulationGroupBox;
@@ -436,9 +451,6 @@ private:
   Label *mpOMCFlagsLabel;
   QLineEdit *mpOMCFlagsTextBox;
   QCheckBox *mpSaveClassBeforeSimulationCheckBox;
-  QGroupBox *mpTransformationalDebuggerGroupBox;
-  QCheckBox *mpAlwaysShowTransformationsCheckBox;
-  QCheckBox *mpGenerateOperationsCheckBox;
 };
 
 class NotificationsPage : public QWidget
@@ -570,6 +582,35 @@ private slots:
   void browseFigaroLibraryFile();
   void browseFigaroOptionsFile();
   void browseFigaroProcessFile();
+};
+
+class DebuggerPage : public QWidget
+{
+  Q_OBJECT
+public:
+  DebuggerPage(OptionsDialog *pParent);
+  void setGDBPath(QString path);
+  QString getGDBPath();
+  QSpinBox* getGDBCommandTimeoutSpinBox() {return mpGDBCommandTimeoutSpinBox;}
+  QCheckBox* getDisplayCFramesCheckBox();
+  QCheckBox* getDisplayUnknownFramesCheckBox();
+  QCheckBox* getAlwaysShowTransformationsCheckBox() {return mpAlwaysShowTransformationsCheckBox;}
+  QCheckBox* getGenerateOperationsCheckBox() {return mpGenerateOperationsCheckBox;}
+private:
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpAlgorithmicDebuggerGroupBox;
+  Label *mpGDBPathLabel;
+  QLineEdit *mpGDBPathTextBox;
+  QPushButton *mpGDBPathBrowseButton;
+  Label *mpGDBCommandTimeoutLabel;
+  QSpinBox *mpGDBCommandTimeoutSpinBox;
+  QCheckBox *mpDisplayCFramesCheckBox;
+  QCheckBox *mpDisplayUnknownFramesCheckBox;
+  QGroupBox *mpTransformationalDebuggerGroupBox;
+  QCheckBox *mpAlwaysShowTransformationsCheckBox;
+  QCheckBox *mpGenerateOperationsCheckBox;
+public slots:
+  void browseGDBPath();
 };
 
 #endif // OPTIONSDIALOG_H

@@ -71,6 +71,9 @@ SOURCES += main.cpp\
     Editors/FindReplaceDialog.cpp \
     Editors/ModelicaTextEditor.cpp \
     Editors/TransformationsEditor.cpp \
+    Editors/DebuggerSourceEditor.cpp \
+    Editors/TextEditor.cpp \
+    Editors/TLMEditor.cpp \
     Plotting/PlotWindowContainer.cpp \
     Component/Component.cpp \
     Annotations/ShapeAnnotation.cpp \
@@ -92,8 +95,19 @@ SOURCES += main.cpp\
     Util/OMDumpXML.cpp \
     Util/Utilities.cpp \
     Util/diff_match_patch.cpp \
-    TransformationalDebugger/TransformationsWidget.cpp
+    TransformationalDebugger/TransformationsWidget.cpp \
 #    Simulation/SimulationBrowserWidget.cpp
+    Debugger/GDB/CommandFactory.cpp \
+    Debugger/GDB/GDBAdapter.cpp \
+    Debugger/StackFrames/StackFramesWidget.cpp \
+    Debugger/Locals/LocalsWidget.cpp \
+    Debugger/Locals/ModelicaValue.cpp \
+    Debugger/Breakpoints/BreakpointMarker.cpp \
+    Debugger/Breakpoints/BreakpointsWidget.cpp \
+    Debugger/Breakpoints/BreakpointDialog.cpp \
+    Debugger/DebuggerMainWindow.cpp \
+    Debugger/Attach/AttachToProcessDialog.cpp \
+    Debugger/Attach/ProcessListModel.cpp
 
 HEADERS  += Util/backtrace.h \
     Util/Helper.h \
@@ -110,6 +124,9 @@ HEADERS  += Util/backtrace.h \
     Editors/FindReplaceDialog.h \
     Editors/ModelicaTextEditor.h \
     Editors/TransformationsEditor.h \
+    Editors/DebuggerSourceEditor.h \
+    Editors/TextEditor.h \
+    Editors/TLMEditor.h \
     Plotting/PlotWindowContainer.h \
     Component/Component.h \
     Annotations/ShapeAnnotation.h \
@@ -131,8 +148,19 @@ HEADERS  += Util/backtrace.h \
     Util/OMDumpXML.cpp \
     Util/Utilities.h \
     Util/diff_match_patch.h \
-    TransformationalDebugger/TransformationsWidget.h
+    TransformationalDebugger/TransformationsWidget.h \
 #    Simulation/SimulationBrowserWidget.h
+    Debugger/GDB/CommandFactory.h \
+    Debugger/GDB/GDBAdapter.h \
+    Debugger/StackFrames/StackFramesWidget.h \
+    Debugger/Locals/LocalsWidget.h \
+    Debugger/Locals/ModelicaValue.h \
+    Debugger/Breakpoints/BreakpointMarker.h \
+    Debugger/Breakpoints/BreakpointsWidget.h \
+    Debugger/Breakpoints/BreakpointDialog.h \
+    Debugger/DebuggerMainWindow.h \
+    Debugger/Attach/AttachToProcessDialog.h \
+    Debugger/Attach/ProcessListModel.h
 
 # Windows libraries and includes
 win32 {
@@ -144,7 +172,9 @@ win32 {
         __WIN32__
     CONFIG(debug, debug|release){
     LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rtd -lomnithread34_rtd \
-        -L../../build/lib/omc -lOMPlot -lomqwtd
+        -L../../build/lib/omc -lOMPlot -lomqwtd \
+        -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
+        -L../../Parser -lantlr3
 } else {
 # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
 # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
@@ -153,6 +183,8 @@ win32 {
     QMAKE_LFLAGS_RELEASE =
     LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rt -lomnithread34_rt \
         -L../../build/lib/omc -lOMPlot -lomqwt \
+        -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
+        -L../../Parser -lantlr3 \
         # required for backtrace
         -L$$(OMDEV)/tools/mingw/bin -lintl-8 -lbfd -liberty -limagehlp
 }
@@ -178,6 +210,13 @@ INCLUDEPATH += ../../3rdParty/qjson-0.8.1/build/include
 INCLUDEPATH += . \
                 Annotations \
                 Component \
+                Debugger \
+                Debugger/Attach \
+                Debugger/Breakpoints \
+                Debugger/GDB \
+                Debugger/Locals \
+                Debugger/Parser \
+                Debugger/StackFrames \
                 Editors \
                 FMI \
                 Modeling \
@@ -188,7 +227,11 @@ INCLUDEPATH += . \
                 TransformationalDebugger \
                 Util
 
-OTHER_FILES += Resources/css/stylesheet.qss
+OTHER_FILES += Resources/css/stylesheet.qss \
+    Debugger/Parser/GDBMIOutput.g \
+    Debugger/Parser/GDBMIParser.h \
+    Debugger/Parser/GDBMIParser.cpp \
+    Debugger/Parser/main.cpp
 
 CONFIG += warn_off
 

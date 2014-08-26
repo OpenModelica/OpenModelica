@@ -120,6 +120,7 @@ public:
                                  QString * selectedFilter = 0);
   static QString getExistingDirectory(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0);
   static QString createTooltip(QStringList info, QString name, QString path);
+  static QString createTooltip(QString name, QString location);
   static void setLastOpenDirectory(QString lastOpenDirectory);
   static QString getLastOpenDirectory();
   static QStringList getDialogAnnotation(QString componentAnnotation);
@@ -128,6 +129,8 @@ public:
   static QStringList splitStringWithSpaces(QString value);
   static void fillEncodingComboBox(QComboBox *pEncodingComboBox);
   static QStringList makeVariableParts(QString variable);
+  static bool isCFile(QString extension);
+  static bool isModelicaFile(QString extension);
 protected:
   static QString mLastOpenDir;
 };

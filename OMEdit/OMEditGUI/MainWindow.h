@@ -43,7 +43,6 @@
 #include <QtGui>
 #include <QDomDocument>
 
-
 #if (QT_VERSION < QT_VERSION_CHECK(4, 6, 0))
 #error "OMEdit requires Qt 4.6.0 or newer"
 #endif
@@ -61,6 +60,7 @@
 #include "Plotting/PlotWindowContainer.h"
 #include "ModelWidgetContainer.h"
 #include "FindReplaceDialog.h"
+#include "DebuggerMainWindow.h"
 #include "ImportFMUDialog.h"
 #include "NotificationsDialog.h"
 
@@ -76,11 +76,11 @@ class VariablesWidget;
 class SimulationDialog;
 class PlotWindowContainer;
 class ModelWidgetContainer;
+class DebuggerMainWindow;
 class InfoBar;
 class WelcomePageWidget;
 class AboutOMEditWidget;
 class FindReplaceDialog;
-class MainWindow;
 
 class MainWindow : public QMainWindow
 {
@@ -105,6 +105,7 @@ public:
   PlotWindowContainer* getPlotWindowContainer();
   //InteractiveSimulationTabWidget* getInteractiveSimulationTabWidget();
   ModelWidgetContainer* getModelWidgetContainer();
+  DebuggerMainWindow* getDebuggerMainWindow() {return mpDebuggerMainWindow;}
   WelcomePageWidget* getWelcomePageWidget();
   InfoBar* getInfoBar();
   QStatusBar* getStatusBar();
@@ -185,6 +186,7 @@ private:
   PlotWindowContainer *mpPlotWindowContainer;
   //InteractiveSimulationTabWidget *mpInteractiveSimualtionTabWidget;
   ModelWidgetContainer *mpModelWidgetContainer;
+  DebuggerMainWindow *mpDebuggerMainWindow;
   WelcomePageWidget *mpWelcomePageWidget;
   AboutOMEditWidget *mpAboutOMEditDialog;
   InfoBar *mpInfoBar;
@@ -196,6 +198,7 @@ private:
   QTimer *mpAutoSaveTimer;
   // File Menu
   QAction *mpNewModelicaClassAction;
+  QAction *mpNewTLMFileAction;
   QAction *mpOpenModelicaFileAction;
   QAction *mpOpenModelicaFileWithEncodingAction;
   QAction *mpLoadModelicaLibraryAction;
@@ -221,6 +224,7 @@ private:
   QAction *mpResetZoomAction;
   QAction *mpZoomInAction;
   QAction *mpZoomOutAction;
+  QAction *mpShowAlgorithmicDebuggerAction;
   // Simulation Menu
   QAction *mpInstantiateModelAction;
   QAction *mpCheckModelAction;
@@ -280,6 +284,7 @@ private:
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
 public slots:
   void createNewModelicaClass();
+  void createNewTLMFile();
   void openModelicaFile();
   void showOpenModelicaFileDialog();
   void loadModelicaLibrary();
@@ -294,6 +299,7 @@ public slots:
   void resetZoom();
   void zoomIn();
   void zoomOut();
+  void showAlgorithmicDebugger();
   void instantiatesModel();
   void checkModel();
   void checkAllModels();
@@ -348,7 +354,7 @@ protected:
 class InfoBar : public QFrame
 {
 public:
-  InfoBar(MainWindow *pParent);
+  InfoBar(QWidget *pParent);
   void showMessage(QString message);
 private:
   Label *mpInfoLabel;

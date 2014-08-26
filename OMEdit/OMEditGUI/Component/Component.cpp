@@ -107,9 +107,9 @@ Component::Component(QString annotation, QString className, StringHandler::Model
   getClassInheritedComponents();
   parseAnnotationString(annotation);
   // if type is connector and component is not a library component and not a system library class.
-//  bool isSystemLibrary = mpGraphicsView ? mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() : false;
-//  if (mType == StringHandler::Connector && !isLibraryComponent() && !isSystemLibrary)
-//    connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnection(Component*)));
+  //  bool isSystemLibrary = mpGraphicsView ? mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() : false;
+  //  if (mType == StringHandler::Connector && !isLibraryComponent() && !isSystemLibrary)
+  //    connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnection(Component*)));
 }
 
 /* Called for component annotation instance */

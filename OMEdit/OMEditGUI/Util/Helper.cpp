@@ -63,6 +63,7 @@ QString Helper::exeFileTypes = "EXE Files (*.exe)";
 #else
 QString Helper::exeFileTypes = "Executable files (*)";
 #endif
+QString Helper::txtFileTypes = "TXT Files (*.txt)";
 int Helper::treeIndentation = 13;
 QSize Helper::iconSize = QSize(20, 20);
 QSize Helper::buttonIconSize = QSize(16, 16);
@@ -99,9 +100,28 @@ QString Helper::errorComponentAnnotationString = QString("{-100.0,-100.0,100.0,1
                                                          "{Rectangle(true, {0.0, 0.0}, 0, {255, 0, 0}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, BorderPattern.None, {{-100, -100}, {100, 100}}, 0),"
                                                          "Line(true, {0.0, 0.0}, 0, {{-100, 100}, {100, -100}}, {255, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None),"
                                                          "Line(true, {0.0, 0.0}, 0, {{100, 100}, {-100, -100}}, {255, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None)}}");
+/* Meta Modelica Types */
+QString Helper::MODELICA_METATYPE = QString("modelica_metatype");
+QString Helper::MODELICA_BOOLEAN = QString("modelica_boolean");
+QString Helper::MODELICA_INETGER = QString("modelica_integer");
+QString Helper::MODELICA_REAL = QString("modelica_real");
+QString Helper::REPLACEABLE_TYPE_ANY = QString("replaceable type Any");
+QString Helper::RECORD = QString("record");
+QString Helper::LIST = QString("list");
+QString Helper::OPTION = QString("Option");
+QString Helper::TUPLE = QString("tuple");
+QString Helper::ARRAY = QString("Array");
+QString Helper::VALUE_OPTIMIZED_OUT = QString("value has been optimized out");
+/* Modelica Types */
+QString Helper::STRING = QString("String");
+QString Helper::BOOLEAN = QString("Boolean");
+QString Helper::INTEGER = QString("Integer");
+QString Helper::REAL = QString("Real");
 /* Global translated variables */
 QString Helper::newModelicaClass;
 QString Helper::createNewModelicaClass;
+QString Helper::newTLMFile;
+QString Helper::createNewTLMFile;
 QString Helper::findClasses;
 QString Helper::openModelicaFiles;
 QString Helper::openConvertModelicaFiles;
@@ -118,8 +138,10 @@ QString Helper::chooseFile;
 QString Helper::chooseFiles;
 QString Helper::attributes;
 QString Helper::properties;
+QString Helper::add;
 QString Helper::edit;
 QString Helper::save;
+QString Helper::apply;
 QString Helper::chooseDirectory;
 QString Helper::general;
 QString Helper::output;
@@ -148,6 +170,7 @@ QString Helper::importFromOMNotebook;
 QString Helper::importNgspiceNetlist;
 QString Helper::importFromOMNotebookTip;
 QString Helper::importNgspiceNetlistTip;
+QString Helper::line;
 QString Helper::exportAsImage;
 QString Helper::exportAsImageTip;
 QString Helper::exportFigaro;
@@ -160,6 +183,8 @@ QString Helper::question;
 QString Helper::search;
 QString Helper::unloadClass;
 QString Helper::unloadClassTip;
+QString Helper::unloadXMLTip;
+QString Helper::refresh;
 QString Helper::simulate;
 QString Helper::simulateTip;
 QString Helper::simulationSetup;
@@ -205,9 +230,10 @@ QString Helper::fileLocation;
 QString Helper::errorLocation;
 QString Helper::readOnly;
 QString Helper::writable;
+QString Helper::workingDirectory;
 QString Helper::iconView;
 QString Helper::diagramView;
-QString Helper::modelicaTextView;
+QString Helper::textView;
 QString Helper::documentationView;
 QString Helper::searchModelicaClass;
 QString Helper::findReplaceModelicaText;
@@ -235,12 +261,24 @@ QString Helper::executionCount;
 QString Helper::executionMaxTime;
 QString Helper::executionTime;
 QString Helper::executionFraction;
+QString Helper::debuggingFileNotSaveInfo;
+QString Helper::algorithmicDebugger;
+QString Helper::debugConfigurations;
+QString Helper::resume;
+QString Helper::interrupt;
+QString Helper::exit;
+QString Helper::stepOver;
+QString Helper::stepInto;
+QString Helper::stepReturn;
+QString Helper::attachToRunningProcess;
 
 void Helper::initHelperVariables()
 {
   /* Global translated variables */
   Helper::newModelicaClass = tr("New Modelica Class");
   Helper::createNewModelicaClass = tr("Create New Modelica Class");
+  Helper::newTLMFile = tr("New TLM File");
+  Helper::createNewTLMFile = tr("Create New TLM File");
   Helper::findClasses = tr("Find Classes");
   Helper::openModelicaFiles = tr("Open Model/Library File(s)");
   Helper::openConvertModelicaFiles = tr("Open/Convert Modelica File(s) With Encoding");
@@ -257,8 +295,10 @@ void Helper::initHelperVariables()
   Helper::chooseFiles = tr("Choose File(s)");
   Helper::attributes = tr("Attributes");
   Helper::properties = tr("Properties");
+  Helper::add = tr("Add");
   Helper::edit = tr("Edit");
   Helper::save = tr("Save");
+  Helper::apply = tr("Apply");
   Helper::importFMU = tr("Import FMU");
   Helper::chooseDirectory = tr("Choose Directory");
   Helper::general = tr("General");
@@ -288,6 +328,7 @@ void Helper::initHelperVariables()
   Helper::importNgspiceNetlist = tr("Import ngspice netlist");
   Helper::importFromOMNotebookTip = tr("Imports the model(s) from OMNotebook");
   Helper::importNgspiceNetlistTip = tr("Converts ngspice netlist(s) to Modelica code");
+  Helper::line = tr("Line");
   Helper::exportAsImage = tr("Export as an Image");
   Helper::exportAsImageTip = tr("Exports the current model to Image");
   Helper::exportFigaro = tr("Export Figaro");
@@ -300,6 +341,8 @@ void Helper::initHelperVariables()
   Helper::search = tr("Search");
   Helper::unloadClass = tr("Unload");
   Helper::unloadClassTip = tr("Unload the Modelica class");
+  Helper::unloadXMLTip = tr("Unload the XML file");
+  Helper::refresh = tr("Refresh");
   Helper::simulate = tr("Simulate");
   Helper::simulateTip = tr("Simulate the Modelica class");
   Helper::simulationSetup = tr("Simulation Setup");
@@ -345,9 +388,10 @@ void Helper::initHelperVariables()
   Helper::errorLocation = tr("Location", "For errors");
   Helper::readOnly = tr("Read-Only");
   Helper::writable = tr("Writable");
+  Helper::workingDirectory = tr("Working Directory:");
   Helper::iconView = tr("Icon View");
   Helper::diagramView = tr("Diagram View");
-  Helper::modelicaTextView = tr("Modelica Text View");
+  Helper::textView = tr("Text View");
   Helper::documentationView = tr("Documentation View");
   Helper::searchModelicaClass = tr("Search Modelica Class");
   Helper::findReplaceModelicaText = tr("Find/Replace...");
@@ -375,6 +419,16 @@ void Helper::initHelperVariables()
   Helper::executionMaxTime = tr("Max time");
   Helper::executionTime = tr("Time");
   Helper::executionFraction = tr("Fraction");
+  Helper::debuggingFileNotSaveInfo = tr("<b>Info: </b>Update the actual model in <b>Modeling</b> perspective and simulate again. This is only shown for debugging purpose. Your changes will not be saved.");
+  Helper::algorithmicDebugger = tr("Algorithmic Debugger");
+  Helper::debugConfigurations = tr("Debug Configurations");
+  Helper::resume = tr("Resume");
+  Helper::interrupt = tr("Interrupt");
+  Helper::exit = tr("Exit");
+  Helper::stepOver = tr("Step Over");
+  Helper::stepInto = tr("Step Into");
+  Helper::stepReturn = tr("Step Return");
+  Helper::attachToRunningProcess = tr("Attach to Running Process");
 }
 
 QString GUIMessages::getMessage(int type)
@@ -406,7 +460,7 @@ QString GUIMessages::getMessage(int type)
     case OPENMODELICAHOME_NOT_FOUND:
       return tr("Could not find environment variable OPENMODELICAHOME. Please make sure OpenModelica is installed properly.");
     case ERROR_OCCURRED:
-      return tr("Following Error has occurred. \n\n%1");
+      return tr("Following error has occurred. \n\n%1");
     case ERROR_IN_MODELICA_TEXT:
       return tr("Problems are found in Modelica Text. <br />");
     case REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY:
@@ -461,6 +515,8 @@ QString GUIMessages::getMessage(int type)
       return tr("The FIGARO is generated.");
     case DELETE_CLASS_MSG:
       return tr("Are you sure you want to unload <b>%1</b>? Everything contained inside this class will also be unloaded.");
+    case DELETE_TEXT_FILE_MSG:
+      return tr("Are you sure you want to unload <b>%1</b>?");
     case WRONG_MODIFIER:
       return tr("The Modifier '%1' format is invalid. The correct format is 'phi(start=1)'");
     case SET_INFO_XML_FLAG:
@@ -469,6 +525,20 @@ QString GUIMessages::getMessage(int type)
       return tr("Tools->Options->Simulation->OMC Flags");
     case SET_INFO_XML_FLAG_MSG_MAC:
       return tr("OMEdit->Preferences->Simulation->OMC Flags");
+    case DEBUG_CONFIGURATION_EXISTS_MSG:
+      return tr("A debug configuration with name <b>%1</b> already exists. Error occurred while saving the debug configuration <b>%2<b>.");
+    case DEBUG_CONFIGURATION_SIZE_EXCEED:
+      return tr("Maximum <b>%1</b> debug configurations are allowed.");
+    case DELETE_DEBUG_CONFIGURATION_MSG:
+      return tr("Are you sure you want to delete <b>%1</b> debug configuration?");
+    case DEBUGGER_ALREADY_RUNNING:
+      return tr("A debugging session is already running. Only one debugging session is allowed.");
+    case CLASS_NOT_FOUND:
+      return tr("Unable to find the class <b>%1</b>.");
+    case BREAKPOINT_INSERT_NOT_SAVED:
+      return tr("The class <b>%1</b> is not saved. Breakpoints are only allowed on saved classes.");
+    case BREAKPOINT_INSERT_NOT_MODELICA_CLASS:
+      return tr("The class <b>%1</b> is not a modelica class. Breakpoints are only allowed on modelica classes.");
     default:
       return "";
   }

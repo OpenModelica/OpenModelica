@@ -93,16 +93,24 @@ public slots:
 class LibraryTreeNode : public QTreeWidgetItem
 {
 public:
+  enum LibraryType {
+    Modelica,   /* Used to represent Modelica models. */
+    Text,       /* Used to represent text based files. */
+    TLM         /* Used to represent XML files. */
+  };
   enum SaveContentsType {
     SaveInOneFile,
     SaveFolderStructure,
     SaveUnspecified
   };
-  LibraryTreeNode(QString text, QString parentName, QString nameStructure, QString tooltip, StringHandler::ModelicaClasses type,
-                  QString fileName, bool readOnly, bool isSaved, bool isProtected, LibraryTreeWidget *pParent);
-  static QIcon getModelicaNodeIcon(int type);
-  void setType(StringHandler::ModelicaClasses type);
-  StringHandler::ModelicaClasses getType();
+  LibraryTreeNode(LibraryType type, QString text, QString parentName, QString nameStructure, QString tooltip,
+                  StringHandler::ModelicaClasses modelicaType, QString fileName, bool readOnly, bool isSaved, bool isProtected,
+                  LibraryTreeWidget *pParent);
+  QIcon getModelicaNodeIcon();
+  LibraryType getLibraryType() {return mLibraryType;}
+  void setLibraryType(LibraryType libraryType) {mLibraryType = libraryType;}
+  void setModelicaType(StringHandler::ModelicaClasses type);
+  StringHandler::ModelicaClasses getModelicaType();
   void setName(QString name);
   const QString& getName() const;
   void setParentName(QString parentName);
@@ -127,7 +135,8 @@ public:
   ModelWidget* getModelWidget();
 private:
   LibraryTreeWidget *mpLibraryTreeWidget;
-  StringHandler::ModelicaClasses mType;
+  LibraryType mLibraryType;
+  StringHandler::ModelicaClasses mModelicaType;
   QString mName;
   QString mParentName;
   QString mNameStructure;
@@ -162,6 +171,7 @@ public:
   static bool sortNodesAscending(const LibraryTreeNode *node1, const LibraryTreeNode *node2);
   LibraryTreeNode* addLibraryTreeNode(QString name, StringHandler::ModelicaClasses type, QString parentName=QString(),
                                       bool isSaved = true, int insertIndex = 0);
+  LibraryTreeNode* addLibraryTreeNode(QString name, bool isSaved, int insertIndex = 0);
   LibraryTreeNode* getLibraryTreeNode(QString nameStructure, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive);
   QList<LibraryTreeNode*> getLibraryTreeNodesList();
   void addLibraryComponentObject(LibraryComponent *libraryComponent);
@@ -170,6 +180,8 @@ public:
   bool isFileWritAble(QString filePath);
   void showProtectedClasses(bool enable);
   bool unloadClass(LibraryTreeNode *pLibraryTreeNode, bool askQuestion = true);
+  bool unloadTextFile(LibraryTreeNode *pLibraryTreeNode, bool askQuestion = true);
+  bool unloadXMLFile(LibraryTreeNode *pLibraryTreeNode, bool askQuestion = true);
   void unloadClassHelper(LibraryTreeNode *pLibraryTreeNode);
   bool saveLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
   LibraryTreeNode* findParentLibraryTreeNodeSavedInSameFile(LibraryTreeNode *pLibraryTreeNode, QFileInfo fileInfo);
@@ -188,10 +200,15 @@ private:
   QAction *mpSimulateAction;
   QAction *mpSimulationSetupAction;
   QAction *mpUnloadClassAction;
+  QAction *mpUnloadTextFileAction;
+  QAction *mpUnloadXMLFileAction;
   QAction *mpRefreshAction;
   QAction *mpExportFMUAction;
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
+  bool saveModelicaLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
+  bool saveTextLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
+  bool saveXMLLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
   bool saveLibraryTreeNodeHelper(LibraryTreeNode *pLibraryTreeNode);
   bool saveLibraryTreeNodeOneFileHelper(LibraryTreeNode *pLibraryTreeNode);
   bool setSubModelsFileNameOneFileHelper(LibraryTreeNode *pLibraryTreeNode, QString filePath);
@@ -199,6 +216,7 @@ private:
   bool saveLibraryTreeNodeFolderHelper(LibraryTreeNode *pLibraryTreeNode);
   bool saveSubModelsFolderHelper(LibraryTreeNode *pLibraryTreeNode, QString directoryName);
   bool saveLibraryTreeNodeOneFileOrFolderHelper(LibraryTreeNode *pLibraryTreeNode);
+  void unloadLibraryTreeNodeAndModelWidget(LibraryTreeNode *pLibraryTreeNode);
 public slots:
   void expandLibraryTreeNode(QTreeWidgetItem *item);
   void showContextMenu(QPoint point);
@@ -210,13 +228,15 @@ public slots:
   void checkModel();
   void checkAllModels();
   void unloadClass();
+  void unloadTextFile();
+  void unloadXMLFile();
   void refresh();
   void exportModelFMU();
   void exportModelXML();
   void exportModelFigaro();
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false);
   void parseAndLoadModelicaText(QString modelText);
-  void showModelWidget(LibraryTreeNode *pLibraryTreeNode = 0, bool newClass = false, bool extendsClass = false);
+  void showModelWidget(LibraryTreeNode *pLibraryTreeNode = 0, bool newClass = false, bool extendsClass = false, QString text = QString());
   void openLibraryTreeNode(QString nameStructure);
   void loadLibraryComponent(LibraryTreeNode *pLibraryTreeNode);
 protected:

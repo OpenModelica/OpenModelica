@@ -401,11 +401,11 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   // points manipulation buttons
   mpAddPointButton = new QToolButton;
   mpAddPointButton->setObjectName("ShapePointsButton");
-  mpAddPointButton->setIcon(QIcon(":/Resources/icons/add-icon.png"));
+  mpAddPointButton->setIcon(QIcon(":/Resources/icons/add-icon.svg"));
   connect(mpAddPointButton, SIGNAL(clicked()), SLOT(addPoint()));
   mpRemovePointButton = new QToolButton;
   mpRemovePointButton->setObjectName("ShapePointsButton");
-  mpRemovePointButton->setIcon(QIcon(":/Resources/icons/delete.png"));
+  mpRemovePointButton->setIcon(QIcon(":/Resources/icons/delete.svg"));
   connect(mpRemovePointButton, SIGNAL(clicked()), SLOT(removePoint()));
   mpPointsButtonBox = new QDialogButtonBox(Qt::Vertical);
   mpPointsButtonBox->addButton(mpMovePointUpButton, QDialogButtonBox::ActionRole);
@@ -426,7 +426,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
-  mpApplyButton = new QPushButton(tr("Apply"));
+  mpApplyButton = new QPushButton(Helper::apply);
   mpApplyButton->setAutoDefault(false);
   connect(mpApplyButton, SIGNAL(clicked()), this, SLOT(applyShapeProperties()));
   if (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() || mpShapeAnnotation->isInheritedShape())

@@ -48,8 +48,8 @@
 #include "Utilities.h"
 #include "BaseEditor.h"
 
+class MainWindow;
 class ModelWidget;
-class LineNumberArea;
 
 class CommentDefinition
 {
@@ -82,17 +82,17 @@ public:
   void setLastValidText(QString validText);
   QStringList getClassNames(QString *errorString);
   bool validateModelicaText();
+  void setModelicaTextDocument(QTextDocument *document);
 private:
-  ModelWidget *mpModelWidget;
   QString mLastValidText;
   bool mTextChanged;
+  bool mForceSetPlainText;
   QAction *mpToggleCommentSelectionAction;
 protected:
   virtual void keyPressEvent(QKeyEvent *pEvent);
 signals:
   bool focusOut();
 private slots:
-  void updateCursorPosition();
   void showContextMenu(QPoint point);
 public slots:
   void setPlainText(const QString &text);

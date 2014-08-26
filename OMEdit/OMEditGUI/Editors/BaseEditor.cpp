@@ -36,10 +36,22 @@
  */
 
 #include "BaseEditor.h"
+#include "ModelWidgetContainer.h"
 #include "Helper.h"
 
 BaseEditor::BaseEditor(QWidget *pParent)
-  : QPlainTextEdit(pParent)
+  : QPlainTextEdit(pParent), mpModelWidget(0), mCanHaveBreakpoints(false)
+{
+  initialize();
+}
+
+BaseEditor::BaseEditor(ModelWidget *pParent)
+  : QPlainTextEdit(pParent), mpModelWidget(pParent), mCanHaveBreakpoints(false)
+{
+  initialize();
+}
+
+void BaseEditor::initialize()
 {
   setTabStopWidth(Helper::tabWidth);
   setObjectName("BaseEditor");
@@ -51,25 +63,37 @@ BaseEditor::BaseEditor(QWidget *pParent)
   connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(highlightCurrentLine()));
   updateLineNumberAreaWidth(0);
   highlightCurrentLine();
+  createActions();
+}
+
+void BaseEditor::createActions()
+{
+  /* Toggle breakpoint action */
+  mpToggleBreakpointAction = new QAction(tr("Toggle Breakpoint"), this);
+  connect(mpToggleBreakpointAction, SIGNAL(triggered()), this, SLOT(toggleBreakpoint()));
 }
 
 //! Calculate appropriate width for LineNumberArea.
 //! @return int width of LineNumberArea.
 int BaseEditor::lineNumberAreaWidth()
 {
-  int digits = 1;
+  int digits = 2;
   int max = qMax(1, document()->blockCount());
   while (max >= 10)
   {
     max /= 10;
     ++digits;
   }
-  int space = 20 + fontMetrics().width(QLatin1Char('9')) * digits;
+  int space = 10 + fontMetrics().width(QLatin1Char('9')) * digits;
+  if (canHaveBreakpoints())
+    space += 16;  /* the breakpoint enable/disable svg is 16*16. */
   return space;
 }
 
-//! Activated whenever LineNumberArea Widget paint event is raised.
-//! Writes the line numbers for the visible blocks.
+/*!
+  Activated whenever LineNumberArea Widget paint event is raised.
+  Writes the line numbers for the visible blocks and draws the breakpoint markers.
+  */
 void BaseEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
 {
   QPainter painter(mpLineNumberArea);
@@ -79,9 +103,12 @@ void BaseEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
   int blockNumber = block.blockNumber();
   int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top();
   int bottom = top + (int) blockBoundingRect(block).height();
+  const QFontMetrics fm(mpLineNumberArea->font());
+  int fmLineSpacing = fm.lineSpacing();
 
   while (block.isValid() && top <= event->rect().bottom())
   {
+    /* paint line numbers */
     if (block.isVisible() && bottom >= event->rect().top())
     {
       QString number = QString::number(blockNumber + 1);
@@ -94,10 +121,65 @@ void BaseEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
       QFontMetrics fontMetrics (document()->defaultFont());
       painter.drawText(0, top, mpLineNumberArea->width() - 5, fontMetrics.height(), Qt::AlignRight, number);
     }
+    /* paint breakpoints */
+    TextBlockUserData *pTextBlockUserData = static_cast<TextBlockUserData*>(block.userData());
+    if (pTextBlockUserData && canHaveBreakpoints())
+    {
+      int xoffset = 0;
+      foreach (ITextMark *mk, pTextBlockUserData->marks())
+      {
+        int x = 0;
+        int radius = fmLineSpacing + 2;
+        QRect r(x + xoffset, top, radius, radius);
+        mk->icon().paint(&painter, r, Qt::AlignCenter);
+        xoffset += 2;
+      }
+    }
     block = block.next();
     top = bottom;
     bottom = top + (int) blockBoundingRect(block).height();
     ++blockNumber;
+  }
+}
+
+/**
+ * Activated whenever LineNumberArea Widget mouse press event is raised.
+ */
+void BaseEditor::lineNumberAreaMouseEvent(QMouseEvent *event)
+{
+  /* if breakpoints are not enabled for this editor then return. */
+  if (!canHaveBreakpoints())
+    return;
+
+  QTextCursor cursor = cursorForPosition(QPoint(0, event->pos().y()));
+  const QFontMetrics fm(mpLineNumberArea->font());
+  int breakPointWidth = 0;
+  breakPointWidth += fm.lineSpacing();
+
+  // Set whether the mouse cursor is a hand or a normal arrow
+  if (event->type() == QEvent::MouseMove)
+  {
+    bool handCursor = (event->pos().x() <= breakPointWidth);
+    if (handCursor != (mpLineNumberArea->cursor().shape() == Qt::PointingHandCursor))
+      mpLineNumberArea->setCursor(handCursor ? Qt::PointingHandCursor : Qt::ArrowCursor);
+  }
+  else if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonDblClick)
+  {
+    QString fileName = mpModelWidget->getLibraryTreeNode()->getFileName();
+    int lineNumber = cursor.blockNumber() + 1;
+    if (event->button() == Qt::LeftButton)
+    {
+      //! left clicked: add/remove breakpoint
+      toggleBreakpoint(fileName, lineNumber);
+    }
+    else if (event->button() == Qt::RightButton)
+    {
+      //! right clicked: show context menu
+      QMenu menu(this);
+      mpToggleBreakpointAction->setData(QStringList() << fileName << QString::number(lineNumber));
+      menu.addAction(mpToggleBreakpointAction);
+      menu.exec(event->globalPos());
+    }
   }
 }
 
@@ -117,6 +199,34 @@ void BaseEditor::goToLineNumber(int lineNumber)
   }
 }
 
+void BaseEditor::setCanHaveBreakpoints(bool canHaveBreakpoints)
+{
+  mCanHaveBreakpoints = canHaveBreakpoints;
+  mpLineNumberArea->setMouseTracking(true);
+}
+
+void BaseEditor::toggleBreakpoint(const QString fileName, int lineNumber)
+{
+  MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+  BreakpointsTreeModel *pBreakpointsTreeModel = pMainWindow->getDebuggerMainWindow()->getBreakpointsWidget()->getBreakpointsTreeModel();
+  BreakpointMarker *pBreakpointMarker = pBreakpointsTreeModel->findBreakpointMarker(fileName, lineNumber);
+  if (!pBreakpointMarker)
+  {
+    /* create a breakpoint marker */
+    pBreakpointMarker = new BreakpointMarker(fileName, lineNumber, pBreakpointsTreeModel);
+    pBreakpointMarker->setEnabled(true);
+    /* Add the marker to document marker */
+    mpDocumentMarker->addMark(pBreakpointMarker, lineNumber);
+    /* insert the breakpoint in BreakpointsWidget */
+    pBreakpointsTreeModel->insertBreakpoint(pBreakpointMarker, mpModelWidget->getLibraryTreeNode(), pBreakpointsTreeModel->getRootBreakpointTreeItem());
+  }
+  else
+  {
+    mpDocumentMarker->removeMark(pBreakpointMarker);
+    pBreakpointsTreeModel->removeBreakpoint(pBreakpointMarker);
+  }
+}
+
 //! Reimplementation of resize event.
 //! Resets the size of LineNumberArea.
 void BaseEditor::resizeEvent(QResizeEvent *pEvent)
@@ -125,6 +235,34 @@ void BaseEditor::resizeEvent(QResizeEvent *pEvent)
 
   QRect cr = contentsRect();
   mpLineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
+}
+
+/*!
+  Reimplementation of keyPressEvent.
+  Handles the Ctrl+l and opens the GotoLineDialog.
+  */
+void BaseEditor::keyPressEvent(QKeyEvent *pEvent)
+{
+  if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_L)
+  {
+    GotoLineDialog *pGotoLineWidget = new GotoLineDialog(this);
+    pGotoLineWidget->show();
+    return;
+  }
+  QPlainTextEdit::keyPressEvent(pEvent);
+}
+
+/*!
+  Slot activated when ModelicaEditor cursorPositionChanged signal is raised.
+  Updates the cursorPostionLabel i.e Line: 12, Col:123.
+  */
+void BaseEditor::updateCursorPosition()
+{
+  const QTextBlock block = textCursor().block();
+  const int line = block.blockNumber() + 1;
+  const int column = textCursor().columnNumber();
+  Label *pCursorPositionLabel = mpModelWidget->getCursorPositionLabel();
+  pCursorPositionLabel->setText(QString("Line: %1, Col: %2").arg(line).arg(column));
 }
 
 //! Updates the width of LineNumberArea.
@@ -161,6 +299,20 @@ void BaseEditor::highlightCurrentLine()
   extraSelections.append(selection);
   setExtraSelections(extraSelections);
 }
+
+/**
+ * Slot activated when set breakpoint is seleteted from line number area context menu.
+ */
+void BaseEditor::toggleBreakpoint()
+{
+  QAction *pAction = qobject_cast<QAction*>(sender());
+  if (pAction)
+  {
+    QStringList list = pAction->data().toStringList();
+    toggleBreakpoint(list.at(0), list.at(1).toInt());
+  }
+}
+
 
 //! @class GotoLineWidget
 //! @brief An interface to goto a specific line in BaseEditor.

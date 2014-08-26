@@ -4,12 +4,12 @@
         <file>Resources/icons/console.png</file>
         <file>Resources/icons/copy.png</file>
         <file>Resources/icons/cut.png</file>
-        <file>Resources/icons/delete.png</file>
+        <file>Resources/icons/delete.svg</file>
         <file>Resources/icons/grid.png</file>
         <file>Resources/icons/model.png</file>
         <file>Resources/icons/modeltext.png</file>
         <file>Resources/icons/flatmodel.png</file>
-        <file>Resources/icons/new.png</file>
+        <file>Resources/icons/new.svg</file>
         <file>Resources/icons/open.png</file>
         <file>Resources/icons/paste.png</file>
         <file>Resources/icons/redo.png</file>
@@ -33,6 +33,7 @@
         <file>Resources/icons/branch-closed.png</file>
         <file>Resources/icons/branch-open.png</file>
         <file>Resources/icons/branch-more.png</file>
+        <file>Resources/icons/txt.svg</file>
         <file>Resources/icons/model-icon.svg</file>
         <file>Resources/icons/package-icon.svg</file>
         <file>Resources/icons/block-icon.svg</file>
@@ -116,7 +117,8 @@
         <file>Resources/icons/clear.png</file>
         <file>Resources/icons/optimization-icon.svg</file>
         <file>Resources/icons/refresh.png</file>
-        <file>Resources/icons/add-icon.png</file>
+        <file>Resources/icons/add-icon.svg</file>
+        <file>Resources/icons/edit-icon.svg</file>
         <file>Resources/icons/down.png</file>
         <file>Resources/icons/up.png</file>
         <file>Resources/icons/print.png</file>
@@ -125,5 +127,14 @@
         <file>Resources/icons/plt.svg</file>
         <file>Resources/icons/csv.svg</file>
         <file>Resources/icons/debugger.svg</file>
+        <file>Resources/icons/resume.svg</file>
+        <file>Resources/icons/interrupt.svg</file>
+        <file>Resources/icons/exit.svg</file>
+        <file>Resources/icons/step-over.svg</file>
+        <file>Resources/icons/step-into.svg</file>
+        <file>Resources/icons/step-return.svg</file>
+        <file>Resources/icons/arrow.svg</file>
+        <file>Resources/icons/breakpoint_enabled.svg</file>
+        <file>Resources/icons/breakpoint_disabled.svg</file>
     </qresource>
 </RCC>

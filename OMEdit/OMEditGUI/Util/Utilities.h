@@ -170,4 +170,44 @@ inline QDataStream& operator>>(QDataStream& in, FindText& findText)
   return in;
 }
 
+//! @struct DebuggerConfiguration
+/*! \brief It contains the debugger configuration settings  from debugger configuration dialog .
+ * We must register this struct as a meta type since we need to use it as a QVariant.
+ * This is used to store the debugger configuration settings information in omedit.ini file.
+ * The QDataStream also needed to be defined for this struct.
+ */
+struct DebuggerConfiguration
+{
+  QString name;
+  QString program;
+  QString workingDirectory;
+  QString GDBPath;
+  QString arguments;
+  operator QVariant() const
+  {
+    return QVariant::fromValue(*this);
+  }
+};
+Q_DECLARE_METATYPE(DebuggerConfiguration)
+
+inline QDataStream& operator<<(QDataStream& out, const DebuggerConfiguration& configurationSettings)
+{
+  out << configurationSettings.name;
+  out << configurationSettings.program;
+  out << configurationSettings.workingDirectory;
+  out << configurationSettings.GDBPath;
+  out << configurationSettings.arguments;
+  return out;
+}
+
+inline QDataStream& operator>>(QDataStream& in, DebuggerConfiguration& configurationSettings)
+{
+  in >> configurationSettings.name;
+  in >> configurationSettings.program;
+  in >> configurationSettings.workingDirectory;
+  in >> configurationSettings.GDBPath;
+  in >> configurationSettings.arguments;
+  return in;
+}
+
 #endif // UTILITIES_H

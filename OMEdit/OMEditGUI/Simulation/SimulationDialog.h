@@ -91,7 +91,7 @@ public:
   QStringList getSimulationFlags() {return mSimulationFlags;}
   bool getShowGeneratedFiles() {return mShowGeneratedFiles;}
   bool isValid() {return mValid;}
-  void setReSimuate(bool set) {mReSimulate = set;}
+  void setReSimulate(bool set) {mReSimulate = set;}
   bool isReSimulate() {return mReSimulate;}
   bool isProfiling() {return mProfiling;}
   QString getWorkingDirectory() {return mWorkingDirectory;}
@@ -141,6 +141,7 @@ private:
   Label *mpNumberOfProcessorsLabel;
   QSpinBox *mpNumberOfProcessorsSpinBox;
   Label *mpNumberOfProcessorsNoteLabel;
+  QCheckBox *mpLaunchDebuggerCheckBox;
   // Output Tab
   QWidget *mpOutputTab;
   Label *mpNumberofIntervalLabel;
@@ -230,6 +231,7 @@ private:
   QList<SimulationMessage> parseXMLLogOutput(QString output);
   SimulationMessage parseXMLLogMessageTag(QDomNode messageNode, int level);
   void writeSimulationMessage(SimulationMessage &simulationMessage);
+  void processFinished(int exitCode, QProcess::ExitStatus exitStatus);
 public slots:
   void runSimulationExecutable(SimulationOptions simulationOptions);
   void browseModelSetupFile();
@@ -240,6 +242,7 @@ public slots:
   void writeCompilationStandardError();
   void showSimulationOutputWidget();
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+  void GDBProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void writeSimulationStandardOutput();
   void writeSimulationStandardError();
   void cancelSimulation();

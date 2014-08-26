@@ -328,7 +328,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
   pLibraryTreeNode = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getLibraryTreeWidget()->getLibraryTreeNode(className);
   if (!pLibraryTreeNode)
     return false;
-  StringHandler::ModelicaClasses type = pLibraryTreeNode->getType();
+  StringHandler::ModelicaClasses type = pLibraryTreeNode->getModelicaType();
   QString name = pLibraryTreeNode->getName();
   OptionsDialog *pOptionsDialog = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
   // item not to be dropped on itself; if dropping an item on itself
@@ -560,7 +560,7 @@ void GraphicsView::createConnection(QString startComponentName, QString endCompo
   {
     /* Ticket #2450
        Do not check for the ports compatibility via instantiatemodel. Just let the user create the connection.
-       //pMainWindow->getOMCProxy()->instantiateModelSucceeds(mpModelWidget->getLibraryTreeNode()->getNameStructure());
+       //pMainWindow->getOMCProxy()->instantiateModelSucceeds(mpModelWidget->getNameStructure());
       */
     /* complete the connection */
     setIsCreatingConnection(false);
@@ -831,17 +831,17 @@ void GraphicsView::createActions()
   mpPropertiesAction = new QAction(Helper::properties, this);
   connect(mpPropertiesAction, SIGNAL(triggered()), SLOT(showGraphicsViewProperties()));
   // Connection Delete Action
-  mpCancelConnectionAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Cancel Connection"), this);
+  mpCancelConnectionAction = new QAction(QIcon(":/Resources/icons/delete.svg"), tr("Cancel Connection"), this);
   mpCancelConnectionAction->setStatusTip(tr("Cancels the current connection"));
   connect(mpCancelConnectionAction, SIGNAL(triggered()), SLOT(removeConnection()));
   // Connection Delete Action
-  mpDeleteConnectionAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Delete Connection"), this);
+  mpDeleteConnectionAction = new QAction(QIcon(":/Resources/icons/delete.svg"), tr("Delete Connection"), this);
   mpDeleteConnectionAction->setStatusTip(tr("Deletes the connection"));
   mpDeleteConnectionAction->setShortcut(QKeySequence::Delete);
   mpDeleteConnectionAction->setDisabled(isSystemLibrary);
   // Actions for Components
   // Delete Action
-  mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.png"), Helper::deleteStr, this);
+  mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
   mpDeleteAction->setStatusTip(tr("Deletes the item"));
   mpDeleteAction->setShortcut(QKeySequence::Delete);
   mpDeleteAction->setDisabled(isSystemLibrary);
@@ -1085,9 +1085,9 @@ void GraphicsView::addClassAnnotation()
   else
   {
     pMainWindow->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                                    tr("Error in class annotation ") + pMainWindow->getOMCProxy()->getResult(),
-                                                                    Helper::scriptingKind, Helper::errorLevel, 0,
-                                                                    pMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
+                                                                         tr("Error in class annotation ") + pMainWindow->getOMCProxy()->getResult(),
+                                                                         Helper::scriptingKind, Helper::errorLevel, 0,
+                                                                         pMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
   }
 }
 
@@ -1889,8 +1889,8 @@ void WelcomePageWidget::openLatestNewsItem(QListWidgetItem *pItem)
 ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLibraryTreeNode, ModelWidgetContainer *pParent)
   : QWidget(pParent)
 {
-  mpLibraryTreeNode = pLibraryTreeNode;
   mpModelWidgetContainer = pParent;
+  mpLibraryTreeNode = pLibraryTreeNode;
   // icon graphics framework
   mpIconGraphicsScene = new GraphicsScene(StringHandler::Icon, this);
   mpIconGraphicsView = new GraphicsView(StringHandler::Icon, this);
@@ -1905,13 +1905,13 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   mpCursorPositionLabel = new Label;
   mpModelicaTextEditor = new ModelicaTextEditor(this);
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
-  mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(),
-                                                          pMainWindow, mpModelicaTextEditor->document());
+  mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(), pMainWindow,
+                                                          mpModelicaTextEditor->document());
   mpModelicaTextEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
   connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
   // set Project Status Bar lables
   mpReadOnlyLabel = mpLibraryTreeNode->isReadOnly() ? new Label(Helper::readOnly) : new Label(tr("Writeable"));
-  mpModelicaTypeLabel = new Label(StringHandler::getModelicaClassType(pLibraryTreeNode->getType()));
+  mpModelicaTypeLabel = new Label(StringHandler::getModelicaClassType(pLibraryTreeNode->getModelicaType()));
   mpViewTypeLabel = new Label(StringHandler::getViewType(StringHandler::Diagram));
   mpModelFilePathLabel = new Label(pLibraryTreeNode->getFileName());
   mpModelFilePathLabel->setElideMode(Qt::ElideMiddle);
@@ -1953,15 +1953,15 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
   pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
   // modelica text view tool button
-  mpModelicaTextViewToolButton = new QToolButton;
-  mpModelicaTextViewToolButton->setText(Helper::modelicaTextView);
-  mpModelicaTextViewToolButton->setIcon(QIcon(":/Resources/icons/modeltext.png"));
-  mpModelicaTextViewToolButton->setIconSize(Helper::buttonIconSize);
-  mpModelicaTextViewToolButton->setToolTip(Helper::modelicaTextView);
-  mpModelicaTextViewToolButton->setAutoRaise(true);
-  mpModelicaTextViewToolButton->setCheckable(true);
-  connect(mpModelicaTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showModelicaTextView(bool)));
-  pViewButtonsHorizontalLayout->addWidget(mpModelicaTextViewToolButton);
+  mpTextViewToolButton = new QToolButton;
+  mpTextViewToolButton->setText(Helper::textView);
+  mpTextViewToolButton->setIcon(QIcon(":/Resources/icons/modeltext.png"));
+  mpTextViewToolButton->setIconSize(Helper::buttonIconSize);
+  mpTextViewToolButton->setToolTip(Helper::textView);
+  mpTextViewToolButton->setAutoRaise(true);
+  mpTextViewToolButton->setCheckable(true);
+  connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showModelicaTextView(bool)));
+  pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
   // documentation view tool button
   mpDocumentationViewToolButton = new QToolButton;
   mpDocumentationViewToolButton->setText(Helper::documentationView);
@@ -1977,7 +1977,7 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   mpViewsButtonGroup->setExclusive(true);
   mpViewsButtonGroup->addButton(mpDiagramViewToolButton);
   mpViewsButtonGroup->addButton(mpIconViewToolButton);
-  mpViewsButtonGroup->addButton(mpModelicaTextViewToolButton);
+  mpViewsButtonGroup->addButton(mpTextViewToolButton);
   mpViewsButtonGroup->addButton(mpDocumentationViewToolButton);
   // create project status bar
   mpModelStatusBar = new QStatusBar;
@@ -2014,6 +2014,159 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   pMainLayout->addWidget(mpDiagramGraphicsView, 1);
   pMainLayout->addWidget(mpIconGraphicsView, 1);
   pMainLayout->addWidget(mpModelicaTextEditor, 1);
+  setLayout(pMainLayout);
+}
+
+ModelWidget::ModelWidget(QString text, LibraryTreeNode *pLibraryTreeNode, ModelWidgetContainer *pParent)
+  : QWidget(pParent)
+{
+  mpModelWidgetContainer = pParent;
+  mpLibraryTreeNode = pLibraryTreeNode;
+  // icon graphics framework
+  mpIconGraphicsScene = 0;
+  mpIconGraphicsView = 0;
+  // diagram graphics framework
+  mpDiagramGraphicsScene = 0;
+  mpDiagramGraphicsView = 0;
+  // create a modelica text editor for modelica text
+  mpCursorPositionLabel = new Label;
+  mpModelicaTextEditor = 0;
+  mpTextEditor = new TextEditor(this);
+  mpTextEditor->setPlainText(text);
+  mpModelicaTypeLabel = 0;
+  mpViewTypeLabel = 0;
+  mpReadOnlyLabel = new Label(tr("Writeable"));
+  mpModelFilePathLabel = new Label;
+  mpModelFilePathLabel->setElideMode(Qt::ElideMiddle);
+  // documentation view tool button
+  mpFileLockToolButton = new QToolButton;
+  mpFileLockToolButton->setText(tr("File is writable"));
+  mpFileLockToolButton->setIcon(QIcon(":/Resources/icons/unlock.png"));
+  mpFileLockToolButton->setEnabled(false);
+  mpFileLockToolButton->setIconSize(Helper::buttonIconSize);
+  mpFileLockToolButton->setToolTip(mpFileLockToolButton->text());
+  mpFileLockToolButton->setAutoRaise(true);
+  connect(mpFileLockToolButton, SIGNAL(clicked()), SLOT(makeFileWritAble()));
+  // frame to contain view buttons
+  QFrame *pViewButtonsFrame = new QFrame;
+  QHBoxLayout *pViewButtonsHorizontalLayout = new QHBoxLayout;
+  pViewButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
+  pViewButtonsHorizontalLayout->setSpacing(0);
+  // text view tool button
+  mpTextViewToolButton = new QToolButton;
+  mpTextViewToolButton->setText(Helper::textView);
+  mpTextViewToolButton->setIcon(QIcon(":/Resources/icons/modeltext.png"));
+  mpTextViewToolButton->setIconSize(Helper::buttonIconSize);
+  mpTextViewToolButton->setToolTip(Helper::textView);
+  mpTextViewToolButton->setAutoRaise(true);
+  mpTextViewToolButton->setCheckable(true);
+  mpTextViewToolButton->setChecked(true);
+  pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
+  pViewButtonsFrame->setLayout(pViewButtonsHorizontalLayout);
+  // view buttons box
+  mpViewsButtonGroup = new QButtonGroup;
+  mpViewsButtonGroup->setExclusive(true);
+  mpViewsButtonGroup->addButton(mpTextViewToolButton);
+  // create project status bar
+  mpModelStatusBar = new QStatusBar;
+  mpModelStatusBar->setObjectName("ModelStatusBar");
+  mpModelStatusBar->setSizeGripEnabled(false);
+  mpModelStatusBar->addPermanentWidget(pViewButtonsFrame, 0);
+  mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
+  mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
+  mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
+  mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
+  // set layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->setSpacing(4);
+  pMainLayout->addWidget(mpModelStatusBar);
+  pMainLayout->addWidget(mpTextEditor, 1);
+  setLayout(pMainLayout);
+}
+
+ModelWidget::ModelWidget(QString text, QString Xml, LibraryTreeNode *pLibraryTreeNode, ModelWidgetContainer *pParent)
+  : QWidget(pParent)
+{
+  mpModelWidgetContainer = pParent;
+  mpLibraryTreeNode = pLibraryTreeNode;
+  // icon graphics framework
+  mpIconGraphicsScene = 0;
+  mpIconGraphicsView = 0;
+  // diagram graphics framework
+  mpDiagramGraphicsScene = new GraphicsScene(StringHandler::Diagram, this);
+  mpDiagramGraphicsView = new GraphicsView(StringHandler::Diagram, this);
+  mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
+  mpDiagramGraphicsView->hide();
+  // create an xml editor for TLM
+  mpCursorPositionLabel = new Label;
+  mpModelicaTextEditor = 0;
+  mpTLMEditor = new TLMEditor(this);
+  mpTLMEditor->setPlainText(text);
+  MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
+  mpTLMHighlighter = new TLMHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(), pMainWindow,
+                                                          mpTLMEditor->document());
+//  mpTLMEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
+  connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpTLMHighlighter, SLOT(settingsChanged()));
+
+  mpModelicaTypeLabel = 0;
+  mpViewTypeLabel = 0;
+  mpReadOnlyLabel = new Label(tr("Writeable"));
+  mpModelFilePathLabel = new Label;
+  mpModelFilePathLabel->setElideMode(Qt::ElideMiddle);
+  // documentation view tool button
+  mpFileLockToolButton = new QToolButton;
+  mpFileLockToolButton->setText(tr("File is writable"));
+  mpFileLockToolButton->setIcon(QIcon(":/Resources/icons/unlock.png"));
+  mpFileLockToolButton->setEnabled(false);
+  mpFileLockToolButton->setIconSize(Helper::buttonIconSize);
+  mpFileLockToolButton->setToolTip(mpFileLockToolButton->text());
+  mpFileLockToolButton->setAutoRaise(true);
+  connect(mpFileLockToolButton, SIGNAL(clicked()), SLOT(makeFileWritAble()));
+  // frame to contain view buttons
+  QFrame *pViewButtonsFrame = new QFrame;
+  QHBoxLayout *pViewButtonsHorizontalLayout = new QHBoxLayout;
+  pViewButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
+  pViewButtonsHorizontalLayout->setSpacing(0);
+  // diagram view tool button
+  mpDiagramViewToolButton = new QToolButton;
+  mpDiagramViewToolButton->setText(Helper::diagramView);
+  mpDiagramViewToolButton->setIcon(QIcon(":/Resources/icons/modeling.png"));
+  mpDiagramViewToolButton->setIconSize(Helper::buttonIconSize);
+  mpDiagramViewToolButton->setToolTip(Helper::diagramView);
+  mpDiagramViewToolButton->setAutoRaise(true);
+  mpDiagramViewToolButton->setCheckable(true);
+  pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
+  // xml view tool button
+  mpTextViewToolButton = new QToolButton;
+  mpTextViewToolButton->setText(Helper::textView);
+  mpTextViewToolButton->setIcon(QIcon(":/Resources/icons/modeltext.png"));
+  mpTextViewToolButton->setIconSize(Helper::buttonIconSize);
+  mpTextViewToolButton->setToolTip(Helper::textView);
+  mpTextViewToolButton->setAutoRaise(true);
+  mpTextViewToolButton->setCheckable(true);
+  mpTextViewToolButton->setChecked(true);
+  pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
+  pViewButtonsFrame->setLayout(pViewButtonsHorizontalLayout);
+  // view buttons box
+  mpViewsButtonGroup = new QButtonGroup;
+  mpViewsButtonGroup->setExclusive(true);
+  mpViewsButtonGroup->addButton(mpTextViewToolButton);
+  // create project status bar
+  mpModelStatusBar = new QStatusBar;
+  mpModelStatusBar->setObjectName("ModelStatusBar");
+  mpModelStatusBar->setSizeGripEnabled(false);
+  mpModelStatusBar->addPermanentWidget(pViewButtonsFrame, 0);
+  mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
+  mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
+  mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
+  mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
+  // set layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->setSpacing(4);
+  pMainLayout->addWidget(mpModelStatusBar);
+  pMainLayout->addWidget(mpTLMEditor, 1);
   setLayout(pMainLayout);
 }
 
@@ -2429,7 +2582,7 @@ void ModelWidget::refresh()
   pOMCProxy->setSourceFile(mpLibraryTreeNode->getNameStructure(), mpLibraryTreeNode->getFileName());
   QStringList info = pOMCProxy->getClassInformation(mpLibraryTreeNode->getNameStructure());
   StringHandler::ModelicaClasses type = info.size() < 3 ? pOMCProxy->getClassRestriction(mpLibraryTreeNode->getNameStructure()) : StringHandler::getModelicaClassType(info.at(0));
-  mpLibraryTreeNode->setType(type);
+  mpLibraryTreeNode->setModelicaType(type);
   mpLibraryTreeNode->setToolTip(0, StringHandler::createTooltip(info, mpLibraryTreeNode->getName(), mpLibraryTreeNode->getNameStructure()));
   /* set the LibraryTreeNode icon */
   bool isDocumentationClass = mpModelWidgetContainer->getMainWindow()->getOMCProxy()->getDocumentationClassAnnotation(mpLibraryTreeNode->getNameStructure());
@@ -2475,7 +2628,7 @@ void ModelWidget::showIconView(bool checked)
   {
     if (!mpModelicaTextEditor->validateModelicaText())
     {
-      mpModelicaTextViewToolButton->setChecked(true);
+      mpTextViewToolButton->setChecked(true);
       return;
     }
   }
@@ -2501,7 +2654,7 @@ void ModelWidget::showDiagramView(bool checked)
   {
     if (!mpModelicaTextEditor->validateModelicaText())
     {
-      mpModelicaTextViewToolButton->setChecked(true);
+      mpTextViewToolButton->setChecked(true);
       return;
     }
   }
@@ -2529,9 +2682,7 @@ void ModelWidget::showModelicaTextView(bool checked)
     return;
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ModelicaText));
   // get the modelica text of the model
-  mpModelicaTextEditor->blockSignals(true);
   mpModelicaTextEditor->setPlainText(mpModelWidgetContainer->getMainWindow()->getOMCProxy()->list(getLibraryTreeNode()->getNameStructure()));
-  mpModelicaTextEditor->blockSignals(false);
   mpModelicaTextEditor->setLastValidText(mpModelicaTextEditor->toPlainText());
   mpIconGraphicsView->hide();
   mpDiagramGraphicsView->hide();
@@ -2547,7 +2698,7 @@ void ModelWidget::showDocumentationView()
   // validate the modelica text before switching to documentation view
   if (!mpModelicaTextEditor->validateModelicaText())
   {
-    mpModelicaTextViewToolButton->setChecked(true);
+    mpTextViewToolButton->setChecked(true);
     return;
   }
   mpModelWidgetContainer->getMainWindow()->getDocumentationWidget()->showDocumentation(getLibraryTreeNode()->getNameStructure());
@@ -2744,11 +2895,10 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     pModelWidget->setWindowState(Qt::WindowMaximized);
     setActiveSubWindow(pSubWindow);
   }
-  if (!checkPreferedView)
+  if (!checkPreferedView || pModelWidget->getLibraryTreeNode()->getLibraryType() != LibraryTreeNode::Modelica)
     return;
   // get the preferred view to display
-  mpMainWindow->getOMCProxy()->sendCommand(QString("getNamedAnnotation(").append(pModelWidget->getLibraryTreeNode()->getNameStructure())
-                                           .append(", preferredView)"));
+  mpMainWindow->getOMCProxy()->sendCommand(QString("getNamedAnnotation(").append(pModelWidget->getLibraryTreeNode()->getNameStructure()).append(", preferredView)"));
   QStringList preferredViewList = StringHandler::unparseStrings(mpMainWindow->getOMCProxy()->getResult());
   if (!preferredViewList.isEmpty())
   {
@@ -2760,7 +2910,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     }
     else if (preferredView.compare("text") == 0)
     {
-      pModelWidget->getModelicaTextViewToolButton()->setChecked(true);
+      pModelWidget->getTextViewToolButton()->setChecked(true);
     }
     else
     {
@@ -2783,9 +2933,9 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     {
       pModelWidget->getIconViewToolButton()->setChecked(true);
     }
-    else if (defaultView.compare(Helper::modelicaTextView) == 0)
+    else if (defaultView.compare(Helper::textView) == 0)
     {
-      pModelWidget->getModelicaTextViewToolButton()->setChecked(true);
+      pModelWidget->getTextViewToolButton()->setChecked(true);
     }
     else if (defaultView.compare(Helper::documentationView) == 0)
     {
@@ -2952,12 +3102,27 @@ void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
       pModelWidget->getIconViewToolButton()->setChecked(true);
       break;
     case StringHandler::ModelicaText:
-      pModelWidget->getModelicaTextViewToolButton()->setChecked(true);
+      pModelWidget->getTextViewToolButton()->setChecked(true);
       break;
     default:
       pModelWidget->getDiagramViewToolButton()->setChecked(true);
       break;
   }
+}
+
+void ModelWidgetContainer::saveModelicaModelWidget(ModelWidget *pModelWidget)
+{
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (!pModelWidget->getModelicaTextEditor()->validateModelicaText())
+    return;
+  if (pModelWidget->getModelicaTextEditor()->isVisible())
+    pModelWidget->getModelicaTextEditor()->setPlainText(mpMainWindow->getOMCProxy()->list(pModelWidget->getLibraryTreeNode()->getNameStructure()));
+  mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(pModelWidget->getLibraryTreeNode());
+}
+
+void ModelWidgetContainer::saveTextModelWidget(ModelWidget *pModelWidget)
+{
+  mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(pModelWidget->getLibraryTreeNode());
 }
 
 void ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pItem)
@@ -2968,37 +3133,61 @@ void ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pItem)
 
 void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 {
-  bool enabled;
+  bool enabled, modelica, text, xml;
   ModelWidget *pModelWidget;
+  LibraryTreeNode *pLibraryTreeNode;
   if (pSubWindow)
   {
     enabled = true;
     pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
+    pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
+    if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica)
+    {
+      modelica = true;
+      text = false;
+      xml = false;
+    }
+    else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text)
+    {
+      modelica = false;
+      text = true;
+      xml = false;
+    }
+    else
+    {
+      modelica = false;
+      text = false;
+      xml = true;
+    }
   }
   else
   {
     enabled = false;
+    modelica = false;
+    text = false;
+    xml = false;
     pModelWidget = 0;
+    pLibraryTreeNode = 0;
   }
   // update the actions of the menu and toolbars
   getMainWindow()->getSaveAction()->setEnabled(enabled);
-//  getMainWindow()->getSaveAsAction()->setEnabled(enabled);
-//  getMainWindow()->getSaveAllAction()->setEnabled(enabled);
-  getMainWindow()->getSaveTotalModelAction()->setEnabled(enabled);
-  getMainWindow()->getShowGridLinesAction()->setEnabled(enabled);
-  getMainWindow()->getResetZoomAction()->setEnabled(enabled);
-  getMainWindow()->getZoomInAction()->setEnabled(enabled);
-  getMainWindow()->getZoomOutAction()->setEnabled(enabled);
-  getMainWindow()->getSimulateModelAction()->setEnabled(enabled);
-  getMainWindow()->getSimulationSetupAction()->setEnabled(enabled);
-  getMainWindow()->getInstantiateModelAction()->setEnabled(enabled);
-  getMainWindow()->getCheckModelAction()->setEnabled(enabled);
-  getMainWindow()->getCheckAllModelsAction()->setEnabled(enabled);
-  getMainWindow()->getExportFMUAction()->setEnabled(enabled);
-  getMainWindow()->getExportXMLAction()->setEnabled(enabled);
-  getMainWindow()->getExportFigaroAction()->setEnabled(enabled);
-  getMainWindow()->getExportToOMNotebookAction()->setEnabled(enabled);
-  getMainWindow()->getExportAsImageAction()->setEnabled(enabled);
+  //  getMainWindow()->getSaveAsAction()->setEnabled(enabled);
+  //  getMainWindow()->getSaveAllAction()->setEnabled(enabled);
+  getMainWindow()->getSaveTotalModelAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getShowGridLinesAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getResetZoomAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getZoomInAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getZoomOutAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getSimulateModelAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getSimulationSetupAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getInstantiateModelAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getCheckModelAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getCheckAllModelsAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getExportFMUAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getExportXMLAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getExportFigaroAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getExportToOMNotebookAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getExportAsImageAction()->setEnabled(enabled && modelica);
   getMainWindow()->getPrintModelAction()->setEnabled(enabled);
   /* disable the save actions if class is a system library class. */
   if (pModelWidget)
@@ -3013,7 +3202,11 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   /* enable/disable the find/replace and goto line actions depending on the text editor visibility. */
   if (pModelWidget)
   {
-    if (pModelWidget->getModelicaTextEditor()->isVisible())
+    if (pModelWidget->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Modelica && pModelWidget->getModelicaTextEditor()->isVisible())
+      enabled = true;
+    else if (pModelWidget->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Text && pModelWidget->getTextEditor()->isVisible())
+      enabled = true;
+    else if (pModelWidget->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::TLM && pModelWidget->getTLMEditor()->isVisible())
       enabled = true;
     else
       enabled = false;
@@ -3036,12 +3229,13 @@ void ModelWidgetContainer::saveModelWidget()
                              GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("saving")), Helper::ok);
     return;
   }
-  /* if Modelica text is changed manually by user then validate it before saving. */
-  if (!pModelWidget->getModelicaTextEditor()->validateModelicaText())
-    return;
-  if (pModelWidget->getModelicaTextEditor()->isVisible())
-    pModelWidget->getModelicaTextEditor()->setPlainText(mpMainWindow->getOMCProxy()->list(pModelWidget->getLibraryTreeNode()->getNameStructure()));
-  mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(pModelWidget->getLibraryTreeNode());
+  LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
+  if (pLibraryTreeNode && pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica)
+    saveModelicaModelWidget(pModelWidget);
+  else if (pLibraryTreeNode && pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text)
+    saveTextModelWidget(pModelWidget);
+  else if (pLibraryTreeNode && pLibraryTreeNode->getLibraryType() == LibraryTreeNode::TLM)
+    saveTextModelWidget(pModelWidget);
 }
 
 void ModelWidgetContainer::saveAsModelWidget()
@@ -3112,9 +3306,9 @@ void ModelWidgetContainer::printModel()
       QPrintDialog *pPrintDialog = new QPrintDialog(&printer, this);
       pPrintDialog->setWindowTitle(tr("Print Document"));
       if (pModelicaTextEdit->textCursor().hasSelection())
-         pPrintDialog->addEnabledOption(QAbstractPrintDialog::PrintSelection);
+        pPrintDialog->addEnabledOption(QAbstractPrintDialog::PrintSelection);
       if (pPrintDialog->exec() == QDialog::Accepted)
-         pModelicaTextEdit->print(&printer);
+        pModelicaTextEdit->print(&printer);
       delete pPrintDialog;
     }
     else

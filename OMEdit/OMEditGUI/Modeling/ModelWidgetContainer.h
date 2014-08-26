@@ -52,6 +52,8 @@
 #include "Helper.h"
 #include "Utilities.h"
 #include "ModelicaTextEditor.h"
+#include "TextEditor.h"
+#include "TLMEditor.h"
 
 class ModelWidget;
 class ComponentInfo;
@@ -281,20 +283,27 @@ class LibraryTreeNode;
 class ModelWidgetContainer;
 class ModelicaTextEditor;
 class ModelicaTextHighlighter;
+class TextEditor;
+class TLMEditor;
+class TLMHighlighter;
 class Label;
 class ModelWidget : public QWidget
 {
   Q_OBJECT
 public:
   ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer *pParent);
+  ModelWidget(QString text, LibraryTreeNode *pLibraryTreeNode, ModelWidgetContainer *pParent);
+  ModelWidget(QString text, QString Xml, LibraryTreeNode *pLibraryTreeNode, ModelWidgetContainer *pParent);
   LibraryTreeNode* getLibraryTreeNode() {return mpLibraryTreeNode;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   GraphicsView* getDiagramGraphicsView() {return mpDiagramGraphicsView;}
   GraphicsView* getIconGraphicsView() {return mpIconGraphicsView;}
   ModelicaTextEditor* getModelicaTextEditor() {return mpModelicaTextEditor;}
+  TextEditor* getTextEditor() {return mpTextEditor;}
+  TLMEditor* getTLMEditor() {return mpTLMEditor;}
   QToolButton* getIconViewToolButton() {return mpIconViewToolButton;}
   QToolButton* getDiagramViewToolButton() {return mpDiagramViewToolButton;}
-  QToolButton* getModelicaTextViewToolButton() {return mpModelicaTextViewToolButton;}
+  QToolButton* getTextViewToolButton() {return mpTextViewToolButton;}
   QToolButton* getDocumentationViewToolButton() {return mpDocumentationViewToolButton;}
   void setModelFilePathLabel(QString path);
   Label* getCursorPositionLabel() {return mpCursorPositionLabel;}
@@ -307,19 +316,22 @@ public:
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
   void refresh();
 private:
-  LibraryTreeNode *mpLibraryTreeNode;
   ModelWidgetContainer *mpModelWidgetContainer;
+  LibraryTreeNode *mpLibraryTreeNode;
   GraphicsView *mpDiagramGraphicsView;
   GraphicsScene *mpDiagramGraphicsScene;
   GraphicsView *mpIconGraphicsView;
   GraphicsScene *mpIconGraphicsScene;
   ModelicaTextEditor *mpModelicaTextEditor;
   ModelicaTextHighlighter *mpModelicaTextHighlighter;
+  TextEditor *mpTextEditor;
+  TLMEditor *mpTLMEditor;
+  TLMHighlighter *mpTLMHighlighter;
   QStatusBar *mpModelStatusBar;
   QButtonGroup *mpViewsButtonGroup;
   QToolButton *mpDiagramViewToolButton;
   QToolButton *mpIconViewToolButton;
-  QToolButton *mpModelicaTextViewToolButton;
+  QToolButton *mpTextViewToolButton;
   QToolButton *mpDocumentationViewToolButton;
   Label *mpReadOnlyLabel;
   Label *mpModelicaTypeLabel;
@@ -360,6 +372,8 @@ private:
   QDialog *mpModelSwitcherDialog;
   QListWidget *mpRecentModelsList;
   void loadPreviousViewType(ModelWidget *pModelWidget);
+  void saveModelicaModelWidget(ModelWidget *pModelWidget);
+  void saveTextModelWidget(ModelWidget *pModelWidget);
 public slots:
   void openRecentModelWidget(QListWidgetItem *pItem);
   void currentModelWidgetChanged(QMdiSubWindow *pSubWindow);

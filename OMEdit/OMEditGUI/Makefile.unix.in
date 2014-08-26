@@ -34,12 +34,16 @@ omc_communication.cc: $(runtimedir)/omc_communication.idl
 	@IDLCMD@ $<
 omc_communication.h: omc_communication.cc
 
-$(NAME): Makefile OMEdit.config omc_communication.cpp
+$(NAME): parsergen Makefile OMEdit.config omc_communication.cpp
 	$(MAKE) -f Makefile
 
 clean:
+	$(MAKE) -C Debugger/Parser -f Makefile.lib.unix clean
 	test ! -f Makefile || $(MAKE) -f Makefile clean
 	rm -f ../bin/*.o
+
+parsergen:
+	$(MAKE) -C Debugger/Parser -f Makefile.lib.unix
 
 build: $(NAME)
 	$(MAKE) -f Makefile

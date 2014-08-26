@@ -35,11 +35,11 @@
  * RCS: $Id$
  *
  */
-
-#include <QtGui>
-#include <QSettings>
+#include "BreakpointMarker.h"
 #include "ModelicaTextEditor.h"
 #include "Helper.h"
+#include <QtGui>
+#include <QSettings>
 
 /*!
   \class CommentDefinition
@@ -129,13 +129,17 @@ bool isComment(const QString &text,
 
 //! Constructor
 ModelicaTextEditor::ModelicaTextEditor(ModelWidget *pParent)
-  : BaseEditor(pParent), mLastValidText(""), mTextChanged(false)
+  : BaseEditor(pParent), mLastValidText(""), mTextChanged(false), mForceSetPlainText(false)
 {
-  mpModelWidget = pParent;
   setContextMenuPolicy(Qt::CustomContextMenu);
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
+  setCanHaveBreakpoints(true);
   createActions();
   setLineWrapping();
+  /* set the document marker */
+  mpDocumentMarker = new DocumentMarker(document());
+  setModelicaTextDocument(document());
+  /* set the options for the editor */
   OptionsDialog *pOptionsDialog = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
   connect(pOptionsDialog, SIGNAL(updateLineWrapping()), SLOT(setLineWrapping()));
   connect(this, SIGNAL(focusOut()), mpModelWidget, SLOT(modelicaEditorTextChanged()));
@@ -257,18 +261,7 @@ void ModelicaTextEditor::keyPressEvent(QKeyEvent *pEvent)
   {
     pEvent->setModifiers(Qt::NoModifier);
   }
-  QPlainTextEdit::keyPressEvent(pEvent);
-}
-
-//! Slot activated when ModelicaEditor cursorPositionChanged signal is raised.
-//! Updates the cursorPostionLabel i.e Line: 12, Col:123.
-void ModelicaTextEditor::updateCursorPosition()
-{
-  const QTextBlock block = textCursor().block();
-  const int line = block.blockNumber() + 1;
-  const int column = textCursor().columnNumber();
-  Label *pCursorPositionLabel = mpModelWidget->getCursorPositionLabel();
-  pCursorPositionLabel->setText(QString("Line: %1, Col: %2").arg(line).arg(column));
+  BaseEditor::keyPressEvent(pEvent);
 }
 
 void ModelicaTextEditor::showContextMenu(QPoint point)
@@ -284,6 +277,21 @@ void ModelicaTextEditor::showContextMenu(QPoint point)
   pMenu->addAction(mpToggleCommentSelectionAction);
   pMenu->exec(mapToGlobal(point));
   delete pMenu;
+}
+
+void ModelicaTextEditor::setModelicaTextDocument(QTextDocument *doc)
+{
+  ModelicaTextDocumentLayout *docLayout = qobject_cast<ModelicaTextDocumentLayout*>(doc->documentLayout());
+  if (!docLayout)
+  {
+    QTextOption opt = doc->defaultTextOption();
+    opt.setTextDirection(Qt::LeftToRight);
+    opt.setFlags(opt.flags() | QTextOption::IncludeTrailingSpaces | QTextOption::AddSpaceForLineAndParagraphSeparators);
+    doc->setDefaultTextOption(opt);
+    docLayout = new ModelicaTextDocumentLayout(doc);
+    doc->setDocumentLayout(docLayout);
+  }
+  setDocument(doc);
 }
 
 /*!
@@ -471,7 +479,9 @@ void ModelicaTextEditor::setPlainText(const QString &text)
 {
   if (text != toPlainText())
   {
+    mForceSetPlainText = true;
     QPlainTextEdit::setPlainText(text);
+    mForceSetPlainText = false;
     updateLineNumberAreaWidth(0);
   }
 }
@@ -486,13 +496,13 @@ void ModelicaTextEditor::contentsHasChanged(int position, int charsRemoved, int 
     if (charsRemoved == 0 && charsAdded == 0)
       return;
     /* if user is changing the system library class. */
-    if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary())
+    if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary() && !mForceSetPlainText)
     {
       InfoBar *pInfoBar = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getInfoBar();
       pInfoBar->showMessage(tr("<b>Warning: </b>You are changing a system library class. System libraries are always read-only. Your changes will not be saved."));
     }
     /* if user is changing the read-only class. */
-    else if (mpModelWidget->getLibraryTreeNode()->isReadOnly())
+    else if (mpModelWidget->getLibraryTreeNode()->isReadOnly() && !mForceSetPlainText)
     {
       InfoBar *pInfoBar = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getInfoBar();
       pInfoBar->showMessage(tr("<b>Warning: </b>You are changing a read-only class."));
@@ -500,8 +510,29 @@ void ModelicaTextEditor::contentsHasChanged(int position, int charsRemoved, int 
     /* if user is changing the normal class. */
     else
     {
-      mpModelWidget->setModelModified();
-      mTextChanged = true;
+      if (!mForceSetPlainText) {
+        mpModelWidget->setModelModified();
+        mTextChanged = true;
+      }
+      /* Keep the line numbers and the block information for the line breakpoints updated */
+      if (charsRemoved != 0)
+      {
+        mpDocumentMarker->updateBreakpointsLineNumber();
+        mpDocumentMarker->updateBreakpointsBlock(document()->findBlock(position));
+      }
+      else
+      {
+        const QTextBlock posBlock = document()->findBlock(position);
+        const QTextBlock nextBlock = document()->findBlock(position + charsAdded);
+        if (posBlock != nextBlock)
+        {
+          mpDocumentMarker->updateBreakpointsLineNumber();
+          mpDocumentMarker->updateBreakpointsBlock(posBlock);
+          mpDocumentMarker->updateBreakpointsBlock(nextBlock);
+        }
+        else
+          mpDocumentMarker->updateBreakpointsBlock(posBlock);
+      }
     }
   }
 }

@@ -36,21 +36,20 @@
  *
  */
 
-#include <QX11Info>
 #include <limits>
 
 #include "ModelicaClassDialog.h"
 #include "StringHandler.h"
 #include "ModelWidgetContainer.h"
 
-LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, ModelicaClassDialog *pParent)
-  : QDialog(pParent, Qt::WindowTitleHint)
+LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, LibraryTreeWidget *pParent)
+  : QDialog(0, Qt::WindowTitleHint)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(title));
   resize(250, 500);
   mpLineEdit = pLineEdit;
-  mpModelicaClassDialog = pParent;
+  mpLibraryTreeWidget = pParent;
   mpFindClassTextBox = new QLineEdit;
   mpFindClassTextBox->setPlaceholderText(Helper::findClasses);
   connect(mpFindClassTextBox, SIGNAL(textEdited(QString)), SLOT(findModelicaClasses()));
@@ -70,9 +69,9 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Mo
   mpLibraryBrowseTreeWidget->setIndentation(Helper::treeIndentation);
   mpLibraryBrowseTreeWidget->setExpandsOnDoubleClick(false);
   connect(mpLibraryBrowseTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(useModelicaClass()));
-  for (int i = 0; i < mpModelicaClassDialog->getMainWindow()->getLibraryTreeWidget()->topLevelItemCount(); i++)
+  for (int i = 0; i < mpLibraryTreeWidget->topLevelItemCount(); i++)
   {
-    QTreeWidgetItem *pLibraryTreeItem = mpModelicaClassDialog->getMainWindow()->getLibraryTreeWidget()->topLevelItem(i)->clone();
+    QTreeWidgetItem *pLibraryTreeItem = mpLibraryTreeWidget->topLevelItem(i)->clone();
     mpLibraryBrowseTreeWidget->addTopLevelItem(pLibraryTreeItem);
   }
   // if the text box has some value then expand the tree and select the item accordingly.
@@ -309,13 +308,13 @@ void ModelicaClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
 
 void ModelicaClassDialog::browseExtendsClass()
 {
-  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Extends Class"), mpExtendsClassTextBox, this);
+  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Extends Class"), mpExtendsClassTextBox, mpMainWindow->getLibraryTreeWidget());
   pLibraryBrowseDialog->exec();
 }
 
 void ModelicaClassDialog::browseParentClass()
 {
-  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Parent Class"), mpParentClassTextBox, this);
+  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Parent Class"), mpParentClassTextBox, mpMainWindow->getLibraryTreeWidget());
   pLibraryBrowseDialog->exec();
 }
 
@@ -645,7 +644,7 @@ SaveAsClassDialog::SaveAsClassDialog(ModelWidget *pModelWidget, MainWindow *pPar
   // create save contents of package in one file checkbox
   mpSaveContentsInOneFileCheckBox = new QCheckBox(tr("Save contents in one file"));
   mpSaveContentsInOneFileCheckBox->setChecked(true);
-  if (pModelWidget->getLibraryTreeNode()->getType() == StringHandler::Package && mpParentClassComboBox->currentText().isEmpty())
+  if (pModelWidget->getLibraryTreeNode()->getModelicaType() == StringHandler::Package && mpParentClassComboBox->currentText().isEmpty())
     mpSaveContentsInOneFileCheckBox->setVisible(true);
   else
     mpSaveContentsInOneFileCheckBox->setVisible(false);
@@ -683,7 +682,7 @@ QComboBox* SaveAsClassDialog::getParentClassComboBox()
   */
 void SaveAsClassDialog::saveAsModelicaClass()
 {
-  QString type = StringHandler::getModelicaClassType(mpModelWidget->getLibraryTreeNode()->getType());
+  QString type = StringHandler::getModelicaClassType(mpModelWidget->getLibraryTreeNode()->getModelicaType());
   if (mpNameTextBox->text().isEmpty())
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
@@ -755,7 +754,7 @@ void SaveAsClassDialog::saveAsModelicaClass()
   }
   //open the new tab in central widget and add the model to library tree.
   LibraryTreeNode *pLibraryTreeNode;
-  pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(mpNameTextBox->text(), mpModelWidget->getLibraryTreeNode()->getType(),
+  pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(mpNameTextBox->text(), mpModelWidget->getLibraryTreeNode()->getModelicaType(),
                                                             mpParentClassComboBox->currentText(), false);
   pLibraryTreeNode->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeNode::SaveInOneFile : LibraryTreeNode::SaveFolderStructure);
   pLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
@@ -765,7 +764,7 @@ void SaveAsClassDialog::saveAsModelicaClass()
 
 void SaveAsClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
 {
-  if (text.isEmpty() && mpModelWidget->getLibraryTreeNode()->getType() == StringHandler::Package)
+  if (text.isEmpty() && mpModelWidget->getLibraryTreeNode()->getModelicaType() == StringHandler::Package)
     mpSaveContentsInOneFileCheckBox->setVisible(true);
   else
     mpSaveContentsInOneFileCheckBox->setVisible(false);

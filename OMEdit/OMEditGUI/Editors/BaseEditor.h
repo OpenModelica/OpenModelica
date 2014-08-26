@@ -39,8 +39,10 @@
 #define BASEEDITOR_H
 
 #include <QtGui>
+#include "BreakpointMarker.h"
 #include "Utilities.h"
 
+class ModelWidget;
 class LineNumberArea;
 
 class BaseEditor : public QPlainTextEdit
@@ -48,17 +50,35 @@ class BaseEditor : public QPlainTextEdit
   Q_OBJECT
 public:
   BaseEditor(QWidget *pParent);
+  BaseEditor(ModelWidget *pParent);
+private:
+  QAction *mpToggleBreakpointAction;
+
+  void initialize();
+  void createActions();
+public:
   int lineNumberAreaWidth();
   void lineNumberAreaPaintEvent(QPaintEvent *event);
+  void lineNumberAreaMouseEvent(QMouseEvent *event);
   void goToLineNumber(int lineNumber);
-private:
+  bool canHaveBreakpoints() {return mCanHaveBreakpoints;}
+  void setCanHaveBreakpoints(bool canHaveBreakpoints);
+  DocumentMarker* getDocumentMarker() {return mpDocumentMarker;}
+  void toggleBreakpoint(const QString fileName, int lineNumber);
+protected:
   LineNumberArea *mpLineNumberArea;
+  ModelWidget *mpModelWidget;
+  bool mCanHaveBreakpoints;
+  DocumentMarker *mpDocumentMarker;
 protected:
   virtual void resizeEvent(QResizeEvent *pEvent);
+  virtual void keyPressEvent(QKeyEvent *pEvent);
 public slots:
+  void updateCursorPosition();
   void updateLineNumberAreaWidth(int newBlockCount);
   void updateLineNumberArea(const QRect &rect, int dy);
   void highlightCurrentLine();
+  void toggleBreakpoint();
 };
 
 class LineNumberArea : public QWidget
@@ -77,6 +97,14 @@ protected:
   virtual void paintEvent(QPaintEvent *event)
   {
     mpEditor->lineNumberAreaPaintEvent(event);
+  }
+  virtual void mouseMoveEvent(QMouseEvent *event)
+  {
+    mpEditor->lineNumberAreaMouseEvent(event);
+  }
+  virtual void mousePressEvent(QMouseEvent *event)
+  {
+    mpEditor->lineNumberAreaMouseEvent(event);
   }
 private:
   BaseEditor *mpEditor;

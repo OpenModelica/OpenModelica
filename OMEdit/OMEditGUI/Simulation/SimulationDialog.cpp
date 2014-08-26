@@ -148,6 +148,8 @@ void SimulationDialog::setUpForm()
   mpNumberOfProcessorsSpinBox = new QSpinBox;
   mpNumberOfProcessorsSpinBox->setSpecialValueText("<Auto>");
   mpNumberOfProcessorsNoteLabel = new Label(tr("Note: Use 1 processor if you encounter problems during compilation."));
+  // Launch Debugger checkbox
+  mpLaunchDebuggerCheckBox = new QCheckBox(tr("Launch Debugger"));
   // set General Tab Layout
   QGridLayout *pGeneralTabLayout = new QGridLayout;
   pGeneralTabLayout->setAlignment(Qt::AlignTop);
@@ -158,6 +160,7 @@ void SimulationDialog::setUpForm()
   pGeneralTabLayout->addWidget(mpNumberOfProcessorsLabel, 3, 0);
   pGeneralTabLayout->addWidget(mpNumberOfProcessorsSpinBox, 3, 1);
   pGeneralTabLayout->addWidget(mpNumberOfProcessorsNoteLabel, 3, 2);
+  pGeneralTabLayout->addWidget(mpLaunchDebuggerCheckBox, 4, 0, 1, 3);
   mpGeneralTab->setLayout(pGeneralTabLayout);
   // add General Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpGeneralTab, Helper::general);
@@ -462,6 +465,14 @@ void SimulationDialog::translateModel()
         return;
     }
   }
+  /*
+    set the debugging flag before translation
+    we will remove it when gdb process is finished
+    */
+  if (mpLaunchDebuggerCheckBox->isChecked())
+  {
+    mpMainWindow->getOMCProxy()->setCommandLineOptions("+d=gendebugsymbols");
+  }
   /* translate the model */
   if (mpMainWindow->getOMCProxy()->translateModel(mpLibraryTreeNode->getNameStructure(), mSimulationParameters))
   {
@@ -579,7 +590,7 @@ void SimulationDialog::saveSimulationOptions()
   if (mpLibraryTreeNode->getModelWidget())
   {
     mpLibraryTreeNode->getModelWidget()->setModelModified();
-    if (mpLibraryTreeNode->getModelWidget()->isVisible())
+    if (mpLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->isVisible())
       mpLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->setPlainText(mpMainWindow->getOMCProxy()->list(mpLibraryTreeNode->getNameStructure()));
   }
 }
@@ -761,12 +772,57 @@ void SimulationDialog::writeSimulationMessage(SimulationMessage &simulationMessa
 }
 
 /*!
+  Writes the error if process has crashed.\n
+  If the process finished normally then read the simulation result file and switch to plotting view.
+  */
+void SimulationDialog::processFinished(int exitCode, QProcess::ExitStatus exitStatus)
+{
+  mIsSimulationProcessRunning = false;
+  // If user has cancelled the simulation then don't show the plotting view.
+  if (mIsCancelled) {
+    return;
+  }
+  if (exitStatus == QProcess::CrashExit || exitCode != 0) {
+    QString exitCodeStr = tr("Simulation process exited with code %1").arg(QString::number(exitCode));
+    if (mpSimulationProcess->error() == QProcess::UnknownError) {
+      writeSimulationOutput(exitCodeStr, Qt::red, true);
+    } else {
+      writeSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, Qt::red, true);
+    }
+  } else {
+    if (mSimulationOptions.isProfiling()) {
+      mpMainWindow->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getFileNamePrefix() + "_info.xml");
+    }
+  }
+  /* if it is a re-simulation then we need to hide the progress dialog */
+  if (mSimulationOptions.isReSimulate()) {
+    mpProgressDialog->hide();
+  }
+  QString workingDirectory = mSimulationOptions.getWorkingDirectory();
+  // read the result file
+  QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(mSimulationOptions.getOutputFileName()));
+  QRegExp regExp("\\b(mat|plt|csv)\\b");
+  if (regExp.indexIn(mSimulationOptions.getOutputFileName()) != -1 && resultFileInfo.exists() && mLastModifiedDateTime < resultFileInfo.lastModified()) {
+    VariablesWidget *pVariablesWidget = mpMainWindow->getVariablesWidget();
+    OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
+    QStringList list = pOMCProxy->readSimulationResultVars(mSimulationOptions.getOutputFileName());
+    // close the simulation result file.
+    pOMCProxy->closeSimulationResultFile();
+    if (list.size() > 0) {
+      mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
+      pVariablesWidget->insertVariablesItemsToTree(mSimulationOptions.getOutputFileName(), workingDirectory, list, mSimulationOptions);
+      mpMainWindow->getVariablesDockWidget()->show();
+    }
+  }
+}
+
+/*!
   Starts the simulation executable with -port argument.\n
   Creates a TCP server and starts listening for the simulation runtime progress messages.
   */
 void SimulationDialog::runSimulationExecutable(SimulationOptions simulationOptions)
 {
-  mSimulationOptions = simulationOptions;
+  mSimulationOptions = simulationOptions; /* reset the SimulationOptions here because it might be changed by resimulate call. */
   QFileInfo resultFileInfo(QString(simulationOptions.getWorkingDirectory()).append("/").append(simulationOptions.getOutputFileName()));
   if (resultFileInfo.exists()) {
     mLastModifiedDateTime = resultFileInfo.lastModified();
@@ -1076,6 +1132,9 @@ void SimulationDialog::simulate()
       pSimulationOutputWidget->raise();
       pSimulationOutputWidget->activateWindow();
     }
+    /* if launch debugger is checked then show the algorithmic debugger window */
+    if (mpLaunchDebuggerCheckBox->isChecked())
+      mpMainWindow->showAlgorithmicDebugger();
   }
 }
 
@@ -1102,11 +1161,40 @@ void SimulationDialog::compilationProcessFinished(int exitCode, QProcess::ExitSt
                                         mpShowGeneratedFilesCheckBox->isChecked(),
                                         mpProfilingComboBox->currentText() != "none",
                                         mpMainWindow->getOMCProxy()->changeDirectory());
+    mSimulationOptions = simulationOptions;
     /* show the Transformational Debugger */
-    if (mpMainWindow->getOptionsDialog()->getSimulationPage()->getAlwaysShowTransformationsCheckBox()->isChecked())
+    if (mpMainWindow->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked())
       mpMainWindow->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getFileNamePrefix() + "_info.xml");
-    /* run the simulation */
-    runSimulationExecutable(simulationOptions);
+    /* launch the algorithmic debugger */
+    if (mpLaunchDebuggerCheckBox->isChecked())
+    {
+      QString fileName = QString(simulationOptions.getOutputFileName()).remove(QRegExp("(_res.mat|_res.plt|_res.csv)"));
+      // start the executable
+      fileName = QString(simulationOptions.getWorkingDirectory()).append("/").append(fileName);
+      fileName = fileName.replace("//", "/");
+      // run the simulation executable to create the result file
+    #ifdef WIN32
+      fileName = fileName.append(".exe");
+    #endif
+      // start the debugger
+      if (mpMainWindow->getDebuggerMainWindow()->getGDBAdapter()->isGDBRunning())
+      {
+        QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                                 GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
+      }
+      else
+      {
+        QFileInfo fileInfo(fileName);
+        QString GDBPath = mpMainWindow->getOptionsDialog()->getDebuggerPage()->getGDBPath();
+        mpMainWindow->getDebuggerMainWindow()->getGDBAdapter()->launch(fileName, fileInfo.absoluteDir().absolutePath(), QStringList(),
+                                                                       GDBPath, false);
+      }
+    }
+    else
+    {
+      /* run the simulation */
+      runSimulationExecutable(simulationOptions);
+    }
   } else if (!mIsCancelled) {
     QString exitCodeStr = tr("Compilation process exited with code %1").arg(QString::number(exitCode));
     if (mpCompilationProcess->error() == QProcess::UnknownError)
@@ -1156,49 +1244,20 @@ void SimulationDialog::showSimulationOutputWidget()
 }
 
 /*!
-  Slot activated when mpSimulationProcess finished signal is raised.\n
-  Writes the error if mpSimulationProcess has crashed.\n
-  If the mpSimulationProcess finished normally then read the simulation result file and switch to plotting view.
+  Slot activated when mpSimulationProcess finished signal is raised.
   */
 void SimulationDialog::simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  mIsSimulationProcessRunning = false;
-  // If user has cancelled the simulation then don't show the plotting view.
-  if (mIsCancelled) {
-    return;
-  }
-  if (exitStatus == QProcess::CrashExit || exitCode != 0) {
-    QString exitCodeStr = tr("Simulation process exited with code %1").arg(QString::number(exitCode));
-    if (mpSimulationProcess->error() == QProcess::UnknownError) {
-      writeSimulationOutput(exitCodeStr, Qt::red, true);
-    } else {
-      writeSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, Qt::red, true);
-    }
-  } else {
-    if (mSimulationOptions.isProfiling()) {
-      mpMainWindow->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getFileNamePrefix() + "_info.xml");
-    }
-  }
-  /* if it is a re-simulation then we need to hide the progress dialog */
-  if (mSimulationOptions.isReSimulate()) {
-    mpProgressDialog->hide();
-  }
-  QString workingDirectory = mSimulationOptions.getWorkingDirectory();
-  // read the result file
-  QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(mSimulationOptions.getOutputFileName()));
-  QRegExp regExp("\\b(mat|plt|csv)\\b");
-  if (regExp.indexIn(mSimulationOptions.getOutputFileName()) != -1 && resultFileInfo.exists() && mLastModifiedDateTime < resultFileInfo.lastModified()) {
-    VariablesWidget *pVariablesWidget = mpMainWindow->getVariablesWidget();
-    OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
-    QStringList list = pOMCProxy->readSimulationResultVars(mSimulationOptions.getOutputFileName());
-    // close the simulation result file.
-    pOMCProxy->closeSimulationResultFile();
-    if (list.size() > 0) {
-      mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
-      pVariablesWidget->insertVariablesItemsToTree(mSimulationOptions.getOutputFileName(), workingDirectory, list, mSimulationOptions);
-      mpMainWindow->getVariablesDockWidget()->show();
-    }
-  }
+  processFinished(exitCode, exitStatus);
+}
+
+/*!
+  Slot activated when GDBAdapter::mpGDBProcess finished signal is raised.
+  */
+void SimulationDialog::GDBProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
+{
+  if (!mpMainWindow->getDebuggerMainWindow()->getGDBAdapter()->isGDBKilled())
+    processFinished(exitCode, exitStatus);
 }
 
 /*!

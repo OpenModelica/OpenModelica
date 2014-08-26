@@ -76,6 +76,7 @@ OMCProxy::OMCProxy(MainWindow *pMainWindow)
   pHorizontalLayout->addWidget(mpExpressionTextBox);
   pHorizontalLayout->addWidget(mpOMCLoggerSendButton);
   QVBoxLayout *pVerticalalLayout = new QVBoxLayout;
+  pVerticalalLayout->setContentsMargins(1, 1, 1, 1);
   pVerticalalLayout->addWidget(mpOMCLoggerTextBox);
   pVerticalalLayout->addLayout(pHorizontalLayout);
   mpOMCLoggerWidget->setLayout(pVerticalalLayout);
@@ -363,6 +364,13 @@ bool OMCProxy::startServer()
     CORBA::Object_var obj = orb->string_to_object(uri.trimmed().toLocal8Bit());
     mOMC = OmcCommunication::_narrow(obj);
     mHasInitialized = true;
+    // get the process id
+#ifdef WIN32
+    struct _PROCESS_INFORMATION *pProcinfo = omcProcess->pid();
+    mOMCProcessId = pProcinfo->dwProcessId;
+#else
+    mProcessId = omcProcess->pid();
+#endif
   }
   catch (std::exception &e)
   {

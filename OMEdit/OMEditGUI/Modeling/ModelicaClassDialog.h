@@ -43,17 +43,17 @@
 
 class MainWindow;
 class Label;
-class ModelicaClassDialog;
+class LibraryTreeWidget;
 
 class LibraryBrowseDialog : public QDialog
 {
   Q_OBJECT
 public:
-  LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, ModelicaClassDialog *pParent);
+  LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, LibraryTreeWidget *pParent);
   void unHideChildItems(QTreeWidgetItem *pItem);
 private:
   QLineEdit *mpLineEdit;
-  ModelicaClassDialog *mpModelicaClassDialog;
+  LibraryTreeWidget *mpLibraryTreeWidget;
   QLineEdit *mpFindClassTextBox;
   QTreeWidget *mpLibraryBrowseTreeWidget;
   QPushButton *mpOkButton;

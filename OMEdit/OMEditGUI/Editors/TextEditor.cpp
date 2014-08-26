@@ -35,40 +35,20 @@
  *
  */
 
-#include "TransformationsEditor.h"
+#include "TextEditor.h"
 
-/*!
-  \class TransformationsEditor
-  \class TSourceEditor
-  \brief An editor for Modelica Text used for Transformational Debugger.
-  */
-/*!
-  \param pTransformationsWidget - pointer to TransformationsWidget
-  */
-TransformationsEditor::TransformationsEditor(TransformationsWidget *pTransformationsWidget)
-  : BaseEditor(pTransformationsWidget)
+TextEditor::TextEditor(ModelWidget *pParent)
+  : BaseEditor(pParent)
 {
-  mpTransformationsWidget = pTransformationsWidget;
-  setLineWrapping();
-  OptionsDialog *pOptionsDialog = mpTransformationsWidget->getMainWindow()->getOptionsDialog();
+  OptionsDialog *pOptionsDialog = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
   connect(pOptionsDialog, SIGNAL(updateLineWrapping()), SLOT(setLineWrapping()));
-  connect(this->document(), SIGNAL(contentsChange(int,int,int)), SLOT(contentsHasChanged(int,int,int)));
+  connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(updateCursorPosition()));
+  updateCursorPosition();
 }
 
-//! Slot activated when TSourceEditor's QTextDocument contentsChanged SIGNAL is raised.
-void TransformationsEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
+void TextEditor::setLineWrapping()
 {
-  Q_UNUSED(position);
-  if (charsRemoved == 0 && charsAdded == 0)
-    return;
-
-  InfoBar *pInfoBar = mpTransformationsWidget->getTSourceEditorInfoBar();
-  pInfoBar->showMessage(Helper::debuggingFileNotSaveInfo);
-}
-
-void TransformationsEditor::setLineWrapping()
-{
-  OptionsDialog *pOptionsDialog = mpTransformationsWidget->getMainWindow()->getOptionsDialog();
+  OptionsDialog *pOptionsDialog = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
   if (pOptionsDialog->getModelicaTextEditorPage()->getLineWrappingCheckbox()->isChecked())
     setLineWrapMode(QPlainTextEdit::WidgetWidth);
   else

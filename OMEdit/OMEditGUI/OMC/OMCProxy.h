@@ -62,6 +62,7 @@ class OMCProxy : public QObject
 private:
   OmcCommunication_var mOMC;
   bool mHasInitialized;
+  qint64 mOMCProcessId;
   bool mCanUseEventLoop;
   QString mResult;
   QString mExpression;
@@ -80,6 +81,7 @@ private:
 public:
   OMCProxy(MainWindow *pMainWindow);
   ~OMCProxy();
+  qint64 getOMCProcessId() {return mOMCProcessId;}
   bool canUseEventLoop();
   void enableCanUseEventLoop(bool enable);
   void enableCustomExpression(bool enable);

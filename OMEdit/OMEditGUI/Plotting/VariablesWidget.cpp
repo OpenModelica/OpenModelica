@@ -1184,7 +1184,7 @@ void VariablesWidget::showContextMenu(QPoint point)
   if (pVariablesTreeItem && pVariablesTreeItem->isRootItem())
   {
     /* delete result action */
-    QAction *pDeleteResultAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Delete Result"), this);
+    QAction *pDeleteResultAction = new QAction(QIcon(":/Resources/icons/delete.svg"), tr("Delete Result"), this);
     pDeleteResultAction->setData(pVariablesTreeItem->getVariableName());
     pDeleteResultAction->setStatusTip(tr("Delete the result"));
     connect(pDeleteResultAction, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(removeVariableTreeItem()));
@@ -1224,7 +1224,7 @@ void VariablesWidget::reSimulate()
   if (pAction)
   {
     SimulationOptions simulationOptions = pAction->data().value<SimulationOptions>();
-    simulationOptions.setReSimuate(true);
+    simulationOptions.setReSimulate(true);
     /* Update the _init.xml file with new values. */
     QRegExp resultTypeRegExp("(_res.mat|_res.plt|_res.csv)");
     /* open the model_init.xml file for writing */

@@ -62,6 +62,7 @@ OptionsDialog::OptionsDialog(MainWindow *pParent)
   mpFillStylePage = new FillStylePage(this);
   mpCurveStylePage = new CurveStylePage(this);
   mpFigaroPage = new FigaroPage(this);
+  mpDebuggerPage = new DebuggerPage(this);
   // get the settings
   readSettings();
   // set up the Options Dialog
@@ -89,6 +90,7 @@ void OptionsDialog::readSettings()
   readFillStyleSettings();
   readCurveStyleSettings();
   readFigaroSettings();
+  readDebuggerSettings();
 }
 
 //! Reads the General section settings from omedit.ini
@@ -266,10 +268,6 @@ void OptionsDialog::readSimulationSettings()
     mpSimulationPage->getOMCFlagsTextBox()->setText(mSettings.value("simulation/OMCFlags").toString());
   if (mSettings.contains("simulation/saveClassBeforeSimulation"))
     mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->setChecked(mSettings.value("simulation/saveClassBeforeSimulation").toBool());
-  if (mSettings.contains("transformationalDebugger/alwaysShowTransformationalDebugger"))
-    mpSimulationPage->getAlwaysShowTransformationsCheckBox()->setChecked(mSettings.value("transformationalDebugger/alwaysShowTransformationalDebugger").toBool());
-  if (mSettings.contains("transformationalDebugger/generateOperations"))
-    mpSimulationPage->getGenerateOperationsCheckBox()->setChecked(mSettings.value("transformationalDebugger/generateOperations").toBool());
 }
 
 //! Reads the Notifications section settings from omedit.ini
@@ -362,6 +360,25 @@ void OptionsDialog::readFigaroSettings()
     mpFigaroPage->getFigaroOptionsTextBox()->setText(mSettings.value("figaro/options").toString());
   if (mSettings.contains("figaro/process"))
     mpFigaroPage->getFigaroProcessTextBox()->setText(mSettings.value("figaro/process").toString());
+}
+
+/*!
+  Reads the Debugger section settings to omedit.ini
+  */
+void OptionsDialog::readDebuggerSettings()
+{
+  if (mSettings.contains("algorithmicDebugger/GDBPath"))
+    mpDebuggerPage->setGDBPath(mSettings.value("algorithmicDebugger/GDBPath").toString());
+  if (mSettings.contains("algorithmicDebugger/GDBCommandTimeout"))
+    mpDebuggerPage->getGDBCommandTimeoutSpinBox()->setValue(mSettings.value("algorithmicDebugger/GDBCommandTimeout").toInt());
+  if (mSettings.contains("algorithmicDebugger/displayCFrames"))
+    mpDebuggerPage->getDisplayCFramesCheckBox()->setChecked(mSettings.value("algorithmicDebugger/displayCFrames").toBool());
+  if (mSettings.contains("algorithmicDebugger/displayUnknownFrames"))
+    mpDebuggerPage->getDisplayUnknownFramesCheckBox()->setChecked(mSettings.value("algorithmicDebugger/displayUnknownFrames").toBool());
+  if (mSettings.contains("transformationalDebugger/alwaysShowTransformationalDebugger"))
+    mpDebuggerPage->getAlwaysShowTransformationsCheckBox()->setChecked(mSettings.value("transformationalDebugger/alwaysShowTransformationalDebugger").toBool());
+  if (mSettings.contains("transformationalDebugger/generateOperations"))
+    mpDebuggerPage->getGenerateOperationsCheckBox()->setChecked(mSettings.value("transformationalDebugger/generateOperations").toBool());
 }
 
 //! Saves the General section settings to omedit.ini
@@ -531,10 +548,6 @@ void OptionsDialog::saveSimulationSettings()
   else
     mpSimulationPage->getOMCFlagsTextBox()->setText(mSettings.value("simulation/OMCFlags").toString());
   mSettings.setValue("simulation/saveClassBeforeSimulation", mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->isChecked());
-  mSettings.setValue("transformationalDebugger/alwaysShowTransformationalDebugger", mpSimulationPage->getAlwaysShowTransformationsCheckBox()->isChecked());
-  mSettings.setValue("transformationalDebugger/generateOperations", mpSimulationPage->getGenerateOperationsCheckBox()->isChecked());
-  if (mpSimulationPage->getGenerateOperationsCheckBox()->isChecked())
-    mpMainWindow->getOMCProxy()->setCommandLineOptions("+d=infoXmlOperations");
 }
 
 //! Saves the Notifications section settings to omedit.ini
@@ -580,6 +593,22 @@ void OptionsDialog::saveFigaroSettings()
   mSettings.setValue("figaro/mode", mpFigaroPage->getFigaroModeComboBox()->itemData(mpFigaroPage->getFigaroModeComboBox()->currentIndex()).toString());
   mSettings.setValue("figaro/options", mpFigaroPage->getFigaroOptionsTextBox()->text());
   mSettings.setValue("figaro/process", mpFigaroPage->getFigaroProcessTextBox()->text());
+}
+
+/*!
+  Saves the Debugger section settings to omedit.ini
+  */
+void OptionsDialog::saveDebuggerSettings()
+{
+  mSettings.setValue("algorithmicDebugger/GDBPath", mpDebuggerPage->getGDBPath());
+  mSettings.value("algorithmicDebugger/GDBCommandTimeout", mpDebuggerPage->getGDBCommandTimeoutSpinBox()->value());
+  mSettings.setValue("algorithmicDebugger/displayCFrames", mpDebuggerPage->getDisplayCFramesCheckBox()->isChecked());
+  mSettings.setValue("algorithmicDebugger/displayUnknownFrames", mpDebuggerPage->getDisplayUnknownFramesCheckBox()->isChecked());
+  mpMainWindow->getDebuggerMainWindow()->getStackFramesWidget()->getStackFramesTreeWidget()->updateStackFrames();
+  mSettings.setValue("transformationalDebugger/alwaysShowTransformationalDebugger", mpDebuggerPage->getAlwaysShowTransformationsCheckBox()->isChecked());
+  mSettings.setValue("transformationalDebugger/generateOperations", mpDebuggerPage->getGenerateOperationsCheckBox()->isChecked());
+  if (mpDebuggerPage->getGenerateOperationsCheckBox()->isChecked())
+    mpMainWindow->getOMCProxy()->setCommandLineOptions("+d=infoXmlOperations");
 }
 
 //! Sets up the Options Widget dialog
@@ -666,6 +695,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pFigaroItem = new QListWidgetItem(mpOptionsList);
   pFigaroItem->setIcon(QIcon(":/Resources/icons/console.png"));
   pFigaroItem->setText(Helper::figaro);
+  // Debugger Item
+  QListWidgetItem *pDebuggerItem = new QListWidgetItem(mpOptionsList);
+  pDebuggerItem->setIcon(QIcon(":/Resources/icons/debugger.svg"));
+  pDebuggerItem->setText(tr("Debugger"));
 }
 
 //! Creates pages for the Options Widget. The pages are created as stacked widget and are mapped with mpOptionsList.
@@ -682,6 +715,7 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpFillStylePage);
   mpPagesWidget->addWidget(mpCurveStylePage);
   mpPagesWidget->addWidget(mpFigaroPage);
+  mpPagesWidget->addWidget(mpDebuggerPage);
 }
 
 MainWindow* OptionsDialog::getMainWindow()
@@ -739,6 +773,11 @@ FigaroPage* OptionsDialog::getFigaroPage()
   return mpFigaroPage;
 }
 
+DebuggerPage* OptionsDialog::getDebuggerPage()
+{
+  return mpDebuggerPage;
+}
+
 //! Change the page in Options Widget when the mpOptionsList currentItemChanged Signal is raised.
 void OptionsDialog::changePage(QListWidgetItem *current, QListWidgetItem *previous)
 {
@@ -773,6 +812,7 @@ void OptionsDialog::saveSettings()
   saveFillStyleSettings();
   saveCurveStyleSettings();
   saveFigaroSettings();
+  saveDebuggerSettings();
   mSettings.sync();
   accept();
 }
@@ -810,7 +850,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
     mpLanguageComboBox->addItem(key, locale);
   }
   // Working Directory
-  mpWorkingDirectoryLabel = new Label(tr("Working Directory:"));
+  mpWorkingDirectoryLabel = new Label(Helper::workingDirectory);
   mpWorkingDirectoryTextBox = new QLineEdit(mpOptionsDialog->getMainWindow()->getOMCProxy()->changeDirectory());
   mpWorkingDirectoryBrowseButton = new QPushButton(Helper::browse);
   mpWorkingDirectoryBrowseButton->setAutoDefault(false);
@@ -875,7 +915,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
   mpIconViewRadioButton = new QRadioButton(Helper::iconView);
   mpDiagramViewRadioButton = new QRadioButton(Helper::diagramView);
   mpDiagramViewRadioButton->setChecked(true);
-  mpTextViewRadioButton = new QRadioButton(Helper::modelicaTextView);
+  mpTextViewRadioButton = new QRadioButton(Helper::textView);
   mpDocumentationViewRadioButton = new QRadioButton(Helper::documentationView);
   QButtonGroup *pDefaultViewButtonGroup = new QButtonGroup;
   pDefaultViewButtonGroup->addButton(mpIconViewRadioButton);
@@ -1032,7 +1072,7 @@ void GeneralSettingsPage::setDefaultView(QString value)
 {
   if (value.compare(Helper::iconView) == 0)
     mpIconViewRadioButton->setChecked(true);
-  else if (value.compare(Helper::modelicaTextView) == 0)
+  else if (value.compare(Helper::textView) == 0)
     mpTextViewRadioButton->setChecked(true);
   else if (value.compare(Helper::documentationView) == 0)
     mpDocumentationViewRadioButton->setChecked(true);
@@ -1045,7 +1085,7 @@ QString GeneralSettingsPage::getDefaultView()
   if (mpIconViewRadioButton->isChecked())
     return Helper::iconView;
   else if (mpTextViewRadioButton->isChecked())
-    return Helper::modelicaTextView;
+    return Helper::textView;
   else if (mpDocumentationViewRadioButton->isChecked())
     return Helper::documentationView;
   else
@@ -1141,7 +1181,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
   mpSystemLibrariesTree->setHeaderLabels(systemLabels);
   connect(mpSystemLibrariesTree, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(openEditSystemLibrary()));
   // system libraries buttons
-  mpAddSystemLibraryButton = new QPushButton(tr("Add"));
+  mpAddSystemLibraryButton = new QPushButton(Helper::add);
   mpAddSystemLibraryButton->setAutoDefault(false);
   connect(mpAddSystemLibraryButton, SIGNAL(clicked()), SLOT(openAddSystemLibrary()));
   mpEditSystemLibraryButton = new QPushButton(Helper::edit);
@@ -1180,7 +1220,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
   mpUserLibrariesTree->setHeaderLabels(userLabels);
   connect(mpUserLibrariesTree, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(openEditUserLibrary()));
   // user libraries buttons
-  mpAddUserLibraryButton = new QPushButton(tr("Add"));
+  mpAddUserLibraryButton = new QPushButton(Helper::add);
   mpAddUserLibraryButton->setAutoDefault(false);
   connect(mpAddUserLibraryButton, SIGNAL(clicked()), SLOT(openAddUserLibrary()));
   mpEditUserLibraryButton = new QPushButton(Helper::edit);
@@ -1539,6 +1579,9 @@ ModelicaTextSettings::ModelicaTextSettings()
   setQuotesRuleColor(QColor(0, 139, 0));            // dark green
   setCommentRuleColor(QColor(0, 150, 0));           // dark green
   setNumberRuleColor(QColor(139, 0, 139));          // purple
+  setTLMTagRuleColor(QColor(0, 0, 255));            // blue
+  setTLMElementRuleColor(QColor(0, 0, 255));        // blue
+  setTLMQuotesRuleColor(QColor(139, 0, 0));         // dark red
 }
 
 //! Sets the font for the Modelica Text.
@@ -1667,7 +1710,47 @@ QColor ModelicaTextSettings::getCommentRuleColor()
   return mCommentRuleColor;
 }
 
+//! Sets the color for the TLM Tag.
+//! @param color is the color to set.
+void ModelicaTextSettings::setTLMTagRuleColor(QColor color)
+{
+  mTLMTagRuleColor = color;
+}
 
+//! Returns the TLM Tag color.
+//! @return mTLMTagRuleColor the color.
+QColor ModelicaTextSettings::getTLMTagRuleColor()
+{
+  return mTLMTagRuleColor;
+}
+
+//! Sets the color for the TLM Element.
+//! @param color is the color to set.
+void ModelicaTextSettings::setTLMElementRuleColor(QColor color)
+{
+  mTLMElementRuleColor = color;
+}
+
+//! Returns the TLM  Element color.
+//! @return mTLMElementRuleColor the color.
+QColor ModelicaTextSettings::getTLMElementRuleColor()
+{
+  return mTLMElementRuleColor;
+}
+
+//! Sets the color for the TLM Quotes.
+//! @param color is the color to set.
+void ModelicaTextSettings::setTLMQuotesRuleColor(QColor color)
+{
+  mTLMQuotesRuleColor = color;
+}
+
+//! Returns the TLM  Quotes color.
+//! @return mTLMQuotesRuleColor the color.
+QColor ModelicaTextSettings::getTLMQuotesRuleColor()
+{
+  return mTLMQuotesRuleColor;
+}
 //! @class ModelicaTextEditorPage
 //! @brief Creates an interface for Modelica Text settings.
 
@@ -1789,6 +1872,21 @@ void ModelicaTextEditorPage::addListItems()
   mpCommentItem->setText("Comment");
   mpCommentItem->setData(Qt::UserRole, "Comment");
   mpCommentItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getCommentRuleColor());
+
+  mpTLMTagItem = new QListWidgetItem(mpItemsList);
+  mpTLMTagItem->setText("TLM Tag");
+  mpTLMTagItem->setData(Qt::UserRole, "TLM Tag");
+  mpTLMTagItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getTLMTagRuleColor());
+
+  mpTLMElementItem = new QListWidgetItem(mpItemsList);
+  mpTLMElementItem->setText("TLM Element");
+  mpTLMElementItem->setData(Qt::UserRole, "TLM Element");
+  mpTLMElementItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getTLMElementRuleColor());
+
+  mpTLMQuotesItem = new QListWidgetItem(mpItemsList);
+  mpTLMQuotesItem->setText("TLM Quotes");
+  mpTLMQuotesItem->setData(Qt::UserRole, "TLM Quotes");
+  mpTLMQuotesItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getTLMQuotesRuleColor());
 }
 
 //! Returns the preview text.
@@ -2325,22 +2423,11 @@ SimulationPage::SimulationPage(OptionsDialog *pParent)
   pSimulationLayout->addWidget(mpOMCFlagsTextBox, 2, 1);
   pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, 3, 0, 1, 2);
   mpSimulationGroupBox->setLayout(pSimulationLayout);
-  /* Transformational Debugger */
-  mpTransformationalDebuggerGroupBox = new QGroupBox(Helper::transformationalDebugger);
-  mpAlwaysShowTransformationsCheckBox = new QCheckBox(tr("Always show %1 after compilation").arg(Helper::transformationalDebugger));
-  mpGenerateOperationsCheckBox = new QCheckBox(tr("Generate operations in the info xml"));
-  // set the layout of Transformational Debugger group
-  QGridLayout *pTransformationalDebuggerLayout = new QGridLayout;
-  pTransformationalDebuggerLayout->setAlignment(Qt::AlignTop);
-  pTransformationalDebuggerLayout->addWidget(mpAlwaysShowTransformationsCheckBox, 0, 0);
-  pTransformationalDebuggerLayout->addWidget(mpGenerateOperationsCheckBox, 1, 0);
-  mpTransformationalDebuggerGroupBox->setLayout(pTransformationalDebuggerLayout);
   // set the layout
   QVBoxLayout *pLayout = new QVBoxLayout;
   pLayout->setAlignment(Qt::AlignTop);
   pLayout->setContentsMargins(0, 0, 0, 0);
   pLayout->addWidget(mpSimulationGroupBox);
-  pLayout->addWidget(mpTransformationalDebuggerGroupBox);
   setLayout(pLayout);
 }
 
@@ -2815,4 +2902,98 @@ void FigaroPage::browseFigaroProcessFile()
 {
   mpFigaroProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
                                                                  NULL, Helper::exeFileTypes, NULL));
+}
+
+/*!
+  \class DebuggerPage
+  \brief Creates an interface for debugger settings.
+  */
+/*!
+  \param pParent - pointer to OptionsDialog
+  */
+DebuggerPage::DebuggerPage(OptionsDialog *pParent)
+  : QWidget(pParent)
+{
+  mpOptionsDialog = pParent;
+  mpAlgorithmicDebuggerGroupBox = new QGroupBox(Helper::algorithmicDebugger);
+  // GDB Path
+  mpGDBPathLabel = new Label(tr("GDB Path:"));
+#ifdef WIN32
+  mpGDBPathTextBox = new QLineEdit(QString(Helper::OpenModelicaHome).append("/MinGW/bin/gdb.exe"));
+#else
+  mpGDBPathTextBox = new QLineEdit("gdb");
+#endif
+  mpGDBPathBrowseButton = new QPushButton(Helper::browse);
+  connect(mpGDBPathBrowseButton, SIGNAL(clicked()), SLOT(browseGDBPath()));
+  /* GDB Commanf Timeout */
+  mpGDBCommandTimeoutLabel = new Label(tr("GDB Command Timeout:"));
+  mpGDBCommandTimeoutSpinBox = new QSpinBox;
+  mpGDBCommandTimeoutSpinBox->setSuffix(tr(" seconds"));
+  mpGDBCommandTimeoutSpinBox->setRange(30, std::numeric_limits<int>::max());
+  mpGDBCommandTimeoutSpinBox->setSingleStep(10);
+  mpGDBCommandTimeoutSpinBox->setValue(40);
+  // Display C Frames
+  mpDisplayCFramesCheckBox = new QCheckBox(tr("Display C frames"));
+  // Display Unknown Frames
+  mpDisplayUnknownFramesCheckBox = new QCheckBox(tr("Display unknown frames"));
+  /* set the debugger group box layout */
+  QGridLayout *pDebuggerLayout = new QGridLayout;
+  pDebuggerLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pDebuggerLayout->addWidget(mpGDBPathLabel, 0, 0);
+  pDebuggerLayout->addWidget(mpGDBPathTextBox, 0, 1);
+  pDebuggerLayout->addWidget(mpGDBPathBrowseButton, 0, 2);
+  pDebuggerLayout->addWidget(mpGDBCommandTimeoutLabel, 1, 0);
+  pDebuggerLayout->addWidget(mpGDBCommandTimeoutSpinBox, 1, 1, 1, 2);
+  pDebuggerLayout->addWidget(mpDisplayCFramesCheckBox, 2, 0, 1, 2);
+  pDebuggerLayout->addWidget(mpDisplayUnknownFramesCheckBox, 3, 0, 1, 2);
+  mpAlgorithmicDebuggerGroupBox->setLayout(pDebuggerLayout);
+  /* Transformational Debugger */
+  mpTransformationalDebuggerGroupBox = new QGroupBox(Helper::transformationalDebugger);
+  mpAlwaysShowTransformationsCheckBox = new QCheckBox(tr("Always show %1 after compilation").arg(Helper::transformationalDebugger));
+  mpGenerateOperationsCheckBox = new QCheckBox(tr("Generate operations in the info xml"));
+  // set the layout of Transformational Debugger group
+  QGridLayout *pTransformationalDebuggerLayout = new QGridLayout;
+  pTransformationalDebuggerLayout->setAlignment(Qt::AlignTop);
+  pTransformationalDebuggerLayout->addWidget(mpAlwaysShowTransformationsCheckBox, 0, 0);
+  pTransformationalDebuggerLayout->addWidget(mpGenerateOperationsCheckBox, 1, 0);
+  mpTransformationalDebuggerGroupBox->setLayout(pTransformationalDebuggerLayout);
+  // set the layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignTop);
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpAlgorithmicDebuggerGroupBox);
+  pMainLayout->addWidget(mpTransformationalDebuggerGroupBox);
+  setLayout(pMainLayout);
+}
+
+void DebuggerPage::setGDBPath(QString path)
+{
+  mpGDBPathTextBox->setText(path.isEmpty() ? "gdb" : path);
+}
+
+QString DebuggerPage::getGDBPath()
+{
+  if (mpGDBPathTextBox->text().isEmpty())
+    return "gdb";
+  else
+    return mpGDBPathTextBox->text();
+}
+
+QCheckBox* DebuggerPage::getDisplayCFramesCheckBox()
+{
+  return mpDisplayCFramesCheckBox;
+}
+
+QCheckBox* DebuggerPage::getDisplayUnknownFramesCheckBox()
+{
+  return mpDisplayUnknownFramesCheckBox;
+}
+
+void DebuggerPage::browseGDBPath()
+{
+  QString GDBPath = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
+                                                   NULL, "", NULL);
+  if (GDBPath.isEmpty())
+    return;
+  mpGDBPathTextBox->setText(GDBPath);
 }

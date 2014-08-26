@@ -69,6 +69,7 @@ public:
   static QString matFileTypes;
   static QString omResultFileTypes;
   static QString exeFileTypes;
+  static QString txtFileTypes;
   static int treeIndentation;
   static QSize iconSize;
   static QSize buttonIconSize;
@@ -100,9 +101,28 @@ public:
   static QFontInfo monospacedFontInfo;
   static QString defaultComponentAnnotationString;
   static QString errorComponentAnnotationString;
+  /* Meta Modelica Types */
+  static QString MODELICA_METATYPE;
+  static QString MODELICA_BOOLEAN;
+  static QString MODELICA_INETGER;
+  static QString MODELICA_REAL;
+  static QString REPLACEABLE_TYPE_ANY;
+  static QString RECORD;
+  static QString LIST;
+  static QString OPTION;
+  static QString TUPLE;
+  static QString ARRAY;
+  static QString VALUE_OPTIMIZED_OUT;
+  /* Modelica Types */
+  static QString STRING;
+  static QString BOOLEAN;
+  static QString INTEGER;
+  static QString REAL;
   /* Global translated variables */
   static QString newModelicaClass;
   static QString createNewModelicaClass;
+  static QString newTLMFile;
+  static QString createNewTLMFile;
   static QString findClasses;
   static QString openModelicaFiles;
   static QString openConvertModelicaFiles;
@@ -119,8 +139,10 @@ public:
   static QString chooseFiles;
   static QString attributes;
   static QString properties;
+  static QString add;
   static QString edit;
   static QString save;
+  static QString apply;
   static QString chooseDirectory;
   static QString general;
   static QString output;
@@ -149,6 +171,7 @@ public:
   static QString importNgspiceNetlist;
   static QString importFromOMNotebookTip;
   static QString importNgspiceNetlistTip;
+  static QString line;
   static QString exportAsImage;
   static QString exportAsImageTip;
   static QString exportFigaro;
@@ -161,6 +184,8 @@ public:
   static QString search;
   static QString unloadClass;
   static QString unloadClassTip;
+  static QString unloadXMLTip;
+  static QString refresh;
   static QString simulate;
   static QString simulateTip;
   static QString simulationSetup;
@@ -206,9 +231,10 @@ public:
   static QString fileLocation;
   static QString readOnly;
   static QString writable;
+  static QString workingDirectory;
   static QString iconView;
   static QString diagramView;
-  static QString modelicaTextView;
+  static QString textView;
   static QString documentationView;
   static QString searchModelicaClass;
   static QString findReplaceModelicaText;
@@ -236,6 +262,16 @@ public:
   static QString executionMaxTime;
   static QString executionTime;
   static QString executionFraction;
+  static QString debuggingFileNotSaveInfo;
+  static QString algorithmicDebugger;
+  static QString debugConfigurations;
+  static QString resume;
+  static QString interrupt;
+  static QString exit;
+  static QString stepOver;
+  static QString stepInto;
+  static QString stepReturn;
+  static QString attachToRunningProcess;
 };
 
 class GUIMessages : public QObject
@@ -284,10 +320,18 @@ public:
     XML_GENERATED,
     FIGARO_GENERATED,
     DELETE_CLASS_MSG,
+    DELETE_TEXT_FILE_MSG,
     WRONG_MODIFIER,
     SET_INFO_XML_FLAG,
     SET_INFO_XML_FLAG_MSG,
-    SET_INFO_XML_FLAG_MSG_MAC
+    SET_INFO_XML_FLAG_MSG_MAC,
+    DEBUG_CONFIGURATION_EXISTS_MSG,
+    DEBUG_CONFIGURATION_SIZE_EXCEED,
+    DELETE_DEBUG_CONFIGURATION_MSG,
+    DEBUGGER_ALREADY_RUNNING,
+    CLASS_NOT_FOUND,
+    BREAKPOINT_INSERT_NOT_SAVED,
+    BREAKPOINT_INSERT_NOT_MODELICA_CLASS
   };
 
   static QString getMessage(int type);

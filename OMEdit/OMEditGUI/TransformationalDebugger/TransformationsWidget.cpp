@@ -625,7 +625,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   mpTSourceEditorFileLabel = new Label("");
   mpTSourceEditorFileLabel->setElideMode(Qt::ElideMiddle);
   mpTSourceEditorFileLabel->hide();
-  mpTSourceEditorInfoBar = new InfoBar(mpMainWindow);
+  mpTSourceEditorInfoBar = new InfoBar(this);
   mpTSourceEditorInfoBar->hide();
   mpTransformationsEditor = new TransformationsEditor(this);
   ModelicaTextHighlighter *pModelicaTextHighlighter;

@@ -152,7 +152,7 @@ QString StringHandler::getViewType(int type)
     case StringHandler::Diagram:
       return Helper::diagramView;
     case StringHandler::ModelicaText:
-      return Helper::modelicaTextView;
+      return Helper::textView;
     default:
       // should never be reached
       return "";
@@ -1114,6 +1114,11 @@ QString StringHandler::createTooltip(QStringList info, QString name, QString pat
   }
 }
 
+QString StringHandler::createTooltip(QString name, QString location)
+{
+  return QString(Helper::name).append(": ").append(name).append("<br />").append(Helper::fileLocation).append(": ").append(location);
+}
+
 void StringHandler::setLastOpenDirectory(QString lastOpenDirectory)
 {
   mLastOpenDir = lastOpenDirectory;
@@ -1255,4 +1260,24 @@ void StringHandler::fillEncodingComboBox(QComboBox *pEncodingComboBox)
 QStringList StringHandler::makeVariableParts(QString variable)
 {
   return variable.split(QRegExp("\\.(?![^\\[\\]]*\\])"), QString::SkipEmptyParts);
+}
+
+bool StringHandler::isCFile(QString extension)
+{
+  if (extension.compare("c") == 0 ||
+      extension.compare("cpp") == 0 ||
+      extension.compare("cc") == 0 ||
+      extension.compare("h") == 0 ||
+      extension.compare("hpp") == 0)
+    return true;
+  else
+    return false;
+}
+
+bool StringHandler::isModelicaFile(QString extension)
+{
+  if (extension.compare("mo") == 0)
+    return true;
+  else
+    return false;
 }

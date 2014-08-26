@@ -55,10 +55,12 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   Helper::monospacedFontInfo = QFontInfo(monospaceFont);
   /*! @note register the RecentFile and FindText struct in the Qt's meta system
    * Don't remove/move the following line.
-   * Because RecentFile struct should be registered before reading the recentFilesList section from the settings file.
+   * Because RecentFile, FindText and DebuggerConfiguration struct should be registered before reading the recentFilesList, FindText and
+     DebuggerConfiguration section respectively from the settings file.
    */
   qRegisterMetaTypeStreamOperators<RecentFile>("RecentFile");
   qRegisterMetaTypeStreamOperators<FindText>("FindText");
+  qRegisterMetaTypeStreamOperators<DebuggerConfiguration>("DebuggerConfiguration");
   // Create the OMCProxy object.
   pSplashScreen->showMessage(tr("Connecting to OpenModelica Compiler"), Qt::AlignRight, Qt::white);
   mpOMCProxy = new OMCProxy(this);
@@ -153,6 +155,9 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   mpVariablesDockWidget->setWidget(mpVariablesWidget);
   // Create an object of InteractiveSimulationTabWidget
   //mpInteractiveSimualtionTabWidget = new InteractiveSimulationTabWidget(this);
+  /* Debugger MainWindow */
+  /* Important. Create the instance of DebuggerMainWindow before ModelWidgetContainer otherwise the ctrl+tab changer does not work. */
+  mpDebuggerMainWindow = new DebuggerMainWindow(this);
   // Create an object of ModelWidgetContainer
   mpModelWidgetContainer = new ModelWidgetContainer(this);
   // Create an object of WelcomePageWidget
@@ -203,8 +208,8 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/modeling.png"), tr("Modeling"));
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/omplot.png"), tr("Plotting"));
   /* Remove the interactive simulation tab until we make it run again. */
-//  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/interactive-simulation.png"), tr("Interactive Simulation"));
-//  mpPerspectiveTabbar->setTabEnabled(3, false);
+  //  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/interactive-simulation.png"), tr("Interactive Simulation"));
+  //  mpPerspectiveTabbar->setTabEnabled(3, false);
   connect(mpPerspectiveTabbar, SIGNAL(currentChanged(int)), SLOT(perspectiveTabChanged(int)));
   mpStatusBar->addPermanentWidget(mpPerspectiveTabbar);
   // set status bar for MainWindow
@@ -217,7 +222,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   // set the OMC Flags.
   if (!mpOptionsDialog->getSimulationPage()->getOMCFlagsTextBox()->text().isEmpty())
     mpOMCProxy->setCommandLineOptions(mpOptionsDialog->getSimulationPage()->getOMCFlagsTextBox()->text());
-  if (mpOptionsDialog->getSimulationPage()->getGenerateOperationsCheckBox()->isChecked())
+  if (mpOptionsDialog->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked())
     mpOMCProxy->setCommandLineOptions("+d=infoXmlOperations");
   // restore OMEdit widgets state
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
@@ -595,6 +600,8 @@ void MainWindow::beforeClosingMainWindow()
 {
   mpOMCProxy->stopServer();
   delete mpOMCProxy;
+  delete mpModelWidgetContainer;
+  delete mpDebuggerMainWindow;
   delete mpSimulationDialog;
   /* save the TransformationsWidget last window geometry and splitters state. */
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
@@ -1035,6 +1042,14 @@ void MainWindow::createNewModelicaClass()
   pModelicaClassDialog->show();
 }
 
+void MainWindow::createNewTLMFile()
+{
+  LibraryTreeNode *pLibraryTreeNode = mpLibraryTreeWidget->addLibraryTreeNode("TLM", false);
+  pLibraryTreeNode->setSaveContentsType(LibraryTreeNode::SaveInOneFile);
+  mpLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
+  mpLibraryTreeWidget->showModelWidget(pLibraryTreeNode);
+}
+
 void MainWindow::openModelicaFile()
 {
   QStringList fileNames;
@@ -1264,6 +1279,15 @@ void MainWindow::zoomOut()
     else if (pModelWidget->getIconGraphicsView()->isVisible())
       pModelWidget->getIconGraphicsView()->zoomOut();
   }
+}
+
+void MainWindow::showAlgorithmicDebugger()
+{
+  mpDebuggerMainWindow->show();
+  mpDebuggerMainWindow->raise();
+  mpDebuggerMainWindow->activateWindow();
+  mpDebuggerMainWindow->setWindowState(mpDebuggerMainWindow->windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
+  mpDebuggerMainWindow->restoreWindows();
 }
 
 void MainWindow::instantiatesModel()
@@ -1580,8 +1604,8 @@ void MainWindow::exportModelAsImage()
   else
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                    .arg(tr("exporting to Image")), Helper::scriptingKind, Helper::notificationLevel,
-                                                    0, mpMessagesWidget->getMessagesTreeWidget()));
+                                                         .arg(tr("exporting to Image")), Helper::scriptingKind, Helper::notificationLevel,
+                                                         0, mpMessagesWidget->getMessagesTreeWidget()));
   }
 }
 
@@ -1745,9 +1769,9 @@ void MainWindow::perspectiveTabChanged(int tabIndex)
     case 2:
       switchToPlottingPerspective();
       break;
-    case 3:
-      switchToInteractiveSimulationPerspective();
-      break;
+      //    case 3:
+      //      switchToInteractiveSimulationPerspective();
+      //      break;
     default:
       switchToWelcomePerspective();
       break;
@@ -1800,10 +1824,15 @@ void MainWindow::createActions()
   /* Menu Actions */
   // File Menu
   // create new Modelica class action
-  mpNewModelicaClassAction = new QAction(QIcon(":/Resources/icons/new.png"), Helper::newModelicaClass, this);
+  mpNewModelicaClassAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newModelicaClass, this);
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
   mpNewModelicaClassAction->setShortcut(QKeySequence("Ctrl+n"));
   connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
+  // create new TLM file action
+  mpNewTLMFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newTLMFile, this);
+  mpNewTLMFileAction->setStatusTip(Helper::createNewTLMFile);
+  //mpNewTLMFileAction->setShortcut(QKeySequence("Ctrl+x"));
+  connect(mpNewTLMFileAction, SIGNAL(triggered()), SLOT(createNewTLMFile()));
   // open Modelica file action
   mpOpenModelicaFileAction = new QAction(QIcon(":/Resources/icons/open.png"), Helper::openModelicaFiles, this);
   mpOpenModelicaFileAction->setShortcut(QKeySequence("Ctrl+o"));
@@ -1915,6 +1944,11 @@ void MainWindow::createActions()
   mpZoomOutAction->setShortcut(QKeySequence("Ctrl+-"));
   mpZoomOutAction->setEnabled(false);
   connect(mpZoomOutAction, SIGNAL(triggered()), SLOT(zoomOut()));
+  // Algorithmic Debugger action
+  mpShowAlgorithmicDebuggerAction = new QAction(Helper::algorithmicDebugger, this);
+  mpShowAlgorithmicDebuggerAction->setShortcut(QKeySequence("ctrl+t"));
+  mpShowAlgorithmicDebuggerAction->setStatusTip(Helper::algorithmicDebugger);
+  connect(mpShowAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(showAlgorithmicDebugger()));
   // Simulation Menu
   // instantiate model action
   mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.png"), tr("Instantiate Model"), this);
@@ -2021,7 +2055,7 @@ void MainWindow::createActions()
   mpShapesActionGroup = new QActionGroup(this);
   mpShapesActionGroup->setExclusive(false);
   // line creation action
-  mpLineShapeAction = new QAction(QIcon(":/Resources/icons/line-shape.png"), tr("Line"), mpShapesActionGroup);
+  mpLineShapeAction = new QAction(QIcon(":/Resources/icons/line-shape.png"), Helper::line, mpShapesActionGroup);
   mpLineShapeAction->setStatusTip(tr("Draws a line shape"));
   mpLineShapeAction->setCheckable(true);
   connect(mpLineShapeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
@@ -2094,6 +2128,7 @@ void MainWindow::createMenus()
   pFileMenu->setTitle(tr("&File"));
   // add actions to File menu
   pFileMenu->addAction(mpNewModelicaClassAction);
+  //pFileMenu->addAction(mpNewTLMFileAction);
   pFileMenu->addAction(mpOpenModelicaFileAction);
   pFileMenu->addAction(mpOpenModelicaFileWithEncodingAction);
   pFileMenu->addAction(mpLoadModelicaLibraryAction);
@@ -2154,10 +2189,6 @@ void MainWindow::createMenus()
   QMenu *pViewWindowsMenu = new QMenu(menuBar());
   pViewWindowsMenu->setObjectName("WindowsViewMenu");
   pViewWindowsMenu->setTitle(tr("Windows"));
-  // Perspectives View Menu
-  QMenu *pViewPerspectivesMenu = new QMenu(menuBar());
-  pViewPerspectivesMenu->setObjectName("PerspectivesViewMenu");
-  pViewPerspectivesMenu->setTitle(tr("Perspectives"));
   // add actions to View menu
   // Add Actions to Toolbars View Sub Menu
   pViewToolbarsMenu->addAction(mpFileToolBar->toggleViewAction());
@@ -2174,9 +2205,10 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(pSearchClassAction);
   pViewWindowsMenu->addAction(mpLibraryTreeDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
-//  pViewWindowsMenu->addAction(mpSimulationDockWidget->toggleViewAction());
+  //  pViewWindowsMenu->addAction(mpSimulationDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpVariablesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
+  pViewWindowsMenu->addAction(mpShowAlgorithmicDebuggerAction);
   pViewMenu->addAction(pViewWindowsMenu->menuAction());
   pViewMenu->addSeparator();
   pViewMenu->addAction(mpShowGridLinesAction);
@@ -2235,9 +2267,9 @@ void MainWindow::createMenus()
   pHelpMenu->addAction(mpOpenModelicaScriptingAction);
   pHelpMenu->addAction(mpModelicaDocumentationAction);
   pHelpMenu->addSeparator();
-//  pHelpMenu->addAction(mpModelicaByExampleAction);
-//  pHelpMenu->addAction(mpModelicaWebReferenceAction);
-//  pHelpMenu->addSeparator();
+  //  pHelpMenu->addAction(mpModelicaByExampleAction);
+  //  pHelpMenu->addAction(mpModelicaWebReferenceAction);
+  //  pHelpMenu->addSeparator();
   pHelpMenu->addAction(mpAboutOMEditAction);
   // add Help menu to menu bar
   menuBar()->addAction(pHelpMenu->menuAction());
@@ -2425,7 +2457,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
   QMainWindow::resizeEvent(event);
 }
 
-InfoBar::InfoBar(MainWindow *pParent)
+InfoBar::InfoBar(QWidget *pParent)
   : QFrame(pParent)
 {
   QPalette pal = palette();
