@@ -211,6 +211,10 @@ lstparams "breaklines=true,caption={Advection equation -- flat model},captionpos
 \end_layout
 
 \begin_layout Paragraph
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
 Generated C code
 \begin_inset Newline newline
 \end_inset
@@ -220,6 +224,11 @@ Generated C code
 LatexCommand lstinputlisting
 filename "../PDESolver/models/advection.c"
 lstparams "breaklines=true,caption={Advection equation -- \"generated\" C code},captionpos=b,frame=tb,label={advection.c},language=C"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -329,10 +338,14 @@ lstparams "breaklines=true,caption={String model in Modelica},captionpos=b,frame
 \end_layout
 
 \begin_layout Paragraph
+\begin_inset Note Note
+status open
+
+\begin_layout Paragraph
 Generated C code
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset CommandInset include
 LatexCommand lstinputlisting
 filename "../PDESolver/models/string.c"
@@ -343,12 +356,17 @@ lstparams "breaklines=true,caption={String equation -- \"generated\" C code},cap
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset Note Note
 status open
 
 \begin_layout Plain Layout
 přidat
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \end_inset
@@ -1837,6 +1855,129 @@ Equation connecting membrane and air
 LatexCommand lstinputlisting
 filename "../models/membraneInAir.mo"
 lstparams "breaklines=true,caption={Vibrating membrane in air},captionpos=b,frame=tb,label={membraneInAir.mo}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Euler equations
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\frac{\partial\varrho}{\partial t} & = & -\frac{\partial}{\partial x}\left(\varrho v\right)\\
+\frac{\partial}{\partial t}\left(\varrho v\right) & = & -\frac{\partial p}{\partial x}\\
+\varrho\frac{\partial\varepsilon}{\partial t} & = & -p\frac{\partial v}{\partial x}
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\varrho$
+\end_inset
+
+ ..
+ density, 
+\begin_inset Formula $v$
+\end_inset
+
+ ..
+ velocity, 
+\begin_inset Formula $p$
+\end_inset
+
+ ..
+ pressure, 
+\begin_inset Formula $\varepsilon$
+\end_inset
+
+ ..
+ specific internal energy
+\end_layout
+
+\begin_layout Standard
+state equation
+\begin_inset Formula 
+\begin{align*}
+p & =\varepsilon\varrho(\gamma-1)
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\gamma=c_{p}/c_{v}$
+\end_inset
+
+ ..
+ gas constant (fraction of specific heat capacities at constant pressure
+ and volume)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Subsection
+Euler equations -- two-temperature model
+\end_layout
+
+\begin_layout Plain Layout
+euler equations
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Formula 
+\begin{eqnarray*}
+\varrho_{t} & = & -\left(\varrho v\right){}_{x}\\
+\left(\varrho v\right){}_{t} & = & -(p^{i}+p^{e})_{x}\\
+\varrho\varepsilon_{t}^{e} & = & -p^{e}v_{x}-W_{x}-\beta\left(T_{e}-T_{i}\right)\\
+\varrho\varepsilon_{t}^{i} & = & -p^{i}v_{x}+\beta\left(T_{e}-T_{i}\right)
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+heat transfer
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Formula 
+\[
+W=\kappa(T)T_{x}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+state equations
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Formula 
+\begin{align*}
+p_{e} & =\varepsilon_{e}\varrho(\gamma-1) & p_{i} & =\varepsilon_{i}\varrho(\gamma-1)\\
+\varepsilon_{e} & =\frac{T_{e}Z\, k_{B}}{\left(\gamma-1\right)A\, m_{u}} & \varepsilon_{i} & =\frac{T_{i}k_{B}}{\left(\gamma-1\right)A\, m_{u}}
+\end{align*}
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 

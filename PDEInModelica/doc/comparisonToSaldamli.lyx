@@ -1741,7 +1741,7 @@ status open
 \begin_layout Plain Layout
 
 \family typewriter
-class DomainCircular2D
+class DomainHalf-circle
 \end_layout
 
 \begin_layout Plain Layout
@@ -1870,7 +1870,7 @@ coord = c + radius * r * { cos(Pi*(1/2 + v), sin(Pi*(1/2 + v) };
 \begin_layout Plain Layout
 
 \family typewriter
-end DomainCircular2D;
+end DomainHalf-circle;
 \end_layout
 
 \end_inset
