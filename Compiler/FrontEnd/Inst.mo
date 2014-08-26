@@ -1461,67 +1461,12 @@ algorithm
       list<DAE.SubMod> submods;
 
     case (_, _, DAE.MOD(subModLst = submods), _, _, _)
-      equation
-        checkDuplicateModInBasicType(submods, inPrefix);
-      then
-        List.map4(submods, instBasicTypeAttributes2, inCache, inEnv, inBaseType, inTypeFunc);
+      then List.map4(submods, instBasicTypeAttributes2, inCache, inEnv, inBaseType, inTypeFunc);
 
     case (_, _, DAE.NOMOD(), _, _, _) then {};
     case (_, _, DAE.REDECL(finalPrefix = _), _, _, _) then {};
   end match;
 end instBasicTypeAttributes;
-
-protected function checkDuplicateModInBasicType
-  input list<DAE.SubMod> inSubMods;
-  input Prefix.Prefix inPrefix;
-algorithm
-  _ := match(inSubMods, inPrefix)
-    local
-      DAE.SubMod mod;
-      list<DAE.SubMod> rest_mods;
-
-    case (mod :: rest_mods, _)
-      equation
-        List.map2_0(rest_mods, checkDuplicateModInBasicType2, mod, inPrefix);
-        checkDuplicateModInBasicType(rest_mods, inPrefix);
-      then
-        ();
-
-    case ({}, _) then ();
-
-  end match;
-end checkDuplicateModInBasicType;
-
-protected function checkDuplicateModInBasicType2
-  input DAE.SubMod inSubMod1;
-  input DAE.SubMod inSubMod2;
-  input Prefix.Prefix inPrefix;
-algorithm
-  _ := matchcontinue(inSubMod1, inSubMod2, inPrefix)
-    local
-      DAE.Ident id1, id2;
-      DAE.Mod m1, m2;
-      Absyn.Info info1, info2;
-      String pre_str;
-
-    case (DAE.NAMEMOD(ident = id1), DAE.NAMEMOD(ident = id2), _)
-      equation
-        false = stringEq(id1, id2);
-      then
-        ();
-
-    case (DAE.NAMEMOD(ident = id1, mod = m1), DAE.NAMEMOD(mod = m2), _)
-      equation
-        info1 = Mod.getModInfo(m1);
-        info2 = Mod.getModInfo(m2);
-        pre_str = PrefixUtil.printPrefixStr(inPrefix);
-        Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
-          {id1, pre_str}, {info1, info2});
-      then
-        fail();
-
-  end matchcontinue;
-end checkDuplicateModInBasicType2;
 
 protected function instBasicTypeAttributes2
   input DAE.SubMod inSubMod;
@@ -2468,7 +2413,7 @@ algorithm
           DAE.NOMOD(), Prefix.NOPRE(), ci_state2, c, SCode.PUBLIC(), {}, false,
           callscope, ConnectionGraph.EMPTY, Connect.emptySet, NONE());
 
-        (cache,mod_1) = Mod.elabMod(cache, cenv_2, ih, pre, mod, impl, info);
+        (cache,mod_1) = Mod.elabMod(cache, cenv_2, ih, pre, mod, impl, Mod.DERIVED(cn), info);
 
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
@@ -2507,7 +2452,7 @@ algorithm
 
         // elab the modifiers in the parent environment!
         parentEnv = List.stripFirst(env);
-        (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, impl, info);
+        (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, impl, Mod.DERIVED(cn), info);
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
 
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
@@ -2555,7 +2500,7 @@ algorithm
 
         // elab the modifiers in the parent environment!!
         parentEnv = List.stripFirst(env);
-        (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, info);
+        (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
         // print("mods: " +& Absyn.pathString(cn) +& " " +& Mod.printModStr(mods_1) +& "\n");
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
 
@@ -2610,7 +2555,7 @@ algorithm
 
         // elab the modifiers in the parent environment!
         parentEnv = List.stripFirst(env);
-        (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, impl, info);
+        (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, impl, Mod.DERIVED(cn), info);
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
 
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
@@ -2938,7 +2883,7 @@ algorithm
       equation
         //Debug.traceln("Try instbasic 1 " +& Absyn.pathString(path));
         ErrorExt.setCheckpoint("instBasictypeBaseclass");
-        (cache,m_1) = Mod.elabModForBasicType(cache, env, ih, Prefix.NOPRE(), mod, true, info);
+        (cache,m_1) = Mod.elabModForBasicType(cache, env, ih, Prefix.NOPRE(), mod, true, Mod.DERIVED(path), info);
         m_2 = Mod.merge(mods, m_1, env, Prefix.NOPRE());
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
         //Debug.traceln("Try instbasic 2 " +& Absyn.pathString(path) +& " " +& Mod.printModStr(m_2));
@@ -3024,7 +2969,7 @@ algorithm
 
     case (cache,env,ih,_,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},(_ :: _),_,inst_dims,_,_,_) /* Inherits baseclass -and- has components */
       equation
-        (cache,m_1) = Mod.elabModForBasicType(cache, env, ih, Prefix.NOPRE(), mod, true, info);
+        (cache,m_1) = Mod.elabModForBasicType(cache, env, ih, Prefix.NOPRE(), mod, true, Mod.DERIVED(path), info);
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
         cdef_1 = SCode.classSetPartial(cdef, SCode.NOT_PARTIAL());
 
@@ -3185,7 +3130,7 @@ algorithm
 
         // the mod is elabed in the parent of this class
         parentEnv = List.stripFirst(env);
-        (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, info);
+        (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
 
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
@@ -3233,7 +3178,7 @@ algorithm
 
         // elab the modifiers in the parent environment!!
         parentEnv = List.stripFirst(env);
-        (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, info);
+        (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
         // print("mods: " +& Absyn.pathString(cn) +& " " +& Mod.printModStr(mods_1) +& "\n");
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
 
@@ -3289,7 +3234,7 @@ algorithm
 
         // elab the modifiers in the parent environment!
         parentEnv = List.stripFirst(env);
-        (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, info);
+        (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
 
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
@@ -3360,6 +3305,8 @@ algorithm
   el := InstUtil.sortInnerFirstTplLstElementMod(el);
   //System.stopTimer();
   //Debug.fprintln(Flags.IDEP, "After: " +& stringDelimitList(List.map(List.map(el, Util.tuple21), SCode.elementName), ", "));
+  //Mod.verifySingleMod(inMod, inPrefix);
+
   (cache, outEnv, outIH, outStore, outDae, outSets, outState, outTypesVarLst, outGraph) :=
     instElementList2(cache, inEnv, inIH, store, inMod, inPrefix,
       inState, el, inInstDims, inImplInst, inCallingScope, inGraph, inSets, inStopOnError, {}, {});
@@ -3522,7 +3469,6 @@ algorithm
         // check for duplicate modifications
         ele = Util.tuple21(el);
         (elementName, info) = InstUtil.extractCurrentName(ele);
-        Mod.verifySingleMod(mod,pre,elementName,info);
 
         (true, cache) = InstUtil.isConditionalComponent(cache, env, ele, pre, info);
 
@@ -3541,7 +3487,6 @@ algorithm
         // check for duplicate modifications
         ele = Util.tuple21(el);
         (elementName, info) = InstUtil.extractCurrentName(ele);
-        Mod.verifySingleMod(mod,pre,elementName,info);
 
         /*
         classmod = Mod.lookupModificationP(mods, t);
@@ -3770,7 +3715,7 @@ algorithm
         // print("Inst.instElement: before elabMod " +& PrefixUtil.printPrefixStr(pre) +&
         // "." +& name +& " component mod: " +& SCodeDump.printModStr(m) +& " in env: " +&
         // Env.printEnvPathStr(env2) +& "\n");
-        (cache, m_1) = Mod.elabMod(cache, env2, ih, pre, m, impl, info);
+        (cache, m_1) = Mod.elabMod(cache, env2, ih, pre, m, impl, Mod.COMPONENT(name), info);
 
         // print("Inst.instElement: after elabMod " +& PrefixUtil.printPrefixStr(pre) +& "." +& name +& " component mod: " +& Mod.printModStr(m_1) +& " in env: " +& Env.printEnvPathStr(env2) +& "\n");
 
@@ -3891,7 +3836,7 @@ algorithm
         // We must update those variables that is found in m into a new environment.
         own_cref = Absyn.CREF_IDENT(name, {}) ;
         // In case we want to EQBOUND a complex type, e.g. when declaring constants. /sjoelund 2009-10-30
-        (cache, m_1) = Mod.elabMod(cache, env, ih, pre, m, impl, info);
+        (cache, m_1) = Mod.elabMod(cache, env, ih, pre, m, impl, Mod.COMPONENT(name), info);
 
         //---------
         // We build up a class structure for the complex type
@@ -4216,8 +4161,8 @@ algorithm
         compsOnConstrain = InstUtil.extractConstrainingComps(cc,env,pre) "extract components belonging to constraining class";
         crefs = InstUtil.getCrefFromMod(mod);
         (cache,env_1,ih) = updateComponentsInEnv(cache, env, ih, pre, DAE.NOMOD(), crefs, ci_state, impl);
-        (cache,m_1) = Mod.elabMod(cache,env_1, ih, pre, mod, impl, info);
-        (cache,old_m_1) = Mod.elabMod(cache,env_1, ih, pre, old_mod, impl, info);
+        (cache,m_1) = Mod.elabMod(cache,env_1, ih, pre, mod, impl, Mod.COMPONENT(n1), info);
+        (cache,old_m_1) = Mod.elabMod(cache,env_1, ih, pre, old_mod, impl, Mod.COMPONENT(n2), info);
 
         old_m_1 = InstUtil.keepConstrainingTypeModifersOnly(old_m_1,compsOnConstrain) "keep previous constrainingclass mods";
         cmod = InstUtil.keepConstrainingTypeModifersOnly(cmod,compsOnConstrain) "keep previous constrainingclass mods";
@@ -4247,8 +4192,8 @@ algorithm
         true = stringEq(n1, n2);
         crefs = InstUtil.getCrefFromMod(mod);
         (cache,env_1,ih) = updateComponentsInEnv(cache,env,ih, pre, DAE.NOMOD(), crefs, ci_state, impl) "m" ;
-        (cache,m_1) = Mod.elabMod(cache, env_1, ih, pre, mod, impl, info);
-        (cache,old_m_1) = Mod.elabMod(cache, env_1, ih, pre, old_mod, impl, info);
+        (cache,m_1) = Mod.elabMod(cache, env_1, ih, pre, mod, impl, Mod.COMPONENT(n1), info);
+        (cache,old_m_1) = Mod.elabMod(cache, env_1, ih, pre, old_mod, impl, Mod.COMPONENT(n2), info);
         m_2 = Mod.merge(rmod, m_1, env_1, pre);
         m_3 = Mod.merge(m_2, old_m_1, env_1, pre);
       then
@@ -4449,7 +4394,7 @@ algorithm
         // Debug.fprintln(Flags.INST_TRACE, "updateComponentInEnv: found a redeclaration that only changes bindings and prefixes: NEW:\n" +& SCodeDump.unparseElementStr(compNew) +& " in env:" +& Env.printEnvPathStr(env));
 
         // update the mod then give it to
-        (cache, daeMod) = Mod.elabMod(cache, env, ih, pre, smod, impl, info);
+        (cache, daeMod) = Mod.elabMod(cache, env, ih, pre, smod, impl, Mod.COMPONENT(name), info);
 
         // take the mods and attributes from the new comp!
         mods = daeMod;
@@ -4670,7 +4615,7 @@ algorithm
     // if we don't have a redeclare, take the binding from mod_3
     case (cache,env,cenv,ih,_,_,_,_,_,_,_,_,_,_,_,mod,_,_,_,updatedComps)
       equation
-        (cache, m_1) = updateComponentInEnv3(cache, env, ih, m, impl, info);
+        (cache, m_1) = updateComponentInEnv3(cache, env, ih, m, impl, Mod.COMPONENT(name), info);
         classmod = Mod.lookupModificationP(mod, path);
         mm = Mod.lookupCompModification(mod, name);
         // make sure is not a redeclare
@@ -4723,7 +4668,7 @@ algorithm
     // mod is a redeclare, take binding from m!
     case (cache,env,cenv,ih,_,_,_,_,_,_,_,_,_,_,_,mod,_,_,_,updatedComps)
       equation
-        (cache, m_1) = updateComponentInEnv3(cache, env, ih, m, impl, info);
+        (cache, m_1) = updateComponentInEnv3(cache, env, ih, m, impl, Mod.COMPONENT(name), info);
         classmod = Mod.lookupModificationP(mod, path);
         mm = Mod.lookupCompModification(mod, name);
         mod = Mod.merge(classmod, mm, env, Prefix.NOPRE());
@@ -4784,21 +4729,21 @@ protected function updateComponentInEnv3
   input InnerOuter.InstHierarchy inIH;
   input SCode.Mod inMod;
   input Boolean inImpl;
+  input Mod.ModScope inModScope;
   input Absyn.Info inInfo;
   output Env.Cache outCache;
   output DAE.Mod outMod;
 algorithm
   (outCache, outMod) :=
-  matchcontinue(inCache, inEnv, inIH, inMod, inImpl, inInfo)
+  matchcontinue(inCache, inEnv, inIH, inMod, inImpl, inModScope, inInfo)
     local
       DAE.Mod mod;
       Env.Cache cache;
 
-    case (_, _, _, _, _, _)
+    case (_, _, _, _, _, _, _)
       equation
         ErrorExt.setCheckpoint("updateComponentInEnv3");
-        (cache, mod) =
-          Mod.elabMod(inCache, inEnv, inIH, Prefix.NOPRE(), inMod, inImpl, inInfo)
+        (cache, mod) = Mod.elabMod(inCache, inEnv, inIH, Prefix.NOPRE(), inMod, inImpl, inModScope, inInfo)
         "Prefix does not matter, since we only update types
          in env, and does not make any dae elements, etc.." ;
         ErrorExt.rollBack("updateComponentInEnv3")
@@ -5490,7 +5435,7 @@ algorithm
 
         // we really need to keep at least the redeclare modifications here!!
         smod = SCodeUtil.removeSelfReferenceFromMod(scodeMod, c1);
-        (cache,m) = Mod.elabMod(cache, env, ih, pre, smod, impl, info); // m = Mod.elabUntypedMod(smod, env, pre);
+        (cache,m) = Mod.elabMod(cache, env, ih, pre, smod, impl, Mod.COMPONENT(n), info); // m = Mod.elabUntypedMod(smod, env, pre);
 
         cenv = Env.mergeEnv(cenv, env, n, c, Env.M(pre, n, ad, m, env, inst_dims));
         (cache,compenv,ih,store,_,_,ty,_) =
@@ -5529,7 +5474,7 @@ algorithm
 
         // we really need to keep at least the redeclare modifications here!!
         smod = SCodeUtil.removeNonConstantBindingsKeepRedeclares(scodeMod, false);
-        (cache,m) = Mod.elabMod(cache, env, ih, pre, smod, impl, info); // m = Mod.elabUntypedMod(smod, env, pre);
+        (cache,m) = Mod.elabMod(cache, env, ih, pre, smod, impl, Mod.COMPONENT(n), info); // m = Mod.elabUntypedMod(smod, env, pre);
 
         cenv = Env.mergeEnv(cenv, env, n, c, Env.M(pre, n, ad, m, env, inst_dims));
         (cache,compenv,ih,store,_,_,ty,_) =
@@ -5568,7 +5513,7 @@ algorithm
 
         // we really need to keep at least the redeclare modifications here!!
         smod = SCodeUtil.removeNonConstantBindingsKeepRedeclares(scodeMod, true);
-        (cache,m) = Mod.elabMod(cache, env, ih, pre, smod, impl, info); // m = Mod.elabUntypedMod(smod, env, pre);
+        (cache,m) = Mod.elabMod(cache, env, ih, pre, smod, impl, Mod.COMPONENT(n), info); // m = Mod.elabUntypedMod(smod, env, pre);
 
         cenv = Env.mergeEnv(cenv, env, n, c, Env.M(pre, n, ad, m, env, inst_dims));
         (cache,compenv,ih,store,_,_,ty,_) =

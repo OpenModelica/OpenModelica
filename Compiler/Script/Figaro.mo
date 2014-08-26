@@ -258,7 +258,7 @@ algorithm
     local
       Ident n;
       SCode.Mod m;
-    case SCode.NAMEMOD(ident = n, A = m)
+    case SCode.NAMEMOD(ident = n, mod = m)
       equation
         true = n ==& "fullClassName";
       then fcMod2(m);
@@ -443,7 +443,7 @@ algorithm
     local
       Ident n;
       SCode.Mod m;
-    case SCode.NAMEMOD(ident = n, A = m)
+    case SCode.NAMEMOD(ident = n, mod = m)
       equation
         true = n ==& "codeInstanceFigaro";
       then foMod2(m);

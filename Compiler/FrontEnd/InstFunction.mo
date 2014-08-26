@@ -674,7 +674,7 @@ algorithm
                                                             modifications = mod1),info = info))
       equation
         (cache,(c as SCode.CLASS(name = _, restriction = _)),cenv) = Lookup.lookupClass(cache, env, cn, false /* Makes MultiBody gravityacceleration hacks shit itself */);
-        (cache,mod2) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod1, false, info);
+        (cache,mod2) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod1, false, Mod.DERIVED(cn), info);
 
         (cache,_,ih,_,_,_,ty,_,_,_) =
           Inst.instClass(cache,cenv,ih,UnitAbsynBuilder.emptyInstStore(), mod2,
@@ -894,7 +894,7 @@ algorithm
         attr = SCode.ATTR(dim,ct,prl,var,dir);
 
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, true);
-        (cache,mod_1) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod, impl, info);
+        (cache,mod_1) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod, impl, Mod.COMPONENT(id), info);
         mod_1 = Mod.merge(outerMod,mod_1,cenv,Prefix.NOPRE());
         owncref = Absyn.CREF_IDENT(id,{});
         (cache,dimexp) = InstUtil.elabArraydim(cache, env, owncref, t, dim, NONE(), false, NONE(), true, false, Prefix.NOPRE(), info, {});

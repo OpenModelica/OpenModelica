@@ -685,18 +685,18 @@ end dumpModifierBinding;
 template dumpSubModifier(SCode.SubMod submod, SCodeDumpOptions options)
 ::=
 match submod
-  case NAMEMOD(A = MOD(__)) then
-    '<%dumpModifierPrefix(A)%><%ident%><%dumpModifier(A,options)%>'
-  case NAMEMOD(A = REDECL(__)) then
-    '<%dumpRedeclModifier(A,options)%>'
+  case NAMEMOD(mod = MOD(__)) then
+    '<%dumpModifierPrefix(mod)%><%ident%><%dumpModifier(mod,options)%>'
+  case NAMEMOD(mod = REDECL(__)) then
+    '<%dumpRedeclModifier(mod,options)%>'
 end dumpSubModifier;
 
 template dumpAnnotationSubModifier(SCode.SubMod submod, SCodeDumpOptions options)
 ::=
 match submod
-  case NAMEMOD(A = nameMod as MOD(__)) then
+  case NAMEMOD(mod = nameMod as MOD(__)) then
     (if Config.showAnnotations() then
-      '<%dumpModifierPrefix(A)%><%ident%><%dumpAnnotationModifier(nameMod,options)%>'
+      '<%dumpModifierPrefix(mod)%><%ident%><%dumpAnnotationModifier(nameMod,options)%>'
     else
       match ident
       case "choices"
@@ -708,8 +708,8 @@ match submod
       case "Placement"
         then ""
       else '<%dumpModifierPrefix(nameMod)%><%ident%><%dumpAnnotationModifier(nameMod,options)%>')
-  case NAMEMOD(A = REDECL(__)) then
-    '<%dumpRedeclModifier(A,options)%>'
+  case NAMEMOD(mod = REDECL(__)) then
+    '<%dumpRedeclModifier(mod,options)%>'
 end dumpAnnotationSubModifier;
 
 template dumpAttributes(SCode.Attributes attributes)

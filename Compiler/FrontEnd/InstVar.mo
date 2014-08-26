@@ -1528,7 +1528,7 @@ algorithm
 
         scodeMod = InstUtil.chainRedeclares(mod, scodeMod);
 
-        (_,mod2) = Mod.elabMod(cache, env, ih, pre, scodeMod, impl,info);
+        (_,mod2) = Mod.elabMod(cache, env, ih, pre, scodeMod, impl, Mod.DERIVED(path), info);
         mod3 = Mod.merge(mod, mod2, env, pre);
         mod_1 = Mod.lookupIdxModification(mod3, i);
         s = DAE.INDEX(DAE.ICONST(i));

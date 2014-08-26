@@ -13739,7 +13739,7 @@ algorithm
 
         (cache,c,env_1) = Lookup.lookupClass(cache, env, Absyn.IDENT(annName), false);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-        (cache,mod_2) = Mod.elabMod(cache, env_2, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo);
+        (cache,mod_2) = Mod.elabMod(cache, env_2, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Mod.COMPONENT(annName), Absyn.dummyInfo);
         c_1 = SCode.classSetPartial(c, SCode.NOT_PARTIAL());
         (_,_,_,_,dae,_,_,_,_,_) =
           Inst.instClass(cache, env_1, InnerOuter.emptyInstHierarchy,
@@ -14095,7 +14095,7 @@ algorithm
         placementc = getClassInProgram("Icon", graphicProgram);
         placementclass = SCodeUtil.translateClass(placementc);
 
-        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add Absyn.Info to this function's input
+        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Mod.COMPONENT("Icon"), Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add Absyn.Info to this function's input
         (cache,_,_,_,dae,_,_,_,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore, mod_2, Prefix.NOPRE(),
             placementclass, {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
@@ -14127,7 +14127,7 @@ algorithm
 
         placementc = getClassInProgram("Icon", graphicProgram);
         placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, true, Absyn.dummyInfo);
+        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, true, Mod.COMPONENT("Icon"), Absyn.dummyInfo);
         (cache,_,_,_,dae,_,_,_,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
             mod_2, Prefix.NOPRE(), placementclass, {}, false, InstTypes.TOP_CALL(),
@@ -14150,7 +14150,7 @@ algorithm
 
         placementc = getClassInProgram("Diagram", graphicProgram);
         placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo);
+        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Mod.COMPONENT("Diagram"), Absyn.dummyInfo);
         (cache,_,_,_,dae,_,_,_,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy,
             UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), placementclass, {}, false,
@@ -14181,7 +14181,7 @@ algorithm
 
         placementc = getClassInProgram("Icon", graphicProgram);
         placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, true, Absyn.dummyInfo);
+        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, true, Mod.COMPONENT("Diagram"), Absyn.dummyInfo);
         (cache,_,_,_,dae,_,_,_,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
             mod_2, Prefix.NOPRE(), placementclass, {}, false, InstTypes.TOP_CALL(),
@@ -14204,7 +14204,7 @@ algorithm
 
         placementc = getClassInProgram(anncname, graphicProgram);
         placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo);
+        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Mod.COMPONENT(anncname), Absyn.dummyInfo);
         (cache,_,_,_,dae,_,_,_,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
             mod_2, Prefix.NOPRE(), placementclass, {},

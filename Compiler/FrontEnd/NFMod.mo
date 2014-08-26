@@ -802,7 +802,7 @@ algorithm
 end splitMod2;
 
 protected function mergeModsInSameScope
-  "Merges two modifier in the same scope, i.e. they have the same priority. It's
+  "Merges two modifiers in the same scope, i.e. they have the same priority. It's
    thus an error if the modifiers modify the same element."
   input Modifier inMod1;
   input Modifier inMod2;
@@ -843,7 +843,7 @@ algorithm
       equation
         info1 = modifierInfo(inMod1);
         info2 = modifierInfo(inMod2);
-        comp_str = NFInstPrefix.prefixStr(comp_str, prefix);
+        comp_str = "component " +& NFInstPrefix.prefixStr(comp_str, prefix);
         Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
           {inElementName, comp_str}, {info2, info1});
       then
@@ -1075,7 +1075,7 @@ algorithm
 
     case ({}, _) then {};
 
-    case (SCode.NAMEMOD(ident = _, A = SCode.MOD(binding = SOME((e, _))))::rest, _)
+    case (SCode.NAMEMOD(ident = _, mod = SCode.MOD(binding = SOME((e, _))))::rest, _)
       equation
         cl = Absyn.getCrefFromExp(e,true,true);
         true = List.fold(List.map1(cl, Absyn.crefFirstEqual, id), boolOr, false);
@@ -1266,7 +1266,7 @@ algorithm
     local
       SCode.Element redecl;
 
-    case (SCode.NAMEMOD(A = SCode.REDECL(element = redecl)), _)
+    case (SCode.NAMEMOD(mod = SCode.REDECL(element = redecl)), _)
       equation
         //NFSCodeCheck.checkDuplicateRedeclarations(redecl, inRedeclares);
       then

@@ -390,7 +390,7 @@ algorithm
       SCode.Element el;
       NFSCodeEnv.Redeclaration redecl;
 
-    case (SCode.NAMEMOD(A = SCode.REDECL(element = el)), _)
+    case (SCode.NAMEMOD(mod = SCode.REDECL(element = el)), _)
       equation
         redecl = NFSCodeEnv.RAW_MODIFIER(el);
         NFSCodeCheck.checkDuplicateRedeclarations(redecl, inRedeclares);

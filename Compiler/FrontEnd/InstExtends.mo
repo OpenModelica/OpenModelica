@@ -199,7 +199,7 @@ algorithm
         (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih,mod,pre,rest,elsExtendsScope,ci_state,className,impl,isPartialInst)
         "continue with next element in list";
 
-        emod_1 = Mod.elabUntypedMod(emod, env2, Prefix.NOPRE());
+        emod_1 = Mod.elabUntypedMod(emod, env2, Prefix.NOPRE(), Mod.EXTENDS(tp));
         mods_1 = Mod.merge(mod, mods_1, env2, Prefix.NOPRE());
         mods_1 = Mod.merge(mods_1, emod_1, env2, Prefix.NOPRE());
 
@@ -1758,7 +1758,7 @@ algorithm
 
     case (_, _, {}, _) then (inCache, {});
 
-    case (_, _, SCode.NAMEMOD(ident = ident, A = mod) :: rest_mods, _)
+    case (_, _, SCode.NAMEMOD(ident, mod) :: rest_mods, _)
       equation
         (cache, mod) = fixModifications(inCache, inEnv, mod, inHt);
         (cache, rest_mods) = fixSubModList(cache, inEnv, rest_mods, inHt);

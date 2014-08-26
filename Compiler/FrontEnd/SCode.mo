@@ -141,7 +141,7 @@ uniontype SubMod "Modifications are represented in an more structured way than i
     (such as in `x.y =  z\') are normalized (to `x(y = z)\')."
   record NAMEMOD
     Ident ident;
-    Mod A "A named component" ;
+    Mod mod "A named component" ;
   end NAMEMOD;
 end SubMod;
 
@@ -3773,7 +3773,7 @@ algorithm
     local
       String id;
 
-    case (NAMEMOD(ident = id, A = MOD(binding = SOME((Absyn.BOOL(value = true), _)))), _)
+    case (NAMEMOD(ident = id, mod = MOD(binding = SOME((Absyn.BOOL(value = true), _)))), _)
       then stringEq(id, inName);
 
     else false;
@@ -4637,7 +4637,7 @@ public function isRedeclareSubMod
   output Boolean outIsRedeclare;
 algorithm
   outIsRedeclare := match(inSubMod)
-    case NAMEMOD(A = REDECL(element = _)) then true;
+    case NAMEMOD(mod = REDECL(element = _)) then true;
     else false;
   end match;
 end isRedeclareSubMod;
@@ -5110,7 +5110,7 @@ algorithm
 
     case (_, {}) then {};
 
-    case (NAMEMOD(id1, _), NAMEMOD(id2, _)::rest)
+    case (NAMEMOD(ident = id1), NAMEMOD(ident = id2)::rest)
       equation
         true = stringEqual(id1, id2);
       then

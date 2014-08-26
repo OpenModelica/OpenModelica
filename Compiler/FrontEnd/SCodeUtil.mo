@@ -1499,7 +1499,7 @@ algorithm
       String fileName;
       Integer line;
     case ({},_) then default;
-    case (SCode.NAMEMOD(ident="__OpenModelica_FileInfo",A=SCode.MOD(binding=SOME((Absyn.TUPLE({Absyn.STRING(fileName),Absyn.INTEGER(line)}),_))))::_,_)
+    case (SCode.NAMEMOD(ident="__OpenModelica_FileInfo",mod=SCode.MOD(binding=SOME((Absyn.TUPLE({Absyn.STRING(fileName),Absyn.INTEGER(line)}),_))))::_,_)
       then Absyn.INFO(fileName,false,line,0,line,0,Absyn.dummyTimeStamp);
     case (_::rest,_) then getInfoAnnotationOrDefault2(rest,default);
   end match;

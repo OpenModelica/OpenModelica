@@ -330,7 +330,7 @@ public constant Message FOUND_CLASS_NAME_VIA_COMPONENT = MESSAGE(101, TRANSLATIO
 public constant Message FOUND_FUNC_NAME_VIA_COMP_NONCALL = MESSAGE(102, TRANSLATION(), ERROR(),
   Util.gettext("Found function %s by name lookup via component, but this is only valid when the name is used as a function call."));
 public constant Message DUPLICATE_MODIFICATIONS = MESSAGE(103, TRANSLATION(), ERROR(),
-  Util.gettext("Duplicate modification of element %s on component %s."));
+  Util.gettext("Duplicate modification of element %s on %s."));
 public constant Message ILLEGAL_SUBSCRIPT = MESSAGE(104, TRANSLATION(), ERROR(),
   Util.gettext("Illegal subscript %s for dimensions %s in component %s."));
 public constant Message ILLEGAL_EQUATION_TYPE = MESSAGE(105, TRANSLATION(), ERROR(),

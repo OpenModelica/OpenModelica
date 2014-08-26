@@ -1633,7 +1633,7 @@ algorithm
     case ({}) then {};
 
     // handle namemod
-    case (SCode.NAMEMOD(A = mod)::rest)
+    case (SCode.NAMEMOD(mod = mod)::rest)
       equation
         (e, sm) = getExpsFromMod(mod);
         exps = getExpsFromSubMods(rest);
@@ -2656,8 +2656,6 @@ algorithm
         compModLocal = Mod.lookupModificationP(mod, tpp);
         m = traverseModAddFinal(m, finalPrefix);
 
-        // compModLocal = Mod.lookupCompModification12(mod,n);
-        // print(" \t comp: " +& n +& " " +& " compModLocal: " +& Mod.printModStr(compModLocal) +& "\n");
         (cache,env,ih,selem,smod) = Inst.redeclareType(cache,env,ih,compModLocal,
         /*comp,*/ SCode.COMPONENT(n,pf,attr,tss,m,comment,aExp, aInfo),
         pre, cistate, impl,cmod);
@@ -3830,7 +3828,7 @@ algorithm
         ad_1 = getOptionArraydim(ad);
         env = addEnumerationLiteralsToEnv(env, cl);
 
-        (cache,mod_1) = Mod.elabMod(cache, env, ih, pre, mod, impl, info);
+        (cache,mod_1) = Mod.elabMod(cache, env, ih, pre, mod, impl, Mod.DERIVED(cn), info);
         eq = Mod.modEquation(mod_1);
         (cache,dim1,cl,type_mods) = getUsertypeDimensions(cache, cenv, ih, pre, cl, dims, impl);
         (cache,dim2) = elabArraydim(cache, env, owncref, cn, ad_1, eq, impl, NONE(), true, false, pre, info, dims);
@@ -3854,7 +3852,7 @@ algorithm
           _, impl)
       equation
         (_,_,{SCode.EXTENDS(path, _, mod,_, info)},{}) = splitElts(els); // ONLY ONE extends!
-        (cache,mod_1) = Mod.elabModForBasicType(cache, env, ih, pre, mod, impl, info);
+        (cache,mod_1) = Mod.elabModForBasicType(cache, env, ih, pre, mod, impl, Mod.EXTENDS(path), info);
         (cache,cl,_) = Lookup.lookupClass(cache, env, path, false);
         (cache,res,cl,type_mods) = getUsertypeDimensions(cache,env,ih,pre,cl,{},impl);
         // type_mods = Mod.addEachIfNeeded(type_mods, res);
@@ -4428,7 +4426,7 @@ algorithm
           = Lookup.lookupIdent(cache, env, id);
         cmod_1 = Mod.stripSubmod(cmod);
         m_1 = SCode.stripSubmod(m);
-        (cache,m_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), m_1, false, info);
+        (cache,m_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), m_1, false, Mod.COMPONENT(id), info);
         mod_2 = Mod.merge(cmod_1, m_2, env, Prefix.NOPRE());
         SOME(eq) = Mod.modEquation(mod_2);
         (cache,dims) = elabComponentArraydimFromEnv2(cache,eq, env);
@@ -5076,7 +5074,7 @@ algorithm
 
     case(SCode.NAMEMOD("noDerivative",(m as SCode.MOD(binding=_)))::subs,_,_,_,_,_,_)
     equation
-      (cache,DAE.MOD(subModLst={sub})) = Mod.elabMod(inCache, inEnv, inIH, inPrefix, m, false,info);
+      (cache,DAE.MOD(subModLst={sub})) = Mod.elabMod(inCache, inEnv, inIH, inPrefix, m, false, Mod.COMPONENT("noDerivative"), info);
       (name,cond) = extractNameAndExp(sub);
       outconds = getDeriveCondition(subs,elemDecl,cache,inEnv,inIH,inPrefix,info);
       varPos = setFunctionInputIndex(elemDecl,name,1);

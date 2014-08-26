@@ -1167,7 +1167,7 @@ algorithm
       list<SCode.Subscript> subs;
       Env env,  ty_env;
 
-    case (SCode.NAMEMOD(ident = ident, A = m), (env, ty_env), _)
+    case (SCode.NAMEMOD(ident = ident, mod = m), (env, ty_env), _)
       equation
         analyseNameMod(ident, env, ty_env, m, inInfo);
       then
@@ -1442,7 +1442,7 @@ algorithm
 
     // derivative is a bit special since it's not a builtin function, so just
     // analyse it's modifier to make sure that we get the derivation function.
-    case (SCode.NAMEMOD(ident = "derivative", A = mods), _, _)
+    case (SCode.NAMEMOD(ident = "derivative", mod = mods), _, _)
       equation
         analyseModifier(mods, inEnv, NFSCodeEnv.emptyEnv, inInfo);
       then
@@ -1451,7 +1451,7 @@ algorithm
     // Otherwise, try to analyse the modifier name, and if that succeeds also
     // try and analyse the rest of the modification. This is needed for example
     // for the graphical annotations such as Icon.
-    case (SCode.NAMEMOD(ident = id, A = mods), _, _)
+    case (SCode.NAMEMOD(ident = id, mod = mods), _, _)
       equation
         analyseAnnotationName(id, inEnv, inInfo);
         analyseModifier(mods, inEnv, NFSCodeEnv.emptyEnv, inInfo);

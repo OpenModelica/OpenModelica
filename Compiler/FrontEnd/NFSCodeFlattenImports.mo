@@ -516,7 +516,7 @@ algorithm
       list<SCode.Subscript> subs;
       SCode.Mod mod;
 
-    case (SCode.NAMEMOD(ident = ident, A = mod), _, _)
+    case (SCode.NAMEMOD(ident = ident, mod = mod), _, _)
       equation
         mod = flattenModifier(mod, inEnv, inInfo);
       then

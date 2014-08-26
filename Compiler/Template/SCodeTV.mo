@@ -394,7 +394,7 @@ package SCode
   uniontype SubMod
     record NAMEMOD
       Ident ident;
-      Mod A;
+      Mod mod;
     end NAMEMOD;
   end SubMod;
 
