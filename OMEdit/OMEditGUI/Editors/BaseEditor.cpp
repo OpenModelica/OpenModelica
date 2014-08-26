@@ -165,6 +165,12 @@ void BaseEditor::lineNumberAreaMouseEvent(QMouseEvent *event)
   }
   else if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonDblClick)
   {
+    /* Do not allow breakpoints if file is not saved. */
+    if (!mpModelWidget->getLibraryTreeNode()->isSaved()) {
+      InfoBar *pInfoBar = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getInfoBar();
+      pInfoBar->showMessage(tr("<b>Information: </b>Breakpoints are only allowed on saved classes."));
+      return;
+    }
     QString fileName = mpModelWidget->getLibraryTreeNode()->getFileName();
     int lineNumber = cursor.blockNumber() + 1;
     if (event->button() == Qt::LeftButton)
