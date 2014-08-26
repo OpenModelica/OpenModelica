@@ -933,6 +933,8 @@ OMShell/OMShellGUI/OMShell.config \
 OMShell/OMShellGUI/Makefile.unix \
 OMEdit/OMEditGUI/Makefile.unix \
 OMEdit/OMEditGUI/OMEdit.config \
+OMEdit/OMEditGUI/Debugger/Parser/Makefile.unix.in \
+OMEdit/OMEditGUI/Debugger/Parser/Makefile.lib.unix.in \
 OMPlot/OMPlotGUI/Makefile.unix \
 OMPlot/OMPlotGUI/OMPlotGUI.config \
 OMOptim/build/Makefile.unix \
