@@ -79,7 +79,7 @@ protected import SCodeDump;
 protected import Lookup;
 protected import SCodeUtil;
 
-public uniontype ModScope 
+public uniontype ModScope
   "Used to know where a modifier came from, for error reporting."
   record COMPONENT
     String name;
