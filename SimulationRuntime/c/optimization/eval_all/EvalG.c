@@ -80,7 +80,7 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
   const int index_con = optData->dim.index_con;
 
   modelica_real ***v;
-  long double *a[np];
+  long double a[5][5];
   long double *sdt;
   double * vv[np+1];
   int i, j, k, shift;
@@ -89,21 +89,17 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
     optData2ModelData(optData, vopt, 1);
 
   v = optData->v;
-
-  for(j = 0; j< np; ++j)
-    a[j] = optData->rk.a[j];
+  memcpy(a ,optData->rk.a, sizeof(optData->rk.a));
 
   vv[0] = optData->sv0;
-  for(j = 0; j < np; ++j){
-    vv[j + 1] = vopt + j*nv;
+  vv[1] = vopt;
+  for(j = 1; j < np; ++j){
+    vv[j + 1] = vv[j] + nv;
   }
 
-  for(i = 0, shift = 0; i <nsi; ++i){
-
-    sdt = optData->bounds.scaldt[i];
-
-    if(np == 3){
-
+  if(np == 3){
+    for(i = 0, shift = 0; i <nsi; ++i){
+      sdt = optData->bounds.scaldt[i];
       /*1*/
       for(k=0; k< nx; ++k){
         g[shift++] = (a[0][0]*vv[0][k] + a[0][3]*vv[3][k] + sdt[k]*v[i][0][k+nx])
@@ -127,18 +123,22 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
       }
       memcpy(g + shift, &v[i][2][index_con], nc*sizeof(double));
       shift +=nc;
-
-    }else if(np == 1){
+      vv[0] = vv[np];
+      for(j = 0; j < np; ++j)
+        vv[j + 1] = vv[j] + nv;
+    }
+  }else if(np == 1){
+    for(i = 0, shift = 0; i <nsi; ++i){
+      sdt = optData->bounds.scaldt[i];
       for(k = 0; k < nx; ++k)
         g[shift++] = vv[0][k] + (sdt[k]*v[i][0][k+nx] - vv[1][k]);
 
       memcpy(g + shift, &v[i][0][index_con], nc*sizeof(double));
       shift += nc;
+      vv[0] = vv[np];
+      for(j = 0; j < np; ++j)
+        vv[j + 1] = vv[j] + nv;
     }
-
-    vv[0] = vv[np];
-    for(j = 0; j < np; ++j)
-      vv[j + 1] = vv[j] + nv;
   }
   if(ACTIVE_STREAM(LOG_IPOPT_ERROR)){
     const int nJ = optData->dim.nJ;
