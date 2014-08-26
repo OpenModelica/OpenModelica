@@ -10906,6 +10906,7 @@ public function isCrefListWithEqualIdents
   input list<DAE.Exp> iExpressions;
   output Boolean oCrefWithEqualIdents;
 protected
+  Boolean tmpCrefWithEqualIdents;
   list<Boolean> boolHelperList;
   list<DAE.ComponentRef> crefs;
   DAE.Exp head;
@@ -10914,15 +10915,21 @@ algorithm
   oCrefWithEqualIdents := matchcontinue(iExpressions)
     case(head::_)
       equation
+        //print("isCrefListWithEqualIdents: \n" +& stringDelimitList(List.map1(iExpressions, ExpressionDump.dumpExpStr, 1), ""));
         boolHelperList = List.map(iExpressions, isCref);
         true = List.reduce(boolHelperList,boolAnd);
+        //print("isCrefListWithEqualIdents: all crefs!\n");
         crefs = List.map(iExpressions, expCref);
         headCref = expCref(head);
-        boolHelperList = List.map1(crefs, ComponentReference.crefEqual, headCref);
-      then List.reduce(boolHelperList,boolAnd);
+        boolHelperList = List.map1(crefs, ComponentReference.crefEqualWithoutLastSubs, headCref);
+        tmpCrefWithEqualIdents = List.reduce(boolHelperList,boolAnd);
+        //print("isCrefListWithEqualIdents: returns " +& boolString(tmpCrefWithEqualIdents) +& "\n\n");
+      then tmpCrefWithEqualIdents;
     case({})
       then true;
     else
+      equation
+        //print("isCrefListWithEqualIdents: returns false\n\n");
       then false;
   end matchcontinue;
 end isCrefListWithEqualIdents;
