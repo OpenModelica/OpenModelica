@@ -369,7 +369,7 @@ bool OMCProxy::startServer()
     struct _PROCESS_INFORMATION *pProcinfo = omcProcess->pid();
     mOMCProcessId = pProcinfo->dwProcessId;
 #else
-    mProcessId = omcProcess->pid();
+    mOMCProcessId = omcProcess->pid();
 #endif
   }
   catch (std::exception &e)
