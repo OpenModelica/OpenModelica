@@ -127,9 +127,9 @@ umfpack: build/lib/omc/libumfpack.a
 
 umfpack-clean:
 	cd 3rdParty/SuiteSparse/UMFPACK && make clean && make purge
-	rm -r build/include/omc/c/suitesparse
-	rm build/lib/omc/libumfpack.a
-	rm build/lib/omc/libamd.a
+	rm -rf build/include/omc/c/suitesparse
+	rm -f build/lib/omc/libumfpack.a
+	rm -f build/lib/omc/libamd.a
 
 build/lib/omc/libopenblas_openmodelica.a:
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 CC="$(CC)" CXX="$(CXX)" FC="$(FC)" USE_THREAD=0 NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica $(OPENBLAS_EXTRA_ARGS)
