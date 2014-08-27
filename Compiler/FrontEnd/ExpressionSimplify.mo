@@ -3656,14 +3656,14 @@ algorithm
     // e2 + (e*e2) = (1.0 + e)*e2;
     case (op1 as DAE.ADD(ty = _), e1, DAE.BINARY(e2, op2 as DAE.MUL(ty=_),e3))
       equation
-        false = Expression.isConst(e1);
+        false = Expression.isConstValue(e1);
         true = Expression.expEqual(e1,e3);
       then
         DAE.BINARY(e1,op2,DAE.BINARY(DAE.RCONST(1.0),op1,e2));
     // e2 + (e2*e) = (1.0 + e)*e2;
     case (op1 as DAE.ADD(ty = _), e1, DAE.BINARY(e2, op2 as DAE.MUL(ty=_),e3))
       equation
-        false = Expression.isConst(e1);
+        false = Expression.isConstValue(e1);
         true = Expression.expEqual(e1,e2);
       then
         DAE.BINARY(e1,op2,DAE.BINARY(DAE.RCONST(1.0),op1,e3));
@@ -3840,7 +3840,7 @@ algorithm
     // exp(e1) * exp(e2) => exp(e1 + e2)
     case(_,DAE.MUL(ty),DAE.CALL(path=Absyn.IDENT("exp"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("exp"),expLst={e2}),_,_)
       equation
-        false = Expression.isConst(e1) or Expression.isConst(e2);
+        false = Expression.isConstValue(e1) or Expression.isConstValue(e2);
         e = DAE.BINARY(e1, DAE.ADD(ty),e2);
         res = Expression.makePureBuiltinCall("exp",{e},ty);
       then res;
@@ -4035,14 +4035,14 @@ algorithm
     // (e2*e3)/e1 => (e3/e1)*e2
     case (_,DAE.DIV(ty = tp2),DAE.BINARY(exp1 = e2,operator = DAE.MUL(ty = tp),exp2 = e3),e1,_,true)
       equation
-        true = Expression.isConst(e3);
+        true = Expression.isConstValue(e3);
         (e,true) = simplify1(DAE.BINARY(e3,DAE.DIV(tp2),e1));
       then DAE.BINARY(e,DAE.MUL(tp),e2);
 
     // e2*e3 / e1 => e2 / e1 * e3
     case (_,DAE.DIV(ty = tp2),DAE.BINARY(exp1 = e2,operator = DAE.MUL(ty = tp),exp2 = e3),e1,_,true)
       equation
-        true = Expression.isConst(e2);
+        true = Expression.isConstValue(e2);
         (e,true) = simplify1(DAE.BINARY(e2,DAE.DIV(tp2),e1));
       then DAE.BINARY(e,DAE.MUL(tp),e3);
 
@@ -4189,7 +4189,7 @@ algorithm
          * Exponentation is very expensive compared to the inner expressions.
          */
         ((exp_lst as (_ :: _ :: _ :: _))) = Expression.factors(e1);
-        _ = List.selectFirst(exp_lst,Expression.isConst);
+        _ = List.selectFirst(exp_lst,Expression.isConstValue);
         exp_lst_1 = simplifyBinaryDistributePow(exp_lst, e2);
       then Expression.makeProductLst(exp_lst_1);
     // (e1^e2)^e3 => e1^(e2*e3)
@@ -4398,7 +4398,7 @@ algorithm
           DAE.BINARY(e_4,DAE.MUL(_),e_5),op3,e_6,
           _,_,_,_,_,_,_,_)
       equation
-        false = Expression.isConst(e_2);
+        false = Expression.isConstValue(e_2);
         true = Expression.expEqual(e_2,e_6);
         true = Expression.operatorEqual(op2,op3);
 
@@ -4419,7 +4419,7 @@ algorithm
           DAE.BINARY(e_4,op3,e_5),DAE.MUL(_),e_6,
           _,_,_,_,_,_,_,_)
       equation
-        false = Expression.isConst(e_2);
+        false = Expression.isConstValue(e_2);
         true = Expression.expEqual(e_2,e_5);
         true = Expression.operatorEqual(op2,op3);
 
@@ -4560,8 +4560,8 @@ algorithm
     // constants
     case (_,oper,e1,e2)
       equation
-        true = Expression.isConst(e1);
-        true = Expression.isConst(e2);
+        true = Expression.isConstValue(e1);
+        true = Expression.isConstValue(e2);
         b = simplifyRelationConst(oper, e1, e2);
       then DAE.BCONST(b);
 

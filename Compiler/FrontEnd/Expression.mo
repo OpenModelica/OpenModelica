@@ -7301,7 +7301,7 @@ algorithm
 
     case (DAE.SIZE(exp=e1,sz=SOME(e2)),_) then isConstWork(e1,isConstWork(e2,true));
 
-    case (DAE.CALL(path=_,expLst=ae,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=_)), tuple_=_, builtin=_, isImpure=false, inlineType=_,tailCall=_)),_) then isConstWorkList(ae,true);
+    case (DAE.CALL(expLst=ae, attr=DAE.CALL_ATTR(builtin=false, isImpure=false)),_) then isConstWorkList(ae,true);
 
     case (DAE.RECORD(path=_,exps=ae,ty=_),_) then isConstWorkList(ae,true);
 
