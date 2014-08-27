@@ -1643,7 +1643,7 @@ end dumpLevelSchedule;
 //-----------------------
 // Fixed level Scheduling
 //-----------------------
-public function createFixedLevelSchedule 
+public function createFixedLevelSchedule
   "author: marcusw
   Creates a level scheduling for the given graph, but assign the tasks to the threads."
   input HpcOmTaskGraph.TaskGraph iGraph;
@@ -1659,8 +1659,8 @@ protected
   list<HpcOmSimCode.TaskList> levelTaskLists;
 algorithm
   // 1. Create a task list for each thread and a advice list for each task which is empty at beginning
-  // 2. Iterate over all levels 
-  //  2.1. Create an ready-list and set all values to 0 
+  // 2. Iterate over all levels
+  //  2.1. Create an ready-list and set all values to 0
   //  2.2. Iterate over all tasks of the current level
   //    2.2.1. Find the thread that should calulcate the task
   //        2.2.1. (1) This could be the thread with the lowest value in the ready list if no task is in the advice list
@@ -1729,7 +1729,7 @@ end createFixedLevelScheduleForLevel0;
 
 protected function createFixedLevelScheduleForTask
   input Integer iTaskIdx;
-  input Real iLevelExecCosts; //sum of all execcosts 
+  input Real iLevelExecCosts; //sum of all execcosts
   input array<list<Integer>> iAdviceList; //is updated with arrayUpdate
   input array<Real> iThreadReadyList; //is updated with arrayUpdate
   input HpcOmTaskGraph.TaskGraph iGraph;
@@ -1763,7 +1763,7 @@ protected function createFixedLevelScheduleForTask0
   input array<list<Integer>> iAdviceList;
   output array<list<Integer>> oAdviceList;
 protected
-  list<Integer> adviceElem; 
+  list<Integer> adviceElem;
 algorithm
   adviceElem := arrayGet(iAdviceList, iSuccessor);
   adviceElem := iThreadAdvice::adviceElem;
@@ -1772,7 +1772,7 @@ end createFixedLevelScheduleForTask0;
 
 protected function getBestFittingThread
   input list<Integer> iAdviceList;
-  input Real iLevelExecCosts; //sum of all execosts 
+  input Real iLevelExecCosts; //sum of all execosts
   input array<Real> iThreadReadyList;
   output Integer oThreadIdx;
 protected
@@ -1794,7 +1794,7 @@ algorithm
       then head;
     case(head::tail,_,_)
       then getBestFittingThread(tail,iLevelExecCosts, iThreadReadyList);
-  end matchcontinue;   
+  end matchcontinue;
 end getBestFittingThread;
 
 protected function getFirstReadyThread
@@ -1826,7 +1826,7 @@ algorithm
       equation
         print("getFirstReadyThread0 failed\n");
     then iFirstReadyThread;
-  end match;  
+  end match;
 end getFirstReadyThread0;
 
 //---------------------------
