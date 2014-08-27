@@ -1,5 +1,5 @@
 #pragma once
-#include <SimController/ISimData.h>
+#include <Core/SimController/ISimData.h>
 namespace uBlas = boost::numeric::ublas;
 
 class SimData : public ISimData

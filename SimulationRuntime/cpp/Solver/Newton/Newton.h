@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <System/IAlgLoop.h>                // Interface to AlgLoo
-#include <Solver/IAlgLoopSolver.h>        // Export function from dll
-#include <Solver/INonLinSolverSettings.h>
+#include <Core/System/IAlgLoop.h>                // Interface to AlgLoo
+#include <Core/Solver/IAlgLoopSolver.h>        // Export function from dll
+#include <Core/Solver/INonLinSolverSettings.h>
 #include "NewtonSettings.h"
 
 

@@ -1,8 +1,8 @@
 #pragma once
 
 #ifdef ANALYZATION_MODE
-#include <SimulationSettings/IGlobalSettings.h>
-#include <DataExchange/IHistory.h>
+#include <Core/SimulationSettings//IGlobalSettings.h>
+#include <Core/DataExchange/IHistory.h>
 #include <map>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>

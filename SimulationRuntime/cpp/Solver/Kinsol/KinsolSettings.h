@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Solver/INonLinSolverSettings.h>
+#include <Core/Solver/INonLinSolverSettings.h>
 
 class KinsolSettings :public INonLinSolverSettings
 {

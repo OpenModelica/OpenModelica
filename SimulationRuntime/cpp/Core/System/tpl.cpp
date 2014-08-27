@@ -1,6 +1,6 @@
 
 
-#include "Modelica.h"
+#include <Core/Modelica.h>
 
 //template class   boost::shared_ptr<IAlgLoopSolver>;
 //template class   boost::shared_ptr<IAlgLoop>;

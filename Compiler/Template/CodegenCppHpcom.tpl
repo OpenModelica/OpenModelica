@@ -585,8 +585,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let memoryExtension = MemberVariableAssign(modelInfo, hpcOmMemory, useFlatArrayNotation)
   let className = lastIdentOfPath(modelInfo.name)
   <<
-   #include "Modelica.h"
-   #include "ModelicaDefine.h"
+   #include <Core/Modelica.h>
+   #include <Core/ModelicaDefine.h>
    #include "OMCpp<%fileNamePrefix%>.h"
    #include "OMCpp<%fileNamePrefix%>Functions.h"
 
@@ -1282,8 +1282,10 @@ template function_HPCOM_Task(list<SimEqSystem> allEquationsPlusWhen, Task iTask,
       >>
     case (task as CALCTASK_LEVEL(__)) then
       let odeEqs = task.eqIdc |> eq => equationNamesHPCOM_(eq,allEquationsPlusWhen,contextSimulationNonDiscrete,&varDecls, simCode, useFlatArrayNotation); separator="\n"
+      let taskStr = task.nodeIdc |> task => '<%task%>';separator=","
       let &varDeclsLocal = buffer "" /*BUFL*/
       <<
+      // Tasks <%taskStr%>
       <%odeEqs%>
       >>
     case (task as ASSIGNLOCKTASK(__)) then

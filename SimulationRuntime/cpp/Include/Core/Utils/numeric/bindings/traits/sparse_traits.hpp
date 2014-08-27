@@ -14,11 +14,11 @@
 #ifndef BOOST_NUMERIC_BINDINGS_TRAITS_SPARSE_TRAITS_H
 #define BOOST_NUMERIC_BINDINGS_TRAITS_SPARSE_TRAITS_H
 
-#include "Utils/numeric/bindings/traits/config.hpp"
+#include <Core/Utils/numeric/bindings/traits/config.hpp>
 
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
 
-#include "Utils/numeric/bindings/traits/traits.hpp"
+#include <Core/Utils/numeric/bindings/traits/traits.hpp>
 
 namespace boost { namespace numeric { namespace bindings { namespace traits {
 

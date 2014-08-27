@@ -1,7 +1,7 @@
 #pragma once
   
 
-#include <Solver/INonLinSolverSettings.h>
+#include <Core/Solver/INonLinSolverSettings.h>
 class HybrjSettings :public INonLinSolverSettings 
 {
 public:

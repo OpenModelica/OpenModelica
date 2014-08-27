@@ -1,6 +1,6 @@
 #pragma once
 #include "FactoryExport.h"
-#include <Solver/SolverSettings.h>
+#include <Core/Solver/SolverSettings.h>
 #include <Euler/IEulerSettings.h>
 
 /*****************************************************************************/

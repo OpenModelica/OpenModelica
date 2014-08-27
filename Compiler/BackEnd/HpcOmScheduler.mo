@@ -1235,7 +1235,7 @@ algorithm
         compLst = List.flatten(List.map1(section,Util.arrayGetIndexFirst,inComps));
         simEqSysIdcs = getSimEqSysIdcsForCompLst(compLst,iSccSimEqMapping);
         simEqSysIdcs = List.sort(simEqSysIdcs,intGt);
-        task = HpcOmSimCode.CALCTASK_LEVEL(simEqSysIdcs,section);
+        task = makeCalcLevelTask(simEqSysIdcs,section);
         taskLst = HpcOmSimCode.SERIALTASKLIST({task}, true);
     then taskLst;
     case(section::_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps),_)
@@ -1590,7 +1590,7 @@ protected function makeCalcLevelTask" makes a CALCTASK_LEVEL for the given list 
   input list<Integer> nodeIdx;
   output HpcOmSimCode.Task taskOut;
 algorithm
-  taskOut := HpcOmSimCode.CALCTASK_LEVEL(simEqs,nodeIdx);
+  taskOut := HpcOmSimCode.CALCTASK_LEVEL(simEqs,nodeIdx,NONE());
 end makeCalcLevelTask;
 
 public function makeCalcTask" makes a CALCTASK for the given list of SimEqSys and a nodeIdx"
@@ -1639,6 +1639,195 @@ algorithm
       then fail();
    end match;
 end dumpLevelSchedule;
+
+//-----------------------
+// Fixed level Scheduling
+//-----------------------
+public function createFixedLevelSchedule 
+  "author: marcusw
+  Creates a level scheduling for the given graph, but assign the tasks to the threads."
+  input HpcOmTaskGraph.TaskGraph iGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iMeta;
+  input Integer iNumberOfThreads;
+  input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
+  output HpcOmSimCode.Schedule oSchedule;
+  output HpcOmTaskGraph.TaskGraphMeta oMeta;
+protected
+  list<list<Integer>> levelTasks;
+  array<list<Integer>> adviceLists;
+  HpcOmSimCode.Schedule tmpSchedule;
+  list<HpcOmSimCode.TaskList> levelTaskLists;
+algorithm
+  // 1. Create a task list for each thread and a advice list for each task which is empty at beginning
+  // 2. Iterate over all levels 
+  //  2.1. Create an ready-list and set all values to 0 
+  //  2.2. Iterate over all tasks of the current level
+  //    2.2.1. Find the thread that should calulcate the task
+  //        2.2.1. (1) This could be the thread with the lowest value in the ready list if no task is in the advice list
+  //        2.2.1. (2) This could be the first thread in the advice list, if the thread has not already an execution time > (sum(exec(levelTasks)) / numThreads)
+  //        2.2.1. (3) Otherwise case (1)
+  //    2.2.2. Append the task to the thread and add the execution cost the the ready list
+  //    2.2.3. Add the thread to the advice-list of all successor tasks
+  levelTasks := HpcOmTaskGraph.getLevelNodes(iGraph);
+  adviceLists := arrayCreate(arrayLength(iGraph), {});
+  levelTaskLists := List.fold5(levelTasks, createFixedLevelScheduleForLevel, adviceLists, iGraph, iMeta, iNumberOfThreads, iSccSimEqMapping, {});
+  levelTaskLists := listReverse(levelTaskLists);
+  oSchedule := HpcOmSimCode.LEVELSCHEDULE(levelTaskLists);
+  oMeta := iMeta;
+end createFixedLevelSchedule;
+
+protected function createFixedLevelScheduleForLevel
+  "author: marcusw
+  Handles all tasks of one level. The advice-list is updated during calculation."
+  input list<Integer> iTasksOfLevel;
+  input array<list<Integer>> iAdviceList;
+  input HpcOmTaskGraph.TaskGraph iGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iMeta;
+  input Integer iNumberOfThreads;
+  input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
+  input list<HpcOmSimCode.TaskList> iLevelTaskLists;
+  output list<HpcOmSimCode.TaskList> oLevelTaskLists;
+protected
+  Real levelExecCosts;
+  array<Real> threadReadyList;
+  array<list<Integer>> threadTaskList;
+  array<tuple<Integer, Real>> exeCosts;
+  HpcOmSimCode.TaskList taskList;
+  list<HpcOmSimCode.Task> tasksOfLevel;
+  array<list<Integer>> inComps;
+algorithm
+  HpcOmTaskGraph.TASKGRAPHMETA(exeCosts=exeCosts,inComps=inComps) := iMeta;
+  levelExecCosts := HpcOmTaskGraph.getCostsForContractedNodes(iTasksOfLevel, exeCosts);
+  threadReadyList := arrayCreate(iNumberOfThreads, 0.0);
+  threadTaskList := arrayCreate(iNumberOfThreads, {});
+  _ := List.fold5(iTasksOfLevel, createFixedLevelScheduleForTask, levelExecCosts, iAdviceList, threadReadyList, iGraph, iMeta, threadTaskList);
+  threadTaskList := Util.arrayMap(threadTaskList, listReverse);
+  ((_,tasksOfLevel)) := Util.arrayFold2(threadTaskList, createFixedLevelScheduleForLevel0, inComps, iSccSimEqMapping, (1,{}));
+  taskList := HpcOmSimCode.PARALLELTASKLIST(tasksOfLevel);
+  oLevelTaskLists := taskList :: iLevelTaskLists;
+end createFixedLevelScheduleForLevel;
+
+protected function createFixedLevelScheduleForLevel0
+  input list<Integer> iTaskList;
+  input array<list<Integer>> iComps;
+  input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
+  input tuple<Integer, list<HpcOmSimCode.Task>> iIdxTaskList; //<threadIdx, taskList>
+  output tuple<Integer, list<HpcOmSimCode.Task>> oIdxTaskList; //<threadIdx, taskList>
+protected
+  Integer threadIdx;
+  list<HpcOmSimCode.Task> taskList;
+  HpcOmSimCode.Task newTask;
+  list<Integer> components, simEqs;
+algorithm
+  (threadIdx, taskList) := iIdxTaskList;
+  components := List.flatten(List.map1(iTaskList, Util.arrayGetIndexFirst, iComps)); //Components of each task
+  simEqs := List.flatten(List.map1(components,Util.arrayGetIndexFirst,iSccSimEqMapping));
+  newTask := HpcOmSimCode.CALCTASK_LEVEL(simEqs, iTaskList, SOME(threadIdx));
+  taskList := newTask :: taskList;
+  oIdxTaskList := (threadIdx+1,taskList);
+end createFixedLevelScheduleForLevel0;
+
+protected function createFixedLevelScheduleForTask
+  input Integer iTaskIdx;
+  input Real iLevelExecCosts; //sum of all execcosts 
+  input array<list<Integer>> iAdviceList; //is updated with arrayUpdate
+  input array<Real> iThreadReadyList; //is updated with arrayUpdate
+  input HpcOmTaskGraph.TaskGraph iGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iMeta;
+  input array<list<Integer>> iThreadTasks;
+  output array<list<Integer>> oThreadTasks; //list of tasks for each thread
+protected
+  list<Integer> adviceElem, threadTasks, successorList;
+  Integer threadIdx;
+  Real threadReadyTime, exeCost;
+algorithm
+  adviceElem := arrayGet(iAdviceList, iTaskIdx);
+  threadIdx := getBestFittingThread(adviceElem, iLevelExecCosts, iThreadReadyList);
+  threadTasks := arrayGet(iThreadTasks, threadIdx);
+  successorList := arrayGet(iGraph, threadIdx);
+  //update the advice list
+  _ := List.fold1(successorList, createFixedLevelScheduleForTask0, threadIdx, iAdviceList);
+  threadReadyTime := arrayGet(iThreadReadyList, threadIdx);
+  ((_,exeCost)) := HpcOmTaskGraph.getExeCost(iTaskIdx, iMeta);
+  threadReadyTime := realAdd(threadReadyTime, exeCost);
+  //update the thread ready list
+  _ := arrayUpdate(iThreadReadyList, threadIdx, threadReadyTime);
+  //update the thread tasks
+  threadTasks := iTaskIdx :: threadTasks;
+  oThreadTasks := arrayUpdate(iThreadTasks, threadIdx, threadTasks);
+end createFixedLevelScheduleForTask;
+
+protected function createFixedLevelScheduleForTask0
+  input Integer iSuccessor;
+  input Integer iThreadAdvice;
+  input array<list<Integer>> iAdviceList;
+  output array<list<Integer>> oAdviceList;
+protected
+  list<Integer> adviceElem; 
+algorithm
+  adviceElem := arrayGet(iAdviceList, iSuccessor);
+  adviceElem := iThreadAdvice::adviceElem;
+  oAdviceList := arrayUpdate(iAdviceList, iSuccessor, adviceElem);
+end createFixedLevelScheduleForTask0;
+
+protected function getBestFittingThread
+  input list<Integer> iAdviceList;
+  input Real iLevelExecCosts; //sum of all execosts 
+  input array<Real> iThreadReadyList;
+  output Integer oThreadIdx;
+protected
+  Real averageThreadTime, readyTime; //levelExecCost / numberOfThreads
+  Integer numOfThreads, threadIdx, head;
+  list<Integer> tail;
+algorithm
+  oThreadIdx := matchcontinue(iAdviceList, iLevelExecCosts, iThreadReadyList)
+    case({},_,_)
+      equation
+        threadIdx = getFirstReadyThread(iThreadReadyList);
+      then threadIdx;
+    case(head::tail,_,_)
+      equation
+        readyTime = arrayGet(iThreadReadyList, head);
+        numOfThreads = arrayLength(iThreadReadyList);
+        averageThreadTime = realDiv(iLevelExecCosts, numOfThreads);
+        true = realLt(readyTime, averageThreadTime);
+      then head;
+    case(head::tail,_,_)
+      then getBestFittingThread(tail,iLevelExecCosts, iThreadReadyList);
+  end matchcontinue;   
+end getBestFittingThread;
+
+protected function getFirstReadyThread
+  input array<Real> iThreadReadyList;
+  output Integer oFirstReadyThreadIdx;
+algorithm
+  ((oFirstReadyThreadIdx,_,_)) := Util.arrayFold(iThreadReadyList, getFirstReadyThread0, (-1,-1.0,1));
+end getFirstReadyThread;
+
+protected function getFirstReadyThread0
+  input Real iThreadReadyTime;
+  input tuple<Integer,Real,Integer> iFirstReadyThread; //<firstThreadIdx, readyTime, currentThreadIdx>
+  output tuple<Integer,Real,Integer> oFirstReadyThread;
+protected
+  Integer firstThreadIdx, currentThreadIdx;
+  Real readyTime;
+  Boolean isLower;
+algorithm
+  oFirstReadyThread := match(iThreadReadyTime, iFirstReadyThread)
+    case(_,(-1,_,currentThreadIdx)) //no thread set as firstThread
+      then ((currentThreadIdx, iThreadReadyTime, currentThreadIdx+1));
+    case(_,(firstThreadIdx,readyTime,currentThreadIdx))
+      equation
+        isLower = realLt(iThreadReadyTime, readyTime);
+        firstThreadIdx = Util.if_(isLower, currentThreadIdx, firstThreadIdx);
+        readyTime = Util.if_(isLower, iThreadReadyTime, readyTime);
+      then ((firstThreadIdx, readyTime, currentThreadIdx+1));
+    else
+      equation
+        print("getFirstReadyThread0 failed\n");
+    then iFirstReadyThread;
+  end match;  
+end getFirstReadyThread0;
 
 //---------------------------
 // Task dependency Scheduling

@@ -1,6 +1,6 @@
-#include "Modelica.h"
+#include <Core/Modelica.h>
 //#define BOOST_EXTENSION_GLOBALSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
-#include "GlobalSettings.h"
+#include <Core/SimulationSettings/GlobalSettings.h>
 
 GlobalSettings::GlobalSettings()
 : _startTime            (0.0)

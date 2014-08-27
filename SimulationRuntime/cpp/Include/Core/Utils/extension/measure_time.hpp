@@ -10,11 +10,15 @@
 #include <sstream>
 #include <vector>
 #include <ctime>
+#include <iostream>
 
+
+class RDTSC_MeasureTime;
 
 class MeasureTime
 {
 public:
+  MeasureTime() {}
 	virtual ~MeasureTime() {}
 
 	struct data
@@ -32,17 +36,15 @@ public:
 
 	void writeTimeToJason(std::string model_name, std::vector<data> times);
 
-protected:
-	MeasureTime() {}
-
+public:
 	virtual unsigned long long getTimeP() = 0;
-
-	static MeasureTime *instance;
+protected:
+	static RDTSC_MeasureTime *instance;
 };
 
 class RDTSC_MeasureTime : public MeasureTime
 {
-protected:
+public:
 	RDTSC_MeasureTime() : MeasureTime() {};
 
 	virtual unsigned long long getTimeP();

@@ -5,8 +5,8 @@
 
 
 #elif defined(OMC_BUILD)
-#include "Modelica.h"
-#include <DataExchange/SimData.h>
+#include <Core/Modelica.h>
+#include <Core/DataExchange/SimData.h>
 
 /* OMC factory*/
 using boost::extensions::factory;
@@ -16,8 +16,8 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
     ["SimData"].set<SimData>();
 }
 #elif defined(SIMSTER_BUILD)
-#include "Modelica.h"
-#include <DataExchange/SimData.h>
+#include <Core/Modelica.h>
+#include <Core/DataExchange/SimData.h>
 
 /*Simster factory*/
  extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_dataExchange(boost::extensions::factory_map & fm)

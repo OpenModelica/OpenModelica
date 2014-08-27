@@ -1,9 +1,9 @@
 #pragma once
 
 #include <SimCoreFactory/Policies/LinSolverOMCFactory.h>
-#include <Solver/UmfPack/UmfPack.h>
-#include <Solver/UmfPack/UmfPackSettings.h>
-#include <Solver/IAlgLoopSolver.h>
+#include <Core/Solver/UmfPack/UmfPack.h>
+#include <Core/Solver/UmfPack/UmfPackSettings.h>
+#include <Core/Solver/IAlgLoopSolver.h>
 
 template<class T>
 struct ObjectFactory;

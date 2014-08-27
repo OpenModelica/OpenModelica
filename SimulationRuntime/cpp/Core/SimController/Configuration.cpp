@@ -1,7 +1,7 @@
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-#include "Configuration.h"
+#include <Core/SimController/Configuration.h>
 #include "LibrariesConfig.h"
 
 

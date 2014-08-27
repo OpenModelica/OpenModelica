@@ -1,6 +1,6 @@
-#include "Modelica.h"
-#include "FactoryExport.h"
-#include <Solver/SimulationMonitor.h>
+#include <Core/Modelica.h>
+#include <Core/Solver/FactoryExport.h>
+#include <Core/Solver/SimulationMonitor.h>
 
 SimulationMonitor::SimulationMonitor()
 :/*_time_out(0)

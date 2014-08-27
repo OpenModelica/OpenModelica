@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef ANALYZATION_MODE
-#include <System/ISystemInitialization.h>
+#include <Core/System/ISystemInitialization.h>
 #endif
 
 class Initialization

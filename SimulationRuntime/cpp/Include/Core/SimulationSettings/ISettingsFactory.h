@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Solver/ISolverSettings.h>
+#include <Core/Solver/ISolverSettings.h>
 
 class ISettingsFactory
 {

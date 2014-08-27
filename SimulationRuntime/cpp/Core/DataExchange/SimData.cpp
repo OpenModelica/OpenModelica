@@ -1,5 +1,5 @@
-#include "Modelica.h"
-#include <DataExchange/SimData.h>
+#include <Core/Modelica.h>
+#include <Core/DataExchange/SimData.h>
 
 
 /*Vxworks

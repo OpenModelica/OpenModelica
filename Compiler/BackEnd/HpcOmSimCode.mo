@@ -59,6 +59,7 @@ encapsulated package HpcOmSimCode
     record CALCTASK_LEVEL
       list<Integer> eqIdc;
       list<Integer> nodeIdc; //indices of the graph-node
+      Option<Integer> threadIdx; //an advice which thread should calculate the task
     end CALCTASK_LEVEL;
     record ASSIGNLOCKTASK //Task which assignes a lock
       String lockId;

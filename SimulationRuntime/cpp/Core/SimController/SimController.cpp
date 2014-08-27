@@ -1,10 +1,10 @@
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-#include <SimController/ISimController.h>
-#include "SimController.h"
+#include <Core/SimController/ISimController.h>
+#include <Core/SimController/SimController.h>
+#include <Core/SimController/Configuration.h>
 #include "LibrariesConfig.h"
-#include "Configuration.h"
 
 SimController::SimController(PATH library_path,PATH modelicasystem_path) : SimControllerPolicy(library_path, modelicasystem_path,library_path), _initialized(false)
 {

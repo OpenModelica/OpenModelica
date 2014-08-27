@@ -1,8 +1,8 @@
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include "Hybrj.h"
 
-#include <Math/ILapack.h>        // needed for solution of linear system with Lapack
-#include <Math/Constants.h>        // definition of constants like uround
+#include <Core/Math/ILapack.h>        // needed for solution of linear system with Lapack
+#include <Core/Math/Constants.h>        // definition of constants like uround
 #include <algorithm>    // std::max
 
 Hybrj::Hybrj(IAlgLoop* algLoop, INonLinSolverSettings* settings)

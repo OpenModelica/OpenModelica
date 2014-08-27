@@ -1,9 +1,9 @@
 #pragma once
 
 #include <SimCoreFactory/Policies/SolverSettingsOMCFactory.h>
-#include <Solver/SolverSettings.h>
+#include <Core/Solver/SolverSettings.h>
 #include <boost/shared_ptr.hpp>
-#include <SimulationSettings/IGlobalSettings.h>
+#include <Core/SimulationSettings//IGlobalSettings.h>
 
 /*
 Policy class to create solver settings object

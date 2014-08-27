@@ -163,8 +163,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   #define MODEL_IDENTIFIER <%System.stringReplace(fileNamePrefix,".", "_")%>Extension
   #define MODEL_GUID "{<%guid%>}"
 
-  #include "Modelica.h"
-  #include "ModelicaDefine.h"
+  #include <Core/Modelica.h>
+  #include <Core/ModelicaDefine.h>
   #include <System/IMixedSystem.h>
    #include <SimulationSettings/IGlobalSettings.h>
    #include <System/IAlgLoopSolverFactory.h>

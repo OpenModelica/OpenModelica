@@ -2,19 +2,19 @@
 
 #if defined(__vxworks)
 
-  #include "Modelica.h"
- #include <System/AlgLoopSolverFactory.h>
+#include <Core/Modelica.h>
+#include <Core/System/AlgLoopSolverFactory.h>
   extern "C" IAlgLoopSolverFactory* createAlgLoopSolverFactory(IGlobalSettings* globalSettings,PATH library_path,PATH modelicasystem_path)
   {
      return new AlgLoopSolverFactory(globalSettings,library_path,modelicasystem_path);
   }
 
 #elif defined(SIMSTER_BUILD)
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-#include "FactoryExport.h"
-#include <System/AlgLoopSolverFactory.h>
+#include <Core/System/FactoryExport.h>
+#include <Core/System/AlgLoopSolverFactory.h>
 
 /*Simster factory*/
 extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_system(boost::extensions::factory_map & fm)
@@ -26,11 +26,11 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_system(boost::exten
 
 
 #elif defined(OMC_BUILD)
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-#include "FactoryExport.h"
-#include <System/AlgLoopSolverFactory.h>
+#include <Core/System/FactoryExport.h>
+#include <Core/System/AlgLoopSolverFactory.h>
 
 
 /*OMC factory*/

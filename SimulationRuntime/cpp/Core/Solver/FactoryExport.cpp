@@ -6,13 +6,13 @@
 
 #elif defined(OMC_BUILD)
 
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-#include "FactoryExport.h"
+#include <Core/Solver/FactoryExport.h>
 
-#include <Solver/SolverDefaultImplementation.h>
-#include <Solver/SolverSettings.h>
+#include <Core/Solver/SolverDefaultImplementation.h>
+#include <Core/Solver/SolverSettings.h>
 
 
 /* OMC factory*/
@@ -25,10 +25,10 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
     ["SolverSettings"].set<SolverSettings>();
 }
 #elif defined(SIMSTER_BUILD)
-#include "Modelica.h"
-#include "FactoryExport.h"
-#include <Solver/SolverDefaultImplementation.h>
-#include <Solver/SolverSettings.h>
+#include <Core/Modelica.h>
+#include <Core/Solver/FactoryExport.h>
+#include <Core/Solver/SolverDefaultImplementation.h>
+#include <Core/Solver/SolverSettings.h>
 
 /*Simster factory*/
 extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_solver(boost::extensions::factory_map & fm)

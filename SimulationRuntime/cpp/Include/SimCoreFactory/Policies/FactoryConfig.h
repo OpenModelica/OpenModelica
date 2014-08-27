@@ -18,12 +18,12 @@
 #ifdef ANALYZATION_MODE
     #include <boost/unordered_map.hpp>
     /*Factory includes*/
-    #include "Utils/extension/extension.hpp"
-    #include "Utils/extension/factory.hpp"
-    #include "Utils/extension/type_map.hpp"
-    #include "Utils/extension/shared_library.hpp"
-    #include "Utils/extension/convenience.hpp"
-    #include "Utils/extension/factory_map.hpp"
+    #include <Core/Utils/extension/extension.hpp>
+    #include <Core/Utils/extension/factory.hpp>
+    #include <Core/Utils/extension/type_map.hpp>
+    #include <Core/Utils/extension/shared_library.hpp>
+    #include <Core/Utils/extension/convenience.hpp>
+    #include <Core/Utils/extension/factory_map.hpp>
     #include <boost/filesystem/operations.hpp>
     #include <boost/filesystem/path.hpp>
 
@@ -40,13 +40,13 @@
     #define PATH fs::path
     #include "LibrariesConfig.h"
     /*
-    #include <System/IAlgLoop.h>
-    #include <Solver/IAlgLoopSolver.h>
-    #include <System/IAlgLoopSolverFactory.h>
-    #include <SimController/ISimData.h>
-    #include <System/IMixedSystem.h>
-    #include <SimulationSettings/IGlobalSettings.h>
-    #include <SimController/ISimController.h>  */
+    #include <Core/System/IAlgLoop.h>
+    #include <Core/Solver/IAlgLoopSolver.h>
+    #include <Core/System/IAlgLoopSolverFactory.h>
+    #include <Core/SimController/ISimData.h>
+    #include <Core/System/IMixedSystem.h>
+    #include <Core/SimulationSettings//IGlobalSettings.h>
+    #include <Core/SimController/ISimController.h>  */
     #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 
 #else

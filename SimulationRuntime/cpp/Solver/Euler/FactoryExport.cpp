@@ -1,8 +1,8 @@
 
 #pragma once
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #if defined(__vxworks)
-#include "Modelica.h"
+#include <Core/Modelica.h>
 
 #include "Euler.h"
 #include "EulerSettings.h"
@@ -30,7 +30,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_euler(boost::extens
 }
 
 #elif defined(OMC_BUILD)
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include "Euler.h"

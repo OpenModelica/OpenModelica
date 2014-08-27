@@ -1,6 +1,6 @@
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include "CVode.h"
-#include <Math/Functions.h>
+#include <Core/Math/Functions.h>
 
 Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
     : SolverDefaultImplementation(system, settings),

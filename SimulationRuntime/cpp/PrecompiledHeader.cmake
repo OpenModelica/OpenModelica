@@ -85,7 +85,7 @@ MESSAGE(FATAL_ERROR "A source file for ${_inputWe} was not found. Required for M
 ENDIF(NOT _sourceFound)
 #copy pre compiled header file in installation directory
 MESSAGE(STATUS "install pch: ${CMAKE_BINARY_DIR}/${_inputWe}.pch" )
-install (FILES "${CMAKE_BINARY_DIR}/Core/Modelica/${_inputWe}.pch" DESTINATION include/omc/cpp)
+install (FILES "${CMAKE_BINARY_DIR}/Core/Modelica/${_inputWe}.pch" DESTINATION include/omc/cpp/Core)
 SET(PCH_FILE "${_inputWe}.pch")
 SET(H_FILE "${_name}")
 ENDIF(CMAKE_BUILD_TYPE MATCHES RELEASE)
@@ -101,7 +101,7 @@ ENDIF(MSVC)
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" )
 GET_FILENAME_COMPONENT(_name ${_input} NAME)
 SET(_source "${CMAKE_SOURCE_DIR}/${_input}")
-SET(_outdir "${CMAKE_BINARY_DIR}/${_name}.gch")
+SET(_outdir "${CMAKE_BINARY_DIR}/Core/${_name}.gch")
 MAKE_DIRECTORY(${_outdir})
 #SET(_output "${_outdir}/.c++")
 #changed output so that gcc automaticly finds pre compiled header for Modelica system
@@ -136,9 +136,9 @@ COMMAND ${CMAKE_CXX_COMPILER} ${_compiler_FLAGS} -x c++-header -o ${_output} ${_
 DEPENDS ${_source} )
 ADD_CUSTOM_TARGET(${_targetName}_gch DEPENDS ${_output})
 ADD_DEPENDENCIES(${_targetName} ${_targetName}_gch)
-SET_TARGET_PROPERTIES(${_targetName} PROPERTIES COMPILE_FLAGS "-include ${_name} -Winvalid-pch")
+SET_TARGET_PROPERTIES(${_targetName} PROPERTIES COMPILE_FLAGS "-include Core/${_name} -Winvalid-pch")
 #copy pre compiled header file in installation directory
-install (FILES "${_output}" DESTINATION include/omc/cpp)
+install (FILES "${_output}" DESTINATION include/omc/cpp/Core)
 SET(PCH_FILE "${_name}.gch")
 SET(H_FILE "${_name}")
 endif()
@@ -186,7 +186,7 @@ ENDFOREACH(item)
 #SET_TARGET_PROPERTIES(${_targetName} PROPERTIES COMPILE_FLAGS "-include ${_name} -Winvalid-pch")
 
 #copy pre compiled header file in installation directory
-#install (FILES "${_output}" DESTINATION include/omc/cpp)
+#install (FILES "${_output}" DESTINATION include/omc/cpp/Core)
 #SET(PCH_FILE "${_name}")
 endif()
 

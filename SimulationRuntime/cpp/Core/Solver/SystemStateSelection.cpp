@@ -1,8 +1,8 @@
-#include "Modelica.h"
-#include "FactoryExport.h"
-#include <Solver/SystemStateSelection.h>
-#include <Math/ArrayOperations.h>
-#include <Math/Functions.h>
+#include <Core/Modelica.h>
+#include <Core/Solver/FactoryExport.h>
+#include <Core/Solver/SystemStateSelection.h>
+#include <Core/Math/ArrayOperations.h>
+#include <Core/Math/Functions.h>
 
 
 SystemStateSelection::SystemStateSelection(IMixedSystem* system)

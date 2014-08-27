@@ -1,6 +1,6 @@
 #pragma once
 
-#include <System/IStateSelection.h>
+#include <Core/System/IStateSelection.h>
 #include <boost/shared_array.hpp>
 
 #if defined(ANALYZATION_MODE)

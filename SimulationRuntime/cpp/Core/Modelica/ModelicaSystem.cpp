@@ -1,11 +1,11 @@
- #include "Modelica.h"
+ #include <Core/Modelica.h>
  #include <SimCoreFactory/Policies/FactoryConfig.h>
- #include "FactoryExport.h"
- #include "System/EventHandling.h"
- #include "HistoryImpl.h"
- #include "System/SystemDefaultImplementation.h"
- #include "DataExchange/Policies/TextfileWriter.h"
- #include "ModelicaSystem.h"
+ #include <Core/Modelica/FactoryExport.h>
+ #include <Core/System/EventHandling.h>
+ #include <Core/HistoryImpl.h>
+ #include <Core/System/SystemDefaultImplementation.h>
+ #include <Core/DataExchange/Policies/TextfileWriter.h>
+ #include <Core/Modelica/ModelicaSystem.h>
 
 
 

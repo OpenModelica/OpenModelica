@@ -1,9 +1,8 @@
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-#include "Factory.h"
-#include "GlobalSettings.h"
-
+#include <Core/SimulationSettings/Factory.h>
+#include <Core/SimulationSettings/GlobalSettings.h>
 
 
 #define BOOST_NO_WCHAR

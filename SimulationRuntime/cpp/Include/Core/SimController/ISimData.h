@@ -1,5 +1,5 @@
 #pragma once
-#include <DataExchange/ISimVar.h>
+#include <Core/DataExchange/ISimVar.h>
 
 #ifdef ANALYZATION_MODE
 #include <string.h>

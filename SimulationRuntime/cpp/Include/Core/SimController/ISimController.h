@@ -1,10 +1,10 @@
 #pragma once
 
 #ifdef ANALYZATION_MODE
-#include <SimController/ISimData.h>
-#include <System/IMixedSystem.h>
-#include <System/IAlgLoopSolverFactory.h>
-#include <SimulationSettings/IGlobalSettings.h>
+#include <Core/SimController/ISimData.h>
+#include <Core/System/IMixedSystem.h>
+#include <Core/System/IAlgLoopSolverFactory.h>
+#include <Core/SimulationSettings//IGlobalSettings.h>
 #include <boost/weak_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 

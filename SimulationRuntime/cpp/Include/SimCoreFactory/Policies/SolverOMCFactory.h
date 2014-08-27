@@ -1,8 +1,8 @@
 #pragma once
 
 #include <SimCoreFactory/ObjectFactory.h>
-#include <Solver/ISolver.h>
-#include <SimulationSettings/ISettingsFactory.h>
+#include <Core/Solver/ISolver.h>
+#include <Core/SimulationSettings//ISettingsFactory.h>
 
 /*
 Policy class to create solver object

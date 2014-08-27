@@ -1,9 +1,9 @@
 #pragma once
 
-#include <System/IAlgLoopSolverFactory.h>
+#include <Core/System/IAlgLoopSolverFactory.h>
 #include <SimCoreFactory/Policies/SystemOMCFactory.h>
-#include <System/AlgLoopSolverFactory.h>
-#include <SimController/ISimData.h>
+#include <Core/System/AlgLoopSolverFactory.h>
+#include <Core/SimController/ISimData.h>
 
 /*
 Policy class to create a OMC-,  Modelica- system or AlgLoopSolver

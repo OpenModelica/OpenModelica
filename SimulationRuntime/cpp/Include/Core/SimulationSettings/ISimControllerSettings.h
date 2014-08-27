@@ -4,7 +4,7 @@
 Klasse zur Kapselung der Parameter (Einstellungen) für den SimManagerSettings.
 */
 
-#include <Math/Constants.h>
+#include <Core/Math/Constants.h>
 
 class ISimControllerSettings
 {

@@ -3285,6 +3285,8 @@ package HpcOmSimCode
     end CALCTASK;
     record CALCTASK_LEVEL
       list<Integer> eqIdc;
+      list<Integer> nodeIdc;
+      Option<Integer> threadIdx;
     end CALCTASK_LEVEL;
     record ASSIGNLOCKTASK //Task which assignes a lock
       String lockId;

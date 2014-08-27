@@ -1,14 +1,14 @@
 #pragma once
 
 #ifdef ANALYZATION_MODE
-#include <Math/Functions.h>
-#include <System/EventHandling.h>
+#include <Core/Math/Functions.h>
+#include <Core/System/EventHandling.h>
 #include <boost/any.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/circular_buffer.hpp>
 #include <iostream>
-#include <System/IContinuous.h>
-#include <SimulationSettings/IGlobalSettings.h>
+#include <Core/System/IContinuous.h>
+#include <Core/SimulationSettings//IGlobalSettings.h>
 #endif
 
 /*****************************************************************************/

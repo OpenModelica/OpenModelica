@@ -1,7 +1,7 @@
 #pragma once
 
 #include "FactoryExport.h"
-#include <Solver/SolverDefaultImplementation.h>
+#include <Core/Solver/SolverDefaultImplementation.h>
 
 class IEulerSettings;
 

@@ -1,8 +1,8 @@
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include "FactoryExport.h"
-#include <System/IEvent.h>
-#include <System/EventHandling.h>
-#include <Math/Functions.h>
+#include <Core/System/IEvent.h>
+#include <Core/System/EventHandling.h>
+#include <Core/Math/Functions.h>
 
 
 /**

@@ -1,5 +1,5 @@
-#include "Modelica.h"
-#include <Math/Functions.h>
+#include <Core/Modelica.h>
+#include <Core/Math/Functions.h>
 #include <stdexcept>
 
 /* Matrixes using column major order (as in Fortran) */

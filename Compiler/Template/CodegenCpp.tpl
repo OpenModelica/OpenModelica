@@ -367,8 +367,8 @@ template simulationFactoryFile(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
-   /* #include "Modelica.h"
-   #include "ModelicaDefine.h"
+   /* #include <Core/Modelica.h>
+   #include <Core/ModelicaDefine.h>
    #include "OMCpp<%fileNamePrefix%>Extension.h" */
 
 
@@ -389,8 +389,8 @@ template simulationInitCppFile(SimCode simCode, Boolean useFlatArrayNotation)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-   /* #include "Modelica.h"
-   #include "ModelicaDefine.h"
+   /* #include <Core/Modelica.h>
+   #include <Core/ModelicaDefine.h>
    #include "OMCpp<%fileNamePrefix%>Initialize.h" */
 
    <%algloopfilesInclude(listAppend(allEquations,initialEquations),simCode)%>
@@ -419,8 +419,8 @@ template simulationJacobianCppFile(SimCode simCode, Boolean useFlatArrayNotation
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-   /* #include "Modelica.h"
-   #include "ModelicaDefine.h"
+   /* #include <Core/Modelica.h>
+   #include <Core/ModelicaDefine.h>
    #include "OMCpp<%fileNamePrefix%>Jacobian.h" */
    <%lastIdentOfPath(modelInfo.name)%>Jacobian::<%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
@@ -445,8 +445,8 @@ template simulationStateSelectionCppFile(SimCode simCode, Boolean useFlatArrayNo
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-   /* #include "Modelica.h"
-   #include "ModelicaDefine.h"
+   /* #include <Core/Modelica.h>
+   #include <Core/ModelicaDefine.h>
    #include "OMCpp<%fileNamePrefix%>StateSelection.h" */
    <%lastIdentOfPath(modelInfo.name)%>StateSelection::<%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
@@ -474,8 +474,8 @@ template simulationWriteOutputCppFile(SimCode simCode, Boolean useFlatArrayNotat
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-   /* #include "Modelica.h"
-   #include "ModelicaDefine.h"
+   /* #include <Core/Modelica.h>
+   #include <Core/ModelicaDefine.h>
    #include "OMCpp<%fileNamePrefix%>WriteOutput.h" */
 
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
@@ -520,8 +520,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
   <<
-   /* #include "Modelica.h"
-   #include "ModelicaDefine.h"
+   /* #include <Core/Modelica.h>
+   #include <Core/ModelicaDefine.h>
    #include "OMCpp<%fileNamePrefix%>Extension.h" */
    <%lastIdentOfPath(modelInfo.name)%>Extension::<%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
@@ -1104,8 +1104,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
     #ifndef BOOST_ALL_DYN_LINK
   #define BOOST_ALL_DYN_LINK
     #endif
-  #include "Modelica.h"
-  #include "ModelicaDefine.h"
+  #include <Core/Modelica.h>
+  #include <Core/ModelicaDefine.h>
   #include <SimCoreFactory/Policies/FactoryConfig.h>
   #include <SimController/ISimController.h>
   <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '#include "Core/Utils/extension/measure_time.hpp"' %>
@@ -1155,8 +1155,8 @@ template calcHelperMainfile(SimCode simCode)
     *
     *****************************************************************************/
 
-    #include "Modelica.h"
-    #include "ModelicaDefine.h"
+    #include <Core/Modelica.h>
+    #include <Core/ModelicaDefine.h>
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>Extension.h"
@@ -1193,8 +1193,8 @@ template simulationFunctionsFile(SimCode simCode, list<Function> functions, list
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
-  /* #include "Modelica.h"
-  #include "ModelicaDefine.h"
+  /* #include <Core/Modelica.h>
+  #include <Core/ModelicaDefine.h>
   #include "OMCpp<%fileNamePrefix%>Functions.h" */
 
   <%externalFunctionIncludes(includes)%>
@@ -1463,8 +1463,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let className = lastIdentOfPath(modelInfo.name)
 
   <<
-   #include "Modelica.h"
-   #include "ModelicaDefine.h"
+   #include <Core/Modelica.h>
+   #include <Core/ModelicaDefine.h>
    #include "OMCpp<%fileNamePrefix%>.h"
    #include "OMCpp<%fileNamePrefix%>Functions.h"
 
@@ -1587,8 +1587,8 @@ match eq
     case SES_LINEAR(__)
     case SES_NONLINEAR(__) then
   <<
-   /* #include "Modelica.h"
-   #include "ModelicaDefine.h"
+   /* #include <Core/Modelica.h>
+   #include <Core/ModelicaDefine.h>
    #include "OMCpp<%fileNamePrefix%>Extension.h"
    #include "OMCpp<%filename%>Algloop<%index%>.h"
    #include "OMCpp<%modelfilename%>.h" */
@@ -7606,8 +7606,8 @@ template algloopMainfile(list<SimEqSystem> allEquations, SimCode simCode,Context
     *
     *****************************************************************************/
 
-    #include "Modelica.h"
-    #include "ModelicaDefine.h"
+    #include <Core/Modelica.h>
+    #include <Core/ModelicaDefine.h>
     #include "OMCpp<%fileNamePrefix%>Extension.h"
     #include "OMCpp<%modelfilename%>.h"
     #include "OMCpp<%modelfilename%>Functions.h"
@@ -8454,7 +8454,6 @@ end daeExpMatrixRow;
 template daeExpMatrixRow(list<Exp> row,Context context)
  "Helper to daeExpMatrix."
 ::=
- /*
  if isCrefListWithEqualIdents(row) then
   match row
   case firstelem::_ then
@@ -8463,8 +8462,6 @@ template daeExpMatrixRow(list<Exp> row,Context context)
    "NO_ASSIGN"
    end match
   else
-   "NO_ASSIGN"
- */
    "NO_ASSIGN"
 end daeExpMatrixRow;
 

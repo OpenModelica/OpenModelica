@@ -17,7 +17,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/convenience.hpp>
 #include <boost/extension/factory_map.hpp>
-#include "Utils/extension/convenience.hpp"
+#include <Core/Utils/extension/convenience.hpp>
 
 namespace boost {namespace extensions {
 

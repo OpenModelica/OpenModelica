@@ -1,9 +1,9 @@
-#include "Modelica.h"
-#include "FactoryExport.h"
-#include <Solver/SolverDefaultImplementation.h>
-#include <Solver/SolverSettings.h>
-#include <SimulationSettings/IGlobalSettings.h>
-#include <Math/Constants.h>
+#include <Core/Modelica.h>
+#include <Core/Solver/FactoryExport.h>
+#include <Core/Solver/SolverDefaultImplementation.h>
+#include <Core/Solver/SolverSettings.h>
+#include <Core/SimulationSettings/IGlobalSettings.h>
+#include <Core/Math/Constants.h>
 
 SolverDefaultImplementation::SolverDefaultImplementation(IMixedSystem* system, ISolverSettings* settings)
 : SimulationMonitor()

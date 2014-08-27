@@ -1,7 +1,7 @@
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-#include <SimController/ISimController.h>
+#include <Core/SimController/ISimController.h>
 
 
 OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)

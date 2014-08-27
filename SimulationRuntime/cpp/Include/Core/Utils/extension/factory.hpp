@@ -13,8 +13,8 @@
 #ifndef BOOST_EXTENSION_FACTORY_HPP
 #define BOOST_EXTENSION_FACTORY_HPP
 
-#include "Utils/extension/common.hpp"
-#include "Utils/extension/impl/create.hpp"
+#include <Core/Utils/extension/common.hpp>
+#include <Core/Utils/extension/impl/create.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_base_of.hpp>
 #include <boost/type_traits/is_class.hpp>
@@ -105,7 +105,7 @@ class factory;
 // generate specializations of factory
 # define BOOST_PP_ITERATION_LIMITS \
   (0, BOOST_PP_INC(BOOST_EXTENSION_MAX_FUNCTOR_PARAMS) - 1)
-# define BOOST_PP_FILENAME_1 "Utils/extension/impl/factory.hpp"
+# define BOOST_PP_FILENAME_1 "Core/Utils/extension/impl/factory.hpp"
 # include BOOST_PP_ITERATE()
 #endif
 }  // namespace extensions

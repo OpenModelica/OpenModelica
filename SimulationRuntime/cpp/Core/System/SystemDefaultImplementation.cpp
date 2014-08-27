@@ -1,9 +1,9 @@
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include "FactoryExport.h"
 #include <SimCoreFactory/Policies/FactoryConfig.h>
-#include <System/EventHandling.h>
-#include <System/SystemDefaultImplementation.h>
-#include <System/AlgLoopSolverFactory.h>
+#include <Core/System/EventHandling.h>
+#include <Core/System/SystemDefaultImplementation.h>
+#include <Core/System/AlgLoopSolverFactory.h>
 
 
 template <class T>

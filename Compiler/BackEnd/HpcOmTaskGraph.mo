@@ -1435,7 +1435,7 @@ algorithm
   (graphTmp,cutNodes) := cutTaskGraph(graphTmp,stateNodes,whenNodes,{});
   cutNodeChildren := List.flatten(List.map1(listAppend(cutNodes,whenNodes),Util.arrayGetIndexFirst,graphIn)); // for computing new root-nodes when cutting out when-equations
   (_,cutNodeChildren,_) := List.intersection1OnTrue(cutNodeChildren,cutNodes,intEq);
-  graphDataOdeOut := getOdeSystemData(graphDataIn,listAppend(cutNodes,whenNodes),cutNodeChildren);
+  graphDataOdeOut := cutSystemData(graphDataIn,listAppend(cutNodes,whenNodes),cutNodeChildren);
   graphOdeOut := graphTmp;
 end getOdeSystem;
 
@@ -1569,7 +1569,7 @@ algorithm
   end matchcontinue;
 end cutTaskGraph;
 
-protected function getOdeSystemData "updates the taskGraphMetaData for the ode system.
+protected function cutSystemData "updates the taskGraphMetaData regarding the removed nodes.
 author:Waurich TUD 2013-07"
   input TaskGraphMeta graphDataIn;
   input list<Integer> cutNodes;
@@ -1598,7 +1598,7 @@ algorithm
   rangeLst := List.intRange(arrayLength(nodeMark));
   nodeMark := List.fold1(rangeLst, markRemovedNodes,cutNodes,nodeMark);
   graphDataOut :=TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
-end getOdeSystemData;
+end cutSystemData;
 
 protected function markRemovedNodes " folding function to set the entries in nodeMark to -1 for a removed component
 author:Waurich TUD 2013-07"
@@ -2173,7 +2173,7 @@ algorithm
   (graphTmp,cutNodes) := cutTaskGraph(graphTmp,discreteNodes,{},{});
   cutNodeChildren := List.flatten(List.map1(cutNodes,Util.arrayGetIndexFirst,iTaskGraph)); // for computing new root-nodes when cutting out nodes
   (_,cutNodeChildren,_) := List.intersection1OnTrue(cutNodeChildren,cutNodes,intEq);
-  oTaskGraphMeta := getOdeSystemData(iTaskGraphMeta,cutNodes,cutNodeChildren);
+  oTaskGraphMeta := cutSystemData(iTaskGraphMeta,cutNodes,cutNodeChildren);
   oTaskGraph := graphTmp;
 end getEventSystem;
 
@@ -4944,7 +4944,7 @@ algorithm
   end matchcontinue;
 end getCostsForNode;
 
-protected function getCostsForContractedNodes "sums up alle execution costs for a contracted node.
+public function getCostsForContractedNodes "sums up alle execution costs for a contracted node.
 authro:Waurich TUD 2013-10"
   input list<Integer> nodeList;
   input array<tuple<Integer,Real>> exeCosts;

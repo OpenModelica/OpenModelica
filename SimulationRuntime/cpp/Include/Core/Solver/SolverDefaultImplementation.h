@@ -1,16 +1,16 @@
 #pragma once
 
-#include <System/IMixedSystem.h>
-#include <System/IContinuous.h>
-#include <System/IEvent.h>
-#include <System/ITime.h>
-#include <System/IWriteOutput.h>
-#include <System/ISystemInitialization.h>
-#include <System/ISystemProperties.h>
-#include <Solver/ISolver.h>        // Solver interface
-#include <Solver/ISolverSettings.h>      // SolverSettings interface
-#include <Solver/SystemStateSelection.h>
-#include <Solver/SimulationMonitor.h>
+#include <Core/System/IMixedSystem.h>
+#include <Core/System/IContinuous.h>
+#include <Core/System/IEvent.h>
+#include <Core/System/ITime.h>
+#include <Core/System/IWriteOutput.h>
+#include <Core/System/ISystemInitialization.h>
+#include <Core/System/ISystemProperties.h>
+#include <Core/Solver/ISolver.h>        // Solver interface
+#include <Core/Solver/ISolverSettings.h>      // SolverSettings interface
+#include <Core/Solver/SystemStateSelection.h>
+#include <Core/Solver/SimulationMonitor.h>
 /// typedef to hand over (callback) functions to fortran routines
 typedef int (*U_fp)(...);
 

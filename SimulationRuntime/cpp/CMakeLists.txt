@@ -250,10 +250,6 @@ message(STATUS "Boost dirs '${Boost_LIBRARY_DIRS}', '${Boost_INCLUDE_DIR}'")
 
 #build of simulation.core
 include_directories ("Include")
-include_directories ("Include/Core")
-#include_directories ("Include/SimCoreFactory")
-
-
 
 
 add_subdirectory (Core/Math)

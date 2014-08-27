@@ -1,6 +1,6 @@
 
 #pragma once
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #if defined(__vxworks)
 
 

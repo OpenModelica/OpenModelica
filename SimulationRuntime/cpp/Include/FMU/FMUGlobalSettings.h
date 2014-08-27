@@ -1,5 +1,5 @@
 #pragma once
-#include <SimulationSettings/IGlobalSettings.h>
+#include <Core/SimulationSettings//IGlobalSettings.h>
 
 
 class  FMUGlobalSettings : public IGlobalSettings

@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef ANALYZATION_MODE
-#include <SimulationSettings/ISettingsFactory.h>
+#include <Core/SimulationSettings//ISettingsFactory.h>
 #include <SimCoreFactory/Policies/StaticSolverSettingsOMCFactory.h>
 class  SettingsFactory : public ISettingsFactory
                        , public StaticSolverSettingsOMCFactory<OMCFactory>

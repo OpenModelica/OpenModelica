@@ -5,7 +5,7 @@
 
 #ifdef ANALYZATION_MODE
 #include <boost/function.hpp>
-#include <SimController/ISimController.h>
+#include <Core/SimController/ISimController.h>
 #endif
 
 class SimController : public ISimController,

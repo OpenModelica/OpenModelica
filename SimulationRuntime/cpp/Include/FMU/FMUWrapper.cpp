@@ -1,11 +1,11 @@
 
-#include "Modelica.h"
+#include <Core/Modelica.h>
 /*workarround until cmake file is modified*/
 #define OMC_BUILD
-#include <Solver/ISolverSettings.h>
-#include <SimulationSettings/ISettingsFactory.h>
-#include <Solver/ISolver.h>
-#include <DataExchange/SimData.h>
+#include <Core/Solver/ISolverSettings.h>
+#include <Core/SimulationSettings//ISettingsFactory.h>
+#include <Core/Solver/ISolver.h>
+#include <Core/DataExchange/SimData.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 /*end workarround*/
 #include "FMU/FMUWrapper.h"

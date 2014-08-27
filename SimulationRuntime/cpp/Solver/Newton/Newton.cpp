@@ -1,8 +1,8 @@
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include "Newton.h"
 
-#include <Math/ILapack.h>        // needed for solution of linear system with Lapack
-#include <Math/Constants.h>        // definitializeion of constants like uround
+#include <Core/Math/ILapack.h>        // needed for solution of linear system with Lapack
+#include <Core/Math/Constants.h>        // definitializeion of constants like uround
 
 
 Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)

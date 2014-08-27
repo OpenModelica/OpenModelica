@@ -1,5 +1,5 @@
-#include "Modelica.h"
-#include <Math/ArrayOperations.h>
+#include <Core/Modelica.h>
+#include <Core/Math/ArrayOperations.h>
 #include <sstream>
 #include <stdio.h>
 using namespace std;

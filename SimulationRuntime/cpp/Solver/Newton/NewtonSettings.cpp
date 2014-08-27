@@ -1,4 +1,4 @@
-#include "Modelica.h"
+#include <Core/Modelica.h>
 
 
 #include "NewtonSettings.h"

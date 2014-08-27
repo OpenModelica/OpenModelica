@@ -520,6 +520,13 @@ algorithm
     case(_,_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+        true = stringEq(flagValue, "levelfix");
+        print("Using fixed level Scheduler (experimental)\n");
+        (schedule,taskGraphMeta1) = HpcOmScheduler.createFixedLevelSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
+      then (schedule,iSimCode,iTaskGraph,taskGraphMeta1,iSccSimEqMapping);
+    case(_,_,_,_,_,_,_)
+      equation
+        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "ext");
         print("Using external Scheduler\n");
         schedule = HpcOmScheduler.createExtSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping, "taskGraph" +& iFilenamePrefix +& "_ext.graphml");

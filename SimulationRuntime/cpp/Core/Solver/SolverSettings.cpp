@@ -1,10 +1,10 @@
-#include "Modelica.h"
-#include "FactoryExport.h"
+#include <Core/Modelica.h>
+#include <Core/Solver/FactoryExport.h>
 
-#include <Solver/SolverSettings.h>
-#include <SimulationSettings/IGlobalSettings.h>
+#include <Core/Solver/SolverSettings.h>
+#include <Core/SimulationSettings//IGlobalSettings.h>
 //#include "../Interfaces/API.h"
-#include <Math/Constants.h>
+#include <Core/Math/Constants.h>
 SolverSettings::SolverSettings( IGlobalSettings* globalSettings)
   : _hInit    (1e-3 )
   , _hUpperLimit  (1e-3)

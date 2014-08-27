@@ -18,8 +18,8 @@
 #ifndef BOOST_UBLAS_HAVE_BINDINGS
 #  include <boost/numeric/ublas/matrix_sparse.hpp>
 #endif
-#include "Utils/numeric/bindings/traits/sparse_traits.hpp"
-#include "Utils/numeric/bindings/traits/detail/ublas_ordering.hpp"
+#include <Core/Utils/numeric/bindings/traits/sparse_traits.hpp>
+#include <Core/Utils/numeric/bindings/traits/detail/ublas_ordering.hpp>
 #include <algorithm>
 
 

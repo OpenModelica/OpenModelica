@@ -5,9 +5,9 @@
 #pragma once
 
 
-#include <Object/IObject.h>
+#include <Core/Object/IObject.h>
 
-#include <Object/DCSAPI.h>
+#include <Core/Object/DCSAPI.h>
 
 using std::ostream;
 using std::endl;

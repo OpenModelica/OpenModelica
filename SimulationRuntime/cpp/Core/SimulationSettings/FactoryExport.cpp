@@ -3,8 +3,8 @@
 #if defined(__vxworks)
 
 
-  #include "Modelica.h"
-    #include "Factory.h"
+  #include <Core/Modelica.h>
+  #include <Core/SimulationSettings/Factory.h>
   extern "C" ISettingsFactory* createSettingsFactory(PATH library_path,PATH modelicasystem_path)
   {
      return new SettingsFactory(library_path,library_path,modelicasystem_path);
@@ -12,8 +12,8 @@
 
 #elif defined(SIMSTER_BUILD)
 
-#include "Modelica.h"
-#include "Factory.h"
+#include <Core/Modelica.h>
+#include <Core/SimulationSettings/Factory.h>
 
 
 /*Simster factory */
@@ -25,10 +25,10 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_simulation_settings
 
 #elif defined(OMC_BUILD)
 
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-#include "Factory.h"
+#include <Core/SimulationSettings/Factory.h>
 
 /*OMC facory*/
 using boost::extensions::factory;

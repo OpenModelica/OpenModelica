@@ -1,7 +1,7 @@
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-#include  "Initialization.h"
+#include <Core/SimController/Initialization.h>
 
 
 Initialization::Initialization(boost::shared_ptr<ISystemInitialization> system_initialization,boost::shared_ptr<ISolver> solver )

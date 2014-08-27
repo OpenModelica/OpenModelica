@@ -1,6 +1,6 @@
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include "FactoryExport.h"
-#include <System/AlgLoopDefaultImplementation.h>
+#include <Core/System/AlgLoopDefaultImplementation.h>
 
 
 

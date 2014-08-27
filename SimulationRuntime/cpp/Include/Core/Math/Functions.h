@@ -7,7 +7,7 @@
 #include <iostream>
 #include <string>
 #include <exception>
-#include <Math/OMAPI.h>    ///< For the use of DGESV, etc.
+#include <Core/Math/OMAPI.h>    ///< For the use of DGESV, etc.
 /*****************************************************************************/
 /**
 

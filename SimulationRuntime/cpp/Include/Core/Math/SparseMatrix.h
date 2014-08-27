@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #ifdef USE_UMFPACK
 #include "umfpack.h"
 #endif

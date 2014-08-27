@@ -1,8 +1,8 @@
 
-#include "Modelica.h"
+#include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-#include <System/AlgLoopSolverFactory.h>
+#include <Core/System/AlgLoopSolverFactory.h>
 
 #ifdef ANALYZATION_MODE
 AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings* global_settings,PATH library_path,PATH modelicasystem_path)

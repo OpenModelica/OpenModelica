@@ -1,7 +1,7 @@
 #pragma once
 
 #include <SimCoreFactory/ObjectFactory.h>
-#include <Solver/ISolver.h>
+#include <Core/Solver/ISolver.h>
 
 /*
 Policy class to create solver settings object

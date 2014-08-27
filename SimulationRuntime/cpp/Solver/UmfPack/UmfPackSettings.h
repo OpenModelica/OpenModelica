@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Solver/ILinSolverSettings.h>
+#include <Core/Solver/ILinSolverSettings.h>
 
 class UmfPackSettings : public ILinSolverSettings
 {
