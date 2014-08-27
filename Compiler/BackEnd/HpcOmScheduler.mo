@@ -1789,7 +1789,7 @@ algorithm
       equation
         readyTime = arrayGet(iThreadReadyList, head);
         numOfThreads = arrayLength(iThreadReadyList);
-        averageThreadTime = realDiv(iLevelExecCosts, numOfThreads);
+        averageThreadTime = realDiv(iLevelExecCosts, intReal(numOfThreads));
         true = realLt(readyTime, averageThreadTime);
       then head;
     case(head::tail,_,_)
