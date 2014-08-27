@@ -59,6 +59,7 @@ AC_SUBST(LD_LAPACK)
 AC_SUBST(PYTHON_INTERFACE)
 AC_SUBST(WITH_SUNDIALS)
 AC_SUBST(WITH_IPOPT)
+AC_SUBST(UMFPACK_TARGET)
 AC_SUBST(OMNOTEBOOK)
 AC_SUBST(FPMATHFORTRAN)
 AC_SUBST(OMOPTIM_CC)
@@ -887,6 +888,13 @@ AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hyperg
         USE_GRAPH=0
     fi
     USE_PATOH=0;
+])
+
+AC_ARG_WITH(UMFPACK, [  --with-UMFPACK                   Compile with UMFPACK, a sparse linear systems solver],
+[
+    UMFPACK_TARGET="umfpack";
+], [
+    UMFPACK_TARGET="";
 ])
 
 AC_MSG_CHECKING([for revision])

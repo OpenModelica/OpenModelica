@@ -62,7 +62,7 @@ install-python:
 install-openturns: mkbuilddirs
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
 
-interactive: .testvariables mkbuilddirs boehm-gc fmil msl-external-libs lis Cdaskr CMinpack $(IPOPT_TARGET)
+interactive: .testvariables mkbuilddirs boehm-gc fmil msl-external-libs lis Cdaskr CMinpack $(IPOPT_TARGET) $(UMFPACK_TARGET)
 	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)
 	# Depends on libinteractive.a
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
@@ -114,6 +114,22 @@ build/lib/omc/libipopt.la: 3rdParty/Ipopt-3.11.6/Makefile
 	cp -a 3rdParty/Ipopt-3.11.6/lib*/*.* build/lib/omc
 
 ipopt: build/lib/omc/libipopt.la
+
+build/lib/omc/libumfpack.a: 3rdParty/SuiteSparse/UMFPACK/Makefile
+	$(MAKE) -C 3rdParty/SuiteSparse/UMFPACK
+	cp -a 3rdParty/SuiteSparse/UMFPACK/Lib/*.a build/lib/omc
+	cp -a 3rdParty/SuiteSparse/AMD/Lib/*.a build/lib/omc
+	mkdir --parent build/include/omc/c/suitesparse
+	cp -a 3rdParty/SuiteSparse/UMFPACK/Include/*.h build/include/omc/c/suitesparse
+	cp -a 3rdParty/SuiteSparse/AMD/Include/*.h build/include/omc/c/suitesparse
+	cp -a 3rdParty/SuiteSparse/UFconfig/*.h build/include/omc/c/suitesparse
+umfpack: build/lib/omc/libumfpack.a
+
+umfpack-clean:
+	cd 3rdParty/SuiteSparse/UMFPACK && make clean && make purge
+	rm -r build/include/omc/c/suitesparse
+	rm build/lib/omc/libumfpack.a
+	rm build/lib/omc/libamd.a
 
 build/lib/omc/libopenblas_openmodelica.a:
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 CC="$(CC)" CXX="$(CXX)" FC="$(FC)" USE_THREAD=0 NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica $(OPENBLAS_EXTRA_ARGS)
@@ -313,7 +329,7 @@ bootstrap-clean:
 openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
-clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean
+clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd SimulationRuntime/interactive && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
