@@ -852,6 +852,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
         >>
     case SOME(hpcOmSchedule as LEVELSCHEDULE(__)) then
       let odeEqs = hpcOmSchedule.tasksOfLevels |> tasks => function_HPCOM_Level(allEquationsPlusWhen, tasks, type, &varDecls, simCode, useFlatArrayNotation); separator="\n"
+      //let valid = hpcOmSchedule.haveAllTasksValidThreadIdx(tasks);
       match type
         case ("mixed") then
           <<
@@ -860,30 +861,15 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
 
           void <%lastIdentOfPath(name)%>::evaluateThreadFunc0()
           {
-            //if (omp_get_dynamic())
-            //    omp_set_dynamic(0);
-
             <%varDecls%>
 
             #pragma omp parallel num_threads(<%intSub(getConfigInt(NUM_PROC),1)%>)
             {
                 while(!finished)
                 {
-                    #ifdef MEASURE_PAPI
-                    int event[NUM_EVENTS] = {PAPI_L2_TCM};
-                    long long values[NUM_EVENTS];
-                    #endif
-
                     #pragma omp master
                     {
                         <%function_HPCOM_assignLock("startEvaluateLock","","pthreads")%>
-                        #ifdef MEASURE_PAPI
-                        /* Start counting events */
-                        if (PAPI_start_counters(event, NUM_EVENTS) != PAPI_OK) {
-                            fprintf(stderr, "PAPI_start_counters - FAILED\n");
-                            exit(1);
-                        }
-                        #endif
                     }
 
                     #pragma omp barrier
@@ -892,30 +878,15 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
                         <%function_HPCOM_releaseLock("finishedEvaluateLock","","pthreads")%>
                         break;
                     }
+                    
                     <%odeEqs%>
 
                     #pragma omp barrier
 
                     #pragma omp master
                     {
-                        #ifdef MEASURE_PAPI
-                        /* Read the counters */
-                        if (PAPI_read_counters(values, NUM_EVENTS) != PAPI_OK) {
-                            fprintf(stderr, "PAPI_read_counters - FAILED\n");
-                            exit(1);
-                        }
-                        std::cerr << "L2 Cache misses: " << values[0] << std::endl;
-
-                        /* Stop counting events */
-                        if (PAPI_stop_counters(values, NUM_EVENTS) != PAPI_OK) {
-                            fprintf(stderr, "PAPI_stoped_counters - FAILED\n");
-                            exit(1);
-                        }
-                        #endif
                         <%function_HPCOM_releaseLock("finishedEvaluateLock","","pthreads")%>
                     }
-
-
                 }
             }
           }
@@ -924,6 +895,8 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
           {
             if(firstRun)
             {
+                if (omp_get_dynamic())
+                    omp_set_dynamic(0);
                 firstRun = false;
                 <%generateThread(0, "pthreads", modelNamePrefixStr, "evaluateThreadFunc")%>
             }
@@ -1584,9 +1557,12 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /I - Include Directories
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
-  CFLAGS=  /ZI /Od /EHa /MP /fp:except /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" -I. <%makefileParams.includes%>  -I"$(BOOST_INCLUDE)" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY <%extraHPCOMflags%>
-
-  CPPFLAGS = /DOMC_BUILD
+  !IF "$(PCH_FILE)" == ""
+  CFLAGS=  $(SYSTEM_CFLAGS) /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" /I. <%makefileParams.includes%>  /I"$(BOOST_INCLUDE)" /I"$(SUITESPARSE_INCLUDE)" /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY
+  !ELSE
+  CFLAGS=  $(SYSTEM_CFLAGS) /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" /I. <%makefileParams.includes%>  /I"$(BOOST_INCLUDE)" /I"$(SUITESPARSE_INCLUDE)" /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  /Fp<%makefileParams.omhome%>/include/omc/cpp/Core/$(PCH_FILE)  /YuCore/$(H_FILE)
+  !ENDIF
+  CPPFLAGS =
   # /ZI enable Edit and Continue debug info
   CDFLAGS = /ZI
 
@@ -1653,7 +1629,7 @@ LINK=<%makefileParams.linker%>
 EXEEXT=<%makefileParams.exeext%>
 DLLEXT=<%makefileParams.dllext%>
 CFLAGS_BASED_ON_INIT_FILE=<%_extraCflags%> # -I"<%makefileParams.omhome%>/../SimulationRuntime/cpp" -I"<%makefileParams.omhome%>/../SimulationRuntime/cpp/Core" -I"<%makefileParams.omhome%>/../SimulationRuntime/cpp/Include/SimCoreFactory" -I"<%makefileParams.omhome%>/../SimulationRuntime/cpp/Include/Core"
-CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>  <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
+CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(SUITESPARSE_INCLUDE)" <%makefileParams.includes ; separator=" "%>  <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
 LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" $(BASE_LIB)  -lOMCppOMCFactory -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath  -L"$(BOOST_LIBS)"  $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_LOG_LIB) $(BOOST_THREAD_LIB) $(LINUX_LIB_DL)
 CPP_RUNTIME_LIBS=<%analyzationLibs%>
 LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"   -L"<%makefileParams.omhome%>/bin"  -lOMCppOMCFactory -L"$(BOOST_LIBS)" <%schedulerLibs%> <%analyzationLibs%> $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL)
