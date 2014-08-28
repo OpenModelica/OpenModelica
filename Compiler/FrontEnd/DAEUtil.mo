@@ -3002,12 +3002,27 @@ algorithm (outrefs,matching) := matchcontinue(inCrefs)
     equation
       (recRefs,b3) = compareCrefList(llrefs);
       i = listLength(recRefs);
-      b1 = (0 == intMod(listLength(crefs),listLength(recRefs)));
+      // make sure is more than 0!
+      true = intGt(i, 0);
+      b1 = (0 == intMod(listLength(crefs),i));
       crefs = List.unionOnTrueList({recRefs,crefs},ComponentReference.crefEqual);
       b2 = intEq(listLength(crefs),i);
       b1 = boolAnd(b1,boolAnd(b2,b3));
     then
       (crefs,b1);
+
+  // this deals with 0 as the number of set crefs in one of the branches, for example:
+  // if then reinint;reinit; else reinit;reinit; end if;
+  case(crefs::llrefs)
+    equation
+      (recRefs,b3) = compareCrefList(llrefs);
+      i = listLength(recRefs);
+      // make sure both of them are 0!
+      true = intEq(i, 0);
+      true = intEq(listLength(crefs), 0);
+    then
+      (crefs,true);
+
   end matchcontinue;
 end compareCrefList;
 
