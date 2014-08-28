@@ -10,13 +10,13 @@ using std::map;
 using std::pair;
 using std::make_pair;
 
-struct sparse_inserter {
+struct sparse_inserter  {
     struct t2 {
         int i;
         int j;
         map< pair<int,int>, double> & content;
         t2(int i, int j, map< pair<int,int>, double> & c): i(i), j(j), content(c) {}
-        void operator=(double t) {
+        inline void operator=(double t) {
             content[make_pair(j,i)]=t;
         }
     };
@@ -25,7 +25,7 @@ struct sparse_inserter {
         int i;
         map< pair<int,int>, double> & content;
         t1(int i,map< pair<int,int>, double> & c): i(i), content(c) {}
-        t2 operator[](size_t j) {
+        inline t2 operator[](size_t j) {
             t2 res(i,j,content);
             return res;
         }
@@ -33,9 +33,15 @@ struct sparse_inserter {
 
 
     map< pair<int,int>, double> content;
-    t1 operator[](size_t i) {
+    inline t1 operator[](size_t i) {
         t1 res(i,content);
         return res;
+    }
+
+    inline t2 operator()(const unsigned int  i, const unsigned int j)
+    {
+      t2 res(i,j,content);
+      return res;
     }
 
 };
