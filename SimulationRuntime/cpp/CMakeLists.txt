@@ -17,10 +17,10 @@
 cmake_minimum_required (VERSION 2.6)
 project(CppSolverInterface)
 
-IF(NOT ANALYZATION_MODE AND NOT MSVC)
+IF(NOT ANALYZATION_MODE)
 	#Precompiled header produces problems if the compiler is not "g++" but "scorep g++"
 	include(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
-ENDIF(NOT ANALYZATION_MODE AND NOT MSVC)
+ENDIF(NOT ANALYZATION_MODE )
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
 option(ANALYZATION_MODE "ANALYZATION_MODE" OFF)
