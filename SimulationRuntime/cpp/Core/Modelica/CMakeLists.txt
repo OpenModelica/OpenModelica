@@ -118,7 +118,7 @@ endforeach(lib ${LAPACK_LIBRARIES})
 #end Fix
 
 IF(NOT ANALYZATION_MODE)
-	add_precompiled_header(${ModelicaName} Include/Core/Modelica.h )
+	#add_precompiled_header(${ModelicaName} Include/Core/Modelica.h )
 ENDIF(NOT ANALYZATION_MODE)
 
  configure_file (

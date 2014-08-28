@@ -19,7 +19,7 @@ project(CppSolverInterface)
 
 IF(NOT ANALYZATION_MODE)
 	#Precompiled header produces problems if the compiler is not "g++" but "scorep g++"
-	include(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
+	#include(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
 ENDIF(NOT ANALYZATION_MODE)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
