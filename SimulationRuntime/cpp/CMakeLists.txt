@@ -225,7 +225,7 @@ IF(SuiteSparse_found)
     SET(SUITESPARSE_INCLUDE ${SUITESPARSE_INCLUDE_DIRS})
 ELSE()
 	message(STATUS "UmfPack disabled")
-	SET(SUITESPARSE_INCLUDE "")
+	SET(SUITESPARSE_INCLUDE ".")
 ENDIF()
 
 #Mico corba
