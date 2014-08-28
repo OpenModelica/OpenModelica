@@ -543,6 +543,41 @@ function interval "Returns the interval between the previous and present tick of
 </html>"));
 end interval;
 
+function transition "Define state machine transition"
+  external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'transition()'\">transition()</a>
+</html>"));
+end transition;
+
+function initialState "Define inital state of a state machine"
+  external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'initialState()'\">initialState()</a>
+</html>"));
+end initialState;
+
+function activeState "Return true if instance of a state machine is active, otherwise false"
+  external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'activeState()'\">activeState()</a>
+</html>"));
+end activeState;
+
+function ticksInState "Returns the number of clock ticks since a transition was made to the currently active state"
+  external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'ticksInState()'\">ticksInState()</a>
+</html>"));
+end ticksInState;
+
+function timeInState "Returns the time duration as Real in [s] since a transition was made to the currently active state"
+  external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'ticksInState()'\">ticksInState()</a>
+</html>"));
+end timeInState;
+
 function change "Indicate discrete variable changing"
   external "builtin";
   annotation(Documentation(info="<html>

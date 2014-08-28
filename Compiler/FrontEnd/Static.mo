@@ -5275,6 +5275,322 @@ algorithm
   end match;
 end elabBuiltinInterval;
 
+/*
+protected function elabBuiltinTransition2 "
+Author: BTH
+Helper function to elabBuiltinTransition"
+  input list<Absyn.Exp> args;
+  input Integer numOfArgs;
+  output list<Absyn.Exp> argsWithDefaults;
+algorithm
+  (argsWithDefaults) := match (numOfArgs, args)
+    local
+      list<Absyn.Exp> args2;
+    case (3, args2) then listAppend(args2, {Absyn.BOOL(true), Absyn.BOOL(true), Absyn.BOOL(false), Absyn.INTEGER(1)});
+    case (4, args2) then listAppend(args2, {Absyn.BOOL(true), Absyn.BOOL(false), Absyn.INTEGER(1)});
+    case (5, args2) then listAppend(args2, {Absyn.BOOL(false), Absyn.INTEGER(1)});
+    case (6, args2) then listAppend(args2, {Absyn.INTEGER(1)});
+    case (7, args2) then args2;
+    else then fail();
+  end match;
+end elabBuiltinTransition2;
+*/
+
+protected function elabBuiltinTransition2 "
+Author: BTH
+Helper function to elabBuiltinTransition"
+  input list<Absyn.Exp> args;
+  output list<Absyn.Exp> argsWithDefaults;
+algorithm
+  argsWithDefaults := match (args)
+    local
+      Absyn.Exp a1,a2,a3,a4,a5,a6,a7;
+      String strMsg;
+    case ({a1,a2,a3}) then listAppend(args, {Absyn.BOOL(true), Absyn.BOOL(true), Absyn.BOOL(false), Absyn.INTEGER(1)});
+    case ({a1,a2,a3,a4}) then listAppend(args, {Absyn.BOOL(true), Absyn.BOOL(false), Absyn.INTEGER(1)});
+    case ({a1,a2,a3,a4,a5}) then listAppend(args, {Absyn.BOOL(false), Absyn.INTEGER(1)});
+    case ({a1,a2,a3,a4,a5,a6}) then listAppend(args, {Absyn.INTEGER(1)});
+    case ({a1,a2,a3,a4,a5,a6,a7}) then args;
+  end match;
+end elabBuiltinTransition2;
+
+protected function elabBuiltinTransition "
+Author: BTH
+This function elaborates the builtin operator
+transition(from, to, condition, immediate=true, reset=true, synchronize=false, priority=1)."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties) := match (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
+    local
+      DAE.Exp call,from,to,condition,immediate,reset,synchronize,priority;
+      DAE.Type ty1,ty2,ty3,ty4,ty5,ty6,ty7,ty;
+      DAE.Const c4,c5,c6,c7;
+      Boolean impl;
+      Env.Env env;
+      Env.Cache cache;
+      Prefix.Prefix pre;
+      DAE.Properties prop1,prop2,prop3,prop4,prop5,prop6,prop7,prop;
+      Absyn.Exp afrom, ato, acondition, aimmediate, areset, asynchronize, apriority;
+      Integer n;
+      String strMsg0,strMsg1,strMsg2,strMsg3,strMsg4,strMsg5,strMsg6,strMsg7,strPre,strMsgArgs;
+      list<Absyn.Exp> argsWithDefaults;
+      array<Absyn.Exp> argsWithDefaultsArray;
+
+    case (cache,env,_,{},impl,pre,_)
+      equation
+        strMsg0 = "transition(" +& Dump.printExpLstStr(args) +& ")";
+        strPre = PrefixUtil.printPrefixStr3(pre);
+        n = listLength(args);
+        strMsgArgs = "transition(" +& strMsg0 +& ", number of arguments should be between 3 and 7.";
+        Error.assertionOrAddSourceMessage(n >= 3 and n <= 7,Error.WRONG_TYPE_OR_NO_OF_ARGS,
+          {strMsgArgs, strPre}, info);
+
+        argsWithDefaults = elabBuiltinTransition2(args);
+        argsWithDefaultsArray = listArray(argsWithDefaults);
+        afrom = arrayGet(argsWithDefaultsArray, 1);
+        ato = arrayGet(argsWithDefaultsArray, 2);
+        acondition = arrayGet(argsWithDefaultsArray, 3);
+        aimmediate = arrayGet(argsWithDefaultsArray, 4);
+        areset = arrayGet(argsWithDefaultsArray, 5);
+        asynchronize = arrayGet(argsWithDefaultsArray, 6);
+        apriority = arrayGet(argsWithDefaultsArray, 7);
+
+        (cache, from, prop1, _) = elabExpInExpression(cache,env,afrom,impl,NONE(),true,pre,info);
+        ty1 = Types.getPropType(prop1);
+        strMsg1 = strMsg0 +& ", first argument needs to be a block instance.";
+        Error.assertionOrAddSourceMessage(Types.isComplexType(ty1),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+          {strMsg1, strPre}, info);
+
+        (cache, to, prop2, _) = elabExpInExpression(cache,env,ato,impl,NONE(),true,pre,info);
+        ty2 = Types.getPropType(prop2);
+        strMsg2 = strMsg0 +& ", second argument needs to be a block instance.";
+        Error.assertionOrAddSourceMessage(Types.isComplexType(ty1),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+          {strMsg2, strPre}, info);
+
+        (cache, condition, prop3, _) = elabExpInExpression(cache,env,acondition,impl,NONE(),true,pre,info);
+        ty3 = Types.getPropType(prop3);
+        strMsg3 = strMsg0 +& ", third argument needs to be a Boolean argument.";
+        Error.assertionOrAddSourceMessage(Types.isBoolean(ty3),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+          {strMsg3, strPre}, info);
+
+        (cache, immediate, prop4, _) = elabExpInExpression(cache,env,aimmediate,impl,NONE(),true,pre,info);
+        ty4 = Types.getPropType(prop4);
+        c4 = Types.getPropConst(prop4);
+        strMsg4 = strMsg0 +& ", forth argument needs to be a Boolean argument with parametric variability.";
+        Error.assertionOrAddSourceMessage(Types.isBoolean(ty4) and Types.isParameterOrConstant(c4),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+          {strMsg4, strPre}, info);
+
+        (cache, reset, prop5, _) = elabExpInExpression(cache,env,areset,impl,NONE(),true,pre,info);
+        ty5 = Types.getPropType(prop5);
+        c5 = Types.getPropConst(prop5);
+        strMsg5 = strMsg0 +& ", fith argument needs to be a Boolean argument with parametric variability.";
+        Error.assertionOrAddSourceMessage(Types.isBoolean(ty5) and Types.isParameterOrConstant(c5),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+          {strMsg5, strPre}, info);
+
+        (cache, synchronize, prop6, _) = elabExpInExpression(cache,env,asynchronize,impl,NONE(),true,pre,info);
+        ty6 = Types.getPropType(prop6);
+        c6 = Types.getPropConst(prop6);
+        strMsg6 = strMsg0 +& ", sixth argument needs to be a Boolean argument with parametric variability.";
+        Error.assertionOrAddSourceMessage(Types.isBoolean(ty6) and Types.isParameterOrConstant(c6),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+          {strMsg6, strPre}, info);
+
+        (cache, priority, prop7, _) = elabExpInExpression(cache,env,apriority,impl,NONE(),true,pre,info);
+        ty7 = Types.getPropType(prop7);
+        c7 = Types.getPropConst(prop7);
+        strMsg7 = strMsg0 +& ", seventh argument needs to be an Integer argument >= 0 with parametric variability.";
+        Error.assertionOrAddSourceMessage(Types.isInteger(ty7) and Types.isParameterOrConstant(c7) and
+          Expression.expInt(priority) >= 0, Error.WRONG_TYPE_OR_NO_OF_ARGS, {strMsg7, strPre}, info);
+
+        ty =  DAE.T_FUNCTION(
+                {DAE.FUNCARG("from",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                 DAE.FUNCARG("to",ty2,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                 DAE.FUNCARG("condition",ty3,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                 DAE.FUNCARG("immediate",ty4,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                 DAE.FUNCARG("reset",ty5,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                 DAE.FUNCARG("synchronize",ty6,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                 DAE.FUNCARG("priority",ty7,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
+                 DAE.T_NORETCALL_DEFAULT,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
+                DAE.emptyTypeSource);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("transition"), argsWithDefaults, nargs, impl, NONE(), pre, info);
+      then (cache, call, prop);
+  end match;
+end elabBuiltinTransition;
+
+protected function elabBuiltinInitialState "
+Author: BTH
+This function elaborates the builtin operator
+initialState(state)."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties) := match (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
+    local
+      DAE.Exp call,state;
+      DAE.Type ty1,ty;
+      Boolean impl;
+      Env.Env env;
+      Env.Cache cache;
+      Prefix.Prefix pre;
+      DAE.Properties prop1,prop;
+      Absyn.Exp astate;
+      String strMsg, strPre;
+
+    case (cache,env,{astate},{},impl,pre,_)
+      equation
+        (cache, state, prop1, _) = elabExpInExpression(cache,env,astate,impl,NONE(),true,pre,info);
+        ty1 = Types.getPropType(prop1);
+        strMsg = "initialState(" +& Dump.printExpLstStr(args) +& "), Argument needs to be a block instance.";
+        strPre = PrefixUtil.printPrefixStr3(pre);
+        Error.assertionOrAddSourceMessage(Types.isComplexType(ty1),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+          {strMsg, strPre}, info);
+
+        ty =  DAE.T_FUNCTION(
+                {DAE.FUNCARG("state",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
+                 DAE.T_NORETCALL_DEFAULT,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
+                DAE.emptyTypeSource);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("initialState"), args, nargs, impl, NONE(), pre, info);
+      then (cache, call, prop);
+  end match;
+end elabBuiltinInitialState;
+
+protected function elabBuiltinActiveState "
+Author: BTH
+This function elaborates the builtin operator
+activeState(state)."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties) := match (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
+    local
+      DAE.Exp call,state;
+      DAE.Type ty1,ty;
+      Boolean impl;
+      Env.Env env;
+      Env.Cache cache;
+      Prefix.Prefix pre;
+      DAE.Properties prop1,prop;
+      Absyn.Exp astate;
+      String strMsg, strPre;
+
+    case (cache,env,{astate},{},impl,pre,_)
+      equation
+        (cache, state, prop1, _) = elabExpInExpression(cache,env,astate,impl,NONE(),true,pre,info);
+        ty1 = Types.getPropType(prop1);
+        strMsg = "activeState(" +& Dump.printExpLstStr(args) +& "), Argument needs to be a block instance.";
+        strPre = PrefixUtil.printPrefixStr3(pre);
+        Error.assertionOrAddSourceMessage(Types.isComplexType(ty1), Error.WRONG_TYPE_OR_NO_OF_ARGS,
+          {strMsg, strPre}, info);
+
+        ty =  DAE.T_FUNCTION(
+                {DAE.FUNCARG("state",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
+                 DAE.T_BOOL_DEFAULT,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
+                DAE.emptyTypeSource);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("activeState"), args, nargs, impl, NONE(), pre, info);
+      then (cache, call, prop);
+  end match;
+end elabBuiltinActiveState;
+
+protected function elabBuiltinTicksInState "
+Author: BTH
+This function elaborates the builtin operator
+ticksInState()."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties) := match (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
+    local
+      DAE.Exp call;
+      DAE.Type ty;
+      Boolean impl;
+      Env.Env env;
+      Env.Cache cache;
+      Prefix.Prefix pre;
+      DAE.Properties prop;
+
+    case (cache,env,{},{},impl,pre,_)
+      equation
+        ty =  DAE.T_FUNCTION(
+                {},
+                 DAE.T_INTEGER_DEFAULT,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
+                DAE.emptyTypeSource);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("ticksInState"), args, nargs, impl, NONE(), pre, info);
+      then (cache, call, prop);
+  end match;
+end elabBuiltinTicksInState;
+
+protected function elabBuiltinTimeInState "
+Author: BTH
+This function elaborates the builtin operator
+timeInState()."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties) := match (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
+    local
+      DAE.Exp call;
+      DAE.Type ty;
+      Boolean impl;
+      Env.Env env;
+      Env.Cache cache;
+      Prefix.Prefix pre;
+      DAE.Properties prop;
+
+    case (cache,env,{},{},impl,pre,_)
+      equation
+        ty =  DAE.T_FUNCTION(
+                {},
+                 DAE.T_REAL_DEFAULT,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
+                DAE.emptyTypeSource);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("timeInState"), args, nargs, impl, NONE(), pre, info);
+      then (cache, call, prop);
+  end match;
+end elabBuiltinTimeInState;
 
 protected function elabBuiltinBoolean
 "This function elaborates on the builtin operator boolean, which extracts
@@ -6861,6 +7177,26 @@ algorithm
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then elabBuiltinNoClock;
+    case "transition"
+      equation
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+      then elabBuiltinTransition;
+    case "initialState"
+      equation
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+      then elabBuiltinInitialState;
+    case "activeState"
+      equation
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+      then elabBuiltinActiveState;
+    case "ticksInState"
+      equation
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+      then elabBuiltinTicksInState;
+    case "timeInState"
+      equation
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+      then elabBuiltinTimeInState;
   end match;
 end elabBuiltinHandler;
 
