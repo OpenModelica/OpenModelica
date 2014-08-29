@@ -1609,7 +1609,7 @@ match eq
      ,__Asparse(0)
     >>
     %>
-  
+
    //<%alocateLinearSystemConstructor(eq, useFlatArrayNotation)%>
    ,_conditions(conditions)
    ,_event_handling(event_handling)
@@ -1622,13 +1622,13 @@ match eq
 
    <%modelname%>Algloop<%index%>::~<%modelname%>Algloop<%index%>()
     {
-      
+
      <% match eq
       case SES_LINEAR(__) then
       <<
       if(__Asparse != 0)
           delete __Asparse;
-     
+
        if(__A != 0)
           delete __A;
       >>
@@ -3480,11 +3480,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
   void <%modelname%>Algloop<%index%>::getRHS(double* residuals)
     {
-        
+
         <% match eq
         case SES_LINEAR(__) then
         <<
-           memcpy(residuals,__b.getData(),sizeof(double)* _dimAEq);    
+           memcpy(residuals,__b.getData(),sizeof(double)* _dimAEq);
         >>
         else
         <<
@@ -4242,7 +4242,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      StatArrayDim1<double,<%size%> > __b;
     >>
     %>
-     
+
     sparse_inserter *__Asparse; //sparse
 
     //b vector

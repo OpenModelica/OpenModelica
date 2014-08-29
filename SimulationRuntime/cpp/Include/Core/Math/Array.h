@@ -270,14 +270,14 @@ public:
     if(fotran)
        return _real_array[size1*(j - 1) + i - 1]; //column wise order
      else
-       return _real_array[size2*(i - 1) + j - 1]; //row wise order  
+       return _real_array[size2*(i - 1) + j - 1]; //row wise order
   }
   inline virtual const T& operator()(const unsigned int i, const unsigned  int j) const
   {
     if(fotran)
      return _real_array[size1*(j - 1) + i - 1];//column wise order
     else
-     return _real_array[size2*(i - 1) + j - 1];//row wise order 
+     return _real_array[size2*(i - 1) + j - 1];//row wise order
   }
 
 
