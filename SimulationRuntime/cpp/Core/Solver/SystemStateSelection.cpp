@@ -121,7 +121,7 @@ void SystemStateSelection::setAMatrix(int* newEnable,unsigned int index)
 
       if( _state_selection->getAMatrix(index,A2))
       {
-            fill_array<int,2 >(A2,0);
+            fill_array<int>(A2,0);
 
             for(col=0; col<_dimStateCanditates[index]; col++)
             {
@@ -139,7 +139,7 @@ void SystemStateSelection::setAMatrix(int* newEnable,unsigned int index)
       }
       else if( _state_selection->getAMatrix(index,A1))
       {
-            fill_array<int,1 >(A1,0);
+            fill_array<int>(A1,0);
 
             for(col=0; col<_dimStateCanditates[index]; col++)
             {

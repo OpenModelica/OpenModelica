@@ -181,7 +181,7 @@ public:
     boost::array<T,size> _real_array;
 };
 
-template<typename T ,std::size_t size1,std::size_t size2>class StatArrayDim2 : public BaseArray<T>
+template<typename T ,std::size_t size1,std::size_t size2,bool fotran = false>class StatArrayDim2 : public BaseArray<T>
 {
 
 public:
@@ -267,11 +267,17 @@ public:
 
   inline virtual T& operator()(const unsigned int i, const unsigned  int j)
   {
-    return _real_array[size2*(i - 1) + j - 1];
+    if(fotran)
+       return _real_array[size1*(j - 1) + i - 1]; //column wise order
+     else
+       return _real_array[size2*(i - 1) + j - 1]; //row wise order  
   }
   inline virtual const T& operator()(const unsigned int i, const unsigned  int j) const
   {
-    return _real_array[size2*(i - 1) + j - 1];
+    if(fotran)
+     return _real_array[size1*(j - 1) + i - 1];//column wise order
+    else
+     return _real_array[size2*(i - 1) + j - 1];//row wise order 
   }
 
 
@@ -285,7 +291,7 @@ public:
 
   virtual unsigned int getNumElems()
   {
-    return size1 + size2;
+    return size1 * size2;
   }
    /*
   access to data
@@ -1271,7 +1277,7 @@ void multiply_array( BaseArray<T> & inputArray ,const T &b, BaseArray<T> & outpu
   std::transform (data, data + nelems, aim, std::bind2nd( std::multiplies< T >(), b ));
 };
 
-template < typename T, size_t NumDims >
+template < typename T >
 void fill_array( BaseArray<T> & inputArray , T b)
 {
   T* data = inputArray.getData();

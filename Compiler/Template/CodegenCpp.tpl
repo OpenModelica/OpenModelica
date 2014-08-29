@@ -1602,9 +1602,15 @@ match eq
    ,_system(system)
    ,__z(z)
    ,__zDot(zDot)
-   ,__A(0)
-   ,__Asparse(0)
-   <%alocateLinearSystemConstructor(eq, useFlatArrayNotation)%>
+   <% match eq
+     case SES_LINEAR(__) then
+    <<
+    ,__A(0)
+     ,__Asparse(0)
+    >>
+    %>
+  
+   //<%alocateLinearSystemConstructor(eq, useFlatArrayNotation)%>
    ,_conditions(conditions)
    ,_event_handling(event_handling)
    ,_useSparseFormat(false)
@@ -1616,10 +1622,17 @@ match eq
 
    <%modelname%>Algloop<%index%>::~<%modelname%>Algloop<%index%>()
     {
-       if(__Asparse != 0)
+      
+     <% match eq
+      case SES_LINEAR(__) then
+      <<
+      if(__Asparse != 0)
           delete __Asparse;
+     
        if(__A != 0)
           delete __A;
+      >>
+     %>
     }
 
     bool <%modelname%>Algloop<%index%>::getUseSparseFormat()
@@ -1634,7 +1647,7 @@ match eq
 
    <%algloopRHSCode(simCode,eq)%>
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then algloopResiduals(simCode,eq)%>
-   <%initAlgloop(simCode,eq,context)%>
+   <%initAlgloop(simCode,eq,context,useFlatArrayNotation)%>
    <%initAlgloopTemplate(simCode,eq,context,useFlatArrayNotation)%>
    <%updateAlgloop(simCode,eq,context)%>
    <%upateAlgloopNonLinear(simCode,eq,context, useFlatArrayNotation)%>
@@ -1653,16 +1666,17 @@ match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
     let modelname = lastIdentOfPath(modelInfo.name)
     match eqn
-      case eq as SES_NONLINEAR(__) then
+      /*case eq as SES_NONLINEAR(__) then
         <<
         void <%modelname%>Algloop<%index%>::evaluate()
         {
            if(_useSparseFormat)
-             evaluate(__Asparse);
+             evaluate(NULL);
            else
-             evaluate(__A);
+             evaluate(NULL);
         }
         >>
+      */
       case eq as SES_LINEAR(__) then
         <<
         void <%modelname%>Algloop<%index%>::evaluate()
@@ -1719,8 +1733,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
   <<
-  template <typename T>
-  void <%modelname%>Algloop<%index%>::evaluate(T *__A)
+  <% match eq
+   case SES_LINEAR(__) then
+   <<
+    template <typename T>
+    void <%modelname%>Algloop<%index%>::evaluate(T *__A)
+   >>
+   case SES_NONLINEAR(__) then
+   <<
+    void <%modelname%>Algloop<%index%>::evaluate()
+   >>
+  %>
   {
         <%varDecls%>
 
@@ -1771,13 +1794,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
  let Amatrix=
     (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
       let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
-      '<%preExp%>(*__A)[<%row%>][<%col%>]=<%expPart%>;'
+      '<%preExp%>(*__A)(<%row%>+1,<%col%>+1)=<%expPart%>;'
   ;separator="\n")
 
- let bvector =  (beqs |> exp hasindex i0 =>
+ let bvector =  (beqs |> exp hasindex i0 fromindex 1=>
 
      let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
-     '<%preExp%>__b[<%i0%>]=<%expPart%>;'
+     '<%preExp%>__b(<%i0%>)=<%expPart%>;'
   ;separator="\n")
 
   <<
@@ -3326,7 +3349,7 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, SimCode sim
   >>
 end functionInitialEquations;
 
-template initAlgloop(SimCode simCode,SimEqSystem eq,Context context)
+template initAlgloop(SimCode simCode,SimEqSystem eq,Context context,Boolean useFlatArrayNotation)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -3334,14 +3357,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
   match eq
   case SES_NONLINEAR(__) then
+   let &varDecls = buffer ""
+   let &preExp = buffer ""
    <<
      void <%modelname%>Algloop<%index%>::initialize()
      {
 
-        if(_useSparseFormat)
-          <%modelname%>Algloop<%index%>::initialize(__Asparse);
-        else
-          <%modelname%>Algloop<%index%>::initialize(__A);
+         <%initAlgloopEquation(eq,varDecls,simCode,context,useFlatArrayNotation)%>
+         AlgLoopDefaultImplementation::initialize();
+
+        // Update the equations once before start of simulation
+        evaluate();
      }
    >>
  case SES_LINEAR(__) then
@@ -3367,9 +3393,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
   let &varDecls = buffer ""
   let &preExp = buffer ""
-  let initalgvars = initAlgloopvars(preExp,varDecls,modelInfo,simCode,context,useFlatArrayNotation)
+  //let initalgvars = initAlgloopvars(preExp,varDecls,modelInfo,simCode,context,useFlatArrayNotation)
 
   match eq
+  /*
   case SES_NONLINEAR(__) then
   <<
   template <typename T>
@@ -3382,6 +3409,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     evaluate();
    }
   >>
+  */
  case SES_LINEAR(__) then
    <<
      template <typename T>
@@ -3420,11 +3448,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
      void <%modelname%>Algloop<%index%>::getSystemMatrix(double* A_matrix)
      {
-          memcpy(A_matrix,__A->data(),_dimAEq*_dimAEq*sizeof(double));
+          <% match eq
+           case SES_LINEAR(__) then
+           "memcpy(A_matrix,__A->getData(),_dimAEq*_dimAEq*sizeof(double));"
+          %>
      }
      void <%modelname%>Algloop<%index%>::getSystemMatrix(sparse_matrix* A_matrix)
      {
-          A_matrix->build(*__Asparse);
+          <% match eq
+          case SES_LINEAR(__) then
+          "A_matrix->build(*__Asparse);"
+          %>
      }
    >>
 
@@ -3446,13 +3480,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
   void <%modelname%>Algloop<%index%>::getRHS(double* residuals)
     {
-        if (isLinear())
-        {
-            for(size_t i=0; i<_dimAEq; ++i)
-                residuals[i] = __b[i];
-        }
+        
+        <% match eq
+        case SES_LINEAR(__) then
+        <<
+           memcpy(residuals,__b.getData(),sizeof(double)* _dimAEq);    
+        >>
         else
-            AlgLoopDefaultImplementation::getRHS(residuals);
+        <<
+          AlgLoopDefaultImplementation::getRHS(residuals);
+        >>
+        %>
     }
   >>
 
@@ -3580,13 +3618,13 @@ case SES_NONLINEAR(__) then
  let Amatrix=
     (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
       let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
-      '<%preExp%>(*__A)[<%row%>][<%col%>]=<%expPart%>;'
+      '<%preExp%>(*__A)(<%row%>+1,<%col%>+1)=<%expPart%>;'
   ;separator="\n")
 
- let bvector =  (beqs |> exp hasindex i0 =>
+ let bvector =  (beqs |> exp hasindex i0 fromindex 1 =>
 
      let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
-     '<%preExp%>__b[<%i0%>]=<%expPart%>;'
+     '<%preExp%>__b(<%i0%>)=<%expPart%>;'
   ;separator="\n")
 
  <<
@@ -3777,7 +3815,7 @@ case SES_LINEAR(__) then
     if(_useSparseFormat)
       __Asparse = new sparse_inserter;
     else
-      __A = new boost::multi_array<double,2>(boost::extents[<%size%>][<%size%>],boost::fortran_storage_order());
+      __A = new StatArrayDim2<double,<%size%>,<%size%> ,true>(); //boost::multi_array<double,2>(boost::extents[<%size%>][<%size%>],boost::fortran_storage_order());
    >>
 end alocateLinearSystem;
 
@@ -4180,9 +4218,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       void setUseSparseFormat(bool value);
 
   protected:
+   <% match eq
+    case SES_LINEAR(__) then
+    <<
     template <typename T>
     void evaluate(T* __A);
-
+    >>
+   %>
   private:
     Functions* _functions;
 
@@ -4191,12 +4233,20 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //state derivatives
     double* __zDot;
     // A matrix
-    boost::multi_array<double,2> *__A; //dense
-
+    //boost::multi_array<double,2> *__A; //dense
+    <%match eq case SES_LINEAR(__) then
+    let size = listLength(vars)
+    <<
+     StatArrayDim2<double,<%size%>,<%size%>,true>* __A; //dense
+     //b vector
+     StatArrayDim1<double,<%size%> > __b;
+    >>
+    %>
+     
     sparse_inserter *__Asparse; //sparse
 
     //b vector
-    boost::multi_array<double,1> __b;
+    //boost::multi_array<double,1> __b;
     bool* _conditions;
 
     EventHandling& _event_handling;
@@ -8386,7 +8436,7 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp /*BUFP*/,
 ///////////////////////////////////////////////CED
  let matrixassign = match m.matrix
     case row::_ then
-        let vars = daeExpMatrixRow(row,context)
+        let vars = daeExpMatrixRow(m.matrix,context)
         match vars
         case "NO_ASSIGN"
         then
@@ -8452,13 +8502,13 @@ end daeExpMatrixRow;
 */
 
 ////////////////////////////////////////////////////////////////////////CED Functions
-template daeExpMatrixRow(list<Exp> row,Context context)
+template daeExpMatrixRow(list<list<Exp>> matrix,Context context)
  "Helper to daeExpMatrix."
 ::=
- if isCrefListWithEqualIdents(row) then
-  match row
-  case firstelem::_ then
-      daeExpMatrixName(firstelem,context)
+ if isCrefListWithEqualIdents(List.flatten(matrix)) then
+  match matrix
+  case row::_ then
+      daeExpMatrixName(row,context)
   else
    "NO_ASSIGN"
    end match
@@ -8466,10 +8516,10 @@ template daeExpMatrixRow(list<Exp> row,Context context)
    "NO_ASSIGN"
 end daeExpMatrixRow;
 
-template daeExpMatrixName(Exp name,Context context)
+template daeExpMatrixName(list<Exp> row,Context context)
 ::=
-  match name
-  case CREF(componentRef = cr) then
+  match row
+  case CREF(componentRef = cr)::_ then
    match context
    case FUNCTION_CONTEXT(__) then
       daeExpMatrixName2(cr)
