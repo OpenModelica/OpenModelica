@@ -134,6 +134,7 @@ if true then /* Suppress output */
     "../BackEnd/DAEQuery.mo",
     "../BackEnd/Differentiate.mo",
     "../BackEnd/DumpHTML.mo",
+    "../BackEnd/DynamicOptimization.mo",
     "../BackEnd/EvaluateFunctions.mo",
     "../BackEnd/EvaluateParameter.mo",
     "../BackEnd/ExpressionSolve.mo",

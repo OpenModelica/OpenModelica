@@ -10855,8 +10855,8 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
       let objectiveFunction = match objetiveE
         case SOME(exp) then
         <<
-         *res =  &$P$TMP_mayerTerm;
-         *index_Dres = $P$TMP_mayerTerm$pDERC$indexdiffed;
+         *res =  &$P$OMC$objectMayerTerm;
+         *index_Dres = $P$OMC$objectMayerTerm$pDERC$indexdiffed;
          return 0;
         >>
       let startTimeOpt = match startTimeE
@@ -10868,9 +10868,9 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
 
       let objectiveIntegrand = match objectiveIntegrandE case SOME(exp) then
         <<
-         *res =  &$P$TMP_lagrangeTerm;
-         *index_DresB = $P$TMP_lagrangeTerm$pDERB$indexdiffed;
-         *index_DresC = $P$TMP_lagrangeTerm$pDERC$indexdiffed;
+         *res =  &$P$OMC$objectLagrangeTerm;
+         *index_DresB = $P$OMC$objectLagrangeTerm$pDERB$indexdiffed;
+         *index_DresC = $P$OMC$objectLagrangeTerm$pDERC$indexdiffed;
          return 0;
         >>
       let inputBounds = match simCode

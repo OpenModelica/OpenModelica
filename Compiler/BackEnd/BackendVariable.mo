@@ -1655,6 +1655,52 @@ algorithm
   end match;
 end isRealOptimizeConstraintsVars;
 
+public function hasMayerTermAnno
+"author: Vitalij Ruge
+ Return true if variable has isMayer=true annotation"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    local SCode.Comment comm;
+      
+    case (BackendDAE.VAR(comment= SOME(comm) ))
+       then SCode.commentHasBooleanNamedAnnotation(comm, "isMayer");
+    else then false; 
+  end match;
+end hasMayerTermAnno;
+
+public function hasLagrangeTermAnno
+"author: Vitalij Ruge
+ Return true if variable has isLagrange=true annotation"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    local SCode.Comment comm;
+      
+    case (BackendDAE.VAR(comment=  SOME(comm) ))
+       then SCode.commentHasBooleanNamedAnnotation(comm, "isLagrange");
+    else then false; 
+  end match;
+end hasLagrangeTermAnno;
+
+public function hasConTermAnno
+"author: Vitalij Ruge
+ Return true if variable has isConstraint=true annotation"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    local SCode.Comment comm;
+      
+    case (BackendDAE.VAR(comment=  SOME(comm) ))
+       then SCode.commentHasBooleanNamedAnnotation(comm, "isConstraint");
+    else then false; 
+  end match;
+end hasConTermAnno;
+
+
 public function isNonRealParam
 "Return true if variable is NOT a parameter of real-type"
   input BackendDAE.Var inVar;

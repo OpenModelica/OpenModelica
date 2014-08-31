@@ -1969,44 +1969,77 @@ public function generateResidualfromRealtion "author: vitalij"
   input Integer inI;
   input DAE.Exp iRhs;
   input DAE.ElementSource Source;
+  input BackendDAE.Variables inVars;
+  input BackendDAE.Variables knvars;
   output list<BackendDAE.Equation> outEqn;
   output BackendDAE.Var vout;
 algorithm
-  (outEqn, vout) :=  match (inI, iRhs, Source)
+  (outEqn, vout) :=  match (inI, iRhs, Source, inVars, knvars)
     local
-      DAE.Exp rhs, e1, e2;
-      DAE.ComponentRef lhs;
-      BackendDAE.Var dummyVar;
+      DAE.Exp rhs, e1, e2 , expNull, lowBound;
+      DAE.ComponentRef lhs, cr;
+      BackendDAE.Var dummyVar, v;
+      BackendDAE.Variables mergeVars;
+      BackendDAE.Equation eqn;
 
-    case (_, DAE.RELATION(e1, DAE.LESS(_), e2, _, _), _) equation
-      lhs = ComponentReference.makeCrefIdent("$TMP_ineq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
+    case (_, DAE.RELATION(e1, DAE.LESS(_), e2, _, _), _,_,_) equation
+      lhs = ComponentReference.makeCrefIdent("$OMC$constarintTerm" +& intString(inI), DAE.T_REAL_DEFAULT, {});
       dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-      (rhs, _) = ExpressionSimplify.simplify(DAE.BINARY(e1, DAE.SUB(DAE.T_REAL_DEFAULT), e2));
+      rhs = Expression.expSub(e1,e2);
+      (rhs, _) = ExpressionSimplify.simplify1(rhs);
+      expNull = DAE.RCONST(0.0);
+      lowBound = DAE.RCONST(-1e21);
+      dummyVar = BackendVariable.setVarMinMax(dummyVar, (SOME(lowBound), SOME(expNull)));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
-    case (_, DAE.RELATION(e1, DAE.LESSEQ(_), e2, _, _), _) equation
-      lhs = ComponentReference.makeCrefIdent("$TMP_ineq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
+    case (_, DAE.RELATION(e1, DAE.LESSEQ(_), e2, _, _), _,_,_) equation
+      lhs = ComponentReference.makeCrefIdent("$OMC$constarintTerm" +& intString(inI), DAE.T_REAL_DEFAULT, {});
       dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-      (rhs, _) = ExpressionSimplify.simplify(DAE.BINARY(e1, DAE.SUB(DAE.T_REAL_DEFAULT), e2));
+      rhs = Expression.expSub(e1,e2);
+      (rhs, _) = ExpressionSimplify.simplify1(rhs);
+      expNull = DAE.RCONST(0.0);
+      lowBound = DAE.RCONST(-1e21);
+      dummyVar = BackendVariable.setVarMinMax(dummyVar, (SOME(lowBound), SOME(expNull)));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
-    case (_, DAE.RELATION(e1, DAE.GREATER(_), e2, _, _), _) equation
-      lhs = ComponentReference.makeCrefIdent("$TMP_ineq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
+    case (_, DAE.RELATION(e1, DAE.GREATER(_), e2, _, _), _,_,_) equation
+      lhs = ComponentReference.makeCrefIdent("$OMC$constarintTerm" +& intString(inI), DAE.T_REAL_DEFAULT, {});
       dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-      (rhs, _) = ExpressionSimplify.simplify(DAE.BINARY(e2, DAE.SUB(DAE.T_REAL_DEFAULT), e1));
+      rhs =  Expression.expSub(e2,e1);
+      (rhs, _) = ExpressionSimplify.simplify1(rhs);
+      expNull = DAE.RCONST(0.0);
+      lowBound = DAE.RCONST(-1e21);
+      dummyVar = BackendVariable.setVarMinMax(dummyVar, (SOME(lowBound), SOME(expNull)));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
-    case (_, DAE.RELATION(e1, DAE.GREATEREQ(_), e2, _, _), _) equation
-      lhs = ComponentReference.makeCrefIdent("$TMP_ineq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
+    case (_, DAE.RELATION(e1, DAE.GREATEREQ(_), e2, _, _), _,_,_) equation
+      lhs = ComponentReference.makeCrefIdent("$OMC$constarintTerm" +& intString(inI), DAE.T_REAL_DEFAULT, {});
       dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-      (rhs, _) = ExpressionSimplify.simplify(DAE.BINARY(e2, DAE.SUB(DAE.T_REAL_DEFAULT), e1));
+      rhs =  Expression.expSub(e2,e1);
+      (rhs, _) = ExpressionSimplify.simplify(rhs);
+      expNull = DAE.RCONST(0.0);
+      lowBound = DAE.RCONST(-1e21);
+      dummyVar = BackendVariable.setVarMinMax(dummyVar, (SOME(lowBound), SOME(expNull)));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
-    case (_, DAE.RELATION(e1, DAE.EQUAL(_), e2, _, _), _) equation
-      lhs = ComponentReference.makeCrefIdent("$TMP_eq_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
+    case (_, DAE.RELATION(e1, DAE.EQUAL(_), e2, _, _), _,_,_) equation
+      lhs = ComponentReference.makeCrefIdent("$OMC$constarintTerm" +& intString(inI), DAE.T_REAL_DEFAULT, {});
       dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-      (rhs, _) = ExpressionSimplify.simplify(DAE.BINARY(e2, DAE.SUB(DAE.T_REAL_DEFAULT), e1));
+      rhs =  Expression.expSub(e2,e1);
+      (rhs, _) = ExpressionSimplify.simplify(rhs);
+      expNull = DAE.RCONST(0.0);
+      dummyVar = BackendVariable.setVarMinMax(dummyVar, (SOME(expNull), SOME(expNull)));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
+    
+    case(_,e1 as DAE.CREF(componentRef = cr),_,_,_) equation  
+      mergeVars =  BackendVariable.mergeVariables(inVars, knvars);
+      ({v},_)= BackendVariable.getVar(cr,mergeVars);
+      lhs = ComponentReference.makeCrefIdent("$OMC$constarintTerm" +& intString(inI), DAE.T_REAL_DEFAULT, {});
+      dummyVar = BackendDAE.VAR(lhs, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      dummyVar = BackendVariable.mergeAliasVars(dummyVar, v, false, knvars);
+      eqn = BackendDAE.SOLVED_EQUATION(lhs, e1, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+    then ({eqn}, dummyVar);
+    else fail();
   end match;
 end generateResidualfromRealtion;
 

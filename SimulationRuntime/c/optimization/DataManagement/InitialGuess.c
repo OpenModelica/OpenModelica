@@ -255,6 +255,7 @@ static inline void init_ipopt_data(OptData *optData){
   const int nJ = optData->dim.nJ;
   const int nx = optData->dim.nx;
   const int nReal = optData->dim.nReal;
+  const int index_con = optData->dim.index_con;
 
   int i,j,l,shift;
 
@@ -283,14 +284,12 @@ static inline void init_ipopt_data(OptData *optData){
 
   externalInputFree(data);
 
-  {
-    const int index_con = optData->dim.index_con;
-    for(j = 0; j< nc; ++j){
-      if(data->modelData.realVarsData[j + index_con].info.name[5] == 'i') /* $P$TMP_ineq_conj*/
-        for(i = nx; i < NRes; i += nJ)
-            ipop->gmin[i+j] = -1e21;
+
+  for(j = 0; j< nc; ++j){
+    for(i = nx; i < NRes; i += nJ){
+      ipop->gmin[i+j] = data->modelData.realVarsData[j + index_con].attribute.min;
+      ipop->gmax[i+j] = data->modelData.realVarsData[j + index_con].attribute.max;
     }
-      /*else $P$TMP_eq_con */
   }
 
 }

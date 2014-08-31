@@ -49,7 +49,6 @@ public import Env;
 public import HashTable2;
 
 protected import Algorithm;
-protected import BackendDAECreate;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendDump;
@@ -2995,17 +2994,12 @@ algorithm
     BackendDAE.SymbolicJacobians linearModelMatrixes;
     DAE.FunctionTree funcs, functionTree;
     list< .DAE.Constraint> constraints;
-    BackendDAE.Variables v;
-    list<BackendDAE.Equation> eqns;
   case(_) equation
     true = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
     System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
     BackendDAE.DAE(eqs=eqs,shared=shared) = inBackendDAE;
     BackendDAE.SHARED(constraints=constraints) = shared;
-    eqns = {};
-    v = BackendVariable.emptyVars();
-    (v,eqns) = BackendDAECreate.addOptimizationVarsEqns2(constraints,1,v,eqns);
-    (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar(),v);
+    (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar());
     shared = BackendDAEUtil.addBackendDAESharedJacobians(linearModelMatrixes, shared);
     functionTree = BackendDAEUtil.getFunctions(shared);
     functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
@@ -3092,21 +3086,20 @@ protected function createLinearModelMatrixes
  author: wbraun"
   input BackendDAE.BackendDAE inBackendDAE;
   input Boolean UseOtimica;
-  input BackendDAE.Variables conVars;
   output BackendDAE.SymbolicJacobians outJacobianMatrixes;
   output DAE.FunctionTree outFunctionTree;
 
 algorithm
   (outJacobianMatrixes, outFunctionTree) :=
-  match (inBackendDAE,UseOtimica,conVars)
+  match (inBackendDAE,UseOtimica)
     local
       BackendDAE.BackendDAE backendDAE,backendDAE2;
 
-      list<BackendDAE.Var>  varlst, knvarlst,  states, inputvars, inputvars2, outputvars, paramvars, states_inputs;
+      list<BackendDAE.Var>  varlst, knvarlst,  states, inputvars, inputvars2, outputvars, paramvars, states_inputs, conVarsList;
       list<DAE.ComponentRef> comref_states, comref_inputvars, comref_outputvars, comref_vars, comref_knvars;
       DAE.ComponentRef leftcref;
 
-      BackendDAE.Variables v,kv,statesarr,inputvarsarr,paramvarsarr,outputvarsarr, object, optimizer_vars;
+      BackendDAE.Variables v,kv,statesarr,inputvarsarr,paramvarsarr,outputvarsarr, object, optimizer_vars, conVars;
       BackendDAE.EquationArray e;
 
       BackendDAE.SymbolicJacobians linearModelMatrices;
@@ -3118,7 +3111,7 @@ algorithm
       DAE.FunctionTree funcs, functionTree;
       list<DAE.Function> funcLst;
 
- case (backendDAE, false,_)
+ case (backendDAE, false)
       equation
         backendDAE2 = BackendDAEUtil.copyBackendDAE(backendDAE);
         backendDAE2 = collapseIndependentBlocks(backendDAE2);
@@ -3174,7 +3167,7 @@ algorithm
       then
         (linearModelMatrices, functionTree);
 
-    case (backendDAE, true,_) //  created linear model (matrixes) for optimization
+    case (backendDAE, true) //  created linear model (matrixes) for optimization
       equation
         // A := der(x)
         // B := {der(x), con(x), L(x)}
@@ -3196,6 +3189,8 @@ algorithm
         paramvars = List.select(knvarlst, BackendVariable.isParam);
         inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
         outputvars = List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
+        conVarsList = List.select(varlst, BackendVariable.isRealOptimizeConstraintsVars);
+        
         states_inputs = listAppend(states, inputvars2);
         _ = List.map(states,BackendVariable.varCref);
         _ = List.map(inputvars2,BackendVariable.varCref);
@@ -3205,7 +3200,8 @@ algorithm
         inputvarsarr = BackendVariable.listVar1(inputvars);
         paramvarsarr = BackendVariable.listVar1(paramvars);
         outputvarsarr = BackendVariable.listVar1(outputvars);
-
+        conVars = BackendVariable.listVar1(conVarsList);
+        
         //BackendDump.printVariables(conVars);
         //BackendDump.printVariables(object);
         //print(intString(BackendVariable.numVariables(object)));
@@ -3221,7 +3217,7 @@ algorithm
         // Differentiate the System w.r.t states&inputs for matrices B
 
         optimizer_vars = BackendVariable.mergeVariables(statesarr, conVars);
-        object = checkObjectIsSet(outputvarsarr,"$TMP_lagrangeTerm");
+        object = checkObjectIsSet(outputvarsarr,"$OMC$objectLagrangeTerm");
         optimizer_vars = BackendVariable.mergeVariables(optimizer_vars, object);
         //BackendDump.printVariables(optimizer_vars);
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"B");
@@ -3231,7 +3227,7 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix B time: " +& realString(clock()) +& "\n");
 
         // Differentiate the System w.r.t states for matrices C
-        object = checkObjectIsSet(outputvarsarr,"$TMP_mayerTerm");
+        object = checkObjectIsSet(outputvarsarr,"$OMC$objectMayerTerm");
         optimizer_vars = BackendVariable.mergeVariables(optimizer_vars, object);
         //BackendDump.printVariables(optimizer_vars);
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"C");
