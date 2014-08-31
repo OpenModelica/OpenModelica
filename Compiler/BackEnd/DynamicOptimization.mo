@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
- 
+
  encapsulated package DynamicOptimization
 
 " file:        DynamicOptimization.mo
@@ -103,7 +103,7 @@ algorithm
     then (v, e,inClassAttr);
     case (v, e, true, _, _, _)
       equation
-        
+
         leftcref = ComponentReference.makeCrefIdent("$OMC$objectMayerTerm", DAE.T_REAL_DEFAULT, {});
         dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
         mayer1 = findMayerTerm(inVars, knvars);
@@ -120,10 +120,10 @@ algorithm
         b = not List.isEmpty(objectEqn);
         v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
         e = Util.if_(b, listAppend(e, objectEqn), e);
-        
+
         constraint = addConstraints(inVars, knvars, inConstraint);
         (v, e) = addOptimizationVarsEqns2(constraint, 1, v, e, knvars);
-        
+
        then (v, e,{DAE.OPTIMIZATION_ATTRS(mayer1, lagrange1, NONE(), NONE())});
     else then(inVars, inEqns, inClassAttr);
   end match;
@@ -168,7 +168,7 @@ protected function addOptimizationVarsEqns2
  input BackendDAE.Variables inVars;
  input list<BackendDAE.Equation> inEqns;
  input BackendDAE.Variables knvars;
- 
+
  output BackendDAE.Variables outVars;
  output list<BackendDAE.Equation>  outEqns;
 algorithm
@@ -195,7 +195,7 @@ output Option<DAE.Exp> mayer;
 algorithm
   mayer := match(inVars, knvars)
   local list<BackendDAE.Var> varlst; BackendDAE.Variables v;
-    
+
     case(_, _) equation
       v = BackendVariable.mergeVariables(inVars, knvars);
       varlst = BackendVariable.varList(v);
@@ -214,7 +214,7 @@ output Option<DAE.Exp> mayer;
 algorithm
   mayer := match(inVars, knvars)
   local list<BackendDAE.Var> varlst; BackendDAE.Variables v;
-    
+
     case(_, _) equation
       v = BackendVariable.mergeVariables(inVars, knvars);
       varlst = BackendVariable.varList(v);
@@ -234,9 +234,9 @@ output Option<DAE.Exp> mayer;
 
 algorithm
   mayer := match(varlst, Inmayer)
-  local list<BackendDAE.Var> varlst; BackendDAE.Var v; 
+  local list<BackendDAE.Var> varlst; BackendDAE.Var v;
         DAE.Exp e, e2, e3; Option<DAE.Exp> opte; DAE.ComponentRef cr;
-    
+
     case({},NONE()) then NONE();
     case({},opte as SOME(e)) then opte;
     case(v::varlst, SOME(e)) equation
@@ -264,14 +264,14 @@ output Option<DAE.Exp> mayer;
 algorithm
   mayer := match(inmayer1, inmayer2)
   local DAE.Exp e1, e2, e3;
-    
+
     case(SOME(e1), SOME(e2)) equation
       e3 = Expression.expAdd(e1,e2);
     then SOME(e3);
     case(NONE(), SOME(e2)) then SOME(e2);
     case(SOME(e1), NONE()) then SOME(e1);
     case(NONE(), NONE()) then NONE();
-      
+
   end match;
 end mergeObjectVars;
 
@@ -285,7 +285,7 @@ output list< .DAE.Constraint> outConstraint;
 algorithm
   outConstraint := match(inVars, knvars, inConstraint)
   local list<BackendDAE.Var> varlst; BackendDAE.Variables v; list< .DAE.Exp> constraintLst; list< .DAE.Constraint> constraint;
-    
+
     case(_, _, {DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}) equation
       //print("\n1-->");
       v = BackendVariable.mergeVariables(inVars, knvars);
@@ -318,7 +318,7 @@ algorithm
   outConstraint := match(inConstraintLst, inVarlst)
   local list<BackendDAE.Var> varlst; list< .DAE.Exp> constraintLst;
     BackendDAE.Var v; .DAE.Exp e; DAE.ComponentRef cr; list< .DAE.Exp> ConstraintLst;
-    
+
     case({}, {}) then {};
     case({}, v::varlst) equation
       cr = BackendVariable.varCref(v);
@@ -329,7 +329,7 @@ algorithm
       e = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
     then addConstraints2(e::ConstraintLst,varlst);
     else then(inConstraintLst);
-      
+
   end match;
 end addConstraints2;
 

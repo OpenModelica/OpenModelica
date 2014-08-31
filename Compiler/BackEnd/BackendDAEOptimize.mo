@@ -3190,7 +3190,7 @@ algorithm
         inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
         outputvars = List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
         conVarsList = List.select(varlst, BackendVariable.isRealOptimizeConstraintsVars);
-        
+
         states_inputs = listAppend(states, inputvars2);
         _ = List.map(states,BackendVariable.varCref);
         _ = List.map(inputvars2,BackendVariable.varCref);
@@ -3201,7 +3201,7 @@ algorithm
         paramvarsarr = BackendVariable.listVar1(paramvars);
         outputvarsarr = BackendVariable.listVar1(outputvars);
         conVars = BackendVariable.listVar1(conVarsList);
-        
+
         //BackendDump.printVariables(conVars);
         //BackendDump.printVariables(object);
         //print(intString(BackendVariable.numVariables(object)));

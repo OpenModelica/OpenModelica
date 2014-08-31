@@ -1663,10 +1663,10 @@ public function hasMayerTermAnno
 algorithm
   outBoolean := match (inVar)
     local SCode.Comment comm;
-      
+
     case (BackendDAE.VAR(comment= SOME(comm) ))
        then SCode.commentHasBooleanNamedAnnotation(comm, "isMayer");
-    else then false; 
+    else then false;
   end match;
 end hasMayerTermAnno;
 
@@ -1678,10 +1678,10 @@ public function hasLagrangeTermAnno
 algorithm
   outBoolean := match (inVar)
     local SCode.Comment comm;
-      
+
     case (BackendDAE.VAR(comment=  SOME(comm) ))
        then SCode.commentHasBooleanNamedAnnotation(comm, "isLagrange");
-    else then false; 
+    else then false;
   end match;
 end hasLagrangeTermAnno;
 
@@ -1693,10 +1693,10 @@ public function hasConTermAnno
 algorithm
   outBoolean := match (inVar)
     local SCode.Comment comm;
-      
+
     case (BackendDAE.VAR(comment=  SOME(comm) ))
        then SCode.commentHasBooleanNamedAnnotation(comm, "isConstraint");
-    else then false; 
+    else then false;
   end match;
 end hasConTermAnno;
 

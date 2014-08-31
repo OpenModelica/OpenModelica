@@ -2030,8 +2030,8 @@ algorithm
       expNull = DAE.RCONST(0.0);
       dummyVar = BackendVariable.setVarMinMax(dummyVar, (SOME(expNull), SOME(expNull)));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
-    
-    case(_,e1 as DAE.CREF(componentRef = cr),_,_,_) equation  
+
+    case(_,e1 as DAE.CREF(componentRef = cr),_,_,_) equation
       mergeVars =  BackendVariable.mergeVariables(inVars, knvars);
       ({v},_)= BackendVariable.getVar(cr,mergeVars);
       lhs = ComponentReference.makeCrefIdent("$OMC$constarintTerm" +& intString(inI), DAE.T_REAL_DEFAULT, {});
