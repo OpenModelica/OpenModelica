@@ -8,6 +8,8 @@ import CodegenUtil.*;
 
 
 
+
+
 template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -541,9 +543,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%functionAnalyticJacobians(jacobianMatrixes,simCode,useFlatArrayNotation)%>
 
 
-  //testmaessig aus der cruntime
-      /* Jacobians */
-
+    //testmaessig aus der cruntime
+    /* Jacobians */
 
     <%functionAnalyticJacobians2(jacobianMatrixes, lastIdentOfPath(modelInfo.name))%>
 
@@ -11663,17 +11664,11 @@ template functionAnalyticJacobiansHeader(list<JacobianMatrix> JacobianMatrixes,S
     generateMatrix(mat, vars, name, modelNamePrefix) ;separator="\n")
 */
   <<
-  /*blub*/
+
   <%initialjacMats%>
 
+  >>  
 
-  /*blub*/  /*blub*/
-
-
-
-  >>
-
-  //<%jacMats%>
 
 end functionAnalyticJacobiansHeader;
 
