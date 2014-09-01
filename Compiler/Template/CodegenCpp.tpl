@@ -158,7 +158,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
      void initialAnalytic<%name%>Jacobian();
      void calc<%name%>JacobianColumn();
      void get<%name%>Jacobian(SparseMatrix& matrix);
-	 /*needed for colored Jacs*/
+   /*needed for colored Jacs*/
     >>
     ;separator="\n";empty)
    <<
@@ -172,25 +172,25 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     <%
     let jacobianvars = (jacobianMatrixes |> (_,_, name, _, _, _, _) hasindex index0 =>
     <<
-	private:
+  private:
      SparseMatrix _<%name%>jacobian;
      ublas::vector<double> _<%name%>jac_y;
      ublas::vector<double> _<%name%>jac_tmp;
      ublas::vector<double> _<%name%>jac_x;
-	public:
-	 /*needed for colored Jacs*/
-	   
-	 int  _<%name%>_sizeCols;
+  public:
+   /*needed for colored Jacs*/
+
+   int  _<%name%>_sizeCols;
      int  _<%name%>_sizeRows;
-	 int* _<%name%>_sparsePattern_leadindex;
-	 int  _<%name%>_sizeof_sparsePattern_leadindex;
+   int* _<%name%>_sparsePattern_leadindex;
+   int  _<%name%>_sizeof_sparsePattern_leadindex;
      int* _<%name%>_sparsePattern_index;
-	 int  _<%name%>_sizeof_sparsePattern_index;
-     int* _<%name%>_sparsePattern_colorCols;    
-	 int  _<%name%>_sizeof_sparsePattern_colorCols;
-	 int  _<%name%>_sparsePattern_maxColors;
-	 
-	 
+   int  _<%name%>_sizeof_sparsePattern_index;
+     int* _<%name%>_sparsePattern_colorCols;
+   int  _<%name%>_sizeof_sparsePattern_colorCols;
+   int  _<%name%>_sparsePattern_maxColors;
+
+
     >>
     ;separator="\n";empty)
    <<
@@ -206,11 +206,11 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        (mat |> (eqs,_,_) =>  generateAlgloopsolverVariables(eqs,simCode) ;separator="\n")
      ;separator="")
     %>
-	
-	/*testmässig aus der Cruntime*/
-	
-	<%functionAnalyticJacobiansHeader(jacobianMatrixes, modelNamePrefix(simCode))%>
-	
+
+  /*testmässig aus der Cruntime*/
+
+  <%functionAnalyticJacobiansHeader(jacobianMatrixes, modelNamePrefix(simCode))%>
+
   };
  >>
 end simulationJacobianHeaderFile;
@@ -230,7 +230,7 @@ case _ then
   match sparsepattern
   case {(_,{})} then
     <<
-	//sinnloser Kommentar
+  //sinnloser Kommentar
     >>
   case _ then
   match matrixname
@@ -240,10 +240,10 @@ case _ then
       let indexElems = ( sparsepattern |> (cref,indexes) hasindex index0 =>
         let &eachCrefParts += mkSparseFunctionHeader(matrixname, index0, cref, indexes, modelNamePrefix)
         <<
-		initializeColumnsColoredJacobian<%matrixname%>_<%index0%>();
+    initializeColumnsColoredJacobian<%matrixname%>_<%index0%>();
         >>
 
-        
+
       ;separator="\n")
       let colorArray = (colorList |> (indexes) hasindex index0 =>
         let colorCol = ( indexes |> i_index =>
@@ -255,36 +255,36 @@ case _ then
       let index_ = listLength(seedVars)
       let sp_size_index =  lengthListElements(splitTuple212List(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
-	  
-	  
+
+
       <<
-	  public:
+    public:
       <%eachCrefParts%>
       void initializeColoredJacobian<%matrixname%>();
-	  
+
       int  _<%matrixname%>_sizeCols;
       int  _<%matrixname%>_sizeRows;
-	  
-	  
-	    //_<%matrixname%>_sparsePattern_leadindex = new int[];
+
+
+      //_<%matrixname%>_sparsePattern_leadindex = new int[];
         //_<%matrixname%>_sparsePattern_index = new int[];
         //_<%matrixname%>_sparsePattern_colorCols = new int[<%index_%>];
-	  
-	  
+
+
       int  _<%matrixname%>_sparsePattern_leadindex[<%sizeleadindex%>];
-	  
-	  int  _<%matrixname%>_sizeof_sparsePattern_leadindex;
-	  
+
+    int  _<%matrixname%>_sizeof_sparsePattern_leadindex;
+
       int  _<%matrixname%>_sparsePattern_index[<%sp_size_index%>];
-	  
-	  int  _<%matrixname%>_sizeof_sparsePattern_index;
-	  
+
+    int  _<%matrixname%>_sizeof_sparsePattern_index;
+
       int  _<%matrixname%>_sparsePattern_colorCols[<%index_%>];
-      
-	  int  _<%matrixname%>_sizeof_sparsePattern_colorCols;
-	  
-	  int  _<%matrixname%>_sparsePattern_maxColors;
-	  
+
+    int  _<%matrixname%>_sizeof_sparsePattern_colorCols;
+
+    int  _<%matrixname%>_sparsePattern_maxColors;
+
 
       >>
    end match
@@ -448,19 +448,19 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     virtual void setAMatrix(unsigned int index, DynArrayDim2<int>& A);
     virtual bool getAMatrix(unsigned int index,DynArrayDim1<int>& A);
     virtual void setAMatrix(unsigned int index,DynArrayDim1<int>& A);
-	/*colored jacobians*/
+  /*colored jacobians*/
     virtual void getA_sparsePattern_leadindex(int* A_sparsePattern_leadindex, int size);
-	virtual int  getA_sizeof_sparsePattern_leadindex();
+  virtual int  getA_sizeof_sparsePattern_leadindex();
     virtual void getA_sparsePattern_index(int* A_sparsePattern_index, int size);
-	virtual int  getA_sizeof_sparsePattern_index();
+  virtual int  getA_sizeof_sparsePattern_index();
     virtual void getA_sparsePattern_colorCols(int* A_sparsePattern_colorCols, int size);
-	virtual int  getA_sizeof_sparsePattern_colorCols();	
+  virtual int  getA_sizeof_sparsePattern_colorCols();
     virtual int  getA_sparsePattern_maxColors();
-   
 
-	
-	
-	
+
+
+
+
   };
  >>
 end simulationExtensionHeaderFile;
@@ -539,18 +539,18 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     }
     <%functionAnalyticJacobians(jacobianMatrixes,simCode,useFlatArrayNotation)%>
-	
-	
-	//testmaessig aus der cruntime
-	    /* Jacobians */
+
+
+  //testmaessig aus der cruntime
+      /* Jacobians */
 
 
     <%functionAnalyticJacobians2(jacobianMatrixes, lastIdentOfPath(modelInfo.name))%>
 
     <%\n%>
-	
-	
-	
+
+
+
  >>
 end simulationJacobianCppFile;
 
@@ -670,9 +670,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       <%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize();
       <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize();
       <%lastIdentOfPath(modelInfo.name)%>Jacobian::initialize();
-	  
-	  
-	  <%lastIdentOfPath(modelInfo.name)%>Jacobian::initializeColoredJacobianA();
+
+
+    <%lastIdentOfPath(modelInfo.name)%>Jacobian::initializeColoredJacobianA();
 
     }
 
@@ -782,44 +782,44 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
       <%lastIdentOfPath(modelInfo.name)%>StateSelection::setAMatrix(index,A);
    }
-   
+
    /*needed for colored jacobians*/
-   
+
    void <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sparsePattern_leadindex(int* A_sparsePattern_leadindex, int size)
    {
-		memcpy(A_sparsePattern_leadindex, _A_sparsePattern_leadindex, size * sizeof(int));
+    memcpy(A_sparsePattern_leadindex, _A_sparsePattern_leadindex, size * sizeof(int));
    }
-   
+
    void <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sparsePattern_index(int* A_sparsePattern_index, int size)
    {
-		memcpy(A_sparsePattern_index, _A_sparsePattern_index, size * sizeof(int));
+    memcpy(A_sparsePattern_index, _A_sparsePattern_index, size * sizeof(int));
    }
-   
+
    void <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sparsePattern_colorCols(int* A_sparsePattern_colorCols, int size)
    {
-		memcpy(A_sparsePattern_colorCols, _A_sparsePattern_colorCols, size * sizeof(int));
+    memcpy(A_sparsePattern_colorCols, _A_sparsePattern_colorCols, size * sizeof(int));
    }
-   
+
    int <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sparsePattern_maxColors()
    {
-		return _A_sparsePattern_maxColors;
+    return _A_sparsePattern_maxColors;
    }
-   
+
    /*********************************************************************************************/
-   
+
    int <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sizeof_sparsePattern_colorCols()
    {
-		return _A_sizeof_sparsePattern_colorCols;
+    return _A_sizeof_sparsePattern_colorCols;
    }
-   
+
    int <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sizeof_sparsePattern_leadindex()
    {
-		return _A_sizeof_sparsePattern_leadindex ;
+    return _A_sizeof_sparsePattern_leadindex ;
    }
-   
+
    int <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sizeof_sparsePattern_index()
    {
-		return _A_sizeof_sparsePattern_index;
+    return _A_sizeof_sparsePattern_index;
    }
  >>
 end simulationExtensionCppFile;
@@ -6901,7 +6901,7 @@ template expTypeFlag(DAE.Type ty, Integer flag)
   case T_ARRAY(dims=dims) then'BaseArray<<%expTypeShort(ty)%>>&'
   else expTypeFlag(ty, 9)
     end match
-	
+
   case 9 then
   // we want the "modelica type"
   match ty case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
@@ -11498,20 +11498,20 @@ template functionAnalyticJacobians2(list<JacobianMatrix> JacobianMatrixes,String
   let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, maxColor, indexJacobian) =>
     initialAnalyticJacobians2(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
 /*
-	let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor, indexJacobian) =>
+  let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor, indexJacobian) =>
     generateMatrix(mat, vars, name, modelNamePrefix) ;separator="\n")
 */
   <<
-	/*blub*/
-	<%initialjacMats%>
-	
-	
-	/*blub*/	/*blub*/
-	
-	
-	
-  >>  
-  
+  /*blub*/
+  <%initialjacMats%>
+
+
+  /*blub*/  /*blub*/
+
+
+
+  >>
+
   //<%jacMats%>
 
 end functionAnalyticJacobians2;
@@ -11530,7 +11530,7 @@ case _ then
   match sparsepattern
 //  case {(_,{})} then
 //    <<
-//	/*sinnloser Kommentar*/
+//  /*sinnloser Kommentar*/
 //    >>
   case _ then
   match matrixname
@@ -11540,19 +11540,19 @@ case _ then
       let sizeleadindex = listLength(sparsepattern)
       let leadindex = (sparsepattern |> (cref,indexes) hasindex index0 =>
       <<
-	  _<%matrixname%>_sparsePattern_leadindex[<%cref(cref, false)%>$pDER<%matrixname%>$indexdiff] = <%listLength(indexes)%>;
+    _<%matrixname%>_sparsePattern_leadindex[<%cref(cref, false)%>$pDER<%matrixname%>$indexdiff] = <%listLength(indexes)%>;
       >>
-	  
-      
-	  
+
+
+
       ;separator="\n")
       let indexElems = ( sparsepattern |> (cref,indexes) hasindex index0 =>
         let &eachCrefParts += mkSparseFunction(matrixname, index0, cref, indexes, modelNamePrefix)
         <<
-		initializeColumnsColoredJacobian<%matrixname%>_<%index0%>();
+    initializeColumnsColoredJacobian<%matrixname%>_<%index0%>();
         >>
 
-        
+
       ;separator="\n")
       let colorArray = (colorList |> (indexes) hasindex index0 =>
         let colorCol = ( indexes |> i_index =>
@@ -11572,32 +11572,32 @@ case _ then
 
         //_<%matrixname%>_sizeCols = <%index_%>;
         //_<%matrixname%>_sizeRows = <%indexColumn%>;
-		
 
-		
+
+
         _<%matrixname%>_sparsePattern_leadindex = new int[<%sizeleadindex%>];
         _<%matrixname%>_sparsePattern_index = new int[<%sp_size_index%>];
         _<%matrixname%>_sparsePattern_colorCols = new int[<%index_%>];
         _<%matrixname%>_sparsePattern_maxColors = <%maxColor%>;
-		
-		
-		
-		
-		
 
-	  
-		_<%matrixname%>_sizeof_sparsePattern_leadindex = <%sizeleadindex%>;
-		_<%matrixname%>_sizeof_sparsePattern_index = <%sp_size_index%>;
-		_<%matrixname%>_sizeof_sparsePattern_colorCols = <%index_%>;		
-		
-		
+
+
+
+
+
+
+    _<%matrixname%>_sizeof_sparsePattern_leadindex = <%sizeleadindex%>;
+    _<%matrixname%>_sizeof_sparsePattern_index = <%sp_size_index%>;
+    _<%matrixname%>_sizeof_sparsePattern_colorCols = <%index_%>;
+
+
         //<%matrixname%>_jacobian = NULL;
         //<%matrixname%>_sizeTmpVars = <%tmpvarsSize%>;
         //<%matrixname%>_seedVars = (modelica_real*) calloc(<%index_%>,sizeof(modelica_real));
         //<%matrixname%>_resultVars = (modelica_real*) calloc(<%indexColumn%>,sizeof(modelica_real));
         //<%matrixname%>_tmpVars = (modelica_real*) calloc(<%tmpvarsSize%>,sizeof(modelica_real));
-		
-		
+
+
         /* write column ptr of compressed sparse column*/
         <%leadindex%>
         for(int i = 1; i < <%sizeleadindex%> ; i++)
@@ -11630,20 +11630,20 @@ match matrixname
  case "A" then
     let indexrows = ( indexes |> indexrow hasindex index0 =>
       <<
-	  i = _<%matrixname%>_sparsePattern_leadindex[<%cref(cref, false)%>$pDER<%matrixname%>$indexdiff] - <%listLength(indexes)%>;
+    i = _<%matrixname%>_sparsePattern_leadindex[<%cref(cref, false)%>$pDER<%matrixname%>$indexdiff] - <%listLength(indexes)%>;
       _<%matrixname%>_sparsePattern_index[i+<%index0%>] = <%cref(indexrow, false)%>$pDER<%matrixname%>$indexdiffed;
-      >>      
+      >>
       ;separator="\n")
 
     <<
     void <%modelNamePrefix%>Jacobian::initializeColumnsColoredJacobian<%matrixname%>_<%matrixIndex%>()
     {
       int i;
-	  
-	  
+
+
       /* write index for cref: <%cref(cref , false)%> */
-	  
-	  
+
+
       <%indexrows%>
     }
     <%\n%>
@@ -11659,20 +11659,20 @@ template functionAnalyticJacobiansHeader(list<JacobianMatrix> JacobianMatrixes,S
   let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, maxColor, indexJacobian) =>
     initialAnalyticJacobiansHeader(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
 /*
-	let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor, indexJacobian) =>
+  let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor, indexJacobian) =>
     generateMatrix(mat, vars, name, modelNamePrefix) ;separator="\n")
 */
   <<
-	/*blub*/
-	<%initialjacMats%>
-	
-	
-	/*blub*/	/*blub*/
-	
-	
-	
-  >>  
-  
+  /*blub*/
+  <%initialjacMats%>
+
+
+  /*blub*/  /*blub*/
+
+
+
+  >>
+
   //<%jacMats%>
 
 end functionAnalyticJacobiansHeader;
@@ -11697,10 +11697,10 @@ case _ then
       let indexElems = ( sparsepattern |> (cref,indexes) hasindex index0 =>
         let &eachCrefParts += mkSparseFunctionHeader(matrixname, index0, cref, indexes, modelNamePrefix)
         <<
-		initializeColumnsColoredJacobian<%matrixname%>_<%index0%>();
+    initializeColumnsColoredJacobian<%matrixname%>_<%index0%>();
         >>
 
-        
+
       ;separator="\n")
       let colorArray = (colorList |> (indexes) hasindex index0 =>
         let colorCol = ( indexes |> i_index =>
@@ -11712,30 +11712,30 @@ case _ then
       let index_ = listLength(seedVars)
       let sp_size_index =  lengthListElements(splitTuple212List(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
-	  
-	  
+
+
       <<
-	  public:
+    public:
       <%eachCrefParts%>
       void initializeColoredJacobian<%matrixname%>();
-	  
+
       //int  _<%matrixname%>_sizeCols;
       //int  _<%matrixname%>_sizeRows;
-	  
-	  
-	    //_<%matrixname%>_sparsePattern_leadindex = new int[];
+
+
+      //_<%matrixname%>_sparsePattern_leadindex = new int[];
         //_<%matrixname%>_sparsePattern_index = new int[];
         //_<%matrixname%>_sparsePattern_colorCols = new int[<%index_%>];
-	  
-	  
+
+
       //int  _<%matrixname%>_sparsePattern_leadindex[<%sizeleadindex%>];
-	  //int  _<%matrixname%>_sizeof_sparsePattern_leadindex;
-	  //int  _<%matrixname%>_sparsePattern_index[<%sp_size_index%>];
-	  //int  _<%matrixname%>_sizeof_sparsePattern_index;
-	  //int  _<%matrixname%>_sparsePattern_colorCols[<%index_%>];
-	  //int  _<%matrixname%>_sizeof_sparsePattern_colorCols;
-	  //int  _<%matrixname%>_sparsePattern_maxColors;
-	  
+    //int  _<%matrixname%>_sizeof_sparsePattern_leadindex;
+    //int  _<%matrixname%>_sparsePattern_index[<%sp_size_index%>];
+    //int  _<%matrixname%>_sizeof_sparsePattern_index;
+    //int  _<%matrixname%>_sparsePattern_colorCols[<%index_%>];
+    //int  _<%matrixname%>_sizeof_sparsePattern_colorCols;
+    //int  _<%matrixname%>_sparsePattern_maxColors;
+
 
       >>
    end match
@@ -12066,11 +12066,11 @@ template defineSparseIndexes(list<SimVar> diffVars, list<SimVar> diffedVars, Str
 ::=
   let diffVarsResult = (diffVars |> var as SIMVAR(name=name) hasindex index0 =>
      '#define <%cref(name,false)%>$pDER<%matrixName%>$indexdiff <%index0%> /*test for colored jacobians*/
-	  #define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%>$indexdiff <%index0%>'
+    #define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%>$indexdiff <%index0%>'
     ;separator="\n")
     let diffedVarsResult = (diffedVars |> var as SIMVAR(name=name) hasindex index0 =>
      '#define <%cref(name,false)%>$pDER<%matrixName%>$indexdiffed <%index0%> /*test for colored jacobians*/
-	  #define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%>$indexdiffed <%index0%>'
+    #define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%>$indexdiffed <%index0%>'
     ;separator="\n")
    /* generate at least one print command to have the same index and avoid the strange side effect */
   <<
