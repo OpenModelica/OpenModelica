@@ -8436,7 +8436,7 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp /*BUFP*/,
 ///////////////////////////////////////////////CED
  let matrixassign = match m.matrix
     case row::_ then
-        let vars = daeExpMatrixRow(m.matrix,context)
+        let vars = daeExpMatrixRow(m.matrix,context,simCode)
         match vars
         case "NO_ASSIGN"
         then
@@ -8502,13 +8502,13 @@ end daeExpMatrixRow;
 */
 
 ////////////////////////////////////////////////////////////////////////CED Functions
-template daeExpMatrixRow(list<list<Exp>> matrix,Context context)
+template daeExpMatrixRow(list<list<Exp>> matrix,Context context,SimCode simCode)
  "Helper to daeExpMatrix."
 ::=
- if isCrefListWithEqualIdents(List.flatten(matrix)) then
+if isCrefListWithEqualIdents(List.flatten(matrix)) then
   match matrix
   case row::_ then
-      daeExpMatrixName(row,context)
+      daeExpMatrixName(row,context,simCode)
   else
    "NO_ASSIGN"
    end match
@@ -8516,17 +8516,22 @@ template daeExpMatrixRow(list<list<Exp>> matrix,Context context)
    "NO_ASSIGN"
 end daeExpMatrixRow;
 
-template daeExpMatrixName(list<Exp> row,Context context)
+template daeExpMatrixName(list<Exp> row,Context context,SimCode simCode)
 ::=
+  let &varDecls = buffer "" /*BUFD*/
+  let &preExp = buffer "" /*BUFD*/
   match row
-  case CREF(componentRef = cr)::_ then
+   case CREF(componentRef = cr)::_ then
+      contextCref(crefStripLastSubs(cr),context,simCode,false)
+   /*
    match context
    case FUNCTION_CONTEXT(__) then
-      daeExpMatrixName2(cr)
+    cref2(cr,false) //daeExpMatrixName2(cr) //assign array complete to the function therefore false as second argument
    else
-   "_"+daeExpMatrixName2(cr)
-  else
+   "_"+cref2(cr,false)//daeExpMatrixName2(cr) //assign array complete to function therefore false as second argument
+  else 
   "NO_ASSIGN"
+  */
 end daeExpMatrixName;
 
 
@@ -8836,20 +8841,20 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     if acceptMetaModelicaGrammar() then 'print(<%var1%>)' else 'puts(<%var1%>)'
 
 
-
- case CALL(path=IDENT(name="integer"), expLst={inExp,index}) then
+  case CALL(path=IDENT(name="integer"), expLst={inExp,index}) then
     let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
-    let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
+   // let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     'boost::numeric_cast<int>(<%exp%>)'
-
-  case CALL(path=IDENT(name="floor"), expLst={inExp,index}, attr=CALL_ATTR(ty = ty)) then
+  
+ 
+  case CALL(path=IDENT(name="floor"), expLst={inExp}, attr=CALL_ATTR(ty = ty)) then
     let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
-    let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
+    //let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     'std::floor(<%exp%>)'
 
-  case CALL(path=IDENT(name="ceil"), expLst={inExp,index}, attr=CALL_ATTR(ty = ty)) then
+  case CALL(path=IDENT(name="ceil"), expLst={inExp}, attr=CALL_ATTR(ty = ty)) then
     let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
-    let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
+    //let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     'std::ceil(<%exp%>)'
 
 
@@ -9077,7 +9082,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
 
     let &varDecls += '<%tvar%>.setDims(<%dimsExp%>);<%\n%>'
 
-    let &preExp += 'fill_array<<%ty_str%>,<%listLength(dims)%>>(<%tvar%>, <%valExp%>);<%\n%>'
+    let &preExp += 'fill_array<<%ty_str%>>(<%tvar%>, <%valExp%>);<%\n%>'
     '<%tvar%>'
   case CALL(path=IDENT(name="$_start"), expLst={arg}) then
     daeExpCallStart(arg, context, preExp, varDecls,simCode,useFlatArrayNotation)
@@ -9201,6 +9206,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%tvar%> = delay(<%index%>, <%var1%>,  <%var2%>, <%var3%>);<%\n%>'
     '<%tvar%>'
 
+    
   case CALL(path=IDENT(name="integer"),
             expLst={toBeCasted}) then
     let castedVar = daeExp(toBeCasted, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
