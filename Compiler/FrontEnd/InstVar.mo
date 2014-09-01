@@ -1264,7 +1264,7 @@ algorithm
     case (DAE.MOD(eachPrefix = SCode.NOT_EACH(), subModLst = submods,
         eqModOption = eqmod), _, _, _, _)
       equation
-        List.map4_0(submods, checkArraySubModDimSize, inDimension, inPrefix, inIdent, inInfo); 
+        List.map4_0(submods, checkArraySubModDimSize, inDimension, inPrefix, inIdent, inInfo);
       then
         ();
 
@@ -1338,9 +1338,9 @@ algorithm
     else true;
   end matchcontinue;
 end checkArrayModBindingDimSize;
-         
 
-  
+
+
 protected function instArray2
 "When an array is instantiated by instVar, this function is used
   to go through all the array elements and instantiate each array
