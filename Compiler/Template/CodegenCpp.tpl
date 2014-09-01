@@ -8529,7 +8529,7 @@ template daeExpMatrixName(list<Exp> row,Context context,SimCode simCode)
     cref2(cr,false) //daeExpMatrixName2(cr) //assign array complete to the function therefore false as second argument
    else
    "_"+cref2(cr,false)//daeExpMatrixName2(cr) //assign array complete to function therefore false as second argument
-  else 
+  else
   "NO_ASSIGN"
   */
 end daeExpMatrixName;
@@ -8845,8 +8845,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
    // let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     'boost::numeric_cast<int>(<%exp%>)'
-  
- 
+
+
   case CALL(path=IDENT(name="floor"), expLst={inExp}, attr=CALL_ATTR(ty = ty)) then
     let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     //let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
@@ -9206,7 +9206,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%tvar%> = delay(<%index%>, <%var1%>,  <%var2%>, <%var3%>);<%\n%>'
     '<%tvar%>'
 
-    
+
   case CALL(path=IDENT(name="integer"),
             expLst={toBeCasted}) then
     let castedVar = daeExp(toBeCasted, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
