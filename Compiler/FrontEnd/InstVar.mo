@@ -1196,6 +1196,7 @@ protected function instArray
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   checkDimensionGreaterThanZero(inDimension,inPrefix,inIdent,info);
+  checkArrayModDimSize(inMod, inDimension, inPrefix, inIdent, info);
   (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph) :=
     instArray2(inCache, inEnv, inIH, inStore, inState, inMod, inPrefix, inIdent,
       inElement, inPrefixes, inInteger, inDimension, inDimensionLst,
@@ -1243,6 +1244,103 @@ algorithm
   end match;
 end checkDimensionGreaterThanZero2;
 
+protected function checkArrayModDimSize
+  "This function checks that the dimension of a modifier is the same as the
+   modified components dimension. Only the first dimension is checked, since
+   this function is meant to be called in instArray which is called recursively
+   for a component's dimensions."
+  input DAE.Mod inModifier;
+  input DAE.Dimension inDimension;
+  input Prefix.Prefix inPrefix;
+  input String inIdent;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inModifier, inDimension, inPrefix, inIdent, inInfo)
+    local
+      list<DAE.SubMod> submods;
+      Option<DAE.EqMod> eqmod;
+
+    // Only check modifiers which are not marked with 'each'.
+    case (DAE.MOD(eachPrefix = SCode.NOT_EACH(), subModLst = submods,
+        eqModOption = eqmod), _, _, _, _)
+      equation
+        List.map4_0(submods, checkArraySubModDimSize, inDimension, inPrefix, inIdent, inInfo); 
+      then
+        ();
+
+    else ();
+  end match;
+end checkArrayModDimSize;
+
+protected function checkArraySubModDimSize
+  input DAE.SubMod inSubMod;
+  input DAE.Dimension inDimension;
+  input Prefix.Prefix inPrefix;
+  input String inIdent;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inSubMod, inDimension, inPrefix, inIdent, inInfo)
+    local
+      String name;
+      Option<DAE.EqMod> eqmod;
+
+    // Don't check quantity, because Dymola doesn't and as a result the MSL
+    // contains some type errors.
+    case (DAE.NAMEMOD(ident = "quantity"), _, _, _, _) then ();
+
+    case (DAE.NAMEMOD(ident = name, mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(),
+        eqModOption = eqmod)), _, _, _, _)
+      equation
+        name = inIdent +& "." +& name;
+        true = checkArrayModBindingDimSize(eqmod, inDimension, inPrefix, name, inInfo);
+      then
+        ();
+
+    else ();
+  end match;
+end checkArraySubModDimSize;
+
+protected function checkArrayModBindingDimSize
+  input Option<DAE.EqMod> inBinding;
+  input DAE.Dimension inDimension;
+  input Prefix.Prefix inPrefix;
+  input String inIdent;
+  input Absyn.Info inInfo;
+  output Boolean outIsCorrect;
+algorithm
+  outIsCorrect := matchcontinue(inBinding, inDimension, inPrefix, inIdent, inInfo)
+    local
+      DAE.Exp exp;
+      DAE.Type ty;
+      DAE.Dimension ty_dim;
+      Integer dim_size1, dim_size2;
+      String exp_str, exp_ty_str, dims_str;
+      DAE.Dimensions ty_dims;
+
+    case (SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty))), _, _, _, _)
+      equation
+        ty_dim = Types.getDimensionNth(ty, 1);
+        dim_size1 = Expression.dimensionSize(inDimension);
+        dim_size2 = Expression.dimensionSize(ty_dim);
+        true = dim_size1 <> dim_size2;
+        // If the dimensions are not equal, print an error message.
+        exp_str = ExpressionDump.printExpStr(exp);
+        exp_ty_str = Types.unparseType(ty);
+        // We don't know the complete expected type, so lets assume that the
+        // rest of the expression's type is correct (will be caught later anyway).
+        _ :: ty_dims = Types.getDimensions(ty);
+        dims_str = ExpressionDump.dimensionsString(inDimension :: ty_dims);
+        Error.addSourceMessage(Error.ARRAY_DIMENSION_MISMATCH,
+          {exp_str, exp_ty_str, dims_str}, inInfo);
+      then
+        false;
+
+    else true;
+  end matchcontinue;
+end checkArrayModBindingDimSize;
+         
+
+  
 protected function instArray2
 "When an array is instantiated by instVar, this function is used
   to go through all the array elements and instantiate each array

@@ -966,20 +966,21 @@ algorithm
     local
       DAE.Dimension dim;
       DAE.Type t;
-      Integer d;
+      Integer d, dc;
       DAE.Dimensions dims;
 
     case (DAE.T_ARRAY(dims = dims), d)
       equation
-        dim = listNth(dims, d - 1);
+        dim = listGet(dims, d);
       then
         dim;
 
-    case (DAE.T_ARRAY(ty = t), d)
+    case (DAE.T_ARRAY(ty = t, dims = dims), d)
       equation
-        true = (d > 1);
+        dc = listLength(dims);
+        true = (d > dc);
       then
-        getDimensionNth(t, d - 1);
+        getDimensionNth(t, d - dc);
 
     case (DAE.T_SUBTYPE_BASIC(complexType = t), d)
       then getDimensionNth(t, d);
