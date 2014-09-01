@@ -73,7 +73,7 @@ algorithm
       list<BackendDAE.Equation> e;
       Option<DAE.Exp> mayer, mayer1, lagrange, lagrange1;
       list< .DAE.Exp> constraintLst;
-      list< .DAE.Constraint> constraint;
+      list< .DAE.Constraint> constraints;
 
     case (v, e, true, {DAE.OPTIMIZATION_ATTRS(objetiveE=mayer, objectiveIntegrandE=lagrange)}, _, _)
       equation
@@ -97,8 +97,8 @@ algorithm
         v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
         e = Util.if_(b, listAppend(e, objectEqn), e);
 
-        constraint = addConstraints(inVars, knvars, inConstraint);
-        (v, e) = addOptimizationVarsEqns2(constraint, 1, v, e, knvars);
+        constraints = addConstraints(inVars, knvars, inConstraint);
+        (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars);
 
     then (v, e,inClassAttr);
     case (v, e, true, _, _, _)
@@ -121,8 +121,8 @@ algorithm
         v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
         e = Util.if_(b, listAppend(e, objectEqn), e);
 
-        constraint = addConstraints(inVars, knvars, inConstraint);
-        (v, e) = addOptimizationVarsEqns2(constraint, 1, v, e, knvars);
+        constraints = addConstraints(inVars, knvars, inConstraint);
+        (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars);
 
        then (v, e,{DAE.OPTIMIZATION_ATTRS(mayer1, lagrange1, NONE(), NONE())});
     else then(inVars, inEqns, inClassAttr);
@@ -233,7 +233,7 @@ input Option<DAE.Exp> Inmayer;
 output Option<DAE.Exp> mayer;
 
 algorithm
-  mayer := match(varlst, Inmayer)
+  mayer := match(InVarlst, Inmayer)
   local list<BackendDAE.Var> varlst; BackendDAE.Var v;
         DAE.Exp e, e2, e3; Option<DAE.Exp> opte; DAE.ComponentRef cr;
 
@@ -284,7 +284,7 @@ output list< .DAE.Constraint> outConstraint;
 
 algorithm
   outConstraint := match(inVars, knvars, inConstraint)
-  local list<BackendDAE.Var> varlst; BackendDAE.Variables v; list< .DAE.Exp> constraintLst; list< .DAE.Constraint> constraint;
+  local list<BackendDAE.Var> varlst; BackendDAE.Variables v; list< .DAE.Exp> constraintLst; list< .DAE.Constraint> constraints;
 
     case(_, _, {DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}) equation
       //print("\n1-->");
@@ -293,17 +293,17 @@ algorithm
       varlst = List.select(varlst, BackendVariable.hasConTermAnno);
       //print("\n1.3-->");
       constraintLst = addConstraints2(constraintLst, varlst);
-      constraint =  {DAE.CONSTRAINT_EXPS(constraintLst)};
+      constraints =  {DAE.CONSTRAINT_EXPS(constraintLst)};
       //print("\n1.5-->");
-    then constraint;
+    then constraints;
     case(_, _, {}) equation
       //print("\n2-->");
       v = BackendVariable.mergeVariables(inVars, knvars);
       varlst = BackendVariable.varList(v);
       varlst = List.select(varlst, BackendVariable.hasConTermAnno);
       constraintLst = addConstraints2({}, varlst);
-      constraint =  {DAE.CONSTRAINT_EXPS(constraintLst)};
-    then constraint;
+      constraints =  {DAE.CONSTRAINT_EXPS(constraintLst)};
+    then constraints;
     else then (inConstraint);
   end match;
 end addConstraints;
@@ -315,7 +315,7 @@ input list<BackendDAE.Var> inVarlst;
 output list< .DAE.Exp> outConstraintLst;
 
 algorithm
-  outConstraint := match(inConstraintLst, inVarlst)
+  outConstraintLst := match(inConstraintLst, inVarlst)
   local list<BackendDAE.Var> varlst; list< .DAE.Exp> constraintLst;
     BackendDAE.Var v; .DAE.Exp e; DAE.ComponentRef cr; list< .DAE.Exp> ConstraintLst;
 
