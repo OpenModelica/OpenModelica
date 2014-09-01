@@ -126,12 +126,11 @@ DocumentationViewer* DocumentationWidget::getDocumentationViewer()
 
 void DocumentationWidget::showDocumentation(QString className)
 {
-  /* Create a local file with the html we want to view as otherwise
-   * JavaScript does not run properly.
-   */
+  /* Create a local file with the html we want to view as otherwise JavaScript does not run properly. */
   QString documentation = mpMainWindow->getOMCProxy()->getDocumentationAnnotation(className);
   mDocumentationFile.open(QIODevice::WriteOnly | QIODevice::Text);
   QTextStream out(&mDocumentationFile);
+  out.setCodec(Helper::utf8.toStdString().data());
   out << documentation;
   mDocumentationFile.close();
   mpDocumentationViewer->setUrl(mDocumentationFile.fileName());
@@ -197,6 +196,7 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
   settings()->setFontFamily(QWebSettings::StandardFont, "Verdana");
   settings()->setFontSize(QWebSettings::DefaultFontSize, 10);
   settings()->setAttribute(QWebSettings::LocalStorageEnabled, true);
+  settings()->setDefaultTextEncoding(Helper::utf8.toStdString().data());
   // set DocumentationViewer web page policy
   page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
   connect(page(), SIGNAL(linkClicked(QUrl)), SLOT(processLinkClick(QUrl)));

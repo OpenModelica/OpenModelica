@@ -511,7 +511,7 @@ void OpenModelicaFile::convertModelicaFile(QString fileName, QTextCodec *pCodec)
   file.close();
   file.open(QIODevice::WriteOnly | QIODevice::Truncate);
   QTextStream out(&file);
-  out.setCodec("UTF-8");
+  out.setCodec(Helper::utf8.toStdString().data());
   out.setGenerateByteOrderMark(false);
   out << fileData;
   file.close();
