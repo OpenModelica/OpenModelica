@@ -5275,44 +5275,24 @@ algorithm
   end match;
 end elabBuiltinInterval;
 
-/*
-protected function elabBuiltinTransition2 "
+protected function isBlockTypeWorkaround "
 Author: BTH
-Helper function to elabBuiltinTransition"
-  input list<Absyn.Exp> args;
-  input Integer numOfArgs;
-  output list<Absyn.Exp> argsWithDefaults;
+Helper function to elabBuiltinTransition.
+This function checks whether a type is complex.
+It is used as a workaround to check for block instances in elabBuiltinTransition, elabBultinActiveState and elabBuiltinInitalState.
+This is not perfect since there are also other instances that are 'complex' types which are not block instances.
+But allowing more might not be so bad anyway, since the MLS 3.3 restriction to block seems more restrictive than necessary,
+e.g., one can be more lenient and allow models as states, too..."
+  input DAE.Type ity;
+  output Boolean b;
 algorithm
-  (argsWithDefaults) := match (numOfArgs, args)
-    local
-      list<Absyn.Exp> args2;
-    case (3, args2) then listAppend(args2, {Absyn.BOOL(true), Absyn.BOOL(true), Absyn.BOOL(false), Absyn.INTEGER(1)});
-    case (4, args2) then listAppend(args2, {Absyn.BOOL(true), Absyn.BOOL(false), Absyn.INTEGER(1)});
-    case (5, args2) then listAppend(args2, {Absyn.BOOL(false), Absyn.INTEGER(1)});
-    case (6, args2) then listAppend(args2, {Absyn.INTEGER(1)});
-    case (7, args2) then args2;
-    else then fail();
-  end match;
-end elabBuiltinTransition2;
-*/
-
-protected function elabBuiltinTransition2 "
-Author: BTH
-Helper function to elabBuiltinTransition"
-  input list<Absyn.Exp> args;
-  output list<Absyn.Exp> argsWithDefaults;
-algorithm
-  argsWithDefaults := match (args)
-    local
-      Absyn.Exp a1,a2,a3,a4,a5,a6,a7;
-      String strMsg;
-    case ({a1,a2,a3}) then listAppend(args, {Absyn.BOOL(true), Absyn.BOOL(true), Absyn.BOOL(false), Absyn.INTEGER(1)});
-    case ({a1,a2,a3,a4}) then listAppend(args, {Absyn.BOOL(true), Absyn.BOOL(false), Absyn.INTEGER(1)});
-    case ({a1,a2,a3,a4,a5}) then listAppend(args, {Absyn.BOOL(false), Absyn.INTEGER(1)});
-    case ({a1,a2,a3,a4,a5,a6}) then listAppend(args, {Absyn.INTEGER(1)});
-    case ({a1,a2,a3,a4,a5,a6,a7}) then args;
-  end match;
-end elabBuiltinTransition2;
+  b := matchcontinue(ity)
+    local DAE.Type ty;
+    case (DAE.T_SUBTYPE_BASIC(complexType = ty)) then isBlockTypeWorkaround(ty);
+    case (DAE.T_COMPLEX(varLst = _)) then true;
+    else false;
+  end matchcontinue;
+end isBlockTypeWorkaround;
 
 protected function elabBuiltinTransition "
 Author: BTH
@@ -5334,97 +5314,142 @@ algorithm
       DAE.Exp call,from,to,condition,immediate,reset,synchronize,priority;
       DAE.Type ty1,ty2,ty3,ty4,ty5,ty6,ty7,ty;
       DAE.Const c4,c5,c6,c7;
-      Boolean impl;
+      Boolean impl, b1, b2, b3;
       Env.Env env;
       Env.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop1,prop2,prop3,prop4,prop5,prop6,prop7,prop;
-      Absyn.Exp afrom, ato, acondition, aimmediate, areset, asynchronize, apriority;
-      Integer n;
-      String strMsg0,strMsg1,strMsg2,strMsg3,strMsg4,strMsg5,strMsg6,strMsg7,strPre,strMsgArgs;
+      Absyn.Exp afrom, ato, acondition, aimmediate, areset, asynchronize, apriority, afrom2, ato2, acondition2;
+      Integer n, nFrom;
+      String strMsg0,strMsg1,strMsg2,strPre,s1,s2,s3,s4,s5,s6;
       list<Absyn.Exp> argsWithDefaults;
       array<Absyn.Exp> argsWithDefaultsArray;
+      list<String> slist;
 
-    case (cache,env,_,{},impl,pre,_)
+    case (cache,env,_,_,impl,pre,_)
       equation
-        strMsg0 = "transition(" +& Dump.printExpLstStr(args) +& ")";
+        slist = List.map(nargs,Dump.printNamedArgStr);
+        s1 = Dump.printExpLstStr(args);
+        s2 = stringDelimitList(s1 :: slist, ", ");
+        strMsg0 = "transition(" +& s2 +& ")";
         strPre = PrefixUtil.printPrefixStr3(pre);
         n = listLength(args);
-        strMsgArgs = "transition(" +& strMsg0 +& ", number of arguments should be between 3 and 7.";
-        Error.assertionOrAddSourceMessage(n >= 3 and n <= 7,Error.WRONG_TYPE_OR_NO_OF_ARGS,
-          {strMsgArgs, strPre}, info);
 
-        argsWithDefaults = elabBuiltinTransition2(args);
-        argsWithDefaultsArray = listArray(argsWithDefaults);
-        afrom = arrayGet(argsWithDefaultsArray, 1);
-        ato = arrayGet(argsWithDefaultsArray, 2);
-        acondition = arrayGet(argsWithDefaultsArray, 3);
-        aimmediate = arrayGet(argsWithDefaultsArray, 4);
-        areset = arrayGet(argsWithDefaultsArray, 5);
-        asynchronize = arrayGet(argsWithDefaultsArray, 6);
-        apriority = arrayGet(argsWithDefaultsArray, 7);
+        b1 = List.isMemberOnTrue("from", nargs, elabBuiltinTransition3);
+        s3 = strMsg0 +& ", named argument \"from\" already has a value.";
+        Error.assertionOrAddSourceMessage(not (b1 and n > 0),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+          {s3, strPre}, info);
+        s4 = strMsg0 +& ", missing value for first argument \"from\".";
+        Error.assertionOrAddSourceMessage(b1 or n > 0,Error.WRONG_TYPE_OR_NO_OF_ARGS,
+          {s4, strPre}, info);
 
+        b2 = List.isMemberOnTrue("to", nargs, elabBuiltinTransition3);
+        s5 = strMsg0 +& ", named argument \"to\" already has a value.";
+        Error.assertionOrAddSourceMessage(not (b2 and n > 1),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+          {s5, strPre}, info);
+        s6 = strMsg0 +& ", missing value for second argument \"to\".";
+        Error.assertionOrAddSourceMessage(b2 or n > 1,Error.WRONG_TYPE_OR_NO_OF_ARGS,
+          {s6, strPre}, info);
+
+        afrom = elabBuiltinTransition5("from", b1, args, nargs);
         (cache, from, prop1, _) = elabExpInExpression(cache,env,afrom,impl,NONE(),true,pre,info);
         ty1 = Types.getPropType(prop1);
         strMsg1 = strMsg0 +& ", first argument needs to be a block instance.";
-        Error.assertionOrAddSourceMessage(Types.isComplexType(ty1),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+        Error.assertionOrAddSourceMessage(isBlockTypeWorkaround(ty1),Error.WRONG_TYPE_OR_NO_OF_ARGS,
           {strMsg1, strPre}, info);
 
+        ato = elabBuiltinTransition5("to", b2, args, nargs);
         (cache, to, prop2, _) = elabExpInExpression(cache,env,ato,impl,NONE(),true,pre,info);
         ty2 = Types.getPropType(prop2);
         strMsg2 = strMsg0 +& ", second argument needs to be a block instance.";
-        Error.assertionOrAddSourceMessage(Types.isComplexType(ty1),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+        Error.assertionOrAddSourceMessage(isBlockTypeWorkaround(ty2),Error.WRONG_TYPE_OR_NO_OF_ARGS,
           {strMsg2, strPre}, info);
 
-        (cache, condition, prop3, _) = elabExpInExpression(cache,env,acondition,impl,NONE(),true,pre,info);
-        ty3 = Types.getPropType(prop3);
-        strMsg3 = strMsg0 +& ", third argument needs to be a Boolean argument.";
-        Error.assertionOrAddSourceMessage(Types.isBoolean(ty3),Error.WRONG_TYPE_OR_NO_OF_ARGS,
-          {strMsg3, strPre}, info);
-
-        (cache, immediate, prop4, _) = elabExpInExpression(cache,env,aimmediate,impl,NONE(),true,pre,info);
-        ty4 = Types.getPropType(prop4);
-        c4 = Types.getPropConst(prop4);
-        strMsg4 = strMsg0 +& ", forth argument needs to be a Boolean argument with parametric variability.";
-        Error.assertionOrAddSourceMessage(Types.isBoolean(ty4) and Types.isParameterOrConstant(c4),Error.WRONG_TYPE_OR_NO_OF_ARGS,
-          {strMsg4, strPre}, info);
-
-        (cache, reset, prop5, _) = elabExpInExpression(cache,env,areset,impl,NONE(),true,pre,info);
-        ty5 = Types.getPropType(prop5);
-        c5 = Types.getPropConst(prop5);
-        strMsg5 = strMsg0 +& ", fith argument needs to be a Boolean argument with parametric variability.";
-        Error.assertionOrAddSourceMessage(Types.isBoolean(ty5) and Types.isParameterOrConstant(c5),Error.WRONG_TYPE_OR_NO_OF_ARGS,
-          {strMsg5, strPre}, info);
-
-        (cache, synchronize, prop6, _) = elabExpInExpression(cache,env,asynchronize,impl,NONE(),true,pre,info);
-        ty6 = Types.getPropType(prop6);
-        c6 = Types.getPropConst(prop6);
-        strMsg6 = strMsg0 +& ", sixth argument needs to be a Boolean argument with parametric variability.";
-        Error.assertionOrAddSourceMessage(Types.isBoolean(ty6) and Types.isParameterOrConstant(c6),Error.WRONG_TYPE_OR_NO_OF_ARGS,
-          {strMsg6, strPre}, info);
-
-        (cache, priority, prop7, _) = elabExpInExpression(cache,env,apriority,impl,NONE(),true,pre,info);
-        ty7 = Types.getPropType(prop7);
-        c7 = Types.getPropConst(prop7);
-        strMsg7 = strMsg0 +& ", seventh argument needs to be an Integer argument >= 0 with parametric variability.";
-        Error.assertionOrAddSourceMessage(Types.isInteger(ty7) and Types.isParameterOrConstant(c7) and
-          Expression.expInt(priority) >= 0, Error.WRONG_TYPE_OR_NO_OF_ARGS, {strMsg7, strPre}, info);
-
+        // Alternatively, ty1 and ty2 could be replaced by DAE.T_CODE(DAE.C_VARIABLENAME,{}), not sure if that would be a better solution
         ty =  DAE.T_FUNCTION(
-                {DAE.FUNCARG("from",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-                 DAE.FUNCARG("to",ty2,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-                 DAE.FUNCARG("condition",ty3,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-                 DAE.FUNCARG("immediate",ty4,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-                 DAE.FUNCARG("reset",ty5,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-                 DAE.FUNCARG("synchronize",ty6,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-                 DAE.FUNCARG("priority",ty7,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
+                {DAE.FUNCARG("from",ty1, DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                 DAE.FUNCARG("to",ty2, DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                 DAE.FUNCARG("condition",DAE.T_BOOL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                 DAE.FUNCARG("immediate",DAE.T_BOOL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),SOME(DAE.BCONST(true))),
+                 DAE.FUNCARG("reset",DAE.T_BOOL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),SOME(DAE.BCONST(true))),
+                 DAE.FUNCARG("synchronize",DAE.T_BOOL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),SOME(DAE.BCONST(false))),
+                 DAE.FUNCARG("priority",DAE.T_INTEGER_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),SOME(DAE.ICONST(1)))},
                  DAE.T_NORETCALL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("transition"), argsWithDefaults, nargs, impl, NONE(), pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("transition"), args, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
 end elabBuiltinTransition;
+
+protected function elabBuiltinTransition3 "
+Author: BTH
+Helper function to elabBuiltinTransition.
+Checks if namedArg.argName == name"
+  input Absyn.Ident name;
+  input Absyn.NamedArg namedArg;
+  output Boolean outIsEqual;
+algorithm
+  outIsEqual := match (name, namedArg)
+    local
+      Absyn.Ident argName;
+      Absyn.Exp argValue;
+
+    case (_, Absyn.NAMEDARG(argName, argValue))
+      equation
+        true = name ==& argName;
+      then true;
+
+    else then false;
+  end match;
+end elabBuiltinTransition3;
+
+protected function elabBuiltinTransition4 "
+Author: BTH
+Helper function to elabBuiltinTransition.
+Extract element argValue."
+  input Absyn.NamedArg inElement;
+  output Absyn.Exp argValue;
+algorithm
+  argValue := match (inElement)
+    local
+      Absyn.Ident argName;
+      Absyn.Exp argValue1;
+    case (Absyn.NAMEDARG(argName, argValue1))
+      then argValue1;
+  end match;
+end elabBuiltinTransition4;
+
+protected function elabBuiltinTransition5 "
+Author: BTH
+Helper function to elabBuiltinTransition."
+  input String argName;
+  input Boolean getAsNamedArg;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  output Absyn.Exp argValue;
+algorithm
+  argValue := match (argName, getAsNamedArg, args, nargs)
+    local
+      Absyn.Ident argName;
+      Absyn.Exp argValue1;
+      Absyn.NamedArg namedArg;
+      String s1;
+      Boolean b1;
+    case (s1 as "from", b1 as true, _, _)
+      equation
+        namedArg = List.getMemberOnTrue("from", nargs, elabBuiltinTransition3);
+      then elabBuiltinTransition4(namedArg);
+    case (s1 as "from", b1 as false, _, _)
+      then listGet(args, 1);
+    case (s1 as "to", b1 as true, _, _)
+      equation
+        namedArg = List.getMemberOnTrue("to", nargs, elabBuiltinTransition3);
+      then elabBuiltinTransition4(namedArg);
+    case (s1 as "to", b1 as false, _, _)
+      then listGet(args, 2);
+  end match;
+end elabBuiltinTransition5;
 
 protected function elabBuiltinInitialState "
 Author: BTH
@@ -5459,7 +5484,7 @@ algorithm
         ty1 = Types.getPropType(prop1);
         strMsg = "initialState(" +& Dump.printExpLstStr(args) +& "), Argument needs to be a block instance.";
         strPre = PrefixUtil.printPrefixStr3(pre);
-        Error.assertionOrAddSourceMessage(Types.isComplexType(ty1),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+        Error.assertionOrAddSourceMessage(isBlockTypeWorkaround(ty1),Error.WRONG_TYPE_OR_NO_OF_ARGS,
           {strMsg, strPre}, info);
 
         ty =  DAE.T_FUNCTION(
@@ -5505,7 +5530,7 @@ algorithm
         ty1 = Types.getPropType(prop1);
         strMsg = "activeState(" +& Dump.printExpLstStr(args) +& "), Argument needs to be a block instance.";
         strPre = PrefixUtil.printPrefixStr3(pre);
-        Error.assertionOrAddSourceMessage(Types.isComplexType(ty1), Error.WRONG_TYPE_OR_NO_OF_ARGS,
+        Error.assertionOrAddSourceMessage(isBlockTypeWorkaround(ty1), Error.WRONG_TYPE_OR_NO_OF_ARGS,
           {strMsg, strPre}, info);
 
         ty =  DAE.T_FUNCTION(
