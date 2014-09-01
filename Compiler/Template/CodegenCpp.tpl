@@ -158,23 +158,39 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
      void initialAnalytic<%name%>Jacobian();
      void calc<%name%>JacobianColumn();
      void get<%name%>Jacobian(SparseMatrix& matrix);
+	 /*needed for colored Jacs*/
     >>
     ;separator="\n";empty)
    <<
       <%jacobianfunctions%>
    >>
    %>
-   private:
+
 
 
 
     <%
     let jacobianvars = (jacobianMatrixes |> (_,_, name, _, _, _, _) hasindex index0 =>
     <<
+	private:
      SparseMatrix _<%name%>jacobian;
      ublas::vector<double> _<%name%>jac_y;
      ublas::vector<double> _<%name%>jac_tmp;
      ublas::vector<double> _<%name%>jac_x;
+	public:
+	 /*needed for colored Jacs*/
+	   
+	 int  _<%name%>_sizeCols;
+     int  _<%name%>_sizeRows;
+	 int* _<%name%>_sparsePattern_leadindex;
+	 int  _<%name%>_sizeof_sparsePattern_leadindex;
+     int* _<%name%>_sparsePattern_index;
+	 int  _<%name%>_sizeof_sparsePattern_index;
+     int* _<%name%>_sparsePattern_colorCols;    
+	 int  _<%name%>_sizeof_sparsePattern_colorCols;
+	 int  _<%name%>_sparsePattern_maxColors;
+	 
+	 
     >>
     ;separator="\n";empty)
    <<
@@ -190,13 +206,91 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        (mat |> (eqs,_,_) =>  generateAlgloopsolverVariables(eqs,simCode) ;separator="\n")
      ;separator="")
     %>
-
+	
+	/*testmässig aus der Cruntime*/
+	
+	<%functionAnalyticJacobiansHeader(jacobianMatrixes, modelNamePrefix(simCode))%>
+	
   };
  >>
 end simulationJacobianHeaderFile;
 
 
+//template initialAnalyticJacobiansHeader(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>> colorList, Integer maxColor, String modelNamePrefix)
+/*"template initialAnalyticJacobians
+  This template generates source code for functions that initialize the sparse-pattern for a single jacobian.
+  This is a helper of template functionAnalyticJacobians"
+*/
+  //::=
+/*match seedVars
+case {} then
+<<
+>>
+case _ then
+  match sparsepattern
+  case {(_,{})} then
+    <<
+	//sinnloser Kommentar
+    >>
+  case _ then
+  match matrixname
+  case "A" then
+      let &eachCrefParts = buffer ""
 
+      let indexElems = ( sparsepattern |> (cref,indexes) hasindex index0 =>
+        let &eachCrefParts += mkSparseFunctionHeader(matrixname, index0, cref, indexes, modelNamePrefix)
+        <<
+		initializeColumnsColoredJacobian<%matrixname%>_<%index0%>();
+        >>
+
+        
+      ;separator="\n")
+      let colorArray = (colorList |> (indexes) hasindex index0 =>
+        let colorCol = ( indexes |> i_index =>
+        '_<%matrixname%>_sparsePattern_colorCols[<%cref(i_index, false)%>$pDER<%matrixname%>$indexdiff] = <%intAdd(index0,1)%>; '
+        ;separator="\n")
+      '<%colorCol%>'
+      ;separator="\n")
+      let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn;separator="\n")
+      let index_ = listLength(seedVars)
+      let sp_size_index =  lengthListElements(splitTuple212List(sparsepattern))
+      let sizeleadindex = listLength(sparsepattern)
+	  
+	  
+      <<
+	  public:
+      <%eachCrefParts%>
+      void initializeColoredJacobian<%matrixname%>();
+	  
+      int  _<%matrixname%>_sizeCols;
+      int  _<%matrixname%>_sizeRows;
+	  
+	  
+	    //_<%matrixname%>_sparsePattern_leadindex = new int[];
+        //_<%matrixname%>_sparsePattern_index = new int[];
+        //_<%matrixname%>_sparsePattern_colorCols = new int[<%index_%>];
+	  
+	  
+      int  _<%matrixname%>_sparsePattern_leadindex[<%sizeleadindex%>];
+	  
+	  int  _<%matrixname%>_sizeof_sparsePattern_leadindex;
+	  
+      int  _<%matrixname%>_sparsePattern_index[<%sp_size_index%>];
+	  
+	  int  _<%matrixname%>_sizeof_sparsePattern_index;
+	  
+      int  _<%matrixname%>_sparsePattern_colorCols[<%index_%>];
+      
+	  int  _<%matrixname%>_sizeof_sparsePattern_colorCols;
+	  
+	  int  _<%matrixname%>_sparsePattern_maxColors;
+	  
+
+      >>
+   end match
+   end match
+end match*/
+//end initialAnalyticJacobiansHeader;
 
 
 template simulationStateSelectionHeaderFile(SimCode simCode)
@@ -354,8 +448,19 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     virtual void setAMatrix(unsigned int index, DynArrayDim2<int>& A);
     virtual bool getAMatrix(unsigned int index,DynArrayDim1<int>& A);
     virtual void setAMatrix(unsigned int index,DynArrayDim1<int>& A);
+	/*colored jacobians*/
+    virtual void getA_sparsePattern_leadindex(int* A_sparsePattern_leadindex, int size);
+	virtual int  getA_sizeof_sparsePattern_leadindex();
+    virtual void getA_sparsePattern_index(int* A_sparsePattern_index, int size);
+	virtual int  getA_sizeof_sparsePattern_index();
+    virtual void getA_sparsePattern_colorCols(int* A_sparsePattern_colorCols, int size);
+	virtual int  getA_sizeof_sparsePattern_colorCols();	
+    virtual int  getA_sparsePattern_maxColors();
+   
 
-
+	
+	
+	
   };
  >>
 end simulationExtensionHeaderFile;
@@ -434,11 +539,20 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     }
     <%functionAnalyticJacobians(jacobianMatrixes,simCode,useFlatArrayNotation)%>
+	
+	
+	//testmaessig aus der cruntime
+	    /* Jacobians */
+
+
+    <%functionAnalyticJacobians2(jacobianMatrixes, lastIdentOfPath(modelInfo.name))%>
+
+    <%\n%>
+	
+	
+	
  >>
 end simulationJacobianCppFile;
-
-
-
 
 template simulationStateSelectionCppFile(SimCode simCode, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for simulation target."
@@ -556,7 +670,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       <%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize();
       <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize();
       <%lastIdentOfPath(modelInfo.name)%>Jacobian::initialize();
-
+	  
+	  
+	  <%lastIdentOfPath(modelInfo.name)%>Jacobian::initializeColoredJacobianA();
 
     }
 
@@ -666,7 +782,45 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
       <%lastIdentOfPath(modelInfo.name)%>StateSelection::setAMatrix(index,A);
    }
-
+   
+   /*needed for colored jacobians*/
+   
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sparsePattern_leadindex(int* A_sparsePattern_leadindex, int size)
+   {
+		memcpy(A_sparsePattern_leadindex, _A_sparsePattern_leadindex, size * sizeof(int));
+   }
+   
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sparsePattern_index(int* A_sparsePattern_index, int size)
+   {
+		memcpy(A_sparsePattern_index, _A_sparsePattern_index, size * sizeof(int));
+   }
+   
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sparsePattern_colorCols(int* A_sparsePattern_colorCols, int size)
+   {
+		memcpy(A_sparsePattern_colorCols, _A_sparsePattern_colorCols, size * sizeof(int));
+   }
+   
+   int <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sparsePattern_maxColors()
+   {
+		return _A_sparsePattern_maxColors;
+   }
+   
+   /*********************************************************************************************/
+   
+   int <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sizeof_sparsePattern_colorCols()
+   {
+		return _A_sizeof_sparsePattern_colorCols;
+   }
+   
+   int <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sizeof_sparsePattern_leadindex()
+   {
+		return _A_sizeof_sparsePattern_leadindex ;
+   }
+   
+   int <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sizeof_sparsePattern_index()
+   {
+		return _A_sizeof_sparsePattern_index;
+   }
  >>
 end simulationExtensionCppFile;
 
@@ -6747,6 +6901,7 @@ template expTypeFlag(DAE.Type ty, Integer flag)
   case T_ARRAY(dims=dims) then'BaseArray<<%expTypeShort(ty)%>>&'
   else expTypeFlag(ty, 9)
     end match
+	
   case 9 then
   // we want the "modelica type"
   match ty case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
@@ -11336,9 +11491,302 @@ end setVariables;
 
 
 
+template functionAnalyticJacobians2(list<JacobianMatrix> JacobianMatrixes,String modelNamePrefix) "template functionAnalyticJacobians
+  This template generates source code for all given jacobians."
+::=
+
+  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, maxColor, indexJacobian) =>
+    initialAnalyticJacobians2(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
+/*
+	let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor, indexJacobian) =>
+    generateMatrix(mat, vars, name, modelNamePrefix) ;separator="\n")
+*/
+  <<
+	/*blub*/
+	<%initialjacMats%>
+	
+	
+	/*blub*/	/*blub*/
+	
+	
+	
+  >>  
+  
+  //<%jacMats%>
+
+end functionAnalyticJacobians2;
+
+
+template initialAnalyticJacobians2(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>> colorList, Integer maxColor, String modelNamePrefix)
+"template initialAnalyticJacobians
+  This template generates source code for functions that initialize the sparse-pattern for a single jacobian.
+  This is a helper of template functionAnalyticJacobians"
+::=
+match seedVars
+case {} then
+<<
+>>
+case _ then
+  match sparsepattern
+//  case {(_,{})} then
+//    <<
+//	/*sinnloser Kommentar*/
+//    >>
+  case _ then
+  match matrixname
+  case "A" then
+      let &eachCrefParts = buffer ""
+      let sp_size_index =  lengthListElements(splitTuple212List(sparsepattern))
+      let sizeleadindex = listLength(sparsepattern)
+      let leadindex = (sparsepattern |> (cref,indexes) hasindex index0 =>
+      <<
+	  _<%matrixname%>_sparsePattern_leadindex[<%cref(cref, false)%>$pDER<%matrixname%>$indexdiff] = <%listLength(indexes)%>;
+      >>
+	  
+      
+	  
+      ;separator="\n")
+      let indexElems = ( sparsepattern |> (cref,indexes) hasindex index0 =>
+        let &eachCrefParts += mkSparseFunction(matrixname, index0, cref, indexes, modelNamePrefix)
+        <<
+		initializeColumnsColoredJacobian<%matrixname%>_<%index0%>();
+        >>
+
+        
+      ;separator="\n")
+      let colorArray = (colorList |> (indexes) hasindex index0 =>
+        let colorCol = ( indexes |> i_index =>
+        '_<%matrixname%>_sparsePattern_colorCols[<%cref(i_index, false)%>$pDER<%matrixname%>$indexdiff] = <%intAdd(index0,1)%>; '
+        ;separator="\n")
+      '<%colorCol%>'
+      ;separator="\n")
+      let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn;separator="\n")
+      let tmpvarsSize = (jacobianColumn |> (_,vars,_) => listLength(vars);separator="\n")
+      let index_ = listLength(seedVars)
+      <<
+
+      <%eachCrefParts%>
+
+      void <%modelNamePrefix%>Jacobian::initializeColoredJacobian<%matrixname%>()
+      {
+
+        //_<%matrixname%>_sizeCols = <%index_%>;
+        //_<%matrixname%>_sizeRows = <%indexColumn%>;
+		
+
+		
+        _<%matrixname%>_sparsePattern_leadindex = new int[<%sizeleadindex%>];
+        _<%matrixname%>_sparsePattern_index = new int[<%sp_size_index%>];
+        _<%matrixname%>_sparsePattern_colorCols = new int[<%index_%>];
+        _<%matrixname%>_sparsePattern_maxColors = <%maxColor%>;
+		
+		
+		
+		
+		
+
+	  
+		_<%matrixname%>_sizeof_sparsePattern_leadindex = <%sizeleadindex%>;
+		_<%matrixname%>_sizeof_sparsePattern_index = <%sp_size_index%>;
+		_<%matrixname%>_sizeof_sparsePattern_colorCols = <%index_%>;		
+		
+		
+        //<%matrixname%>_jacobian = NULL;
+        //<%matrixname%>_sizeTmpVars = <%tmpvarsSize%>;
+        //<%matrixname%>_seedVars = (modelica_real*) calloc(<%index_%>,sizeof(modelica_real));
+        //<%matrixname%>_resultVars = (modelica_real*) calloc(<%indexColumn%>,sizeof(modelica_real));
+        //<%matrixname%>_tmpVars = (modelica_real*) calloc(<%tmpvarsSize%>,sizeof(modelica_real));
+		
+		
+        /* write column ptr of compressed sparse column*/
+        <%leadindex%>
+        for(int i = 1; i < <%sizeleadindex%> ; i++)
+            _<%matrixname%>_sparsePattern_leadindex[i] += _<%matrixname%>_sparsePattern_leadindex[i-1];
+
+
+        /* call functions to write index for each cref */
+        <%indexElems%>
+
+        /* write color array */
+        <%colorArray%>
+      }
+      >>
+   end match
+   end match
+end match
+end initialAnalyticJacobians2;
+
+template symbolName(String modelNamePrefix, String symbolName)
+  "Creates a unique name for the function"
+::=
+  modelNamePrefix + "_" + symbolName
+end symbolName;
+
+
+template mkSparseFunction(String matrixname, String matrixIndex, DAE.ComponentRef cref, list<DAE.ComponentRef> indexes, String modelNamePrefix)
+"generate "
+::=
+match matrixname
+ case "A" then
+    let indexrows = ( indexes |> indexrow hasindex index0 =>
+      <<
+	  i = _<%matrixname%>_sparsePattern_leadindex[<%cref(cref, false)%>$pDER<%matrixname%>$indexdiff] - <%listLength(indexes)%>;
+      _<%matrixname%>_sparsePattern_index[i+<%index0%>] = <%cref(indexrow, false)%>$pDER<%matrixname%>$indexdiffed;
+      >>      
+      ;separator="\n")
+
+    <<
+    void <%modelNamePrefix%>Jacobian::initializeColumnsColoredJacobian<%matrixname%>_<%matrixIndex%>()
+    {
+      int i;
+	  
+	  
+      /* write index for cref: <%cref(cref , false)%> */
+	  
+	  
+      <%indexrows%>
+    }
+    <%\n%>
+    >>
+end match
+end mkSparseFunction;
+
+
+template functionAnalyticJacobiansHeader(list<JacobianMatrix> JacobianMatrixes,String modelNamePrefix) "template functionAnalyticJacobians
+  This template generates source code for all given jacobians."
+::=
+
+  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, maxColor, indexJacobian) =>
+    initialAnalyticJacobiansHeader(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
+/*
+	let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor, indexJacobian) =>
+    generateMatrix(mat, vars, name, modelNamePrefix) ;separator="\n")
+*/
+  <<
+	/*blub*/
+	<%initialjacMats%>
+	
+	
+	/*blub*/	/*blub*/
+	
+	
+	
+  >>  
+  
+  //<%jacMats%>
+
+end functionAnalyticJacobiansHeader;
+
+template initialAnalyticJacobiansHeader(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>> colorList, Integer maxColor, String modelNamePrefix)
+"template initialAnalyticJacobians
+  This template generates source code for functions that initialize the sparse-pattern for a single jacobian.
+  This is a helper of template functionAnalyticJacobians"
+::=
+match seedVars
+case {} then
+<<
+>>
+case _ then
+  match sparsepattern
+
+  case _ then
+  match matrixname
+  case "A" then
+      let &eachCrefParts = buffer ""
+
+      let indexElems = ( sparsepattern |> (cref,indexes) hasindex index0 =>
+        let &eachCrefParts += mkSparseFunctionHeader(matrixname, index0, cref, indexes, modelNamePrefix)
+        <<
+		initializeColumnsColoredJacobian<%matrixname%>_<%index0%>();
+        >>
+
+        
+      ;separator="\n")
+      let colorArray = (colorList |> (indexes) hasindex index0 =>
+        let colorCol = ( indexes |> i_index =>
+        '_<%matrixname%>_sparsePattern_colorCols[<%cref(i_index, false)%>$pDER<%matrixname%>$indexdiff] = <%intAdd(index0,1)%>; '
+        ;separator="\n")
+      '<%colorCol%>'
+      ;separator="\n")
+      let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn;separator="\n")
+      let index_ = listLength(seedVars)
+      let sp_size_index =  lengthListElements(splitTuple212List(sparsepattern))
+      let sizeleadindex = listLength(sparsepattern)
+	  
+	  
+      <<
+	  public:
+      <%eachCrefParts%>
+      void initializeColoredJacobian<%matrixname%>();
+	  
+      //int  _<%matrixname%>_sizeCols;
+      //int  _<%matrixname%>_sizeRows;
+	  
+	  
+	    //_<%matrixname%>_sparsePattern_leadindex = new int[];
+        //_<%matrixname%>_sparsePattern_index = new int[];
+        //_<%matrixname%>_sparsePattern_colorCols = new int[<%index_%>];
+	  
+	  
+      //int  _<%matrixname%>_sparsePattern_leadindex[<%sizeleadindex%>];
+	  //int  _<%matrixname%>_sizeof_sparsePattern_leadindex;
+	  //int  _<%matrixname%>_sparsePattern_index[<%sp_size_index%>];
+	  //int  _<%matrixname%>_sizeof_sparsePattern_index;
+	  //int  _<%matrixname%>_sparsePattern_colorCols[<%index_%>];
+	  //int  _<%matrixname%>_sizeof_sparsePattern_colorCols;
+	  //int  _<%matrixname%>_sparsePattern_maxColors;
+	  
+
+      >>
+   end match
+   end match
+
+
+end initialAnalyticJacobiansHeader;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template mkSparseFunctionHeader(String matrixname, String matrixIndex, DAE.ComponentRef cref, list<DAE.ComponentRef> indexes, String modelNamePrefix)
+"generate "
+::=
+match matrixname
+ case "A" then
+    <<
+    void initializeColumnsColoredJacobian<%matrixname%>_<%matrixIndex%>();<%\n%>
+    >>
+end match
+end mkSparseFunctionHeader;
 
 template initialAnalyticJacobians(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixName, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>> colorList,SimCode simCode)
  "Generates function that initialize the sparse-pattern for a jacobain matrix"
@@ -11617,10 +12065,12 @@ template defineSparseIndexes(list<SimVar> diffVars, list<SimVar> diffedVars, Str
   Generates Matrixes for Linear Model."
 ::=
   let diffVarsResult = (diffVars |> var as SIMVAR(name=name) hasindex index0 =>
-     '#define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%>$indexdiff <%index0%>'
+     '#define <%cref(name,false)%>$pDER<%matrixName%>$indexdiff <%index0%> /*test for colored jacobians*/
+	  #define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%>$indexdiff <%index0%>'
     ;separator="\n")
     let diffedVarsResult = (diffedVars |> var as SIMVAR(name=name) hasindex index0 =>
-     '#define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%>$indexdiffed <%index0%>'
+     '#define <%cref(name,false)%>$pDER<%matrixName%>$indexdiffed <%index0%> /*test for colored jacobians*/
+	  #define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%>$indexdiffed <%index0%>'
     ;separator="\n")
    /* generate at least one print command to have the same index and avoid the strange side effect */
   <<
