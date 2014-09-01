@@ -158,7 +158,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
      void initialAnalytic<%name%>Jacobian();
      void calc<%name%>JacobianColumn();
      void get<%name%>Jacobian(SparseMatrix& matrix);
-   /*needed for colored Jacs*/
+     /*needed for colored Jacs*/
     >>
     ;separator="\n";empty)
    <<
@@ -172,23 +172,23 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     <%
     let jacobianvars = (jacobianMatrixes |> (_,_, name, _, _, _, _) hasindex index0 =>
     <<
-  private:
-     SparseMatrix _<%name%>jacobian;
-     ublas::vector<double> _<%name%>jac_y;
-     ublas::vector<double> _<%name%>jac_tmp;
-     ublas::vector<double> _<%name%>jac_x;
-  public:
-   /*needed for colored Jacs*/
+      private:
+         SparseMatrix _<%name%>jacobian;
+         ublas::vector<double> _<%name%>jac_y;
+         ublas::vector<double> _<%name%>jac_tmp;
+         ublas::vector<double> _<%name%>jac_x;
+      public:
+       /*needed for colored Jacs*/
 
-   int  _<%name%>_sizeCols;
-     int  _<%name%>_sizeRows;
-   int* _<%name%>_sparsePattern_leadindex;
-   int  _<%name%>_sizeof_sparsePattern_leadindex;
-     int* _<%name%>_sparsePattern_index;
-   int  _<%name%>_sizeof_sparsePattern_index;
-     int* _<%name%>_sparsePattern_colorCols;
-   int  _<%name%>_sizeof_sparsePattern_colorCols;
-   int  _<%name%>_sparsePattern_maxColors;
+       int  _<%name%>_sizeCols;
+         int  _<%name%>_sizeRows;
+       int* _<%name%>_sparsePattern_leadindex;
+       int  _<%name%>_sizeof_sparsePattern_leadindex;
+         int* _<%name%>_sparsePattern_index;
+       int  _<%name%>_sizeof_sparsePattern_index;
+         int* _<%name%>_sparsePattern_colorCols;
+       int  _<%name%>_sizeof_sparsePattern_colorCols;
+       int  _<%name%>_sparsePattern_maxColors;
 
 
     >>
@@ -207,7 +207,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
      ;separator="")
     %>
 
-  /*testmässig aus der Cruntime*/
+  /*testmaessig aus der Cruntime*/
 
   <%functionAnalyticJacobiansHeader(jacobianMatrixes, modelNamePrefix(simCode))%>
 
@@ -4702,7 +4702,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
     virtual int getDimTimeEvent() const;
-    //gibt die Time events (Startzeit und Frequenz) zurÃ¼ck
+    //gibt die Time events (Startzeit und Frequenz) zuruck
     virtual void getTimeEvent(time_event_type& time_events);
     //Wird vom Solver zur Behandlung der Time events aufgerufen (wenn zero_sign[i] = 0  kein time event,zero_sign[i] = n  Anzahl von vorgekommen time events )
     virtual void handleTimeEvent(int* time_events);
@@ -11540,7 +11540,7 @@ case _ then
       let sizeleadindex = listLength(sparsepattern)
       let leadindex = (sparsepattern |> (cref,indexes) hasindex index0 =>
       <<
-    _<%matrixname%>_sparsePattern_leadindex[<%cref(cref, false)%>$pDER<%matrixname%>$indexdiff] = <%listLength(indexes)%>;
+        _<%matrixname%>_sparsePattern_leadindex[<%cref(cref, false)%>$pDER<%matrixname%>$indexdiff] = <%listLength(indexes)%>;
       >>
 
 
@@ -11549,7 +11549,7 @@ case _ then
       let indexElems = ( sparsepattern |> (cref,indexes) hasindex index0 =>
         let &eachCrefParts += mkSparseFunction(matrixname, index0, cref, indexes, modelNamePrefix)
         <<
-    initializeColumnsColoredJacobian<%matrixname%>_<%index0%>();
+          initializeColumnsColoredJacobian<%matrixname%>_<%index0%>();
         >>
 
 
@@ -11586,9 +11586,9 @@ case _ then
 
 
 
-    _<%matrixname%>_sizeof_sparsePattern_leadindex = <%sizeleadindex%>;
-    _<%matrixname%>_sizeof_sparsePattern_index = <%sp_size_index%>;
-    _<%matrixname%>_sizeof_sparsePattern_colorCols = <%index_%>;
+        _<%matrixname%>_sizeof_sparsePattern_leadindex = <%sizeleadindex%>;
+        _<%matrixname%>_sizeof_sparsePattern_index = <%sp_size_index%>;
+        _<%matrixname%>_sizeof_sparsePattern_colorCols = <%index_%>;
 
 
         //<%matrixname%>_jacobian = NULL;
@@ -11629,8 +11629,8 @@ template mkSparseFunction(String matrixname, String matrixIndex, DAE.ComponentRe
 match matrixname
  case "A" then
     let indexrows = ( indexes |> indexrow hasindex index0 =>
-      <<
-    i = _<%matrixname%>_sparsePattern_leadindex[<%cref(cref, false)%>$pDER<%matrixname%>$indexdiff] - <%listLength(indexes)%>;
+    <<
+      i = _<%matrixname%>_sparsePattern_leadindex[<%cref(cref, false)%>$pDER<%matrixname%>$indexdiff] - <%listLength(indexes)%>;
       _<%matrixname%>_sparsePattern_index[i+<%index0%>] = <%cref(indexrow, false)%>$pDER<%matrixname%>$indexdiffed;
       >>
       ;separator="\n")
@@ -11697,7 +11697,7 @@ case _ then
       let indexElems = ( sparsepattern |> (cref,indexes) hasindex index0 =>
         let &eachCrefParts += mkSparseFunctionHeader(matrixname, index0, cref, indexes, modelNamePrefix)
         <<
-    initializeColumnsColoredJacobian<%matrixname%>_<%index0%>();
+        initializeColumnsColoredJacobian<%matrixname%>_<%index0%>();
         >>
 
 
@@ -11715,26 +11715,26 @@ case _ then
 
 
       <<
-    public:
-      <%eachCrefParts%>
-      void initializeColoredJacobian<%matrixname%>();
+      public:
+        <%eachCrefParts%>
+        void initializeColoredJacobian<%matrixname%>();
 
-      //int  _<%matrixname%>_sizeCols;
-      //int  _<%matrixname%>_sizeRows;
-
-
-      //_<%matrixname%>_sparsePattern_leadindex = new int[];
-        //_<%matrixname%>_sparsePattern_index = new int[];
-        //_<%matrixname%>_sparsePattern_colorCols = new int[<%index_%>];
+        //int  _<%matrixname%>_sizeCols;
+        //int  _<%matrixname%>_sizeRows;
 
 
-      //int  _<%matrixname%>_sparsePattern_leadindex[<%sizeleadindex%>];
-    //int  _<%matrixname%>_sizeof_sparsePattern_leadindex;
-    //int  _<%matrixname%>_sparsePattern_index[<%sp_size_index%>];
-    //int  _<%matrixname%>_sizeof_sparsePattern_index;
-    //int  _<%matrixname%>_sparsePattern_colorCols[<%index_%>];
-    //int  _<%matrixname%>_sizeof_sparsePattern_colorCols;
-    //int  _<%matrixname%>_sparsePattern_maxColors;
+        //_<%matrixname%>_sparsePattern_leadindex = new int[];
+          //_<%matrixname%>_sparsePattern_index = new int[];
+          //_<%matrixname%>_sparsePattern_colorCols = new int[<%index_%>];
+
+
+        //int  _<%matrixname%>_sparsePattern_leadindex[<%sizeleadindex%>];
+        //int  _<%matrixname%>_sizeof_sparsePattern_leadindex;
+        //int  _<%matrixname%>_sparsePattern_index[<%sp_size_index%>];
+        //int  _<%matrixname%>_sizeof_sparsePattern_index;
+        //int  _<%matrixname%>_sparsePattern_colorCols[<%index_%>];
+        //int  _<%matrixname%>_sizeof_sparsePattern_colorCols;
+        //int  _<%matrixname%>_sparsePattern_maxColors;
 
 
       >>
