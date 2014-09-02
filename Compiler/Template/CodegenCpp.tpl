@@ -6,11 +6,6 @@ import CodegenUtil.*;
 
 
 
-
-
-
-
-
 template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -9262,7 +9257,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let tmp_type_str = match typeof(a0)
       case ty as T_ARRAY(dims=dims) then
         let &dimstr += listLength(dims)
-        'multi_array<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
+        'DynArrayDim<%listLength(dims)%><<%expTypeShort(ty)%>>'
         else
         let &dimstr += 'error array dims'
         'array error'
@@ -9270,12 +9265,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let tvar = tempDecl(tmp_type_str, &varDecls /*BUFD*/)
     let a0str = daeExp(a0, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
     let arrays_exp = (arrays |> array =>
-    '<%tvar%>_list.push_back(<%daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)%>);' ;separator="\n")
+    '<%tvar%>_list.push_back(&<%daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)%>);' ;separator="\n")
     let &preExp +=
-    'std::vector<<%tmp_type_str%> > <%tvar%>_list;
-     <%tvar%>_list.push_back(<%a0str%>);
+    'vector<BaseArray<<%ty_str%>>* > <%tvar%>_list;
+     <%tvar%>_list.push_back(&<%a0str%>);
      <%arrays_exp%>
-     cat_array<<%ty_str%>,<%dimstr%> >(<%dim_exp%>,<%tvar%>, <%tvar%>_list );
+     cat_array<<%ty_str%> >(<%dim_exp%>,<%tvar%>, <%tvar%>_list );
     '
     '<%tvar%>'
 
@@ -12239,11 +12234,7 @@ template copyArrayData(DAE.Type ty, String exp, DAE.ComponentRef cr,
 ::=
   let type = expTypeArray(ty)
   let cref = contextArrayCref(cr, context)
-  match context
-  case FUNCTION_CONTEXT(__) then
-    'assign_array(<%cref%>,<%exp%>);'
-  else
-    'assign_array(<%cref%>,<%exp%>);'
+  '<%cref%>.assign(<%exp%>);'
 end copyArrayData;
 
 template algStmtWhen(DAE.Statement when, Context context, Text &varDecls /*BUFP*/,SimCode simCode, Boolean useFlatArrayNotation)

@@ -79,7 +79,7 @@ using namespace std;
 #include <boost/unordered_map.hpp>
 #include <boost/program_options.hpp>
 #include <boost/assign/list_inserter.hpp>
-
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/array.hpp>
 
 //#include <boost/timer/timer.hpp>

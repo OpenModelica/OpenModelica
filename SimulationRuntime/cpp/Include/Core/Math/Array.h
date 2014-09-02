@@ -1,11 +1,16 @@
 #pragma once
 
-
+//forward declaration
+template <class T> class DynArrayDim1;
+template <class T> class DynArrayDim2;
+template <class T> class DynArrayDim3;
 
 template<class T>class BaseArray
 {
 public:
-  BaseArray(){};
+  BaseArray(bool is_static)
+  :_static(is_static)
+  {};
 
   virtual T& operator()(unsigned int i)
   {
@@ -53,7 +58,13 @@ public:
   {
     throw std::invalid_argument("Wrong virtual Array setDims call");
   }
-
+  
+  bool isStatic()
+  {
+     return _static;
+  }
+  protected:
+    bool _static;
 };
 
 template<typename T, std::size_t size>class StatArrayDim1 : public BaseArray<T>
@@ -61,17 +72,20 @@ template<typename T, std::size_t size>class StatArrayDim1 : public BaseArray<T>
 
 public:
   StatArrayDim1(const T* data)
+  :BaseArray<T>(true)
   {
     //std::copy(data,data+size,_real_array.begin());
     memcpy( _real_array.begin(), data, size * sizeof( T ) );
   }
 
   StatArrayDim1(const StatArrayDim1<T,size>& otherarray)
+  :BaseArray<T>(true)
   {
      _real_array = otherarray._real_array;
   }
 
   StatArrayDim1()
+  :BaseArray<T>(true)
   {
   }
 
@@ -86,15 +100,28 @@ public:
  {
   if (this != &rhs)
   {
+     
       try
       {
-         StatArrayDim1<T,size>&  a = dynamic_cast<StatArrayDim1<T,size>&  >(rhs);
-         _real_array = a._real_array;
+         if(rhs.isStatic())
+         {
+            StatArrayDim1<T,size>&  a = dynamic_cast<StatArrayDim1<T,size>&  >(rhs);
+            _real_array = a._real_array;
+         }
+         else
+         {
+             DynArrayDim1<T>&  a = dynamic_cast<DynArrayDim1<T>&  >(rhs);
+             const T* data = rhs.getData();
+             memcpy( _real_array.begin(), data, size * sizeof( T ) );
+         
+         }
       }
       catch(std::bad_exception & be)
       {
         throw std::runtime_error("Wrong array type assign");
+        
       }
+             
   }
   return *this;
  }
@@ -186,16 +213,19 @@ template<typename T ,std::size_t size1,std::size_t size2,bool fotran = false>cla
 
 public:
   StatArrayDim2(const T* data) //const T (&data)     const T (&data)[size1*size2]
+  :BaseArray<T>(true)
   {
     //std::copy(data,data+size1*size2,_real_array.begin());
     memcpy( _real_array.begin(), data, size1*size2 * sizeof( T ) );
   }
 
   StatArrayDim2()
+  :BaseArray<T>(true)
   {
   }
 
   StatArrayDim2(const StatArrayDim2<T,size1,size2>& otherarray)
+  :BaseArray<T>(true)
   {
      _real_array = otherarray._real_array;
   }
@@ -326,16 +356,19 @@ template<typename T ,std::size_t size1, std::size_t size2, std::size_t size3> cl
   //friend class ArrayDim3<T, size1, size2, size3>;
 public:
   StatArrayDim3(const T data[])
+  :BaseArray<T>(true)
   {
     //std::copy(data,data+size1*size2*size3,_real_array.begin());
      memcpy( _real_array.begin(), data, size1*size2*size3 * sizeof( T ) );
   }
 
   StatArrayDim3()
+  :BaseArray<T>(true)
   {
   }
 
-  ~StatArrayDim3(){}
+  ~StatArrayDim3()
+  {}
 
   /*void assign(StatArrayDim3<T,size1,size2,size3> otherArray)
   {
@@ -670,11 +703,13 @@ public:
 
 
   DynArrayDim1()
+  :BaseArray<T>(false)
   {
     _multi_array.reindex(1);
   }
 
   DynArrayDim1(const DynArrayDim1<T>& dynarray)
+  :BaseArray<T>(false)
   {
     //assign(dynarray);
     setDims(dynarray.getDims()[0]);
@@ -683,6 +718,7 @@ public:
   }
 
   DynArrayDim1(unsigned int size1)
+  :BaseArray<T>(false)
   {
     std::vector<size_t> v;
     v.push_back(size1);
@@ -691,6 +727,7 @@ public:
   }
 
   DynArrayDim1(const BaseArray<T>& otherArray)
+  :BaseArray<T>(false)
   {
     std::vector<size_t> v = otherArray.getDims();
      if(v.size()!=1)
@@ -806,11 +843,13 @@ template<typename T >class DynArrayDim2 : public BaseArray<T>
 
 public:
   DynArrayDim2()
+  :BaseArray<T>(false)
   {
     _multi_array.reindex(1);
   }
 
   DynArrayDim2(const DynArrayDim2<T>& dynarray)
+  :BaseArray<T>(false)
   {
     //assign(dynarray);
     setDims(dynarray.getDims()[0],dynarray.getDims()[1]);
@@ -819,7 +858,8 @@ public:
   }
 
    DynArrayDim2(const BaseArray<T>& otherArray)
-  {
+   :BaseArray<T>(false)
+   {
     std::vector<size_t> v = otherArray.getDims();
     if(v.size()!=2)
       throw std::runtime_error("Wrong number of dimensions in DynArrayDim2");
@@ -829,6 +869,7 @@ public:
     _multi_array.assign(data_otherarray,data_otherarray+v[0]*v[1]);
    }
   DynArrayDim2(unsigned int size1, unsigned int size2)
+  :BaseArray<T>(false)
   {
     std::vector<size_t> v;
     v.push_back(size1);
@@ -938,11 +979,13 @@ template<typename T> class DynArrayDim3 : public BaseArray<T>
   //friend class ArrayDim3<T, size1, size2, size3>;
 public:
   DynArrayDim3()
+  :BaseArray<T>(false)
   {
     _multi_array.reindex(1);
   }
 
   DynArrayDim3(unsigned int size1, unsigned int size2, unsigned int size3)
+  :BaseArray<T>(false)
   {
     std::vector<size_t> v;
     v.push_back(size1);
@@ -952,6 +995,7 @@ public:
     _multi_array.reindex(1);
   }
   DynArrayDim3(const BaseArray<T>& otherArray)
+  :BaseArray<T>(false)
   {
     std::vector<size_t> v = otherArray.getDims();
     if(v.size()!=3)

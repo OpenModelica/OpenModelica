@@ -334,74 +334,8 @@ void assign_array(boost::multi_array<T, NumDims> &A,boost::multi_array_ref<T, Nu
 /**
 Concatenates n real arrays along the k:th dimension.
 */
-template < typename T, size_t NumDims >
-void cat_array (int k,boost::multi_array< T, NumDims >& a, std::vector<boost::multi_array< T, NumDims > > x )
-{
-    unsigned int new_k_dim_size = 0;
-    unsigned int n = x.size();
-    /* check dim sizes of all inputs */
-    if(n<1)
-      throw std::invalid_argument("No input arrays");
-
-    if(x[0].num_dimensions() < k)
-     throw std::invalid_argument("Wrong dimension for input array");
-
-    new_k_dim_size = x[0].shape()[k-1];
-    for(int i = 1; i < n; i++)
-    {
-        if(x[0].num_dimensions() != x[i].num_dimensions())
-           throw std::invalid_argument("Wrong dimension for input array");
-        for(int j = 0; j < (k - 1); j++)
-        {
-            if (x[0].shape()[j] != x[i].shape()[j])
-                throw std::invalid_argument("Wrong size for input array");
-        }
-        new_k_dim_size += x[i].shape()[k-1];
-        for(int j = k; j < x[0].num_dimensions(); j++)
-        {
-          if (x[0].shape()[j] != x[i].shape()[j])
-            throw std::invalid_argument("Wrong size for input array");
-        }
-    }
-    /* calculate size of sub and super structure in 1-dim data representation */
-    unsigned int n_sub = 1;
-    unsigned int n_super = 1;
-    for (int i = 0; i < (k - 1); i++)
-    {
-        n_super *= x[0].shape()[i];
-    }
-    for (int i = k; i < x[0].num_dimensions(); i++)
-    {
-        n_sub *= x[0].shape()[i];
-    }
-    /* allocate output array */
-    const size_t* shape = x[0].shape();
-    vector<size_t> ex;
-    ex.assign( shape, shape+x[0].num_dimensions() );
-    ex[k-1] = new_k_dim_size;
-    if(ex.size()<k)
-    throw std::invalid_argument("Error resizing concatenate array");
-  a.resize( ex );
-
-  /* concatenation along k-th dimension */
-    T* a_data = a.data();
-    int j = 0;
-    for(int i = 0; i < n_super; i++)
-  {
-        for(int c = 0; c < n; c++)
-    {
-            int n_sub_k = n_sub * x[c].shape()[k-1];
-            T* x_data = x[c].data();
-      for(int r = 0; r < n_sub_k; r++)
-      {
-                a_data[j] =       x_data[r + (i * n_sub_k)];
-                j++;
-            }
-        }
-    }
-    a.reindex(1);
-
-}
+template < typename T >
+void cat_array (int k,BaseArray<T>& a, vector<BaseArray<T>* >& x );
 
 
 template < typename T >
