@@ -374,22 +374,22 @@ This function checks wheter a type is complex AND not extending a base type."
   input DAE.Type ity;
   output Boolean b;
 algorithm
-  b := matchcontinue(ity)
+  b := match(ity)
     local Type ty;
     case (DAE.T_SUBTYPE_BASIC(complexType = ty)) then isComplexType(ty);
     case (DAE.T_COMPLEX(varLst = _::_)) then true; // not derived from baseclass
     else false;
-  end matchcontinue;
+  end match;
 end isComplexType;
 
 public function isExternalObject "Returns true if type is COMPLEX and external object (ClassInf)"
   input DAE.Type tp;
   output Boolean b;
 algorithm
-  b := matchcontinue(tp)
+  b := match(tp)
     case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_))) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isExternalObject;
 
 public function expTypetoTypesType

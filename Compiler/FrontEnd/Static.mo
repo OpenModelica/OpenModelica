@@ -5311,19 +5311,15 @@ transition(from, to, condition, immediate=true, reset=true, synchronize=false, p
 algorithm
   (outCache,outExp,outProperties) := match (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
     local
-      DAE.Exp call,from,to,condition,immediate,reset,synchronize,priority;
-      DAE.Type ty1,ty2,ty3,ty4,ty5,ty6,ty7,ty;
-      DAE.Const c4,c5,c6,c7;
-      Boolean impl, b1, b2, b3;
+      DAE.Exp call;
+      DAE.Type ty1,ty2,ty;
+      Boolean impl;
       Env.Env env;
       Env.Cache cache;
       Prefix.Prefix pre;
-      DAE.Properties prop1,prop2,prop3,prop4,prop5,prop6,prop7,prop;
-      Absyn.Exp afrom, ato, acondition, aimmediate, areset, asynchronize, apriority, afrom2, ato2, acondition2;
+      DAE.Properties prop;
       Integer n, nFrom;
-      String strMsg0,strMsg1,strMsg2,strPre,s1,s2,s3,s4,s5,s6;
-      list<Absyn.Exp> argsWithDefaults;
-      array<Absyn.Exp> argsWithDefaultsArray;
+      String strMsg0,strPre,s1,s2;
       list<String> slist;
 
     case (cache,env,_,_,impl,pre,_)
@@ -5335,35 +5331,9 @@ algorithm
         strPre = PrefixUtil.printPrefixStr3(pre);
         n = listLength(args);
 
-        b1 = List.isMemberOnTrue("from", nargs, elabBuiltinTransition3);
-        s3 = strMsg0 +& ", named argument \"from\" already has a value.";
-        Error.assertionOrAddSourceMessage(not (b1 and n > 0),Error.WRONG_TYPE_OR_NO_OF_ARGS,
-          {s3, strPre}, info);
-        s4 = strMsg0 +& ", missing value for first argument \"from\".";
-        Error.assertionOrAddSourceMessage(b1 or n > 0,Error.WRONG_TYPE_OR_NO_OF_ARGS,
-          {s4, strPre}, info);
-
-        b2 = List.isMemberOnTrue("to", nargs, elabBuiltinTransition3);
-        s5 = strMsg0 +& ", named argument \"to\" already has a value.";
-        Error.assertionOrAddSourceMessage(not (b2 and n > 1),Error.WRONG_TYPE_OR_NO_OF_ARGS,
-          {s5, strPre}, info);
-        s6 = strMsg0 +& ", missing value for second argument \"to\".";
-        Error.assertionOrAddSourceMessage(b2 or n > 1,Error.WRONG_TYPE_OR_NO_OF_ARGS,
-          {s6, strPre}, info);
-
-        afrom = elabBuiltinTransition5("from", b1, args, nargs);
-        (cache, from, prop1, _) = elabExpInExpression(cache,env,afrom,impl,NONE(),true,pre,info);
-        ty1 = Types.getPropType(prop1);
-        strMsg1 = strMsg0 +& ", first argument needs to be a block instance.";
-        Error.assertionOrAddSourceMessage(isBlockTypeWorkaround(ty1),Error.WRONG_TYPE_OR_NO_OF_ARGS,
-          {strMsg1, strPre}, info);
-
-        ato = elabBuiltinTransition5("to", b2, args, nargs);
-        (cache, to, prop2, _) = elabExpInExpression(cache,env,ato,impl,NONE(),true,pre,info);
-        ty2 = Types.getPropType(prop2);
-        strMsg2 = strMsg0 +& ", second argument needs to be a block instance.";
-        Error.assertionOrAddSourceMessage(isBlockTypeWorkaround(ty2),Error.WRONG_TYPE_OR_NO_OF_ARGS,
-          {strMsg2, strPre}, info);
+        // Check if "from" and "to" arguments are of complex type and return their type
+        ty1 = elabBuiltinTransition2(cache, env, args, nargs, impl, pre, info, "from", n, strMsg0, strPre);
+        ty2 = elabBuiltinTransition2(cache, env, args, nargs, impl, pre, info, "to", n, strMsg0, strPre);
 
         // Alternatively, ty1 and ty2 could be replaced by DAE.T_CODE(DAE.C_VARIABLENAME,{}), not sure if that would be a better solution
         ty =  DAE.T_FUNCTION(
@@ -5382,6 +5352,51 @@ algorithm
   end match;
 end elabBuiltinTransition;
 
+protected function elabBuiltinTransition2 "
+Author: BTH
+Helper function to elabBuiltinTransition.
+Check if the \"from\" argument or the \"to\" argument is of complex type."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  input Absyn.Ident argName;
+  input Integer n;
+  input String strMsg0;
+  input String strPre;
+  output DAE.Type ty;
+protected
+  Absyn.Exp arg1;
+  DAE.Properties prop1;
+  Integer nPos;
+  String s1,s2,strPos,strMsg1;
+  Boolean b1;
+algorithm
+  strPos := Util.if_(argName ==& "from", "first", "second");
+  nPos := Util.if_(argName ==& "from", 1, 2);
+  b1 := List.isMemberOnTrue(argName, nargs, elabBuiltinTransition3);
+
+  s1 := strMsg0 +& ", named argument \"" +& argName +& "\" already has a value.";
+  Error.assertionOrAddSourceMessage(not (b1 and n >= nPos),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+    {s1, strPre}, info);
+
+  s2 := strMsg0 +& ", missing value for " +& strPos +& " argument \"" +& argName +& "\".";
+  Error.assertionOrAddSourceMessage(b1 or n >= nPos, Error.WRONG_TYPE_OR_NO_OF_ARGS,
+      {s2, strPre}, info);
+
+  arg1 := elabBuiltinTransition5(argName, b1, args, nargs);
+  (_, _, prop1, _) := elabExpInExpression(inCache,inEnv,arg1,inBoolean,NONE(),true,inPrefix,info);
+  ty := Types.getPropType(prop1);
+  strMsg1 := strMsg0 +& ", " +& strPos +& "argument needs to be a block instance.";
+  Error.assertionOrAddSourceMessage(isBlockTypeWorkaround(ty),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+  {strMsg1, strPre}, info);
+
+end elabBuiltinTransition2;
+
+
 protected function elabBuiltinTransition3 "
 Author: BTH
 Helper function to elabBuiltinTransition.
@@ -5395,12 +5410,12 @@ algorithm
       Absyn.Ident argName;
       Absyn.Exp argValue;
 
-    case (_, Absyn.NAMEDARG(argName, argValue))
+    case (_, Absyn.NAMEDARG(argName=argName))
       equation
         true = name ==& argName;
       then true;
 
-    else then false;
+    else false;
   end match;
 end elabBuiltinTransition3;
 
@@ -5413,9 +5428,8 @@ Extract element argValue."
 algorithm
   argValue := match (inElement)
     local
-      Absyn.Ident argName;
       Absyn.Exp argValue1;
-    case (Absyn.NAMEDARG(argName, argValue1))
+    case (Absyn.NAMEDARG(argValue = argValue1))
       then argValue1;
   end match;
 end elabBuiltinTransition4;
@@ -5430,22 +5444,19 @@ Helper function to elabBuiltinTransition."
   output Absyn.Exp argValue;
 algorithm
   argValue := match (argName, getAsNamedArg, args, nargs)
-    local
-      Absyn.Exp argValue1;
+  local
       Absyn.NamedArg namedArg;
-      String s1;
-      Boolean b1;
-    case (s1 as "from", b1 as true, _, _)
+    case ("from", true, _, _)
       equation
         namedArg = List.getMemberOnTrue("from", nargs, elabBuiltinTransition3);
       then elabBuiltinTransition4(namedArg);
-    case (s1 as "from", b1 as false, _, _)
+    case ("from", false, _, _)
       then listGet(args, 1);
-    case (s1 as "to", b1 as true, _, _)
+    case ("to", true, _, _)
       equation
         namedArg = List.getMemberOnTrue("to", nargs, elabBuiltinTransition3);
       then elabBuiltinTransition4(namedArg);
-    case (s1 as "to", b1 as false, _, _)
+    case ("to", false, _, _)
       then listGet(args, 2);
   end match;
 end elabBuiltinTransition5;
