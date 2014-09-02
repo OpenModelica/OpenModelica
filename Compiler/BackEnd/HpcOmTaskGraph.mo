@@ -416,7 +416,8 @@ protected
   Real requiredTime;
 algorithm
   COMMUNICATION(numberOfVars=numberOfVars,numberOfIntegers=numberOfIntegers,numberOfFloats=numberOfFloats,numberOfBooleans=numberOfBooleans,childNode=childNode,requiredTime=requiredTime) := commCostsIn;
-  commCostsOut := COMMUNICATION(numberOfVars,numberOfIntegers,numberOfFloats,numberOfBooleans,childNode+idxOffset,requiredTime);
+  childNode := childNode+idxOffset;
+  commCostsOut := COMMUNICATION(numberOfVars,numberOfIntegers,numberOfFloats,numberOfBooleans,childNode,requiredTime);
 end updateCommCosts1;
 
 protected function updateTaskGraphSystem "map function to add the indices in the taskGraph system to the number of nodes of the previous system.
@@ -512,10 +513,11 @@ protected function createCommunicationObject "author: marcusw
   input Real requiredTime;
   output Communication oComm;
 protected
-  Integer sccIdx,refCountInt,refCountFloat,refCountBool;
+  Integer sccIdx,refCountInt,refCountFloat,refCountBool,refCountSum;
 algorithm
   (sccIdx,refCountInt,refCountFloat,refCountBool) := iTuple;
-  oComm := COMMUNICATION(refCountInt+refCountFloat+refCountBool,refCountInt,refCountFloat,refCountBool,sccIdx,requiredTime);
+  refCountSum := refCountInt+refCountFloat+refCountBool;
+  oComm := COMMUNICATION(refCountSum,refCountInt,refCountFloat,refCountBool,sccIdx,requiredTime);
 end createCommunicationObject;
 
 protected function updateCommCostBySccRef1 "author: marcusw
@@ -1049,15 +1051,15 @@ protected
   DAE.Type ty;
 algorithm
   oUnsolvedVars := match(iVarIdx, iVarType, iUnsolvedVars)
-    case((varIdx,derived),DAE.T_INTEGER(_),(intVarIdc,realVarIdc,boolVarIdc))
+    case((varIdx,derived),DAE.T_INTEGER(_,_),(intVarIdc,realVarIdc,boolVarIdc))
       equation
         intVarIdc = varIdx::intVarIdc;
       then ((intVarIdc,realVarIdc,boolVarIdc));
-    case((varIdx,derived),DAE.T_REAL(_),(intVarIdc,realVarIdc,boolVarIdc))
+    case((varIdx,derived),DAE.T_REAL(_,_),(intVarIdc,realVarIdc,boolVarIdc))
       equation
         realVarIdc = (varIdx,derived)::realVarIdc;
       then ((intVarIdc,realVarIdc,boolVarIdc));
-    case((varIdx,derived),DAE.T_BOOL(_),(intVarIdc,realVarIdc,boolVarIdc))
+    case((varIdx,derived),DAE.T_BOOL(_,_),(intVarIdc,realVarIdc,boolVarIdc))
       equation
         boolVarIdc = varIdx::boolVarIdc;
       then ((intVarIdc,realVarIdc,boolVarIdc));
