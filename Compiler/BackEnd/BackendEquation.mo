@@ -1972,7 +1972,7 @@ public function generateResidualfromRealtion "author: vitalij"
   input BackendDAE.Variables inVars;
   input BackendDAE.Variables knvars;
   input BackendDAE.VarKind conKind;
-  
+
   output list<BackendDAE.Equation> outEqn;
   output BackendDAE.Var vout;
 algorithm

@@ -8130,7 +8130,7 @@ algorithm
         outputVars = rewriteIndex(outputVars, 0);
         realOptimizeConstraintsVars = rewriteIndex(realOptimizeConstraintsVars, 0);
         realOptimizeFinalConstraintsVars = rewriteIndex(realOptimizeFinalConstraintsVars, 0);
-        
+
         //jacobianVars don't need a index rewrite
       then SimCode.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars,
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
@@ -11856,7 +11856,7 @@ algorithm
            (jacobianVars, intpl) = List.mapFoldTuple(jacobianVars, func, intpl);
            (realOptimizeConstraintsVars, intpl) = List.mapFoldTuple(realOptimizeConstraintsVars, func, intpl);
            (realOptimizeFinalConstraintsVars, intpl) = List.mapFoldTuple(realOptimizeFinalConstraintsVars, func, intpl);
-           
+
 
          then (SimCode.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
                   paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars,realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars), intpl);
@@ -12410,7 +12410,7 @@ algorithm
         enumTypesList = getEnumerationTypesHelper(jacobianVars_, enumTypesList);
         enumTypesList = getEnumerationTypesHelper(realOptimizeConstraintsVars_, enumTypesList);
         enumTypesList = getEnumerationTypesHelper(realOptimizeFinalConstraintsVars_, enumTypesList);
-        
+
       then
         enumTypesList;
     case (_) then {};

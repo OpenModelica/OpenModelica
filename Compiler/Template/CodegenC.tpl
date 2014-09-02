@@ -952,7 +952,7 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
       <%vars.realOptimizeConstraintsVars |> var =>
         globalDataVarDefine(var, "realVars", intAdd(intAdd(intMul(2, numStateVars),numAlgVars), numDiscreteReal))
       ;separator="\n"%>
-      
+
       /* Nonlinear Final Constraints For Dyn. Optimization */
       <%vars.realOptimizeFinalConstraintsVars |> var =>
         globalDataVarDefine(var, "realVars", intAdd(intAdd(intMul(2, numStateVars),numAlgVars), intAdd(numDiscreteReal,numOptimizeConstraints)))

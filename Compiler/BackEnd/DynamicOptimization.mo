@@ -103,7 +103,7 @@ algorithm
 
         constraints = addConstraints(inVars, knvars, inConstraint);
         (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$constarintTerm", BackendDAE.OPT_CONSTR());
-        
+
         constraints = findFinalConstraints(inVars, knvars, {});
         (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$finalConstarintTerm", BackendDAE.OPT_FCONSTR());
 
@@ -130,7 +130,7 @@ algorithm
 
         constraints = addConstraints(inVars, knvars, inConstraint);
         (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$constarintTerm", BackendDAE.OPT_CONSTR());
-        
+
         constraints = findFinalConstraints(inVars, knvars, {});
         (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$finalConstarintTerm", BackendDAE.OPT_FCONSTR());
 
@@ -147,7 +147,7 @@ protected function addOptimizationVarsEqns1
  input BackendDAE.Variables knvars;
  input String prefConCrefName;
  input BackendDAE.VarKind conKind;
- 
+
  output BackendDAE.Variables outVars;
  output list<BackendDAE.Equation>  outEqns;
 algorithm
@@ -160,8 +160,8 @@ algorithm
    list<BackendDAE.Equation> conEqn;
    BackendDAE.Variables v;
    list<BackendDAE.Equation> eqns;
-   String conCrefName; 
-    
+   String conCrefName;
+
    case({}, _, _, _, _, _, _) then (inVars, inEqns);
    case(e::conLst, _, _, _, _, _, _) equation
     //print("con"+& intString(inI) +& " "+& ExpressionDump.printExpStr(e) +& "\n=>" +& ExpressionDump.dumpExpStr(e,0) +& "\n");
@@ -185,7 +185,7 @@ protected function addOptimizationVarsEqns2
  input BackendDAE.Variables knvars;
  input String prefConCrefName;
  input BackendDAE.VarKind conKind;
- 
+
  output BackendDAE.Variables outVars;
  output list<BackendDAE.Equation>  outEqns;
 algorithm
