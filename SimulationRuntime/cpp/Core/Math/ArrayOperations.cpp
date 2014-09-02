@@ -26,7 +26,7 @@ void cat_array (int k,BaseArray<T>& a, vector<BaseArray<T>* >& x )
     /* check dim sizes of all inputs */
     if(n<1)
       throw std::invalid_argument("No input arrays");
-    
+
     if(x[0]->getDims().size() < k)
      throw std::invalid_argument("Wrong dimension for input array");
 
@@ -81,7 +81,7 @@ void cat_array (int k,BaseArray<T>& a, vector<BaseArray<T>* >& x )
             }
         }
     }
-   
+
 
 }
 template  void cat_array<double> (int k,BaseArray<double>& a, vector<BaseArray<double>* >& x );

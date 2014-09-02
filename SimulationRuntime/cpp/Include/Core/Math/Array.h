@@ -58,7 +58,7 @@ public:
   {
     throw std::invalid_argument("Wrong virtual Array setDims call");
   }
-  
+
   bool isStatic()
   {
      return _static;
@@ -100,7 +100,7 @@ public:
  {
   if (this != &rhs)
   {
-     
+
       try
       {
          if(rhs.isStatic())
@@ -113,15 +113,15 @@ public:
              DynArrayDim1<T>&  a = dynamic_cast<DynArrayDim1<T>&  >(rhs);
              const T* data = rhs.getData();
              memcpy( _real_array.begin(), data, size * sizeof( T ) );
-         
+
          }
       }
       catch(std::bad_exception & be)
       {
         throw std::runtime_error("Wrong array type assign");
-        
+
       }
-             
+
   }
   return *this;
  }
