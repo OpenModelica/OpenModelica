@@ -809,7 +809,7 @@ end getMaxCommCostsByTaskList;
 
 protected function getMaxCommCostsByTaskList1 "author: marcusw
   Check if the communication from parent to the given task (iTask) is higher than the current maximum.
-  If there is an edge between the nodes and it has an higher required time, then the output 
+  If there is an edge between the nodes and it has an higher required time, then the output
   value is updated. Otherwise the function returns the current maximum."
   input tuple<HpcOmSimCode.Task,Integer> iTask;
   input HpcOmSimCode.Task iParentTask;

@@ -483,7 +483,7 @@ end createTaskGraph1;
 
 protected function flattenRefCounter "author: marcusw
   Flat the given ref counter from <nodeIdx, numInts, numFloats, numBools> to <nodeIdx, (numInts + numFloats + numBools)."
-  input tuple<Integer,Integer,Integer,Integer> iRefCounter; 
+  input tuple<Integer,Integer,Integer,Integer> iRefCounter;
   output tuple<Integer,Integer> oRefCounter;
 protected
   Integer nodeIdx, numInts, numFloats, numBools;
@@ -903,7 +903,7 @@ algorithm
         ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
         ((intVars, floatVars, boolVars)) = arrayGet(iRequiredSccs, sccIdx);
         tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(intVars+1, floatVars, boolVars));
-      then tmpRequiredSccs; 
+      then tmpRequiredSccs;
     case ((varIdx,1),2,_,tmpRequiredSccs)
       equation
         ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
@@ -915,7 +915,7 @@ algorithm
         ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
         ((intVars, floatVars, boolVars)) = arrayGet(iRequiredSccs, sccIdx);
         tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(intVars, floatVars, boolVars+1));
-      then tmpRequiredSccs; 
+      then tmpRequiredSccs;
    else iRequiredSccs;
   end match;
 end fillSccList;
@@ -2566,8 +2566,8 @@ public function convertToGraphMLSccLevelSubgraph "author: marcusw, waurich
   output GraphML.GraphInfo oGraphInfo;
 protected
   GraphML.GraphInfo graphInfo;
-  Integer nameAttIdx, calcTimeAttIdx, opCountAttIdx, yCoordAttIdx, taskIdAttIdx, commCostAttIdx, 
-          commVarsAttIdx, commVarsIntAttIdx, commVarsFloatAttIdx, commVarsBoolAttIdx, critPathAttIdx, 
+  Integer nameAttIdx, calcTimeAttIdx, opCountAttIdx, yCoordAttIdx, taskIdAttIdx, commCostAttIdx,
+          commVarsAttIdx, commVarsIntAttIdx, commVarsFloatAttIdx, commVarsBoolAttIdx, critPathAttIdx,
           simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx, annotAttIdx;
   list<Integer> nodeIdc;
 algorithm
@@ -2591,11 +2591,11 @@ algorithm
         (graphInfo,(_,critPathAttIdx)) = GraphML.addAttribute("", "CriticalPath", GraphML.TYPE_STRING(), GraphML.TARGET_GRAPH(), graphInfo);
         graphInfo = GraphML.addGraphAttributeValue((critPathAttIdx, criticalPathInfo), iGraphIdx, graphInfo);
         nodeIdc = List.intRange(arrayLength(iGraph));
-        ((graphInfo,_)) = List.fold4(nodeIdc, addNodeToGraphML, (iGraph, iGraphData), 
-                                     (nameAttIdx,opCountAttIdx,calcTimeAttIdx,taskIdAttIdx,yCoordAttIdx,commCostAttIdx,commVarsAttIdx, 
-                                      commVarsIntAttIdx,commVarsFloatAttIdx,commVarsBoolAttIdx,simCodeEqAttIdx,threadIdAttIdx,taskNumberAttIdx,annotAttIdx), 
-                                     sccSimEqMapping, 
-                                     (iCriticalPath,iCriticalPathWoC,schedulerInfo, annotationInfo), 
+        ((graphInfo,_)) = List.fold4(nodeIdc, addNodeToGraphML, (iGraph, iGraphData),
+                                     (nameAttIdx,opCountAttIdx,calcTimeAttIdx,taskIdAttIdx,yCoordAttIdx,commCostAttIdx,commVarsAttIdx,
+                                      commVarsIntAttIdx,commVarsFloatAttIdx,commVarsBoolAttIdx,simCodeEqAttIdx,threadIdAttIdx,taskNumberAttIdx,annotAttIdx),
+                                     sccSimEqMapping,
+                                     (iCriticalPath,iCriticalPathWoC,schedulerInfo, annotationInfo),
                                      (graphInfo,iGraphIdx));
       then graphInfo;
   end match;
@@ -5221,7 +5221,7 @@ algorithm
   end matchcontinue;
 end transposeCommCosts1;
 
-//TODO: Can this be merged with getCommCostBetweenNodes? 
+//TODO: Can this be merged with getCommCostBetweenNodes?
 public function getCommunicationCost " gets the communication cost for an edge from parent node to child node.
   REMARK: use the primal indeces!!!!!!
   author: waurich TUD 2013-06."

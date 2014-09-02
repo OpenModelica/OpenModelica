@@ -3510,7 +3510,7 @@ public function getVarAtIndexFirst
   input BackendDAE.Variables inVariables;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := getVarAt(inVariables, inInteger); 
+  outVar := getVarAt(inVariables, inInteger);
 end getVarAtIndexFirst;
 
 public function setVarAt
