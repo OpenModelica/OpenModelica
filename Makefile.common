@@ -127,7 +127,7 @@ build/lib/omc/libumfpack.a: 3rdParty/SuiteSparse/UMFPACK/Makefile
 umfpack: build/lib/omc/libumfpack.a
 
 umfpack-clean:
-	cd 3rdParty/SuiteSparse/build && make clean
+	test -d 3rdParty/SuiteSparse/build && cd 3rdParty/SuiteSparse/build && make clean
 	rm -rf build/include/omc/c/suitesparse
 	rm -f build/lib/omc/libumfpack.a
 	rm -f build/lib/omc/libamd.a
