@@ -11503,13 +11503,8 @@ template functionAnalyticJacobians2(list<JacobianMatrix> JacobianMatrixes,String
     generateMatrix(mat, vars, name, modelNamePrefix) ;separator="\n")
 */
   <<
-  /*blub*/
+
   <%initialjacMats%>
-
-
-  /*blub*/  /*blub*/
-
-
 
   >>
 
@@ -11541,7 +11536,7 @@ case _ then
       let sizeleadindex = listLength(sparsepattern)
       let leadindex = (sparsepattern |> (cref,indexes) hasindex index0 =>
       <<
-        _<%matrixname%>_sparsePattern_leadindex[<%cref(cref, false)%>$pDER<%matrixname%>$indexdiff] = <%listLength(indexes)%>;
+        _<%matrixname%>_sparsePattern_leadindex[<%crefWithoutIndexOperator(cref)%>$pDER<%matrixname%>$indexdiff] = <%listLength(indexes)%>;
       >>
 
 
@@ -11557,7 +11552,7 @@ case _ then
       ;separator="\n")
       let colorArray = (colorList |> (indexes) hasindex index0 =>
         let colorCol = ( indexes |> i_index =>
-        '_<%matrixname%>_sparsePattern_colorCols[<%cref(i_index, false)%>$pDER<%matrixname%>$indexdiff] = <%intAdd(index0,1)%>; '
+        '_<%matrixname%>_sparsePattern_colorCols[<%crefWithoutIndexOperator(i_index)%>$pDER<%matrixname%>$indexdiff] = <%intAdd(index0,1)%>; '
         ;separator="\n")
       '<%colorCol%>'
       ;separator="\n")
@@ -11631,8 +11626,8 @@ match matrixname
  case "A" then
     let indexrows = ( indexes |> indexrow hasindex index0 =>
     <<
-      i = _<%matrixname%>_sparsePattern_leadindex[<%cref(cref, false)%>$pDER<%matrixname%>$indexdiff] - <%listLength(indexes)%>;
-      _<%matrixname%>_sparsePattern_index[i+<%index0%>] = <%cref(indexrow, false)%>$pDER<%matrixname%>$indexdiffed;
+      i = _<%matrixname%>_sparsePattern_leadindex[<%crefWithoutIndexOperator(indexrow)%>$pDER<%matrixname%>$indexdiff] - <%listLength(indexes)%>;
+      _<%matrixname%>_sparsePattern_index[i+<%index0%>] = <%crefWithoutIndexOperator(indexrow)%>$pDER<%matrixname%>$indexdiffed;
       >>
       ;separator="\n")
 
@@ -12060,12 +12055,10 @@ template defineSparseIndexes(list<SimVar> diffVars, list<SimVar> diffedVars, Str
   Generates Matrixes for Linear Model."
 ::=
   let diffVarsResult = (diffVars |> var as SIMVAR(name=name) hasindex index0 =>
-     '#define <%cref(name,false)%>$pDER<%matrixName%>$indexdiff <%index0%> /*test for colored jacobians*/
-    #define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%>$indexdiff <%index0%>'
+     '#define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%>$indexdiff <%index0%>'
     ;separator="\n")
     let diffedVarsResult = (diffedVars |> var as SIMVAR(name=name) hasindex index0 =>
-     '#define <%cref(name,false)%>$pDER<%matrixName%>$indexdiffed <%index0%> /*test for colored jacobians*/
-    #define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%>$indexdiffed <%index0%>'
+     '#define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%>$indexdiffed <%index0%>'
     ;separator="\n")
    /* generate at least one print command to have the same index and avoid the strange side effect */
   <<
