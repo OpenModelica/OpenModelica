@@ -11,11 +11,12 @@
 #include <vector>
 #include <ctime>
 #include <iostream>
+#include <Core/Modelica.h>
 
 
 class RDTSC_MeasureTime;
 
-class MeasureTime
+class BOOST_EXTENSION_EXPORT_DECL MeasureTime
 {
 public:
   MeasureTime() {}
@@ -42,7 +43,7 @@ protected:
 	static RDTSC_MeasureTime *instance;
 };
 
-class RDTSC_MeasureTime : public MeasureTime
+class BOOST_EXTENSION_EXPORT_DECL RDTSC_MeasureTime : public MeasureTime
 {
 public:
 	RDTSC_MeasureTime() : MeasureTime() {};
