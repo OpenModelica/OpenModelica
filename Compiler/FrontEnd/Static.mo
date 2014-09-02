@@ -5431,7 +5431,6 @@ Helper function to elabBuiltinTransition."
 algorithm
   argValue := match (argName, getAsNamedArg, args, nargs)
     local
-      Absyn.Ident argName;
       Absyn.Exp argValue1;
       Absyn.NamedArg namedArg;
       String s1;
