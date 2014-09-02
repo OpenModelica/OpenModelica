@@ -11576,12 +11576,12 @@ case _ then
       void <%modelNamePrefix%>Jacobian::initializeColoredJacobian<%matrixname%>()
       {
 
-    if(_A_sparsePattern_leadindex)
-      delete []  _A_sparsePattern_leadindex;
-    if(_A_sparsePattern_index)
-      delete []  _A_sparsePattern_index;
-    if(_A_sparsePattern_colorCols)
-      delete []  _A_sparsePattern_colorCols;
+        if(_A_sparsePattern_leadindex)
+            delete []  _A_sparsePattern_leadindex;
+        if(_A_sparsePattern_index)
+            delete []  _A_sparsePattern_index;
+        if(_A_sparsePattern_colorCols)
+            delete []  _A_sparsePattern_colorCols;
 
         _<%matrixname%>_sparsePattern_leadindex = new int[<%sizeleadindex%>];
         _<%matrixname%>_sparsePattern_index = new int[<%sp_size_index%>];

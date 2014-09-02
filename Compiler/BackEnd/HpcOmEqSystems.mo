@@ -2285,7 +2285,7 @@ protected
   array<String> nodeDescs, nodeNames;
   array<list<Integer>> inComps;
   array<tuple<Integer,Real>> exeCosts;
-  array<list<tuple<Integer,Integer,Integer>>> commCosts;
+  array<HpcOmTaskGraph.Communications> commCosts;
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, nodeMark=nodeMark) := metaIn;
   numNodes := arrayLength(graph);
@@ -2306,13 +2306,21 @@ algorithm
   metaOut := HpcOmTaskGraph.TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,{},nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
 end buildTaskgraphMetaForTornSystem;
 
-protected function buildDummyCommCosts"generates preliminary commCosts for a children list.
+protected function buildDummyCommCosts "generates preliminary commCosts for a children list.
 author:Waurich TUD 2014-07"
   input list<Integer> childNodes;
-  output list<tuple<Integer,Integer,Integer>> commCosts;
+  output HpcOmTaskGraph.Communications commCosts;
 algorithm
-  commCosts := List.map2(childNodes,Util.make3Tuple,1,70);
+  commCosts := List.map(childNodes,buildDummyCommCost);
 end buildDummyCommCosts;
+
+protected function buildDummyCommCost "author:marcusw
+  Generates preliminary commCost for a children."
+  input Integer iChildNodeIdx;
+  output HpcOmTaskGraph.Communication oCommCost;
+algorithm
+  oCommCost := HpcOmTaskGraph.COMMUNICATION(1,0,1,0,iChildNodeIdx,70.0);
+end buildDummyCommCost;
 
 public function createSingleBlockSchedule
   input HpcOmTaskGraph.TaskGraph graphIn;

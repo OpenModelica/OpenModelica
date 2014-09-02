@@ -91,7 +91,7 @@ protected
   array<Real> threadReadyTimes;
   array<tuple<HpcOmSimCode.Task,Integer>> allTasks;
   array<list<HpcOmSimCode.Task>> threadTasks;
-  array<list<tuple<Integer, Integer, Integer>>> commCosts;
+  array<HpcOmTaskGraph.Communications> commCosts;
   HpcOmSimCode.Schedule tmpSchedule;
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts) := iTaskGraphMeta;
@@ -118,7 +118,7 @@ protected function createListSchedule1 "function createListSchedule1
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraph iTaskGraphT;
   input array<tuple<HpcOmSimCode.Task,Integer>> iAllTasks; //all tasks with ref-counter
-  input array<list<tuple<Integer, Integer, Integer>>> iCommCosts;
+  input array<HpcOmTaskGraph.Communications> iCommCosts;
   input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
   input FuncType iLockWithPredecessorHandler; //Function which handles locks to all predecessors
   input HpcOmSimCode.Schedule iSchedule;
@@ -252,7 +252,7 @@ protected
   array<Real> threadReadyTimes;
   array<tuple<HpcOmSimCode.Task,Integer>> allTasks;
   array<list<HpcOmSimCode.Task>> threadTasks;
-  array<list<tuple<Integer, Integer, Integer>>> commCosts, commCostsT;
+  array<HpcOmTaskGraph.Communications> commCosts, commCostsT;
   HpcOmSimCode.Schedule tmpSchedule;
   list<String> lockIdc;
 algorithm
@@ -734,7 +734,7 @@ protected function calculateFinishTimes
   input Real iPredecessorTaskLastFinished; //time when the last predecessor has finished
   input HpcOmSimCode.Task iTask;
   input list<tuple<HpcOmSimCode.Task,Integer>> iPredecessorTasks; //all child tasks with ref-counter
-  input array<list<tuple<Integer, Integer, Integer>>> iCommCosts;
+  input array<HpcOmTaskGraph.Communications> iCommCosts;
   input array<Real> iThreadReadyTimes;
   output array<Real> oFinishTimes;
 protected
@@ -749,7 +749,7 @@ protected function calculateFinishTimes1
   input Real iPredecessorTaskLastFinished; //time when the last successor has finished
   input HpcOmSimCode.Task iTask;
   input list<tuple<HpcOmSimCode.Task,Integer>> iPredecessorTasks; //all child tasks
-  input array<list<tuple<Integer, Integer, Integer>>> iCommCosts;
+  input array<HpcOmTaskGraph.Communications> iCommCosts;
   input array<Real> iThreadReadyTimes;
   input Integer iThreadIdx;
   input array<Real> iFinishTimes;
@@ -776,7 +776,7 @@ protected function calculateFinishTimeByThreadId
   input Integer iThreadId;
   input HpcOmSimCode.Task iTask;
   input list<tuple<HpcOmSimCode.Task,Integer>> iPredecessorTasks; //all child tasks
-  input array<list<tuple<Integer, Integer, Integer>>> iCommCosts;
+  input array<HpcOmTaskGraph.Communications> iCommCosts;
   output Real oFinishTime;
 protected
   list<tuple<HpcOmSimCode.Task,Integer>> predecessorTasksOtherTh; //all predecessor scheduled to another thread
@@ -797,54 +797,57 @@ algorithm
   end match;
 end calculateFinishTimeByThreadId;
 
-protected function getMaxCommCostsByTaskList
+protected function getMaxCommCostsByTaskList "author: marcusw
+  Get the required time of the highest communication from parent to the childs referenced in iTaskList."
   input HpcOmSimCode.Task iParentTask;
   input list<tuple<HpcOmSimCode.Task,Integer>> iTaskList;
-  input array<list<tuple<Integer, Integer, Integer>>> iCommCosts;
+  input array<HpcOmTaskGraph.Communications> iCommCosts;
   output Real oCommCost;
 algorithm
   oCommCost := List.fold2(iTaskList, getMaxCommCostsByTaskList1, iParentTask, iCommCosts, 0.0);
 end getMaxCommCostsByTaskList;
 
-protected function getMaxCommCostsByTaskList1
+protected function getMaxCommCostsByTaskList1 "author: marcusw
+  Check if the communication from parent to the given task (iTask) is higher than the current maximum.
+  If there is an edge between the nodes and it has an higher required time, then the output 
+  value is updated. Otherwise the function returns the current maximum."
   input tuple<HpcOmSimCode.Task,Integer> iTask;
   input HpcOmSimCode.Task iParentTask;
-  input array<list<tuple<Integer, Integer, Integer>>> iCommCosts;
+  input array<HpcOmTaskGraph.Communications> iCommCosts;
   input Real iCurrentMax;
   output Real oCommCost;
 protected
   Integer taskIdx;
-  Integer reqCycles;
-  Real reqCyclesReal;
+  Real reqCycles;
   list<Integer> eqIdc, parentEqIdc;
-  list<tuple<Integer, Integer, Integer>> childCommCosts;
+  HpcOmTaskGraph.Communications childCommCosts;
 algorithm
   oCommCost := matchcontinue(iTask, iParentTask, iCommCosts, iCurrentMax)
     case((HpcOmSimCode.CALCTASK(index=taskIdx,eqIdc=eqIdc),_),HpcOmSimCode.CALCTASK(eqIdc=parentEqIdc),_,_)
       equation
         //print("Try to find edge cost from scc " +& intString(List.first(eqIdc)) +& " to scc " +& intString(List.first(parentEqIdc)) +& "\n");
         childCommCosts = arrayGet(iCommCosts,List.first(eqIdc));
-        ((_,_,reqCycles)) = getMaxCommCostsByTaskList2(childCommCosts, List.first(parentEqIdc));
-        reqCyclesReal = intReal(reqCycles);
-        true = realGt(reqCyclesReal, iCurrentMax);
-      then reqCyclesReal;
+        HpcOmTaskGraph.COMMUNICATION(requiredTime=reqCycles) = getMaxCommCostsByTaskList2(childCommCosts, List.first(parentEqIdc));
+        true = realGt(reqCycles, iCurrentMax);
+      then reqCycles;
     else iCurrentMax;
   end matchcontinue;
 end getMaxCommCostsByTaskList1;
 
-protected function getMaxCommCostsByTaskList2
-  input list<tuple<Integer, Integer, Integer>> iCommCosts;
+protected function getMaxCommCostsByTaskList2 "author: marcusw"
+  input HpcOmTaskGraph.Communications iCommCosts;
   input Integer iIdx; //Scc idx
-  output tuple<Integer, Integer, Integer> oTuple;
+  output HpcOmTaskGraph.Communication oComm;
 protected
-  Integer childIdxHead, childNumberOfVarsHead, childReqCyclesHead;
-  list<tuple<Integer, Integer, Integer>> tail;
+  Integer childIdxHead;
+  HpcOmTaskGraph.Communications tail;
+  HpcOmTaskGraph.Communication head;
 algorithm
-  oTuple := matchcontinue(iCommCosts, iIdx)
-    case((childIdxHead,childNumberOfVarsHead,childReqCyclesHead)::tail, _)
+  oComm := matchcontinue(iCommCosts, iIdx)
+    case((head as HpcOmTaskGraph.COMMUNICATION(childNode=childIdxHead))::tail, _)
       equation
         true = intEq(childIdxHead,iIdx);
-      then ((childIdxHead,childNumberOfVarsHead,childReqCyclesHead));
+      then head;
     case(_::tail, _) then getMaxCommCostsByTaskList2(tail, iIdx);
     else
       equation
@@ -1151,7 +1154,7 @@ protected
   list<Integer> rootNodes;
   array<String> nodeNames, nodeDescs;
   array<tuple<Integer,Real>> exeCosts;
-  array<list<tuple<Integer,Integer,Integer>>> commCosts;
+  array<HpcOmTaskGraph.Communications> commCosts;
 algorithm
   targetCost := 1000.0;
   HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) := iMeta;
@@ -1535,7 +1538,7 @@ protected
   array<tuple<Integer,Real>> exeCosts;
   array<Integer> nodeMark;
   list<Integer> rootNodes;
-  array<list<tuple<Integer,Integer,Integer>>> commCosts;
+  array<HpcOmTaskGraph.Communications> commCosts;
   array<tuple<Integer,Integer,Integer>> varCompMapping, eqCompMapping; //Map each variable to the scc that solves her
   array<String> nodeNames, nodeDescs;
 algorithm
@@ -1722,6 +1725,7 @@ algorithm
   (threadIdx, taskList) := iIdxTaskList;
   components := List.flatten(List.map1(iTaskList, Util.arrayGetIndexFirst, iComps)); //Components of each task
   simEqs := List.flatten(List.map1(components,Util.arrayGetIndexFirst,iSccSimEqMapping));
+  simEqs := listReverse(simEqs);
   newTask := HpcOmSimCode.CALCTASK_LEVEL(simEqs, iTaskList, SOME(threadIdx));
   taskList := newTask :: taskList;
   oIdxTaskList := (threadIdx+1,taskList);
@@ -2039,13 +2043,11 @@ protected function getSingleRelations
   input list<tuple<Integer,Integer,Integer>> irelations;
   output list<tuple<Integer,Integer,Integer>> orelations;
 protected
-  tuple<Integer,Integer,Integer> data;
-  Integer costs;
+  Real costs;
 algorithm
-  data := HpcOmTaskGraph.getCommCostBetweenNodes(n,edge,iTaskGraphMeta);
-  (_,_,costs) := data;
-  orelations := listAppend(irelations,{(edge,n,costs)});
-  orelations := listAppend(orelations,{(n,edge,costs)});
+  costs := HpcOmTaskGraph.getCommCostTimeBetweenNodes(n,edge,iTaskGraphMeta);
+  orelations := listAppend(irelations,{(edge,n,realInt(costs))});
+  orelations := listAppend(orelations,{(n,edge,realInt(costs))});
 end getSingleRelations;
 
 protected function getRelations
@@ -2524,7 +2526,7 @@ algorithm
       array<Integer> taskAss,taskDuplAss,nodeMark,newIdxAss;
       array<list<Integer>> procAss, sccSimEqMap, inComps, comps;
       array<tuple<Integer,Real>> exeCosts;
-      array<list<tuple<Integer,Integer,Integer>>> commCosts;
+      array<HpcOmTaskGraph.Communications> commCosts;
       array<tuple<Integer,Integer,Integer>> varCompMapping,eqCompMapping,mapDupl;
       tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> idcs;
       list<Integer> order, rootNodes;
@@ -3845,7 +3847,7 @@ protected
 algorithm
   lastNode := arrayGet(lastArrayIn,node);// latest allowable starting time of the node
   lactPred := arrayGet(lactArrayIn,pred);
-  commCosts := HpcOmTaskGraph.getCommCostBetweenNodesInCycles(pred,node,iTaskGraphMeta);
+  commCosts := HpcOmTaskGraph.getCommCostTimeBetweenNodes(pred,node,iTaskGraphMeta);
   isCritical := realSub(lastNode,lactPred) <=. commCosts;
 end TDSpredIsCritical;
 
@@ -3886,7 +3888,7 @@ algorithm
         parents = arrayGet(graphT,nodeIdx);
         true = List.isNotEmpty(parents);
         parentECTs = List.map1(parents,Util.arrayGetIndexFirst,ect);
-        commCosts = List.map2(parents,HpcOmTaskGraph.getCommCostBetweenNodesInCycles,nodeIdx,iTaskGraphMeta);
+        commCosts = List.map2(parents,HpcOmTaskGraph.getCommCostTimeBetweenNodes,nodeIdx,iTaskGraphMeta);
         costs = List.threadMap(parentECTs,commCosts,realAdd);
         maxCost = List.fold(costs,realMax,0.0);
         fpredPos = List.position(maxCost,costs)+1;
@@ -4105,7 +4107,7 @@ algorithm
       array<Integer> nodeMark;
       array<list<Integer>> inComps;
       array<tuple<Integer,Real>> exeCosts;
-      array<list<tuple<Integer,Integer,Integer>>> commCosts;
+      array<HpcOmTaskGraph.Communications> commCosts;
       array<list<HpcOmSimCode.Task>> threadTasks;
       list<HpcOmSimCode.Task> taskLst1,taskLst,taskLstAss,taskLstRel, removeLocks;
       HpcOmSimCode.Schedule schedule;
@@ -4650,7 +4652,7 @@ algorithm
       false = List.isMemberOnTrue(-1.0,parentAsaps,realEq);
       exeCost = HpcOmTaskGraph.getExeCostReqCycles(node,iTaskGraphMeta);
       parentsExeCosts = List.map1(parents,HpcOmTaskGraph.getExeCostReqCycles,iTaskGraphMeta);
-      commCosts = List.map2(parents,HpcOmTaskGraph.getCommCostBetweenNodesInCycles,node,iTaskGraphMeta);
+      commCosts = List.map2(parents,HpcOmTaskGraph.getCommCostTimeBetweenNodes,node,iTaskGraphMeta);
       parentAsaps2 = List.threadMap(parentAsaps,parentsExeCosts,realAdd); // add the exeCosts
       parentAsaps2 = List.threadMap(parentAsaps2,commCosts,realAdd); // add commCosts
       maxASAP = List.fold(parentAsaps2,realMax,0.0);
@@ -4769,7 +4771,7 @@ algorithm
       childTDSLevels = List.map1(childNodes,Util.arrayGetIndexFirst,tdsLevelIn);
       false = List.isMemberOnTrue(-1.0,childTDSLevels,realEq);
       nodeExeCost = HpcOmTaskGraph.getExeCostReqCycles(nodeIdx,iTaskGraphMeta);
-      commCostsToChilds = List.map2rm(childNodes,HpcOmTaskGraph.getCommCostBetweenNodesInCycles,nodeIdx,iTaskGraphMeta);  // only for alap
+      commCostsToChilds = List.map2rm(childNodes,HpcOmTaskGraph.getCommCostTimeBetweenNodes,nodeIdx,iTaskGraphMeta);  // only for alap
       childAlaps = List.map1(childNodes,Util.arrayGetIndexFirst,alapIn);
       childAlaps = List.threadMap(childAlaps,commCostsToChilds,realAdd);
       childLasts = List.map1(childNodes,Util.arrayGetIndexFirst,lastIn);
@@ -5320,8 +5322,9 @@ algorithm
       Boolean isEmpty;
       array<list<HpcOmSimCode.Task>> threadTasks,threadTasksIn;
       array<HpcOmSimCode.Task> checkedTasksIn, checkedTasks;
-      Integer commCost, taskIdx,taskIdxLatest, taskNum, threadIdx, threadIdxLatest;
-      Real finishingTime, finishingTime1, finishingTimeComm, exeCost, commCostR;
+      Integer taskIdx,taskIdxLatest, taskNum, threadIdx, threadIdxLatest;
+      Real commCost;
+      Real finishingTime, finishingTime1, finishingTimeComm, exeCost;
       HpcOmTaskGraph.TaskGraphMeta taskGraphMeta;
       HpcOmSimCode.Task task, latestTask, preTask;
       list<HpcOmSimCode.Task> thread;
@@ -5354,11 +5357,10 @@ algorithm
         task = listGet(thread,taskNum);
         taskIdx = getTaskIdx(task);
         // get the costs for the node which is computed after the latest parent and decide whether to take commCost into account or not
-        ((_,_,commCost)) = HpcOmTaskGraph.getCommCostBetweenNodes(taskIdxLatest,taskIdx,taskGraphMeta);
-        commCostR = intReal(commCost);
+        commCost = HpcOmTaskGraph.getCommCostTimeBetweenNodes(taskIdxLatest,taskIdx,taskGraphMeta);
         ((_,exeCost)) = HpcOmTaskGraph.getExeCost(taskIdx,taskGraphMeta);
         finishingTime = finishingTime +. exeCost;
-        finishingTimeComm = finishingTime +. commCostR;
+        finishingTimeComm = finishingTime +. commCost;
         finishingTime = Util.if_(intEq(threadIdxLatest,threadIdx),finishingTime,finishingTimeComm);
         // choose if the parentTask or the preTask(task on the same processor) is later.
         preTask = getPredecessorCalcTask(thread,taskNum);

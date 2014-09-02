@@ -2149,6 +2149,18 @@ algorithm
   end match;
 end getVarSource;
 
+public function getVarType "author: marcusw
+  returns the BackendDAE.Type of the variable"
+  input BackendDAE.Var inVar;
+  output BackendDAE.Type outType;
+algorithm
+  outType := match (inVar)
+    local
+      BackendDAE.Type varType;
+    case BackendDAE.VAR(varType=varType) then varType;
+  end match;
+end getVarType;
+
 public function getMinMaxAsserts "author: Frenkel TUD 2011-03"
   input Option<DAE.VariableAttributes> attr;
   input DAE.ComponentRef name;
@@ -3490,6 +3502,16 @@ algorithm
         fail();
   end matchcontinue;
 end getVarAt;
+
+public function getVarAtIndexFirst
+"author: marcusw
+  Return variable at a given position, enumerated from 1..n, but with the index as first argument, so that it can be used with fold an map functions."
+  input Integer inInteger;
+  input BackendDAE.Variables inVariables;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := getVarAt(inVariables, inInteger); 
+end getVarAtIndexFirst;
 
 public function setVarAt
 "author: Frenkel TUD
