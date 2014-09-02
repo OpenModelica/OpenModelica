@@ -533,12 +533,21 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    #include "OMCpp<%fileNamePrefix%>Jacobian.h" */
    <%lastIdentOfPath(modelInfo.name)%>Jacobian::<%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
+   ,_A_sparsePattern_leadindex(NULL)
+   ,_A_sparsePattern_index(NULL)
+   ,_A_sparsePattern_colorCols(NULL)
    {
    }
 
 
    <%lastIdentOfPath(modelInfo.name)%>Jacobian::~<%lastIdentOfPath(modelInfo.name)%>Jacobian()
     {
+		if(_A_sparsePattern_leadindex)
+			delete []  _A_sparsePattern_leadindex;
+		if(_A_sparsePattern_index)
+			delete []  _A_sparsePattern_index;
+		if(_A_sparsePattern_colorCols)
+			delete []  _A_sparsePattern_colorCols;
 
     }
     <%functionAnalyticJacobians(jacobianMatrixes,simCode,useFlatArrayNotation)%>
@@ -11566,40 +11575,27 @@ case _ then
 
       void <%modelNamePrefix%>Jacobian::initializeColoredJacobian<%matrixname%>()
       {
-
-        //_<%matrixname%>_sizeCols = <%index_%>;
-        //_<%matrixname%>_sizeRows = <%indexColumn%>;
-
-
-
+		
+		if(_A_sparsePattern_leadindex)
+			delete []  _A_sparsePattern_leadindex;
+		if(_A_sparsePattern_index)
+			delete []  _A_sparsePattern_index;
+		if(_A_sparsePattern_colorCols)
+			delete []  _A_sparsePattern_colorCols;
+	
         _<%matrixname%>_sparsePattern_leadindex = new int[<%sizeleadindex%>];
         _<%matrixname%>_sparsePattern_index = new int[<%sp_size_index%>];
         _<%matrixname%>_sparsePattern_colorCols = new int[<%index_%>];
         _<%matrixname%>_sparsePattern_maxColors = <%maxColor%>;
 
-
-
-
-
-
-
         _<%matrixname%>_sizeof_sparsePattern_leadindex = <%sizeleadindex%>;
         _<%matrixname%>_sizeof_sparsePattern_index = <%sp_size_index%>;
         _<%matrixname%>_sizeof_sparsePattern_colorCols = <%index_%>;
-
-
-        //<%matrixname%>_jacobian = NULL;
-        //<%matrixname%>_sizeTmpVars = <%tmpvarsSize%>;
-        //<%matrixname%>_seedVars = (modelica_real*) calloc(<%index_%>,sizeof(modelica_real));
-        //<%matrixname%>_resultVars = (modelica_real*) calloc(<%indexColumn%>,sizeof(modelica_real));
-        //<%matrixname%>_tmpVars = (modelica_real*) calloc(<%tmpvarsSize%>,sizeof(modelica_real));
-
 
         /* write column ptr of compressed sparse column*/
         <%leadindex%>
         for(int i = 1; i < <%sizeleadindex%> ; i++)
             _<%matrixname%>_sparsePattern_leadindex[i] += _<%matrixname%>_sparsePattern_leadindex[i-1];
-
 
         /* call functions to write index for each cref */
         <%indexElems%>
