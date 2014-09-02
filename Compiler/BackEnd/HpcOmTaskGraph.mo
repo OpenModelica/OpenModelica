@@ -65,7 +65,7 @@ protected import Util;
 
 public type TaskGraph = array<list<Integer>>;
 
-public uniontype Communications = list<Communication>;
+public type Communications = list<Communication>;
 
 public uniontype Communication
   record COMMUNICATION
