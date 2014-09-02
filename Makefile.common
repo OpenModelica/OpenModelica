@@ -116,17 +116,18 @@ build/lib/omc/libipopt.la: 3rdParty/Ipopt-3.11.6/Makefile
 ipopt: build/lib/omc/libipopt.la
 
 build/lib/omc/libumfpack.a: 3rdParty/SuiteSparse/UMFPACK/Makefile
-	$(MAKE) -C 3rdParty/SuiteSparse/UMFPACK
-	cp -a 3rdParty/SuiteSparse/UMFPACK/Lib/*.a build/lib/omc
-	cp -a 3rdParty/SuiteSparse/AMD/Lib/*.a build/lib/omc
-	mkdir --parent build/include/omc/c/suitesparse
-	cp -a 3rdParty/SuiteSparse/UMFPACK/Include/*.h build/include/omc/c/suitesparse
-	cp -a 3rdParty/SuiteSparse/AMD/Include/*.h build/include/omc/c/suitesparse
-	cp -a 3rdParty/SuiteSparse/UFconfig/*.h build/include/omc/c/suitesparse
+	mkdir -p 3rdParty/SuiteSparse/build
+	cd 3rdParty/SuiteSparse/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_INSTALL_PREFIX:PATH="../../../build"
+	$(MAKE) -C 3rdParty/SuiteSparse/build install
+	#cp -au 3rdParty/SuiteSparse/build/*.$(STATIC_EXT) build/lib/omc
+	#mkdir --parent build/include/omc/c/suitesparse
+	#cp -a 3rdParty/SuiteSparse/UMFPACK/Include/*.h build/include/omc/c/suitesparse
+	#cp -a 3rdParty/SuiteSparse/AMD/Include/*.h build/include/omc/c/suitesparse
+	#cp -a 3rdParty/SuiteSparse/UFconfig/*.h build/include/omc/c/suitesparse
 umfpack: build/lib/omc/libumfpack.a
 
 umfpack-clean:
-	cd 3rdParty/SuiteSparse/UMFPACK && make clean && make purge
+	cd 3rdParty/SuiteSparse/build && make clean
 	rm -rf build/include/omc/c/suitesparse
 	rm -f build/lib/omc/libumfpack.a
 	rm -f build/lib/omc/libamd.a
