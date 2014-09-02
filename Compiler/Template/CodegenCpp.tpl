@@ -7,7 +7,8 @@ import CodegenUtil.*;
 
 
 
-
+ 
+ 
 
 
 template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
@@ -11626,7 +11627,7 @@ match matrixname
  case "A" then
     let indexrows = ( indexes |> indexrow hasindex index0 =>
     <<
-      i = _<%matrixname%>_sparsePattern_leadindex[<%crefWithoutIndexOperator(indexrow)%>$pDER<%matrixname%>$indexdiff] - <%listLength(indexes)%>;
+      i = _<%matrixname%>_sparsePattern_leadindex[<%crefWithoutIndexOperator(cref)%>$pDER<%matrixname%>$indexdiff] - <%listLength(indexes)%>;
       _<%matrixname%>_sparsePattern_index[i+<%index0%>] = <%crefWithoutIndexOperator(indexrow)%>$pDER<%matrixname%>$indexdiffed;
       >>
       ;separator="\n")
