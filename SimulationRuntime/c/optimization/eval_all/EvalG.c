@@ -75,9 +75,11 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
   const int nx = optData->dim.nx;
   const int nv = optData->dim.nv;
   const int nc = optData->dim.nc;
+  const int ncf = optData->dim.ncf;
   const int nsi = optData->dim.nsi;
   const int np = optData->dim.np;
   const int index_con = optData->dim.index_con;
+  const int index_conf = optData->dim.index_conf;
 
   modelica_real ***v;
   long double a[5][5];
@@ -127,6 +129,9 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
       for(j = 0; j < np; ++j)
         vv[j + 1] = vv[j] + nv;
     }
+    /*terminal constraint(s)*/
+    memcpy(g + shift, &v[nsi-1][2][index_conf], ncf*sizeof(double));
+
   }else if(np == 1){
     for(i = 0, shift = 0; i <nsi; ++i){
       sdt = optData->bounds.scaldt[i];
@@ -139,6 +144,8 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
       for(j = 0; j < np; ++j)
         vv[j + 1] = vv[j] + nv;
     }
+    /*terminal constraint(s)*/
+    memcpy(g + m - ncf, &v[nsi-1][0][index_conf], ncf*sizeof(double));
   }
   if(ACTIVE_STREAM(LOG_IPOPT_ERROR)){
     const int nJ = optData->dim.nJ;
@@ -193,7 +200,9 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
     const int nx = optData->dim.nx;
     const int nv = optData->dim.nv;
     const int nJ = optData->dim.nJ;
+    const int ncf = optData->dim.ncf;
     modelica_boolean ** J = optData->s.JderCon;
+    modelica_boolean ** Jf = optData->s.J[2];
     int i, j, k, l, ii, cindex;
 
     if(new_x)
@@ -246,6 +255,11 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
           }
         }
       }
+      /*terminal constraint(s)*/
+      for(l = 0; l< ncf; ++l){
+        structJacC(optData->Jf[l], values, nv, &k, Jf[l]);
+      }
+
     }else if(np == 1){
       /*****************************/
       for(j = 0, k = 0; j < np; ++j){
@@ -283,6 +297,10 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
             }
           }
         }
+      }
+      /*terminal constraint(s)*/
+      for(l=0; l< ncf; ++l){
+        structJacC(optData->Jf[l], values, nv, &k, Jf[l]);
       }
     }
     /*****************************/
@@ -489,8 +507,10 @@ static inline void generated_jac_struc(OptData * optData, int *iRow, int* iCol){
   const int nJ = optData->dim.nJ;
   const int np = optData->dim.np;
   const int npv = np*nv;
+  const int ncf = optData->dim.ncf;
 
   modelica_boolean **  J = optData->s.JderCon;
+  modelica_boolean **  Jf = optData->s.J[2];
   int r, c, tmp_r, tmp_c;
   int i, j, k;
 
@@ -589,6 +609,10 @@ static inline void generated_jac_struc(OptData * optData, int *iRow, int* iCol){
         set_row(&k, iRow, iCol, J[j], nv, r+j, c+3*nv);
       }
     }
+    /*terminal constraint(s)*/
+    for(j = 0; j<ncf; ++j){
+      set_row(&k, iRow, iCol, Jf[j], nv, r+j, c);
+    }
   }else if(np == 1){
 
     for(j = 0; j <nJ; ++j){
@@ -610,6 +634,10 @@ static inline void generated_jac_struc(OptData * optData, int *iRow, int* iCol){
         set_row(&k, iRow, iCol, J[j], nv, r+j, c+nv);
       }
 
+    }
+    /*terminal constraint(s)*/
+    for(j = 0; j<ncf; ++j){
+      set_row(&k, iRow, iCol, Jf[j], nv, r+j, c);
     }
 
   }

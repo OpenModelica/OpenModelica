@@ -2501,6 +2501,7 @@ algorithm
     case BackendDAE.JAC_VAR()     then "JACOBIAN_VAR";
     case BackendDAE.JAC_DIFF_VAR()then "JACOBIAN_DIFF_VAR";
     case BackendDAE.OPT_CONSTR()  then "OPT_CONSTR";
+    case BackendDAE.OPT_FCONSTR()  then "OPT_FCONSTR";
   end match;
 end kindString;
 

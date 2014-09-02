@@ -45,6 +45,7 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo,double * v);
 void optData2ModelData(OptData *optData, double *vopt, const int index);
 
 void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const int i, const int j, const int index);
+void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J);
 
 /*ipopt*/
 

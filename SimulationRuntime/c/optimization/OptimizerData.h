@@ -47,6 +47,7 @@ typedef struct OptDataDim{
  int nx;
  int nu;
  int nc;
+ int ncf;
  int nv;
  int NV;
  int NRes;
@@ -59,10 +60,12 @@ typedef struct OptDataDim{
  int nReal;
 
  int index_con;
+ int index_conf;
  int index_lagrange;
  int index_mayer;
 
  int nJderx;
+ int nJfderx;
  int nH0;
  int nH1;
  int nH0_;
@@ -120,9 +123,11 @@ typedef struct OptDataIpopt{
 typedef struct OptDataStructure{
   modelica_boolean matrix[5];
   modelica_boolean ***J;
+  modelica_boolean **Jf;
   modelica_boolean **H0;
   modelica_boolean **H1;
   modelica_boolean ***Hg;
+  modelica_boolean ***Hcf;
   modelica_boolean **Hm;
   modelica_boolean **Hl;
   modelica_boolean lagrange;
@@ -156,9 +161,12 @@ typedef struct OptData{
   modelica_real *sv0;
   modelica_real ****J;
   modelica_real ** tmpJ;
+  modelica_real ** Jf;
+  modelica_real ** tmpJf;
   long double ***H;
   long double **Hl;
   long double **Hm;
+  long double ***Hcf;
   DATA *data;
   FILE * pFile;
 

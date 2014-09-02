@@ -453,6 +453,7 @@ package SimCode
       Integer numStateSets;
       Integer numJacobians;
       Integer numOptimizeConstraints;
+      Integer numOptimizeFinalConstraints;
       end VARINFO;
   end VarInfo;
 
@@ -482,6 +483,7 @@ package SimCode
       list<SimVar> stringConstVars;
       list<SimVar> jacobianVars;
       list<SimVar> realOptimizeConstraintsVars;
+      list<SimVar> realOptimizeFinalConstraintsVars;
     end SIMVARS;
   end SimVars;
 
@@ -853,6 +855,7 @@ package BackendDAE
     record JAC_VAR end JAC_VAR;
     record JAC_DIFF_VAR end JAC_DIFF_VAR;
     record OPT_CONSTR end OPT_CONSTR;
+    record OPT_FCONSTR end OPT_FCONSTR;
   end VarKind;
 
   uniontype ZeroCrossing

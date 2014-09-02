@@ -1126,6 +1126,7 @@ algorithm
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())) then ();
     case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())) then ();
     case (BackendDAE.VAR(varKind = BackendDAE.OPT_CONSTR())) then ();
+      case (BackendDAE.VAR(varKind = BackendDAE.OPT_FCONSTR())) then ();
   end match;
 end failIfNonState;
 
@@ -1240,6 +1241,7 @@ algorithm
     case ((BackendDAE.VAR(varKind=BackendDAE.DUMMY_DER()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.DUMMY_STATE()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_CONSTR()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.OPT_FCONSTR()) :: _)) then true;
     case ((_ :: vs)) then hasContinousVar(vs);
     case ({}) then false;
   end match;
@@ -1655,6 +1657,17 @@ algorithm
   end match;
 end isRealOptimizeConstraintsVars;
 
+public function isRealOptimizeFinalConstraintsVars
+"Return true if variable is a final constraint(slack variable)"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case (BackendDAE.VAR(varKind = BackendDAE.OPT_FCONSTR())) then true;
+    case (_) then false;
+  end match;
+end isRealOptimizeFinalConstraintsVars;
+
 public function hasMayerTermAnno
 "author: Vitalij Ruge
  Return true if variable has isMayer=true annotation"
@@ -1700,6 +1713,20 @@ algorithm
   end match;
 end hasConTermAnno;
 
+public function hasFinalConTermAnno
+"author: Vitalij Ruge
+ Return true if variable has isFinalConstraint=true annotation"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    local SCode.Comment comm;
+
+    case (BackendDAE.VAR(comment=  SOME(comm) ))
+       then SCode.commentHasBooleanNamedAnnotation(comm, "isFinalConstraint");
+    else then false;
+  end match;
+end hasFinalConTermAnno;
 
 public function isNonRealParam
 "Return true if variable is NOT a parameter of real-type"

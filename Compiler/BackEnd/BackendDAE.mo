@@ -217,6 +217,7 @@ uniontype VarKind "variable kind"
   record JAC_VAR end JAC_VAR;
   record JAC_DIFF_VAR end JAC_DIFF_VAR;
   record OPT_CONSTR end OPT_CONSTR;
+  record OPT_FCONSTR end OPT_FCONSTR;
 end VarKind;
 
 public uniontype EquationKind "equation kind"

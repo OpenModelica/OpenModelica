@@ -70,9 +70,10 @@ static inline void optimizationWithIpopt(OptData*optData){
   const int np = optData->dim.np;
   const int nx = optData->dim.nx;
   const int NJ = optData->dim.nJderx;
+  const int NJf = optData->dim.nJfderx;
   const int nH0 = optData->dim.nH0_;
   const int nH1 = optData->dim.nH1_;
-  const int njac = np*(NJ*nsi + nx*(np*nsi - 1));
+  const int njac = np*(NJ*nsi + nx*(np*nsi - 1)) + NJf;
   const int nhess = (nsi*np-1)*nH0+nH1;
 
   Number * Vmin = optData->bounds.Vmin;

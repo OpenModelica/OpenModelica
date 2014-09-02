@@ -220,6 +220,7 @@ uniontype VarInfo "Number of variables of various types in a Modelica model."
     Integer numStateSets;
     Integer numJacobians;
     Integer numOptimizeConstraints;
+    Integer numOptimizeFinalConstraints;
   end VARINFO;
 end VarInfo;
 
@@ -249,11 +250,12 @@ uniontype SimVars "Container for metadata about variables in a Modelica model."
     list<SimVar> stringConstVars;
     list<SimVar> jacobianVars;
     list<SimVar> realOptimizeConstraintsVars;
+    list<SimVar> realOptimizeFinalConstraintsVars;
   end SIMVARS;
 end SimVars;
 
 public constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {},
-  {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{});
+  {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
 
 uniontype SimVar "Information about a variable in a Modelica model."
   record SIMVAR

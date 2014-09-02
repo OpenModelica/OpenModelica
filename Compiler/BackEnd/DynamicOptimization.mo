@@ -33,19 +33,23 @@
 
 " file:        DynamicOptimization.mo
   package:     DynamicOptimization
-  description: DynamicOptimization contains the data-types used by the optimization.
+  description: DynamicOptimization contains the function that create dynamic optimization.
 
-  RCS: $$
+  RCS: $Id: DynamicOptimization.mo  xxx$
 "
 public import DAE;
 public import BackendDAE;
 
+/*
+protected import BackendDump;
+protected import ExpressionDump;
+*/
 
 protected import BackendEquation;
-protected import BackendDump;
+
 protected import BackendVariable;
 protected import ComponentReference;
-protected import ExpressionDump;
+
 protected import Expression;
 protected import List;
 protected import Util;
@@ -98,7 +102,10 @@ algorithm
         e = Util.if_(b, listAppend(e, objectEqn), e);
 
         constraints = addConstraints(inVars, knvars, inConstraint);
-        (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars);
+        (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$constarintTerm", BackendDAE.OPT_CONSTR());
+        
+        constraints = findFinalConstraints(inVars, knvars, {});
+        (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$finalConstarintTerm", BackendDAE.OPT_FCONSTR());
 
     then (v, e,inClassAttr);
     case (v, e, true, _, _, _)
@@ -122,7 +129,10 @@ algorithm
         e = Util.if_(b, listAppend(e, objectEqn), e);
 
         constraints = addConstraints(inVars, knvars, inConstraint);
-        (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars);
+        (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$constarintTerm", BackendDAE.OPT_CONSTR());
+        
+        constraints = findFinalConstraints(inVars, knvars, {});
+        (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$finalConstarintTerm", BackendDAE.OPT_FCONSTR());
 
        then (v, e,{DAE.OPTIMIZATION_ATTRS(mayer1, lagrange1, NONE(), NONE())});
     else then(inVars, inEqns, inClassAttr);
@@ -135,10 +145,13 @@ protected function addOptimizationVarsEqns1
  input BackendDAE.Variables inVars;
  input list<BackendDAE.Equation> inEqns;
  input BackendDAE.Variables knvars;
+ input String prefConCrefName;
+ input BackendDAE.VarKind conKind;
+ 
  output BackendDAE.Variables outVars;
  output list<BackendDAE.Equation>  outEqns;
 algorithm
- (outVars, outEqns) := match(constraintLst, inI, inVars, inEqns, knvars)
+ (outVars, outEqns) := match(constraintLst, inI, inVars, inEqns, knvars,prefConCrefName,conKind)
  local
    list<DAE.Exp> conLst;
    DAE.Exp e;
@@ -147,16 +160,18 @@ algorithm
    list<BackendDAE.Equation> conEqn;
    BackendDAE.Variables v;
    list<BackendDAE.Equation> eqns;
-
-   case({}, _, _, _,_) then (inVars, inEqns);
-   case(e::conLst, _, _, _, _) equation
+   String conCrefName; 
+    
+   case({}, _, _, _, _, _, _) then (inVars, inEqns);
+   case(e::conLst, _, _, _, _, _, _) equation
     //print("con"+& intString(inI) +& " "+& ExpressionDump.printExpStr(e) +& "\n=>" +& ExpressionDump.dumpExpStr(e,0) +& "\n");
     //BackendDump.printVariables(inVars);
     //BackendDump.printVariables(knvars);
-    (conEqn, dummyVar) = BackendEquation.generateResidualfromRealtion(inI, e, DAE.emptyElementSource, inVars, knvars);
+    conCrefName = prefConCrefName +& intString(inI);
+    (conEqn, dummyVar) = BackendEquation.generateResidualfromRealtion(conCrefName, e, DAE.emptyElementSource, inVars, knvars, conKind);
     v = BackendVariable.addNewVar(dummyVar, inVars);
     eqns = listAppend(conEqn, inEqns);
-    (v, eqns)= addOptimizationVarsEqns1(conLst, inI + 1, v, eqns, knvars);
+    (v, eqns)= addOptimizationVarsEqns1(conLst, inI + 1, v, eqns, knvars, prefConCrefName, conKind);
    then (v, eqns);
    else (inVars, inEqns);
    end match;
@@ -168,17 +183,19 @@ protected function addOptimizationVarsEqns2
  input BackendDAE.Variables inVars;
  input list<BackendDAE.Equation> inEqns;
  input BackendDAE.Variables knvars;
-
+ input String prefConCrefName;
+ input BackendDAE.VarKind conKind;
+ 
  output BackendDAE.Variables outVars;
  output list<BackendDAE.Equation>  outEqns;
 algorithm
-  (outVars, outEqns) := match(inConstraint, inI, inVars, inEqns, knvars)
+  (outVars, outEqns) := match(inConstraint, inI, inVars, inEqns, knvars,prefConCrefName,conKind)
   local
    list<BackendDAE.Equation> e;
    BackendDAE.Variables v;
    list< .DAE.Exp> constraintLst;
-    case({DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}, _, _, _, _) equation
-      (v, e) = addOptimizationVarsEqns1(constraintLst, inI, inVars, inEqns, knvars);
+    case({DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}, _, _, _, _, _, _) equation
+      (v, e) = addOptimizationVarsEqns1(constraintLst, inI, inVars, inEqns, knvars,prefConCrefName,conKind);
       then (v, e);
   else (inVars, inEqns);
   end match;
@@ -332,5 +349,39 @@ algorithm
 
   end match;
 end addConstraints2;
+
+
+protected function findFinalConstraints
+"author: Vitalij Ruge"
+input BackendDAE.Variables inVars;
+input BackendDAE.Variables knvars;
+input list< .DAE.Constraint> inConstraint;
+output list< .DAE.Constraint> outConstraint;
+
+algorithm
+  outConstraint := match(inVars, knvars, inConstraint)
+  local list<BackendDAE.Var> varlst; BackendDAE.Variables v; list< .DAE.Exp> constraintLst; list< .DAE.Constraint> constraints;
+
+    case(_, _, {DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}) equation
+      //print("\n1-->");
+      v = BackendVariable.mergeVariables(inVars, knvars);
+      varlst = BackendVariable.varList(v);
+      varlst = List.select(varlst, BackendVariable.hasFinalConTermAnno);
+      //print("\n1.3-->");
+      constraintLst = addConstraints2(constraintLst, varlst);
+      constraints =  {DAE.CONSTRAINT_EXPS(constraintLst)};
+      //print("\n1.5-->");
+    then constraints;
+    case(_, _, {}) equation
+      //print("\n2-->");
+      v = BackendVariable.mergeVariables(inVars, knvars);
+      varlst = BackendVariable.varList(v);
+      varlst = List.select(varlst, BackendVariable.hasFinalConTermAnno);
+      constraintLst = addConstraints2({}, varlst);
+      constraints =  {DAE.CONSTRAINT_EXPS(constraintLst)};
+    then constraints;
+    else then (inConstraint);
+  end match;
+end findFinalConstraints;
 
 end DynamicOptimization;

@@ -399,7 +399,7 @@ typedef struct MODEL_DATA_XML
 
 typedef struct MODEL_DATA
 {
-  STATIC_REAL_DATA* realVarsData;     /* states + derived states + algs + constrainsOpt + discrete */
+  STATIC_REAL_DATA* realVarsData;     /* states + derived states + algs + (constrainsVars+FinalconstrainsVars) + discrete */
   STATIC_INTEGER_DATA* integerVarsData;
   STATIC_BOOLEAN_DATA* booleanVarsData;
   STATIC_STRING_DATA* stringVarsData;
@@ -451,7 +451,8 @@ typedef struct MODEL_DATA
   long nNonLinearSystems;
   long nStateSets;
   long nInlineVars;                    /* number of additional variables for the inline solverr */
-  long nOptimizeConstraints;
+  long nOptimizeConstraints;           /* number of additional variables for constraint in dynamic optimization*/
+  long nOptimizeFinalConstraints;      /* number of additional variables for final constraint in dynamic optimization*/
 
   long nAliasReal;
   long nAliasInteger;

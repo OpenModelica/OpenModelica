@@ -4078,6 +4078,10 @@ algorithm
       equation
         failure(_ = List.getMemberOnTrue(i, vars, intEq));
       then incidenceRowExp1(rest,irest,i::vars,diffindex);
+    case (BackendDAE.VAR(varKind = BackendDAE.OPT_FCONSTR())::rest,i::irest,_,_)
+      equation
+        failure(_ = List.getMemberOnTrue(i, vars, intEq));
+      then incidenceRowExp1(rest,irest,i::vars,diffindex);
     case (_ :: rest,_::irest,_,_)
       then incidenceRowExp1(rest,irest,vars,diffindex);
   end matchcontinue;

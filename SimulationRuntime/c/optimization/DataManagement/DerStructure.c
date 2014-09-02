@@ -51,6 +51,7 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   const int np = dim->np;
   const int nJ = dim->nJ;
   const int nJ2 = dim->nJ2;
+  const int ncf = dim->ncf;
   int i, j, k;
   char * cflags;
   cflags = (char*)omc_flagValue[FLAG_UP_HESSIAN];
@@ -71,14 +72,16 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   s->indexABCD[2] = data->callback->INDEX_JAC_B;
   s->indexABCD[3] = data->callback->INDEX_JAC_C;
   s->indexABCD[4] = data->callback->INDEX_JAC_D;
+  s->matrix[0] = (modelica_boolean)0;
   s->matrix[1] = (modelica_boolean)(data->callback->initialAnalyticJacobianA((void*) data) == 0);
   s->matrix[2] = (modelica_boolean)(data->callback->initialAnalyticJacobianB((void*) data) == 0);
   s->matrix[3] = (modelica_boolean)(data->callback->initialAnalyticJacobianC((void*) data) == 0);
   s->matrix[4] = (modelica_boolean)(data->callback->initialAnalyticJacobianD((void*) data) == 0);
 
   dim->nJderx = 0;
+  dim->nJfderx = 0;
   /*************************/
-  s->J =  (modelica_boolean***) malloc(2*sizeof(modelica_boolean**));
+  s->J =  (modelica_boolean***) malloc(3*sizeof(modelica_boolean**));
   s->J[0] =  (modelica_boolean**) malloc((nJ +1)*sizeof(modelica_boolean*));
   for(i = 0; i < (nJ +1); ++i)
     s->J[0][i] = (modelica_boolean*)calloc(nv, sizeof(modelica_boolean));
@@ -86,6 +89,10 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   s->J[1] =  (modelica_boolean**) malloc(nJ2*sizeof(modelica_boolean*));
   for(i = 0; i < nJ2; ++i)
     s->J[1][i] = (modelica_boolean*)calloc(nv, sizeof(modelica_boolean));
+
+  s->J[2] =  (modelica_boolean**) malloc(ncf*sizeof(modelica_boolean*));
+  for(i = 0; i < ncf; ++i)
+    s->J[2][i] = (modelica_boolean*)calloc(nv, sizeof(modelica_boolean));
 
   s->derIndex[0] = s->derIndex[1] = s->derIndex[2] = -1;
   s->mayer = (modelica_boolean) (data->callback->mayer(data, &s->pmayer, &s->derIndex[0]) >= 0);
@@ -124,6 +131,15 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
     optData->tmpJ[k] = (modelica_real*) calloc(nv, sizeof(modelica_real));
   }
 
+  optData->Jf = (modelica_real**) malloc(ncf*sizeof(modelica_real*));
+  for(k = 0; k < ncf; ++k){
+    optData->Jf[k] = (modelica_real*) calloc(nv, sizeof(modelica_real));
+  }
+  optData->tmpJf = (modelica_real**) malloc(ncf*sizeof(modelica_real*));
+  for(k = 0; k < ncf; ++k){
+    optData->tmpJf[k] = (modelica_real*) calloc(nv, sizeof(modelica_real));
+  }
+
   if(s->mayer){
     const int nReal = dim->nReal;
     dim->index_mayer = -1;
@@ -151,6 +167,13 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
     optData->H[i] = (long double **) malloc(nv*sizeof(long double*));
     for(j = 0; j < nv; ++j)
       optData->H[i][j] = (long double *) calloc(nv, sizeof(long double));
+  }
+
+  optData->Hcf = (long double ***) malloc(ncf*sizeof(long double**));
+  for(i = 0; i < ncf; ++i){
+    optData->Hcf[i] = (long double **) malloc(nv*sizeof(long double*));
+    for(j = 0; j < nv; ++j)
+      optData->Hcf[i][j] = (long double *) calloc(nv, sizeof(long double));
   }
 
   optData->Hm = (long double **)malloc(nv*sizeof(long double*));
@@ -194,7 +217,7 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
   s->indexCon2 = (int *)malloc(dim->nc* sizeof(int));
   s->indexCon3 = (int *)malloc(dim->nc* sizeof(int));
 
-  for(index = 2; index < 4; ++index){
+  for(index = 2; index < 5; ++index){
 
     if(s->matrix[index]){
       tmp_index = index-2;
@@ -259,6 +282,13 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
     }
   }
 
+ for(i = 0; i < dim->ncf ; ++i){
+   for(j = 0; j < dim->nv; ++j){
+     if(s->J[2][i][j])
+       ++dim->nJfderx;
+   }
+ }
+
   if(s->lagrange)
     for(j = 0; j < dim->nv; ++j){
       if(s->J[0][s->derIndex[1]][j])
@@ -303,20 +333,24 @@ static inline void copy_JacVars(OptData *optData){
   int i,j,l;
 
   DATA* data = optData->data;
-  const int indexBC[2] = {data->callback->INDEX_JAC_B, data->callback->INDEX_JAC_C};
+  int * indexBC = &optData->s.indexABCD[2];
+  modelica_boolean * s= &optData->s.matrix[2];
+  const int nn = 3;
   OptDataDim * dim = &optData->dim;
   const int np = dim->np;
   const int nsi = dim->nsi;
 
-  dim->analyticJacobians_tmpVars = (modelica_real ****) malloc(2*sizeof(modelica_real***));
-  for(l = 0; l < 2 ; ++l){
-    dim->dim_tmpVars[l] = data->simulationInfo.analyticJacobians[indexBC[l]].sizeTmpVars;
-    dim->analyticJacobians_tmpVars[l] = (modelica_real ***) malloc(nsi*sizeof(modelica_real**));
-    for(i = 0; i< nsi; ++i){
-      dim->analyticJacobians_tmpVars[l][i] = (modelica_real **) malloc(np*sizeof(modelica_real*));
-      for(j = 0; j< np; ++j){
-        dim->analyticJacobians_tmpVars[l][i][j] = (modelica_real *) malloc(dim->dim_tmpVars[l]*sizeof(modelica_real));
-        memcpy(dim->analyticJacobians_tmpVars[l][i][j],data->simulationInfo.analyticJacobians[indexBC[l]].tmpVars,dim->dim_tmpVars[l]*sizeof(modelica_real));
+  dim->analyticJacobians_tmpVars = (modelica_real ****) malloc(nn*sizeof(modelica_real***));
+  for(l = 0; l < nn ; ++l){
+    if(s[l]){
+      dim->dim_tmpVars[l] = data->simulationInfo.analyticJacobians[indexBC[l]].sizeTmpVars;
+      dim->analyticJacobians_tmpVars[l] = (modelica_real ***) malloc(nsi*sizeof(modelica_real**));
+      for(i = 0; i< nsi; ++i){
+        dim->analyticJacobians_tmpVars[l][i] = (modelica_real **) malloc(np*sizeof(modelica_real*));
+        for(j = 0; j< np; ++j){
+          dim->analyticJacobians_tmpVars[l][i][j] = (modelica_real *) malloc(dim->dim_tmpVars[l]*sizeof(modelica_real));
+          memcpy(dim->analyticJacobians_tmpVars[l][i][j],data->simulationInfo.analyticJacobians[indexBC[l]].tmpVars,dim->dim_tmpVars[l]*sizeof(modelica_real));
+        }
       }
     }
   }
@@ -330,6 +364,7 @@ static inline void print_local_jac_struct(DATA * data, OptDataDim * dim, OptData
 
   const int nv = dim->nv;
   const int nJ = dim->nJ;
+  const int ncf = dim->ncf;
 
   int i, j;
 
@@ -339,6 +374,15 @@ static inline void print_local_jac_struct(DATA * data, OptDataDim * dim, OptData
       printf("\n");
       for(j =0; j< nv; ++j)
         printf("%s ", (s->JderCon[i][j])? "*":"0");
+  }
+  if(ncf > 0){
+    printf("\n-------------------------------------------------------");
+    printf("\nfinal constraint(s)");
+    for(i = 0; i < ncf; ++i){
+        printf("\n");
+        for(j =0; j< nv; ++j)
+          printf("%s ", (s->J[2][i][j])? "*":"0");
+    }
   }
 
   printf("\n========================================================");
@@ -368,6 +412,7 @@ static inline void print_local_jac_struct(DATA * data, OptDataDim * dim, OptData
 static inline void local_hessian_struct(DATA * data, OptDataDim * dim, OptDataStructure *s){
   const int nv = dim->nv;
   const int nJ = dim->nJ;
+  const int ncf = dim->ncf;
 
   int i, j, l;
 
@@ -376,6 +421,7 @@ static inline void local_hessian_struct(DATA * data, OptDataDim * dim, OptDataSt
   modelica_boolean ** Hl;
   modelica_boolean ** H0;
   modelica_boolean ** H1;
+  modelica_boolean *** Hcf;
   modelica_boolean **J;
   modelica_boolean tmp;
 
@@ -385,16 +431,25 @@ static inline void local_hessian_struct(DATA * data, OptDataDim * dim, OptDataSt
   dim->nH1_ = 0;
 
   s->Hg = (modelica_boolean ***) malloc(nJ*sizeof(modelica_boolean**));
+
   for(i = 0; i<nJ; ++i){
     s->Hg[i] = (modelica_boolean **) malloc(nv*sizeof(modelica_boolean*));
     for(j = 0; j < nv; ++j)
       s->Hg[i][j] = (modelica_boolean *) calloc(nv, sizeof(modelica_boolean));
   }
 
+  s->Hcf = (modelica_boolean ***) malloc(ncf*sizeof(modelica_boolean**));
+  for(i = 0; i<ncf; ++i){
+    s->Hcf[i] = (modelica_boolean **) malloc(nv*sizeof(modelica_boolean*));
+    for(j = 0; j < nv; ++j)
+      s->Hcf[i][j] = (modelica_boolean *) calloc(nv, sizeof(modelica_boolean));
+  }
+
   s->Hm = (modelica_boolean **) malloc(nv*sizeof(modelica_boolean*));
   s->Hl = (modelica_boolean **) malloc(nv*sizeof(modelica_boolean*));
   s->H0 = (modelica_boolean **) malloc(nv*sizeof(modelica_boolean*));
   s->H1 = (modelica_boolean **) malloc(nv*sizeof(modelica_boolean*));
+
 
   for(j = 0; j < nv; ++j){
     s->Hm[j] = (modelica_boolean *) calloc(nv, sizeof(modelica_boolean));
@@ -410,6 +465,7 @@ static inline void local_hessian_struct(DATA * data, OptDataDim * dim, OptDataSt
   H0 = s->H0;
   H1 = s->H1;
   J = s->JderCon;
+  Hcf = s->Hcf;
 
   /***********************************/
   for(l = 0; l < nJ; ++l){
@@ -417,6 +473,15 @@ static inline void local_hessian_struct(DATA * data, OptDataDim * dim, OptDataSt
       for(j = 0; j <nv; ++j){
         if(J[l][i]*J[l][j])
           Hg[l][i][j] = (modelica_boolean)1;
+      }
+    }
+  }
+  /***********************************/
+  for(l = 0; l < ncf; ++l){
+    for(i = 0; i < nv; ++i){
+      for(j = 0; j <nv; ++j){
+        if(s->J[2][l][i]*s->J[2][l][j])
+          Hcf[l][i][j] = (modelica_boolean)1;
       }
     }
   }
@@ -463,6 +528,24 @@ static inline void local_hessian_struct(DATA * data, OptDataDim * dim, OptDataSt
       }
     }
   }
+
+  /*******************************/
+  if(ncf > 0){
+    for(i = 0; i< nv; ++i){
+      for(j = 0; j <nv; ++j){
+        for(l = 0; l <ncf; ++l){
+          if(Hcf[l][i][j] && !H1[i][j]){
+            H1[i][j] = (modelica_boolean)1;
+            ++dim->nH1;
+            if(i <= j)
+              ++dim->nH1_;
+            break;
+          }
+        }
+      }
+    }
+  }
+
 }
 
 /*

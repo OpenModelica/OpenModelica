@@ -644,6 +644,10 @@ algorithm
       equation
         File.write(file,"constraint");
       then ();
+    case BackendDAE.OPT_FCONSTR()
+      equation
+        File.write(file,"final constraint");
+      then ();
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"serializeVarKind failed"});

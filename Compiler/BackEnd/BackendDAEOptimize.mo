@@ -3095,7 +3095,7 @@ algorithm
     local
       BackendDAE.BackendDAE backendDAE,backendDAE2;
 
-      list<BackendDAE.Var>  varlst, knvarlst,  states, inputvars, inputvars2, outputvars, paramvars, states_inputs, conVarsList;
+      list<BackendDAE.Var>  varlst, knvarlst,  states, inputvars, inputvars2, outputvars, paramvars, states_inputs, conVarsList, fconVarsList;
       list<DAE.ComponentRef> comref_states, comref_inputvars, comref_outputvars, comref_vars, comref_knvars;
       DAE.ComponentRef leftcref;
 
@@ -3190,6 +3190,7 @@ algorithm
         inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
         outputvars = List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
         conVarsList = List.select(varlst, BackendVariable.isRealOptimizeConstraintsVars);
+        fconVarsList = List.select(varlst, BackendVariable.isRealOptimizeFinalConstraintsVars); // ToDo: FinalCon
 
         states_inputs = listAppend(states, inputvars2);
         _ = List.map(states,BackendVariable.varCref);
@@ -3238,8 +3239,9 @@ algorithm
 
         // Differentiate the System w.r.t inputs for matrices D
         optimizer_vars = BackendVariable.emptyVars();
+        optimizer_vars = BackendVariable.listVar1(fconVarsList);
 
-        (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2, {}, statesarr, inputvarsarr, paramvarsarr, optimizer_vars, varlst, "D");
+        (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2, states_inputs, statesarr, inputvarsarr, paramvarsarr, optimizer_vars, varlst, "D");
         functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix D time: " +& realString(clock()) +& "\n");
