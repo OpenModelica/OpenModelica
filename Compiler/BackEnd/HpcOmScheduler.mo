@@ -2044,10 +2044,12 @@ protected function getSingleRelations
   output list<tuple<Integer,Integer,Integer>> orelations;
 protected
   Real costs;
+  Integer costsInt;
 algorithm
   costs := HpcOmTaskGraph.getCommCostTimeBetweenNodes(n,edge,iTaskGraphMeta);
-  orelations := listAppend(irelations,{(edge,n,realInt(costs))});
-  orelations := listAppend(orelations,{(n,edge,realInt(costs))});
+  costsInt := realInt(costs);
+  orelations := listAppend(irelations,{(edge,n,costsInt)});
+  orelations := listAppend(orelations,{(n,edge,costsInt)});
 end getSingleRelations;
 
 protected function getRelations

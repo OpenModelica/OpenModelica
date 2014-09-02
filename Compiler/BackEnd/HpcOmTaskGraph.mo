@@ -1052,15 +1052,15 @@ algorithm
     case((varIdx,derived),DAE.T_INTEGER(_),(intVarIdc,realVarIdc,boolVarIdc))
       equation
         intVarIdc = varIdx::intVarIdc;
-      then (intVarIdc,realVarIdc,boolVarIdc);
+      then ((intVarIdc,realVarIdc,boolVarIdc));
     case((varIdx,derived),DAE.T_REAL(_),(intVarIdc,realVarIdc,boolVarIdc))
       equation
         realVarIdc = (varIdx,derived)::realVarIdc;
-      then (intVarIdc,realVarIdc,boolVarIdc);
+      then ((intVarIdc,realVarIdc,boolVarIdc));
     case((varIdx,derived),DAE.T_BOOL(_),(intVarIdc,realVarIdc,boolVarIdc))
       equation
         boolVarIdc = varIdx::boolVarIdc;
-      then (intVarIdc,realVarIdc,boolVarIdc);
+      then ((intVarIdc,realVarIdc,boolVarIdc));
     case((varIdx,derived),DAE.T_ARRAY(ty=ty),(intVarIdc,realVarIdc,boolVarIdc))
       then getUnsolvedVarsBySCC2(iVarIdx,ty,iUnsolvedVars);
     else
@@ -4843,7 +4843,7 @@ algorithm
         criticalPathIdx = getCriticalPath2(criticalPaths, 1, -1.0, -1);
         ((cpCalcTime, criticalPathChild)) = listGet(criticalPaths, criticalPathIdx);
         criticalPath = iNode :: criticalPathChild;
-        commCost = Util.if_(iHandleCommCosts, getCommCostBetweenNodes(iNode, List.first(criticalPathChild), iGraphData), COMMUNICATION(0,0,0,0,-1,0));
+        commCost = Util.if_(iHandleCommCosts, getCommCostBetweenNodes(iNode, List.first(criticalPathChild), iGraphData), COMMUNICATION(0,0,0,0,-1,0.0));
         //print("Comm cost from node " +& intString(iNode) +& " to " +& intString(List.first(criticalPathChild)) +& " with costs " +& intString(Util.tuple33(commCost)) +& "\n");
         nodeComps = arrayGet(inComps, iNode);
         calcTime = addUpExeCostsForNode(nodeComps, exeCosts, 0.0); //sum up calc times of all components
@@ -5535,7 +5535,7 @@ algorithm
       nodeDescs1 = Util.arrayAppend(nodeDescs1,nodeDescs2);
       nodeMark1 = Util.arrayAppend(nodeMark1,nodeMark2);
       exeCosts1 = Util.arrayAppend(exeCosts1,exeCosts2);
-      commCosts1 = List.threadFold2(nodeLst,newComps,setCommCostsToParent,1,74,commCosts1);
+      commCosts1 = List.threadFold2(nodeLst,newComps,setCommCostsToParent,1,74.0,commCosts1);
       graphData = TASKGRAPHMETA(inComps1,varCompMapping1,eqCompMapping1,rootNodes1,nodeNames1,nodeDescs1,exeCosts1,commCosts1,nodeMark1);
     then (graph,graphData);
   else
@@ -5548,7 +5548,7 @@ author:Waurich TUD 2014-07"
   input list<Integer> parents;
   input Integer child;
   input Integer numFloatVars;
-  input Integer reqCycles;
+  input Real reqCycles;
   input array<Communications> commCostsIn;
   output array<Communications> commCostsOut;
 algorithm
@@ -5560,7 +5560,7 @@ author:Waurich TUD 2014-07"
   input Integer parent;
   input Integer child;
   input Integer numVars;
-  input Integer reqCycles;
+  input Real reqCycles;
   input array<Communications> commCostsIn;
   output array<Communications> commCostsOut;
 protected
