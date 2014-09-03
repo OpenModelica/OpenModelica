@@ -2818,7 +2818,7 @@ algorithm
         numOfCommVarsFloatString = intString(numOfCommVarsFloat);
         numOfCommVarsBoolString = intString(numOfCommVarsBool);
         commCostString = System.snprintff("%.0f", 25, commCost);
-        visualizeCriticalPath = boolAnd(visualizeCriticalPath,List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx))); 
+        visualizeCriticalPath = boolAnd(visualizeCriticalPath,List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx)));
         edgeColor = Util.if_(visualizeCriticalPath, GraphML.COLOR_GRAY, GraphML.COLOR_BLACK);
         edgeLabels = Util.if_(visualizeCommTime, {GraphML.EDGELABEL(commCostString, SOME(edgeColor), GraphML.FONTSIZE_STANDARD)}, {});
         (tmpGraph,(_,_)) = GraphML.addEdge("Edge" +& intString(parentIdx) +& intString(childIdx),
@@ -2841,7 +2841,7 @@ algorithm
         numOfCommVarsFloatString = intString(numOfCommVarsFloat);
         numOfCommVarsBoolString = intString(numOfCommVarsBool);
         commCostString = System.snprintff("%.0f", 25, commCost);
-        visualizeCriticalPath = boolAnd(visualizeCriticalPath,List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx))); 
+        visualizeCriticalPath = boolAnd(visualizeCriticalPath,List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx)));
         edgeColor = Util.if_(visualizeCriticalPath, GraphML.COLOR_GRAY, GraphML.COLOR_BLACK);
         edgeLabels = Util.if_(visualizeCommTime, {GraphML.EDGELABEL(commCostString, SOME(edgeColor), GraphML.FONTSIZE_STANDARD)}, {});
         (tmpGraph,(_,_)) = GraphML.addEdge( "Edge" +& intString(parentIdx) +& intString(childIdx),
