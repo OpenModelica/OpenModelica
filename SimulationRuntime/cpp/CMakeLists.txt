@@ -223,9 +223,11 @@ IF(SuiteSparse_found)
 	include_directories(${SUITESPARSE_INCLUDE_DIRS})
 	add_definitions(-DUSE_UMFPACK)
     SET(SUITESPARSE_INCLUDE ${SUITESPARSE_INCLUDE_DIRS})
+	SET(UMFPACK_LIB ${SUITESPARSE_LIBRARIES})
 ELSE()
 	message(STATUS "UmfPack disabled")
 	SET(SUITESPARSE_INCLUDE ".")
+	SET(UMFPACK_LIB "")
 ENDIF()
 
 #Mico corba
