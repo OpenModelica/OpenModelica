@@ -1712,9 +1712,11 @@ algorithm
       equation
         e2 = Expression.makeDiv(e,e1);
         (res1, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        res2 = DAE.BINARY(res1, DAE.DIV(tp),
-                          DAE.BINARY(DAE.RCONST(1.0), DAE.ADD(tp),
-                                     DAE.BINARY(e2, DAE.MUL(tp),e2)));
+        res2 = Expression.addNoEventToRelations(DAE.IFEXP(DAE.RELATION(e1,DAE.EQUAL(tp),DAE.RCONST(0.0),-1,NONE()),
+                e1,
+                DAE.BINARY(res1, DAE.DIV(tp), DAE.BINARY(DAE.RCONST(1.0), DAE.ADD(tp), DAE.BINARY(e2, DAE.MUL(tp),e2)))
+               ));
+
       then
         (res2,  funcs);
 
@@ -1981,7 +1983,7 @@ algorithm
         (zero, inFunctionTree);
 
     // der(r^x)  = r^x*ln(r)*der(x)
-    case (e0 as DAE.BINARY(exp1 = (e1 as DAE.RCONST(real=r)),operator = DAE.POW(tp),exp2 = _), _, _, _, _)
+    case (e0 as DAE.BINARY(exp1 = DAE.RCONST(real=r),operator = DAE.POW(tp),exp2 = e1), _, _, _, _)
       equation
         (de1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         r = realLn(r);
