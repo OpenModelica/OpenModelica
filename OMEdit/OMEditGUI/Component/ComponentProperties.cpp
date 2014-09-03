@@ -189,6 +189,36 @@ void Parameter::setEnabled(bool enable)
 }
 
 /*!
+  \class GroupBox
+  \brief Creates a group for parameters.
+  */
+GroupBox::GroupBox(const QString &title, QWidget *parent)
+  : QGroupBox(title, parent)
+{
+  mpGroupImageLabel = new Label;
+  mpGridLayout = new QGridLayout;
+  mpGridLayout->setObjectName(title);
+  mpGridLayout->setAlignment(Qt::AlignLeft);
+  mpHorizontalLayout = new QHBoxLayout;
+  mpHorizontalLayout->setAlignment(Qt::AlignLeft);
+  mpHorizontalLayout->addLayout(mpGridLayout, 1);
+  mpHorizontalLayout->addWidget(mpGroupImageLabel, 0, Qt::AlignRight);
+  setLayout(mpHorizontalLayout);
+}
+
+/*!
+  Sets the group image.
+  \param groupImage - the absolute path of the image.
+  */
+void GroupBox::setGroupImage(QString groupImage)
+{
+  if (!mpGroupImageLabel->pixmap() || (mpGroupImageLabel->pixmap() && mpGroupImageLabel->pixmap()->isNull())) {
+    QPixmap pixmap(groupImage);
+    mpGroupImageLabel->setPixmap(pixmap);
+  }
+}
+
+/*!
   \class ParametersScrollArea
   \brief Creates a scroll area for each tab of the component parameters dialog.
   */
@@ -223,44 +253,26 @@ bool ParametersScrollArea::eventFilter(QObject *o, QEvent *e)
   \param pGroupBox - pointer to QGroupBox.
   \param pGroupBoxLayout - pointer to QGridLayout.
   */
-void ParametersScrollArea::addGroupBox(QGroupBox *pGroupBox, QGridLayout *pGroupBoxLayout)
+void ParametersScrollArea::addGroupBox(GroupBox *pGroupBox)
 {
   if (!getGroupBox(pGroupBox->title()))
   {
     pGroupBox->hide();  /* create a hidden groupbox, we show it when it contains the parameters. */
     mGroupBoxesList.append(pGroupBox);
-    pGroupBoxLayout->setObjectName(pGroupBox->title());
-    pGroupBoxLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-    pGroupBox->setLayout(pGroupBoxLayout);
-    mGroupBoxesLayoutList.append(pGroupBoxLayout);
     mpVerticalLayout->addWidget(pGroupBox);
   }
 }
 
 /*!
-  Returns the QGroupBox by reading the list of QGroupBoxes.
-  \return the QGroupBox
+  Returns the GroupBox by reading the list of GroupBoxes.
+  \return the GroupBox
   */
-QGroupBox* ParametersScrollArea::getGroupBox(QString title)
+GroupBox* ParametersScrollArea::getGroupBox(QString title)
 {
-  foreach (QGroupBox *pGroupBox, mGroupBoxesList)
+  foreach (GroupBox *pGroupBox, mGroupBoxesList)
   {
     if (pGroupBox->title().compare(title) == 0)
       return pGroupBox;
-  }
-  return 0;
-}
-
-/*!
-  Returns the QGridLayout by reading the list of QGridLayouts.
-  \return the QGridLayout
-  */
-QGridLayout *ParametersScrollArea::getGroupBoxLayout(QString title)
-{
-  foreach (QGridLayout *pGroupBoxLayout, mGroupBoxesLayoutList)
-  {
-    if (pGroupBoxLayout->objectName().compare(title) == 0)
-      return pGroupBoxLayout;
   }
   return 0;
 }
@@ -338,9 +350,8 @@ void ComponentParameters::setUpDialog()
   ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
   // first add the Component Group Box
   pParametersScrollArea->getLayout()->addWidget(mpComponentGroupBox);
-  QGroupBox *pGroupBox = new QGroupBox("Parameters");
-  QGridLayout *pGroupBoxLayout = new QGridLayout;
-  pParametersScrollArea->addGroupBox(pGroupBox, pGroupBoxLayout);
+  GroupBox *pGroupBox = new GroupBox("Parameters");
+  pParametersScrollArea->addGroupBox(pGroupBox);
   mTabsMap.insert("General", mpParametersTabWidget->addTab(pParametersScrollArea, "General"));
   // create parameters tabs and groupboxes
   createTabsAndGroupBoxes(mpComponent->getOMCProxy(), mpComponent->getClassName());
@@ -430,9 +441,8 @@ void ComponentParameters::createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString c
         if (!mTabsMap.contains(tab))
         {
           ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
-          QGroupBox *pGroupBox = new QGroupBox(groupBox);
-          QGridLayout *pGroupBoxLayout = new QGridLayout;
-          pParametersScrollArea->addGroupBox(pGroupBox, pGroupBoxLayout);
+          GroupBox *pGroupBox = new GroupBox(groupBox);
+          pParametersScrollArea->addGroupBox(pGroupBox);
           mTabsMap.insert(tab, mpParametersTabWidget->addTab(pParametersScrollArea, tab));
         }
         else
@@ -443,9 +453,8 @@ void ComponentParameters::createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString c
           {
             if (!pParametersScrollArea->getGroupBox(groupBox))
             {
-              QGroupBox *pGroupBox = new QGroupBox(groupBox);
-              QGridLayout *pGroupBoxLayout = new QGridLayout;
-              pParametersScrollArea->addGroupBox(pGroupBox, pGroupBoxLayout);
+              GroupBox *pGroupBox = new GroupBox(groupBox);
+              pParametersScrollArea->addGroupBox(pGroupBox);
             }
           }
         }
@@ -497,6 +506,7 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
     QString tab = QString("General");
     QString groupBox = QString("Parameters");
     bool enable = true;
+    QString groupImage = "";
     QStringList dialogAnnotation = StringHandler::getDialogAnnotation(componentAnnotations[i]);
     if ((pComponentInfo->getVariablity().compare("parameter") == 0) || (dialogAnnotation.size() > 0) || !mParametersOnly)
     {
@@ -508,17 +518,22 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
         groupBox = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(1));
         // get the enable value
         enable = dialogAnnotation.at(2).contains("true");
+        // get the group image
+        groupImage = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(9));
+        groupImage = mpMainWindow->getOMCProxy()->uriToFilename(groupImage);
       }
       ParametersScrollArea *pParametersScrollArea;
       pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(tab)));
       if (pParametersScrollArea)
       {
-        QGridLayout *pGroupBoxLayout = pParametersScrollArea->getGroupBoxLayout(groupBox);
-        int layoutIndex = pGroupBoxLayout->rowCount();
-        if (pGroupBoxLayout)
+        GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(groupBox);
+        if (pGroupBox)
         {
+          // set the group image
+          pGroupBox->setGroupImage(groupImage);
+          QGridLayout *pGroupBoxGridLayout = pGroupBox->getGridLayout();
+          int layoutIndex = pGroupBoxGridLayout->rowCount();
           /* We hide the groupbox when we create it. Show the groupbox now since it has a parameter. */
-          QGroupBox *pGroupBox = pParametersScrollArea->getGroupBox(groupBox);
           pGroupBox->show();
           /* create a parameter */
           Parameter *pParameter = new Parameter(pComponentInfo, pOMCProxy, className, componentBaseClassName, componentClassName,
@@ -535,15 +550,15 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
             pParameter->getNameLabel()->setStyleSheet("QLabel{border:1px dotted #000; border-left:none; border-top:none; border-right:none;}");
             pParameter->getNameLabel()->setToolTip(tr("Inherited from <b>%1</b>").arg(componentClassName));
           }
-          pGroupBoxLayout->addWidget(pParameter->getNameLabel(), layoutIndex, 0);
+          pGroupBoxGridLayout->addWidget(pParameter->getNameLabel(), layoutIndex, 0);
           if (dialogAnnotation.size() > 3)
           {
             if (dialogAnnotation.at(2).compare("false") == 0)
               pParameter->getValueTextBox()->setEnabled(false);
           }
-          pGroupBoxLayout->addWidget(pParameter->getValueTextBox(), layoutIndex, 1);
-          pGroupBoxLayout->addWidget(pParameter->getUnitLabel(), layoutIndex, 2);
-          pGroupBoxLayout->addWidget(pParameter->getCommentLabel(), layoutIndex, 3);
+          pGroupBoxGridLayout->addWidget(pParameter->getValueTextBox(), layoutIndex, 1);
+          pGroupBoxGridLayout->addWidget(pParameter->getUnitLabel(), layoutIndex, 2);
+          pGroupBoxGridLayout->addWidget(pParameter->getCommentLabel(), layoutIndex, 3);
           mParametersList.append(pParameter);
         }
       }

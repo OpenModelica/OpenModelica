@@ -59,20 +59,31 @@ private:
   Label *mpCommentLabel;
 };
 
+class GroupBox : public QGroupBox
+{
+  Q_OBJECT
+public:
+  GroupBox(const QString &title, QWidget* parent=0);
+  void setGroupImage(QString groupImage);
+  QGridLayout *getGridLayout() {return mpGridLayout;}
+private:
+  Label *mpGroupImageLabel;
+  QGridLayout *mpGridLayout;
+  QHBoxLayout *mpHorizontalLayout;
+};
+
 class ParametersScrollArea : public QScrollArea
 {
   Q_OBJECT
 public:
   ParametersScrollArea();
   bool eventFilter(QObject *o, QEvent *e);
-  void addGroupBox(QGroupBox *pGroupBox, QGridLayout *pGroupBoxLayout);
-  QGroupBox* getGroupBox(QString title);
-  QGridLayout* getGroupBoxLayout(QString title);
+  void addGroupBox(GroupBox *pGroupBox);
+  GroupBox *getGroupBox(QString title);
   QVBoxLayout* getLayout();
 private:
   QWidget *mpWidget;
-  QList<QGroupBox*> mGroupBoxesList;
-  QList<QGridLayout*> mGroupBoxesLayoutList;
+  QList<GroupBox*> mGroupBoxesList;
   QVBoxLayout *mpVerticalLayout;
 };
 
