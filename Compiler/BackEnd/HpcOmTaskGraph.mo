@@ -2511,35 +2511,45 @@ end solvesDiscreteValue;
 //------------------------------------------
 //Methods to write blt-structure as xml-file
 //------------------------------------------
+public uniontype GraphDumpOptions
+  record GRAPHDUMPOPTIONS
+    Boolean visualizeCriticalPath;
+    Boolean visualizeTaskStartAndFinishTime;
+    Boolean visualizeTaskCalcTime;
+    Boolean visualizeCommTime;
+  end GRAPHDUMPOPTIONS;
+end GraphDumpOptions;
 
 public function dumpAsGraphMLSccLevel "author: marcusw, waurich
   Write out the given graph as a graphml file."
   input TaskGraph iGraph;
   input TaskGraphMeta iGraphData;
-  input BackendDAE.BackendDAE backendDAE;
-  input String fileName;
-  input String criticalPathInfo; //Critical path as String
+  input BackendDAE.BackendDAE iBackendDAE;
+  input String iFileName;
+  input String iCriticalPathInfo; //Critical path as String
   input list<tuple<Integer,Integer>> iCriticalPath; //Critical path as list of edges
   input list<tuple<Integer,Integer>> iCriticalPathWoC; //Critical path without communciation as list of edges
-  input array<list<Integer>> sccSimEqMapping; //maps each scc to simEqSystems
-  input array<tuple<Integer,Integer,Real>> schedulerInfo; //maps each Task to <threadId, orderId, startCalcTime>
+  input array<list<Integer>> iSccSimEqMapping; //maps each scc to simEqSystems
+  input array<tuple<Integer,Integer,Real>> iSchedulerInfo; //maps each Task to <threadId, orderId, startCalcTime>
+  input GraphDumpOptions iGraphDumpOptions; //Options to specify the output
 protected
   GraphML.GraphInfo graphInfo;
 algorithm
-  graphInfo := convertToGraphMLSccLevel(iGraph,iGraphData,backendDAE,criticalPathInfo,iCriticalPath,iCriticalPathWoC,sccSimEqMapping,schedulerInfo);
-  GraphML.dumpGraph(graphInfo, fileName);
+  graphInfo := convertToGraphMLSccLevel(iGraph,iGraphData,iBackendDAE,iCriticalPathInfo,iCriticalPath,iCriticalPathWoC,iSccSimEqMapping,iSchedulerInfo,iGraphDumpOptions);
+  GraphML.dumpGraph(graphInfo, iFileName);
 end dumpAsGraphMLSccLevel;
 
 public function convertToGraphMLSccLevel "author: marcusw, waurich
   Convert the given graph into a graphml-structure."
   input TaskGraph iGraph;
   input TaskGraphMeta iGraphData;
-  input BackendDAE.BackendDAE backendDAE;
-  input String criticalPathInfo; //Critical path as String
+  input BackendDAE.BackendDAE iBackendDAE;
+  input String iCriticalPathInfo; //Critical path as String
   input list<tuple<Integer,Integer>> iCriticalPath; //Critical path as list of edges
   input list<tuple<Integer,Integer>> iCriticalPathWoC; //Critical path without communciation as list of edges
-  input array<list<Integer>> sccSimEqMapping; //maps each scc to simEqSystems
-  input array<tuple<Integer,Integer,Real>> schedulerInfo; //maps each Task to <threadId, orderId, startCalcTime>
+  input array<list<Integer>> iSccSimEqMapping; //maps each scc to simEqSystems
+  input array<tuple<Integer,Integer,Real>> iSchedulerInfo; //maps each Task to <threadId, orderId, startCalcTime>
+  input GraphDumpOptions iGraphDumpOptions; //Options to specify the output
   output GraphML.GraphInfo oGraphInfo;
 protected
   Integer graphIdx;
@@ -2550,20 +2560,21 @@ algorithm
   (graphInfo, (_,graphIdx)) := GraphML.addGraph("TaskGraph", true, graphInfo);
   annotationInfo := arrayCreate(arrayLength(iGraph),"uncomment in HpcOmTaskGraph and +showAnnotations");
   //annotationInfo := setAnnotationsForTasks(iGraphData,backendDAE,annotationInfo);
-  oGraphInfo := convertToGraphMLSccLevelSubgraph(iGraph,iGraphData,criticalPathInfo,iCriticalPath,iCriticalPathWoC,sccSimEqMapping,schedulerInfo,annotationInfo,graphIdx,graphInfo);
+  oGraphInfo := convertToGraphMLSccLevelSubgraph(iGraph,iGraphData,iCriticalPathInfo,iCriticalPath,iCriticalPathWoC,iSccSimEqMapping,iSchedulerInfo,annotationInfo,graphIdx,iGraphDumpOptions,graphInfo);
 end convertToGraphMLSccLevel;
 
 public function convertToGraphMLSccLevelSubgraph "author: marcusw, waurich
   Convert the given graph into a subgraph of the graphml-structure."
   input TaskGraph iGraph;
   input TaskGraphMeta iGraphData;
-  input String criticalPathInfo; //Critical path as String
+  input String iCriticalPathInfo; //Critical path as String
   input list<tuple<Integer,Integer>> iCriticalPath; //Critical path as list of edges
   input list<tuple<Integer,Integer>> iCriticalPathWoC; //Critical path without communciation as list of edges
-  input array<list<Integer>> sccSimEqMapping; //maps each scc to simEqSystems
-  input array<tuple<Integer,Integer,Real>> schedulerInfo; //maps each Task to <threadId, orderId, startCalcTime>
-  input array<String> annotationInfo;  //annotations for the variables in a task
+  input array<list<Integer>> iSccSimEqMapping; //maps each scc to simEqSystems
+  input array<tuple<Integer,Integer,Real>> iSchedulerInfo; //maps each Task to <threadId, orderId, startCalcTime>
+  input array<String> iAnnotationInfo;  //annotations for the variables in a task
   input Integer iGraphIdx;
+  input GraphDumpOptions iGraphDumpOptions; //Options to specify the output
   input GraphML.GraphInfo iGraphInfo;
   output GraphML.GraphInfo oGraphInfo;
 protected
@@ -2573,8 +2584,8 @@ protected
           simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx, annotAttIdx;
   list<Integer> nodeIdc;
 algorithm
-  oGraphInfo := match(iGraph, iGraphData, criticalPathInfo, iCriticalPath, iCriticalPathWoC, sccSimEqMapping, schedulerInfo, annotationInfo, iGraphIdx, iGraphInfo)
-    case(_,_,_,_,_,_,_,_,_,_)
+  oGraphInfo := match(iGraph, iGraphData, iCriticalPathInfo, iCriticalPath, iCriticalPathWoC, iSccSimEqMapping, iSchedulerInfo, iAnnotationInfo, iGraphIdx, iGraphDumpOptions, iGraphInfo)
+    case(_,_,_,_,_,_,_,_,_,_,_)
       equation
         (graphInfo,(_,nameAttIdx)) = GraphML.addAttribute("", "Name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), iGraphInfo);
         (graphInfo,(_,opCountAttIdx)) = GraphML.addAttribute("-1", "Operations", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graphInfo);
@@ -2591,13 +2602,14 @@ algorithm
         (graphInfo,(_,commVarsBoolAttIdx)) = GraphML.addAttribute("-1", "CommVarsBool", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graphInfo);
         (graphInfo,(_,annotAttIdx)) = GraphML.addAttribute("annotation", "annotations", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
         (graphInfo,(_,critPathAttIdx)) = GraphML.addAttribute("", "CriticalPath", GraphML.TYPE_STRING(), GraphML.TARGET_GRAPH(), graphInfo);
-        graphInfo = GraphML.addGraphAttributeValue((critPathAttIdx, criticalPathInfo), iGraphIdx, graphInfo);
+        graphInfo = GraphML.addGraphAttributeValue((critPathAttIdx, iCriticalPathInfo), iGraphIdx, graphInfo);
         nodeIdc = List.intRange(arrayLength(iGraph));
-        ((graphInfo,_)) = List.fold4(nodeIdc, addNodeToGraphML, (iGraph, iGraphData),
+        ((graphInfo,_)) = List.fold5(nodeIdc, addNodeToGraphML, (iGraph, iGraphData),
                                      (nameAttIdx,opCountAttIdx,calcTimeAttIdx,taskIdAttIdx,yCoordAttIdx,commCostAttIdx,commVarsAttIdx,
                                       commVarsIntAttIdx,commVarsFloatAttIdx,commVarsBoolAttIdx,simCodeEqAttIdx,threadIdAttIdx,taskNumberAttIdx,annotAttIdx),
-                                     sccSimEqMapping,
-                                     (iCriticalPath,iCriticalPathWoC,schedulerInfo, annotationInfo),
+                                     iSccSimEqMapping,
+                                     (iCriticalPath,iCriticalPathWoC,iSchedulerInfo, iAnnotationInfo),
+                                     iGraphDumpOptions,
                                      (graphInfo,iGraphIdx));
       then graphInfo;
   end match;
@@ -2611,10 +2623,11 @@ protected function addNodeToGraphML "author: marcusw, waurich
   //Attribute index for <nameAttIdx,opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx, annotationAttIdx>
   input array<list<Integer>> sccSimEqMapping;
   input tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,array<tuple<Integer,Integer,Real>>,array<String>> iSchedulerInfoCritPath; //<criticalPath,criticalPathWoC,schedulerInfo,annotationInfo>
+  input GraphDumpOptions iGraphDumpOptions; //Options to specify the output
   input tuple<GraphML.GraphInfo,Integer> iGraph;
   output tuple<GraphML.GraphInfo,Integer> oGraph; //<GraphInfo, GraphIdx>
 algorithm
-  oGraph := matchcontinue(nodeIdx,tGraphDataTuple,attIdc,sccSimEqMapping,iSchedulerInfoCritPath,iGraph)
+  oGraph := matchcontinue(nodeIdx,tGraphDataTuple,attIdc,sccSimEqMapping,iSchedulerInfoCritPath,iGraphDumpOptions,iGraph)
     local
       TaskGraph tGraphIn;
       TaskGraphMeta tGraphDataIn;
@@ -2647,7 +2660,9 @@ algorithm
       list<GraphML.NodeLabel> nodeLabels;
       array<tuple<Integer,Integer,Real>> schedulerInfo;
       list<tuple<Integer,Integer>> criticalPath, criticalPathWoC;
-    case(_,(tGraphIn,tGraphDataIn),_,_,(criticalPath,criticalPathWoC,schedulerInfo,annotationInfo),(tmpGraph,graphIdx))
+      Boolean visualizeTaskStartAndFinishTime;
+      Boolean visualizeTaskCalcTime;
+    case(_,(tGraphIn,tGraphDataIn),_,_,(criticalPath,criticalPathWoC,schedulerInfo,annotationInfo),GRAPHDUMPOPTIONS(visualizeTaskStartAndFinishTime=visualizeTaskStartAndFinishTime,visualizeTaskCalcTime=visualizeTaskCalcTime),(tmpGraph,graphIdx))
       equation
         false = nodeIdx == 0 or nodeIdx == -1;
         (nameAttIdx, opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx,annotationAttIdx) = attIdc;
@@ -2680,7 +2695,10 @@ algorithm
         calcTimeString = System.snprintff("%.0f", 25, calcTime);
         taskFinishTimeString = System.snprintff("%.0f", 25, taskFinishTime);
         taskStartTimeString = System.snprintff("%.0f", 25, taskStartTime);
-        nodeLabels = {GraphML.NODELABEL_INTERNAL(componentsString, NONE(), GraphML.FONTPLAIN()), GraphML.NODELABEL_CORNER(calcTimeString, SOME(GraphML.COLOR_YELLOW), GraphML.FONTBOLD(), "se"), GraphML.NODELABEL_CORNER(taskStartTimeString, SOME(GraphML.COLOR_CYAN), GraphML.FONTBOLD(), "nw"), GraphML.NODELABEL_CORNER(taskFinishTimeString, SOME(GraphML.COLOR_PINK), GraphML.FONTBOLD(), "sw")};
+        //Setup nodeLabels
+        nodeLabels = {GraphML.NODELABEL_INTERNAL(componentsString, NONE(), GraphML.FONTPLAIN())};
+        nodeLabels = Util.if_(visualizeTaskCalcTime, GraphML.NODELABEL_CORNER(calcTimeString, SOME(GraphML.COLOR_YELLOW), GraphML.FONTBOLD(), "se")::nodeLabels, nodeLabels);
+        nodeLabels = Util.if_(visualizeTaskStartAndFinishTime, listAppend(nodeLabels, {GraphML.NODELABEL_CORNER(taskStartTimeString, SOME(GraphML.COLOR_CYAN), GraphML.FONTBOLD(), "nw"), GraphML.NODELABEL_CORNER(taskFinishTimeString, SOME(GraphML.COLOR_PINK), GraphML.FONTBOLD(), "sw")}), nodeLabels);
         //print("Node " +& intString(nodeIdx) +& " has child nodes " +& stringDelimitList(List.map(childNodes,intString),", ") +& "\n");
         (tmpGraph,(_,_)) = GraphML.addNode("Node" +& intString(nodeIdx),
                                               GraphML.COLOR_ORANGE,
@@ -2690,10 +2708,10 @@ algorithm
                                               {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)),((yCoordAttIdx,yCoordString)),((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString)),((annotationAttIdx,annotationString))},
                                               graphIdx,
                                               tmpGraph);
-        tmpGraph = List.fold4(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, (commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx), (criticalPath,criticalPathWoC), tmpGraph);
+        tmpGraph = List.fold5(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, (commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx), (criticalPath,criticalPathWoC), iGraphDumpOptions, tmpGraph);
       then
         ((tmpGraph,graphIdx));
-    case(_,(tGraphIn,tGraphDataIn),_,_,(criticalPath,criticalPathWoC,schedulerInfo,annotationInfo),(tmpGraph,graphIdx))
+    case(_,(tGraphIn,tGraphDataIn),_,_,(criticalPath,criticalPathWoC,schedulerInfo,annotationInfo),GRAPHDUMPOPTIONS(visualizeTaskStartAndFinishTime=visualizeTaskStartAndFinishTime,visualizeTaskCalcTime=visualizeTaskCalcTime),(tmpGraph,graphIdx))
       equation
         // for a node that consists of contracted nodes
         false = nodeIdx == 0 or nodeIdx == -1;
@@ -2725,7 +2743,9 @@ algorithm
         calcTimeString = System.snprintff("%.0f", 25, calcTime);
         taskFinishTimeString = System.snprintff("%.0f", 25, taskFinishTime);
         taskStartTimeString = System.snprintff("%.0f", 25, taskStartTime);
-        nodeLabels = {GraphML.NODELABEL_INTERNAL(componentsString, NONE(), GraphML.FONTPLAIN()), GraphML.NODELABEL_CORNER(calcTimeString, SOME(GraphML.COLOR_YELLOW), GraphML.FONTBOLD(), "se"), GraphML.NODELABEL_CORNER(taskStartTimeString, SOME(GraphML.COLOR_CYAN), GraphML.FONTBOLD(), "nw"), GraphML.NODELABEL_CORNER(taskFinishTimeString, SOME(GraphML.COLOR_PINK), GraphML.FONTBOLD(), "sw")};
+        nodeLabels = {GraphML.NODELABEL_INTERNAL(componentsString, NONE(), GraphML.FONTPLAIN())};
+        nodeLabels = Util.if_(visualizeTaskCalcTime, GraphML.NODELABEL_CORNER(calcTimeString, SOME(GraphML.COLOR_YELLOW), GraphML.FONTBOLD(), "se")::nodeLabels, nodeLabels);
+        nodeLabels = Util.if_(visualizeTaskStartAndFinishTime, listAppend(nodeLabels, {GraphML.NODELABEL_CORNER(taskStartTimeString, SOME(GraphML.COLOR_CYAN), GraphML.FONTBOLD(), "nw"), GraphML.NODELABEL_CORNER(taskFinishTimeString, SOME(GraphML.COLOR_PINK), GraphML.FONTBOLD(), "sw")}), nodeLabels);
         //print("Node " +& intString(nodeIdx) +& " has child nodes " +& stringDelimitList(List.map(childNodes,intString),", ") +& "\n");
         (tmpGraph,(_,_)) = GraphML.addNode("Node" +& intString(nodeIdx),
                                       GraphML.COLOR_ORANGE,
@@ -2735,12 +2755,11 @@ algorithm
                                       {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((yCoordAttIdx,yCoordString)),((taskIdAttIdx,componentsString)), ((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString)),((annotationAttIdx,annotationString))},
                                       graphIdx,
                                       tmpGraph);
-        tmpGraph = List.fold4(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, (commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx), (criticalPath,criticalPathWoC), tmpGraph);
+        tmpGraph = List.fold5(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, (commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx), (criticalPath,criticalPathWoC), iGraphDumpOptions, tmpGraph);
       then
         ((tmpGraph,graphIdx));
     else
       equation
-        //true = nodeIdx == 0 or nodeIdx == -1;
         print("addSccToGraphML failed \n");
       then
           fail();
@@ -2769,6 +2788,7 @@ protected function addDepToGraph "author: marcusw
   input TaskGraphMeta tGraphDataIn;
   input tuple<Integer,Integer, Integer, Integer, Integer> iCommAttIdc; //<%(commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx)%>
   input tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>> iCriticalPathEdges; //<%criticalPathEdges, criticalPathEdgesWoC%>
+  input GraphDumpOptions iGraphDumpOptions; //Options to specify the output
   input GraphML.GraphInfo iGraph;
   output GraphML.GraphInfo oGraph;
 protected
@@ -2783,9 +2803,12 @@ protected
   GraphML.GraphInfo tmpGraph;
   list<tuple<Integer,Integer>> criticalPathEdges, criticalPathEdgesWoC;
   String edgeColor;
+  Boolean visualizeCriticalPath;
+  Boolean visualizeCommTime;
+  list<GraphML.EdgeLabel> edgeLabels;
 algorithm
-  oGraph := matchcontinue(childIdx, parentIdx, tGraphDataIn, iCommAttIdc, iCriticalPathEdges, iGraph)
-    case(_,_,TASKGRAPHMETA(commCosts=commCosts, nodeMark=nodeMark, inComps=inComps),(commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx),(criticalPathEdges, criticalPathEdgesWoC),_)
+  oGraph := matchcontinue(childIdx, parentIdx, tGraphDataIn, iCommAttIdc, iCriticalPathEdges, iGraphDumpOptions, iGraph)
+    case(_,_,TASKGRAPHMETA(commCosts=commCosts, nodeMark=nodeMark, inComps=inComps),(commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx),(criticalPathEdges, criticalPathEdgesWoC),GRAPHDUMPOPTIONS(visualizeCriticalPath=visualizeCriticalPath,visualizeCommTime=visualizeCommTime),_)
       equation
         true = List.exist1(criticalPathEdges, compareIntTuple2, (parentIdx, childIdx));
         //Edge is part of critical path
@@ -2795,19 +2818,21 @@ algorithm
         numOfCommVarsFloatString = intString(numOfCommVarsFloat);
         numOfCommVarsBoolString = intString(numOfCommVarsBool);
         commCostString = System.snprintff("%.0f", 25, commCost);
-        edgeColor = Util.if_(List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx)), GraphML.COLOR_GRAY, GraphML.COLOR_BLACK);
+        visualizeCriticalPath = boolAnd(visualizeCriticalPath,List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx))); 
+        edgeColor = Util.if_(visualizeCriticalPath, GraphML.COLOR_GRAY, GraphML.COLOR_BLACK);
+        edgeLabels = Util.if_(visualizeCommTime, {GraphML.EDGELABEL(commCostString, SOME(edgeColor), GraphML.FONTSIZE_STANDARD)}, {});
         (tmpGraph,(_,_)) = GraphML.addEdge("Edge" +& intString(parentIdx) +& intString(childIdx),
                                               "Node" +& intString(childIdx), "Node" +& intString(parentIdx),
                                               edgeColor,
                                               GraphML.LINE(),
                                               GraphML.LINEWIDTH_BOLD,
                                               false,
-                                              {GraphML.EDGELABEL(commCostString, SOME(edgeColor), GraphML.FONTSIZE_STANDARD)},
+                                              edgeLabels,
                                               (GraphML.ARROWNONE(),GraphML.ARROWSTANDART()),
                                               {(commCostAttIdx, commCostString),(commVarsAttIdx, numOfCommVarsString),(commVarsAttIntIdx,numOfCommVarsIntString),(commVarsAttFloatIdx,numOfCommVarsFloatString),(commVarsAttBoolIdx,numOfCommVarsBoolString)},
                                               iGraph);
       then tmpGraph;
-    case(_,_,TASKGRAPHMETA(commCosts=commCosts, nodeMark=nodeMark, inComps=inComps),(commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx),(criticalPathEdges, criticalPathEdgesWoC),_)
+    case(_,_,TASKGRAPHMETA(commCosts=commCosts, nodeMark=nodeMark, inComps=inComps),(commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx),(criticalPathEdges, criticalPathEdgesWoC),GRAPHDUMPOPTIONS(visualizeCriticalPath=visualizeCriticalPath,visualizeCommTime=visualizeCommTime),_)
       equation
         //Edge is not part of critical path
         COMMUNICATION(numberOfVars=numOfCommVars,numberOfIntegers=numOfCommVarsInt,numberOfFloats=numOfCommVarsFloat,numberOfBooleans=numOfCommVarsBool,requiredTime=commCost) = getCommCostBetweenNodes(parentIdx,childIdx,tGraphDataIn);
@@ -2816,7 +2841,9 @@ algorithm
         numOfCommVarsFloatString = intString(numOfCommVarsFloat);
         numOfCommVarsBoolString = intString(numOfCommVarsBool);
         commCostString = System.snprintff("%.0f", 25, commCost);
-        edgeColor = Util.if_(List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx)), GraphML.COLOR_GRAY, GraphML.COLOR_BLACK);
+        visualizeCriticalPath = boolAnd(visualizeCriticalPath,List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx))); 
+        edgeColor = Util.if_(visualizeCriticalPath, GraphML.COLOR_GRAY, GraphML.COLOR_BLACK);
+        edgeLabels = Util.if_(visualizeCommTime, {GraphML.EDGELABEL(commCostString, SOME(edgeColor), GraphML.FONTSIZE_STANDARD)}, {});
         (tmpGraph,(_,_)) = GraphML.addEdge( "Edge" +& intString(parentIdx) +& intString(childIdx),
                                             "Node" +& intString(childIdx),
                                             "Node" +& intString(parentIdx),
@@ -2824,7 +2851,7 @@ algorithm
                                             GraphML.LINE(),
                                             GraphML.LINEWIDTH_STANDARD,
                                             false,
-                                            {GraphML.EDGELABEL(commCostString, SOME(edgeColor), GraphML.FONTSIZE_STANDARD)},
+                                            edgeLabels,
                                             (GraphML.ARROWNONE(),GraphML.ARROWSTANDART()),
                                             {(commCostAttIdx, commCostString),(commVarsAttIdx, numOfCommVarsString),(commVarsAttIntIdx,numOfCommVarsIntString),(commVarsAttFloatIdx,numOfCommVarsFloatString),(commVarsAttBoolIdx,numOfCommVarsBoolString)},
                                             iGraph);

@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 
 project(${ExtensionUtilitiesName})
 
-add_library(${ExtensionUtilitiesName} STATIC measure_time.cpp)
+add_library(${ExtensionUtilitiesName} SHARED measure_time.cpp)
 target_link_libraries (${ExtensionUtilitiesName} ${Boost_LIBRARIES})
 
 if (UNIX)

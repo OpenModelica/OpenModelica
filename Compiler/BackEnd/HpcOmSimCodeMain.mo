@@ -222,7 +222,7 @@ algorithm
 
       fileName = ("taskGraph"+&filenamePrefix+&".graphml");
       schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1,-1.0));
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
       SimCodeUtil.execStat("hpcom setup");
 
 
@@ -241,7 +241,7 @@ algorithm
       daeSccMapping = listArray(List.map(SimCodeUtil.getRemovedEquationSimEqSysIdxes(simCode),List.create));
       daeSccMapping = Util.arrayAppend(sccSimEqMapping,daeSccMapping);
       schedulerInfo = arrayCreate(arrayLength(taskGraphDAE), (-1,-1,-1.0));
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDAE, taskGraphDataDAE,inBackendDAE, fileName, "", {}, {}, daeSccMapping ,schedulerInfo);
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDAE, taskGraphDataDAE,inBackendDAE, fileName, "", {}, {}, daeSccMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
       SimCodeUtil.execStat("hpcom create and dump DAE TaskGraph");
 
       //print("DAE\n");
@@ -257,7 +257,7 @@ algorithm
 
       fileName = ("taskGraph"+&filenamePrefix+&"_event.graphml");
       schedulerInfo = arrayCreate(arrayLength(taskGraphEvent), (-1,-1,-1.0));
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphEvent, taskGraphDataEvent,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphEvent, taskGraphDataEvent,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
       SimCodeUtil.execStat("hpcom create and dump event TaskGraph");
 
       HpcOmSimCode.TASKDEPSCHEDULE(tasks=eventSystemTasks) = HpcOmScheduler.createTaskDepSchedule(taskGraphEvent, taskGraphDataEvent, sccSimEqMapping);
@@ -290,7 +290,7 @@ algorithm
       fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");
       schedulerInfo = arrayCreate(arrayLength(taskGraphOde), (-1,-1,-1.0));
       SimCodeUtil.execStat("hpcom assign levels / get crit. path");
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde,inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde,inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,false,true,true));
       SimCodeUtil.execStat("hpcom dump ODE TaskGraph");
 
 
@@ -310,7 +310,7 @@ algorithm
       //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraphMeta,taskGraphDataSimplified);
 
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_merged.graphml");
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphSimplified, taskGraphDataSimplified, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphSimplified, taskGraphDataSimplified, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,false,true,true));
       SimCodeUtil.execStat("hpcom dump simplified TaskGraph");
 
 
@@ -331,7 +331,7 @@ algorithm
       SimCodeUtil.execStat("hpcom create schedule");
 
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphScheduled, taskGraphDataScheduled, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphScheduled, taskGraphDataScheduled, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,true,true,true));
       //HpcOmScheduler.printSchedule(schedule);
 
       SimCodeUtil.execStat("hpcom dump schedule TaskGraph");
@@ -382,7 +382,7 @@ algorithm
         fileName = ("taskGraph"+&iFileNamePrefix+&"_init.graphml");
         schedulerInfo = arrayCreate(arrayLength(tmpTaskGraph), (-1,-1,-1.0));
         sccSimEqMapping = arrayCreate(arrayLength(tmpTaskGraph), {});
-        HpcOmTaskGraph.dumpAsGraphMLSccLevel(tmpTaskGraph, tmpTaskGraphMeta, initDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
+        HpcOmTaskGraph.dumpAsGraphMLSccLevel(tmpTaskGraph, tmpTaskGraphMeta, initDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
       then ();
     else
       then ();
