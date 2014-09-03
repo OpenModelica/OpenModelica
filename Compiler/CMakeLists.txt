@@ -5,7 +5,7 @@ SET(SRCMO Absyn.mo AbsynDep.mo Algorithm.mo Builtin.mo
 		  ClassLoader.mo Connect.mo ExpandableConnectors.mo
 		  ConnectionGraph.mo Convert.mo DAE.mo DAELow.mo
 		  DAEUtil.mo Differentiate.mo Debug.mo	DFA.mo Dump.mo
-		  DumpGraphviz.mo DynamicOptimization Constants.mo Env.mo Error.mo
+		  DumpGraphviz.mo DynamicOptimization.mo Constants.mo Env.mo Error.mo
 		  Exp.mo SCode.mo SCodeUtil.mo Graphviz.mo HashTable.mo
 		  HashTable2.mo HashTable3.mo HashTable4.mo HashTable5.mo
 		  HashTable6.mo HashTableCG.mo HashTableStringToPath.mo
