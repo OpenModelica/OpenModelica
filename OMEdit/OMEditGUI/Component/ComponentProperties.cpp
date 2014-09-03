@@ -180,6 +180,15 @@ QString Parameter::getUnitFromDerivedClass(OMCProxy *pOMCProxy, QString classNam
 }
 
 /*!
+  Sets the input field of the parameter enable/disable.
+  \param enable
+  */
+void Parameter::setEnabled(bool enable)
+{
+  mpValueTextBox->setEnabled(enable);
+}
+
+/*!
   \class ParametersScrollArea
   \brief Creates a scroll area for each tab of the component parameters dialog.
   */
@@ -405,7 +414,7 @@ void ComponentParameters::createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString c
     /*
       I didn't find anything useful in the specification regarding this issue.
       The parameters dialog is only suppose to show the parameters. However, Dymola also shows the variables in the parameters window
-      which have the dialog annotation with them. So, if the variable has dialog or it is a parameter then show it.
+      which have the dialog annotation with them. So, if the variable has dialog annotation or it is a parameter then show it.
       */
     QString tab = "";
     QString groupBox = "";
@@ -487,6 +496,7 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
       continue;
     QString tab = QString("General");
     QString groupBox = QString("Parameters");
+    bool enable = true;
     QStringList dialogAnnotation = StringHandler::getDialogAnnotation(componentAnnotations[i]);
     if ((pComponentInfo->getVariablity().compare("parameter") == 0) || (dialogAnnotation.size() > 0) || !mParametersOnly)
     {
@@ -496,6 +506,8 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
         tab = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(0));
         // get the group value
         groupBox = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(1));
+        // get the enable value
+        enable = dialogAnnotation.at(2).contains("true");
       }
       ParametersScrollArea *pParametersScrollArea;
       pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(tab)));
@@ -511,6 +523,7 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
           /* create a parameter */
           Parameter *pParameter = new Parameter(pComponentInfo, pOMCProxy, className, componentBaseClassName, componentClassName,
                                                 componentName, mParametersOnly, inheritedComponent, inheritedClassName);
+          pParameter->setEnabled(enable);
           /*
             Show a line under the inherited parameter and display the name of the
             */

@@ -51,6 +51,7 @@ public:
   Label* getUnitLabel();
   Label* getCommentLabel();
   QString getUnitFromDerivedClass(OMCProxy *pOMCProxy, QString className);
+  void setEnabled(bool enable);
 private:
   Label *mpNameLabel;
   QLineEdit *mpValueTextBox;
