@@ -2720,7 +2720,7 @@ void NotebookWindow::closeEvent( QCloseEvent *event )
 
       int result = QMessageBox::question( 0, tr("Close OMC"),
                                           "OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)",
-                                          QMessageBox::Yes | QMessageBox::Default,
+                                          QMessageBox::Ok | QMessageBox::Default,
                                           QMessageBox::No, QMessageBox::Cancel );
 
       if( result == QMessageBox::Yes )
