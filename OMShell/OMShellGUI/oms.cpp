@@ -816,12 +816,12 @@ bool OMS::exit()
       msgBox->setWindowTitle(tr("Close OMC"));
       msgBox->setIcon(QMessageBox::Question);
       msgBox->setText("OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)");
-      msgBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
-      msgBox->setDefaultButton(QMessageBox::Yes);
+      msgBox->setStandardButtons(QMessageBox::Ok | QMessageBox::No | QMessageBox::Cancel);
+      msgBox->setDefaultButton(QMessageBox::Ok);
 
       int result = msgBox->exec();
 
-      if( result == QMessageBox::Yes )
+      if( result == QMessageBox::Ok )
       {
         stopServer();
         return true;
