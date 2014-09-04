@@ -84,6 +84,111 @@ void cat_array (int k,BaseArray<T>& a, vector<BaseArray<T>* >& x )
 
 
 }
+/*
+creates an array (d) for passed multi array  shape (sp) and initialized it with elements from passed source array (s)
+s source array
+d destination array
+sp (shape,indices) of source array
+*/
+template < typename T >
+void create_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d)
+{
+     //alocate target array
+   vector<size_t> shape;
+     vector<size_t>::const_iterator iter;
+     for(iter = (sp.first).begin();iter!=(sp.first).end();++iter)
+     {
+          if(*iter!=0)
+               shape.push_back(*iter);
+
+     }
+     d.setDims(shape);
+   
+     //Check if the dimension of passed indices match the dimension of target array
+   if(sp.second.size()!=s.getNumDims())
+     throw std::invalid_argument("Erro in create array from shape, number of dimensions does not match");
+
+   T* data = new T[d.getNumElems()];
+
+   idx_type::const_iterator spec_iter;
+   //calc number of indeces
+   size_t n =1;
+   for(spec_iter = sp.second.begin();spec_iter!=sp.second.end();++spec_iter)
+     {
+
+        n*=spec_iter->size();
+   }
+   size_t k =0;
+     size_t index=0;
+   vector<size_t>::const_iterator indeces_iter;
+
+   //initialize target array with elements of source array using passed indices
+   vector<size_t> idx;
+   for(int i=0;i<n;i++)
+   {
+    spec_iter = sp.second.begin();
+        for(int dim=0;dim<s.getNumDims();dim++)
+    {
+      size_t idx1 = getNextIndex(*spec_iter,i);
+      idx.push_back(idx1);
+      spec_iter++;
+    }
+    if(index>(d.getNumElems()-1))
+    {
+      throw std::invalid_argument("Erro in create array from shape, number of dimensions does not match");
+    }
+    data[index] = s(idx);
+    idx.clear();
+    index++;
+   }
+   //assign elemets to target array
+   d.assign( data );
+     delete [] data;
+}
+
+
+ //template < typename T , size_t NumDims, size_t NumDims2 >
+template < typename T >
+void promote_array(unsigned int n,BaseArray<T>& s,BaseArray<T>& d)
+{
+   vector<size_t> ex = s.getDims();
+   for(int i=0;i<n;i++)
+    ex.push_back(1);
+   d.setDims(ex);
+   T* data = s.getData();
+   d.assign( data );
+}
+
+
+template < typename T >
+void transpose_array (BaseArray< T >& a, BaseArray< T >&  x )
+
+{
+    if(a.getNumDims()!=2 || x.getNumDims()!=2)
+       throw std::invalid_argument("Erro in transpose_array, number of dimensions does not match");
+    
+    vector<size_t> ex = x.getDims();
+    std::swap( ex[0], ex[1] );
+    a.setDims(ex);
+    a.assign(x);
+
+}
+
+/*
+Explicit template instantiation for double,int,bool
+*/
 template  void cat_array<double> (int k,BaseArray<double>& a, vector<BaseArray<double>* >& x );
 template  void cat_array<int> (int k,BaseArray<int>& a, vector<BaseArray<int>* >& x );
 template  void cat_array<bool> (int k,BaseArray<bool>& a, vector<BaseArray<bool>* >& x );
+
+template void transpose_array (BaseArray< double >& a, BaseArray< double >&  x );
+template void transpose_array (BaseArray< int >& a, BaseArray< int >&  x );
+template void transpose_array (BaseArray< bool >& a, BaseArray< bool >&  x );
+
+template void promote_array(unsigned int n,BaseArray<double>& s,BaseArray<double>& d);
+template void promote_array(unsigned int n,BaseArray<int>& s,BaseArray<int>& d);
+template void promote_array(unsigned int n,BaseArray<bool>& s,BaseArray<bool>& d);
+
+template void create_array_from_shape(const spec_type& sp,BaseArray<double>& s,BaseArray<double>& d);
+template void create_array_from_shape(const spec_type& sp,BaseArray<int>& s,BaseArray<int>& d);
+template void create_array_from_shape(const spec_type& sp,BaseArray<bool>& s,BaseArray<bool>& d);

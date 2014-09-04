@@ -2987,7 +2987,7 @@ template varDeclForVarInit(Variable var,String varName, list<DAE.Exp> instDims, 
   let addRoot =  match type case "modelica_metatype" then ' mmc_GC_add_root(&<%varName%>, mmc_GC_local_state, "<%varName%>");' else ''
   let testinstDimsInit = (instDims |> exp => testDaeDimensionExp(exp);separator="")
   let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits , &varDecls,simCode, useFlatArrayNotation);separator=",")
-  let arrayexpression1 = (if instDims then 'StatArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>,<%instDimsInit%>> <%varName%>;<%\n%>'
+  let arrayexpression1 = (if instDims then 'StatArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>,<%instDimsInit%>> <%varName%>;<%\n%>/*testassign2*/'
   else '<%type%> <%varName%><%initVar%>;<%addRoot%><%\n%>')
   let arrayexpression2 = (if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>> <%varName%>;<%\n%>'
   else '<%type%> <%varName%><%initVar%>;<%addRoot%><%\n%>')
@@ -3282,7 +3282,7 @@ case var as VARIABLE(__) then
      match testinstDimsInit
      case "" then
       let instDimsInit = (instDims |> exp => daeDimensionExp(exp);separator=",")
-     if instDims then 'StatArrayDim<%listLength(instDims)%>< <%expTypeShort(var.ty)%>, <%instDimsInit%>> ' else expTypeFlag(var.ty, 6)
+     if instDims then 'StatArrayDim<%listLength(instDims)%>< <%expTypeShort(var.ty)%>, <%instDimsInit%>> /*testassign3*/ ' else expTypeFlag(var.ty, 6)
      else
      if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>> ' else expTypeFlag(var.ty, 6)
 
@@ -5167,7 +5167,7 @@ match simVar
       >>*/
     //
       <<
-      StatArrayDim<%dims%><<%variableType(type_)%>, <%arraysize%> > <%arrayName%>;
+      StatArrayDim<%dims%><<%variableType(type_)%>, <%arraysize%> > /*testassign4*/<%arrayName%>;
       >>
     case SIMVAR(numArrayElement=_::_) then
       let& dims = buffer "" /*BUFD*/
@@ -5228,7 +5228,7 @@ match simVar
     let typeString = variableType(type_)
     let arraysize = arrayextentDims(name,v.numArrayElement)
     <<
-    StatArrayDim<%dims%><<%typeString%>,<%arraysize%>> <%arrayName%>;
+    StatArrayDim<%dims%><<%typeString%>,<%arraysize%>> /*testassign5*/ <%arrayName%>;
     >>
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       let &dims = buffer "" /*BUFD*/
@@ -5243,7 +5243,7 @@ match simVar
       >>
     */
       <<
-      StatArrayDim<%dims%><<%variableType(type_)%>, <%array_dimensions%>> <%arrayName%>;
+      StatArrayDim<%dims%><<%variableType(type_)%>, <%array_dimensions%>> /*testassign6*/<%arrayName%>;
       >>
    /*special case for varibales that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
@@ -6870,10 +6870,11 @@ template expTypeFlag(DAE.Type ty, Integer flag)
     case T_ARRAY(dims=dims) then 'multi_array_ref<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
     */
   case T_ARRAY(dims=dims) then
-  let testbasearray = dims |> dim =>  '<%testdimension(dim)%>' ;separator=''
-  match testbasearray
-  case "" then'StatArrayDim<%listLength(dims)%><<%expTypeShort(ty)%>,<%(dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")%>>&'
-  else 'DynArrayDim<%listLength(dims)%><<%expTypeShort(ty)%>>'
+  //let testbasearray = dims |> dim =>  '<%testdimension(dim)%>' ;separator=''
+  let dimstr = checkDimension(dims)
+  match dimstr
+  case "" then 'DynArrayDim<%listLength(dims)%><<%expTypeShort(ty)%>>'
+  else 'StatArrayDim<%listLength(dims)%><<%expTypeShort(ty)%>,<%dimstr%>>&'
   else expTypeFlag(ty, 2)
     end match
 
@@ -6886,14 +6887,15 @@ template expTypeFlag(DAE.Type ty, Integer flag)
     //case T_ARRAY(dims=dims) then 'StatArrayDim<%listLength(dims)%><<%expTypeShort(ty)%>,<%(dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")%>>' //'multi_array<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
     //let dimstr = dims |> dim => match dim   case DIM_INTEGER(__) then '<%integer%>'  else 'error index';separator=','
 
-  case T_ARRAY(dims=dims) then
-   let testbasearray = dims |> dim =>  '<%testdimension(dim)%>' ;separator=''
-     let dimstr = dims |> dim =>  '<%dimension(dim)%>' ;separator=','
-   match testbasearray
-   case "" then 'StatArrayDim<%listLength(dims)%><<%expTypeShort(ty)%>,<%dimstr%>>'
+  case T_ARRAY(dims=dims,ty=type) then
+   //let testbasearray = dims |> dim =>  '<%testdimension(dim)%>' ;separator=''
+   //let dimstr = dims |> dim =>  '<%dimension(dim)%>' ;separator=','
+   let dimstr = checkDimension(dims)
+   match dimstr
+   case "" then 'DynArrayDim<%listLength(dims)%><<%expTypeShort(type)%>>/*testassign2*/'
    //case
-   else 'DynArrayDim<%listLength(dims)%><<%expTypeShort(ty)%>>'
-   end match
+   else   'StatArrayDim<%listLength(dims)%><<%expTypeShort(type)%>,<%dimstr%>>/*testassign*/'
+    end match
    else expTypeFlag(ty, 2)
     end match
 
@@ -6977,6 +6979,14 @@ template dimension(Dimension d)
   case DAE.DIM_UNKNOWN(__) then '-1'//error(sourceInfo(),"Unknown dimensions may not be part of generated code. This is most likely an error on the part of OpenModelica. Please submit a detailed bug-report.")
   else error(sourceInfo(), 'dimension: INVALID_DIMENSION')
 end dimension;
+
+template checkDimension(Dimensions dims)
+::=
+  dimensionsList(dims) |> dim as Integer   =>  '<%dim%>';separator=","
+ 
+end checkDimension;
+
+
 
 template testdimension(Dimension d)
 ::=
@@ -8359,10 +8369,9 @@ template daeExpRange(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varD
     '
     '<%tmp%>'
   */
-  let &preExp += 'int num_elems =(<%stop_exp%>-<%start_exp%>)/<%step_exp%>+1;
-    <%tmp%>.setDims(num_elems);
-    /*<%tmp%>.reindex(1);*/
-    for(int i= 1;i<=num_elems;i++)
+  let &preExp += 'int <%tmp%>_num_elems =(<%stop_exp%>-<%start_exp%>)/<%step_exp%>+1;
+    <%tmp%>.setDims(<%tmp%>_num_elems);
+     for(int i= 1;i<=<%tmp%>_num_elems;i++)
         <%tmp%>(i) =<%start_exp%>+(i-1)*<%step_exp%>;
     '
     '<%tmp%>'
@@ -9265,7 +9274,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let tvar = tempDecl(tmp_type_str, &varDecls /*BUFD*/)
     let a0str = daeExp(a0, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
     let arrays_exp = (arrays |> array =>
-    '<%tvar%>_list.push_back(&<%daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)%>);' ;separator="\n")
+    '<%tvar%>_list.push_back(&<%daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)%>);/*testpush*/' ;separator="\n")
     let &preExp +=
     'vector<BaseArray<<%ty_str%>>* > <%tvar%>_list;
      <%tvar%>_list.push_back(&<%a0str%>);
@@ -9274,16 +9283,16 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     '
     '<%tvar%>'
 
-  case CALL(path=IDENT(name="promote"), expLst={A, n}) then
-  match A
-    case component as CREF(componentRef=cr, ty=ty) then
+  case CALL(path=IDENT(name="promote"), expLst={A, n}, attr=attr as CALL_ATTR(ty=ty)) then
+  //match A
+    //case component as CREF(componentRef=cr, ty=ty) then
     let var1 = daeExp(A, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     let var2 = daeExp(n, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     //let temp = tempDeclAssign('const size_t*', &varDecls /*BUFD*/,'<%var1%>.shape()')
     //let temp_ex = tempDecl('std::vector<size_t>', &varDecls /*BUFD*/)
-    let arrayType = expTypeArray(ty)
-    let dimstr = listLength(crefSubs(cr))
-    let tmp = tempDecl('multi_array<<%arrayType%>,<%dimstr%>>', &varDecls /*BUFD*/)
+    let arrayType = /*expTypeArray(ty)*/expTypeFlag(ty,6) +"/*testtype*/"
+    //let dimstr = listLength(crefSubs(cr))
+    let tmp = tempDecl('<%arrayType%>', &varDecls /*BUFD*/)
 
    // let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     //let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
@@ -9291,8 +9300,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
 
 
     '<%tmp%> '
-   else
-   'promote array error'
+   //else
+   //'promote array error'
   case CALL(path=IDENT(name="transpose"), expLst={A}) then
     let var1 = daeExp(A, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     let type_str = expTypeFromExpShort(A)
@@ -9597,13 +9606,14 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   case AND(__) then '(<%e1%> && <%e2%>)'
   case OR(__)  then '(<%e1%> || <%e2%>)'
   case MUL_ARRAY_SCALAR(ty=T_ARRAY(dims=dims)) then
-    let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
+    //let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
+    let dimensions = checkDimension(dims)
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'multi_array<int,<%listLength(dims)%>>'
                         case T_ARRAY(ty=T_ENUMERATION(__)) then 'multi_array<int,<%listLength(dims)%>>'
             //previous multi_array multi_array<double,<%listLength(dims)%>>
                         else match dimensions
                 case "" then 'DynArrayDim<%listLength(dims)%><double>'
-                else 'StatArrayDim<%listLength(dims)%><double, <%dimensions%> >'
+                else 'StatArrayDim<%listLength(dims)%><double, <%dimensions%> >/*testassign7*/'
 
 
 
@@ -9617,12 +9627,13 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
     let &preExp +='multiply_array<<%type1%>>(<%e1%>, <%e2%>, <%var1%>);<%\n%>'
     '<%var1%>'
   case MUL_MATRIX_PRODUCT(ty=T_ARRAY(dims=dims)) then
-    let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
+    //let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
+     let dimstr = checkDimension(dims)
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'multi_array<int,<%listLength(dims)%>>'
                         case T_ARRAY(ty=T_ENUMERATION(__)) then 'multi_array<int,<%listLength(dims)%>>'
-                        else match dimensions
+                        else match dimstr
                 case "" then 'DynArrayDim<%listLength(dims)%><double>'
-                else 'StatArrayDim<%listLength(dims)%><double, <%dimensions%> >'
+                else 'StatArrayDim<%listLength(dims)%><double, <%dimstr%> >/*testassign8*/'
     let type1 = match ty case T_ARRAY(ty=T_INTEGER(__)) then "int"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "int"
                         else "double"
@@ -9632,25 +9643,35 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
     let &preExp +='multiply_array<<%type1%>>(<%e1%>, <%e2%>, <%var1%>);//testhier1<%\n%>'
     '<%var1%>'
   case DIV_ARRAY_SCALAR(ty=T_ARRAY(dims=dims)) then
-  let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
-  let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'int'
-                        case T_ARRAY(ty=T_ENUMERATION(__)) then 'int'
-                        else 'double'
-    let var =  match dimensions
-            case "" then tempDecl('DynArrayDim<%listLength(dims)%><<%type%>>', &varDecls /*BUFD*/)
-            else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, <%dimensions%> > ', &varDecls /*BUFD*/)
+ //let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
+    let dimensions = checkDimension(dims)
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'multi_array<int,<%listLength(dims)%>>'
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then 'multi_array<int,<%listLength(dims)%>>'
+            //previous multi_array multi_array<double,<%listLength(dims)%>>
+                        else match dimensions
+                case "" then 'DynArrayDim<%listLength(dims)%><double>'
+                else 'StatArrayDim<%listLength(dims)%><double, <%dimensions%> >/*testassign7*/'
 
-    //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
-    let &preExp += 'assign_array(<%var%>,divide_array<<%type%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
-    '<%var%>'
+
+
+  let type1 = match ty case T_ARRAY(ty=T_INTEGER(__)) then "int"
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "int"
+                        else "double"
+    //let var = tempDecl(type,&varDecls /*BUFD*/)
+    let var1 = tempDecl1(type,e1,&varDecls /*BUFD*/)
+    //let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
+  // previous multiarray let &preExp += 'assign_array(<%var1%>,multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));//testhier1<%\n%>'
+    let &preExp +='divide_array<<%type1%>>(<%e1%>, <%e2%>, <%var1%>);<%\n%>'
+    '<%var1%>'
   case DIV_SCALAR_ARRAY(ty=T_ARRAY(dims=dims)) then
-    let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
+    //let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
+    let dimstr = checkDimension(dims)
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'int'
                         case T_ARRAY(ty=T_ENUMERATION(__)) then 'int'
                         else 'double'
-  let var =  match dimensions
+  let var =  match dimstr
         case "" then tempDecl('DynArrayDim<%listLength(dims)%><<%type%>>', &varDecls /*BUFD*/)
-        else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, <%dimensions%> > ', &varDecls /*BUFD*/)
+        else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, <%dimstr%> > /*testassign12*/', &varDecls /*BUFD*/)
     //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
     //let &preExp += 'assign_array(<%var%>,divide_array<<%type%>,<%listLength(dims)%>>(<%e2%>, <%e1%>));<%\n%>'
     '<%var%>'
@@ -9658,24 +9679,26 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   case UMINUS_ARR(__) then "daeExpBinary:ERR UMINUS_ARR not supported"
 
   case ADD_ARR(ty=T_ARRAY(dims=dims)) then
-  let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
+  //let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
+   let dimstr = checkDimension(dims)
   let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "int"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "int"
                         else "double"
-  let var =  match dimensions
+  let var =  match dimstr
           case "" then tempDecl('DynArrayDim<%listLength(dims)%><<%type%>>', &varDecls /*BUFD*/)
-          else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, <%dimensions%> > ', &varDecls /*BUFD*/)
+          else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, <%dimstr%> > /*testassign10*/', &varDecls /*BUFD*/)
     //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
     let &preExp += 'add_array<<%type%>,<%listLength(dims)%>>(<%e1%>, <%e2%>,<%var%>);<%\n%>'
     '<%var%>'
   case SUB_ARR(ty=T_ARRAY(dims=dims)) then
-  let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
+  //let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
+  let dimstr = checkDimension(dims)
   let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "int"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then  "int"
                         else "double"
-  let var =  match dimensions
+  let var =  match dimstr
         case "" then tempDecl('DynArrayDim<%listLength(dims)%><<%type%>>', &varDecls /*BUFD*/)
-        else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, <%dimensions%>> ', &varDecls /*BUFD*/)
+        else tempDecl('StatArrayDim<%listLength(dims)%><<%type%>, <%dimstr%>> /*testassign13*/', &varDecls /*BUFD*/)
 
     //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
     let &preExp += 'subtract_array<<%type%>,<%listLength(dims)%>>(<%e1%>, <%e2%>, <%var%>);<%\n%>'
@@ -9736,7 +9759,7 @@ case UNARY(__) then
     let listlength = listLength(ty.dims)
   let tmp_type_str =  match dimensions
         case "" then 'DynArrayDim<%listlength%><double>'
-        else 'StatArrayDim<%listlength%><double, <%dimensions%>>'
+        else 'StatArrayDim<%listlength%><double, <%dimensions%>>/*testassign11*/'
 
 
 
@@ -9871,8 +9894,8 @@ template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
       case SLICE(__) then
         let tmp_idx = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
         let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
-        let &preExp +=  '<%tmp_idx%>.assign(<%expPart%>.data(),<%expPart%>.data()+<%expPart%>.num_elements());<%\n%>
-                         <%tmp_shape%>.push_back(<%expPart%>.shape()[0]);<%\n%>
+        let &preExp +=  '<%tmp_idx%>.assign(<%expPart%>.getData(),<%expPart%>.getData()+<%expPart%>.getNumElems());<%\n%>
+                         <%tmp_shape%>.push_back(<%expPart%>.getDims()[0]);<%\n%>
                          <%tmp_indeces%>.push_back(<%tmp_idx%>);<%\n%>'
        ''
     ;separator="\n ")
@@ -10667,7 +10690,7 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
      multi_array<<%expTypeShort(ty)%>,<%listLength(ty.dims)%>> <%name%>;
     >>*/
     <<
-     StatArrayDim<%listLength(ty.dims)%><<%expTypeShort(ty)%>,<%(ty.dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")%> > <%name%>;
+     StatArrayDim<%listLength(ty.dims)%><<%expTypeShort(ty)%>,<%(ty.dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")%> > <%name%>/*testassign14*/;
     >>
   else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
 end literalExpConst;

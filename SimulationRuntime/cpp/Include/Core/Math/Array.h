@@ -11,11 +11,45 @@ public:
   BaseArray(bool is_static)
   :_static(is_static)
   {};
+  //interface methods for all arrays
+  
+  virtual T& operator()(vector<size_t> idx) = 0;
+  virtual void assign(const T* data) = 0;  
+  virtual void assign(const BaseArray<T>& otherArray) = 0;
+  
+  virtual std::vector<size_t> getDims() const
+  {
+    throw std::invalid_argument("Wrong virtual Array getDims call");
+  };
 
+  virtual T* getData()
+  {
+     throw std::invalid_argument("Wrong virtual Array getData call");
+  };
+  virtual const T* getData() const
+  {
+     throw std::invalid_argument("Wrong virtual Array getData call");
+  }
+  virtual unsigned int getNumElems()
+  {
+    throw std::invalid_argument("Wrong virtual Array getNumElems call");
+  };
+  virtual unsigned int getNumDims()
+  {
+    throw std::invalid_argument("Wrong virtual Array getNumDims call");
+  };
+  virtual void setDims(std::vector<size_t> v)
+  {
+    throw std::invalid_argument("Wrong virtual Array setDims call");
+  }
+
+  
+  
   virtual T& operator()(unsigned int i)
   {
      throw std::invalid_argument("Wrong virtual Array operator call");
   };
+  
   virtual const T& operator()(unsigned int i) const
   {
      throw std::invalid_argument("Wrong virtual Array operator call");
@@ -36,29 +70,7 @@ public:
   {
     throw std::invalid_argument("Wrong virtual Array operator call");
   };
-  virtual std::vector<size_t> getDims() const
-  {
-    throw std::invalid_argument("Wrong virtual Array getDims call");
-  };
-
-  virtual T* getData()
-  {
-     throw std::invalid_argument("Wrong virtual Array getData call");
-  };
-  virtual const T* getData() const
-  {
-     throw std::invalid_argument("Wrong virtual Array getData call");
-  }
-  virtual unsigned int getNumElems()
-  {
-    throw std::invalid_argument("Wrong virtual Array getNumElems call");
-  };
-
-  virtual void setDims(std::vector<size_t> v)
-  {
-    throw std::invalid_argument("Wrong virtual Array setDims call");
-  }
-
+  
   bool isStatic()
   {
      return _static;
@@ -96,6 +108,7 @@ public:
   //  _real_array = otherArray._real_array;
   //}
 
+  
   StatArrayDim1<T,size>& operator=(BaseArray<T>& rhs)
  {
   if (this != &rhs)
@@ -134,14 +147,14 @@ public:
   return *this;
  }
 
-  void assign(const T* data)
+   virtual void assign(const T* data)
   {
       //std::copy(data,data+size,_real_array.begin());
       memcpy( _real_array.begin(), data, size * sizeof( T ) );
   }
 
 
-  void assign(const BaseArray<T>& otherArray)
+   virtual void assign(const BaseArray<T>& otherArray)
   {
     std::vector<size_t> v;
     v = otherArray.getDims();
@@ -153,7 +166,10 @@ public:
       _real_array[i-1] = otherArray(i);
     }*/
   }
-
+  virtual T& operator()(vector<size_t> idx)
+  {
+     return _real_array[idx[0]-1];
+  };
 
 
   inline virtual T& operator()(unsigned int index)
@@ -189,6 +205,11 @@ public:
   {
     return size;
   }
+  virtual unsigned int getNumDims()
+  {
+     return 1;
+  }
+  
   virtual void setDims(std::vector<size_t> v)
   {
 
@@ -270,7 +291,7 @@ public:
       throw std::runtime_error("Wrong array dimension");
 
   }
-  void assign(const BaseArray<T>& otherArray)
+  virtual void assign(const BaseArray<T>& otherArray)
   {
 
     std::vector<size_t> v;
@@ -288,12 +309,16 @@ public:
     */
   }
 
-  void assign(const T* data)//)const T (&data) [size1*size2]
+  virtual void assign(const T* data)//)const T (&data) [size1*size2]
   {
     //std::copy(data,data+size1*size2,_real_array.begin());
     memcpy( _real_array.begin(), data, size1*size2 * sizeof( T ) );
 
   }
+  virtual T& operator()(vector<size_t> idx)
+  {
+     return _real_array[size2*(idx[0] - 1) + idx[1] - 1]; //row wise order
+  };
 
   inline virtual T& operator()(const unsigned int i, const unsigned  int j)
   {
@@ -322,6 +347,11 @@ public:
   virtual unsigned int getNumElems()
   {
     return size1 * size2;
+  }
+   
+    virtual unsigned int getNumDims()
+  {
+     return 2;
   }
    /*
   access to data
@@ -375,7 +405,7 @@ public:
     _real_array = otherArray._real_array;
   }
   */
-  void assign(const BaseArray<T>& otherArray)
+  virtual  void assign(const BaseArray<T>& otherArray)
   {
     std::vector<size_t> v;
     v = otherArray.getDims();
@@ -394,7 +424,7 @@ public:
     }*/
   }
 
-  void assign(const T& data)
+  virtual void assign(const T* data)
   {
      //std::copy(data,data+size1*size2*size3,_real_array.begin());
      memcpy( _real_array.begin(), data, size1*size2*size3 * sizeof( T ) );
@@ -416,7 +446,10 @@ public:
   }
   return *this;
  }
-
+  virtual T& operator()(vector<size_t> idx)
+  {
+     return _real_array[size3 * size2 * (idx[0] - 1) + size2 * (idx[1] - 1) + (idx[2] - 1)];
+  };
  inline virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
   {
     return _real_array[size3 * size2 * (i - 1) + size2 * (j - 1) + (k - 1)];
@@ -426,6 +459,12 @@ public:
   {
     return size1 + size2 + size3;
   }
+  
+   virtual unsigned int getNumDims()
+  {
+     return 2;
+  }
+  
   virtual void setDims(std::vector<size_t> v)
   {
 
@@ -751,7 +790,7 @@ public:
     _multi_array.assign(data, data + otherArray._multi_array.num_elements());
   }
   */
-  void assign(const BaseArray<T>& otherArray)
+  virtual  void assign(const BaseArray<T>& otherArray)
   {
     std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
@@ -767,11 +806,16 @@ public:
 
   }
 
-  void assign(const T* data)
+  virtual void assign(const T* data)
   {
     _multi_array.assign(data, data + _multi_array.num_elements() );
   }
-
+  
+  
+  virtual T& operator()(vector<size_t> idx)
+  {
+     return _multi_array[idx[0]];
+  };
   inline virtual T& operator()(unsigned int index)
   {
     //double tmp = _multi_array[index];
@@ -833,7 +877,10 @@ public:
   {
     return _multi_array.num_elements();
   }
-
+ virtual unsigned int getNumDims()
+  {
+     return 1;
+  }
   private:
     boost::multi_array<T, 1> _multi_array;
 };
@@ -887,7 +934,7 @@ public:
     _multi_array.assign(data, data + otherArray._multi_array.num_elements());
   }
  */
-  void assign(const BaseArray<T>& otherArray)
+  virtual  void assign(const BaseArray<T>& otherArray)
   {
     std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
@@ -915,11 +962,14 @@ public:
    }
    return *this;
   }
-  void assign(const T& data)
+  virtual void assign(const T* data)
   {
     _multi_array.assign(data, data + _multi_array.num_elements() );
   }
-
+ virtual T& operator()(vector<size_t> idx)
+  {
+     return _multi_array[idx[0]][idx[1]];
+  };
   inline virtual T& operator()(const unsigned  int i, const unsigned  int j)
   {
     return _multi_array[i][j];
@@ -952,6 +1002,11 @@ public:
   {
     return _multi_array.num_elements();
   }
+   virtual unsigned int getNumDims()
+  {
+     return 2;
+  }
+  
   /*
   access to data
   */
@@ -1016,7 +1071,7 @@ public:
     _multi_array.assign(data, data + v[0]*v[1]*v[2]);
   }
 
-  void assign(const BaseArray<T>& otherArray)
+  virtual  void assign(const BaseArray<T>& otherArray)
   {
     std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
@@ -1047,7 +1102,7 @@ public:
    }
    return *this;
   }
-  void assign(const T& data)
+  virtual void assign(const T& data)
   {
     _multi_array.assign(data, data + _multi_array.num_elements() );
   }
@@ -1075,7 +1130,10 @@ public:
     ex.assign( shape, shape + 3 );
     return ex;
   }
-
+  virtual T& operator()(vector<size_t> idx)
+  {
+     return _multi_array[idx[0]][idx[1]][idx[2]];
+  };
   inline virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
   {
     return _multi_array[i][j][k];
@@ -1085,6 +1143,11 @@ public:
   {
     return _multi_array.num_elements();
   }
+   virtual unsigned int getNumDims()
+  {
+     return 3;
+  }
+  
    /*
   access to data
   */
@@ -1320,6 +1383,18 @@ void multiply_array( BaseArray<T> & inputArray ,const T &b, BaseArray<T> & outpu
   T* aim = outputArray.getData();
   std::transform (data, data + nelems, aim, std::bind2nd( std::multiplies< T >(), b ));
 };
+
+
+template < typename T>
+void divide_array( BaseArray<T> & inputArray ,const T &b, BaseArray<T> & outputArray  )
+{
+  outputArray.setDims(inputArray.getDims());
+  T* data = inputArray.getData();
+  unsigned int nelems = inputArray.getNumElems();
+  T* aim = outputArray.getData();
+  std::transform (data, data + nelems, aim, std::bind2nd( std::divides< T >(), b ));
+};
+
 
 template < typename T >
 void fill_array( BaseArray<T> & inputArray , T b)

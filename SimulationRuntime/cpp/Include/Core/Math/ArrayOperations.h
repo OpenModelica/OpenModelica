@@ -167,7 +167,7 @@ boost::multi_array< T, dims >  array_operation( boost::multi_array_ref< T, dims 
         i != a.end(); i++, j++ )
         array_operation( *i, *j, op );
   return a;
-}
+};
 
 
 /**
@@ -176,7 +176,6 @@ Applies array operation F  (*,/) on one dimensional array
 template<
   typename T, class F
 >
-
 boost::multi_array< T, 1 > array_operation( boost::multi_array_ref< T, 1 > a, boost::multi_array_ref< T, 1 > b, F& op )
 {
   typename boost::multi_array_ref< T, 1 >::iterator j = b.begin();
@@ -184,7 +183,7 @@ boost::multi_array< T, 1 > array_operation( boost::multi_array_ref< T, 1 > a, bo
         i != a.end(); i++, j++ )
     op( *i, *j );
   return a;
-}
+};
 
 /**
 Applies array operation F  (*,/) on  sub array a[i]
@@ -198,7 +197,7 @@ boost::detail::multi_array::sub_array< T, NumDims > array_operation( boost::deta
         i != a.end(); i++, j++ )
     array_operation( *i, *j, op );
   return a;
-}
+};
 
 /**
 Applies array operation F  (*,/) on one dimensial sub array a[i]
@@ -339,98 +338,23 @@ void cat_array (int k,BaseArray<T>& a, vector<BaseArray<T>* >& x );
 
 
 template < typename T >
-void transpose_array (boost::multi_array< T, 2 >& a, boost::multi_array< T, 2 >  x )
+void transpose_array (BaseArray< T >& a, BaseArray< T >&  x );
 
-{
-
-    const size_t* shape = x.shape();
-    vector<size_t> ex;
-    ex.assign( shape, shape+x.num_dimensions() );
-    std::swap( ex[0], ex[1] );
-    a.resize(ex);
-    a.reindex(1);
-     T* data = x.data();
-    a.assign( data, data + a.num_elements() );
-
-}
 /*
 creates an array (d) for passed multi array  shape (sp) and initialized it with elements from passed source array (s)
 s source array
 d destination array
 sp (shape,indices) of source array
 */
-template < typename T , size_t NumDims, size_t NumDims2>
-void create_array_from_shape(const spec_type& sp,boost::multi_array< T, NumDims >& s,boost::multi_array< T, NumDims2 >& d)
-{
-     //alocate target array
-   vector<size_t> shape;
-     vector<size_t>::const_iterator iter;
-     for(iter = (sp.first).begin();iter!=(sp.first).end();++iter)
-     {
-          if(*iter!=0)
-               shape.push_back(*iter);
 
-     }
-     d.resize(shape);
-     d.reindex(1);
-     //Check if the dimension of passed indices match the dimension of target array
-   if(sp.second.size()!=s.num_dimensions())
-     throw std::invalid_argument("Erro in create array from shape, number of dimensions does not match");
-
-   T* data = new T[d.num_elements()];
-
-   idx_type::const_iterator spec_iter;
-   //calc number of indeces
-   size_t n =1;
-   for(spec_iter = sp.second.begin();spec_iter!=sp.second.end();++spec_iter)
-     {
-
-        n*=spec_iter->size();
-   }
-   size_t k =0;
-     size_t index=0;
-   vector<size_t>::const_iterator indeces_iter;
-
-   //initialize target array with elements of source array using passed indices
-   vector<size_t> idx;
-   for(int i=0;i<n;i++)
-   {
-    spec_iter = sp.second.begin();
-        for(int dim=0;dim<s.num_dimensions();dim++)
-    {
-      size_t idx1 = getNextIndex(*spec_iter,i);
-      idx.push_back(idx1);
-      spec_iter++;
-    }
-    if(index>(d.num_elements()-1))
-    {
-      throw std::invalid_argument("Erro in create array from shape, number of dimensions does not match");
-    }
-    data[index] = s(idx);
-    idx.clear();
-    index++;
-   }
-   //assign elemets to target array
-   d.assign( data, data + d.num_elements() );
-     delete [] data;
-}
+template < typename T >
+void create_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d);
 
 
+ 
+template < typename T >
+void promote_array(unsigned int n,BaseArray<T>& s,BaseArray<T>& d);
 
-
-
- template < typename T , size_t NumDims, size_t NumDims2 >
-void promote_array(unsigned int n,boost::multi_array< T, NumDims >& s,boost::multi_array< T, NumDims2 >& d)
-{
-   const size_t* shape = s.shape();
-   vector<size_t> ex;
-   ex.assign( shape, shape+ s.num_dimensions() );
-   for(int i=0;i<n;i++)
-    ex.push_back(1);
-   d.resize(ex);
-   T* data = s.data();
-   d.assign( data, data + s.num_elements() );
-}
 
 /**
 finds min/max elements of an array */
