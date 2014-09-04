@@ -708,6 +708,7 @@ static inline void pickUpStates(OptData* optData){
       warningStreamPrint(LOG_STDOUT, 0, "OMC can't find the file %s.",cflags);
     }else{
       int c, n = 0;
+      modelica_boolean b;
       while(1){
           c = fgetc(pFile);
           if (c==EOF) break;
@@ -731,18 +732,23 @@ static inline void pickUpStates(OptData* optData){
           fscanf(pFile, "%s", buffer);
           fscanf(pFile, "%lf", &start_value);
 
-          printf("\nset %s.start %g", buffer,start_value);
+          printf("\n[%i]set %s.start %g", i, buffer,start_value);
 
-          for(j = 0; j < optData->dim.nx; ++j){
+          for(j = 0, b = 0; j < optData->dim.nx; ++j){
             if(!strcmp(optData->data->modelData.realVarsData[j].info.name, buffer)){
               optData->data->localData[0]->realVars[i] = start_value;
               optData->data->localData[1]->realVars[i] = start_value;
               optData->data->localData[2]->realVars[i] = start_value;
               optData->v0[i] = start_value;
+              b = 1;
+              continue;
             }
           }
+          if(!b)
+            warningStreamPrint(LOG_STDOUT, 0, "it was impossible to set %s.start %g", buffer,start_value);
 
         }
+        printf("\n");
         /*update system*/
         optData->data->callback->input_function(optData->data);
         optData->data->callback->functionDAE(optData->data);
