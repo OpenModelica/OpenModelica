@@ -46,6 +46,8 @@ static inline void calculatedScalingHelper(OptDataBounds * bounds, OptDataTime *
 static inline void setRKCoeff(OptDataRK *rk, const int np);
 static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim, DATA* data);
 
+static inline void pickUpStates(OptData* optdata);
+
 /* pick up model data
  * author: Vitalij Ruge
  */
@@ -71,14 +73,18 @@ int pickUpModelData(DATA* data, SOLVER_INFO* solverInfo)
     for(j = 0; j<dim->np;++j)
       optData->v[i][j] = (modelica_real*)malloc(nReal*sizeof(modelica_real));
   }
+  optData->data = data;
+
   optData->v0 = (modelica_real*)malloc(nReal*sizeof(modelica_real));
   memcpy(optData->v0, data->localData[1]->realVars, nReal*sizeof(modelica_real));
+
+  pickUpStates(optData);
 
   optData->sv0 = (modelica_real*)malloc(dim->nx*sizeof(modelica_real));
   for(i = 0; i<dim->nx; ++i)
     optData->sv0[i] = optData->v0[i] * optData->bounds.scalF[i];
 
-  optData->data = data;
+
   printSomeModelInfos(&optData->bounds, &optData->dim, data);
 
   return 0;
@@ -651,34 +657,91 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
 }
 
 void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
-  DATA * data = optData->data;
-  int i,j,l,ii, ll;
-  const int index = 4;
-  const h_index = optData->s.indexABCD[index];
-  const unsigned int * const cC = data->simulationInfo.analyticJacobians[h_index].sparsePattern.colorCols;
-  const unsigned int * const lindex  = optData->s.lindex[index];
-  const int nx = data->simulationInfo.analyticJacobians[h_index].sizeCols;
-  const int Cmax = data->simulationInfo.analyticJacobians[h_index].sparsePattern.maxColors + 1;
-  const int dnx = optData->dim.nx;
-  const int dnxnc = optData->dim.nJ;
-  const modelica_real * const resultVars = data->simulationInfo.analyticJacobians[h_index].resultVars;
-  const unsigned int * const sPindex = data->simulationInfo.analyticJacobians[h_index].sparsePattern.index;
+  if(optData->dim.ncf > 0){
+    DATA * data = optData->data;
+    int i,j,l,ii, ll;
+    const int index = 4;
+    const h_index = optData->s.indexABCD[index];
+    const unsigned int * const cC = data->simulationInfo.analyticJacobians[h_index].sparsePattern.colorCols;
+    const unsigned int * const lindex  = optData->s.lindex[index];
+    const int nx = data->simulationInfo.analyticJacobians[h_index].sizeCols;
+    const int Cmax = data->simulationInfo.analyticJacobians[h_index].sparsePattern.maxColors + 1;
+    const int dnx = optData->dim.nx;
+    const int dnxnc = optData->dim.nJ;
+    const modelica_real * const resultVars = data->simulationInfo.analyticJacobians[h_index].resultVars;
+    const unsigned int * const sPindex = data->simulationInfo.analyticJacobians[h_index].sparsePattern.index;
 
-  const int * index_J = (index == 3)? optData->s.indexJ3 : optData->s.indexJ2;
-  const int nJ1 = optData->dim.nJ + 1;
+    const int * index_J = (index == 3)? optData->s.indexJ3 : optData->s.indexJ2;
+    const int nJ1 = optData->dim.nJ + 1;
 
-  modelica_real **sV = optData->s.seedVec[index];
+    modelica_real **sV = optData->s.seedVec[index];
 
-  for(i = 1; i < Cmax; ++i){
-    data->simulationInfo.analyticJacobians[h_index].seedVars = sV[i];
+    for(i = 1; i < Cmax; ++i){
+      data->simulationInfo.analyticJacobians[h_index].seedVars = sV[i];
 
-    data->callback->functionJacD_column(data);
+      data->callback->functionJacD_column(data);
 
-    for(ii = 0; ii < nx; ++ii){
-      if(cC[ii] == i){
-        for(j = lindex[ii]; j < lindex[ii + 1]; ++j){
-          ll = sPindex[j];
-          optData->Jf[ll][ii] = resultVars[ll];
+      for(ii = 0; ii < nx; ++ii){
+        if(cC[ii] == i){
+          for(j = lindex[ii]; j < lindex[ii + 1]; ++j){
+            ll = sPindex[j];
+            optData->Jf[ll][ii] = resultVars[ll];
+          }
+        }
+      }
+    }
+  }
+}
+
+/*!
+ *  pick up start values from csv for states
+ *  author: Vitalij Ruge
+ **/
+static inline void pickUpStates(OptData* optData){
+  char* cflags;
+  cflags = (char*)omc_flagValue[FLAG_INPUT_FILE_STATES];
+
+  if(cflags){
+    FILE * pFile = NULL;
+    pFile = fopen(cflags,"r");
+    if(pFile == NULL){
+      warningStreamPrint(LOG_STDOUT, 0, "OMC can't find the file %s.",cflags);
+    }else{
+      int c, n = 0;
+      while(1){
+          c = fgetc(pFile);
+          if (c==EOF) break;
+          if (c=='\n') ++n;
+      }
+      // check if csv file is empty!
+      if(n == 0){
+        fprintf(stderr, "External input file: externalInput.csv is empty!\n"); fflush(NULL);
+        EXIT(1);
+      }else{
+        int i, j;
+        double start_value;
+        char buffer[200];
+
+        --n;
+        if(n != optData->dim.nx)
+          warningStreamPrint(LOG_STDOUT, 0, "size %i != %i of %s", n, optData->dim.nx, cflags);
+
+        rewind(pFile);
+        for(i =0; i< n; ++i){
+          fscanf(pFile, "%s", buffer);
+          fscanf(pFile, "%lf", &start_value);
+
+          printf("\nset %s.start %g", buffer,start_value);
+
+          for(j = 0; j < optData->dim.nx; ++j){
+            if(!strcmp(optData->data->modelData.realVarsData[j].info.name, buffer)){
+              optData->data->localData[0]->realVars[i] = start_value;
+              optData->data->localData[1]->realVars[i] = start_value;
+              optData->data->localData[2]->realVars[i] = start_value;
+              optData->v0[i] = start_value;
+            }
+          }
+
         }
       }
     }
