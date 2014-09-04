@@ -34,6 +34,7 @@ encapsulated package SynchronousFeatures
   package:     SynchronousFeatures
   description: This package contains functions that belong to synchronous features.
                - base-clock partitioning
+               - sub-clock partitioning
 
   RCS: $Id: SynchronousFeatures.mo 21476 2014-07-11 12:08:20Z lochel $"
 
@@ -428,7 +429,7 @@ algorithm
 
   // TODO: make this better
   eqLst := BackendEquation.equationList(eqs);
-  eqLst := setSubClockPartition(eqLst, listReverse(arrayList(ixs)));
+  eqLst := setSubClockPartition(eqLst, arrayList(ixs));
   eqs := BackendEquation.listEquation(eqLst);
 
   outEqSystem := BackendDAE.EQSYSTEM(vars, eqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
