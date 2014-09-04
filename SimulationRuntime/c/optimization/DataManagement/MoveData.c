@@ -743,6 +743,9 @@ static inline void pickUpStates(OptData* optData){
           }
 
         }
+        /*update system*/
+        optData->data->callback->input_function(optData->data);
+        optData->data->callback->functionDAE(optData->data);
       }
     }
   }
