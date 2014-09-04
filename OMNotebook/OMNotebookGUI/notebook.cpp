@@ -2723,7 +2723,7 @@ void NotebookWindow::closeEvent( QCloseEvent *event )
                                           QMessageBox::Ok | QMessageBox::Default,
                                           QMessageBox::No, QMessageBox::Cancel );
 
-      if( result == QMessageBox::Yes )
+      if( result == QMessageBox::Ok )
       {
         QString quit = "quit()";
         omc->evalExpression( quit );
