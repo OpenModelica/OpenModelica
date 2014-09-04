@@ -5622,6 +5622,7 @@ algorithm
     case (DAE.RCONST(_),_,ext_arg) then ((inExp,ext_arg));
     case (DAE.SCONST(_),_,ext_arg) then ((inExp,ext_arg));
     case (DAE.BCONST(_),_,ext_arg) then ((inExp,ext_arg));
+    case (DAE.CLKCONST(_),_,ext_arg) then ((inExp,ext_arg));
     case (DAE.ENUM_LITERAL(name=_),_,ext_arg) then ((inExp,ext_arg));
     case (DAE.CREF(cr,tp),rel,ext_arg)
       equation
