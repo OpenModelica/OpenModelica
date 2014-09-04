@@ -12,11 +12,11 @@ public:
   :_static(is_static)
   {};
   //interface methods for all arrays
-  
+
   virtual T& operator()(vector<size_t> idx) = 0;
-  virtual void assign(const T* data) = 0;  
+  virtual void assign(const T* data) = 0;
   virtual void assign(const BaseArray<T>& otherArray) = 0;
-  
+
   virtual std::vector<size_t> getDims() const
   {
     throw std::invalid_argument("Wrong virtual Array getDims call");
@@ -43,13 +43,13 @@ public:
     throw std::invalid_argument("Wrong virtual Array setDims call");
   }
 
-  
-  
+
+
   virtual T& operator()(unsigned int i)
   {
      throw std::invalid_argument("Wrong virtual Array operator call");
   };
-  
+
   virtual const T& operator()(unsigned int i) const
   {
      throw std::invalid_argument("Wrong virtual Array operator call");
@@ -70,7 +70,7 @@ public:
   {
     throw std::invalid_argument("Wrong virtual Array operator call");
   };
-  
+
   bool isStatic()
   {
      return _static;
@@ -108,7 +108,7 @@ public:
   //  _real_array = otherArray._real_array;
   //}
 
-  
+
   StatArrayDim1<T,size>& operator=(BaseArray<T>& rhs)
  {
   if (this != &rhs)
@@ -209,7 +209,7 @@ public:
   {
      return 1;
   }
-  
+
   virtual void setDims(std::vector<size_t> v)
   {
 
@@ -348,7 +348,7 @@ public:
   {
     return size1 * size2;
   }
-   
+
     virtual unsigned int getNumDims()
   {
      return 2;
@@ -459,12 +459,12 @@ public:
   {
     return size1 + size2 + size3;
   }
-  
+
    virtual unsigned int getNumDims()
   {
      return 2;
   }
-  
+
   virtual void setDims(std::vector<size_t> v)
   {
 
@@ -810,8 +810,8 @@ public:
   {
     _multi_array.assign(data, data + _multi_array.num_elements() );
   }
-  
-  
+
+
   virtual T& operator()(vector<size_t> idx)
   {
      return _multi_array[idx[0]];
@@ -1006,7 +1006,7 @@ public:
   {
      return 2;
   }
-  
+
   /*
   access to data
   */
@@ -1147,7 +1147,7 @@ public:
   {
      return 3;
   }
-  
+
    /*
   access to data
   */

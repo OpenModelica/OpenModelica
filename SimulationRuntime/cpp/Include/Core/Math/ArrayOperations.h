@@ -351,7 +351,7 @@ template < typename T >
 void create_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d);
 
 
- 
+
 template < typename T >
 void promote_array(unsigned int n,BaseArray<T>& s,BaseArray<T>& d);
 

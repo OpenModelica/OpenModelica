@@ -2754,12 +2754,12 @@ package Expression
     input list<DAE.Exp> iExpressions;
     output Boolean oCrefWithEqualIdents;
   end isCrefListWithEqualIdents;
- 
+
   function dimensionsList
   input DAE.Dimensions inDims;
   output list<Integer> outValues;
   end dimensionsList;
-  
+
 end Expression;
 
 package ExpressionDump

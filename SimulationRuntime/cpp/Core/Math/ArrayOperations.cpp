@@ -103,7 +103,7 @@ void create_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d
 
      }
      d.setDims(shape);
-   
+
      //Check if the dimension of passed indices match the dimension of target array
    if(sp.second.size()!=s.getNumDims())
      throw std::invalid_argument("Erro in create array from shape, number of dimensions does not match");
@@ -166,7 +166,7 @@ void transpose_array (BaseArray< T >& a, BaseArray< T >&  x )
 {
     if(a.getNumDims()!=2 || x.getNumDims()!=2)
        throw std::invalid_argument("Erro in transpose_array, number of dimensions does not match");
-    
+
     vector<size_t> ex = x.getDims();
     std::swap( ex[0], ex[1] );
     a.setDims(ex);

@@ -6983,7 +6983,7 @@ end dimension;
 template checkDimension(Dimensions dims)
 ::=
   dimensionsList(dims) |> dim as Integer   =>  '<%dim%>';separator=","
- 
+
 end checkDimension;
 
 

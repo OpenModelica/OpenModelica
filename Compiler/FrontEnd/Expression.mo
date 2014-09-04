@@ -10910,7 +10910,7 @@ public function checkDimensionSizes
       DAE.Exp e;
 algorithm
   value := matchcontinue(dim)
-   
+
     case DAE.DIM_INTEGER(integer = i) then true;
     case DAE.DIM_ENUM(size = i) then true;
     case DAE.DIM_BOOLEAN() then true;
