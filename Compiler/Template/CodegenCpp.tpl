@@ -1665,7 +1665,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         SystemDefaultImplementation::initialize();
         //Instantiate auxiliary object for event handling functionality
         _event_handling.getCondition =  boost::bind(&<%className%>::getCondition, this, _1);
-    	
+
         //Todo: reindex all arrays removed  // arrayReindex(modelInfo,useFlatArrayNotation)
         //Initialize array elements
         <%initializeArrayElements(simCode, useFlatArrayNotation)%>
