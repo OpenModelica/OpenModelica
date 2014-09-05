@@ -1640,36 +1640,39 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         ,_simData(simData)
         <%simulationInitFile(simCode, false)%>
     {
-        //Number of equations
-        <%dimension1(simCode)%>
-        _dimZeroFunc= <%zerocrosslength(simCode)%>;
-        _dimTimeEvent = <%timeeventlength(simCode)%>;
-        //Number of residues
-        <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
-        <<
-        _dimResidues=<%numResidues(allEquations)%>;
-        >>
-        %>
-        <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-        <<
+    //Number of equations
+    <%dimension1(simCode)%>
+    _dimZeroFunc= <%zerocrosslength(simCode)%>;
+    _dimTimeEvent = <%timeeventlength(simCode)%>;
+    //Number of residues
+    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
+      <<
+      _dimResidues=<%numResidues(allEquations)%>;
+      >>
+
+    %>
+    <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+      <<
         MeasureTime::data ref;
         ref.max_time = 0;
         ref.num_calcs = 0;
         ref.sum_time = 0;
-        measureTimeArray = std::vector<MeasureTime::data>(<%intAdd(listLength(simCode.allEquations), listLength(simCode.initialEquations))%>,ref);
-        >>
-        %>
-        //DAE's are not supported yet, Index reduction is enabled
-        _dimAE = 0; // algebraic equations
-        //Initialize the state vector
-        SystemDefaultImplementation::initialize();
-        //Instantiate auxiliary object for event handling functionality
-        _event_handling.getCondition =  boost::bind(&<%className%>::getCondition, this, _1);
+        measureTimeArray = std::vector<MeasureTime::data>(<%listLength(simCode.allEquations)%>,ref);
+      >>
+    %>
+    //DAE's are not supported yet, Index reduction is enabled
+    _dimAE = 0; // algebraic equations
+    //Initialize the state vector
+    SystemDefaultImplementation::initialize();
+    //Instantiate auxiliary object for event handling functionality
+    _event_handling.getCondition =  boost::bind(&<%className%>::getCondition, this, _1);
+   //Todo: reindex all arrays removed  // arrayReindex(modelInfo,useFlatArrayNotation)
+    //Initialize array elements
+    <%initializeArrayElements(simCode, useFlatArrayNotation)%>
+    _functions = new Functions(_simTime);
 
-        //Todo: reindex all arrays removed  // arrayReindex(modelInfo,useFlatArrayNotation)
-        //Initialize array elements
-        <%initializeArrayElements(simCode, useFlatArrayNotation)%>
-        _functions = new Functions(_simTime);
+
+
     }
 
 
@@ -1680,6 +1683,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             delete _functions;
 
         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+        let n = listLength(simCode.allEquations)
         <<
             MeasureTime::getInstance()->writeTimeToJason("<%dotPath(modelInfo.name)%>",measureTimeArray);
         >>
@@ -3493,8 +3497,8 @@ end functionCallExternalObjectConstructors;
 template functionInitialEquations(list<SimEqSystem> initalEquations, SimCode simCode, Boolean useFlatArrayNotation)
   "Generates function in simulation file."
 ::=
-        let equation_func_calls = (initalEquations |> eq =>
-                    equation_function_create_single_func(eq, contextOther/*BUFC*/, simCode, "initEquation","Initialize",useFlatArrayNotation,true)
+        let equation_func_calls = (initalEquations |> eq hasindex i0  =>
+                    equation_function_create_single_func(eq, contextOther/*BUFC*/, simCode, "initEquation","Initialize",useFlatArrayNotation,true,i0)
                     ;separator="\n")
   /*
   let &varDecls = buffer ""
@@ -7266,7 +7270,7 @@ end equation_function_call;
     >>
     */
 
-template measureTimeStart(String eq_number)
+template measureTimeStart(Integer eq_number)
 ::=
   <<
     long long unsigned startMeasure_t, endMeasure_t,measure_t;
@@ -7274,7 +7278,7 @@ template measureTimeStart(String eq_number)
   >>
 end measureTimeStart;
 
-template measureTimeStop(String eq_number)
+template measureTimeStop(Integer eq_number)
 ::=
   <<
     endMeasure_t = MeasureTime::getTime();
@@ -7285,7 +7289,7 @@ template measureTimeStop(String eq_number)
   >>
 end measureTimeStop;
 
-template equation_function_create_single_func(SimEqSystem eq, Context context, SimCode simCode,Text method,Text classnameext, Boolean useFlatArrayNotation, Boolean createMeasureTime)
+template equation_function_create_single_func(SimEqSystem eq, Context context, SimCode simCode,Text method,Text classnameext, Boolean useFlatArrayNotation, Boolean createMeasureTime, Integer equa_number)
 ::=
   let ix_str = equationIndex(eq)
   let &varDeclsLocal = buffer "" /*BUFD*/
@@ -7315,13 +7319,13 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     case e as SES_MIXED(__)
       then
       /*<%equationMixed(e, context, &varDeclsLocal, simCode)%>*/
-      let &additionalFuncs += equation_function_create_single_func(e.cont,context,simCode,method,classnameext, useFlatArrayNotation, false)
+      let &additionalFuncs += equation_function_create_single_func(e.cont,context,simCode,method,classnameext, useFlatArrayNotation, false, 0)
       "throw std::runtime_error(\"Mixed systems are not supported yet\");"
     else
       "NOT IMPLEMENTED EQUATION"
   end match
-  let &measureTimeStartVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then measureTimeStart(ix_str) //else ""
-  let &measureTimeEndVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then measureTimeStop(ix_str) //else ""
+  let &measureTimeStartVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then measureTimeStart(equa_number) //else ""
+  let &measureTimeEndVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then measureTimeStop(equa_number) //else ""
   <<
     <%additionalFuncs%>
     /*
@@ -9208,6 +9212,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode,useFlatArrayNotation)
     'modelica_mod_<%expTypeShort(attr.ty)%>(<%var1%>,<%var2%>)'
 
+    
    case CALL(path=IDENT(name="semiLinear"), expLst={e1,e2,e3}, attr=attr as CALL_ATTR(__)) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode,useFlatArrayNotation)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode,useFlatArrayNotation)
@@ -9226,7 +9231,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &tmpVar /*BUFD*/,simCode, useFlatArrayNotation)
     let arr_tp_str = expTypeFromExpShort(array)
     let tvar = tempDecl(expTypeFromExpModelica(array), &varDecls /*BUFD*/)
-    let &preExp += '<%tvar%> = sum_array<<%arr_tp_str%>,1>(<%expVar%>);<%\n%>'
+    let &preExp += '<%tvar%> = sum_array<<%arr_tp_str%>>(<%expVar%>);<%\n%>'
     '<%tvar%>'
 
   case CALL(path=IDENT(name="min"), expLst={array}) then
@@ -9286,7 +9291,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var2 = daeExp(n, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     //let temp = tempDeclAssign('const size_t*', &varDecls /*BUFD*/,'<%var1%>.shape()')
     //let temp_ex = tempDecl('std::vector<size_t>', &varDecls /*BUFD*/)
-    let arrayType = /*expTypeArray(ty)*/expTypeFlag(ty,6)
+    let arrayType = /*expTypeArray(ty)*/expTypeFlag(ty,6) 
     //let dimstr = listLength(crefSubs(cr))
     let tmp = tempDecl('<%arrayType%>', &varDecls /*BUFD*/)
 
@@ -10557,6 +10562,15 @@ case ecr as CREF(componentRef=CREF_IDENT(subscriptLst=subs)) then
     contextCref(ecr.componentRef, context,simCode,useFlatArrayNotation)
   else
     daeExpCrefRhs(ecr, context, &preExp, &varDecls, simCode, useFlatArrayNotation)
+case ecr as CREF(componentRef=cr as CREF_QUAL(__)) then
+    if crefIsScalar(cr, context) then
+      contextCref(ecr.componentRef, context,simCode,useFlatArrayNotation)
+    else
+      let arrName = contextCref(crefStripSubs(cr), context, simCode,useFlatArrayNotation)
+      <<
+       <%arrName%>(<%threadDimSubList(crefDims(cr),crefSubs(cr),context,&preExp,&varDecls,simCode, useFlatArrayNotation)%>)
+      >>
+    
 case ecr as CREF(componentRef=CREF_QUAL(__)) then
     contextCref(ecr.componentRef, context,simCode,useFlatArrayNotation)
 else
@@ -10565,7 +10579,36 @@ end scalarLhsCref;
 
 
 
+template threadDimSubList(list<Dimension> dims, list<Subscript> subs, Context context, Text &preExp, Text &varDecls,SimCode simCode, Boolean useFlatArrayNotation)
+  "Do direct indexing since sizes are known during compile-time"
+::=
+  match subs
+  case {} then error(sourceInfo(),"Empty dimensions in indexing cref?")
 
+  case {sub as INDEX(__)} then
+    match dims
+    case {dim} then
+       let estr = daeExp(sub.exp, context, &preExp, &varDecls, simCode, useFlatArrayNotation)
+      '<%estr%>'
+    else error(sourceInfo(),"Less subscripts that dimensions in indexing cref? That's odd!")
+
+  case (sub as INDEX(__))::subrest then
+    match dims
+      case _::dimrest
+      then
+      
+        let estr = daeExp(sub.exp, context, &preExp, &varDecls, simCode, useFlatArrayNotation)
+        '((<%estr%><%
+          dimrest |> dim =>
+          match dim
+          case DIM_INTEGER(__) then '-1)*<%integer%>'
+          case DIM_BOOLEAN(__) then '*2'
+          case DIM_ENUM(__) then '*<%size%>'
+          else error(sourceInfo(),"Non-constant dimension in simulation context")
+        %>)<%match subrest case {} then "" else '+<%threadDimSubList(dimrest, subrest, context, &preExp, &varDecls, simCode, useFlatArrayNotation)%>'%>'
+      else error(sourceInfo(),"Less subscripts that dimensions in indexing cref? That's odd!")
+  else error(sourceInfo(),"Non-index subscript in indexing cref? That's odd!")
+end threadDimSubList;
 
 
 template elseExpr(DAE.Else it, Context context, Text &preExp, Text &varDecls,SimCode simCode,Boolean useFlatArrayNotation) ::=
@@ -11259,8 +11302,8 @@ end update;
 template equationFunctions( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context, Boolean useFlatArrayNotation)
 ::=
 
- let equation_func_calls = (allEquationsPlusWhen |> eq =>
-                    equation_function_create_single_func(eq, context/*BUFC*/, simCode,"evaluate","", useFlatArrayNotation,true)
+ let equation_func_calls = (allEquationsPlusWhen |> eq hasindex i0 =>
+                    equation_function_create_single_func(eq, context/*BUFC*/, simCode,"evaluate","", useFlatArrayNotation,true,i0)
                     ;separator="\n")
 
 

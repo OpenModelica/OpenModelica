@@ -7,7 +7,6 @@
 #include <cvodes/cvodes.h>
 #include <cvode/cvode.h>
 #include <nvector/nvector_serial.h>
-#include <sundials/sundials_direct.h>
 #include <cvodes/cvodes_dense.h>
 #include <cvodes/cvodes_spgmr.h>
 
@@ -145,11 +144,6 @@ private:
   // Callback der Nullstellenfunktion
   static int CV_ZerofCallback(double t, N_Vector y, double *zeroval, void *user_data);
 
-  // Functions for Coloured Jacobian
-  static int CV_JCallback(long int N, double t, N_Vector y, N_Vector fy, DlsMat Jac,void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
-  int calcJacobian(double t, long int N, double* fHelp, N_Vector errorWeight, double* y, N_Vector fy, double* jac);
-  void initializeColoredJac();
-
 
   ISolverSettings
     *_cvodesettings;              ///< Input      - Solver settings
@@ -173,9 +167,7 @@ private:
     *_z,            ///< Output      - (Current) State vector
     *_zInit,          ///< Temp      - Initial state vector
     *_zWrite,                   ///< Temp      - Zustand den das System rausschreibt
-    *_absTol,          ///         - Vektor für absolute Toleranzen
-  *_delta,
-  *_deltaInv;
+  *_absTol;          ///         - Vektor für absolute Toleranzen
 
   double
     _hOut;            ///< Temp      - Ouput step size for dense output
@@ -203,19 +195,7 @@ double
     _CV_yWrite,        ///< Temp      - Vector for dense out
     _CV_absTol;
 
-  // Variables for Coloured Jacobians
-  int  _sizeof_sparsePattern_colorCols;
-  int* _sparsePattern_colorCols;
 
-  int  _sizeof_sparsePattern_leadindex;
-  int* _sparsePattern_leadindex;
-
-
-  int  _sizeof_sparsePattern_index;
-  int* _sparsePattern_index;
-
-
-  int  _sparsePattern_maxColors;
 
   bool _cvode_initialized;
 
