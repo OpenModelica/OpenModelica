@@ -4572,11 +4572,11 @@ template functionsFile(String filePrefix,
      literalsRes
   %>
   #include "util/modelica.h"
-  
+
   /* start - annotation(Include=...) if we have any */
   <%externalFunctionIncludes(includes)%>
   /* end - annotation(Include=...) */
-  
+
   <% if mainFunction then
   <<
   void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__ ((noreturn)) = omc_assert_function;
