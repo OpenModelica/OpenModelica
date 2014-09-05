@@ -256,7 +256,7 @@ T dot_array( BaseArray<T> & a ,  BaseArray<T> & b  )
 {
   if(a.getNumDims()!=1  || b.getNumDims()!=1)
     throw std::invalid_argument("error in dot array function. Wrong dimension");
-  
+
   T* data1 = a.getData();
   unsigned int nelems = a.getNumElems();
   T* data2 = b.getData();
@@ -272,7 +272,7 @@ void cross_array( BaseArray<T> & a ,BaseArray<T> & b, BaseArray<T> & res )
   res(1) = (a(2) * b(3)) - (a(3) * b(2));
   res(2) = (a(3) * b(1)) - (a(1) * b(3));
   res(3) = (a(1) * b(2)) - (a(2) * b(1));
-  
+
 };
 
 

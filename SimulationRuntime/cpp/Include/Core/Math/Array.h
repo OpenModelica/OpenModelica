@@ -11,7 +11,7 @@ public:
   BaseArray(bool is_static)
   :_static(is_static)
   {};
-  
+
   //interface methods for all arrays
 
   virtual T& operator()(vector<size_t> idx) = 0;
@@ -23,7 +23,7 @@ public:
   virtual unsigned int getNumElems() = 0;
   virtual unsigned int getNumDims() = 0;
   virtual void setDims(std::vector<size_t> v) = 0;
-   
+
   virtual T& operator()(unsigned int i)
   {
      throw std::invalid_argument("Wrong virtual Array operator call");
@@ -195,7 +195,7 @@ public:
   }
   void setDims(unsigned int size1)
   {
-  
+
   }
   typedef typename boost::array<T,size>::const_iterator                              const_iterator;
   typedef typename  boost::array<T,size>::iterator                                   iterator;

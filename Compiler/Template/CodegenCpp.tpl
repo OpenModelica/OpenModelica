@@ -9290,7 +9290,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var2 = daeExp(n, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     //let temp = tempDeclAssign('const size_t*', &varDecls /*BUFD*/,'<%var1%>.shape()')
     //let temp_ex = tempDecl('std::vector<size_t>', &varDecls /*BUFD*/)
-    let arrayType = /*expTypeArray(ty)*/expTypeFlag(ty,6) 
+    let arrayType = /*expTypeArray(ty)*/expTypeFlag(ty,6)
     //let dimstr = listLength(crefSubs(cr))
     let tmp = tempDecl('<%arrayType%>', &varDecls /*BUFD*/)
 
