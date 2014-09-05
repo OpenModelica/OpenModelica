@@ -11,40 +11,19 @@ public:
   BaseArray(bool is_static)
   :_static(is_static)
   {};
+  
   //interface methods for all arrays
 
   virtual T& operator()(vector<size_t> idx) = 0;
   virtual void assign(const T* data) = 0;
   virtual void assign(const BaseArray<T>& otherArray) = 0;
-
-  virtual std::vector<size_t> getDims() const
-  {
-    throw std::invalid_argument("Wrong virtual Array getDims call");
-  };
-
-  virtual T* getData()
-  {
-     throw std::invalid_argument("Wrong virtual Array getData call");
-  };
-  virtual const T* getData() const
-  {
-     throw std::invalid_argument("Wrong virtual Array getData call");
-  }
-  virtual unsigned int getNumElems()
-  {
-    throw std::invalid_argument("Wrong virtual Array getNumElems call");
-  };
-  virtual unsigned int getNumDims()
-  {
-    throw std::invalid_argument("Wrong virtual Array getNumDims call");
-  };
-  virtual void setDims(std::vector<size_t> v)
-  {
-    throw std::invalid_argument("Wrong virtual Array setDims call");
-  }
-
-
-
+  virtual std::vector<size_t> getDims() const = 0;
+  virtual T* getData() = 0;
+  virtual const T* getData() const = 0;
+  virtual unsigned int getNumElems() = 0;
+  virtual unsigned int getNumDims() = 0;
+  virtual void setDims(std::vector<size_t> v) = 0;
+   
   virtual T& operator()(unsigned int i)
   {
      throw std::invalid_argument("Wrong virtual Array operator call");
@@ -213,6 +192,10 @@ public:
   virtual void setDims(std::vector<size_t> v)
   {
 
+  }
+  void setDims(unsigned int size1)
+  {
+  
   }
   typedef typename boost::array<T,size>::const_iterator                              const_iterator;
   typedef typename  boost::array<T,size>::iterator                                   iterator;
@@ -1374,75 +1357,3 @@ private:
 
 */
 
-template < typename T>
-void multiply_array( BaseArray<T> & inputArray ,const T &b, BaseArray<T> & outputArray  )
-{
-  outputArray.setDims(inputArray.getDims());
-  T* data = inputArray.getData();
-  unsigned int nelems = inputArray.getNumElems();
-  T* aim = outputArray.getData();
-  std::transform (data, data + nelems, aim, std::bind2nd( std::multiplies< T >(), b ));
-};
-
-
-template < typename T>
-void divide_array( BaseArray<T> & inputArray ,const T &b, BaseArray<T> & outputArray  )
-{
-  outputArray.setDims(inputArray.getDims());
-  T* data = inputArray.getData();
-  unsigned int nelems = inputArray.getNumElems();
-  T* aim = outputArray.getData();
-  std::transform (data, data + nelems, aim, std::bind2nd( std::divides< T >(), b ));
-};
-
-
-template < typename T >
-void fill_array( BaseArray<T> & inputArray , T b)
-{
-  T* data = inputArray.getData();
-  unsigned int nelems = inputArray.getNumElems();
-  std::fill( data, data + nelems, b);
-};
-
-template < typename T, size_t NumDims >
-void subtract_array( BaseArray<T> & leftArray , BaseArray<T> & rightArray, BaseArray<T> & resultArray  )
-{
-  resultArray.setDims(leftArray.getDims());
-  T* data1 = leftArray.getData();
-  unsigned int nelems = leftArray.getNumElems();
-  T* data2 = rightArray.getData();
-  T* aim = resultArray.getData();
-
-  std::transform (data1, data1 + nelems, data2, aim, std::minus<T>());
-};
-
-template < typename T, size_t NumDims >
-void add_array( BaseArray<T> & leftArray , BaseArray<T> & rightArray, BaseArray<T> & resultArray  )
-{
-  resultArray.setDims(leftArray.getDims());
-  T* data1 = leftArray.getData();
-  unsigned int nelems = leftArray.getNumElems();
-  T* data2 = rightArray.getData();
-  T* aim = resultArray.getData();
-
-  std::transform (data1, data1 + nelems, data2, aim, std::plus<T>());
-};
-
-template < typename T, size_t dims >
-void usub_array(BaseArray<T> & a , BaseArray<T> & b)
-{
-  b.setDims(a.getDims());
-  int numEle =  a.getNumElems();
-  for ( unsigned int i = 1;  i <= numEle; i++)
-  {
-    b(i) = -(a(i));
-  }
-}
-
-template < typename T, size_t NumDims >
-T sum_array ( BaseArray<T> & leftArray )
-{
-   T val;
-   val = std::accumulate( leftArray.getData(), leftArray.getData() + leftArray.getNumElems() ,0 );
-   return val;
-}

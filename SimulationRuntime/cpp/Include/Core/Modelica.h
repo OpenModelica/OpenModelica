@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <map>
 #include <cmath>
+#include <numeric>
 using namespace std;
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #ifndef BOOST_THREAD_USE_DLL
