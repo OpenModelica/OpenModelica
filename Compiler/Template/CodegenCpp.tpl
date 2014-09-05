@@ -9212,7 +9212,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode,useFlatArrayNotation)
     'modelica_mod_<%expTypeShort(attr.ty)%>(<%var1%>,<%var2%>)'
 
-    
+
    case CALL(path=IDENT(name="semiLinear"), expLst={e1,e2,e3}, attr=attr as CALL_ATTR(__)) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode,useFlatArrayNotation)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode,useFlatArrayNotation)
@@ -9291,7 +9291,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var2 = daeExp(n, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     //let temp = tempDeclAssign('const size_t*', &varDecls /*BUFD*/,'<%var1%>.shape()')
     //let temp_ex = tempDecl('std::vector<size_t>', &varDecls /*BUFD*/)
-    let arrayType = /*expTypeArray(ty)*/expTypeFlag(ty,6) 
+    let arrayType = /*expTypeArray(ty)*/expTypeFlag(ty,6)
     //let dimstr = listLength(crefSubs(cr))
     let tmp = tempDecl('<%arrayType%>', &varDecls /*BUFD*/)
 
@@ -10570,7 +10570,7 @@ case ecr as CREF(componentRef=cr as CREF_QUAL(__)) then
       <<
        <%arrName%>(<%threadDimSubList(crefDims(cr),crefSubs(cr),context,&preExp,&varDecls,simCode, useFlatArrayNotation)%>)
       >>
-    
+
 case ecr as CREF(componentRef=CREF_QUAL(__)) then
     contextCref(ecr.componentRef, context,simCode,useFlatArrayNotation)
 else
@@ -10596,7 +10596,7 @@ template threadDimSubList(list<Dimension> dims, list<Subscript> subs, Context co
     match dims
       case _::dimrest
       then
-      
+
         let estr = daeExp(sub.exp, context, &preExp, &varDecls, simCode, useFlatArrayNotation)
         '((<%estr%><%
           dimrest |> dim =>
