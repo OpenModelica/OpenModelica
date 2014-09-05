@@ -2633,7 +2633,7 @@ template function_HPCOM_initializeLockByLockName(String lockName, String lockPre
       pthread_spin_init(&<%lockPrefix%>_<%lockName%>, 0);
       >>
 end function_HPCOM_initializeLockByLockName;
-  
+
 template function_HPCOM_createLockByDepTask(Task depTask, String lockPrefix, String iType)
 ::=
   let lockName = function_HPCOM_getLockNameByDepTask(depTask)

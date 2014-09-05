@@ -129,7 +129,7 @@ protected function createListSchedule1 "function createListSchedule1
     input Integer iThreadIdx;
     input list<tuple<HpcOmSimCode.Task,Integer>> iPredecessors;
     output list<HpcOmSimCode.Task> oTasks; //lock tasks
-    output list<HpcOmSimCode.Task> oOutgoingDepTasks; 
+    output list<HpcOmSimCode.Task> oOutgoingDepTasks;
   end FuncType;
 protected
   HpcOmSimCode.Task head, newTask;
@@ -402,7 +402,7 @@ protected
   HpcOmSimCode.Task tmpTask, successorTask;
 algorithm
   (successorTask,_) := iSuccessorTask;
-  tmpTask := createDepTask(successorTask,iTask,false); 
+  tmpTask := createDepTask(successorTask,iTask,false);
   oReleaseTasks := tmpTask :: iReleaseTasks;
 end addAssignLocksToSchedule;
 
@@ -517,7 +517,7 @@ algorithm
 end createDepTask; //former: convertLockIdToAssignTask,convertLockIdToReleaseTask
 
 protected function createDepTaskByTaskIdc "author: marcusw
-  Create a dependeny task that indicates that variables of another task are required or calculated. The 
+  Create a dependeny task that indicates that variables of another task are required or calculated. The
   source and target tasks are taken from the all-tasks-array."
   input Integer iSourceTaskIdx;
   input Integer iTargetTaskIdx;
@@ -533,9 +533,9 @@ algorithm
 end createDepTaskByTaskIdc;
 
 protected function createDepTaskByTaskIdcR "author: marcusw
-  Create a dependeny task that indicates that variables of another task are required or calculated. The 
+  Create a dependeny task that indicates that variables of another task are required or calculated. The
   source and target tasks are taken from the all-tasks-array. Additionally, this
-  is the revered edition of createOutgoingDummyDepTask, which means that the dependency is 
+  is the revered edition of createOutgoingDummyDepTask, which means that the dependency is
   leading from target to source."
   input Integer iSourceTaskIdx;
   input Integer iTargetTaskIdx;
@@ -4255,7 +4255,7 @@ author:Waurich TUD 2013-12"
   input Integer numProc;
   input array<tuple<HpcOmSimCode.Task,Integer>> iAllCalcTasks;
   input list<HpcOmSimCode.Task> removeLocksIn;
-  output list<HpcOmSimCode.Task> removeLocksOut; //dummy-tasks are appended, that have a correct source- and target-taskID 
+  output list<HpcOmSimCode.Task> removeLocksOut; //dummy-tasks are appended, that have a correct source- and target-taskID
 protected
   array<list<Integer>> parentsOnThreads;
   list<Integer> otherParentsProcs, lockCandidatesFlat;
