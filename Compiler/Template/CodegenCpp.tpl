@@ -9942,10 +9942,10 @@ template daeExpCrefRhsArrayBox2(Text var,DAE.Type type, Context context, Text &p
                                Text &varDecls /*BUFP*/,SimCode simCode) ::=
  match type
   case t as T_ARRAY(ty=aty,dims=dims)        then
-    
+
      let dimstr = checkDimension(dims)
-   
-    
+
+
     let arraytype =   match dimstr
       case "" then 'DynArrayDim<%listLength(dims)%><<%expTypeShort(type)%>>'
       else   'StatArrayDim<%listLength(dims)%><<%expTypeShort(type)%>,<%dimstr%>>'
