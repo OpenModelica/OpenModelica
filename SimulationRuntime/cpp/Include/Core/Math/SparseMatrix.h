@@ -40,7 +40,7 @@ struct sparse_inserter  {
 
     inline t2 operator()(const unsigned int  i, const unsigned int j)
     {
-      t2 res(i,j,content);
+      t2 res(i-1,j-1,content);
       return res;
     }
 
