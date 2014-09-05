@@ -1289,7 +1289,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
             std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
 
             simulation.first->Start(system.first,simulation.second,"<%lastIdentOfPath(modelInfo.name)%>");
-      <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then 'RDTSC_MeasureTime::deinitialize();' %>
+      <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '//RDTSC_MeasureTime::deinitialize();' %>
       return 0;
 
       }
