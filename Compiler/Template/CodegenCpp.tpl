@@ -6,6 +6,8 @@ import CodegenUtil.*;
 
 
 
+
+
 template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -9016,16 +9018,22 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     'boost::numeric_cast<int>(<%exp%>)'
 
 
-  case CALL(path=IDENT(name="floor"), expLst={inExp}, attr=CALL_ATTR(ty = ty)) then
+  case CALL(path=IDENT(name="floor"), expLst={inExp,index}, attr=CALL_ATTR(ty = ty)) then
     let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     //let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     'std::floor(<%exp%>)'
-
-  case CALL(path=IDENT(name="ceil"), expLst={inExp}, attr=CALL_ATTR(ty = ty)) then
+ case CALL(path=IDENT(name="floor"), expLst={inExp}, attr=CALL_ATTR(ty = ty)) then
+    let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
+    //let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
+    'std::floor(<%exp%>)'
+  case CALL(path=IDENT(name="ceil"), expLst={inExp,index}, attr=CALL_ATTR(ty = ty)) then
     let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     //let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     'std::ceil(<%exp%>)'
-
+  case CALL(path=IDENT(name="ceil"), expLst={inExp,index}, attr=CALL_ATTR(ty = ty)) then
+    let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
+    //let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
+    'std::ceil(<%exp%>)'
 
   case CALL(path=IDENT(name="integer"), expLst={inExp}) then
     let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
@@ -9220,7 +9228,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &tmpVar /*BUFD*/,simCode, useFlatArrayNotation)
     let arr_tp_str = expTypeFromExpShort(array)
     let tvar = tempDecl(expTypeFromExpModelica(array), &varDecls /*BUFD*/)
-    let &preExp += '<%tvar%> = min_max<<%arr_tp_str%>,1>(<%expVar%>).second;<%\n%>'
+    let &preExp += '<%tvar%> = min_max<<%arr_tp_str%>>(<%expVar%>).second;<%\n%>'
     '<%tvar%>'
   case CALL(path=IDENT(name="sum"), expLst={array}) then
     let &tmpVar = buffer "" /*BUFD*/
@@ -9235,7 +9243,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &tmpVar /*BUFD*/,simCode, useFlatArrayNotation)
     let arr_tp_str = expTypeFromExpShort(array)
     let tvar = tempDecl(expTypeFromExpModelica(array), &varDecls /*BUFD*/)
-    let &preExp += '<%tvar%> = min_max<<%arr_tp_str%>,1>(<%expVar%>).first;<%\n%>'
+    let &preExp += '<%tvar%> = min_max<<%arr_tp_str%>>(<%expVar%>).first;<%\n%>'
     '<%tvar%>'
 
   case CALL(path=IDENT(name="fill"), expLst=val::dims, attr=attr as CALL_ATTR(__)) then
@@ -9934,17 +9942,24 @@ template daeExpCrefRhsArrayBox2(Text var,DAE.Type type, Context context, Text &p
                                Text &varDecls /*BUFP*/,SimCode simCode) ::=
  match type
   case t as T_ARRAY(ty=aty,dims=dims)        then
-    let arraytype = 'multi_array<<%expTypeShort(t)%>,<%listLength(dims)%>>'
+    
+     let dimstr = checkDimension(dims)
+   
+    
+    let arraytype =   match dimstr
+      case "" then 'DynArrayDim<%listLength(dims)%><<%expTypeShort(type)%>>'
+      else   'StatArrayDim<%listLength(dims)%><<%expTypeShort(type)%>,<%dimstr%>>'
+      end match
     let &tmpdecl = buffer "" /*BUFD*/
     let arrayVar = tempDecl(arraytype, &tmpdecl /*BUFD*/)
-    let boostExtents = '<%arraytype%><%arrayVar%>/*(<%boostExtents(t)%>)*/;'
-    let size = (dims |> dim => dimension(dim) ;separator="+")
-    let arrayassign =  '<%arrayVar%>.assign(&<%var%>,&<%var%>+(<%size%>));<%\n%>'
+    let boostExtents = '<%arraytype%><%arrayVar%>;'
+    //let size = (dims |> dim => dimension(dim) ;separator="+")
+   // let arrayassign =  '<%arrayVar%>.assign(&<%var%>,&<%var%>+(<%size%>));<%\n%>'
+    let arrayassign =  '<%arrayVar%>.assign(&<%var%>);<%\n%>'
     let &preExp += '
           //tmp array3
           <%boostExtents%>
-          /*<%arrayVar%>.reindex(1);*/
-          <%arrayassign%>'
+         <%arrayassign%>'
     arrayVar
   else
     var

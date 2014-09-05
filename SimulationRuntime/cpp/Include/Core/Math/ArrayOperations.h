@@ -73,6 +73,15 @@ void usub_array(BaseArray<T> & a , BaseArray<T> & b);
 template < typename T >
 T sum_array ( BaseArray<T> & leftArray );
 
+
+/**
+finds min/max elements of an array */
+template < typename T >
+std::pair <T,T>
+min_max (BaseArray<T>& x);
+
+
+
 /**
 scalar product of two arrays (a,b type as template parameter)
 */

@@ -275,7 +275,17 @@ void cross_array( BaseArray<T> & a ,BaseArray<T> & b, BaseArray<T> & res )
 
 };
 
-
+/**
+finds min/max elements of an array */
+template < typename T >
+std::pair <T,T>
+min_max (BaseArray<T>& x)
+{
+  T* data = x.getData();
+  std::pair <T*,T*> ret =
+  boost::minmax_element(data, data + x.getNumElems());
+  return std::make_pair(*(ret.first),*(ret.second));
+}
 /*
 Explicit template instantiation for double,int,bool
 */
@@ -334,3 +344,7 @@ template void cross_array( BaseArray<bool> & a ,BaseArray<bool> & b, BaseArray<b
 template double dot_array( BaseArray<double> & a ,  BaseArray<double> & b  );
 template int dot_array( BaseArray<int> & a ,  BaseArray<int> & b  );
 template bool dot_array( BaseArray<bool> & a ,  BaseArray<bool> & b  );
+
+template std::pair <double,double> min_max (BaseArray<double>& x);
+template std::pair <int,int> min_max (BaseArray<int>& x);
+template std::pair <bool,bool> min_max (BaseArray<bool>& x);
