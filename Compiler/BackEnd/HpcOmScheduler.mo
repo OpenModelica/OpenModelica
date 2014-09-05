@@ -1089,7 +1089,7 @@ algorithm
       equation
         tmpScheduleInfo = arrayUpdate(tmpScheduleInfo,taskIdx,(threadIdx,taskNumber,timeFinished));
       then ((tmpScheduleInfo,taskNumber+1));
-    case (HpcOmSimCode.DEPTASK(_),_) then iScheduleInfo;
+    case (HpcOmSimCode.DEPTASK(sourceTask=_,targetTask=_,outgoing=_),_) then iScheduleInfo;
     else
       equation
         print("HpcOmScheduler.convertScheduleStrucToInfo1 failed. Unknown Task-Type.\n");

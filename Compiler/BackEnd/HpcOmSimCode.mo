@@ -93,7 +93,7 @@ encapsulated package HpcOmSimCode
       array<list<Task>> threadTasks; //List of tasks assigned to the thread <%idx%>
       list<Task> outgoingDepTasks; //all outgoing dep-tasks -> can be used for example to initialize locks
       list<Task> scheduledTasks;
-      array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks; //mapping task idx -> (calc task, reference counter)
+      array<tuple<Task,Integer>> allCalcTasks; //mapping task idx -> (calc task, reference counter)
     end THREADSCHEDULE;
     record TASKDEPSCHEDULE
       list<tuple<Task,list<Integer>>> tasks; //topological sorted tasks with <taskIdx, parentTaskIdc>
