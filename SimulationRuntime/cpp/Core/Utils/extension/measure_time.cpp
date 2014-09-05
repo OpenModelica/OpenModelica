@@ -1,6 +1,6 @@
 #include <Core/Utils/extension/measure_time.hpp>
 
-RDTSC_MeasureTime * MeasureTime::instance = 0;
+MeasureTime * MeasureTime::instance = 0;
 
 MeasureTime* MeasureTime::getInstance()
 {
@@ -15,10 +15,9 @@ void MeasureTime::deinitialize()
 
 unsigned long long MeasureTime::getTime()
 {
-//  if (instance == 0)
-//    return 0;
+  if (instance == 0)
+    return 0;
 
-  std::cerr << "hallo welt" << std::endl;
   unsigned long long val = instance->getTimeP();
 
   return val;

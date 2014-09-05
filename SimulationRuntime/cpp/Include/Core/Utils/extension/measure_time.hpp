@@ -13,10 +13,7 @@
 #include <iostream>
 #include <Core/Modelica.h>
 
-
-class RDTSC_MeasureTime;
-
-class BOOST_EXTENSION_EXPORT_DECL MeasureTime
+class MeasureTime
 {
 public:
   MeasureTime() {}
@@ -40,10 +37,10 @@ public:
 public:
 	virtual unsigned long long getTimeP() = 0;
 protected:
-	static RDTSC_MeasureTime *instance;
+	static MeasureTime *instance;
 };
 
-class BOOST_EXTENSION_EXPORT_DECL RDTSC_MeasureTime : public MeasureTime
+class RDTSC_MeasureTime : public MeasureTime
 {
 public:
 	RDTSC_MeasureTime() : MeasureTime() {};
