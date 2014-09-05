@@ -3296,12 +3296,11 @@ package HpcOmSimCode
       list<Integer> nodeIdc;
       Option<Integer> threadIdx;
     end CALCTASK_LEVEL;
-    record ASSIGNLOCKTASK //Task which assignes a lock
-      String lockId;
-    end ASSIGNLOCKTASK;
-    record RELEASELOCKTASK //Task which releases a lock
-      String lockId;
-    end RELEASELOCKTASK;
+    record DEPTASK
+      Task sourceTask;
+      Task targetTask;
+      Boolean outgoing; //true if the dependency is leading to the task of another thread
+    end DEPTASK;
   end Task;
 
   uniontype TaskList
@@ -3319,7 +3318,7 @@ package HpcOmSimCode
     end LEVELSCHEDULE;
     record THREADSCHEDULE
       array<list<Task>> threadTasks;
-      list<String> lockIdc;
+      list<Task> outgoingDepTasks;
     end THREADSCHEDULE;
     record TASKDEPSCHEDULE
       list<tuple<Task,list<Integer>>> tasks;

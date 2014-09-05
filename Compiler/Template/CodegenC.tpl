@@ -2293,9 +2293,9 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
       }
       >>
    case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
-      let locks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_createLock(idx, "lock", type); separator="\n"
-      let initlocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_initializeLock(idx, "lock", type); separator="\n"
-      let assignLocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_assignLock(idx, "lock", type); separator="\n"
+      let locks = hpcOmSchedule.outgoingDepTasks |> task => function_HPCOM_createLockByDepTask(task, "lock", type); separator="\n"
+      let initlocks = hpcOmSchedule.outgoingDepTasks |> task => function_HPCOM_initializeLockByDepTask(task, "lock", type); separator="\n"
+      let assignLocks = hpcOmSchedule.outgoingDepTasks |> task => function_HPCOM_assignLockByDepTask(task, "lock", type); separator="\n"
       match type
         case ("openmp") then
           let taskEqs = functionXXX_system0_HPCOM_Thread(derivativEquations,name,hpcOmSchedule.threadTasks, type, modelNamePrefixStr); separator="\n"
@@ -2330,13 +2330,13 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           let threadFuncCalls = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_call(name, n, i0); separator="\n"
           let threadStart = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_start(i0); separator="\n"
 
-          let threadLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_createLock(i0, "th_lock", type); separator="\n"
-          let threadLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_createLock(i0, "th_lock1", type); separator="\n"
-          let threadLocksInit = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLock(i0, "th_lock", type); separator="\n"
-          let threadLocksInit1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLock(i0, "th_lock1", type); separator="\n"
-          let threadAssignLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLock(i0, "th_lock", type); separator="\n"
-          let threadAssignLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLock(i0, "th_lock1", type); separator="\n"
-          let threadReleaseLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseLock(i0, "th_lock", type); separator="\n"
+          let threadLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_createLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_createLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadLocksInit = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadLocksInit1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadAssignLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadAssignLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadReleaseLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseLockByLockName(i0, "th_lock", type); separator="\n"
 
           <<
           // number of threads: <%arrayLength(hpcOmSchedule.threadTasks)%>
@@ -2392,13 +2392,13 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           let threadFuncCalls = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_call(name, n, i0); separator="\n"
           let threadStart = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_start(i0); separator="\n"
 
-          let threadLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_createLock(i0, "th_lock", "pthreads"); separator="\n"
-          let threadLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_createLock(i0, "th_lock1", "pthreads"); separator="\n"
-          let threadLocksInit = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLock(i0, "th_lock", "pthreads"); separator="\n"
-          let threadLocksInit1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLock(i0, "th_lock1", "pthreads"); separator="\n"
-          let threadAssignLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLock(i0, "th_lock", "pthreads"); separator="\n"
-          let threadAssignLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLock(i0, "th_lock1", "pthreads"); separator="\n"
-          let threadReleaseLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseLock(i0, "th_lock", "pthreads"); separator="\n"
+          let threadLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_createLockByLockName(i0, "th_lock", "pthreads"); separator="\n"
+          let threadLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_createLockByLockName(i0, "th_lock1", "pthreads"); separator="\n"
+          let threadLocksInit = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLockByLockName(i0, "th_lock", "pthreads"); separator="\n"
+          let threadLocksInit1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLockByLockName(i0, "th_lock1", "pthreads"); separator="\n"
+          let threadAssignLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLockByLockName(i0, "th_lock", "pthreads"); separator="\n"
+          let threadAssignLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLockByLockName(i0, "th_lock1", "pthreads"); separator="\n"
+          let threadReleaseLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseLockByLockName(i0, "th_lock", "pthreads"); separator="\n"
 
           <<
           static int finished; //set to 1 if the hpcom-threads should be destroyed
@@ -2587,93 +2587,133 @@ template function_HPCOM_Task(list<SimEqSystem> derivativEquations, String name, 
       <<
       <%odeEqs%>
       >>
-    case (task as ASSIGNLOCKTASK(__)) then
-      let assLck = function_HPCOM_assignLock(task.lockId, "lock", iType); separator="\n"
+    case(task as DEPTASK(outgoing=false)) then
+      let assLck = function_HPCOM_assignLockByDepTask(task, "lock", iType); separator="\n"
       <<
-      //Assign lock <%task.lockId%>
       <%assLck%>
       >>
-    case (task as RELEASELOCKTASK(__)) then
-      let relLck = function_HPCOM_releaseLock(task.lockId, "lock", iType); separator="\n"
+    case(task as DEPTASK(outgoing=true)) then
+      let relLck = function_HPCOM_releaseLockByDepTask(task, "lock", iType); separator="\n"
       <<
-      //Release lock <%task.lockId%>
       <%relLck%>
       >>
 end function_HPCOM_Task;
 
-template function_HPCOM_initializeLock(String lockIdx, String lockPrefix, String iType)
+template function_HPCOM_getLockNameByDepTask(Task depTask)
 ::=
-  match iType
-    case ("openmp") then
-      <<
-      omp_init_lock(&<%lockPrefix%>_<%lockIdx%>);
-      >>
-    case ("pthreads") then
-      <<
-      pthread_mutex_init(&<%lockPrefix%>_<%lockIdx%>, NULL);
-      >>
-    case ("pthreads_spin") then
-      <<
-      pthread_spin_init(&<%lockPrefix%>_<%lockIdx%>, 0);
-      >>
-end function_HPCOM_initializeLock;
+  match(depTask)
+    case(DEPTASK(sourceTask=CALCTASK(index=sourceIdx), targetTask=CALCTASK(index=targetIdx))) then
+      '<%sourceIdx%>_<%targetIdx%>'
+    else
+      'invalidLockTask'
+  end match
+end function_HPCOM_getLockNameByDepTask;
 
-template function_HPCOM_createLock(String lockIdx, String prefix, String iType)
+template function_HPCOM_initializeLockByDepTask(Task depTask, String lockPrefix, String iType)
 ::=
-  match iType
-    case ("openmp") then
-      <<
-      static omp_lock_t <%prefix%>_<%lockIdx%>;
-      >>
-    case ("pthreads") then
-      <<
-      static pthread_mutex_t <%prefix%>_<%lockIdx%>;
-      >>
-    case ("pthreads_spin") then
-      <<
-      static pthread_spinlock_t <%prefix%>_<%lockIdx%>;
-      >>
-end function_HPCOM_createLock;
+  let lockName = function_HPCOM_getLockNameByDepTask(depTask)
+  <<
+  <%function_HPCOM_initializeLockByLockName(lockName, lockPrefix, iType)%>
+  >>
+end function_HPCOM_initializeLockByDepTask;
 
-template function_HPCOM_assignLock(String lockIdx, String prefix, String iType)
+template function_HPCOM_initializeLockByLockName(String lockName, String lockPrefix, String iType)
 ::=
   match iType
     case ("openmp") then
       <<
-      omp_set_lock(&<%prefix%>_<%lockIdx%>);
+      omp_init_lock(&<%lockPrefix%>_<%lockName%>);
       >>
     case ("pthreads") then
       <<
-      pthread_mutex_lock(&<%prefix%>_<%lockIdx%>);
+      pthread_mutex_init(&<%lockPrefix%>_<%lockName%>, NULL);
       >>
     case ("pthreads_spin") then
       <<
-      pthread_spin_lock(&<%prefix%>_<%lockIdx%>);
+      pthread_spin_init(&<%lockPrefix%>_<%lockName%>, 0);
       >>
-end function_HPCOM_assignLock;
+end function_HPCOM_initializeLockByLockName;
+  
+template function_HPCOM_createLockByDepTask(Task depTask, String lockPrefix, String iType)
+::=
+  let lockName = function_HPCOM_getLockNameByDepTask(depTask)
+  <<
+  <%function_HPCOM_createLockByLockName(lockName, lockPrefix, iType)%>
+  >>
+end function_HPCOM_createLockByDepTask;
 
-template function_HPCOM_releaseLock(String lockIdx, String prefix, String iType)
+template function_HPCOM_createLockByLockName(String lockName, String lockPrefix, String iType)
 ::=
   match iType
     case ("openmp") then
       <<
-      omp_unset_lock(&<%prefix%>_<%lockIdx%>);
+      static omp_lock_t <%lockPrefix%>_<%lockName%>;
       >>
     case ("pthreads") then
       <<
-      pthread_mutex_unlock(&<%prefix%>_<%lockIdx%>);
+      static pthread_mutex_t <%lockPrefix%>_<%lockName%>;
       >>
     case ("pthreads_spin") then
       <<
-      pthread_spin_unlock(&<%prefix%>_<%lockIdx%>);
+      static pthread_spinlock_t <%lockPrefix%>_<%lockName%>;
       >>
-end function_HPCOM_releaseLock;
+end function_HPCOM_createLockByLockName;
+
+template function_HPCOM_assignLockByDepTask(Task depTask, String lockPrefix, String iType)
+::=
+  let lockName = function_HPCOM_getLockNameByDepTask(depTask)
+  <<
+  <%function_HPCOM_assignLockByLockName(lockName, lockPrefix, iType)%>
+  >>
+end function_HPCOM_assignLockByDepTask;
+
+template function_HPCOM_assignLockByLockName(String lockName, String lockPrefix, String iType)
+::=
+  match iType
+    case ("openmp") then
+      <<
+      omp_set_lock(&<%lockPrefix%>_<%lockName%>);
+      >>
+    case ("pthreads") then
+      <<
+      pthread_mutex_lock(&<%lockPrefix%>_<%lockName%>);
+      >>
+    case ("pthreads_spin") then
+      <<
+      pthread_spin_lock(&<%lockPrefix%>_<%lockName%>);
+      >>
+end function_HPCOM_assignLockByLockName;
+
+template function_HPCOM_releaseLockByDepTask(Task depTask, String lockPrefix, String iType)
+::=
+  let lockName = function_HPCOM_getLockNameByDepTask(depTask)
+  <<
+  <%function_HPCOM_releaseLockByLockName(lockName, lockPrefix, iType)%>
+  >>
+end function_HPCOM_releaseLockByDepTask;
+
+template function_HPCOM_releaseLockByLockName(String lockName, String lockPrefix, String iType)
+::=
+  match iType
+    case ("openmp") then
+      <<
+      omp_unset_lock(&<%lockPrefix%>_<%lockName%>);
+      >>
+    case ("pthreads") then
+      <<
+      pthread_mutex_unlock(&<%lockPrefix%>_<%lockName%>);
+      >>
+    case ("pthreads_spin") then
+      <<
+      pthread_spin_unlock(&<%lockPrefix%>_<%lockName%>);
+      >>
+end function_HPCOM_releaseLockByLockName;
 
 template functionXXX_system0_HPCOM_PThread_func(list<SimEqSystem> derivativEquations, String name, Integer n, array<list<Task>> threadTasks, String iType, Integer idx, String modelNamePrefixStr)
 ::=
   let taskEqs = functionXXX_system0_HPCOM_Thread0(derivativEquations, name, arrayGet(threadTasks,intAdd(idx,1)), iType, modelNamePrefixStr); separator="\n"
-  let assLock = function_HPCOM_assignLock(idx, "th_lock", "pthreads"); separator="\n"
-  let relLock = function_HPCOM_releaseLock(idx, "th_lock1", "pthreads"); separator="\n"
+  let assLock = function_HPCOM_assignLockByLockName(idx, "th_lock", "pthreads"); separator="\n"
+  let relLock = function_HPCOM_releaseLockByLockName(idx, "th_lock1", "pthreads"); separator="\n"
   <<
   void function<%name%>_system<%n%>_thread_<%idx%>(DATA *data)
   {

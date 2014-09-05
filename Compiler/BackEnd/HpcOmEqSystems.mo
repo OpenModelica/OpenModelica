@@ -2158,7 +2158,7 @@ algorithm
   task := matchcontinue(otherEqSys,resSimEqs,compIdx)
     local
       Integer numThreads;
-      list<String> lockIdc, lockIdcsEnd;
+      list<HpcOmSimCode.Task> outgoingDepTasks, outgoingDepTasksEnd;
       String lockSuffix;
       HpcOmSimCode.Schedule schedule;
       HpcOmSimCode.Task resEqsTask;
@@ -2166,37 +2166,39 @@ algorithm
       list<HpcOmSimCode.Task> assLocks,relLocks, firstThread;
       array<list<HpcOmSimCode.Task>> threadTasks;
       list<list<HpcOmSimCode.Task>> threadTasksLst;
+      array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
     case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=levelTasks),_,_)
       equation
         print("levelScheduling is not supported for heterogenious scheduling\n");
       then
         fail();
-    case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_)
+    case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks),_,_)
       equation
+        //05-09-2014 marcusw: Changed because of dependency-task restructuring for MPI
         numThreads = arrayLength(threadTasks);
         // rename locks, get locks before residual equations
-        lockSuffix = "_"+&intString(compIdx);
-        lockIdc = List.map1(lockIdc,stringAppend,lockSuffix);
-        lockIdcsEnd = List.map1r(List.map(List.intRange(numThreads),intString),stringAppend,"lock_comp"+&intString(compIdx)+&"_th");
-        lockIdc = listAppend(lockIdc,lockIdcsEnd);
-        threadTasks = Util.arrayMap1(threadTasks,appendStringToLockIdcs,lockSuffix);
+        //lockSuffix = "_"+&intString(compIdx);
+        //outgoingDepTasks = List.map1(lockIdc,stringAppend,lockSuffix);
+        //outgoingDepTasksEnd = List.map1r(List.map(List.intRange(numThreads),intString),stringAppend,"lock_comp"+&intString(compIdx)+&"_th");
+        //outgoingDepTasks = listAppend(outgoingDepTasks,outgoingDepTasksEnd);
+        //threadTasks = Util.arrayMap1(threadTasks,appendStringToLockIdcs,lockSuffix);
 
         // build missing residual tasks and locks
-        assLocks = List.map(lockIdcsEnd,HpcOmScheduler.getAssignLockTask);
-        relLocks = List.map(lockIdcsEnd,HpcOmScheduler.getReleaseLockTask);
-        resEqsTask = HpcOmSimCode.CALCTASK(0,-1,-1.0,-1.0,1,resSimEqs);
+        //assLocks = List.map(outgoingDepTasksEnd,HpcOmScheduler.getAssignLockTask);
+        //relLocks = List.map(outgoingDepTasksEnd,HpcOmScheduler.getReleaseLockTask);
+        //resEqsTask = HpcOmSimCode.CALCTASK(0,-1,-1.0,-1.0,1,resSimEqs);
 
         threadTasksLst = arrayList(threadTasks);
 
-        threadTasksLst = List.threadMap(threadTasksLst,List.map(relLocks,List.create),listAppend);
-        firstThread::threadTasksLst = threadTasksLst;
+        //threadTasksLst = List.threadMap(threadTasksLst,List.map(relLocks,List.create),listAppend);
+        //firstThread::threadTasksLst = threadTasksLst;
 
-        firstThread = listAppend(firstThread,assLocks);
-        firstThread = listAppend(firstThread,{resEqsTask});
+        //firstThread = listAppend(firstThread,assLocks);
+        //firstThread = listAppend(firstThread,{resEqsTask});
 
-        threadTasksLst = firstThread::threadTasksLst;
+        //threadTasksLst = firstThread::threadTasksLst;
         threadTasks = listArray(threadTasksLst);
-        schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,lockIdc,{});
+        schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,{},allCalcTasks);
 
       then
         HpcOmSimCode.SCHEDULED_TASK(compIdx,numThreads,schedule);
@@ -2207,36 +2209,37 @@ algorithm
   end matchcontinue;
 end pts_transformScheduleToTask;
 
-protected function appendStringToLockIdcs"appends the suffix to the lockIds of the given tasks
-author: Waurich TUD 2014-07"
-  input list<HpcOmSimCode.Task> taskLstIn;
-  input String suffix;
-  output list<HpcOmSimCode.Task> taskLstOut;
-algorithm
-  taskLstOut := List.map1(taskLstIn,appendStringToLockIdcs1,suffix);
-end appendStringToLockIdcs;
-
-protected function appendStringToLockIdcs1"appends the suffix to the lockIds of the given tasks
-author: Waurich TUD 2014-07"
-  input HpcOmSimCode.Task taskIn;
-  input String suffix;
-  output HpcOmSimCode.Task taskOut;
-algorithm
-  taskOut := match(taskIn,suffix)
-    local
-      String lockId;
-    case(HpcOmSimCode.ASSIGNLOCKTASK(lockId=lockId),_)
-      equation
-        lockId = stringAppend(lockId,suffix);
-    then HpcOmSimCode.ASSIGNLOCKTASK(lockId);
-     case(HpcOmSimCode.RELEASELOCKTASK(lockId=lockId),_)
-      equation
-        lockId = stringAppend(lockId,suffix);
-    then HpcOmSimCode.RELEASELOCKTASK(lockId);
-    else
-      then taskIn;
-  end match;
-end appendStringToLockIdcs1;
+//05-09-2014 marcusw: Changed because of dependency-task restructuring for MPI
+//protected function appendStringToLockIdcs"appends the suffix to the lockIds of the given tasks
+//author: Waurich TUD 2014-07"
+//  input list<HpcOmSimCode.Task> taskLstIn;
+//  input String suffix;
+//  output list<HpcOmSimCode.Task> taskLstOut;
+//algorithm
+//  taskLstOut := List.map1(taskLstIn,appendStringToLockIdcs1,suffix);
+//end appendStringToLockIdcs;
+//
+//protected function appendStringToLockIdcs1"appends the suffix to the lockIds of the given tasks
+//author: Waurich TUD 2014-07"
+//  input HpcOmSimCode.Task taskIn;
+//  input String suffix;
+//  output HpcOmSimCode.Task taskOut;
+//algorithm
+//  taskOut := match(taskIn,suffix)
+//    local
+//      String lockId;
+//    case(HpcOmSimCode.ASSIGNLOCKTASK(lockId=lockId),_)
+//      equation
+//        lockId = stringAppend(lockId,suffix);
+//    then HpcOmSimCode.ASSIGNLOCKTASK(lockId);
+//     case(HpcOmSimCode.RELEASELOCKTASK(lockId=lockId),_)
+//      equation
+//        lockId = stringAppend(lockId,suffix);
+//    then HpcOmSimCode.RELEASELOCKTASK(lockId);
+//    else
+//      then taskIn;
+//  end match;
+//end appendStringToLockIdcs1;
 
 protected function buildMatchedGraphForTornSystem
   input Integer idx;
@@ -2335,6 +2338,7 @@ protected
   array<list<HpcOmSimCode.Task>> threadTasks;
   array<list<Integer>> inComps;
   list<String> lockIdc;
+  array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) := metaIn;
   nodes := List.intRange(arrayLength(graphIn));
@@ -2344,7 +2348,8 @@ algorithm
   thread1 := List.threadMap1(simEqSys,nodes,HpcOmScheduler.makeCalcTask,1);
   threadTasks := arrayCreate(4,{});
   threadTasks := arrayUpdate(threadTasks,1,thread1);
-  schedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,{},scheduledTasks);
+  allCalcTasks := arrayCreate(listLength(thread1), (HpcOmSimCode.TASKEMPTY(),0));
+  schedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,{},scheduledTasks,allCalcTasks);
 end createSingleBlockSchedule;
 
 //--------------------------------------------------//

@@ -61,12 +61,11 @@ encapsulated package HpcOmSimCode
       list<Integer> nodeIdc; //indices of the graph-node
       Option<Integer> threadIdx; //an advice which thread should calculate the task
     end CALCTASK_LEVEL;
-    record ASSIGNLOCKTASK //Task which assignes a lock
-      String lockId;
-    end ASSIGNLOCKTASK;
-    record RELEASELOCKTASK //Task which releases a lock
-      String lockId;
-    end RELEASELOCKTASK;
+    record DEPTASK
+      Task sourceTask;
+      Task targetTask;
+      Boolean outgoing; //true if the dependency is leading to the task of another thread
+    end DEPTASK;
     record PREFETCHTASK //This task will load variables in the cache
       list<Integer> varIdc;
       Integer varArrayidx;
@@ -92,8 +91,9 @@ encapsulated package HpcOmSimCode
     end LEVELSCHEDULE;
     record THREADSCHEDULE
       array<list<Task>> threadTasks; //List of tasks assigned to the thread <%idx%>
-      list<String> lockIdc;
+      list<Task> outgoingDepTasks; //all outgoing dep-tasks -> can be used for example to initialize locks
       list<Task> scheduledTasks;
+      array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks; //mapping task idx -> (calc task, reference counter)
     end THREADSCHEDULE;
     record TASKDEPSCHEDULE
       list<tuple<Task,list<Integer>>> tasks; //topological sorted tasks with <taskIdx, parentTaskIdc>
