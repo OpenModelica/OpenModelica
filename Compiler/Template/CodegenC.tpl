@@ -104,8 +104,8 @@ template translateFunctions(FunctionCode functionCode)
     let()= System.tmpTickResetIndex(0,2) /* auxFunction index */
     let filePrefix = name
     let _= (if mainFunction then textFile(functionsMakefile(functionCode), '<%filePrefix%>.makefile'))
-    let()= textFile(functionsHeaderFile(filePrefix, mainFunction, functions, extraRecordDecls, externalFunctionIncludes), '<%filePrefix%>.h')
-    let()= textFileConvertLines(functionsFile(filePrefix, mainFunction, functions, literals), '<%filePrefix%>.c')
+    let()= textFile(functionsHeaderFile(filePrefix, mainFunction, functions, extraRecordDecls), '<%filePrefix%>.h')
+    let()= textFileConvertLines(functionsFile(filePrefix, mainFunction, functions, literals, externalFunctionIncludes), '<%filePrefix%>.c')
     let()= textFile(recordsFile(filePrefix, extraRecordDecls), '<%filePrefix%>_records.c')
     // If ParModelica generate the kernels file too.
     if acceptParModelicaGrammar() then
@@ -4559,7 +4559,8 @@ end commonHeader;
 template functionsFile(String filePrefix,
                        Option<Function> mainFunction,
                        list<Function> functions,
-                       list<Exp> literals)
+                       list<Exp> literals,
+                       list<String> includes)
  "Generates the contents of the main C file for the function case."
 ::=
   let &preLit = buffer ""
@@ -4571,6 +4572,11 @@ template functionsFile(String filePrefix,
      literalsRes
   %>
   #include "util/modelica.h"
+  
+  /* start - annotation(Include=...) if we have any */
+  <%externalFunctionIncludes(includes)%>
+  /* end - annotation(Include=...) */
+  
   <% if mainFunction then
   <<
   void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__ ((noreturn)) = omc_assert_function;
@@ -4588,8 +4594,7 @@ end functionsFile;
 template functionsHeaderFile(String filePrefix,
                        Option<Function> mainFunction,
                        list<Function> functions,
-                       list<RecordDeclaration> extraRecordDecls,
-                       list<String> includes)
+                       list<RecordDeclaration> extraRecordDecls)
  "Generates the contents of the main C file for the function case."
 ::=
   <<
@@ -4605,10 +4610,6 @@ template functionsHeaderFile(String filePrefix,
   <%match mainFunction case SOME(fn) then functionHeader(fn,true)%>
 
   <%functionHeaders(functions)%>
-
-  /* start - annotation(Include=...) if we have any */
-  <%externalFunctionIncludes(includes)%>
-  /* end - annotation(Include=...) */
 
   #ifdef __cplusplus
   }
