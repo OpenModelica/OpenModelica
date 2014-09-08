@@ -741,7 +741,7 @@ static inline void pickUpStates(OptData* optData){
           if(!b)
             warningStreamPrint(LOG_STDOUT, 0, "it was impossible to set %s.start %g", buffer,start_value);
           else
-        	printf("\n[%i]set %s.start %g", i, buffer,start_value);
+          printf("\n[%i]set %s.start %g", i, buffer,start_value);
 
         }
         fclose(pFile);
