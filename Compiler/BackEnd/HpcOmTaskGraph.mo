@@ -1514,27 +1514,22 @@ author: Waurich TUD 2013-06"
   output TaskGraph graphOdeOut;
   output TaskGraphMeta graphDataOdeOut;
 protected
-  list<BackendDAE.Var> varLst;
-  list<Integer> statevarindx_lst, stateVars, stateNodes, whenNodes, whenChildren, cutNodes, cutNodeChildren;
+  list<Integer> stateNodes, whenNodes, cutNodes, cutNodeChildren;
   array<tuple<Integer, Integer, Integer>> varCompMapping, eqCompMapping;
   array<list<Integer>> inComps;
-  String fileName;
-  BackendDAE.Variables orderedVars;
   BackendDAE.EqSystems systs;
-  BackendDAE.Shared shared;
   TaskGraph graphTmp;
   TaskGraphMeta graphDataTmp;
 algorithm
   TASKGRAPHMETA(varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, inComps=inComps) := graphDataIn;
-  BackendDAE.DAE(systs,shared) := systIn;
+  BackendDAE.DAE(systs,_) := systIn;
   ((stateNodes,_)) := List.fold2(systs,getAllStateNodes,varCompMapping,inComps,({},0));
   whenNodes := getEventNodes(systIn,eqCompMapping);
-  graphTmp := graphIn; //arrayCopy(graphIn);
-  (graphTmp,cutNodes) := cutTaskGraph(graphTmp,stateNodes,whenNodes,{});
+  graphTmp := arrayCopy(graphIn);
+  (graphOdeOut,cutNodes) := cutTaskGraph(graphTmp,stateNodes,whenNodes);
   cutNodeChildren := List.flatten(List.map1(listAppend(cutNodes,whenNodes),Util.arrayGetIndexFirst,graphIn)); // for computing new root-nodes when cutting out when-equations
   (_,cutNodeChildren,_) := List.intersection1OnTrue(cutNodeChildren,cutNodes,intEq);
-  graphDataOdeOut := cutSystemData(graphDataIn,listAppend(cutNodes,whenNodes),cutNodeChildren);
-  graphOdeOut := graphTmp;
+  graphDataOdeOut := cutSystemData(graphDataIn,listAppend(cutNodes,{}),cutNodeChildren);
 end getOdeSystem;
 
 protected function getAllStateNodes "folding function for getOdeSystem to traverse the equationsystems in the BackendDAE.
@@ -1602,70 +1597,91 @@ algorithm
       equation
         false = BackendVariable.isStateVar(head);
         stateVars = getStates(rest,stateVarsIn,Idx+1);
-      then
-        stateVars;
+      then stateVars;
     case((head::rest),_,_)
       equation
         true = BackendVariable.isStateVar(head);
         stateVars = getStates(rest,Idx::stateVarsIn,Idx+1);
-      then
-        stateVars;
+      then stateVars;
     case({},_,_)
-      then
-        stateVarsIn;
+      then stateVarsIn;
    end matchcontinue;
  end getStates;
 
-protected function cutTaskGraph "cuts every branch of the taskgraph that leads not to exceptNode.
+protected function cutTaskGraph "cuts every branch of the taskGraph that leads not to exceptNode.
 author:Waurich TUD 2013-06"
   input TaskGraph graphIn;
-  input list<Integer> stateNodes;
-  input list<Integer> eventNodes;
-  input list<Integer> deleteNodes;
+  input list<Integer> exceptNodes;// dont cut them and their predecessors
+  input list<Integer> whenNodes;// these can be removed even if they are predecessors of the exceptNodes
   output TaskGraph graphOut;
   output list<Integer> cutNodesOut;
 algorithm
-  (graphOut,cutNodesOut) := matchcontinue(graphIn,stateNodes,eventNodes,deleteNodes)
+  (graphOut,cutNodesOut) := matchcontinue(graphIn,exceptNodes,whenNodes)
     local
-      list<Integer> cutNodes;
-      list<Integer> deleteNodesTmp;
-      list<Integer> noChildren;
-      array<list<Integer>> graphTmp;
+      Integer sizeDAE,sizeODE;
+      TaskGraph graphT, graphODE;
+      list<Integer> cutNodes,odeNodes;
+      array<Integer> odeMap;
       list<list<Integer>> graphTmpLst;
-    case(_,_,_,_)
+    case(_,_,_)
       equation
         // remove the algebraic branches
-        noChildren = getLeafNodes(graphIn);
-        (_,cutNodes,_) = List.intersection1OnTrue(noChildren,listAppend(stateNodes,deleteNodes),intEq);
-        deleteNodesTmp = listAppend(cutNodes,deleteNodes);
-        false = List.isEmpty(cutNodes);
-        //print("pre cut\n");
-        //printTaskGraph(graphIn);
-        graphTmp = removeEntriesInGraph(graphIn,cutNodes);
-        (graphTmp,deleteNodesTmp) = cutTaskGraph(graphTmp,stateNodes,eventNodes,deleteNodesTmp);
-        //print("post cut\n");
-        //printTaskGraph(graphTmp);
-         then
-           (graphTmp,deleteNodesTmp);
-    case(_,_,_,_)
+        sizeDAE = arrayLength(graphIn);
+        graphT = BackendDAEUtil.transposeMatrix(graphIn,sizeDAE);
+        odeNodes = listAppend(exceptNodes,getAllSuccessors(exceptNodes,graphT));//the ODE-System
+        (_,odeNodes,_) = List.intersection1OnTrue(odeNodes,whenNodes,intEq);
+        (odeNodes,cutNodes,_) = List.intersection1OnTrue(List.intRange(sizeDAE),odeNodes,intEq);
+
+        odeNodes = List.sort(odeNodes,intGt);
+        sizeODE = listLength(odeNodes);
+        odeMap = arrayCreate(sizeDAE,-1);
+        List.threadMap1_0(odeNodes,List.intRange(sizeODE),Util.arrayUpdateIndexFirst,odeMap);
+        graphODE = arrayCreate(sizeODE,{});
+        (graphODE,cutNodes) = cutTaskGraph2(List.intRange(sizeDAE),graphODE,{},graphIn,odeMap);
+      then (graphODE,cutNodes);
+    else
       equation
-        noChildren = getLeafNodes(graphIn);
-        (_,cutNodes,_) = List.intersection1OnTrue(noChildren,listAppend(stateNodes,deleteNodes),intEq);
-        true = List.isEmpty(cutNodes);
-        //print("pre cut\n");
-        //print("cutting nodes: " +& stringDelimitList(List.map(eventNodes,intString),",") +& "\n");
-        //printTaskGraph(graphIn);
-        graphTmp = removeEntriesInGraph(graphIn,eventNodes);
-        graphTmpLst = arrayList(graphIn);
-        graphTmpLst = List.map1(graphTmpLst,updateContinuousEntriesInList,List.unique(listAppend(deleteNodes,eventNodes)));
-        graphTmp = listArray(graphTmpLst);
-        (graphTmp,_) = deleteRowInAdjLst(graphTmp,List.unique(listAppend(deleteNodes,eventNodes)));
-        //print("post cut\n");
-        //printTaskGraph(graphTmp);
-         then
-           (graphTmp,deleteNodes);
+        print("cutTaskGraph failed\n");
+      then fail();
   end matchcontinue;
 end cutTaskGraph;
+
+protected function cutTaskGraph2"uses a mapping between daeIdx and odeIdx (or for DAE-eqs -1) and builds up a new ode graph.
+the ode nodes are mapped to new indeces and the dae eqs are skipped.
+author:Waurich TUD 2013-04"
+  input list<Integer> daeNodes;
+  input TaskGraph graphODE;
+  input list<Integer> cutNodesIn;
+  input TaskGraph graphDAE;
+  input array<Integer> odeMap;
+  output TaskGraph graphOut;
+  output list<Integer> cutNodesOut;
+algorithm
+  (graphOut,cutNodesOut) := matchcontinue(daeNodes,graphODE,cutNodesIn,graphDAE,odeMap)
+    local
+      Integer daeIdx,odeIdx;
+      list<Integer> rest,row,cutNodes;
+      TaskGraph graphTmp;
+    case(daeIdx::rest,_,_,_,_)
+      equation
+        odeIdx = arrayGet(odeMap,daeIdx);
+        true = intGt(odeIdx,0);  // this node is still in the ODE system
+        row = arrayGet(graphDAE,daeIdx);
+        row = List.map1(row,Util.arrayGetIndexFirst,odeMap);
+        row = List.filter1OnTrue(row,intGt,0);
+        _ = arrayUpdate(graphODE,odeIdx,row);
+        (_,cutNodes) = cutTaskGraph2(rest,graphODE,cutNodesIn,graphDAE,odeMap);
+      then (graphODE,cutNodes);
+    case(daeIdx::rest,_,_,_,_)
+      equation
+        odeIdx = arrayGet(odeMap,daeIdx);
+        true = intEq(odeIdx,-1);  // this node ist not in the ODE system
+        (_,cutNodes) = cutTaskGraph2(rest,graphODE,daeIdx::cutNodesIn,graphDAE,odeMap);
+      then (graphODE,cutNodes);
+    case({},_,_,_,_)
+      then (graphODE,cutNodesIn);
+  end matchcontinue;
+end cutTaskGraph2;
 
 protected function cutSystemData "updates the taskGraphMetaData regarding the removed nodes.
 author:Waurich TUD 2013-07"
@@ -1687,9 +1703,6 @@ protected
 algorithm
   TASKGRAPHMETA(inComps = inComps, varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, rootNodes = rootNodes, nodeNames =nodeNames, nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
   inComps := listArray(List.deletePositions(arrayList(inComps),List.map1(cutNodes,intSub,1)));
-  //varCompMapping := removeContinuousEntriesTuple(varCompMapping,cutNodes);
-  //eqCompMapping := removeContinuousEntriesTuple(eqCompMapping,cutNodes);
-  //(_,rootNodes,_) := List.intersection1OnTrue(rootNodes,cutNodes,intEq); //TODO:  this has to be updated(When cutting out When-nodes new roots arise) DONE!
   rootNodes := listAppend(rootNodes,cutNodeChildren);
   rootNodes := arrayList(removeContinuousEntries(listArray(rootNodes),cutNodes));
   rootNodes := List.removeOnTrue(-1, intEq, rootNodes);
@@ -1770,6 +1783,52 @@ algorithm
   end matchcontinue;
 end getCompInComps;
 
+protected function getAllSuccessors"gets all successors including all childNodes of the childNodes...
+author:Waurich TUD 2014-09"
+  input list<Integer> nodes;
+  input TaskGraph graph;
+  output list<Integer> successors;
+protected
+  array<Boolean> alreadyVisited;
+  list<Boolean> check;
+  list<Integer> successors1, successors2;
+algorithm
+  alreadyVisited := arrayCreate(arrayLength(graph),false);
+  List.map2_0(nodes,Util.arrayUpdateIndexFirst,true,alreadyVisited); // dont use the except nodes
+  successors1 := List.flatten(List.map1(nodes,Util.arrayGetIndexFirst,graph));
+  check := List.map1(successors1,Util.arrayGetIndexFirst,alreadyVisited);  //check if it was already visited?
+  (_,successors1) := List.filterOnTrueSync(check,boolNot,successors1);
+  successors1 := List.unique(successors1);
+  //print("successors1_: "+&intLstString(successors1)+&"\n");
+  successors := getAllSuccessors2(successors1,graph,alreadyVisited,successors1);
+end getAllSuccessors;
+
+protected function getAllSuccessors2"gets all successors for the given nodes and repeats it for the successors until the end of the graph.
+author: Waurich TUD 2014-09"
+  input list<Integer> nodes;
+  input TaskGraph graph;
+  input array<Boolean> alreadyVisited;
+  input list<Integer> successorsIn;
+  output list<Integer> successorsOut;
+algorithm
+  successorsOut := match(nodes,graph,alreadyVisited,successorsIn)
+    local
+      list<Boolean> check;
+      list<Integer> successors1;
+    case({},_,_,_)
+      then List.unique(successorsIn);
+    case(_,_,_,_)
+      equation
+        successors1 = List.flatten(List.map1(nodes,Util.arrayGetIndexFirst,graph));
+        check = List.map1(successors1,Util.arrayGetIndexFirst,alreadyVisited);  //check if it was already visited?
+        (_,successors1) = List.filterOnTrueSync(check,boolNot,successors1);
+        successors1 = List.unique(successors1);
+        //print("successors1: "+&intLstString(successors1)+&"\n");
+        List.map2_0(successors1,Util.arrayUpdateIndexFirst,true,alreadyVisited);
+    then getAllSuccessors2(successors1,graph,alreadyVisited,listAppend(successors1,successorsIn));
+  end match;
+end getAllSuccessors2;
+
 public function getChildNodes "gets the successor nodes for a list of parent nodes.
 author: waurich TUD 2013-06"
   input array<list<Integer>> adjacencyLstIn;
@@ -1835,24 +1894,6 @@ algorithm
   deleteEntries := List.sort(deleteEntriesIn,intLt);
   arrayOut := Util.arrayMap1(arrayTmp,removeContinuousEntries1,deleteEntries);
 end removeContinuousEntries;
-
-protected function removeContinuousEntriesTuple " updates the entries.
-the entries in the array belong to a continuous series. (all numbers from 1 to max(array) belong to the array).
-the deleteEntries are removed from the array and the indices are adapted so that the new array consists againn of continuous series of numbers.
-e.g. removeContinuousEntries([4,6,2,3,1,7,5],{3,6}) = [3,-1,2,-1,1,5,4];
-REMARK : does not shorten the array, but sets deleted entries to -1 TODO: change this
-author: Waurich TUD 2013-07"
-  input array<tuple<Integer, Integer, Integer>> arrayIn;
-  input list<Integer> deleteEntriesIn;
-  output array<tuple<Integer, Integer, Integer>> arrayOut;
-protected
-  list<Integer> deleteEntries;
-  array<tuple<Integer, Integer, Integer>> arrayTmp;
-algorithm
-  arrayTmp := Util.arrayMap1(arrayIn,invalidateEntryTuple,deleteEntriesIn);
-  deleteEntries := List.sort(deleteEntriesIn,intLt);
-  arrayOut := Util.arrayMap1(arrayTmp,removeContinuousEntriesTuple1,deleteEntries);
-end removeContinuousEntriesTuple;
 
 protected function invalidateEntry " map function that sets the entryOut -1 if entryIn is member of lstIn.
 author: Waurich TUD 2013-07"
@@ -1921,84 +1962,6 @@ algorithm
     then entryIn;
   end matchcontinue;
 end removeContinuousEntries1;
-
-protected function removeContinuousEntriesTuple1" map function for removeContinuousEntries to update the indices.
-author:Waurich TUD 2013-07."
-  input tuple<Integer,Integer,Integer> entryTplIn;
-  input list<Integer> deleteEntriesIn;
-  output tuple<Integer,Integer,Integer> entryTplOut;
-protected
-  Integer entryIn, eqSysIdx, entryOffset;
-algorithm
-  entryTplOut := matchcontinue(entryTplIn,deleteEntriesIn)
-  local
-    Integer offset;
-    Integer entry;
-  case((entryIn,eqSysIdx,entryOffset),_)
-    equation
-      entry = List.getMemberOnTrue(entryIn,deleteEntriesIn,intGe);
-      offset = listLength(deleteEntriesIn)-List.position(entry,deleteEntriesIn);
-      entry = entryIn-offset;
-    then
-      ((entry,eqSysIdx,entryOffset));
-  else
-    equation
-    then
-      entryTplIn;
-  end matchcontinue;
-end removeContinuousEntriesTuple1;
-
-public function removeEntriesInGraph "deletes given entries from adjacencyLst.
-  author: Waurich TUD 2013-06"
-  input array<list<Integer>> inArray;
-  input list<Integer> noStates;
-  output array<list<Integer>> outArray;
-algorithm
-  outArray := match(inArray,noStates)
-  local
-    Integer head;
-    list<Integer> rest;
-    array<list<Integer>> ArrayTmp;
-  case(_,{})
-    equation
-    then
-      inArray;
-  case(_,(head::rest))
-    equation
-      ArrayTmp = removeEntryFromArray(inArray,head,1);
-      ArrayTmp = removeEntriesInGraph(ArrayTmp,rest);
-    then
-      ArrayTmp;
-  end match;
-end removeEntriesInGraph;
-
-protected function removeEntryFromArray "removes a single entry in the list<Integer> from an array<list<Integer>>. starts with indexed row.
-  author: Waurich 2013-06"
-  input array<list<Integer>> inArray;
-  input Integer entry;
-  input Integer indx;
-  output array<list<Integer>> outArray;
-algorithm
-  outArray := matchcontinue(inArray,entry,indx)
-  local
-    Integer size;
-    list<Integer> row;
-    array<list<Integer>> ArrayTmp;
-  case(_,_,_)
-  equation
-    size = arrayLength(inArray);
-    true = indx>size;
-  then inArray;
-  case(_,_,_)
-    equation
-      size = arrayLength(inArray);
-      true = indx <= size;
-      row = arrayGet(inArray,indx);
-      row = List.deleteMember(row,entry);
-      ArrayTmp = Util.arrayReplaceAtWithFill(indx,row,row,inArray);
-    then removeEntryFromArray(ArrayTmp,entry,indx+1);
-  end matchcontinue;
-end removeEntryFromArray;
 
 protected function deleteRowInAdjLst "deletes rows indexed by the rowDel from the adjacencyLst.
 author:waurich TUD 2013 - 06"
@@ -2268,7 +2231,7 @@ algorithm
   discreteNodes := List.unique(discreteNodes);
   //print("Discrete nodes: " +& stringDelimitList(List.map(discreteNodes, intString), ",") +& " (len: " +& intString(listLength(discreteNodes)) +& ")\n");
   graphTmp := iTaskGraph; //arrayCopy(graphIn);
-  (graphTmp,cutNodes) := cutTaskGraph(graphTmp,discreteNodes,{},{});
+  (graphTmp,cutNodes) := cutTaskGraph(graphTmp,discreteNodes,{});
   cutNodeChildren := List.flatten(List.map1(cutNodes,Util.arrayGetIndexFirst,iTaskGraph)); // for computing new root-nodes when cutting out nodes
   (_,cutNodeChildren,_) := List.intersection1OnTrue(cutNodeChildren,cutNodes,intEq);
   oTaskGraphMeta := cutSystemData(iTaskGraphMeta,cutNodes,cutNodeChildren);
@@ -3649,7 +3612,6 @@ protected
 algorithm
   deleteNodes := List.fold1(contractNodes,getMergeSet,graphIn,{}); //removes the last node in the path for every list of contracted paths
   graphTmp := List.fold(contractNodes,contractNodesInGraph1,graphIn);
-  //graphTmp = removeEntriesInGraph(graphIn,deleteNodes);
   graphTmpLst := arrayList(graphIn);
   graphTmpLst := List.map1(graphTmpLst,updateContinuousEntriesInList,List.unique(deleteNodes));
   graphTmp := listArray(graphTmpLst);
@@ -4518,7 +4480,7 @@ algorithm
   oComm := COMMUNICATION(numberOfVars,integerVars,floatVars,booleanVars,childNode,requiredTime);
 end createCommCosts0;
 
-protected function countOperations "author: marcusw
+public function countOperations "author: marcusw
   Count the operations of the given component."
   input BackendDAE.StrongComponent icomp;
   input BackendDAE.EqSystem isyst;
