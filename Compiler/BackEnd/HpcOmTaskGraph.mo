@@ -1623,6 +1623,9 @@ algorithm
       list<Integer> cutNodes,odeNodes;
       array<Integer> odeMap;
       list<list<Integer>> graphTmpLst;
+    case(_,{-1},_)
+      equation
+      then (graphIn,{});
     case(_,_,_)
       equation
         // remove the algebraic branches
