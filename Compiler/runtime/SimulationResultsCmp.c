@@ -115,48 +115,28 @@ static inline void fixCommaInName(char **str, size_t len)
     *str = newvar;
   }
 }
+
 static char ** getVars(void *vars, unsigned int* nvars)
 {
-  char **cmpvars=NULL;
-  char *var;
-  unsigned int i;
+  char **cmpvars = NULL;
   unsigned int ncmpvars = 0;
-  char **newvars=NULL;
-  *nvars=0;
-#ifdef DEBUGOUTPUT
-   fprintf(stderr, "getVars\n");
-#endif
-  while (RML_NILHDR != RML_GETHDR(vars)) {
-    var = RML_STRINGDATA(RML_CAR(vars));
+  unsigned int i = 0;
+  void *v;
 
-    // if var is empty, continue
-    if (strcmp(var, "\"\"") == 0) {
-#ifdef DEBUGOUTPUT
-        fprintf(stderr, "skip Var: %s\n", var);
-#endif
-       vars = RML_CDR(vars);
-       continue;
-    }
-#ifdef DEBUGOUTPUT
-     fprintf(stderr, "Var: %s\n", var);
-#endif
-    newvars = (char**)malloc(sizeof(char*)*(ncmpvars+1));
-
-    for (i=0;i<ncmpvars;i++)
-      newvars[i] = cmpvars[i];
-    newvars[ncmpvars] = var;
-    ncmpvars += 1;
-    if(cmpvars) free(cmpvars);
-    cmpvars = newvars;
-#ifdef DEBUGOUTPUT
-     fprintf(stderr, "NVar: %d\n", ncmpvars);
-#endif
-    vars = RML_CDR(vars);
+  /* Count the number of variables in the list. */
+  for(v = vars; RML_NILHDR != RML_GETHDR(v); v = RML_CDR(v)) {
+    ++ncmpvars;
   }
+
+  /* Allocate a new string array to contain the variable names. */
+  cmpvars = (char**)GC_malloc(sizeof(char*)*(ncmpvars));
+
+  /* Copy the variable names from the RML list to the string array. */
+  for(; RML_NILHDR != RML_GETHDR(vars); vars = RML_CDR(vars)) {
+    cmpvars[i++] = GC_strdup(RML_STRINGDATA(RML_CAR(vars)));
+  }
+
   *nvars = ncmpvars;
-#ifdef DEBUGOUTPUT
-    fprintf(stderr, "found %d Vars\n", ncmpvars);
-#endif
   return cmpvars;
 }
 
@@ -719,7 +699,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
         ngetfailedvars++;
         continue;
       }
-    }
+    } 
     /*  check if in file */
     data = getData(var1,filename,size,suggestReadAll,&simresglob_c,runningTestsuite);
     if (data.n==0)  {
@@ -774,7 +754,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   // if (var1) free(var1);
   // if (var2) free(var2);
   if (ddf.data) free(ddf.data);
-  if (cmpvars) free(cmpvars);
+  if (cmpvars) GC_free(cmpvars);
   if (time.data) free(time.data);
   if (timeref.data) free(timeref.data);
   if (cmpdiffvars) free(cmpdiffvars);
