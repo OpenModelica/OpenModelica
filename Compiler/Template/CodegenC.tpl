@@ -3077,7 +3077,7 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   let &varDecls2 = buffer ""
   let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls2, &auxFunction)
 
-  let resDesc = (zeroCrossings |> ZERO_CROSSING(__) => '"<%ExpressionDump.printExpStr(relation_)%>"'
+  let resDesc = (zeroCrossings |> ZERO_CROSSING(__) => '"<%Util.escapeModelicaStringToCString(ExpressionDump.printExpStr(relation_))%>"'
     ;separator=",\n")
 
   let desc = match zeroCrossings
