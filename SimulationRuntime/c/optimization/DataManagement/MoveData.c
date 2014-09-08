@@ -722,23 +722,17 @@ static inline void pickUpStates(OptData* optData){
         int i, j;
         double start_value;
         char buffer[200];
-
-        --n;
-        if(n != optData->dim.nx)
-          warningStreamPrint(LOG_STDOUT, 0, "size %i != %i of %s", n, optData->dim.nx, cflags);
-
+        const int nReal = optData->data->modelData.nVariablesReal;
         rewind(pFile);
         for(i =0; i< n; ++i){
           fscanf(pFile, "%s", buffer);
-          fscanf(pFile, "%lf", &start_value);
+          if (fscanf(pFile, "%lf", &start_value) <= 0) continue;
 
-          printf("\n[%i]set %s.start %g", i, buffer,start_value);
-
-          for(j = 0, b = 0; j < optData->dim.nx; ++j){
+          for(j = 0, b = 0; j < nReal; ++j){
             if(!strcmp(optData->data->modelData.realVarsData[j].info.name, buffer)){
-              optData->data->localData[0]->realVars[i] = start_value;
-              optData->data->localData[1]->realVars[i] = start_value;
-              optData->data->localData[2]->realVars[i] = start_value;
+              optData->data->localData[0]->realVars[j] = start_value;
+              optData->data->localData[1]->realVars[j] = start_value;
+              optData->data->localData[2]->realVars[j] = start_value;
               optData->v0[i] = start_value;
               b = 1;
               continue;
@@ -746,8 +740,11 @@ static inline void pickUpStates(OptData* optData){
           }
           if(!b)
             warningStreamPrint(LOG_STDOUT, 0, "it was impossible to set %s.start %g", buffer,start_value);
+          else
+        	printf("\n[%i]set %s.start %g", i, buffer,start_value);
 
         }
+        fclose(pFile);
         printf("\n");
         /*update system*/
         optData->data->callback->input_function(optData->data);
