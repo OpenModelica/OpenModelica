@@ -8937,11 +8937,11 @@ end complexityTraverse;
 
 protected function complexityTraverse2
   input DAE.Exp exp;
-  input Integer _complexity;
+  input Integer complexity_;
   output DAE.Exp outExp;
   output Integer outComplexity;
 algorithm
-  outComplexity := _complexity+complexity(exp);
+  outComplexity := complexity_ + complexity(exp);
   outExp := exp;
 end complexityTraverse2;
 
