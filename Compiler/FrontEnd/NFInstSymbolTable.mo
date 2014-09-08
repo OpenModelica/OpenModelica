@@ -995,23 +995,25 @@ protected function getDependenciesFromExp
   input DAE.Exp inExp;
   output list<DAE.Exp> outDeps;
 algorithm
-  ((_, outDeps)) := Expression.traverseExp(inExp, expDependencyTraverser, {});
+  (_, outDeps) := Expression.traverseExp(inExp, expDependencyTraverser, {});
 end getDependenciesFromExp;
 
 protected function expDependencyTraverser
   "Traversal function used by getDependenciesFromExp."
-  input tuple<DAE.Exp, list<DAE.Exp>> inTuple;
-  output tuple<DAE.Exp, list<DAE.Exp>> outTuple;
+  input DAE.Exp inExp;
+  input list<DAE.Exp> inExps;
+  output DAE.Exp outExp;
+  output list<DAE.Exp> outExps;
 algorithm
-  outTuple := match(inTuple)
+  (outExp,outExps) := match (inExp,inExps)
     local
       DAE.Exp exp;
       list<DAE.Exp> deps;
 
-    case ((exp as DAE.CREF(componentRef = _), deps))
-      then ((exp, exp :: deps));
+    case (exp as DAE.CREF(componentRef = _), deps)
+      then (exp, exp :: deps);
 
-    else inTuple;
+    else (inExp,inExps);
 
   end match;
 end expDependencyTraverser;

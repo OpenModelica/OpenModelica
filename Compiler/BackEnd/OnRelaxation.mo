@@ -471,30 +471,32 @@ protected
   Boolean b;
 algorithm
   (e,knvars) := itpl;
-  ((e,(knvars,b))) := Expression.traverseExp(e,traverserExpreplaceFinalParameter,(knvars,false));
+  (e,(knvars,b)) := Expression.traverseExp(e,traverserExpreplaceFinalParameter,(knvars,false));
   (e,_) := ExpressionSimplify.condsimplify(b, e);
   outTpl := (e,knvars);
 end replaceFinalParameter;
 
 protected function traverserExpreplaceFinalParameter "author: Frenkel TUD 2012-06"
-  input tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> tpl;
-  output tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> outTpl;
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables,Boolean> tpl;
+  output DAE.Exp outExp;
+  output tuple<BackendDAE.Variables,Boolean> outTpl;
 algorithm
-  outTpl := matchcontinue(tpl)
+  (outExp,outTpl) := matchcontinue (inExp,tpl)
     local
       BackendDAE.Variables knvars;
       DAE.Exp e,e1;
       DAE.ComponentRef cr;
       BackendDAE.Var v;
-    case((DAE.CREF(componentRef=cr),(knvars,_)))
+    case (DAE.CREF(componentRef=cr),(knvars,_))
       equation
         (v::_,_) = BackendVariable.getVar(cr, knvars);
         true = BackendVariable.isFinalVar(v);
         e1 = BackendVariable.varBindExpStartValue(v);
       then
-        ((e1,(knvars,true)));
+        (e1,(knvars,true));
 
-    else tpl;
+    else (inExp,tpl);
   end matchcontinue;
 end traverserExpreplaceFinalParameter;
 
@@ -3212,7 +3214,7 @@ protected
 algorithm
   set := HashSet.emptyHashSet();
   set := addCrefandParentsToSet(cr,set,NONE());
-  ((_,(_,isthere))) := Expression.traverseExpTopDown(inExp, expHasCreftraverser, (set,false));
+  (_,(_,isthere)) := Expression.traverseExpTopDown(inExp, expHasCreftraverser, (set,false));
 end expHasCref;
 
 protected function addCrefandParentsToSet
@@ -3263,23 +3265,25 @@ end addCrefandParentsToSet;
 
 protected function expHasCreftraverser "author: Frenkel TUD 2012-05
   helper for expHasCref"
-  input tuple<DAE.Exp, tuple<HashSet.HashSet,Boolean>> inTpl;
-  output tuple<DAE.Exp, Boolean, tuple<HashSet.HashSet,Boolean>> outTpl;
+  input DAE.Exp e;
+  input tuple<HashSet.HashSet,Boolean> inTpl;
+  output DAE.Exp outExp;
+  output Boolean continue;
+  output tuple<HashSet.HashSet,Boolean> outTpl;
 algorithm
-  outTpl := matchcontinue(inTpl)
+  (outExp,continue,outTpl) := matchcontinue(e,inTpl)
     local
       Boolean b;
       DAE.ComponentRef cr;
-      DAE.Exp e;
       HashSet.HashSet set;
 
-    case ((e as DAE.CREF(componentRef = cr), (set,false)))
+    case (DAE.CREF(componentRef = cr), (set,false))
       equation
         b = BaseHashSet.has(cr,set);
       then
-        ((e,not b,(set,b)));
+        (e,not b,(set,b));
 
-    case (((e,(set,b)))) then ((e,not b,(set,b)));
+    case (_,(set,b)) then (e,not b,(set,b));
 
   end matchcontinue;
 end expHasCreftraverser;
@@ -3540,7 +3544,7 @@ algorithm
         crnosubs = ComponentReference.crefStripLastSubs(cr);
         set = addCrefandParentsToSet(crnosubs,set,NONE());
         set = List.fold(crlst,BaseHashSet.add,set);
-        ((_,(_,false))) = Expression.traverseExpTopDown(e2, expHasCreftraverser, (set,false));
+        (_,(_,false)) = Expression.traverseExpTopDown(e2, expHasCreftraverser, (set,false));
         (_,ilst) = BackendVariable.getVarLst(crlst,vars,{},{});
         // unassgned
         unassignedLst(ilst,vec1);
@@ -3564,7 +3568,7 @@ algorithm
         crnosubs = ComponentReference.crefStripLastSubs(cr);
         set = addCrefandParentsToSet(crnosubs,set,NONE());
         set = List.fold(crlst,BaseHashSet.add,set);
-        ((_,(_,false))) = Expression.traverseExpTopDown(e1, expHasCreftraverser, (set,false));
+        (_,(_,false)) = Expression.traverseExpTopDown(e1, expHasCreftraverser, (set,false));
         (_,ilst) = BackendVariable.getVarLst(crlst,vars,{},{});
         // unassgned
         unassignedLst(ilst,vec1);

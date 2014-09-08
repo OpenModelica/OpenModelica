@@ -827,20 +827,8 @@ public function getAllExpsStmts "
   input list<DAE.Statement> stmts;
   output list<DAE.Exp> exps;
 algorithm
-  (_, exps) := DAEUtil.traverseDAEEquationsStmts(stmts, getAllExpsStmtsCollector, {});
+  (_, (_,exps)) := DAEUtil.traverseDAEEquationsStmts(stmts, Expression.traverseSubexpressionsHelper, (Expression.expressionCollector, {}));
 end getAllExpsStmts;
-
-function getAllExpsStmtsCollector
-  input tuple<DAE.Exp, list<DAE.Exp>> itpl;
-  output tuple<DAE.Exp, list<DAE.Exp>> otpl;
-algorithm
-  otpl := match itpl
-    local
-      DAE.Exp exp;
-      list<DAE.Exp> inExps;
-    case ((exp, inExps)) then Expression.traverseExp(exp, Expression.expressionCollector, inExps);
-  end match;
-end getAllExpsStmtsCollector;
 
 public function getStatementSource
   input DAE.Statement stmt;
@@ -885,7 +873,7 @@ algorithm
       DAE.Exp exp;
     case DAE.STMT_NORETCALL(exp=exp)
       equation
-        ((_,b)) = Expression.traverseExp(exp,Expression.hasNoSideEffects,true);
+        (_,b) = Expression.traverseExp(exp,Expression.hasNoSideEffects,true);
       then not b; // has side effects => this is an expression that could do something
     else true;
   end match;

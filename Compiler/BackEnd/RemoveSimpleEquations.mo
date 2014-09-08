@@ -156,7 +156,7 @@ algorithm
   repl := BackendVarTransform.emptyReplacementsSized(size);
   // check for unReplaceable crefs
   unReplaceable := HashSet.emptyHashSet();
-  unReplaceable := BackendDAEUtil.traverseBackendDAEExps(dae, traverserUnreplaceable, unReplaceable);
+  ((_,unReplaceable)) := BackendDAEUtil.traverseBackendDAEExps(dae, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
   unReplaceable := addUnreplaceableFromWhens(dae, unReplaceable);
   Debug.fcall2(Flags.DUMP_REPL, BackendDump.dumpHashSet, unReplaceable, "Unreplaceable Crefs:");
   // traverse all systems and remove simple equations
@@ -298,7 +298,7 @@ algorithm
   repl := BackendVarTransform.emptyReplacementsSized(size);
   // check for unReplaceable crefs
   unReplaceable := HashSet.emptyHashSet();
-  unReplaceable := BackendDAEUtil.traverseBackendDAEExps(inDAE, traverserUnreplaceable, unReplaceable);
+  ((_,unReplaceable)) := BackendDAEUtil.traverseBackendDAEExps(inDAE, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
   unReplaceable := addUnreplaceableFromWhens(inDAE, unReplaceable);
   Debug.fcall2(Flags.DUMP_REPL, BackendDump.dumpHashSet, unReplaceable, "Unreplaceable Crefs:");
   (outDAE, (repl, _, b)) := BackendDAEUtil.mapEqSystemAndFold(inDAE, allAcausal1, (repl, unReplaceable, false));
@@ -361,7 +361,7 @@ algorithm
   repl := BackendVarTransform.emptyReplacementsSized(size);
   // check for unReplaceable crefs
   unReplaceable := HashSet.emptyHashSet();
-  unReplaceable := BackendDAEUtil.traverseBackendDAEExps(inDAE, traverserUnreplaceable, unReplaceable);
+  ((_,unReplaceable)) := BackendDAEUtil.traverseBackendDAEExps(inDAE, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
   unReplaceable := addUnreplaceableFromWhens(inDAE, unReplaceable);
   // do not replace state sets
   unReplaceable := addUnreplaceableFromStateSets(inDAE, unReplaceable);
@@ -1287,8 +1287,8 @@ algorithm
     case (_, _, _, _, (vars, BackendDAE.SHARED(knownVars=knvars, backendDAEType = BackendDAE.JACOBIAN()), _, _, _, _, _))
       equation
         // collect vars and check if variable time not there
-        ((_, (false, _, _, _, _, ilst))) = Expression.traverseExpTopDown(lhs, traversingTimeVarsFinder, (false, vars, knvars, true, false, {}));
-        ((_, (false, _, _, _, _, ilst))) = Expression.traverseExpTopDown(rhs, traversingTimeVarsFinder, (false, vars, knvars, true, false, ilst));
+        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(lhs, traversingTimeVarsFinder, (false, vars, knvars, true, false, {}));
+        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(rhs, traversingTimeVarsFinder, (false, vars, knvars, true, false, ilst));
         ilst = List.uniqueIntN(ilst, BackendVariable.varsSize(vars));
         vlst = List.map1r(ilst, BackendVariable.getVarAt, vars);
       then
@@ -1296,8 +1296,8 @@ algorithm
     case (_, _, _, _, (vars, BackendDAE.SHARED(knownVars=knvars), _, _, _, _, _))
       equation
         // collect vars and check if variable time not there
-        ((_, (false, _, _, _, _, ilst))) = Expression.traverseExpTopDown(lhs, traversingTimeVarsFinder, (false, vars, knvars, false, false, {}));
-        ((_, (false, _, _, _, _, ilst))) = Expression.traverseExpTopDown(rhs, traversingTimeVarsFinder, (false, vars, knvars, false, false, ilst));
+        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(lhs, traversingTimeVarsFinder, (false, vars, knvars, false, false, {}));
+        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(rhs, traversingTimeVarsFinder, (false, vars, knvars, false, false, ilst));
         ilst = List.uniqueIntN(ilst, BackendVariable.varsSize(vars));
         vlst = List.map1r(ilst, BackendVariable.getVarAt, vars);
       then
@@ -1329,7 +1329,7 @@ algorithm
     case (_, _, _, (vars, BackendDAE.SHARED(knownVars=knvars, backendDAEType = BackendDAE.JACOBIAN()), _, _, _, _, _))
       equation
         // collect vars and check if variable time not there
-        ((_, (false, _, _, _, _, ilst))) = Expression.traverseExpTopDown(exp, traversingTimeVarsFinder, (false, vars, knvars, true, false, {}));
+        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(exp, traversingTimeVarsFinder, (false, vars, knvars, true, false, {}));
         ilst = List.uniqueIntN(ilst, BackendVariable.varsSize(vars));
         vlst = List.map1r(ilst, BackendVariable.getVarAt, vars);
       then
@@ -1338,7 +1338,7 @@ algorithm
     case (_, _, _, (vars, BackendDAE.SHARED(knownVars=knvars), _, _, _, _, _))
       equation
         // collect vars and check if variable time not there
-        ((_, (false, _, _, _, _, ilst))) = Expression.traverseExpTopDown(exp, traversingTimeVarsFinder, (false, vars, knvars, false, false, {}));
+        (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(exp, traversingTimeVarsFinder, (false, vars, knvars, false, false, {}));
         ilst = List.uniqueIntN(ilst, BackendVariable.varsSize(vars));
         vlst = List.map1r(ilst, BackendVariable.getVarAt, vars);
       then
@@ -1364,12 +1364,14 @@ algorithm
 end toplevelInputOrUnfixed;
 
 protected function traversingTimeVarsFinder "author: Frenkel 2012-12"
-  input tuple<DAE.Exp, tuple<Boolean, BackendDAE.Variables, BackendDAE.Variables, Boolean, Boolean, list<Integer>> > inExp;
-  output tuple<DAE.Exp, Boolean, tuple<Boolean, BackendDAE.Variables, BackendDAE.Variables, Boolean, Boolean, list<Integer>> > outExp;
+  input DAE.Exp inExp;
+  input tuple<Boolean, BackendDAE.Variables, BackendDAE.Variables, Boolean, Boolean, list<Integer>> inTuple;
+  output DAE.Exp outExp;
+  output Boolean continue;
+  output tuple<Boolean, BackendDAE.Variables, BackendDAE.Variables, Boolean, Boolean, list<Integer>> outTuple;
 algorithm
-  outExp := matchcontinue(inExp)
+  (outExp,continue,outTuple) := matchcontinue (inExp,inTuple)
     local
-      DAE.Exp e;
       Boolean b, b1, b2;
       BackendDAE.Variables vars, knvars;
       DAE.ComponentRef cr;
@@ -1377,33 +1379,33 @@ algorithm
       list<Integer> ilst, vlst;
       list<BackendDAE.Var> varlst;
 
-    case ((e as DAE.CREF(DAE.CREF_IDENT(ident = "time", subscriptLst = {}), _), (_, vars, knvars, b1, b2, ilst)))
-    then ((e, false, (true, vars, knvars, b1, b2, ilst)));
+    case (DAE.CREF(DAE.CREF_IDENT(ident = "time", subscriptLst = {}), _), (_, vars, knvars, b1, b2, ilst))
+    then (inExp, false, (true, vars, knvars, b1, b2, ilst));
 
-    case ((e as DAE.CREF(cr, _), (_, vars, knvars, b1, b2, ilst))) equation
+    case (DAE.CREF(cr, _), (_, vars, knvars, b1, b2, ilst)) equation
       (varlst, _::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
       false = List.mapAllValueBool(varlst, toplevelInputOrUnfixed, false);
-    then ((e, false, (true, vars, knvars, b1, b2, ilst)));
+    then (inExp, false, (true, vars, knvars, b1, b2, ilst));
 
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")), (_, vars, knvars, b1, b2, ilst))) then ((e, false, (true, vars, knvars, b1, b2, ilst) ));
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "change")), (_, vars, knvars, b1, b2, ilst))) then ((e, false, (true, vars, knvars, b1, b2, ilst) ));
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "edge")), (_, vars, knvars, b1, b2, ilst))) then ((e, false, (true, vars, knvars, b1, b2, ilst) ));
+    case (DAE.CALL(path = Absyn.IDENT(name = "pre")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst) );
+    case (DAE.CALL(path = Absyn.IDENT(name = "change")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst) );
+    case (DAE.CALL(path = Absyn.IDENT(name = "edge")), (_, vars, knvars, b1, b2, ilst)) then (inExp, false, (true, vars, knvars, b1, b2, ilst) );
 
     // case for finding simple equation in jacobians
     // there are all known variables mark as input and they are all time-depending
-    case ((e as DAE.CREF(cr, _), (_, vars, knvars, true, b2, ilst))) equation
+    case (DAE.CREF(cr, _), (_, vars, knvars, true, b2, ilst)) equation
       (var::_, _::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
       DAE.INPUT() = BackendVariable.getVarDirection(var);
-    then ((e, false, (true, vars, knvars, true, b2, ilst)));
+    then (inExp, false, (true, vars, knvars, true, b2, ilst));
 
     // var
-    case ((e as DAE.CREF(cr, _), (b, vars, knvars, b1, b2, ilst))) equation
+    case (DAE.CREF(cr, _), (b, vars, knvars, b1, b2, ilst)) equation
       (_::_, vlst)= BackendVariable.getVar(cr, vars);
       ilst = listAppend(ilst, vlst);
-    then ((e, true, (b, vars, knvars, b1, b2, ilst)));
+    then (inExp, true, (b, vars, knvars, b1, b2, ilst));
 
-    case ((e, (b, vars, knvars, b1, b2, ilst)))
-    then ((e, not b, (b, vars, knvars, b1, b2, ilst)));
+    case (_, (b, vars, knvars, b1, b2, ilst))
+    then (inExp, not b, (b, vars, knvars, b1, b2, ilst));
   end matchcontinue;
 end traversingTimeVarsFinder;
 
@@ -3008,7 +3010,7 @@ algorithm
     case(NONE(), _) then iOExp;
     case(SOME(e), _)
       equation
-        ((e, (_, b, _))) = Expression.traverseExp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
+        (e, (_, b, _)) = Expression.traverseExp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
         (e, _) = ExpressionSimplify.condsimplify(b, e);
       then
         SOME(e);
@@ -3041,7 +3043,7 @@ algorithm
         equalNonFreeStartValues(values, knVars, (NONE(), NONE(), cr));
     case (((SOME(e), _))::values, _, (SOME(e2), _, _))
       equation
-        ((e1, (_, b, _))) = Expression.traverseExp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
+        (e1, (_, b, _)) = Expression.traverseExp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         true = Expression.expEqual(e1, e2);
       then
@@ -3068,14 +3070,14 @@ algorithm
         equalFreeStartValues(values, knVars, iValue);
     case (((SOME(e), cr))::values, _, (NONE(), _, _))
       equation
-        ((e1, (_, b, _))) = Expression.traverseExp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
+        (e1, (_, b, _)) = Expression.traverseExp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
       then
         equalFreeStartValues(values, knVars, (SOME(e1), SOME(e), cr));
     // compare
     case (((SOME(e), _))::values, _, (SOME(e2), _, _))
       equation
-        ((e1, (_, b, _))) = Expression.traverseExp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
+        (e1, (_, b, _)) = Expression.traverseExp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         true = Expression.expEqual(e1, e2);
       then
@@ -3084,30 +3086,32 @@ algorithm
 end equalFreeStartValues;
 
 protected function replaceCrefWithBindExp "author: Frenkel TUD 2012-12"
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables, Boolean, HashSet.HashSet>> inTuple;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables, Boolean, HashSet.HashSet>> outTuple;
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables, Boolean, HashSet.HashSet> inTuple;
+  output DAE.Exp outExp;
+  output tuple<BackendDAE.Variables, Boolean, HashSet.HashSet> outTuple;
 algorithm
-  outTuple := matchcontinue(inTuple)
+  (outExp,outTuple) := matchcontinue (inExp,inTuple)
     local
       DAE.Exp e;
       BackendDAE.Variables vars;
       DAE.ComponentRef cr;
       HashSet.HashSet hs;
     // true if crefs replaced in expression
-    case ((DAE.CREF(componentRef=cr), (vars, _, hs)))
+    case (DAE.CREF(componentRef=cr), (vars, _, hs))
       equation
         // check for cyclic bindings in start value
         false = BaseHashSet.has(cr, hs);
         ({BackendDAE.VAR(bindExp = SOME(e))}, _) = BackendVariable.getVar(cr, vars);
         hs = BaseHashSet.add(cr, hs);
-        ((e, (_, _, hs))) = Expression.traverseExp(e, replaceCrefWithBindExp, (vars, false, hs));
+        (e, (_, _, hs)) = Expression.traverseExp(e, replaceCrefWithBindExp, (vars, false, hs));
       then
-        ((e, (vars, true, hs)));
+        (e, (vars, true, hs));
     // true if crefs in expression
-    case ((e as DAE.CREF(componentRef=_), (vars, _, hs)))
+    case (e as DAE.CREF(componentRef=_), (vars, _, hs))
       then
-        ((e, (vars, true, hs)));
-    else inTuple;
+        (e, (vars, true, hs));
+    else (inExp,inTuple);
   end matchcontinue;
 end replaceCrefWithBindExp;
 
@@ -3287,28 +3291,28 @@ end updateSystem;
 
 protected function updateVar "author: Frenkel TUD 2012-12
   update the derivatives of states and add the vars to varrarr"
-  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendVarTransform.VariableReplacements>> inTpl;
-  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendVarTransform.VariableReplacements>> oTpl;
+  input BackendDAE.Var inVar;
+  input tuple<BackendDAE.Variables, BackendVarTransform.VariableReplacements> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<BackendDAE.Variables, BackendVarTransform.VariableReplacements> oTpl;
 algorithm
-  oTpl := matchcontinue(inTpl)
+  (outVar,oTpl) := matchcontinue (inVar,inTpl)
     local
       DAE.ComponentRef cr;
       DAE.Exp e;
       BackendDAE.Var v;
       BackendDAE.Variables vars;
       BackendVarTransform.VariableReplacements repl;
-    case ((v as BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(cr))), (vars, repl)))
+    case (v as BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(cr))), (vars, repl))
       equation
         e = BackendVarTransform.getReplacement(repl, cr);
         v = updateStateOrder(e, v);
         vars = BackendVariable.addVar(v, vars);
-      then
-        ((v, (vars, repl)));
-    case ((v, (vars, repl)))
+      then (v, (vars, repl));
+    case (v, (vars, repl))
       equation
         vars = BackendVariable.addVar(v, vars);
-      then
-        ((v, (vars, repl)));
+      then (v, (vars, repl));
   end matchcontinue;
 end updateVar;
 
@@ -3421,44 +3425,45 @@ algorithm
 end fixAliasConstBindings1;
 
 protected function replaceAliasVarTraverser "author: Frenkel TUD 2011-12"
- input tuple<BackendDAE.Var, tuple<BackendVarTransform.VariableReplacements, list<BackendDAE.Var>>> inTpl;
- output tuple<BackendDAE.Var, tuple<BackendVarTransform.VariableReplacements, list<BackendDAE.Var>>> outTpl;
+ input BackendDAE.Var inVar;
+ input tuple<BackendVarTransform.VariableReplacements, list<BackendDAE.Var>> inTpl;
+ output BackendDAE.Var outVar;
+ output tuple<BackendVarTransform.VariableReplacements, list<BackendDAE.Var>> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var v, v1;
       BackendVarTransform.VariableReplacements repl;
       DAE.Exp e, e1;
       list<BackendDAE.Var> varlst;
       Boolean b;
-    case ((v as BackendDAE.VAR(bindExp=SOME(e)), (repl, varlst)))
+    case (v as BackendDAE.VAR(bindExp=SOME(e)), (repl, varlst))
       equation
         (e1, true) = BackendVarTransform.replaceExp(e, repl, NONE());
         b = Expression.isConst(e1);
         v1 = Debug.bcallret2(not b, BackendVariable.setBindExp, v, SOME(e1), v);
         varlst = List.consOnTrue(b, v1, varlst);
-      then ((v1, (repl, varlst)));
-    case _ then inTpl;
+      then (v1, (repl, varlst));
+    else (inVar,inTpl);
   end matchcontinue;
 end replaceAliasVarTraverser;
 
 protected function replaceVarTraverser "author: Frenkel TUD 2011-03"
- input tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> inTpl;
- output tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> outTpl;
+ input BackendDAE.Var inVar;
+ input BackendVarTransform.VariableReplacements inRepl;
+ output BackendDAE.Var outVar;
+ output BackendVarTransform.VariableReplacements repl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,repl) := matchcontinue (inVar,inRepl)
     local
       BackendDAE.Var v, v1;
-      BackendVarTransform.VariableReplacements repl;
       DAE.Exp e, e1;
-    case ((v as BackendDAE.VAR(bindExp=SOME(e)), repl))
+    case (v as BackendDAE.VAR(bindExp=SOME(e)), repl)
       equation
         (e1, true) = BackendVarTransform.replaceExp(e, repl, NONE());
         v1 = BackendVariable.setBindExp(v, SOME(e1));
-      then ((v1, repl));
-    case _ then inTpl;
+      then (v1, repl);
+    else (inVar,inRepl);
   end matchcontinue;
 end replaceVarTraverser;
 
@@ -3686,38 +3691,38 @@ algorithm
   end match;
 end getAliasReplacements;
 
-protected function getAliasVarReplacements "author: Frenkel TUD 2012-12"
-  input tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> inTpl;
-  output tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> outTpl;
+protected function getAliasVarReplacements
+  input BackendDAE.Var inVar;
+  input BackendVarTransform.VariableReplacements inRepl;
+  output BackendDAE.Var v;
+  output BackendVarTransform.VariableReplacements repl;
 protected
-  BackendDAE.Var v;
   DAE.Exp exp;
   DAE.ComponentRef cr;
-  BackendVarTransform.VariableReplacements repl;
 algorithm
-  (v, repl) := inTpl;
+  v := inVar;
   BackendDAE.VAR(varName=cr, bindExp=SOME(exp)) := v;
-  repl := BackendVarTransform.addReplacement(repl, cr, exp, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
-  outTpl := (v, repl);
+  repl := BackendVarTransform.addReplacement(inRepl, cr, exp, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
 end getAliasVarReplacements;
 
 protected function replaceEquationTraverser "
   Helper function to e.g. removeSimpleEquations"
-  input tuple<BackendDAE.Equation, tuple<BackendVarTransform.VariableReplacements, list<BackendDAE.Equation>, Boolean>> inTpl;
-  output tuple<BackendDAE.Equation, tuple<BackendVarTransform.VariableReplacements, list<BackendDAE.Equation>, Boolean>> outTpl;
+  input BackendDAE.Equation inEq;
+  input tuple<BackendVarTransform.VariableReplacements, list<BackendDAE.Equation>, Boolean> inTpl;
+  output BackendDAE.Equation outEq;
+  output tuple<BackendVarTransform.VariableReplacements, list<BackendDAE.Equation>, Boolean> outTpl;
 algorithm
-  outTpl:=
-  match (inTpl)
+  (outEq,outTpl) := match (inEq,inTpl)
     local
       BackendDAE.Equation e;
       BackendVarTransform.VariableReplacements repl;
       list<BackendDAE.Equation> eqns, eqns1;
       Boolean b, b1;
-    case ((e, (repl, eqns, b)))
+    case (e, (repl, eqns, b))
       equation
         (eqns1, b1) = BackendVarTransform.replaceEquations({e}, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         eqns = listAppend(eqns1, eqns);
-      then ((e, (repl, eqns, b or b1)));
+      then (e, (repl, eqns, b or b1));
   end match;
 end replaceEquationTraverser;
 
@@ -3822,8 +3827,7 @@ algorithm
   outUnreplaceable := List.fold(crlst, BaseHashSet.add, inUnreplaceable);
 end addUnreplaceableFromStateSet;
 
-protected function addUnreplaceableFromWhens "author: Frenkel TUD 2012-12
-  collect all lhs of whens and array assign statement because these are not
+protected function addUnreplaceableFromWhens "collect all lhs of whens and array assign statement because these are not
   replaceable_ or if they are replaced the initial system get in trouble"
   input BackendDAE.BackendDAE inDAE;
   input HashSet.HashSet inUnreplaceable;
@@ -3834,47 +3838,32 @@ protected
 algorithm
   BackendDAE.DAE(eqs=systs, shared=BackendDAE.SHARED(initialEqs=eqns)) := inDAE;
   outUnreplaceable := List.fold(systs, addUnreplaceableFromWhensSystem, inUnreplaceable);
-  outUnreplaceable := BackendDAEUtil.traverseBackendDAEExpsEqns(eqns, addUnreplaceableFromEqns, outUnreplaceable);
+  ((_,outUnreplaceable)) := BackendDAEUtil.traverseBackendDAEExpsEqns(eqns, Expression.traverseSubexpressionsHelper, (addUnreplaceableFromEqnsExp, outUnreplaceable));
 end addUnreplaceableFromWhens;
 
-protected function addUnreplaceableFromEqns "author: Frenkel TUD 2010-12
-  helper for equationsCrefs"
-  input tuple<DAE.Exp, HashSet.HashSet> inTpl;
-  output tuple<DAE.Exp, HashSet.HashSet> outTpl;
-protected
-  HashSet.HashSet hs;
-  DAE.Exp e, e1;
+protected function addUnreplaceableFromEqnsExp
+  input DAE.Exp e;
+  input HashSet.HashSet hs;
+  output DAE.Exp outExp;
+  output HashSet.HashSet ohs;
 algorithm
-  (e, hs) := inTpl;
-  outTpl := Expression.traverseExp(e, addUnreplaceableFromEqnsExp, hs);
-end addUnreplaceableFromEqns;
-
-protected function addUnreplaceableFromEqnsExp "author: Frenkel TUD 2010-12"
-  input tuple<DAE.Exp, HashSet.HashSet> inExp;
-  output tuple<DAE.Exp, HashSet.HashSet> outExp;
-algorithm
-  outExp := match(inExp)
+  (outExp,ohs) := match (e,hs)
     local
-      HashSet.HashSet hs;
       DAE.ComponentRef cr;
-      DAE.Exp e;
-    case((DAE.CREF(componentRef=DAE.WILD()), _))
-      then
-        inExp;
+    case (DAE.CREF(componentRef=DAE.WILD()), _)
+      then (e,hs);
 
-    case((e as DAE.CREF(componentRef=cr), hs))
+    case (DAE.CREF(componentRef=cr), _)
       equation
         cr = ComponentReference.crefStripLastSubs(cr);
-        hs = BaseHashSet.add(cr, hs);
-      then
-        ((e, hs ));
+        ohs = BaseHashSet.add(cr, hs);
+      then (e,ohs);
     // let WILD pass
-    case _ then inExp;
+    else (e,hs);
   end match;
 end addUnreplaceableFromEqnsExp;
 
-protected function addUnreplaceableFromWhensSystem "author: Frenkel TUD 2012-12
-  traverse the Whens of an  equation system to add all variables set in when"
+protected function addUnreplaceableFromWhensSystem "traverse the Whens of an  equation system to add all variables set in when"
   input BackendDAE.EqSystem isyst;
   input HashSet.HashSet inUnreplaceable;
   output HashSet.HashSet outUnreplaceable;
@@ -3885,33 +3874,31 @@ algorithm
   outUnreplaceable := BackendEquation.traverseBackendDAEEqns(eqns, addUnreplaceableFromWhenEqn, inUnreplaceable);
 end addUnreplaceableFromWhensSystem;
 
-protected function addUnreplaceableFromWhenEqn "author: Frenkel TUD 2012-12"
-  input tuple<BackendDAE.Equation, HashSet.HashSet> inTpl;
-  output tuple<BackendDAE.Equation, HashSet.HashSet> outTpl;
+protected function addUnreplaceableFromWhenEqn
+  input BackendDAE.Equation inEq;
+  input HashSet.HashSet inHs;
+  output BackendDAE.Equation eqn;
+  output HashSet.HashSet hs;
 algorithm
-  outTpl := match inTpl
+  (eqn,hs) := match (inEq,inHs)
     local
-      BackendDAE.Equation eqn;
-      HashSet.HashSet hs;
       BackendDAE.WhenEquation weqn;
       list< DAE.Statement> stmts;
     // when eqn
-    case ((eqn as BackendDAE.WHEN_EQUATION(whenEquation=weqn), hs))
+    case (eqn as BackendDAE.WHEN_EQUATION(whenEquation=weqn), hs)
       equation
         hs = addUnreplaceableFromWhen(weqn, hs);
-      then
-        ((eqn, hs));
+      then (eqn,hs);
     // algorithm
-    case ((eqn as BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(statementLst=stmts)), hs))
+    case (eqn as BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(statementLst=stmts)), hs)
       equation
         hs = List.fold(stmts, addUnreplaceableFromWhenStmt, hs);
-      then
-       ((eqn, hs));
-    else inTpl;
+      then (eqn, hs);
+    else (inEq,inHs);
   end match;
 end addUnreplaceableFromWhenEqn;
 
-protected function addUnreplaceableFromWhenStmt "author: Frenkel TUD 2012-12"
+protected function addUnreplaceableFromWhenStmt
   input DAE.Statement inStmt;
   input HashSet.HashSet inHS;
   output HashSet.HashSet outHS;
@@ -3953,7 +3940,7 @@ algorithm
   end matchcontinue;
 end addUnreplaceableFromWhenStmt;
 
-protected function addUnreplaceableFromStmt "author: Frenkel TUD 2012-12"
+protected function addUnreplaceableFromStmt
   input DAE.Statement inStmt;
   input HashSet.HashSet inHS;
   output HashSet.HashSet outHS;
@@ -3986,8 +3973,7 @@ algorithm
   end match;
 end addUnreplaceableFromStmt;
 
-protected function addUnreplaceableFromWhen "author: Frenkel TUD 2012-12
-  This is a helper function for addUnreplaceableFromWhenEqn."
+protected function addUnreplaceableFromWhen "This is a helper function for addUnreplaceableFromWhenEqn."
   input BackendDAE.WhenEquation inWEqn;
   input HashSet.HashSet iHs;
   output HashSet.HashSet oHs;
@@ -4012,45 +3998,32 @@ algorithm
   end match;
 end addUnreplaceableFromWhen;
 
-protected function traverserUnreplaceable "author: Frenkel TUD 2012-12"
-  input tuple<DAE.Exp, HashSet.HashSet> inExp;
-  output tuple<DAE.Exp, HashSet.HashSet> outExp;
-protected
-   HashSet.HashSet unReplaceable;
-   DAE.Exp e;
+protected function traverserExpUnreplaceable
+  input DAE.Exp e;
+  input HashSet.HashSet unReplaceable;
+  output DAE.Exp outExp;
+  output HashSet.HashSet outHt;
 algorithm
-  (e, unReplaceable) := inExp;
-  outExp := Expression.traverseExp(e, traverserExpUnreplaceable, unReplaceable);
-end traverserUnreplaceable;
-
-protected function traverserExpUnreplaceable "author: Frenkel TUD 2012-12"
-  input tuple<DAE.Exp, HashSet.HashSet> inExp;
-  output tuple<DAE.Exp, HashSet.HashSet> outExp;
-algorithm
-  outExp := matchcontinue(inExp)
+  (outExp,outHt) := matchcontinue (e,unReplaceable)
     local
-      HashSet.HashSet unReplaceable;
-      DAE.Exp e;
       DAE.ComponentRef cr;
       list<DAE.Exp> explst;
       list<DAE.ComponentRef> crlst;
-    case((e as DAE.CREF(componentRef = cr), unReplaceable))
+    case (DAE.CREF(componentRef = cr), _)
       equation
-        unReplaceable = traverseCrefUnreplaceable(cr, NONE(), unReplaceable);
-      then
-        ((e, unReplaceable));
-     case((e as DAE.CALL(path=Absyn.IDENT(name = "pre"), expLst=explst), unReplaceable))
+        outHt = traverseCrefUnreplaceable(cr, NONE(), unReplaceable);
+      then (e, outHt);
+     case (DAE.CALL(path=Absyn.IDENT(name = "pre"), expLst=explst), _)
       equation
         crlst = List.flatten(List.map(explst, Expression.extractCrefsFromExp));
         crlst = List.map(crlst, ComponentReference.crefStripLastSubs);
-        unReplaceable = List.fold(crlst, BaseHashSet.add, unReplaceable);
-      then
-        ((e, unReplaceable));
-    case _ then inExp;
+        outHt = List.fold(crlst, BaseHashSet.add, unReplaceable);
+      then (e, outHt);
+    else (e,unReplaceable);
   end matchcontinue;
 end traverserExpUnreplaceable;
 
-protected function traverseCrefUnreplaceable "author: Frenkel TUD 2012-12"
+protected function traverseCrefUnreplaceable
   input DAE.ComponentRef inCref;
   input Option<DAE.ComponentRef> preCref;
   input HashSet.HashSet iUnreplaceable;
@@ -4066,7 +4039,7 @@ algorithm
       Boolean b;
     case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), SOME(pcr), _)
       equation
-        (_, b) = Expression.traverseExpCref(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
+        (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
         pcr = Debug.bcallret4(b, ComponentReference.crefPrependIdent, pcr, name, {}, ty, pcr);
         unReplaceable = Debug.bcallret2(b, BaseHashSet.add, pcr, iUnreplaceable, iUnreplaceable);
         pcr = ComponentReference.crefPrependIdent(pcr, name, subs, ty);
@@ -4074,7 +4047,7 @@ algorithm
         traverseCrefUnreplaceable(cr, SOME(pcr), unReplaceable);
     case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), NONE(), _)
       equation
-        (_, b) = Expression.traverseExpCref(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
+        (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
         pcr = DAE.CREF_IDENT(name, ty, {});
         unReplaceable = Debug.bcallret2(b, BaseHashSet.add, pcr, iUnreplaceable, iUnreplaceable);
       then
@@ -4082,14 +4055,14 @@ algorithm
 
     case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), SOME(pcr), _)
       equation
-        (_, b) = Expression.traverseExpCref(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
+        (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
         pcr = ComponentReference.crefPrependIdent(pcr, name, {}, ty);
         unReplaceable = Debug.bcallret2(b, BaseHashSet.add, pcr, iUnreplaceable, iUnreplaceable);
       then
         unReplaceable;
     case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), NONE(), _)
       equation
-        (_, b) = Expression.traverseExpCref(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
+        (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
         pcr = DAE.CREF_IDENT(name, ty, {});
         unReplaceable = Debug.bcallret2(b, BaseHashSet.add, pcr, iUnreplaceable, iUnreplaceable);
       then
@@ -4101,9 +4074,7 @@ algorithm
   end match;
 end traverseCrefUnreplaceable;
 
-protected function negateExpression
-"@author: adrpo
- negate an expression with a debug message"
+protected function negateExpression "negate an expression with a debug message"
   input Boolean negationFlag;
   input DAE.Exp inExp "the expression we should negate if flag is true";
   input DAE.Exp inAlternative "the expression we should return if flag is false";

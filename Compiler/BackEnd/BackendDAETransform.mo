@@ -598,21 +598,8 @@ public function replaceDerOpInEquationList
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  (outEqns,_) := BackendEquation.traverseBackendDAEExpsEqnList(inEqns, replaceDerOpInExp,0);
+  (outEqns,_) := BackendEquation.traverseBackendDAEExpsEqnList(inEqns, Expression.traverseSubexpressionsHelper, (replaceDerOpInExpTraverser, NONE()));
 end replaceDerOpInEquationList;
-
-protected function replaceDerOpInExp
-  "Replaces all der(cref) with $DER.cref in an expression."
-    input tuple<DAE.Exp, Integer> inTpl;
-    output tuple<DAE.Exp, Integer> outTpl;
-protected
-  DAE.Exp exp,exp1;
-  Integer i;
-algorithm
-  (exp,i) := inTpl;
-  ((exp1, _)) := Expression.traverseExp(exp, replaceDerOpInExpTraverser, NONE());
-  outTpl := ((exp1,i));
-end replaceDerOpInExp;
 
 protected function replaceDerOpInExpTraverser
   "Used with Expression.traverseExp to traverse an expression an replace calls to
@@ -624,32 +611,30 @@ protected function replaceDerOpInExpTraverser
   Derive.differentiateExpression. Ideally these parts should be fixed so that they can
   handle der-calls, but until that happens we just replace the der-calls with
   crefs."
-  input tuple<DAE.Exp, Option<DAE.ComponentRef>> inExp;
-  output tuple<DAE.Exp, Option<DAE.ComponentRef>> outExp;
+  input DAE.Exp inExp;
+  input Option<DAE.ComponentRef> inCr;
+  output DAE.Exp outExp;
+  output Option<DAE.ComponentRef> outCr;
 algorithm
-  outExp := matchcontinue(inExp)
+  (outExp,outCr) := matchcontinue(inExp,inCr)
     local
       DAE.ComponentRef cr, der_cr;
       DAE.Exp cref_exp;
       DAE.ComponentRef cref;
 
-    case ((DAE.CALL(path = Absyn.IDENT("der"),expLst = {DAE.CREF(componentRef = cr)}),
-        SOME(cref)))
+    case (DAE.CALL(path = Absyn.IDENT("der"),expLst = {DAE.CREF(componentRef = cr)}), SOME(cref))
       equation
         der_cr = ComponentReference.crefPrefixDer(cr);
         true = ComponentReference.crefEqualNoStringCompare(der_cr, cref);
         cref_exp = Expression.crefExp(der_cr);
-      then
-        ((cref_exp, SOME(cref)));
+      then (cref_exp, inCr);
 
-    case ((DAE.CALL(path = Absyn.IDENT("der"),expLst = {DAE.CREF(componentRef = cr)}),
-        NONE()))
+    case (DAE.CALL(path = Absyn.IDENT("der"),expLst = {DAE.CREF(componentRef = cr)}), NONE())
       equation
         cr = ComponentReference.crefPrefixDer(cr);
         cref_exp = Expression.crefExp(cr);
-      then
-        ((cref_exp, NONE()));
-    case (_) then inExp;
+      then (cref_exp, NONE());
+    else (inExp,inCr);
   end matchcontinue;
 end replaceDerOpInExpTraverser;
 
@@ -1397,8 +1382,10 @@ public function traverseBackendDAEExpsEqn
   output BackendDAE.Equation outEquation;
   output Type_a outTypeA;
   partial function FuncExpType
-    input tuple<DAE.Exp, Type_a> inTpl;
-    output tuple<DAE.Exp, Type_a> outTpl;
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
   end FuncExpType;
 algorithm
   (outEquation,(_,outTypeA)) := traverseBackendDAEExpsEqnWithSymbolicOperation(inEquation,traverseBackendDAEExpsEqnWithoutSymbolicOperationHelper,(func,inTypeA));
@@ -1406,21 +1393,24 @@ end traverseBackendDAEExpsEqn;
 
 protected function traverseBackendDAEExpsEqnWithoutSymbolicOperationHelper
   replaceable type Type_a subtypeof Any;
-  input tuple<DAE.Exp, tuple<list<DAE.SymbolicOperation>,tuple<FuncExpType,Type_a>>> inTpl;
-  output tuple<DAE.Exp, tuple<list<DAE.SymbolicOperation>,tuple<FuncExpType,Type_a>>> outTpl;
+  input DAE.Exp inExp;
+  input tuple<list<DAE.SymbolicOperation>,tuple<FuncExpType,Type_a>> inTpl;
+  output DAE.Exp exp;
+  output tuple<list<DAE.SymbolicOperation>,tuple<FuncExpType,Type_a>> outTpl;
   partial function FuncExpType
-    input tuple<DAE.Exp, Type_a> inTpl;
-    output tuple<DAE.Exp, Type_a> outTpl;
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
   end FuncExpType;
 protected
   FuncExpType func;
   Type_a arg;
   list<DAE.SymbolicOperation> ops;
-  DAE.Exp exp;
 algorithm
-  (exp,(ops,(func,arg))) := inTpl;
-  ((exp,arg)) := func((exp,arg));
-  outTpl := (exp,(ops,(func,arg)));
+  (ops,(func,arg)) := inTpl;
+  (exp,arg) := func(inExp,arg);
+  outTpl := (ops,(func,arg));
 end traverseBackendDAEExpsEqnWithoutSymbolicOperationHelper;
 
 public function traverseBackendDAEExpsEqnWithSymbolicOperation
@@ -1433,8 +1423,10 @@ public function traverseBackendDAEExpsEqnWithSymbolicOperation
   output BackendDAE.Equation outEquation;
   output Type_a outTypeA;
   partial function FuncExpType
-    input tuple<DAE.Exp, tuple<list<DAE.SymbolicOperation>,Type_a>> inTpl;
-    output tuple<DAE.Exp, tuple<list<DAE.SymbolicOperation>,Type_a>> outTpl;
+    input DAE.Exp inExp;
+    input tuple<list<DAE.SymbolicOperation>,Type_a> inTpl;
+    output DAE.Exp outExp;
+    output tuple<list<DAE.SymbolicOperation>,Type_a> outTpl;
   end FuncExpType;
 algorithm
   (outEquation,outTypeA) := matchcontinue (inEquation,func,inTypeA)
@@ -1458,8 +1450,8 @@ algorithm
 
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source, attr=eqAttr),_,_)
       equation
-        ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
-        ((e2_1,(ops,ext_arg_2))) = func((e2,(ops,ext_arg_1)));
+        (e1_1,(ops,ext_arg_1)) = func(e1,({},inTypeA));
+        (e2_1,(ops,ext_arg_2)) = func(e2,(ops,ext_arg_1));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
         (BackendDAE.EQUATION(e1_1,e2_1,source,eqAttr),ext_arg_2);
@@ -1467,8 +1459,8 @@ algorithm
     // Array equation
     case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source = source, attr=eqAttr),_,_)
       equation
-        ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
-        ((e2_1,(ops,ext_arg_2))) = func((e2,(ops,ext_arg_1)));
+        (e1_1,(ops,ext_arg_1)) = func(e1,({},inTypeA));
+        (e2_1,(ops,ext_arg_2)) = func(e2,(ops,ext_arg_1));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
         (BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,eqAttr),ext_arg_2);
@@ -1476,15 +1468,15 @@ algorithm
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source=source, attr=eqAttr),_,_)
       equation
         e1 = Expression.crefExp(cr);
-        ((DAE.CREF(cr1,_),(ops,ext_arg_1))) = func((e1,({},inTypeA)));
-        ((e2_1,(ops,_))) = func((e2,(ops,ext_arg_1)));
+        (DAE.CREF(cr1,_),(ops,ext_arg_1)) = func(e1,({},inTypeA));
+        (e2_1,(ops,_)) = func(e2,(ops,ext_arg_1));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
         (BackendDAE.SOLVED_EQUATION(cr1,e2_1,source,eqAttr),ext_arg_1);
 
     case (BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source, attr=eqAttr),_,_)
       equation
-        ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
+        (e1_1,(ops,ext_arg_1)) = func(e1,({},inTypeA));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
         (BackendDAE.RESIDUAL_EQUATION(e1_1,source,eqAttr),ext_arg_1);
@@ -1500,9 +1492,9 @@ algorithm
           BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e1,elsewhenPart=NONE()),source = source, attr=eqAttr),_,_)
       equation
         e2 = Expression.crefExp(cr);
-        ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
-        ((DAE.CREF(cr1,_),(ops,ext_arg_2))) = func((e2,(ops,ext_arg_1)));
-        ((cond,(ops,ext_arg_3))) = func((cond,(ops,ext_arg_2)));
+        (e1_1,(ops,ext_arg_1)) = func(e1,({},inTypeA));
+        (DAE.CREF(cr1,_),(ops,ext_arg_2)) = func(e2,(ops,ext_arg_1));
+        (cond,(ops,ext_arg_3)) = func(cond,(ops,ext_arg_2));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
         res = BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e1_1,NONE()),source,eqAttr);
      then
@@ -1511,8 +1503,8 @@ algorithm
     case (BackendDAE.WHEN_EQUATION(size=size,whenEquation =
           BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e1,elsewhenPart=SOME(elsepart)),source = source,attr=eqAttr),_,_)
       equation
-        ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
-        ((cond,(ops,ext_arg_2))) = func((cond,(ops,ext_arg_1)));
+        (e1_1,(ops,ext_arg_1)) = func(e1,({},inTypeA));
+        (cond,(ops,ext_arg_2)) = func(cond,(ops,ext_arg_1));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
         (BackendDAE.WHEN_EQUATION(whenEquation=elsepartRes,source=source),ext_arg_3) = traverseBackendDAEExpsEqnWithSymbolicOperation(BackendDAE.WHEN_EQUATION(size,elsepart,source,eqAttr),func,ext_arg_2);
         res = BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr,e1_1,SOME(elsepartRes)),source,eqAttr);
@@ -1521,8 +1513,8 @@ algorithm
 
     case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source = source, attr=eqAttr),_,_)
       equation
-        ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
-        ((e2_1,(ops,ext_arg_2))) = func((e2,(ops,ext_arg_1)));
+        (e1_1,(ops,ext_arg_1)) = func(e1,({},inTypeA));
+        (e2_1,(ops,ext_arg_2)) = func(e2,(ops,ext_arg_1));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
         (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,eqAttr),ext_arg_2);
@@ -1553,8 +1545,10 @@ protected function traverseBackendDAEExpsLstEqnWithSymbolicOperation
   output list<DAE.Exp> outExps;
   output Type_a outTypeA;
   partial function FuncExpType
-    input tuple<DAE.Exp, Type_a> inTpl;
-    output tuple<DAE.Exp, Type_a> outTpl;
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
   end FuncExpType;
 algorithm
   (outExps,outTypeA) := match (inExps,func,inTypeA,iAcc)
@@ -1565,7 +1559,7 @@ algorithm
     case({},_,_,_) then (listReverse(iAcc),inTypeA);
     case(exp::rest,_,_,_)
       equation
-        ((exp,arg)) = func((exp,inTypeA));
+        (exp,arg) = func(exp,inTypeA);
         (exps,arg) = traverseBackendDAEExpsLstEqnWithSymbolicOperation(rest,func,arg,exp::iAcc);
       then
         (exps,arg);
@@ -1581,8 +1575,10 @@ protected function traverseBackendDAEExpsEqnLstWithSymbolicOperation
   output list<BackendDAE.Equation> outEqns;
   output Type_a outTypeA;
   partial function FuncExpType
-    input tuple<DAE.Exp, tuple<list<DAE.SymbolicOperation>,Type_a>> inTpl;
-    output tuple<DAE.Exp, tuple<list<DAE.SymbolicOperation>,Type_a>> outTpl;
+    input DAE.Exp inExp;
+    input tuple<list<DAE.SymbolicOperation>,Type_a> inTpl;
+    output DAE.Exp outExp;
+    output tuple<list<DAE.SymbolicOperation>,Type_a> outTpl;
   end FuncExpType;
 algorithm
   (outEqns,outTypeA) := match (inEqns,func,inTypeA,iAcc)
@@ -1609,8 +1605,10 @@ protected function traverseBackendDAEExpsEqnLstLstWithSymbolicOperation
   output list<list<BackendDAE.Equation>> outEqns;
   output Type_a outTypeA;
   partial function FuncExpType
-    input tuple<DAE.Exp, tuple<list<DAE.SymbolicOperation>,Type_a>> inTpl;
-    output tuple<DAE.Exp, tuple<list<DAE.SymbolicOperation>,Type_a>> outTpl;
+    input DAE.Exp inExp;
+    input tuple<list<DAE.SymbolicOperation>,Type_a> inTpl;
+    output DAE.Exp outExp;
+    output tuple<list<DAE.SymbolicOperation>,Type_a> outTpl;
   end FuncExpType;
 algorithm
   (outEqns,outTypeA) := match (inEqns,func,inTypeA,iAcc)
@@ -1639,8 +1637,10 @@ protected function traverseBackendDAEExpsWhenOperator
   output list<BackendDAE.WhenOperator> outReinitStmtLst;
   output Type_a outTypeA;
   partial function FuncExpType
-    input tuple<DAE.Exp, Type_a> inTpl;
-    output tuple<DAE.Exp, Type_a> outTpl;
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
   end FuncExpType;
 algorithm
   (outReinitStmtLst,outTypeA) := matchcontinue (inReinitStmtLst,func,inTypeA)
@@ -1659,23 +1659,23 @@ algorithm
     case (BackendDAE.REINIT(stateVar=cr,value=cond,source=source)::res,_,_)
       equation
         (res1,ext_arg_1) =  traverseBackendDAEExpsWhenOperator(res,func,inTypeA);
-        ((cond1,ext_arg_2)) = func((cond,ext_arg_1));
+        (cond1,ext_arg_2) = func(cond,ext_arg_1);
         cre = Expression.crefExp(cr);
-        ((DAE.CREF(componentRef=cr1),ext_arg_2)) = func((cre,ext_arg_2));
+        (DAE.CREF(componentRef=cr1),ext_arg_2) = func(cre,ext_arg_2);
       then
         (BackendDAE.REINIT(cr1,cond1,source)::res1,ext_arg_2);
 
     case (BackendDAE.ASSERT(condition=cond,message=msg,level=level,source=source)::res,_,_)
       equation
         (res1,ext_arg_1) =  traverseBackendDAEExpsWhenOperator(res,func,inTypeA);
-        ((cond1,ext_arg_2)) = func((cond,ext_arg_1));
+        (cond1,ext_arg_2) = func(cond,ext_arg_1);
       then
         (BackendDAE.ASSERT(cond1,msg,level,source)::res1,ext_arg_2);
 
     case (BackendDAE.NORETCALL(exp=exp,source=source)::res,_,_)
       equation
         (res1,ext_arg_1) =  traverseBackendDAEExpsWhenOperator(res,func,inTypeA);
-        ((exp,ext_arg_2)) = Expression.traverseExp(exp,func,ext_arg_1);
+        (exp,ext_arg_2) = Expression.traverseExp(exp,func,ext_arg_1);
       then
         (BackendDAE.NORETCALL(exp,source)::res1,ext_arg_2);
 
@@ -1702,8 +1702,10 @@ public function traverseBackendDAEExpsWhenClauseLst
   output list<BackendDAE.WhenClause> outWhenClauseLst;
   output Type_a outTypeA;
   partial function FuncExpType
-    input tuple<DAE.Exp, Type_a> inTpl;
-    output tuple<DAE.Exp, Type_a> outTpl;
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
   end FuncExpType;
 algorithm
   (outWhenClauseLst,outTypeA) := matchcontinue (inWhenClauseLst,func,inTypeA)
@@ -1718,7 +1720,7 @@ algorithm
 
     case (BackendDAE.WHEN_CLAUSE(cond,reinitStmtLst,elsindx)::wclst,_,_)
       equation
-        ((cond1,ext_arg_1)) = func((cond,inTypeA));
+        (cond1,ext_arg_1) = func(cond,inTypeA);
         (reinitStmtLst1,ext_arg_2) = traverseBackendDAEExpsWhenOperator(reinitStmtLst,func,ext_arg_1);
         (wclst1,ext_arg_3) = traverseBackendDAEExpsWhenClauseLst(wclst,func,ext_arg_2);
       then
@@ -1742,8 +1744,10 @@ public function traverseBackendDAEExpsEqnList
   output list<BackendDAE.Equation> outEquations;
   output Type_a outTypeA;
   partial function FuncExpType
-    input tuple<DAE.Exp, Type_a> inTpl;
-    output tuple<DAE.Exp, Type_a> outTpl;
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
   end FuncExpType;
 algorithm
   (outEquations,outTypeA):=

@@ -1840,21 +1840,22 @@ algorithm
 end findArraysPartiallyIndexedRecords;
 
 protected function findArraysPartiallyIndexedRecordsExpVisitor "visitor function for expressions in findArraysPartiallyIndexedRecords"
-  input tuple<DAE.Exp,HashTable.HashTable> inTpl;
-  output tuple<DAE.Exp,HashTable.HashTable> outTpl;
+  input DAE.Exp inExp;
+  input HashTable.HashTable inHt;
+  output DAE.Exp e;
+  output HashTable.HashTable ht;
 algorithm
-    outTpl := matchcontinue(inTpl)
-    local
-      DAE.ComponentRef cr;
-      HashTable.HashTable ht;
-      list<DAE.Var> varLst;
-      DAE.Exp e;
-      case((e as DAE.CREF(cr,_),ht)) equation
-        DAE.T_COMPLEX(varLst = varLst,complexClassType=ClassInf.RECORD(_)) = ComponentReference.crefLastType(cr);
-        ht = findArraysInRecordLst(ht,cr,varLst);
-      then ((e,ht));
-      case((e,ht)) then ((e,ht));
-    end matchcontinue;
+  (e,ht) := matchcontinue (inExp,inHt)
+      local
+        DAE.ComponentRef cr;
+        list<DAE.Var> varLst;
+      case (e as DAE.CREF(cr,_),ht)
+        equation
+          DAE.T_COMPLEX(varLst = varLst,complexClassType=ClassInf.RECORD(_)) = ComponentReference.crefLastType(cr);
+          ht = findArraysInRecordLst(ht,cr,varLst);
+        then (e,ht);
+      else (inExp,inHt);
+  end matchcontinue;
 end findArraysPartiallyIndexedRecordsExpVisitor;
 
 protected function  findArraysInRecordLst "help function to findArraysPartiallyIndexedRecordsExpVisitor, searches the record elements for arrays"

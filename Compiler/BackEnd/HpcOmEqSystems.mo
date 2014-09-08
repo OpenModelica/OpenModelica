@@ -1106,30 +1106,26 @@ end eqInFrontList;
 
 protected function addResidualVarToEquation2 " adds the residual variable to the equation
 author: waurich TUD 2013-08"
-  input tuple<DAE.Exp,tuple<DAE.Exp,Boolean>> tplIn;
-  output tuple<DAE.Exp,tuple<DAE.Exp,Boolean>> tplOut;
+  input DAE.Exp inExp;
+  input tuple<DAE.Exp,Boolean> tplIn;
+  output DAE.Exp outExp;
+  output tuple<DAE.Exp,Boolean> tplOut;
 algorithm
-  tplOut := matchcontinue(tplIn)
+  (outExp,tplOut) := match (inExp,tplIn)
     local
       Boolean rhs;
       tuple<DAE.Exp,Boolean> tpl;
       DAE.Exp exp1;
       DAE.Exp exp2;
-    case(((exp1,(exp2,rhs))))
+    case (exp1,(exp2,true))
       equation
-        true = rhs;
         //print("rhs expression: "+&ExpressionDump.dumpExpStr(exp1,0)+&"\n");
         //print("\n append with \n");
         //print("residualValue: "+&ExpressionDump.dumpExpStr(exp2,0)+&"\n");
         exp1 = Expression.expAdd(exp1,exp2);
-      then
-        ((exp1,(exp2,true)));
-    case(((exp1,(exp2,rhs))))
-      equation
-        false = rhs;
-      then
-        ((exp1,(exp2,true)));
-    end matchcontinue;
+      then (exp1,tplIn);
+    else (inExp,tplIn);
+  end match;
 end addResidualVarToEquation2;
 
 

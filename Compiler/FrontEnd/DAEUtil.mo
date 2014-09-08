@@ -3044,31 +3044,20 @@ algorithm
         pv = getParameterVars(dae,HashTable2.emptyHashTable());
         (ht,true) = evaluateAnnotation1(dae,pv,HashTable2.emptyHashTable());
         (_,ht1,_) = evaluateAnnotation2_loop(inCache,env,dae,ht,BaseHashTable.hashTableCurrentSize(ht));
-        (elts2,(_,_,_)) = traverseDAE2(elts, evaluateAnnotationVisitor, (ht1,0,0));
+        (elts2,_) = traverseDAE2(elts, Expression.traverseSubexpressionsHelper, (evaluateAnnotationTraverse, (ht1,0,0)));
       then
         DAE.DAE(elts2);
     case (_,_,dae) then dae;
   end matchcontinue;
 end evaluateAnnotation;
 
-protected function evaluateAnnotationVisitor "author: Frenkel TUD, 2010-12
-  helper of evaluateAnnotation"
-  input tuple<DAE.Exp,tuple<HashTable2.HashTable,Integer,Integer>> itpl;
-  output tuple<DAE.Exp,tuple<HashTable2.HashTable,Integer,Integer>> otpl;
-algorithm
-  otpl := match itpl
-    local
-      DAE.Exp exp;
-      tuple<HashTable2.HashTable,Integer,Integer> extra_arg;
-    case ((exp,extra_arg)) then Expression.traverseExp(exp,evaluateAnnotationTraverse,extra_arg);
-  end match;
-end evaluateAnnotationVisitor;
-
 protected function evaluateAnnotationTraverse "author: Frenkel TUD, 2010-12"
-  input tuple<DAE.Exp, tuple<HashTable2.HashTable,Integer,Integer>> itpl;
-  output tuple<DAE.Exp, tuple<HashTable2.HashTable,Integer,Integer>> otpl;
+  input DAE.Exp inExp;
+  input tuple<HashTable2.HashTable,Integer,Integer> itpl;
+  output DAE.Exp outExp;
+  output tuple<HashTable2.HashTable,Integer,Integer> otpl;
 algorithm
-  otpl := matchcontinue (itpl)
+  (outExp,otpl) := matchcontinue (inExp,itpl)
     local
       DAE.ComponentRef cr;
       HashTable2.HashTable ht;
@@ -3077,33 +3066,30 @@ algorithm
       list<DAE.Var> varLst;
 
     // Special Case for Records
-    case ((exp as DAE.CREF(componentRef = _,ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))),(ht,i,j)))
+    case (exp as DAE.CREF(componentRef = _,ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))),(ht,i,j))
       equation
-        ((e1,(_,true))) = BackendDAEUtil.extendArrExp((exp,(NONE(),false)));
-        ((e1,(ht,i,k))) = Expression.traverseExp(e1,evaluateAnnotationTraverse,(ht,i,j));
+        (e1,(_,true)) = BackendDAEUtil.extendArrExp(exp,(NONE(),false));
+        (e1,(ht,i,k)) = Expression.traverseExp(e1,evaluateAnnotationTraverse,(ht,i,j));
         true = intGt(k,j);
-      then
-        ((e1,(ht,i,k)));
+      then (e1,(ht,i,k));
     // Special Case for Arrays
-    case ((exp as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(ht,i,j)))
+    case (exp as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(ht,i,j))
       equation
-        ((e1,(_,true))) = BackendDAEUtil.extendArrExp((exp,(NONE(),false)));
-        ((e1,(ht,i,k))) = Expression.traverseExp(e1,evaluateAnnotationTraverse,(ht,i,j));
+        (e1,(_,true)) = BackendDAEUtil.extendArrExp(exp,(NONE(),false));
+        (e1,(ht,i,k)) = Expression.traverseExp(e1,evaluateAnnotationTraverse,(ht,i,j));
         true = intGt(k,j);
-      then
-        ((e1,(ht,i,k)));
+      then (e1,(ht,i,k));
 
-    case((exp as DAE.CREF(componentRef = _),(ht,i,j)))
+    case (exp as DAE.CREF(componentRef = _),(ht,i,j))
       equation
         e1 = replaceCrefInAnnotation(exp, ht);
         true = Expression.isConst(e1);
-      then
-        ((e1,(ht,i,j+1)));
+      then (e1,(ht,i,j+1));
 
-    case((exp as DAE.CREF(componentRef = _),(ht,i,j)))
-      then ((exp,(ht,i+1,j)));
+    case (exp as DAE.CREF(componentRef = _),(ht,i,j))
+      then (exp,(ht,i+1,j));
 
-    else itpl;
+    else (inExp,itpl);
   end matchcontinue;
 end evaluateAnnotationTraverse;
 
@@ -3230,7 +3216,7 @@ algorithm
       then e;
     case (e,pv)
       equation
-        ((e1,(_,i,_))) = Expression.traverseExp(e,evaluateAnnotationTraverse,(pv,0,0));
+        (e1,(_,i,_)) = Expression.traverseExp(e,evaluateAnnotationTraverse,(pv,0,0));
         true = intEq(i,0);
         e2 = evaluateParameter(e1,pv);
       then
@@ -3348,7 +3334,7 @@ algorithm
                   source=source,variableAttributesOption=variableAttributesOption,
                   comment=absynCommentOption,innerOuter=innerOuter),(ht,cache,env))
       equation
-        ((e1,(_,i,j))) = Expression.traverseExp(e,evaluateAnnotationTraverse,(ht,0,0));
+        (e1,(_,i,j)) = Expression.traverseExp(e,evaluateAnnotationTraverse,(ht,0,0));
         (e2,ht1,cache) = evaluateAnnotation4(cache,env,cr,e1,i,j,ht);
       then
         (DAE.VAR(cr,DAE.PARAM(),direction,parallelism,protection,ty,SOME(e2),dims,ct,
@@ -3385,7 +3371,7 @@ algorithm
         // there are no other crefs
         true = intEq(i,0);
         // evalute expression
-        ((e1,(ht,_,_))) = Expression.traverseExp(e,evaluateAnnotationTraverse,(ht,0,0));
+        (e1,(ht,_,_)) = Expression.traverseExp(e,evaluateAnnotationTraverse,(ht,0,0));
         (cache, value,_) = Ceval.ceval(inCache, env, e1, false,NONE(),Absyn.NO_MSG(),0);
          e1 = ValuesUtil.valueExp(value);
         // e1 = e;
@@ -3395,53 +3381,6 @@ algorithm
   end matchcontinue;
 end evaluateAnnotation4;
 
-public function renameTimeToDollarTime "author: BZ, 2009-1
-  rename the keyword time to globalData->timeValue, this is a special case for functions since they do not get translated in to c_crefs."
-  input list<DAE.Element> dae;
-  output list<DAE.Element> odae;
-algorithm
-  (odae,_) := traverseDAE2(dae, renameTimeToDollarTimeVisitor, 0);
-end renameTimeToDollarTime;
-
-protected function renameTimeToDollarTimeVisitor "author: BZ, 2009-01
-  The visitor function for traverseDAE.calls Expression.traverseExp on the expression."
-  input tuple<DAE.Exp,Integer> itpl;
-  output tuple<DAE.Exp,Integer> otpl;
-algorithm
-  otpl := match itpl
-    local
-      DAE.Exp exp,oexp;
-      Integer arg,oarg;
-    case ((exp,oarg)) then Expression.traverseExp(exp,renameTimeToDollarTimeFromCref,oarg);
-  end match;
-end renameTimeToDollarTimeVisitor;
-
-protected function renameTimeToDollarTimeFromCref "author: BZ, 2008-12
-  Function for Expression.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit."
-  input tuple<DAE.Exp, Integer> inTplExpExpString;
-  output tuple<DAE.Exp, Integer> outTplExpExpString;
-algorithm
-  outTplExpExpString := matchcontinue (inTplExpExpString)
-    local
-      DAE.ComponentRef cr,cr2,cref_;
-      DAE.Type cty,ty;
-      Integer oarg;
-      list<DAE.Subscript> subs;
-      DAE.Exp exp;
-
-    case((DAE.CREF(DAE.CREF_IDENT("time",cty,subs),ty),oarg))
-      equation
-        cref_ = ComponentReference.makeCrefIdent("globalData->timeValue",cty,subs);
-        exp = Expression.makeCrefExp(cref_,ty);
-      then
-        ((exp,oarg));
-
-    else inTplExpExpString;
-
-  end matchcontinue;
-end renameTimeToDollarTimeFromCref;
-
-
 public function renameUniqueOuterVars "author: BZ, 2008-12
   Rename innerouter(the inner part of innerouter) variables that have been renamed to a.b.$unique$var
   Just remove the $unique$ from the var name.
@@ -3449,40 +3388,29 @@ public function renameUniqueOuterVars "author: BZ, 2008-12
   input DAE.DAElist dae;
   output DAE.DAElist odae;
 algorithm
-  (odae,_,_) := traverseDAE(dae, DAE.emptyFuncTree, renameUniqueVisitor, 0);
+  (odae,_,_) := traverseDAE(dae, DAE.emptyFuncTree, Expression.traverseSubexpressionsHelper, (removeUniqieIdentifierFromCref, {}));
 end renameUniqueOuterVars;
 
-protected function renameUniqueVisitor "author: BZ, 2008-12
-  The visitor function for traverseDAE.
-  calls Expression.traverseExp on the expression."
-  input tuple<DAE.Exp,Integer> itpl;
-  output tuple<DAE.Exp,Integer> otpl;
+protected function removeUniqieIdentifierFromCref "Function for Expression.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit."
+  input DAE.Exp inExp;
+  input Type_a oarg;
+  output DAE.Exp outExp;
+  output Type_a outDummy;
+  replaceable type Type_a subtypeof Any;
 algorithm
-  otpl := match itpl
+  (outExp,outDummy) := matchcontinue (inExp,oarg)
     local
-      DAE.Exp exp,oexp;
-      Integer arg,oarg;
-    case ((exp,oarg)) then Expression.traverseExp(exp,removeUniqieIdentifierFromCref,oarg);
-  end match;
-end renameUniqueVisitor;
+      DAE.ComponentRef cr,cr2;
+      DAE.Type ty;
+      DAE.Exp exp;
 
-protected function removeUniqieIdentifierFromCref "author: BZ, 2008-12
-  Function for Expression.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit."
-  input tuple<DAE.Exp, Integer> inTplExpExpString;
-  output tuple<DAE.Exp, Integer> outTplExpExpString;
-algorithm
-  outTplExpExpString := matchcontinue (inTplExpExpString)
-    local
-      DAE.ComponentRef cr,cr2; DAE.Type ty; Integer oarg; DAE.Exp exp;
-
-    case((DAE.CREF(cr,ty),oarg))
+    case (DAE.CREF(cr,ty),_)
       equation
         cr2 = unNameInnerouterUniqueCref(cr,DAE.UNIQUEIO);
         exp = Expression.makeCrefExp(cr2,ty);
-      then
-        ((exp,oarg));
+      then (exp,oarg);
 
-    else inTplExpExpString;
+    else (inExp,oarg);
 
   end matchcontinue;
 end removeUniqieIdentifierFromCref;
@@ -3493,42 +3421,30 @@ public function nameUniqueOuterVars "author: BZ, 2008-12
   input DAE.DAElist dae;
   output DAE.DAElist odae;
 algorithm
-  (odae,_,_) := traverseDAE(dae, DAE.emptyFuncTree, nameUniqueVisitor, 0);
+  (odae,_,_) := traverseDAE(dae, DAE.emptyFuncTree, Expression.traverseSubexpressionsHelper, (addUniqueIdentifierToCref, {}));
 end nameUniqueOuterVars;
-
-protected function nameUniqueVisitor "author: BZ, 2008-12
-  The visitor function for traverseDAE.
-  calls Expression.traverseExp on the expression."
-  input tuple<DAE.Exp,Integer> itpl;
-  output tuple<DAE.Exp,Integer> otpl;
-algorithm
-  otpl := match itpl
-    local
-      DAE.Exp exp;
-      Integer oarg;
-
-    case ((exp,oarg)) then Expression.traverseExp(exp,addUniqueIdentifierToCref,oarg);
-
-  end match;
-end nameUniqueVisitor;
 
 protected function addUniqueIdentifierToCref "author: BZ, 2008-12
   Function for Expression.traverseExp, adds the constant 'UNIQUEIO' to the CREF_IDENT() part of the cref."
-  input tuple<DAE.Exp, Integer> inTplExpExpString;
-  output tuple<DAE.Exp, Integer> outTplExpExpString;
+  input DAE.Exp inExp;
+  input Type_a oarg;
+  output DAE.Exp outExp;
+  output Type_a outDummy;
+  replaceable type Type_a subtypeof Any;
 algorithm
-  outTplExpExpString := matchcontinue (inTplExpExpString)
+  (outExp,outDummy) := matchcontinue (inExp,oarg)
     local
-      DAE.ComponentRef cr,cr2; DAE.Type ty; Integer oarg; DAE.Exp exp;
+      DAE.ComponentRef cr,cr2;
+      DAE.Type ty;
+      DAE.Exp exp;
 
-    case((DAE.CREF(cr,ty),oarg))
+    case (DAE.CREF(cr,ty),_)
       equation
         cr2 = nameInnerouterUniqueCref(cr);
         exp = Expression.makeCrefExp(cr2,ty);
-      then
-        ((exp,oarg));
+      then (exp,oarg);
 
-    case _ then inTplExpExpString;
+    else (inExp,oarg);
 
   end matchcontinue;
 end addUniqueIdentifierToCref;
@@ -3542,8 +3458,10 @@ protected function traverseDAEOptExp "author: BZ, 2008-12
   output Option<DAE.Exp> ooexp;
   output Type_a oextraArg;
   partial function FuncExpType
-    input tuple<DAE.Exp,Type_a> arg;
-    output tuple<DAE.Exp,Type_a> oarg;
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
@@ -3556,7 +3474,7 @@ algorithm
 
     case(SOME(e),_,extraArg)
       equation
-        ((e,extraArg)) = func((e,extraArg));
+        (e,extraArg) = func(e,extraArg);
       then
         (SOME(e),extraArg);
   end match;
@@ -3570,8 +3488,10 @@ protected function traverseDAEExpList "author: BZ, 2008-12
   output list<DAE.Exp> oexps;
   output Type_a oextraArg;
   partial function FuncExpType
-    input tuple<DAE.Exp,Type_a> arg;
-    output tuple<DAE.Exp,Type_a> oarg;
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
@@ -3585,7 +3505,7 @@ algorithm
 
     case(e::exps,_,extraArg)
       equation
-        ((e,extraArg)) = func((e,extraArg));
+        (e,extraArg) = func(e,extraArg);
         (oexps,extraArg) = traverseDAEExpList(exps,func,extraArg);
       then
         (e::oexps,extraArg);
@@ -3600,8 +3520,10 @@ protected function traverseDAEList "author: BZ, 2008-12
   output list<list<DAE.Element>> traversedDaeList;
   output Type_a oextraArg;
   partial function FuncExpType
-    input tuple<DAE.Exp,Type_a> arg;
-    output tuple<DAE.Exp,Type_a> oarg;
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
@@ -3681,7 +3603,12 @@ public function traverseDAE "
   output DAE.DAElist traversedDae;
   output DAE.FunctionTree outTree;
   output Type_a oextraArg;
-  partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
   (traversedDae,outTree,oextraArg) := match(dae,functionTree,func,iextraArg)
@@ -3705,7 +3632,12 @@ public function traverseDAEFuncLst "help function to traverseDae. Traverses the 
   input Type_a iextraArg;
   output list<tuple<DAE.AvlKey,DAE.AvlValue>> outFuncLst;
   output Type_a oextraArg;
-  partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
   replaceable type Type_a subtypeof Any;
 
 algorithm
@@ -3739,7 +3671,12 @@ public function traverseDAEFunctions "
   input list<DAE.Function> acc;
   output list<DAE.Function> outFuncLst;
   output Type_a oextraArg;
-  partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
   (outFuncLst,oextraArg) := match(ifuncLst,func,iextraArg,acc)
@@ -3763,7 +3700,12 @@ protected function traverseDAEFunc
   input Type_a iextraArg;
   output DAE.Function traversedFn;
   output Type_a oextraArg;
-  partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
   (traversedFn,oextraArg) := match (daeFn,func,iextraArg)
@@ -3803,7 +3745,12 @@ public function traverseDAE2 "author: BZ, 2008-12, adrpo, 2010-12
   input Type_a extraArg;
   output list<DAE.Element> traversedDaeList;
   output Type_a oextraArg;
-  partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
   (traversedDaeList,oextraArg) := traverseDAE2_tail(daeList,func,extraArg,{});
@@ -3818,7 +3765,12 @@ protected function traverseDAE2_tail "author: adrpo, 2010-12
   input list<DAE.Element> iaccumulator;
   output list<DAE.Element> traversedDaeList;
   output Type_a oextraArg;
-  partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
   (traversedDaeList,oextraArg) := match (daeList,func,iextraArg,iaccumulator)
@@ -3850,7 +3802,12 @@ protected function traverseDAE2_tail2 "author: adrpo, 2010-12
   input Type_a iextraArg;
   output DAE.Element outElt;
   output Type_a oextraArg;
-  partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
   (outElt,oextraArg) := match (ielt,func,iextraArg)
@@ -3883,7 +3840,7 @@ algorithm
 
     case(DAE.VAR(cr,kind,dir,prl,prot,tp,optExp,dims,ct,source,attr,cmt,io),_,extraArg)
       equation
-        ((maybeCrExp,extraArg)) = func((Expression.crefExp(cr), extraArg));
+        (maybeCrExp,extraArg) = func(Expression.crefExp(cr), extraArg);
         // If the result is DAE.CREF, we replace the name of the variable.
         // Otherwise, we only use the extraArg
         cr2 = Util.makeValueOrDefault(Expression.expCref,maybeCrExp,cr);
@@ -3895,63 +3852,63 @@ algorithm
 
     case(DAE.DEFINE(cr,e,source),_,extraArg)
       equation
-        ((e2,extraArg)) = func((e, extraArg));
-        ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr), extraArg));
+        (e2,extraArg) = func(e, extraArg);
+        (DAE.CREF(cr2,_),extraArg) = func(Expression.crefExp(cr), extraArg);
         elt = DAE.DEFINE(cr2,e2,source);
       then
         (elt,extraArg);
 
     case(DAE.INITIALDEFINE(cr,e,source),_,extraArg)
       equation
-        ((e2,extraArg)) = func((e, extraArg));
-        ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr), extraArg));
+        (e2,extraArg) = func(e, extraArg);
+        (DAE.CREF(cr2,_),extraArg) = func(Expression.crefExp(cr), extraArg);
         elt = DAE.INITIALDEFINE(cr2,e2,source);
       then
         (elt,extraArg);
 
     case(DAE.EQUEQUATION(cr,cr1,source),_,extraArg)
       equation
-        ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr), extraArg));
-        ((DAE.CREF(cr1_2,_),extraArg)) = func((Expression.crefExp(cr1), extraArg));
+        (DAE.CREF(cr2,_),extraArg) = func(Expression.crefExp(cr), extraArg);
+        (DAE.CREF(cr1_2,_),extraArg) = func(Expression.crefExp(cr1), extraArg);
         elt = DAE.EQUEQUATION(cr2,cr1_2,source);
       then
         (elt,extraArg);
 
     case(DAE.EQUATION(e1,e2,source),_,extraArg)
       equation
-        ((e11,extraArg)) = func((e1, extraArg));
-        ((e22,extraArg)) = func((e2, extraArg));
+        (e11,extraArg) = func(e1, extraArg);
+        (e22,extraArg) = func(e2, extraArg);
         elt = DAE.EQUATION(e11,e22,source);
       then
         (elt,extraArg);
 
     case(DAE.COMPLEX_EQUATION(e1,e2,source),_,extraArg)
       equation
-        ((e11,extraArg)) = func((e1, extraArg));
-        ((e22,extraArg)) = func((e2, extraArg));
+        (e11,extraArg) = func(e1, extraArg);
+        (e22,extraArg) = func(e2, extraArg);
         elt = DAE.COMPLEX_EQUATION(e11,e22,source);
       then
         (elt,extraArg);
 
     case(DAE.ARRAY_EQUATION(idims,e1,e2,source),_,extraArg)
       equation
-        ((e11, extraArg)) = func((e1, extraArg));
-        ((e22, extraArg)) = func((e2, extraArg));
+        (e11, extraArg) = func(e1, extraArg);
+        (e22, extraArg) = func(e2, extraArg);
         elt = DAE.ARRAY_EQUATION(idims,e11,e22,source);
       then
         (elt,extraArg);
 
     case(DAE.INITIAL_ARRAY_EQUATION(idims,e1,e2,source),_,extraArg)
       equation
-        ((e11, extraArg)) = func((e1, extraArg));
-        ((e22, extraArg)) = func((e2, extraArg));
+        (e11, extraArg) = func(e1, extraArg);
+        (e22, extraArg) = func(e2, extraArg);
         elt = DAE.INITIAL_ARRAY_EQUATION(idims,e11,e22,source);
       then
         (elt,extraArg);
 
     case(DAE.WHEN_EQUATION(e1,elist,SOME(elt),source),_,extraArg)
       equation
-        ((e11, extraArg)) = func((e1, extraArg));
+        (e11, extraArg) = func(e1, extraArg);
         ({elt2}, extraArg)= traverseDAE2_tail({elt},func,extraArg,{});
         (elist2, extraArg) = traverseDAE2_tail(elist,func,extraArg,{});
         elt = DAE.WHEN_EQUATION(e11,elist2,SOME(elt2),source);
@@ -3960,7 +3917,7 @@ algorithm
 
     case(DAE.WHEN_EQUATION(e1,elist,NONE(),source),_,extraArg)
       equation
-        ((e11,extraArg)) = func((e1, extraArg));
+        (e11,extraArg) = func(e1, extraArg);
         (elist2,extraArg) = traverseDAE2_tail(elist,func,extraArg,{});
         elt = DAE.WHEN_EQUATION(e11,elist2,NONE(),source);
       then
@@ -3968,16 +3925,16 @@ algorithm
 
     case(DAE.INITIALEQUATION(e1,e2,source),_,extraArg)
       equation
-        ((e11,extraArg)) = func((e1, extraArg));
-        ((e22,extraArg)) = func((e2, extraArg));
+        (e11,extraArg) = func(e1, extraArg);
+        (e22,extraArg) = func(e2, extraArg);
         elt = DAE.INITIALEQUATION(e11,e22,source);
       then
         (elt,extraArg);
 
     case(DAE.INITIAL_COMPLEX_EQUATION(e1,e2,source),_,extraArg)
       equation
-        ((e11,extraArg)) = func((e1, extraArg));
-        ((e22,extraArg)) = func((e2, extraArg));
+        (e11,extraArg) = func(e1, extraArg);
+        (e22,extraArg) = func(e2, extraArg);
         elt = DAE.INITIAL_COMPLEX_EQUATION(e11,e22,source);
       then
         (elt,extraArg);
@@ -3994,38 +3951,38 @@ algorithm
 
     case(DAE.ASSERT(e1,e2,e3,source),_,extraArg)
       equation
-        ((e11,extraArg)) = func((e1,extraArg));
-        ((e22,extraArg)) = func((e2,extraArg));
-        ((e32,extraArg)) = func((e3,extraArg));
+        (e11,extraArg) = func(e1,extraArg);
+        (e22,extraArg) = func(e2,extraArg);
+        (e32,extraArg) = func(e3,extraArg);
         elt = DAE.ASSERT(e11,e22,e32,source);
       then
         (elt,extraArg);
 
     case(DAE.TERMINATE(e1,source),_,extraArg)
       equation
-        ((e11,extraArg)) = func((e1,extraArg));
+        (e11,extraArg) = func(e1,extraArg);
         elt = DAE.TERMINATE(e11,source);
       then
         (elt,extraArg);
 
     case(DAE.NORETCALL(e1,source),_,extraArg)
       equation
-        ((e11,extraArg)) = func((e1,extraArg));
+        (e11,extraArg) = func(e1,extraArg);
         elt = DAE.NORETCALL(e11,source);
       then
         (elt,extraArg);
 
     case(DAE.INITIAL_NORETCALL(e1,source),_,extraArg)
       equation
-        ((e11,extraArg)) = func((e1,extraArg));
+        (e11,extraArg) = func(e1,extraArg);
         elt = DAE.INITIAL_NORETCALL(e11,source);
       then
         (elt,extraArg);
 
     case(DAE.REINIT(cr,e1,source),_,extraArg)
       equation
-        ((e11,extraArg)) = func((e1,extraArg));
-        ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr),extraArg));
+        (e11,extraArg) = func(e1,extraArg);
+        (DAE.CREF(cr2,_),extraArg) = func(Expression.crefExp(cr),extraArg);
         elt = DAE.REINIT(cr2,e11,source);
       then
         (elt,extraArg);
@@ -4107,7 +4064,12 @@ public function traverseDAEEquationsStmts "Traversing of DAE.Statement."
   input Type_a iextraArg;
   output list<DAE.Statement> outStmts;
   output Type_a oextraArg;
-  partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
   (outStmts,oextraArg) := traverseDAEEquationsStmtsList(inStmts,func,TRAVERSE_ALL(),iextraArg);
@@ -4119,7 +4081,12 @@ public function traverseDAEEquationsStmtsRhsOnly "Traversing of DAE.Statement. O
   input Type_a iextraArg;
   output list<DAE.Statement> outStmts;
   output Type_a oextraArg;
-  partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
   (outStmts,oextraArg) := traverseDAEEquationsStmtsList(inStmts,func,TRAVERSE_RHS_ONLY(),iextraArg);
@@ -4132,7 +4099,12 @@ protected function traverseDAEEquationsStmtsList "Traversing of DAE.Statement."
   input Type_a iextraArg;
   output list<DAE.Statement> outStmts;
   output Type_a oextraArg;
-  partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
   replaceable type Type_a subtypeof Any;
 protected
   list<list<DAE.Statement>> outStmtsLst;
@@ -4145,19 +4117,26 @@ algorithm
 end traverseDAEEquationsStmtsList;
 
 protected function traverseStatementsOptionsEvalLhs
-  input tuple<DAE.Exp,Type_a> inTpl;
+  input DAE.Exp inExp;
+  input Type_a inA;
   input FuncExpType func;
   input TraverseStatementsOptions opt;
-  output tuple<DAE.Exp,Type_a> outTpl;
-  partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
+  output DAE.Exp outExp;
+  output Type_a outA;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTpl := match (inTpl,func,opt)
-    case (_,_,TRAVERSE_ALL())
+  (outExp,outA) := match (inExp,inA,func,opt)
+    case (_,_,_,TRAVERSE_ALL())
       equation
-        outTpl = func(inTpl);
-      then outTpl;
-    else inTpl;
+        (outExp,outA) = func(inExp,inA);
+      then (outExp,outA);
+    else (inExp,inA);
   end match;
 end traverseStatementsOptionsEvalLhs;
 
@@ -4168,7 +4147,12 @@ protected function traverseDAEEquationsStmtsWork "Handles the traversing of DAE.
   input Type_a iextraArg;
   output list<DAE.Statement> outStmts;
   output Type_a oextraArg;
-  partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
   (outStmts,oextraArg) := matchcontinue (inStmt,func,opt,iextraArg)
@@ -4191,30 +4175,30 @@ algorithm
 
     case (DAE.STMT_ASSIGN(type_ = tp,exp1 = e,exp = e2, source = source),_,_,extraArg)
       equation
-        ((e_1,extraArg)) = traverseStatementsOptionsEvalLhs(((e, extraArg)),func,opt);
-        ((e_2,extraArg)) = func((e2, extraArg));
+        (e_1,extraArg) = traverseStatementsOptionsEvalLhs(e, extraArg, func, opt);
+        (e_2,extraArg) = func(e2, extraArg);
         x = Util.if_(referenceEq(e,e_1) and referenceEq(e2,e_2),inStmt,DAE.STMT_ASSIGN(tp,e_1,e_2,source));
       then (x::{},extraArg);
 
     case (DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e, source = source),_,_,extraArg)
       equation
-        ((e_1, extraArg)) = func((e, extraArg));
-        ((DAE.TUPLE(expl2), extraArg)) = traverseStatementsOptionsEvalLhs(((DAE.TUPLE(expl1), extraArg)),func,opt);
+        (e_1, extraArg) = func(e, extraArg);
+        (DAE.TUPLE(expl2), extraArg) = traverseStatementsOptionsEvalLhs(DAE.TUPLE(expl1), extraArg, func, opt);
         x = Util.if_(referenceEq(e,e_1) and referenceEq(expl1,expl2),inStmt,DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1,source));
       then (x::{},extraArg);
 
     case (DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source),_,_,extraArg)
       equation
-        ((e_1, extraArg)) = func((e, extraArg));
-        ((DAE.CREF(cr_1,_), extraArg)) = traverseStatementsOptionsEvalLhs(((Expression.crefExp(cr), extraArg)),func,opt);
+        (e_1, extraArg) = func(e, extraArg);
+        (DAE.CREF(cr_1,_), extraArg) = traverseStatementsOptionsEvalLhs(Expression.crefExp(cr), extraArg, func, opt);
         x = Util.if_(referenceEq(e,e_1) and referenceEq(cr,cr_1),inStmt,DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source));
       then (x::{},extraArg);
 
     // NOTE: This is making the function use matchcontinue!
     case (DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source),_,_,extraArg)
       equation
-        ((e_1, extraArg)) = func((e, extraArg));
-        failure(((DAE.CREF(_,_), _)) = func((Expression.crefExp(cr), extraArg)));
+        (e_1, extraArg) = func(e, extraArg);
+        failure((DAE.CREF(_,_), _) = func(Expression.crefExp(cr), extraArg));
         x = Util.if_(referenceEq(e,e_1),inStmt,DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source));
         /* We need to pass this through because simplify/etc may scalarize the cref...
         true = Flags.isSet(Flags.FAILTRACE);
@@ -4227,7 +4211,7 @@ algorithm
       equation
         (algElse1,extraArg) = traverseDAEEquationsStmtsElse(algElse,func,opt,extraArg);
         (stmts2,extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
-        ((e_1,extraArg)) = func((e, extraArg));
+        (e_1,extraArg) = func(e, extraArg);
         (stmts1,b) = Algorithm.optimizeIf(e_1,stmts2,algElse1,source);
         stmts1 = Util.if_(not b and referenceEq(e,e_1) and referenceEq(stmts,stmts2) and referenceEq(algElse,algElse1),inStmt::{},stmts1);
       then (stmts1,extraArg);
@@ -4235,28 +4219,28 @@ algorithm
     case (DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, source = source),_,_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
-        ((e_1, extraArg)) = func((e, extraArg));
+        (e_1, extraArg) = func(e, extraArg);
         x = Util.if_(referenceEq(e,e_1) and referenceEq(stmts,stmts2),inStmt,DAE.STMT_FOR(tp,b1,id1,ix,e_1,stmts2,source));
       then (x::{},extraArg);
 
     case (DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source),_,_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
-        ((e_1, extraArg)) = func((e, extraArg));
+        (e_1, extraArg) = func(e, extraArg);
         x = Util.if_(referenceEq(e,e_1) and referenceEq(stmts,stmts2),inStmt,DAE.STMT_PARFOR(tp,b1,id1,ix,e_1,stmts2,loopPrlVars,source));
       then (x::{},extraArg);
 
     case (DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source),_,_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
-        ((e_1, extraArg)) = func((e, extraArg));
+        (e_1, extraArg) = func(e, extraArg);
         x = Util.if_(referenceEq(e,e_1) and referenceEq(stmts,stmts2),inStmt,DAE.STMT_WHILE(e_1,stmts2,source));
       then (x::{},extraArg);
 
     case (DAE.STMT_WHEN(exp=e,conditions=conditions,initialCall=initialCall,statementLst=stmts,elseWhen=NONE(),source=source),_,_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
-        ((e_1, extraArg)) = func((e, extraArg));
+        (e_1, extraArg) = func(e, extraArg);
         x = Util.if_(referenceEq(e,e_1) and referenceEq(stmts,stmts2),inStmt,DAE.STMT_WHEN(e_1,conditions,initialCall,stmts2,NONE(),source));
       then (x::{},extraArg);
 
@@ -4264,34 +4248,34 @@ algorithm
       equation
         ({ew_1}, extraArg) = traverseDAEEquationsStmtsList({ew},func,opt,extraArg);
         (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
-        ((e_1, extraArg)) = func((e, extraArg));
+        (e_1, extraArg) = func(e, extraArg);
         x = Util.if_(referenceEq(ew,ew_1) and referenceEq(e,e_1) and referenceEq(stmts,stmts2),inStmt,DAE.STMT_WHEN(e_1,conditions,initialCall,stmts2,SOME(ew),source));
       then (x::{},extraArg);
 
     case (DAE.STMT_ASSERT(cond = e, msg=e2, level=e3, source = source),_,_,extraArg)
       equation
-        ((e_1, extraArg)) = func((e, extraArg));
-        ((e_2, extraArg)) = func((e2, extraArg));
-        ((e_3, extraArg)) = func((e3, extraArg));
+        (e_1, extraArg) = func(e, extraArg);
+        (e_2, extraArg) = func(e2, extraArg);
+        (e_3, extraArg) = func(e3, extraArg);
         x = Util.if_(referenceEq(e,e_1) and referenceEq(e2,e_2) and referenceEq(e3,e_3),inStmt,DAE.STMT_ASSERT(e_1,e_2,e_3,source));
       then (x::{},extraArg);
 
     case (DAE.STMT_TERMINATE(msg = e, source = source),_,_,extraArg)
       equation
-        ((e_1, extraArg)) = func((e, extraArg));
+        (e_1, extraArg) = func(e, extraArg);
         x = Util.if_(referenceEq(e,e_1),inStmt,DAE.STMT_TERMINATE(e_1,source));
       then (x::{},extraArg);
 
     case (DAE.STMT_REINIT(var = e,value=e2, source = source),_,_,extraArg)
       equation
-        ((e_1, extraArg)) = func((e, extraArg));
-        ((e_2, extraArg)) = func((e2, extraArg));
+        (e_1, extraArg) = func(e, extraArg);
+        (e_2, extraArg) = func(e2, extraArg);
         x = Util.if_(referenceEq(e,e_1) and referenceEq(e2,e_2),inStmt,DAE.STMT_REINIT(e_1,e_2,source));
       then (x::{},extraArg);
 
     case (DAE.STMT_NORETCALL(exp = e, source = source),_,_,extraArg)
       equation
-        ((e_1, extraArg)) = func((e, extraArg));
+        (e_1, extraArg) = func(e, extraArg);
         x = Util.if_(referenceEq(e,e_1),inStmt,DAE.STMT_NORETCALL(e_1,source));
       then (x::{},extraArg);
 
@@ -4324,7 +4308,12 @@ protected function traverseDAEEquationsStmtsElse "Helper function for traverseDA
   input Type_a iextraArg;
   output DAE.Else outElse;
   output Type_a oextraArg;
-  partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
   (outElse,oextraArg) := match(inElse,func,opt,iextraArg)
@@ -4339,7 +4328,7 @@ algorithm
     equation
       (el_1,extraArg) = traverseDAEEquationsStmtsElse(el,func,opt,extraArg);
       (st_1,extraArg) = traverseDAEEquationsStmtsList(st,func,opt,extraArg);
-      ((e_1,extraArg)) = func((e, extraArg));
+      (e_1,extraArg) = func(e, extraArg);
       outElse = Algorithm.optimizeElseIf(e_1,st_1,el_1);
       b = referenceEq(el,el_1) and referenceEq(st,st_1) and referenceEq(e,e_1);
       outElse = Util.if_(b,inElse,outElse);
@@ -4592,7 +4581,12 @@ Help function to traverseDAE
   input Type_a iextraArg;
   output Option<DAE.VariableAttributes> traversedDaeList;
   output Type_a oextraArg;
-  partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
   (traversedDaeList,oextraArg) := match(attr,func,iextraArg)
@@ -5781,19 +5775,20 @@ end splitElements_dispatch;
 
 public function collectLocalDecls
 "Used to traverse expressions and collect all local declarations"
-  input tuple<DAE.Exp,list<DAE.Element>> tpl;
-  output tuple<DAE.Exp,list<DAE.Element>> otpl;
+  input DAE.Exp e;
+  input list<DAE.Element> inElements;
+  output DAE.Exp outExp;
+  output list<DAE.Element> outElements;
 algorithm
-  otpl := matchcontinue (tpl)
+  (outExp,outElements) := match (e,inElements)
     local
-      DAE.Exp e;
       list<DAE.Element> ld1,ld2,ld;
-    case ((e as DAE.MATCHEXPRESSION(localDecls = ld1),ld2))
+    case (DAE.MATCHEXPRESSION(localDecls = ld1),ld2)
       equation
         ld = listAppend(ld1,ld2);
-      then ((e,ld));
-    else tpl;
-  end matchcontinue;
+      then (e,ld);
+    else (e,inElements);
+  end match;
 end collectLocalDecls;
 
 public function getUniontypePaths
@@ -6048,20 +6043,20 @@ end printBindingSourceStr;
 
 public function collectValueblockFunctionRefVars
 "Collect the function names of variables in valueblock local sections"
-  input tuple<DAE.Exp,list<Absyn.Path>> itpl;
-  output tuple<DAE.Exp,list<Absyn.Path>> otpl;
+  input DAE.Exp exp;
+  input list<Absyn.Path> acc;
+  output DAE.Exp outExp;
+  output list<Absyn.Path> outAcc;
 algorithm
-  otpl := matchcontinue itpl
+  (outExp,outAcc) := match (exp,acc)
     local
       list<DAE.Element> decls;
-      DAE.Exp exp;
-      list<Absyn.Path> acc;
-    case ((exp as DAE.MATCHEXPRESSION(localDecls = decls),acc))
+    case (DAE.MATCHEXPRESSION(localDecls = decls),_)
       equation
-        acc = List.fold(decls, collectFunctionRefVarPaths, acc);
-      then ((exp,acc));
-    case _ then itpl;
-  end matchcontinue;
+        outAcc = List.fold(decls, collectFunctionRefVarPaths, acc);
+      then (exp,outAcc);
+    else (exp,acc);
+  end match;
 end collectValueblockFunctionRefVars;
 
 public function collectFunctionRefVarPaths
@@ -6821,48 +6816,25 @@ protected
   list<DAE.Element> elts;
 algorithm
   DAE.DAE(elts) := inDAE;
-  (_, outCrefs) := traverseDAE2(elts, collectAllExpandableCrefs, {});
+  (_, (_, outCrefs)) := traverseDAE2(elts, Expression.traverseSubexpressionsHelper, (collectAllExpandableCrefsInExp, {}));
 end getAllExpandableCrefsFromDAE;
 
-protected function collectAllExpandableCrefs
-"@author: adrpo
- collect all crefs"
-  input tuple<DAE.Exp, list<DAE.ComponentRef>> itpl;
-  output tuple<DAE.Exp, list<DAE.ComponentRef>> otpl;
+protected function collectAllExpandableCrefsInExp "collect all crefs from expression"
+  input DAE.Exp exp;
+  input list<DAE.ComponentRef> acc;
+  output DAE.Exp outExp;
+  output list<DAE.ComponentRef> outCrefs;
 algorithm
-  otpl := match itpl
-    local
-      DAE.Exp exp;
-      list<DAE.ComponentRef> extra_arg;
-    case ((exp,extra_arg))
-      equation
-        ((exp,extra_arg)) = Expression.traverseExp(exp,collectAllExpandableCrefsInExp,extra_arg);
-      then
-        ((exp,extra_arg));
-  end match;
-end collectAllExpandableCrefs;
-
-protected function collectAllExpandableCrefsInExp
-"@author: adrpo
- collect all crefs from expression"
-  input tuple<DAE.Exp, list<DAE.ComponentRef>> itpl;
-  output tuple<DAE.Exp, list<DAE.ComponentRef>> otpl;
-algorithm
-  otpl := matchcontinue (itpl)
+  (outExp,outCrefs) := match (exp,acc)
     local
       DAE.ComponentRef cr;
-      DAE.Exp exp;
-      list<DAE.ComponentRef> acc;
 
-    case ((exp as DAE.CREF(componentRef = cr),acc))
-      equation
-        true = ConnectUtil.isExpandable(cr);
-      then
-        ((exp,(cr::acc)));
+    case (DAE.CREF(componentRef = cr),_)
+      then (exp,List.consOnTrue(ConnectUtil.isExpandable(cr),cr,acc));
 
-    else itpl;
+    else (exp,acc);
 
-  end matchcontinue;
+  end match;
 end collectAllExpandableCrefsInExp;
 
 public function daeDescription

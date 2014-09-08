@@ -5336,7 +5336,7 @@ algorithm
   invars := List.select(invars,checkInputUsedAnnotation);
   invars := checkExternalDeclInputUsed(invars,decl);
   invars := List.select1(invars,checkVarBindingsInputUsed,vars);
-  (_,invars) := DAEUtil.traverseDAE2(algs,checkExpInputUsed,invars);
+  (_,(_,invars)) := DAEUtil.traverseDAE2(algs,Expression.traverseSubexpressionsHelper,(checkExpInputUsed,invars));
   List.map1_0(invars,warnUnusedFunctionVar,name);
 end checkFunctionInputUsed;
 
@@ -5391,39 +5391,28 @@ algorithm
 end checkExternalDeclInputUsed;
 
 protected function checkExpInputUsed
-  input tuple<DAE.Exp,list<DAE.Element>> tpl;
-  output tuple<DAE.Exp,list<DAE.Element>> otpl;
-protected
-  DAE.Exp exp;
-  list<DAE.Element> els;
+  input DAE.Exp inExp;
+  input list<DAE.Element> inEls;
+  output DAE.Exp exp;
+  output list<DAE.Element> els;
 algorithm
-  (exp,els) := tpl;
-  otpl := Expression.traverseExp(exp,checkExpInputUsed2,els);
-end checkExpInputUsed;
-
-protected function checkExpInputUsed2
-  input tuple<DAE.Exp,list<DAE.Element>> tpl;
-  output tuple<DAE.Exp,list<DAE.Element>> otpl;
-algorithm
-  otpl := matchcontinue tpl
+  (exp,els) := matchcontinue (inExp,inEls)
     local
-      DAE.Exp exp;
-      list<DAE.Element> els;
       DAE.ComponentRef cr;
       Absyn.Path path;
-    case ((exp as DAE.CREF(componentRef=cr),els))
+    case (exp as DAE.CREF(componentRef=cr),els)
       equation
         els = List.select1(els,checkExpInputUsed3,cr);
-      then ((exp,els));
-    case ((exp as DAE.CALL(path=path),els))
+      then (exp,els);
+    case (exp as DAE.CALL(path=path),els)
       equation
         true = Config.acceptMetaModelicaGrammar();
         cr = ComponentReference.pathToCref(path);
         els = List.select1(els,checkExpInputUsed3,cr);
-      then ((exp,els));
-    else tpl;
+      then (exp,els);
+    else (inExp,inEls);
   end matchcontinue;
-end checkExpInputUsed2;
+end checkExpInputUsed;
 
 protected function checkExpInputUsed3
   input DAE.Element el;
@@ -8771,7 +8760,7 @@ algorithm
     case (DAE.STMT_ASSIGN(exp1=lhs,exp=rhs,source=source),_,(_,_,unbound))
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
-        ((_,(unbound,_))) = Expression.traverseExpTopDown(rhs,findUnboundVariableUse,(unbound,info));
+        (_,(unbound,_)) = Expression.traverseExpTopDown(rhs,findUnboundVariableUse,(unbound,info));
         // Traverse subs too! arr[x] := ..., x unbound
         unbound = traverseCrefSubs(lhs,info,unbound);
         unbound = crefFiltering(lhs,unbound);
@@ -8779,7 +8768,7 @@ algorithm
     case (DAE.STMT_TUPLE_ASSIGN(expExpLst=lhss,exp=rhs,source=source),_,(_,_,unbound))
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
-        ((_,(unbound,_))) = Expression.traverseExpTopDown(rhs,findUnboundVariableUse,(unbound,info));
+        (_,(unbound,_)) = Expression.traverseExpTopDown(rhs,findUnboundVariableUse,(unbound,info));
         // Traverse subs too! arr[x] := ..., x unbound
         unbound = List.fold1(lhss,traverseCrefSubs,info,unbound);
         unbound = List.fold(lhss,crefFiltering,unbound);
@@ -8787,7 +8776,7 @@ algorithm
     case (DAE.STMT_ASSIGN_ARR(componentRef=cr,exp=rhs,source=source),_,(_,_,unbound))
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
-        ((_,(unbound,_))) = Expression.traverseExpTopDown(rhs,findUnboundVariableUse,(unbound,info));
+        (_,(unbound,_)) = Expression.traverseExpTopDown(rhs,findUnboundVariableUse,(unbound,info));
         // Traverse subs too! arr[x] := ..., x unbound
         unbound = traverseCrefSubs(DAE.CREF(cr,DAE.T_UNKNOWN_DEFAULT),info,unbound);
         unbound = crefFiltering(DAE.CREF(cr,DAE.T_UNKNOWN_DEFAULT),unbound);
@@ -8801,20 +8790,20 @@ algorithm
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
         unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,iter) "TODO: This is not needed if all references are tagged CREF_ITER";
-        ((_,(unbound,_))) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
+        (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
         ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
       then ((b,b,unbound));
     case (DAE.STMT_PARFOR(iter=iter,range=exp,statementLst=stmts,source=source),_,(_,_,unbound))
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
         unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,iter) "TODO: This is not needed if all references are tagged CREF_ITER";
-        ((_,(unbound,_))) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
+        (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
         ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
       then ((b,b,unbound));
     case (DAE.STMT_WHILE(exp=exp,statementLst=stmts,source=source),_,(_,_,unbound))
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
-        ((_,(unbound,_))) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
+        (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
         ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
       then ((b,b,unbound));
     case (DAE.STMT_ASSERT(cond=DAE.BCONST(false),msg=exp2,source=source),_,(_,_,unbound)) // TODO: Re-write these earlier from assert(false,msg) to terminate(msg)
@@ -8824,18 +8813,18 @@ algorithm
     case (DAE.STMT_ASSERT(cond=exp1,msg=exp2,source=source),_,(_,_,unbound))
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
-        ((_,(unbound,_))) = Expression.traverseExpTopDown(exp1,findUnboundVariableUse,(unbound,info));
-        ((_,(unbound,_))) = Expression.traverseExpTopDown(exp2,findUnboundVariableUse,(unbound,info));
+        (_,(unbound,_)) = Expression.traverseExpTopDown(exp1,findUnboundVariableUse,(unbound,info));
+        (_,(unbound,_)) = Expression.traverseExpTopDown(exp2,findUnboundVariableUse,(unbound,info));
       then ((false,false,unbound));
     case (DAE.STMT_TERMINATE(msg=exp,source=source),_,(_,_,unbound))
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
-        ((_,(unbound,_))) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
+        (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
       then ((true,true,unbound));
     case (DAE.STMT_NORETCALL(exp=exp,source=source),_,(_,_,unbound))
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
-        ((_,(unbound,_))) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
+        (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
       then ((false,false,unbound));
     case (DAE.STMT_BREAK(source=_),_,(_,_,unbound)) then ((true,false,unbound));
     case (DAE.STMT_RETURN(source=_),_,(_,_,unbound)) then ((true,true,unbound));
@@ -8874,7 +8863,7 @@ algorithm
     case (DAE.NOELSE(),_,_,_) then ((false,false,inUnbound));
     case (DAE.ELSEIF(exp,stmts,else_),unbound,iloop,_)
       equation
-        ((_,(unbound,_))) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
+        (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
         ((b1,b2,unboundBranch)) = checkFunctionDefUseElse(else_,unbound,inLoop,info);
         ((b3,b4,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, inLoop, (false,false,unbound));
         iloop = true "We find a few false positives if we are too conservative, so let's do it non-exact";
@@ -8969,10 +8958,13 @@ algorithm
 end traverseCrefSubs;
 
 protected function findUnboundVariableUse "Check if the expression is used before it is defined"
-  input tuple<DAE.Exp,tuple<list<String>,Absyn.Info>> inTpl;
-  output tuple<DAE.Exp,Boolean,tuple<list<String>,Absyn.Info>> outTpl;
+  input DAE.Exp inExp;
+  input tuple<list<String>,Absyn.Info> inTpl;
+  output DAE.Exp outExp;
+  output Boolean continue;
+  output tuple<list<String>,Absyn.Info> outTpl;
 algorithm
-  outTpl := match inTpl
+  (outExp,continue,outTpl) := match (inExp,inTpl)
     local
       DAE.Exp exp;
       list<String> unbound,unboundLocal;
@@ -8984,21 +8976,21 @@ algorithm
       list<DAE.Exp> inputs;
       list<DAE.Element> localDecls;
       list<DAE.MatchCase> cases;
-    case ((exp as DAE.SIZE(exp=_),arg)) then ((exp,false,arg));
-    case ((exp as DAE.CREF(componentRef=cr),(unbound,info)))
+    case (exp as DAE.SIZE(exp=_),arg) then (exp,false,arg);
+    case (exp as DAE.CREF(componentRef=cr),(unbound,info))
       equation
         b = listMember(ComponentReference.crefFirstIdent(cr),unbound);
         str = ComponentReference.crefFirstIdent(cr);
         Error.assertionOrAddSourceMessage(not b, Error.WARNING_DEF_USE, {str}, info);
         unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,str);
-      then ((exp,true,(unbound,info)));
-    case ((exp as DAE.MATCHEXPRESSION(inputs=inputs,localDecls=localDecls,cases=cases),(unbound,info)))
+      then (exp,true,(unbound,info));
+    case (exp as DAE.MATCHEXPRESSION(inputs=inputs,localDecls=localDecls,cases=cases),(unbound,info))
       equation
-        ((_,(unbound,_))) = Expression.traverseExpTopDown(DAE.LIST(inputs),findUnboundVariableUse,(unbound,info));
+        (_,(unbound,_)) = Expression.traverseExpTopDown(DAE.LIST(inputs),findUnboundVariableUse,(unbound,info));
         unboundLocal = checkFunctionDefUse2(localDecls,NONE(),unbound,{},info);
         List.map1_0(cases,findUnboundVariableUseInCase,unboundLocal);
-      then ((exp,false,(unbound,info)));
-    case ((exp,arg)) then ((exp,true,arg));
+      then (exp,false,(unbound,info));
+    case (exp,arg) then (exp,true,arg);
   end match;
 end findUnboundVariableUse;
 
@@ -9016,9 +9008,9 @@ algorithm
     case (DAE.CASE(patterns=patterns,patternGuard=patternGuard,body=body,result=result,info=info,resultInfo=resultInfo),unbound)
       equation
         ((_,unbound)) = Patternm.traversePattern((DAE.PAT_META_TUPLE(patterns),unbound),patternFiltering);
-        ((_,(unbound,info))) = Expression.traverseExpTopDown(DAE.META_OPTION(patternGuard),findUnboundVariableUse,(unbound,info));
+        (_,(unbound,info)) = Expression.traverseExpTopDown(DAE.META_OPTION(patternGuard),findUnboundVariableUse,(unbound,info));
         ((_,_,unbound)) = List.fold1(body, checkFunctionDefUseStmt, true, (false,false,unbound));
-        ((_,(unbound,_))) = Expression.traverseExpTopDown(DAE.META_OPTION(result),findUnboundVariableUse,(unbound,resultInfo));
+        (_,(unbound,_)) = Expression.traverseExpTopDown(DAE.META_OPTION(result),findUnboundVariableUse,(unbound,resultInfo));
       then ();
   end match;
 end findUnboundVariableUseInCase;

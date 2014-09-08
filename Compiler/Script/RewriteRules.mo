@@ -625,26 +625,28 @@ public function rewriteExpBackEnd
  input Binds inBinds;
  output DAE.Exp outExp;
 algorithm
-  ((outExp, _)) := Expression.traverseExp(inExp, replaceBindsBackEnd, inBinds);
+  (outExp, _) := Expression.traverseExp(inExp, replaceBindsBackEnd, inBinds);
 end rewriteExpBackEnd;
 
 public function replaceBindsBackEnd
-    input tuple<DAE.Exp, Binds> inTplExpBinds;
-    output tuple<DAE.Exp, Binds> outTplExpBinds;
+  input DAE.Exp inExp;
+  input Binds inBinds;
+  output DAE.Exp outExp;
+  output Binds outBinds;
 algorithm
-  outTplExpBinds := match(inTplExpBinds)
+  (outExp,outBinds) := match (inExp,inBinds)
     local
       DAE.Exp e1,e2;
       Binds bnds;
 
-    case ((e1 as DAE.CREF(_, _), bnds))
+    case (e1 as DAE.CREF(_, _), bnds)
       equation
         e2 = replaceBindBackEnd(e1, bnds);
       then
-        ((e2, bnds));
+        (e2, bnds);
 
     // leave as it is
-    else inTplExpBinds;
+    else (inExp,inBinds);
 
   end match;
 end replaceBindsBackEnd;

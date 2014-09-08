@@ -191,24 +191,24 @@ algorithm
   ((_,ass1,ass2)) := BackendVariable.traverseBackendDAEVars(vars, freeStateAssignments, (1,ass1,ass2));
 end singularSystemCheck1;
 
-protected function freeStateAssignments
-"author Frenkel TUD 2013-01
-  unset assignments of statevariables."
-  input tuple<BackendDAE.Var, tuple<Integer,array<Integer>,array<Integer>>> inTpl;
-  output tuple<BackendDAE.Var, tuple<Integer,array<Integer>,array<Integer>>> outTpl;
+protected function freeStateAssignments "unset assignments of statevariables."
+  input BackendDAE.Var inVar;
+  input tuple<Integer,array<Integer>,array<Integer>> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<Integer,array<Integer>,array<Integer>> outTpl;
 algorithm
-  outTpl := match(inTpl)
+  (outVar,outTpl) := match (inVar,inTpl)
     local
       Integer e,index;
       array<Integer> ass1,ass2;
       BackendDAE.Var var;
-    case ((var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=_)),(index,ass1,ass2)))
+    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=_)),(index,ass1,ass2))
       equation
         e = ass1[index];
         ass1 = arrayUpdate(ass1,index,-1);
         ass2 = arrayUpdate(ass2,e,-1);
-      then ((var,(index+1,ass1,ass2)));
-    case ((var,(index,ass1,ass2))) then ((var,(index+1,ass1,ass2)));
+      then (var,(index+1,ass1,ass2));
+    case (var,(index,ass1,ass2)) then (var,(index+1,ass1,ass2));
   end match;
 end freeStateAssignments;
 

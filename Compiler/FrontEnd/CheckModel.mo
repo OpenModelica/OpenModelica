@@ -423,16 +423,14 @@ algorithm
     // a := expr;
     case (DAE.STMT_ASSIGN(exp1 = exp1), _, _)
       equation
-        ((_, (_, ht))) = Expression.traverseExpTopDown(exp1, statementOutputsCrefFinder, (inCrefExpansion, iht));
-      then
-        ht;
+        (_, (_, ht)) = Expression.traverseExpTopDown(exp1, statementOutputsCrefFinder, (inCrefExpansion, iht));
+      then ht;
 
     // (a, b, ...) := expr;
     case (DAE.STMT_TUPLE_ASSIGN(expExpLst = expl), _, _)
       equation
-        ((_, (_, ht))) = Expression.traverseExpListTopDown(expl, statementOutputsCrefFinder, (inCrefExpansion, iht));
-      then
-        ht;
+        (_, (_, ht)) = Expression.traverseExpListTopDown(expl, statementOutputsCrefFinder, (inCrefExpansion, iht));
+      then ht;
 
     // a := expr;  // where a is array with an empty list as subscript
     case (DAE.STMT_ASSIGN_ARR(componentRef=cr), _, _)
@@ -440,8 +438,7 @@ algorithm
         ({}) = ComponentReference.crefLastSubs(cr);
         crlst = ComponentReference.expandCref(cr, true);
         ht = List.fold(crlst, BaseHashSet.add, iht);
-      then
-        ht;
+      then ht;
 
     // a := expr;  // where a is array
     case (DAE.STMT_ASSIGN_ARR(componentRef=cr), _, _)
@@ -451,8 +448,7 @@ algorithm
         cr = ComponentReference.crefSetLastSubs(cr, subs);
         crlst = ComponentReference.expandCref(cr, true);
         ht = List.fold(crlst, BaseHashSet.add, iht);
-      then
-        ht;
+      then ht;
 
     case(DAE.STMT_IF(statementLst = stmts, else_ = elsebranch), _, _)
       equation
@@ -544,10 +540,13 @@ algorithm
 end statementElseOutputs;
 
 protected function statementOutputsCrefFinder "author: Frenkel TUD 2012-06"
-  input tuple<DAE.Exp, tuple<DAE.Expand, HashSet.HashSet>> inExp;
-  output tuple<DAE.Exp, Boolean, tuple<DAE.Expand, HashSet.HashSet>> outExp;
+  input DAE.Exp inExp;
+  input tuple<DAE.Expand, HashSet.HashSet> inTpl;
+  output DAE.Exp outExp;
+  output Boolean continue;
+  output tuple<DAE.Expand, HashSet.HashSet> outTpl;
 algorithm
-  outExp := matchcontinue(inExp)
+  (outExp,continue,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.Exp e, exp, e1, e2;
       HashSet.HashSet ht;
@@ -557,75 +556,64 @@ algorithm
       DAE.Expand expand;
 
     // Skip wild
-    case((e as DAE.CREF(componentRef=DAE.WILD()), (expand,ht)))
-      then
-        ((e, false, (expand,ht)));
+    case (e as DAE.CREF(componentRef=DAE.WILD()), (expand,ht))
+      then (e, false, (expand,ht));
 
     // Skip time
-    case((e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time", subscriptLst={})), (expand,ht)))
-      then
-        ((e, false, (expand,ht)));
+    case (e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time", subscriptLst={})), (expand,ht))
+      then (e, false, (expand,ht));
 
     // Skip external Objects
-    case((e as DAE.CREF(ty=DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path=_))), (expand,ht)))
-      then
-        ((e, false, (expand,ht)));
+    case (e as DAE.CREF(ty=DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path=_))), (expand,ht))
+      then (e, false, (expand,ht));
 
     // empty subs
-    case((e as DAE.CREF(componentRef=cr), (expand,ht)))
+    case (e as DAE.CREF(componentRef=cr), (expand,ht))
       equation
         ({}) = ComponentReference.crefLastSubs(cr);
         crlst = ComponentReference.expandCref(cr, true);
         ht = List.fold(crlst, BaseHashSet.add, ht);
-      then
-        ((e, false, (expand,ht)));
+      then (e, false, (expand,ht));
 
     // some subs - NOT_EXPAND strategy (needed for equations translated to algorithms)
-    case((e as DAE.CREF(componentRef=cr), (expand as DAE.NOT_EXPAND(),ht)))
+    case (e as DAE.CREF(componentRef=cr), (expand as DAE.NOT_EXPAND(),ht))
       equation
         ht = List.fold({cr}, BaseHashSet.add, ht);
-      then
-        ((e, false, (expand,ht)));
+      then (e, false, (expand,ht));
 
     // some subs - EXPAND
-    case((e as DAE.CREF(componentRef=cr), (expand,ht)))
+    case (e as DAE.CREF(componentRef=cr), (expand,ht))
       equation
         (subs as _::_) = ComponentReference.crefLastSubs(cr);
         subs = List.fill(DAE.WHOLEDIM(), listLength(subs));
         cr = ComponentReference.crefSetLastSubs(cr, subs);
         crlst = ComponentReference.expandCref(cr, true);
         ht = List.fold(crlst, BaseHashSet.add, ht);
-      then
-        ((e, false, (expand,ht)));
+      then (e, false, (expand,ht));
 
-    case((e as DAE.ASUB(exp=exp), (expand,ht)))
+    case (e as DAE.ASUB(exp=exp), (expand,ht))
       equation
-        ((_, (expand,ht))) = Expression.traverseExpTopDown(exp, statementOutputsCrefFinder, (expand,ht));
-      then
-        ((e, false, (expand,ht)));
+        (_, (expand,ht)) = Expression.traverseExpTopDown(exp, statementOutputsCrefFinder, (expand,ht));
+      then (e, false, (expand,ht));
 
-    case((e as DAE.TSUB(exp=exp), (expand,ht)))
+    case (e as DAE.TSUB(exp=exp), (expand,ht))
       equation
-        ((_, (expand,ht))) = Expression.traverseExpTopDown(exp, statementOutputsCrefFinder, (expand,ht));
-      then
-        ((e, false, (expand,ht)));
+        (_, (expand,ht)) = Expression.traverseExpTopDown(exp, statementOutputsCrefFinder, (expand,ht));
+      then (e, false, (expand,ht));
 
-    case((e as DAE.RELATION(exp1=_), (expand,ht)))
-      then
-        ((e, false, (expand,ht)));
+    case (e as DAE.RELATION(exp1=_), (expand,ht))
+      then (e, false, (expand,ht));
 
-    case((e as DAE.RANGE(ty=_), (expand,ht)))
-      then
-        ((e, false, (expand,ht)));
+    case (e as DAE.RANGE(ty=_), (expand,ht))
+      then (e, false, (expand,ht));
 
-    case((e as DAE.IFEXP(expThen=e1, expElse=e2), (expand,ht)))
+    case (e as DAE.IFEXP(expThen=e1, expElse=e2), (expand,ht))
       equation
-        ((_, (expand,ht))) = Expression.traverseExpTopDown(e1, statementOutputsCrefFinder, (expand,ht));
-        ((_, (expand,ht))) = Expression.traverseExpTopDown(e2, statementOutputsCrefFinder, (expand,ht));
-      then
-        ((e, false, (expand,ht)));
+        (_, (expand,ht)) = Expression.traverseExpTopDown(e1, statementOutputsCrefFinder, (expand,ht));
+        (_, (expand,ht)) = Expression.traverseExpTopDown(e2, statementOutputsCrefFinder, (expand,ht));
+      then (e, false, (expand,ht));
 
-    case((e, (expand,ht))) then ((e, true, (expand,ht)));
+    case (e, (expand,ht)) then (e, true, (expand,ht));
 
   end matchcontinue;
 end statementOutputsCrefFinder;
@@ -893,7 +881,7 @@ algorithm
 
     case(_, _, _)
       equation
-        ((_, (_, _::{}))) = Expression.traverseExp(Expression.expSub(e1, e2), traversingComponentRefFinder, (ihs, {}));
+        (_, (_, _::{})) = Expression.traverseExp(Expression.expSub(e1, e2), traversingComponentRefFinder, (ihs, {}));
       then
         Expression.sizeOf(Expression.typeof(e1));
 
@@ -903,28 +891,29 @@ algorithm
   end matchcontinue;
 end simpleEquation;
 
-protected function traversingComponentRefFinder "author: Frenkel TUD 2012-06"
-  input tuple<DAE.Exp, tuple<HashSet.HashSet, list<DAE.ComponentRef>>> inExp;
-  output tuple<DAE.Exp, tuple<HashSet.HashSet, list<DAE.ComponentRef>>> outExp;
+protected function traversingComponentRefFinder
+  input DAE.Exp inExp;
+  input tuple<HashSet.HashSet, list<DAE.ComponentRef>> inTpl;
+  output DAE.Exp outExp;
+  output tuple<HashSet.HashSet, list<DAE.ComponentRef>> outTpl;
 algorithm
-  outExp := matchcontinue(inExp)
+  (outExp,outTpl) := matchcontinue (inExp,inTpl)
     local
       HashSet.HashSet hs;
       list<DAE.ComponentRef> crefs, crlst;
       DAE.ComponentRef cr;
       DAE.Exp e;
 
-    case((DAE.CREF(componentRef = DAE.WILD()), (_, _)))
-      then inExp;
+    case (DAE.CREF(componentRef = DAE.WILD()), (_, _))
+      then (inExp,inTpl);
 
-    case((e as DAE.CREF(componentRef=cr), (hs, crefs)))
+    case (e as DAE.CREF(componentRef=cr), (hs, crefs))
       equation
         crlst = ComponentReference.expandCref(cr, true);
         crefs = getcr(crlst, hs, crefs);
-      then
-        ((e, (hs, crefs)));
+      then (e, (hs, crefs));
 
-    case _ then inExp;
+    else (inExp,inTpl);
 
   end matchcontinue;
 end traversingComponentRefFinder;

@@ -1989,19 +1989,14 @@ algorithm
   outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, bindExp, inBindValue, dim, source, attr, comment, ct);
 end setBindValue;
 
-public function setVarDirectionTpl "author: "
-  input tuple<BackendDAE.Var, DAE.VarDirection> inTpl;
-  output tuple<BackendDAE.Var, DAE.VarDirection> outTpl;
+public function setVarDirectionTpl
+  input BackendDAE.Var inVar;
+  input DAE.VarDirection inDir;
+  output BackendDAE.Var var;
+  output DAE.VarDirection dir;
 algorithm
-  outTpl  := match(inTpl)
-    local
-      BackendDAE.Var var;
-      DAE.VarDirection dir;
-
-    case((var, dir)) equation
-      var = setVarDirection(var, dir);
-    then ((var, dir));
-  end match;
+  var := setVarDirection(inVar, inDir);
+  dir := inDir;
 end setVarDirectionTpl;
 
 public function setVarDirection "author: Frenkel TUD 17-03-11
@@ -2904,21 +2899,16 @@ algorithm
 end deleteVars;
 
 protected function deleteVars1
-"author: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, BackendDAE.Variables> inTpl;
- output tuple<BackendDAE.Var, BackendDAE.Variables> outTpl;
+  input BackendDAE.Var inVar;
+  input BackendDAE.Variables inVars;
+  output BackendDAE.Var v;
+  output BackendDAE.Variables vars;
+protected
+  DAE.ComponentRef cr;
 algorithm
-  outTpl:= match (inTpl)
-    local
-      BackendDAE.Var v;
-      BackendDAE.Variables vars;
-      DAE.ComponentRef cr;
-    case ((v as BackendDAE.VAR(varName = cr),vars))
-      equation
-        vars = removeCref(cr,vars) "alg var deleted" ;
-      then
-        ((v,vars));
-  end match;
+  v := inVar;
+  BackendDAE.VAR(varName = cr) := v;
+  vars := removeCref(cr,inVars);
 end deleteVars1;
 
 public function deleteVar
@@ -3879,24 +3869,25 @@ end getVarIndexFromVariables;
 
 protected function traversingisVarIndexVarFinder
 "author: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, list<Integer>>> inTpl;
- output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, list<Integer>>> outTpl;
+ input BackendDAE.Var inVar;
+ input tuple<BackendDAE.Variables, list<Integer>> inTpl;
+ output BackendDAE.Var outVar;
+ output tuple<BackendDAE.Variables, list<Integer>> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var v;
       BackendDAE.Variables vars;
       list<Integer> v_lst;
       DAE.ComponentRef cr;
       list<Integer> indxlst;
-    case ((v,(vars,v_lst)))
+    case (v,(vars,v_lst))
       equation
         cr = varCref(v);
        (_,indxlst) = getVar(cr, vars);
        v_lst = listAppend(v_lst,indxlst);
-      then ((v,(vars,v_lst)));
-    case _ then inTpl;
+      then (v,(vars,v_lst));
+    else (inVar,inTpl);
   end matchcontinue;
 end traversingisVarIndexVarFinder;
 
@@ -3911,11 +3902,12 @@ end getVarIndexFromVar;
 
 protected function traversingVarIndexFinder
 "author: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, list<Integer>>> inTpl;
- output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, list<Integer>>> outTpl;
+  input BackendDAE.Var inVar;
+  input tuple<BackendDAE.Variables, list<Integer>> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<BackendDAE.Variables, list<Integer>> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var v;
       list<BackendDAE.Var> vlst;
@@ -3923,13 +3915,13 @@ algorithm
       list<Integer> v_lst;
       DAE.ComponentRef cr;
       list<Integer> indxlst;
-    case ((v,(vars,v_lst)))
+    case (v,(vars,v_lst))
       equation
         cr = varCref(v);
        (_,indxlst) = getVar(cr, vars);
        v_lst = listAppend(v_lst,indxlst);
-      then ((v,(vars,v_lst)));
-    case _ then inTpl;
+      then (v,(vars,v_lst));
+    else (inVar,inTpl);
   end matchcontinue;
 end traversingVarIndexFinder;
 
@@ -3964,15 +3956,13 @@ end mergeVariables;
 
 protected function mergeVariables1
 "author: Frenkel TUD 2013-02"
- input tuple<BackendDAE.Var, BackendDAE.Variables> inTpl;
- output tuple<BackendDAE.Var, BackendDAE.Variables> outTpl;
-protected
- BackendDAE.Var v;
- BackendDAE.Variables vars;
+ input BackendDAE.Var inVar;
+ input BackendDAE.Variables inVars;
+ output BackendDAE.Var v;
+ output BackendDAE.Variables vars;
 algorithm
-  (v,vars) := inTpl;
-  vars := addVar(v,vars);
-  outTpl := (v,vars);
+  v := inVar;
+  vars := addVar(inVar,inVars);
 end mergeVariables1;
 
 public function traverseBackendDAEVars "author: Frenkel TUD
@@ -3983,8 +3973,10 @@ public function traverseBackendDAEVars "author: Frenkel TUD
   output Type_a outTypeA;
   replaceable type Type_a subtypeof Any;
   partial function FuncExpType
-    input tuple<BackendDAE.Var, Type_a> inTpl;
-    output tuple<BackendDAE.Var, Type_a> outTpl;
+    input BackendDAE.Var inVar;
+    input Type_a inA;
+    output BackendDAE.Var outVar;
+    output Type_a outA;
   end FuncExpType;
 algorithm
   outTypeA := matchcontinue (inVariables,func,inTypeA)
@@ -4013,8 +4005,11 @@ public function traverseBackendDAEVarsWithStop "author: Frenkel TUD
   input Type_a inTypeA;
   output Type_a outTypeA;
   partial function FuncExpType
-    input tuple<BackendDAE.Var, Type_a> inTpl;
-    output tuple<BackendDAE.Var, Boolean, Type_a> outTpl;
+    input BackendDAE.Var inVar;
+    input Type_a inA;
+    output BackendDAE.Var outVar;
+    output Boolean continue;
+    output Type_a outA;
   end FuncExpType;
 algorithm
   outTypeA:=
@@ -4026,8 +4021,7 @@ algorithm
     case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=n,varOptArr=varOptArr)),_,_)
       equation
         ext_arg_1 = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithStop(varOptArr,func,traverseBackendDAEVarWithStop,1,n,inTypeA);
-      then
-        ext_arg_1;
+      then ext_arg_1;
     case (_,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVarsWithStop failed");
@@ -4044,8 +4038,10 @@ protected function traverseBackendDAEVar "author: Frenkel TUD
   input Type_a inTypeA;
   output Type_a outTypeA;
   partial function FuncExpType
-    input tuple<BackendDAE.Var, Type_a> inTpl;
-    output tuple<BackendDAE.Var, Type_a> outTpl;
+    input BackendDAE.Var inVar;
+    input Type_a inA;
+    output BackendDAE.Var outVar;
+    output Type_a outA;
   end FuncExpType;
 algorithm
   outTypeA:=
@@ -4056,7 +4052,7 @@ algorithm
     case (NONE(),_,_) then inTypeA;
     case (SOME(v),_,_)
       equation
-        ((_,ext_arg)) = func((v,inTypeA));
+        (_,ext_arg) = func(v,inTypeA);
       then
         ext_arg;
     else
@@ -4076,8 +4072,11 @@ protected function traverseBackendDAEVarWithStop "author: Frenkel TUD
   output Boolean outBoolean;
   output Type_a outTypeA;
   partial function FuncExpType
-    input tuple<BackendDAE.Var, Type_a> inTpl;
-    output tuple<BackendDAE.Var, Boolean, Type_a> outTpl;
+    input BackendDAE.Var inVar;
+    input Type_a inA;
+    output BackendDAE.Var outVar;
+    output Boolean continue;
+    output Type_a outA;
   end FuncExpType;
 algorithm
   (outBoolean,outTypeA):=
@@ -4089,7 +4088,7 @@ algorithm
     case (NONE(),_,_) then (true,inTypeA);
     case (SOME(v),_,_)
       equation
-        ((_,b,ext_arg)) = func((v,inTypeA));
+        (_,b,ext_arg) = func(v,inTypeA);
       then
         (b,ext_arg);
     else
@@ -4111,8 +4110,10 @@ public function traverseBackendDAEVarsWithUpdate "author: Frenkel TUD
   output BackendDAE.Variables outVariables;
   output Type_a outTypeA;
   partial function FuncExpType
-    input tuple<BackendDAE.Var, Type_a> inTpl;
-    output tuple<BackendDAE.Var, Type_a> outTpl;
+    input BackendDAE.Var inVar;
+    input Type_a inA;
+    output BackendDAE.Var outVar;
+    output Type_a outA;
   end FuncExpType;
 algorithm
   (outVariables,outTypeA):=
@@ -4144,8 +4145,10 @@ protected function traverseBackendDAEVarWithUpdate "author: Frenkel TUD
   output Option<BackendDAE.Var> outVar;
   output Type_a outTypeA;
   partial function FuncExpType
-    input tuple<BackendDAE.Var, Type_a> inTpl;
-    output tuple<BackendDAE.Var, Type_a> outTpl;
+    input BackendDAE.Var inVar;
+    input Type_a inA;
+    output BackendDAE.Var outVar;
+    output Type_a outA;
   end FuncExpType;
 algorithm
   (outVar,outTypeA):=
@@ -4157,11 +4160,10 @@ algorithm
     case (ovar as NONE(),_,_) then (ovar,inTypeA);
     case (ovar as SOME(v),_,_)
       equation
-        ((v1,ext_arg)) = func((v,inTypeA));
+        (v1,ext_arg) = func(v,inTypeA);
         ovar = Util.if_(referenceEq(v,v1),ovar,SOME(v1));
-      then
-        (ovar,ext_arg);
-    case (_,_,_)
+      then (ovar,ext_arg);
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVar failed");
       then
@@ -4177,21 +4179,21 @@ algorithm
 end getAllCrefFromVariables;
 
 protected function traversingVarCrefFinder
-"author: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, list<DAE.ComponentRef>> inTpl;
- output tuple<BackendDAE.Var, list<DAE.ComponentRef>> outTpl;
+  input BackendDAE.Var inVar;
+  input list<DAE.ComponentRef> inCrefs;
+  output BackendDAE.Var outVar;
+  output list<DAE.ComponentRef> outCrefs;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,outCrefs) := matchcontinue (inVar,inCrefs)
     local
       BackendDAE.Var v;
       list<DAE.ComponentRef> cr_lst;
       DAE.ComponentRef cr;
-    case ((v,cr_lst))
+    case (v,cr_lst)
       equation
         cr = varCref(v);
-      then ((v,cr::cr_lst));
-    case _ then inTpl;
+      then (v,cr::cr_lst);
+    else (inVar,inCrefs);
   end matchcontinue;
 end traversingVarCrefFinder;
 
@@ -4203,21 +4205,13 @@ algorithm
 end getAllDiscreteVarFromVariables;
 
 protected function traversingisisVarDiscreteFinder
-"author: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, list<BackendDAE.Var>> inTpl;
- output tuple<BackendDAE.Var, list<BackendDAE.Var>> outTpl;
+  input BackendDAE.Var inVar;
+  input list<BackendDAE.Var> inVars;
+  output BackendDAE.Var v;
+  output list<BackendDAE.Var> v_lst;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
-    local
-      BackendDAE.Var v;
-      list<BackendDAE.Var> v_lst;
-    case ((v,v_lst))
-      equation
-        true = BackendDAEUtil.isVarDiscrete(v);
-      then ((v,v::v_lst));
-    else inTpl;
-  end matchcontinue;
+  v := inVar;
+  v_lst := List.consOnTrue(BackendDAEUtil.isVarDiscrete(v),v,inVars);
 end traversingisisVarDiscreteFinder;
 
 public function getAllStateVarFromVariables
@@ -4228,16 +4222,13 @@ algorithm
 end getAllStateVarFromVariables;
 
 protected function traversingisStateVarFinder
-"author: Frenkel TUD 2010-11"
-  input tuple<BackendDAE.Var, list<BackendDAE.Var>> inTpl;
-  output tuple<BackendDAE.Var, list<BackendDAE.Var>> outTpl;
-protected
-  BackendDAE.Var v;
-  list<BackendDAE.Var> v_lst;
+  input BackendDAE.Var inVar;
+  input list<BackendDAE.Var> inVars;
+  output BackendDAE.Var v;
+  output list<BackendDAE.Var> v_lst;
 algorithm
-  (v,v_lst) := inTpl;
-  v_lst := List.consOnTrue(isStateVar(v),v,v_lst);
-  outTpl := (v,v_lst);
+  v := inVar;
+  v_lst := List.consOnTrue(isStateVar(v),v,inVars);
 end traversingisStateVarFinder;
 
 public function getAllStateDerVarIndexFromVariables
@@ -4249,22 +4240,22 @@ algorithm
 end getAllStateDerVarIndexFromVariables;
 
 protected function traversingisStateDerVarIndexFinder
-"author: Frenkel TUD 2010-11"
-  input tuple<BackendDAE.Var, tuple<list<BackendDAE.Var>,list<Integer>,Integer>> inTpl;
-  output tuple<BackendDAE.Var, tuple<list<BackendDAE.Var>,list<Integer>,Integer>> outTpl;
+  input BackendDAE.Var inVar;
+  input tuple<list<BackendDAE.Var>,list<Integer>,Integer> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<list<BackendDAE.Var>,list<Integer>,Integer> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var v;
       list<BackendDAE.Var> v_lst;
       list<Integer> i_lst;
       Integer i;
-    case ((v,(v_lst,i_lst,i)))
+    case (v,(v_lst,i_lst,i))
       equation
         true = isStateDerVar(v);
-      then ((v,(v::v_lst,i::i_lst,i+1)));
-    case ((v,(v_lst,i_lst,i))) then ((v,(v_lst,i_lst,i+1)));
+      then (v,(v::v_lst,i::i_lst,i+1));
+    case (v,(v_lst,i_lst,i)) then (v,(v_lst,i_lst,i+1));
   end matchcontinue;
 end traversingisStateDerVarIndexFinder;
 
@@ -4278,21 +4269,22 @@ end getAllStateVarIndexFromVariables;
 
 protected function traversingisStateVarIndexFinder
 "author: Frenkel TUD 2010-11"
-  input tuple<BackendDAE.Var, tuple<list<BackendDAE.Var>,list<Integer>,Integer>> inTpl;
-  output tuple<BackendDAE.Var, tuple<list<BackendDAE.Var>,list<Integer>,Integer>> outTpl;
+  input BackendDAE.Var inVar;
+  input tuple<list<BackendDAE.Var>,list<Integer>,Integer> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<list<BackendDAE.Var>,list<Integer>,Integer> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var v;
       list<BackendDAE.Var> v_lst;
       list<Integer> i_lst;
       Integer i;
-    case ((v,(v_lst,i_lst,i)))
+    case (v,(v_lst,i_lst,i))
       equation
         true = isStateVar(v);
-      then ((v,(v::v_lst,i::i_lst,i+1)));
-    case ((v,(v_lst,i_lst,i))) then ((v,(v_lst,i_lst,i+1)));
+      then (v,(v::v_lst,i::i_lst,i+1));
+    case (v,(v_lst,i_lst,i)) then (v,(v_lst,i_lst,i+1));
   end matchcontinue;
 end traversingisStateVarIndexFinder;
 
@@ -4554,30 +4546,30 @@ algorithm
 end mergeStartFixed1;
 
 protected function replaceCrefWithBindExp
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean,HashSet.HashSet>> inTuple;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean,HashSet.HashSet>> outTuple;
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables,Boolean,HashSet.HashSet> inTuple;
+  output DAE.Exp outExp;
+  output tuple<BackendDAE.Variables,Boolean,HashSet.HashSet> outTuple;
 algorithm
-  outTuple := matchcontinue(inTuple)
+  (outExp,outTuple) := matchcontinue (inExp,inTuple)
     local
       DAE.Exp e;
       BackendDAE.Variables vars;
       DAE.ComponentRef cr;
       HashSet.HashSet hs;
     // true if crefs replaced in expression
-    case ((DAE.CREF(componentRef=cr), (vars,_,hs)))
+    case (DAE.CREF(componentRef=cr), (vars,_,hs))
       equation
         // check for cyclic bindings in start value
         false = BaseHashSet.has(cr, hs);
         ({BackendDAE.VAR(bindExp = SOME(e))}, _) = getVar(cr, vars);
         hs = BaseHashSet.add(cr,hs);
-        ((e, (_,_,hs))) = Expression.traverseExp(e, replaceCrefWithBindExp, (vars,false,hs));
-      then
-        ((e, (vars,true,hs)));
+        (e, (_,_,hs)) = Expression.traverseExp(e, replaceCrefWithBindExp, (vars,false,hs));
+      then (e, (vars,true,hs));
     // true if crefs in expression
-    case ((e as DAE.CREF(componentRef=_), (vars,_,hs)))
-      then
-        ((e, (vars,true,hs)));
-    else inTuple;
+    case (e as DAE.CREF(componentRef=_), (vars,_,hs))
+      then (e, (vars,true,hs));
+    else (inExp,inTuple);
   end matchcontinue;
 end replaceCrefWithBindExp;
 
@@ -4619,8 +4611,8 @@ algorithm
     case (_,_,_,_,_,_)
       equation
         // simple evaluation, by replace crefs with bind expressions recursivly
-        ((exp1_1, (_,b1,_))) = Expression.traverseExp(exp1, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
-        ((exp2_1, (_,b2,_))) = Expression.traverseExp(exp2, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
+        (exp1_1, (_,b1,_)) = Expression.traverseExp(exp1, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
+        (exp2_1, (_,b2,_)) = Expression.traverseExp(exp2, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
         (exp1_1,_) = ExpressionSimplify.condsimplify(b1,exp1_1);
         (exp2_1,_) = ExpressionSimplify.condsimplify(b2,exp2_1);
         true = Expression.expEqual(exp1_1, exp2_1);

@@ -4500,22 +4500,21 @@ algorithm
                 DAE.emptyTypeSource);
         ty = Util.if_(i==2,ty1,ty2);
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("delay"), args, nargs, impl, NONE(), pre, info);
-        ((call,_)) = Expression.traverseExp(call,elabBuiltinDelay2,1);
+        call = Expression.traverseExpDummy(call,elabBuiltinDelay2);
       then (cache, call, prop);
   end match;
 end elabBuiltinDelay;
 
 protected function elabBuiltinDelay2
-  "Duplicate the 2nd argument of delay for no good reason"
-  input tuple<DAE.Exp,Integer> exp;
-  output tuple<DAE.Exp,Integer> oexp;
+  input DAE.Exp exp;
+  output DAE.Exp oexp;
 algorithm
   oexp := match exp
     local
       Absyn.Path path;
       DAE.Exp e1,e2;
       DAE.CallAttributes attr;
-    case ((DAE.CALL(path as Absyn.IDENT("delay"), {e1,e2}, attr),_)) then ((DAE.CALL(path, {e1,e2,e2}, attr),1)); // stupid, eh?
+    case DAE.CALL(path as Absyn.IDENT("delay"), {e1,e2}, attr) then DAE.CALL(path, {e1,e2,e2}, attr);
     else exp;
   end match;
 end elabBuiltinDelay2;
@@ -9072,15 +9071,16 @@ protected function evaluateSlotExp
   input Absyn.Info inInfo;
   output DAE.Exp outExp;
 algorithm
-  ((outExp, _)) := Expression.traverseExp(inExp, evaluateSlotExp_traverser,
-    (inSlotArray, inInfo));
+  (outExp, _) := Expression.traverseExp(inExp, evaluateSlotExp_traverser, (inSlotArray, inInfo));
 end evaluateSlotExp;
 
 protected function evaluateSlotExp_traverser
-  input tuple<DAE.Exp, tuple<array<tuple<Slot, Integer>>, Absyn.Info>> inTuple;
-  output tuple<DAE.Exp, tuple<array<tuple<Slot, Integer>>, Absyn.Info>> outTuple;
+  input DAE.Exp inExp;
+  input tuple<array<tuple<Slot, Integer>>, Absyn.Info> inTuple;
+  output DAE.Exp outExp;
+  output tuple<array<tuple<Slot, Integer>>, Absyn.Info> outTuple;
 algorithm
-  outTuple := match(inTuple)
+  (outExp,outTuple) := match (inExp,inTuple)
     local
       String id;
       array<tuple<Slot, Integer>> slots;
@@ -9089,14 +9089,13 @@ algorithm
       Absyn.Info info;
 
     // Only simple identifiers can be slot names.
-    case ((orig_exp as DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id)), (slots, info)))
+    case (orig_exp as DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id)), (slots, info))
       equation
         slot = lookupSlotInArray(id, slots);
         exp = getOptSlotDefaultExp(slot, slots, info, orig_exp);
-      then
-        ((exp, (slots, info)));
+      then (exp, (slots, info));
 
-    else inTuple;
+    else (inExp,inTuple);
   end match;
 end evaluateSlotExp_traverser;
 

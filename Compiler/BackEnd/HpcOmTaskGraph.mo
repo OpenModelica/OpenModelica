@@ -2280,8 +2280,10 @@ end getComponentsIncludingTime;
 
 protected function getComponentsIncludingTime0 "get the scc-idc that have an equation containing 'time' as variable
 author: marcusw"
-  input tuple<BackendDAE.Equation,tuple<Integer, list<Integer>, array<tuple<Integer,Integer,Integer>>, Integer>> iOffsetResList; //<equation, <offset, resultList, eqCompMapping, eqIdx>>
-  output tuple<BackendDAE.Equation,tuple<Integer, list<Integer>, array<tuple<Integer,Integer,Integer>>, Integer>> oOffsetResList;
+  input BackendDAE.Equation inEq;
+  input tuple<Integer, list<Integer>, array<tuple<Integer,Integer,Integer>>, Integer> iOffsetResList; //<equation, <offset, resultList, eqCompMapping, eqIdx>>
+  output BackendDAE.Equation outEq;
+  output tuple<Integer, list<Integer>, array<tuple<Integer,Integer,Integer>>, Integer> oOffsetResList;
 protected
   BackendDAE.Equation eq;
   Integer offset, eqIdx, sccIdx;
@@ -2289,33 +2291,31 @@ protected
   array<tuple<Integer, Integer, Integer>> eqCompMapping;
   Boolean timeIsPartOfEquation;
 algorithm
-  oOffsetResList := matchcontinue(iOffsetResList)
-    case((eq, (offset,resultList,eqCompMapping,eqIdx)))
+  (outEq,oOffsetResList) := matchcontinue(inEq,iOffsetResList)
+    case (eq, (offset,resultList,eqCompMapping,eqIdx))
       equation
         ((sccIdx,_,_)) = arrayGet(eqCompMapping, eqIdx+offset);
         //print("Component " +& intString(sccIdx) +& "\n");
         true = BackendDAEUtil.traverseBackendDAEExpsOptEqn(SOME(eq), getComponentsIncludingTime1, false);
         resultList = sccIdx::resultList;
-      then ((eq, (offset,resultList,eqCompMapping,eqIdx+1)));
-    case((eq, (offset,resultList,eqCompMapping,eqIdx)))
-      then ((eq, (offset,resultList,eqCompMapping,eqIdx+1)));
+      then (eq, (offset,resultList,eqCompMapping,eqIdx+1));
+    case (eq, (offset,resultList,eqCompMapping,eqIdx))
+      then (eq, (offset,resultList,eqCompMapping,eqIdx+1));
   end matchcontinue;
 end getComponentsIncludingTime0;
 
 protected function getComponentsIncludingTime1
-  input tuple<DAE.Exp, Boolean> inTpl;
-  output tuple<DAE.Exp, Boolean> outTpl;
-protected
-  DAE.Exp e;
-  String expStr;
-  Boolean res;
+  input DAE.Exp inExp;
+  input Boolean inB;
+  output DAE.Exp e;
+  output Boolean res;
 algorithm
-  outTpl := match(inTpl)
-    case((e,false))
+  (e,res) := match (inExp,inB)
+    case (e,false)
       equation
         res = Expression.traverseCrefsFromExp(e, getComponentsIncludingTime2, false);
-      then ((e,res));
-    else then inTpl;
+      then (e,res);
+    else (inExp,inB);
   end match;
 end getComponentsIncludingTime1;
 
@@ -4508,7 +4508,7 @@ algorithm
         varexp = Expression.crefExp(cr);
         varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
         (exp_, _) = ExpressionSolve.solveLin(e1, e2, varexp);
-        ((_,(op1,op2,_,op3))) = BackendDAEOptimize.countOperationsExp((exp_,(0,0,0,0)));
+        (_,(op1,op2,_,op3)) = BackendDAEOptimize.countOperationsExp(exp_,(0,0,0,0));
       then ((op1,op2,op3));
     else
       equation

@@ -908,26 +908,16 @@ encapsulated package HpcOmMemory
     list<Integer> varIdcList;
   algorithm
     //print("getEqSCVarMapping0: Handling equation:\n" +& BackendDump.equationString(iEquation) +& "\n");
-    (_,(_,oMapping)) := BackendEquation.traverseBackendDAEExpsEqn(iEquation,createMemoryMapTraverse, (iHt,{}));
+    (_,(_,(_,oMapping))) := BackendEquation.traverseBackendDAEExpsEqn(iEquation,Expression.traverseSubexpressionsHelper, (createMemoryMapTraverse0, (iHt,{})));
     //((_,(_,oMapping))) := Expression.traverseExp(exp,createMemoryMapTraverse, (iHt,{}));
   end getEqSCVarMapping0;
 
-  protected function createMemoryMapTraverse "author: marcusw
-    Append the variables of the given expression to the variable list."
-    input tuple<DAE.Exp,tuple<HashTableCrILst.HashTable, list<Integer>>> iExpVars; // <expression, <hashTable, variableList>>
-    output tuple<DAE.Exp,tuple<HashTableCrILst.HashTable, list<Integer>>> oExpVars;
-  protected
-    DAE.Exp iExp;
-    tuple<HashTableCrILst.HashTable, list<Integer>> iVarInfo;
-  algorithm
-    (iExp,iVarInfo) := iExpVars;
-    oExpVars := Expression.traverseExp(iExp,createMemoryMapTraverse0,iVarInfo);
-  end createMemoryMapTraverse;
-
   protected function createMemoryMapTraverse0 "author: marcusw
     Extend the variable list if the given expression is a cref."
-    input tuple<DAE.Exp,tuple<HashTableCrILst.HashTable, list<Integer>>> iExpVars; // <expression, <hashTable, variableList>>
-    output tuple<DAE.Exp,tuple<HashTableCrILst.HashTable, list<Integer>>> oExpVars;
+    input DAE.Exp inExp;
+    input tuple<HashTableCrILst.HashTable, list<Integer>> inTpl; // <expression, <hashTable, variableList>>
+    output DAE.Exp outExp;
+    output tuple<HashTableCrILst.HashTable, list<Integer>> oTpl;
   protected
     list<Integer> iVarList, oVarList, varInfo;
     Integer varIdx;
@@ -935,8 +925,8 @@ encapsulated package HpcOmMemory
     DAE.Exp iExp;
     DAE.ComponentRef componentRef;
   algorithm
-    oExpVars := matchcontinue(iExpVars)
-      case((iExp as DAE.CREF(componentRef=componentRef), (iHashTable,iVarList)))
+    (outExp,oTpl) := matchcontinue(inExp,inTpl)
+      case(iExp as DAE.CREF(componentRef=componentRef), (iHashTable,iVarList))
         equation
           //print("HpcOmSimCode.createMemoryMapTraverse: try to find componentRef\n");
           varInfo = BaseHashTable.get(componentRef, iHashTable);
@@ -945,17 +935,8 @@ encapsulated package HpcOmMemory
           //print("HpcOmSimCode.createMemoryMapTraverse: Found ref " +& ComponentReference.printComponentRefStr(componentRef) +& " with Index: " +& intString(varIdx) +& "\n");
           //ExpressionDump.dumpExp(iExp);
           oVarList = varIdx :: iVarList;
-        then ((iExp,(iHashTable,oVarList)));
-      case((iExp as DAE.CREF(componentRef=componentRef), (iHashTable,iVarList)))
-        equation
-          //print("HpcOmSimCode.createMemoryMapTraverse: Variable not found ( " +& ComponentReference.printComponentRefStr(componentRef) +& ")\n");
-        then iExpVars;
-      case((iExp, _))
-        equation
-          //BackendDump.debugExpStr((iExp, "\n"));
-        then iExpVars;
-      else
-        then iExpVars;
+        then (iExp,(iHashTable,oVarList));
+      else (inExp,inTpl);
     end matchcontinue;
   end createMemoryMapTraverse0;
 
@@ -1835,7 +1816,7 @@ encapsulated package HpcOmMemory
         equation
           //BackendDump.debugExpStr((exp,"\n"));
           //print("end Expression\n");
-          ((_,(_,varIdcList))) = Expression.traverseExp(exp,createMemoryMapTraverse, (iHt,{}));
+          (_,(_,varIdcList)) = Expression.traverseExp(exp,createMemoryMapTraverse0, (iHt,{}));
           //print("Var List for simEquation " +& intString(index) +& ":");
           //print(stringDelimitList, ","));
           //print("\n");

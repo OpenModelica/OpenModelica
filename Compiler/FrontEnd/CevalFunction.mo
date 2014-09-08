@@ -1016,7 +1016,7 @@ algorithm
 
     case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = sl)), _, _, st)
       equation
-        (sl, env) = DAEUtil.traverseDAEEquationsStmts(sl, optimizeExp, inEnv);
+        (sl, (_,env)) = DAEUtil.traverseDAEEquationsStmts(sl, Expression.traverseSubexpressionsHelper, (optimizeExpTraverser, inEnv));
         (cache, env, loop_ctrl, st) = evaluateStatements(sl, inCache, env, st);
       then
         (cache, env, loop_ctrl, st);
@@ -2840,31 +2840,17 @@ end checkCyclicalComponents;
 
 // [EOPT]  Expression optimization functions.
 
-protected function optimizeExp
+protected function optimizeExpTraverser
   "This function optimizes expressions in a function. So far this is only used
   to transform ASUB expressions to CREFs so that this doesn't need to be done
   while evaluating the function. But it's possible that more forms of
   optimization can be done too."
-  input tuple<DAE.Exp, Env.Env> inTuple;
-  output tuple<DAE.Exp, Env.Env> outTuple;
+  input DAE.Exp inExp;
+  input Env.Env inEnv;
+  output DAE.Exp outExp;
+  output Env.Env outEnv;
 algorithm
-  outTuple := match(inTuple)
-    local
-      DAE.Exp e;
-      Env.Env env;
-    case ((e, env))
-      equation
-        ((e, env)) = Expression.traverseExp(e, optimizeExpTraverser, env);
-      then
-        ((e, env));
-  end match;
-end optimizeExp;
-
-protected function optimizeExpTraverser
-  input tuple<DAE.Exp, Env.Env> inTuple;
-  output tuple<DAE.Exp, Env.Env> outTuple;
-algorithm
-  outTuple := match(inTuple)
+  (outExp,outEnv) := match (inExp,inEnv)
     local
       DAE.ComponentRef cref;
       DAE.Type ety;
@@ -2873,19 +2859,17 @@ algorithm
       Env.Env env;
       DAE.Exp exp;
 
-    case ((DAE.ASUB(exp = DAE.CREF(componentRef = cref, ty = ety), sub = sub_exps), env))
+    case (DAE.ASUB(exp = DAE.CREF(componentRef = cref, ty = ety), sub = sub_exps), env)
       equation
         subs = List.map(sub_exps, Expression.makeIndexSubscript);
         cref = ComponentReference.subscriptCref(cref, subs);
         exp = Expression.makeCrefExp(cref, ety);
-      then
-        ((exp, env));
+      then (exp, env);
 
-    case ((DAE.TSUB(exp = DAE.TUPLE(exp::_), ix = 1, ty = _), env))
-      then
-        ((exp, env));
+    case (DAE.TSUB(exp = DAE.TUPLE(exp::_), ix = 1, ty = _), env)
+      then (exp, env);
 
-    else inTuple;
+    else (inExp,inEnv);
   end match;
 end optimizeExpTraverser;
 

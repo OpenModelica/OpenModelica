@@ -673,34 +673,24 @@ algorithm
   end matchcontinue;
 end collectVarEqns;
 
-protected function searchDerivativesEqn "author: Frenkel TUD 2012-11"
-  input tuple<DAE.Exp,tuple<list<Integer>,BackendDAE.Variables>> itpl;
-  output tuple<DAE.Exp,tuple<list<Integer>,BackendDAE.Variables>> outTpl;
-protected
-  DAE.Exp e;
-  tuple<list<Integer>,BackendDAE.Variables> tpl;
-algorithm
-  (e,tpl) := itpl;
-  outTpl := Expression.traverseExp(e,searchDerivativesExp,tpl);
-end searchDerivativesEqn;
-
 protected function searchDerivativesExp "author: Frenkel TUD 2012-11"
-  input tuple<DAE.Exp,tuple<list<Integer>,BackendDAE.Variables>> tpl;
-  output tuple<DAE.Exp,tuple<list<Integer>,BackendDAE.Variables>> outTpl;
+  input DAE.Exp inExp;
+  input tuple<list<Integer>,BackendDAE.Variables> tpl;
+  output DAE.Exp outExp;
+  output tuple<list<Integer>,BackendDAE.Variables> outTpl;
 algorithm
-  outTpl := matchcontinue(tpl)
+  (outExp,outTpl) := matchcontinue (inExp,tpl)
     local
       BackendDAE.Variables vars;
       list<Integer> ilst,i1lst;
       DAE.Exp e;
       DAE.ComponentRef cr;
-    case((e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),(ilst,vars)))
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),(ilst,vars))
       equation
         (_,i1lst) = BackendVariable.getVar(cr,vars);
         ilst = List.fold1(i1lst,List.removeOnTrue, intEq, ilst);
-      then
-        ((e,(ilst,vars)));
-    case _ then tpl;
+      then (e,(ilst,vars));
+    else (inExp,tpl);
   end matchcontinue;
 end searchDerivativesExp;
 
@@ -752,7 +742,7 @@ algorithm
         //Debug.fcall(Flags.BLT_DUMP, print, "differentiated equation " +& intString(e) +& " " +& BackendDump.equationString(eqn_1) +& "\n");
         eqn = BackendEquation.markDifferentiated(eqn);
         // get needed der(variables) from equation
-       (_,(_,_,elst)) = BackendEquation.traverseBackendDAEExpsEqn(eqn_1, getDerVars, (vars,ass1,{}));
+       (_,(_,(_,_,elst))) = BackendEquation.traverseBackendDAEExpsEqn(eqn_1, Expression.traverseSubexpressionsHelper, (getDerVarsExp, (vars,ass1,{})));
        elst = List.map1r(elst,arrayGet,mapIncRowEqn);
        elst = List.fold2(elst, addUnMarked, mark, markarr, inNextEqns);
        (eqntpl, shared) = differentiateSetEqns(es,inNextEqns,vars,eqns,ass1,mapIncRowEqn,mark,markarr,shared,(e,SOME(eqn_1),eqn)::inEqnTpl);
@@ -777,24 +767,13 @@ algorithm
   oAcc := List.consOnTrue(not b, e, iAcc);
 end  addUnMarked;
 
-protected function getDerVars
-"author Frenkel TUD 2013-01
-  collect all equations of assigned der(var)"
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,array<Integer>,list<Integer>>> inTpl;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables,array<Integer>,list<Integer>>> outTpl;
-protected
-  DAE.Exp exp;
-  tuple<BackendDAE.Variables,array<Integer>,list<Integer>> tpl;
-algorithm
-  (exp,tpl) := inTpl;
-  outTpl := Expression.traverseExp(exp,getDerVarsExp,tpl);
-end getDerVars;
-
 protected function getDerVarsExp
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,array<Integer>,list<Integer>>> inTpl;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables,array<Integer>,list<Integer>>> outTpl;
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables,array<Integer>,list<Integer>> inTpl;
+  output DAE.Exp outExp;
+  output tuple<BackendDAE.Variables,array<Integer>,list<Integer>> outTpl;
 algorithm
-  outTpl := matchcontinue(inTpl)
+  (outExp,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.Exp e;
       DAE.ComponentRef cr;
@@ -804,25 +783,25 @@ algorithm
       list<Integer> ilst,vlst,elst;
 
     // special case for time, it is never part of the equation system
-    case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),tpl))
-      then ((e, tpl));
+    case (e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),tpl)
+      then (e, tpl);
 
     // case for functionpointers
-    case ((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),tpl))
+    case (e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),tpl)
       then
-        ((e, tpl));
+        (e, tpl);
 
     // add it
-    case ((e as DAE.CREF(componentRef = cr),(vars,ass1,ilst)))
+    case (e as DAE.CREF(componentRef = cr),(vars,ass1,ilst))
       equation
          (_,vlst) = BackendVariable.getVar(cr, vars);
          vlst = List.select1r(vlst,Matching.isAssigned,ass1);
          elst = List.map1r(vlst,arrayGet,ass1);
          ilst = listAppend(elst,ilst);
       then
-        ((e, (vars,ass1,ilst)));
+        (e, (vars,ass1,ilst));
 
-    case _ then inTpl;
+    else (inExp,inTpl);
   end matchcontinue;
 end getDerVarsExp;
 
@@ -899,8 +878,8 @@ algorithm
     case ({},_,_,_,_,_,_,_) then (vars,eqns,inStateOrd,inChangedVars,inOrgEqnsLst);
     case ((e,SOME(eqn_1),eqn)::rest,_,_,_,_,_,_,_)
       equation
-        (eqn_1,_) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn_1, replaceStateOrderExp,vars);
-        (eqn_1,(vars1,eqns1,_,changedVars,_,_,_)) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn_1,changeDerVariablestoStates,(vars,eqns,inStateOrd,inChangedVars,e,imapIncRowEqn,mt));
+        (eqn_1,_) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn_1, replaceStateOrderExp, vars);
+        (eqn_1,(_,(vars1,eqns1,_,changedVars,_,_,_))) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn_1,Expression.traverseSubexpressionsHelper,(changeDerVariablestoStatesFinderNew,(vars,eqns,inStateOrd,inChangedVars,e,imapIncRowEqn,mt)));
         Debug.fcall(Flags.BLT_DUMP, debugdifferentiateEqns,(eqn,eqn_1));
         eqns1 = BackendEquation.setAtIndex(eqns1, e, eqn_1);
         orgEqnsLst = addOrgEqn(inOrgEqnsLst,e,eqn);
@@ -926,49 +905,49 @@ algorithm
 end replaceDifferentiatedEqns;
 
 protected function replaceStateOrderExp
-"author: Frenkel TUD 2011-05"
-  input tuple<DAE.Exp,BackendDAE.Variables> inTpl;
-  output tuple<DAE.Exp,BackendDAE.Variables> outTpl;
-protected
-  DAE.Exp e;
-  BackendDAE.Variables vars;
+  input DAE.Exp inExp;
+  input BackendDAE.Variables inVars;
+  output DAE.Exp e;
+  output BackendDAE.Variables vars;
 algorithm
-  (e,vars) := inTpl;
-  outTpl := Expression.traverseExpTopDown(e,replaceStateOrderExpFinder,vars);
+  (e,vars) := Expression.traverseExpTopDown(inExp,replaceStateOrderExpFinder,inVars);
 end replaceStateOrderExp;
 
 protected function replaceStateOrderExpFinder
 "author: Frenkel TUD 2011-05 "
-  input tuple<DAE.Exp,BackendDAE.Variables> inExp;
-  output tuple<DAE.Exp, Boolean, BackendDAE.Variables> outExp;
+  input DAE.Exp inExp;
+  input BackendDAE.Variables inVars;
+  output DAE.Exp outExp;
+  output Boolean continue;
+  output BackendDAE.Variables outVars;
 algorithm
-  (outExp) := matchcontinue (inExp)
+  (outExp,continue,outVars) := matchcontinue (inExp,inVars)
     local
       DAE.Exp e;
       BackendDAE.Variables vars;
       DAE.ComponentRef dcr,cr;
       DAE.CallAttributes attr;
       Integer index;
-     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars))
+     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
         ({BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(dcr)))},_) = BackendVariable.getVar(cr,vars);
         e = Expression.crefExp(dcr);
       then
-        ((e,false,vars));
-     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr),DAE.ICONST(index)},attr=attr),vars))
+        (e,false,vars);
+     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr),DAE.ICONST(index)},attr=attr),vars)
       equation
         true = intEq(index,2);
         ({BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(dcr)))},_) = BackendVariable.getVar(cr,vars);
         e = Expression.crefExp(dcr);
       then
-        ((DAE.CALL(Absyn.IDENT("der"),{e},attr),false,vars));
-     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})},attr=attr),vars))
+        (DAE.CALL(Absyn.IDENT("der"),{e},attr),false,vars);
+     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})},attr=attr),vars)
       equation
         ({BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(dcr)))},_) = BackendVariable.getVar(cr,vars);
         e = Expression.crefExp(dcr);
       then
-        ((DAE.CALL(Absyn.IDENT("der"),{e},attr),false,vars));
-     case ((e,vars)) then ((e,true,vars));
+        (DAE.CALL(Absyn.IDENT("der"),{e},attr),false,vars);
+     case (e,vars) then (e,true,vars);
   end matchcontinue;
 end replaceStateOrderExpFinder;
 
@@ -1047,7 +1026,7 @@ algorithm
         ilst = List.fold1(unassignedStates, statesWithUnusedDerivative, mt, {});
         ilst = List.select1(ilst, isStateonIndex, v);
         // check also initial equations (this could be done also once before)
-        ((ilst,_)) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.getInitialEqnsFromShared(ishared),searchDerivativesEqn,(ilst,v));
+        ((_,(ilst,_))) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.getInitialEqnsFromShared(ishared),Expression.traverseSubexpressionsHelper,(searchDerivativesExp,(ilst,v)));
         Debug.fcall(Flags.BLT_DUMP,print,"states without used derivative:\n");
         Debug.fcall(Flags.BLT_DUMP,BackendDump.debuglst,(ilst,intString,", ","\n"));
         (syst,shared,ass1,ass2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn) =
@@ -1187,7 +1166,7 @@ algorithm
         ilst = List.fold1(ilst, statesWithUnusedDerivative, mt, {});
         varlst = List.map1r(ilst,BackendVariable.getVarAt,v);
         // check also initial equations (this could be done alse once before
-        ((ilst,_)) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.getInitialEqnsFromShared(ishared),searchDerivativesEqn,(ilst,v));
+        ((_,(ilst,_))) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.getInitialEqnsFromShared(ishared),Expression.traverseSubexpressionsHelper,(searchDerivativesExp,(ilst,v)));
         // check if there are states with unused derivative
         _::_ = ilst;
         Debug.fcall(Flags.BLT_DUMP, print, "All unassignedStates without Derivative: " +& stringDelimitList(List.map(ilst,intString),", ")  +& "\n");
@@ -1233,28 +1212,28 @@ algorithm
 end replaceFinalVars;
 
 protected function replaceFinalVarsEqn
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements>> inTpl;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements>> outTpl;
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements> inTpl;
+  output DAE.Exp e;
+  output tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements> tpl;
 protected
-  DAE.Exp e;
-  tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements> tpl;
   BackendDAE.Variables vars;
   Boolean b;
   BackendVarTransform.VariableReplacements repl;
 algorithm
-  (e,tpl) := inTpl;
-  ((e,(vars,b,repl))) := Expression.traverseExp(e,replaceFinalVarsExp,tpl);
+  (e,tpl as (_,b,_)) := Expression.traverseExp(inExp,replaceFinalVarsExp,inTpl);
   (e,_) := ExpressionSimplify.condsimplify(b,e);
-  outTpl := (e,(vars,b,repl));
 end replaceFinalVarsEqn;
 
 protected function replaceFinalVarsExp "
 Author: Frenkel TUD 2012-11
 replace final parameter."
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements>> inExp;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements>> outExp;
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements> inTpl;
+  output DAE.Exp outExp;
+  output tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements> outTpl;
 algorithm
-  outExp := matchcontinue(inExp)
+  (outExp,outTpl) := matchcontinue (inExp,inTpl)
     local
       BackendDAE.Variables vars;
       DAE.ComponentRef cr;
@@ -1262,14 +1241,13 @@ algorithm
       DAE.Exp e,e2;
       BackendVarTransform.VariableReplacements repl;
 
-    case((e as DAE.CREF(componentRef=cr), (vars,_,repl)))
+    case (e as DAE.CREF(componentRef=cr), (vars,_,repl))
       equation
         (vlst as _::_,_) = BackendVariable.getVar(cr,vars);
         ((repl,true)) = List.fold(vlst,replaceFinalVarsGetExp,(repl,false));
         (e2,true) = BackendVarTransform.replaceExp(e,repl,NONE());
-      then
-        ((e2, (vars,true,repl) ));
-    case _ then inExp;
+      then (e2, (vars,true,repl));
+    else (inExp,inTpl);
   end matchcontinue;
 end replaceFinalVarsExp;
 
@@ -1341,37 +1319,38 @@ end replaceAliasState;
 
 protected function replaceAliasStateExp
 "author: Frenkel TUD 2012-06"
-  input tuple<DAE.Exp,tuple<DAE.ComponentRef,DAE.Exp,DAE.Exp>> inTpl;
-  output tuple<DAE.Exp,tuple<DAE.ComponentRef,DAE.Exp,DAE.Exp>> outTpl;
-protected
-  DAE.Exp e;
-  tuple<DAE.ComponentRef,DAE.Exp,DAE.Exp> tpl;
+  input DAE.Exp inExp;
+  input tuple<DAE.ComponentRef,DAE.Exp,DAE.Exp> inTpl;
+  output DAE.Exp e;
+  output tuple<DAE.ComponentRef,DAE.Exp,DAE.Exp> tpl;
 algorithm
-  (e,tpl) := inTpl;
-  outTpl := Expression.traverseExpTopDown(e,replaceAliasStateExp1,tpl);
+  (e,tpl) := Expression.traverseExpTopDown(inExp,replaceAliasStateExp1,inTpl);
 end replaceAliasStateExp;
 
 protected function replaceAliasStateExp1
 "author: Frenkel TUD 2012-06 "
-  input tuple<DAE.Exp,tuple<DAE.ComponentRef,DAE.Exp,DAE.Exp>> inExp;
-  output tuple<DAE.Exp,Boolean,tuple<DAE.ComponentRef,DAE.Exp,DAE.Exp>> outExp;
+  input DAE.Exp inExp;
+  input tuple<DAE.ComponentRef,DAE.Exp,DAE.Exp> inTpl;
+  output DAE.Exp outExp;
+  output Boolean continue;
+  output tuple<DAE.ComponentRef,DAE.Exp,DAE.Exp> outTpl;
 algorithm
-  (outExp) := matchcontinue (inExp)
+  (outExp,continue,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.Exp e,e1,de1;
       DAE.ComponentRef cr,acr;
       tuple<DAE.ComponentRef,DAE.Exp,DAE.Exp> tpl;
-     case ((DAE.CREF(componentRef = cr),(acr,e1,de1)))
+     case (DAE.CREF(componentRef = cr),(acr,e1,de1))
       equation
         true = ComponentReference.crefEqualNoStringCompare(acr, cr);
       then
-        ((e1, false, (acr,e1,de1)));
-     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(acr,e1,de1)))
+        (e1, false, (acr,e1,de1));
+     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(acr,e1,de1))
       equation
         true = ComponentReference.crefEqualNoStringCompare(acr, cr);
       then
-        ((de1, false, (acr,e1,de1)));
-     case ((e,tpl)) then ((e,true,tpl));
+        (de1, false, (acr,e1,de1));
+     case (e,tpl) then (e,true,tpl);
   end matchcontinue;
 end replaceAliasStateExp1;
 
@@ -1527,38 +1506,40 @@ end dynamicStateSelectionWork;
 protected function countStateCandidates
 "author Frenkel TUD 2013-01
   count the number of states in variables"
-  input tuple<BackendDAE.Var,Integer> inTpl;
-  output tuple<BackendDAE.Var,Integer> oTpl;
+  input BackendDAE.Var inVar;
+  input Integer inCount;
+  output BackendDAE.Var outVar;
+  output Integer outCount;
 algorithm
-  oTpl := match inTpl
+  (outVar,outCount) := match (inVar,inCount)
     local
       BackendDAE.Var var;
       Integer diffcount,statecount;
       Boolean b;
       DAE.ComponentRef cr;
-    case ((var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=1)), statecount))
+    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=1)), statecount)
       equation
         // do not count states with stateSelect.always
         b = varStateSelectAlways(var);
         statecount = Debug.bcallret2(not b, intAdd, statecount, 1, statecount);
-      then
-        ((var, statecount));
-    case ((var as BackendDAE.VAR(varName=_, varKind=BackendDAE.STATE(index=_,derName=SOME(_))), statecount))
+      then (var, statecount);
+
+    case (var as BackendDAE.VAR(varName=_, varKind=BackendDAE.STATE(index=_,derName=SOME(_))), statecount)
       equation
         // do not count states with stateSelect.always, but ignore only higest state
         b = varStateSelectAlways(var);
         statecount = Debug.bcallret2(b, intAdd, statecount, 1, statecount);
-      then
-        ((var, statecount));
-    case ((var as BackendDAE.VAR(varName=_, varKind=BackendDAE.STATE(index=diffcount,derName=NONE())), statecount))
+      then (var, statecount);
+
+    case (var as BackendDAE.VAR(varName=_, varKind=BackendDAE.STATE(index=diffcount,derName=NONE())), statecount)
       equation
         statecount = diffcount + statecount;
         // do not count states with stateSelect.always, but ignore only higest state
         b = varStateSelectAlways(var);
         statecount = Debug.bcallret2(b, intSub, statecount, 1, statecount);
-      then
-        ((var, statecount));
-    else inTpl;
+      then (var, statecount);
+
+    else (inVar,inCount);
   end match;
 end countStateCandidates;
 
@@ -1608,39 +1589,28 @@ algorithm
   end match;
 end inlineOrgEqns;
 
-protected function replaceDerStatesStates
-"author: Frenkel TUD 2012-06
-  traverse an exp top down and ."
-  input tuple<DAE.Exp, BackendDAE.StateOrder> inTpl;
-  output tuple<DAE.Exp, BackendDAE.StateOrder> outTpl;
-protected
-  DAE.Exp exp;
-  BackendDAE.StateOrder so;
-algorithm
-  (exp,so) := inTpl;
-  outTpl := Expression.traverseExp(exp,replaceDerStatesStatesExp,so);
-end replaceDerStatesStates;
-
 protected function replaceDerStatesStatesExp
 "author: Frenkel TUD 2012-06
   helper for replaceDerStatesStates.
   replaces all der(x) with dx"
-  input tuple<DAE.Exp, BackendDAE.StateOrder> inTuple;
-  output tuple<DAE.Exp, BackendDAE.StateOrder> outTuple;
+  input DAE.Exp inExp;
+  input BackendDAE.StateOrder inOrder;
+  output DAE.Exp outExp;
+  output BackendDAE.StateOrder outOrder;
 algorithm
-  outTuple := matchcontinue(inTuple)
+  (outExp,outOrder) := matchcontinue (inExp,inOrder)
     local
       BackendDAE.StateOrder so;
       DAE.Exp e;
       DAE.ComponentRef cr,dcr;
     // replace it
-    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef = cr)}),so))
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef = cr)}),so)
       equation
         dcr = getStateOrder(cr,so);
         e = Expression.crefExp(dcr);
       then
-        ((e,so));
-    else inTuple;
+        (e,so);
+    else (inExp,inOrder);
   end matchcontinue;
 end replaceDerStatesStatesExp;
 
@@ -1655,14 +1625,13 @@ algorithm
   ((oSo,_,outVars)) := BackendVariable.traverseBackendDAEVars(v,traversinghighestOrderDerivativesFinder,(iSo,v,{}));
 end highestOrderDerivatives;
 
-protected function traversinghighestOrderDerivativesFinder
-"  author: Frenkel TUD 2012-05
-  helper for highestOrderDerivatives"
- input tuple<BackendDAE.Var, tuple<BackendDAE.StateOrder,BackendDAE.Variables,list<BackendDAE.Var>>> inTpl;
- output tuple<BackendDAE.Var, tuple<BackendDAE.StateOrder,BackendDAE.Variables,list<BackendDAE.Var>>> outTpl;
+protected function traversinghighestOrderDerivativesFinder "helper for highestOrderDerivatives"
+ input BackendDAE.Var inVar;
+ input tuple<BackendDAE.StateOrder,BackendDAE.Variables,list<BackendDAE.Var>> inTpl;
+ output BackendDAE.Var outVar;
+ output tuple<BackendDAE.StateOrder,BackendDAE.Variables,list<BackendDAE.Var>> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var v;
       DAE.ComponentRef cr,dcr;
@@ -1670,15 +1639,15 @@ algorithm
       BackendDAE.Variables vars;
       list<BackendDAE.Var> varlst;
       Boolean b;
-    case ((v as BackendDAE.VAR(varKind=BackendDAE.STATE(derName=NONE())),(so,vars,varlst)))
-      then ((v,(so,vars,v::varlst)));
-     case ((v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(derName=SOME(dcr))),(so,vars,varlst)))
+    case (v as BackendDAE.VAR(varKind=BackendDAE.STATE(derName=NONE())),(so,vars,varlst))
+      then (v,(so,vars,v::varlst));
+     case (v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(derName=SOME(dcr))),(so,vars,varlst))
       equation
         b = BackendVariable.isState(dcr,vars);
         varlst = List.consOnTrue(not b, v, varlst);
         so = addStateOrder(cr, dcr, so);
-      then ((v,(so,vars,varlst)));
-    else inTpl;
+      then (v,(so,vars,varlst));
+    else (inVar,inTpl);
   end matchcontinue;
 end traversinghighestOrderDerivativesFinder;
 
@@ -1693,14 +1662,13 @@ algorithm
   ((_,_,outVars)) := BackendVariable.traverseBackendDAEVars(derv,traversinglowerOrderDerivativesFinder,(so,v,BackendVariable.emptyVars()));
 end lowerOrderDerivatives;
 
-protected function traversinglowerOrderDerivativesFinder
-"  author: Frenkel TUD 2012-05
-  helpber for lowerOrderDerivatives"
- input tuple<BackendDAE.Var, tuple<BackendDAE.StateOrder,BackendDAE.Variables,BackendDAE.Variables>> inTpl;
- output tuple<BackendDAE.Var, tuple<BackendDAE.StateOrder,BackendDAE.Variables,BackendDAE.Variables>> outTpl;
+protected function traversinglowerOrderDerivativesFinder "helpber for lowerOrderDerivatives"
+ input BackendDAE.Var inVar;
+ input tuple<BackendDAE.StateOrder,BackendDAE.Variables,BackendDAE.Variables> inTpl;
+ output BackendDAE.Var outVar;
+ output tuple<BackendDAE.StateOrder,BackendDAE.Variables,BackendDAE.Variables> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var v;
       list<BackendDAE.Var> vlst;
@@ -1708,14 +1676,14 @@ algorithm
       list<DAE.ComponentRef> crlst;
       BackendDAE.StateOrder so;
       BackendDAE.Variables vars,vars1,vars2;
-     case ((v,(so,vars,vars1)))
+     case (v,(so,vars,vars1))
       equation
         dcr = BackendVariable.varCref(v);
         crlst = getDerStateOrder(dcr,so);
         vlst = List.map1(crlst,getVar,vars);
         vars2 = List.fold(vlst,BackendVariable.addVar,vars1);
-      then ((v,(so,vars,vars2)));
-    else inTpl;
+      then (v,(so,vars,vars2));
+    else (inVar,inTpl);
   end matchcontinue;
 end traversinglowerOrderDerivativesFinder;
 
@@ -1809,9 +1777,9 @@ algorithm
         expcrA = DAE.CAST(tp,expcrA);
         op = Util.if_(intGt(rang,1),DAE.MUL_MATRIX_PRODUCT(DAE.T_REAL_DEFAULT),DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT));
         mulAstates = DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrstates));
-        ((mulAstates,(_,_))) = BackendDAEUtil.extendArrExp((mulAstates,(NONE(),false)));
+        (mulAstates,(_,_)) = BackendDAEUtil.extendArrExp(mulAstates,(NONE(),false));
         mulAdstates = DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrdstates));
-        ((mulAdstates,(_,_))) = BackendDAEUtil.extendArrExp((mulAdstates,(NONE(),false)));
+        (mulAdstates,(_,_)) = BackendDAEUtil.extendArrExp(mulAdstates,(NONE(),false));
         expset = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrset),listGet(expcrset,1));
         expderset = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrdset),listGet(expcrdset,1));
         source = DAE.SOURCE(Absyn.INFO("stateselection",false,0,0,0,0,Absyn.dummyTimeStamp),{},NONE(),{},{},{},{});
@@ -1823,7 +1791,7 @@ algorithm
                                       BackendDAE.EQUATION(expderset,mulAdstates,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC));
         // start values for the set
         expsetstart = DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrstatesstart));
-        ((expsetstart,(_,_))) = BackendDAEUtil.extendArrExp((expsetstart,(NONE(),false)));
+        (expsetstart,(_,_)) = BackendDAEUtil.extendArrExp(expsetstart,(NONE(),false));
         (setVars,_) = List.map2Fold(setVars,setStartExp,expsetstart,rang,1);
         // add set states
         vars = BackendVariable.addVars(setVars,iVars);
@@ -1993,7 +1961,7 @@ algorithm
         // replace final parameter
         (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst1, replaceFinalVarsEqn,(BackendVariable.daeKnVars(ishared),false,BackendVarTransform.emptyReplacements()));
         // replace all der(x) with dx
-        (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, replaceDerStatesStates,so);
+        (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, Expression.traverseSubexpressionsHelper, (replaceDerStatesStatesExp,so));
         // force inline
         funcs = BackendDAEUtil.getFunctions(ishared);
         (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, forceInlinEqn,funcs);
@@ -2001,8 +1969,8 @@ algorithm
         (eqnslst,_) = InlineArrayEquations.getScalarArrayEqns(eqnslst);
         // convert x:STATE(n) if n>1 to DER.DER....x
         (hov,ht) = List.map1Fold(iHov,getLevelStates,level,HashTableCrIntToExp.emptyHashTable());
-        (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, replaceDummyDerivatives, ht);
-        (eqnslst1,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst1, replaceDummyDerivatives, ht);
+        (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, Expression.traverseSubexpressionsHelper, (replaceDummyDerivativesExp, ht));
+        (eqnslst1,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst1, Expression.traverseSubexpressionsHelper, (replaceDummyDerivativesExp, ht));
         // remove stateSelect=StateSelect.always vars
         varlst = List.filter1(hov, notVarStateSelectAlways, level);
         neqns = BackendEquation.equationLstSize(eqnslst);
@@ -2397,10 +2365,12 @@ algorithm
 end dumpBlock;
 
 protected function getStateIndexes
-  input tuple<BackendDAE.Var, tuple<array<Integer>,array<Integer>,Integer,Integer,BackendDAE.Variables,list<Integer>>> inTpl;
-  output tuple<BackendDAE.Var, tuple<array<Integer>,array<Integer>,Integer,Integer,BackendDAE.Variables,list<Integer>>> outTpl;
+  input BackendDAE.Var inVar;
+  input tuple<array<Integer>,array<Integer>,Integer,Integer,BackendDAE.Variables,list<Integer>> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<array<Integer>,array<Integer>,Integer,Integer,BackendDAE.Variables,list<Integer>> outTpl;
 algorithm
-  outTpl := matchcontinue(inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       DAE.ComponentRef cr;
       BackendDAE.Var v;
@@ -2409,17 +2379,15 @@ algorithm
       BackendDAE.Variables hov;
       list<Integer> derstatesindexs;
       Option<DAE.ComponentRef> derName;
-    case ((v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(derName=_)),(stateindexs,invmap,indx,nv,hov,derstatesindexs)))
+    case (v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(derName=_)),(stateindexs,invmap,indx,nv,hov,derstatesindexs))
       equation
         (_::_,{s}) = BackendVariable.getVar(cr, hov);
         newindx = nv+s;
         _= arrayUpdate(stateindexs,indx,newindx);
         _= arrayUpdate(invmap,s,indx);
-      then
-        ((v,(stateindexs,invmap,indx+1,nv,hov,indx::derstatesindexs)));
-   case ((v,(stateindexs,invmap,indx,nv,hov,derstatesindexs)))
-      then
-        ((v,(stateindexs,invmap,indx+1,nv,hov,derstatesindexs)));
+      then (v,(stateindexs,invmap,indx+1,nv,hov,indx::derstatesindexs));
+   case (v,(stateindexs,invmap,indx,nv,hov,derstatesindexs))
+      then (v,(stateindexs,invmap,indx+1,nv,hov,derstatesindexs));
   end matchcontinue;
 end getStateIndexes;
 
@@ -2754,15 +2722,13 @@ algorithm
 end processComps4New;
 
 protected function forceInlinEqn
-  input tuple<DAE.Exp, DAE.FunctionTree> inTpl;
-  output tuple<DAE.Exp, DAE.FunctionTree> outTpl;
-protected
-  DAE.Exp e;
-  DAE.FunctionTree funcs;
+  input DAE.Exp inExp;
+  input DAE.FunctionTree inFuncs;
+  output DAE.Exp e;
+  output DAE.FunctionTree funcs;
 algorithm
-  (e,funcs) := inTpl;
-  (e,_,_) := Inline.forceInlineExp(e,(SOME(funcs),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
-  outTpl := (e,funcs);
+  funcs := inFuncs;
+  (e,_,_) := Inline.forceInlineExp(inExp,(SOME(funcs),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
 end forceInlinEqn;
 
 protected function getSetSystem
@@ -3833,7 +3799,7 @@ algorithm
   vars := BackendVariable.addVars(dummyvars,vars);
   // perform replacement rules
   (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,replaceDummyDerivativesVar,ht);
-  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,replaceDummyDerivatives,ht);
+  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
   // extend assignments
   ass1 := Util.arrayExpand(nv1-nv, ass1, -1);
   // set the new assignments
@@ -3860,10 +3826,12 @@ protected function makeHigherStatesRepl
   This function creates a new variable named
   der+<varname> and adds it to the dae. The kind of the
   var with varname is changed to dummy_state"
-  input tuple<BackendDAE.Var,tuple<BackendDAE.Variables,Integer,Integer,list<tuple<Integer,Integer>>,list<BackendDAE.Var>,HashTableCrIntToExp.HashTable>> inTpl;
-  output tuple<BackendDAE.Var,tuple<BackendDAE.Variables,Integer,Integer,list<tuple<Integer,Integer>>,list<BackendDAE.Var>,HashTableCrIntToExp.HashTable>> oTpl;
+  input BackendDAE.Var inVar;
+  input tuple<BackendDAE.Variables,Integer,Integer,list<tuple<Integer,Integer>>,list<BackendDAE.Var>,HashTableCrIntToExp.HashTable> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<BackendDAE.Variables,Integer,Integer,list<tuple<Integer,Integer>>,list<BackendDAE.Var>,HashTableCrIntToExp.HashTable> oTpl;
 algorithm
-  oTpl := matchcontinue inTpl
+  (outVar,oTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Variables vars;
       HashTableCrIntToExp.HashTable ht;
@@ -3873,16 +3841,15 @@ algorithm
       list<BackendDAE.Var> varlst;
       list<tuple<Integer,Integer>> addassign;
     // state diffed more than once
-    case ((var as BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(index=diffcount,derName=NONE())),(vars,i,j,addassign,varlst,ht)))
+    case (var as BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(index=diffcount,derName=NONE())),(vars,i,j,addassign,varlst,ht))
       equation
         true = intGt(diffcount,1);
         // dummy_der name
         cr = ComponentReference.crefPrefixDer(name);
         // add replacement for each derivative
         (varlst,ht,j) = makeHigherStatesRepl1(diffcount-2,2,name,cr,var,vars,varlst,ht,j);
-      then
-        ((var,(vars,i+1,j,(i,j)::addassign,varlst,ht)));
-    case ((var,(vars,i,j,addassign,varlst,ht))) then ((var,(vars,i+1,j,addassign,varlst,ht)));
+      then (var,(vars,i+1,j,(i,j)::addassign,varlst,ht));
+    case (var,(vars,i,j,addassign,varlst,ht)) then (var,(vars,i+1,j,addassign,varlst,ht));
   end matchcontinue;
 end makeHigherStatesRepl;
 
@@ -3969,7 +3936,7 @@ algorithm
   vars := BackendVariable.addVars(dummvars,vars);
   // perform replacement rules
   (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,replaceDummyDerivativesVar,oHt);
-  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,replaceDummyDerivatives,oHt);
+  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,oHt));
   osyst := BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching,stateSets,partitionKind);
 end addAllDummyStates;
 
@@ -3978,10 +3945,12 @@ protected function makeAllDummyVarandDummyDerivativeRepl
   This function creates a new variable named
   der+<varname> and adds it to the dae. The kind of the
   var with varname is changed to dummy_state"
-  input tuple<BackendDAE.Var,tuple<BackendDAE.Variables,BackendDAE.StateOrder,list<BackendDAE.Var>,HashTableCrIntToExp.HashTable>> inTpl;
-  output tuple<BackendDAE.Var,tuple<BackendDAE.Variables,BackendDAE.StateOrder,list<BackendDAE.Var>,HashTableCrIntToExp.HashTable>> oTpl;
+  input BackendDAE.Var inVar;
+  input tuple<BackendDAE.Variables,BackendDAE.StateOrder,list<BackendDAE.Var>,HashTableCrIntToExp.HashTable> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<BackendDAE.Variables,BackendDAE.StateOrder,list<BackendDAE.Var>,HashTableCrIntToExp.HashTable> oTpl;
 algorithm
-  oTpl := matchcontinue inTpl
+  (outVar,oTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Variables vars;
       BackendDAE.StateOrder so;
@@ -4001,47 +3970,42 @@ algorithm
       Integer diffcount;
       list<BackendDAE.Var> varlst;
     // state with stateSelect.always, diffed once
-    case ((var as BackendDAE.VAR(varName=_,varKind=BackendDAE.STATE(index=diffcount),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht)))
+    case (var as BackendDAE.VAR(varName=_,varKind=BackendDAE.STATE(index=diffcount),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht))
       equation
         true = intEq(diffcount,1);
-      then
-        ((var,(vars,so,varlst,ht)));
+      then (var,(vars,so,varlst,ht));
     // state with stateSelect.always, diffed more than once, known derivative
-    case ((var as BackendDAE.VAR(varName=_,varKind=BackendDAE.STATE(derName=SOME(cr)),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht)))
+    case (var as BackendDAE.VAR(varName=_,varKind=BackendDAE.STATE(derName=SOME(cr)),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht))
       equation
         var = BackendVariable.setVarKind(var, BackendDAE.STATE(1,SOME(cr)));
-      then
-        ((var,(vars,so,varlst,ht)));
+      then (var,(vars,so,varlst,ht));
     // state with stateSelect.always, diffed more than once, unknown derivative
-    case ((var as BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(index=diffcount,derName=NONE()),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht)))
+    case (var as BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(index=diffcount,derName=NONE()),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht))
       equation
         // then replace not the highest state but the lower
         cr = ComponentReference.crefPrefixDer(name);
         // add replacement for each derivative
         (varlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(diffcount-1,2,name,cr,var,vars,so,varlst,ht);
         var = BackendVariable.setVarKind(var, BackendDAE.STATE(1,NONE()));
-      then
-        ((var,(vars,so,varlst,ht)));
+      then (var,(vars,so,varlst,ht));
     // state, replaceable with known derivative
-    case ((var as BackendDAE.VAR(name,BackendDAE.STATE(index=_,derName=SOME(_)),dir,prl,tp,bind,value,dim,source,attr,comment,ct),(vars,so,varlst,ht)))
+    case (var as BackendDAE.VAR(name,BackendDAE.STATE(index=_,derName=SOME(_)),dir,prl,tp,bind,value,dim,source,attr,comment,ct),(vars,so,varlst,ht))
       equation
         // add replacement for each derivative
         (varlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(1,1,name,name,var,vars,so,varlst,ht);
         cr = ComponentReference.crefPrefixDer(name);
         source = DAEUtil.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
-      then
-        ((BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,value,dim,source,attr,comment,ct),(vars,so,varlst,ht)));
+      then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,value,dim,source,attr,comment,ct),(vars,so,varlst,ht));
     // state replacable without unknown derivative
-    case ((var as BackendDAE.VAR(name,BackendDAE.STATE(index=diffcount,derName=NONE()),dir,prl,tp,bind,value,dim,source,attr,comment,ct),(vars,so,varlst,ht)))
+    case (var as BackendDAE.VAR(name,BackendDAE.STATE(index=diffcount,derName=NONE()),dir,prl,tp,bind,value,dim,source,attr,comment,ct),(vars,so,varlst,ht))
       equation
         // add replacement for each derivative
         (varlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(diffcount,1,name,name,var,vars,so,varlst,ht);
         // dummy_der name vor Source information
         cr = ComponentReference.crefPrefixDer(name);
         source = DAEUtil.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
-      then
-        ((BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,value,dim,source,attr,comment,ct),(vars,so,varlst,ht)));
-    else inTpl;
+      then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,value,dim,source,attr,comment,ct),(vars,so,varlst,ht));
+    else (inVar,inTpl);
   end matchcontinue;
 end makeAllDummyVarandDummyDerivativeRepl;
 
@@ -4141,8 +4105,8 @@ algorithm
         // create dummy_der vars and change deselected states to dummy states
         ((vars,ht)) = List.fold1(dummyStates,makeDummyVarandDummyDerivative,level,(vars,iHt));
         (vars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars,replaceDummyDerivativesVar,ht);
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,replaceDummyDerivatives,ht);
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,replaceFirstOrderDerivatives,repl);
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,Expression.traverseSubexpressionsHelper,(replaceFirstOrderDerivativesExp,repl));
       then
         (BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching,stateSets,partitionKind),ht);
   end match;
@@ -4231,74 +4195,50 @@ algorithm
   end matchcontinue;
 end crefPrefixDerN;
 
-protected function replaceFirstOrderDerivatives "author: Frenkel TUD 2013-01"
-  input tuple<DAE.Exp,HashTable2.HashTable> itpl;
-  output tuple<DAE.Exp,HashTable2.HashTable> outTpl;
-protected
-  DAE.Exp e;
-  HashTable2.HashTable ht;
-algorithm
-  (e,ht) := itpl;
-  outTpl := Expression.traverseExp(e,replaceFirstOrderDerivativesExp,ht);
-end replaceFirstOrderDerivatives;
-
 protected function replaceFirstOrderDerivativesExp "author: Frenkel TUD 2013-01"
-  input tuple<DAE.Exp,HashTable2.HashTable> tpl;
-  output tuple<DAE.Exp,HashTable2.HashTable> outTpl;
+  input DAE.Exp inExp;
+  input HashTable2.HashTable iht;
+  output DAE.Exp outExp;
+  output HashTable2.HashTable ht;
 algorithm
-  outTpl := matchcontinue(tpl)
+  (outExp,ht) := matchcontinue (inExp,iht)
     local
-      HashTable2.HashTable ht;
       DAE.Exp e;
       DAE.ComponentRef cr;
-    case((DAE.CREF(componentRef=cr),ht))
+    case (DAE.CREF(componentRef=cr),ht)
       equation
         e = BaseHashTable.get(cr,ht);
-      then
-        ((e,ht));
-    case _ then tpl;
+      then (e,ht);
+    else (inExp,iht);
   end matchcontinue;
 end replaceFirstOrderDerivativesExp;
 
-protected function replaceDummyDerivatives "author: Frenkel TUD 2012-08"
-  input tuple<DAE.Exp,HashTableCrIntToExp.HashTable> itpl;
-  output tuple<DAE.Exp,HashTableCrIntToExp.HashTable> outTpl;
-protected
-  DAE.Exp e;
-  HashTableCrIntToExp.HashTable ht;
-algorithm
-  (e,ht) := itpl;
-  outTpl := Expression.traverseExp(e,replaceDummyDerivativesExp,ht);
-end replaceDummyDerivatives;
-
 protected function replaceDummyDerivativesExp "author: Frenkel TUD 2012-08"
-  input tuple<DAE.Exp,HashTableCrIntToExp.HashTable> tpl;
-  output tuple<DAE.Exp,HashTableCrIntToExp.HashTable> outTpl;
+  input DAE.Exp inExp;
+  input HashTableCrIntToExp.HashTable iht;
+  output DAE.Exp outExp;
+  output HashTableCrIntToExp.HashTable ht;
 algorithm
-  outTpl := matchcontinue(tpl)
+  (outExp,ht) := matchcontinue(inExp,iht)
     local
-      HashTableCrIntToExp.HashTable ht;
       DAE.Exp e;
       DAE.ComponentRef cr;
       Integer i;
       String msg;
-    case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),ht))
+    case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),ht)
       equation
         e = BaseHashTable.get((cr,1),ht);
-      then
-        ((e,ht));
-    case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr),DAE.ICONST(i)}),ht))
+      then (e,ht);
+    case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr),DAE.ICONST(i)}),ht)
       equation
         e = BaseHashTable.get((cr,i),ht);
-      then
-        ((e,ht));
-    case((e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst=_::_::_),ht))
+      then (e,ht);
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst=_::_::_),ht)
       equation
         msg = "IndexReduction.replaceDummyDerivativesExp failed for " +& ExpressionDump.printExpStr(e) +& "!";
         Error.addMessage(Error.COMPILER_WARNING, {msg});
-      then
-        ((e,ht));
-    case _ then tpl;
+      then (e,ht);
+    else (inExp,iht);
   end matchcontinue;
 end replaceDummyDerivativesExp;
 
@@ -4332,9 +4272,9 @@ algorithm
         // replace dummy_derivatives in knvars,aliases,ineqns,remeqns
         (aliasVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars,replaceDummyDerivativesVar,ht);
         (knvars1,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars,replaceDummyDerivativesVar,ht);
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(inieqns,replaceDummyDerivatives,ht);
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,replaceDummyDerivatives,ht);
-        (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,replaceDummyDerivatives,ht);
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(inieqns,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
+        (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
       then
         BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(timeEvents,whenClauseLst1,zeroCrossingLst,sampleLst,relationsLst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs,ei);
 
@@ -4343,30 +4283,31 @@ end replaceDummyDerivativesShared;
 
 protected function replaceDummyDerivativesVar
 "author: Frenkel TUD 2012-08"
- input tuple<BackendDAE.Var, HashTableCrIntToExp.HashTable> inTpl;
- output tuple<BackendDAE.Var, HashTableCrIntToExp.HashTable> outTpl;
+ input BackendDAE.Var inVar;
+ input HashTableCrIntToExp.HashTable inHt;
+ output BackendDAE.Var outVar;
+ output HashTableCrIntToExp.HashTable outHt;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,outHt) := matchcontinue (inVar,inHt)
     local
       BackendDAE.Var v,v1;
       HashTableCrIntToExp.HashTable ht;
       DAE.Exp e,e1;
       Option<DAE.VariableAttributes> attr;
 
-    case ((v as BackendDAE.VAR(bindExp=SOME(e),values=attr),ht))
+    case (v as BackendDAE.VAR(bindExp=SOME(e),values=attr),ht)
       equation
-        ((e1, _)) = Expression.traverseExp(e, replaceDummyDerivatives, ht);
+        (e1, _) = Expression.traverseExp(e, replaceDummyDerivativesExp, ht);
         v1 = BackendVariable.setBindExp(v, SOME(e1));
-        (attr,_) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,replaceDummyDerivatives,ht);
+        (attr,_) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
         v1 = BackendVariable.setVarAttributes(v1,attr);
-      then ((v1,ht));
+      then (v1,ht);
 
-    case  ((v as BackendDAE.VAR(values=attr),ht))
+    case  (v as BackendDAE.VAR(values=attr),ht)
       equation
-        (attr,_) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,replaceDummyDerivatives,ht);
+        (attr,_) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
         v1 = BackendVariable.setVarAttributes(v,attr);
-      then ((v1,ht));
+      then (v1,ht);
   end matchcontinue;
 end replaceDummyDerivativesVar;
 
@@ -4751,26 +4692,15 @@ algorithm
   end match;
 end dumpzycles;
 
-protected function changeDerVariablestoStates
-"author: Frenkel TUD 2011-05
-  change the kind of all variables in a der to state"
-  input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT>> inTpl;
-  output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT>> outTpl;
-protected
-  DAE.Exp e;
-  tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT> vars;
-algorithm
-  (e,vars) := inTpl;
-  outTpl := Expression.traverseExp(e,changeDerVariablestoStatesFinderNew,vars);
-end changeDerVariablestoStates;
-
 protected function changeDerVariablestoStatesFinderNew
 "author: Frenkel TUD 2011-05
   helper for changeDerVariablestoStates"
-  input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrix>> inExp;
-  output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT>> outExp;
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrix> inTpl;
+  output DAE.Exp outExp;
+  output tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT> outTpl;
 algorithm
-  (outExp) := match (inExp)
+  (outExp,outTpl) := match (inExp,inTpl)
     local
       DAE.Exp e;
       DAE.ComponentRef cr;
@@ -4783,27 +4713,27 @@ algorithm
       BackendDAE.StateOrder so;
       Integer index,eindx;
      /* der(var), change algebraic to states */
-     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
+     case (e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt))
       equation
         (varlst,changedVars) = BackendVariable.getVar(cr,vars);
         (vars,ilst) = algebraicState(varlst,changedVars,vars,ilst);
       then
-        ((e, (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)));
+        (e, (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt));
     /* der(der(var)), set differentiation counter = 2 */
-    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {e as DAE.CREF(componentRef = cr)})}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {e as DAE.CREF(componentRef = cr)})}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt))
       equation
         (varlst,changedVars) = BackendVariable.getVar(cr,vars);
         (vars,ilst) = increaseDifferentiation(varlst,changedVars,2,vars,ilst);
       then
-        ((DAE.CALL(Absyn.IDENT("der"),{e,DAE.ICONST(2)},DAE.callAttrBuiltinReal), (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)));
+        (DAE.CALL(Absyn.IDENT("der"),{e,DAE.ICONST(2)},DAE.callAttrBuiltinReal), (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt));
     /* der(var,index), set differentiation counter = index+1 */
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr),DAE.ICONST(index)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
+    case (e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr),DAE.ICONST(index)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt))
       equation
         (varlst,changedVars) = BackendVariable.getVar(cr,vars);
         (vars,ilst) = increaseDifferentiation(varlst,changedVars,index,vars,ilst);
       then
-        ((e, (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)));
-    case _ then inExp;
+        (e, (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt));
+    else (inExp,inTpl);
   end match;
 end changeDerVariablestoStatesFinderNew;
 
@@ -5272,12 +5202,12 @@ algorithm
 end dumpSystemGraphML;
 
 protected function addVarGraph
-"author: Frenkel TUD 2012-05"
- input tuple<BackendDAE.Var, tuple<Boolean,Integer,tuple<GraphML.GraphInfo,Integer>>> inTpl;
- output tuple<BackendDAE.Var, tuple<Boolean,Integer,tuple<GraphML.GraphInfo,Integer>>> outTpl;
+ input BackendDAE.Var inVar;
+ input tuple<Boolean,Integer,tuple<GraphML.GraphInfo,Integer>> inTpl;
+ output BackendDAE.Var outVar;
+ output tuple<Boolean,Integer,tuple<GraphML.GraphInfo,Integer>> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var v;
       GraphML.GraphInfo graphInfo;
@@ -5287,7 +5217,7 @@ algorithm
       Integer id;
       Boolean b;
       String color,desc,labelText;
-    case ((v as BackendDAE.VAR(varName=cr),(true,id,(graphInfo,graph))))
+    case (v as BackendDAE.VAR(varName=cr),(true,id,(graphInfo,graph)))
       equation
         true = BackendVariable.isStateVar(v);
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),g);
@@ -5296,15 +5226,17 @@ algorithm
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
         desc = ComponentReference.printComponentRefStr(cr);
         (graphInfo,_) = GraphML.addNode("v" +& intString(id),GraphML.COLOR_BLUE, {label}, GraphML.ELLIPSE(),SOME(desc),{}, graph, graphInfo);
-      then ((v,(true,id+1,(graphInfo,graph))));
-    case ((v as BackendDAE.VAR(varName=cr),(false,id,(graphInfo,graph))))
+      then (v,(true,id+1,(graphInfo,graph)));
+
+    case (v as BackendDAE.VAR(varName=cr),(false,id,(graphInfo,graph)))
       equation
         true = BackendVariable.isStateVar(v);
         labelText = intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
         (graphInfo,_) = GraphML.addNode("v" +& intString(id),GraphML.COLOR_BLUE,{label},GraphML.ELLIPSE(),NONE(),{}, graph, graphInfo);
-      then ((v,(false,id+1,(graphInfo,graph))));
-    case ((v as BackendDAE.VAR(varName=cr),(true,id,(graphInfo,graph))))
+      then (v,(false,id+1,(graphInfo,graph)));
+
+    case (v as BackendDAE.VAR(varName=cr),(true,id,(graphInfo,graph)))
       equation
         b = BackendVariable.isVarDiscrete(v);
         color = Util.if_(b,GraphML.COLOR_PURPLE,GraphML.COLOR_RED);
@@ -5314,26 +5246,29 @@ algorithm
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
         //g = GraphML.addNode("v" +& intString(id),intString(id),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
         (graphInfo,_) = GraphML.addNode("v" +& intString(id),color,{label},GraphML.ELLIPSE(),SOME(desc),{}, graph, graphInfo);
-      then ((v,(true,id+1,(graphInfo,graph))));
-    case ((v as BackendDAE.VAR(varName=cr),(false,id,(graphInfo,graph))))
+      then (v,(true,id+1,(graphInfo,graph)));
+
+    case (v as BackendDAE.VAR(varName=cr),(false,id,(graphInfo,graph)))
       equation
         b = BackendVariable.isVarDiscrete(v);
         color = Util.if_(b,GraphML.COLOR_PURPLE,GraphML.COLOR_RED);
         labelText = intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
         (graphInfo,_) = GraphML.addNode("v" +& intString(id),color, {label}, GraphML.ELLIPSE(),NONE(),{},graph, graphInfo);
-      then ((v,(false,id+1,(graphInfo,graph))));
-    case _ then inTpl;
+      then (v,(false,id+1,(graphInfo,graph)));
+
+    else (inVar,inTpl);
   end matchcontinue;
 end addVarGraph;
 
 protected function addVarGraphMatch
 "author: Frenkel TUD 2012-05"
- input tuple<BackendDAE.Var, tuple<Boolean,Integer,array<Integer>,tuple<GraphML.GraphInfo,Integer>>> inTpl;
- output tuple<BackendDAE.Var, tuple<Boolean,Integer,array<Integer>,tuple<GraphML.GraphInfo,Integer>>> outTpl;
+ input BackendDAE.Var inVar;
+ input tuple<Boolean,Integer,array<Integer>,tuple<GraphML.GraphInfo,Integer>> inTpl;
+ output BackendDAE.Var outVar;
+ output tuple<Boolean,Integer,array<Integer>,tuple<GraphML.GraphInfo,Integer>> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var v;
       GraphML.GraphInfo graphInfo;
@@ -5344,7 +5279,7 @@ algorithm
       array<Integer> vec1;
       String color,desc;
       String labelText;
-    case ((v as BackendDAE.VAR(varName=cr),(false,id,vec1,(graphInfo,graph))))
+    case (v as BackendDAE.VAR(varName=cr),(false,id,vec1,(graphInfo,graph)))
       equation
         true = BackendVariable.isStateVar(v);
         color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_BLUE,GraphML.COLOR_YELLOW);
@@ -5353,8 +5288,9 @@ algorithm
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
         //g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),g);
         (graphInfo,_) = GraphML.addNode("v" +& intString(id),color, {label}, GraphML.ELLIPSE(),NONE(),{},graph, graphInfo);
-      then ((v,(false,id+1,vec1,(graphInfo,graph))));
-    case ((v as BackendDAE.VAR(varName=cr),(true,id,vec1,(graphInfo,graph))))
+      then (v,(false,id+1,vec1,(graphInfo,graph)));
+
+    case (v as BackendDAE.VAR(varName=cr),(true,id,vec1,(graphInfo,graph)))
       equation
         true = BackendVariable.isStateVar(v);
         color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_BLUE,GraphML.COLOR_YELLOW);
@@ -5362,8 +5298,9 @@ algorithm
         labelText = intString(id);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
         (graphInfo,_) = GraphML.addNode("v" +& intString(id),color, {label}, GraphML.ELLIPSE(),SOME(desc),{},graph, graphInfo);
-      then ((v,(true,id+1,vec1,(graphInfo,graph))));
-    case ((v as BackendDAE.VAR(varName=cr),(false,id,vec1,(graphInfo,graph))))
+      then (v,(true,id+1,vec1,(graphInfo,graph)));
+
+    case (v as BackendDAE.VAR(varName=cr),(false,id,vec1,(graphInfo,graph)))
       equation
         color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_RED,GraphML.COLOR_YELLOW);
         labelText = intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr);
@@ -5371,16 +5308,18 @@ algorithm
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
         //g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),g);
         (graphInfo,_) = GraphML.addNode("v" +& intString(id),color,{label},GraphML.ELLIPSE(),NONE(),{},graph, graphInfo);
-      then ((v,(false,id+1,vec1,(graphInfo,graph))));
-    case ((v as BackendDAE.VAR(varName=cr),(true,id,vec1,(graphInfo,graph))))
+      then (v,(false,id+1,vec1,(graphInfo,graph)));
+
+    case (v as BackendDAE.VAR(varName=cr),(true,id,vec1,(graphInfo,graph)))
       equation
         color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_RED,GraphML.COLOR_YELLOW);
         desc = ComponentReference.printComponentRefStr(cr);
         labelText = intString(id);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
         (graphInfo,_) = GraphML.addNode("v" +& intString(id),color,{label},GraphML.ELLIPSE(),SOME(desc),{},graph, graphInfo);
-      then ((v,(true,id+1,vec1,(graphInfo,graph))));
-    case _ then inTpl;
+      then (v,(true,id+1,vec1,(graphInfo,graph)));
+
+    else (inVar,inTpl);
   end matchcontinue;
 end addVarGraphMatch;
 
@@ -5996,24 +5935,25 @@ end findStateOrderWork;
 protected function traverseFindStateOrder
 "author: Frenkel TUD 2013-01
   collect all states and there derivatives"
- input tuple<BackendDAE.Equation, BackendDAE.Variables> inTpl;
- output tuple<BackendDAE.Equation, BackendDAE.Variables> outTpl;
+ input BackendDAE.Equation inEq;
+ input BackendDAE.Variables inVars;
+ output BackendDAE.Equation outEq;
+ output BackendDAE.Variables outVars;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outEq,outVars) := matchcontinue (inEq,inVars)
     local
       BackendDAE.Equation e;
       BackendDAE.Variables v;
       DAE.ComponentRef cr,dcr;
       list<BackendDAE.Var> vlst,dvlst;
-    case ((e,v))
+    case (e,v)
       equation
         (cr,dcr,_,_,false) = BackendEquation.derivativeEquation(e);
         (vlst,_) = BackendVariable.getVar(cr,v);
         (dvlst,_) = BackendVariable.getVar(dcr,v);
         v = addStateOrderFinder(vlst,dvlst,v);
-      then ((e,v));
-    case _ then inTpl;
+      then (e,v);
+    else (inEq,inVars);
   end matchcontinue;
 end traverseFindStateOrder;
 

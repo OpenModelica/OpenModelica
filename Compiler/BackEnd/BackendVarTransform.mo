@@ -323,7 +323,7 @@ algorithm
       HashSet.HashSet set;
       list<DAE.ComponentRef> dests;
     case (_,_,_) equation
-      ((_,set)) = Expression.traverseExpTopDown(dst, traversingCrefFinder, HashSet.emptyHashSet());
+      (_,set) = Expression.traverseExpTopDown(dst, traversingCrefFinder, HashSet.emptyHashSet());
       dests = BaseHashSet.hashSetList(set);
       invHt_1 = List.fold(dests,BaseHashTable.delete,invHt);
       then
@@ -348,7 +348,7 @@ algorithm
       HashSet.HashSet set;
       list<DAE.ComponentRef> dests;
     case (_,_,_) equation
-      ((_,set)) = Expression.traverseExpTopDown(dst, traversingCrefFinder, HashSet.emptyHashSet());
+      (_,set) = Expression.traverseExpTopDown(dst, traversingCrefFinder, HashSet.emptyHashSet());
       dests = BaseHashSet.hashSetList(set);
       invHt_1 = List.fold1r(dests,addReplacementInv2,src,invHt);
       then
@@ -358,21 +358,22 @@ end addReplacementInv;
 
 protected function traversingCrefFinder "
 Author: Frenkel 2012-12"
-  input tuple<DAE.Exp, HashSet.HashSet > inExp;
-  output tuple<DAE.Exp, Boolean, HashSet.HashSet > outExp;
+  input DAE.Exp e;
+  input HashSet.HashSet ihs;
+  output DAE.Exp outExp;
+  output Boolean continue;
+  output HashSet.HashSet set;
 algorithm
-  outExp := matchcontinue(inExp)
+  (outExp,continue,set) := matchcontinue (e,ihs)
     local
-      DAE.Exp e;
       DAE.ComponentRef cr;
-      HashSet.HashSet set;
-    case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), set))
-      then ((e,false,set));
-    case((e as DAE.CREF(componentRef = cr), set))
+    case (DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), set)
+      then (e,false,set);
+    case (DAE.CREF(componentRef = cr), set)
       equation
         set = BaseHashSet.add(cr,set);
-      then ((e,false,set));
-    case((e,set)) then ((e,true,set));
+      then (e,false,set);
+    else (e,true,ihs);
   end matchcontinue;
 end traversingCrefFinder;
 
@@ -1049,7 +1050,7 @@ algorithm
         true = replaceExpCond(cond, e);
         (cr,_) = replaceCrefSubs(cr,repl,cond);
         _ = getExtendReplacement(repl, cr);
-        ((e2,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
+        (e2,(_,true)) = BackendDAEUtil.extendArrExp(e,(NONE(),false));
         (e3,_) = replaceExp(e2,repl,cond);
       then
         (e3,true);
@@ -1557,22 +1558,24 @@ end replaceEquationsArr;
 
 protected function replaceEquationTraverser
   "Help function to e.g. removeSimpleEquations"
-  input tuple<BackendDAE.Equation,tuple<VariableReplacements,Option<FuncTypeExp_ExpToBoolean>,list<BackendDAE.Equation>,Boolean>> inTpl;
-  output tuple<BackendDAE.Equation,tuple<VariableReplacements,Option<FuncTypeExp_ExpToBoolean>,list<BackendDAE.Equation>,Boolean>> outTpl;
+  input BackendDAE.Equation inEq;
+  input tuple<VariableReplacements,Option<FuncTypeExp_ExpToBoolean>,list<BackendDAE.Equation>,Boolean> inTpl;
+  output BackendDAE.Equation e;
+  output tuple<VariableReplacements,Option<FuncTypeExp_ExpToBoolean>,list<BackendDAE.Equation>,Boolean> outTpl;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 protected
-  BackendDAE.Equation e;
   VariableReplacements repl;
   Option<FuncTypeExp_ExpToBoolean> optfunc;
   list<BackendDAE.Equation> eqns;
   Boolean b;
 algorithm
- (e,(repl,optfunc,eqns,b)) := inTpl;
- (eqns,b) := replaceEquation(e,repl,optfunc,eqns,b);
- outTpl := (e,(repl,optfunc,eqns,b));
+  e := inEq;
+  (repl,optfunc,eqns,b) := inTpl;
+  (eqns,b) := replaceEquation(e,repl,optfunc,eqns,b);
+  outTpl := (repl,optfunc,eqns,b);
 end replaceEquationTraverser;
 
 public function replaceEquations
@@ -2275,22 +2278,25 @@ end replaceStatementLstRHS;
 
 protected function replaceExpWrapper"to use replaceExp in DAEUtil.traverseDAEEquationsStmtsRhsOnly
 author: Waurich TUD 2014-4"
-  input tuple<DAE.Exp,tuple<VariableReplacements,Option<FuncTypeExp_ExpToBoolean>,Boolean>> tplIn;
-  output tuple<DAE.Exp,tuple<VariableReplacements,Option<FuncTypeExp_ExpToBoolean>,Boolean>> tplOut;
+  input DAE.Exp inExp;
+  input tuple<VariableReplacements,Option<FuncTypeExp_ExpToBoolean>,Boolean> inTpl;
+  output DAE.Exp exp;
+  output tuple<VariableReplacements,Option<FuncTypeExp_ExpToBoolean>,Boolean> tpl;
 partial function FuncTypeExp_ExpToBoolean
   input DAE.Exp inExp;
   output Boolean outBoolean;
 end FuncTypeExp_ExpToBoolean;
 protected
   Boolean b1,b2;
-  DAE.Exp exp;
   VariableReplacements repl;
   Option<FuncTypeExp_ExpToBoolean> opt;
 algorithm
-  (exp,(repl,opt,b1)) := tplIn;
+  exp := inExp;
+  tpl := inTpl;
+  (repl,opt,b1) := tpl;
   (exp,b2) := replaceExp(exp,repl,opt);
   b2 := b1 or b2;
-  tplOut := (exp,(repl,opt,b2));
+  tpl := (repl,opt,b2);
 end replaceExpWrapper;
 
 protected function moveNegateRhs
@@ -2562,7 +2568,7 @@ algorithm
     then (InDivideByZero, 0, InIdent);
 
     case ((cr, exp) :: tplLst2, _, false, _, _) equation
-      ((_, BooleanControlExp)) = Expression.traverseExp(exp, controlExp, false);
+      (_, BooleanControlExp) = Expression.traverseExp(exp, controlExp, false);
       false = BooleanControlExp;
 
       str = ComponentReference.printComponentRefStr(cr);
@@ -2577,25 +2583,25 @@ algorithm
 end divideByZeroReplacements2;
 
 protected function controlExp
-  input tuple<DAE.Exp, Boolean > inTuple;
-  output tuple<DAE.Exp, Boolean > outTuple;
+  input DAE.Exp inExp;
+  input Boolean inB;
+  output DAE.Exp outExp;
+  output Boolean b;
 algorithm
-  outTuple := matchcontinue(inTuple)
+  (outExp,b) := match (inExp,inB)
     local
-      DAE.Exp exp1 , exp2, exp3;
+      DAE.Exp exp1, exp2;
       DAE.Operator operator;
-      Boolean b;
 
-    case ((_, true))
-    then inTuple;
+    case (_, true) then (inExp,true);
 
-    case((exp3 as DAE.BINARY(exp1, DAE.DIV(_), exp2), false)) equation
-      b = Expression.isZero(exp2);
-    then((exp3, b));
+    case (DAE.BINARY(exp1, DAE.DIV(_), exp2), false)
+      equation
+        b = Expression.isZero(exp2);
+      then (inExp, b);
 
-    case ((exp1, _))
-    then ((exp1, false));
-  end matchcontinue;
+    else (inExp,false);
+  end match;
 end controlExp;
 
 /*********************************************************/

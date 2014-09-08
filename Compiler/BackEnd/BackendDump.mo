@@ -3420,26 +3420,24 @@ algorithm
 end dumpStateVariables;
 
 protected function dumpStateVariable
-"author: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, Integer> inTpl;
- output tuple<BackendDAE.Var, Integer> outTpl;
+  input BackendDAE.Var inVar;
+  input Integer inPos;
+  output BackendDAE.Var v;
+  output Integer pos;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (v,pos) := matchcontinue (inVar,inPos)
     local
-      BackendDAE.Var v;
       DAE.ComponentRef cr;
       String scr;
-      Integer pos;
-    case ((v,pos))
+    case (v,pos)
       equation
         true = BackendVariable.isStateVar(v);
         cr = BackendVariable.varCref(v);
         scr = ComponentReference.printComponentRefStr(cr);
         print(intString(pos)); print(": ");
         print(scr); print("\n");
-      then ((v,pos+1));
-    else inTpl;
+      then (v,pos+1);
+    else (inVar,inPos);
   end matchcontinue;
 end dumpStateVariable;
 
@@ -3521,7 +3519,7 @@ algorithm
 
   HS := HashSet.emptyHashSet();
   HS := List.fold(systs, Initialization.collectPreVariablesEqSystem, HS);
-  HS := BackendDAEUtil.traverseBackendDAEExpsEqns(removedEqs, Initialization.collectPreVariablesEquation, HS);
+  ((_,HS)) := BackendDAEUtil.traverseBackendDAEExpsEqns(removedEqs, Expression.traverseSubexpressionsHelper, (Initialization.collectPreVariablesTraverseExp, HS));
   discstates := BaseHashSet.hashSetList(HS);
   dst := listLength(discstates);
 
@@ -3693,33 +3691,34 @@ algorithm
   outTpl := ((sys+1, inp1, st1, states1, dvar1, discvars1, seq1, salg1, sarr1, sce1, swe1, sie1, eqsys1, meqsys1, teqsys1));
 end dumpCompShort1;
 
-protected function traversingisStateTopInputVarFinder "author: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, tuple<Integer,Integer,list<DAE.ComponentRef>,Integer,list<DAE.ComponentRef>>> inTpl;
- output tuple<BackendDAE.Var, tuple<Integer,Integer,list<DAE.ComponentRef>,Integer,list<DAE.ComponentRef>>> outTpl;
+protected function traversingisStateTopInputVarFinder
+  input BackendDAE.Var inVar;
+  input tuple<Integer,Integer,list<DAE.ComponentRef>,Integer,list<DAE.ComponentRef>> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<Integer,Integer,list<DAE.ComponentRef>,Integer,list<DAE.ComponentRef>> outTpl;
 algorithm
-  outTpl := matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var v;
       Integer inp,st,dvar;
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> states,discvars;
 
-    case ((v,(inp,st,states,dvar,discvars))) equation
+    case (v,(inp,st,states,dvar,discvars)) equation
       true = BackendVariable.isStateVar(v);
       cr = BackendVariable.varCref(v);
-    then ((v,(inp,st+1,cr::states,dvar,discvars)));
+    then (v,(inp,st+1,cr::states,dvar,discvars));
 
-    case ((v,(inp,st,states,dvar,discvars))) equation
+    case (v,(inp,st,states,dvar,discvars)) equation
       true = BackendVariable.isVarDiscrete(v);
       cr = BackendVariable.varCref(v);
-    then ((v,(inp,st,states,dvar+1,cr::discvars)));
+    then (v,(inp,st,states,dvar+1,cr::discvars));
 
-    case ((v,(inp,st,states,dvar,discvars))) equation
+    case (v,(inp,st,states,dvar,discvars)) equation
       true = BackendVariable.isVarOnTopLevelAndInput(v);
-    then ((v,(inp+1,st,states,dvar,discvars)));
+    then (v,(inp+1,st,states,dvar,discvars));
 
-    case _
-    then inTpl;
+    else (inVar,inTpl);
   end matchcontinue;
 end traversingisStateTopInputVarFinder;
 

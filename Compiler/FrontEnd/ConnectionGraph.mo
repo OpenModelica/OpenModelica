@@ -948,13 +948,15 @@ end evalRootedAndIsRoot;
 
 protected function evalRootedAndIsRootHelper
 "Helper function for evalIsRoot."
-  input tuple<DAE.Exp,tuple<HashTable.HashTable,list<DAE.ComponentRef>,ConnectionGraph>> inRoots;
-  output tuple<DAE.Exp,tuple<HashTable.HashTable,list<DAE.ComponentRef>,ConnectionGraph>> outRoots;
+  input DAE.Exp inExp;
+  input tuple<HashTable.HashTable,list<DAE.ComponentRef>,ConnectionGraph> inRoots;
+  output DAE.Exp outExp;
+  output tuple<HashTable.HashTable,list<DAE.ComponentRef>,ConnectionGraph> outRoots;
 algorithm
-  outRoots := matchcontinue inRoots
+  (outExp,outRoots) := matchcontinue (inExp,inRoots)
     local
       ConnectionGraph graph;
-      DAE.Exp inExp,exp;
+      DAE.Exp exp;
       HashTable.HashTable rooted;
       DAE.ComponentRef cref,cref1;
       Boolean result;
@@ -962,8 +964,7 @@ algorithm
       list<DAE.ComponentRef> roots;
 
     // handle rooted
-    case ((inExp as DAE.CALL(path=Absyn.IDENT("rooted"),
-          expLst={DAE.CREF(componentRef = cref)}), (rooted,roots,graph)))
+    case (DAE.CALL(path=Absyn.IDENT("rooted"), expLst={DAE.CREF(componentRef = cref)}), (rooted,roots,graph))
       equation
         // find partner in branches
         branches = getBranches(graph);
@@ -977,35 +978,31 @@ algorithm
         //   ComponentReference.printComponentRefStr(cref) +& " is " +& boolString(result) +& " rooted\n");
         Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalRootedAndIsRootHelper: " +&
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
-      then ((DAE.BCONST(result), (rooted,roots,graph)));
+      then (DAE.BCONST(result), (rooted,roots,graph));
 
     // no roots, same exp
-    case ((exp, (rooted,roots as {},graph))) then ((exp, (rooted,roots,graph)));
+    case (exp, (rooted,roots as {},graph)) then (exp, (rooted,roots,graph));
 
     // deal with Connections.isRoot
-    case ((inExp as DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
-          expLst={DAE.CREF(componentRef = cref)}), (rooted,roots,graph)))
+    case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.CREF(componentRef = cref)}), (rooted,roots,graph))
       equation
         result = List.isMemberOnTrue(cref, roots, ComponentReference.crefEqualNoStringCompare);
         Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalIsRootHelper: " +&
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
-      then ((DAE.BCONST(result), (rooted,roots,graph)));
+      then (DAE.BCONST(result), (rooted,roots,graph));
 
     // deal with NOT Connections.isRoot
-    case ((inExp as DAE.LUNARY(DAE.NOT(_), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
-          expLst={DAE.CREF(componentRef = cref)})), (rooted,roots,graph)))
+    case (DAE.LUNARY(DAE.NOT(_), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.CREF(componentRef = cref)})), (rooted,roots,graph))
       equation
         result = List.isMemberOnTrue(cref, roots, ComponentReference.crefEqualNoStringCompare);
         result = boolNot(result);
         Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalIsRootHelper: " +&
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
-      then ((DAE.BCONST(result), (rooted,roots,graph)));
+      then (DAE.BCONST(result), (rooted,roots,graph));
 
     // no replacement needed
-    case ((exp, (rooted,roots,graph)))
-      equation
+    else (inExp, inRoots);
         // Debug.fprintln(Flags.CGRAPH, ExpressionDump.printExpStr(exp) +& " not found in roots!");
-      then ((exp, (rooted,roots,graph)));
   end matchcontinue;
 end evalRootedAndIsRootHelper;
 

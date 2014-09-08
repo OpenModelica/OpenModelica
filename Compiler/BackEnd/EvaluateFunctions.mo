@@ -1077,8 +1077,8 @@ algorithm
     stmts1 := listReverse(stmts1);
 
   // build new crefs for the scalars
-  (stmts1,_) := DAEUtil.traverseDAEEquationsStmts(stmts1,makeIdentCref,varScalarCrefs);
-  (stmts1,_) := DAEUtil.traverseDAEEquationsStmts(stmts1,makeIdentCref,constScalarCrefs);
+  (stmts1,_) := DAEUtil.traverseDAEEquationsStmts(stmts1,Expression.traverseSubexpressionsHelper,(makeIdentCref,varScalarCrefs));
+  (stmts1,_) := DAEUtil.traverseDAEEquationsStmts(stmts1,Expression.traverseSubexpressionsHelper,(makeIdentCref,constScalarCrefs));
   algsOut := {DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts1),DAE.emptyElementSource)};
 end buildPartialFunction;
 
@@ -1195,40 +1195,28 @@ algorithm
   b := not expLstIsConst(exps);
 end expLstIsNotConst;
 
-protected function makeIdentCref  "traverses the exps"
-  input tuple<DAE.Exp,list<DAE.ComponentRef>> inTpl;
-  output tuple<DAE.Exp,list<DAE.ComponentRef>> outTpl;
-protected
-  DAE.Exp exp;
-  list<DAE.ComponentRef> crefs;
+protected function makeIdentCref  "searches only for crefs"
+  input DAE.Exp inExp;
+  input list<DAE.ComponentRef> inCrefs;
+  output DAE.Exp outExp;
+  output list<DAE.ComponentRef> outCrefs;
 algorithm
-  (exp,crefs) := inTpl;
-  ((exp,crefs)) := Expression.traverseExp(exp,makeIdentCref1,crefs);
-  outTpl := (exp,crefs);
-end makeIdentCref;
-
-protected function makeIdentCref1  "searches only for crefs"
-  input tuple<DAE.Exp, list<DAE.ComponentRef>> inTpl;
-  output tuple<DAE.Exp,list<DAE.ComponentRef>> outTpl;
-algorithm
-  outTpl := match(inTpl)
+  (outExp,outCrefs) := match (inExp,inCrefs)
     local
       DAE.ComponentRef cref;
       list<DAE.ComponentRef> crefs;
       DAE.Exp exp;
       DAE.Type ty;
       String delimiter;
-    case((DAE.CREF(componentRef=cref,ty=ty),crefs))
+    case (DAE.CREF(componentRef=cref,ty=ty),crefs)
       equation
         cref = makeIdentCref2(cref,crefs);
         exp = DAE.CREF(cref,ty);
       then
-        ((exp,crefs));
-    case((exp,crefs))
-      then
-        ((exp,crefs));
+        (exp,crefs);
+    else (inExp,inCrefs);
   end match;
-end makeIdentCref1;
+end makeIdentCref;
 
 
 protected function makeIdentCref2"appends the crefs of a qualified crefs with the given delimiter
@@ -1421,7 +1409,7 @@ algorithm
         cref = Expression.expCref(exp1);
         scalars = getRecordScalars(cref);
         (exp2,changed) = BackendVarTransform.replaceExp(exp2,replIn,NONE());
-        ((exp2,(exp1,funcTree,idx,addStmts))) = Expression.traverseExpTopDown(exp2,evaluateConstantFunctionWrapper,(exp1,funcTree,idx,{}));
+        (exp2,(exp1,funcTree,idx,addStmts)) = Expression.traverseExpTopDown(exp2,evaluateConstantFunctionWrapper,(exp1,funcTree,idx,{}));
         (exp2,changed) = Debug.bcallret1_2(changed,ExpressionSimplify.simplify,exp2,exp2,changed);
         (exp2,_) = ExpressionSimplify.simplify(exp2);
         expLst = Expression.getComplexContents(exp2);
@@ -1545,7 +1533,7 @@ algorithm
         //print("\nthe RHS after\n");
         //print(ExpressionDump.printExpStr(exp1));
         //BackendDump.dumpEquationList(addEqs,"the additional equations after");
-        ((_,isCon)) = Expression.traverseExp(exp1,expIsConstTraverser,true);
+        isCon = Expression.isConst(exp1);
         exp1 = Util.if_(isCon,exp1,exp0);
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"--> is the tuple const? "+&boolString(isCon)+&"\n");
 
@@ -1676,21 +1664,21 @@ algorithm
       equation
         //check if its the if
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"-->try to check if its the if case\n");
-        ((exp1,(_,_,_,_))) = Expression.traverseExpTopDown(expIf,evaluateConstantFunctionWrapper,(expIf,funcTree,idx,{}));
+        (exp1,(_,_,_,_)) = Expression.traverseExpTopDown(expIf,evaluateConstantFunctionWrapper,(expIf,funcTree,idx,{}));
         (exp1,_) = BackendVarTransform.replaceExp(exp1,replIn,NONE());
         (exp1,_) = ExpressionSimplify.simplify(exp1);
         isCon = Expression.isConst(exp1);
         isIf = Debug.bcallret1(isCon,Expression.getBoolConst,exp1,false);
 
         // check if its the IF case, if true then evaluate:
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"-->is the if const? "+&boolString(isCon)+&" and is it the if case ? "+&boolString(isIf)+&"\n");
+        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"-->is the if const? "+&boolString(isCon)+&" and is it the if case ? "+&boolString(isIf)+&"\n");
         //(stmts1,(funcTree,repl,idx)) = Debug.bcallret3_2(isIf and isCon,evaluateFunctions_updateStatement,stmtsIf,(funcTree,replIn,idx),lstIn,stmtsIf,(funcTree,replIn,idx));
         (stmts1,(funcTree,repl,idx)) = Debug.bcallret3_2(isIf and isCon,evaluateFunctions_updateStatement,stmtsIf,(funcTree,replIn,idx),{},{stmtIn},(funcTree,replIn,idx));  // without listIn
 
         // if its definitly not the if, check the else
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isIf,print,"-->try to check if its another case\n");
+        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isIf,print,"-->try to check if its another case\n");
         (stmtsElse,isElse) = Debug.bcallret2_2(isCon and not isIf,evaluateElse,else_,info,{stmtIn},false);
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isIf,print,"-->is it an other case? "+&boolString(isElse)+&"\n");
+        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isIf,print,"-->is it an other case? "+&boolString(isElse)+&"\n");
         (stmts1,(funcTree,repl,idx)) = Debug.bcallret3_2(isCon and isElse,evaluateFunctions_updateStatement,stmtsElse,(funcTree,replIn,idx),{},stmts1,(funcTree,replIn,idx));
         eval = isCon and (isIf or isElse);
      then
@@ -1722,8 +1710,8 @@ algorithm
     case(DAE.ELSEIF(exp=expIf,statementLst=stmts,else_=else_),FUNCINFO(repl=replIn, funcTree=funcTree, idx=idx))
       equation
         // check if its the elseif
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"-->try to check if its the elseif case\n");
-        ((exp1,(_,_,_,_))) = Expression.traverseExpTopDown(expIf,evaluateConstantFunctionWrapper,(expIf,funcTree,idx,{}));
+        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"-->try to check if its the elseif case\n");
+        (exp1,(_,_,_,_)) = Expression.traverseExpTopDown(expIf,evaluateConstantFunctionWrapper,(expIf,funcTree,idx,{}));
         (exp1,_) = BackendVarTransform.replaceExp(exp1,replIn,NONE());
         (exp1,_) = ExpressionSimplify.simplify(exp1);
         isCon = Expression.isConst(exp1);
@@ -1768,18 +1756,6 @@ algorithm
        replIn;
   end matchcontinue;
 end addTplReplacements;
-
-protected function expIsConstTraverser "traverser function to check if there are any variable expressions"
-  input tuple<DAE.Exp,Boolean> tplIn;
-  output tuple<DAE.Exp,Boolean> tplOut;
-protected
-  DAE.Exp exp;
-  Boolean b1,b2;
-algorithm
-  (exp,b1) := tplIn;
-  b2 := Expression.isConst(exp);
-  tplOut := (exp,b1 and b2);
-end expIsConstTraverser;
 
 protected function equationToStatement "converts a simple BackendDAE.Equation to a DAE.Statement
 author:Waurich TUD 2014-04"
@@ -1999,17 +1975,20 @@ algorithm
 end evaluateFunctions_updateStatementLst;
 
 protected function evaluateConstantFunctionWrapper
-  input tuple<DAE.Exp,tuple<DAE.Exp, DAE.FunctionTree,Integer,list<DAE.Statement>>> inTpl;
-  output tuple<DAE.Exp, Boolean, tuple<DAE.Exp,DAE.FunctionTree,Integer,list<DAE.Statement>>> outTpl;
+  input DAE.Exp inExp;
+  input tuple<DAE.Exp, DAE.FunctionTree,Integer,list<DAE.Statement>> inTpl;
+  output DAE.Exp outExp;
+  output Boolean continue;
+  output tuple<DAE.Exp,DAE.FunctionTree,Integer,list<DAE.Statement>> outTpl;
 algorithm
-  outTpl := matchcontinue(inTpl)
+  (outExp,continue,outTpl) := matchcontinue(inExp,inTpl)
     local
       Integer idx;
       DAE.Exp rhs, lhs;
       DAE.FunctionTree funcs;
       list<BackendDAE.Equation> addEqs;
       list<DAE.Statement> stmts,stmtsIn;
-  case((rhs,(lhs,funcs,idx,stmtsIn)))
+  case (rhs,(lhs,funcs,idx,stmtsIn))
     equation
       DAE.CALL(path=_,expLst=_,attr=_) = rhs;
       ((rhs,lhs,addEqs,funcs,idx,_)) = evaluateConstantFunction(rhs,lhs,funcs,idx);
@@ -2017,12 +1996,9 @@ algorithm
       stmts = List.map(addEqs,equationToStmt);
 
       stmts = listAppend(stmts,stmtsIn);
-    then
-      ((rhs,true,(lhs,funcs,idx,stmts)));
-  case((rhs,(lhs,funcs,idx,stmtsIn)))
-    equation
-    then
-      ((rhs,false,(lhs,funcs,idx,stmtsIn)));
+    then (rhs,true,(lhs,funcs,idx,stmts));
+  case (rhs,(lhs,funcs,idx,stmtsIn))
+    then (rhs,false,(lhs,funcs,idx,stmtsIn));
   end matchcontinue;
 end evaluateConstantFunctionWrapper;
 
@@ -2092,7 +2068,7 @@ algorithm
         equation
         // simplify the condition
           //print("STMT_IF_EXP_IN_ELSEIF:\n");
-        ((exp,(_,funcs,idx,_))) = Expression.traverseExpTopDown(exp,evaluateConstantFunctionWrapper,(exp,funcs,idx,{}));
+        (exp,(_,funcs,idx,_)) = Expression.traverseExpTopDown(exp,evaluateConstantFunctionWrapper,(exp,funcs,idx,{}));
         (exp,_) = BackendVarTransform.replaceExp(exp,replIn,NONE());
         (exp,_) = ExpressionSimplify.simplify(exp);
 
@@ -2740,8 +2716,8 @@ algorithm
   varLst := BackendVariable.varList(vars);
   initEqs := BackendEquation.getInitialEqnsFromShared(shared);
   states := List.filterOnTrue(varLst,BackendVariable.isStateorStateDerVar);
-  derVarsInit := BackendDAEUtil.traverseBackendDAEExpsEqns(initEqs,findDerVarCrefs,{});
-  derVars := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs,findDerVarCrefs,derVarsInit);
+  ((_,derVarsInit)) := BackendDAEUtil.traverseBackendDAEExpsEqns(initEqs,Expression.traverseSubexpressionsHelper,(findDerVarCrefs,{}));
+  ((_,derVars)) := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs,Expression.traverseSubexpressionsHelper,(findDerVarCrefs,derVarsInit));
     //print("derVars\n"+&stringDelimitList(List.map(derVars,ComponentReference.printComponentRefStr),"\n")+&"\n\n");
   ssVarLst := List.filterOnTrue(varLst,varSSisPreferOrHigher);
   ssVars := List.map(ssVarLst,BackendVariable.varCref);
@@ -2767,63 +2743,41 @@ end varSSisPreferOrHigher;
 
 protected function setVarKindForStates"if a state var is a memeber of the list of state-crefs, it remains a state. otherwise it will be changed to VarKind.Variable
 waurich TUD 2014-04"
-  input tuple<BackendDAE.Var,list<DAE.ComponentRef>> tplIn;
-  output tuple<BackendDAE.Var,list<DAE.ComponentRef>> tplOut;
+  input BackendDAE.Var inVar;
+  input list<DAE.ComponentRef> inCrefs;
+  output BackendDAE.Var outVar;
+  output list<DAE.ComponentRef> outCrefs;
 algorithm
-  tplOut := matchcontinue(tplIn)
+  (outVar,outCrefs) := matchcontinue (inVar,inCrefs)
     local
       Boolean isState;
       DAE.ComponentRef cr1;
       BackendDAE.Var varOld,varNew;
       list<DAE.ComponentRef> derVars;
-    case((varOld as BackendDAE.VAR(varName=cr1,varKind=BackendDAE.STATE(index=_,derName=_)),derVars))
+    case (varOld as BackendDAE.VAR(varName=cr1,varKind=BackendDAE.STATE(index=_,derName=_)),derVars)
       equation
         isState = List.isMemberOnTrue(cr1,derVars,ComponentReference.crefEqual);
         varNew = Debug.bcallret2(not isState,BackendVariable.setVarKind,varOld,BackendDAE.VARIABLE(),varOld);
-      then
-        ((varNew,derVars));
-    else
-      then
-        tplIn;
+      then (varNew,derVars);
+    else (inVar,inCrefs);
   end matchcontinue;
 end setVarKindForStates;
 
-protected function findDerVarCrefs"traverses the lhs end the rhs exp of the equations and searches for der(var)
-author:Waurich TUD 2014-04"
-  input tuple<DAE.Exp,list<DAE.ComponentRef>> tplIn;
-  output tuple<DAE.Exp,list<DAE.ComponentRef>> tplOut;
-protected
-  DAE.Exp e;
-  list<DAE.ComponentRef> varLst;
+protected function findDerVarCrefs "traverses all the sub expressions and searches for der(var)"
+  input DAE.Exp inExp;
+  input list<DAE.ComponentRef> inCrefs;
+  output DAE.Exp outExp;
+  output list<DAE.ComponentRef> outCrefs;
 algorithm
-  (e,varLst) := tplIn;
-  ((_,varLst)) := Expression.traverseExp(e,findDerVarCrefs1,varLst);
-  tplOut := (e,varLst);
-end findDerVarCrefs;
-
-protected function findDerVarCrefs1"traverses all the sub expressions and searches for der(var)"
-  input tuple<DAE.Exp,list<DAE.ComponentRef>> tplIn;
-  output tuple<DAE.Exp,list<DAE.ComponentRef>> tplOut;
-algorithm
-  tplOut := match(tplIn)
+  (outExp,outCrefs) := match(inExp,inCrefs)
     local
-      DAE.Exp e;
       DAE.ComponentRef cr;
-      list<DAE.ComponentRef> varsIn;
       tuple<DAE.Exp,list<DAE.ComponentRef>> tpl;
-    case((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),_))
-      equation
-        (e,varsIn) = tplIn;
-        tpl = (e,cr::varsIn);
-       then
-         tpl;
-    else
-    equation
-      (e,varsIn) = tplIn;
-      then
-        tplIn;
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),_)
+       then (inExp,cr::inCrefs);
+    else (inExp,inCrefs);
   end match;
-end findDerVarCrefs1;
+end findDerVarCrefs;
 
 // =============================================================================
 // convert tuple equations to several single equations

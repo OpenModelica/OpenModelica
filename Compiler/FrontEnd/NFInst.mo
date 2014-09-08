@@ -2881,7 +2881,7 @@ algorithm
 
     case (NFInstTypes.ASSIGN_STMT(lhs=DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name)),rhs=exp,info=info), (allStatements,allPossible))
       equation
-        ((_, deps)) = Expression.traverseExp(exp,getExpDependencies,{});
+        (_, deps) = Expression.traverseExp(exp,getExpDependencies,{});
         Error.assertionOrAddSourceMessage(not listMember(name,deps),Error.INTERNAL_ERROR,{"getStatementDependencies: self-dependence in deps"},info);
         deps = List.intersectionOnTrue(allPossible,deps,stringEq);
       then // O(n^2), but function init-bindings are usually too small to warrant a hashtable
@@ -2889,7 +2889,7 @@ algorithm
     case (NFInstTypes.FUNCTION_ARRAY_INIT(name,DAE.T_ARRAY(dims=dims),info), (allStatements,allPossible))
       equation
         exps = Expression.dimensionsToExps(dims,{});
-        ((_, deps)) = Expression.traverseExp(DAE.LIST(exps),getExpDependencies,{});
+        (_, deps) = Expression.traverseExp(DAE.LIST(exps),getExpDependencies,{});
         Error.assertionOrAddSourceMessage(not listMember(name,deps),Error.INTERNAL_ERROR,{"getStatementDependencies: self-dependence in deps"},info);
         deps = List.intersectionOnTrue(allPossible,deps,stringEq);
       then // O(n^2), but function init-bindings are usually too small to warrant a hashtable
@@ -2914,17 +2914,17 @@ algorithm
 end selectStatement;
 
 protected function getExpDependencies
-  input tuple<DAE.Exp,list<String>> inTpl;
-  output tuple<DAE.Exp,list<String>> outTpl;
+  input DAE.Exp inExp;
+  input list<String> inLst;
+  output DAE.Exp exp;
+  output list<String> lst;
 algorithm
-  outTpl := match inTpl
+  (exp,lst) := match (inExp,inLst)
     local
-      list<String> lst;
       String name;
-      DAE.Exp exp;
-    case ((exp as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name)),lst)) then ((exp,name::lst));
-    case ((exp as DAE.CREF(componentRef=DAE.CREF_QUAL(ident=name)),lst)) then ((exp,name::lst));
-    else inTpl;
+    case (exp as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name)),lst) then (exp,name::lst);
+    case (exp as DAE.CREF(componentRef=DAE.CREF_QUAL(ident=name)),lst) then (exp,name::lst);
+    else (inExp,inLst);
   end match;
 end getExpDependencies;
 
@@ -3410,10 +3410,8 @@ algorithm
 
     case (NFInstTypes.UNTYPED_DIMENSION(dimension = DAE.DIM_EXP(exp = dim_exp)), st)
       equation
-        ((_, st)) = Expression.traverseExpTopDown(dim_exp,
-          markDimExpAsStructuralTraverser, st);
-      then
-        st;
+        (_, st) = Expression.traverseExpTopDown(dim_exp, markDimExpAsStructuralTraverser, st);
+      then st;
 
     else inSymbolTable;
 
@@ -3421,29 +3419,29 @@ algorithm
 end assignParamTypesToDim;
 
 protected function markDimExpAsStructuralTraverser
-  input tuple<DAE.Exp, SymbolTable> inTuple;
-  output tuple<DAE.Exp, Boolean, SymbolTable> outTuple;
+  input DAE.Exp exp;
+  input SymbolTable inSt;
+  output DAE.Exp outExp;
+  output Boolean continue;
+  output SymbolTable st;
 algorithm
-  outTuple := match(inTuple)
+  (outExp,continue,st) := match (exp,inSt)
     local
-      DAE.Exp exp, index_exp;
-      SymbolTable st;
+      DAE.Exp index_exp;
       DAE.ComponentRef cref;
 
-    case (((exp as DAE.CREF(componentRef = cref)), st))
+    case (DAE.CREF(componentRef = cref), st)
       equation
         st = markParamAsStructural(cref, st);
         // TODO: Mark cref subscripts too.
-      then
-        ((exp, true, st));
+      then (exp, true, st);
 
-    case (((exp as DAE.SIZE(sz = SOME(index_exp))), st))
+    case (DAE.SIZE(sz = SOME(index_exp)), st)
       equation
         st = markExpAsStructural(index_exp, st);
-      then
-        ((exp, false, st));
+      then (exp, false, st);
 
-    case ((exp, st)) then ((exp, true, st));
+    else (exp, true, inSt);
 
   end match;
 end markDimExpAsStructuralTraverser;
@@ -3453,27 +3451,25 @@ protected function markExpAsStructural
   input SymbolTable inSymbolTable;
   output SymbolTable outSymbolTable;
 algorithm
-  ((_, outSymbolTable)) := Expression.traverseExp(inExp,
-    markExpAsStructuralTraverser, inSymbolTable);
+  (_, outSymbolTable) := Expression.traverseExp(inExp, markExpAsStructuralTraverser, inSymbolTable);
 end markExpAsStructural;
 
 protected function markExpAsStructuralTraverser
-  input tuple<DAE.Exp, SymbolTable> inTuple;
-  output tuple<DAE.Exp, SymbolTable> outTuple;
+  input DAE.Exp inExp;
+  input SymbolTable inSt;
+  output DAE.Exp exp;
+  output SymbolTable st;
 algorithm
-  outTuple := match(inTuple)
+  (exp,st) := match (inExp,inSt)
     local
       DAE.ComponentRef cref;
-      DAE.Exp exp;
-      SymbolTable st;
 
-    case (((exp as DAE.CREF(componentRef = cref)), st))
+    case (DAE.CREF(componentRef = cref), st)
       equation
         st = markParamAsStructural(cref, st);
-      then
-        ((exp, st));
+      then (inExp, st);
 
-    else inTuple;
+    else (inExp,inSt);
 
   end match;
 end markExpAsStructuralTraverser;

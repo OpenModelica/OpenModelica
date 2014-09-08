@@ -302,17 +302,18 @@ algorithm
 end arrayEntryLengthIs;
 
 protected function getSimpleEquations
-  input tuple<BackendDAE.Equation,list<BackendDAE.Equation>> tplIn;
-  output tuple<BackendDAE.Equation,list<BackendDAE.Equation>> tplOut;
+  input BackendDAE.Equation inEq;
+  input list<BackendDAE.Equation> inEqs;
+  output BackendDAE.Equation outEq;
+  output list<BackendDAE.Equation> eqLst;
 protected
-  BackendDAE.Equation eq, eqIn;
-  list<BackendDAE.Equation> eqLst;
+  BackendDAE.Equation eq;
   Boolean isSimple;
 algorithm
-  (eqIn,eqLst) := tplIn;
-  (eq,isSimple) := BackendEquation.traverseBackendDAEExpsEqn(eqIn,isAddOrSubExp,true);
+  outEq := inEq;
+  eqLst := inEqs;
+  (eq,isSimple) := BackendEquation.traverseBackendDAEExpsEqn(inEq,isAddOrSubExp,true);
   eqLst := Util.if_(isSimple,eq::eqLst,eqLst);
-  tplOut := (eqIn,eqLst);
 end getSimpleEquations;
 
 protected function resolveLoops_findLoops "author:Waurich TUD 2014-02
@@ -1465,56 +1466,43 @@ algorithm
 end gatherCrossNodes;
 
 protected function isAddOrSubExp
-  input tuple<DAE.Exp, Boolean> inTpl;
-  output tuple<DAE.Exp, Boolean> outTpl;
+  input DAE.Exp inExp;
+  input Boolean inB;
+  output DAE.Exp outExp;
+  output Boolean b;
 algorithm
-  outTpl := match(inTpl)
+  (outExp,b) := match(inExp,inB)
     local
-      Boolean b;
       DAE.Exp exp,exp1,exp2,exp11,exp12;
       DAE.Operator op;
       DAE.ComponentRef cref;
       DAE.Type ty;
-    case((DAE.CREF(componentRef=_),true))
+    case (DAE.CREF(componentRef=_),true)
       equation
         //x
-        (exp,b) = inTpl;
-      then
-        ((exp,b));
-    case((DAE.UNARY(operator=_,exp=exp1),true))
+      then (inExp,inB);
+    case (DAE.UNARY(exp=exp1),true)
       equation
         // (-x)
-        (exp,b) = inTpl;
-        ((_,b)) = isAddOrSubExp((exp1,b));
-      then
-        ((exp,b));
-    case((DAE.RCONST(real=_),true))  // maybe we have to remove this, because this is just for kirchhoffs current law
+        (_,b) = isAddOrSubExp(exp1,true);
+      then (inExp,b);
+    case (DAE.RCONST(real=_),true)  // maybe we have to remove this, because this is just for kirchhoffs current law
       equation
         //const.
-        (exp,b) = inTpl;
-      then
-        ((exp,b));
-    case((DAE.BINARY(exp1 = exp1,operator = DAE.ADD(ty=_),exp2 = exp2),true))
+      then (inExp,true);
+    case (DAE.BINARY(exp1 = exp1,operator = DAE.ADD(ty=_),exp2 = exp2),true)
       equation
         //x + y
-        (exp,b) = inTpl;
-        ((_,b)) = isAddOrSubExp((exp1,b));
-        ((_,b)) = isAddOrSubExp((exp2,b));
-      then
-        ((exp,b));
-    case((DAE.BINARY(exp1=exp1,operator = DAE.SUB(ty=_),exp2=exp2),true))
+        (_,b) = isAddOrSubExp(exp1,true);
+        (_,b) = isAddOrSubExp(exp2,b);
+      then (inExp,b);
+    case (DAE.BINARY(exp1=exp1,operator = DAE.SUB(ty=_),exp2=exp2),true)
       equation
         //x - y
-        (exp,b) = inTpl;
-        ((_,b)) = isAddOrSubExp((exp1,b));
-        ((_,b)) = isAddOrSubExp((exp2,b));
-      then
-        ((exp,b));
-    else
-      equation
-        (exp,_) = inTpl;
-      then
-        ((exp,false));
+        (_,b) = isAddOrSubExp(exp1,true);
+        (_,b) = isAddOrSubExp(exp2,b);
+      then (inExp,b);
+    else (inExp,false);
   end match;
 end isAddOrSubExp;
 

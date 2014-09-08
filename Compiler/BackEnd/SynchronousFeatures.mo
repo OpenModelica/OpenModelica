@@ -458,34 +458,36 @@ algorithm
 end setSubClockPartition;
 
 protected function getVariableLists
-  input tuple<DAE.Exp, tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>>> inTpl;
-  output tuple<DAE.Exp, tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>>> outTpl;
+  input DAE.Exp inExp;
+  input tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>> inTpl;
+  output DAE.Exp outExp;
+  output tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>> outTpl;
 algorithm
-  outTpl := match(inTpl)
+  (outExp,outTpl) := match(inExp,inTpl)
     local
       DAE.Exp exp;
       list<DAE.ComponentRef> continuousTimeVars, clockedVars;
       DAE.ComponentRef cr;
 
-    case ((exp as DAE.CALL(path=Absyn.IDENT(name="sample"), expLst=_::DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars)))
-    then ((exp, (cr::continuousTimeVars, clockedVars)));
+    case (exp as DAE.CALL(path=Absyn.IDENT(name="sample"), expLst=_::DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
+    then (exp, (cr::continuousTimeVars, clockedVars));
 
-    case ((exp as DAE.CALL(path=Absyn.IDENT(name="subSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars)))
-    then ((exp, (continuousTimeVars, cr::clockedVars)));
+    case (exp as DAE.CALL(path=Absyn.IDENT(name="subSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
+    then (exp, (continuousTimeVars, cr::clockedVars));
 
-    case ((exp as DAE.CALL(path=Absyn.IDENT(name="superSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars)))
-    then ((exp, (continuousTimeVars, cr::clockedVars)));
+    case (exp as DAE.CALL(path=Absyn.IDENT(name="superSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
+    then (exp, (continuousTimeVars, cr::clockedVars));
 
-    case ((exp as DAE.CALL(path=Absyn.IDENT(name="shiftSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars)))
-    then ((exp, (continuousTimeVars, cr::clockedVars)));
+    case (exp as DAE.CALL(path=Absyn.IDENT(name="shiftSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
+    then (exp, (continuousTimeVars, cr::clockedVars));
 
-    case ((exp as DAE.CALL(path=Absyn.IDENT(name="backSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars)))
-    then ((exp, (continuousTimeVars, cr::clockedVars)));
+    case (exp as DAE.CALL(path=Absyn.IDENT(name="backSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
+    then (exp, (continuousTimeVars, cr::clockedVars));
 
-    case ((exp as DAE.CALL(path=Absyn.IDENT(name="previous"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars)))
-    then ((exp, (continuousTimeVars, cr::clockedVars)));
+    case (exp as DAE.CALL(path=Absyn.IDENT(name="previous"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
+    then (exp, (continuousTimeVars, cr::clockedVars));
 
-    else then inTpl;
+    else (inExp,inTpl);
   end match;
 end getVariableLists;
 

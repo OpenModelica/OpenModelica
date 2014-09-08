@@ -1299,7 +1299,7 @@ algorithm
 
     case (e,fns,source)
       equation
-        ((e_1,(fns,true,assrtLst))) = Expression.traverseExp(e,inlineCall,(fns,false,{}));
+        (e_1,(fns,true,assrtLst)) = Expression.traverseExp(e,inlineCall,(fns,false,{}));
         source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
         (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
       then
@@ -1327,7 +1327,7 @@ algorithm
       list<DAE.Statement> assrtLst;
     case (e,fns,source)
       equation
-        ((e_1,(fns,true,_))) = Expression.traverseExp(e,forceInlineCall,(fns,false,{}));
+        (e_1,(fns,true,_)) = Expression.traverseExp(e,forceInlineCall,(fns,false,{}));
         source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
         (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
       then
@@ -1407,12 +1407,14 @@ algorithm
   end matchcontinue;
 end checkExpsTypeEquiv;
 
-public function inlineCall
+protected function inlineCall
 "replaces an inline call with the expression from the function"
-  input tuple<DAE.Exp, tuple<Functiontuple,Boolean,list<DAE.Statement>>> inTuple;
-  output tuple<DAE.Exp, tuple<Functiontuple,Boolean,list<DAE.Statement>>> outTuple;
+  input DAE.Exp inExp;
+  input tuple<Functiontuple,Boolean,list<DAE.Statement>> inTuple;
+  output DAE.Exp outExp;
+  output tuple<Functiontuple,Boolean,list<DAE.Statement>> outTuple;
 algorithm
-  outTuple := matchcontinue(inTuple)
+  (outExp,outTuple) := matchcontinue (inExp,inTuple)
     local
       Functiontuple fns,fns1;
       list<DAE.Element> fn;
@@ -1433,13 +1435,13 @@ algorithm
       DAE.Type ty;
 
       /* If we disable inlining by use of flags, we still inline builtin functions */
-    case ((DAE.CALL(attr=DAE.CALL_ATTR(inlineType=inlineType)),_))
+    case (DAE.CALL(attr=DAE.CALL_ATTR(inlineType=inlineType)),_)
       equation
         false = Flags.isSet(Flags.INLINE_FUNCTIONS);
         failure(DAE.BUILTIN_EARLY_INLINE() = inlineType);
-      then inTuple;
+      then (inExp,inTuple);
 
-    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_,assrtLstIn)))
+    case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_,assrtLstIn))
       equation
         true = Config.acceptMetaModelicaGrammar();
         true = DAEUtil.convertInlineTypeToBool(inlineType);
@@ -1456,13 +1458,12 @@ algorithm
         // add noEvent to avoid events as usually for functions
         // MSL 3.2.1 need GenerateEvents to disable this
         newExp = Expression.addNoEventToRelationsAndConds(newExp);
-        ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
+        (newExp,(_,_,true)) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         // for inlinecalls in functions
-        ((newExp1,(_,_,assrtLst))) = Expression.traverseExp(newExp,inlineCall,(fns,true,assrtLstIn));
-      then
-        ((newExp1,(fns,true,assrtLst)));
+        (newExp1,(_,_,assrtLst)) = Expression.traverseExp(newExp,inlineCall,(fns,true,assrtLstIn));
+      then (newExp1,(fns,true,assrtLst));
 
-    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(ty=ty,inlineType=inlineType)),(fns,_,assrtLstIn)))
+    case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(ty=ty,inlineType=inlineType)),(fns,_,assrtLstIn))
       // no assert detected
       equation
         false = Config.acceptMetaModelicaGrammar();
@@ -1483,13 +1484,12 @@ algorithm
         // MSL 3.2.1 need GenerateEvents to disable this
         generateEvents = hasGenerateEventsAnnotation(comment);
         newExp = Debug.bcallret1(not generateEvents,Expression.addNoEventToRelationsAndConds,newExp,newExp);
-        ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
+        (newExp,(_,_,true)) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         // for inlinecalls in functions
-        ((newExp1,(_,_,assrtLst))) = Expression.traverseExp(newExp,inlineCall,(fns,true,assrtLstIn));
-      then
-        ((newExp1,(fns,true,assrtLst)));
+        (newExp1,(_,_,assrtLst)) = Expression.traverseExp(newExp,inlineCall,(fns,true,assrtLstIn));
+      then (newExp1,(fns,true,assrtLst));
 
-    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(ty=ty,inlineType=inlineType)),(fns,_,assrtLstIn)))
+    case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(ty=ty,inlineType=inlineType)),(fns,_,assrtLstIn))
       // assert detected
       equation
         false = Config.acceptMetaModelicaGrammar();
@@ -1513,14 +1513,13 @@ algorithm
         // MSL 3.2.1 need GenerateEvents to disable this
         generateEvents = hasGenerateEventsAnnotation(comment);
         newExp = Debug.bcallret1(not generateEvents,Expression.addNoEventToRelationsAndConds,newExp,newExp);
-        ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
+        (newExp,(_,_,true)) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         assrt = inlineAssert(assrt,fns,argmap,checkcr);
         // for inlinecalls in functions
-        ((newExp1,(_,_,assrtLst))) = Expression.traverseExp(newExp,inlineCall,(fns,true,assrt::assrtLstIn));
-      then
-        ((newExp1,(fns,true,assrtLst)));
+        (newExp1,(_,_,assrtLst)) = Expression.traverseExp(newExp,inlineCall,(fns,true,assrt::assrtLstIn));
+      then (newExp1,(fns,true,assrtLst));
 
-    else inTuple;
+    else (inExp,inTuple);
   end matchcontinue;
 end inlineCall;
 
@@ -1538,10 +1537,10 @@ protected
 algorithm
   DAE.STMT_ASSERT(cond=cond, msg=msg, level=level, source=source) := assrtIn;
   (cond,_,_,_) := inlineExp(cond,fns,source);
-  ((cond,(_,_,true))) := Expression.traverseExp(cond,replaceArgs,(argmap,checkcr,true));
+  (cond,(_,_,true)) := Expression.traverseExp(cond,replaceArgs,(argmap,checkcr,true));
   //print("ASSERT inlined: "+&ExpressionDump.printExpStr(cond)+&"\n");
   (msg,_,_,_) := inlineExp(msg,fns,source);
-  ((msg,(_,_,true))) := Expression.traverseExp(msg,replaceArgs,(argmap,checkcr,true));
+  (msg,(_,_,true)) := Expression.traverseExp(msg,replaceArgs,(argmap,checkcr,true));
   assrtOut := DAE.STMT_ASSERT(cond, msg, level, source);
 end inlineAssert;
 
@@ -1573,10 +1572,12 @@ end dumpArgmap;
 
 public function forceInlineCall
 "replaces an inline call with the expression from the function"
-  input tuple<DAE.Exp, tuple<Functiontuple,Boolean,list<DAE.Statement>>> inTuple;
-  output tuple<DAE.Exp, tuple<Functiontuple,Boolean,list<DAE.Statement>>> outTuple;
+  input DAE.Exp inExp;
+  input tuple<Functiontuple,Boolean,list<DAE.Statement>> inTuple;
+  output DAE.Exp outExp;
+  output tuple<Functiontuple,Boolean,list<DAE.Statement>> outTuple;
 algorithm
-  outTuple := matchcontinue(inTuple)
+  (outExp,outTuple) := matchcontinue (inExp,inTuple)
     local
       Functiontuple fns,fns1;
       list<DAE.Element> fn;
@@ -1595,7 +1596,7 @@ algorithm
       Boolean generateEvents,b;
       Option<SCode.Comment> comment;
 
-    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_,assrtLstIn)))
+    case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_,assrtLstIn))
       equation
         false = Config.acceptMetaModelicaGrammar();
         true = checkInlineType(inlineType,fns);
@@ -1613,13 +1614,12 @@ algorithm
         // MSL 3.2.1 need GenerateEvents to disable this
         generateEvents = hasGenerateEventsAnnotation(comment);
         newExp = Debug.bcallret1(not generateEvents,Expression.addNoEventToRelationsAndConds,newExp,newExp);
-        ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
+        (newExp,(_,_,true)) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         // for inlinecalls in functions
-        ((newExp1,(_,b,assrtLst))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true,assrtLstIn));
-      then
-        ((newExp1,(fns,b,assrtLst)));
+        (newExp1,(_,b,assrtLst)) = Expression.traverseExp(newExp,forceInlineCall,(fns,true,assrtLstIn));
+      then (newExp1,(fns,b,assrtLst));
 
-    else inTuple;
+    else (inExp,inTuple);
   end matchcontinue;
 end forceInlineCall;
 
@@ -2004,10 +2004,12 @@ end getRhsExp;
 
 protected function replaceArgs
 "finds DAE.CREF and replaces them with new exps if the cref is in the argmap"
-  input tuple<DAE.Exp, tuple<list<tuple<DAE.ComponentRef,DAE.Exp>>,HashTableCG.HashTable,Boolean>> inTuple;
-  output tuple<DAE.Exp, tuple<list<tuple<DAE.ComponentRef,DAE.Exp>>,HashTableCG.HashTable,Boolean>> outTuple;
+  input DAE.Exp inExp;
+  input tuple<list<tuple<DAE.ComponentRef,DAE.Exp>>,HashTableCG.HashTable,Boolean> inTuple;
+  output DAE.Exp outExp;
+  output tuple<list<tuple<DAE.ComponentRef,DAE.Exp>>,HashTableCG.HashTable,Boolean> outTuple;
 algorithm
-  outTuple := matchcontinue(inTuple)
+  (outExp,outTuple) := matchcontinue (inExp,inTuple)
     local
       DAE.ComponentRef cref;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
@@ -2020,18 +2022,18 @@ algorithm
       DAE.TailCall tc;
       HashTableCG.HashTable checkcr;
       Boolean replacedfailed;
-    case ((DAE.CREF(componentRef = cref),(argmap,checkcr,true)))
+    case (DAE.CREF(componentRef = cref),(argmap,checkcr,true))
       equation
         e = getExpFromArgMap(argmap,cref);
         (e,_) = ExpressionSimplify.simplify(e);
-      then
-        ((e,(argmap,checkcr,true)));
-    case ((e as DAE.CREF(componentRef = cref),(argmap,checkcr,true)))
+      then (e,(argmap,checkcr,true));
+
+    case (e as DAE.CREF(componentRef = cref),(argmap,checkcr,true))
       equation
         _ = BaseHashTable.get(cref,checkcr);
-      then
-        ((e,(argmap,checkcr,false)));
-    case ((DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,_,inlineType,tc)),ty),(argmap,checkcr,true)))
+      then (e,(argmap,checkcr,false));
+
+    case (DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,_,inlineType,tc)),ty),(argmap,checkcr,true))
       equation
         cref = ComponentReference.pathToCref(path);
         (e as DAE.CREF(componentRef=cref,ty=ty2)) = getExpFromArgMap(argmap,cref);
@@ -2041,16 +2043,16 @@ algorithm
         isFunctionPointerCall = Types.isFunctionReferenceVar(ty2);
         e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty,tuple_,b,isImpure,isFunctionPointerCall,inlineType,tc));
         (e,_) = ExpressionSimplify.simplify(e);
-      then
-        ((e,(argmap,checkcr,true)));
-    case ((e as DAE.UNBOX(DAE.CALL(path,_,DAE.CALL_ATTR(builtin=false)),_),(argmap,checkcr,true)))
+      then (e,(argmap,checkcr,true));
+
+    case (e as DAE.UNBOX(DAE.CALL(path,_,DAE.CALL_ATTR(builtin=false)),_),(argmap,checkcr,true))
       equation
         cref = ComponentReference.pathToCref(path);
         _ = BaseHashTable.get(cref,checkcr);
-      then
-        ((e,(argmap,checkcr,false)));
+      then (e,(argmap,checkcr,false));
+
         /* TODO: Use the inlineType of the function reference! */
-    case((DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,isImpure,_,_,tc)),(argmap,checkcr,true)))
+    case (DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,isImpure,_,_,tc)),(argmap,checkcr,true))
       equation
         cref = ComponentReference.pathToCref(path);
         (e as DAE.CREF(componentRef=cref,ty=ty)) = getExpFromArgMap(argmap,cref);
@@ -2062,14 +2064,15 @@ algorithm
         e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty2,tuple_,b,isImpure,isFunctionPointerCall,inlineType,tc));
         e = boxIfUnboxedFunRef(e,ty);
         (e,_) = ExpressionSimplify.simplify(e);
-      then ((e,(argmap,checkcr,true)));
-    case((e as DAE.CALL(path,_,DAE.CALL_ATTR(ty=DAE.T_METATYPE(ty = _),builtin=false)),(argmap,checkcr,true)))
+      then (e,(argmap,checkcr,true));
+
+    case (e as DAE.CALL(path,_,DAE.CALL_ATTR(ty=DAE.T_METATYPE(ty = _),builtin=false)),(argmap,checkcr,true))
       equation
         cref = ComponentReference.pathToCref(path);
         _ = BaseHashTable.get(cref,checkcr);
-      then
-        ((e,(argmap,checkcr,false)));
-    case((e,(argmap,checkcr,replacedfailed))) then ((e,(argmap,checkcr,replacedfailed)));
+      then (e,(argmap,checkcr,false));
+
+    case (e,(argmap,checkcr,replacedfailed)) then (e,(argmap,checkcr,replacedfailed));
   end matchcontinue;
 end replaceArgs;
 
@@ -2222,8 +2225,10 @@ public function inlineEquationExp "
   output DAE.EquationExp outExp;
   output DAE.ElementSource source;
   partial function Func
-    input tuple<DAE.Exp, tuple<Functiontuple,Boolean,list<DAE.Statement>>> inTuple;
-    output tuple<DAE.Exp, tuple<Functiontuple,Boolean,list<DAE.Statement>>> outTuple;
+    input DAE.Exp inExp;
+    input tuple<Functiontuple,Boolean,list<DAE.Statement>> inTuple;
+    output DAE.Exp outExp;
+    output tuple<Functiontuple,Boolean,list<DAE.Statement>> outTuple;
   end Func;
   type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 algorithm
@@ -2236,22 +2241,22 @@ algorithm
       list<DAE.Statement> assrtLst;
     case (DAE.PARTIAL_EQUATION(e),_,fns,_)
       equation
-        ((e_1,(fns,changed,_))) = Expression.traverseExp(e,fn,(fns,false,{}));
+        (e_1,(fns,changed,_)) = Expression.traverseExp(e,fn,(fns,false,{}));
         eq2 = DAE.PARTIAL_EQUATION(e_1);
         source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
         (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
       then (eq2,source);
     case (DAE.RESIDUAL_EXP(e),_,fns,_)
       equation
-        ((e_1,(fns,changed,_))) = Expression.traverseExp(e,fn,(fns,false,{}));
+        (e_1,(fns,changed,_)) = Expression.traverseExp(e,fn,(fns,false,{}));
         eq2 = DAE.RESIDUAL_EXP(e_1);
         source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
         (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
       then (eq2,source);
     case (DAE.EQUALITY_EXPS(e1,e2),_,fns,_)
       equation
-        ((e1_1,(fns,changed,_))) = Expression.traverseExp(e1,fn,(fns,false,{}));
-        ((e2_1,(fns,changed,_))) = Expression.traverseExp(e2,fn,(fns,changed,{}));
+        (e1_1,(fns,changed,_)) = Expression.traverseExp(e1,fn,(fns,false,{}));
+        (e2_1,(fns,changed,_)) = Expression.traverseExp(e2,fn,(fns,changed,{}));
         eq2 = DAE.EQUALITY_EXPS(e1_1,e2_1);
         source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
         (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);

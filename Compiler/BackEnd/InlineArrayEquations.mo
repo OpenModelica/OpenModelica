@@ -153,7 +153,7 @@ algorithm
     case (BackendDAE.ARRAY_EQUATION(left=(lhs as DAE.CREF(componentRef=_)), right=rhs, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=eqKind)), _) equation
       // the lhs array is expressed as a cref
       true = Expression.isArray(rhs) or Expression.isMatrix(rhs);
-      ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((lhs, (NONE(), false)));
+      (e1_1, (_, _)) = BackendDAEUtil.extendArrExp(lhs, (NONE(), false));
       ea1 = Expression.flattenArrayExpToList(e1_1);
       ea2 = Expression.flattenArrayExpToList(rhs);
       ((_, eqns)) = List.threadFold4(ea1, ea2, generateScalarArrayEqns2, source, differentiated, eqKind, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
@@ -161,23 +161,23 @@ algorithm
 
     case (BackendDAE.ARRAY_EQUATION(left=lhs, right=rhs as DAE.CREF(componentRef=_), source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=eqKind)), _) equation
       true = Expression.isArray(lhs) or Expression.isMatrix(lhs);
-      ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((rhs,(NONE(),false)));
+      (e2_1, (_, _)) = BackendDAEUtil.extendArrExp(rhs,(NONE(),false));
       ea1 = Expression.flattenArrayExpToList(lhs);
       ea2 = Expression.flattenArrayExpToList(e2_1);
       ((_, eqns)) = List.threadFold4(ea1, ea2, generateScalarArrayEqns2, source, differentiated, eqKind, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
     then (eqns,true);
 
     case (BackendDAE.ARRAY_EQUATION(left=lhs as DAE.CREF(componentRef=_),right=rhs as DAE.CREF(componentRef=_), source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=eqKind)), _) equation
-      ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((lhs, (NONE(), false)));
-      ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((rhs, (NONE(), false)));
+      (e1_1, (_, _)) = BackendDAEUtil.extendArrExp(lhs, (NONE(), false));
+      (e2_1, (_, _)) = BackendDAEUtil.extendArrExp(rhs, (NONE(), false));
       ea1 = Expression.flattenArrayExpToList(e1_1);
       ea2 = Expression.flattenArrayExpToList(e2_1);
       ((_, eqns)) = List.threadFold4(ea1, ea2, generateScalarArrayEqns2, source, differentiated, eqKind, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
     then (eqns, true);
 
     case (BackendDAE.ARRAY_EQUATION(left=lhs,right=rhs, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=eqKind)), _) equation
-      ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((lhs, (NONE(), false)));
-      ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((rhs, (NONE(), false)));
+      (e1_1, (_, _)) = BackendDAEUtil.extendArrExp(lhs, (NONE(), false));
+      (e2_1, (_, _)) = BackendDAEUtil.extendArrExp(rhs, (NONE(), false));
       (e1_1,_) = ExpressionSimplify.simplify(e1_1);
       (e2_1,_) = ExpressionSimplify.simplify(e2_1);
       true = Expression.isArray(e1_1) or Expression.isMatrix(e1_1);

@@ -443,27 +443,17 @@ protected
   HashTableExpToIndex.HashTable ht;
 algorithm
   ht := HashTableExpToIndex.emptyHashTable();
-  (outDAE, outTree, (ht, _, _, outTimeEvents)) := DAEUtil.traverseDAE(inDAE, functionTree, transformBuiltinExpressions, (ht, 0, 0, {}));
+  (outDAE, outTree, (_, (ht, _, _, outTimeEvents))) := DAEUtil.traverseDAE(inDAE, functionTree, Expression.traverseSubexpressionsHelper, (transformBuiltinExpression, (ht, 0, 0, {})));
 end processBuiltinExpressions;
-
-protected function transformBuiltinExpressions "author: lochel
-  Helper for processBuiltinExpressions"
-  input tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/, list<BackendDAE.TimeEvent>>> itpl;
-  output tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/, list<BackendDAE.TimeEvent>>> otpl;
-protected
-  DAE.Exp e;
-  tuple<HashTableExpToIndex.HashTable, Integer, Integer, list<BackendDAE.TimeEvent>> i;
-algorithm
-  (e, i) := itpl;
-  otpl := Expression.traverseExp(e, transformBuiltinExpression, i);
-end transformBuiltinExpressions;
 
 protected function transformBuiltinExpression "author: lochel
   Helper for transformBuiltinExpressions"
-  input tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/, list<BackendDAE.TimeEvent>>> inTuple;
-  output tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/, list<BackendDAE.TimeEvent>>> outTuple;
+  input DAE.Exp inExp;
+  input tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/, list<BackendDAE.TimeEvent>> inTuple;
+  output DAE.Exp outExp;
+  output tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/, list<BackendDAE.TimeEvent>> outTuple;
 algorithm
-  outTuple := matchcontinue(inTuple)
+  (outExp,outTuple) := matchcontinue (inExp,inTuple)
     local
       DAE.Exp e, start, interval;
       list<DAE.Exp> es;
@@ -473,28 +463,28 @@ algorithm
       DAE.CallAttributes attr;
 
     // delay [already in ht]
-    case ((e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample, timeEvents))) equation
+    case (e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample, timeEvents)) equation
       i = BaseHashTable.get(e, ht);
-    then ((DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(i)::es, attr), (ht, iDelay, iSample, timeEvents)));
+    then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(i)::es, attr), (ht, iDelay, iSample, timeEvents));
 
     // delay [not yet in ht]
-    case ((e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample, timeEvents))) equation
+    case (e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample, timeEvents)) equation
       ht = BaseHashTable.add((e, iDelay+1), ht);
-    then ((DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(iDelay)::es, attr), (ht, iDelay+1, iSample, timeEvents)));
+    then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(iDelay)::es, attr), (ht, iDelay+1, iSample, timeEvents));
 
     // sample [already in ht]
-    case ((e as DAE.CALL(Absyn.IDENT("sample"), es, attr), (ht, iDelay, iSample, timeEvents))) equation
+    case (e as DAE.CALL(Absyn.IDENT("sample"), es, attr), (ht, iDelay, iSample, timeEvents)) equation
       i = BaseHashTable.get(e, ht);
-    then ((DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(i)::es, attr), (ht, iDelay, iSample, timeEvents)));
+    then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(i)::es, attr), (ht, iDelay, iSample, timeEvents));
 
     // sample [not yet in ht]
-    case ((e as DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, iSample, timeEvents))) equation
+    case (e as DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, iSample, timeEvents)) equation
       iSample = iSample+1;
       timeEvents = listAppend(timeEvents, {BackendDAE.SAMPLE_TIME_EVENT(iSample, start, interval)});
       ht = BaseHashTable.add((e, iSample), ht);
-    then ((DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(iSample)::es, attr), (ht, iDelay, iSample, timeEvents)));
+    then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(iSample)::es, attr), (ht, iDelay, iSample, timeEvents));
 
-    else inTuple;
+    else (inExp,inTuple);
   end matchcontinue;
 end transformBuiltinExpression;
 
@@ -2515,24 +2505,23 @@ algorithm
 end handleAliasEquations1;
 
 protected function replaceAliasVarTraverser
-"author: Frenkel TUD 2011-03"
- input tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> inTpl;
- output tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> outTpl;
+  input BackendDAE.Var inVar;
+  input BackendVarTransform.VariableReplacements inRepl;
+  output BackendDAE.Var outVar;
+  output BackendVarTransform.VariableReplacements repl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,repl) := matchcontinue (inVar,inRepl)
     local
       BackendDAE.Var v, v1;
-      BackendVarTransform.VariableReplacements repl;
       DAE.Exp e, e1;
       Boolean b;
-    case ((v as BackendDAE.VAR(bindExp=SOME(e)), repl))
+    case (v as BackendDAE.VAR(bindExp=SOME(e)), repl)
       equation
         (e1, true) = BackendVarTransform.replaceExp(e, repl, NONE());
         b = Expression.isConst(e1);
         v1 = Debug.bcallret2(not b, BackendVariable.setBindExp, v, SOME(e1), v);
-      then ((v1, repl));
-    else inTpl;
+      then (v1, repl);
+    else (inVar,inRepl);
   end matchcontinue;
 end replaceAliasVarTraverser;
 

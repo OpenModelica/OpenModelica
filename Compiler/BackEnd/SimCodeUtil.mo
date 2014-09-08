@@ -1173,16 +1173,15 @@ algorithm
 end simulationFindLiterals;
 
 protected function findLiteralsHelper
-  input tuple<DAE.Exp, tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>>> inTpl;
-  output tuple<DAE.Exp, tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>>> outTpl;
-protected
-  DAE.Exp exp;
-  tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> tpl;
+  input DAE.Exp inExp;
+  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  output DAE.Exp exp;
+  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> tpl;
 algorithm
-  (exp, tpl) := inTpl;
-  ((exp, tpl)) := Expression.traverseExp(exp, replaceLiteralExp, tpl);
-  ((exp, tpl)) := Expression.traverseExpTopDown(exp, replaceLiteralArrayExp, tpl);
-  outTpl := (exp, tpl);
+  exp := inExp;
+  tpl := inTpl;
+  (exp, tpl) := Expression.traverseExp(exp, replaceLiteralExp, tpl);
+  (exp, tpl) := Expression.traverseExpTopDown(exp, replaceLiteralArrayExp, tpl);
 end findLiteralsHelper;
 
 protected function replaceLiteralArrayExp
@@ -1194,32 +1193,35 @@ protected function replaceLiteralArrayExp
 
   Handles only array expressions (needs to be performed in a top-down fashion)
   "
-  input tuple<DAE.Exp, tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>>> inTpl;
-  output tuple<DAE.Exp, Boolean, tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>>> outTpl;
+  input DAE.Exp inExp;
+  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  output DAE.Exp outExp;
+  output Boolean continue;
+  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outTpl;
 algorithm
-  outTpl := matchcontinue inTpl
+  (outExp,continue,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.Exp exp,exp2;
       tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> tpl;
-    case ((exp as DAE.ARRAY(array=_), _))
+    case (DAE.ARRAY(array=_), _)
       equation
-        isLiteralArrayExp(exp);
-        ((exp2, tpl)) = replaceLiteralExp2(inTpl);
-      then ((exp2, false, tpl));
-    case ((exp as DAE.ARRAY(array=_), tpl))
-      equation
-        failure(isLiteralArrayExp(exp));
-      then ((exp, false, tpl));
-    case ((exp as DAE.MATRIX(matrix=_), _))
-      equation
-        isLiteralArrayExp(exp);
-        ((exp2, tpl)) = replaceLiteralExp2(inTpl);
-      then ((exp2, false, tpl));
-    case ((exp as DAE.MATRIX(matrix=_), tpl))
+        isLiteralArrayExp(inExp);
+        (exp2, tpl) = replaceLiteralExp2(inExp, inTpl);
+      then (exp2, false, tpl);
+    case (exp as DAE.ARRAY(array=_), tpl)
       equation
         failure(isLiteralArrayExp(exp));
-      then ((exp, false, tpl));
-    case ((exp, tpl)) then ((exp, true, tpl));
+      then (exp, false, tpl);
+    case (exp as DAE.MATRIX(matrix=_), _)
+      equation
+        isLiteralArrayExp(exp);
+        (exp2, tpl) = replaceLiteralExp2(inExp, inTpl);
+      then (exp2, false, tpl);
+    case (exp as DAE.MATRIX(matrix=_), tpl)
+      equation
+        failure(isLiteralArrayExp(exp));
+      then (exp, false, tpl);
+    else (inExp, true, inTpl);
   end matchcontinue;
 end replaceLiteralArrayExp;
 
@@ -1230,35 +1232,39 @@ protected function replaceLiteralExp
   * HashTable Exp->Index (Number of the literal)
   * The list of literals
   "
-  input tuple<DAE.Exp, tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>>> inTpl;
-  output tuple<DAE.Exp, tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>>> outTpl;
+  input DAE.Exp inExp;
+  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  output DAE.Exp outExp;
+  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outTpl;
 algorithm
-  outTpl := matchcontinue inTpl
+  (outExp,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.Exp exp;
       String msg;
       tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> t;
-    case ((exp, _))
+    case (exp, t)
       equation
         failure(isLiteralExp(exp));
-      then inTpl;
-    case ((exp, _))
+      then (exp, t);
+    case (exp, t)
       equation
         isTrivialLiteralExp(exp);
-      then inTpl;
-    case ((exp, t))
+      then (exp, t);
+    case (exp, t)
       equation
         exp = listToCons(exp);
-      then Expression.traverseExp(exp, replaceLiteralExp, t); // All sublists should also be added as literals...
-    case ((exp, _))
+        (exp, t) = Expression.traverseExp(exp, replaceLiteralExp, t);
+      then (exp, t); // All sublists should also be added as literals...
+    case (exp, t)
       equation
         failure(_ = listToCons(exp));
-      then replaceLiteralExp2(inTpl);
-    case ((exp, _))
+        (exp,t) = replaceLiteralExp2(exp, inTpl);
+      then (exp, t);
+    case (exp, _)
       equation
         msg = "./Compiler/BackEnd/SimCodeUtil.mo: function replaceLiteralExp failed. Falling back to not replacing "+&ExpressionDump.printExpStr(exp)+&".";
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
-      then inTpl;
+      then (inExp,inTpl);
   end matchcontinue;
 end replaceLiteralExp;
 
@@ -1269,26 +1275,28 @@ protected function replaceLiteralExp2
   * HashTable Exp->Index (Number of the literal)
   * The list of literals
   "
-  input tuple<DAE.Exp, tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>>> inTpl;
-  output tuple<DAE.Exp, tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>>> outTpl;
+  input DAE.Exp inExp;
+  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  output DAE.Exp outExp;
+  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outTpl;
 algorithm
-  outTpl := matchcontinue inTpl
+  (outExp,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.Exp exp, nexp;
       Integer i, ix;
       list<DAE.Exp> l;
       DAE.Type et;
       HashTableExpToIndex.HashTable ht;
-    case ((exp, (i, ht, l)))
+    case (exp, (i, ht, l))
       equation
         ix = BaseHashTable.get(exp, ht);
         nexp = DAE.SHARED_LITERAL(ix, exp);
-      then ((nexp, (i, ht, l)));
-    case ((exp, (i, ht, l)))
+      then (nexp, (i, ht, l));
+    case (exp, (i, ht, l))
       equation
         ht = BaseHashTable.add((exp, i), ht);
         nexp = DAE.SHARED_LITERAL(i, exp);
-      then ((nexp, (i+1, ht, exp::l)));
+      then (nexp, (i+1, ht, exp::l));
   end matchcontinue;
 end replaceLiteralExp2;
 
@@ -2927,7 +2935,7 @@ algorithm
         failure((_, _) = ExpressionSolve.solve(e1, e2, varexp));
         prevarexp = Expression.makePureBuiltinCall("pre", {varexp}, Expression.typeof(varexp));
         prevarexp = Expression.expSub(varexp, prevarexp);
-        ((e2, _)) = Expression.traverseExp(e2, replaceIFBrancheswithoutVar, (varexp, prevarexp));
+        (e2, _) = Expression.traverseExp(e2, replaceIFBrancheswithoutVar, (varexp, prevarexp));
         eqn = BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars);
         cr = Debug.bcallret1(BackendVariable.isStateVar(v), ComponentReference.crefPrefixDer, cr, cr);
@@ -3007,22 +3015,23 @@ algorithm
 end createEquation;
 
 protected function replaceIFBrancheswithoutVar
-  input tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp>> inExp;
-  output tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp>> outExp;
+  input DAE.Exp inExp;
+  input tuple<DAE.Exp, DAE.Exp> inTpl;
+  output DAE.Exp outExp;
+  output tuple<DAE.Exp, DAE.Exp> outTpl;
 algorithm
-  outExp := match(inExp)
+  (outExp,outTpl) := match (inExp,inTpl)
     local
       DAE.Exp exp, crexp, cond, e1, e2;
       Boolean b;
-    case((DAE.IFEXP(cond, e1, e2), (crexp, exp)))
+    case (DAE.IFEXP(cond, e1, e2), (crexp, exp))
       equation
         b = Expression.expContains(e1, crexp);
         e1 = Util.if_(b, e1, exp);
         b = Expression.expContains(e2, crexp);
         e2 = Util.if_(b, e2, exp);
-      then
-        ((DAE.IFEXP(cond, e1, e2), (crexp, exp)));
-    else inExp;
+      then (DAE.IFEXP(cond, e1, e2), inTpl);
+    else (inExp,inTpl);
   end match;
 end replaceIFBrancheswithoutVar;
 
@@ -3120,20 +3129,22 @@ algorithm
 end createSimWhenClausesEqs;
 
 protected function findWhenEquation
-  input tuple<BackendDAE.Equation, list<SimCode.SimWhenClause>> inTpl;
-  output tuple<BackendDAE.Equation, list<SimCode.SimWhenClause>> outTpl;
+  input BackendDAE.Equation inEq;
+  input list<SimCode.SimWhenClause> inWhen;
+  output BackendDAE.Equation outEq;
+  output list<SimCode.SimWhenClause> outWhen;
 algorithm
-  outTpl := matchcontinue (inTpl)
+  (outEq,outWhen) := matchcontinue (inEq,inWhen)
     local
       BackendDAE.WhenEquation eq;
       BackendDAE.Equation eqn;
       list<SimCode.SimWhenClause> simWhenClause;
 
-    case ((eqn as BackendDAE.WHEN_EQUATION(whenEquation = eq), simWhenClause)) equation
+    case (eqn as BackendDAE.WHEN_EQUATION(whenEquation = eq), simWhenClause) equation
       simWhenClause = findWhenEquation1(eq, simWhenClause);
-    then ((eqn, simWhenClause));
+    then (eqn, simWhenClause);
 
-    else inTpl;
+    else (inEq,inWhen);
   end matchcontinue;
 end findWhenEquation;
 
@@ -3243,7 +3254,7 @@ algorithm
     case (e1 as DAE.CREF(componentRef = cr), e2, _, _, _)
       equation
         // ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((e1, (NONE(), false)));
-        ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (NONE(), false)));
+        (e2_1, (_, _)) = BackendDAEUtil.extendArrExp(e2, (NONE(), false));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         (tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(e1);
         // tmp
@@ -3265,7 +3276,7 @@ algorithm
     case (e1, (e2 as DAE.CREF(componentRef = cr)), _, _, _)
       equation
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-        ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((e1, (NONE(), false)));
+        (e1_1, (_, _)) = BackendDAEUtil.extendArrExp(e1, (NONE(), false));
         // ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (NONE(), false)));
         (tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(e2);
         // tmp
@@ -3287,7 +3298,7 @@ algorithm
     case (DAE.CALL(path=path, expLst=e2lst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(rpath)))), e2, _, _, _)
       equation
         true = Absyn.pathEqual(path, rpath);
-        ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (NONE(), false)));
+        (e2_1, (_, _)) = BackendDAEUtil.extendArrExp(e2, (NONE(), false));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
         ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
@@ -3308,7 +3319,7 @@ algorithm
     case (_, e2 as DAE.CALL(path=path, expLst=e2lst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(rpath)))), _, _, _)
       equation
         true = Absyn.pathEqual(path, rpath);
-        ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (NONE(), false)));
+        (e1_1, (_, _)) = BackendDAEUtil.extendArrExp(e2, (NONE(), false));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
         ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
@@ -5209,30 +5220,17 @@ end isSimEqSys;
 protected function collectDelayExpressions
 "Put expression into a list if it is a call to delay().
 Useable as a function parameter for Expression.traverseExpression."
-  input tuple<DAE.Exp, list<DAE.Exp>> inTuple;
-  output tuple<DAE.Exp, list<DAE.Exp>> outTuple;
+  input DAE.Exp e;
+  input list<DAE.Exp> acc;
+  output DAE.Exp outExp;
+  output list<DAE.Exp> outAcc;
 algorithm
-  outTuple := matchcontinue(inTuple)
-    local
-      DAE.Exp e;
-      list<DAE.Exp> l;
-    case ((e as DAE.CALL(path = Absyn.IDENT("delay")), l))
-    then ((e, e :: l));
-    case _ then inTuple;
-  end matchcontinue;
+  (outExp,outAcc) := match (e,acc)
+    case (DAE.CALL(path = Absyn.IDENT("delay")), _)
+      then (e, e :: acc);
+    else (e,acc);
+  end match;
 end collectDelayExpressions;
-
-protected function findDelaySubExpressions
-"Return all subexpressions of inExp that are calls to delay()"
-  input tuple<DAE.Exp, list<DAE.Exp>> itpl;
-  output tuple<DAE.Exp, list<DAE.Exp>> otpl;
-protected
-  DAE.Exp e;
-  list<DAE.Exp> el;
-algorithm
-  (e, el) := itpl;
-  otpl := Expression.traverseExp(e, collectDelayExpressions, el);
-end findDelaySubExpressions;
 
 protected function extractDelayedExpressions
   input BackendDAE.BackendDAE dlow;
@@ -5244,7 +5242,7 @@ algorithm
       list<DAE.Exp> exps;
     case _
       equation
-        exps = BackendDAEUtil.traverseBackendDAEExps(dlow, findDelaySubExpressions, {});
+        ((_,exps)) = BackendDAEUtil.traverseBackendDAEExps(dlow, Expression.traverseSubexpressionsHelper, (collectDelayExpressions, {}));
         delayedExps = List.map(exps, extractIdAndExpFromDelayExp);
         maxDelayedExpIndex = List.fold(List.map(delayedExps, Util.tuple21), intMax, -1);
       then
@@ -5634,20 +5632,22 @@ algorithm
 end createRemovedEquations;
 
 protected function traversedlowEqToSimEqSystem
-  input tuple<BackendDAE.Equation, tuple<Integer, list<SimCode.SimEqSystem>>> inTpl;
-  output tuple<BackendDAE.Equation, tuple<Integer, list<SimCode.SimEqSystem>>> outTpl;
+  input BackendDAE.Equation inEq;
+  input tuple<Integer, list<SimCode.SimEqSystem>> inTpl;
+  output BackendDAE.Equation outEq;
+  output tuple<Integer, list<SimCode.SimEqSystem>> outTpl;
 algorithm
-  outTpl := matchcontinue(inTpl)
+  (outEq,outTpl) := matchcontinue (inEq,inTpl)
     local
       BackendDAE.Equation e;
       SimCode.SimEqSystem se;
       list<SimCode.SimEqSystem> seqnlst;
       Integer uniqueEqIndex;
-    case ((e, (uniqueEqIndex, seqnlst)))
+    case (e, (uniqueEqIndex, seqnlst))
       equation
         (se, uniqueEqIndex) = dlowEqToSimEqSystem(e, uniqueEqIndex);
-      then ((e, (uniqueEqIndex, se::seqnlst)));
-    case _ then inTpl;
+      then (e, (uniqueEqIndex, se::seqnlst));
+    else (inEq,inTpl);
   end matchcontinue;
 end traversedlowEqToSimEqSystem;
 
@@ -5680,22 +5680,22 @@ algorithm
 end extractDiscreteModelVars;
 
 protected function traversingisVarDiscreteCrefFinder
-"author: Frenkel TUD 2010-11"
-  input tuple<BackendDAE.Var, list<DAE.ComponentRef>> inTpl;
-  output tuple<BackendDAE.Var, list<DAE.ComponentRef>> outTpl;
+  input BackendDAE.Var inVar;
+  input list<DAE.ComponentRef> inTpl;
+  output BackendDAE.Var outVar;
+  output list<DAE.ComponentRef> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var v;
       list<DAE.ComponentRef> cr_lst;
       DAE.ComponentRef cr;
-    case ((v, cr_lst))
+    case (v, cr_lst)
       equation
         true = BackendDAEUtil.isVarDiscrete(v);
         cr = BackendVariable.varCref(v);
-      then ((v, cr::cr_lst));
-    case _ then inTpl;
+      then (v, cr::cr_lst);
+    else (inVar,inTpl);
   end matchcontinue;
 end traversingisVarDiscreteCrefFinder;
 
@@ -6078,7 +6078,7 @@ algorithm
       equation
         List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, cr2);
         // ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((e1, (SOME(inFuncs), false)));
-        ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (NONE(), false)));
+        (e2_1, (_, _)) = BackendDAEUtil.extendArrExp(e2, (NONE(), false));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         tp = Expression.typeof(e1);
         stms = DAE.STMT_ASSIGN(tp, e1, e2_1, source);
@@ -6089,7 +6089,7 @@ algorithm
       equation
         List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, cr2);
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-        ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((e1, (NONE(), false)));
+        (e1_1, (_, _)) = BackendDAEUtil.extendArrExp(e1, (NONE(), false));
         // ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (SOME(inFuncs)), false)));
         tp = Expression.typeof(e2);
         stms = DAE.STMT_ASSIGN(tp, e2, e1_1, source);
@@ -6103,7 +6103,7 @@ algorithm
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
         List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
-        ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (NONE(), false)));
+        (e2_1, (_, _)) = BackendDAEUtil.extendArrExp(e2, (NONE(), false));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
         ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
@@ -6128,7 +6128,7 @@ algorithm
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
         List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
-        ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((e1, (NONE(), false)));
+        (e1_1, (_, _)) = BackendDAEUtil.extendArrExp(e1, (NONE(), false));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
         ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
@@ -6292,8 +6292,8 @@ algorithm
       cr_1 = ComponentReference.crefStripLastSubs(cr);
       e1 = Expression.replaceDerOpInExp(e1);
       e2 = Expression.replaceDerOpInExp(e2);
-      ((e1, _)) = BackendDAEUtil.collateArrExp((e1, NONE()));
-      ((e2, _)) = BackendDAEUtil.collateArrExp((e2, NONE()));
+      (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
+      (e2, _) = BackendDAEUtil.collateArrExp(e2, NONE());
       (e1, e2) = solveTrivialArrayEquation(cr_1, e1, e2);
       (equation_, uniqueEqIndex) = createSingleArrayEqnCode2(cr_1, cr_1, e1, e2, iuniqueEqIndex, source);
     then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
@@ -6581,10 +6581,12 @@ end createInitialResiduals;
 
 protected function traverseKnVarsToSimEqSystem
   "author: Frenkel TUD 2012-10"
-   input tuple<BackendDAE.Var, tuple<Integer, list<SimCode.SimEqSystem>>> inTpl;
-   output tuple<BackendDAE.Var, tuple<Integer, list<SimCode.SimEqSystem>>> outTpl;
+   input BackendDAE.Var inVar;
+   input tuple<Integer, list<SimCode.SimEqSystem>> inTpl;
+   output BackendDAE.Var outVar;
+   output tuple<Integer, list<SimCode.SimEqSystem>> outTpl;
 algorithm
-  outTpl:= matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var v;
       Integer uniqueEqIndex;
@@ -6592,22 +6594,24 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp exp;
       DAE.ElementSource source;
-    case ((v as BackendDAE.VAR(varName = cr, bindExp=SOME(exp), source=source), (uniqueEqIndex, eqns)))
+    case (v as BackendDAE.VAR(varName = cr, bindExp=SOME(exp), source=source), (uniqueEqIndex, eqns))
       equation
         false = BackendVariable.varFixed(v);
         false = BackendVariable.isVarOnTopLevelAndInput(v);
       then
-        ((v, (uniqueEqIndex+1, SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp, source)::eqns)));
-    else inTpl;
+        (v, (uniqueEqIndex+1, SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp, source)::eqns));
+    else (inVar,inTpl);
   end matchcontinue;
 end traverseKnVarsToSimEqSystem;
 
 protected function traverseAliasVarsToSimEqSystem
   "author: Frenkel TUD 2012-10"
-   input tuple<BackendDAE.Var, tuple<Integer, list<SimCode.SimEqSystem>>> inTpl;
-   output tuple<BackendDAE.Var, tuple<Integer, list<SimCode.SimEqSystem>>> outTpl;
+   input BackendDAE.Var inVar;
+   input tuple<Integer, list<SimCode.SimEqSystem>> inTpl;
+   output BackendDAE.Var outVar;
+   output tuple<Integer, list<SimCode.SimEqSystem>> outTpl;
 algorithm
-  outTpl:= match (inTpl)
+  (outVar,outTpl) := match (inVar,inTpl)
     local
       BackendDAE.Var v;
       Integer uniqueEqIndex;
@@ -6615,9 +6619,9 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp exp;
       DAE.ElementSource source;
-    case ((v as BackendDAE.VAR(varName = cr, bindExp=SOME(exp), source=source), (uniqueEqIndex, eqns)))
+    case (v as BackendDAE.VAR(varName = cr, bindExp=SOME(exp), source=source), (uniqueEqIndex, eqns))
       then
-        ((v, (uniqueEqIndex+1, SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp, source)::eqns)));
+        (v, (uniqueEqIndex+1, SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp, source)::eqns));
   end match;
 end traverseAliasVarsToSimEqSystem;
 
@@ -6935,27 +6939,27 @@ end createParameterEquations;
 
 protected function traverseAlgorithmFinder "author: Frenkel TUD 2010-12
   collect all used algorithms"
-  input tuple<BackendDAE.Equation, list<DAE.Algorithm>> inTpl;
-  output tuple<BackendDAE.Equation, list<DAE.Algorithm>> outTpl;
+  input BackendDAE.Equation inEq;
+  input list<DAE.Algorithm> inAlgs;
+  output BackendDAE.Equation eqn;
+  output list<DAE.Algorithm> algs;
 algorithm
-  outTpl := matchcontinue (inTpl)
+  (eqn,algs) := matchcontinue (inEq,inAlgs)
     local
-      BackendDAE.Equation eqn;
       DAE.Algorithm alg;
-      list<DAE.Algorithm> algs;
-      case ((eqn as BackendDAE.ALGORITHM(alg=alg), algs))
-        then
-          ((eqn, alg::algs));
-    case _ then inTpl;
+    case (eqn as BackendDAE.ALGORITHM(alg=alg), algs)
+      then (eqn, alg::algs);
+    else (inEq,inAlgs);
   end matchcontinue;
 end traverseAlgorithmFinder;
 
 protected function createInitialAssignmentsFromStart
-  input tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>, BackendDAE.Variables>> inTpl;
-  output tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>, BackendDAE.Variables>> outTpl;
+  input BackendDAE.Var inVar;
+  input tuple<list<BackendDAE.Equation>, BackendDAE.Variables> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<list<BackendDAE.Equation>, BackendDAE.Variables> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var var;
       BackendDAE.Equation initialEquation;
@@ -6969,24 +6973,25 @@ algorithm
       // expressions, e.g. parameter values, as start.  NOTE: such start
       // attributes can then not be changed in the text file, since the initial
       // calc. will override those entries!
-    case ((var as BackendDAE.VAR(varName=name, source=source), (eqns, av)))
+    case (var as BackendDAE.VAR(varName=name, source=source), (eqns, av))
       equation
         startv = BackendVariable.varStartValueFail(var);
         false = Expression.isConst(startv);
         SimCode.NOALIAS() = getAliasVar(var, SOME(av));
         initialEquation = BackendDAE.SOLVED_EQUATION(name, startv, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-      then
-        ((var, (initialEquation :: eqns, av)));
+      then (var, (initialEquation :: eqns, av));
 
-    case _ then inTpl;
+    else (inVar,inTpl);
   end matchcontinue;
 end createInitialAssignmentsFromStart;
 
 protected function createInitialAssignmentsFromNominal "see also createInitialAssignmentsFromStart"
-  input tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>, BackendDAE.Variables>> inTpl;
-  output tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>, BackendDAE.Variables>> outTpl;
+  input BackendDAE.Var inVar;
+  input tuple<list<BackendDAE.Equation>, BackendDAE.Variables> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<list<BackendDAE.Equation>, BackendDAE.Variables> outTpl;
 algorithm
-  outTpl := matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var var;
       BackendDAE.Equation initialEquation;
@@ -6996,22 +7001,24 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.Variables av;
 
-    case ((var as BackendDAE.VAR(varName=name, source=source), (eqns, av))) equation
+    case (var as BackendDAE.VAR(varName=name, source=source), (eqns, av)) equation
       nominalv = BackendVariable.varNominalValueFail(var);
       false = Expression.isConst(nominalv);
       SimCode.NOALIAS() = getAliasVar(var, SOME(av));
       initialEquation = BackendDAE.SOLVED_EQUATION(name, nominalv, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-    then ((var, (initialEquation :: eqns, av)));
+    then (var, (initialEquation :: eqns, av));
 
-    case _ then inTpl;
+    else (inVar,inTpl);
   end matchcontinue;
 end createInitialAssignmentsFromNominal;
 
 protected function createInitialAssignmentsFromMin "see also createInitialAssignmentsFromStart"
-  input tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>, BackendDAE.Variables>> inTpl;
-  output tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>, BackendDAE.Variables>> outTpl;
+  input BackendDAE.Var inVar;
+  input tuple<list<BackendDAE.Equation>, BackendDAE.Variables> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<list<BackendDAE.Equation>, BackendDAE.Variables> outTpl;
 algorithm
-  outTpl := matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var var;
       BackendDAE.Equation initialEquation;
@@ -7021,22 +7028,24 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.Variables av;
 
-    case ((var as BackendDAE.VAR(varName=name, source=source), (eqns, av))) equation
+    case (var as BackendDAE.VAR(varName=name, source=source), (eqns, av)) equation
       minv = BackendVariable.varMinValueFail(var);
       false = Expression.isConst(minv);
       SimCode.NOALIAS() = getAliasVar(var, SOME(av));
       initialEquation = BackendDAE.SOLVED_EQUATION(name, minv, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-    then ((var, (initialEquation :: eqns, av)));
+    then (var, (initialEquation :: eqns, av));
 
-    case _ then inTpl;
+    else (inVar,inTpl);
   end matchcontinue;
 end createInitialAssignmentsFromMin;
 
 protected function createInitialAssignmentsFromMax "see also createInitialAssignmentsFromStart"
-  input tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>, BackendDAE.Variables>> inTpl;
-  output tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>, BackendDAE.Variables>> outTpl;
+  input BackendDAE.Var inVar;
+  input tuple<list<BackendDAE.Equation>, BackendDAE.Variables> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<list<BackendDAE.Equation>, BackendDAE.Variables> outTpl;
 algorithm
-  outTpl := matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var var;
       BackendDAE.Equation initialEquation;
@@ -7046,23 +7055,24 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.Variables av;
 
-    case ((var as BackendDAE.VAR(varName=name, source=source), (eqns, av))) equation
+    case (var as BackendDAE.VAR(varName=name, source=source), (eqns, av)) equation
       maxv = BackendVariable.varMaxValueFail(var);
       false = Expression.isConst(maxv);
       SimCode.NOALIAS() = getAliasVar(var, SOME(av));
       initialEquation = BackendDAE.SOLVED_EQUATION(name, maxv, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-    then ((var, (initialEquation :: eqns, av)));
+    then (var, (initialEquation :: eqns, av));
 
-    else then inTpl;
+    else (inVar,inTpl);
   end matchcontinue;
 end createInitialAssignmentsFromMax;
 
 protected function createInitialParamAssignments
-  input tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>, list<BackendDAE.Var>, list<Integer>, list<Integer>, Integer>> inTpl;
-  output tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>, list<BackendDAE.Var>, list<Integer>, list<Integer>, Integer>> outTpl;
+  input BackendDAE.Var inVar;
+  input tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>, list<BackendDAE.Var>, list<Integer>, list<Integer>, Integer> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>, list<BackendDAE.Var>, list<Integer>, list<Integer>, Integer> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var var, var1;
       BackendDAE.Equation initialEquation;
@@ -7076,10 +7086,10 @@ algorithm
       Boolean b1, b2;
 
     // ignore constants
-    case ((var as BackendDAE.VAR(varKind=BackendDAE.CONST()), (eqns, v, kn, v1, v2, pos)))
-      then ((var, (eqns, v, var::kn, v1, v2, pos)));
+    case (var as BackendDAE.VAR(varKind=BackendDAE.CONST()), (eqns, v, kn, v1, v2, pos))
+      then (var, (eqns, v, var::kn, v1, v2, pos));
 
-    case ((var as BackendDAE.VAR(varName=cr, bindExp=SOME(e), source = source), (eqns, v, kn, v1, v2, pos)))
+    case (var as BackendDAE.VAR(varName=cr, bindExp=SOME(e), source = source), (eqns, v, kn, v1, v2, pos))
       equation
         false = BackendVariable.isVarOnTopLevelAndInput(var);
         b1 = BackendVariable.isParam(var);
@@ -7089,21 +7099,21 @@ algorithm
         cre = Expression.crefExp(cr);
         initialEquation = BackendDAE.EQUATION(cre, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
         var1 = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
-      then
-        ((var, (initialEquation :: eqns, var1::v, kn, pos::v1, pos::v2, pos+1)));
-    case ((var, (eqns, v, kn, v1, v2, pos)))
+      then (var, (initialEquation :: eqns, var1::v, kn, pos::v1, pos::v2, pos+1));
+    case (var, (eqns, v, kn, v1, v2, pos))
       equation
         var1 = BackendVariable.setVarKind(var, BackendDAE.PARAM());
-      then ((var, (eqns, v, var1::kn, v1, v2, pos)));
+      then (var, (eqns, v, var1::kn, v1, v2, pos));
   end matchcontinue;
 end createInitialParamAssignments;
 
 protected function createVarAsserts
-  input tuple<BackendDAE.Var, list<DAE.Algorithm>> inTpl;
-  output tuple<BackendDAE.Var, list<DAE.Algorithm>> outTpl;
+  input BackendDAE.Var inVar;
+  input list<DAE.Algorithm> inAlgs;
+  output BackendDAE.Var outVar;
+  output list<DAE.Algorithm> outAlgs;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,outAlgs) := matchcontinue (inVar,inAlgs)
     local
       BackendDAE.Var var;
       list<DAE.Algorithm> asserts, asserts1, asserts2;
@@ -7112,67 +7122,61 @@ algorithm
       BackendDAE.VarKind kind;
       Option<DAE.VariableAttributes> attr;
 
-    case ((var as BackendDAE.VAR(varName=_, varKind=_, values = _), asserts))
+    case (var as BackendDAE.VAR(varName=_, varKind=_, values = _), asserts)
       equation
-        ((_, asserts1)) = createVarMinMaxAssert((var, asserts));
-        ((_, asserts2)) = createVarNominalAssert((var, asserts1));
-      then
-        ((var, asserts2));
+        (_, asserts1) = createVarMinMaxAssert(var, asserts);
+        (_, asserts2) = createVarNominalAssert(var, asserts1);
+      then (var, asserts2);
 
-    case _
-      then inTpl;
+    else (inVar,inAlgs);
   end matchcontinue;
 end createVarAsserts;
 
 protected function createVarNominalAssert
-  input tuple<BackendDAE.Var, list<DAE.Algorithm>> inTpl;
-  output tuple<BackendDAE.Var, list<DAE.Algorithm>> outTpl;
+  input BackendDAE.Var inVar;
+  input list<DAE.Algorithm> inAsserts;
+  output BackendDAE.Var outVar;
+  output list<DAE.Algorithm> asserts;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,asserts) := matchcontinue (inVar,inAsserts)
     local
       BackendDAE.Var var;
-      list<DAE.Algorithm> asserts;
       DAE.ComponentRef name;
       DAE.ElementSource source;
       BackendDAE.VarKind kind;
       Option<DAE.VariableAttributes> attr;
       BackendDAE.Type varType;
 
-    case ((var as BackendDAE.VAR(varName=name, varKind=kind, values = attr, varType=varType, source = source), asserts))
+    case (var as BackendDAE.VAR(varName=name, varKind=kind, values = attr, varType=varType, source = source), asserts)
       equation
         asserts = BackendVariable.getNominalAssert(attr, name, source, kind, varType, asserts);
-      then
-        ((var, asserts));
+      then (var, asserts);
 
-    case _
-      then inTpl;
+    else (inVar,inAsserts);
   end matchcontinue;
 end createVarNominalAssert;
 
 protected function createVarMinMaxAssert
-  input tuple<BackendDAE.Var, list<DAE.Algorithm>> inTpl;
-  output tuple<BackendDAE.Var, list<DAE.Algorithm>> outTpl;
+  input BackendDAE.Var inVar;
+  input list<DAE.Algorithm> inAsserts;
+  output BackendDAE.Var outVar;
+  output list<DAE.Algorithm> asserts;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,asserts) := matchcontinue (inVar,inAsserts)
     local
       BackendDAE.Var var;
-      list<DAE.Algorithm> asserts;
       DAE.ComponentRef name;
       DAE.ElementSource source;
       BackendDAE.VarKind kind;
       Option<DAE.VariableAttributes> attr;
       BackendDAE.Type varType;
 
-    case ((var as BackendDAE.VAR(varName=name, varKind=kind, values = attr, varType=varType, source = source), asserts))
+    case (var as BackendDAE.VAR(varName=name, varKind=kind, values = attr, varType=varType, source = source), asserts)
       equation
         asserts = BackendVariable.getMinMaxAsserts(attr, name, source, kind, varType, asserts);
-      then
-        ((var, asserts));
+      then (var, asserts);
 
-    case _
-      then inTpl;
+    else (inVar,inAsserts);
   end matchcontinue;
 end createVarMinMaxAssert;
 
@@ -7345,20 +7349,21 @@ algorithm
 end createVars;
 
 protected function extractVarsFromList
-  input tuple<BackendDAE.Var, tuple<SimCode.SimVars, BackendDAE.Variables, BackendDAE.Variables>> inTpl;
-  output tuple<BackendDAE.Var, tuple<SimCode.SimVars, BackendDAE.Variables, BackendDAE.Variables>> outTpl;
+  input BackendDAE.Var inVar;
+  input tuple<SimCode.SimVars, BackendDAE.Variables, BackendDAE.Variables> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<SimCode.SimVars, BackendDAE.Variables, BackendDAE.Variables> outTpl;
 algorithm
-  outTpl:= matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Var var;
       SimCode.SimVars vars;
       BackendDAE.Variables aliasVars, v;
-    case ((var, (vars, aliasVars, v)))
+    case (var, (vars, aliasVars, v))
       equation
         vars = extractVarFromVar(var, aliasVars, v, vars);
-      then
-        ((var, (vars, aliasVars, v)));
-    else inTpl;
+      then (var, (vars, aliasVars, v));
+    else (inVar,inTpl);
   end matchcontinue;
 end extractVarsFromList;
 
@@ -9095,29 +9100,31 @@ algorithm
   end matchcontinue;
 end getCausality;
 
-protected function traversingdlowvarToSimvarFold "author: Frenkel TUD 2010-11"
+protected function traversingdlowvarToSimvarFold
   input BackendDAE.Var v;
   input tuple<list<SimCode.SimVar>, BackendDAE.Variables> inTpl;
   output tuple<list<SimCode.SimVar>, BackendDAE.Variables> outTpl;
 algorithm
-  ((_, outTpl)) := traversingdlowvarToSimvar((v, inTpl));
+  (_, outTpl) := traversingdlowvarToSimvar(v, inTpl);
 end traversingdlowvarToSimvarFold;
 
-protected function traversingdlowvarToSimvar "author: Frenkel TUD 2010-11"
-  input tuple<BackendDAE.Var, tuple<list<SimCode.SimVar>, BackendDAE.Variables>> inTpl;
-  output tuple<BackendDAE.Var, tuple<list<SimCode.SimVar>, BackendDAE.Variables>> outTpl;
+protected function traversingdlowvarToSimvar
+  input BackendDAE.Var inVar;
+  input tuple<list<SimCode.SimVar>, BackendDAE.Variables> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<list<SimCode.SimVar>, BackendDAE.Variables> outTpl;
 algorithm
-  outTpl := match (inTpl)
+  (outVar,outTpl) := match (inVar,inTpl)
     local
       BackendDAE.Var v;
       list<SimCode.SimVar> sv_lst;
       SimCode.SimVar sv;
       BackendDAE.Variables vars;
-    case ((v, (sv_lst, vars)))
+    case (v, (sv_lst, vars))
       equation
         sv = dlowvarToSimvar(v, NONE(), vars);
-      then ((v, (sv::sv_lst, vars)));
-    case _ then inTpl;
+      then (v, (sv::sv_lst, vars));
+    else (inVar,inTpl);
   end match;
 end traversingdlowvarToSimvar;
 
@@ -9145,56 +9152,59 @@ public function getMatchingExpsList
   input MatchFn inFn;
   output list<DAE.Exp> outExpLst;
   partial function MatchFn
-    input tuple<DAE.Exp, list<DAE.Exp>> itpl;
-    output tuple<DAE.Exp, list<DAE.Exp>> otpl;
+    input DAE.Exp inExp;
+    input list<DAE.Exp> inExps;
+    output DAE.Exp outExp;
+    output list<DAE.Exp> outExps;
   end MatchFn;
 algorithm
-  ((_, outExpLst)) := Expression.traverseExpList(inExps, inFn, {});
+  (_, outExpLst) := Expression.traverseExpList(inExps, inFn, {});
 end getMatchingExpsList;
 
 protected function matchNonBuiltinCallsAndFnRefPaths "The extra argument is a tuple<list, list>; the second list is the list of variable
   names to filter out (so we don't add function references variables)"
-  input tuple<DAE.Exp, tuple<list<Absyn.Path>, list<Absyn.Path>>> itpl;
-  output tuple<DAE.Exp, tuple<list<Absyn.Path>, list<Absyn.Path>>> otpl;
+  input DAE.Exp inExp;
+  input tuple<list<Absyn.Path>, list<Absyn.Path>> itpl;
+  output DAE.Exp outExp;
+  output tuple<list<Absyn.Path>, list<Absyn.Path>> otpl;
 algorithm
-  otpl := matchcontinue itpl
+  (outExp,otpl) := matchcontinue (inExp,itpl)
     local
-      DAE.Exp e;
       Absyn.Path path;
       list<Absyn.Path> acc, filter;
-    case ((e as DAE.CALL(path = path, attr = DAE.CALL_ATTR(builtin = false)), (acc, filter)))
+    case (DAE.CALL(path = path, attr = DAE.CALL_ATTR(builtin = false)), (acc, filter))
       equation
         path = Absyn.makeNotFullyQualified(path);
         false = List.isMemberOnTrue(path, filter, Absyn.pathEqual);
-      then ((e, (path::acc, filter)));
-    case ((e as DAE.PARTEVALFUNCTION(path = path), (acc, filter)))
+      then (inExp, (path::acc, filter));
+    case (DAE.PARTEVALFUNCTION(path = path), (acc, filter))
       equation
         path = Absyn.makeNotFullyQualified(path);
         false = List.isMemberOnTrue(path, filter, Absyn.pathEqual);
-      then ((e, (path::acc, filter)));
-    case ((e as DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(builtin = false)), (acc, filter)))
+      then (inExp, (path::acc, filter));
+    case (DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(builtin = false)), (acc, filter))
       equation
-        path = Absyn.crefToPath(getCrefFromExp(e));
+        path = Absyn.crefToPath(getCrefFromExp(inExp));
         false = List.isMemberOnTrue(path, filter, Absyn.pathEqual);
-      then ((e, (path::acc, filter)));
-    case _ then itpl;
+      then (inExp, (path::acc, filter));
+    else (inExp,itpl);
   end matchcontinue;
 end matchNonBuiltinCallsAndFnRefPaths;
 
 protected function matchMetarecordCalls "Used together with getMatchingExps"
-  input tuple<DAE.Exp, list<DAE.Exp>> itpl;
-  output tuple<DAE.Exp, list<DAE.Exp>> otpl;
+  input DAE.Exp e;
+  input list<DAE.Exp> acc;
+  output DAE.Exp outExp;
+  output list<DAE.Exp> outExps;
 algorithm
-  otpl := matchcontinue itpl
+  (outExp,outExps) := matchcontinue (e,acc)
     local
-      DAE.Exp e;
-      list<DAE.Exp> acc;
       Integer index;
-    case ((e as DAE.METARECORDCALL(index = index), acc))
+    case (DAE.METARECORDCALL(index = index), _)
       equation
-        false = -1 == index;
-      then ((e, e::acc));
-    case _ then itpl;
+        outExps = List.consOnTrue(-1 <> index, e, acc);
+      then (e, outExps);
+    else (e,acc);
   end matchcontinue;
 end matchMetarecordCalls;
 
@@ -9572,10 +9582,9 @@ algorithm
 
     case(_, _)
       equation
-         false = Expression.traverseCrefsFromExp(inExp, traversingXLOCExpFinder, false);
-        ((exp, _)) = Expression.traverseExp(inExp, traversingDivExpFinder, inSource);
-      then
-        exp;
+        false = Expression.traverseCrefsFromExp(inExp, traversingXLOCExpFinder, false);
+        (exp, _) = Expression.traverseExp(inExp, traversingDivExpFinder, inSource);
+      then exp;
   end match;
 end addDivExpErrorMsgtoExp;
 
@@ -9592,39 +9601,41 @@ algorithm
 end traversingXLOCExpFinder;
 
 protected function traversingDivExpFinder "author: Frenkel TUD 2010-02"
-  input tuple<DAE.Exp, DAE.ElementSource> inExp;
-  output tuple<DAE.Exp, DAE.ElementSource> outExp;
+  input DAE.Exp inExp;
+  input DAE.ElementSource inSource;
+  output DAE.Exp outExp;
+  output DAE.ElementSource outSource;
 algorithm
-  outExp := matchcontinue(inExp)
+  (outExp,outSource) := matchcontinue (inExp,inSource)
     local
       DAE.Exp e, e1, e2;
       DAE.Type ty;
       String se;
       DAE.ElementSource source;
-    case( (e as DAE.BINARY(exp1 = _, operator = DAE.DIV(_), exp2 = e2), source))
+    case (e as DAE.BINARY(exp1 = _, operator = DAE.DIV(_), exp2 = e2), source)
       equation
         true = Expression.isConst(e2);
         false = Expression.isZero(e2);
-      then ((e, source ));
-    case( (DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty), exp2 = e2), source))
-      then ((DAE.CALL(Absyn.IDENT("DIVISION"), {e1, e2}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source ));
+      then (e, source);
+    case (DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty), exp2 = e2), source)
+      then (DAE.CALL(Absyn.IDENT("DIVISION"), {e1, e2}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source);
 
-    case( (e as DAE.BINARY(exp1 = _, operator = DAE.DIV_ARRAY_SCALAR(_), exp2 = e2), source))
+    case (e as DAE.BINARY(exp1 = _, operator = DAE.DIV_ARRAY_SCALAR(_), exp2 = e2), source)
       equation
         true = Expression.isConst(e2);
         false = Expression.isZero(e2);
-      then ((e, source ));
-    case( (DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty), exp2 = e2), source))
-      then ((DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1, e2}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source ));
+      then (e, source);
+    case (DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty), exp2 = e2), source)
+      then (DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1, e2}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source);
 
-    case( (e as DAE.BINARY(exp1 = _, operator = DAE.DIV_SCALAR_ARRAY(_), exp2 = e2), source))
+    case (e as DAE.BINARY(exp1 = _, operator = DAE.DIV_SCALAR_ARRAY(_), exp2 = e2), source)
       equation
         true = Expression.isConst(e2);
         false = Expression.isZero(e2);
-      then ((e, source ));
-    case( (DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty), exp2 = e2), source))
-      then ((DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1, e2}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source));
-    case _ then (inExp);
+      then (e, source);
+    case (DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty), exp2 = e2), source)
+      then (DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1, e2}, DAE.CALL_ATTR(ty, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source);
+    else (inExp,inSource);
   end matchcontinue;
 end traversingDivExpFinder;
 
@@ -9764,8 +9775,8 @@ algorithm
     case (_, _, DAE.CREF(componentRef = cr))
       equation
         true = crefIsDerivative(cr);
-        ((e1, _)) = Expression.replaceDerOpInExpCond((lhs, SOME(cr)));
-        ((e2, _)) = Expression.replaceDerOpInExpCond((rhs, SOME(cr)));
+        (e1, _) = Expression.replaceDerOpInExpCond(lhs, SOME(cr));
+        (e2, _) = Expression.replaceDerOpInExpCond(rhs, SOME(cr));
         (solved_exp, asserts) = ExpressionSolve.solve(e1, e2, exp);
       then
         (solved_exp, asserts);
@@ -11873,8 +11884,10 @@ protected function traverseExpsSimCode
   output A oa;
   replaceable type A subtypeof Any;
   partial function Func
-    input tuple<DAE.Exp, A> tpl;
-    output tuple<DAE.Exp, A> otpl;
+    input DAE.Exp inExp;
+    input A inTypeA;
+    output DAE.Exp outExp;
+    output A outA;
   end Func;
 algorithm
   (outSimCode, oa) := match (simCode, func, ia)
@@ -11928,7 +11941,7 @@ algorithm
                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix,
                           hpcOmSchedule,hpcOmMemory,equationsForConditions,crefToSimVarHT,backendMapping), _, a)
       equation
-        (literals, a) = List.mapFoldTuple(literals, func, a);
+        (literals, a) = List.mapFold(literals, func, a);
         (allEquations, a) = traverseExpsEqSystems(allEquations, func, a, {});
         (odeEquations, a) = traverseExpsEqSystemsList(odeEquations, func, a, {});
         (algebraicEquations, a) = traverseExpsEqSystemsList(algebraicEquations, func, a, {});
@@ -11968,8 +11981,10 @@ protected function traverseExpsEqSystemsList
   output A oa;
   replaceable type A subtypeof Any;
   partial function Func
-    input tuple<DAE.Exp, A> tpl;
-    output tuple<DAE.Exp, A> otpl;
+    input DAE.Exp inExp;
+    input A inTypeA;
+    output DAE.Exp outExp;
+    output A outA;
   end Func;
 algorithm
   (oeqs, oa) := match (ieqs, func, ia, acc)
@@ -11996,8 +12011,10 @@ protected function traverseExpsEqSystems
   output A oa;
   replaceable type A subtypeof Any;
   partial function Func
-    input tuple<DAE.Exp, A> tpl;
-    output tuple<DAE.Exp, A> otpl;
+    input DAE.Exp inExp;
+    input A inTypeA;
+    output DAE.Exp outExp;
+    output A outA;
   end Func;
 algorithm
   (oeqs, oa) := match (ieqs, func, ia, acc)
@@ -12023,8 +12040,10 @@ protected function traverseExpsEqSystem
   output A oa;
   replaceable type A subtypeof Any;
   partial function Func
-    input tuple<DAE.Exp, A> tpl;
-    output tuple<DAE.Exp, A> otpl;
+    input DAE.Exp inExp;
+    input A inTypeA;
+    output DAE.Exp outExp;
+    output A outA;
   end Func;
 algorithm
   (oeq, oa) := match (eq, func, ia)
@@ -12052,15 +12071,15 @@ algorithm
       Boolean linearTearing;
     case (SimCode.SES_RESIDUAL(index, exp, source), _, a)
       equation
-        ((exp, a)) = func((exp, a));
+        (exp, a) = func(exp, a);
       then (SimCode.SES_RESIDUAL(index, exp, source), a);
     case (SimCode.SES_SIMPLE_ASSIGN(index, cr, exp, source), _, a)
       equation
-        ((exp, a)) = func((exp, a));
+        (exp, a) = func(exp, a);
       then (SimCode.SES_SIMPLE_ASSIGN(index, cr, exp, source), a);
     case (SimCode.SES_ARRAY_CALL_ASSIGN(index, cr, exp, source), _, a)
       equation
-        ((exp, a)) = func((exp, a));
+        (exp, a) = func(exp, a);
       then (SimCode.SES_ARRAY_CALL_ASSIGN(index, cr, exp, source), a);
     case (SimCode.SES_IFEQUATION(index, ifbranches, elsebranch, source), _, a)
       equation

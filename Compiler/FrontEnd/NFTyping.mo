@@ -1218,32 +1218,32 @@ algorithm
 
     case (DAE.DIM_EXP(exp = exp), _)
       equation
-        ((exp, _)) = Expression.traverseExp(exp,
-          propagateCrefSubsToExpTraverser, inCref);
-      then
-        DAE.DIM_EXP(exp);
+        (exp, _) = Expression.traverseExp(exp, propagateCrefSubsToExpTraverser, inCref);
+      then DAE.DIM_EXP(exp);
 
     else inDimension;
   end match;
 end propagateCrefSubsToDimension;
 
 protected function propagateCrefSubsToExpTraverser
-  input tuple<DAE.Exp, DAE.ComponentRef> inTuple;
-  output tuple<DAE.Exp, DAE.ComponentRef> outTuple;
+  input DAE.Exp inExp;
+  input DAE.ComponentRef inCr;
+  output DAE.Exp outExp;
+  output DAE.ComponentRef outCref;
 algorithm
-  outTuple := match(inTuple)
+  (outExp,outCref) := match (inExp,inCr)
     local
       DAE.ComponentRef cref1, cref2;
       DAE.Type ty;
 
-    case ((DAE.CREF(cref1, ty), cref2))
+    case (DAE.CREF(cref1, ty), cref2)
       equation
         cref1 = propagateCrefSubsToCref(cref1, cref2);
         ty = propagateCrefSubsToType(ty, cref2);
       then
-        ((DAE.CREF(cref1, ty), cref2));
+        (DAE.CREF(cref1, ty), cref2);
 
-    else inTuple;
+    else (inExp,inCr);
   end match;
 end propagateCrefSubsToExpTraverser;
 

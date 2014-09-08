@@ -243,10 +243,12 @@ end evaluateParameters;
 
 
 protected function getParameterIncidenceMatrix
-  input tuple<BackendDAE.Var,tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT>> inTp;
-  output tuple<BackendDAE.Var,tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT>> outTpl;
+  input BackendDAE.Var inVar;
+  input tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT> outTpl;
 algorithm
-  outTpl := matchcontinue (inTp)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Variables knvars;
       BackendDAE.Var v;
@@ -260,38 +262,35 @@ algorithm
       selectParameterFunc selectParameter;
       Boolean select;
 
-    case ((v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),bindExp=SOME(e)),(knvars,index,selectParameter,selectedParameter,nselect,ass,m,mt)))
+    case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),bindExp=SOME(e)),(knvars,index,selectParameter,selectedParameter,nselect,ass,m,mt))
       equation
-        ((_,(_,ilst))) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (knvars,{}));
+        (_,(_,ilst)) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (knvars,{}));
         select = selectParameter(v);
         selectedParameter = List.consOnTrue(select, index, selectedParameter);
         ass = arrayUpdate(ass,index,index);
         m = arrayUpdate(m,index,ilst);
         mt = List.fold1(index::ilst,Util.arrayCons,index,mt);
-      then
-        ((v,(knvars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt)));
+      then (v,(knvars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt));
 
-    case ((v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),values=attr),(knvars,index,selectParameter,selectedParameter,nselect,ass,m,mt)))
+    case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),values=attr),(knvars,index,selectParameter,selectedParameter,nselect,ass,m,mt))
       equation
         e = DAEUtil.getStartAttrFail(attr);
-        ((_,(_,ilst))) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (knvars,{}));
+        (_,(_,ilst)) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (knvars,{}));
         select = selectParameter(v);
         selectedParameter = List.consOnTrue(select, index, selectedParameter);
         ass = arrayUpdate(ass,index,index);
         m = arrayUpdate(m,index,ilst);
         mt = List.fold1(index::ilst,Util.arrayCons,index,mt);
-      then
-        ((v,(knvars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt)));
+      then (v,(knvars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt));
 
-    case ((v,(knvars,index,selectParameter,selectedParameter,nselect,ass,m,mt)))
+    case (v,(knvars,index,selectParameter,selectedParameter,nselect,ass,m,mt))
       equation
         select = selectParameter(v);
         selectedParameter = List.consOnTrue(select, index, selectedParameter);
         ass = arrayUpdate(ass,index,index);
         ilst = {index};
         mt = arrayUpdate(mt,index,ilst);
-      then
-        ((v,(knvars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt)));
+      then (v,(knvars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt));
   end matchcontinue;
 end getParameterIncidenceMatrix;
 
@@ -717,7 +716,7 @@ protected
 algorithm
    // apply replacements
   (e1,_) := BackendVarTransform.replaceExp(e, iRepl, NONE());
-  ((_,(_,ilst))) := Expression.traverseExpTopDown(e1, BackendDAEUtil.traversingincidenceRowExpFinder, (iKnVars,{}));
+  (_,(_,ilst)) := Expression.traverseExpTopDown(e1, BackendDAEUtil.traversingincidenceRowExpFinder, (iKnVars,{}));
   (oKnVars,oCache,oRepl,oMark) := evaluateSelectedParameters1(ilst,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
   (e1,_) := BackendVarTransform.replaceExp(e1, oRepl, NONE());
   (e1,_) := ExpressionSimplify.simplify(e1);
@@ -746,7 +745,7 @@ algorithm
     case (false,_,_,_,_,_)
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
-        ((e2, (_,_,_))) = Expression.traverseExp(e1, replaceCrefWithBindStartExp, (knvars,false,HashSet.emptyHashSet()));
+        (e2, (_,_,_)) = Expression.traverseExp(e1, replaceCrefWithBindStartExp, (knvars,false,HashSet.emptyHashSet()));
         msg = ComponentReference.printComponentRefStr(cr) +& " has unevaluateable fixed attribute value \"" +& ExpressionDump.printExpStr(e) +& "\" use values from start attribute(s) \"" +& ExpressionDump.printExpStr(e2) +& "\"";
         Error.addSourceMessage(Error.COMPILER_WARNING, {msg}, info);
       then
@@ -755,10 +754,12 @@ algorithm
 end evaluateFixedAttributeReportWarning;
 
 protected function replaceCrefWithBindStartExp
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean,HashSet.HashSet>> inTuple;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean,HashSet.HashSet>> outTuple;
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables,Boolean,HashSet.HashSet> inTuple;
+  output DAE.Exp outExp;
+  output tuple<BackendDAE.Variables,Boolean,HashSet.HashSet> outTuple;
 algorithm
-  outTuple := matchcontinue(inTuple)
+  (outExp,outTuple) := matchcontinue (inExp,inTuple)
     local
       DAE.Exp e;
       BackendDAE.Var v;
@@ -767,21 +768,19 @@ algorithm
       Boolean b;
       HashSet.HashSet hs;
     // true if crefs replaced in expression
-    case ((DAE.CREF(componentRef=cr), (vars,b,hs)))
+    case (DAE.CREF(componentRef=cr), (vars,b,hs))
       equation
         // check for cyclic bindings in start value
         false = BaseHashSet.has(cr, hs);
         ({v}, _) = BackendVariable.getVar(cr, vars);
         e = BackendVariable.varStartValueType(v);
         hs = BaseHashSet.add(cr,hs);
-        ((e, (_,b,hs))) = Expression.traverseExp(e, replaceCrefWithBindStartExp, (vars,b,hs));
-      then
-        ((e, (vars,b,hs)));
+        (e, (_,b,hs)) = Expression.traverseExp(e, replaceCrefWithBindStartExp, (vars,b,hs));
+      then (e, (vars,b,hs));
     // true if crefs in expression
-    case ((e as DAE.CREF(componentRef=_), (vars,_,hs)))
-      then
-        ((e, (vars,true,hs)));
-    else inTuple;
+    case (e as DAE.CREF(componentRef=_), (vars,_,hs))
+      then (e, (vars,true,hs));
+    else (inExp,inTuple);
   end matchcontinue;
 end replaceCrefWithBindStartExp;
 
@@ -950,19 +949,22 @@ algorithm
 end addConstExpReplacement;
 
 protected function traverseExpVisitorWrapper "help function to replaceFinalVarTraverser"
-  input tuple<DAE.Exp,tuple<BackendVarTransform.VariableReplacements,Boolean>> inTpl;
-  output tuple<DAE.Exp,tuple<BackendVarTransform.VariableReplacements,Boolean>> outTpl;
+  input DAE.Exp inExp;
+  input tuple<BackendVarTransform.VariableReplacements,Boolean> inTpl;
+  output DAE.Exp outExp;
+  output tuple<BackendVarTransform.VariableReplacements,Boolean> outTpl;
 algorithm
-  outTpl := matchcontinue(inTpl)
-  local
-    DAE.Exp exp;
-    BackendVarTransform.VariableReplacements repl;
-    DAE.ComponentRef cr;
-    Boolean b,b1;
-    case((exp as DAE.CREF(componentRef=_),(repl,b))) equation
-      (exp,b1) = BackendVarTransform.replaceExp(exp,repl,NONE());
-    then ((exp,(repl,b or b1)));
-    else inTpl;
+  (outExp,outTpl) := matchcontinue(inExp,inTpl)
+    local
+      DAE.Exp exp;
+      BackendVarTransform.VariableReplacements repl;
+      DAE.ComponentRef cr;
+      Boolean b,b1;
+    case (exp as DAE.CREF(componentRef=_),(repl,b))
+      equation
+        (exp,b1) = BackendVarTransform.replaceExp(exp,repl,NONE());
+      then (exp,(repl,b or b1));
+    else (inExp,inTpl);
   end matchcontinue;
 end traverseExpVisitorWrapper;
 
@@ -989,11 +991,12 @@ end replaceEvaluatedParametersSystem;
 
 protected function replaceEvaluatedParameterTraverser
 "author: Frenkel TUD 2011-04"
- input tuple<BackendDAE.Var, tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,Env.Cache,Env.Env,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements>> inTpl;
- output tuple<BackendDAE.Var, tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,Env.Cache,Env.Env,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements>> outTpl;
+ input BackendDAE.Var inVar;
+ input tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,Env.Cache,Env.Env,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> inTpl;
+ output BackendDAE.Var outVar;
+ output tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,Env.Cache,Env.Env,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Variables knVars;
       BackendDAE.IncidenceMatrix m;
@@ -1009,7 +1012,7 @@ algorithm
       DAE.ComponentRef cr;
       Option<DAE.VariableAttributes> attr;
       Boolean b;
-    case ((v as BackendDAE.VAR(varName=_,bindExp=SOME(e),values=attr),(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)))
+    case (v as BackendDAE.VAR(varName=_,bindExp=SOME(e),values=attr),(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate))
       equation
         // apply replacements
         (e1,true) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
@@ -1018,20 +1021,20 @@ algorithm
         (attr,(replEvaluate,b)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(replEvaluate,false));
         v = Debug.bcallret2(b,BackendVariable.setVarAttributes,v,attr,v);
         (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,env,mark,markarr,repl);
-      then ((v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)));
+      then (v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate));
 
-    case  ((v as BackendDAE.VAR(values=attr),(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)))
+    case  (v as BackendDAE.VAR(values=attr),(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate))
       equation
         // apply replacements
         (attr,(replEvaluate,true)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(replEvaluate,false));
         v = BackendVariable.setVarAttributes(v,attr);
         (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,env,mark,markarr,repl);
-      then ((v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)));
+      then (v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate));
 
-    case  ((v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)))
+    case (v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate))
       equation
         (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,env,mark,markarr,repl);
-      then ((v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)));
+      then (v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate));
   end matchcontinue;
 end replaceEvaluatedParameterTraverser;
 

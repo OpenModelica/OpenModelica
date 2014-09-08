@@ -133,16 +133,14 @@ algorithm
 end simplifyWithOptions;
 
 public function simplifyTraverseHelper
-  input tuple<DAE.Exp,A> tpl;
-  output tuple<DAE.Exp,A> otpl;
+  input DAE.Exp inExp;
+  input A inA;
+  output DAE.Exp exp;
+  output A a;
   replaceable type A subtypeof Any;
-protected
-  A a;
-  DAE.Exp exp;
 algorithm
-  (exp,a) := tpl;
-  (exp,_) := simplify(exp);
-  otpl := (exp,a);
+  a := inA;
+  (exp,_) := simplify(inExp);
 end simplifyTraverseHelper;
 
 public function simplify1time "simplify1 with timing"
@@ -158,23 +156,6 @@ algorithm
 end simplify1time;
 
 public function simplifyWork
-"This function does some very basic simplification
-  on expressions, like 0*a = 0, [1][1] => 1, etc.
-NOTE: simplifyWork does not modify expressions unless they change.
-If the expression traversal also does not modify expressions that do not change, referenceEq can be used to determine if any subexpression changed.
-"
-  input tuple<DAE.Exp,ExpressionSimplifyTypes.Options> inTpl;
-  output tuple<DAE.Exp,ExpressionSimplifyTypes.Options> tpl;
-protected
-  DAE.Exp inExp,outExp;
-  ExpressionSimplifyTypes.Options inOptions,outOptions;
-algorithm
-  (inExp,inOptions) := inTpl;
-  (outExp,outOptions) := simplifyWork2(inExp,inOptions);
-  tpl := (outExp,outOptions);
-end simplifyWork;
-
-protected function simplifyWork2
 "This function does some very basic simplification
   on expressions, like 0*a = 0, [1][1] => 1, etc.
 This function can be optimised to a switch-statement due to all uniontypes being different.
@@ -284,7 +265,7 @@ algorithm
     // anything else
     else (inExp,options);
   end match;
-end simplifyWork2;
+end simplifyWork;
 
 protected function simplifyAsubExp
   input DAE.Exp origExp;
@@ -375,15 +356,15 @@ algorithm
     // move pre inside
     case DAE.CALL(path=Absyn.IDENT("pre"), expLst={e})
       equation
-        ((e,_)) = Expression.traverseExpTopDown(e,preCref,false);
+        (e,_) = Expression.traverseExpTopDown(e,preCref,false);
       then e;
     case DAE.CALL(path=Absyn.IDENT("change"), expLst={e})
       equation
-        ((e,_)) = Expression.traverseExpTopDown(e,changeCref,false);
+        (e,_) = Expression.traverseExpTopDown(e,changeCref,false);
       then e;
     case DAE.CALL(path=Absyn.IDENT("edge"), expLst={e})
       equation
-        ((e,_)) = Expression.traverseExpTopDown(e,edgeCref,false);
+        (e,_) = Expression.traverseExpTopDown(e,edgeCref,false);
       then e;
 
     // normal (pure) call
@@ -430,47 +411,56 @@ algorithm
 end simplifyCall;
 
 protected function preCref
-  input tuple<DAE.Exp,Boolean> iExp;
-  output tuple<DAE.Exp,Boolean,Boolean> oExp;
+  input DAE.Exp ie;
+  input Boolean ib;
+  output DAE.Exp oe;
+  output Boolean continue;
+  output Boolean ob;
 algorithm
-  oExp := match(iExp)
+  (oe,continue,ob) := match (ie,ib)
     local
       DAE.Exp e;
       Boolean b;
       DAE.Type ty;
-    case ((e as DAE.CREF(ty=ty),_)) then ((Expression.makeBuiltinCall("pre",{e},ty,false),false,true));
-    case ((e as DAE.CALL(path=Absyn.IDENT("pre")),b)) then ((e,false,b));
-    case ((e,b)) then ((e,not b,b));
+    case (e as DAE.CREF(ty=ty),_) then (Expression.makeBuiltinCall("pre",{e},ty,false),false,true);
+    case (e as DAE.CALL(path=Absyn.IDENT("pre")),b) then (e,false,b);
+    case (e,b) then (e,not b,b);
   end match;
 end preCref;
 
 protected function changeCref
-  input tuple<DAE.Exp,Boolean> iExp;
-  output tuple<DAE.Exp,Boolean,Boolean> oExp;
+  input DAE.Exp ie;
+  input Boolean ib;
+  output DAE.Exp oe;
+  output Boolean continue;
+  output Boolean ob;
 algorithm
-  oExp := match(iExp)
+  (oe,continue,ob) := match (ie,ib)
     local
       DAE.Exp e;
       Boolean b;
       DAE.Type ty;
-    case ((e as DAE.CREF(ty=ty),_)) then ((Expression.makeBuiltinCall("change",{e},ty,false),false,true));
-    case ((e as DAE.CALL(path=Absyn.IDENT("change")),b)) then ((e,false,b));
-    case ((e,b)) then ((e,not b,b));
+    case (e as DAE.CREF(ty=ty),_) then (Expression.makeBuiltinCall("change",{e},ty,false),false,true);
+    case (e as DAE.CALL(path=Absyn.IDENT("change")),b) then (e,false,b);
+    case (e,b) then (e,not b,b);
   end match;
 end changeCref;
 
 protected function edgeCref
-  input tuple<DAE.Exp,Boolean> iExp;
-  output tuple<DAE.Exp,Boolean,Boolean> oExp;
+  input DAE.Exp ie;
+  input Boolean ib;
+  output DAE.Exp oe;
+  output Boolean continue;
+  output Boolean ob;
 algorithm
-  oExp := match(iExp)
+  (oe,continue,ob) := match (ie,ib)
     local
       DAE.Exp e;
       Boolean b;
       DAE.Type ty;
-    case ((e as DAE.CREF(ty=ty),_)) then ((Expression.makeBuiltinCall("edge",{e},ty,false),false,true));
-    case ((e as DAE.CALL(path=Absyn.IDENT("edge")),b)) then ((e,false,b));
-    case ((e,b)) then ((e,not b,b));
+    case (e as DAE.CREF(ty=ty),_) then (Expression.makeBuiltinCall("edge",{e},ty,false),false,true);
+    case (e as DAE.CALL(path=Absyn.IDENT("edge")),b) then (e,false,b);
+    case (e,b) then (e,not b,b);
   end match;
 end edgeCref;
 
@@ -554,7 +544,7 @@ algorithm
     case (exp,options,0,_,_)
       equation
         str1 = ExpressionDump.printExpStr(exp);
-        ((exp,_)) = Expression.traverseExp(exp,simplifyWork,options);
+        (exp,_) = Expression.traverseExp(exp,simplifyWork,options);
         str2 = ExpressionDump.printExpStr(exp);
         Error.addMessage(Error.SIMPLIFY_FIXPOINT_MAXIMUM, {str1,str2});
       then (exp,hasChanged);
@@ -562,7 +552,7 @@ algorithm
       equation
         // print("simplify1 start: " +& ExpressionDump.printExpStr(exp) +& "\n");
         ErrorExt.setCheckpoint("ExpressionSimplify");
-        ((expAfterSimplify,options)) = Expression.traverseExp(exp,simplifyWork,options);
+        (expAfterSimplify,options) = Expression.traverseExp(exp,simplifyWork,options);
         b = not referenceEq(expAfterSimplify, exp);
         Debug.bcall1(b,ErrorExt.rollBack,"ExpressionSimplify");
         Debug.bcall1(not b,ErrorExt.delCheckpoint,"ExpressionSimplify");
@@ -5034,14 +5024,16 @@ protected function replaceIteratorWithExp
   input String name;
   output DAE.Exp outExp;
 algorithm
-  ((outExp,(_,_,true))) := Expression.traverseExp(exp, replaceIteratorWithExpTraverser, (name,iterExp,true));
+  (outExp,(_,_,true)) := Expression.traverseExp(exp, replaceIteratorWithExpTraverser, (name,iterExp,true));
 end replaceIteratorWithExp;
 
 protected function replaceIteratorWithExpTraverser
-  input tuple<DAE.Exp,tuple<String,DAE.Exp,Boolean>> inTpl;
-  output tuple<DAE.Exp,tuple<String,DAE.Exp,Boolean>> outTpl;
+  input DAE.Exp inExp;
+  input tuple<String,DAE.Exp,Boolean> inTpl;
+  output DAE.Exp outExp;
+  output tuple<String,DAE.Exp,Boolean> outTpl;
 algorithm
-  outTpl := matchcontinue inTpl
+  (outExp,outTpl) := matchcontinue (inExp,inTpl)
     local
       String id,name,replName;
       DAE.Exp iterExp;
@@ -5051,30 +5043,30 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp exp;
       tuple<String,DAE.Exp,Boolean> tpl;
-    case ((_,(_,_,false))) then inTpl;
-    case ((DAE.CREF(DAE.CREF_IDENT(id,_,{}),_),tpl as (name,iterExp,_)))
+    case (_,(_,_,false)) then (inExp,inTpl);
+    case (DAE.CREF(DAE.CREF_IDENT(id,_,{}),_),tpl as (name,iterExp,_))
       equation
         true = stringEq(name,id);
-      then ((iterExp,tpl));
-    case ((exp as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=id)),(name,iterExp,_)))
+      then (iterExp,tpl);
+    case (exp as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=id)),(name,iterExp,_))
       equation
         true = stringEq(name,id);
-      then ((exp,(name,iterExp,false)));
-    case ((DAE.CREF(DAE.CREF_QUAL(id,ty1,ss,cr),ty),tpl as (name,DAE.CREF(componentRef=DAE.CREF_IDENT(ident=replName,subscriptLst={})),_)))
-      equation
-        true = stringEq(name,id);
-        exp = DAE.CREF(DAE.CREF_QUAL(replName,ty1,ss,cr),ty);
-      then ((exp,tpl));
-    case ((DAE.CREF(DAE.CREF_QUAL(id,ty1,{},cr),ty),tpl as (name,DAE.CREF(componentRef=DAE.CREF_IDENT(ident=replName,subscriptLst=ss)),_)))
+      then (exp,(name,iterExp,false));
+    case (DAE.CREF(DAE.CREF_QUAL(id,ty1,ss,cr),ty),tpl as (name,DAE.CREF(componentRef=DAE.CREF_IDENT(ident=replName,subscriptLst={})),_))
       equation
         true = stringEq(name,id);
         exp = DAE.CREF(DAE.CREF_QUAL(replName,ty1,ss,cr),ty);
-      then ((exp,tpl));
-    case ((exp as DAE.CREF(componentRef=DAE.CREF_QUAL(ident=id)),(name,iterExp,_)))
+      then (exp,tpl);
+    case (DAE.CREF(DAE.CREF_QUAL(id,ty1,{},cr),ty),tpl as (name,DAE.CREF(componentRef=DAE.CREF_IDENT(ident=replName,subscriptLst=ss)),_))
       equation
         true = stringEq(name,id);
-      then ((exp,(name,iterExp,false)));
-    else inTpl;
+        exp = DAE.CREF(DAE.CREF_QUAL(replName,ty1,ss,cr),ty);
+      then (exp,tpl);
+    case (exp as DAE.CREF(componentRef=DAE.CREF_QUAL(ident=id)),(name,iterExp,_))
+      equation
+        true = stringEq(name,id);
+      then (exp,(name,iterExp,false));
+    else (inExp,inTpl);
   end matchcontinue;
 end replaceIteratorWithExpTraverser;
 

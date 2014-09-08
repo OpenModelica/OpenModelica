@@ -5275,25 +5275,25 @@ end generateFunctions2;
 
 protected function matchQualifiedCalls
 "Collects the packages used by the functions"
-  input tuple<DAE.Exp,list<String>> itpl;
-  output tuple<DAE.Exp,list<String>> otpl;
+  input DAE.Exp e;
+  input list<String> acc;
+  output DAE.Exp outExp;
+  output list<String> outAcc;
 algorithm
-  otpl := match itpl
+  (outExp,outAcc) := match (e,acc)
     local
-      DAE.Exp e;
-      list<String> acc;
       String name;
       DAE.ComponentRef cr;
-    case ((e as DAE.CALL(path = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED(name=name)), attr = DAE.CALL_ATTR(builtin = false)),acc))
+    case (DAE.CALL(path = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED(name=name)), attr = DAE.CALL_ATTR(builtin = false)),_)
       equation
-        acc = List.consOnTrue(not listMember(name,acc),name,acc);
-      then ((e,acc));
-    case ((e as DAE.CREF(componentRef=cr,ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=false)),acc))
+        outAcc = List.consOnTrue(not listMember(name,acc),name,acc);
+      then (e,outAcc);
+    case (DAE.CREF(componentRef=cr,ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=false)),_)
       equation
         Absyn.QUALIFIED(name,Absyn.IDENT(_)) = ComponentReference.crefToPath(cr);
-        acc = List.consOnTrue(not listMember(name,acc),name,acc);
-      then ((e,acc));
-    case _ then itpl;
+        outAcc = List.consOnTrue(not listMember(name,acc),name,acc);
+      then (e,outAcc);
+    else (e,acc);
   end match;
 end matchQualifiedCalls;
 
