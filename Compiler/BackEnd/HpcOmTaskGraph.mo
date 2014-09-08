@@ -486,7 +486,7 @@ protected function updateCommCostBySccRef "author: marcusw
   Updates the given commCosts-array with the values of the refCount-list."
   input list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>>> requiredSccs_RefCount; //<sccIdx,refCountInt,refCountFloat,refCountBool>
   input Integer nodeIdx;
-  input array<Communications> iCommCosts; 
+  input array<Communications> iCommCosts;
   output array<Communications> oCommCosts;
   //the communications, created for the given node (nodeIdx) - the required time is set to -1.0, the childNode-idx is set the the parent-idx of the ref counter!
   output Communications oNodeComms;
