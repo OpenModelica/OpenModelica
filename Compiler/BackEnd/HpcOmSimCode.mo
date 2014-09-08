@@ -44,9 +44,10 @@ encapsulated package HpcOmSimCode
 
   public uniontype CommunicationInfo //stored more detailed informations about a communication (edge)
     record COMMUNICATION_INFO
-      list<SimCode.SimVar> floatVars; //the float, int and boolean variables that have to be transfered
-      list<SimCode.SimVar> intVars;
-      list<SimCode.SimVar> boolVars;
+      //leading to circular dependency
+      //list<SimCode.SimVar> floatVars; //the float, int and boolean variables that have to be transfered
+      //list<SimCode.SimVar> intVars;
+      //list<SimCode.SimVar> boolVars;
     end COMMUNICATION_INFO;
   end CommunicationInfo;
 
