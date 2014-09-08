@@ -26,7 +26,9 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
       _continuous_system(NULL),
       _event_system(NULL),
       _mixed_system(NULL),
-      _time_system(NULL)
+      _time_system(NULL),
+	  _delta(NULL),
+	  _ysave(NULL)
 {
   _data = ((void*) this);
 }
@@ -49,6 +51,19 @@ Cvode::~Cvode()
     N_VDestroy_Serial(_CV_absTol);
     CVodeFree(&_cvodeMem);
   }
+  
+  
+  if (_sparsePattern_index)
+		delete [] _sparsePattern_leadindex;
+  if (_sparsePattern_colorCols)
+		delete [] _sparsePattern_colorCols;
+  if(_sparsePattern_index)
+		delete [] _sparsePattern_index;
+  if(_delta)
+	  delete [] _delta;
+  if(_ysave)
+	  delete [] _ysave;
+
 }
 
 void Cvode::initialize()
@@ -85,15 +100,22 @@ void Cvode::initialize()
       delete[] _zeroSign;
     if (_absTol)
       delete[] _absTol;
-
+	if(_delta)
+	  delete [] _delta;
+	  if(_ysave)
+	  delete [] _ysave;
+	
     _z = new double[_dimSys];
     _zInit = new double[_dimSys];
     _zWrite = new double[_dimSys];
     _zeroSign = new int[_dimZeroFunc];
     _absTol = new double[_dimSys];
+	_delta =new double[_dimSys];
+	_ysave =new double[_dimSys];
 
     memset(_z, 0, _dimSys * sizeof(double));
     memset(_zInit, 0, _dimSys * sizeof(double));
+	memset(_ysave, 0, _dimSys * sizeof(double));
 
     // Counter initialisieren
     _outStps = 0;
@@ -191,9 +213,15 @@ void Cvode::initialize()
     if (_idid < 0)
       throw std::invalid_argument(/*_idid,_tCurrent,*/"Cvode::initialize()");
 
-    _idid = CVDense(_cvodeMem, _dimSys);
+    // Initialize linear solver
+	_idid = CVDense(_cvodeMem, _dimSys);
     if (_idid < 0)
       throw std::invalid_argument("Cvode::initialize()");
+
+	// Use own jacobian matrix
+	_idid = CVDlsSetDenseJacFn(_cvodeMem, CV_JCallback);
+	if (_idid < 0)
+      throw std::invalid_argument("CVode::initialize()");
 
     if (_dimZeroFunc)
     {
@@ -207,6 +235,8 @@ void Cvode::initialize()
       memset(_zeroVal, -1, _dimZeroFunc * sizeof(int));
 
     }
+	
+	initializeColoredJac();
     _cvode_initialized = true;
 
     //
@@ -527,6 +557,151 @@ int Cvode::CV_ZerofCallback(double t, N_Vector y, double *zeroval, void *user_da
   ((Cvode*) user_data)->giveZeroVal(t, NV_DATA_S(y), zeroval);
 
   return (0);
+}
+
+int Cvode::CV_JCallback(long int N, double t, N_Vector y, N_Vector fy, DlsMat Jac,void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
+{
+  return ((Cvode*) user_data)->calcJacobian(t,N, tmp1, tmp2, tmp3,  NV_DATA_S(y), fy, Jac);
+
+}
+
+int Cvode::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight, N_Vector jthCol, double* y, N_Vector fy, DlsMat Jac)
+{
+  try
+  {
+    int j,k,l;
+	double fnorm, minInc, *f_data, *fHelp_data, *errorWeight_data, h, srur;
+	
+	f_data = NV_DATA_S(fy);
+	errorWeight_data = NV_DATA_S(errorWeight);
+	fHelp_data = NV_DATA_S(fHelp);
+  	
+	
+	//Get relevant info
+	_idid = CVodeGetErrWeights(_cvodeMem, errorWeight);
+	if (_idid < 0)
+    {
+      _idid = -5;
+      throw std::invalid_argument("Cvode::calcJacobian()");
+	}
+	_idid = CVodeGetCurrentStep(_cvodeMem, &h);
+	if (_idid < 0)
+    {
+      _idid = -5;
+      throw std::invalid_argument("Cvode::calcJacobian()");
+	}
+	
+	srur = sqrt(UROUND);
+	
+	fnorm = N_VWrmsNorm(fy, errorWeight);
+	minInc = (fnorm != 0.0) ?
+           (1000.0 * abs(h) * UROUND * N * fnorm) : 1.0;
+
+	for(j=0;j<N;j++)
+	{
+		_delta[j] = max(srur*abs(y[j]), minInc/errorWeight_data[j]);
+	}
+	
+	// Calculation of the jacobian
+	for(int i=0; i < _sparsePattern_maxColors; i++)
+	{
+		for(int ii=0; ii < _dimSys; ii++)
+		{
+			if((_sparsePattern_colorCols[ii] - 1) == i)
+			{
+				_ysave[ii] = y[ii];
+				y[ii]+= _delta[ii];
+			}
+			
+		}
+
+		calcFunction(t, y, fHelp_data);
+
+		for(int ii = 0; ii < _dimSys; ii++)
+		{
+			if((_sparsePattern_colorCols[ii] - 1) == i)
+			{
+
+				y[ii] = _ysave[ii];
+
+				if(ii==0)
+				{
+					j = 0;
+				}
+				else
+				{
+					j = _sparsePattern_leadindex[ii-1];
+
+				}
+				while(j <_sparsePattern_leadindex[ii])
+				{
+					l = _sparsePattern_index[j];
+					k = l + ii * _dimSys;
+					Jac->data[k] = (fHelp_data[l] - f_data[l])/_delta[l];
+					j++;
+				}
+			}
+		}
+	}
+	
+	
+  }      //workaround until exception can be catch from c- libraries
+  catch (std::exception& ex)
+  {
+    std::string error = ex.what();
+    cerr << "CVode integration error: " << error;
+    return 1;
+  }
+
+  /* Calculation of J without colouring
+	 for (j = 0; j < N; j++) 
+	 {
+
+		//Generate the jth col of J(tn,y) 
+
+		//N_VSetArrayPointer(DENSE_COL(Jac,j), jthCol);
+
+		yjsaved = y[j];
+
+		y[j] += _delta[j];
+
+		calcFunction(t, y, fHelp_data);
+		
+		y[j] = yjsaved;
+
+		delta_inv = 1.0/_delta[j];
+		N_VLinearSum(delta_inv, fHelp, -delta_inv, fy, jthCol);
+
+		for(int i=0; i<_dimSys; ++i)
+        {
+            Jac->data[i+j*_dimSys] = NV_Ith_S(jthCol,i);
+        }
+
+		//DENSE_COL(Jac,j) = N_VGetArrayPointer(jthCol);
+	}
+	*/
+
+  
+  return 0;
+}
+
+void Cvode::initializeColoredJac()
+{
+	_sizeof_sparsePattern_colorCols = _system->getA_sizeof_sparsePattern_colorCols();
+	_sparsePattern_colorCols = new int[_sizeof_sparsePattern_colorCols];
+	_system->getA_sparsePattern_colorCols( _sparsePattern_colorCols, _sizeof_sparsePattern_colorCols);
+
+	_sizeof_sparsePattern_leadindex = _system->getA_sizeof_sparsePattern_leadindex();
+	_sparsePattern_leadindex = new int[_sizeof_sparsePattern_leadindex];
+	_system->getA_sparsePattern_leadindex( _sparsePattern_leadindex, _sizeof_sparsePattern_leadindex);
+
+
+	_sizeof_sparsePattern_index = _system->getA_sizeof_sparsePattern_index();
+	_sparsePattern_index = new int[_sizeof_sparsePattern_index];
+	_system->getA_sparsePattern_index( _sparsePattern_index, _sizeof_sparsePattern_index);
+
+
+	_sparsePattern_maxColors = _system->getA_sparsePattern_maxColors();
 }
 
 const int Cvode::reportErrorMessage(ostream& messageStream)
