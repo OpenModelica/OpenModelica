@@ -41,6 +41,14 @@ encapsulated package HpcOmSimCode
       list<Integer> otherVars; //a list of not optimized variables
     end MEMORYMAP_ARRAY;
   end MemoryMap;
+  
+  public uniontype CommunicationInfo //stored more detailed informations about a communication (edge)
+    record COMMUNICATION_INFO
+      list<SimCode.SimVar> floatVars; //the float, int and boolean variables that have to be transfered
+      list<SimCode.SimVar> intVars;
+      list<SimCode.SimVar> boolVars;
+    end COMMUNICATION_INFO;
+  end CommunicationInfo;
 
   public uniontype Task
     record SCHEDULED_TASK
@@ -65,6 +73,7 @@ encapsulated package HpcOmSimCode
       Task sourceTask;
       Task targetTask;
       Boolean outgoing; //true if the dependency is leading to the task of another thread
+      //CommunicationInfo communicationInfo;
     end DEPTASK;
     record PREFETCHTASK //This task will load variables in the cache
       list<Integer> varIdc;

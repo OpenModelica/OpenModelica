@@ -71,9 +71,9 @@ public uniontype Communication
   record COMMUNICATION
     //Variables that have to be transmitted
     Integer numberOfVars; //sum of {numOfIntegers,numOfFloats,numOfBoolean}
-    Integer numberOfIntegers;
-    Integer numberOfFloats;
-    Integer numberOfBooleans;
+    list<Integer> integerVars;
+    list<Integer> floatVars;
+    list<Integer> booleanVars;
     //Other values
     Integer childNode;
     Real requiredTime;
@@ -412,12 +412,13 @@ author: Waurich TUD 2013-07"
   input Integer idxOffset;
   output Communication commCostsOut;
 protected
-  Integer numberOfVars, numberOfIntegers, numberOfFloats, numberOfBooleans, childNode;
+  Integer numberOfVars, childNode;
+  list<Integer> integerVars,floatVars,booleanVars;
   Real requiredTime;
 algorithm
-  COMMUNICATION(numberOfVars=numberOfVars,numberOfIntegers=numberOfIntegers,numberOfFloats=numberOfFloats,numberOfBooleans=numberOfBooleans,childNode=childNode,requiredTime=requiredTime) := commCostsIn;
+  COMMUNICATION(numberOfVars=numberOfVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,childNode=childNode,requiredTime=requiredTime) := commCostsIn;
   childNode := childNode+idxOffset;
-  commCostsOut := COMMUNICATION(numberOfVars,numberOfIntegers,numberOfFloats,numberOfBooleans,childNode,requiredTime);
+  commCostsOut := COMMUNICATION(numberOfVars,integerVars,floatVars,booleanVars,childNode,requiredTime);
 end updateCommCosts1;
 
 protected function updateTaskGraphSystem "map function to add the indices in the taskGraph system to the number of nodes of the previous system.
@@ -445,19 +446,19 @@ protected
   TaskGraph graphIn;
   TaskGraph graphTmp;
   array<list<Integer>> inComps;
-  array<tuple<Integer,Integer,Integer>>  varCompMapping;
-  array<tuple<Integer,Integer,Integer>> eqCompMapping;
+  array<tuple<Integer,Integer,Integer>>  varCompMapping; //<sccIdx, eqSysIdx, offset>
+  array<tuple<Integer,Integer,Integer>> eqCompMapping; //<sccIdx, eqSysIdx, offset>
   list<Integer> rootNodes;
   array<String> nodeNames;
   array<String> nodeDescs;
   array<Communications> commCosts;
+  Communications commCostsOfNode;
   array<Integer> nodeMark;
   tuple<list<Integer>, list<tuple<Integer, Integer>>, list<Integer>> unsolvedVars; //<intVarIdc, <floatVarIdx, [0 if derived, 1 if not]>, boolVarIdc>
   list<Integer> eventVarLst;
-  array<tuple<Integer,Integer,Integer>> requiredSccs; //required variables <int, float, bool>
+  array<tuple<list<Integer>,list<Integer>,list<Integer>>> requiredSccs; //required variables <int, float, bool>
   Integer componentIndex, numberOfComps;
-  list<tuple<Integer,Integer,Integer,Integer>> requiredSccs_RefCount; //<sccIdx, refCountInt, refCountFloat, refCountBool>
-  list<tuple<Integer,Integer>> flatRequiredSccs_RefCount; //<sccIdx, refCountInt + refCountFloat + refCountBool>
+  list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>>> requiredSccs_RefCount; //<sccIdx, refCountInt, refCountFloat, refCountBool>
   String nodeName;
 algorithm
   (incidenceMatrix,isyst,ishared,numberOfComps) := isystInfo;
@@ -470,54 +471,45 @@ algorithm
   _ := HpcOmBenchmark.benchSystem();
   //nodeMark := arrayUpdate(nodeMark,componentIndex,getNodeMark(componentIndex,incidenceMatrix,varCompMapping,eqCompMapping));
   unsolvedVars := getUnsolvedVarsBySCC(component,incidenceMatrix,orderedVars,eventVarLst);
-  requiredSccs := arrayCreate(numberOfComps,(0,0,0)); //create a ref-counter for each component
+  requiredSccs := arrayCreate(numberOfComps,({},{},{})); //create a ref-counter for each component
   requiredSccs := List.fold2(List.map1(Util.tuple31(unsolvedVars),Util.makeTuple,1),fillSccList,1,varCompMapping,requiredSccs);
   requiredSccs := List.fold2(Util.tuple32(unsolvedVars),fillSccList,2,varCompMapping,requiredSccs);
   requiredSccs := List.fold2(List.map1(Util.tuple33(unsolvedVars),Util.makeTuple,1),fillSccList,3,varCompMapping,requiredSccs);
   ((_,requiredSccs_RefCount)) := Util.arrayFold(requiredSccs, convertRefArrayToList, (1,{}));
-  commCosts := updateCommCostBySccRef(requiredSccs_RefCount, componentIndex, commCosts);
-  flatRequiredSccs_RefCount := List.map(requiredSccs_RefCount, flattenRefCounter);
-  (graphTmp,rootNodes) := fillAdjacencyList(graphIn,rootNodes,componentIndex,flatRequiredSccs_RefCount,1);
+  (commCosts,commCostsOfNode) := updateCommCostBySccRef(requiredSccs_RefCount, componentIndex, commCosts);
+  (graphTmp,rootNodes) := fillAdjacencyList(graphIn,rootNodes,componentIndex,commCostsOfNode,1);
   graphTmp := Util.arrayMap1(graphTmp,List.sort,intGt);
   graphInfoOut := (graphTmp,inComps,commCosts,nodeNames,rootNodes,nodeMark,componentIndex+1);
 end createTaskGraph1;
 
-protected function flattenRefCounter "author: marcusw
-  Flat the given ref counter from <nodeIdx, numInts, numFloats, numBools> to <nodeIdx, (numInts + numFloats + numBools)."
-  input tuple<Integer,Integer,Integer,Integer> iRefCounter;
-  output tuple<Integer,Integer> oRefCounter;
-protected
-  Integer nodeIdx, numInts, numFloats, numBools;
-algorithm
-  (nodeIdx, numInts, numFloats, numBools) := iRefCounter;
-  oRefCounter := (nodeIdx, numInts + numFloats + numBools);
-end flattenRefCounter;
-
 protected function updateCommCostBySccRef "author: marcusw
   Updates the given commCosts-array with the values of the refCount-list."
-  input list<tuple<Integer,Integer,Integer,Integer>> requiredSccs_RefCount; //<sccIdx,refCountInt,refCountFloat,refCountBool>
+  input list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>>> requiredSccs_RefCount; //<sccIdx,refCountInt,refCountFloat,refCountBool>
   input Integer nodeIdx;
-  input array<Communications> iCommCosts; //<sccIdx,numberOfVars,requiredCycles>
+  input array<Communications> iCommCosts; 
   output array<Communications> oCommCosts;
+  //the communications, created for the given node (nodeIdx) - the required time is set to -1.0, the childNode-idx is set the the parent-idx of the ref counter!
+  output Communications oNodeComms;
 protected
   Communications tmpComms;
 algorithm
   tmpComms := List.map1(requiredSccs_RefCount, createCommunicationObject, -1.0);
-  //oCommCosts := arrayUpdate(iCommCosts, nodeIdx,tmpList);
   oCommCosts := List.fold1(tmpComms,updateCommCostBySccRef1,nodeIdx,iCommCosts);
+  oNodeComms := tmpComms;
 end updateCommCostBySccRef;
 
 protected function createCommunicationObject "author: marcusw
   Helper function which converts a tuple<sccIdx,refCountInt,refCountFloat,refCountBool> to a Communictaion-object."
-  input tuple<Integer,Integer,Integer,Integer> iTuple;
+  input tuple<Integer,list<Integer>,list<Integer>,list<Integer>> iTuple;
   input Real requiredTime;
   output Communication oComm;
 protected
-  Integer sccIdx,refCountInt,refCountFloat,refCountBool,refCountSum;
+  list<Integer> integerVars,floatVars,booleanVars;
+  Integer sccIdx,refCountSum;
 algorithm
-  (sccIdx,refCountInt,refCountFloat,refCountBool) := iTuple;
-  refCountSum := refCountInt+refCountFloat+refCountBool;
-  oComm := COMMUNICATION(refCountSum,refCountInt,refCountFloat,refCountBool,sccIdx,requiredTime);
+  (sccIdx,integerVars,floatVars,booleanVars) := iTuple;
+  refCountSum := listLength(integerVars) + listLength(floatVars) + listLength(booleanVars);
+  oComm := COMMUNICATION(refCountSum,integerVars,floatVars,booleanVars,sccIdx,requiredTime);
 end createCommunicationObject;
 
 protected function updateCommCostBySccRef1 "author: marcusw
@@ -529,41 +521,44 @@ protected function updateCommCostBySccRef1 "author: marcusw
 protected
   Communications oldComms;
   Integer sourceSccIdx;
-  Integer numberOfVars, numberOfIntegers, numberOfFloats, numberOfBooleans;
+  list<Integer> integerVars,floatVars,booleanVars;
+  Integer numberOfVars;
   Real requiredTime;
   Communication tmpComm;
 algorithm
-  COMMUNICATION(numberOfVars=numberOfVars,numberOfIntegers=numberOfIntegers,numberOfFloats=numberOfFloats,numberOfBooleans=numberOfBooleans,childNode=sourceSccIdx,requiredTime=requiredTime) := iEdgeSource;
+  COMMUNICATION(numberOfVars=numberOfVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,childNode=sourceSccIdx,requiredTime=requiredTime) := iEdgeSource;
   oldComms := arrayGet(iCommCosts, sourceSccIdx);
   //print("updateCommCostBySccRef1 added edge from " +& intString(sourceSccIdx) +& " to " +& intString(iEdgeTarget) +& "\n");
-  tmpComm := COMMUNICATION(numberOfVars,numberOfIntegers,numberOfFloats,numberOfBooleans,iEdgeTarget,requiredTime);
+  tmpComm := COMMUNICATION(numberOfVars,integerVars,floatVars,booleanVars,iEdgeTarget,requiredTime);
   oCommCosts := arrayUpdate(iCommCosts, sourceSccIdx, tmpComm::oldComms);
 end updateCommCostBySccRef1;
 
-protected function fillAdjacencyList "sets the child index in the rows indexed by the parent list.
+protected function fillAdjacencyList "append the child index to the rows indexed by the parent list.
 author: waurich TUD 2013-06"
   input array<list<Integer>> adjLstIn;
   input list<Integer> rootNodesIn;
   input Integer childNode;
-  input list<tuple<Integer,Integer>> parentLst;
-  input Integer Idx;
+  input Communications parentLst; //Communication-objects, with childNode = parentNodeIdx
+  input Integer Idx; //current parent, starting with 1
   output array<list<Integer>> adjLstOut;
   output list<Integer> rootNodesOut;
 algorithm
   (adjLstOut, rootNodesOut) := matchcontinue(adjLstIn,rootNodesIn,childNode,parentLst,Idx)
     local
-      Integer parentNode;
+      Communication parentNode;
       list<Integer> parentRow;
       list<Integer> rootNodes;
       array<list<Integer>> adjLst;
+      Integer parentNodeIdx;
     case(_,_,_,_,_)
       equation
         true = listLength(parentLst) >= Idx;
-        ((parentNode,_)) = listGet(parentLst,Idx);
-        parentRow = arrayGet(adjLstIn,parentNode);
+        parentNode = listGet(parentLst,Idx);
+        COMMUNICATION(childNode=parentNodeIdx) = parentNode;
+        parentRow = arrayGet(adjLstIn,parentNodeIdx);
         parentRow = childNode::parentRow;
-        parentRow = List.removeOnTrue(parentNode,intEq,parentRow);  // deletes the self-loops
-        adjLst = arrayUpdate(adjLstIn,parentNode,parentRow);
+        parentRow = List.removeOnTrue(parentNodeIdx,intEq,parentRow);  // deletes the self-loops
+        adjLst = arrayUpdate(adjLstIn,parentNodeIdx,parentRow);
         (adjLst,rootNodes) = fillAdjacencyList(adjLst,rootNodesIn,childNode,parentLst,Idx+1);
       then
         (adjLst,rootNodes);
@@ -892,31 +887,35 @@ protected function fillSccList "author: marcusw
   This function appends the scc, which solves the given variable, to the requiredsccs-list."
   input tuple<Integer,Integer> iVariable; //<varIdx, [derived = 0, not derived = 1]>
   input Integer iVarType; //<1 = int, 2 = float, 3 = bool>
-  input array<tuple<Integer,Integer,Integer>> iVarCompMapping;
-  input array<tuple<Integer,Integer,Integer>> iRequiredSccs; //<int vars, float vars, bool vars>
-  output array<tuple<Integer,Integer,Integer>> oRequiredSccs;
+  input array<tuple<Integer,Integer,Integer>> iVarCompMapping; //<sccIdx, eqSysIdx, offset>
+  input array<tuple<list<Integer>,list<Integer>,list<Integer>>> iRequiredSccs; //<int vars, float vars, bool vars>
+  output array<tuple<list<Integer>,list<Integer>,list<Integer>>> oRequiredSccs;
 algorithm
   oRequiredSccs := match(iVariable,iVarType,iVarCompMapping,iRequiredSccs)
     local
-      Integer varIdx, sccIdx, intVars, floatVars, boolVars;
-      array<tuple<Integer,Integer,Integer>> tmpRequiredSccs;
+      Integer varIdx, sccIdx;
+      list<Integer> integerVars,floatVars,booleanVars;
+      array<tuple<list<Integer>,list<Integer>,list<Integer>>> tmpRequiredSccs;
     case ((varIdx,1),1,_,tmpRequiredSccs)
       equation
         ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
-        ((intVars, floatVars, boolVars)) = arrayGet(iRequiredSccs, sccIdx);
-        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(intVars+1, floatVars, boolVars));
+        ((integerVars,floatVars,booleanVars)) = arrayGet(iRequiredSccs, sccIdx);
+        integerVars = varIdx::integerVars;
+        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars));
       then tmpRequiredSccs;
     case ((varIdx,1),2,_,tmpRequiredSccs)
       equation
         ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
-        ((intVars, floatVars, boolVars)) = arrayGet(iRequiredSccs, sccIdx);
-        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(intVars, floatVars+1, boolVars));
+        ((integerVars,floatVars,booleanVars)) = arrayGet(iRequiredSccs, sccIdx);
+        floatVars = varIdx::floatVars;
+        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars));
       then tmpRequiredSccs;
     case ((varIdx,1),3,_,tmpRequiredSccs)
       equation
         ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
-        ((intVars, floatVars, boolVars)) = arrayGet(iRequiredSccs, sccIdx);
-        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(intVars, floatVars, boolVars+1));
+        ((integerVars,floatVars,booleanVars)) = arrayGet(iRequiredSccs, sccIdx);
+        booleanVars = varIdx::booleanVars;
+        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars));
       then tmpRequiredSccs;
    else iRequiredSccs;
   end match;
@@ -924,20 +923,21 @@ end fillSccList;
 
 protected function convertRefArrayToList "author: marcusw
   Append the reference values for the given scc to the result list, if the reference counter is not zero."
-  input tuple<Integer,Integer,Integer> iRefCountValues; //<referenceInt, referenceFloat, referenceBool>
-  input tuple<Integer,list<tuple<Integer,Integer,Integer,Integer>>> iList; //the current index and the current ref-list (<sccIdx, refCountInt, refCountFloat, refCountBool>)
-  output tuple<Integer,list<tuple<Integer,Integer,Integer,Integer>>> oList;
+  input tuple<list<Integer>,list<Integer>,list<Integer>> iRefCountValues; //<referenceInt, referenceFloat, referenceBool>
+  input tuple<Integer,list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>>>> iList; //the current index and the current ref-list (<sccIdx, refCountInt, refCountFloat, refCountBool>)
+  output tuple<Integer,list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>>>> oList;
 protected
-  Integer curIdx, refCountValueInt, refCountValueFloat, refCountValueBool;
-  tuple<Integer,Integer,Integer,Integer> tmpTuple;
-  list<tuple<Integer,Integer,Integer,Integer>> curList;
+  Integer curIdx;
+  list<Integer> integerVars,floatVars,booleanVars;
+  tuple<Integer,list<Integer>,list<Integer>,list<Integer>> tmpTuple;
+  list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>>> curList;
 algorithm
   oList := match(iRefCountValues,iList)
-    case((0,0,0),(curIdx,curList))
+    case(({},{},{}),(curIdx,curList))
       then ((curIdx+1,curList));
-    case((refCountValueInt,refCountValueFloat,refCountValueBool),(curIdx,curList))
+    case((integerVars,floatVars,booleanVars),(curIdx,curList))
       equation
-        tmpTuple = (curIdx,refCountValueInt,refCountValueFloat,refCountValueBool);
+        tmpTuple = (curIdx,integerVars,floatVars,booleanVars);
         curList = tmpTuple::curList;
       then ((curIdx+1,curList));
    end match;
@@ -2793,6 +2793,7 @@ protected function addDepToGraph "author: marcusw
   output GraphML.GraphInfo oGraph;
 protected
   array<Communications> commCosts;
+  list<Integer> integerVars,floatVars,booleanVars;
   Integer commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx;
   Integer numOfCommVars, numOfCommVarsInt, numOfCommVarsFloat, numOfCommVarsBool, primalCompParent, primalCompChild;
   Real commCost;
@@ -2812,11 +2813,11 @@ algorithm
       equation
         true = List.exist1(criticalPathEdges, compareIntTuple2, (parentIdx, childIdx));
         //Edge is part of critical path
-        COMMUNICATION(numberOfVars=numOfCommVars,numberOfIntegers=numOfCommVarsInt,numberOfFloats=numOfCommVarsFloat,numberOfBooleans=numOfCommVarsBool,requiredTime=commCost) = getCommCostBetweenNodes(parentIdx,childIdx,tGraphDataIn);
+        COMMUNICATION(numberOfVars=numOfCommVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,requiredTime=commCost) = getCommCostBetweenNodes(parentIdx,childIdx,tGraphDataIn);
         numOfCommVarsString = intString(numOfCommVars);
-        numOfCommVarsIntString = intString(numOfCommVarsInt);
-        numOfCommVarsFloatString = intString(numOfCommVarsFloat);
-        numOfCommVarsBoolString = intString(numOfCommVarsBool);
+        numOfCommVarsIntString = intString(listLength(integerVars));
+        numOfCommVarsFloatString = intString(listLength(floatVars));
+        numOfCommVarsBoolString = intString(listLength(booleanVars));
         commCostString = System.snprintff("%.0f", 25, commCost);
         visualizeCriticalPath = boolAnd(visualizeCriticalPath,List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx)));
         edgeColor = Util.if_(visualizeCriticalPath, GraphML.COLOR_GRAY, GraphML.COLOR_BLACK);
@@ -2835,11 +2836,11 @@ algorithm
     case(_,_,TASKGRAPHMETA(commCosts=commCosts, nodeMark=nodeMark, inComps=inComps),(commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx),(criticalPathEdges, criticalPathEdgesWoC),GRAPHDUMPOPTIONS(visualizeCriticalPath=visualizeCriticalPath,visualizeCommTime=visualizeCommTime),_)
       equation
         //Edge is not part of critical path
-        COMMUNICATION(numberOfVars=numOfCommVars,numberOfIntegers=numOfCommVarsInt,numberOfFloats=numOfCommVarsFloat,numberOfBooleans=numOfCommVarsBool,requiredTime=commCost) = getCommCostBetweenNodes(parentIdx,childIdx,tGraphDataIn);
+        COMMUNICATION(numberOfVars=numOfCommVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,requiredTime=commCost) = getCommCostBetweenNodes(parentIdx,childIdx,tGraphDataIn);
         numOfCommVarsString = intString(numOfCommVars);
-        numOfCommVarsIntString = intString(numOfCommVarsInt);
-        numOfCommVarsFloatString = intString(numOfCommVarsFloat);
-        numOfCommVarsBoolString = intString(numOfCommVarsBool);
+        numOfCommVarsIntString = intString(listLength(integerVars));
+        numOfCommVarsFloatString = intString(listLength(floatVars));
+        numOfCommVarsBoolString = intString(listLength(booleanVars));
         commCostString = System.snprintff("%.0f", 25, commCost);
         visualizeCriticalPath = boolAnd(visualizeCriticalPath,List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx)));
         edgeColor = Util.if_(visualizeCriticalPath, GraphML.COLOR_GRAY, GraphML.COLOR_BLACK);
@@ -3153,9 +3154,13 @@ Prints the information about the the communication costs of one edge."
   output String oCommString;
 protected
   Integer numberOfVars,numberOfIntegers,numberOfFloats,numberOfBooleans,childNode;
+  list<Integer> integerVars,floatVars,booleanVars;
   Real requiredTime;
 algorithm
-  COMMUNICATION(numberOfVars=numberOfVars,numberOfIntegers=numberOfIntegers,numberOfFloats=numberOfFloats,numberOfBooleans=numberOfBooleans,childNode=childNode,requiredTime=requiredTime) := iComm;
+  COMMUNICATION(numberOfVars=numberOfVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,childNode=childNode,requiredTime=requiredTime) := iComm;
+  numberOfIntegers := listLength(integerVars);
+  numberOfFloats := listLength(floatVars);
+  numberOfBooleans := listLength(booleanVars);
   oCommString := "(target: " +& intString(childNode) +& " ints: " +& intString(numberOfIntegers) +& " floats: " +& intString(numberOfFloats) +& " booleans: " +& intString(numberOfBooleans) +& " [requiredTime: " +& realString(requiredTime) +& " for " +& intString(numberOfVars) +& " variables)";
 end printCommCost;
 
@@ -3519,7 +3524,7 @@ algorithm
         false = List.exist1(parentNodes,listMember,doNotMerge);
         //print("HpcOmTaskGraph.mergeParentNodes0: looking at node " +& intString(iNodeIdx) +& "\n");
         parentCommCosts = List.map2(parentNodes, getCommCostBetweenNodes, iNodeIdx, iGraphData);
-        COMMUNICATION(requiredTime=highestCommCost) = getHighestCommCost(parentCommCosts, COMMUNICATION(0,0,0,0,-1,-1.0));
+        COMMUNICATION(requiredTime=highestCommCost) = getHighestCommCost(parentCommCosts, COMMUNICATION(0,{},{},{},-1,-1.0));
         parentExeCosts = List.map1(parentNodes, getExeCost, iGraphData);
         ((_,sumParentExeCosts)) = List.fold(parentExeCosts, addUpExeCosts, (0,0.0));
         ((_,highestParentExeCost)) = getHighestExecCost(parentExeCosts, (0,0.0));
@@ -4503,13 +4508,14 @@ protected function createCommCosts0 "author: marcusw
   output Communication oComm;
 protected
   Integer childNode,reqTimeM,reqTimeN;
-  Integer numberOfIntegers, numberOfFloats, numberOfBooleans, numberOfVars;
+  Integer numberOfVars;
   Real requiredTime;
+  list<Integer> integerVars,floatVars,booleanVars;
 algorithm
-  COMMUNICATION(numberOfVars=numberOfVars,numberOfIntegers=numberOfIntegers,numberOfFloats=numberOfFloats,numberOfBooleans=numberOfBooleans,childNode=childNode,requiredTime=requiredTime) := iComm;
+  COMMUNICATION(numberOfVars=numberOfVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,childNode=childNode,requiredTime=requiredTime) := iComm;
   (reqTimeM,reqTimeN) := iReqTimeCom;
   requiredTime := intReal(reqTimeN + numberOfVars*reqTimeM);
-  oComm := COMMUNICATION(numberOfVars,numberOfIntegers,numberOfFloats,numberOfBooleans,childNode,requiredTime);
+  oComm := COMMUNICATION(numberOfVars,integerVars,floatVars,booleanVars,childNode,requiredTime);
 end createCommCosts0;
 
 protected function countOperations "author: marcusw
@@ -4872,7 +4878,7 @@ algorithm
         criticalPathIdx = getCriticalPath2(criticalPaths, 1, -1.0, -1);
         ((cpCalcTime, criticalPathChild)) = listGet(criticalPaths, criticalPathIdx);
         criticalPath = iNode :: criticalPathChild;
-        commCost = Util.if_(iHandleCommCosts, getCommCostBetweenNodes(iNode, List.first(criticalPathChild), iGraphData), COMMUNICATION(0,0,0,0,-1,0.0));
+        commCost = Util.if_(iHandleCommCosts, getCommCostBetweenNodes(iNode, List.first(criticalPathChild), iGraphData), COMMUNICATION(0,{},{},{},-1,0.0));
         //print("Comm cost from node " +& intString(iNode) +& " to " +& intString(List.first(criticalPathChild)) +& " with costs " +& intString(Util.tuple33(commCost)) +& "\n");
         nodeComps = arrayGet(inComps, iNode);
         calcTime = addUpExeCostsForNode(nodeComps, exeCosts, 0.0); //sum up calc times of all components
@@ -5235,15 +5241,16 @@ protected function transposeCommCosts1 "author: marcusw
 protected
   array<Communications> tmpCommCosts;
   Communications costs;
-  Integer numberOfVars,numberOfIntegers,numberOfFloats,numberOfBooleans,nodeIdx;
+  Integer numberOfVars,nodeIdx;
+  list<Integer> integerVars,floatVars,booleanVars;
   Real requiredTime;
 algorithm
   oCommCosts := matchcontinue(iCost, iParentCompIdx, iCommCosts)
-    case(COMMUNICATION(numberOfVars=numberOfVars,numberOfIntegers=numberOfIntegers,numberOfFloats=numberOfFloats,numberOfBooleans=numberOfBooleans,childNode=nodeIdx,requiredTime=requiredTime),_,_)
+    case(COMMUNICATION(numberOfVars=numberOfVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,childNode=nodeIdx,requiredTime=requiredTime),_,_)
       equation
         true = intLe(nodeIdx, arrayLength(iCommCosts));
         costs = arrayGet(iCommCosts, nodeIdx);
-        costs = COMMUNICATION(numberOfVars,numberOfIntegers,numberOfFloats,numberOfBooleans,iParentCompIdx,requiredTime) :: costs;
+        costs = COMMUNICATION(numberOfVars,integerVars,floatVars,booleanVars,iParentCompIdx,requiredTime) :: costs;
         tmpCommCosts = arrayUpdate(iCommCosts, nodeIdx, costs);
       then tmpCommCosts;
     else iCommCosts;
@@ -5328,7 +5335,7 @@ algorithm
   childComps := arrayGet(inComps, iChildNodeIdx);
   concreteCommCostsOpt := List.map2(parentComps, getCommCostBetweenNodes0, childComps, commCosts);
   concreteCommCosts := List.flatten(List.map(concreteCommCostsOpt, List.fromOption));
-  oCommCost := getHighestCommCost(concreteCommCosts, COMMUNICATION(0,0,0,0,-1,-1.0));
+  oCommCost := getHighestCommCost(concreteCommCosts, COMMUNICATION(0,{},{},{},-1,-1.0));
 end getCommCostBetweenNodes;
 
 protected function getCommCostBetweenNodes0
@@ -5346,7 +5353,7 @@ algorithm
         commCosts = arrayGet(iCommCosts, iParentComp);
         filteredCommCosts = List.filter1OnTrue(commCosts, getCommCostBetweenNodes1, iChildComps);
         true = List.isNotEmpty(filteredCommCosts);
-        highestCommCost = getHighestCommCost(filteredCommCosts, COMMUNICATION(0,0,0,0,-1,-1.0));
+        highestCommCost = getHighestCommCost(filteredCommCosts, COMMUNICATION(0,{},{},{},-1,-1.0));
       then SOME(highestCommCost);
     else NONE();
   end matchcontinue;
@@ -5520,6 +5527,7 @@ algorithm
       Integer numNewComps;
       list<Integer> newComps;
       list<list<Integer>> nodeLst;
+      list<list<tuple<Integer,Integer>>> nodeVarLst;
       array<tuple<Integer,Integer,Integer>> varCompMap;
       TaskGraph graph;
       TaskGraphMeta graphData;
@@ -5545,14 +5553,14 @@ algorithm
       true = intNe(numNewComps,0);
       crefsLst = List.map(eqLst,BackendEquation.equationCrefs);
       //print("crefs \n");List.map_0(crefsLst,ComponentReference.printComponentRefList);
-      nodeLst = List.map2(crefsLst,getNodeForCrefLst,dae,varCompMap);
+      nodeVarLst = List.map2(crefsLst,getNodeForCrefLst,dae,varCompMap);
       //print("nodes: "+&stringDelimitList(List.map(nodeLst,intLstString)," | ")+&"\n");
 
       TASKGRAPHMETA(inComps = inComps1 ,varCompMapping=varCompMapping1, eqCompMapping=eqCompMapping1, rootNodes = rootNodes1, nodeNames =nodeNames1, nodeDescs= nodeDescs1, exeCosts = exeCosts1, commCosts=commCosts1, nodeMark=nodeMark1) = graphDataIn;
       graph = Util.arrayAppend(graphIn,arrayCreate(numNewComps,{}));
       newComps = List.intRange2(arrayLength(graphIn)+1,arrayLength(graphIn)+numNewComps);
       //print("newComps: "+&stringDelimitList(List.map(newComps,intString)," | ")+&"\n");
-      graph =  List.threadFold(nodeLst,newComps,addEdgesToGraph,graph);
+      graph =  List.threadFold(nodeVarLst,newComps,addEdgesToGraph,graph);
 
       inComps2 = listArray(List.map(newComps,List.create));
       nodeNames2 = arrayCreate(numNewComps,"assert");
@@ -5564,7 +5572,7 @@ algorithm
       nodeDescs1 = Util.arrayAppend(nodeDescs1,nodeDescs2);
       nodeMark1 = Util.arrayAppend(nodeMark1,nodeMark2);
       exeCosts1 = Util.arrayAppend(exeCosts1,exeCosts2);
-      commCosts1 = List.threadFold2(nodeLst,newComps,setCommCostsToParent,1,74.0,commCosts1);
+      commCosts1 = List.threadFold1(nodeVarLst,newComps,setCommCostsToParent,74.0,commCosts1);
       graphData = TASKGRAPHMETA(inComps1,varCompMapping1,eqCompMapping1,rootNodes1,nodeNames1,nodeDescs1,exeCosts1,commCosts1,nodeMark1);
     then (graph,graphData);
   else
@@ -5574,31 +5582,31 @@ end appendRemovedEquations;
 
 protected function setCommCostsToParent"sets/updated the communication costs for the list of parents to the child node.
 author:Waurich TUD 2014-07"
-  input list<Integer> parents;
+  input list<tuple<Integer,Integer>> parents; //<parentNodeIdx,varIdx>
   input Integer child;
-  input Integer numFloatVars;
   input Real reqCycles;
   input array<Communications> commCostsIn;
   output array<Communications> commCostsOut;
 algorithm
-  commCostsOut := List.fold3(parents,setCommCosts,child,numFloatVars,reqCycles,commCostsIn);
+  commCostsOut := List.fold2(parents,setCommCosts,child,reqCycles,commCostsIn);
 end setCommCostsToParent;
 
 protected function setCommCosts"sets/updated the communication costs for the edge from parent to child node.
 author:Waurich TUD 2014-07"
-  input Integer parent;
+  input tuple<Integer,Integer> parent; //<parentNodeIdx,varIdx>
   input Integer child;
-  input Integer numVars;
   input Real reqCycles;
   input array<Communications> commCostsIn;
   output array<Communications> commCostsOut;
 protected
   Communications row;
+  Integer parentNodeIdx, varIdx;
 algorithm
-  row := arrayGet(commCostsIn,parent);
+  (parentNodeIdx,varIdx) := parent;
+  row := arrayGet(commCostsIn,parentNodeIdx);
   row := List.filter1OnTrue(row,isCommunicationChildEqualToIdx,child);
-  row := COMMUNICATION(numVars,0,numVars,0,child,reqCycles)::row;
-  commCostsOut := arrayUpdate(commCostsIn,parent,row);
+  row := COMMUNICATION(1,{},{varIdx},{},child,reqCycles)::row;
+  commCostsOut := arrayUpdate(commCostsIn,parentNodeIdx,row);
 end setCommCosts;
 
 protected function isCommunicationChildEqualToIdx "author:marcusw
@@ -5615,12 +5623,12 @@ end isCommunicationChildEqualToIdx;
 
 protected function addEdgesToGraph"adds several edges from the list of parent to child to the taskgraph
 author:Waurich TUD 2014-07"
-  input list<Integer> parents;
+  input list<tuple<Integer,Integer>> parents; //<nodeIdx, varIdx>
   input Integer child;
   input TaskGraph graphIn;
   output TaskGraph graphOut;
 algorithm
-  graphOut := List.fold1(parents,addEdgeToGraph,child,graphIn);
+  graphOut := List.fold1(List.map(parents,Util.tuple21),addEdgeToGraph,child,graphIn);
 end addEdgesToGraph;
 
 protected function addEdgeToGraph"adds an edge from parent to child to the taskgraph
@@ -5638,27 +5646,44 @@ end addEdgeToGraph;
 
 protected function getNodeForCrefLst"gets the node in which the var for the given cref is solved.
 author:Waurich TUD 2014-07"
-  input list<DAE.ComponentRef> crefs;
-  input BackendDAE.BackendDAE dae;
-  input array<tuple<Integer,Integer,Integer>> varCompMap;
-  output list<Integer> nodeLst;
+  input list<DAE.ComponentRef> iCrefs;
+  input BackendDAE.BackendDAE iDae;
+  input array<tuple<Integer,Integer,Integer>> iVarCompMap;
+  output list<tuple<Integer,Integer>> oNodeVarLst; //<nodeIdx, varIdx>
+protected
+  list<tuple<Integer,Integer>> tmpNodeVarLst;
 algorithm
-  nodeLst := List.map2(crefs,getNodeForCref,dae,varCompMap);
-  nodeLst := List.filter1OnTrue(nodeLst,intNe,-1);
+  tmpNodeVarLst := List.map2(iCrefs,getNodeForCref,iDae,iVarCompMap);
+  oNodeVarLst := List.filter1OnTrue(tmpNodeVarLst,tupleList21Equal,-1);
 end getNodeForCrefLst;
 
-protected function getNodeForCref
-  input DAE.ComponentRef cref;
-  input BackendDAE.BackendDAE dae;
-  input array<tuple<Integer,Integer,Integer>> varCompMapping;
-  output Integer nodeIdx;
+protected function tupleList21Equal
+  "Checks if the first tuple argument is equal to the iCompValue.
+   author: marcusw"
+  input tuple<Integer,Integer> iTuple;
+  input Integer iCompValue;
+  output Boolean oEqual;
 protected
-  Integer eqSysIdx,varIdx;
+  Integer tpl1;
+algorithm
+  (tpl1,_) := iTuple;
+  oEqual := intEq(tpl1,iCompValue);
+end tupleList21Equal;
+
+protected function getNodeForCref "get the node- and var-idx for the given cref
+author:Waurich TUD 2014-07"
+  input DAE.ComponentRef iCref;
+  input BackendDAE.BackendDAE iDae;
+  input array<tuple<Integer,Integer,Integer>> iVarCompMapping;
+  output tuple<Integer,Integer> oNodeVarIdx; //<nodeIdx, varIdx>
+protected
+  Integer eqSysIdx,varIdx,nodeIdx;
   BackendDAE.EqSystems eqSystems;
 algorithm
-  BackendDAE.DAE(eqs=eqSystems) := dae;
-  (eqSysIdx,varIdx,_) := getNodeForCref1(eqSystems,cref,1);
-  nodeIdx := getNodeForVarIdx(varIdx,eqSysIdx,varCompMapping,varIdx);
+  BackendDAE.DAE(eqs=eqSystems) := iDae;
+  (eqSysIdx,varIdx,_) := getNodeForCref1(eqSystems,iCref,1);
+  nodeIdx := getNodeForVarIdx(varIdx,eqSysIdx,iVarCompMapping,varIdx);
+  oNodeVarIdx := (nodeIdx,varIdx);
 end getNodeForCref;
 
 protected function getNodeForCref1

@@ -2322,7 +2322,7 @@ protected function buildDummyCommCost "author:marcusw
   input Integer iChildNodeIdx;
   output HpcOmTaskGraph.Communication oCommCost;
 algorithm
-  oCommCost := HpcOmTaskGraph.COMMUNICATION(1,0,1,0,iChildNodeIdx,70.0);
+  oCommCost := HpcOmTaskGraph.COMMUNICATION(1,{},{-1},{},iChildNodeIdx,70.0);
 end buildDummyCommCost;
 
 public function createSingleBlockSchedule
