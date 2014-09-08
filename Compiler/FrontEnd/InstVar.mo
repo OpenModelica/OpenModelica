@@ -1008,6 +1008,8 @@ algorithm
         // Propagate the final prefix from the modifier.
         //fin = InstUtil.propagateModFinal(mod, fin);
 
+        attr = stripVarAttrDirection(cr, attr, inState);
+
         // Add the component to the DAE.
         dae2 = InstDAE.daeDeclare(cr, inState, ty, attr, vis, opt_binding, inInstDims,
           start, dae_var_attr, inComment, io, fin, source, false);
@@ -1028,6 +1030,27 @@ algorithm
   end matchcontinue;
 end instScalar;
 
+protected function stripVarAttrDirection
+  "This function strips the input/output prefixes from components which are not
+   top-level or inside a top-level connector."
+  input DAE.ComponentRef inCref;
+  input SCode.Attributes inAttributes;
+  input ClassInf.State inState;
+  output SCode.Attributes outAttributes;
+algorithm
+  outAttributes := match(inCref, inAttributes, inState)
+    // Component without input/output.
+    case (_, SCode.ATTR(direction = Absyn.BIDIR()), _) then inAttributes;
+    // Non-qualified identifier = top-level component.
+    case (DAE.CREF_IDENT(ident = _), _, _) then inAttributes;
+    // Single-qualified identifier in connector = component in top-level connector.
+    case (DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT(ident = _)), _,
+      ClassInf.CONNECTOR(path = _)) then inAttributes;
+    // Everything else, strip the input/output prefix.
+    else SCode.setAttributesDirection(inAttributes, Absyn.BIDIR());
+  end match;
+end stripVarAttrDirection;
+    
 protected function instScalar2
   "Helper function to instScalar. Some operations needed when instantiating a
   scalar depends on what kind of variable it is, i.e. constant, parameter or
