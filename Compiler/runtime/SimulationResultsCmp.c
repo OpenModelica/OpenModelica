@@ -699,7 +699,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
         ngetfailedvars++;
         continue;
       }
-    } 
+    }
     /*  check if in file */
     data = getData(var1,filename,size,suggestReadAll,&simresglob_c,runningTestsuite);
     if (data.n==0)  {

@@ -1050,7 +1050,7 @@ algorithm
     else SCode.setAttributesDirection(inAttributes, Absyn.BIDIR());
   end match;
 end stripVarAttrDirection;
-    
+
 protected function instScalar2
   "Helper function to instScalar. Some operations needed when instantiating a
   scalar depends on what kind of variable it is, i.e. constant, parameter or
