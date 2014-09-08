@@ -10132,15 +10132,15 @@ public function replaceDerOpInExpTraverser
 algorithm
   (outExp,outCr) := matchcontinue (e,optCr)
     local
-      DAE.ComponentRef cr, der_cr;
+      DAE.ComponentRef cr, derCr;
       DAE.Exp cref_exp;
       DAE.ComponentRef cref;
 
     case (DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(componentRef = cr)}), SOME(cref))
       equation
-        der_cr = ComponentReference.crefPrefixDer(cr);
-        true = ComponentReference.crefEqualNoStringCompare(der_cr, cref);
-        cref_exp = crefExp(der_cr);
+        derCr = ComponentReference.crefPrefixDer(cr);
+        true = ComponentReference.crefEqualNoStringCompare(derCr, cref);
+        cref_exp = crefExp(derCr);
       then (cref_exp, SOME(cref));
 
     case (DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(componentRef = cr)}), NONE())
