@@ -2,26 +2,6 @@
 
 MeasureTime * MeasureTime::instance = 0;
 
-MeasureTimeValues::MeasureTimeValues() {}
-
-MeasureTimeValues::~MeasureTimeValues() {}
-
-MeasureTimeData::MeasureTimeData() : id(0), sumMeasuredValues(MeasureTime::getZeroValues()), numCalcs(0), category("") {}
-
-MeasureTimeData::~MeasureTimeData()
-{
-  //if(sumMeasuredValues != NULL)
-    //delete sumMeasuredValues;
-}
-
-MeasureTime::MeasureTime() : overhead(NULL) {}
-
-MeasureTime::~MeasureTime()
-{
-  if(overhead != NULL)
-    delete overhead;
-}
-
 MeasureTime* MeasureTime::getInstance()
 {
   return instance;
@@ -33,52 +13,17 @@ void MeasureTime::deinitialize()
     delete instance;
 }
 
-MeasureTimeValues* MeasureTime::getZeroValues()
+unsigned long long MeasureTime::getTime()
 {
   if (instance == 0)
     return 0;
 
-  return instance->getZeroValuesP();
+  unsigned long long val = instance->getTimeP();
+
+  return val;
 }
 
-MeasureTimeValues* MeasureTime::getOverhead()
-{
-  if (instance == 0)
-    return 0;
-
-  return instance->overhead;
-}
-
-void MeasureTime::benchOverhead()
-{
-  if(overhead != NULL)
-    delete overhead;
-
-  overhead = getZeroValues();
-
-  MeasureTimeValues *overheadMeasureStart = getZeroValues();
-  MeasureTimeValues *overheadMeasureEnd = getZeroValues();
-
-  for(int i = 0; i < 10; i++) //warmup
-  {
-    MeasureTime::getTimeValues(overheadMeasureStart);
-    MeasureTime::getTimeValues(overheadMeasureEnd);
-  }
-
-  for(int i = 0; i < 100; i++)
-  {
-    MeasureTime::getTimeValues(overheadMeasureStart);
-    MeasureTime::getTimeValues(overheadMeasureEnd);
-    overheadMeasureEnd->sub(overheadMeasureStart);
-    overhead->add(overheadMeasureEnd);
-  }
-  overhead->div(100);
-
-  delete overheadMeasureStart;
-  delete overheadMeasureEnd;
-}
-
-void MeasureTime::writeTimeToJason(std::string model_name, std::vector<MeasureTimeData> data)
+void MeasureTime::writeTimeToJason(std::string model_name, std::vector<data> times)
 {
   std::stringstream date;
   date.str("");
@@ -94,10 +39,62 @@ void MeasureTime::writeTimeToJason(std::string model_name, std::vector<MeasureTi
   os << "\"functions\":[\n],\n";
   os << "\"profileBlocks\":[\n";
 
-  for (unsigned i = 0; i < data.size(); ++i)
+  for (unsigned i = 0; i < times.size(); ++i)
   {
-    os << "{\"id\":" << i+1 << ",\"ncall\":" << data[i].numCalcs << "," << data[i].sumMeasuredValues->serializeToJson() << "},\n";
+    os << "{\"id\":" << i << ",\"ncall\":" << times[i].num_calcs << ",\"time\":" << times[i].sum_time << ",\"maxTime\":" << times[i].max_time << "},\n";
   }
   os << "]\n}";
   os.close();
 }
+
+unsigned long long RDTSC_MeasureTime::getTimeP()
+{
+  return RDTSC();
+}
+
+void RDTSC_MeasureTime::initialize()
+{
+  instance = new RDTSC_MeasureTime();
+}
+
+#if defined(_MSC_VER)
+
+#if defined(__i386__) || defined(__x86_64__)
+unsigned long long RDTSC_MeasureTime::RDTSC()
+{
+  return _rdtsc();
+}
+#else
+unsigned long long RDTSC_MeasureTime::RDTSC()
+{
+  throw std::runtime_error("No time measurement for this processor arch.");
+  return 0;
+}
+#endif // defined(__i386__) || defined(__x86_64__)
+#else
+#if defined(__i386__)
+unsigned long long RDTSC_MeasureTime::RDTSC()
+{
+  unsigned long long res;
+  asm volatile (".byte 0x0f, 0x31" : "=A" (res));
+  return res;
+}
+
+#elif defined(__x86_64__)
+unsigned long long RDTSC_MeasureTime::RDTSC()
+{
+  unsigned hi, lo;
+  __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
+  return ((unsigned long long) lo) | (((unsigned long long) hi) << 32);
+}
+
+#else
+unsigned long long RDTSC_MeasureTime::RDTSC()
+{
+  throw std::runtime_error("No time measurement for this processor arch.");
+  return 0;
+}
+
+#endif //defined(__i386__)
+
+#endif //defined(_MSC_VER)

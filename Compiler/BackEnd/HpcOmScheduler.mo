@@ -1097,11 +1097,10 @@ algorithm
   end match;
 end convertScheduleStrucToInfo1;
 
-protected function convertScheduleStrucToInfoLevel "author: marcusw
-  Convert the given task list, representing a level of the level-scheduler, to a scheduler info."
+protected function convertScheduleStrucToInfoLevel
   input list<HpcOmSimCode.TaskList> taskLst;
   input Integer sectionsNumber;
-  input array<tuple<Integer,Integer,Real>> iScheduleInfo; //maps each Task to <threadId, orderId, startCalcTime>
+  input array<tuple<Integer,Integer,Real>> iScheduleInfo;
   output array<tuple<Integer,Integer,Real>> oScheduleInfo;
 algorithm
   oScheduleInfo := matchcontinue(taskLst,sectionsNumber,iScheduleInfo)
@@ -1130,24 +1129,22 @@ protected function convertScheduleStrucToInfoLevel1
   input list<HpcOmSimCode.Task> tasks;
   input Integer sectionsNumber;
   input Integer sectionIdx;
-  input array<tuple<Integer,Integer,Real>> iScheduleInfo; //maps each Task to <threadId, orderId, startCalcTime>
+  input array<tuple<Integer,Integer,Real>> iScheduleInfo;
   output array<tuple<Integer,Integer,Real>> oScheduleInfo;
 algorithm
   oScheduleInfo := matchcontinue(tasks,sectionsNumber,sectionIdx,iScheduleInfo)
     local
-      Integer numNodes, threadIdx;
+      Integer numNodes;
       list<Integer> nodeIdc;
       array<tuple<Integer,Integer,Real>> scheduleInfo;
       list<tuple<Integer,Integer,Real>> tuplLst;
       list<HpcOmSimCode.Task> rest;
-      Option<Integer> threadIdxOpt;
     case({},_,_,_)
       then iScheduleInfo;
-    case(HpcOmSimCode.CALCTASK_LEVEL(nodeIdc=nodeIdc,threadIdx=threadIdxOpt)::rest,_,_,_)
+    case(HpcOmSimCode.CALCTASK_LEVEL(nodeIdc=nodeIdc)::rest,_,_,_)
       equation
         numNodes = listLength(nodeIdc);
-        threadIdx = Util.getOptionOrDefault(threadIdxOpt,-1);
-        tuplLst = List.threadMap1(List.fill(threadIdx,numNodes),List.fill(-1,numNodes),Util.make3Tuple,0.0);
+        tuplLst = List.threadMap1(List.fill(sectionsNumber,numNodes),List.fill(sectionIdx,numNodes),Util.make3Tuple,0.0);
         List.threadMap1_0(nodeIdc,tuplLst,Util.arrayUpdateIndexFirst,iScheduleInfo);
       then convertScheduleStrucToInfoLevel1(rest,sectionsNumber,sectionIdx+1,iScheduleInfo);
   end matchcontinue;
@@ -1683,25 +1680,22 @@ public function createFixedLevelSchedule
   output HpcOmTaskGraph.TaskGraphMeta oMeta;
 protected
   list<list<Integer>> levelTasks;
-  //for each node (arrayIdx): list of threads that handle predecessor tasks. If a node has multiple
-  //predecessors handled by the same thread, the thread-index occurs multiple times in the list.
   array<list<Integer>> adviceLists;
   HpcOmSimCode.Schedule tmpSchedule;
   list<HpcOmSimCode.TaskList> levelTaskLists;
 algorithm
   // 1. Create a task list for each thread and a advice list for each task which is empty at beginning
   // 2. Iterate over all levels
-  //  2.1. Create an thread-ready-list and set all values to 0
+  //  2.1. Create an ready-list and set all values to 0
   //  2.2. Iterate over all tasks of the current level
   //    2.2.1. Find the thread that should calulcate the task
-  //        2.2.1. (1) This could be the thread with the lowest value in the ready list if no thread is in the advice list
+  //        2.2.1. (1) This could be the thread with the lowest value in the ready list if no task is in the advice list
   //        2.2.1. (2) This could be the first thread in the advice list, if the thread has not already an execution time > (sum(exec(levelTasks)) / numThreads)
   //        2.2.1. (3) Otherwise case (1)
   //    2.2.2. Append the task to the thread and add the execution cost the the ready list
   //    2.2.3. Add the thread to the advice-list of all successor tasks
   levelTasks := HpcOmTaskGraph.getLevelNodes(iGraph);
   adviceLists := arrayCreate(arrayLength(iGraph), {});
-  HpcOmTaskGraph.printTaskGraph(iGraph);
   levelTaskLists := List.fold5(levelTasks, createFixedLevelScheduleForLevel, adviceLists, iGraph, iMeta, iNumberOfThreads, iSccSimEqMapping, {});
   levelTaskLists := listReverse(levelTaskLists);
   oSchedule := HpcOmSimCode.LEVELSCHEDULE(levelTaskLists);
@@ -1728,7 +1722,6 @@ protected
   list<HpcOmSimCode.Task> tasksOfLevel;
   array<list<Integer>> inComps;
 algorithm
-  print("createFixedLevelScheduleForLevel: entering next level\n");
   HpcOmTaskGraph.TASKGRAPHMETA(exeCosts=exeCosts,inComps=inComps) := iMeta;
   levelExecCosts := HpcOmTaskGraph.getCostsForContractedNodes(iTasksOfLevel, exeCosts);
   threadReadyList := arrayCreate(iNumberOfThreads, 0.0);
@@ -1738,7 +1731,6 @@ algorithm
   ((_,tasksOfLevel)) := Util.arrayFold2(threadTaskList, createFixedLevelScheduleForLevel0, inComps, iSccSimEqMapping, (1,{}));
   taskList := HpcOmSimCode.PARALLELTASKLIST(tasksOfLevel);
   oLevelTaskLists := taskList :: iLevelTaskLists;
-  print("createFixedLevelScheduleForLevel: leaving level\n");
 end createFixedLevelScheduleForLevel;
 
 protected function createFixedLevelScheduleForLevel0
@@ -1776,16 +1768,10 @@ protected
   Integer threadIdx;
   Real threadReadyTime, exeCost;
 algorithm
-  print("\tcreateFixedLevelScheduleForTask: handling task: " +& intString(iTaskIdx) +& "\n");
   adviceElem := arrayGet(iAdviceList, iTaskIdx);
-  print("\t\tAdvice-list: " +& stringDelimitList(List.map(adviceElem, intString), ",") +& "\n");
-  adviceElem := flattenAdviceList(adviceElem, arrayLength(iThreadReadyList));
-  print("\t\tAdvice-list-flattened: " +& stringDelimitList(List.map(adviceElem, intString), ",") +& "\n");
   threadIdx := getBestFittingThread(adviceElem, iLevelExecCosts, iThreadReadyList);
-  print("\t\tBest-thread: " +& intString(threadIdx) +& "\n");
   threadTasks := arrayGet(iThreadTasks, threadIdx);
-  successorList := arrayGet(iGraph, iTaskIdx);
-  print("\t\tSuccessors: " +& stringDelimitList(List.map(successorList, intString), ",") +& "\n");
+  successorList := arrayGet(iGraph, threadIdx);
   //update the advice list
   _ := List.fold1(successorList, createFixedLevelScheduleForTask0, threadIdx, iAdviceList);
   threadReadyTime := arrayGet(iThreadReadyList, threadIdx);
@@ -1799,8 +1785,6 @@ algorithm
 end createFixedLevelScheduleForTask;
 
 protected function createFixedLevelScheduleForTask0
-  "author: marcusw
-   Update the given advice list, by adding the iThreadAdvice to the successor-task-entry."
   input Integer iSuccessor;
   input Integer iThreadAdvice;
   input array<list<Integer>> iAdviceList;
@@ -1813,81 +1797,8 @@ algorithm
   oAdviceList := arrayUpdate(iAdviceList, iSuccessor, adviceElem);
 end createFixedLevelScheduleForTask0;
 
-protected function flattenAdviceList
-  "author: marcusw
-   Flatten the given advice list and order the entries regarding their occurency count.
-   For example: {2,3,1,1,2,2} -> {2,1,3}"
-  input list<Integer> iAdviceList;
-  input Integer iNumOfThreads;
-  output list<Integer> oAdviceList;
-protected
-  array<Integer> counterArray;
-  list<tuple<Integer,Integer>> tupleList;
-algorithm
-  counterArray := arrayCreate(iNumOfThreads,0);
-  counterArray := List.fold(iAdviceList, flattenAdviceListElem, counterArray);
-  tupleList := arrayToTupleListZeroRemoved(counterArray, 1, {});
-  oAdviceList := List.map(List.sort(tupleList, intTpl22Gt),Util.tuple21);
-end flattenAdviceList;
-
-protected function flattenAdviceListElem "author: marcusw
-   Increment the value in the counter array of the given thread (iAdviceElem)."
-  input Integer iAdviceElem;
-  input array<Integer> iCounterArray;
-  output array<Integer> oCounterArray;
-protected
-  Integer counter;
-algorithm
-  counter := arrayGet(iCounterArray, iAdviceElem);
-  counter := counter + 1;
-  oCounterArray := arrayUpdate(iCounterArray, iAdviceElem, counter);
-end flattenAdviceListElem;
-
-protected function arrayToTupleListZeroRemoved "author: marcusw
-   Convert a integer array, to list of tuples <arrayIndex, value> if the value is != 0.
-   For example: [1,4,2] -> {<1,1>,<2,4>,<3,2>}"
-  input array<Integer> iArray;
-  input Integer iCurrentIdx;
-  input list<tuple<Integer,Integer>> iTupleList;
-  output list<tuple<Integer,Integer>> oTupleList;
-protected
-  list<tuple<Integer,Integer>> tmpTupleList;
-  Integer currentValue;
-algorithm
-  oTupleList := matchcontinue(iArray, iCurrentIdx, iTupleList)
-    case(_,_,_)
-      equation
-        true = intLe(iCurrentIdx, arrayLength(iArray));
-        currentValue = arrayGet(iArray, iCurrentIdx);
-        true = intNe(currentValue, 0);
-        tmpTupleList = (iCurrentIdx, currentValue)::iTupleList;
-        tmpTupleList = arrayToTupleListZeroRemoved(iArray, iCurrentIdx+1, tmpTupleList);
-      then tmpTupleList;
-    case(_,_,_)
-      equation
-        true = intLe(iCurrentIdx, arrayLength(iArray));
-        tmpTupleList = arrayToTupleListZeroRemoved(iArray, iCurrentIdx+1, iTupleList);
-      then tmpTupleList;
-    else then iTupleList;
-  end matchcontinue;
-end arrayToTupleListZeroRemoved;
-
-protected function intTpl22Gt
-  input tuple<Integer,Integer> iTpl1;
-  input tuple<Integer,Integer> iTpl2;
-  output Boolean oRes;
-protected
-  Integer val1, val2;
-algorithm
-  (_,val1) := iTpl1;
-  (_,val2) := iTpl2;
-  oRes := intGt(val1, val2);
-end intTpl22Gt;
-
 protected function getBestFittingThread
-  "author: marcusw
-  Get the optimal thread for the task, regarding the given advice list."
-  input list<Integer> iAdviceList; //advice list of the task - the list is traversed from front to back, until a suitable thread is found
+  input list<Integer> iAdviceList;
   input Real iLevelExecCosts; //sum of all execosts
   input array<Real> iThreadReadyList;
   output Integer oThreadIdx;

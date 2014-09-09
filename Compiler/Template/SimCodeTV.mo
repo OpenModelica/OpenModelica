@@ -835,10 +835,6 @@ package SimCodeUtil
     output Integer outVariableIndex;
   end getVariableIndex;
 
-  function getMaxSimEqSystemIndex
-    input SimCode.SimCode simCode;
-    output Integer idxOut;
-  end getMaxSimEqSystemIndex;
 end SimCodeUtil;
 
 
