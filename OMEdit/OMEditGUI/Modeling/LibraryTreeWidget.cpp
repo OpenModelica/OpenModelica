@@ -814,7 +814,7 @@ LibraryTreeNode* LibraryTreeWidget::addLibraryTreeNode(QString name, bool isSave
 {
   mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(name));
   QString fileName = "";
-  LibraryTreeNode *pNewLibraryTreeNode = new LibraryTreeNode(LibraryTreeNode::TLM, name, "", name, StringHandler::createTooltip(name, ""),
+  LibraryTreeNode *pNewLibraryTreeNode = new LibraryTreeNode(LibraryTreeNode::Text, name, "", name, StringHandler::createTooltip(name, ""),
                                                              StringHandler::Model, fileName, !isFileWritAble(fileName), isSaved, false, this);
   pNewLibraryTreeNode->setIsDocumentationClass(false);
 
