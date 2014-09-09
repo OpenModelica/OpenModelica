@@ -367,7 +367,7 @@ algorithm
         // is it completely constant or partially?
         funcIsConst = List.isEmpty(varScalarCrefs) and List.isEmpty(varComplexCrefs);
         funcIsPartConst = (List.isNotEmpty(varScalarCrefs) or List.isNotEmpty(varComplexCrefs)) and (List.isNotEmpty(constScalarCrefs) or List.isNotEmpty(constComplexCrefs)) and not funcIsConst;
-        isConstRec = intEq(listLength(constScalarCrefs),listLength(List.flatten(scalarOutputs))) and List.isEmpty(varScalarCrefs) and listEmpty(varComplexCrefs) and listEmpty(constComplexCrefs);
+        isConstRec = intEq(listLength(constScalarCrefs),listLength(List.flatten(scalarOutputs))) and List.isEmpty(varScalarCrefs) and List.isEmpty(varComplexCrefs) and listEmpty(constComplexCrefs);
 
         //Debug.bcall1(isConstRec,print,"the function output is completely constant and its a record\n");
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and funcIsConst,print,"the function output is completely constant\n");
