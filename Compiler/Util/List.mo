@@ -162,21 +162,12 @@ public function fill
   input Integer inCount;
   output list<ElementType> outList;
 algorithm
-  outList := matchcontinue(inElement, inCount)
-    case (_, _)
-      equation
-        true = inCount >= 0;
-      then
-        fill_tail(inElement, inCount, {});
-
-    else
-      equation
-        Debug.fprintln(Flags.FAILTRACE, "- List.fill failed with negative value "
-          +& intString(inCount));
-      then
-        fail();
-
-  end matchcontinue;
+  if inCount >= 0 then
+    outList := fill_tail(inElement, inCount, {});
+  else
+    Debug.fprintln(Flags.FAILTRACE, "- List.fill failed with negative value "
+      + intString(inCount));
+  end if;
 end fill;
 
 protected function fill_tail
@@ -211,7 +202,7 @@ public function intRange2
 protected
   Integer step;
 algorithm
-  step := Util.if_(intLt(inStart, inStop), 1, -1);
+  step := if inStart < inStop then 1 else -1;
   outRange := intRange_tail(inStart, step, inStop);
 end intRange2;
 
@@ -232,44 +223,21 @@ protected function intRange_tail
   input Integer inStep;
   input Integer inStop;
   output list<Integer> outResult;
+protected
+  String error_str;
+  Boolean is_done;
 algorithm
-  outResult := matchcontinue(inStart, inStep, inStop)
-    local
-      String error_str;
-      Boolean is_done;
-
-    case (_, 0, _)
-      equation
-        error_str = stringDelimitList(
-          map({inStart, inStep, inStop}, intString), ":");
-        Error.addMessage(Error.ZERO_STEP_IN_ARRAY_CONSTRUCTOR, {error_str});
-      then
-        fail();
-
-    case (_, _, _)
-      equation
-        false = intEq(inStep, 0);
-        true = (inStart == inStop);
-      then
-        {inStart};
-
-    case (_, _, _)
-      equation
-        false = intEq(inStep, 0);
-        true = (inStep > 0);
-        is_done = (inStart > inStop);
-      then
-        intRange_tail2(inStart, inStep, inStop, intGt, is_done, {});
-
-    case (_, _, _)
-      equation
-        false = intEq(inStep, 0);
-        true = (inStep < 0);
-        is_done = (inStart < inStop);
-      then
-        intRange_tail2(inStart, inStep, inStop, intLt, is_done, {});
-
-  end matchcontinue;
+  if inStep == 0 then // Step-size of 0 will lead to infinite loop.
+    error_str := stringDelimitList(
+      list(intString(e) for e in {inStart, inStep, inStop}), ":");
+    Error.addMessage(Error.ZERO_STEP_IN_ARRAY_CONSTRUCTOR, {error_str});
+    fail();
+  elseif inStart == inStop then
+    outResult := {inStart};
+  else
+    is_done := if inStep > 0 then inStart > inStop else inStart < inStop;
+    outResult := intRange_tail2(inStart, inStep, inStop, inGt, is_done, {});
+  end if;
 end intRange_tail;
 
 protected function intRange_tail2
@@ -287,25 +255,19 @@ protected function intRange_tail2
     input Integer inValue2;
     output Boolean outRes;
   end CompFunc;
+protected
+  Integer next;
+  list<Integer> vals;
+  Boolean is_done;
 algorithm
-  outValues := match(inStart, inStep, inStop, compFunc, isDone, inValues)
-    local
-      Integer next;
-      list<Integer> vals;
-      Boolean is_done;
-
-    case (_, _, _, _, true, _)
-      then listReverse(inValues);
-
-    else
-      equation
-        next = inStart + inStep;
-        vals = inStart :: inValues;
-        is_done = compFunc(next, inStop);
-      then
-        intRange_tail2(next, inStep, inStop, compFunc, is_done, vals);
-
-  end match;
+  if isDone then
+    outValues := listReverse(inValues);
+  else
+    next := inStart + inStep;
+    vals := inStart :: inValues;
+    is_done := compFunc(next, inStop);
+    outValues := intRange_tail2(next, inStep, inStop, compFunc, is_done, vals);
+  end if;
 end intRange_tail2;
 
 public function toOption
@@ -374,7 +336,7 @@ public function isEqual
   input Boolean inEqualLength;
   output Boolean outIsEqual;
 algorithm
-  outIsEqual := matchcontinue(inList1, inList2, inEqualLength)
+  outIsEqual := match(inList1, inList2, inEqualLength)
     local
       ElementType e1, e2;
       list<ElementType> rest1, rest2;
@@ -382,14 +344,11 @@ algorithm
     case ({}, {}, _) then true;
     case ({}, _, false) then true;
     case (_, {}, false) then true;
-    case (e1 :: rest1, e2 :: rest2, _)
-      equation
-        equality(e1 = e2);
-      then
-        isEqual(rest1, rest2, inEqualLength);
+    case (e1 :: rest1, e2 :: rest2, _) guard(equality(e1 = e2))
+      then isEqual(rest1, rest2, inEqualLength);
 
     else false;
-  end matchcontinue;
+  end match;
 end isEqual;
 
 public function isEqualOnTrue
@@ -2435,7 +2394,7 @@ public function map
     output ElementOutType outElement;
   end MapFunc;
 algorithm
-  outList := listReverse(map_tail(inList, inFunc, {}));
+  outList := list(inFunc(e) for e in inList);
 end map;
 
 public function mapReverse
@@ -2451,38 +2410,8 @@ public function mapReverse
     output ElementOutType outElement;
   end MapFunc;
 algorithm
-  outList := map_tail(inList, inFunc, {});
+  outList := listReverse(inFunc(e) for e in inList);
 end mapReverse;
-
-protected function map_tail
-  "Tail-recursive implementation of map."
-  input  list<ElementInType> inList;
-  input  MapFunc inFunc;
-  input  list<ElementOutType> inAccumList;
-  output list<ElementOutType> outList;
-
-  partial function MapFunc
-    input ElementInType inElement;
-    output ElementOutType outElement;
-  end MapFunc;
-algorithm
-  outList := match(inList, inFunc, inAccumList)
-    local
-      ElementInType head;
-      ElementOutType new_head;
-      list<ElementInType> rest;
-      list<ElementOutType> accum;
-
-    case ({}, _, _) then inAccumList;
-
-    case (head :: rest, _, _)
-      equation
-        new_head = inFunc(head);
-        accum = map_tail(rest, inFunc, new_head :: inAccumList);
-      then
-        accum;
-  end match;
-end map_tail;
 
 public function map_2
   "Takes a list and a function, and creates two new lists by applying the
