@@ -2825,7 +2825,7 @@ algorithm
         fullMods1 = getFullModsFromMod(cref, mod);
         fullMods2 = getFullModsFromSubMods(inTopCref, rest);
         fullMods = listAppend(
-                     Util.if_(listEmpty(fullMods1),
+                     Util.if_(List.isEmpty(fullMods1),
                               SUB_MOD(cref, subMod)::fullMods1, // add if LEAF
                               fullMods1),
                      fullMods2);

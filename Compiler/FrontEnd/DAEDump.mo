@@ -2740,17 +2740,17 @@ algorithm
        // dump variables
        str = dumpVarsStream(v, false, str);
 
-       str = IOStream.append(str, Util.if_(listEmpty(ie), "", "initial equation\n"));
+       str = IOStream.append(str, Util.if_(List.isEmpty(ie), "", "initial equation\n"));
        str = dumpInitialEquationsStream(ie, str);
 
        str = dumpInitialAlgorithmsStream(ia, str);
 
-       str = IOStream.append(str, Util.if_(listEmpty(e), "", "equation\n"));
+       str = IOStream.append(str, Util.if_(List.isEmpty(e), "", "equation\n"));
        str = dumpEquationsStream(e, str);
 
        str = dumpAlgorithmsStream(a, str);
 
-       str = IOStream.append(str, Util.if_(listEmpty(co), "", "constraint\n"));
+       str = IOStream.append(str, Util.if_(List.isEmpty(co), "", "constraint\n"));
        str = dumpConstraintStream(co, str);
      then
        str;

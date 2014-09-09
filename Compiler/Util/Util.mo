@@ -3865,7 +3865,7 @@ algorithm
     case ("\n" :: rest_str, wl, delim, dl, acc_str, _, acc_strl)
       equation
         // The delimiter should not be applied to the first string.
-        delim = if_(listEmpty(acc_strl), "", delim);
+        delim = if_(List.isEmpty(acc_strl), "", delim);
         str = delim +& stringAppendList(listReverse(acc_str));
         acc_strl = str :: acc_strl;
       then
@@ -3876,7 +3876,7 @@ algorithm
     case ({}, _, delim, _, acc_str, _, acc_strl)
       equation
         // The delimiter should not be applied to the first string.
-        delim = if_(listEmpty(acc_strl), "", delim);
+        delim = if_(List.isEmpty(acc_strl), "", delim);
         str = delim +& stringAppendList(listReverse(acc_str));
         acc_strl = str :: acc_strl;
       then
@@ -3887,7 +3887,7 @@ algorithm
     case (_, wl, delim, dl, acc_str, sl, acc_strl)
       equation
         // The delimiter should not be applied to the first string.
-        ((delim, dl)) = if_(listEmpty(acc_strl), ("", 0), (delim, dl));
+        ((delim, dl)) = if_(List.isEmpty(acc_strl), ("", 0), (delim, dl));
         true = sl + dl >= wl;
         // Split the string at the first space (will be the last since the
         // string is reversed). The first part before the space will be the new

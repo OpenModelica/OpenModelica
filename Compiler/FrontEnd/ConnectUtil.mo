@@ -1980,7 +1980,7 @@ protected
 algorithm
   setCrefs := getAllEquCrefs({inSet}, {});
   lst := List.intersectionOnTrue(setCrefs, inNonUsefulExpandable, ComponentReference.crefEqualNoStringCompare);
-  isInSet := listEmpty(lst);
+  isInSet := List.isEmpty(lst);
 end removeCrefsFromSets2;
 
 function mergeEquSetsAsCrefs
@@ -2019,7 +2019,7 @@ algorithm
     case (set1, set2::rest, acc)
       equation
          // Could be faster if we had a function for intersectionExist in a set
-         b = listEmpty(List.intersectionOnTrue(set1, set2, ComponentReference.crefEqualNoStringCompare));
+         b = List.isEmpty(List.intersectionOnTrue(set1, set2, ComponentReference.crefEqualNoStringCompare));
          set = Debug.bcallret3(not b, List.unionOnTrue, set1, set2, ComponentReference.crefEqualNoStringCompare, set1);
          acc = List.consOnTrue(b, set2, acc);
          (set, rest) = mergeWithRest(set, rest, acc);

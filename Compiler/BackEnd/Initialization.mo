@@ -710,7 +710,7 @@ algorithm
     case (BackendDAE.MIXEDEQUATIONSYSTEM(disc_vars=vlst)::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       varlst = filterVarsWithoutStartValue(varlst);
-      false = listEmpty(varlst);
+      false = List.isEmpty(varlst);
 
       Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in mixed equation system:\n" +& warnAboutVars2(varlst));
       _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
@@ -719,7 +719,7 @@ algorithm
     case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_NONLINEAR())::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       varlst = filterVarsWithoutStartValue(varlst);
-      false = listEmpty(varlst);
+      false = List.isEmpty(varlst);
 
       Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in nonlinear equation system:\n" +& warnAboutVars2(varlst));
       _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
@@ -728,7 +728,7 @@ algorithm
      case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_GENERIC())::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       varlst = filterVarsWithoutStartValue(varlst);
-      false = listEmpty(varlst);
+      false = List.isEmpty(varlst);
 
       Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in equation system w/o analytic Jacobian:\n" +& warnAboutVars2(varlst));
       _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
@@ -737,7 +737,7 @@ algorithm
     case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_NO_ANALYTIC())::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       varlst = filterVarsWithoutStartValue(varlst);
-      false = listEmpty(varlst);
+      false = List.isEmpty(varlst);
 
       Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in equation system w/o analytic Jacobian:\n" +& warnAboutVars2(varlst));
       _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
@@ -746,7 +746,7 @@ algorithm
     case (BackendDAE.TORNSYSTEM(tearingvars=vlst, linear=false)::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       varlst = filterVarsWithoutStartValue(varlst);
-      false = listEmpty(varlst);
+      false = List.isEmpty(varlst);
 
       Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in torn nonlinear equation system:\n" +& warnAboutVars2(varlst));
       _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
@@ -1046,7 +1046,7 @@ algorithm
 
     case (_, _, _, _, _, _) equation
       row = mt[n];
-      true = listEmpty(row);
+      true = List.isEmpty(row);
 
       var = BackendVariable.getVarAt(inVars, n);
       cref = BackendVariable.varCref(var);
@@ -1057,7 +1057,7 @@ algorithm
 
     case (_, _, _, _, _, _) equation
       row = mt[n];
-      true = listEmpty(row);
+      true = List.isEmpty(row);
 
       var = BackendVariable.getVarAt(inVars, n);
       cref = BackendVariable.varCref(var);
@@ -1068,7 +1068,7 @@ algorithm
 
     case (_, _, _, _, _, _) equation
       row = mt[n];
-      false = listEmpty(row);
+      false = List.isEmpty(row);
     then (inVars, inEqs, iB, inDumpVars);
 
     else equation

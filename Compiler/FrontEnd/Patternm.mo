@@ -1313,7 +1313,7 @@ algorithm
     case ((DAE.PAT_CALL_NAMED(name, namedPatterns),a))
       equation
         namedPatterns = List.filter(namedPatterns, filterEmptyPattern);
-        pat = Util.if_(listEmpty(namedPatterns), DAE.PAT_WILD(), DAE.PAT_CALL_NAMED(name, namedPatterns));
+        pat = Util.if_(List.isEmpty(namedPatterns), DAE.PAT_WILD(), DAE.PAT_CALL_NAMED(name, namedPatterns));
       then ((pat,a));
     case ((pat as DAE.PAT_CALL_TUPLE(patterns),a))
       equation

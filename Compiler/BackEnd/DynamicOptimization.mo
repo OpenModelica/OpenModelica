@@ -86,7 +86,7 @@ algorithm
         mayer1 = findMayerTerm(inVars, knvars);
         mayer1 = mergeObjectVars(mayer1,mayer);
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, mayer1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
-        b = not listEmpty(objectEqn);
+        b = not List.isEmpty(objectEqn);
 
         v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
         e = Util.if_(b, listAppend(e, objectEqn), e);
@@ -96,7 +96,7 @@ algorithm
         lagrange1 = findLagrangeTerm(inVars, knvars);
         lagrange1 = mergeObjectVars(lagrange1,lagrange);
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, lagrange1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
-        b = not listEmpty(objectEqn);
+        b = not List.isEmpty(objectEqn);
 
         v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
         e = Util.if_(b, listAppend(e, objectEqn), e);
@@ -115,7 +115,7 @@ algorithm
         dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
         mayer1 = findMayerTerm(inVars, knvars);
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, mayer1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
-        b = not listEmpty(objectEqn);
+        b = not List.isEmpty(objectEqn);
 
         v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
         e = Util.if_(b, listAppend(e, objectEqn), e);
@@ -124,7 +124,7 @@ algorithm
         dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
         lagrange1 = findLagrangeTerm(inVars, knvars);
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, lagrange1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
-        b = not listEmpty(objectEqn);
+        b = not List.isEmpty(objectEqn);
         v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
         e = Util.if_(b, listAppend(e, objectEqn), e);
 

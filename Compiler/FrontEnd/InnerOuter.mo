@@ -1725,7 +1725,7 @@ algorithm
     case(INST_INNER(_, _, _, fullName, typePath, scope, _, outers, _))
       equation
         outers = List.uniqueOnTrue(outers, ComponentReference.crefEqualNoStringCompare);
-        strOuters = Util.if_(listEmpty(outers),
+        strOuters = Util.if_(List.isEmpty(outers),
                       "",
                       " Referenced by 'outer' components: {" +&
                       stringDelimitList(List.map(outers, ComponentReference.printComponentRefStr), ", ") +& "}");

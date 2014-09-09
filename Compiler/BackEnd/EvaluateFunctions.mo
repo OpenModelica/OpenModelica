@@ -365,9 +365,9 @@ algorithm
         //print("varScalarCrefs 1\n"+&stringDelimitList(List.map(varScalarCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
 
         // is it completely constant or partially?
-        funcIsConst = listEmpty(varScalarCrefs) and listEmpty(varComplexCrefs);
+        funcIsConst = List.isEmpty(varScalarCrefs) and listEmpty(varComplexCrefs);
         funcIsPartConst = (List.isNotEmpty(varScalarCrefs) or List.isNotEmpty(varComplexCrefs)) and (List.isNotEmpty(constScalarCrefs) or List.isNotEmpty(constComplexCrefs)) and not funcIsConst;
-        isConstRec = intEq(listLength(constScalarCrefs),listLength(List.flatten(scalarOutputs))) and listEmpty(varScalarCrefs) and listEmpty(varComplexCrefs) and listEmpty(constComplexCrefs);
+        isConstRec = intEq(listLength(constScalarCrefs),listLength(List.flatten(scalarOutputs))) and List.isEmpty(varScalarCrefs) and listEmpty(varComplexCrefs) and listEmpty(constComplexCrefs);
 
         //Debug.bcall1(isConstRec,print,"the function output is completely constant and its a record\n");
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and funcIsConst,print,"the function output is completely constant\n");
@@ -700,8 +700,8 @@ algorithm
         ({},lhsExpIn,{});
     case(_,_,_,_,_,_,DAE.TUPLE(PR=expLst))
       equation
-        true = listEmpty(List.flatten(scalarOutputs));
-        true = not listEmpty(constScalarCrefs);
+        true = List.isEmpty(List.flatten(scalarOutputs));
+        true = not List.isEmpty(constScalarCrefs);
         varScalarCrefsInFunc = {};
         allOutputCrefs = List.map(allOutputs,DAEUtil.varCref);
         (protCrefs,_,outputCrefs) = List.intersection1OnTrue(constScalarCrefs,allOutputCrefs,ComponentReference.crefEqual);
@@ -848,7 +848,7 @@ algorithm
         cref = DAEUtil.varCref(elem);
         scalars = getScalarsForComplexVar(elem);
         // function output is one dimensional
-        true = listEmpty(scalars);
+        true = List.isEmpty(scalars);
         const = listMember(cref,constCrefs);
         constCompl = Util.if_(const,cref::constComplexLstIn,constComplexLstIn);
         varCompl = Util.if_(not const,cref::varComplexLstIn,varComplexLstIn);
@@ -1490,7 +1490,7 @@ algorithm
         // if its not definite which case, try to predict a constant output, maybe its partially constant, then remove function outputs replacements
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isEval,print,"-->try to predict the outputs \n");
         ((stmtsNew,addStmts),FUNCINFO(repl,funcTree,idx)) = Debug.bcallret2_2(not isEval ,predictIfOutput,alg,FUNCINFO(replIn,funcTree,idx),(stmts1,{}),FUNCINFO(replIn,funcTree,idx));
-        predicted = List.isNotEmpty(addStmts) or listEmpty(stmtsNew) and not isEval;
+        predicted = List.isNotEmpty(addStmts) or List.isEmpty(stmtsNew) and not isEval;
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isEval,print,"could it be predicted? "+&boolString(predicted)+&"\n");
 
         // if nothing can be done, remove the replacements for the variables assigned in the if stmt
@@ -2465,7 +2465,7 @@ algorithm
            Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"--> the predicted const outputs:\n"+&stringDelimitList(List.map(outExps,ExpressionDump.printExpStr),"\n"));
          (constOutExps,_,varOutExps) = List.intersection1OnTrue(outExps,allLHS,Expression.expEqual);
 
-         predicted = List.isNotEmpty(constOutExps) and listEmpty(varOutExps);
+         predicted = List.isNotEmpty(constOutExps) and List.isEmpty(varOutExps);
          //repl = Debug.bcallret3(not predicted, BackendVarTransform.removeReplacements,replIn,varCrefs,NONE(),replIn);
          //Debug.bcall(not predicted,print,"remove the replacement for: "+&stringDelimitList(List.map(varCrefs,ComponentReference.crefStr),"\n")+&"\n");
          repl = replIn;

@@ -877,8 +877,8 @@ algorithm
         rhs = varExp(a_ii);
         hs_ii = BackendDAE.EQUATION(lhs,rhs,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
         // update th a_i_lst and the hs_i_lst
-        a_i_lstTmp = Debug.bcallret1(listEmpty(a_i_lstIn), List.create, {a_ii},varInFrontList(a_ii,a_i_lstIn));
-        hs_i_lstTmp = Debug.bcallret1(listEmpty(hs_i_lstIn), List.create, {hs_ii}, eqInFrontList(hs_ii,hs_i_lstIn));
+        a_i_lstTmp = Debug.bcallret1(List.isEmpty(a_i_lstIn), List.create, {a_ii},varInFrontList(a_ii,a_i_lstIn));
+        hs_i_lstTmp = Debug.bcallret1(List.isEmpty(hs_i_lstIn), List.create, {hs_ii}, eqInFrontList(hs_ii,hs_i_lstIn));
         //next residual equation
         (hs_i_lstTmp,a_i_lstTmp) = getTornSystemCoefficients1(resIdxRest,iIdx,resVal_iIn,hs_i_lstTmp,a_i_lstTmp,tornSysIdx);
       then
@@ -904,8 +904,8 @@ algorithm
         lhs = varExp(r_ii);
         hs_ii = BackendDAE.EQUATION(lhs,rhs,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
         // update th a_i_lst and the hs_i_lst
-        a_i_lstTmp = Debug.bcallret1(listEmpty(a_i_lstIn), List.create, {a_ii},varInFrontList(a_ii, a_i_lstIn));
-        hs_i_lstTmp = Debug.bcallret1(listEmpty(hs_i_lstIn), List.create, {hs_ii}, eqInFrontList(hs_ii, hs_i_lstIn));
+        a_i_lstTmp = Debug.bcallret1(List.isEmpty(a_i_lstIn), List.create, {a_ii},varInFrontList(a_ii, a_i_lstIn));
+        hs_i_lstTmp = Debug.bcallret1(List.isEmpty(hs_i_lstIn), List.create, {hs_ii}, eqInFrontList(hs_ii, hs_i_lstIn));
         // next residual equation
         (hs_i_lstTmp, a_i_lstTmp) = getTornSystemCoefficients1(resIdxRest, iIdx, resVal_iIn, hs_i_lstTmp, a_i_lstTmp,tornSysIdx);
       then
@@ -1052,8 +1052,8 @@ algorithm
   resVal := BackendDAE.VAR(resCRef,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR());
   (resEq,(resExp,_)) := BackendEquation.traverseBackendDAEExpsEqn(resEq,addResidualVarToEquation2,(resExp,false));
   // update the resEq and resVar lists
-  r_i_lst := Debug.bcallret1(listEmpty(r_i_lst), List.create, {resVal},varInFrontList(resVal,r_i_lst));
-  h_i_lst := Debug.bcallret1(listEmpty(h_i_lst), List.create, {resEq}, eqInFrontList(resEq,h_i_lst));
+  r_i_lst := Debug.bcallret1(List.isEmpty(r_i_lst), List.create, {resVal},varInFrontList(resVal,r_i_lst));
+  h_i_lst := Debug.bcallret1(List.isEmpty(h_i_lst), List.create, {resEq}, eqInFrontList(resEq,h_i_lst));
   tplOut := (h_i_lst,r_i_lst);
 end addResidualVarToEquation1;
 

@@ -4840,7 +4840,7 @@ algorithm
         true = System.getPartialInstantiation();
         // if all the functions are complete, add them, otherwise, NO
         fLst = List.select(funcs, DAEUtil.isNotCompleteFunction);
-        fLst = Util.if_(listEmpty(fLst), funcs, {});
+        fLst = Util.if_(List.isEmpty(fLst), funcs, {});
         cache = Env.addDaeFunction(cache, fLst);
       then
         cache;*/

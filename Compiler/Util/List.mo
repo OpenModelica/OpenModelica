@@ -339,12 +339,23 @@ algorithm
   end match;
 end fromOption;
 
+public function isEmpty 
+  "Returns true if the given list is empty, otherwise false." 
+  input list<ElementType> inList; 
+  output Boolean outIsEmpty; 
+algorithm 
+  outIsEmpty := match(inList) 
+    case ({}) then true; 
+    else false; 
+  end match; 
+end isEmpty; 
+
 public function isNotEmpty
   "Returns true if the given list is not empty, otherwise false."
   input list<ElementType> inList;
   output Boolean outIsNotEmpty;
 algorithm
-  outIsNotEmpty := not listEmpty(inList);
+  outIsNotEmpty := not List.isEmpty(inList);
 end isNotEmpty;
 
 public function assertIsEmpty

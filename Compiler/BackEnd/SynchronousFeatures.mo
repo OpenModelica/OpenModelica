@@ -320,7 +320,7 @@ algorithm
       v = BackendVariable.getVarAt(vars, n);
       cr = BackendVariable.varCref(v);
       // Select any equation that could define this variable
-      b = not listEmpty(mT[n]);
+      b = not List.isEmpty(mT[n]);
       name = Debug.bcallret1(not b, ComponentReference.printComponentRefStr, cr, "");
       info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(v));
       Error.assertionOrAddSourceMessage(b, Error.EQUATIONS_VAR_NOT_DEFINED, {name}, info);

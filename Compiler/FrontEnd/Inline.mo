@@ -1474,7 +1474,7 @@ algorithm
         (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
         // merge statements to one line
         (repl,assrtStmts) = mergeFunctionBody(stmts,repl,{});
-        true = listEmpty(assrtStmts);
+        true = List.isEmpty(assrtStmts);
         newExp = getReplacementCheckComplex(repl,cr,ty);
         argmap = List.threadTuple(crefs,args);
         (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());

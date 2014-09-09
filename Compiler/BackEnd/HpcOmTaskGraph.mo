@@ -564,7 +564,7 @@ algorithm
         (adjLst,rootNodes);
     case(_,_,_,_,_)
       equation
-        true = listEmpty(parentLst);
+        true = List.isEmpty(parentLst);
         rootNodes = childNode::rootNodesIn;
       then
         (adjLstIn,rootNodes);
@@ -1567,7 +1567,7 @@ algorithm
       BackendDAE.EQSYSTEM(orderedVars=orderedVars) = systIn;
       varLst = BackendVariable.varList(orderedVars);
       stateVars = getStates(varLst,{},1);
-      true = listEmpty(stateVars);
+      true = List.isEmpty(stateVars);
       varOffsetNew = listLength(varLst)+varOffset;
       then
         ((stateNodesIn,varOffsetNew));
@@ -3162,7 +3162,7 @@ protected
   String str;
 algorithm
   str := stringDelimitList(List.map(lstIn,intString),",");
-  strOut := Util.if_(listEmpty(lstIn),"---",str);
+  strOut := Util.if_(List.isEmpty(lstIn),"---",str);
 end intLstString;
 
 public function dumpCriticalPathInfo "author:marcusw
@@ -3258,8 +3258,8 @@ algorithm
         numProc = Flags.getConfigInt(Flags.NUM_PROC);
         taskGraphT = BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
         //get the single nodes, sort them according to their exeCosts in decreasing order
-        (_,singleNodes) = List.filterOnTrueSync(arrayList(iTaskGraph),listEmpty,List.intRange(arrayLength(iTaskGraph)));  //nodes without successor
-        (_,singleNodes1) = List.filterOnTrueSync(arrayList(taskGraphT),listEmpty,List.intRange(arrayLength(taskGraphT))); //nodes without predecessor
+        (_,singleNodes) = List.filterOnTrueSync(arrayList(iTaskGraph),List.isEmpty,List.intRange(arrayLength(iTaskGraph)));  //nodes without successor
+        (_,singleNodes1) = List.filterOnTrueSync(arrayList(taskGraphT),List.isEmpty,List.intRange(arrayLength(taskGraphT))); //nodes without predecessor
         (singleNodes,_,_) = List.intersection1OnTrue(singleNodes,singleNodes1,intEq);
         (_,singleNodes,_) = List.intersection1OnTrue(singleNodes,doNotMergeIn,intEq);
         exeCosts = List.map1(singleNodes,getExeCostReqCycles,iTaskGraphMeta);
@@ -3983,7 +3983,7 @@ algorithm
         false = intEq(inPath,0);
         nodeChildren = arrayGet(graphIn,inPath);
         parents = getParentNodes(inPath,graphIn);
-        true = listEmpty(nodeChildren) and listLength(parents) == 1;
+        true = List.isEmpty(nodeChildren) and listLength(parents) == 1;
         pathLst = List.first(lstIn);
         pathLst = inPath::pathLst;
         lstTmp = List.replaceAt(pathLst,0,lstIn);
@@ -4766,7 +4766,7 @@ algorithm
       equation
         true = arrayLength(graphIn) <> 0;
         graphT = BackendDAEUtil.transposeMatrix(graphIn,arrayLength(graphIn));
-        (_,rootNodes) = List.filterOnTrueSync(arrayList(graphT),listEmpty,List.intRange(arrayLength(graphT)));
+        (_,rootNodes) = List.filterOnTrueSync(arrayList(graphT),List.isEmpty,List.intRange(arrayLength(graphT)));
 
         (cpWCpaths,cpWCcosts) = getCriticalPath(graphIn,graphDataIn,rootNodes,true);
         (CpWoCpaths,cpWoCcosts) = getCriticalPath(graphIn,graphDataIn,rootNodes,false);
