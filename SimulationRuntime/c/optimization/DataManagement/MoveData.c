@@ -685,7 +685,7 @@ void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
         if(cC[ii] == i){
           for(j = lindex[ii]; j < lindex[ii + 1]; ++j){
             ll = sPindex[j];
-            optData->Jf[ll][ii] = resultVars[ll];
+            J[ll][ii] = resultVars[ll];
           }
         }
       }

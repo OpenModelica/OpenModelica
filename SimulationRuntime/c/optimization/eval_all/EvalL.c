@@ -37,7 +37,7 @@
 static inline void num_hessian0(double * v, const double * const lambda, const double objFactor , OptData *optData, const int i, const int j);
 static inline void sumLagrange0(const int i, const int j, double * res,  const modelica_boolean upC, OptData *optData);
 static inline void num_hessian1(double * v, const double * const lambda, const double objFactor, OptData *optData, const int i, const int j);
-static inline void sumLagrange1(const int i, const int j, double * res,  const modelica_boolean upC, const modelica_boolean upC2, const modelica_boolean upC3, OptData *optData);
+static inline void sumLagrange1(const int i, const int j, double * res,  const modelica_boolean upC, const modelica_boolean upC2, OptData *optData);
 #define DF_STEP(v) (1e-5*fabs(v) + 1e-8)
 
 /* eval hessian
@@ -157,7 +157,7 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
       for(i = 0; i < nv; ++i){
         for(j = 0; j < i + 1; ++j){
           if(optData->s.H1[i][j] && np == p){
-            sumLagrange1(i, j, values + (k++),upC, upC2, 1,optData);
+            sumLagrange1(i, j, values + (k++),upC, upC2,optData);
           }else if(optData->s.H0[i][j]){
             sumLagrange0(i, j, values + (k++),upC,optData);
           }
@@ -277,8 +277,8 @@ static inline void num_hessian1(double * v, const double * const lambda,
   const int ncf = optData->dim.ncf;
   const modelica_real * const vmax = optData->bounds.vmax;
   const modelica_real * const vnom = optData->bounds.vnom;
-  const modelica_boolean upCost2 = objFactor != 0 && ma && np == j + 1 && nsi == i  +1;
   const modelica_boolean upFinalCon = np == j + 1 && nsi == i  +1;
+  const modelica_boolean upCost2 = upFinalCon && ma && objFactor != 0;
   const short indexJ = (upCost2) ? 3 : 2;
   int ii,jj, l,k;
   long double v_save, h;
@@ -313,9 +313,6 @@ static inline void num_hessian1(double * v, const double * const lambda,
     /********************/
     diffSynColoredOptimizerSystem(optData, optData->tmpJ, i,j,indexJ);
     /********************/
-    if(upFinalCon)
-      diffSynColoredOptimizerSystemF(optData, optData->tmpJf);
-    /********************/
     v[ii] = (double)v_save;
     /********************/
     for(jj = 0; jj <ii+1; ++jj){
@@ -347,15 +344,18 @@ static inline void num_hessian1(double * v, const double * const lambda,
       }
     }
     /********************/
-    if(upFinalCon)
+    if(upFinalCon && ncf > 0){
+      diffSynColoredOptimizerSystemF(optData, optData->tmpJf);
       for(jj = 0; jj <ii+1; ++jj){
         if(optData->s.H0[ii][jj]){
           for(l = 0; l < ncf; ++l){
-            if(optData->s.Hcf[l][ii][jj])
+            if(optData->s.Hcf[l][ii][jj]){
               optData->Hcf[l][ii][jj] = (long double)(optData->tmpJf[l][jj] - optData->Jf[l][jj])*lambda[nJ+l]/h;
+            }
           }
         }
       }
+    }
     /********************/
   }
 
@@ -392,14 +392,14 @@ static inline void sumLagrange0(const int i, const int j, double * res,
  * author: Vitalij Ruge
  */
 static inline void sumLagrange1(const int i, const int j, double * res,
-    const modelica_boolean upC, const modelica_boolean upC2, const modelica_boolean upC3, OptData *optData){
+    const modelica_boolean upC, const modelica_boolean upC2, OptData *optData){
   const int nJ = optData->dim.nJ;
   const int ncf = optData->dim.ncf;
 
   long double sum = 0.0;
+  int l;
 
   if(optData->s.H0[i][j]){
-    int l;
     for(l = 0; l< nJ; ++l){
       if(optData->s.Hg[l][i][j])
         sum += optData->H[l][i][j];
@@ -407,16 +407,11 @@ static inline void sumLagrange1(const int i, const int j, double * res,
 
     if(upC && optData->s.Hl[i][j])
       sum += optData->Hl[i][j];
-
-    if(upC3){
-      int l;
-      for(l = 0; l< ncf; ++l){
-        if(optData->s.Hcf[l][i][j])
-          sum += optData->Hcf[l][i][j];
-      }
-    }
   }
-
+  for(l = 0; l< ncf; ++l){
+    if(optData->s.Hcf[l][i][j])
+        sum += optData->Hcf[l][i][j];
+    }
   if(upC2 && optData->s.Hm[i][j])
     sum += optData->Hm[i][j];
 
