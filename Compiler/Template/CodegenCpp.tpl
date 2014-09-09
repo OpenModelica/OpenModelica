@@ -1271,7 +1271,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   #include <Core/ModelicaDefine.h>
   #include <SimCoreFactory/Policies/FactoryConfig.h>
   #include <SimController/ISimController.h>
-  <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '#include "Core/Utils/extension/measure_time.hpp"' %>
+  <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '#include "Core/Utils/extension/measure_time_rdtsc.hpp"' %>
   #if defined(_MSC_VER) || defined(__MINGW32__)
   #include <tchar.h>
   int _tmain(int argc, const _TCHAR* argv[])
@@ -1279,20 +1279,20 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   int main(int argc, const char* argv[])
   #endif
   {
-  <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then 'RDTSC_MeasureTime::initialize();' %>
+      <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then 'MeasureTimeRDTSC::initialize();' %>
       try
       {
-      boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
+            boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
             //SimController to start simulation
 
             std::pair<boost::shared_ptr<ISimController>,SimSettings> simulation =  _factory->createSimulation(argc,argv);
 
-        //create Modelica system
+            //create Modelica system
             std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
 
             simulation.first->Start(system.first,simulation.second,"<%lastIdentOfPath(modelInfo.name)%>");
-      <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '//RDTSC_MeasureTime::deinitialize();' %>
-      return 0;
+            <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '//MeasureTimeRDTSC::deinitialize();' %>
+            return 0;
 
       }
       catch(std::exception& ex)
@@ -1653,12 +1653,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         >>
         %>
         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+        let numOfEqs = SimCodeUtil.getMaxSimEqSystemIndex(simCode)
         <<
-        MeasureTime::data ref;
-        ref.max_time = 0;
-        ref.num_calcs = 0;
-        ref.sum_time = 0;
-        measureTimeArray = std::vector<MeasureTime::data>(<%intAdd(listLength(simCode.allEquations), listLength(simCode.initialEquations))%>,ref);
+        measureTimeArray = std::vector<MeasureTimeData>(<%numOfEqs%>);
+        measuredStartValues = MeasureTime::getZeroValues();
+        measuredEndValues = MeasureTime::getZeroValues();
+        
+        for(int i = 0; i < <%numOfEqs%>; i++)
+            measureTimeArray[i] = MeasureTimeData();
         >>
         %>
         //DAE's are not supported yet, Index reduction is enabled
@@ -1683,9 +1685,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
         <<
-            MeasureTime::getInstance()->writeTimeToJason("<%dotPath(modelInfo.name)%>",measureTimeArray);
+        MeasureTime::getInstance()->writeTimeToJason("<%dotPath(modelInfo.name)%>",measureTimeArray);
         >>
-      %>
+        %>
     }
 
 
@@ -4286,7 +4288,11 @@ match modelInfo
 
      boost::shared_ptr<ISimData> _simData;
 
-  <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then 'std::vector<MeasureTime::data> measureTimeArray;' %>
+     <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+     <<
+     std::vector<MeasureTimeData> measureTimeArray;
+     MeasureTimeValues *measuredStartValues, *measuredEndValues, *measuredOverheadValues;
+     >>%>
 
      <%memberfuncs%>
 
@@ -7271,8 +7277,8 @@ end equation_function_call;
 template measureTimeStart(String eq_number)
 ::=
   <<
-    long long unsigned startMeasure_t, endMeasure_t,measure_t;
-    startMeasure_t = MeasureTime::getTime();
+  MeasureTime::getTimeValues(measuredStartValues);
+  for(int i = 0; i < 10; i++) {
   >>
 end measureTimeStart;
 
@@ -7280,11 +7286,14 @@ template measureTimeStop(String eq_number)
 ::=
   let eqNumber = intSub(stringInt(eq_number),1)
   <<
-    endMeasure_t = MeasureTime::getTime();
-    measure_t = endMeasure_t - startMeasure_t;
-    if(measure_t > measureTimeArray[<%eqNumber%>].max_time) measureTimeArray[<%eqNumber%>].max_time = measure_t;
-    measureTimeArray[<%eqNumber%>].sum_time += measure_t;
-    ++(measureTimeArray[<%eqNumber%>].num_calcs);
+  }
+  MeasureTime::getTimeValues(measuredEndValues);
+  measuredEndValues->sub(measuredStartValues);
+  measuredEndValues->div(10);
+  //measuredEndValues->sub(MeasureTime::getOverhead());
+  //if(measure_t > measureTimeArray[<%eqNumber%>].max_time) measureTimeArray[<%eqNumber%>].max_time = measuredEndValues;
+  (measureTimeArray[<%eqNumber%>].sumMeasuredValues)->add(measuredEndValues);
+  ++(measureTimeArray[<%eqNumber%>].numCalcs);
   >>
 end measureTimeStop;
 
@@ -7332,10 +7341,10 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     */
     void <%lastIdentOfPathFromSimCode(simCode)%><%classnameext%>::<%method%>_<%ix_str%>()
     {
-    <%measureTimeStartVar%>
       <%varDeclsLocal%>
-      <%body%>
-    <%measureTimeEndVar%>
+      <%measureTimeStartVar%>
+        <%body%>
+      <%measureTimeEndVar%>
     }
   >>
 
