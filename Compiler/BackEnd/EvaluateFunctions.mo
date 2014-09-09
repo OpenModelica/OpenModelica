@@ -365,7 +365,7 @@ algorithm
         //print("varScalarCrefs 1\n"+&stringDelimitList(List.map(varScalarCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
 
         // is it completely constant or partially?
-        funcIsConst = List.isEmpty(varScalarCrefs) and listEmpty(varComplexCrefs);
+        funcIsConst = List.isEmpty(varScalarCrefs) and List.isNotEmpty(varComplexCrefs);
         funcIsPartConst = (List.isNotEmpty(varScalarCrefs) or List.isNotEmpty(varComplexCrefs)) and (List.isNotEmpty(constScalarCrefs) or List.isNotEmpty(constComplexCrefs)) and not funcIsConst;
         isConstRec = intEq(listLength(constScalarCrefs),listLength(List.flatten(scalarOutputs))) and List.isEmpty(varScalarCrefs) and listEmpty(varComplexCrefs) and listEmpty(constComplexCrefs);
 

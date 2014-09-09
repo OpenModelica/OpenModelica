@@ -355,7 +355,7 @@ public function isNotEmpty
   input list<ElementType> inList;
   output Boolean outIsNotEmpty;
 algorithm
-  outIsNotEmpty := not List.isEmpty(inList);
+  outIsNotEmpty := not isEmpty(inList);
 end isNotEmpty;
 
 public function assertIsEmpty
