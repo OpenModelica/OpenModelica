@@ -429,7 +429,7 @@ algorithm
   end match;
 end dumpKind;
 
-protected function dumpKindStr "Dump VarKind to a string."
+public function dumpKindStr "Dump VarKind to a string."
   input DAE.VarKind inVarKind;
   output String outString;
 algorithm

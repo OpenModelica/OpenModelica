@@ -91,6 +91,17 @@ algorithm
   end match;
 end constStrFriendly;
 
+public function const2VarKind
+  input DAE.Const const;
+  output DAE.VarKind kind;
+algorithm
+  kind := match(const)
+    case(DAE.C_VAR()) then DAE.VARIABLE();
+    case(DAE.C_PARAM()) then DAE.PARAM();
+    case(DAE.C_CONST()) then DAE.CONST();
+  end match;
+end const2VarKind;
+
 public function dumpVarParallelismStr "Dump VarParallelism to a string"
   input DAE.VarParallelism inVarParallelism;
   output String outString;

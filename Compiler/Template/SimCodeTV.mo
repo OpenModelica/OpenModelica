@@ -287,6 +287,7 @@ package SimCode
       Option<DAE.Exp> value;
       list<DAE.Exp> instDims;
       DAE.VarParallelism parallelism;
+      DAE.VarKind kind;
     end VARIABLE;
 
     record FUNCTION_PTR

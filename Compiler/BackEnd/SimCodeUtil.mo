@@ -850,10 +850,12 @@ algorithm
       DAE.Type tty;
       String name;
       DAE.ComponentRef cref_;
+      DAE.Const const;
       list<DAE.FuncArg> args;
       DAE.Type res_ty;
       list<SimCode.Variable> var_args;
       list<DAE.Type> tys;
+      DAE.VarKind kind;
       DAE.VarParallelism prl;
 
     case DAE.FUNCARG(name=name, ty=DAE.T_FUNCTION(funcArg = args, funcResultType = DAE.T_TUPLE(tupleType = tys)))
@@ -876,12 +878,13 @@ algorithm
       then
         SimCode.FUNCTION_PTR(name, {res_ty}, var_args);
 
-    case DAE.FUNCARG(name=name, ty=tty, par=prl)
+    case DAE.FUNCARG(name=name, ty=tty, par=prl, const=const)
       equation
         tty = Types.simplifyType(tty);
         cref_  = ComponentReference.makeCrefIdent(name, tty, {});
+        kind = DAEUtil.const2VarKind(const);
       then
-        SimCode.VARIABLE(cref_, tty, NONE(), {}, prl);
+        SimCode.VARIABLE(cref_, tty, NONE(), {}, prl, kind);
   end matchcontinue;
 end typesSimFunctionArg;
 
@@ -894,6 +897,7 @@ algorithm
       String name;
       DAE.Type daeType;
       DAE.ComponentRef id;
+      DAE.VarKind kind;
       DAE.VarParallelism prl;
       list<DAE.Subscript> inst_dims;
       list<DAE.Exp> inst_dims_exp;
@@ -908,12 +912,13 @@ algorithm
       parallelism = prl,
       ty = daeType,
       binding = binding,
-      dims = inst_dims
+      dims = inst_dims,
+      kind = kind
     ))
       equation
         daeType = Types.simplifyType(daeType);
         inst_dims_exp = List.map(inst_dims, indexSubscriptToExp);
-      then SimCode.VARIABLE(id, daeType, binding, inst_dims_exp, prl);
+      then SimCode.VARIABLE(id, daeType, binding, inst_dims_exp, prl, kind);
     case (_)
       equation
         // TODO: ArrayEqn fails here
@@ -7547,6 +7552,34 @@ algorithm
   print("\n");
 end dumpVarLst;
 
+protected function dumpVariablesString "dumps a list of SimCode.Variables to stdout.
+author: Waurich TUD 2014-09"
+  input list<SimCode.Variable> vars;
+  input String delimiter;
+algorithm
+  _ := matchcontinue(vars,delimiter)
+    local
+      String s1,s2;
+      DAE.ComponentRef cref;
+      DAE.Type ty;
+      DAE.VarKind kind;
+      Option<DAE.Exp> val;
+      list<DAE.Exp> instDims;
+      list<SimCode.Variable> rest;
+    case({},_)
+      equation
+        then();
+    case(SimCode.VARIABLE(name=cref,ty=ty,value=val,instDims=instDims,parallelism=_,kind=kind)::rest,_)
+      equation
+        (s1,_) = DAEDump.printTypeStr(ty);
+        s1 = Types.printTypeStr(ty);
+        s2 = DAEDump.dumpKindStr(kind);
+        print(ComponentReference.printComponentRefStr(cref)+&" ("+&s1+&", "+&s2+&") "+&delimiter);
+        dumpVariablesString(rest,delimiter);
+      then ();
+  end matchcontinue;
+end dumpVariablesString;
+
 public function dumpModelInfo"dumps the SimVars to stdout
 author:Waurich TUD 2014-05"
   input SimCode.ModelInfo modelInfo;
@@ -7558,15 +7591,70 @@ protected
   list<SimCode.SimVar> derivativeVars;
   list<SimCode.SimVar> algVars;
   list<SimCode.SimVar> discreteAlgVars;
+  list<SimCode.Function> functions;
 algorithm
-  SimCode.MODELINFO(vars=simVars, varInfo=varInfo) := modelInfo;
+  SimCode.MODELINFO(vars=simVars, varInfo=varInfo, functions=functions) := modelInfo;
   SimCode.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,discreteAlgVars=discreteAlgVars) := simVars;
   SimCode.VARINFO(numStateVars=nsv,numAlgVars=nalgv) := varInfo;
   Debug.bcall2(List.isNotEmpty(stateVars),dumpVarLst,stateVars,"stateVars ("+&intString(nsv)+&")");
   Debug.bcall2(List.isNotEmpty(derivativeVars),dumpVarLst,derivativeVars,"derivativeVars");
   Debug.bcall2(List.isNotEmpty(algVars),dumpVarLst,algVars,"algVars ("+&intString(nalgv)+&")");
   Debug.bcall2(List.isNotEmpty(discreteAlgVars),dumpVarLst,discreteAlgVars,"discreteAlgVars");
+  print("functions:\n-----------\n\n");
+  Debug.bcall1(List.isNotEmpty(functions),dumpFunctions,functions);
 end dumpModelInfo;
+
+protected function dumpFunctions
+  input list<SimCode.Function> functions;
+algorithm
+  _ := matchcontinue(functions)
+  local
+    Absyn.Path path;
+    list<SimCode.Function> rest;
+    list<SimCode.Variable> outVars,functionArguments,variableDeclarations,funArgs, locals;
+    list<SimCode.Statement> body;
+  case({})
+    equation
+    then ();
+  case(SimCode.FUNCTION(name=path,outVars=outVars,functionArguments=functionArguments,variableDeclarations=variableDeclarations,body=body)::rest)
+    equation
+      print("Function: "+&Absyn.pathStringNoQual(path)+&"\n");
+      print("\toutVars: ");
+      dumpVariablesString(outVars," , ");
+      print("\n\tfunctionArguments: ");
+      dumpVariablesString(functionArguments," , ");
+      print("\n\tvariableDeclarations: ");
+      dumpVariablesString(variableDeclarations," , ");
+      print("\n");
+      dumpFunctions(rest);
+    then ();
+  case(SimCode.PARALLEL_FUNCTION(name=path)::rest)
+    equation
+      print("Parallel Function: "+&Absyn.pathStringNoQual(path)+&"\n");
+      dumpFunctions(rest);
+    then ();
+  case(SimCode.KERNEL_FUNCTION(name=path)::rest)
+    equation
+      print("Kernel Function: "+&Absyn.pathStringNoQual(path)+&"\n");
+      dumpFunctions(rest);
+    then ();
+  case(SimCode.EXTERNAL_FUNCTION(name=path)::rest)
+    equation
+      print("External Function: "+&Absyn.pathStringNoQual(path)+&"\n");
+      dumpFunctions(rest);
+    then ();
+  case(SimCode.RECORD_CONSTRUCTOR(name=path, funArgs=funArgs, locals=locals)::rest)
+    equation
+      print("Record: "+&Absyn.pathStringNoQual(path)+&"\n");
+      print("\tfunArgs: ");
+      dumpVariablesString(funArgs," , ");
+      print("\n\tlocals: ");
+      dumpVariablesString(locals," , ");
+      print("\n");
+      dumpFunctions(rest);
+    then ();
+  end matchcontinue;
+end dumpFunctions;
 
 public function dumpSimEqSystemLst
   input list<SimCode.SimEqSystem> eqSysLstIn;
@@ -8907,7 +8995,7 @@ algorithm
         cref_ = ComponentReference.makeCrefIdent(name, ty, {});
         DAE.ATTR(parallelism = scPrl) = attr;
         prl = scodeParallelismToDAEParallelism(scPrl);
-      then SimCode.VARIABLE(cref_, ty, NONE(), {}, prl);
+      then SimCode.VARIABLE(cref_, ty, NONE(), {}, prl,DAE.VARIABLE());
   end match;
 end typesVarNoBinding;
 
@@ -8932,7 +9020,7 @@ algorithm
         DAE.ATTR(parallelism = scPrl) = attr;
         prl = scodeParallelismToDAEParallelism(scPrl);
         bindExp = Types.getBindingExp(inTypesVar, Absyn.IDENT(name));
-      then SimCode.VARIABLE(cref_, ty, SOME(bindExp), {}, prl);
+      then SimCode.VARIABLE(cref_, ty, SOME(bindExp), {}, prl, DAE.VARIABLE());
   end match;
 end typesVar;
 
