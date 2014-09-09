@@ -219,7 +219,7 @@ void Cvode::initialize()
       throw std::invalid_argument("Cvode::initialize()");
 
   // Use own jacobian matrix
-  _idid = CVDlsSetDenseJacFn(_cvodeMem, CV_JCallback);
+  //_idid = CVDlsSetDenseJacFn(_cvodeMem, CV_JCallback);
   if (_idid < 0)
       throw std::invalid_argument("CVode::initialize()");
 
@@ -236,7 +236,7 @@ void Cvode::initialize()
 
     }
 
-  initializeColoredJac();
+    initializeColoredJac();
     _cvode_initialized = true;
 
     //
