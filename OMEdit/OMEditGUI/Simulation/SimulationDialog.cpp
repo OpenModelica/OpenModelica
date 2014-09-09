@@ -257,7 +257,7 @@ void SimulationDialog::setUpForm()
   mpOutputVariablesLabel->setToolTip(tr("Comma separated list of variables. Output the variables at the end of the simulation to the standard output."));
   mpOutputVariablesTextBox = new QLineEdit;
   // measure simulation time checkbox
-  QLabel *mpProfilingLabel = new Label(tr("Profiling (enable performance measurements)"));
+  mpProfilingLabel = new Label(tr("Profiling (enable performance measurements)"));
   mpProfilingComboBox = new QComboBox;
   QStringList profilingOptions = mpMainWindow->getOMCProxy()->getConfigFlagValidOptions("profiling");
   mpProfilingComboBox->addItems(profilingOptions);
