@@ -9265,6 +9265,11 @@ algorithm
         path = Absyn.makeNotFullyQualified(path);
         false = List.isMemberOnTrue(path, filter, Absyn.pathEqual);
       then (inExp, (path::acc, filter));
+    case (DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = path)), (acc, filter))
+      equation
+        false = List.isMemberOnTrue(path, {Absyn.IDENT("list"),Absyn.IDENT("listReverse"),Absyn.IDENT("array"),Absyn.IDENT("min"),Absyn.IDENT("max"),Absyn.IDENT("sum"),Absyn.IDENT("product")}, Absyn.pathEqual);
+        false = List.isMemberOnTrue(path, filter, Absyn.pathEqual);
+      then (inExp, (path::acc, filter));
     case (DAE.PARTEVALFUNCTION(path = path), (acc, filter))
       equation
         path = Absyn.makeNotFullyQualified(path);

@@ -47,6 +47,7 @@ protected import Debug;
 protected import Dump;
 protected import Error;
 protected import Expression;
+protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import ExpressionSimplifyTypes;
 protected import Flags;
@@ -954,6 +955,9 @@ algorithm
         ety = Types.simplifyType(Types.typeOfValue(valType));
       then
         DAE.EMPTY(scope, DAE.CREF_IDENT(name, ety, {}), ety, tyStr);
+
+    case (Values.NORETCALL())
+      then DAE.TUPLE({});
 
     case (v)
       equation
@@ -2049,6 +2053,8 @@ algorithm
         Print.printBuf("}");
       then
         ();
+    case Values.TUPLE(valueLst = {})
+      then ();
     case Values.TUPLE(valueLst = vs)
       equation
         Print.printBuf("(");
@@ -2056,6 +2062,8 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    case Values.META_TUPLE(valueLst = {})
+      then ();
     case Values.META_TUPLE(valueLst = vs)
       equation
         Print.printBuf("(");
@@ -2151,7 +2159,8 @@ algorithm
       then
         ();
 
-    case(Values.NORETCALL()) then ();
+    case (Values.NORETCALL())
+      then ();
 
     case (Values.META_FAIL())
       equation

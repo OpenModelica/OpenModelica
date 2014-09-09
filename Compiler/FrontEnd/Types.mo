@@ -81,9 +81,7 @@ protected import ValuesUtil;
 protected import DAEUtil;
 protected import SCodeDump;
 
-public function discreteType
-"author: PA
-  Succeeds for all the discrete types, Integer, String, Boolean and enumeration."
+public function discreteType "Succeeds for all the discrete types, Integer, String, Boolean and enumeration."
   input DAE.Type inType;
 algorithm
   _ := match (inType)
@@ -101,9 +99,7 @@ algorithm
   end match;
 end discreteType;
 
-public function propsAnd "
-Author BZ, 2008-09
-Function for merging a list of properties, currently only working on DAE.PROP() and not TUPLE_DAE.PROP()."
+public function propsAnd "Function for merging a list of properties, currently only working on DAE.PROP() and not TUPLE_DAE.PROP()."
   input list<DAE.Properties> inProps;
   output DAE.Properties outProp;
 algorithm outProp := matchcontinue(inProps)
@@ -124,7 +120,6 @@ algorithm outProp := matchcontinue(inProps)
 end matchcontinue;
 end propsAnd;
 
-// stefan
 public function makePropsNotConst
 "returns the same Properties but with the const flag set to Var"
   input DAE.Properties inProperties;
@@ -2897,15 +2892,14 @@ protected function getInputVars "author: LS
   input list<DAE.Var> vl;
   output list<DAE.Var> vl_1;
 algorithm
-  vl_1 := getVars(vl, isInputVar);
+  vl_1 := List.select(vl, isInputVar);
 end getInputVars;
 
-protected function getOutputVars "author: LS
-  Retrieve all output variables from a list of variables."
+protected function getOutputVars "Retrieve all output variables from a list of variables."
   input list<DAE.Var> vl;
   output list<DAE.Var> vl_1;
 algorithm
-  vl_1 := getVars(vl, isOutputVar);
+  vl_1 := List.select(vl, isOutputVar);
 end getOutputVars;
 
 public function getFixedVarAttributeParameterOrConstant
@@ -2988,37 +2982,6 @@ algorithm
   end matchcontinue;
 end getClassnameOpt;
 
-public function getVars "author: LS
-  Select the variables from the list for which the
-  condition function given as second argument succeeds."
-  input list<DAE.Var> inVarLst;
-  input FuncTypeVarTo inFuncTypeVarTo;
-  output list<DAE.Var> outVarLst;
-  partial function FuncTypeVarTo
-    input DAE.Var inVar;
-  end FuncTypeVarTo;
-algorithm
-  outVarLst := matchcontinue (inVarLst,inFuncTypeVarTo)
-    local
-      list<DAE.Var> vl_1,vl;
-      DAE.Var v;
-      FuncTypeVarTo cond;
-    case ({},_) then {};
-    case ((v :: vl),cond)
-      equation
-        cond(v);
-        vl_1 = getVars(vl, cond);
-      then
-        (v :: vl_1);
-    case ((v :: vl),cond)
-      equation
-        failure(cond(v));
-        vl_1 = getVars(vl, cond);
-      then
-        vl_1;
-  end matchcontinue;
-end getVars;
-
 public function getConnectorVars
   "Returns the list of variables in a connector, or fails if the type is not a
   connector."
@@ -3037,34 +3000,28 @@ end getConnectorVars;
 public function isInputVar
 "Succeds if variable is an input variable."
   input DAE.Var inVar;
+  output Boolean b;
 algorithm
-  _ := match (inVar)
+  b := match (inVar)
     local
       DAE.Attributes attr;
 
     case DAE.TYPES_VAR(attributes = attr)
-      equation
-        true = isInputAttr(attr);
-        true = isPublicAttr(attr);
-      then
-        ();
+      then isInputAttr(attr) and isPublicAttr(attr);
   end match;
 end isInputVar;
 
 public function isOutputVar
 "Succeds if variable is an output variable."
   input DAE.Var inVar;
+  output Boolean b;
 algorithm
-  _ := match (inVar)
+  b := match (inVar)
     local
       DAE.Attributes attr;
 
     case DAE.TYPES_VAR(attributes = attr)
-      equation
-        true = isOutputAttr(attr);
-        true = isPublicAttr(attr);
-      then
-        ();
+      then isOutputAttr(attr) and isPublicAttr(attr);
   end match;
 end isOutputVar;
 

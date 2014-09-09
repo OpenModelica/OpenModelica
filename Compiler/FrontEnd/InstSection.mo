@@ -2566,8 +2566,9 @@ algorithm
         (cache,e_1) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_NORETCALL(e_1,source);
+        stmts = Util.if_(Expression.isTuple(e_1),{},{stmt});
       then
-        (cache,{stmt});
+        (cache,stmts);
 
     /// break
     case (cache,_,_,_,_,SCode.ALG_BREAK( info = info),source,_,_,_,_)
@@ -5647,6 +5648,7 @@ algorithm
       String str;
     case (DAE.CALL(path=_),_) then ();
     case (DAE.REDUCTION(expr=_),_) then ();
+    case (DAE.TUPLE({}),_) then ();
     else
       equation
         str = ExpressionDump.printExpStr(exp);

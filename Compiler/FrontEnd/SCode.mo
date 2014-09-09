@@ -4841,11 +4841,13 @@ end isImpureFunctionRestriction;
 
 public function isRestrictionImpure
   input Restriction inRestr;
+  input Boolean hasZeroOutputPreMSL3_2;
   output Boolean isExternal;
 algorithm
-  isExternal := match(inRestr)
-    case (R_FUNCTION(FR_EXTERNAL_FUNCTION(true))) then true;
-    case (R_FUNCTION(FR_NORMAL_FUNCTION(true))) then true;
+  isExternal := match(inRestr,hasZeroOutputPreMSL3_2)
+    case (R_FUNCTION(FR_EXTERNAL_FUNCTION(true)),_) then true;
+    case (R_FUNCTION(FR_NORMAL_FUNCTION(true)),_) then true;
+    case (R_FUNCTION(FR_EXTERNAL_FUNCTION(false)),false) then true;
     else false;
   end match;
 end isRestrictionImpure;

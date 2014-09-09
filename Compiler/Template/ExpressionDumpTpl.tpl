@@ -506,6 +506,7 @@ match exp
     let step_str = match step case SOME(step) then '<%dumpOperand(step, e, false)%>:'
     let stop_str = dumpOperand(stop, e, false)
     '<%start_str%>:<%step_str%><%stop_str%>'
+  case TUPLE(PR={}) then ""
   case TUPLE(__) then
     let tuple_str = dumpExpList(PR, stringDelimiter, ", ")
     '(<%tuple_str%>)'

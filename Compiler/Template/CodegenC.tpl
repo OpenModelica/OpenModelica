@@ -4661,7 +4661,7 @@ template contextCref(ComponentRef cr, Context context, Text &auxFunction)
     case CREF_QUAL(identType = T_ARRAY(ty = T_COMPLEX(complexClassType = record_state))) then
       let &preExp = buffer ""
       let &varDecls = buffer ""
-      let rec_name = underscorePath(ClassInf.getStateName(record_state))
+      let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
       let recPtr = tempDecl(rec_name + "*", &varDecls)
       let dimsLenStr = listLength(crefSubs(cr))
       let dimsValuesStr = (crefSubs(cr) |> INDEX(__) => daeDimensionExp(exp, context, &preExp, &varDecls, &auxFunction) ; separator=", ")
@@ -6359,7 +6359,7 @@ case var as VARIABLE(__) then
     'copy_<%expTypeShort(var.ty)%>_array_data(<%contextCref(cr,contextFunction,&auxFunction)%>, &<%lhsVarName%>);<%\n%>'
   case SOME(arr as ARRAY(ty = T_ARRAY(ty = T_COMPLEX(complexClassType = record_state)))) then
     let varName = contextCref(var.name,contextFunction,&auxFunction)
-    let rec_name = underscorePath(ClassInf.getStateName(record_state))
+    let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
     let &preExp = buffer ""
     let params = (arr.array |> e hasindex i1 fromindex 1 =>
       let prefix = if arr.scalar then '(<%expTypeFromExpModelica(e)%>)' else '&'
@@ -7781,6 +7781,7 @@ template daeExp(Exp exp, Context context, Text &preExp, Text &varDecls, Text &au
   case e as BOX(__)             then daeExpBox(e, context, &preExp, &varDecls, &auxFunction)
   case e as UNBOX(__)           then daeExpUnbox(e, context, &preExp, &varDecls, &auxFunction)
   case e as SHARED_LITERAL(__)  then daeExpSharedLiteral(e)
+  case e as CLKCONST(__)        then '#error "<%ExpressionDump.printExpStr(e)%>"'
   else error(sourceInfo(), 'Unknown expression: <%ExpressionDump.printExpStr(exp)%>')
 end daeExp;
 
@@ -7840,7 +7841,7 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp,
       case cr as CREF_QUAL(identType = T_ARRAY(ty = T_COMPLEX(complexClassType = record_state))) then
         let &preExp = buffer ""
         let &varDecls = buffer ""
-        let rec_name = underscorePath(ClassInf.getStateName(record_state))
+        let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
         let recPtr = tempDecl(rec_name + "*", &varDecls)
         let dimsLenStr = listLength(crefSubs(cr))
         let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
@@ -7903,12 +7904,12 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp,
                   ;separator=", ")
                 match ty
                   case (T_ARRAY(ty = T_COMPLEX(complexClassType = record_state))) then
-                  let rec_name = underscorePath(ClassInf.getStateName(record_state))
+                  let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
                   <<
                    (*((<%rec_name%>*)(generic_array_element_addr(&<%arrName%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>))))
                   >>
                   case (T_COMPLEX(complexClassType = record_state)) then
-                  let rec_name = underscorePath(ClassInf.getStateName(record_state))
+                  let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
                   <<
                    (*((<%rec_name%>*)(generic_array_element_addr(&<%arrName%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>))))
                   >>
@@ -9281,7 +9282,7 @@ case CAST(__) then
           let tmp = tempDecl(expTypeModelica(ty2),&varDecls)
           let res = tempDecl(expTypeModelica(ty1),&varDecls)
           let &preExp += '<%tmp%> = <%expVar%>;<%\n%>'
-          let &preExp += ty1.varLst |> var as DAE.TYPES_VAR() => '<%res%>._<%var.name%> = <%tmp%>._<%var.name%>;<%\n%>'
+          let &preExp += ty1.varLst |> var as DAE.TYPES_VAR() => '<%res%>._<%var.name%> = <%tmp%>._<%var.name%>; /* cast */<%\n%>'
           res
   else
     '(<%expVar%>) /* could not cast, using the variable as it is */'
@@ -9379,11 +9380,15 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
   case ASUB(exp=e, sub=indexes) then
     let exp = daeExp(e, context, &preExp, &varDecls, &auxFunction)
     let typeShort = expTypeFromExpShort(e)
-    let expIndexes = (indexes |> index => '<%daeExpASubIndex(index, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
-    '<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(<%exp%>, <%expIndexes%>)'
+    match Expression.typeof(inExp)
+    case T_ARRAY(__) then
+      error(sourceInfo(),'ASUB non-scalar <%printExpStr(inExp)%>. The inner exp has type: <%unparseType(Expression.typeof(e))%>. After ASUB it is still an array: <%unparseType(Expression.typeof(inExp))%>.')
+    else
+      let expIndexes = (indexes |> index => '<%daeExpASubIndex(index, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
+      '<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(<%exp%>, <%expIndexes%>)'
 
-  case exp then
-    error(sourceInfo(),'OTHER_ASUB <%printExpStr(exp)%>')
+  else
+    error(sourceInfo(),'OTHER_ASUB <%printExpStr(inExp)%>')
 end daeExpAsub;
 
 template daeExpASubIndex(Exp exp, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
@@ -9455,40 +9460,32 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
   special reduction functions (list, listReverse, array) and handles both list and array as input"
 ::=
   match exp
-  case r as REDUCTION(reductionInfo=ri as REDUCTIONINFO(iterType=COMBINE()),iterators={iter as REDUCTIONITER(__)}) then
+  case r as REDUCTION(reductionInfo=ri as REDUCTIONINFO(iterType=THREAD()),iterators=iterators)
+  case r as REDUCTION(reductionInfo=ri as REDUCTIONINFO(iterType=COMBINE()),iterators=iterators as {_}) then
+  (
   let &tmpVarDecls = buffer ""
   let &tmpExpPre = buffer ""
   let &bodyExpPre = buffer ""
-  let &guardExpPre = buffer ""
   let &rangeExpPre = buffer ""
-  let identType = expTypeFromExpModelica(iter.exp)
-  let arrayType = expTypeFromExpArray(iter.exp)
   let arrayTypeResult = expTypeFromExpArray(r)
-  let loopVar = match identType
-    case "modelica_metatype" then tempDecl(identType,&tmpVarDecls)
-    else tempDecl(arrayType,&tmpVarDecls)
-  let firstIndex = match identType case "modelica_metatype" then "" else tempDecl("int",&tmpVarDecls)
   let arrIndex = match ri.path case IDENT(name="array") then tempDecl("int",&tmpVarDecls)
   let foundFirst = if not ri.defaultValue then tempDecl("int",&tmpVarDecls)
-  let rangeExp = daeExp(iter.exp,context,&rangeExpPre,&tmpVarDecls, &auxFunction)
   let resType = expTypeArrayIf(typeof(exp))
   let res = contextCref(makeUntypedCrefIdent(ri.resultName), context, &auxFunction)
   let &tmpVarDecls += '<%resType%> <%res%>;<%\n%>'
   let resTmp = tempDecl(resType,&varDecls)
   let &preDefault = buffer ""
-  let resTail = match ri.path case IDENT(name="list") then tempDecl("modelica_metatype*",&tmpVarDecls)
-  let defaultValue = match ri.path case IDENT(name="array") then "" else match ri.defaultValue
-    case SOME(v) then daeExp(valueExp(v),context,&preDefault,&tmpVarDecls, &auxFunction)
-    end match
-  let guardCond = match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls, &auxFunction) else "1"
-  let empty = match identType case "modelica_metatype" then 'listEmpty(<%loopVar%>)' else '0 == size_of_dimension_base_array(<%loopVar%>, 1)'
-  let length = match identType case "modelica_metatype" then 'listLength(<%loopVar%>)' else 'size_of_dimension_base_array(<%loopVar%>, 1)'
+  let resTail = (match ri.path case IDENT(name="list") then tempDecl("modelica_metatype*",&tmpVarDecls))
+  let defaultValue = (match ri.path
+    case IDENT(name="array") then ""
+    else (match ri.defaultValue
+          case SOME(v) then daeExp(valueExp(v),context,&preDefault,&tmpVarDecls, &auxFunction)))
   let reductionBodyExpr = contextCref(makeUntypedCrefIdent(ri.foldName), context, &auxFunction)
   let bodyExprType = expTypeArrayIf(typeof(r.expr))
   let reductionBodyExprWork = daeExp(r.expr, context, &bodyExpPre, &tmpVarDecls, &auxFunction)
   let &tmpVarDecls += '<%bodyExprType%> <%reductionBodyExpr%>;<%\n%>'
   let &bodyExpPre += '<%reductionBodyExpr%> = <%reductionBodyExprWork%>;<%\n%>'
-  let foldExp = match ri.path
+  let foldExp = (match ri.path
     case IDENT(name="list") then
     <<
     *<%resTail%> = mmc_mk_cons(<%reductionBodyExpr%>,0);
@@ -9497,7 +9494,12 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     case IDENT(name="listReverse") then // This is too easy; the damn list is already in the correct order
       '<%res%> = mmc_mk_cons(<%reductionBodyExpr%>,<%res%>);'
     case IDENT(name="array") then
-      '*(<%arrayTypeResult%>_element_addr1(&<%res%>, 1, <%arrIndex%>++)) = <%reductionBodyExpr%>;'
+      match typeof(r.expr)
+        case T_COMPLEX(complexClassType = record_state) then
+          let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
+          '*((<%rec_name%>*)generic_array_element_addr(&<%res%>, sizeof(<%rec_name%>), 1, <%arrIndex%>++)) = <%reductionBodyExpr%>;'
+        else
+          '*(<%arrayTypeResult%>_element_addr1(&<%res%>, 1, <%arrIndex%>++)) = <%reductionBodyExpr%>;'
     else match ri.foldExp case SOME(fExp) then
       let &foldExpPre = buffer ""
       let fExpStr = daeExp(fExp, context, &bodyExpPre, &tmpVarDecls, &auxFunction)
@@ -9513,13 +9515,72 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
         <%foundFirst%> = 1;
       }
       >>
-      else '<%res%> = <%fExpStr%>;'
-  let firstValue = match ri.path
+      else '<%res%> = <%fExpStr%>;')
+  let endLoop = tempDecl("int",&tmpVarDecls)
+  let loopHeadIter = (iterators |> iter as REDUCTIONITER(__) =>
+    let identType = expTypeFromExpModelica(iter.exp)
+    let arrayType = expTypeFromExpArray(iter.exp)
+    let loopVar = '<%iter.id%>_loopVar'
+    let &guardExpPre = buffer ""
+    let &tmpVarDecls += (match identType
+      case "modelica_metatype" then 'modelica_metatype <%loopVar%> = 0;<%\n%>'
+      else '<%arrayType%> <%loopVar%>;<%\n%>')
+    let firstIndex = match identType case "modelica_metatype" then "" else tempDecl("int",&tmpVarDecls)
+    let rangeExp = daeExp(iter.exp,context,&rangeExpPre,&tmpVarDecls, &auxFunction)
+    let &rangeExpPre += '<%loopVar%> = <%rangeExp%>;<%\n%>'
+    let &rangeExpPre += if firstIndex then '<%firstIndex%> = 1;<%\n%>'
+    let guardCond = (match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls, &auxFunction) else "1")
+    let empty = (match identType case "modelica_metatype" then 'listEmpty(<%loopVar%>)' else '0 == size_of_dimension_base_array(<%loopVar%>, 1)')
+    let iteratorName = contextIteratorName(iter.id, context)
+    let &tmpVarDecls += '<%identType%> <%iteratorName%>;<%\n%>'
+    let guardExp =
+      <<
+      <%&guardExpPre%>
+      if(<%guardCond%>) { /* found non-guarded */
+        <%endLoop%>--;
+        break;
+      }
+      >>
+    (match identType
+      case "modelica_metatype" then
+      <<
+      while(!<%empty%>) {
+        <%iteratorName%> = MMC_CAR(<%loopVar%>);
+        <%loopVar%> = MMC_CDR(<%loopVar%>);
+        <%guardExp%>
+      }
+      >>
+      else
+      let addr = match iter.ty
+        case T_ARRAY(ty=T_COMPLEX(complexClassType = record_state)) then
+          let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
+          '*((<%rec_name%>*)generic_array_element_addr(&<%loopVar%>, sizeof(<%rec_name%>), 1, <%firstIndex%>++))'
+        else
+          '*(<%arrayType%>_element_addr1(&<%loopVar%>, 1, <%firstIndex%>++))'
+      <<
+      while(<%firstIndex%> <= size_of_dimension_base_array(<%loopVar%>, 1)) {
+        <%iteratorName%> = <%addr%>;
+        <%guardExp%>
+      }
+      >>))
+  let firstValue = (match ri.path
      case IDENT(name="array") then
-     <<
-     <%arrIndex%> = 1;
-     simple_alloc_1d_<%arrayTypeResult%>(&<%res%>,<%length%>);
-     >>
+       let length = tempDecl("int",&tmpVarDecls)
+       let &rangeExpPre += '<%length%> = 0;<%\n%>'
+       let _ = (iterators |> iter as REDUCTIONITER(__) =>
+         let loopVar = '<%iter.id%>_loopVar'
+         let identType = expTypeFromExpModelica(iter.exp)
+         let &rangeExpPre += '<%length%> = max(<%length%>,<%match identType case "modelica_metatype" then 'listLength(<%loopVar%>)' else 'size_of_dimension_base_array(<%loopVar%>, 1)'%>);<%\n%>'
+         "")
+       <<
+       <%arrIndex%> = 1;
+       <% match typeof(r.expr)
+        case T_COMPLEX(complexClassType = record_state) then
+          let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
+          'alloc_generic_array(&<%res%>,sizeof(<%rec_name%>),1,<%length%>);'
+        else
+          'simple_alloc_1d_<%arrayTypeResult%>(&<%res%>,<%length%>);'%>
+       >>
      else if ri.defaultValue then
      <<
      <%&preDefault%>
@@ -9528,46 +9589,38 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
      else
      <<
      <%foundFirst%> = 0; /* <%dotPath(ri.path)%> lacks default-value */
-     >>
-  let iteratorName = contextIteratorName(iter.id, context)
-  let loopHead = match identType
-    case "modelica_metatype" then
+     >>)
+  let loop =
     <<
-    while(!<%empty%>)
-    {
-      <%identType%> <%iteratorName%>;
-      <%iteratorName%> = MMC_CAR(<%loopVar%>);
-      <%loopVar%> = MMC_CDR(<%loopVar%>);
-    >>
-    else
-    <<
-    while(<%firstIndex%> <= size_of_dimension_base_array(<%loopVar%>, 1))
-    {
-      <%identType%> <%iteratorName%>;
-      <%iteratorName%> = *(<%arrayType%>_element_addr1(&<%loopVar%>, 1, <%firstIndex%>++));
+    while(1) {
+      <%endLoop%> = <%listLength(iterators)%>;
+      <%loopHeadIter%>
+      if (<%endLoop%> == 0) {
+        <%&bodyExpPre%>
+        <%foldExp%>
+      } <% match iterators case _::_ then
+      <<
+      else if (<%endLoop%> == <%listLength(iterators)%>) {
+        break;
+      } else {
+        MMC_THROW_INTERNAL();
+      }
+      >> %>
+    }
     >>
   let &preExp += <<
   {
     <%&tmpVarDecls%>
     <%&rangeExpPre%>
-    <%loopVar%> = <%rangeExp%>;
-    <% if firstIndex then '<%firstIndex%> = 1;' %>
     <%firstValue%>
     <% if resTail then '<%resTail%> = &<%res%>;' %>
-    <%loopHead%>
-      <%&guardExpPre%>
-      if(<%guardCond%>)
-      {
-        <%&bodyExpPre%>
-        <%foldExp%>
-      }
-    }
+    <%loop%>
     <% if not ri.defaultValue then 'if (!<%foundFirst%>) MMC_THROW_INTERNAL();' %>
     <% if resTail then '*<%resTail%> = mmc_mk_nil();' %>
     <% resTmp %> = <% res %>;
   }<%\n%>
   >>
-  resTmp
+  resTmp)
   else error(sourceInfo(), 'Code generation does not support multiple iterators: <%printExpStr(exp)%>')
 end daeExpReduction;
 
@@ -10042,7 +10095,7 @@ case var as VARIABLE(parallelism = PARLOCAL()) then
   if instDims then
     'device_local_<%expTypeArray(var.ty)%>'
   else
-    '<%expTypeArrayIf(var.ty)%>'
+    expTypeArrayIf(var.ty)
 end varType;
 
 template varTypeBoxed(Variable var)
@@ -10194,7 +10247,7 @@ template expTypeFlag(DAE.Type ty, Integer flag)
     else match ty case T_COMPLEX(__) then
       '<%underscorePath(ClassInf.getStateName(complexClassType))%>'
     else match ty case T_ARRAY(ty = t as T_COMPLEX(__)) then
-      '<%expTypeShort(t)%>'
+      expTypeShort(t)
     else
       'modelica_<%expTypeShort(ty)%>'
   case 3 then

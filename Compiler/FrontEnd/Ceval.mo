@@ -348,7 +348,7 @@ algorithm
 
     case (cache,env,DAE.TUPLE(expl),impl,stOpt,msg,_)
       equation
-        true = Config.acceptMetaModelicaGrammar();
+        // true = Config.acceptMetaModelicaGrammar();
         (cache,vallst,stOpt) = cevalList(cache, env, expl, impl, stOpt,msg,numIter);
       then (cache,Values.TUPLE(vallst),stOpt);
 
@@ -933,7 +933,7 @@ algorithm
     case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _, _)
       equation
         DAE.C_CONST() = Types.propAllConst(inProp);
-        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Absyn.NO_MSG(), 0);
+        (cache, v, _) = ceval(inCache, inEnv, e, false, NONE(), Absyn.NO_MSG(), 0);
         e = ValuesUtil.valueExp(v);
       then
         (cache, e, inProp);
@@ -945,6 +945,18 @@ algorithm
         print(" tuple non constant evaluation not implemented yet\n");
       then
         fail();
+
+    case (_, _, e, _, _, _)
+      equation
+        true = Expression.isConst(e); // Structural parameters and the like... we can ceval them if we want to
+        false = Config.acceptMetaModelicaGrammar();
+        // false = Expression.isConstValue(e);
+        // print("Try ceval: " + ExpressionDump.printExpStr(e) + "; expect " + Types.unparseType(Types.getPropType(inProp)) + "\n");
+        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Absyn.NO_MSG(), 0);
+        // print("Ceval'ed constant: " + ExpressionDump.printExpStr(inExp) + " => " + ValuesUtil.valString(v) + "\n");
+        e = ValuesUtil.valueExp(v);
+        // print("Ceval'ed constant: " + ExpressionDump.printExpStr(inExp) + "\n");
+      then (inCache, e, inProp);
 
     else
       equation
@@ -1151,6 +1163,7 @@ algorithm
     case "fill" then cevalBuiltinFill;
     case "Modelica.Utilities.Strings.substring" then cevalBuiltinSubstring;
     case "print" then cevalBuiltinPrint;
+    case "fail" then cevalBuiltinFail;
     // BTH
     case "Clock"
       equation
@@ -4480,6 +4493,24 @@ algorithm
         (cache,v,st);
   end matchcontinue;
 end cevalBuiltinSizeMatrix;
+
+protected function cevalBuiltinFail
+  "This function constant evaluates calls to the fail() function."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpl;
+  input Boolean inImpl;
+  input Option<GlobalScript.SymbolTable> inST;
+  input Absyn.Msg inMsg;
+  input Integer numIter;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<GlobalScript.SymbolTable> outST;
+algorithm
+  outCache := inCache;
+  outValue := Values.META_FAIL();
+  outST := inST;
+end cevalBuiltinFail;
 
 protected function cevalBuiltinFill
   "This function constant evaluates calls to the fill function."

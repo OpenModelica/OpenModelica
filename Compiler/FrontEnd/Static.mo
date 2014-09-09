@@ -8520,6 +8520,7 @@ algorithm
   (call_exp,_) := ExpressionSimplify.condsimplify(didInline,call_exp);
   didInline := didInline and (not Config.acceptMetaModelicaGrammar() /* Some weird errors when inlining. Becomes boxed even if it shouldn't... */);
   prop_1 := Debug.bcallret2(didInline, Types.setPropType, prop_1, restype, prop_1);
+  (cache, call_exp, prop_1) := Ceval.cevalIfConstant(cache, inEnv, call_exp, prop_1, impl, info);
   expProps := Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
   outCache := cache;
 end elabCallArgs3;

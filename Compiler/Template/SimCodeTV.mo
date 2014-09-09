@@ -1129,6 +1129,9 @@ package DAE
     record BCONST
       Boolean bool;
     end BCONST;
+    record CLKCONST
+      Absyn.ClockKind clk;
+    end CLKCONST;
     record ENUM_LITERAL
       Absyn.Path name;
       Integer index;
@@ -3107,6 +3110,10 @@ package Types
     input list<DAE.Exp> inDimensionLst;
     output DAE.Type outType;
   end liftArrayListExp;
+ function unliftArray
+    input DAE.Type inType;
+    output DAE.Type outType;
+  end unliftArray;
 end Types;
 
 package FMI
