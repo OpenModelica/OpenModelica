@@ -74,6 +74,13 @@ public:
   {
      _real_array = otherarray._real_array;
   }
+  StatArrayDim1(const DynArrayDim1<T>& otherarray)
+  :BaseArray<T>(true)
+  {
+     const T* data_otherarray = otherarray.getData();
+    //std::copy(data_otherarray,data_otherarray+size,_real_array.begin());
+    memcpy( _real_array.begin(), data_otherarray, size * sizeof( T ) );
+  }
 
   StatArrayDim1()
   :BaseArray<T>(true)
@@ -263,16 +270,10 @@ public:
 
   void append(size_t i,const StatArrayDim1<T,size2>& rhs)
   {
-
-    if(rhs.getDims()[0]==size2)
-    {
-        const T* data = rhs.getData();
-        // std::copy(data,data+size2,data0+(size1));
-        memcpy( _real_array.begin()+(i-1)*size2, data, size2 * sizeof( T ) );
-    }
-    else
-      throw std::runtime_error("Wrong array dimension");
-
+    const T* data = rhs.getData();
+    // std::copy(data,data+size2,data0+(size1));
+    memcpy( _real_array.begin()+(i-1)*size2, data, size2 * sizeof( T ) );
+   
   }
   virtual void assign(const BaseArray<T>& otherArray)
   {
@@ -282,14 +283,7 @@ public:
     const T* data_otherarray = otherArray.getData();
      //std::copy(data_otherarray,data_otherarray+size1*size2,_real_array.begin());
      memcpy( _real_array.begin(), data_otherarray, size1*size2 * sizeof( T ) );
-    /*for(int i = 1; i <= min(v[0],size1); i++)
-    {
-      for(int j = 1; j <= min(v[1],size2); j++)
-      {
-        _real_array[size2*(i - 1) + j - 1] = otherArray(i,j);
-      }
-    }
-    */
+  
   }
 
   virtual void assign(const T* data)//)const T (&data) [size1*size2]
@@ -395,18 +389,17 @@ public:
      const T* data_otherarray = otherArray.getData();
      //std::copy(data_otherarray,data_otherarray+size1*size2*size3,_real_array.begin());
       memcpy( _real_array.begin(), data_otherarray, size1*size2*size3 * sizeof( T ) );
-    /*for(int i = 1; i <= min(v[0],size1); i++)
-    {
-      for(int j = 1; j <= min(v[1],size2); j++)
-      {
-        for(int k = 1; k <= min(v[2],size3); k++)
-        {
-          _real_array[i-1][j-1][k-1] = otherArray(i,j,k);
-        }
-      }
-    }*/
+   
   }
+  void append(size_t i,const StatArrayDim2<T,size2,size3>& rhs)
+  {
 
+        const T* data = rhs.getData();
+        // std::copy(data,data+size2,data0+(size1));
+        memcpy( _real_array.begin()+(i-1)*size2*size3, data, size2 *size3*sizeof( T ) );
+    
+
+  }
   virtual void assign(const T* data)
   {
      //std::copy(data,data+size1*size2*size3,_real_array.begin());
@@ -924,14 +917,16 @@ public:
     _multi_array.reindex(1);
      const T* data = otherArray.getData();
     _multi_array.assign(data, data + v[0]*v[1]);
-   /*for (int i = 1; i <= v[0]; i++)
-    {
-      for (int j = 1; j <= v[1]; j++)
-      {
-        _multi_array[i][j] = otherArray(i,j);
-      }
-    }
-     */
+  }
+  void append(size_t i,const DynArrayDim1<T>& rhs)
+  {
+
+        const T* data = rhs.getData();
+        boost::multi_array<T, 1>  a;
+        std::vector<size_t> v = rhs.getDims();
+        a.resize(v);
+        a.reindex(1);
+        _multi_array[i]=a;
   }
   DynArrayDim2<T>& operator=(const DynArrayDim2<T>& rhs)
   {
