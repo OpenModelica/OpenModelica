@@ -92,7 +92,7 @@ function isEmpty
   input T ts;
   output Boolean isEmpty;
 algorithm
-  isEmpty := List.isEmpty(ts);
+  isEmpty := listEmpty(ts);
 end isEmpty;
 
 function insert

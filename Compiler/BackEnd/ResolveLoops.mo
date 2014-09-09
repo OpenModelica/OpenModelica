@@ -207,7 +207,7 @@ algorithm
     case(partition::rest,_,_,_,_,_,_,_,_,_)
       equation
         (_,partition,_) = List.intersection1OnTrue(partition,nonLoopEqs,intEq);
-        true = List.isEmpty(partition);
+        true = listEmpty(partition);
         eqLst = resolveLoops_resolvePartitions(rest,mIn,mTIn,m_uncut,mT_uncut,eqMapping,varMapping,daeEqs,daeVars,nonLoopEqs);
     then
       eqLst;
@@ -395,7 +395,7 @@ algorithm
 
         //print("all simpleLoop-paths: \n"+&stringDelimitList(List.map(simpleLoops,HpcOmTaskGraph.intLstString)," / ")+&"\n");
         subLoop = connectPathsToOneLoop(simpleLoops,{});  // try to build a a closed loop from these paths
-        isNoSingleLoop = List.isEmpty(subLoop);
+        isNoSingleLoop = listEmpty(subLoop);
         simpleLoops = Util.if_(isNoSingleLoop,simpleLoops,{subLoop});
         paths0 = listAppend(simpleLoops,connectedPaths);
         paths0 = sortPathsAsChain(paths0);
@@ -415,7 +415,7 @@ algorithm
         (paths0,paths1) =  List.extract1OnTrue(paths,listLengthIs,listLength(List.last(paths)));
           //print("the shortest paths: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
 
-        paths1 = Util.if_(List.isEmpty(paths1),paths0,paths1);
+        paths1 = Util.if_(listEmpty(paths1),paths0,paths1);
         closedPaths = List.map1(paths1,closePathDirectly,paths0);
         closedPaths = List.fold1(closedPaths,getReverseDoubles,closedPaths,{});   // all paths with just one direction
         closedPaths = List.map(closedPaths,List.unique);
@@ -428,7 +428,7 @@ algorithm
          // no crossNodes
            //print("no crossNodes\n");
          varEqsLst = List.map1(eqsIn,Util.arrayGetIndexFirst,mIn);
-         isNoSingleLoop = List.exist(varEqsLst,List.isEmpty);
+         isNoSingleLoop = List.exist(varEqsLst,listEmpty);
          subLoop = Util.if_(isNoSingleLoop,{},eqsIn);
        then
          {subLoop};
@@ -1429,7 +1429,7 @@ protected
   list<Integer> row;
 algorithm
   row := arrayGet(arrayIn,idx);
-  row := Util.if_(List.isEmpty(row),{idx},{});
+  row := Util.if_(listEmpty(row),{idx},{});
   lstOut := listAppend(lstIn,row);
 end arrayGetIsEmptyLst;
 

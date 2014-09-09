@@ -2188,8 +2188,8 @@ algorithm
         zceqnsmarks = BackendDAEUtil.markZeroCrossingEquations(syst, inAllZeroCrossings, zceqnsmarks, ass1);
         (odeEquations1, algebraicEquations1, allEquations1, equationsForZeroCrossings1, uniqueEqIndex, tempvars, eqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping) =
           createEquationsForSystem1(stateeqnsmark, zceqnsmarks, syst, shared, comps, iuniqueEqIndex, itempvars, isccOffset, ieqSccMapping, ieqBackendSimCodeMapping, iBackendMapping, {}, {}, {}, {});
-        odeEquations = List.consOnTrue(not List.isEmpty(odeEquations1),odeEquations1,inOdeEquations);
-        algebraicEquations = List.consOnTrue(not List.isEmpty(algebraicEquations1),algebraicEquations1, inAlgebraicEquations);
+        odeEquations = List.consOnTrue(not listEmpty(odeEquations1),odeEquations1,inOdeEquations);
+        algebraicEquations = List.consOnTrue(not listEmpty(algebraicEquations1),algebraicEquations1, inAlgebraicEquations);
         allEquations = listAppend(inAllEquations, allEquations1);
         equationsForZeroCrossings = listAppend(inEquationsForZeroCrossings, equationsForZeroCrossings1);
         (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsForZeroCrossings, tempvars, eqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping) =

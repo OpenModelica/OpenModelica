@@ -7612,7 +7612,7 @@ algorithm
 
     case (BackendDAE.MIXEDEQUATIONSYSTEM(disc_vars=vlst)::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
-      false = List.isEmpty(varlst);
+      false = listEmpty(varlst);
 
       warning = "Iteration variables of mixed equation system:\n" +& warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
@@ -7620,7 +7620,7 @@ algorithm
 
     case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_NONLINEAR())::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
-      false = List.isEmpty(varlst);
+      false = listEmpty(varlst);
 
       warning = "Iteration variables of nonlinear equation system:\n" +& warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
@@ -7628,7 +7628,7 @@ algorithm
 
      case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_GENERIC())::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
-      false = List.isEmpty(varlst);
+      false = listEmpty(varlst);
 
       warning = "Iteration variables of equation system w/o analytic Jacobian:\n" +& warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
@@ -7636,7 +7636,7 @@ algorithm
 
     case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_NO_ANALYTIC())::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
-      false = List.isEmpty(varlst);
+      false = listEmpty(varlst);
 
       warning = "Iteration variables of equation system w/o analytic Jacobian:\n" +& warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
@@ -7644,7 +7644,7 @@ algorithm
 
     case (BackendDAE.TORNSYSTEM(tearingvars=vlst, linear=linear)::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
-      false = List.isEmpty(varlst);
+      false = listEmpty(varlst);
 
       str = Util.if_(linear, "linear", "nonlinear");
       warning = "Iteration variables of torn " +& str +& " equation system:\n" +& warnAboutVars(varlst);

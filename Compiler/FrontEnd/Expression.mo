@@ -1650,7 +1650,7 @@ protected
   list<DAE.Exp> expLst;
 algorithm
   expLst := getComplexContents(expIn);
-  expsOut := Util.if_(List.isEmpty(expLst), {expIn}, expLst);
+  expsOut := Util.if_(listEmpty(expLst), {expIn}, expLst);
 end getComplexContentsInCall;
 
 public function getArrayOrRangeContents "returns the list of expressions in the array"
@@ -3903,7 +3903,7 @@ algorithm
         i = dimensionSize(d);
         (e, ty) = makeZeroExpression(dims);
         eLst = List.fill(e,i);
-        scalar = List.isEmpty(dims);
+        scalar = listEmpty(dims);
       then
         (DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,d::dims,DAE.emptyTypeSource),scalar,eLst),
          DAE.T_ARRAY(ty,{d},DAE.emptyTypeSource));
@@ -3933,7 +3933,7 @@ algorithm
         i = dimensionSize(d);
         (e, ty) = makeOneExpression(dims);
         eLst = List.fill(e,i);
-        scalar = List.isEmpty(dims);
+        scalar = listEmpty(dims);
       then
         (DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,d::dims,DAE.emptyTypeSource),scalar,eLst),
          DAE.T_ARRAY(ty,{d},DAE.emptyTypeSource));

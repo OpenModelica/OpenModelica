@@ -35,6 +35,7 @@ functions = [
 'listAppend',
 'listArray',
 'listDelete',
+'listEmpty',
 'listFirst',
 'listGet',
 'listLength',

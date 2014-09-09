@@ -520,7 +520,7 @@ algorithm
         e_1 = DAE.LUNARY(op, e1);
         {zc} = makeZeroCrossings({e_1}, {eq_count}, {wc_count});
         zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
-        zeroCrossings = Util.if_(List.isEmpty(zc_lst), listAppend(zeroCrossings, {zc}), zeroCrossings);
+        zeroCrossings = Util.if_(listEmpty(zc_lst), listAppend(zeroCrossings, {zc}), zeroCrossings);
         Debug.fcall(Flags.RELIDX, BackendDump.debugExpStr, (e_1, "\n"));
       then (e_1, false, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
     case ((e as DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)))
@@ -533,7 +533,7 @@ algorithm
         e_1 = DAE.LBINARY(e_1, op, e_2);
         {zc} = makeZeroCrossings({e_1}, {eq_count}, {wc_count});
         zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
-        zeroCrossings = Util.if_(List.isEmpty(zc_lst), listAppend(zeroCrossings, {zc}), zeroCrossings);
+        zeroCrossings = Util.if_(listEmpty(zc_lst), listAppend(zeroCrossings, {zc}), zeroCrossings);
         print(Debug.fcallret1(Flags.RELIDX, BackendDump.zeroCrossingListString, zeroCrossings, ""));
       then (e_1, false, ((zeroCrossings, relations, samples, numRelations1, numMathFunctions), (eq_count, wc_count, vars, knvars)));
     // function with discrete expressions generate no zerocrossing
@@ -685,7 +685,7 @@ algorithm
         e_1 = DAE.LUNARY(op, e1);
         {zc} = makeZeroCrossings({e_1}, {alg_indx}, {});
         zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
-        zeroCrossings = Util.if_(List.isEmpty(zc_lst), listAppend(zeroCrossings, {zc}), zeroCrossings);
+        zeroCrossings = Util.if_(listEmpty(zc_lst), listAppend(zeroCrossings, {zc}), zeroCrossings);
         Debug.fcall(Flags.RELIDX, BackendDump.debugExpStr, (e_1, "\n"));
       then (e_1, false, (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
     case ((e as DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2)), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)))
@@ -698,7 +698,7 @@ algorithm
         e_1 = DAE.LBINARY(e_1, op, e_2);
         {zc} = makeZeroCrossings({e_1}, {alg_indx}, {});
         zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
-        zeroCrossings = Util.if_(List.isEmpty(zc_lst), listAppend(zeroCrossings, {zc}), zeroCrossings);
+        zeroCrossings = Util.if_(listEmpty(zc_lst), listAppend(zeroCrossings, {zc}), zeroCrossings);
         print(Debug.fcallret1(Flags.RELIDX, BackendDump.zeroCrossingListString, zeroCrossings, ""));
       then (e_1, false, (iterator, le, range, (zeroCrossings, relations, samples, numRelations1, numMathFunctions), (alg_indx, vars, knvars)));
     // function with discrete expressions generate no zerocrossing
@@ -868,7 +868,7 @@ algorithm
         e_1 = DAE.LUNARY(op, e1);
         {zc} = makeZeroCrossings({e_1}, {alg_indx}, {});
         zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
-        zeroCrossings = Util.if_(List.isEmpty(zc_lst), listAppend(zeroCrossings, {zc}), zeroCrossings);
+        zeroCrossings = Util.if_(listEmpty(zc_lst), listAppend(zeroCrossings, {zc}), zeroCrossings);
         Debug.fcall(Flags.RELIDX, print, "collectZCAlgsFor LUNARY result zc : ");
         Debug.fcall(Flags.RELIDX, BackendDump.debugExpStr, (e_1, "\n"));
       then (e_1, false, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
@@ -903,7 +903,7 @@ algorithm
         e_1 = DAE.LBINARY(e_1, op, e_2);
         {zc} = makeZeroCrossings({e_1}, {alg_indx}, {});
         zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
-        zeroCrossings = Util.if_(List.isEmpty(zc_lst), listAppend(zeroCrossings, {zc}), zeroCrossings);
+        zeroCrossings = Util.if_(listEmpty(zc_lst), listAppend(zeroCrossings, {zc}), zeroCrossings);
         Debug.fcall(Flags.RELIDX, print, "collectZCAlgsFor LBINARY2 result zc : ");
         Debug.fcall(Flags.RELIDX, print, BackendDump.zeroCrossingListString(zeroCrossings));
       then (e_1, false, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations1, numMathFunctions), (alg_indx, vars, knvars)));

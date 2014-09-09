@@ -5038,7 +5038,7 @@ algorithm
       equation
          (_, lst::{}) = traverseExpBidir(exp, onlyLiteralsInExpEnter, onlyLiteralsInExpExit, {}::{});
          // if list is empty (no crefs were added)
-         b = List.isEmpty(lst);
+         b = listEmpty(lst);
          // debugging:
          // print("Crefs in annotations: (" +& stringDelimitList(List.map(lst, Dump.printExpStr), ", ") +& ")\n");
       then

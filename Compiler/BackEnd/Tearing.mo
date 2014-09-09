@@ -955,7 +955,7 @@ algorithm
     case(_,_,_,_,_,_,_,_)
       equation
         unsolvables = getUnsolvableVarsConsiderMatching(1,BackendVariable.varsSize(vars),mt,ass1,ass2,{});
-    false = List.isEmpty(unsolvables);
+    false = listEmpty(unsolvables);
     tvar = listGet(unsolvables,1);
          Debug.bcall(listMember(tvar,tSel_never), Error.addCompilerWarning, "There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
          Debug.fcall(Flags.TEARING_DUMP, print,"\nForced selection of Tearing Variable:\n" +& UNDERLINE +& "\n");
@@ -2789,13 +2789,13 @@ algorithm
    case(_,_,_,_,_,_,_,_,_,_,false)
      equation
      ((_,unassigned)) = List.fold(ass1In,getUnassigned,(1,{}));
-       false = List.isEmpty(unassigned);
+       false = listEmpty(unassigned);
           Debug.fcall(Flags.TEARING_DUMP, print,"\nnoncausal\n");
      then (ass1In,ass2In,mIn,mtIn,orderIn,false);
    case(_,_,_,_,_,_,_,_,_,_,false)
      equation
        ((_,unassigned)) = List.fold(ass1In,getUnassigned,(1,{}));
-       true = List.isEmpty(unassigned);
+       true = listEmpty(unassigned);
           Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\ncausal\n");
        subOrder = listGet(orderIn,1);
        subOrder = listReverse(subOrder);

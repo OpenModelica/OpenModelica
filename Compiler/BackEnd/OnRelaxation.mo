@@ -3009,7 +3009,7 @@ protected function isResOrphan
   input array<list<Integer>> ass;
   output Boolean b;
 algorithm
-  b := List.isEmpty(ass[indx]);
+  b := listEmpty(ass[indx]);
 end isResOrphan;
 
 protected function isNoResOrphan

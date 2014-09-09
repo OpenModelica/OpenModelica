@@ -6507,7 +6507,7 @@ algorithm
           elabExpInExpression(cache, env, aexp, inImpl, NONE(), true, inPrefix, inInfo);
         (scalar_tp,dims) = Types.flattenArrayTypeOpt(tp);
         List.map2_0(dims,checkTypeScalar,tp,inInfo);
-        e = Util.if_(List.isEmpty(dims), e, Expression.makePureBuiltinCall("scalar", {e}, scalar_tp));
+        e = Util.if_(listEmpty(dims), e, Expression.makePureBuiltinCall("scalar", {e}, scalar_tp));
         (e,_) = ExpressionSimplify.simplify1(e);
       then
         (cache, e, DAE.PROP(scalar_tp, c));

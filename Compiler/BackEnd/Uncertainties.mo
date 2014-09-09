@@ -152,7 +152,7 @@ algorithm
 
         //(dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs,m=SOME(m),mT=SOME(mt))::eqsyslist,_)) = BackendDAEUtil.mapEqSystem(dlow_1,BackendDAEUtil.getIncidenceMatrixScalarfromOptionForMapEqSystem);
 
-        true = List.isEmpty(eqsyslist);
+        true = listEmpty(eqsyslist);
         mExt=getExtIncidenceMatrix(m);
 
         //dumpExtIncidenceMatrix(mExt);
@@ -757,7 +757,7 @@ algorithm
         //print("Cleaning up system of knowns..");
         knownsSystem = removeEquations(m,setS);
         knownsSystem = removeUnrelatedEquations(knownsSystem,knowns);
-        true = List.isEmpty(knownsSystem);
+        true = listEmpty(knownsSystem);
         print("Warning: The system is ill-posed. There are no remaining equations containing the knowns.\n");
     then
       ({},{});
@@ -1238,12 +1238,12 @@ mOut:=matchcontinue(m,set,acc)
   case((_,vars)::t,_,_)
       equation
         newVars = List.filter1OnTrue(vars,removeVarsNotInSet_helper,set);
-        true = List.isEmpty(newVars);
+        true = listEmpty(newVars);
       then removeVarsNotInSet(t,set,acc);
   case((eq,vars)::t,_,_)
       equation
         newVars = List.filter1OnTrue(vars,removeVarsNotInSet_helper,set);
-        false = List.isEmpty(newVars);
+        false = listEmpty(newVars);
       then removeVarsNotInSet(t,set,(eq,newVars)::acc);
 end matchcontinue;
 end removeVarsNotInSet;
@@ -1341,7 +1341,7 @@ algorithm
         then ();
         case(_,h::t,_)
             equation
-                true=List.isEmpty(removeUnrelatedEquations(m,{h}));
+                true=listEmpty(removeUnrelatedEquations(m,{h}));
                 not_found_var=BackendVariable.getVarAt(variables,h);
                 str = ComponentReference.crefStr(BackendVariable.varCref(not_found_var));
                 print("Warning: The variable '"+&str+&"' was not found in the system of knowns\n");
@@ -1349,7 +1349,7 @@ algorithm
             then ();
         case(_,h::t,_)
             equation
-               false=List.isEmpty(removeUnrelatedEquations(m,{h}));
+               false=listEmpty(removeUnrelatedEquations(m,{h}));
                 checkSystemContainsVars(m,t,variables);
             then ();
     end matchcontinue;

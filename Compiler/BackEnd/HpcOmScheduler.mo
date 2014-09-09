@@ -1184,7 +1184,7 @@ algorithm
   graphT := BackendDAEUtil.transposeMatrix(iGraph,arrayLength(iGraph));
 
   // assign initial level
-  //(_,startNodes) := List.filterOnTrueSync(arrayList(graphT),List.isEmpty,List.intRange(arrayLength(graphT)));
+  //(_,startNodes) := List.filterOnTrueSync(arrayList(graphT),listEmpty,List.intRange(arrayLength(graphT)));
   //level := getGraphLevel(iGraph,{startNodes});
   level := HpcOmTaskGraph.getLevelNodes(iGraph);
   levelAss := arrayCreate(arrayLength(inComps),-1);
@@ -1490,7 +1490,7 @@ algorithm
       clusterCostsTmp = List.map(mergedNodesIn,Util.tuple22);
       clusterTmp = listReverse(List.map(mergedNodesIn,Util.tuple21));
       cluster::clusterTmp = clusterTmp;  // reverse the first cluster if there is only one cluster
-      cluster = Util.if_(List.isEmpty(clusterTmp),listReverse(cluster),cluster);
+      cluster = Util.if_(listEmpty(clusterTmp),listReverse(cluster),cluster);
       clusterTmp = cluster::clusterTmp;
     then (clusterTmp,clusterCostsTmp);
    case(node::nodeRest,cost::costRest,_, {})
@@ -1568,7 +1568,7 @@ algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,rootNodes=rootNodes,nodeNames=nodeNames,nodeDescs=nodeDescs,exeCosts=exeCosts, commCosts=commCosts) := iMeta;
 
   graphT := BackendDAEUtil.transposeMatrix(iGraph,arrayLength(iGraph));
-  //(_,startNodes) := List.filterOnTrueSync(arrayList(graphT),List.isEmpty,List.intRange(arrayLength(graphT)));
+  //(_,startNodes) := List.filterOnTrueSync(arrayList(graphT),listEmpty,List.intRange(arrayLength(graphT)));
   //startNodes := HpcOmTaskGraph.getRootNodes(iGraph);
   //print("startnodes "+&stringDelimitList(List.map(startNodes,intString),",")+&"\n");
   //level := getGraphLevel(iGraph,{startNodes});
@@ -3842,7 +3842,7 @@ algorithm
         parentAssgmnts = List.map1(parentsNofpred,Util.arrayGetIndexFirst,taskAssIn);
         (_,unAssParents) = List.filter1OnTrueSync(parentAssgmnts,intEq,-1,parentsNofpred); // not yet assigned parents
         // if there are unassigned parents, use them, otherwise all parents including fpred. take the one with the least execution cost
-        parents = Util.if_(List.isEmpty(unAssParents),parents,unAssParents);
+        parents = Util.if_(listEmpty(unAssParents),parents,unAssParents);
         parentExeCost = List.map1(parents,HpcOmTaskGraph.getExeCostReqCycles,iTaskGraphMeta);
         maxExeCost = List.fold(parentExeCost,realMax,0.0);
         pos = List.position(maxExeCost,parentExeCost) + 1;
@@ -3923,7 +3923,7 @@ algorithm
     case(_,_,_,_,_)
       equation
         parents = arrayGet(graphT,nodeIdx);
-        true = List.isEmpty(parents);
+        true = listEmpty(parents);
         fpredOut = arrayUpdate(fpredIn,nodeIdx,0);
       then fpredOut;
   end matchcontinue;
@@ -4718,7 +4718,7 @@ algorithm
     equation
       // the current Node is a leaf node
       childNodes = arrayGet(iTaskGraph,nodeIdx);
-      true = List.isEmpty(childNodes);
+      true = listEmpty(childNodes);
       nodeExeCost = HpcOmTaskGraph.getExeCostReqCycles(nodeIdx,iTaskGraphMeta);
       alap = arrayUpdate(alapIn,nodeIdx,nodeExeCost);
       last = arrayUpdate(lastIn,nodeIdx,nodeExeCost);
@@ -5236,7 +5236,7 @@ algorithm
         parentLst = arrayGet(taskGraphTIn,taskID);
         // gets the parentIdcs which are not yet checked and computes the latest finishingTime of all parentNodes
         ((parentLst, latestTask)) = List.fold1(parentLst, updateFinishingTime1, checkedTasksIn, ({},HpcOmSimCode.TASKEMPTY()));
-        isComputable = List.isEmpty(parentLst);
+        isComputable = listEmpty(parentLst);
         taskIdxNew = Util.if_(isComputable,taskIdxIn+1,taskIdxIn);
         //update the threadTasks and checked Tasks
         ((threadTasks,checkedTasks)) = Debug.bcallret1(isComputable, computeFinishingTimeForOneTask, (threadTasksIn,checkedTasksIn,taskIdxIn,threadIdxIn,latestTask,taskGraphMetaIn),(threadTasksIn,checkedTasksIn));
@@ -5493,7 +5493,7 @@ protected function intListString
   output String s;
 algorithm
   s := stringDelimitList(List.map(lstIn,intString)," , ");
-  s := Util.if_(List.isEmpty(lstIn),"{}",s);
+  s := Util.if_(listEmpty(lstIn),"{}",s);
 end intListString;
 
 protected function intListListString

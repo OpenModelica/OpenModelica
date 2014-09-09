@@ -1082,7 +1082,7 @@ algorithm
     NFSCodeEnv.EXTENDS_TABLE(baseClasses = bcl as _ :: _)) :: _ := inEnv;
   ((_, outBaseClasses)) :=
     List.fold2(bcl, lookupBaseClasses2, inName, inEnv, ({}, {}));
-  false := List.isEmpty(outBaseClasses);
+  false := listEmpty(outBaseClasses);
   outBaseClasses := listReverse(outBaseClasses);
 end lookupBaseClasses;
 
