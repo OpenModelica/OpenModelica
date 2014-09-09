@@ -9741,7 +9741,11 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
   let() = System.tmpTickSetIndex(startTmpTickIndex,1)
   let stmts = (c.body |> stmt => algStatement(stmt, context, &varDeclsCaseInner, &auxFunction); separator="\n")
   let &preGuardCheck = buffer ""
-  let guardCheck = (match patternGuard case SOME(exp) then 'if (!<%daeExp(exp,context,&preGuardCheck,&varDeclsCaseInner, &auxFunction)%>) <%onPatternFail%>;<%\n%>')
+  let guardCheck = (match patternGuard case SOME(exp) then
+    <<
+    /* Check guard condition after assignments */
+    if (!<%daeExp(exp,context,&preGuardCheck,&varDeclsCaseInner, &auxFunction)%>) <%onPatternFail%>;<%\n%>
+    >>)
   let caseRes = (match c.result
     case SOME(TUPLE(PR=exps)) then
       (exps |> e hasindex i1 fromindex 1 =>
@@ -9762,13 +9766,13 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
     <%varDeclsCaseInner%>
     <%preExpCaseInner%>
     <%patternMatching%>
+    <%assignments%>
     <%&preGuardCheck%>
     <%guardCheck%>
     <% match c.jump
        case 0 then "/* Pattern matching succeeded */"
        else '<%ix%> += <%c.jump%>; /* Pattern matching succeeded; we may skip some cases if we fail */'
     %>
-    <%assignments%>
     <%stmts%>
     <%modelicaLine(c.resultInfo)%>
     <% if c.result then '<%preRes%><%caseRes%>' else 'MMC_THROW_INTERNAL();<%\n%>' %>
