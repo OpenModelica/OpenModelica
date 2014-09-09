@@ -2048,6 +2048,17 @@ algorithm
   end match;
 end getVarDirection;
 
+public function getVarNominalValue "
+  Returns the DAE.NominalValue or default value of a variable."
+  input BackendDAE.Var InVar;
+  output DAE.Exp nom;
+algorithm
+  nom := match(InVar)
+         local Option<DAE.VariableAttributes> attr;
+           case(BackendDAE.VAR(values = attr)) then DAEUtil.getNominalAttr(attr);
+         end match;
+end varNominalValueFail;
+
 
 public function isVarOnTopLevelAndOutput "and has the DAE.VarDirection = OUTPUT
   The check for top-model is done by spliting the name at \'.\' and

@@ -252,19 +252,23 @@ output Option<DAE.Exp> mayer;
 algorithm
   mayer := match(InVarlst, Inmayer)
   local list<BackendDAE.Var> varlst; BackendDAE.Var v;
-        DAE.Exp e, e2, e3; Option<DAE.Exp> opte; DAE.ComponentRef cr;
+        DAE.Exp e, e2, e3, nom; Option<DAE.Exp> opte; DAE.ComponentRef cr;
 
     case({},NONE()) then NONE();
     case({},opte as SOME(e)) then opte;
     case(v::varlst, SOME(e)) equation
+      nom = BackendVariable.getVarNominalValue(v);
       cr = BackendVariable.varCref(v);
       e2 = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
+      e2 = Expression.expDiv(e2, nom);
       e3 = Expression.expAdd(e,e2);
       opte = SOME(e3);
       then findMayerTerm2(varlst, opte);
     case(v::varlst, NONE()) equation
+      nom = BackendVariable.getVarNominalValue(v);
       cr = BackendVariable.varCref(v);
       e2 = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
+      e2 = Expression.expDiv(e2, nom);
       opte = SOME(e2);
       then findMayerTerm2(varlst, opte);
     else then NONE();
