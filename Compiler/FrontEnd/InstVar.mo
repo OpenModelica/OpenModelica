@@ -973,7 +973,6 @@ algorithm
             inImpl, InstTypes.INNER_CALL(), inGraph, inSets);
 
         // Propagate and instantiate attributes.
-        dae1 = InstUtil.propagateAttributes(dae1, inAttributes, inPrefixes, inInfo);
         (cache, dae_var_attr) = InstBinding.instDaeVariableAttributes(cache, env, inMod, ty, {});
         attr = InstUtil.propagateAbSCDirection(vt, inAttributes, opt_attr, inInfo);
         attr = SCode.removeAttributeDimensions(attr);
@@ -1009,6 +1008,10 @@ algorithm
         //fin = InstUtil.propagateModFinal(mod, fin);
 
         attr = stripVarAttrDirection(cr, attr, inState);
+
+        // Propagate prefixes to any elements inside this components if it's a
+        // structured component.
+        dae1 = InstUtil.propagateAttributes(dae1, attr, inPrefixes, inInfo);
 
         // Add the component to the DAE.
         dae2 = InstDAE.daeDeclare(cr, inState, ty, attr, vis, opt_binding, inInstDims,
