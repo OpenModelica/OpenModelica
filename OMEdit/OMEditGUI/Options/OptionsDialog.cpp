@@ -45,12 +45,11 @@
 //! Constructor
 //! @param pParent is the pointer to MainWindow
 OptionsDialog::OptionsDialog(MainWindow *pParent)
-  : QDialog(pParent, Qt::WindowTitleHint), mSettings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application)
+  : QDialog(pParent, Qt::WindowTitleHint), mpSettings(OpenModelica::getApplicationSettings())
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::options));
   setModal(true);
   mpMainWindow = pParent;
-  mSettings.setIniCodec(Helper::utf8.toStdString().data());
   mpGeneralSettingsPage = new GeneralSettingsPage(this);
   mpLibrariesPage = new LibrariesPage(this);
   mpModelicaTextSettings = new ModelicaTextSettings();
@@ -77,7 +76,7 @@ OptionsDialog::~OptionsDialog()
 //! Reads the settings from omedit.ini file.
 void OptionsDialog::readSettings()
 {
-  mSettings.sync();
+  mpSettings->sync();
   readGeneralSettings();
   readLibrariesSettings();
   readModelicaTextSettings();
@@ -97,48 +96,48 @@ void OptionsDialog::readSettings()
 void OptionsDialog::readGeneralSettings()
 {
   // read the language option
-  if (mSettings.contains("language"))
+  if (mpSettings->contains("language"))
   {
     /* Handle locale stored both as variant and as QString */
-    QLocale locale = QLocale(mSettings.value("language").toString());
-    int currentIndex = mpGeneralSettingsPage->getLanguageComboBox()->findData(locale.name() == "C" ? mSettings.value("language") : QVariant(locale), Qt::UserRole, Qt::MatchExactly);
+    QLocale locale = QLocale(mpSettings->value("language").toString());
+    int currentIndex = mpGeneralSettingsPage->getLanguageComboBox()->findData(locale.name() == "C" ? mpSettings->value("language") : QVariant(locale), Qt::UserRole, Qt::MatchExactly);
     if (currentIndex > -1) {
       mpGeneralSettingsPage->getLanguageComboBox()->setCurrentIndex(currentIndex);
     }
   }
   // read the working directory
-  if (mSettings.contains("workingDirectory"))
-    mpMainWindow->getOMCProxy()->changeDirectory(mSettings.value("workingDirectory").toString());
+  if (mpSettings->contains("workingDirectory"))
+    mpMainWindow->getOMCProxy()->changeDirectory(mpSettings->value("workingDirectory").toString());
   mpGeneralSettingsPage->setWorkingDirectory(mpMainWindow->getOMCProxy()->changeDirectory());
   // read the user customizations
-  if (mSettings.contains("userCustomizations"))
-    mpGeneralSettingsPage->setPreserveUserCustomizations(mSettings.value("userCustomizations").toBool());
+  if (mpSettings->contains("userCustomizations"))
+    mpGeneralSettingsPage->setPreserveUserCustomizations(mpSettings->value("userCustomizations").toBool());
   // read show protected classes
-  if (mSettings.contains("showProtectedClasses"))
-    mpGeneralSettingsPage->setShowProtectedClasses(mSettings.value("showProtectedClasses").toBool());
+  if (mpSettings->contains("showProtectedClasses"))
+    mpGeneralSettingsPage->setShowProtectedClasses(mpSettings->value("showProtectedClasses").toBool());
   // read the modeling view mode
-  if (mSettings.contains("modeling/viewmode"))
-    mpGeneralSettingsPage->setModelingViewMode(mSettings.value("modeling/viewmode").toString());
+  if (mpSettings->contains("modeling/viewmode"))
+    mpGeneralSettingsPage->setModelingViewMode(mpSettings->value("modeling/viewmode").toString());
   // read the plotting view mode
-  if (mSettings.contains("plotting/viewmode"))
-    mpGeneralSettingsPage->setPlottingViewMode(mSettings.value("plotting/viewmode").toString());
+  if (mpSettings->contains("plotting/viewmode"))
+    mpGeneralSettingsPage->setPlottingViewMode(mpSettings->value("plotting/viewmode").toString());
   // read the default view
-  if (mSettings.contains("defaultView"))
-    mpGeneralSettingsPage->setDefaultView(mSettings.value("defaultView").toString());
+  if (mpSettings->contains("defaultView"))
+    mpGeneralSettingsPage->setDefaultView(mpSettings->value("defaultView").toString());
   // read auto save
-  if (mSettings.contains("autoSave/enable"))
-    mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->setChecked(mSettings.value("autoSave/enable").toBool());
-  if (mSettings.contains("autoSave/interval"))
-    mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->setValue(mSettings.value("autoSave/interval").toInt());
-  if (mSettings.contains("autoSave/enableSingleClasses"))
-    mpGeneralSettingsPage->getEnableAutoSaveForSingleClassesCheckBox()->setChecked(mSettings.value("autoSave/enableSingleClasses").toBool());
-  if (mSettings.contains("autoSave/enableOneFilePackages"))
-    mpGeneralSettingsPage->getEnableAutoSaveForOneFilePackagesCheckBox()->setChecked(mSettings.value("autoSave/enableOneFilePackages").toBool());
+  if (mpSettings->contains("autoSave/enable"))
+    mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->setChecked(mpSettings->value("autoSave/enable").toBool());
+  if (mpSettings->contains("autoSave/interval"))
+    mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->setValue(mpSettings->value("autoSave/interval").toInt());
+  if (mpSettings->contains("autoSave/enableSingleClasses"))
+    mpGeneralSettingsPage->getEnableAutoSaveForSingleClassesCheckBox()->setChecked(mpSettings->value("autoSave/enableSingleClasses").toBool());
+  if (mpSettings->contains("autoSave/enableOneFilePackages"))
+    mpGeneralSettingsPage->getEnableAutoSaveForOneFilePackagesCheckBox()->setChecked(mpSettings->value("autoSave/enableOneFilePackages").toBool());
   // read welcome page
-  if (mSettings.contains("welcomePage/view"))
-    mpGeneralSettingsPage->setWelcomePageView(mSettings.value("welcomePage/view").toInt());
-  if (mSettings.contains("welcomePage/showLatestNews"))
-    mpGeneralSettingsPage->getShowLatestNewsCheckBox()->setChecked(mSettings.value("welcomePage/showLatestNews").toBool());
+  if (mpSettings->contains("welcomePage/view"))
+    mpGeneralSettingsPage->setWelcomePageView(mpSettings->value("welcomePage/view").toInt());
+  if (mpSettings->contains("welcomePage/showLatestNews"))
+    mpGeneralSettingsPage->getShowLatestNewsCheckBox()->setChecked(mpSettings->value("welcomePage/showLatestNews").toBool());
 }
 
 //! Reads the Libraries section settings from omedit.ini
@@ -153,18 +152,18 @@ void OptionsDialog::readLibrariesSettings()
     i = 0;   //Restart iteration
   }
   // read the settings and add libraries
-  mSettings.beginGroup("libraries");
-  QStringList systemLibraries = mSettings.childKeys();
+  mpSettings->beginGroup("libraries");
+  QStringList systemLibraries = mpSettings->childKeys();
   foreach (QString systemLibrary, systemLibraries)
   {
     QStringList values;
-    values << systemLibrary << mSettings.value(systemLibrary).toString();
+    values << systemLibrary << mpSettings->value(systemLibrary).toString();
     mpLibrariesPage->getSystemLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
   }
-  mSettings.endGroup();
+  mpSettings->endGroup();
   // read the forceModelicaLoad
-  if (mSettings.contains("forceModelicaLoad"))
-    mpLibrariesPage->getForceModelicaLoadCheckBox()->setChecked(mSettings.value("forceModelicaLoad").toBool());
+  if (mpSettings->contains("forceModelicaLoad"))
+    mpLibrariesPage->getForceModelicaLoadCheckBox()->setChecked(mpSettings->value("forceModelicaLoad").toBool());
   // read user libraries
   i = 0;
   while(i < mpLibrariesPage->getUserLibrariesTree()->topLevelItemCount())
@@ -174,192 +173,192 @@ void OptionsDialog::readLibrariesSettings()
     i = 0;   //Restart iteration
   }
   // read the settings and add libraries
-  mSettings.beginGroup("userlibraries");
-  QStringList userLibraries = mSettings.childKeys();
+  mpSettings->beginGroup("userlibraries");
+  QStringList userLibraries = mpSettings->childKeys();
   foreach (QString userLibrary, userLibraries)
   {
     QStringList values;
-    values << QUrl::fromPercentEncoding(QByteArray(userLibrary.toStdString().c_str())) << mSettings.value(userLibrary).toString();
+    values << QUrl::fromPercentEncoding(QByteArray(userLibrary.toStdString().c_str())) << mpSettings->value(userLibrary).toString();
     mpLibrariesPage->getUserLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
   }
-  mSettings.endGroup();
+  mpSettings->endGroup();
 }
 
 //! Reads the ModelicaText settings from omedit.ini
 void OptionsDialog::readModelicaTextSettings()
 {
-  if (mSettings.contains("textEditor/enableSyntaxHighlighting"))
-    mpModelicaTextEditorPage->getSyntaxHighlightingCheckbox()->setChecked(mSettings.value("textEditor/enableSyntaxHighlighting").toBool());
-  if (mSettings.contains("textEditor/enableLineWrapping"))
-    mpModelicaTextEditorPage->getLineWrappingCheckbox()->setChecked(mSettings.value("textEditor/enableLineWrapping").toBool());
-  if (mSettings.contains("textEditor/fontFamily"))
-    mpModelicaTextSettings->setFontFamily(mSettings.value("textEditor/fontFamily").toString());
-  if (mSettings.contains("textEditor/fontSize"))
-    mpModelicaTextSettings->setFontSize(mSettings.value("textEditor/fontSize").toDouble());
-  if (mSettings.contains("textEditor/textRuleColor"))
-    mpModelicaTextSettings->setTextRuleColor(QColor(mSettings.value("textEditor/textRuleColor").toUInt()));
-  if (mSettings.contains("textEditor/keywordRuleColor"))
-    mpModelicaTextSettings->setKeywordRuleColor(QColor(mSettings.value("textEditor/keywordRuleColor").toUInt()));
-  if (mSettings.contains("textEditor/typeRuleColor"))
-    mpModelicaTextSettings->setTypeRuleColor(QColor(mSettings.value("textEditor/typeRuleColor").toUInt()));
-  if (mSettings.contains("textEditor/functionRuleColor"))
-    mpModelicaTextSettings->setFunctionRuleColor(QColor(mSettings.value("textEditor/functionRuleColor").toUInt()));
-  if (mSettings.contains("textEditor/quotesRuleColor"))
-    mpModelicaTextSettings->setQuotesRuleColor(QColor(mSettings.value("textEditor/quotesRuleColor").toUInt()));
-  if (mSettings.contains("textEditor/commentRuleColor"))
-    mpModelicaTextSettings->setCommentRuleColor(QColor(mSettings.value("textEditor/commentRuleColor").toUInt()));
-  if (mSettings.contains("textEditor/numberRuleColor"))
-    mpModelicaTextSettings->setNumberRuleColor(QColor(mSettings.value("textEditor/numberRuleColor").toUInt()));
+  if (mpSettings->contains("textEditor/enableSyntaxHighlighting"))
+    mpModelicaTextEditorPage->getSyntaxHighlightingCheckbox()->setChecked(mpSettings->value("textEditor/enableSyntaxHighlighting").toBool());
+  if (mpSettings->contains("textEditor/enableLineWrapping"))
+    mpModelicaTextEditorPage->getLineWrappingCheckbox()->setChecked(mpSettings->value("textEditor/enableLineWrapping").toBool());
+  if (mpSettings->contains("textEditor/fontFamily"))
+    mpModelicaTextSettings->setFontFamily(mpSettings->value("textEditor/fontFamily").toString());
+  if (mpSettings->contains("textEditor/fontSize"))
+    mpModelicaTextSettings->setFontSize(mpSettings->value("textEditor/fontSize").toDouble());
+  if (mpSettings->contains("textEditor/textRuleColor"))
+    mpModelicaTextSettings->setTextRuleColor(QColor(mpSettings->value("textEditor/textRuleColor").toUInt()));
+  if (mpSettings->contains("textEditor/keywordRuleColor"))
+    mpModelicaTextSettings->setKeywordRuleColor(QColor(mpSettings->value("textEditor/keywordRuleColor").toUInt()));
+  if (mpSettings->contains("textEditor/typeRuleColor"))
+    mpModelicaTextSettings->setTypeRuleColor(QColor(mpSettings->value("textEditor/typeRuleColor").toUInt()));
+  if (mpSettings->contains("textEditor/functionRuleColor"))
+    mpModelicaTextSettings->setFunctionRuleColor(QColor(mpSettings->value("textEditor/functionRuleColor").toUInt()));
+  if (mpSettings->contains("textEditor/quotesRuleColor"))
+    mpModelicaTextSettings->setQuotesRuleColor(QColor(mpSettings->value("textEditor/quotesRuleColor").toUInt()));
+  if (mpSettings->contains("textEditor/commentRuleColor"))
+    mpModelicaTextSettings->setCommentRuleColor(QColor(mpSettings->value("textEditor/commentRuleColor").toUInt()));
+  if (mpSettings->contains("textEditor/numberRuleColor"))
+    mpModelicaTextSettings->setNumberRuleColor(QColor(mpSettings->value("textEditor/numberRuleColor").toUInt()));
 }
 
 //! Reads the GraphicsViews section settings from omedit.ini
 void OptionsDialog::readGraphicalViewsSettings()
 {
-  if (mSettings.contains("iconView/extentLeft"))
-    mpGraphicalViewsPage->setIconViewExtentLeft(mSettings.value("iconView/extentLeft").toDouble());
-  if (mSettings.contains("iconView/extentBottom"))
-    mpGraphicalViewsPage->setIconViewExtentBottom(mSettings.value("iconView/extentBottom").toDouble());
-  if (mSettings.contains("iconView/extentRight"))
-    mpGraphicalViewsPage->setIconViewExtentRight(mSettings.value("iconView/extentRight").toDouble());
-  if (mSettings.contains("iconView/extentTop"))
-    mpGraphicalViewsPage->setIconViewExtentTop(mSettings.value("iconView/extentTop").toDouble());
-  if (mSettings.contains("iconView/gridHorizontal"))
-    mpGraphicalViewsPage->setIconViewGridHorizontal(mSettings.value("iconView/gridHorizontal").toDouble());
-  if (mSettings.contains("iconView/gridVertical"))
-    mpGraphicalViewsPage->setIconViewGridVertical(mSettings.value("iconView/gridVertical").toDouble());
-  if (mSettings.contains("iconView/scaleFactor"))
-    mpGraphicalViewsPage->setIconViewScaleFactor(mSettings.value("iconView/scaleFactor").toDouble());
-  if (mSettings.contains("iconView/preserveAspectRatio"))
-    mpGraphicalViewsPage->setIconViewPreserveAspectRation(mSettings.value("iconView/preserveAspectRatio").toBool());
-  if (mSettings.contains("DiagramView/extentLeft"))
-    mpGraphicalViewsPage->setDiagramViewExtentLeft(mSettings.value("DiagramView/extentLeft").toDouble());
-  if (mSettings.contains("DiagramView/extentBottom"))
-    mpGraphicalViewsPage->setDiagramViewExtentBottom(mSettings.value("DiagramView/extentBottom").toDouble());
-  if (mSettings.contains("DiagramView/extentRight"))
-    mpGraphicalViewsPage->setDiagramViewExtentRight(mSettings.value("DiagramView/extentRight").toDouble());
-  if (mSettings.contains("DiagramView/extentTop"))
-    mpGraphicalViewsPage->setDiagramViewExtentTop(mSettings.value("DiagramView/extentTop").toDouble());
-  if (mSettings.contains("DiagramView/gridHorizontal"))
-    mpGraphicalViewsPage->setDiagramViewGridHorizontal(mSettings.value("DiagramView/gridHorizontal").toDouble());
-  if (mSettings.contains("DiagramView/gridVertical"))
-    mpGraphicalViewsPage->setDiagramViewGridVertical(mSettings.value("DiagramView/gridVertical").toDouble());
-  if (mSettings.contains("DiagramView/scaleFactor"))
-    mpGraphicalViewsPage->setDiagramViewScaleFactor(mSettings.value("DiagramView/scaleFactor").toDouble());
-  if (mSettings.contains("DiagramView/preserveAspectRatio"))
-    mpGraphicalViewsPage->setDiagramViewPreserveAspectRation(mSettings.value("DiagramView/preserveAspectRatio").toBool());
+  if (mpSettings->contains("iconView/extentLeft"))
+    mpGraphicalViewsPage->setIconViewExtentLeft(mpSettings->value("iconView/extentLeft").toDouble());
+  if (mpSettings->contains("iconView/extentBottom"))
+    mpGraphicalViewsPage->setIconViewExtentBottom(mpSettings->value("iconView/extentBottom").toDouble());
+  if (mpSettings->contains("iconView/extentRight"))
+    mpGraphicalViewsPage->setIconViewExtentRight(mpSettings->value("iconView/extentRight").toDouble());
+  if (mpSettings->contains("iconView/extentTop"))
+    mpGraphicalViewsPage->setIconViewExtentTop(mpSettings->value("iconView/extentTop").toDouble());
+  if (mpSettings->contains("iconView/gridHorizontal"))
+    mpGraphicalViewsPage->setIconViewGridHorizontal(mpSettings->value("iconView/gridHorizontal").toDouble());
+  if (mpSettings->contains("iconView/gridVertical"))
+    mpGraphicalViewsPage->setIconViewGridVertical(mpSettings->value("iconView/gridVertical").toDouble());
+  if (mpSettings->contains("iconView/scaleFactor"))
+    mpGraphicalViewsPage->setIconViewScaleFactor(mpSettings->value("iconView/scaleFactor").toDouble());
+  if (mpSettings->contains("iconView/preserveAspectRatio"))
+    mpGraphicalViewsPage->setIconViewPreserveAspectRation(mpSettings->value("iconView/preserveAspectRatio").toBool());
+  if (mpSettings->contains("DiagramView/extentLeft"))
+    mpGraphicalViewsPage->setDiagramViewExtentLeft(mpSettings->value("DiagramView/extentLeft").toDouble());
+  if (mpSettings->contains("DiagramView/extentBottom"))
+    mpGraphicalViewsPage->setDiagramViewExtentBottom(mpSettings->value("DiagramView/extentBottom").toDouble());
+  if (mpSettings->contains("DiagramView/extentRight"))
+    mpGraphicalViewsPage->setDiagramViewExtentRight(mpSettings->value("DiagramView/extentRight").toDouble());
+  if (mpSettings->contains("DiagramView/extentTop"))
+    mpGraphicalViewsPage->setDiagramViewExtentTop(mpSettings->value("DiagramView/extentTop").toDouble());
+  if (mpSettings->contains("DiagramView/gridHorizontal"))
+    mpGraphicalViewsPage->setDiagramViewGridHorizontal(mpSettings->value("DiagramView/gridHorizontal").toDouble());
+  if (mpSettings->contains("DiagramView/gridVertical"))
+    mpGraphicalViewsPage->setDiagramViewGridVertical(mpSettings->value("DiagramView/gridVertical").toDouble());
+  if (mpSettings->contains("DiagramView/scaleFactor"))
+    mpGraphicalViewsPage->setDiagramViewScaleFactor(mpSettings->value("DiagramView/scaleFactor").toDouble());
+  if (mpSettings->contains("DiagramView/preserveAspectRatio"))
+    mpGraphicalViewsPage->setDiagramViewPreserveAspectRation(mpSettings->value("DiagramView/preserveAspectRatio").toBool());
 }
 
 //! Reads the Simulation section settings from omedit.ini
 void OptionsDialog::readSimulationSettings()
 {
-  if (mSettings.contains("simulation/matchingAlgorithm"))
+  if (mpSettings->contains("simulation/matchingAlgorithm"))
   {
-    int currentIndex = mpSimulationPage->getMatchingAlgorithmComboBox()->findText(mSettings.value("simulation/matchingAlgorithm").toString(), Qt::MatchExactly);
+    int currentIndex = mpSimulationPage->getMatchingAlgorithmComboBox()->findText(mpSettings->value("simulation/matchingAlgorithm").toString(), Qt::MatchExactly);
     if (currentIndex > -1)
       mpSimulationPage->getMatchingAlgorithmComboBox()->setCurrentIndex(currentIndex);
   }
-  if (mSettings.contains("simulation/indexReductionMethod"))
+  if (mpSettings->contains("simulation/indexReductionMethod"))
   {
-    int currentIndex = mpSimulationPage->getIndexReductionMethodComboBox()->findText(mSettings.value("simulation/indexReductionMethod").toString(), Qt::MatchExactly);
+    int currentIndex = mpSimulationPage->getIndexReductionMethodComboBox()->findText(mpSettings->value("simulation/indexReductionMethod").toString(), Qt::MatchExactly);
     if (currentIndex > -1)
       mpSimulationPage->getIndexReductionMethodComboBox()->setCurrentIndex(currentIndex);
   }
-  if (mSettings.contains("simulation/OMCFlags"))
-    mpSimulationPage->getOMCFlagsTextBox()->setText(mSettings.value("simulation/OMCFlags").toString());
-  if (mSettings.contains("simulation/saveClassBeforeSimulation"))
-    mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->setChecked(mSettings.value("simulation/saveClassBeforeSimulation").toBool());
+  if (mpSettings->contains("simulation/OMCFlags"))
+    mpSimulationPage->getOMCFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
+  if (mpSettings->contains("simulation/saveClassBeforeSimulation"))
+    mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->setChecked(mpSettings->value("simulation/saveClassBeforeSimulation").toBool());
 }
 
 //! Reads the Notifications section settings from omedit.ini
 void OptionsDialog::readNotificationsSettings()
 {
-  if (mSettings.contains("notifications/promptQuitApplication"))
+  if (mpSettings->contains("notifications/promptQuitApplication"))
   {
-    mpNotificationsPage->getQuitApplicationCheckBox()->setChecked(mSettings.value("notifications/promptQuitApplication").toBool());
+    mpNotificationsPage->getQuitApplicationCheckBox()->setChecked(mpSettings->value("notifications/promptQuitApplication").toBool());
   }
-  if (mSettings.contains("notifications/itemDroppedOnItself"))
+  if (mpSettings->contains("notifications/itemDroppedOnItself"))
   {
-    mpNotificationsPage->getItemDroppedOnItselfCheckBox()->setChecked(mSettings.value("notifications/itemDroppedOnItself").toBool());
+    mpNotificationsPage->getItemDroppedOnItselfCheckBox()->setChecked(mpSettings->value("notifications/itemDroppedOnItself").toBool());
   }
-  if (mSettings.contains("notifications/replaceableIfPartial"))
+  if (mpSettings->contains("notifications/replaceableIfPartial"))
   {
-    mpNotificationsPage->getReplaceableIfPartialCheckBox()->setChecked(mSettings.value("notifications/replaceableIfPartial").toBool());
+    mpNotificationsPage->getReplaceableIfPartialCheckBox()->setChecked(mpSettings->value("notifications/replaceableIfPartial").toBool());
   }
-  if (mSettings.contains("notifications/innerModelNameChanged"))
+  if (mpSettings->contains("notifications/innerModelNameChanged"))
   {
-    mpNotificationsPage->getInnerModelNameChangedCheckBox()->setChecked(mSettings.value("notifications/innerModelNameChanged").toBool());
+    mpNotificationsPage->getInnerModelNameChangedCheckBox()->setChecked(mpSettings->value("notifications/innerModelNameChanged").toBool());
   }
-  if (mSettings.contains("notifications/saveModelForBitmapInsertion"))
+  if (mpSettings->contains("notifications/saveModelForBitmapInsertion"))
   {
-    mpNotificationsPage->getSaveModelForBitmapInsertionCheckBox()->setChecked(mSettings.value("notifications/saveModelForBitmapInsertion").toBool());
+    mpNotificationsPage->getSaveModelForBitmapInsertionCheckBox()->setChecked(mpSettings->value("notifications/saveModelForBitmapInsertion").toBool());
   }
 }
 
 //! Reads the LineStyle section settings from omedit.ini
 void OptionsDialog::readLineStyleSettings()
 {
-  if (mSettings.contains("linestyle/color"))
+  if (mpSettings->contains("linestyle/color"))
   {
-    QColor color = QColor(mSettings.value("linestyle/color").toUInt());
+    QColor color = QColor(mpSettings->value("linestyle/color").toUInt());
     if (color.isValid())
     {
       mpLineStylePage->setLineColor(color);
       mpLineStylePage->setLinePickColorButtonIcon();
     }
   }
-  if (mSettings.contains("linestyle/pattern"))
-    mpLineStylePage->setLinePattern(mSettings.value("linestyle/pattern").toString());
-  if (mSettings.contains("linestyle/thickness"))
-    mpLineStylePage->setLineThickness(mSettings.value("linestyle/thickness").toFloat());
-  if (mSettings.contains("linestyle/startArrow"))
-    mpLineStylePage->setLineStartArrow(mSettings.value("linestyle/startArrow").toString());
-  if (mSettings.contains("linestyle/endArrow"))
-    mpLineStylePage->setLineEndArrow(mSettings.value("linestyle/endArrow").toString());
-  if (mSettings.contains("linestyle/arrowSize"))
-    mpLineStylePage->setLineArrowSize(mSettings.value("linestyle/arrowSize").toFloat());
-  if (mSettings.contains("linestyle/smooth"))
-    mpLineStylePage->setLineSmooth(mSettings.value("linestyle/smooth").toBool());
+  if (mpSettings->contains("linestyle/pattern"))
+    mpLineStylePage->setLinePattern(mpSettings->value("linestyle/pattern").toString());
+  if (mpSettings->contains("linestyle/thickness"))
+    mpLineStylePage->setLineThickness(mpSettings->value("linestyle/thickness").toFloat());
+  if (mpSettings->contains("linestyle/startArrow"))
+    mpLineStylePage->setLineStartArrow(mpSettings->value("linestyle/startArrow").toString());
+  if (mpSettings->contains("linestyle/endArrow"))
+    mpLineStylePage->setLineEndArrow(mpSettings->value("linestyle/endArrow").toString());
+  if (mpSettings->contains("linestyle/arrowSize"))
+    mpLineStylePage->setLineArrowSize(mpSettings->value("linestyle/arrowSize").toFloat());
+  if (mpSettings->contains("linestyle/smooth"))
+    mpLineStylePage->setLineSmooth(mpSettings->value("linestyle/smooth").toBool());
 }
 
 //! Reads the FillStyle section settings from omedit.ini
 void OptionsDialog::readFillStyleSettings()
 {
-  if (mSettings.contains("fillstyle/color"))
+  if (mpSettings->contains("fillstyle/color"))
   {
-    QColor color = QColor(mSettings.value("fillstyle/color").toUInt());
+    QColor color = QColor(mpSettings->value("fillstyle/color").toUInt());
     if (color.isValid())
     {
       mpFillStylePage->setFillColor(color);
       mpFillStylePage->setFillPickColorButtonIcon();
     }
   }
-  if (mSettings.contains("fillstyle/pattern"))
-    mpFillStylePage->setFillPattern(mSettings.value("fillstyle/pattern").toString());
+  if (mpSettings->contains("fillstyle/pattern"))
+    mpFillStylePage->setFillPattern(mpSettings->value("fillstyle/pattern").toString());
 }
 
 //! Reads the CurveStyle section settings from omedit.ini
 void OptionsDialog::readCurveStyleSettings()
 {
-  if (mSettings.contains("curvestyle/pattern"))
-    mpCurveStylePage->setCurvePattern(mSettings.value("curvestyle/pattern").toInt());
-  if (mSettings.contains("curvestyle/thickness"))
-    mpCurveStylePage->setCurveThickness(mSettings.value("curvestyle/thickness").toFloat());
+  if (mpSettings->contains("curvestyle/pattern"))
+    mpCurveStylePage->setCurvePattern(mpSettings->value("curvestyle/pattern").toInt());
+  if (mpSettings->contains("curvestyle/thickness"))
+    mpCurveStylePage->setCurveThickness(mpSettings->value("curvestyle/thickness").toFloat());
 }
 
 //! Reads the Fiagro section settings from omedit.ini
 void OptionsDialog::readFigaroSettings()
 {
-  if (mSettings.contains("figaro/databasefile"))
-    mpFigaroPage->getFigaroDatabaseFileTextBox()->setText(mSettings.value("figaro/databasefile").toString());
-  if (mSettings.contains("figaro/mode"))
+  if (mpSettings->contains("figaro/databasefile"))
+    mpFigaroPage->getFigaroDatabaseFileTextBox()->setText(mpSettings->value("figaro/databasefile").toString());
+  if (mpSettings->contains("figaro/mode"))
   {
-    int currentIndex = mpFigaroPage->getFigaroModeComboBox()->findData(mSettings.value("figaro/mode").toString(), Qt::UserRole, Qt::MatchExactly);
+    int currentIndex = mpFigaroPage->getFigaroModeComboBox()->findData(mpSettings->value("figaro/mode").toString(), Qt::UserRole, Qt::MatchExactly);
     if (currentIndex > -1) mpFigaroPage->getFigaroModeComboBox()->setCurrentIndex(currentIndex);
   }
-  if (mSettings.contains("figaro/options"))
-    mpFigaroPage->getFigaroOptionsTextBox()->setText(mSettings.value("figaro/options").toString());
-  if (mSettings.contains("figaro/process"))
-    mpFigaroPage->getFigaroProcessTextBox()->setText(mSettings.value("figaro/process").toString());
+  if (mpSettings->contains("figaro/options"))
+    mpFigaroPage->getFigaroOptionsTextBox()->setText(mpSettings->value("figaro/options").toString());
+  if (mpSettings->contains("figaro/process"))
+    mpFigaroPage->getFigaroProcessTextBox()->setText(mpSettings->value("figaro/process").toString());
 }
 
 /*!
@@ -367,22 +366,22 @@ void OptionsDialog::readFigaroSettings()
   */
 void OptionsDialog::readDebuggerSettings()
 {
-  if (mSettings.contains("algorithmicDebugger/GDBPath"))
-    mpDebuggerPage->setGDBPath(mSettings.value("algorithmicDebugger/GDBPath").toString());
-  if (mSettings.contains("algorithmicDebugger/GDBCommandTimeout"))
-    mpDebuggerPage->getGDBCommandTimeoutSpinBox()->setValue(mSettings.value("algorithmicDebugger/GDBCommandTimeout").toInt());
-  if (mSettings.contains("algorithmicDebugger/displayCFrames"))
-    mpDebuggerPage->getDisplayCFramesCheckBox()->setChecked(mSettings.value("algorithmicDebugger/displayCFrames").toBool());
-  if (mSettings.contains("algorithmicDebugger/displayUnknownFrames"))
-    mpDebuggerPage->getDisplayUnknownFramesCheckBox()->setChecked(mSettings.value("algorithmicDebugger/displayUnknownFrames").toBool());
-  if (mSettings.contains("algorithmicDebugger/clearOutputOnNewRun"))
-    mpDebuggerPage->getClearOutputOnNewRunCheckBox()->setChecked(mSettings.value("algorithmicDebugger/clearOutputOnNewRun").toBool());
-  if (mSettings.contains("algorithmicDebugger/clearLogOnNewRun"))
-    mpDebuggerPage->getClearLogOnNewRunCheckBox()->setChecked(mSettings.value("algorithmicDebugger/clearLogOnNewRun").toBool());
-  if (mSettings.contains("transformationalDebugger/alwaysShowTransformationalDebugger"))
-    mpDebuggerPage->getAlwaysShowTransformationsCheckBox()->setChecked(mSettings.value("transformationalDebugger/alwaysShowTransformationalDebugger").toBool());
-  if (mSettings.contains("transformationalDebugger/generateOperations"))
-    mpDebuggerPage->getGenerateOperationsCheckBox()->setChecked(mSettings.value("transformationalDebugger/generateOperations").toBool());
+  if (mpSettings->contains("algorithmicDebugger/GDBPath"))
+    mpDebuggerPage->setGDBPath(mpSettings->value("algorithmicDebugger/GDBPath").toString());
+  if (mpSettings->contains("algorithmicDebugger/GDBCommandTimeout"))
+    mpDebuggerPage->getGDBCommandTimeoutSpinBox()->setValue(mpSettings->value("algorithmicDebugger/GDBCommandTimeout").toInt());
+  if (mpSettings->contains("algorithmicDebugger/displayCFrames"))
+    mpDebuggerPage->getDisplayCFramesCheckBox()->setChecked(mpSettings->value("algorithmicDebugger/displayCFrames").toBool());
+  if (mpSettings->contains("algorithmicDebugger/displayUnknownFrames"))
+    mpDebuggerPage->getDisplayUnknownFramesCheckBox()->setChecked(mpSettings->value("algorithmicDebugger/displayUnknownFrames").toBool());
+  if (mpSettings->contains("algorithmicDebugger/clearOutputOnNewRun"))
+    mpDebuggerPage->getClearOutputOnNewRunCheckBox()->setChecked(mpSettings->value("algorithmicDebugger/clearOutputOnNewRun").toBool());
+  if (mpSettings->contains("algorithmicDebugger/clearLogOnNewRun"))
+    mpDebuggerPage->getClearLogOnNewRunCheckBox()->setChecked(mpSettings->value("algorithmicDebugger/clearLogOnNewRun").toBool());
+  if (mpSettings->contains("transformationalDebugger/alwaysShowTransformationalDebugger"))
+    mpDebuggerPage->getAlwaysShowTransformationsCheckBox()->setChecked(mpSettings->value("transformationalDebugger/alwaysShowTransformationalDebugger").toBool());
+  if (mpSettings->contains("transformationalDebugger/generateOperations"))
+    mpDebuggerPage->getGenerateOperationsCheckBox()->setChecked(mpSettings->value("transformationalDebugger/generateOperations").toBool());
 }
 
 //! Saves the General section settings to omedit.ini
@@ -394,18 +393,18 @@ void OptionsDialog::saveGeneralSettings()
     language = QLocale::system().name();
   else
     language = mpGeneralSettingsPage->getLanguageComboBox()->itemData(mpGeneralSettingsPage->getLanguageComboBox()->currentIndex()).toLocale().name();
-  mSettings.setValue("language", language);
+  mpSettings->setValue("language", language);
   // save working directory
   mpMainWindow->getOMCProxy()->changeDirectory(mpGeneralSettingsPage->getWorkingDirectory());
-  mSettings.setValue("workingDirectory", mpMainWindow->getOMCProxy()->changeDirectory());
+  mpSettings->setValue("workingDirectory", mpMainWindow->getOMCProxy()->changeDirectory());
   // save user customizations
-  mSettings.setValue("userCustomizations", mpGeneralSettingsPage->getPreserveUserCustomizations());
+  mpSettings->setValue("userCustomizations", mpGeneralSettingsPage->getPreserveUserCustomizations());
   // save show protected classes
-  mSettings.setValue("showProtectedClasses", mpGeneralSettingsPage->getShowProtectedClasses());
+  mpSettings->setValue("showProtectedClasses", mpGeneralSettingsPage->getShowProtectedClasses());
   // show/hide the protected classes
   getMainWindow()->getLibraryTreeWidget()->showProtectedClasses(mpGeneralSettingsPage->getShowProtectedClasses());
   // save modeling view mode
-  mSettings.setValue("modeling/viewmode", mpGeneralSettingsPage->getModelingViewMode());
+  mpSettings->setValue("modeling/viewmode", mpGeneralSettingsPage->getModelingViewMode());
   if (mpGeneralSettingsPage->getModelingViewMode().compare(Helper::subWindow) == 0)
   {
     mpMainWindow->getModelWidgetContainer()->setViewMode(QMdiArea::SubWindowView);
@@ -421,7 +420,7 @@ void OptionsDialog::saveGeneralSettings()
     mpMainWindow->getModelWidgetContainer()->setViewMode(QMdiArea::TabbedView);
   }
   // save plotting view mode
-  mSettings.setValue("plotting/viewmode", mpGeneralSettingsPage->getPlottingViewMode());
+  mpSettings->setValue("plotting/viewmode", mpGeneralSettingsPage->getPlottingViewMode());
   if (mpGeneralSettingsPage->getPlottingViewMode().compare(Helper::subWindow) == 0)
   {
     mpMainWindow->getPlotWindowContainer()->setViewMode(QMdiArea::SubWindowView);
@@ -437,12 +436,12 @@ void OptionsDialog::saveGeneralSettings()
     mpMainWindow->getPlotWindowContainer()->setViewMode(QMdiArea::TabbedView);
   }
   // save default view
-  mSettings.setValue("defaultView", mpGeneralSettingsPage->getDefaultView());
+  mpSettings->setValue("defaultView", mpGeneralSettingsPage->getDefaultView());
   // save auto save
-  mSettings.setValue("autoSave/enable", mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->isChecked());
-  mSettings.setValue("autoSave/interval", mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->value());
-  mSettings.setValue("autoSave/enableSingleClasses", mpGeneralSettingsPage->getEnableAutoSaveForSingleClassesCheckBox()->isChecked());
-  mSettings.setValue("autoSave/enableOneFilePackages", mpGeneralSettingsPage->getEnableAutoSaveForOneFilePackagesCheckBox()->isChecked());
+  mpSettings->setValue("autoSave/enable", mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->isChecked());
+  mpSettings->setValue("autoSave/interval", mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->value());
+  mpSettings->setValue("autoSave/enableSingleClasses", mpGeneralSettingsPage->getEnableAutoSaveForSingleClassesCheckBox()->isChecked());
+  mpSettings->setValue("autoSave/enableOneFilePackages", mpGeneralSettingsPage->getEnableAutoSaveForOneFilePackagesCheckBox()->isChecked());
   mpMainWindow->toggleAutoSave();
   // save welcome page
   switch (mpGeneralSettingsPage->getWelcomePageView())
@@ -455,7 +454,7 @@ void OptionsDialog::saveGeneralSettings()
       mpMainWindow->getWelcomePageWidget()->getSplitter()->setOrientation(Qt::Horizontal);
       break;
   }
-  mSettings.setValue("welcomePage/view", mpGeneralSettingsPage->getWelcomePageView());
+  mpSettings->setValue("welcomePage/view", mpGeneralSettingsPage->getWelcomePageView());
   if (mpGeneralSettingsPage->getShowLatestNewsCheckBox()->isChecked())
   {
     mpMainWindow->getWelcomePageWidget()->getLatestNewsFrame()->show();
@@ -465,138 +464,138 @@ void OptionsDialog::saveGeneralSettings()
   {
     mpMainWindow->getWelcomePageWidget()->getLatestNewsFrame()->hide();
   }
-  mSettings.setValue("welcomePage/showLatestNews", mpGeneralSettingsPage->getShowLatestNewsCheckBox()->isChecked());
+  mpSettings->setValue("welcomePage/showLatestNews", mpGeneralSettingsPage->getShowLatestNewsCheckBox()->isChecked());
 }
 
 //! Saves the Libraries section settings to omedit.ini
 void OptionsDialog::saveLibrariesSettings()
 {
   // read the settings and add system libraries
-  mSettings.beginGroup("libraries");
-  foreach (QString lib, mSettings.childKeys())
+  mpSettings->beginGroup("libraries");
+  foreach (QString lib, mpSettings->childKeys())
   {
-    mSettings.remove(lib);
+    mpSettings->remove(lib);
   }
   QTreeWidgetItemIterator systemLibrariesIterator(mpLibrariesPage->getSystemLibrariesTree());
   while (*systemLibrariesIterator)
   {
     QTreeWidgetItem *pItem = dynamic_cast<QTreeWidgetItem*>(*systemLibrariesIterator);
-    mSettings.setValue(pItem->text(0), pItem->text(1));
+    mpSettings->setValue(pItem->text(0), pItem->text(1));
     ++systemLibrariesIterator;
   }
-  mSettings.endGroup();
-  mSettings.setValue("forceModelicaLoad", mpLibrariesPage->getForceModelicaLoadCheckBox()->isChecked());
+  mpSettings->endGroup();
+  mpSettings->setValue("forceModelicaLoad", mpLibrariesPage->getForceModelicaLoadCheckBox()->isChecked());
   // read the settings and add user libraries
-  mSettings.beginGroup("userlibraries");
-  foreach (QString lib, mSettings.childKeys())
+  mpSettings->beginGroup("userlibraries");
+  foreach (QString lib, mpSettings->childKeys())
   {
-    mSettings.remove(lib);
+    mpSettings->remove(lib);
   }
   QTreeWidgetItemIterator userLibrariesIterator(mpLibrariesPage->getUserLibrariesTree());
   while (*userLibrariesIterator)
   {
     QTreeWidgetItem *pItem = dynamic_cast<QTreeWidgetItem*>(*userLibrariesIterator);
-    mSettings.setValue(QUrl::toPercentEncoding(pItem->text(0)), pItem->text(1));
+    mpSettings->setValue(QUrl::toPercentEncoding(pItem->text(0)), pItem->text(1));
     ++userLibrariesIterator;
   }
-  mSettings.endGroup();
+  mpSettings->endGroup();
 }
 
 //! Saves the ModelicaText settings to omedit.ini
 void OptionsDialog::saveModelicaTextSettings()
 {
-  mSettings.setValue("textEditor/enableSyntaxHighlighting", mpModelicaTextEditorPage->getSyntaxHighlightingCheckbox()->isChecked());
-  mSettings.setValue("textEditor/enableLineWrapping", mpModelicaTextEditorPage->getLineWrappingCheckbox()->isChecked());
-  mSettings.setValue("textEditor/fontFamily", mpModelicaTextSettings->getFontFamily());
-  mSettings.setValue("textEditor/fontSize", mpModelicaTextSettings->getFontSize());
-  mSettings.setValue("textEditor/textRuleColor", mpModelicaTextSettings->getTextRuleColor().rgba());
-  mSettings.setValue("textEditor/keywordRuleColor", mpModelicaTextSettings->getKeywordRuleColor().rgba());
-  mSettings.setValue("textEditor/typeRuleColor", mpModelicaTextSettings->getTypeRuleColor().rgba());
-  mSettings.setValue("textEditor/functionRuleColor", mpModelicaTextSettings->getFunctionRuleColor().rgba());
-  mSettings.setValue("textEditor/quotesRuleColor", mpModelicaTextSettings->getQuotesRuleColor().rgba());
-  mSettings.setValue("textEditor/commentRuleColor", mpModelicaTextSettings->getCommentRuleColor().rgba());
-  mSettings.setValue("textEditor/numberRuleColor", mpModelicaTextSettings->getNumberRuleColor().rgba());
+  mpSettings->setValue("textEditor/enableSyntaxHighlighting", mpModelicaTextEditorPage->getSyntaxHighlightingCheckbox()->isChecked());
+  mpSettings->setValue("textEditor/enableLineWrapping", mpModelicaTextEditorPage->getLineWrappingCheckbox()->isChecked());
+  mpSettings->setValue("textEditor/fontFamily", mpModelicaTextSettings->getFontFamily());
+  mpSettings->setValue("textEditor/fontSize", mpModelicaTextSettings->getFontSize());
+  mpSettings->setValue("textEditor/textRuleColor", mpModelicaTextSettings->getTextRuleColor().rgba());
+  mpSettings->setValue("textEditor/keywordRuleColor", mpModelicaTextSettings->getKeywordRuleColor().rgba());
+  mpSettings->setValue("textEditor/typeRuleColor", mpModelicaTextSettings->getTypeRuleColor().rgba());
+  mpSettings->setValue("textEditor/functionRuleColor", mpModelicaTextSettings->getFunctionRuleColor().rgba());
+  mpSettings->setValue("textEditor/quotesRuleColor", mpModelicaTextSettings->getQuotesRuleColor().rgba());
+  mpSettings->setValue("textEditor/commentRuleColor", mpModelicaTextSettings->getCommentRuleColor().rgba());
+  mpSettings->setValue("textEditor/numberRuleColor", mpModelicaTextSettings->getNumberRuleColor().rgba());
 }
 
 //! Saves the GraphicsViews section settings to omedit.ini
 void OptionsDialog::saveGraphicalViewsSettings()
 {
-  mSettings.setValue("iconView/extentLeft", mpGraphicalViewsPage->getIconViewExtentLeft());
-  mSettings.setValue("iconView/extentBottom", mpGraphicalViewsPage->getIconViewExtentBottom());
-  mSettings.setValue("iconView/extentRight", mpGraphicalViewsPage->getIconViewExtentRight());
-  mSettings.setValue("iconView/extentTop", mpGraphicalViewsPage->getIconViewExtentTop());
-  mSettings.setValue("iconView/gridHorizontal", mpGraphicalViewsPage->getIconViewGridHorizontal());
-  mSettings.setValue("iconView/gridVertical", mpGraphicalViewsPage->getIconViewGridVertical());
-  mSettings.setValue("iconView/scaleFactor", mpGraphicalViewsPage->getIconViewScaleFactor());
-  mSettings.setValue("iconView/preserveAspectRatio", mpGraphicalViewsPage->getIconViewPreserveAspectRation());
-  mSettings.setValue("DiagramView/extentLeft", mpGraphicalViewsPage->getDiagramViewExtentLeft());
-  mSettings.setValue("DiagramView/extentBottom", mpGraphicalViewsPage->getDiagramViewExtentBottom());
-  mSettings.setValue("DiagramView/extentRight", mpGraphicalViewsPage->getDiagramViewExtentRight());
-  mSettings.setValue("DiagramView/extentTop", mpGraphicalViewsPage->getDiagramViewExtentTop());
-  mSettings.setValue("DiagramView/gridHorizontal", mpGraphicalViewsPage->getDiagramViewGridHorizontal());
-  mSettings.setValue("DiagramView/gridVertical", mpGraphicalViewsPage->getDiagramViewGridVertical());
-  mSettings.setValue("DiagramView/scaleFactor", mpGraphicalViewsPage->getDiagramViewScaleFactor());
-  mSettings.setValue("DiagramView/preserveAspectRatio", mpGraphicalViewsPage->getDiagramViewPreserveAspectRation());
+  mpSettings->setValue("iconView/extentLeft", mpGraphicalViewsPage->getIconViewExtentLeft());
+  mpSettings->setValue("iconView/extentBottom", mpGraphicalViewsPage->getIconViewExtentBottom());
+  mpSettings->setValue("iconView/extentRight", mpGraphicalViewsPage->getIconViewExtentRight());
+  mpSettings->setValue("iconView/extentTop", mpGraphicalViewsPage->getIconViewExtentTop());
+  mpSettings->setValue("iconView/gridHorizontal", mpGraphicalViewsPage->getIconViewGridHorizontal());
+  mpSettings->setValue("iconView/gridVertical", mpGraphicalViewsPage->getIconViewGridVertical());
+  mpSettings->setValue("iconView/scaleFactor", mpGraphicalViewsPage->getIconViewScaleFactor());
+  mpSettings->setValue("iconView/preserveAspectRatio", mpGraphicalViewsPage->getIconViewPreserveAspectRation());
+  mpSettings->setValue("DiagramView/extentLeft", mpGraphicalViewsPage->getDiagramViewExtentLeft());
+  mpSettings->setValue("DiagramView/extentBottom", mpGraphicalViewsPage->getDiagramViewExtentBottom());
+  mpSettings->setValue("DiagramView/extentRight", mpGraphicalViewsPage->getDiagramViewExtentRight());
+  mpSettings->setValue("DiagramView/extentTop", mpGraphicalViewsPage->getDiagramViewExtentTop());
+  mpSettings->setValue("DiagramView/gridHorizontal", mpGraphicalViewsPage->getDiagramViewGridHorizontal());
+  mpSettings->setValue("DiagramView/gridVertical", mpGraphicalViewsPage->getDiagramViewGridVertical());
+  mpSettings->setValue("DiagramView/scaleFactor", mpGraphicalViewsPage->getDiagramViewScaleFactor());
+  mpSettings->setValue("DiagramView/preserveAspectRatio", mpGraphicalViewsPage->getDiagramViewPreserveAspectRation());
 }
 
 //! Saves the Simulation section settings to omedit.ini
 void OptionsDialog::saveSimulationSettings()
 {
-  mSettings.setValue("simulation/matchingAlgorithm", mpSimulationPage->getMatchingAlgorithmComboBox()->currentText());
+  mpSettings->setValue("simulation/matchingAlgorithm", mpSimulationPage->getMatchingAlgorithmComboBox()->currentText());
   mpMainWindow->getOMCProxy()->setMatchingAlgorithm(mpSimulationPage->getMatchingAlgorithmComboBox()->currentText());
-  mSettings.setValue("simulation/indexReductionMethod", mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
+  mpSettings->setValue("simulation/indexReductionMethod", mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
   mpMainWindow->getOMCProxy()->setIndexReductionMethod(mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
   mpMainWindow->getOMCProxy()->clearCommandLineOptions();
   if (mpMainWindow->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCFlagsTextBox()->text()))
-    mSettings.setValue("simulation/OMCFlags", mpSimulationPage->getOMCFlagsTextBox()->text());
+    mpSettings->setValue("simulation/OMCFlags", mpSimulationPage->getOMCFlagsTextBox()->text());
   else
-    mpSimulationPage->getOMCFlagsTextBox()->setText(mSettings.value("simulation/OMCFlags").toString());
-  mSettings.setValue("simulation/saveClassBeforeSimulation", mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->isChecked());
+    mpSimulationPage->getOMCFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
+  mpSettings->setValue("simulation/saveClassBeforeSimulation", mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->isChecked());
 }
 
 //! Saves the Notifications section settings to omedit.ini
 void OptionsDialog::saveNotificationsSettings()
 {
-  mSettings.setValue("notifications/promptQuitApplication", mpNotificationsPage->getQuitApplicationCheckBox()->isChecked());
-  mSettings.setValue("notifications/itemDroppedOnItself", mpNotificationsPage->getItemDroppedOnItselfCheckBox()->isChecked());
-  mSettings.setValue("notifications/replaceableIfPartial", mpNotificationsPage->getReplaceableIfPartialCheckBox()->isChecked());
-  mSettings.setValue("notifications/innerModelNameChanged", mpNotificationsPage->getInnerModelNameChangedCheckBox()->isChecked());
-  mSettings.setValue("notifications/saveModelForBitmapInsertion", mpNotificationsPage->getSaveModelForBitmapInsertionCheckBox()->isChecked());
+  mpSettings->setValue("notifications/promptQuitApplication", mpNotificationsPage->getQuitApplicationCheckBox()->isChecked());
+  mpSettings->setValue("notifications/itemDroppedOnItself", mpNotificationsPage->getItemDroppedOnItselfCheckBox()->isChecked());
+  mpSettings->setValue("notifications/replaceableIfPartial", mpNotificationsPage->getReplaceableIfPartialCheckBox()->isChecked());
+  mpSettings->setValue("notifications/innerModelNameChanged", mpNotificationsPage->getInnerModelNameChangedCheckBox()->isChecked());
+  mpSettings->setValue("notifications/saveModelForBitmapInsertion", mpNotificationsPage->getSaveModelForBitmapInsertionCheckBox()->isChecked());
 }
 
 //! Saves the LineStyle section settings to omedit.ini
 void OptionsDialog::saveLineStyleSettings()
 {
-  mSettings.setValue("linestyle/color", mpLineStylePage->getLineColor().rgba());
-  mSettings.setValue("linestyle/pattern", mpLineStylePage->getLinePattern());
-  mSettings.setValue("linestyle/thickness", mpLineStylePage->getLineThickness());
-  mSettings.setValue("linestyle/startArrow", mpLineStylePage->getLineStartArrow());
-  mSettings.setValue("linestyle/endArrow", mpLineStylePage->getLineEndArrow());
-  mSettings.setValue("linestyle/arrowSize", mpLineStylePage->getLineArrowSize());
-  mSettings.setValue("linestyle/smooth", mpLineStylePage->getLineSmooth());
+  mpSettings->setValue("linestyle/color", mpLineStylePage->getLineColor().rgba());
+  mpSettings->setValue("linestyle/pattern", mpLineStylePage->getLinePattern());
+  mpSettings->setValue("linestyle/thickness", mpLineStylePage->getLineThickness());
+  mpSettings->setValue("linestyle/startArrow", mpLineStylePage->getLineStartArrow());
+  mpSettings->setValue("linestyle/endArrow", mpLineStylePage->getLineEndArrow());
+  mpSettings->setValue("linestyle/arrowSize", mpLineStylePage->getLineArrowSize());
+  mpSettings->setValue("linestyle/smooth", mpLineStylePage->getLineSmooth());
 }
 
 //! Saves the FillStyle section settings to omedit.ini
 void OptionsDialog::saveFillStyleSettings()
 {
-  mSettings.setValue("fillstyle/color", mpFillStylePage->getFillColor().rgba());
-  mSettings.setValue("fillstyle/pattern", mpFillStylePage->getFillPattern());
+  mpSettings->setValue("fillstyle/color", mpFillStylePage->getFillColor().rgba());
+  mpSettings->setValue("fillstyle/pattern", mpFillStylePage->getFillPattern());
 }
 
 //! Saves the CurveStyle section settings to omedit.ini
 void OptionsDialog::saveCurveStyleSettings()
 {
-  mSettings.setValue("curvestyle/pattern", mpCurveStylePage->getCurvePattern());
-  mSettings.setValue("curvestyle/thickness", mpCurveStylePage->getCurveThickness());
+  mpSettings->setValue("curvestyle/pattern", mpCurveStylePage->getCurvePattern());
+  mpSettings->setValue("curvestyle/thickness", mpCurveStylePage->getCurveThickness());
 }
 
 //! Saves the Figaro section settings to omedit.ini
 void OptionsDialog::saveFigaroSettings()
 {
-  mSettings.setValue("figaro/databasefile", mpFigaroPage->getFigaroDatabaseFileTextBox()->text());
-  mSettings.setValue("figaro/mode", mpFigaroPage->getFigaroModeComboBox()->itemData(mpFigaroPage->getFigaroModeComboBox()->currentIndex()).toString());
-  mSettings.setValue("figaro/options", mpFigaroPage->getFigaroOptionsTextBox()->text());
-  mSettings.setValue("figaro/process", mpFigaroPage->getFigaroProcessTextBox()->text());
+  mpSettings->setValue("figaro/databasefile", mpFigaroPage->getFigaroDatabaseFileTextBox()->text());
+  mpSettings->setValue("figaro/mode", mpFigaroPage->getFigaroModeComboBox()->itemData(mpFigaroPage->getFigaroModeComboBox()->currentIndex()).toString());
+  mpSettings->setValue("figaro/options", mpFigaroPage->getFigaroOptionsTextBox()->text());
+  mpSettings->setValue("figaro/process", mpFigaroPage->getFigaroProcessTextBox()->text());
 }
 
 /*!
@@ -604,21 +603,21 @@ void OptionsDialog::saveFigaroSettings()
   */
 void OptionsDialog::saveDebuggerSettings()
 {
-  mSettings.beginGroup("algorithmicDebugger");
-  mSettings.setValue("GDBPath", mpDebuggerPage->getGDBPath());
-  mSettings.value("GDBCommandTimeout", mpDebuggerPage->getGDBCommandTimeoutSpinBox()->value());
-  mSettings.setValue("displayCFrames", mpDebuggerPage->getDisplayCFramesCheckBox()->isChecked());
-  mSettings.setValue("displayUnknownFrames", mpDebuggerPage->getDisplayUnknownFramesCheckBox()->isChecked());
+  mpSettings->beginGroup("algorithmicDebugger");
+  mpSettings->setValue("GDBPath", mpDebuggerPage->getGDBPath());
+  mpSettings->value("GDBCommandTimeout", mpDebuggerPage->getGDBCommandTimeoutSpinBox()->value());
+  mpSettings->setValue("displayCFrames", mpDebuggerPage->getDisplayCFramesCheckBox()->isChecked());
+  mpSettings->setValue("displayUnknownFrames", mpDebuggerPage->getDisplayUnknownFramesCheckBox()->isChecked());
   mpMainWindow->getDebuggerMainWindow()->getStackFramesWidget()->getStackFramesTreeWidget()->updateStackFrames();
-  mSettings.setValue("clearOutputOnNewRun", mpDebuggerPage->getClearOutputOnNewRunCheckBox()->isChecked());
-  mSettings.setValue("clearLogOnNewRun", mpDebuggerPage->getClearLogOnNewRunCheckBox()->isChecked());
-  mSettings.endGroup();
-  mSettings.beginGroup("transformationalDebugger");
-  mSettings.setValue("alwaysShowTransformationalDebugger", mpDebuggerPage->getAlwaysShowTransformationsCheckBox()->isChecked());
-  mSettings.setValue("generateOperations", mpDebuggerPage->getGenerateOperationsCheckBox()->isChecked());
+  mpSettings->setValue("clearOutputOnNewRun", mpDebuggerPage->getClearOutputOnNewRunCheckBox()->isChecked());
+  mpSettings->setValue("clearLogOnNewRun", mpDebuggerPage->getClearLogOnNewRunCheckBox()->isChecked());
+  mpSettings->endGroup();
+  mpSettings->beginGroup("transformationalDebugger");
+  mpSettings->setValue("alwaysShowTransformationalDebugger", mpDebuggerPage->getAlwaysShowTransformationsCheckBox()->isChecked());
+  mpSettings->setValue("generateOperations", mpDebuggerPage->getGenerateOperationsCheckBox()->isChecked());
   if (mpDebuggerPage->getGenerateOperationsCheckBox()->isChecked())
     mpMainWindow->getOMCProxy()->setCommandLineOptions("+d=infoXmlOperations");
-  mSettings.endGroup();
+  mpSettings->endGroup();
 }
 
 //! Sets up the Options Widget dialog
@@ -823,7 +822,7 @@ void OptionsDialog::saveSettings()
   saveCurveStyleSettings();
   saveFigaroSettings();
   saveDebuggerSettings();
-  mSettings.sync();
+  mpSettings->sync();
   accept();
 }
 

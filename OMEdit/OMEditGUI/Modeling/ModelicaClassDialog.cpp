@@ -890,9 +890,8 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   /* restore the window geometry. */
   if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
-    QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-    settings.setIniCodec(Helper::utf8.toStdString().data());
-    restoreGeometry(settings.value("InformationDialog/geometry").toByteArray());
+    QSettings *pSettings = OpenModelica::getApplicationSettings();
+    restoreGeometry(pSettings->value("InformationDialog/geometry").toByteArray());
   }
 }
 
@@ -901,9 +900,8 @@ void InformationDialog::closeEvent(QCloseEvent *event)
   /* save the window geometry. */
   if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
-    QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-    settings.setIniCodec(Helper::utf8.toStdString().data());
-    settings.setValue("InformationDialog/geometry", saveGeometry());
+    QSettings *pSettings = OpenModelica::getApplicationSettings();
+    pSettings->setValue("InformationDialog/geometry", saveGeometry());
   }
   event->accept();
 }

@@ -225,21 +225,20 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   if (mpOptionsDialog->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked())
     mpOMCProxy->setCommandLineOptions("+d=infoXmlOperations");
   // restore OMEdit widgets state
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
   if (mpOptionsDialog->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
-    restoreGeometry(settings.value("application/geometry").toByteArray());
+    restoreGeometry(pSettings->value("application/geometry").toByteArray());
     bool restoreMessagesWidget = false;
     if (mpMessagesWidget->getMessagesTreeWidget()->topLevelItemCount() > 0) restoreMessagesWidget = true;
-    restoreState(settings.value("application/windowState").toByteArray());
+    restoreState(pSettings->value("application/windowState").toByteArray());
     if (restoreMessagesWidget) mpMessagesDockWidget->show();
     mpPerspectiveTabbar->setCurrentIndex(0);
     switchToWelcomePerspective();
   }
   // read last Open Directory location
-  if (settings.contains("lastOpenDirectory"))
-    StringHandler::setLastOpenDirectory(settings.value("lastOpenDirectory").toString());
+  if (pSettings->contains("lastOpenDirectory"))
+    StringHandler::setLastOpenDirectory(pSettings->value("lastOpenDirectory").toString());
   // create the auto save timer
   mpAutoSaveTimer = new QTimer(this);
   connect(mpAutoSaveTimer, SIGNAL(timeout()), SLOT(autoSave()));
@@ -517,9 +516,8 @@ QAction* MainWindow::getGotoLineNumberAction()
 //! Adds the currently opened file to the recentFilesList settings.
 void MainWindow::addRecentFile(const QString &fileName, const QString &encoding)
 {
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
-  QList<QVariant> files = settings.value("recentFilesList/files").toList();
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
   // remove the already present RecentFile instance from the list.
   foreach (QVariant file, files)
   {
@@ -535,7 +533,7 @@ void MainWindow::addRecentFile(const QString &fileName, const QString &encoding)
   files.prepend(QVariant::fromValue(recentFile));
   while (files.size() > MaxRecentFiles)
     files.removeLast();
-  settings.setValue("recentFilesList/files", files);
+  pSettings->setValue("recentFilesList/files", files);
   updateRecentFileActions();
 }
 
@@ -546,9 +544,8 @@ void MainWindow::updateRecentFileActions()
   for (int i = 0; i < MaxRecentFiles; ++i)
     mpRecentFileActions[i]->setVisible(false);
   /* read the new recent files list */
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
-  QList<QVariant> files = settings.value("recentFilesList/files").toList();
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
   int numRecentFiles = qMin(files.size(), (int)MaxRecentFiles);
   for (int i = 0; i < numRecentFiles; ++i)
   {
@@ -607,8 +604,7 @@ void MainWindow::beforeClosingMainWindow()
   delete mpDebuggerMainWindow;
   delete mpSimulationDialog;
   /* save the TransformationsWidget last window geometry and splitters state. */
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
   QHashIterator<QString, TransformationsWidget*> transformationsWidgets(mTransformationsWidgetHash);
   if (mTransformationsWidgetHash.size() > 0)
   {
@@ -617,17 +613,17 @@ void MainWindow::beforeClosingMainWindow()
     TransformationsWidget *pTransformationsWidget = transformationsWidgets.value();
     if (pTransformationsWidget)
     {
-      settings.beginGroup("transformationalDebugger");
-      settings.setValue("geometry", pTransformationsWidget->saveGeometry());
-      settings.setValue("variablesNestedHorizontalSplitter", pTransformationsWidget->getVariablesNestedHorizontalSplitter()->saveState());
-      settings.setValue("variablesNestedVerticalSplitter", pTransformationsWidget->getVariablesNestedVerticalSplitter()->saveState());
-      settings.setValue("variablesHorizontalSplitter", pTransformationsWidget->getVariablesHorizontalSplitter()->saveState());
-      settings.setValue("equationsNestedHorizontalSplitter", pTransformationsWidget->getEquationsNestedHorizontalSplitter()->saveState());
-      settings.setValue("equationsNestedVerticalSplitter", pTransformationsWidget->getEquationsNestedVerticalSplitter()->saveState());
-      settings.setValue("equationsHorizontalSplitter", pTransformationsWidget->getEquationsHorizontalSplitter()->saveState());
-      settings.setValue("transformationsVerticalSplitter", pTransformationsWidget->getTransformationsVerticalSplitter()->saveState());
-      settings.setValue("transformationsHorizontalSplitter", pTransformationsWidget->getTransformationsHorizontalSplitter()->saveState());
-      settings.endGroup();
+      pSettings->beginGroup("transformationalDebugger");
+      pSettings->setValue("geometry", pTransformationsWidget->saveGeometry());
+      pSettings->setValue("variablesNestedHorizontalSplitter", pTransformationsWidget->getVariablesNestedHorizontalSplitter()->saveState());
+      pSettings->setValue("variablesNestedVerticalSplitter", pTransformationsWidget->getVariablesNestedVerticalSplitter()->saveState());
+      pSettings->setValue("variablesHorizontalSplitter", pTransformationsWidget->getVariablesHorizontalSplitter()->saveState());
+      pSettings->setValue("equationsNestedHorizontalSplitter", pTransformationsWidget->getEquationsNestedHorizontalSplitter()->saveState());
+      pSettings->setValue("equationsNestedVerticalSplitter", pTransformationsWidget->getEquationsNestedVerticalSplitter()->saveState());
+      pSettings->setValue("equationsHorizontalSplitter", pTransformationsWidget->getEquationsHorizontalSplitter()->saveState());
+      pSettings->setValue("transformationsVerticalSplitter", pTransformationsWidget->getTransformationsVerticalSplitter()->saveState());
+      pSettings->setValue("transformationsHorizontalSplitter", pTransformationsWidget->getTransformationsHorizontalSplitter()->saveState());
+      pSettings->endGroup();
     }
   }
   /* delete the TransformationsWidgets */
@@ -640,10 +636,10 @@ void MainWindow::beforeClosingMainWindow()
   }
   mTransformationsWidgetHash.clear();
   /* save OMEdit MainWindow geometry state */
-  settings.setValue("application/geometry", saveGeometry());
-  settings.setValue("application/windowState", saveState());
+  pSettings->setValue("application/geometry", saveGeometry());
+  pSettings->setValue("application/windowState", saveState());
   // save last Open Directory location
-  settings.setValue("lastOpenDirectory", StringHandler::getLastOpenDirectory());
+  pSettings->setValue("lastOpenDirectory", StringHandler::getLastOpenDirectory());
 }
 
 void MainWindow::openDroppedFile(QDropEvent *event)
@@ -1214,18 +1210,16 @@ void MainWindow::openRecentFile()
 
 void MainWindow::clearRecentFilesList()
 {
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
-  settings.remove("recentFilesList/files");
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  pSettings->remove("recentFilesList/files");
   updateRecentFileActions();
   mpWelcomePageWidget->addRecentFilesListItems();
 }
 
 void MainWindow::clearFindReplaceTexts()
 {
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
-  settings.remove("findReplaceDialog/textsToFind");
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  pSettings->remove("findReplaceDialog/textsToFind");
   mpFindReplaceDialog->readFindTextFromSettings();
 }
 

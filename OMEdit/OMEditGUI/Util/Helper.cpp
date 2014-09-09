@@ -549,6 +549,7 @@ QString& OpenModelica::tempDirectory()
   static int init = 0;
   static QString tmpPath;
   if (!init) {
+    init = 1;
 #ifdef WIN32
     tmpPath = QDir::tempPath() + "/OpenModelica/OMEdit/";
 #else // UNIX environment
@@ -560,3 +561,16 @@ QString& OpenModelica::tempDirectory()
   }
   return tmpPath;
 }
+
+QSettings* OpenModelica::getApplicationSettings()
+{
+  static int init = 0;
+  static QSettings *pSettings;
+  if (!init) {
+    init = 1;
+    pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+    pSettings->setIniCodec(Helper::utf8.toStdString().data());
+  }
+  return pSettings;
+}
+

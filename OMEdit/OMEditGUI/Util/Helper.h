@@ -44,6 +44,7 @@
 #include <QSize>
 #include <QObject>
 #include <QFontInfo>
+#include <QSettings>
 
 class Helper : public QObject
 {
@@ -340,6 +341,7 @@ public:
 
 namespace OpenModelica {
   QString& tempDirectory();
+  QSettings* getApplicationSettings();
 }
 
 #endif // HELPER_H

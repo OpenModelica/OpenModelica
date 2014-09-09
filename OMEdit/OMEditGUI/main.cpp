@@ -241,10 +241,9 @@ int main(int argc, char *argv[])
 #else /* unix */
   omhome = omhome ? omhome : CONFIG_DEFAULT_OPENMODELICAHOME;
 #endif
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
-  QLocale settingsLocale = QLocale(settings.value("language").toString());
-  settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QLocale settingsLocale = QLocale(pSettings->value("language").toString());
+  settingsLocale = settingsLocale.name() == "C" ? pSettings->value("language").toLocale() : settingsLocale;
   QString locale = settingsLocale.name().isEmpty() ? QLocale::system().name() : settingsLocale.name();
   /* set the default locale of the application so that QSpinBox etc show values according to the locale. */
   QLocale::setDefault(settingsLocale);
@@ -322,9 +321,9 @@ int main(int argc, char *argv[])
   splashScreen.finish(&mainwindow);
   /* Show release information notification */
   bool releaseInformation = true;
-  if (settings.contains("notifications/releaseInformation"))
+  if (pSettings->contains("notifications/releaseInformation"))
   {
-    releaseInformation = settings.value("notifications/releaseInformation").toBool();
+    releaseInformation = pSettings->value("notifications/releaseInformation").toBool();
   }
   if (releaseInformation)
   {

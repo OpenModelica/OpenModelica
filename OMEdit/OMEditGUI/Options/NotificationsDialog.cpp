@@ -236,9 +236,8 @@ QString NotificationsDialog::getNotificationCheckBoxString()
   */
 void NotificationsDialog::saveQuitNotificationSettings()
 {
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
-  settings.setValue("notifications/promptQuitApplication", true);
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  pSettings->setValue("notifications/promptQuitApplication", true);
 }
 
 /*!
@@ -247,9 +246,8 @@ void NotificationsDialog::saveQuitNotificationSettings()
   */
 void NotificationsDialog::saveItemDroppedOnItselfNotificationSettings()
 {
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
-  settings.setValue("notifications/itemDroppedOnItself", false);
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  pSettings->setValue("notifications/itemDroppedOnItself", false);
   mpMainWindow->getOptionsDialog()->getNotificationsPage()->getItemDroppedOnItselfCheckBox()->setChecked(false);
 }
 
@@ -259,9 +257,8 @@ void NotificationsDialog::saveItemDroppedOnItselfNotificationSettings()
   */
 void NotificationsDialog::saveReplaceableIfPartialNotificationSettings()
 {
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
-  settings.setValue("notifications/replaceableIfPartial", false);
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  pSettings->setValue("notifications/replaceableIfPartial", false);
   mpMainWindow->getOptionsDialog()->getNotificationsPage()->getReplaceableIfPartialCheckBox()->setChecked(false);
 }
 
@@ -271,9 +268,8 @@ void NotificationsDialog::saveReplaceableIfPartialNotificationSettings()
   */
 void NotificationsDialog::saveInnerModelNameChangedNotificationSettings()
 {
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
-  settings.setValue("notifications/innerModelNameChanged", false);
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  pSettings->setValue("notifications/innerModelNameChanged", false);
   mpMainWindow->getOptionsDialog()->getNotificationsPage()->getInnerModelNameChangedCheckBox()->setChecked(false);
 }
 
@@ -283,9 +279,8 @@ void NotificationsDialog::saveInnerModelNameChangedNotificationSettings()
   */
 void NotificationsDialog::saveModelForBitmapInsertionNotificationSettings()
 {
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
-  settings.setValue("notifications/saveModelForBitmapInsertion", false);
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  pSettings->setValue("notifications/saveModelForBitmapInsertion", false);
   mpMainWindow->getOptionsDialog()->getNotificationsPage()->getSaveModelForBitmapInsertionCheckBox()->setChecked(false);
 }
 
@@ -294,10 +289,9 @@ void NotificationsDialog::saveModelForBitmapInsertionNotificationSettings()
   */
 void NotificationsDialog::saveReleaseInformationNotificationSettings()
 {
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
-  settings.clear();
-  settings.setValue("notifications/releaseInformation", false);
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  pSettings->clear();
+  pSettings->setValue("notifications/releaseInformation", false);
 }
 
 /*!

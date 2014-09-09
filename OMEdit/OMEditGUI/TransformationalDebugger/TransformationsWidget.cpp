@@ -737,21 +737,20 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   pMainLayout->addWidget(mpTransformationsHorizontalSplitter, 1, 0);
   setLayout(pMainLayout);
   /* restore the TransformationsWidget geometry and splitters state. */
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
   if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
-    settings.beginGroup("transformationalDebugger");
-    restoreGeometry(settings.value("geometry").toByteArray());
-    mpVariablesNestedHorizontalSplitter->restoreState(settings.value("variablesNestedHorizontalSplitter").toByteArray());
-    mpVariablesNestedVerticalSplitter->restoreState(settings.value("variablesNestedVerticalSplitter").toByteArray());
-    mpVariablesHorizontalSplitter->restoreState(settings.value("variablesHorizontalSplitter").toByteArray());
-    mpEquationsNestedHorizontalSplitter->restoreState(settings.value("equationsNestedHorizontalSplitter").toByteArray());
-    mpEquationsNestedVerticalSplitter->restoreState(settings.value("equationsNestedVerticalSplitter").toByteArray());
-    mpEquationsHorizontalSplitter->restoreState(settings.value("equationsHorizontalSplitter").toByteArray());
-    mpTransformationsVerticalSplitter->restoreState(settings.value("transformationsVerticalSplitter").toByteArray());
-    mpTransformationsHorizontalSplitter->restoreState(settings.value("transformationsHorizontalSplitter").toByteArray());
-    settings.endGroup();
+    pSettings->beginGroup("transformationalDebugger");
+    restoreGeometry(pSettings->value("geometry").toByteArray());
+    mpVariablesNestedHorizontalSplitter->restoreState(pSettings->value("variablesNestedHorizontalSplitter").toByteArray());
+    mpVariablesNestedVerticalSplitter->restoreState(pSettings->value("variablesNestedVerticalSplitter").toByteArray());
+    mpVariablesHorizontalSplitter->restoreState(pSettings->value("variablesHorizontalSplitter").toByteArray());
+    mpEquationsNestedHorizontalSplitter->restoreState(pSettings->value("equationsNestedHorizontalSplitter").toByteArray());
+    mpEquationsNestedVerticalSplitter->restoreState(pSettings->value("equationsNestedVerticalSplitter").toByteArray());
+    mpEquationsHorizontalSplitter->restoreState(pSettings->value("equationsHorizontalSplitter").toByteArray());
+    mpTransformationsVerticalSplitter->restoreState(pSettings->value("transformationsVerticalSplitter").toByteArray());
+    mpTransformationsHorizontalSplitter->restoreState(pSettings->value("transformationsHorizontalSplitter").toByteArray());
+    pSettings->endGroup();
   }
 }
 

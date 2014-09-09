@@ -143,10 +143,9 @@ void FindReplaceDialog::setTextEdit(BaseEditor *pBaseEditor)
   */
 void FindReplaceDialog::readFindTextFromSettings()
 {
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
   mpFindComboBox->clear();
-  QList<QVariant> findTexts = settings.value("findReplaceDialog/textsToFind").toList();
+  QList<QVariant> findTexts = pSettings->value("findReplaceDialog/textsToFind").toList();
   int numFindTexts = qMin(findTexts.size(), (int)MaxFindTexts);
   for (int i = 0; i < numFindTexts; ++i)
   {
@@ -161,9 +160,8 @@ void FindReplaceDialog::readFindTextFromSettings()
   */
 void FindReplaceDialog::saveFindTextToSettings(QString textToFind)
 {
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
-  QList<QVariant> texts = settings.value("findReplaceDialog/textsToFind").toList();
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QList<QVariant> texts = pSettings->value("findReplaceDialog/textsToFind").toList();
   // remove the already present text from the list.
   foreach (QVariant text, texts)
   {
@@ -177,7 +175,7 @@ void FindReplaceDialog::saveFindTextToSettings(QString textToFind)
   while (texts.size() > MaxFindTexts)
     texts.removeLast();
 
-  settings.setValue("findReplaceDialog/textsToFind", texts);
+  pSettings->setValue("findReplaceDialog/textsToFind", texts);
 }
 
 /*!

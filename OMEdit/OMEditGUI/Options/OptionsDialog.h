@@ -122,7 +122,7 @@ private:
   CurveStylePage *mpCurveStylePage;
   FigaroPage *mpFigaroPage;
   DebuggerPage *mpDebuggerPage;
-  QSettings mSettings;
+  QSettings *mpSettings;
   QListWidget *mpOptionsList;
   QStackedWidget *mpPagesWidget;
   QPushButton *mpCancelButton;

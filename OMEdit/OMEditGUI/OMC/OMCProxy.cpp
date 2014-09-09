@@ -324,10 +324,9 @@ bool OMCProxy::startServer()
       objectRefFile.remove();
     mObjectRefFile = objectRefFile.fileName();
     // read the locale
-    QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-    settings.setIniCodec(Helper::utf8.toStdString().data());
-    QLocale settingsLocale = QLocale(settings.value("language").toString());
-    settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
+    QSettings *pSettings = OpenModelica::getApplicationSettings();
+    QLocale settingsLocale = QLocale(pSettings->value("language").toString());
+    settingsLocale = settingsLocale.name() == "C" ? pSettings->value("language").toLocale() : settingsLocale;
     // Start the omc.exe
     QStringList parameters;
     QDir corbaObjectReferenceFilePath(tmpPath);
@@ -811,37 +810,36 @@ QString OMCProxy::getEnvironmentVar(QString name)
   */
 void OMCProxy::loadSystemLibraries(QSplashScreen *pSplashScreen)
 {
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
   bool forceModelicaLoad = true;
-  if (settings.contains("forceModelicaLoad"))
-    forceModelicaLoad = settings.value("forceModelicaLoad").toBool();
-  settings.beginGroup("libraries");
-  QStringList libraries = settings.childKeys();
+  if (pSettings->contains("forceModelicaLoad"))
+    forceModelicaLoad = pSettings->value("forceModelicaLoad").toBool();
+  pSettings->beginGroup("libraries");
+  QStringList libraries = pSettings->childKeys();
   /*
     Only force loading of Modelica & ModelicaReference if user is using OMEdit for the first time.
     Later user must use the libraries options dialog.
     */
   if (forceModelicaLoad)
   {
-    if (!settings.contains("Modelica"))
+    if (!pSettings->contains("Modelica"))
     {
-      settings.setValue("Modelica","default");
+      pSettings->setValue("Modelica","default");
       libraries.prepend("Modelica");
     }
-    if (!settings.contains("ModelicaReference"))
+    if (!pSettings->contains("ModelicaReference"))
     {
-      settings.setValue("ModelicaReference","default");
+      pSettings->setValue("ModelicaReference","default");
       libraries.prepend("ModelicaReference");
     }
   }
   foreach (QString lib, libraries)
   {
     pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
-    QString version = settings.value(lib).toString();
+    QString version = pSettings->value(lib).toString();
     loadModel(lib, version);
   }
-  settings.endGroup();
+  pSettings->endGroup();
   mpMainWindow->getOptionsDialog()->readLibrariesSettings();
 }
 
@@ -851,13 +849,12 @@ void OMCProxy::loadSystemLibraries(QSplashScreen *pSplashScreen)
   */
 void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
 {
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
-  settings.beginGroup("userlibraries");
-  QStringList libraries = settings.childKeys();
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  pSettings->beginGroup("userlibraries");
+  QStringList libraries = pSettings->childKeys();
   foreach (QString lib, libraries)
   {
-    QString encoding = settings.value(lib).toString();
+    QString encoding = pSettings->value(lib).toString();
     QString fileName = QUrl::fromPercentEncoding(QByteArray(lib.toStdString().c_str()));
     pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(fileName), Qt::AlignRight, Qt::white);
     if (parseFile(fileName, encoding))
@@ -913,7 +910,7 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
       }
     }
   }
-  settings.endGroup();
+  pSettings->endGroup();
 }
 
 /*!

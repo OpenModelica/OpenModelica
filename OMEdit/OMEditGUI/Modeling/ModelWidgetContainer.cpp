@@ -1781,9 +1781,8 @@ void WelcomePageWidget::addRecentFilesListItems()
 {
   // remove list items first
   mpRecentItemsList->clear();
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  settings.setIniCodec(Helper::utf8.toStdString().data());
-  QList<QVariant> files = settings.value("recentFilesList/files").toList();
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
   int numRecentFiles = qMin(files.size(), (int)mpMainWindow->MaxRecentFiles);
   for (int i = 0; i < numRecentFiles; ++i)
   {
