@@ -2057,8 +2057,7 @@ algorithm
          local Option<DAE.VariableAttributes> attr;
            case(BackendDAE.VAR(values = attr)) then DAEUtil.getNominalAttr(attr);
          end match;
-end varNominalValueFail;
-
+end getVarNominalValue;
 
 public function isVarOnTopLevelAndOutput "and has the DAE.VarDirection = OUTPUT
   The check for top-model is done by spliting the name at \'.\' and
