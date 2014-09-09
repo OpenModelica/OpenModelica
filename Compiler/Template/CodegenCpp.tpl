@@ -7008,7 +7008,7 @@ end testdimension;
 template dimensionExp(DAE.Exp dimExp,Context context,Boolean useFlatArrayNotation)
 ::=
   match dimExp
-  case DAE.CREF(componentRef = cr) then 
+  case DAE.CREF(componentRef = cr) then
    match context
     case FUNCTION_CONTEXT(__) then System.unquoteIdentifier(crefStr(cr))
    else '<%cref(cr, useFlatArrayNotation)%>'
@@ -9987,7 +9987,7 @@ template cref1(ComponentRef cr, SimCode simCode, Context context, Text &varDecls
    'unsigned_'
    case CREF_IDENT(ident = "string") then
    'string_'
-   
+
   else '<%representationCref(cr, simCode,context, varDecls, useFlatArrayNotation) %>'
 end cref1;
 

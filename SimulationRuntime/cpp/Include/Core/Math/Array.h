@@ -273,7 +273,7 @@ public:
     const T* data = rhs.getData();
     // std::copy(data,data+size2,data0+(size1));
     memcpy( _real_array.begin()+(i-1)*size2, data, size2 * sizeof( T ) );
-   
+
   }
   virtual void assign(const BaseArray<T>& otherArray)
   {
@@ -283,7 +283,7 @@ public:
     const T* data_otherarray = otherArray.getData();
      //std::copy(data_otherarray,data_otherarray+size1*size2,_real_array.begin());
      memcpy( _real_array.begin(), data_otherarray, size1*size2 * sizeof( T ) );
-  
+
   }
 
   virtual void assign(const T* data)//)const T (&data) [size1*size2]
@@ -389,7 +389,7 @@ public:
      const T* data_otherarray = otherArray.getData();
      //std::copy(data_otherarray,data_otherarray+size1*size2*size3,_real_array.begin());
       memcpy( _real_array.begin(), data_otherarray, size1*size2*size3 * sizeof( T ) );
-   
+
   }
   void append(size_t i,const StatArrayDim2<T,size2,size3>& rhs)
   {
@@ -397,7 +397,7 @@ public:
         const T* data = rhs.getData();
         // std::copy(data,data+size2,data0+(size1));
         memcpy( _real_array.begin()+(i-1)*size2*size3, data, size2 *size3*sizeof( T ) );
-    
+
 
   }
   virtual void assign(const T* data)
