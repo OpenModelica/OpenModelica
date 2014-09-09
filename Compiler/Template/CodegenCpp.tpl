@@ -1658,7 +1658,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         measureTimeArray = std::vector<MeasureTimeData>(<%numOfEqs%>);
         measuredStartValues = MeasureTime::getZeroValues();
         measuredEndValues = MeasureTime::getZeroValues();
-        
+
         for(int i = 0; i < <%numOfEqs%>; i++)
             measureTimeArray[i] = MeasureTimeData();
         >>

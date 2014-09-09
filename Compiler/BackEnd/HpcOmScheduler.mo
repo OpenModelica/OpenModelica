@@ -1683,7 +1683,7 @@ public function createFixedLevelSchedule
   output HpcOmTaskGraph.TaskGraphMeta oMeta;
 protected
   list<list<Integer>> levelTasks;
-  //for each node (arrayIdx): list of threads that handle predecessor tasks. If a node has multiple  
+  //for each node (arrayIdx): list of threads that handle predecessor tasks. If a node has multiple
   //predecessors handled by the same thread, the thread-index occurs multiple times in the list.
   array<list<Integer>> adviceLists;
   HpcOmSimCode.Schedule tmpSchedule;
