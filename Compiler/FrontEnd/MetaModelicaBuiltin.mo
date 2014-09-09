@@ -643,11 +643,11 @@ external "builtin";
 </html>"));
 end listDelete;
 
-function List.isEmpty<A> "O(1)"
+function listEmpty<A> "O(1)"
   input List<A> lst;
   output Boolean isEmpty;
 external "builtin";
-end List.isEmpty;
+end listEmpty;
 
 function cons<A> "O(1)"
   input A element;
