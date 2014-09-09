@@ -640,6 +640,7 @@ void MainWindow::beforeClosingMainWindow()
   pSettings->setValue("application/windowState", saveState());
   // save last Open Directory location
   pSettings->setValue("lastOpenDirectory", StringHandler::getLastOpenDirectory());
+  delete pSettings;
 }
 
 void MainWindow::openDroppedFile(QDropEvent *event)
