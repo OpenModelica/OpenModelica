@@ -672,7 +672,7 @@ algorithm
         (lhs_vars, lhs_rest) = List.splitOnTrue(lhs_vars, DAEUtil.isParamConstOrComplexVar);
         (rhs_vars, rhs_rest) = List.splitOnTrue(rhs_vars, DAEUtil.isParamConstOrComplexVar);
 
-        ioc = List.isEmpty(lhs_rest) and listEmpty(rhs_rest);
+        ioc = List.isEmpty(lhs_rest) and List.isEmpty(rhs_rest);
 
         (eql, ioc) = generateAssertion3(lhs_vars, rhs_vars,
           lhs_cref, rhs_cref, inInfo, inEquations, ioc);
