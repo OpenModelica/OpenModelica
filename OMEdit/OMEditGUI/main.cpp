@@ -242,6 +242,7 @@ int main(int argc, char *argv[])
   omhome = omhome ? omhome : CONFIG_DEFAULT_OPENMODELICAHOME;
 #endif
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  settings.setIniCodec(Helper::utf8.toStdString().data());
   QLocale settingsLocale = QLocale(settings.value("language").toString());
   settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
   QString locale = settingsLocale.name().isEmpty() ? QLocale::system().name() : settingsLocale.name();

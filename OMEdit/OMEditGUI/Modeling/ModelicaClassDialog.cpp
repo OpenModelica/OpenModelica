@@ -891,6 +891,7 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
     QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+    settings.setIniCodec(Helper::utf8.toStdString().data());
     restoreGeometry(settings.value("InformationDialog/geometry").toByteArray());
   }
 }
@@ -901,6 +902,7 @@ void InformationDialog::closeEvent(QCloseEvent *event)
   if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
     QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+    settings.setIniCodec(Helper::utf8.toStdString().data());
     settings.setValue("InformationDialog/geometry", saveGeometry());
   }
   event->accept();

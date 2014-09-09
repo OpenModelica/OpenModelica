@@ -592,8 +592,10 @@ public:
   void setGDBPath(QString path);
   QString getGDBPath();
   QSpinBox* getGDBCommandTimeoutSpinBox() {return mpGDBCommandTimeoutSpinBox;}
-  QCheckBox* getDisplayCFramesCheckBox();
-  QCheckBox* getDisplayUnknownFramesCheckBox();
+  QCheckBox* getDisplayCFramesCheckBox() {return mpDisplayCFramesCheckBox;}
+  QCheckBox* getDisplayUnknownFramesCheckBox() {return mpDisplayUnknownFramesCheckBox;}
+  QCheckBox* getClearOutputOnNewRunCheckBox() {return mpClearOutputOnNewRunCheckBox;}
+  QCheckBox* getClearLogOnNewRunCheckBox() {return mpClearLogOnNewRunCheckBox;}
   QCheckBox* getAlwaysShowTransformationsCheckBox() {return mpAlwaysShowTransformationsCheckBox;}
   QCheckBox* getGenerateOperationsCheckBox() {return mpGenerateOperationsCheckBox;}
 private:
@@ -606,6 +608,8 @@ private:
   QSpinBox *mpGDBCommandTimeoutSpinBox;
   QCheckBox *mpDisplayCFramesCheckBox;
   QCheckBox *mpDisplayUnknownFramesCheckBox;
+  QCheckBox *mpClearOutputOnNewRunCheckBox;
+  QCheckBox *mpClearLogOnNewRunCheckBox;
   QGroupBox *mpTransformationalDebuggerGroupBox;
   QCheckBox *mpAlwaysShowTransformationsCheckBox;
   QCheckBox *mpGenerateOperationsCheckBox;

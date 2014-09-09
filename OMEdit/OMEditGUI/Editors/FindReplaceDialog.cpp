@@ -144,6 +144,7 @@ void FindReplaceDialog::setTextEdit(BaseEditor *pBaseEditor)
 void FindReplaceDialog::readFindTextFromSettings()
 {
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  settings.setIniCodec(Helper::utf8.toStdString().data());
   mpFindComboBox->clear();
   QList<QVariant> findTexts = settings.value("findReplaceDialog/textsToFind").toList();
   int numFindTexts = qMin(findTexts.size(), (int)MaxFindTexts);
@@ -161,6 +162,7 @@ void FindReplaceDialog::readFindTextFromSettings()
 void FindReplaceDialog::saveFindTextToSettings(QString textToFind)
 {
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  settings.setIniCodec(Helper::utf8.toStdString().data());
   QList<QVariant> texts = settings.value("findReplaceDialog/textsToFind").toList();
   // remove the already present text from the list.
   foreach (QVariant text, texts)

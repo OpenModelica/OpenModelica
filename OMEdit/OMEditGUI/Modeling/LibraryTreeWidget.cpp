@@ -1712,6 +1712,7 @@ void LibraryTreeWidget::openFile(QString fileName, QString encoding, bool showPr
       QMessageBox::information(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), Helper::ok);
       QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+      settings.setIniCodec(Helper::utf8.toStdString().data());
       QList<QVariant> files = settings.value("recentFilesList/files").toList();
       // remove the RecentFile instance from the list.
       foreach (QVariant file, files)

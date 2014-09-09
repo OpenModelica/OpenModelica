@@ -50,7 +50,7 @@ OptionsDialog::OptionsDialog(MainWindow *pParent)
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::options));
   setModal(true);
   mpMainWindow = pParent;
-  mSettings.setIniCodec(Helper::utf8.toLatin1().data());
+  mSettings.setIniCodec(Helper::utf8.toStdString().data());
   mpGeneralSettingsPage = new GeneralSettingsPage(this);
   mpLibrariesPage = new LibrariesPage(this);
   mpModelicaTextSettings = new ModelicaTextSettings();
@@ -375,6 +375,10 @@ void OptionsDialog::readDebuggerSettings()
     mpDebuggerPage->getDisplayCFramesCheckBox()->setChecked(mSettings.value("algorithmicDebugger/displayCFrames").toBool());
   if (mSettings.contains("algorithmicDebugger/displayUnknownFrames"))
     mpDebuggerPage->getDisplayUnknownFramesCheckBox()->setChecked(mSettings.value("algorithmicDebugger/displayUnknownFrames").toBool());
+  if (mSettings.contains("algorithmicDebugger/clearOutputOnNewRun"))
+    mpDebuggerPage->getClearOutputOnNewRunCheckBox()->setChecked(mSettings.value("algorithmicDebugger/clearOutputOnNewRun").toBool());
+  if (mSettings.contains("algorithmicDebugger/clearLogOnNewRun"))
+    mpDebuggerPage->getClearLogOnNewRunCheckBox()->setChecked(mSettings.value("algorithmicDebugger/clearLogOnNewRun").toBool());
   if (mSettings.contains("transformationalDebugger/alwaysShowTransformationalDebugger"))
     mpDebuggerPage->getAlwaysShowTransformationsCheckBox()->setChecked(mSettings.value("transformationalDebugger/alwaysShowTransformationalDebugger").toBool());
   if (mSettings.contains("transformationalDebugger/generateOperations"))
@@ -600,15 +604,21 @@ void OptionsDialog::saveFigaroSettings()
   */
 void OptionsDialog::saveDebuggerSettings()
 {
-  mSettings.setValue("algorithmicDebugger/GDBPath", mpDebuggerPage->getGDBPath());
-  mSettings.value("algorithmicDebugger/GDBCommandTimeout", mpDebuggerPage->getGDBCommandTimeoutSpinBox()->value());
-  mSettings.setValue("algorithmicDebugger/displayCFrames", mpDebuggerPage->getDisplayCFramesCheckBox()->isChecked());
-  mSettings.setValue("algorithmicDebugger/displayUnknownFrames", mpDebuggerPage->getDisplayUnknownFramesCheckBox()->isChecked());
+  mSettings.beginGroup("algorithmicDebugger");
+  mSettings.setValue("GDBPath", mpDebuggerPage->getGDBPath());
+  mSettings.value("GDBCommandTimeout", mpDebuggerPage->getGDBCommandTimeoutSpinBox()->value());
+  mSettings.setValue("displayCFrames", mpDebuggerPage->getDisplayCFramesCheckBox()->isChecked());
+  mSettings.setValue("displayUnknownFrames", mpDebuggerPage->getDisplayUnknownFramesCheckBox()->isChecked());
   mpMainWindow->getDebuggerMainWindow()->getStackFramesWidget()->getStackFramesTreeWidget()->updateStackFrames();
-  mSettings.setValue("transformationalDebugger/alwaysShowTransformationalDebugger", mpDebuggerPage->getAlwaysShowTransformationsCheckBox()->isChecked());
-  mSettings.setValue("transformationalDebugger/generateOperations", mpDebuggerPage->getGenerateOperationsCheckBox()->isChecked());
+  mSettings.setValue("clearOutputOnNewRun", mpDebuggerPage->getClearOutputOnNewRunCheckBox()->isChecked());
+  mSettings.setValue("clearLogOnNewRun", mpDebuggerPage->getClearLogOnNewRunCheckBox()->isChecked());
+  mSettings.endGroup();
+  mSettings.beginGroup("transformationalDebugger");
+  mSettings.setValue("alwaysShowTransformationalDebugger", mpDebuggerPage->getAlwaysShowTransformationsCheckBox()->isChecked());
+  mSettings.setValue("generateOperations", mpDebuggerPage->getGenerateOperationsCheckBox()->isChecked());
   if (mpDebuggerPage->getGenerateOperationsCheckBox()->isChecked())
     mpMainWindow->getOMCProxy()->setCommandLineOptions("+d=infoXmlOperations");
+  mSettings.endGroup();
 }
 
 //! Sets up the Options Widget dialog
@@ -2936,6 +2946,12 @@ DebuggerPage::DebuggerPage(OptionsDialog *pParent)
   mpDisplayCFramesCheckBox = new QCheckBox(tr("Display C frames"));
   // Display Unknown Frames
   mpDisplayUnknownFramesCheckBox = new QCheckBox(tr("Display unknown frames"));
+  // clear output on new run
+  mpClearOutputOnNewRunCheckBox = new QCheckBox(tr("Clear old output on a new run"));
+  mpClearOutputOnNewRunCheckBox->setChecked(true);
+  // clear log on new run
+  mpClearLogOnNewRunCheckBox = new QCheckBox(tr("Clear old log on a new run"));
+  mpClearLogOnNewRunCheckBox->setChecked(true);
   /* set the debugger group box layout */
   QGridLayout *pDebuggerLayout = new QGridLayout;
   pDebuggerLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -2946,6 +2962,8 @@ DebuggerPage::DebuggerPage(OptionsDialog *pParent)
   pDebuggerLayout->addWidget(mpGDBCommandTimeoutSpinBox, 1, 1, 1, 2);
   pDebuggerLayout->addWidget(mpDisplayCFramesCheckBox, 2, 0, 1, 2);
   pDebuggerLayout->addWidget(mpDisplayUnknownFramesCheckBox, 3, 0, 1, 2);
+  pDebuggerLayout->addWidget(mpClearOutputOnNewRunCheckBox, 4, 0, 1, 2);
+  pDebuggerLayout->addWidget(mpClearLogOnNewRunCheckBox, 5, 0, 1, 2);
   mpAlgorithmicDebuggerGroupBox->setLayout(pDebuggerLayout);
   /* Transformational Debugger */
   mpTransformationalDebuggerGroupBox = new QGroupBox(Helper::transformationalDebugger);
@@ -2977,16 +2995,6 @@ QString DebuggerPage::getGDBPath()
     return "gdb";
   else
     return mpGDBPathTextBox->text();
-}
-
-QCheckBox* DebuggerPage::getDisplayCFramesCheckBox()
-{
-  return mpDisplayCFramesCheckBox;
-}
-
-QCheckBox* DebuggerPage::getDisplayUnknownFramesCheckBox()
-{
-  return mpDisplayUnknownFramesCheckBox;
 }
 
 void DebuggerPage::browseGDBPath()

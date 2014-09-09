@@ -738,6 +738,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   setLayout(pMainLayout);
   /* restore the TransformationsWidget geometry and splitters state. */
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  settings.setIniCodec(Helper::utf8.toStdString().data());
   if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
     settings.beginGroup("transformationalDebugger");

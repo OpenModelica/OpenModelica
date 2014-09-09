@@ -325,6 +325,7 @@ bool OMCProxy::startServer()
     mObjectRefFile = objectRefFile.fileName();
     // read the locale
     QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+    settings.setIniCodec(Helper::utf8.toStdString().data());
     QLocale settingsLocale = QLocale(settings.value("language").toString());
     settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
     // Start the omc.exe
@@ -811,6 +812,7 @@ QString OMCProxy::getEnvironmentVar(QString name)
 void OMCProxy::loadSystemLibraries(QSplashScreen *pSplashScreen)
 {
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  settings.setIniCodec(Helper::utf8.toStdString().data());
   bool forceModelicaLoad = true;
   if (settings.contains("forceModelicaLoad"))
     forceModelicaLoad = settings.value("forceModelicaLoad").toBool();
@@ -850,6 +852,7 @@ void OMCProxy::loadSystemLibraries(QSplashScreen *pSplashScreen)
 void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
 {
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  settings.setIniCodec(Helper::utf8.toStdString().data());
   settings.beginGroup("userlibraries");
   QStringList libraries = settings.childKeys();
   foreach (QString lib, libraries)

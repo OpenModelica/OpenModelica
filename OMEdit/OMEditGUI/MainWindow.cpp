@@ -226,6 +226,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
     mpOMCProxy->setCommandLineOptions("+d=infoXmlOperations");
   // restore OMEdit widgets state
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  settings.setIniCodec(Helper::utf8.toStdString().data());
   if (mpOptionsDialog->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
     restoreGeometry(settings.value("application/geometry").toByteArray());
@@ -517,6 +518,7 @@ QAction* MainWindow::getGotoLineNumberAction()
 void MainWindow::addRecentFile(const QString &fileName, const QString &encoding)
 {
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  settings.setIniCodec(Helper::utf8.toStdString().data());
   QList<QVariant> files = settings.value("recentFilesList/files").toList();
   // remove the already present RecentFile instance from the list.
   foreach (QVariant file, files)
@@ -545,6 +547,7 @@ void MainWindow::updateRecentFileActions()
     mpRecentFileActions[i]->setVisible(false);
   /* read the new recent files list */
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  settings.setIniCodec(Helper::utf8.toStdString().data());
   QList<QVariant> files = settings.value("recentFilesList/files").toList();
   int numRecentFiles = qMin(files.size(), (int)MaxRecentFiles);
   for (int i = 0; i < numRecentFiles; ++i)
@@ -605,6 +608,7 @@ void MainWindow::beforeClosingMainWindow()
   delete mpSimulationDialog;
   /* save the TransformationsWidget last window geometry and splitters state. */
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  settings.setIniCodec(Helper::utf8.toStdString().data());
   QHashIterator<QString, TransformationsWidget*> transformationsWidgets(mTransformationsWidgetHash);
   if (mTransformationsWidgetHash.size() > 0)
   {
@@ -1211,6 +1215,7 @@ void MainWindow::openRecentFile()
 void MainWindow::clearRecentFilesList()
 {
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  settings.setIniCodec(Helper::utf8.toStdString().data());
   settings.remove("recentFilesList/files");
   updateRecentFileActions();
   mpWelcomePageWidget->addRecentFilesListItems();
@@ -1219,6 +1224,7 @@ void MainWindow::clearRecentFilesList()
 void MainWindow::clearFindReplaceTexts()
 {
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  settings.setIniCodec(Helper::utf8.toStdString().data());
   settings.remove("findReplaceDialog/textsToFind");
   mpFindReplaceDialog->readFindTextFromSettings();
 }
