@@ -2169,7 +2169,7 @@ template functionWhenReinitStatementThen(Boolean initialCall, list<WhenOperator>
     case REINIT(__) then
       let &preExp = buffer ""
       let val = daeExp(value, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
-      let lhs = match crefLastType(stateVar)
+      let lhs = match crefTypeConsiderSubs(stateVar)
          case DAE.T_ARRAY(__) then
            'copy_real_array_data_mem(<%val%>, &<%cref(stateVar)%>);'
          else
