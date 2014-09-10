@@ -70,12 +70,13 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   FMI2ME->FMIInstanceName = (char*) malloc(strlen(instanceName)+1);
   strcpy(FMI2ME->FMIInstanceName, instanceName);
   FMI2ME->FMIDebugLogging = debugLogging;
-  fmi2_import_instantiate_model(FMI2ME->FMIImportInstance, FMI2ME->FMIInstanceName, NULL, fmi2_false);
+  fmi2_import_instantiate(FMI2ME->FMIImportInstance, FMI2ME->FMIInstanceName, fmi2_model_exchange, NULL, fmi2_false);
   fmi2_import_set_debug_logging(FMI2ME->FMIImportInstance, FMI2ME->FMIDebugLogging, 0, NULL);
   FMI2ME->FMIToleranceControlled = fmi2_true;
   FMI2ME->FMIRelativeTolerance = 0.001;
   FMI2ME->FMIEventInfo = malloc(sizeof(fmi2_event_info_t));
-  fmi2_import_initialize_model(FMI2ME->FMIImportInstance, FMI2ME->FMIToleranceControlled, FMI2ME->FMIRelativeTolerance, FMI2ME->FMIEventInfo);
+  fmi2_import_enter_initialization_mode(FMI2ME->FMIImportInstance);
+  fmi2_import_exit_initialization_mode(FMI2ME->FMIImportInstance);
   return FMI2ME;
 }
 
@@ -83,7 +84,7 @@ void FMI2ModelExchangeDestructor_OMC(void* in_fmi2me)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
   fmi2_import_terminate(FMI2ME->FMIImportInstance);
-  fmi2_import_free_model_instance(FMI2ME->FMIImportInstance);
+  fmi2_import_free_instance(FMI2ME->FMIImportInstance);
   fmi2_import_destroy_dllfmu(FMI2ME->FMIImportInstance);
   fmi2_import_free(FMI2ME->FMIImportInstance);
   fmi_import_free_context(FMI2ME->FMIImportContext);
@@ -156,8 +157,17 @@ void fmi2GetDerivatives_OMC(void* in_fmi2me, int numberOfContinuousStates, doubl
 int fmi2EventUpdate_OMC(void* in_fmi2me, int intermediateResults, double flowStates)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  fmi2_import_eventUpdate(FMI2ME->FMIImportInstance, intermediateResults, FMI2ME->FMIEventInfo);
-  return FMI2ME->FMIEventInfo->stateValuesChanged;
+  fmi2_event_info_t *eventInfo = FMI2ME->FMIEventInfo;
+  fmi2_import_enter_event_mode(FMI2ME->FMIImportInstance);
+  eventInfo->newDiscreteStatesNeeded = fmi2_true;
+  eventInfo->terminateSimulation = fmi2_false;
+
+  while(eventInfo->newDiscreteStatesNeeded && !eventInfo->terminateSimulation) {
+    fmi2_import_new_discrete_states(FMI2ME->FMIImportInstance, eventInfo);
+  }
+
+  fmi2_import_enter_continuous_time_mode(FMI2ME->FMIImportInstance);
+  return eventInfo->valuesOfContinuousStatesChanged;
 }
 
 /*
@@ -178,7 +188,8 @@ int fmi2CompletedIntegratorStep_OMC(void* in_fmi2me, double flowStates)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
   fmi2_boolean_t callEventUpdate = fmi2_false;
-  fmi2_import_completed_integrator_step(FMI2ME->FMIImportInstance, &callEventUpdate);
+  fmi2_boolean_t terminateSimulation = fmi2_false;
+  fmi2_import_completed_integrator_step(FMI2ME->FMIImportInstance, fmi2_true, &callEventUpdate, &terminateSimulation);
   return callEventUpdate;
 }
 

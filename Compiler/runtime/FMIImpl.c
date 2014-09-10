@@ -523,8 +523,8 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
   }
 }
 
-void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_version_enu_t version, void** experimentAnnotation, void** modelVariablesInstance,
-    void** modelVariablesList, int input_connectors, int output_connectors)
+void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_version_enu_t version, void** typeDefinitionsList, void** experimentAnnotation,
+    void** modelVariablesInstance, void** modelVariablesList, int input_connectors, int output_connectors)
 {
   /* Read the model name from FMU's modelDescription.xml file. */
   const char* modelName = fmi2_import_get_model_name(fmi);
@@ -580,6 +580,52 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
   /* construct FMIINFO record */
   *fmiInfo = FMI__INFO(mk_scon_check_null(fmi_version_to_string(version)), mk_icon(fmiType), mk_scon_check_null(modelName), mk_scon_check_null(modelIdentifier), mk_scon_check_null(guid), mk_scon_check_null(description),
       mk_scon_check_null(generationTool), mk_scon_check_null(generationDateAndTime), mk_scon_check_null(namingConvention), continuousStatesList, eventIndicatorsList);
+
+  fmi2_import_type_definitions_t* typeDefinitions = fmi2_import_get_type_definitions(fmi);
+  size_t typeDefinitionsSize = typeDefinitions ? fmi2_import_get_type_definition_number(typeDefinitions) : 0;
+  *typeDefinitionsList = mk_nil();
+  void* enumItems = mk_nil();
+
+  for(i = 0; i < typeDefinitionsSize; ++i) {
+    fmi2_import_variable_typedef_t* variableTypeDef = fmi2_import_get_typedef(typeDefinitions, i);
+    const char* name = fmi2_import_get_type_name(variableTypeDef);
+    char* name_safe = makeStringFMISafe(name);
+    void* typeName = mk_scon_check_null(name_safe);
+    free(name_safe);
+    const char* description = fmi2_import_get_type_description(variableTypeDef);
+
+    /* check if type is enum */
+    if(fmi2_import_get_base_type(variableTypeDef) != fmi1_base_type_enum) {
+      continue;
+    }
+
+    /* get the TypeDefinition as EnumerationType */
+    fmi2_import_enumeration_typedef_t* enumTypeDef = fmi2_import_get_type_as_enum(variableTypeDef);
+    const char* quantity = "";
+    int min = 0;
+    int max = 0;
+    unsigned itemsSize = 0;
+    enumItems = mk_nil();
+    void* enumItem = NULL;
+
+    if(enumTypeDef) {
+      quantity = fmi2_import_get_type_quantity(variableTypeDef);
+      min = fmi2_import_get_enum_type_min(enumTypeDef);
+      max = fmi2_import_get_enum_type_max(enumTypeDef);
+      itemsSize = fmi2_import_get_enum_type_size(enumTypeDef);
+
+      for(unsigned j = itemsSize; j > 0; --j) {
+        const char* itemName = fmi2_import_get_enum_type_item_name(enumTypeDef, j);
+        const char* itemDescription = fmi2_import_get_enum_type_item_description(enumTypeDef, j);
+        enumItem = FMI__ENUMERATIONITEM(mk_scon_check_null(itemName), mk_scon_check_null(itemDescription));
+        enumItems = mk_cons(enumItem, enumItems);
+      }
+    }
+
+    void* typeDefinition = FMI__ENUMERATIONTYPE(typeName, mk_scon_check_null(description), mk_scon_check_null(quantity), mk_icon(min), mk_icon(max), enumItems);
+    *typeDefinitionsList = mk_cons(typeDefinition, *typeDefinitionsList);
+  }
+
   /* Read the FMI Default Experiment Start value from FMU's modelDescription.xml file. */
   double experimentStartTime = fmi2_import_get_default_experiment_start(fmi);
   /* Read the FMI Default Experiment Stop value from FMU's modelDescription.xml file. */
@@ -777,7 +823,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
       return 0;
     }
 #endif
-    FMIImpl__initializeFMI2Import(fmi, fmiInfo, version, experimentAnnotation, modelVariablesInstance, modelVariablesList, input_connectors, output_connectors);
+    FMIImpl__initializeFMI2Import(fmi, fmiInfo, version, typeDefinitionsList, experimentAnnotation, modelVariablesInstance, modelVariablesList, input_connectors, output_connectors);
   }
   /* everything is OK return success */
   return 1;
