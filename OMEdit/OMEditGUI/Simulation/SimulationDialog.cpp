@@ -147,7 +147,7 @@ void SimulationDialog::setUpForm()
   mpNumberOfProcessorsLabel = new Label(tr("Number of Processors:"));
   mpNumberOfProcessorsSpinBox = new QSpinBox;
   mpNumberOfProcessorsSpinBox->setSpecialValueText("<Auto>");
-  mpNumberOfProcessorsNoteLabel = new Label(tr("Note: Use 1 processor if you encounter problems during compilation."));
+  mpNumberOfProcessorsNoteLabel = new Label(tr("Use 1 processor if you encounter problems during compilation."));
   // Launch Debugger checkbox
   mpLaunchDebuggerCheckBox = new QCheckBox(tr("Launch Debugger"));
   // set General Tab Layout
