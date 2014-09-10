@@ -348,7 +348,7 @@ public:
   {
 
   }
-  
+
   void setDims(size_t i,size_t j)
   {
 
