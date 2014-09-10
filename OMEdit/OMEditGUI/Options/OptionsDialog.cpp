@@ -2943,8 +2943,10 @@ DebuggerPage::DebuggerPage(OptionsDialog *pParent)
   mpGDBCommandTimeoutSpinBox->setValue(40);
   // Display C Frames
   mpDisplayCFramesCheckBox = new QCheckBox(tr("Display C frames"));
+  mpDisplayCFramesCheckBox->setChecked(true);
   // Display Unknown Frames
   mpDisplayUnknownFramesCheckBox = new QCheckBox(tr("Display unknown frames"));
+  mpDisplayUnknownFramesCheckBox->setChecked(true);
   // clear output on new run
   mpClearOutputOnNewRunCheckBox = new QCheckBox(tr("Clear old output on a new run"));
   mpClearOutputOnNewRunCheckBox->setChecked(true);
