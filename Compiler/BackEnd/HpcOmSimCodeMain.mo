@@ -161,7 +161,7 @@ algorithm
 
       Boolean taskGraphMetaValid, numFixed;
       String taskGraphMetaMessage, criticalPathInfo;
-      array<tuple<Integer,Integer,Real>> schedulerInfo;
+      array<tuple<Integer,Integer,Real>> schedulerInfo; //maps each Task to <threadId, orderId, startCalcTime>
       HpcOmSimCode.Schedule schedule;
       array<tuple<Integer,Integer,Integer>> eqCompMapping, varCompMapping;
       Real graphCosts;
@@ -331,7 +331,7 @@ algorithm
       SimCodeUtil.execStat("hpcom create schedule");
 
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphScheduled, taskGraphDataScheduled, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,true,true,true));
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphScheduled, taskGraphDataScheduled, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,false,true,true));
       //HpcOmScheduler.printSchedule(schedule);
 
       SimCodeUtil.execStat("hpcom dump schedule TaskGraph");

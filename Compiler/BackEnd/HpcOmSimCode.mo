@@ -32,6 +32,7 @@
 encapsulated package HpcOmSimCode
 
   public import HashTableCrILst;
+  //public import SimCode;
 
   public uniontype MemoryMap //stores information to organize the memory for the parallel code in an efficient way
     record MEMORYMAP_ARRAY
