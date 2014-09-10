@@ -576,11 +576,6 @@ modelica_metatype arrayCreate(modelica_integer nelts, modelica_metatype val)
   }
 }
 
-modelica_integer arrayLength(modelica_metatype arr)
-{
-  return MMC_HDRSLOTS(MMC_GETHDR(arr));
-}
-
 modelica_metatype arrayList(modelica_metatype arr)
 {
   modelica_metatype result;

@@ -419,6 +419,7 @@ extern char* getTypeOfAny(void*any); /* For debugging */
 extern char* getRecordElementName(void*any, int element); /* For debugging */
 extern int isOptionNone(void*any); /* For debugging */
 extern void changeStdStreamBuffer(void); /* For debugging */
+extern modelica_integer mmc_gdb_arrayLength(modelica_metatype arr); /* For debugging */
 
 /* Debugging functions used by OMEdit */
 typedef enum metaType

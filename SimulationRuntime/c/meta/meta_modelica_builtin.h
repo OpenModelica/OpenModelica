@@ -108,8 +108,11 @@ extern modelica_metatype boxptr_listDelete(threadData_t*,modelica_metatype,model
 #define optionNone(x) (0==MMC_HDRSLOTS(MMC_GETHDR(x)) ? 1 : 0)
 
 /* Array Operations */
-/* Do not define this function static inline. It is needed by the debugger. */
-extern modelica_integer arrayLength(modelica_metatype arr);
+static inline modelica_integer arrayLength(modelica_metatype arr)
+{
+  return MMC_HDRSLOTS(MMC_GETHDR(arr));
+}
+
 extern modelica_metatype arrayList(modelica_metatype);
 extern modelica_metatype listArray(modelica_metatype);
 extern modelica_metatype arrayCopy(modelica_metatype);

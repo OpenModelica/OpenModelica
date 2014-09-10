@@ -795,6 +795,11 @@ void changeStdStreamBuffer(void) {
   setbuf(stderr, NULL);
 }
 
+modelica_integer mmc_gdb_arrayLength(modelica_metatype arr)
+{
+  return MMC_HDRSLOTS(MMC_GETHDR(arr));
+}
+
 /*
  * Used by OMEdit for debugging.
  * Returns the metatype element as an array e.g ^done,omc_element={name, displayName, type}
