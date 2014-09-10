@@ -37,7 +37,7 @@ class MeasureTimeRDTSC : public MeasureTime
   static void getTimeValues(MeasureTimeValues *res);
 
  private:
-  static inline unsigned long long RDTSC() __attribute__((always_inline));
+  static inline unsigned long long RDTSC(); //__attribute__((always_inline));
 };
 
 #endif /* MEASURE_TIME_RDTSC_HPP_ */

@@ -61,7 +61,7 @@ class MeasureTime
    *  - always inline -> effect
    *  - measure overhead and sub the values -> effect
    */
-  static inline void getTimeValues(MeasureTimeValues *res) __attribute__((always_inline))
+  static inline void getTimeValues(MeasureTimeValues *res) //__attribute__((always_inline))
   {
     getTimeValuesFct(res);
   }
