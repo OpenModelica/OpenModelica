@@ -614,7 +614,8 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
       max = fmi2_import_get_enum_type_max(enumTypeDef);
       itemsSize = fmi2_import_get_enum_type_size(enumTypeDef);
 
-      for(unsigned j = itemsSize; j > 0; --j) {
+      unsigned j;
+      for(j = itemsSize; j > 0; --j) {
         const char* itemName = fmi2_import_get_enum_type_item_name(enumTypeDef, j);
         const char* itemDescription = fmi2_import_get_enum_type_item_description(enumTypeDef, j);
         enumItem = FMI__ENUMERATIONITEM(mk_scon_check_null(itemName), mk_scon_check_null(itemDescription));
