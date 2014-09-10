@@ -84,7 +84,7 @@ algorithm
       equation
         inVarsAndknvars = BackendVariable.mergeVariables(inVars, knvars);
         varlst = BackendVariable.varList(inVarsAndknvars);
-        
+
         leftcref = ComponentReference.makeCrefIdent("$OMC$objectMayerTerm", DAE.T_REAL_DEFAULT, {});
         dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
         mayer1 = findMayerTerm(varlst);
@@ -116,7 +116,7 @@ algorithm
       equation
         inVarsAndknvars = BackendVariable.mergeVariables(inVars, knvars);
         varlst = BackendVariable.varList(inVarsAndknvars);
-        
+
         leftcref = ComponentReference.makeCrefIdent("$OMC$objectMayerTerm", DAE.T_REAL_DEFAULT, {});
         dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
         mayer1 = findMayerTerm(varlst);
