@@ -665,6 +665,10 @@ public constant Message SIMPLIFICATION_TYPE = MESSAGE(249, TRANSLATION(), NOTIFI
   Util.gettext("Expression simplification '%s' → '%s' changed the type from %s to %s."));
 public constant Message VECTORIZE_CALL_DIM_MISMATCH = MESSAGE(250, TRANSLATION(), ERROR(),
   Util.gettext("Failed to vectorize function call because arguments %s=%s and %s=%s have mismatched dimensions %s and %s."));
+public constant Message TCOMPLEX_MULTIPLE_NAMES = MESSAGE(251, TRANSLATION(), NOTIFICATION(),
+  Util.gettext("Non-tuple complex type specifiers need to have exactly one type name: %s."));
+public constant Message TCOMPLEX_TUPLE_ONE_NAME = MESSAGE(252, TRANSLATION(), NOTIFICATION(),
+  Util.gettext("Tuple complex type specifiers need to have more than one type name: %s."));
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));

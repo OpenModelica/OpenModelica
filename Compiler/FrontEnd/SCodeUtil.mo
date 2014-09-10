@@ -454,8 +454,9 @@ algorithm
 
     case (Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt),_)
       equation
+        checkTypeSpec(t, info);
         // Debug.fprintln(Flags.TRANSLATE, "translating derived class: " +& Dump.unparseTypeSpec(t));
-        mod = translateMod(SOME(Absyn.CLASSMOD(a,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo) "TODO: attributes of derived classes";
+        mod = translateMod(SOME(Absyn.CLASSMOD(a,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info) "TODO: attributes of derived classes";
         scodeAttr = translateAttributes(attr, {});
         scodeCmt = translateComment(cmt);
       then
@@ -1206,6 +1207,8 @@ algorithm
       (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,parallelism=parallelism,variability = variability,direction = di,arrayDim = ad)),typeSpec = t,
       components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment,condition=cond) :: xs)),info)
       equation
+        // TODO: Improve performance by iterating over all elements at once instead of creating a new Absyn.COMPONENTS in each step...
+        checkTypeSpec(t,info);
         // Debug.fprintln(Flags.TRANSLATE, "translating component: " +& n +& " final: " +& SCode.finalStr(SCode.boolFinal(finalPrefix)));
         setHasInnerOuterDefinitionsHandler(io); // signal the external flag that we have inner/outer definitions
         setHasStreamConnectorsHandler(st);      // signal the external flag that we have stream connectors
@@ -2653,5 +2656,39 @@ algorithm
       then SCode.getElementWithPath(sp, inPath);
   end matchcontinue;
 end getElementWithPathCheckBuiltin;
+
+protected function checkTypeSpec
+  input Absyn.TypeSpec ts;
+  input Absyn.Info info;
+algorithm
+  _ := match (ts,info)
+    local
+      list<Absyn.TypeSpec> tss;
+      Absyn.TypeSpec ts2;
+      String str;
+    case (Absyn.TPATH(path=_),_) then ();
+    case (Absyn.TCOMPLEX(path=Absyn.IDENT("tuple"),typeSpecs={ts2}),_)
+      equation
+        str = Absyn.typeSpecString(ts);
+        Error.addSourceMessage(Error.TCOMPLEX_TUPLE_ONE_NAME,{str},info);
+        checkTypeSpec(ts2,info);
+      then ();
+      // It is okay for tuples to have multiple typespecs
+    case (Absyn.TCOMPLEX(path=Absyn.IDENT("tuple"),typeSpecs=tss as (_::_::_)),_)
+      equation
+        List.map1_0(tss, checkTypeSpec, info);
+      then ();
+    case (Absyn.TCOMPLEX(typeSpecs={ts2}),_)
+      equation
+        checkTypeSpec(ts2,info);
+      then ();
+    case (Absyn.TCOMPLEX(typeSpecs=tss),_)
+      equation
+        str = Absyn.typeSpecString(ts);
+        Error.addSourceMessage(Error.TCOMPLEX_MULTIPLE_NAMES,{str},info);
+        List.map1_0(tss, checkTypeSpec, info);
+      then ();
+  end match;
+end checkTypeSpec;
 
 end SCodeUtil;
