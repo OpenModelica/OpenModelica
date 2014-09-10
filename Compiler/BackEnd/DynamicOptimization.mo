@@ -73,17 +73,21 @@ algorithm
       list<BackendDAE.Equation> objectEqn;
       BackendDAE.Var dummyVar;
       Boolean b;
-      BackendDAE.Variables v;
+      BackendDAE.Variables v, inVarsAndknvars;
       list<BackendDAE.Equation> e;
       Option<DAE.Exp> mayer, mayer1, lagrange, lagrange1;
       list< .DAE.Exp> constraintLst;
       list< .DAE.Constraint> constraints;
+      list<BackendDAE.Var> varlst;
 
     case (v, e, true, {DAE.OPTIMIZATION_ATTRS(objetiveE=mayer, objectiveIntegrandE=lagrange)}, _, _)
       equation
+        inVarsAndknvars = BackendVariable.mergeVariables(inVars, knvars);
+        varlst = BackendVariable.varList(inVarsAndknvars);
+        
         leftcref = ComponentReference.makeCrefIdent("$OMC$objectMayerTerm", DAE.T_REAL_DEFAULT, {});
         dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-        mayer1 = findMayerTerm(inVars, knvars);
+        mayer1 = findMayerTerm(varlst);
         mayer1 = mergeObjectVars(mayer1,mayer);
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, mayer1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
         b = not List.isEmpty(objectEqn);
@@ -93,7 +97,7 @@ algorithm
 
         leftcref = ComponentReference.makeCrefIdent("$OMC$objectLagrangeTerm", DAE.T_REAL_DEFAULT, {});
         dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-        lagrange1 = findLagrangeTerm(inVars, knvars);
+        lagrange1 = findLagrangeTerm(varlst);
         lagrange1 = mergeObjectVars(lagrange1,lagrange);
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, lagrange1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
         b = not List.isEmpty(objectEqn);
@@ -101,19 +105,21 @@ algorithm
         v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
         e = Util.if_(b, listAppend(e, objectEqn), e);
 
-        constraints = addConstraints(inVars, knvars, inConstraint);
+        constraints = addConstraints(varlst, inConstraint);
         (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$constarintTerm", BackendDAE.OPT_CONSTR());
 
-        constraints = findFinalConstraints(inVars, knvars, {});
+        constraints = findFinalConstraints(varlst, {});
         (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$finalConstarintTerm", BackendDAE.OPT_FCONSTR());
 
     then (v, e,inClassAttr);
     case (v, e, true, _, _, _)
       equation
-
+        inVarsAndknvars = BackendVariable.mergeVariables(inVars, knvars);
+        varlst = BackendVariable.varList(inVarsAndknvars);
+        
         leftcref = ComponentReference.makeCrefIdent("$OMC$objectMayerTerm", DAE.T_REAL_DEFAULT, {});
         dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-        mayer1 = findMayerTerm(inVars, knvars);
+        mayer1 = findMayerTerm(varlst);
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, mayer1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
         b = not List.isEmpty(objectEqn);
 
@@ -122,16 +128,16 @@ algorithm
 
         leftcref = ComponentReference.makeCrefIdent("$OMC$objectLagrangeTerm", DAE.T_REAL_DEFAULT, {});
         dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-        lagrange1 = findLagrangeTerm(inVars, knvars);
+        lagrange1 = findLagrangeTerm(varlst);
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, lagrange1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
         b = not List.isEmpty(objectEqn);
         v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
         e = Util.if_(b, listAppend(e, objectEqn), e);
 
-        constraints = addConstraints(inVars, knvars, inConstraint);
+        constraints = addConstraints(varlst, inConstraint);
         (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$constarintTerm", BackendDAE.OPT_CONSTR());
 
-        constraints = findFinalConstraints(inVars, knvars, {});
+        constraints = findFinalConstraints(varlst, {});
         (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$finalConstarintTerm", BackendDAE.OPT_FCONSTR());
 
        then (v, e,{DAE.OPTIMIZATION_ATTRS(mayer1, lagrange1, NONE(), NONE())});
@@ -205,40 +211,25 @@ end addOptimizationVarsEqns2;
 protected function findMayerTerm
 "author: Vitalij Ruge
 find mayer-term from annotation"
-input BackendDAE.Variables inVars;
-input BackendDAE.Variables knvars;
+input list<BackendDAE.Var> varlst;
 output Option<DAE.Exp> mayer;
-
+protected
+list<BackendDAE.Var> varlst_filter;
 algorithm
-  mayer := match(inVars, knvars)
-  local list<BackendDAE.Var> varlst; BackendDAE.Variables v;
-
-    case(_, _) equation
-      v = BackendVariable.mergeVariables(inVars, knvars);
-      varlst = BackendVariable.varList(v);
-      varlst = List.select(varlst, BackendVariable.hasMayerTermAnno);
-    then findMayerTerm2(varlst, NONE());
-  end match;
+  varlst_filter := List.select(varlst, BackendVariable.hasMayerTermAnno);
+  mayer := findMayerTerm2(varlst_filter, NONE());
 end findMayerTerm;
 
 protected function findLagrangeTerm
 "author: Vitalij Ruge
-find mayer-term from annotation"
-input BackendDAE.Variables inVars;
-input BackendDAE.Variables knvars;
-output Option<DAE.Exp> mayer;
-
+find lagrange-term from annotation"
+input list<BackendDAE.Var> varlst;
+output Option<DAE.Exp> lagrange;
+protected
+list<BackendDAE.Var> varlst_filter;
 algorithm
-  mayer := match(inVars, knvars)
-  local list<BackendDAE.Var> varlst; BackendDAE.Variables v;
-
-    case(_, _) equation
-      v = BackendVariable.mergeVariables(inVars, knvars);
-      varlst = BackendVariable.varList(v);
-      varlst = List.select(varlst, BackendVariable.hasLagrangeTermAnno);
-      //BackendDump.printVarList(varlst);
-    then findMayerTerm2(varlst, NONE());
-  end match;
+  varlst_filter := List.select(varlst, BackendVariable.hasLagrangeTermAnno);
+  lagrange := findMayerTerm2(varlst_filter, NONE());
 end findLagrangeTerm;
 
 
@@ -254,8 +245,7 @@ algorithm
   local list<BackendDAE.Var> varlst; BackendDAE.Var v;
         DAE.Exp e, e2, e3, nom; Option<DAE.Exp> opte; DAE.ComponentRef cr;
 
-    case({},NONE()) then NONE();
-    case({},opte as SOME(e)) then opte;
+    case({},_) then Inmayer;
     case(v::varlst, SOME(e)) equation
       nom = BackendVariable.getVarNominalValue(v);
       cr = BackendVariable.varCref(v);
@@ -289,39 +279,33 @@ algorithm
     case(SOME(e1), SOME(e2)) equation
       e3 = Expression.expAdd(e1,e2);
     then SOME(e3);
-    case(NONE(), SOME(e2)) then SOME(e2);
-    case(SOME(e1), NONE()) then SOME(e1);
-    case(NONE(), NONE()) then NONE();
+    case(NONE(), SOME(e2)) then inmayer2;
+    case(_, NONE()) then inmayer1;
 
   end match;
 end mergeObjectVars;
 
 protected function addConstraints
 "author: Vitalij Ruge"
-input BackendDAE.Variables inVars;
-input BackendDAE.Variables knvars;
+input list<BackendDAE.Var> InVarlst;
 input list< .DAE.Constraint> inConstraint;
 output list< .DAE.Constraint> outConstraint;
 
 algorithm
-  outConstraint := match(inVars, knvars, inConstraint)
+  outConstraint := match(InVarlst, inConstraint)
   local list<BackendDAE.Var> varlst; BackendDAE.Variables v; list< .DAE.Exp> constraintLst; list< .DAE.Constraint> constraints;
 
-    case(_, _, {DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}) equation
+    case(_, {DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}) equation
       //print("\n1-->");
-      v = BackendVariable.mergeVariables(inVars, knvars);
-      varlst = BackendVariable.varList(v);
-      varlst = List.select(varlst, BackendVariable.hasConTermAnno);
+      varlst = List.select(InVarlst, BackendVariable.hasConTermAnno);
       //print("\n1.3-->");
       constraintLst = addConstraints2(constraintLst, varlst);
       constraints =  {DAE.CONSTRAINT_EXPS(constraintLst)};
       //print("\n1.5-->");
     then constraints;
-    case(_, _, {}) equation
+    case(_, {}) equation
       //print("\n2-->");
-      v = BackendVariable.mergeVariables(inVars, knvars);
-      varlst = BackendVariable.varList(v);
-      varlst = List.select(varlst, BackendVariable.hasConTermAnno);
+      varlst = List.select(InVarlst, BackendVariable.hasConTermAnno);
       constraintLst = addConstraints2({}, varlst);
       constraints =  {DAE.CONSTRAINT_EXPS(constraintLst)};
     then constraints;
@@ -357,30 +341,25 @@ end addConstraints2;
 
 protected function findFinalConstraints
 "author: Vitalij Ruge"
-input BackendDAE.Variables inVars;
-input BackendDAE.Variables knvars;
+input list<BackendDAE.Var> inVarlst;
 input list< .DAE.Constraint> inConstraint;
 output list< .DAE.Constraint> outConstraint;
 
 algorithm
-  outConstraint := match(inVars, knvars, inConstraint)
+  outConstraint := match(inVarlst, inConstraint)
   local list<BackendDAE.Var> varlst; BackendDAE.Variables v; list< .DAE.Exp> constraintLst; list< .DAE.Constraint> constraints;
 
-    case(_, _, {DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}) equation
+    case(_,  {DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}) equation
       //print("\n1-->");
-      v = BackendVariable.mergeVariables(inVars, knvars);
-      varlst = BackendVariable.varList(v);
-      varlst = List.select(varlst, BackendVariable.hasFinalConTermAnno);
+      varlst = List.select(inVarlst, BackendVariable.hasFinalConTermAnno);
       //print("\n1.3-->");
       constraintLst = addConstraints2(constraintLst, varlst);
       constraints =  {DAE.CONSTRAINT_EXPS(constraintLst)};
       //print("\n1.5-->");
     then constraints;
-    case(_, _, {}) equation
+    case(_, {}) equation
       //print("\n2-->");
-      v = BackendVariable.mergeVariables(inVars, knvars);
-      varlst = BackendVariable.varList(v);
-      varlst = List.select(varlst, BackendVariable.hasFinalConTermAnno);
+      varlst = List.select(inVarlst, BackendVariable.hasFinalConTermAnno);
       constraintLst = addConstraints2({}, varlst);
       constraints =  {DAE.CONSTRAINT_EXPS(constraintLst)};
     then constraints;
