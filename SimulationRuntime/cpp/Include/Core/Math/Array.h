@@ -200,7 +200,7 @@ public:
   {
 
   }
-  void setDims(unsigned int size1)
+  void setDims(size_t size1)
   {
 
   }
@@ -345,6 +345,11 @@ public:
      return _real_array.data();
   }
   virtual void setDims(std::vector<size_t> v)
+  {
+
+  }
+  
+  void setDims(size_t i,size_t j)
   {
 
   }
