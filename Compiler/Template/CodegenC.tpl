@@ -7484,24 +7484,37 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
  "The implementation of algStmtForGeneric, which is also used by daeExpReduction."
 ::=
   let iterName = contextIteratorName(iterator, context)
-  let tvar = tempDecl("int", &varDecls)
   let ivar = tempDecl(type, &varDecls)
   let &preExp = buffer ""
   let evar = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-  let stmtStuff = if iterIsArray then
-      'simple_index_alloc_<%type%>1(&<%evar%>, <%tvar%>, &<%ivar%>);'
-    else
-      '<%iterName%> = *(<%arrayType%>_element_addr1(&<%evar%>, 1, <%tvar%>));'
   <<
   <%preExp%>
   {
     <%type%> <%iterName%>;
-
-    for(<%tvar%> = 1; <%tvar%> <= size_of_dimension_base_array(<%evar%>, 1); ++<%tvar%>)
-    {
-      <%stmtStuff%>
-      <%body%>
-    }
+    <% match type
+    case "modelica_metatype" then
+      let tvar = tempDecl("modelica_metatype", &varDecls)
+      <<
+      for (<%tvar%> = <%evar%>; !listEmpty(<%tvar%>); <%tvar%>=listRest(<%tvar%>))
+      {
+        <%iterName%> = listFirst(<%tvar%>);
+        <%body%>
+      }
+      >>
+    else
+      let tvar = tempDecl("int", &varDecls)
+      let stmtStuff = if iterIsArray then
+          'simple_index_alloc_<%type%>1(&<%evar%>, <%tvar%>, &<%ivar%>);'
+        else
+          '<%iterName%> = *(<%arrayType%>_element_addr1(&<%evar%>, 1, <%tvar%>));'
+      <<
+      for(<%tvar%> = 1; <%tvar%> <= size_of_dimension_base_array(<%evar%>, 1); ++<%tvar%>)
+      {
+        <%stmtStuff%>
+        <%body%>
+      }
+      >>
+    %>
   }
   >>
 end algStmtForGeneric_impl;
@@ -10139,7 +10152,8 @@ template expTypeShort(DAE.Type type)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "complex"
   case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>'
-  case T_METATYPE(__) case T_METABOXED(__)    then "metatype"
+  case T_METATYPE(__)
+  case T_METABOXED(__)    then "metatype"
   case T_FUNCTION(__)
   case T_FUNCTION_REFERENCE_FUNC(__)
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"

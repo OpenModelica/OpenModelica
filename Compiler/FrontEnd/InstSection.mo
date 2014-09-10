@@ -5151,6 +5151,7 @@ algorithm
     local
       String str;
     case (DAE.T_ARRAY(ty = oty),_,_) then oty;
+    case (DAE.T_METALIST(listType = oty),_,_) then Types.boxIfUnboxedType(oty);
     else
       equation
         str = Types.unparseType(ty);

@@ -609,9 +609,12 @@ algorithm
     case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts, _)
       equation
         isArray = Types.isArray(t, dims);
-        _ = Types.simplifyType(t);
-      then
-        DAE.STMT_FOR(t, isArray, i, -1, e, stmts, source);
+      then DAE.STMT_FOR(t, isArray, i, -1, e, stmts, source);
+
+    case (i, e, DAE.PROP(type_ = DAE.T_METALIST(listType = t)), stmts, _)
+      equation
+        t = Types.simplifyType(t);
+      then DAE.STMT_FOR(t, false, i, -1, e, stmts, source);
 
     case (_, e, DAE.PROP(type_ = t), _, _)
       equation
