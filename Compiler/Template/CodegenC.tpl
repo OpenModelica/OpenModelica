@@ -63,7 +63,8 @@ template translateModel(SimCode simCode, String guid)
 
     let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), '<%fileNamePrefix%>_functions.h')
 
-    let()= textFileConvertLines(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, sc.externalFunctionIncludes), '<%fileNamePrefix%>_functions.c')
+    let()= textFileConvertLines(simulationFunctionsFile(fileNamePrefix, modelInfo.functions), '<%fileNamePrefix%>_functions.c')
+    let()= textFile(externalFunctionIncludes(sc.externalFunctionIncludes), '<%fileNamePrefix%>_includes.h')
 
     let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
 
@@ -100,12 +101,13 @@ template translateFunctions(FunctionCode functionCode)
   MetaModelica functions."
 ::=
   match functionCode
-  case FUNCTIONCODE(__) then
+  case fc as FUNCTIONCODE(__) then
     let()= System.tmpTickResetIndex(0,2) /* auxFunction index */
     let filePrefix = name
     let _= (if mainFunction then textFile(functionsMakefile(functionCode), '<%filePrefix%>.makefile'))
     let()= textFile(functionsHeaderFile(filePrefix, mainFunction, functions, extraRecordDecls), '<%filePrefix%>.h')
-    let()= textFileConvertLines(functionsFile(filePrefix, mainFunction, functions, literals, externalFunctionIncludes), '<%filePrefix%>.c')
+    let()= textFileConvertLines(functionsFile(filePrefix, mainFunction, functions, literals), '<%filePrefix%>.c')
+    let()= textFile(externalFunctionIncludes(fc.externalFunctionIncludes), '<%filePrefix%>_includes.h')
     let()= textFile(recordsFile(filePrefix, extraRecordDecls), '<%filePrefix%>_records.c')
     // If ParModelica generate the kernels file too.
     if acceptParModelicaGrammar() then
@@ -1351,15 +1353,7 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelN
 ::=
   let &varDecls = buffer ""
   let &auxFunction = buffer ""
-  let res = <<
-  /* Initializes the raw time events of the simulation using the now
-     calcualted parameters. */
-  void <%symbolName(modelNamePrefix,"function_initSample")%>(DATA *data)
-  {
-    long i=0;
-    <%varDecls%>
-
-    <%(timeEvents |> timeEvent =>
+  let body = (timeEvents |> timeEvent =>
       match timeEvent
         case SAMPLE_TIME_EVENT(__) then
           let &preExp = buffer ""
@@ -1374,7 +1368,15 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelN
           assertStreamPrint(threadData,data->modelData.samplesInfo[i].interval > 0.0, "sample-interval <= 0.0");
           i++;
           >>
-        else '')%>
+        else '')
+  let res = <<
+  /* Initializes the raw time events of the simulation using the now
+     calcualted parameters. */
+  void <%symbolName(modelNamePrefix,"function_initSample")%>(DATA *data)
+  {
+    long i=0;
+    <%varDecls%>
+    <%body%>
   }
   >>
   <<
@@ -4180,7 +4182,7 @@ template simulationLiteralsFile(String filePrefix, list<Exp> literals)
   /* adpro: leave a newline at the end of file to get rid of warnings! */
 end simulationLiteralsFile;
 
-template simulationFunctionsFile(String filePrefix, list<Function> functions, list<String> includes)
+template simulationFunctionsFile(String filePrefix, list<Function> functions)
  "Generates the content of the C file for functions in the simulation case."
 ::=
   <<
@@ -4190,7 +4192,7 @@ template simulationFunctionsFile(String filePrefix, list<Function> functions, li
   #endif
 
   #include "<%filePrefix%>_literals.h"
-  <%externalFunctionIncludes(includes)%>
+  #include "<%filePrefix%>_includes.h"
 
   <%functionBodies(functions)%>
 
@@ -4559,8 +4561,7 @@ end commonHeader;
 template functionsFile(String filePrefix,
                        Option<Function> mainFunction,
                        list<Function> functions,
-                       list<Exp> literals,
-                       list<String> includes)
+                       list<Exp> literals)
  "Generates the contents of the main C file for the function case."
 ::=
   let &preLit = buffer ""
@@ -4573,9 +4574,7 @@ template functionsFile(String filePrefix,
   %>
   #include "util/modelica.h"
 
-  /* start - annotation(Include=...) if we have any */
-  <%externalFunctionIncludes(includes)%>
-  /* end - annotation(Include=...) */
+  #include "<%filePrefix%>_includes.h"
 
   <% if mainFunction then
   <<
@@ -5848,6 +5847,7 @@ case efn as EXTERNAL_FUNCTION(__) then
   <%functionPrototype(fname, funArgs, outVars, false)%>
   {
     <%varDecls%>
+    <%modelicaLine(info)%>
     <%preExp%>
     <%outputAlloc%>
     <%callPart%>
@@ -8236,7 +8236,14 @@ case BINARY(__) then
   case ADD(__) then '(<%e1%> + <%e2%>)'
   case SUB(__) then '(<%e1%> - <%e2%>)'
   case MUL(__) then '(<%e1%> * <%e2%>)'
-  case DIV(__) then '(<%e1%> / <%e2%>)'
+  case DIV(__) then
+    let tvar = tempDecl(expTypeModelica(ty),&varDecls)
+    let &preExp += '<%tvar%> = <%e2%>;<%\n%>'
+    let &preExp +=
+      if acceptMetaModelicaGrammar()
+        then 'if (<%tvar%> == 0) {MMC_THROW_INTERNAL();}<%\n%>'
+        else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(exp))%>");}<%\n%>'
+    '(<%e1%> / <%e2%>)'
   case POW(__) then
     if isHalf(exp2) then 'sqrt(<%e1%>)'
     else match realExpIntLit(exp2)
@@ -8869,11 +8876,23 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
-    'ldiv(<%var1%>,<%var2%>).quot'
+    let tvar = tempDecl("modelica_integer", &varDecls)
+    let &preExp += '<%tvar%> = <%var2%>;<%\n%>'
+    let &preExp +=
+      if acceptMetaModelicaGrammar()
+        then 'if (<%tvar%> == 0) {MMC_THROW_INTERNAL();}<%\n%>'
+        else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
+    'ldiv(<%var1%>,<%tvar%>).quot'
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
+    let tvar = tempDecl("modelica_real", &varDecls)
+    let &preExp += '<%tvar%> = <%var2%>;<%\n%>'
+    let &preExp +=
+      if acceptMetaModelicaGrammar()
+        then 'if (<%tvar%> == 0.0) {MMC_THROW_INTERNAL();}<%\n%>'
+        else 'if (<%tvar%> == 0.0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
     'trunc(<%var1%>/<%var2%>)'
 
   case CALL(path=IDENT(name="mod"), expLst={e1,e2}, attr=CALL_ATTR(ty = ty)) then

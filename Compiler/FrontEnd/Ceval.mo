@@ -3521,6 +3521,7 @@ algorithm
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
         rv1 = intReal(ri);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
+        Error.addInternalError("cevalBuiltinDiv got Integer and Real (type error)\n");
         rv_1 = rv1/. rv2;
          b = rv_1 <. 0.0;
         rv_2 = Util.if_(b,realCeil(rv_1),realFloor(rv_1));
@@ -3530,6 +3531,7 @@ algorithm
       equation
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
+        Error.addInternalError("cevalBuiltinDiv got Real and Integer (type error)\n");
         rv2 = intReal(ri);
         rv_1 = rv1/. rv2;
         b = rv_1 <. 0.0;

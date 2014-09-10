@@ -9593,18 +9593,21 @@ end generateExtFunctionIncludesLibstr;
 
 protected function generateExtFunctionIncludesIncludestr
   input SCode.Mod inMod;
-  output list<String> outStringLst;
+  output list<String> includes;
 algorithm
-  outStringLst:= matchcontinue (inMod)
+  includes := matchcontinue (inMod)
     local
       String inc, inc_1;
+      Integer lineNumberStart;
+      String str,fileName;
     case (_)
       equation
-        SCode.MOD(binding = SOME((Absyn.STRING(inc), _))) =
+        SCode.MOD(binding = SOME((Absyn.STRING(inc), _)), info = Absyn.INFO(fileName=fileName,lineNumberStart=lineNumberStart)) =
           Mod.getUnelabedSubMod(inMod, "Include");
+        str = "#line "+&intString(lineNumberStart)+&" \""+&fileName+&"\"";
         inc_1 = System.unescapedString(inc);
-      then
-        {inc_1};
+        includes = Util.if_(boolOr(Config.acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)), {str,inc_1}, {inc_1});
+      then includes;
     else {};
   end matchcontinue;
 end generateExtFunctionIncludesIncludestr;

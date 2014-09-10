@@ -60,7 +60,8 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let target  = simulationCodeTarget()
   let()= textFile(simulationLiteralsFile(fileNamePrefix, literals), '<%fileNamePrefix%>_literals.h')
   let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), '<%fileNamePrefix%>_functions.h')
-  let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, sc.externalFunctionIncludes), '<%fileNamePrefix%>_functions.c')
+  let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions), '<%fileNamePrefix%>_functions.c')
+  let()= textFile(externalFunctionIncludes(sc.externalFunctionIncludes), '<%fileNamePrefix%>_includes.h')
   let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
   let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefix%>_model.h')
 

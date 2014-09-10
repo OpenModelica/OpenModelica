@@ -19,6 +19,6 @@ if numMessages > 0 or not status then
 else
   system("rm -f " + messageFile);
 end if;
-files:={typeNameString(mainClass) + ext for ext in {".c",".h","_records.c",".deps"}};getErrorString();
+files:={typeNameString(mainClass) + ext for ext in {".c",".h","_includes.h","_records.c",".deps"}};getErrorString();
 {compareFilesAndMove(file,"../" + file) for file in files};
 exit(0);
