@@ -67,8 +67,6 @@ protected import Util;
 - evaluation of for-loops
 - evaluation of while-loops
 - evaluation of xOut := funcCall1(funcCall2(xIn[1]));  with funcCall2(xIn[1]) = xIn[1,2] for example have a look at Media.Examples.ReferenceAir.MoistAir
-(I think the stmt in MoistAir.setState_pTX should be a STMT_IF instead of a STMT_ASSIGN, thats why its not evaluated)
-- run the msl models and check for failures in List.filter1OnTrueSync and List.filterOnTrueSync, this fails somewhere and could improve something if fixed
 - evaluation of BackendDAE.ARRAY_EQUATION
 */
 // =============================================================================
@@ -76,7 +74,7 @@ protected import Util;
 //
 // =============================================================================
 
-public uniontype FuncInfo "store global informations when traversing the statemtents and evaluate the function calls"
+public uniontype FuncInfo "store informations when traversing the statements and evaluate the function calls"
   record FUNCINFO
     BackendVarTransform.VariableReplacements repl;
     DAE.FunctionTree funcTree;
@@ -284,13 +282,14 @@ algorithm
       DAE.Exp exp, exp2, constExp, outputExp;
       DAE.Function func;
       DAE.FunctionTree funcs;
-      DAE.Type ty;
+      DAE.Type ty, singleOutputType;
       list<BackendDAE.Equation> constEqs;
       list<DAE.ComponentRef> inputCrefs, outputCrefs, allInputCrefs, allOutputCrefs, constInputCrefs, constCrefs, varScalarCrefsInFunc,constComplexCrefs,varComplexCrefs,constScalarCrefs, constScalarCrefsOut,varScalarCrefs;
-      list<DAE.Element> elements, algs, allInputs, protectVars, allOutputs, varOutputs;
+      list<DAE.Element> elements, algs, allInputs, protectVars, allOutputs, updatedVarOutputs, newOutputVars;
       list<DAE.Exp> exps, inputExps, complexExp, allInputExps, constInputExps, constExps, constComplexExps, constScalarExps, lhsExps;
       list<list<DAE.Exp>> scalarExp;
       list<DAE.Statement> stmts;
+      list<DAE.Type> outputVarTypes;
       list<list<DAE.ComponentRef>> scalarInputs, scalarOutputs;
     case(DAE.CALL(path=path, expLst=exps, attr=attr1),_,_,_)
       equation
@@ -382,7 +381,7 @@ algorithm
         true =  funcIsPartConst or funcIsConst;
         changed = funcIsPartConst or funcIsConst;
         // build the new lhs, the new statements for the function, the constant parts...
-        (varOutputs,outputExp,varScalarCrefsInFunc) = buildVariableFunctionParts(scalarOutputs,constComplexCrefs,varComplexCrefs,constScalarCrefs,varScalarCrefs,allOutputs,lhsExpIn);
+        (updatedVarOutputs,outputExp,varScalarCrefsInFunc) = buildVariableFunctionParts(scalarOutputs,constComplexCrefs,varComplexCrefs,constScalarCrefs,varScalarCrefs,allOutputs,lhsExpIn);
         (constScalarCrefsOut,constComplexCrefs) = buildConstFunctionCrefs(constScalarCrefs,constComplexCrefs,allOutputCrefs,lhsExpIn);
         (algs,constEqs) = Debug.bcallret3_2(not funcIsConst,buildPartialFunction,(varScalarCrefsInFunc,algs),(constScalarCrefs,constScalarExps,constComplexCrefs,constComplexExps,constScalarCrefsOut),repl,algs,{});
 
@@ -390,11 +389,11 @@ algorithm
         //print("constComplexCrefs\n"+&stringDelimitList(List.map(constComplexCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
 
         // build the new partial function
-        elements = listAppend(allInputs,varOutputs);
+        elements = listAppend(allInputs,updatedVarOutputs);
         elements = listAppend(elements,protectVars);
         elements = listAppend(elements,algs);
         elements = List.unique(elements);
-        (func,path) = updateFunctionBody(func,elements,idx, varOutputs, allOutputs);
+        (func,path) = updateFunctionBody(func,elements,idx, updatedVarOutputs, allOutputs);
         funcs = Debug.bcallret2(funcIsPartConst,DAEUtil.addDaeFunction,{func},funcs,funcs);
         idx = Util.if_(funcIsPartConst or funcIsConst,idx+1,idx);
 
@@ -403,9 +402,15 @@ algorithm
         lhsExps = getCrefsForRecord(lhsExpIn);
         outputExp = Util.if_(isConstRec,DAE.TUPLE(lhsExps),outputExp);
         // which rhs
-        attr2 = DAEUtil.replaceCallAttrType(attr1,DAE.T_TUPLE({},DAE.emptyTypeSource));
-        attr2 = Util.if_(intEq(listLength(varOutputs),1),attr1,attr2);
+        newOutputVars = List.filter(updatedVarOutputs,DAEUtil.isOutputVar);
+        outputVarTypes = List.map(newOutputVars,DAEUtil.getVariableType);
+        attr2 = DAEUtil.replaceCallAttrType(attr1,DAE.T_TUPLE(outputVarTypes,DAE.emptyTypeSource));
+        DAE.CALL_ATTR(ty = singleOutputType) = attr1;
+        singleOutputType = Debug.bcallret1(List.isNotEmpty(newOutputVars),List.first,outputVarTypes,singleOutputType);//if the function is evaluated completely
+        attr1 = DAEUtil.replaceCallAttrType(attr1,singleOutputType);
+        attr2 = Util.if_(intEq(listLength(newOutputVars),1),attr1,attr2);
         //DAEDump.dumpCallAttr(attr2);
+
         exp2 = Debug.bcallret1(List.hasOneElement(constComplexExps) and funcIsConst,List.first,constComplexExps,DAE.TUPLE(constComplexExps));  // either a single equation or a tuple equation
         exp = Util.if_(funcIsConst,exp2,rhsExpIn);
         exp = Util.if_(funcIsPartConst,DAE.CALL(path, exps, attr2),exp);
