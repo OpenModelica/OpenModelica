@@ -1186,8 +1186,9 @@ void SimulationDialog::compilationProcessFinished(int exitCode, QProcess::ExitSt
       {
         QFileInfo fileInfo(fileName);
         QString GDBPath = mpMainWindow->getOptionsDialog()->getDebuggerPage()->getGDBPath();
-        mpMainWindow->getDebuggerMainWindow()->getGDBAdapter()->launch(fileName, fileInfo.absoluteDir().absolutePath(), QStringList(),
-                                                                       GDBPath, false);
+        QStringList args(QString("-logFormat=text"));
+        args << simulationOptions.getSimulationFlags();
+        mpMainWindow->getDebuggerMainWindow()->getGDBAdapter()->launch(fileName, fileInfo.absoluteDir().absolutePath(), args, GDBPath, false);
       }
     }
     else
