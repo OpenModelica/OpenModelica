@@ -457,7 +457,7 @@ algorithm
         outBinds;
 
     // TODO, handle for iterators!
-    case (Absyn.FOR_ITER_FARG(e1a, _), Absyn.FOR_ITER_FARG(e1b, _), _)
+    case (Absyn.FOR_ITER_FARG(e1a, _, _), Absyn.FOR_ITER_FARG(e1b, _, _), _)
       equation
         outBinds = matchesFrontEnd(e1a, e1b, inAcc);
       then
