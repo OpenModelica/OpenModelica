@@ -7471,16 +7471,17 @@ match stmt
 case STMT_FOR(__) then
   let iterType = expType(type_, iterIsArray)
   let arrayType = expTypeArray(type_)
-
-
+  let tvar = match iterType
+    case "modelica_metatype"
+      then tempDecl("modelica_metatype", &varDecls)
+    else   tempDecl("int", &varDecls)
   let stmtStr = (statementLst |> stmt =>
     algStatement(stmt, context, &varDecls, &auxFunction) ;separator="\n")
-  algStmtForGeneric_impl(range, iter, iterType, arrayType, iterIsArray, stmtStr,
-    context, &varDecls, &auxFunction)
+  algStmtForGeneric_impl(range, iter, iterType, arrayType, iterIsArray, stmtStr, tvar, context, &varDecls, &auxFunction)
 end algStmtForGeneric;
 
 template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
-  String arrayType, Boolean iterIsArray, Text &body, Context context, Text &varDecls, Text &auxFunction)
+  String arrayType, Boolean iterIsArray, Text &body, Text tvar, Context context, Text &varDecls, Text &auxFunction)
  "The implementation of algStmtForGeneric, which is also used by daeExpReduction."
 ::=
   let iterName = contextIteratorName(iterator, context)
@@ -7493,7 +7494,6 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
     <%type%> <%iterName%>;
     <% match type
     case "modelica_metatype" then
-      let tvar = tempDecl("modelica_metatype", &varDecls)
       <<
       for (<%tvar%> = <%evar%>; !listEmpty(<%tvar%>); <%tvar%>=listRest(<%tvar%>))
       {
@@ -7502,7 +7502,6 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
       }
       >>
     else
-      let tvar = tempDecl("int", &varDecls)
       let stmtStuff = if iterIsArray then
           'simple_index_alloc_<%type%>1(&<%evar%>, <%tvar%>, &<%ivar%>);'
         else
