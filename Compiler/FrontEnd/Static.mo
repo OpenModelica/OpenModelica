@@ -9709,7 +9709,7 @@ algorithm
         // Extract all dimensions from the parameters.
         tys = List.map(inParameters, Types.funcArgType);
         dims = getAllOutputDimensions(inResultType);
-        dims = List.mapFlat_tail(tys, Types.getDimensions, dims);
+        dims = listAppend(List.mapFlat(tys, Types.getDimensions), dims);
         // Use the dimensions to figure out which parameters are referenced by
         // other parameters' dimensions. This is done to minimize the things we
         // need to constant evaluate, a.k.a. 'things that go wrong'.
@@ -9937,7 +9937,7 @@ algorithm
       equation
         tys = List.map(funcArg, Types.funcArgType);
         dims = getAllOutputDimensions(funcResultType);
-        dims = List.mapFlat_tail(tys, Types.getDimensions, dims);
+        dims = listAppend(List.mapFlat(tys, Types.getDimensions), dims);
         // Use the dimensions to figure out which parameters are referenced by
         // other parameters' dimensions. This is done to minimize the things we
         // need to constant evaluate, a.k.a. 'things that go wrong'.
