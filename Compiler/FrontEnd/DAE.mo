@@ -1445,17 +1445,10 @@ uniontype CallAttributes
   end CALL_ATTR;
 end CallAttributes;
 
-public uniontype ReductionIterType
-  record COMBINE "Reductions are by default calculated as all combinations of the iterators"
-  end COMBINE;
-  record THREAD "With this option, all iterators must have the same length"
-  end THREAD;
-end ReductionIterType;
-
 public uniontype ReductionInfo
   record REDUCTIONINFO "A separate uniontype containing the information not required by traverseExp, etc"
     Absyn.Path path "array, sum,..";
-    ReductionIterType iterType;
+    Absyn.ReductionIterType iterType;
     Type exprType;
     Option<Values.Value> defaultValue "if there is no default value, the reduction is not defined for 0-length arrays/lists";
     String foldName;

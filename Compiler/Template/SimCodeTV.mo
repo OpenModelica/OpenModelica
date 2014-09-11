@@ -1090,6 +1090,13 @@ package Absyn
 
   end Within;
 
+  uniontype ReductionIterType
+    record COMBINE
+    end COMBINE;
+    record THREAD
+    end THREAD;
+  end ReductionIterType;
+
   constant Info dummyInfo;
 
   function pathString2NoLeadingDot "Tail-recursive version, with string builder (stringDelimitList is optimised)"
@@ -1301,17 +1308,10 @@ package DAE
 
   type ReductionIterators = list<ReductionIterator>;
 
-  uniontype ReductionIterType
-    record COMBINE
-    end COMBINE;
-    record THREAD
-    end THREAD;
-  end ReductionIterType;
-
   uniontype ReductionInfo
     record REDUCTIONINFO "A separate uniontype containing the information not required by traverseExp, etc"
       Absyn.Path path "array, sum,..";
-      ReductionIterType iterType;
+      Absyn.ReductionIterType iterType;
       Type exprType;
       Option<Values.Value> defaultValue "if there is no default value, the reduction is not defined for 0-length arrays/lists";
       String foldName;

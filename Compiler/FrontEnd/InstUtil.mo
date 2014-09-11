@@ -7508,9 +7508,7 @@ algorithm
     case (e,n::names,r::ranges)
       equation
         e2 = wrapIntoFor(e, names, ranges);
-      then
-        Absyn.CALL(Absyn.CREF_IDENT("array",{}),
-           Absyn.FOR_ITER_FARG(e2,{Absyn.ITERATOR(n,NONE(),SOME(Absyn.RANGE(Absyn.INTEGER(1),NONE(),r)))}));
+      then Absyn.CALL(Absyn.CREF_IDENT("array",{}), Absyn.FOR_ITER_FARG(e2, Absyn.COMBINE() ,{Absyn.ITERATOR(n,NONE(),SOME(Absyn.RANGE(Absyn.INTEGER(1),NONE(),r)))}));
   end match;
 end wrapIntoFor;
 

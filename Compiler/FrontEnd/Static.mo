@@ -564,7 +564,7 @@ algorithm
       Absyn.CodeNode cn;
       list<DAE.Type> typeList;
       list<DAE.Const> constList;
-
+      Absyn.ReductionIterType iterType;
 
     /* uncomment for debuging
     case (cache,_,inExp,impl,st,doVect,_,info)
@@ -761,9 +761,9 @@ algorithm
         (cache,e_1,prop,st);
 
     // Array-related expressions Elab reduction expressions, including array() constructor
-    case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FOR_ITER_FARG(exp = e, iterators=iterators)),impl,st,doVect,pre,_,_)
+    case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FOR_ITER_FARG(exp = e, iterType=iterType, iterators=iterators)),impl,st,doVect,pre,_,_)
       equation
-        (cache,e_1,prop,st_1) = elabCallReduction(cache,env, fn, e, iterators, impl, st,doVect,pre,info);
+        (cache,e_1,prop,st_1) = elabCallReduction(cache,env, fn, e, iterType, iterators, impl, st,doVect,pre,info);
         _ = Types.propAllConst(prop);
       then
         (cache,e_1,prop,st_1);
@@ -1238,6 +1238,7 @@ protected function elabCallReduction
   input Env.Env inEnv;
   input Absyn.ComponentRef reductionFn;
   input Absyn.Exp reductionExp;
+  input Absyn.ReductionIterType iterType;
   input Absyn.ForIterators iterators;
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> inST;
@@ -1250,7 +1251,7 @@ protected function elabCallReduction
   output Option<GlobalScript.SymbolTable> outST;
 algorithm
   (outCache,outExp,outProperties,outST):=
-  matchcontinue (inCache,inEnv,reductionFn,reductionExp,iterators,impl,
+  matchcontinue (inCache,inEnv,reductionFn,reductionExp,iterType,iterators,impl,
       inST,performVectorization,inPrefix,info)
     local
       DAE.Exp exp_1;
@@ -1274,12 +1275,13 @@ algorithm
       Absyn.ForIterators iters;
       String foldId,resultId;
 
-    case (cache,env,fn,exp,iters,_,st,doVect,pre,_)
+    case (cache,env,fn,exp,_,iters,_,st,doVect,pre,_)
       equation
         env_1 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forIterScopeName), NONE());
         iters = listReverse(iters);
         (cache,env_1,reductionIters,dims,iterconst,hasGuardExp,st) = elabCallReductionIterators(cache, env_1, iters, impl, st, doVect, pre, info);
         dims = listReverse(dims);
+        dims = fixDimsItertype(iterType,dims);
         // print("elabReductionExp: " +& Dump.printExpStr(exp) +& "\n");
         (cache,exp_1,DAE.PROP(expty, expconst),st) = elabExpInExpression(cache, env_1, exp, impl, st, doVect, pre, info);
         // print("exp_1 has type: " +& Types.unparseType(expty) +& "\n");
@@ -1291,12 +1293,12 @@ algorithm
         resultId = Util.getTempVariableIndex();
         (env_foldExp,afoldExp) = makeReductionFoldExp(env_1,fn_1,expty,foldId,resultId);
         (cache,foldExp,_,st) = elabExpOptAndMatchType(cache, env_foldExp, afoldExp, expty, impl, st, doVect,pre,info);
-        // print("make reduction: " +& Absyn.pathString(fn_1) +& " exp_1: " +& ExpressionDump.printExpStr(exp_1) +& "\n");
-        exp_1 = DAE.REDUCTION(DAE.REDUCTIONINFO(fn_1,DAE.COMBINE(),expty,v,foldId,resultId,foldExp),exp_1,reductionIters);
+        // print("make reduction: " +& Absyn.pathString(fn_1) +& " exp_1: " +& ExpressionDump.printExpStr(exp_1) +& " ty: " +& Types.unparseType(expty) +& "\n");
+        exp_1 = DAE.REDUCTION(DAE.REDUCTIONINFO(fn_1,iterType,expty,v,foldId,resultId,foldExp),exp_1,reductionIters);
       then
         (cache,exp_1,prop,st);
 
-    case (_,_,_,_,_::_::_,_,_,_,_,_)
+    case (_,_,_,_,_,_::_::_,_,_,_,_,_)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"Reductions using multiple iterators is not yet implemented. Try rewriting the expression using nested reductions (e.g. array(i+j for i, j) => array(array(i+j for i) for j)."}, info);
       then fail();
@@ -1307,6 +1309,20 @@ algorithm
       then fail();
   end matchcontinue;
 end elabCallReduction;
+
+protected function fixDimsItertype
+  input Absyn.ReductionIterType iterType;
+  input list<DAE.Dimension> dims;
+  output list<DAE.Dimension> outDims;
+algorithm
+  outDims := match (iterType,dims)
+    local
+      DAE.Dimension dim;
+    case (Absyn.COMBINE(),_) then dims;
+    case (_,dim::_) // TODO: Get the best dimension (if several, choose the one that is integer constant; we do run-time checks to assert they are all equal)
+      then {dim};
+  end match;
+end fixDimsItertype;
 
 protected function elabCallReductionIterators
   input Env.Cache inCache;
@@ -9245,7 +9261,7 @@ algorithm
       DAE.ReductionIterator riter;
       String foldName,resultName;
       list<DAE.ReductionIterator> riters;
-      DAE.ReductionIterType iterType;
+      Absyn.ReductionIterType iterType;
 
     case (e,{},_,prop,_) then (e,prop);
 
@@ -9294,7 +9310,7 @@ algorithm
         (e,prop) = vectorizeCall(e,ad,slots,prop,info); // Recurse...
         foldName = Util.getTempVariableIndex();
         resultName = Util.getTempVariableIndex();
-        iterType = Util.if_(listLength(riters)>1,DAE.THREAD(),DAE.COMBINE());
+        iterType = Util.if_(listLength(riters)>1,Absyn.THREAD(),Absyn.COMBINE());
         rinfo = DAE.REDUCTIONINFO(Absyn.IDENT("array"),iterType,tp,SOME(Values.ARRAY({},{0})),foldName,resultName,NONE());
         e = DAE.REDUCTION(rinfo,e,riters);
       then (e,prop);

@@ -4442,7 +4442,7 @@ algorithm
         printListAsCorbaString(argNames, printNamedArgAsCorbaString, ",");
         Print.printBuf(" end Absyn.FUNCTIONARGS;");
       then ();
-    case Absyn.FOR_ITER_FARG(exp,iterators)
+    case Absyn.FOR_ITER_FARG(exp,_,iterators)
       equation
         Print.printBuf("record Absyn.FOR_ITER_FARG exp = ");
         printExpAsCorbaString(exp);

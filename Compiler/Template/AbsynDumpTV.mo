@@ -658,9 +658,17 @@ package Absyn
 
     record FOR_ITER_FARG
       Exp  exp;
+      ReductionIterType iterType;
       ForIterators iterators;
     end FOR_ITER_FARG;
   end FunctionArgs;
+
+  uniontype ReductionIterType
+    record COMBINE
+    end COMBINE;
+    record THREAD
+    end THREAD;
+  end ReductionIterType;
 
   uniontype NamedArg
     record NAMEDARG

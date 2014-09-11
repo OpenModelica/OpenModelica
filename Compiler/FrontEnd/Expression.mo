@@ -167,6 +167,7 @@ algorithm
       Absyn.ForIterators aiters;
       DAE.Type ty;
       DAE.Dimensions dims;
+      Absyn.ReductionIterType iterType;
 
     case (DAE.ICONST(integer = i)) then Absyn.INTEGER(i);
     case (DAE.RCONST(real = r))
@@ -301,13 +302,13 @@ algorithm
 
     case(DAE.CODE(code,_)) then Absyn.CODE(code);
 
-    case DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path=path),expr=e1,iterators=riters) equation
-      //print("unelab of reduction not impl. yet");
-      acref = Absyn.pathToCref(path);
-      ae1 = unelabExp(e1);
-      aiters = List.map(riters, unelabReductionIterator);
-    then
-      Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, aiters));
+    case DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(iterType=iterType,path=path),expr=e1,iterators=riters)
+      equation
+        //print("unelab of reduction not impl. yet");
+        acref = Absyn.pathToCref(path);
+        ae1 = unelabExp(e1);
+        aiters = List.map(riters, unelabReductionIterator);
+      then Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, iterType, aiters));
 
     else
       equation

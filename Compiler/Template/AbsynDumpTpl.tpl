@@ -982,7 +982,7 @@ match args
   case FOR_ITER_FARG(__) then
     let exp_str = dumpExp(exp)
     let iter_str = (iterators |> i => dumpForIterator(i) ;separator=", ")
-    '<%exp_str%> for <%iter_str%>'
+    '<%exp_str%> <%match iterType case THREAD(__) then "threaded "%>for <%iter_str%>'
 end dumpFunctionArgs;
 
 template dumpNamedArg(Absyn.NamedArg narg)

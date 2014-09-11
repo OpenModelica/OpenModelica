@@ -3290,18 +3290,19 @@ algorithm
       Absyn.Exp exp1_1,exp2_1,exp1,exp2, exp;
       String id;
       Absyn.ForIterators iterators, iteratorsRenamed;
+      Absyn.ReductionIterType iterType;
     case (Absyn.FUNCTIONARGS(args = exps,argNames = namedArg),old_comp,new_comp) /* the old name for the component */
       equation
         exps_1 = renameComponentInExpList(exps, old_comp, new_comp);
         namedArg_1 = renameComponentInNamedArgs(namedArg, old_comp, new_comp);
       then
         Absyn.FUNCTIONARGS(exps_1,namedArg_1);
-    case (Absyn.FOR_ITER_FARG(exp = exp, iterators=iterators),old_comp,new_comp)
+    case (Absyn.FOR_ITER_FARG(exp, iterType, iterators),old_comp,new_comp)
       equation
         exp1_1 = renameComponentInExp(exp, old_comp, new_comp);
         iteratorsRenamed = renameComponentInIterators(iterators, old_comp, new_comp);
       then
-        Absyn.FOR_ITER_FARG(exp1_1, iteratorsRenamed);
+        Absyn.FOR_ITER_FARG(exp1_1, iterType, iteratorsRenamed);
     case (_,_,_)
       equation
         print("-rename_component_in_function_args failed\n");

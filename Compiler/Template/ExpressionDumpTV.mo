@@ -30,6 +30,13 @@ package Absyn
   uniontype ClockKind
   end ClockKind;
 
+  uniontype ReductionIterType
+    record COMBINE
+    end COMBINE;
+    record THREAD
+    end THREAD;
+  end ReductionIterType;
+
   function clockKindString
     input ClockKind inClockKind;
     output String outString;
@@ -603,17 +610,10 @@ package DAE
     end CALL_ATTR;
   end CallAttributes;
 
-  uniontype ReductionIterType
-    record COMBINE
-    end COMBINE;
-    record THREAD
-    end THREAD;
-  end ReductionIterType;
-
   uniontype ReductionInfo
     record REDUCTIONINFO
       Absyn.Path path;
-      ReductionIterType iterType;
+      Absyn.ReductionIterType iterType;
       Type exprType;
       Option<Exp> foldExp;
     end REDUCTIONINFO;

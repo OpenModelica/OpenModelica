@@ -207,7 +207,7 @@ algorithm
       list<Values.Value> orderd;
       list<String> comp;
       Absyn.ClockKind ck;
-      DAE.ReductionIterType iterType;
+      Absyn.ReductionIterType iterType;
 
     // uncomment for debugging
     // case (cache,env,inExp,_,st,_,_)
@@ -5706,7 +5706,7 @@ end extendFrameForIterators;
 
 protected function backpatchArrayReduction
   input Absyn.Path path;
-  input DAE.ReductionIterType iterType;
+  input Absyn.ReductionIterType iterType;
   input Values.Value inValue;
   input list<Integer> dims;
   output Values.Value outValue;
@@ -5716,7 +5716,7 @@ algorithm
       list<Values.Value> vals;
       Values.Value value;
     case (_,_,value,{_}) then value;
-    case (Absyn.IDENT("array"),DAE.COMBINE(),Values.ARRAY(valueLst=vals),_)
+    case (Absyn.IDENT("array"),Absyn.COMBINE(),Values.ARRAY(valueLst=vals),_)
       equation
         value = backpatchArrayReduction3(vals,listReverse(dims));
         // print(ValuesUtil.valString(value));print("\n");
@@ -6261,12 +6261,12 @@ end cevalDimension;
 
 protected function makeReductionAllCombinations
   input list<list<Values.Value>> inValMatrix;
-  input DAE.ReductionIterType rtype;
+  input Absyn.ReductionIterType rtype;
   output list<list<Values.Value>> valMatrix;
 algorithm
   valMatrix := match (inValMatrix,rtype)
-    case (_,DAE.COMBINE()) then Util.allCombinations(inValMatrix,SOME(100000),Absyn.dummyInfo);
-    case (_,DAE.THREAD()) then List.transposeList(inValMatrix);
+    case (_,Absyn.COMBINE()) then Util.allCombinations(inValMatrix,SOME(100000),Absyn.dummyInfo);
+    case (_,Absyn.THREAD()) then List.transposeList(inValMatrix);
   end match;
 end makeReductionAllCombinations;
 

@@ -3183,7 +3183,7 @@ extern struct record_description Absyn_FunctionArgs_FUNCTIONARGS__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_FunctionArgs_FOR__ITER__FARG__desc_added
 #define Absyn_FunctionArgs_FOR__ITER__FARG__desc_added
-ADD_METARECORD_DEFINITIONS const char* Absyn_FunctionArgs_FOR__ITER__FARG__desc__fields[2] = {"exp","iterators"};
+ADD_METARECORD_DEFINITIONS const char* Absyn_FunctionArgs_FOR__ITER__FARG__desc__fields[3] = {"exp","iterType","iterators"};
 ADD_METARECORD_DEFINITIONS struct record_description Absyn_FunctionArgs_FOR__ITER__FARG__desc = {
   "Absyn_FunctionArgs_FOR__ITER__FARG",
   "Absyn.FunctionArgs.FOR_ITER_FARG",
@@ -3193,8 +3193,40 @@ ADD_METARECORD_DEFINITIONS struct record_description Absyn_FunctionArgs_FOR__ITE
 #else /* Only use the file as a header */
 extern struct record_description Absyn_FunctionArgs_FOR__ITER__FARG__desc;
 #endif
-#define Absyn__FOR_5fITER_5fFARG_3dBOX2 4
-#define Absyn__FOR_5fITER_5fFARG(exp,iterators) (mmc_mk_box3(4,&Absyn_FunctionArgs_FOR__ITER__FARG__desc,exp,iterators))
+#define Absyn__FOR_5fITER_5fFARG_3dBOX3 4
+#define Absyn__FOR_5fITER_5fFARG(exp,iterType,iterators) (mmc_mk_box4(4,&Absyn_FunctionArgs_FOR__ITER__FARG__desc,exp,iterType,iterators))
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_ReductionIterType_COMBINE__desc_added
+#define Absyn_ReductionIterType_COMBINE__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_ReductionIterType_COMBINE__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_ReductionIterType_COMBINE__desc = {
+  "Absyn_ReductionIterType_COMBINE",
+  "Absyn.ReductionIterType.COMBINE",
+  Absyn_ReductionIterType_COMBINE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_ReductionIterType_COMBINE__desc;
+#endif
+#define Absyn__COMBINE_3dBOX0 3
+static const MMC_DEFSTRUCTLIT(Absyn__COMBINE__struct,1,3) {&Absyn_ReductionIterType_COMBINE__desc}};
+static void *Absyn__COMBINE = MMC_REFSTRUCTLIT(Absyn__COMBINE__struct);
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_ReductionIterType_THREAD__desc_added
+#define Absyn_ReductionIterType_THREAD__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_ReductionIterType_THREAD__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_ReductionIterType_THREAD__desc = {
+  "Absyn_ReductionIterType_THREAD",
+  "Absyn.ReductionIterType.THREAD",
+  Absyn_ReductionIterType_THREAD__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_ReductionIterType_THREAD__desc;
+#endif
+#define Absyn__THREAD_3dBOX0 4
+static const MMC_DEFSTRUCTLIT(Absyn__THREAD__struct,1,4) {&Absyn_ReductionIterType_THREAD__desc}};
+static void *Absyn__THREAD = MMC_REFSTRUCTLIT(Absyn__THREAD__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_NamedArg_NAMEDARG__desc_added
 #define Absyn_NamedArg_NAMEDARG__desc_added

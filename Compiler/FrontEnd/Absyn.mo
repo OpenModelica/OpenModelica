@@ -953,11 +953,18 @@ uniontype FunctionArgs "The FunctionArgs uniontype consists of a list of positio
 
   record FOR_ITER_FARG
      Exp  exp "iterator expression";
+     ReductionIterType iterType;
      ForIterators iterators;
   end FOR_ITER_FARG;
 
 end FunctionArgs;
 
+uniontype ReductionIterType
+  record COMBINE "Reductions are by default calculated as all combinations of the iterators"
+  end COMBINE;
+  record THREAD "With this option, all iterators must have the same length"
+  end THREAD;
+end ReductionIterType;
 
 uniontype NamedArg "The NamedArg uniontype consist of an Identifier for the argument and an expression
   giving the value of the argument"
@@ -1967,6 +1974,7 @@ algorithm
       list<NamedArg> named_args;
       ForIterators iters;
       Argument arg;
+      ReductionIterType iterType;
 
     case (FUNCTIONARGS(args = expl, argNames = named_args), _, _, arg)
       equation
@@ -1975,12 +1983,12 @@ algorithm
       then
         (FUNCTIONARGS(expl, named_args), arg);
 
-    case (FOR_ITER_FARG(exp = e, iterators = iters), _, _, arg)
+    case (FOR_ITER_FARG(e, iterType, iters), _, _, arg)
       equation
         (e, arg) = traverseExpBidir(e, enterFunc, exitFunc, arg);
         (iters, arg) = List.map2Fold(iters, traverseExpBidirIterator, enterFunc, exitFunc, arg);
       then
-        (FOR_ITER_FARG(e, iters), arg);
+        (FOR_ITER_FARG(e, iterType, iters), arg);
   end match;
 end traverseExpBidirFunctionArgs;
 
@@ -3443,7 +3451,7 @@ algorithm
       then
         res;
 
-    case (FOR_ITER_FARG(exp,iterators),_,_)
+    case (FOR_ITER_FARG(exp,_,iterators),_,_)
       equation
         l1 = List.map2Option(List.map(iterators,iteratorRange),getCrefFromExp,includeSubs,includeFunctions);
         l2 = List.map2Option(List.map(iterators,iteratorGuard),getCrefFromExp,includeSubs,includeFunctions);
@@ -4412,7 +4420,7 @@ algorithm
           lst_2=findIteratorInForIteratorsBounds(id,forIterators);
           lst=listAppend(lst_1,lst_2);
         then lst;    */
-      case (id, FOR_ITER_FARG(exp,forIterators))
+      case (id, FOR_ITER_FARG(exp,_,forIterators))
         equation
           lst_1=findIteratorInExp(id,exp);
           (bool,lst_2)=findIteratorInForIteratorsBounds2(id,forIterators);

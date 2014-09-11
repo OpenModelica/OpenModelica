@@ -1418,14 +1418,14 @@ for_or_expression_list returns [void* ast, int isFor]
   ( {LA(1)==IDENT || LA(1)==OPERATOR && LA(2) == EQUALS || LA(1) == RPAR || LA(1) == RBRACE}? { $ast = mk_nil(); $isFor = 0; }
   | ( (e=expression | e=part_eval_function_expression)
       ( (COMMA el=for_or_expression_list2)
-      | (FOR forind=for_indices)
+      | (threaded=THREADED? FOR forind=for_indices)
       )?
     )
     {
       if (el != NULL) {
         $ast = mk_cons(e,el);
       } else if (forind != NULL) {
-        $ast = Absyn__FOR_5fITER_5fFARG(e, forind);
+        $ast = Absyn__FOR_5fITER_5fFARG(e, threaded ? Absyn__THREAD : Absyn__COMBINE, forind);
       } else {
         $ast = mk_cons(e, mk_nil());
       }

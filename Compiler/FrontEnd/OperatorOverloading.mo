@@ -719,7 +719,7 @@ algorithm
         cr = DAE.CREF(DAE.CREF_IDENT(iterName,newType1,{}),newType1);
         (cache,exp,foldType,resType) = binaryUserdef(cache,env,op,cr,inExp2,newType1,inType2,impl,st,pre,info);
         resType = Types.liftArray(resType,dim1);
-        exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),DAE.COMBINE(),resType,NONE(),foldName,resultName,NONE()),exp,DAE.REDUCTIONITER(iterName,inExp1,NONE(),newType1)::{});
+        exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),Absyn.COMBINE(),resType,NONE(),foldName,resultName,NONE()),exp,DAE.REDUCTIONITER(iterName,inExp1,NONE(),newType1)::{});
         // exp = ExpressionSimplify.simplify1(exp);
       then (cache,{(exp,NONE())});
     case (cache,_,true,_,_,false,_,_,_,_,_,_,_,_,_,_,_) // scalar op non-scalar
@@ -739,7 +739,7 @@ algorithm
         cr = DAE.CREF(DAE.CREF_IDENT(iterName,newType2,{}),newType2);
         (cache,exp,foldType,resType) = binaryUserdef(cache,env,op,inExp1,cr,inType1,newType2,impl,st,pre,info);
         resType = DAE.T_ARRAY(resType,{dim2},{});
-        exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),DAE.COMBINE(),resType,NONE(),foldName,resultName,NONE()),exp,DAE.REDUCTIONITER(iterName,inExp2,NONE(),newType2)::{});
+        exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),Absyn.COMBINE(),resType,NONE(),foldName,resultName,NONE()),exp,DAE.REDUCTIONITER(iterName,inExp2,NONE(),newType2)::{});
         // exp = ExpressionSimplify.simplify1(exp);
       then (cache,{(exp,NONE())});
       // '*' invalid operations: vector*vector or vector*matrix
@@ -780,8 +780,8 @@ algorithm
         iter = DAE.REDUCTIONITER(iterName1,cr,NONE(),newType1);
         iter1 = DAE.REDUCTIONITER(iterName,inExp1,NONE(),newType1);
         iter2 = DAE.REDUCTIONITER(iterName2,inExp2,NONE(),newType2);
-        exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("sum"),DAE.THREAD(),resType,zeroConstructor,foldName1,resultName1,SOME(foldExp)),exp,iter::iter2::{});
-        exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),DAE.COMBINE(),resType,NONE(),foldName2,resultName2,NONE()),exp,iter1::{});
+        exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("sum"),Absyn.THREAD(),resType,zeroConstructor,foldName1,resultName1,SOME(foldExp)),exp,iter::iter2::{});
+        exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),Absyn.COMBINE(),resType,NONE(),foldName2,resultName2,NONE()),exp,iter1::{});
       then (cache,{(exp,NONE())});
       // matrix-matrix-multiply
     case (cache,_,_,_,true,_,_,true,Absyn.MUL(),_,_,_,_,_,_,_,_)
@@ -819,11 +819,11 @@ algorithm
         iter3 = DAE.REDUCTIONITER(iterName3,cr1,NONE(),newType1_1);
         iter4 = DAE.REDUCTIONITER(iterName4,cr2,NONE(),newType2_1);
 
-        exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("sum"),DAE.THREAD(),ty,zeroConstructor,foldName,resultName,SOME(foldExp)),mulExp,iter3::iter4::{});
+        exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("sum"),Absyn.THREAD(),ty,zeroConstructor,foldName,resultName,SOME(foldExp)),mulExp,iter3::iter4::{});
         ty = Types.liftArray(ty,dim2_2);
-        exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),DAE.COMBINE(),ty,NONE(),foldName2,resultName2,NONE()),exp,iter2::{});
+        exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),Absyn.COMBINE(),ty,NONE(),foldName2,resultName2,NONE()),exp,iter2::{});
         ty = Types.liftArray(ty,dim1_1);
-        exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),DAE.COMBINE(),ty,NONE(),foldName1,resultName1,NONE()),exp,iter1::{});
+        exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),Absyn.COMBINE(),ty,NONE(),foldName1,resultName1,NONE()),exp,iter1::{});
       then (cache,{(exp,NONE())});
       // The rest are array op array, which are element-wise operations
       // We thus change the operator to the element-wise one to avoid other vector operations than this one
@@ -853,7 +853,7 @@ algorithm
         resType = DAE.T_ARRAY(resType,{dim2},{});
         iter1 = DAE.REDUCTIONITER(iterName1,inExp1,NONE(),newType1);
         iter2 = DAE.REDUCTIONITER(iterName2,inExp2,NONE(),newType2);
-        exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),DAE.THREAD(),resType,NONE(),foldName,resultName,NONE()),exp,iter1::iter2::{});
+        exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),Absyn.THREAD(),resType,NONE(),foldName,resultName,NONE()),exp,iter1::iter2::{});
       then (cache,{(exp,NONE())});
   end match;
 end binaryUserdefArray2;

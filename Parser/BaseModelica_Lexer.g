@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -87,7 +87,7 @@ LOOP;
 MODEL;
 T_NOT;
 T_OUTER;
-OPERATOR; 
+OPERATOR;
 OVERLOAD;
 PURE;
 T_OR;
@@ -120,6 +120,7 @@ LOCAL;
 MATCH;
 MATCHCONTINUE;
 SUBTYPEOF;
+THREADED;
 UNIONTYPE;
 WILD;
 ALLWILD;
@@ -151,7 +152,7 @@ END_PARFOR;
 // Operators
 // ---------
 
-DOT; 
+DOT;
 LPAR;
 RPAR;
 LBRACK;
@@ -163,7 +164,7 @@ ASSIGN;
 COMMA;
 COLON;
 SEMICOLON;
-/* elementwise operators */  
+/* elementwise operators */
 PLUS_EW;
 MINUS_EW;
 STAR_EW;
@@ -230,7 +231,7 @@ T_NOT : 'not' | '!' {
                ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
      };
 T_OUTER : 'outer';
-OPERATOR : 'operator'; 
+OPERATOR : 'operator';
 OVERLOAD : '$overload'; // OpenModelica extension
 T_OR : 'or' | '||' {
             ModelicaParser_lexerError = ANTLR3_TRUE;
@@ -261,7 +262,7 @@ BREAK : 'break';
 // Operators
 // ---------
 
-DOT : '.'; 
+DOT : '.';
 LPAR : '(';
 RPAR : ')';
 LBRACK : '[';
@@ -295,13 +296,13 @@ WS : ( ' ' | '\t' | NL )+ { $channel=HIDDEN; }
 
 LINE_COMMENT
     : '//' ( ~('\r'|'\n')* ) (NL|EOF) { $channel=HIDDEN; }
-    ;  
+    ;
 
 ML_COMMENT
     :   '/*' (options {greedy=false;} : .)* '*/' { $channel=HIDDEN;  }
     ;
 
-fragment 
+fragment
 NL: '\r\n' | '\n' | '\r';
 
 /* OpenModelica extensions */
@@ -429,12 +430,12 @@ UNSIGNED_INTEGER :
             c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "Treating \%s as 0\%s. This is not standard Modelica and only done for compatibility with old code. Support for this feature may be removed in the future.",
                strs, 2, $line, $pos+1, $line, $pos+len+1,
                ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
-           } 
+           }
          | /* Modelica 3.0 element-wise operators! */
-         (('+' { $type = PLUS_EW; }) 
-          |('-' { $type = MINUS_EW; }) 
-          |('*' { $type = STAR_EW; }) 
-          |('/' { $type = SLASH_EW; }) 
+         (('+' { $type = PLUS_EW; })
+          |('-' { $type = MINUS_EW; })
+          |('*' { $type = STAR_EW; })
+          |('/' { $type = SLASH_EW; })
           |('^' { $type = POWER_EW; })
           )?
       )
