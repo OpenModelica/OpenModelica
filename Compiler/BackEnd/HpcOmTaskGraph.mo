@@ -1791,19 +1791,26 @@ author:Waurich TUD 2014-09"
   input list<Integer> nodes;
   input TaskGraph graph;
   output list<Integer> successors;
-protected
-  array<Boolean> alreadyVisited;
-  list<Boolean> check;
-  list<Integer> successors1, successors2;
 algorithm
-  alreadyVisited := arrayCreate(arrayLength(graph),false);
-  List.map2_0(nodes,Util.arrayUpdateIndexFirst,true,alreadyVisited); // dont use the except nodes
-  successors1 := List.flatten(List.map1(nodes,Util.arrayGetIndexFirst,graph));
-  check := List.map1(successors1,Util.arrayGetIndexFirst,alreadyVisited);  //check if it was already visited?
-  (_,successors1) := List.filterOnTrueSync(check,boolNot,successors1);
-  successors1 := List.unique(successors1);
-  //print("successors1_: "+&intLstString(successors1)+&"\n");
-  successors := getAllSuccessors2(successors1,graph,alreadyVisited,successors1);
+  successors := matchcontinue(nodes,graph)
+    local
+      array<Boolean> alreadyVisited;
+      list<Boolean> check;
+      list<Integer> successors1, successors2;
+    case(_,_)
+      equation
+        alreadyVisited = arrayCreate(arrayLength(graph),false);
+        List.map2_0(nodes,Util.arrayUpdateIndexFirst,true,alreadyVisited); // dont use the except nodes
+        successors1 = List.flatten(List.map1(nodes,Util.arrayGetIndexFirst,graph));
+        check = List.map1(successors1,Util.arrayGetIndexFirst,alreadyVisited);  //check if it was already visited?
+        (_,successors1) = List.filterOnTrueSync(check,boolNot,successors1);
+        successors1 = List.unique(successors1);
+      then getAllSuccessors2(successors1,graph,alreadyVisited,successors1);
+    else
+      equation
+        print("getAllSuccessors failed!\n");
+      then fail();
+  end matchcontinue;
 end getAllSuccessors;
 
 protected function getAllSuccessors2"gets all successors for the given nodes and repeats it for the successors until the end of the graph.
@@ -2255,6 +2262,7 @@ algorithm
         occurEquLst = List.filter1OnTrue(occurEquLst, intGt, 0);
         //print("getComponentsOfZeroCrossing: simEqs: " +& stringDelimitList(List.map(occurEquLst, intString), ",") +& "\n");
         tmpCompIdc = List.map1(occurEquLst, Util.arrayGetIndexFirst, iSimCodeEqCompMapping);
+        tmpCompIdc = List.filter1OnTrue(tmpCompIdc, intGt, 0);
         //print("getComponentsOfZeroCrossing: components: " +& stringDelimitList(List.map(tmpCompIdc, intString), ",") +& "\n");
       then tmpCompIdc;
     else then {};
