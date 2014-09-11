@@ -12859,14 +12859,14 @@ template daeExpTsub(Exp inExp, Context context, Text &preExp,
 ::=
   match inExp
   case TSUB(ix=1) then
-    let tuple_val = daeExp(exp, context, &preExp, &varDecls, simCode, useFlatArrayNotation) 
+    let tuple_val = daeExp(exp, context, &preExp, &varDecls, simCode, useFlatArrayNotation)
      'boost::get<0>(<%tuple_val%>.data)'
   case TSUB(exp=CALL(attr=CALL_ATTR(ty=T_TUPLE(tupleType=tys)))) then
     let v = tempDecl(expTypeArrayIf(listGet(tys,ix)), &varDecls)
     let additionalOutputs = List.restOrEmpty(tys) |> ty hasindex i1 fromindex 2 => if intEq(i1,ix) then ', &<%v%>' else ", NULL"
     let res = daeExpCallTuple(exp, additionalOutputs, context, &preExp, &varDecls, simCode, useFlatArrayNotation)
     let &preExp += '<%res%>/*test2*/;<%\n%>'
-    v 
+    v
   case TSUB(__) then
     error(sourceInfo(), '<%printExpStr(inExp)%>: TSUB only makes sense if the subscripted expression is a function call of tuple type')
 end daeExpTsub;

@@ -198,7 +198,7 @@ public:
 
   virtual void setDims(std::vector<size_t> v) {  }
   void setDims(size_t size1)  { }
-  
+
   typedef typename boost::array<T,size>::const_iterator                              const_iterator;
   typedef typename  boost::array<T,size>::iterator                                   iterator;
   iterator begin()
@@ -818,7 +818,7 @@ public:
     _multi_array.resize(v);
     _multi_array.reindex(1);
   }
-  
+
   virtual std::vector<size_t> getDims() const
   {
     const size_t* shape = _multi_array.shape();
