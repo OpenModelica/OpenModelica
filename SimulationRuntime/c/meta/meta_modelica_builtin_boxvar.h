@@ -61,6 +61,10 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_intStringChar,2,0) {(modelica_metatype)
 #define boxvar_intStringChar MMC_REFSTRUCTLIT(boxvar_lit_intStringChar)
 static const MMC_DEFSTRUCTLIT(boxvar_lit_intSub,2,0) {(modelica_metatype)boxptr_intSub,0}};
 #define boxvar_intSub MMC_REFSTRUCTLIT(boxvar_lit_intSub)
+static const MMC_DEFSTRUCTLIT(boxvar_lit_isNone,2,0) {(modelica_metatype)boxptr_isNone,0}};
+#define boxvar_isNone MMC_REFSTRUCTLIT(boxvar_lit_isNone)
+static const MMC_DEFSTRUCTLIT(boxvar_lit_isSome,2,0) {(modelica_metatype)boxptr_isSome,0}};
+#define boxvar_isSome MMC_REFSTRUCTLIT(boxvar_lit_isSome)
 static const MMC_DEFSTRUCTLIT(boxvar_lit_listAppend,2,0) {(modelica_metatype)boxptr_listAppend,0}};
 #define boxvar_listAppend MMC_REFSTRUCTLIT(boxvar_lit_listAppend)
 static const MMC_DEFSTRUCTLIT(boxvar_lit_listArray,2,0) {(modelica_metatype)boxptr_listArray,0}};

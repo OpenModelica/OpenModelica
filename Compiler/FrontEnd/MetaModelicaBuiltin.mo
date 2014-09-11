@@ -834,6 +834,12 @@ function isNone<A> "Returns true if the input is NONE()"
 external "builtin";
 end isNone;
 
+function isSome<A> "Returns true if the input is SOME()"
+  input Option<A> opt;
+  output Boolean some;
+external "builtin";
+end isSome;
+
 type NONE end NONE;
 type SOME end SOME;
 

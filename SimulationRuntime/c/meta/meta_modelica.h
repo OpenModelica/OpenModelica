@@ -179,6 +179,7 @@ typedef int mmc_switch_type;
 #define MMC_ARRAY_TAG             255
 #define MMC_STRLEN(x)             (MMC_HDRSTRLEN(MMC_GETHDR(x)))
 #define MMC_OPTIONNONE(x)         (0==MMC_HDRSLOTS(MMC_GETHDR(x)) ? 1 : 0)
+#define MMC_OPTIONSOME(x)         (0==MMC_HDRSLOTS(MMC_GETHDR(x)) ? 0 : 1)
 
 /*
  * adrpo: if a structure has pointers

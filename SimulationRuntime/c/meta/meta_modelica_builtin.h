@@ -100,6 +100,9 @@ extern modelica_integer listLength(modelica_metatype);
 #define listRest(X) MMC_CDR(X)
 #define listFirst(X) MMC_CAR(X)
 
+#define isNone(X) MMC_OPTIONNONE(X)
+#define isSome(X) MMC_OPTIONSOME(X)
+
 extern modelica_metatype boxptr_listNth(threadData_t*,modelica_metatype,modelica_metatype);
 extern modelica_metatype boxptr_listGet(threadData_t*,modelica_metatype,modelica_metatype);
 extern modelica_metatype boxptr_listDelete(threadData_t*,modelica_metatype,modelica_metatype);

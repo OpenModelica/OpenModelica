@@ -32,6 +32,8 @@ functions = [
 'intString',
 'intStringChar',
 'intSub',
+'isNone',
+'isSome',
 'listAppend',
 'listArray',
 'listDelete',
