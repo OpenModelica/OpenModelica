@@ -580,7 +580,7 @@ public function dimensionSizeExpHandleUnkown
   This function will change unknown dims to DAE.ICONST(-1).
   we use it to handle unknown dims in code generation. unknown dims
   are okay if the variable is a function input (it's just holds the slot
-  and will not be generated). Otherwise it's an error 
+  and will not be generated). Otherwise it's an error
   since it shouldn't have reached there."
   input DAE.Dimension dim;
   output DAE.Exp exp;
@@ -8543,7 +8543,7 @@ public function dimensionsKnownAndNonZero
   input list<DAE.Dimension> dims;
   output Boolean allKnown;
 algorithm
-  allKnown := Util.boolAndList(List.map(dims, dimensionKnownAndNonZero));  
+  allKnown := Util.boolAndList(List.map(dims, dimensionKnownAndNonZero));
 end dimensionsKnownAndNonZero;
 
 public function dimensionUnknownOrExp

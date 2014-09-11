@@ -2690,8 +2690,8 @@ package ComponentReference
 end ComponentReference;
 
 package Expression
-  
-  function subscriptConstants 
+
+  function subscriptConstants
     "returns true if all subscripts are known (i.e no cref) constant values (no slice or wholedim "
     input list<DAE.Subscript> inSubs;
     output Boolean areConstant;

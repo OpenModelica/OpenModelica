@@ -3969,7 +3969,7 @@ algorithm
   outDimension := match (inDimension)
     local
       Integer i;
-      
+
     // case (DAE.DIM_ENUM(size = i)) then DAE.DIM_INTEGER(i);
     case (DAE.DIM_BOOLEAN()) then DAE.DIM_INTEGER(2);
     else inDimension;

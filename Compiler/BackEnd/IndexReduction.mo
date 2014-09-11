@@ -3416,7 +3416,7 @@ algorithm
       equation
         crlst = ComponentReference.expandCref(name,false);
         /*
-        TODO: mahge: what is this supposed to do?. 
+        TODO: mahge: what is this supposed to do?.
         Why are even these dims needed separetely in BackendDAE.VAR
         They are already in the cref */
         /*

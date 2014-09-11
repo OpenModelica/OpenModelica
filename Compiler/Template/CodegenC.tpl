@@ -10397,8 +10397,8 @@ template dimension(Dimension d)
   case DAE.DIM_BOOLEAN(__) then '2'
   case DAE.DIM_ENUM(__) then size
   case DAE.DIM_EXP(exp=e) then dimensionExp(e)
-  case DAE.DIM_INTEGER(__) then 
-    if intEq(integer, -1) then 
+  case DAE.DIM_INTEGER(__) then
+    if intEq(integer, -1) then
       error(sourceInfo(),"Negeative dimension(unknown dimensions) may not be part of generated code. This is most likely an error on the part of OpenModelica. Please submit a detailed bug-report.")
     else
       integer

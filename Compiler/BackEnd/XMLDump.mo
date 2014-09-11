@@ -3317,7 +3317,7 @@ algorithm
         Print.printBuf(printExpStr(e1));
       then
         ();
-    case DAE.DIM_UNKNOWN() 
+    case DAE.DIM_UNKNOWN()
       equation
         Print.printBuf(":");
       then

@@ -1905,7 +1905,7 @@ algorithm
       SymbolTable st;
 
     case (ty, {}, _, _, _, _) then (inCache, ty, inST);
-            
+
     case (ty, DAE.DIM_UNKNOWN() :: rest_dims, dim_int :: bind_dims, _, _, st)
       equation
         dim = Expression.intDimension(dim_int);
@@ -1919,7 +1919,7 @@ algorithm
         (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
         (cache, DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(0)}, DAE.emptyTypeSource), st);
-        
+
     case (ty, DAE.DIM_INTEGER(dim_int) :: rest_dims, bind_dims, _, _, st)
       equation
         dim = DAE.DIM_INTEGER(dim_int);
@@ -1927,7 +1927,7 @@ algorithm
         (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
         (cache, DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource), st);
-        
+
     case (ty, DAE.DIM_BOOLEAN() :: rest_dims, bind_dims, _, _, st)
       equation
         dim = DAE.DIM_INTEGER(2);
@@ -1935,7 +1935,7 @@ algorithm
         (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
         (cache, DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource), st);
-        
+
     case (ty, DAE.DIM_ENUM(size = dim_int) :: rest_dims, bind_dims, _, _, st)
       equation
         dim = DAE.DIM_INTEGER(dim_int);
@@ -1943,7 +1943,7 @@ algorithm
         (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
         (cache, DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource), st);
-        
+
     case (ty, DAE.DIM_EXP(exp = dim_exp) :: rest_dims, bind_dims, _, _, st)
       equation
         (cache, dim_val, st) = cevalExp(dim_exp, inCache, inEnv, st);

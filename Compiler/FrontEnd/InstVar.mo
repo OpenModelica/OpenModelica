@@ -813,11 +813,11 @@ algorithm
       equation
         true = Config.splitArrays();
         false = ClassInf.isFunction(ci_state);
-        
+
         // Try to deduce the dimension from the modifier.
         dim2 = InstUtil.instWholeDimFromMod(dim, mod, n, info);
         inst_dims_1 = List.appendLastList(inst_dims, {dim2});
-        
+
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instArray(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf, 1, dim2, dims, idxs, inst_dims_1, impl, comment,info,graph, csets);
         ty_1 = InstUtil.liftNonBasicTypes(ty,dim2); // Do not lift types extending basic type, they are already array types.
@@ -841,7 +841,7 @@ algorithm
         dim2 = InstUtil.instWholeDimFromMod(dim, mod, n, info);
         inst_dims_1 = List.appendLastList(inst_dims, {dim2});
         dime2 = Expression.dimensionSubscript(dim2);
-        
+
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instVar2(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,dime2::idxs,inst_dims_1,impl,comment,info,graph,csets);
         ty_1 = InstUtil.liftNonBasicTypes(ty,dim2); // Do not lift types extending basic type, they are already array types.
@@ -856,7 +856,7 @@ algorithm
 
         // dim = InstUtil.evalEnumAndBoolDim(dim);
         inst_dims_1 = List.appendLastList(inst_dims, {dim});
-        
+
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instArray(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf, 1, dim, dims, idxs, inst_dims_1, impl, comment,info,graph,csets);
         ty_1 = InstUtil.liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
@@ -875,7 +875,7 @@ algorithm
         */
         inst_dims_1 = List.appendLastList(inst_dims, {dim});
         dime = Expression.dimensionSubscript(dim);
-        
+
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instVar2(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,dime::idxs,inst_dims_1,impl,comment,info,graph,csets);
         // Type lifting is done in the "scalar" case
