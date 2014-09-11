@@ -27,7 +27,8 @@ private:
     ITERATIONSTATUS _iterationStatus;
     ILinSolverSettings *_umfpackSettings;
     IAlgLoop *_algLoop;
-    sparse_matrix * _jac;
+    sparse_matrix * _jacs;
+    double * _jacd;
     double * _rhs;
     double * _x;
     bool _firstuse;

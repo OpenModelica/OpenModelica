@@ -62,8 +62,10 @@ public:
   virtual bool isLinearTearing()=0;
   virtual bool isConsistent() = 0;
 
+
   virtual bool getUseSparseFormat() = 0;
   virtual void setUseSparseFormat(bool value) = 0;
+  virtual float queryDensity() = 0;
   /*/// Fügt das übergebene Objekt als Across-Kante hinzu
   void addAcrossEdge(IObject& new_obj);
 

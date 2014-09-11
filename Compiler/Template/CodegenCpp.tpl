@@ -1809,6 +1809,7 @@ match eq
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then algloopResiduals(simCode,eq)%>
    <%initAlgloop(simCode,eq,context,useFlatArrayNotation)%>
    <%initAlgloopTemplate(simCode,eq,context,useFlatArrayNotation)%>
+   <%queryDensity(simCode,eq,context, useFlatArrayNotation)%>
    <%updateAlgloop(simCode,eq,context)%>
    <%upateAlgloopNonLinear(simCode,eq,context, useFlatArrayNotation)%>
    <%upateAlgloopLinear(simCode,eq,context, useFlatArrayNotation)%>
@@ -1819,6 +1820,33 @@ match eq
 
     >>
 end algloopCppFile;
+
+template queryDensity(SimCode simCode, SimEqSystem eqn, Context context,Boolean useFlatArrayNotation)
+::=
+match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+  	let modelname = lastIdentOfPath(modelInfo.name)
+  	match eqn
+  		case eq as SES_NONLINEAR(__) then
+ 			<<
+			
+				float <%modelname%>Algloop<%index%>::queryDensity()
+				{
+					return -1.;
+				}
+				
+			>> 			
+  		case eq as SES_LINEAR(__) then
+			let size=listLength(simJac)
+			<<
+			
+				float <%modelname%>Algloop<%index%>::queryDensity()
+				{
+					return 100.*<%size%>./_dimAEq/_dimAEq;
+				}
+				
+			>>
+end queryDensity;
 
 template updateAlgloop(SimCode simCode,SimEqSystem eqn,Context context)
 ::=
@@ -3780,6 +3808,7 @@ case SES_NONLINEAR(__) then
       let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
       '<%preExp%>(*__A)(<%row%>+1,<%col%>+1)=<%expPart%>;'
   ;separator="\n")
+	
 
  let bvector =  (beqs |> exp hasindex i0 fromindex 1 =>
 
@@ -3788,7 +3817,7 @@ case SES_NONLINEAR(__) then
   ;separator="\n")
 
  <<
-      <%varDecls%>
+ 	  <%varDecls%>
       <%Amatrix%>
       <%bvector%>
   >>
@@ -4380,7 +4409,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
       bool getUseSparseFormat();
       void setUseSparseFormat(bool value);
-
+	  float queryDensity();
+	  
   protected:
    <% match eq
     case SES_LINEAR(__) then
