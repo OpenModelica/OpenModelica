@@ -196,14 +196,9 @@ public:
      return 1;
   }
 
-  virtual void setDims(std::vector<size_t> v)
-  {
-
-  }
-  void setDims(size_t size1)
-  {
-
-  }
+  virtual void setDims(std::vector<size_t> v) {  }
+  void setDims(size_t size1)  { }
+  
   typedef typename boost::array<T,size>::const_iterator                              const_iterator;
   typedef typename  boost::array<T,size>::iterator                                   iterator;
   iterator begin()
@@ -344,15 +339,8 @@ public:
   {
      return _real_array.data();
   }
-  virtual void setDims(std::vector<size_t> v)
-  {
-
-  }
-
-  void setDims(size_t i,size_t j)
-  {
-
-  }
+  virtual void setDims(std::vector<size_t> v) {  }
+  void setDims(size_t i,size_t j)  {  }
 private:
   //boost::array< boost::array<T, size2>, size1> _real_array;
   boost::array<T, size2 * size1> _real_array;
@@ -446,10 +434,8 @@ public:
      return 2;
   }
 
-  virtual void setDims(std::vector<size_t> v)
-  {
-
-  }
+  virtual void setDims(std::vector<size_t> v) { }
+  void setDims(size_t i,size_t j,size_t k)  { }
    /*
   access to data
   */
@@ -832,7 +818,7 @@ public:
     _multi_array.resize(v);
     _multi_array.reindex(1);
   }
-
+  
   virtual std::vector<size_t> getDims() const
   {
     const size_t* shape = _multi_array.shape();

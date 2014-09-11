@@ -8356,7 +8356,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as ASUB(__)            then daeExpAsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
   case e as MATRIX(__)          then daeExpMatrix(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
   case e as RANGE(__)           then daeExpRange(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
-  case e as TSUB(__)            then "Tsub not supported yet"
+  case e as TSUB(__)            then daeExpTsub(e, context,  &preExp, &varDecls, simCode, useFlatArrayNotation )
   case e as REDUCTION(__)       then daeExpReduction(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
   case e as ARRAY(__)           then daeExpArray(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
   case e as SIZE(__)            then daeExpSize(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
@@ -9068,7 +9068,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(path=IDENT(name="max"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode,useFlatArrayNotation)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode,useFlatArrayNotation)
-    'int_max((int)<%var1%>,(int)<%var2%>)'
+    'max(<%var1%>,<%var2%>)'
 
   case CALL(attr=CALL_ATTR(ty = T_REAL(__)),
             path=IDENT(name="min"), expLst={e1,e2}) then
@@ -9079,7 +9079,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(path=IDENT(name="min"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode,useFlatArrayNotation)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode,useFlatArrayNotation)
-    'int_min((int)<%var1%>,(int)<%var2%>)'
+    'min(<%var1%>,<%var2%>)'
 
   case CALL(path=IDENT(name="abs"), expLst={e1}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode,useFlatArrayNotation)
@@ -10817,6 +10817,8 @@ template literalExpConstImpl(Exp lit, Integer index) "These should all be declar
 
   else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
 end literalExpConstImpl;
+
+
 
 /*
 template timeEventcondition(list<SampleCondition> sampleConditions,Text &varDecls /*BUFP*/,SimCode simCode)
@@ -12850,5 +12852,57 @@ template subscriptToCStrWithoutIndexOperator(Subscript subscript)
       end match
   else "UNKNOWN_SUBSCRIPT"
 end subscriptToCStrWithoutIndexOperator;
+
+template daeExpTsub(Exp inExp, Context context, Text &preExp,
+                    Text &varDecls,SimCode simCode, Boolean useFlatArrayNotation)
+ "Generates code for an tsub expression."
+::=
+  match inExp
+  case TSUB(ix=1) then
+    let tuple_val = daeExp(exp, context, &preExp, &varDecls, simCode, useFlatArrayNotation) 
+     'boost::get<0>(<%tuple_val%>.data)'
+  case TSUB(exp=CALL(attr=CALL_ATTR(ty=T_TUPLE(tupleType=tys)))) then
+    let v = tempDecl(expTypeArrayIf(listGet(tys,ix)), &varDecls)
+    let additionalOutputs = List.restOrEmpty(tys) |> ty hasindex i1 fromindex 2 => if intEq(i1,ix) then ', &<%v%>' else ", NULL"
+    let res = daeExpCallTuple(exp, additionalOutputs, context, &preExp, &varDecls, simCode, useFlatArrayNotation)
+    let &preExp += '<%res%>/*test2*/;<%\n%>'
+    v 
+  case TSUB(__) then
+    error(sourceInfo(), '<%printExpStr(inExp)%>: TSUB only makes sense if the subscripted expression is a function call of tuple type')
+end daeExpTsub;
+
+template daeExpCallTuple(Exp call, Text additionalOutputs /* arguments 2..N */, Context context, Text &preExp, Text &varDecls,SimCode simCode, Boolean useFlatArrayNotation)
+::=
+  match call
+  case exp as CALL(attr=attr as CALL_ATTR(__)) then
+    let argStr = if boolOr(attr.builtin,isParallelFunctionContext(context))
+                   then (expLst |> exp => '<%daeExp(exp, context, &preExp, &varDecls, simCode, useFlatArrayNotation)%>' ;separator=", ")
+                 else ("threadData" + (expLst |> exp => (", " + daeExp(exp, context, &preExp, &varDecls, simCode, useFlatArrayNotation))))
+    if attr.isFunctionPointerCall
+      then
+        let typeCast1 = generateTypeCast(attr.ty, expLst, true,preExp, varDecls,context, simCode, useFlatArrayNotation)
+        let typeCast2 = generateTypeCast(attr.ty, expLst, false, preExp, varDecls,context,simCode, useFlatArrayNotation)
+        let name = '_<%underscorePath(path)%>'
+        let func = '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%name%>), 1)))'
+        let closure = '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%name%>), 2)))'
+        let argStrPointer = ('threadData, <%closure%>' + (expLst |> exp => (", " + daeExp(exp, context, &preExp, &varDecls,simCode, useFlatArrayNotation))))
+        //'<%name%>(<%argStr%><%additionalOutputs%>)'
+        '/*Closure?*/<%closure%> ? (<%typeCast1%> <%func%>) (<%argStrPointer%><%additionalOutputs%>) : (<%typeCast2%> <%func%>) (<%argStr%><%additionalOutputs%>)'
+      else
+        let name = '<% if attr.builtin then "" else "omc_" %><%underscorePath(path)%>'
+        '<%name%>(<%argStr%><%additionalOutputs%>)'
+end daeExpCallTuple;
+
+template generateTypeCast(Type ty, list<DAE.Exp> es, Boolean isClosure, Text &preExp /*BUFP*/,
+                     Text &varDecls, Context context,SimCode simCode, Boolean useFlatArrayNotation)
+::=
+  let ret = (match ty
+    case T_NORETCALL(__) then "void"
+    else "modelica_metatype")
+  let inputs = es |> e => ', <%expTypeFromExpArrayIf(e,context, &preExp ,&varDecls ,simCode, useFlatArrayNotation)%>'
+  let outputs = match ty
+    case T_TUPLE(tupleType=_::tys) then (tys |> t => ', <%expTypeArrayIf(t)%>')
+  '(<%ret%>(*)(threadData_t*<%if isClosure then ", modelica_metatype"%><%inputs%><%outputs%>))'
+end generateTypeCast;
 
 end CodegenCpp;
