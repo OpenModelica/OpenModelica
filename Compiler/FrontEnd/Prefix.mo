@@ -70,6 +70,7 @@ uniontype ComponentPrefix
  NOTE: Component prefixes are stored in inverse order c.b[2].a!"
   record PRE
     String prefix "prefix name" ;
+    list<DAE.Dimension> dimensions "dimensions" ;
     list<DAE.Subscript> subscripts "subscripts" ;
     ComponentPrefix next "next prefix" ;
     ClassInf.State ci_state "to be able to at least partially fill in type information properly for DAE.VAR";

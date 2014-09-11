@@ -60,7 +60,7 @@ protected import Types;
 
 protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
-protected type InstDims = list<list<DAE.Subscript>>;
+protected type InstDims = list<list<DAE.Dimension>>;
 
 public function daeDeclare
 "Given a global component name, a type, and a set of attributes, this function declares a component for the DAE result.
@@ -75,7 +75,7 @@ public function daeDeclare
   input SCode.Attributes inAttributes;
   input SCode.Visibility visibility;
   input Option<DAE.Exp> inBinding;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inVarAttr;
   input Option<SCode.Comment> inComment;
@@ -144,7 +144,7 @@ protected function daeDeclare2
   input DAE.VarParallelism inParallelism;
   input DAE.VarVisibility protection;
   input Option<DAE.Exp> inExpExpOption;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inAttr;
   input Option<SCode.Comment> inComment;
@@ -173,7 +173,7 @@ algorithm
       String s;
       DAE.Type ty,tp;
       DAE.VarVisibility prot;
-      list<DAE.Subscript> finst_dims;
+      list<DAE.Dimension> finst_dims;
       Absyn.Path path;
       DAE.Type tty;
       Absyn.Info info;

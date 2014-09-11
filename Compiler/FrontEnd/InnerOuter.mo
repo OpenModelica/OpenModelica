@@ -1095,7 +1095,7 @@ public function switchInnerToOuterAndPrefix
       DAE.VarKind vk;
       DAE.Type t;
       Option<DAE.Exp> e;
-      list<DAE.Subscript> id;
+      list<DAE.Dimension> id;
       DAE.ConnectorType ct;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -1169,7 +1169,7 @@ public function prefixOuterDaeVars
       DAE.VarKind vk;
       DAE.Type t;
       Option<DAE.Exp> e;
-      list<DAE.Subscript> id;
+      list<DAE.Dimension> id;
       DAE.ConnectorType ct;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;

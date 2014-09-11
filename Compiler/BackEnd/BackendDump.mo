@@ -2467,7 +2467,7 @@ algorithm
   outStr := DAEDump.dumpDirectionStr(dir) +& ComponentReference.printComponentRefStr(cr) +& ":"
             +& kindString(kind) +& "(" +& connectorTypeString(ct) +& attributesString(dae_var_attr)
             +& ") " +& optExpressionString(bindExp,"") +& DAEDump.dumpCommentAnnotationStr(comment)
-            +& stringDelimitList(paths_lst, ", ") +& " type: " +& dumpTypeStr(var_type) +& ComponentReference.printComponentRef2Str("", arrayDim);
+            +& stringDelimitList(paths_lst, ", ") +& " type: " +& dumpTypeStr(var_type);
 end varString;
 
 public function dumpKind

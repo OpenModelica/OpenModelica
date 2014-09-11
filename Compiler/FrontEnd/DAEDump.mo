@@ -2492,7 +2492,7 @@ algorithm
     // dims give something
     case (_, true)
      equation
-       str = "[" +& stringDelimitList(List.map(dims, ExpressionDump.printSubscriptStr), ", ") +& "]";
+       str = "[" +& stringDelimitList(List.map(dims, ExpressionDump.dimensionString), ", ") +& "]";
      then
        str;
   end matchcontinue;

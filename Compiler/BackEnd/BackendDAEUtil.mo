@@ -7908,7 +7908,7 @@ algorithm
     local
       DAE.Exp e1;
       DAE.ComponentRef cref;
-      list<DAE.Subscript> instdims;
+      list<DAE.Dimension> instdims;
       Option<DAE.VariableAttributes> attr;
       Type_a ext_arg_1,ext_arg_2;
       VarKind varKind;
@@ -7925,15 +7925,15 @@ algorithm
     case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,source,attr,comment,ct)),_,_)
       equation
         (e1,ext_arg_1) = func(e1,inTypeA);
-        (instdims,ext_arg_2) = List.map1Fold(instdims,traverseBackendDAEExpsSubscriptWithUpdate,func,ext_arg_1);
-        (attr,ext_arg_2) = traverseBackendDAEVarAttr(attr,func,ext_arg_2);
+        // (instdims,ext_arg_2) = List.map1Fold(instdims,traverseBackendDAEExpsSubscriptWithUpdate,func,ext_arg_1);
+        (attr,ext_arg_2) = traverseBackendDAEVarAttr(attr,func,ext_arg_1);
       then
         (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,source,attr,comment,ct)),ext_arg_2);
 
     case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,source,attr,comment,ct)),_,_)
       equation
-        (instdims,ext_arg_2) = List.map1Fold(instdims,traverseBackendDAEExpsSubscriptWithUpdate,func,inTypeA);
-        (attr,ext_arg_2) = traverseBackendDAEVarAttr(attr,func,ext_arg_2);
+        // (instdims,ext_arg_2) = List.map1Fold(instdims,traverseBackendDAEExpsSubscriptWithUpdate,func,inTypeA);
+        (attr,ext_arg_2) = traverseBackendDAEVarAttr(attr,func,inTypeA);
       then
         (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,source,attr,comment,ct)),ext_arg_2);
 

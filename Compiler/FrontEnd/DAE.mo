@@ -49,7 +49,7 @@ public import Values;
 
 public type Ident = String;
 
-public type InstDims = list<Subscript>;
+public type InstDims = list<Dimension>;
 
 public type StartValue = Option<Exp>;
 

@@ -655,7 +655,7 @@ protected function lowerDynamicVar
 algorithm
   (outVar) := match (inElement, functionTree)
     local
-      list<DAE.Subscript> dims;
+      list<DAE.Dimension> dims;
       DAE.ComponentRef name;
       BackendDAE.VarKind kind_1;
       DAE.VarKind kind;
@@ -706,7 +706,7 @@ protected function lowerKnownVar
 algorithm
   (outVar,oInlineHT,assrtEqOut) := matchcontinue (inElement, functionTree, iInlineHT)
     local
-      list<DAE.Subscript> dims;
+      list<DAE.Dimension> dims;
       DAE.ComponentRef name;
       BackendDAE.VarKind kind_1;
       Option<DAE.Exp> bind, bind1;
@@ -1094,7 +1094,7 @@ algorithm
   outVar:=
   match (inElement, functionTree)
     local
-      list<DAE.Subscript> dims;
+      list<DAE.Dimension> dims;
       DAE.ComponentRef name;
       BackendDAE.VarKind kind_1;
       Option<DAE.Exp> bind;

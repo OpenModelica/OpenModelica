@@ -100,7 +100,7 @@ protected type Ident = DAE.Ident "an identifier";
 
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
-protected type InstDims = list<list<DAE.Subscript>>
+protected type InstDims = list<list<DAE.Dimension>>
 "Changed from list<Subscript> to list<list<Subscript>>. One list for each scope.
  This so when instantiating classes extending from primitive types can collect the dimension of -one- surrounding scope to create type.
  E.g. RealInput p[3]; gives the list {3} for this scope and other lists for outer (in instance hierachy) scopes";
@@ -597,7 +597,7 @@ public function instClass
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inBoolean;
   input InstTypes.CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -740,7 +740,7 @@ protected function instClassBasictype
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImplicit;
   input InstTypes.CallingScope inCallingScope;
   input Connect.Sets inSets;
@@ -820,7 +820,7 @@ public function instClassIn "
   input ClassInf.State inState;
   input SCode.Element inClass;
   input SCode.Visibility inVisibility;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean implicitInstantiation;
   input InstTypes.CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -919,7 +919,7 @@ public function instClassIn2
   input ClassInf.State inState;
   input SCode.Element inClass;
   input SCode.Visibility inVisibility;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean implicitInstantiation;
   input InstTypes.CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -1103,7 +1103,7 @@ public function instClassIn_dispatch
   input ClassInf.State inState;
   input SCode.Element inClass;
   input SCode.Visibility inVisibility;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean implicitInstantiation;
   input InstTypes.CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -1278,10 +1278,10 @@ protected function liftNonExpType
 algorithm
   outType := match(inType, inInstDims, inSplitArrays)
     local
-      list<DAE.Subscript> subs;
+      list<DAE.Dimension> dims;
 
-    case (_, subs :: _, false)
-      then Types.liftArraySubscriptList(inType, subs);
+    case (_, dims :: _, false)
+      then Types.liftArrayListDims(inType, dims);
 
     else inType;
 
@@ -1607,7 +1607,7 @@ end instBuiltinAttribute;
 
 protected function arrayBasictypeBaseclass
 "author: PA"
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input DAE.Type inType;
   output Option<DAE.Type> outOptType;
 algorithm
@@ -1620,7 +1620,7 @@ algorithm
 
     else
       equation
-        dims = Expression.subscriptDimensions(List.last(inInstDims));
+        dims = List.last(inInstDims);
         ty = Expression.liftArrayLeftList(inType, dims);
       then
         SOME(ty);
@@ -1640,7 +1640,7 @@ public function partialInstClassIn
   input ClassInf.State inState;
   input SCode.Element inClass;
   input SCode.Visibility inVisibility;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Integer numIter;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -1782,7 +1782,7 @@ protected function partialInstClassIn_dispatch
   input ClassInf.State inState;
   input SCode.Element inClass;
   input SCode.Visibility inVisibility;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean partialInst;
   input Integer numIter;
   output Env.Cache outCache;
@@ -1893,7 +1893,7 @@ public function instClassdef "
   input SCode.Visibility inVisibility;
   input SCode.Partial inPartialPrefix;
   input SCode.Encapsulated inEncapsulatedPrefix;
-  input list<list<DAE.Subscript>>inInstDims9;
+  input list<list<DAE.Dimension>> inInstDims9;
   input Boolean inBoolean10;
   input InstTypes.CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -1933,7 +1933,7 @@ type"
   input SCode.ClassDef inClassDef6;
   input SCode.Restriction inRestriction7;
   input SCode.Visibility inVisibility;
-  input list<list<DAE.Subscript>>inInstDims9;
+  input list<list<DAE.Dimension>> inInstDims9;
   input Boolean inBoolean10;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
@@ -2066,7 +2066,7 @@ protected function instClassdef2 "
   input SCode.Visibility inVisibility;
   input SCode.Partial inPartialPrefix;
   input SCode.Encapsulated inEncapsulatedPrefix;
-  input list<list<DAE.Subscript>>inInstDims9;
+  input list<list<DAE.Dimension>> inInstDims9;
   input Boolean inBoolean10;
   input InstTypes.CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -2418,8 +2418,9 @@ algorithm
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
         (cache,dims) = InstUtil.elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl,NONE(),true,pre,info,inst_dims) "owncref not valid here" ;
-        inst_dims2 = InstUtil.instDimExpLst(dims, impl);
-        inst_dims_1 = List.appendLastList(inst_dims, inst_dims2);
+        // inst_dims2 = InstUtil.instDimExpLst(dims, impl);
+        inst_dims_1 = List.appendLastList(inst_dims, dims);
+        
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis,
           inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope.";
         ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations";
@@ -2457,8 +2458,8 @@ algorithm
 
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
         (cache,dims) = InstUtil.elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl, NONE(), true, pre, info, inst_dims) "owncref not valid here" ;
-        inst_dims2 = InstUtil.instDimExpLst(dims, impl);
-        inst_dims_1 = List.appendLastList(inst_dims, inst_dims2);
+        // inst_dims2 = InstUtil.instDimExpLst(dims, impl);
+        inst_dims_1 = List.appendLastList(inst_dims, dims);
 
         adno = Absyn.getArrayDimOptAsList(ad);
         // cenv_2 = Env.mergeEnv(cenv_2, env, "$derived_" +& cn2, c, Env.M(pre, cn2, adno, mods_1, parentEnv, inst_dims_1));
@@ -2560,8 +2561,8 @@ algorithm
 
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
         (cache,dims) = InstUtil.elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl, NONE(), true, pre, info, inst_dims) "owncref not valid here" ;
-        inst_dims2 = InstUtil.instDimExpLst(dims, impl);
-        inst_dims_1 = List.appendLastList(inst_dims, inst_dims2);
+        // inst_dims2 = InstUtil.instDimExpLst(dims, impl);
+        inst_dims_1 = List.appendLastList(inst_dims, dims);
 
         adno = Absyn.getArrayDimOptAsList(ad);
         //cenv_2 = Env.mergeEnv(cenv_2, env, "$derived_" +& cn2, c, Env.M(pre, className, adno, mods_1, parentEnv, inst_dims_1));
@@ -2762,7 +2763,7 @@ protected function instClassDefHelper
   input InnerOuter.InstHierarchy inIH;
   input list<Absyn.TypeSpec> inSpecs;
   input Prefix.Prefix inPre;
-  input list<list<DAE.Subscript>>inDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImpl;
   input list<DAE.Type> accTypes;
   input Connect.Sets inSets;
@@ -2774,7 +2775,7 @@ protected function instClassDefHelper
   output Option<SCode.Attributes> outAttr;
 algorithm
   (outCache,outEnv,outIH,outType,outSets,outAttr) :=
-  matchcontinue (inCache,inEnv,inIH,inSpecs,inPre,inDims,inImpl,accTypes,inSets)
+  matchcontinue (inCache,inEnv,inIH,inSpecs,inPre,inInstDims,inImpl,accTypes,inSets)
     local
       Env.Cache cache;
       Env.Env env,cenv;
@@ -2850,7 +2851,7 @@ protected function instBasictypeBaseclass
   input list<SCode.Element> inSCodeElementLst2;
   input list<SCode.Element> inSCodeElementLst3;
   input DAE.Mod inMod4;
-  input list<list<DAE.Subscript>>inInstDims5;
+  input list<list<DAE.Dimension>> inInstDims5;
   input String className;
   input Absyn.Info info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
@@ -2946,7 +2947,7 @@ Handles the fail case rollbacks/deleteCheckpoint of errors."
   input list<SCode.Element> inSCodeElementLst2;
   input list<SCode.Element> inSCodeElementLst3;
   input DAE.Mod inMod4;
-  input list<list<DAE.Subscript>>inInstDims5;
+  input list<list<DAE.Dimension>> inInstDims5;
   input String className;
   input Absyn.Info info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
@@ -3007,7 +3008,7 @@ protected function partialInstClassdef
   input SCode.Element inClass "the class this definition comes from";
   input SCode.ClassDef inClassDef;
   input SCode.Visibility inVisibility;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Integer numIter;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -3039,7 +3040,7 @@ algorithm
       Env.Cache cache;
       InstanceHierarchy ih;
       Option<SCode.Comment> cmt;
-      list<DAE.Subscript> inst_dims2;
+      list<DAE.Dimension> inst_dims2;
       DAE.Dimensions dims;
       Option<DAE.EqMod> eq;
       Boolean isPartialInst;
@@ -3135,8 +3136,8 @@ algorithm
 
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
         (cache,dims) = InstUtil.elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, false, NONE(), true, pre, info, inst_dims) "owncref not valid here" ;
-        inst_dims2 = InstUtil.instDimExpLst(dims, false);
-        _ = List.appendLastList(inst_dims, inst_dims2);
+        // inst_dims2 = InstUtil.instDimExpLst(dims, false);
+        _ = List.appendLastList(inst_dims, dims);
 
         adno = Absyn.getArrayDimOptAsList(ad);
         // cenv_2 = Env.mergeEnv(cenv_2, env, "$derived_" +& cn2, c, Env.M(pre, cn2, adno, mods_1, parentEnv, inst_dims));
@@ -3239,8 +3240,8 @@ algorithm
 
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
         (cache,dims) = InstUtil.elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, false, NONE(), true, pre, info, inst_dims) "owncref not valid here" ;
-        inst_dims2 = InstUtil.instDimExpLst(dims, false);
-        inst_dims_1 = List.appendLastList(inst_dims, inst_dims2);
+        // inst_dims2 = InstUtil.instDimExpLst(dims, false);
+        inst_dims_1 = List.appendLastList(inst_dims, dims);
 
         adno = Absyn.getArrayDimOptAsList(ad);
         // cenv_2 = Env.mergeEnv(cenv_2, env, "$derived_" +& cn2, c, Env.M(pre, className, adno, mods_1, parentEnv, inst_dims_1));
@@ -3275,7 +3276,7 @@ public function instElementList
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input list<tuple<SCode.Element, DAE.Mod>> inElements;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImplInst;
   input InstTypes.CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -3342,7 +3343,7 @@ protected function instElementList2
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input list<tuple<SCode.Element, DAE.Mod>> inElements;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImplicit;
   input InstTypes.CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -3420,7 +3421,7 @@ public function instElement2
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input tuple<SCode.Element, DAE.Mod> inElement;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImplicit;
   input InstTypes.CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -3534,7 +3535,7 @@ public function instElement "
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input tuple<SCode.Element, DAE.Mod> inElement;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImplicit;
   input InstTypes.CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -3893,7 +3894,7 @@ algorithm
         // (cache, env, ih, store, dae, csets, ci_state, vars, graph) = instElement(inCache, inEnv, inIH, inUnitStore, inMod, inPrefix, inState, inElement, inInstDims, inImplicit, inCallingScope, inGraph, inSets);
         s = Absyn.pathString(t);
         scope_str = Env.printEnvPathStr(env);
-        pre = PrefixUtil.prefixAdd(name, {}, pre, vt, ci_state);
+        pre = PrefixUtil.prefixAdd(name, {}, {}, pre, vt, ci_state);
         ns = PrefixUtil.printPrefixStrIgnoreNoPre(pre);
         Error.addSourceMessage(Error.LOOKUP_ERROR_COMPNAME, {s, scope_str, ns}, info);
         true = Flags.isSet(Flags.FAILTRACE);
@@ -4787,7 +4788,7 @@ public function instClassDecl
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -5374,7 +5375,7 @@ protected function removeSelfReferenceAndUpdate
   input SCode.Attributes iattr;
   input SCode.Prefixes inPrefixes;
   input Boolean impl;
-  input list<list<DAE.Subscript>>inst_dims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Prefix.Prefix pre;
   input DAE.Mod mods;
   input SCode.Mod scodeMod;
@@ -5386,7 +5387,7 @@ protected function removeSelfReferenceAndUpdate
   output list<Absyn.ComponentRef> o1;
 algorithm
   (outCache,outEnv,outIH,outStore,o1) :=
-  matchcontinue(inCache,inEnv,inIH,inStore,inRefs,inRef,inPath,inState,iattr,inPrefixes,impl,inst_dims,pre,mods,scodeMod,info)
+  matchcontinue(inCache,inEnv,inIH,inStore,inRefs,inRef,inPath,inState,iattr,inPrefixes,impl,inInstDims,pre,mods,scodeMod,info)
     local
       Absyn.Path sty;
       Absyn.ComponentRef c1;
@@ -5406,6 +5407,7 @@ algorithm
       SCode.ConnectorType ct;
       SCode.Attributes attr;
       DAE.Dimensions dims;
+      InstDims inst_dims;
       DAE.Var new_var;
       InstanceHierarchy ih;
       Absyn.InnerOuter io;
@@ -5426,7 +5428,7 @@ algorithm
     case(cache,env,ih,store,cl1,c1 as Absyn.CREF_IDENT(name = n),sty,state,
          (attr as SCode.ATTR(arrayDims = ad, connectorType = ct,
                              parallelism= prl1, variability = var1, direction = dir)),
-         _,_,_,_,_,_,_)
+         _,_,inst_dims,_,_,_,_)
       equation
         ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = InstUtil.removeCrefFromCrefs(cl1, c1);
@@ -5465,7 +5467,7 @@ algorithm
     case(cache,env,ih,store,cl1,c1 as Absyn.CREF_IDENT(name = n),sty,state,
          (attr as SCode.ATTR(arrayDims = ad, connectorType = ct,
                              parallelism= prl1, variability = var1, direction = dir)),
-         _,_,_,_,_,_,_)
+         _,_,inst_dims,_,_,_,_)
       equation
         ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = InstUtil.removeCrefFromCrefs(cl1, c1);
@@ -5504,7 +5506,7 @@ algorithm
     case(cache,env,ih,store,cl1,c1 as Absyn.CREF_IDENT(name = n),sty,state,
          (attr as SCode.ATTR(arrayDims = ad, connectorType = ct,
                              parallelism= prl1, variability = var1, direction = dir)),
-         _,_,_,_,_,_,_)
+         _,_,inst_dims,_,_,_,_)
       equation
         ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = InstUtil.removeCrefFromCrefs(cl1, c1);
@@ -5543,7 +5545,7 @@ algorithm
     case(cache,env,ih,store,cl1,c1 as Absyn.CREF_IDENT(name = n),sty,state,
          (attr as SCode.ATTR(arrayDims = ad, connectorType = ct,
                              parallelism= prl1, variability = var1, direction = dir)),
-         _,_,_,_,_,_,_)
+         _,_,inst_dims,_,_,_,_)
       equation
         ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = InstUtil.removeCrefFromCrefs(cl1, c1);

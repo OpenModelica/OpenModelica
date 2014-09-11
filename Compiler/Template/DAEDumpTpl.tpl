@@ -536,10 +536,10 @@ match c
     >>
 end dumpCref;
 
-template dumpTypeDimensions(list<Subscript> subscriptLst)
+template dumpTypeDimensions(list<Dimension> dimensionLst)
 ::=
-  if subscriptLst then
-    let sub_str = (subscriptLst |> s => dumpSubscript(s) ;separator=", ")
+  if dimensionLst then
+    let sub_str = (dimensionLst |> s => dumpDimension(s) ;separator=", ")
     '[<%sub_str%>]'
 end dumpTypeDimensions;
 

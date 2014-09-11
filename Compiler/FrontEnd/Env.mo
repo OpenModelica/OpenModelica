@@ -170,7 +170,7 @@ public uniontype Modification
     Absyn.ArrayDim d "the array dimensions of the component or class generating this scope";
     DAE.Mod m "the modifier sent down";
     Env e "the environment from where mod was sent down";
-    list<list<DAE.Subscript>> i "the inst dims";
+    list<list<DAE.Dimension>> i "the inst dims";
   end M;
 end Modification;
 

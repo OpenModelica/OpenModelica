@@ -122,20 +122,20 @@ algorithm
   outIntegers := List.map(inSubscripts, subscriptInt);
 end subscriptsInt;
 
-public function subscriptIsZero
-  input DAE.Subscript inSubscript;
+public function dimensionIsZero
+  input DAE.Dimension inDimension;
   output Boolean outIsZero;
 algorithm
-  outIsZero := matchcontinue(inSubscript)
+  outIsZero := matchcontinue(inDimension)
     case _
       equation
-        true = 0 == subscriptInt(inSubscript);
+        true = 0 == dimensionSize(inDimension);
       then
         true;
 
     else false;
   end matchcontinue;
-end subscriptIsZero;
+end dimensionIsZero;
 
 public function unelabExp
 "Transform an DAE.Exp into Absyn.Expression.
@@ -557,7 +557,9 @@ algorithm
 end liftArrayR;
 
 public function dimensionSizeExp
-  "Converts a dimension to an expression."
+  "Converts (extracts) a dimension to an expression.
+  This function will fail if dimension is unknown. i.e. DIM_UNKNOWN.
+  If you want to(kind of) handle unknown dims use dimensionSizeExpHandleUnkown."
   input DAE.Dimension dim;
   output DAE.Exp exp;
 algorithm
@@ -572,6 +574,22 @@ algorithm
     case DAE.DIM_EXP(exp = e) then e;
   end match;
 end dimensionSizeExp;
+
+public function dimensionSizeExpHandleUnkown
+  "Converts (extracts) a dimension to an expression.
+  This function will change unknown dims to DAE.ICONST(-1).
+  we use it to handle unknown dims in code generation. unknown dims
+  are okay if the variable is a function input (it's just holds the slot
+  and will not be generated). Otherwise it's an error 
+  since it shouldn't have reached there."
+  input DAE.Dimension dim;
+  output DAE.Exp exp;
+algorithm
+  exp := match(dim)
+    case DAE.DIM_UNKNOWN() then DAE.ICONST(-1);
+    else dimensionSizeExp(dim);
+  end match;
+end dimensionSizeExpHandleUnkown;
 
 public function intDimension
   "Converts an integer to an array dimension."
@@ -7119,11 +7137,6 @@ algorithm
     // any other call is a function call
     case (DAE.CALL(path = _)) then true;
 
-    // mahge: Commented out because it doesn't seem neccessary to
-    // traverse all expressions. It is not needed (I think) and it
-    // is expensive because success here means exps will be elaborated
-    // again by InstSection.condenseArrayEquation for no apparent use.
-
     // partial evaluation functions
     case (DAE.PARTEVALFUNCTION(path = _, expList = elst)) // stefan
       equation
@@ -8513,6 +8526,26 @@ algorithm
   end matchcontinue;
 end dimensionKnown;
 
+public function dimensionKnownAndNonZero
+  "Checks whether a dimensions is known or not."
+  input DAE.Dimension dim;
+  output Boolean known;
+algorithm
+  known := matchcontinue(dim)
+    case DAE.DIM_EXP(exp = DAE.ICONST(0)) then false;
+    else dimensionKnown(dim);
+  end matchcontinue;
+end dimensionKnownAndNonZero;
+
+public function dimensionsKnownAndNonZero
+  "Checks whether all dimensions are known or not.
+  TODO: mahge: imprive this for speed"
+  input list<DAE.Dimension> dims;
+  output Boolean allKnown;
+algorithm
+  allKnown := Util.boolAndList(List.map(dims, dimensionKnownAndNonZero));  
+end dimensionsKnownAndNonZero;
+
 public function dimensionUnknownOrExp
   "Checks whether a dimensions is known or not."
   input DAE.Dimension dim;
@@ -8560,7 +8593,7 @@ algorithm
 end subscriptEqual;
 
 public function subscriptConstants "
-returns true if all subscripts are constant values (no slice or wholedim "
+returns true if all subscripts are known (i.e no cref) constant values (no slice or wholedim "
   input list<DAE.Subscript> inSubs;
   output Boolean areConstant;
 algorithm

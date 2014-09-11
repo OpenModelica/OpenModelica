@@ -80,7 +80,7 @@ protected import SCodeDump;
 
 protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
-protected type InstDims = list<list<DAE.Subscript>>;
+protected type InstDims = list<list<DAE.Dimension>>;
 
 public function instVar
 "this function will look if a variable is inner/outer and depending on that will:
@@ -100,7 +100,7 @@ public function instVar
   input SCode.Prefixes inPrefixes;
   input DAE.Dimensions inDimensionLst;
   input list<DAE.Subscript> inIntegerLst;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImpl;
   input SCode.Comment inComment;
   input Absyn.Info info;
@@ -441,7 +441,7 @@ protected function instVar_dispatch "A component element in a class may consist 
   input SCode.Prefixes inPrefixes;
   input DAE.Dimensions inDimensionLst;
   input list<DAE.Subscript> inIntegerLst;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inBoolean;
   input SCode.Comment inSCodeComment;
   input Absyn.Info info;
@@ -606,7 +606,7 @@ protected function instVar2
   input SCode.Prefixes inPrefixes;
   input DAE.Dimensions inDimensions;
   input list<DAE.Subscript> inSubscripts;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImpl;
   input SCode.Comment inComment;
   input Absyn.Info inInfo;
@@ -625,7 +625,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inStore,inState,inMod,inPrefix,inName,inClass,inAttributes,inPrefixes,inDimensions,inSubscripts,inInstDims,inImpl,inComment,inInfo,inGraph,inSets)
     local
       InstDims inst_dims,inst_dims_1;
-      list<DAE.Subscript> dims_1;
+      list<DAE.Dimension> dims_1;
       DAE.Exp e,e_1;
       DAE.Properties p;
       Env.Env env_1,env,compenv;
@@ -703,8 +703,6 @@ algorithm
         true = ClassInf.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
 
-        //Do not flatten because it is a function
-        dims_1 = InstUtil.instDimExpLst(dims, impl);
 
         //Instantiate type of the component, skip dae/not flattening (but extract functions)
         // adrpo: do not send in the modifications as it will fail if the modification is an ARRAY.
@@ -731,7 +729,7 @@ algorithm
 
 
         SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
-        dae = InstDAE.daeDeclare(cr, ci_state, ty, attr, vis, SOME(e), {dims_1}, NONE(), dae_var_attr, SOME(comment), io, fin, source, true);
+        dae = InstDAE.daeDeclare(cr, ci_state, ty, attr, vis, SOME(e), {dims}, NONE(), dae_var_attr, SOME(comment), io, fin, source, true);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
         (cache,env_1,ih,store,dae,csets,ty_1,graph);
@@ -742,9 +740,6 @@ algorithm
       equation
         true = ClassInf.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
-
-        //Do not flatten because it is a function
-        dims_1 = InstUtil.instDimExpLst(dims, impl);
 
         //get the equation modification
         SOME(DAE.TYPED(e,_,p,_,_)) = Mod.modEquation(mod);
@@ -772,7 +767,7 @@ algorithm
 
 
         SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
-        dae = InstDAE.daeDeclare(cr, ci_state, ty, attr, vis, SOME(e_1), {dims_1}, NONE(), dae_var_attr, SOME(comment), io, fin, source, true);
+        dae = InstDAE.daeDeclare(cr, ci_state, ty, attr, vis, SOME(e_1), {dims}, NONE(), dae_var_attr, SOME(comment), io, fin, source, true);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
         (cache,env_1,ih,store,dae,csets,ty_1,graph);
@@ -789,17 +784,14 @@ algorithm
           Inst.instClass(cache, env, ih, store, mod, pre, cl, inst_dims, impl, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, csets);
         arrty = InstUtil.makeArrayType(dims, ty);
         InstUtil.checkFunctionVarType(arrty, ci_state, n, info);
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,DAE.T_UNKNOWN_DEFAULT,{}));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,arrty,{}));
         (cache,dae_var_attr) = InstBinding.instDaeVariableAttributes(cache,env, mod, ty, {});
-        //Do all dimensions...
-        // print("dims: " +& stringDelimitList(List.map(dims,ExpressionDump.dimensionString),",") +& "\n");
-        dims_1 = InstUtil.instDimExpLst(dims, impl);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
-        dae = InstDAE.daeDeclare(cr, ci_state, ty, attr,vis,NONE(), {dims_1},NONE(), dae_var_attr, SOME(comment),io,fin,source,true);
+        dae = InstDAE.daeDeclare(cr, ci_state, ty, attr,vis,NONE(), {dims},NONE(), dae_var_attr, SOME(comment),io,fin,source,true);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
         (cache,env_1,ih,store,dae,csets,arrty,graph);
@@ -821,11 +813,11 @@ algorithm
       equation
         true = Config.splitArrays();
         false = ClassInf.isFunction(ci_state);
+        
         // Try to deduce the dimension from the modifier.
-        (dime as DAE.INDEX(DAE.ICONST(integer = deduced_dim))) =
-          InstUtil.instWholeDimFromMod(dim, mod, n, info);
-        dim2 = DAE.DIM_INTEGER(deduced_dim);
-        inst_dims_1 = List.appendLastList(inst_dims, {dime});
+        dim2 = InstUtil.instWholeDimFromMod(dim, mod, n, info);
+        inst_dims_1 = List.appendLastList(inst_dims, {dim2});
+        
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instArray(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf, 1, dim2, dims, idxs, inst_dims_1, impl, comment,info,graph, csets);
         ty_1 = InstUtil.liftNonBasicTypes(ty,dim2); // Do not lift types extending basic type, they are already array types.
@@ -839,10 +831,17 @@ algorithm
         false = Config.splitArrays();
         false = ClassInf.isFunction(ci_state);
         // Try to deduce the dimension from the modifier.
+        /*TODO : mahge: remove this*/
+        /*
         dime = InstUtil.instWholeDimFromMod(dim, mod, n, info);
         dime2 = InstUtil.makeNonExpSubscript(dime);
         dim2 = Expression.subscriptDimension(dime);
         inst_dims_1 = List.appendLastList(inst_dims, {dime2});
+        */
+        dim2 = InstUtil.instWholeDimFromMod(dim, mod, n, info);
+        inst_dims_1 = List.appendLastList(inst_dims, {dim2});
+        dime2 = Expression.dimensionSubscript(dim2);
+        
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instVar2(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,dime2::idxs,inst_dims_1,impl,comment,info,graph,csets);
         ty_1 = InstUtil.liftNonBasicTypes(ty,dim2); // Do not lift types extending basic type, they are already array types.
@@ -854,8 +853,10 @@ algorithm
       equation
         true = Config.splitArrays();
         false = ClassInf.isFunction(ci_state);
-        dime = InstUtil.instDimExp(dim, impl);
-        inst_dims_1 = List.appendLastList(inst_dims, {dime});
+
+        // dim = InstUtil.evalEnumAndBoolDim(dim);
+        inst_dims_1 = List.appendLastList(inst_dims, {dim});
+        
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instArray(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf, 1, dim, dims, idxs, inst_dims_1, impl, comment,info,graph,csets);
         ty_1 = InstUtil.liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
@@ -867,8 +868,14 @@ algorithm
       equation
         false = Config.splitArrays();
         false = ClassInf.isFunction(ci_state);
+        /*TODO : mahge: remove this*/
+        /*
         dime = InstUtil.instDimExpNonSplit(dim, impl);
         inst_dims_1 = List.appendLastList(inst_dims, {dime});
+        */
+        inst_dims_1 = List.appendLastList(inst_dims, {dim});
+        dime = Expression.dimensionSubscript(dim);
+        
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instVar2(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,dime::idxs,inst_dims_1,impl,comment,info,graph,csets);
         // Type lifting is done in the "scalar" case
@@ -911,7 +918,7 @@ public function instScalar
   input SCode.Attributes inAttributes;
   input SCode.Prefixes inPrefixes;
   input list<DAE.Subscript> inSubscripts;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImpl;
   input Option<SCode.Comment> inComment;
   input Absyn.Info inInfo;
@@ -958,6 +965,7 @@ algorithm
       DAE.StartValue start;
       Option<SCode.Attributes> opt_attr;
       DAE.Mod mod;
+      list<DAE.Dimension> predims;
 
     case (cache, env, ih, store, _, mod, _, _,
         SCode.CLASS(name = cls_name, restriction = res), SCode.ATTR(variability = vt),
@@ -967,7 +975,8 @@ algorithm
         // Instantiate the components class.
         idxs = listReverse(idxs);
         ci_state = ClassInf.start(res, Absyn.IDENT(cls_name));
-        pre = PrefixUtil.prefixAdd(inName, idxs, inPrefix, vt, ci_state);
+        predims = List.lastListOrEmpty(inInstDims);
+        pre = PrefixUtil.prefixAdd(inName, predims, idxs, inPrefix, vt, ci_state);
         (cache, env, ih, store, dae1, csets, ty,_, opt_attr, graph) =
           Inst.instClass(cache, env, ih, store, inMod, pre, inClass, inInstDims,
             inImpl, InstTypes.INNER_CALL(), inGraph, inSets);
@@ -979,8 +988,10 @@ algorithm
 
         // Attempt to set the correct type for array variable if splitArrays is
         // false. Does not work correctly yet.
+        /* TODO: mahge: this should be removed
         ty = Debug.bcallret2(not Config.splitArrays(), Types.liftArraySubscriptList,
           ty, List.flatten(inInstDims), ty);
+          */
 
         // Make a component reference for the component.
         ident_ty = InstUtil.makeCrefBaseType(ty, inInstDims);
@@ -1206,7 +1217,7 @@ protected function instArray
   input DAE.Dimension inDimension;
   input DAE.Dimensions inDimensionLst;
   input list<DAE.Subscript> inIntegerLst;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inBoolean;
   input SCode.Comment inComment;
   input Absyn.Info info;
@@ -1385,7 +1396,7 @@ protected function instArray2
   input DAE.Dimension inDimension;
   input DAE.Dimensions inDimensionLst;
   input list<DAE.Subscript> inIntegerLst;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inBoolean;
   input SCode.Comment inComment;
   input Absyn.Info info;
@@ -1539,7 +1550,7 @@ algorithm
     case (_,_,_,_,ci_state,mod,pre,n,(_,_),_,i,_,_,idxs,_,_,_,_,_,_)
       equation
         failure(_ = Mod.lookupIdxModification(mod, i));
-        str1 = PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, pre, SCode.VAR(), ci_state));
+        str1 = PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, {}, pre, SCode.VAR(), ci_state));
         str2 = "[" +& stringDelimitList(List.map(idxs, ExpressionDump.printSubscriptStr), ", ") +& "]";
         str3 = Mod.prettyPrintMod(mod, 1);
         str4 = PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "(" +& n +& str2 +& "=" +& str3 +& ")";
@@ -1573,7 +1584,7 @@ Special case for DIM_INTEGER: tail-recursive implementation since the number of 
   input Integer thisDim;
   input DAE.Dimensions inDimensionLst;
   input list<DAE.Subscript> inIntegerLst;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inBoolean;
   input SCode.Comment inComment;
   input Absyn.Info info;

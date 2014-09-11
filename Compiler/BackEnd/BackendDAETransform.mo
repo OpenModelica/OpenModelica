@@ -566,7 +566,7 @@ algorithm
       BackendDAE.Type tp;
       Option<DAE.Exp> exp;
       Option<Values.Value> v;
-      list<DAE.Subscript> dim;
+      list<DAE.Dimension> dim;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;

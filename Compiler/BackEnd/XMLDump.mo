@@ -897,16 +897,16 @@ See dump Subscript for details.
 algorithm
   _:= match (arry_Dim)
     local
-      list<DAE.Subscript> lSub;
-      DAE.Subscript sub;
+      list<DAE.Dimension> lDim;
+      DAE.Dimension dim;
   case {} then ();
-  case (sub :: lSub)
-  equation
-    dumpStrOpenTag(SUBSCRIPT);
-    dumpSubscript(sub);
-    dumpStrCloseTag(SUBSCRIPT);
-    dumpDAEInstDims2(lSub);
-  then();
+  case (dim :: lDim)
+    equation
+      dumpStrOpenTag(DIMENSION);
+      dumpDimension(dim);
+      dumpStrCloseTag(DIMENSION);
+      dumpDAEInstDims2(lDim);
+    then();
   end match;
 end dumpDAEInstDims2;
 
@@ -3291,6 +3291,39 @@ algorithm
         ();
   end match;
 end dumpSubscript;
+
+public function dumpDimension "
+This function print an DAE.Dimension eventually
+using the ExpressionDump.printExpStr function.
+"
+  input DAE.Dimension inDimension;
+algorithm
+  _:=
+  match (inDimension)
+    local DAE.Exp e1;
+      Integer i;
+    case DAE.DIM_INTEGER(i)
+      equation
+        Print.printBuf(intString(i));
+      then
+        ();
+    case DAE.DIM_ENUM(_,_,_)
+      equation
+        Print.printBuf("Dim Enum");
+      then
+        ();
+    case DAE.DIM_EXP(e1)
+      equation
+        Print.printBuf(printExpStr(e1));
+      then
+        ();
+    case DAE.DIM_UNKNOWN() 
+      equation
+        Print.printBuf(":");
+      then
+        ();
+  end match;
+end dumpDimension;
 
 
 public function dumpTypeStr "

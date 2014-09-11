@@ -74,7 +74,7 @@ protected import Builtin;
 
 protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
-protected type InstDims = list<list<DAE.Subscript>>;
+protected type InstDims = list<list<DAE.Dimension>>;
 
 public function instantiateFunctionImplicit
 "author: PA
@@ -333,7 +333,7 @@ public function implicitFunctionInstantiation
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -393,7 +393,7 @@ protected function implicitFunctionInstantiation2
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean instFunctionTypeOnly "if true, do no additional checking of the function";
   output Env.Cache outCache;
   output Env.Env outEnv;

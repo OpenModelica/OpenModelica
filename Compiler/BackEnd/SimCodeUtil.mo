@@ -899,7 +899,7 @@ algorithm
       DAE.ComponentRef id;
       DAE.VarKind kind;
       DAE.VarParallelism prl;
-      list<DAE.Subscript> inst_dims;
+      list<DAE.Dimension> inst_dims;
       list<DAE.Exp> inst_dims_exp;
       Option<DAE.Exp> binding;
       SimCode.Variable var;
@@ -917,7 +917,7 @@ algorithm
     ))
       equation
         daeType = Types.simplifyType(daeType);
-        inst_dims_exp = List.map(inst_dims, indexSubscriptToExp);
+        inst_dims_exp = List.map(inst_dims, Expression.dimensionSizeExpHandleUnkown);
       then SimCode.VARIABLE(id, daeType, binding, inst_dims_exp, prl, kind);
     case (_)
       equation
@@ -3432,7 +3432,7 @@ algorithm
       Option<DAE.ComponentRef> arrayCref;
       list<SimCode.SimVar> tempvars;
       list<String> numArrayElement;
-      list<DAE.Subscript> inst_dims;
+      list<DAE.Dimension> inst_dims;
       list<Integer> ds;
 
     case({}, _) then itempvars;
@@ -3452,8 +3452,8 @@ algorithm
     case(DAE.CREF(cr, ty)::rest, _)
       equation
         arrayCref = ComponentReference.getArrayCref(cr);
-        inst_dims = ComponentReference.getArraySubs(cr);
-        numArrayElement = List.map(inst_dims, ExpressionDump.subscriptString);
+        inst_dims = ComponentReference.crefDims(cr);
+        numArrayElement = List.map(inst_dims, ExpressionDump.dimensionString);
         var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), numArrayElement, false, true);
       then
         createTempVarsforCrefs(rest, var::itempvars);
@@ -8955,6 +8955,8 @@ algorithm
   end match;
 end getCrefFromExp;
 
+
+/*TODO: mahge: Remove me*/
 protected function indexSubscriptToExp
   input DAE.Subscript subscript;
   output DAE.Exp exp_;
@@ -9035,7 +9037,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
-      list<DAE.Subscript> inst_dims;
+      list<DAE.Dimension> inst_dims;
       list<String> numArrayElement;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -9076,7 +9078,7 @@ algorithm
         arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         caus = getCausality(dlowVar, vars);
-        numArrayElement = List.map(inst_dims, ExpressionDump.subscriptString);
+        numArrayElement = List.map(inst_dims, ExpressionDump.dimensionString);
         // print("name: " +& ComponentReference.printComponentRefStr(cr) +& "indx: " +& intString(indx) +& "\n");
         // check if the variable has changeable value
         // parameter which are final = true or Evaluate Annotation are not
@@ -9109,7 +9111,7 @@ algorithm
         arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         caus = getCausality(dlowVar, vars);
-        numArrayElement = List.map(inst_dims, ExpressionDump.subscriptString);
+        numArrayElement = List.map(inst_dims, ExpressionDump.dimensionString);
         // print("name: " +& ComponentReference.printComponentRefStr(cr) +& "indx: " +& intString(indx) +& "\n");
       then
         SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
@@ -9136,7 +9138,7 @@ algorithm
         arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         caus = getCausality(dlowVar, vars);
-        numArrayElement = List.map(inst_dims, ExpressionDump.subscriptString);
+        numArrayElement = List.map(inst_dims, ExpressionDump.dimensionString);
         // print("name: " +& ComponentReference.printComponentRefStr(cr) +& "indx: " +& intString(indx) +& "\n");
       then
         SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,

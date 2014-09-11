@@ -2112,7 +2112,7 @@ algorithm
     local
       list<Integer> dim;
       list<list<Integer>> ranges;
-      list<DAE.Subscript> dims;
+      list<DAE.Dimension> dims;
       list<list<DAE.Subscript>> subslst;
       DAE.ComponentRef cref;
       DAE.Dimensions dimensions;
@@ -2138,7 +2138,7 @@ algorithm
         crefs;
     case(DAE.VAR(componentRef=cref,ty=DAE.T_REAL(varLst=_, source=_), dims=dims ))
       equation
-        dim = Expression.subscriptsInt(dims);
+        dim = List.map(dims, Expression.dimensionSize);
         Debug.bcall1(intEq(listLength(dim),2),print,"failure in getScalarsForComplexVar:the array has multiple dimensions");
         true = listLength(dim) == 1;
         dim = List.intRange(List.first(dim));
@@ -2177,15 +2177,15 @@ author: Waurich TUD 2014-03"
 algorithm
   b := matchcontinue(inElem)
     local
-      list<Integer> dim;
-      list<DAE.Subscript> dims;
+      list<Integer> dimints;
+      list<DAE.Dimension> dims;
     case(DAE.VAR(componentRef = _,ty=DAE.T_COMPLEX(varLst = _)))
       then
         false;
     case(DAE.VAR(componentRef=_,ty=DAE.T_REAL(varLst=_, source=_), dims=dims ))
       equation
-        dim = Expression.subscriptsInt(dims);
-        true = intNe(List.first(dim),0);
+        dimints = List.map(dims, Expression.dimensionSize);
+        true = intNe(List.first(dimints),0);
       then
         false;
     case(DAE.VAR(componentRef=_,ty=DAE.T_ARRAY(ty=_, dims=_, source=_), dims=dims ))

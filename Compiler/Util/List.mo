@@ -727,6 +727,23 @@ algorithm
   end match;
 end last;
 
+public function lastListOrEmpty
+  "Returns the last element(list) of a list of lists. Returns empty list
+  if the outer list is empty is empty."
+  input list<list<ElementType>> inListList;
+  output list<ElementType> outLastList;
+algorithm
+  outLastList := match(inListList)
+    local
+      list<ElementType> elist;
+      list<list<ElementType>> restlist;
+
+    case {} then {};
+    case {elist} then elist;
+    case (_ :: restlist) then lastListOrEmpty(restlist);
+  end match;
+end lastListOrEmpty;
+
 public function secondLast
   "Returns the second last element of a list, or fails if such an element does
    not exist."

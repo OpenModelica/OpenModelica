@@ -321,21 +321,21 @@ algorithm
 end removeSelfReferentialDims;
 
 protected function removeSelfReferentialDim
-  input DAE.Subscript inDim;
+  input DAE.Dimension inDim;
   input String inName;
-  output DAE.Subscript outDim;
+  output DAE.Dimension outDim;
 algorithm
   outDim := matchcontinue(inDim, inName)
     local
       DAE.Exp exp;
       list<DAE.ComponentRef> crefs;
 
-    case (DAE.INDEX(exp = exp), _)
+    case (DAE.DIM_EXP(exp = exp), _)
       equation
         crefs = Expression.extractCrefsFromExp(exp);
         true = List.isMemberOnTrue(inName, crefs, isCrefNamed);
       then
-        DAE.WHOLEDIM();
+        DAE.DIM_UNKNOWN();
 
     else inDim;
 
@@ -1905,22 +1905,8 @@ algorithm
       SymbolTable st;
 
     case (ty, {}, _, _, _, _) then (inCache, ty, inST);
-
-    // Use the given dimension if the dimension has been declared. The list of
-    // dimensions might be empty in this case, so List.stripFirst is used
-    // instead of matching.
-    case (ty, DAE.INDEX(exp = dim_exp) :: rest_dims, bind_dims, _, _, st)
-      equation
-        (cache, dim_val, st) = cevalExp(dim_exp, inCache, inEnv, st);
-        dim_int = ValuesUtil.valueInteger(dim_val);
-        dim = Expression.intDimension(dim_int);
-        bind_dims = List.stripFirst(bind_dims);
-        (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
-      then
-        (cache, DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource), st);
-
-    // Otherwise, take the dimension from the binding if it's an input.
-    case (ty, DAE.WHOLEDIM() :: rest_dims, dim_int :: bind_dims, _, _, st)
+            
+    case (ty, DAE.DIM_UNKNOWN() :: rest_dims, dim_int :: bind_dims, _, _, st)
       equation
         dim = Expression.intDimension(dim_int);
         (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
@@ -1928,11 +1914,45 @@ algorithm
         (cache, DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource), st);
 
     // If the variable is not an input, set the dimension size to 0 (dynamic size).
-    case (ty, DAE.WHOLEDIM() :: rest_dims, bind_dims, _, _, st)
+    case (ty, DAE.DIM_UNKNOWN() :: rest_dims, bind_dims, _, _, st)
       equation
         (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
         (cache, DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(0)}, DAE.emptyTypeSource), st);
+        
+    case (ty, DAE.DIM_INTEGER(dim_int) :: rest_dims, bind_dims, _, _, st)
+      equation
+        dim = DAE.DIM_INTEGER(dim_int);
+        bind_dims = List.stripFirst(bind_dims);
+        (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
+      then
+        (cache, DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource), st);
+        
+    case (ty, DAE.DIM_BOOLEAN() :: rest_dims, bind_dims, _, _, st)
+      equation
+        dim = DAE.DIM_INTEGER(2);
+        bind_dims = List.stripFirst(bind_dims);
+        (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
+      then
+        (cache, DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource), st);
+        
+    case (ty, DAE.DIM_ENUM(size = dim_int) :: rest_dims, bind_dims, _, _, st)
+      equation
+        dim = DAE.DIM_INTEGER(dim_int);
+        bind_dims = List.stripFirst(bind_dims);
+        (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
+      then
+        (cache, DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource), st);
+        
+    case (ty, DAE.DIM_EXP(exp = dim_exp) :: rest_dims, bind_dims, _, _, st)
+      equation
+        (cache, dim_val, st) = cevalExp(dim_exp, inCache, inEnv, st);
+        dim_int = ValuesUtil.valueInteger(dim_val);
+        dim = DAE.DIM_INTEGER(dim_int);
+        bind_dims = List.stripFirst(bind_dims);
+        (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
+      then
+        (cache, DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource), st);
 
     case (_, _ :: _, _, _, _, _)
       equation
@@ -2615,7 +2635,7 @@ algorithm
     local
       DAE.Exp bind_exp;
       list<FunctionVar> deps;
-      list<DAE.Subscript> dims;
+      list<DAE.Dimension> dims;
       Arg arg;
 
     case ((DAE.VAR(binding = SOME(bind_exp), dims = dims), _), _)
@@ -2644,29 +2664,29 @@ end getElementDependencies;
 protected function getElementDependenciesFromDims
   "Helper function to getElementDependencies that gets the dependencies from the
   dimensions of a variable."
-  input DAE.Subscript inSubscript;
+  input DAE.Dimension inDimension;
   input Arg inArg;
-  output DAE.Subscript outSubscript;
+  output DAE.Dimension outDimension;
   output Arg outArg;
   type Arg = tuple<list<FunctionVar>, list<FunctionVar>, list<DAE.Ident>>;
 algorithm
-  (outSubscript, outArg) := matchcontinue(inSubscript, inArg)
+  (outDimension, outArg) := matchcontinue(inDimension, inArg)
     local
       Arg arg;
-      DAE.Exp sub_exp;
+      DAE.Exp dim_exp;
 
     case (_, _)
       equation
-        sub_exp = Expression.getSubscriptExp(inSubscript);
+        dim_exp = Expression.dimensionSizeExp(inDimension);
         (_, (_, _, arg)) = Expression.traverseExpBidir(
-          sub_exp,
+          dim_exp,
           (getElementDependenciesTraverserEnter,
            getElementDependenciesTraverserExit,
            inArg));
        then
-        (inSubscript, arg);
+        (inDimension, arg);
 
-    else (inSubscript, inArg);
+    else (inDimension, inArg);
   end matchcontinue;
 end getElementDependenciesFromDims;
 

@@ -80,21 +80,21 @@ algorithm
 
     case Prefix.NOPRE() then "<Prefix.NOPRE()>";
     case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "<Prefix.PREFIX(Prefix.NOCOMPPRE())>";
-    case Prefix.PREFIX(Prefix.PRE(str,{},Prefix.NOCOMPPRE(),_),_) then str;
-    case Prefix.PREFIX(Prefix.PRE(str,ss,Prefix.NOCOMPPRE(),_),_)
+    case Prefix.PREFIX(Prefix.PRE(str,_,{},Prefix.NOCOMPPRE(),_),_) then str;
+    case Prefix.PREFIX(Prefix.PRE(str,_,ss,Prefix.NOCOMPPRE(),_),_)
       equation
         s = stringAppend(str, "[" +& stringDelimitList(
           List.map(ss, ExpressionDump.subscriptString), ", ") +& "]");
       then
         s;
-    case Prefix.PREFIX(Prefix.PRE(str,{},rest,_),cp)
+    case Prefix.PREFIX(Prefix.PRE(str,_,{},rest,_),cp)
       equation
         rest_1 = printPrefixStr(Prefix.PREFIX(rest,cp));
         s = stringAppend(rest_1, ".");
         s_1 = stringAppend(s, str);
       then
         s_1;
-    case Prefix.PREFIX(Prefix.PRE(str,ss,rest,_),cp)
+    case Prefix.PREFIX(Prefix.PRE(str,_,ss,rest,_),cp)
       equation
         rest_1 = printPrefixStr(Prefix.PREFIX(rest,cp));
         s = stringAppend(rest_1, ".");
@@ -160,23 +160,24 @@ public function prefixAdd "This function is used to extend a prefix with another
   prefixes components are stored in the opposite order from the
   normal order used when displaying them."
   input String inIdent;
+  input list<DAE.Dimension> inType;
   input list<DAE.Subscript> inIntegerLst;
   input Prefix.Prefix inPrefix;
   input SCode.Variability vt;
   input ClassInf.State ci_state;
   output Prefix.Prefix outPrefix;
 algorithm
-  outPrefix := match (inIdent,inIntegerLst,inPrefix,vt,ci_state)
+  outPrefix := match (inIdent,inType,inIntegerLst,inPrefix,vt,ci_state)
     local
       String i;
       list<DAE.Subscript> s;
       Prefix.ComponentPrefix p;
 
-    case (i,s,Prefix.PREFIX(p,_),_,_)
-      then Prefix.PREFIX(Prefix.PRE(i,s,p,ci_state),Prefix.CLASSPRE(vt));
+    case (i,_,s,Prefix.PREFIX(p,_),_,_)
+      then Prefix.PREFIX(Prefix.PRE(i,inType,s,p,ci_state),Prefix.CLASSPRE(vt));
 
-    case(i,s,Prefix.NOPRE(),_,_)
-      then Prefix.PREFIX(Prefix.PRE(i,s,Prefix.NOCOMPPRE(),ci_state),Prefix.CLASSPRE(vt));
+    case(i,_,s,Prefix.NOPRE(),_,_)
+      then Prefix.PREFIX(Prefix.PRE(i,inType,s,Prefix.NOCOMPPRE(),ci_state),Prefix.CLASSPRE(vt));
   end match;
 end prefixAdd;
 
@@ -191,8 +192,9 @@ algorithm
       Prefix.ClassPrefix cp;
       Prefix.ComponentPrefix c;
       ClassInf.State ci_state;
-    case (Prefix.PREFIX(Prefix.PRE(prefix = a,subscripts = b,next = _,ci_state=ci_state),cp))
-      then Prefix.PREFIX(Prefix.PRE(a,b,Prefix.NOCOMPPRE(),ci_state),cp);
+      list<DAE.Dimension> pdims;
+    case (Prefix.PREFIX(Prefix.PRE(prefix = a, dimensions = pdims, subscripts = b,next = _,ci_state=ci_state),cp))
+      then Prefix.PREFIX(Prefix.PRE(a,pdims,b,Prefix.NOCOMPPRE(),ci_state),cp);
   end match;
 end prefixFirst;
 

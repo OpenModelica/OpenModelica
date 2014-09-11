@@ -88,7 +88,7 @@ protected import NFSCodeFlatten;
 
 protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
-protected type InstDims = list<list<DAE.Subscript>>;
+protected type InstDims = list<list<DAE.Dimension>>;
 
 public function newIdent
 "This function creates a new, unique identifer.
@@ -2533,7 +2533,7 @@ public function addComponentsToEnv
   input list<tuple<SCode.Element, DAE.Mod>> inComponents;
   input list<tuple<SCode.Element, DAE.Mod>> inAllComponents;
   input list<SCode.Equation> inEquations;
-  input list<list<DAE.Subscript>> inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImpl;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -2584,7 +2584,7 @@ protected function addComponentToEnv
   input tuple<SCode.Element, DAE.Mod> inComponent;
   input list<tuple<SCode.Element, DAE.Mod>> inAllComponents;
   input list<SCode.Equation> inEquations;
-  input list<list<DAE.Subscript>> inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImpl;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -2718,7 +2718,7 @@ protected function addComponentsToEnv2
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input list<tuple<SCode.Element, DAE.Mod>> inElement;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -2909,7 +2909,7 @@ protected function addRecordConstructorsToTheCache
   input ClassInf.State inState;
   input Absyn.Direction inDirection;
   input SCode.Element inClass;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -3053,7 +3053,7 @@ public function checkMultiplyDeclared
   input Prefix.Prefix prefix;
   input ClassInf.State ciState;
   input tuple<SCode.Element, DAE.Mod> compTuple;
-  input list<list<DAE.Subscript>>instDims;
+  input list<list<DAE.Dimension>> instDims;
   input Boolean impl;
   output Boolean alreadyDeclared;
 algorithm
@@ -3740,7 +3740,7 @@ public function getUsertypeDimensions
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output DAE.Dimensions outDimensionLst;
@@ -3960,55 +3960,23 @@ algorithm
   end matchcontinue;
 end updateClassInfState;
 
-public function instDimExpLst
-"Instantiates dimension expressions, DAE.Dimension, which are transformed to DAE.Subscript\'s"
-  input DAE.Dimensions inDimensionLst;
-  input Boolean inBoolean;
-  output list<DAE.Subscript> outExpSubscriptLst;
-algorithm
-  outExpSubscriptLst := match (inDimensionLst,inBoolean)
-    local
-      list<DAE.Subscript> res;
-      DAE.Subscript r;
-      DAE.Dimension x;
-      DAE.Dimensions xs;
-      Boolean b;
-    case ({},_) then {};  /* impl */
-    case ((x :: xs),b)
-      equation
-        res = instDimExpLst(xs, b);
-        r = instDimExp(x, b);
-      then
-        (r :: res);
-  end match;
-end instDimExpLst;
-
-public function instDimExp
+public function evalEnumAndBoolDim
 "function: instDAE.Dimension
   instantiates one dimension expression, See also instDimExpLst."
   input DAE.Dimension inDimension;
-  input Boolean inBoolean;
-  output DAE.Subscript outSubscript;
+  output DAE.Dimension outDimension;
 algorithm
-  outSubscript := match (inDimension,inBoolean)
+  outDimension := match (inDimension)
     local
-      DAE.Exp e;
       Integer i;
-
-    /* TODO: Fix slicing, e.g. DAE.SLICE, for impl=true */
-    /*case (DIMEXP(subscript = DAE.WHOLEDIM()),(impl as false))
-      equation
-        Error.addMessage(Error.DIMENSION_NOT_KNOWN, {":"});
-      then
-        fail();*/
-    case (DAE.DIM_UNKNOWN(),_) then DAE.WHOLEDIM();
-    case (DAE.DIM_INTEGER(integer = i),_) then DAE.INDEX(DAE.ICONST(i));
-    case (DAE.DIM_ENUM(size = i), _) then DAE.INDEX(DAE.ICONST(i));
-    case (DAE.DIM_BOOLEAN(), _) then DAE.INDEX(DAE.ICONST(2));
-    case (DAE.DIM_EXP(exp = e), _) then DAE.INDEX(e);
+      
+    // case (DAE.DIM_ENUM(size = i)) then DAE.DIM_INTEGER(i);
+    case (DAE.DIM_BOOLEAN()) then DAE.DIM_INTEGER(2);
+    else inDimension;
   end match;
-end instDimExp;
+end evalEnumAndBoolDim;
 
+/*TODO: mahge: Remove me*/
 public function instDimExpNonSplit
 "the vesrion of instDimExp for the case of non-expanded arrays"
   input DAE.Dimension inDimension;
@@ -4036,9 +4004,9 @@ public function instWholeDimFromMod
   input DAE.Mod modifier;
   input String inVarName;
   input Absyn.Info inInfo;
-  output DAE.Subscript subscript;
+  output DAE.Dimension outDimension;
 algorithm
-  subscript := matchcontinue(dimensionExp, modifier, inVarName, inInfo)
+  outDimension := matchcontinue(dimensionExp, modifier, inVarName, inInfo)
     local
       DAE.Dimension d;
       DAE.Subscript sub;
@@ -4049,8 +4017,7 @@ algorithm
             SOME(DAE.TYPED(modifierAsExp = exp))), _, _)
       equation
         (d :: _) = Expression.expDimensions(exp);
-        sub = Expression.dimensionSubscript(d);
-      then sub;
+      then d;
 
     // TODO: We should print an error if we fail to deduce the dimensions from
     // the modifier, but we do not yet handle some cases (such as
@@ -4497,7 +4464,7 @@ public function elabArraydimOpt
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   output Env.Cache outCache;
   output DAE.Dimensions outDimensionLst;
 algorithm
@@ -4548,7 +4515,7 @@ public function elabArraydim
   input Boolean isFunctionInput;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   output Env.Cache outCache;
   output DAE.Dimensions outDimensionLst;
 algorithm
@@ -4696,7 +4663,7 @@ protected function elabArraydimType
   input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef componentRef;
   input Absyn.Info info;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   output DAE.Dimensions outDimensionLst;
 algorithm
   outDimensionLst := matchcontinue(inType,inArrayDim,exp,path,inPrefix,componentRef,info,inInstDims)
@@ -4705,7 +4672,7 @@ algorithm
       list<Absyn.Subscript> ad;
       String tpStr,adStr,expStr,str;
       InstDims id;
-      list<DAE.Subscript> flat_id;
+      list<DAE.Dimension> flat_id;
     case(t,ad,_,_,_,_,_,_)
       equation
         true = Config.splitArrays();
@@ -4736,12 +4703,14 @@ protected function elabArraydimType2
 "Help function to elabArraydimType."
   input DAE.Type inType;
   input Absyn.ArrayDim inArrayDim;
-  input list<DAE.Subscript> inSubs;
+  input list<DAE.Dimension> inDims;
   output DAE.Dimensions outDimensionOptionLst;
 algorithm
-  outDimensionOptionLst := matchcontinue (inType,inArrayDim,inSubs)
+  outDimensionOptionLst := matchcontinue (inType,inArrayDim,inDims)
     local
       DAE.Dimension d,d1;
+      DAE.Dimension dim;
+      list<DAE.Dimension> rest;
       DAE.Dimensions l;
       DAE.Type t;
       list<Absyn.Subscript> ad;
@@ -4786,11 +4755,10 @@ algorithm
         l;
     */
 
-    case (DAE.T_ARRAY(dims = {d}, ty = t, source = _), ad, sub::subs)
+    case (DAE.T_ARRAY(dims = {d}, ty = t, source = _), ad, dim::rest)
       equation
-        d1 = Expression.subscriptDimension(sub);
-         _ = compatibleArraydim(d,d1);
-        l = elabArraydimType2(t,ad,subs);
+         _ = compatibleArraydim(d,dim);
+        l = elabArraydimType2(t,ad,rest);
       then
         l;
 
@@ -7209,7 +7177,7 @@ public function traverseModAddDims
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
   input SCode.Mod inMod;
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   input list<Absyn.Subscript> inDecDims;
   output SCode.Mod outMod;
 algorithm
@@ -7242,7 +7210,7 @@ algorithm
       mod2;*/
   case (cache,env,pre,mod,inst_dims,decDims)
     equation
-      exps = List.mapList(inst_dims,Expression.subscriptNonExpandedExp);
+      exps = List.map1(inst_dims,Expression.dimensionsToExps,{});
       aexps = List.mapList(exps, Expression.unelabExp);
       adims = List.map(decDims, Absyn.subscriptExpOpt);
       mod2 = traverseModAddDims4(cache,env,pre,mod, aexps, adims, true);
@@ -7768,7 +7736,7 @@ end propagateAbSCDirection2;
 
 public function makeCrefBaseType
   input DAE.Type inBaseType;
-  input list<list<DAE.Subscript>>inDimensions;
+  input list<list<DAE.Dimension>>inDimensions;
   output DAE.Type outType;
 algorithm
   outType := Types.simplifyType(makeCrefBaseType2(inBaseType, inDimensions));
@@ -7776,7 +7744,7 @@ end makeCrefBaseType;
 
 protected function makeCrefBaseType2
   input DAE.Type inBaseType;
-  input list<list<DAE.Subscript>>inDimensions;
+  input list<list<DAE.Dimension>>inDimensions;
   output DAE.Type outType;
 algorithm
   outType := matchcontinue(inBaseType, inDimensions)
@@ -7790,7 +7758,7 @@ algorithm
 
     else
       equation
-        dims = Expression.subscriptDimensions(List.last(inDimensions));
+        dims = List.last(inDimensions);
         ty = Expression.liftArrayLeftList(inBaseType, dims);
       then
         ty;
@@ -8683,7 +8651,7 @@ algorithm
         // print("for record: " +& stringDelimitList(names,",") +& "\n");
         // Arrays with unknown bounds (size(cr,1), etc) are treated as initialized because they may have 0 dimensions checked for in the code
         outNames = Util.if_(DAEUtil.varDirectionEqual(dir,DAE.OUTPUT()), names, {});
-        names = Util.if_(List.fold(dims,foldIsKnownSubscriptDimensionNonZero,true), names, {});
+        names = Util.if_(Expression.dimensionsKnownAndNonZero(dims), names, {});
         unbound = listAppend(names,unbound);
         outputs = listAppend(outNames,inOutputs);
         unbound = checkFunctionDefUse2(rest,alg,unbound,outputs,inInfo);
@@ -8691,7 +8659,7 @@ algorithm
     case (DAE.VAR(direction=dir,componentRef=DAE.CREF_IDENT(ident=name),dims=dims,binding=NONE())::rest,_,unbound,outputs,_)
       equation
         // Arrays with unknown bounds (size(cr,1), etc) are treated as initialized because they may have 0 dimensions checked for in the code
-        unbound = List.consOnTrue(List.fold(dims,foldIsKnownSubscriptDimensionNonZero,true),name,unbound);
+        unbound = List.consOnTrue(Expression.dimensionsKnownAndNonZero(dims),name,unbound);
         outputs = List.consOnTrue(DAEUtil.varDirectionEqual(dir,DAE.OUTPUT()),name,inOutputs);
         unbound = checkFunctionDefUse2(rest,alg,unbound,outputs,inInfo);
       then unbound;
@@ -8718,19 +8686,6 @@ algorithm
   Error.assertionOrAddSourceMessage(not b, Error.WARNING_DEF_USE, {name}, info);
   outUnbound := List.filter1OnTrue(inUnbound,Util.stringNotEqual,name);
 end checkOutputDefUse;
-
-protected function foldIsKnownSubscriptDimensionNonZero
-  "Helper beacuase DAE.VAR contains Subscript instead of Dimension"
-  input DAE.Subscript sub;
-  input Boolean known;
-  output Boolean outKnown;
-algorithm
-  outKnown := match (sub,known)
-    case (DAE.INDEX(DAE.ICONST(0)),_) then false;
-    case (DAE.INDEX(DAE.ICONST(_)),true) then true;
-    else false;
-  end match;
-end foldIsKnownSubscriptDimensionNonZero;
 
 protected function checkFunctionDefUseStmt
   "Find any variable that might be used in the statement without prior definition. Any defined variables are removed from undefined."
@@ -9053,17 +9008,17 @@ algorithm
 end checkParallelismWRTEnv;
 
 public function instDimsHasZeroDims
-  input list<list<DAE.Subscript>>inInstDims;
+  input list<list<DAE.Dimension>> inInstDims;
   output Boolean outHasZeroDims;
 algorithm
   outHasZeroDims := matchcontinue(inInstDims)
     local
-      list<DAE.Subscript> dims;
+      list<DAE.Dimension> dims;
       InstDims rest_dims;
 
     case (dims :: _)
       equation
-        true = List.exist(dims, Expression.subscriptIsZero);
+        true = List.exist(dims, Expression.dimensionIsZero);
       then
         true;
 

@@ -116,7 +116,7 @@ algorithm
       BackendDAE.Type d;
       Option<DAE.Exp> e;
       Option<Values.Value> f;
-      list<DAE.Subscript> g;
+      list<DAE.Dimension> g;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr;
@@ -206,7 +206,7 @@ algorithm
       BackendDAE.Type d;
       Option<DAE.Exp> e;
       Option<Values.Value> f;
-      list<DAE.Subscript> g;
+      list<DAE.Dimension> g;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr1;
@@ -264,7 +264,7 @@ algorithm
       BackendDAE.Type d;
       Option<DAE.Exp> e;
       Option<Values.Value> f;
-      list<DAE.Subscript> g;
+      list<DAE.Dimension> g;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr1;
@@ -323,7 +323,7 @@ algorithm
       BackendDAE.Type d;
       Option<DAE.Exp> e;
       Option<Values.Value> f;
-      list<DAE.Subscript> g;
+      list<DAE.Dimension> g;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr1;
@@ -381,7 +381,7 @@ algorithm
       BackendDAE.Type d;
       Option<DAE.Exp> e;
       Option<Values.Value> f;
-      list<DAE.Subscript> g;
+      list<DAE.Dimension> g;
       DAE.ElementSource source;
       Option<SCode.Comment> s;
       DAE.ConnectorType ct;
@@ -601,7 +601,7 @@ algorithm
       BackendDAE.Type d;
       Option<DAE.Exp> e;
       Option<Values.Value> f;
-      list<DAE.Subscript> g;
+      list<DAE.Dimension> g;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr;
@@ -682,7 +682,7 @@ algorithm
       BackendDAE.Type d;
       Option<DAE.Exp> e;
       Option<Values.Value> f;
-      list<DAE.Subscript> g;
+      list<DAE.Dimension> g;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> oattr;
       Option<SCode.Comment> s;
@@ -739,7 +739,7 @@ algorithm
       BackendDAE.Type d;
       Option<DAE.Exp> e;
       Option<Values.Value> f;
-      list<DAE.Subscript> g;
+      list<DAE.Dimension> g;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr1;
@@ -796,7 +796,7 @@ algorithm
       BackendDAE.Type d;
       Option<DAE.Exp> e,min,max;
       Option<Values.Value> f;
-      list<DAE.Subscript> g;
+      list<DAE.Dimension> g;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr1;
@@ -865,7 +865,7 @@ algorithm
       BackendDAE.Type d;
       Option<DAE.Exp> e;
       Option<Values.Value> f;
-      list<DAE.Subscript> g;
+      list<DAE.Dimension> g;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr1;
@@ -1863,7 +1863,7 @@ protected
   BackendDAE.Type tp;
   Option<DAE.Exp> bind;
   Option<Values.Value> v;
-  list<DAE.Subscript> dim;
+  list<DAE.Dimension> dim;
   DAE.ElementSource source;
   Option<DAE.VariableAttributes> attr;
   Option<SCode.Comment> comment;
@@ -1904,7 +1904,7 @@ protected
   BackendDAE.Type tp;
   Option<DAE.Exp> bind;
   Option<Values.Value> v;
-  list<DAE.Subscript> dim;
+  list<DAE.Dimension> dim;
   DAE.ElementSource source;
   Option<DAE.VariableAttributes> attr;
   Option<SCode.Comment> comment;
@@ -1937,7 +1937,7 @@ protected
   DAE.VarParallelism prl;
   BackendDAE.Type tp;
   Option<Values.Value> v;
-  list<DAE.Subscript> dim;
+  list<DAE.Dimension> dim;
   DAE.ElementSource source;
   Option<DAE.VariableAttributes> attr;
   Option<SCode.Comment> comment;
@@ -1969,7 +1969,7 @@ protected
   DAE.VarParallelism prl;
   BackendDAE.Type tp;
   Option<DAE.Exp> bindExp;
-  list<DAE.Subscript> dim;
+  list<DAE.Dimension> dim;
   DAE.ElementSource source;
   Option<DAE.VariableAttributes> attr;
   Option<SCode.Comment> comment;
@@ -2013,7 +2013,7 @@ algorithm
       BackendDAE.Type tp;
       Option<DAE.Exp> bind;
       Option<Values.Value> v;
-      list<DAE.Subscript> dim;
+      list<DAE.Dimension> dim;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
@@ -4312,7 +4312,7 @@ algorithm
       BackendDAE.Type d;
       Option<DAE.Exp> e;
       Option<Values.Value> f;
-      list<DAE.Subscript> g;
+      list<DAE.Dimension> g;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> oattr;
       Option<SCode.Comment> s;
@@ -4987,7 +4987,7 @@ algorithm
       BackendDAE.Type tp;
       Option<DAE.Exp> exp;
       Option<Values.Value> v;
-      list<DAE.Subscript> dim;
+      list<DAE.Dimension> dim;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;

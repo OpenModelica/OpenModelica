@@ -12931,15 +12931,16 @@ algorithm
         //print("env:");print(Env.printEnvStr(env));print("\n");
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache, crefEnv, cr);
         ty = Types.simplifyType(t);
-        crefPrefix = PrefixUtil.prefixAdd(id,{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
+        sl = Types.getDimensions(ty);
+        crefPrefix = PrefixUtil.prefixAdd(id,sl,{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
         (cache,cr,const,hasZeroSizeDim) = elabCrefSubs(cache, crefEnv, crefSubs, restCref, topPrefix, crefPrefix, impl, hasZeroSizeDim, info);
       then
         (cache,ComponentReference.makeCrefQual(id,ty,{},cr),const,hasZeroSizeDim);
 
     // QUAL,with no subscripts second case => look for class
-    case (cache,crefEnv,crefSubs,Absyn.CREF_QUAL(name = id,subscripts = {},componentRef = restCref),topPrefix,crefPrefix,impl,hasZeroSizeDim,_)
+    case (cache,crefEnv,crefSubs,Absyn.CREF_QUAL(name = id, subscripts = {},componentRef = restCref),topPrefix,crefPrefix,impl,hasZeroSizeDim,_)
       equation
-        crefPrefix = PrefixUtil.prefixAdd(id,{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
+        crefPrefix = PrefixUtil.prefixAdd(id,{},{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
         (cache,cr,const,hasZeroSizeDim) = elabCrefSubs(cache, crefEnv, crefSubs, restCref, topPrefix, crefPrefix, impl, hasZeroSizeDim, info);
       then
         (cache,ComponentReference.makeCrefQual(id,DAE.T_COMPLEX_DEFAULT,{},cr),const,hasZeroSizeDim);
@@ -12955,7 +12956,7 @@ algorithm
         sl = Types.getDimensions(id_ty);
         (cache,ss_1,const1) = elabSubscriptsDims(cache, crefSubs, ss, sl, impl,
             topPrefix, inComponentRef, info);
-        crefPrefix = PrefixUtil.prefixAdd(id, ss_1, crefPrefix, vt, ClassInf.UNKNOWN(Absyn.IDENT("")));
+        crefPrefix = PrefixUtil.prefixAdd(id, sl, ss_1, crefPrefix, vt, ClassInf.UNKNOWN(Absyn.IDENT("")));
         (cache,cr,const2,hasZeroSizeDim) = elabCrefSubs(cache, crefEnv, crefSubs, restCref, topPrefix, crefPrefix, impl, hasZeroSizeDim, info);
         const = Types.constAnd(const1, const2);
       then

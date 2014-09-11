@@ -2784,11 +2784,11 @@ algorithm
         List.map1Flat(crefs,expandCref_impl,true);
 
     // A simple cref without subscripts but array type.
-    case (DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims = dims), {}),true)
+    case (DAE.CREF_IDENT(id, correctTy as DAE.T_ARRAY(ty = ty as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims = dims), {}),true)
       equation
         // Create a list of : subscripts to generate all elements.
         subs = List.fill(DAE.WHOLEDIM(), listLength(dims));
-        crefs = expandCref2(id, ty, subs, dims);
+        crefs = expandCref2(id, correctTy, subs, dims);
       then
         expandCrefLst(crefs,varLst,{});
 

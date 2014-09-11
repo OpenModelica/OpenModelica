@@ -3415,10 +3415,16 @@ algorithm
     case (_,_,DAE.T_ARRAY(ty=tp,dims=dims),_)
       equation
         crlst = ComponentReference.expandCref(name,false);
+        /*
+        TODO: mahge: what is this supposed to do?. 
+        Why are even these dims needed separetely in BackendDAE.VAR
+        They are already in the cref */
+        /*
         ilst = Expression.dimensionsSizes(dims);
         subs = Expression.intSubscripts(ilst);
+        */
         // the rest not
-        vars = List.map4(crlst,generateVar,varKind,tp,subs,NONE());
+        vars = List.map4(crlst,generateVar,varKind,tp,dims,NONE());
       then
         vars;
     case (_,_,_,_)
@@ -4791,7 +4797,7 @@ algorithm
       BackendDAE.Type tp;
       Option<DAE.Exp> bind;
       Option<Values.Value> v;
-      list<DAE.Subscript> dim;
+      list<DAE.Dimension> dim;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
@@ -4856,7 +4862,7 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
-      list<DAE.Subscript> lstSubs;
+      list<DAE.Dimension> lstDims;
       Integer i,eindx,diffindex;
       list<Integer> ilst,changedVars;
       Option<DAE.Exp> quantity,unit,displayUnit,startOrigin;
@@ -4888,12 +4894,12 @@ algorithm
 */
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
-        ((BackendDAE.VAR(cr,BackendDAE.STATE(_,dcr),a,prl,b,_,_,lstSubs,source,_,comment,ct) :: {}),i::_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
+        ((BackendDAE.VAR(cr,BackendDAE.STATE(_,dcr),a,prl,b,_,_,lstDims,source,_,comment,ct) :: {}),i::_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
         // do not use the normal derivative prefix for the name
         //dummyder = ComponentReference.crefPrefixDer(cr);
         dummyder = ComponentReference.makeCrefQual("$_DER",DAE.T_REAL_DEFAULT,{},cr);
         (eqns_1,so1) = addDummyStateEqn(vars,eqns,cr,dummyder,so,i,eindx,mapIncRowEqn,mt);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.STATE(1,dcr), a, prl, b, NONE(), NONE(), lstSubs, source, NONE(), comment, ct), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.STATE(1,dcr), a, prl, b, NONE(), NONE(), lstDims, source, NONE(), comment, ct), vars);
         e = Expression.makeCrefExp(dummyder,DAE.T_REAL_DEFAULT);
       then
         ((DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal), (vars_1,eqns_1,so1,i::ilst,eindx,mapIncRowEqn,mt)));

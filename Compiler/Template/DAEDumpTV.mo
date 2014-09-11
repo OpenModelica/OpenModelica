@@ -224,7 +224,7 @@ package DAE
 
     type Ident = String;
 
-    type InstDims = list<Subscript>;
+    type InstDims = list<Dimension>;
     type Dimensions = list<Dimension>;
 
   uniontype DAElist

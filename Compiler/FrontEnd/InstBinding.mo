@@ -51,7 +51,7 @@ public import Values;
 
 protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
-protected type InstDims = list<list<DAE.Subscript>>;
+protected type InstDims = list<list<DAE.Dimension>>;
 
 protected import Ceval;
 protected import ComponentReference;
