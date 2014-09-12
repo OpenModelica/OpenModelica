@@ -20,9 +20,9 @@ MeasureTimeData::~MeasureTimeData()
 
 std::string MeasureTimeData::serializeToJson() const
 {
-	std::stringstream ss("");	
-	ss << "\"ncall\":" << numCalcs << "," << sumMeasuredValues->serializeToJson();
-	return ss.str();
+  std::stringstream ss("");
+  ss << "\"ncall\":" << numCalcs << "," << sumMeasuredValues->serializeToJson();
+  return ss.str();
 }
 
 MeasureTime::MeasureTime() : overhead(NULL) {}
@@ -40,7 +40,7 @@ MeasureTime* MeasureTime::getInstance()
 
 void MeasureTime::deinitialize()
 {
-  std::cerr << "Deinit:" << std::endl;	
+  std::cerr << "Deinit:" << std::endl;
   if (instance != 0)
   {
     std::cerr << "try is " << std::endl;
@@ -96,50 +96,50 @@ void MeasureTime::benchOverhead()
 
 void MeasureTime::addJsonContentBlock(const std::string model_name, const std::string blockname, const std::vector<MeasureTimeData> * in)
 {
-	toWrite[model_name][blockname] = in;
+  toWrite[model_name][blockname] = in;
 }
 
 void MeasureTime::writeToJson()
 {
   std::stringstream date;
-	date.str("");
-	time_t sec = time(NULL);
-	tm * date_t = localtime(&sec);
-	date << date_t->tm_year + 1900 << "-" << date_t->tm_mon + 1 << "-" << date_t->tm_mday << " " << date_t->tm_hour << ":" << date_t->tm_min << ":" << date_t->tm_sec;
+  date.str("");
+  time_t sec = time(NULL);
+  tm * date_t = localtime(&sec);
+  date << date_t->tm_year + 1900 << "-" << date_t->tm_mon + 1 << "-" << date_t->tm_mday << " " << date_t->tm_hour << ":" << date_t->tm_min << ":" << date_t->tm_sec;
 
   for( file_map::const_iterator model = toWrite.begin() ; model != toWrite.end() ; ++model ) // iterate files
   {
-		std::ofstream os;
-		os.open((model->first + std::string("_prof.json")).c_str());
-		os << "{\n\"name\":\"" << model->first << "\",\n";
-		os << "\"prefix\":\"" << model->first << "\",\n";
-		os << "\"date\":\"" << date.str() << "\",\n";
+    std::ofstream os;
+    os.open((model->first + std::string("_prof.json")).c_str());
+    os << "{\n\"name\":\"" << model->first << "\",\n";
+    os << "\"prefix\":\"" << model->first << "\",\n";
+    os << "\"date\":\"" << date.str() << "\",\n";
 
-		//write blocks:
-		bool isFirstBlock = true;
-		for( block_map::const_iterator block = model->second.begin() ; block != model->second.end() ; ++block ) // iterate blocks
-		{
-			const std::vector<MeasureTimeData> * data = block->second;
+    //write blocks:
+    bool isFirstBlock = true;
+    for( block_map::const_iterator block = model->second.begin() ; block != model->second.end() ; ++block ) // iterate blocks
+    {
+      const std::vector<MeasureTimeData> * data = block->second;
 
-			if(isFirstBlock) isFirstBlock = false;
-			else
-			{
-				os << ",\n";
-			}
-			os << "\"" << block->first << "\":[\n";
-			
-			//write data
-			for (unsigned i = 0; i < data->size()-1; ++i)
-			{
-				os << "{\"id\":" << i+1 << "," << (*data)[i].serializeToJson() << "},\n";
-			}
-			if( data->size() > 0 ) os << "{\"id\":" << data->size() << "," << (*data)[data->size()-1].serializeToJson() << "}]";
-			else os << "]";
+      if(isFirstBlock) isFirstBlock = false;
+      else
+      {
+        os << ",\n";
+      }
+      os << "\"" << block->first << "\":[\n";
 
-		} // end blocks
+      //write data
+      for (unsigned i = 0; i < data->size()-1; ++i)
+      {
+        os << "{\"id\":" << i+1 << "," << (*data)[i].serializeToJson() << "},\n";
+      }
+      if( data->size() > 0 ) os << "{\"id\":" << data->size() << "," << (*data)[data->size()-1].serializeToJson() << "}]";
+      else os << "]";
 
-		os << "\n}";
-		os.close();
+    } // end blocks
 
-	} // end files
+    os << "\n}";
+    os.close();
+
+  } // end files
 }

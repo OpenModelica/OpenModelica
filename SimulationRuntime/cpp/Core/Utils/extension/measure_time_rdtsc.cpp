@@ -4,7 +4,7 @@ MeasureTimeValuesRDTSC::MeasureTimeValuesRDTSC(unsigned long long time) : Measur
 
 MeasureTimeValuesRDTSC::~MeasureTimeValuesRDTSC() {}
 
-std::string MeasureTimeValuesRDTSC::serializeToJson() const 
+std::string MeasureTimeValuesRDTSC::serializeToJson() const
 {
   std::stringstream ss;
   ss << "\"time\":" << time << ",\"maxTime\":" << max_time;
@@ -43,8 +43,8 @@ void MeasureTimeValuesRDTSC::add(MeasureTimeValues *values)
   MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(values);
   time += val->time;
 
-	if( val->time > max_time )
-		max_time = val->time;
+  if( val->time > max_time )
+    max_time = val->time;
 }
 
 void MeasureTimeValuesRDTSC::sub(MeasureTimeValues *values)
