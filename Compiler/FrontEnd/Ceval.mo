@@ -867,7 +867,7 @@ algorithm
         // print("Before:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") +& "\n");
         valMatrix = makeReductionAllCombinations(valMatrix,iterType);
         // print("After:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") +& "\n");
-        // print("Start cevalReduction: " +& Absyn.pathString(path) +& " " +& ValuesUtil.valString(startValue) +& " " +& ValuesUtil.valString(Values.TUPLE(vals)) +& " " +& ExpressionDump.printExpStr(daeExp) +& "\n");
+        // print("Start cevalReduction: " +& Absyn.pathString(path) +& " " +& ExpressionDump.printExpStr(daeExp) +& "\n");
         (cache, ov, stOpt) = cevalReduction(cache, env, path, ov, daeExp, ty, foldName, resultName, foldExp, names, listReverse(valMatrix), tys, impl, stOpt,msg,numIter+1);
         value = Util.getOptionOrDefault(ov, Values.META_FAIL());
         value = backpatchArrayReduction(path, iterType, value, dims);
@@ -5433,11 +5433,15 @@ algorithm
       list<list<Values.Value>> valueMatrix;
       Option<Values.Value> curValue;
 
-    case (cache, _, Absyn.IDENT("listReverse"), SOME(Values.LIST(vals)), _, _, _, _, _, _, {}, _, _, st, _, _)
+    case (cache, _, Absyn.IDENT("list"), SOME(Values.LIST(vals)), _, _, _, _, _, _, {}, _, _, st, _, _)
       equation
         vals = listReverse(vals);
       then (cache, SOME(Values.LIST(vals)), st);
+    case (cache, _, Absyn.IDENT("listReverse"), SOME(Values.LIST(vals)), _, _, _, _, _, _, {}, _, _, st, _, _)
+      then (cache, inCurValue, st);
     case (cache, _, Absyn.IDENT("array"), SOME(Values.ARRAY(vals,dims)), _, _, _, _, _, _, {}, _, _, st, _, _)
+      equation
+        vals = listReverse(vals);
       then (cache, SOME(Values.ARRAY(vals,dims)), st);
 
     case (cache, _, _, curValue, _, _, _, _, _, _, {}, _, _, st, _, _)
@@ -5446,7 +5450,7 @@ algorithm
     case (cache, env, _, curValue, _, _, _, _, _, _, vals :: valueMatrix, _, _, st, _, _)
       equation
         // Bind the iterator
-        // print("iterator: " +& iteratorName +& " => " +& ValuesUtil.valString(value) +& "\n");
+        // print("iterators: " + stringDelimitList(list(ValuesUtil.valString(v) for v in vals), ",") + "\n");
         new_env = extendFrameForIterators(env, iteratorNames, vals, iterTypes);
         // Calculate var1 of the folding function
         (cache, curValue, st) = cevalReductionEvalAndFold(cache, new_env, opPath, curValue, exp, exprType, foldName, resultName, foldExp, impl, st,msg,numIter+1);
@@ -6265,8 +6269,8 @@ protected function makeReductionAllCombinations
   output list<list<Values.Value>> valMatrix;
 algorithm
   valMatrix := match (inValMatrix,rtype)
-    case (_,Absyn.COMBINE()) then Util.allCombinations(inValMatrix,SOME(100000),Absyn.dummyInfo);
-    case (_,Absyn.THREAD()) then List.transposeList(inValMatrix);
+    case (_,Absyn.COMBINE()) then listReverse(Util.allCombinations(inValMatrix,SOME(100000),Absyn.dummyInfo));
+    case (_,Absyn.THREAD()) then listReverse(List.transposeList(inValMatrix));
   end match;
 end makeReductionAllCombinations;
 

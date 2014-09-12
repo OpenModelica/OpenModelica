@@ -5117,9 +5117,8 @@ algorithm
     // step 2: result= (replace b in (a+b) with 4, a with 3): 3+4
     // ...
     // Why reverse order? Smaller expressions to perform the replacements in
-    case (_,SOME(foldExp),_,_,_,_,_)
+    case (_,SOME(foldExp),_,_,_,exp::exps,_)
       equation
-        exp::exps = listReverse(inExps);
         exp = simplifyReductionFoldPhase2(exps,foldExp,foldName,resultName,exp);
       then exp;
 

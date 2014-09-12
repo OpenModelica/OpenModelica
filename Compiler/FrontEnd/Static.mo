@@ -1255,7 +1255,7 @@ algorithm
       inST,performVectorization,inPrefix,info)
     local
       DAE.Exp exp_1;
-      DAE.Type expty;
+      DAE.Type expty,resultTy;
       DAE.Const iterconst,expconst,const;
       Env.Env env_foldExp,env_1,env;
       Option<GlobalScript.SymbolTable> st;
@@ -1287,12 +1287,12 @@ algorithm
         // print("exp_1 has type: " +& Types.unparseType(expty) +& "\n");
         const = Types.constAnd(expconst, iterconst);
         fn_1 = Absyn.crefToPath(fn);
-        (cache,exp_1,expty,v,fn_1) = reductionType(cache, env, fn_1, exp_1, expty, Types.unboxedType(expty), dims, hasGuardExp, info);
+        (cache,exp_1,expty,resultTy,v,fn_1) = reductionType(cache, env, fn_1, exp_1, expty, Types.unboxedType(expty), dims, hasGuardExp, info);
         prop = DAE.PROP(expty, const);
         foldId = Util.getTempVariableIndex();
         resultId = Util.getTempVariableIndex();
-        (env_foldExp,afoldExp) = makeReductionFoldExp(env_1,fn_1,expty,foldId,resultId);
-        (cache,foldExp,_,st) = elabExpOptAndMatchType(cache, env_foldExp, afoldExp, expty, impl, st, doVect,pre,info);
+        (env_foldExp,afoldExp) = makeReductionFoldExp(env_1,fn_1,expty,resultTy,foldId,resultId);
+        (cache,foldExp,_,st) = elabExpOptAndMatchType(cache, env_foldExp, afoldExp, resultTy, impl, st, doVect,pre,info);
         // print("make reduction: " +& Absyn.pathString(fn_1) +& " exp_1: " +& ExpressionDump.printExpStr(exp_1) +& " ty: " +& Types.unparseType(expty) +& "\n");
         exp_1 = DAE.REDUCTION(DAE.REDUCTIONINFO(fn_1,iterType,expty,v,foldId,resultId,foldExp),exp_1,reductionIters);
       then
@@ -1389,37 +1389,38 @@ protected function makeReductionFoldExp
   input Env.Env inEnv;
   input Absyn.Path path;
   input DAE.Type expty;
+  input DAE.Type resultTy;
   input String foldId;
   input String resultId;
   output Env.Env outEnv;
   output Option<Absyn.Exp> afoldExp;
 algorithm
-  (outEnv,afoldExp) := match (inEnv,path,expty,foldId,resultId)
+  (outEnv,afoldExp) := match (inEnv,path,expty,resultTy,foldId,resultId)
     local
       Absyn.Exp exp;
       Absyn.ComponentRef cr,cr1,cr2;
       Env.Env env;
 
-    case (env,Absyn.IDENT("array"),_,_,_) then (env,NONE());
-    case (env,Absyn.IDENT("list"),_,_,_) then (env,NONE());
-    case (env,Absyn.IDENT("listReverse"),_,_,_) then (env,NONE());
-    case (env,Absyn.IDENT("sum"),_,_,_)
+    case (env,Absyn.IDENT("array"),_,_,_,_) then (env,NONE());
+    case (env,Absyn.IDENT("list"),_,_,_,_) then (env,NONE());
+    case (env,Absyn.IDENT("listReverse"),_,_,_,_) then (env,NONE());
+    case (env,Absyn.IDENT("sum"),_,_,_,_)
       equation
         _ = Absyn.pathToCref(path);
         env = Env.extendFrameForIterator(env, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         env = Env.extendFrameForIterator(env, resultId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         cr1 = Absyn.CREF_IDENT(foldId,{});
         cr2 = Absyn.CREF_IDENT(resultId,{});
-        exp = Absyn.BINARY(Absyn.CREF(cr1),Absyn.ADD(),Absyn.CREF(cr2));
+        exp = Absyn.BINARY(Absyn.CREF(cr2),Absyn.ADD(),Absyn.CREF(cr1));
       then (env,SOME(exp));
-    case (env,Absyn.IDENT("product"),_,_,_)
+    case (env,Absyn.IDENT("product"),_,_,_,_)
       equation
         _ = Absyn.pathToCref(path);
         env = Env.extendFrameForIterator(env, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         env = Env.extendFrameForIterator(env, resultId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         cr1 = Absyn.CREF_IDENT(foldId,{});
         cr2 = Absyn.CREF_IDENT(resultId,{});
-        exp = Absyn.BINARY(Absyn.CREF(cr1),Absyn.MUL(),Absyn.CREF(cr2));
+        exp = Absyn.BINARY(Absyn.CREF(cr2),Absyn.MUL(),Absyn.CREF(cr1));
       then (env,SOME(exp));
     else
       equation
@@ -1427,7 +1428,7 @@ algorithm
         cr = Absyn.pathToCref(path);
         // print("makeReductionFoldExp => " +& Absyn.pathString(path) +& Types.unparseType(expty) +& "\n");
         env = Env.extendFrameForIterator(env, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
-        env = Env.extendFrameForIterator(env, resultId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        env = Env.extendFrameForIterator(env, resultId, resultTy, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         cr1 = Absyn.CREF_IDENT(foldId,{});
         cr2 = Absyn.CREF_IDENT(resultId,{});
         exp = Absyn.CALL(cr,Absyn.FUNCTIONARGS({Absyn.CREF(cr1),Absyn.CREF(cr2)},{}));
@@ -1448,133 +1449,138 @@ protected function reductionType
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Type outType;
+  output DAE.Type resultType;
   output Option<Values.Value> defaultValue;
   output Absyn.Path outPath;
 algorithm
-  (outCache,outExp,outType,defaultValue,outPath) :=
+  (outCache,outExp,outType,resultType,defaultValue,outPath) :=
   match (inCache, inEnv, fn, inExp, inType, unboxedType, dims, hasGuardExp, info)
     local
       Boolean b;
       Integer i;
       Real r;
       list<DAE.Type> fnTypes;
-      DAE.Type ty,typeA,typeB,resType;
+      DAE.Type ty,ty2,typeA,typeB,resType;
       Absyn.Path path;
       Values.Value v;
       DAE.Exp exp;
       Env.Cache cache;
       Env.Env env;
+      InstTypes.PolymorphicBindings bindings;
+      Option<Values.Value> defaultBinding;
 
     case (cache,_,Absyn.IDENT(name = "array"), exp, ty, _, _, _, _)
       equation
         ty = List.foldr(dims,Types.liftArray,ty);
-      then (cache,exp,ty,SOME(Values.ARRAY({},{0})),fn);
+      then (cache,exp,ty,ty,SOME(Values.ARRAY({},{0})),fn);
 
     case (cache,_,Absyn.IDENT(name = "list"), exp, ty, _, _, _, _)
       equation
         (exp,ty) = Types.matchType(exp, ty, DAE.T_METABOXED_DEFAULT, true);
-      then (cache,exp,DAE.T_METALIST(ty, DAE.emptyTypeSource),SOME(Values.LIST({})),fn);
+        ty = DAE.T_METALIST(ty, DAE.emptyTypeSource);
+      then (cache,exp,ty,ty,SOME(Values.LIST({})),fn);
 
     case (cache,_,Absyn.IDENT(name = "listReverse"), exp, ty, _, _, _, _)
       equation
         (exp,ty) = Types.matchType(exp, ty, DAE.T_METABOXED_DEFAULT, true);
-      then (cache,exp,DAE.T_METALIST(ty, DAE.emptyTypeSource),SOME(Values.LIST({})),fn);
+        ty = DAE.T_METALIST(ty, DAE.emptyTypeSource);
+      then (cache,exp,ty,ty,SOME(Values.LIST({})),fn);
 
     case (cache,_,Absyn.IDENT("min"),exp, ty, DAE.T_REAL(varLst = _),_,_,_)
       equation
         r = System.realMaxLit();
         v = Values.REAL(r);
         (exp,ty) = Types.matchType(exp, ty, DAE.T_REAL_DEFAULT, true);
-      then (cache,exp,ty,SOME(v),fn);
+      then (cache,exp,ty,ty,SOME(v),fn);
 
     case (cache,_,Absyn.IDENT("min"),exp,ty,DAE.T_INTEGER(varLst = _),_,_,_)
       equation
         i = System.intMaxLit();
         v = Values.INTEGER(i);
         (exp,ty) = Types.matchType(exp, ty, DAE.T_INTEGER_DEFAULT, true);
-      then (cache,exp,ty,SOME(v),fn);
+      then (cache,exp,ty,ty,SOME(v),fn);
 
     case (cache,_,Absyn.IDENT("min"),exp,ty,DAE.T_BOOL(varLst = _),_,_,_)
       equation
         v = Values.BOOL(true);
         (exp,ty) = Types.matchType(exp, ty, DAE.T_BOOL_DEFAULT, true);
-      then (cache,exp,ty,SOME(v),fn);
+      then (cache,exp,ty,ty,SOME(v),fn);
 
     case (cache,_,Absyn.IDENT("min"),exp,ty,DAE.T_STRING(varLst = _),_,_,_)
       equation
         (exp,ty) = Types.matchType(exp, ty, DAE.T_STRING_DEFAULT, true);
-      then (cache,exp,ty,NONE(),fn);
+      then (cache,exp,ty,ty,NONE(),fn);
 
     case (cache,_,Absyn.IDENT("max"),exp,ty,DAE.T_REAL(varLst = _),_,_,_)
       equation
         r = realNeg(System.realMaxLit());
         v = Values.REAL(r);
         (exp,ty) = Types.matchType(exp, ty, DAE.T_REAL_DEFAULT, true);
-      then (cache,exp,ty,SOME(v),fn);
+      then (cache,exp,ty,ty,SOME(v),fn);
 
     case (cache,_,Absyn.IDENT("max"),exp,ty,DAE.T_INTEGER(varLst = _),_,_,_)
       equation
         i = intNeg(System.intMaxLit());
         v = Values.INTEGER(i);
         (exp,ty) = Types.matchType(exp, ty, DAE.T_INTEGER_DEFAULT, true);
-      then (cache,exp,ty,SOME(v),fn);
+      then (cache,exp,ty,ty,SOME(v),fn);
 
     case (cache,_,Absyn.IDENT("max"),exp,ty,DAE.T_BOOL(varLst = _),_,_,_)
       equation
         v = Values.BOOL(false);
         (exp,ty) = Types.matchType(exp, ty, DAE.T_BOOL_DEFAULT, true);
-      then (cache,exp,ty,SOME(v),fn);
+      then (cache,exp,ty,ty,SOME(v),fn);
 
     case (cache,_,Absyn.IDENT("max"),exp,ty,DAE.T_STRING(varLst = _),_,_,_)
       equation
         v = Values.STRING("");
         (exp,ty) = Types.matchType(exp, ty, DAE.T_STRING_DEFAULT, true);
-      then (cache,exp,ty,SOME(v),fn);
+      then (cache,exp,ty,ty,SOME(v),fn);
 
     case (cache,_,Absyn.IDENT("sum"),exp,ty,DAE.T_REAL(varLst = _),_,_,_)
       equation
         v = Values.REAL(0.0);
         (exp,ty) = Types.matchType(exp, ty, DAE.T_REAL_DEFAULT, true);
-      then (cache,exp,ty,SOME(v),fn);
+      then (cache,exp,ty,ty,SOME(v),fn);
 
     case (cache,_,Absyn.IDENT("sum"),exp,ty,DAE.T_INTEGER(varLst = _),_,_,_)
       equation
         v = Values.INTEGER(0);
         (exp,ty) = Types.matchType(exp, ty, DAE.T_INTEGER_DEFAULT, true);
-      then (cache,exp,ty,SOME(v),fn);
+      then (cache,exp,ty,ty,SOME(v),fn);
 
     case (cache,_,Absyn.IDENT("sum"),exp,ty,DAE.T_BOOL(varLst = _),_,_,_)
       equation
         v = Values.BOOL(false);
         (exp,ty) = Types.matchType(exp, ty, DAE.T_BOOL_DEFAULT, true);
-      then (cache,exp,ty,SOME(v),fn);
+      then (cache,exp,ty,ty,SOME(v),fn);
 
     case (cache,_,Absyn.IDENT("sum"),exp,ty,DAE.T_STRING(varLst = _),_,_,_)
       equation
         v = Values.STRING("");
         (exp,ty) = Types.matchType(exp, ty, DAE.T_STRING_DEFAULT, true);
-      then (cache,exp,ty,SOME(v),fn);
+      then (cache,exp,ty,ty,SOME(v),fn);
 
     case (cache,_,Absyn.IDENT("sum"),exp,ty,DAE.T_ARRAY(ty =_),_,_,_)
-      then (cache,exp,ty,NONE(),fn);
+      then (cache,exp,ty,ty,NONE(),fn);
 
     case (cache,_,Absyn.IDENT("product"),exp,ty,DAE.T_REAL(varLst = _),_,_,_)
       equation
         v = Values.REAL(1.0);
         (exp,ty) = Types.matchType(exp, ty, DAE.T_REAL_DEFAULT, true);
-      then (cache,exp,ty,SOME(v),fn);
+      then (cache,exp,ty,ty,SOME(v),fn);
 
     case (cache,_,Absyn.IDENT("product"),exp,ty,DAE.T_INTEGER(varLst = _),_,_,_)
       equation
         v = Values.INTEGER(1);
         (exp,ty) = Types.matchType(exp, ty, DAE.T_INTEGER_DEFAULT, true);
-      then (cache,exp,ty,SOME(v),fn);
+      then (cache,exp,ty,ty,SOME(v),fn);
 
     case (cache,_,Absyn.IDENT("product"),exp,ty,DAE.T_BOOL(varLst = _),_,_,_)
       equation
         v = Values.BOOL(true);
         (exp,ty) = Types.matchType(exp, ty, DAE.T_BOOL_DEFAULT, true);
-      then (cache,exp,ty,SOME(v),fn);
+      then (cache,exp,ty,ty,SOME(v),fn);
 
     case (_,_,Absyn.IDENT("product"),_,_,DAE.T_STRING(varLst = _),_,_,_)
       equation
@@ -1583,16 +1589,23 @@ algorithm
 
     case (cache,_,Absyn.IDENT("product"),exp,ty,DAE.T_ARRAY(ty = _),_,_,_)
       equation
-      then (cache,exp,ty,NONE(),fn);
+      then (cache,exp,ty,ty,NONE(),fn);
 
     case (cache,env,path,exp,ty,_,_,_,_)
       equation
         (cache,fnTypes) = Lookup.lookupFunctionsInEnv(cache, env, path, info);
-        (typeA,typeB,resType,path) = checkReductionType1(env,path,fnTypes,info);
-        (exp,ty) = checkReductionType2(exp,ty,typeA,typeB,resType,Types.equivtypes(typeA,typeB),Types.equivtypes(typeB,resType),info);
+        (typeA,typeB,resType,defaultBinding,path) = checkReductionType1(env,path,fnTypes,info);
+        ty2 = Util.if_(Util.isSome(defaultBinding),typeB,ty);
+        (exp,typeA,bindings) = Types.matchTypePolymorphicWithError(exp,ty,typeA,SOME(path),{},info);
+        (_,typeB,bindings) = Types.matchTypePolymorphicWithError(DAE.CREF(DAE.CREF_IDENT("$result",DAE.T_ANYTYPE_DEFAULT,{}),DAE.T_ANYTYPE_DEFAULT),ty2,typeB,SOME(path),bindings,info);
+        bindings = Types.solvePolymorphicBindings(bindings, info, {path});
+        typeA = Types.fixPolymorphicRestype(typeA, bindings, info);
+        typeB = Types.fixPolymorphicRestype(typeB, bindings, info);
+        resType = Types.fixPolymorphicRestype(resType, bindings, info);
+        (exp,ty) = checkReductionType2(exp,ty,typeA,typeB,resType,Types.equivtypes(typeA,typeB) or Util.isSome(defaultBinding),Types.equivtypes(typeB,resType),info);
         (cache,Util.SUCCESS()) = instantiateDaeFunction(cache, env, path, false, NONE(), true);
         Error.assertionOrAddSourceMessage(Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.EXPERIMENTAL_REDUCTIONS), Error.COMPILER_NOTIFICATION, {"Custom reduction functions are an OpenModelica extension to the Modelica Specification. Do not use them if you need your model to compile using other tools or if you are concerned about using experimental features. Use +d=experimentalReductions to disable this message."}, info);
-      then (cache,exp,ty,NONE(),path);
+      then (cache,exp,ty,typeB,defaultBinding,path);
   end match;
 end reductionType;
 
@@ -1604,13 +1617,16 @@ protected function checkReductionType1
   output DAE.Type typeA;
   output DAE.Type typeB;
   output DAE.Type resType;
+  output Option<Values.Value> startValue;
   output Absyn.Path outPath;
 algorithm
-  (typeA,typeB,resType,outPath) := match (inEnv,inPath,fnTypes,info)
+  (typeA,typeB,resType,startValue,outPath) := match (inEnv,inPath,fnTypes,info)
     local
       String str1,str2;
       Absyn.Path path;
       Env.Env env;
+      DAE.Exp e;
+      Values.Value v;
 
     case (env, path, {}, _)
       equation
@@ -1619,8 +1635,13 @@ algorithm
         Error.addSourceMessage(Error.LOOKUP_FUNCTION_ERROR, {str1,str2}, info);
       then fail();
 
-    case (_, _, {DAE.T_FUNCTION(funcArg={DAE.FUNCARG(ty=typeA,const=DAE.C_VAR()),DAE.FUNCARG(ty=typeB,const=DAE.C_VAR())},funcResultType = resType, source = {path})}, _)
-      then (typeA,typeB,resType,path);
+    case (_, _, {DAE.T_FUNCTION(funcArg={DAE.FUNCARG(ty=typeA,const=DAE.C_VAR()),DAE.FUNCARG(ty=typeB,const=DAE.C_VAR(),defaultBinding=SOME(e))},funcResultType = resType, source = {path})}, _)
+      equation
+        v = Ceval.cevalSimple(e);
+      then (typeA,typeB,resType,SOME(v),path);
+
+    case (_, _, {DAE.T_FUNCTION(funcArg={DAE.FUNCARG(ty=typeA,const=DAE.C_VAR()),DAE.FUNCARG(ty=typeB,const=DAE.C_VAR(),defaultBinding=NONE())},funcResultType = resType, source = {path})}, _)
+      then (typeA,typeB,resType,NONE(),path);
 
     else
       equation
@@ -1648,10 +1669,8 @@ algorithm
       DAE.Exp exp;
 
     case (exp,_,_,_,_,true,true,_)
-      equation
-        // print("Casting " +& ExpressionDump.printExpStr(exp) +& " of " +& Types.unparseType(expType) +& " to " +& Types.unparseType(typeA) +& "\n");
-        (exp,outTy) = Types.matchType(exp,expType,typeA,true);
-      then (exp,outTy);
+        // (exp,outTy) = Types.matchType(exp,expType,typeA,true);
+      then (exp,typeA);
     case (_,_,_,_,_,_,false,_)
       equation
         str1 = Types.unparseType(typeB);

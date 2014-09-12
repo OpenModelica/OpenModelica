@@ -5748,6 +5748,40 @@ algorithm
   end matchcontinue;
 end matchTypePolymorphic;
 
+public function matchTypePolymorphicWithError "Like matchType, except we also
+bind polymorphic variabled. Used when elaborating calls."
+  input DAE.Exp iexp;
+  input DAE.Type iactual;
+  input DAE.Type iexpected;
+  input Option<Absyn.Path> envPath "to detect which polymorphic types are recursive";
+  input InstTypes.PolymorphicBindings ipolymorphicBindings;
+  input Absyn.Info info;
+  output DAE.Exp outExp;
+  output DAE.Type outType;
+  output InstTypes.PolymorphicBindings outBindings;
+algorithm
+  (outExp,outType,outBindings):=
+  matchcontinue (iexp,iactual,iexpected,envPath,ipolymorphicBindings,info)
+    local
+      DAE.Exp e,e_1,exp;
+      Type e_type,expected_type,e_type_1,actual,expected;
+      InstTypes.PolymorphicBindings polymorphicBindings;
+      String str1,str2,str3;
+
+    case (exp,actual,expected,_,polymorphicBindings,_)
+      equation
+        (exp,actual,polymorphicBindings) = matchTypePolymorphic(exp,actual,expected,envPath,polymorphicBindings,false);
+      then (exp,actual,polymorphicBindings);
+    else
+      equation
+        str1 = ExpressionDump.printExpStr(iexp);
+        str2 = unparseType(iactual);
+        str3 = unparseType(iexpected);
+        Error.addSourceMessage(Error.EXP_TYPE_MISMATCH, {str1,str3,str2}, info);
+      then fail();
+  end matchcontinue;
+end matchTypePolymorphicWithError;
+
 public function matchType "This function matches an expression with an expected type, and
   converts the expression to the expected type if necessary."
   input DAE.Exp exp;

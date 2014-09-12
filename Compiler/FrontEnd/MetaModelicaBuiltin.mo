@@ -581,7 +581,7 @@ end substring;
 
 function listAppend<A> "O(length(lst1)), O(1) if either list is empty"
   input List<A> lst1;
-  input List<A> lst2;
+  input List<A> lst2 := {};
   output List<A> lst;
 external "builtin";
 end listAppend;
@@ -651,7 +651,7 @@ end listEmpty;
 
 function cons<A> "O(1)"
   input A element;
-  input List<A> inLst;
+  input List<A> inLst := {};
   output List<A> outLst;
 algorithm
   outLst := element::inLst;
