@@ -4086,7 +4086,7 @@ protected
   tuple<Integer,Integer> reqTimeCom;
   //These mappings are for simEqSystems
   list<tuple<Integer,Integer,Real>> reqTimeOpLstSimCode; //<simEqIdx,numberOfCalcs,calcTimeSum>
-  array<tuple<Integer,Real>> reqTimeOpSimCode;
+  array<tuple<Integer,Real>> reqTimeOpSimCode; //<simEqIdx,calcTime>
   TaskGraphMeta tmpTaskGraphMeta;
   array<Real> reqTimeOp; //Calculation time for each scc
   array<list<Integer>> inComps;
@@ -4099,10 +4099,13 @@ algorithm
         compMapping = Util.arrayMap(compMapping_withIdx, Util.tuple21);
         ((_,reqTimeCom)) = HpcOmBenchmark.benchSystem();
         reqTimeOpLstSimCode = HpcOmBenchmark.readCalcTimesFromFile(benchFilePrefix);
+        //print("createCosts: read files\n");
         reqTimeOpSimCode = arrayCreate(listLength(reqTimeOpLstSimCode),(-1,-1.0));
         reqTimeOpSimCode = List.fold(reqTimeOpLstSimCode, createCosts1, reqTimeOpSimCode);
+        //print("createCosts: reqTimeOpSimCode created\n");
         reqTimeOp = arrayCreate(listLength(comps),-1.0);
         reqTimeOp = convertSimEqToSccCosts(reqTimeOpSimCode, simeqCompMapping, reqTimeOp);
+        //print("createCosts: scc costs converted\n");
         commCosts = createCommCosts(commCosts,1,reqTimeCom);
         ((_,tmpTaskGraphMeta)) = Util.arrayFold4(inComps,createCosts0,(comps,shared),compMapping, reqTimeOp, reqTimeCom, (1,iTaskGraphMeta));
       then tmpTaskGraphMeta;
@@ -4301,35 +4304,35 @@ protected function convertSimEqToSccCosts
   input array<Real> iReqTimeOp;
   output array<Real> oReqTimeOp; //calcTime for each scc
 algorithm
-  ((_,oReqTimeOp)) := Util.arrayFold1(iReqTimeOpSimCode, convertSimEqToSccCosts1, iSimeqCompMapping, (0,iReqTimeOp));
+  ((_,oReqTimeOp)) := Util.arrayFold1(iReqTimeOpSimCode, convertSimEqToSccCosts1, iSimeqCompMapping, (1,iReqTimeOp));
 end convertSimEqToSccCosts;
 
 protected function convertSimEqToSccCosts1
   input tuple<Integer,Real> iReqTimeOpSimCode;
   input array<Integer> iSimeqCompMapping; //Map each simEq to the scc
   input tuple<Integer,array<Real>> iReqTimeOp;
-  output tuple<Integer,array<Real>> oReqTimeOp; //calcTime for each scc
+  output tuple<Integer,array<Real>> oReqTimeOp; //<simEqIdx, calcTime>
 protected
   Integer simEqCalcCount, simEqIdx;
   Real simEqCalcTime, realSimEqCalcCount;
   array<Real> reqTime;
 algorithm
   oReqTimeOp := matchcontinue(iReqTimeOpSimCode,iSimeqCompMapping,iReqTimeOp)
-    case(_,_,_)
+    case((simEqCalcCount, simEqCalcTime),_,(simEqIdx,reqTime))
       equation
-        (simEqCalcCount, simEqCalcTime) = iReqTimeOpSimCode;
-        (simEqIdx,reqTime) = iReqTimeOp;
         realSimEqCalcCount = intReal(simEqCalcCount);
         true = realNe(realSimEqCalcCount,0.0);
         reqTime = convertSimEqToSccCosts2(reqTime, realDiv(simEqCalcTime,realSimEqCalcCount), simEqIdx, iSimeqCompMapping);
       then ((simEqIdx+1,reqTime));
-    else
+    case((simEqCalcCount, simEqCalcTime),_,(simEqIdx,reqTime))
       equation
-        (simEqCalcCount, simEqCalcTime) = iReqTimeOpSimCode;
-        (simEqIdx,reqTime) = iReqTimeOp;
         realSimEqCalcCount = intReal(simEqCalcCount);
         reqTime = convertSimEqToSccCosts2(reqTime, 0.0, simEqIdx, iSimeqCompMapping);
       then ((simEqIdx+1,reqTime));
+    else
+      equation
+        print("convertSimEqToSccCosts1 failed!\n");
+      then fail();
   end matchcontinue;
 end convertSimEqToSccCosts1;
 
@@ -4350,7 +4353,7 @@ algorithm
         sccIdx = arrayGet(iSimeqCompMapping, iSimEqIdx);
         true = intGt(sccIdx,0);
         reqTime = arrayUpdate(reqTime,sccIdx, iSimEqCalcTime);
-        //print("convertSimEqToSccCosts2 sccIdx: " +& intString(sccIdx) +& " reqTime: " +& realString(iSimEqCalcTime) +& "\n");
+        //print("convertSimEqToSccCosts2 sccIdx: " +& intString(sccIdx) +& " simEqIdx: " +& intString(iSimEqIdx) +& " reqTime: " +& realString(iSimEqCalcTime) +& "\n");
       then
         reqTime;
     else
@@ -4396,10 +4399,15 @@ protected
   Integer simEqIdx,calcTimeCount;
   Real calcTime;
 algorithm
-  tmpArray := iReqTime;
-  (simEqIdx,calcTimeCount,calcTime) := iTuple;
-  tmpArray := arrayUpdate(iReqTime, simEqIdx+1,(calcTimeCount,calcTime));
-  oReqTime := tmpArray;
+  oReqTime := match(iTuple, iReqTime)
+    case((0,calcTimeCount,calcTime),_)
+      then iReqTime;
+    case((simEqIdx,calcTimeCount,calcTime),tmpArray)
+      equation
+        //print("createCosts1: simEqIdx: " +& intString(simEqIdx) +& " calc-time: " +& realString(calcTime) +& " array-length: " +& intString(arrayLength(iReqTime)) +& "\n");
+        tmpArray = arrayUpdate(iReqTime, simEqIdx,(calcTimeCount,calcTime));
+      then tmpArray;
+  end match;
 end createCosts1;
 
 protected function createExecCost "author: marcusw
@@ -4416,6 +4424,7 @@ algorithm
       tuple<Integer,Real> execCost;
     case(_,_,_,_,_,_)
       equation
+        //print("\tcreateExecCost: sccs: " +& stringDelimitList(List.map(iNodeSccs, intString), ",") +& "\n"); 
         execCost = List.fold3(iNodeSccs, createExecCost0, icomps_shared, compMapping, iRequiredTime, (0,0.0));
         _ = arrayUpdate(iExecCosts,iNodeIdx,execCost);
       then ();
@@ -4447,6 +4456,7 @@ algorithm
   comp := listGet(comps,sccIndex);
   syst := arrayGet(compMapping,sccIndex);
   reqTime := arrayGet(iRequiredTime, sccIndex);
+  //print("createExecCost0: Handling scc " +& intString(sccIndex) +& " with cost " +& realString(reqTime) +& "\n");
   ((costAdd,costMul,costTrig)) := countOperations(comp, syst, shared);
   oCosts := (costAdd+costMul+costTrig + iCosts_op, realAdd(iCosts_cyc,reqTime));
 end createExecCost0;

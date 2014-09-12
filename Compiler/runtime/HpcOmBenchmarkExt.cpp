@@ -354,16 +354,36 @@ std::list<std::list<double> > ReadJsonBenchFileEquations(std::string filePath)
 
     /* allocate memory for entire content */
     buffer = (char*)calloc( 1, lSize+1 );
-    if( !buffer ) fclose(fp),fputs("memory alloc fails",stderr),exit(1);
+    if( !buffer )
+    {
+    	fclose(fp),fputs("memory alloc fails\n",stderr);
+    	return resultList;
+    }
 
     /* copy the file into the buffer */
     if( 1!=fread( buffer , lSize, 1 , fp) )
-      fclose(fp),free(buffer),fputs("entire read fails",stderr),exit(1);
-
+    {
+      fclose(fp),free(buffer),fputs("entire read fails\n",stderr);
+      return resultList;
+    }
     /* do your work here, buffer is a string contains the whole text */
     root = cJSON_Parse(buffer);
+
+    if(root == 0)
+    {
+    	fclose(fp),free(buffer),fputs("no root object defined in json-file - maybe the json file is corrupt\n",stderr);
+    	return resultList;
+    }
+
     profileBlocks = cJSON_GetObjectItem(root,"profileBlocks");
+    if(profileBlocks == 0)
+    {
+    	fclose(fp),free(buffer),fputs("no profile blocks defined in json-file\n",stderr);
+    	return resultList;
+    }
+
     arraySize = cJSON_GetArraySize(profileBlocks);
+
     for(i = 0; i < arraySize; i++)
     {
       cJSON *item = cJSON_GetArrayItem(profileBlocks, i);

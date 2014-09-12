@@ -96,7 +96,7 @@ void MeasureTime::writeTimeToJason(std::string model_name, std::vector<MeasureTi
 
   for (unsigned i = 0; i < data.size(); ++i)
   {
-    os << "{\"id\":" << i+1 << ",\"ncall\":" << data[i].numCalcs << "," << data[i].sumMeasuredValues->serializeToJson() << "},\n";
+    os << "{\"id\":" << (i+1) << ",\"ncall\":" << data[i].numCalcs << "," << data[i].sumMeasuredValues->serializeToJson() << "}" << ((i+1) == data.size() ? "" : ",") << "\n";
   }
   os << "]\n}";
   os.close();
