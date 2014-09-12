@@ -356,8 +356,8 @@ std::list<std::list<double> > ReadJsonBenchFileEquations(std::string filePath)
     buffer = (char*)calloc( 1, lSize+1 );
     if( !buffer )
     {
-    	fclose(fp),fputs("memory alloc fails\n",stderr);
-    	return resultList;
+      fclose(fp),fputs("memory alloc fails\n",stderr);
+      return resultList;
     }
 
     /* copy the file into the buffer */
@@ -371,15 +371,15 @@ std::list<std::list<double> > ReadJsonBenchFileEquations(std::string filePath)
 
     if(root == 0)
     {
-    	fclose(fp),free(buffer),fputs("no root object defined in json-file - maybe the json file is corrupt\n",stderr);
-    	return resultList;
+      fclose(fp),free(buffer),fputs("no root object defined in json-file - maybe the json file is corrupt\n",stderr);
+      return resultList;
     }
 
     profileBlocks = cJSON_GetObjectItem(root,"profileBlocks");
     if(profileBlocks == 0)
     {
-    	fclose(fp),free(buffer),fputs("no profile blocks defined in json-file\n",stderr);
-    	return resultList;
+      fclose(fp),free(buffer),fputs("no profile blocks defined in json-file\n",stderr);
+      return resultList;
     }
 
     arraySize = cJSON_GetArraySize(profileBlocks);

@@ -4424,7 +4424,7 @@ algorithm
       tuple<Integer,Real> execCost;
     case(_,_,_,_,_,_)
       equation
-        //print("\tcreateExecCost: sccs: " +& stringDelimitList(List.map(iNodeSccs, intString), ",") +& "\n"); 
+        //print("\tcreateExecCost: sccs: " +& stringDelimitList(List.map(iNodeSccs, intString), ",") +& "\n");
         execCost = List.fold3(iNodeSccs, createExecCost0, icomps_shared, compMapping, iRequiredTime, (0,0.0));
         _ = arrayUpdate(iExecCosts,iNodeIdx,execCost);
       then ();
