@@ -1289,7 +1289,13 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
             std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
 
             simulation.first->Start(system.first,simulation.second,"<%lastIdentOfPath(modelInfo.name)%>");
-            <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '//MeasureTimeRDTSC::deinitialize();' %>
+            
+            <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+                <<
+                MeasureTime::getInstance()->writeToJson();
+                //MeasureTimeRDTSC::deinitialize();
+                >>
+            %>
             return 0;
 
       }
@@ -1654,6 +1660,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         let numOfEqs = SimCodeUtil.getMaxSimEqSystemIndex(simCode)
         <<
         measureTimeArray = std::vector<MeasureTimeData>(<%numOfEqs%>);
+        MeasureTime::addJsonContentBlock("<%dotPath(modelInfo.name)%>","profileBlocks",&measureTimeArray);
         measuredStartValues = MeasureTime::getZeroValues();
         measuredEndValues = MeasureTime::getZeroValues();
 
@@ -1680,12 +1687,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     {
         if(_functions != NULL)
             delete _functions;
-
-        <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-        <<
-        MeasureTime::getInstance()->writeTimeToJason("<%dotPath(modelInfo.name)%>",measureTimeArray);
-        >>
-        %>
     }
 
 
@@ -7314,8 +7315,8 @@ end equation_function_call;
 template measureTimeStart(String eq_number)
 ::=
   <<
-  MeasureTime::getTimeValues(measuredStartValues);
-  for(int i = 0; i < 10; i++) {
+  MeasureTime::getTimeValuesStart(measuredStartValues);
+  //for(int i = 0; i < 10; i++) {
   >>
 end measureTimeStart;
 
@@ -7323,8 +7324,8 @@ template measureTimeStop(String eq_number)
 ::=
   let eqNumber = intSub(stringInt(eq_number),1)
   <<
-  }
-  MeasureTime::getTimeValues(measuredEndValues);
+  //}
+  MeasureTime::getTimeValuesEnd(measuredEndValues);
   measuredEndValues->sub(measuredStartValues);
   measuredEndValues->div(10);
   //measuredEndValues->sub(MeasureTime::getOverhead());

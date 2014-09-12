@@ -9,17 +9,18 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <map>
 #include <ctime>
 #include <iostream>
 #include <Core/Modelica.h>
 
 class MeasureTimeValues
 {
-public:
+ public:
   MeasureTimeValues();
   virtual ~MeasureTimeValues();
 
-  virtual std::string serializeToJson() = 0;
+  virtual std::string serializeToJson() const = 0;
 
   virtual void add(MeasureTimeValues *values) = 0;
   virtual void sub(MeasureTimeValues *values) = 0;
@@ -33,11 +34,11 @@ class MeasureTimeData
   MeasureTimeValues *sumMeasuredValues;
   //MeasureTimeValues *maxMeasuredValues;
   unsigned int numCalcs;
-  std::string category;
-
 
   MeasureTimeData();
   virtual ~MeasureTimeData();
+
+  std::string serializeToJson() const;
 
   void addValuesToSum(MeasureTimeValues *values);
 };
@@ -47,7 +48,8 @@ class MeasureTime
  public:
   typedef void (*getTimeValuesFctType)(MeasureTimeValues*);
 
-  MeasureTime();
+  typedef std::map<std::string, const std::vector<MeasureTimeData> *> block_map;
+  typedef std::map<std::string, block_map> file_map;
 
   virtual ~MeasureTime();
 
@@ -61,24 +63,35 @@ class MeasureTime
    *  - always inline -> effect
    *  - measure overhead and sub the values -> effect
    */
-  static inline void getTimeValues(MeasureTimeValues *res) //__attribute__((always_inline))
+  static inline void getTimeValuesStart(MeasureTimeValues *res) //__attribute__((always_inline))
   {
-    getTimeValuesFct(res);
+    getTimeValuesStartFct(res);
+  }
+
+  static inline void getTimeValuesEnd(MeasureTimeValues *res)
+  {
+    getTimeValuesEndFct(res);
   }
 
   static MeasureTimeValues* getZeroValues();
 
   static void deinitialize();
 
-  void writeTimeToJason(std::string model_name, std::vector<MeasureTimeData> data);
+  static void addJsonContentBlock(const std::string filename, const std::string blockname, const std::vector<MeasureTimeData> * in);
+
+  static void writeToJson();
 
   virtual void benchOverhead();
 
  protected:
-  static MeasureTime *instance;
-  static getTimeValuesFctType getTimeValuesFct;
 
-  MeasureTimeValues *overhead;
+  static MeasureTime * instance;
+  static getTimeValuesFctType getTimeValuesStartFct, getTimeValuesEndFct;
+  static file_map toWrite;
+
+  MeasureTimeValues * overhead;
+
+  MeasureTime();
 
   virtual MeasureTimeValues* getZeroValuesP() = 0;
 };

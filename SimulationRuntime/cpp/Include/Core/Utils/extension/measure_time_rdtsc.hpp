@@ -8,10 +8,12 @@ class MeasureTimeValuesRDTSC : public MeasureTimeValues
 public:
   unsigned long long time;
 
+	unsigned long long max_time;
+
   MeasureTimeValuesRDTSC(unsigned long long time);
   virtual ~MeasureTimeValuesRDTSC();
 
-  virtual std::string serializeToJson();
+  virtual std::string serializeToJson() const;
 
   virtual void add(MeasureTimeValues *values);
   virtual void sub(MeasureTimeValues *values);
@@ -31,10 +33,14 @@ class MeasureTimeRDTSC : public MeasureTime
   static void initialize()
   {
     instance = new MeasureTimeRDTSC();
-    MeasureTime::getTimeValuesFct = &MeasureTimeRDTSC::getTimeValues;
+    MeasureTime::getTimeValuesStartFct = &MeasureTimeRDTSC::getTimeValuesStart;
+    MeasureTime::getTimeValuesEndFct = &MeasureTimeRDTSC::getTimeValuesEnd;
     instance->benchOverhead();
   }
-  static void getTimeValues(MeasureTimeValues *res);
+
+  static void getTimeValuesStart(MeasureTimeValues *res);
+
+  static void getTimeValuesEnd(MeasureTimeValues *res);
 
  private:
   static inline unsigned long long RDTSC(); //__attribute__((always_inline));

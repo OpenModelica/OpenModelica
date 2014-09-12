@@ -1,15 +1,13 @@
 #include <Core/Utils/extension/measure_time_rdtsc.hpp>
 
-MeasureTime::getTimeValuesFctType MeasureTime::getTimeValuesFct = 0;
-
-MeasureTimeValuesRDTSC::MeasureTimeValuesRDTSC(unsigned long long time) : MeasureTimeValues(), time(time) {}
+MeasureTimeValuesRDTSC::MeasureTimeValuesRDTSC(unsigned long long time) : MeasureTimeValues(), time(time), max_time(time) {}
 
 MeasureTimeValuesRDTSC::~MeasureTimeValuesRDTSC() {}
 
-std::string MeasureTimeValuesRDTSC::serializeToJson()
+std::string MeasureTimeValuesRDTSC::serializeToJson() const 
 {
   std::stringstream ss;
-  ss << "\"time\":" << time;
+  ss << "\"time\":" << time << ",\"maxTime\":" << max_time;
   return ss.str();
 }
 
@@ -21,7 +19,14 @@ MeasureTimeRDTSC::~MeasureTimeRDTSC()
 {
 }
 
-void MeasureTimeRDTSC::getTimeValues(MeasureTimeValues *res)
+void MeasureTimeRDTSC::getTimeValuesStart(MeasureTimeValues *res)
+{
+  MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(res);
+  unsigned long long time = RDTSC();
+  val->time = time;
+}
+
+void MeasureTimeRDTSC::getTimeValuesEnd(MeasureTimeValues *res)
 {
   unsigned long long time = RDTSC();
   MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(res);
@@ -37,6 +42,9 @@ void MeasureTimeValuesRDTSC::add(MeasureTimeValues *values)
 {
   MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(values);
   time += val->time;
+
+	if( val->time > max_time )
+		max_time = val->time;
 }
 
 void MeasureTimeValuesRDTSC::sub(MeasureTimeValues *values)
