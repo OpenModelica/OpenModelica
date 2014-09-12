@@ -881,6 +881,7 @@ algorithm
       Absyn.Within within_;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
+      GlobalScript.SimulationOptions defaulSimOpt;
       SimCode.SimulationSettings simSettings;
       Boolean dumpExtractionSteps;
       list<tuple<Absyn.Path,list<String>>> uses;
@@ -1233,7 +1234,8 @@ algorithm
       equation
         true = checkFMUVersion(str1);
         filenameprefix = Util.stringReplaceChar(filenameprefix,".","_");
-        simSettings = convertSimulationOptionsToSimCode(defaultSimulationOptions);
+        defaulSimOpt = buildSimulationOptionsFromModelExperimentAnnotation(st, className, filenameprefix, SOME(defaultSimulationOptions));
+        simSettings = convertSimulationOptionsToSimCode(defaulSimOpt);
         (cache,ret_val,st_1) = translateModelFMU(cache, env, className, st, str1, filenameprefix, true, SOME(simSettings));
       then
         (cache,ret_val,st_1);
