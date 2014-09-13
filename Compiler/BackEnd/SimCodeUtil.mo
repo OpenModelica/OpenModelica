@@ -13870,7 +13870,7 @@ end dumpVarMappingTuple;
 
 public function getFMIModelStructure
 " function detectes the model stucture for FMI 2.0
-  by analyzing the symbolic jacobian matrixes and sparsity pattern" 
+  by analyzing the symbolic jacobian matrixes and sparsity pattern"
   input SimCode.SimCode simCode;
   input list<SimCode.JacobianMatrix> jacobianMatrixes; // Matrixes A,B,C,D
   output SimCode.FmiModelStructure outFmiModelStructure;
@@ -13885,29 +13885,29 @@ algorithm
 
   SOME(A as (_, _, _, (_,spTA,_), _, _, _)) := getJacobianMatrix(jacobianMatrixes, "A");
   SOME(B as (_, _, _, (_,spTB,_), _, _, _)) := getJacobianMatrix(jacobianMatrixes, "B");
-  
+
   spTA  := mergeSparsePatter(spTA, spTB, {});
   // expand cref to der(cref), since diffed crefs are states
-  // but mean der(crefs) 
+  // but mean der(crefs)
   spTA := translateSparsePatterCref2DerCref(spTA, {});
 
   // translate crefs -> simvars integers via cref2simvars
   spTInts := translateSparsePatterSimVarInts(spTA, simCode, {});
   spTInts := List.sort(spTInts, compareSparsePatterInt);
   derivatives := translateSparsePatterInts2FMIUnknown(spTInts, {});
-  
+
   // combine the transposed sparse pattern of matrix C and D
-  // to obtain dependencies for the outputs   
+  // to obtain dependencies for the outputs
   SOME(C as (_, _, _, (_,spTA,_), _, _, _)) := getJacobianMatrix(jacobianMatrixes, "C");
   SOME(D as (_, _, _, (_,spTB,_), _, _, _)) := getJacobianMatrix(jacobianMatrixes, "D");
-  
+
   spTA  := mergeSparsePatter(spTA, spTB, {});
 
   // translate crefs -> simvars integers via cref2simvars
   spTInts := translateSparsePatterSimVarInts(spTA, simCode, {});
   spTInts := List.sort(spTInts, compareSparsePatterInt);
   outputs := translateSparsePatterInts2FMIUnknown(spTInts, {});
-  
+
   //output results
   outFmiModelStructure := SimCode.FMIMODELSTRUCTURE(SimCode.FMIOUTPUTS(outputs), SimCode.FMIDERIVATIVES(derivatives));
 end getFMIModelStructure;
@@ -13924,16 +13924,16 @@ algorithm
       Integer unknown;
       list<Integer> dependencies;
       list<String> dependenciesKind;
-  
+
     case ({}, _) then listReverse(inAccum);
-      
+
     case ( ((unknown, dependencies))::rest, _)
       equation
       // for now dependenciesKind is set to dependent
-      dependenciesKind = List.fill("dependent", listLength(dependencies));  
-      then 
+      dependenciesKind = List.fill("dependent", listLength(dependencies));
+      then
         translateSparsePatterInts2FMIUnknown(rest, SimCode.FMIUNKNOWN(unknown, dependencies, dependenciesKind)::inAccum);
-     
+
      end match;
 end translateSparsePatterInts2FMIUnknown;
 
@@ -13948,15 +13948,15 @@ algorithm
       DAE.ComponentRef cref;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> rest;
-  
+
     case ({}, _) then listReverse(inAccum);
-      
+
     case ( ((cref, crefs))::rest, _)
       equation
         cref = ComponentReference.crefPrefixDer(cref);
-      then 
+      then
         translateSparsePatterCref2DerCref(rest, (cref, crefs)::inAccum);
-     
+
      end match;
 end translateSparsePatterCref2DerCref;
 
@@ -13974,16 +13974,16 @@ algorithm
       list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> rest;
       Integer unknown;
       list<Integer> dependencies;
-  
+
     case ({}, _, _) then listReverse(inAccum);
-      
+
     case ( ((cref, crefs))::rest, _, _)
       equation
         unknown = translateCref2SimVarIndex(cref, simCode);
         dependencies = List.map1(crefs, translateCref2SimVarIndex, simCode);
-      then 
+      then
         translateSparsePatterSimVarInts(rest, simCode, (unknown, dependencies)::inAccum);
-     
+
      end match;
 end translateSparsePatterSimVarInts;
 
@@ -14026,7 +14026,7 @@ algorithm
        case ( _::rest, _)
         then getJacobianMatrix(rest, inJacobianName);
        else then NONE();
-    end matchcontinue;   
+    end matchcontinue;
 end getJacobianMatrix;
 
 protected function mergeSparsePatter
@@ -14040,9 +14040,9 @@ algorithm
     list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> restA, restB;
     DAE.ComponentRef crefA, crefB;
     list<DAE.ComponentRef> listA, listB, listOut;
-    
+
     case ( {}, {}, _) then listReverse(inAccum);
-      
+
     case (( (crefA, listA) )::restA, ((crefB, listB))::restB, _)
       equation
         true = ComponentReference.crefEqual(crefA, crefB);

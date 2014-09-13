@@ -230,7 +230,7 @@ algorithm
     else false;
   end match;
 end checkFMIVersion;
-  
+
 public function isFMIVersion20 "Checks if the FMI version is 2.0."
   input String inFMUVersion;
   output Boolean success;

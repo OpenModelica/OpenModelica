@@ -235,13 +235,13 @@ algorithm
         (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
         timeFrontend = System.realtimeTock(GlobalScript.RT_CLOCK_FRONTEND);
         System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
-        
-        // activate symolic jacobains for fmi 2.0 
-        // to provide dependence information and partial derivatives 
+
+        // activate symolic jacobains for fmi 2.0
+        // to provide dependence information and partial derivatives
         fmi20 = FMI.isFMIVersion20(FMUVersion);
         symbolicJacActivated = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, fmi20);
-        
+
         _ = Env.getFunctionTree(cache);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         description = DAEUtil.daeDescription(dae);
