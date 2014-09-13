@@ -1232,7 +1232,7 @@ algorithm
 
     case (cache,env,"translateModelFMU", {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(str1),Values.STRING(filenameprefix)},st,_)
       equation
-        true = checkFMUVersion(str1);
+        true = FMI.checkFMIVersion(str1);
         filenameprefix = Util.stringReplaceChar(filenameprefix,".","_");
         defaulSimOpt = buildSimulationOptionsFromModelExperimentAnnotation(st, className, filenameprefix, SOME(defaultSimulationOptions));
         simSettings = convertSimulationOptionsToSimCode(defaulSimOpt);
@@ -1242,7 +1242,7 @@ algorithm
 
     case (cache,env,"translateModelFMU", {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(str1),Values.STRING(filenameprefix)},st,_)
       equation
-        false = checkFMUVersion(str1);
+        false = FMI.checkFMIVersion(str1);
         Error.addMessage(Error.UNKNOWN_FMU_VERSION, {str1});
       then
         (cache,Values.STRING(""),st);
@@ -7689,19 +7689,6 @@ algorithm
     else acc;
   end match;
 end findFunctionsToCompile;
-
-protected function checkFMUVersion "Checks if the FMU version is supported."
-  input String inFMUVersion;
-  output Boolean success;
-algorithm
-  success := match (inFMUVersion)
-    case ("1") then true;
-    case ("1.0") then true;
-    case ("2") then true;
-    case ("2.0") then true;
-    else false;
-  end match;
-end checkFMUVersion;
 
 protected function saveTotalModel
   input String filename;

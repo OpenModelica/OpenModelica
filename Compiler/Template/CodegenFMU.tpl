@@ -105,7 +105,7 @@ case SIMCODE(__) then
     <%TypeDefinitions(modelInfo, "2.0")%>
     <%DefaultExperiment(simulationSettingsOpt)%>
     <%ModelVariables(modelInfo, "2.0")%>
-    <%ModelStructure(modelInfo)%>
+    <%ModelStructure(simCode, jacobianMatrixes)%>
   </fmiModelDescription>
   >>
 end fmi2ModelDescription;
@@ -612,14 +612,12 @@ template externalFunction(Function fn)
       >>
 end externalFunction;
 
-template ModelStructure(ModelInfo modelInfo)
+template ModelStructure(SimCode simCode, list<JacobianMatrix> jacobianMatrixes)
  "Generates Model Structure."
 ::=
-match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
   <<
   <ModelStructure>
-    <%ModelStructureHelper(getFMIModelStructure(vars))%>
+    <%ModelStructureHelper(getFMIModelStructure(simCode, jacobianMatrixes))%>
   </ModelStructure>
   >>
 end ModelStructure;

@@ -1946,7 +1946,7 @@ end checkLinearSystem;
 // Generate sparse pattern
 //
 // =============================================================================
- public function detectSparsePatternODE
+public function detectSparsePatternODE
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 protected
@@ -2023,10 +2023,10 @@ algorithm
 
       BackendDAE.SparseColoring coloring;
       list<list<DAE.ComponentRef>> translated;
-      list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsetuple;
+      list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsetuple, sparsetupleT;
 
-    case (_,{},_) then (({},({},{})),{});
-    case (_,_,{}) then (({},({},{})),{});
+    case (_,{},_) then (({},{},({},{})),{});
+    case (_,_,{}) then (({},{},({},{})),{});
     case(BackendDAE.DAE(eqs = (syst as BackendDAE.EQSYSTEM(matching=bdaeMatching as BackendDAE.MATCHING(comps=comps, ass1=ass1)))::{}),indiffVars,indiffedVars)
       equation
         Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,print," start getting sparsity pattern diff Vars : " +& intString(listLength(indiffedVars))  +& " diffed vars: " +& intString(listLength(indiffVars)) +&"\n");
@@ -2096,8 +2096,10 @@ algorithm
         //Debug.execStat("generateSparsePattern -> nonZeroElements: " +& intString(nonZeroElements) +& " " ,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
 
         // translated to DAE.ComRefs
+        translated = List.mapList1_1(sparsepattern, List.getIndexFirst, diffCompRefs);
+        sparsetuple = List.threadTuple(diffedCompRefs, translated);
         translated = List.mapList1_1(sparsepatternT, List.getIndexFirst, diffedCompRefs);
-        sparsetuple = List.threadTuple(diffCompRefs, translated);
+        sparsetupleT = List.threadTuple(diffCompRefs, translated);
 
         // build up a bi-partied graph of pattern
         Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,print,"analytical Jacobians[SPARSE] -> build sparse graph.\n");
@@ -2135,7 +2137,7 @@ algorithm
         //without coloring
         //coloring = List.transposeList({diffCompRefs});
         Debug.fcall(Flags.DUMP_SPARSE_VERBOSE, print, "analytical Jacobians[SPARSE] -> ready! " +& realString(clock()) +& "\n");
-      then ((sparsetuple, (diffCompRefs, diffedCompRefs)), coloring);
+      then ((sparsetupleT, sparsetuple, (diffCompRefs, diffedCompRefs)), coloring);
         else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.generateSparsePattern failed"});

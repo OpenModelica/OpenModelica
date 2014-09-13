@@ -154,7 +154,7 @@ package SimCode
   type JacobianMatrix = tuple<list<JacobianColumn>, // column
                             list<SimVar>,           // seed vars
                             String,                 // matrix name
-                            tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimVar>,list<SimVar>>>,    // sparse pattern
+                            tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimVar>,list<SimVar>>>,    // sparse pattern
                             list<list<DAE.ComponentRef>>,    // colored cols
                             Integer,                         // max color used
                             Integer>;                        // jacobian index
@@ -820,7 +820,8 @@ package SimCodeUtil
   end getEnumerationTypes;
 
   function getFMIModelStructure
-    input SimCode.SimVars inVars;
+    input SimCode.SimCode simCode;
+    input list<SimCode.JacobianMatrix> jacobianMatrixes;
     output SimCode.FmiModelStructure outFmiModelStructure;
   end getFMIModelStructure;
 

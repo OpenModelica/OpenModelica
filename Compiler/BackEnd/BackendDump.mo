@@ -665,7 +665,7 @@ protected
   list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> pattern;
   list< .DAE.ComponentRef> diffVars, diffedVars;
 algorithm
-  (pattern, (diffVars, diffedVars)) := inPattern;
+  (pattern, _, (diffVars, diffedVars)) := inPattern;
 
   print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
   print("independents [or inputs] (" +& intString(listLength(diffVars)) +& ")\n");

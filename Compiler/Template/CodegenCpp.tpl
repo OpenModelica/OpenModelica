@@ -11631,7 +11631,7 @@ template functionAnalyticJacobians2(list<JacobianMatrix> JacobianMatrixes,String
   This template generates source code for all given jacobians."
 ::=
 
-  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, maxColor, indexJacobian) =>
+  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,_,(_,_)), colorList, maxColor, indexJacobian) =>
     initialAnalyticJacobians2(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
 /*
   let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor, indexJacobian) =>
@@ -11774,7 +11774,7 @@ template functionAnalyticJacobiansHeader(list<JacobianMatrix> JacobianMatrixes,S
   This template generates source code for all given jacobians."
 ::=
 
-  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, maxColor, indexJacobian) =>
+  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,_,(_,_)), colorList, maxColor, indexJacobian) =>
     initialAnalyticJacobiansHeader(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
 /*
   let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor, indexJacobian) =>
@@ -11950,10 +11950,10 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes, SimCod
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   let classname =  lastIdentOfPath(modelInfo.name)
-  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, _, jacIndex) =>
+  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,_,(_,_)), colorList, _, jacIndex) =>
     initialAnalyticJacobians(jacIndex, mat, vars, name, sparsepattern, colorList,simCode)
     ;separator="\n\n";empty)
- let jacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, maxColor, jacIndex) =>
+ let jacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,_,(_,_)), colorList, maxColor, jacIndex) =>
     generateMatrix(jacIndex, mat, vars, name, sparsepattern, colorList, maxColor,simCode, useFlatArrayNotation)
     ;separator="\n\n";empty)
  let initialStateSetJac = (stateSets |> set hasindex i1 fromindex 0 => (match set
@@ -12108,7 +12108,7 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes,SimC
  "Generates defines for jacobian vars."
 ::=
 
-  let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,(diffVars,diffedVars)), _, _, jacIndex) =>
+  let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,_,(diffVars,diffedVars)), _, _, jacIndex) =>
     let varsDef = variableDefinitionsJacobians2(jacIndex, jacColumn, seedVars, name,simCode)
     let sparseDef = defineSparseIndexes(diffVars, diffedVars, name,simCode)
     <<

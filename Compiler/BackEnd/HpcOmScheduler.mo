@@ -3018,7 +3018,7 @@ algorithm
       list<SimCode.JacobianColumn> jacCols;
       list<SimCode.SimVar> vars;
       String name;
-      tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimCode.SimVar>,list<SimCode.SimVar>>> sparsePatt;
+      tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimCode.SimVar>,list<SimCode.SimVar>>> sparsePatt;
       list<list<DAE.ComponentRef>> colCols;
       array<Integer> ass;
       Integer newIdx;
@@ -3066,7 +3066,7 @@ algorithm
       list<SimCode.JacobianColumn> jacCols;
       list<SimCode.SimVar> vars;
       String name;
-      tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimCode.SimVar>,list<SimCode.SimVar>>> sparsePatt;
+      tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimCode.SimVar>,list<SimCode.SimVar>>> sparsePatt;
       list<list<DAE.ComponentRef>> colCols;
       array<Integer> ass;
       Integer newIdx;

@@ -75,6 +75,7 @@ protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Flags;
+protected import FMI;
 protected import HpcOmEqSystems;
 protected import HpcOmSimCodeMain;
 protected import SimCodeDump;
@@ -224,6 +225,8 @@ algorithm
       DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
       String description;
+      Boolean symbolicJacActivated;
+      Boolean fmi20;
     case (cache,env,_,st as GlobalScript.SYMBOLTABLE(ast=p),FMUVersion,filenameprefix,_, _)
       equation
         /* calculate stuff that we need to create SimCode data structure */
@@ -231,8 +234,14 @@ algorithm
         //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
         (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
         timeFrontend = System.realtimeTock(GlobalScript.RT_CLOCK_FRONTEND);
-
         System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
+        
+        // activate symolic jacobains for fmi 2.0 
+        // to provide dependence information and partial derivatives 
+        fmi20 = FMI.isFMIVersion20(FMUVersion);
+        symbolicJacActivated = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
+        Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, fmi20);
+        
         _ = Env.getFunctionTree(cache);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         description = DAEUtil.daeDescription(dae);
@@ -243,6 +252,9 @@ algorithm
 
         (indexed_dlow_1,libs,file_dir,timeSimCode,timeTemplates) =
           generateModelCodeFMU(dlow_1, p, dae,  className, FMUVersion, filenameprefix, inSimSettingsOpt);
+
+        //reset config flag
+        Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, symbolicJacActivated);
 
         resultValues =
         {("timeTemplates",Values.REAL(timeTemplates)),

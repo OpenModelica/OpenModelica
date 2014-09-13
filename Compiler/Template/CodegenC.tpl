@@ -1138,7 +1138,7 @@ end globalDataAliasVarArray;
 template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes, String modelNamePrefix) "template variableDefinitionsJacobians
   Generates defines for jacobian vars."
 ::=
-  let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,(diffVars,diffedVars)), _, _, indexJacobian)  =>
+  let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,_,(diffVars,diffedVars)), _, _, indexJacobian)  =>
     let varsDef = variableDefinitionsJacobians2(indexJacobian, jacColumn, seedVars, name)
     let sparseDef = defineSparseIndexes(diffVars, diffedVars, name)
     <<
@@ -3474,7 +3474,7 @@ end genVector;
 template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes,String modelNamePrefix) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
-  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, maxColor, indexJacobian) =>
+  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,_,(_,_)), colorList, maxColor, indexJacobian) =>
     initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
   let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor, indexJacobian) =>
     generateMatrix(mat, vars, name, modelNamePrefix) ;separator="\n")

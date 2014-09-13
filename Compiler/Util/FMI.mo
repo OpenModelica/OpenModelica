@@ -218,6 +218,30 @@ algorithm
   end match;
 end getFMIVersion;
 
+public function checkFMIVersion "Checks if the FMU version is supported."
+  input String inFMIVersion;
+  output Boolean success;
+algorithm
+  success := match (inFMIVersion)
+    case ("1") then true;
+    case ("1.0") then true;
+    case ("2") then true;
+    case ("2.0") then true;
+    else false;
+  end match;
+end checkFMIVersion;
+  
+public function isFMIVersion20 "Checks if the FMI version is 2.0."
+  input String inFMUVersion;
+  output Boolean success;
+algorithm
+  success := match (inFMUVersion)
+    case ("2") then true;
+    case ("2.0") then true;
+    else false;
+  end match;
+end isFMIVersion20;
+
 public function getEnumerationTypeFromTypes
   input list<TypeDefinitions> inTypeDefinitionsList;
   input String inBaseType;

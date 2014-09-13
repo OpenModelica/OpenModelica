@@ -614,7 +614,7 @@ algorithm
 
     case (_,_,_,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs,ei))
       equation
-        symjacs = {(SOME(inSymJac),inSparsePattern,inSparseColoring),(NONE(),({},({},{})),{}),(NONE(),({},({},{})),{}),(NONE(),({},({},{})),{})};
+        symjacs = {(SOME(inSymJac),inSparsePattern,inSparseColoring), (NONE(),({},{},({},{})),{}),(NONE(),({},{},({},{})),{}),(NONE(),({},{},({},{})),{})};
       then
         BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs,ei);
 

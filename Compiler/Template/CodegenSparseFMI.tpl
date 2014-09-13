@@ -1959,7 +1959,7 @@ end jacobianVarsSeedDefine;
 
 template makeJacobianFuncs(list<JacobianMatrix> jacobians, String modelName)
 ::=
-  let jacDecls = (jacobians |> (jacColumn,seedVars,name,(_,(diffVars,diffedVars)),_,_,_) =>
+  let jacDecls = (jacobians |> (jacColumn,seedVars,name,(_,_,(diffVars,diffedVars)),_,_,_) =>
     '<%makeJacobianFunc(name,jacColumn,seedVars,diffVars,diffedVars,modelName)%>'
    ;separator="\n")
   <<
@@ -1970,7 +1970,7 @@ end makeJacobianFuncs;
 template makeJacobianStateSetFuncs(list<StateSet> stateSets, String modelName)
 ::=
   (stateSets |> SES_STATESET(__) =>
-    let jacDecls = (jacobianMatrix |> (jacColumn,seedVars,name,(_,(diffVars,diffedVars)),_,_,_) =>
+    let jacDecls = (jacobianMatrix |> (jacColumn,seedVars,name,(_,_,(diffVars,diffedVars)),_,_,_) =>
     '<%makeJacobianFunc(name,jacColumn,seedVars,diffVars,diffedVars,modelName)%>')
     <<
     <%jacDecls%>
@@ -1995,7 +1995,7 @@ end declareJacobians2;
 
 template declareJacobians(list<JacobianMatrix> jacobians)
 ::=
-  let jacDecls = (jacobians |> (_,_,name,(_,(diffVars,diffedVars)),_,_,_) =>
+  let jacDecls = (jacobians |> (_,_,name,(_,_,(diffVars,diffedVars)),_,_,_) =>
     '<%declareJacobians2(name,diffVars,diffedVars)%>'
    ;separator="\n")
   <<
