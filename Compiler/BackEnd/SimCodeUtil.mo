@@ -14019,7 +14019,7 @@ algorithm
       SimCode.JacobianMatrix matrix;
       list<SimCode.JacobianMatrix> rest;
       String name;
-      case ( (matrix as (_, _, name, _, _, _, _))::_, inJacobianName)
+      case ( (matrix as (_, _, name, _, _, _, _))::_, _)
         equation
           true = stringEq(name, inJacobianName);
        then SOME(matrix);
