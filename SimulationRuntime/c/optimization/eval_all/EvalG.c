@@ -660,9 +660,9 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
   int index_x = 0;
   double gmax = -1;
   int i, j, k, l;
-  int ii, jj, kk; 
+  int ii, jj, kk;
   double tmp, tmp1;
- 
+
   for(i = 0, l = 0; i < nsi-1; ++i){
     for(j = 0; j < np; ++j){
       for(k=0; k< nx; ++k){
