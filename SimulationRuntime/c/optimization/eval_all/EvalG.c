@@ -63,7 +63,7 @@ static inline void structJacC(const modelica_real *const J, double *values,
     const int nv, int *k, const modelica_boolean * const Jj);
 
 static inline void printMaxError(Number *g, const int m, const int nx, const int nJ, long double **t,
-    const int np, const int nsi, DATA * data);
+    const int np, const int nsi, DATA * data, OptData * optData);
 
 
 /* eval constraints
@@ -149,7 +149,7 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
   }
   if(ACTIVE_STREAM(LOG_IPOPT_ERROR)){
     const int nJ = optData->dim.nJ;
-    printMaxError(g, m, nx, nJ, optData->time.t, np ,nsi ,optData->data);
+    printMaxError(g, m, nx, nJ, optData->time.t, np ,nsi ,optData->data, optData);
   }
 
   return TRUE;
@@ -654,43 +654,68 @@ static inline void generated_jac_struc(OptData * optData, int *iRow, int* iCol){
 
 
 static inline void printMaxError(Number *g, const int m, const int nx, const int nJ,
-    long double **t, const int np, const int nsi, DATA * data){
+    long double **t, const int np, const int nsi, DATA * data, OptData * optData){
 
   int index = 0;
   int index_x = 0;
   double gmax = -1;
-  int i, j, k;
-
-  {
-    double tmp;
-    for(i = 0; i < m; ++i){
-      k = i % nJ;
-      if(k < nx){
-        tmp = fabs(g[i]);
+  int i, j, k, l;
+  int ii, jj, kk; 
+  double tmp, tmp1;
+ 
+  for(i = 0, l = 0; i < nsi-1; ++i){
+    for(j = 0; j < np; ++j){
+      for(k=0; k< nx; ++k){
+        tmp = fabs(g[l++]);
         if(tmp > gmax){
-          gmax  = tmp;
-          index = i;
-          index_x = k;
+          ii = i;
+          jj = j;
+          kk = k;
+          gmax = tmp;
         }
-      }else{
-        if(g[i] > gmax){
-          gmax  = g[i];
-          index = i;
-          index_x = k;
+      }
+      for(; k< nJ; ++k, ++l){
+        tmp = fmax(fabs(g[l] - optData->ipop.gmax[l]),  fabs(g[l] - optData->ipop.gmin[l]));
+        if(tmp > gmax){
+          ii = i;
+          jj = j;
+          kk = k;
+          gmax = tmp;
         }
       }
     }
   }
 
-  i = index/(nJ*np);
-  j = index/(nsi*nJ);
-  k = index_x;
+  for(j = 0; j < np; ++j){
+    for(k=0; k< nx; ++k){
+      tmp = fabs(g[l++]);
+      if(tmp > gmax){
+        ii = nsi - 1;
+        jj = j;
+        kk = k;
+        gmax = tmp;
+      }
+    }
+    /*
+    for(; k< nJ+optData->dim.ncf; ++k, ++l){
+      tmp = fmax(fabs(g[l] - optData->ipop.gmax[l]),  fabs(g[l] - optData->ipop.gmin[l]));
+      if(tmp > gmax){
+        ii = nsi- 1;
+        jj = j;
+        kk = k;
+        gmax = tmp;
+      }
+    }
+    */
+  }
 
-  if(k < nx){
+  if(kk < nx){
     printf("\nmax error for |%s(%g) - collocation_poly| = %g\n",
-                              data->modelData.realVarsData[k].info.name, (double)t[i][j], gmax);
+                              data->modelData.realVarsData[kk].info.name, (double)t[ii][jj], gmax);
+  }else if(kk < nJ){
+    printf("\nmax error for |cosntrain[%i](%g)| = %g\n", kk - nx, (double)t[ii][jj], gmax);
   }else{
-    printf("\nmax error for |cosntrain[%i](%g)| = %g\n", k - nx, (double)t[i][j], gmax);
+    printf("\nmax error for |final_cosntrain[%i](%g)| = %g\n", kk - nJ, (double)t[ii][jj], gmax);
   }
 
 
