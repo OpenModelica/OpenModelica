@@ -3099,7 +3099,7 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
                  <%zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
                    'static const int occurEqs<%i0%>[] = {<%listLength(occurEquLst)%><%occurEquLst |> i => ',<%i%>'%>};' ; separator = "\n"%>
                  static const int *occurEqs[] = {<%zeroCrossings |> ZERO_CROSSING(__) hasindex i0 => 'occurEqs<%i0%>' ; separator = ","%>};
-                 *out_EquationIndexes = occurEqs[i];
+                 *out_EquationIndexes = (int*) occurEqs[i];
                  return res[i];
                }
                >>
