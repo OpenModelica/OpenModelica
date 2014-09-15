@@ -197,26 +197,26 @@ package DAE
   end Dimension;
 
   uniontype ClockKind
-	  record INFERREDCLOCK end INFERREDCLOCK;
+    record INFERREDCLOCK end INFERREDCLOCK;
 
-	  record INTEGERCLOCK
-	    Exp intervalCounter;
-	    Integer resolution;
-	  end INTEGERCLOCK;
+    record INTEGERCLOCK
+      Exp intervalCounter;
+      Integer resolution;
+    end INTEGERCLOCK;
 
-	  record REALCLOCK
-	    Exp interval;
-	  end REALCLOCK;
+    record REALCLOCK
+      Exp interval;
+    end REALCLOCK;
 
-	  record BOOLEANCLOCK
-	    Exp condition;
-	    Real startInterval;
-	  end BOOLEANCLOCK;
+    record BOOLEANCLOCK
+      Exp condition;
+      Real startInterval;
+    end BOOLEANCLOCK;
 
-	  record SOLVERCLOCK
-	    ClockKind c;
-	    String solverMethod;
-	  end SOLVERCLOCK;
+    record SOLVERCLOCK
+      ClockKind c;
+      String solverMethod;
+    end SOLVERCLOCK;
   end ClockKind;
 
   uniontype Exp
