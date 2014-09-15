@@ -535,7 +535,7 @@ algorithm
       Boolean impl,a,b,havereal,doVect;
       Integer l,i,nmax;
       Real r;
-      Absyn.ClockKind ck;
+      DAE.ClockKind ck;
       String expstr,str1,str2,s,msg,replaceWith;
       DAE.Dimension dim1,dim2;
       Option<GlobalScript.SymbolTable> st,st_1,st_2;
@@ -594,13 +594,6 @@ algorithm
     case (cache,_,Absyn.BOOL(value = b),_,st,_,_,_,_)
       then
         (cache,DAE.BCONST(b),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),st);
-
-    // BTH
-    case (cache,_,Absyn.CLOCK(value = ck),_,st,_,_,_,_)
-      equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
-      then
-        (cache,DAE.CLKCONST(ck),DAE.PROP(DAE.T_CLOCK_DEFAULT,DAE.C_CONST()),st);
 
     case (_,_,Absyn.END(),_,_,_,_,_,_)
       equation
@@ -4588,13 +4581,13 @@ algorithm
         ty =  DAE.T_FUNCTION(
                 {},
                 DAE.T_CLOCK_DEFAULT,
-                DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
 
-        call = Expression.makePureBuiltinCall("Clock", {}, ty);
+        call = Expression.makeImpureBuiltinCall("Clock", {}, ty);
       then (cache, call, DAE.PROP(DAE.T_CLOCK_DEFAULT, DAE.C_CONST()));
 
-    // clock with Integer interval "Clock(intervalCounter)"
+    // clock with Integer interval "Clock(intervalCounter)", intervalCounter variability is C_VAR()
     case (cache,env,{aintervalCounter},{},impl,pre,_)
       equation
         (cache, intervalCounter, prop1, _) = elabExpInExpression(cache,env,aintervalCounter,impl,NONE(),true,pre,info);
@@ -4609,7 +4602,7 @@ algorithm
                 {DAE.FUNCARG("intervalCounter",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
                  DAE.FUNCARG("resolution",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
                 DAE.T_CLOCK_DEFAULT,
-                DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
         // Pretend that Clock(intervalCounter) was Clock(intervalCounter,1) (resolution default value)
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("Clock"),
@@ -4635,14 +4628,14 @@ algorithm
                 {DAE.FUNCARG("intervalCounter",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
                  DAE.FUNCARG("resolution",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
                 DAE.T_CLOCK_DEFAULT,
-                DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
         // Pretend that Clock(intervalCounter) was Clock(intervalCounter,1) (resolution default value)
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("Clock"),
                listReverse(aresolution :: args), nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
 
-    // clock with Integer interval "Clock(intervalCounter, resolution)"
+    // clock with Integer interval "Clock(intervalCounter, resolution)", , intervalCounter variability is C_VAR()
     case (cache,env,{aintervalCounter, aresolution},{},impl,pre,_)
       equation
         (cache, intervalCounter, prop1, _) = elabExpInExpression(cache,env,aintervalCounter,impl,NONE(),true,pre,info);
@@ -4662,7 +4655,7 @@ algorithm
                 {DAE.FUNCARG("intervalCounter",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
                  DAE.FUNCARG("resolution",ty2,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
                 DAE.T_CLOCK_DEFAULT,
-                DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
 
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("Clock"),
@@ -4693,7 +4686,7 @@ algorithm
                 {DAE.FUNCARG("intervalCounter",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
                  DAE.FUNCARG("resolution",ty2,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
                 DAE.T_CLOCK_DEFAULT,
-                DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
 
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("Clock"),
@@ -4701,7 +4694,7 @@ algorithm
       then (cache, call, prop);
 
 
-    // clock with Real interval "Clock(interval)"
+    // clock with Real interval "Clock(interval)", intervalCounter variability is C_VAR()
     case (cache,env,{ainterval},{},impl,pre,_)
       equation
         (cache, interval, prop1, _) = elabExpInExpression(cache,env,ainterval,impl,NONE(),true,pre,info);
@@ -4714,7 +4707,7 @@ algorithm
         ty =  DAE.T_FUNCTION(
                 {DAE.FUNCARG("interval",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
                 DAE.T_CLOCK_DEFAULT,
-                DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
 
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("Clock"),
@@ -4737,7 +4730,7 @@ algorithm
         ty =  DAE.T_FUNCTION(
                 {DAE.FUNCARG("interval",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
                 DAE.T_CLOCK_DEFAULT,
-                DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
 
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("Clock"),
@@ -4756,7 +4749,7 @@ algorithm
                 {DAE.FUNCARG("condition",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
                  DAE.FUNCARG("startInterval",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
                 DAE.T_CLOCK_DEFAULT,
-                DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
 
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("Clock"),
@@ -4779,7 +4772,7 @@ algorithm
                 {DAE.FUNCARG("condition",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
                  DAE.FUNCARG("startInterval",ty2,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
                 DAE.T_CLOCK_DEFAULT,
-                DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
 
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("Clock"),
@@ -4800,7 +4793,7 @@ algorithm
                 {DAE.FUNCARG("c",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
                  DAE.FUNCARG("solverMethod",ty2,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
                 DAE.T_CLOCK_DEFAULT,
-                DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
 
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("Clock"),
@@ -4890,7 +4883,7 @@ end elabBuiltinHold;
 
 protected function elabBuiltinSample "
 Author: BTH
-This function elaborates the builtin clocked version of the operator sample(u,c)."
+This function elaborates the builtin operator sample(..) variants."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> args;
@@ -4911,6 +4904,7 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop1,prop2,prop;
+      DAE.Const variability;
       Absyn.Exp au,ac,astart,ainterval;
 
     // The time event triggering sample(start, interval)
@@ -4923,8 +4917,8 @@ algorithm
         (start,_) = Types.matchType(start,ty1,DAE.T_REAL_DEFAULT,true);
         (interval,_) = Types.matchType(interval,ty2,DAE.T_REAL_DEFAULT,true);
         ty =  DAE.T_FUNCTION(
-                {DAE.FUNCARG("start",ty1,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE()),
-                 DAE.FUNCARG("interval",ty2,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
+                {DAE.FUNCARG("start",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE()),
+                 DAE.FUNCARG("interval",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
                  DAE.T_BOOL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
@@ -4932,37 +4926,44 @@ algorithm
       then (cache, call, prop);
 
     // The sample from the Synchronous Language Elements chapter (Modelica 3.3)
-    case (cache,env,{au},{},impl,pre,_)
-      equation
-        (cache, u, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
-        ac = Absyn.CLOCK(Absyn.INFERREDCLOCK());
-        ty1 = Types.arrayElementType(Types.getPropType(prop1));
-        ty =  DAE.T_FUNCTION(
-                {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-                 DAE.FUNCARG("c",DAE.T_CLOCK_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
-                ty1,
-                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
-        // Pretend that sample(u) was sample(u,Clock()) since clock is inferred if not given as argument
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("sample"),
-               listReverse(ac :: args), nargs, impl, NONE(), pre, info);
-      then (cache, call, prop);
-
-    // The sample from the Synchronous Language Elements chapter (Modelica 3.3)
-    case (cache,env,{au,ac},{},impl,pre,_)
+    case (cache,env,{au,ac}, {},impl,pre,_)
       equation
         (cache, u, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
         (cache, c, prop2, _) = elabExpInExpression(cache,env,ac,impl,NONE(),true,pre,info);
-        (c,_) = Types.matchType(c,Types.getPropType(prop2),DAE.T_CLOCK_DEFAULT,true);
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
+        ty2 = Types.arrayElementType(Types.getPropType(prop2));
+        variability = Types.getPropConst(prop1);
+        (c,_) = Types.matchType(c,ty2,DAE.T_CLOCK_DEFAULT,true);
+
         ty =  DAE.T_FUNCTION(
-                {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-                 DAE.FUNCARG("c",DAE.T_CLOCK_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
-                 ty1,
+                {DAE.FUNCARG("u",ty1,variability,DAE.NON_PARALLEL(),NONE()),
+                 DAE.FUNCARG("c",ty2,DAE.C_VAR(),DAE.NON_PARALLEL(),SOME(DAE.CLKCONST(DAE.INFERREDCLOCK())))},
+                ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("sample"), args, nargs, impl, NONE(), pre, info);
+
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("sample"),
+          args, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
+
+    case (cache,env,{au}, {},impl,pre,_)
+      equation
+        (cache, u, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
+        ty1 = Types.arrayElementType(Types.getPropType(prop1));
+        variability = Types.getPropConst(prop1);
+
+        ty =  DAE.T_FUNCTION(
+                {DAE.FUNCARG("u",ty1,variability,DAE.NON_PARALLEL(),NONE()),
+                 DAE.FUNCARG("c",DAE.T_CLOCK_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),SOME(DAE.CLKCONST(DAE.INFERREDCLOCK())))},
+                ty1,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
+                DAE.emptyTypeSource);
+
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("sample"),
+          args, nargs, impl, NONE(), pre, info);
+      then (cache, call, prop);
+
+
   end matchcontinue;
 end elabBuiltinSample;
 

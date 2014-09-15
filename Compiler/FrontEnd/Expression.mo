@@ -359,8 +359,6 @@ protected function unleabZeroExpFromType
 algorithm
   outExp := match ty
     case DAE.T_BOOL(source=_) then Absyn.BOOL(false);
-    // BTH
-    case DAE.T_CLOCK(source=_) then Absyn.CLOCK(Absyn.INFERREDCLOCK());
     case DAE.T_STRING(source=_) then Absyn.STRING("");
     case DAE.T_INTEGER(source=_) then Absyn.INTEGER(0);
     case DAE.T_REAL(source=_) then Absyn.REAL("0.0");

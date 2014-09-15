@@ -13,7 +13,7 @@ match exp
     let str = escapedString(string,false)
     '<%stringDelimiter%><%str%><%stringDelimiter%>'
   case BCONST(__) then bool
-  case CLKCONST(__) then clockKindString(clk)
+  case CLKCONST(__) then dumpClockKind(clk, stringDelimiter)
   case ENUM_LITERAL(__) then
     (if typeinfo() then '/* <%index%> */') + AbsynDumpTpl.dumpPath(name)
   case CREF(__) then (if typeinfo() then '/*<%unparseType(ty)%>*/ ') + dumpCref(componentRef)
@@ -168,6 +168,25 @@ end dumpExpList;
 template dumpExpListCrefs(list<DAE.Exp> expl, String stringDelimiter, String expDelimiter)
 ::= (expl |> exp => dumpExpCrefs(exp, stringDelimiter) ;separator=expDelimiter)
 end dumpExpListCrefs;
+
+template dumpClockKind(DAE.ClockKind clk, String stringDelimiter)
+::=
+match clk
+  case INFERREDCLOCK(__) then "Clock()"
+  case INTEGERCLOCK(__) then
+    let ic_str = dumpExp(intervalCounter, stringDelimiter)
+    'Clock(<%ic_str%>, <%resolution%>)'
+  case REALCLOCK(__) then
+    let interval_str = dumpExp(interval, stringDelimiter)
+    'Clock(<%interval_str%>)'
+  case BOOLEANCLOCK(__) then
+    let condition_str = dumpExp(condition, stringDelimiter)
+    'Clock(<%condition_str%>, <%startInterval%>)'
+  case SOLVERCLOCK(__) then
+    let clk_str = dumpClockKind(c, stringDelimiter)
+    'Clock(<%clk_str%>, <%solverMethod%>)'
+end dumpClockKind;
+
 
 template dumpCref(DAE.ComponentRef cref)
 ::=

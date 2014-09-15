@@ -44,6 +44,7 @@ encapsulated package Values
   The code is excluded from the report, since they convey no
   semantic information."
 
+
 public import Absyn;
 
 public
@@ -63,11 +64,6 @@ uniontype Value
   record BOOL
     Boolean boolean;
   end BOOL;
-
-  // BTH
-  record CLOCK
-    Absyn.ClockKind clk;
-  end CLOCK;
 
   record ENUM_LITERAL
     Absyn.Path name;

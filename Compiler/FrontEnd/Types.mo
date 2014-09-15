@@ -1076,8 +1076,6 @@ algorithm
     case (Values.REAL(real = _)) then (DAE.T_REAL_DEFAULT);
     case (Values.STRING(string = _)) then (DAE.T_STRING_DEFAULT);
     case (Values.BOOL(boolean = _)) then (DAE.T_BOOL_DEFAULT);
-    // BTH
-    case (Values.CLOCK(clk = _)) then (DAE.T_CLOCK_DEFAULT);
     case (Values.ENUM_LITERAL(name = path, index = index))
       equation
         path = Absyn.pathPrefix(path);

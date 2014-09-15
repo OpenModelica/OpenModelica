@@ -1216,6 +1216,7 @@ algorithm
       DAE.ComponentRef c;
       DAE.Exp e1,e2,e,t,f,start,stop,step,cr,dim,exp,iterexp,cond,ae1;
       DAE.Operator op;
+      DAE.ClockKind clk;
       list<String> argnodes,nodes;
       Absyn.Path fcn;
       list<DAE.Exp> args,es;
@@ -1259,6 +1260,15 @@ algorithm
       equation
         gen_str = genStringNTime("   |", level);
         res_str = stringAppendList({gen_str,"BCONST ","true","\n"});
+      then
+        res_str;
+
+    // BTH TODO
+    case (DAE.CLKCONST(clk = clk),level)
+      equation
+        gen_str = genStringNTime("   |", level);
+        s = clockKindString(clk);
+        res_str = stringAppendList({gen_str,"CLKCONST ",s,"\n"});
       then
         res_str;
 
@@ -1761,6 +1771,37 @@ algorithm
     case (str,_,_,_) then str;
   end matchcontinue;
 end parenthesize;
+
+public function clockKindString "
+Author: BTH
+Return textual representation of a ClockKind."
+  input DAE.ClockKind inClockKind;
+  output String outString;
+algorithm
+  outString := match inClockKind
+    local
+      Real startInterval;
+      Integer resolution;
+      DAE.Exp intervalCounter, interval, condition;
+      String solverMethod;
+      DAE.ClockKind c;
+
+    case DAE.INFERREDCLOCK()
+    then "Clock()";
+
+    case DAE.INTEGERCLOCK(intervalCounter=intervalCounter, resolution=resolution)
+    then "Clock(" +& dumpExpStr(intervalCounter,0) +& ", " +& intString(resolution) +& ")";
+
+    case DAE.REALCLOCK(interval=interval)
+    then "Clock(" +& dumpExpStr(interval,0) +& ")";
+
+    case DAE.BOOLEANCLOCK(condition=condition, startInterval=startInterval)
+    then "Clock(" +& dumpExpStr(condition,0) +& ", " +& realString(startInterval) +& ")";
+
+    case DAE.SOLVERCLOCK(c=c, solverMethod=solverMethod)
+    then "Clock(" +& clockKindString(c) +& ", " +& solverMethod +& ")";
+  end match;
+end clockKindString;
 
 end ExpressionDump;
 

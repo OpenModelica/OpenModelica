@@ -1181,6 +1181,32 @@ uniontype Mod "Modification"
 
 end Mod;
 
+
+// BTH
+public
+uniontype ClockKind
+  record INFERREDCLOCK end INFERREDCLOCK;
+
+  record INTEGERCLOCK
+    Exp intervalCounter;
+    Integer resolution;
+  end INTEGERCLOCK;
+
+  record REALCLOCK
+    Exp interval;
+  end REALCLOCK;
+
+  record BOOLEANCLOCK
+    Exp condition;
+    Real startInterval;
+  end BOOLEANCLOCK;
+
+  record SOLVERCLOCK
+    ClockKind c;
+    String solverMethod;
+  end SOLVERCLOCK;
+end ClockKind;
+
 /* -- End Types.mo -- */
 
 public
@@ -1215,7 +1241,7 @@ uniontype Exp "Expressions
 
   // BTH
   record CLKCONST
-    Absyn.ClockKind clk "Clock constants" ;
+    ClockKind clk "Clock constants" ;
   end CLKCONST;
 
   record ENUM_LITERAL "Enumeration literal"

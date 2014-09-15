@@ -27,9 +27,6 @@ package Absyn
     end FULLYQUALIFIED;
   end Path;
 
-  uniontype ClockKind
-  end ClockKind;
-
   uniontype ReductionIterType
     record COMBINE
     end COMBINE;
@@ -37,10 +34,6 @@ package Absyn
     end THREAD;
   end ReductionIterType;
 
-  function clockKindString
-    input ClockKind inClockKind;
-    output String outString;
-  end clockKindString;
 end Absyn;
 
 package ClassInf
@@ -110,6 +103,10 @@ package ClassInf
     record TYPE_BOOL
       Absyn.Path path;
     end TYPE_BOOL;
+
+    record TYPE_CLOCK
+      Absyn.Path path;
+    end TYPE_CLOCK;
 
     record TYPE_ENUM
       Absyn.Path path;
@@ -199,6 +196,29 @@ package DAE
     end DIM_UNKNOWN;
   end Dimension;
 
+  uniontype ClockKind
+	  record INFERREDCLOCK end INFERREDCLOCK;
+
+	  record INTEGERCLOCK
+	    Exp intervalCounter;
+	    Integer resolution;
+	  end INTEGERCLOCK;
+
+	  record REALCLOCK
+	    Exp interval;
+	  end REALCLOCK;
+
+	  record BOOLEANCLOCK
+	    Exp condition;
+	    Real startInterval;
+	  end BOOLEANCLOCK;
+
+	  record SOLVERCLOCK
+	    ClockKind c;
+	    String solverMethod;
+	  end SOLVERCLOCK;
+  end ClockKind;
+
   uniontype Exp
     record ICONST
       Integer integer;
@@ -217,7 +237,7 @@ package DAE
     end BCONST;
 
     record CLKCONST
-      Absyn.ClockKind clk;
+      ClockKind clk;
     end CLKCONST;
 
     record ENUM_LITERAL

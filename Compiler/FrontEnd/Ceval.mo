@@ -206,13 +206,13 @@ algorithm
       Absyn.Info info;
       list<Values.Value> orderd;
       list<String> comp;
-      Absyn.ClockKind ck;
+      DAE.ClockKind ck;
       Absyn.ReductionIterType iterType;
 
     // uncomment for debugging
     // case (cache,env,inExp,_,st,_,_)
     //   equation print("Ceval.ceval: " +& ExpressionDump.printExpStr(inExp) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
-    //   then fail();
+    // then fail();
 
     case (cache,_,DAE.ICONST(integer = i),_,stOpt,_,_) then (cache,Values.INTEGER(i),stOpt);
 
@@ -221,8 +221,6 @@ algorithm
     case (cache,_,DAE.SCONST(string = s),_,stOpt,_,_) then (cache,Values.STRING(s),stOpt);
 
     case (cache,_,DAE.BCONST(bool = b),_,stOpt,_,_)  then (cache,Values.BOOL(b),stOpt);
-    // BTH
-    case (cache,_,DAE.CLKCONST(clk = ck),_,stOpt,_,_) then (cache,Values.CLOCK(ck),stOpt);
 
     case (cache,_,DAE.ENUM_LITERAL(name = name, index = i),_,stOpt,_,_)
       then (cache, Values.ENUM_LITERAL(name, i), stOpt);
@@ -1165,10 +1163,11 @@ algorithm
     case "print" then cevalBuiltinPrint;
     case "fail" then cevalBuiltinFail;
     // BTH
+    /*
     case "Clock"
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
-      then cevalBuiltinClock;
+      then cevalBuiltinClock; */
     // MetaModelica type conversions
     case "intString" equation true = Config.acceptMetaModelicaGrammar(); then cevalIntString;
     case "realString" equation true = Config.acceptMetaModelicaGrammar(); then cevalRealString;
@@ -2139,68 +2138,6 @@ algorithm
         (cache,Values.NORETCALL(),st);
   end match;
 end cevalBuiltinPrint;
-
-protected function cevalBuiltinClock "
-author: BTH
-TODO Complete support of all Clock constructros
-  Evaluates the Clock constructor."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<DAE.Exp> inExpExpLst;
-  input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inST;
-  input Absyn.Msg inMsg;
-  input Integer numIter;
-  output Env.Cache outCache;
-  output Values.Value outValue;
-  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
-  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
-    local
-      Absyn.ClockKind cv;
-      Real rv1,rv2;
-      Integer iv1,iv2;
-      Boolean bv1;
-      Env.Env env;
-      DAE.Exp exp1,exp2;
-      Boolean impl;
-      Option<GlobalScript.SymbolTable> st;
-      Absyn.Msg msg;
-      Env.Cache cache;
-
-    case (cache,env,{},impl,st,msg,_)
-      equation
-        cv = Absyn.INFERREDCLOCK();
-      then
-        (cache,Values.CLOCK(cv),st);
-
-    case (cache,env,{exp1,exp2},impl,st,msg,_)
-      equation
-        (cache,Values.INTEGER(iv1),_) = ceval(cache,env,exp1,impl,st,msg,numIter+1);
-        (cache,Values.INTEGER(iv2),_) = ceval(cache,env,exp2,impl,st,msg,numIter+1);
-        cv = Absyn.INTEGERCLOCK(iv1,iv2);
-      then
-        (cache,Values.CLOCK(cv),st);
-
-    case (cache,env,{exp1},impl,st,msg,_)
-      equation
-        (cache,Values.REAL(rv1),_) = ceval(cache,env,exp1,impl,st,msg,numIter+1);
-        cv = Absyn.REALCLOCK(rv1);
-      then
-        (cache,Values.CLOCK(cv),st);
-
-
-    case (cache,env,{exp1, exp2},impl,st,msg,_)
-      equation
-        (cache,Values.BOOL(bv1),_) = ceval(cache,env,exp1,impl,st,msg,numIter+1);
-        (cache,Values.REAL(rv1),_) = ceval(cache,env,exp2,impl,st,msg,numIter+1);
-        cv = Absyn.BOOLEANCLOCK(bv1,rv1);
-      then
-        (cache,Values.CLOCK(cv),st);
-
-  end matchcontinue;
-end cevalBuiltinClock;
 
 protected function cevalIntString
   input Env.Cache inCache;
