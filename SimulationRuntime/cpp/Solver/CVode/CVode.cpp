@@ -218,9 +218,9 @@ void Cvode::initialize()
     if (_idid < 0)
       throw std::invalid_argument("Cvode::initialize()");
 
-	// Use own jacobian matrix
-	_idid = CVDlsSetDenseJacFn(_cvodeMem, CV_JCallback);
-	if (_idid < 0)
+  // Use own jacobian matrix
+  _idid = CVDlsSetDenseJacFn(_cvodeMem, CV_JCallback);
+  if (_idid < 0)
       throw std::invalid_argument("CVode::initialize()");
 
     if (_dimZeroFunc)
@@ -570,7 +570,7 @@ int Cvode::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeig
   try
   {
     int j,k,l;
-	double fnorm, minInc, *f_data, *fHelp_data, *errorWeight_data, h, srur, delta_inv;
+  double fnorm, minInc, *f_data, *fHelp_data, *errorWeight_data, h, srur, delta_inv;
 
   f_data = NV_DATA_S(fy);
   errorWeight_data = NV_DATA_S(errorWeight);
@@ -632,48 +632,48 @@ int Cvode::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeig
         {
           j = _sparsePattern_leadindex[ii-1];
 
-				}
-				while(j <_sparsePattern_leadindex[ii])
-				{
-					l = _sparsePattern_index[j];
-					k = l + ii * _dimSys;
-					//Jac->data[k] = (fHelp_data[l] - f_data[l])/_delta[l];
-					delta_inv = 1.0/_delta[ii];
-					Jac->data[k] = (fHelp_data[l] - f_data[l])*delta_inv;
-					j++;
-				}
-			}
-		}
-	}
-	
-	/*
-	//Calculation of J without colouring
-	 for (j = 0; j < N; j++) 
-	 {
+        }
+        while(j <_sparsePattern_leadindex[ii])
+        {
+          l = _sparsePattern_index[j];
+          k = l + ii * _dimSys;
+          //Jac->data[k] = (fHelp_data[l] - f_data[l])/_delta[l];
+          delta_inv = 1.0/_delta[ii];
+          Jac->data[k] = (fHelp_data[l] - f_data[l])*delta_inv;
+          j++;
+        }
+      }
+    }
+  }
+
+  /*
+  //Calculation of J without colouring
+   for (j = 0; j < N; j++)
+   {
 
 
-		//N_VSetArrayPointer(DENSE_COL(Jac,j), jthCol);
+    //N_VSetArrayPointer(DENSE_COL(Jac,j), jthCol);
 
-		 _ysave[j] = y[j];
+     _ysave[j] = y[j];
 
-		y[j] += _delta[j];
+    y[j] += _delta[j];
 
-		calcFunction(t, y, fHelp_data);
-		
-		y[j] = _ysave[j];
+    calcFunction(t, y, fHelp_data);
 
-		delta_inv = 1.0/_delta[j];
-		N_VLinearSum(delta_inv, fHelp, -delta_inv, fy, jthCol);
+    y[j] = _ysave[j];
 
-		for(int i=0; i<_dimSys; ++i)
+    delta_inv = 1.0/_delta[j];
+    N_VLinearSum(delta_inv, fHelp, -delta_inv, fy, jthCol);
+
+    for(int i=0; i<_dimSys; ++i)
         {
             Jac->data[i+j*_dimSys] = NV_Ith_S(jthCol,i);
         }
 
-		//DENSE_COL(Jac,j) = N_VGetArrayPointer(jthCol);
-	}
-	*/
- 
+    //DENSE_COL(Jac,j) = N_VGetArrayPointer(jthCol);
+  }
+  */
+
  }      //workaround until exception can be catch from c- libraries
   catch (std::exception& ex)
   {
