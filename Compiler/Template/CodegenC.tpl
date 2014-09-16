@@ -7497,7 +7497,7 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
       <<
       for (<%tvar%> = <%evar%>; !listEmpty(<%tvar%>); <%tvar%>=listRest(<%tvar%>))
       {
-        <%iterName%> = listFirst(<%tvar%>);
+        <%iterName%> = listHead(<%tvar%>);
         <%body%>
       }
       >>

@@ -5163,7 +5163,7 @@ template tempDecl(String ty, Text &varDecls /*BUFP*/)
              case "listGet_rettype"
              case "listDelete_rettype"
              case "listRest_rettype"
-             case "listFirst_rettype"
+             case "listHead_rettype"
              case "arrayGet_rettype"
              case "arrayCreate_rettype"
              case "arrayList_rettype"
