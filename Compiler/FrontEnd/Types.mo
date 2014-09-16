@@ -5851,7 +5851,7 @@ algorithm
       then
         (exps, tys);
 
-    case ({}, {}, _, _, _, _) 
+    case ({}, {}, _, _, _, _)
       then (listReverse(inAccumExps), listReverse(inAccumTypes));
 
   end match;

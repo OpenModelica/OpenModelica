@@ -96,7 +96,7 @@ uniontype SubClockPartition
     Integer factor "subSample/superSample";
     //Integer counter "shiftSample/backSample";
     //Integer resolution "shiftSample/backSample";
-	end SubClockPartition;
+  end SubClockPartition;
 end SubClockPartition;
 
 public
