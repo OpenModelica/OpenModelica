@@ -13892,7 +13892,7 @@ algorithm
   spTA := translateSparsePatterCref2DerCref(spTA, {});
 
   // translate crefs -> simvars integers via cref2simvars
-  spTInts := translateSparsePatterSimVarInts(spTA, simCode, {});
+  spTInts := translateSparsePatterSimVarInts(spTA, simCode);
   spTInts := List.sort(spTInts, compareSparsePatterInt);
   derivatives := translateSparsePatterInts2FMIUnknown(spTInts, {});
 
@@ -13904,7 +13904,7 @@ algorithm
   spTA  := mergeSparsePatter(spTA, spTB, {});
 
   // translate crefs -> simvars integers via cref2simvars
-  spTInts := translateSparsePatterSimVarInts(spTA, simCode, {});
+  spTInts := translateSparsePatterSimVarInts(spTA, simCode);
   spTInts := List.sort(spTInts, compareSparsePatterInt);
   outputs := translateSparsePatterInts2FMIUnknown(spTInts, {});
 
@@ -13960,7 +13960,25 @@ algorithm
      end match;
 end translateSparsePatterCref2DerCref;
 
-protected function translateSparsePatterSimVarInts
+public function translateSparsePatterSimVarInts
+"function translates sparse pattern to simVar index"
+  input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsePattern;
+  input SimCode.SimCode simCode;
+  output list<tuple<Integer, list<Integer>>> outSparsePattern;
+algorithm
+  outSparsePattern := match(sparsePattern, simCode)
+    local
+      list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> all;
+  
+    case ({}, _) then {};
+      
+    case (all, _)
+     then translateSparsePatterSimVarIntsWork(sparsePattern, simCode, {});
+     
+     end match;  
+end translateSparsePatterSimVarInts;
+
+protected function translateSparsePatterSimVarIntsWork
 "function translates sparse pattern to simVar index"
   input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsePattern;
   input SimCode.SimCode simCode;
@@ -13982,10 +14000,28 @@ algorithm
         unknown = translateCref2SimVarIndex(cref, simCode);
         dependencies = List.map1(crefs, translateCref2SimVarIndex, simCode);
       then
-        translateSparsePatterSimVarInts(rest, simCode, (unknown, dependencies)::inAccum);
+        translateSparsePatterSimVarIntsWork(rest, simCode, (unknown, dependencies)::inAccum);
 
      end match;
-end translateSparsePatterSimVarInts;
+end translateSparsePatterSimVarIntsWork;
+
+public function translateColorsSimVarInts
+"function translates sparse pattern to simVar index"
+  input list<list<DAE.ComponentRef>> inColors;
+  input SimCode.SimCode simCode;
+  output list<list<Integer>> outColors;
+algorithm
+  outColors := match(inColors, simCode)
+    local
+      list<list<DAE.ComponentRef>> all;
+  
+    case ({}, _) then {};
+      
+    case (all, _)
+     then List.mapList1_1(all, translateCref2SimVarIndex, simCode);
+     
+     end match; 
+end translateColorsSimVarInts;
 
 protected function compareSparsePatterInt
 "function translates the first cref of sparse pattern to der(cref)"
@@ -14008,7 +14044,6 @@ algorithm
   SimCode.SIMVAR(variable_index = SOME(out)) := cref2simvar(inCref, simCode);
 end translateCref2SimVarIndex;
 
-//type JacobianMatrix = tuple<list<JacobianColumn>, list<SimVar>, String, tuple<list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>>, list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>>, tuple<list<SimVar>, list<SimVar>>>, list<list<DAE.ComponentRef>>, Integer, Integer>;
 protected function getJacobianMatrix
   input list<SimCode.JacobianMatrix> injacobianMatrixes;
   input String inJacobianName;
@@ -14043,6 +14078,10 @@ algorithm
 
     case ( {}, {}, _) then listReverse(inAccum);
 
+    case ( {}, _, _) then inB;
+
+    case ( _, {}, _) then inA;
+
     case (( (crefA, listA) )::restA, ((crefB, listB))::restB, _)
       equation
         true = ComponentReference.crefEqual(crefA, crefB);
@@ -14051,59 +14090,6 @@ algorithm
          mergeSparsePatter(restA, restB, (crefA,listOut)::inAccum);
    end match;
 end mergeSparsePatter;
-
-protected function getFMIModelStructureHelper
-  input SimCode.SimVars inAllVars;
-  input list<SimCode.SimVar> inVars;
-  input SimCode.FmiModelStructure inFmiModelStructure;
-  output SimCode.FmiModelStructure outFmiModelStructure;
-algorithm
-  outFmiModelStructure := matchcontinue (inAllVars, inVars, inFmiModelStructure)
-    local
-      list<SimCode.SimVar> stateVars_;
-      list<SimCode.SimVar> xs;
-      Integer index_, variableIndex, variableIndexOfStateVar;
-      SimCode.FmiModelStructure fmiModelStructure;
-      SimCode.FmiOutputs fmiOutputs_;
-      SimCode.FmiDerivatives fmiDerivatives_;
-      list<SimCode.FmiUnknown> fmiUnknownsList_;
-      SimCode.FmiUnknown fmiUnknown;
-
-    case (_, (SimCode.SIMVAR(causality = SimCode.OUTPUT(), variable_index = SOME(variableIndex)) :: xs),
-          (fmiModelStructure as SimCode.FMIMODELSTRUCTURE(fmiOutputs = SimCode.FMIOUTPUTS(fmiUnknownsList = fmiUnknownsList_),
-                                                          fmiDerivatives = fmiDerivatives_)))
-      equation
-        fmiUnknown = SimCode.FMIUNKNOWN(variableIndex, {}, {"fixed"}); /* empty dependencies & dependenciesKind list for outputs. */
-        fmiUnknownsList_ = listAppend(fmiUnknownsList_, {fmiUnknown});
-        fmiOutputs_ = SimCode.FMIOUTPUTS(fmiUnknownsList_);
-        fmiModelStructure = SimCode.FMIMODELSTRUCTURE(fmiOutputs_, fmiDerivatives_);
-        fmiModelStructure = getFMIModelStructureHelper(inAllVars, xs, fmiModelStructure);
-      then
-        fmiModelStructure;
-
-    case (SimCode.SIMVARS(stateVars = stateVars_), (SimCode.SIMVAR(varKind=BackendDAE.STATE_DER(), index = index_, variable_index = SOME(variableIndex)) :: xs),
-          (fmiModelStructure as SimCode.FMIMODELSTRUCTURE(fmiOutputs = fmiOutputs_,
-                                                          fmiDerivatives = SimCode.FMIDERIVATIVES(fmiUnknownsList = fmiUnknownsList_))))
-      equation
-        variableIndexOfStateVar =  getStateSimVarIndexFromIndex(stateVars_, index_);
-        /* FIXME! For now using fixed as default dependenciesKind. */
-        fmiUnknown = SimCode.FMIUNKNOWN(variableIndex, {variableIndexOfStateVar}, {"fixed"});
-        fmiUnknownsList_ = listAppend(fmiUnknownsList_, {fmiUnknown});
-        fmiDerivatives_ = SimCode.FMIDERIVATIVES(fmiUnknownsList_);
-        fmiModelStructure = SimCode.FMIMODELSTRUCTURE(fmiOutputs_, fmiDerivatives_);
-        fmiModelStructure = getFMIModelStructureHelper(inAllVars, xs, fmiModelStructure);
-      then
-        fmiModelStructure;
-
-    case (_, (_ :: xs), fmiModelStructure)
-      equation
-        fmiModelStructure = getFMIModelStructureHelper(inAllVars, xs, fmiModelStructure);
-      then
-        fmiModelStructure;
-
-    case (_, {}, fmiModelStructure) then fmiModelStructure;
-  end matchcontinue;
-end getFMIModelStructureHelper;
 
 public function getStateSimVarIndexFromIndex
   input list<SimCode.SimVar> inStateVars;

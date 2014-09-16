@@ -840,6 +840,19 @@ package SimCodeUtil
     input SimCode.SimCode simCode;
     output Integer idxOut;
   end getMaxSimEqSystemIndex;
+  
+  function translateSparsePatterSimVarInts
+    input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsePattern;
+    input SimCode.SimCode simCode;
+    output list<tuple<Integer, list<Integer>>> outSparsePattern;
+  end translateSparsePatterSimVarInts;
+  
+  function translateColorsSimVarInts
+    input list<list<DAE.ComponentRef>> inColors;
+    input SimCode.SimCode simCode;
+    output list<list<Integer>> outColors;
+  end translateColorsSimVarInts;
+  
 end SimCodeUtil;
 
 
