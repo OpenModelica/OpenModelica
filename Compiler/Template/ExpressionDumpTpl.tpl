@@ -172,17 +172,17 @@ end dumpExpListCrefs;
 template dumpClockKind(DAE.ClockKind clk, String stringDelimiter)
 ::=
 match clk
-  case INFERREDCLOCK(__) then "Clock()"
-  case INTEGERCLOCK(__) then
+  case INFERRED_CLOCK(__) then "Clock()"
+  case INTEGER_CLOCK(__) then
     let ic_str = dumpExp(intervalCounter, stringDelimiter)
     'Clock(<%ic_str%>, <%resolution%>)'
-  case REALCLOCK(__) then
+  case REAL_CLOCK(__) then
     let interval_str = dumpExp(interval, stringDelimiter)
     'Clock(<%interval_str%>)'
-  case BOOLEANCLOCK(__) then
+  case BOOLEAN_CLOCK(__) then
     let condition_str = dumpExp(condition, stringDelimiter)
     'Clock(<%condition_str%>, <%startInterval%>)'
-  case SOLVERCLOCK(__) then
+  case SOLVER_CLOCK(__) then
     let clk_str = dumpClockKind(c, stringDelimiter)
     'Clock(<%clk_str%>, <%solverMethod%>)'
 end dumpClockKind;

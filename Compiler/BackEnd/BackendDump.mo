@@ -2738,7 +2738,6 @@ algorithm
 end optDistributionString;
 
 protected function optUncertainty
-"funcion optUncertainty"
   input Option<DAE.Uncertainty> uncertainty;
   output String outString;
 algorithm
@@ -2751,7 +2750,6 @@ algorithm
 end optUncertainty;
 
 protected function optStateSelectionString
-" function optStateSelectionString "
   input Option<DAE.StateSelect> ss;
   output String outString;
 algorithm
@@ -2770,7 +2768,7 @@ protected function partitionKindString
   output String outString;
 algorithm
   outString := match(inPartitionKind)
-    case BackendDAE.CLOCKED_PARTITION() then "clocked";
+    case BackendDAE.CLOCKED_PARTITION(clockKind=_) then "clocked";
     case BackendDAE.CONTINUOUS_TIME_PARTITION() then "continuous time";
     case BackendDAE.UNSPECIFIED_PARTITION() then "unspecified";
     case BackendDAE.UNKNOWN_PARTITION() then "unknown";
@@ -2785,27 +2783,21 @@ protected function equationAttrString
   output String outString;
 protected
   BackendDAE.EquationKind kind;
-  BackendDAE.SubClockPartitionKind subPartitionKind;
+  Integer subPartitionIndex;
 algorithm
-  BackendDAE.EQUATION_ATTRIBUTES(kind=kind, subPartitionKind=subPartitionKind) := inEqAttr;
+  BackendDAE.EQUATION_ATTRIBUTES(kind=kind, subPartitionIndex=subPartitionIndex) := inEqAttr;
   outString := "[" +& equationKindString(kind);
-  outString := Util.if_(Flags.isSet(Flags.DUMP_SYNCHRONOUS), outString +& ", sub-partition index: " +& subPartitionString(subPartitionKind), outString);
+  outString := Util.if_(Flags.isSet(Flags.DUMP_SYNCHRONOUS), outString +& ", sub-partition index: " +& subPartitionString(subPartitionIndex), outString);
   outString := outString +& "]";
 end equationAttrString;
 
 protected function subPartitionString
-  input BackendDAE.SubClockPartitionKind inSubPartitionKind;
+  input Integer inSubPartitionIndex;
   output String outString;
 algorithm
-  outString := match inSubPartitionKind
-    local
-      Integer index;
-
-    case BackendDAE.SUB_PARTITION(index=index) then intString(index);
-    case BackendDAE.UNKNOWN_SUB_PARTITION() then "unknown";
-    else equation
-      Error.addInternalError("./Compiler/BackEnd/BackendDump.mo: function subPartitionString failed");
-    then fail();
+  outString := match inSubPartitionIndex
+    case 0 then "unknown";
+    else intString(inSubPartitionIndex);
   end match;
 end subPartitionString;
 

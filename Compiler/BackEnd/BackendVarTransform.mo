@@ -239,7 +239,7 @@ algorithm
     // Once match is available as a complement to matchcontinue, this case could be useful again.
     //case ((repl as REPLACEMENTS(ht,invHt)),src,dst) /* source dest */
      // equation
-     //   olddst = BaseHashTable.get(src, ht) "if rule a->b exists, fail" ;
+     //   olddst = BaseHashTable.get(src, ht) "if rule a->b exists, fail";
      // then
      //   fail();
 
@@ -288,7 +288,7 @@ algorithm
       Option<HashTable2.HashTable> derConst;
     case ((REPLACEMENTS(hashTable=ht)),src,_) /* source dest */
       equation
-        _ = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
+        _ = BaseHashTable.get(src,ht) "if rule a->b exists, fail";
       then
         fail();
     case ((REPLACEMENTS(ht,invHt,eht,iv,derConst)),src,dst)
@@ -398,13 +398,13 @@ algorithm
       list<DAE.ComponentRef> srcs;
     case (_,_,_)
       equation
-        failure(_ = BaseHashTable.get(dst,invHt)) "No previous elt for dst -> src" ;
+        failure(_ = BaseHashTable.get(dst,invHt)) "No previous elt for dst -> src";
         invHt_1 = BaseHashTable.add((dst, {src}),invHt);
       then
         invHt_1;
     case (_,_,_)
       equation
-        srcs = BaseHashTable.get(dst,invHt) "previous elt for dst -> src, append.." ;
+        srcs = BaseHashTable.get(dst,invHt) "previous elt for dst -> src, append..";
         srcs = src::srcs;
         invHt_1 = BaseHashTable.add((dst, srcs),invHt);
       then

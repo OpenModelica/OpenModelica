@@ -591,7 +591,7 @@ algorithm
         vars = BackendVariable.addVar(backendVar1, inVars);
         e1 = Expression.crefExp(cr);
       then
-        (vars, inKnVars, inExVars, BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), BackendDAE.UNKNOWN_SUB_PARTITION()))::inEqnsLst, iInlineHT);
+        (vars, inKnVars, inExVars, BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0))::inEqnsLst, iInlineHT);
 
     // variables: states and algebraic variables with NO binding equation
     case (DAE.VAR(binding=NONE()), _, _, _, _, _, _)
@@ -614,7 +614,7 @@ algorithm
     // known variables: parameters and constants
     case (DAE.VAR(componentRef = _), _, _, _, _, _, _)
       equation
-        (backendVar1, inlineHT,assrtEqs) = lowerKnownVar(inElement, functionTree, iInlineHT) "in previous rule, lower_var failed." ;
+        (backendVar1, inlineHT,assrtEqs) = lowerKnownVar(inElement, functionTree, iInlineHT) "in previous rule, lower_var failed.";
         knvars = BackendVariable.addVar(backendVar1, inKnVars);
         eqLst = listAppend(inEqnsLst,assrtEqs);
       then
@@ -1656,7 +1656,7 @@ algorithm
         true = DAEUtil.expTypeComplex(tp);
         size = Expression.sizeOf(tp);
       then
-        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.UNKNOWN_SUB_PARTITION()))::inEqns;
+        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0))::inEqns;
 
     // array types to array equations
     case (_, _, _, _, _, _)
@@ -1674,7 +1674,7 @@ algorithm
         true = Types.isTuple(tp);
         size = Expression.sizeOf(tp);
       then
-        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.UNKNOWN_SUB_PARTITION()))::inEqns;
+        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0))::inEqns;
 
     // other types
     case (_, _, _, _, _, _)
@@ -1686,7 +1686,7 @@ algorithm
         false = b1 or b2 or b3;
         //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, Absyn.dummyInfo);
       then
-        BackendDAE.EQUATION(inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.UNKNOWN_SUB_PARTITION()))::inEqns;
+        BackendDAE.EQUATION(inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0))::inEqns;
     else
       equation
         // show only on failtrace!
@@ -1722,7 +1722,7 @@ algorithm
     case (_, _, _, _, _, _)
       equation
         ds = Expression.dimensionsSizes(dims);
-      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.UNKNOWN_SUB_PARTITION()))::iAcc;
+      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0))::iAcc;
   end matchcontinue;
 end lowerArrayEqn;
 
@@ -1740,7 +1740,7 @@ algorithm
       list<DAE.Exp> e1lst, e2lst;
     case ({}, {}, _, _, _) then iAcc;
     case (e1::e1lst, e2::e2lst, _, _, _)
-      then generateEquations(e1lst, e2lst, source, inEqKind, BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.UNKNOWN_SUB_PARTITION()))::iAcc);
+      then generateEquations(e1lst, e2lst, source, inEqKind, BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0))::iAcc);
   end match;
 end generateEquations;
 

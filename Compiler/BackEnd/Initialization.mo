@@ -1190,7 +1190,7 @@ protected function fixInitialSystem "author: lochel
   input BackendDAE.EquationArray inEqns;
   input BackendDAE.Variables inInitVars;
   input BackendDAE.Shared inShared;
-  input Integer inIndex "index of the system (0 is regular)" ;
+  input Integer inIndex "index of the system (0 is regular)";
   output BackendDAE.EquationArray outEqns;
   output list<BackendDAE.Var> outDumpVars;
   output list<BackendDAE.Equation> outRemovedEqns;
@@ -1199,8 +1199,8 @@ protected
   list<Integer> stateIndices, range, unassigned, initEqsIndices, redundantEqns;
   list<BackendDAE.Var> initVarList;
   array<Integer> vec1, vec2;
-  BackendDAE.IncidenceMatrix m "incidence matrix of modified system" ;
-  BackendDAE.IncidenceMatrix m_ "incidence matrix of original system (TODO: fix this one)" ;
+  BackendDAE.IncidenceMatrix m "incidence matrix of modified system";
+  BackendDAE.IncidenceMatrix m_ "incidence matrix of original system (TODO: fix this one)";
   BackendDAE.EqSystem syst;
   DAE.FunctionTree funcs;
   BackendDAE.AdjacencyMatrixEnhanced me;
@@ -1232,7 +1232,7 @@ algorithm
   nAddEqs := intMax(nVars-nEqns + inIndex, inIndex);
 //print("nAddEqs: " +& intString(nAddEqs) +& "\n");
   m_ := fixUnderDeterminedSystem(m_, stateIndices, nEqns, nAddEqs);
-  SOME(m) := BackendDAEUtil.copyIncidenceMatrix(SOME(m_)) "deep copy" ;
+  SOME(m) := BackendDAEUtil.copyIncidenceMatrix(SOME(m_)) "deep copy";
 
   // modify incidence matrix for over-determined systems
   nAddVars := intMax(nEqns-nVars + inIndex, inIndex);
@@ -1301,7 +1301,7 @@ algorithm
     //then fail();
 
     case (_, _, _, _) equation
-      true = (inNAddEqns > 0) "just to be careful" ;
+      true = (inNAddEqns > 0) "just to be careful";
       m = arrayCreate(inNEqns+inNAddEqns, {});
       m = Util.arrayCopy(inM, m);
       newEqIndices = List.intRange2(inNEqns+1, inNEqns+inNAddEqns);
@@ -1339,7 +1339,7 @@ algorithm
     //then fail();
 
     case (_, _, _, _) equation
-      true = (inNAddVars > 0) "just to be careful" ;
+      true = (inNAddVars > 0) "just to be careful";
       newVarIndices = List.intRange2(inNVars+1, inNVars+inNAddVars);
       m = List.fold1(inInitEqnIndices, squareIncidenceMatrix2, newVarIndices, inM);
     then m;
@@ -1360,7 +1360,7 @@ protected function addStartValueEquations "author: lochel"
   input BackendDAE.EquationArray inEqns;
   input list<BackendDAE.Var> inDumpVars;
   output BackendDAE.EquationArray outEqns;
-  output list<BackendDAE.Var> outDumpVars "this are the variables that get fixed (not the same as inVarLst!)" ;
+  output list<BackendDAE.Var> outDumpVars "this are the variables that get fixed (not the same as inVarLst!)";
 algorithm
   (outEqns, outDumpVars) := matchcontinue(inVarLst, inEqns, inDumpVars)
     local
@@ -1432,8 +1432,8 @@ protected function consistencyCheck "
     - The first list contains all consistent initial conditions.
     - The second list contains all inconsistent initial conditions.
     - The third list contains all initial conditions that couldn't be checked."
-  input list<Integer> inRedundantEqns "these are the indices of the redundant equations" ;
-  input BackendDAE.EquationArray inEqns "this are all equations of the given system" ;
+  input list<Integer> inRedundantEqns "these are the indices of the redundant equations";
+  input BackendDAE.EquationArray inEqns "this are all equations of the given system";
   input BackendDAE.Variables inVars;
   input BackendDAE.Shared inShared;
   input Integer nAddVars;
@@ -1442,9 +1442,9 @@ protected function consistencyCheck "
   input array<Integer> vecVarToEqs;
   input array<Integer> vecEqsToVar;
   input array<Integer> mapIncRowEqn;
-  output list<Integer> outConsistentEquations "These equations are consistent and can be removed from the initialization problem without any issue." ;
-  output list<Integer> outInconsistentEquations "If this list is not empty then the initialization problem is inconsistent and has no solution." ;
-  output list<Integer> outUncheckedEquations "These equations need to be checked numerically." ;
+  output list<Integer> outConsistentEquations "These equations are consistent and can be removed from the initialization problem without any issue.";
+  output list<Integer> outInconsistentEquations "If this list is not empty then the initialization problem is inconsistent and has no solution.";
+  output list<Integer> outUncheckedEquations "These equations need to be checked numerically.";
 algorithm
   (outConsistentEquations, outInconsistentEquations, outUncheckedEquations) := matchcontinue(inRedundantEqns, inEqns, inVars, inShared, nAddVars, inM, me, vecVarToEqs, vecEqsToVar, mapIncRowEqn)
     local
@@ -1549,9 +1549,9 @@ algorithm
 end isVarExplicitSolvable;
 
 protected function splitStrongComponents "author: mwenzler"
-  input list<list<Integer>> inComps "list of strong components" ;
-  output list<Integer> outListComps "all components of size 1" ;
-  output list<Integer> outLoopListComps "all components of size > 1" ;
+  input list<list<Integer>> inComps "list of strong components";
+  output list<Integer> outListComps "all components of size 1";
+  output list<Integer> outLoopListComps "all components of size > 1";
 algorithm
   (outListComps, outLoopListComps) := match(inComps)
     local
@@ -1596,8 +1596,8 @@ protected function compsMarker "author: mwenzler"
   input array<Integer> inVecVarToEq;
   input BackendDAE.IncidenceMatrix inM;
   input list<Integer> inFlatComps;
-  input list<Integer> inLoopListComps "not used yet" ;
-  output list<Integer> outMarkedEqns "contains all the indices of the equations that need to be considered" ;
+  input list<Integer> inLoopListComps "not used yet";
+  output list<Integer> outMarkedEqns "contains all the indices of the equations that need to be considered";
 protected
   list<Integer> varList;
   list<Integer> markedEqns;
@@ -1691,8 +1691,8 @@ protected function setupVarReplacements
   input list<Integer> inMarkedEqns;
   input BackendDAE.EquationArray inEqns;
   input BackendDAE.Variables inVars;
-  input array<Integer> inVecEqToVar "matching" ;
-  input BackendVarTransform.VariableReplacements inRepls "initially call this with empty replacements" ;
+  input array<Integer> inVecEqToVar "matching";
+  input BackendVarTransform.VariableReplacements inRepls "initially call this with empty replacements";
   input array<Integer> inMapIncRowEqn;
   input BackendDAE.AdjacencyMatrixEnhanced inME;
   output BackendVarTransform.VariableReplacements outRepls;
@@ -1749,7 +1749,7 @@ protected function applyVarReplacements "author: lochel
 protected
   BackendDAE.Equation eqn;
 algorithm
-  outEqnList := BackendEquation.copyEquationArray(inEqnList) "avoid side-effects" ;
+  outEqnList := BackendEquation.copyEquationArray(inEqnList) "avoid side-effects";
   eqn := BackendEquation.equationNth1(outEqnList, inEqnIndex);
   ({eqn}, _) := BackendVarTransform.replaceEquations({eqn}, inVarRepls, NONE());
   outEqnList := BackendEquation.setAtIndex(outEqnList, inEqnIndex, eqn);

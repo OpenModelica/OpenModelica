@@ -1185,26 +1185,27 @@ end Mod;
 // BTH
 public
 uniontype ClockKind
-  record INFERREDCLOCK end INFERREDCLOCK;
+  record INFERRED_CLOCK
+  end INFERRED_CLOCK;
 
-  record INTEGERCLOCK
+  record INTEGER_CLOCK
     Exp intervalCounter;
     Integer resolution;
-  end INTEGERCLOCK;
+  end INTEGER_CLOCK;
 
-  record REALCLOCK
+  record REAL_CLOCK
     Exp interval;
-  end REALCLOCK;
+  end REAL_CLOCK;
 
-  record BOOLEANCLOCK
+  record BOOLEAN_CLOCK
     Exp condition;
     Real startInterval;
-  end BOOLEANCLOCK;
+  end BOOLEAN_CLOCK;
 
-  record SOLVERCLOCK
+  record SOLVER_CLOCK
     ClockKind c;
     String solverMethod;
-  end SOLVERCLOCK;
+  end SOLVER_CLOCK;
 end ClockKind;
 
 /* -- End Types.mo -- */

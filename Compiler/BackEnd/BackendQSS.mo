@@ -514,7 +514,7 @@ algorithm
       local
         Integer h;
         DAE.Exp exp,e1;
-        DAE.Exp scalar "scalar" ;
+        DAE.Exp scalar "scalar";
         String s;
         Integer p;
        case (_,{h},_,_,_,_,true,_,_)
@@ -967,7 +967,7 @@ end getEquationsWithDiscont;
 
 function getEquations
   input BackendDAE.EquationArray eqsdae;
-  input list<Integer> indx "zero-based indexing" ;
+  input list<Integer> indx "zero-based indexing";
   output list<BackendDAE.Equation> outEquationLst;
 algorithm
   outEquationLst := match (eqsdae,indx)

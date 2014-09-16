@@ -1209,9 +1209,9 @@ algorithm
       String eqnstr;
     case (_,_,_)
       equation
-        var = a2[eqn] "Got the variable that is solved in the equation" ;
-        reachable = Debug.bcallret2(intGt(var,0),arrayGet,mt,var,{}) "Got the equations of that variable" ;
-        reachable_1 = BackendDAEUtil.removeNegative(reachable) "in which other equations is this variable present ?" ;
+        var = a2[eqn] "Got the variable that is solved in the equation";
+        reachable = Debug.bcallret2(intGt(var,0),arrayGet,mt,var,{}) "Got the equations of that variable";
+        reachable_1 = BackendDAEUtil.removeNegative(reachable) "in which other equations is this variable present ?";
       then
         List.removeOnTrue(eqn, intEq, reachable_1);
     else

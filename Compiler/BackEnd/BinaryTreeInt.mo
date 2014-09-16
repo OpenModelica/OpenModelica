@@ -54,9 +54,9 @@ public
 uniontype BinTree "Generic Binary tree implementation
   - Binary Tree"
   record TREENODE
-    Option<TreeValue> value "Value" ;
-    Option<BinTree> leftSubTree "left subtree" ;
-    Option<BinTree> rightSubTree "right subtree" ;
+    Option<TreeValue> value "Value";
+    Option<BinTree> leftSubTree "left subtree";
+    Option<BinTree> rightSubTree "right subtree";
   end TREENODE;
 
 end BinTree;
@@ -65,8 +65,8 @@ public
 uniontype TreeValue "Each node in the binary tree can have a value associated with it.
   - Tree Value"
   record TREEVALUE
-    Key key "Key" ;
-    Value value "Value" ;
+    Key key "Key";
+    Value value "Value";
   end TREEVALUE;
 
 end TreeValue;
@@ -75,9 +75,9 @@ public
 type Key = Integer "A key is a Integer";
 
 public
-type Value = Integer "- Value" ;
+type Value = Integer "- Value";
 
-public constant BinTree emptyBinTree=TREENODE(NONE(),NONE(),NONE()) " Empty binary tree " ;
+public constant BinTree emptyBinTree=TREENODE(NONE(),NONE(),NONE()) " Empty binary tree ";
 
 /**************************
   implementation

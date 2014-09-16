@@ -10531,7 +10531,7 @@ algorithm
       Real rsize, rexpandsize;
     case (SimCode.VALUE_ARRAY(numberOfElements = n, arrSize = size, valueArray = arr), _)
       equation
-        (n < size) = true "Have space to add array elt." ;
+        (n < size) = true "Have space to add array elt.";
         n_1 = n + 1;
         arr_1 = arrayUpdate(arr, n + 1, SOME(entry));
       then
@@ -10539,7 +10539,7 @@ algorithm
 
     case (SimCode.VALUE_ARRAY(numberOfElements = n, arrSize = size, valueArray = arr), _)
       equation
-        (n < size) = false "Do NOT have splace to add array elt. Expand with factor 1.4" ;
+        (n < size) = false "Do NOT have splace to add array elt. Expand with factor 1.4";
         rsize = intReal(size);
         rexpandsize = rsize *. 0.4;
         expandsize = realInt(rexpandsize);

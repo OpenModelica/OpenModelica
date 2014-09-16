@@ -32,7 +32,7 @@
 encapsulated package BackendDAE
 " file:        BackendDAE.mo
   package:     BackendDAE
-  description: BackendDAE contains the data-types used by the backend.
+  description: BackendDAE contains the data-types used by the back end.
 
   RCS: $Id$
 "
@@ -69,8 +69,8 @@ type EqSystems = list<EqSystem>;
 public
 uniontype EqSystem "An independent system of equations (and their corresponding variables)"
   record EQSYSTEM
-    Variables orderedVars "ordered Variables, only states and alg. vars" ;
-    EquationArray orderedEqs "ordered Equations" ;
+    Variables orderedVars "ordered Variables, only states and alg. vars";
+    EquationArray orderedEqs "ordered Equations";
     Option<IncidenceMatrix> m;
     Option<IncidenceMatrixT> mT;
     Matching matching;
@@ -82,23 +82,27 @@ end EqSystem;
 public
 uniontype BaseClockPartitionKind
   record UNKNOWN_PARTITION end UNKNOWN_PARTITION;
-  record CLOCKED_PARTITION end CLOCKED_PARTITION;
+  record CLOCKED_PARTITION
+    DAE.ClockKind clockKind;
+    // array<SubClockPartitions> subClockPartitions;
+  end CLOCKED_PARTITION;
   record CONTINUOUS_TIME_PARTITION end CONTINUOUS_TIME_PARTITION;
   record UNSPECIFIED_PARTITION "treated as CONTINUOUS_TIME_PARTITION" end UNSPECIFIED_PARTITION;
 end BaseClockPartitionKind;
 
 public
-uniontype SubClockPartitionKind
-  record UNKNOWN_SUB_PARTITION end UNKNOWN_SUB_PARTITION;
-  record SUB_PARTITION
-    Integer index;
-  end SUB_PARTITION;
-end SubClockPartitionKind;
+uniontype SubClockPartition
+  record SubClockPartition
+    Integer factor "subSample/superSample";
+    //Integer counter "shiftSample/backSample";
+    //Integer resolution "shiftSample/backSample";
+	end SubClockPartition;
+end SubClockPartition;
 
 public
 uniontype Shared "Data shared for all equation-systems"
   record SHARED
-    Variables knownVars                     "Known variables, i.e. constants and parameters" ;
+    Variables knownVars                     "Known variables, i.e. constants and parameters";
     Variables externalObjects               "External object variables";
     Variables aliasVars                     "Data originating from removed simple equations needed to build
                                              variables' lookup table (in C output).
@@ -107,14 +111,14 @@ uniontype Shared "Data shared for all equation-systems"
                                              buffer and results caching, etc., is avoided, but in C-code output all the
                                              data about variables' names, comments, units, etc. is preserved as well as
                                              pinter to their values (trajectories).";
-    EquationArray initialEqs                "Initial equations" ;
-    EquationArray removedEqs                "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
+    EquationArray initialEqs                "Initial equations";
+    EquationArray removedEqs                "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect";
     list< .DAE.Constraint> constraints     "constraints (Optimica extension)";
     list< .DAE.ClassAttributes> classAttrs "class attributes (Optimica extension)";
     Env.Cache cache;
     Env.Env env;
     .DAE.FunctionTree functionTree          "functions for Backend";
-    EventInfo eventInfo                     "eventInfo" ;
+    EventInfo eventInfo                     "eventInfo";
     ExternalObjectClasses extObjClasses     "classes of external objects, contains constructor & destructor";
     BackendDAEType backendDAEType           "indicate for what the BackendDAE is used";
     SymbolicJacobians symjacs               "Symbolic Jacobians";
@@ -166,8 +170,8 @@ public
 uniontype VariableArray "array of Equations are expandable, to amortize the cost of adding
   equations in a more efficient manner"
   record VARIABLE_ARRAY
-    Integer numberOfElements "no. elements" ;
-    Integer arrSize "array size" ;
+    Integer numberOfElements "no. elements";
+    Integer arrSize "array size";
     array<Option<Var>> varOptArr;
   end VARIABLE_ARRAY;
 end VariableArray;
@@ -176,8 +180,8 @@ public
 uniontype EquationArray
   record EQUATION_ARRAY
     Integer size "size of the Equations in scalar form";
-    Integer numberOfElement "no. elements" ;
-    Integer arrSize "array size" ;
+    Integer numberOfElement "no. elements";
+    Integer arrSize "array size";
     array<Option<Equation>> equOptArr;
   end EQUATION_ARRAY;
 end EquationArray;
@@ -185,17 +189,17 @@ end EquationArray;
 public
 uniontype Var "variables"
   record VAR
-    .DAE.ComponentRef varName "variable name" ;
-    VarKind varKind "Kind of variable" ;
-    .DAE.VarDirection varDirection "input, output or bidirectional" ;
+    .DAE.ComponentRef varName "variable name";
+    VarKind varKind "Kind of variable";
+    .DAE.VarDirection varDirection "input, output or bidirectional";
     .DAE.VarParallelism varParallelism "parallelism of the variable. parglobal, parlocal or non-parallel";
-    Type varType "built-in type or enumeration" ;
-    Option< .DAE.Exp> bindExp "Binding expression e.g. for parameters" ;
-    Option<Values.Value> bindValue "binding value for parameters" ;
-    .DAE.InstDims arryDim "array dimensions of non-expanded var" ;
-    .DAE.ElementSource source "origin of variable" ;
-    Option< .DAE.VariableAttributes> values "values on built-in attributes" ;
-    Option<SCode.Comment> comment "this contains the comment and annotation from Absyn" ;
+    Type varType "built-in type or enumeration";
+    Option< .DAE.Exp> bindExp "Binding expression e.g. for parameters";
+    Option<Values.Value> bindValue "binding value for parameters";
+    .DAE.InstDims arryDim "array dimensions of non-expanded var";
+    .DAE.ElementSource source "origin of variable";
+    Option< .DAE.VariableAttributes> values "values on built-in attributes";
+    Option<SCode.Comment> comment "this contains the comment and annotation from Absyn";
     .DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
   end VAR;
 end Var;
@@ -231,13 +235,13 @@ public uniontype EquationAttributes
   record EQUATION_ATTRIBUTES
     Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
     EquationKind kind;
-    SubClockPartitionKind subPartitionKind;
+    Integer subPartitionIndex;
   end EQUATION_ATTRIBUTES;
 end EquationAttributes;
 
-public constant EquationAttributes EQ_ATTR_DEFAULT_DYNAMIC = EQUATION_ATTRIBUTES(false, DYNAMIC_EQUATION(), UNKNOWN_SUB_PARTITION());
-public constant EquationAttributes EQ_ATTR_DEFAULT_INITIAL = EQUATION_ATTRIBUTES(false, INITIAL_EQUATION(), UNKNOWN_SUB_PARTITION());
-public constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(false, UNKNOWN_EQUATION_KIND(), UNKNOWN_SUB_PARTITION());
+public constant EquationAttributes EQ_ATTR_DEFAULT_DYNAMIC = EQUATION_ATTRIBUTES(false, DYNAMIC_EQUATION(), 0);
+public constant EquationAttributes EQ_ATTR_DEFAULT_INITIAL = EQUATION_ATTRIBUTES(false, INITIAL_EQUATION(), 0);
+public constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(false, UNKNOWN_EQUATION_KIND(), 0);
 
 public
 uniontype Equation
@@ -249,9 +253,9 @@ uniontype Equation
   end EQUATION;
 
   record ARRAY_EQUATION
-    list<Integer> dimSize "dimension sizes" ;
-    .DAE.Exp left "lhs" ;
-    .DAE.Exp right "rhs" ;
+    list<Integer> dimSize "dimension sizes";
+    .DAE.Exp left "lhs";
+    .DAE.Exp right "rhs";
     .DAE.ElementSource source "origin of equation";
     EquationAttributes attr;
   end ARRAY_EQUATION;
@@ -264,13 +268,13 @@ uniontype Equation
   end SOLVED_EQUATION;
 
   record RESIDUAL_EQUATION
-    .DAE.Exp exp "not present from FrontEnd" ;
+    .DAE.Exp exp "not present from FrontEnd";
     .DAE.ElementSource source "origin of equation";
     EquationAttributes attr;
   end RESIDUAL_EQUATION;
 
   record ALGORITHM
-    Integer size "size of equation" ;
+    Integer size "size of equation";
     .DAE.Algorithm alg;
     .DAE.ElementSource source "origin of algorithm";
     .DAE.Expand expand "this algorithm was translated from an equation. we should not expand array crefs!";
@@ -285,9 +289,9 @@ uniontype Equation
   end WHEN_EQUATION;
 
   record COMPLEX_EQUATION "complex equations: recordX = function call(x, y, ..);"
-     Integer size "size of equation" ;
-    .DAE.Exp left "lhs" ;
-    .DAE.Exp right "rhs" ;
+     Integer size "size of equation";
+    .DAE.Exp left "lhs";
+    .DAE.Exp right "rhs";
     .DAE.ElementSource source "origin of equation";
     EquationAttributes attr;
   end COMPLEX_EQUATION;
@@ -304,9 +308,9 @@ end Equation;
 public
 uniontype WhenEquation
   record WHEN_EQ "equation when condition then left = right; [elsewhenPart] end when;"
-    .DAE.Exp condition                "the when-condition" ;
-    .DAE.ComponentRef left            "left hand side of equation" ;
-    .DAE.Exp right                    "right hand side of equation" ;
+    .DAE.Exp condition                "the when-condition";
+    .DAE.ComponentRef left            "left hand side of equation";
+    .DAE.Exp right                    "right hand side of equation";
     Option<WhenEquation> elsewhenPart "elsewhen equation with the same cref on the left hand side.";
   end WHEN_EQ;
 end WhenEquation;
@@ -372,7 +376,7 @@ uniontype StateOrder
 end StateOrder;
 
 public
-type StrongComponents = list<StrongComponent> "Order of the equations the have to be solved" ;
+type StrongComponents = list<StrongComponent> "Order of the equations the have to be solved";
 
 public
 uniontype StrongComponent
@@ -455,8 +459,8 @@ end StateSet;
 public
 uniontype EventInfo
   record EVENT_INFO
-    list<TimeEvent> timeEvents         "stores all information regarding time events" ;
-    list<WhenClause> whenClauseLst     "list of when clauses. The WhenEquation data type refer to this list by position" ;
+    list<TimeEvent> timeEvents         "stores all information regarding time events";
+    list<WhenClause> whenClauseLst     "list of when clauses. The WhenEquation data type refer to this list by position";
     list<ZeroCrossing> zeroCrossingLst "list of zero crossing conditions";
     // TODO: sampleLst and relationsLst could be removed if cpp runtime is prepared to handle zero crossing conditions
     list<ZeroCrossing> sampleLst       "list of sample as before, used by cpp runtime";
@@ -469,8 +473,8 @@ end EventInfo;
 public
 uniontype WhenOperator
   record REINIT "Reinit Statement"
-    .DAE.ComponentRef stateVar "State variable to reinit" ;
-    .DAE.Exp value             "Value after reinit" ;
+    .DAE.ComponentRef stateVar "State variable to reinit";
+    .DAE.Exp value             "Value after reinit";
     .DAE.ElementSource source  "origin of equation";
   end REINIT;
 
@@ -497,9 +501,9 @@ end WhenOperator;
 public
 uniontype WhenClause
   record WHEN_CLAUSE
-    .DAE.Exp condition               "the when-condition" ;
-    list<WhenOperator> reinitStmtLst "list of reinit statements associated to the when clause." ;
-    Option<Integer> elseClause       "index of elsewhen clause" ;
+    .DAE.Exp condition               "the when-condition";
+    list<WhenOperator> reinitStmtLst "list of reinit statements associated to the when clause.";
+    Option<Integer> elseClause       "index of elsewhen clause";
 
     // HL only needs to know if it is an elsewhen the equations take care of which clauses are related.
 
@@ -511,9 +515,9 @@ end WhenClause;
 public
 uniontype ZeroCrossing
   record ZERO_CROSSING
-    .DAE.Exp relation_         "function" ;
-    list<Integer> occurEquLst  "list of equations where the function occurs" ;
-    list<Integer> occurWhenLst "list of when clauses where the function occurs" ;
+    .DAE.Exp relation_         "function";
+    list<Integer> occurEquLst  "list of equations where the function occurs";
+    list<Integer> occurWhenLst "list of when clauses where the function occurs";
   end ZERO_CROSSING;
 end ZeroCrossing;
 
@@ -526,7 +530,7 @@ uniontype TimeEvent
   end COMPLEX_TIME_EVENT;
 
   record SAMPLE_TIME_EVENT "e.g. sample(1, 1)"
-    Integer index "unique sample index" ;
+    Integer index "unique sample index";
     .DAE.Exp startExp;
     .DAE.Exp intervalExp;
   end SAMPLE_TIME_EVENT;
@@ -543,7 +547,7 @@ public
 type IncidenceMatrixElement = list<IncidenceMatrixElementEntry>;
 
 public
-type IncidenceMatrix = array<IncidenceMatrixElement> "array<list<Integer>>" ;
+type IncidenceMatrix = array<IncidenceMatrixElement> "array<list<Integer>>";
 
 public
 type IncidenceMatrixT = IncidenceMatrix

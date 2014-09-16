@@ -224,7 +224,7 @@ algorithm
       true = DAEUtil.expTypeComplex(tp);
       size = Expression.sizeOf(tp);
       source = DAEUtil.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
-    then ((i+1, BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(inDiffed, inEqKind, BackendDAE.UNKNOWN_SUB_PARTITION()))::eqns));
+    then ((i+1, BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(inDiffed, inEqKind, 0))::eqns));
 
     // array types to array equations
     case (_, _, _, _, _, _, (i, eqns)) equation
@@ -233,7 +233,7 @@ algorithm
       dims = Expression.arrayDimension(tp);
       ds = Expression.dimensionsSizes(dims);
       source = DAEUtil.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
-    then ((i+1, BackendDAE.ARRAY_EQUATION(ds, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(inDiffed, inEqKind, BackendDAE.UNKNOWN_SUB_PARTITION()))::eqns));
+    then ((i+1, BackendDAE.ARRAY_EQUATION(ds, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(inDiffed, inEqKind, 0))::eqns));
 
     // other types
     case (_, _, _, _, _, _, (i, eqns)) equation
@@ -242,7 +242,7 @@ algorithm
       b2 = DAEUtil.expTypeArray(tp);
       false = b1 or b2;
       source = DAEUtil.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
-    then ((i+1, BackendDAE.EQUATION(inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(inDiffed, inEqKind, BackendDAE.UNKNOWN_SUB_PARTITION()))::eqns));
+    then ((i+1, BackendDAE.EQUATION(inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(inDiffed, inEqKind, 0))::eqns));
 
     else equation
       // show only on failtrace!

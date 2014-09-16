@@ -93,7 +93,7 @@ algorithm
       DAE.ComponentRef cr1,cr2;
     case (BackendDAE.VAR(varName = cr1),BackendDAE.VAR(varName = cr2))
       equation
-        res = ComponentReference.crefEqualNoStringCompare(cr1, cr2) "A BackendDAE.Var is identified by its component reference" ;
+        res = ComponentReference.crefEqualNoStringCompare(cr1, cr2) "A BackendDAE.Var is identified by its component reference";
       then
         res;
   end match;
@@ -2458,14 +2458,14 @@ algorithm
       Real rsize,rexpandsize;
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),v)
       equation
-        (n < size) = true "Have space to add array elt." ;
+        (n < size) = true "Have space to add array elt.";
         n_1 = n + 1;
         arr_1 = arrayUpdate(arr, n_1, SOME(v));
       then
         BackendDAE.VARIABLE_ARRAY(n_1,size,arr_1);
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),v)
       equation
-        (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4" ;
+        (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4";
         rsize = intReal(size);
         rexpandsize = rsize*. 0.4;
         expandsize = realInt(rexpandsize);
@@ -2867,7 +2867,7 @@ algorithm
         true;
     case (cr,_,knvars)
       equation
-        ((BackendDAE.VAR(varDirection = DAE.INPUT()) :: _),_) = getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
+        ((BackendDAE.VAR(varDirection = DAE.INPUT()) :: _),_) = getVar(cr, knvars) "input variables stored in known variables are input on top level";
       then
         true;
     case (_,_,_) then false;
@@ -3646,7 +3646,7 @@ algorithm
       DAE.ComponentRef cr1;
     case (_,_)
       equation
-        (v,indx) = getVar2(cr, inVariables) "if scalar found, return it" ;
+        (v,indx) = getVar2(cr, inVariables) "if scalar found, return it";
       then
         ({v},{indx});
     case (_,_) /* check if array or record */

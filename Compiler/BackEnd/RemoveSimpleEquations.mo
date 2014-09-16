@@ -130,7 +130,7 @@ protected type VarSetAttributes =
     list<tuple<DAE.Exp, DAE.ComponentRef>>,
     tuple<Option<DAE.Exp>,
     Option<DAE.Exp>>
-  > "fixed, list<startvalue, origin, cr>, nominal, (min, max)" ;
+  > "fixed, list<startvalue, origin, cr>, nominal, (min, max)";
 
 protected constant VarSetAttributes EMPTYVARSETATTRIBUTES = (false, (-1, {}), {}, (NONE(), NONE()));
 
@@ -1383,7 +1383,7 @@ algorithm
     then (inExp, false, (true, vars, knvars, b1, b2, ilst));
 
     case (DAE.CREF(cr, _), (_, vars, knvars, b1, b2, ilst)) equation
-      (varlst, _::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
+      (varlst, _::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level";
       false = List.mapAllValueBool(varlst, toplevelInputOrUnfixed, false);
     then (inExp, false, (true, vars, knvars, b1, b2, ilst));
 
@@ -1394,7 +1394,7 @@ algorithm
     // case for finding simple equation in jacobians
     // there are all known variables mark as input and they are all time-depending
     case (DAE.CREF(cr, _), (_, vars, knvars, true, b2, ilst)) equation
-      (var::_, _::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
+      (var::_, _::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level";
       DAE.INPUT() = BackendVariable.getVarDirection(var);
     then (inExp, false, (true, vars, knvars, true, b2, ilst));
 

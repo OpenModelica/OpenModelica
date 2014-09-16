@@ -181,7 +181,7 @@ algorithm
     case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_,_,_,_)
       equation
         i_1 = i + 1;
-        (ass1_1,ass2_1) = pathFound(m, mt, i, i,emark, vmark, ass1, ass2) "eMark(i)=vMark(i)=false" ;
+        (ass1_1,ass2_1) = pathFound(m, mt, i, i,emark, vmark, ass1, ass2) "eMark(i)=vMark(i)=false";
         (ass1_2,ass2_2,syst,shared,arg) = DFSLH2(syst, ishared, nv, nf, i_1, emark, vmark, ass1_1, ass2_1, match_opts, sssHandler, inArg);
       then
         (ass1_2,ass2_2,syst,shared,arg);
@@ -199,7 +199,7 @@ algorithm
          then becomes: der_u1 = der(u2).
          In the dummy derivative method this equation is added and the original equation
          u1=u2 is kept. This is not the case for the original pantilides algorithm, where
-         the original equation is removed from the system." ;
+         the original equation is removed from the system.";
         eqns = BackendEquation.getEqnsFromEqSystem(syst);
         nf_1 = BackendDAEUtil.equationSize(eqns) "and try again, restarting. This could be optimized later. It should not
                                    be necessary to restart the matching, according to Bernard Bachmann. Instead one
@@ -209,7 +209,7 @@ algorithm
                                    not restarting.
                                    2004-12-29 PA. This was a bug, assignment lists needed to be expanded with the size
                                    of the system in order to work. SO: Matching is not needed to be restarted from
-                                   scratch." ;
+                                   scratch.";
         nv_1 = BackendVariable.varsSize(BackendVariable.daeVars(syst));
         ass1_2 = assignmentsArrayExpand(ass1_1, nv_1,arrayLength(ass1_1),-1);
         ass2_2 = assignmentsArrayExpand(ass2_1, nf_1,arrayLength(ass2_1),-1);
@@ -6138,7 +6138,7 @@ end randSortSystem;
 
 protected function randSortSystem1
   input Integer index;
-  input Integer offset "obsolete" ;
+  input Integer offset "obsolete";
   input array<Integer> randarr;
   input Type_a oldTypeA;
   input Type_a newTypeA;

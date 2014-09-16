@@ -1786,19 +1786,19 @@ algorithm
       String solverMethod;
       DAE.ClockKind c;
 
-    case DAE.INFERREDCLOCK()
+    case DAE.INFERRED_CLOCK()
     then "Clock()";
 
-    case DAE.INTEGERCLOCK(intervalCounter=intervalCounter, resolution=resolution)
+    case DAE.INTEGER_CLOCK(intervalCounter=intervalCounter, resolution=resolution)
     then "Clock(" +& dumpExpStr(intervalCounter,0) +& ", " +& intString(resolution) +& ")";
 
-    case DAE.REALCLOCK(interval=interval)
+    case DAE.REAL_CLOCK(interval=interval)
     then "Clock(" +& dumpExpStr(interval,0) +& ")";
 
-    case DAE.BOOLEANCLOCK(condition=condition, startInterval=startInterval)
+    case DAE.BOOLEAN_CLOCK(condition=condition, startInterval=startInterval)
     then "Clock(" +& dumpExpStr(condition,0) +& ", " +& realString(startInterval) +& ")";
 
-    case DAE.SOLVERCLOCK(c=c, solverMethod=solverMethod)
+    case DAE.SOLVER_CLOCK(c=c, solverMethod=solverMethod)
     then "Clock(" +& clockKindString(c) +& ", " +& solverMethod +& ")";
   end match;
 end clockKindString;

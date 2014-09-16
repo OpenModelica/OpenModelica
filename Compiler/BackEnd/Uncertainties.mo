@@ -428,7 +428,7 @@ out:=matchcontinue(equations,allEqs,variables,knownVariables,mapIncRowEqn)
    equation
       true = intEq(eqn,0);
       r = getEquationStringOrNothing(eqn_t,allEqs,variables,knownVariables,mapIncRowEqn);
-      s = "\"-\"" ;
+      s = "\"-\"";
     then s::r;
   case(eqn::eqn_t,_,_,_,_)
     equation
@@ -1965,7 +1965,7 @@ algorithm
     // Next equation.
     case ((e :: eqns),_,_,_,_,_,_,_,_,false)
       equation
-        (eqns_1,seqns_1,mvars_1,repl_1) = eliminateVariablesDAE2(eqns, eqnIndex + 1, vars, knvars, mvars,  repl, inDoubles, m, elimVarIndexList, false) "Not a simple variable, check rest" ;
+        (eqns_1,seqns_1,mvars_1,repl_1) = eliminateVariablesDAE2(eqns, eqnIndex + 1, vars, knvars, mvars,  repl, inDoubles, m, elimVarIndexList, false) "Not a simple variable, check rest";
       then
         ((e :: eqns_1),seqns_1,mvars_1,repl_1);
   end matchcontinue;
@@ -2025,23 +2025,23 @@ algorithm
     list<BackendDAE.EqSystem> systList;
     BackendDAE.Shared shared;
 
-    BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars" ;
-    BackendDAE.EquationArray orderedEqs "ordered Equations" ;
+    BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
+    BackendDAE.EquationArray orderedEqs "ordered Equations";
     Option<BackendDAE.IncidenceMatrix> m;
     Option<BackendDAE.IncidenceMatrixT> mT;
     BackendDAE.Matching matching;
 
-    BackendDAE.Variables knownVars "Known variables, i.e. constants and parameters" ;
+    BackendDAE.Variables knownVars "Known variables, i.e. constants and parameters";
     BackendDAE.Variables externalObjects "External object variables";
     BackendDAE.Variables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
-    BackendDAE.EquationArray initialEqs "Initial equations" ;
-    BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
+    BackendDAE.EquationArray initialEqs "Initial equations";
+    BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect";
     list<DAE.Constraint> constrs;
     list<DAE.ClassAttributes> clsAttrs;
     Env.Cache cache;
     Env.Env env;
     DAE.FunctionTree funcs;
-    BackendDAE.EventInfo eventInfo "eventInfo" ;
+    BackendDAE.EventInfo eventInfo "eventInfo";
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
     BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used";
     BackendDAE.SymbolicJacobians symjacs;
@@ -2089,23 +2089,23 @@ algorithm
     list<BackendDAE.EqSystem> systList;
     BackendDAE.Shared shared;
 
-    BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars" ;
-    BackendDAE.EquationArray orderedEqs "ordered Equations" ;
+    BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
+    BackendDAE.EquationArray orderedEqs "ordered Equations";
     Option<BackendDAE.IncidenceMatrix> m;
     Option<BackendDAE.IncidenceMatrixT> mT;
     BackendDAE.Matching matching;
 
-    BackendDAE.Variables knownVars "Known variables, i.e. constants and parameters" ;
+    BackendDAE.Variables knownVars "Known variables, i.e. constants and parameters";
     BackendDAE.Variables externalObjects "External object variables";
     BackendDAE.Variables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
-    BackendDAE.EquationArray initialEqs "Initial equations" ;
-    BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
+    BackendDAE.EquationArray initialEqs "Initial equations";
+    BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect";
     list<DAE.Constraint> constrs;
     list<DAE.ClassAttributes> clsAttrs;
     Env.Cache cache;
     Env.Env env;
     DAE.FunctionTree funcs;
-    BackendDAE.EventInfo eventInfo "eventInfo" ;
+    BackendDAE.EventInfo eventInfo "eventInfo";
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
     BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used";
     BackendDAE.SymbolicJacobians symjacs;
@@ -2312,13 +2312,13 @@ algorithm
     case ({},knvars,_) then ({},knvars);
     case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
       equation
-        _ = BaseHashTable.get(cr,mvars) "alg var moved to known vars" ;
+        _ = BaseHashTable.get(cr,mvars) "alg var moved to known vars";
         (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
       then
         (vs_1,(v :: knvars_1));
     case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
       equation
-        failure(_ = BaseHashTable.get(cr,mvars)) "alg var not moved to known vars" ;
+        failure(_ = BaseHashTable.get(cr,mvars)) "alg var not moved to known vars";
         (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
       then
         ((v :: vs_1),knvars_1);
@@ -2338,17 +2338,17 @@ algorithm
     BackendDAE.Shared shared;
 
 
-    BackendDAE.Variables knownVars "Known variables, i.e. constants and parameters" ;
+    BackendDAE.Variables knownVars "Known variables, i.e. constants and parameters";
     BackendDAE.Variables externalObjects "External object variables";
     BackendDAE.Variables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
-    BackendDAE.EquationArray initialEqs "Initial equations" ;
-    BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
+    BackendDAE.EquationArray initialEqs "Initial equations";
+    BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect";
     list<DAE.Constraint> constrs;
     list<DAE.ClassAttributes> clsAttrs;
     Env.Cache cache;
     Env.Env env;
     DAE.FunctionTree funcs;
-    BackendDAE.EventInfo eventInfo "eventInfo" ;
+    BackendDAE.EventInfo eventInfo "eventInfo";
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
     BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used";
     BackendDAE.SymbolicJacobians symjacs;

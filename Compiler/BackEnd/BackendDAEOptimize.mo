@@ -496,7 +496,7 @@ algorithm
     // inputs not constant and parameter(fixed=false) are constant but evaluated after konstant variables are evaluted
     case (e as DAE.CREF(cr,_), (_,vars,knvars,b1,b2))
       equation
-        (vlst,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
+        (vlst,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level";
         false = List.mapAllValueBool(vlst,toplevelInputOrUnfixed,false);
       then (e,false,(true,vars,knvars,b1,b2));
     case (e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_,_}), (_,vars,knvars,b1,b2)) then (e,false,(true,vars,knvars,b1,b2));
@@ -5602,8 +5602,8 @@ algorithm
 end makeEquationToResidualExp;
 
 protected function makeEquationsFromResiduals
-  input list<DAE.Exp> inExp1 "conds" ;
-  input list<list<DAE.Exp>> inExpLst2 "tbs" ;
+  input list<DAE.Exp> inExp1 "conds";
+  input list<list<DAE.Exp>> inExpLst2 "tbs";
   input list<DAE.Exp> inExpLst3;
   input DAE.ElementSource inSource "the origin of the element";
   input BackendDAE.EquationAttributes inEqAttr;
@@ -6121,8 +6121,8 @@ algorithm
   (osyst,osharedChanged) :=
     matchcontinue(isyst,sharedChanged)
     local
-      BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars" ;
-      BackendDAE.EquationArray orderedEqs "ordered Equations" ;
+      BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
+      BackendDAE.EquationArray orderedEqs "ordered Equations";
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
       BackendDAE.Matching matching;
@@ -6788,7 +6788,7 @@ algorithm
       list<DAE.Exp> array;
 
       DAE.Type ty;
-      Boolean scalar "scalar for codegen" ;
+      Boolean scalar "scalar for codegen";
 
       HashTableExpToIndex.HashTable ht;
 
@@ -6981,7 +6981,7 @@ algorithm
       list<DAE.Exp> array;
 
       DAE.Type ty;
-      Boolean scalar "scalar for codegen" ;
+      Boolean scalar "scalar for codegen";
 
     // we do not replace initial()
     case (condition as DAE.CALL(path = Absyn.IDENT(name = "initial")), _, index)
@@ -7252,11 +7252,11 @@ algorithm
       BackendDAE.Var var1;
     case(_, _, _)
       equation
-        true = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
+        true = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative";
       then (inVars, DAE.RCONST(0.0));
     case(_, _, _)
       equation
-        false = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
+        false = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative";
         false = BackendVariable.isStateVar(var);
         var1 = BackendVariable.setVarKind(var, BackendDAE.STATE(1,NONE()));
         vars = BackendVariable.addVar(var1, inVars);
@@ -7289,7 +7289,7 @@ algorithm
     case(_, {}, true) then inVars;
     case(_, var::newStates, _)
       equation
-        false = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
+        false = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative";
         false = BackendVariable.isStateVar(var);
         var = BackendVariable.setVarKind(var, BackendDAE.STATE(1,NONE()));
         vars = BackendVariable.addVar(var, inVars);

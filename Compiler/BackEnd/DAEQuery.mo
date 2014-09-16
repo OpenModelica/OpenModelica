@@ -647,7 +647,7 @@ algorithm
         ((BackendDAE.VAR(varKind = BackendDAE.STATE(index=_)) :: _),p) =
         BackendVariable.getVar(cr, vars) "If variable x is a state, der(x) is a variable in incidence matrix,
                                  x is inserted as negative value, since it is needed by debugging and index
-                                 reduction using dummy derivatives" ;
+                                 reduction using dummy derivatives";
         p_1 = List.map1r(p, intSub, 0);
         pStr = List.map(p_1, intString);
       then

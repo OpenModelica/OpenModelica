@@ -451,7 +451,7 @@ algorithm
     then {};
 
     case (eq::eqs, index::indices) equation
-      eq = BackendEquation.setSubPartition(eq, BackendDAE.SUB_PARTITION(index));
+      eq = BackendEquation.setSubPartition(eq, index);
       eqs = setSubClockPartition(eqs, indices);
     then eq::eqs;
   end match;
@@ -609,7 +609,7 @@ protected function getPartitionKind
 algorithm
   outPartitionKind := match(inContinuousTimeVars, inClockedVars)
     case ({}, {}) then BackendDAE.UNSPECIFIED_PARTITION();
-    case ({}, _) then BackendDAE.CLOCKED_PARTITION();
+    case ({}, _) then BackendDAE.CLOCKED_PARTITION(DAE.INFERRED_CLOCK());
     case (_, {}) then BackendDAE.CONTINUOUS_TIME_PARTITION();
     case (_, _) then BackendDAE.UNKNOWN_PARTITION();
   end match;

@@ -4937,7 +4937,7 @@ algorithm
 
         ty =  DAE.T_FUNCTION(
                 {DAE.FUNCARG("u",ty1,variability,DAE.NON_PARALLEL(),NONE()),
-                 DAE.FUNCARG("c",ty2,DAE.C_VAR(),DAE.NON_PARALLEL(),SOME(DAE.CLKCONST(DAE.INFERREDCLOCK())))},
+                 DAE.FUNCARG("c",ty2,DAE.C_VAR(),DAE.NON_PARALLEL(),SOME(DAE.CLKCONST(DAE.INFERRED_CLOCK())))},
                 ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
@@ -4954,7 +4954,7 @@ algorithm
 
         ty =  DAE.T_FUNCTION(
                 {DAE.FUNCARG("u",ty1,variability,DAE.NON_PARALLEL(),NONE()),
-                 DAE.FUNCARG("c",DAE.T_CLOCK_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),SOME(DAE.CLKCONST(DAE.INFERREDCLOCK())))},
+                 DAE.FUNCARG("c",DAE.T_CLOCK_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),SOME(DAE.CLKCONST(DAE.INFERRED_CLOCK())))},
                 ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);

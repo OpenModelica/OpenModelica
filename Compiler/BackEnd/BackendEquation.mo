@@ -83,8 +83,8 @@ end listEquation;
 
 protected function listEquation1
   input list<BackendDAE.Equation> inEquationList;
-  input Integer inPos "initially call this with 1" ;
-  input Integer inSize "initially call this with 0" ;
+  input Integer inPos "initially call this with 1";
+  input Integer inSize "initially call this with 0";
   input array<Option<BackendDAE.Equation>> inEquOptArr;
   output Integer outSize;
   output array<Option<BackendDAE.Equation>> outEquOptArr;
@@ -1080,7 +1080,7 @@ algorithm
 end mergeEquationArray;
 
 protected function findFirstUnusedEquOptEntry
-  input Integer inPos "initially call this with 1" ;
+  input Integer inPos "initially call this with 1";
   input Integer inSize;
   input array<Option<BackendDAE.Equation>> inEquOptArr;
   output Integer outIndex;
@@ -1089,7 +1089,7 @@ algorithm
 end findFirstUnusedEquOptEntry;
 
 protected function findFirstUnusedEquOptEntryWork
-  input Integer inPos "initially call this with 1" ;
+  input Integer inPos "initially call this with 1";
   input Integer inSize;
   input Option<BackendDAE.Equation> thisValue;
   input array<Option<BackendDAE.Equation>> inEquOptArr;
@@ -1118,7 +1118,7 @@ algorithm
       Real rsize, rexpandsize;
 
     case (e, BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr)) equation
-      (numberOfElement < arrSize) = true "Have space to add array elt." ;
+      (numberOfElement < arrSize) = true "Have space to add array elt.";
       n_1 = numberOfElement + 1;
       index = findFirstUnusedEquOptEntry(1, arrSize, equOptArr);
       arr_1 = arrayUpdate(equOptArr, index, SOME(e));
@@ -1213,7 +1213,7 @@ public function setAtIndex "author: lochel
   Sets the n-th array element of an EquationArray.
   Please note: one-based indexing"
   input BackendDAE.EquationArray inEquationArray;
-  input Integer inPos "one-based indexing" ;
+  input Integer inPos "one-based indexing";
   input BackendDAE.Equation inEquation;
   output BackendDAE.EquationArray outEquationArray;
 protected
@@ -1228,7 +1228,7 @@ end setAtIndex;
 
 public function getEqns "author: Frenkel TUD 2011-05
   returns the equations given by the list of indexes"
-  input list<Integer> inIndices "one-based indexing" ;
+  input list<Integer> inIndices "one-based indexing";
   input BackendDAE.EquationArray inEquationArray;
   output list<BackendDAE.Equation> outEqns;
 algorithm
@@ -1239,7 +1239,7 @@ public function equationNth1 "author: PA
   Return the n-th equation from the expandable equation array
   indexed from 1..N."
   input BackendDAE.EquationArray inEquationArray;
-  input Integer inPos "one-based indexing" ;
+  input Integer inPos "one-based indexing";
   output BackendDAE.Equation outEquation;
 algorithm
   outEquation := matchcontinue (inEquationArray, inPos)
@@ -1632,7 +1632,7 @@ end equationInfo;
 
 public function markedEquationSource
   input BackendDAE.EqSystem syst;
-  input Integer inPos "one-based indexing" ;
+  input Integer inPos "one-based indexing";
   output DAE.ElementSource outSource;
 protected
   BackendDAE.EquationArray eqns;
@@ -1830,18 +1830,18 @@ public function generateEQUATION "author: Frenkel TUD 2010-05"
   input BackendDAE.EquationKind inEqKind;
   output BackendDAE.Equation outEqn;
 algorithm
-  outEqn := BackendDAE.EQUATION(iLhs, iRhs, Source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.UNKNOWN_SUB_PARTITION()));
+  outEqn := BackendDAE.EQUATION(iLhs, iRhs, Source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0));
 end generateEQUATION;
 
 public function setSubPartition "author: lochel"
   input BackendDAE.Equation inEqn;
-  input BackendDAE.SubClockPartitionKind inSubClockPartitionKind;
+  input Integer inSubClockPartitionIndex;
   output BackendDAE.Equation outEqn;
 protected
   BackendDAE.EquationAttributes attr;
 algorithm
   attr := getEquationAttributes(inEqn);
-  attr := setSubClockPartitionKind(attr, inSubClockPartitionKind);
+  attr := setSubClockPartitionIndex(attr, inSubClockPartitionIndex);
   outEqn := setEquationAttributes(inEqn, attr);
 end setSubPartition;
 
@@ -1868,25 +1868,17 @@ algorithm
   end match;
 end getEquationAttributes;
 
-public function setSubClockPartitionKind
+public function setSubClockPartitionIndex
   input BackendDAE.EquationAttributes inAttr;
-  input BackendDAE.SubClockPartitionKind inSubClockPartitionKind;
+  input Integer inSubClockPartitionIndex;
   output BackendDAE.EquationAttributes outAttr;
 protected
   Boolean differentiated;
   BackendDAE.EquationKind kind;
 algorithm
   BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=kind) := inAttr;
-  outAttr := BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, inSubClockPartitionKind);
-public uniontype EquationAttributes
-
-  record EQUATION_ATTRIBUTES
-    Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
-    EquationKind kind;
-    SubClockPartitionKind subPartitionKind;
-  end EQUATION_ATTRIBUTES;
-end EquationAttributes;
-end setSubClockPartitionKind;
+  outAttr := BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, inSubClockPartitionIndex);
+end setSubClockPartitionIndex;
 
 public function setEquationAttributes
   input BackendDAE.Equation inEqn;
@@ -1950,7 +1942,7 @@ algorithm
     DAE.Exp rhs;
 
     case (_, SOME(rhs), _, _)
-    then {BackendDAE.SOLVED_EQUATION(inLhs, rhs, inSource, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.UNKNOWN_SUB_PARTITION()))};
+    then {BackendDAE.SOLVED_EQUATION(inLhs, rhs, inSource, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0))};
 
     else {};
   end match;
@@ -2128,7 +2120,7 @@ public function aliasEquation "author Frenkel TUD 2011-04
   Returns the two sides of an alias equation as expressions and cref.
   If the equation is not simple, this function will fail."
   input BackendDAE.Equation inEqn;
-  output list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> outTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)" ;
+  output list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> outTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)";
 algorithm
   outTpls := match (inEqn)
     local
@@ -2157,8 +2149,8 @@ protected function aliasEquation1 "author Frenkel TUD 2011-04
   helper for aliasEquation"
   input DAE.Exp lhs;
   input DAE.Exp rhs;
-  input list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> inTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)" ;
-  output list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> outTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)" ;
+  input list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> inTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)";
+  output list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> outTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)";
 algorithm
   outTpls := match (lhs, rhs, inTpls)
     local
@@ -2646,10 +2638,10 @@ protected function markDifferentiated2
   output BackendDAE.EquationAttributes outAttr;
 protected
   BackendDAE.EquationKind kind;
-  BackendDAE.SubClockPartitionKind subPartitionKind;
+  Integer subPartitionIndex;
 algorithm
-  BackendDAE.EQUATION_ATTRIBUTES(kind=kind, subPartitionKind=subPartitionKind) := inAttr;
-  outAttr := BackendDAE.EQUATION_ATTRIBUTES(true, kind, subPartitionKind);
+  BackendDAE.EQUATION_ATTRIBUTES(kind=kind, subPartitionIndex=subPartitionIndex) := inAttr;
+  outAttr := BackendDAE.EQUATION_ATTRIBUTES(true, kind, subPartitionIndex);
 end markDifferentiated2;
 
 public function isDifferentiated

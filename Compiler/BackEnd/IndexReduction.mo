@@ -4894,7 +4894,7 @@ algorithm
 */
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
-        ((BackendDAE.VAR(cr,BackendDAE.STATE(_,dcr),a,prl,b,_,_,lstDims,source,_,comment,ct) :: {}),i::_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
+        ((BackendDAE.VAR(cr,BackendDAE.STATE(_,dcr),a,prl,b,_,_,lstDims,source,_,comment,ct) :: {}),i::_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s";
         // do not use the normal derivative prefix for the name
         //dummyder = ComponentReference.crefPrefixDer(cr);
         dummyder = ComponentReference.makeCrefQual("$_DER",DAE.T_REAL_DEFAULT,{},cr);
@@ -4906,13 +4906,13 @@ algorithm
 
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,changedVars,eindx,mapIncRowEqn,mt)))
       equation
-        (varlst as _::_,ilst) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
+        (varlst as _::_,ilst) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v";
         (vars_1,changedVars) = changeDerVariablestoStates1(varlst,ilst,vars,changedVars);
       then
         ((e, (vars_1,eqns,so,changedVars,eindx,mapIncRowEqn,mt)));
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
-        (_::_,_::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
+        (_::_,_::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v";
         print("wrong Variable in der: \n");
         BackendDump.debugExpStr((e,"\n"));
       then

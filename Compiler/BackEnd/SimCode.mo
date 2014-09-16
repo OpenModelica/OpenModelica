@@ -621,18 +621,18 @@ type Value = SimVar;
 public
 uniontype HashTableCrefToSimVar
   record HASHTABLE
-    array<list<tuple<Key,Integer>>> hashTable " hashtable to translate Key to array indx" ;
-    ValueArray valueArr "Array of values" ;
-    Integer bucketSize "bucket size" ;
-    Integer numberOfEntries "number of entries in hashtable" ;
+    array<list<tuple<Key,Integer>>> hashTable " hashtable to translate Key to array indx";
+    ValueArray valueArr "Array of values";
+    Integer bucketSize "bucket size";
+    Integer numberOfEntries "number of entries in hashtable";
   end HASHTABLE;
 end HashTableCrefToSimVar;
 
 uniontype ValueArray "array of values are expandable, to amortize the cost of adding elements in a more
 efficient manner"
   record VALUE_ARRAY
-    Integer numberOfElements "number of elements in hashtable" ;
-    Integer arrSize "size of crefArray" ;
+    Integer numberOfElements "number of elements in hashtable";
+    Integer arrSize "size of crefArray";
     array<Option<tuple<Key,Value>>> valueArray "array of values";
   end VALUE_ARRAY;
 end ValueArray;

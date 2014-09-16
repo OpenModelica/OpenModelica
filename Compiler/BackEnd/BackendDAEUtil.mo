@@ -1098,8 +1098,8 @@ end calculateVarSizes;
 
 public function numberOfZeroCrossings "author: lochel"
   input BackendDAE.BackendDAE inBackendDAE;
-  output Integer outNumZeroCrossings "number of ordinary zerocrossings" ;
-  output Integer outNumTimeEvents    "number of zerocrossings that are time events" ;
+  output Integer outNumZeroCrossings "number of ordinary zerocrossings";
+  output Integer outNumTimeEvents    "number of zerocrossings that are time events";
   output Integer outNumRelations;
   output Integer outNumMathEventFunctions;
 protected
@@ -2009,7 +2009,7 @@ algorithm
       array<list<Integer>> m,mt;
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1,_,comps)))
       equation
-        size = arrayLength(ass1) "equation_size(e) => size &" ;
+        size = arrayLength(ass1) "equation_size(e) => size &";
         arr = arrayCreate(size, 0);
         arr_1 = markStateEquations(syst, arr, ass1);
         (blt_states,blt_no_states) = splitBlocks(comps, arr_1);
@@ -2044,14 +2044,14 @@ algorithm
     case (comp::comps,arr)
       equation
         (eqns,_) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
-        true = blockIsDynamic(eqns, arr) "block is dynamic, belong in dynamic section" ;
+        true = blockIsDynamic(eqns, arr) "block is dynamic, belong in dynamic section";
         (states,output_) = splitBlocks(comps, arr);
       then
         ((comp::states),output_);
 
     case (comp::comps,arr)
       equation
-        (states,output_) = splitBlocks(comps, arr) "block is not dynamic, belong in output section" ;
+        (states,output_) = splitBlocks(comps, arr) "block is not dynamic, belong in output section";
       then
         (states,(comp::output_));
     else
@@ -6447,7 +6447,7 @@ algorithm
     case (BackendDAE.EQUATION(exp = e1,scalar=e2,source=source),_,_,_,_,_,_,_,_)
       equation
         var_indxs = fvarsInEqn(m, eqn_indx);
-        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index" ;
+        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index";
         var_indxs_1 = List.sort(var_indxs_1,intGt);
         (eqns, shared) = calculateJacobianRow2(Expression.expSub(e1,e2), vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
@@ -6457,7 +6457,7 @@ algorithm
     case (BackendDAE.RESIDUAL_EQUATION(exp=e,source=source),_,_,_,_,_,_,_,_)
       equation
         var_indxs = fvarsInEqn(m, eqn_indx);
-        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index" ;
+        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index";
         var_indxs_1 = List.sort(var_indxs_1,intGt);
         (eqns, shared) = calculateJacobianRow2(e, vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
@@ -6468,7 +6468,7 @@ algorithm
       equation
         e1 = Expression.crefExp(cr);
         var_indxs = fvarsInEqn(m, eqn_indx);
-        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index" ;
+        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index";
         var_indxs_1 = List.sort(var_indxs_1,intGt);
         (eqns, shared) = calculateJacobianRow2(Expression.expSub(e1,e2), vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
@@ -6884,7 +6884,7 @@ end rhsConstant2;
 //
 //     case (e,_)
 //       equation
-//         {} = Expression.extractCrefsFromExp(e) "Special case for expressions with no variables" ;
+//         {} = Expression.extractCrefsFromExp(e) "Special case for expressions with no variables";
 //       then
 //         true;
 //     case (e,vars)

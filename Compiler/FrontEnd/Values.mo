@@ -128,7 +128,6 @@ uniontype Value
     Value ty "the DAE.Type translated to Value using defaults";
     String tyStr "the type of the variable";
   end EMPTY;
-
 end Value;
 
 public uniontype IntRealOp
