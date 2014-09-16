@@ -13969,13 +13969,13 @@ algorithm
   outSparsePattern := match(sparsePattern, simCode)
     local
       list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> all;
-  
+
     case ({}, _) then {};
-      
+
     case (all, _)
      then translateSparsePatterSimVarIntsWork(sparsePattern, simCode, {});
-     
-     end match;  
+
+     end match;
 end translateSparsePatterSimVarInts;
 
 protected function translateSparsePatterSimVarIntsWork
@@ -14014,13 +14014,13 @@ algorithm
   outColors := match(inColors, simCode)
     local
       list<list<DAE.ComponentRef>> all;
-  
+
     case ({}, _) then {};
-      
+
     case (all, _)
      then List.mapList1_1(all, translateCref2SimVarIndex, simCode);
-     
-     end match; 
+
+     end match;
 end translateColorsSimVarInts;
 
 protected function compareSparsePatterInt
