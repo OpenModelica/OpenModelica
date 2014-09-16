@@ -60,6 +60,7 @@ protected import BackendVariable;
 protected import BackendVarTransform;
 protected import BaseHashSet;
 protected import BaseHashTable;
+protected import Ceval;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
@@ -1534,6 +1535,8 @@ algorithm
       list<Integer> ilst2;
       Boolean b, negated;
       list<Integer> colum;
+      DAE.FunctionTree functions;
+      DAE.Exp exp2;
     // alias a
     case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
       equation
@@ -1549,12 +1552,32 @@ algorithm
     // const
     case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
       equation
-        false = Expression.isImpure(exp); // lochel: this is at least needed for impure functions
+        true = Expression.isConstValue(exp);
         Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrExpStr, ("Const Equation ", cr, " = ", exp, " found.\n"));
         colum = mT[i];
         _ = arrayUpdate(mT, i, index::colum);
       then
         ((vars, shared, eqns, TIMEINDEPENTVAR(cr, i, exp, eqnAttributes, -1)::seqns, index+1, mT, true));
+
+    case (_, _, _, _, _, (vars, shared as BackendDAE.SHARED(functionTree=functions), eqns, seqns, index, mT, _))
+      equation
+        false = Expression.isImpure(exp); // lochel: this is at least needed for impure functions
+        exp2 = Ceval.cevalSimpleWithFunctionTreeReturnExp(exp, functions);
+        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrExpStr, ("Const Equation (through Ceval) ", cr, " = ", exp, " found.\n"));
+        colum = mT[i];
+        _ = arrayUpdate(mT, i, index::colum);
+      then
+        ((vars, shared, eqns, TIMEINDEPENTVAR(cr, i, exp2, eqnAttributes, -1)::seqns, index+1, mT, true));
+
+      // TODO: Remove or fix this case. We do not want to add function calls here as they are inlined in a very bad way sometimes.
+    case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
+      equation
+        false = Expression.isImpure(exp); // lochel: this is at least needed for impure functions
+        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrExpStr, ("Const Equation (through Ceval) ", cr, " = ", exp, " found.\n"));
+        colum = mT[i];
+        _ = arrayUpdate(mT, i, index::colum);
+      then ((vars, shared, eqns, TIMEINDEPENTVAR(cr, i, exp, eqnAttributes, -1)::seqns, index+1, mT, true));
+
   end matchcontinue;
 end constOrAliasAcausal;
 
@@ -2195,7 +2218,7 @@ algorithm
        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars, i);
        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
        (vars, shared, isState, eqnslst) = optMoveVarShared(replaceable_, v, i, eqnAttributes, exp, BackendVariable.addKnVarDAE, iMT, iVars, ishared, iEqnslst);
-       constExp = Expression.isConst(exp);
+       constExp = Expression.isConstValue(exp);
        // add to replacements if constant
        repl = Debug.bcallret4(replaceable_ and constExp and replaceble1, BackendVarTransform.addReplacement, iRepl, cr, exp, SOME(BackendVarTransform.skipPreChangeEdgeOperator), iRepl);
        // if state der(var) has to replaced to 0
@@ -2218,7 +2241,7 @@ algorithm
        exp = Util.if_(Types.isRealOrSubTypeReal(ComponentReference.crefLastType(cr)), DAE.RCONST(0.0), DAE.ICONST(0));
        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
        (vars, shared, isState, eqnslst) = optMoveVarShared(replaceable_, v, i, eqnAttributes, exp, BackendVariable.addKnVarDAE, iMT, iVars, ishared, iEqnslst);
-       constExp = Expression.isConst(exp);
+       constExp = Expression.isConstValue(exp);
        // add to replacements if constant
        repl = Debug.bcallret4(replaceable_ and constExp and replaceble1, BackendVarTransform.addReplacement, iRepl, cr, exp, SOME(BackendVarTransform.skipPreChangeEdgeOperator), iRepl);
        // if state der(var) has to replaced to 0
@@ -3440,7 +3463,7 @@ algorithm
     case (v as BackendDAE.VAR(bindExp=SOME(e)), (repl, varlst))
       equation
         (e1, true) = BackendVarTransform.replaceExp(e, repl, NONE());
-        b = Expression.isConst(e1);
+        b = Expression.isConstValue(e1);
         v1 = Debug.bcallret2(not b, BackendVariable.setBindExp, v, SOME(e1), v);
         varlst = List.consOnTrue(b, v1, varlst);
       then (v1, (repl, varlst));

@@ -55,6 +55,7 @@ public import Values;
 protected type Ident = String;
 public type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 
+protected import Ceval;
 protected import ClassInf;
 protected import ComponentReference;
 protected import Config;
@@ -1325,6 +1326,13 @@ algorithm
       DAE.Exp e,e_1,e_2;
       DAE.ElementSource source;
       list<DAE.Statement> assrtLst;
+      DAE.FunctionTree functionTree;
+    case (e,(SOME(functionTree),_),source)
+      equation
+        true = Expression.isConst(inExp);
+        e_1 = Ceval.cevalSimpleWithFunctionTreeReturnExp(inExp, functionTree);
+        source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
+      then (e_1,source,true);
     case (e,fns,source)
       equation
         (e_1,(fns,true,_)) = Expression.traverseExp(e,forceInlineCall,(fns,false,{}));

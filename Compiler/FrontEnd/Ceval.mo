@@ -62,6 +62,7 @@ public import Values;
 public import Lookup;
 
 // protected imports
+protected import BaseHashTable;
 protected import CevalScript;
 protected import ComponentReference;
 protected import Config;
@@ -72,6 +73,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
+protected import HashTable;
 protected import Inst;
 protected import InstBinding;
 protected import InstUtil;
@@ -5699,6 +5701,24 @@ public function cevalSimple
 algorithm
   (_,val,_) := ceval(Env.emptyCache(),{},exp,false,NONE(),Absyn.MSG(Absyn.dummyInfo),0);
 end cevalSimple;
+
+public function cevalSimpleWithFunctionTreeReturnExp
+  "A simple expression does not need cache, etc"
+  input DAE.Exp exp;
+  input DAE.FunctionTree functions;
+  output DAE.Exp oexp;
+protected
+  Values.Value val;
+  Env.Cache cache;
+  Env.StructuralParameters structuralParameters;
+  array<DAE.FunctionTree> functionTree;
+algorithm
+  structuralParameters := (HashTable.emptyHashTableSized(BaseHashTable.lowBucketSize),{});
+  functionTree := arrayCreate(1,functions);
+  cache := Env.CACHE(NONE(), functionTree, structuralParameters, Absyn.IDENT(""), Absyn.dummyProgram);
+  (cache,val,_) := ceval(cache, {}, exp, false, NONE(), Absyn.NO_MSG(),0);
+  oexp := ValuesUtil.valueExp(val);
+end cevalSimpleWithFunctionTreeReturnExp;
 
 public function cevalAstExp
 "Part of meta-programming using CODE.

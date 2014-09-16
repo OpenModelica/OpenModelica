@@ -3856,6 +3856,8 @@ template equationSimpleAssign(SimEqSystem eq, Context context,
  "Generates an equation that is just a simple assignment."
 ::=
 match eq
+case SES_SIMPLE_ASSIGN(exp=CALL(path=IDENT(name="fail"))) then
+  'MMC_THROW_INTERNAL()<%\n%>'
 case SES_SIMPLE_ASSIGN(__) then
   let &preExp = buffer ""
   let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
@@ -4711,6 +4713,7 @@ template subscriptToCStr(Subscript subscript)
 ::=
   match subscript
   case SLICE(exp=ICONST(integer=i)) then i
+  case SLICE(__) then error(sourceInfo(), "Unknown slice " + printExpStr(exp))
   case WHOLEDIM(__) then "WHOLEDIM"
   case INDEX(__) then
    match exp
@@ -4723,7 +4726,7 @@ template subscriptToCStr(Subscript subscript)
     let index = daeExp(exp, contextOther, &preExp, &varDecls, &auxFunction)
     '<%index%>'
    end match
-  else "UNKNOWN_SUBSCRIPT"
+  else error(sourceInfo(), "UNKNOWN_SUBSCRIPT")
 end subscriptToCStr;
 
 template crefM(ComponentRef cr)
@@ -4754,19 +4757,19 @@ template subscriptToMStr(Subscript subscript)
 ::=
   match subscript
   case SLICE(exp=ICONST(integer=i)) then i
+  case SLICE(__) then error(sourceInfo(), "Unknown slice " + printExpStr(exp))
   case WHOLEDIM(__) then "WHOLEDIM"
   case INDEX(__) then
    match exp
     case ICONST(integer=i) then i
     case ENUM_LITERAL(index=i) then i
-    case _ then
-    let &varDecls = buffer ""
-    let &preExp = buffer ""
-    let &auxFunction = buffer ""
-    let index = daeExp(exp, contextOther, &preExp, &varDecls, &auxFunction)
-    '<%index%>'
+    else
+      let &varDecls = buffer ""
+      let &preExp = buffer ""
+      let &auxFunction = buffer ""
+      daeExp(exp, contextOther, &preExp, &varDecls, &auxFunction)
    end match
-  else "UNKNOWN_SUBSCRIPT"
+  else error(sourceInfo(), "UNKNOWN_SUBSCRIPT")
 end subscriptToMStr;
 
 template contextArrayReferenceCrefAndCopy(ComponentRef cr, Exp e, Type ty, Context context, Text &varDecls, Text &varCopy, Text &auxFunction)
@@ -6903,6 +6906,8 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, Text
  "Generates an assigment algorithm statement."
 ::=
   match stmt
+  case STMT_ASSIGN(exp=CALL(path=IDENT(name="fail"))) then
+    'MMC_THROW_INTERNAL()<%\n%>'
   case STMT_ASSIGN(exp1=CREF(componentRef=WILD(__)), exp=e) then
     let &preExp = buffer ""
     let expPart = daeExp(e, context, &preExp, &varDecls, &auxFunction)
@@ -7109,6 +7114,8 @@ template algStmtTupleAssign(DAE.Statement stmt, Context context, Text &varDecls,
  "Generates a tuple assigment algorithm statement."
 ::=
 match stmt
+case STMT_TUPLE_ASSIGN(expExpLst={_}) then
+  error(sourceInfo(), "A tuple assignment of only one variable is a regular assignment")
 case STMT_TUPLE_ASSIGN(exp=CALL(attr=CALL_ATTR(ty=T_TUPLE(tupleType=ntys)))) then
   let &preExp = buffer ""
   let &postExp = buffer ""
@@ -7129,7 +7136,7 @@ case STMT_TUPLE_ASSIGN(exp=CALL(attr=CALL_ATTR(ty=T_TUPLE(tupleType=ntys)))) the
     // Crazy DAE.CALL on lhs? Yup, we apparently generate those. TODO: Don't generate those crazy things!
     case (e as CALL(attr=CALL_ATTR(ty=ty)))::_ then '<%contextArrayReferenceCrefAndCopy(makeUntypedCrefIdent("#error"), e, ty, context, varDecls, postExp, auxFunction)%> = <%ret%>;<%\n%>'
     case e::_ then error(sourceInfo(), 'Unknown expression to assign to: <%printExpStr(e)%>')
-  ('/* tuple assignment */<%\n%>' + preExp + postExp)
+  ('/* tuple assignment <%expExpLst |> e => Util.escapeModelicaStringToCString(printExpStr(e)) ; separator=", "%>*/<%\n%>' + preExp + postExp)
 case STMT_TUPLE_ASSIGN(exp=MATCHEXPRESSION(__)) then
   let &preExp = buffer ""
   let &afterExp = buffer ""
@@ -7143,7 +7150,7 @@ case STMT_TUPLE_ASSIGN(exp=MATCHEXPRESSION(__)) then
                   ;separator="\n"; empty)
   <<
   <%expExpLst |> cr hasindex i0 =>
-    let typ = '<%expTypeFromExpModelica(cr)%>'
+    let typ = expTypeFromExpModelica(cr)
     let decl = tempDeclMatchOutput(typ, prefix, startIndexOutputs, i0, &varDecls)
     ""
   ;separator="\n";empty%>

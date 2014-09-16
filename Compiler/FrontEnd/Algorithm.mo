@@ -134,11 +134,35 @@ public function makeTupleAssignmentNoTypeCheck
   input DAE.ElementSource source;
   output DAE.Statement outStatement;
 protected
-  Boolean b;
+  Boolean b1,b2;
 algorithm
-  b := List.fold(List.map(lhs, Expression.isWild), boolAnd, true);
-  outStatement := Util.if_(b, DAE.STMT_NORETCALL(rhs, source), DAE.STMT_TUPLE_ASSIGN(ty,lhs,rhs,source));
+  b1 := List.fold(List.map(lhs, Expression.isWild), boolAnd, true);
+  b2 := List.fold(List.map(List.restOrEmpty(lhs), Expression.isWild), boolAnd, true);
+  outStatement := makeTupleAssignmentNoTypeCheck2(b1,b2,ty,lhs,rhs,source);
 end makeTupleAssignmentNoTypeCheck;
+
+protected function makeTupleAssignmentNoTypeCheck2
+  input Boolean allWild;
+  input Boolean singleAssign;
+  input DAE.Type ty;
+  input list<DAE.Exp> lhs;
+  input DAE.Exp rhs;
+  input DAE.ElementSource source;
+  output DAE.Statement outStatement;
+algorithm
+  outStatement := match (allWild,singleAssign,ty,lhs,rhs,source)
+    local
+      DAE.Type ty1;
+      DAE.Exp lhs1;
+      DAE.ComponentRef cr;
+    case (true,_,_,_,_,_) then DAE.STMT_NORETCALL(rhs, source);
+    case (_,true,DAE.T_TUPLE(tupleType=(ty1 as DAE.T_ARRAY(ty=_))::_),DAE.CREF(componentRef=cr)::_,_,_)
+      then DAE.STMT_ASSIGN_ARR(ty1, cr, DAE.TSUB(rhs, 1, ty1), source);
+    case (_,true,DAE.T_TUPLE(tupleType=ty1::_),lhs1::_,_,_)
+      then DAE.STMT_ASSIGN(ty1, lhs1, DAE.TSUB(rhs,1,ty1), source);
+    else DAE.STMT_TUPLE_ASSIGN(ty,lhs,rhs,source);
+  end match;
+end makeTupleAssignmentNoTypeCheck2;
 
 public function makeAssignment
 "This function creates an `DAE.STMT_ASSIGN\' construct, and checks that the
@@ -356,6 +380,7 @@ algorithm
       DAE.Properties rprop;
       list<DAE.Type> lhrtypes, tpl;
       list<DAE.TupleConst> clist;
+      DAE.Type ty;
 
     case (lhs, lprop, rhs, _, _, _)
       equation
@@ -380,7 +405,7 @@ algorithm
       then
         fail();
     // a normal prop in rhs that contains a T_TUPLE!
-    case (expl, lhprops, rhs, DAE.PROP(type_ = DAE.T_TUPLE(tupleType = tpl)), _, _)
+    case (expl, lhprops, rhs, DAE.PROP(type_ = ty as DAE.T_TUPLE(tupleType = tpl)), _, _)
       equation
         bvals = List.map(lhprops, Types.propAnyConst);
         DAE.C_VAR() = List.reduce(bvals, Types.constOr);
@@ -388,18 +413,16 @@ algorithm
         Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
          /* Don\'t use new rhs\', since type conversions of
             several output args are not clearly defined. */
-      then
-        DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT, expl, rhs, source);
+      then makeTupleAssignmentNoTypeCheck(ty, expl, rhs, source);
     // a tuple in rhs
-    case (expl, lhprops, rhs, DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(tupleType = tpl), tupleConst = DAE.TUPLE_CONST(tupleConstLst = _)), _, _)
+    case (expl, lhprops, rhs, DAE.PROP_TUPLE(type_ = ty as DAE.T_TUPLE(tupleType = tpl), tupleConst = DAE.TUPLE_CONST(tupleConstLst = _)), _, _)
       equation
         bvals = List.map(lhprops, Types.propAnyConst);
         DAE.C_VAR() = List.reduce(bvals, Types.constOr);
         lhrtypes = List.map(lhprops, Types.getPropType);
         Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
          /* Don\'t use new rhs\', since type conversions of several output args are not clearly defined. */
-      then
-        DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT, expl, rhs, source);
+      then makeTupleAssignmentNoTypeCheck(ty, expl, rhs, source);
     case (lhs, lprop, rhs, rprop, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);

@@ -83,7 +83,7 @@ public
 uniontype BaseClockPartitionKind
   record UNKNOWN_PARTITION end UNKNOWN_PARTITION;
   record CLOCKED_PARTITION
-    DAE.ClockKind clockKind;
+    .DAE.ClockKind clockKind;
     // array<SubClockPartitions> subClockPartitions;
   end CLOCKED_PARTITION;
   record CONTINUOUS_TIME_PARTITION end CONTINUOUS_TIME_PARTITION;
