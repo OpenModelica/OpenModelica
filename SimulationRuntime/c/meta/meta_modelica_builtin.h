@@ -97,8 +97,8 @@ extern modelica_integer listLength(modelica_metatype);
 #define listGet(X,Y) boxptr_listGet(threadData,X,mmc_mk_icon(Y))
 #define listEmpty(LST) MMC_NILTEST(LST)
 #define listDelete(X,Y) boxptr_listDelete(threadData,X,mmc_mk_icon(Y))
-#define listRest(X) MMC_CDR(X)
-#define listFirst(X) MMC_CAR(X)
+#define listRest(X) boxptr_listRest(threadData,X)
+#define listHead(X) boxptr_listHead(threadData,X)
 
 #define isNone(X) MMC_OPTIONNONE(X)
 #define isSome(X) MMC_OPTIONSOME(X)
@@ -106,6 +106,8 @@ extern modelica_integer listLength(modelica_metatype);
 extern modelica_metatype boxptr_listNth(threadData_t*,modelica_metatype,modelica_metatype);
 extern modelica_metatype boxptr_listGet(threadData_t*,modelica_metatype,modelica_metatype);
 extern modelica_metatype boxptr_listDelete(threadData_t*,modelica_metatype,modelica_metatype);
+extern modelica_metatype boxptr_listRest(threadData_t*,modelica_metatype);
+extern modelica_metatype boxptr_listHead(threadData_t*,modelica_metatype);
 
 /* Option Operations */
 #define optionNone(x) (0==MMC_HDRSLOTS(MMC_GETHDR(x)) ? 1 : 0)

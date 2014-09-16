@@ -131,8 +131,6 @@ boxptr_wrapper1Arg(boxptr_arrayCopy,arrayCopy)
 boxptr_wrapper2Args(boxptr_arrayAdd,arrayAdd)
 boxptr_unOpThreadData(boxptr_getGlobalRoot,(void*),mmc_unbox_integer,nobox_getGlobalRoot)
 boxptr_unOp(boxptr_valueConstructor,mmc_mk_icon,(void*),valueConstructor)
-boxptr_wrapper1Arg(boxptr_listFirst,MMC_CAR)
-boxptr_wrapper1Arg(boxptr_listRest,MMC_CDR)
 boxptr_wrapper2Args(boxptr_cons,mmc_mk_cons)
 
 #undef boxptr_unOp

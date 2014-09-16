@@ -560,6 +560,22 @@ modelica_metatype boxptr_listDelete(threadData_t *threadData,modelica_metatype l
   return lst;
 }
 
+modelica_metatype boxptr_listRest(threadData_t *threadData, modelica_metatype lst)
+{
+  if (!MMC_NILTEST(lst)) {
+    return MMC_CDR(lst);
+  }
+  MMC_THROW_INTERNAL();
+}
+
+modelica_metatype boxptr_listHead(threadData_t *threadData, modelica_metatype lst)
+{
+  if (!MMC_NILTEST(lst)) {
+    return MMC_CAR(lst);
+  }
+  MMC_THROW_INTERNAL();
+}
+
 /* Array Operations */
 
 modelica_metatype arrayCreate(modelica_integer nelts, modelica_metatype val)
