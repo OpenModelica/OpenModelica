@@ -5814,7 +5814,7 @@ algorithm
 end matchType;
 
 public function matchTypes
-"matchType, list of actual types, one  expected type."
+  "matchType, list of actual types, one expected type."
   input list<DAE.Exp> iexps;
   input list<DAE.Type> itys;
   input DAE.Type expected;
@@ -5822,27 +5822,73 @@ public function matchTypes
   output list<DAE.Exp> outExps;
   output list<DAE.Type> outTys;
 algorithm
-  (outExps,outTys) := matchcontinue (iexps,itys,expected,printFailtrace)
+  (outExps, outTys) := matchTypes_tail(iexps, itys, expected, printFailtrace, {}, {});
+end matchTypes;
+
+protected function matchTypes_tail
+  input list<DAE.Exp> iexps;
+  input list<DAE.Type> itys;
+  input DAE.Type expected;
+  input Boolean printFailtrace;
+  input list<DAE.Exp> inAccumExps;
+  input list<DAE.Type> inAccumTypes;
+  output list<DAE.Exp> outExps;
+  output list<DAE.Type> outTys;
+algorithm
+  (outExps, outTys) :=
+  match(iexps, itys, expected, printFailtrace, inAccumExps, inAccumTypes)
     local
-      DAE.Type ty;
-      list<DAE.Type> otys,tys;
       DAE.Exp e;
       list<DAE.Exp> exps;
-      String str;
-    case ({},{},_,_) then ({},{});
-    case (e::exps,ty::tys,_,_)
+      DAE.Type ty;
+      list<DAE.Type> tys;
+
+    case (e :: exps, ty :: tys, _, _, _, _)
       equation
-        (e,ty) = matchType(e,getUniontypeIfMetarecordReplaceAllSubtypes(ty),getUniontypeIfMetarecordReplaceAllSubtypes(expected),printFailtrace);
-        (exps,otys) = matchTypes(exps,tys,expected,printFailtrace);
+        (e, ty) = matchTypes2(e, ty, expected, printFailtrace);
+        (exps, tys) = matchTypes_tail(exps, tys, expected, printFailtrace,
+          e :: inAccumExps, ty :: inAccumTypes);
       then
-        (e::exps,ty::otys);
-    case (e::_,ty::_,_,true)
+        (exps, tys);
+
+    case ({}, {}, _, _, _, _) 
+      then (listReverse(inAccumExps), listReverse(inAccumTypes));
+
+  end match;
+end matchTypes_tail;
+
+protected function matchTypes2
+  input DAE.Exp inExp;
+  input DAE.Type inType;
+  input DAE.Type inExpected;
+  input Boolean inPrintFailtrace;
+  output DAE.Exp outExp;
+  output DAE.Type outType;
+algorithm
+  (outExp, outType) := matchcontinue(inExp, inType, inExpected, inPrintFailtrace)
+    local
+      DAE.Exp e;
+      DAE.Type ty, expected_ty;
+      String str;
+
+    case (_, _, _, _)
       equation
-        str = "- Types.matchTypes failed for " +& ExpressionDump.printExpStr(e) +& " from " +& unparseType(ty) +& " to " +& unparseType(expected) +& "\n";
-        Error.addMessage(Error.INTERNAL_ERROR,{str});
-      then fail();
+        ty = getUniontypeIfMetarecordReplaceAllSubtypes(inType);
+        expected_ty = getUniontypeIfMetarecordReplaceAllSubtypes(inExpected);
+        (e, ty) = matchType(inExp, ty, expected_ty, inPrintFailtrace);
+      then
+        (e, ty);
+
+    else
+      equation
+        str = "- Types.matchTypes failed for " +& ExpressionDump.printExpStr(inExp)
+           +& " from " +& unparseType(inType) +& " to " +& unparseType(inExpected) +& "\n";
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then
+        fail();
+
   end matchcontinue;
-end matchTypes;
+end matchTypes2;
 
 protected function printFailure
 "@author adrpo

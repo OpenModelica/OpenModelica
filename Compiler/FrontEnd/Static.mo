@@ -5446,9 +5446,7 @@ algorithm
       Absyn.Exp argValue;
 
     case (_, Absyn.NAMEDARG(argName=argName))
-      equation
-        true = name ==& argName;
-      then true;
+      then stringEq(name, argName);
 
     else false;
   end match;
