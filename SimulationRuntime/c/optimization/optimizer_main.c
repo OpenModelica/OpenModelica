@@ -257,6 +257,15 @@ static inline void freeOptimizerData(OptData*optData){
   free(optData->v);
   free(optData->v0);
   free(optData->sv0);
+  free(optData->b0);
+  free(optData->i0);
+  free(optData->b0Pre);
+  free(optData->i0Pre);
+  free(optData->v0Pre);
+  free(optData->rePre);
+  free(optData->re);
+  free(optData->storeR);
+
   for(i = 0; i < nsi; ++i){
     for(j = 0; j < np; ++j){
       for(k = 0; k < nJ; ++k)

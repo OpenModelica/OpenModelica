@@ -54,6 +54,10 @@ static inline void pickUpStates(OptData* optdata);
 int pickUpModelData(DATA* data, SOLVER_INFO* solverInfo)
 {
   const int nReal = data->modelData.nVariablesReal;
+  const int nBoolean = data->modelData.nVariablesBoolean;
+  const int nInteger = data->modelData.nVariablesInteger;
+  const int nRelations =  data->modelData.nRelations;
+
   int i, j;
   OptData *optData =  (OptData*) solverInfo->solverData;
   OptDataDim *dim;
@@ -84,6 +88,29 @@ int pickUpModelData(DATA* data, SOLVER_INFO* solverInfo)
   for(i = 0; i<dim->nx; ++i)
     optData->sv0[i] = optData->v0[i] * optData->bounds.scalF[i];
 
+  optData->i0 = (modelica_integer*)malloc(nInteger*sizeof(modelica_integer));
+  memcpy(optData->i0, data->localData[0]->integerVars, nInteger*sizeof(modelica_integer));
+
+  optData->b0 = (modelica_boolean*)malloc(nBoolean*sizeof(modelica_boolean));
+  memcpy(optData->b0, data->localData[0]->booleanVars, nBoolean*sizeof(modelica_boolean));
+
+  optData->re = (modelica_boolean*)malloc(nRelations*sizeof(modelica_boolean));
+  memcpy(optData->re, data->simulationInfo.relations, nRelations*sizeof(modelica_boolean));
+
+  optData->i0Pre = (modelica_integer*)malloc(nInteger*sizeof(modelica_integer));
+  memcpy(optData->i0Pre, data->simulationInfo.integerVarsPre, nInteger*sizeof(modelica_integer));
+
+  optData->b0Pre = (modelica_boolean*)malloc(nBoolean*sizeof(modelica_boolean));
+  memcpy(optData->b0Pre, data->simulationInfo.booleanVarsPre, nBoolean*sizeof(modelica_boolean));
+
+  optData->v0Pre = (modelica_real*)malloc(nReal*sizeof(modelica_real));
+  memcpy(optData->v0Pre, data->simulationInfo.realVarsPre, nReal*sizeof(modelica_real));
+
+  optData->rePre = (modelica_boolean*)malloc(nRelations*sizeof(modelica_boolean));
+  memcpy(optData->rePre, data->simulationInfo.relationsPre, nRelations*sizeof(modelica_boolean));
+
+  optData->storeR = (modelica_boolean*)malloc(nRelations*sizeof(modelica_boolean));
+  memcpy(optData->storeR, data->simulationInfo.storedRelations, nRelations*sizeof(modelica_boolean));
 
   printSomeModelInfos(&optData->bounds, &optData->dim, data);
 
@@ -433,6 +460,9 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
   const int nsi = optData->dim.nsi;
   const int np = optData->dim.np;
   const int nReal = optData->dim.nReal;
+  const int nBoolean = optData->data->modelData.nVariablesBoolean;
+  const int nInteger = optData->data->modelData.nVariablesInteger;
+  const int nRelations =  optData->data->modelData.nRelations;
   const int nvnp = nv*np;
   long double a[np];
   modelica_real *** v = optData->v;
@@ -475,13 +505,22 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
   fprintf(pFile, "%s", "\n");
   /******************/
   memcpy(sData->realVars, v0, nReal*sizeof(modelica_real));
+  memcpy(data->localData[0]->integerVars, optData->i0, nInteger*sizeof(modelica_integer));
+  memcpy(data->localData[0]->booleanVars, optData->b0, nBoolean*sizeof(modelica_boolean));
+  memcpy(data->simulationInfo.integerVarsPre, optData->i0Pre, nInteger*sizeof(modelica_integer));
+  memcpy(data->simulationInfo.booleanVarsPre, optData->b0Pre, nBoolean*sizeof(modelica_boolean));
+  memcpy(data->simulationInfo.realVarsPre, optData->v0Pre, nReal*sizeof(modelica_real));
+  memcpy(data->simulationInfo.relationsPre, optData->rePre, nRelations*sizeof(modelica_boolean));
+  memcpy(data->simulationInfo.relations, optData->re, nRelations*sizeof(modelica_boolean));
+  memcpy(data->simulationInfo.storedRelations, optData->storeR, nRelations*sizeof(modelica_boolean));
   /******************/
   solverInfo->currentTime = (double)t0;
   sData->timeValue = solverInfo->currentTime;
 
   /*updateDiscreteSystem(data);*/
   data->callback->input_function(data);
-  data->callback->functionDAE(data);
+  /*data->callback->functionDAE(data);*/
+  updateDiscreteSystem(data);
 
   sim_result.emit(&sim_result,data);
   /******************/
@@ -517,6 +556,10 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
   const int np = optData->dim.np;
 
   const modelica_real * vnom = optData->bounds.vnom;
+  const int nBoolean = optData->data->modelData.nVariablesBoolean;
+  const int nInteger = optData->data->modelData.nVariablesInteger;
+  const int nReal = optData->dim.nReal;
+  const int nRelations =  optData->data->modelData.nRelations;
 
 
   modelica_real * realVars[3];
@@ -533,6 +576,16 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
   for(l = 0; l< 2; ++l){
     tmpVars[l] = data->simulationInfo.analyticJacobians[indexBC[l]].tmpVars;
   }
+
+  memcpy(data->localData[0]->integerVars, optData->i0, nInteger*sizeof(modelica_integer));
+  memcpy(data->localData[0]->booleanVars, optData->b0, nBoolean*sizeof(modelica_boolean));
+  memcpy(data->simulationInfo.integerVarsPre, optData->i0Pre, nInteger*sizeof(modelica_integer));
+  memcpy(data->simulationInfo.booleanVarsPre, optData->b0Pre, nBoolean*sizeof(modelica_boolean));
+  memcpy(data->simulationInfo.realVarsPre, optData->v0Pre, nReal*sizeof(modelica_real));
+  memcpy(data->simulationInfo.relationsPre, optData->rePre, nRelations*sizeof(modelica_boolean));
+  memcpy(data->simulationInfo.relations, optData->re, nRelations*sizeof(modelica_boolean));
+  memcpy(data->simulationInfo.storedRelations, optData->storeR, nRelations*sizeof(modelica_boolean));
+
 
   for(i = 0, shift = 0; i < nsi-1; ++i){
     for(j = 0; j < np; ++j, shift += nv){
@@ -552,7 +605,8 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
       }
 
       data->callback->input_function(data);
-      data->callback->functionDAE(data);
+      /*data->callback->functionDAE(data);*/
+      updateDiscreteSystem(data);
 
       if(index){
         diffSynColoredOptimizerSystem(optData, optData->J[i][j], i,j,2);
@@ -579,7 +633,8 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
     }
 
     data->callback->input_function(data);
-    data->callback->functionDAE(data);
+    /*data->callback->functionDAE(data);*/
+    updateDiscreteSystem(data);
 
     if(index){
       diffSynColoredOptimizerSystem(optData, optData->J[i][j], i,j, (j+1 == np)? 3 : 2);
@@ -743,7 +798,8 @@ static inline void pickUpStates(OptData* optData){
         printf("\n");
         /*update system*/
         optData->data->callback->input_function(optData->data);
-        optData->data->callback->functionDAE(optData->data);
+        /*optData->data->callback->functionDAE(optData->data);*/
+        updateDiscreteSystem(optData->data);
       }
     }
   }

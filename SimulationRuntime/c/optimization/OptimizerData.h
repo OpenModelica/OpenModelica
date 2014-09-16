@@ -159,6 +159,18 @@ typedef struct OptData{
   modelica_real ***v;
   modelica_real *v0;
   modelica_real *sv0;
+
+  modelica_integer* i0;
+  modelica_boolean* b0;
+  modelica_integer* i0Pre;
+  modelica_boolean* b0Pre;
+  modelica_real* v0Pre;
+
+  modelica_boolean* rePre;
+  modelica_boolean* re;
+
+  modelica_boolean * storeR;
+
   modelica_real ****J;
   modelica_real ** tmpJ;
   modelica_real ** Jf;
