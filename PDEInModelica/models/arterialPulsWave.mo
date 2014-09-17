@@ -20,19 +20,19 @@ model arterialPulsWave
   parameter Real MAP=90*133.322387415;
   parameter Real R_out = MAP/CO; //right bc output resistence
   input Real Q_heart;
-  
-  
+
+
 equation
   pder(A,time) + pder(A*U,x) = 0                                       in omega;
-  pder(U,time) + (2*alpha-1)*U*pder(U,x) + (alpha-1)*U*U/A*pder(A,x) 
+  pder(U,time) + (2*alpha-1)*U*pder(U,x) + (alpha-1)*U*U/A*pder(A,x)
                                          + 1/rho*pder(P,x) = f/(rho*A) in omega;
   f = -2*(zeta+2)*mu*C.pi*U                                            in omega;
   P = P_ext + beta/A_0*(sqrt(A) - sqrt(A_0))                           in omega;
   Q = Q_heart;                                                         in omega.left;
   Q = P/R_out;                                                         in omega.right;
-  
-  
-  
+
+
+
 
 
 end arterialPulsWave;
