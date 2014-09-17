@@ -45,7 +45,7 @@ ut = Array(Float64,nU,nX) #state fields time derivatives ut[nVar, nNode]
 t = 0.0                #time
 dx = L/(nX-1)          #space step
 #dt                     #time step
-cfl = 0.1
+cfl = 0.5
 
 #numerics functions
 function extrapolate3(x,x1,x2,x3,u1,u2,u3)
@@ -72,20 +72,30 @@ function updateUt(x,u,ux,ut,t)
 end
 
 function updateULW(u,ut,dt)
-    function UUpdate(i)
-        (u[i+1] + u[i-1])/2 + dt*ut[i]
+    uNew = similar(u)
+    for i = 2:size(u,2)-1
+        uNew[i] = (u[i+1] + u[i-1])/2.0 + dt*ut[i]
     end
-    u1new = UUpdate(2)
-    unew = UUpdate(3)
-    for i = 4:size(u,2)-1 
-        u[i-2] = u1new
-        u1new = unew
-        unew = UUpdate(i)
+    for i = 2:size(u,2)-1
+        u[i] = uNew[i]
     end
-    u[size(u,2)-2] = u1new
-    u[size(u,2)-1] = unew
+    
 end
-        
+
+#function updateULW(u,ut,dt)
+#    function UUpdate(i)
+#        (u[i+1] + u[i-1])/2 + dt*ut[i]
+#    end
+#    u1new = UUpdate(2)
+#    unew = UUpdate(3)
+#    for i = 4:size(u,2)-1 
+#        u[i-2] = u1new
+#        u1new = unew
+#        unew = UUpdate(i)
+#    end
+#    u[size(u,2)-2] = u1new
+#    u[size(u,2)-1] = unew
+#end
 
 
 

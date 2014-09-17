@@ -1,51 +1,38 @@
 model arterialPulsWave
-  constant Integer N=120;
-  constant Real L=4;
-  constant Real dx=L/(N - 1);
-  constant Real x[N]=array(dx*i for i in 1:N);
-  constant Real Pa2mmHgR=133.322387415;
-  parameter Real rho=1000;
-  parameter Real f=0;
-  parameter Real alpha=0;
-  parameter Real h0=0.002;
-  parameter Real E=6500000000.0;
-  parameter Real nu=1/2;
-  parameter Real beta=sqrt(Modelica.Constants.pi)*h0*E/((1 - nu^2)*A0);
-  parameter Real Pext=0;
-  parameter Real A0=Modelica.Constants.pi*0.012^2;
-  parameter Real HR=70/60;
-  parameter Real Tc=1/HR;
-  parameter Real MAP=90*Pa2mmHgR;
-  parameter Real CO=5.6/1000/60;
-  parameter Real SV=CO/HR;
-  parameter Real Qmax=3*Modelica.Constants.pi*SV/(2*Tc);
-  parameter Real Rout=MAP/CO;
-  parameter Real AInit=((MAP - Pext)/beta + sqrt(A0))^2;
-  Real A[N](each start=AInit, each fixed=true);
-  Real Q[N];
-  Real u[N];
-  Real P[N];
-  Real tp;
-//initial conditions:
-initial equation
-  for i in 2:N - 1 loop
-    Q[i]=CO;
-  end for;
+  import PDEDomains.*;
+  import C = Modelica.Constants;
+  parameter Real L = 1;
+  parameter DomainLineSEgment1D omega(length = L);
+  field Real A(domain = omega);
+  field Real U(domain = omega, start = MAP);
+  field Real P(domain = omega, start = CO);
+  parameter Real alpha = 1.1;
+  parameter Real rho = 1000;
+  parameter Real zeta = (2-alpha)/(alpha-1);
+  field Real f;
+  parameter Real mu = 4e-3;
+  parameter Real P_ext = 0;
+  parameter Real A_0 = 24e-3;
+  parameter Real beta = 4/3*sqrt(C.Pi)*h*E;
+  parameter Real h = 0.002; //vessel wall thicknes [m]
+  parameter Real E = 6500000.0; //vessel Young's modulus [Pa]
+  parameter Real CO = 5.6/1000/60;
+  parameter Real MAP=90*133.322387415;
+  parameter Real R_out = MAP/CO; //right bc output resistence
+  input Real Q_heart;
+  
+  
 equation
-//border conditions:
-  tp=mod(time, Tc);
-  Q[1]=if tp < Tc/3 then Qmax*sin(3*Modelica.Constants.pi*tp/Tc)^2 else 0;
-  A_x[1]=(A[2] - A[1])/dx;
-  Q_x[1]=(Q[2] - Q[1])/dx;
+  pder(A,time) + pder(A*U,x) = 0                                       in omega;
+  pder(U,time) + (2*alpha-1)*U*pder(U,x) + (alpha-1)*U*U/A*pder(A,x) 
+                                         + 1/rho*pder(P,x) = f/(rho*A) in omega;
+  f = -2*(zeta+2)*mu*C.pi*U                                            in omega;
+  P = P_ext + beta/A_0*(sqrt(A) - sqrt(A_0))                           in omega;
+  Q = Q_heart;                                                         in omega.left;
+  Q = P/R_out;                                                         in omega.right;
+  
+  
+  
 
-  Q[N]=0;
-  A_x[N]=(A[N] - A[N - 1])/dx;
-  Q_x[N]=(Q[N] - Q[N - 1])/dx;
 
-//equations
-  pder(A,t) + pder(Q,x) = 0 ??in omega;
-  pder(Q,t) + alpha*(2*Q*pder(Q,x)/A - Q^2*pder(A,x)/A^2) + A/rho*pder(P,x) = f/rho ?? in omega;
-  P = Pext + beta*(sqrt(A) - sqrt(A0));
-//  pder(P,x) = beta/2*pder(A,x)/sqrt(A); - generate automaticaly by deriving the above equation
-  u = Q/A;
 end arterialPulsWave;

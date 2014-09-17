@@ -269,11 +269,10 @@ name "String-equation-(1D)"
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula $c$
+\begin_inset Formula $c=2$
 \end_inset
 
- ..
- constant
+ 
 \end_layout
 
 \begin_layout Standard
@@ -291,6 +290,22 @@ equation:
 
 \end_layout
 
+\begin_layout Standard
+or 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\frac{\partial u}{\partial t}-c\frac{\partial v}{\partial x} & = & 0\\
+\frac{\partial v}{\partial t}-\frac{\partial u}{\partial x} & = & 0
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Paragraph
 initial conditions
 \end_layout
@@ -298,7 +313,7 @@ initial conditions
 \begin_layout Standard
 \begin_inset Formula 
 \begin{eqnarray*}
-u(x,0) & = & \sin\left(\frac{4\pi}{L}x\right)\\
+u(x,0) & = & 0\\
 \dot{u}(x,0) & = & 0
 \end{eqnarray*}
 
@@ -313,9 +328,13 @@ boundary conditions
 
 \begin_layout Standard
 \begin_inset Formula 
-\[
-u(0,t)=0,\quad u(L,t)=0
-\]
+\begin{eqnarray*}
+u(0,t) & = & \begin{cases}
+\sin\left(2\pi t\right), & t\in\langle0,1\rangle\\
+0 & t>1
+\end{cases}\\
+u(L,t) & = & 0
+\end{eqnarray*}
 
 \end_inset
 
@@ -1306,14 +1325,14 @@ Q=AU
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula $\beta=\frac{\sqrt{\pi}h_{0}E}{(1-\nu^{2})A_{0}}$
+\begin_inset Formula $\beta=\frac{4}{3}\sqrt{\pi}Eh$
 \end_inset
 
 
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula $h_{0}$
+\begin_inset Formula $h$
 \end_inset
 
  ..
@@ -1356,30 +1375,11 @@ key "PeripheralArterial,gosling2003terminology,gao2006stress"
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula $\mu=4.0\,\mathrm{mPa\, s}$
-\end_inset
+\begin_inset Note Note
+status open
 
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula $\alpha$
-\end_inset
-
- ..
- other ugly coefficient, let us say its 
-\begin_inset Formula $1$
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula $f$
-\end_inset
-
- ..
- frictional forces per unit length, let us assume inviscide flow 
+\begin_layout Plain Layout
+, let us assume inviscide flow 
 \begin_inset Formula $f=0$
 \end_inset
 
@@ -1397,13 +1397,18 @@ key "hagen-poiseuille"
 
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
 \begin_layout Standard
 \begin_inset Formula $\mu$
 \end_inset
 
 ..
  dynamic viscosity of blood 
-\begin_inset Formula $(3~4)\cdot10^{-3}\textrm{Pa\cdot s}$
+\begin_inset Formula $4\cdot10^{-3}\textrm{Pa\cdot s}$
 \end_inset
 
 
@@ -1417,14 +1422,210 @@ key "blood-viscosity"
 \end_layout
 
 \begin_layout Standard
+\begin_inset Formula $\alpha$
+\end_inset
+
+..
+ velocity profile shape factor 
+\begin_inset Formula $1.1$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\zeta=\frac{2-\alpha}{\alpha-1}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $f$
+\end_inset
+
+ ..
+ frictional forces per unit length, 
+\begin_inset Formula 
+\[
+f=-2(\zeta+2)\mu\pi U
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+PDE equations in 
+\begin_inset Formula $A,Q$
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
 \begin_inset Formula 
 \begin{eqnarray*}
 \frac{\partial A}{\partial t}+\frac{\partial Q}{\partial x} & = & 0\\
 \frac{\partial Q}{\partial t}+\frac{\partial}{\partial x}\left(\alpha\frac{Q^{2}}{A}\right)+\frac{A}{\varrho}\frac{\partial P}{\partial x} & = & \,\\
 =\frac{\partial Q}{\partial t}+\alpha\left(2\frac{Q}{A}\frac{\partial Q}{\partial x}-\frac{Q^{2}}{A^{2}}\frac{\partial A}{\partial x}\right)+\frac{A}{\varrho}\frac{\partial P}{\partial x} & = & \,\\
-\frac{\partial Q}{\partial t}+2\alpha\frac{Q}{A}\frac{\partial Q}{\partial x}+\left(\frac{\beta}{2\varrho}\sqrt{A}-\alpha\frac{Q^{2}}{A^{2}}\right)\frac{\partial A}{\partial x} & = & \frac{f}{\varrho}\\
-P_{ext}+\beta\left(\sqrt{A}-\sqrt{A_{0}}\right) & = & P
+\frac{\partial Q}{\partial t}+2\alpha\frac{Q}{A}\frac{\partial Q}{\partial x}+\left(\frac{\beta}{2\varrho}\sqrt{A}-\alpha\frac{Q^{2}}{A^{2}}\right)\frac{\partial A}{\partial x} & = & \frac{f}{\varrho}
 \end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+or in 
+\begin_inset Formula $A,U$
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\frac{\partial A}{\partial t}+\frac{\partial\left(AU\right)}{\partial x} & = & 0\\
+\frac{\partial U}{\partial t}+\left(2\alpha-1\right)U\frac{\partial U}{\partial x}+\left(\alpha-1\right)\frac{U^{2}}{A}\frac{\partial A}{\partial x}+\frac{1}{\varrho}\frac{\partial P}{\partial x} & = & \frac{f}{\varrho A}
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Pressure-area state equation:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+P_{ext}+\frac{\beta}{A_{0}}\left(\sqrt{A}-\sqrt{A_{0}}\right)=P
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Formula 
+\begin{equation}
+\alpha=\frac{1}{AU^{2}}\intop_{A}ud\sigma\label{eq:shape_factor}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+where the velocity profile
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Formula 
+\begin{equation}
+u(r,x,t)=U\frac{\zeta+2}{\zeta}\left[1-\left(\frac{r}{R}\right)^{\zeta}\right]\label{eq:velocity_profile}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Formula $R$
+\end_inset
+
+ is radius, 
+\begin_inset Formula $r$
+\end_inset
+
+ ..
+ radial coordinate,
+\begin_inset Formula $\zeta=9$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Plain Layout
+If we integrate 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:velocity_profile"
+
+\end_inset
+
+ and substitute to 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:shape_factor"
+
+\end_inset
+
+ we obtain
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Formula 
+\[
+U\frac{\xi+2}{\xi}\left(R-\frac{1}{R^{\xi}}\int_{0}^{R}r^{\xi}dr\right)=U\frac{\xi+2}{\xi}\left(R-\frac{1}{R^{\xi}}\frac{1}{\xi+1}R^{\xi+1}\right)=UR\frac{\xi+2}{\xi+1}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Formula 
+\begin{eqnarray*}
+\int_{A}u^{2}(r)d\sigma & = & \iint_{x^{2}+y^{2}\leq R^{2}}u^{2}\left(\sqrt{x^{2}+y^{2}}\right)dxdy=\int_{0}^{R}\int_{0}^{2\pi}u^{2}(r)r\, drd\phi=\\
+2\pi\int_{0}^{R}u^{2}(r)r\, dr & = & 2\pi\int_{0}^{R}\left(U\frac{\zeta+2}{\zeta}\left[1-\left(\frac{r}{R}\right)^{\zeta}\right]\right)^{2}r\, dr=2\pi\left(U\frac{\zeta+2}{\zeta}\right)^{2}\int_{0}^{R}\left(\left[1-\left(\frac{r}{R}\right)^{\zeta}\right]\right)^{2}r\, dr\\
+2\pi\left(U\frac{\zeta+2}{\zeta}\right)^{2}\int_{0}^{R}\left(r-2\frac{r^{\zeta+1}}{R^{\zeta}}+\frac{r^{2\zeta+1}}{R^{2\zeta}}\right)dr & = & \frac{2\pi}{R^{2\zeta}}\left(U\frac{\zeta+2}{\zeta}\right)^{2}\int_{0}^{R}\left(R^{2\zeta}r-2R^{\zeta}r^{\zeta+1}+r^{2\zeta+1}\right)dr\\
+\frac{2\pi}{R^{2\zeta}}\left(U\frac{\zeta+2}{\zeta}\right)^{2}\left(R^{2\zeta}\frac{R^{2}}{2}-2R^{\zeta}\frac{R^{\zeta+2}}{\zeta+2}+\frac{R^{2\zeta+2}}{2\zeta+2}\right) & = & \frac{2\pi}{R^{2\zeta}}\left(U\frac{\zeta+2}{\zeta}\right)^{2}\left(R^{2\zeta}\frac{R^{2}}{2}-2R^{2\zeta}\frac{R^{2}}{\zeta+2}+R^{2\zeta}\frac{R^{2}}{2\zeta+2}\right)=\\
+2\pi R^{2}\left(U\frac{\zeta+2}{\zeta}\right)^{2}\left(\frac{1}{2}-\frac{2}{\zeta+2}+\frac{1}{2\zeta+2}\right) & = & \pi R^{2}\left(U\frac{\zeta+2}{\zeta}\right)^{2}\left(1-\frac{4}{\zeta+2}+\frac{1}{\zeta+1}\right)=\\
+\pi R^{2}\left(U\frac{\zeta+2}{\zeta}\right)^{2}\left(\frac{(\zeta+2)(\zeta+1)-4(\zeta+1)+(\zeta+2)}{(\zeta+2)(\zeta+1)}\right) & = & \pi R^{2}U^{2}\frac{\zeta+2}{\zeta+1}
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Formula 
+\begin{eqnarray*}
+x & = & r\cos(\phi)\\
+y & = & r\sin(\phi)
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Formula 
+\begin{eqnarray*}
+\alpha & = & \frac{1}{AU^{2}}\pi R^{2}U^{2}\frac{\zeta+2}{\zeta+1}=\frac{\zeta+2}{\zeta+1}
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 

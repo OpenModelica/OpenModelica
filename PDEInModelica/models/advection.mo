@@ -4,8 +4,8 @@ model advection "advection equation"
   parameter Real L = 1; // length
   parameter Real c = 1;
   parameter DomainLineSegment1D omega(length = L);
-  field Real u(domain = omega, start = 1);
+  field Real u(domain = omega, start = 0);
 equation
-  pder(u,time) + c*pder(u,dom.x) = 0  in omega.interior;
-  u = cos(2*C.pi*time)                in omega.left;
+  pder(u,time) + c*pder(u,x) = 0  in omega.interior;
+  u = sin(2*C.pi*time)            in omega.left;
 end advection;

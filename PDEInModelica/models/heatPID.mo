@@ -4,10 +4,10 @@ model heatPID
     Region0D sensorPosition(shape = shapeFunc, range = {{1,1},{0.5,0.5},{0.5,0.5}})  ;
   end Room
 
-  parameter Real lx = 1, ly = 1, lz = 1;
+  parameter Real lx = 4, ly = 5, lz = 3;
   Room room(Lx=lx, Ly=ly, Lz=lz);
-  field Real T(domain = room, start = Tout);
-  field Real[3] W(domain = room, start = {0,0,0});
+  field Real T(domain = room, start = 15);
+  field Real[3] W(domain = room);
   parameter Real c = 1012, rho = 1.204, lambda = 0.0257;
   parameter Real Tout = 0, kappa = 0.2;
   Real Ts, P, eInt;

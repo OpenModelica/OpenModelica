@@ -17,9 +17,11 @@ end
 
 using Gadfly
 #using Winston
-#plot(x = X, y = U[1,:])
+plot(x = X, y = U[1,:])
 
 
-#D = vec(U[1,:]) - analyticU
+D = vec(U[1,:]) - analyticU
+l2err = sqrt((transpose(D)*D)[1])/nX
+println(l2err)
 #plot(x = X, y = D)
-plot(x = X, y = analyticU)
+#plot(x = X, y = analyticU)

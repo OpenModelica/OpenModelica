@@ -1,10 +1,10 @@
 #numerics setup
-nX = 100               #number of nodes
+nX = 400               #number of nodes
 
 
 #numerics functions
 
-function updateU_x_LW(X,U,U_x)
+function updateU_x_LF(X,U,U_x)
     for i = 2:(size(X,1)-1)
         U_x[i] = (U[i+1] - U[i-1])/(X[i+1] - X[i-1])
     end
@@ -18,7 +18,7 @@ function updateU_t(X,U,U_x,U_t,t)
     end
 end
 
-function updateU_LW(U,U_t,dt)
+function updateU_LF(U,U_t,dt)
     function UUpdate(i)
         (U[i+1] + U[i-1])/2 + dt*U_t[i]
     end
@@ -46,7 +46,7 @@ function simulate(tEnd)
     t = 0.0                #time
     dx = L/(nX-1)          #space step
     #dt                     #time step
-    cfl = 0.5
+    cfl = 0.01
 
 
     for i = 1:nU
@@ -61,9 +61,9 @@ function simulate(tEnd)
             U[i,1]  = BCFun(i,left,t,X,U)
             U[i,nX] = BCFun(i,right,t,X,U)
         end
-        updateU_x_LW(X,U,U_x)
+        updateU_x_LF(X,U,U_x)
         updateU_t(X,U,U_x,U_t,t)
-        updateU_LW(U,U_t,dt)
+        updateU_LF(U,U_t,dt)
         t = t + dt
     end    
     (X,U)
