@@ -48,7 +48,7 @@ omc_communication.cc: $(runtimedir)/omc_communication.idl
 omc_communication.h: omc_communication.cc
 
 clean:
-	-rm -f *.o *~ core *.core $(PROG)$(EXEEXT) $(builddir_bin)/$(PROG)$(EXEEXT)
+	-rm -f *.o *~ core *.core omc_communication.* $(PROG)$(EXEEXT) $(builddir_bin)/$(PROG)$(EXEEXT)
 
 
 mosh.o : mosh.cpp
