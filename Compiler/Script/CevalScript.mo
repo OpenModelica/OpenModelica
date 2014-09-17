@@ -7686,6 +7686,11 @@ algorithm
       equation
          paths = List.fold1(elts,findFunctionsToCompile,Absyn.joinPaths(pathPrefix,Absyn.IDENT(name)),acc);
       then paths;
+      // Derived classes, class extends
+    case (SCode.CLASS(name=name, partialPrefix=SCode.NOT_PARTIAL(), restriction=SCode.R_FUNCTION(_)),_,_)
+      equation
+         p = Absyn.joinPaths(pathPrefix,Absyn.IDENT(name));
+      then p::acc;
     else acc;
   end match;
 end findFunctionsToCompile;
