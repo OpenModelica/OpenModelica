@@ -533,7 +533,7 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
       /******************/
       fprintf(pFile, "%lf ",(double)t[ii][jj]);
       for(i = 0; i < nu; ++i){
-    	tmp_u = (float)(vopt[ii*nvnp+jj*nv+nx+i]*vnom[i + nx]);
+      tmp_u = (float)(vopt[ii*nvnp+jj*nv+nx+i]*vnom[i + nx]);
         fprintf(pFile, "%lf ", tmp_u);
       }
       fprintf(pFile, "%s", "\n");
