@@ -500,6 +500,7 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
     for(k = 0, tmpv = 0.0; k < np; ++k){
       tmpv += a[k]*vopt[k*nv + j];
     }
+    tmpv = fmin(fmax(tmpv,optData->bounds.vmin[j]),optData->bounds.vmax[j]);
     data->simulationInfo.inputVars[i] = (double)tmpv*vnom[j];
     fprintf(pFile, "%lf ", (float)data->simulationInfo.inputVars[i]);
   }
