@@ -147,8 +147,8 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
     memcpy(data->simulationInfo.integerVarsPre, optData->i0Pre, nInteger*sizeof(modelica_integer));
     memcpy(data->simulationInfo.booleanVarsPre, optData->b0Pre, nBoolean*sizeof(modelica_boolean));
     memcpy(data->simulationInfo.realVarsPre, optData->v0Pre, nReal*sizeof(modelica_real));
-    memcpy(data->simulationInfo.relationsPre, optData->rePre, nBoolean*sizeof(modelica_boolean));
-    memcpy(data->simulationInfo.relations, optData->re, nBoolean*sizeof(modelica_boolean));
+    memcpy(data->simulationInfo.relationsPre, optData->rePre, nRelations*sizeof(modelica_boolean));
+    memcpy(data->simulationInfo.relations, optData->re, nRelations*sizeof(modelica_boolean));
 
     for(ii = 0, k = 0, v = vopt, la = lambda; ii + 1 < nsi; ++ii){
       for(p = 1; p < np1; ++p, v += nv, la += nJ){
