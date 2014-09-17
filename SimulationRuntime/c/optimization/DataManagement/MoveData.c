@@ -466,6 +466,7 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
   const int nvnp = nv*np;
   long double a[np];
   modelica_real *** v = optData->v;
+  float tmp_u;
 
   int i,j,k, ii, jj;
   char buffer[4096];
@@ -532,8 +533,8 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
       /******************/
       fprintf(pFile, "%lf ",(double)t[ii][jj]);
       for(i = 0; i < nu; ++i){
-      data->simulationInfo.inputVars[i] = vopt[ii*nvnp+nx+i]*vnom[i + nx];
-        fprintf(pFile, "%lf ", (float)data->simulationInfo.inputVars[i]);
+    	tmp_u = (float)(vopt[ii*nvnp+jj*nv+nx+i]*vnom[i + nx]);
+        fprintf(pFile, "%lf ", tmp_u);
       }
       fprintf(pFile, "%s", "\n");
       /******************/
