@@ -10,7 +10,7 @@ builddir_bin=$(top_builddir)/build/bin/
 builddir_share=$(top_builddir)/build/share/
 runtimedir=$(top_builddir)/Compiler/runtime/
 resourcedir=./Resources/nls/
-  
+
 NAME=OMEdit
 EXE=@EXE@
 APP=@APP@
@@ -40,7 +40,7 @@ $(NAME): parsergen Makefile OMEdit.config omc_communication.cpp
 clean:
 	$(MAKE) -C Debugger/Parser -f Makefile.lib.unix clean
 	test ! -f Makefile || $(MAKE) -f Makefile clean
-	rm -f ../bin/*.o
+	rm -f ../bin/*.o omc_communication.*
 
 parsergen:
 	$(MAKE) -C Debugger/Parser -f Makefile.lib.unix
