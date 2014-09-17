@@ -4,12 +4,12 @@
 #include "FactoryExport.h"
 
 #include <Core/Solver/SolverDefaultImplementation.h>
-#include <cvodes/cvodes.h>
+//#include <cvodes/cvodes.h>
 #include <cvode/cvode.h>
 #include <nvector/nvector_serial.h>
 #include <sundials/sundials_direct.h>
-#include <cvodes/cvodes_dense.h>
-#include <cvodes/cvodes_spgmr.h>
+#include <cvode/cvode_dense.h>
+#include <cvode/cvode_spgmr.h>
 
 #ifdef USE_BOOST_LOG
 #include <boost/log/core.hpp>
