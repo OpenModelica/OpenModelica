@@ -391,6 +391,7 @@ void SimManager::runSingleProcess()
       boost::shared_ptr<IEvent> event_system = boost::dynamic_pointer_cast<IEvent>(_mixed_system);
       boost::shared_ptr<IContinuous> cont_system = boost::dynamic_pointer_cast<IContinuous>(_mixed_system);
       boost::shared_ptr<ITime> timeevent_system = boost::dynamic_pointer_cast<ITime>(_mixed_system);
+        boost::shared_ptr<IStepEvent> step_event_system = boost::dynamic_pointer_cast<IStepEvent>(_mixed_system);
       double
             startTime,
             endTime,
@@ -565,8 +566,9 @@ void SimManager::runSingleProcess()
                   }
 
             } // end while continue
-
-
+            step_event_system->setTerminal(true);
+            cont_system->evaluateAll(IContinuous::CONTINUOUS);  
+            
             if(zeroVal_new)
                   delete [] zeroVal_new;
 

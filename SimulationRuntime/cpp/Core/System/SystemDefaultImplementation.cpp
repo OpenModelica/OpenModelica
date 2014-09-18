@@ -47,6 +47,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *global
 ,_initial(false)
 ,_delay_max(0.0)
 ,_start_time(0.0)
+,_terminal(false)
 ,_global_settings(globalSettings)
 {
 }
@@ -151,7 +152,7 @@ void SystemDefaultImplementation::initialize()
     memset(_time_event_counter,0,(_dimTimeEvent)*sizeof(int));
   }
   _start_time =0.0;
-
+  _terminal =false;
 };
 
 

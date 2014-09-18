@@ -166,6 +166,7 @@ protected:
 
 
     bool _initial;
+    bool _terminal;
     //SValuesMap _start_values;
     InitVars<double> _real_start_values;
     InitVars<int> _int_start_values;

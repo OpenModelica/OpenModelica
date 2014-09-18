@@ -4,6 +4,7 @@
 #include <string>
 #include <stdio.h>
 #include <stdarg.h>
+#include <sstream>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -37,19 +38,27 @@ void ModelicaVFormatError(const char*string, va_list args)
  throw std::invalid_argument("ModelicaVFormatError not implemented yet");
 }
 
-void ModelicaFormatError(const char* string, ...)
+void ModelicaFormatError(const char* text, ...)
 {
-  throw std::invalid_argument("ModelicaFormatError not implemented yet");
+  std::stringstream ss;
+  va_list args;
+  va_start(args, text);
+  ss <<  text;
+  va_end(args);
+  ModelicaError(ss.str().c_str());
 }
 
 char* ModelicaAllocateString(size_t len)
 {
- throw std::invalid_argument("ModelicaAllocateString not implemented yet");
+   return new char[len];
 }
 
 char* ModelicaAllocateStringWithErrorReturn(size_t len)
 {
- throw std::invalid_argument("ModelicaAllocateStringWithErrorReturn ot implemented yet");
+ char *res = new char[len];
+  if(!res)
+    ModelicaFormatError("%s:%d: ModelicaAllocateString failed", __FILE__, __LINE__);
+  return res;
 }
 #ifdef __cplusplus
 }
