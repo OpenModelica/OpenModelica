@@ -3113,10 +3113,13 @@ void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
 void ModelWidgetContainer::saveModelicaModelWidget(ModelWidget *pModelWidget)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
-  if (!pModelWidget->getModelicaTextEditor()->validateModelicaText())
+  if (!pModelWidget->getModelicaTextEditor()->validateModelicaText()) {
     return;
-  if (pModelWidget->getModelicaTextEditor()->isVisible())
-    pModelWidget->getModelicaTextEditor()->setPlainText(mpMainWindow->getOMCProxy()->list(pModelWidget->getLibraryTreeNode()->getNameStructure()));
+  }
+  if (pModelWidget->getModelicaTextEditor()->isVisible()) {
+    QString text = mpMainWindow->getOMCProxy()->list(pModelWidget->getLibraryTreeNode()->getNameStructure());
+    pModelWidget->getModelicaTextEditor()->setPlainText(text);
+  }
   mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(pModelWidget->getLibraryTreeNode());
 }
 
@@ -3230,12 +3233,13 @@ void ModelWidgetContainer::saveModelWidget()
     return;
   }
   LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
-  if (pLibraryTreeNode && pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica)
+  if (pLibraryTreeNode && pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica) {
     saveModelicaModelWidget(pModelWidget);
-  else if (pLibraryTreeNode && pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text)
+  } else if (pLibraryTreeNode && pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text) {
     saveTextModelWidget(pModelWidget);
-  else if (pLibraryTreeNode && pLibraryTreeNode->getLibraryType() == LibraryTreeNode::TLM)
+  } else if (pLibraryTreeNode && pLibraryTreeNode->getLibraryType() == LibraryTreeNode::TLM) {
     saveTextModelWidget(pModelWidget);
+  }
 }
 
 void ModelWidgetContainer::saveAsModelWidget()

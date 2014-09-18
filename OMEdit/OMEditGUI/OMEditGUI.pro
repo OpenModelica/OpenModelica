@@ -233,7 +233,8 @@ OTHER_FILES += Resources/css/stylesheet.qss \
     Debugger/Parser/GDBMIParser.cpp \
     Debugger/Parser/main.cpp
 
-CONFIG += warn_off
+# Please read the warnings. They are like vegetables; good for you even if you hate them.
+CONFIG += warn_on
 
 RESOURCES += resource_omedit.qrc
 

@@ -94,6 +94,7 @@ class LibraryTreeNode : public QTreeWidgetItem
 {
 public:
   enum LibraryType {
+    InvalidType, /* Used to catch errors */
     Modelica,   /* Used to represent Modelica models. */
     Text,       /* Used to represent text based files. */
     TLM         /* Used to represent XML files. */

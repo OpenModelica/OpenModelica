@@ -309,16 +309,17 @@ void TVariablesTreeModel::insertTVariablesItems()
       }
       QString findVariable;
       /* if last item */
-      if (tVariables.size() == count && variable.name.startsWith("der("))
+      if (tVariables.size() == count && variable.name.startsWith("der(")) {
         findVariable = parentTVariable.isEmpty() ? "der(" + tVariable + ")" : parentTVariable + ".der(" + tVariable + ")";
-      else
+      } else {
         findVariable = parentTVariable.isEmpty() ? tVariable : parentTVariable + "." + tVariable;
-      if (pParentTVariablesTreeItem = findTVariablesTreeItem(findVariable, pParentTVariablesTreeItem))
-      {
-        if (count == 1)
+      }
+      if ((pParentTVariablesTreeItem = findTVariablesTreeItem(findVariable, pParentTVariablesTreeItem))) {
+        if (count == 1) {
           parentTVariable = tVariable;
-        else
+        } else {
           parentTVariable += "." + tVariable;
+        }
         count++;
         continue;
       }
@@ -441,7 +442,7 @@ EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWid
 }
 
 TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWindow *pMainWindow)
-  : mInfoXMLFullFileName(infoXMLFullFileName), mpMainWindow(pMainWindow)
+  : mpMainWindow(pMainWindow), mInfoXMLFullFileName(infoXMLFullFileName)
 {
   if (!mInfoXMLFullFileName.endsWith("_info.xml")) {
     mProfJSONFullFileName = "";
@@ -883,7 +884,7 @@ void TransformationsWidget::fetchNestedEquations(QTreeWidgetItem *pParentTreeWid
 {
   foreach (int nestedIndex, mpInfoXMLFileHandler->equations[index]->eqs)
   {
-    OMEquation *nestedEquation = mpInfoXMLFileHandler->equations[nestedIndex];
+    // OMEquation *nestedEquation = mpInfoXMLFileHandler->equations[nestedIndex];
     QTreeWidgetItem *pNestedEquationTreeItem = makeEquationTreeWidgetItem(nestedIndex,1);
     if (pNestedEquationTreeItem) {
       pParentTreeWidgetItem->addChild(pNestedEquationTreeItem);

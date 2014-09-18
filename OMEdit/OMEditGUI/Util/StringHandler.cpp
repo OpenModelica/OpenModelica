@@ -921,30 +921,29 @@ QStringList StringHandler::unparseArrays(QString value)
   value = StringHandler::removeFirstLastCurlBrackets(value);
   size_t length = value.size();
   int subbraceopen = 0;
-  for (; i < length ; i++)
-  {
-    if (value.at(i) == ' ' || value.at(i) == ',') continue; // ignore any kind of space
-    if (value.at(i) == '{' && braceopen == 0)
-    {
+  for (; i < length ; i++) {
+    if (value.at(i) == ' ' || value.at(i) == ',') {
+      continue; // ignore any kind of space
+    }
+    if (value.at(i) == '{' && braceopen == 0) {
       braceopen = 1;
       mainbraceopen = i;
       continue;
     }
-    if (value.at(i) == '{')
-    {
+    if (value.at(i) == '{') {
       subbraceopen = 1;
     }
 
-    if (value.at(i) == '}' && braceopen == 1 && subbraceopen == 0)
-    {
+    if (value.at(i) == '}' && braceopen == 1 && subbraceopen == 0) {
       //closing of a group
       int copylength = i- mainbraceopen+1;
       braceopen = 0;
       lst.append(value.mid(mainbraceopen, copylength));
       continue;
     }
-    if (value.at(i) == '}')
+    if (value.at(i) == '}') {
       subbraceopen = 0;
+    }
 
     /* skip the whole quotes section */
     if (value.at(i) == '"')
@@ -953,9 +952,11 @@ QStringList StringHandler::unparseArrays(QString value)
       while (value.at(i) != '"')
       {
         i++;
-        if (value.at(i) == '"' && value.at(i+1) != ',')
-          if (value.at(i+1) != '}')
-            i+2;
+        if (value.at(i) == '"' && value.at(i+1) != ',') {
+          if (value.at(i+1) != '}') {
+            i+=2;
+          }
+        }
       }
     }
   }
@@ -990,19 +991,19 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
   if (!purposedFileName.isEmpty() && !defaultSuffix.isEmpty())
     purposedFileName = QString(purposedFileName).append(".").append(defaultSuffix);
 
-  if (!purposedFileName.isEmpty())
+  if (!purposedFileName.isEmpty()) {
     fileName = QFileDialog::getSaveFileName(parent, caption, QString(dir_str).append("/").append(purposedFileName), filter, selectedFilter);
-  else
+  } else {
     fileName = QFileDialog::getSaveFileName(parent, caption, dir_str, filter, selectedFilter);
+  }
 
-  if (!fileName.isEmpty())
-  {
+  if (!fileName.isEmpty()) {
     /* Qt is not reallllyyyy platform independent :(
      * In older versions of Qt QFileDialog::getSaveFileName doesn't return file extension on Linux.
      * But it works fine in Qt 4.8.
      */
     QFileInfo fileInfo(fileName);
-#ifdef Q_OS_LINUX && QT_VERSION < 0x040800
+#if defined(Q_OS_LINUX) && QT_VERSION < 0x040800
     if (fileInfo.suffix() == QString(""))
       fileName.append(".").append(defaultSuffix);
 #else
@@ -1028,6 +1029,7 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
 #ifdef WIN32
   fileName = QFileDialog::getOpenFileName(parent, caption, dir_str, filter, selectedFilter);
 #else
+  Q_UNUSED(selectedFilter)
   QFileDialog *dialog;
   dialog = new QFileDialog(parent, caption, dir_str, filter);
   QList<QUrl> urls = dialog->sidebarUrls();
@@ -1060,6 +1062,7 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
 #ifdef WIN32
   fileNames = QFileDialog::getOpenFileNames(parent, caption, dir_str, filter, selectedFilter);
 #else
+  Q_UNUSED(selectedFilter);
   QFileDialog *dialog;
   dialog = new QFileDialog(parent, caption, dir_str, filter);
   QList<QUrl> urls = dialog->sidebarUrls();

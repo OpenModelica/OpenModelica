@@ -1019,17 +1019,16 @@ bool LibraryTreeWidget::saveLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode)
   bool result = false;
   mpMainWindow->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeNode->getNameStructure()));
   mpMainWindow->showProgressBar();
-  if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica)
-  {
+  if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica) {
     result = saveModelicaLibraryTreeNode(pLibraryTreeNode);
-  }
-  else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::TLM)
-  {
+  } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::TLM) {
     result = saveXMLLibraryTreeNode(pLibraryTreeNode);
-  }
-  else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text)
-  {
+  } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text) {
     result = saveTextLibraryTreeNode(pLibraryTreeNode);
+  } else {
+    QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
+                             .arg(tr("Unable to save the file, unknown library type.")), Helper::ok);
+    result = false;
   }
   mpMainWindow->getStatusBar()->clearMessage();
   mpMainWindow->hideProgressBar();
@@ -1062,56 +1061,43 @@ bool LibraryTreeWidget::saveModelicaLibraryTreeNode(LibraryTreeNode *pLibraryTre
       A root model with no sub models.
       If it is a package then check whether save contents type. Otherwise simply save it to file.
       */
-    if (pLibraryTreeNode->getModelicaType() == StringHandler::Package && pLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveInOneFile)
-    {
+    if (pLibraryTreeNode->getModelicaType() == StringHandler::Package && pLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveInOneFile) {
       result = saveLibraryTreeNodeOneFileHelper(pLibraryTreeNode);
-    }
-    else if (pLibraryTreeNode->getModelicaType() == StringHandler::Package && pLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveFolderStructure)
-    {
+    } else if (pLibraryTreeNode->getModelicaType() == StringHandler::Package && pLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveFolderStructure) {
       result = saveLibraryTreeNodeFolderHelper(pLibraryTreeNode);
-    }
-    else
-    {
+    } else {
       result = saveLibraryTreeNodeHelper(pLibraryTreeNode);
     }
-    if (result)
+    if (result) {
       getMainWindow()->addRecentFile(pLibraryTreeNode->getFileName(), Helper::utf8);
-  }
-  else if (pLibraryTreeNode->getParentName().isEmpty() && pLibraryTreeNode->childCount() > 0)
-  {
+    }
+  } else if (pLibraryTreeNode->getParentName().isEmpty() && pLibraryTreeNode->childCount() > 0) {
     /* A root model with sub models.
      * If its a new model then its fileName is <interactive> then check its mSaveContentsType.
      * If mSaveContentsType is LibraryTreeNode::SaveInOneFile then we save all sub models in one file
      */
-    if (pLibraryTreeNode->getFileName().isEmpty() && pLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveInOneFile)
-    {
+    if (pLibraryTreeNode->getFileName().isEmpty() && pLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveInOneFile) {
       result = saveLibraryTreeNodeOneFileHelper(pLibraryTreeNode);
-    }
-    /* A root model with sub models.
-     * If its a new model then its fileName is <interactive> then check its mSaveContentsType.
-     * If mSaveContentsType is LibraryTreeNode::SaveFolderStructure then we save sub models in folder structure
-     */
-    else if (pLibraryTreeNode->getFileName().isEmpty() && pLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveFolderStructure)
-    {
+    } else if (pLibraryTreeNode->getFileName().isEmpty() && pLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveFolderStructure) {
+      /* A root model with sub models.
+       * If its a new model then its fileName is <interactive> then check its mSaveContentsType.
+       * If mSaveContentsType is LibraryTreeNode::SaveFolderStructure then we save sub models in folder structure
+       */
       result = saveLibraryTreeNodeFolderHelper(pLibraryTreeNode);
-    }
-    else
-    {
+    } else {
       result = saveLibraryTreeNodeOneFileOrFolderHelper(pLibraryTreeNode);
     }
-    if (result)
+    if (result) {
       getMainWindow()->addRecentFile(pLibraryTreeNode->getFileName(), Helper::utf8);
-  }
-  else if (!pLibraryTreeNode->getParentName().isEmpty())
-  {
+    }
+  } else if (!pLibraryTreeNode->getParentName().isEmpty()) {
     /* A sub model contained inside some other model.
      * Find its root model.
      * If the root model fileName is <interactive> then check its mSaveContentsType.
      * If mSaveContentsType is LibraryTreeNode::SaveInOneFile then we save all sub models in one file.
      */
     pLibraryTreeNode = getLibraryTreeNode(StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()));
-    if (pLibraryTreeNode->getFileName().isEmpty() && pLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveInOneFile)
-    {
+    if (pLibraryTreeNode->getFileName().isEmpty() && pLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveInOneFile) {
       result = saveLibraryTreeNodeOneFileHelper(pLibraryTreeNode);
     }
     /* A sub model contained inside some other model.
@@ -1119,17 +1105,16 @@ bool LibraryTreeWidget::saveModelicaLibraryTreeNode(LibraryTreeNode *pLibraryTre
      * If its a new model then its fileName is <interactive> then check its mSaveContentsType.
      * If mSaveContentsType is LibraryTreeNode::SaveFolderStructure then we save sub models in folder structure
      */
-    else if (pLibraryTreeNode->getFileName().isEmpty() && pLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveFolderStructure)
-    {
+    else if (pLibraryTreeNode->getFileName().isEmpty() && pLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveFolderStructure) {
       result = saveLibraryTreeNodeFolderHelper(pLibraryTreeNode);
-    }
-    else
-    {
+    } else {
       result = saveLibraryTreeNodeOneFileOrFolderHelper(pLibraryTreeNode);
     }
-    if (result)
+    if (result) {
       getMainWindow()->addRecentFile(pLibraryTreeNode->getFileName(), Helper::utf8);
+    }
   }
+  return result;
 }
 
 bool LibraryTreeWidget::saveTextLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode)
@@ -1878,13 +1863,16 @@ void LibraryTreeWidget::showModelWidget(LibraryTreeNode *pLibraryTreeNode, bool 
   }
   else
   {
-    ModelWidget *pModelWidget;
-    if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica)
+    ModelWidget *pModelWidget = NULL;
+    if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica) {
       pModelWidget = new ModelWidget(newClass, extendsClass, pLibraryTreeNode, mpMainWindow->getModelWidgetContainer());
-    else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text)
+    } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text) {
         pModelWidget = new ModelWidget(text, pLibraryTreeNode, mpMainWindow->getModelWidgetContainer());
-    else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::TLM)
+    } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::TLM) {
       pModelWidget = new ModelWidget(text, text, pLibraryTreeNode, mpMainWindow->getModelWidgetContainer());
+    } else {
+      // ???
+    }
     pLibraryTreeNode->setModelWidget(pModelWidget);
     pLibraryTreeNode->getModelWidget()->setWindowTitle(pLibraryTreeNode->getNameStructure() + (pLibraryTreeNode->isSaved() ? "" : "*"));
     mpMainWindow->getModelWidgetContainer()->addModelWidget(pModelWidget);

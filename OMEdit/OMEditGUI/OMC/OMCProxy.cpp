@@ -317,8 +317,7 @@ bool OMCProxy::startServer()
     objectRefFile.setFileName(QString("%1openmodelica.objid.%3%4").arg(tmpPath).arg(Helper::OMCServerName).arg(fileIdentifier));
 #else // UNIX environment
     char *user = getenv("USER");
-    if (!user) { user = "nobody"; }
-    objectRefFile.setFileName(QString("%1openmodelica.%3.objid.%4%5").arg(tmpPath).arg(QString(user)).arg(Helper::OMCServerName).arg(fileIdentifier));
+    objectRefFile.setFileName(QString("%1openmodelica.%3.objid.%4%5").arg(tmpPath).arg(QString(user ? user : "nobody")).arg(Helper::OMCServerName).arg(fileIdentifier));
 #endif
     if (objectRefFile.exists())
       objectRefFile.remove();

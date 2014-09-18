@@ -1515,7 +1515,6 @@ void MainWindow::importNgspiceNetlist()
     return;
   // create a progress bar
   int endtime = 0;
-  int value = 1;
   // show the progress bar and set the message in status bar
   mpStatusBar->showMessage(tr("Importing ngspice netlist and converting to Modelica code"));
   mpProgressBar->setRange(0, endtime);
@@ -1655,7 +1654,7 @@ void MainWindow::openModelicaWebReference()
 
 void MainWindow::openAboutOMEdit()
 {
-  mpAboutOMEditDialog->setGeometry(QRect(rect().center() - QPoint(262.2, 235), rect().center() + QPoint(262.2, 235)));
+  mpAboutOMEditDialog->setGeometry(QRect(rect().center() - QPoint(262, 235), rect().center() + QPoint(262, 235)));
   mpAboutOMEditDialog->setFocus(Qt::ActiveWindowFocusReason);
   mpAboutOMEditDialog->raise();
   mpAboutOMEditDialog->show();
@@ -2454,7 +2453,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 {
   if (mpAboutOMEditDialog)
     if (mpAboutOMEditDialog->isVisible())
-      mpAboutOMEditDialog->setGeometry(QRect(rect().center() - QPoint(262.2, 235), rect().center() + QPoint(262.2, 235)));
+      mpAboutOMEditDialog->setGeometry(QRect(rect().center() - QPoint(262, 235), rect().center() + QPoint(262, 235)));
   QMainWindow::resizeEvent(event);
 }
 

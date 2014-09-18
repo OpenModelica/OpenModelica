@@ -554,8 +554,7 @@ QString& OpenModelica::tempDirectory()
     tmpPath = QDir::tempPath() + "/OpenModelica/OMEdit/";
 #else // UNIX environment
     char *user = getenv("USER");
-    if (!user) { user = "nobody"; }
-    tmpPath = QDir::tempPath() + "/OpenModelica_" + QString(user) + "/OMEdit/";
+    tmpPath = QDir::tempPath() + "/OpenModelica_" + QString(user ? user : "nobody") + "/OMEdit/";
 #endif
     tmpPath.remove("\"");
   }
