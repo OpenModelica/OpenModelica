@@ -2927,7 +2927,7 @@ case var as VARIABLE(ty = T_STRING(__)) then
     if not acceptMetaModelicaGrammar() then
       // We need to strdup() all strings, then allocate them on the memory pool again, then free the temporary string
       let strVar = tempDecl("string", &varDecls)
-      
+
       let &varAssign +=
         <<
         _<%fname%> = <%strVar%>;
@@ -8419,7 +8419,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as BINARY(__)          then daeExpBinary(operator, exp1, exp2, context, &preExp, &varDecls,simCode, useFlatArrayNotation)
   case e as IFEXP(__)           then daeExpIf(expCond, expThen, expElse, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, useFlatArrayNotation)
   case e as RELATION(__)        then daeExpRelation(e, context, &preExp, &varDecls,simCode, useFlatArrayNotation)
-  case e as CALL(__)            then daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation) 
+  case e as CALL(__)            then daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
   case e as RECORD(__)          then daeExpRecord(e, context, &preExp, &varDecls,simCode, useFlatArrayNotation)
   case e as ASUB(__)            then daeExpAsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
   case e as MATRIX(__)          then daeExpMatrix(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
@@ -9059,7 +9059,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
 
         then  '_system->_terminal'
     else
-          '_terminal' 
+          '_terminal'
 
    case CALL(path=IDENT(name="DIVISION"),
             expLst={e1, e2}) then
@@ -9511,7 +9511,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
                         case FUNCTION_CONTEXT(__) then '<%funName%>(<%argStr%>);<%\n%>/*funccall*/'
             /*multi_array else 'assign_array(<%retVar%> ,_functions.<%funName%>(<%argStr%>));<%\n%>'*/
                         else '_functions-><%funName%>(<%argStr%>);<%\n%>'
-    ""    
+    ""
     /*Function calls with array return type*/
     case exp as CALL(attr=attr as CALL_ATTR(ty=T_ARRAY(ty=ty,dims=dims))) then
 
@@ -12560,7 +12560,7 @@ case STMT_NORETCALL(__) then
   //No retcall
   <%preExp%>
   <%expPart%>;
-    //No retcall 
+    //No retcall
   >>
 end algStmtNoretcall;
 
@@ -12959,7 +12959,7 @@ template daeExpTsub(Exp inExp, Context context, Text &preExp,
      let res = daeExpCallTuple(exp,retVar, context, &preExp, &varDecls, simCode, useFlatArrayNotation)
     let &preExp += '<%res%>/*test2*/;<%\n%>'
     'boost::get<<%intAdd(-1,ix)%>>(<%retVar%>.data)'
-    
+
   case TSUB(__) then
     error(sourceInfo(), '<%printExpStr(inExp)%>: TSUB only makes sense if the subscripted expression is a function call of tuple type')
 end daeExpTsub;
@@ -12968,8 +12968,8 @@ template daeExpCallTuple(Exp call , Text additionalOutputs/* arguments 2..N */, 
 ::=
   match call
   case exp as CALL(attr=attr as CALL_ATTR(__)) then
-    
-    
+
+
     let argStr = if boolOr(attr.builtin,isParallelFunctionContext(context))
                    then (expLst |> exp => '<%daeExp(exp, context, &preExp, &varDecls, simCode, useFlatArrayNotation)%>' ;separator=", ")
                  else ((expLst |> exp => (daeExp(exp, context, preExp, &varDecls, simCode, useFlatArrayNotation));separator=", "))

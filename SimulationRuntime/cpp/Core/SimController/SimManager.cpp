@@ -567,8 +567,8 @@ void SimManager::runSingleProcess()
 
             } // end while continue
             step_event_system->setTerminal(true);
-            cont_system->evaluateAll(IContinuous::CONTINUOUS);  
-            
+            cont_system->evaluateAll(IContinuous::CONTINUOUS);
+
             if(zeroVal_new)
                   delete [] zeroVal_new;
 
