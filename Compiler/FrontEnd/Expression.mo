@@ -10648,4 +10648,23 @@ algorithm
   end match;
 end traverseExpDerPreStartList;
 
+public function renameExpCrefIdent
+  input DAE.Exp inExp;
+  input tuple<String,String> inTpl;
+  output DAE.Exp outExp;
+  output tuple<String,String> outTpl;
+algorithm
+  (outExp,outTpl) := match (inExp,inTpl)
+    local
+      DAE.Type ty1,ty2;
+      String name,from,to;
+      DAE.Exp exp;
+    case (DAE.CREF(DAE.CREF_IDENT(name,ty1,{}),ty2),(from,to))
+      equation
+        exp = Util.if_(stringEq(name,from),DAE.CREF(DAE.CREF_IDENT(to,ty1,{}),ty2),inExp);
+      then (exp,inTpl);
+    else (inExp,inTpl);
+  end match;
+end renameExpCrefIdent;
+
 end Expression;
