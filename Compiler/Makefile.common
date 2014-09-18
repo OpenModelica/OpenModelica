@@ -256,6 +256,7 @@ VarTransform.mo \
 # HashTable6.mo \
 
 SCRIPT = \
+BlockCallRewrite.mo \
 CevalScript.mo \
 Interactive.mo \
 GlobalScript.mo \

@@ -1184,13 +1184,14 @@ algorithm
             p as Absyn.PROGRAM(globalBuildTimes=ts),instClsLst = ic, lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_)
       equation
+        absynClass = Interactive.getPathedClassInProgram(path, p);
+        classes = {absynClass};
         absynClass = Interactive.getPathedClassInProgram(classpath, p);
-        classes = {Interactive.getPathedClassInProgram(path, p)};
         within_ = Interactive.buildWithin(classpath);
         pnew = BlockCallRewrite.rewriteBlockCall(Absyn.PROGRAM({absynClass}, within_,ts), (Absyn.PROGRAM(classes, within_,ts)));
         newp = Interactive.updateProgram(pnew, p);
       then
-        (cache,Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));   
+        (cache,Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
 
     case (cache, _, "rewriteBlockCall", _, st, _)
       then (cache, Values.BOOL(false), st);
