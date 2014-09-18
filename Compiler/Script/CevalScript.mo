@@ -138,6 +138,7 @@ protected import ErrorExt;
 protected import UnitAbsynBuilder;
 protected import UnitParserExt;
 protected import RewriteRules;
+//protected import BlockCallRewrite;
 
 protected constant DAE.Type simulationResultType_rtest = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
@@ -893,6 +894,7 @@ algorithm
       list<Boolean> blst;
       list<Error.TotalMessage> messages;
       UnitAbsyn.Unit u1,u2;
+      Absyn.TimeStamp ts;
       Real stoptime,starttime,tol,stepsize,interval;
       String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str,description,prefix;
     case (cache,_,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
@@ -1176,12 +1178,29 @@ algorithm
 
     case (cache, _, "exportToFigaro", _, st, _)
       then (cache, Values.BOOL(false), st);
+        
+  /*  case (cache,_, "rewriteBlockCall",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))},
+       (GlobalScript.SYMBOLTABLE(
+            p as Absyn.PROGRAM(globalBuildTimes=ts),instClsLst = ic, lstVarVal = iv,compiledFunctions = cf,
+            loadedFiles = lf)),_)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(classpath, p);
+        classes = {Interactive.getPathedClassInProgram(path, p)};
+        within_ = Interactive.buildWithin(classpath);          
+        pnew = BlockCallRewrite.rewriteBlockCall(Absyn.PROGRAM({absynClass}, within_,ts), (Absyn.PROGRAM(classes, within_,ts)));  
+        newp = Interactive.updateProgram(pnew, p);
+      then
+        (cache,Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));   */
+         
+    case (cache, _, "rewriteBlockCall", _, st, _)
+      then (cache, Values.BOOL(false), st);    
 
     case (cache,_,"listVariables",{},st as GlobalScript.SYMBOLTABLE(lstVarVal = iv),_)
       equation
         v = ValuesUtil.makeArray(getVariableNames(iv,{}));
       then
         (cache,v,st);
+        
 
     case (cache,env,"jacobian",{Values.CODE(Absyn.C_TYPENAME(path))},
           (GlobalScript.SYMBOLTABLE(

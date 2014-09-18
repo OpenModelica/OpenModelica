@@ -2077,6 +2077,16 @@ external "builtin";
 annotation(preferredView="text");
 end exportToFigaro;
 
+public function rewriteBlockCall "Function for property modeling, transforms block calls into instantiations for a loaded model"
+  input TypeName className;
+  input TypeName inDefs;
+  output Boolean success;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>An extension for modeling requirements in Modelica. Rewrites block calls as block instantiations.</p>
+</html>"),preferredView="text");
+end rewriteBlockCall;
+
 function realpath "Get full path name of file or directory name"
   input String name "Absolute or relative file or directory name";
   output String fullName "Full path of 'name'";
