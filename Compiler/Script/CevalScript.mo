@@ -1178,7 +1178,7 @@ algorithm
 
     case (cache, _, "exportToFigaro", _, st, _)
       then (cache, Values.BOOL(false), st);
-        
+
   /*  case (cache,_, "rewriteBlockCall",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))},
        (GlobalScript.SYMBOLTABLE(
             p as Absyn.PROGRAM(globalBuildTimes=ts),instClsLst = ic, lstVarVal = iv,compiledFunctions = cf,
@@ -1186,21 +1186,21 @@ algorithm
       equation
         absynClass = Interactive.getPathedClassInProgram(classpath, p);
         classes = {Interactive.getPathedClassInProgram(path, p)};
-        within_ = Interactive.buildWithin(classpath);          
-        pnew = BlockCallRewrite.rewriteBlockCall(Absyn.PROGRAM({absynClass}, within_,ts), (Absyn.PROGRAM(classes, within_,ts)));  
+        within_ = Interactive.buildWithin(classpath);
+        pnew = BlockCallRewrite.rewriteBlockCall(Absyn.PROGRAM({absynClass}, within_,ts), (Absyn.PROGRAM(classes, within_,ts)));
         newp = Interactive.updateProgram(pnew, p);
       then
         (cache,Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));   */
-         
+
     case (cache, _, "rewriteBlockCall", _, st, _)
-      then (cache, Values.BOOL(false), st);    
+      then (cache, Values.BOOL(false), st);
 
     case (cache,_,"listVariables",{},st as GlobalScript.SYMBOLTABLE(lstVarVal = iv),_)
       equation
         v = ValuesUtil.makeArray(getVariableNames(iv,{}));
       then
         (cache,v,st);
-        
+
 
     case (cache,env,"jacobian",{Values.CODE(Absyn.C_TYPENAME(path))},
           (GlobalScript.SYMBOLTABLE(
