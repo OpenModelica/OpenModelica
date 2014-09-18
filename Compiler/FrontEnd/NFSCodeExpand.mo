@@ -56,6 +56,7 @@ protected import Flags;
 protected import NFInstDump;
 protected import NFInstUtil;
 protected import List;
+protected import SCode;
 protected import Types;
 protected import Util;
 
@@ -1059,7 +1060,7 @@ algorithm
         el = List.fold2(locals, expandElement, EXPAND_FUNCTION(), {}, el);
         el = expandArray((al,EXPAND_FUNCTION(),false /* not initial */), EXPAND_FUNCTION(), {}, {}::{}, el, expandStatements);
         el = listReverse(el);
-      then DAE.FUNCTION(path,{DAE.FUNCTION_DEF(el)},DAE.T_FUNCTION_DEFAULT,false,false,DAE.NO_INLINE(),DAE.emptyElementSource,NONE());
+      then DAE.FUNCTION(path,{DAE.FUNCTION_DEF(el)},DAE.T_FUNCTION_DEFAULT,SCode.PUBLIC() /*TODO: Improve this...*/,false,false,DAE.NO_INLINE(),DAE.emptyElementSource,NONE());
 
 
     case NFInstTypes.RECORD_CONSTRUCTOR(path, recType , inputs, locals, _)
@@ -1075,7 +1076,7 @@ algorithm
           Absyn.NOT_INNER_OUTER());
         el = outRec::el;
         el = listReverse(el);
-      then DAE.FUNCTION(path,{DAE.FUNCTION_DEF(el)},DAE.T_FUNCTION_DEFAULT,false,false,DAE.NO_INLINE(),DAE.emptyElementSource,NONE());
+      then DAE.FUNCTION(path,{DAE.FUNCTION_DEF(el)},DAE.T_FUNCTION_DEFAULT,SCode.PUBLIC() /*TODO: Improve this...*/,false,false,DAE.NO_INLINE(),DAE.emptyElementSource,NONE());
 
   end match;
 end expandFunction;

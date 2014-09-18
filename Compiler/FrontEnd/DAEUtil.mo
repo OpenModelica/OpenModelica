@@ -2695,6 +2695,16 @@ algorithm
   end matchcontinue;
 end getNamedFunctionFromList;
 
+public function getFunctionVisibility
+  input DAE.Function fn;
+  output SCode.Visibility visibility;
+algorithm
+  visibility := match fn
+    case DAE.FUNCTION(visibility = visibility) then visibility;
+    else SCode.PUBLIC();
+  end match;
+end getFunctionVisibility;
+
 protected function getFunctionsElements
   input list<DAE.Function> elements;
   output list<DAE.Element> els;
@@ -3731,18 +3741,19 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       Option<SCode.Comment> cmt;
       Type_a extraArg;
+      SCode.Visibility visibility;
 
-    case(DAE.FUNCTION(path,(DAE.FUNCTION_DEF(body = elist)::derFuncs),ftp,partialPrefix,isImpure,inlineType,source,cmt),_,extraArg)
+    case (DAE.FUNCTION(path,(DAE.FUNCTION_DEF(body = elist)::derFuncs),ftp,visibility,partialPrefix,isImpure,inlineType,source,cmt),_,extraArg)
       equation
         (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
-      then (DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt),extraArg);
+      then (DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,visibility,partialPrefix,isImpure,inlineType,source,cmt),extraArg);
 
-    case(DAE.FUNCTION(path,(DAE.FUNCTION_EXT(body = elist,externalDecl=extDecl)::derFuncs),ftp,partialPrefix,isImpure,_,source,cmt),_,extraArg)
+    case (DAE.FUNCTION(path,(DAE.FUNCTION_EXT(body = elist,externalDecl=extDecl)::derFuncs),ftp,visibility,partialPrefix,isImpure,_,source,cmt),_,extraArg)
       equation
         (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
-      then (DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extDecl)::derFuncs,ftp,partialPrefix,isImpure,DAE.NO_INLINE(),source,cmt),extraArg);
+      then (DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extDecl)::derFuncs,ftp,visibility,partialPrefix,isImpure,DAE.NO_INLINE(),source,cmt),extraArg);
 
-    case(DAE.RECORD_CONSTRUCTOR(path,tp,source),_,extraArg)
+    case (DAE.RECORD_CONSTRUCTOR(path,tp,source),_,extraArg)
       then (DAE.RECORD_CONSTRUCTOR(path,tp,source),extraArg);
   end match;
 end traverseDAEFunc;
@@ -6136,13 +6147,12 @@ algorithm
       DAE.InlineType inlineType;
       DAE.ElementSource source;
       Option<SCode.Comment> comment;
+      SCode.Visibility visibility;
 
-
-    case (DAE.FUNCTION(path=path, functions=functions, type_=type_, partialPrefix=partialPrefix, isImpure=isImpure, inlineType=inlineType, source=source, comment=comment), _)
+    case (DAE.FUNCTION(path, functions, type_, visibility, partialPrefix, isImpure, inlineType, source, comment), _)
       equation
         functions = listAppend(functions, {iFuncDef});
-      then
-        DAE.FUNCTION(path, functions, type_, partialPrefix, isImpure, inlineType, source, comment);
+      then DAE.FUNCTION(path, functions, type_, visibility, partialPrefix, isImpure, inlineType, source, comment);
     else ifunc;
   end match;
 end addFunctionDefinition;

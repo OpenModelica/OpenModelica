@@ -67,6 +67,7 @@ protected import ExpressionDump;
 protected import Flags;
 protected import Inline;
 protected import List;
+protected import SCode;
 protected import Util;
 
 
@@ -2540,6 +2541,7 @@ algorithm
       DAE.ComponentRef diffwrtCref;
       list<DAE.ComponentRef> diffwrtCrefs;
       list<Boolean> blst;
+      SCode.Visibility visibility;
 
     // differentiate function
     case (func, _, dpathOption, _, _, _)
@@ -2552,6 +2554,7 @@ algorithm
         outputVars =  DAEUtil.getFunctionOutputVars(func);
         protectedVars  = DAEUtil.getFunctionProtectedVars(func);
         bodyStmts = DAEUtil.getFunctionAlgorithmStmts(func);
+        visibility = DAEUtil.getFunctionVisibility(func);
 
         path = DAEUtil.functionName(func);
         funcname = Util.modelicaStringToCStr(Absyn.pathString(path), false);
@@ -2593,7 +2596,7 @@ algorithm
 
         isImpure = DAEUtil.getFunctionImpureAttribute(func);
         dinl = DAEUtil.getFunctionInlineType(func);
-        dfunc = DAE.FUNCTION(dpath, {DAE.FUNCTION_DEF(funcbodyDer)}, dtp, false, isImpure, dinl, DAE.emptyElementSource, NONE());
+        dfunc = DAE.FUNCTION(dpath, {DAE.FUNCTION_DEF(funcbodyDer)}, dtp, visibility, false, isImpure, dinl, DAE.emptyElementSource, NONE());
       then
         (dfunc, functions, blst);
 

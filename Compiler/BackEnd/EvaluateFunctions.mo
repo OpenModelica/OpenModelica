@@ -993,7 +993,8 @@ algorithm
       DAE.ElementSource source;
       DAE.Function func;
       Option<SCode.Comment> comment;
-    case(DAE.FUNCTION(path=path,functions=_,type_=typ,partialPrefix=pP,isImpure=iI,inlineType=iType,source=source,comment=comment),_,_,_,_)
+      SCode.Visibility visibility;
+    case (DAE.FUNCTION(path,_,typ,visibility,pP,iI,iType,source,comment),_,_,_,_)
       equation
         //print("the pathname before: "+&Absyn.pathString(path)+&"\n");
         //print("THE FUNCTION BEFORE \n"+&DAEDump.dumpFunctionStr(funcIn)+&"\n");
@@ -1007,11 +1008,10 @@ algorithm
         //print("the old type: "+&Types.unparseType(typ)+&"\n");
         typ = updateFunctionType(typ,outputs,origOutputs);
         //print("the new type: "+&Types.unparseType(typ)+&"\n");
-        func = DAE.FUNCTION(path,{DAE.FUNCTION_DEF(body)},typ,pP,iI,iType,source,comment);
+        func = DAE.FUNCTION(path,{DAE.FUNCTION_DEF(body)},typ,visibility,pP,iI,iType,source,comment);
         //print("THE FUNCTION AFTER \n"+&DAEDump.dumpFunctionStr(func)+&"\n");
         //print("the pathname after: "+&Absyn.pathString(path)+&"\n");
-      then
-        (func,path);
+      then (func,path);
     else
       equation
         print("updateFunctionBody failed \n");

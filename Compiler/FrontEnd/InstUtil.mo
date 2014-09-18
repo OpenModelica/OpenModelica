@@ -4839,14 +4839,15 @@ algorithm
     DAE.ElementSource source;
     Option<SCode.Comment> cmt;
     list<DAE.Function> elts;
+    SCode.Visibility visiblity;
 
     case({},_) then {};
 
-    case(DAE.FUNCTION(p,funcs,tp,part,isImpure,inlineType,source,cmt)::elts,_)
+    case(DAE.FUNCTION(p,funcs,tp,visiblity,part,isImpure,inlineType,source,cmt)::elts,_)
       equation
         elts = addNameToDerivativeMapping(elts,path);
         funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
-      then DAE.FUNCTION(p,funcs,tp,part,isImpure,inlineType,source,cmt)::elts;
+      then DAE.FUNCTION(p,funcs,tp,visiblity,part,isImpure,inlineType,source,cmt)::elts;
 
     case(elt::elts,_)
       equation

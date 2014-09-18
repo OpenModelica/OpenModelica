@@ -405,20 +405,21 @@ algorithm
        Absyn.Path path;
        DAE.ExternalDecl extdecl;
        Option<SCode.Comment> cmt;
+       SCode.Visibility visibility;
 
-    case(DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae,_,_)
+    case(DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist)::derFuncs,ftp,visibility,partialPrefix,isImpure,inlineType,source,cmt)::dae,_,_)
       equation
         elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
         dae2 = applyReplacementsFunctions(dae,repl,condExpFunc);
       then
-        DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae2;
+        DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,visibility,partialPrefix,isImpure,inlineType,source,cmt)::dae2;
 
-    case(DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist,extdecl)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae,_,_)
+    case(DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist,extdecl)::derFuncs,ftp,visibility,partialPrefix,isImpure,inlineType,source,cmt)::dae,_,_)
       equation
         elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
         dae2 = applyReplacementsFunctions(dae,repl,condExpFunc);
       then
-        DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extdecl)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae2;
+        DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extdecl)::derFuncs,ftp,visibility,partialPrefix,isImpure,inlineType,source,cmt)::dae2;
   end match;
 end applyReplacementsFunctions;
 

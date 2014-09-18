@@ -359,13 +359,13 @@ algorithm
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = SCode.R_RECORD(_), partialPrefix = pPrefix)),inst_dims)
       equation
         (cache,c,cenv) = Lookup.lookupRecordConstructorClass(cache,env,Absyn.IDENT(n));
-        (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,_,_,_,source,_)}) = implicitFunctionInstantiation2(cache,cenv,ih,mod,pre,c,inst_dims,true);
+        (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,_,_,_,_,source,_)}) = implicitFunctionInstantiation2(cache,cenv,ih,mod,pre,c,inst_dims,true);
         // fpath = Absyn.makeFullyQualified(fpath);
         fun = DAE.RECORD_CONSTRUCTOR(fpath,ty1,source);
         cache = InstUtil.addFunctionsToDAE(cache, {fun}, pPrefix);
       then (cache,env,ih);
 
-    case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = _,restriction = r,partialPrefix = pPrefix)),inst_dims)
+    case (cache,env,ih,mod,pre,(c as SCode.CLASS(restriction = r,partialPrefix = pPrefix)),inst_dims)
       equation
         failure(SCode.R_RECORD(_) = r);
         true = MetaUtil.strictRMLCheck(Flags.isSet(Flags.STRICT_RML),c);
@@ -432,9 +432,10 @@ algorithm
       SCode.Comment cmt;
       SCode.FunctionRestriction funcRest;
       InstTypes.CallingScope cs;
+      SCode.Visibility visibility;
 
     // normal functions
-    case (cache,env,ih,mod,pre,SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(funcRest),info = info,cmt=cmt),inst_dims,_)
+    case (cache,env,ih,mod,pre,SCode.CLASS(classDef=cd, prefixes=SCode.PREFIXES(visibility=visibility), partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(funcRest),info = info,cmt=cmt),inst_dims,_)
       equation
         false = SCode.isExternalFunctionRestriction(funcRest);
         isImpure = SCode.isImpureFunctionRestriction(funcRest);
@@ -472,11 +473,11 @@ algorithm
           false and Config.acceptMetaModelicaGrammar() and not instFunctionTypeOnly,
           InstUtil.checkFunctionInputUsed,daeElts,NONE(),Absyn.pathString(fpath));
       then
-        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefixBool,isImpure,inlineType,source,SOME(cmt))});
+        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,visibility,partialPrefixBool,isImpure,inlineType,source,SOME(cmt))});
 
     // External functions should also have their type in env, but no dae.
-    case (cache,env,ih,mod,pre,(c as SCode.CLASS(partialPrefix=partialPrefix,name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure))),
-        classDef = cd as (parts as SCode.PARTS(elementLst = _)), cmt=cmt, info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,_)
+    case (cache,env,ih,mod,pre,(c as SCode.CLASS(partialPrefix=partialPrefix, prefixes=SCode.PREFIXES(visibility=visibility), name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure))),
+          classDef = cd as (parts as SCode.PARTS(elementLst = _)), cmt=cmt, info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,_)
       equation
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,_,_,_) =
           Inst.instClass(cache,env,ih, UnitAbsynBuilder.emptyInstStore(),mod, pre,
@@ -508,15 +509,15 @@ algorithm
         partialPrefixBool = SCode.partialBool(partialPrefix);
         InstUtil.checkExternalFunction(daeElts,extdecl,Absyn.pathString(fpath));
       then
-        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,partialPrefixBool,isImpure,DAE.NO_INLINE(),source,SOME(cmt))});
+        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,visibility,partialPrefixBool,isImpure,DAE.NO_INLINE(),source,SOME(cmt))});
 
     // Instantiate overloaded functions
-    case (cache,env,ih,_,pre,(SCode.CLASS(name = n,restriction = (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure))),
+    case (cache,env,ih,_,pre,(SCode.CLASS(name = n, prefixes=SCode.PREFIXES(visibility=visibility), restriction = (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure))),
           classDef = SCode.OVERLOAD(pathLst = funcnames),cmt=cmt)),_,_)
       equation
         (cache,env,ih,resfns) = instOverloadedFunctions(cache,env,ih,pre,funcnames) "Overloaded functions" ;
         (cache,fpath) = Inst.makeFullyQualified(cache,env,Absyn.IDENT(n));
-        resfns = DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF({})},DAE.T_UNKNOWN_DEFAULT,true,isImpure,DAE.NO_INLINE(),DAE.emptyElementSource,SOME(cmt))::resfns;
+        resfns = DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF({})},DAE.T_UNKNOWN_DEFAULT,visibility,true,isImpure,DAE.NO_INLINE(),DAE.emptyElementSource,SOME(cmt))::resfns;
       then
         (cache,env,ih,resfns);
 

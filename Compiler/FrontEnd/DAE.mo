@@ -342,6 +342,7 @@ public uniontype Function
     Absyn.Path path;
     list<FunctionDefinition> functions "contains the body and an optional function derivative mapping";
     Type type_;
+    SCode.Visibility visibility;
     Boolean partialPrefix "MetaModelica extension";
     Boolean isImpure "Modelica 3.3 impure/pure, by default isImpure = false all the time only if prefix *impure* function is specified";
     InlineType inlineType;

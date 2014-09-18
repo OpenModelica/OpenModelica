@@ -789,24 +789,25 @@ algorithm
       list<DAE.FunctionDefinition> funcDefs;
       DAE.ElementSource source;
       Option<SCode.Comment> cmt;
+      SCode.Visibility visibility;
 
     case({},_,_) then listReverse(iAcc);
 
-    case(DAE.FUNCTION(p,DAE.FUNCTION_DEF(body = elist)::funcDefs,t,partialPrefix,isImpure,inlineType,source,cmt) :: cdr,_,_)
+    case (DAE.FUNCTION(p,DAE.FUNCTION_DEF(body = elist)::funcDefs,t,visibility,partialPrefix,isImpure,inlineType,source,cmt) :: cdr,_,_)
       equation
         (elist_1,true)= inlineDAEElements(elist,inFunctions,{},false);
-        res = DAE.FUNCTION(p,DAE.FUNCTION_DEF(elist_1)::funcDefs,t,partialPrefix,isImpure,inlineType,source,cmt);
+        res = DAE.FUNCTION(p,DAE.FUNCTION_DEF(elist_1)::funcDefs,t,visibility,partialPrefix,isImpure,inlineType,source,cmt);
       then
         inlineCallsInFunctions(cdr,inFunctions,res::iAcc);
     // external functions
-    case(DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist,ext)::funcDefs,t,partialPrefix,isImpure,inlineType,source,cmt) :: cdr,_,_)
+    case (DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist,ext)::funcDefs,t,visibility,partialPrefix,isImpure,inlineType,source,cmt) :: cdr,_,_)
       equation
         (elist_1,true)= inlineDAEElements(elist,inFunctions,{},false);
-        res = DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist_1,ext)::funcDefs,t,partialPrefix,isImpure,inlineType,source,cmt);
+        res = DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist_1,ext)::funcDefs,t,visibility,partialPrefix,isImpure,inlineType,source,cmt);
       then
         inlineCallsInFunctions(cdr,inFunctions,res::iAcc);
 
-    case(el :: cdr,_,_)
+    case (el :: cdr,_,_)
       then
         inlineCallsInFunctions(cdr,inFunctions,el::iAcc);
     else
