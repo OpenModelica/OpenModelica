@@ -146,8 +146,6 @@ class NoFileException : public PlotException
 {
 public:
   NoFileException(const char *fileName) : PlotException(fileName) {}
-private:
-  const char *temp;
 };
 
 class NoVariableException : public PlotException
