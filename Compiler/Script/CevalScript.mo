@@ -138,7 +138,7 @@ protected import ErrorExt;
 protected import UnitAbsynBuilder;
 protected import UnitParserExt;
 protected import RewriteRules;
-//protected import BlockCallRewrite;
+protected import BlockCallRewrite;
 
 protected constant DAE.Type simulationResultType_rtest = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
@@ -1179,7 +1179,7 @@ algorithm
     case (cache, _, "exportToFigaro", _, st, _)
       then (cache, Values.BOOL(false), st);
 
-  /*  case (cache,_, "rewriteBlockCall",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))},
+    case (cache,_, "rewriteBlockCall",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))},
        (GlobalScript.SYMBOLTABLE(
             p as Absyn.PROGRAM(globalBuildTimes=ts),instClsLst = ic, lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_)
@@ -1190,7 +1190,7 @@ algorithm
         pnew = BlockCallRewrite.rewriteBlockCall(Absyn.PROGRAM({absynClass}, within_,ts), (Absyn.PROGRAM(classes, within_,ts)));
         newp = Interactive.updateProgram(pnew, p);
       then
-        (cache,Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));   */
+        (cache,Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));   
 
     case (cache, _, "rewriteBlockCall", _, st, _)
       then (cache, Values.BOOL(false), st);
