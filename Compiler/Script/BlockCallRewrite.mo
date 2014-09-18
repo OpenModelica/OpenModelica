@@ -17,7 +17,7 @@ algorithm
   (newOut) := match(inPg, inDefs)
     case (_, _)
       equation
-        Error.addMessgae(Error.INTERNAL_ERROR,{"rewriteBlockCall is not implemented in RML; use the bootstrapped omc to use BlockCallRewrite.mo"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"rewriteBlockCall is not implemented in RML; use the bootstrapped omc to use BlockCallRewrite.mo"});
       then fail();
   end match;
 end rewriteBlockCall;
