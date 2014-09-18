@@ -5003,8 +5003,8 @@ algorithm
       equation
         foldName2 = Util.getTempVariableIndex();
         resultName2 = Util.getTempVariableIndex();
-        foldExpr2 = Expression.traverseExp(foldExpr,Expression.renameExpCrefIdent,(foldName,foldName2));
-        foldExpr2 = Expression.traverseExp(foldExpr2,Expression.renameExpCrefIdent,(resultName,resultName2));
+        (foldExpr2,_) = Expression.traverseExp(foldExpr,Expression.renameExpCrefIdent,(foldName,foldName2));
+        (foldExpr2,_) = Expression.traverseExp(foldExpr2,Expression.renameExpCrefIdent,(resultName,resultName2));
         expr = DAE.REDUCTION(DAE.REDUCTIONINFO(path,Absyn.COMBINE(),ty,defaultValue,foldName2,resultName2,SOME(foldExpr2)),expr,{iter});
         expr = DAE.REDUCTION(DAE.REDUCTIONINFO(path,Absyn.COMBINE(),ty,defaultValue,foldName,resultName,SOME(foldExpr)),expr,iterators);
       then expr;
