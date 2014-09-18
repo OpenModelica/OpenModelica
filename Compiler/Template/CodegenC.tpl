@@ -10721,6 +10721,14 @@ template literalExpConst(Exp lit, Integer index, Text &preLit) "These should all
     static const MMC_DEFSTRUCTLIT(<%tmp%>,2,1) {<%literalExpConstBoxedVal(car,index + "_car", &preLit)%>,<%literalExpConstBoxedVal(cdr, index + "_cdr", &preLit)%>}};
     #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>)
     >>
+  case LIST(__) then
+    let x = listReverse(valList) |> v hasindex i fromindex 1 =>
+      /* We need to use #define's to be C-compliant. Yea, total crap :) */
+      'static const MMC_DEFSTRUCTLIT(<%tmp + "_cons_" + i%>,2,1) {<%literalExpConstBoxedVal(v,tmp + "_elt_" + i, &preLit)%>,MMC_REFSTRUCTLIT(<% match i case 1 then "mmc_nil" else (tmp + "_cons_" + intSub(i,1))%>)}};<%\n%>'
+    <<
+    <%x%>
+    #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>_cons_<%listLength(valList)%>)
+    >>
   case META_TUPLE(__) then
     /* We need to use #define's to be C-compliant. Yea, total crap :) */
     <<

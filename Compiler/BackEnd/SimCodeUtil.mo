@@ -1247,6 +1247,7 @@ algorithm
       DAE.Exp exp;
       String msg;
       tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> t;
+      list<DAE.Exp> es;
     case (exp, t)
       equation
         failure(isLiteralExp(exp));
@@ -1255,6 +1256,11 @@ algorithm
       equation
         isTrivialLiteralExp(exp);
       then (exp, t);
+    case (DAE.LIST(valList=es), t)
+      equation
+        true = listLength(es) > 25;
+        (exp,t) = replaceLiteralExp2(inExp, t);
+      then (exp, t); // Too large list; causes performance issues to find all sublists...
     case (exp, t)
       equation
         exp = listToCons(exp);
