@@ -306,6 +306,19 @@ or
 
 \end_layout
 
+\begin_layout Standard
+\begin_inset Formula 
+\begin{multline*}
+\frac{\partial^{2}u}{\partial t^{2}}-c\frac{\partial^{2}v}{\partial t\partial x}=\\
+=\frac{\partial^{2}u}{\partial t^{2}}-c\frac{\partial^{2}v}{\partial x\partial t}=\\
+\frac{\partial^{2}u}{\partial t^{2}}-c\frac{\partial^{2}u}{\partial x^{2}}
+\end{multline*}
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Paragraph
 initial conditions
 \end_layout

@@ -1,6 +1,6 @@
 #include("advection.jl")
 include("string.jl")
-(X,U) = simulate(0.5)
+(X,U) = simulate(1.0)
 
 function writeData(X,U)
 f = open("result.txt","w")

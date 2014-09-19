@@ -1,36 +1,34 @@
 #numerics setup
-nX = 400               #number of nodes
+nX = 6400               #number of nodes
 
 
 #numerics functions
 
 function updateU_x_LF(X,U,U_x)
     for i = 2:(size(X,1)-1)
-        U_x[i] = (U[i+1] - U[i-1])/(X[i+1] - X[i-1])
+        U_x[:,i] = (U[:,i+1] - U[:,i-1])/(X[i+1] - X[i-1])
     end
 end
 
 function updateU_t(X,U,U_x,U_t,t)
-    for i = 1:nU
-        for j = 2:nX-1 
-            U_t[i,j] = utFun(X[j],U[j],U_x[j],t,i)
-        end
+    for j = 2:nX-1 
+        U_t[:,j] = utFun(X[j],U[:,j],U_x[:,j],t)
     end
 end
 
 function updateU_LF(U,U_t,dt)
     function UUpdate(i)
-        (U[i+1] + U[i-1])/2 + dt*U_t[i]
+        (U[:,i+1] + U[:,i-1])/2 + dt*U_t[:,i]
     end
     u1new = UUpdate(2)
     unew = UUpdate(3)
     for i = 4:size(U,2)-1 
-        U[i-2] = u1new
-        u1new = unew
+        U[:,i-2] = u1new
+        u1new = unew[:,:]
         unew = UUpdate(i)
     end
-    U[size(U,2)-2] = u1new
-    U[size(U,2)-1] = unew
+    U[:,size(U,2)-2] = u1new
+    U[:,size(U,2)-1] = unew
 end
         
 
@@ -40,13 +38,14 @@ function simulate(tEnd)
 
     #numerics variables
     X = linspace(0.0,L,nX) #coordinate
-    U = Array(Float64,nU,nX) #state fields u[nVar, nNode]
-    U_x = Array(Float64,nU,nX) #state fields space derivatives ux[nVar, nNode]
-    U_t = Array(Float64,nU,nX) #state fields time derivatives ut[nVar, nNode]
+    U = Array(Float64,nU,nX) #state fields U[nVar, nNode]
+    U_x = Array(Float64,nU,nX) #state fields space derivatives Ux[nVar, nNode]
+    U_t = Array(Float64,nU,nX) #state fields time derivatives Ut[nVar, nNode]
+    V = Array(Float64,nV,nX) #algevraic fields  V[nVar, nNode]
     t = 0.0                #time
     dx = L/(nX-1)          #space step
     #dt                     #time step
-    cfl = 0.01
+    cfl = 0.2
 
 
     for i = 1:nU
@@ -62,6 +61,8 @@ function simulate(tEnd)
             U[i,nX] = BCFun(i,right,t,X,U)
         end
         updateU_x_LF(X,U,U_x)
+#TODO        updateV
+#TODO        updateV_x
         updateU_t(X,U,U_x,U_t,t)
         updateU_LF(U,U_t,dt)
         t = t + dt

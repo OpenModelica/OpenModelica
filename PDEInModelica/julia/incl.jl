@@ -1,7 +1,7 @@
 const left = false
 const right = true
 
-function extrapolate(X,U,nState,side)
+function extrapolate(nState,side,X,U)
     if side == left 
         extrapolate3(X[1],X[2],X[3],X[4],U[nState,2],U[nState,3],U[nState,4])
     elseif side == right
