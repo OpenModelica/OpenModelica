@@ -3672,7 +3672,7 @@ algorithm
         comp = SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
         ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT(name));
         cref = ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
-        (cache,_) = PrefixUtil.prefixCref(cache, env, ih, pre, cref);
+        (cache,_) = PrefixUtil.prefixCref(cache, env, ih, pre, cref); /*mahge: todo: remove me*/
 
         // The class definition is fetched from the environment. Then the set of
         // modifications is calculated. The modificions is the result of merging

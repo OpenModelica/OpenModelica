@@ -364,6 +364,8 @@ algorithm
       DAE.ComponentRef cref,cref_1,cref_2,cref_;
       String i;
       list<DAE.Subscript> s;
+      list<DAE.Dimension> ds;
+      DAE.Type ident_ty;
       Prefix.ComponentPrefix xs;
       Prefix.ClassPrefix cp;
       ClassInf.State ci_state;
@@ -375,16 +377,18 @@ algorithm
 
     case (cache,_,_,Prefix.NOPRE(),SOME(cref)) then (cache,cref);
     case (cache,_,_,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then (cache,cref);
-    case (cache,env,_,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),NONE())
+    case (cache,env,_,Prefix.PREFIX(Prefix.PRE(prefix = i,dimensions=ds,subscripts = s,next = xs,ci_state=ci_state),cp),NONE())
       equation
-        cref_ = ComponentReference.makeCrefIdent(i,DAE.T_COMPLEX(ci_state, {}, NONE(), DAE.emptyTypeSource),s);
+        ident_ty = Expression.liftArrayLeftList(DAE.T_COMPLEX(ci_state, {}, NONE(), DAE.emptyTypeSource), ds);
+        cref_ = ComponentReference.makeCrefIdent(i,ident_ty,s);
         (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(cref_));
       then
         (cache,cref_1);
-    case (cache,env,_,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),SOME(cref))
+    case (cache,env,_,Prefix.PREFIX(Prefix.PRE(prefix = i,dimensions=ds,subscripts = s,next = xs,ci_state=ci_state),cp),SOME(cref))
       equation
         (cache,cref) = prefixSubscriptsInCref(cache,env,inIH,inPrefix,cref);
-        cref_2 = ComponentReference.makeCrefQual(i,DAE.T_COMPLEX(ci_state, {}, NONE(), DAE.emptyTypeSource),s,cref);
+        ident_ty = Expression.liftArrayLeftList(DAE.T_COMPLEX(ci_state, {}, NONE(), DAE.emptyTypeSource), ds);
+        cref_2 = ComponentReference.makeCrefQual(i,ident_ty,s,cref);
         (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(cref_2));
       then
         (cache,cref_1);
