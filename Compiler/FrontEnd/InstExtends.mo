@@ -152,7 +152,12 @@ algorithm
         // fully qualify modifiers in extends in the extends environment!
         (cache, emod) = fixModifications(cache, env, emod, ht);
 
-        eq_name = stringEq(className, Absyn.pathFirstIdent(tp));
+        // function names might be the same but IT DOES NOT MEAN THEY ARE IN THE SAME SCOPE!
+        eq_name = stringEq(className, Absyn.pathFirstIdent(tp)) and // make sure is the same freaking env!
+                  Absyn.pathEqual(
+                     ClassInf.getStateName(inState),
+                     Absyn.joinPaths(Env.getEnvName(env), Absyn.makeIdentPathFromString(Absyn.pathFirstIdent(tp))));
+
         (cache, (c as SCode.CLASS(name = cn, encapsulatedPrefix = encf,
         restriction = r)), cenv) = lookupBaseClass(tp, eq_name, className, env, cache);
 
