@@ -116,7 +116,7 @@ algorithm
       equation
         (nclsp, eqs, elems) = parseClassParts(classParts, defs, {}, {}, 0);
       then
-        Absyn.PARTS(typeVars, classAttrs, Absyn.EQUATIONS(eqs)::Absyn.PUBLIC(elems)::nclsp, ann, comment);
+        Absyn.PARTS(typeVars, classAttrs, Absyn.PUBLIC(elems)::Absyn.EQUATIONS(eqs)::nclsp, ann, comment);
   end match;
 end parseClassDef;
 
@@ -455,7 +455,7 @@ algorithm
         elem = Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE(), Absyn.NOT_INNER_OUTER(), Absyn.COMPONENTS(Absyn.ATTR(false, false, Absyn.NON_PARALLEL(), Absyn.VAR(), Absyn.BIDIR(), {}), Absyn.TPATH(Absyn.IDENT(id), NONE()),
           {Absyn.COMPONENTITEM(Absyn.COMPONENT(elName,{}, SOME(Absyn.CLASSMOD(mods, Absyn.NOMOD()))), NONE(), NONE())}), Absyn.dummyInfo, NONE()));
 
-      then (Absyn.CREF(Absyn.CREF_IDENT(elName+".out", {})),  eqs, elem::oldElems, count);
+      then (Absyn.CREF(Absyn.CREF_QUAL(elName, {}, Absyn.CREF_IDENT("out", {}))),  eqs, elem::oldElems, count);
 
     case(Absyn.CALL(crf, fargs))
     then (Absyn.CALL(crf,fargs), oldEqs, {}, instNo);
@@ -769,7 +769,7 @@ algorithm
     case({}, _) then (oldEqs, args);
     case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: r_comps, arg::r_args)
       equation
-        eq = Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(elemId + "." + cName, {})), arg), NONE(), Absyn.dummyInfo);
+        eq = Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_QUAL(elemId, {}, Absyn.CREF_IDENT(cName, {}))), arg), NONE(), Absyn.dummyInfo);
       then
         matchVarArgs(elemId, r_args, r_comps, eq::oldEqs);
 
@@ -937,7 +937,7 @@ algorithm
     case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: r_comps)
       equation
          (cName == argName) = true;
-        eq = Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(elemId + "." + cName, {})), argValue), NONE(), Absyn.dummyInfo);
+        eq = Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_QUAL(elemId, {}, Absyn.CREF_IDENT(cName, {}))), argValue), NONE(), Absyn.dummyInfo);
       then
         (eq::oldEqs, true);
        case(_ :: r_comps)
