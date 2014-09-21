@@ -4247,7 +4247,7 @@ algorithm
       then DAE.BINARY(e1,DAE.MUL(ty), e);
     // e1/tan(e2) => e1*cot(e2)
     case(_,DAE.DIV(ty),e1,DAE.CALL(path=Absyn.IDENT("tan"),expLst={e2}),_,_)
-      equation 
+      equation
         e= Expression.makePureBuiltinCall("cot",{e2},ty);
       then DAE.BINARY(e1,DAE.MUL(ty), e);
     // sinh(e)/cosh(e) => tan(e)
@@ -4267,7 +4267,7 @@ algorithm
       then DAE.BINARY(e1,DAE.MUL(ty), e);
     // e1/tanh(e2) => e1*coth(e2)
     case(_,DAE.DIV(ty),e1,DAE.CALL(path=Absyn.IDENT("tanh"),expLst={e2}),_,_)
-      equation 
+      equation
         e= Expression.makePureBuiltinCall("coth",{e2},ty);
       then DAE.BINARY(e1,DAE.MUL(ty), e);
 
