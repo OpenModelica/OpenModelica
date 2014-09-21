@@ -4222,7 +4222,7 @@ algorithm
       then DAE.BINARY(e1,DAE.MUL(ty), e);
     // e1/tan(e2) => e1*cot(e2)
     case(_,DAE.DIV(ty),e1,DAE.CALL(path=Absyn.IDENT("tan"),expLst={e2}),_,_)
-      equation 
+      equation
         e= Expression.makePureBuiltinCall("cot",{e2},ty);
       then DAE.BINARY(e1,DAE.MUL(ty), e);
 
