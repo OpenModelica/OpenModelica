@@ -1568,6 +1568,17 @@ algorithm
         (DAE.BINARY(
           DAE.BINARY(DAE.RCONST(2.0), DAE.MUL(tp), exp_1), DAE.DIV(tp),
           DAE.BINARY(exp_2, DAE.ADD(tp), DAE.RCONST(1.0))), funcs);
+    // diff(cot(x)) = (2*der(x)/(cos(2*x)-1))
+    case ("cot",_,_,_,_,_)
+      equation
+        tp = Expression.typeof(exp);
+        (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
+        exp_2 = Expression.makePureBuiltinCall("cos", {DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(tp),exp)}, tp);
+      then
+        (DAE.BINARY(
+          DAE.BINARY(DAE.RCONST(2.0), DAE.MUL(tp), exp_1), DAE.DIV(tp),
+          DAE.BINARY(exp_2, DAE.SUB(tp), DAE.RCONST(1.0))), funcs);
+
 
     // der(arcsin(x)) = der(x)/sqrt(1-x^2)
     case ("asin",_,_,_,_,_)

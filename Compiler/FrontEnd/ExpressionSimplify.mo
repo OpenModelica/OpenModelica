@@ -3526,6 +3526,25 @@ algorithm
         true = Expression.expEqual(e1,e2);
       then DAE.RCONST(1.0);
 
+    // tan(e)*cot(e) = 1.0
+    case(DAE.MUL(tp),DAE.CALL(path=Absyn.IDENT("tan"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("cot"),expLst={e2}))
+      equation
+        true = Expression.expEqual(e1,e2);
+        e = Expression.makeConstOne(tp);
+      then e;
+
+    // tan(e)*cos(e) = sin(e)
+    case(DAE.DIV(tp),DAE.CALL(path=Absyn.IDENT("tan"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("cos"),expLst={e2}))
+      equation
+        true = Expression.expEqual(e1,e2);
+      then Expression.makePureBuiltinCall("sin",{e1},tp);
+
+    // cot(e)*sin(e) = cos(e)
+    case(DAE.DIV(tp),DAE.CALL(path=Absyn.IDENT("cot"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("sin"),expLst={e2}))
+      equation
+        true = Expression.expEqual(e1,e2);
+      then Expression.makePureBuiltinCall("cos",{e1},tp);
+
     // a+(-b)
     case (DAE.ADD(ty = tp),e1,DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e2))
       equation
@@ -4185,6 +4204,27 @@ algorithm
     // (e1^e2)^e3 => e1^(e2*e3)
     case (_,DAE.POW(ty = _),DAE.BINARY(e1,DAE.POW(ty = _),e2),e3,_,_)
       then DAE.BINARY(e1,DAE.POW(DAE.T_REAL_DEFAULT),DAE.BINARY(e2,DAE.MUL(DAE.T_REAL_DEFAULT),e3));
+
+    // sin(e)/cos(e) => tan(e)
+    case(_,DAE.DIV(ty),DAE.CALL(path=Absyn.IDENT("sin"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("cos"),expLst={e2}),_,_)
+      equation
+        true = Expression.expEqual(e1,e2);
+      then Expression.makePureBuiltinCall("tan",{e1},ty);
+    // cos(e)/sin(e) => cot(e)
+    case(_,DAE.DIV(ty),DAE.CALL(path=Absyn.IDENT("cos"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("sin"),expLst={e2}),_,_)
+      equation
+        true = Expression.expEqual(e1,e2);
+      then Expression.makePureBuiltinCall("cot",{e1},ty);
+    // e1/cot(e2) => e1*tan(e2)
+    case(_,DAE.DIV(ty),e1,DAE.CALL(path=Absyn.IDENT("cot"),expLst={e2}),_,_)
+      equation
+        e =  Expression.makePureBuiltinCall("tan",{e2},ty);
+      then DAE.BINARY(e1,DAE.MUL(ty), e);
+    // e1/tan(e2) => e1*cot(e2)
+    case(_,DAE.DIV(ty),e1,DAE.CALL(path=Absyn.IDENT("tan"),expLst={e2}),_,_)
+      equation 
+        e= Expression.makePureBuiltinCall("cot",{e2},ty);
+      then DAE.BINARY(e1,DAE.MUL(ty), e);
 
     // e1  -e2 => -e1  e2
     // Note: This rule is *not* commutative
