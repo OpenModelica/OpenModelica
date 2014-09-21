@@ -1627,6 +1627,16 @@ algorithm
         exp_2 = Expression.makePureBuiltinCall("cosh", {exp}, tp);
       then (DAE.BINARY(exp_1, DAE.DIV(tp),
                       DAE.BINARY(exp_2, DAE.POW(tp), DAE.RCONST(2.0))), funcs);
+    // der(coth(x)) = -der(x) / sinh(x)^2
+    case ("coth",_,_,_,_,_)
+      equation
+        tp = Expression.typeof(exp);
+        (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType, inFuncs);
+        exp_1 = DAE.UNARY(DAE.UMINUS(tp),exp_1);
+        exp_2 = Expression.makePureBuiltinCall("sinh", {exp}, tp);
+      then (DAE.BINARY(exp_1, DAE.DIV(tp),
+                      DAE.BINARY(exp_2, DAE.POW(tp), DAE.RCONST(2.0))), funcs);
+
 
     // diff(exp(x)) = der(x)*exp(x)
     case ("exp",_,_,_,_,_)
