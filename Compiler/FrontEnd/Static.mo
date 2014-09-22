@@ -11147,7 +11147,7 @@ algorithm
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_1, {}, slots,checkTypes,pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
 
-    case (cache, env, Absyn.NAMEDARG(argName = id), farg, slots, _, _, _, _, polymorphicBindings,_,pre,_,_,_)
+    case (cache, env, Absyn.NAMEDARG(argName = id), farg, slots, true /* only 1 function */, _, _, _, polymorphicBindings,_,pre,_,_,_)
       equation
         failure(_ = findNamedArgType(id, farg));
         s1 = Absyn.pathStringNoQual(path);
