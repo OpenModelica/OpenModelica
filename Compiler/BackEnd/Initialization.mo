@@ -2062,8 +2062,8 @@ algorithm
       preUsed = BaseHashSet.has(cr, hs);
 
       crefExp = Expression.crefExp(cr);
-      startExp = Expression.makePureBuiltinCall("$_start", {crefExp}, ty);
-      // startExp = BackendVariable.varStartValue(var);
+      //startExp = Expression.makePureBuiltinCall("$_start", {crefExp}, ty);
+      startExp = BackendVariable.varStartValue(var);
       eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
       eqns = Debug.bcallret2(isFixed, BackendEquation.addEquation, eqn, eqns, eqns);
 
