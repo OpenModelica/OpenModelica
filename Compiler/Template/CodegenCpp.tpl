@@ -7102,7 +7102,7 @@ end dimensionExp;
 template arrayCrefCStr(ComponentRef cr,Context context)
 ::=
 match context
-case ALGLOOP_CONTEXT(genInitialisation = false) then 
+case ALGLOOP_CONTEXT(genInitialisation = false) then
  let& dims = buffer "" /*BUFD*/
 << _system->_<%crefToCStrForArray(cr,dims)%> >>
 else
@@ -8425,20 +8425,20 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as ENUM_LITERAL(__)    then    index
   case e as CREF(__)            then    daeExpCrefRhs(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
   case e as CAST(__)            then    daeExpCast(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
-  case e as CONS(__)            then    "Cons not supported yet"                          
+  case e as CONS(__)            then    "Cons not supported yet"
   case e as SCONST(__)          then     daeExpSconst(string, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
-  case e as UNARY(__)           then     daeExpUnary(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation) 
+  case e as UNARY(__)           then     daeExpUnary(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
   case e as LBINARY(__)         then     daeExpLbinary(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
-  case e as LUNARY(__)          then     daeExpLunary(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation) 
+  case e as LUNARY(__)          then     daeExpLunary(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
   case e as BINARY(__)          then     daeExpBinary(operator, exp1, exp2, context, &preExp, &varDecls,simCode, useFlatArrayNotation)
   case e as IFEXP(__)           then     daeExpIf(expCond, expThen, expElse, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, useFlatArrayNotation)
-  case e as RELATION(__)        then     daeExpRelation(e, context, &preExp, &varDecls,simCode, useFlatArrayNotation)  
-  case e as CALL(__)            then     daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation) 
-  case e as RECORD(__)          then     daeExpRecord(e, context, &preExp, &varDecls,simCode, useFlatArrayNotation)  
+  case e as RELATION(__)        then     daeExpRelation(e, context, &preExp, &varDecls,simCode, useFlatArrayNotation)
+  case e as CALL(__)            then     daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
+  case e as RECORD(__)          then     daeExpRecord(e, context, &preExp, &varDecls,simCode, useFlatArrayNotation)
   case e as ASUB(__)            then     daeExpAsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
   case e as MATRIX(__)          then     daeExpMatrix(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
   case e as RANGE(__)           then     daeExpRange(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
-  case e as TSUB(__)            then     daeExpTsub(e, context,  &preExp, &varDecls, simCode, useFlatArrayNotation )    
+  case e as TSUB(__)            then     daeExpTsub(e, context,  &preExp, &varDecls, simCode, useFlatArrayNotation )
   case e as REDUCTION(__)       then     daeExpReduction(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
   case e as ARRAY(__)           then     daeExpArray(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
   case e as SIZE(__)            then     daeExpSize(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
@@ -10751,7 +10751,7 @@ template elseExpr(DAE.Else it, Context context, Text &preExp, Text &varDecls,Sim
 
       <%statementLst |> it => algStatement(it, context, &varDecls,simCode,useFlatArrayNotation)
       ;separator="\n"%>
-     
+
     }
     <%elseExpr(else_, context, &preExp, &varDecls,simCode,useFlatArrayNotation)%>
     }
@@ -11594,7 +11594,7 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int,SimCo
       //For whenclause index: <%int%>
       if(_initial)
       {
-        <%initial_assign%> 
+        <%initial_assign%>
       }
       else if (0<%helpIf%>) {
         <%ifthen%>
@@ -12348,7 +12348,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     let &preExp = buffer "" /*BUFD*/
     let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     <<
-  
+
     <%preExp%>
     >>
   case STMT_ASSIGN(exp1=CREF(ty = T_FUNCTION_REFERENCE_VAR(__)))
@@ -12357,7 +12357,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     let varPart = scalarLhsCref(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
     let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     <<
-    
+
     <%preExp%>
     <%varPart%> = (modelica_fnptr) <%expPart%>;
     >>
@@ -12366,7 +12366,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     let &preExp = buffer ""
     let rec = daeExp(exp, context, &preExp, &varDecls,simCode,useFlatArrayNotation)
     <<
-  
+
     <%preExp%>
     <% varLst |> var as TYPES_VAR(__) =>
       match var.ty
@@ -12382,7 +12382,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     let &preExp = buffer ""
     let rec = daeExp(exp, context, &preExp, &varDecls,simCode,useFlatArrayNotation)
     <<
-   
+
     <%preExp%>
     <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
       let re = daeExp(listNth(expLst,i1), context, &preExp, &varDecls,simCode,useFlatArrayNotation)
@@ -12396,10 +12396,10 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     let varPart = scalarLhsCref(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation)
     let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     <<
-   
+
     <%preExp%>
     <%varPart%> = <%expPart%>;
-  
+
     >>
   case STMT_ASSIGN(exp1=exp1 as ASUB(__),exp=val) then
     (match expTypeFromExpShort(exp)
@@ -12411,7 +12411,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
         let idx1 = daeExp(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
         let val1 = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
         <<
-       
+
         <%preExp%>
         arrayUpdate(<%arr1%>,<%idx1%>,<%val1%>);
         >>)
@@ -12421,7 +12421,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
         let varPart = daeExpAsub(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
         let expPart = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
         <<
-       
+
         <%preExp%>
         <%varPart%> = <%expPart%>;
         >>
