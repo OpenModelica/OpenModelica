@@ -4300,7 +4300,7 @@ let conditionvariables =  conditionvariable(zeroCrossings,simCode)
 
 match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
-  let getrealvars = (List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars), 100) |> ls hasindex idx => 
+  let getrealvars = (List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars), 100) |> ls hasindex idx =>
     <<
     void getReal_<%idx%>(double* z);
     void setReal_<%idx%>(const double* z);
