@@ -219,13 +219,13 @@ void Cvode::initialize()
       throw std::invalid_argument("Cvode::initialize()");
 
   // Use own jacobian matrix
- // _idid = CVDlsSetDenseJacFn(_cvodeMem, CV_JCallback);
+  _idid = CVDlsSetDenseJacFn(_cvodeMem, &CV_JCallback);
   if (_idid < 0)
       throw std::invalid_argument("CVode::initialize()");
 
     if (_dimZeroFunc)
     {
-      _idid = CVodeRootInit(_cvodeMem, _dimZeroFunc, CV_ZerofCallback);
+      _idid = CVodeRootInit(_cvodeMem, _dimZeroFunc, &CV_ZerofCallback);
 
       memset(_zeroSign, 0, _dimZeroFunc * sizeof(int));
       _idid = CVodeSetRootDirection(_cvodeMem, _zeroSign);

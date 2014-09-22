@@ -391,17 +391,36 @@ void SimManager::runSingleProcess()
       boost::shared_ptr<IEvent> event_system = boost::dynamic_pointer_cast<IEvent>(_mixed_system);
       boost::shared_ptr<IContinuous> cont_system = boost::dynamic_pointer_cast<IContinuous>(_mixed_system);
       boost::shared_ptr<ITime> timeevent_system = boost::dynamic_pointer_cast<ITime>(_mixed_system);
-        boost::shared_ptr<IStepEvent> step_event_system = boost::dynamic_pointer_cast<IStepEvent>(_mixed_system);
+      boost::shared_ptr<IStepEvent> step_event_system = boost::dynamic_pointer_cast<IStepEvent>(_mixed_system);
       double
             startTime,
             endTime,
             *zeroVal_0,
             *zeroVal_new;
-      int
-            dimZeroF;
+      int dimZeroF;
 
-      std::vector<std::pair<double,int> >
-            tStopsSub;
+      std::vector<std::pair<double,int> > tStopsSub;
+
+      if(!event_system)
+      {
+        std::cerr << "Could not get event system" << std::endl;
+        return;
+      }
+      if(!cont_system)
+      {
+        std::cerr << "Could not get continuous-event system" << std::endl;
+        return;
+      }
+      if(!timeevent_system)
+      {
+        std::cerr << "Could not get time-event system" << std::endl;
+        return;
+      }
+      if(!step_event_system)
+      {
+        std::cerr << "Could not get step-event system" << std::endl;
+        return;
+      }
 
       _H =_tEnd;
       _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECORDCALL);
