@@ -1405,6 +1405,45 @@ algorithm
   end match;
 end containWholeDim;
 
+public function traverseCref
+  replaceable type Type_a subtypeof Any;
+  input DAE.ComponentRef cref;
+  input FuncType func;
+  input Type_a argIn;
+  output Type_a argOut;
+    partial function FuncType
+      input DAE.ComponentRef crefIn;
+      input Type_a inType;
+      output Type_a outType;
+    end FuncType;
+algorithm
+  argOut := matchcontinue(cref,func,argIn)
+  local
+    DAE.ComponentRef cr;
+    Type_a arg;
+   case(DAE.CREF_IDENT(_,_,_),_,_)
+    equation
+      arg = func(cref,argIn);
+    then arg;
+  case(DAE.CREF_QUAL(_,_,_,cr),_,_)
+    equation
+      arg = func(cref,argIn);
+    then traverseCref(cr,func,arg);
+  else
+    equation
+      print("traverseCref failed!");
+      then fail();
+  end matchcontinue;
+end traverseCref;
+
+public function crefIsRec"traverse function to check if one of the crefs is a record"
+  input DAE.ComponentRef cref;
+  input Boolean isRecIn;
+  output Boolean isRec;
+algorithm
+  isRec := isRecIn or Types.isRecord(crefType(cref));
+end crefIsRec;
+
 protected function containWholeDim2 "
   A function to check if a cref contains a [:] wholedim element in the subscriptlist."
   input list<DAE.Subscript> inRef;

@@ -8282,7 +8282,7 @@ algorithm
 
         (cache,func) = InstFunction.getRecordConstructorFunction(cache,env,fn);
 
-        DAE.RECORD_CONSTRUCTOR(path,tp1,_) = func;
+        DAE.RECORD_CONSTRUCTOR(path,tp1,_,_) = func;
         DAE.T_FUNCTION(fargs, outtype, _, {path}) = tp1;
 
 

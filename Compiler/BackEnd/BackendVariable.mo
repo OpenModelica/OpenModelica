@@ -5017,4 +5017,18 @@ algorithm
   end matchcontinue;
 end transformXToXd;
 
+public function isRecordVar"outputs true if the variable belongs to a record.
+author:Waurich TUD 2014-09"
+  input BackendDAE.Var var;
+  output Boolean isRec;
+algorithm
+  isRec := matchcontinue(var)
+    local
+      DAE.ComponentRef cref;
+    case(BackendDAE.VAR(varName=cref))
+      equation
+      then ComponentReference.traverseCref(cref,ComponentReference.crefIsRec,false);
+  end matchcontinue;
+end isRecordVar;
+
 end BackendVariable;

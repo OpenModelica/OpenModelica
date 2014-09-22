@@ -3743,6 +3743,8 @@ algorithm
       Type_a extraArg;
       SCode.Visibility visibility;
 
+      DAE.VarKind kind;
+
     case (DAE.FUNCTION(path,(DAE.FUNCTION_DEF(body = elist)::derFuncs),ftp,visibility,partialPrefix,isImpure,inlineType,source,cmt),_,extraArg)
       equation
         (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
@@ -3753,8 +3755,9 @@ algorithm
         (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
       then (DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extDecl)::derFuncs,ftp,visibility,partialPrefix,isImpure,DAE.NO_INLINE(),source,cmt),extraArg);
 
-    case (DAE.RECORD_CONSTRUCTOR(path,tp,source),_,extraArg)
-      then (DAE.RECORD_CONSTRUCTOR(path,tp,source),extraArg);
+
+    case(DAE.RECORD_CONSTRUCTOR(path,tp,source,kind),_,extraArg)
+      then (DAE.RECORD_CONSTRUCTOR(path,tp,source,kind),extraArg);
   end match;
 end traverseDAEFunc;
 
@@ -6893,5 +6896,37 @@ algorithm
         ca;
   end match;
 end replaceCallAttrType;
+
+public function funcIsRecord
+  input DAE.Function func;
+  output Boolean isRec;
+algorithm
+  isRec := match(func)
+    case(DAE.RECORD_CONSTRUCTOR(path=_,type_=_,source=_))
+      then true;
+    else
+      then false;
+   end match;
+end funcIsRecord;
+
+public function funcArgDim"gets the number of flattened scalars for a FuncArg"
+  input DAE.FuncArg argIn;
+  output Integer dim;
+algorithm
+  dim := match(argIn)
+    local
+      DAE.Type ty;      
+      DAE.Dimensions arrayDims;
+      list<String> names;
+  case(DAE.FUNCARG(ty = DAE.T_ARRAY(dims=arrayDims)))
+    equation
+      then List.fold(List.map(arrayDims, Expression.dimensionSize),intAdd,0);
+  case(DAE.FUNCARG(ty = DAE.T_ENUMERATION(names=names)))
+    equation
+    then listLength(names);
+  else
+    then 1;
+  end match;   
+end funcArgDim;
 
 end DAEUtil;

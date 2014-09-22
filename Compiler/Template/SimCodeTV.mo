@@ -576,6 +576,7 @@ package SimCode
       list<Variable> funArgs;
       list<Variable> locals;
       Absyn.Info info;
+      DAE.VarKind kind;
     end RECORD_CONSTRUCTOR;
   end Function;
 
