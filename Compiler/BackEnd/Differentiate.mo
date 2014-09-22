@@ -1568,17 +1568,6 @@ algorithm
         (DAE.BINARY(
           DAE.BINARY(DAE.RCONST(2.0), DAE.MUL(tp), exp_1), DAE.DIV(tp),
           DAE.BINARY(exp_2, DAE.ADD(tp), DAE.RCONST(1.0))), funcs);
-    // diff(cot(x)) = (2*der(x)/(cos(2*x)-1))
-    case ("cot",_,_,_,_,_)
-      equation
-        tp = Expression.typeof(exp);
-        (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
-        exp_2 = Expression.makePureBuiltinCall("cos", {DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(tp),exp)}, tp);
-      then
-        (DAE.BINARY(
-          DAE.BINARY(DAE.RCONST(2.0), DAE.MUL(tp), exp_1), DAE.DIV(tp),
-          DAE.BINARY(exp_2, DAE.SUB(tp), DAE.RCONST(1.0))), funcs);
-
 
     // der(arcsin(x)) = der(x)/sqrt(1-x^2)
     case ("asin",_,_,_,_,_)
@@ -1627,16 +1616,6 @@ algorithm
         exp_2 = Expression.makePureBuiltinCall("cosh", {exp}, tp);
       then (DAE.BINARY(exp_1, DAE.DIV(tp),
                       DAE.BINARY(exp_2, DAE.POW(tp), DAE.RCONST(2.0))), funcs);
-    // der(coth(x)) = -der(x) / sinh(x)^2
-    case ("coth",_,_,_,_,_)
-      equation
-        tp = Expression.typeof(exp);
-        (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType, inFuncs);
-        exp_1 = DAE.UNARY(DAE.UMINUS(tp),exp_1);
-        exp_2 = Expression.makePureBuiltinCall("sinh", {exp}, tp);
-      then (DAE.BINARY(exp_1, DAE.DIV(tp),
-                      DAE.BINARY(exp_2, DAE.POW(tp), DAE.RCONST(2.0))), funcs);
-
 
     // diff(exp(x)) = der(x)*exp(x)
     case ("exp",_,_,_,_,_)
