@@ -103,6 +103,19 @@ case SIMCODE(__) then
     <%fmi2ModelDescriptionAttributes(simCode,guid)%>>
     <%ModelExchange(simCode)%>
     <%TypeDefinitions(modelInfo, "2.0")%>
+    <LogCategories>
+      <Category name="logEvents" />
+      <Category name="logSingularLinearSystems" />
+      <Category name="logNonlinearSystems" />
+      <Category name="logDynamicStateSelection" />
+      <Category name="logStatusWarning" />
+      <Category name="logStatusDiscard" />
+      <Category name="logStatusError" />
+      <Category name="logStatusFatal" />
+      <Category name="logStatusPending" />
+      <Category name="logAll" />
+      <Category name="logFmi2Call" />
+    </LogCategories>
     <%DefaultExperiment(simulationSettingsOpt)%>
     <%ModelVariables(modelInfo, "2.0")%>
     <%ModelStructure(simCode, jacobianMatrixes)%>
@@ -327,7 +340,7 @@ case SIMCODE(__) then
 end UnitDefinitions;
 
 template TypeDefinitions(ModelInfo modelInfo, String FMUVersion)
- "Generates code for TypeDefinitions file for FMU target."
+ "Generates code for TypeDefinitions for FMU target."
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
@@ -1044,7 +1057,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars, numAl
         <%vars.paramVars |> var => SwitchParameters(var, "realParameter") ;separator="\n"%>
         <%vars.aliasVars |> var => SwitchAliasVars(var, "Real","-") ;separator="\n"%>
         default:
-            return fmiError;
+            return 0;
     }
   }
 
@@ -1235,7 +1248,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars, numAl
         <%vars.paramVars |> var => SwitchParameters(var, "realParameter") ;separator="\n"%>
         <%vars.aliasVars |> var => SwitchAliasVars(var, "Real","-") ;separator="\n"%>
         default:
-            return fmi2Error;
+            return 0;
     }
   }
 

@@ -122,7 +122,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
     functions.logger(NULL, instanceName, fmiWarning, "Warning",
         "fmiInstantiateModel: Missing instance name.");
   }
-  if (strcmp(GUID, MODEL_GUID)) {
+  if (strcmp(GUID, MODEL_GUID) != 0) {
     functions.logger(NULL, instanceName, fmiError, "error",
         "fmiInstantiateModel: Wrong GUID %s. Expected %s.", GUID, MODEL_GUID);
     return NULL;

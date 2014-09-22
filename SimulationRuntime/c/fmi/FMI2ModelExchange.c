@@ -48,10 +48,6 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   FMI2ME->JMCallbacks.log_level = FMI2ME->FMILogLevel;
   FMI2ME->JMCallbacks.context = 0;
   FMI2ME->FMIImportContext = fmi_import_allocate_context(&FMI2ME->JMCallbacks);
-  /* FMI callback functions */
-  FMI2ME->FMICallbackFunctions.logger = fmi2logger;
-  FMI2ME->FMICallbackFunctions.allocateMemory = calloc;
-  FMI2ME->FMICallbackFunctions.freeMemory = free;
   /* parse the xml file */
   FMI2ME->FMIWorkingDirectory = (char*) malloc(strlen(working_directory)+1);
   strcpy(FMI2ME->FMIWorkingDirectory, working_directory);
@@ -60,6 +56,11 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
     fprintf(stderr, "Error parsing the XML file contained in %s\n", FMI2ME->FMIWorkingDirectory);
     return 0;
   }
+  /* FMI callback functions */
+  FMI2ME->FMICallbackFunctions.logger = fmi2logger;
+  FMI2ME->FMICallbackFunctions.allocateMemory = calloc;
+  FMI2ME->FMICallbackFunctions.freeMemory = free;
+  FMI2ME->FMICallbackFunctions.componentEnvironment = FMI2ME->FMIImportInstance;
   /* Load the binary (dll/so) */
   jm_status_enu_t status;
   status = fmi2_import_create_dllfmu(FMI2ME->FMIImportInstance, fmi2_import_get_fmu_kind(FMI2ME->FMIImportInstance), &FMI2ME->FMICallbackFunctions);
@@ -71,7 +72,18 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   strcpy(FMI2ME->FMIInstanceName, instanceName);
   FMI2ME->FMIDebugLogging = debugLogging;
   fmi2_import_instantiate(FMI2ME->FMIImportInstance, FMI2ME->FMIInstanceName, fmi2_model_exchange, NULL, fmi2_false);
-  fmi2_import_set_debug_logging(FMI2ME->FMIImportInstance, FMI2ME->FMIDebugLogging, 0, NULL);
+  /* Only call fmi2SetDebugLogging if debugLogging is true */
+  if (FMI2ME->FMIDebugLogging) {
+    int i;
+    size_t categoriesSize = 0;
+    /* Read the log categories size */
+    categoriesSize = fmi2_import_get_log_categories_num(FMI2ME->FMIImportInstance);
+    fmi2_string_t categories[categoriesSize];
+    for (i = 0 ; i < categoriesSize ; i++) {
+      categories[i] = fmi2_import_get_log_category(FMI2ME->FMIImportInstance, i);
+    }
+    fmi2_import_set_debug_logging(FMI2ME->FMIImportInstance, FMI2ME->FMIDebugLogging, categoriesSize, categories);
+  }
   FMI2ME->FMIToleranceControlled = fmi2_true;
   FMI2ME->FMIRelativeTolerance = 0.001;
   FMI2ME->FMIEventInfo = malloc(sizeof(fmi2_event_info_t));

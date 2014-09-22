@@ -50,6 +50,7 @@ static fmi2String logCategoriesNames[] = {"logEvents", "logSingularLinearSystems
 // array of value references of states
 #if NUMBER_OF_REALS>0
 fmi2ValueReference vrStates[NUMBER_OF_STATES] = STATES;
+fmi2ValueReference vrStatesDerivatives[NUMBER_OF_STATES] = STATESDERIVATIVES;
 #endif
 
 // ---------------------------------------------------------------------------
@@ -275,7 +276,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     functions->logger(functions->componentEnvironment, instanceName, fmi2Error, "error", "fmi2Instantiate: Missing instance name.");
     return NULL;
   }
-  if (strcmp(fmuGUID, MODEL_GUID)) {
+  if (strcmp(fmuGUID, MODEL_GUID) != 0) {
     functions->logger(functions->componentEnvironment, instanceName, fmi2Error, "error", "fmi2Instantiate: Wrong GUID %s. Expected %s.", fmuGUID, MODEL_GUID);
     return NULL;
   }
@@ -786,9 +787,10 @@ fmi2Status fmi2GetDerivatives(fmi2Component c, fmi2Real derivatives[], size_t nx
     return fmi2Error;
   if (nullPointer(comp, "fmi2GetDerivatives", "derivatives[]", derivatives))
     return fmi2Error;
+  comp->fmuData->callback->functionODE(comp->fmuData);
 #if NUMBER_OF_STATES>0
   for (i = 0; i < nx; i++) {
-    fmi2ValueReference vr = vrStates[i] + 1;
+    fmi2ValueReference vr = vrStatesDerivatives[i];
     derivatives[i] = getReal(comp, vr); // to be implemented by the includer of this file
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetDerivatives: #r%d# = %.16g", vr, derivatives[i])
   }
