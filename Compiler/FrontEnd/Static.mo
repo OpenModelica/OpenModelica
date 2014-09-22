@@ -11129,10 +11129,10 @@ algorithm
     // check types vectorized argument
     case (cache,env,Absyn.NAMEDARG(argName = id,argValue = e),farg,slots,_,true,_,_,polymorphicBindings,_,pre,_,_,_)
       equation
-        (cache,e_1,DAE.PROP(t,c1),_) = elabExpInExpression(cache, env, e, impl,st, true,pre,info);
-        (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         vt = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
+        (cache,e_1,DAE.PROP(t,c1),_) = elabExpInExpression(cache, env, e, impl,st, true,pre,info);
+        (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, Env.getEnvPathNoImplicitScope(env));
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, checkTypes,pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
@@ -11140,12 +11140,19 @@ algorithm
     // do not check types
     case (cache,env,Absyn.NAMEDARG(argName = id,argValue = e),farg,slots,_,false,_,_,polymorphicBindings,_,pre,_,_,_)
       equation
-        (cache,e_1,DAE.PROP(t,c1),_) = elabExpInExpression(cache,env, e, impl,st,true,pre,info);
-        (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         vt = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
+        (cache,e_1,DAE.PROP(t,c1),_) = elabExpInExpression(cache,env, e, impl,st,true,pre,info);
+        (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_1, {}, slots,checkTypes,pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
+
+    case (cache, env, Absyn.NAMEDARG(argName = id), farg, slots, _, _, _, _, polymorphicBindings,_,pre,_,_,_)
+      equation
+        failure(_ = findNamedArgType(id, farg));
+        s1 = Absyn.pathStringNoQual(path);
+        Error.addSourceMessage(Error.NO_SUCH_ARGUMENT, {s1,id}, info);
+      then fail();
 
     // failure
     case (cache,env,Absyn.NAMEDARG(argName = id,argValue = e),farg,_,true /* 1 function */,true /* checkTypes */,_,_,_,_,pre,_,_,_)
