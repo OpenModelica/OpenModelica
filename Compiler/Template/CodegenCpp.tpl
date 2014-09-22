@@ -4300,12 +4300,15 @@ let conditionvariables =  conditionvariable(zeroCrossings,simCode)
 
 match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
-  let getrealvars =(List.partition(listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), 100) |> ls hasindex idx => 'void getReal_<%idx%>(double* z);
-                                                                                                                                             void setReal_<%idx%>(const double* z);'
-                                                                                                                                             ;separator="\n")
-
+  let getrealvars = (List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars), 100) |> ls hasindex idx => 
+    <<
+    void getReal_<%idx%>(double* z);
+    void setReal_<%idx%>(const double* z);
+    >>
+    ;separator="\n")
+  let getintvars = (List.partition(listAppend(listAppend(vars.intAlgVars, vars.intParamVars), vars.intAliasVars), 100) |> ls hasindex idx => 'void getInteger_<%idx%>(int* z);';separator="\n")
   <<
-  class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent,  public IStepEvent, public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
+  class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent, public IStepEvent, public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
   {
 
   <%friendclasses%>
@@ -4320,6 +4323,7 @@ match modelInfo
   protected:
     //Methods:
     <%getrealvars%>
+    <%getintvars%>
 
      bool isConsistent();
     //Called to handle all  events occured at same time
@@ -12807,17 +12811,13 @@ case MODELINFO(vars=SIMVARS(__)) then
   let getrealvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getReal","double* z","z",listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), simCode, contextOther, useFlatArrayNotation)
   let setrealvariable = setVariablesWithSplit(lastIdentOfPath(name)+ "::setReal","const double* z","z",listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), simCode, contextOther, useFlatArrayNotation)
 
+  let getintvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getInteger","int* z","z",listAppend(listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ), simCode, contextOther, useFlatArrayNotation)
   <<
 
   <%getrealvariable%>
   <%setrealvariable%>
 
-  void <%lastIdentOfPath(name)%>::getInteger(int* z)
-  {
-    <%listAppend( listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ) |>
-        var hasindex i0 fromindex 0 => giveVariablesDefault(var, i0, useFlatArrayNotation)
-        ;separator="\n"%>
-  }
+  <%getintvariable%>
 
   void <%lastIdentOfPath(name)%>::getBoolean(bool* z)
   {

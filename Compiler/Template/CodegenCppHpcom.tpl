@@ -107,11 +107,15 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     match modelInfo
       case MODELINFO(vars=SIMVARS(__)) then
-          let getrealvars =(List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), 100) |> ls hasindex idx => 'void getReal_<%idx%>(double* z);
-                                                                                                                                                     void setReal_<%idx%>(const double* z);'
-                                                                                                                                                     ;separator="\n")
+          let getrealvars = (List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars), 100) |> ls hasindex idx => 
+            <<
+            void getReal_<%idx%>(double* z);
+            void setReal_<%idx%>(const double* z);
+            >>
+            ;separator="\n")
+          let getintvars = (List.partition(listAppend(listAppend(vars.intAlgVars, vars.intParamVars), vars.intAliasVars), 100) |> ls hasindex idx => 'void getInteger_<%idx%>(int* z);';separator="\n")
           <<
-          class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent,  public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
+          class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent, public IStepEvent, public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
           {
 
            <%friendclasses%>
@@ -128,6 +132,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           protected:
             //Methods:
             <%getrealvars%>
+            <%getintvars%>
 
             <%addHpcomFunctionHeaders%>
 
@@ -621,7 +626,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //Initialize array elements
     <%initializeArrayElements(simCode,useFlatArrayNotation)%>
 
-    _functions = new Functions(_simTime);
+    _functions = new Functions(_simTime,__z,__zDot);
 
     <%hpcomConstructorExtension%>
 
