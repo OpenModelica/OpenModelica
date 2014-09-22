@@ -7416,7 +7416,6 @@ algorithm
        vars = List.filterOnTrue(vars,BackendVariable.isParam);// all record vars that are parameters
        true = intEq(listLength(vars),numScalars) and intNe(numScalars,0);
        rec = DAE.RECORD_CONSTRUCTOR(path,ty,source,DAE.PARAM());
-       print("FOUND RECORD PARAMTER\n");
       then setRecordVariability2(rest,recVarsIn,pathsIn,rec::funcFold);
     else
       equation
