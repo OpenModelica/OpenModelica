@@ -210,11 +210,6 @@ algorithm
       //dumpSccSimEqMapping(sccSimEqMapping);
       SimCodeUtil.execStat("hpcom setup");
 
-      //print("DAE_onlySCCs\n");
-      //HpcOmTaskGraph.printTaskGraph(taskGraph);
-      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);
-
-
       //Get complete DAE System
       //-----------------------
       (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
@@ -1100,5 +1095,134 @@ algorithm
   end matchcontinue;
 end repeatScheduleWithOtherNumProc1;
 */
+
+//----------------------------
+// output data about operations in equations and composition of systems of equations
+//----------------------------
+
+public function outputTimeBenchmark"outputs infos about all equations and equationsystems of the strongComponents.
+author:Waurich TUD "
+  input HpcOmTaskGraph.TaskGraphMeta graphData;
+  input BackendDAE.BackendDAE dae;
+protected
+  list<BackendDAE.StrongComponent> allComps;
+  array<tuple<BackendDAE.EqSystem,Integer>> systCompEqSysMapping;
+  array<tuple<Integer,Real>> exeCosts;
+  list<Real> numCycles;
+  BackendDAE.Shared shared;
+algorithm
+  BackendDAE.DAE(shared=shared) := dae;
+  (allComps,systCompEqSysMapping) := HpcOmTaskGraph.getSystemComponents(dae);
+  HpcOmTaskGraph.TASKGRAPHMETA(exeCosts=exeCosts) := graphData;
+  numCycles := List.map(arrayList(exeCosts),Util.tuple22);
+  print("compIdx\ttype\tnumAdd\tnumMul\tnumTrig\tsize\tdensity\totherEqs\tmeasuredCycles\n");
+  print("start cost benchmark\n");
+  outputTimeBenchmark2(List.intRange(listLength(allComps)),allComps,List.map(numCycles,realInt),systCompEqSysMapping,shared);
+    print("finish cost benchmark\n");
+end outputTimeBenchmark;
+
+protected function outputTimeBenchmark2
+  input list<Integer> sccIndex;
+  input BackendDAE.StrongComponents allComps;
+  input list<Integer> numCycles;
+  input array<tuple<BackendDAE.EqSystem,Integer>> systemCompEqSysMapping;
+  input BackendDAE.Shared shared;
+algorithm
+  _ := matchcontinue(sccIndex,allComps,numCycles,systemCompEqSysMapping,shared)
+    local
+      Integer idx, numAdd, numMul, numTrig, cycles;
+      list<Integer> rest;
+      BackendDAE.StrongComponent comp;
+      BackendDAE.EqSystem eqSystem;
+    case({},_,_,_,_)
+      equation
+      then ();
+    case(_,_,_,_,_)
+      equation
+        true = listLength(allComps) <> listLength(numCycles);
+        print("The number of backenddae comps and measured comps is not the same!\n");
+      then ();
+    case(idx::rest,_,_,_,_)
+      equation
+        comp = listGet(allComps,idx);
+        cycles = listGet(numCycles,idx);
+        eqSystem = Util.tuple21(arrayGet(systemCompEqSysMapping,idx));
+        print("\n"+&intString(idx)+&" : ");
+        outputTimeBenchmark3(comp,cycles,eqSystem,shared);
+        outputTimeBenchmark2(rest,allComps,numCycles,systemCompEqSysMapping,shared);
+      then ();
+    else
+      equation
+        print("outputTimeBenchmark2 failed!\n");
+      then fail();
+  end matchcontinue;
+end outputTimeBenchmark2;
+
+protected function outputTimeBenchmark3
+  input BackendDAE.StrongComponent comp;
+  input Integer cycles;
+  input BackendDAE.EqSystem eqSystem;
+  input BackendDAE.Shared shared;
+algorithm
+  _ := matchcontinue(comp,cycles,eqSystem,shared)
+    local
+      Integer idx, numAdd, numMul, numTrig, density, size, others;
+      list<Integer> rest, resEqs, eqs;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+      list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
+
+      BackendDAE.EquationArray eqns;
+       BackendDAE.Variables vars;
+
+   case(BackendDAE.SINGLEEQUATION(eqn=_,var=_),_,_,_)
+      equation
+        //BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) = eqSystem;
+        //BackendDump.dumpEqnsSolved2({comp},eqns,vars);
+
+        ((numAdd,numMul,numTrig)) = HpcOmTaskGraph.countOperations(comp,eqSystem,shared);
+        density = -1;
+        size = -1;
+        others = -1;
+        print("\tSE\t"+&intString(numAdd)+&"\t"+&intString(numMul)+&"\t"+&intString(numTrig)+&"\t"+&intString(size)+&"\t"+&intString(density)+&"\t"+&intString(others)+&"\t"+&intString(cycles)+&"\n");
+      then ();
+   case(BackendDAE.EQUATIONSYSTEM(eqns=eqs,vars=_,jac=BackendDAE.FULL_JACOBIAN(jacobian = SOME(jac)),jacType=_),_,_,_)
+      equation
+        //BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) = eqSystem;
+        //BackendDump.dumpEqnsSolved2({comp},eqns,vars);
+
+        ((numAdd,numMul,numTrig)) = HpcOmTaskGraph.countOperations(comp,eqSystem,shared);
+        size = listLength(eqs);
+        density = realInt(realMul(realDiv(intReal(listLength(jac)),intReal(intMul(size,size))),100.0));
+        others = -1;
+        print("\tEQS\t"+&intString(numAdd)+&"\t"+&intString(numMul)+&"\t"+&intString(numTrig)+&"\t"+&intString(size)+&"\t"+&intString(density)+&"\t"+&intString(others)+&"\t"+&intString(cycles)+&"\n");
+      then ();
+    case(BackendDAE.TORNSYSTEM(tearingvars=_,residualequations=resEqs,otherEqnVarTpl=otherEqnVarTpl,linear=true,jac=BackendDAE.FULL_JACOBIAN(jacobian = SOME(jac))),_,_,_)
+      equation
+        //BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) = eqSystem;
+        //BackendDump.dumpEqnsSolved2({comp},eqns,vars);
+
+        ((numAdd,numMul,numTrig)) = HpcOmTaskGraph.countOperations(comp,eqSystem,shared);
+        size = listLength(resEqs);
+        density = realInt(realMul(realDiv(intReal(listLength(jac)),intReal(intMul(size,size))),100.0));
+        others = listLength(otherEqnVarTpl);
+        print("\tTLS1\t"+&intString(numAdd)+&"\t"+&intString(numMul)+&"\t"+&intString(numTrig)+&"\t"+&intString(size)+&"\t"+&intString(density)+&"\t"+&intString(others)+&"\t"+&intString(cycles)+&"\n");
+      then ();
+    case(BackendDAE.TORNSYSTEM(tearingvars=_,residualequations=resEqs,otherEqnVarTpl=otherEqnVarTpl,linear=true,jac=BackendDAE.GENERIC_JACOBIAN(jacobian = _,sparsePattern=_,coloring=_)),_,_,_)
+      equation
+        //BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) = eqSystem;
+        //BackendDump.dumpEqnsSolved2({comp},eqns,vars);
+
+        ((numAdd,numMul,numTrig)) = HpcOmTaskGraph.countOperations(comp,eqSystem,shared);
+        density = 0;
+        size = listLength(resEqs);
+        others = listLength(otherEqnVarTpl);
+        print("\tTLS2\t"+&intString(numAdd)+&"\t"+&intString(numMul)+&"\t"+&intString(numTrig)+&"\t"+&intString(size)+&"\t"+&intString(density)+&"\t"+&intString(others)+&"\t"+&intString(cycles)+&"\n");
+      then ();
+    else
+      equation
+        print("\tSTUSS\t"+&intString(-1)+&"\t"+&intString(-1)+&"\t"+&intString(-1)+&"\t"+&intString(-1)+&"\t"+&intString(-1)+&"\t"+&intString(-1)+&"\t"+&intString(-1)+&"\n");
+      then ();
+  end matchcontinue;
+end outputTimeBenchmark3;
 
 end HpcOmSimCodeMain;
