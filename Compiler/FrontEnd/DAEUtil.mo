@@ -6915,7 +6915,7 @@ public function funcArgDim"gets the number of flattened scalars for a FuncArg"
 algorithm
   dim := match(argIn)
     local
-      DAE.Type ty;      
+      DAE.Type ty;
       DAE.Dimensions arrayDims;
       list<String> names;
   case(DAE.FUNCARG(ty = DAE.T_ARRAY(dims=arrayDims)))
@@ -6926,7 +6926,7 @@ algorithm
     then listLength(names);
   else
     then 1;
-  end match;   
+  end match;
 end funcArgDim;
 
 end DAEUtil;

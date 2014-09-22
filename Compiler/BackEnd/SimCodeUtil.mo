@@ -7363,7 +7363,7 @@ end createVars;
 
 protected function setRecordVariability"evaluates if all scalar record values are parameter
 author:Waurich TUD 2014-09"
-  input list<DAE.Function> funcsIn; 
+  input list<DAE.Function> funcsIn;
   input BackendDAE.BackendDAE dae;
   output list<DAE.Function> funcsOut;
 protected
@@ -7376,7 +7376,7 @@ protected
 algorithm
   BackendDAE.DAE(shared=shared) := dae;
   BackendDAE.SHARED(knownVars=knVars) := shared;
-   
+
   recVars := List.filterOnTrue(BackendVariable.varList(knVars),BackendVariable.isRecordVar);
   paths := List.map(recVars,getVarRecordPath);
   funcsOut := setRecordVariability2(funcsIn,recVars,paths,{});  //are all scalars parameters? if so set varKind to PARAM()
@@ -7460,7 +7460,7 @@ algorithm
         then path;
     case(DAE.CREF_QUAL(identType=DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))),path::rest)
       equation
-      then path; 
+      then path;
     case(DAE.CREF_QUAL(componentRef=cref),path::rest)
       equation
         then getRecordPathFromCref(cref,rest);
