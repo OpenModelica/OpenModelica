@@ -2049,7 +2049,7 @@ algorithm
       DAE.InstDims arryDim;
       Option<DAE.Exp> startValue;
       DAE.Exp startValue_;
-      DAE.Exp startExp, bindExp;
+      DAE.Exp startExp, bindExp, crefExp;
       BackendDAE.VarKind varKind;
       HashSet.HashSet hs;
       String s, str, sv;
@@ -2061,8 +2061,10 @@ algorithm
       _ = BackendVariable.varStartValueOption(var);
       preUsed = BaseHashSet.has(cr, hs);
 
-      startExp = BackendVariable.varStartValue(var);
-      eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      crefExp = Expression.crefExp(cr);
+      startExp = Expression.makePureBuiltinCall("$_start", {crefExp}, ty);
+      // startExp = BackendVariable.varStartValue(var);
+      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
       eqns = Debug.bcallret2(isFixed, BackendEquation.addEquation, eqn, eqns, eqns);
 
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
