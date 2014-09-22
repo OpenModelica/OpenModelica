@@ -1,5 +1,6 @@
 #include("advection.jl")
 include("string.jl")
+#include("stringAlg.jl")
 (X,U) = simulate(1.0)
 
 function writeData(X,U)
