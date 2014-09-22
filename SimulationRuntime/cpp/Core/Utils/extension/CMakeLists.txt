@@ -6,7 +6,7 @@ add_library(${ExtensionUtilitiesName} SHARED measure_time.cpp measure_time_rdtsc
 target_link_libraries (${ExtensionUtilitiesName} ${Boost_LIBRARIES})
 
 if (UNIX)
-set_target_properties(${ExtensionUtilitiesName} PROPERTIES COMPILE_FLAGS -fPIC)
+	set_target_properties(${ExtensionUtilitiesName} PROPERTIES COMPILE_FLAGS -fPIC)
 endif(UNIX)
 
 install (TARGETS ${ExtensionUtilitiesName} DESTINATION lib/omc/${LIBINSTALLEXT})

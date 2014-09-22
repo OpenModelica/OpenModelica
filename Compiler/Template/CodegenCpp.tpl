@@ -1206,6 +1206,8 @@ let moLib =  makefileParams.compileDir
 let home = makefileParams.omhome
 <<
 @echo off
+::export PATH=<%home%>/lib/omc/cpp:$PATH REPLACE C: with /C/
+SET PATH=<%home%>/lib/omc/cpp;%PATH%
 <%moLib%>/OMCpp<%fileNamePrefix%>Main.exe -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%> -o <%settings.outputFormat%>
 >>
 end match)

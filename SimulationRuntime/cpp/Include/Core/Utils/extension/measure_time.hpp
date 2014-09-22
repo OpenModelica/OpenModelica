@@ -14,7 +14,7 @@
 #include <iostream>
 #include <Core/Modelica.h>
 
-class MeasureTimeValues
+class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValues
 {
  public:
   MeasureTimeValues();
@@ -27,7 +27,7 @@ class MeasureTimeValues
   virtual void div(int counter) = 0;
 };
 
-class MeasureTimeData
+class BOOST_EXTENSION_EXPORT_DECL MeasureTimeData
 {
  public:
   unsigned int id;
@@ -43,11 +43,10 @@ class MeasureTimeData
   void addValuesToSum(MeasureTimeValues *values);
 };
 
-class MeasureTime
+class BOOST_EXTENSION_EXPORT_DECL MeasureTime
 {
  public:
   typedef void (*getTimeValuesFctType)(MeasureTimeValues*);
-
   typedef std::map<std::string, const std::vector<MeasureTimeData> *> block_map;
   typedef std::map<std::string, block_map> file_map;
 
@@ -66,7 +65,7 @@ class MeasureTime
   static inline void getTimeValuesStart(MeasureTimeValues *res) //__attribute__((always_inline))
   {
     getTimeValuesStartFct(res);
-  }
+  };
 
   static inline void getTimeValuesEnd(MeasureTimeValues *res)
   {
@@ -84,9 +83,9 @@ class MeasureTime
   virtual void benchOverhead();
 
  protected:
-
   static MeasureTime * instance;
-  static getTimeValuesFctType getTimeValuesStartFct, getTimeValuesEndFct;
+  static getTimeValuesFctType getTimeValuesStartFct;
+  static getTimeValuesFctType getTimeValuesEndFct;
   static file_map toWrite;
 
   MeasureTimeValues * overhead;

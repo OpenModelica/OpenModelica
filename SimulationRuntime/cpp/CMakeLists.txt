@@ -11,27 +11,20 @@
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
-
-
-
 cmake_minimum_required (VERSION 2.6)
 project(CppSolverInterface)
-
-IF(NOT ANALYZATION_MODE)
-	#Precompiled header produces problems if the compiler is not "g++" but "scorep g++"
-	include(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
-ENDIF(NOT ANALYZATION_MODE )
-#set(CMAKE_VERBOSE_MAKEFILE ON)
 
 option(ANALYZATION_MODE "ANALYZATION_MODE" OFF)
 option(USE_THREADS "USE_PARALLEL_OUTPUT" OFF)
 
-IF(ANALYZATION_MODE)
-	message(STATUS "Using analyzation mode")
-	add_definitions(-DANALYZATION_MODE)
-ELSE(ANALYZATION_MODE)
+IF(NOT ANALYZATION_MODE)
+	#Precompiled header produces problems if the compiler is not "g++" but "scorep g++"
+	include(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
 	message(STATUS "Analyzation mode disabled")
-ENDIF(ANALYZATION_MODE)
+ELSE(NOT ANALYZATION_MODE)
+	message(STATUS "Using analyzation mode")
+	add_definitions(-DANALYZATION_MODE)	
+ENDIF(NOT ANALYZATION_MODE )
 
 IF(USE_PARALLEL_OUTPUT)
 	add_definitions(-DUSE_PARALLEL_OUTPUT)
@@ -39,33 +32,33 @@ ENDIF(USE_PARALLEL_OUTPUT)
 
 # on windows  boost,blas,lapack  and sundial solvers from omdev is used else the installed versions are used
 IF( WIN32 )
-SET(ENV{BOOST_ROOT} $ENV{OMDEV}"/lib/3rdParty/boost-1_55/")
-#SET(ENV{BOOST_ROOT} $ENV{OMDEV}"/lib/3rdParty/boost-1_49/")
-SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
-SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
-SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
+	SET(ENV{BOOST_ROOT} $ENV{OMDEV}"/lib/3rdParty/boost-1_55/")
+	#SET(ENV{BOOST_ROOT} $ENV{OMDEV}"/lib/3rdParty/boost-1_49/")
+	SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
+	SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
+	SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
 
-# Disable Optimization for RelWithDebInfo on Windows
-if (MSVC)
-    STRING(REPLACE "/O2" "/Od" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
-else()
-	STRING(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
-	STRING(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
-endif()
+	# Disable Optimization for RelWithDebInfo on Windows
+	if (MSVC)
+		STRING(REPLACE "/O2" "/Od" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
+	else()
+		STRING(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
+		STRING(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
+	endif()
 
+	#set mico paths
+	SET(MICO_LIB_HOME $ENV{OMDEV}/lib/mico-msys-mingw/)
+	SET(MICO_INCLUDE_HOME  $ENV{OMDEV}/include/mico-msys-mingw/)
+	#set sundials solvers include and library directories
+	SET(SUNDIALS_INLCUDE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/include)
 
-#set mico paths
-SET(MICO_LIB_HOME $ENV{OMDEV}/lib/mico-msys-mingw/)
-SET(MICO_INCLUDE_HOME  $ENV{OMDEV}/include/mico-msys-mingw/)
-#set sundials solvers include and library directories
-SET(SUNDIALS_INLCUDE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/include)
-
-if(MSVC)
-SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/vc100)
-elseif(MINGW)
-SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/mingw/dlls)
-endif()
-SET(INSTALL_OMDEV_LIBS ON)
+	if(MSVC)
+		SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/vc100)
+	elseif(MINGW)
+		SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/mingw/dlls)
+	endif()
+	
+	SET(INSTALL_OMDEV_LIBS ON)
 ENDIF( WIN32 )
 
 # Find CMinpack
