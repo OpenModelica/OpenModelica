@@ -132,7 +132,7 @@ class Modelica: public IMixedSystem ,public IContinuous ,public IEvent ,public I
   // System is able to provide the Jacobian symbolically
    virtual bool provideSymbolicJacobian() ;
    virtual void saveDiscreteVars();
-   virtual void stepCompleted(double time);
+   virtual bool stepCompleted(double time);
 private:
 
   //Methods:

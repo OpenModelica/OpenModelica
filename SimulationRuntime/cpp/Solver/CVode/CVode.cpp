@@ -351,8 +351,10 @@ void Cvode::CVodeCore()
     //  -> Write output if true
     if (writeOutput)
       writeCVodeOutput(_tCurrent, _h, _locStps);
-
-    _continuous_system->stepCompleted(_tCurrent);
+    
+    //set completed step to system and check if terminate was called
+    if(_continuous_system->stepCompleted(_tCurrent))
+        _solverStatus = DONE;
 
     // Perform state selection
     bool state_selection = stateSelection();

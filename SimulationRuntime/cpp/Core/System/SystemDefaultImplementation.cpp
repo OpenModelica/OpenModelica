@@ -48,6 +48,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *global
 ,_delay_max(0.0)
 ,_start_time(0.0)
 ,_terminal(false)
+,_terminate(false)
 ,_global_settings(globalSettings)
 {
 }
@@ -153,6 +154,7 @@ void SystemDefaultImplementation::initialize()
   }
   _start_time =0.0;
   _terminal =false;
+  _terminate =false;
 };
 
 

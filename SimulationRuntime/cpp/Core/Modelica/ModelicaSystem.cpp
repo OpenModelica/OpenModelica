@@ -188,8 +188,9 @@ bool Modelica::checkForDiscreteEvents()
 
   return restart;
 }
-void Modelica::stepCompleted(double time)
+bool Modelica::stepCompleted(double time)
 {
+throw std::runtime_error("stepCompleted is not yet implemented");
 }
  bool Modelica::checkConditions()
  {
