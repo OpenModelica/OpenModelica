@@ -453,11 +453,17 @@ fmi2Status fmi2Reset(fmi2Component c) {
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Reset")
 
-  comp->state = modelInstantiated;
+  if (comp->state & modelTerminated) {
+    /* intialize modelData */
+    fmu2_model_interface_setupDataStruc(comp->fmuData);
+    initializeDataStruc(comp->fmuData);
+  }
   /* reset the values to start */
   setDefaultStartValues(comp);
   setAllVarsToStart(comp->fmuData);
   setAllParamsToStart(comp->fmuData);
+
+  comp->state = modelInstantiated;
   return fmi2OK;
 }
 
