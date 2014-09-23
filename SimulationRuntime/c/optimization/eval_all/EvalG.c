@@ -675,7 +675,9 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
         }
       }
       for(; k< nJ; ++k, ++l){
-        tmp = fmax(fabs(g[l] - optData->ipop.gmax[l]),  fabs(g[l] - optData->ipop.gmin[l]));
+        tmp1 = g[l] > optData->ipop.gmax[l] ? fabs(g[l] - optData->ipop.gmax[l]) : 0.0;
+        tmp  = g[l] < optData->ipop.gmin[l] ? fabs(g[l] - optData->ipop.gmin[l]) : 0.0;
+        tmp = fmax(tmp, tmp1);
         if(tmp > gmax){
           ii = i;
           jj = j;
@@ -708,15 +710,15 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
     }
     */
   }
-
-  if(kk < nx){
-    printf("\nmax error for |%s(%g) - collocation_poly| = %g\n",
+  if(k>0){
+    if(kk < nx){
+      printf("\nmax error for |%s(%g) - collocation_poly| = %g\n",
                               data->modelData.realVarsData[kk].info.name, (double)t[ii][jj], gmax);
-  }else if(kk < nJ){
-    printf("\nmax error for |cosntrain[%i](%g)| = %g\n", kk - nx, (double)t[ii][jj], gmax);
-  }else{
-    printf("\nmax error for |final_cosntrain[%i](%g)| = %g\n", kk - nJ, (double)t[ii][jj], gmax);
+    }else if(kk < nJ){
+      printf("\nmax error for |cosntrain[%i](%g)| = %g\n", kk - nx, (double)t[ii][jj], gmax);
+    }else{
+      printf("\nmax error for |final_cosntrain[%i](%g)| = %g\n", kk - nJ, (double)t[ii][jj], gmax);
+    }
   }
-
 
 }
