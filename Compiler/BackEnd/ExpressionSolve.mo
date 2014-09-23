@@ -606,7 +606,7 @@ algorithm
        then (res, asserts);
 
     // if simplify1 fails for simplify f(a)/h(a)
-    // try to expand 
+    // try to expand
     // g(.) + f(.)/h(a) = 0 => g(.)*h(a) + f(.) = 0
     case(DAE.BINARY(e1,DAE.ADD(_),
       DAE.BINARY(e2,DAE.DIV(_),e3)),DAE.RCONST(real =0.0),DAE.CREF(componentRef = cr),_)
