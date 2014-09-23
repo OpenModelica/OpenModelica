@@ -533,9 +533,7 @@ int intializeSolverStartData(double *stepSize, long *outputSteps,
 
   SIMULATION_INFO* simInfo = &globalData->simulationInfo;
 
-  string result_file_cstr = string(globalData->modelData.modelFilePrefix) + string("_res.") + simInfo->outputFormat;
-
-  retVal = initializeResultData(globalData, result_file_cstr, 0);
+  retVal = initializeResultData(globalData, 0);
 
   solverInfo = (SOLVER_INFO*) malloc(sizeof(SOLVER_INFO));
 
