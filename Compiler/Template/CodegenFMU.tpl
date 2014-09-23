@@ -643,8 +643,7 @@ case FMIMODELSTRUCTURE(__) then
   <<
   <%ModelStructureOutputs(fmiOutputs)%>
   <%ModelStructureDerivatives(fmiDerivatives)%>
-  <InitialUnknowns>
-  </InitialUnknowns>
+  <%ModelStructureInitialUnknowns(fmiInitialUnknowns)%>
   >>
 end ModelStructureHelper;
 
@@ -671,6 +670,18 @@ case FMIDERIVATIVES(__) then
   </Derivatives>
   >>
 end ModelStructureDerivatives;
+
+template ModelStructureInitialUnknowns(FmiInitialUnknowns fmiInitialUnknowns)
+ "Generates Model Structure InitialUnknowns."
+::=
+match fmiInitialUnknowns
+case FMIINITIALUNKNOWNS(__) then
+  <<
+  <InitialUnknowns>
+    <%ModelStructureUnknowns(fmiUnknownsList)%>
+  </InitialUnknowns>
+  >>
+end ModelStructureInitialUnknowns;
 
 template ModelStructureUnknowns(list<FmiUnknown> fmiUnknownsList)
  "Generates Model Structure Unknowns"

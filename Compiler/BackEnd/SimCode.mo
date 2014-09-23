@@ -659,10 +659,17 @@ public uniontype FmiDerivatives
   end FMIDERIVATIVES;
 end FmiDerivatives;
 
+public uniontype FmiInitialUnknowns
+  record FMIINITIALUNKNOWNS
+    list<FmiUnknown> fmiUnknownsList;
+  end FMIINITIALUNKNOWNS;
+end FmiInitialUnknowns;
+
 public uniontype FmiModelStructure
   record FMIMODELSTRUCTURE
     FmiOutputs fmiOutputs;
     FmiDerivatives fmiDerivatives;
+    FmiInitialUnknowns fmiInitialUnknowns;
   end FMIMODELSTRUCTURE;
 end FmiModelStructure;
 

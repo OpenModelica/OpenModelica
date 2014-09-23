@@ -636,10 +636,17 @@ package SimCode
     end FMIDERIVATIVES;
   end FmiDerivatives;
 
+  uniontype FmiInitialUnknowns
+    record FMIINITIALUNKNOWNS
+      list<FmiUnknown> fmiUnknownsList;
+    end FMIINITIALUNKNOWNS;
+  end FmiInitialUnknowns;
+
   uniontype FmiModelStructure
     record FMIMODELSTRUCTURE
       FmiOutputs fmiOutputs;
       FmiDerivatives fmiDerivatives;
+      FmiInitialUnknowns fmiInitialUnknowns;
     end FMIMODELSTRUCTURE;
   end FmiModelStructure;
 

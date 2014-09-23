@@ -14026,7 +14026,7 @@ algorithm
   outputs := translateSparsePatterInts2FMIUnknown(spTInts, {});
 
   //output results
-  outFmiModelStructure := SimCode.FMIMODELSTRUCTURE(SimCode.FMIOUTPUTS(outputs), SimCode.FMIDERIVATIVES(derivatives));
+  outFmiModelStructure := SimCode.FMIMODELSTRUCTURE(SimCode.FMIOUTPUTS(outputs), SimCode.FMIDERIVATIVES(derivatives), SimCode.FMIINITIALUNKNOWNS({}));
 end getFMIModelStructure;
 
 protected function translateSparsePatterInts2FMIUnknown
