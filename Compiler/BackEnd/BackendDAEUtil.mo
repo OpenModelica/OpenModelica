@@ -8908,22 +8908,22 @@ algorithm
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
   daeHandler := getIndexReductionMethod(strdaeHandler);
 
-  Debug.fcall2(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE, "dumpdaelow");
+  //Debug.fcall2(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE, "dumpdaelow");
   // pre optimisation phase
   _ := traverseBackendDAEExps(inDAE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
   (optdae,Util.SUCCESS()) := preOptimizeDAE(inDAE,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
   sode := causalizeDAE(optdae,NONE(),matchingAlgorithm,daeHandler,true);
-  Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump",sode));
+  //Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump",sode));
 
   // post-optimization phase
   (outSODE,Util.SUCCESS()) := postOptimizeDAE(sode,postOptModules,matchingAlgorithm,daeHandler);
   _ := traverseBackendDAEExps(outSODE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
 
-  Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
-  Debug.bcall(Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO), BackendDump.dumpCompShort, outSODE);
-  Debug.fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE, "system for jacobians");
+  //Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
+  //Debug.bcall(Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO), BackendDump.dumpCompShort, outSODE);
+  //Debug.fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE, "system for jacobians");
 end getSolvedSystemforJacobians;
 
 /*************************************************
