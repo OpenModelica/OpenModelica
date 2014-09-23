@@ -835,6 +835,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     <<
     data->modelData.modelName = "<%dotPath(name)%>";
     data->modelData.modelFilePrefix = "<%fileNamePrefix%>";
+    data->modelData.resultFileName = NULL;
     data->modelData.modelDir = "<%directory%>";
     data->modelData.modelGUID = "{<%guid%>}";
     #ifdef OPENMODELICA_XML_FROM_FILE_AT_RUNTIME

@@ -532,10 +532,20 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   // Create a result file
   const char *result_file = omc_flagValue[FLAG_R];
   string result_file_cstr;
-  if(!result_file) {
-    result_file_cstr = string(data->modelData.modelFilePrefix) + string("_res.") + data->simulationInfo.outputFormat; /* TODO: Fix result file name based on mode */
-  } else {
-    result_file_cstr = result_file;
+  if(!result_file)
+  {
+    result_file_cstr = string(data->modelData.modelFilePrefix) + string("_res.") + data->simulationInfo.outputFormat;
+    if(data->modelData.resultFileName)
+      free(data->modelData.resultFileName);
+    data->modelData.resultFileName = (char*)malloc((strlen(result_file_cstr.c_str())+1)*sizeof(char));
+    strcpy(data->modelData.resultFileName, result_file_cstr.c_str());
+  }
+  else
+  {
+    if(data->modelData.resultFileName)
+      free(data->modelData.resultFileName);
+    data->modelData.resultFileName = (char*)malloc((strlen(result_file)+1)*sizeof(char));
+    strcpy(data->modelData.resultFileName, result_file);
   }
 
   string init_initMethod = "";
@@ -569,7 +579,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     outputVariablesAtEnd = omc_flagValue[FLAG_OUTPUT];
   }
 
-  retVal = callSolver(data, result_file_cstr, init_initMethod, init_optiMethod, init_file, init_time, init_lambda_steps, outputVariablesAtEnd, cpuTime);
+  retVal = callSolver(data, init_initMethod, init_optiMethod, init_file, init_time, init_lambda_steps, outputVariablesAtEnd, cpuTime);
 
   if (omc_flag[FLAG_ALARM]) {
     alarm(0);
@@ -595,8 +605,8 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     rt_accumulate(SIM_TIMER_TOTAL);
     const char* plotFormat = omc_flagValue[FLAG_MEASURETIMEPLOTFORMAT];
     retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat : "svg",
-        data->simulationInfo.solverMethod, data->simulationInfo.outputFormat, result_file_cstr.c_str()) && retVal;
-    retVal = printModelInfoJSON(data, jsonInfo.c_str(), result_file_cstr.c_str()) && retVal;
+        data->simulationInfo.solverMethod, data->simulationInfo.outputFormat, data->modelData.resultFileName) && retVal;
+    retVal = printModelInfoJSON(data, jsonInfo.c_str(), data->modelData.resultFileName) && retVal;
   }
 
   TRACE_POP
@@ -610,12 +620,12 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
  *
  *  This function initializes result object to emit data.
  */
-int initializeResultData(DATA* simData, string result_file_cstr, int cpuTime)
+int initializeResultData(DATA* simData, int cpuTime)
 {
   int resultFormatHasCheapAliasesAndParameters = 0;
   int retVal = 0;
   long maxSteps = 4 * simData->simulationInfo.numSteps;
-  sim_result.filename = strdup(result_file_cstr.c_str());
+  sim_result.filename = strdup(simData->modelData.resultFileName);
   sim_result.numpoints = maxSteps;
   sim_result.cpuTime = cpuTime;
   if(isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", simData->simulationInfo.outputFormat)) {
@@ -670,7 +680,7 @@ int initializeResultData(DATA* simData, string result_file_cstr, int cpuTime)
  * "dassl" & "dassl2" calls the same DASSL Solver with synchronous event handling
  * "dopri5" calls an embedded DOPRI5(4)-solver with stepsize control
  */
-int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
+int callSolver(DATA* simData, string init_initMethod,
     string init_optiMethod, string init_file, double init_time, int lambda_steps, string outputVariablesAtEnd, int cpuTime)
 {
   int retVal = -1;
@@ -684,7 +694,7 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
   MMC_TRY_INTERNAL(mmc_jumper)
   MMC_TRY_INTERNAL(globalJumpBuffer)
 
-  if(initializeResultData(simData, result_file_cstr, cpuTime))
+  if(initializeResultData(simData, cpuTime))
   {
     TRACE_POP
     return -1;

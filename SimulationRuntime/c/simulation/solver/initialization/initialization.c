@@ -842,22 +842,17 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
   double value;
   const char *pError = NULL;
   char* newVarname = NULL;
-  char* resultFile = NULL;
 
   MODEL_DATA *mData = &(data->modelData);
   long i;
 
   infoStreamPrint(LOG_INIT, 0, "import start values\nfile: %s\ntime: %g", pInitFile, initTime);
 
-  resultFile = (char*)malloc((strlen(data->modelData.modelFilePrefix)+12) * sizeof(char));
-  sprintf(resultFile, "%s_res.mat", data->modelData.modelFilePrefix);
-  if(!strcmp(resultFile, pInitFile))
+  if(!strcmp(data->modelData.resultFileName, pInitFile))
   {
-    errorStreamPrint(LOG_INIT, 0, "It is not possible to import the current result file <%s> for the initialization.", pInitFile);
+    errorStreamPrint(LOG_INIT, 0, "Cannot import a result file for initialization that is also the current output file <%s>.\nConsider redirecting the output result file (-r=<new_res.mat>) or renaming the result file that is used for initialization import.", pInitFile);
     return 1;
   }
-  free(resultFile);
-  resultFile = 0;
 
   pError = omc_new_matlab4_reader(pInitFile, &reader);
   if(pError)

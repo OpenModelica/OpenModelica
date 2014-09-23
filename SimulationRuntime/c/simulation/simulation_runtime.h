@@ -53,10 +53,10 @@
 
 extern "C" {
 
-extern int callSolver(DATA* simData, std::string result_file_cstr, std::string init_initMethod,
+extern int callSolver(DATA* simData, std::string init_initMethod,
     std::string init_optiMethod, std::string init_file, double init_time, int lambda_steps, std::string outputVariablesAtEnd, int cpuTime);
 
-extern int initializeResultData(DATA* simData, std::string result_file_cstr, int cpuTime);
+extern int initializeResultData(DATA* simData, int cpuTime);
 
 #endif /* cplusplus */
 

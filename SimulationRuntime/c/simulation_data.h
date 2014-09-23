@@ -418,6 +418,7 @@ typedef struct MODEL_DATA
 
   const char* modelName;
   const char* modelFilePrefix;
+  char* resultFileName;          /* default is <modelFilePrefix>_res.mat, but it can be overriden using -r=<resultFilename> */
   const char* modelDir;
   const char* modelGUID;
   const char* initXMLData;
