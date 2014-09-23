@@ -261,6 +261,7 @@ T dot_array( BaseArray<T> & a ,  BaseArray<T> & b  )
   unsigned int nelems = a.getNumElems();
   T* data2 = b.getData();
   T r = std::inner_product(data1, data1 + nelems, data2, 0);
+  return r;
 };
 
 /**
