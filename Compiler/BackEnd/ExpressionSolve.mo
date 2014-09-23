@@ -251,7 +251,8 @@ algorithm
          false = Expression.expHasCref(inExp2, cr);
          tp = DAE.T_REAL_DEFAULT;
          res = DAE.RCONST(2.0);
-         e2 = DAE.BINARY(inExp2,DAE.POW(tp),res);
+         //e2 = DAE.BINARY(inExp2,DAE.POW(tp),res);
+         e2 = Expression.expPow(inExp2,res);
          (res, asserts) = solve(e1,e2,inExp3);
        then (res, asserts);
     // semiLinear(0, a, b) = 0 => a = b // rule 1
@@ -604,6 +605,41 @@ algorithm
         (res,asserts) = solve(lhs,rhs,inExp3);
        then (res, asserts);
 
+    // if simplify1 fails for simplify f(a)/h(a)
+    // try to expand 
+    // g(.) + f(.)/h(a) = 0 => g(.)*h(a) + f(.) = 0
+    case(DAE.BINARY(e1,DAE.ADD(_),
+      DAE.BINARY(e2,DAE.DIV(_),e3)),DAE.RCONST(real =0.0),DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e3, cr);
+        lhs =  Expression.expMul(e1,e3);
+        lhs =  Expression.expAdd(lhs,e2);
+        (res,asserts) = solve(lhs,inExp2,inExp3);
+      then(res, asserts);
+    // f(.)/h(a) + g(.) = 0.0 => g(.)*h(a) + f(.) = 0.0
+    case(DAE.BINARY(DAE.BINARY(e2,DAE.DIV(_),e3),DAE.ADD(_),e1),DAE.RCONST(real = 0.0),DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e3, cr);
+        lhs =  Expression.expMul(e1,e3);
+        lhs =  Expression.expAdd(lhs,e2);
+        (res,asserts) = solve(lhs, inExp2, inExp3);
+      then(res, asserts);
+    // g(.) - f(.)/h(a) = 0.0 => g(.)*h(a) - f(.) = 0.0
+    case(DAE.BINARY(e1,DAE.SUB(_),DAE.BINARY(e2,DAE.DIV(_),e3)),DAE.RCONST(0.0),DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e3, cr);
+        lhs =  Expression.expMul(e1,e3);
+        lhs =  Expression.makeDiff(lhs,e2);
+        (res,asserts) = solve(lhs,inExp2,inExp3);
+      then(res, asserts);
+    // f(.)/h(a) - g(.) = 0.0 => f(.) - g(.)*h(a)  = 0.0
+    case(DAE.BINARY(DAE.BINARY(e2,DAE.DIV(_),e3),DAE.SUB(_),e1),DAE.RCONST(0.0),DAE.CREF(componentRef = cr),_)
+      equation
+        true = Expression.expHasCref(e3, cr);
+        lhs =  Expression.expMul(e1,e3);
+        lhs =  Expression.makeDiff(e2, lhs);
+        (res,asserts) = solve(lhs,inExp2,inExp3);
+      then(res, asserts);
 
     // a^b = f(..) -> a = (if pre(a)==0 then 1 else sign(pre(a)))*(f(...)^(1/b))
     // does not work because not all have pre in code generation
