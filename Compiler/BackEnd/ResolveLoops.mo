@@ -1167,6 +1167,7 @@ protected function evaluateLoop
   input tuple<BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,list<Integer>> tplIn;
   output Boolean resolve;
 protected
+  Boolean r1,r2;
   Integer numInLoop,numOutLoop;
   list<Integer> nonLoopEqs,nonLoopVars,loopEqs, loopVars, allVars, eqCrossLst;
   list<list<Integer>> eqVars;
@@ -1185,7 +1186,11 @@ algorithm
   (eqCrossLst,_,_) := List.intersection1OnTrue(loopVars,eqCrossLst,intEq);
   numInLoop := listLength(loopVars);
   numOutLoop := listLength(nonLoopVars);
-  resolve := intGe(numInLoop,numOutLoop-1) and intLe(numInLoop,6);
+  r1 := intGe(numInLoop,numOutLoop-1) and intLe(numInLoop,6);
+  r2 := intGe(numInLoop,numOutLoop-2);
+  r1 := Util.if_(intEq(Flags.getConfigInt(Flags.RESHUFFLE),1),r1,false);
+  r2 := Util.if_(intEq(Flags.getConfigInt(Flags.RESHUFFLE),2),r2,r1);
+  resolve := Util.if_(intEq(Flags.getConfigInt(Flags.RESHUFFLE),3),true,r2);
 end evaluateLoop;
 
 protected function sumUp2Equations "author:Waurich TUD 2013-12

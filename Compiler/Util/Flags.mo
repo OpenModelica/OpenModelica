@@ -895,6 +895,11 @@ constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(57, "profiling",
     })),
   Util.gettext("Sets the profiling level to use. Profiled equations and functions record execution time and count for each time step taken by the integrator."));
 
+constant ConfigFlag RESHUFFLE = CONFIG_FLAG(58, "reshuffle",
+  NONE(), EXTERNAL(), INT_FLAG(1), NONE(),
+  Util.gettext("sets tolerance of reshuffling algorithm: 1: conservative, 2: more tolerant, 3 resolve all"));
+
+
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
 // sorted by index (and thus have unique indices).
@@ -955,7 +960,8 @@ constant list<ConfigFlag> allConfigFlags = {
   GENERATE_SYMBOLIC_JACOBIAN,
   GENERATE_SYMBOLIC_LINEARIZATION,
   INT_ENUM_CONVERSION,
-  PROFILING_LEVEL
+  PROFILING_LEVEL,
+  RESHUFFLE
 };
 
 public function new
