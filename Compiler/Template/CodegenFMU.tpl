@@ -259,7 +259,7 @@ match varKind
   case STATE_DER(__) then ' derivative="<%getStateSimVarIndexFromIndex(stateVars, index)%>"'
   else
     match initialValue
-      case SOME(exp) then ' start="<%initValXml(exp)%>"'
+      case SOME(exp) then '<%StartString2(exp)%>'
 end RealVariableTypeCommonAttribute2;
 
 template StringVariableTypeCommonAttribute2(Option<DAE.Exp> initialValue)
