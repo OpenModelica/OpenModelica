@@ -4691,7 +4691,7 @@ algorithm
     case(t,ad,_,_,_,_,_,_)
       equation
         adStr = Absyn.pathString(path) +& Dump.printArraydimStr(ad);
-        tpStr = Types.unparseType(t);
+        tpStr = Types.unparseTypeNoAttr(t);
         expStr = ExpressionDump.printExpStr(exp);
         str = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +& Absyn.printComponentRefStr(componentRef);
         Error.addSourceMessage(Error.MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,{str,adStr,expStr,tpStr},info);
@@ -7606,7 +7606,7 @@ algorithm
           Static.elabExp(inCache, inEnv, cond, false, NONE(), false, pre, info);
         false = Types.isBoolean(t);
         exp_str = ExpressionDump.printExpStr(e);
-        type_str = Types.unparseType(t);
+        type_str = Types.unparseTypeNoAttr(t);
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {exp_str, type_str}, info);
       then
         fail();

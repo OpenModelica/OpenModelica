@@ -600,7 +600,7 @@ algorithm
       equation
         (estr,_) = stringRepresOfExpr(exp, st);
         vtype = Types.typeOfValue(value);
-        tstr = Types.unparseType(vtype);
+        tstr = Types.unparseTypeNoAttr(vtype);
         Error.addSourceMessage(Error.WHILE_CONDITION_TYPE_ERROR, {estr,tstr}, info);
       then
         fail();
@@ -649,7 +649,7 @@ algorithm
       equation
         (estr,_) = stringRepresOfExpr(exp, st);
         vtype = Types.typeOfValue(value);
-        tstr = Types.unparseType(vtype);
+        tstr = Types.unparseTypeNoAttr(vtype);
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {estr,tstr}, info);
       then
         fail();

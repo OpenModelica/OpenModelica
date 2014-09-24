@@ -240,8 +240,8 @@ algorithm
         false = Types.equivtypes(lt, rt);
         lhs_str = ExpressionDump.printExpStr(lhs);
         rhs_str = ExpressionDump.printExpStr(rhs);
-        lt_str = Types.unparseType(lt);
-        rt_str = Types.unparseType(rt);
+        lt_str = Types.unparseTypeNoAttr(lt);
+        rt_str = Types.unparseTypeNoAttr(rt);
         info = DAEUtil.getElementSourceFileInfo(source);
         Types.typeErrorSanityCheck(lt_str, rt_str, info);
         Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,
@@ -489,7 +489,7 @@ algorithm
     case (e, DAE.PROP(type_ = t), _, _, _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
-        t_str = Types.unparseType(t);
+        t_str = Types.unparseTypeNoAttr(t);
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str, t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
@@ -602,7 +602,7 @@ algorithm
     case (((e, DAE.PROP(type_ = t), _) :: _), _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
-        t_str = Types.unparseType(t);
+        t_str = Types.unparseTypeNoAttr(t);
         info = DAEUtil.getElementSourceFileInfo(inSource);
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str, t_str}, info);
       then
@@ -642,7 +642,7 @@ algorithm
     case (_, e, DAE.PROP(type_ = t), _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
-        t_str = Types.unparseType(t);
+        t_str = Types.unparseTypeNoAttr(t);
         Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str, t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
@@ -679,7 +679,7 @@ algorithm
     case (_, e, DAE.PROP(type_ = t), _, _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
-        t_str = Types.unparseType(t);
+        t_str = Types.unparseTypeNoAttr(t);
         Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str, t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
@@ -705,7 +705,7 @@ algorithm
     case (e, DAE.PROP(type_ = t), _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
-        t_str = Types.unparseType(t);
+        t_str = Types.unparseTypeNoAttr(t);
         Error.addSourceMessage(Error.WHILE_CONDITION_TYPE_ERROR, {e_str, t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
@@ -734,7 +734,7 @@ algorithm
     case (e, DAE.PROP(type_ = t), _, _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
-        t_str = Types.unparseType(t);
+        t_str = Types.unparseTypeNoAttr(t);
         Error.addSourceMessage(Error.WHEN_CONDITION_TYPE_ERROR, {e_str, t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();

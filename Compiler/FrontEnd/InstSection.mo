@@ -1341,9 +1341,9 @@ algorithm
     case (e1,DAE.PROP(type_ = t1),e2,DAE.PROP(type_ = t2),_,_,_)
       equation
         e1_str = ExpressionDump.printExpStr(e1);
-        t1_str = Types.unparseType(t1);
+        t1_str = Types.unparseTypeNoAttr(t1);
         e2_str = ExpressionDump.printExpStr(e2);
-        t2_str = Types.unparseType(t2);
+        t2_str = Types.unparseTypeNoAttr(t2);
         s1 = stringAppendList({e1_str,"=",e2_str});
         s2 = stringAppendList({t1_str,"=",t2_str});
         info = DAEUtil.getElementSourceFileInfo(source);
@@ -5092,8 +5092,8 @@ algorithm
         false = Types.subtype(lt, rt);
         lhs_str = ExpressionDump.printExpStr(e_1);
         rhs_str = ExpressionDump.printExpStr(e_2);
-        lt_str = Types.unparseType(lt);
-        rt_str = Types.unparseType(rt);
+        lt_str = Types.unparseTypeNoAttr(lt);
+        rt_str = Types.unparseTypeNoAttr(rt);
         Types.typeErrorSanityCheck(lt_str, rt_str, info);
         Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,{lhs_str,rhs_str,lt_str,rt_str}, info);
       then

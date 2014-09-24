@@ -726,8 +726,8 @@ algorithm
         e_tp = Types.getPropType(prop);
         _ = Types.propAllConst(prop);
         failure((_,_) = Types.matchType(e, e_tp, tp, false));
-        e_tp_str = Types.unparseType(e_tp);
-        tp_str = Types.unparseType(tp);
+        e_tp_str = Types.unparseTypeNoAttr(e_tp);
+        tp_str = Types.unparseTypeNoAttr(tp);
         e_str = ExpressionDump.printExpStr(e);
         e_str_1 = stringAppend("=", e_str);
         str = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +& "." +& componentName;
@@ -926,8 +926,8 @@ algorithm
         SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty)))))), ty2,_)
       equation
         binding_str = ExpressionDump.printExpStr(exp);
-        expected_type_str = Types.unparseType(ty2);
-        given_type_str = Types.unparseType(ty);
+        expected_type_str = Types.unparseTypeNoAttr(ty2);
+        given_type_str = Types.unparseTypeNoAttr(ty);
         Types.typeErrorSanityCheck(given_type_str, expected_type_str, inInfo);
         Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
         {ident, binding_str, expected_type_str, given_type_str}, inInfo);
@@ -990,8 +990,8 @@ algorithm
         failure((_,DAE.PROP(_,_)) = Types.matchProp(e, p, DAE.PROP(tp, c), true));
         v_str = n;
         b_str = ExpressionDump.printExpStr(e);
-        et_str = Types.unparseType(tp);
-        bt_str = Types.unparseType(bt);
+        et_str = Types.unparseTypeNoAttr(tp);
+        bt_str = Types.unparseTypeNoAttr(bt);
         Types.typeErrorSanityCheck(et_str, bt_str, info);
         Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
         {v_str, b_str, et_str, bt_str}, info);

@@ -2595,8 +2595,8 @@ algorithm
         strs = List.map(es, ExpressionDump.printExpStr);
         str = stringDelimitList(strs, ",");
         elt_str = stringAppendList({"[",str,"]"});
-        t1_str = Types.unparseType(t1);
-        t2_str = Types.unparseType(t2);
+        t1_str = Types.unparseTypeNoAttr(t1);
+        t2_str = Types.unparseTypeNoAttr(t2);
         Types.typeErrorSanityCheck(t1_str, t2_str, info);
         Error.addSourceMessage(Error.TYPE_MISMATCH_ARRAY_EXP, {sp,e_str,t1_str,elt_str,t2_str}, info);
       then
@@ -2976,8 +2976,8 @@ algorithm
         failure(equality(t1 = t2));
         pre_str = PrefixUtil.printPrefixStr3(inPrefix);
         el_str = ExpressionDump.printListStr(els, ExpressionDump.printExpStr, ", ");
-        t1_str = Types.unparseType(t1);
-        t2_str = Types.unparseType(t2);
+        t1_str = Types.unparseTypeNoAttr(t1);
+        t2_str = Types.unparseTypeNoAttr(t2);
         Types.typeErrorSanityCheck(t1_str, t2_str, info);
         Error.addSourceMessage(Error.TYPE_MISMATCH_MATRIX_EXP, {pre_str,el_str,t1_str,t2_str}, info);
       then
@@ -10987,8 +10987,8 @@ algorithm
         s1 = intString(position);
         s2 = Absyn.pathStringNoQual(path);
         s3 = ExpressionDump.printExpStr(e_1);
-        s4 = Types.unparseType(Types.getPropType(prop));
-        s5 = Types.unparseType(vt);
+        s4 = Types.unparseTypeNoAttr(Types.getPropType(prop));
+        s5 = Types.unparseTypeNoAttr(vt);
         Error.addSourceMessage(Error.ARG_TYPE_MISMATCH, {s1,s2,id,s3,s4,s5}, info);
       then fail();
 
@@ -11162,8 +11162,8 @@ algorithm
         (cache,e_1,prop,_) = elabExpInExpression(cache, env, e, impl,st, true,pre,info);
         s1 = Absyn.pathStringNoQual(path);
         s2 = ExpressionDump.printExpStr(e_1);
-        s3 = Types.unparseType(Types.getPropType(prop));
-        s4 = Types.unparseType(vt);
+        s3 = Types.unparseTypeNoAttr(Types.getPropType(prop));
+        s4 = Types.unparseTypeNoAttr(vt);
         Error.addSourceMessage(Error.NAMED_ARG_TYPE_MISMATCH, {s1,id,s2,s3,s4}, info);
       then fail();
   end matchcontinue;
@@ -13510,7 +13510,7 @@ algorithm
       equation
         failure((_,_) = Types.matchType(e1, t1, DAE.T_BOOL_DEFAULT, true));
         e_str = ExpressionDump.printExpStr(e1);
-        t_str = Types.unparseType(t1);
+        t_str = Types.unparseTypeNoAttr(t1);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         t_str = t_str +& " (in component: "+&pre_str+&")";
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str,t_str}, inInfo);
@@ -13521,9 +13521,9 @@ algorithm
       equation
         false = Types.semiEquivTypes(t2, t3);
         e1_str = ExpressionDump.printExpStr(e2);
-        t1_str = Types.unparseType(t2);
+        t1_str = Types.unparseTypeNoAttr(t2);
         e2_str = ExpressionDump.printExpStr(e3);
-        t2_str = Types.unparseType(t3);
+        t2_str = Types.unparseTypeNoAttr(t3);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         Types.typeErrorSanityCheck(t1_str, t2_str, inInfo);
         Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP, {pre_str,e1_str,t1_str,e2_str,t2_str}, inInfo);

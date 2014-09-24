@@ -1490,7 +1490,7 @@ algorithm
         result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
         executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),System.platform()));
         logFile = stringAppend(executable,".log");
-        // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
+        // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
         // we should really have different log files for simulation/compilation!
         // as the buildModel log file will be deleted here and that gives less information to the user!
         0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);

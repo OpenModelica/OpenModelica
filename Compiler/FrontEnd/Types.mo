@@ -2248,6 +2248,17 @@ algorithm
   end match;
 end unparseType;
 
+public function unparseTypeNoAttr
+  "Like unparseType, but doesn't print out builtin attributes."
+  input DAE.Type inType;
+  output String outString;
+protected
+  DAE.Type ty;
+algorithm
+  (ty, _) := stripTypeVars(inType);
+  outString := unparseType(ty);
+end unparseTypeNoAttr;
+
 public function unparseConst
   input DAE.Const inConst;
   output String outString;

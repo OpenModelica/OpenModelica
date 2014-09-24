@@ -270,9 +270,9 @@ algorithm
         failure((_, _) = Types.matchType(bindingExp, bindingType, propagatedTy, true));
         nStr = Absyn.pathString(name);
         eStr = ExpressionDump.printExpStr(bindingExp);
-        etStr = Types.unparseType(propagatedTy);
+        etStr = Types.unparseTypeNoAttr(propagatedTy);
         etStr = etStr +& " propDim: " +& intString(propagatedDims);
-        btStr = Types.unparseType(bindingType);
+        btStr = Types.unparseTypeNoAttr(bindingType);
         Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
         {nStr, eStr, etStr, btStr}, info);
       then
@@ -397,9 +397,9 @@ algorithm
     case (_, _, _, _, "equ", _)
       equation
         e1Str = ExpressionDump.printExpStr(inExp1);
-        t1Str = Types.unparseType(inTy1);
+        t1Str = Types.unparseTypeNoAttr(inTy1);
         e2Str = ExpressionDump.printExpStr(inExp2);
-        t2Str = Types.unparseType(inTy2);
+        t2Str = Types.unparseTypeNoAttr(inTy2);
         s1 = stringAppendList({e1Str,"=",e2Str});
         s2 = stringAppendList({t1Str,"=",t2Str});
         Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, inInfo);
@@ -410,9 +410,9 @@ algorithm
     case (_, _, _, _, "alg", _)
       equation
         e1Str = ExpressionDump.printExpStr(inExp1);
-        t1Str = Types.unparseType(inTy1);
+        t1Str = Types.unparseTypeNoAttr(inTy1);
         e2Str = ExpressionDump.printExpStr(inExp2);
-        t2Str = Types.unparseType(inTy2);
+        t2Str = Types.unparseTypeNoAttr(inTy2);
         s1 = stringAppendList({e1Str,":=",e2Str});
         s2 = stringAppendList({t1Str,":=",t2Str});
         Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR, {e1Str,e2Str,t1Str,t2Str}, inInfo);
