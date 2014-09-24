@@ -1436,6 +1436,18 @@ algorithm
     LOOKUP_ANY(), inInfo, NONE());
 end lookupNameSilent;
 
+public function lookupNameSilentNoBuiltin
+  input Absyn.Path inName;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Item outItem;
+  output Absyn.Path outName;
+  output Env outEnv;
+algorithm
+  (outItem, outName, outEnv) := lookupName(inName, inEnv,
+    NO_BUILTIN_TYPES(), inInfo, NONE());
+end lookupNameSilentNoBuiltin;
+
 public function lookupClassName
   "Calls lookupName with the 'Class not found' error message."
   input Absyn.Path inName;

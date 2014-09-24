@@ -95,7 +95,7 @@ algorithm
 
     case (_, _, _)
       equation
-        (item, env) = lookupClass(inClassName, inEnv, inInfo,
+        (item, env) = lookupClass(inClassName, inEnv, true, inInfo,
           SOME(Error.LOOKUP_ERROR));
         checkItemIsClass(item);
         analyseItem(item, env);
@@ -120,26 +120,27 @@ protected function lookupClass
   them as used."
   input Absyn.Path inPath;
   input Env inEnv;
+  input Boolean inBuiltinPossible "True if the path can be a builtin, otherwise false.";
   input Absyn.Info inInfo;
   input Option<Error.Message> inErrorType;
   output Item outItem;
   output Env outEnv;
 algorithm
-  (outItem, outEnv) := matchcontinue(inPath, inEnv, inInfo, inErrorType)
+  (outItem, outEnv) := matchcontinue(inPath, inEnv, inBuiltinPossible, inInfo, inErrorType)
     local
       Item item;
       Env env;
       String name_str, env_str;
       Error.Message error_id;
 
-    case (_, _, _, _)
+    case (_, _, _, _, _)
       equation
-        (item, env) = lookupClass2(inPath, inEnv, inInfo, inErrorType);
+        (item, env) = lookupClass2(inPath, inEnv, inBuiltinPossible, inInfo, inErrorType);
         (item, env, _) = NFSCodeEnv.resolveRedeclaredItem(item, env);
       then
         (item, env);
 
-    case (_, _, _, SOME(error_id))
+    case (_, _, _, _, SOME(error_id))
       equation
         name_str = Absyn.pathString(inPath);
         env_str = NFSCodeEnv.getEnvName(inEnv);
@@ -153,34 +154,42 @@ protected function lookupClass2
   "Help function to lookupClass, does the actual look up."
   input Absyn.Path inPath;
   input Env inEnv;
+  input Boolean inBuiltinPossible;
   input Absyn.Info inInfo;
   input Option<Error.Message> inErrorType;
   output Item outItem;
   output Env outEnv;
 algorithm
-  (outItem, outEnv) := match(inPath, inEnv, inInfo, inErrorType)
+  (outItem, outEnv) := match(inPath, inEnv, inBuiltinPossible, inInfo, inErrorType)
     local
       Item item;
       Env env;
       String id;
       Absyn.Path rest_path;
 
-    case (Absyn.IDENT(name = _), _, _, _)
+    case (Absyn.IDENT(name = _), _, true, _, _)
       equation
         (item, _, env) =
           NFSCodeLookup.lookupNameSilent(inPath, inEnv, inInfo);
       then
         (item, env);
 
+    case (Absyn.IDENT(name = _), _, false, _, _)
+      equation
+        (item, _, env) =
+          NFSCodeLookup.lookupNameSilentNoBuiltin(inPath, inEnv, inInfo);
+      then
+        (item, env);
+
     // Special case for the baseclass of a class extends. Should be looked up
     // among the inherited elements of the enclosing class.
-    case (Absyn.QUALIFIED(name = "$ce", path = Absyn.IDENT(name = id)), _ :: env, _, _)
+    case (Absyn.QUALIFIED(name = "$ce", path = Absyn.IDENT(name = id)), _ :: env, _, _, _)
       equation
         (item, env) = NFSCodeLookup.lookupInheritedName(id, env);
       then
         (item, env);
 
-    case (Absyn.QUALIFIED(name = id, path = rest_path), _, _, _)
+    case (Absyn.QUALIFIED(name = id, path = rest_path), _, _, _, _)
       equation
         (item, _, env) =
           NFSCodeLookup.lookupNameSilent(Absyn.IDENT(id), inEnv, inInfo);
@@ -190,10 +199,10 @@ algorithm
       then
         (item, env);
 
-    case (Absyn.FULLYQUALIFIED(path = rest_path), _, _, _)
+    case (Absyn.FULLYQUALIFIED(path = rest_path), _, _, _, _)
       equation
         env = NFSCodeEnv.getEnvTopScope(inEnv);
-        (item, env) = lookupClass2(rest_path, env, inInfo, inErrorType);
+        (item, env) = lookupClass2(rest_path, env, false, inInfo, inErrorType);
       then
         (item, env);
 
@@ -223,7 +232,7 @@ algorithm
     case (_, NFSCodeEnv.VAR(var = SCode.COMPONENT(typeSpec =
       Absyn.TPATH(path = type_path), modifications = mods, info = info)), _, _)
       equation
-        (item, type_env) = lookupClass(type_path, inEnv, info, inErrorType);
+        (item, type_env) = lookupClass(type_path, inEnv, true, info, inErrorType);
         redeclares = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
         (item, type_env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redeclares, item, type_env, inEnv, NFInstPrefix.emptyPrefix);
@@ -234,7 +243,7 @@ algorithm
     case (_, NFSCodeEnv.CLASS(cls = SCode.CLASS(info = info), env = {class_env}), _, _)
       equation
         env = NFSCodeEnv.enterFrame(class_env, inEnv);
-        (item, env) = lookupClass(inName, env, info, inErrorType);
+        (item, env) = lookupClass(inName, env, false, info, inErrorType);
       then
         (item, env);
 
@@ -296,7 +305,7 @@ algorithm
     case (NFSCodeEnv.CLASS(classType = NFSCodeEnv.BASIC_TYPE()), _) then ();
 
     // A normal class, mark it and it's environment as used, and recursively
-    // analyse it's contents.
+    // analyse its contents.
     case (NFSCodeEnv.CLASS(cls = cls as SCode.CLASS(classDef = cdef,
         restriction = res, info = info, cmt = cmt), env = {cls_env}), env)
       equation
@@ -1047,7 +1056,7 @@ protected
   Item item;
   Env env;
 algorithm
-  (item, env) := lookupClass(inClassName, inEnv, inInfo, NONE());
+  (item, env) := lookupClass(inClassName, inEnv, true, inInfo, NONE());
   analyseItem(item, env);
 end analyseExtends;
 
@@ -1145,7 +1154,7 @@ algorithm
     case (SOME(SCode.CONSTRAINCLASS(constrainingClass = path, modifier = mod)), _, _)
       equation
         analyseClass(path, inEnv, inInfo);
-        (_, env) = lookupClass(path, inEnv, inInfo, SOME(Error.LOOKUP_ERROR));
+        (_, env) = lookupClass(path, inEnv, true, inInfo, SOME(Error.LOOKUP_ERROR));
         analyseModifier(mod, inEnv, env, inInfo);
       then
         ();
@@ -1590,7 +1599,7 @@ algorithm
         // We want to use lookupClass since we need the item and environment, and
         // we don't care about any subscripts, so convert the cref to a path.
         path = Absyn.crefToPathIgnoreSubs(inCref);
-        (item, env) = lookupClass(path, inEnv, inInfo, NONE());
+        (item, env) = lookupClass(path, inEnv, true, inInfo, NONE());
         analyseItem(item, env);
       then
         ();
