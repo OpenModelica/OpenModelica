@@ -1814,8 +1814,8 @@ algorithm
       compEqLst = List.map1(eqIdcs,List.getIndexFirst,eqsIn);
       compVarLst = List.map1(varIdcs,List.getIndexFirst,varsIn);
       compVars = BackendVariable.listVar1(compVarLst);
-      compEqs = BackendEquation.listEquation(compEqLst);     
-     
+      compEqs = BackendEquation.listEquation(compEqLst);
+
       // get incidence matrix
       numEqs = listLength(compEqLst);
       numVars = listLength(compVarLst);
@@ -1861,8 +1861,8 @@ algorithm
   numVars := BackendVariable.varsSize(varsIn);
   varRange := List.intRange(numVars);
   eqRange := List.intRange(numEqs);
-  graphInfo := GraphML.createGraphInfo();   
-  (graphInfo,(_,graphIdx)) := GraphML.addGraph("EqSystemGraph", true, graphInfo);  
+  graphInfo := GraphML.createGraphInfo();
+  (graphInfo,(_,graphIdx)) := GraphML.addGraph("EqSystemGraph", true, graphInfo);
   (graphInfo,(_,typeAttIdx)) := GraphML.addAttribute("", "type", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
   (graphInfo,(_,nameAttIdx)) := GraphML.addAttribute("", "name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
   (graphInfo,(_,idxAttIdx)) := GraphML.addAttribute("", "systIdx", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
@@ -1932,7 +1932,7 @@ algorithm
   {eq} := BackendEquation.getEqns({indx}, eqs);
   eqString := BackendDump.equationString(eq);
   eqNodeId := getEqNodeIdx(indx);
-  idxString := intString(indx);  
+  idxString := intString(indx);
   nodeLabel := GraphML.NODELABEL_INTERNAL(idxString,NONE(),GraphML.FONTPLAIN());
   (graphInfo,_) := GraphML.addNode(eqNodeId,GraphML.COLOR_GREEN2,{nodeLabel},GraphML.RECTANGLE(),SOME(eqString),{(nameAttrIdx,eqString),(typeAttrIdx,typeStr),(idxAttrIdx,daeIdxStr)},graphIdx,graphInfo);
   graphInfoOut := (graphInfo,graphIdx);
