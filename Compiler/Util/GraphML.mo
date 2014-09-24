@@ -41,6 +41,7 @@ encapsulated package GraphML
 protected import List;
 protected import GraphMLDumpTpl;
 protected import Tpl;
+protected import Util;
 
 //TODO: Use HashTable for nodes to prevent duplicates
 
@@ -620,15 +621,39 @@ end printGraphInfo;
 protected function printNode
   input Node node;
 protected
-    String id;
+    String id,atts;
     String color;
     list<NodeLabel> nodeLabels;
     ShapeType shapeType;
     Option<String> optDesc;
     list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
 algorithm
-  NODE(id=id) := node;
-  print("node: "+&id+&"\n");
+  NODE(id=id,optDesc=optDesc,attValues=attValues) := node;
+  atts := stringDelimitList(List.map(attValues,Util.tuple22)," | ");
+  print("node: "+&id+&" desc: "+&Util.getOption(optDesc)+&"\n\tatts: "+&atts+&"\n");
 end printNode;
+
+protected function printGraph
+  input Graph graph;
+protected
+    String id;
+    list<Integer> nodeIdc;
+algorithm
+  GRAPH(id=id,nodeIdc=nodeIdc) := graph;
+  print("graph: "+&id+&" nodeIdc: "+&stringDelimitList(List.map(nodeIdc,intString),", ")+&"\n");
+end printGraph;
+
+protected function printAttribute
+  input Attribute attr;
+protected
+    Integer attIdx;
+    String defaultValue;
+    String name;
+    AttributeType attType;
+    AttributeTarget attTarget;
+algorithm
+  ATTRIBUTE(attIdx=attIdx,name=name) := attr;
+  print("attIdx: "+&intString(attIdx)+&" name: "+&name+&"\n");
+end printAttribute;
 
 end GraphML;

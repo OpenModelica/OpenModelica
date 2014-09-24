@@ -47,6 +47,7 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import ComponentReference;
 protected import DAEDump;
+protected import DAEUtil;
 protected import Debug;
 protected import Expression;
 protected import ExpressionSolve;
@@ -70,10 +71,11 @@ public type Communications = list<Communication>;
 public uniontype Communication
   record COMMUNICATION
     //Variables that have to be transmitted
-    Integer numberOfVars; //sum of {numOfIntegers,numOfFloats,numOfBoolean}
+    Integer numberOfVars; //sum of {numOfIntegers,numOfFloats,numOfBoolean, numOfStrings}
     list<Integer> integerVars;
     list<Integer> floatVars;
     list<Integer> booleanVars;
+    list<Integer> stringVars;
     //Other values
     Integer childNode;
     Real requiredTime;
@@ -413,12 +415,12 @@ author: Waurich TUD 2013-07"
   output Communication commCostsOut;
 protected
   Integer numberOfVars, childNode;
-  list<Integer> integerVars,floatVars,booleanVars;
+  list<Integer> integerVars,floatVars,booleanVars,stringVars;
   Real requiredTime;
 algorithm
-  COMMUNICATION(numberOfVars=numberOfVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,childNode=childNode,requiredTime=requiredTime) := commCostsIn;
+  COMMUNICATION(numberOfVars=numberOfVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,stringVars=stringVars,childNode=childNode,requiredTime=requiredTime) := commCostsIn;
   childNode := childNode+idxOffset;
-  commCostsOut := COMMUNICATION(numberOfVars,integerVars,floatVars,booleanVars,childNode,requiredTime);
+  commCostsOut := COMMUNICATION(numberOfVars,integerVars,floatVars,booleanVars,stringVars,childNode,requiredTime);
 end updateCommCosts1;
 
 protected function updateTaskGraphSystem "map function to add the indices in the taskGraph system to the number of nodes of the previous system.
@@ -454,11 +456,11 @@ protected
   array<Communications> commCosts;
   Communications commCostsOfNode;
   array<Integer> nodeMark;
-  tuple<list<Integer>, list<tuple<Integer, Integer>>, list<Integer>> unsolvedVars; //<intVarIdc, <floatVarIdx, [0 if derived, 1 if not]>, boolVarIdc>
+  tuple<list<Integer>, list<tuple<Integer, Integer>>, list<Integer>, list<Integer>> unsolvedVars; //<intVarIdc, <floatVarIdx, [0 if derived, 1 if not]>, boolVarIdc,stringVarIdc>
   list<Integer> eventVarLst;
-  array<tuple<list<Integer>,list<Integer>,list<Integer>>> requiredSccs; //required variables <int, float, bool>
+  array<tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>> requiredSccs; //required variables <int, float, bool, string>
   Integer componentIndex, numberOfComps;
-  list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>>> requiredSccs_RefCount; //<sccIdx, refCountInt, refCountFloat, refCountBool>
+  list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>>> requiredSccs_RefCount; //<sccIdx, refCountInt, refCountFloat, refCountBool, refCountString>
   String nodeName;
 algorithm
   (incidenceMatrix,isyst,ishared,numberOfComps) := isystInfo;
@@ -469,12 +471,13 @@ algorithm
   nodeName := BackendDump.strongComponentString(component);
   nodeNames := arrayUpdate(nodeNames,componentIndex,nodeName);
   _ := HpcOmBenchmark.benchSystem();
-  //nodeMark := arrayUpdate(nodeMark,componentIndex,getNodeMark(componentIndex,incidenceMatrix,varCompMapping,eqCompMapping));
+
   unsolvedVars := getUnsolvedVarsBySCC(component,incidenceMatrix,orderedVars,eventVarLst);
-  requiredSccs := arrayCreate(numberOfComps,({},{},{})); //create a ref-counter for each component
-  requiredSccs := List.fold2(List.map1(Util.tuple31(unsolvedVars),Util.makeTuple,1),fillSccList,1,varCompMapping,requiredSccs);
-  requiredSccs := List.fold2(Util.tuple32(unsolvedVars),fillSccList,2,varCompMapping,requiredSccs);
-  requiredSccs := List.fold2(List.map1(Util.tuple33(unsolvedVars),Util.makeTuple,1),fillSccList,3,varCompMapping,requiredSccs);
+  requiredSccs := arrayCreate(numberOfComps,({},{},{},{})); //create a ref-counter for each component
+  requiredSccs := List.fold2(List.map1(Util.tuple41(unsolvedVars),Util.makeTuple,1),fillSccList,1,varCompMapping,requiredSccs);
+  requiredSccs := List.fold2(Util.tuple42(unsolvedVars),fillSccList,2,varCompMapping,requiredSccs);
+  requiredSccs := List.fold2(List.map1(Util.tuple43(unsolvedVars),Util.makeTuple,1),fillSccList,3,varCompMapping,requiredSccs);
+  requiredSccs := List.fold2(List.map1(Util.tuple44(unsolvedVars),Util.makeTuple,1),fillSccList,4,varCompMapping,requiredSccs);
   ((_,requiredSccs_RefCount)) := Util.arrayFold(requiredSccs, convertRefArrayToList, (1,{}));
   (commCosts,commCostsOfNode) := updateCommCostBySccRef(requiredSccs_RefCount, componentIndex, commCosts);
   (graphTmp,rootNodes) := fillAdjacencyList(graphIn,rootNodes,componentIndex,commCostsOfNode,1);
@@ -484,7 +487,7 @@ end createTaskGraph1;
 
 protected function updateCommCostBySccRef "author: marcusw
   Updates the given commCosts-array with the values of the refCount-list."
-  input list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>>> requiredSccs_RefCount; //<sccIdx,refCountInt,refCountFloat,refCountBool>
+  input list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>>> requiredSccs_RefCount; //<sccIdx,refCountInt,refCountFloat,refCountBool,refCountString>
   input Integer nodeIdx;
   input array<Communications> iCommCosts;
   output array<Communications> oCommCosts;
@@ -500,16 +503,16 @@ end updateCommCostBySccRef;
 
 protected function createCommunicationObject "author: marcusw
   Helper function which converts a tuple<sccIdx,refCountInt,refCountFloat,refCountBool> to a Communictaion-object."
-  input tuple<Integer,list<Integer>,list<Integer>,list<Integer>> iTuple;
+  input tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>> iTuple;
   input Real requiredTime;
   output Communication oComm;
 protected
-  list<Integer> integerVars,floatVars,booleanVars;
+  list<Integer> integerVars,floatVars,booleanVars,stringVars;
   Integer sccIdx,refCountSum;
 algorithm
-  (sccIdx,integerVars,floatVars,booleanVars) := iTuple;
-  refCountSum := listLength(integerVars) + listLength(floatVars) + listLength(booleanVars);
-  oComm := COMMUNICATION(refCountSum,integerVars,floatVars,booleanVars,sccIdx,requiredTime);
+  (sccIdx,integerVars,floatVars,booleanVars,stringVars) := iTuple;
+  refCountSum := listLength(integerVars) + listLength(floatVars) + listLength(booleanVars) + listLength(stringVars);
+  oComm := COMMUNICATION(refCountSum,integerVars,floatVars,booleanVars,stringVars,sccIdx,requiredTime);
 end createCommunicationObject;
 
 protected function updateCommCostBySccRef1 "author: marcusw
@@ -521,15 +524,15 @@ protected function updateCommCostBySccRef1 "author: marcusw
 protected
   Communications oldComms;
   Integer sourceSccIdx;
-  list<Integer> integerVars,floatVars,booleanVars;
+  list<Integer> integerVars,floatVars,booleanVars,stringVars;
   Integer numberOfVars;
   Real requiredTime;
   Communication tmpComm;
 algorithm
-  COMMUNICATION(numberOfVars=numberOfVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,childNode=sourceSccIdx,requiredTime=requiredTime) := iEdgeSource;
+  COMMUNICATION(numberOfVars=numberOfVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,stringVars=stringVars,childNode=sourceSccIdx,requiredTime=requiredTime) := iEdgeSource;
   oldComms := arrayGet(iCommCosts, sourceSccIdx);
   //print("updateCommCostBySccRef1 added edge from " +& intString(sourceSccIdx) +& " to " +& intString(iEdgeTarget) +& "\n");
-  tmpComm := COMMUNICATION(numberOfVars,integerVars,floatVars,booleanVars,iEdgeTarget,requiredTime);
+  tmpComm := COMMUNICATION(numberOfVars,integerVars,floatVars,booleanVars,stringVars,iEdgeTarget,requiredTime);
   oCommCosts := arrayUpdate(iCommCosts, sourceSccIdx, tmpComm::oldComms);
 end updateCommCostBySccRef1;
 
@@ -886,36 +889,43 @@ end isWhenEquation;
 protected function fillSccList "author: marcusw
   This function appends the scc, which solves the given variable, to the requiredsccs-list."
   input tuple<Integer,Integer> iVariable; //<varIdx, [derived = 0, not derived = 1]>
-  input Integer iVarType; //<1 = int, 2 = float, 3 = bool>
+  input Integer iVarType; //<1 = int, 2 = float, 3 = bool, 4 = string>
   input array<tuple<Integer,Integer,Integer>> iVarCompMapping; //<sccIdx, eqSysIdx, offset>
-  input array<tuple<list<Integer>,list<Integer>,list<Integer>>> iRequiredSccs; //<int vars, float vars, bool vars>
-  output array<tuple<list<Integer>,list<Integer>,list<Integer>>> oRequiredSccs;
+  input array<tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>> iRequiredSccs; //<int vars, float vars, bool vars>
+  output array<tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>> oRequiredSccs;
 algorithm
   oRequiredSccs := match(iVariable,iVarType,iVarCompMapping,iRequiredSccs)
     local
       Integer varIdx, sccIdx;
-      list<Integer> integerVars,floatVars,booleanVars;
-      array<tuple<list<Integer>,list<Integer>,list<Integer>>> tmpRequiredSccs;
+      list<Integer> integerVars,floatVars,booleanVars,stringVars;
+      array<tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>> tmpRequiredSccs;
     case ((varIdx,1),1,_,tmpRequiredSccs)
       equation
         ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
-        ((integerVars,floatVars,booleanVars)) = arrayGet(iRequiredSccs, sccIdx);
+        ((integerVars,floatVars,booleanVars,stringVars)) = arrayGet(iRequiredSccs, sccIdx);
         integerVars = varIdx::integerVars;
-        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars));
+        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars,stringVars));
       then tmpRequiredSccs;
     case ((varIdx,1),2,_,tmpRequiredSccs)
       equation
         ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
-        ((integerVars,floatVars,booleanVars)) = arrayGet(iRequiredSccs, sccIdx);
+        ((integerVars,floatVars,booleanVars,stringVars)) = arrayGet(iRequiredSccs, sccIdx);
         floatVars = varIdx::floatVars;
-        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars));
+        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars,stringVars));
       then tmpRequiredSccs;
     case ((varIdx,1),3,_,tmpRequiredSccs)
       equation
         ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
-        ((integerVars,floatVars,booleanVars)) = arrayGet(iRequiredSccs, sccIdx);
+        ((integerVars,floatVars,booleanVars,stringVars)) = arrayGet(iRequiredSccs, sccIdx);
         booleanVars = varIdx::booleanVars;
-        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars));
+        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars,stringVars));
+      then tmpRequiredSccs;
+    case ((varIdx,1),4,_,tmpRequiredSccs)
+      equation
+        ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
+        ((integerVars,floatVars,booleanVars,stringVars)) = arrayGet(iRequiredSccs, sccIdx);
+        stringVars = varIdx::stringVars;
+        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars,stringVars));
       then tmpRequiredSccs;
    else iRequiredSccs;
   end match;
@@ -923,21 +933,21 @@ end fillSccList;
 
 protected function convertRefArrayToList "author: marcusw
   Append the reference values for the given scc to the result list, if the reference counter is not zero."
-  input tuple<list<Integer>,list<Integer>,list<Integer>> iRefCountValues; //<referenceInt, referenceFloat, referenceBool>
-  input tuple<Integer,list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>>>> iList; //the current index and the current ref-list (<sccIdx, refCountInt, refCountFloat, refCountBool>)
-  output tuple<Integer,list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>>>> oList;
+  input tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>> iRefCountValues; //<referenceInt, referenceFloat, referenceBool,referenceString>
+  input tuple<Integer,list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>>>> iList; //the current index and the current ref-list (<sccIdx, refCountInt, refCountFloat, refCountBool, refCountString>)
+  output tuple<Integer,list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>>>> oList;
 protected
   Integer curIdx;
-  list<Integer> integerVars,floatVars,booleanVars;
-  tuple<Integer,list<Integer>,list<Integer>,list<Integer>> tmpTuple;
-  list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>>> curList;
+  list<Integer> integerVars,floatVars,booleanVars,stringVars;
+  tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>> tmpTuple;
+  list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>>> curList;
 algorithm
   oList := match(iRefCountValues,iList)
-    case(({},{},{}),(curIdx,curList))
+    case(({},{},{},{}),(curIdx,curList))
       then ((curIdx+1,curList));
-    case((integerVars,floatVars,booleanVars),(curIdx,curList))
+    case((integerVars,floatVars,booleanVars,stringVars),(curIdx,curList))
       equation
-        tmpTuple = (curIdx,integerVars,floatVars,booleanVars);
+        tmpTuple = (curIdx,integerVars,floatVars,booleanVars,stringVars);
         curList = tmpTuple::curList;
       then ((curIdx+1,curList));
    end match;
@@ -949,13 +959,13 @@ protected function getUnsolvedVarsBySCC "author: marcusw,waurich
   input BackendDAE.IncidenceMatrix incidenceMatrix;
   input BackendDAE.Variables orderedVars;
   input list<Integer> eventVarLst;
-  output tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>> unsolvedVars; //<intVarIdc, <floatVarIdx, [0 if derived, 1 if not]>, boolVarIdc>
+  output tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>> unsolvedVars; //<intVarIdc, <floatVarIdx, [0 if derived, 1 if not]>, boolVarIdc, stringVarIdc>
 algorithm
   unsolvedVars := matchcontinue(component, incidenceMatrix, orderedVars, eventVarLst)
     local
       Integer varIdx;
       list<Integer> varIdc;
-      tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>> tmpVars;
+      tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>> tmpVars;
     case(BackendDAE.SINGLEEQUATION(var=varIdx),_,_,_)
       equation
         tmpVars = getUnsolvedVarsBySCC0(component,incidenceMatrix,orderedVars,{varIdx},eventVarLst);
@@ -1013,61 +1023,69 @@ protected function getUnsolvedVarsBySCC0 "author: marcusw
   input BackendDAE.Variables orderedVars;
   input list<Integer> varIdc; //variables that are solved by the component
   input list<Integer> eventVarLst;
-  output tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>> unsolvedVars; //<intVars, <floatVarIdx, [1 if derived, 0 if not]>, boolVars>
+  output tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>> unsolvedVars; //<intVars, <floatVarIdx, [1 if derived, 0 if not]>, boolVars, stringVars>
 protected
   list<tuple<Integer,Integer>> tmpVars;
 algorithm
   tmpVars := getVarsBySCC(component, incidenceMatrix);
   tmpVars := List.filter1OnTrue(tmpVars, isTupleMember, varIdc);
   tmpVars := removeEventVars(eventVarLst,tmpVars,1);
-  unsolvedVars := List.fold1(tmpVars, getUnsolvedVarsBySCC1, orderedVars, ({},{},{}));
+  unsolvedVars := List.fold1(tmpVars, getUnsolvedVarsBySCC1, orderedVars, ({},{},{},{}));
 end getUnsolvedVarsBySCC0;
 
 protected function getUnsolvedVarsBySCC1 "author: marcusw
   Append the given variable, regarding their type, to the list of required variables."
   input tuple<Integer,Integer> iVarIdx; //<varIdx, derived[0] | not derived [1]>
   input BackendDAE.Variables orderedVars;
-  input tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>> iUnsolvedVars; //<intVarIdc,realVarIdc,boolVarIdc>
-  output tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>> oUnsolvedVars;
+  input tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>> iUnsolvedVars; //<intVarIdc,realVarIdc,boolVarIdc,stringVarIdc>
+  output tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>> oUnsolvedVars;
 protected
   BackendDAE.Var var;
   BackendDAE.Type varType;
 algorithm
   var := BackendVariable.getVarAt(orderedVars, Util.tuple21(iVarIdx));
   varType := BackendVariable.getVarType(var);
-  oUnsolvedVars := getUnsolvedVarsBySCC2(iVarIdx, varType,iUnsolvedVars);
+  oUnsolvedVars := getUnsolvedVarsBySCC2(varType, iVarIdx, iUnsolvedVars);
 end getUnsolvedVarsBySCC1;
 
 protected function getUnsolvedVarsBySCC2 "author: marcusw
   Append the given variable, regarding their type, to the list of required variables."
-  input tuple<Integer,Integer> iVarIdx;
   input DAE.Type iVarType;
-  input tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>> iUnsolvedVars; //<intVarIdc,realVarIdc,boolVarIdc>
-  output tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>> oUnsolvedVars;
+  input tuple<Integer,Integer> iVarIdx;
+  input tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>> iUnsolvedVars; //<intVarIdc,realVarIdc,boolVarIdc,stringVarIdc>
+  output tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>> oUnsolvedVars;
 protected
-  list<Integer> intVarIdc,boolVarIdc;
+  list<Integer> intVarIdc,boolVarIdc,stringVarIdc;
   list<tuple<Integer,Integer>> realVarIdc;
   Integer varIdx, derived;
   DAE.Type ty;
 algorithm
-  oUnsolvedVars := match(iVarIdx, iVarType, iUnsolvedVars)
-    case((varIdx,derived),DAE.T_INTEGER(_,_),(intVarIdc,realVarIdc,boolVarIdc))
+  oUnsolvedVars := match(iVarType, iVarIdx, iUnsolvedVars)
+    case(DAE.T_INTEGER(_,_),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
       equation
         intVarIdc = varIdx::intVarIdc;
-      then ((intVarIdc,realVarIdc,boolVarIdc));
-    case((varIdx,derived),DAE.T_REAL(_,_),(intVarIdc,realVarIdc,boolVarIdc))
+      then ((intVarIdc,realVarIdc,boolVarIdc,stringVarIdc));
+    case(DAE.T_REAL(_,_),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
       equation
         realVarIdc = (varIdx,derived)::realVarIdc;
-      then ((intVarIdc,realVarIdc,boolVarIdc));
-    case((varIdx,derived),DAE.T_BOOL(_,_),(intVarIdc,realVarIdc,boolVarIdc))
+      then ((intVarIdc,realVarIdc,boolVarIdc,stringVarIdc));
+    case(DAE.T_BOOL(_,_),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
       equation
         boolVarIdc = varIdx::boolVarIdc;
-      then ((intVarIdc,realVarIdc,boolVarIdc));
-    case((varIdx,derived),DAE.T_ARRAY(ty=ty),(intVarIdc,realVarIdc,boolVarIdc))
-      then getUnsolvedVarsBySCC2(iVarIdx,ty,iUnsolvedVars);
+      then ((intVarIdc,realVarIdc,boolVarIdc,stringVarIdc));
+    case(DAE.T_ARRAY(ty=ty),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
+      then getUnsolvedVarsBySCC2(ty,iVarIdx,iUnsolvedVars);
+    case(DAE.T_ENUMERATION(literalVarLst=_),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
+      equation
+        stringVarIdc = varIdx::stringVarIdc;
+      then ((intVarIdc,realVarIdc,boolVarIdc,stringVarIdc));
+    case(DAE.T_STRING(_,_),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
+      equation
+        stringVarIdc = varIdx::stringVarIdc;
+      then ((intVarIdc,realVarIdc,boolVarIdc,stringVarIdc));
     else
       equation
-        print("getUnsolvedVarsBySCC2: Warning, unknown varType for variable " +& intString(Util.tuple21(iVarIdx)) +& " !\n");
+        print("getUnsolvedVarsBySCC2: Warning, unknown varType for variable " +& intString(Util.tuple21(iVarIdx)) +&" !\n");
      then iUnsolvedVars;
   end match;
 end getUnsolvedVarsBySCC2;
@@ -3498,7 +3516,7 @@ algorithm
         false = List.exist1(parentNodes,listMember,doNotMerge);
         //print("HpcOmTaskGraph.mergeParentNodes0: looking at node " +& intString(iNodeIdx) +& "\n");
         parentCommCosts = List.map2(parentNodes, getCommCostBetweenNodes, iNodeIdx, iGraphData);
-        COMMUNICATION(requiredTime=highestCommCost) = getHighestCommCost(parentCommCosts, COMMUNICATION(0,{},{},{},-1,-1.0));
+        COMMUNICATION(requiredTime=highestCommCost) = getHighestCommCost(parentCommCosts, COMMUNICATION(0,{},{},{},{},-1,-1.0));
         parentExeCosts = List.map1(parentNodes, getExeCost, iGraphData);
         ((_,sumParentExeCosts)) = List.fold(parentExeCosts, addUpExeCosts, (0,0.0));
         ((_,highestParentExeCost)) = getHighestExecCost(parentExeCosts, (0,0.0));
@@ -4493,12 +4511,12 @@ protected
   Integer childNode,reqTimeM,reqTimeN;
   Integer numberOfVars;
   Real requiredTime;
-  list<Integer> integerVars,floatVars,booleanVars;
+  list<Integer> integerVars,floatVars,booleanVars,stringVars;
 algorithm
-  COMMUNICATION(numberOfVars=numberOfVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,childNode=childNode,requiredTime=requiredTime) := iComm;
+  COMMUNICATION(numberOfVars=numberOfVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,stringVars=stringVars,childNode=childNode,requiredTime=requiredTime) := iComm;
   (reqTimeM,reqTimeN) := iReqTimeCom;
   requiredTime := intReal(reqTimeN + numberOfVars*reqTimeM);
-  oComm := COMMUNICATION(numberOfVars,integerVars,floatVars,booleanVars,childNode,requiredTime);
+  oComm := COMMUNICATION(numberOfVars,integerVars,floatVars,booleanVars,stringVars,childNode,requiredTime);
 end createCommCosts0;
 
 public function countOperations "author: marcusw
@@ -4861,7 +4879,7 @@ algorithm
         criticalPathIdx = getCriticalPath2(criticalPaths, 1, -1.0, -1);
         ((cpCalcTime, criticalPathChild)) = listGet(criticalPaths, criticalPathIdx);
         criticalPath = iNode :: criticalPathChild;
-        commCost = Util.if_(iHandleCommCosts, getCommCostBetweenNodes(iNode, List.first(criticalPathChild), iGraphData), COMMUNICATION(0,{},{},{},-1,0.0));
+        commCost = Util.if_(iHandleCommCosts, getCommCostBetweenNodes(iNode, List.first(criticalPathChild), iGraphData), COMMUNICATION(0,{},{},{},{},-1,0.0));
         //print("Comm cost from node " +& intString(iNode) +& " to " +& intString(List.first(criticalPathChild)) +& " with costs " +& intString(Util.tuple33(commCost)) +& "\n");
         nodeComps = arrayGet(inComps, iNode);
         calcTime = addUpExeCostsForNode(nodeComps, exeCosts, 0.0); //sum up calc times of all components
@@ -5225,15 +5243,15 @@ protected
   array<Communications> tmpCommCosts;
   Communications costs;
   Integer numberOfVars,nodeIdx;
-  list<Integer> integerVars,floatVars,booleanVars;
+  list<Integer> integerVars,floatVars,booleanVars,stringVars;
   Real requiredTime;
 algorithm
   oCommCosts := matchcontinue(iCost, iParentCompIdx, iCommCosts)
-    case(COMMUNICATION(numberOfVars=numberOfVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,childNode=nodeIdx,requiredTime=requiredTime),_,_)
+    case(COMMUNICATION(numberOfVars=numberOfVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,stringVars=stringVars,childNode=nodeIdx,requiredTime=requiredTime),_,_)
       equation
         true = intLe(nodeIdx, arrayLength(iCommCosts));
         costs = arrayGet(iCommCosts, nodeIdx);
-        costs = COMMUNICATION(numberOfVars,integerVars,floatVars,booleanVars,iParentCompIdx,requiredTime) :: costs;
+        costs = COMMUNICATION(numberOfVars,integerVars,floatVars,booleanVars,stringVars,iParentCompIdx,requiredTime) :: costs;
         tmpCommCosts = arrayUpdate(iCommCosts, nodeIdx, costs);
       then tmpCommCosts;
     else iCommCosts;
@@ -5318,7 +5336,7 @@ algorithm
   childComps := arrayGet(inComps, iChildNodeIdx);
   concreteCommCostsOpt := List.map2(parentComps, getCommCostBetweenNodes0, childComps, commCosts);
   concreteCommCosts := List.flatten(List.map(concreteCommCostsOpt, List.fromOption));
-  oCommCost := getHighestCommCost(concreteCommCosts, COMMUNICATION(0,{},{},{},-1,-1.0));
+  oCommCost := getHighestCommCost(concreteCommCosts, COMMUNICATION(0,{},{},{},{},-1,-1.0));
 end getCommCostBetweenNodes;
 
 protected function getCommCostBetweenNodes0
@@ -5336,7 +5354,7 @@ algorithm
         commCosts = arrayGet(iCommCosts, iParentComp);
         filteredCommCosts = List.filter1OnTrue(commCosts, getCommCostBetweenNodes1, iChildComps);
         true = List.isNotEmpty(filteredCommCosts);
-        highestCommCost = getHighestCommCost(filteredCommCosts, COMMUNICATION(0,{},{},{},-1,-1.0));
+        highestCommCost = getHighestCommCost(filteredCommCosts, COMMUNICATION(0,{},{},{},{},-1,-1.0));
       then SOME(highestCommCost);
     else NONE();
   end matchcontinue;
@@ -5588,7 +5606,7 @@ algorithm
   (parentNodeIdx,varIdx) := parent;
   row := arrayGet(commCostsIn,parentNodeIdx);
   row := List.filter1OnTrue(row,isCommunicationChildEqualToIdx,child);
-  row := COMMUNICATION(1,{},{varIdx},{},child,reqCycles)::row;
+  row := COMMUNICATION(1,{},{varIdx},{},{},child,reqCycles)::row;
   commCostsOut := arrayUpdate(commCostsIn,parentNodeIdx,row);
 end setCommCosts;
 

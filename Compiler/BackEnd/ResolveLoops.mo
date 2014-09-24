@@ -119,7 +119,7 @@ algorithm
 
         varAtts = List.threadMap(List.fill(false,listLength(varLst)),List.fill("",listLength(varLst)),Util.makeTuple);
         eqAtts = List.threadMap(List.fill(false,listLength(eqLst)),List.fill("",listLength(eqLst)),Util.makeTuple);
-        HpcOmEqSystems.dumpEquationSystemGraphML1(vars,eqs,m,varAtts,eqAtts,"whole System_"+&intString(sysIdx));
+        HpcOmEqSystems.dumpEquationSystemBipartiteGraph2(vars,eqs,m,varAtts,eqAtts,"whole System_"+&intString(sysIdx));
           //BackendDump.dumpEquationArray(eqs,"the complete DAE");
 
         // get the linear equations and their vars
@@ -140,7 +140,7 @@ algorithm
 
         varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
         eqAtts = List.threadMap(List.fill(false,numSimpEqs),List.fill("",numSimpEqs),Util.makeTuple);
-        HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m,varAtts,eqAtts,"rL_simpEqs_"+&intString(sysIdx));
+        HpcOmEqSystems.dumpEquationSystemBipartiteGraph2(simpVars,simpEqs,m,varAtts,eqAtts,"rL_simpEqs_"+&intString(sysIdx));
 
         //partition graph
         partitions = arrayList(partitionBipartiteGraph(m,mT));
@@ -154,7 +154,7 @@ algorithm
 
         varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
         eqAtts = List.threadMap(List.fill(false,numSimpEqs),List.fill("",numSimpEqs),Util.makeTuple);
-        HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_cut,varAtts,eqAtts,"rL_loops_"+&intString(sysIdx));
+        HpcOmEqSystems.dumpEquationSystemBipartiteGraph2(simpVars,simpEqs,m_cut,varAtts,eqAtts,"rL_loops_"+&intString(sysIdx));
 
         // handle the partitions separately, resolve the loops in the partitions, insert the resolved equation
         eqLst = resolveLoops_resolvePartitions(partitions,m_cut,mT_cut,m,mT,eqMapping,varMapping,eqLst,varLst,nonLoopEqIdcs);
@@ -172,7 +172,7 @@ algorithm
 
         varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
         eqAtts = List.threadMap(List.fill(false,numSimpEqs),List.fill("",numSimpEqs),Util.makeTuple);
-        HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_after,varAtts,eqAtts,"rL_after_"+&intString(sysIdx));
+        HpcOmEqSystems.dumpEquationSystemBipartiteGraph2(simpVars,simpEqs,m_after,varAtts,eqAtts,"rL_after_"+&intString(sysIdx));
 
         eqSys = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
       then
