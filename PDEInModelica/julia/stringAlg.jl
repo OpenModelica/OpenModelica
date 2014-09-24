@@ -1,4 +1,6 @@
-#model pder(u,t) + 1*pder(u,x) = 0
+# pder(u,time) - pder(w,x) = 0
+#  pder(v,time) - pder(u,x) = 0
+#  w = c*v;
 
 include("incl.jl")
 
@@ -43,7 +45,7 @@ function maxEigValFun()
 end
 
 function vFun(x,u,u_x,t)
-    [c*u[1]]          #w = c*v;
+    [c*u[2]]          #w = c*v;
 end
 
 

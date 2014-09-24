@@ -1,9 +1,11 @@
-#model pder(u,t) + 1*pder(u,x) = 0
+#  pder(u,time) - c*pder(v,x) = 0
+#  pder(v,time) - pder(u,x) = 0
 
 include("incl.jl")
 
 # - model static data
 nU = 2                 #number of state fields u[1,:]
+nV = 0
 
 # - model values
 L = 2.0                #length of domain
@@ -41,7 +43,11 @@ function maxEigValFun()
     c
 end
 
-function utFun(x,u,ux,t,)
+function vFun(x,u,u_x,t)
+[]
+end
+
+function utFun(x,u,ux,v,vx,t,)
     [c*ux[2]; ux[1]]
 end
 

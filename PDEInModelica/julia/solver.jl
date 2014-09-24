@@ -1,12 +1,15 @@
 #numerics setup
-nX = 400               #number of nodes
+nX = 20               #number of nodes
 
 
 #numerics functions
 
-function diff_x_LF(X,Y,Y_x)
-    for i = 2:(size(X,1)-1) #over inner grid nodes
-        Y_x[:,i] = (Y[:,i+1] - Y[:,i-1])/(X[i+1] - X[i-1])
+function diff_x_LF(X,Y,dx,Y_x)
+    nX = size(X,1)
+    Y_x[:,1] = -3/2*Y[:,1] + 2*Y[:,2] + 1/2*Y[:,3]
+    for i = 2:(nX-1) #over inner grid nodes
+        Y_x[:,i] = (Y[:,i+1] - Y[:,i-1])/(2*dx)
+    Y_x[:,nX] = 3/2*Y[:,nX] - 2*Y[:,nX-1] - 1/2*Y[:,nX-2]
     end
 end
 
@@ -64,16 +67,18 @@ function simulate(tEnd)
 
     while t < tEnd 
         dt = cfl*maxEigValFun()*dx
+        t = t + dt
         for i = 1:nU
             U[i,1]  = BCFun(i,left,t,X,U)
             U[i,nX] = BCFun(i,right,t,X,U)
         end
-        diff_x_LF(X,U,U_x)
+        diff_x_LF(X,U,dx,U_x)
         updateV(X,U,U_x,t,V)
-        diff_x_LF(X,V,V_x)
+        diff_x_LF(X,V,dx,V_x)
         updateU_t(X,U,U_x,V,V_x,t,U_t)
         updateU_LF(U_t,dt,U)
-        t = t + dt
+        print("time: ", string(t))
+        println()
     end    
     (X,U)
 end
