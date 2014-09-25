@@ -1235,6 +1235,13 @@ algorithm
       then
         (item, env);
 
+    case (NFSCodeEnv.REDECLARED_ITEM(item, env), _, _, _, _)
+      equation
+        (item, env) = lookupRedeclaredClass2(item, inRedeclarePrefix,
+            inReplaceablePrefix, env, inInfo);
+      then
+        (item, env);
+
     // Non-replaceable element => error.
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name, info = info)),
         _, SCode.NOT_REPLACEABLE(), _, _)
