@@ -626,7 +626,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //Initialize array elements
     <%initializeArrayElements(simCode,useFlatArrayNotation)%>
 
-    _functions = new Functions(_simTime,__z,__zDot);
+    _functions = new Functions(_simTime,__z,__zDot,_initial,_terminate);
 
     <%hpcomConstructorExtension%>
 
