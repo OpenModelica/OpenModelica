@@ -1882,6 +1882,15 @@ algorithm
   outType := DAE.T_ARRAY(inType, {inDimension}, DAE.emptyTypeSource);
 end liftArray;
 
+public function liftList "This function turns a type into a list of that type.
+  If the type already is a list, another dimension is simply added."
+  input DAE.Type inType;
+  input DAE.Dimension inDimension;
+  output DAE.Type outType;
+algorithm
+  outType := DAE.T_METALIST(inType, DAE.emptyTypeSource);
+end liftList;
+
 public function liftArrayListDims "
   This function turns a type into an array of that type."
   input DAE.Type inType;

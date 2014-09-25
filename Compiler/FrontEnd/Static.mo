@@ -1470,13 +1470,13 @@ algorithm
     case (cache,_,Absyn.IDENT(name = "list"), exp, ty, _, _, _, _)
       equation
         (exp,ty) = Types.matchType(exp, ty, DAE.T_METABOXED_DEFAULT, true);
-        ty = DAE.T_METALIST(ty, DAE.emptyTypeSource);
+        ty = List.foldr(dims,Types.liftList,ty);
       then (cache,exp,ty,ty,SOME(Values.LIST({})),fn);
 
     case (cache,_,Absyn.IDENT(name = "listReverse"), exp, ty, _, _, _, _)
       equation
         (exp,ty) = Types.matchType(exp, ty, DAE.T_METABOXED_DEFAULT, true);
-        ty = DAE.T_METALIST(ty, DAE.emptyTypeSource);
+        ty = List.foldr(dims,Types.liftList,ty);
       then (cache,exp,ty,ty,SOME(Values.LIST({})),fn);
 
     case (cache,_,Absyn.IDENT("min"),exp, ty, DAE.T_REAL(varLst = _),_,_,_)

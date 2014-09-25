@@ -5430,6 +5430,7 @@ algorithm
         (cache, value, st) = ceval(cache, env, exp, impl, st,msg,numIter+1);
         // print("cevalReductionEval: " +& ExpressionDump.printExpStr(exp) +& " => " +& ValuesUtil.valString(value) +& "\n");
         (cache, result, st) = cevalReductionFold(cache, env, opPath, curValue, value, foldName, resultName, foldExp, exprType, impl, st,msg,numIter);
+        // print("cevalReductionEval => " +& Util.applyOptionOrDefault(result, ValuesUtil.valString, "") +& "\n");
       then (cache, result, st);
   end match;
 end cevalReductionEvalAndFold;
@@ -5524,24 +5525,6 @@ algorithm
     case (v1, Values.LIST(vals)) then Values.LIST(v1::vals);
   end match;
 end valueCons;
-
-protected function lookupReductionOp
-  "Looks up a reduction function based on it's name."
-  input DAE.Ident reductionName;
-  output ReductionOperator op;
-
-  partial function ReductionOperator
-    input Values.Value v1;
-    input Values.Value v2;
-    output Values.Value res;
-  end ReductionOperator;
-algorithm
-  op := match(reductionName)
-    case "array" then valueArrayCons;
-    case "list" then valueCons;
-    case "listReverse" then valueCons;
-  end match;
-end lookupReductionOp;
 
 protected function cevalReductionIterators
   input Env.Cache inCache;
@@ -5661,7 +5644,17 @@ algorithm
     case (_,_,value,{_}) then value;
     case (Absyn.IDENT("array"),Absyn.COMBINE(),Values.ARRAY(valueLst=vals),_)
       equation
-        value = backpatchArrayReduction3(vals,listReverse(dims));
+        value = backpatchArrayReduction3(vals,listReverse(dims),ValuesUtil.makeArray);
+        // print(ValuesUtil.valString(value));print("\n");
+      then value;
+    case (Absyn.IDENT("list"),Absyn.COMBINE(),Values.LIST(vals),_)
+      equation
+        value = backpatchArrayReduction3(vals,listReverse(dims),ValuesUtil.makeList);
+        // print(ValuesUtil.valString(value));print("\n");
+      then value;
+    case (Absyn.IDENT("listReverse"),Absyn.COMBINE(),Values.LIST(vals),_)
+      equation
+        value = backpatchArrayReduction3(vals,listReverse(dims),ValuesUtil.makeList);
         // print(ValuesUtil.valString(value));print("\n");
       then value;
     else inValue;
@@ -5671,9 +5664,14 @@ end backpatchArrayReduction;
 protected function backpatchArrayReduction3
   input list<Values.Value> inVals;
   input list<Integer> inDims;
+  input Func makeSequence;
   output Values.Value outValue;
+  partial function Func
+    input list<Values.Value> inVals;
+    output Values.Value outVal;
+  end Func;
 algorithm
-  outValue := match (inVals,inDims)
+  outValue := match (inVals,inDims,makeSequence)
     local
       Integer dim;
       list<list<Values.Value>> valMatrix;
@@ -5681,15 +5679,18 @@ algorithm
       list<Values.Value> vals;
       list<Integer> dims;
 
-    case (vals,{_}) then ValuesUtil.makeArray(vals);
-    case (vals,dim::dims)
+    case (vals,{_},_)
+      equation
+        value = makeSequence(vals);
+      then value;
+    case (vals,dim::dims,_)
       equation
         // Split into the smallest of the arrays
         // print("into sublists of length: " +& intString(dim) +& " from length=" +& intString(listLength(vals)) +& "\n");
         valMatrix = List.partition(vals,dim);
         // print("output has length=" +& intString(listLength(valMatrix)) +& "\n");
-        vals = List.map(valMatrix,ValuesUtil.makeArray);
-        value = backpatchArrayReduction3(vals,dims);
+        vals = List.map(valMatrix,makeSequence);
+        value = backpatchArrayReduction3(vals,dims,makeSequence);
       then value;
   end match;
 end backpatchArrayReduction3;
