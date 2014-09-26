@@ -355,15 +355,26 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
 
   class <%lastIdentOfPath(modelInfo.name)%>WriteOutput: virtual public  <%lastIdentOfPath(modelInfo.name)%>
   {
-     public:
-    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
-    virtual ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput();
-     /// Output routine (to be called by the solver after every successful integration step)
-    virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
-    virtual IHistory* getHistory();
+  public:
+       <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
+       virtual ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput();
+       /// Output routine (to be called by the solver after every successful integration step)
+       virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
+       virtual IHistory* getHistory();
+    
   protected:
-    void initialize();
+       void initialize();
+        
   private:
+       void writeAlgVarsValues(HistoryImplType::value_type_v *v);
+       void writeDiscreteAlgVarsValues(HistoryImplType::value_type_v *v);
+       void writeIntAlgVarsValues(HistoryImplType::value_type_v *v);
+       void writeBoolAlgVarsValues(HistoryImplType::value_type_v *v);
+       void writeAliasVarsValues(HistoryImplType::value_type_v *v);
+       void writeIntAliasVarsValues(HistoryImplType::value_type_v *v);
+       void writeBoolAliasVarsValues(HistoryImplType::value_type_v *v);
+       void writeStateValues(HistoryImplType::value_type_v *v, HistoryImplType::value_type_dv *v2);
+  
        void writeAlgVarsResultNames(vector<string>& names);
        void writeDiscreteAlgVarsResultNames(vector<string>& names);
        void writeIntAlgVarsResultNames(vector<string>& names);
@@ -4136,10 +4147,8 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
   <<
    void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeOutput(const IWriteOutput::OUTPUT command)
    {
-    <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-    <<
-    MeasureTime::getTimeValuesStart(measuredStartValues);
-    >>%>
+    <%generateMeasureTimeStartCode("measuredStartValues")%>
+
     //Write head line
     if (command & IWriteOutput::HEAD_LINE)
     {
@@ -4196,10 +4205,7 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
     //Write the current values
     else
     {
-      <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-      <<
-      MeasureTime::getTimeValuesStart(measuredStartValues1);
-      >>%>
+      <%generateMeasureTimeStartCode("measuredStartValues1")%>
       /* HistoryImplType::value_type_v v;
       HistoryImplType::value_type_dv v2; */
 
@@ -4208,7 +4214,15 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       HistoryImplType::value_type_dv *v2 = container->get<1>();
       container->get<2>() = _simTime;
 
-      <%writeoutput2(modelInfo,simCode,useFlatArrayNotation)%>
+      writeAlgVarsValues(v);
+      writeDiscreteAlgVarsValues(v);
+      writeIntAlgVarsValues(v);
+      writeBoolAlgVarsValues(v);
+      writeAliasVarsValues(v);
+      writeIntAliasVarsValues(v);
+      writeBoolAliasVarsValues(v);
+      writeStateValues(v,v2);
+ 
       <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<
       HistoryImplType::value_type_r v3;
@@ -4216,42 +4230,23 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode, useFlatArrayNotation));separator=","%>};
       for(int i=0;i<<%numResidues(allEquations)%>;i++) v3(i) = residues[i];
 
-      <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-      <<
-      MeasureTime::getTimeValuesEnd(measuredEndValues1);
-      measuredEndValues1->sub(measuredStartValues1);
-      measuredEndValues1->sub(MeasureTime::getOverhead());
-      measureTimeWriteOutput[1].sumMeasuredValues->add(measuredEndValues1);
-      ++(measureTimeWriteOutput[1].numCalcs);
-      >>%>
+      <%generateMeasureTimeEndCode("measuredStartValues1", "measuredEndValues1", "measureTimeWriteOutput[1]")%>
 
       _historyImpl->write(v,v2,v3,_simTime);
       >>
     else
       <<
-      <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-      <<
-      MeasureTime::getTimeValuesEnd(measuredEndValues1);
-      measuredEndValues1->sub(measuredStartValues1);
-      measuredEndValues1->sub(MeasureTime::getOverhead());
-      measureTimeWriteOutput[1].sumMeasuredValues->add(measuredEndValues1);
-      ++(measureTimeWriteOutput[1].numCalcs);
-      >>%>
+      <%generateMeasureTimeEndCode("measuredStartValues1", "measuredEndValues1", "measureTimeWriteOutput[1]")%>
 
       //_historyImpl->write(v,v2,_simTime);
       _historyImpl->addContainerToWriteQueue(container);
       >>
     %>
     }
-    <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-    <<
-    MeasureTime::getTimeValuesEnd(measuredEndValues);
-    measuredEndValues->sub(measuredStartValues);
-    measuredEndValues->sub(MeasureTime::getOverhead());
-    measureTimeWriteOutput[0].sumMeasuredValues->add(measuredEndValues);
-    ++(measureTimeWriteOutput[0].numCalcs);
-    >>%>
+    <%generateMeasureTimeEndCode("measuredStartValues", "measuredEndValues", "measureTimeWriteOutput[0]")%>
    }
+   <%generateWriteOutputFunctionsForVars(modelInfo, simCode, '<%lastIdentOfPath(modelInfo.name)%>WriteOutput', useFlatArrayNotation)%>
+   
    <%writeoutput1(modelInfo)%>
   >>
   //<%writeAlgloopvars(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>
@@ -6450,9 +6445,8 @@ template getAliasVarName(AliasVariable aliasvar, SimCode simCode,Context context
     else 'noAlias'
 end getAliasVarName;
 
-//template for write  variables for each time step
-template writeoutput2(ModelInfo modelInfo,SimCode simCode, Boolean useFlatArrayNotation)
-
+//template for write variables for each time step
+template generateWriteOutputFunctionsForVars(ModelInfo modelInfo,SimCode simCode, String className, Boolean useFlatArrayNotation)
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
@@ -6465,30 +6459,51 @@ case MODELINFO(vars=SIMVARS(__)) then
  let intAliasVarsStart = intAdd(stringInt(aliasVarsStart), stringInt(numProtectedRealAliasvars(modelInfo)))
  let boolAliasVarsStart = intAdd(stringInt(intAliasVarsStart), stringInt(numProtectedIntAliasvars(modelInfo)))
  let stateVarsStart = intAdd(stringInt(boolAliasVarsStart), stringInt(numProtectedBoolAliasvars(modelInfo)))
+ 
  <<
-     /* const int algVarsStart = <%algVarsStart%>;
-     const int discrAlgVarsStart  = <%discrAlgVarsStart%>;
-     const int intAlgVarsStart    = <%intAlgVarsStart%>;
-     const int boolAlgVarsStart   = <%boolAlgVarsStart%>;
-     const int aliasVarsStart     = <%aliasVarsStart%>;
-     const int intAliasVarsStart  = <%intAliasVarsStart%>;
-     const int boolAliasVarsStart = <%boolAliasVarsStart%>;
-     const int stateVarsStart     = <%stateVarsStart%>; */
+ /* const int algVarsStart = <%algVarsStart%>;
+ const int discrAlgVarsStart  = <%discrAlgVarsStart%>;
+ const int intAlgVarsStart    = <%intAlgVarsStart%>;
+ const int boolAlgVarsStart   = <%boolAlgVarsStart%>;
+ const int aliasVarsStart     = <%aliasVarsStart%>;
+ const int intAliasVarsStart  = <%intAliasVarsStart%>;
+ const int boolAliasVarsStart = <%boolAliasVarsStart%>;
+ const int stateVarsStart     = <%stateVarsStart%>; */
 
-     <%vars.algVars         |> SIMVAR(isProtected=false) hasindex i0 =>'(*v)(<%intAdd(stringInt(algVarsStart),stringInt(i0))%>)=<%cref(name, useFlatArrayNotation)%>;';align=8 %>
-     <%vars.discreteAlgVars |> SIMVAR(isProtected=false) hasindex i0 =>'(*v)(<%intAdd(stringInt(discrAlgVarsStart), stringInt(i0))%>)=<%cref(name, useFlatArrayNotation)%>;';align=8 %>
-     <%vars.intAlgVars      |> SIMVAR(isProtected=false) hasindex i1 =>'(*v)(<%intAdd(stringInt(intAlgVarsStart), stringInt(i1))%>)=<%cref(name, useFlatArrayNotation)%>;';align=8%>
-     <%vars.boolAlgVars     |> SIMVAR(isProtected=false) hasindex i2 =>'(*v)(<%intAdd(stringInt(boolAlgVarsStart), stringInt(i2))%>)=<%cref(name, useFlatArrayNotation)%>;';align=8 %>
-
-     <%vars.aliasVars       |> SIMVAR(isProtected=false) hasindex i5 =>'(*v)(<%intAdd(stringInt(aliasVarsStart), stringInt(i5))%>)=<%getAliasVar(aliasvar, simCode,contextOther, useFlatArrayNotation)%>;';align=8 %>
-     <%vars.intAliasVars    |> SIMVAR(isProtected=false) hasindex i6 =>'(*v)(<%intAdd(stringInt(intAliasVarsStart), stringInt(i6))%>)=<%getAliasVar(aliasvar, simCode,contextOther, useFlatArrayNotation)%>;';align=8 %>
-     <%vars.boolAliasVars   |> SIMVAR(isProtected=false) hasindex i7 =>'(*v)(<%intAdd(stringInt(boolAliasVarsStart), stringInt(i7))%>)=<%getAliasVar(aliasvar, simCode,contextOther, useFlatArrayNotation)%>;';align=8 %>
-
-     <%(vars.stateVars      |> SIMVAR() hasindex i8 =>'(*v)(<%intAdd(stringInt(stateVarsStart), stringInt(i8))%>)=__z[<%index%>]; ';align=8 )%>
-     <%(vars.derivativeVars |> SIMVAR() hasindex i9 fromindex 1 =>'(*v2)(<%i9%>)=__zDot[<%index%>]; ';align=8 )%>
+ <%writeOutputVars("writeAlgVarsValues", vars.algVars, stringInt(algVarsStart), className, false, simCode, useFlatArrayNotation)%>
+ <%writeOutputVars("writeDiscreteAlgVarsValues", vars.discreteAlgVars, stringInt(discrAlgVarsStart), className, false, simCode, useFlatArrayNotation)%>
+ <%writeOutputVars("writeIntAlgVarsValues", vars.intAlgVars, stringInt(intAlgVarsStart), className, false, simCode, useFlatArrayNotation)%>
+ <%writeOutputVars("writeBoolAlgVarsValues", vars.boolAlgVars, stringInt(boolAlgVarsStart), className, false, simCode, useFlatArrayNotation)%>
+ 
+ <%writeOutputVars("writeAliasVarsValues", vars.aliasVars, stringInt(aliasVarsStart), className, true, simCode, useFlatArrayNotation)%>
+ <%writeOutputVars("writeIntAliasVarsValues", vars.intAliasVars, stringInt(intAliasVarsStart), className, true, simCode, useFlatArrayNotation)%>
+ <%writeOutputVars("writeBoolAliasVarsValues", vars.boolAliasVars, stringInt(boolAliasVarsStart), className, true, simCode, useFlatArrayNotation)%>
+ 
+ void <%className%>::writeStateValues(HistoryImplType::value_type_v *v, HistoryImplType::value_type_dv *v2)
+ {
+   <%(vars.stateVars      |> SIMVAR() hasindex i8 =>'(*v)(<%intAdd(stringInt(stateVarsStart), stringInt(i8))%>)=__z[<%index%>];';separator="\n")%>
+   <%(vars.derivativeVars |> SIMVAR() hasindex i9 fromindex 1 =>'(*v2)(<%i9%>)=__zDot[<%index%>]; ';separator="\n")%>
+ }
  >>
-end writeoutput2;
+end generateWriteOutputFunctionsForVars;
 
+//template to generate a function that writes all given variables
+template writeOutputVars(String functionName, list<SimVar> vars, Integer startIndex, String className, Boolean areAliasVars, SimCode simCode, Boolean useFlatArrayNotation)
+::=
+  <<
+  void <%className%>::<%functionName%>(HistoryImplType::value_type_v *v)
+  {
+    <%if(areAliasVars) then
+    <<
+    <%vars |> SIMVAR(isProtected=false) hasindex i1 =>'(*v)(<%intAdd(startIndex, stringInt(i1))%>)=<%getAliasVar(aliasvar, simCode, contextOther, useFlatArrayNotation)%>;';separator="\n"%>
+    >>
+    else
+    <<
+    <%vars |> SIMVAR(isProtected=false) hasindex i0 =>'(*v)(<%intAdd(startIndex,stringInt(i0))%>)=<%cref(name, useFlatArrayNotation)%>;';separator="\n"%>
+    >>%>
+  }
+  >>
+end writeOutputVars;
 
 //template for write parameter values
 template writeoutputparams(ModelInfo modelInfo,SimCode simCode, Boolean useFlatArrayNotation)
@@ -7427,38 +7442,11 @@ template equation_function_call(SimEqSystem eq, Context context, Text &varDecls,
     >>
 
 end equation_function_call;
-/*
-<<
-      (this->*equations_array[<%arrayIndex%>])();
-    >>
-    */
-
-template measureTimeStart(String eq_number)
-::=
-  <<
-  MeasureTime::getTimeValuesStart(measuredStartValues);
-  //for(int i = 0; i < 10; i++) {
-  >>
-end measureTimeStart;
-
-template measureTimeStop(String eq_number)
-::=
-  let eqNumber = intSub(stringInt(eq_number),1)
-  <<
-  //}
-  MeasureTime::getTimeValuesEnd(measuredEndValues);
-  measuredEndValues->sub(measuredStartValues);
-  //measuredEndValues->div(10);
-  measuredEndValues->sub(MeasureTime::getOverhead());
-  //if(measure_t > measureTimeArray[<%eqNumber%>].max_time) measureTimeArray[<%eqNumber%>].max_time = measuredEndValues;
-  (measureTimeArray[<%eqNumber%>].sumMeasuredValues)->add(measuredEndValues);
-  ++(measureTimeArray[<%eqNumber%>].numCalcs);
-  >>
-end measureTimeStop;
 
 template equation_function_create_single_func(SimEqSystem eq, Context context, SimCode simCode,Text method,Text classnameext, Boolean useFlatArrayNotation, Boolean createMeasureTime)
 ::=
   let ix_str = equationIndex(eq)
+  let ix_str_array = intSub(stringInt(ix_str),1) //equation index - 1
   let &varDeclsLocal = buffer "" /*BUFD*/
   let &additionalFuncs = buffer "" /*BUFD*/
   let &measureTimeStartVar = buffer "" /*BUFD*/
@@ -7491,8 +7479,8 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     else
       "NOT IMPLEMENTED EQUATION"
   end match
-  let &measureTimeStartVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then measureTimeStart(ix_str) //else ""
-  let &measureTimeEndVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then measureTimeStop(ix_str) //else ""
+  let &measureTimeStartVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then generateMeasureTimeStartCode("measuredStartValues") //else ""
+  let &measureTimeEndVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then generateMeasureTimeEndCode("measuredStartValues", "measuredEndValues", 'measureTimeArray[<%ix_str_array%>]') //else ""
   <<
     <%additionalFuncs%>
     /*
@@ -13090,5 +13078,25 @@ template generateTypeCast(Type ty, list<DAE.Exp> es, Boolean isClosure, Text &pr
     case T_TUPLE(tupleType=_::tys) then (tys |> t => ', <%expTypeArrayIf(t)%>')
   '(<%ret%>(*)(threadData_t*<%if isClosure then ", modelica_metatype"%><%inputs%><%outputs%>))'
 end generateTypeCast;
+
+template generateMeasureTimeStartCode(String varNameStartValues)
+::=
+  if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+  <<
+  MeasureTime::getTimeValuesStart(<%varNameStartValues%>);
+  >>
+end generateMeasureTimeStartCode;
+
+template generateMeasureTimeEndCode(String varNameStartValues, String varNameEndValues, String varNameTargetValues)
+::=
+  if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+  <<
+  MeasureTime::getTimeValuesEnd(<%varNameEndValues%>);
+  <%varNameEndValues%>->sub(<%varNameStartValues%>);
+  <%varNameEndValues%>->sub(MeasureTime::getOverhead());
+  <%varNameTargetValues%>.sumMeasuredValues->add(<%varNameEndValues%>);
+  ++(<%varNameTargetValues%>.numCalcs);
+  >>
+end generateMeasureTimeEndCode;
 
 end CodegenCpp;
