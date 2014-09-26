@@ -459,7 +459,7 @@ algorithm
 end getUnsolvableVars;
 
 
-protected function unsolvable
+public function unsolvable
 "  author: Frenkel TUD 2012-08"
   input BackendDAE.AdjacencyMatrixElementEnhanced elem;
   output Boolean b;
@@ -3480,7 +3480,7 @@ protected
   BackendDAE.Variables vars,daeVars;
   BackendDAE.EqSystem subSys;
   BackendDAE.IncidenceMatrix m, m2;
-  BackendDAE.AdjacencyMatrixEnhanced me, meT;
+  BackendDAE.AdjacencyMatrixEnhanced me,me2, meT;
   DAE.FunctionTree funcs;
   BackendDAE.StateSets stateSets;
   BackendDAE.BaseClockPartitionKind partitionKind;
@@ -3490,12 +3490,12 @@ algorithm
   //prepare everything
   size := listLength(varIdcs);
   BackendDAE.EQSYSTEM(orderedVars=daeVars,orderedEqs=daeEqs,matching=BackendDAE.MATCHING(ass1=ass1Sys,ass2=ass2Sys),stateSets=stateSets,partitionKind=partitionKind) := dae;
+  funcs := BackendDAEUtil.getFunctions(shared);
   eqLst := BackendEquation.getEqns(eqIdcs,daeEqs);
   eqs := BackendEquation.listEquation(eqLst);
   varLst := List.map1r(varIdcs, BackendVariable.getVarAt, daeVars);
   vars := BackendVariable.listVar1(varLst);
   subSys := BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
-  funcs := BackendDAEUtil.getFunctions(shared);
   (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subSys,shared);
   ass1 := arrayCreate(size,-1);
   ass2 := arrayCreate(size,-1);
@@ -3506,8 +3506,7 @@ algorithm
       BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
       varAtts := List.threadMap(List.fill(false,listLength(varLst)),List.map(eqIdcs,intString),Util.makeTuple);
       eqAtts := List.threadMap(List.fill(false,listLength(eqLst)),List.map(varIdcs,intString),Util.makeTuple);
-      (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subSys, BackendDAE.NORMAL(), SOME(funcs));
-      HpcOmEqSystems.dumpEquationSystemBipartiteGraph2(vars,eqs,m,varAtts,eqAtts,"shuffle_pre");
+      HpcOmEqSystems.dumpEquationSystemBipartiteGraphSolve2(vars,eqs,me,varAtts,eqAtts,"shuffle_pre");
 
   // get all unsolvable variables
   unsolvables := getUnsolvableVars(1,size,meT,{});
@@ -3519,14 +3518,15 @@ algorithm
       print("ass1!: "+&stringDelimitList(List.map(arrayList(ass1_),intString),", ")+&"\n");
       print("ass2!: "+&stringDelimitList(List.map(arrayList(ass2_),intString),", ")+&"\n");
       BackendDump.dumpEquationArray(replEqs,"replEqs");
-      BackendDump.dumpIncidenceMatrix(m);
 
    subSys := BackendDAE.EQSYSTEM(vars,replEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
    (_,m2,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subSys, BackendDAE.NORMAL(), SOME(funcs));
-   BackendDump.dumpIncidenceMatrix(m2);
    m2 := Util.arrayMap1(m2,deleteInRow,tvars);
    List.map2_0(resEqs,Util.arrayUpdateIndexFirst,{},m2);
       BackendDump.dumpIncidenceMatrix(m2);
+
+      (me2,_,_,_) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subSys,shared);
+      HpcOmEqSystems.dumpEquationSystemBipartiteGraphSolve2(vars,replEqs,me2,varAtts,eqAtts,"shuffle_post");
 
   otherEqnVarTpl := getOrderForOtherEquations(ass2_,m2,size-listLength(resEqs),{});
 
@@ -3553,7 +3553,7 @@ algorithm
   daeOut := BackendDAE.EQSYSTEM(daeVars,daeEqs,NONE(),NONE(),BackendDAE.MATCHING(ass1Sys,ass2Sys,{}),stateSets,partitionKind);
   (daeOut,_,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(daeOut, BackendDAE.NORMAL(), SOME(funcs));
 
-   outRunMatching := true;
+  outRunMatching := true;
 end shuffleTearing;
 
 protected function deleteInRow"deletes the deletes in the row.
@@ -3639,9 +3639,7 @@ algorithm
       BackendDAE.IncidenceMatrix m;
       BackendDAE.EqSystem subSys;
       BackendDAE.EquationArray eqsReplaced,eqs;
-      BackendDAE.Variables updatedVars;
-      BackendDAE.AdjacencyMatrixEnhanced me_;
-      BackendDAE.AdjacencyMatrixEnhanced meT_;
+      BackendDAE.AdjacencyMatrixEnhanced me_,meT_,meSub;
       BackendDAE.AdjacencyMatrixElementEnhanced vareqns;
       DAE.FunctionTree funcs;
     case({},_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -3655,18 +3653,8 @@ algorithm
         // tvar selection
         tvar = omcTearingSelectTearingVar(varsIn,ass1,ass2,me,meT,{},{},{});
         print("selected tvar: "+&intString(tvar)+&"\n");
-            //bipartite graph
-            BackendDump.dumpVariables(varsIn,"varsIn");
-       updatedVars = BackendVariable.listVar(listReverse(listDelete(BackendVariable.varList(varsIn),tvar-1)));
-            BackendDump.dumpVariables(updatedVars,"updatedVars");
-       subSys = BackendDAE.EQSYSTEM(updatedVars,eqsIn,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
-       (_,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(subSys, BackendDAE.NORMAL(), SOME(funcs));
-            updVarIdcs = listDelete(List.intRange(size),tvar-1);
-            varAtts = List.threadMap(List.fill(false,size-1),List.map(updVarIdcs,intString),Util.makeTuple);
-            eqAtts = List.threadMap(List.fill(false,size),List.map(List.intRange(size),intString),Util.makeTuple);
-            HpcOmEqSystems.dumpEquationSystemBipartiteGraph2(updatedVars,eqsIn,m,varAtts,eqAtts,"shuffle_removed_"+&intString(tvar));
-
-        // cheap matching
+            
+         // cheap matching
         _ = arrayUpdate(ass1,tvar,size*2);
             print("ass1: "+&stringDelimitList(List.map(arrayList(ass1),intString),", ")+&"\n");
         vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, meT[tvar]);

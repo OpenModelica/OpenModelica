@@ -60,6 +60,7 @@ protected import HpcOmSimCodeMain;
 protected import HpcOmScheduler;
 protected import List;
 protected import Matching;
+protected import Tearing;
 protected import Util;
 
 //--------------------------------------------------//
@@ -1872,6 +1873,34 @@ algorithm
   GraphML.dumpGraph(graphInfo,name+&".graphml");
 end dumpEquationSystemBipartiteGraph2;
 
+public function dumpEquationSystemBipartiteGraphSolve2
+  input BackendDAE.Variables varsIn;
+  input BackendDAE.EquationArray eqsIn;
+  input BackendDAE.AdjacencyMatrixEnhanced meIn;
+  input list<tuple<Boolean,String>> varAtts;  //<isTornVar,daeIdx>
+  input list<tuple<Boolean,String>> eqAtts;  //<isResEq,daeIdx>
+  input String name;
+protected
+  Integer nameAttIdx,typeAttIdx,idxAttIdx, numVars,numEqs;
+  list<Integer> varRange,eqRange;
+  GraphML.GraphInfo graphInfo;
+  Integer graphIdx;
+algorithm
+  numEqs := BackendDAEUtil.equationArraySize(eqsIn);
+  numVars := BackendVariable.varsSize(varsIn);
+  varRange := List.intRange(numVars);
+  eqRange := List.intRange(numEqs);
+  graphInfo := GraphML.createGraphInfo();
+  (graphInfo,(_,graphIdx)) := GraphML.addGraph("EqSystemGraph", true, graphInfo);
+  (graphInfo,(_,typeAttIdx)) := GraphML.addAttribute("", "type", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
+  (graphInfo,(_,nameAttIdx)) := GraphML.addAttribute("", "name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
+  (graphInfo,(_,idxAttIdx)) := GraphML.addAttribute("", "systIdx", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
+  ((graphInfo,graphIdx)) := List.fold3(eqRange,addEqNodeToGraph,eqsIn,eqAtts,{nameAttIdx,typeAttIdx,idxAttIdx}, (graphInfo,graphIdx));
+  ((graphInfo,graphIdx)) := List.fold3(varRange,addVarNodeToGraph,varsIn,varAtts,{nameAttIdx,typeAttIdx,idxAttIdx}, (graphInfo,graphIdx));
+  graphInfo := List.fold1(eqRange,addSolvEdgeToGraph,meIn,graphInfo);
+  GraphML.dumpGraph(graphInfo,name+&".graphml");
+end dumpEquationSystemBipartiteGraphSolve2;
+
 protected function addVarNodeToGraph "adds a node for a variable to the graph.
 author:Waurich TUD 2013-12"
   input Integer indx;
@@ -1964,6 +1993,39 @@ algorithm
   varNodeId := getVarNodeIdx(varIdx);
   (graphInfoOut,_) := GraphML.addEdge("Edge_"+&intString(varIdx)+&"_"+&intString(eqIdx),varNodeId,eqNodeId,GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,false,{},(GraphML.ARROWNONE(),GraphML.ARROWNONE()),{}, graphInfoIn);
 end addEdgeToGraph2;
+
+protected function addSolvEdgeToGraph "adds an edge with solvability information to the graph by traversing the enhanced adjacency matrix.
+author:Waurich TUD 2013-12"
+  input Integer eqIdx;
+  input BackendDAE.AdjacencyMatrixEnhanced me;
+  input GraphML.GraphInfo graphInfoIn;
+  output GraphML.GraphInfo graphInfoOut;
+protected
+  BackendDAE.AdjacencyMatrixElementEnhanced row;
+algorithm
+  row := arrayGet(me,eqIdx);
+  graphInfoOut := List.fold1(row,addSolvEdgeToGraph2,eqIdx,graphInfoIn);
+end addSolvEdgeToGraph;
+
+protected function addSolvEdgeToGraph2 "helper for addSolvEdgeToGraph.
+author:Waurich TUD 2013-12"
+  input BackendDAE.AdjacencyMatrixElementEnhancedEntry var;
+  input Integer eqIdx;
+  input GraphML.GraphInfo graphInfoIn;
+  output GraphML.GraphInfo graphInfoOut;
+protected
+    Boolean solvable;
+    String eqNodeId, varNodeId;
+    Real lineWidth;
+    Integer varIdx;
+algorithm
+  (varIdx,_) := var;
+  solvable := Tearing.unsolvable({var});
+  eqNodeId := getEqNodeIdx(eqIdx);
+  varNodeId := getVarNodeIdx(varIdx);
+  lineWidth := Util.if_(solvable,GraphML.LINEWIDTH_BOLD,GraphML.LINEWIDTH_STANDARD);
+  (graphInfoOut,_) := GraphML.addEdge("Edge_"+&intString(varIdx)+&"_"+&intString(eqIdx),varNodeId,eqNodeId,GraphML.COLOR_BLACK,GraphML.LINE(),lineWidth,false,{},(GraphML.ARROWNONE(),GraphML.ARROWNONE()),{}, graphInfoIn);
+end addSolvEdgeToGraph2;
 
 protected function genSystemVarIdcs
   input list<Integer> idcsIn;
