@@ -50,7 +50,6 @@ class Writer
         _threadWorkDone = true;
         _writeThread.join()
 #endif
-        std::cerr << "Destructor called" << std::endl;
     }
 
     virtual void write(Writer::value_type_v& v_list, Writer::value_type_dv& v2_list, double time) = 0;
@@ -107,9 +106,9 @@ class Writer
             return;
         }
 
-        value_type_v *v_list = container->get<0>();
-        value_type_dv *v2_list = container->get<1>();
-        double time = get < 2 > (*container);
+        value_type_v *v_list = get<0>(*container);
+        value_type_dv *v2_list = get<1>(*container);
+        double time = get<2>(*container);
 
         write(*v_list, *v2_list, time);
 

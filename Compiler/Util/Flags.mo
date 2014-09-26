@@ -892,7 +892,7 @@ constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(57, "profiling",
     ("blocks",Util.gettext("Generate code for profiling function calls as well as linear and non-linear systems of equations")),
     ("blocks+html",Util.gettext("Like blocks, but also run xsltproc and gnuplot to generate an html report")),
     ("all",Util.gettext("Generate code for profiling of all functions and equations")),
-    ("all_papi",Util.gettext("Generate code for profiling of all functions and equations with additional performance data using the papi-interface (cpp-runtime)"))
+    ("all_perf",Util.gettext("Generate code for profiling of all functions and equations with additional performance data using the papi-interface (cpp-runtime)"))
     })),
   Util.gettext("Sets the profiling level to use. Profiled equations and functions record execution time and count for each time step taken by the integrator."));
 
