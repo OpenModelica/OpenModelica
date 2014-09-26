@@ -8167,30 +8167,23 @@ protected function filter1OnTrueSync_tail
     output Boolean outResult;
   end FilterFunc;
 algorithm
-  (outList,outSyncList) := matchcontinue(inList, inFilterFunc, inArg1, inSyncLst, inAccumList, inAccumSyncList)
+  (outList,outSyncList) := match (inList, inFilterFunc, inArg1, inSyncLst, inAccumList, inAccumSyncList)
     local
       ElementType1 e;
       ElementType2 f;
       list<ElementType1> rest,lst1;
       list<ElementType2> restf,lst2;
+      Boolean b;
     case ({}, _, _, _, _, _) then (inAccumList, inAccumSyncList);
 
     // Add to front if the condition works.
     case (e :: rest, _, _, f :: restf, _, _)
       equation
-        true = inFilterFunc(e,inArg1);
-        (lst1,lst2) = filter1OnTrueSync_tail(rest, inFilterFunc, inArg1, restf, e :: inAccumList, f :: inAccumSyncList);
-      then
-        (lst1,lst2);
+        b = inFilterFunc(e,inArg1);
+        (lst1,lst2) = filter1OnTrueSync_tail(rest, inFilterFunc, inArg1, restf, consOnTrue(b,e,inAccumList), consOnTrue(b,f,inAccumSyncList));
+      then (lst1,lst2);
 
-    // Filter out and move along.
-    case (_ :: rest, _, _, _ :: restf, _, _)
-      equation
-      (lst1,lst2) = filter1OnTrueSync_tail(rest, inFilterFunc, inArg1, restf, inAccumList, inAccumSyncList);
-     then
-      (lst1,lst2);
-
-  end matchcontinue;
+  end match;
 end filter1OnTrueSync_tail;
 
 
