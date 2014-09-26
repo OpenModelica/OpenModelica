@@ -3520,7 +3520,7 @@ algorithm
       print("ass2!: "+&stringDelimitList(List.map(arrayList(ass2_),intString),", ")+&"\n");
       BackendDump.dumpEquationArray(replEqs,"replEqs");
       BackendDump.dumpIncidenceMatrix(m);
-   
+
    subSys := BackendDAE.EQSYSTEM(vars,replEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
    (_,m2,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subSys, BackendDAE.NORMAL(), SOME(funcs));
    BackendDump.dumpIncidenceMatrix(m2);
