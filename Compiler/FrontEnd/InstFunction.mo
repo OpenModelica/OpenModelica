@@ -182,13 +182,15 @@ public function instantiateExternalObject
   input list<SCode.Element> els "elements";
   input DAE.Mod inMod;
   input Boolean impl;
+  input SCode.Comment comment;
+  input Absyn.Info info;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist dae "resulting dae";
   output ClassInf.State ciState;
 algorithm
-  (outCache,outEnv,outIH,dae,ciState) := matchcontinue(inCache,inEnv,inIH,els,inMod,impl)
+  (outCache,outEnv,outIH,dae,ciState) := matchcontinue(inCache,inEnv,inIH,els,inMod,impl,comment,info)
     local
       SCode.Element destr,constr;
       Env.Env env,env1;
@@ -201,7 +203,7 @@ algorithm
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
       // Explicit instantiation, generate constructor and destructor and the function type.
-    case  (cache,env,ih,_,_,false)
+    case  (cache,env,ih,_,_,false,_,_)
       equation
         className=Env.getClassName(env); // The external object classname is in top frame of environment.
         checkExternalObjectMod(inMod, className);
@@ -219,11 +221,13 @@ algorithm
 
         // set the  of this element
        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+       source = DAEUtil.addCommentToSource(source, SOME(comment));
+       source = DAEUtil.addElementSourceFileInfo(source, info);
       then
         (cache,env1,ih,DAE.DAE({DAE.EXTOBJECTCLASS(classNameFQ,source)}),ClassInf.EXTERNAL_OBJ(classNameFQ));
 
     // Implicit, do not instantiate constructor and destructor.
-    case (cache,_,ih,_,_,true)
+    case (cache,_,ih,_,_,true,_,_)
       equation
         SOME(classNameFQ)= Env.getEnvPath(inEnv); // Fully qualified classname
       then
@@ -501,7 +505,7 @@ algorithm
           Inst.instClassdef(cache, env_1, ih, UnitAbsyn.noStore, mod, pre,
             ClassInf.FUNCTION(fpath,isImpure), n,parts, restr, vis, partialPrefix,
             encapsulatedPrefix, inst_dims, true, InstTypes.INNER_CALL(),
-            ConnectionGraph.EMPTY, Connect.emptySet, NONE(),info) "how to get this? impl" ;
+            ConnectionGraph.EMPTY, Connect.emptySet, NONE(), cmt, info) "how to get this? impl" ;
         (cache,ih,extdecl) = instExtDecl(cache, tempenv,ih, n, parts, true, pre,info) "impl" ;
 
         // set the source of this element

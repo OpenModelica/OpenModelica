@@ -1160,6 +1160,7 @@ algorithm
       UnitAbsyn.InstStore store;
       Boolean b;
       BasicTypeAttrTyper typer;
+      SCode.Comment comment;
 
     // Builtin type (Real, Integer, etc.).
     case (cache, env, ih, store, mods, pre, ci_state,
@@ -1224,7 +1225,7 @@ algorithm
 
     // Instantiate a class definition made of parts
     case (cache,env,ih,store,mods,pre,ci_state,
-          c as SCode.CLASS(name = n,restriction = r,classDef = d,info=info,partialPrefix = partialPrefix,encapsulatedPrefix = encapsulatedPrefix),
+          c as SCode.CLASS(name = n,restriction = r,classDef = d, cmt = comment, info=info, partialPrefix = partialPrefix,encapsulatedPrefix = encapsulatedPrefix),
           vis,inst_dims,impl,callscope,graph,_,_)
       equation
         ErrorExt.setCheckpoint("instClassParts");
@@ -1237,7 +1238,7 @@ algorithm
         (cache,env_1,ih,store,dae,csets,ci_state_1,tys,bc,oDA,eqConstraint,graph) =
           instClassdef(cache, env, ih, store, mods, pre, ci_state, n, d, r, vis,
             partialPrefix, encapsulatedPrefix, inst_dims, impl, callscope,
-            graph, inSets, instSingleCref, info);
+            graph, inSets, instSingleCref, comment, info);
         // t2 = clock();
         // time = t2 -. t1;
         // b=realGt(time,0.05);
@@ -1899,6 +1900,7 @@ public function instClassdef "
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   input Option<DAE.ComponentRef> instSingleCref;
+  input SCode.Comment comment;
   input Absyn.Info info;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -1915,7 +1917,7 @@ public function instClassdef "
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
   instClassdef2(inCache,inEnv,inIH,store,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,
-    inPartialPrefix,inEncapsulatedPrefix,inInstDims9,inBoolean10,inCallingScope,inGraph,inSets,instSingleCref,info,Util.makeStatefulBoolean(false));
+    inPartialPrefix,inEncapsulatedPrefix,inInstDims9,inBoolean10,inCallingScope,inGraph,inSets,instSingleCref,comment,info,Util.makeStatefulBoolean(false));
 end instClassdef;
 
 protected function instClassdefBasicType "
@@ -2072,6 +2074,7 @@ protected function instClassdef2 "
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   input Option<DAE.ComponentRef> instSingleCref;
+  input SCode.Comment comment;
   input Absyn.Info info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
   output Env.Cache outCache;
@@ -2088,7 +2091,7 @@ protected function instClassdef2 "
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inStore,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,inPartialPrefix,inEncapsulatedPrefix,inInstDims9,inBoolean10,inCallingScope,inGraph,inSets,instSingleCref,info,stopInst)
+  matchcontinue (inCache,inEnv,inIH,inStore,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,inPartialPrefix,inEncapsulatedPrefix,inInstDims9,inBoolean10,inCallingScope,inGraph,inSets,instSingleCref,comment,info,stopInst)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els,extendsclasselts,compelts_2_elem;
       Env.Env env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2,parentEnv;
@@ -2154,7 +2157,7 @@ algorithm
           SCode.PARTS(elementLst = els,
                       normalEquationLst = {}, initialEquationLst = {},
                       normalAlgorithmLst = {}, initialAlgorithmLst = {}),
-          re,vis,_,_,inst_dims,impl,_,graph,_,_,_,_)
+          re,vis,_,_,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
         false = Util.getStatefulBoolean(stopInst);
         // adpro: if is a model, package, function, external function, record is not a basic type!
@@ -2192,14 +2195,12 @@ algorithm
     // This case instantiates external objects. An external object inherits from ExternalObject
     // and have two local functions: constructor and destructor (and no other elements).
     case (cache,env,ih,store,mods,_,ci_state,_,
-          SCode.PARTS(elementLst = els,
-                      normalEquationLst = _, initialEquationLst = _,
-                      normalAlgorithmLst = _, initialAlgorithmLst = _),
-          _,_,_,_,_,impl,_,graph,_,_,_,_)
+          SCode.PARTS(elementLst = els),
+          _,_,_,_,_,impl,_,graph,_,_,_,_,_)
       equation
         false = Util.getStatefulBoolean(stopInst);
          true = SCode.isExternalObject(els);
-         (cache,env,ih,dae,ci_state) = InstFunction.instantiateExternalObject(cache,env,ih,els,mods,impl);
+         (cache,env,ih,dae,ci_state) = InstFunction.instantiateExternalObject(cache,env,ih,els,mods,impl,comment,info);
       then
         (cache,env,ih,store,dae,inSets,ci_state,{},NONE(),NONE(),NONE(),graph);
 
@@ -2210,7 +2211,7 @@ algorithm
                       normalAlgorithmLst = alg, initialAlgorithmLst = initalg,
                       constraintLst = constrs, clsattrs = clsattrs, externalDecl = ed
                       ),
-        re,_,_,_,inst_dims,impl,callscope,graph,csets,_,_,_)
+        re,_,_,_,inst_dims,impl,callscope,graph,csets,_,_,_,_)
       equation
         false = Util.getStatefulBoolean(stopInst);
         false = SCode.isExternalObject(els);
@@ -2394,7 +2395,7 @@ algorithm
     // This rule describes how to instantiate class definition derived from an enumeration
     case (cache,env,ih,store,mods,pre,_,_,
           SCode.DERIVED(Absyn.TPATH(path = cn,arrayDim = ad),modifications = mod,attributes=DA),
-          re,vis,_,_,inst_dims,impl,callscope,graph,_,_,_,_)
+          re,vis,_,_,inst_dims,impl,callscope,graph,_,_,_,_,_)
       equation
         false = Util.getStatefulBoolean(stopInst);
 
@@ -2431,7 +2432,7 @@ algorithm
     // This rule describes how to instantiate a derived class definition from basic types
     case (cache,env,ih,store,mods,pre,ci_state,_,
           SCode.DERIVED(Absyn.TPATH(path = cn,arrayDim = ad),modifications = mod,attributes=DA),
-          re,vis,_,_,inst_dims,impl,callscope,graph,_,_,_,_)
+          re,vis,_,_,inst_dims,impl,callscope,graph,_,_,_,_,_)
       equation
         false = Util.getStatefulBoolean(stopInst);
 
@@ -2475,7 +2476,7 @@ algorithm
     // This rule describes how to instantiate a derived class definition without array dims
     case (cache,env,ih,store,mods,pre,ci_state,_,
           SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn,arrayDim = ad), modifications = mod, attributes=DA),
-          re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,callscope,graph,_,_,_,_)
+          re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,callscope,graph,_,_,_,_,_)
       equation
         // don't enter here
         // false = true;
@@ -2510,7 +2511,7 @@ algorithm
         instClassdef2(cache, env, ih, store, mods_1, pre, ci_state, className,
            SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},{},{},NONE()),
            re, vis, partialPrefix, encapsulatedPrefix, inst_dims, impl,
-           callscope, graph, inSets, instSingleCref,info,stopInst);
+           callscope, graph, inSets, instSingleCref,comment,info,stopInst);
         oDA = SCode.mergeAttributes(DA,oDA);
       then
         (cache,env,ih,store,dae,csets,ci_state,vars,bc,oDA,eqConstraint,graph);
@@ -2518,7 +2519,7 @@ algorithm
     // This rule describes how to instantiate a derived class definition with array dims
     case (cache,env,ih,store,mods,pre,ci_state,_,
           SCode.DERIVED(Absyn.TPATH(path = cn,arrayDim = ad),modifications = mod,attributes=DA),
-          re,vis,_,_,inst_dims,impl,callscope,graph,_,_,_,_)
+          re,vis,_,_,inst_dims,impl,callscope,graph,_,_,_,_,_)
       equation
         false = Util.getStatefulBoolean(stopInst);
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
@@ -2578,7 +2579,7 @@ algorithm
     // MetaModelica extension
     case (_,_,_,_,mods,_,_,_,
           SCode.DERIVED(Absyn.TCOMPLEX(path=_),modifications = mod),
-          _,_,_,_,_,_,_,_,_,_,_,_)
+          _,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         false = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
@@ -2587,7 +2588,7 @@ algorithm
 
     case (cache,env,ih,store,mods,pre,_,_,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("list"),{tSpec},NONE()),modifications = mod, attributes=DA),
-          _,_,_,_,inst_dims,impl,_,graph,_,_,_,_)
+          _,_,_,_,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
@@ -2602,7 +2603,7 @@ algorithm
 
     case (cache,env,ih,store,mods,pre,_,_,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),{tSpec},NONE()),modifications = mod, attributes=DA),
-          _,_,_,_,inst_dims,impl,_,graph,_,_,_,_)
+          _,_,_,_,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
@@ -2616,7 +2617,7 @@ algorithm
 
     case (cache,env,ih,store,mods,pre,_,_,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecs,NONE()),modifications = mod, attributes=DA),
-          _,_,_,_,inst_dims,impl,_,graph,_,_,_,_)
+          _,_,_,_,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
@@ -2629,7 +2630,7 @@ algorithm
 
     case (cache,env,ih,store,mods,pre,_,_,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("array"),{tSpec},NONE()),modifications = mod, attributes=DA),
-          _,_,_,_,inst_dims,impl,_,graph,_,_,_,_)
+          _,_,_,_,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
@@ -2642,7 +2643,7 @@ algorithm
 
     case (cache,env,ih,store,mods,pre,_,_,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE()),modifications = mod, attributes=DA),
-          _,_,_,_,inst_dims,impl,_,graph,_,_,_,_)
+          _,_,_,_,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
@@ -2654,7 +2655,7 @@ algorithm
 
     case (_,_,_,_,mods,_,_,_,
           SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(path=Absyn.IDENT("polymorphic")),modifications=mod),
-          _,_,_,_,_,_,_,_,_,_,_,_)
+          _,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
@@ -2663,7 +2664,7 @@ algorithm
 
     case (_,_,_,_,_,_,_,_,
           SCode.DERIVED(typeSpec=tSpec as Absyn.TCOMPLEX(arrayDim=SOME(_)),modifications=_),
-          _,_,_,_,_,_,_,_,_,_,_,_)
+          _,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         cns = Dump.unparseTypeSpec(tSpec);
@@ -2672,16 +2673,16 @@ algorithm
 
     case (cache,env,ih,store,mods,pre,ci_state,_,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(str),tSpecs,NONE()),modifications = mod, attributes=DA),
-          re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,_,graph,_,_,_,_)
+          re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
         str = Util.assoc(str,{("List","list"),("Tuple","tuple"),("Array","array")});
         (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph)
-        = instClassdef2(cache,env,ih,store,mods,pre,ci_state,className,SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(str),tSpecs,NONE()),mod,DA),re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,inCallingScope,graph,inSets,instSingleCref,info,stopInst);
+        = instClassdef2(cache,env,ih,store,mods,pre,ci_state,className,SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(str),tSpecs,NONE()),mod,DA),re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,inCallingScope,graph,inSets,instSingleCref,comment,info,stopInst);
       then (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph);
 
     case (_,_,_,_,_,_,_,_,
           SCode.DERIVED(typeSpec=tSpec as Absyn.TCOMPLEX(path=cn,typeSpecs=tSpecs),modifications=_),
-          _,_,_,_,_,_,_,_,_,_,_,_)
+          _,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         false = listMember((Absyn.pathString(cn),listLength(tSpecs)==1), {("tuple",false),("array",true),("Option",true),("list",true)});
@@ -2694,7 +2695,7 @@ algorithm
     /* If the class is derived from a class that can not be found in the environment, this rule prints an error message. */
     case (cache,env,_,_,_,_,_,_,
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = _),modifications = _),
-          _,_,_,_,_,_,_,_,_,_,_,_)
+          _,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         false = Util.getStatefulBoolean(stopInst);
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
@@ -2706,7 +2707,7 @@ algorithm
 
     case (cache,env,_,_,_,_,_,_,
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = _),modifications = _),
-          _,_,_,_,_,_,_,_,_,_,_,_)
+          _,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
