@@ -188,7 +188,11 @@ void multiply_array( BaseArray<T> & inputArray ,const T &b, BaseArray<T> & outpu
 template < typename T>
 void divide_array( BaseArray<T> & inputArray ,const T &b, BaseArray<T> & outputArray  )
 {
-  outputArray.setDims(inputArray.getDims());
+
+  if ( outputArray.getDims() != inputArray.getDims()) 
+	{
+		outputArray.setDims(inputArray.getDims());
+	}
   T* data = inputArray.getData();
   unsigned int nelems = inputArray.getNumElems();
   T* aim = outputArray.getData();
