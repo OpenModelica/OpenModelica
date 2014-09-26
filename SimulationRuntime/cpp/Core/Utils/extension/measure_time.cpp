@@ -3,14 +3,13 @@
 MeasureTime * MeasureTime::instance = 0;
 MeasureTime::file_map MeasureTime::toWrite;
 
-MeasureTime::getTimeValuesFctType MeasureTime::getTimeValuesStartFct = 0;
-MeasureTime::getTimeValuesFctType MeasureTime::getTimeValuesEndFct = 0;
-
 MeasureTimeValues::MeasureTimeValues() {}
 
 MeasureTimeValues::~MeasureTimeValues() {}
 
-MeasureTimeData::MeasureTimeData() : id(0), sumMeasuredValues(MeasureTime::getZeroValues()), numCalcs(0) {}
+MeasureTimeData::MeasureTimeData() : id(""), sumMeasuredValues(MeasureTime::getZeroValues()), numCalcs(0) {}
+
+MeasureTimeData::MeasureTimeData(std::string id) : id(id), sumMeasuredValues(MeasureTime::getZeroValues()), numCalcs(0) {}
 
 MeasureTimeData::~MeasureTimeData()
 {
@@ -65,6 +64,14 @@ MeasureTimeValues* MeasureTime::getOverhead()
   return instance->overhead;
 }
 
+void MeasureTime::setOverheadToZero()
+{
+  if(overhead != NULL)
+    delete overhead;
+
+  overhead = getZeroValuesP();
+}
+
 void MeasureTime::benchOverhead()
 {
   if(overhead != NULL)
@@ -94,7 +101,7 @@ void MeasureTime::benchOverhead()
   delete overheadMeasureEnd;
 }
 
-void MeasureTime::addJsonContentBlock(const std::string model_name, const std::string blockname, const std::vector<MeasureTimeData> * in)
+void MeasureTime::addResultContentBlock(const std::string model_name, const std::string blockname, const std::vector<MeasureTimeData> * in)
 {
   toWrite[model_name][blockname] = in;
 }
@@ -131,14 +138,14 @@ void MeasureTime::writeToJson()
       //write data
       for (unsigned i = 0; i < data->size()-1; ++i)
       {
-        os << "{\"id\":" << i+1 << "," << (*data)[i].serializeToJson() << "},\n";
+        os << "{\"id\":\"" << (*data)[i].id << "\"," << (*data)[i].serializeToJson() << "},\n";
       }
-      if( data->size() > 0 ) os << "{\"id\":" << data->size() << "," << (*data)[data->size()-1].serializeToJson() << "}]";
+      if( data->size() > 0 ) os << "{\"id\":\"" << (*data)[data->size()-1].id << "\"," << (*data)[data->size()-1].serializeToJson() << "}]";
       else os << "]";
 
     } // end blocks
 
-    os << "\n}";
+    os << "\n}\n";
     os.close();
 
   } // end files

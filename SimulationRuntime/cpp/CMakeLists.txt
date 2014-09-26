@@ -4,6 +4,7 @@
 #     if the Boost_log and Boost_setup_log libraries were found ->   -DUSE_BOOST_LOG
 #     if the Boost_thread library was found ->                       -DUSE_BOOST_THREAD
 #     if the Umfpack library of SuiteSparse was found ->             -DUSE_UMFPACK
+#     if the PAPI library was found ->				                       -DUSE_PAPI
 #     if the Sundials libraries were found ->                        -DPMC_USE_SUNDIALS
 #     if the runtime is build for the omc ->                         -DOMC_BUILD
 #
@@ -11,40 +12,96 @@
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
-cmake_minimum_required (VERSION 2.6)
-project(CppSolverInterface)
+CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
+PROJECT(CppSolverInterface)
 
-option(ANALYZATION_MODE "ANALYZATION_MODE" OFF)
-option(USE_THREADS "USE_PARALLEL_OUTPUT" OFF)
 
+
+#Set Options
+OPTION(ANALYZATION_MODE "ANALYZATION_MODE" OFF)
+OPTION(USE_THREADS "USE_PARALLEL_OUTPUT" OFF)
+
+
+#Set Variables
+SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../libraries/Resources/C-Sources")
+SET(USERTABDIR  "${CMAKE_SOURCE_DIR}/../../libraries/Resources/Data/Tables")
+
+SET(LIBINSTALLEXT "cpp")
+SET(MODELICA_MODEL "ModelicaSystem")
+SET(LIBPREFIX "OMCpp")
+SET(SolverName ${LIBPREFIX}Solver)
+SET(SystemName ${LIBPREFIX}System)
+SET(OMCFactoryName ${LIBPREFIX}OMCFactory)
+SET(MathName ${LIBPREFIX}Math)
+SET(ModelicaExternalName ModelicaExternalC)
+SET(ModelicaTablesName ModelicaStandardTables)
+SET(SimulationSettings ${LIBPREFIX}SimulationSettings)
+SET(SimControllerName ${LIBPREFIX}SimController)
+SET(CVodeName ${LIBPREFIX}CVode)
+SET(EulerName ${LIBPREFIX}Euler)
+SET(IdaName ${LIBPREFIX}Ida)
+SET(IdasName ${LIBPREFIX}Idas)
+SET(KinsolName ${LIBPREFIX}Kinsol)
+SET(ModelicaName ${LIBPREFIX}Modelica)
+SET(NewtonName ${LIBPREFIX}Newton)
+SET(HybrjName ${LIBPREFIX}Hybrj)
+SET(UmfPackName ${LIBPREFIX}UmfPack)
+SET(DataExchangeName ${LIBPREFIX}DataExchange)
+SET(ModelicaUtilitiesName ${LIBPREFIX}ModelicaUtilities)
+SET(ExtensionUtilitiesName ${LIBPREFIX}ExtensionUtilities)
+SET(BasiLibName ${LIBPREFIX}Base)
+
+SET(USE_MICO OFF)
+SET(REDUCE_DAE OFF)
+SET(USE_SUNDIALS ON)
+SET(OMC_BUILD ON)
+SET(SIMSTER_BUILD OFF)
+
+SET(Boost_USE_STATIC_LIBS OFF)
+SET(Boost_USE_MULTITHREADED ON)
+SET(Boost_USE_STATIC_RUNTIME OFF)
+
+
+# Handle Analyzation mode
 IF(NOT ANALYZATION_MODE)
 	#Precompiled header produces problems if the compiler is not "g++" but "scorep g++"
-	include(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
-	message(STATUS "Analyzation mode disabled")
+	INCLUDE(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
+	MESSAGE(STATUS "Analyzation mode disabled")
 ELSE(NOT ANALYZATION_MODE)
-	message(STATUS "Using analyzation mode")
-	add_definitions(-DANALYZATION_MODE)	
+	MESSAGE(STATUS "Using analyzation mode")
+	ADD_DEFINITIONS(-DANALYZATION_MODE)	
 ENDIF(NOT ANALYZATION_MODE )
 
+
+# Handle parallel output
 IF(USE_PARALLEL_OUTPUT)
-	add_definitions(-DUSE_PARALLEL_OUTPUT)
+	ADD_DEFINITIONS(-DUSE_PARALLEL_OUTPUT)
 ENDIF(USE_PARALLEL_OUTPUT)
 
-# on windows  boost,blas,lapack  and sundial solvers from omdev is used else the installed versions are used
-IF( WIN32 )
+
+# Handle build type
+IF(OMC_BUILD)
+  ADD_DEFINITIONS(-DOMC_BUILD)
+ELSEIF(SIMSTER_BUILD)
+  ADD_DEFINITIONS(-DSIMSTER_BUILD)
+ENDIF(OMC_BUILD)
+
+
+# Handle OMDEV
+#  - On windows boost,blas,lapack and sundial solvers from omdev are used else the installed versions are used
+IF(WIN32)
 	SET(ENV{BOOST_ROOT} $ENV{OMDEV}"/lib/3rdParty/boost-1_55/")
-	#SET(ENV{BOOST_ROOT} $ENV{OMDEV}"/lib/3rdParty/boost-1_49/")
 	SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
 	SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
 	SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
 
 	# Disable Optimization for RelWithDebInfo on Windows
-	if (MSVC)
+	IF(MSVC)
 		STRING(REPLACE "/O2" "/Od" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
-	else()
+	ELSE(MSVC)
 		STRING(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
 		STRING(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
-	endif()
+	ENDIF(MSVC)
 
 	#set mico paths
 	SET(MICO_LIB_HOME $ENV{OMDEV}/lib/mico-msys-mingw/)
@@ -52,22 +109,23 @@ IF( WIN32 )
 	#set sundials solvers include and library directories
 	SET(SUNDIALS_INLCUDE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/include)
 
-	if(MSVC)
+	IF(MSVC)
 		SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/vc100)
-	elseif(MINGW)
+	ELSEIF(MINGW)
 		SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/mingw/dlls)
-	endif()
+	ENDIF(MSVC)
 	
 	SET(INSTALL_OMDEV_LIBS ON)
-ENDIF( WIN32 )
+ENDIF(WIN32)
+
 
 # Find CMinpack
 # Note: Visual Studio libs are located in install/msvc, libs for gcc are directly in install
-if(MSVC)
+IF(MSVC)
     SET(CMinpack_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install/msvc")
-else(MSVC)
+ELSE(MSVC)
     SET(CMinpack_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install")
-endif(MSVC)
+ENDIF(MSVC)
 
 FIND_PATH(CMINPACK_INCLUDE_DIR cminpack.h
           HINTS ${CMinpack_Path}
@@ -78,160 +136,129 @@ FIND_LIBRARY(CMINPACK_LIBRARY
              HINTS ${CMinpack_Path}
              PATH_SUFFIXES lib lib64)
 
-include_directories(${CMINPACK_INCLUDE_DIR})
-
-set(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../libraries/Resources/C-Sources")
-set(USERTABDIR  "${CMAKE_SOURCE_DIR}/../../libraries/Resources/Data/Tables")
-
-SET(LIBINSTALLEXT "cpp")
-SET(MODELICA_MODEL "ModelicaSystem")
-SET(LIBPREFIX "OMCpp")
-SET(SolverName ${LIBPREFIX}Solver)
-SET(SystemName ${LIBPREFIX}System)
-SET(OMCFactoryName ${LIBPREFIX}OMCFactory)
-set(MathName ${LIBPREFIX}Math)
-set(ModelicaExternalName ModelicaExternalC)
-set(ModelicaTablesName ModelicaStandardTables)
-set(SimulationSettings ${LIBPREFIX}SimulationSettings)
-set(SimControllerName ${LIBPREFIX}SimController)
-set(CVodeName ${LIBPREFIX}CVode)
-set(EulerName ${LIBPREFIX}Euler)
-set(IdaName ${LIBPREFIX}Ida)
-set(IdasName ${LIBPREFIX}Idas)
-set(KinsolName ${LIBPREFIX}Kinsol)
-set(ModelicaName ${LIBPREFIX}Modelica)
-set(NewtonName ${LIBPREFIX}Newton)
-set(HybrjName ${LIBPREFIX}Hybrj)
-set(UmfPackName ${LIBPREFIX}UmfPack)
-set(DataExchangeName ${LIBPREFIX}DataExchange)
-set(ModelicaUtilitiesName ${LIBPREFIX}ModelicaUtilities)
-set(ExtensionUtilitiesName ${LIBPREFIX}ExtensionUtilities)
-set(BasiLibName ${LIBPREFIX}Base)
-
-SET(USE_MICO OFF)
-SET(REDUCE_DAE OFF)
-SET(USE_SUNDIALS ON)
-SET(OMC_BUILD ON)
-SET(SIMSTER_BUILD OFF)
-# Boost
-SET(Boost_USE_STATIC_LIBS OFF)
-SET(Boost_USE_MULTITHREADED ON)
-SET(Boost_USE_STATIC_RUNTIME OFF)
+INCLUDE_DIRECTORIES(${CMINPACK_INCLUDE_DIR})
 
 
-# The optional boost libraries must be searched separately, otherwise no library is found if just one is missing.
-# Additionaly the Boost_LIBRARIES variable is overwritten each time find_package(Boost ...) is called, thus it must be rescued
-find_package(Boost COMPONENTS log log_setup)
+# Find PAPI
+FIND_LIBRARY(PAPI_LIBRARIES NAMES libpapi.a papi)
+FIND_PATH(PAPI_INCLUDE_DIRS NAMES papi.h)
+INCLUDE(FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(PAPI DEFAULT_MSG PAPI_LIBRARIES PAPI_INCLUDE_DIRS)
+IF(PAPI_FOUND)
+  #ADD_DEFINITIONS(-DUSE_PAPI)
+ENDIF(PAPI_FOUND)
+
+
+# Find Boost
+#  - The optional boost libraries must be searched separately, otherwise no library is found if just one is missing.
+#  - Additionaly the Boost_LIBRARIES variable is overwritten each time find_package(Boost ...) is called, thus it must be rescued
+FIND_PACKAGE(Boost COMPONENTS log log_setup)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
 IF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
-	add_definitions(-DUSE_BOOST_LOG)
-	message(STATUS "Using boost log")
+	ADD_DEFINITIONS(-DUSE_BOOST_LOG)
+	MESSAGE(STATUS "Using boost log")
 ELSE(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
-	message(STATUS "Boost log disabled")
-	unset(Boost_LOG_LIBRARY)
+	MESSAGE(STATUS "Boost log disabled")
+	UNSET(Boost_LOG_LIBRARY)
 ENDIF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
 
-find_package(Boost COMPONENTS thread atomic)
+FIND_PACKAGE(Boost COMPONENTS thread atomic)
 
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
-find_package(Threads)
+FIND_PACKAGE(Threads)
 IF(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
-	add_definitions(-DUSE_BOOST_THREAD)
-	message(STATUS "Using boost thread")
+	ADD_DEFINITIONS(-DUSE_BOOST_THREAD)
+	MESSAGE(STATUS "Using boost thread")
 ELSE(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
-	message(STATUS "Boost thread disabled")
+	MESSAGE(STATUS "Boost thread disabled")
 ENDIF(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
 
-find_package(Boost COMPONENTS filesystem system serialization program_options REQUIRED)
+FIND_PACKAGE(Boost COMPONENTS filesystem system serialization program_options REQUIRED)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
 SET(Boost_LIBRARIES ${Boost_LIBRARIES_TMP})
-message(STATUS "Boost Libraries")
-message(STATUS ${Boost_LIBRARIES})
+MESSAGE(STATUS "Boost Libraries")
+MESSAGE(STATUS ${Boost_LIBRARIES})
 
-# Lapack and Blas
-find_package( BLAS )
-find_package( LAPACK  )
-if(MSVC)
+
+# Find Lapack and Blas
+FIND_PACKAGE(BLAS)
+FIND_PACKAGE(LAPACK)
+
+IF(MSVC)
   #workaround  because cmake does not find the lapack libraries for Visual Studio 10
   SET(LAPACK_MSVC_10  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.lib  )
   SET(BLAS_MSVC_10 $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.lib )
   SET(LAPACK_LIBRARIES  ${LAPACK_MSVC_10}   ${BLAS_MSVC_10} )
 
-elseif(MINGW)
+ELSEIF(MINGW)
   SET(LAPACK_MINGW  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll  )
   SET(BLAS_MINGW $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll )
   SET(LAPACK_LIBRARIES  ${LAPACK_MINGW}   ${BLAS_MINGW} )
+ENDIF(MSVC)
 
-endif()
-
-find_library(mkl_rt mkl_rt)
-if (mkl_rt)
+FIND_LIBRARY(mkl_rt mkl_rt)
+IF (mkl_rt)
   #workaround because find_package(lapack)-command returns the wrong libraries on Taurus (ZIH-TU Dresden)
   SET(LAPACK_LIBRARIES ${mkl_rt})
-endif(mkl_rt)
+ENDIF(mkl_rt)
 
-if(OMC_BUILD)
-add_definitions(-DOMC_BUILD)
-elseif(SIMSTER_BUILD)
-add_definitions(-DSIMSTER_BUILD)
-endif()
+MESSAGE(STATUS "Lapack Libraries")
+MESSAGE(STATUS ${LAPACK_LIBRARIES})
 
 
-message(STATUS "Lapack Libraries")
-message(STATUS ${LAPACK_LIBRARIES})
+# Find Sundials solvers
+IF(USE_SUNDIALS)
+  FIND_PATH(SUNDIALS_INCLUDE_DIR cvode/cvode.h
+      PATHS ${SUNDIALS_INLCUDE_HOME})
+  MESSAGE(STATUS ${SUNDIALS_INCLUDE_DIR})
 
+  FIND_LIBRARY(SUNDIALS_NVECSERIAL_LIB "sundials_nvecserial"
+      PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME})
+  FIND_LIBRARY(SUNDIALS_CVODES_LIB "sundials_cvodes"
+      PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
+  FIND_LIBRARY(SUNDIALS_IDA_LIB "sundials_ida"
+      PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
+  FIND_LIBRARY(SUNDIALS_KINSOL_LIB "sundials_kinsol"
+      PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
+  #FIND_LIBRARY(SUNDIALS_IDAS_LIB "sundials_idas"
+  #    PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
 
-# Sundials solvers
-if(USE_SUNDIALS)
+  SET(SUNDIALS_LIBS ${SUNDIALS_NVECSERIAL_LIB}  ${SUNDIALS_CVODES_LIB}  ${SUNDIALS_IDA_LIB}  ${SUNDIALS_KINSOL_LIB})
 
-find_path(SUNDIALS_INCLUDE_DIR cvode/cvode.h
-    PATHS ${SUNDIALS_INLCUDE_HOME})
-message(STATUS ${SUNDIALS_INCLUDE_DIR})
+  MESSAGE(STATUS "Sundials Libraries:")
+  MESSAGE(STATUS ${SUNDIALS_LIBS})
+  ADD_DEFINITIONS(-DPMC_USE_SUNDIALS)
 
-find_library(SUNDIALS_NVECSERIAL_LIB "sundials_nvecserial"
-    PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME})
-find_library(SUNDIALS_CVODES_LIB "sundials_cvodes"
-    PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
-find_library(SUNDIALS_IDA_LIB "sundials_ida"
-    PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
-find_library(SUNDIALS_KINSOL_LIB "sundials_kinsol"
-    PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
-#find_library(SUNDIALS_IDAS_LIB "sundials_idas"
-#    PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
+  # On Windows we need to install those libraries along with the SimManager
+  INSTALL(FILES ${SUNDIALS_LIBS} DESTINATION bin)
+ENDIF(USE_SUNDIALS)
 
-set(SUNDIALS_LIBS ${SUNDIALS_NVECSERIAL_LIB}  ${SUNDIALS_CVODES_LIB}  ${SUNDIALS_IDA_LIB}  ${SUNDIALS_KINSOL_LIB})
-
-message(STATUS "Sundials Libraries:")
-message(STATUS ${SUNDIALS_LIBS})
-add_definitions(-DPMC_USE_SUNDIALS)
-
-# On Windows we need to install those libraries along with the SimManager
-INSTALL(FILES ${SUNDIALS_LIBS} DESTINATION bin)
-endif()
 
 #Handle umfpack
 FIND_PACKAGE(SuiteSparse HINTS "${CMAKE_SOURCE_DIR}/Solver/UmfPack/")
 IF(SuiteSparse_found)
-	message(STATUS "Using UmfPack")
-	include_directories(${SUITESPARSE_INCLUDE_DIRS})
-	add_definitions(-DUSE_UMFPACK)
+	MESSAGE(STATUS "Using UmfPack")
+	INCLUDE_DIRECTORIES(${SUITESPARSE_INCLUDE_DIRS})
+	ADD_DEFINITIONS(-DUSE_UMFPACK)
     SET(SUITESPARSE_INCLUDE ${SUITESPARSE_INCLUDE_DIRS})
 	SET(UMFPACK_LIB ${SUITESPARSE_LIBRARIES})
-ELSE()
-	message(STATUS "UmfPack disabled")
+ELSE(SuiteSparse_found)
+	MESSAGE(STATUS "UmfPack disabled")
 	SET(SUITESPARSE_INCLUDE ".")
 	SET(UMFPACK_LIB "")
-ENDIF()
+ENDIF(SuiteSparse_found)
 
-#Mico corba
-if(USE_MICO)
-  find_library(MICO_LIBRARY  mico2313
+
+#Handle Mico corba
+IF(USE_MICO)
+  FIND_LIBRARY(MICO_LIBRARY  mico2313
     PATHS ${MICO_LIB_HOME}) #you can add additional search paths for mico library
-  find_path(MICO_INCLUDE_DIR CORBA.h
+  FIND_PATH(MICO_INCLUDE_DIR CORBA.h
      ${MICO_INCLUDE_HOME}) #you can add additional search paths for mico include
-  message(STATUS ${MICO_LIBRARY})
-  message(STATUS ${MICO_INCLUDE_DIR})
-endif()
+  MESSAGE(STATUS ${MICO_LIBRARY})
+  MESSAGE(STATUS ${MICO_INCLUDE_DIR})
+ENDIF(USE_MICO)
+
 
 #Write the defines into the ADDITIONAL_DEFINES variable
 # GET_DIRECTORY_PROPERTY(ADDITIONAL_DEFINES DEFINITIONS)

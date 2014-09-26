@@ -30,12 +30,13 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValues
 class BOOST_EXTENSION_EXPORT_DECL MeasureTimeData
 {
  public:
-  unsigned int id;
+  std::string id;
   MeasureTimeValues *sumMeasuredValues;
   //MeasureTimeValues *maxMeasuredValues;
   unsigned int numCalcs;
 
   MeasureTimeData();
+  MeasureTimeData(std::string id);
   virtual ~MeasureTimeData();
 
   std::string serializeToJson() const;
@@ -64,23 +65,28 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTime
    */
   static inline void getTimeValuesStart(MeasureTimeValues *res) //__attribute__((always_inline))
   {
-    getTimeValuesStartFct(res);
-  };
+    instance->getTimeValuesStartP(res);
+  }
 
   static inline void getTimeValuesEnd(MeasureTimeValues *res)
   {
-    getTimeValuesEndFct(res);
+    instance->getTimeValuesEndP(res);
   }
 
   static MeasureTimeValues* getZeroValues();
 
   static void deinitialize();
 
-  static void addJsonContentBlock(const std::string filename, const std::string blockname, const std::vector<MeasureTimeData> * in);
+  static void addResultContentBlock(const std::string filename, const std::string blockname, const std::vector<MeasureTimeData> * in);
 
   static void writeToJson();
 
   virtual void benchOverhead();
+
+  virtual void setOverheadToZero();
+
+  virtual void initializeThread(unsigned long int (*threadHandle)()) = 0;
+  virtual void deinitializeThread(unsigned long int (*threadHandle)()) = 0;
 
  protected:
   static MeasureTime * instance;
@@ -93,5 +99,8 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTime
   MeasureTime();
 
   virtual MeasureTimeValues* getZeroValuesP() = 0;
+
+  virtual void getTimeValuesStartP(MeasureTimeValues *res) = 0;
+  virtual void getTimeValuesEndP(MeasureTimeValues *res) = 0;
 };
 #endif // MEASURE_TIME_HPP

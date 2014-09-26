@@ -19,14 +19,24 @@ MeasureTimeRDTSC::~MeasureTimeRDTSC()
 {
 }
 
-void MeasureTimeRDTSC::getTimeValuesStart(MeasureTimeValues *res)
+void MeasureTimeRDTSC::initializeThread(unsigned long int (*threadHandle)())
+{
+
+}
+
+void MeasureTimeRDTSC::deinitializeThread(unsigned long int (*threadHandle)())
+{
+
+}
+
+void MeasureTimeRDTSC::getTimeValuesStartP(MeasureTimeValues *res)
 {
   MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(res);
   unsigned long long time = RDTSC();
   val->time = time;
 }
 
-void MeasureTimeRDTSC::getTimeValuesEnd(MeasureTimeValues *res)
+void MeasureTimeRDTSC::getTimeValuesEndP(MeasureTimeValues *res)
 {
   unsigned long long time = RDTSC();
   MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(res);

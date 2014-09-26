@@ -26,6 +26,8 @@ class MeasureTimeRDTSC : public MeasureTime
   MeasureTimeRDTSC();
 
   MeasureTimeValues* getZeroValuesP();
+  void getTimeValuesStartP(MeasureTimeValues *res);
+  void getTimeValuesEndP(MeasureTimeValues *res);
 
  public:
   virtual ~MeasureTimeRDTSC();
@@ -33,14 +35,11 @@ class MeasureTimeRDTSC : public MeasureTime
   static void initialize()
   {
     instance = new MeasureTimeRDTSC();
-    MeasureTime::getTimeValuesStartFct = &MeasureTimeRDTSC::getTimeValuesStart;
-    MeasureTime::getTimeValuesEndFct = &MeasureTimeRDTSC::getTimeValuesEnd;
-    instance->benchOverhead();
+    instance->setOverheadToZero();
   }
 
-  static void getTimeValuesStart(MeasureTimeValues *res);
-
-  static void getTimeValuesEnd(MeasureTimeValues *res);
+  virtual void initializeThread(unsigned long int (*threadHandle)());
+  virtual void deinitializeThread(unsigned long int (*threadHandle)());
 
  private:
   static inline unsigned long long RDTSC(); //__attribute__((always_inline));

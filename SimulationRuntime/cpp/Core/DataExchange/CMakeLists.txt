@@ -21,6 +21,7 @@ install (TARGETS ${DataExchangeName}_static DESTINATION lib/omc/${LIBINSTALLEXT}
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/IHistory.h
 				${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/ISimVar.h
 				${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/SimData.h
+				${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/Writer.h
   DESTINATION include/omc/cpp/Core/DataExchange)
 
 
