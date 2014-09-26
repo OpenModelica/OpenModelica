@@ -142,8 +142,8 @@ public:
 
    virtual void assign(const BaseArray<T>& otherArray)
   {
-    std::vector<size_t> v;
-    v = otherArray.getDims();
+    //std::vector<size_t> v;
+    //v = otherArray.getDims();
     const T* data_otherarray = otherArray.getData();
     //std::copy(data_otherarray,data_otherarray+size,_real_array.begin());
     memcpy( _real_array.begin(), data_otherarray, size * sizeof( T ) );
@@ -760,9 +760,12 @@ public:
   virtual  void assign(const BaseArray<T>& otherArray)
   {
     std::vector<size_t> v = otherArray.getDims();
-    _multi_array.resize(v);
-    _multi_array.reindex(1);
-     const T* data_otherarray = otherArray.getData();
+	
+    if ( v != getDims()) 
+	{
+		_multi_array.resize(v);
+		_multi_array.reindex(1);
+	}     const T* data_otherarray = otherArray.getData();
     _multi_array.assign(data_otherarray,data_otherarray+ v[0]);
     /*for (int i = 1; i <= v[0]; i++)
     {
