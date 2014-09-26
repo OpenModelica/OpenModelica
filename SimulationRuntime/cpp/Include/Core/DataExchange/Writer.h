@@ -52,7 +52,7 @@ class Writer
 #endif
     }
 
-    virtual void write(Writer::value_type_v& v_list, Writer::value_type_dv& v2_list, double time) = 0;
+    virtual void write(value_type_v& v_list, value_type_dv& v2_list, double time) = 0;
 
     boost::tuple<value_type_v*, value_type_dv*, double>* getFreeContainer()
     {
