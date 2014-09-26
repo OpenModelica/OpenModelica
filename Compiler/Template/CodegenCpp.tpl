@@ -8230,12 +8230,12 @@ template assignDerArray(Context context, String arr, ComponentRef c,SimCode simC
      let &varDeclsCref = buffer "" /*BUFD*/
      <<
         /*<%cref(c,useFlatArrayNotation)%>*/
-        memcpy(&<%cref1(c,simCode, context, varDeclsCref, useFlatArrayNotation)%>,<%arr%>.data(),<%arr%>.shape()[0]*sizeof(double));
+        memcpy(&<%cref1(c,simCode, context, varDeclsCref, useFlatArrayNotation)%>,<%arr%>.getData(),<%arr%>.getNumElems()*sizeof(double));
      >>
     case STATE_DER(__)   then
      let &varDeclsCref = buffer "" /*BUFD*/
     <<
-      memcpy(&<%cref1(c,simCode, context, varDeclsCref, useFlatArrayNotation)%>,<%arr%>.data(),<%arr%>.shape()[0]*sizeof(double));
+      memcpy(&<%cref1(c,simCode, context, varDeclsCref, useFlatArrayNotation)%>,<%arr%>.getData(),<%arr%>.getNumElems()*sizeof(double));
     >>
     else
      let &varDeclsCref = buffer "" /*BUFD*/
