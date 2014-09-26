@@ -3092,7 +3092,7 @@ case var as VARIABLE(ty = T_STRING(__)) then
       let &varAssign +=
         <<
         //_<%fname%> = <%strVar%>;
-     output = <%strVar%>;
+        output = <%strVar%>;
         >>
       ""
     else
