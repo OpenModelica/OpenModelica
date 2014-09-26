@@ -3653,7 +3653,7 @@ algorithm
         // tvar selection
         tvar = omcTearingSelectTearingVar(varsIn,ass1,ass2,me,meT,{},{},{});
         print("selected tvar: "+&intString(tvar)+&"\n");
-            
+
          // cheap matching
         _ = arrayUpdate(ass1,tvar,size*2);
             print("ass1: "+&stringDelimitList(List.map(arrayList(ass1),intString),", ")+&"\n");
