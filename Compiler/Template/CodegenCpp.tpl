@@ -2610,6 +2610,7 @@ case RECORD_CONSTRUCTOR(__) then
   <<
   void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var as  VARIABLE(__) => '<%varType1(var,simCode)%> <%crefStr(name)%>' ;separator=", "%><%if funArgs then "," else ""%><%retType%>& output )
   {
+   
     <%funArgs |> VARIABLE(__) => '(output.<%crefStr(name)%>) = (<%crefStr(name)%>);' ;separator="\n"%>
     //output = <%structVar%>;
   //return <%structVar%>;
@@ -2737,7 +2738,7 @@ case FUNCTION(__) then
     }
     while(false);
     <%outVarAssign%>
-  <%if outVars then 'output = _<%fname%>;' %>
+  <%if outVars then '/*output = _<%fname%>;*/' %>
   }
 
   <% if inFunc then
@@ -3090,11 +3091,12 @@ case var as VARIABLE(ty = T_STRING(__)) then
 
       let &varAssign +=
         <<
-        _<%fname%> = <%strVar%>;
+        //_<%fname%> = <%strVar%>;
+		 output = <%strVar%>;
         >>
       ""
     else
-      let &varAssign += '_<%fname%>= <%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>;<%\n%>'
+      let &varAssign += 'output /*_<%fname%> */= <%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>;<%\n%>'
       ""
 case var as VARIABLE(__) then
   let marker = '<%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>'
@@ -3118,11 +3120,11 @@ case var as VARIABLE(__) then
     ""
 */
  if instDims then
- let &varAssign += '_<%fname%>.assign(<%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>);<%\n%>'
+ let &varAssign += '/*_<%fname%>*/ output.assign(<%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>);<%\n%>'
  //let &varAssign += '<%contextCref(var.name,contextFunction,simCode)%>;<%\n%>'
  ""
  else
- let &varAssign += '_<%fname%> = <%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>;<%\n%>'
+ let &varAssign += 'output /*_<%fname%>*/ = <%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>;<%\n%>'
  //let &varAssign += '<%contextCref(var.name,contextFunction,simCode)%>;<%\n%>'
  ""
 case var as FUNCTION_PTR(__) then
@@ -3153,11 +3155,11 @@ case var as VARIABLE(ty = T_STRING(__)) then
       let strVar = tempDecl("string", &varDecls)
       let &varAssign +=
         <<
-        _<%fname%> = <%strVar%>;
+        /*_<%fname%>*/ output = <%strVar%>;
        >>
       ""
     else
-      let &varAssign += '_<%fname%>= <%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>;<%\n%>'
+      let &varAssign += '/*_<%fname%>*/ output= <%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>;<%\n%>'
       ""
 case var as VARIABLE(__) then
   let marker = '<%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>'
@@ -3166,19 +3168,18 @@ case var as VARIABLE(__) then
   let instDimsInit = (instDims |> exp =>
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     ;separator=",")
-  let assginBegin = 'boost::get<<%ix%>>('
-  let assginEnd = ')'
+  let assginBegin = 'boost::get<<%ix%>>'
   if instDims then
-    let &varInits += '<%assginBegin%>_<%fname%>.data<%assginEnd%>.setDims(<%instDimsInit%>);//todo setDims not for stat arrays
+    let &varInits += '<%assginBegin%>(/*_<%fname%>*/output.data).setDims(<%instDimsInit%>);//todo setDims not for stat arrays
     <%\n%>'
-    let &varAssign += '<%assginBegin%>_<%fname%>.data<%assginEnd%>=<%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>;<%\n%>'
+    let &varAssign += '<%assginBegin%>(/*_<%fname%>*/output.data)=<%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>;<%\n%>'
     ""
   else
    // let &varInits += initRecordMembers(var)
-    let &varAssign += ' <%assginBegin%>_<%fname%>.data<%assginEnd%> = <%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>;<%\n%>'
+    let &varAssign += ' <%assginBegin%>(/*_<%fname%>*/output.data) = <%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>;<%\n%>'
     ""
 case var as FUNCTION_PTR(__) then
-    let &varAssign += '_<%fname%> = (modelica_fnptr) _<%var.name%>;<%\n%>'
+    let &varAssign += '/*_<%fname%>*/ output = (modelica_fnptr) _<%var.name%>;<%\n%>'
     ""
 end varOutputTuple;
 
@@ -3378,7 +3379,7 @@ end varDefaultValue;
 template funArgDefinition(Variable var,SimCode simCode, Boolean useFlatArrayNotation)
 ::=
   match var
-  case VARIABLE(__) then '<%varType1(var, simCode)%> <%contextCref(name,contextFunction,simCode,useFlatArrayNotation)%>'
+  case VARIABLE(__) then '<%varType1(var, simCode)%> <%contextCref(name,contextFunction,simCode,useFlatArrayNotation)%> /*test1*/'
   case FUNCTION_PTR(__) then 'modelica_fnptr <%name%>'
 end funArgDefinition;
 
