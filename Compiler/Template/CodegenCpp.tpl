@@ -361,10 +361,10 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
        /// Output routine (to be called by the solver after every successful integration step)
        virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
        virtual IHistory* getHistory();
-    
+
   protected:
        void initialize();
-        
+
   private:
        void writeAlgVarsValues(HistoryImplType::value_type_v *v);
        void writeDiscreteAlgVarsValues(HistoryImplType::value_type_v *v);
@@ -374,7 +374,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
        void writeIntAliasVarsValues(HistoryImplType::value_type_v *v);
        void writeBoolAliasVarsValues(HistoryImplType::value_type_v *v);
        void writeStateValues(HistoryImplType::value_type_v *v, HistoryImplType::value_type_dv *v2);
-  
+
        void writeAlgVarsResultNames(vector<string>& names);
        void writeDiscreteAlgVarsResultNames(vector<string>& names);
        void writeIntAlgVarsResultNames(vector<string>& names);
@@ -4222,7 +4222,7 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       writeIntAliasVarsValues(v);
       writeBoolAliasVarsValues(v);
       writeStateValues(v,v2);
- 
+
       <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<
       HistoryImplType::value_type_r v3;
@@ -4246,7 +4246,7 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
     <%generateMeasureTimeEndCode("measuredStartValues", "measuredEndValues", "measureTimeWriteOutput[0]")%>
    }
    <%generateWriteOutputFunctionsForVars(modelInfo, simCode, '<%lastIdentOfPath(modelInfo.name)%>WriteOutput', useFlatArrayNotation)%>
-   
+
    <%writeoutput1(modelInfo)%>
   >>
   //<%writeAlgloopvars(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>
@@ -6459,7 +6459,7 @@ case MODELINFO(vars=SIMVARS(__)) then
  let intAliasVarsStart = intAdd(stringInt(aliasVarsStart), stringInt(numProtectedRealAliasvars(modelInfo)))
  let boolAliasVarsStart = intAdd(stringInt(intAliasVarsStart), stringInt(numProtectedIntAliasvars(modelInfo)))
  let stateVarsStart = intAdd(stringInt(boolAliasVarsStart), stringInt(numProtectedBoolAliasvars(modelInfo)))
- 
+
  <<
  /* const int algVarsStart = <%algVarsStart%>;
  const int discrAlgVarsStart  = <%discrAlgVarsStart%>;
@@ -6474,11 +6474,11 @@ case MODELINFO(vars=SIMVARS(__)) then
  <%writeOutputVars("writeDiscreteAlgVarsValues", vars.discreteAlgVars, stringInt(discrAlgVarsStart), className, false, simCode, useFlatArrayNotation)%>
  <%writeOutputVars("writeIntAlgVarsValues", vars.intAlgVars, stringInt(intAlgVarsStart), className, false, simCode, useFlatArrayNotation)%>
  <%writeOutputVars("writeBoolAlgVarsValues", vars.boolAlgVars, stringInt(boolAlgVarsStart), className, false, simCode, useFlatArrayNotation)%>
- 
+
  <%writeOutputVars("writeAliasVarsValues", vars.aliasVars, stringInt(aliasVarsStart), className, true, simCode, useFlatArrayNotation)%>
  <%writeOutputVars("writeIntAliasVarsValues", vars.intAliasVars, stringInt(intAliasVarsStart), className, true, simCode, useFlatArrayNotation)%>
  <%writeOutputVars("writeBoolAliasVarsValues", vars.boolAliasVars, stringInt(boolAliasVarsStart), className, true, simCode, useFlatArrayNotation)%>
- 
+
  void <%className%>::writeStateValues(HistoryImplType::value_type_v *v, HistoryImplType::value_type_dv *v2)
  {
    <%(vars.stateVars      |> SIMVAR() hasindex i8 =>'(*v)(<%intAdd(stringInt(stateVarsStart), stringInt(i8))%>)=__z[<%index%>];';separator="\n")%>
