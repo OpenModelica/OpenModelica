@@ -1416,6 +1416,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
    ,_terminate(terminate)
    {
      <%literals |> literal hasindex i0 fromindex 0 => literalExpConstImpl(literal,i0) ; separator="\n";empty%>
+	 initialize();
    }
 
    Functions::~Functions()
@@ -1426,6 +1427,12 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
         if(!cond)
             throw std::runtime_error(msg);
     }
+	
+	void Functions::initialize()
+	{
+		<%initParams1(functions, simCode)%>
+	}
+	
     <%functionBodies(functions,simCode,useFlatArrayNotation)%>
   >>
 
@@ -1473,6 +1480,7 @@ end simulationTypesHeaderFile;
 template simulationFunctionsHeaderFile(SimCode simCode, list<Function> functions, list<Exp> literals, Boolean useFlatArrayNotation)
 ::=
 match simCode
+
 case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
   #pragma once
@@ -1501,6 +1509,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        //Literals
         <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n";empty%>
      private:
+	   void initialize();
 
        //Function return variables
        <%functionHeaderBodies3(functions,simCode)%>
@@ -1510,10 +1519,101 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        double* __z;
        double* __zDot;
 
+	   // function paramter variables
+	   <%allocateParams1(functions, simCode)%>
+	   
      };
   >>
 
 end simulationFunctionsHeaderFile;
+
+template allocateParams1( list<Function> functions, SimCode simCode)
+::=
+let params = (functions |> fn => allocateParams2(fn, simCode) ;separator="\n")
+<<
+<%params%>
+>>
+end allocateParams1;
+
+template allocateParams2(Function fn, SimCode simCode)
+::=
+match fn
+case FUNCTION(__) then
+let params = (variableDeclarations |> var hasindex i1 fromindex 1 =>
+      paramInit(var, "", i1,simCode) ; separator="" /* increase the counter! */)
+<<
+<%params%>
+>>
+end allocateParams2;
+
+template paramInit(Variable var, String outStruct, Integer i,SimCode simCode)
+::=
+let &varDecls = buffer "" /*BUFD*/
+let &varInits = buffer "" /*BUFD*/
+let dump  = match var
+case VARIABLE(__) then
+	match kind
+		case PARAM(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
+		//case CONST(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
+	end match
+end match
+<<
+<%varDecls%>
+>>
+end paramInit;
+
+template initParams1( list<Function> functions, SimCode simCode)
+::=
+let params = (functions |> fn => initParams2(fn, simCode) ;separator="\n")
+<<
+<%params%>
+>>
+end initParams1;
+
+template initParams2(Function fn, SimCode simCode)
+::=
+match fn
+case FUNCTION(__) then
+let params = (variableDeclarations |> var hasindex i1 fromindex 1 =>
+      paramInit2(var, "", i1,simCode) ; separator="" /* increase the counter! */)
+<<
+<%params%>
+>>
+end initParams2;
+
+template paramInit2(Variable var, String outStruct, Integer i,SimCode simCode)
+::=
+let &varDecls = buffer "" /*BUFD*/
+let &varInits = buffer "" /*BUFD*/
+let dump  = match var
+case VARIABLE(__) then
+	match kind
+		case PARAM(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
+		//case CONST(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
+	end match
+end match
+<<
+<%varInits%>
+>>
+end paramInit2;
+
+
+
+template notparamInit(Variable var, String outStruct, Integer i, Text &varDecls /*BUFP*/, Text &varInits /*BUFP*/, SimCode simCode, Boolean useFlatArrayNotation)
+::=
+let dump  = match var
+case VARIABLE(__) then
+	match kind
+		case VARIABLE(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, true)
+		case DISCRETE(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, true)
+	end match
+end match
+""
+end notparamInit;
+
+
+
+
 
 template simulationMainDLLib(SimCode simCode)
 ::=
@@ -2586,12 +2686,14 @@ case FUNCTION(__) then
   let fname = underscorePath(name)
   let retType = if outVars then '<%fname%>RetType ' else "void" /* functionBodyRegularFunction */
   let &varDecls = buffer "" /*BUFD*/
+ 
+  
   let &varInits = buffer "" /*BUFD*/
   //let retVar = if outVars then tempDecl(retType, &varDecls /*BUFD*/)
   //let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
   let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
-      varInit(var, "", i1, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, useFlatArrayNotation) ; empty /* increase the counter! */
-    )
+      notparamInit(var, "", i1, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, useFlatArrayNotation) ; empty /* increase the counter! */)
+	  
   //let addRootsInputs = (functionArguments |> var => addRoots(var) ;separator="\n")
   //let addRootsOutputs = (outVars |> var => addRoots(var) ;separator="\n")
   //let funArgs = (functionArguments |> var => functionArg(var, &varInits) ;separator="\n")
@@ -2626,7 +2728,9 @@ case FUNCTION(__) then
     //functionBodyRegularFunction
     <%varDecls%>
     <%outVarInits%>
-    <%varInits%>
+
+	
+	<%varInits%>
     do
     {
         <%bodyPart%>
@@ -2675,7 +2779,7 @@ case efn as EXTERNAL_FUNCTION(__) then
                   else
                   extFunCall(fn, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, useFlatArrayNotation,true)
   let _ = ( outVars |> var hasindex i1 fromindex 1 =>
-            varInit(var, retVar, i1, &varDecls /*BUFD*/, &outVarInits /*BUFC*/,simCode,useFlatArrayNotation)
+            notparamInit(var, retVar, i1, &varDecls /*BUFD*/, &outVarInits /*BUFC*/,simCode,useFlatArrayNotation) ///TOODOO
             ; empty /* increase the counter! */
           )
 
