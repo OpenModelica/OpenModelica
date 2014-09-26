@@ -1416,7 +1416,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
    ,_terminate(terminate)
    {
      <%literals |> literal hasindex i0 fromindex 0 => literalExpConstImpl(literal,i0) ; separator="\n";empty%>
-	 initialize();
+   initialize();
    }
 
    Functions::~Functions()
@@ -1427,12 +1427,12 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
         if(!cond)
             throw std::runtime_error(msg);
     }
-	
-	void Functions::initialize()
-	{
-		<%initParams1(functions, simCode)%>
-	}
-	
+
+  void Functions::initialize()
+  {
+    <%initParams1(functions, simCode)%>
+  }
+
     <%functionBodies(functions,simCode,useFlatArrayNotation)%>
   >>
 
@@ -1509,7 +1509,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        //Literals
         <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n";empty%>
      private:
-	   void initialize();
+     void initialize();
 
        //Function return variables
        <%functionHeaderBodies3(functions,simCode)%>
@@ -1519,9 +1519,9 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        double* __z;
        double* __zDot;
 
-	   // function paramter variables
-	   <%allocateParams1(functions, simCode)%>
-	   
+     // function paramter variables
+     <%allocateParams1(functions, simCode)%>
+
      };
   >>
 
@@ -1552,10 +1552,10 @@ let &varDecls = buffer "" /*BUFD*/
 let &varInits = buffer "" /*BUFD*/
 let dump  = match var
 case VARIABLE(__) then
-	match kind
-		case PARAM(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
-		//case CONST(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
-	end match
+  match kind
+    case PARAM(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
+    //case CONST(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
+  end match
 end match
 <<
 <%varDecls%>
@@ -1587,10 +1587,10 @@ let &varDecls = buffer "" /*BUFD*/
 let &varInits = buffer "" /*BUFD*/
 let dump  = match var
 case VARIABLE(__) then
-	match kind
-		case PARAM(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
-		//case CONST(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
-	end match
+  match kind
+    case PARAM(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
+    //case CONST(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
+  end match
 end match
 <<
 <%varInits%>
@@ -1603,10 +1603,10 @@ template notparamInit(Variable var, String outStruct, Integer i, Text &varDecls 
 ::=
 let dump  = match var
 case VARIABLE(__) then
-	match kind
-		case VARIABLE(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, true)
-		case DISCRETE(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, true)
-	end match
+  match kind
+    case VARIABLE(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, true)
+    case DISCRETE(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, true)
+  end match
 end match
 ""
 end notparamInit;
@@ -2686,14 +2686,14 @@ case FUNCTION(__) then
   let fname = underscorePath(name)
   let retType = if outVars then '<%fname%>RetType ' else "void" /* functionBodyRegularFunction */
   let &varDecls = buffer "" /*BUFD*/
- 
-  
+
+
   let &varInits = buffer "" /*BUFD*/
   //let retVar = if outVars then tempDecl(retType, &varDecls /*BUFD*/)
   //let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
   let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
       notparamInit(var, "", i1, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, useFlatArrayNotation) ; empty /* increase the counter! */)
-	  
+
   //let addRootsInputs = (functionArguments |> var => addRoots(var) ;separator="\n")
   //let addRootsOutputs = (outVars |> var => addRoots(var) ;separator="\n")
   //let funArgs = (functionArguments |> var => functionArg(var, &varInits) ;separator="\n")
@@ -2729,8 +2729,8 @@ case FUNCTION(__) then
     <%varDecls%>
     <%outVarInits%>
 
-	
-	<%varInits%>
+
+  <%varInits%>
     do
     {
         <%bodyPart%>
