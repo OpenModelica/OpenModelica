@@ -2610,7 +2610,7 @@ case RECORD_CONSTRUCTOR(__) then
   <<
   void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var as  VARIABLE(__) => '<%varType1(var,simCode)%> <%crefStr(name)%>' ;separator=", "%><%if funArgs then "," else ""%><%retType%>& output )
   {
-   
+
     <%funArgs |> VARIABLE(__) => '(output.<%crefStr(name)%>) = (<%crefStr(name)%>);' ;separator="\n"%>
     //output = <%structVar%>;
   //return <%structVar%>;
@@ -3092,7 +3092,7 @@ case var as VARIABLE(ty = T_STRING(__)) then
       let &varAssign +=
         <<
         //_<%fname%> = <%strVar%>;
-		 output = <%strVar%>;
+     output = <%strVar%>;
         >>
       ""
     else
