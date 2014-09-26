@@ -608,7 +608,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
    {
       _historyImpl = new HistoryImplType(*globalSettings);
-      
+
       <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
       <<
       measureTimeWriteOutput = std::vector<MeasureTimeData>(2);
@@ -618,7 +618,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       measuredStartValues = MeasureTime::getZeroValues();
       measuredEndValues = MeasureTime::getZeroValues();
       measuredStartValues1 = MeasureTime::getZeroValues();
-      measuredEndValues1 = MeasureTime::getZeroValues();      
+      measuredEndValues1 = MeasureTime::getZeroValues();
       >>%>
    }
 
@@ -1288,7 +1288,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   #include <Core/ModelicaDefine.h>
   #include <SimCoreFactory/Policies/FactoryConfig.h>
   #include <SimController/ISimController.h>
-  <% 
+  <%
     match(getConfigString(PROFILING_LEVEL))
         case("none") then ''
         case("all_perf") then '#include "Core/Utils/extension/measure_time_papi.hpp"'
@@ -1302,7 +1302,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   int main(int argc, const char* argv[])
   #endif
   {
-      <% 
+      <%
       match(getConfigString(PROFILING_LEVEL))
           case("none") then ''
           case("all_perf") then 'MeasureTimePAPI::initialize();'
@@ -1619,7 +1619,7 @@ let libsPos2 = if dirExtra then libsStr // else ""
 let _extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then ""
 let extraCflags = '<%_extraCflags%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g"%>'
 let omHome = makefileParams.omhome
-let &timeMeasureLink += 
+let &timeMeasureLink +=
     match(getConfigString(PROFILING_LEVEL))
         case("none") then ''
         case("all_perf") then ' -Wl,-rpath,"<%omHome%>/lib/omc/cpp" -lOMCppExtensionUtilities -lOMCppExtensionUtilities_papi -lpapi'
@@ -1708,7 +1708,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","profileBlocks",&measureTimeArray);
             measuredStartValues = MeasureTime::getZeroValues();
             measuredEndValues = MeasureTime::getZeroValues();
-    
+
             for(int i = 0; i < <%numOfEqs%>; i++)
             {
                 ostringstream ss;
@@ -4202,12 +4202,12 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       >>%>
       /* HistoryImplType::value_type_v v;
       HistoryImplType::value_type_dv v2; */
-      
+
       boost::tuple<HistoryImplType::value_type_v*, HistoryImplType::value_type_dv*, double> *container = _historyImpl->getFreeContainer();
       HistoryImplType::value_type_v *v = container->get<0>();
       HistoryImplType::value_type_dv *v2 = container->get<1>();
       container->get<2>() = _simTime;
-            
+
       <%writeoutput2(modelInfo,simCode,useFlatArrayNotation)%>
       <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<
@@ -4215,7 +4215,7 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       <%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode));separator="\n")%>
       double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode, useFlatArrayNotation));separator=","%>};
       for(int i=0;i<<%numResidues(allEquations)%>;i++) v3(i) = residues[i];
-      
+
       <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
       <<
       MeasureTime::getTimeValuesEnd(measuredEndValues1);
@@ -4224,7 +4224,7 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       measureTimeWriteOutput[1].sumMeasuredValues->add(measuredEndValues1);
       ++(measureTimeWriteOutput[1].numCalcs);
       >>%>
-      
+
       _historyImpl->write(v,v2,v3,_simTime);
       >>
     else
@@ -4237,7 +4237,7 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       measureTimeWriteOutput[1].sumMeasuredValues->add(measuredEndValues1);
       ++(measureTimeWriteOutput[1].numCalcs);
       >>%>
-      
+
       //_historyImpl->write(v,v2,_simTime);
       _historyImpl->addContainerToWriteQueue(container);
       >>
