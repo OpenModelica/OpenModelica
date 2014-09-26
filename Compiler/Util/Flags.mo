@@ -818,7 +818,8 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(44, "tearingMethod",
   SOME(STRING_DESC_OPTION({
     ("noTearing", Util.gettext("Skip tearing.")),
     ("omcTearing", Util.gettext("Tearing method developed by TU Dresden: Frenkel, Schubert.")),
-    ("cellier", Util.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"))})),
+    ("cellier", Util.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick")),
+    ("shuffleTearing", Util.gettext("experimental tearing method developed by TU Dresden: Waurich."))})),
     Util.gettext("Sets the tearing method to use. Select no tearing or choose tearing method."));
 
 constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(45, "scalarizeMinMax",

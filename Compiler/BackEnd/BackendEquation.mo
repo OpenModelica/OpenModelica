@@ -1226,6 +1226,23 @@ algorithm
   outEquationArray := BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, newEquOptArr);
 end setAtIndex;
 
+public function setAtIndexFirst "author: waurich
+  Sets the n-th array element of an EquationArray but with index at first argument.
+  Please note: one-based indexing"
+  input Integer inPos "one-based indexing";
+  input BackendDAE.Equation inEquation;
+  input BackendDAE.EquationArray inEquationArray;
+  output BackendDAE.EquationArray outEquationArray;
+protected
+  array<Option<BackendDAE.Equation>> equOptArr, newEquOptArr;
+  Integer size, numberOfElement, arrSize;
+algorithm
+  BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr) := inEquationArray;
+  size := size -equationOptSize(equOptArr[inPos]) +equationSize(inEquation);
+  newEquOptArr := arrayUpdate(equOptArr, inPos, SOME(inEquation));
+  outEquationArray := BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, newEquOptArr);
+end setAtIndexFirst;
+
 public function getEqns "author: Frenkel TUD 2011-05
   returns the equations given by the list of indexes"
   input list<Integer> inIndices "one-based indexing";

@@ -316,7 +316,7 @@ algorithm
   eqLst := Util.if_(isSimple,eq::eqLst,eqLst);
 end getSimpleEquations;
 
-protected function resolveLoops_findLoops "author:Waurich TUD 2014-02
+public function resolveLoops_findLoops "author:Waurich TUD 2014-02
   gets the crossNodes for the partitions and searches for loops"
   input list<list<Integer>> partitionsIn;
   input BackendDAE.IncidenceMatrix mIn;  // the whole system of simpleEquations
@@ -897,7 +897,7 @@ algorithm
   end matchcontinue;
 end resolveClosedLoop2;
 
-protected function sortLoop "author:Waurich TUD 2014-01
+public function sortLoop "author:Waurich TUD 2014-01
   sorts the equations in a loop so that they are solved in a row."
   input list<Integer> loopIn;
   input BackendDAE.IncidenceMatrix m;

@@ -51,12 +51,18 @@ protected import BackendVariable;
 protected import Config;
 protected import Debug;
 protected import Error;
+protected import ExpressionSolve;
+protected import ExpressionSimplify;
+protected import Expression;
 protected import Flags;
+protected import HpcOmEqSystems;
+protected import HpcOmTaskGraph;
 protected import List;
 protected import Matching;
 protected import Util;
 protected import SCode;
 protected import SCodeDump;
+protected import ResolveLoops;
 
 // =============================================================================
 // section for type definitions
@@ -71,6 +77,7 @@ protected constant String UNDERLINE = "========================================"
 uniontype TearingMethod
   record OMC_TEARING end OMC_TEARING;
   record CELLIER_TEARING end CELLIER_TEARING;
+  record SHUFFLE_TEARING end SHUFFLE_TEARING;
 end TearingMethod;
 
 // =============================================================================
@@ -100,6 +107,7 @@ algorithm
     case(_) equation
       //Debug.fcall2(Flags.TEARING_DUMPVERBOSE, BackendDump.dumpBackendDAE, inDAE, "DAE");
       methodString = Config.getTearingMethod();
+      false = stringEqual(methodString, "shuffleTearing");
       method = getTearingMethod(methodString);
       BackendDAE.DAE(shared=shared) = inDAE;
       BackendDAE.SHARED(backendDAEType=DAEtype) = shared;
@@ -107,6 +115,17 @@ algorithm
       Debug.fcall(Flags.TEARING_DUMP, BackendDump.printBackendDAEType, DAEtype);
       Debug.fcall(Flags.TEARING_DUMP, print, "!\n" +& UNDERLINE +& UNDERLINE +& "\n");
       (outDAE, _) = BackendDAEUtil.mapEqSystemAndFold(inDAE, tearingSystemWork, method);
+    then outDAE;
+
+    case(_) equation
+      methodString = Config.getTearingMethod();
+      BackendDAE.DAE(shared=shared) = inDAE;
+      BackendDAE.SHARED(backendDAEType=DAEtype) = shared;
+      true = stringEqual(methodString, "shuffleTearing");
+      method = getTearingMethod(methodString);
+      BackendDump.dumpBackendDAE(inDAE,"inDAE"+&BackendDump.printBackendDAEType2String(DAEtype));
+      (outDAE, _) = BackendDAEUtil.mapEqSystemAndFold(inDAE, tearingSystemWork_alt, method);
+      BackendDump.dumpBackendDAE(outDAE,"outDAE"+&BackendDump.printBackendDAEType2String(DAEtype));
     then outDAE;
 
     else equation
@@ -133,6 +152,10 @@ algorithm
     case (_) equation
       true = stringEqual(inTearingMethod, "cellier");
     then CELLIER_TEARING();
+
+    case (_) equation
+      true = stringEqual(inTearingMethod, "shuffleTearing");
+    then SHUFFLE_TEARING();
 
     else equation
       Error.addInternalError("./Compiler/BackEnd/Tearing.mo: function getTearingMethod failed");
@@ -3383,6 +3406,478 @@ algorithm
       then ((num,indx+1,ilst));
   end matchcontinue;
 end findNEntries;
+
+//____________________________________________________
+//shuffle Tearing, work in progress
+//____________________________________________________
+
+protected function tearingSystemWork_alt "author: waurich TUD 2014-09"
+  input BackendDAE.EqSystem isyst;
+  input tuple<BackendDAE.Shared, TearingMethod> sharedChanged;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared, TearingMethod> osharedChanged;
+protected
+  BackendDAE.StrongComponents comps;
+  BackendDAE.EqSystem syst;
+  TearingMethod method;
+  Boolean b;
+  BackendDAE.Shared shared;
+  array<Integer> ass1, ass2;
+algorithm
+  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)):=isyst;
+  (shared, method) := sharedChanged;
+  (comps,(syst,shared,b)) := List.mapFold(comps,shuffleTearing0,(isyst,shared,false));
+  print("watch the assingments here!\n");
+  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2)):=syst;
+  osyst := Debug.bcallret2(b, BackendDAEUtil.setEqSystemMatching, syst, BackendDAE.MATCHING(ass1, ass2, comps), isyst);
+  osharedChanged := sharedChanged;
+end tearingSystemWork_alt;
+
+protected function shuffleTearing0
+  input BackendDAE.StrongComponent compIn;
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,Boolean> tplIn;
+  output BackendDAE.StrongComponent compOut;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,Boolean> tplOut;
+algorithm
+  (compOut,tplOut) := matchcontinue(compIn,tplIn)
+    local
+      Boolean outRunMatching;
+      list<Integer> vIdcs,eqIdcs;
+      BackendDAE.EqSystem eqSys;
+      BackendDAE.JacobianType jacType;
+      BackendDAE.Shared shared;
+      BackendDAE.StrongComponent comp1;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
+    case ((BackendDAE.EQUATIONSYSTEM(eqns=eqIdcs, vars=vIdcs, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType)),(eqSys,shared,outRunMatching))
+      equation
+        equality(jacType = BackendDAE.JAC_TIME_VARYING());
+        (comp1,eqSys,outRunMatching) = shuffleTearing(eqIdcs, vIdcs, eqSys, shared,  ojac, jacType);
+      then (comp1,(eqSys,shared,true));
+    else
+      then (compIn,tplIn);
+  end matchcontinue;
+end shuffleTearing0;
+
+protected function shuffleTearing ""
+  input list<Integer> eqIdcs;
+  input list<Integer> varIdcs;
+  input BackendDAE.EqSystem dae;
+  input BackendDAE.Shared shared;
+  input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
+  input BackendDAE.JacobianType jacType;
+  output BackendDAE.StrongComponent ocomp;
+  output BackendDAE.EqSystem daeOut;
+  output Boolean outRunMatching;
+protected
+  Integer size;
+  list<Integer> unsolvables,tvars,resEqs, otherEqs, otherVars;
+  list<list<Integer>> otherVarsLst;
+  array<list<Integer>> mapEqnIncRow;
+  array<Integer> mapIncRowEqn,ass1,ass2,ass1_,ass2_,ass1Sys,ass2Sys,columark;
+  list<tuple<Boolean,String>> varAtts,eqAtts;
+  list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
+  BackendDAE.EquationArray eqs,replEqs,daeEqs;
+  BackendDAE.Variables vars,daeVars;
+  BackendDAE.EqSystem subSys;
+  BackendDAE.IncidenceMatrix m, m2;
+  BackendDAE.AdjacencyMatrixEnhanced me, meT;
+  DAE.FunctionTree funcs;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  list<BackendDAE.Equation> eqLst;
+  list<BackendDAE.Var> varLst;
+algorithm
+  //prepare everything
+  size := listLength(varIdcs);
+  BackendDAE.EQSYSTEM(orderedVars=daeVars,orderedEqs=daeEqs,matching=BackendDAE.MATCHING(ass1=ass1Sys,ass2=ass2Sys),stateSets=stateSets,partitionKind=partitionKind) := dae;
+  eqLst := BackendEquation.getEqns(eqIdcs,daeEqs);
+  eqs := BackendEquation.listEquation(eqLst);
+  varLst := List.map1r(varIdcs, BackendVariable.getVarAt, daeVars);
+  vars := BackendVariable.listVar1(varLst);
+  subSys := BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+  funcs := BackendDAEUtil.getFunctions(shared);
+  (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subSys,shared);
+  ass1 := arrayCreate(size,-1);
+  ass2 := arrayCreate(size,-1);
+  columark := arrayCreate(size,-1);
+      print("\nAdjacencyMatrixEnhanced:\n");
+      BackendDump.dumpAdjacencyMatrixTEnhanced(me);
+      print("\nAdjacencyMatrixTransposedEnhanced:\n");
+      BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
+      varAtts := List.threadMap(List.fill(false,listLength(varLst)),List.map(eqIdcs,intString),Util.makeTuple);
+      eqAtts := List.threadMap(List.fill(false,listLength(eqLst)),List.map(varIdcs,intString),Util.makeTuple);
+      (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subSys, BackendDAE.NORMAL(), SOME(funcs));
+      HpcOmEqSystems.dumpEquationSystemBipartiteGraph2(vars,eqs,m,varAtts,eqAtts,"shuffle_pre");
+
+  // get all unsolvable variables
+  unsolvables := getUnsolvableVars(1,size,meT,{});
+
+  //start tearing procedure
+  (tvars,resEqs,replEqs,ass1_,ass2_) := shuffleTearing2(unsolvables,{},vars,eqs,shared,size,me,meT,mapEqnIncRow,mapIncRowEqn,ass1,ass2,columark,1);
+      print("tvars: "+&stringDelimitList(List.map(tvars,intString),", ")+&"\n");
+      print("resEqs: "+&stringDelimitList(List.map(resEqs,intString),", ")+&"\n");
+      print("ass1!: "+&stringDelimitList(List.map(arrayList(ass1_),intString),", ")+&"\n");
+      print("ass2!: "+&stringDelimitList(List.map(arrayList(ass2_),intString),", ")+&"\n");
+      BackendDump.dumpEquationArray(replEqs,"replEqs");
+      BackendDump.dumpIncidenceMatrix(m);
+   
+   subSys := BackendDAE.EQSYSTEM(vars,replEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+   (_,m2,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subSys, BackendDAE.NORMAL(), SOME(funcs));
+   BackendDump.dumpIncidenceMatrix(m2);
+   m2 := Util.arrayMap1(m2,deleteInRow,tvars);
+   List.map2_0(resEqs,Util.arrayUpdateIndexFirst,{},m2);
+      BackendDump.dumpIncidenceMatrix(m2);
+
+  otherEqnVarTpl := getOrderForOtherEquations(ass2_,m2,size-listLength(resEqs),{});
+
+  //the new global matching (update indeces for torn system and update matching assignments)
+  tvars := List.map1(tvars,List.getIndexFirst,varIdcs);
+  resEqs := List.map1(resEqs,List.getIndexFirst,eqIdcs);
+  otherEqs := List.map(otherEqnVarTpl,Util.tuple21);
+  otherEqs := List.map1(otherEqs,List.getIndexFirst,eqIdcs);
+  otherVarsLst := List.map(otherEqnVarTpl,Util.tuple22);
+  otherVarsLst := List.mapList1_1(otherVarsLst,List.getIndexFirst,varIdcs);
+  otherVars := List.flatten(otherVarsLst);
+  List.threadMap1_0(tvars,resEqs,Util.arrayUpdateIndexFirst,ass1Sys);
+  List.threadMap1_0(otherVars,otherEqs,Util.arrayUpdateIndexFirst,ass1Sys);
+  List.threadMap1_0(tvars,resEqs,Util.arrayUpdateIndexFirst,ass2Sys);
+  List.threadMap1_0(otherVars,otherEqs,Util.arrayUpdateIndexFirst,ass2Sys);
+
+  otherEqnVarTpl := List.threadMap(otherEqs,otherVarsLst,Util.makeTuple);
+  //the new component
+  ocomp := BackendDAE.TORNSYSTEM(tvars,resEqs,otherEqnVarTpl,true,BackendDAE.EMPTY_JACOBIAN());
+      BackendDump.dumpComponent(ocomp);
+
+  // the new eqSystem
+  daeEqs := List.threadFold(eqIdcs,BackendEquation.equationList(replEqs),BackendEquation.setAtIndexFirst,daeEqs);
+  daeOut := BackendDAE.EQSYSTEM(daeVars,daeEqs,NONE(),NONE(),BackendDAE.MATCHING(ass1Sys,ass2Sys,{}),stateSets,partitionKind);
+  (daeOut,_,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(daeOut, BackendDAE.NORMAL(), SOME(funcs));
+
+   outRunMatching := true;
+end shuffleTearing;
+
+protected function deleteInRow"deletes the deletes in the row.
+author:waurich TUD 2014-09"
+  input list<Integer> row;
+  input list<Integer> deletes;
+  output list<Integer> rowOut;
+algorithm
+  (_,rowOut,_) := List.intersection1OnTrue(row,deletes,intEq);
+end deleteInRow;
+
+protected function getOrderForOtherEquations
+  input array<Integer> ass2;
+  input BackendDAE.IncidenceMatrix mIn;//the incidenceMatrix without entries for the tearing vars and empty resEqs
+  input Integer size;
+  input list<tuple<Integer,list<Integer>>> lstIn; //otherEqnVarTpl
+  output list<tuple<Integer,list<Integer>>> lstOut;
+algorithm
+  lstOut := matchcontinue(ass2,mIn,size,lstIn)
+    local
+      array<Boolean> isAss;
+      list<Integer> assEqs,assVars;
+      list<list<Integer>> assVarLst;
+      list<tuple<Integer,list<Integer>>> newTuples;
+      BackendDAE.IncidenceMatrix m;
+    case(_,_,_,_)
+      equation
+        true = listLength(lstIn) < size;
+        // get the first assignable equations
+        isAss = Util.arrayMap(mIn,List.hasOneElement);
+        (_,assEqs) = List.filter1OnTrueSync(arrayList(isAss),boolEq,true,List.intRange(arrayLength(ass2)));
+              print("assEqs: "+&stringDelimitList(List.map(assEqs,intString),", ")+&"\n");
+        assVars = List.map1(assEqs,Util.arrayGetIndexFirst,ass2);
+              print("assVars: "+&stringDelimitList(List.map(assVars,intString),", ")+&"\n");
+        assVarLst = List.map(assVars,List.create);
+        newTuples = List.threadMap(assEqs,assVarLst,Util.makeTuple);
+        // update matrix
+        m = Util.arrayMap1(mIn,deleteInRow,assVars);
+        BackendDump.dumpIncidenceMatrix(m);
+    then getOrderForOtherEquations(ass2,m,size,listAppend(lstIn,newTuples));
+    case(_,_,_,_)
+      equation
+        true = listLength(lstIn) == size;
+      then lstIn;
+    else
+      equation
+        print("getOrderForOtherEquations failed!\n");
+      then fail();
+  end matchcontinue;
+end getOrderForOtherEquations;
+
+
+protected function shuffleTearing2
+  input list<Integer> unsolvables;
+  input list<Integer> tvarsIn;
+  input BackendDAE.Variables varsIn;
+  input BackendDAE.EquationArray eqsIn;
+  input BackendDAE.Shared shared;
+  input Integer size;
+  input BackendDAE.AdjacencyMatrixEnhanced me;
+  input BackendDAE.AdjacencyMatrixEnhanced meT;
+  input array<list<Integer>> mapEqnIncRow;
+  input array<Integer> mapIncRowEqn;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+  input array<Integer> columark;
+  input Integer mark;
+  output list<Integer> tvarsOut;
+  output list<Integer> resEqsOut;
+  output BackendDAE.EquationArray eqsOut;
+  output array<Integer> ass1Out;
+  output array<Integer> ass2Out;
+algorithm
+  (tvarsOut,resEqsOut,eqsOut,ass1Out,ass2Out) := matchcontinue(unsolvables,tvarsIn,varsIn,eqsIn,shared,size,me,meT,mapEqnIncRow,mapIncRowEqn,ass1,ass2,columark,mark)
+    local
+      Integer tvar,mark_;
+      list<Integer> unassignedVars, unassignedEqs, resEqs, tvars;
+      array<Integer> ass1_,ass2_,columark_;
+      list<Integer> updVarIdcs;
+      list<tuple<Boolean,String>> varAtts,eqAtts;
+      array<list<Integer>> mapEqnIncRow_;
+      array<Integer> mapIncRowEqn_;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.EqSystem subSys;
+      BackendDAE.EquationArray eqsReplaced,eqs;
+      BackendDAE.Variables updatedVars;
+      BackendDAE.AdjacencyMatrixEnhanced me_;
+      BackendDAE.AdjacencyMatrixEnhanced meT_;
+      BackendDAE.AdjacencyMatrixElementEnhanced vareqns;
+      DAE.FunctionTree funcs;
+    case({},_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        funcs = BackendDAEUtil.getFunctions(shared);
+        mark_ = mark;
+        ass1_ = arrayCopy(ass1);
+        ass2_ = arrayCopy(ass2);
+        columark_ = arrayCopy(columark);
+
+        // tvar selection
+        tvar = omcTearingSelectTearingVar(varsIn,ass1,ass2,me,meT,{},{},{});
+        print("selected tvar: "+&intString(tvar)+&"\n");
+            //bipartite graph
+            BackendDump.dumpVariables(varsIn,"varsIn");
+       updatedVars = BackendVariable.listVar(listReverse(listDelete(BackendVariable.varList(varsIn),tvar-1)));
+            BackendDump.dumpVariables(updatedVars,"updatedVars");
+       subSys = BackendDAE.EQSYSTEM(updatedVars,eqsIn,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+       (_,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(subSys, BackendDAE.NORMAL(), SOME(funcs));
+            updVarIdcs = listDelete(List.intRange(size),tvar-1);
+            varAtts = List.threadMap(List.fill(false,size-1),List.map(updVarIdcs,intString),Util.makeTuple);
+            eqAtts = List.threadMap(List.fill(false,size),List.map(List.intRange(size),intString),Util.makeTuple);
+            HpcOmEqSystems.dumpEquationSystemBipartiteGraph2(updatedVars,eqsIn,m,varAtts,eqAtts,"shuffle_removed_"+&intString(tvar));
+
+        // cheap matching
+        _ = arrayUpdate(ass1,tvar,size*2);
+            print("ass1: "+&stringDelimitList(List.map(arrayList(ass1),intString),", ")+&"\n");
+        vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, meT[tvar]);
+        tearingBFS(vareqns,me,meT,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
+            print("ass1_assigned: "+&stringDelimitList(List.map(arrayList(ass1),intString),", ")+&"\n");
+
+        // get unassigned variables and equations
+        ((_,unassignedVars)) = List.fold(arrayList(ass1),getUnassigned,(1,{}));
+        ((_,unassignedEqs)) = List.fold(arrayList(ass2),getUnassigned,(1,{}));
+
+            print("unassignedVars: "+&stringDelimitList(List.map(unassignedVars,intString),", ")+&"\n");
+            print("unassignedEqs: "+&stringDelimitList(List.map(unassignedEqs,intString),", ")+&"\n");
+
+       //reshuffle remaining parts
+            BackendDump.dumpEquationArray(eqsIn,"eqs IN");
+       eqsReplaced = shuffleTearing3(unassignedVars,varsIn,eqsIn,me,meT,funcs);
+            BackendDump.dumpEquationArray(eqsReplaced,"eqsReplaced");
+
+      //try to complete matching
+        subSys = BackendDAE.EQSYSTEM(varsIn,eqsReplaced,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+        (me_,meT_,mapEqnIncRow_,mapIncRowEqn_) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subSys,shared);
+            print("\nAdjacencyMatrixEnhanced:\n");
+            BackendDump.dumpAdjacencyMatrixTEnhanced(me_);
+        _ = arrayUpdate(ass1_,tvar,size*2);
+        vareqns = List.removeOnTrue(ass2_, isAssignedSaveEnhanced, meT_[tvar]);
+        tearingBFS(vareqns,me_,meT_,mapEqnIncRow_,mapIncRowEqn_,size,ass1_,ass2_,columark_,mark_,{});
+            print("ass1_assigned 2!: "+&stringDelimitList(List.map(arrayList(ass1_),intString),", ")+&"\n");
+
+      //check
+        (eqs,tvars,resEqs,ass1_,ass2_) = shuffleTearing4(ass1,ass1_,ass2,ass2_,eqsIn,eqsReplaced,tvar::tvarsIn);
+      then (tvars,resEqs,eqs,ass1_,ass2_);
+    else
+      equation
+        print("shuffleTearing2 failed!\n");
+      then fail();
+  end matchcontinue;
+end shuffleTearing2;
+
+protected function shuffleTearing4
+  input array<Integer> ass1;
+  input array<Integer> ass1_new;
+  input array<Integer> ass2;
+  input array<Integer> ass2_new;
+  input BackendDAE.EquationArray eqs;
+  input BackendDAE.EquationArray eqs_new;
+  input list<Integer> tvarsIn;
+  output BackendDAE.EquationArray eqsOut;
+  output list<Integer> tvarsOut;
+  output list<Integer> resEqsOut;
+  output array<Integer> ass1Out;
+  output array<Integer> ass2Out;
+algorithm
+  (eqsOut,tvarsOut,resEqsOut,ass1Out,ass2Out) := matchcontinue(ass1,ass1_new,ass2,ass2_new,eqs,eqs_new,tvarsIn)
+    local
+      list<Integer> unassVars1, unassVars2, resEqs;
+    case(_,_,_,_,_,_,_)
+      equation
+        // done
+        ((_,unassVars2)) = List.fold(arrayList(ass1_new),getUnassigned,(1,{}));
+            print("unassVars2: "+&stringDelimitList(List.map(unassVars2,intString),", ")+&"\n");
+
+        true = List.isEmpty(unassVars2);
+        ((_,resEqs)) = List.fold(arrayList(ass2_new),getUnassigned,(1,{}));
+            print("resEqs: "+&stringDelimitList(List.map(resEqs,intString),", ")+&"\n");
+
+      then (eqs_new,tvarsIn,resEqs,ass1_new,ass2_new);
+    case(_,_,_,_,_,_,_)
+      equation
+        // something has improved a bit
+        ((_,unassVars1)) = List.fold(arrayList(ass1),getUnassigned,(1,{}));
+        ((_,unassVars2)) = List.fold(arrayList(ass1_new),getUnassigned,(1,{}));
+        true = listLength(unassVars2) < listLength(unassVars1);
+        print("something has improved!\n");
+    then fail();
+    else
+      equation
+        print("shuffleTearing4 failed!\n");
+   then fail();
+  end matchcontinue;
+end shuffleTearing4;
+
+protected function shuffleTearing3
+  input list<Integer> unassignedVars;
+  input BackendDAE.Variables varsIn;
+  input BackendDAE.EquationArray eqsIn;
+  input BackendDAE.AdjacencyMatrixEnhanced me;
+  input BackendDAE.AdjacencyMatrixEnhanced meT;
+  input DAE.FunctionTree funcs;
+  output BackendDAE.EquationArray eqsOut;
+protected
+  Integer maxNum, replEqIdx;
+  list<Integer> appEqIdcs, numOfAdjVars;
+  list<list<Integer>> loops;
+  list<BackendDAE.Equation> appEqs,eqsInLst;
+  list<BackendDAE.Var> unassVars;
+  BackendDAE.Equation resolvedEq;
+  BackendDAE.Variables unassVarArr;
+  BackendDAE.EquationArray appEqsArr;
+  BackendDAE.EqSystem subSys;
+  BackendDAE.IncidenceMatrix m;
+  BackendDAE.IncidenceMatrixT mT;
+algorithm
+  eqsInLst := BackendEquation.equationList(eqsIn);
+  //get the appending equations for the unassigned vars and build a new eqSystem
+  appEqIdcs := List.unique(List.map(List.flatten(List.map1(unassignedVars,Util.arrayGetIndexFirst,meT)),Util.tuple21));
+  appEqs := List.map1(appEqIdcs,List.getIndexFirst,eqsInLst);
+
+  unassVars := List.map1(unassignedVars,BackendVariable.getVarAtIndexFirst,varsIn);
+  unassVarArr := BackendVariable.listVar(unassVars);
+  appEqsArr := BackendEquation.listEquation(appEqs);
+  subSys := BackendDAE.EQSYSTEM(unassVarArr,appEqsArr,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+  (_,m,mT,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subSys, BackendDAE.NORMAL(), SOME(funcs));
+      BackendDump.dumpEquationList(appEqs,"unassEqs");
+      BackendDump.dumpVarList(unassVars,"unassVars");
+      BackendDump.dumpIncidenceMatrix(m);
+      BackendDump.dumpIncidenceMatrix(mT);
+
+  // search for loops and resolve them
+  loops := List.create(List.intRange(listLength(appEqs)));
+  (loops,_,_) := ResolveLoops.resolveLoops_findLoops(loops,m,mT,{},{},{});
+      print("loops: \n"+&stringDelimitList(List.map(loops,HpcOmTaskGraph.intLstString)," / ")+&"\n");
+  resolvedEq := resolveCycle(List.first(loops),m,mT,appEqs,unassVars);
+      BackendDump.dumpEquationList({resolvedEq},"resolvedEq");
+
+  //replace a former equation
+  numOfAdjVars := List.map(List.map1(List.first(loops),Util.arrayGetIndexFirst,me),listLength);
+  maxNum := List.fold(numOfAdjVars,intMax,0);
+  replEqIdx := List.position(maxNum,numOfAdjVars)+1;
+  appEqs := List.replaceAt(resolvedEq,replEqIdx-1,appEqs);
+  eqsOut := List.threadFold(appEqIdcs,appEqs,BackendEquation.setAtIndexFirst,eqsIn);
+end shuffleTearing3;
+
+public function resolveCycle
+  input list<Integer> loopIn;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
+  input list<BackendDAE.Equation> eqsIn;
+  input list<BackendDAE.Var> varsIn;
+  output BackendDAE.Equation eqOut;
+protected
+  Integer startEqIdx,startEqDaeIdx;
+  list<Integer> loop1, restLoop;
+  BackendDAE.Equation eq;
+algorithm
+  startEqIdx::restLoop := loopIn;
+  loop1 := ResolveLoops.sortLoop(restLoop,m,mT,{startEqIdx});
+    print("solve the loop: "+&stringDelimitList(List.map(loop1,intString),",")+&"\n");
+  eqOut := resolveCycle2(NONE(),loop1,m,mT,eqsIn,varsIn);
+end resolveCycle;
+
+public function resolveCycle2
+  input Option<BackendDAE.Equation> eq;
+  input list<Integer> loopIn;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
+  input list<BackendDAE.Equation> eqsIn;
+  input list<BackendDAE.Var> varsIn;
+  output BackendDAE.Equation eqOut;
+protected
+algorithm
+  eqOut := matchcontinue(eq,loopIn,m,mT,eqsIn,varsIn)
+    local
+      Integer startEq,nextEq,sharedVar;
+      list<Integer> rest,vars1,vars2;
+      BackendDAE.Equation eq1,eq2;
+      BackendDAE.Var var;
+      BackendDAE.EquationAttributes attr;
+      DAE.Exp lhs1, lhs2, rhs1, rhs2 ,varExp,eqExp;
+      DAE.ElementSource source;
+    case(SOME(eq1),{},_,_,_,_)
+      equation
+        // resolved the whole cycle
+        print("done\n");
+        then eq1;
+    case(NONE(),startEq::rest,_,_,_,_)
+      equation
+        // start resolving the first 2 equations
+        nextEq::rest = rest;
+        vars1 = arrayGet(m,startEq);
+        vars2 = arrayGet(m,nextEq);
+        (vars1,_,_) = List.intersection1OnTrue(vars1,vars2,intEq);
+            print("vars1: "+&stringDelimitList(List.map(vars1,intString),",")+&"\n");
+        sharedVar = List.first(vars1);
+        eq1 = listGet(eqsIn,startEq);
+        eq2 = listGet(eqsIn,nextEq);
+        var = listGet(varsIn,sharedVar);
+        varExp = Expression.crefExp(BackendVariable.varCref(var));
+            BackendDump.dumpEquationList({eq1},"eq1");
+            BackendDump.dumpEquationList({eq2},"eq2");
+            BackendDump.dumpVarList({var},"var");
+
+        BackendDAE.EQUATION(exp=lhs1,scalar=rhs1,source=source,attr=attr) = eq1;
+        BackendDAE.EQUATION(exp=lhs2,scalar=rhs2) = eq2;
+        (eqExp,_) = ExpressionSolve.solve(lhs1,rhs1,varExp);
+
+          eq1 = BackendDAE.EQUATION(varExp,eqExp,source,attr);
+          BackendDump.dumpEquationList({eq1},"solved Eq");
+
+        ((lhs2,_)) = Expression.replaceExp(lhs2,varExp,eqExp);
+        ((rhs2,_)) = Expression.replaceExp(rhs2,varExp,eqExp);
+        (lhs2,_) = ExpressionSimplify.simplify(lhs2);
+        (rhs2,_) = ExpressionSimplify.simplify(rhs2);
+          eq2 = BackendDAE.EQUATION(lhs2,rhs2,source,attr);
+          BackendDump.dumpEquationList({eq2},"eingesetzt Eq");
+     then resolveCycle2(SOME(eq2),rest,m,mT,eqsIn,varsIn);
+    else
+      equation
+      print("resolveCycles2 failed!\n");
+    then fail();
+  end matchcontinue;
+end resolveCycle2;
 
 
 end Tearing;
