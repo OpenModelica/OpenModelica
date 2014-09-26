@@ -5917,8 +5917,8 @@ case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
       daeExp(exp, contextFunction, &varInits, &varDecls, &auxFunction)
     ;separator=", ")
   if instDims then
-    let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-    let defaultValue = varDefaultValue(var, "", varName, &varDecls, &varInits, &auxFunction)
+    let defaultAlloc = 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+    let defaultValue = varAllocDefaultValue(var, "", varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
     let &varInits += defaultValue
     ""
   else
@@ -6225,17 +6225,18 @@ case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
   if instDims then
     (match var.ty
     case T_COMPLEX(__) then
-      let &varInits += 'alloc_generic_array(&<%varName%>, sizeof(<%expTypeShort(var.ty)%>), <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+      let defaultAlloc = 'alloc_generic_array(&<%varName%>, sizeof(<%expTypeShort(var.ty)%>), <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
       (match var.value
       case SOME(exp) then
-        let defaultValue = varDefaultValue(var, outStruct, varName, &varDecls, &varInits, &auxFunction)
+        let defaultValue = varAllocDefaultValue(var, outStruct, varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
         let &varInits += defaultValue
         ""
       else
+        let &varInits += defaultAlloc
         "")
     else
-      let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-      let defaultValue = varDefaultValue(var, outStruct, varName, &varDecls, &varInits, &auxFunction)
+      let defaultAlloc = 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+      let defaultValue = varAllocDefaultValue(var, outStruct, varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
       let &varInits += defaultValue
       "")
   else
@@ -6273,8 +6274,8 @@ case var as VARIABLE(parallelism = PARGLOBAL(__)) then
 
   if instDims then
     let &varDecls += 'device_<%expTypeShort(var.ty)%>_array <%varName%>;<%\n%>'
-    let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-    let defaultValue = varDefaultValue(var, outStruct, varName, &varDecls, &varInits, &auxFunction)
+    let defaultAlloc = 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+    let defaultValue = varAllocDefaultValue(var, outStruct, varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
     let &varInits += defaultValue
 
     let &varFrees += 'free_device_array(&<%varName%>);<%\n%>'
@@ -6299,8 +6300,8 @@ case var as VARIABLE(parallelism = PARLOCAL(__)) then
     ;separator=", ")
   if instDims then
     let &varDecls += 'device_local_<%expTypeShort(var.ty)%>_array <%varName%>;<%\n%>'
-    let &varInits += 'alloc_device_local_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-    let defaultValue = varDefaultValue(var, outStruct, varName, &varDecls, &varInits, &auxFunction)
+    let defaultAlloc = 'alloc_device_local_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+    let defaultValue = varAllocDefaultValue(var, outStruct, varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
     let &varInits += defaultValue
 
     // let &varFrees += 'free_device_array(&<%varName%>);<%\n%>'
@@ -6334,8 +6335,8 @@ case var as VARIABLE(__) then
       daeExp(exp, contextFunction, &varInits, &varDecls, &auxFunction)
     ;separator=", ")
   if instDims then
-    let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array_c99_<%listLength(instDims)%>(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>, memory_state);<%\n%>'
-    let defaultValue = varDefaultValue(var, outStruct, varName, &varDecls, &varInits, &auxFunction)
+    let defaultAlloc = 'alloc_<%expTypeShort(var.ty)%>_array_c99_<%listLength(instDims)%>(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>, memory_state);<%\n%>'
+    let defaultValue = varAllocDefaultValue(var, outStruct, varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
     let &varInits += defaultValue
     " "
   else
@@ -6354,14 +6355,15 @@ else
 end varInitParallel;
 
 
-template varDefaultValue(Variable var, String outStruct, String lhsVarName,  Text &varDecls, Text &varInits, Text &auxFunction)
+template varAllocDefaultValue(Variable var, String outStruct, String lhsVarName, Text allocNoDefault, Text &varDecls, Text &varInits, Text &auxFunction)
 ::=
 match var
 case var as VARIABLE(__) then
   match value
   case SOME(CREF(componentRef = cr)) then
-    'copy_<%expTypeShort(var.ty)%>_array_data(<%contextCref(cr,contextFunction,&auxFunction)%>, &<%lhsVarName%>);<%\n%>'
+    'copy_<%expTypeShort(var.ty)%>_array(<%contextCref(cr,contextFunction,&auxFunction)%>, &<%lhsVarName%>);<%\n%>'
   case SOME(arr as ARRAY(ty = T_ARRAY(ty = T_COMPLEX(complexClassType = record_state)))) then
+    let &varInits += allocNoDefault
     let varName = contextCref(var.name,contextFunction,&auxFunction)
     let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
     let &preExp = buffer ""
@@ -6375,11 +6377,13 @@ case var as VARIABLE(__) then
     >>
   case SOME(arr as ARRAY(__)) then
     let arrayExp = '<%daeExp(arr, contextFunction, &varInits, &varDecls, &auxFunction)%>'
-    'copy_<%expTypeShort(var.ty)%>_array_data(<%arrayExp%>, &<%lhsVarName%>);<%\n%>'
+    'copy_<%expTypeShort(var.ty)%>_array(<%arrayExp%>, &<%lhsVarName%>);<%\n%>'
   case SOME(exp) then
     '<%lhsVarName%> = <%daeExp(exp, contextFunction, &varInits, &varDecls, &auxFunction)%>;<%\n%>'
-
-end varDefaultValue;
+  else
+    let &varInits += allocNoDefault
+    ""
+end varAllocDefaultValue;
 
 template varOutput(Variable var, Text &varAssign)
  "Generates code to copy result value from a function to dest."
