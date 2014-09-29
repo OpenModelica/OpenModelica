@@ -5418,8 +5418,9 @@ match simVar
       multi_array<<%variableType(type_)%>,<%dims%>> <%arrayName%>;
       >>*/
     //
+    let test = v.numArrayElement |> index =>  '<%index%>'; separator="," 
       <<
-      StatArrayDim<%dims%><<%variableType(type_)%>, <%arraysize%> >  <%arrayName%>;
+      StatArrayDim<%dims%><<%variableType(type_)%>, <%arraysize%> >  <%arrayName%>  /*testarray3 <%test%> */;
       >>
     case SIMVAR(numArrayElement=_::_) then
       let& dims = buffer "" /*BUFD*/
@@ -5480,7 +5481,7 @@ match simVar
     let typeString = variableType(type_)
     let arraysize = arrayextentDims(name,v.numArrayElement)
     <<
-    StatArrayDim<%dims%><<%typeString%>,<%arraysize%>>  <%arrayName%>;
+    StatArrayDim<%dims%><<%typeString%>,<%arraysize%>>  <%arrayName%>/*testarray2*/;
     >>
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       let &dims = buffer "" /*BUFD*/
@@ -5495,7 +5496,7 @@ match simVar
       >>
     */
       <<
-      StatArrayDim<%dims%><<%variableType(type_)%>, <%array_dimensions%>> <%arrayName%>;
+      StatArrayDim<%dims%><<%variableType(type_)%>, <%array_dimensions%>> <%arrayName%> /*testarray*/;
       >>
    /*special case for varibales that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
@@ -7948,6 +7949,7 @@ template initAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls, Si
     " "
  end initAlgloopsolvers2;
 
+ 
 template algloopForwardDeclaration(list<SimEqSystem> allEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -9942,11 +9944,11 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
     //let var = tempDecl(type,&varDecls /*BUFD*/)
   let &tempvarDecl = buffer ""
     let var1 = tempDecl(type,&tempvarDecl /*BUFD*/)
-  let &preExp +='<%tempvarDecl%><%\n%> /*/test*/'
+  let &preExp +='<%tempvarDecl%><%\n%> '
     //let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
   // previous multiarray let &preExp += 'assign_array(<%var1%>,multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));//testhier1<%\n%>'
     let &preExp +='divide_array<<%type1%>>(<%e1%>, <%e2%>, <%var1%>);<%\n%>'
-    '<%var1%>/'
+    '<%var1%>'
   case DIV_SCALAR_ARRAY(ty=T_ARRAY(dims=dims)) then
     //let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
     let dimstr = checkDimension(dims)
@@ -11335,30 +11337,30 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
       case LESS(__) then
       <<
          if(_conditions[<%zerocrossingIndex%>])
-                f[<%index1%>]=(<%e1%> - 1e-11 - <%e2%>);
+                f[<%index1%>]=(<%e1%> - 1e-9 - <%e2%>);
            else
-                f[<%index1%>]=(<%e2%> - <%e1%> -  1e-11);
+                f[<%index1%>]=(<%e2%> - <%e1%> -  1e-9);
        >>
       case LESSEQ(__) then
        <<
          if(_conditions[<%zerocrossingIndex%>])
-                f[<%index1%>]=(<%e1%> - 1e-11 - <%e2%>);
+                f[<%index1%>]=(<%e1%> - 1e-9 - <%e2%>);
            else
-                f[<%index1%>]=(<%e2%> - <%e1%> - 1e-11);
+                f[<%index1%>]=(<%e2%> - <%e1%> - 1e-9);
        >>
       case GREATER(__) then
        <<
          if(_conditions[<%zerocrossingIndex%>])
-                f[<%index1%>]=(<%e2%> - <%e1%> - 1e-11);
+                f[<%index1%>]=(<%e2%> - <%e1%> - 1e-9);
            else
-                f[<%index1%>]=(<%e1%> - 1e-11 - <%e2%>);
+                f[<%index1%>]=(<%e1%> - 1e-9 - <%e2%>);
          >>
       case GREATEREQ(__) then
         <<
          if(_conditions[<%zerocrossingIndex%>])
-                f[<%index1%>]=(<%e2%> - <%e1%> - 1e-11);
+                f[<%index1%>]=(<%e2%> - <%e1%> - 1e-9);
            else
-                f[<%index1%>]=(<%e1%> - 1e-11 - <%e2%>);
+                f[<%index1%>]=(<%e1%> - 1e-9 - <%e2%>);
          >>
     else
        <<
