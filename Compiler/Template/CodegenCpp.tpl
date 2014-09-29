@@ -5418,7 +5418,7 @@ match simVar
       multi_array<<%variableType(type_)%>,<%dims%>> <%arrayName%>;
       >>*/
     //
-    let test = v.numArrayElement |> index =>  '<%index%>'; separator="," 
+    let test = v.numArrayElement |> index =>  '<%index%>'; separator=","
       <<
       StatArrayDim<%dims%><<%variableType(type_)%>, <%arraysize%> >  <%arrayName%>  /*testarray3 <%test%> */;
       >>
@@ -7949,7 +7949,7 @@ template initAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls, Si
     " "
  end initAlgloopsolvers2;
 
- 
+
 template algloopForwardDeclaration(list<SimEqSystem> allEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
