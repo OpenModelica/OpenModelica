@@ -717,14 +717,14 @@ algorithm
         (cache,exp_1,prop,st_1);
 
     // homotopy replacement (usually used for debugging only)
-    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("homotopy", _),functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = _)),impl,st,doVect,pre,_,_)
+    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("homotopy", _),functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,_,_)
       equation
         replaceWith = Flags.getConfigString(Flags.REPLACE_HOMOTOPY);
         // replace homotopy if Flags.REPLACE_HOMOTOPY is "actual" or "simplified"
         false = stringEq(replaceWith, "none");
         true = boolOr(stringEq(replaceWith, "actual"), stringEq(replaceWith, "simplified"));
         // TODO, handle empy args and nargs for homotopy!
-        {e1, e2} = args;
+        {e1, e2} = getHomotopyArguments(args, nargs);
         e = Util.if_(stringEq(replaceWith, "actual"), e1, e2);
         (cache,e_1,prop,st_1) = elabExpInExpression(cache, env, e, impl, st, doVect, pre, info);
       then
@@ -898,6 +898,31 @@ algorithm
        fail();
   end matchcontinue;
 end elabExp2;
+
+public function getHomotopyArguments
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  output list<Absyn.Exp> outPositionalArgs;
+algorithm
+  outPositionalArgs := matchcontinue(args, nargs)
+    local
+      Absyn.Exp e1, e2;
+
+    // only positional
+    case ({e1, e2}, _) then {e1, e2};
+    // only named
+    case ({}, {Absyn.NAMEDARG("actual", e1), Absyn.NAMEDARG("simplified", e2)}) then {e1, e2};
+    case ({}, {Absyn.NAMEDARG("simplified", e2), Absyn.NAMEDARG("actual", e1)}) then {e1, e2};
+    // combination
+    case ({e1}, {Absyn.NAMEDARG("simplified", e2)}) then {e1, e2};
+    case (_, _)
+      equation
+        Error.addCompilerError("+replaceHomotopy: homotopy called with wrong arguments: " +&
+          Dump.printFunctionArgsStr(Absyn.FUNCTIONARGS(args, nargs)));
+      then
+        fail();
+  end matchcontinue;
+end getHomotopyArguments;
 
 protected function elabIfExp
 "Elaborates an if-expression. If one of the branches can not be elaborated and
