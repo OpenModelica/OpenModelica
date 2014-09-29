@@ -116,18 +116,15 @@ void Euler::initialize()
         if( _eulerSettings->getDenseOutput())
         {
             // Ausgabeschrittweite
-            _hOut        =  dynamic_cast<ISolverSettings*>(_eulerSettings)->getGlobalSettings()->gethOutput();
-
+            _hOut		=  dynamic_cast<ISolverSettings*>(_eulerSettings)->getGlobalSettings()->gethOutput();
+			_h=_hOut;
         }
-     _h = std::max(std::min(_h, dynamic_cast<ISolverSettings*>(_eulerSettings)->getUpperLimit()), dynamic_cast<ISolverSettings*>(_eulerSettings)->getLowerLimit());
-     double hout = dynamic_cast<ISolverSettings*>(_eulerSettings)->getGlobalSettings()->gethOutput();
-    _outputStp = hout/_h ;
+		else
+		{
+			_h = std::max(std::min(_h, dynamic_cast<ISolverSettings*>(_eulerSettings)->getUpperLimit()), dynamic_cast<ISolverSettings*>(_eulerSettings)->getLowerLimit());
+		}
     _tZero=-1;
-    if(_outputStp<1)
-    {
-       _outputStp=1;
-        dynamic_cast<ISolverSettings*>(_eulerSettings)->setUpperLimit(hout);
-    }
+   
     }
 }
   void Euler::setTimeOut(unsigned int time_out)

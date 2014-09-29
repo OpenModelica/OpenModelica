@@ -22,7 +22,6 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
  public:
     MatFileWriter(unsigned long size, string output_path, string file_name)
             : Writer<dim_1, dim_2, dim_3, dim_4>(),
-              _output_stream(0),
               _dataHdrPos(),
               _dataEofPos(),
               _curser_position(0),

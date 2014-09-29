@@ -18,7 +18,8 @@ extern "C" ISolverSettings* createEulerSettings(IGlobalSettings* globalSettings)
 }
 
 #elif defined(SIMSTER_BUILD)
-
+#include <Modelica.h>
+#include <Policies/FactoryConfig.h>
 #include "Euler.h"
 #include "EulerSettings.h"
 

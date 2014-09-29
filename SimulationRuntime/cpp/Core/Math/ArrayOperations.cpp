@@ -246,7 +246,9 @@ template < typename T>
 T sum_array ( BaseArray<T> & leftArray )
 {
    T val;
-   val = std::accumulate( leftArray.getData(), leftArray.getData() + leftArray.getNumElems() ,0 );
+   T* data = leftArray.getData();
+   unsigned int dim = leftArray.getNumElems();
+   val = std::accumulate( data, data + dim ,0.0 );
    return val;
 }
 
@@ -263,7 +265,7 @@ T dot_array( BaseArray<T> & a ,  BaseArray<T> & b  )
   T* data1 = a.getData();
   unsigned int nelems = a.getNumElems();
   T* data2 = b.getData();
-  T r = std::inner_product(data1, data1 + nelems, data2, 0);
+  T r = std::inner_product(data1, data1 + nelems, data2, 0.0);
   return r;
 };
 
