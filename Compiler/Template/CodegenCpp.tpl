@@ -5,7 +5,6 @@ import CodegenUtil.*;
 // SECTION: SIMULATION TARGET, ROOT TEMPLATE
 
 
-
 template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -2728,6 +2727,7 @@ case FUNCTION(__) then
   {
     //functionBodyRegularFunction
     <%varDecls%>
+	//outvars
     <%outVarInits%>
 
 
@@ -3163,7 +3163,7 @@ case var as VARIABLE(ty = T_STRING(__)) then
       ""
 case var as VARIABLE(__) then
   let marker = '<%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>'
-  let &varInits += '/* varOutput varInits(<%marker%>) */ <%\n%>'
+  let &varInits += '/* varOutputTuple varInits(<%marker%>) */ <%\n%>'
   let &varAssign += '// varOutput varAssign(<%marker%>) <%\n%>'
   let instDimsInit = (instDims |> exp =>
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
@@ -9940,11 +9940,13 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "int"
                         else "double"
     //let var = tempDecl(type,&varDecls /*BUFD*/)
-    let var1 = tempDecl1(type,e1,&varDecls /*BUFD*/)
+	let &tempvarDecl = buffer ""
+    let var1 = tempDecl(type,&tempvarDecl /*BUFD*/)
+	let &preExp +='<%tempvarDecl%><%\n%> /*/test*/'
     //let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
   // previous multiarray let &preExp += 'assign_array(<%var1%>,multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));//testhier1<%\n%>'
     let &preExp +='divide_array<<%type1%>>(<%e1%>, <%e2%>, <%var1%>);<%\n%>'
-    '<%var1%>'
+    '<%var1%>/'
   case DIV_SCALAR_ARRAY(ty=T_ARRAY(dims=dims)) then
     //let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
     let dimstr = checkDimension(dims)
