@@ -58,10 +58,10 @@ match simCode
 case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let guid = getUUIDStr()
   let target  = simulationCodeTarget()
-  let &staticPrototypes = buffer ""
+  let &dummy = buffer ""
   let()= textFile(simulationLiteralsFile(fileNamePrefix, literals), '<%fileNamePrefix%>_literals.h')
-  let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls, staticPrototypes), '<%fileNamePrefix%>_functions.h')
-  let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, staticPrototypes), '<%fileNamePrefix%>_functions.c')
+  let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), '<%fileNamePrefix%>_functions.h')
+  let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, dummy), '<%fileNamePrefix%>_functions.c')
   let()= textFile(externalFunctionIncludes(sc.externalFunctionIncludes), '<%fileNamePrefix%>_includes.h')
   let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
   let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefix%>_model.h')

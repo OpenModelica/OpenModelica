@@ -56,15 +56,14 @@ template translateModel(SimCode simCode, String guid)
   match simCode
   case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
     let target  = simulationCodeTarget()
-    let &staticPrototypes = buffer ""
+    let &dummy = buffer ""
     let()= System.tmpTickResetIndex(0,2) /* auxFunction index */
     let()= textFile(simulationMakefile(target, simCode), '<%fileNamePrefix%>.makefile') // write the makefile first!
 
     let()= textFile(simulationLiteralsFile(fileNamePrefix, literals), '<%fileNamePrefix%>_literals.h')
+    let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), '<%fileNamePrefix%>_functions.h')
 
-    let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls, staticPrototypes), '<%fileNamePrefix%>_functions.h')
-
-    let()= textFileConvertLines(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, staticPrototypes), '<%fileNamePrefix%>_functions.c')
+    let()= textFileConvertLines(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, dummy), '<%fileNamePrefix%>_functions.c')
     let()= textFile(externalFunctionIncludes(sc.externalFunctionIncludes), '<%fileNamePrefix%>_includes.h')
 
     let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
@@ -4201,7 +4200,7 @@ template simulationFunctionsFile(String filePrefix, list<Function> functions, Te
 
   <%staticPrototypes%>
 
-  <%functionBodies(functions)%>
+  <%functionBodies(functions,true)%>
 
   #ifdef __cplusplus
   }
@@ -4268,9 +4267,10 @@ template recordsFile(String filePrefix, list<RecordDeclaration> recordDecls)
   /* adpro: leave a newline at the end of file to get rid of warnings! */
 end recordsFile;
 
-template simulationFunctionsHeaderFile(String filePrefix, list<Function> functions, list<RecordDeclaration> recordDecls, Text &staticPrototypes)
+template simulationFunctionsHeaderFile(String filePrefix, list<Function> functions, list<RecordDeclaration> recordDecls)
  "Generates the content of the C file for functions in the simulation case."
 ::=
+  let &staticPrototypes = buffer ""
   <<
   #ifndef <%stringReplace(filePrefix,".","_")%>__H
   #define <%stringReplace(filePrefix,".","_")%>__H
@@ -4282,7 +4282,9 @@ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functio
   <%\n%>
   <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n\n"%>
   <%\n%>
-  <%functionHeaders(functions, staticPrototypes)%>
+  <%functionHeaders(functions, true, staticPrototypes)%>
+  <%\n%>
+  <%staticPrototypes%>
   <%\n%>
   #ifdef __cplusplus
   }
@@ -4594,8 +4596,8 @@ template functionsFile(String filePrefix,
   void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
   >> %>
 
-  <%match mainFunction case SOME(fn) then functionBody(fn,true)%>
-  <%functionBodies(functions)%>
+  <%match mainFunction case SOME(fn) then functionBody(fn,true,false)%>
+  <%functionBodies(functions,false)%>
   <%\n%>
   >>
 end functionsFile;
@@ -4617,9 +4619,9 @@ template functionsHeaderFile(String filePrefix,
 
   <%extraRecordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
 
-  <%match mainFunction case SOME(fn) then functionHeader(fn,true,staticPrototypes)%>
+  <%match mainFunction case SOME(fn) then functionHeader(fn,true,false,staticPrototypes)%>
 
-  <%functionHeaders(functions, staticPrototypes)%>
+  <%functionHeaders(functions, false, staticPrototypes)%>
 
   #ifdef __cplusplus
   }
@@ -4866,10 +4868,10 @@ template externalFunctionIncludes(list<String> includes)
 end externalFunctionIncludes;
 
 
-template functionHeaders(list<Function> functions, Text &staticPrototypes)
+template functionHeaders(list<Function> functions, Boolean isSimulation, Text &staticPrototypes)
  "Generates function header part in function files."
 ::=
-  (functions |> fn => functionHeader(fn, false, staticPrototypes) ; separator="\n")
+  (functions |> fn => functionHeader(fn, false, isSimulation, staticPrototypes) ; separator="\n")
 end functionHeaders;
 
 template parallelFunctionHeadersImpl(list<Function> functions)
@@ -4878,14 +4880,14 @@ template parallelFunctionHeadersImpl(list<Function> functions)
   (functions |> fn => parallelFunctionHeader(fn, false) ; separator="\n")
 end parallelFunctionHeadersImpl;
 
-template functionHeader(Function fn, Boolean inFunc, Text &staticPrototypes)
+template functionHeader(Function fn, Boolean inFunc, Boolean isSimulation, Text &staticPrototypes)
  "Generates function header part in function files."
 ::=
   match fn
     case FUNCTION(__) then
       <<
-      <%functionHeaderNormal(underscorePath(name), functionArguments, outVars, inFunc, visibility, false, staticPrototypes)%>
-      <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars, isBoxedFunction(fn), visibility, false, staticPrototypes)%>
+      <%functionHeaderNormal(underscorePath(name), functionArguments, outVars, inFunc, visibility, false, isSimulation, staticPrototypes)%>
+      <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars, isBoxedFunction(fn), visibility, false, isSimulation, staticPrototypes)%>
       >>
     case KERNEL_FUNCTION(__) then
       <<
@@ -4893,15 +4895,15 @@ template functionHeader(Function fn, Boolean inFunc, Text &staticPrototypes)
       >>
     case EXTERNAL_FUNCTION(dynamicLoad=true) then
       <<
-      <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc, visibility, true, staticPrototypes)%>
-      <%functionHeaderBoxed(underscorePath(name), funArgs, outVars, isBoxedFunction(fn), visibility, true, staticPrototypes)%>
+      <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc, visibility, true, isSimulation, staticPrototypes)%>
+      <%functionHeaderBoxed(underscorePath(name), funArgs, outVars, isBoxedFunction(fn), visibility, true, isSimulation, staticPrototypes)%>
 
       <%extFunDefDynamic(fn)%>
       >>
     case EXTERNAL_FUNCTION(__) then
       <<
-      <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc, visibility, false, staticPrototypes)%>
-      <%functionHeaderBoxed(underscorePath(name), funArgs, outVars, isBoxedFunction(fn), visibility, false, staticPrototypes)%>
+      <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc, visibility, false, isSimulation, staticPrototypes)%>
+      <%functionHeaderBoxed(underscorePath(name), funArgs, outVars, isBoxedFunction(fn), visibility, false, isSimulation, staticPrototypes)%>
 
       <%extFunDef(fn)%>
       >>
@@ -4912,7 +4914,7 @@ template functionHeader(Function fn, Boolean inFunc, Text &staticPrototypes)
       <% match visibility case PUBLIC() then "DLLExport" %>
       <%fname%> omc_<%fname%>(threadData_t *threadData<%funArgsStr%>); /* record head */
 
-      <%functionHeaderBoxed(fname, funArgs, boxedRecordOutVars, false, visibility, false, staticPrototypes)%>
+      <%functionHeaderBoxed(fname, funArgs, boxedRecordOutVars, false, visibility, false, isSimulation, staticPrototypes)%>
       >>
 end functionHeader;
 
@@ -5028,11 +5030,11 @@ template recordDefinitionHeader(String origName, String encName, Integer numFiel
   >>
 end recordDefinitionHeader;
 
-template functionHeaderNormal(String fname, list<Variable> fargs, list<Variable> outVars, Boolean inFunc, SCode.Visibility visibility, Boolean dynamicLoad, Text &staticPrototypes)
-::= functionHeaderImpl(fname, fargs, outVars, inFunc, false, visibility, dynamicLoad, staticPrototypes)
+template functionHeaderNormal(String fname, list<Variable> fargs, list<Variable> outVars, Boolean inFunc, SCode.Visibility visibility, Boolean dynLoad, Boolean isSimulation, Text &staticPrototypes)
+::=functionHeaderImpl(fname, fargs, outVars, inFunc, false, visibility, dynLoad, isSimulation, staticPrototypes)
 end functionHeaderNormal;
 
-template functionHeaderBoxed(String fname, list<Variable> fargs, list<Variable> outVars, Boolean isBoxed, SCode.Visibility visibility, Boolean dynamicLoad, Text &staticPrototypes)
+template functionHeaderBoxed(String fname, list<Variable> fargs, list<Variable> outVars, Boolean isBoxed, SCode.Visibility visibility, Boolean dynLoad, Boolean isSimulation, Text &staticPrototypes)
 ::=
   let boxvar =
     <<
@@ -5040,21 +5042,21 @@ template functionHeaderBoxed(String fname, list<Variable> fargs, list<Variable> 
     #define boxvar_<%fname%> MMC_REFSTRUCTLIT(boxvar_lit_<%fname%>)<%\n%>
     >>
   <<
-  <%if isBoxed then '#define boxptr_<%fname%> omc_<%fname%><%\n%>' else functionHeaderImpl(fname, fargs, outVars, false, true, visibility, dynamicLoad, staticPrototypes)%>
+  <%if isBoxed then '#define boxptr_<%fname%> omc_<%fname%><%\n%>' else functionHeaderImpl(fname, fargs, outVars, false, true, visibility, dynLoad, isSimulation, staticPrototypes)%>
   <% match visibility
     case PROTECTED(__) then
-      let &staticPrototypes += boxvar
-      ""
+      let &staticPrototypes += (if isSimulation then "" else boxvar)
+      if isSimulation then '<%boxvar%> /* boxvar early */' else ""
     else boxvar %>
   >>
 end functionHeaderBoxed;
 
-template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> outVars, Boolean inFunc, Boolean boxed, SCode.Visibility visibility, Boolean dynamicLoad, Text &staticPrototypes)
+template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> outVars, Boolean inFunc, Boolean boxed, SCode.Visibility visibility, Boolean dynamicLoad, Boolean isSimulation, Text &staticPrototypes)
  "Generates function header for a Modelica/MetaModelica function. Generates a
 
   boxed version of the header if boxed = true, otherwise a normal header"
 ::=
-  let prototype = functionPrototype(fname, fargs, outVars, boxed, visibility)
+  let prototype = functionPrototype(fname, fargs, outVars, boxed, visibility, isSimulation)
   let inFnStr = if boolAnd(boxed,inFunc) then
     <<
     DLLExport
@@ -5062,19 +5064,22 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
     >>
   match visibility
     case PROTECTED(__) then
-      let &staticPrototypes += if dynamicLoad then "" else '<%prototype%>;<%\n%>'
-      inFnStr
+      if isSimulation then
+        if dynamicLoad then "" else '<%prototype%>;<%\n%>'
+      else
+        let &staticPrototypes += if dynamicLoad then "" else '<%prototype%>;<%\n%>'
+        inFnStr
     else
       <<
       <%inFnStr%>
-      <%if dynamicLoad then '' else '<% match visibility case PUBLIC(__) then 'DLLExport<%\n%>'%><%prototype%>;'%>
+      <%if dynamicLoad then '' else 'DLLExport<%\n%><%prototype%>;'%>
       >>
 end functionHeaderImpl;
 
-template functionPrototype(String fname, list<Variable> fargs, list<Variable> outVars, Boolean boxed, SCode.Visibility visibility)
+template functionPrototype(String fname, list<Variable> fargs, list<Variable> outVars, Boolean boxed, SCode.Visibility visibility, Boolean isSimulation)
  "Generates function header definition for a Modelica/MetaModelica function. Generates a boxed version of the header if boxed = true, otherwise a normal definition"
 ::=
-  let static = (match visibility case PROTECTED(__) then "static ")
+  let static = if isSimulation then "" else (match visibility case PROTECTED(__) then 'static ')
   let fargsStr = if boxed then
       (fargs |> var => ", " + funArgBoxedDefinition(var) )
     else
@@ -5458,10 +5463,10 @@ template functionName(Function fn, Boolean dotPath)
 end functionName;
 
 
-template functionBodies(list<Function> functions)
+template functionBodies(list<Function> functions, Boolean isSimulation)
  "Generates the body for a set of functions."
 ::=
-  (functions |> fn => functionBody(fn, false) ;separator="\n")
+  (functions |> fn => functionBody(fn, false, isSimulation) ;separator="\n")
 end functionBodies;
 
 template functionBodiesParModelica(list<Function> functions)
@@ -5470,14 +5475,14 @@ template functionBodiesParModelica(list<Function> functions)
   (functions |> fn => functionBodyParModelica(fn, false) ;separator="\n")
 end functionBodiesParModelica;
 
-template functionBody(Function fn, Boolean inFunc)
+template functionBody(Function fn, Boolean inFunc, Boolean isSimulation)
  "Generates the body for a function."
 ::=
   match fn
-  case fn as FUNCTION(__)                    then functionBodyRegularFunction(fn, inFunc)
+  case fn as FUNCTION(__)                    then functionBodyRegularFunction(fn, inFunc, isSimulation)
   case fn as KERNEL_FUNCTION(__)             then functionBodyKernelFunctionInterface(fn, inFunc)
-  case fn as EXTERNAL_FUNCTION(__)           then functionBodyExternalFunction(fn, inFunc)
-  case fn as RECORD_CONSTRUCTOR(__)          then functionBodyRecordConstructor(fn)
+  case fn as EXTERNAL_FUNCTION(__)           then functionBodyExternalFunction(fn, inFunc, isSimulation)
+  case fn as RECORD_CONSTRUCTOR(__)          then functionBodyRecordConstructor(fn, isSimulation)
 end functionBody;
 
 template functionBodyParModelica(Function fn, Boolean inFunc)
@@ -5506,7 +5511,7 @@ case FUNCTION(__) then
   >>
 end extractParforBodies;
 
-template functionBodyRegularFunction(Function fn, Boolean inFunc)
+template functionBodyRegularFunction(Function fn, Boolean inFunc, Boolean isSimulation)
  "Generates the body for a Modelica/MetaModelica function."
 ::=
 match fn
@@ -5531,11 +5536,11 @@ case FUNCTION(__) then
   /* Needs to be done last as it messes with the tmp ticks :) */
   let &varDecls += addRootsTempArray()
 
-  let boxedFn = functionBodyBoxed(fn)
+  let boxedFn = functionBodyBoxed(fn, isSimulation)
   <<
   <%auxFunction%>
   <% match visibility case PUBLIC(__) then "DLLExport" %>
-  <%functionPrototype(fname, functionArguments, outVars, false, visibility)%>
+  <%functionPrototype(fname, functionArguments, outVars, false, visibility, isSimulation)%>
   {
     <%varDecls%>
     _tailrecursive: OMC_LABEL_UNUSED
@@ -5846,7 +5851,7 @@ case tupleVar as ((cref as CREF_IDENT(__),_)) then
 end setKernelArgFormTupleLoopVars_ith;
 
 
-template functionBodyExternalFunction(Function fn, Boolean inFunc)
+template functionBodyExternalFunction(Function fn, Boolean inFunc, Boolean isSimulation)
  "Generates the body for an external function (just a wrapper)."
 ::=
 match fn
@@ -5867,10 +5872,10 @@ case efn as EXTERNAL_FUNCTION(__) then
   let &outVarAssign = buffer ""
   let _ = (List.restOrEmpty(outVars) |> var => varOutput(var, &outVarAssign))
   let &varDecls += addRootsTempArray()
-  let boxedFn = functionBodyBoxed(fn)
+  let boxedFn = functionBodyBoxed(fn, isSimulation)
   let fnBody = <<
   <%auxFunction%>
-  <%functionPrototype(fname, funArgs, outVars, false, visibility)%>
+  <%functionPrototype(fname, funArgs, outVars, false, visibility, isSimulation)%>
   {
     <%varDecls%>
     <%modelicaLine(info)%>
@@ -5896,7 +5901,7 @@ case efn as EXTERNAL_FUNCTION(__) then
 end functionBodyExternalFunction;
 
 
-template functionBodyRecordConstructor(Function fn)
+template functionBodyRecordConstructor(Function fn, Boolean isSimulation)
  "Generates the body for a record constructor."
 ::=
 match fn
@@ -5912,7 +5917,7 @@ case RECORD_CONSTRUCTOR(__) then
   let _ = (locals |> var =>
       varInitRecord(var, structVar, &varDecls, &varInits, &auxFunction) ; empty /* increase the counter! */
     )
-  let boxedFn = functionBodyBoxed(fn)
+  let boxedFn = functionBodyBoxed(fn, isSimulation)
   <<
   <%auxFunction%>
   <%fname%> omc_<%fname%>(threadData_t *threadData<%funArgs |> VARIABLE(__) => ', <%expTypeArrayIf(ty)%> <%crefStr(name)%>'%>)
@@ -5958,7 +5963,7 @@ case var as FUNCTION_PTR(__) then
 else error(sourceInfo(), 'Unknown local variable type in record')
 end varInitRecord;
 
-template functionBodyBoxed(Function fn)
+template functionBodyBoxed(Function fn, Boolean isSimulation)
  "Generates code for a boxed version of a function. Extracts the needed data
   from a function and calls functionBodyBoxedImpl"
 ::=
@@ -5970,14 +5975,14 @@ template functionBodyBoxed(Function fn)
   <<
   <%
   match fn
-  case FUNCTION(__) then if not isBoxedFunction(fn) then functionBodyBoxedImpl(name, functionArguments, outVars, visibility)
-  case EXTERNAL_FUNCTION(__) then if not isBoxedFunction(fn) then functionBodyBoxedImpl(name, funArgs, outVars, visibility)
-  case RECORD_CONSTRUCTOR(__) then boxRecordConstructor(fn)
+  case FUNCTION(__) then if not isBoxedFunction(fn) then functionBodyBoxedImpl(name, functionArguments, outVars, visibility, isSimulation)
+  case EXTERNAL_FUNCTION(__) then if not isBoxedFunction(fn) then functionBodyBoxedImpl(name, funArgs, outVars, visibility, isSimulation)
+  case RECORD_CONSTRUCTOR(__) then boxRecordConstructor(fn, isSimulation)
   %>
   >>
 end functionBodyBoxed;
 
-template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Variable> outvars, SCode.Visibility visibility)
+template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Variable> outvars, SCode.Visibility visibility, Boolean isSimulation)
  "Helper template for functionBodyBoxed, does all the real work."
 ::=
   let() = System.tmpTickReset(1)
@@ -6023,7 +6028,7 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
     let arg = funArgName(var)
     funArgBox('*out<%arg%>', arg, 'out<%arg%>', liftArrayListExp(var.ty,var.instDims), &varUnbox, &varDecls)
     ; separator="\n")
-  let prototype = functionPrototype(fname, funargs, outvars, true, visibility)
+  let prototype = functionPrototype(fname, funargs, outvars, true, visibility, isSimulation)
   <<
   <%auxFunction%>
   <%prototype%>
@@ -6038,7 +6043,7 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
   >>
 end functionBodyBoxedImpl;
 
-template boxRecordConstructor(Function fn)
+template boxRecordConstructor(Function fn, Boolean isSimulation)
 ::=
 let &auxFunction = buffer ""
 match fn
@@ -6052,7 +6057,7 @@ case RECORD_CONSTRUCTOR(__) then
      else error(sourceInfo(),"boxRecordConstructor:Unknown variable"))
   let start = daeExpMetaHelperBoxStart(incrementInt(listLength(funArgs), 1))
   <<
-  <%match visibility case PROTECTED(__) then "static "%>modelica_metatype boxptr_<%fname%>(threadData_t *threadData<%funArgs |> var => (", " + funArgBoxedDefinition(var))%>)
+  <%if isSimulation then "" else match visibility case PROTECTED(__) then "static "%>modelica_metatype boxptr_<%fname%>(threadData_t *threadData<%funArgs |> var => (", " + funArgBoxedDefinition(var))%>)
   {
     return mmc_mk_box<%start%>3, &<%fname%>__desc<%funArgsStr%>);
   }
