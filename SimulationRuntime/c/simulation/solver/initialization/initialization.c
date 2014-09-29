@@ -986,6 +986,10 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   infoStreamPrint(LOG_INIT, 0, "### START INITIALIZATION ###");
 
+  setAllParamsToStart(data);
+  data->callback->updateBoundParameters(data);
+  data->callback->updateBoundVariableAttributes(data);
+
   /* import start values from extern mat-file */
   if(pInitFile && strcmp(pInitFile, ""))
   {
@@ -996,12 +1000,8 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
     }
   }
 
-  /* set up all variables and parameters with their start-values */
-  setAllParamsToStart(data);
+  /* set up all variables with their start-values */
   setAllVarsToStart(data);
-
-  data->callback->updateBoundParameters(data);
-  data->callback->updateBoundVariableAttributes(data);
 
   /* if there are user-specified options, use them! */
   if(pInitMethod && strcmp(pInitMethod, "")) {
