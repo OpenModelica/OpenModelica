@@ -2727,7 +2727,7 @@ case FUNCTION(__) then
   {
     //functionBodyRegularFunction
     <%varDecls%>
-	//outvars
+  //outvars
     <%outVarInits%>
 
 
@@ -9940,9 +9940,9 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "int"
                         else "double"
     //let var = tempDecl(type,&varDecls /*BUFD*/)
-	let &tempvarDecl = buffer ""
+  let &tempvarDecl = buffer ""
     let var1 = tempDecl(type,&tempvarDecl /*BUFD*/)
-	let &preExp +='<%tempvarDecl%><%\n%> /*/test*/'
+  let &preExp +='<%tempvarDecl%><%\n%> /*/test*/'
     //let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
   // previous multiarray let &preExp += 'assign_array(<%var1%>,multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));//testhier1<%\n%>'
     let &preExp +='divide_array<<%type1%>>(<%e1%>, <%e2%>, <%var1%>);<%\n%>'
