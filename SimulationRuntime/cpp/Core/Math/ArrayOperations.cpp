@@ -188,13 +188,12 @@ void multiply_array( BaseArray<T> & inputArray ,const T &b, BaseArray<T> & outpu
 template < typename T>
 void divide_array( BaseArray<T> & inputArray ,const T &b, BaseArray<T> & outputArray  )
 {
-
-  if ( outputArray.getDims() != inputArray.getDims())
-  {
-    outputArray.setDims(inputArray.getDims());
-  }
-  T* data = inputArray.getData();
   unsigned int nelems = inputArray.getNumElems();
+  if ( outputArray.getNumElems() != nelems) 
+	{
+		outputArray.setDims(inputArray.getDims());
+	}
+  T* data = inputArray.getData();
   T* aim = outputArray.getData();
   std::transform (data, data + nelems, aim, std::bind2nd( std::divides< T >(), b ));
 };
