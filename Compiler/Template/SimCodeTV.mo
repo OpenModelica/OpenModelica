@@ -538,6 +538,7 @@ package SimCode
       list<Variable> functionArguments;
       list<Variable> variableDeclarations;
       list<Statement> body;
+      SCode.Visibility visibility;
       Absyn.Info info;
     end FUNCTION;
     record PARALLEL_FUNCTION
@@ -569,6 +570,7 @@ package SimCode
       list<String> libs;
       String language;
       Absyn.Info info;
+      SCode.Visibility visibility;
       Boolean dynamicLoad;
     end EXTERNAL_FUNCTION;
     record RECORD_CONSTRUCTOR
@@ -576,6 +578,7 @@ package SimCode
       list<Variable> funArgs;
       list<Variable> locals;
       Absyn.Info info;
+      SCode.Visibility visibility;
       DAE.VarKind kind;
     end RECORD_CONSTRUCTOR;
   end Function;

@@ -689,11 +689,12 @@ algorithm
       DAE.FunctionAttributes funAttrs;
       list<DAE.Var> varlst;
       DAE.VarKind kind;
+      SCode.Visibility visibility;
 
       // Modelica functions.
-    case (_, DAE.FUNCTION(path = fpath, source = source,
+    case (_, DAE.FUNCTION(path = fpath, source = source, visibility = visibility,
       functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
-      type_ = DAE.T_FUNCTION(funcArg=args, funcResultType=_, functionAttributes=funAttrs),
+      type_ = DAE.T_FUNCTION(funcArg=args, functionAttributes=funAttrs),
       partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
       equation
 
@@ -708,12 +709,12 @@ algorithm
         bodyStmts = List.map(algs, elaborateStatement);
         info = DAEUtil.getElementSourceFileInfo(source);
       then
-        (SimCode.FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, info), rt_1, recordDecls, includes, includeDirs, libs);
+        (SimCode.FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, visibility, info), rt_1, recordDecls, includes, includeDirs, libs);
 
 
      case (_, DAE.FUNCTION(path = fpath, source = source,
       functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
-      type_ = DAE.T_FUNCTION(funcArg=args, funcResultType=_, functionAttributes=funAttrs),
+      type_ = DAE.T_FUNCTION(funcArg=args, functionAttributes=funAttrs),
       partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
       equation
 
@@ -750,48 +751,10 @@ algorithm
       then
         (SimCode.PARALLEL_FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, info), rt_1, recordDecls, includes, includeDirs, libs);
 
-/*
-     // mahge930: kernel functions
-    case (DAE.FUNCTION(path = fpath, source = source,
-      functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
-      type_ = tp as DAE.T_FUNCTION(funcArg=args, funcResultType=restype, functionAttributes = funAttrs),
-      partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
-      equation
-
-        DAE.FUNCTION_ATTRIBUTES(_, _, _, DAE.FP_KERNEL_FUNCTION()) = funAttrs;
-
-        outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
-        funArgs = List.map(args, typesSimFunctionArg);
-        (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
-        vars = List.filter(daeElts, isVarQ);
-        varDecls = List.map(vars, daeInOutSimVar);
-        algs = List.filter(daeElts, DAEUtil.isAlgorithm);
-        bodyStmts = List.map(algs, elaborateStatement);
-        info = DAEUtil.getElementSourceFileInfo(source);
-
-
-        outVars = Util.listMap(DAEUtil.getOutputVars(daeElts), daeInOutSimVarKernelInterface);
-        // outVars = Util.listMap(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
-
-        funArgs = Util.listMap(args, typesSimFunctionArgKernelInterface);
-        // funArgs = Util.listMap(args, typesSimFunctionArg);
-
-        (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
-
-        // kernel function "vardecls" shouldn't include output vars.
-        vars = Util.listFilter(daeElts, isVarNotInputNotOutput);
-        varDecls = Util.listMap(vars, daeInOutSimVar);
-        algs = Util.listFilter(daeElts, DAEUtil.isAlgorithm);
-        bodyStmts = Util.listMap(algs, elaborateStatement);
-
-      then
-        (KERNEL_FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, info), rt_1, recordDecls, includes, includeDirs, libs);
-*/
-
     // External functions.
-    case (_, DAE.FUNCTION(path = fpath, source = source,
+    case (_, DAE.FUNCTION(path = fpath, source = source, visibility = visibility,
       functions = DAE.FUNCTION_EXT(body =  daeElts, externalDecl = extdecl)::_, // might be followed by derivative maps
-      type_ = (DAE.T_FUNCTION(funcArg = args, funcResultType = _))), rt, recordDecls, includes, includeDirs, libs)
+      type_ = (DAE.T_FUNCTION(funcArg = args))), rt, recordDecls, includes, includeDirs, libs)
       equation
         DAE.EXTERNALDECL(name=extfnname, args=extargs,
           returnArg=extretarg, language=lang, ann=ann) = extdecl;
@@ -817,11 +780,11 @@ algorithm
         lang = System.toupper(lang);
       then
         (SimCode.EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn,
-          inVars, outVars, biVars, fn_includes, fn_libs, lang, info, dynamicLoad),
+          inVars, outVars, biVars, fn_includes, fn_libs, lang, visibility, info, dynamicLoad),
           rt_1, recordDecls, includes, includeDirs, libs);
 
         // Record constructor.
-    case (_, DAE.RECORD_CONSTRUCTOR(path = _, source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name))),kind=kind), rt, recordDecls, includes, includeDirs, libs)
+    case (_, DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name))),kind=kind), rt, recordDecls, includes, includeDirs, libs)
       equation
         funArgs = List.map(args, typesSimFunctionArg);
         (recordDecls, rt_1) = elaborateRecordDeclarationsForRecord(restype, recordDecls, rt);
@@ -830,7 +793,7 @@ algorithm
         varDecls = List.map(varlst, typesVar);
         info = DAEUtil.getElementSourceFileInfo(source);
       then
-        (SimCode.RECORD_CONSTRUCTOR(name, funArgs, varDecls, info, kind), rt_1, recordDecls, includes, includeDirs, libs);
+        (SimCode.RECORD_CONSTRUCTOR(name, funArgs, varDecls, SCode.PUBLIC(), info, kind), rt_1, recordDecls, includes, includeDirs, libs);
 
         // failure
     case (_, fn, _, _, _, _, _)

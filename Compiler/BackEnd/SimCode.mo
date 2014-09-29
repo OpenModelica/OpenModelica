@@ -56,6 +56,7 @@ public import Absyn;
 public import BackendDAE;
 public import DAE;
 public import HpcOmSimCode;
+public import SCode;
 
 public
 type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
@@ -312,6 +313,7 @@ uniontype Function
     list<Variable> functionArguments;
     list<Variable> variableDeclarations;
     list<Statement> body;
+    SCode.Visibility visibility;
     Absyn.Info info;
   end FUNCTION;
 
@@ -345,6 +347,7 @@ uniontype Function
     list<String> includes "this one is needed so that we know if we should generate the external function prototype or not";
     list<String> libs "need this one for C#";
     String language "C or Fortran";
+    SCode.Visibility visibility;
     Absyn.Info info;
     Boolean dynamicLoad;
   end EXTERNAL_FUNCTION;
@@ -353,6 +356,7 @@ uniontype Function
     Absyn.Path name;
     list<Variable> funArgs;
     list<Variable> locals;
+    SCode.Visibility visibility;
     Absyn.Info info;
     DAE.VarKind kind;
   end RECORD_CONSTRUCTOR;
