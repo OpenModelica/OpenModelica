@@ -1645,11 +1645,11 @@ algorithm
     case (_, _, _, DAE.NOMOD(), _, _, _) then (inTargetClassEnv, inTargetClass, inIH);
     case (_, _, _, DAE.MOD(subModLst={},eqModOption=_), _, _, _) then (inTargetClassEnv, inTargetClass, inIH);
 
-    // don't do this for MetaModelica, top scope, functions
+    // don't do this for MetaModelica, target class is builtin or builtin type, functions
     case (_, _, _, _, _, _, _)
       equation
         true = Config.acceptMetaModelicaGrammar() or
-               isTopScope(inTargetClassEnv) or
+               isTargetClassBuiltin(inTargetClassEnv, inTargetClass) or
                inFunctionScope(inSourceEnv);
       then
         (inTargetClassEnv, inTargetClass, inIH);
@@ -1670,6 +1670,24 @@ algorithm
 
   end matchcontinue;
 end createVersionScope;
+
+public function isTargetClassBuiltin
+  input Graph inGraph;
+  input SCode.Element inClass;
+  output Boolean yes;
+algorithm
+  yes := matchcontinue(inGraph, inClass)
+    local Ref r;
+    case (_, _)
+      equation
+        r = FNode.child(lastScopeRef(inGraph), SCode.elementName(inClass));
+        yes = FNode.isRefBasicType(r) or FNode.isRefBuiltin(r);
+      then
+        yes;
+
+    else false;
+  end matchcontinue;
+end isTargetClassBuiltin;
 
 public function mkVersionName
   input Graph inSourceEnv;

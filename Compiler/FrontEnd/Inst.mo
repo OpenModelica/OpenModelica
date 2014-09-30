@@ -5785,13 +5785,16 @@ algorithm
       Prefix.Prefix pre1, pre2;
       SCode.Element e1, e2;
       Boolean b1, b2, b3;
+      SCode.Encapsulated encflag;
+      SCode.Restriction restr;
 
     case (cache, _, _, _)
       equation
         true = Flags.isSet(Flags.CACHE);
         instHash = getGlobalRoot(Global.instHashIndex);
-        FCore.CL(e2, pre2, m2, _, _) = FNode.refData(inRef);
-        fullEnvPathPlusClass = generateCachePath(inEnv, e2, pre2, InstTypes.INNER_CALL());
+        FCore.CL(e2 as SCode.CLASS(restriction = restr, encapsulatedPrefix=encflag), pre2, m2, _, _) = FNode.refData(inRef);
+        env = FGraph.openScope(inEnv, encflag, SOME(inName), FGraph.restrictionToScopeType(restr));
+        fullEnvPathPlusClass = generateCachePath(env, e2, pre2, InstTypes.INNER_CALL());
 
         // print("Try cached instance: " +& Absyn.pathString(fullEnvPathPlusClass) +& "\n");
         {SOME(FUNC_instClassIn(inputs, outputs as (ft, env, _, _, _, _, _, _, _, _))),_} = BaseHashTable.get(fullEnvPathPlusClass, instHash);
@@ -5817,8 +5820,10 @@ algorithm
       equation
         true = Flags.isSet(Flags.CACHE);
         instHash = getGlobalRoot(Global.instHashIndex);
-        FCore.CL(e2, pre2, m2, _, _) = FNode.refData(inRef);
-        fullEnvPathPlusClass = generateCachePath(inEnv, e2, pre2, InstTypes.INNER_CALL());
+        FCore.CL(e2 as SCode.CLASS(restriction = restr, encapsulatedPrefix=encflag), pre2, m2, _, _) = FNode.refData(inRef);
+        env = FGraph.openScope(inEnv, encflag, SOME(inName), FGraph.restrictionToScopeType(restr));
+        fullEnvPathPlusClass = generateCachePath(env, e2, pre2, InstTypes.INNER_CALL());
+
         // print("Could not get the cached instance: " +& Absyn.pathString(fullEnvPathPlusClass) +& "\n");
         env = FGraph.pushScopeRef(inEnv, inRef);
       then
