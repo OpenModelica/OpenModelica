@@ -41,17 +41,19 @@
 #include "blaswrap.h"
 #include "f2c.h"
 
-/*! \fn int allocatelinearSystem(DATA *data)
+/*! \fn int initializeLinearSystems(DATA *data)
  *
  *  This function allocates memory for all linear systems.
  *
  *  \param [ref] [data]
  */
-int allocatelinearSystem(DATA *data)
+int initializeLinearSystems(DATA *data)
 {
-  int i,nnz;
+  int i, nnz;
   int size;
   LINEAR_SYSTEM_DATA *linsys = data->simulationInfo.linearSystemData;
+
+  infoStreamPrint(LOG_LS, 1, "initialize linear system solvers");
 
   for(i=0; i<data->modelData.nLinearSystems; ++i)
   {
@@ -63,8 +65,10 @@ int allocatelinearSystem(DATA *data)
     linsys[i].b = (double*) malloc(size*sizeof(double));
 
     /* check if analytical jacobian is created */
-    if (1 == linsys[i].method){
-      if(linsys[i].jacobianIndex != -1){
+    if (1 == linsys[i].method)
+    {
+      if(linsys[i].jacobianIndex != -1)
+      {
         assertStreamPrint(data->threadData, 0 != linsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
       }
       if(linsys[i].initialAnalyticalJacobian(data))
@@ -74,48 +78,58 @@ int allocatelinearSystem(DATA *data)
     }
     /* allocate solver data */
     /* the implementation of matrix A is solver-specific */
-    switch(data->simulationInfo.lsMethod){
+    switch(data->simulationInfo.lsMethod)
+    {
     case LS_LAPACK:
       linsys[i].A = (double*) malloc(size*size*sizeof(double));
       linsys[i].setAElement = setAElementLAPACK;
       allocateLapackData(size, &linsys[i].solverData);
       break;
+
     case LS_LIS:
       linsys[i].setAElement = setAElementLis;
       allocateLisData(size, size, nnz, &linsys[i].solverData);
       break;
+
     default:
       throwStreamPrint(data->threadData, "unrecognized linear solver");
     }
   }
+
+  messageClose(LOG_LS);
   return 0;
 }
 
-/*! \fn freelinearSystem
+/*! \fn freeLinearSystems
  *
  *  This function frees memory of linear systems.
  *
  *  \param [ref] [data]
  */
-int freelinearSystem(DATA *data)
+int freeLinearSystems(DATA *data)
 {
   int i;
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
 
-  for(i=0;i<data->modelData.nLinearSystems;++i)
+  infoStreamPrint(LOG_LS, 1, "free linear system solvers");
+
+  for(i=0; i<data->modelData.nLinearSystems; ++i)
   {
     /* free system and solver data */
     free(linsys[i].x);
     free(linsys[i].b);
 
-    switch(data->simulationInfo.lsMethod){
+    switch(data->simulationInfo.lsMethod)
+    {
     case LS_LAPACK:
       freeLapackData(&linsys[i].solverData);
       free(linsys[i].A);
       break;
+
     case LS_LIS:
       freeLisData(&linsys[i].solverData);
       break;
+
     default:
       throwStreamPrint(data->threadData, "unrecognized linear solver");
     }
@@ -123,13 +137,14 @@ int freelinearSystem(DATA *data)
     free(linsys[i].solverData);
   }
 
+  messageClose(LOG_LS);
   return 0;
 }
 
 /*! \fn solve non-linear systems
  *
  *  \param [in]  [data]
- *               [sysNumber] index of corresponding non-linear System
+ *         [in]  [sysNumber] index of corresponding non-linear System
  *
  *  \author wbraun
  */
@@ -138,13 +153,16 @@ int solve_linear_system(DATA *data, int sysNumber)
   int success;
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
 
-  switch(data->simulationInfo.lsMethod){
+  switch(data->simulationInfo.lsMethod)
+  {
   case LS_LAPACK:
     success = solveLapack(data, sysNumber);
     break;
+
   case LS_LIS:
     success = solveLis(data, sysNumber);
     break;
+
   default:
     throwStreamPrint(data->threadData, "unrecognized linear solver");
   }
@@ -168,27 +186,29 @@ int check_linear_solutions(DATA *data, int printFailingSystems)
   int i, j, retVal=0;
 
   for(i=0; i<data->modelData.nLinearSystems; ++i)
-    if(linsys[i].solved == 0)
+  {
+    if(0 == linsys[i].solved)
     {
       retVal = 1;
       if(printFailingSystems && ACTIVE_WARNING_STREAM(LOG_LS))
       {
-        int indexes[2] = {1,modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).id};
+        int indexes[2] = {1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).id};
         warningStreamPrintWithEquationIndexes(LOG_LS, 1, indexes, "linear system %d fails at t=%g", indexes[1], data->localData[0]->timeValue);
         messageClose(LOG_LS);
       }
     }
+  }
 
   return retVal;
 }
 
-void setAElementLAPACK(int row, int col, double value, int nth, void *data )
+void setAElementLAPACK(int row, int col, double value, int nth, void *data)
 {
   LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
   linsys->A[row + col * linsys->size] = value;
 }
 
-void setAElementLis(int row, int col, double value, int nth, void *data )
+void setAElementLis(int row, int col, double value, int nth, void *data)
 {
   LINEAR_SYSTEM_DATA* linSys = (LINEAR_SYSTEM_DATA*) data;
   DATA_LIS* sData = (DATA_LIS*) linSys->solverData;

@@ -78,8 +78,9 @@ extern const char *NEWTONSTRATEGY_DESC[NEWTON_MAX+1];
 
 typedef void* NLS_SOLVER_DATA;
 
-int allocateNonlinearSystem(DATA *data);
-int freeNonlinearSystem(DATA *data);
+int initializeNonlinearSystems(DATA *data);
+int updateStaticDataOfNonlinearSystems(DATA *data);
+int freeNonlinearSystems(DATA *data);
 int solve_nonlinear_system(DATA *data, int sysNumber);
 int check_nonlinear_solutions(DATA *data, int printFailingSystems);
 double extraPolate(DATA *data, double old1, double old2);

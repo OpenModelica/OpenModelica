@@ -977,8 +977,8 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
  */
 int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod, const char* pInitFile, double initTime, int lambda_steps)
 {
-  int initMethod = data->callback->useSymbolicInitialization ? IIM_SYMBOLIC : IIM_NUMERIC;  /* default method */
-  int optiMethod = IOM_NELDER_MEAD_EX;                                      /* default method */
+  int initMethod = data->callback->useSymbolicInitialization ? IIM_SYMBOLIC : IIM_NUMERIC; /* default method */
+  int optiMethod = IOM_NELDER_MEAD_EX; /* default method */
   int retVal = -1;
   int i;
 
@@ -1003,39 +1003,52 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   /* set up all variables with their start-values */
   setAllVarsToStart(data);
 
+  /* update static data of non-linear system solvers */
+  updateStaticDataOfNonlinearSystems(data);
+
   /* if there are user-specified options, use them! */
-  if(pInitMethod && strcmp(pInitMethod, "")) {
+  if(pInitMethod && strcmp(pInitMethod, ""))
+  {
     initMethod = IIM_UNKNOWN;
 
-    for(i=1; i<IIM_MAX; ++i) {
-      if(!strcmp(pInitMethod, INIT_METHOD_NAME[i])) {
+    for(i=1; i<IIM_MAX; ++i)
+    {
+      if(!strcmp(pInitMethod, INIT_METHOD_NAME[i]))
+      {
         initMethod = i;
       }
     }
 
-    if(initMethod == IIM_UNKNOWN) {
+    if(initMethod == IIM_UNKNOWN)
+    {
       warningStreamPrint(LOG_STDOUT, 0, "unrecognized option -iim %s", pInitMethod);
       warningStreamPrint(LOG_STDOUT, 0, "current options are:");
-      for(i=1; i<IIM_MAX; ++i) {
+      for(i=1; i<IIM_MAX; ++i)
+      {
         warningStreamPrint(LOG_STDOUT, 0, "| %-15s [%s]", INIT_METHOD_NAME[i], INIT_METHOD_DESC[i]);
       }
       throwStreamPrint(data->threadData, "see last warning");
     }
   }
 
-  if(pOptiMethod && strcmp(pOptiMethod, "")) {
+  if(pOptiMethod && strcmp(pOptiMethod, ""))
+  {
     optiMethod = IOM_UNKNOWN;
 
-    for(i=1; i<IOM_MAX; ++i) {
-      if(!strcmp(pOptiMethod, OPTI_METHOD_NAME[i])) {
+    for(i=1; i<IOM_MAX; ++i)
+    {
+      if(!strcmp(pOptiMethod, OPTI_METHOD_NAME[i]))
+      {
         optiMethod = i;
       }
     }
 
-    if(optiMethod == IOM_UNKNOWN) {
+    if(optiMethod == IOM_UNKNOWN)
+    {
       warningStreamPrint(LOG_STDOUT, 0, "unrecognized option -iom %s", pOptiMethod);
       warningStreamPrint(LOG_STDOUT, 0, "current options are:");
-      for(i=1; i<IOM_MAX; ++i) {
+      for(i=1; i<IOM_MAX; ++i)
+      {
         warningStreamPrint(LOG_STDOUT, 0, "| %-15s [%s]", OPTI_METHOD_NAME[i], OPTI_METHOD_DESC[i]);
       }
       throwStreamPrint(data->threadData, "see last warning");
@@ -1043,7 +1056,8 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   }
 
   infoStreamPrint(LOG_INIT, 0, "initialization method: %-15s [%s]", INIT_METHOD_NAME[initMethod], INIT_METHOD_DESC[initMethod]);
-  if(initMethod == IIM_NUMERIC) {
+  if(initMethod == IIM_NUMERIC)
+  {
     infoStreamPrint(LOG_INIT, 0, "optimization method:   %-15s [%s]", OPTI_METHOD_NAME[optiMethod], OPTI_METHOD_DESC[optiMethod]);
   }
 
@@ -1053,36 +1067,51 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   /* initialize all (nonlinear|linear|mixed) systems
    * This is a workaround and should be removed as soon as possible.
    */
-  for(i=0; i<data->modelData.nNonLinearSystems; ++i) {
+  for(i=0; i<data->modelData.nNonLinearSystems; ++i)
+  {
     data->simulationInfo.nonlinearSystemData[i].solved = 1;
   }
-  for(i=0; i<data->modelData.nLinearSystems; ++i) {
+  for(i=0; i<data->modelData.nLinearSystems; ++i)
+  {
     data->simulationInfo.linearSystemData[i].solved = 1;
   }
-  for(i=0; i<data->modelData.nMixedSystems; ++i) {
+  for(i=0; i<data->modelData.nMixedSystems; ++i)
+  {
     data->simulationInfo.mixedSystemData[i].solved = 1;
   }
   /* end workaround */
 
   /* select the right initialization-method */
-  if(initMethod == IIM_NONE) {
+  if(IIM_NONE == initMethod)
+  {
     retVal = 0;
-  } else if(initMethod == IIM_NUMERIC) {
+  }
+  else if(IIM_NUMERIC == initMethod)
+  {
     retVal = numeric_initialization(data, optiMethod, lambda_steps);
-  } else if(initMethod == IIM_SYMBOLIC) {
+  }
+  else if(IIM_SYMBOLIC == initMethod)
+  {
     retVal = symbolic_initialization(data, lambda_steps);
-  } else {
+  }
+  else
+  {
     throwStreamPrint(data->threadData, "unsupported option -iim");
   }
 
   /* check for unsolved (nonlinear|linear|mixed) systems
    * This is a workaround and should be removed as soon as possible.
    */
-  if(check_nonlinear_solutions(data, 1)) {
+  if(check_nonlinear_solutions(data, 1))
+  {
     retVal = -2;
-  } else if(check_linear_solutions(data, 1)) {
+  }
+  else if(check_linear_solutions(data, 1))
+  {
     retVal = -3;
-  } else if(check_mixed_solutions(data, 1)) {
+  }
+  else if(check_mixed_solutions(data, 1))
+  {
     retVal = -4;
   }
   /* end workaround */

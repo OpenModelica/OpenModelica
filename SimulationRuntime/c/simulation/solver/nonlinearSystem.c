@@ -96,18 +96,20 @@ struct dataNewtonAndHybrid {
   void* hybridData;
 };
 
-/*! \fn int allocateNonlinearSystem(DATA *data)
+/*! \fn int initializeNonlinearSystems(DATA *data)
  *
  *  This function allocates memory for all nonlinear systems.
  *
  *  \param [ref] [data]
  */
-int allocateNonlinearSystem(DATA *data)
+int initializeNonlinearSystems(DATA *data)
 {
   int i;
   int size;
   NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo.nonlinearSystemData;
   struct dataNewtonAndHybrid *mixedSolverData;
+
+  infoStreamPrint(LOG_NLS, 1, "initialize non-linear system solvers");
 
   for(i=0; i<data->modelData.nNonLinearSystems; ++i)
   {
@@ -170,20 +172,47 @@ int allocateNonlinearSystem(DATA *data)
 
   }
 
+  messageClose(LOG_NLS);
   return 0;
 }
 
-/*! \fn freeNonlinearSystem
+/*! \fn int updateStaticDataOfNonlinearSystems(DATA *data)
+ *
+ *  This function allocates memory for all nonlinear systems.
+ *
+ *  \param [ref] [data]
+ */
+int updateStaticDataOfNonlinearSystems(DATA *data)
+{
+  int i;
+  int size;
+  NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo.nonlinearSystemData;
+  struct dataNewtonAndHybrid *mixedSolverData;
+
+  infoStreamPrint(LOG_NLS, 1, "update static data of non-linear system solvers");
+
+  for(i=0; i<data->modelData.nNonLinearSystems; ++i)
+  {
+    nonlinsys[i].initializeStaticNLSData(data, &nonlinsys[i]);
+  }
+
+  messageClose(LOG_NLS);
+  return 0;
+}
+
+/*! \fn freeNonlinearSystems
  *
  *  This function frees memory of nonlinear systems.
  *
  *  \param [ref] [data]
  */
-int freeNonlinearSystem(DATA *data)
+int freeNonlinearSystems(DATA *data)
 {
   int i;
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
 
+  infoStreamPrint(LOG_NLS, 1, "free non-linear system solvers");
+  
   for(i=0; i<data->modelData.nNonLinearSystems; ++i)
   {
     free(nonlinsys[i].nlsx);
@@ -222,6 +251,7 @@ int freeNonlinearSystem(DATA *data)
     free(nonlinsys[i].solverData);
   }
 
+  messageClose(LOG_NLS);
   return 0;
 }
 

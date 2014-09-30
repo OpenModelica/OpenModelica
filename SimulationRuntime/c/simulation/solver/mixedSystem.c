@@ -38,17 +38,19 @@
 #include "mixedSearchSolver.h"
 #include "simulation_info_xml.h"
 
-/*! \fn int allocatemixedSystem(DATA *data)
+/*! \fn int initializeMixedSystems(DATA *data)
  *
  *  This function allocates memory for all mixed systems.
  *
  *  \param [ref] [data]
  */
-int allocatemixedSystem(DATA *data)
+int initializeMixedSystems(DATA *data)
 {
   int i;
   int size;
   MIXED_SYSTEM_DATA *system = data->simulationInfo.mixedSystemData;
+
+  infoStreamPrint(LOG_NLS, 1, "initialize mixed system solvers");
 
   for(i=0; i<data->modelData.nMixedSystems; ++i)
   {
@@ -67,20 +69,24 @@ int allocatemixedSystem(DATA *data)
       throwStreamPrint(data->threadData, "unrecognized mixed solver");
     }
   }
+
+  messageClose(LOG_NLS);
   return 0;
 }
 
-/*! \fn freemixedSystem
+/*! \fn freeMixedSystems
  *
  *  Thi function frees memory of mixed systems.
  *
  *  \param [ref] [data]
  */
-int freemixedSystem(DATA *data)
+int freeMixedSystems(DATA *data)
 {
   int i;
   MIXED_SYSTEM_DATA* system = data->simulationInfo.mixedSystemData;
 
+  infoStreamPrint(LOG_NLS, 1, "free mixed system solvers");
+  
   for(i=0;i<data->modelData.nMixedSystems;++i)
   {
 
@@ -100,6 +106,7 @@ int freemixedSystem(DATA *data)
     free(system[i].solverData);
   }
 
+  messageClose(LOG_NLS);
   return 0;
 }
 

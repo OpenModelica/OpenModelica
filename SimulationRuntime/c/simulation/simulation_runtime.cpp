@@ -849,15 +849,11 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   rt_tick(SIM_TIMER_INIT_XML);
   read_input_xml(&(data->modelData), &(data->simulationInfo));
   rt_accumulate(SIM_TIMER_INIT_XML);
-
-  /* allocate memory for mixed system solvers */
-  allocatemixedSystem(data);
-
-  /* allocate memory for linear system solvers */
-  allocatelinearSystem(data);
-
-  /* allocate memory for non-linear system solvers */
-  allocateNonlinearSystem(data);
+  
+  /* initialize static data of mixed/linear/non-linear system solvers */
+  initializeMixedSystems(data);
+  initializeLinearSystems(data);
+  initializeNonlinearSystems(data);
 
   // this sets the static variable that is in the file with the generated-model functions
   if(data->modelData.nVariablesReal == 0 && data->modelData.nVariablesInteger && data->modelData.nVariablesBoolean)
@@ -978,9 +974,9 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
       retVal = startNonInteractiveSimulation(argc, argv, data);
     }
 
-    freemixedSystem(data);        /* free mixed system data */
-    freelinearSystem(data);       /* free linear system data */
-    freeNonlinearSystem(data);    /* free nonlinear system data */
+    freeMixedSystems(data);        /* free mixed system data */
+    freeLinearSystems(data);       /* free linear system data */
+    freeNonlinearSystems(data);    /* free nonlinear system data */
 
     data->callback->callExternalObjectDestructors(data);
     deInitializeDataStruc(data);
