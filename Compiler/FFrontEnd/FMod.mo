@@ -245,11 +245,11 @@ algorithm
       String name;
       Absyn.Path path;
 
-    case FCore.MS_COMPONENT(name = name) then System.gettext("component ") +& name;
-    case FCore.MS_EXTENDS(path = path) then System.gettext("extends ") +& Absyn.pathString(path);
-    case FCore.MS_DERIVED(path = path) then System.gettext("inherited class ") +& Absyn.pathString(path);
-    case FCore.MS_CLASS_EXTENDS(name = name) then System.gettext("class extends class ") +& name;
-    case FCore.MS_CONSTRAINEDBY(path = path) then System.gettext("constrainedby class ") +& Absyn.pathString(path);
+    case FCore.MS_COMPONENT(name = name) then "component " +& name;
+    case FCore.MS_EXTENDS(path = path) then "extends " +& Absyn.pathString(path);
+    case FCore.MS_DERIVED(path = path) then "inherited class " +& Absyn.pathString(path);
+    case FCore.MS_CLASS_EXTENDS(name = name) then "class extends class " +& name;
+    case FCore.MS_CONSTRAINEDBY(path = path) then "constrainedby class " +& Absyn.pathString(path);
 
   end match;
 end printModScope;
