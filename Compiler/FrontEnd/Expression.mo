@@ -2193,6 +2193,8 @@ algorithm
       then tp;
     case (DAE.UNBOX(ty = tp)) then tp;
     case (DAE.SHARED_LITERAL(exp = e)) then typeof(e);
+    // A little crazy, but sometimes we call typeof on things that will not be used in the end...
+    case (DAE.EMPTY(ty = tp)) then tp;
 
     case e
       equation
