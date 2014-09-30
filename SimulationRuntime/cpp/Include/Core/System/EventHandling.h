@@ -14,7 +14,8 @@ public:
     EventHandling();
     virtual ~EventHandling(void);
     //Inits the event variables
-    void initialize(IEvent* system,int dim,init_prevars_type init_prevars);
+    //void initialize(IEvent* system,int dim,init_prevars_type init_prevars);
+	void initialize(IEvent* system,int dim);
     //Returns the help vector
     //void getHelpVars(double* h);
     //sets the help vector
