@@ -30,7 +30,7 @@ inline static int sgn (const double &c)
 }
 
 /// Definition of Signum function
-double division (const double &a,const double &b, const char * text);
+double BOOST_EXTENSION_EXPORT_DECL division (const double &a,const double &b, const char * text);
 
 inline static int modelica_mod_int(int v1, int v2)
 {
@@ -236,7 +236,7 @@ inline bool in_range(T i,T start,T stop)
 
 
 
-int pivot( double *A, int n_rows, int n_cols, int *rowInd, int *colInd );
+int BOOST_EXTENSION_EXPORT_DECL pivot( double *A, int n_rows, int n_cols, int *rowInd, int *colInd );
 
 
 //  (C) Copyright Gennadiy Rozental 2001-2002.

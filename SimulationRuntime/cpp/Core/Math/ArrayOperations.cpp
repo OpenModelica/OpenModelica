@@ -295,62 +295,62 @@ min_max (BaseArray<T>& x)
 /*
 Explicit template instantiation for double,int,bool
 */
-template  void cat_array<double> (int k,BaseArray<double>& a, vector<BaseArray<double>* >& x );
-template  void cat_array<int> (int k,BaseArray<int>& a, vector<BaseArray<int>* >& x );
-template  void cat_array<bool> (int k,BaseArray<bool>& a, vector<BaseArray<bool>* >& x );
+template  void BOOST_EXTENSION_EXPORT_DECL cat_array<double> (int k,BaseArray<double>& a, vector<BaseArray<double>* >& x );
+template  void BOOST_EXTENSION_EXPORT_DECL cat_array<int> (int k,BaseArray<int>& a, vector<BaseArray<int>* >& x );
+template  void BOOST_EXTENSION_EXPORT_DECL cat_array<bool> (int k,BaseArray<bool>& a, vector<BaseArray<bool>* >& x );
 
-template void transpose_array (BaseArray< double >& a, BaseArray< double >&  x );
-template void transpose_array (BaseArray< int >& a, BaseArray< int >&  x );
-template void transpose_array (BaseArray< bool >& a, BaseArray< bool >&  x );
+template void BOOST_EXTENSION_EXPORT_DECL transpose_array (BaseArray< double >& a, BaseArray< double >&  x );
+template void BOOST_EXTENSION_EXPORT_DECL transpose_array (BaseArray< int >& a, BaseArray< int >&  x );
+template void BOOST_EXTENSION_EXPORT_DECL transpose_array (BaseArray< bool >& a, BaseArray< bool >&  x );
 
-template void promote_array(unsigned int n,BaseArray<double>& s,BaseArray<double>& d);
-template void promote_array(unsigned int n,BaseArray<int>& s,BaseArray<int>& d);
-template void promote_array(unsigned int n,BaseArray<bool>& s,BaseArray<bool>& d);
+template void BOOST_EXTENSION_EXPORT_DECL promote_array(unsigned int n,BaseArray<double>& s,BaseArray<double>& d);
+template void BOOST_EXTENSION_EXPORT_DECL promote_array(unsigned int n,BaseArray<int>& s,BaseArray<int>& d);
+template void BOOST_EXTENSION_EXPORT_DECL promote_array(unsigned int n,BaseArray<bool>& s,BaseArray<bool>& d);
 
-template void create_array_from_shape(const spec_type& sp,BaseArray<double>& s,BaseArray<double>& d);
-template void create_array_from_shape(const spec_type& sp,BaseArray<int>& s,BaseArray<int>& d);
-template void create_array_from_shape(const spec_type& sp,BaseArray<bool>& s,BaseArray<bool>& d);
-
-
-
-template void multiply_array( BaseArray<double> & inputArray ,const double &b, BaseArray<double> & outputArray  );
-template void multiply_array( BaseArray<int> & inputArray ,const int &b, BaseArray<int> & outputArray  );
-template void multiply_array( BaseArray<bool> & inputArray ,const bool &b, BaseArray<bool> & outputArray  );
+template void BOOST_EXTENSION_EXPORT_DECL create_array_from_shape(const spec_type& sp,BaseArray<double>& s,BaseArray<double>& d);
+template void BOOST_EXTENSION_EXPORT_DECL create_array_from_shape(const spec_type& sp,BaseArray<int>& s,BaseArray<int>& d);
+template void BOOST_EXTENSION_EXPORT_DECL create_array_from_shape(const spec_type& sp,BaseArray<bool>& s,BaseArray<bool>& d);
 
 
-template void divide_array( BaseArray<double> & inputArray ,const double &b, BaseArray<double> & outputArray  );
-template void divide_array( BaseArray<int> & inputArray ,const int &b, BaseArray<int> & outputArray  );
-template void divide_array( BaseArray<bool> & inputArray ,const bool &b, BaseArray<bool> & outputArray  );
+
+template void BOOST_EXTENSION_EXPORT_DECL multiply_array( BaseArray<double> & inputArray ,const double &b, BaseArray<double> & outputArray  );
+template void BOOST_EXTENSION_EXPORT_DECL multiply_array( BaseArray<int> & inputArray ,const int &b, BaseArray<int> & outputArray  );
+template void BOOST_EXTENSION_EXPORT_DECL multiply_array( BaseArray<bool> & inputArray ,const bool &b, BaseArray<bool> & outputArray  );
 
 
-template void fill_array( BaseArray<double> & inputArray , double b);
-template void fill_array( BaseArray<int> & inputArray , int b);
-template void fill_array( BaseArray<bool> & inputArray , bool b);
+template void BOOST_EXTENSION_EXPORT_DECL divide_array( BaseArray<double> & inputArray ,const double &b, BaseArray<double> & outputArray  );
+template void BOOST_EXTENSION_EXPORT_DECL divide_array( BaseArray<int> & inputArray ,const int &b, BaseArray<int> & outputArray  );
+template void BOOST_EXTENSION_EXPORT_DECL divide_array( BaseArray<bool> & inputArray ,const bool &b, BaseArray<bool> & outputArray  );
 
-template void subtract_array( BaseArray<double> & leftArray , BaseArray<double> & rightArray, BaseArray<double> & resultArray  );
-template void subtract_array( BaseArray<int> & leftArray , BaseArray<int> & rightArray, BaseArray<int> & resultArray  );
-template void subtract_array( BaseArray<bool> & leftArray , BaseArray<bool> & rightArray, BaseArray<bool> & resultArray  );
 
-template void add_array( BaseArray<double> & leftArray , BaseArray<double> & rightArray, BaseArray<double> & resultArray  );
-template void add_array( BaseArray<int> & leftArray , BaseArray<int> & rightArray, BaseArray<int> & resultArray  );
-template void add_array( BaseArray<bool> & leftArray , BaseArray<bool> & rightArray, BaseArray<bool> & resultArray  );
+template void BOOST_EXTENSION_EXPORT_DECL fill_array( BaseArray<double> & inputArray , double b);
+template void BOOST_EXTENSION_EXPORT_DECL fill_array( BaseArray<int> & inputArray , int b);
+template void BOOST_EXTENSION_EXPORT_DECL fill_array( BaseArray<bool> & inputArray , bool b);
 
-template void usub_array(BaseArray<double> & a , BaseArray<double> & b);
-template void usub_array(BaseArray<int> & a , BaseArray<int> & b);
-template void usub_array(BaseArray<bool> & a , BaseArray<bool> & b);
+template void BOOST_EXTENSION_EXPORT_DECL subtract_array( BaseArray<double> & leftArray , BaseArray<double> & rightArray, BaseArray<double> & resultArray  );
+template void BOOST_EXTENSION_EXPORT_DECL subtract_array( BaseArray<int> & leftArray , BaseArray<int> & rightArray, BaseArray<int> & resultArray  );
+template void BOOST_EXTENSION_EXPORT_DECL subtract_array( BaseArray<bool> & leftArray , BaseArray<bool> & rightArray, BaseArray<bool> & resultArray  );
 
-template double sum_array ( BaseArray<double> & leftArray );
-template int sum_array ( BaseArray<int> & leftArray );
-template bool sum_array ( BaseArray<bool> & leftArray );
+template void BOOST_EXTENSION_EXPORT_DECL add_array( BaseArray<double> & leftArray , BaseArray<double> & rightArray, BaseArray<double> & resultArray  );
+template void BOOST_EXTENSION_EXPORT_DECL add_array( BaseArray<int> & leftArray , BaseArray<int> & rightArray, BaseArray<int> & resultArray  );
+template void BOOST_EXTENSION_EXPORT_DECL add_array( BaseArray<bool> & leftArray , BaseArray<bool> & rightArray, BaseArray<bool> & resultArray  );
 
-template void cross_array( BaseArray<double> & a ,BaseArray<double> & b, BaseArray<double> & res );
-template void cross_array( BaseArray<int> & a ,BaseArray<int> & b, BaseArray<int> & res );
-template void cross_array( BaseArray<bool> & a ,BaseArray<bool> & b, BaseArray<bool> & res );
+template void BOOST_EXTENSION_EXPORT_DECL usub_array(BaseArray<double> & a , BaseArray<double> & b);
+template void BOOST_EXTENSION_EXPORT_DECL usub_array(BaseArray<int> & a , BaseArray<int> & b);
+template void BOOST_EXTENSION_EXPORT_DECL usub_array(BaseArray<bool> & a , BaseArray<bool> & b);
 
-template double dot_array( BaseArray<double> & a ,  BaseArray<double> & b  );
-template int dot_array( BaseArray<int> & a ,  BaseArray<int> & b  );
-template bool dot_array( BaseArray<bool> & a ,  BaseArray<bool> & b  );
+template double BOOST_EXTENSION_EXPORT_DECL sum_array ( BaseArray<double> & leftArray );
+template int    BOOST_EXTENSION_EXPORT_DECL sum_array ( BaseArray<int> & leftArray );
+template bool   BOOST_EXTENSION_EXPORT_DECL sum_array ( BaseArray<bool> & leftArray );
 
-template std::pair <double,double> min_max (BaseArray<double>& x);
-template std::pair <int,int> min_max (BaseArray<int>& x);
-template std::pair <bool,bool> min_max (BaseArray<bool>& x);
+template void BOOST_EXTENSION_EXPORT_DECL cross_array( BaseArray<double> & a ,BaseArray<double> & b, BaseArray<double> & res );
+template void BOOST_EXTENSION_EXPORT_DECL cross_array( BaseArray<int> & a ,BaseArray<int> & b, BaseArray<int> & res );
+template void BOOST_EXTENSION_EXPORT_DECL cross_array( BaseArray<bool> & a ,BaseArray<bool> & b, BaseArray<bool> & res );
+
+template double BOOST_EXTENSION_EXPORT_DECL dot_array( BaseArray<double> & a ,  BaseArray<double> & b  );
+template int    BOOST_EXTENSION_EXPORT_DECL dot_array( BaseArray<int> & a ,  BaseArray<int> & b  );
+template bool   BOOST_EXTENSION_EXPORT_DECL dot_array( BaseArray<bool> & a ,  BaseArray<bool> & b  );
+
+template std::pair <double,double> BOOST_EXTENSION_EXPORT_DECL min_max (BaseArray<double>& x);
+template std::pair <int,int>       BOOST_EXTENSION_EXPORT_DECL min_max (BaseArray<int>& x);
+template std::pair <bool,bool>     BOOST_EXTENSION_EXPORT_DECL min_max (BaseArray<bool>& x);

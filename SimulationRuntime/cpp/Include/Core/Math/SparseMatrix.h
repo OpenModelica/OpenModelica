@@ -10,7 +10,7 @@ using std::map;
 using std::pair;
 using std::make_pair;
 
-struct sparse_inserter  {
+struct BOOST_EXTENSION_EXPORT_DECL sparse_inserter  {
     struct t2 {
         int i;
         int j;
@@ -46,7 +46,7 @@ struct sparse_inserter  {
 
 };
 
-struct sparse_matrix {
+struct BOOST_EXTENSION_EXPORT_DECL sparse_matrix {
     std::vector<int> Ap;
     std::vector<int> Ai;
     std::vector<double> Ax;

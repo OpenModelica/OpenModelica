@@ -97,11 +97,28 @@ public:
 protected:
     virtual void initializeLibraries(PATH library_path,PATH modelicasystem_path,PATH config_path)
     {
+        
+        LOADERRESULT result;
+
+		PATH math_path = ObjectFactory<CreationPolicy>::_library_path;
+        PATH math_name(MATH_LIB);
+        math_path/=math_name;
+
+        result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(math_path.string(),*_settings_type_map);
+
+        if (result != LOADER_SUCCESS)
+        {
+
+            throw std::runtime_error(string("Failed loading Math library: ") + math_path.string());
+        }
+
+        
+        
         PATH settingsfactory_path = ObjectFactory<CreationPolicy>::_library_path;
         PATH settingsfactory_name(SETTINGSFACTORY_LIB);
         settingsfactory_path/=settingsfactory_name;
 
-        LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(settingsfactory_path.string(),*_settings_type_map);
+        result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(settingsfactory_path.string(),*_settings_type_map);
 
         if (result != LOADER_SUCCESS)
         {

@@ -24,7 +24,7 @@
 #define min(a,b) ((a > b) ? (b) : (a))
 #endif
 
-double division (const double &a,const double &b, const char* text)
+double  division (const double &a,const double &b, const char* text)
 {
   if(b != 0)
     return a/b ;
@@ -83,7 +83,7 @@ rowInd and colInd are vectors of length nrwos and n_cols respectively.
 They hold the old (and new) pivoting information, such that
   A_pivoted[i,j] = A[rowInd[i], colInd[j]]
 */
-int pivot( double *A, int n_rows, int n_cols, int *rowInd, int *colInd )
+int  pivot( double *A, int n_rows, int n_cols, int *rowInd, int *colInd )
 {
   /* parameter, determines how much larger an element should be before rows and columns are interchanged */
   const double fac = 1.125; /* approved by dymola ;) */

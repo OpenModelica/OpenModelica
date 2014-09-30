@@ -2,7 +2,8 @@ cmake_minimum_required (VERSION 2.6)
 
 project(${MathName})
 # add the solver default implementation library
-add_library(${MathName} STATIC ArrayOperations.cpp Functions.cpp SparseMatrix.cpp)
+add_library(${MathName} SHARED ArrayOperations.cpp Functions.cpp SparseMatrix.cpp FactoryExport.cpp)
+target_link_libraries (${MathName}  ${Boost_LIBRARIES} )
 if (UNIX)
 set_target_properties(${MathName} PROPERTIES COMPILE_FLAGS -fPIC)
 endif(UNIX)
