@@ -26,14 +26,14 @@ EventHandling::~EventHandling(void)
 /**
 Inits the event variables
 */
-void EventHandling::initialize(IEvent* system,int dim,init_prevars_type init_prevars)
+void EventHandling::initialize(IEvent* system,int dim)
 {
    // _dimH=dim;
     _event_system=system;
     _countinous_system = dynamic_cast<IContinuous*>(_event_system);
     _mixed_system= dynamic_cast<IMixedSystem*>(_event_system);
 
-    init_prevars(_pre_vars_idx,_pre_discrete_vars_idx);
+    _event_system->initPreVars(_pre_vars_idx,_pre_discrete_vars_idx);
     _pre_vars.resize((boost::extents[_pre_vars_idx.size()]));
     _pre_discrete_vars.resize((boost::extents[_pre_discrete_vars_idx.size()]));
     /*if(_dimH > 0)
@@ -52,6 +52,7 @@ void EventHandling::initialize(IEvent* system,int dim,init_prevars_type init_pre
     _conditions0 = new bool[_event_system->getDimZeroFunc()];
     _conditions1 = new bool[_event_system->getDimZeroFunc()];
 }
+
 /**
 Returns the help vector
 */
