@@ -369,11 +369,11 @@ fmi2Status fmi2EnterInitializationMode(fmi2Component c) {
   /* initial sample and delay before initial the system */
   comp->fmuData->callback->callExternalObjectConstructors(comp->fmuData);
   /* allocate memory for non-linear system solvers */
-  allocateNonlinearSystem(comp->fmuData);
+  initializeNonlinearSystems(comp->fmuData);
   /* allocate memory for non-linear system solvers */
-  allocatelinearSystem(comp->fmuData);
+  initializeLinearSystems(comp->fmuData);
   /* allocate memory for mixed system solvers */
-  allocatemixedSystem(comp->fmuData);
+  initializeMixedSystems(comp->fmuData);
   /* allocate memory for state selection */
   initializeStateSetJacobians(comp->fmuData);
   if (initialization(comp->fmuData, "", "", "", 0.0, 5)) {
@@ -431,11 +431,11 @@ fmi2Status fmi2Terminate(fmi2Component c) {
   /* deinitDelay(comp->fmuData); */
   comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData);
   /* free nonlinear system data */
-  freeNonlinearSystem(comp->fmuData);
+  freeNonlinearSystems(comp->fmuData);
   /* free mixed system data */
-  freemixedSystem(comp->fmuData);
+  freeMixedSystems(comp->fmuData);
   /* free linear system data */
-  freelinearSystem(comp->fmuData);
+  freeLinearSystems(comp->fmuData);
   /* free stateset data */
   freeStateSetData(comp->fmuData);
   deInitializeDataStruc(comp->fmuData);
