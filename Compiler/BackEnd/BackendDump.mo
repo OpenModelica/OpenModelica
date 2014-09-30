@@ -311,7 +311,7 @@ algorithm
     case (BackendDAE.ALGEQSYSTEM()) then "algebraic loop";
     case (BackendDAE.ARRAYSYSTEM()) then "multidim equation arrays";
     case (BackendDAE.PARAMETERSYSTEM()) then "parameter system";
-    case (BackendDAE.INITIALSYSTEM()) then "initial system";
+    case (BackendDAE.INITIALSYSTEM()) then "initialization";
   end match;
 end printBackendDAEType2String;
 
@@ -3500,14 +3500,16 @@ protected
   HashSet.HashSet HS;
   BackendDAE.EqSystems systs;
   BackendDAE.EquationArray removedEqs;
-  String statesStr, sysStr, stStr, dvarStr, dstStr, statesStr, discvarsStr, discstatesStr, inpStr, strcompsStr, seqStr, sarrStr, salgStr, sceStr, sweStr, sieStr, eqsysStr, teqsysStr, meqsysStr;
+  String statesStr, sysStr, stStr, dvarStr, dstStr, statesStr, discvarsStr, discstatesStr, inpStr, strcompsStr, seqStr, sarrStr, salgStr, sceStr, sweStr, sieStr, eqsysStr, teqsysStr, meqsysStr, daeType;
 
   list<String> msgs;
   DumpCompShortSystemsTpl systemsTpl;
   DumpCompShortMixedTpl mixedTpl;
   DumpCompShortTornTpl tornTpl;
+  BackendDAE.BackendDAEType backendDAEType;
 algorithm
-  BackendDAE.DAE(systs, BackendDAE.SHARED(removedEqs=removedEqs)) := inDAE;
+  BackendDAE.DAE(systs, BackendDAE.SHARED(removedEqs=removedEqs, backendDAEType=backendDAEType)) := inDAE;
+  daeType := printBackendDAEType2String(backendDAEType);
 
   HS := HashSet.emptyHashSet();
   HS := List.fold(systs, Initialization.collectPreVariablesEqSystem, HS);
@@ -3535,7 +3537,7 @@ algorithm
   stStr := stStr+&statesStr;
   dvarStr := dvarStr+&discvarsStr;
   dstStr := dstStr+&discstatesStr;
-  msgs := {sysStr,stStr,dvarStr,dstStr,inpStr};
+  msgs := {daeType,sysStr,stStr,dvarStr,dstStr,inpStr};
   Error.addMessage(Error.BACKENDDAEINFO_STATISTICS, msgs);
 
   strcompsStr := intString(strcomps);
@@ -3549,7 +3551,7 @@ algorithm
   teqsysStr := intString(teqsys);
   meqsysStr := intString(meqsys);
 
-  msgs := {strcompsStr,seqStr,sarrStr,salgStr,sceStr,sweStr,sieStr,eqsysStr,teqsysStr,meqsysStr};
+  msgs := {daeType,strcompsStr,seqStr,sarrStr,salgStr,sceStr,sweStr,sieStr,eqsysStr,teqsysStr,meqsysStr};
   Error.addMessage(Error.BACKENDDAEINFO_STRONGCOMPONENT_STATISTICS, msgs);
 
   Debug.bcall(intGt(eqsys,0),dumpCompSystems,systemsTpl);
