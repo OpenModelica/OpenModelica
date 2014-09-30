@@ -101,10 +101,12 @@ if true then /* Suppress output */
     "../FrontEnd/ValuesUtil.mo",
 
   // "FFrontEnd";
+    "../FFrontEnd/FBuiltin.mo",
     "../FFrontEnd/FCore.mo",
     "../FFrontEnd/FExpand.mo",
     "../FFrontEnd/FGraph.mo",
     "../FFrontEnd/FGraphBuild.mo",
+    "../FFrontEnd/FGraphBuildEnv.mo",
     "../FFrontEnd/FGraphDump.mo",
     "../FFrontEnd/FGraphStream.mo",
     "../FFrontEnd/FInst.mo",

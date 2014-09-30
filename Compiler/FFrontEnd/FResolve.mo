@@ -49,6 +49,8 @@ import FLookup;
 protected
 import SCode;
 import FGraphBuild;
+import List;
+import ClassInf;
 
 public
 type Name = FCore.Name;
@@ -112,8 +114,9 @@ algorithm
     case (r, g)
       equation
         true = FNode.isRefExtends(r);
+        false = FNode.isRefDerived(r);
         // it does have a reference child already!
-        _ = FNode.child(r, FNode.refNodeName);
+        true = FNode.isRefRefResolved(r);
       then
         g;
 
@@ -121,11 +124,12 @@ algorithm
     case (r, g)
       equation
         true = FNode.isRefExtends(r);
-        FCore.EX(e) = FNode.data(FNode.fromRef(r));
+        false = FNode.isRefDerived(r);
+        FCore.EX(e = e) = FNode.refData(r);
         p = SCode.getBaseClassPath(e);
         _ = SCode.elementInfo(e);
-        rr = FLookup.name(r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption);
-        g = FGraphBuild.mkRefNode(FNode.refNodeName, rr, r, g);
+        (g, rr) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption);
+        g = FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
       then
         g;
 
@@ -133,12 +137,15 @@ algorithm
     case (r, g)
       equation
         true = FNode.isRefExtends(r);
-        FCore.EX(e) = FNode.data(FNode.fromRef(r));
+        false = FNode.isRefDerived(r);
+        FCore.EX(e = e) = FNode.refData(r);
         p = SCode.getBaseClassPath(e);
         _ = SCode.elementInfo(e);
-        failure(_ = FLookup.name(r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
-        print("FResolve.ext_one: baseclass " +& Absyn.pathString(p) +&
+        failure((_, _) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
+        print("FResolve.ext_one: baseclass: " +& Absyn.pathString(p) +&
               " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
+        // put it in the graph as unresolved ref
+        g = FGraphBuild.mkRefNode(FNode.refNodeName, {}, r, g);
       then
         g;
 
@@ -190,7 +197,7 @@ algorithm
       equation
         true = FNode.isRefDerived(r);
         // it does have a reference child already!
-        _ = FNode.child(r, FNode.refNodeName);
+        true = FNode.isRefRefResolved(r);
       then
         g;
 
@@ -198,10 +205,9 @@ algorithm
     case (r, g)
       equation
         true = FNode.isRefDerived(r);
-        FCore.DE(d) = FNode.data(FNode.fromRef(r));
-        SCode.DERIVED(typeSpec = Absyn.TPATH(p, _)) = d;
-        rr = FLookup.name(r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption);
-        g = FGraphBuild.mkRefNode(FNode.refNodeName, rr, r, g);
+        FCore.CL(e = SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(p, _)))) = FNode.refData(r);
+        (g, rr) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption);
+        g = FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
       then
         g;
 
@@ -209,11 +215,12 @@ algorithm
     case (r, g)
       equation
         true = FNode.isRefDerived(r);
-        FCore.DE(d) = FNode.data(FNode.fromRef(r));
-        SCode.DERIVED(typeSpec = Absyn.TPATH(p, _)) = d;
-        failure(_ = FLookup.name(r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
-        print("FResolve.derived_one: baseclass " +& Absyn.pathString(p) +&
+        FCore.CL(e = SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(p, _)))) = FNode.refData(r);
+        failure((_, _) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
+        print("FResolve.derived_one: baseclass: " +& Absyn.pathString(p) +&
               " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
+        // put it in the graph as unresolved ref
+        g = FGraphBuild.mkRefNode(FNode.refNodeName, {}, r, g);
       then
         g;
 
@@ -265,7 +272,7 @@ algorithm
       equation
         true = FNode.isRefComponent(r);
         // it does have a reference child already!
-        _ = FNode.child(r, FNode.refNodeName);
+        true = FNode.isRefRefResolved(r);
       then
         g;
 
@@ -273,11 +280,11 @@ algorithm
     case (r, g)
       equation
         true = FNode.isRefComponent(r);
-        FCore.CO(e = e) = FNode.data(FNode.fromRef(r));
+        FCore.CO(e = e) = FNode.refData(r);
         Absyn.TPATH(p, _) = SCode.getComponentTypeSpec(e);
-        rr = FLookup.name(r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption);
+        (g, rr) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption);
         // print("Resolving ty: " +& Absyn.pathString(p) +& " -> " +& FNode.toStr(FNode.fromRef(rr)) +& "\n");
-        g = FGraphBuild.mkRefNode(FNode.refNodeName, rr, r, g);
+        g = FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
       then
         g;
 
@@ -285,11 +292,13 @@ algorithm
     case (r, g)
       equation
         true = FNode.isRefComponent(r);
-        FCore.CO(e = e) = FNode.data(FNode.fromRef(r));
+        FCore.CO(e = e) = FNode.refData(r);
         Absyn.TPATH(p, _) = SCode.getComponentTypeSpec(e);
-        failure(_ = FLookup.name(r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
-        print("FResolve.ty_one: type path " +& Absyn.pathString(p) +&
+        failure((_, _) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
+        print("FResolve.ty_one: component type path: " +& Absyn.pathString(p) +&
               " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
+        // put it in the graph as unresolved ref
+        g = FGraphBuild.mkRefNode(FNode.refNodeName, {}, r, g);
       then
         g;
 
@@ -341,7 +350,7 @@ algorithm
       equation
         true = FNode.isRefConstrainClass(r);
         // it does have a reference child already!
-        _ = FNode.child(r, FNode.refNodeName);
+        true = FNode.isRefRefResolved(r);
       then
         g;
 
@@ -349,9 +358,9 @@ algorithm
     case (r, g)
       equation
         true = FNode.isRefConstrainClass(r);
-        FCore.CC(SCode.CONSTRAINCLASS(constrainingClass = p)) = FNode.data(FNode.fromRef(r));
-        rr = FLookup.name(r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption);
-        g = FGraphBuild.mkRefNode(FNode.refNodeName, rr, r, g);
+        FCore.CC(SCode.CONSTRAINCLASS(constrainingClass = p)) = FNode.refData(r);
+        (g, rr) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption);
+        g = FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
       then
         g;
 
@@ -359,10 +368,12 @@ algorithm
     case (r, g)
       equation
         true = FNode.isRefConstrainClass(r);
-        FCore.CC(SCode.CONSTRAINCLASS(constrainingClass = p)) = FNode.data(FNode.fromRef(r));
-        failure(_ = FLookup.name(r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
-        print("FResolve.cc_one: type path " +& Absyn.pathString(p) +&
+        FCore.CC(SCode.CONSTRAINCLASS(constrainingClass = p)) = FNode.refData(r);
+        failure((_, _) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
+        print("FResolve.cc_one: constrained class: " +& Absyn.pathString(p) +&
               " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
+        // put it in the graph as unresolved ref
+        g = FGraphBuild.mkRefNode(FNode.refNodeName, {}, r, g);
       then
         g;
 
@@ -414,7 +425,7 @@ algorithm
       equation
         true = FNode.isRefClassExtends(r);
         // it does have a reference child already!
-        _ = FNode.child(r, FNode.refNodeName);
+        true = FNode.isRefRefResolved(r);
       then
         g;
 
@@ -422,12 +433,12 @@ algorithm
     case (r, g)
       equation
         true = FNode.isRefClassExtends(r);
-        FCore.CL(e = SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = id))) = FNode.data(FNode.fromRef(r));
+        FCore.CL(e = SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = id))) = FNode.refData(r);
         // get the parent where the extends are!
         p::_ = FNode.parents(FNode.fromRef(r));
         // search ONLY in extends!
-        rr = FLookup.ext(p, id, FLookup.ignoreParentsAndImports, FLookup.dummyLookupOption);
-        g = FGraphBuild.mkRefNode(FNode.refNodeName, rr, r, g);
+        (g, rr) = FLookup.ext(g, p, id, FLookup.ignoreParentsAndImports, FLookup.dummyLookupOption);
+        g = FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
       then
         g;
 
@@ -435,13 +446,16 @@ algorithm
     case (r, g)
       equation
         true = FNode.isRefClassExtends(r);
-        FCore.CL(e = SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = id))) = FNode.data(FNode.fromRef(r));
+        FCore.CL(e = SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = id))) = FNode.refData(r);
         // get the parent where the extends are!
         p::_ = FNode.parents(FNode.fromRef(r));
         // search ONLY in extends!
-        failure(_ = FLookup.ext(p, id, FLookup.ignoreParentsAndImports, FLookup.dummyLookupOption));
-        print("FResolve.clsext_one: class extends " +& id +&
-              " not found in extends of: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
+        failure((_, _) = FLookup.ext(g, p, id, FLookup.ignoreParentsAndImports, FLookup.dummyLookupOption));
+        print("FResolve.clsext_one: class extends: " +& id +& " scope: " +& FNode.toPathStr(FNode.fromRef(r)) +&
+              " not found in extends of: " +& FNode.toPathStr(FNode.fromRef(p)) +& ":\n");
+        print("\t" +& stringDelimitList(List.map(List.map(FNode.extendsRefs(p), FNode.fromRef), FNode.toPathStr), "\n\t") +& "\n");
+        // put it in the graph as unresolved ref
+        g = FGraphBuild.mkRefNode(FNode.refNodeName, {}, r, g);
       then
         g;
 
@@ -464,7 +478,7 @@ algorithm
 
     case (_, g)
       equation
-        // apply on all comopnent reference nodes
+        // apply on all component reference nodes
         g = FNode.apply1(inRef, cr_one, g);
       then
         g;
@@ -493,7 +507,7 @@ algorithm
       equation
         true = FNode.isRefCref(r);
         // it does have a reference child already!
-        _ = FNode.child(r, FNode.refNodeName);
+        true = FNode.isRefRefResolved(r);
       then
         g;
 
@@ -501,9 +515,9 @@ algorithm
     case (r, g)
       equation
         true = FNode.isRefCref(r);
-        FCore.CR(r = cr) = FNode.data(FNode.fromRef(r));
-        rr = FLookup.cr(r, cr, FLookup.ignoreNothing, FLookup.dummyLookupOption);
-        g = FGraphBuild.mkRefNode(FNode.refNodeName, rr, r, g);
+        FCore.CR(r = cr) = FNode.refData(r);
+        (g, rr) = FLookup.cr(g, r, cr, FLookup.ignoreNothing, FLookup.dummyLookupOption); // SOME(Absyn.dummyInfo));
+        g = FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
       then
         g;
 
@@ -511,10 +525,12 @@ algorithm
     case (r, g)
       equation
         true = FNode.isRefCref(r);
-        FCore.CR(r = cr) = FNode.data(FNode.fromRef(r));
-        failure(_ = FLookup.cr(r, cr, FLookup.ignoreNothing, FLookup.dummyLookupOption));
-        print("FResolve.cr_one: component reference " +& Absyn.crefString(cr) +&
+        FCore.CR(r = cr) = FNode.refData(r);
+        failure((_, _) = FLookup.cr(g, r, cr, FLookup.ignoreNothing, FLookup.dummyLookupOption));
+        print("FResolve.cr_one: component reference: " +& Absyn.crefString(cr) +&
               " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
+        // put it in the graph as unresolved ref
+        g = FGraphBuild.mkRefNode(FNode.refNodeName, {}, r, g);
       then
         g;
 
@@ -522,5 +538,170 @@ algorithm
 
   end matchcontinue;
 end cr_one;
+
+public function mod
+"@author: adrpo
+ for all mods lookup the modifier node and add $ref nodes to the result"
+  input Ref inRef;
+  input Graph ig;
+  output Graph og;
+algorithm
+  og := match(inRef, ig)
+    local
+      Refs refs;
+      Graph g;
+
+    case (_, g)
+      equation
+        // apply on all modifier nodes
+        g = FNode.apply1(inRef, mod_one, g);
+      then
+        g;
+
+  end match;
+end mod;
+
+public function mod_one
+"@author: adrpo
+ helper"
+  input Ref inRef;
+  input Graph ig;
+  output Graph og;
+algorithm
+  og := matchcontinue(inRef, ig)
+    local
+      Ref r, rr;
+      Absyn.ComponentRef cr;
+      Node n;
+      Absyn.Info i;
+      Graph g;
+
+    // found mod that has a ref node
+    case (r, g)
+      equation
+        true = FNode.isRefMod(r) and
+               (not FNode.isRefModHolder(r)) and
+               (not ClassInf.isBasicTypeComponentName(FNode.refName(r)));
+        // it does have a reference child already!
+        true = FNode.isRefRefResolved(r);
+      then
+        g;
+
+    // found mod
+    case (r, g)
+      equation
+        true = FNode.isRefMod(r) and
+               (not FNode.isRefModHolder(r)) and
+               (not ClassInf.isBasicTypeComponentName(FNode.refName(r)));
+        cr = Absyn.pathToCref(Absyn.stringListPath(FNode.namesUpToParentName(r, FNode.modNodeName)));
+        (g, rr) = FLookup.cr(g, FNode.getModifierTarget(r), cr, FLookup.ignoreNothing, FLookup.dummyLookupOption); // SOME(Absyn.dummyInfo));
+        g = FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
+      then
+        g;
+
+    // not found mod
+    case (r, g)
+      equation
+        true = FNode.isRefMod(r) and
+               (not FNode.isRefModHolder(r)) and
+               (not ClassInf.isBasicTypeComponentName(FNode.refName(r)));
+        cr = Absyn.pathToCref(Absyn.stringListPath(FNode.namesUpToParentName(r, FNode.modNodeName)));
+        failure((_, _) = FLookup.cr(g, FNode.getModifierTarget(r), cr, FLookup.ignoreNothing, FLookup.dummyLookupOption));
+        print("FResolve.mod_one: modifier: " +& Absyn.crefString(cr) +&
+              " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
+        // put it in the graph as unresolved ref
+        g = FGraphBuild.mkRefNode(FNode.refNodeName, {}, r, g);
+      then
+        g;
+
+    else ig;
+
+  end matchcontinue;
+end mod_one;
+
+public function elred
+"@author: adrpo
+ for all redeclare as element lookup the base class and add $ref nodes to the result"
+  input Ref inRef;
+  input Graph ig;
+  output Graph og;
+algorithm
+  og := match(inRef, ig)
+    local
+      Refs refs;
+      Graph g;
+
+    case (_, g)
+      equation
+        // apply on all class extends nodes
+        g = FNode.apply1(inRef, elred_one, g);
+      then
+        g;
+
+  end match;
+end elred;
+
+public function elred_one
+"@author: adrpo
+ helper"
+  input Ref inRef;
+  input Graph ig;
+  output Graph og;
+algorithm
+  og := matchcontinue(inRef, ig)
+    local
+      Ref r, rr, p;
+      SCode.Element e;
+      Node n;
+      Absyn.Info i;
+      Name id;
+      Graph g;
+
+    // found redeclare as element that has a ref node
+    case (r, g)
+      equation
+        true = FNode.isRefRedeclare(r);
+        true = (FNode.isRefClass(r) and (not FNode.isRefClassExtends(r))) or FNode.isRefComponent(r);
+        // it does have a reference child already!
+        true = FNode.isRefRefResolved(r);
+      then
+        g;
+
+    // found redeclare as element
+    case (r, g)
+      equation
+        true = FNode.isRefRedeclare(r);
+        true = (FNode.isRefClass(r) and (not FNode.isRefClassExtends(r))) or FNode.isRefComponent(r);
+        id = SCode.elementName(FNode.getElement(FNode.fromRef(r)));
+        // get the parent where the extends are!
+        p::_ = FNode.parents(FNode.fromRef(r));
+        // search ONLY in extends!
+        (g, rr) = FLookup.ext(g, p, id, FLookup.ignoreParentsAndImports, FLookup.dummyLookupOption);
+        g = FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
+      then
+        g;
+
+    // not found ref
+    case (r, g)
+      equation
+        true = FNode.isRefRedeclare(r);
+        true = (FNode.isRefClass(r) and (not FNode.isRefClassExtends(r))) or FNode.isRefComponent(r);
+        id = SCode.elementName(FNode.getElement(FNode.fromRef(r)));
+        // get the parent where the extends are!
+        p::_ = FNode.parents(FNode.fromRef(r));
+        // search ONLY in extends!
+        failure((_, _) = FLookup.ext(g, p, id, FLookup.ignoreParentsAndImports, FLookup.dummyLookupOption));
+        print("FResolve.elred_one: redeclare as element: " +& id +& " scope: " +& FNode.toPathStr(FNode.fromRef(r)) +&
+              " not found in extends of: " +& FNode.toPathStr(FNode.fromRef(p)) +& ":\n");
+        print("\t" +& stringDelimitList(List.map(List.map(FNode.extendsRefs(p), FNode.fromRef), FNode.toPathStr), "\n\t") +& "\n");
+        // put it in the graph as unresolved ref
+        g = FGraphBuild.mkRefNode(FNode.refNodeName, {}, r, g);
+      then
+        g;
+
+    else ig;
+
+  end matchcontinue;
+end elred_one;
 
 end FResolve;

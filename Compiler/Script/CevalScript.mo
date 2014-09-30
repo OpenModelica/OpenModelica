@@ -54,7 +54,7 @@ public import Absyn;
 public import BackendDAE;
 public import Ceval;
 public import DAE;
-public import Env;
+public import FCore;
 public import Error;
 public import GlobalScript;
 public import Interactive;
@@ -93,6 +93,8 @@ protected import ExpressionDump;
 protected import FindZeroCrossings;
 protected import Flags;
 protected import FInst;
+protected import FGraph;
+protected import FGraphDump;
 protected import Global;
 protected import Graph;
 protected import HashSetString;
@@ -307,16 +309,16 @@ algorithm
 end buildCurrentSimulationResultExp;
 
 protected function cevalCurrentSimulationResultExp
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input String inputFilename;
   input GlobalScript.SymbolTable st;
   input Absyn.Msg msg;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output String filename;
 algorithm
   (outCache,filename) := match (inCache,env,inputFilename,st,msg)
-    local Env.Cache cache;
+    local FCore.Cache cache;
     case (cache,_,"<default>",_,_)
       equation
         (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(),true,SOME(st),msg,0);
@@ -762,20 +764,20 @@ end checkValidVersion;
 
 public function cevalInteractiveFunctions
 "defined in the interactive environment."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inExp "expression to evaluate";
   input GlobalScript.SymbolTable inSymbolTable;
   input Absyn.Msg msg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inExp,inSymbolTable,msg,numIter)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       DAE.Exp exp;
       list<DAE.Exp> eLst;
       list<Values.Value> valLst;
@@ -809,13 +811,13 @@ end cevalInteractiveFunctions;
 
 protected function cevalInteractiveFunctions2
 "defined in the interactive environment."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input String inFunctionName;
   input list<Values.Value> inVals;
   input GlobalScript.SymbolTable inSt;
   input Absyn.Msg msg;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
@@ -833,7 +835,7 @@ algorithm
       Absyn.Path path,classpath,className,baseClassPath;
       SCode.Program scodeP,sp;
       Option<list<SCode.Element>> fp;
-      Env.Env env;
+      FCore.Graph env;
       GlobalScript.SymbolTable newst,st_1,st;
       Absyn.Program p,ip,pnew,newp,ptot;
       list<Absyn.Program> newps;
@@ -868,7 +870,7 @@ algorithm
       GlobalScript.Statements istmts;
       list<GlobalScript.Statements> istmtss;
       Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<GlobalScript.LoadedFile> lf;
       Absyn.ComponentRef  crefCName;
       list<tuple<String,Values.Value>> resultValues;
@@ -1047,7 +1049,7 @@ algorithm
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(cache, scodeP, Absyn.IDENT(""));
         (cache,c,env) = Lookup.lookupClass(cache,env, path, true);
-        SOME(p1) = Env.getEnvPath(env);
+        SOME(p1) = FGraph.getScopePath(env);
         s1 = Absyn.pathString(p1);
         Print.printBuf("Found class ");
         Print.printBuf(s1);
@@ -1192,7 +1194,7 @@ algorithm
         pnew = Interactive.updateProgram(pnew, p);
         newst = Interactive.setSymbolTableAST(st, pnew);
       then
-        (Env.emptyCache(),Values.BOOL(true), newst);
+        (FCore.emptyCache(),Values.BOOL(true), newst);
 
     case (cache, _, "rewriteBlockCall", _, st, _)
       then (cache, Values.BOOL(false), st);
@@ -1592,7 +1594,7 @@ algorithm
           resultValues);
         newst = Interactive.addVarToSymboltable(
           DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}),
-          Values.STRING(result_file), Env.emptyEnv, st);
+          Values.STRING(result_file), FGraph.empty(), st);
         //reset config flag
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, b);
       then
@@ -1633,7 +1635,7 @@ algorithm
     case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},st,_)
       equation
         (cache,env,dae,st) = runFrontEnd(cache,env,className,st,true);
-        str = DAEDump.dumpStr(dae,Env.getFunctionTree(cache));
+        str = DAEDump.dumpStr(dae,FCore.getFunctionTree(cache));
       then
         (cache,Values.STRING(str),st);
 
@@ -1774,7 +1776,7 @@ algorithm
         args = System.strtok(str, " ");
         _ = Flags.readArgs(args);
       then
-        (Env.emptyCache(),Values.BOOL(true),st);
+        (FCore.emptyCache(),Values.BOOL(true),st);
 
     case (cache,_,"setCommandLineOptions",_,st,_)
       then (cache,Values.BOOL(false),st);
@@ -2161,7 +2163,7 @@ algorithm
         _ = Print.getString();
         newst = GlobalScript.SYMBOLTABLE(p,NONE(),{},iv,cf,lf);
       then
-        (Env.emptyCache(),Values.BOOL(b),newst);
+        (FCore.emptyCache(),Values.BOOL(b),newst);
 
     case (cache,_,"loadModel",Values.CODE(Absyn.C_TYPENAME(path))::_,st,_)
       equation
@@ -2180,7 +2182,7 @@ algorithm
         newp = ClassLoader.loadFile(name,encoding);
         newp = Interactive.updateProgram(newp, p);
       then
-        (Env.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
+        (FCore.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
 
     case (cache,_,"loadFile",_,st,_)
       then (cache,Values.BOOL(false),st);
@@ -2198,7 +2200,7 @@ algorithm
         System.GC_enable();
         newp = List.fold(newps, Interactive.updateProgram, p);
       then
-        (Env.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
+        (FCore.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
 
     case (_,_,"loadFiles",{Values.ARRAY(valueLst=vals),Values.STRING(encoding),Values.INTEGER(_)},
           (GlobalScript.SYMBOLTABLE(
@@ -2210,7 +2212,7 @@ algorithm
         newps = List.map(List.map1(strs,Util.makeTuple,encoding), loadFileThread);
         newp = List.fold(newps, Interactive.updateProgram, p);
       then
-        (Env.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
+        (FCore.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
 
     case (cache,_,"loadFiles",_,st,_)
       equation
@@ -2250,7 +2252,7 @@ algorithm
         newp = Parser.parsestring(str,name);
         newp = Interactive.updateProgram(newp, p);
       then
-        (Env.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
+        (FCore.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
 
     case (cache,_,"loadString",_,st,_)
     then (cache,Values.BOOL(false),st);
@@ -2313,10 +2315,10 @@ algorithm
       equation
         st = saveTotalModel(filename,classpath,st);
       then
-        (cache,Values.BOOL(true),st);
+        (cache, Values.BOOL(true), st);
 
     case (cache,_,"saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))},(st as GlobalScript.SYMBOLTABLE(ast = _)),_)
-      then (cache,Values.BOOL(false),st);
+      then (cache, Values.BOOL(false), st);
 
     case (cache,_,"getDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
@@ -2429,7 +2431,7 @@ algorithm
         ErrorExt.setCheckpoint("getSimulationOptions");
         simOpt = GlobalScript.SIMULATION_OPTIONS(DAE.RCONST(startTime),DAE.RCONST(stopTime),DAE.ICONST(numberOfIntervals),DAE.RCONST(0.0),DAE.RCONST(tolerance),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""));
         ErrorExt.rollBack("getSimulationOptions");
-        (_, _::startTimeExp::stopTimeExp::intervalExp::toleranceExp::_) = StaticScript.getSimulationArguments(Env.emptyCache(), {},{Absyn.CREF(cr_1)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo,SOME(simOpt));
+        (_, _::startTimeExp::stopTimeExp::intervalExp::toleranceExp::_) = StaticScript.getSimulationArguments(FCore.emptyCache(), FGraph.empty(), {Absyn.CREF(cr_1)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo,SOME(simOpt));
         startTime = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,startTimeExp,Values.REAL(startTime)));
         stopTime = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,stopTimeExp,Values.REAL(stopTime)));
         tolerance = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,toleranceExp,Values.REAL(tolerance)));
@@ -3378,13 +3380,13 @@ end setEcho;
 
 public function getIncidenceMatrix " author: adrpo
  translates a model and returns the incidence matrix"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input Absyn.Msg inMsg;
   input String filenameprefix;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
   output String outString;
@@ -3395,7 +3397,7 @@ algorithm
       String filename,file_dir, str;
       list<SCode.Element> p_1;
       DAE.DAElist dae_1,dae;
-      Env.Env env;
+      FCore.Graph env;
       list<GlobalScript.InstantiatedClass> ic_1,ic;
       BackendDAE.BackendDAE dlow;
       Absyn.ComponentRef a_cref;
@@ -3404,7 +3406,7 @@ algorithm
       list<GlobalScript.Variable> iv;
       list<GlobalScript.CompiledCFunction> cf;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String flatModelicaStr,description;
 
     case (cache,env,_,(st as GlobalScript.SYMBOLTABLE(ast = p,instClsLst = ic,lstVarVal = _,compiledFunctions = _)),_,_) /* mo file directory */
@@ -3419,7 +3421,7 @@ algorithm
         file_dir = getFileDir(a_cref, p);
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         dlow = FindZeroCrossings.findZeroCrossings(dlow);
-        flatModelicaStr = DAEDump.dumpStr(dae,Env.getFunctionTree(cache));
+        flatModelicaStr = DAEDump.dumpStr(dae,FCore.getFunctionTree(cache));
         flatModelicaStr = stringAppend("OldEqStr={'", flatModelicaStr);
         flatModelicaStr = System.stringReplace(flatModelicaStr, "\n", "%##%");
         flatModelicaStr = System.stringReplace(flatModelicaStr, "%##%", "','");
@@ -3432,31 +3434,31 @@ algorithm
 end getIncidenceMatrix;
 
 public function runFrontEnd
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path className;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input Boolean relaxedFrontEnd "Do not check for illegal simulation models, so we allow instantation of packages, etc";
-  output Env.Cache cache;
-  output Env.Env env;
+  output FCore.Cache cache;
+  output FCore.Graph env;
   output DAE.DAElist dae;
   output GlobalScript.SymbolTable st;
 algorithm
   // add program to the cache so it can be used to lookup modelica://
   // URIs in external functions IncludeDirectory/LibraryDirectory
-  cache := Env.setProgramInCache(inCache, Interactive.getSymbolTableAST(inInteractiveSymbolTable));
+  cache := FCore.setProgramInCache(inCache, Interactive.getSymbolTableAST(inInteractiveSymbolTable));
   (cache,env,dae,st) := runFrontEndWork(cache,inEnv,className,inInteractiveSymbolTable,relaxedFrontEnd,Error.getNumErrorMessages());
 end runFrontEnd;
 
 protected function runFrontEndWork
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path className;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input Boolean relaxedFrontEnd "Do not check for illegal simulation models, so we allow instantation of packages, etc";
   input Integer numError;
-  output Env.Cache cache;
-  output Env.Env env;
+  output FCore.Cache cache;
+  output FCore.Graph env;
   output DAE.DAElist dae;
   output GlobalScript.SymbolTable st;
 algorithm
@@ -3480,15 +3482,21 @@ algorithm
       equation
         true = Flags.isSet(Flags.GRAPH_INST);
         false = Flags.isSet(Flags.SCODE_INST);
+
+        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
         str = Absyn.pathString(className);
         (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);
         re = Absyn.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
         (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp)),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true);
+        print("Load deps:      " +& realString(System.realtimeTock(GlobalScript.RT_CLOCK_FINST)) +& "\n");
 
+        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
-        dae = FInst.inst(className, scodeP);
+        print("Absyn->SCode:   " +& realString(System.realtimeTock(GlobalScript.RT_CLOCK_FINST)) +& "\n");
+
+        dae = FInst.instPath(className, scodeP);
         ic_1 = ic;
       then
         (cache,env,dae,GlobalScript.SYMBOLTABLE(p,fp,ic_1,iv,cf,lf));
@@ -3506,9 +3514,9 @@ algorithm
         nfenv = NFEnv.buildInitialEnv(scodeP, scode_builtin);
         (dae, funcs) = NFInst.instClass(className, nfenv);
 
-        cache = Env.emptyCache();
-        cache = Env.setCachedFunctionTree(cache, funcs);
-        env = Env.emptyEnv;
+        cache = FCore.emptyCache();
+        cache = FCore.setCachedFunctionTree(cache, funcs);
+        env = FGraph.empty();
         ic_1 = Interactive.addInstantiatedClass(ic,
           GlobalScript.INSTCLASS(className, dae, env));
         st = GlobalScript.SYMBOLTABLE(p, fp, ic_1, iv, cf, lf);
@@ -3541,8 +3549,9 @@ algorithm
 
         //System.startTimer();
         //print("\nInst.instantiateClass");
-
         (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodeP,className);
+
+        FGraphDump.dumpGraph(env, "F:\\dev\\" +& Absyn.pathString(className) +& ".graph.graphml");
 
         //System.stopTimer();
         //print("\nInst.instantiateClass: " +& realString(System.getTimerIntervalTime()));
@@ -3550,7 +3559,7 @@ algorithm
         // adrpo: do not add it to the instantiated classes, it just consumes memory for nothing.
         ic_1 = ic;
         // ic_1 = Interactive.addInstantiatedClass(ic, GlobalScript.INSTCLASS(className,dae,env));
-        _ = DAEUtil.getFunctionList(Env.getFunctionTree(cache)); // Make sure that the functions are valid before returning success
+        _ = DAEUtil.getFunctionList(FCore.getFunctionTree(cache)); // Make sure that the functions are valid before returning success
       then (cache,env,dae,GlobalScript.SYMBOLTABLE(p,fp,ic_1,iv,cf,lf));
 
     case (cache,env,_,st as GlobalScript.SYMBOLTABLE(ast=p),_,_)
@@ -3572,14 +3581,14 @@ end runFrontEndWork;
 
 protected function translateModel " author: x02lucpo
  translates a model into cpp code and writes also a makefile"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
   output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
@@ -3589,8 +3598,8 @@ algorithm
   (outCache,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
   match (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       BackendDAE.BackendDAE indexed_dlow;
       GlobalScript.SymbolTable st;
       list<String> libs;
@@ -3609,14 +3618,14 @@ end translateModel;
 
 /*protected function translateModelCPP " author: x02lucpo
  translates a model into cpp code and writes also a makefile"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
   output BackendDAE.BackendDAE outBackendDAE;
@@ -3627,8 +3636,8 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
   match (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       BackendDAE.BackendDAE indexed_dlow;
       GlobalScript.SymbolTable st;
       list<String> libs;
@@ -3646,23 +3655,23 @@ end translateModelCPP;*/
 
 protected function translateModelFMU " author: Frenkel TUD
  translates a model into cpp code and writes also a makefile"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input String inFMUVersion;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable):=
   match (inCache,inEnv,className,inInteractiveSymbolTable,inFMUVersion,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       BackendDAE.BackendDAE indexed_dlow;
       GlobalScript.SymbolTable st;
       list<String> libs;
@@ -3690,22 +3699,22 @@ end translateModelFMU;
 
 protected function translateModelXML " author: Alachew
  translates a model into XML code "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable):=
   match (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       BackendDAE.BackendDAE indexed_dlow;
       GlobalScript.SymbolTable st;
       list<String> libs;
@@ -3727,26 +3736,26 @@ end translateModelXML;
 
 
 public function translateGraphics "function: translates the graphical annotations from old to new version"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path className;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input Absyn.Msg inMsg;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable) :=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
-      Env.Env env;
+      FCore.Graph env;
       list<GlobalScript.InstantiatedClass> ic;
       GlobalScript.SymbolTable st;
       Absyn.Program p;
       list<GlobalScript.Variable> iv;
       list<GlobalScript.CompiledCFunction> cf;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<GlobalScript.LoadedFile> lf;
       Absyn.TimeStamp ts;
       String errorMsg,retStr,s1;
@@ -3779,12 +3788,12 @@ end translateGraphics;
 
 protected function calculateSimulationSettings " author: x02lucpo
  calculates the start,end,interval,stepsize, method and initFileName"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Values.Value> vals;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input Absyn.Msg inMsg;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SimCode.SimulationSettings outSimSettings;
 algorithm
   (outCache,outSimSettings):=
@@ -3795,9 +3804,9 @@ algorithm
       Values.Value starttime_v,stoptime_v,tolerance_v;
       Integer interval_i;
       Real starttime_r,stoptime_r,tolerance_r;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String cflags,simflags;
     case (cache,_,{Values.CODE(Absyn.C_TYPENAME(_)),starttime_v,stoptime_v,Values.INTEGER(interval_i),tolerance_v,Values.STRING(method_str),_,Values.STRING(options_str),Values.STRING(outputFormat_str),Values.STRING(variableFilter_str),Values.STRING(cflags),Values.STRING(_)},
          (GlobalScript.SYMBOLTABLE(ast = _)),_)
@@ -3927,12 +3936,12 @@ end moveClassInList;
 
 protected function buildModel " author: x02lucpo
  translates and builds the model by running compiler script on the generated makefile"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Values.Value> inValues;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input Absyn.Msg inMsg;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output GlobalScript.SymbolTable outInteractiveSymbolTable3;
   output String compileDir;
   output String outString1 "className";
@@ -3953,12 +3962,12 @@ algorithm
       Absyn.Program p;
       Absyn.Class cdef;
       Real edit,build,globalEdit,globalBuild,timeCompile;
-      Env.Env env;
+      FCore.Graph env;
       SimCode.SimulationSettings simSettings;
       Values.Value starttime,stoptime,interval,tolerance,method,options,outputFormat,variableFilter;
       list<Values.Value> vals, values;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       Boolean existFile;
       Absyn.TimeStamp ts;
 
@@ -4056,13 +4065,13 @@ protected function createSimulationResultFromcallModelExecutable
   input Real timeTotal;
   input Real timeSimulation;
   input list<tuple<String,Values.Value>> resultValues;
-  input Env.Cache inCache;
+  input FCore.Cache inCache;
   input Absyn.Path className;
   input list<Values.Value> inVals;
   input GlobalScript.SymbolTable inSt;
   input String result_file;
   input String logFile;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
@@ -4083,7 +4092,7 @@ algorithm
           resultValues);
         newst = Interactive.addVarToSymboltable(
           DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}),
-          Values.STRING(result_file), Env.emptyEnv, inSt);
+          Values.STRING(result_file), FGraph.empty(), inSt);
       then
         (inCache,simValue,newst);
     else
@@ -4099,12 +4108,12 @@ algorithm
 end createSimulationResultFromcallModelExecutable;
 
 protected function buildOpenTURNSInterface "builds the OpenTURNS interface by calling the OpenTURNS module"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Values.Value> vals;
   input GlobalScript.SymbolTable inSt;
   input Absyn.Msg inMsg;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output String scriptFile;
   output GlobalScript.SymbolTable outSt;
 algorithm
@@ -4113,9 +4122,9 @@ algorithm
       String templateFile, str;
       Absyn.Program p;
       Absyn.Path className;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.DAElist dae;
-      Env.Env env;
+      FCore.Graph env;
       BackendDAE.BackendDAE dlow;
       DAE.FunctionTree funcs;
       GlobalScript.SymbolTable st;
@@ -4127,7 +4136,7 @@ algorithm
         (cache,env,dae,_) = runFrontEnd(cache,inEnv,className,inSt,false);
         //print("instantiated class\n");
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
-        funcs = Env.getFunctionTree(cache);
+        funcs = FCore.getFunctionTree(cache);
         str = Debug.bcallret2(showFlatModelica, DAEDump.dumpStr, dae, funcs, "");
         Debug.bcall(showFlatModelica, print, str);
         // get all the variable names with a distribution
@@ -4165,19 +4174,19 @@ algorithm
 
 protected function runOpenTURNSPythonScript
 "runs OpenTURNS with the given python script returning the log file"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Values.Value> vals;
   input GlobalScript.SymbolTable inSt;
   input Absyn.Msg inMsg;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output String outLogFile;
   output GlobalScript.SymbolTable outSt;
 algorithm
   (outCache,outLogFile,outSt):= match(inCache,inEnv,vals,inSt,inMsg)
     local
       String pythonScriptFile, logFile;
-      Env.Cache cache;
+      FCore.Cache cache;
     case(cache,_,{Values.STRING(pythonScriptFile)},_,_)
       equation
         logFile = OpenTURNS.runPythonScript(pythonScriptFile);
@@ -4335,12 +4344,12 @@ algorithm
 end winCitation;
 
 public function checkModel " checks a model and returns number of variables and equations"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path className;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input Absyn.Msg inMsg;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
@@ -4348,11 +4357,11 @@ algorithm
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
       DAE.DAElist dae;
-      Env.Env env;
+      FCore.Graph env;
       GlobalScript.SymbolTable st;
       Absyn.Program p;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       Integer eqnSize,varSize,simpleEqnSize;
       String errorMsg,warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
       Boolean strEmpty;
@@ -4520,12 +4529,12 @@ end subtractDummy;
 protected function dumpXMLDAEFrontEnd
 "@author: adrpo
  this function runs the front-end for the dumpXMLDAE function"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path inClassName;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output DAE.DAElist outDae;
 algorithm
   (outCache, outEnv, outDae) := match(inCache, inEnv, inClassName, inInteractiveSymbolTable)
@@ -4547,12 +4556,12 @@ end dumpXMLDAEFrontEnd;
 
 protected function dumpXMLDAE " author: fildo
  This function outputs the DAE system corresponding to a specific model."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Values.Value> vals;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input Absyn.Msg inMsg;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output GlobalScript.SymbolTable outInteractiveSymbolTable3;
   output String xml_filename;
 algorithm
@@ -4560,11 +4569,11 @@ algorithm
   matchcontinue (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
       String cname_str,filenameprefix,compileDir,rewriteRulesFile,description;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Path classname;
       Absyn.Program p;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow;
-      Env.Cache cache;
+      FCore.Cache cache;
       Boolean addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
       GlobalScript.SymbolTable st;
       Absyn.Msg msg;
@@ -4762,8 +4771,8 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.EventInfo eventInfo;
       BackendDAE.ExtraInfo extraInfo;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
 
     // no rewrites!
     case _
@@ -4884,13 +4893,13 @@ end getAllClassPathsRecursive;
 public function checkAllModelsRecursive
 "@author adrpo
  checks all models and returns number of variables and equations"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path className;
   input Boolean inCheckProtected;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input Absyn.Msg inMsg;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
@@ -4901,9 +4910,9 @@ algorithm
       GlobalScript.SymbolTable st;
       Absyn.Program p;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String ret;
-      Env.Env env;
+      FCore.Graph env;
       Boolean b;
 
     case (cache,env,_,b,(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
@@ -4943,8 +4952,8 @@ end failOrSuccess;
 function checkAll
 "@author adrpo
  checks all models and returns number of variables and equations"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Path> allClasses;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input Absyn.Msg inMsg;
@@ -4956,9 +4965,9 @@ algorithm
       GlobalScript.SymbolTable st;
       Absyn.Program p;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String  str, s;
-      Env.Env env;
+      FCore.Graph env;
       Real t1, t2, elapsedTime;
       Absyn.ComponentRef cr;
       Absyn.Class c;
@@ -4979,9 +4988,9 @@ algorithm
         print("Checking: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... ");
         t1 = clock();
         Flags.setConfigBool(Flags.CHECK_MODEL, true);
-        (_,Values.STRING(str),_) = checkModel(Env.emptyCache(), env, className, st, msg);
+        (_,Values.STRING(str),_) = checkModel(FCore.emptyCache(), env, className, st, msg);
         Flags.setConfigBool(Flags.CHECK_MODEL, false);
-        (_,Values.STRING(str),_) = checkModel(Env.emptyCache(), env, className, st, msg);
+        (_,Values.STRING(str),_) = checkModel(FCore.emptyCache(), env, className, st, msg);
         t2 = clock(); elapsedTime = t2 -. t1; s = realString(elapsedTime);
         print (s +& " seconds -> " +& failOrSuccess(str) +& "\n\t");
         print (System.stringReplace(str, "\n", "\n\t"));
@@ -5002,12 +5011,12 @@ end checkAll;
 
 public function buildModelBeast " copy & pasted by: Otto
  translates and builds the model by running compiler script on the generated makefile"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Values.Value> vals;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input Absyn.Msg inMsg;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
   output String compileDir;
   output String outString1 "className";
@@ -5024,11 +5033,11 @@ algorithm
       Absyn.Path classname;
       Absyn.Program p,p2;
       Absyn.Class cdef;
-      Env.Env env;
+      FCore.Graph env;
       Values.Value starttime,stoptime,interval,method,tolerance,options;
       Absyn.Msg msg;
       Absyn.Within win1;
-      Env.Cache cache;
+      FCore.Cache cache;
       SimCode.SimulationSettings simSettings;
       Absyn.TimeStamp ts;
 
@@ -5103,13 +5112,13 @@ end generateFunctionFileName;
 
 public function getFunctionDependencies
 "returns all function dependencies as paths, also the main function and the function tree"
-  input Env.Cache cache;
+  input FCore.Cache cache;
   input Absyn.Path functionName;
   output DAE.Function mainFunction "the main function";
   output list<Absyn.Path> dependencies "the dependencies as paths";
   output DAE.FunctionTree funcs "the function tree";
 algorithm
-  funcs := Env.getFunctionTree(cache);
+  funcs := FCore.getFunctionTree(cache);
   // First check if the main function exists... If it does not it might be an interactive function...
   mainFunction := DAEUtil.getNamedFunction(functionName, funcs);
   dependencies := SimCodeMain.getCalledFunctionsInFunction(functionName,funcs);
@@ -5117,10 +5126,10 @@ end getFunctionDependencies;
 
 public function collectDependencies
 "collects all function dependencies, also the main function, uniontypes, metarecords"
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input Absyn.Path functionName;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Function mainFunction;
   output list<DAE.Function> dependencies;
   output list<DAE.Type> metarecordTypes;
@@ -5137,20 +5146,20 @@ algorithm
 end collectDependencies;
 
 public function cevalGenerateFunction "Generates code for a given function name."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Program program;
   input Absyn.Path inPath;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output String functionName;
   output String functionFileName;
 algorithm
   (outCache,functionName,functionFileName) := matchcontinue (inCache,inEnv,program,inPath)
     local
       String pathstr, fileName;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Path path;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Function mainFunction;
       list<DAE.Function> d;
       list<DAE.Type> metarecordTypes;
@@ -5179,7 +5188,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.GEN);
         true = Flags.isSet(Flags.GENERATE_CODE_CHEAT);
-        funcs = Env.getFunctionTree(cache);
+        funcs = FCore.getFunctionTree(cache);
         // First check if the main function exists... If it does not it might be an interactive function...
         pathstr = generateFunctionName(path);
         fileName = generateFunctionFileName(path);
@@ -5203,13 +5212,13 @@ algorithm
 end cevalGenerateFunction;
 
 protected function generateFunctions
-  input Env.Cache icache;
-  input Env.Env ienv;
+  input FCore.Cache icache;
+  input FCore.Graph ienv;
   input Absyn.Program p;
   input list<SCode.Element> isp;
   input Boolean cleanCache;
-  output Env.Cache cache;
-  output Env.Env env;
+  output FCore.Cache cache;
+  output FCore.Graph env;
 algorithm
   (cache,env) := match (icache,ienv,p,isp,cleanCache)
     local
@@ -5241,16 +5250,16 @@ algorithm
 end generateFunctions;
 
 protected function generateFunctions2
-  input Env.Cache icache;
-  input Env.Env ienv;
+  input FCore.Cache icache;
+  input FCore.Graph ienv;
   input Absyn.Program p;
   input SCode.Element cl;
   input String name;
   input list<SCode.Element> elementLst;
   input Absyn.Info info;
   input Boolean cleanCache;
-  output Env.Cache cache;
-  output Env.Env env;
+  output FCore.Cache cache;
+  output FCore.Graph env;
 algorithm
   (cache,env) := matchcontinue (icache,ienv,p,cl,name,elementLst,info,cleanCache)
     local
@@ -5270,10 +5279,10 @@ algorithm
 
     case (cache,env,_,_,_,_,_,_)
       equation
-        cache = Util.if_(cleanCache, Env.emptyCache(), cache);
+        cache = Util.if_(cleanCache, FCore.emptyCache(), cache);
         paths = List.fold1(elementLst, findFunctionsToCompile, Absyn.FULLYQUALIFIED(Absyn.IDENT(name)), {});
         cache = instantiateDaeFunctions(cache, env, paths);
-        funcs = Env.getFunctionTree(cache);
+        funcs = FCore.getFunctionTree(cache);
         d = List.map2(paths, DAEUtil.getNamedFunctionWithError, funcs, info);
         (_,(_,dependencies)) = DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}),{});
         // print(name +& " has dependencies: " +& stringDelimitList(dependencies,",") +& "\n");
@@ -5321,15 +5330,15 @@ algorithm
 end matchQualifiedCalls;
 
 protected function instantiateDaeFunctions
-  input Env.Cache icache;
-  input Env.Env ienv;
+  input FCore.Cache icache;
+  input FCore.Graph ienv;
   input list<Absyn.Path> ipaths;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
 algorithm
   outCache := match (icache,ienv,ipaths)
     local
       Absyn.Path path;
-      Env.Cache cache; Env.Env env;
+      FCore.Cache cache; FCore.Graph env;
       list<Absyn.Path> paths;
     case (cache,_,{}) then cache;
     case (cache,env,path::paths)
@@ -6709,7 +6718,7 @@ end unparseGroupImport;
 
 public function evalCodeTypeName
   input Values.Value val;
-  input Env.Env env;
+  input FCore.Graph env;
   output Values.Value res;
 algorithm
   res := matchcontinue (val,env)
@@ -6717,7 +6726,7 @@ algorithm
       Absyn.Path path;
     case (Values.CODE(Absyn.C_TYPENAME(path as Absyn.IDENT(_) /* We only want to lookup idents in the symboltable; also speeds up e.g. simulate(Modelica.A.B.C) so we do not instantiate all classes */)),_)
       equation
-        (_,_,_,DAE.VALBOUND(valBound=res as Values.CODE(A=Absyn.C_TYPENAME(path=_))),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env, ComponentReference.pathToCref(path));
+        (_,_,_,DAE.VALBOUND(valBound=res as Values.CODE(A=Absyn.C_TYPENAME(path=_))),_,_,_,_,_) = Lookup.lookupVar(FCore.emptyCache(), env, ComponentReference.pathToCref(path));
       then res;
     else val;
   end matchcontinue;
@@ -6790,29 +6799,29 @@ public function cevalCallFunctionEvaluateOrGenerate
 "This function evaluates CALL expressions, i.e. function calls.
   They are currently evaluated by generating code for the function and
   then dynamicly load the function and call it."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input list<Values.Value> inValuesValueLst;
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> inSymTab;
   input Absyn.Msg inMsg;
   input Boolean bIsCompleteFunction;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outSymTab;
 algorithm
   (outCache,outValue,outSymTab) := matchcontinue (inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg,bIsCompleteFunction)
     local
       Values.Value newval;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp e;
       Absyn.Path funcpath;
       list<DAE.Exp> expl;
       Boolean  print_debug;
       list<Values.Value> vallst;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<GlobalScript.CompiledCFunction> cflist;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Program p;
@@ -6863,7 +6872,7 @@ algorithm
           Prefix.NOPRE(),
           sc,
           {});
-        func = Env.getCachedInstFunc(cache, funcpath);
+        func = FCore.getCachedInstFunc(cache, funcpath);
         (cache, newval, st) = CevalFunction.evaluate(cache, env, func, vallst, st);
         // Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print, "[dynload]: constant evaluation SUCCESS: " +& Absyn.pathString(funcpath) +& "\n");
       then
@@ -6876,7 +6885,7 @@ algorithm
         true = bIsCompleteFunction;
         true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
-        Debug.fprintln(Flags.DYN_LOAD, "[dynload]: [func from file] check if is in CF list: " +& Absyn.pathString(funcpath) +& "\n");
+        Debug.fprintln(Flags.DYN_LOAD, "[dynload]: [func from file] check if is in CF list: " +& Absyn.pathString(funcpath));
 
         (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);
         Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(_),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(funcpath, p);
@@ -6982,7 +6991,7 @@ algorithm
 
         // we might actually have a function loaded here already!
         // we need to unload all functions to not get conflicts!
-        p = Env.getProgramFromCache(cache);
+        p = FCore.getProgramFromCache(cache);
         (cache,funcstr,fileName) = cevalGenerateFunction(cache, env, p, funcpath);
         // generate a uniquely named dll!
         Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: cevalCallFunction: about to execute " +& funcstr +& "\n");
@@ -7096,28 +7105,28 @@ end isCevaluableFunction2;
 public function cevalCallFunction "This function evaluates CALL expressions, i.e. function calls.
   They are currently evaluated by generating code for the function and
   then dynamicly load the function and call it."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input list<Values.Value> inValuesValueLst;
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> inSymTab;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outSymTab;
 algorithm
   (outCache,outValue,outSymTab) := matchcontinue (inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg,numIter)
     local
       Values.Value newval;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp e;
       Absyn.Path funcpath;
       list<DAE.Exp> expl;
       list<Values.Value> vallst, pubVallst, proVallst;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Path complexName;
       list<DAE.Var> pubVarLst, proVarLst, varLst;
@@ -7135,8 +7144,9 @@ algorithm
         (cache,newval,st);
 
     // This case prevents the constructor call of external objects of being evaluated
-    case (cache,env as _ :: _,(DAE.CALL(path = funcpath,expLst = _)),_,_,_,msg,_)
+    case (cache,env,(DAE.CALL(path = funcpath,expLst = _)),_,_,_,msg,_)
       equation
+        true = FGraph.isNotEmpty(env);
         cevalIsExternalObjectConstructor(cache,funcpath,env,msg);
       then
         fail();
@@ -7200,15 +7210,15 @@ public function isCompleteFunction
  - not partial
  - not replaceable (without redeclare)
  - replaceable and called functions are not partial or not replaceable (without redeclare)"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path inFuncPath;
   output Boolean isComplete;
 algorithm
  isComplete := matchcontinue(inCache, inEnv, inFuncPath)
    local
-     Env.Cache cache;
-     Env.Env env;
+     FCore.Cache cache;
+     FCore.Graph env;
      Absyn.Path fpath;
 
    // external functions are complete :)
@@ -7239,9 +7249,9 @@ algorithm
 end isCompleteFunction;
 
 public function cevalIsExternalObjectConstructor
-  input Env.Cache cache;
+  input FCore.Cache cache;
   input Absyn.Path funcpath;
-  input Env.Env env;
+  input FCore.Graph env;
   input Absyn.Msg msg;
 protected
   Absyn.Path funcpath2;
@@ -7249,7 +7259,7 @@ protected
   Option<Absyn.Info> info;
 algorithm
   _ := match(cache, funcpath, env, msg)
-    case (_, _, {}, Absyn.NO_MSG()) then fail();
+    case (_, _, FCore.EG(_), Absyn.NO_MSG()) then fail();
     case (_, _, _, Absyn.NO_MSG())
       equation
         (funcpath2, Absyn.IDENT("constructor")) = Absyn.splitQualAndIdentPath(funcpath);
@@ -7268,14 +7278,14 @@ public function ceval "
   function is to concetrate all the calls to Ceval.ceval made from
   the Script files. This will simplify the separation of the scripting
   environment from the FrontEnd"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outST;
 
@@ -7290,14 +7300,14 @@ algorithm
     local
       Option<GlobalScript.SymbolTable> stOpt;
       Boolean impl;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Msg msg;
       list<Values.Value> vallst;
       list<DAE.Exp> expl;
       Values.Value newval,value;
       DAE.Exp e;
       Absyn.Path funcpath;
-      Env.Cache cache;
+      FCore.Cache cache;
       GlobalScript.SymbolTable st;
 
     // adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem

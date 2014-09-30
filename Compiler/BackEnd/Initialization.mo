@@ -41,7 +41,7 @@ public import Absyn;
 public import BackendDAE;
 public import BackendDAEFunc;
 public import DAE;
-public import Env;
+public import FCore;
 public import HashSet;
 public import Util;
 
@@ -93,8 +93,8 @@ algorithm
       BackendDAE.EquationArray inieqns, eqns, emptyeqns, reeqns;
       BackendDAE.EqSystem initsyst;
       BackendDAE.BackendDAE initdae;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       DAE.FunctionTree functionTree;
       list<DAE.Constraint> constraints;
       list<DAE.ClassAttributes> classAttrs;
@@ -123,7 +123,7 @@ algorithm
                                                         constraints=constraints,
                                                         classAttrs=classAttrs,
                                                         cache=cache,
-                                                        env=env,
+                                                        graph=graph,
                                                         functionTree=functionTree,
                                                         info = ei)) = dae;
 
@@ -156,7 +156,7 @@ algorithm
                                  constraints,
                                  classAttrs,
                                  cache,
-                                 env,
+                                 graph,
                                  functionTree,
                                  BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0),
                                  {},
@@ -2415,8 +2415,8 @@ algorithm
       BackendDAE.EquationArray remeqns, inieqns;
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       DAE.FunctionTree funcs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
@@ -2424,11 +2424,11 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.ExtraInfo ei;
 
-    case (true, BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei)), _, _) equation
+    case (true, BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo, eoc, btp, symjacs, ei)), _, _) equation
       (knvars1, (_, _)) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars, optimizeInitialAliasesFinder, (initalAliases, false));
       inieqns = BackendEquation.listEquation(eqnlst);
       systs= List.map1(systs, optimizeInitialAliases, initalAliases);
-    then BackendDAE.DAE(systs, BackendDAE.SHARED(knvars1, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei));
+    then BackendDAE.DAE(systs, BackendDAE.SHARED(knvars1, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo, eoc, btp, symjacs, ei));
 
     case (false, _, _, _)
     then inDAE;

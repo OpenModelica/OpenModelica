@@ -57,7 +57,8 @@ protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;
-protected import Env;
+protected import FCore;
+protected import FGraph;
 protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
@@ -1018,7 +1019,7 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT("fill"), expLst = e::expl))
       equation
         valueLst = List.map(expl, ValuesUtil.expValue);
-        (_,outExp,_) = Static.elabBuiltinFill2(Env.noCache(), Env.emptyEnv, e, Expression.typeof(e), valueLst, DAE.C_CONST(), Prefix.NOPRE(), {}, Absyn.dummyInfo);
+        (_,outExp,_) = Static.elabBuiltinFill2(FCore.noCache(), FGraph.empty(), e, Expression.typeof(e), valueLst, DAE.C_CONST(), Prefix.NOPRE(), {}, Absyn.dummyInfo);
       then
         outExp;
 

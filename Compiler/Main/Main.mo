@@ -56,7 +56,9 @@ protected import DAEUtil;
 protected import Debug;
 protected import Dump;
 protected import DumpGraphviz;
-protected import Env;
+protected import FCore;
+protected import FGraph;
+protected import FGraphStream;
 protected import Error;
 protected import ErrorExt;
 protected import Flags;
@@ -495,8 +497,8 @@ algorithm
       Boolean silent,notsilent;
       GlobalScript.Statements stmts;
       GlobalScript.SymbolTable newst, st;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       DAE.FunctionTree funcs;
       list<Absyn.Class> cls;
 
@@ -534,7 +536,7 @@ algorithm
 
         d = Debug.bcallret3(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP),DAEUtil.transformationsBeforeBackend,cache,env,d,d);
 
-        funcs = Env.getFunctionTree(cache);
+        funcs = FCore.getFunctionTree(cache);
 
         Print.clearBuf();
         SimCodeUtil.execStat("Transformations before Dump");
@@ -580,6 +582,7 @@ algorithm
         _ = Interactive.evaluateToStdOut(stmts, st, true);
       then
         ();
+
     case {f} /* A template file .tpl (in the Susan language)*/
       equation
         isCodegenTemplateFile(f);
@@ -629,15 +632,15 @@ protected function instantiate
    specified by the +i flag on the command line, or the last class in the
    program if no class was specified."
   input Absyn.Program program;
-  output Env.Cache cache;
-  output Env.Env env;
+  output FCore.Cache cache;
+  output FCore.Graph env;
   output DAE.DAElist dae;
   output Absyn.Path cname;
 algorithm
   (cache, env, dae, cname) := matchcontinue(program)
     local
-      Env.Cache c;
-      Env.Env e;
+      FCore.Cache c;
+      FCore.Graph e;
       DAE.DAElist d;
       Absyn.Path class_path;
       String class_to_instantiate;
@@ -650,7 +653,7 @@ algorithm
         true = stringEq(class_to_instantiate,"");
         class_path = Absyn.lastClassname(program);
         st = Interactive.setSymbolTableAST(GlobalScript.emptySymboltable,program);
-        (c, e, d, _) = CevalScript.runFrontEnd(Env.emptyCache(),Env.emptyEnv,class_path,st,true);
+        (c, e, d, _) = CevalScript.runFrontEnd(FCore.emptyCache(),FGraph.empty(),class_path,st,true);
       then
         (c, e, d, class_path);
 
@@ -662,7 +665,7 @@ algorithm
         false = stringEq(class_to_instantiate,"");
         class_path = Absyn.stringPath(class_to_instantiate);
         st = Interactive.setSymbolTableAST(GlobalScript.emptySymboltable,program);
-        (c, e, d, _) = CevalScript.runFrontEnd(Env.emptyCache(),Env.emptyEnv,class_path,st,true);
+        (c, e, d, _) = CevalScript.runFrontEnd(FCore.emptyCache(),FGraph.empty(),class_path,st,true);
       then
         (c, e, d, class_path);
   end matchcontinue;
@@ -670,8 +673,8 @@ end instantiate;
 
 protected function optimizeDae
 "Run the backend. Used for both parallization and for normal execution."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.DAElist dae;
   input Absyn.Program ap;
   input Absyn.Path inPath5;
@@ -681,8 +684,8 @@ algorithm
     local
       BackendDAE.BackendDAE dlow,dlow_1;
       Absyn.Path classname;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       String description,filenameprefix;
 
     case (cache,env,_,_,classname)
@@ -1056,18 +1059,21 @@ algorithm
         true = not System.userIsRoot() or Config.getRunningTestsuite();
         _ = Settings.getInstallationDirectoryPath();
 
-        // debug_show_depth(2);
-
         // reset the timer used to calculate
         // cummulative time of some functions
         // search for System.startTimer/System.stopTimer/System.getTimerIntervalTimer
         // System.resetTimer();
 
         //setGlobalRoot(Global.crefIndex,  ComponentReference.createEmptyCrefMemory());
-        //Env.globalCache = fill(Env.emptyCache,1);
+        //Env.globalCache = fill(FCore.emptyCache,1);
         _ = readSettings(args);
+
+        FGraphStream.start();
+
         // non of the interactive mode was set, flatten the file
         translateFile(args);
+
+        FGraphStream.finish();
         /*
         errstr = Print.getErrorString();
         Debug.fcall(Flags.ERRORBUF, print, errstr);
@@ -1104,6 +1110,7 @@ algorithm
         Print.printBuf("\n\n----\n\nError buffer:\n\n");
         print(errstr);
         print(ErrorExt.printMessagesStr(false)); print("\n");
+        FGraphStream.finish();
       then
         fail();
 

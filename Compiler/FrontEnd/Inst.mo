@@ -84,7 +84,7 @@ public import ClassInf;
 public import Connect;
 public import ConnectionGraph;
 public import DAE;
-public import Env;
+public import FCore;
 public import InnerOuter;
 public import InstTypes;
 public import Mod;
@@ -127,6 +127,9 @@ protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
+protected import FGraph;
+protected import FGraphBuildEnv;
+protected import FNode;
 protected import Global;
 protected import HashTable;
 protected import HashTable5;
@@ -154,24 +157,24 @@ protected import UnitAbsynBuilder;
 protected function instantiateClass_dispatch
 " instantiate a class.
  if this function fails with stack overflow, it will be caught in the caller"
-  input Env.Cache inCache;
+  input FCore.Cache inCache;
   input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDAElist;
 algorithm
   (outCache,outEnv,outIH,outDAElist) := match (inCache,inIH,inProgram,inPath)
     local
       Absyn.Path path;
-      Env.Env env,env_1,env_2;
+      FCore.Graph env,env_1,env_2;
       DAE.DAElist dae1,dae,dae2;
       list<SCode.Element> cdecls;
       String name2,n,pathstr,name;
       SCode.Element cdef;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       ConnectionGraph.ConnectionGraph graph;
       DAE.ElementSource source "the origin of the element";
@@ -181,13 +184,13 @@ algorithm
      // top level class
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = _)))
       equation
-        cache = Env.setCacheClassName(cache,path);
+        cache = FCore.setCacheClassName(cache,path);
         cdecls = InstUtil.scodeFlatten(cdecls, inPath);
-        (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls);
+        (cache,env) = Builtin.initialGraph(cache);
+        env_1 = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
 
         // set the source of this element
-        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
         (cache,env_2,ih,dae2) = instClassInProgram(cache, env_1, ih, cdecls, path, source);
         // check the models for balancing
         //Debug.fcall2(Flags.CHECK_MODEL_BALANCE, checkModelBalancing, SOME(path), dae1);
@@ -201,19 +204,19 @@ algorithm
     // class in package
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name=_)))
       equation
-        cache = Env.setCacheClassName(cache,path);
+        cache = FCore.setCacheClassName(cache,path);
         cdecls = InstUtil.scodeFlatten(cdecls, inPath);
         pathstr = Absyn.pathString(path);
 
         //System.startTimer();
         //print("\nBuiltinMaking");
-        (cache,env) = Builtin.initialEnv(cache);
+        (cache,env) = Builtin.initialGraph(cache);
         //System.stopTimer();
         //print("\nBuiltinMaking: " +& realString(System.getTimerIntervalTime()));
 
         //System.startTimer();
         //print("\nInstClassDecls");
-        (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls);
+        env_1 = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
         //System.stopTimer();
         //print("\nInstClassDecls: " +& realString(System.getTimerIntervalTime()));
 
@@ -226,7 +229,6 @@ algorithm
 
         //System.startTimer();
         //print("\nInstClass");
-        env_2 = Env.addModification(env_2, Env.M(Prefix.NOPRE(), n, {}, DAE.NOMOD(), env_1, {}));
         (cache,env_2,ih,_,dae,_,_,_,_,_) = instClass(cache,env_2,ih,
           UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), Prefix.NOPRE(), cdef,
           {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl";
@@ -246,7 +248,7 @@ algorithm
         //System.startTimer();
         //print("\nSetSource+DAE");
         // set the source of this element
-        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
         daeElts = DAEUtil.daeElements(dae);
         cmt = SCode.getElementComment(cdef);
         dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,cmt)});
@@ -269,12 +271,12 @@ public function instantiateClass
    First, all the class definitions are added to the environment without
   modifications, and then the specified class is instantiated in the
   function instClassInProgram"
-  input Env.Cache inCache;
+  input FCore.Cache inCache;
   input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDAElist;
 algorithm
@@ -283,7 +285,7 @@ algorithm
       Absyn.Path cr,path;
       list<SCode.Element> cdecls;
       String cname_str;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       Boolean stackOverflow;
 
@@ -322,24 +324,24 @@ public function instantiatePartialClass
  This is a function for instantiating partial 'top' classes.
  It does so by converting the partial class into a non partial class.
  Currently used by: MathCore.modelEquations, CevalScript.checkModel"
-  input Env.Cache inCache;
+  input FCore.Cache inCache;
   input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDAElist;
 algorithm
   (outCache,outEnv,outIH,outDAElist) := matchcontinue (inCache,inIH,inProgram,inPath)
     local
       Absyn.Path cr,path;
-      Env.Env env,env_1,env_2;
+      FCore.Graph env,env_1,env_2;
       DAE.DAElist dae1,dae;
       list<SCode.Element> cdecls;
       String name2,n,pathstr,name,cname_str;
       SCode.Element cdef;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
       list<DAE.Element> daeElts;
@@ -354,30 +356,29 @@ algorithm
 
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = _))) /* top level class */
       equation
-        (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls);
+        (cache,env) = Builtin.initialGraph(cache);
+        env_1 = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
         cdecls = List.map1(cdecls,SCode.classSetPartial,SCode.NOT_PARTIAL());
-        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
         (cache,env_2,ih,dae) = instClassInProgram(cache, env_1, ih, cdecls, path, source);
       then
         (cache,env_2,ih,dae);
 
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name=_))) /* class in package */
       equation
-        (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls);
+        (cache,env) = Builtin.initialGraph(cache);
+        env_1 = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
         (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
 
         cdef = SCode.classSetPartial(cdef, SCode.NOT_PARTIAL());
 
-        env_2 = Env.addModification(env_2, Env.M(Prefix.NOPRE(), n, {}, DAE.NOMOD(), env_1, {}));
         (cache,env_2,ih,_,dae,_,_,_,_,_) =
           instClass(cache, env_2, ih, UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), Prefix.NOPRE(),
             cdef, {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl" ;
         pathstr = Absyn.pathString(path);
 
         // set the source of this element
-        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
         daeElts = DAEUtil.daeElements(dae);
         cmt = SCode.getElementComment(cdef);
         dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,cmt)});
@@ -394,71 +395,16 @@ algorithm
   end matchcontinue;
 end instantiatePartialClass;
 
-public function instantiateClassImplicit
-"author: PA
-  Similar to instantiate_class, i.e. instantation of arbitrary classes
-  but this one instantiates the class implicit, which is less costly."
-  input Env.Cache inCache;
-  input InnerOuter.InstHierarchy inIH;
-  input SCode.Program inProgram;
-  input SCode.Path inPath;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
-  output InnerOuter.InstHierarchy outIH;
-  output DAE.DAElist outDAElist;
-algorithm
-  (outCache,outEnv,outIH,outDAElist) := matchcontinue (inCache,inIH,inProgram,inPath)
-    local
-      Absyn.Path cr,path;
-      Env.Env env,env_1,env_2;
-      DAE.DAElist dae1,dae;
-      list<SCode.Element> cdecls;
-      String name2,n,name;
-      SCode.Element cdef;
-      Env.Cache cache;
-      InstanceHierarchy ih;
-
-    case (_,_,{},_)
-      equation
-        Error.addMessage(Error.NO_CLASSES_LOADED, {});
-      then
-        fail();
-
-    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = _))) /* top level class */
-      equation
-        (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls);
-        (cache,env_2,ih,dae) = instClassInProgramImplicit(cache, env_1, ih, cdecls, path);
-      then
-        (cache,env_2,ih,dae);
-
-    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name=_))) /* class in package */
-      equation
-        (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls);
-        (cache,(cdef as SCode.CLASS(name = _)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
-        env = Env.extendFrameC(env_2, cdef);
-      then
-        (cache,env,ih,DAE.emptyDae);
-
-    else
-      equation
-        print("-Inst.instantiateClassImplicit failed\n");
-      then
-        fail();
-  end matchcontinue;
-end instantiateClassImplicit;
-
 protected function instClassInProgram
   "Instantiates a specific top level class in a Program."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   input DAE.ElementSource inSource;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
@@ -467,8 +413,8 @@ algorithm
     local
       String name;
       SCode.Element cls;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       InstanceHierarchy ih;
       DAE.DAElist dae;
       list<DAE.Element> elts;
@@ -504,82 +450,6 @@ algorithm
   end matchcontinue;
 end instClassInProgram;
 
-protected function instClassInProgramImplicit
-  "Implicitly instantitates a specific top level class in a Program."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input InnerOuter.InstHierarchy inIH;
-  input SCode.Program inProgram;
-  input SCode.Path inPath;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
-  output InnerOuter.InstHierarchy outIH;
-  output DAE.DAElist outDae;
-algorithm
-  (outCache, outEnv, outIH, outDae) :=
-  matchcontinue(inCache, inEnv, inIH, inProgram, inPath)
-    local
-      Env.Env env;
-      DAE.DAElist dae;
-      SCode.Element c;
-      String name;
-      Env.Cache cache;
-      InstanceHierarchy ih;
-
-    case (_, _, _, {}, _)
-      then (inCache, inEnv, inIH, DAE.emptyDae);
-
-    case (cache, env, ih, _, Absyn.IDENT(name = name))
-      equation
-        c = InstUtil.lookupTopLevelClass(name, inProgram, false);
-        env = Env.extendFrameC(env, c);
-      then
-        (cache, env, ih, DAE.emptyDae);
-
-    else
-      equation
-        Debug.fprint(Flags.FAILTRACE, "Inst.instClassInProgramImplicit failed");
-      then
-        fail();
-
-  end matchcontinue;
-end instClassInProgramImplicit;
-
-public function instClassDecls
-"This function instantiated class definitions, i.e.
-  adding the class definitions to the environment.
-  See also partialInstClassIn."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input InnerOuter.InstHierarchy inIH;
-  input SCode.Program inProgram;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
-  output InnerOuter.InstHierarchy outIH;
-  output DAE.DAElist outDae;
-algorithm
-  (outCache,outEnv,outIH,outDae) := match (inCache,inEnv,inIH,inProgram)
-    local
-      DAE.DAElist dae1, dae2, dae;
-      Env.Env env;
-      Env.Cache cache;
-      InstanceHierarchy ih;
-      SCode.Element c;
-      list<SCode.Element> cs;
-
-    case (cache, env, ih, {}) then (cache, env, ih, DAE.emptyDae);
-
-    case (cache, env, ih, c :: cs)
-      equation
-        (cache, env, ih, dae1) = instClassDecl(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), c, {});
-        (cache, env, ih, dae2) = instClassDecls(cache, env, ih, cs);
-        dae = DAEUtil.joinDaes(dae1, dae2);
-      then
-        (cache, env, ih, dae);
-
-  end match;
-end instClassDecls;
-
 public function instClass
 "Instantiation of a class can be either implicit or normal.
   This function is used in both cases. When implicit instantiation
@@ -590,8 +460,8 @@ public function instClass
    o Initialize the class inference state machine
    o Instantiate all the elements and equations
    o Generate equations from the connection sets built during instantiation"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
@@ -602,8 +472,8 @@ public function instClass
   input InstTypes.CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
-  output Env.Cache cache;
-  output Env.Env outEnv;
+  output FCore.Cache cache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -616,7 +486,7 @@ algorithm
   (cache,outEnv,outIH,outStore,outDae,outSets,outType,outState,optDerAttr,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inStore,inMod,inPrefix,inClass,inInstDims,inBoolean,inCallingScope,inGraph,inSets)
     local
-      Env.Env env,env_1,env_3;
+      FCore.Graph env,env_1,env_3;
       DAE.Mod mod;
       Prefix.Prefix pre;
       Connect.Sets csets;
@@ -663,8 +533,8 @@ algorithm
           (c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r, partialPrefix = partialPrefix, info = info)),
           inst_dims,impl,callscope,graph,_)
       equation
-        recursionDepthReached = listLength(env) < Global.recursionDepthLimit;
-        scopeName = Debug.bcallret1(not recursionDepthReached,Env.printEnvPathStr,env,"");
+        recursionDepthReached = listLength(FGraph.currentScope(env)) < Global.recursionDepthLimit;
+        scopeName = Debug.bcallret1(not recursionDepthReached,FGraph.printGraphPathStr,env,"");
         strDepth = intString(Global.recursionDepthLimit);
         Error.assertionOrAddSourceMessage(recursionDepthReached,Error.RECURSION_DEPTH_REACHED,{strDepth, scopeName},info);
         //print("---- CLASS: "); print(n);print(" ----\n"); print(SCodeDump.printClassStr(c)); //Print out the input SCode class
@@ -676,9 +546,9 @@ algorithm
         isPartialFn = isFn and SCode.partialBool(partialPrefix);
         true = notIsPartial or isPartialFn;
 
-        env_1 = Env.openScope(env, encflag, SOME(n), Env.restrictionToScopeType(r));
+        env_1 = FGraph.openScope(env, encflag, SOME(n), FGraph.restrictionToScopeType(r));
 
-        ci_state = ClassInf.start(r,Env.getEnvName(env_1));
+        ci_state = ClassInf.start(r,FGraph.getGraphName(env_1));
         csets = ConnectUtil.newSet(pre, inSets);
 
         (cache,env_3,ih,store,dae1,csets,ci_state_1,tys,bc_ty,oDA,equalityConstraint, graph)
@@ -704,7 +574,7 @@ algorithm
 
         // Fixes partial functions.
         ty = InstUtil.fixInstClassType(ty,isPartialFn);
-        //env_3 = Env.updateEnv(env_3);
+        // env_3 = FGraph.updateScope(env_3);
       then
         (cache,env_3,ih,store,dae,csets,ty,ci_state_1,oDA,graph);
 
@@ -718,7 +588,7 @@ algorithm
     case (_,env,_,_,_,_,SCode.CLASS(name = n),_,_,_,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "- Inst.instClass: " +& n +& " in env: " +&
-        Env.printEnvPathStr(env) +& " failed");
+        FGraph.printGraphPathStr(env) +& " failed");
       then
         fail();
   end matchcontinue;
@@ -733,8 +603,8 @@ protected function instClassBasictype
   extending from basic types. See instBasictypeBaseclass.
   NOTE: This function should only be called from instBasictypeBaseclass.
   This is new functionality in Modelica v 2.2."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
@@ -744,8 +614,8 @@ protected function instClassBasictype
   input Boolean inImplicit;
   input InstTypes.CallingScope inCallingScope;
   input Connect.Sets inSets;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -757,7 +627,7 @@ algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outTypeVars,outState):=
   match (inCache,inEnv,inIH,inStore,inMod,inPrefix,inClass,inInstDims,inImplicit,inCallingScope,inSets)
     local
-      Env.Env env_1,env_3,env;
+      FCore.Graph env_1,env_3,env;
       ClassInf.State ci_state,ci_state_1;
       SCode.Element c_1,c;
       DAE.DAElist dae1,dae1_1,dae;
@@ -774,14 +644,14 @@ algorithm
       SCode.Restriction r;
       InstDims inst_dims;
       InstTypes.CallingScope callscope;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       UnitAbsyn.InstStore store;
 
     case (cache,env,ih,store,mod,pre,(c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r)),inst_dims,impl,_,_) /* impl */
       equation
-        env_1 = Env.openScope(env, encflag, SOME(n), Env.restrictionToScopeType(r));
-        ci_state = ClassInf.start(r, Env.getEnvName(env_1));
+        env_1 = FGraph.openScope(env, encflag, SOME(n), FGraph.restrictionToScopeType(r));
+        ci_state = ClassInf.start(r, FGraph.getGraphName(env_1));
         c_1 = SCode.classSetPartial(c, SCode.NOT_PARTIAL());
         (cache,env_3,ih,store,dae1,csets,ci_state_1,tys,bc_ty,_,_,_)
         = instClassIn(cache, env_1, ih, store, mod, pre, ci_state, c_1, SCode.PUBLIC(), inst_dims, impl, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, inSets, NONE());
@@ -811,8 +681,8 @@ public function instClassIn "
   generation of functions in implicit instanitation (according to
   *implicitInstantiation* boolean) can cause circular dependencies
   (e.g. if a function uses a constant in its body)"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
@@ -826,8 +696,8 @@ public function instClassIn "
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   input Option<DAE.ComponentRef> instSingleCref;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -843,14 +713,15 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inStore,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inCallingScope,inGraph,inSets,instSingleCref)
     local
       Option<DAE.Type> bc;
-      Env.Env env;
+      FCore.Graph env;
       ClassInf.State ci_state;
       SCode.Element c;
+      SCode.Restriction r;
       String n;
       DAE.DAElist dae;
       Connect.Sets csets;
       list<DAE.Var> tys;
-      Env.Cache cache;
+      FCore.Cache cache;
       Option<SCode.Attributes> oDA;
       DAE.EqualityConstraint equalityConstraint;
       ConnectionGraph.ConnectionGraph graph;
@@ -859,6 +730,7 @@ algorithm
       UnitAbsyn.InstStore store;
       Absyn.InnerOuter io;
       Absyn.Info info;
+      SCode.Encapsulated encflag;
 
     // if the class is no outer: regular, or inner
     case (_,_,_,_,_,_,_,SCode.CLASS(prefixes = SCode.PREFIXES(innerOuter = io)),_,_,_,_,_,_,_)
@@ -869,10 +741,30 @@ algorithm
       then
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
 
+    // if the class is inner or innerouter and an instance, use the original name and original scope
+    case (_,_,_,_,_,_,_,SCode.CLASS(name = n, restriction=r, encapsulatedPrefix = encflag, prefixes = SCode.PREFIXES(innerOuter = io)),_,_,_,_,_,_,_)
+      equation
+        true = boolOr(Absyn.isInnerOuter(io), Absyn.isOnlyOuter(io));
+        FCore.CL(status = FCore.CLS_INSTANCE(n)) = FNode.refData(FGraph.lastScopeRef(inEnv));
+        (env, _) = FGraph.stripLastScopeRef(inEnv);
+
+        env = FGraph.openScope(env, encflag, SOME(n), FGraph.restrictionToScopeType(r));
+        ci_state = ClassInf.start(r,FGraph.getGraphName(env));
+
+        // lookup in IH
+        InnerOuter.INST_INNER(innerElement = SOME(c)) =
+          InnerOuter.lookupInnerVar(inCache, env, inIH, inPrefix, n, io);
+
+        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) =
+          instClassIn2(inCache,env,inIH,inStore,inMod,inPrefix,ci_state,c,inVisibility,inInstDims,implicitInstantiation,inCallingScope,inGraph,inSets,instSingleCref);
+      then
+        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
+
     // if the class is inner or innerouter we need to instantiate the inner!
     case (_,_,_,_,_,_,_,SCode.CLASS(name = n, prefixes = SCode.PREFIXES(innerOuter = io)),_,_,_,_,_,_,_)
       equation
         true = boolOr(Absyn.isInnerOuter(io), Absyn.isOnlyOuter(io));
+        n = FGraph.getInstanceOriginalName(inEnv, n);
 
         // lookup in IH
         InnerOuter.INST_INNER(innerElement = SOME(c)) =
@@ -910,8 +802,8 @@ public function instClassIn2
  generation of functions in implicit instanitation (according to
  *implicitInstantiation* boolean) can cause circular dependencies
  (e.g. if a function uses a constant in its body)"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
@@ -925,8 +817,8 @@ public function instClassIn2
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   input Option<DAE.ComponentRef> instSingleCref;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -942,7 +834,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inStore,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inCallingScope,inGraph,inSets,instSingleCref)
     local
       Option<DAE.Type> bc;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Mod mods;
       Prefix.Prefix pre;
       ClassInf.State ci_state;
@@ -956,7 +848,7 @@ algorithm
       list<DAE.Var> tys;
       SCode.Restriction r,rCached;
       SCode.ClassDef d;
-      Env.Cache cache;
+      FCore.Cache cache;
       Option<SCode.Attributes> oDA;
       DAE.EqualityConstraint equalityConstraint;
       InstTypes.CallingScope callscope, ccs;
@@ -966,7 +858,6 @@ algorithm
       CachedInstItemInputs inputs;
       CachedInstItemOutputs outputs;
       Absyn.Path fullEnvPathPlusClass;
-      Option<Absyn.Path> envPathOpt;
       String className;
       UnitAbsyn.InstStore store;
 
@@ -980,6 +871,7 @@ algorithm
       Option<DAE.ComponentRef> aa_9;
       tuple<InstDims,Boolean,DAE.Mod,Connect.Sets,ClassInf.State,SCode.Element,Option<DAE.ComponentRef>> bbx, bby;
       ConnectionGraph.ConnectionGraph graphCached;
+      DAE.FunctionTree functionTree;
 
     // packages derived from partial packages should do partialInstClass, since it filters out a lot of things.
     case (cache,env,ih,store,mods,pre,ci_state,
@@ -991,14 +883,13 @@ algorithm
         (cache,env,ih,store,DAE.emptyDae, inSets,ci_state,{},NONE(),NONE(),NONE(),graph);
 
     //  see if we have it in the cache
-    case (_, env, ih, store, mods, pre, ci_state,
+    case (cache, env, ih, store, mods, pre, ci_state,
         c as SCode.CLASS(name = className, restriction=_), _, inst_dims, impl,
         callscope, graph, csets, _)
       equation
         true = Flags.isSet(Flags.CACHE);
         instHash = getGlobalRoot(Global.instHashIndex);
-        envPathOpt = Env.getEnvPath(inEnv);
-        fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
+        fullEnvPathPlusClass = generateCachePath(inEnv, c, pre, callscope);
         {SOME(FUNC_instClassIn(inputs, outputs)),_} = BaseHashTable.get(fullEnvPathPlusClass, instHash);
         (_, _, _, _, aa_1, aa_2, aa_3, aa_4, aa_5 as SCode.CLASS(restriction=_), _, aa_7, aa_8, _, aa_9, ccs) = inputs;
         // are the important inputs the same??
@@ -1007,19 +898,22 @@ algorithm
         bby = (inst_dims, impl, mods, csets, ci_state, c,    instSingleCref);
         equality(bbx = bby);
         true = callingScopeCacheEq(ccs, callscope);
-        (env,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graphCached) = outputs;
+        (functionTree,env,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graphCached) = outputs;
         graph = ConnectionGraph.merge(graph, graphCached);
+
+        // cache = FCore.setCachedFunctionTree(cache, DAEUtil.joinAvlTrees(functionTree, FCore.getFunctionTree(cache)));
+        showCacheInfo("Full Inst Hit: ", fullEnvPathPlusClass);
         /*
         Debug.fprintln(Flags.CACHE, "IIII->got from instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
           "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& " class: " +&  className +&
           "\n\tmods: " +& Mod.printModStr(mods) +&
-          "\n\tenv: " +& Env.printEnvPathStr(inEnv) +&
+          "\n\tenv: " +& FGraph.printGraphPathStr(inEnv) +&
           "\n\tsingle cref: " +& Expression.printComponentRefOptStr(instSingleCref) +&
           "\n\tdims: [" +& stringDelimitList(List.map1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +&
           "\n\tdae:\n" +& DAEDump.dump2str(dae));
         */
       then
-        (inCache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
+        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
 
     // call the function and then add it in the cache
     case (cache,env,ih,store,_,_,ci_state,
@@ -1029,12 +923,13 @@ algorithm
         //System.startTimer();
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) =
           instClassIn_dispatch(inCache,inEnv,inIH,store,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,implicitInstantiation,callscope,inGraph,inSets,instSingleCref);
-        envPathOpt = Env.getEnvPath(inEnv);
-        fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
+
+        fullEnvPathPlusClass = generateCachePath(inEnv, inClass, inPrefix, callscope);
 
         inputs = (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inGraph,instSingleCref,callscope);
-        outputs = (env,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
+        outputs = (FCore.getFunctionTree(cache),env,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
 
+        showCacheInfo("Full Inst Add: ", fullEnvPathPlusClass);
         addToInstCache(fullEnvPathPlusClass,
            SOME(FUNC_instClassIn( // result for full instantiation
              inputs,
@@ -1046,7 +941,7 @@ algorithm
         Debug.fprintln(Flags.CACHE, "IIII->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
           "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& " class: " +&  className +&
           "\n\tmods: " +& Mod.printModStr(mods) +&
-          "\n\tenv: " +& Env.printEnvPathStr(inEnv) +&
+          "\n\tenv: " +& FGraph.printGraphPathStr(inEnv) +&
           "\n\tsingle cref: " +& Expression.printComponentRefOptStr(instSingleCref) +&
           "\n\tdims: [" +& stringDelimitList(List.map1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +&
           "\n\tdae:\n" +& DAEDump.dump2str(dae));
@@ -1054,6 +949,7 @@ algorithm
         //checkModelBalancingFilterByRestriction(r, envPathOpt, dae);
         //System.stopTimer();
         //_ = Database.query(0, "insert into Inst values(\"" +& Absyn.pathString(fullEnvPathPlusClass) +& "\", " +& realString(System.getTimerIntervalTime()) +& ");");
+        // _ = FGraph.updateClass(inEnv, inClass, inPrefix, inMod, FCore.CLS_FULL(), env);
       then
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
 
@@ -1064,7 +960,7 @@ algorithm
         //print("instClassIn(");print(n);print(") failed\n");
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprintln(Flags.FAILTRACE, "- Inst.instClassIn2 failed on class:" +&
-           n +& " in environment: " +& Env.printEnvPathStr(env));
+           n +& " in environment: " +& FGraph.printGraphPathStr(env));
       then
         fail();
 
@@ -1094,8 +990,8 @@ public function instClassIn_dispatch
   generation of functions in implicit instanitation (according to
   *implicitInstantiation* boolean) can cause circular dependencies
   (e.g. if a function uses a constant in its body)"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
@@ -1109,8 +1005,8 @@ public function instClassIn_dispatch
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   input Option<DAE.ComponentRef> instSingleCref;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -1126,7 +1022,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inStore,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inCallingScope,inGraph,inSets,instSingleCref)
     local
       Option<DAE.Type> bc;
-      Env.Env env,env_1;
+      FCore.Graph env,env_1;
       DAE.Mod mods;
       Prefix.Prefix pre;
       ClassInf.State ci_state,ci_state_1;
@@ -1139,7 +1035,7 @@ algorithm
       list<DAE.Var> tys;
       SCode.Restriction r;
       SCode.ClassDef d;
-      Env.Cache cache;
+      FCore.Cache cache;
       Option<SCode.Attributes> oDA;
       InstTypes.CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
@@ -1147,7 +1043,7 @@ algorithm
       DAE.DAElist dae,dae1,dae1_1;
       Absyn.Info info;
       DAE.Type typ;
-      Env.Env env_2, env_3;
+      FCore.Graph env_2, env_3;
       list<SCode.Element> els;
       list<tuple<SCode.Element, DAE.Mod>> comp;
       list<String> names;
@@ -1196,7 +1092,7 @@ algorithm
            especially MUX.Or1.auxiliary doesn't get its start/fixed bindings
         print("Inst enumeration class (empty prefix) / variable (some pre): " +& n +&
           "\npre: " +& PrefixUtil.printPrefixStr(pre) +&
-          "\nenv: " +& Env.printEnvPathStr(env) +&
+          "\nenv: " +& FGraph.printGraphPathStr(env) +&
           "\nmods: " +& Mod.printModStr(mods) +&
           "\ninst_dims: [" +& stringDelimitList(List.map1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& "\n");
         */
@@ -1233,7 +1129,7 @@ algorithm
         // Debug.fprint(Flags.INSTTR, "ICLASS [");
         _ = Util.if_(impl, "impl] ", "expl] ");
         // Debug.fprint(Flags.INSTTR, implstr);
-        // Debug.fprintln(Flags.INSTTR, Env.printEnvPathStr(env) +& "." +& n +& " mods: " +& Mod.printModStr(mods));
+        // Debug.fprintln(Flags.INSTTR, FGraph.printGraphPathStr(env) +& "." +& n +& " mods: " +& Mod.printModStr(mods));
         // t1 = clock();
         (cache,env_1,ih,store,dae,csets,ci_state_1,tys,bc,oDA,eqConstraint,graph) =
           instClassdef(cache, env, ih, store, mods, pre, ci_state, n, d, r, vis,
@@ -1243,7 +1139,7 @@ algorithm
         // time = t2 -. t1;
         // b=realGt(time,0.05);
         // s = realString(time);
-        // Debug.fprintln(Flags.INSTTR, " -> ICLASS " +& n +& " inst time: " +& s +& " in env: " +& Env.printEnvPathStr(env) +& " mods: " +& Mod.printModStr(mods));
+        // Debug.fprintln(Flags.INSTTR, " -> ICLASS " +& n +& " inst time: " +& s +& " in env: " +& FGraph.printGraphPathStr(env) +& " mods: " +& Mod.printModStr(mods));
         dae = Util.if_(SCode.isFunction(c) and not impl, DAE.DAE({}), dae);
         ErrorExt.delCheckpoint("instClassParts");
       then
@@ -1449,8 +1345,8 @@ algorithm
 end getEnumAttributeType;
 
 protected function instBasicTypeAttributes
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Mod inMod;
   input DAE.Type inBaseType;
   input BasicTypeAttrTyper inTypeFunc;
@@ -1471,8 +1367,8 @@ end instBasicTypeAttributes;
 
 protected function instBasicTypeAttributes2
   input DAE.SubMod inSubMod;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Type inBaseType;
   input BasicTypeAttrTyper inTypeFunc;
   output DAE.Var outVar;
@@ -1504,8 +1400,8 @@ end instBasicTypeAttributes2;
 
 protected function instBuiltinAttribute
 "Help function to e.g. instRealClass, etc."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input String id;
   input Option<Values.Value> optVal;
   input DAE.Exp bind;
@@ -1522,8 +1418,8 @@ algorithm
       DAE.Dimension d;
       String s,s1,s2;
       DAE.Type expectedTp;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
 
     case (_,_,_,SOME(v),_,expectedTp,DAE.PROP(bindTp,c))
       equation
@@ -1633,8 +1529,8 @@ public function partialInstClassIn
 "This function is used when instantiating classes in lookup of other classes.
   The only work performed by this function is to instantiate local classes and
   inherited classes."
-  input Env.Cache inCache;
-  input .Env.Env inEnv;
+  input FCore.Cache inCache;
+  input .FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -1643,15 +1539,15 @@ public function partialInstClassIn
   input SCode.Visibility inVisibility;
   input list<list<DAE.Dimension>> inInstDims;
   input Integer numIter;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output ClassInf.State outState;
   output list<DAE.Var> outTys;
 algorithm
   (outCache,outEnv,outIH,outState,outTys) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Mod mods;
       Prefix.Prefix pre;
       ClassInf.State ci_state,ci_state_1;
@@ -1661,13 +1557,12 @@ algorithm
       SCode.ClassDef d;
       SCode.Visibility vis;
       InstDims inst_dims;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       InstHashTable instHash;
       CachedPartialInstItemInputs inputs;
       CachedPartialInstItemOutputs outputs;
       Absyn.Path fullEnvPathPlusClass;
-      Option<Absyn.Path> envPathOpt;
       String className;
       DAE.Mod aa_1;
       Prefix.Prefix aa_2;
@@ -1677,15 +1572,17 @@ algorithm
       tuple<InstDims,DAE.Mod,ClassInf.State,SCode.Element> bbx,bby;
       Boolean partialInst;
       list<DAE.Var> vars;
+      DAE.FunctionTree functionTree;
 
     // see if we find a partial class inst
-    case (_,env,ih,mods,pre,ci_state,c as SCode.CLASS(name = className, restriction=_),_,inst_dims,_)
+    case (cache,env,ih,mods,pre,ci_state,c as SCode.CLASS(name = className, restriction=_),_,inst_dims,_)
       equation
         true = Flags.isSet(Flags.CACHE);
         instHash = getGlobalRoot(Global.instHashIndex);
-        envPathOpt = Env.getEnvPath(inEnv);
         className = SCode.className(c);
-        fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
+
+        fullEnvPathPlusClass = generateCachePath(inEnv, c, pre, InstTypes.INNER_CALL());
+
         {_,SOME(FUNC_partialInstClassIn(inputs, outputs))} = BaseHashTable.get(fullEnvPathPlusClass, instHash);
         (_, _, _, aa_1, aa_2, aa_4, aa_5 as SCode.CLASS(restriction=_), _, aa_7) = inputs;
         // are the important inputs the same??
@@ -1693,27 +1590,30 @@ algorithm
         bbx = (aa_7,      aa_1, aa_4,     aa_5);
         bby = (inst_dims, mods, ci_state, c);
         equality(bbx = bby);
-        (env,ci_state_1,vars) = outputs;
-        //Debug.fprintln(Flags.CACHE, "IIIIPARTIAL->got PARTIAL from instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
+        (functionTree,env,ci_state_1,vars) = outputs;
+
+        // cache = FCore.setCachedFunctionTree(cache, DAEUtil.joinAvlTrees(functionTree, FCore.getFunctionTree(cache)));
+        showCacheInfo("Partial Inst Hit: ", fullEnvPathPlusClass);
       then
-        (inCache,env,ih,ci_state_1,vars);
+        (cache,env,ih,ci_state_1,vars);
 
     /*/ adrpo: TODO! FIXME! see if we find a full instantiation!
     // this fails for 2-3 examples, so disable it for now and check it later
     case (cache,env,ih,mods,pre,csets,ci_state,c as SCode.CLASS(name = className, restriction=r),vis,inst_dims,_)
       local
-      tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, DAE.Mod, Prefix.Prefix,
+      tuple<FCore.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, DAE.Mod, Prefix.Prefix,
             Connect.Sets, ClassInf.State, SCode.Element, Boolean, InstDims, Boolean,
             ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>> inputs;
-      tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, DAE.DAElist,
+      tuple<FCore.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, DAE.DAElist,
             Connect.Sets, ClassInf.State, list<DAE.Var>, Option<DAE.Type>,
             Option<SCode.Attributes>, DAE.EqualityConstraint,
             ConnectionGraph.ConnectionGraph> outputs;
       equation
         true = Flags.isSet(Flags.CACHE);
         instHash = getGlobalRoot(Global.instHashIndex);
-        envPathOpt = Env.getEnvPath(inEnv);
-        fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
+
+        fullEnvPathPlusClass = generateCachePath(inEnv, c, pre, InstTypes.INNER_CALL());
+
         {SOME(FUNC_instClassIn(inputs, outputs)), _} = get(fullEnvPathPlusClass, instHash);
         (_, _, _, _, aa_1, aa_2, aa_3, aa_4, aa_5  as SCode.CLASS(restriction=rCached), _, aa_7, _, _, _) = inputs;
         // are the important inputs the same??
@@ -1738,25 +1638,26 @@ algorithm
         (cache,env,ih,ci_state,vars) =
            partialInstClassIn_dispatch(inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,vis,inInstDims,partialInst,numIter+1);
 
-        envPathOpt = Env.getEnvPath(inEnv);
-        className = SCode.className(c);
-        fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
+        fullEnvPathPlusClass = generateCachePath(inEnv, inClass, inPrefix, InstTypes.INNER_CALL());
 
         inputs = (inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,vis,inInstDims);
-        outputs = (env,ci_state,vars);
+        outputs = (FCore.getFunctionTree(cache),env,ci_state,vars);
+
+        showCacheInfo("Partial Inst Add: ", fullEnvPathPlusClass);
 
         addToInstCache(fullEnvPathPlusClass,
            NONE(),
            SOME(FUNC_partialInstClassIn( // result for partial instantiation
              inputs,outputs)));
-        //Debug.fprintln(Flags.CACHE, "IIIIPARTIAL->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
+        // Debug.fprintln(Flags.CACHE, "IIIIPARTIAL->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
+        // _ = FGraph.updateClass(inEnv, inClass, inPrefix, inMod, FCore.CLS_PARTIAL(), env);
       then
         (cache,env,ih,ci_state,vars);
 
     case (_,env,_,_,_,_,c,_,_,_)
       equation
         false = numIter < Global.recursionDepthLimit;
-        n = Env.printEnvPathStr(env);
+        n = FGraph.printGraphPathStr(env);
         // print("partialInstClassIn recursion depth... " +& n +& "\n");
         Error.addSourceMessage(Error.RECURSION_DEPTH_REACHED,{n},SCode.elementInfo(c));
       then fail();
@@ -1765,7 +1666,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.partialInstClassIn failed on class:" +&
-           n +& " in environment: " +& Env.printEnvPathStr(env));
+           n +& " in environment: " +& FGraph.printGraphPathStr(env));
       then
         fail();
   end matchcontinue;
@@ -1775,8 +1676,8 @@ protected function partialInstClassIn_dispatch
 "This function is used when instantiating classes in lookup of other classes.
   The only work performed by this function is to instantiate local classes and
   inherited classes."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -1786,15 +1687,15 @@ protected function partialInstClassIn_dispatch
   input list<list<DAE.Dimension>> inInstDims;
   input Boolean partialInst;
   input Integer numIter;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output ClassInf.State outState;
   output list<DAE.Var> outVars;
 algorithm
   (outCache,outEnv,outIH,outState,outVars) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,partialInst,numIter)
     local
-      Env.Env env,env_1;
+      FCore.Graph env,env_1;
       DAE.Mod mods;
       Prefix.Prefix pre;
       ClassInf.State ci_state,ci_state_1;
@@ -1805,7 +1706,7 @@ algorithm
       SCode.Visibility vis;
       SCode.Partial partialPrefix;
       InstDims inst_dims;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       Absyn.Info info;
       list<DAE.Var> vars;
@@ -1849,14 +1750,14 @@ algorithm
         // time = t2 -. t1;
         //b=realGt(time,0.05);
         // s = realString(time);
-        // s2 = Env.printEnvPathStr(env);
+        // s2 = FGraph.printGraphPathStr(env);
         // Debug.fprintln(Flags.INSTTR, "ICLASSPARTIAL " +& n +& " inst time: " +& s +& " in env " +& s2 +& " mods: " +& Mod.printModStr(mods));
         //print(Util.if_(b,s,""));
         //print("inCache:");print(Env.printCacheStr(cache));print("\n");
         // adrpo: never add a partial environment to the cache!
         // cache = Env.addCachedEnv(cache,n,env_1);
         // print("outCache:");print(Env.printCacheStr(cache));print("\n");
-        // print("partialInstClassDef, outenv:");print(Env.printEnvStr(env_1));
+        // print("partialInstClassDef, outenv:");print(FGraph.printGraphStr(env_1));
       then
         (cache,env_1,ih,ci_state_1,vars);
 
@@ -1881,8 +1782,8 @@ public function instClassdef "
   are concatenated to produce the result.
   The last two arguments are the same as for instClassIn:
   implicit instantiation and implicit package/function instantiation."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input DAE.Mod inMod2;
@@ -1902,8 +1803,8 @@ public function instClassdef "
   input Option<DAE.ComponentRef> instSingleCref;
   input SCode.Comment comment;
   input Absyn.Info info;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -1924,8 +1825,8 @@ protected function instClassdefBasicType "
 This function will try to instantiate the
 class definition as a it would extend a basic
 type"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod2;
@@ -1942,8 +1843,8 @@ type"
   input Option<DAE.ComponentRef> instSingleCref;
   input Absyn.Info info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -1959,7 +1860,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inStore,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,inInstDims9,inBoolean10,inGraph,inSets,instSingleCref,info,stopInst)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els;
-      Env.Env env1,env2,env3,env;
+      FCore.Graph env1,env2,env3,env;
       list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,cdefelts_2;
       Connect.Sets csets;
       DAE.DAElist dae1,dae2,dae;
@@ -1972,7 +1873,7 @@ algorithm
       Boolean impl;
       SCode.Visibility vis;
       InstDims inst_dims;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.EqualityConstraint eqConstraint;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
@@ -2001,12 +1902,12 @@ algorithm
 
         // InstUtil.checkExtendsForTypeRestiction(cache, env, ih, re, extendselts);
 
-        (env1,ih) = InstUtil.addClassdefsToEnv(env, ih, pre, cdefelts, impl, SOME(mods)) "1. CLASS & IMPORT nodes and COMPONENT nodes(add to env)" ;
+        (cache,env1,ih) = InstUtil.addClassdefsToEnv(cache, env, ih, pre, cdefelts, impl, SOME(mods)) "1. CLASS & IMPORT nodes and COMPONENT nodes(add to env)" ;
         cdefelts_1 = InstUtil.addNomod(cdefelts) "instantiate CDEFS so redeclares are carried out" ;
         /*
         (cache,env2,ih,cdefelts_2) =
           updateCompeltsMods(cache, env1, ih, pre,
-            InstUtil.sortElementList(cdefelts_1, env1, Env.inFunctionScope(env1)),
+            InstUtil.sortElementList(cdefelts_1, env1, FGraph.inFunctionScope(env1)),
             ci_state, impl);*/
         env2 = env1;
         cdefelts_2 = cdefelts_1;
@@ -2055,8 +1956,8 @@ protected function instClassdef2 "
   are concatenated to produce the result.
   The last two arguments are the same as for instClassIn:
   implicit instantiation and implicit package/function instantiation."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod2;
@@ -2077,8 +1978,8 @@ protected function instClassdef2 "
   input SCode.Comment comment;
   input Absyn.Info info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -2094,7 +1995,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inStore,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,inPartialPrefix,inEncapsulatedPrefix,inInstDims9,inBoolean10,inCallingScope,inGraph,inSets,instSingleCref,comment,info,stopInst)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els,extendsclasselts,compelts_2_elem;
-      Env.Env env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2,parentEnv;
+      FCore.Graph env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2,parentEnv;
       list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,extcomps,compelts_1,compelts_2, comp_cond, derivedClassesWithConstantMods;
       Connect.Sets csets,csets1,csets2,csets3,csets4,csets5,csets_1;
       DAE.DAElist dae1,dae2,dae3,dae4,dae5,dae6,dae7,dae;
@@ -2123,7 +2024,7 @@ algorithm
       Absyn.Path cn;
       Option<list<Absyn.Subscript>> ad;
       SCode.Mod mod;
-      Env.Cache cache;
+      FCore.Cache cache;
       Option<SCode.Attributes> oDA;
       DAE.EqualityConstraint eqConstraint;
       InstTypes.CallingScope callscope;
@@ -2142,12 +2043,13 @@ algorithm
       Option<SCode.ExternalDecl> ed;
       DAE.ElementSource elementSource;
       list<Absyn.Subscript> adno;
+      FCore.Ref lastRef;
 
     /*// uncomment for debugging
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
           re,vis,_,_,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
-        // Debug.fprintln(Flags.INST_TRACE, "ICD BEGIN: " +& Env.printEnvPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
+        // Debug.fprintln(Flags.INST_TRACE, "ICD BEGIN: " +& FGraph.printGraphPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
       then
         fail();*/
 
@@ -2170,7 +2072,7 @@ algorithm
 
         (cdefelts,extendsclasselts,extendselts as _::_,{}) = InstUtil.splitElts(els);
         extendselts = SCodeUtil.addRedeclareAsElementsToExtends(extendselts, SCodeUtil.getRedeclareAsElements(els));
-        (env1,ih) = InstUtil.addClassdefsToEnv(env, ih, pre, cdefelts, impl, SOME(mods));
+        (cache,env1,ih) = InstUtil.addClassdefsToEnv(cache, env, ih, pre, cdefelts, impl, SOME(mods));
         (cache,_,_,_,extcomps,{},{},{},{}) =
         InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, extendsclasselts, els, ci_state, className, impl, false);
 
@@ -2188,7 +2090,7 @@ algorithm
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
           re,vis,_,_,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
-        // Debug.fprintln(Flags.INST_TRACE, "ICD AFTER BASIC TYPE: " +& Env.printEnvPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
+        // Debug.fprintln(Flags.INST_TRACE, "ICD AFTER BASIC TYPE: " +& FGraph.printGraphPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
       then
         fail();*/
 
@@ -2228,10 +2130,10 @@ algorithm
 
         extendselts = SCodeUtil.addRedeclareAsElementsToExtends(extendselts, SCodeUtil.getRedeclareAsElements(els));
 
-        (env1,ih) = InstUtil.addClassdefsToEnv(env, ih, pre, cdefelts, impl, SOME(mods));
+        (cache, env1,ih) = InstUtil.addClassdefsToEnv(cache, env, ih, pre, cdefelts, impl, SOME(mods));
 
 
-        //// Debug.fprintln(Flags.INST_TRACE, "after InstUtil.addClassdefsToEnv ENV: " +& Util.if_(stringEq(className, "PortVolume"), Env.printEnvStr(env1), " no env print "));
+        //// Debug.fprintln(Flags.INST_TRACE, "after InstUtil.addClassdefsToEnv ENV: " +& Util.if_(stringEq(className, "PortVolume"), FGraph.printGraphStr(env1), " no env print "));
 
         // adrpo: TODO! DO SOME CHECKS HERE!
         // restriction on what can inherit what, see 7.1.3 Restrictions on the Kind of Base Class
@@ -2242,6 +2144,8 @@ algorithm
         (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) =
         InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, extendsclasselts, els, ci_state, className, impl, false)
         "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations.";
+
+        // print("Extended Elements inst:\n" +& InstUtil.printElementAndModList(extcomps));
 
         //Debug.fprint(Flags.INST_EXT_TRACE, "EXTENDS RETURNS:\n" +& Debug.fcallret1(Flags.INST_EXT_TRACE, printElementAndModList, extcomps, "") +& "\n");
         //Debug.fprint(Flags.INST_EXT_TRACE, "EXTENDS RETURNS EMODS: " +& Mod.printModStr(emods) +& "\n");
@@ -2294,7 +2198,7 @@ algorithm
         /*
         (cache,env4,ih,compelts_2) =
           updateCompeltsMods(cache, env3, ih, pre,
-            InstUtil.sortElementList(compelts_1, env3, Env.inFunctionScope(env3)),
+            InstUtil.sortElementList(compelts_1, env3, FGraph.inFunctionScope(env3)),
             ci_state, impl);*/
         compelts_2 = compelts_1;
         env4 = env3;
@@ -2311,7 +2215,7 @@ algorithm
 
         //print("To match modifiers,\n" +& Mod.printModStr(checkMods) +& "\n on components: ");
         //print(" (" +& stringDelimitList(List.map(compelts_2_elem,SCode.elementName),", ") +& ") \n");
-        InstUtil.matchModificationToComponents(compelts_2_elem,checkMods,Env.printEnvPathStr(env4));
+        InstUtil.matchModificationToComponents(compelts_2_elem,checkMods,FGraph.printGraphPathStr(env4));
 
         // Move any conditional components to the end of the component list, to
         // make sure that any dependencies of the condition are instantiated first.
@@ -2325,7 +2229,7 @@ algorithm
         // If we are currently instantiating a connector, add all flow variables
         // in it as inside connectors.
         zero_dims = InstUtil.instDimsHasZeroDims(inst_dims);
-        elementSource = DAEUtil.createElementSource(info, Env.getEnvPath(env4), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        elementSource = DAEUtil.createElementSource(info, FGraph.getScopePath(env4), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         csets1 = ConnectUtil.addConnectorVariablesFromDAE(zero_dims, ci_state1, pre, vars, csets, info, elementSource);
 
         // Reorder the connect equations to have non-expandable connect first:
@@ -2377,7 +2281,7 @@ algorithm
         //(dae,csets5,ih,graph) = InnerOuter.changeOuterReferences(dae,csets5,ih,graph);
         //t2 = clock();
         //ti = t2 -. t1;
-        //Debug.fprintln(Flags.INNER_OUTER, " INST_CLASS: (" +& realString(ti) +& ") -> " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods) +& " in env: " +& Env.printEnvPathStr(env7));
+        //Debug.fprintln(Flags.INNER_OUTER, " INST_CLASS: (" +& realString(ti) +& ") -> " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods) +& " in env: " +& FGraph.printGraphPathStr(env7));
 
         csets5 = InnerOuter.changeInnerOuterInOuterConnect(csets5);
 
@@ -2403,11 +2307,11 @@ algorithm
           Lookup.lookupClass(cache, env, cn, true);
 
         // keep the old behaviour
-        env3 = Env.openScope(cenv, enc2, SOME(cn2), SOME(Env.CLASS_SCOPE()));
-        ci_state2 = ClassInf.start(r, Env.getEnvName(env3));
-        new_ci_state = ClassInf.start(r, Env.getEnvName(env3));
+        env3 = FGraph.openScope(cenv, enc2, SOME(cn2), SOME(FCore.CLASS_SCOPE()));
+        ci_state2 = ClassInf.start(r, FGraph.getGraphName(env3));
+        new_ci_state = ClassInf.start(r, FGraph.getGraphName(env3));
 
-        // print("Enum Env: " +& Env.printEnvPathStr(env3) +& "\n");
+        // print("Enum Env: " +& FGraph.printGraphPathStr(env3) +& "\n");
         (cache,cenv_2,_,_,_,_,_,_,_,_,_,_) =
         instClassIn(
           cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
@@ -2446,25 +2350,23 @@ algorithm
         Util.setStatefulBoolean(stopInst, not valid_connector);
         true = valid_connector;
 
-        cenv_2 = Env.openScope(cenv, enc2, SOME(cn2), Env.classInfToScopeType(ci_state));
-        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
+        cenv_2 = FGraph.openScope(cenv, enc2, SOME(cn2), FGraph.classInfToScopeType(ci_state));
+        new_ci_state = ClassInf.start(r, FGraph.getGraphName(cenv_2));
 
         // chain the redeclares
         mod = InstUtil.chainRedeclares(mods, mod);
 
         // elab the modifiers in the parent environment!
-        parentEnv = List.stripFirst(env);
+        (parentEnv, _) = FGraph.stripLastScopeRef(env);
         (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, impl, Mod.DERIVED(cn), info);
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
 
-        eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
+        eq = Mod.modEquation(mods_1) "instantiate array dimensions";
         (cache,dims) = InstUtil.elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl, NONE(), true, pre, info, inst_dims) "owncref not valid here" ;
         // inst_dims2 = InstUtil.instDimExpLst(dims, impl);
         inst_dims_1 = List.appendLastList(inst_dims, dims);
 
         adno = Absyn.getArrayDimOptAsList(ad);
-        // cenv_2 = Env.mergeEnv(cenv_2, env, "$derived_" +& cn2, c, Env.M(pre, cn2, adno, mods_1, parentEnv, inst_dims_1));
-        cenv_2 = Env.addModification(cenv_2, Env.M(pre, cn2, adno, mods_1, parentEnv, inst_dims_1));
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis,
           inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
 
@@ -2486,7 +2388,7 @@ algorithm
         // false = Config.acceptMetaModelicaGrammar();
         // no types, enums or connectors please!
         false = valueEq(re, SCode.R_TYPE());
-        // false = valueEq(re, SCode.R_FUNCTION());
+        // false = SCode.isFunctionRestriction(re);
         false = valueEq(re, SCode.R_ENUMERATION());
         false = valueEq(re, SCode.R_PREDEFINED_ENUMERATION());
         false = SCode.isConnector(re);
@@ -2501,11 +2403,12 @@ algorithm
         mod = InstUtil.chainRedeclares(mods, mod);
 
         // elab the modifiers in the parent environment!!
-        parentEnv = List.stripFirst(env);
+        (parentEnv, lastRef) = FGraph.stripLastScopeRef(env);
+        // adrpo: as we do this IN THE SAME ENVIRONMENT (no open scope), clone it before doing changes
+        // env = FGraph.pushScopeRef(parentEnv, FNode.copyRefNoUpdate(lastRef));
         (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
         // print("mods: " +& Absyn.pathString(cn) +& " " +& Mod.printModStr(mods_1) +& "\n");
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
-
         // use instExtends for derived with no array dimensions and no modification (given via the mods_1)
         (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) =
         instClassdef2(cache, env, ih, store, mods_1, pre, ci_state, className,
@@ -2532,31 +2435,31 @@ algorithm
         // package A3=A(mods)
         // will get you different function implementations for the different packages!
         /*
-        fullEnvPath = Absyn.selectPathsOpt(Env.getEnvPath(env), Absyn.IDENT(""));
+        fullEnvPath = Absyn.selectPathsOpt(FGraph.getScopePath(env), Absyn.IDENT(""));
         fullClassName = "DE_" +& Absyn.pathStringReplaceDot(fullEnvPath, "_") +& "_D_" +&
-                        Absyn.pathStringReplaceDot(Absyn.selectPathsOpt(Env.getEnvPath(cenv), Absyn.IDENT("")), "_" ) +& "." +& cn2 +& "_ED";
+                        Absyn.pathStringReplaceDot(Absyn.selectPathsOpt(FGraph.getScopePath(cenv), Absyn.IDENT("")), "_" ) +& "." +& cn2 +& "_ED";
         fullClassName = System.stringReplace(fullClassName, ".", "_");
 
         // open a scope with a unique name in the base class environment so there is no collision
-        cenv_2 = Env.openScope(cenv, enc2, SOME(fullClassName), Env.classInfToScopeType(ci_state));
-        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
+        cenv_2 = FGraph.openScope(cenv, enc2, SOME(fullClassName), FGraph.classInfToScopeType(ci_state));
+        new_ci_state = ClassInf.start(r, FGraph.getGraphName(cenv_2));
         */
         // open a scope with the correct name
 
         // className = className +& "|" +& PrefixUtil.printPrefixStr(pre) +& "|" +& cn2;
 
-        cenv_2 = Env.openScope(cenv, enc2, SOME(className), Env.classInfToScopeType(ci_state));
-        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
+        cenv_2 = FGraph.openScope(cenv, enc2, SOME(className), FGraph.classInfToScopeType(ci_state));
+        new_ci_state = ClassInf.start(r, FGraph.getGraphName(cenv_2));
 
         c = SCode.setClassName(className, c);
 
-        //print("Derived Env: " +& Env.printEnvPathStr(cenv_2) +& "\n");
+        //print("Derived Env: " +& FGraph.printGraphPathStr(cenv_2) +& "\n");
 
         // chain the redeclares
         mod = InstUtil.chainRedeclares(mods, mod);
 
         // elab the modifiers in the parent environment!
-        parentEnv = List.stripFirst(env);
+        (parentEnv, _) = FGraph.stripLastScopeRef(env);
         (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, impl, Mod.DERIVED(cn), info);
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
 
@@ -2566,8 +2469,6 @@ algorithm
         inst_dims_1 = List.appendLastList(inst_dims, dims);
 
         adno = Absyn.getArrayDimOptAsList(ad);
-        //cenv_2 = Env.mergeEnv(cenv_2, env, "$derived_" +& cn2, c, Env.M(pre, className, adno, mods_1, parentEnv, inst_dims_1));
-        cenv_2 = Env.addModification(cenv_2, Env.M(pre, className, adno, mods_1, parentEnv, inst_dims_1));
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis,
             inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
 
@@ -2700,7 +2601,7 @@ algorithm
         false = Util.getStatefulBoolean(stopInst);
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
         cns = Absyn.pathString(cn);
-        scope_str = Env.printEnvPathStr(env);
+        scope_str = FGraph.printGraphPathStr(env);
         Error.addSourceMessage(Error.LOOKUP_ERROR, {cns,scope_str}, info);
       then
         fail();
@@ -2714,7 +2615,7 @@ algorithm
         Debug.fprint(Flags.FAILTRACE, "- Inst.instClassdef DERIVED( ");
         Debug.fprint(Flags.FAILTRACE, Absyn.pathString(cn));
         Debug.fprint(Flags.FAILTRACE, ") lookup failed\n ENV:");
-        Debug.fprint(Flags.FAILTRACE,Env.printEnvStr(env));
+        Debug.fprint(Flags.FAILTRACE,FGraph.printGraphStr(env));
       then
         fail();
 
@@ -2722,9 +2623,9 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.instClassdef failed");
-        s = Env.printEnvPathStr(inEnv);
+        s = FGraph.printGraphPathStr(inEnv);
         Debug.traceln("  class :" +& s);
-        // Debug.traceln("  Env :" +& Env.printEnvStr(env));
+        // Debug.traceln("  Env :" +& FGraph.printGraphStr(env));
       then
         fail();
   end matchcontinue;
@@ -2759,8 +2660,8 @@ end joinExtAlgorithms;
 protected function instClassDefHelper
 "Function: instClassDefHelper
  MetaModelica extension. KS TODO: Document this function!!!!"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input list<Absyn.TypeSpec> inSpecs;
   input Prefix.Prefix inPre;
@@ -2768,8 +2669,8 @@ protected function instClassDefHelper
   input Boolean inImpl;
   input list<DAE.Type> accTypes;
   input Connect.Sets inSets;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output list<DAE.Type> outType;
   output Connect.Sets outSets;
@@ -2778,8 +2679,8 @@ algorithm
   (outCache,outEnv,outIH,outType,outSets,outAttr) :=
   matchcontinue (inCache,inEnv,inIH,inSpecs,inPre,inInstDims,inImpl,accTypes,inSets)
     local
-      Env.Cache cache;
-      Env.Env env,cenv;
+      FCore.Cache cache;
+      FCore.Graph env,cenv;
       Prefix.Prefix pre;
       InstDims dims;
       Boolean impl;
@@ -2845,8 +2746,8 @@ protected function instBasictypeBaseclass
   end RealSignal;
   Such classes can not have any other components,
   and can only inherit one basic type."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input list<SCode.Element> inSCodeElementLst2;
@@ -2856,7 +2757,7 @@ protected function instBasictypeBaseclass
   input String className;
   input Absyn.Info info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae "contain functions";
@@ -2868,7 +2769,7 @@ algorithm
     local
       DAE.Mod m_1,m_2,mods;
       SCode.Element cdef;
-      Env.Env cenv,env_1,env;
+      FCore.Graph cenv,env_1,env;
       DAE.DAElist dae;
       DAE.Type ty;
       list<DAE.Var> tys;
@@ -2877,7 +2778,7 @@ algorithm
       Absyn.Path path;
       SCode.Mod mod;
       InstDims inst_dims;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       UnitAbsyn.InstStore store;
 
@@ -2889,7 +2790,6 @@ algorithm
         m_2 = Mod.merge(mods, m_1, env, Prefix.NOPRE());
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
         //Debug.traceln("Try instbasic 2 " +& Absyn.pathString(path) +& " " +& Mod.printModStr(m_2));
-        cenv = Env.addModification(cenv, Env.M(Prefix.NOPRE(), className, {}, m_2, env, inst_dims));
         (cache,_,ih,store,dae,_,ty,tys,_) =
         instClassBasictype(cache,cenv,ih, store,m_2, Prefix.NOPRE(), cdef, inst_dims, false, InstTypes.INNER_CALL(), Connect.emptySet);
         //Debug.traceln("Try instbasic 3 " +& Absyn.pathString(path) +& " " +& Mod.printModStr(m_2));
@@ -2941,8 +2841,8 @@ protected function instBasictypeBaseclass2 "
 Author: BZ, 2009-02
 Helper function for instBasictypeBaseClass
 Handles the fail case rollbacks/deleteCheckpoint of errors."
-  input Env.Cache inCache;
-  input Env.Env inEnv1;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv1;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input list<SCode.Element> inSCodeElementLst2;
@@ -2957,7 +2857,7 @@ algorithm
   local
       DAE.Mod m_1,mods;
       SCode.Element cdef,cdef_1;
-      Env.Env cenv,env_1,env;
+      FCore.Graph cenv,env_1,env;
       DAE.DAElist dae;
       DAE.Type ty;
       ClassInf.State st;
@@ -2966,7 +2866,7 @@ algorithm
       SCode.Mod mod;
       InstDims inst_dims;
       String classname;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
 
     case (cache,env,ih,_,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},(_ :: _),_,inst_dims,_,_,_) /* Inherits baseclass -and- has components */
@@ -2975,14 +2875,13 @@ algorithm
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
         cdef_1 = SCode.classSetPartial(cdef, SCode.NOT_PARTIAL());
 
-        cenv = Env.addModification(cenv, Env.M(Prefix.NOPRE(), className, {}, m_1, env, inst_dims));
         (cache,_,ih,_,_,_,ty,_,_,_) = instClass(cache,cenv,ih,store, m_1,
           Prefix.NOPRE(), cdef_1, inst_dims, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl" ;
 
         b1 = Types.basicType(ty);
         b2 = Types.arrayType(ty);
         true = boolOr(b1, b2);
-        classname = Env.printEnvPathStr(env);
+        classname = FGraph.printGraphPathStr(env);
         ErrorExt.rollBack("instBasictypeBaseclass2");
         Error.addSourceMessage(Error.INHERIT_BASIC_WITH_COMPS, {classname}, info);
         Util.setStatefulBoolean(stopInst,true);
@@ -3000,8 +2899,8 @@ end instBasictypeBaseclass2;
 protected function partialInstClassdef
 "This function is used by partialInstClassIn for instantiating local
   class definitons and inherited class definitions only."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -3011,8 +2910,8 @@ protected function partialInstClassdef
   input SCode.Visibility inVisibility;
   input list<list<DAE.Dimension>> inInstDims;
   input Integer numIter;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output ClassInf.State outState;
   output list<DAE.Var> outVars;
@@ -3022,7 +2921,7 @@ algorithm
     local
       ClassInf.State ci_state1,ci_state,new_ci_state,new_ci_state_1,ci_state2;
       list<SCode.Element> cdefelts,extendselts,els,cdefelts2,classextendselts;
-      Env.Env env1,env2,env,cenv,cenv_2,env_2,env3,parentEnv;
+      FCore.Graph env1,env2,env,cenv,cenv_2,env_2,env3,parentEnv;
       DAE.Mod emods,mods,mod_1,mods_1;
       list<tuple<SCode.Element, DAE.Mod>> extcomps,lst_constantEls;
       list<SCode.Equation> eqs,initeqs;
@@ -3038,7 +2937,7 @@ algorithm
       Absyn.Path cn;
       Option<list<Absyn.Subscript>> ad;
       SCode.Mod mod;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       Option<SCode.Comment> cmt;
       list<DAE.Dimension> inst_dims2;
@@ -3048,6 +2947,7 @@ algorithm
       Absyn.ArrayDim adno;
       list<DAE.Var> vars;
       Absyn.Info info;
+      FCore.Ref lastRef;
 
       // long class definition, the normal case, a class with parts
       case (cache,env,ih,mods,pre,ci_state,parentClass,
@@ -3063,12 +2963,12 @@ algorithm
         className = SCode.getElementName(parentClass);
 
         // Debug.traceln(" Partialinstclassdef for: " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods));
-        // Debug.fprintln(Flags.INST_TRACE, "PARTIALICD: " +& Env.printEnvPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
+        // Debug.fprintln(Flags.INST_TRACE, "PARTIALICD: " +& FGraph.printGraphPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
         partialPrefix = InstUtil.isPartial(partialPrefix, mods);
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         (cdefelts,classextendselts,extendselts,_) = InstUtil.splitElts(els);
         extendselts = SCodeUtil.addRedeclareAsElementsToExtends(extendselts, SCodeUtil.getRedeclareAsElements(els));
-        (env1,ih) = InstUtil.addClassdefsToEnv(env, ih, pre, cdefelts, true, SOME(mods)) " CLASS & IMPORT nodes are added to env" ;
+        (cache,env1,ih) = InstUtil.addClassdefsToEnv(cache,env, ih, pre, cdefelts, true, SOME(mods)) " CLASS & IMPORT nodes are added to env" ;
         (cache,env2,ih,emods,extcomps,_,_,_,_) =
         InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, classextendselts, els, ci_state, className, true, isPartialInst)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
@@ -3091,7 +2991,7 @@ algorithm
         mods = Mod.merge(mods, emods, env2, pre);
 
         (cdefelts2,extcomps) = InstUtil.classdefElts2(extcomps, partialPrefix);
-        (env2,ih) = InstUtil.addClassdefsToEnv(env2, ih, pre, cdefelts2, true, SOME(mods)); // Add inherited classes to env
+        (cache,env2,ih) = InstUtil.addClassdefsToEnv(cache, env2, ih, pre, cdefelts2, true, SOME(mods)); // Add inherited classes to env
 
         (cache,env3,ih) = InstUtil.addComponentsToEnv(cache, env2, ih, mods, pre, ci_state,
                                              lst_constantEls, lst_constantEls, {},
@@ -3099,12 +2999,16 @@ algorithm
 
         /*(cache,env3,ih,lst_constantEls) =
            updateCompeltsMods(cache, env3, ih, pre,
-             InstUtil.sortElementList(lst_constantEls, env3, Env.inFunctionScope(env3)),
+             InstUtil.sortElementList(lst_constantEls, env3, FGraph.inFunctionScope(env3)),
              ci_state, true);*/
 
         (cache,env3,ih,_,_,_,ci_state2,vars,_) =
            instElementList(cache, env3, ih, UnitAbsyn.noStore, mods, pre, ci_state1, lst_constantEls,
               inst_dims, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, false) "instantiate constants";
+        /*
+        ci_state2 = ci_state1;
+        vars = {};
+        */
         // Debug.traceln("partialInstClassdef OK " +& className);
       then
         (cache,env3,ih,ci_state2,vars);
@@ -3124,14 +3028,14 @@ algorithm
         // if is a basic type, or enum follow the normal path
         true = InstUtil.checkDerivedRestriction(re, r, cn2);
 
-        cenv_2 = Env.openScope(cenv, enc2, SOME(cn2), Env.restrictionToScopeType(r));
-        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
+        cenv_2 = FGraph.openScope(cenv, enc2, SOME(cn2), FGraph.restrictionToScopeType(r));
+        new_ci_state = ClassInf.start(r, FGraph.getGraphName(cenv_2));
 
         // chain the redeclares
         mod = InstUtil.chainRedeclares(mods, mod);
 
         // the mod is elabed in the parent of this class
-        parentEnv = List.stripFirst(env);
+        (parentEnv, _) = FGraph.stripLastScopeRef(env);
         (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
 
@@ -3141,8 +3045,6 @@ algorithm
         _ = List.appendLastList(inst_dims, dims);
 
         adno = Absyn.getArrayDimOptAsList(ad);
-        // cenv_2 = Env.mergeEnv(cenv_2, env, "$derived_" +& cn2, c, Env.M(pre, cn2, adno, mods_1, parentEnv, inst_dims));
-        cenv_2 = Env.addModification(cenv_2, Env.M(pre, cn2, adno, mods_1, parentEnv, inst_dims));
         (cache,env_2,ih,new_ci_state_1,vars) = partialInstClassIn(cache, cenv_2, ih, mods_1, pre, new_ci_state, c, vis, inst_dims, numIter);
       then
         (cache,env_2,ih,new_ci_state_1,vars);
@@ -3179,7 +3081,9 @@ algorithm
         mod = InstUtil.chainRedeclares(mods, mod);
 
         // elab the modifiers in the parent environment!!
-        parentEnv = List.stripFirst(env);
+        (parentEnv, lastRef) = FGraph.stripLastScopeRef(env);
+        // adrpo: as we do this IN THE SAME ENVIRONMENT (no open scope), clone it before doing changes
+        // env = FGraph.pushScopeRef(parentEnv, FNode.copyRefNoUpdate(lastRef));
         (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
         // print("mods: " +& Absyn.pathString(cn) +& " " +& Mod.printModStr(mods_1) +& "\n");
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
@@ -3212,30 +3116,30 @@ algorithm
         // package A3=A(mods)
         // will get you different function implementations for the different packages!
         /*
-        fullEnvPath = Absyn.selectPathsOpt(Env.getEnvPath(env), Absyn.IDENT(""));
+        fullEnvPath = Absyn.selectPathsOpt(FGraph.getScopePath(env), Absyn.IDENT(""));
         fullClassName = "DE_" +& Absyn.pathStringReplaceDot(fullEnvPath, "_") +& "_D_" +&
-                        Absyn.pathStringReplaceDot(Absyn.selectPathsOpt(Env.getEnvPath(cenv), Absyn.IDENT("")), "_" ) +& "." +& cn2 +& "_ED";
+                        Absyn.pathStringReplaceDot(Absyn.selectPathsOpt(FGraph.getScopePath(cenv), Absyn.IDENT("")), "_" ) +& "." +& cn2 +& "_ED";
 
         // open a scope with a unique name in the base class environment so there is no collision
-        cenv_2 = Env.openScope(cenv, enc2, SOME(fullClassName), Env.classInfToScopeType(ci_state));
-        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
+        cenv_2 = FGraph.openScope(cenv, enc2, SOME(fullClassName), FGraph.classInfToScopeType(ci_state));
+        new_ci_state = ClassInf.start(r, FGraph.getGraphName(cenv_2));
         */
 
         // open a scope with the correct name
         // className = className +& "|" +& PrefixUtil.printPrefixStr(pre) +& "|" +& cn2;
 
-        cenv_2 = Env.openScope(cenv, enc2, SOME(className), Env.classInfToScopeType(ci_state));
-        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
+        cenv_2 = FGraph.openScope(cenv, enc2, SOME(className), FGraph.classInfToScopeType(ci_state));
+        new_ci_state = ClassInf.start(r, FGraph.getGraphName(cenv_2));
 
         c = SCode.setClassName(className, c);
 
-        //print("Partial Derived Env: " +& Env.printEnvPathStr(cenv_2) +& "\n");
+        //print("Partial Derived Env: " +& FGraph.printGraphPathStr(cenv_2) +& "\n");
 
         // chain the redeclares
         mod = InstUtil.chainRedeclares(mods, mod);
 
         // elab the modifiers in the parent environment!
-        parentEnv = List.stripFirst(env);
+        (parentEnv, _) = FGraph.stripLastScopeRef(env);
         (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
 
@@ -3245,8 +3149,6 @@ algorithm
         inst_dims_1 = List.appendLastList(inst_dims, dims);
 
         adno = Absyn.getArrayDimOptAsList(ad);
-        // cenv_2 = Env.mergeEnv(cenv_2, env, "$derived_" +& cn2, c, Env.M(pre, className, adno, mods_1, parentEnv, inst_dims_1));
-        cenv_2 = Env.addModification(cenv_2, Env.M(pre, className, adno, mods_1, parentEnv, inst_dims_1));
         (cache,env_2,ih,new_ci_state_1,vars) = partialInstClassIn(cache, cenv_2, ih, mods_1, pre, new_ci_state, c, vis, inst_dims_1, numIter);
       then
         (cache,env_2,ih,new_ci_state_1,vars);
@@ -3260,7 +3162,7 @@ algorithm
       equation
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
         cns = Absyn.pathString(cn);
-        scope_str = Env.printEnvPathStr(env);
+        scope_str = FGraph.printGraphPathStr(env);
         Error.addSourceMessage(Error.LOOKUP_ERROR, {cns,scope_str},SCode.elementInfo(parentClass));
       then
         fail();
@@ -3269,8 +3171,8 @@ end partialInstClassdef;
 
 public function instElementList
   "Instantiates a list of elements."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input DAE.Mod inMod;
@@ -3283,8 +3185,8 @@ public function instElementList
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   input Boolean inStopOnError;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -3294,7 +3196,7 @@ public function instElementList
   output ConnectionGraph.ConnectionGraph outGraph;
 protected
   list<tuple<SCode.Element, DAE.Mod>> el;
-  Env.Cache cache;
+  FCore.Cache cache;
   Integer i1,i2;
 algorithm
   // print("push " +& PrefixUtil.printPrefixStr(inPrefix) +& "\n");
@@ -3302,7 +3204,7 @@ algorithm
   // i1 := numStructuralParameterScopes(cache);
   //Debug.fprintln(Flags.IDEP, "Before:\n" +& stringDelimitList(List.map(List.map(inElements, Util.tuple21), SCodeDump.unparseElementStr), "\n"));
   //System.startTimer();
-  el := InstUtil.sortElementList(inElements, inEnv, Env.inFunctionScope(inEnv));
+  el := InstUtil.sortElementList(inElements, inEnv, FGraph.inFunctionScope(inEnv));
   // adrpo: MAKE SURE inner objects ARE FIRST in the list for instantiation!
   el := InstUtil.sortInnerFirstTplLstElementMod(el);
   //System.stopTimer();
@@ -3336,8 +3238,8 @@ protected function instElementList2
       This means that all EXTENDS nodes are handled.
   3.  Third, 'Flatten the class, apply modifiers and instantiate all local elements.'
       This handles COMPONENT nodes."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
@@ -3352,8 +3254,8 @@ protected function instElementList2
   input Boolean inStopOnError;
   input list<list<DAE.Element>> daeAcc;
   input list<list<DAE.Var>> varAcc;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -3366,7 +3268,7 @@ algorithm
   match (inCache, inEnv, inIH, inStore, inMod, inPrefix, inState,
       inElements, inInstDims, inImplicit, inCallingScope, inGraph, inSets, inStopOnError, daeAcc, varAcc)
     local
-      Env.Env env;
+      FCore.Graph env;
       Connect.Sets csets;
       ClassInf.State ci_state;
       DAE.DAElist dae;
@@ -3377,7 +3279,7 @@ algorithm
       list<tuple<SCode.Element, DAE.Mod>> els;
       InstDims inst_dims;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstTypes.CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
@@ -3414,8 +3316,8 @@ public function instElement2
       This means that all EXTENDS nodes are handled.
   3.  Third, 'Flatten the class, apply modifiers and instantiate all local elements.'
       This handles COMPONENT nodes."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
@@ -3428,8 +3330,8 @@ public function instElement2
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   input Boolean inStopOnError;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output list<DAE.Element> outDae;
@@ -3442,7 +3344,7 @@ algorithm
   matchcontinue (inCache, inEnv, inIH, inStore, inMod, inPrefix, inState,
       inElement, inInstDims, inImplicit, inCallingScope, inGraph, inSets, inStopOnError)
     local
-      Env.Env env,env_1;
+      FCore.Graph env,env_1;
       Connect.Sets csets;
       ClassInf.State ci_state,ci_state_1;
       list<DAE.Var> tys1;
@@ -3451,7 +3353,7 @@ algorithm
       tuple<SCode.Element, DAE.Mod> el;
       InstDims inst_dims;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Info info;
       InstTypes.CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
@@ -3485,7 +3387,7 @@ algorithm
       equation
         ErrorExt.setCheckpoint("instElementList2");
         (cache,env,ih,{el}) = updateCompeltsMods(cache, env, ih, pre, {el}, ci_state, impl);
-        // Debug.fprintln(Flags.INST_TRACE, "INST ELEMENT: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.shortElementStr(Util.tuple21(el)) +& " mods: " +& Mod.printModStr(mod));
+        // Debug.fprintln(Flags.INST_TRACE, "INST ELEMENT: " +& FGraph.printGraphPathStr(env) +& " el: " +& SCodeDump.shortElementStr(Util.tuple21(el)) +& " mods: " +& Mod.printModStr(mod));
         // check for duplicate modifications
         ele = Util.tuple21(el);
         (elementName, info) = InstUtil.extractCurrentName(ele);
@@ -3496,7 +3398,7 @@ algorithm
         */
         /*// A frequent used debugging line
         print("Instantiating element: " +& elementName +&
-              "\n\tin scope " +& Env.getScopeName(env) +&
+              "\n\tin scope " +& FGraph.getScopeName(env) +&
               "\n\telements to go: " +& intString(listLength(els)) +&
               "\n\tmods: " +& Mod.printModStr(mod) +&
               "\n\telement: " +& SCodeDump.shortElementStr(ele) +&
@@ -3528,8 +3430,8 @@ end instElement2;
 public function instElement "
   This monster function instantiates an element of a class definition.  An
   element is either a class definition, a variable, or an import clause."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inUnitStore;
   input DAE.Mod inMod;
@@ -3541,8 +3443,8 @@ public function instElement "
   input InstTypes.CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outUnitStore;
   output DAE.DAElist outDae;
@@ -3573,8 +3475,8 @@ algorithm
       DAE.Mod mod, mods, class_mod, mm, cmod, mod_1, var_class_mod, m_1;
       DAE.Type ty;
       DAE.Var new_var;
-      Env.Cache cache;
-      Env.Env env, env2, cenv, comp_env;
+      FCore.Cache cache;
+      FCore.Graph env, env2, cenv, comp_env;
       InstanceHierarchy ih;
       InstDims inst_dims;
       list<Absyn.ComponentRef> crefs, crefs1, crefs2, crefs3;
@@ -3586,7 +3488,7 @@ algorithm
       SCode.Comment comment;
       Prefix.Prefix pre;
       SCode.Attributes attr;
-      SCode.Element cls, comp, comp2;
+      SCode.Element cls, comp, comp2, el;
       SCode.Final final_prefix;
       SCode.ConnectorType ct;
       SCode.Mod m;
@@ -3606,25 +3508,23 @@ algorithm
         prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), _),
         _, _, _, _, _)
       equation
-        //Redeclare of class definition, replaceable is true
+        /*/Redeclare of class definition, replaceable is true
         (class_mod as DAE.REDECL(tplSCodeElementModLst = (cls,_)::_)) =
           Mod.lookupModificationP(inMod, Absyn.IDENT(name));
         class_mod = Mod.removeMod(class_mod, name);
-        (cache, env, ih, dae) =
-          instClassDecl(cache, env, ih, class_mod, inPrefix, cls, inInstDims);
+        env = FGraph.mkClassNode(env, cls, inPrefix, class_mod);*/
       then
-        (cache, env, ih, inUnitStore, dae, inSets, inState, {}, inGraph);
+        (cache, env, ih, inUnitStore, DAE.emptyDae, inSets, inState, {}, inGraph);
 
     // Classdefinition without redeclaration
     case (cache, env, ih, _, _, _, _, (cls as SCode.CLASS(name = name), _), _, _, _, _, _)
       equation
-        class_mod = Mod.lookupModificationP(inMod, Absyn.IDENT(name));
+        /*class_mod = Mod.lookupModificationP(inMod, Absyn.IDENT(name));
         // This was an attempt to fix multiple class definition bug. Unfortunately, it breaks some tests. -- alleb
         // _ = InstUtil.checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
-        (cache, env, ih, dae) = instClassDecl(cache, env, ih, class_mod,
-          inPrefix, cls, inInstDims);
+        env = FGraph.mkClassNode(env, cls, inPrefix, class_mod);*/
       then
-        (cache, env, ih, inUnitStore, dae, inSets, inState, {}, inGraph);
+        (cache, env, ih, inUnitStore, DAE.emptyDae, inSets, inState, {}, inGraph);
 
     // A component
     // This is the rule for instantiating a model component.  A component can be
@@ -3632,8 +3532,15 @@ algorithm
     // these are treated in a similar way. Lookup the class name, apply
     // modifications and add the variable to the current frame in the
     // environment. Then instantiate the class with an extended prefix.
-    case (cache, env, ih, store, mods, pre, ci_state,
-        ((SCode.COMPONENT(
+    case (cache, env, ih, store, mods, pre, ci_state, ((el as SCode.COMPONENT(name = name, typeSpec = Absyn.TPATH(_, _))), cmod),
+        inst_dims, impl, _, graph, csets)
+      equation
+        //print("  instElement: A component: " +& name +& "\n");
+        //print("instElement: " +& name +& " in s:" +& FGraph.printGraphPathStr(env) +& " m: " +& SCodeDump.printModStr(m) +& " cm: " +& Mod.printModStr(cmod) +& " mods:" +& Mod.printModStr(mods) +& "\n");
+        //print("Env:\n" +& FGraph.printGraphStr(env) +& "\n");
+        // lookup as it might have been redeclared
+        // (_, _, el, _, _, _) = Lookup.lookupIdentLocal(cache, env, name);
+        SCode.COMPONENT(
           name = name,
           prefixes = prefixes as SCode.PREFIXES(
             visibility = _,
@@ -3645,12 +3552,7 @@ algorithm
           modifications = m,
           comment = comment,
           condition = cond,
-          info = info)), cmod),
-        inst_dims, impl, _, graph, csets)
-      equation
-        // print("  instElement: A component: " +& name +& "\n");
-        //print("instElement: " +& name +& " in s:" +& Env.printEnvPathStr(env) +& " m: " +& SCodeDump.printModStr(m) +& " cm: " +& Mod.printModStr(cmod) +& " mods:" +& Mod.printModStr(mods) +& "\n");
-        //print("Env:\n" +& Env.printEnvStr(env) +& "\n");
+          info = info) = el;
 
         true = Util.if_(Config.acceptParModelicaGrammar(), InstUtil.checkParallelismWRTEnv(env,name,attr,info), true);
 
@@ -3716,10 +3618,10 @@ algorithm
 
         // print("Inst.instElement: before elabMod " +& PrefixUtil.printPrefixStr(pre) +&
         // "." +& name +& " component mod: " +& SCodeDump.printModStr(m) +& " in env: " +&
-        // Env.printEnvPathStr(env2) +& "\n");
+        // FGraph.printGraphPathStr(env2) +& "\n");
         (cache, m_1) = Mod.elabMod(cache, env2, ih, pre, m, impl, Mod.COMPONENT(name), info);
 
-        // print("Inst.instElement: after elabMod " +& PrefixUtil.printPrefixStr(pre) +& "." +& name +& " component mod: " +& Mod.printModStr(m_1) +& " in env: " +& Env.printEnvPathStr(env2) +& "\n");
+        // print("Inst.instElement: after elabMod " +& PrefixUtil.printPrefixStr(pre) +& "." +& name +& " component mod: " +& Mod.printModStr(m_1) +& " in env: " +& FGraph.printGraphPathStr(env2) +& "\n");
 
         mod = Mod.merge(mm, class_mod, env2, pre);
         mod = Mod.merge(mod, m_1, env2, pre);
@@ -3768,12 +3670,10 @@ algorithm
         // adrpo: 2011-11-18: see if the component is an INPUT or OUTPUT and class is a record
         //                    and add it to the cache!
         // (cache, _, _) = addRecordConstructorsToTheCache(cache, cenv, ih, mod_1, pre, ci_state, dir, cls, inst_dims);
-        cenv = Env.mergeEnv(cenv, env2, name, cls, Env.M(pre, name, ad, mod_1, env2, inst_dims));
-        cenv = Env.addModification(cenv, Env.M(pre, name, ad, mod_1, env2, inst_dims));
+        (cenv, cls, ih) = FGraph.createVersionScope(env2, name, pre, mod_1, cenv, cls, ih);
         (cache, comp_env, ih, store, dae, csets, ty, graph_new) = InstVar.instVar(cache,
           cenv, ih, store, ci_state, mod_1, pre, name, cls, attr,
           prefixes, dims, {}, inst_dims, impl, comment, info, graph, csets, env2);
-        (comp_env, env2) = Env.splitEnv(comp_env, env2, name);
         // print("instElement -> component: " +& name +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         //The environment is extended (updated) with the new variable binding.
         (cache, binding) = InstBinding.makeBinding(cache, env2, attr, mod, ty, pre, name, info);
@@ -3799,7 +3699,7 @@ algorithm
         // Type info present. Now we can also put the binding into the dae.
         // If the type is one of the simple, predifined types a simple variable
         // declaration is added to the DAE.
-        env = Env.updateFrameV(env2, new_var, Env.VAR_DAE(), comp_env);
+        env = FGraph.updateComp(env2, new_var, FCore.VAR_DAE(), comp_env);
         vars = Util.if_(already_declared, {}, {new_var});
         dae = Util.if_(already_declared, DAE.emptyDae, dae);
         (_, ih, graph) = InnerOuter.handleInnerOuterEquations(io, DAE.emptyDae, ih, graph_new, graph);
@@ -3867,12 +3767,12 @@ algorithm
         // true in update_frame means the variable is now instantiated.
         dae_attr = DAEUtil.translateSCodeAttrToDAEAttr(attr, prefixes, comment);
         ((ty,_)) = Types.traverseType((ty,1),Types.setIsFunctionPointer);
-        new_var = DAE.TYPES_VAR(name, dae_attr, ty, binding, NONE());
+        new_var = DAE.TYPES_VAR(name, dae_attr, ty, binding, NONE()) ;
 
         // type info present Now we can also put the binding into the dae.
         // If the type is one of the simple, predifined types a simple variable
         // declaration is added to the DAE.
-        env = Env.updateFrameV(env, new_var, Env.VAR_DAE(), comp_env)  ;
+        env = FGraph.updateComp(env, new_var, FCore.VAR_DAE(), comp_env);
         vars = Util.if_(already_declared, {}, {new_var});
         dae = Util.if_(already_declared, DAE.emptyDae, dae);
         (_, ih, graph) = InnerOuter.handleInnerOuterEquations(io, DAE.emptyDae, ih, graph_new, graph);
@@ -3894,7 +3794,7 @@ algorithm
         // good for GDB debugging to re-run the instElement again
         // (cache, env, ih, store, dae, csets, ci_state, vars, graph) = instElement(inCache, inEnv, inIH, inUnitStore, inMod, inPrefix, inState, inElement, inInstDims, inImplicit, inCallingScope, inGraph, inSets);
         s = Absyn.pathString(t);
-        scope_str = Env.printEnvPathStr(env);
+        scope_str = FGraph.printGraphPathStr(env);
         pre = PrefixUtil.prefixAdd(name, {}, {}, pre, vt, ci_state);
         ns = PrefixUtil.printPrefixStrIgnoreNoPre(pre);
         Error.addSourceMessage(Error.LOOKUP_ERROR_COMPNAME, {s, scope_str, ns}, info);
@@ -3907,7 +3807,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.instElement failed: " +& SCodeDump.unparseElementStr(comp,SCodeDump.defaultOptions));
-        Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
+        Debug.traceln("  Scope: " +& FGraph.printGraphPathStr(env));
       then
         fail();
   end matchcontinue;
@@ -3917,15 +3817,15 @@ protected function updateCompeltsMods
 "never fail and *NEVER* display any error messages as this function
  prints non-true error messages and even so instElementList dependency
  analysis might work fine and still instantiate."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input list<tuple<SCode.Element, DAE.Mod>> inComponents;
   input ClassInf.State inState;
   input Boolean inBoolean;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output list<tuple<SCode.Element, DAE.Mod>> outComponents;
 algorithm
@@ -3961,22 +3861,22 @@ protected function updateCompeltsMods_dispatch
   This function updates component modifiers to typed modifiers.
   Typed modifiers are needed  to merge modifiers and to be able to
   fully instantiate a component."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input list<tuple<SCode.Element, DAE.Mod>> inComponents;
   input ClassInf.State inState;
   input Boolean inBoolean;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output list<tuple<SCode.Element, DAE.Mod>> outComponents;
 algorithm
   (outCache,outEnv,outIH,outComponents):=
   matchcontinue (inCache,inEnv,inIH,inPrefix,inComponents,inState,inBoolean)
     local
-      Env.Env env,env2,env3;
+      FCore.Graph env,env2,env3;
       Prefix.Prefix pre;
       SCode.Mod umod;
       list<Absyn.ComponentRef> crefs,crefs_1;
@@ -3988,7 +3888,7 @@ algorithm
       SCode.Element comp,redComp;
       ClassInf.State ci_state;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       String name;
       Absyn.Info info;
@@ -4082,8 +3982,8 @@ public function redeclareType
 "This function takes a DAE.Mod and an SCode.Element and if the modification
   contains a redeclare of that element, the type is changed and an updated
   element is returned."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input SCode.Element inElement;
@@ -4091,8 +3991,8 @@ public function redeclareType
   input ClassInf.State inState;
   input Boolean inImplicit;
   input DAE.Mod inCmod;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output SCode.Element outElement;
   output DAE.Mod outMod;
@@ -4100,7 +4000,7 @@ algorithm
   (outCache,outEnv,outIH,outElement,outMod) := matchcontinue (inCache,inEnv,inIH,inMod,inElement,inPrefix,inState,inImplicit,inCmod)
     local
       list<Absyn.ComponentRef> crefs;
-      Env.Env env_1,env;
+      FCore.Graph env_1,env;
       DAE.Mod m_1,old_m_1,m_2,m_3,m,rmod,innerCompMod,compMod;
       SCode.Element redecl,newcomp,comp,redComp;
       String n1,n2;
@@ -4116,14 +4016,14 @@ algorithm
       list<tuple<SCode.Element, DAE.Mod>> rest;
       Prefix.Prefix pre;
       ClassInf.State ci_state;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       DAE.Mod cmod;
 
       Option<SCode.ConstrainClass> cc;
       list<SCode.Element> compsOnConstrain;
       Absyn.InnerOuter io;
-      SCode.Attributes at;
+      SCode.Attributes at, at2;
       Option<Absyn.Exp> cond;
       Absyn.Info info;
       Absyn.TypeSpec apt;
@@ -4155,51 +4055,71 @@ algorithm
                             replaceablePrefix = repl2 as SCode.REPLACEABLE((cc as SOME(_))),
                             innerOuter = io,
                             visibility = _),
-                          typeSpec = _,
+                          attributes = at2,
+                          typeSpec = t2,
                           modifications = old_mod),
           pre,ci_state,impl,cmod)
       equation
         true = stringEq(n1, n2);
+        mod = InstUtil.chainRedeclares(inMod, mod);
+        at = SCodeUtil.mergeDimensions(at, at2); // take the array dims from the original if the redeclare does not have any
         compsOnConstrain = InstUtil.extractConstrainingComps(cc,env,pre) "extract components belonging to constraining class";
         crefs = InstUtil.getCrefFromMod(mod);
         (cache,env_1,ih) = updateComponentsInEnv(cache, env, ih, pre, DAE.NOMOD(), crefs, ci_state, impl);
         (cache,m_1) = Mod.elabMod(cache,env_1, ih, pre, mod, impl, Mod.COMPONENT(n1), info);
         (cache,old_m_1) = Mod.elabMod(cache,env_1, ih, pre, old_mod, impl, Mod.COMPONENT(n2), info);
 
-        old_m_1 = InstUtil.keepConstrainingTypeModifersOnly(old_m_1,compsOnConstrain) "keep previous constrainingclass mods";
-        cmod = InstUtil.keepConstrainingTypeModifersOnly(cmod,compsOnConstrain) "keep previous constrainingclass mods";
+        rmod = InstUtil.keepConstrainingTypeModifersOnly(rmod, compsOnConstrain) "keep previous constrainingclass mods";
+        old_m_1 = InstUtil.keepConstrainingTypeModifersOnly(old_m_1, compsOnConstrain) "keep previous constrainingclass mods";
 
-        innerCompMod = Mod.merge(m_1,old_m_1,env_1,pre) "inner comp modifier merg(new_inner, old_inner) ";
-        compMod = Mod.merge(rmod,cmod,env_1,pre) "outer comp modifier";
+        m_2 = Mod.merge(m_1, rmod, env_1, pre);
+        m_3 = Mod.merge(m_2, old_m_1, env_1, pre);
+        m_3 = Mod.merge(m_3, cmod, env_1, pre);
 
         redComp = SCode.COMPONENT(n1,
                     SCode.PREFIXES(vis, redeclp, finalPrefix, io, repl2),
                     at,t,mod,comment,cond,info);
-        m_2 = Mod.merge(compMod, innerCompMod, env_1, pre);
       then
-        (cache,env_1,ih,redComp,m_2);
+        (cache,env_1,ih,redComp,m_3);
 
     // no constraining type on comp, throw away modifiers prior to redeclaration
     case (cache,env,ih,(DAE.REDECL(tplSCodeElementModLst = (((redecl as
-          SCode.COMPONENT(name = n1,typeSpec = _,modifications = mod, info = info)),rmod) :: _))),
+          SCode.COMPONENT(name = n1,
+                          prefixes = SCode.PREFIXES(
+                            finalPrefix = finalPrefix,
+                            replaceablePrefix = repl,
+                            visibility = vis,
+                            redeclarePrefix = redeclp),
+                            typeSpec = t,modifications = mod,comment = comment,
+                            attributes = at,condition = cond, info = info
+                            )),rmod) :: _))),
+          // adrpo: always take the inner outer from the component, not the redeclaration!!!!
           SCode.COMPONENT(name = n2,
                           prefixes = SCode.PREFIXES(
                             finalPrefix = SCode.NOT_FINAL(),
-                            replaceablePrefix = SCode.REPLACEABLE(NONE()),
-                            visibility = _
-                          ),
-                          typeSpec = _,modifications = old_mod),
-          pre,ci_state,impl,_)
+                            replaceablePrefix = repl2 as SCode.REPLACEABLE(NONE()),
+                            innerOuter = io,
+                            visibility = _),
+                          typeSpec = t2,
+                          attributes = at2,
+                          modifications = old_mod),
+          pre,ci_state,impl,cmod)
       equation
         true = stringEq(n1, n2);
+        mod = InstUtil.chainRedeclares(inMod, mod);
+        at = SCodeUtil.mergeDimensions(at, at2); // take the array dims from the original if the redeclare does not have any
         crefs = InstUtil.getCrefFromMod(mod);
         (cache,env_1,ih) = updateComponentsInEnv(cache,env,ih, pre, DAE.NOMOD(), crefs, ci_state, impl) "m" ;
         (cache,m_1) = Mod.elabMod(cache, env_1, ih, pre, mod, impl, Mod.COMPONENT(n1), info);
         (cache,old_m_1) = Mod.elabMod(cache, env_1, ih, pre, old_mod, impl, Mod.COMPONENT(n2), info);
-        m_2 = Mod.merge(rmod, m_1, env_1, pre);
+        m_2 = Mod.merge(m_1, rmod, env_1, pre);
         m_3 = Mod.merge(m_2, old_m_1, env_1, pre);
+        m_3 = Mod.merge(m_3,cmod,env_1,pre);
+        redComp = SCode.COMPONENT(n1,
+                    SCode.PREFIXES(vis, redeclp, finalPrefix, io, repl),
+                    at,t,mod,comment,cond,info);
       then
-        (cache,env_1,ih,redecl,m_3);
+        (cache,env_1,ih,redComp,m_3);
 
     // redeclaration of classes:
     case (cache,env,ih,
@@ -4276,16 +4196,16 @@ protected function updateComponentsInEnv
   component can be instantiated fully and the type of the component can be
   determined. The type is added/updated to the environment such that other
   components can use it when they are instantiated."
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix pre;
   input DAE.Mod mod;
   input list<Absyn.ComponentRef> crefs;
   input ClassInf.State ci_state;
   input Boolean impl;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
 protected
   String myTick, crefsStr;
@@ -4296,7 +4216,7 @@ algorithm
   (outCache,outEnv,outIH,_):=
     updateComponentsInEnv2(cache,env,inIH,pre,mod,crefs,ci_state,impl,NONE(),NONE());
   //Debug.fprintln(Flags.DEBUG,"finished update comps" +& myTick);
-  //print("outEnv:");print(Env.printEnvStr(outEnv));print("\n");
+  //print("outEnv:");print(FGraph.printGraphStr(outEnv));print("\n");
 end updateComponentsInEnv;
 
 protected function getUpdatedCompsHashTable
@@ -4312,8 +4232,8 @@ end getUpdatedCompsHashTable;
 
 protected function updateComponentInEnv
   "Helper function to updateComponentsInEnv. Does the work for one variable."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix pre;
   input DAE.Mod mod;
@@ -4322,8 +4242,8 @@ protected function updateComponentInEnv
   input Boolean impl;
   input Option<HashTable5.HashTable> inUpdatedComps;
   input Option<Absyn.ComponentRef> currentCref "The cref that caused this call to updateComponentInEnv.";
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output Option<HashTable5.HashTable> outUpdatedComps;
 algorithm
@@ -4344,11 +4264,11 @@ algorithm
       SCode.Comment comment;
       DAE.Mod cmod,mods;
       SCode.Element cl, compNew;
-      Env.Env cenv,env2,env_1;
+      FCore.Graph cenv,env2,env_1;
       list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
       Option<Absyn.Exp> cond;
       DAE.Var tyVar;
-      Env.InstStatus is;
+      FCore.Status is;
       Absyn.Info info;
       InstanceHierarchy ih;
       SCode.Prefixes pf;
@@ -4361,9 +4281,9 @@ algorithm
       DAE.Mod daeMod;
       SCode.Prefixes prefixes;
       SCode.Attributes attributes;
-      Env.Env compenv, env, idENV;
-      Env.InstStatus instStatus;
-      Env.Cache cache;
+      FCore.Graph compenv, env, idENV;
+      FCore.Status instStatus;
+      FCore.Cache cache;
       HashTable5.HashTable updatedComps;
       ClassInf.State ci_state;
 
@@ -4393,7 +4313,7 @@ algorithm
         //true = valueEq(tsOld, tsNew);
 
         // update frame in env!
-        // Debug.fprintln(Flags.INST_TRACE, "updateComponentInEnv: found a redeclaration that only changes bindings and prefixes: NEW:\n" +& SCodeDump.unparseElementStr(compNew) +& " in env:" +& Env.printEnvPathStr(env));
+        // Debug.fprintln(Flags.INST_TRACE, "updateComponentInEnv: found a redeclaration that only changes bindings and prefixes: NEW:\n" +& SCodeDump.unparseElementStr(compNew) +& " in env:" +& FGraph.printGraphPathStr(env));
 
         // update the mod then give it to
         (cache, daeMod) = Mod.elabMod(cache, env, ih, pre, smod, impl, Mod.COMPONENT(name), info);
@@ -4427,7 +4347,7 @@ algorithm
 
         (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(ct,prl1,var1,dir,io,visibility),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
 
-        //print("updateComponentInEnv: NEW ENV:\n" +& Env.printEnvStr(env_1) +& "\n");
+        //print("updateComponentInEnv: NEW ENV:\n" +& FGraph.printGraphStr(env_1) +& "\n");
       then
         (cache,env_1,ih,SOME(updatedComps));
 
@@ -4438,7 +4358,7 @@ algorithm
         true = stringEq(name, id);
         // fetch the original class!
         (cl, _) = Lookup.lookupClassLocal(env, name);
-        env = Env.updateFrameC(env, SCode.mergeWithOriginal(compNew, cl), env);
+        env = FGraph.updateClass(env, SCode.mergeWithOriginal(compNew, cl), pre, mod, FCore.CLS_UNTYPED(), env);
         updatedComps = getUpdatedCompsHashTable(inUpdatedComps);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
       then
@@ -4449,7 +4369,7 @@ algorithm
       equation
         id = Absyn.crefFirstIdent(cref);
         (cache,_,_,_,is,_) = Lookup.lookupIdent(cache,env,id);
-        true = Env.isTyped(is) "If InstStatus is typed, return";
+        true = FCore.isTyped(is) "If InstStatus is typed, return";
       then
         (cache,env,ih,inUpdatedComps);
 
@@ -4501,9 +4421,9 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.updateComponentInEnv failed, cref = " +& Dump.printComponentRefStr(cref));
         Debug.traceln(" mods: " +& Mod.printModStr(mod));
-        Debug.traceln(" scope: " +& Env.printEnvPathStr(env));
+        Debug.traceln(" scope: " +& FGraph.printGraphPathStr(env));
         Debug.traceln(" prefix: " +& PrefixUtil.printPrefixStr(pre));
-        //print("Env:\n" +& Env.printEnvStr(env) +& "\n");
+        //print("Env:\n" +& FGraph.printGraphStr(env) +& "\n");
       then
         fail();
 
@@ -4514,9 +4434,9 @@ end updateComponentInEnv;
 protected function updateComponentInEnv2
 " Helper function, checks if the component was already instantiated.
   If it was, don't do it again."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Env.Env cenv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input FCore.Graph cenv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix pre;
   input Absyn.Path path;
@@ -4534,8 +4454,8 @@ protected function updateComponentInEnv2
   input ClassInf.State ci_state;
   input Boolean impl;
   input HashTable5.HashTable inUpdatedComps;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output HashTable5.HashTable outUpdatedComps;
 algorithm
@@ -4544,8 +4464,8 @@ algorithm
                  cmod,mod,cref,ci_state,impl,inUpdatedComps)
     local
       InstanceHierarchy ih;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       HashTable5.HashTable updatedComps;
 
     case (cache,env,_,ih,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,updatedComps)
@@ -4567,9 +4487,9 @@ end updateComponentInEnv2;
 protected function updateComponentInEnv2_dispatch
 " Helper function, checks if the component was already instantiated.
   If it was, don't do it again."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Env.Env inCenv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input FCore.Graph inCenv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix pre;
   input Absyn.Path path;
@@ -4587,8 +4507,8 @@ protected function updateComponentInEnv2_dispatch
   input ClassInf.State ci_state;
   input Boolean impl;
   input HashTable5.HashTable inUpdatedComps;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output HashTable5.HashTable outUpdatedComps;
 algorithm
@@ -4598,14 +4518,14 @@ algorithm
     local
       DAE.Type ty;
       DAE.Mod m_1,classmod,mm,mod_1,mod_2,mod_3,mod;
-      Env.Env compenv;
+      FCore.Graph compenv;
       Option<DAE.EqMod> eq;
       DAE.Dimensions dims;
       DAE.Binding binding;
       Absyn.ComponentRef owncref;
       InstanceHierarchy ih;
-      Env.Cache cache;
-      Env.Env env, cenv;
+      FCore.Cache cache;
+      FCore.Graph env, cenv;
       HashTable5.HashTable updatedComps;
       SCode.Element cls;
 
@@ -4648,11 +4568,10 @@ algorithm
            "\n");*/
 
         // Instantiate the component */
-        cenv = Env.mergeEnv(cenv, env, name, cls, Env.M(pre, name, ad, mod_3, env, {}));
+        (cenv, cls, ih) = FGraph.createVersionScope(env, name, pre, mod_3, cenv, cls, ih);
         (cache,compenv,ih,_,_,_,ty,_) =
           InstVar.instVar(cache, cenv, ih, UnitAbsyn.noStore, ci_state, mod_3, pre,
           name, cls, attr, inPrefixes, dims, {}, {}, impl, SCode.noComment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
-        (compenv, env) = Env.splitEnv(compenv, env, name);
 
         // print("updateComponentInEnv -> 1 component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
 
@@ -4660,7 +4579,7 @@ algorithm
         (cache,binding) = InstBinding.makeBinding(cache, env, attr, mod_3, ty, pre, name, info);
         /* type info present */
         //Debug.fprintln(Flags.DEBUG,"VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCodeDump.printModStr(m));
-        env = Env.updateFrameV(env, DAE.TYPES_VAR(name,dattr,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
+        env = FGraph.updateComp(env, DAE.TYPES_VAR(name,dattr,ty,binding,NONE()), FCore.VAR_TYPED(), compenv);
         //updatedComps = BaseHashTable.delete(cref,updatedComps);
 
         updatedComps = BaseHashTable.add((cref,1),updatedComps);
@@ -4699,11 +4618,10 @@ algorithm
            "\n");*/
 
         // Instantiate the component */
-        cenv = Env.mergeEnv(cenv, env, name, cls, Env.M(pre, name, ad, m_1, env, {}));
+        (cenv, cls, ih) = FGraph.createVersionScope(env, name, pre, m_1, cenv, cls, ih);
         (cache,compenv,ih,_,_,_,ty,_) =
           InstVar.instVar(cache, cenv, ih, UnitAbsyn.noStore, ci_state, m_1 /* classmod */, pre,
           name, cls, attr, inPrefixes, dims, {}, {}, impl, SCode.noComment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
-        (compenv, env) = Env.splitEnv(compenv, env, name);
 
         // print("updateComponentInEnv -> 1 component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
 
@@ -4711,7 +4629,7 @@ algorithm
         (cache,binding) = InstBinding.makeBinding(cache, env, attr, m_1, ty, pre, name, info);
         /* type info present */
         //Debug.fprintln(Flags.DEBUG,"VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCodeDump.printModStr(m));
-        env = Env.updateFrameV(env, DAE.TYPES_VAR(name,dattr,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
+        env = FGraph.updateComp(env, DAE.TYPES_VAR(name,dattr,ty,binding,NONE()), FCore.VAR_TYPED(), compenv);
         //updatedComps = BaseHashTable.delete(cref,updatedComps);
 
         updatedComps = BaseHashTable.add((cref,1),updatedComps);
@@ -4726,21 +4644,21 @@ algorithm
 end updateComponentInEnv2_dispatch;
 
 protected function updateComponentInEnv3
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input SCode.Mod inMod;
   input Boolean inImpl;
   input Mod.ModScope inModScope;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Mod outMod;
 algorithm
   (outCache, outMod) :=
   matchcontinue(inCache, inEnv, inIH, inMod, inImpl, inModScope, inInfo)
     local
       DAE.Mod mod;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (_, _, _, _, _, _, _)
       equation
@@ -4776,69 +4694,21 @@ algorithm
   end matchcontinue;
 end updateComponentInEnv3;
 
-public function instClassDecl
-"The class definition is instantiated although no variable is declared with it.
-  After instantiating it, it is checked to see if it can be used as a package,
-  and if it can, then it is added as a variable under the same name as the class.
-  This makes it possible to use a unified lookup mechanism.
-  And since packages only can contain constants and class definition, instantiating
-  a package does not do anything else."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
-  input SCode.Element inClass;
-  input list<list<DAE.Dimension>> inInstDims;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
-  output InnerOuter.InstHierarchy outIH;
-  output DAE.DAElist outDae;
-algorithm
-  (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inInstDims)
-    local
-      Env.Env env;
-      DAE.DAElist dae;
-      DAE.Mod mod;
-      Prefix.Prefix pre;
-      SCode.Element c;
-      String n;
-      SCode.Restriction restr;
-      InstDims inst_dims;
-      Env.Cache cache;
-      InstanceHierarchy ih;
-
-    case (cache,env,ih,_,_,(c as SCode.CLASS(name = _,restriction = _)),_)
-      equation
-        // add the class in the environment
-        env = Env.extendFrameC(env, c);
-      then
-        (cache,env,ih,DAE.emptyDae);
-
-    else
-      equation
-        Debug.fprint(Flags.FAILTRACE, "- Inst.instClassDecl failed\n");
-      then
-        fail();
-  end matchcontinue;
-end instClassDecl;
-
 public function makeEnvFromProgram
-"This function takes a SCode.Program and builds
-  an environment, excluding the class in A1."
-  input Env.Cache inCache;
+"This function takes a SCode.Program and builds an environment."
+  input FCore.Cache inCache;
   input SCode.Program prog;
   input SCode.Path path;
-  output Env.Cache outCache;
-  output Env.Env env_1;
+  output FCore.Cache outCache;
+  output FCore.Graph env_1;
 protected
-  Env.Env env;
-  Env.Cache cache;
+  FCore.Graph env;
+  FCore.Cache cache;
 algorithm
   // prog := scodeFlatten(prog, path);
-  (cache,env) := Builtin.initialEnv(inCache);
-  (outCache,env_1,_,_) :=
-    instClassDecls(cache, env, InnerOuter.emptyInstHierarchy, prog);
+  (cache, env) := Builtin.initialGraph(inCache);
+  env_1 := FGraphBuildEnv.mkProgramGraph(prog, FCore.USERDEFINED(),env);
+  outCache := cache;
 end makeEnvFromProgram;
 
 public function makeFullyQualified
@@ -4846,23 +4716,23 @@ public function makeFullyQualified
   Transforms a class name to its fully qualified name by investigating the environment.
   For instance, the model Resistor in Modelica.Electrical.Analog.Basic will given the
   correct environment have the fully qualified name: Modelica.Electrical.Analog.Basic.Resistor"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path inPath;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Absyn.Path outPath;
 algorithm
   (outCache,outPath) := matchcontinue (inCache,inEnv,inPath)
     local
-      Env.Env env,env_1;
+      FCore.Graph env,env_1;
       Absyn.Path path,path_2,path3;
       String s;
-      Env.Cache cache;
+      FCore.Cache cache;
       SCode.Element cl;
       DAE.ComponentRef crPath;
-      Env.Frame f;
-      Env.Env fs;
+      FCore.Graph fs;
       Absyn.Ident name, ename;
+      FCore.Ref r;
 
     // Special cases: assert and reinit can not be handled by builtin.mo, since they do not have return type
     case(cache,_,path as Absyn.IDENT("assert")) then (cache,path);
@@ -4882,14 +4752,6 @@ algorithm
     // do NOT fully quallify again a fully qualified path!
     case (cache,_,Absyn.FULLYQUALIFIED(_)) then (cache, inPath);
 
-    /*/ do not qualify functions or records!
-    case (cache,env,path)
-      equation
-        (cache,cl as SCode.CLASS(name = name),env_1) = Lookup.lookupClass(cache, env, path, false);
-        true = SCode.isFunction(cl) or SCode.isRecord(cl);
-      then
-        (cache,path);*/
-
     // To make a class fully qualified, the class path is looked up in the environment.
     // The FQ path consist of the simple class name appended to the environment path of the looked up class.
     case (cache,env,path)
@@ -4900,10 +4762,13 @@ algorithm
         (cache,Absyn.makeFullyQualified(path_2));
 
     // Needed to make external objects fully-qualified
-    case (cache,env as (Env.FRAME(name = SOME(name))::_),Absyn.IDENT(s))
+    case (cache,env,Absyn.IDENT(s))
       equation
+        r = FGraph.lastScopeRef(env);
+        false = FNode.isRefTop(r);
+        name = FNode.refName(r);
         true = name ==& s;
-        SOME(path_2) = Env.getEnvPath(env);
+        SOME(path_2) = FGraph.getScopePath(env);
       then
         (cache,Absyn.makeFullyQualified(path_2));
 
@@ -4915,11 +4780,11 @@ algorithm
       then
         (cache,Absyn.makeFullyQualified(path_2));
 
-     // A package constant, first try to look it up local(top frame)
-    case (cache,(f::_) ,path)
+     // A package constant, first try to look it up local (top frame)
+    case (cache,env,path)
       equation
         crPath = ComponentReference.pathToCref(path);
-        (cache,_,_,_,_,_,env,_,name) = Lookup.lookupVarInternal(cache, {f}, crPath,InstTypes.SEARCH_ALSO_BUILTIN());
+        (cache,_,_,_,_,_,env,_,name) = Lookup.lookupVarInternal(cache, env, crPath, InstTypes.SEARCH_ALSO_BUILTIN());
         path3 = makeFullyQualified2(env,Absyn.IDENT(name));
       then
         (cache,Absyn.makeFullyQualified(path3));
@@ -4939,9 +4804,8 @@ algorithm
         /*true = Flags.isSet(Flags.FAILTRACE);
         print(Absyn.pathString(path));print(" failed to make FQ in env:");
         print("\n");
-        print(Env.printEnvPathStr(inEnv));
-        print("\n");
-        // print(Env.printEnvStr(inEnv));*/
+        print(FGraph.printGraphPathStr(env));
+        print("\n");*/
       then
         (cache,path);
   end matchcontinue;
@@ -4950,8 +4814,8 @@ end makeFullyQualified;
 public function instList
 "This is a utility used to do instantiation of list
   of things, collecting the result in another list."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -4961,16 +4825,16 @@ public function instList
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input ConnectionGraph.ConnectionGraph inGraph;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ClassInf.State outState;
   output ConnectionGraph.ConnectionGraph outGraph;
   partial function InstFunc
-    input Env.Cache inCache;
-    input Env.Env inEnv;
+    input FCore.Cache inCache;
+    input FCore.Graph inEnv;
     input InnerOuter.InstHierarchy inIH;
     input Prefix.Prefix inPrefix;
     input Connect.Sets inSets;
@@ -4979,8 +4843,8 @@ public function instList
     input Boolean inBoolean;
     input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
     input ConnectionGraph.ConnectionGraph inGraph;
-    output Env.Cache outCache;
-    output Env.Env outEnv;
+    output FCore.Cache outCache;
+    output FCore.Graph outEnv;
     output InnerOuter.InstHierarchy outIH;
     output DAE.DAElist outDAe;
     output Connect.Sets outSets;
@@ -4993,7 +4857,7 @@ algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
   match (inCache,inEnv,inIH,inPrefix,inSets,inState,instFunc,inTypeALst,inBoolean,unrollForLoops,inGraph)
     local
-      Env.Env env,env_1,env_2;
+      FCore.Graph env,env_1,env_2;
       DAE.Mod mod;
       Prefix.Prefix pre;
       Connect.Sets csets,csets_1,csets_2;
@@ -5002,7 +4866,7 @@ algorithm
       DAE.DAElist dae1,dae2,dae;
       Type_a e;
       list<Type_a> es;
-      Env.Cache cache;
+      FCore.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
 
@@ -5020,25 +4884,25 @@ algorithm
 end instList;
 
 protected function instConstraints
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input list<SCode.ConstraintSection> inConstraints;
   input Boolean inImpl;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output DAE.DAElist outDae;
   output ClassInf.State outState;
 algorithm
   (outCache,outEnv,outDae,outState) := match(inCache,inEnv,inPrefix,inState,inConstraints,inImpl)
     local
-      Env.Env env1,env2;
+      FCore.Graph env1,env2;
       DAE.DAElist constraints_1,constraints_2;
       ClassInf.State ci_state;
       list<SCode.ConstraintSection> rest;
       SCode.ConstraintSection constr;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.DAElist dae;
 
     case (_,_,_,_,{},_)
@@ -5061,22 +4925,22 @@ algorithm
 end instConstraints;
 
 protected function instClassAttributes
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Prefix.Prefix inPrefix;
   input list<Absyn.NamedArg> inAttrs;
   input Boolean inBoolean;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output DAE.DAElist outDae;
 algorithm
 
   (outCache,outEnv,outDae):=
   match (inCache,inEnv,inPrefix,inAttrs,inBoolean,inInfo)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       DAE.DAElist clsAttrs, dae;
 
     case (cache,env,_,{},_,_)
@@ -5096,27 +4960,27 @@ algorithm
 end instClassAttributes;
 
 protected function instClassAttributes2
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Prefix.Prefix inPrefix;
   input list<Absyn.NamedArg> inAttrs;
   input Boolean inBoolean;
   input Absyn.Info inInfo;
   input DAE.DAElist inClsAttrs;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output DAE.DAElist outDae;
 algorithm
 
   (outCache,outEnv,outDae):=
   match (inCache,inEnv,inPrefix,inAttrs,inBoolean,inInfo,inClsAttrs)
     local
-      Env.Env env,env_2;
+      FCore.Graph env,env_2;
       Prefix.Prefix pre;
       Boolean impl;
       Absyn.NamedArg na;
       list<Absyn.NamedArg> rest;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Ident attrName;
       Absyn.Exp attrExp;
       DAE.Exp outExp;
@@ -5190,12 +5054,12 @@ Author BZ 2008-06,
 Instantiate a class, but _allways_ as inner class. This due to that we do not want flow equations equal to zero.
 Called from Interactive.mo, boschsection.
 "
-  input Env.Cache inCache;
+  input FCore.Cache inCache;
   input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDAElist;
 algorithm
@@ -5203,12 +5067,12 @@ algorithm
   matchcontinue (inCache,inIH,inProgram,inPath)
     local
       Absyn.Path cr,path;
-      Env.Env env,env_1,env_2;
+      FCore.Graph env,env_1,env_2;
       DAE.DAElist dae1,dae;
       list<SCode.Element> cdecls;
       String name2,n,pathstr,name,cname_str;
       SCode.Element cdef;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
 
     case (_,_,{},_)
@@ -5219,19 +5083,18 @@ algorithm
 
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = _))) /* top level class */
       equation
-        (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,_) = instClassDecls(cache,env,ih, cdecls);
+        (cache,env) = Builtin.initialGraph(cache);
+        env_1 = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
         (cache,env_2,ih,dae) = instBoschClassInProgram(cache,env_1,ih, cdecls, path);
       then
         (cache,env_2,ih,dae);
 
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name=_))) /* class in package */
       equation
-        (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,_) = instClassDecls(cache,env,ih, cdecls);
+        (cache,env) = Builtin.initialGraph(cache);
+        env_1 = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
         (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
 
-        env_2 = Env.addModification(env_2, Env.M(Prefix.NOPRE(), n, {}, DAE.NOMOD(), env_1, {}));
         (cache,env_2,ih,_,dae,_,_,_,_,_) =
           instClass(cache,env_2,ih,UnitAbsyn.noStore, DAE.NOMOD(), Prefix.NOPRE(),
             cdef, {}, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl" ;
@@ -5250,13 +5113,13 @@ end instantiateBoschClass;
 
 protected function instBoschClassInProgram
 "Helper function for instantiateBoschClass"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
@@ -5264,12 +5127,12 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inProgram,inPath)
     local
       DAE.DAElist dae;
-      Env.Env env_1,env;
+      FCore.Graph env_1,env;
       SCode.Element c;
       String name1,name2;
       list<SCode.Element> cs;
       Absyn.Path path;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
 
     case (cache,env,ih,((c as SCode.CLASS(name = name1)) :: _),Absyn.IDENT(name = name2))
@@ -5365,8 +5228,8 @@ protected function removeSelfReferenceAndUpdate
  But also instantiate the declared type, if any.
  If it fails (declarations of array dimensions using
  the size of itself) it will just remove the element."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input list<Absyn.ComponentRef> inRefs;
@@ -5381,8 +5244,8 @@ protected function removeSelfReferenceAndUpdate
   input DAE.Mod mods;
   input SCode.Mod scodeMod;
   input Absyn.Info info;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output list<Absyn.ComponentRef> o1;
@@ -5393,8 +5256,8 @@ algorithm
       Absyn.Path sty;
       Absyn.ComponentRef c1;
       list<Absyn.ComponentRef> cl1,cl2;
-      Env.Cache cache;
-      Env.Env env,compenv,cenv;
+      FCore.Cache cache;
+      FCore.Graph env,compenv,cenv;
       Integer i1,i2;
       list<Absyn.Subscript> ad;
       SCode.Parallelism prl1;
@@ -5440,11 +5303,10 @@ algorithm
         smod = SCodeUtil.removeSelfReferenceFromMod(scodeMod, c1);
         (cache,m) = Mod.elabMod(cache, env, ih, pre, smod, impl, Mod.COMPONENT(n), info); // m = Mod.elabUntypedMod(smod, env, pre);
 
-        cenv = Env.mergeEnv(cenv, env, n, c, Env.M(pre, n, ad, m, env, inst_dims));
+        (cenv, c, ih) = FGraph.createVersionScope(env, n, pre, m, cenv, c, ih);
         (cache,compenv,ih,store,_,_,ty,_) =
           InstVar.instVar(cache, cenv, ih, store, state, m, pre, n, c, attr,
             inPrefixes, dims, {}, inst_dims, true, SCode.noComment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
-        (compenv, env) = Env.splitEnv(compenv, env, n);
 
         // print("component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
 
@@ -5452,7 +5314,7 @@ algorithm
         vis = SCode.prefixesVisibility(inPrefixes);
 
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(ct,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
-        env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv);
+        env = FGraph.updateComp(env, new_var, FCore.VAR_TYPED(), compenv);
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
       then
         (cache,env,ih,store,cl2);
@@ -5473,17 +5335,16 @@ algorithm
         ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = InstUtil.removeCrefFromCrefs(cl1, c1);
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
-        (cache,dims) = InstUtil.elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, NONE(), true, false, pre, info, inst_dims);
+        (cache,dims) = InstUtil.elabArraydim(cache, cenv, c1, sty, ad, NONE(), impl, NONE(), true, false, pre, info, inst_dims);
 
         // we really need to keep at least the redeclare modifications here!!
         smod = SCodeUtil.removeNonConstantBindingsKeepRedeclares(scodeMod, false);
         (cache,m) = Mod.elabMod(cache, env, ih, pre, smod, impl, Mod.COMPONENT(n), info); // m = Mod.elabUntypedMod(smod, env, pre);
 
-        cenv = Env.mergeEnv(cenv, env, n, c, Env.M(pre, n, ad, m, env, inst_dims));
+        (cenv, c, ih) = FGraph.createVersionScope(env, n, pre, m, cenv, c, ih);
         (cache,compenv,ih,store,_,_,ty,_) =
           InstVar.instVar(cache, cenv, ih, store, state, m, pre, n, c, attr,
             inPrefixes, dims, {}, inst_dims, true, SCode.noComment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
-        (compenv, env) = Env.splitEnv(compenv, env, n);
 
         // print("component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
 
@@ -5491,7 +5352,7 @@ algorithm
         vis = SCode.prefixesVisibility(inPrefixes);
 
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(ct,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
-        env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv);
+        env = FGraph.updateComp(env, new_var, FCore.VAR_TYPED(), compenv);
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
       then
         (cache,env,ih,store,cl2);
@@ -5518,11 +5379,10 @@ algorithm
         smod = SCodeUtil.removeNonConstantBindingsKeepRedeclares(scodeMod, true);
         (cache,m) = Mod.elabMod(cache, env, ih, pre, smod, impl, Mod.COMPONENT(n), info); // m = Mod.elabUntypedMod(smod, env, pre);
 
-        cenv = Env.mergeEnv(cenv, env, n, c, Env.M(pre, n, ad, m, env, inst_dims));
+        (cenv, c, ih) = FGraph.createVersionScope(env, n, pre, m, cenv, c, ih);
         (cache,compenv,ih,store,_,_,ty,_) =
           InstVar.instVar(cache, cenv, ih, store, state, m, pre, n, c, attr,
             inPrefixes, dims, {}, inst_dims, true, SCode.noComment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
-        (compenv, env) = Env.splitEnv(compenv, env, n);
 
         // print("component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
 
@@ -5530,7 +5390,7 @@ algorithm
         vis = SCode.prefixesVisibility(inPrefixes);
 
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(ct,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
-        env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv);
+        env = FGraph.updateComp(env, new_var, FCore.VAR_TYPED(), compenv);
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
       then
         (cache,env,ih,store,cl2);
@@ -5558,11 +5418,10 @@ algorithm
         // (cache,m) = Mod.elabMod(cache, env, ih, pre, smod, impl, info); // m = Mod.elabUntypedMod(smod, env, pre);
         m = DAE.NOMOD();
 
-        cenv = Env.mergeEnv(cenv, env, n, c, Env.M(pre, n, ad, m, env, inst_dims));
+        (cenv, c, ih) = FGraph.createVersionScope(env, n, pre, m, cenv, c, ih);
         (cache,compenv,ih,store,_,_,ty,_) =
           InstVar.instVar(cache, cenv, ih, store, state, m, pre, n, c, attr,
             inPrefixes, dims, {}, inst_dims, true, SCode.noComment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
-        (compenv, env) = Env.splitEnv(compenv, env, n);
 
         // print("component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
 
@@ -5570,7 +5429,7 @@ algorithm
         vis = SCode.prefixesVisibility(inPrefixes);
 
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(ct,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
-        env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv);
+        env = FGraph.updateComp(env, new_var, FCore.VAR_TYPED(), compenv);
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
       then
         (cache,env,ih,store,cl2);
@@ -5599,6 +5458,7 @@ algorithm
         //(cache, dM) = elabMod(cache, env, ih, pre, sM, impl, info);
         dM = Mod.elabUntypedMod(sM, env, pre);
 
+        (cenv, c, ih) = FGraph.createVersionScope(env, n, pre, dM, cenv, c, ih);
         (cache,compenv,ih,store,_,_,ty,_) =
           InstVar.instVar(cache, cenv, ih, store, state, dM, pre, n, c, attr,
             inPrefixes, dims, {}, inst_dims, true, NONE(), info, ConnectionGraph.EMPTY, Connect.emptySet, env);
@@ -5608,7 +5468,7 @@ algorithm
         io = SCode.prefixesInnerOuter(inPrefixes);
         vis = SCode.prefixesVisibility(inPrefixes);
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(ct,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
-        env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv);
+        env = FGraph.updateComp(env, new_var, FCore.VAR_TYPED(), compenv);
         ErrorExt.delCheckpoint("Inst.removeSelfReferenceAndUpdate");
       then
         (cache,env,ih,store,cl2);
@@ -5632,8 +5492,8 @@ end removeSelfReferenceAndUpdate;
 protected function updateComponentsInEnv2
 "author: PA
   Help function to updateComponentsInEnv."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix pre;
   input DAE.Mod mod;
@@ -5642,15 +5502,15 @@ protected function updateComponentsInEnv2
   input Boolean impl;
   input Option<HashTable5.HashTable> inUpdatedComps;
   input Option<Absyn.ComponentRef> currentCref;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output Option<HashTable5.HashTable> outUpdatedComps;
 algorithm
   (outCache,outEnv,outIH,outUpdatedComps) :=
   matchcontinue (inCache,inEnv,inIH,pre,mod,crefs,ci_state,impl,inUpdatedComps,currentCref)
     local
-      Env.Env env_1,env_2;
+      FCore.Graph env_1,env_2;
       DAE.Mod mods;
       Absyn.ComponentRef cr;
       list<Absyn.ComponentRef> rest;
@@ -5658,8 +5518,8 @@ algorithm
       String n;
       DAE.Binding binding;
       Option<HashTable5.HashTable> updatedComps;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
 
     // This case catches when we want to update an already typed and bound var.
     case (cache,env,ih,_,mods,(Absyn.CREF_IDENT(name = n, subscripts = {}) :: rest),_,_,updatedComps,_)
@@ -5696,7 +5556,7 @@ end updateComponentsInEnv2;
 
 protected function makeFullyQualified2
 "help function to makeFullyQualified"
-  input Env.Env env;
+  input FCore.Graph env;
   input Absyn.Path restPath;
 output Absyn.Path path;
 algorithm
@@ -5705,12 +5565,12 @@ algorithm
       Absyn.Path scope;
     case(_,_)
       equation
-        SOME(scope) = Env.getEnvPath(env);
+        SOME(scope) = FGraph.getScopePath(env);
         path = Absyn.joinPaths(scope, restPath);
       then path;
     else
       equation
-        NONE() = Env.getEnvPath(env);
+        NONE() = FGraph.getScopePath(env);
       then
         restPath;
   end matchcontinue;
@@ -5796,20 +5656,20 @@ algorithm
   end matchcontinue;
 end addToInstCache;
 
-protected type CachedInstItemInputs = tuple<Env.Cache, Env.Env, InstanceHierarchy,
+protected type CachedInstItemInputs = tuple<FCore.Cache, FCore.Graph, InstanceHierarchy,
     UnitAbsyn.InstStore, DAE.Mod, Prefix.Prefix, Connect.Sets, ClassInf.State,
     SCode.Element, SCode.Visibility, InstDims, Boolean,
     ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>, InstTypes.CallingScope>;
 
-protected type CachedInstItemOutputs = tuple<Env.Env, DAE.DAElist, Connect.Sets,
+protected type CachedInstItemOutputs = tuple<DAE.FunctionTree, FCore.Graph, DAE.DAElist, Connect.Sets,
     ClassInf.State, list<DAE.Var>, Option<DAE.Type>, Option<SCode.Attributes>,
     DAE.EqualityConstraint, ConnectionGraph.ConnectionGraph>;
 
-protected type CachedPartialInstItemInputs = tuple<Env.Cache, Env.Env,
+protected type CachedPartialInstItemInputs = tuple<FCore.Cache, FCore.Graph,
     InstanceHierarchy, DAE.Mod, Prefix.Prefix, ClassInf.State,
     SCode.Element, SCode.Visibility, InstDims>;
 
-protected type CachedPartialInstItemOutputs = tuple<Env.Env, ClassInf.State, list<DAE.Var>>;
+protected type CachedPartialInstItemOutputs = tuple<DAE.FunctionTree, FCore.Graph, ClassInf.State, list<DAE.Var>>;
 
 protected
 uniontype CachedInstItem
@@ -5898,5 +5758,139 @@ end emptyInstHashTableSized;
 
 /* end HashTable */
 
+public function getCachedInstance
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input String inName;
+  input FCore.Ref inRef;
+  output FCore.Cache outCache;
+  output FCore.Graph outGraph;
+algorithm
+  (outCache, outGraph) := matchcontinue(inCache, inEnv, inName, inRef)
+    local
+      FCore.Cache cache;
+      FCore.Graph env;
+      DAE.FunctionTree ft;
+      InstHashTable instHash;
+      Absyn.Path fullEnvPathPlusClass;
+      tuple<FCore.Cache, FCore.Graph, InstanceHierarchy,
+            UnitAbsyn.InstStore, DAE.Mod, Prefix.Prefix, Connect.Sets, ClassInf.State,
+            SCode.Element, SCode.Visibility, InstDims, Boolean,
+            ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>, InstTypes.CallingScope>
+            inputs;
+      tuple<DAE.FunctionTree, FCore.Graph, DAE.DAElist, Connect.Sets,
+            ClassInf.State, list<DAE.Var>, Option<DAE.Type>, Option<SCode.Attributes>,
+            DAE.EqualityConstraint, ConnectionGraph.ConnectionGraph> outputs;
+      DAE.Mod m1, m2;
+      Prefix.Prefix pre1, pre2;
+      SCode.Element e1, e2;
+      Boolean b1, b2, b3;
+
+    case (cache, _, _, _)
+      equation
+        true = Flags.isSet(Flags.CACHE);
+        instHash = getGlobalRoot(Global.instHashIndex);
+        FCore.CL(e2, pre2, m2, _, _) = FNode.refData(inRef);
+        fullEnvPathPlusClass = generateCachePath(inEnv, e2, pre2, InstTypes.INNER_CALL());
+
+        // print("Try cached instance: " +& Absyn.pathString(fullEnvPathPlusClass) +& "\n");
+        {SOME(FUNC_instClassIn(inputs, outputs as (ft, env, _, _, _, _, _, _, _, _))),_} = BaseHashTable.get(fullEnvPathPlusClass, instHash);
+
+        // do some sanity checks
+        (_, _, _, _, m1, pre1, _, _, e1, _, _, _,_ , _, _) = inputs;
+
+        b1 = Mod.modEqual(m1, m2);
+        b2 = SCode.elementEqual(e1, e2);
+        b3 = Absyn.pathEqual(PrefixUtil.prefixToPath(pre1), PrefixUtil.prefixToPath(pre2));
+
+        // cache = FCore.setCachedFunctionTree(cache, DAEUtil.joinAvlTrees(ft, FCore.getFunctionTree(cache)));
+        /*
+        print("Got cached instance: " +& Absyn.pathString(fullEnvPathPlusClass) +&
+              " mod: " +& boolString(b1) +&
+              " els: " +& boolString(b2) +&
+              " pre: " +& boolString(b3) +&
+              "\n");*/
+      then
+        (cache, env);
+
+    else
+      equation
+        true = Flags.isSet(Flags.CACHE);
+        instHash = getGlobalRoot(Global.instHashIndex);
+        FCore.CL(e2, pre2, m2, _, _) = FNode.refData(inRef);
+        fullEnvPathPlusClass = generateCachePath(inEnv, e2, pre2, InstTypes.INNER_CALL());
+        // print("Could not get the cached instance: " +& Absyn.pathString(fullEnvPathPlusClass) +& "\n");
+        env = FGraph.pushScopeRef(inEnv, inRef);
+      then
+        (inCache, env);
+
+  end matchcontinue;
+end getCachedInstance;
+
+protected function generateCachePath
+  input FCore.Graph inEnv;
+  input SCode.Element inClass;
+  input Prefix.Prefix inPrefix;
+  input InstTypes.CallingScope inCallScope;
+  output Absyn.Path outCachePath;
+algorithm
+  outCachePath := matchcontinue(inEnv, inClass, inPrefix, inCallScope)
+    local
+      String name, n;
+      Absyn.Path p;
+      SCode.Restriction r;
+
+    case (_, SCode.CLASS(name = n, restriction = r), _, _)
+      equation
+        name = InstTypes.callingScopeStr(inCallScope) +& "$" +&
+               SCodeDump.restrString(r) +& "$" +&
+               generatePrefixStr(inPrefix) +& "$";
+        p = Absyn.joinPaths(Absyn.IDENT(name), FGraph.getGraphName(inEnv));
+      then
+        p;
+
+    case (_, SCode.CLASS(name = n), _, _)
+      equation
+        print("Inst.generateCachePath: failed to generate cache path for: " +& n +& " in scope: " +& FGraph.getGraphNameStr(inEnv) +& "\n");
+        p = FGraph.joinScopePath(inEnv, Absyn.IDENT(n));
+      then
+        p;
+
+  end matchcontinue;
+end generateCachePath;
+
+public function generatePrefixStr
+  input Prefix.Prefix inPrefix;
+  output String str;
+algorithm
+  str := matchcontinue(inPrefix)
+
+    case (_)
+      equation
+        str = Absyn.pathString2NoLeadingDot(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(inPrefix)))), "$");
+      then
+        str;
+
+    else "";
+
+  end matchcontinue;
+end generatePrefixStr;
+
+protected function showCacheInfo
+  input String inMsg;
+  input Absyn.Path inPath;
+algorithm
+  _ := matchcontinue(inMsg, inPath)
+
+    case (_, _)
+      equation
+        true = Flags.isSet(Flags.SHOW_INST_CACHE_INFO);
+        print(inMsg +& Absyn.pathString(inPath) +& "\n");
+      then
+        ();
+
+    else ();
+  end matchcontinue;
+end showCacheInfo;
 
 end Inst;

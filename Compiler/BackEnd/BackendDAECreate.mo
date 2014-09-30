@@ -41,7 +41,7 @@ encapsulated package BackendDAECreate
 public import Absyn;
 public import BackendDAE;
 public import DAE;
-public import Env;
+public import FCore;
 
 protected import BackendDAEUtil;
 protected import BackendDump;
@@ -85,11 +85,11 @@ public function lower "This function translates a DAE, which is the result from 
   O(1) for finding a variable. The equations are put in an expandable
   array. Where adding a new equation can be done in O(1) time if space
   is available.
-  inputs:  lst: DAE.DAElist, inCache: Env.Cache, inEnv: Env.Env
+  inputs:  lst: DAE.DAElist, inCache: FCore.Cache, inEnv: FCore.Graph
   outputs: BackendDAE.BackendDAE"
   input DAE.DAElist lst;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input BackendDAE.ExtraInfo inExtraInfo;
   output BackendDAE.BackendDAE outBackendDAE;
 protected
@@ -110,7 +110,7 @@ protected
 algorithm
   // reset dumped file sequence number
   System.tmpTickResetIndex(0, Global.backendDAE_fileSequence);
-  functionTree := Env.getFunctionTree(inCache);
+  functionTree := FCore.getFunctionTree(inCache);
   (DAE.DAE(elems), functionTree, timeEvents) := processBuiltinExpressions(lst, functionTree);
   vars := BackendVariable.emptyVars();
   knvars := BackendVariable.emptyVars();

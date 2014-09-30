@@ -45,6 +45,8 @@ import FNode;
 
 protected
 import List;
+import FGraph;
+import FGraphBuild;
 
 public
 type Name = FCore.Name;
@@ -83,82 +85,85 @@ public constant Options ignoreAll = OPTIONS(true, true, true);
 public function id
 "@author: adrpo
  search for id"
+  input Graph inGraph;
   input Ref inRef;
   input Name inName;
   input Options inOptions;
   input Msg inMsg "Message flag, SOME() outputs lookup error messages";
+  output Graph outGraph;
   output Ref outRef;
 algorithm
-  outRef := matchcontinue(inRef, inName, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inRef, inName, inOptions, inMsg)
     local
       Ref r;
       Parents p;
+      Graph g;
 
     // implicit scope which has for iterators
-    case (_, _, _, _)
+    case (g, _, _, _, _)
       equation
         r = FNode.child(inRef, FNode.forNodeName);
         r = FNode.child(r, inName);
       then
-        r;
+        (g, r);
 
     /*/ self?
-    case (_, _, _, _)
+    case (g, _, _, _, _)
       equation
         true = FNode.isRefImplicitScope(inRef);
         true = stringEq(FNode.name(FNode.fromRef(inRef)), inName);
         r = FNode.child(inRef, inName);
         false = FNode.isRefImplicitScope(r);
       then
-        r;*/
+        (g, r);*/
 
-    // implicit scope? move upwards
-    case (_, _, _, _)
+    // implicit scope? move upwards if allowed
+    case (g, _, _, OPTIONS(_, _, false), _)
       equation
         true = FNode.isRefImplicitScope(inRef);
         p = FNode.parents(FNode.fromRef(inRef));
         // get the original parent
         r = FNode.original(p);
-        r = id(r, inName, inOptions, inMsg);
+        (g, r) = id(g, r, inName, inOptions, inMsg);
       then
-        r;
+        (g, r);
 
     // local?
-    case (_, _, _, _)
+    case (g, _, _, _, _)
       equation
         false = FNode.isRefImplicitScope(inRef);
         r = FNode.child(inRef, inName);
       then
-        r;
+        (g, r);
 
     // lookup in imports
-    case (_, _, OPTIONS(false, _, _), _)
+    case (g, _, _, OPTIONS(false, _, _), _)
       equation
         false = FNode.isRefImplicitScope(inRef);
-        r = imp(inRef, inName, inOptions, inMsg);
+        (g, r) = imp(g, inRef, inName, inOptions, inMsg);
       then
-        r;
+        (g, r);
 
     // lookup in extends
-    case (_, _, OPTIONS(_, false, _), _)
+    case (g, _, _, OPTIONS(_, false, _), _)
       equation
         false = FNode.isRefImplicitScope(inRef);
-        r = ext(inRef, inName, inOptions, inMsg);
+        (g, r) = ext(g, inRef, inName, inOptions, inMsg);
       then
-        r;
+        (g, r);
 
     // encapsulated
-    case (_, _, OPTIONS(_, _, false), _)
+    case (g, _, _, OPTIONS(_, _, false), _)
       equation
         false = FNode.isRefImplicitScope(inRef);
         true = FNode.isEncapsulated(FNode.fromRef(inRef));
         r = FNode.top(inRef);
-        r = id(r, inName, inOptions, inMsg);
+        (g, r) = id(g, r, inName, inOptions, inMsg);
       then
-        r;
+        (g, r);
 
     // search parent
-    case (_, _, OPTIONS(_, _, false), _)
+    case (g, _, _, OPTIONS(_, _, false), _)
       equation
         false = FNode.isRefImplicitScope(inRef);
         false = FNode.isEncapsulated(FNode.fromRef(inRef));
@@ -166,19 +171,19 @@ algorithm
         p = FNode.parents(FNode.fromRef(inRef));
         // get the original parent
         r = FNode.original(p);
-        r = search({r}, inName, inOptions, inMsg);
+        (g, r) = search(g, {r}, inName, inOptions, inMsg);
       then
-        r;
+        (g, r);
 
     // top node reached
-    case (_, _, OPTIONS(_, _, false), _)
+    case (g, _, _, OPTIONS(_, _, false), _)
       equation
         false = FNode.hasParents(FNode.fromRef(inRef));
       then
         fail();
 
     // failure
-    case (_, _, _, SOME(_))
+    case (g, _, _, _, SOME(_))
       equation
         print("FLookup.id failed for: " +& inName +& " in: " +& FNode.toPathStr(FNode.fromRef(inRef)) +& "\n");
       then
@@ -190,36 +195,39 @@ end id;
 public function search
 "@author: adrpo
  search for id in list"
+  input Graph inGraph;
   input Refs inRefs;
   input Name inName;
   input Options inOptions;
   input Msg inMsg "Message flag, SOME() outputs lookup error messages";
+  output Graph outGraph;
   output Ref outRef;
 algorithm
-  outRef := matchcontinue(inRefs, inName, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inRefs, inName, inOptions, inMsg)
     local
       Ref r;
       Refs rest;
+      Graph g;
 
     // not found
-    case ({}, _, _, _) then fail();
+    case (_, {}, _, _, _) then fail();
 
     // found
-    case (r::_, _, _, _)
+    case (g, r::_, _, _, _)
       equation
-        r = id(r, inName, inOptions, inMsg);
+        (g, r) = id(g, r, inName, inOptions, inMsg);
       then
-        r;
+        (g, r);
 
     // search rest
-    case (_::rest, _, _, _)
+    case (g, _::rest, _, _, _)
       equation
-        r = search(rest, inName, inOptions, inMsg);
+        (g, r) = search(g, rest, inName, inOptions, inMsg);
       then
-        r;
+        (g, r);
 
     // failure
-    case (_, _, _, SOME(_))
+    case (g, _, _, _, SOME(_))
       equation
         print("FLookup.search failed for: " +& inName +& " in: " +&
            FNode.toPathStr(FNode.fromRef(List.first(inRefs))) +& "\n");
@@ -232,42 +240,59 @@ end search;
 public function name
 "@author: adrpo
  search for a name"
+  input Graph inGraph;
   input Ref inRef;
   input Absyn.Path inPath;
   input Options inOptions;
   input Msg inMsg "Message flag, SOME() outputs lookup error messages";
+  output Graph outGraph;
   output Ref outRef;
 algorithm
-  outRef := matchcontinue(inRef, inPath, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inRef, inPath, inOptions, inMsg)
     local
       Ref r;
       Name i;
       Absyn.Path rest;
+      String s;
+      Graph g;
 
     // simple name
-    case (_, Absyn.IDENT(i), _, _)
+    case (g, _, Absyn.IDENT(i), _, _)
       equation
-        r = id(inRef, i, inOptions, inMsg);
+        (g, r) = id(g, inRef, i, inOptions, inMsg);
       then
-        r;
+        (g, r);
 
-    // qualified name
-    case (_, Absyn.QUALIFIED(i, rest), _, _)
+    // qualified name, could find the rest
+    case (g, _, Absyn.QUALIFIED(i, rest), _, _)
       equation
-        r = id(inRef, i, inOptions, inMsg);
-        r = name(r, rest, inOptions, inMsg);
+        (g, r) = id(g, inRef, i, inOptions, inMsg);
+        (g, r) = name(g, r, rest, inOptions, inMsg);
       then
-        r;
+        (g, r);
+
+    // qualified name, could not find the rest, stop!
+    case (g, _, Absyn.QUALIFIED(i, rest), _, _)
+      equation
+        (g, r) = id(g, inRef, i, inOptions, inMsg);
+        failure((_, _) = name(g, r, rest, inOptions, inMsg));
+        // add an assersion node that it should
+        // be a name in here and return that
+        s = "missing: " +& Absyn.pathString(rest) +& " in scope: " +& FNode.toPathStr(FNode.fromRef(r));
+        // make the assert node have the name of the missing path part
+        (g, r) = FGraphBuild.mkAssertNode(Absyn.pathFirstIdent(rest), s, r, g);
+      then
+        (g, r);
 
     // fully qual name
-    case (_, Absyn.FULLYQUALIFIED(rest), _, _)
+    case (g, _, Absyn.FULLYQUALIFIED(rest), _, _)
       equation
         r = FNode.top(inRef);
-        r = name(r, rest, inOptions, inMsg);
+        (g, r) = name(g, r, rest, inOptions, inMsg);
       then
-        r;
+        (g, r);
 
-    case (_, _, _, SOME(_))
+    case (g, _, _, _, SOME(_))
       equation
         print("FLookup.name failed for: " +& Absyn.pathString(inPath) +& " in: " +& FNode.toPathStr(FNode.fromRef(inRef)) +& "\n");
       then
@@ -279,20 +304,23 @@ end name;
 public function ext
 "@author: adrpo
  search for id in extends"
+  input Graph inGraph;
   input Ref inRef;
   input Name inName;
   input Options inOptions;
   input Msg inMsg "Message flag, SOME() outputs lookup error messages";
+  output Graph outGraph;
   output Ref outRef;
 algorithm
-  outRef := matchcontinue(inRef, inName, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inRef, inName, inOptions, inMsg)
     local
       Ref r;
       Refs refs;
       Parents p;
+      Graph g;
 
-    // for class extends we're searching inside the base class also!
-    case (_, _, _, _)
+    // for class extends search inside the base class first
+    case (g, _, _, _, _)
       equation
         true = FNode.isClassExtends(FNode.fromRef(inRef));
         // get its ref node
@@ -301,21 +329,32 @@ algorithm
         r = FNode.target(FNode.fromRef(r));
         // print("Searching for: " +& inName +& " in class extends target:\n\t" +& FNode.toPathStr(FNode.fromRef(r)) +& "\n");
         // search in type target
-        r = id(r, inName, ignoreParentsAndImports, inMsg);
+        (g, r) = id(g, r, inName, ignoreParents, inMsg);
         // print("Found it in: " +& FNode.toPathStr(FNode.fromRef(r)) +& "\n");
       then
-        r;
+        (g, r);
+
+    // for class extends: if not found in base class search in the parents of this node
+    case (g, _, _, _, _)
+      equation
+        true = FNode.isClassExtends(FNode.fromRef(inRef));
+        // get the original parent
+        r = FNode.original(FNode.parents(FNode.fromRef(inRef)));
+        (g, r) = id(g, r, inName, ignoreNothing, inMsg);
+        // print("Found it in: " +& FNode.toPathStr(FNode.fromRef(r)) +& "\n");
+      then
+        (g, r);
 
     // get all extends of the node and search in them
-    case (_, _, _, _)
+    case (g, _, _, _, _)
       equation
         refs = FNode.extendsRefs(inRef);
         true = List.isNotEmpty(refs);
         refs = List.map(List.map(refs, FNode.fromRef), FNode.target);
         // print("Searching for: " +& inName +& " in extends targets:\n\t" +& stringDelimitList(List.map(List.map(refs, FNode.fromRef), FNode.toPathStr), "\n\t") +& "\n");
-        r = search(refs, inName, ignoreParentsAndImports, inMsg);
+        (g, r) = search(g, refs, inName, ignoreParentsAndImports, inMsg);
       then
-        r;
+        (g, r);
 
   end matchcontinue;
 end ext;
@@ -323,77 +362,83 @@ end ext;
 public function imp
 "@author: adrpo
  search for id in imports"
+  input Graph inGraph;
   input Ref inRef;
   input Name inName;
   input Options inOptions;
   input Msg inMsg "Message flag, SOME() outputs lookup error messages";
+  output Graph outGraph;
   output Ref outRef;
 algorithm
-  outRef := matchcontinue(inRef, inName, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inRef, inName, inOptions, inMsg)
     local
       Ref r;
       Parents p;
       list<Import> qi, uqi;
+      Graph g;
 
     // lookup in qual
-    case (_, _, _, _)
+    case (g, _, _, _, _)
       equation
         true = FNode.hasImports(FNode.fromRef(inRef));
         (qi,_) = FNode.imports(FNode.fromRef(inRef));
-        r = imp_qual(inRef, inName, qi, inOptions, inMsg);
+        (g, r) = imp_qual(g, inRef, inName, qi, inOptions, inMsg);
       then
-        r;
+        (g, r);
 
     // lookup in un-qual
-    case (_, _, _, _)
+    case (g, _, _, _, _)
       equation
         true = FNode.hasImports(FNode.fromRef(inRef));
         (_, uqi) = FNode.imports(FNode.fromRef(inRef));
-        r = imp_unqual(inRef, inName, uqi, inOptions, inMsg);
+        (g, r) = imp_unqual(g, inRef, inName, uqi, inOptions, inMsg);
       then
-        r;
+        (g, r);
 
   end matchcontinue;
 end imp;
 
 protected function imp_qual
 "Looks up a name through the qualified imports in a scope."
+  input Graph inGraph;
   input Ref inRef;
   input Name inName;
   input list<Import> inImports;
   input Options inOptions;
   input Msg inMsg "Message flag, SOME() outputs lookup error messages";
+  output Graph outGraph;
   output Ref outRef;
 algorithm
-  outRef := matchcontinue(inRef, inName, inImports, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inRef, inName, inImports, inOptions, inMsg)
     local
       Name name;
       Absyn.Path path;
       list<Import> rest_imps;
       Ref r;
+      Graph g;
 
     // No match, search the rest of the list of imports.
-    case (_, _, Absyn.NAMED_IMPORT(name = name) :: rest_imps, _, _)
+    case (g, _, _, Absyn.NAMED_IMPORT(name = name) :: rest_imps, _, _)
       equation
         false = stringEqual(inName, name);
-        r = imp_qual(inRef, inName, rest_imps, inOptions, inMsg);
+        (g, r) = imp_qual(g, inRef, inName, rest_imps, inOptions, inMsg);
       then
-        r;
+        (g, r);
 
     // Match, look up the fully qualified import path.
-    case (_, _, Absyn.NAMED_IMPORT(name = name, path = path) :: _, _, _)
+    case (g, _, _, Absyn.NAMED_IMPORT(name = name, path = path) :: _, _, _)
       equation
         true = stringEqual(inName, name);
-        r = fq(inRef, path, inOptions, inMsg);
+        (g, r) = fq(g, inRef, path, inOptions, inMsg);
       then
-        r;
+        (g, r);
 
     // Partial match, return failure
-    case (_, _, Absyn.NAMED_IMPORT(name = name) :: _, _, _)
+    case (g, _, _, Absyn.NAMED_IMPORT(name = name) :: _, _, _)
       equation
         true = stringEqual(inName, name);
       then
-        fail();
+        fail(); // TODO! maybe add an assertion node!
 
   end matchcontinue;
 end imp_qual;
@@ -402,78 +447,87 @@ public function imp_unqual
   "Looks up a name through the qualified imports in a scope. If it finds the
   name it returns the item, path, and environment for the name, otherwise it
   fails."
+  input Graph inGraph;
   input Ref inRef;
   input Name inName;
   input list<Import> inImports;
   input Options inOptions;
   input Msg inMsg "Message flag, SOME() outputs lookup error messages";
+  output Graph outGraph;
   output Ref outRef;
 algorithm
-  outRef := matchcontinue(inRef, inName, inImports, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inRef, inName, inImports, inOptions, inMsg)
     local
       Absyn.Path path, path2;
       list<Import> rest_imps;
       Ref r;
+      Graph g;
 
     // For each unqualified import we have to look up the package the import
     // points to, and then look among the public member of the package for the
     // name we are looking for.
-    case (_, _, Absyn.UNQUAL_IMPORT(path = path) :: _, _, _)
+    case (g, _, _, Absyn.UNQUAL_IMPORT(path = path) :: _, _, _)
       equation
         // Look up the import path.
-        r = fq(inRef, path, inOptions, inMsg);
+        (g, r) = fq(g, inRef, path, inOptions, inMsg);
         // Look up the name among the public member of the found package.
-        r = id(r, inName, ignoreParents, inMsg);
+        (g, r) = id(g, r, inName, ignoreParents, inMsg);
       then
-        r;
+        (g, r);
 
     // No match, continue with the rest of the imports.
-    case (_, _, _ :: rest_imps, _, _)
+    case (g, _, _, _ :: rest_imps, _, _)
       equation
-        r = imp_unqual(inRef, inName, rest_imps, inOptions, inMsg);
+        (g, r) = imp_unqual(g, inRef, inName, rest_imps, inOptions, inMsg);
       then
-        r;
+        (g, r);
   end matchcontinue;
 end imp_unqual;
 
 public function fq
 "Looks up a fully qualified path in ref"
+  input Graph inGraph;
   input Ref inRef;
   input Absyn.Path inName;
   input Options inOptions;
   input Msg inMsg "Message flag, SOME() outputs lookup error messages";
+  output Graph outGraph;
   output Ref outRef;
 algorithm
-  outRef := name(FNode.top(inRef), inName, inOptions, inMsg);
+  (outGraph, outRef) := name(inGraph, FGraph.top(inGraph), inName, inOptions, inMsg);
 end fq;
 
 public function cr
 "@author: adrpo
  search for a component reference"
+  input Graph inGraph;
   input Ref inRef;
   input Absyn.ComponentRef inCref;
   input Options inOptions;
   input Msg inMsg "Message flag, SOME() outputs lookup error messages";
+  output Graph outGraph;
   output Ref outRef;
 algorithm
-  outRef := matchcontinue(inRef, inCref, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inRef, inCref, inOptions, inMsg)
     local
       Ref r;
       Name i;
       Absyn.ComponentRef rest;
       list<Absyn.Subscript> ss;
+      Graph g;
+      String s;
 
     // simple name
-    case (_, Absyn.CREF_IDENT(i, _), _, _)
+    case (g, _, Absyn.CREF_IDENT(i, _), _, _)
       equation
-        r = id(inRef, i, inOptions, inMsg);
+        (g, r) = id(g, inRef, i, inOptions, inMsg);
       then
-        r;
+        (g, r);
 
     // qualified name, first is component
-    case (_, Absyn.CREF_QUAL(i, _, rest), _, _)
+    case (g, _, Absyn.CREF_QUAL(i, _, rest), _, _)
       equation
-        r = id(inRef, i, inOptions, inMsg);
+        (g, r) = id(g, inRef, i, inOptions, inMsg);
         // inRef is a component, lookup in type
         true = FNode.isRefComponent(r);
         // get the ref
@@ -481,29 +535,44 @@ algorithm
         // get the target from ref
         r = FNode.target(FNode.fromRef(r));
         // search in type target
-        r = cr(r, rest, inOptions, inMsg);
+        (g, r) = cr(g, r, rest, ignoreParents, inMsg);
       then
-        r;
+        (g, r);
 
     // qualified name
-    case (_, Absyn.CREF_QUAL(i, _, rest), _, _)
+    case (g, _, Absyn.CREF_QUAL(i, _, rest), _, _)
       equation
         // inRef is a class
-        r = id(inRef, i, inOptions, inMsg);
+        (g, r) = id(g, inRef, i, inOptions, inMsg);
         true = FNode.isRefClass(r);
-        r = cr(r, rest, inOptions, inMsg);
+        (g, r) = cr(g, r, rest, ignoreParents, inMsg);
       then
-        r;
+        (g, r);
+
+    // qualified name
+    case (g, _, Absyn.CREF_QUAL(i, _, rest), _, _)
+      equation
+        // inRef is a class
+        (g, r) = id(g, inRef, i, inOptions, inMsg);
+        true = FNode.isRefClass(r) or FNode.isRefComponent(r);
+        // add an assersion node that it should
+        // be a name in here and return that
+        s = "missing: " +& Absyn.crefString(rest) +& " in scope: " +& FNode.toPathStr(FNode.fromRef(r));
+        // make the assert node have the name of the missing cref part
+        (g, r) = FGraphBuild.mkAssertNode(Absyn.crefFirstIdent(rest), s, r, g);
+      then
+        (g, r);
+
 
     // fully qual name
-    case (_, Absyn.CREF_FULLYQUALIFIED(rest), _, _)
+    case (g, _, Absyn.CREF_FULLYQUALIFIED(rest), _, _)
       equation
-        r = FNode.top(inRef);
-        r = cr(r, rest, inOptions, inMsg);
+        r = FGraph.top(g);
+        (g, r) = cr(g, r, rest, inOptions, inMsg);
       then
-        r;
+        (g, r);
 
-    case (_, _, _, SOME(_))
+    case (g, _, _, _, SOME(_))
       equation
         print("FLookup.cr failed for: " +& Absyn.crefString(inCref) +& " in: " +& FNode.toPathStr(FNode.fromRef(inRef)) +& "\n");
       then

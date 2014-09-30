@@ -46,17 +46,17 @@ import DAE;
 import FCore;
 
 protected
-import Builtin;
-import Env;
+import FBuiltin;
 import FGraph;
 import FExpand;
 import FGraphBuild;
 import FGraphDump;
-import FGraphStream;
 import System;
 import InstUtil;
 import Flags;
 import List;
+import GlobalScript;
+import FNode;
 
 public
 type Name = FCore.Name;
@@ -81,14 +81,14 @@ type Msg = Option<Absyn.Info>;
 
 public function inst
 "@author: adrpo
- instantiate path in program"
+ instantiate an entire program"
   input Absyn.Path inPath;
   input SCode.Program inProgram;
   output DAE.DAElist dae;
 algorithm
   dae := matchcontinue(inPath, inProgram)
     local
-      Graph g;
+      Graph g, gclone;
       SCode.Program p;
       list<Real> lst;
 
@@ -96,33 +96,36 @@ algorithm
       equation
         p = doSCodeDep(inProgram, inPath);
 
-        FGraphStream.start();
-
         lst = {};
 
-        // enableTrace();
-        System.startTimer();
-        (_, g) = Builtin.initialFGraph(Env.emptyCache());
+        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
+        (_, g) = FBuiltin.initialGraph(FCore.emptyCache());
         g = FGraphBuild.mkProgramGraph(
                  p,
                  FCore.USERDEFINED(),
                  g);
-        System.stopTimer();
-        lst = List.consr(lst, System.getTimerIntervalTime());
+        lst = List.consr(lst, System.realtimeTock(GlobalScript.RT_CLOCK_FINST));
         print("SCode->FGraph:  " +& realString(List.first(lst)) +& "\n");
+        //print("FGraph nodes:   " +& intString(listLength(FNode.dfs(FGraph.top(g)))) +& "\n");
+        //print("FGraph refs:    " +& intString(listLength(FNode.dfs_filter(FGraph.top(g), FNode.isRefReference))) +& "\n");
 
-        System.startTimer();
+        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
         // resolve all
         g = FExpand.all(g);
-        System.stopTimer();
-        lst = List.consr(lst, System.getTimerIntervalTime());
+        lst = List.consr(lst, System.realtimeTock(GlobalScript.RT_CLOCK_FINST));
 
-        print("FGraph nodes:   " +& intString(FGraph.lastId(g)) +& "\n");
+        //print("FGraph nodes:   " +& intString(listLength(FNode.dfs(FGraph.top(g)))) +& "\n");
+        //print("FGraph refs:    " +& intString(listLength(FNode.dfs_filter(FGraph.top(g), FNode.isRefReference))) +& "\n");
         print("Total time:     " +& realString(List.fold(lst, realAdd, 0.0)) +& "\n");
 
         FGraphDump.dumpGraph(g, "F:\\dev\\" +& Absyn.pathString(inPath) +& ".graph.graphml");
 
-        FGraphStream.finish();
+        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
+        gclone = FGraph.clone(g);
+        lst = List.consr(lst, System.realtimeTock(GlobalScript.RT_CLOCK_FINST));
+        print("FGraph->clone:  " +& realString(List.first(lst)) +& "\n");
+
+        // FGraphDump.dumpGraph(gclone, "F:\\dev\\" +& Absyn.pathString(inPath) +& ".graph.clone.graphml");
       then
         DAE.emptyDae;
 
@@ -135,6 +138,66 @@ algorithm
   end matchcontinue;
 end inst;
 
+public function instPath
+"@author: adrpo
+ instantiate path in program"
+  input Absyn.Path inPath;
+  input SCode.Program inProgram;
+  output DAE.DAElist dae;
+algorithm
+  dae := matchcontinue(inPath, inProgram)
+    local
+      Graph g;
+      Ref r;
+      SCode.Program p;
+      list<Real> lst;
+
+    case (_, _) then inst(inPath, inProgram);
+
+    case (_, _)
+      equation
+        lst = {};
+
+        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
+        p = doSCodeDep(inProgram, inPath);
+        lst = List.consr(lst, System.realtimeTock(GlobalScript.RT_CLOCK_FINST));
+        print("SCode depend:   " +& realString(List.first(lst)) +& "\n");
+
+        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
+        (_, g) = FBuiltin.initialGraph(FCore.emptyCache());
+        lst = List.consr(lst, System.realtimeTock(GlobalScript.RT_CLOCK_FINST));
+        print("Initial graph:  " +& realString(List.first(lst)) +& "\n");
+
+        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
+        g = FGraphBuild.mkProgramGraph(
+                 p,
+                 FCore.USERDEFINED(),
+                 g);
+        lst = List.consr(lst, System.realtimeTock(GlobalScript.RT_CLOCK_FINST));
+        print("SCode->FGraph:  " +& realString(List.first(lst)) +& "\n");
+
+        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
+        // resolve all references on path
+        (g, r) = FExpand.path(g, inPath);
+        lst = List.consr(lst, System.realtimeTock(GlobalScript.RT_CLOCK_FINST));
+        print("FExpand.path:   " +& realString(List.first(lst)) +& "\n");
+
+        print("FGraph nodes:   " +& intString(FGraph.lastId(g)) +& "\n");
+        print("Total time:     " +& realString(List.fold(lst, realAdd, 0.0)) +& "\n");
+
+        FGraphDump.dumpGraph(g, "F:\\dev\\" +& Absyn.pathString(inPath) +& ".graph.graphml");
+      then
+        DAE.emptyDae;
+
+    case (_, _)
+      equation
+        print("FInst.inst failed!\n");
+      then
+        DAE.emptyDae;
+
+  end matchcontinue;
+end instPath;
+
 protected function doSCodeDep
 "do or not do scode dependency based on a flag"
   input SCode.Program inProgram;
@@ -142,13 +205,16 @@ protected function doSCodeDep
   output SCode.Program outProgram;
 algorithm
   outProgram := matchcontinue(inProgram, inPath)
+
     case (_, _)
       equation
         true = Flags.isSet(Flags.GRAPH_INST_RUN_DEP);
         outProgram = InstUtil.scodeFlatten(inProgram, inPath);
       then
         outProgram;
+
     else inProgram;
+
   end matchcontinue;
 end doSCodeDep;
 

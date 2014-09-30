@@ -41,7 +41,7 @@ public import Absyn;
 public import BackendDAE;
 public import BackendDAEFunc;
 public import DAE;
-public import Env;
+public import FCore;
 
 protected import BackendDAEUtil;
 protected import BackendDump;
@@ -148,8 +148,8 @@ protected
   BackendDAE.EquationArray removedEqs;
   list<DAE.Constraint> constrs;
   list<DAE.ClassAttributes> clsAttrs;
-  Env.Cache cache;
-  Env.Env env;
+  FCore.Cache cache;
+  FCore.Graph env;
   DAE.FunctionTree functionTree;
   BackendDAE.EventInfo eventInfo;
   BackendDAE.ExternalObjectClasses extObjClasses;

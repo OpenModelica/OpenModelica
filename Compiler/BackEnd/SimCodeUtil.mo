@@ -44,7 +44,8 @@ public import Absyn;
 public import BackendDAE;
 public import Ceval;
 public import DAE;
-public import Env;
+public import FCore;
+public import FGraph;
 public import HashTableExpToIndex;
 public import HashTableStringToPath;
 public import SCode;
@@ -3843,8 +3844,8 @@ algorithm
       BackendDAE.JacobianType jac_tp;
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       DAE.FunctionTree funcs;
       BackendDAE.EventInfo ev;
       list<Integer> ieqns, ivars, disc_eqns, disc_vars, eqIdcs;
@@ -4557,7 +4558,7 @@ algorithm
       (symJac, _, _, _, numJac, _) = countandIndexAlgebraicLoopsSymJac(symJac, 0, 0, 0, iNumJac);
       (outSets, outSymJacs, oNumJac) = indexStateSets(sets, symJac::inSymJacs, numJac, SimCode.SES_STATESET(index, nCandidates, nStates, states, statescandidates, crA, symJac)::inSetsAccum);
      then (outSets, outSymJacs, oNumJac);
-       end match;
+  end match;
 end indexStateSets;
 
 // =============================================================================
@@ -5899,7 +5900,8 @@ algorithm
     local
       BackendDAE.Variables evars, vars1;
       BackendDAE.EquationArray eeqns, eqns_1;
-      Env.Cache cache;
+      FCore.Cache cache;
+      FCore.Graph graph;
       DAE.FunctionTree funcs;
       BackendDAE.BackendDAE subsystem_dae;
       BackendDAE.StrongComponents comps;
@@ -5916,10 +5918,11 @@ algorithm
       vars1 = BackendVariable.listVar1(inVars);
       evars = BackendVariable.emptyVars();
       eeqns = BackendEquation.emptyEqns();
-      cache = Env.emptyCache();
+      cache = FCore.emptyCache();
+      graph = FGraph.empty();
       funcs = DAEUtil.avlTreeNew();
       syst = BackendDAE.EQSYSTEM(vars1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-      shared = BackendDAE.SHARED(evars, evars, evars, eeqns, eeqns, {}, {}, cache, {}, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
+      shared = BackendDAE.SHARED(evars, evars, evars, eeqns, eeqns, {}, {}, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
       subsystem_dae = BackendDAE.DAE({syst}, shared);
       (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE());
       (equations_, _, uniqueEqIndex, tempvars) = createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
@@ -6248,7 +6251,8 @@ algorithm
       DAE.ComponentRef cr, cr_1;
       BackendDAE.Variables evars, vars1;
       BackendDAE.EquationArray eeqns, eqns_1;
-      Env.Cache cache;
+      FCore.Cache cache;
+      FCore.Graph graph;
       DAE.FunctionTree funcs;
       DAE.ElementSource source;
       BackendDAE.Variables av;
@@ -6288,11 +6292,12 @@ algorithm
       av = BackendVariable.emptyVars();
       eeqns = BackendEquation.emptyEqns();
       evars = BackendVariable.listVar1({});
-      cache = Env.emptyCache();
+      cache = FCore.emptyCache();
+      graph = FGraph.empty();
       funcs = DAEUtil.avlTreeNew();
       vars1 = BackendVariable.listVar1(vars);
       syst = BackendDAE.EQSYSTEM(vars1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-      shared = BackendDAE.SHARED(evars, evars, av, eeqns, eeqns, {}, {}, cache, {}, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
+      shared = BackendDAE.SHARED(evars, evars, av, eeqns, eeqns, {}, {}, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
       subsystem_dae = BackendDAE.DAE({syst}, shared);
       (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE());
       (equations_, noDiscequations, uniqueEqIndex, tempvars) = createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
@@ -6311,11 +6316,12 @@ algorithm
       av = BackendVariable.emptyVars();
       eeqns = BackendEquation.emptyEqns();
       evars = BackendVariable.listVar1({});
-      cache = Env.emptyCache();
+      cache = FCore.emptyCache();
+      graph = FGraph.empty();
       funcs = DAEUtil.avlTreeNew();
       vars1 = BackendVariable.listVar1(vars);
       syst = BackendDAE.EQSYSTEM(vars1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-      shared = BackendDAE.SHARED(evars, evars, av, eeqns, eeqns, {}, {}, cache, {}, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
+      shared = BackendDAE.SHARED(evars, evars, av, eeqns, eeqns, {}, {}, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
       subsystem_dae = BackendDAE.DAE({syst}, shared);
       (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE());
       (equations_, noDiscequations, uniqueEqIndex, tempvars) = createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
@@ -6858,8 +6864,8 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Variables aliasVars, alisvars;
 
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       DAE.FunctionTree funcs;
       BackendDAE.EventInfo einfo;
       BackendDAE.BackendDAEType btp;
@@ -6869,7 +6875,7 @@ algorithm
       BackendDAE.ExtraInfo ei;
 
     case (BackendDAE.SHARED(knownVars=knvars, externalObjects=extobj,
-                            initialEqs=ie, removedEqs=_, constraints=constrs, classAttrs=clsAttrs, cache=cache, env=env,
+                            initialEqs=ie, removedEqs=_, constraints=constrs, classAttrs=clsAttrs, cache=cache, graph=graph,
                             extObjClasses=extObjClasses, functionTree=funcs, eventInfo=_, backendDAEType=_,  info = ei), _, _, _)
       equation
         // kvars params
@@ -6883,7 +6889,7 @@ algorithm
         kn = BackendVariable.listVar(lkn);
         funcs = DAEUtil.avlTreeNew();
         syst = BackendDAE.EQSYSTEM(v, pe, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-        shared = BackendDAE.SHARED(kn, extobj, alisvars, emptyeqns, emptyeqns, constrs, clsAttrs, cache, env, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), extObjClasses, BackendDAE.PARAMETERSYSTEM(), {}, ei);
+        shared = BackendDAE.SHARED(kn, extobj, alisvars, emptyeqns, emptyeqns, constrs, clsAttrs, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), extObjClasses, BackendDAE.PARAMETERSYSTEM(), {}, ei);
         (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
         v1 = listArray(lv1);
         v2 = listArray(lv2);
@@ -14009,8 +14015,8 @@ algorithm
 
     case ( ((unknown, dependencies))::rest, _)
       equation
-      // for now dependenciesKind is set to dependent
-      dependenciesKind = List.fill("dependent", listLength(dependencies));
+        // for now dependenciesKind is set to dependent
+        dependenciesKind = List.fill("dependent", listLength(dependencies));
       then
         translateSparsePatterInts2FMIUnknown(rest, SimCode.FMIUNKNOWN(unknown, dependencies, dependenciesKind)::inAccum);
 
@@ -14141,7 +14147,7 @@ algorithm
        case ( _::rest, _)
         then getJacobianMatrix(rest, inJacobianName);
        else then NONE();
-    end matchcontinue;
+  end matchcontinue;
 end getJacobianMatrix;
 
 protected function mergeSparsePatter

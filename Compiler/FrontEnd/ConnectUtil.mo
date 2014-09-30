@@ -52,7 +52,7 @@ public import ClassInf;
 public import Config;
 public import Connect;
 public import DAE;
-public import Env;
+public import FCore;
 public import InnerOuter;
 public import Prefix;
 public import ConnectionGraph;
@@ -1907,11 +1907,11 @@ algorithm
 
     case (true, _, _, _, _)
       equation
-        // print(printSetsStr(inSets) +& "\n");
+        //print(printSetsStr(inSets) +& "\n");
         set_array = generateSetArray(inSets);
         sets = arrayList(set_array);
-        // print("Sets:\n");
-        // print(stringDelimitList(List.map(sets, printSetStr), "\n") +& "\n");
+        //print("Sets:\n");
+        //print(stringDelimitList(List.map(sets, printSetStr), "\n") +& "\n");
 
         has_expandable = daeHasExpandableConnectors(inDae);
         (sets, dae) = removeUnusedExpandableVariablesAndConnections(sets, inDae, has_expandable);
@@ -3425,7 +3425,7 @@ public function componentFace
   All other connector elements that are hierarchically inside M, but not in one of the outside connectors
   of M, is called an inside connector with respect to M. This is done **BEFORE** resolving outer elements
   to corresponding inner ones."
-  input Env.Env env;
+  input FCore.Graph env;
   input InnerOuter.InstHierarchy inIH;
   input DAE.ComponentRef inComponentRef;
   output Connect.Face outFace;
@@ -3444,7 +3444,7 @@ algorithm
     case (_,_,DAE.CREF_QUAL(ident = id,componentRef = _))
       equation
        (_,_,DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_,_,_,_,_,_)
-         = Lookup.lookupVar(Env.emptyCache(),env,ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
+         = Lookup.lookupVar(FCore.emptyCache(),env,ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
       then Connect.OUTSIDE();
 
     // is a qualified cref and is NOT a connector => INSIDE

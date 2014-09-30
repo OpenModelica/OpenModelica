@@ -39,7 +39,8 @@ import Absyn;
 import Connect;
 import ConnectionGraph;
 import DAE;
-import Env;
+import FCore;
+import FNode;
 import Prefix;
 import SCode;
 import UnitAbsyn;
@@ -62,19 +63,15 @@ protected import PrefixUtil;
 protected import System;
 protected import Util;
 protected import VarTransform;
+protected import FGraph;
 
 public
-type Cache     = Env.Cache;
-type Frame     = Env.Frame;
-type AvlTree   = Env.AvlTree;
-type Item      = Env.Item;
-type Ident     = Env.Ident;
-type CSetsType = Env.CSetsType;
+type Cache     = FCore.Cache;
 
 uniontype InstResult
   record INST_RESULT
     Cache outCache;
-    Env.Env outEnv;
+    FCore.Graph outEnv;
     UnitAbsyn.InstStore outStore;
     DAE.DAElist outDae;
     Connect.Sets outSets;
@@ -400,8 +397,8 @@ public function retrieveOuterConnections
  set, if a corresponding innner component can be found in the environment.
  If not, they are kept in the outerConnects for use higher up in the instance
  hierarchy."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -457,8 +454,8 @@ end removeInnerPrefixFromCref;
 
 protected function retrieveOuterConnections2
 "help function to retrieveOuterConnections"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input list<Connect.OuterConnect> inOuterConnects;
@@ -569,8 +566,8 @@ protected function addOuterConnectIfEmpty
  inner component. In that is case the outer
  connection (from inside sub-components) forms
  a connection set of their own."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InstHierarchy inIH;
   input Prefix.Prefix pre;
   input Connect.Sets inSets;
@@ -597,8 +594,8 @@ algorithm
        Integer sc;
        list<Connect.SetConnection> cl;
        list<Connect.OuterConnect> oc;
-       Env.Cache cache;
-       Env.Env env;
+       FCore.Cache cache;
+       FCore.Graph env;
        Absyn.InnerOuter io1,io2;
        ConnectionGraph.ConnectionGraph graph;
 
@@ -644,8 +641,8 @@ protected function addOuterConnectIfEmptyNoEnv
  2008-12: This is an extension of addOuterConnectIfEmpty,
           with the difference that we only need to find
           one variable in the enviroment."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InstHierarchy inIH;
   input Prefix.Prefix inPre;
   input Connect.Sets inSets;
@@ -670,8 +667,8 @@ algorithm
        Integer sc;
        list<Connect.SetConnection> cl;
        list<Connect.OuterConnect> oc;
-       Env.Cache cache;
-       Env.Env env;
+       FCore.Cache cache;
+       FCore.Graph env;
        Absyn.InnerOuter io1,io2;
        Prefix.Prefix pre;
 
@@ -739,8 +736,8 @@ protected function lookupVarInnerOuterAttr
 "searches for two variables in env and retrieves
  its inner and outer attributes in form of booleans.
  adrpo: Make sure that there are no error messages displayed!"
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input InstHierarchy inIH;
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
@@ -780,7 +777,7 @@ algorithm
         (isInner,isOuter) = innerOuterBooleans(io);
         ErrorExt.rollBack("lookupVarInnerOuterAttr");
       then (isInner,isOuter);
-    // failure
+     // failure
     else
       equation
         ErrorExt.rollBack("lookupVarInnerOuterAttr");
@@ -933,7 +930,7 @@ end outerConnection;
 
 public function assertDifferentFaces
 "faces, e.g both inside or both outside connectors"
-  input Env.Env env;
+  input FCore.Graph env;
   input InstHierarchy inIH;
   input DAE.ComponentRef inComponentRef1;
   input DAE.ComponentRef inComponentRef2;
@@ -1001,7 +998,7 @@ algorithm
         // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : stripping and looking for: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& name);
 
         // put the name as the last prefix
-        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,prefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
+        (_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, prefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
 
         // search in instance hierarchy
         instInner = get(cref, ht);
@@ -1025,7 +1022,7 @@ algorithm
         // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : stripping and looking for: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& name);
 
         // put the name as the last prefix
-        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,prefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
+        (_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, prefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
 
         // search in instance hierarchy we had a failure
         failure(_ = get(cref, ht));
@@ -1050,8 +1047,8 @@ end lookupInnerInIH;
 public function modificationOnOuter "
 Author BZ, 2008-11
 According to specification modifiers on outer elements is not allowed."
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input InstHierarchy ih;
   input Prefix.Prefix prefix;
   input String componentName;
@@ -1127,7 +1124,7 @@ public function switchInnerToOuterAndPrefix
                    comment = comment,
                    innerOuter=Absyn.INNER()) :: r),_,_)
       equation
-        (_,cr) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,pre, cr);
+        (_,cr) = PrefixUtil.prefixCref(FCore.emptyCache(),FGraph.empty(),emptyInstHierarchy,pre, cr);
         r_1 = switchInnerToOuterAndPrefix(r, io, pre);
       then
         (DAE.VAR(cr,vk,dir,prl,prot,t,e,id,ct,source,dae_var_attr,comment,io) :: r_1);
@@ -1200,7 +1197,7 @@ public function prefixOuterDaeVars
                    comment = comment,
                    innerOuter=io) :: r),_)
       equation
-        (_,cr) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,crefPrefix, cr);
+        (_,cr) = PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, crefPrefix, cr);
         r_1 = prefixOuterDaeVars(r, crefPrefix);
       then
         (DAE.VAR(cr,vk,dir,prl,prot,t,e,id,ct,source,dae_var_attr,comment,io) :: r_1);
@@ -1221,148 +1218,157 @@ public function prefixOuterDaeVars
   end matchcontinue;
 end prefixOuterDaeVars;
 
-public function switchInnerToOuterInEnv "
-function switchInnerToOuterInEnv
+public function switchInnerToOuterInGraph "
+function switchInnerToOuterInGraph
   switches the inner to outer attributes of a component in the Env."
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input DAE.ComponentRef inCr;
-  output Env.Env outEnv;
+  output FCore.Graph outEnv;
 algorithm
   outEnv := match(inEnv,inCr)
     local
-      Env.Env envIn,  envRest;
+      FCore.Graph envIn,  envRest;
       DAE.ComponentRef cr;
-      Frame f;
+      FCore.Ref r;
+      FCore.Node n;
     // handle nothingness
-    case ({}, _) then {};
+    case (FCore.EG(_), _) then inEnv;
+    case (FCore.G(scope = {}), _) then inEnv;
     // only need to handle top frame!
-    case ((f::envRest), cr)
+    case (_, cr)
       equation
-        f = switchInnerToOuterInFrame(f, cr);
+        r = FGraph.lastScopeRef(inEnv);
+        n = FNode.fromRef(r);
+        n = switchInnerToOuterInNode(n, cr);
+        r = FNode.updateRef(r, n);
       then
-        f::envRest;
+        inEnv;
   end match;
-end switchInnerToOuterInEnv;
+end switchInnerToOuterInGraph;
 
-protected function switchInnerToOuterInFrame "
+protected function switchInnerToOuterInNode "
 function switchInnerToOuterInFrame
   switches the inner to outer attributes of a component in the Frame."
-  input Frame inFrame;
+  input FCore.Node inNode;
   input DAE.ComponentRef inCr;
-  output Frame outFrame;
+  output FCore.Node outNode;
 algorithm
-  outFrame := matchcontinue(inFrame,inCr)
+  outNode := matchcontinue(inNode,inCr)
     local
       DAE.ComponentRef cr;
-      Option<Env.Ident> id;
-      Option<Env.ScopeType> st;
-      Env.FrameType ft;
-      Env.AvlTree clsAndVars,tys;
-      Env.CSetsType crs;
-      list<SCode.Element> du;
-      Env.ImportTable it;
-      Env.Frame f;
-      Env.Extra extra;
-      Env.Env parents;
+      FCore.Name n;
+      FCore.Id i;
+      FCore.Parents p;
+      FCore.Children c;
+      FCore.Data d;
 
-    case (Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents), cr)
+    case (FCore.N(n, i, p, c, d), cr)
       equation
-        SOME(clsAndVars) = switchInnerToOuterInAvlTree(SOME(clsAndVars), cr);
+        SOME(c) = switchInnerToOuterInChildren(SOME(c), cr);
       then
-        Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents);
+        FCore.N(n, i, p, c, d);
 
-    case (Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents), _)
-      equation
-        // when above fails leave unchanged
-      then
-        Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents);
+    else inNode;
 
   end matchcontinue;
-end switchInnerToOuterInFrame;
+end switchInnerToOuterInNode;
 
-protected function switchInnerToOuterInAvlTree "
-function switchInnerToOuterInAvlTree
+protected function switchInnerToOuterInChildren "
+function switchInnerToOuterInChildren
   switches the inner to outer attributes of a component in the AvlTree."
-  input Option<AvlTree> inTreeOpt;
+  input Option<FCore.Children> inTreeOpt;
   input DAE.ComponentRef inCr;
-  output Option<AvlTree> outTreeOpt;
+  output Option<FCore.Children> outTreeOpt;
 algorithm
   outTreeOpt := match(inTreeOpt,inCr)
     local
       DAE.ComponentRef cr;
-      Env.AvlKey rkey;
-      Env.AvlValue rval;
-      Option<AvlTree> l,r;
+      FCore.CAvlKey rkey;
+      FCore.CAvlValue rval;
+      FCore.Node n;
+      Option<FCore.Children> l,r;
       Integer h;
 
     case (NONE(),_) then NONE();
 
-    case (SOME(Env.AVLTREENODE(value = SOME(Env.AVLTREEVALUE(rkey,rval)),height = h,left = l,right = r)), cr)
+    case (SOME(FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(rkey,rval)),height = h,left = l,right = r)), cr)
       equation
-        rval = switchInnerToOuterInAvlTreeValue(rval, cr);
-        l = switchInnerToOuterInAvlTree(l, cr);
-        r = switchInnerToOuterInAvlTree(r, cr);
+        n = FNode.fromRef(rval);
+        n = switchInnerToOuterInChildrenValue(n, cr);
+        rval = FNode.updateRef(rval, n);
+        l = switchInnerToOuterInChildren(l, cr);
+        r = switchInnerToOuterInChildren(r, cr);
       then
-        SOME(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,rval)),h,l,r));
+        SOME(FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(rkey,rval)),h,l,r));
 
-    case (SOME(Env.AVLTREENODE(value = NONE(),height = h,left = l,right = r)),cr)
+    case (SOME(FCore.CAVLTREENODE(value = NONE(),height = h,left = l,right = r)),cr)
       equation
-        l = switchInnerToOuterInAvlTree(l, cr);
-        r = switchInnerToOuterInAvlTree(r, cr);
+        l = switchInnerToOuterInChildren(l, cr);
+        r = switchInnerToOuterInChildren(r, cr);
       then
-        SOME(Env.AVLTREENODE(NONE(),h,l,r));
+        SOME(FCore.CAVLTREENODE(NONE(),h,l,r));
+
   end match;
-end switchInnerToOuterInAvlTree;
+end switchInnerToOuterInChildren;
 
-protected function switchInnerToOuterInAvlTreeValue "
-function switchInnerToOuterInAvlTreeValue
+protected function switchInnerToOuterInChildrenValue "
+function switchInnerToOuterInChildrenValue
   switches the inner to outer attributes of a component in the AvlTree."
-  input Item inItem;
+  input FCore.Node inNode;
   input DAE.ComponentRef inCr;
-  output Item outItem;
+  output FCore.Node outNode;
 algorithm
-  outItem := matchcontinue(inItem,inCr)
+  outNode := matchcontinue(inNode,inCr)
     local
       DAE.ComponentRef cr;
+      FCore.Ref r;
+      FCore.Node node;
+
       DAE.Ident name;
       DAE.Attributes attributes;
       SCode.Visibility visibility;
       DAE.Type ty;
       DAE.Binding binding;
-      SCode.Element e;
-      DAE.Mod m;
-      Env.InstStatus instStatus;
-      Env.Env env;
+
       SCode.ConnectorType ct;
       SCode.Parallelism parallelism "parallelism";
       SCode.Variability variability "variability" ;
       Absyn.Direction direction "direction" ;
       Option<DAE.Const> cnstForRange;
-      Env.ItemType it;
 
     // inner
-    case (Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, it), _)
+    case (node, _)
       equation
+        // get the instance child
+        r = FNode.childFromNode(node, FNode.itNodeName);
+        FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange)) = FNode.refData(r);
         DAE.ATTR(ct, parallelism, variability, direction, Absyn.INNER(), visibility) = attributes;
         attributes = DAE.ATTR(ct, parallelism, variability, direction, Absyn.OUTER(), visibility);
-        // env = switchInnerToOuterInEnv(env, inCr);
+        // update the ref
+        r = FNode.updateRef(r, FNode.setData(FNode.fromRef(r),FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange))));
+        // env = switchInnerToOuterInGraph(env, inCr);
       then
-        Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, it);
+        node;
 
     // inner outer
-    case (Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, it), _)
+    case (node, _)
       equation
+        // get the instance child
+        r = FNode.childFromNode(node, FNode.itNodeName);
+        FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange)) = FNode.refData(r);
         DAE.ATTR(ct, parallelism, variability, direction, Absyn.INNER_OUTER(), visibility) = attributes;
         attributes = DAE.ATTR(ct, parallelism, variability, direction, Absyn.OUTER(), visibility);
-        // env = switchInnerToOuterInEnv(env, inCr);
+        // update the ref
+        r = FNode.updateRef(r, FNode.setData(FNode.fromRef(r),FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange))));
+        // env = switchInnerToOuterInGraph(env, inCr);
       then
-        Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, it);
+        node;
 
     // leave unchanged
-    else inItem;
+    case (_, _) then inNode;
 
   end matchcontinue;
-end switchInnerToOuterInAvlTreeValue;
+end switchInnerToOuterInChildrenValue;
 
 
 ///////////////////////////////////////////////////
@@ -1385,7 +1391,7 @@ public function lookupInnerVar
  This function lookups the result of instatiation of the inner
  component given an instance hierarchy a prefix and a component name."
   input Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.Ident inIdent;
@@ -1396,7 +1402,7 @@ algorithm
     local
       Cache cache;
       String n;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
       TopInstance tih;
       InstInner instInner;
@@ -1450,7 +1456,7 @@ algorithm
       equation
         false = Absyn.isInner(inInnerOuter);
         // prefix the name!
-        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
+        (_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
         // print ("InnerOuter.updateInstHierarchy jumping over non-inner: " +& ComponentReference.printComponentRefStr(cref) +& "\n");
       then
         ih;*/
@@ -1471,7 +1477,7 @@ algorithm
       equation
         // prefix the name!
         cref_ = ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
-        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, cref_);
+        (_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, inPrefix, cref_);
         // add to hashtable!
         // Debug.fprintln(Flags.FAILTRACE, "InnerOuter.updateInstHierarchy adding: " +& PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name +& " to IH");
         ht = add((cref,inInstInner), ht);
@@ -1482,7 +1488,7 @@ algorithm
     case(_,_,_,INST_INNER(io=_))
       equation
         // prefix the name!
-        //(_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent("UNKNOWN", DAE.T_UNKNOWN_DEFAULT, {}));
+        //(_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent("UNKNOWN", DAE.T_UNKNOWN_DEFAULT, {}));
         // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.updateInstHierarchy failure for: " +&
         //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name);
       then
@@ -1493,7 +1499,7 @@ end updateInstHierarchy;
 public function addClassIfInner
   input SCode.Element inClass;
   input Prefix.Prefix inPrefix;
-  input Env.Env inScope;
+  input FCore.Graph inScope;
   input InstHierarchy inIH;
   output InstHierarchy outIH;
 algorithm
@@ -1506,7 +1512,7 @@ algorithm
     case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(innerOuter = io)), _, _, _)
       equation
         true = Absyn.isInner(io);
-        scopeName = Env.getEnvNameStr(inScope);
+        scopeName = FGraph.getGraphNameStr(inScope);
         // add to instance hierarchy
         outIH = updateInstHierarchy(inIH, inPrefix, io,
           INST_INNER(
@@ -1597,7 +1603,7 @@ algorithm
     // we have some outer references, search for our prefix + cref in them
     case ({TOP_INSTANCE(_, _, outerPrefixes as _::_)}, _, _)
       equation
-        (_,fullCref) = PrefixUtil.prefixCref(Env.emptyCache(), {}, emptyInstHierarchy, inPrefix, inOuterComponentRef);
+        (_,fullCref) = PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, inPrefix, inOuterComponentRef);
 
         // this will fail if we don't find it so prefixing can happen in the calling function
         (outerCrefPrefix, innerCrefPrefix) = searchForInnerPrefix(fullCref, outerPrefixes);
@@ -1739,7 +1745,7 @@ public function getExistingInnerDeclarations
 "@author: adrpo
  This function retrieves all the existing inner declarations as a string"
   input InstHierarchy inIH;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output String innerDeclarations;
 algorithm
   innerDeclarations := match(inIH, inEnv)
@@ -1755,7 +1761,7 @@ algorithm
     // we have no inner components yet
     case ({}, _)
       then
-        "There are no 'inner' components defined in the model in any of the parent scopes of 'outer' component's scope: " +& Env.printEnvPathStr(inEnv) +& "." ;
+        "There are no 'inner' components defined in the model in any of the parent scopes of 'outer' component's scope: " +& FGraph.printGraphPathStr(inEnv) +& "." ;
 
     // get the list of components
     case((TOP_INSTANCE(_, ht, _))::_, _)

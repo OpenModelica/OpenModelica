@@ -64,7 +64,9 @@ encapsulated package Static
 
 public import Absyn;
 public import DAE;
-public import Env;
+public import FCore;
+public import FGraph;
+public import FNode;
 public import GlobalScript;
 public import MetaUtil;
 public import SCode;
@@ -119,15 +121,15 @@ protected import StaticScript;
 protected import RewriteRules;
 
 public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inImplicit;
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
   output list<DAE.Properties> outTypesPropertiesLst;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
@@ -137,8 +139,8 @@ algorithm
 end elabExpList;
 
 protected function elabExpList2 "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input DAE.Type ty "The type of the last evaluated expression; used to speed up instantiation of enumerations :)";
   input Boolean inImplicit;
@@ -146,7 +148,7 @@ protected function elabExpList2 "Expression elaboration of Absyn.Exp list, i.e. 
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
   output list<DAE.Properties> outTypesPropertiesLst;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
@@ -160,10 +162,10 @@ algorithm
       DAE.Properties p;
       list<DAE.Exp> exps;
       list<DAE.Properties> props;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp e;
       list<Absyn.Exp> rest;
-      Env.Cache cache;
+      FCore.Cache cache;
       Boolean doVect;
       Prefix.Prefix pre;
       Absyn.ComponentRef cr;
@@ -199,8 +201,8 @@ end elabExpList2;
 public function elabExpListList
 "Expression elaboration of lists of lists of expressions.
   Used in for instance matrices, etc."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<list<Absyn.Exp>> inAbsynExpLstLst;
   input DAE.Type ty "The type of the last evaluated expression; used to speed up instantiation of enumerations :)";
   input Boolean inBoolean;
@@ -208,7 +210,7 @@ public function elabExpListList
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<list<DAE.Exp>> outExpExpLstLst;
   output list<list<DAE.Properties>> outTypesPropertiesLstLst;
   output Option<GlobalScript.SymbolTable> outST;
@@ -222,10 +224,10 @@ algorithm
       list<DAE.Properties> p;
       list<list<DAE.Exp>> exps;
       list<list<DAE.Properties>> props;
-      Env.Env env;
+      FCore.Graph env;
       list<Absyn.Exp> e;
       list<list<Absyn.Exp>> rest;
-      Env.Cache cache;
+      FCore.Cache cache;
       Boolean doVect;
       Prefix.Prefix pre;
       DAE.Properties p1;
@@ -242,8 +244,8 @@ end elabExpListList;
 
 protected function elabExpOptAndMatchType "
   elabExp, but for Option<Absyn.Exp>,DAE.Type => Option<DAE.Exp>"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Option<Absyn.Exp> oExp;
   input DAE.Type defaultType;
   input Boolean inBoolean;
@@ -251,7 +253,7 @@ protected function elabExpOptAndMatchType "
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache cache;
+  output FCore.Cache cache;
   output Option<DAE.Exp> outExp;
   output DAE.Properties prop;
   output Option<GlobalScript.SymbolTable> st;
@@ -276,15 +278,15 @@ function: elabExp
   DAE.Properties type, and include the type and the variability of the
   expression.  This function performs analysis, and returns an
   DAE.Exp and the properties."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input Boolean inImplicit;
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> st;
@@ -319,15 +321,15 @@ function: elabExp
   DAE.Properties type, and include the type and the variability of the
   expression.  This function performs analysis, and returns an
   DAE.Exp and the properties."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input Boolean inImplicit;
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> st;
@@ -336,15 +338,15 @@ algorithm
 end elabExp_dispatch;
 
 public function elabExpInExpression "Like elabExp but casts PROP_TUPLE to a PROP"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input Boolean inImplicit;
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> st;
@@ -372,7 +374,7 @@ end elabExpInExpression2;
 public function checkAssignmentToInput
   input Absyn.Exp inExp;
   input DAE.Attributes inAttributes;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Boolean inAllowTopLevelInputs;
   input Absyn.Info inInfo;
 algorithm
@@ -386,7 +388,7 @@ algorithm
 
     case (_, _, _, _, _)
       equation
-        true = inAllowTopLevelInputs or not Env.inFunctionScope(inEnv);
+        true = inAllowTopLevelInputs or not FGraph.inFunctionScope(inEnv);
       then
         ();
 
@@ -425,13 +427,13 @@ end checkAssignmentToInput2;
 public function checkAssignmentToInputs
   input list<Absyn.Exp> inExpCrefs;
   input list<DAE.Attributes> inAttributes;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := matchcontinue(inExpCrefs, inAttributes, inEnv, inInfo)
     case (_, _, _, _)
       equation
-        false = Env.inFunctionScope(inEnv);
+        false = FGraph.inFunctionScope(inEnv);
       then
         ();
 
@@ -446,8 +448,8 @@ end checkAssignmentToInputs;
 
 public function elabExpCrefNoEvalList
 "elaborates a list of expressions that are only component references."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inExpLst;
   input Boolean inImplicit;
   input Option<GlobalScript.SymbolTable> inST;
@@ -455,7 +457,7 @@ public function elabExpCrefNoEvalList
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   input Integer numErrorMessages;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Exp> outExpLst;
   output list<DAE.Properties> outPropertiesLst;
   output list<DAE.Attributes> outAttributesLst;
@@ -464,8 +466,8 @@ algorithm
   (outCache,outExpLst,outPropertiesLst,outAttributesLst,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpLst,inImplicit,inST,performVectorization,inPrefix,info,numErrorMessages)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Boolean impl,doVect;
       Option<GlobalScript.SymbolTable> st;
       list<Absyn.Exp> rest;
@@ -515,8 +517,8 @@ function: elabExp
   DAE.Properties type, and include the type and the variability of the
   expression.  This function performs analysis, and returns an
   DAE.Exp and the properties."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input Boolean inImplicit;
   input Option<GlobalScript.SymbolTable> inST;
@@ -524,7 +526,7 @@ function: elabExp
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   input Integer numErrorMessages;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
@@ -541,7 +543,7 @@ algorithm
       Option<GlobalScript.SymbolTable> st,st_1,st_2;
       DAE.Exp exp,e1_1,e2_1,exp_1,e_1,mexp,mexp_1,arrexp;
       DAE.Properties prop,prop1,prop2;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.ComponentRef cr,fn;
       DAE.Type t,t1,t2,arrtp,t_1,t_2,tp,ty;
       DAE.Const c1,c2,c,const;
@@ -556,7 +558,7 @@ algorithm
       DAE.Type at,tp_1;
       list<list<DAE.Properties>> tps;
       list<list<DAE.Type>> tps_1;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.ForIterators iterators;
       Prefix.Prefix pre;
       list<list<Absyn.Exp>> ess;
@@ -887,11 +889,11 @@ algorithm
        true = Flags.isSet(Flags.FAILTRACE);
        Debug.fprint(Flags.FAILTRACE, "- Static.elabExp failed: ");
        Debug.traceln(Dump.printExpStr(e));
-       Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
+       Debug.traceln("  Scope: " +& FGraph.printGraphPathStr(env));
        Debug.traceln("  Prefix: " +& PrefixUtil.printPrefixStr(pre));
 
        //Debug.traceln("\n env : ");
-       //Debug.traceln(Env.printEnvStr(env));
+       //Debug.traceln(FGraph.printGraphStr(env));
        //Debug.traceln("\n----------------------- FINISHED ENV ------------------------\n");
        */
      then
@@ -929,8 +931,8 @@ protected function elabIfExp
 the condition is parameter or constant; it is evaluated and the correct branch is selected.
 This is a dirty hack to make MSL CombiTable models work!
 Note: Because of this, the function has to rollback or delete an ErrorExt checkpoint."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp condExp;
   input DAE.Properties condProp;
   input Absyn.Exp trueExp;
@@ -940,7 +942,7 @@ Note: Because of this, the function has to rollback or delete an ErrorExt checkp
   input Boolean vect;
   input Prefix.Prefix pre;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties prop;
   output Option<GlobalScript.SymbolTable> outSt;
@@ -951,8 +953,8 @@ algorithm
       DAE.Properties trueProp,falseProp;
       Boolean b;
       Option<GlobalScript.SymbolTable> st;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
 
     case (cache,env,_,_,_,_,_,st,_,_,_)
       equation
@@ -983,8 +985,8 @@ end elabIfExp;
 public function elabListExp "Function that elaborates the MetaModelica list type,
 for instance list<Integer>.
 This is used by Inst.mo when handling a var := {...} statement"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inExpList;
   input DAE.Properties inProp;
   input Boolean inBoolean;
@@ -992,7 +994,7 @@ This is used by Inst.mo when handling a var := {...} statement"
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
@@ -1000,8 +1002,8 @@ algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption) :=
   matchcontinue (inCache,inEnv,inExpList,inProp,inBoolean,inST,performVectorization,inPrefix,info)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Boolean impl,doVect;
       Option<GlobalScript.SymbolTable> st;
       DAE.Properties prop;
@@ -1046,18 +1048,18 @@ public function fromEquationsToAlgAssignments " Converts equations to algorithm 
  then 1;"
   input list<Absyn.EquationItem> eqsIn;
   input list<Absyn.AlgorithmItem> accList;
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input Prefix.Prefix inPrefix;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Absyn.AlgorithmItem> algsOut;
 algorithm
   (outCache,algsOut) :=
   match (eqsIn,accList,cache,env,inPrefix)
     local
       list<Absyn.AlgorithmItem> localAccList;
-      Env.Cache localCache;
-      Env.Env localEnv;
+      FCore.Cache localCache;
+      FCore.Graph localEnv;
       Prefix.Prefix pre;
       Option<Absyn.Comment> comment;
       Absyn.Info info;
@@ -1081,10 +1083,10 @@ protected function fromEquationBranchesToAlgBranches
 "Converts equations to algorithm assignments."
   input list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> eqsIn;
   input list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> accList;
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input Prefix.Prefix inPrefix;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> algsOut;
 algorithm
   (outCache,algsOut) :=
@@ -1092,8 +1094,8 @@ algorithm
     local
       list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> localAccList;
       list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> rest;
-      Env.Cache localCache;
-      Env.Env localEnv;
+      FCore.Cache localCache;
+      FCore.Graph localEnv;
       Prefix.Prefix pre;
       Absyn.Exp e;
       list<Absyn.AlgorithmItem> algs;
@@ -1111,16 +1113,16 @@ protected function fromEquationToAlgAssignment "function: fromEquationToAlgAssig
   input Absyn.Equation eq;
   input Option<Absyn.Comment> comment;
   input Absyn.Info info;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Prefix.Prefix inPrefix;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Absyn.AlgorithmItem> algStatement;
 algorithm
   (outCache,algStatement) := matchcontinue (eq,comment,info,inCache,inEnv,inPrefix)
     local
-      Env.Cache localCache,cache;
-      Env.Env env;
+      FCore.Cache localCache,cache;
+      FCore.Graph env;
       Prefix.Prefix pre;
       String str,strLeft,strRight;
       Absyn.Exp left,right,e;
@@ -1223,10 +1225,10 @@ end elabMatrixToMatrixExp;
 
 protected function matrixConstrMaxDim
   "Helper function to elabExp (MATRIX).
-   Determines the maximum dimension of the array arguments to the matrix
-   constructor as.
-   max(2, ndims(A), ndims(B), ndims(C),..) for matrix constructor arguments
-   A, B, C, ..."
+  Determines the maximum dimension of the array arguments to the matrix
+  constructor as.
+  max(2, ndims(A), ndims(B), ndims(C),..) for matrix constructor arguments
+  A, B, C, ..."
   input list<DAE.Type> inTypes;
   input Integer inAccumMax;
   output Integer outMaxDim;
@@ -1252,8 +1254,8 @@ end matrixConstrMaxDim;
 protected function elabCallReduction
 "This function elaborates reduction expressions that look like function
   calls. For example an array constructor."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ComponentRef reductionFn;
   input Absyn.Exp reductionExp;
   input Absyn.ReductionIterType iterType;
@@ -1263,7 +1265,7 @@ protected function elabCallReduction
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> outST;
@@ -1275,14 +1277,14 @@ algorithm
       DAE.Exp exp_1;
       DAE.Type expty,resultTy;
       DAE.Const iterconst,expconst,const;
-      Env.Env env_foldExp,env_1,env;
+      FCore.Graph env_foldExp,env_1,env;
       Option<GlobalScript.SymbolTable> st;
       DAE.Properties prop;
       Absyn.Path fn_1;
       Absyn.ComponentRef fn;
       Absyn.Exp exp;
       Boolean doVect,hasGuardExp;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       Option<Absyn.Exp> afoldExp;
       Option<DAE.Exp> foldExp;
@@ -1295,7 +1297,7 @@ algorithm
 
     case (cache,env,fn,exp,_,iters,_,st,doVect,pre,_)
       equation
-        env_1 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forIterScopeName), NONE());
+        env_1 = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.forIterScopeName), NONE());
         iters = listReverse(iters);
         (cache,env_1,reductionIters,dims,iterconst,hasGuardExp,st) = elabCallReductionIterators(cache, env_1, iters, impl, st, doVect, pre, info);
         dims = listReverse(dims);
@@ -1343,16 +1345,16 @@ algorithm
 end fixDimsItertype;
 
 protected function elabCallReductionIterators
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ForIterators inIterators;
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> inSt;
   input Boolean doVect;
   input Prefix.Prefix pre;
   input Absyn.Info info;
-  output Env.Cache outCache;
-  output Env.Env envWithIterators;
+  output FCore.Cache outCache;
+  output FCore.Graph envWithIterators;
   output list<DAE.ReductionIterator> outIterators;
   output DAE.Dimensions outDims;
   output DAE.Const const;
@@ -1371,8 +1373,8 @@ algorithm
       DAE.Dimension dim;
       list<DAE.ReductionIterator> diters;
       DAE.Dimensions dims;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       DAE.Const iterconst,guardconst;
       DAE.Type fulliterty,iterty;
       Option<GlobalScript.SymbolTable> st;
@@ -1387,7 +1389,7 @@ algorithm
         (iterty,dim) = Types.unliftArrayOrList(fulliterty);
 
         // print("iterator type: " +& Types.unparseType(iterty) +& "\n");
-        envWithIterators = Env.extendFrameForIterator(env, iter, iterty, DAE.UNBOUND(), SCode.CONST(), SOME(iterconst));
+        envWithIterators = FGraph.addForIterator(env, iter, iterty, DAE.UNBOUND(), SCode.CONST(), SOME(iterconst));
         // print("exp_1 has type: " +& Types.unparseType(expty) +& "\n");
         (cache,guardExp,DAE.PROP(_, guardconst),st) = elabExpOptAndMatchType(cache, envWithIterators, aguardExp, DAE.T_BOOL_DEFAULT, impl, st, doVect,pre,info);
 
@@ -1395,7 +1397,7 @@ algorithm
 
         (cache,envWithIterators,diters,dims,const,hasGuardExp,st) = elabCallReductionIterators(cache,env,iterators,impl,st,doVect,pre,info);
         // Yes, we do this twice to hide the iterators from the different guard-expressions...
-        envWithIterators = Env.extendFrameForIterator(envWithIterators, iter, iterty, DAE.UNBOUND(), SCode.CONST(), SOME(iterconst));
+        envWithIterators = FGraph.addForIterator(envWithIterators, iter, iterty, DAE.UNBOUND(), SCode.CONST(), SOME(iterconst));
         const = Types.constAnd(guardconst, iterconst);
         hasGuardExp = hasGuardExp or Util.isSome(guardExp);
         dim = Util.if_(Util.isSome(guardExp), DAE.DIM_UNKNOWN(), dim);
@@ -1404,20 +1406,19 @@ algorithm
 end elabCallReductionIterators;
 
 protected function makeReductionFoldExp
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Absyn.Path path;
   input DAE.Type expty;
   input DAE.Type resultTy;
   input String foldId;
   input String resultId;
-  output Env.Env outEnv;
-  output Option<Absyn.Exp> afoldExp;
+  output FCore.Graph outEnv;  output Option<Absyn.Exp> afoldExp;
 algorithm
   (outEnv,afoldExp) := match (inEnv,path,expty,resultTy,foldId,resultId)
     local
       Absyn.Exp exp;
       Absyn.ComponentRef cr,cr1,cr2;
-      Env.Env env;
+      FCore.Graph env;
 
     case (env,Absyn.IDENT("array"),_,_,_,_) then (env,NONE());
     case (env,Absyn.IDENT("list"),_,_,_,_) then (env,NONE());
@@ -1425,8 +1426,8 @@ algorithm
     case (env,Absyn.IDENT("sum"),_,_,_,_)
       equation
         _ = Absyn.pathToCref(path);
-        env = Env.extendFrameForIterator(env, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
-        env = Env.extendFrameForIterator(env, resultId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        env = FGraph.addForIterator(env, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        env = FGraph.addForIterator(env, resultId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         cr1 = Absyn.CREF_IDENT(foldId,{});
         cr2 = Absyn.CREF_IDENT(resultId,{});
         exp = Absyn.BINARY(Absyn.CREF(cr2),Absyn.ADD(),Absyn.CREF(cr1));
@@ -1434,8 +1435,8 @@ algorithm
     case (env,Absyn.IDENT("product"),_,_,_,_)
       equation
         _ = Absyn.pathToCref(path);
-        env = Env.extendFrameForIterator(env, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
-        env = Env.extendFrameForIterator(env, resultId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        env = FGraph.addForIterator(env, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        env = FGraph.addForIterator(env, resultId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         cr1 = Absyn.CREF_IDENT(foldId,{});
         cr2 = Absyn.CREF_IDENT(resultId,{});
         exp = Absyn.BINARY(Absyn.CREF(cr2),Absyn.MUL(),Absyn.CREF(cr1));
@@ -1445,8 +1446,8 @@ algorithm
         env = inEnv;
         cr = Absyn.pathToCref(path);
         // print("makeReductionFoldExp => " +& Absyn.pathString(path) +& Types.unparseType(expty) +& "\n");
-        env = Env.extendFrameForIterator(env, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
-        env = Env.extendFrameForIterator(env, resultId, resultTy, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        env = FGraph.addForIterator(env, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        env = FGraph.addForIterator(env, resultId, resultTy, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         cr1 = Absyn.CREF_IDENT(foldId,{});
         cr2 = Absyn.CREF_IDENT(resultId,{});
         exp = Absyn.CALL(cr,Absyn.FUNCTIONARGS({Absyn.CREF(cr1),Absyn.CREF(cr2)},{}));
@@ -1455,8 +1456,8 @@ algorithm
 end makeReductionFoldExp;
 
 protected function reductionType
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path fn;
   input DAE.Exp inExp;
   input DAE.Type inType;
@@ -1464,7 +1465,7 @@ protected function reductionType
   input DAE.Dimensions dims;
   input Boolean hasGuardExp;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Type outType;
   output DAE.Type resultType;
@@ -1482,8 +1483,8 @@ algorithm
       Absyn.Path path;
       Values.Value v;
       DAE.Exp exp;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       InstTypes.PolymorphicBindings bindings;
       Option<Values.Value> defaultBinding;
 
@@ -1628,7 +1629,7 @@ algorithm
 end reductionType;
 
 protected function checkReductionType1
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Absyn.Path inPath;
   input list<DAE.Type> fnTypes;
   input Absyn.Info info;
@@ -1642,14 +1643,14 @@ algorithm
     local
       String str1,str2;
       Absyn.Path path;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp e;
       Values.Value v;
 
     case (env, path, {}, _)
       equation
         str1 = Absyn.pathString(path);
-        str2 = Env.printEnvPathStr(env);
+        str2 = FGraph.printGraphPathStr(env);
         Error.addSourceMessage(Error.LOOKUP_FUNCTION_ERROR, {str1,str2}, info);
       then fail();
 
@@ -1759,12 +1760,12 @@ protected function elabCodeType "This function will construct the correct type f
   expression. The types are built-in classes of different types. E.g.
   the class TypeName is the type
   of Code expressions corresponding to a type name Code expression."
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Absyn.CodeNode inCode;
   output DAE.Type outType;
 algorithm
   outType := match (inEnv,inCode)
-    local Env.Env env;
+    local FCore.Graph env;
 
     case (_,Absyn.C_TYPENAME(path = _))
       then DAE.T_CODE(DAE.C_TYPENAME(),DAE.emptyTypeSource);
@@ -1794,13 +1795,13 @@ public function elabGraphicsExp
   These have an array of records representing graphical objects. These
   elements can have different types, therefore elab_graphic_exp will allow
   arrays with elements of varying types. "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -1814,7 +1815,7 @@ algorithm
       String s,ps;
       DAE.Exp dexp,e1_1,e2_1,e_1,e3_1,start_1,stop_1,start_2,stop_2,step_1,step_2,mexp,mexp_1;
       DAE.Properties prop,prop1,prop2,prop3;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.ComponentRef cr,fn;
       DAE.Type t,start_t,stop_t,step_t,t_1,t_2;
       DAE.Const c1,c,c_start,c_stop,const,c_step;
@@ -1829,7 +1830,7 @@ algorithm
       DAE.Type rt,at;
       list<list<DAE.Properties>> tps;
       list<list<DAE.Type>> tps_1;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       list<list<Absyn.Exp>> ess;
       list<list<DAE.Exp>> dess;
@@ -2059,15 +2060,15 @@ end deoverloadRange;
 
 protected function elabRange
   "Elaborates a range expression on the form start:stop or start:step:stop."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Exp inRangeExp;
   input Boolean inImpl;
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean inVect;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProps;
   output Option<GlobalScript.SymbolTable> outST;
@@ -2081,7 +2082,7 @@ algorithm
       DAE.Type ty, start_t, step_t, stop_t;
       DAE.Const co, start_c, step_c, stop_c;
       Option<GlobalScript.SymbolTable> st;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Type ety;
       list<String> error_strs;
       String error_str;
@@ -2136,8 +2137,8 @@ protected function elabRangeType
   "This function creates a type for a range expression given by a start, stop,
   and optional step expression. This function always succeeds, but may return an
   array-type of unknown size if the expressions can't be constant evaluated."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inStart;
   input Option<DAE.Exp> inStep;
   input DAE.Exp inStop;
@@ -2145,7 +2146,7 @@ protected function elabRangeType
   input DAE.Type inExpType;
   input DAE.Const co;
   input Boolean inImpl;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Type outType;
 algorithm
   (outCache, outType) := matchcontinue(inCache, inEnv, inStart, inStep, inStop, inType,
@@ -2154,7 +2155,7 @@ algorithm
       DAE.Exp step_exp;
       Values.Value start_val, step_val, stop_val;
       Integer dim;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (_, _, _, _, _, _, _, DAE.C_VAR(), _)
       then (inCache, DAE.T_ARRAY(inType, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource));
@@ -2239,14 +2240,14 @@ algorithm
 end elabRangeSize;
 
 protected function elabTuple "This function does elaboration of tuples, i.e. function calls returning several values."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inBoolean;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
   output list<DAE.Properties> outTypesPropertiesLst;
 algorithm
@@ -2257,11 +2258,11 @@ algorithm
       DAE.Properties p;
       list<DAE.Exp> exps_1;
       list<DAE.Properties> props;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp e;
       list<Absyn.Exp> exps;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Boolean doVect;
       Prefix.Prefix pre;
 
@@ -2287,23 +2288,23 @@ end elabTuple;
 // stefan
 protected function elabPartEvalFunction
 "turns an Absyn.PARTEVALFUNCTION into an DAE.PARTEVALFUNCTION"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input Option<GlobalScript.SymbolTable> inSymbolTableOption;
   input Boolean inImpl;
   input Boolean inVect;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> outSymbolTableOption;
 algorithm
   (outCache,outExp,outProperties,outSymbolTableOption) := match (inCache,inEnv,inExp,inSymbolTableOption,inImpl,inVect,inPrefix,info)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Absyn.ComponentRef cref;
       list<Absyn.Exp> posArgs;
       list<Absyn.NamedArg> namedArgs;
@@ -2326,7 +2327,7 @@ algorithm
         (cache,exp,prop_1,st) = elabExpInExpression(cache, env, Absyn.CREF(cref), impl, st, inVect, pre, info);
       then (cache,exp,prop_1,st);
 
-    case (cache,env,Absyn.PARTEVALFUNCTION(cref,Absyn.FUNCTIONARGS(posArgs,namedArgs)),st,impl,_,pre,_)
+    case(cache,env,Absyn.PARTEVALFUNCTION(cref,Absyn.FUNCTIONARGS(posArgs,namedArgs)),st,impl,_,pre,_)
       equation
         p = Absyn.crefToPath(cref);
         (cache,{tty}) = Lookup.lookupFunctionsInEnv(cache, env, p, info);
@@ -2398,7 +2399,7 @@ algorithm
 end stripExtraArgsFromType2;
 
 protected function elabArray
-  "This function elaborates on array expressions.
+"This function elaborates on array expressions.
 
   All types of an array should be equivalent. However, mixed Integer and Real
   elements are allowed in an array and in that case the Integer elements
@@ -2445,8 +2446,8 @@ algorithm
 end elabArray;
 
 protected function elabArrayHasMixedIntReals
-  "Helper function to elab_array, checks if expression list contains both
-   Integer and Real types."
+"Helper function to elab_array, checks if expression list contains both
+  Integer and Real types."
   input list<DAE.Properties> props;
   output DAE.Type ty;
 algorithm
@@ -2631,13 +2632,13 @@ end elabArray2;
 
 protected function elabGraphicsArray
 "This function elaborates array expressions for graphics elaboration."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
   output DAE.Properties outProperties;
 algorithm
@@ -2646,14 +2647,14 @@ algorithm
     local
       DAE.Exp e_1;
       DAE.Properties prop;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp e;
       Boolean impl;
       DAE.Type t1,t2;
       DAE.Const c1,c2,c;
       list<DAE.Exp> es_1;
       list<Absyn.Exp> es;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       String envStr,str,preStr,expStr;
     case (cache,env,{e},impl,pre,_) /* impl */
@@ -2670,7 +2671,7 @@ algorithm
         (cache,(e_1 :: es_1),DAE.PROP(t1,c));
     case (_,env,{},_,pre,_)
       equation
-        envStr = Env.printEnvPathStr(env);
+        envStr = FGraph.printGraphPathStr(env);
         preStr = PrefixUtil.printPrefixStr(pre);
         str = "Static.elabGraphicsArray failed on an empty modification with prefix: " +& preStr +& " in scope: " +& envStr;
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
@@ -2678,7 +2679,7 @@ algorithm
         fail();
     case (_,env,e::_,_,pre,_)
       equation
-        envStr = Env.printEnvPathStr(env);
+        envStr = FGraph.printGraphPathStr(env);
         preStr = PrefixUtil.printPrefixStr(pre);
         expStr = Dump.printExpStr(e);
         str = "Static.elabGraphicsArray failed on expresion: " +& expStr +& " with prefix: " +& preStr +& " in scope: " +& envStr;
@@ -2690,8 +2691,8 @@ end elabGraphicsArray;
 
 protected function elabMatrixComma "This function is a helper function for elabMatrixSemi.
   It elaborates one matrix row of a matrix."
-  input Env.Cache inCache;
-  input Env.Env inEnv1;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv1;
   input list<DAE.Exp> es;
   input list<DAE.Properties> inProps;
   input Boolean inBoolean3;
@@ -2701,7 +2702,7 @@ protected function elabMatrixComma "This function is a helper function for elabM
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp1;
   output DAE.Properties outProperties2;
   output DAE.Dimension outInteger3;
@@ -2717,10 +2718,10 @@ algorithm
       DAE.Dimension t1_dim1_1,t1_dim2_1,dim1,dim2,dim2_1;
       Boolean impl,havereal,a,doVect;
       DAE.Type at;
-      Env.Env env;
+      FCore.Graph env;
       Option<GlobalScript.SymbolTable> st;
       list<DAE.Exp> els_1,els;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       list<DAE.Properties> props;
 
@@ -2938,8 +2939,8 @@ end promoteExp;
 protected function elabMatrixSemi
 "This function elaborates Matrix expressions, e.g. {1,0;2,1}
   A row is elaborated with elabMatrixComma."
-  input Env.Cache inCache;
-  input Env.Env inEnv1;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv1;
   input list<list<DAE.Exp>> expss;
   input list<list<DAE.Properties>> inPropss;
   input Boolean inBoolean3;
@@ -2949,7 +2950,7 @@ protected function elabMatrixSemi
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp1;
   output DAE.Properties outProperties2;
   output DAE.Dimension outInteger3;
@@ -2964,12 +2965,12 @@ algorithm
       Integer maxn,dim;
       DAE.Dimension dim1,dim2,dim1_1,dim2_1,dim1_2;
       Boolean impl,havereal;
-      Env.Env env;
+      FCore.Graph env;
       Option<GlobalScript.SymbolTable> st;
       list<DAE.Exp> els;
       list<list<DAE.Exp>> elss;
       String el_str,t1_str,t2_str,dim1_str,dim2_str,el_str1,pre_str;
-      Env.Cache cache;
+      FCore.Cache cache;
       Boolean doVect;
       Prefix.Prefix pre;
       list<DAE.Properties> props;
@@ -3027,15 +3028,15 @@ protected function verifyBuiltInHandlerType "
  Author BZ, 2009-02
   This function validates that arguments to function are of a correct type.
   Then call elabCallArgs to vectorize/type-match."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean impl;
   input extraFunc typeChecker;
   input String fnName;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   partial function extraFunc
@@ -3051,8 +3052,8 @@ algorithm
       DAE.Const c;
       DAE.Properties prop;
       Prefix.Prefix pre;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
 
     case (cache,env,{s1},_,_,_,pre,_) /* impl */
       equation
@@ -3069,14 +3070,14 @@ end verifyBuiltInHandlerType;
 protected function elabBuiltinCardinality
 "author: PA
   This function elaborates the cardinality operator."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -3084,10 +3085,10 @@ algorithm
     local
       DAE.Exp exp_1;
       DAE.Type tp1;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp exp;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
 
     case (cache, env, {exp}, _, impl, pre, _)
@@ -3110,14 +3111,14 @@ protected function elabBuiltinSmooth
   The only allowed types for expr in smooth are: real expressions, arrays of
   allowed expressions, and records containing only components of allowed
   expressions."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -3127,10 +3128,10 @@ algorithm
       DAE.Const c1,c;
       Boolean impl,b1,b2;
       DAE.Type tp,tp1;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp p,expr;
       list<Absyn.Exp> expl;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Type etp;
       String s1,a1,a2,sp;
       Integer pInt;
@@ -3192,15 +3193,15 @@ end elabBuiltinSmooth;
 protected function elabBuiltinSize
 "This function elaborates the size operator.
   Input is the list of arguments to size as Absyn.Exp
-  expressions and the environment, Env.Env."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  expressions and the environment, FCore.Graph."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -3210,9 +3211,9 @@ algorithm
       DAE.Type arrtp;
       DAE.Properties prop;
       Boolean impl;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp arraycr,dim;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Type ety;
       DAE.Dimensions dims;
@@ -3314,7 +3315,7 @@ protected function elabBuiltinSizeIndex
   input DAE.Type inArrayType;
   input DAE.Exp inIndexExp;
   input DAE.Dimensions inDimensions;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Absyn.Info inInfo;
   output Option<DAE.Exp> outSizeExp;
   output Option<DAE.Properties> outProperties;
@@ -3377,7 +3378,7 @@ algorithm
       equation
         exp = DAE.SIZE(inArrayExp, SOME(inIndexExp));
         cnst = DAE.C_PARAM(); // Types.getPropConst(inArrayProp);
-        cnst = Util.if_(Env.inFunctionScope(inEnv), DAE.C_VAR(), cnst);
+        cnst = Util.if_(FGraph.inFunctionScope(inEnv), DAE.C_VAR(), cnst);
         prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, cnst);
       then
         (SOME(exp), SOME(prop));
@@ -3389,14 +3390,14 @@ protected function elabBuiltinNDims
 "@author Stefan Vorkoetter <svorkoetter@maplesoft.com>
  ndims(A) : Returns the number of dimensions k of array expression A, with k >= 0.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -3405,9 +3406,9 @@ algorithm
       DAE.Exp arraycrefe,exp;
       DAE.Type arrtp;
       Boolean impl;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp arraycr;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<Absyn.Exp> expl;
       Integer nd;
       Prefix.Prefix pre;
@@ -3432,15 +3433,15 @@ algorithm
 end elabBuiltinNDims;
 
 protected function elabBuiltinFill "This function elaborates the builtin operator fill.
-  The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  The input is the arguments to fill as Absyn.Exp expressions and the environment FCore.Graph"
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -3452,13 +3453,13 @@ algorithm
       list<DAE.Properties> dimprops;
       DAE.Type sty;
       list<Values.Value> dimvals;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp s;
       list<Absyn.Exp> dims;
       Boolean impl;
       String implstr,expstr,str,sp;
       list<String> expstrs;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Const c1;
       Prefix.Prefix pre;
       DAE.Type exp_type;
@@ -3512,7 +3513,7 @@ algorithm
     case (_,env,dims,_,_,_,_)
       equation
         str = "Static.elabBuiltinFill failed in component" +& PrefixUtil.printPrefixStr3(inPrefix) +&
-              " and scope: " +& Env.printEnvPathStr(env) +&
+              " and scope: " +& FGraph.printGraphPathStr(env) +&
               " for expression: fill(" +& Dump.printExpLstStr(dims) +& ")";
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then
@@ -3541,8 +3542,8 @@ public function elabBuiltinFill2
 
   Public since it is used by ExpressionSimplify.simplifyBuiltinCalls.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input DAE.Type inType;
   input list<Values.Value> inValuesValueLst;
@@ -3550,7 +3551,7 @@ public function elabBuiltinFill2
   input Prefix.Prefix inPrefix;
   input list<Absyn.Exp> inDims;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -3559,13 +3560,13 @@ algorithm
       list<DAE.Exp> arraylist;
       DAE.Type at;
       Boolean a;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp s,exp;
       DAE.Type sty,ty,sty2;
       Integer v;
       DAE.Const con;
       list<Values.Value> rest;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Const c1;
       Prefix.Prefix pre;
       String str;
@@ -3604,7 +3605,7 @@ algorithm
     case (_,env,_,_,_,_,_,_,_)
       equation
         str = "Static.elabBuiltinFill2 failed in component" +& PrefixUtil.printPrefixStr3(inPrefix) +&
-              " and scope: " +& Env.printEnvPathStr(env) +&
+              " and scope: " +& FGraph.printGraphPathStr(env) +&
               " for expression: fill(" +& Dump.printExpLstStr(inDims) +& ")";
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, inInfo);
       then
@@ -3613,14 +3614,14 @@ algorithm
 end elabBuiltinFill2;
 
 protected function elabBuiltinSymmetric "This function elaborates the builtin operator symmetric"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -3632,10 +3633,10 @@ algorithm
       DAE.Type eltp,newtp;
       DAE.Properties prop;
       DAE.Const c;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp matexp;
       DAE.Exp exp_1,exp;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
 
     case (cache,env,{matexp},_,impl,pre,_)
@@ -3652,14 +3653,14 @@ algorithm
 end elabBuiltinSymmetric;
 
 protected function elabBuiltinClassDirectory
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -3678,18 +3679,18 @@ end elabBuiltinClassDirectory;
 
 protected function elabBuiltinTranspose
   "Elaborates the builtin operator transpose."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inPosArgs;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 protected
-  Env.Cache cache;
+  FCore.Cache cache;
   Absyn.Exp aexp;
   DAE.Exp exp;
   DAE.Type ty, el_ty;
@@ -3710,15 +3711,15 @@ algorithm
 end elabBuiltinTranspose;
 
 protected function elabBuiltinSum "This function elaborates the builtin operator sum.
-  The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  The input is the arguments to fill as Absyn.Exp expressions and the environment FCore.Graph"
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -3727,10 +3728,10 @@ algorithm
       DAE.Exp exp_1,exp_2;
       DAE.Type t,tp;
       DAE.Const c;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp arrexp;
       Boolean impl,b;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       String estr,tstr;
       DAE.Type etp;
@@ -3752,15 +3753,15 @@ algorithm
 end elabBuiltinSum;
 
 protected function elabBuiltinProduct "This function elaborates the builtin operator product.
-  The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  The input is the arguments to fill as Absyn.Exp expressions and the environment FCore.Graph"
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -3771,11 +3772,11 @@ algorithm
       DAE.Dimension dim;
       DAE.Type t,tp;
       DAE.Const c;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp arrexp;
       Boolean impl;
       DAE.Type ty,ty2;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       String str_exp,str_pre;
       DAE.Type etp;
@@ -3832,15 +3833,15 @@ algorithm
 end elabBuiltinProduct2;
 
 protected function elabBuiltinPre "This function elaborates the builtin operator pre.
-  Input is the arguments to the pre operator and the environment, Env.Env."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  Input is the arguments to the pre operator and the environment, FCore.Graph."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -3849,13 +3850,13 @@ algorithm
     local
       DAE.Exp exp_1,exp_2, call;
       DAE.Const c;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp exp;
       DAE.Dimension dim;
       Boolean impl,sc;
       String s,el_str,pre_str;
       list<Absyn.Exp> expl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Type t,t2,tp;
       DAE.Type etp,etp_org;
@@ -3962,15 +3963,15 @@ end elabBuiltinPre2;
 
 
 protected function elabBuiltinInStream "This function elaborates the builtin operator inStream.
-  Input is the arguments to the inStream operator and the environment, Env.Env."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  Input is the arguments to the inStream operator and the environment, FCore.Graph."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inArgs;
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -3980,9 +3981,9 @@ algorithm
       DAE.Exp exp_1, e;
       DAE.Type tp;
       DAE.Const c;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp exp;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Info info;
       DAE.Properties prop;
 
@@ -4007,15 +4008,15 @@ algorithm
 end elabBuiltinInStream;
 
 protected function elabBuiltinActualStream "This function elaborates the builtin operator actualStream.
-  Input is the arguments to the actualStream operator and the environment, Env.Env."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  Input is the arguments to the actualStream operator and the environment, FCore.Graph."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inArgs;
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -4026,8 +4027,8 @@ algorithm
       DAE.Exp exp_1, e;
       DAE.Type tp;
       DAE.Const c;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Absyn.Info info;
       DAE.Properties prop;
 
@@ -4052,8 +4053,8 @@ algorithm
 end elabBuiltinActualStream;
 
 protected function elabBuiltinStreamOperator
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input String inOperator;
   input DAE.Exp inExp;
   input DAE.Type inType;
@@ -4081,8 +4082,8 @@ algorithm
 end elabBuiltinStreamOperator;
 
 protected function validateBuiltinStreamOperator
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inOperand;
   input DAE.Type inType;
   input String inOperator;
@@ -4162,14 +4163,14 @@ protected function elabBuiltinArray "
   array(1,4,6) which is the same as {1,4,6}.
   Input is the list of arguments to the operator, as Absyn.Exp list.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -4184,9 +4185,9 @@ algorithm
       DAE.Type newtp_1;
       Boolean scalar,impl;
       DAE.Exp exp;
-      Env.Env env;
+      FCore.Graph env;
       list<Absyn.Exp> expl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
 
     case (cache,env,expl,_,impl,pre,_)
@@ -4272,14 +4273,14 @@ algorithm
 end elabBuiltinArray3;
 
 protected function elabBuiltinZeros "This function elaborates the builtin operator zeros(n)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -4287,10 +4288,10 @@ algorithm
     local
       DAE.Exp e;
       DAE.Properties p;
-      Env.Env env;
+      FCore.Graph env;
       list<Absyn.Exp> args;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
 
     case (cache,env,args,_,impl,pre,_)
@@ -4382,14 +4383,14 @@ algorithm
 end sameDimensions3;
 
 protected function elabBuiltinOnes "This function elaborates on the builtin opeator ones(n)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -4398,10 +4399,10 @@ algorithm
     local
       DAE.Exp e;
       DAE.Properties p;
-      Env.Env env;
+      FCore.Graph env;
       list<Absyn.Exp> args;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
     case (cache,env,args,_,impl,pre,_)
       equation
@@ -4413,14 +4414,14 @@ end elabBuiltinOnes;
 
 protected function elabBuiltinMax
   "This function elaborates on the builtin operator max(a, b)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inFnArgs;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -4430,14 +4431,14 @@ end elabBuiltinMax;
 
 protected function elabBuiltinMin
   "This function elaborates the builtin operator min(a, b)"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inFnArgs;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -4448,14 +4449,14 @@ end elabBuiltinMin;
 protected function elabBuiltinMinMaxCommon
   "Helper function to elabBuiltinMin and elabBuiltinMax, containing common
   functionality."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input String inFnName;
   input list<Absyn.Exp> inFnArgs;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -4466,10 +4467,10 @@ algorithm
       DAE.Type tp;
       DAE.Type ty,ty1,ty2,elt_ty;
       DAE.Const c,c1,c2;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp arrexp,s1,s2;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties p;
 
@@ -4513,14 +4514,14 @@ Author BZ
 TODO: implement,
 fix types, so we can have integer as input
 verify that the input is correct."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -4529,8 +4530,8 @@ algorithm
       DAE.Exp call;
       DAE.Type ty1,ty2,ty;
       Boolean impl;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop;
       Integer i;
@@ -4575,14 +4576,14 @@ end elabBuiltinDelay2;
 protected function elabBuiltinClock "
 Author: BTH
 This function elaborates the builtin Clock constructor Clock(..)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -4591,8 +4592,8 @@ algorithm
       DAE.Exp call,interval,intervalCounter,resolution,condition,startInterval,c,solverMethod;
       DAE.Type ty1,ty2,ty;
       Boolean impl;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop1,prop2,prop;
       Absyn.Exp ainterval, aintervalCounter, aresolution, acondition, astartInterval, ac, asolverMethod;
@@ -4831,14 +4832,14 @@ end elabBuiltinClock;
 protected function elabBuiltinPrevious "
 Author: BTH
 This function elaborates the builtin operator previous(u)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -4847,8 +4848,8 @@ algorithm
       DAE.Exp call, u;
       DAE.Type ty1,ty2,ty;
       Boolean impl;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop1, prop;
       Absyn.Exp au;
@@ -4870,14 +4871,14 @@ end elabBuiltinPrevious;
 protected function elabBuiltinHold "
 Author: BTH
 This function elaborates the builtin operator hold(u)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -4886,8 +4887,8 @@ algorithm
       DAE.Exp call, u;
       DAE.Type ty1,ty2,ty;
       Boolean impl;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop1, prop;
       Absyn.Exp au;
@@ -4909,14 +4910,14 @@ end elabBuiltinHold;
 protected function elabBuiltinSample "
 Author: BTH
 This function elaborates the builtin operator sample(..) variants."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -4925,8 +4926,8 @@ algorithm
       DAE.Exp call,u,c,start,interval;
       DAE.Type ty1,ty2,ty;
       Boolean impl;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop1,prop2,prop;
       DAE.Const variability;
@@ -4980,7 +4981,7 @@ algorithm
         ty =  DAE.T_FUNCTION(
                 {DAE.FUNCARG("u",ty1,variability,DAE.NON_PARALLEL(),NONE()),
                  DAE.FUNCARG("c",DAE.T_CLOCK_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),SOME(DAE.CLKCONST(DAE.INFERRED_CLOCK())))},
-                ty1,
+                 ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 DAE.emptyTypeSource);
 
@@ -4996,14 +4997,14 @@ end elabBuiltinSample;
 protected function elabBuiltinSubSample "
 Author: BTH
 This function elaborates the builtin operator subSample(u,factor)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -5012,8 +5013,8 @@ algorithm
       DAE.Exp call,u,factor;
       DAE.Type ty1,ty2,ty;
       Boolean impl;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop1,prop2,prop;
       Absyn.Exp au,afactor;
@@ -5055,14 +5056,14 @@ end elabBuiltinSubSample;
 protected function elabBuiltinSuperSample "
 Author: BTH
 This function elaborates the builtin operator superSample(u,factor)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -5071,8 +5072,8 @@ algorithm
       DAE.Exp call,u,factor;
       DAE.Type ty1,ty2,ty;
       Boolean impl;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop1,prop2,prop;
       Absyn.Exp au,afactor;
@@ -5114,14 +5115,14 @@ end elabBuiltinSuperSample;
 protected function elabBuiltinShiftSample "
 Author: BTH
 This function elaborates the builtin operator shiftSample(u,shiftCounter,resolution)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -5130,8 +5131,8 @@ algorithm
       DAE.Exp call,u,shiftCounter,resolution;
       DAE.Type ty1,ty2,ty;
       Boolean impl;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop1,prop2,prop3,prop;
       Absyn.Exp au,ashiftCounter,aresolution;
@@ -5182,14 +5183,14 @@ end elabBuiltinShiftSample;
 protected function elabBuiltinBackSample "
 Author: BTH
 This function elaborates the builtin operator backSample(u,backCounter,resolution)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -5198,8 +5199,8 @@ algorithm
       DAE.Exp call,u,backCounter,resolution;
       DAE.Type ty1,ty2,ty;
       Boolean impl;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop1,prop2,prop3,prop;
       Absyn.Exp au,abackCounter,aresolution;
@@ -5250,14 +5251,14 @@ end elabBuiltinBackSample;
 protected function elabBuiltinNoClock "
 Author: BTH
 This function elaborates the builtin operator noClock(u)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -5266,8 +5267,8 @@ algorithm
       DAE.Exp call, u;
       DAE.Type ty1,ty2,ty;
       Boolean impl;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop1, prop;
       Absyn.Exp au;
@@ -5289,14 +5290,14 @@ end elabBuiltinNoClock;
 protected function elabBuiltinInterval "
 Author: BTH
 This function elaborates the builtin operator interval(u)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -5305,8 +5306,8 @@ algorithm
       DAE.Exp call, u;
       DAE.Type ty1,ty;
       Boolean impl;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop1, prop;
       Absyn.Exp au;
@@ -5358,14 +5359,14 @@ protected function elabBuiltinTransition "
 Author: BTH
 This function elaborates the builtin operator
 transition(from, to, condition, immediate=true, reset=true, synchronize=false, priority=1)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -5374,8 +5375,8 @@ algorithm
       DAE.Exp call;
       DAE.Type ty1,ty2,ty;
       Boolean impl;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop;
       Integer n, nFrom;
@@ -5397,8 +5398,8 @@ algorithm
 
         // Alternatively, ty1 and ty2 could be replaced by DAE.T_CODE(DAE.C_VARIABLENAME,{}), not sure if that would be a better solution
         ty =  DAE.T_FUNCTION(
-                {DAE.FUNCARG("from",ty1, DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-                 DAE.FUNCARG("to",ty2, DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                {DAE.FUNCARG("from",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                 DAE.FUNCARG("to",ty2,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
                  DAE.FUNCARG("condition",DAE.T_BOOL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
                  DAE.FUNCARG("immediate",DAE.T_BOOL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),SOME(DAE.BCONST(true))),
                  DAE.FUNCARG("reset",DAE.T_BOOL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),SOME(DAE.BCONST(true))),
@@ -5416,8 +5417,8 @@ protected function elabBuiltinTransition2 "
 Author: BTH
 Helper function to elabBuiltinTransition.
 Check if the \"from\" argument or the \"to\" argument is of complex type."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
@@ -5523,14 +5524,14 @@ protected function elabBuiltinInitialState "
 Author: BTH
 This function elaborates the builtin operator
 initialState(state)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -5539,8 +5540,8 @@ algorithm
       DAE.Exp call,state;
       DAE.Type ty1,ty;
       Boolean impl;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop1,prop;
       Absyn.Exp astate;
@@ -5569,14 +5570,14 @@ protected function elabBuiltinActiveState "
 Author: BTH
 This function elaborates the builtin operator
 activeState(state)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -5585,8 +5586,8 @@ algorithm
       DAE.Exp call,state;
       DAE.Type ty1,ty;
       Boolean impl;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop1,prop;
       Absyn.Exp astate;
@@ -5615,14 +5616,14 @@ protected function elabBuiltinTicksInState "
 Author: BTH
 This function elaborates the builtin operator
 ticksInState()."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -5631,8 +5632,8 @@ algorithm
       DAE.Exp call;
       DAE.Type ty;
       Boolean impl;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop;
 
@@ -5652,14 +5653,14 @@ protected function elabBuiltinTimeInState "
 Author: BTH
 This function elaborates the builtin operator
 timeInState()."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -5668,8 +5669,8 @@ algorithm
       DAE.Exp call;
       DAE.Type ty;
       Boolean impl;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Properties prop;
 
@@ -5688,14 +5689,14 @@ end elabBuiltinTimeInState;
 protected function elabBuiltinBoolean
 "This function elaborates on the builtin operator boolean, which extracts
   the boolean value of a Real, Integer or Boolean value."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -5703,10 +5704,10 @@ algorithm
   match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp s1;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Properties prop;
       Prefix.Prefix pre;
     case (cache,env,{s1},_,impl,pre,_)
@@ -5727,24 +5728,24 @@ end elabBuiltinBoolean;
 protected function elabBuiltinIntegerEnum
 "This function elaborates on the builtin operator Integer for Enumerations, which extracts
   the Integer value of a Enumeration element."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp s1;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Properties prop;
       Prefix.Prefix pre;
     case (cache,env,{s1},_,impl,pre,_)
@@ -5757,14 +5758,14 @@ end elabBuiltinIntegerEnum;
 
 protected function elabBuiltinDiagonal "This function elaborates on the builtin operator diagonal, creating a
   matrix with a value of the diagonal. The other elements are zero."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -5777,9 +5778,9 @@ algorithm
       DAE.Type arrType,ty;
       DAE.Const c;
       DAE.Exp res,s1_1;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp v1,s1;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
 
     case (cache,env,{v1},_,impl,pre,_)
@@ -5862,14 +5863,14 @@ algorithm
 end elabBuiltinDiagonal3;
 
 protected function elabBuiltinDifferentiate "This function elaborates on the builtin operator differentiate, by deriving the Exp"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -5877,12 +5878,12 @@ algorithm
     local
       list<Absyn.ComponentRef> cref_list1,cref_list2,cref_list;
       GlobalScript.SymbolTable symbol_table;
-      Env.Env gen_env,env;
+      FCore.Graph gen_env,env;
       DAE.Exp s1_1,s2_1,call;
       DAE.Properties st;
       Absyn.Exp s1,s2;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
 
     case (cache,_,{s1,s2},_,impl,pre,_)
@@ -5912,14 +5913,14 @@ protected function elabBuiltinSimplify "This function elaborates the simplify fu
   The call in mosh is: simplify(x+yx-x,\"Real\") if the variable should be
   Real or simplify(x+yx-x,\"Integer\") if the variable should be Integer
   This function is only for testing ExpressionSimplify.simplify"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -5928,12 +5929,12 @@ algorithm
     local
       list<Absyn.ComponentRef> cref_list;
       GlobalScript.SymbolTable symbol_table;
-      Env.Env gen_env,env;
+      FCore.Graph gen_env,env;
       DAE.Exp s1_1;
       DAE.Properties st;
       Absyn.Exp s1;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
     case (cache,_,{s1,Absyn.STRING(value = "Real")},_,impl,pre,_) /* impl */
       equation
@@ -5990,7 +5991,7 @@ algorithm
         path_str = Absyn.pathString(path);
         symbol_table_1 = Interactive.addVarToSymboltable(
           DAE.CREF_IDENT(path_str, tp, {}),
-          Values.CODE(Absyn.C_VARIABLENAME(cr)), Env.emptyEnv, symbol_table);
+          Values.CODE(Absyn.C_VARIABLENAME(cr)), FGraph.empty(), symbol_table);
         symbol_table_2 = absynCrefListToInteractiveVarList(rest, symbol_table_1, tp);
       then
         symbol_table_2;
@@ -6007,14 +6008,14 @@ protected function elabBuiltinNoevent "
   The builtin operator noevent makes sure that events are not generated
   for the expression.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -6023,10 +6024,10 @@ algorithm
     local
       DAE.Exp exp_1;
       DAE.Properties prop;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp exp;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
     case (cache,env,{exp},_,impl,pre,_)
       equation
@@ -6041,14 +6042,14 @@ protected function elabBuiltinEdge "
   This function handles the built in edge operator. If the operand is
   constant edge is always false.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -6056,11 +6057,11 @@ algorithm
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp exp_1,exp_2;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp exp;
       Boolean impl;
       DAE.Const c;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       String ps;
     case (cache,env,{exp},_,impl,pre,_) /* Constness: C_VAR */
@@ -6087,14 +6088,14 @@ end elabBuiltinEdge;
 
 protected function elabBuiltinDer
 "This function handles the built in der operator."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -6103,14 +6104,14 @@ algorithm
     local
       DAE.Exp e,ee1;
       DAE.Properties prop;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp exp;
       Boolean impl;
       DAE.Const c;
       list<String> lst;
       String s,sp,es3;
       list<Absyn.Exp> expl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Type ety,ty,elem_ty;
       DAE.Dimensions dims;
@@ -6133,7 +6134,7 @@ algorithm
         true = Types.dimensionsKnown(ety);
         ety = Types.arrayElementType(ety);
         true = Types.isRealOrSubTypeReal(ety);
-        (cache,e,(prop as DAE.PROP(_,_))) = elabCallArgs(cache,env, Absyn.IDENT("der"), {exp}, {}, impl,NONE(),pre,info);
+        (cache,e,(prop as DAE.PROP(_,_))) = elabCallArgs(cache, env, Absyn.IDENT("der"), {exp}, {}, impl, NONE(), pre, info);
       then
         (cache,e,prop);
 
@@ -6172,14 +6173,14 @@ protected function elabBuiltinChange "author: PA
 
   This function handles the built in change operator.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -6189,10 +6190,10 @@ algorithm
       DAE.ComponentRef cr_1;
       DAE.Const c;
       DAE.Type tp1;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.ComponentRef cr;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       String sp;
       DAE.Properties prop;
@@ -6216,14 +6217,14 @@ protected function elabBuiltinChange2 "author: PA
 
   This function handles the built in change operator.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ComponentRef cr;
   input DAE.Exp inExp;
   input DAE.Properties prop;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -6233,10 +6234,10 @@ algorithm
       DAE.ComponentRef cr_1;
       DAE.Const c;
       DAE.Type tp1,tp2;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp exp;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       String sp;
       DAE.Dimensions dims;
@@ -6285,14 +6286,14 @@ end elabBuiltinChange2;
 
 protected function elabBuiltinCat "author: PA
   This function handles the built in cat operator."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -6305,14 +6306,14 @@ algorithm
       list<DAE.Exp> matrices_1;
       list<DAE.Properties> props;
       DAE.Type result_type,result_type_1,ty;
-      Env.Env env;
+      FCore.Graph env;
       list<Absyn.Exp> matrices;
       list<DAE.Type> tys,tys2;
       Boolean impl;
       DAE.Properties tp;
       list<String> lst;
       String s,str;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Type etp;
       Prefix.Prefix pre;
       String sp;
@@ -6411,14 +6412,14 @@ end elabBuiltinCat2;
 
 protected function elabBuiltinIdentity "author: PA
   This function handles the built in identity operator."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -6428,10 +6429,10 @@ algorithm
       DAE.Exp dim_exp, call;
       Integer size;
       DAE.Dimension dim_size;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp dim;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Type ty;
       DAE.Type ety;
       Prefix.Prefix pre;
@@ -6466,22 +6467,22 @@ end elabBuiltinIdentity;
 
 protected function elabBuiltinIsRoot
 "This function elaborates on the builtin operator Connections.isRoot."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
   match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Boolean impl;
       Absyn.Exp exp0;
       DAE.Exp exp;
@@ -6500,21 +6501,21 @@ protected function elabBuiltinRooted
 "author: adrpo
   This function handles the built-in rooted operator. (MultiBody).
   See more here: http://trac.modelica.org/Modelica/ticket/95"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Boolean impl;
       Absyn.Exp exp0;
       DAE.Exp exp;
@@ -6538,14 +6539,14 @@ protected function elabBuiltinScalar "author: PA
   This function handles the built in scalar operator.
   For example, scalar({1}) => 1 or scalar({a}) => a
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inArgs;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -6555,8 +6556,8 @@ algorithm
       DAE.Exp e;
       DAE.Type tp,scalar_tp;
       DAE.Const c;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Absyn.Exp aexp;
       DAE.Dimensions dims;
 
@@ -6620,14 +6621,14 @@ end elabBuiltinCross2;
 protected function elabBuiltinString "
   author: PA
   This function handles the built-in String operator."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -6638,11 +6639,11 @@ algorithm
       DAE.Type tp;
       DAE.Const c;
       list<DAE.Const> constlist;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp e;
       Boolean impl;
       list<DAE.Exp> args_1;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       list<Slot> slots,newslots;
@@ -6691,14 +6692,14 @@ algorithm
 end elabBuiltinString;
 
 protected function elabBuiltinGetInstanceName
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -6706,23 +6707,23 @@ algorithm
     local
       String str;
       Absyn.Path name,envName;
-    case (Env.CACHE(modelName=name),_,{},{},_,Prefix.NOPRE(),_)
+    case (FCore.CACHE(modelName=name),_,{},{},_,Prefix.NOPRE(),_)
       equation
-        envName = Env.getEnvName(inEnv);
+        envName = FGraph.getGraphName(inEnv);
         true = Absyn.pathEqual(envName,name);
         str = Absyn.pathLastIdent(name);
         outExp = DAE.SCONST(str);
         outProperties = DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST());
       then (inCache,outExp,outProperties);
-    case (Env.CACHE(modelName=name),_,{},{},_,Prefix.NOPRE(),_)
+    case (FCore.CACHE(modelName=name),_,{},{},_,Prefix.NOPRE(),_)
       equation
-        envName = Env.getEnvName(inEnv);
+        envName = FGraph.getGraphName(inEnv);
         false = Absyn.pathEqual(envName,name);
         str = Absyn.pathString(envName);
         outExp = DAE.SCONST(str);
         outProperties = DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST());
       then (inCache,outExp,outProperties);
-    case (Env.CACHE(modelName=name),_,{},{},_,_,_)
+    case (FCore.CACHE(modelName=name),_,{},{},_,_,_)
       equation
         str = Absyn.pathLastIdent(name) +& "." +& PrefixUtil.printPrefixStr(inPrefix);
         outExp = DAE.SCONST(str);
@@ -6733,14 +6734,14 @@ end elabBuiltinGetInstanceName;
 
 protected function elabBuiltinVector "author: PA
   This function handles the built in vector operator."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -6750,13 +6751,13 @@ algorithm
       DAE.Type tp,tp_1,arr_tp;
       DAE.Const c;
       DAE.Type etp;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp e;
       Boolean impl,scalar;
       list<DAE.Exp> expl,expl_1,expl_2;
       list<list<DAE.Exp>> explm;
       list<Integer> dims;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       Integer dim,dimtmp;
 
@@ -6815,7 +6816,7 @@ end elabBuiltinVector;
 
 protected function checkBuiltinVectorDims
   input Absyn.Exp expr;
-  input Env.Env env;
+  input FCore.Graph env;
   input list<Integer> dimensions;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
@@ -6832,7 +6833,7 @@ algorithm
       then ();
     case (_, _, _, pre, _)
       equation
-        scope_str = Env.printEnvPathStr(env);
+        scope_str = FGraph.printGraphPathStr(env);
         arg_str = "vector(" +& Dump.printExpStr(expr) +& ")";
         dim_str = "[" +& stringDelimitList(List.map(dimensions, intString), ", ") +& "]";
         pre_str = PrefixUtil.printPrefixStr3(pre);
@@ -6951,21 +6952,21 @@ end elabBuiltinVector2;
 
 public function elabBuiltinMatrix
   "Elaborates the builtin matrix function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inArgs;
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
   (outCache, outExp, outProperties) := match(inCache, inEnv, inArgs, inNamedArgs, inImpl, inPrefix, inInfo)
     local
       Absyn.Exp arg;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Exp exp;
       DAE.Properties props;
       DAE.Type ty;
@@ -6991,8 +6992,8 @@ end elabBuiltinMatrix;
 protected function elabBuiltinMatrix2
   "Helper function to elabBuiltinMatrix, evaluates the matrix function given the
    elaborated argument."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inArg;
   input DAE.Properties inProperties;
   input DAE.Type inType;
@@ -7161,14 +7162,14 @@ public function elabBuiltinHandlerGeneric "
   input String inIdent;
   output FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties;
   partial function FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties
-    input Env.Cache inCache;
-    input Env.Env inEnv;
+    input FCore.Cache inCache;
+    input FCore.Graph inEnv;
     input list<Absyn.Exp> inAbsynExpLst;
     input list<Absyn.NamedArg> inNamedArg;
     input Boolean inBoolean;
     input Prefix.Prefix inPrefix;
     input Absyn.Info info;
-    output Env.Cache outCache;
+    output FCore.Cache outCache;
     output DAE.Exp outExp;
     output DAE.Properties outProperties;
   end FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties;
@@ -7187,14 +7188,14 @@ public function elabBuiltinHandler "
   input String inIdent;
   output FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties;
   partial function FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties
-    input Env.Cache inCache;
-    input Env.Env inEnv;
+    input FCore.Cache inCache;
+    input FCore.Graph inEnv;
     input list<Absyn.Exp> inAbsynExpLst;
     input list<Absyn.NamedArg> inNamedArg;
     input Boolean inBoolean;
     input Prefix.Prefix inPrefix;
     input Absyn.Info info;
-    output Env.Cache outCache;
+    output FCore.Cache outCache;
     output DAE.Exp outExp;
     output DAE.Properties outProperties;
   end FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties;
@@ -7301,14 +7302,14 @@ public function elabBuiltinHandlerInternal "
   input String inIdent;
   output FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties;
   partial function FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties
-    input Env.Cache inCache;
-    input Env.Env inEnv;
+    input FCore.Cache inCache;
+    input FCore.Graph inEnv;
     input list<Absyn.Exp> inAbsynExpLst;
     input list<Absyn.NamedArg> inNamedArg;
     input Boolean inBoolean;
     input Prefix.Prefix inPrefix;
     input Absyn.Info info;
-    output Env.Cache outCache;
+    output FCore.Cache outCache;
     output DAE.Exp outExp;
     output DAE.Properties outProperties;
   end FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties;
@@ -7370,26 +7371,26 @@ end isBuiltinFunc;
 
 protected function elabCallBuiltin "This function elaborates on builtin operators (such as \"pre\", \"der\" etc.),
   by calling the builtin handler to retrieve the correct function to call."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ComponentRef inComponentRef;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   partial function handlerFunc
-    input Env.Cache inCache;
-    input Env.Env inEnvFrameLst;
+    input FCore.Cache inCache;
+    input FCore.Graph inEnvFrameLst;
     input list<Absyn.Exp> inAbsynExpLst;
     input list<Absyn.NamedArg> inNamedArgs;
     input Boolean inBoolean;
     input Prefix.Prefix inPrefix;
     input Absyn.Info info;
-    output Env.Cache outCache;
+    output FCore.Cache outCache;
     output DAE.Exp outExp;
     output DAE.Properties outProperties;
   end handlerFunc;
@@ -7400,12 +7401,12 @@ algorithm
       handlerFunc handler;
       DAE.Exp exp;
       DAE.Properties prop;
-      Env.Env env;
+      FCore.Graph env;
       String name;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       Absyn.ComponentRef cr;
 
@@ -7457,8 +7458,8 @@ function: elabCall
   This function elaborates on a function call.  It converts the name
   to a Absyn.Path, and used the Static.elabCallArgs to do the rest of the
   work."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ComponentRef inComponentRef;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
@@ -7467,7 +7468,7 @@ function: elabCall
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   input Integer numErrorMessages;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
@@ -7478,7 +7479,7 @@ algorithm
       DAE.Exp e;
       DAE.Properties prop;
       Option<GlobalScript.SymbolTable> st;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.ComponentRef fn;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
@@ -7486,7 +7487,7 @@ algorithm
       Absyn.Path fn_1;
       String fnstr,argstr,prestr,s,name,env_str;
       list<String> argstrs;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
 
     case (cache,env,fn,args,nargs,impl,st,pre,_,_)
@@ -7668,8 +7669,8 @@ end absynExpListToDaeExpList;
 public function getOptionalNamedArg " This function is used to \"elaborate\" interactive functions optional parameters,
   e.g. simulate(A.b, startTime=1), startTime is an optional parameter
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean inBoolean;
   input String inIdent;
@@ -7678,7 +7679,7 @@ public function getOptionalNamedArg " This function is used to \"elaborate\" int
   input DAE.Exp inExp;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
 algorithm
   (outCache,outExp):=
@@ -7687,12 +7688,12 @@ algorithm
       DAE.Exp exp,exp_1,exp_2,dexp;
       DAE.Type t,tp;
       DAE.Const c1;
-      Env.Env env;
+      FCore.Graph env;
       Option<GlobalScript.SymbolTable> st;
       Boolean impl;
       String id,id2;
       list<Absyn.NamedArg> xs;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       Absyn.Exp aexp;
     case (cache,_,_,_,_,_,{},exp,_,_) then (cache,exp);  /* The expected type */
@@ -7715,26 +7716,26 @@ public function elabUntypedCref "This function elaborates a ComponentRef without
    Environment is passed along, such that constant subscripts can be elabed using existing
   functions
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ComponentRef inComponentRef;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.ComponentRef outComponentRef;
 algorithm
   (outCache,outComponentRef) :=
   match (inCache,inEnv,inComponentRef,inBoolean,inPrefix,info)
     local
       list<DAE.Subscript> subs_1;
-      Env.Env env;
+      FCore.Graph env;
       String id;
       list<Absyn.Subscript> subs;
       Boolean impl;
       DAE.ComponentRef cr_1;
       Absyn.ComponentRef cr;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
     case (cache,env,Absyn.CREF_IDENT(name = id,subscripts = subs),impl,pre,_) /* impl */
       equation
@@ -7829,62 +7830,6 @@ algorithm
     case (_ :: rest) then splitElts(rest);
   end matchcontinue;
 end getComponentsWithUnkownArraySizes;
-
-protected function transformFunctionArgumentsIntoModifications
-"@author: adrpo
- This function transforms the arguments
- given to a function into a modification."
-  input Env.Cache cache;
-  input Env.Env env;
-  input Boolean impl;
-  input Option<GlobalScript.SymbolTable> inSymTab;
-  input SCode.Element inClass;
-  input list<Absyn.Exp> inPositionalArguments;
-  input list<Absyn.NamedArg> inNamedArguments;
-  output Option<Absyn.Modification> absynOptMod;
-algorithm
-  absynOptMod := matchcontinue (cache, env, impl, inSymTab, inClass, inPositionalArguments, inNamedArguments)
-    local
-      Option<Absyn.Modification> m;
-      list<Absyn.NamedArg> na;
-
-    case (_, _, _, _, _,{},{}) then NONE();
-    case (cache,env,impl,inSymTab,_,{},inNamedArguments)
-      equation
-        m = transformToModification(cache,env,impl,inSymTab,inNamedArguments);
-      then m;
-    case (cache,env,impl,inSymTab,inClass,inPositionalArguments,inNamedArguments)
-      equation
-        // TODO! FIXME! transform positional to named!
-        //na = listAppend(inNamedArguments, transformPositionalToNamed(inClass, inPositionalArguments);
-        m = transformToModification(cache,env,impl,inSymTab,inNamedArguments);
-      then m;
-  end matchcontinue;
-end transformFunctionArgumentsIntoModifications;
-
-protected function transformFunctionArgumentsIntoModifications
-"@author: adrpo
- This function transforms the arguments
- given to a function into a modification."
-  input Env.Cache cache;
-  input Env.Env env;
-  input Boolean impl;
-  input Option<GlobalScript.SymbolTable> inSymTab;
-  input SCode.Element inClass;
-  input list<Absyn.Exp> inPositionalArguments;
-  input list<Absyn.NamedArg> inNamedArguments;
-  output Option<Absyn.Modification> absynOptMod;
-algorithm
-  absynOptMod := matchcontinue (cache, env, impl, inSymTab, inClass, inPositionalArguments, inNamedArguments)
-    local
-      Option<Absyn.Modification> m;
-    case (_, _, _, _, _,{},{}) then NONE();
-    case (cache,env,impl,inSymTab,_,{},inNamedArguments)
-      equation
-        m = transformToModification(cache,env,impl,inSymTab,inNamedArguments);
-      then m;
-  end matchcontinue;
-end transformFunctionArgumentsIntoModifications;
 */
 
 protected function createDummyFarg
@@ -7893,118 +7838,6 @@ protected function createDummyFarg
 algorithm
   farg := DAE.FUNCARG(name, DAE.T_UNKNOWN_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE());
 end createDummyFarg;
-
-protected function transformModificationsToNamedArguments
-  input SCode.Element c;
-  input String prefix;
-  output list<Absyn.NamedArg> namedArguments;
-algorithm
-  namedArguments := matchcontinue(c, prefix)
-    local
-      SCode.Mod mod;
-      list<Absyn.NamedArg> nArgs;
-
-    // fech modifications from the class if there are any
-    case (SCode.CLASS(classDef = SCode.DERIVED(modifications = mod)), _)
-      equation
-        // transform modifications into function arguments and prefix the UNQUALIFIED component
-        // references with the function prefix, here world.
-        Debug.fprintln(Flags.STATIC, "Found modifications: " +& SCodeDump.printModStr(mod,SCodeDump.defaultOptions));
-        /* modification elaboration doesn't work as World is not a package!
-           anyhow we can deal with this in a different way, see below
-        // build the prefix
-        prefix = Prefix.PREFIX(Prefix.PRE(componentName, {}, Prefix.NOCOMPPRE()),
-                               Prefix.CLASSPRE(SCode.VAR()));
-        // elaborate the modification
-        (cache, daeMod) = Mod.elabMod(cache, classEnv, prefix, mod, impl);
-        Debug.fprintln(Flags.STATIC, "Elaborated modifications: " +& Mod.printModStr(daeMod,SCodeDump.defaultOptions));
-        */
-        nArgs = SCodeUtil.translateSCodeModToNArgs(prefix, mod);
-        Debug.fprintln(Flags.STATIC, "Translated mods to named arguments: " +&
-           stringDelimitList(List.map(nArgs, Dump.printNamedArgStr), ", "));
-     then
-       nArgs;
-    // if there isn't a derived class, return nothing
-    else {};
-  end matchcontinue;
-end transformModificationsToNamedArguments;
-
-protected function addComponentFunctionsToCurrentEnvironment
-"author: adrpo
-  This function will copy the SCode.Element N given as input and the
-  derived dependency into the current scope with name componentName.N"
- input Env.Cache inCache;
- input Env.Env inEnv;
- input SCode.Element scodeClass;
- input Env.Env inClassEnv;
- input String componentName;
- output Env.Cache outCache;
- output Env.Env outEnv;
-algorithm
-  (outCache, outEnv) := matchcontinue(inCache, inEnv, scodeClass, inClassEnv, componentName)
-    local
-      Env.Cache cache;
-      Env.Env env, classEnv;
-      SCode.Element sc, extendedClass;
-      String cn, extendsCn;
-      SCode.Ident name "the name of the class" ;
-      SCode.Partial partialPrefix "the partial prefix" ;
-      SCode.Encapsulated encapsulatedPrefix "the encapsulated prefix" ;
-      SCode.Restriction restriction "the restriction of the class" ;
-      SCode.ClassDef classDef "the class specification" ;
-      Absyn.TypeSpec typeSpec "typeSpec: type specification" ;
-      Absyn.Path extendsPath, newExtendsPath;
-      SCode.Mod modifications ;
-      SCode.Attributes attributes ;
-      SCode.Comment cmt,comment "the translated comment from the Absyn" ;
-      Option<Absyn.ArrayDim> arrayDim;
-      Absyn.Info info;
-      SCode.Prefixes prefixes;
-
-    // handle derived component functions i.e. gravityAcceleration = gravityAccelerationTypes
-    case(cache, env,
-         sc as SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, SCode.DERIVED(Absyn.TPATH(extendsPath, arrayDim), _, attributes),comment,info),
-         classEnv, _)
-      equation
-        // enableTrace();
-        // change the class name from gravityAcceleration to be world.gravityAcceleration
-        name = componentName +& "__" +& name;
-        // lookup the derived class
-        (_, extendedClass, _) = Lookup.lookupClass(cache, classEnv, extendsPath, true);
-        // remove modifications as they are added via transformModificationsToNamedArguments
-        // also change extendsPath to world.gravityAccelerationTypes
-        extendsCn = componentName +& "__" +& Absyn.pathString(extendsPath);
-        newExtendsPath = Absyn.IDENT(extendsCn);
-        comment = propagateDerivedInlineAnnotation(extendedClass, comment);
-        sc = SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction,
-               SCode.DERIVED(Absyn.TPATH(newExtendsPath, arrayDim), SCode.NOMOD(), attributes), comment,info);
-        // add the class function to the environment
-        env = Env.extendFrameC(env, sc);
-        // construct the extended class gravityAccelerationType
-        // with a different name: world.gravityAccelerationType
-        SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info) = extendedClass;
-        // change the class name from gravityAccelerationTypes to be world.gravityAccelerationTypes
-        name = componentName +& "__" +& name;
-        // construct the extended class world.gravityAccelerationType
-        sc = SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info);
-        // add the extended class function to the environment
-        env = Env.extendFrameC(env, sc);
-      then (cache, env);
-    // handle component functions made of parts
-    case(cache, env, sc as SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info),
-         _, _)
-      equation
-        // enableTrace();
-        // change the class name from gravityAcceleration to be world.gravityAcceleration
-        name = componentName +& "__" +& name;
-        // remove modifications as they are added via transformModificationsToNamedArguments
-        // also change extendsPath to world.gravityAccelerationTypes
-        sc = SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info);
-        // add the class function to the environment
-        env = Env.extendFrameC(env, sc);
-      then (cache, env);
-  end matchcontinue;
-end addComponentFunctionsToCurrentEnvironment;
 
 protected function propagateDerivedInlineAnnotation
   "Inserts an inline annotation from the given class into the given comment, if
@@ -8037,8 +7870,8 @@ function: elabCallArgs
   as actual arguments in a function call to that function, this
   function finds the function definition and matches the actual
   arguments to the formal parameters."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path inPath;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
@@ -8046,7 +7879,7 @@ function: elabCallArgs
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -8058,21 +7891,23 @@ end elabCallArgs;
 protected function elabCallArgsEvaluateArrayLength "Evaluate array dimensions in the returned type. For a call f(n) we might get Integer[n] back, where n is a parameter expression.
 We consider any such parameter structural since it decides the dimension of an array.
 We fall back to not evaluating the parameter if we fail since the dimension may not be structural (used in another call or reduction, etc)."
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input DAE.Properties inProperties;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Properties outProperties;
 algorithm
   (outCache,outProperties) := matchcontinue (inCache,env,inProperties,inPrefix,info)
     local
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Type ty;
       /* Unsure if we want to evaluate dimensions inside function scope */
-    case (_,Env.FRAME(scopeType = SOME(Env.CLASS_SCOPE()))::_,_,_,_)
+    case (_,_,_,_,_)
       equation
+        // last scope ref in env is a class scope
+        true = FGraph.checkScopeType(List.create(FGraph.lastScopeRef(env)), SOME(FCore.CLASS_SCOPE()));
         ty = Types.getPropType(inProperties);
         ((ty,(cache,_))) = Types.traverseType((ty,(inCache,env)),elabCallArgsEvaluateArrayLength2);
       then (cache,Types.setPropType(inProperties,ty));
@@ -8081,12 +7916,12 @@ algorithm
 end elabCallArgsEvaluateArrayLength;
 
 protected function elabCallArgsEvaluateArrayLength2
-  input tuple<DAE.Type,tuple<Env.Cache,Env.Env>> inTpl;
-  output tuple<DAE.Type,tuple<Env.Cache,Env.Env>> outTpl;
+  input tuple<DAE.Type,tuple<FCore.Cache,FCore.Graph>> inTpl;
+  output tuple<DAE.Type,tuple<FCore.Cache,FCore.Graph>> outTpl;
 algorithm
   (outTpl) := matchcontinue (inTpl)
     local
-      tuple<Env.Cache,Env.Env> tpl;
+      tuple<FCore.Cache,FCore.Graph> tpl;
       DAE.Dimensions dims;
       DAE.TypeSource source;
       DAE.Type ty;
@@ -8100,16 +7935,16 @@ end elabCallArgsEvaluateArrayLength2;
 
 protected function elabCallArgsEvaluateArrayLength3
   input DAE.Dimension inDim;
-  input tuple<Env.Cache,Env.Env> inTpl;
+  input tuple<FCore.Cache,FCore.Graph> inTpl;
   output DAE.Dimension outDim;
-  output tuple<Env.Cache,Env.Env> outTpl;
+  output tuple<FCore.Cache,FCore.Graph> outTpl;
 algorithm
   (outDim,outTpl) := matchcontinue (inDim,inTpl)
     local
       Integer i;
       DAE.Exp exp;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
     case (DAE.DIM_EXP(exp),(cache,env))
       equation
         (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env,exp,false,NONE(),Absyn.NO_MSG(),0);
@@ -8162,8 +7997,8 @@ function: elabCallArgs
   as actual arguments in a function call to that function, this
   function finds the function definition and matches the actual
   arguments to the formal parameters."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path inPath;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
@@ -8173,7 +8008,7 @@ function: elabCallArgs
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   input Integer numErrors;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
 algorithm
   (outCache,expProps) :=
@@ -8181,7 +8016,7 @@ algorithm
     local
       DAE.Type t,outtype,restype,functype,tp1;
       list<DAE.FuncArg> fargs;
-      Env.Env env_1,env_2,env,classEnv,recordEnv;
+      FCore.Graph env_1,env_2,env,classEnv,recordEnv;
       list<Slot> slots,newslots,newslots2;
       list<DAE.Exp> args_1,args_2;
       list<DAE.Const> constlist, constInputArgs, constDefaultArgs;
@@ -8201,7 +8036,7 @@ algorithm
       list<String> t_lst,names;
       String fn_str,types_str,scope,pre_str,componentName,fnIdent;
       String s,name,argStr,stringifiedInstanceFunctionName;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Type tp;
       Prefix.Prefix pre;
       SCode.Restriction re;
@@ -8246,7 +8081,7 @@ algorithm
       then
         (cache,SOME((DAE.CALL(fn,args_2,DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),DAE.PROP(DAE.T_UNKNOWN_DEFAULT,DAE.C_CONST()))));
 
-    // adrpo: deal with function call via an instance: MultiBody world.gravityAcceleration
+    /*/ adrpo: deal with function call via an instance: MultiBody world.gravityAcceleration
     case (cache, env, fn, args, nargs, impl, _, st,pre,_,_)
       equation
         fnPrefix = Absyn.stripLast(fn); // take the prefix: word
@@ -8293,17 +8128,13 @@ algorithm
         // call the class normally
         (cache,call_exp,prop_1) = elabCallArgs(cache, env, correctFunctionPath, args, nargs, impl, st,pre,info);
       then
-        (cache,SOME((call_exp,prop_1)));
+        (cache,SOME((call_exp,prop_1)));*/
 
     // Record constructors, user defined or implicit, try the hard stuff first
     case (cache,env,fn,args,nargs,impl,_,st,pre,_,_)
       equation
         // For unrolling errors if an overloaded 'constructor' matches later.
         ErrorExt.setCheckpoint("RecordConstructor");
-
-        (_,recordCl,_) = Lookup.lookupClass(cache, env, fn, false);
-        true = SCode.isRecord(recordCl);
-
 
         (cache,func) = InstFunction.getRecordConstructorFunction(cache,env,fn);
 
@@ -8458,7 +8289,7 @@ algorithm
     case (cache,env,fn,_,_,_,_,_,_,_,_)
       equation
         failure((_,_,_) = Lookup.lookupType(cache,env, fn, NONE())) "msg" ;
-        scope = Env.printEnvPathStr(env) +& " (looking for a function or record)";
+        scope = FGraph.printGraphPathStr(env) +& " (looking for a function or record)";
         fn_str = Absyn.pathString(fn);
         Error.addSourceMessage(Error.LOOKUP_ERROR, {fn_str,scope}, info); // No need to add prefix because only depends on scope?
 
@@ -8482,7 +8313,7 @@ algorithm
       equation
         ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- Static.elabCallArgs failed on: " +& Absyn.pathString(fn) +& " in env: " +& Env.printEnvPathStr(env));
+        Debug.fprintln(Flags.FAILTRACE, "- Static.elabCallArgs failed on: " +& Absyn.pathString(fn) +& " in env: " +& FGraph.printGraphPathStr(env));
       then
         fail();
   end matchcontinue;
@@ -8490,8 +8321,8 @@ end elabCallArgs2;
 
 public function elabCallArgs3
   "Elaborates the input given a set of viable function candidates, and vectorizes the arguments+performs type checking"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Type> typelist;
   input Absyn.Path fn;
   input list<Absyn.Exp> args;
@@ -8500,7 +8331,7 @@ public function elabCallArgs3
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix pre;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
 protected
   DAE.Exp callExp,call_exp;
@@ -8520,14 +8351,14 @@ protected
   list<Slot> slots,slots2;
   DAE.FunctionTree functionTree;
   Util.Status status;
-  Env.Cache cache;
+  FCore.Cache cache;
   Boolean didInline;
   Boolean b,onlyOneFunction,isFunctionPointer;
   IsExternalObject isExternalObject;
 algorithm
   onlyOneFunction := listLength(typelist) == 1;
   (cache,b) := isExternalObjectFunction(inCache,inEnv,fn);
-  isExternalObject := Util.if_(b and not Env.inFunctionScope(inEnv), IS_EXTERNAL_OBJECT_MODEL_SCOPE(), NOT_EXTERNAL_OBJECT_MODEL_SCOPE());
+  isExternalObject := Util.if_(b and not FGraph.inFunctionScope(inEnv), IS_EXTERNAL_OBJECT_MODEL_SCOPE(), NOT_EXTERNAL_OBJECT_MODEL_SCOPE());
   (cache,
    args_1,
    constlist,
@@ -8545,7 +8376,7 @@ algorithm
   (isBuiltin,builtin,fn_1) := isBuiltinFunc(fn_1,functype);
   inlineType := inlineBuiltin(isBuiltin,inlineType);
 
-  //check the env to see if a call to a parallel or kernle function is a valid one.
+  //check the env to see if a call to a parallel or kernel function is a valid one.
   true := isValidWRTParallelScope(fn,builtin,funcParal,inEnv,info);
 
   const := List.fold(constlist, Types.constAnd, DAE.C_CONST());
@@ -8570,11 +8401,14 @@ algorithm
 
   //debugPrintString = Util.if_(Util.isEqual(DAE.NORM_INLINE,inline)," Inline: " +& Absyn.pathString(fn_1) +& "\n", "");print(debugPrintString);
   (call_exp,prop_1) := vectorizeCall(callExp, vect_dims, slots2, prop, info);
-  /* Instantiate the function and add to dae function tree*/
-  (cache,status) := instantiateDaeFunction(cache,inEnv,fn_1,builtin,NONE(),true);
-  /* Instantiate any implicit record constructors needed and add them to the dae function tree */
+  // print("3 Prefix: " +& PrefixUtil.printPrefixStr(pre) +& " path: " +& Absyn.pathString(fn_1) +& "\n");
+  // Instantiate the function and add to dae function tree
+  (cache,status) := instantiateDaeFunction(cache,inEnv,
+    Util.if_(Lookup.isFunctionCallViaComponent(cache, inEnv, fn), fn, fn_1), // don't use the fully qualified name for calling component functions
+    builtin,NONE(),true);
+  // Instantiate any implicit record constructors needed and add them to the dae function tree
   cache := instantiateImplicitRecordConstructors(cache, inEnv, args_1, st);
-  functionTree := Env.getFunctionTree(cache);
+  functionTree := FCore.getFunctionTree(cache);
   (call_exp,_,didInline,_) := Inline.inlineExp(call_exp,(SOME(functionTree),{DAE.BUILTIN_EARLY_INLINE(),DAE.EARLY_INLINE()}),DAE.emptyElementSource);
   (call_exp,_) := ExpressionSimplify.condsimplify(didInline,call_exp);
   didInline := didInline and (not Config.acceptMetaModelicaGrammar() /* Some weird errors when inlining. Becomes boxed even if it shouldn't... */);
@@ -8600,14 +8434,26 @@ protected function isValidWRTParallelScope
   input Absyn.Path inFn;
   input Boolean isBuiltin;
   input DAE.FunctionParallelism inFuncParallelism;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Absyn.Info inInfo;
   output Boolean isValid;
 algorithm
-  isValid := matchcontinue(inFn,isBuiltin,inFuncParallelism,inEnv,inInfo)
+  isValid := isValidWRTParallelScope_dispatch(inFn, isBuiltin, inFuncParallelism, FGraph.currentScope(inEnv), inInfo);
+end isValidWRTParallelScope;
+
+protected function isValidWRTParallelScope_dispatch
+  input Absyn.Path inFn;
+  input Boolean isBuiltin;
+  input DAE.FunctionParallelism inFuncParallelism;
+  input FCore.Scope inScope;
+  input Absyn.Info inInfo;
+  output Boolean isValid;
+algorithm
+  isValid := matchcontinue(inFn,isBuiltin,inFuncParallelism,inScope,inInfo)
   local
     String scopeName, errorString;
-    Env.Env restFrames;
+    FCore.Scope restScope;
+    FCore.Ref ref;
 
 
     // non-parallel builtin function call is OK everywhere.
@@ -8617,22 +8463,34 @@ algorithm
     // If we have a function call in an implicit scope type, then go
     // up recursively to find the actuall scope and then check.
     // But parfor scope is a parallel type so is handled differently.
-    case(_,_,_, Env.FRAME(name = SOME(scopeName))::restFrames, _)
+    case(_,_,_, ref::restScope, _)
       equation
-        true = listMember(scopeName, Env.implicitScopeNames);
-        false = stringEq(scopeName, Env.parForScopeName);
-      then isValidWRTParallelScope(inFn,isBuiltin,inFuncParallelism,restFrames,inInfo);
+        false = FNode.isRefTop(ref);
+        scopeName = FNode.refName(ref);
+        true = listMember(scopeName, FCore.implicitScopeNames);
+        false = stringEq(scopeName, FCore.parForScopeName);
+      then isValidWRTParallelScope_dispatch(inFn,isBuiltin,inFuncParallelism,restScope,inInfo);
 
     // This two are common cases so keep them at the top.
     // normal(non parallel) function call in a normal scope (function and class scopes) is OK.
-    case(_,_,DAE.FP_NON_PARALLEL(), Env.FRAME(scopeType = SOME(Env.CLASS_SCOPE()))::_, _)
-      then true;
-    case(_,_,DAE.FP_NON_PARALLEL(), Env.FRAME(scopeType = SOME(Env.FUNCTION_SCOPE()))::_, _)
-      then true;
+    case(_,_,DAE.FP_NON_PARALLEL(), ref::_, _)
+      equation
+        true = FGraph.checkScopeType({ref}, SOME(FCore.CLASS_SCOPE()));
+      then
+        true;
+
+    case(_,_,DAE.FP_NON_PARALLEL(), ref::_, _)
+      equation
+        true = FGraph.checkScopeType({ref}, SOME(FCore.FUNCTION_SCOPE()));
+      then
+        true;
 
     // Normal function call in a prallel scope is error, if it is not a built-in function.
-    case(_,_,DAE.FP_NON_PARALLEL(), Env.FRAME(name = SOME(scopeName), scopeType = SOME(Env.PARALLEL_SCOPE()))::_, _)
+    case(_,_,DAE.FP_NON_PARALLEL(), ref::_, _)
       equation
+        false = FNode.isRefTop(ref);
+        scopeName = FNode.refName(ref);
+        true = FGraph.checkScopeType({ref}, SOME(FCore.PARALLEL_SCOPE()));
 
         errorString = "\n" +&
              "- Non-Parallel function '" +& Absyn.pathString(inFn) +&
@@ -8641,21 +8499,30 @@ algorithm
              "- Please declare the function as parallel function.";
         Error.addSourceMessage(Error.PARMODELICA_ERROR,
           {errorString}, inInfo);
-      then false;
+      then
+        false;
 
 
     // parallel function call in a parallel scope (kernel function, parallel function) is OK.
     // Except when it is calling itself, recurssion
-    case(_,_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(name = SOME(scopeName), scopeType = SOME(Env.PARALLEL_SCOPE()))::_, _)
+    case(_,_,DAE.FP_PARALLEL_FUNCTION(), ref::_, _)
       equation
+        false = FNode.isRefTop(ref);
+        scopeName = FNode.refName(ref);
+        true = FGraph.checkScopeType({ref}, SOME(FCore.PARALLEL_SCOPE()));
         // make sure the function is not calling itself
         // recurrsion is not allowed.
         false = stringEqual(scopeName,Absyn.pathString(inFn));
-      then true;
+      then
+        true;
 
     // If the above case failed (parallel function recurssion) this will print the error message
-    case(_,_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(name = SOME(scopeName), scopeType = SOME(Env.PARALLEL_SCOPE()))::_, _)
+    case(_,_,DAE.FP_PARALLEL_FUNCTION(), ref::_, _)
       equation
+        false = FNode.isRefTop(ref);
+        scopeName = FNode.refName(ref);
+        true = FGraph.checkScopeType({ref}, SOME(FCore.PARALLEL_SCOPE()));
+
         // make sure the function is not calling itself
         // recurrsion is not allowed.
         true = stringEqual(scopeName,Absyn.pathString(inFn));
@@ -8667,17 +8534,24 @@ algorithm
              " 'parfor' loop";
         Error.addSourceMessage(Error.PARMODELICA_ERROR,
           {errorString}, inInfo);
-      then false;
+      then
+        false;
 
     // parallel function call in a parfor scope is OK.
-    case(_,_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(name = SOME(scopeName))::_, _)
+    case(_,_,DAE.FP_PARALLEL_FUNCTION(), ref::_, _)
       equation
-        true = stringEqual(scopeName, Env.parForScopeName);
-      then true;
+        false = FNode.isRefTop(ref);
+        scopeName = FNode.refName(ref);
+        true = stringEqual(scopeName, FCore.parForScopeName);
+      then
+        true;
 
     //parallel function call in non parallel scope types is error.
-    case(_,_,DAE.FP_PARALLEL_FUNCTION(),Env.FRAME(name = SOME(scopeName))::_,_)
+    case(_,_,DAE.FP_PARALLEL_FUNCTION(), ref::_,_)
       equation
+        false = FNode.isRefTop(ref);
+        scopeName = FNode.refName(ref);
+
         errorString = "\n" +&
              "- Parallel function '" +& Absyn.pathString(inFn) +&
              "' can not be called from a non parallel scope '" +& scopeName +& "'.\n" +&
@@ -8689,8 +8563,11 @@ algorithm
       then false;
 
     // Kernel functions should not call themselves.
-    case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(name = SOME(scopeName))::_, _)
+    case(_,_,DAE.FP_KERNEL_FUNCTION(), ref::_, _)
       equation
+        false = FNode.isRefTop(ref);
+        scopeName = FNode.refName(ref);
+
         // make sure the function is not calling itself
         // recurrsion is not allowed.
         true = stringEqual(scopeName,Absyn.pathString(inFn));
@@ -8700,11 +8577,16 @@ algorithm
              "- Recurrsion is not allowed for Kernel functions. ";
         Error.addSourceMessage(Error.PARMODELICA_ERROR,
           {errorString}, inInfo);
-      then false;
+      then
+        false;
 
     //kernel function call in a parallel scope (kernel function, parallel function) is Error.
-    case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(name = SOME(scopeName), scopeType = SOME(Env.PARALLEL_SCOPE()))::_, _)
+    case(_,_,DAE.FP_KERNEL_FUNCTION(), ref::_, _)
       equation
+        false = FNode.isRefTop(ref);
+        scopeName = FNode.refName(ref);
+        true = FGraph.checkScopeType({ref}, SOME(FCore.PARALLEL_SCOPE()));
+
         errorString = "\n" +&
              "- Kernel function '" +& Absyn.pathString(inFn) +&
              "' can not be called from a parallel scope '" +& scopeName +& "'.\n" +&
@@ -8713,12 +8595,16 @@ algorithm
              " 'parfor' loop";
         Error.addSourceMessage(Error.PARMODELICA_ERROR,
           {errorString}, inInfo);
-      then false;
+      then
+        false;
 
     //kernel function call in a parfor loop is Error too (similar to above). just different error message.
-    case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(name = SOME(scopeName))::_, _)
+    case(_,_,DAE.FP_KERNEL_FUNCTION(), ref::_, _)
       equation
-        true = stringEqual(scopeName, Env.parForScopeName);
+        false = FNode.isRefTop(ref);
+        scopeName = FNode.refName(ref);
+
+        true = stringEqual(scopeName, FCore.parForScopeName);
         errorString = "\n" +&
              "- Kernel function '" +& Absyn.pathString(inFn) +&
              "' can not be called from inside parallel for (parfor) loop body." +& "'.\n" +&
@@ -8731,33 +8617,37 @@ algorithm
 
     // Kernel function call in a non-parallel scope is OK.
     // Except when it is calling itself, recurssion
-    case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(name = SOME(scopeName))::_, _)
+    case(_,_,DAE.FP_KERNEL_FUNCTION(), ref::_, _)
       equation
+        false = FNode.isRefTop(ref);
+        scopeName = FNode.refName(ref);
         // make sure the function is not calling itself
         // recurrsion is not allowed.
         false = stringEqual(scopeName,Absyn.pathString(inFn));
-      then true;
+      then
+        true;
 
     else true;
+
         /*
     //Normal (non parallel) function call in a normal function scope is OK.
-    case(DAE.FP_NON_PARALLEL(), Env.FRAME(scopeType = Env.FUNCTION_SCOPE())) then();
+    case(DAE.FP_NON_PARALLEL(), FCore.N(scopeType = FCore.FUNCTION_SCOPE())) then();
     //Normal (non parallel) function call in a normal class scope is OK.
-    case(DAE.FP_NON_PARALLEL(), Env.FRAME(scopeType = Env.CLASS_SCOPE())) then();
+    case(DAE.FP_NON_PARALLEL(), FCore.N(scopeType = FCore.CLASS_SCOPE())) then();
     //Normal (non parallel) function call in a normal function scope is OK.
-    case(DAE.FP_NON_PARALLEL(), Env.FRAME(scopeType = Env.FUNCTION_SCOPE())) then();
+    case(DAE.FP_NON_PARALLEL(), FCore.N(scopeType = FCore.FUNCTION_SCOPE())) then();
     //Normal (non parallel) function call in a normal class scope is OK.
-    case(DAE.FP_KERNEL_FUNCTION(), Env.FRAME(scopeType = Env.CLASS_SCOPE())) then();
+    case(DAE.FP_KERNEL_FUNCTION(), FCore.N(scopeType = FCore.CLASS_SCOPE())) then();
     //Normal (non parallel) function call in a normal function scope is OK.
-    case(DAE.FP_KERNEL_FUNCTION(), Env.FRAME(scopeType = Env.FUNCTION_SCOPE())) then();
+    case(DAE.FP_KERNEL_FUNCTION(), FCore.N(scopeType = FCore.FUNCTION_SCOPE())) then();
     */
 
  end matchcontinue;
-end isValidWRTParallelScope;
+end isValidWRTParallelScope_dispatch;
 
 protected function elabCallArgsMetarecord
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Type inType;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
@@ -8766,7 +8656,7 @@ protected function elabCallArgsMetarecord
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
 algorithm
   (outCache,expProps) :=
@@ -8774,8 +8664,8 @@ algorithm
     local
       DAE.Type t;
       list<DAE.FuncArg> fargs;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       list<Slot> slots,newslots;
       list<DAE.Exp> args_1,args_2;
       list<DAE.Const> constlist;
@@ -8856,13 +8746,13 @@ end ForceFunctionInst;
 
 public function instantiateDaeFunction "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
 functiontree of a newly created dae"
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input Absyn.Path name;
   input Boolean builtin "builtin functions create empty dae";
   input Option<SCode.Element> clOpt "if not present, looked up by name in environment";
   input Boolean printErrorMsg "if true, prints an error message if the function could not be instantiated";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Util.Status status;
 algorithm
   (outCache,status) := instantiateDaeFunction2(inCache, env, name, builtin, clOpt, Error.getNumErrorMessages(), printErrorMsg, Util.isSome(getGlobalRoot(Global.instOnlyForcedFunctions)), NORMAL_FUNCTION_INST());
@@ -8870,14 +8760,14 @@ end instantiateDaeFunction;
 
 public function instantiateDaeFunctionFromTypes "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
 functiontree of a newly created dae"
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input list<DAE.Type> tys;
   input Boolean builtin "builtin functions create empty dae";
   input Option<SCode.Element> clOpt "if not present, looked up by name in environment";
   input Boolean printErrorMsg "if true, prints an error message if the function could not be instantiated";
   input Util.Status acc;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Util.Status status;
 algorithm
   (outCache,status) := match (inCache, env, tys, builtin, clOpt, printErrorMsg, acc)
@@ -8896,13 +8786,13 @@ end instantiateDaeFunctionFromTypes;
 
 public function instantiateDaeFunctionForceInst "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
 functiontree of a newly created dae"
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input Absyn.Path name;
   input Boolean builtin "builtin functions create empty dae";
   input Option<SCode.Element> clOpt "if not present, looked up by name in environment";
   input Boolean printErrorMsg "if true, prints an error message if the function could not be instantiated";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Util.Status status;
 algorithm
   (outCache,status) := instantiateDaeFunction2(inCache, env, name, builtin, clOpt, Error.getNumErrorMessages(), printErrorMsg, Util.isSome(getGlobalRoot(Global.instOnlyForcedFunctions)), FORCE_FUNCTION_INST());
@@ -8910,8 +8800,8 @@ end instantiateDaeFunctionForceInst;
 
 protected function instantiateDaeFunction2 "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
 functiontree of a newly created dae"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path inName;
   input Boolean builtin "builtin functions create empty dae";
   input Option<SCode.Element> clOpt "if not present, looked up by name in environment";
@@ -8919,13 +8809,13 @@ functiontree of a newly created dae"
   input Boolean printErrorMsg "if true, prints an error message if the function could not be instantiated";
   input Boolean instOnlyForcedFunctions;
   input ForceFunctionInst forceFunctionInst;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Util.Status status;
 algorithm
   (outCache,status) := matchcontinue(inCache,inEnv,inName,builtin,clOpt,numError,printErrorMsg,instOnlyForcedFunctions,forceFunctionInst)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       SCode.Element cl;
       String pathStr,envStr;
       DAE.ComponentRef cref;
@@ -8947,27 +8837,25 @@ algorithm
         (_,true) = isExternalObjectFunction(cache,env,name);
       then (cache,Util.SUCCESS());
 
-    // Recursive calls (by looking at envinronment) skipped
+    // Recursive calls (by looking at environment) skipped
     case(cache,env,name,_,NONE(),_,_,_,_)
       equation
-        false = Env.isTopScope(env);
-        true = Absyn.pathSuffixOf(name,Env.getEnvName(env));
+        false = FGraph.isTopScope(env);
+        true = Absyn.pathSuffixOf(name,FGraph.getGraphName(env));
       then (cache,Util.SUCCESS());
 
     // Recursive calls (by looking in cache) skipped
     case(cache,env,name,_,_,_,_,_,_)
       equation
-        (cache,_,env) = Lookup.lookupClass(cache,env,name,false);
-        (cache,name) = Inst.makeFullyQualified(cache,env,name);
-        Env.checkCachedInstFuncGuard(cache,name);
+        (cache, env, cl, name) = lookupAndFullyQualify(cache,env,name);
+        FCore.checkCachedInstFuncGuard(cache,name);
       then (cache,Util.SUCCESS());
 
     // class must be looked up
     case(cache,env,name,_,NONE(),_,_,_,_)
       equation
-        (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
-        (cache,name) = Inst.makeFullyQualified(cache,env,name);
-        cache = Env.addCachedInstFuncGuard(cache,name);
+        (cache, env, cl, name) = lookupAndFullyQualify(cache,env,name);
+        cache = FCore.addCachedInstFuncGuard(cache,name);
         (cache,env,_) = InstFunction.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),cl,{});
       then (cache,Util.SUCCESS());
 
@@ -8988,7 +8876,7 @@ algorithm
     case(_,env,name,_,_,_,true,_,_)
       equation
         true = Error.getNumErrorMessages() == numError;
-        envStr = Env.printEnvPathStr(env);
+        envStr = FGraph.printGraphPathStr(env);
         pathStr = Absyn.pathString(name);
         Error.addMessage(Error.GENERIC_INST_FUNCTION, {pathStr, envStr});
       then fail();
@@ -8997,23 +8885,59 @@ algorithm
   end matchcontinue;
 end instantiateDaeFunction2;
 
+protected function lookupAndFullyQualify
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input Absyn.Path inFunctionName;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
+  output SCode.Element outClass;
+  output Absyn.Path outFunctionName;
+algorithm
+  (outCache, outEnv, outClass, outFunctionName) := matchcontinue(inCache, inEnv, inFunctionName)
+    local
+      FCore.Cache cache;
+      FCore.Graph env;
+      Absyn.Path name;
+      SCode.Element cl;
+
+    // do NOT qualify function calls via component instance!
+    case (_, _, _)
+      equation
+        true = Lookup.isFunctionCallViaComponent(inCache, inEnv, inFunctionName);
+        (cache,cl,env) = Lookup.lookupClass(inCache, inEnv, inFunctionName, false);
+        name = FGraph.joinScopePath(env, Absyn.makeIdentPathFromString(SCode.elementName(cl)));
+      then
+        (inCache, env, cl, name);
+
+    // qualify everything else
+    case (_, _, _)
+      equation
+        (cache,cl,env) = Lookup.lookupClass(inCache, inEnv, inFunctionName, false);
+        name = Absyn.makeFullyQualified(FGraph.joinScopePath(env, Absyn.makeIdentPathFromString(SCode.elementName(cl))));
+      then
+        (cache, env, cl, name);
+
+  end matchcontinue;
+end lookupAndFullyQualify;
+
 protected function instantiateImplicitRecordConstructors
   "Given a list of arguments to a function, this function checks if any of the
   arguments are component references to a record instance, and instantiates the
   record constructors for those components. These are implicit record
   constructors, because they are not explicitly called, but are needed when code
   is generated for record instances as function input arguments."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> args;
   input Option<GlobalScript.SymbolTable> st;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
 algorithm
   outCache := matchcontinue(inCache, inEnv, args, st)
     local
       list<DAE.Exp> rest_args;
       Absyn.Path record_name;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (_, _, _, SOME(_)) then inCache;
     case (_, _, {}, _) then inCache;
     case (_, _, DAE.CREF(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = record_name))) :: rest_args, _)
@@ -9221,16 +9145,16 @@ protected function determineConstSpecialFunc "For the special functions construc
 in external object,
 the constantness is always variable, even if arguments are constant, because they should be called during
 runtime and not during compiletime."
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input DAE.Const inConst;
   input Absyn.Path funcName;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Const outConst;
 algorithm
   (outCache,outConst) := matchcontinue(inCache,env,inConst,funcName)
   local Absyn.Path path;
-    Env.Cache cache;
+    FCore.Cache cache;
     // External Object found, constructor call is not constant.
     case (cache,_,_, path)
       equation
@@ -9241,22 +9165,22 @@ algorithm
 end determineConstSpecialFunc;
 
 public function isExternalObjectFunction
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path inPath;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Boolean res;
 algorithm
   (outCache,res) := matchcontinue(inCache,inEnv,inPath)
     local
-      Env.Cache cache;
-      Env.Env env_1,env;
+      FCore.Cache cache;
+      FCore.Graph env_1,env;
       Absyn.Path path;
       list<SCode.Element> els;
 
     case (cache,env,path) equation
       (cache,SCode.CLASS(classDef = SCode.PARTS(elementLst = els)),_)
-          = Lookup.lookupClass(cache,env, path, false);
+          = Lookup.lookupClass(cache, env, path, false);
       true = SCode.isExternalObject(els);
       then (cache,true);
     case (cache,_,path) equation
@@ -9613,7 +9537,7 @@ protected function deoverloadFuncname
   so this is returned. Otherwise return input."
   input Absyn.Path inPath;
   input DAE.Type inType;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output Absyn.Path outPath;
   output DAE.Type outType;
 algorithm
@@ -9640,8 +9564,8 @@ protected function elabTypes "
 function: elabTypes
    Elaborate input parameters to a function and
    select matching function type from a list of types."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input list<DAE.Type> inTypesTypeLst;
@@ -9652,7 +9576,7 @@ function: elabTypes
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Exp> outExpExpLst1;
   output list<DAE.Const> outTypesConstLst2;
   output DAE.Type outType3;
@@ -9667,13 +9591,13 @@ algorithm
       list<DAE.Exp> args_1;
       list<DAE.Const> clist;
       DAE.Dimensions dims;
-      Env.Env env;
+      FCore.Graph env;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       DAE.Type funcType,t,restype;
       list<DAE.FuncArg> params;
       list<DAE.Type> trest;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstTypes.PolymorphicBindings polymorphicBindings;
       Prefix.Prefix pre;
       DAE.FunctionAttributes functionAttributes;
@@ -9718,7 +9642,7 @@ protected function applyArgTypesToFuncType
   input list<Slot> inSlots;
   input list<DAE.FuncArg> inParameters;
   input DAE.Type inResultType;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Boolean checkTypes; // If not checking types no need to do any of this. In and out.
   input Absyn.Info inInfo;
   output list<DAE.FuncArg> outParameters;
@@ -9727,8 +9651,8 @@ algorithm
   (outParameters, outResultType) :=
   matchcontinue(inSlots, inParameters, inResultType, inEnv, checkTypes, inInfo)
     local
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       list<DAE.Var> vars;
       SCode.Element dummy_var;
       DAE.Type res_ty;
@@ -9760,7 +9684,7 @@ algorithm
         used_slots = List.filter1OnTrue(inSlots, isSlotUsed, used_args);
 
         // Create DAE.Vars from the slots.
-        cache = Env.noCache();
+        cache = FCore.noCache();
 
         vars = List.map2(used_slots, makeVarFromSlot, inEnv, cache);
 
@@ -9772,7 +9696,7 @@ algorithm
         // Create a new implicit scope with the needed parameters on top
         // of the current env so we can find the bindings if needed.
         // We need an implicit scope so comp1.comp2 can be looked up without package constant restriction
-        env = Env.openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(Env.forScopeName), NONE());
+        env = FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName), NONE());
 
         // add variables to the environment
         env = makeDummyFuncEnv(env, vars, dummy_var);
@@ -9868,8 +9792,8 @@ end isSlotUsed;
 protected function makeVarFromSlot
   "Converts a Slot to a DAE.Var."
   input Slot inSlot;
-  input Env.Env inEnv;
-  input Env.Cache inCache;
+  input FCore.Graph inEnv;
+  input FCore.Cache inCache;
   output DAE.Var outVar;
 algorithm
   outVar := matchcontinue (inSlot, inEnv, inCache)
@@ -9913,12 +9837,12 @@ algorithm
 end makeVarFromSlot;
 
 protected function evaluateStructuralSlots2
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Slot> inSlots;
   input list<String> usedSlots;
   input list<Slot> acc;
-  output Env.Cache cache;
+  output FCore.Cache cache;
   output list<Slot> slots;
 algorithm
   (cache,slots) := matchcontinue (inCache,inEnv,inSlots,usedSlots,acc)
@@ -9962,11 +9886,11 @@ algorithm
 end evaluateStructuralSlots2;
 
 protected function evaluateStructuralSlots
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Slot> inSlots;
   input DAE.Type funcType;
-  output Env.Cache cache;
+  output FCore.Cache cache;
   output list<Slot> slots;
 algorithm
   (cache,slots) := match (inCache,inEnv,inSlots,funcType)
@@ -9994,21 +9918,23 @@ end evaluateStructuralSlots;
 protected function makeDummyFuncEnv
   "Helper function to applyArgTypesToFuncType, creates a dummy function
    environment."
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input list<DAE.Var> inVars;
   input SCode.Element inDummyVar;
-  output Env.Env outEnv;
+  output FCore.Graph outEnv;
 algorithm
   outEnv := match(inEnv, inVars, inDummyVar)
     local
       DAE.Var var;
       list<DAE.Var> rest_vars;
-      Env.Env env;
+      FCore.Graph env;
+      SCode.Element dummyVar;
 
     case (_, var :: rest_vars, _)
       equation
-        env = Env.extendFrameV(inEnv, var, inDummyVar, DAE.NOMOD(),
-          Env.VAR_TYPED(), Env.emptyEnv);
+        dummyVar = SCode.setComponentName(inDummyVar, DAEUtil.typeVarIdent(var));
+        env = FGraph.mkComponentNode(inEnv, var, dummyVar, DAE.NOMOD(),
+          FCore.VAR_TYPED(), FGraph.empty());
       then
         makeDummyFuncEnv(env, rest_vars, inDummyVar);
 
@@ -10023,8 +9949,8 @@ protected function evaluateFuncParamDimAndMatchTypes
   sure the type matches with the expected type in the slot."
   input Slot inSlot;
   input DAE.FuncArg inParam;
-  input Env.Env inEnv;
-  input Env.Cache inCache;
+  input FCore.Graph inEnv;
+  input FCore.Cache inCache;
   input Absyn.Info inInfo;
   output DAE.FuncArg outParam;
 algorithm
@@ -10096,8 +10022,8 @@ end evaluateFuncParamDimAndMatchTypes;
 protected function evaluateFuncArgTypeDims
   "Constant evaluates the dimensions of a type."
   input DAE.Type inType;
-  input Env.Env inEnv;
-  input Env.Cache inCache;
+  input FCore.Graph inEnv;
+  input FCore.Cache inCache;
   output DAE.Type outType;
 algorithm
   outType := matchcontinue(inType, inEnv, inCache)
@@ -10107,7 +10033,7 @@ algorithm
       Integer n;
       DAE.Dimension dim;
       list<DAE.Type> tys;
-      Env.Env env;
+      FCore.Graph env;
 
     // Array type, evaluate the dimension.
     case (DAE.T_ARRAY(ty, {dim}, ts), _, _)
@@ -10544,8 +10470,8 @@ protected function elabInputArgs
   1. Positional arguments fill the first slots according to their position.
   2. Named arguments fill slots with the same name as the named argument.
   3. Unfilled slots are checks so that they have default values, otherwise error."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input list<Slot> inSlotLst;
@@ -10559,7 +10485,7 @@ protected function elabInputArgs
   input Absyn.Info info;
   input DAE.Type funcType "Used to determine which arguments are structural. We will evaluate them later to figure if they are used in dimensions. So we evaluate them here to get a more optimised DAE";
   input Absyn.Path path;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Exp> outExps;
   output list<Slot> outSlotLst;
   output list<DAE.Const> outTypesConstLst;
@@ -10572,10 +10498,10 @@ algorithm
       list<Slot> slots_1,newslots,slots;
       list<DAE.Const> clist1,clist2,clist;
       list<DAE.Exp> explst,newexp;
-      Env.Env env;
+      FCore.Graph env;
       list<Absyn.Exp> exp;
       list<Absyn.NamedArg> narg;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       InstTypes.PolymorphicBindings polymorphicBindings;
 
@@ -10709,15 +10635,15 @@ protected function fillGraphicsDefaultSlots
   and fills  default values into slots which have not been filled.
 
   Special case for graphics exps"
-  input Env.Cache inCache;
+  input FCore.Cache inCache;
   input list<Slot> inSlotLst;
   input SCode.Element inClass;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Boolean inBoolean;
   input InstTypes.PolymorphicBindings inPolymorphicBindings;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Slot> outSlotLst;
   output list<DAE.Const> outTypesConstLst;
   output InstTypes.PolymorphicBindings outPolymorphicBindings;
@@ -10730,7 +10656,7 @@ algorithm
       Option<DAE.Exp> e;
       DAE.Dimensions ds;
       SCode.Element class_;
-      Env.Env env;
+      FCore.Graph env;
       Boolean impl;
       Absyn.Exp dexp;
       DAE.Exp exp,exp_1;
@@ -10739,7 +10665,7 @@ algorithm
       DAE.VarParallelism pr;
       list<DAE.Const> constLst;
       String id;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       InstTypes.PolymorphicBindings polymorphicBindings;
       Integer idx;
@@ -10758,7 +10684,7 @@ algorithm
 
         (cache,exp,DAE.PROP(t,c1),_) = elabExpInExpression(cache, env, dexp, impl, NONE(), true, pre, info);
         // print("Slot: " +& id +& " -> " +& Exp.printExpStr(exp) +& "\n");
-        (exp_1,_,polymorphicBindings) = Types.matchTypePolymorphic(exp,t,tp,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
+        (exp_1,_,polymorphicBindings) = Types.matchTypePolymorphic(exp,t,tp,FGraph.getGraphPathNoImplicitScope(env),polymorphicBindings,false);
         true = Types.constEqualOrHigher(c1,c2);
       then
         (cache, SLOT(DAE.FUNCARG(id,tp,c2,pr,e),true,SOME(exp_1),ds,idx) :: res, c1::constLst, polymorphicBindings);
@@ -10815,11 +10741,11 @@ protected function evalExternalObjectInput
   input IsExternalObject isExternalObject;
   input DAE.Type ty;
   input DAE.Const const;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
 algorithm
   (outCache,outExp) := matchcontinue (isExternalObject,ty,const,inCache,inEnv,inExp,info)
@@ -10828,14 +10754,14 @@ algorithm
       Values.Value val;
     case (NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),_,_,_,_,_,_)
       then (inCache,inExp);
-    case (_, _, _, _, _, _, _)
+    case (_,_,_,_,_,_,_)
       equation
         true = Types.isParameterOrConstant(const);
         false = Expression.isConst(inExp);
         (outCache, val, _) = Ceval.ceval(inCache, inEnv, inExp, false, NONE(), Absyn.MSG(info), 0);
         outExp = ValuesUtil.valueExp(val);
       then (outCache,outExp);
-    case (_, _, _, _, _, _, _)
+    case (_,_,_,_,_,_,_)
       equation
         true = Types.isParameterOrConstant(const) or Types.isExternalObject(ty) or Expression.isConst(inExp);
       then (inCache,inExp);
@@ -10852,8 +10778,8 @@ protected function elabPositionalInputArgs
 "This function elaborates the positional input arguments of a function.
   A list of slots is filled from the beginning with types of each
   positional argument."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<DAE.FuncArg> inTypesFuncArgLst;
   input Integer position;
@@ -10867,7 +10793,7 @@ protected function elabPositionalInputArgs
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   input Absyn.Path path;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Slot> outSlotLst;
   output list<DAE.Const> outTypesConstLst;
   output InstTypes.PolymorphicBindings outPolymorphicBindings;
@@ -10882,13 +10808,13 @@ algorithm
       DAE.Const c1,c2;
       DAE.VarParallelism pr;
       list<DAE.Const> clist;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp e;
       list<Absyn.Exp> es;
       DAE.FuncArg farg;
       list<DAE.FuncArg> vs;
       DAE.Dimensions ds;
-      Env.Cache cache;
+      FCore.Cache cache;
       String id;
       DAE.Properties props;
       Prefix.Prefix pre;
@@ -10915,8 +10841,8 @@ protected function elabPositionalInputArg
 "This function elaborates the positional input arguments of a function.
   A list of slots is filled from the beginning with types of each
   positional argument."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input DAE.FuncArg farg;
   input Integer position;
@@ -10931,7 +10857,7 @@ protected function elabPositionalInputArg
   input Absyn.Info info;
   input Absyn.Path path;
   input Integer numErrors;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Slot> outSlotLst;
   output DAE.Const outConst;
   output InstTypes.PolymorphicBindings outPolymorphicBindings;
@@ -10946,12 +10872,12 @@ algorithm
       DAE.VarParallelism pr;
       DAE.Properties prop;
       list<DAE.Const> clist;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp e;
       list<Absyn.Exp> es;
       list<DAE.FuncArg> vs;
       DAE.Dimensions ds;
-      Env.Cache cache;
+      FCore.Cache cache;
       String id;
       DAE.Properties props;
       Prefix.Prefix pre;
@@ -10974,7 +10900,7 @@ algorithm
         ((vt, _)) = Types.traverseType((vt, -1), Types.makeExpDimensionsUnknown);
         c1 = Types.propAllConst(props);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, vt, c1, cache, env, e_1, info);
-        (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
+        (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,FGraph.getGraphPathNoImplicitScope(env),polymorphicBindings,false);
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, {}, slots,checkTypes,pre,info) "no vectorized dim" ;
       then
         (cache,slots_1,c1,polymorphicBindings);
@@ -10987,7 +10913,7 @@ algorithm
         ((vt, _)) = Types.traverseType((vt, -1), Types.makeExpDimensionsUnknown);
         c1 = Types.propAllConst(props);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, vt, c1, cache, env, e_1, info);
-        (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, Env.getEnvPathNoImplicitScope(env));
+        (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, FGraph.getGraphPathNoImplicitScope(env));
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, checkTypes,pre,info);
       then
         (cache,slots_1,c1,polymorphicBindings);
@@ -11027,8 +10953,8 @@ protected function elabNamedInputArgs
   If a slot is filled twice the function fails. If a slot is not filled at
   all and the
   value is not a parameter or a constant the function also fails."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input list<DAE.FuncArg> inTypesFuncArgLst;
   input list<Slot> inSlotLst;
@@ -11041,7 +10967,7 @@ protected function elabNamedInputArgs
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   input Absyn.Path path;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Slot> outSlotLst;
   output list<DAE.Const> outTypesConstLst;
   output InstTypes.PolymorphicBindings outPolymorphicBindings;
@@ -11055,14 +10981,14 @@ algorithm
       DAE.VarParallelism pr;
       list<Slot> slots_1,newslots,slots;
       list<DAE.Const> clist;
-      Env.Env env;
+      FCore.Graph env;
       String id, pre_str;
       Absyn.Exp e;
       Absyn.NamedArg na;
       list<Absyn.NamedArg> nas,narg;
       list<DAE.FuncArg> farg;
       DAE.CodeType ct;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Dimensions ds;
       Prefix.Prefix pre;
       InstTypes.PolymorphicBindings polymorphicBindings;
@@ -11090,8 +11016,8 @@ protected function elabNamedInputArg
   If a slot is filled twice the function fails. If a slot is not filled at
   all and the
   value is not a parameter or a constant the function also fails."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.NamedArg inNamedArg;
   input list<DAE.FuncArg> inTypesFuncArgLst;
   input list<Slot> inSlotLst;
@@ -11105,7 +11031,7 @@ protected function elabNamedInputArg
   input Absyn.Info info;
   input Absyn.Path path;
   input Integer numErrors;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Slot> outSlotLst;
   output DAE.Const outTypesConstLst;
   output InstTypes.PolymorphicBindings outPolymorphicBindings;
@@ -11119,13 +11045,13 @@ algorithm
       DAE.VarParallelism pr;
       list<Slot> slots_1,newslots,slots;
       list<DAE.Const> clist;
-      Env.Env env;
+      FCore.Graph env;
       String id, pre_str, str;
       Absyn.Exp e;
       list<Absyn.NamedArg> nas,narg;
       list<DAE.FuncArg> farg;
       DAE.CodeType ct;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Dimensions ds;
       Prefix.Prefix pre;
       InstTypes.PolymorphicBindings polymorphicBindings;
@@ -11147,7 +11073,7 @@ algorithm
         pr = findNamedArgParallelism(id,farg);
         (cache,e_1,DAE.PROP(t,c1),_) = elabExpInExpression(cache, env, e, impl,st, true,pre,info);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
-        (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
+        (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,FGraph.getGraphPathNoImplicitScope(env),polymorphicBindings,false);
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, {}, slots,checkTypes,pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
 
@@ -11158,7 +11084,7 @@ algorithm
         pr = findNamedArgParallelism(id,farg);
         (cache,e_1,DAE.PROP(t,c1),_) = elabExpInExpression(cache, env, e, impl,st, true,pre,info);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
-        (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, Env.getEnvPathNoImplicitScope(env));
+        (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, FGraph.getGraphPathNoImplicitScope(env));
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, checkTypes,pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
 
@@ -11328,14 +11254,14 @@ function: elabCref
   component referred to, and check if the environment contains
   either a constant binding for that variable, or if it contains an
   equation binding with a constant expression."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ComponentRef inComponentRef;
   input Boolean inImplict "implicit instantiation";
   input Boolean performVectorization "true => generates vectorized expressions, {v[1],v[2],...}";
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties,DAE.Attributes>> res;
 algorithm
   (outCache,res) := elabCref1(inCache,inEnv,inComponentRef,inImplict,performVectorization,inPrefix,true,info);
@@ -11343,14 +11269,14 @@ end elabCref;
 
 public function elabCrefNoEval "
   Some functions expect a DAE.ComponentRef back and use this instead of elabCref :)"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ComponentRef inComponentRef;
   input Boolean inImplict "implicit instantiation";
   input Boolean performVectorization "true => generates vectorized expressions, {v[1],v[2],...}";
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties,DAE.Attributes>> res;
 algorithm
   (outCache,res) := elabCref1(inCache,inEnv,inComponentRef,inImplict,performVectorization,inPrefix,false,info);
@@ -11362,15 +11288,15 @@ function: elabCref
   component referred to, and check if the environment contains
   either a constant binding for that variable, or if it contains an
   equation binding with a constant expression."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ComponentRef inComponentRef;
   input Boolean inImplict "implicit instantiation";
   input Boolean performVectorization "true => generates vectorized expressions, {v[1],v[2],...}";
   input Prefix.Prefix inPrefix;
   input Boolean evalCref;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties,DAE.Attributes>> res;
 algorithm
   (outCache,res) := matchcontinue (inCache,inEnv,inComponentRef,inImplict,performVectorization,inPrefix,evalCref,info)
@@ -11381,9 +11307,9 @@ algorithm
       DAE.Type t,origt;
       DAE.Type tt;
       DAE.Exp exp,exp1,exp2,crefExp,expASUB;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.ComponentRef c;
-      Env.Cache cache;
+      FCore.Cache cache;
       Boolean impl,doVect,isBuiltinFn,isBuiltinFnOrInlineBuiltin,hasZeroSizeDim;
       DAE.Type et;
       String s,scope;
@@ -11399,7 +11325,6 @@ algorithm
       DAE.FunctionBuiltin isBuiltin;
       DAE.Attributes attr;
       DAE.Binding binding "equation modification";
-      Env.Frame frame;
 
     // wildcard
     case (cache,_,Absyn.WILD(),_,_,_,_,_)
@@ -11434,8 +11359,7 @@ algorithm
     case (cache,env,Absyn.CREF_FULLYQUALIFIED(c),impl,doVect,pre,_,_)
       equation
         c = replaceEnd(c);
-        frame = Env.topFrame(env);
-        env = {frame};
+        env = FGraph.topScope(env);
         (cache,c_1,constSubs,hasZeroSizeDim) = elabCrefSubs(cache, env, inEnv, c, pre, Prefix.NOPRE(), impl, false, info);
         (cache,attr,t,binding,forIteratorConstOpt,splicedExpData,_,_,_) = Lookup.lookupVar(cache, env, c_1);
         // variability = applySubscriptsVariability(DAEUtil.getAttrVariability(attr), constSubs);
@@ -11474,7 +11398,7 @@ algorithm
         (cache, cl as SCode.CLASS(restriction = SCode.R_ENUMERATION()), env) =
           Lookup.lookupClass(cache, env, path, false);
         typeStr = Absyn.pathLastIdent(path);
-        path = Env.joinEnvPath(env, Absyn.IDENT(typeStr));
+        path = FGraph.joinScopePath(env, Absyn.IDENT(typeStr));
         enum_lit_strs = SCode.componentNames(cl);
         (exp, t) = makeEnumerationArray(path, enum_lit_strs);
       then
@@ -11518,8 +11442,8 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Static.elabCref failed: " +&
           Dump.printComponentRefStr(c) +& " in env: " +&
-          Env.printEnvPathStr(env));
-        // Debug.traceln("ENVIRONMENT:\n" +& Env.printEnvStr(env));
+          FGraph.printGraphPathStr(env));
+        // Debug.traceln("ENVIRONMENT:\n" +& FGraph.printGraphStr(env));
       then
         fail();
 
@@ -11542,7 +11466,7 @@ algorithm
       equation
         failure((_,_,_,_) = elabCrefSubs(cache,env, env,c, pre, Prefix.NOPRE(),impl,false,info));
         s = Dump.printComponentRefStr(c);
-        scope = Env.printEnvPathStr(env);
+        scope = FGraph.printGraphPathStr(env);
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR, {s,scope}, info); // - no need to add prefix info since problem only depends on the scope?
       then
         (cache,NONE());
@@ -11550,11 +11474,11 @@ algorithm
 end elabCref1;
 
 protected function lookupFunctionsInEnvNoError
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path inPath;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
   (outCache, outTypesTypeLst) := matchcontinue(inCache, inEnv, inPath, inInfo)
@@ -11698,8 +11622,8 @@ protected function makeASUBArrayAdressing
    sub = {1,CREF_IDENT('index',{}), ASUB( exp = CREF_IDENT('y',{}), sub = {CREF_IDENT('z',{})})})
   will create nestled asubs for subscripts conaining crefs with subs."
   input Absyn.ComponentRef inRef;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Boolean inBoolean "implicit instantiation";
   input DAE.Exp inExp;
   input InstTypes.SplicedExpData splicedExpData;
@@ -11716,9 +11640,9 @@ algorithm
       String id2;
       DAE.Type ty,ty2,tty2;
       DAE.ComponentRef cr,cref_;
-      Env.Env env;
+      FCore.Graph env;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       list<DAE.Exp> exps;
 
@@ -11912,8 +11836,8 @@ protected function elabCref2
   Non Constant values are e.g.:
     p1+p2, x1x2, where p1,p2 are modelica parameters,
                  x1,x2 modelica variables."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.ComponentRef inComponentRef;
   input DAE.Attributes inAttributes;
   input DAE.Const constSubs;
@@ -11925,7 +11849,7 @@ protected function elabCref2
   input Prefix.Prefix inPrefix;
   input Boolean evalCref;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Const outConst;
   output DAE.Attributes outAttributes;
@@ -11939,13 +11863,13 @@ algorithm
       DAE.Exp e,e_1,exp,index;
       Option<DAE.Exp> sexp;
       Values.Value v;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Const const;
       SCode.Variability var;
       DAE.Binding binding_1,bind;
       String s,str,scope,pre_str;
       DAE.Binding binding;
-      Env.Cache cache;
+      FCore.Cache cache;
       Boolean doVect,genWarning,scalar;
       DAE.Type expIdTy;
       Prefix.Prefix pre;
@@ -12207,7 +12131,7 @@ algorithm
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,NONE()/*not foriter*/,tt,DAE.UNBOUND(),_,_,pre,_,_)
       equation
         s = ComponentReference.printComponentRefStr(cr);
-        scope = Env.printEnvPathStr(env);
+        scope = FGraph.printGraphPathStr(env);
         pre_str = PrefixUtil.printPrefixStr2(pre);
         s = pre_str +& s;
         // Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {s,scope}, info);
@@ -12272,7 +12196,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         pre_str = PrefixUtil.printPrefixStr2(pre);
-        Debug.fprint(Flags.FAILTRACE, "- Static.elabCref2 failed for: " +& pre_str +& ComponentReference.printComponentRefStr(cr) +& "\n env:" +& Env.printEnvStr(env));
+        Debug.fprint(Flags.FAILTRACE, "- Static.elabCref2 failed for: " +& pre_str +& ComponentReference.printComponentRefStr(cr) +& "\n env:" +& FGraph.printGraphStr(env));
       then
         fail();
   end matchcontinue;
@@ -12934,16 +12858,16 @@ end absynCrefToComponentReference;
 
 protected function elabCrefSubs
 "This function elaborates on all subscripts in a component reference."
-  input Env.Cache inCache;
-  input Env.Env inCrefEnv "search for the cref in this environment";
-  input Env.Env inSubsEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inCrefEnv "search for the cref in this environment";
+  input FCore.Graph inSubsEnv;
   input Absyn.ComponentRef inComponentRef;
   input Prefix.Prefix inTopPrefix "the top prefix, i.e. the one send down by elabCref1, needed to prefix expressions in subscript types!";
   input Prefix.Prefix inCrefPrefix "the accumulated cref, required for lookup";
   input Boolean inBoolean;
   input Boolean inHasZeroSizeDim;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.ComponentRef outComponentRef;
   output DAE.Const outConst "The constness of the subscripts. Note: This is not the same as
   the constness of a cref with subscripts! (just becase x[1,2] has a constant subscript list does
@@ -12955,7 +12879,7 @@ algorithm
       DAE.Type t;
       DAE.Dimensions sl;
       DAE.Const const,const1,const2;
-      Env.Env crefEnv, crefSubs;
+      FCore.Graph crefEnv, crefSubs;
       String id;
       list<Absyn.Subscript> ss;
       Boolean impl, hasZeroSizeDim;
@@ -12964,7 +12888,7 @@ algorithm
       DAE.Type ty, id_ty;
       list<DAE.Subscript> ss_1;
       Absyn.ComponentRef restCref,absynCref;
-      Env.Cache cache;
+      FCore.Cache cache;
       SCode.Variability vt;
       Prefix.Prefix crefPrefix;
       Prefix.Prefix topPrefix;
@@ -12994,7 +12918,7 @@ algorithm
       equation
         (cache,cr) = PrefixUtil.prefixCref(cache,crefEnv,InnerOuter.emptyInstHierarchy,crefPrefix,
                                            ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
-        //print("env:");print(Env.printEnvStr(env));print("\n");
+        //print("env:");print(FGraph.printGraphStr(env));print("\n");
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache, crefEnv, cr);
         ty = Types.simplifyType(t);
         sl = Types.getDimensions(ty);
@@ -13004,7 +12928,7 @@ algorithm
         (cache,ComponentReference.makeCrefQual(id,ty,{},cr),const,hasZeroSizeDim);
 
     // QUAL,with no subscripts second case => look for class
-    case (cache,crefEnv,crefSubs,Absyn.CREF_QUAL(name = id, subscripts = {},componentRef = restCref),topPrefix,crefPrefix,impl,hasZeroSizeDim,_)
+    case (cache,crefEnv,crefSubs,Absyn.CREF_QUAL(name = id,subscripts = {},componentRef = restCref),topPrefix,crefPrefix,impl,hasZeroSizeDim,_)
       equation
         crefPrefix = PrefixUtil.prefixAdd(id,{},{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
         (cache,cr,const,hasZeroSizeDim) = elabCrefSubs(cache, crefEnv, crefSubs, restCref, topPrefix, crefPrefix, impl, hasZeroSizeDim, info);
@@ -13030,7 +12954,7 @@ algorithm
 
     case (cache, crefEnv, crefSubs, Absyn.CREF_FULLYQUALIFIED(componentRef = absynCr), topPrefix, crefPrefix, impl, hasZeroSizeDim, _)
       equation
-        crefEnv = Env.topEnv(crefEnv);
+        crefEnv = FGraph.topScope(crefEnv);
         (cache, cr, const1, hasZeroSizeDim) = elabCrefSubs(cache, crefEnv, crefSubs, absynCr, topPrefix, crefPrefix, impl, hasZeroSizeDim, info);
       then
         (cache, cr, const1, hasZeroSizeDim);
@@ -13044,7 +12968,7 @@ algorithm
         "[top:" +& PrefixUtil.printPrefixStr(topPrefix) +& "]." +&
         PrefixUtil.printPrefixStr(crefPrefix) +& "." +&
           Dump.printComponentRefStr(absynCref) +& " env: " +&
-          Env.printEnvPathStr(crefEnv));
+          FGraph.printGraphPathStr(crefEnv));
       then
         fail();
   end matchcontinue;
@@ -13054,13 +12978,13 @@ public function elabSubscripts
 "This function converts a list of Absyn.Subscript to a list of
   DAE.Subscript, and checks if all subscripts are constant.
   HJ: not checking for constant, returning if constant or not"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Subscript> inAbsynSubscriptLst;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Subscript> outExpSubscriptLst;
   output DAE.Const outConst;
 algorithm
@@ -13069,11 +12993,11 @@ algorithm
       DAE.Subscript sub_1;
       DAE.Const const1,const2,const;
       list<DAE.Subscript> subs_1;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Subscript sub;
       list<Absyn.Subscript> subs;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
 
     // empty list
@@ -13091,15 +13015,15 @@ end elabSubscripts;
 
 protected function elabSubscriptsDims
   "Elaborates a list of subscripts and checks that they are valid for the given dimensions."
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input list<Absyn.Subscript> subs;
   input DAE.Dimensions dims;
   input Boolean impl;
   input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef inCref;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Subscript> outSubs;
   output DAE.Const outConst;
 algorithm
@@ -13109,8 +13033,8 @@ end elabSubscriptsDims;
 
 protected function elabSubscriptsDims2
   "Helper function to elabSubscriptsDims."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Subscript> inSubscripts;
   input DAE.Dimensions inDimensions;
   input Boolean inImpl;
@@ -13119,7 +13043,7 @@ protected function elabSubscriptsDims2
   input Absyn.Info inInfo;
   input DAE.Const inConst;
   input list<DAE.Subscript> inElabSubscripts;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Subscript> outSubscripts;
   output DAE.Const outConst;
 algorithm
@@ -13134,7 +13058,7 @@ algorithm
       DAE.Subscript dsub;
       list<DAE.Subscript> elabed_subs;
       DAE.Const const;
-      Env.Cache cache;
+      FCore.Cache cache;
       Option<DAE.Properties> prop;
       Integer subl, diml, esubl;
       String subl_str, diml_str, cref_str;
@@ -13177,8 +13101,8 @@ end elabSubscriptsDims2;
 
 protected function elabSubscriptsDims3
   "Helper function to elabSubscriptsDims2."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Subscript inSubscript;
   input DAE.Dimension inDimension;
   input DAE.Const inConst;
@@ -13186,13 +13110,13 @@ protected function elabSubscriptsDims3
   input Boolean inImpl;
   input Absyn.ComponentRef inCref;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Subscript outSubscript;
 algorithm
   (outCache, outSubscript) := matchcontinue(inCache, inEnv,
       inSubscript, inDimension, inConst, inProperties, inImpl, inCref, inInfo)
     local
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Subscript sub;
       Integer int_dim;
       DAE.Properties prop;
@@ -13207,7 +13131,7 @@ algorithm
     // treated in this way.
     case (_, _, _, _, _, _, _, _, _)
       equation
-        true = Env.inForOrParforIterLoopScope(inEnv);
+        true = FGraph.inForOrParforIterLoopScope(inEnv);
         true = Expression.dimensionKnown(inDimension);
       then
         (inCache, inSubscript);
@@ -13285,13 +13209,13 @@ end elabSubscriptsDims3;
 
 protected function elabSubscript "This function converts an Absyn.Subscript to an
   DAE.Subscript."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Subscript inSubscript;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Subscript outSubscript;
   output DAE.Const outConst;
   output Option<DAE.Properties> outProperties;
@@ -13304,9 +13228,9 @@ algorithm
       DAE.Type ty;
       DAE.Const const;
       DAE.Subscript sub_2;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp sub;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Properties prop;
       Prefix.Prefix pre;
 
@@ -13331,7 +13255,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprintln(Flags.FAILTRACE, "- Static.elabSubscript failed on " +&
           Dump.printSubscriptStr(inSubscript) +& " in env: " +&
-          Env.printEnvPathStr(inEnv));
+          FGraph.printGraphPathStr(inEnv));
       then
         fail();
   end matchcontinue;
@@ -13468,8 +13392,8 @@ algorithm
 end subscriptType;
 
 protected function makeIfexp "This function elaborates on the parts of an if expression."
-  input Env.Cache inCache;
-  input Env.Env inEnv1;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv1;
   input DAE.Exp inExp2;
   input DAE.Properties inProperties3;
   input DAE.Exp inExp4;
@@ -13480,7 +13404,7 @@ protected function makeIfexp "This function elaborates on the parts of an if exp
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -13489,12 +13413,12 @@ algorithm
     local
       DAE.Const c,c1,c2,c3;
       DAE.Exp exp,e1,e2,e3,e2_1,e3_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Type t2,t3,t2_1,t3_1,t1,ty;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       String e_str,t_str,e1_str,t1_str,e2_str,t2_str,pre_str;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
 
     /*
@@ -13566,8 +13490,8 @@ end makeIfexp;
 protected function cevalIfexpIfConstant "author: PA
   Constant evaluates the condition of an expression if it is constants and
   elimitates the if expressions by selecting branch."
-  input Env.Cache inCache;
-  input Env.Env inEnv1;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv1;
   input DAE.Exp inExp2;
   input DAE.Exp inExp3;
   input DAE.Exp inExp4;
@@ -13578,18 +13502,18 @@ protected function cevalIfexpIfConstant "author: PA
   input Boolean inBoolean6;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Type outType;
 algorithm
   (outCache,outExp,outType) :=
   matchcontinue (inCache,inEnv1,inExp2,inExp3,inExp4,inConst5,trueType,falseType,defaultType,inBoolean6,inST,inInfo)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp e1,e2,e3,res;
       Boolean impl,cond;
       Option<GlobalScript.SymbolTable> st;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Msg msg;
       DAE.Type ty;
 
@@ -13605,7 +13529,7 @@ algorithm
     case (cache,_,e1,e2,e3,DAE.C_PARAM(),_,_,_,_,_,_) then (cache,DAE.IFEXP(e1,e2,e3),defaultType);
     case (cache,env,e1,e2,e3,DAE.C_CONST(),_,_,_,impl,st,_)
       equation
-        msg = Util.if_(Env.inFunctionScope(env) or Env.inForOrParforIterLoopScope(env), Absyn.NO_MSG(), Absyn.MSG(inInfo));
+        msg = Util.if_(FGraph.inFunctionScope(env) or FGraph.inForOrParforIterLoopScope(env), Absyn.NO_MSG(), Absyn.MSG(inInfo));
         (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st,msg,0);
         res = Util.if_(cond, e2, e3);
         ty = Util.if_(cond, trueType, falseType);
@@ -13615,7 +13539,7 @@ algorithm
     // the stupid Lookup which instantiates packages without modifiers.
     case (cache,env,e1,e2,e3,DAE.C_CONST(),_,_,_,_,_,_)
       equation
-        true = Env.inFunctionScope(env) or Env.inForOrParforIterLoopScope(env);
+        true = FGraph.inFunctionScope(env) or FGraph.inForOrParforIterLoopScope(env);
       then
         (cache, DAE.IFEXP(e1, e2, e3),defaultType);
 
@@ -13647,22 +13571,22 @@ protected function canonCref2 "This function relates a DAE.ComponentRef to its c
   which is when all subscripts are evaluated to constant values.
   If Such an evaluation is not possible, there is no canonical
   form and this function fails."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.ComponentRef inComponentRef;
   input DAE.ComponentRef inPrefixCref;
   input Boolean inBoolean;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.ComponentRef outComponentRef;
 algorithm
   (outCache,outComponentRef) :=
   match (inCache,inEnv,inComponentRef,inPrefixCref,inBoolean)
     local
       list<DAE.Subscript> ss_1,ss;
-      Env.Env env;
+      FCore.Graph env;
       String n;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.ComponentRef prefixCr,cr;
       list<Integer> sl;
       DAE.Type t;
@@ -13680,11 +13604,11 @@ end canonCref2;
 
 public function canonCref "Transform expression to canonical form
   by constant evaluating all subscripts."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.ComponentRef inComponentRef;
   input Boolean inBoolean;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.ComponentRef outComponentRef;
 algorithm
   (outCache,outComponentRef) :=
@@ -13693,11 +13617,11 @@ algorithm
       DAE.Type t;
       list<Integer> sl;
       list<DAE.Subscript> ss_1,ss;
-      Env.Env env, componentEnv;
+      FCore.Graph env, componentEnv;
       String n;
       Boolean impl;
       DAE.ComponentRef c_1,c,cr;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Type ty2;
 
     // handle wild _
@@ -13850,11 +13774,11 @@ protected function unevaluatedFunctionVariability
   bindings with higher variability than the component, and we can't set it to
   constant because that would cause the compiler to try and constant evaluate
   the call. So we set it to DAE.C_UNKNOWN() instead."
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output DAE.Const outConst;
 algorithm
   outConst := matchcontinue(inEnv)
-    case _ equation true = Env.inFunctionScope(inEnv); then DAE.C_VAR();
+    case _ equation true = FGraph.inFunctionScope(inEnv); then DAE.C_VAR();
     case _ equation true = Flags.getConfigBool(Flags.CHECK_MODEL); then DAE.C_UNKNOWN();
     // bug #2113, seems that there is nothing in the specs
     // that requires that fill arguments are of parameter/constant
@@ -13878,8 +13802,8 @@ end slotAnd;
 
 public function elabCodeExp
   input Absyn.Exp exp;
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input DAE.CodeType ct;
   input Option<GlobalScript.SymbolTable> st;
   input Absyn.Info info;
@@ -13959,8 +13883,8 @@ end elabCodeExp;
 
 public function elabArrayDims
   "Elaborates a list of array dimensions."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ComponentRef inComponentRef;
   input list<Absyn.Subscript> inDimensions;
   input Boolean inImplicit;
@@ -13968,7 +13892,7 @@ public function elabArrayDims
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Dimensions outDimensions;
 algorithm
   (outCache, outDimensions) := elabArrayDims2(inCache, inEnv, inComponentRef,
@@ -13977,8 +13901,8 @@ end elabArrayDims;
 
 protected function elabArrayDims2
   "Helper function to elabArrayDims. Needed because of tail recursion."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ComponentRef inCref;
   input list<Absyn.Subscript> inDimensions;
   input Boolean inImplicit;
@@ -13987,13 +13911,13 @@ protected function elabArrayDims2
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
   input DAE.Dimensions inElaboratedDims;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Dimensions outDimensions;
 algorithm
   (outCache, outDimensions) := match(inCache, inEnv, inCref, inDimensions,
       inImplicit, inST, inDoVect, inPrefix, inInfo, inElaboratedDims)
     local
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Subscript dim;
       list<Absyn.Subscript> rest_dims;
       DAE.Dimension elab_dim;
@@ -14016,8 +13940,8 @@ end elabArrayDims2;
 
 protected function elabArrayDim
   "Elaborates a single array dimension."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ComponentRef inCref;
   input Absyn.Subscript inDimension;
   input Boolean inImpl;
@@ -14025,7 +13949,7 @@ protected function elabArrayDim
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Dimension outDimension;
 algorithm
   (outCache, outDimension) := matchcontinue(inCache, inEnv, inCref, inDimension,
@@ -14033,8 +13957,8 @@ algorithm
     local
       Absyn.ComponentRef cr;
       DAE.Dimension dim;
-      Env.Cache cache;
-      Env.Env cenv;
+      FCore.Cache cache;
+      FCore.Graph cenv;
       SCode.Element cls;
       Absyn.Path type_path, enum_type_name;
       String name;
@@ -14078,7 +14002,7 @@ algorithm
         (_, cls as SCode.CLASS(name = name, restriction = SCode.R_ENUMERATION(),
             classDef = SCode.PARTS(elementLst = _)), cenv) =
           Lookup.lookupClass(inCache, inEnv, type_path, false);
-        enum_type_name = Env.joinEnvPath(cenv, Absyn.IDENT(name));
+        enum_type_name = FGraph.joinScopePath(cenv, Absyn.IDENT(name));
         enum_literals = SCode.componentNames(cls);
         enum_size = listLength(enum_literals);
       then
@@ -14122,8 +14046,8 @@ end elabArrayDim;
 protected function elabArrayDim2
   "Helper function to elabArrayDim. Continues the work from the last case in
   elabArrayDim to avoid unnecessary elaboration."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ComponentRef inCref;
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
@@ -14132,14 +14056,14 @@ protected function elabArrayDim2
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Option<DAE.Dimension> outDimension;
 algorithm
   (outCache, outDimension) := matchcontinue(inCache, inEnv, inCref, inExp, inProperties,
       inImpl, inST, inDoVect, inPrefix, inInfo)
     local
       DAE.Const cnst;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Exp e;
       DAE.Type ty;
       String e_str, t_str, a_str;

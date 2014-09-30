@@ -50,7 +50,7 @@ encapsulated package Interactive
 public import Absyn;
 public import ConnectionGraph;
 public import DAE;
-public import Env;
+public import FCore;
 public import Global;
 public import GlobalScript;
 public import SCode;
@@ -76,6 +76,7 @@ protected import ErrorExt;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
+protected import FGraph;
 protected import InnerOuter;
 protected import Inst;
 protected import InstUtil;
@@ -125,19 +126,22 @@ algorithm
 
     case (GlobalScript.ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),st,verbose)
       equation
-        showStatement(x, semicolon);
+        showStatement(x, semicolon, true);
         (res,newst) = evaluate2(GlobalScript.ISTMTS({x},verbose), st);
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
+        showStatement(x, semicolon, false);
       then
         (res_1,newst);
 
     case (GlobalScript.ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),st,verbose)
       equation
-        showStatement(x, semicolon);
+        showStatement(x, semicolon, true);
         (res,newst) = evaluate2(GlobalScript.ISTMTS({x},semicolon), st);
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
+        showStatement(x, semicolon, false);
+
         (res2,newst_1) = evaluate(GlobalScript.ISTMTS(xs,semicolon), newst, verbose);
         res_2 = stringAppendList({res_1,res2});
       then
@@ -166,23 +170,26 @@ algorithm
 
     case (GlobalScript.ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),st,verbose)
       equation
-        showStatement(x,semicolon);
+        showStatement(x, semicolon, true);
         new = GlobalScript.ISTMTS({x},verbose);
         (res,newst) = evaluate2(new, st);
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
         print(res_1);
+        showStatement(x, semicolon, false);
       then
         newst;
 
     case (GlobalScript.ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),st,verbose)
       equation
-        showStatement(x,semicolon);
+        showStatement(x, semicolon, true);
         new = GlobalScript.ISTMTS({x},semicolon);
         (res,newst) = evaluate2(new, st);
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
         print(res_1);
+        showStatement(x, semicolon, false);
+
         newst_1 = evaluateToStdOut(GlobalScript.ISTMTS(xs,semicolon), newst, verbose);
       then
         newst_1;
@@ -220,16 +227,42 @@ end evaluateFork;
 protected function showStatement
   input GlobalScript.Statement s;
   input Boolean semicolon;
+  input Boolean start;
 algorithm
-  _:= matchcontinue(s, semicolon)
-    case (_, _)
+  _ := matchcontinue(s, semicolon, start)
+
+    // running testsuite
+    case (_, _, true)
       equation
         true = Flags.isSet(Flags.SHOW_STATEMENT);
+        true = Config.getRunningTestsuite();
         print("Evaluating: " +& printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) +& "\n");
+      then
+        ();
+    case (_, _, false)
+      equation
+        true = Flags.isSet(Flags.SHOW_STATEMENT);
+        true = Config.getRunningTestsuite();
+      then
+        ();
+
+    // not running testsuite, show more!
+    case (_, _, true)
+      equation
+        true = Flags.isSet(Flags.SHOW_STATEMENT);
+        System.realtimeTick(GlobalScript.RT_CLOCK_SHOW_STATEMENT);
+        print("Evaluating:   > " +& printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) +& "\n");
+      then
+        ();
+    case (_, _, false)
+      equation
+        true = Flags.isSet(Flags.SHOW_STATEMENT);
+        print("Evaluated:    < " +& realString(System.realtimeTock(GlobalScript.RT_CLOCK_SHOW_STATEMENT)) +& " / " +& printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) +& "\n");
       then
         ();
 
     else ();
+
   end matchcontinue;
 end showStatement;
 
@@ -296,6 +329,7 @@ algorithm
     // Evaluate algorithm statements in  evaluateAlgStmt()
     case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IALG(algItem = (algitem as Absyn.ALGORITHMITEM(algorithm_ = _)))}, semicolon = _),st)
       equation
+        Inst.initInstHashTable();
         (str,st_1) = evaluateAlgStmt(algitem, st);
         str_1 = stringAppend(str, "\n");
       then
@@ -304,6 +338,7 @@ algorithm
     // Evaluate expressions in evaluate_exprToStr()
     case ((GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = exp)})),st)
       equation
+        Inst.initInstHashTable();
         (str,st_1) = evaluateExprToStr(exp, st, Absyn.dummyInfo);
         str_1 = stringAppend(str, "\n");
       then
@@ -322,7 +357,7 @@ protected function evaluateAlgStmt
 algorithm
   (outString,outSymbolTable) := matchcontinue (inAlgorithmItem,inSymbolTable)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp econd,msg_1,sexp,srexp;
       DAE.Properties prop,rprop;
       GlobalScript.SymbolTable st_1,st_2,st_3,st_4,st,newst;
@@ -344,7 +379,7 @@ algorithm
       Values.Value startv, stepv, stopv;
       Absyn.Exp starte, stepe, stope;
       Absyn.ComponentRef cr;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Info info;
       Absyn.FunctionArgs fargs;
       list<Absyn.Subscript> asubs;
@@ -357,7 +392,7 @@ algorithm
           (st as GlobalScript.SYMBOLTABLE(ast = _)))
       equation
         (env,st) = buildEnvFromSymboltable(st);
-        (cache,econd,_,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(), env, cond, true, SOME(st), true, Prefix.NOPRE(), info);
+        (cache,econd,_,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(), env, cond, true, SOME(st), true, Prefix.NOPRE(), info);
         (_,Values.BOOL(true),SOME(st_2)) = CevalScript.ceval(cache,env, econd, true, SOME(st_1), Absyn.MSG(info), 0);
       then
         ("",st_2);
@@ -367,7 +402,7 @@ algorithm
           (st as GlobalScript.SYMBOLTABLE(ast = _)))
       equation
         (env,st) = buildEnvFromSymboltable(st);
-        (cache,msg_1,_,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(), env, msg, true, SOME(st), true, Prefix.NOPRE(), info);
+        (cache,msg_1,_,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(), env, msg, true, SOME(st), true, Prefix.NOPRE(), info);
         (_,Values.STRING(str),SOME(st_2)) = CevalScript.ceval(cache,env, msg_1, true, SOME(st_1), Absyn.MSG(info), 0);
       then
         (str,st_2);
@@ -376,7 +411,7 @@ algorithm
       equation
         (env,st) = buildEnvFromSymboltable(st);
         exp = Absyn.CALL(cr,fargs);
-        (cache,sexp,_,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), info);
+        (cache,sexp,_,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), info);
         (_,_,SOME(st_2)) = CevalScript.ceval(cache, env, sexp, true, SOME(st_1), Absyn.MSG(info), 0);
       then
         ("",st_2);
@@ -392,7 +427,7 @@ algorithm
         value = getVariableValueLst(Absyn.pathToStringList(Absyn.crefToPath(cr)), vars);
         str = ValuesUtil.valString(value);
         t = Types.typeOfValue(value);
-        newst = addVarToSymboltable(DAE.CREF_IDENT(ident, t, {}), value, Env.emptyEnv, st);
+        newst = addVarToSymboltable(DAE.CREF_IDENT(ident, t, {}), value, FGraph.empty(), st);
       then (str,newst);
 
     case
@@ -402,7 +437,7 @@ algorithm
         (st as GlobalScript.SYMBOLTABLE(ast = _)))
       equation
         (env,st) = buildEnvFromSymboltable(st);
-        (cache,sexp,DAE.PROP(_,_),SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
+        (cache,sexp,DAE.PROP(_,_),SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
         (_,value,SOME(st_2)) = CevalScript.ceval(cache,env, sexp, true,SOME(st_1),Absyn.MSG(info),0);
         (_, dsubs, _) = Static.elabSubscripts(cache, env, asubs, true, Prefix.NOPRE(), info);
 
@@ -420,7 +455,7 @@ algorithm
         (st as GlobalScript.SYMBOLTABLE(ast = _)))
       equation
         (env,st) = buildEnvFromSymboltable(st);
-        (cache,srexp,rprop,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(),env, rexp, true, SOME(st),true,Prefix.NOPRE(),info);
+        (cache,srexp,rprop,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(),env, rexp, true, SOME(st),true,Prefix.NOPRE(),info);
         DAE.T_TUPLE(tupleType = types) = Types.getPropType(rprop);
         crefs = makeTupleCrefs(crefexps, types, env, cache, info);
         (_,Values.TUPLE(values),SOME(st_2)) = CevalScript.ceval(cache, env, srexp, true, SOME(st_1), Absyn.MSG(info),0);
@@ -726,14 +761,14 @@ algorithm
   (outValue,outSymbolTable):=
   matchcontinue (inExp,inSymbolTable,info)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp sexp;
       DAE.Properties prop;
       GlobalScript.SymbolTable st_1,st_2,st;
       Values.Value value;
       Absyn.Exp exp;
       Absyn.Program p;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<GlobalScript.Variable> vars;
       Absyn.ComponentRef cr;
 
@@ -748,7 +783,7 @@ algorithm
     case (exp,(st as GlobalScript.SYMBOLTABLE(ast = _)),_)
       equation
         (env,st) = buildEnvFromSymboltable(st);
-        (cache,sexp,_,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), info);
+        (cache,sexp,_,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), info);
         (_,value,SOME(st_2)) = CevalScript.ceval(cache, env, sexp, true, SOME(st_1), Absyn.MSG(info),0);
       then
         (value,st_2);
@@ -764,14 +799,14 @@ protected function stringRepresOfExpr
   output String estr;
   output GlobalScript.SymbolTable st;
 protected
-  Env.Env env;
+  FCore.Graph env;
   DAE.Exp sexp;
   DAE.Properties prop;
   GlobalScript.SymbolTable st_1;
 algorithm
   (env,st) := buildEnvFromSymboltable(ist);
-  (_,sexp,prop,SOME(st_1)) := StaticScript.elabExp(Env.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), Absyn.dummyInfo);
-  (_, sexp, prop) := Ceval.cevalIfConstant(Env.emptyCache(), env, sexp, prop, true, Absyn.dummyInfo);
+  (_,sexp,prop,SOME(st_1)) := StaticScript.elabExp(FCore.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), Absyn.dummyInfo);
+  (_, sexp, prop) := Ceval.cevalIfConstant(FCore.emptyCache(), env, sexp, prop, true, Absyn.dummyInfo);
   estr := ExpressionDump.printExpStr(sexp);
 end stringRepresOfExpr;
 
@@ -812,8 +847,8 @@ end evaluateExprToStr;
 protected function makeTupleCrefs
   input list<Absyn.Exp> inCrefs;
   input list<DAE.Type> inTypes;
-  input Env.Env inEnv;
-  input Env.Cache inCache;
+  input FCore.Graph inEnv;
+  input FCore.Cache inCache;
   input Absyn.Info inInfo;
   output list<DAE.ComponentRef> outCrefs;
 algorithm
@@ -824,8 +859,8 @@ protected function makeTupleCref
   "Translates an Absyn.CREF to a DAE.CREF_IDENT."
   input Absyn.Exp inCref;
   input DAE.Type inType;
-  input Env.Env inEnv;
-  input Env.Cache inCache;
+  input FCore.Graph inEnv;
+  input FCore.Cache inCache;
   input Absyn.Info inInfo;
   output DAE.ComponentRef outCref;
 algorithm
@@ -885,7 +920,7 @@ protected function addVarsToSymboltable
   "Adds a list of variables to the interactive symboltable."
   input list<DAE.ComponentRef> inCref;
   input list<Values.Value> inValues;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input GlobalScript.SymbolTable inSymbolTable;
   output GlobalScript.SymbolTable outSymbolTable;
 algorithm
@@ -897,7 +932,7 @@ public function addVarToSymboltable
   "Adds a variable to the interactive symboltable."
   input DAE.ComponentRef inCref;
   input Values.Value inValue;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input GlobalScript.SymbolTable inSymbolTable;
   output GlobalScript.SymbolTable outSymbolTable;
 protected
@@ -972,7 +1007,7 @@ protected function addVarToVarList
   "Assigns a value to a variable with a specific identifier."
   input DAE.ComponentRef inCref;
   input Values.Value inValue;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input list<GlobalScript.Variable> inVariables;
   output list<GlobalScript.Variable> outVariables;
 protected
@@ -987,7 +1022,7 @@ protected function addVarToVarList2
   input GlobalScript.Variable inOldVariable;
   input DAE.ComponentRef inCref;
   input Values.Value inValue;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output GlobalScript.Variable outVariable;
   output Boolean outFound;
 protected
@@ -1004,7 +1039,7 @@ protected function addVarToVarList3
   input GlobalScript.Variable inOldVariable;
   input DAE.ComponentRef inCref;
   input Values.Value inValue;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output GlobalScript.Variable outVariable;
 algorithm
   outVariable := match(inFound, inOldVariable, inCref, inValue, inEnv)
@@ -1024,7 +1059,7 @@ algorithm
     case (true, GlobalScript.IVAR(id, val, ty), DAE.CREF_IDENT(subscriptLst = subs), _, _)
       equation
         (_, val, _) = CevalFunction.assignVector(inValue, val, subs,
-          Env.emptyCache(), inEnv, NONE());
+          FCore.emptyCache(), inEnv, NONE());
       then
         GlobalScript.IVAR(id, val, ty);
 
@@ -1066,19 +1101,19 @@ public function buildEnvFromSymboltable
    Builds an environment from a symboltable by adding all
    interactive variables and their bindings to the environment."
   input GlobalScript.SymbolTable inSymbolTable;
-  output Env.Env outEnv;
+  output FCore.Graph outEnv;
   output GlobalScript.SymbolTable st;
 algorithm
   (outEnv,st) := match (inSymbolTable)
     local
       list<SCode.Element> p_1;
-      Env.Env env,env_1;
+      FCore.Graph env,env_1;
       list<GlobalScript.Variable> vars;
 
     case (st as GlobalScript.SYMBOLTABLE(lstVarVal = vars))
       equation
         (p_1,st) = symbolTableToSCode(st);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(), p_1, Absyn.IDENT(""));
+        (_,env) = Inst.makeEnvFromProgram(FCore.emptyCache(), p_1, Absyn.IDENT(""));
         // Reverse the variable list to make sure iterators overwrite other
         // variables (iterators are appended to the front of the list).
         vars = listReverse(vars);
@@ -1092,12 +1127,12 @@ end buildEnvFromSymboltable;
 protected function addVarsToEnv
 "Helper function to buildEnvFromSymboltable."
   input list<GlobalScript.Variable> inVariableLst;
-  input Env.Env inEnv;
-  output Env.Env outEnv;
+  input FCore.Graph inEnv;
+  output FCore.Graph outEnv;
 algorithm
   outEnv := matchcontinue (inVariableLst,inEnv)
     local
-      Env.Env env_1,env_2,env;
+      FCore.Graph env_1,env_2,env;
       String id;
       Values.Value v;
       DAE.Type tp;
@@ -1105,8 +1140,8 @@ algorithm
 
     case ((GlobalScript.IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation
-        (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env, ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
-        env_1 = Env.updateFrameV(
+        (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(FCore.emptyCache(), env, ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
+        env_1 = FGraph.updateComp(
                   env,
                   DAE.TYPES_VAR(
                     id,
@@ -1114,16 +1149,16 @@ algorithm
                     tp,
                     DAE.VALBOUND(v, DAE.BINDING_FROM_DEFAULT_VALUE()),
                     NONE()),
-                  Env.VAR_TYPED(),
-                  {});
+                  FCore.VAR_TYPED(),
+                  FGraph.empty());
         env_2 = addVarsToEnv(rest, env_1);
       then
         env_2;
 
     case ((GlobalScript.IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation
-        failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{})));
-        env_1 = Env.extendFrameV(
+        failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(FCore.emptyCache(),env, ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{})));
+        env_1 = FGraph.mkComponentNode(
                  env,
                  DAE.TYPES_VAR(id,DAE.dummyAttrVar,tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()),
                   SCode.COMPONENT(
@@ -1133,8 +1168,8 @@ algorithm
                     Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
                     SCode.noComment, NONE(), Absyn.dummyInfo),
                   DAE.NOMOD(),
-                 Env.VAR_UNTYPED(),
-                 {});
+                 FCore.VAR_UNTYPED(),
+                 FGraph.empty());
         env_2 = addVarsToEnv(rest, env_1);
       then
         env_2;
@@ -1248,9 +1283,9 @@ algorithm
       list<String> libs;
       Absyn.Class cls,refactoredClass;
       list<DAE.Exp> simOptions;
-      Env.Env env;
+      FCore.Graph env;
       list<Absyn.Exp> exp_list,exp_list2;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
@@ -3938,13 +3973,13 @@ algorithm
   comps := match(p, path)
     local
         SCode.Program p_1;
-        Env.Env env;
+        FCore.Graph env;
 
     // if we have a qualified class, a modification into it can affect any other
     case (_, _)
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        (_,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
         ((_,_,(comps,_,_))) = traverseClasses(p, NONE(), extractAllComponentsVisitor,(GlobalScript.COMPONENTS({},0),p,env), true) "traverse protected";
       then
         comps;
@@ -3955,15 +3990,15 @@ protected function extractAllComponentsVisitor
 "author: x02lucpo
   the visitor for traverse-classes that extracts all
   the components and extends from all classes"
-  input tuple<Absyn.Class, Option<Absyn.Path>, tuple<GlobalScript.Components, Absyn.Program, Env.Env>> inTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv;
-  output tuple<Absyn.Class, Option<Absyn.Path>, tuple<GlobalScript.Components, Absyn.Program, Env.Env>> outTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv;
+  input tuple<Absyn.Class, Option<Absyn.Path>, tuple<GlobalScript.Components, Absyn.Program, FCore.Graph>> inTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv;
+  output tuple<Absyn.Class, Option<Absyn.Path>, tuple<GlobalScript.Components, Absyn.Program, FCore.Graph>> outTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv;
 algorithm
   outTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv:=
   matchcontinue (inTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv)
     local
       Absyn.Path path_1,pa_1,pa;
       Option<Absyn.Path> paOpt;
-      Env.Env cenv,env;
+      FCore.Graph cenv,env;
       GlobalScript.Components comps_1,comps;
       Absyn.Class class_;
       String id;
@@ -3977,7 +4012,7 @@ algorithm
         false = isReadOnly(file_info);
         path_1 = Absyn.joinPaths(pa, Absyn.IDENT(id));
         cenv = getClassEnvNoElaboration(p, path_1, env);
-        (_,pa_1) = Inst.makeFullyQualified(Env.emptyCache(), cenv, path_1);
+        (_,pa_1) = Inst.makeFullyQualified(FCore.emptyCache(), cenv, path_1);
         comps_1 = extractComponentsFromClass(class_, pa_1, comps, cenv);
       then
         ((class_,SOME(pa),(comps_1,p,env)));
@@ -3987,7 +4022,7 @@ algorithm
         path_1 = Absyn.IDENT(id);
 
         cenv = getClassEnvNoElaboration(p, path_1, env);
-        (_,pa_1) = Inst.makeFullyQualified(Env.emptyCache(),cenv, path_1);
+        (_,pa_1) = Inst.makeFullyQualified(FCore.emptyCache(),cenv, path_1);
         comps_1 = extractComponentsFromClass(class_, pa_1, comps, cenv);
       then
         ((class_,NONE(),(comps_1,p,env)));
@@ -4010,7 +4045,7 @@ protected function extractComponentsFromClass
   input Absyn.Class inClass;
   input Absyn.Path inPath;
   input GlobalScript.Components inComponents;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
@@ -4021,7 +4056,7 @@ algorithm
       Absyn.ClassDef classdef;
       Absyn.Info info;
       Absyn.Path pa;
-      Env.Env env;
+      FCore.Graph env;
     case (Absyn.CLASS(name = _,body = classdef),pa,comps,env) /* the QUALIFIED path */
       equation
         comps_1 = extractComponentsFromClassdef(pa, classdef, comps, env);
@@ -4041,7 +4076,7 @@ protected function extractComponentsFromClassdef
   input Absyn.Path inPath;
   input Absyn.ClassDef inClassDef;
   input GlobalScript.Components inComponents;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output GlobalScript.Components outComponents;
 algorithm
   outComponents:= matchcontinue (inPath,inClassDef,inComponents,inEnv)
@@ -4049,7 +4084,7 @@ algorithm
       GlobalScript.Components comps_1,comps;
       Absyn.Path pa,path;
       list<Absyn.ClassPart> parts;
-      Env.Env env;
+      FCore.Graph env;
       list<Absyn.ElementArg> elementargs,elementarg;
       String id_ex;
     case (pa,Absyn.PARTS(classParts = parts),comps,env) /* the QUALIFIED path for the class */
@@ -4078,13 +4113,13 @@ protected function extractComponentsFromClassparts
   input Absyn.Path inPath;
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input GlobalScript.Components inComponents;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output GlobalScript.Components outComponents;
 algorithm
   outComponents:= matchcontinue (inPath,inAbsynClassPartLst,inComponents,inEnv)
     local
       GlobalScript.Components comps,comps_1,comps_2;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Path pa;
       list<Absyn.ElementItem> elements;
       list<Absyn.ClassPart> res;
@@ -4111,14 +4146,14 @@ protected function extractComponentsFromElements
   input Absyn.Path inPath;
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input GlobalScript.Components inComponents;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inPath,inAbsynElementItemLst,inComponents,inEnv)
     local
       GlobalScript.Components comps,comps_1,comps_2;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Path pa;
       Absyn.ElementSpec elementspec;
       list<Absyn.ElementItem> res;
@@ -4144,24 +4179,24 @@ protected function extractComponentsFromElementspec
   input Absyn.Path inPath;
   input Absyn.ElementSpec inElementSpec;
   input GlobalScript.Components inComponents;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inPath,inElementSpec,inComponents,inEnv)
     local
       String id;
-      Env.Env cenv,env;
+      FCore.Graph cenv,env;
       Absyn.Path path_1,path,pa;
       GlobalScript.Components comps_1,comps,comps_2;
       list<Absyn.ComponentItem> comp_items;
       GlobalScript.Component comp;
       list<Absyn.ElementArg> elementargs;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (pa,Absyn.COMPONENTS(typeSpec = Absyn.TPATH(path_1,_),components = comp_items),comps,env) /* the QUALIFIED path for the class */
       equation
-        (cache,SCode.CLASS(name=id),cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
+        (cache,SCode.CLASS(name=id),cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1, false);
         path_1 = Absyn.IDENT(id);
         (cache,path) = Inst.makeFullyQualified(cache, cenv, path_1);
         comps_1 = extractComponentsFromComponentitems(pa, path, comp_items, comps, env);
@@ -4169,7 +4204,7 @@ algorithm
         comps_1;
     case (pa,Absyn.EXTENDS(path = path_1,elementArg = elementargs),comps,env)
       equation
-        (cache,_,cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false)
+        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1, false)
         "print \"extract_components_from_elementspec Absyn.EXTENDS(path,_) not implemented yet\"" ;
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
         comp = GlobalScript.EXTENDSITEM(pa,path);
@@ -4191,14 +4226,14 @@ protected function extractComponentsFromComponentitems
   input Absyn.Path inPath2;
   input list<Absyn.ComponentItem> inAbsynComponentItemLst3;
   input GlobalScript.Components inComponents4;
-  input Env.Env inEnv5;
+  input FCore.Graph inEnv5;
   output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inPath1,inPath2,inAbsynComponentItemLst3,inComponents4,inEnv5)
     local
       GlobalScript.Components comps,comps_1,comps_2,comps_3;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.ComponentRef comp;
       Absyn.Path pa,path;
       String id;
@@ -4225,7 +4260,7 @@ protected function extractComponentsFromElementargs
   input Absyn.Path inPath;
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input GlobalScript.Components inComponents;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
@@ -4233,7 +4268,7 @@ algorithm
     local
       Absyn.Path pa;
       GlobalScript.Components comps,comps_1,comps_2,comps_3;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.ElementSpec elementspec,elementspec2;
       list<Absyn.ElementArg> res;
       Absyn.ConstrainClass constrainclass;
@@ -4271,7 +4306,7 @@ protected function extractComponentsFromModificationOption
   input Absyn.Path inPath;
   input Option<Absyn.Modification> inAbsynModificationOption;
   input GlobalScript.Components inComponents;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
@@ -4279,7 +4314,7 @@ algorithm
     local
       Absyn.Path pa;
       GlobalScript.Components comps,comps_1;
-      Env.Env env;
+      FCore.Graph env;
       list<Absyn.ElementArg> elementargs;
     case (_,NONE(),comps,_) then comps;  /* the QUALIFIED path for the class */
     case (pa,SOME(Absyn.CLASSMOD(elementargs,_)),comps,env)
@@ -4532,16 +4567,16 @@ public function getClassEnv
    by partially instantiating it."
   input Absyn.Program p;
   input Absyn.Path p_class;
-  output Env.Env env_2;
+  output FCore.Graph env_2;
 protected
   list<SCode.Element> p_1;
-  Env.Env env,env_1,env2;
+  FCore.Graph env,env_1,env2;
   SCode.Element cl;
   String id;
   SCode.Encapsulated encflag;
   SCode.Restriction restr;
   ClassInf.State ci_state;
-  Env.Cache cache;
+  FCore.Cache cache;
 algorithm
   env_2 := matchcontinue (p,p_class)
     local
@@ -4550,7 +4585,7 @@ algorithm
                      // of the derived class is returned, which can be a totally different scope.
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
         (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr,classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(_,_)))),env_1) =
         Lookup.lookupClass(cache,env, p_class, false);
       then env_1;
@@ -4558,15 +4593,15 @@ algorithm
     case (_,_)
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
         (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, p_class, false);
-        env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
-        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
+        env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+        ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         (_,env_2,_,_,_) =
           Inst.partialInstClassIn(cache,env2,InnerOuter.emptyInstHierarchy,
             DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {}, 0);
       then env_2;
-    case (_,_) then {};
+    case (_,_) then FGraph.empty();
   end matchcontinue;
 end getClassEnv;
 
@@ -5491,7 +5526,7 @@ algorithm
       Absyn.Path p_class,inherit_class;
       Absyn.Within within_;
       Absyn.Class cdef,cdef_1;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Program newp,p;
       Absyn.ComponentRef class_,inheritclass,subident;
       Absyn.Modification mod;
@@ -5521,13 +5556,13 @@ protected function setExtendsSubmodifierInClass
                Absyn.Path, /* inherit_name */
                Absyn.ComponentRef, /* submodifier */
                Absyn.Modification,
-               Env.Env)
+               FCore.Graph)
    outputs: Absyn.Class"
   input Absyn.Class inClass;
   input Absyn.Path inPath;
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Modification inModification;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output Absyn.Class outClass;
 algorithm
   outClass:=
@@ -5542,7 +5577,7 @@ algorithm
       Absyn.Path inherit_name;
       Absyn.ComponentRef submod;
       Absyn.Modification mod;
-      Env.Env env;
+      FCore.Graph env;
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
@@ -5572,13 +5607,13 @@ protected function setExtendsSubmodifierInClassparts
                 Absyn.Path, /* inherit_name */
                 Absyn.ComponentRef, /* submodifier */
                 Absyn.Modification,
-                Env.Env)
+                FCore.Graph)
    outputs:  Absyn.ClassPart list"
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Absyn.Path inPath;
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Modification inModification;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output list<Absyn.ClassPart> outAbsynClassPartLst;
 algorithm
   outAbsynClassPartLst:=
@@ -5589,7 +5624,7 @@ algorithm
       Absyn.Path inherit;
       Absyn.ComponentRef submod;
       Absyn.Modification mod;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.ClassPart elt;
     case ({},_,_,_,_) then {};
     case ((Absyn.PUBLIC(contents = elts) :: rest),inherit,submod,mod,env)
@@ -5618,13 +5653,13 @@ protected function setExtendsSubmodifierInElementitems
                Absyn.Path, /* inherit_name */
                Absyn.ComponentRef, /* submodifier */
                Absyn.Modification,
-               Env.Env)
+               FCore.Graph)
    outputs:  Absyn.ElementItem list"
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Absyn.Path inPath;
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Modification inModification;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output list<Absyn.ElementItem> outAbsynElementItemLst;
 algorithm
   outAbsynElementItemLst:=
@@ -5635,7 +5670,7 @@ algorithm
       Absyn.Path inherit;
       Absyn.ComponentRef submod;
       Absyn.Modification mod;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.ElementItem elitem;
     case ({},_,_,_,_) then {};
     case ((Absyn.ELEMENTITEM(element = elt) :: rest),inherit,submod,mod,env)
@@ -5658,13 +5693,13 @@ protected function setExtendsSubmodifierInElement
               Absyn.Path, /* inherit_name */
               Absyn.ComponentRef, /* submodifier */
               Absyn.Modification,
-              Env.Env)
+              FCore.Graph)
    outputs:  Absyn.Element"
   input Absyn.Element inElement;
   input Absyn.Path inPath;
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Modification inModification;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output Absyn.Element outElement;
 algorithm
   outElement:=
@@ -5678,7 +5713,7 @@ algorithm
       Absyn.Info info;
       Option<Absyn.ConstrainClass> constr;
       Absyn.ComponentRef submod;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Modification mod;
       Absyn.Element elt;
       Option<Absyn.Annotation> annOpt;
@@ -5693,7 +5728,7 @@ algorithm
       specification = Absyn.EXTENDS(path = path,elementArg = eargs,annotationOpt=annOpt),info = info,constrainClass = constr),
       inherit,submod,mod,env)
       equation
-        (_,path_1) = Inst.makeFullyQualified(Env.emptyCache(),env, path);
+        (_,path_1) = Inst.makeFullyQualified(FCore.emptyCache(),env, path);
         true = Absyn.pathEqual(inherit, path_1);
         eargs_1 = setSubmodifierInElementargs(eargs, Absyn.crefToPath(submod), mod);
       then
@@ -5723,7 +5758,7 @@ algorithm
     local
       Absyn.Path p_class,name,extpath;
       Absyn.Class cdef;
-      Env.Env env;
+      FCore.Graph env;
       list<Absyn.ElementSpec> exts,exts_1;
       list<Absyn.ElementArg> extmod;
       Absyn.Modification mod;
@@ -5768,7 +5803,7 @@ algorithm
     local
       Absyn.Path p_class,name,extpath;
       Absyn.Class cdef;
-      Env.Env env;
+      FCore.Graph env;
       list<Absyn.ElementSpec> exts,exts_1;
       list<Absyn.ElementArg> extmod;
       Absyn.Modification mod;
@@ -5833,7 +5868,7 @@ protected function makeExtendsFullyQualified
 " Makes an EXTENDS ElementSpec having a
    fully qualified extends path."
   input Absyn.ElementSpec inElementSpec;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output Absyn.ElementSpec outElementSpec;
 algorithm
   outElementSpec:=
@@ -5841,12 +5876,12 @@ algorithm
     local
       Absyn.Path path_1,path;
       list<Absyn.ElementArg> earg;
-      Env.Env env;
+      FCore.Graph env;
       Option<Absyn.Annotation> annOpt;
 
     case (Absyn.EXTENDS(path = path,elementArg = earg,annotationOpt=annOpt),env)
       equation
-        (_,path_1) = Inst.makeFullyQualified(Env.emptyCache(),env, path);
+        (_,path_1) = Inst.makeFullyQualified(FCore.emptyCache(),env, path);
       then
         Absyn.EXTENDS(path_1,earg,annOpt);
   end match;
@@ -5874,7 +5909,7 @@ algorithm
       Absyn.Path p_class,name,extpath;
       Absyn.Class cdef;
       list<Absyn.ElementSpec> exts,exts_1;
-      Env.Env env;
+      FCore.Graph env;
       list<Absyn.ElementArg> extmod;
       list<String> res,res1;
       String res_1,res_2;
@@ -7078,7 +7113,7 @@ algorithm
       Absyn.Program p,p_1;
       Absyn.ComponentRef old_class,new_name;
       list<SCode.Element> pa_1;
-      Env.Env env;
+      FCore.Graph env;
       list<String> path_str_lst;
     case (p,_,(new_name as Absyn.CREF_QUAL(name = _)))
       equation
@@ -7093,7 +7128,7 @@ algorithm
         old_path = Absyn.crefToPath(old_class) "class in package" ;
         new_path = Absyn.crefToPath(new_name);
         pa_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),pa_1, Absyn.IDENT(""));
+        (_,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),pa_1, Absyn.IDENT(""));
         ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p, NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
         path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
@@ -7107,7 +7142,7 @@ algorithm
         old_path_no_last = Absyn.stripLast(old_path);
         new_path = Absyn.joinPaths(old_path_no_last, new_path_1);
         pa_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),pa_1, Absyn.IDENT(""));
+        (_,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),pa_1, Absyn.IDENT(""));
         ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p,NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
         path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
@@ -7122,8 +7157,8 @@ protected function renameClassVisitor
    It returns a list of strings of renamed classes.
    The 'traversal-tuple' is therefore
    tuple<oldname, newname, program, string list, env>."
-  input tuple<Absyn.Class, Option<Absyn.Path>, tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, Env.Env>> inTplAbsynClassAbsynPathOptionTplAbsynPathAbsynPathAbsynProgramStringLstEnvEnv;
-  output tuple<Absyn.Class, Option<Absyn.Path>, tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, Env.Env>> outTplAbsynClassAbsynPathOptionTplAbsynPathAbsynPathAbsynProgramStringLstEnvEnv;
+  input tuple<Absyn.Class, Option<Absyn.Path>, tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, FCore.Graph>> inTplAbsynClassAbsynPathOptionTplAbsynPathAbsynPathAbsynProgramStringLstEnvEnv;
+  output tuple<Absyn.Class, Option<Absyn.Path>, tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, FCore.Graph>> outTplAbsynClassAbsynPathOptionTplAbsynPathAbsynPathAbsynProgramStringLstEnvEnv;
 algorithm
   outTplAbsynClassAbsynPathOptionTplAbsynPathAbsynPathAbsynProgramStringLstEnvEnv:=
   matchcontinue (inTplAbsynClassAbsynPathOptionTplAbsynPathAbsynPathAbsynProgramStringLstEnvEnv)
@@ -7136,9 +7171,9 @@ algorithm
       Absyn.Info file_info;
       Absyn.Program p;
       list<String> path_str_lst;
-      Env.Env env,cenv;
+      FCore.Graph env,cenv;
       Absyn.Class class_1,class_;
-      tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, Env.Env> args;
+      tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, FCore.Graph> args;
       Option<Absyn.Path> opath;
 
     // Skip readonly classes.
@@ -7207,7 +7242,7 @@ protected function renameClassInClass
   input Absyn.Class inClass1;
   input Absyn.Path inPath2;
   input Absyn.Path inPath3;
-  input Env.Env inEnv4;
+  input FCore.Graph inEnv4;
   output Absyn.Class outClass;
   output Boolean outBoolean;
 algorithm
@@ -7221,13 +7256,13 @@ algorithm
       Option<String> comment;
       Absyn.Info file_info;
       Absyn.Path old_comp,new_comp,path_1,path,new_path;
-      Env.Env env,cenv;
+      FCore.Graph env,cenv;
       list<Absyn.ElementArg> modifications,elementarg;
       Option<Absyn.Comment> co;
       Absyn.Class class_;
       Option<list<Absyn.Subscript>> subscripts;
       Absyn.ElementAttributes attrs;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
       list<Absyn.Annotation> ann;
@@ -7252,7 +7287,7 @@ algorithm
                       body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path_1,subscripts),attributes = attrs,arguments = elementarg,comment = co),
                       info = file_info),old_comp,new_comp,env)
       equation
-        (cache,SCode.CLASS(name=name),cenv) = Lookup.lookupClass(Env.emptyCache(), env, path_1, false);
+        (cache,SCode.CLASS(name=name),cenv) = Lookup.lookupClass(FCore.emptyCache(), env, path_1, false);
         path_1 = Absyn.IDENT(name);
         (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
         true = Absyn.pathEqual(path, old_comp);
@@ -7271,14 +7306,14 @@ protected function renameClassInParts
   input list<Absyn.ClassPart> inAbsynClassPartLst1;
   input Absyn.Path inPath2;
   input Absyn.Path inPath3;
-  input Env.Env inEnv4;
+  input FCore.Graph inEnv4;
   output list<Absyn.ClassPart> outAbsynClassPartLst;
   output Boolean outBoolean;
 algorithm
   (outAbsynClassPartLst,outBoolean):=
   matchcontinue (inAbsynClassPartLst1,inPath2,inPath3,inEnv4)
     local
-      Env.Env env;
+      FCore.Graph env;
       list<Absyn.ClassPart> res_1,res;
       Boolean changed1,changed2,changed;
       list<Absyn.ElementItem> elements_1,elements;
@@ -7313,7 +7348,7 @@ protected function renameClassInElements
   input list<Absyn.ElementItem> inAbsynElementItemLst1;
   input Absyn.Path inPath2;
   input Absyn.Path inPath3;
-  input Env.Env inEnv4;
+  input FCore.Graph inEnv4;
   output list<Absyn.ElementItem> outAbsynElementItemLst;
   output Boolean outBoolean;
 algorithm
@@ -7329,7 +7364,7 @@ algorithm
       Absyn.Info info;
       Option<Absyn.ConstrainClass> constrainClass;
       Absyn.Path old_comp,new_comp;
-      Env.Env env;
+      FCore.Graph env;
     case ({},_,_,_) then ({},false);  /* the old name for the component signal if something in class have been changed */
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,specification = elementspec,info = info,constrainClass = constrainClass)) :: res),old_comp,new_comp,env)
       equation
@@ -7356,7 +7391,7 @@ protected function renameClassInElementSpec
   input Absyn.ElementSpec inElementSpec1;
   input Absyn.Path inPath2;
   input Absyn.Path inPath3;
-  input Env.Env inEnv4;
+  input FCore.Graph inEnv4;
   output Absyn.ElementSpec outElementSpec;
   output Boolean outBoolean;
 algorithm
@@ -7364,7 +7399,7 @@ algorithm
   matchcontinue (inElementSpec1,inPath2,inPath3,inEnv4)
     local
       String id;
-      Env.Env cenv,env;
+      FCore.Graph cenv,env;
       Absyn.Path path_1,path,new_path,old_comp,new_comp,comps;
       Absyn.ElementAttributes a;
       list<Absyn.ComponentItem> comp_items;
@@ -7372,7 +7407,7 @@ algorithm
       Boolean changed;
       Option<Absyn.ArrayDim> x;
       Option<Absyn.Annotation> annOpt;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.ElementSpec spec;
       Option<Absyn.Comment> cmt;
       list<Absyn.ElementArg> elargs;
@@ -7380,7 +7415,7 @@ algorithm
 
     case (Absyn.COMPONENTS(attributes = a,typeSpec = Absyn.TPATH(path_1,x),components = comp_items),old_comp,new_comp,env) /* the old name for the component signal if something in class have been changed rule */
       equation
-        (cache,SCode.CLASS(name=id),cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
+        (cache,SCode.CLASS(name=id),cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1, false);
         path_1 = Absyn.IDENT(id);
         (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
         true = Absyn.pathEqual(path, old_comp);
@@ -7389,7 +7424,7 @@ algorithm
         (Absyn.COMPONENTS(a,Absyn.TPATH(new_path,x),comp_items),true);
     case (Absyn.EXTENDS(path = path_1,elementArg = elargs, annotationOpt=annOpt),old_comp,new_comp,env)
       equation
-        (cache,_,cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false) "print \"rename_class_in_element_spec Absyn.EXTENDS(path,_) not implemented yet\"" ;
+        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1, false) "print \"rename_class_in_element_spec Absyn.EXTENDS(path,_) not implemented yet\"" ;
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
         true = Absyn.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
@@ -7410,22 +7445,22 @@ protected function renameClassInImport
   input Absyn.Import inImport1;
   input Absyn.Path inPath2;
   input Absyn.Path inPath3;
-  input Env.Env inEnv4;
+  input FCore.Graph inEnv4;
   output Absyn.Import outImport;
   output Boolean outBoolean;
 algorithm
   (outImport,outBoolean):=
   matchcontinue (inImport1,inPath2,inPath3,inEnv4)
     local
-      Env.Env cenv,env;
+      FCore.Graph cenv,env;
       Absyn.Path path,new_path,path_1,old_comp,new_comp;
       String id;
       Absyn.Import import_;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (Absyn.NAMED_IMPORT(name = id,path = path_1),old_comp,new_comp,env) /* the old name for the component signal if something in class have been changed */
       equation
-        (cache,_,cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
+        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1, false);
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
         true = Absyn.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
@@ -7433,7 +7468,7 @@ algorithm
         (Absyn.NAMED_IMPORT(id,new_path),true);
     case (Absyn.QUAL_IMPORT(path = path_1),old_comp,new_comp,env)
       equation
-        (cache,_,cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
+        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1, false);
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
         true = Absyn.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
@@ -7441,7 +7476,7 @@ algorithm
         (Absyn.QUAL_IMPORT(new_path),true);
     case (Absyn.NAMED_IMPORT(name = _,path = path_1),old_comp,new_comp,env)
       equation
-        (cache,_,cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
+        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1, false);
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
         true = Absyn.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
@@ -10239,7 +10274,7 @@ algorithm
       Absyn.Path modelpath,path;
       Absyn.Class cdef;
       list<SCode.Element> p_1;
-      Env.Env env,env_1;
+      FCore.Graph env,env_1;
       SCode.Element c;
       String id,str,s;
       SCode.Encapsulated encflag;
@@ -10248,7 +10283,7 @@ algorithm
       Integer n,n_1;
       Absyn.Program p;
       list<Absyn.ElementSpec> extends_;
-      Env.Cache cache;
+      FCore.Cache cache;
       GlobalScript.SymbolTable st;
 
     case (model_,n,st as GlobalScript.SYMBOLTABLE(ast=p))
@@ -10256,7 +10291,7 @@ algorithm
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         (p_1,st) = symbolTableToSCode(st);
-        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
         (_,(c as SCode.CLASS(name=_,encapsulatedPrefix=_,restriction=_)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         str = getNthInheritedClass2(c, cdef, n, env_1);
       then
@@ -10300,7 +10335,7 @@ algorithm
       equation
         cdef = inClass;
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
         (_,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache, env, modelpath, false);
         str = getNthInheritedClass2(c, cdef, n, env_1);
       then
@@ -10490,7 +10525,7 @@ protected function getNthInheritedClass2
   input SCode.Element inClass1;
   input Absyn.Class inClass2;
   input Integer inInteger3;
-  input Env.Env inEnv4;
+  input FCore.Graph inEnv4;
   output String outString;
 algorithm
   outString := matchcontinue (inClass1,inClass2,inInteger3,inEnv4)
@@ -10502,7 +10537,7 @@ algorithm
       String str,id;
       SCode.Element c;
       Absyn.Class cdef;
-      Env.Env env,env2,env_2;
+      FCore.Graph env,env2,env_2;
       ClassInf.State ci_state;
       SCode.Encapsulated encflag;
       SCode.Restriction restr;
@@ -10519,10 +10554,10 @@ algorithm
     /* If that fails, instantiate, which takes more time */
     case ((c as SCode.CLASS(name = id,encapsulatedPrefix = encflag,restriction = restr)),cdef,n,env)
       equation
-        env2 = Env.openScope(env, encflag, SOME(id), Env.restrictionToScopeType(restr));
-        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
+        env2 = FGraph.openScope(env, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+        ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         (_,env_2,_,_,_) =
-          Inst.partialInstClassIn(Env.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
+          Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
             DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         lst = getBaseClasses(cdef, env_2);
         n_1 = n - 1;
@@ -10660,7 +10695,7 @@ algorithm
     local
       Absyn.Path modelpath;
       list<SCode.Element> p_1;
-      Env.Env env,env_1;
+      FCore.Graph env,env_1;
       SCode.Element c;
       String id,str;
       SCode.Encapsulated encflag;
@@ -10669,13 +10704,13 @@ algorithm
       Absyn.ComponentRef model_;
       Absyn.Program p;
       Integer n;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (model_,p,n)
       equation
         modelpath = Absyn.crefToPath(model_);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
         (_,(c as SCode.CLASS(name=_,encapsulatedPrefix=_,restriction=_)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         cdef = getPathedClassInProgram(modelpath, p);
         str = getNthComponent2(c, cdef, n, env_1);
@@ -10690,13 +10725,13 @@ protected function getNthComponent2
   input SCode.Element inClass1;
   input Absyn.Class inClass2;
   input Integer inInteger3;
-  input Env.Env inEnv4;
+  input FCore.Graph inEnv4;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inClass1,inClass2,inInteger3,inEnv4)
     local
-      Env.Env env2,env_2,env;
+      FCore.Graph env2,env_2,env;
       ClassInf.State ci_state;
       Absyn.Element comp;
       String s1,str,id;
@@ -10708,10 +10743,10 @@ algorithm
 
     case ((c as SCode.CLASS(name = id,encapsulatedPrefix = encflag,restriction = restr)),cdef,n,env)
       equation
-        env2 = Env.openScope(env, encflag, SOME(id), Env.restrictionToScopeType(restr));
-        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
+        env2 = FGraph.openScope(env, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+        ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         (_,env_2,_,_,_) =
-          Inst.partialInstClassIn(Env.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
+          Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
             DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         comp = getNthComponentInClass(cdef, n);
         {s1} = getComponentInfoOld(comp, env_2);
@@ -10789,7 +10824,7 @@ algorithm
       Absyn.Path modelpath;
       Absyn.Class cdef;
       list<SCode.Element> p_1;
-      Env.Env env,env_1,env2,env_2;
+      FCore.Graph env,env_1,env2,env_2;
       SCode.Element c;
       String id,s1,s2,str,res;
       SCode.Encapsulated encflag;
@@ -10798,7 +10833,7 @@ algorithm
       list<Absyn.Element> comps1,comps2;
       Absyn.ComponentRef model_;
       Absyn.Program p;
-      Env.Cache cache;
+      FCore.Cache cache;
       Boolean b;
       GlobalScript.SymbolTable st;
 
@@ -10807,10 +10842,10 @@ algorithm
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         (p_1,st) = symbolTableToSCode(st);
-        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
-        env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
-        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
+        env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+        ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         (_,env_2,_,_,_) =
           Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),
             Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
@@ -12450,24 +12485,24 @@ protected function getBaseClasses
 " This function gets all base classes of a class, NOT Recursive.
    It uses the environment to get the fully qualified names of the classes."
   input Absyn.Class inClass;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output list<Absyn.ComponentRef> outAbsynComponentRefLst;
 algorithm
   outAbsynComponentRefLst := matchcontinue (inClass,inEnv)
     local
       list<Absyn.ComponentRef> res;
       list<Absyn.ClassPart> parts;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Path tp;
       String baseClassName;
       Option<String> comment;
       list<Absyn.ElementArg> modifications;
-      Env.Env cenv;
+      FCore.Graph cenv;
       Absyn.Path envpath,p1;
       String tpname,str;
       Absyn.ComponentRef cref;
       SCode.Element c;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),env)
       equation
@@ -12478,8 +12513,8 @@ algorithm
     // adrpo: handle the case for model extends baseClassName end baseClassName;
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName, _, _, parts = parts)),env)
       equation
-        (_,_,cenv) = Lookup.lookupClass(Env.emptyCache(), env, Absyn.IDENT(baseClassName), true);
-        SOME(envpath) = Env.getEnvPath(cenv);
+        (_,_,cenv) = Lookup.lookupClass(FCore.emptyCache(), env, Absyn.IDENT(baseClassName), true);
+        SOME(envpath) = FGraph.getScopePath(cenv);
         p1 = Absyn.joinPaths(envpath, Absyn.IDENT(baseClassName));
         cref = Absyn.pathToCref(p1);
         _ = Absyn.pathString(p1);
@@ -12488,8 +12523,8 @@ algorithm
 
     case (Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(tp,_))),env)
       equation
-        (_,_,cenv) = Lookup.lookupClass(Env.emptyCache(), env, tp, true);
-        SOME(envpath) = Env.getEnvPath(cenv);
+        (_,_,cenv) = Lookup.lookupClass(FCore.emptyCache(), env, tp, true);
+        SOME(envpath) = FGraph.getScopePath(cenv);
         tpname = Absyn.pathLastIdent(tp);
         p1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
         cref = Absyn.pathToCref(p1);
@@ -12498,8 +12533,8 @@ algorithm
 
     case (Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(tp,_))),env)
       equation
-        (_,_,cenv) = Lookup.lookupClass(Env.emptyCache(), env, tp, true);
-        NONE() = Env.getEnvPath(cenv);
+        (_,_,cenv) = Lookup.lookupClass(FCore.emptyCache(), env, tp, true);
+        NONE() = FGraph.getScopePath(cenv);
         cref = Absyn.pathToCref(tp);
         then {cref};
 
@@ -12511,7 +12546,7 @@ end getBaseClasses;
 protected function getBaseClassesFromParts
 "Helper function to getBaseClasses."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output list<Absyn.ComponentRef> outAbsynComponentRefLst;
 algorithm
   outAbsynComponentRefLst := matchcontinue (inAbsynClassPartLst,inEnv)
@@ -12519,7 +12554,7 @@ algorithm
       list<Absyn.ComponentRef> c1,c2,res;
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> rest;
-      Env.Env env;
+      FCore.Graph env;
 
     case ((Absyn.PUBLIC(contents = elts) :: rest),env)
       equation
@@ -12543,12 +12578,12 @@ end getBaseClassesFromParts;
 protected function getBaseClassesFromElts
 "Helper function to getBaseClassesFromParts."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output list<Absyn.ComponentRef> outAbsynComponentRefLst;
 algorithm
   outAbsynComponentRefLst := matchcontinue (inAbsynElementItemLst,inEnv)
     local
-      Env.Env env,env_1;
+      FCore.Graph env,env_1;
       list<Absyn.ComponentRef> cl;
       SCode.Element c;
       Absyn.Path envpath,p_1,path;
@@ -12561,8 +12596,8 @@ algorithm
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path))) :: rest),env)
       equation
         cl = getBaseClassesFromElts(rest, env) "Inherited class is defined inside package" ;
-        (_,_,env_1) = Lookup.lookupClass(Env.emptyCache(),env, path, true);
-        SOME(envpath) = Env.getEnvPath(env_1);
+        (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, path, true);
+        SOME(envpath) = FGraph.getScopePath(env_1);
         tpname = Absyn.pathLastIdent(path);
         p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
         cref = Absyn.pathToCref(p_1);
@@ -12572,8 +12607,8 @@ algorithm
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path))) :: rest),env)
       equation
         cl = getBaseClassesFromElts(rest, env) "Inherited class defined on top level scope" ;
-        (_,_,env_1) = Lookup.lookupClass(Env.emptyCache(),env, path, true);
-        NONE() = Env.getEnvPath(env_1);
+        (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, path, true);
+        NONE() = FGraph.getScopePath(env_1);
         cref = Absyn.pathToCref(path);
       then
         (cref :: cl);
@@ -12971,7 +13006,7 @@ algorithm
     case (Absyn.MODIFICATION(path = Absyn.IDENT(name = "info"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::_)
       equation
-        (_,dexp,_) = StaticScript.elabGraphicsExp(Env.emptyCache(), Env.emptyEnv, exp, true, Prefix.NOPRE(), Absyn.dummyInfo);
+        (_,dexp,_) = StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, Prefix.NOPRE(), Absyn.dummyInfo);
         (DAE.SCONST(s),_) = ExpressionSimplify.simplify(dexp);
         // ss = getDocumentationAnnotationInfo(xs);
       then s;
@@ -12998,7 +13033,7 @@ algorithm
     case (Absyn.MODIFICATION(path = Absyn.IDENT(name = "revisions"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::_)
       equation
-        (_,dexp,_) = StaticScript.elabGraphicsExp(Env.emptyCache(), Env.emptyEnv, exp, true, Prefix.NOPRE(), Absyn.dummyInfo);
+        (_,dexp,_) = StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, Prefix.NOPRE(), Absyn.dummyInfo);
         (DAE.SCONST(s),_) = ExpressionSimplify.simplify(dexp);
       then s;
     case (_::xs)
@@ -13339,12 +13374,12 @@ algorithm
     local
       Absyn.FunctionArgs fargs;
       list<SCode.Element> p_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp newexp;
       String gexpstr, gexpstr_1, annName;
       list<String> res;
       list<Absyn.ElementArg>  mod, rest;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Properties prop;
       Absyn.Program lineProgram;
 
@@ -13356,7 +13391,7 @@ algorithm
         lineProgram = modelicaAnnotationProgram(Config.getAnnotationVersion());
         fargs = createFuncargsFromElementargs(mod);
         p_1 = SCodeUtil.translateAbsyn2SCode(lineProgram);
-        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
         (_,newexp,prop) = StaticScript.elabGraphicsExp(cache,env, Absyn.CALL(Absyn.CREF_IDENT(annName,{}),fargs), false,Prefix.NOPRE(), info) "impl" ;
         (cache, newexp, prop) = Ceval.cevalIfConstant(cache, env, newexp, prop, false, info);
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
@@ -13653,13 +13688,13 @@ protected function getComponentAnnotationsFromElts
   output String resStr;
 protected
   list<SCode.Element> graphicProgramSCode;
-  Env.Env env;
+  FCore.Graph env;
   list<String> res;
   Absyn.Program placementProgram;
 algorithm
   placementProgram := modelicaAnnotationProgram(Config.getAnnotationVersion());
   graphicProgramSCode := SCodeUtil.translateAbsyn2SCode(placementProgram);
-  (_,env) := Inst.makeEnvFromProgram(Env.emptyCache(), graphicProgramSCode, Absyn.IDENT(""));
+  (_,env) := Inst.makeEnvFromProgram(FCore.emptyCache(), graphicProgramSCode, Absyn.IDENT(""));
   res := getComponentitemsAnnotations(comps, env, inClass, inFullProgram, inModelPath);
   resStr := stringDelimitList(res, ",");
 end getComponentAnnotationsFromElts;
@@ -13667,7 +13702,7 @@ end getComponentAnnotationsFromElts;
 protected function getComponentitemsAnnotations
 "Helper function to getComponentAnnotationsFromElts"
   input list<Absyn.Element> inAbsynElementLst;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Absyn.Class inClass;
   input Absyn.Program inFullProgram;
   input Absyn.Path inModelPath;
@@ -13678,7 +13713,7 @@ algorithm
       list<String> res1,res2,res;
       list<Absyn.ComponentItem> items;
       list<Absyn.Element> rest;
-      Env.Env env;
+      FCore.Graph env;
 
     case ({},_,_,_,_) then {};
 
@@ -13708,7 +13743,7 @@ end getComponentitemsAnnotations;
 protected function getComponentitemsAnnotationsElArgs
 "Helper function to getComponentitemsAnnotationsFromItems."
   input list<Absyn.ElementArg> inElArgLst;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Absyn.Class inClass;
   input Absyn.Program inFullProgram;
   input Absyn.Path inModelPath;
@@ -13716,7 +13751,7 @@ protected function getComponentitemsAnnotationsElArgs
 algorithm
   outStringLst := matchcontinue (inElArgLst,inEnv,inClass,inFullProgram,inModelPath)
     local
-      Env.Env env,env_1,env_2;
+      FCore.Graph env,env_1,env_2;
       SCode.Element c,c_1;
       SCode.Mod mod_1;
       DAE.Mod mod_2;
@@ -13727,7 +13762,7 @@ algorithm
       String gexpstr,gexpstr_1,annName;
       list<String> res;
       list<Absyn.ElementArg> mod, rest;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Info info;
 
     // handle empty
@@ -13767,7 +13802,7 @@ end getComponentitemsAnnotationsElArgs;
 protected function getComponentitemsAnnotationsFromItems
 "Helper function to getComponentitemsAnnotations."
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Absyn.Class inClass;
   input Absyn.Program inFullProgram;
   input Absyn.Path inModelPath;
@@ -13775,7 +13810,7 @@ protected function getComponentitemsAnnotationsFromItems
 algorithm
   outStringLst := match (inAbsynComponentItemLst,inEnv,inClass,inFullProgram,inModelPath)
     local
-      Env.Env env;
+      FCore.Graph env;
       String gexpstr,gexpstr_1;
       list<String> res;
       list<Absyn.ElementArg>  annotations;
@@ -13992,15 +14027,15 @@ protected function buildEnvForGraphicProgram
   input Absyn.Path inModelPath "the path to the class where the annotation is";
   input list<Absyn.ElementArg> inAnnotationMod "the annotation modification";
   input String inAnnotationClass "the annotation class i.e. Line, Icon, etc";
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output Absyn.Program outGraphicProgram;
 algorithm
   (outCache, outEnv, outGraphicProgram) :=
   matchcontinue(inFullProgram, inModelPath, inAnnotationMod, inAnnotationClass)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       list<SCode.Element> graphicProgramSCode;
       Absyn.Program graphicProgram;
       Boolean b1, b2;
@@ -14024,7 +14059,7 @@ algorithm
         b2 = Config.getEvaluateParametersInAnnotations();
         Flags.setConfigBool(Flags.CHECK_MODEL, true);
         Config.setEvaluateParametersInAnnotations(true); // set to evaluate the parameters!
-        (cache,env,_,_) = Inst.instantiateClass(Env.emptyCache(),InnerOuter.emptyInstHierarchy,graphicProgramSCode,inModelPath);
+        (cache,env,_,_) = Inst.instantiateClass(FCore.emptyCache(),InnerOuter.emptyInstHierarchy,graphicProgramSCode,inModelPath);
         Config.setEvaluateParametersInAnnotations(b2);
         Flags.setConfigBool(Flags.CHECK_MODEL, b1);
       then
@@ -14041,7 +14076,7 @@ algorithm
 
         graphicProgram = modelicaAnnotationProgram(Config.getAnnotationVersion());
         graphicProgramSCode = SCodeUtil.translateAbsyn2SCode(graphicProgram);
-        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(), graphicProgramSCode, Absyn.IDENT(inAnnotationClass));
+        (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(), graphicProgramSCode, Absyn.IDENT(inAnnotationClass));
       then
         (cache, env, graphicProgram);
 
@@ -14066,7 +14101,7 @@ algorithm
       list<Absyn.ElementArg> stripmod,mod,gxmods;
       Absyn.Exp graphicexp;
       SCode.Mod mod_1;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Class placementc;
       SCode.Element placementclass;
       DAE.Mod mod_2;
@@ -14078,7 +14113,7 @@ algorithm
       DAE.Exp graphicexp2;
       DAE.Properties prop;
       Absyn.Program graphicProgram;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Info info;
 
     case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(path = Absyn.IDENT(name = "Icon"),modification = SOME(Absyn.CLASSMOD(mod,_)), info = info)}),
@@ -14103,7 +14138,7 @@ algorithm
 
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
 
-        // print("Env: " +& Env.printEnvStr(env) +& "\n");
+        // print("Env: " +& FGraph.printGraphStr(env) +& "\n");
 
         (_,graphicexp2,prop) = StaticScript.elabGraphicsExp(cache, env, graphicexp, false, Prefix.NOPRE(), Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add Absyn.Info to this function's input
         (cache, graphicexp2, prop) = Ceval.cevalIfConstant(cache, env, graphicexp2, prop, false, Absyn.dummyInfo);
@@ -14158,7 +14193,7 @@ algorithm
             InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
 
-        // print("Env: " +& Env.printEnvStr(env) +& "\n");
+        // print("Env: " +& FGraph.printGraphStr(env) +& "\n");
 
         (_,graphicexp2,_) = StaticScript.elabGraphicsExp(cache, env, graphicexp, false,Prefix.NOPRE(), Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add Absyn.Info to this function's input
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
@@ -14768,19 +14803,19 @@ protected function getComponentInfo
    of comma separated values of the type and name and comment,
    and attributes of  of the component, If Element is not a
    component, the empty string is returned.
-   inputs: (Absyn.Element, string, /* public or protected */, Env.Env)
+   inputs: (Absyn.Element, string, /* public or protected */, FCore.Graph)
    outputs: string list"
   input Absyn.Element inElement;
   input Boolean inBoolean;
   input String inString;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
   matchcontinue (inElement,inBoolean,inString,inEnv)
     local
       SCode.Element c;
-      Env.Env env_1,env;
+      FCore.Graph env_1,env;
       Absyn.Path envpath,p_1,p;
       String tpname,typename,finalPrefix,repl,inout_str,flowPrefixstr,streamPrefixstr,variability_str,dir_str,str,access;
       String typeAdStr;
@@ -14796,8 +14831,8 @@ algorithm
                         specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, typeAd),components = lst)),
           b,access,env)
       equation
-        (_,_,env_1) = Lookup.lookupClass(Env.emptyCache(),env, p, false);
-        SOME(envpath) = Env.getEnvPath(env_1);
+        (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, p, false);
+        SOME(envpath) = FGraph.getScopePath(env_1);
         tpname = Absyn.pathLastIdent(p);
         p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
         typename = Absyn.pathString(p_1);
@@ -14892,12 +14927,12 @@ protected function getComponentsInfo
   where variability is one of: \"constant\", \"parameter\", \"discrete\" or \"unspecified\"
   where innerouter is one of: \"inner\", \"outer\", (\"innerouter\") or \"none\"
   where vardirection is one of: \"input\", \"output\" or \"unspecified\".
-  inputs:  (Absyn.Element list, string /* \"public\" or \"protected\" */, Env.Env)
+  inputs:  (Absyn.Element list, string /* \"public\" or \"protected\" */, FCore.Graph)
   outputs:  string"
   input list<Absyn.Element> inAbsynElementLst;
   input Boolean inBoolean;
   input String inString;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output String outString;
 algorithm
   outString:=
@@ -14906,7 +14941,7 @@ algorithm
       list<String> lst;
       String lst_1,res,access;
       list<Absyn.Element> elts;
-      Env.Env env;
+      FCore.Graph env;
       Boolean b;
     case (elts,_,access,env)
       equation
@@ -14921,12 +14956,12 @@ end getComponentsInfo;
 
 protected function getComponentsInfo2
 "Helper function to getComponentsInfo
-  inputs: (Absyn.Element list, string /* \"public\" or \"protected\" */, Env.Env)
+  inputs: (Absyn.Element list, string /* \"public\" or \"protected\" */, FCore.Graph)
   outputs: string list"
   input list<Absyn.Element> inAbsynElementLst;
   input Boolean inBoolean;
   input String inString;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input list<String> acc;
   output list<String> outStringLst;
 algorithm
@@ -14936,7 +14971,7 @@ algorithm
       Absyn.Element elt;
       list<Absyn.Element> rest;
       String access;
-      Env.Env env;
+      FCore.Graph env;
       Boolean b;
     case ({},_,_,_,_) then listReverse(acc);
     case ((elt :: rest),b,access,env,_)
@@ -14966,14 +15001,14 @@ protected function getComponentInfoOld
    or \'Resistor,R1,\"comment1\",R2,\"comment2\"\'
    If Element is not a component, the empty string is returned"
   input Absyn.Element inElement;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
   matchcontinue (inElement,inEnv)
     local
       SCode.Element c;
-      Env.Env env_1,env;
+      FCore.Graph env_1,env;
       Absyn.Path envpath,p_1,p;
       String tpname,typename;
       list<Absyn.ComponentItem> lst;
@@ -14987,8 +15022,8 @@ algorithm
                         specification = Absyn.COMPONENTS(attributes = _,typeSpec = Absyn.TPATH(p, _),components = lst)),
           env)
       equation
-        (_,_,env_1) = Lookup.lookupClass(Env.emptyCache(),env, p, true);
-        SOME(envpath) = Env.getEnvPath(env_1);
+        (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, p, true);
+        SOME(envpath) = FGraph.getScopePath(env_1);
         tpname = Absyn.pathLastIdent(p);
         p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
         typename = Absyn.pathString(p_1);
@@ -16725,7 +16760,7 @@ algorithm
       GlobalScript.InstantiatedClass cl,newc,x;
       Absyn.Path path,path2;
       DAE.DAElist dae,dae_1;
-      Env.Env env,env_1;
+      FCore.Graph env,env_1;
       list<GlobalScript.InstantiatedClass> xs,res;
     case ({},cl) then {cl};
     case ((GlobalScript.INSTCLASS(qualName = path,daeElementLst = _) :: xs),newc as GlobalScript.INSTCLASS(qualName = path2))
@@ -16755,7 +16790,7 @@ algorithm
       GlobalScript.InstantiatedClass x,res;
       Absyn.Path path,path2;
       DAE.DAElist dae;
-      Env.Env env;
+      FCore.Graph env;
       list<GlobalScript.InstantiatedClass> xs;
     case (((x as GlobalScript.INSTCLASS(qualName = path,daeElementLst = _)) :: _),path2)
       equation
@@ -17750,13 +17785,13 @@ protected function getLocalVariables
 "Returns the string list of local varibales defined with in the algorithm."
   input Absyn.Class inClass;
   input Boolean inBoolean;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output String outList;
 algorithm
   outList := match(inClass, inBoolean, inEnv)
     local
       String strList;
-      Env.Env env;
+      FCore.Graph env;
       Boolean b;
       list<Absyn.ClassPart> parts;
       case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)), b, env)
@@ -17776,12 +17811,12 @@ end getLocalVariables;
 protected function getLocalVariablesInClassParts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Boolean inBoolean;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output String outList;
 algorithm
   outList := matchcontinue (inAbsynClassPartLst, inBoolean, inEnv)
     local
-      Env.Env env;
+      FCore.Graph env;
       Boolean b;
       list<Absyn.AlgorithmItem> algs;
       list<Absyn.ClassPart> xs;
@@ -17805,12 +17840,12 @@ end getLocalVariablesInClassParts;
 protected function getLocalVariablesInAlgorithmsItems
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   input Boolean inBoolean;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output String outList;
 algorithm
   outList := matchcontinue (inAbsynAlgorithmItemLst, inBoolean, inEnv)
     local
-      Env.Env env;
+      FCore.Graph env;
       Boolean b;
       String strList;
       list<Absyn.AlgorithmItem> xs;
@@ -17832,12 +17867,12 @@ end getLocalVariablesInAlgorithmsItems;
 protected function getLocalVariablesInAlgorithmItem
   input Absyn.Algorithm inAbsynAlgorithmItem;
   input Boolean inBoolean;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output String outList;
 algorithm
   outList := match (inAbsynAlgorithmItem, inBoolean, inEnv)
     local
-      Env.Env env;
+      FCore.Graph env;
       Boolean b;
       String strList;
       list<Absyn.ElementItem> elsItems;
@@ -18893,25 +18928,25 @@ protected function getClassEnvNoElaboration " Retrieves the environment of the c
    where partial instantiation fails since cardinality(p) can not be determined."
   input Absyn.Program p;
   input Absyn.Path p_class;
-  input Env.Env env;
-  output Env.Env env_2;
+  input FCore.Graph env;
+  output FCore.Graph env_2;
 protected
   SCode.Element cl;
   String id;
   SCode.Encapsulated encflag;
   SCode.Restriction restr;
-  Env.Env env_1,env2;
+  FCore.Graph env_1,env2;
   ClassInf.State ci_state;
   Real t1,t2;
-  Env.Cache cache;
+  FCore.Cache cache;
 algorithm
   env_2 := matchcontinue(p,p_class,env)
     // First try partial instantiation
     case(_,_,_)
       equation
-        (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
-        env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
-        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
+        (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(FCore.emptyCache(),env, p_class, false);
+        env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+        ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         (cache,env_2,_,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {}, 0);
       then
@@ -18919,9 +18954,9 @@ algorithm
 
     case(_,_,_)
       equation
-        (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
-        env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
-        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
+        (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(FCore.emptyCache(),env, p_class, false);
+        env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+        ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InnerOuter.emptyInstHierarchy,
           UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(),
           ci_state, cl, SCode.PUBLIC(), {},false, InstTypes.INNER_CALL(),

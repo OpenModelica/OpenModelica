@@ -45,7 +45,7 @@ public import ClassInf;
 public import Connect;
 public import ConnectionGraph;
 public import DAE;
-public import Env;
+public import FCore;
 public import InnerOuter;
 public import InstTypes;
 public import Mod;
@@ -63,6 +63,8 @@ protected import UnitAbsynBuilder;
 protected import List;
 protected import Types;
 protected import Flags;
+protected import FGraph;
+protected import FNode;
 protected import Debug;
 protected import SCodeDump;
 protected import Util;
@@ -76,116 +78,20 @@ protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 protected type InstDims = list<list<DAE.Dimension>>;
 
-public function instantiateFunctionImplicit
-"author: PA
-  Similar to instantiateClassImplict, i.e. instantation of arbitrary
-  classes but this one instantiates the class implicit for functions."
-  input Env.Cache inCache;
-  input InnerOuter.InstHierarchy inIH;
-  input SCode.Program inProgram;
-  input SCode.Path inPath;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
-  output InnerOuter.InstHierarchy outIH;
-algorithm
-  (outCache,outEnv,outIH) := matchcontinue (inCache,inIH,inProgram,inPath)
-    local
-      Absyn.Path cr,path;
-      Env.Env env,env_1,env_2;
-      list<SCode.Element> cdecls;
-      String name2,n,name;
-      SCode.Element cdef;
-      Env.Cache cache;
-      InstanceHierarchy ih;
-
-    // Fully qualified paths
-    case (cache,ih,cdecls,Absyn.FULLYQUALIFIED(path))
-      equation
-        (cache,env,ih) = instantiateFunctionImplicit(cache,ih,cdecls,path);
-      then
-        (cache,env,ih);
-
-    case (_,_,{},_)
-      equation
-        Error.addMessage(Error.NO_CLASSES_LOADED, {});
-      then
-        fail();
-
-    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = _))) /* top level class */
-      equation
-        (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,_) = Inst.instClassDecls(cache, env, ih, cdecls);
-        (cache,env_2,ih) = instFunctionInProgramImplicit(cache, env_1, ih, cdecls, path);
-      then
-        (cache,env_2,ih);
-
-    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name=_))) /* class in package */
-      equation
-        (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,_) = Inst.instClassDecls(cache, env, ih, cdecls);
-        (cache,(cdef as SCode.CLASS(name = _)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
-        env_2 = Env.extendFrameC(env_2, cdef);
-        (cache,env,ih) = implicitFunctionInstantiation(cache, env_2, ih, DAE.NOMOD(), Prefix.NOPRE(), cdef, {});
-      then
-        (cache,env,ih);
-
-    case (_,_,_,path)
-      equation
-        //print("-instantiateFunctionImplicit ");print(Absyn.pathString(path));print(" failed\n");
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "-Inst.instantiateFunctionImplicit " +& Absyn.pathString(path) +& " failed\n");
-      then
-        fail();
-  end matchcontinue;
-end instantiateFunctionImplicit;
-
-protected function instFunctionInProgramImplicit
-  "Implicitly instantiates a specific top level function in a Program."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input InnerOuter.InstHierarchy inIH;
-  input SCode.Program inProgram;
-  input SCode.Path inPath;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
-  output InnerOuter.InstHierarchy outIH;
-algorithm
-  (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inProgram,inPath)
-    local
-      Env.Env env;
-      SCode.Element c;
-      String name;
-      Env.Cache cache;
-      InstanceHierarchy ih;
-
-    case (_, _, _, {}, _) then (inCache, inEnv, inIH);
-
-    case (cache, env, ih, _, Absyn.IDENT(name = name))
-      equation
-        c = InstUtil.lookupTopLevelClass(name, inProgram, false);
-        env = Env.extendFrameC(env, c);
-        (cache, env, ih) = implicitFunctionInstantiation(cache, env, ih,
-          DAE.NOMOD(), Prefix.NOPRE(), c, {});
-      then
-        (cache, env, ih);
-
-  end matchcontinue;
-end instFunctionInProgramImplicit;
-
 public function instantiateExternalObject
 "instantiate an external object.
  This is done by instantiating the destructor and constructor
  functions and create a DAE element containing these two."
-  input Env.Cache inCache;
-  input Env.Env inEnv "environment";
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv "environment";
   input InnerOuter.InstHierarchy inIH;
   input list<SCode.Element> els "elements";
   input DAE.Mod inMod;
   input Boolean impl;
   input SCode.Comment comment;
   input Absyn.Info info;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist dae "resulting dae";
   output ClassInf.State ciState;
@@ -193,43 +99,43 @@ algorithm
   (outCache,outEnv,outIH,dae,ciState) := matchcontinue(inCache,inEnv,inIH,els,inMod,impl,comment,info)
     local
       SCode.Element destr,constr;
-      Env.Env env,env1;
-      Env.Cache cache;
+      FCore.Graph env1;
+      FCore.Cache cache;
       Ident className;
       Absyn.Path classNameFQ;
       DAE.Type functp;
-      Env.Frame f;
-      Env.Env fs,fs1;
+      FCore.Graph fs,fs1,env;
+      FCore.Ref r;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
       // Explicit instantiation, generate constructor and destructor and the function type.
     case  (cache,env,ih,_,_,false,_,_)
       equation
-        className=Env.getClassName(env); // The external object classname is in top frame of environment.
+        className = FNode.refName(FGraph.lastScopeRef(env)); // The external object classname is in top frame of environment.
         checkExternalObjectMod(inMod, className);
         destr = SCode.getExternalObjectDestructor(els);
         constr = SCode.getExternalObjectConstructor(els);
-        env = Env.extendFrameC(env,destr);
-        env = Env.extendFrameC(env,constr);
+        env = FGraph.mkClassNode(env, destr, Prefix.NOPRE(), inMod);
+        env = FGraph.mkClassNode(env, constr, Prefix.NOPRE(), inMod);
         (cache,ih) = instantiateExternalObjectDestructor(cache,env,ih,destr);
         (cache,ih,functp) = instantiateExternalObjectConstructor(cache,env,ih,constr);
-        SOME(classNameFQ)= Env.getEnvPath(env); // Fully qualified classname
+        SOME(classNameFQ)=  FGraph.getScopePath(env); // Fully qualified classname
         // Extend the frame with the type, one frame up at the same place as the class.
-        f::fs = env;
-        fs1 = Env.extendFrameT(fs,className,functp);
-        env1 = f::fs1;
+        (env, r) = FGraph.stripLastScopeRef(env);
+        env = FGraph.mkTypeNode(env,className,functp);
+        env = FGraph.pushScopeRef(env, r);
 
         // set the  of this element
-       source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+       source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
        source = DAEUtil.addCommentToSource(source, SOME(comment));
        source = DAEUtil.addElementSourceFileInfo(source, info);
       then
-        (cache,env1,ih,DAE.DAE({DAE.EXTOBJECTCLASS(classNameFQ,source)}),ClassInf.EXTERNAL_OBJ(classNameFQ));
+        (cache,env,ih,DAE.DAE({DAE.EXTOBJECTCLASS(classNameFQ,source)}),ClassInf.EXTERNAL_OBJ(classNameFQ));
 
     // Implicit, do not instantiate constructor and destructor.
     case (cache,_,ih,_,_,true,_,_)
       equation
-        SOME(classNameFQ)= Env.getEnvPath(inEnv); // Fully qualified classname
+        SOME(classNameFQ)= FGraph.getScopePath(inEnv); // Fully qualified classname
       then
         (cache,inEnv,ih,DAE.emptyDae,ClassInf.EXTERNAL_OBJ(classNameFQ));
 
@@ -272,17 +178,17 @@ end checkExternalObjectMod;
 
 protected function instantiateExternalObjectDestructor
 "instantiates the destructor function of an external object"
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input InnerOuter.InstHierarchy inIH;
   input SCode.Element cl;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output InnerOuter.InstHierarchy outIH;
 algorithm
   (outCache,outIH) := matchcontinue (inCache,env,inIH,cl)
     local
-      Env.Cache cache;
-      Env.Env env1;
+      FCore.Cache cache;
+      FCore.Graph env1;
       InstanceHierarchy ih;
 
     case (cache,_,ih,_)
@@ -299,18 +205,18 @@ end instantiateExternalObjectDestructor;
 
 protected function instantiateExternalObjectConstructor
 "instantiates the constructor function of an external object"
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input InnerOuter.InstHierarchy inIH;
   input SCode.Element cl;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output InnerOuter.InstHierarchy outIH;
   output DAE.Type outType;
 algorithm
   (outCache,outIH,outType) := matchcontinue (inCache,env,inIH,cl)
     local
-      Env.Cache cache;
-      Env.Env env1;
+      FCore.Cache cache;
+      FCore.Graph env1;
       DAE.Type ty;
       InstanceHierarchy ih;
 
@@ -331,28 +237,28 @@ public function implicitFunctionInstantiation
 "This function instantiates a function, which is performed *implicitly*
   since the variables of a function should not be instantiated as for an
   ordinary class."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
   input list<list<DAE.Dimension>> inInstDims;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
 algorithm
   (outCache,outEnv,outIH):= match (inCache,inEnv,inIH,inMod,inPrefix,inClass,inInstDims)
     local
       DAE.Type ty1;
-      Env.Env env,cenv;
+      FCore.Graph env,cenv;
       Absyn.Path fpath;
       DAE.Mod mod;
       Prefix.Prefix pre;
       SCode.Element c;
       String n;
       InstDims inst_dims;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
       list<DAE.Function> funs;
@@ -382,7 +288,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.implicitFunctionInstantiation failed " +& n);
-        Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
+        Debug.traceln("  Scope: " +& FGraph.printGraphPathStr(env));
       then fail();
   end match;
 end implicitFunctionInstantiation;
@@ -391,16 +297,16 @@ protected function implicitFunctionInstantiation2
 "This function instantiates a function, which is performed *implicitly*
   since the variables of a function should not be instantiated as for an
   ordinary class."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
   input list<list<DAE.Dimension>> inInstDims;
   input Boolean instFunctionTypeOnly "if true, do no additional checking of the function";
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output list<DAE.Function> funcs;
 algorithm
@@ -408,7 +314,7 @@ algorithm
     local
       DAE.Type ty,ty1;
       ClassInf.State st;
-      Env.Env env_1,env,tempenv,cenv;
+      FCore.Graph env_1,env,tempenv,cenv;
       Absyn.Path fpath;
       DAE.Mod mod;
       Prefix.Prefix pre;
@@ -423,7 +329,7 @@ algorithm
       SCode.ClassDef parts;
       list<SCode.Element> els;
       list<Absyn.Path> funcnames;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
       list<DAE.Element> daeElts;
@@ -449,13 +355,15 @@ algorithm
                      inClass,
                      SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), inClass));
         cs = Util.if_(instFunctionTypeOnly, InstTypes.TYPE_CALL(), InstTypes.INNER_CALL());
+        //print("1 Prefix: " +& PrefixUtil.printPrefixStr(pre) +& " path: " +& n +& "\n");
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,_,_,_) =
           Inst.instClass(cache, env, ih, UnitAbsynBuilder.emptyInstStore(), mod, pre,
             c, inst_dims, true, cs, ConnectionGraph.EMPTY, Connect.emptySet);
         List.map2_0(daeElts,InstUtil.checkFunctionElement,false,info);
-        // do not add the stripped class to the env, is already there!
+        // do not add the stripped class to the env, is already there, not stripped!
         env_1 = env; // Env.extendFrameC(env,c);
         (cache,fpath) = Inst.makeFullyQualified(cache, env_1, Absyn.IDENT(n));
+        //print("2 Prefix: " +& PrefixUtil.printPrefixStr(pre) +& " path: " +& Absyn.pathString(fpath) +& "\n");
         cmt = InstUtil.extractClassDefComment(cache, env, cd, cmt);
         derFuncs = InstUtil.getDeriveAnnotation(cd, cmt,fpath,cache,cenv,ih,pre,info);
 
@@ -463,10 +371,10 @@ algorithm
 
         ty1 = InstUtil.setFullyQualifiedTypename(ty,fpath);
         checkExtObjOutput(ty1,info);
-        env_1 = Env.extendFrameT(env_1, n, ty1);
+        env_1 = FGraph.mkTypeNode(env_1, n, ty1);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         inlineType = InstUtil.isInlineFunc(c);
         partialPrefixBool = SCode.partialBool(partialPrefix);
 
@@ -481,13 +389,13 @@ algorithm
 
     // External functions should also have their type in env, but no dae.
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(partialPrefix=partialPrefix, prefixes=SCode.PREFIXES(visibility=visibility), name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure))),
-          classDef = cd as (parts as SCode.PARTS(elementLst = _)), cmt=cmt, info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,_)
+        classDef = cd as (parts as SCode.PARTS(elementLst = _)), cmt=cmt, info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,_)
       equation
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,_,_,_) =
           Inst.instClass(cache,env,ih, UnitAbsynBuilder.emptyInstStore(),mod, pre,
             c, inst_dims, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         List.map2_0(daeElts,InstUtil.checkFunctionElement,true,info);
-        //env_11 = Env.extendFrameC(cenv,c);
+        //env_11 = FGraph.mkClassNode(cenv,pre,mod,c);
         // Only created to be able to get FQ path.
         (cache,fpath) = Inst.makeFullyQualified(cache,env,Absyn.IDENT(n));
 
@@ -499,7 +407,7 @@ algorithm
         ty1 = InstUtil.setFullyQualifiedTypename(ty,fpath);
         checkExtObjOutput(ty1,info);
         ((ty1,_)) = Types.traverseType((ty1,-1),Types.makeExpDimensionsUnknown);
-        env_1 = Env.extendFrameT(cenv, n, ty1);
+        env_1 = FGraph.mkTypeNode(cenv, n, ty1);
         vis = SCode.PUBLIC();
         (cache,tempenv,ih,_,_,_,_,_,_,_,_,_) =
           Inst.instClassdef(cache, env_1, ih, UnitAbsyn.noStore, mod, pre,
@@ -509,7 +417,7 @@ algorithm
         (cache,ih,extdecl) = instExtDecl(cache, tempenv,ih, n, parts, true, pre,info) "impl" ;
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         partialPrefixBool = SCode.partialBool(partialPrefix);
         InstUtil.checkExternalFunction(daeElts,extdecl,Absyn.pathString(fpath));
       then
@@ -530,20 +438,20 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.implicitFunctionInstantiation2 failed " +& n);
-        Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
+        Debug.traceln("  Scope: " +& FGraph.printGraphPathStr(env));
       then fail();
   end matchcontinue;
 end implicitFunctionInstantiation2;
 
 protected function instantiateDerivativeFuncs "instantiates all functions found in derivative annotations so they are also added to the
 dae and can be generated code for in case they are required"
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input InnerOuter.InstHierarchy ih;
   input list<DAE.FunctionDefinition> funcs;
   input Absyn.Path path "the function name itself, must be added to derivative functions mapping to be able to search upwards";
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
 algorithm
  // print("instantiate deriative functions for "+&Absyn.pathString(path)+&"\n");
  (outCache) := instantiateDerivativeFuncs2(cache,env,ih,DAEUtil.getDerivativePaths(funcs),path,info);
@@ -551,20 +459,20 @@ algorithm
 end instantiateDerivativeFuncs;
 
 protected function instantiateDerivativeFuncs2 "help function"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input list<Absyn.Path> inPaths;
   input Absyn.Path path "the function name itself, must be added to derivative functions mapping to be able to search upwards";
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
 algorithm
   (outCache) := matchcontinue(inCache,inEnv,inIH,inPaths,path,info)
     local
       list<DAE.Function> funcs;
       Absyn.Path p;
-      Env.Cache cache;
-      Env.Env cenv,env;
+      FCore.Cache cache;
+      FCore.Graph cenv,env;
       InstanceHierarchy ih;
       SCode.Element cdef;
       list<Absyn.Path> paths;
@@ -577,7 +485,7 @@ algorithm
       equation
         (cache,_,cenv) = Lookup.lookupClass(cache,env,p,true);
         (cache,p) = Inst.makeFullyQualified(cache,cenv,p);
-        Env.checkCachedInstFuncGuard(cache,p);
+        FCore.checkCachedInstFuncGuard(cache,p);
       then instantiateDerivativeFuncs2(cache,env,ih,paths,path,info);
 
     case(cache,env,ih,p::paths,_,_)
@@ -585,19 +493,19 @@ algorithm
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env,p,true);
         (cache,p) = Inst.makeFullyQualified(cache,cenv,p);
         // add to cache before instantiating, to break recursion for recursive definitions.
-        cache = Env.addCachedInstFuncGuard(cache,p);
+        cache = FCore.addCachedInstFuncGuard(cache,p);
         (cache,_,ih,funcs) =
         implicitFunctionInstantiation2(cache,cenv,ih,DAE.NOMOD(),Prefix.NOPRE(),cdef,{},false);
 
         funcs = InstUtil.addNameToDerivativeMapping(funcs,path);
-        cache = Env.addDaeFunction(cache, funcs);
+        cache = FCore.addDaeFunction(cache, funcs);
       then instantiateDerivativeFuncs2(cache,env,ih,paths,path,info);
 
     else
       equation
         p :: _ = inPaths;
         fun = Absyn.pathString(p);
-        scope = Env.printEnvPathStr(inEnv);
+        scope = FGraph.printGraphPathStr(inEnv);
         Error.addSourceMessage(Error.LOOKUP_FUNCTION_ERROR,{fun,scope},info);
       then fail();
 
@@ -613,25 +521,25 @@ public function implicitFunctionTypeInstantiation
 
   Extended 2007-06-29, BZ
   Now this function also handles Derived function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input SCode.Element inClass;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
 algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inClass)
     local
       SCode.Element stripped_class;
-      Env.Env env_1,env;
+      FCore.Graph env_1,env;
       String id,cn2;
       SCode.Partial p;
       SCode.Encapsulated e;
       SCode.Restriction r;
       Option<SCode.ExternalDecl> extDecl;
       list<SCode.Element> elts, stripped_elts;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       list<SCode.Annotation> annotationLst;
       Absyn.Info info;
@@ -641,7 +549,7 @@ algorithm
       Option<list<Absyn.Subscript>> ad;
       SCode.Mod mod1;
       DAE.Mod mod2;
-      Env.Env cenv;
+      FCore.Graph cenv;
       SCode.Element c;
       DAE.Type ty1,ty;
       SCode.Prefixes prefixes;
@@ -656,7 +564,7 @@ algorithm
         // stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},{},extDecl),cmt,info);
         (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
         // Only external functions are valid without an algorithm section...
-        cache = Env.addDaeExtFunction(cache, funs);
+        cache = FCore.addDaeExtFunction(cache, funs);
       then
         (cache,env_1,ih);
 
@@ -669,7 +577,7 @@ algorithm
         stripped_class = SCode.CLASS(id,prefixes,e,p,SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(false)),SCode.PARTS(elts,{},{},{},{},{},{},NONE()),cmt,info);
         (cache,env_1,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), stripped_class, {}, true);
         // Only external functions are valid without an algorithm section...
-        // cache = Env.addDaeExtFunction(cache, funs);
+        // cache = FCore.addDaeExtFunction(cache, funs);
       then
         (cache,env_1,ih);
 
@@ -678,31 +586,32 @@ algorithm
                                    classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn,arrayDim = _),
                                                             modifications = mod1),info = info))
       equation
-        (cache,(c as SCode.CLASS(name = _, restriction = _)),cenv) = Lookup.lookupClass(cache, env, cn, false /* Makes MultiBody gravityacceleration hacks shit itself */);
+        (cache,(c as SCode.CLASS(name = _, restriction = _)),cenv) = Lookup.lookupClass(cache, env, cn, false); // Makes MultiBody gravityacceleration hacks shit itself
         (cache,mod2) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod1, false, Mod.DERIVED(cn), info);
 
         (cache,_,ih,_,_,_,ty,_,_,_) =
           Inst.instClass(cache,cenv,ih,UnitAbsynBuilder.emptyInstStore(), mod2,
             Prefix.NOPRE(), c, {}, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
 
-        env_1 = Env.extendFrameC(env,c);
+        env_1 = env; // why would you want to do this: FGraph.mkClassNode(env,c); ?????
         (cache,fpath) = Inst.makeFullyQualified(cache,env_1, Absyn.IDENT(id));
         ty1 = InstUtil.setFullyQualifiedTypename(ty,fpath);
-        env_1 = Env.extendFrameT(env_1, id, ty1);
+        env_1 = FGraph.mkTypeNode(env_1, id, ty1);
+        // (cache,env_1,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
       then
         (cache,env_1,ih);
 
     case (cache,env,ih,SCode.CLASS(name = _,partialPrefix = _,encapsulatedPrefix = _,restriction = _,
                                    classDef = SCode.OVERLOAD(pathLst=_)))
       equation
-         //(cache,env,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
+         (cache,env,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
       then
         (cache,env,ih);
 
     case (_,_,_,SCode.CLASS(name=id))
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.implicitFunctionTypeInstantiation failed " +& id +& "\nenv: " +& Env.getEnvNameStr(inEnv) +& "\nelelement: " +& SCodeDump.unparseElementStr(inClass,SCodeDump.defaultOptions));
+        Debug.traceln("- Inst.implicitFunctionTypeInstantiation failed " +& id +& "\nenv: " +& FGraph.getGraphNameStr(inEnv) +& "\nelelement: " +& SCodeDump.unparseElementStr(inClass,SCodeDump.defaultOptions));
       then fail();
   end matchcontinue;
 end implicitFunctionTypeInstantiation;
@@ -711,25 +620,25 @@ protected function instOverloadedFunctions
 "This function instantiates the functions in the overload list of a
   overloading function definition and register the function types using
   the overloaded name. It also creates dae elements for the functions."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix pre;
   input list<Absyn.Path> inAbsynPathLst;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output list<DAE.Function> outFns;
 algorithm
   (outCache,outEnv,outIH,outFns) := matchcontinue (inCache,inEnv,inIH,pre,inAbsynPathLst)
     local
-      Env.Env env,cenv;
+      FCore.Graph env,cenv;
       SCode.Element c;
       String id;
       SCode.Encapsulated encflag;
       Absyn.Path fn;
       list<Absyn.Path> fns;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       SCode.Partial partialPrefix;
       Absyn.Info info;
@@ -770,15 +679,15 @@ protected function instExtDecl
   that type. If no explicit call and only one output parameter exists, then
   this will be the return type of the function, otherwise the return type
   will be void."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input String inIdent;
   input SCode.ClassDef inClassDef;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output InnerOuter.InstHierarchy outIH;
   output DAE.ExternalDecl outExternalDecl;
 algorithm
@@ -789,11 +698,11 @@ algorithm
       DAE.ExtArg rettype;
       Option<SCode.Annotation> ann;
       DAE.ExternalDecl daeextdecl;
-      Env.Env env;
+      FCore.Graph env;
       SCode.ExternalDecl extdecl,orgextdecl;
       Boolean impl;
       list<SCode.Element> els;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       Prefix.Prefix pre;
 
@@ -835,13 +744,13 @@ public function instRecordConstructorElt
   This function takes an Env and an Element and builds a input argument to
   a record constructor.
   E.g if the element is Real x; the resulting Var is \"input Real x;\""
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input SCode.Element inElement;
   input DAE.Mod outerMod;
   input Boolean inImplicit;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output InnerOuter.InstHierarchy outIH;
   output DAE.Var outVar;
 algorithm
@@ -849,7 +758,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inElement,outerMod,inImplicit)
     local
       SCode.Element cl;
-      Env.Env cenv,env,compenv;
+      FCore.Graph cenv,env,compenv;
       DAE.Mod mod_1;
       Absyn.ComponentRef owncref;
       DAE.Dimensions dimexp;
@@ -869,7 +778,7 @@ algorithm
       SCode.Mod mod;
       SCode.Comment comment;
       SCode.Element elt;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.InnerOuter io;
       SCode.Final finalPrefix;
       Absyn.Info info;
@@ -904,11 +813,9 @@ algorithm
         owncref = Absyn.CREF_IDENT(id,{});
         (cache,dimexp) = InstUtil.elabArraydim(cache, env, owncref, t, dim, NONE(), false, NONE(), true, false, Prefix.NOPRE(), info, {});
 
-        cenv = Env.mergeEnv(cenv, env, id, cl, Env.M(Prefix.NOPRE(), id, dim, mod_1, env, {}));
-        cenv = Env.addModification(cenv, Env.M(Prefix.NOPRE(), id, dim, mod_1, env, {}));
+        // cenv = FGraph.createVersionScope(env, cenv, SCode.elementName(cl), id, Prefix.NOPRE(), mod_1);
         (cache,compenv,ih,_,_,_,tp_1,_) = InstVar.instVar(cache, cenv, ih, UnitAbsyn.noStore, ClassInf.FUNCTION(Absyn.IDENT(""), false), mod_1, Prefix.NOPRE(),
           id, cl, attr, prefixes, dimexp, {}, {}, impl, comment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
-        (compenv, env) = Env.splitEnv(compenv, env, id);
 
         (cache,bind) = InstBinding.makeBinding(cache,env, attr, mod_1, tp_1, Prefix.NOPRE(), id, info);
       then
@@ -925,41 +832,46 @@ algorithm
 end instRecordConstructorElt;
 
 public function getRecordConstructorFunction
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path inPath;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Function outFunc;
 algorithm
   (outCache,outFunc)  := matchcontinue (inCache,inEnv,inPath)
     local
       Absyn.Path path;
       SCode.Element recordCl;
-      Env.Env recordEnv;
+      FCore.Graph recordEnv;
       DAE.Function func;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Type recType,fixedTy,funcTy;
       list<DAE.Var> vars, inputs, locals;
       list<DAE.FuncArg> fargs;
       DAE.EqualityConstraint eqCo;
       DAE.TypeSource src;
+      String name, newName;
 
       case(_, _, _)
         equation
           path = Absyn.makeFullyQualified(inPath);
-          func = Env.getCachedInstFunc(inCache,path);
+          func = FCore.getCachedInstFunc(inCache,path);
         then
           (inCache,func);
 
       case(_, _, _)
         equation
-
           (_,recordCl,recordEnv) = Lookup.lookupClass(inCache, inEnv, inPath, false);
           true = SCode.isRecord(recordCl);
+
+          name = SCode.getElementName(recordCl);
+          newName = FGraph.getInstanceOriginalName(recordEnv, name);
+          recordCl = SCode.setClassName(newName, recordCl);
 
           (cache,_,_,_,_,_,recType,_,_,_) = Inst.instClass(inCache,recordEnv, InnerOuter.emptyInstHierarchy,
             UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), recordCl,
             {}, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
+
           DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src) = recType;
 
           (inputs,locals) = List.extractOnTrue(vars, Types.isModifiableTypesVar);
@@ -968,20 +880,29 @@ algorithm
           vars = listAppend(inputs,locals);
 
           path = Absyn.makeFullyQualified(path);
-
           fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
           fargs = Types.makeFargsList(inputs);
           funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, {path});
           func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource,DAE.VARIABLE());
 
           cache = InstUtil.addFunctionsToDAE(cache, {func}, SCode.NOT_PARTIAL());
+
+          // add the instance record constructor too!
+          path = Absyn.pathSetLastIdent(path, Absyn.makeIdentPathFromString(name));
+          fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
+          fargs = Types.makeFargsList(inputs);
+          funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, {path});
+          func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource,DAE.VARIABLE());
+
+          cache = InstUtil.addFunctionsToDAE(cache, {func}, SCode.NOT_PARTIAL());
+
         then
           (cache,func);
 
       else
         equation
           true = Flags.isSet(Flags.FAILTRACE);
-          Debug.fprint(Flags.FAILTRACE, "Inst.getRecordConstructorFunction failed for " +& Absyn.pathString(inPath) +& "\n");
+          Debug.fprint(Flags.FAILTRACE, "InstFunction.getRecordConstructorFunction failed for " +& Absyn.pathString(inPath) +& "\n");
         then
           fail();
 
@@ -990,10 +911,10 @@ algorithm
 end getRecordConstructorFunction;
 
 public function addRecordConstructorFunction "Add record constructor whenever we instantiate a variable. Needed so we can cast to this constructor freely."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Type inType;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
 algorithm
   outCache := matchcontinue (inCache,inEnv,inType)
     local
@@ -1001,10 +922,10 @@ algorithm
       DAE.Type ty,recType,fixedTy,funcTy;
       DAE.EqualityConstraint eqCo;
       DAE.TypeSource src;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Path path;
       SCode.Element recordCl;
-      Env.Env recordEnv;
+      FCore.Graph recordEnv;
       DAE.Function func;
       list<DAE.FuncArg> fargs;
 
@@ -1020,7 +941,6 @@ algorithm
     case (cache, _, DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src))
       equation
         path = Absyn.makeFullyQualified(path);
-        //(cache, _) = getRecordConstructorFunction(cache, inEnv, path);
 
         (inputs,locals) = List.extractOnTrue(vars, Types.isModifiableTypesVar);
         inputs = List.map(inputs,Types.setVarDefaultInput);

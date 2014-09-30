@@ -65,7 +65,8 @@ protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;
-protected import Env;
+protected import FCore;
+protected import FGraph;
 protected import Error;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
@@ -304,10 +305,10 @@ algorithm
 
     case DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(iterType=iterType,path=path),expr=e1,iterators=riters)
       equation
-        //print("unelab of reduction not impl. yet");
-        acref = Absyn.pathToCref(path);
-        ae1 = unelabExp(e1);
-        aiters = List.map(riters, unelabReductionIterator);
+      //print("unelab of reduction not impl. yet");
+      acref = Absyn.pathToCref(path);
+      ae1 = unelabExp(e1);
+      aiters = List.map(riters, unelabReductionIterator);
       then Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, iterType, aiters));
 
     else
@@ -497,14 +498,14 @@ algorithm
 
     case(DAE.CODE(Absyn.C_VARIABLENAME(cref),_))
       equation
-        (_,e_cref) = Static.elabUntypedCref(Env.emptyCache(),Env.emptyEnv,cref,false,Prefix.NOPRE(),Absyn.dummyInfo);
+        (_,e_cref) = Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,Prefix.NOPRE(),Absyn.dummyInfo);
         e = crefExp(e_cref);
       then
         e;
 
     case(DAE.CODE(Absyn.C_EXPRESSION(Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS({Absyn.CREF(cref)},{}))),_))
       equation
-        (_,e_cref) = Static.elabUntypedCref(Env.emptyCache(),Env.emptyEnv,cref,false,Prefix.NOPRE(),Absyn.dummyInfo);
+        (_,e_cref) = Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,Prefix.NOPRE(),Absyn.dummyInfo);
         e = crefExp(e_cref);
       then
         DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal);
@@ -1633,14 +1634,14 @@ algorithm
       equation
          expLstLst = List.map(expLst,getComplexContentsInCall);
          expLst = List.flatten(expLstLst);
-       then
+      then
         expLst;
     case(DAE.RECORD(path=_,exps=expLst, comp=_,ty=_))
       then
         expLst;
     case(DAE.ARRAY(ty=_,scalar=_,array=_))
       equation
-        expLst = arrayElements(e);
+      expLst = arrayElements(e);
       then
         expLst;
     case(DAE.TUPLE(PR=expLst))
@@ -2059,7 +2060,7 @@ algorithm
   dim := matchcontinue (dim1,dim2)
     local
       Integer i1,i2,i;
-    case (_, _)
+    case (_,_)
       equation
         i = dimensionSize(dim1)+dimensionSize(dim2);
       then DAE.DIM_INTEGER(i);
@@ -2982,7 +2983,7 @@ algorithm
         exp;
 
     // do not check the DAE.ASUB
-    case (_, _)
+    case(_,_)
       equation
         false = Flags.isSet(Flags.CHECK_ASUB);
         exp = DAE.ASUB(inExp,inSubs);
@@ -3193,11 +3194,11 @@ algorithm
       Real r1,r2;
       Integer i1,i2;
       DAE.Exp e;
-    case (_, _)
+    case(_,_)
       equation
         true = isZero(e1);
       then e2;
-    case (_, _)
+    case(_,_)
       equation
         true = isZero(e2);
       then e1;
@@ -3218,7 +3219,7 @@ algorithm
     case (_,DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=e))
       then
         expSub(e1,e);
-    case (_, _)
+    case (_,_)
       equation
         tp = typeof(e1);
         true = Types.isIntegerOrRealOrSubTypeOfEither(tp);
@@ -3250,12 +3251,12 @@ algorithm
       Real r1,r2;
       Integer i1,i2;
       DAE.Exp e;
-    case (_, _)
+    case(_,_)
       equation
         true = isZero(e1);
       then
         negate(e2);
-    case (_, _)
+    case(_,_)
       equation
         true = isZero(e2);
       then
@@ -3288,7 +3289,7 @@ algorithm
         e = expAdd(e,e2);
       then
         negate(e);
-    case (_, _)
+    case (_,_)
       equation
         tp = typeof(e1);
         true = Types.isIntegerOrRealOrSubTypeOfEither(tp);
@@ -3315,11 +3316,11 @@ algorithm
   res := matchcontinue(e1,e2)
     local
 
-    case (_, _) equation
+    case(_,_) equation
       true = isZero(e2);
     then e1;
 
-    case (_, _) equation
+    case(_,_) equation
       true = isZero(e1);
     then negate(e2);
 
@@ -3337,11 +3338,11 @@ algorithm
   res := matchcontinue(e1,e2)
     local
 
-    case (_, _)
+    case(_,_)
       equation
         true = isZero(e2);
       then e1;
-    case (_, _)
+    case(_,_)
       equation
         true = isZero(e1);
       then negate(e2);
@@ -3459,11 +3460,11 @@ algorithm
       Real r1,r2;
       Integer i1,i2;
       DAE.Exp e1_1,e2_1;
-    case (_, _)
+    case(_,_)
       equation
         true = isZero(e1);
       then e1;
-    case (_, _)
+    case(_,_)
       equation
         true = isZero(e2);
       then e2;
@@ -3523,23 +3524,23 @@ algorithm
       Real r1,r2;
 
     // e1^1 = e1
-    case(_, _) equation
+    case(_,_) equation
       true = isOne(e2);
     then e1;
 
     // e1^0 = 1
-    case (_, _) equation
+    case(_,_) equation
       true = isZero(e2);
       false = isZero(e1);
     then makeConstOne(typeof(e1));
 
     // 1^e2 = 1
-    case (_, _) equation
+    case (_,_) equation
       true = isConstOne(e1);
     then e1;
 
     // 0^e2 = 0
-    case (_, _) equation
+    case (_,_) equation
       true = isZero(e1);
       false = isZero(e2);
     then makeConstZero(typeof(e1));
@@ -3782,10 +3783,10 @@ public function makeDiv "Takes two expressions and create a division"
   output DAE.Exp res;
 algorithm
   res := matchcontinue(e1,e2)
-    case (_, _) equation
+    case(_,_) equation
       true = isZero(e1);
     then e1;
-    case (_, _) equation
+    case(_,_) equation
       true = isOne(e2);
     then e1;
     else expDiv(e1,e2);
@@ -4205,7 +4206,7 @@ algorithm
 
     case (e, (s, t))
       equation
-        ((e1, _)) = replaceExp(e, s, t);
+      ((e1, _)) = replaceExp(e, s, t);
       then (e1, (s, t));
 
   end match;
@@ -4742,7 +4743,7 @@ The extra argument is a tuple of the actul function to call on each subexpressio
   end FuncExpType;
 protected
   FuncExpType rel;
-  Type_a ext_arg;
+      Type_a ext_arg;
 algorithm
   (rel,ext_arg) := itpl;
   (outExp,ext_arg) := traverseExpTopDown(inExp,rel,ext_arg);
@@ -4761,7 +4762,7 @@ The extra argument is a tuple of the actul function to call on each subexpressio
   output tuple<FuncExpType,Type_a> otpl;
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+  input Type_a inTypeA;
     output DAE.Exp outExp;
     output Type_a outA;
   end FuncExpType;
@@ -4841,7 +4842,7 @@ algorithm
 
     case ({},_,ext_arg) then (inExpl,ext_arg);
 
-    case (e::expl,_,ext_arg)
+    case(e::expl,_,ext_arg)
       equation
         (e1,ext_arg) = traverseExp(e, rel, ext_arg);
         (expl1,ext_arg) = traverseExpList(expl,rel,ext_arg);
@@ -5193,7 +5194,7 @@ algorithm
       Type_a a;
       Option<DAE.Exp> oe;
     case (NONE(),_,a) then (inExp/*In case external functions create a copy of NONE()*/,a);
-    case (oe as SOME(e),_,a) equation
+    case(oe as SOME(e),_,a) equation
       (e1,a) = traverseExp(e,func,a);
       oe = Util.if_(referenceEq(e,e1),oe,SOME(e1));
      then (oe,a);
@@ -5586,7 +5587,7 @@ Author: Frenkel TUD 2011-05, traverses all ComponentRef from an Expression."
 algorithm
   outArg := match(inExp,inFunc,inArg)
    local Type_a arg;
-    case (_, _, _)
+    case(_,_,_)
       equation
         (_,(_,arg)) = traverseExp(inExp, traversingCrefFinder, (inFunc,inArg));
       then
@@ -5640,7 +5641,7 @@ Returns a list containing, all division DAE.Exp in an Expression."
   output list<DAE.Exp> acc;
 algorithm
   (outExp,acc) := match (e,exps)
-    local
+  local
       DAE.Exp e2;
     case (DAE.BINARY(operator = DAE.DIV(_),exp2 = e2), _)
       then (e, e2::exps);
@@ -8532,6 +8533,7 @@ public function dimensionKnownAndNonZero
 algorithm
   known := matchcontinue(dim)
     case DAE.DIM_EXP(exp = DAE.ICONST(0)) then false;
+    case DAE.DIM_INTEGER(0) then false;
     else dimensionKnown(dim);
   end matchcontinue;
 end dimensionKnownAndNonZero;

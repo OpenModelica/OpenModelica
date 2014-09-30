@@ -45,7 +45,8 @@ encapsulated package BackendDAEOptimize
 public import Absyn;
 public import BackendDAE;
 public import DAE;
-public import Env;
+public import FCore;
+public import FGraph;
 public import HashTable2;
 
 protected import Algorithm;
@@ -234,8 +235,8 @@ algorithm
       BackendDAE.EquationArray remeqns,inieqns;
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       DAE.FunctionTree funcTree;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
@@ -244,14 +245,14 @@ algorithm
       BackendDAE.EqSystems systs;
       BackendDAE.ExtraInfo ei;
 
-    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,eventInfo,eoc,btp,symjacs,ei)))
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,eventInfo,eoc,btp,symjacs,ei)))
       equation
         _ = BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(knvars,Expression.traverseSubexpressionsHelper,(traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasVars,false)));
         _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(inieqns,Expression.traverseSubexpressionsHelper,(traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasVars,false)));
         _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,Expression.traverseSubexpressionsHelper,(traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasVars,false)));
         (eventInfo,_) = traverseEventInfoExps(eventInfo,Expression.traverseSubexpressionsHelper,(traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasVars,false)));
       then
-        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,eventInfo,eoc,btp,symjacs,ei));
+        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,eventInfo,eoc,btp,symjacs,ei));
   end match;
 end simplifyTimeIndepFuncCallsShared;
 
@@ -668,8 +669,8 @@ algorithm
       BackendDAE.EquationArray remeqns,inieqns;
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       DAE.FunctionTree funcs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
@@ -679,7 +680,7 @@ algorithm
       BackendDAE.EqSystems systs;
       BackendDAE.ExtraInfo ei;
 
-    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei)))
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei)))
       equation
         repl = BackendVarTransform.emptyReplacements();
         ((repl1,_)) = BackendVariable.traverseBackendDAEVars(knvars,removeParametersFinder,(repl,knvars));
@@ -688,7 +689,7 @@ algorithm
         Debug.fcall(Flags.DUMP_PARAM_REPL, BackendVarTransform.dumpReplacements, repl2);
         systs= List.map1(systs,removeParameterswork,repl2);
       then
-        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei));
+        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei));
   end match;
 end removeParameters;
 
@@ -865,8 +866,8 @@ algorithm
       BackendDAE.EquationArray remeqns,inieqns;
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
@@ -875,14 +876,14 @@ algorithm
       BackendDAE.EqSystems systs;
       BackendDAE.ExtraInfo ei;
 
-    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei)))
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei)))
       equation
         repl = BackendVarTransform.emptyReplacements();
         repl1 = BackendVariable.traverseBackendDAEVars(knvars,protectedParametersFinder,repl);
         Debug.fcall(Flags.DUMP_PP_REPL, BackendVarTransform.dumpReplacements, repl1);
         systs = List.map1(systs,removeProtectedParameterswork,repl1);
       then
-        (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei)));
+        (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei)));
   end match;
 end removeProtectedParameters;
 
@@ -1191,8 +1192,8 @@ algorithm
       BackendDAE.EquationArray remeqns,inieqns;
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       DAE.FunctionTree funcs;
       BackendDAE.EventInfo einfo;
       BackendDAE.SymbolicJacobians symjacs;
@@ -1202,7 +1203,7 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.ExtraInfo ei;
 
-    case (BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp,symjacs,ei)))
+    case (BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp,symjacs,ei)))
       equation
         knvars1 = BackendVariable.emptyVars();
         ((knvars,knvars1)) = BackendVariable.traverseBackendDAEVars(knvars,copyNonParamVariables,(knvars,knvars1));
@@ -1213,7 +1214,7 @@ algorithm
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns,checkUnusedParameter,(knvars,knvars1));
         (_,(_,knvars1)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkUnusedParameter,(knvars,knvars1));
       then
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei));
+        BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei));
   end match;
 end removeUnusedParameter;
 
@@ -1323,8 +1324,8 @@ public function removeUnusedVariables
 algorithm
   outDlow := match (inDlow)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       DAE.FunctionTree funcs;
       BackendDAE.Variables knvars,exobj,knvars1,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
@@ -1338,7 +1339,7 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.ExtraInfo ei;
 
-    case (BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp,symjacs,ei)))
+    case (BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp,symjacs,ei)))
       equation
         knvars1 = BackendVariable.emptyVars();
         ((_,knvars1)) = List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem,checkUnusedVariables,(knvars,knvars1));
@@ -1348,7 +1349,7 @@ algorithm
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns,checkUnusedVariables,(knvars,knvars1));
         (_,(_,knvars1)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkUnusedVariables,(knvars,knvars1));
       then
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei));
+        BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei));
   end match;
 end removeUnusedVariables;
 
@@ -1436,8 +1437,8 @@ public function removeUnusedFunctions "author: Frenkel TUD 2012-03
 algorithm
   outDlow := match (inDlow)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       DAE.FunctionTree funcs,usedfuncs;
       BackendDAE.Variables knvars,exobj,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
@@ -1451,7 +1452,7 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.ExtraInfo ei;
 
-    case (BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp,symjacs,ei)))
+    case (BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp,symjacs,ei)))
       equation
         usedfuncs = copyRecordConstructorAndExternalObjConstructorDestructor(funcs);
         ((_,usedfuncs)) = List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem,checkUnusedFunctions,(funcs,usedfuncs));
@@ -1465,7 +1466,7 @@ algorithm
         //traverse Symbolic jacobians
         ((funcs,usedfuncs)) = removeUnusedFunctionsSymJacs(symjacs,(funcs,usedfuncs));
       then
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,usedfuncs,einfo,eoc,btp,symjacs,ei));
+        BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,usedfuncs,einfo,eoc,btp,symjacs,ei));
   end match;
 end removeUnusedFunctions;
 
@@ -3429,8 +3430,8 @@ algorithm
       list<list<BackendDAE.Equation>> derivedEquationslst;
 
 
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
 
       String matrixName;
       array<Integer> ass2;
@@ -3440,7 +3441,7 @@ algorithm
 
       BackendDAE.ExtraInfo ei;
 
-    case(BackendDAE.DAE(shared=BackendDAE.SHARED(cache=cache,env=env,info=ei)), {}, _, _, _, _, _, _) equation
+    case(BackendDAE.DAE(shared=BackendDAE.SHARED(cache=cache,graph=graph,info=ei)), {}, _, _, _, _, _, _) equation
       jacOrderedVars = BackendVariable.emptyVars();
       jacKnownVars = BackendVariable.emptyVars();
       jacExternalObjects = BackendVariable.emptyVars();
@@ -3452,10 +3453,10 @@ algorithm
       jacEventInfo = BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0);
       jacExtObjClasses = {};
 
-      jacobian = BackendDAE.DAE({BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, {}, {}, cache, env, functions, jacEventInfo, jacExtObjClasses,BackendDAE.JACOBIAN(),{},ei));
+      jacobian = BackendDAE.DAE({BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, {}, {}, cache, graph, functions, jacEventInfo, jacExtObjClasses,BackendDAE.JACOBIAN(),{},ei));
     then (jacobian, DAE.emptyFuncTree);
 
-    case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, cache=cache,env=env,  functionTree=functions, info=ei)), diffVars, diffedVars, _, _, _, _, matrixName) equation
+    case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, cache=cache,graph=graph,  functionTree=functions, info=ei)), diffVars, diffedVars, _, _, _, _, matrixName) equation
       // Generate tmp varibales
       dummyVarName = ("dummyVar" +& matrixName);
       x = DAE.CREF_IDENT(dummyVarName,DAE.T_REAL_DEFAULT,{});
@@ -3496,7 +3497,7 @@ algorithm
       jacEventInfo = BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0);
       jacExtObjClasses = {};
 
-      jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, {}, {}, cache, env, DAE.emptyFuncTree, jacEventInfo, jacExtObjClasses, BackendDAE.JACOBIAN(),{}, ei));
+      jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, {}, {}, cache, graph, DAE.emptyFuncTree, jacEventInfo, jacExtObjClasses, BackendDAE.JACOBIAN(),{}, ei));
     then (jacobian, functions);
 
     case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars,   functionTree=functions, info=_)), diffVars, diffedVars, _, _, _, _, matrixName) equation
@@ -4030,7 +4031,8 @@ protected function getSymbolicJacobian
 algorithm
   (outJacobian, outShared) := matchcontinue(inDiffVars, inResEquations, inResVars, inotherEquations, inotherVars, inShared, inAllVars, inName)
     local
-      Env.Cache cache;
+      FCore.Cache cache;
+      FCore.Graph graph;
       BackendDAE.BackendDAE backendDAE, jacBackendDAE;
 
       BackendDAE.Variables emptyVars, dependentVars, independentVars, knvars, allvars;
@@ -4052,6 +4054,7 @@ algorithm
       String errorMessage;
 
       DAE.FunctionTree funcs;
+
     case(_, _, _, _, _, _, _, _)
       equation
         knvars = BackendDAEUtil.getknvars(inShared);
@@ -4100,11 +4103,12 @@ algorithm
         // prepare vars and equations for BackendDAE
         emptyVars =  BackendVariable.emptyVars();
         emptyEqns = BackendEquation.listEquation({});
-        cache = Env.emptyCache();
+        cache = FCore.emptyCache();
+        graph = FGraph.empty();
         backendDAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(dependentVars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())},
           BackendDAE.SHARED(knvars, emptyVars, emptyVars,
             emptyEqns, emptyEqns, {}, {},
-            cache, {}, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0),
+            cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0),
             {}, BackendDAE.ALGEQSYSTEM(), {}, einfo));
 
         backendDAE = BackendDAEUtil.transformBackendDAE(backendDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
@@ -6197,8 +6201,8 @@ protected
   BackendDAE.EquationArray inieqns, remeqns;
   list<DAE.Constraint> constrs;
   list<DAE.ClassAttributes> clsAttrs;
-  Env.Cache cache;
-  Env.Env env;
+  FCore.Cache cache;
+  FCore.Graph graph;
   BackendDAE.EventInfo einfo;
   BackendDAE.ExternalObjectClasses eoc;
   BackendDAE.SymbolicJacobians symjacs;
@@ -6209,7 +6213,7 @@ protected
   Boolean b;
   BackendDAE.ExtraInfo ei;
 algorithm
-  BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei)) := inDAE;
+  BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo, eoc, btp, symjacs, ei)) := inDAE;
   repl := BackendVarTransform.emptyReplacements();
   repl := BackendVariable.traverseBackendDAEVars(knvars, removeConstantsFinder, repl);
   Debug.fcall(Flags.DUMP_CONST_REPL, BackendVarTransform.dumpReplacements, repl);
@@ -6221,7 +6225,7 @@ algorithm
   (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
   inieqns := Debug.bcallret1(b, BackendEquation.listEquation, lsteqns, inieqns);
   systs := List.map1(systs, removeConstantsWork, repl);
-  outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei));
+  outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo, eoc, btp, symjacs, ei));
 end removeConstants;
 
 protected function removeConstantsWork "author: Frenkel TUD"
@@ -6351,8 +6355,8 @@ protected
   BackendDAE.EquationArray remeqns, inieqns;
   list<DAE.Constraint> constrs;
   list<DAE.ClassAttributes> clsAttrs;
-  Env.Cache cache;
-  Env.Env env;
+  FCore.Cache cache;
+  FCore.Graph graph;
   DAE.FunctionTree funcTree;
   BackendDAE.ExternalObjectClasses eoc;
   BackendDAE.SymbolicJacobians symjacs;
@@ -6361,9 +6365,9 @@ protected
   BackendDAE.EqSystems systs;
   BackendDAE.ExtraInfo ei;
 algorithm
-  BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcTree, eventInfo, eoc, btp, symjacs, ei)) := inDAE;
+  BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, eventInfo, eoc, btp, symjacs, ei)) := inDAE;
   _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns, traverserreplaceEdgeChange, false);
-  outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcTree, eventInfo, eoc, btp, symjacs, ei));
+  outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, eventInfo, eoc, btp, symjacs, ei));
 end replaceEdgeChangeShared;
 
 // =============================================================================
@@ -6489,8 +6493,8 @@ protected
   BackendDAE.EquationArray removedEqs;
   list<DAE.Constraint> constraints;
   list<DAE.ClassAttributes> classAttrs;
-  Env.Cache cache;
-  Env.Env env;
+  FCore.Cache cache;
+  FCore.Graph graph;
   DAE.FunctionTree functionTree;
   BackendDAE.EventInfo eventInfo;
   BackendDAE.ExternalObjectClasses extObjClasses;
@@ -6522,7 +6526,7 @@ algorithm
                     constraints=constraints,
                     classAttrs=classAttrs,
                     cache=cache,
-                    env=env,
+                    graph=graph,
                     functionTree=functionTree,
                     eventInfo=eventInfo,
                     extObjClasses=extObjClasses,
@@ -6566,7 +6570,7 @@ algorithm
                               constraints,
                               classAttrs,
                               cache,
-                              env,
+                              graph,
                               functionTree,
                               eventInfo,
                               extObjClasses,
@@ -6697,21 +6701,21 @@ algorithm
     // algorithm
     case (BackendDAE.ALGORITHM(size=size, alg=alg_, source=source, expand=crefExpand, attr=attr), (equationArray, vars, eqns, index, ht))
       equation
-        DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
-        size = size-index;
-        (stmts, preStmts, vars1, index) = encapsulateWhenConditionsForAlgorithms(stmts, vars, index);
-        size = size+index;
+      DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
+      size = size-index;
+      (stmts, preStmts, vars1, index) = encapsulateWhenConditionsForAlgorithms(stmts, vars, index);
+      size = size+index;
 
-        stmts = listAppend(preStmts, stmts);
+      stmts = listAppend(preStmts, stmts);
 
-        alg_ = DAE.ALGORITHM_STMTS(stmts);
-        eqn = BackendDAE.ALGORITHM(size, alg_, source, crefExpand, attr);
-        equationArray = BackendEquation.addEquations({eqn}, equationArray);
+      alg_ = DAE.ALGORITHM_STMTS(stmts);
+      eqn = BackendDAE.ALGORITHM(size, alg_, source, crefExpand, attr);
+      equationArray = BackendEquation.addEquations({eqn}, equationArray);
       then (eqn, (equationArray, vars1, eqns, index, ht));
 
     case (eqn, (equationArray, vars, eqns, index, ht))
       equation
-        equationArray = BackendEquation.addEquations({eqn}, equationArray);
+      equationArray = BackendEquation.addEquations({eqn}, equationArray);
       then (eqn, (equationArray, vars, eqns, index, ht));
   end match;
 end encapsulateWhenConditions2;
@@ -6788,7 +6792,7 @@ algorithm
       list<DAE.Exp> array;
 
       DAE.Type ty;
-      Boolean scalar "scalar for codegen";
+      Boolean scalar "scalar for codegen" ;
 
       HashTableExpToIndex.HashTable ht;
 
@@ -6981,7 +6985,7 @@ algorithm
       list<DAE.Exp> array;
 
       DAE.Type ty;
-      Boolean scalar "scalar for codegen";
+      Boolean scalar "scalar for codegen" ;
 
     // we do not replace initial()
     case (condition as DAE.CALL(path = Absyn.IDENT(name = "initial")), _, index)
@@ -7092,18 +7096,18 @@ algorithm
       BackendDAE.Matching matching;
       DAE.FunctionTree funcs;
       BackendDAE.SymbolicJacobians symjacs;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       BackendDAE.StateSets stateSets;
       BackendDAE.ExtraInfo ei;
       BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind), BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs,ei))
+    case (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind), BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo, eoc, btp, symjacs,ei))
       equation
         (eqns1, (vars1, _)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns, traverserexpandDerEquation, (vars, shared));
         (inieqns1, (vars2, _)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns, traverserexpandDerEquation, (vars1, shared));
       then
-        (BackendDAE.EQSYSTEM(vars2, eqns1, m, mT, matching, stateSets, partitionKind), BackendDAE.SHARED(knvars, exobj, av, inieqns1, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs,ei));
+        (BackendDAE.EQSYSTEM(vars2, eqns1, m, mT, matching, stateSets, partitionKind), BackendDAE.SHARED(knvars, exobj, av, inieqns1, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo, eoc, btp, symjacs,ei));
   end match;
 end expandDerOperatorWork;
 
@@ -7218,24 +7222,24 @@ protected function derCrefsExp "helper for statesExp"
   output BackendDAE.Variables outVars;
 algorithm
   (outExp,outVars) := matchcontinue (inExp,inVars)
-    local
-      DAE.ComponentRef cr;
-      BackendDAE.Variables vars;
-      list<BackendDAE.Var> varlst;
-      BackendDAE.Var v;
-      DAE.Exp e;
+  local
+    DAE.ComponentRef cr;
+    BackendDAE.Variables vars;
+    list<BackendDAE.Var> varlst;
+    BackendDAE.Var v;
+    DAE.Exp e;
     case (e as DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}), vars)
-      equation
-        ({v}, _) = BackendVariable.getVar(cr, vars);
-        (vars, e) = updateStatesVar(vars, v, e);
+    equation
+      ({v}, _) = BackendVariable.getVar(cr, vars);
+      (vars, e) = updateStatesVar(vars, v, e);
       then (e, vars);
     case (e as DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}), vars)
-      equation
-        (varlst, _) = BackendVariable.getVar(cr, vars);
-        vars = updateStatesVars(vars, varlst, false);
+    equation
+      (varlst, _) = BackendVariable.getVar(cr, vars);
+      vars = updateStatesVars(vars, varlst, false);
       then (e, vars);
     else (inExp,inVars);
-  end matchcontinue;
+end matchcontinue;
 end derCrefsExp;
 
 protected function updateStatesVar "
@@ -7252,11 +7256,11 @@ algorithm
       BackendDAE.Var var1;
     case(_, _, _)
       equation
-        true = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative";
+        true = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
       then (inVars, DAE.RCONST(0.0));
     case(_, _, _)
       equation
-        false = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative";
+        false = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
         false = BackendVariable.isStateVar(var);
         var1 = BackendVariable.setVarKind(var, BackendDAE.STATE(1,NONE()));
         vars = BackendVariable.addVar(var1, inVars);
@@ -7289,7 +7293,7 @@ algorithm
     case(_, {}, true) then inVars;
     case(_, var::newStates, _)
       equation
-        false = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative";
+        false = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
         false = BackendVariable.isStateVar(var);
         var = BackendVariable.setVarKind(var, BackendDAE.STATE(1,NONE()));
         vars = BackendVariable.addVar(var, inVars);
@@ -7468,8 +7472,8 @@ algorithm
       BackendDAE.Matching matching;
       BackendDAE.Shared shared;
       BackendDAE.StateSets stateSets;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       BackendDAE.BaseClockPartitionKind partitionKind;
 
     case (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), (shared, _))
@@ -7503,8 +7507,8 @@ algorithm
   (outExp,outB) := matchcontinue(inExp,inB)
     local
       DAE.Exp e;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
 
     // apply rewrite rule
     case (e, _) equation
@@ -7524,8 +7528,8 @@ protected
   BackendDAE.EquationArray remeqns, inieqns;
   list<DAE.Constraint> constrs;
   list<DAE.ClassAttributes> clsAttrs;
-  Env.Cache cache;
-  Env.Env env;
+  FCore.Cache cache;
+  FCore.Graph graph;
   DAE.FunctionTree funcTree;
   BackendDAE.ExternalObjectClasses eoc;
   BackendDAE.SymbolicJacobians symjacs;
@@ -7534,13 +7538,13 @@ protected
   BackendDAE.EqSystems systs;
   BackendDAE.ExtraInfo ei;
 algorithm
-  BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcTree, eventInfo, eoc, btp, symjacs, ei)) := inDAE;
+  BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, eventInfo, eoc, btp, symjacs, ei)) := inDAE;
   _ := BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(knvars,traverserapplyRewriteRulesBackend, false);
   _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(inieqns,traverserapplyRewriteRulesBackend, false);
   _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,traverserapplyRewriteRulesBackend, false);
   // not sure if we should apply the rules on the event info!
   // (ei,_) = traverseEventInfoExps(eventInfo,traverserapplyRewriteRulesBackend, false);
-  outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcTree, eventInfo, eoc, btp, symjacs, ei));
+  outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, eventInfo, eoc, btp, symjacs, ei));
 end applyRewriteRulesBackendShared;
 
 // =============================================================================

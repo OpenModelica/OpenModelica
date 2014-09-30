@@ -29,14 +29,17 @@
  *
  */
 
-encapsulated package FGraphBuild
-" file:        FGraphBuild.mo
-  package:     FGraphBuild
+encapsulated package FGraphBuildEnv
+" file:        FGraphBuildEnv.mo
+  package:     FGraphBuildEnv
   description: A node builder for Modelica constructs
 
-  RCS: $Id: FGraphBuild.mo 14085 2012-11-27 12:12:40Z adrpo $
+  RCS: $Id: FGraphBuildEnv.mo 14085 2012-11-27 12:12:40Z adrpo $
 
-  This module builds nodes out of SCode
+  This module builds nodes out of SCode.
+  The only difference between this and FGraphBuild.mo is that
+  it doesn't expand all nodes and is better suited for usage
+  in the old instantiation.
 "
 
 public import Absyn;
@@ -71,7 +74,6 @@ import List;
 import SCodeUtil;
 import SCodeDump;
 import Util;
-import FMod;
 
 public function mkProgramGraph
 "builds nodes out of classes"
@@ -104,7 +106,7 @@ algorithm
     // class (we don't care here if is replaceable or not we can get that from the class)
     case (SCode.CLASS( classDef = _), _, _, g)
       equation
-        g = mkClassNode(inClass, inParentRef, inKind, g);
+        g = mkClassNode(inClass, Prefix.NOPRE(), DAE.NOMOD(), inParentRef, inKind, g);
       then
         g;
 
@@ -113,12 +115,14 @@ end mkClassGraph;
 
 public function mkClassNode
   input SCode.Element inClass;
+  input Prefix.Prefix inPrefix;
+  input DAE.Mod inMod;
   input Ref inParentRef;
   input Kind inKind;
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inClass, inParentRef, inKind, inGraph)
+  outGraph := match(inClass, inPrefix, inMod, inParentRef, inKind, inGraph)
     local
       SCode.ClassDef cdef;
       SCode.Element cls;
@@ -128,16 +132,14 @@ algorithm
       Node n;
       Ref nr;
 
-    case (_, _, _, g)
+    case (_, _, _, _, _, g)
       equation
         cls = SCodeUtil.expandEnumerationClass(inClass);
         SCode.CLASS(name = name, classDef = cdef) = cls;
-        (g, n) = FGraph.node(g, name, {inParentRef}, FCore.CL(cls, Prefix.NOPRE(), DAE.NOMOD(), inKind, FCore.VAR_UNTYPED()));
+        (g, n) = FGraph.node(g, name, {inParentRef}, FCore.CL(cls, inPrefix, inMod, inKind, FCore.CLS_UNTYPED()));
         nr = FNode.toRef(n);
         FNode.addChildRef(inParentRef, name, nr);
-        // add constrained by node
-        g = mkConstrainClass(cls, nr, inKind, g);
-        g = mkClassChildren(cdef, nr, inKind, g);
+        // g = mkRefNode(FNode.refNodeName, {}, nr, g);
       then
         g;
 
@@ -157,26 +159,20 @@ algorithm
       Node n;
       Ref nr;
       SCode.ConstrainClass cc;
-      SCode.Mod m;
-      Absyn.Path p;
 
-    case (SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix =
-            SCode.REPLACEABLE(SOME(cc as SCode.CONSTRAINCLASS(constrainingClass = p, modifier = m))))), _, _, g)
+    case (SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(SOME(cc)))), _, _, g)
       equation
         (g, n) = FGraph.node(g, FNode.ccNodeName, {inParentRef}, FCore.CC(cc));
         nr = FNode.toRef(n);
         FNode.addChildRef(inParentRef, FNode.ccNodeName, nr);
-        g = mkModNode(FNode.modNodeName, m, FCore.MS_CONSTRAINEDBY(p), nr, inKind, g);
       then
         g;
 
-    case (SCode.COMPONENT(prefixes = SCode.PREFIXES(replaceablePrefix =
-            SCode.REPLACEABLE(SOME(cc as SCode.CONSTRAINCLASS(constrainingClass = p, modifier = m))))), _, _, g)
+    case (SCode.COMPONENT(prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(SOME(cc)))), _, _, g)
       equation
         (g, n) = FGraph.node(g, FNode.ccNodeName, {inParentRef}, FCore.CC(cc));
         nr = FNode.toRef(n);
         FNode.addChildRef(inParentRef, FNode.ccNodeName, nr);
-        g = mkModNode(FNode.modNodeName, m, FCore.MS_CONSTRAINEDBY(p), nr, inKind, g);
       then
         g;
 
@@ -189,13 +185,12 @@ end mkConstrainClass;
 public function mkModNode
   input Name inName "a name for this mod so we can call it from sub-mods";
   input SCode.Mod inMod;
-  input FCore.ModScope inModScope;
   input Ref inParentRef;
   input Kind inKind;
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inName, inMod, inModScope, inParentRef, inKind, inGraph)
+  outGraph := matchcontinue(inName, inMod, inParentRef, inKind, inGraph)
     local
       Name name;
       Graph g;
@@ -204,18 +199,17 @@ algorithm
       SCode.Element e;
       list<SCode.SubMod> sm;
       Option<tuple<Absyn.Exp, Boolean>> b;
-      Absyn.Path p;
 
     // no mods
-    case (_, SCode.NOMOD(), _, _, _, g) then g;
+    case (_, SCode.NOMOD(), _, _, g) then g;
 
     // no binding no sub-mods
-    case (_, SCode.MOD(subModLst = {}, binding = NONE()), _, _, _, g)
+    case (_, SCode.MOD(subModLst = {}, binding = NONE()), _, _, g)
       then
         g;
 
     // just a binding
-    case (name, SCode.MOD(subModLst = {}, binding = b as SOME(_)), _, _, _, g)
+    case (name, SCode.MOD(subModLst = {}, binding = b as SOME(_)), _, _, g)
       equation
         (g, n) = FGraph.node(g, name, {inParentRef}, FCore.MO(inMod));
         nr = FNode.toRef(n);
@@ -225,22 +219,18 @@ algorithm
         g;
 
     // yeha, some mods for sure and a possible binding
-    case (name, SCode.MOD(subModLst = sm, binding = b), _, _, _, g)
+    case (name, SCode.MOD(subModLst = sm, binding = b), _, _, g)
       equation
         (g, n) = FGraph.node(g, name, {inParentRef}, FCore.MO(inMod));
         nr = FNode.toRef(n);
         FNode.addChildRef(inParentRef, name, nr);
-
-        // compact the sub modifiers so no duplicates occur (that would overwrite subnodes)
-        sm = FMod.compactSubMods(sm, inModScope);
-
-        g = mkSubMods(sm, inModScope, nr, inKind, g);
+        g = mkSubMods(sm, nr, inKind, g);
         g = mkBindingNode(b, nr, inKind, g);
       then
         g;
 
     // ouch, a redeclare :)
-    case (name, SCode.REDECL(element = e), _, _, _, g)
+    case (name, SCode.REDECL(element = e), _, _, g)
       equation
         (g, n) = FGraph.node(g, name, {inParentRef}, FCore.MO(inMod));
         nr = FNode.toRef(n);
@@ -250,9 +240,9 @@ algorithm
         g;
 
     // something bad happened!
-    case (name, _, _, _, _, g)
+    case (name, _, _, _, g)
       equation
-        print("FGraphBuild.mkModNode failed with: " +& name +& " mod: " +& SCodeDump.printModStr(inMod, SCodeDump.defaultOptions) +& "\n");
+        print("FGraphBuildEnv.mkModNode failed with: " +& name +& " mod: " +& SCodeDump.printModStr(inMod, SCodeDump.defaultOptions) +& "\n");
       then
         g;
 
@@ -261,13 +251,12 @@ end mkModNode;
 
 public function mkSubMods
   input list<SCode.SubMod> inSubMod;
-  input FCore.ModScope inModScope;
   input Ref inParentRef;
   input Kind inKind;
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inSubMod, inModScope, inParentRef, inKind, inGraph)
+  outGraph := match(inSubMod, inParentRef, inKind, inGraph)
     local
       list<SCode.SubMod> rest;
       SCode.SubMod s;
@@ -276,13 +265,13 @@ algorithm
       Graph g;
 
     // no more, we're done!
-    case ({}, _, _, _, g) then g;
+    case ({}, _, _, g) then g;
 
     // some sub-mods!
-    case (SCode.NAMEMOD(id, m)::rest, _, _, _, g)
+    case (SCode.NAMEMOD(id, m)::rest, _, _, g)
       equation
-        g = mkModNode(id, m, inModScope, inParentRef, inKind, g);
-        g = mkSubMods(rest, inModScope, inParentRef, inKind, g);
+        g = mkModNode(id, m, inParentRef, inKind, g);
+        g = mkSubMods(rest, inParentRef, inKind, g);
       then
         g;
 
@@ -366,10 +355,11 @@ algorithm
       then
         g;
 
-    case (SCode.CLASS_EXTENDS(baseClassName = name, composition = cdef, modifications = m), _, _, g)
+    case (SCode.CLASS_EXTENDS(composition = cdef, modifications = m), _, _, g)
       equation
         g = mkClassChildren(cdef, inParentRef, inKind, g);
-        g = mkModNode(FNode.modNodeName, m, FCore.MS_CLASS_EXTENDS(name), inParentRef, inKind, g);
+        g = mkModNode(FNode.modNodeName, m, inParentRef, inKind, g);
+        g = mkRefNode(FNode.refNodeName, {}, inParentRef, g);
       then
         g;
 
@@ -377,9 +367,10 @@ algorithm
       equation
         p = Absyn.typeSpecPath(ts);
         nr = inParentRef;
-        g = mkModNode(FNode.modNodeName, m, FCore.MS_DERIVED(p), nr, inKind, g);
+        g = mkModNode(FNode.modNodeName, m, nr, inKind, g);
         ad = Absyn.typeSpecDimensions(ts);
         g = mkDimsNode(FNode.tydimsNodeName, SOME(ad), nr, inKind, g);
+        g = mkRefNode(FNode.refNodeName, {}, nr, g);
       then
         g;
 
@@ -426,7 +417,7 @@ algorithm
     // class
     case (SCode.CLASS(name = _), _, _, g)
       equation
-        g = mkClassNode(inElement, inParentRef, inKind, g);
+        g = mkClassNode(inElement, Prefix.NOPRE(), DAE.NOMOD(), inParentRef, inKind, g);
       then
         g;
 
@@ -437,7 +428,8 @@ algorithm
         (g, n) = FGraph.node(g, name, {inParentRef}, FCore.EX(inElement, DAE.NOMOD()));
         nr = FNode.toRef(n);
         FNode.addChildRef(inParentRef, name, nr);
-        g = mkModNode(FNode.modNodeName, m, FCore.MS_EXTENDS(p), nr, inKind, g);
+        g = mkModNode(FNode.modNodeName, m, nr, inKind, g);
+        g = mkRefNode(FNode.refNodeName, {}, nr, g);
       then
         g;
 
@@ -509,7 +501,7 @@ algorithm
       Ref r;
       list<SCode.Element> du;
 
-    // if is there add the unit to it
+    // if is there add the import to it
     case (_, _, _, g)
       equation
         r = FNode.child(inParentRef, FNode.imNodeName);
@@ -634,17 +626,6 @@ algorithm
   g := mkInstNode(i, nr, g);
   // add ref node
   g := mkRefNode(FNode.refNodeName, {}, nr, g);
-  // add type dimensions if exists
-  tad := Absyn.typeSpecDimensions(ts);
-  g := mkDimsNode(FNode.tydimsNodeName, SOME(tad), nr, inKind, g);
-  // add component dimensions if exists
-  g := mkDimsNode(FNode.dimsNodeName, SOME(ad), nr, inKind, g);
-  // add condition if exists
-  g := mkConditionNode(cnd, nr, inKind, g);
-  // add constrained by node
-  g := mkConstrainClass(inComp, nr, inKind, g);
-  // add modifier
-  g := mkModNode(FNode.modNodeName, m, FCore.MS_COMPONENT(name), nr, inKind, g);
   outGraph := g;
 end mkCompNode;
 
@@ -840,7 +821,7 @@ algorithm
     else
       equation
         pr = FGraph.top(inGraph);
-        print("FGraphBuild.mkTypeNode: Error making type node: " +& inName +&
+        print("FGraphBuildEnv.mkTypeNode: Error making type node: " +& inName +&
               " in parent: " +& FNode.name(FNode.fromRef(pr)) +& "\n");
       then
         inGraph;
@@ -1427,33 +1408,6 @@ algorithm
   end matchcontinue;
 end mkRefNode;
 
-public function mkAssertNode
-  input Name inName;
-  input String inMessage;
-  input Ref inParentRef;
-  input Graph inGraph;
-  output Graph outGraph;
-  output Ref outRef;
-algorithm
-  (outGraph, outRef) := matchcontinue(inName, inMessage, inParentRef, inGraph)
-    local
-      Node n;
-      Ref rn, rc;
-      Graph g;
-
-    case (_, _, _, g)
-      equation
-        (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.ASSERT(inMessage));
-        // make a ref
-        rn = FNode.toRef(n);
-        // add the ref node
-        FNode.addChildRef(inParentRef, inName, rn);
-      then
-        (g, rn);
-
-  end matchcontinue;
-end mkAssertNode;
-
 /*
 public function mkCloneNode
 "@author: adrpo
@@ -1506,4 +1460,4 @@ algorithm
 end mkCloneNode;
 */
 
-end FGraphBuild;
+end FGraphBuildEnv;

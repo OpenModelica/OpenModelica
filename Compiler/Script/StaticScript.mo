@@ -33,7 +33,7 @@ encapsulated package StaticScript
 
 public import Absyn;
 public import DAE;
-public import Env;
+public import FCore;
 public import GlobalScript;
 public import Prefix;
 
@@ -55,8 +55,8 @@ protected import Values;
 protected function calculateSimulationTimes
 "@author:
   Calculates the simulation times: startTime, stopTime, numberOfIntervals from the given input arguments"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
@@ -64,7 +64,7 @@ protected function calculateSimulationTimes
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
   input GlobalScript.SimulationOptions inSimOpt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp startTime "start time, default 0.0";
   output DAE.Exp stopTime "stop time, default 1.0";
   output DAE.Exp numberOfIntervals "number of intervals, default 500";
@@ -80,8 +80,8 @@ algorithm
       Absyn.Info info;
       Integer intervals;
       Real rstepTime, rstopTime, rstartTime;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
 
     // special case for Parham Vaseles OpenModelica Interactive, where buildModel takes stepSize instead of startTime, stopTime and numberOfIntervals
     case (cache,env,{Absyn.CREF(componentRef = _)},args,impl,SOME(st),pre,info,_)
@@ -138,8 +138,8 @@ end calculateSimulationTimes;
 public function getSimulationArguments
 "@author: adrpo
   This functiong gets the simulation options"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
@@ -147,7 +147,7 @@ public function getSimulationArguments
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
   input Option<GlobalScript.SimulationOptions> defaultOption;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Exp> outSimulationArguments;
 algorithm
   (outCache, outSimulationArguments) :=
@@ -164,8 +164,8 @@ algorithm
       DAE.Exp exp,startTime,stopTime,numberOfIntervals,tolerance,method,cflags,simflags;
       DAE.Exp fileNamePrefix,options,outputFormat,variableFilter;
       GlobalScript.SimulationOptions defaulSimOpt;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Values.Value v;
 
     // fill in defaults
@@ -242,8 +242,8 @@ end getSimulationArguments;
 public function elabCallInteractive "This function elaborates the functions defined in the interactive environment.
   Since some of these functions are meta-functions, they can not be described in the type
   system, and is thus given the the type T_UNKNOWN"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ComponentRef inComponentRef;
   input list<Absyn.Exp> inExps;
   input list<Absyn.NamedArg> inNamedArgs;
@@ -251,7 +251,7 @@ public function elabCallInteractive "This function elaborates the functions defi
   input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
@@ -260,7 +260,7 @@ public function elabCallInteractive "This function elaborates the functions defi
   matchcontinue (inCache,inEnv,inComponentRef,inExps,inNamedArgs,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
     local
       DAE.ComponentRef cr_1;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.ComponentRef cr,cr2;
       Boolean impl;
       GlobalScript.SymbolTable st;
@@ -273,7 +273,7 @@ public function elabCallInteractive "This function elaborates the functions defi
       Option<GlobalScript.SymbolTable> st_1;
       Integer excludeListSize;
       Absyn.Exp exp;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       Absyn.Path className;
       list<DAE.Exp> simulationArgs;
@@ -474,15 +474,15 @@ end elabCallInteractive;
 public function elabExp "
 function: elabExp
    This is an special case tha considers elabCallInteractive. If this function fails elabExp is called."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input Boolean inImplicit;
   input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> st;
@@ -493,8 +493,8 @@ end elabExp;
 
 protected function elabExp2 "
 function: Auxiliary function to elabExp that considers elabCallInteractive. If this function fails elabExp is called."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input Boolean inImplicit;
   input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
@@ -502,7 +502,7 @@ function: Auxiliary function to elabExp that considers elabCallInteractive. If t
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   input Integer numErrorMessages;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
@@ -514,13 +514,13 @@ algorithm
       Option<GlobalScript.SymbolTable> st,st_1;
       DAE.Exp e_1;
       DAE.Properties prop;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.ComponentRef fn;
       DAE.Const c;
       Absyn.Exp exp;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
   case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,_,pre,_,_)
       equation
@@ -541,8 +541,8 @@ end elabExp2;
 protected function elabCall "
 function: elabCall
   This is an special case tha considers elabCallInteractive."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ComponentRef inComponentRef;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
@@ -551,7 +551,7 @@ function: elabCall
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   input Integer numErrorMessages;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
@@ -562,12 +562,12 @@ algorithm
       DAE.Exp e;
       DAE.Properties prop;
       Option<GlobalScript.SymbolTable> st;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.ComponentRef fn;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
   case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,_,_) /* impl LS: Check if a builtin function call, e.g. size() and calculate if so */
       equation
@@ -579,13 +579,13 @@ end elabCall;
 
 public function elabGraphicsExp
 "This is an special case tha considers elabCallInteractive. If this function fails Static.elabGraphicsExp is called"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -595,12 +595,12 @@ algorithm
       Boolean impl;
       DAE.Exp e_1;
       DAE.Properties prop;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.ComponentRef fn;
       Absyn.Exp e;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
     // Function calls
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),_,pre,_)

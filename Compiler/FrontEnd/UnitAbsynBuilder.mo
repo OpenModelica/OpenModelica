@@ -34,7 +34,7 @@ encapsulated package UnitAbsynBuilder
 public import UnitAbsyn;
 public import DAE;
 public import MMath;
-public import Env;
+public import FCore;
 public import HashTable;
 public import Absyn;
 
@@ -44,6 +44,8 @@ protected import DAEUtil;
 protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
+protected import FNode;
+protected import FGraph;
 protected import Interactive;
 protected import List;
 protected import Lookup;
@@ -55,8 +57,8 @@ protected import Util;
 
 public function registerUnitWeights "traverses all dae variables and adjusts weights depending on defineunits defined
 in the scopes of the classLst for each variable"
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input DAE.DAElist dae;
  protected
  list<Absyn.Path> paths; list<SCode.Element> du;
@@ -64,7 +66,7 @@ algorithm
    _ := matchcontinue(cache,env,dae)
    local
      list<DAE.Element> elts;
-   case(_, _, _) equation
+   case(_,_,_) equation
        false = Flags.getConfigBool(Flags.UNIT_CHECKING);
    then ();
 
@@ -80,15 +82,21 @@ end registerUnitWeights;
 
 protected function retrieveUnitsFromEnv "help function to registerUnitWeights"
   input Absyn.Path p;
-  input tuple<Env.Cache,Env.Env> tpl;
+  input tuple<FCore.Cache,FCore.Graph> tpl;
   output list<SCode.Element> du;
 
 algorithm
    du := matchcontinue(p,tpl)
      local
-       Env.Env env;
-     case(_, _) equation
-       (_,_,Env.FRAME(defineUnits = du)::_) = Lookup.lookupClass(Util.tuple21(tpl),Util.tuple22(tpl),p,false);
+       FCore.Graph env;
+       FCore.Ref r;
+
+     case(_,_) equation
+       (_,_,env) = Lookup.lookupClass(Util.tuple21(tpl),Util.tuple22(tpl),p,false);
+       r = FGraph.lastScopeRef(env);
+       // get the defined units node
+       r = FNode.child(r, FNode.duNodeName);
+       FCore.N(data = FCore.DU(du)) = FNode.fromRef(r);
      then du;
      else {};
   end matchcontinue;
@@ -708,7 +716,7 @@ end splitTypeParams;
 
 public function instBuildUnitTerms "builds unit terms and stores for a DAE. It also returns a hashtable that maps
 variable names to store locations."
-  input Env.Env env;
+  input FCore.Graph env;
   input DAE.DAElist dae;
   input DAE.DAElist compDae "to collect variable bindings";
   input UnitAbsyn.InstStore store;
@@ -742,7 +750,7 @@ end instBuildUnitTerms;
 
 public function buildUnitTerms "builds unit terms and stores for a DAE. It also returns a hashtable that maps
 variable names to store locations."
-  input Env.Env env;
+  input FCore.Graph env;
   input DAE.DAElist dae;
   output UnitAbsyn.UnitTerms terms;
   output UnitAbsyn.Store store;
@@ -826,7 +834,7 @@ algorithm
   outStore := matchcontinue(n,istore)
     local UnitAbsyn.Store store;
     case(0,store) then store;
-    case(_, _) equation
+    case(_,_) equation
       true = n < 0;
       print("addUnspecifiedStores n < 0!\n");
     then fail();
@@ -945,7 +953,7 @@ algorithm
 end buildStores;
 
 protected function buildTerms "builds the unit terms from DAE elements (equations)"
-  input Env.Env env;
+  input FCore.Graph env;
   input DAE.DAElist dae;
   input HashTable.HashTable ht;
   input UnitAbsyn.Store istore;
@@ -1006,7 +1014,7 @@ algorithm
 end buildTerms;
 
 protected function buildTermExp "help function to buildTerms, handles expressions"
-  input Env.Env env;
+  input FCore.Graph env;
   input DAE.Exp exp;
   input Boolean idivOrMul "is true if surrounding expression is division or multiplication. In that case
    the constant will be treated as dimensionless, otherwise it will be treated as unspecified
@@ -1170,7 +1178,7 @@ algorithm
 end  buildArrayElementTerms;
 
 protected function buildTermCall "builds a term and additional terms from a function call"
-  input Env.Env env;
+  input FCore.Graph env;
   input Absyn.Path path;
   input DAE.Exp funcCallExp;
   input list<DAE.Exp> expl;
@@ -1190,7 +1198,7 @@ algorithm
       UnitAbsyn.Store store;
 
     case(_,_,_,_,_,_,store) equation
-       (_,functp,_) = Lookup.lookupType(Env.noCache(),env,path,NONE());
+       (_,functp,_) = Lookup.lookupType(FCore.noCache(),env,path,NONE());
        funcInstId=tick();
        (store,formalParamIndxs) = buildFuncTypeStores(functp,funcInstId,store);
        (actTermLst,extraTerms,store) = buildTermExpList(env,expl,ht,store);
@@ -1264,7 +1272,7 @@ algorithm
 end buildTupleResultTerms;
 
 protected function buildTermExpList "build terms from list of expressions"
-  input Env.Env env;
+  input FCore.Graph env;
   input list<DAE.Exp> iexpl;
   input HashTable.HashTable ht;
   input UnitAbsyn.Store istore;

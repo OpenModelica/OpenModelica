@@ -41,7 +41,7 @@ encapsulated package FindZeroCrossings
 public import Absyn;
 public import BackendDAE;
 public import DAE;
-public import Env;
+public import FCore;
 
 protected import BackendDAECreate;
 protected import BackendDAEUtil;
@@ -116,13 +116,13 @@ protected
   BackendDAE.BackendDAEType btp;
   DAE.FunctionTree funcs;
   BackendDAE.SymbolicJacobians symjacs;
-  Env.Cache cache;
-  Env.Env env;
+  FCore.Cache cache;
+  FCore.Graph graph;
   BackendDAE.EqSystems systs;
   BackendDAE.ExtraInfo ei;
 algorithm
   BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs,
-    cache, env, funcs, einfo as BackendDAE.EVENT_INFO(timeEvents=timeEvents, zeroCrossingLst=zero_crossings, relationsLst=relationsLst,
+    cache, graph, funcs, einfo as BackendDAE.EVENT_INFO(timeEvents=timeEvents, zeroCrossingLst=zero_crossings, relationsLst=relationsLst,
     sampleLst=sampleLst, whenClauseLst=whenclauses, relationsNumber=countRelations,
     numberMathEvents=countMathFunctions), eoc, btp, symjacs, ei)) := inDAE;
 
@@ -137,7 +137,7 @@ algorithm
   inieqns := BackendEquation.listEquation(eqs_lst1);
   Debug.fcall(Flags.RELIDX, print, "findZeroCrossings1 sample index: " +& intString(listLength(sampleLst)) +& "\n");
   einfo1 := BackendDAE.EVENT_INFO(timeEvents, whenclauses, zero_crossings, sampleLst, relationsLst, countRelations, countMathFunctions);
-  outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo1, eoc, btp, symjacs, ei));
+  outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo1, eoc, btp, symjacs, ei));
 end findZeroCrossingsShared;
 
 protected function findZeroCrossings1 "This function finds all zerocrossings in the list of equations and
@@ -166,15 +166,15 @@ protected
   BackendDAE.Matching matching;
   DAE.FunctionTree funcs;
   BackendDAE.SymbolicJacobians symjacs;
-  Env.Cache cache;
-  Env.Env env;
+  FCore.Cache cache;
+  FCore.Graph graph;
   BackendDAE.StateSets stateSets;
   BackendDAE.ExtraInfo ei;
   BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
   BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind) := syst;
   (BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs,
-    cache, env, funcs, einfo as BackendDAE.EVENT_INFO(timeEvents=timeEvents, zeroCrossingLst=zero_crossings,
+    cache, graph, funcs, einfo as BackendDAE.EVENT_INFO(timeEvents=timeEvents, zeroCrossingLst=zero_crossings,
     sampleLst=sampleLst, whenClauseLst=whenclauses, relationsLst=relations,
     relationsNumber=countRelations, numberMathEvents=countMathFunctions),
     eoc, btp, symjacs, ei), allvars) := shared;
@@ -188,7 +188,7 @@ algorithm
   einfo1 := BackendDAE.EVENT_INFO(timeEvents, whenclauses, zero_crossings, sampleLst, relations, countRelations, countMathFunctions);
   allvars := listAppend(allvars, BackendVariable.varList(vars));
   osyst := BackendDAE.EQSYSTEM(vars, eqns1, m, mT, matching, stateSets, partitionKind);
-  oshared := (BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo1, eoc, btp, symjacs, ei), allvars);
+  oshared := (BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo1, eoc, btp, symjacs, ei), allvars);
 end findZeroCrossings1;
 
 protected function findZeroCrossings2 "

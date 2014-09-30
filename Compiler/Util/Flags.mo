@@ -395,6 +395,12 @@ constant DebugFlag HPCOM_MEMORY_OPT = DEBUG_FLAG(114, "hpcomMemoryOpt", false,
   Util.gettext("Optimize the memory structure regarding the selected scheduler"));
 constant DebugFlag DUMP_SYNCHRONOUS = DEBUG_FLAG(115, "dumpSynchronous", false,
   Util.gettext("Dumps information of the clock partitioning."));
+constant DebugFlag STRIP_PREFIX = DEBUG_FLAG(116, "stripPrefix", true,
+  Util.gettext("Strips the environment prefix from path/crefs. Defaults to true."));
+constant DebugFlag DO_SCODE_DEP = DEBUG_FLAG(117, "doSCodeDep", true,
+  Util.gettext("Does scode dependency analysis prior to instantiation. Defaults to true."));
+constant DebugFlag SHOW_INST_CACHE_INFO = DEBUG_FLAG(118, "showInstCacheInfo", false,
+  Util.gettext("Prints information about instantiation cache hits and additions. Defaults to false."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -515,7 +521,10 @@ constant list<DebugFlag> allDebugFlags = {
   ITERATION_VARS,
   ALLOW_RECORD_TOO_MANY_FIELDS,
   HPCOM_MEMORY_OPT,
-  DUMP_SYNCHRONOUS
+  DUMP_SYNCHRONOUS,
+  STRIP_PREFIX,
+  DO_SCODE_DEP,
+  SHOW_INST_CACHE_INFO
 };
 
 // CONFIGURATION FLAGS

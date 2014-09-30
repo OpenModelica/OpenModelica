@@ -63,7 +63,7 @@ encapsulated package EvaluateParameter
 public import Absyn;
 public import BackendDAE;
 public import DAE;
-public import Env;
+public import FCore;
 
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
@@ -196,8 +196,8 @@ algorithm
       BackendDAE.EquationArray remeqns,inieqns;
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
@@ -213,7 +213,7 @@ algorithm
       list<Integer> selectedParameter;
       BackendDAE.ExtraInfo ei;
 
-    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei)),_)
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei)),_)
       equation
         // get parameters with annotation(Evaluate=true)
         size = BackendVariable.varsSize(knvars);
@@ -227,17 +227,17 @@ algorithm
         repl = BackendVarTransform.emptyReplacementsSized(size);
         repleval = BackendVarTransform.emptyReplacementsSized(nselect);
         markarr = arrayCreate(size,-1);
-        (knvars,cache,repl,repleval,mark) = evaluateSelectedParameters(selectedParameter,knvars,m,inieqns,cache,env,1,markarr,repl,repleval);
+        (knvars,cache,repl,repleval,mark) = evaluateSelectedParameters(selectedParameter,knvars,m,inieqns,cache,graph,1,markarr,repl,repleval);
         // replace evaluated parameter in parameters
         comps = BackendDAETransform.tarjanAlgorithm(mt, ass);
          // evaluate vars with bind expression consists of evaluated vars
-        (knvars,repl,repleval,cache,mark) = traverseParameterSorted(comps,knvars,m,inieqns,cache,env,mark,markarr,repl,repleval);
+        (knvars,repl,repleval,cache,mark) = traverseParameterSorted(comps,knvars,m,inieqns,cache,graph,mark,markarr,repl,repleval);
         Debug.fcall(Flags.DUMP_EA_REPL, BackendVarTransform.dumpReplacements, repleval);
         // replace evaluated parameter in variables
-        (systs,(knvars,m,inieqns,cache,env,mark,markarr,repl,repleval)) = List.mapFold(systs,replaceEvaluatedParametersSystem,(knvars,m,inieqns,cache,env,mark,markarr,repl,repleval));
-        (av,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(av,replaceEvaluatedParameterTraverser,(knvars,m,inieqns,cache,env,mark,markarr,repl,repleval));
+        (systs,(knvars,m,inieqns,cache,graph,mark,markarr,repl,repleval)) = List.mapFold(systs,replaceEvaluatedParametersSystem,(knvars,m,inieqns,cache,graph,mark,markarr,repl,repleval));
+        (av,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(av,replaceEvaluatedParameterTraverser,(knvars,m,inieqns,cache,graph,mark,markarr,repl,repleval));
       then
-        (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei)),repleval);
+        (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei)),repleval);
   end match;
 end evaluateParameters;
 
@@ -301,31 +301,31 @@ protected function evaluateSelectedParameters
   input BackendDAE.Variables iKnVars;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.EquationArray inIEqns;
-  input Env.Cache iCache;
-  input Env.Env env;
+  input FCore.Cache iCache;
+  input FCore.Graph graph;
   input Integer iMark;
   input array<Integer> markarr;
   input BackendVarTransform.VariableReplacements iRepl;
   input BackendVarTransform.VariableReplacements iReplEvaluate;
   output BackendDAE.Variables oKnVars;
-  output Env.Cache oCache;
+  output FCore.Cache oCache;
   output BackendVarTransform.VariableReplacements oRepl;
   output BackendVarTransform.VariableReplacements oReplEvaluate;
   output Integer oMark;
 algorithm
-  (oKnVars,oCache,oRepl,oReplEvaluate,oMark) := match (iSelected,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl,iReplEvaluate)
+  (oKnVars,oCache,oRepl,oReplEvaluate,oMark) := match (iSelected,iKnVars,m,inIEqns,iCache,graph,iMark,markarr,iRepl,iReplEvaluate)
     local
       Integer i,mark;
       list<Integer> rest;
       BackendDAE.Variables knVars;
       BackendVarTransform.VariableReplacements repl,repleval;
       BackendDAE.Var v;
-      Env.Cache cache;
+      FCore.Cache cache;
     case ({},_,_,_,_,_,_,_,_,_) then (iKnVars,iCache,iRepl,iReplEvaluate,iMark);
     case (i::rest,_,_,_,_,_,_,_,_,_)
       equation
-        (knVars,cache,repl,repleval,mark) = evaluateSelectedParameters0(i,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl,iReplEvaluate);
-        (knVars,cache,repl,repleval,mark) = evaluateSelectedParameters(rest,knVars,m,inIEqns,cache,env,mark,markarr,repl,repleval);
+        (knVars,cache,repl,repleval,mark) = evaluateSelectedParameters0(i,iKnVars,m,inIEqns,iCache,graph,iMark,markarr,iRepl,iReplEvaluate);
+        (knVars,cache,repl,repleval,mark) = evaluateSelectedParameters(rest,knVars,m,inIEqns,cache,graph,mark,markarr,repl,repleval);
       then (knVars,cache,repl,repleval,mark);
   end match;
 end evaluateSelectedParameters;
@@ -336,43 +336,43 @@ protected function evaluateSelectedParameters0
   input BackendDAE.Variables iKnVars;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.EquationArray inIEqns;
-  input Env.Cache iCache;
-  input Env.Env env;
+  input FCore.Cache iCache;
+  input FCore.Graph graph;
   input Integer iMark;
   input array<Integer> markarr;
   input BackendVarTransform.VariableReplacements iRepl;
   input BackendVarTransform.VariableReplacements iReplEvaluate;
   output BackendDAE.Variables oKnVars;
-  output Env.Cache oCache;
+  output FCore.Cache oCache;
   output BackendVarTransform.VariableReplacements oRepl;
   output BackendVarTransform.VariableReplacements oReplEvaluate;
   output Integer oMark;
 algorithm
-  (oKnVars,oCache,oRepl,oReplEvaluate,oMark) := matchcontinue(i,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl,iReplEvaluate)
+  (oKnVars,oCache,oRepl,oReplEvaluate,oMark) := matchcontinue(i,iKnVars,m,inIEqns,iCache,graph,iMark,markarr,iRepl,iReplEvaluate)
     local
       Integer mark;
       list<Integer> rest;
       BackendDAE.Variables knVars;
       BackendVarTransform.VariableReplacements repl,repleval;
       BackendDAE.Var v;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (_,_,_,_,_,_,_,_,_,_)
       equation
         false = intGt(markarr[i],0) "not allready evaluated";
         _ = arrayUpdate(markarr,i,iMark);
         // evaluate needed parameters
-        (knVars,cache,repl,mark) = evaluateSelectedParameters1(m[i],iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
+        (knVars,cache,repl,mark) = evaluateSelectedParameters1(m[i],iKnVars,m,inIEqns,iCache,graph,iMark,markarr,iRepl);
         // evaluate parameter
         v = BackendVariable.getVarAt(knVars,i);
-        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,true,knVars,m,inIEqns,cache,env,mark,markarr,repl);
-        (knVars,cache,repl,repleval) = evaluateSelectedParameter(v,i,knVars,inIEqns,repl,iReplEvaluate,cache,env);
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,true,knVars,m,inIEqns,cache,graph,mark,markarr,repl);
+        (knVars,cache,repl,repleval) = evaluateSelectedParameter(v,i,knVars,inIEqns,repl,iReplEvaluate,cache,graph);
       then
         (knVars,cache,repl,repleval,mark);
     case (_,_,_,_,_,_,_,_,_,_)
       equation
         // evaluate parameter
         v = BackendVariable.getVarAt(iKnVars,i);
-        (knVars,cache,repl,repleval) = evaluateSelectedParameter(v,i,iKnVars,inIEqns,iRepl,iReplEvaluate,iCache,env);
+        (knVars,cache,repl,repleval) = evaluateSelectedParameter(v,i,iKnVars,inIEqns,iRepl,iReplEvaluate,iCache,graph);
       then (knVars,cache,repl,repleval,iMark);
   end matchcontinue;
 end evaluateSelectedParameters0;
@@ -383,23 +383,23 @@ protected function evaluateSelectedParameters1
   input BackendDAE.Variables iKnVars;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.EquationArray inIEqns;
-  input Env.Cache iCache;
-  input Env.Env env;
+  input FCore.Cache iCache;
+  input FCore.Graph graph;
   input Integer iMark;
   input array<Integer> markarr;
   input BackendVarTransform.VariableReplacements iRepl;
   output BackendDAE.Variables oKnVars;
-  output Env.Cache oCache;
+  output FCore.Cache oCache;
   output BackendVarTransform.VariableReplacements oRepl;
   output Integer oMark;
 algorithm
-  (oKnVars,oCache,oRepl,oMark) := matchcontinue(iUsed,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl)
+  (oKnVars,oCache,oRepl,oMark) := matchcontinue(iUsed,iKnVars,m,inIEqns,iCache,graph,iMark,markarr,iRepl)
     local
       Integer i,mark;
       list<Integer> rest;
       BackendDAE.Variables knVars;
       BackendVarTransform.VariableReplacements repl;
-      Env.Cache cache;
+      FCore.Cache cache;
       BackendDAE.Var v;
     case ({},_,_,_,_,_,_,_,_)
       then (iKnVars,iCache,iRepl,iMark);
@@ -407,16 +407,16 @@ algorithm
       equation
         false = intGt(markarr[i],0) "not allready evaluated";
         _ = arrayUpdate(markarr,i,iMark);
-        (knVars,cache,repl,mark) = evaluateSelectedParameters1(m[i],iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
+        (knVars,cache,repl,mark) = evaluateSelectedParameters1(m[i],iKnVars,m,inIEqns,iCache,graph,iMark,markarr,iRepl);
         v = BackendVariable.getVarAt(knVars,i);
-        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,true,knVars,m,inIEqns,cache,env,mark,markarr,repl);
-        (knVars,cache,repl) = evaluateParameter(v,knVars,inIEqns,repl,cache,env);
-        (knVars,cache,repl,mark) = evaluateSelectedParameters1(rest,knVars,m,inIEqns,cache,env,mark,markarr,repl);
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,true,knVars,m,inIEqns,cache,graph,mark,markarr,repl);
+        (knVars,cache,repl) = evaluateParameter(v,knVars,inIEqns,repl,cache,graph);
+        (knVars,cache,repl,mark) = evaluateSelectedParameters1(rest,knVars,m,inIEqns,cache,graph,mark,markarr,repl);
       then
         (knVars,cache,repl,mark);
     case (_::rest,_,_,_,_,_,_,_,_)
       equation
-        (knVars,cache,repl,mark) = evaluateSelectedParameters1(rest,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
+        (knVars,cache,repl,mark) = evaluateSelectedParameters1(rest,iKnVars,m,inIEqns,iCache,graph,iMark,markarr,iRepl);
       then
         (knVars,cache,repl,mark);
   end matchcontinue;
@@ -431,21 +431,21 @@ protected function evaluateSelectedParameter
   input BackendDAE.EquationArray inIEqns;
   input BackendVarTransform.VariableReplacements iRepl;
   input BackendVarTransform.VariableReplacements iReplEvaluate;
-  input Env.Cache iCache;
-  input Env.Env env;
+  input FCore.Cache iCache;
+  input FCore.Graph graph;
   output BackendDAE.Variables oKnVars;
-  output Env.Cache oCache;
+  output FCore.Cache oCache;
   output BackendVarTransform.VariableReplacements oRepl;
   output BackendVarTransform.VariableReplacements oReplEvaluate;
 algorithm
-  (oKnVars,oCache,oRepl,oReplEvaluate) := matchcontinue(var,index,inKnVars,inIEqns,iRepl,iReplEvaluate,iCache,env)
+  (oKnVars,oCache,oRepl,oReplEvaluate) := matchcontinue(var,index,inKnVars,inIEqns,iRepl,iReplEvaluate,iCache,graph)
     local
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       DAE.Exp e,e1;
       Option<DAE.VariableAttributes> attr;
       BackendVarTransform.VariableReplacements repl,repleval;
-      Env.Cache cache;
+      FCore.Cache cache;
       Values.Value value;
       BackendDAE.Variables knvars;
       Absyn.Info info;
@@ -465,7 +465,7 @@ algorithm
         // apply replacements
         (e1,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
         // evaluate expression
-        (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Absyn.NO_MSG(),0);
+        (cache, value,_) = Ceval.ceval(iCache, graph, e1, false, NONE(), Absyn.NO_MSG(),0);
         e1 = ValuesUtil.valueExp(value);
         // set bind value
         v = BackendVariable.setBindExp(var, SOME(e1));
@@ -495,7 +495,7 @@ algorithm
         // apply replacements
         (e1,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
         // evaluate expression
-        (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Absyn.NO_MSG(),0);
+        (cache, value,_) = Ceval.ceval(iCache, graph, e1, false, NONE(), Absyn.NO_MSG(),0);
         e1 = ValuesUtil.valueExp(value);
         // set bind value
         v = BackendVariable.setBindExp(var, SOME(e1));
@@ -528,7 +528,7 @@ algorithm
         // apply replacements
         (e1,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
         // evaluate expression
-        (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Absyn.NO_MSG(),0);
+        (cache, value,_) = Ceval.ceval(iCache, graph, e1, false, NONE(), Absyn.NO_MSG(),0);
         e1 = ValuesUtil.valueExp(value);
         // set bind value
         v = BackendVariable.setVarStartValue(var,e1);
@@ -564,26 +564,26 @@ protected function evaluateParameter
   input BackendDAE.Variables inKnVars;
   input BackendDAE.EquationArray inIEqns;
   input BackendVarTransform.VariableReplacements iRepl;
-  input Env.Cache iCache;
-  input Env.Env env;
+  input FCore.Cache iCache;
+  input FCore.Graph graph;
   output BackendDAE.Variables oKnVars;
-  output Env.Cache oCache;
+  output FCore.Cache oCache;
   output BackendVarTransform.VariableReplacements oRepl;
 algorithm
-  (oKnVars,oCache,oRepl) := matchcontinue(var,inKnVars,inIEqns,iRepl,iCache,env)
+  (oKnVars,oCache,oRepl) := matchcontinue(var,inKnVars,inIEqns,iRepl,iCache,graph)
     local
       DAE.ComponentRef cr;
       DAE.Exp e,e1;
       Option<DAE.VariableAttributes> attr;
       BackendVarTransform.VariableReplacements repl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Values.Value value;
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindExp=SOME(e)),_,_,_,_,_)
       equation
         // applay replacements
         (e,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
         // evaluate expression
-        (cache, value,_) = Ceval.ceval(iCache, env, e, false, NONE(), Absyn.NO_MSG(), 0);
+        (cache, value,_) = Ceval.ceval(iCache, graph, e, false, NONE(), Absyn.NO_MSG(), 0);
         e1 = ValuesUtil.valueExp(value);
         // save replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
@@ -606,7 +606,7 @@ algorithm
         // applay replacements
         (e,_) = BackendVarTransform.replaceExp(e, iRepl, NONE());
         // evaluate expression
-        (cache, value,_) = Ceval.ceval(iCache, env, e, false, NONE(), Absyn.NO_MSG(),0);
+        (cache, value,_) = Ceval.ceval(iCache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
         e1 = ValuesUtil.valueExp(value);
         // save replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
@@ -627,18 +627,18 @@ protected function evaluateFixedAttribute
   input BackendDAE.Variables iKnVars;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.EquationArray inIEqns;
-  input Env.Cache iCache;
-  input Env.Env env;
+  input FCore.Cache iCache;
+  input FCore.Graph graph;
   input Integer iMark;
   input array<Integer> markarr;
   input BackendVarTransform.VariableReplacements iRepl;
   output BackendDAE.Var oVar;
   output BackendDAE.Variables oKnVars;
-  output Env.Cache oCache;
+  output FCore.Cache oCache;
   output BackendVarTransform.VariableReplacements oRepl;
   output Integer oMark;
 algorithm
-  (oVar,oKnVars,oCache,oRepl,oMark) := match(var,addVar,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl)
+  (oVar,oKnVars,oCache,oRepl,oMark) := match(var,addVar,iKnVars,m,inIEqns,iCache,graph,iMark,markarr,iRepl)
     local
       DAE.ComponentRef cr;
       DAE.Exp e;
@@ -647,7 +647,7 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.Variables knVars;
       Integer mark;
-      Env.Cache cache;
+      FCore.Cache cache;
       BackendVarTransform.VariableReplacements repl;
     case (BackendDAE.VAR(values= NONE()),_,_,_,_,_,_,_,_,_)
       then
@@ -666,22 +666,22 @@ algorithm
         (var,iKnVars,iCache,iRepl,iMark);
     case (BackendDAE.VAR(varName=cr,values=attr as SOME(DAE.VAR_ATTR_REAL(fixed=SOME(e))),source=source),_,_,_,_,_,_,_,_,_)
       equation
-        (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,graph,iMark,markarr,iRepl);
       then
         (v,knVars,cache,repl,mark);
     case (BackendDAE.VAR(varName=cr,values=attr as SOME(DAE.VAR_ATTR_INT(fixed=SOME(e))),source=source),_,_,_,_,_,_,_,_,_)
       equation
-        (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,graph,iMark,markarr,iRepl);
       then
         (v,knVars,cache,repl,mark);
     case (BackendDAE.VAR(varName=cr,values=attr as SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(e))),source=source),_,_,_,_,_,_,_,_,_)
       equation
-        (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,graph,iMark,markarr,iRepl);
       then
         (v,knVars,cache,repl,mark);
     case (BackendDAE.VAR(varName=cr,values=attr as SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(e))),source=source),_,_,_,_,_,_,_,_,_)
       equation
-        (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,graph,iMark,markarr,iRepl);
       then
         (v,knVars,cache,repl,mark);
     else (var,iKnVars,iCache,iRepl,iMark);
@@ -698,14 +698,14 @@ protected function evaluateFixedAttribute1
   input BackendDAE.Variables iKnVars;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.EquationArray inIEqns;
-  input Env.Cache iCache;
-  input Env.Env env;
+  input FCore.Cache iCache;
+  input FCore.Graph graph;
   input Integer iMark;
   input array<Integer> markarr;
   input BackendVarTransform.VariableReplacements iRepl;
   output BackendDAE.Var oVar;
   output BackendDAE.Variables oKnVars;
-  output Env.Cache oCache;
+  output FCore.Cache oCache;
   output BackendVarTransform.VariableReplacements oRepl;
   output Integer oMark;
 protected
@@ -717,7 +717,7 @@ algorithm
    // apply replacements
   (e1,_) := BackendVarTransform.replaceExp(e, iRepl, NONE());
   (_,(_,ilst)) := Expression.traverseExpTopDown(e1, BackendDAEUtil.traversingincidenceRowExpFinder, (iKnVars,{}));
-  (oKnVars,oCache,oRepl,oMark) := evaluateSelectedParameters1(ilst,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
+  (oKnVars,oCache,oRepl,oMark) := evaluateSelectedParameters1(ilst,iKnVars,m,inIEqns,iCache,graph,iMark,markarr,iRepl);
   (e1,_) := BackendVarTransform.replaceExp(e1, oRepl, NONE());
   (e1,_) := ExpressionSimplify.simplify(e1);
    b := Expression.isConst(e1);
@@ -789,8 +789,8 @@ protected function traverseParameterSorted
   input BackendDAE.Variables inKnVars;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.EquationArray inIEqns;
-  input Env.Cache iCache;
-  input Env.Env env;
+  input FCore.Cache iCache;
+  input FCore.Graph graph;
   input Integer iMark;
   input array<Integer> markarr;
   input BackendVarTransform.VariableReplacements repl;
@@ -798,17 +798,17 @@ protected function traverseParameterSorted
   output BackendDAE.Variables oKnVars;
   output BackendVarTransform.VariableReplacements oRepl;
   output BackendVarTransform.VariableReplacements oReplEvaluate;
-  output Env.Cache oCache;
+  output FCore.Cache oCache;
   output Integer oMark;
 algorithm
-  (oKnVars,oRepl,oReplEvaluate,oCache,oMark) := match (inComps,inKnVars,m,inIEqns,iCache,env,iMark,markarr,repl,replEvaluate)
+  (oKnVars,oRepl,oReplEvaluate,oCache,oMark) := match (inComps,inKnVars,m,inIEqns,iCache,graph,iMark,markarr,repl,replEvaluate)
     local
       BackendDAE.Variables knvars;
       BackendDAE.Var v;
       BackendVarTransform.VariableReplacements repl1,evrepl;
       Integer i,mark;
       list<list<Integer>> rest;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<Integer> ilst;
 
     case({},_,_,_,_,_,_,_,_,_)
@@ -817,9 +817,9 @@ algorithm
     case({i}::rest,_,_,_,_,_,_,_,_,_)
       equation
         v = BackendVariable.getVarAt(inKnVars,i);
-        (v,knvars,cache,repl1,mark) = evaluateFixedAttribute(v,true,inKnVars,m,inIEqns,iCache,env,iMark,markarr,repl);
-        (knvars,repl1,evrepl,cache,mark) = evaluateParameterBindings(v,i,knvars,m,inIEqns,cache,env,mark,markarr,repl1,replEvaluate);
-        (knvars,repl1,evrepl,cache,mark) = traverseParameterSorted(rest,knvars,m,inIEqns,cache,env,mark,markarr,repl1,evrepl);
+        (v,knvars,cache,repl1,mark) = evaluateFixedAttribute(v,true,inKnVars,m,inIEqns,iCache,graph,iMark,markarr,repl);
+        (knvars,repl1,evrepl,cache,mark) = evaluateParameterBindings(v,i,knvars,m,inIEqns,cache,graph,mark,markarr,repl1,replEvaluate);
+        (knvars,repl1,evrepl,cache,mark) = traverseParameterSorted(rest,knvars,m,inIEqns,cache,graph,mark,markarr,repl1,evrepl);
       then
         (knvars,repl1,evrepl,cache,mark);
     case (ilst::rest,_,_,_,_,_,_,_,_,_)
@@ -827,8 +827,8 @@ algorithm
         // vlst = List.map1r(ilst,BackendVariable.getVarAt,inKnVars);
         // str = stringDelimitList(List.map(vlst,BackendDump.varString),"\n");
         // print(stringAppendList({"EvaluateParameter.traverseParameterSorted faild because of strong connected Block in Parameters!\n",str,"\n"}));
-        (knvars,repl1,evrepl,cache,mark) = traverseParameterSorted(List.map(ilst,List.create),inKnVars,m,inIEqns,iCache,env,iMark,markarr,repl,replEvaluate);
-        (knvars,repl1,evrepl,cache,mark) = traverseParameterSorted(rest,knvars,m,inIEqns,cache,env,mark,markarr,repl1,evrepl);
+        (knvars,repl1,evrepl,cache,mark) = traverseParameterSorted(List.map(ilst,List.create),inKnVars,m,inIEqns,iCache,graph,iMark,markarr,repl,replEvaluate);
+        (knvars,repl1,evrepl,cache,mark) = traverseParameterSorted(rest,knvars,m,inIEqns,cache,graph,mark,markarr,repl1,evrepl);
       then
         (knvars,repl1,evrepl,cache,mark);
   end match;
@@ -840,8 +840,8 @@ protected function evaluateParameterBindings
   input BackendDAE.Variables inKnVars;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.EquationArray inIEqns;
-  input Env.Cache iCache;
-  input Env.Env env;
+  input FCore.Cache iCache;
+  input FCore.Graph graph;
   input Integer iMark;
   input array<Integer> markarr;
   input BackendVarTransform.VariableReplacements iRepl;
@@ -849,11 +849,11 @@ protected function evaluateParameterBindings
   output BackendDAE.Variables oKnVars;
   output BackendVarTransform.VariableReplacements oRepl;
   output BackendVarTransform.VariableReplacements oReplEvaluate;
-  output Env.Cache oCache;
+  output FCore.Cache oCache;
   output Integer oMark;
 algorithm
   (oKnVars,oRepl,oReplEvaluate,oCache,oMark) :=
-  matchcontinue(var,index,inKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl,iReplEvaluate)
+  matchcontinue(var,index,inKnVars,m,inIEqns,iCache,graph,iMark,markarr,iRepl,iReplEvaluate)
     local
       BackendDAE.Var v;
       DAE.ComponentRef cr;
@@ -873,7 +873,7 @@ algorithm
         v = BackendVariable.setVarAttributes(v,attr);
         //false = Expression.expHasCrefs(e);
         // evaluate expression
-        //(cache, value,_) = Ceval.ceval(iCache, env, e, false,NONE(),Absyn.NO_MSG());
+        //(cache, value,_) = Ceval.ceval(iCache, graph, e, false,NONE(),Absyn.NO_MSG());
         //e1 = ValuesUtil.valueExp(value);
         // set bind value
         //v = BackendVariable.setBindExp(var, SOME(e1));
@@ -894,7 +894,7 @@ algorithm
         v = BackendVariable.setVarAttributes(v,attr);
         //false = Expression.expHasCrefs(e);
         // evaluate expression
-        //(cache, value,_) = Ceval.ceval(iCache, env, e, false,NONE(),Absyn.NO_MSG());
+        //(cache, value,_) = Ceval.ceval(iCache, graph, e, false,NONE(),Absyn.NO_MSG());
         //e1 = ValuesUtil.valueExp(value);
         // set bind value
         //v = BackendVariable.setBindExp(var, SOME(e1));
@@ -972,9 +972,9 @@ end traverseExpVisitorWrapper;
 protected function replaceEvaluatedParametersSystem
 "author Frenkel TUD"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,Env.Cache,Env.Env,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> inTypeA;
+  input tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> inTypeA;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,Env.Cache,Env.Env,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> outTypeA;
+  output tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> outTypeA;
 protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
@@ -992,17 +992,17 @@ end replaceEvaluatedParametersSystem;
 protected function replaceEvaluatedParameterTraverser
 "author: Frenkel TUD 2011-04"
  input BackendDAE.Var inVar;
- input tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,Env.Cache,Env.Env,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> inTpl;
+ input tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> inTpl;
  output BackendDAE.Var outVar;
- output tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,Env.Cache,Env.Env,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> outTpl;
+ output tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> outTpl;
 algorithm
   (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Variables knVars;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.EquationArray ieqns;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       Integer mark;
       array<Integer> markarr;
       BackendVarTransform.VariableReplacements repl;
@@ -1012,7 +1012,7 @@ algorithm
       DAE.ComponentRef cr;
       Option<DAE.VariableAttributes> attr;
       Boolean b;
-    case (v as BackendDAE.VAR(varName=_,bindExp=SOME(e),values=attr),(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate))
+    case (v as BackendDAE.VAR(varName=_,bindExp=SOME(e),values=attr),(knVars,m,ieqns,cache,graph,mark,markarr,repl,replEvaluate))
       equation
         // apply replacements
         (e1,true) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
@@ -1020,21 +1020,21 @@ algorithm
         v = BackendVariable.setBindExp(v, SOME(e1));
         (attr,(replEvaluate,b)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(replEvaluate,false));
         v = Debug.bcallret2(b,BackendVariable.setVarAttributes,v,attr,v);
-        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,env,mark,markarr,repl);
-      then (v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate));
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,graph,mark,markarr,repl);
+      then (v,(knVars,m,ieqns,cache,graph,mark,markarr,repl,replEvaluate));
 
-    case  (v as BackendDAE.VAR(values=attr),(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate))
+    case  (v as BackendDAE.VAR(values=attr),(knVars,m,ieqns,cache,graph,mark,markarr,repl,replEvaluate))
       equation
         // apply replacements
         (attr,(replEvaluate,true)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(replEvaluate,false));
         v = BackendVariable.setVarAttributes(v,attr);
-        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,env,mark,markarr,repl);
-      then (v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate));
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,graph,mark,markarr,repl);
+      then (v,(knVars,m,ieqns,cache,graph,mark,markarr,repl,replEvaluate));
 
-    case (v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate))
+    case (v,(knVars,m,ieqns,cache,graph,mark,markarr,repl,replEvaluate))
       equation
-        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,env,mark,markarr,repl);
-      then (v,(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate));
+        (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,graph,mark,markarr,repl);
+      then (v,(knVars,m,ieqns,cache,graph,mark,markarr,repl,replEvaluate));
   end matchcontinue;
 end replaceEvaluatedParameterTraverser;
 
@@ -1052,8 +1052,8 @@ algorithm
       BackendDAE.EquationArray remeqns,inieqns;
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
@@ -1067,7 +1067,7 @@ algorithm
     // do nothing if there are no replacements
     case (true,_,_) then inDAE;
 
-    case (false,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei)),_)
+    case (false,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei)),_)
       equation
         // do replacements in initial equations
         eqnslst = BackendEquation.equationList(inieqns);
@@ -1080,7 +1080,7 @@ algorithm
         // do replacements in systems
         systs = List.map1(systs,replaceEvaluatedParametersSystemEqns,repl);
       then
-        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei));
+        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei));
 
   end match;
 end replaceEvaluatedParametersEqns;

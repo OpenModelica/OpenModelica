@@ -44,7 +44,8 @@ public import ClassInf;
 public import Connect;
 public import ConnectionGraph;
 public import DAE;
-public import Env;
+public import FCore;
+public import FGraph;
 public import InnerOuter;
 public import Prefix;
 public import SCode;
@@ -93,8 +94,8 @@ public function instEquation
   Instantiates an equation by calling
   instEquationCommon with Inital set
   to NON_INITIAL."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -103,8 +104,8 @@ public function instEquation
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input ConnectionGraph.ConnectionGraph inGraph;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -114,14 +115,14 @@ algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) :=
   matchcontinue (inCache,inEnv,inIH,inPrefix,inSets,inState,inEquation,inBoolean,unrollForLoops,inGraph)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
       Prefix.Prefix pre;
       SCode.EEquation eq,eqn;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       String str;
@@ -146,8 +147,8 @@ end instEquation;
 
 protected function instEEquation
 "Instantiation of EEquation, used in for loops and if-equations."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -156,8 +157,8 @@ protected function instEEquation
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input ConnectionGraph.ConnectionGraph inGraph;
-  output Env.Cache cache;
-  output Env.Env outEnv;
+  output FCore.Cache cache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -170,7 +171,7 @@ algorithm
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
       SCode.EEquation eq;
       Boolean impl;
@@ -198,8 +199,8 @@ public function instInitialEquation
 "author: LS, ELN
   Instantiates initial equation by calling inst_equation_common with Inital
   set to INITIAL."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -208,8 +209,8 @@ public function instInitialEquation
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input ConnectionGraph.ConnectionGraph inGraph;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -219,14 +220,14 @@ algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inPrefix,inSets,inState,inEquation,inBoolean,unrollForLoops,inGraph)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
       Prefix.Prefix pre;
       SCode.EEquation eq;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
 
@@ -247,8 +248,8 @@ end instInitialEquation;
 
 protected function instEInitialEquation
 "Instantiates initial EEquation used in for loops and if equations "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -257,8 +258,8 @@ protected function instEInitialEquation
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input ConnectionGraph.ConnectionGraph inGraph;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -271,11 +272,11 @@ algorithm
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
       SCode.EEquation eq;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
 
@@ -295,8 +296,8 @@ protected function instEquationCommon
 
   This function takes an equation from the source and generates DAE
   equations and connection sets."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -305,8 +306,8 @@ protected function instEquationCommon
   input SCode.Initial inInitial;
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -324,8 +325,8 @@ protected function instEquationCommon2
 
   This function takes an equation from the source and generates DAE
   equations and connection sets."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -335,8 +336,8 @@ protected function instEquationCommon2
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Integer errorCount;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -383,8 +384,8 @@ protected function instEquationCommonWork
 
   This function takes an equation from the source and generates DAE
   equations and connection sets."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -394,8 +395,8 @@ protected function instEquationCommonWork
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
   input DAE.SymbolicOperation flattenOp;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -409,7 +410,7 @@ algorithm
       Connect.Sets csets_1,csets;
       DAE.DAElist dae;
       ClassInf.State ci_state_1,ci_state,ci_state_2;
-      Env.Env env,env_1,env_2;
+      FCore.Graph env,env_1,env_2;
       Prefix.Prefix pre;
       Absyn.ComponentRef c1,c2,cr,cr1,cr2;
       SCode.Initial initial_;
@@ -426,7 +427,7 @@ algorithm
       Values.Value v;
       DAE.ComponentRef cr_1;
       SCode.EEquation eqn,eq;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<Values.Value> valList;
       list<DAE.Exp> expl1;
       list<Boolean> blist;
@@ -462,7 +463,7 @@ algorithm
     // equality equations e1 = e2
     case (cache,env,ih,pre,csets,ci_state,SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info,comment=comment),initial_,impl,graph,_)
       equation
-        // Do static analysis and constant evaluation of expressions.
+         // Do static analysis and constant evaluation of expressions.
         // Gives expression and properties
         // (Type  bool | (Type  Const as (bool | Const list))).
         // For a function, it checks the funtion name.
@@ -486,7 +487,7 @@ algorithm
         (cache,e2_2) = PrefixUtil.prefixExp(cache,env, ih, e2_1, pre);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         source = DAEUtil.addCommentToSource(source,SOME(comment));
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
@@ -561,7 +562,7 @@ algorithm
         (cache,expl1) = PrefixUtil.prefixExpList(cache, env, ih, expl1, pre);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         // Instantiate all branches.
@@ -580,7 +581,7 @@ algorithm
         (cache,expl1) = PrefixUtil.prefixExpList(cache, env, ih, expl1, pre);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         // Instantiate all branches.
@@ -600,7 +601,7 @@ algorithm
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache, env, ih, pre, csets, ci_state, instEEquation, el, impl, alwaysUnroll, graph);
@@ -625,7 +626,7 @@ algorithm
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache,env,ih, pre, csets, ci_state, instEEquation, el, impl, alwaysUnroll, graph);
@@ -715,7 +716,7 @@ algorithm
         (cache,e3_2) = PrefixUtil.prefixExp(cache, env, ih, e3_1, pre);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         dae = DAE.DAE({DAE.ASSERT(e1_2,e2_2,e3_2,source)});
@@ -730,7 +731,7 @@ algorithm
         (cache,e1_2) = PrefixUtil.prefixExp(cache, env, ih, e1_1, pre);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         dae = DAE.DAE({DAE.TERMINATE(e1_2,source)});
@@ -751,7 +752,7 @@ algorithm
         (cache,e1_2) = PrefixUtil.prefixExp(cache, env, ih, e1_1, pre);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         DAE.DAE(daeElts) = instEqEquation(e1_2, tprop1, e2_2, tprop2, source, initial_, impl);
@@ -826,7 +827,7 @@ algorithm
         (cache,exp) = PrefixUtil.prefixExp(cache,env,ih,exp,pre);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         dae = instEquationNoRetCallVectorization(exp,inInitial,source);
@@ -839,8 +840,8 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         s = SCodeDump.equationStr(eqn,SCodeDump.defaultOptions);
         Debug.fprint(Flags.FAILTRACE, "- instEquationCommonWork failed for eqn: ");
-        Debug.fprint(Flags.FAILTRACE, s +& " in scope:" +& Env.getEnvNameStr(env) +& "\n");
-        //print("ENV: " +& Env.printEnvStr(env) +& "\n");
+        Debug.fprint(Flags.FAILTRACE, s +& " in scope:" +& FGraph.getGraphNameStr(env) +& "\n");
+        //print("ENV: " +& FGraph.printGraphStr(env) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -995,8 +996,8 @@ protected function condenseArrayEquation "This function transforms makes the two
 into its condensed form. By default, most array variables are vectorized,
 i.e. v becomes {v[1],v[2],..,v[n]}. But for array equations containing function calls this is not wanted.
 This function detect this case and elaborates expressions without vectorization."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Exp ie1;
   input Absyn.Exp ie2;
   input DAE.Exp elabedE1;
@@ -1006,15 +1007,15 @@ This function detect this case and elaborates expressions without vectorization.
   input Boolean impl;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outE1;
   output DAE.Exp outE2;
   output DAE.Properties oprop "If we have an expandable tuple";
 algorithm
   (outCache,outE1,outE2,oprop) := matchcontinue(inCache,inEnv,ie1,ie2,elabedE1,elabedE2,iprop,iprop2,impl,inPrefix,info)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Boolean b3,b4;
       DAE.Exp elabedE1_2, elabedE2_2;
       DAE.Properties prop1,prop,prop2;
@@ -1115,8 +1116,8 @@ end instEquationCommonCiTrans;
 protected function unroll "Unrolling a loop is a way of removing the non-linear structure of
   the FOR clause by explicitly repeating the body of the loop once
   for each iteration."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -1128,7 +1129,7 @@ protected function unroll "Unrolling a loop is a way of removing the non-linear 
   input SCode.Initial inInitial;
   input Boolean inImplicit;
   input ConnectionGraph.ConnectionGraph inGraph;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ConnectionGraph.ConnectionGraph outGraph;
@@ -1137,7 +1138,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inPrefix,inSets,inState,inIdent,inIteratorType,inValue,inSCodeEEquationLst,inInitial,inImplicit,inGraph)
     local
       Connect.Sets csets,csets_1,csets_2;
-      Env.Env env_1,env_2,env_3,env;
+      FCore.Graph env_1,env_2,env_3,env;
       DAE.DAElist dae1,dae2,dae;
       ClassInf.State ci_state_1,ci_state;
       Prefix.Prefix pre;
@@ -1147,7 +1148,7 @@ algorithm
       list<SCode.EEquation> eqs;
       SCode.Initial initial_;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       list<Integer> dims;
       Integer dim;
@@ -1162,9 +1163,9 @@ algorithm
       equation
         dim = dim-1;
         dims = dim::dims;
-        env_1 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forScopeName),NONE());
+        env_1 = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName),NONE());
         // the iterator is not constant but the range is constant
-        env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
+        env_2 = FGraph.addForIterator(env_1, i, ty, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* use instEEquation*/
         (cache,_,_,dae1,csets_1,ci_state_1,graph) =
           Inst.instList(cache, env_2, ih, pre, csets, ci_state, instEEquation, eqs, impl, alwaysUnroll, graph);
@@ -1178,9 +1179,9 @@ algorithm
       equation
         dim = dim-1;
         dims = dim::dims;
-        env_1 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forScopeName),NONE());
+        env_1 = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName),NONE());
         // the iterator is not constant but the range is constant
-        env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
+        env_2 = FGraph.addForIterator(env_1, i, ty, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         // Use instEInitialEquation
         (cache,_,_,dae1,csets_1,ci_state_1,graph) =
           Inst.instList(cache, env_2, ih, pre, csets, ci_state, instEInitialEquation, eqs, impl, alwaysUnroll, graph);
@@ -1203,15 +1204,15 @@ protected function addForLoopScope
  adrpo NOTE:
    The variability of the iterator SHOULD
    be determined by the range constantness!"
-  input Env.Env env;
+  input FCore.Graph env;
   input Ident iterName;
   input DAE.Type iterType;
   input SCode.Variability iterVariability;
   input Option<DAE.Const> constOfForIteratorRange;
-  output Env.Env newEnv;
+  output FCore.Graph newEnv;
 algorithm
-  newEnv := Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forScopeName), NONE());
-  newEnv := Env.extendFrameForIterator(newEnv, iterName, iterType, DAE.UNBOUND(), iterVariability, constOfForIteratorRange);
+  newEnv := FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName), NONE());
+  newEnv := FGraph.addForIterator(newEnv, iterName, iterType, DAE.UNBOUND(), iterVariability, constOfForIteratorRange);
 end addForLoopScope;
 
 protected function addParForLoopScope
@@ -1219,15 +1220,15 @@ protected function addParForLoopScope
  adrpo NOTE:
    The variability of the iterator SHOULD
    be determined by the range constantness!"
-  input Env.Env env;
+  input FCore.Graph env;
   input Ident iterName;
   input DAE.Type iterType;
   input SCode.Variability iterVariability;
   input Option<DAE.Const> constOfForIteratorRange;
-  output Env.Env newEnv;
+  output FCore.Graph newEnv;
 algorithm
-  newEnv := Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.parForScopeName), NONE());
-  newEnv := Env.extendFrameForIterator(newEnv, iterName, iterType, DAE.UNBOUND(), iterVariability, constOfForIteratorRange);
+  newEnv := FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.parForScopeName), NONE());
+  newEnv := FGraph.addForIterator(newEnv, iterName, iterType, DAE.UNBOUND(), iterVariability, constOfForIteratorRange);
 end addParForLoopScope;
 
 public function instEqEquation "author: LS, ELN
@@ -1854,8 +1855,8 @@ end instArrayElEq;
 protected function unrollForLoop
 "@author: adrpo
  unroll for loops that contains when statements"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
@@ -1867,13 +1868,13 @@ protected function unrollForLoop
   input SCode.Initial inInitial;
   input Boolean inBool;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
   (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
-      Env.Cache cache;
-      Env.Env env,env_1;
+      FCore.Cache cache;
+      FCore.Graph env,env_1;
       Prefix.Prefix pre;
       list<SCode.Statement> sl;
       SCode.Initial initial_;
@@ -1919,8 +1920,8 @@ end unrollForLoop;
 
 protected function instForStatement
 "Helper function for instStatement"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
@@ -1932,13 +1933,13 @@ protected function instForStatement
   input SCode.Initial inInitial;
   input Boolean inBool;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
   (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Prefix.Prefix pre;
       list<SCode.Statement> sl;
       SCode.Initial initial_;
@@ -1969,8 +1970,8 @@ end instForStatement;
 
 protected function instForStatement_dispatch
 "function for instantiating a for statement"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
@@ -1982,14 +1983,14 @@ protected function instForStatement_dispatch
   input SCode.Initial inInitial;
   input Boolean inBool;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
   (outCache,outStatements) :=
   matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,inSource,inInitial,inBool,unrollForLoops)
     local
-      Env.Cache cache;
-      Env.Env env,env_1;
+      FCore.Cache cache;
+      FCore.Graph env,env_1;
       Prefix.Prefix pre;
       list<SCode.Statement> sl;
       SCode.Initial initial_;
@@ -2123,8 +2124,8 @@ public function instAlgorithm
 "Algorithms are converted to the representation defined in
   the module Algorithm, and the added to the DAE result.
   This function converts an algorithm section."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -2133,8 +2134,8 @@ public function instAlgorithm
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input ConnectionGraph.ConnectionGraph inGraph;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -2144,14 +2145,14 @@ algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) :=
   matchcontinue (inCache,inEnv,inIH,inPrefix,inSets,inState,inAlgorithm,inBoolean,unrollForLoops,inGraph)
     local
-      Env.Env env;
+      FCore.Graph env;
       list<DAE.Statement> statements_1;
       Connect.Sets csets;
       ClassInf.State ci_state;
       list<SCode.Statement> statements;
       SCode.Statement stmt;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       SCode.AlgorithmSection algSCode;
       ConnectionGraph.ConnectionGraph graph;
@@ -2165,7 +2166,7 @@ algorithm
       equation
         // set the source of this element
         ci_state = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
-        source = DAEUtil.createElementSource(Absyn.dummyInfo, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.NON_INITIAL(), impl, unrollForLoops, {});
         (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,ExpressionSimplifyTypes.optionSimplifyOnly));
@@ -2194,8 +2195,8 @@ public function instInitialAlgorithm
 "Algorithms are converted to the representation defined
   in the module Algorithm, and the added to the DAE result.
   This function converts an algorithm section."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -2204,8 +2205,8 @@ public function instInitialAlgorithm
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input ConnectionGraph.ConnectionGraph inGraph;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -2215,13 +2216,13 @@ algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inPrefix,inSets,inState,inAlgorithm,inBoolean,unrollForLoops,inGraph)
     local
-      Env.Env env;
+      FCore.Graph env;
       list<DAE.Statement> statements_1;
       Connect.Sets csets;
       ClassInf.State ci_state;
       list<SCode.Statement> statements;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
@@ -2231,7 +2232,7 @@ algorithm
     case (cache,env,ih,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,_,graph)
       equation
         // set the source of this element
-        source = DAEUtil.createElementSource(Absyn.dummyInfo, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.INITIAL(), impl, unrollForLoops, {});
         (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,ExpressionSimplifyTypes.optionSimplifyOnly));
@@ -2250,26 +2251,26 @@ end instInitialAlgorithm;
 
 public function instConstraint
 "Constraints are elaborated and converted to DAE"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input SCode.ConstraintSection inConstraints;
   input Boolean inBoolean;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output DAE.DAElist outDae;
   output ClassInf.State outState;
 algorithm
   (outCache,outEnv,outDae,outState) :=
   matchcontinue (inCache,inEnv,inPrefix,inState,inConstraints,inBoolean)
     local
-      Env.Env env;
+      FCore.Graph env;
       list<DAE.Exp> constraints_1;
       ClassInf.State ci_state;
       list<Absyn.Exp> constraints;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.ElementSource source "the origin of the element";
       DAE.DAElist dae;
@@ -2278,7 +2279,7 @@ algorithm
       equation
         // set the source of this element
         ci_state = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
-        source = DAEUtil.createElementSource(Absyn.dummyInfo, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         (cache,constraints_1,_,_) = Static.elabExpList(cache, env, constraints, impl, NONE(), true /*vect*/, pre, Absyn.dummyInfo);
         // (constraints_1,_) = DAEUtil.traverseDAEEquationsStmts(constraints_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,false));
@@ -2304,8 +2305,8 @@ end instConstraint;
 
 public function instStatements
 "This function converts a list of algorithm statements."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPre;
   input ClassInf.State ci_state;
@@ -2315,17 +2316,17 @@ public function instStatements
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input list<list<DAE.Statement>> acc;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Statement> outAlgorithmStatementLst;
 algorithm
   (outCache,outAlgorithmStatementLst) := match (inCache,inEnv,inIH,inPre,ci_state,inAbsynAlgorithmLst,source,initial_,inBoolean,unrollForLoops,acc)
     local
-      Env.Env env;
+      FCore.Graph env;
       Boolean impl;
       list<DAE.Statement> stmts;
       SCode.Statement x;
       list<SCode.Statement> xs;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       InstanceHierarchy ih;
 
@@ -2349,8 +2350,8 @@ function: instStatement
   This function Looks at an algorithm statement and uses functions
   in the Algorithm module to build a representation of it that can
   be used in the DAE output."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPre;
   input ClassInf.State ci_state;
@@ -2359,7 +2360,7 @@ function: instStatement
   input SCode.Initial initial_;
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Statement> outStatements "more statements due to loop unrolling";
 algorithm
   (outCache,outStatements) := instStatement2(inCache,inEnv,inIH,inPre,ci_state,inAlgorithm,source,initial_,inBoolean,unrollForLoops,Error.getNumErrorMessages());
@@ -2370,8 +2371,8 @@ function: instStatement
   This function Looks at an algorithm statement and uses functions
   in the Algorithm module to build a representation of it that can
   be used in the DAE output."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPre;
   input ClassInf.State ci_state;
@@ -2381,7 +2382,7 @@ function: instStatement
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input Integer numErrorMessages;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Statement> outStatements "more statements due to loop unrolling";
 algorithm
   (outCache,outStatements) :=
@@ -2390,7 +2391,7 @@ algorithm
       DAE.Properties cprop,prop,msgprop,varprop,valprop,levelprop;
       DAE.Exp e_1,e_2,cond_1,cond_2,msg_1,msg_2,var_1,var_2,value_1,value_2,level_1,level_2;
       DAE.Statement stmt, stmt1;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Exp e,cond,msg,level,var,value;
       Boolean impl;
       list<DAE.Statement> tb_1,fb_1,sl_1,stmts;
@@ -2398,7 +2399,7 @@ algorithm
       list<SCode.Statement> tb,fb,sl;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> eib,elseWhenRest;
       SCode.Statement alg;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       InstanceHierarchy ih;
       SCode.Comment comment;
@@ -2715,8 +2716,8 @@ protected function loopOverRange
 "@author: adrpo
   Unrolling a for loop is explicitly repeating
   the body of the loop once for each iteration."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
@@ -2727,13 +2728,13 @@ protected function loopOverRange
   input SCode.Initial inInitial;
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
   (outCache,outStatements) :=
   matchcontinue (inCache,inEnv,inIH,inPrefix,ci_state,inIdent,inValue,inAlgItmLst,source,inInitial,inBoolean,unrollForLoops)
     local
-      Env.Env env_1,env_2,env;
+      FCore.Graph env_1,env_2,env;
       Prefix.Prefix pre;
       String i;
       Values.Value fst,v;
@@ -2741,7 +2742,7 @@ algorithm
       list<SCode.Statement> algs;
       SCode.Initial initial_;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<Integer> dims;
       Integer dim;
       list<DAE.Statement> stmts, stmts1, stmts2;
@@ -2757,9 +2758,9 @@ algorithm
       equation
         dim = dim-1;
         dims = dim::dims;
-        env_1 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forScopeName),NONE());
+        env_1 = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName),NONE());
         // the iterator is not constant but the range is constant
-        env_2 = Env.extendFrameForIterator(env_1, i, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(fst, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
+        env_2 = FGraph.addForIterator(env_1, i, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(fst, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* use instEEquation*/
         (cache,stmts1) = instStatements(cache, env_2, ih, pre, ci_state, algs, source, initial_, impl, unrollForLoops, {});
         (cache,stmts2) = loopOverRange(cache, env, ih, pre, ci_state, i, Values.ARRAY(rest,dims), algs, source, initial_, impl, unrollForLoops);
@@ -2797,15 +2798,15 @@ algorithm
 end rangeExpression;
 
 protected function instIfEqBranch
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input list<SCode.EEquation> inEquations;
   input Boolean inImpl;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output ClassInf.State outState;
   output list<DAE.Element> outEquations;
@@ -2817,16 +2818,16 @@ algorithm
 end instIfEqBranch;
 
 protected function instIfEqBranches
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input list<list<SCode.EEquation>> inBranches;
   input Boolean inImpl;
   input list<list<DAE.Element>> inAccumEqs;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output ClassInf.State outState;
   output list<list<DAE.Element>> outEquations;
@@ -2834,8 +2835,16 @@ algorithm
   (outCache, outEnv, outIH, outState, outEquations) :=
   match(inCache, inEnv, inIH, inPrefix, inState, inBranches, inImpl, inAccumEqs)
     local
-      Env.Cache cache;
-      Env.Env env;
+      DAE.Mod mod;
+      Prefix.Prefix pre;
+      Connect.Sets csets,csets_1,csets_2;
+      ClassInf.State ci_state,ci_state_1,ci_state_2;
+      Boolean impl;
+      list<list<DAE.Element>> llb;
+      list<list<SCode.EEquation>> es;
+      list<SCode.EEquation> e;
+      FCore.Cache cache;
+      FCore.Graph env;
       InnerOuter.InstHierarchy ih;
       ClassInf.State state;
       list<SCode.EEquation> seq;
@@ -2859,15 +2868,15 @@ algorithm
 end instIfEqBranches;
 
 protected function instInitialIfEqBranch
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input list<SCode.EEquation> inEquations;
   input Boolean inImpl;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output ClassInf.State outState;
   output list<DAE.Element> outEquations;
@@ -2879,16 +2888,16 @@ algorithm
 end instInitialIfEqBranch;
 
 protected function instInitialIfEqBranches
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input list<list<SCode.EEquation>> inBranches;
   input Boolean inImpl;
   input list<list<DAE.Element>> inAccumEqs;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output ClassInf.State outState;
   output list<list<DAE.Element>> outEquations;
@@ -2896,8 +2905,8 @@ algorithm
   (outCache, outEnv, outIH, outState, outEquations) :=
   match(inCache, inEnv, inIH, inPrefix, inState, inBranches, inImpl, inAccumEqs)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       InnerOuter.InstHierarchy ih;
       ClassInf.State state;
       list<SCode.EEquation> seq;
@@ -2960,8 +2969,8 @@ end checkForConnectInIfBranch2;
 
 protected function instElseIfs
 "This function helps instStatement to handle elseif parts."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPre;
   input ClassInf.State ci_state;
@@ -2971,13 +2980,13 @@ protected function instElseIfs
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> outElseIfBranches;
 algorithm
   (outCache,outElseIfBranches) :=
   matchcontinue (inCache,inEnv,inIH,inPre,ci_state,inElseIfBranches,source,initial_,inBoolean,unrollForLoops,info)
     local
-      Env.Env env;
+      FCore.Graph env;
       Boolean impl;
       DAE.Exp e_1,e_2;
       DAE.Properties prop;
@@ -2986,7 +2995,7 @@ algorithm
       Absyn.Exp e;
       list<SCode.Statement> l;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> tail;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       InstanceHierarchy ih;
 
@@ -3014,8 +3023,8 @@ protected function instConnect "
   Generates connectionsets for connections.
   Parameters and constants in connectors should generate appropriate assert statements.
   Hence, a DAE.Element list is returned as well."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
   input Prefix.Prefix inPrefix;
@@ -3024,8 +3033,8 @@ protected function instConnect "
   input Boolean inImplicit;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -3044,10 +3053,10 @@ algorithm
       Connect.Face f1,f2;
       Connect.Sets sets;
       DAE.DAElist dae;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
       Absyn.ComponentRef c1,c2;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.InnerOuter io1,io2;
       SCode.Parallelism prl1,prl2;
       SCode.Variability vt1,vt2;
@@ -3190,8 +3199,8 @@ protected function checkConstantVariability "
 Author BZ, 2009-09
   Helper function for instConnect, prints error message for the case with non constant(or parameter) subscript(/s)"
   input list<Absyn.ComponentRef> inrefs;
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input String affectedConnector;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -3230,8 +3239,8 @@ end checkConstantVariability;
 protected function connectExpandableConnectors
 "@author: adrpo
   this function handle the connections of expandable connectors"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
   input Prefix.Prefix inPrefix;
@@ -3240,8 +3249,8 @@ protected function connectExpandableConnectors
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -3259,10 +3268,10 @@ algorithm
       DAE.Type ty1,ty2,ty;
       Connect.Sets sets;
       DAE.DAElist dae, daeExpandable;
-      Env.Env env, envExpandable, envComponent, env1, env2, envComponentEmpty;
+      FCore.Graph env, envExpandable, envComponent, env1, env2, envComponentEmpty;
       Prefix.Prefix pre;
       Absyn.ComponentRef c1,c2,c1_prefix;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.InnerOuter io1,io2;
       SCode.Variability vt1,vt2;
       SCode.Parallelism prl1,prl2;
@@ -3305,14 +3314,14 @@ algorithm
 
         // Debug.fprintln(Flags.EXPANDABLE, "1 connect(expandable, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")" );
 
-        // Debug.fprintln(Flags.EXPANDABLE, "env ===>\n" +& Env.printEnvStr(env));
-        // Debug.fprintln(Flags.EXPANDABLE, "env(c1) ===>\n" +& Env.printEnvStr(env1));
-        // Debug.fprintln(Flags.EXPANDABLE, "env(c2) ===>\n" +& Env.printEnvStr(env2));
+        // Debug.fprintln(Flags.EXPANDABLE, "env ===>\n" +& FGraph.printGraphStr(env));
+        // Debug.fprintln(Flags.EXPANDABLE, "env(c1) ===>\n" +& FGraph.printGraphStr(env1));
+        // Debug.fprintln(Flags.EXPANDABLE, "env(c2) ===>\n" +& FGraph.printGraphStr(env2));
 
         // get the virtual components
-        variables1 = Env.getVariablesFromEnv(env1);
+        variables1 = FGraph.getVariablesFromGraphScope(env1);
         // Debug.fprintln(Flags.EXPANDABLE, "Variables1: " +& stringDelimitList(variables1, ", "));
-        variables2 = Env.getVariablesFromEnv(env2);
+        variables2 = FGraph.getVariablesFromGraphScope(env2);
         // Debug.fprintln(Flags.EXPANDABLE, "Variables2: " +& stringDelimitList(variables2, ", "));
         variablesUnion = List.union(variables1, variables2);
         // sort so we have them in order
@@ -3386,7 +3395,7 @@ algorithm
 
         // we have more than 1 variables in the envComponent, we need to add an empty environment for c1
         // and dive into!
-        variablesUnion = Env.getVariablesFromEnv(envComponent);
+        variablesUnion = FGraph.getVariablesFromGraphScope(envComponent);
         // print("VARS MULTIPLE:" +& stringDelimitList(variablesUnion, ", ") +& "\n");
         // more than 1 variables
         true = listLength(variablesUnion) > 1;
@@ -3396,14 +3405,15 @@ algorithm
         // get the virtual component name
         Absyn.CREF_IDENT(componentName, _) = Absyn.crefGetLastIdent(c1);
 
-        envComponentEmpty = Env.removeComponentsFromFrameV(envComponent);
+        envComponentEmpty = FGraph.removeComponentsFromScope(envComponent);
 
         // get the dimensions from the type!
         daeDims = Types.getDimensions(ty2);
         arrDims = List.map(daeDims,Expression.unelabDimension);
         // add to the environment of the expandable
         // connector the new virtual variable.
-        envExpandable = Env.extendFrameV(
+        envExpandable = FGraph.cloneLastScopeRef(envExpandable);
+        envExpandable = FGraph.mkComponentNode(
                           envExpandable,
                           DAE.TYPES_VAR(componentName,
                                         DAE.ATTR(ct2,prl2,vt2,Absyn.BIDIR(),io2,vis2),
@@ -3416,7 +3426,7 @@ algorithm
                             Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
                             SCode.noComment, NONE(), Absyn.dummyInfo),
                           DAE.NOMOD(),
-                          Env.VAR_TYPED(),
+                          FCore.VAR_TYPED(),
           // add empty here to connect individual components!
           envComponentEmpty);
         // ******************************************************************************
@@ -3473,7 +3483,7 @@ algorithm
 
         // we have more than 1 variables in the envComponent, we need to add an empty environment for c1
         // and dive into!
-        variablesUnion = Env.getVariablesFromEnv(envComponent);
+        variablesUnion = FGraph.getVariablesFromGraphScope(envComponent);
         // print("VARS SINGLE:" +& stringDelimitList(variablesUnion, ", ") +& "\n");
         // max 1 variable, should check for empty!
         false = listLength(variablesUnion) > 1;
@@ -3488,7 +3498,7 @@ algorithm
         arrDims = List.map(daeDims,Expression.unelabDimension);
         // add to the environment of the expandable
         // connector the new virtual variable.
-        envExpandable = Env.extendFrameV(
+        envExpandable = FGraph.mkComponentNode(
                           envExpandable,
                           DAE.TYPES_VAR(
                             componentName,
@@ -3501,7 +3511,7 @@ algorithm
                             Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
                             SCode.noComment, NONE(), Absyn.dummyInfo),
                           DAE.NOMOD(),
-                          Env.VAR_TYPED(),
+                          FCore.VAR_TYPED(),
                           envComponent);
         // ******************************************************************************
         // here we need to update the correct environment.
@@ -3520,9 +3530,9 @@ algorithm
 
         // Debug.fprintln(Flags.EXPANDABLE, "3 connect(expandable, existing[SINGLE])(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
 
-        //Debug.fprintln(Flags.EXPANDABLE, "env expandable: " +& Env.printEnvStr(envExpandable));
-        //Debug.fprintln(Flags.EXPANDABLE, "env component: " +& Env.printEnvStr(envComponent));
-        //Debug.fprintln(Flags.EXPANDABLE, "env: " +& Env.printEnvStr(env));
+        //Debug.fprintln(Flags.EXPANDABLE, "env expandable: " +& FGraph.printGraphStr(envExpandable));
+        //Debug.fprintln(Flags.EXPANDABLE, "env component: " +& FGraph.printGraphStr(envComponent));
+        //Debug.fprintln(Flags.EXPANDABLE, "env: " +& FGraph.printGraphStr(env));
 
         // use the cannon cref here as we will NOT find [i] in this environment!!!!
         // c1 = Absyn.joinCrefs(ComponentReference.unelabCref(c1_2), Absyn.CREF_IDENT(componentName, {}));
@@ -3540,7 +3550,7 @@ algorithm
         state = ClassInf.CONNECTOR(Absyn.IDENT("expandable connector"), true);
         (cache,c1p) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
         (cache,c2p) = PrefixUtil.prefixCref(cache, env, ih, pre, c2_2);
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1p,c2p)), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1p,c2p)), NONE());
         // declare the added component in the DAE!
         (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
 
@@ -3684,43 +3694,44 @@ protected function updateEnvComponentsOnQualPath
     update env[c] with env[d]
     update env[b] with env[c]
     update env[a] with env[b]"
-  input Env.Cache inCache "cache";
-  input Env.Env inEnv "the environment we should update!";
+  input FCore.Cache inCache "cache";
+  input FCore.Graph inEnv "the environment we should update!";
   input DAE.ComponentRef virtualExpandableCref;
   input DAE.Attributes virtualExpandableAttr;
   input DAE.Type virtualExpandableTy;
   input DAE.Binding virtualExpandableBinding;
   input Option<DAE.Const> virtualExpandableCnstForRange;
-  input Env.Env virtualExpandableEnv "the virtual component environment!";
-  output Env.Env outEnv "the returned updated environment";
+  input FCore.Graph virtualExpandableEnv "the virtual component environment!";
+  output FCore.Graph outEnv "the returned updated environment";
 algorithm
   outEnv :=
   match(inCache, inEnv, virtualExpandableCref, virtualExpandableAttr, virtualExpandableTy,
                 virtualExpandableBinding, virtualExpandableCnstForRange, virtualExpandableEnv)
     local
-      Env.Cache cache;
-      Env.Env topEnv "the environment we should update!";
+      FCore.Cache cache;
+      FCore.Graph topEnv "the environment we should update!";
       DAE.ComponentRef veCref, qualCref;
       DAE.Attributes veAttr,currentAttr;
       DAE.Type veTy,currentTy;
       DAE.Binding veBinding,currentBinding;
       Option<DAE.Const> veCnstForRange,currentCnstForRange;
-      Env.Env veEnv "the virtual component environment!";
-      Env.Env updatedEnv "the returned updated environment";
-      Env.Env currentEnv, forLoopEnv, realEnv;
+      FCore.Graph veEnv "the virtual component environment!";
+      FCore.Graph updatedEnv "the returned updated environment";
+      FCore.Graph currentEnv, realEnv;
+      FCore.Scope forLoopScope;
       String currentName;
 
     // we have reached the top, update and return!
     case (_, topEnv, DAE.CREF_IDENT(ident = currentName), veAttr, veTy, veBinding, veCnstForRange, veEnv)
       equation
-        (realEnv, forLoopEnv) = Lookup.splitEnv(topEnv);
+        (realEnv, forLoopScope) = FGraph.splitGraphScope(topEnv);
         // update the topEnv
-        updatedEnv = Env.updateFrameV(
+        updatedEnv = FGraph.updateComp(
                        realEnv,
                        DAE.TYPES_VAR(currentName, veAttr, veTy, veBinding, veCnstForRange),
-                       Env.VAR_TYPED(),
+                       FCore.VAR_TYPED(),
                        veEnv);
-        updatedEnv = listAppend(forLoopEnv, updatedEnv);
+        updatedEnv = FGraph.pushScope(updatedEnv, forLoopScope);
       then
         updatedEnv;
 
@@ -3736,14 +3747,14 @@ algorithm
         // find the correct environment to update
         (_,currentAttr,currentTy,currentBinding,currentCnstForRange,_,_,currentEnv,_) = Lookup.lookupVar(cache, topEnv, qualCref);
 
-        (realEnv, forLoopEnv) = Lookup.splitEnv(currentEnv);
+        (realEnv, forLoopScope) = FGraph.splitGraphScope(currentEnv);
         // update the current environment!
-        currentEnv = Env.updateFrameV(
+        currentEnv = FGraph.updateComp(
                        realEnv,
                        DAE.TYPES_VAR(currentName, veAttr, veTy, veBinding, veCnstForRange),
-                       Env.VAR_TYPED(),
+                       FCore.VAR_TYPED(),
                        veEnv);
-        currentEnv = listAppend(forLoopEnv, currentEnv);
+        currentEnv = FGraph.pushScope(currentEnv, forLoopScope);
 
         // call us recursively to reach the top!
         updatedEnv = updateEnvComponentsOnQualPath(
@@ -3755,7 +3766,8 @@ algorithm
                       currentBinding,
                       currentCnstForRange,
                       currentEnv);
-      then updatedEnv;
+      then
+        updatedEnv;
   end match;
 end updateEnvComponentsOnQualPath;
 
@@ -3763,8 +3775,8 @@ protected function connectExpandableVariables
 "@author: adrpo
   this function handle the connections of expandable connectors
   that contain components"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
   input Prefix.Prefix inPrefix;
@@ -3774,8 +3786,8 @@ protected function connectExpandableVariables
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -3787,10 +3799,10 @@ algorithm
       Boolean impl;
       Connect.Sets sets;
       DAE.DAElist dae, dae1, dae2;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
       Absyn.ComponentRef c1,c2,c1_full,c2_full;
-      Env.Cache cache;
+      FCore.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       list<String> names;
@@ -4146,8 +4158,8 @@ public function connectComponents "
   adds the components to the set, and for complex types it traverses
   the subcomponents and recursively connects them to each other.
   A DAE.Element list is returned for assert statements."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
   input Prefix.Prefix inPrefix3;
@@ -4164,8 +4176,8 @@ public function connectComponents "
   input Absyn.InnerOuter io2;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -4176,7 +4188,7 @@ algorithm
     local
       DAE.ComponentRef c1_1,c2_1,c1,c2,c1p,c2p;
       Connect.Sets sets_1,sets;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
       Connect.Face f1,f2;
       DAE.Type t1, t2, bc_tp1, bc_tp2, equalityConstraintFunctionReturnType;
@@ -4185,7 +4197,7 @@ algorithm
       list<DAE.Var> l1,l2;
       SCode.ConnectorType ct;
       String c1_str,t1_str,t2_str,c2_str;
-      Env.Cache cache;
+      FCore.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
@@ -4217,7 +4229,7 @@ algorithm
            PrefixUtil.prefixExp(cache, env, ih, Expression.crefExp(c2), pre);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
         // print("CONNECT: " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "/" +&
         //    ComponentReference.printComponentRefStr(c1_1) +& "[" +& Dump.unparseInnerouterStr(io1) +& "]" +& " = " +&
@@ -4238,7 +4250,7 @@ algorithm
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
         crefExp1 = Expression.crefExp(c1_1);
         crefExp2 = Expression.crefExp(c2_1);
@@ -4266,7 +4278,7 @@ algorithm
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
         sets_1 = ConnectUtil.addConnection(sets, c1, f1, c2, f2, inConnectorType, source);
       then
@@ -4292,6 +4304,26 @@ algorithm
       then
         (cache,env,ih,sets_1,dae,graph);
 
+    // Connection of arrays of subtype basic types with equality constraint
+    case (cache,env,ih,sets,pre,
+        c1,f1,DAE.T_ARRAY(dims = {dim1}, ty = t1),_,
+        c2,f2,DAE.T_ARRAY(dims = {dim2}, ty = t2),_,
+        ct as SCode.POTENTIAL(),_,_,graph,_)
+      equation
+        DAE.T_SUBTYPE_BASIC(equalityConstraint = SOME(_)) = Types.arrayElementType(t1);
+        DAE.T_SUBTYPE_BASIC(equalityConstraint = SOME(_)) = Types.arrayElementType(t2);
+
+        true = Expression.dimensionsKnownAndEqual(dim1, dim2);
+        _ = Expression.dimensionSize(dim1);
+
+        crefs1 = ComponentReference.expandCref(c1,false);
+        crefs2 = ComponentReference.expandCref(c2,false);
+        (cache, _, ih, sets_1, dae, graph) = connectArrayComponents(cache, env,
+          ih, sets, pre, crefs1, f1, t1, vt1, io1, crefs2, f2, t2, vt2, io2, ct,
+          graph, info);
+      then
+        (cache,env,ih,sets_1,dae,graph);
+
     // Connection of arrays
     case (cache,env,ih,sets,pre,
         c1, f1, t1 as DAE.T_ARRAY(ty = _), _,
@@ -4305,7 +4337,7 @@ algorithm
         // set the source of this element
         (cache,c1p) = PrefixUtil.prefixCref(cache, env, ih, pre, c1);
         (cache,c2p) = PrefixUtil.prefixCref(cache, env, ih, pre, c2);
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1p,c2p)), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1p,c2p)), NONE());
 
         sets_1 = ConnectUtil.addArrayConnection(sets, c1, f1, c2, f2, source, ct);
       then
@@ -4325,7 +4357,7 @@ algorithm
           t2, vt2, ct, io1, io2, ConnectionGraph.NOUPDATE_EMPTY, info);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
         // Add an edge to connection graph. The edge contains the
         // dae to be added in the case where the edge is broken.
@@ -4351,7 +4383,53 @@ algorithm
         // instantiate and add the equalityConstraint function to the dae function tree!
         (cache,equalityConstraintFunction,env) = Lookup.lookupClass(cache,env,fpath1,false);
         (cache,fpath1) = Inst.makeFullyQualified(cache,env,fpath1);
-        cache = Env.addCachedInstFuncGuard(cache,fpath1);
+        cache = FCore.addCachedInstFuncGuard(cache,fpath1);
+        (cache,env,ih) =
+          InstFunction.implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),Prefix.NOPRE(),equalityConstraintFunction,{});
+      then
+        (cache,env,ih,sets_1,dae,graph);
+
+    // Connection of connectors with an equality constraint extending BASIC TYPES
+    case (cache,env,ih,sets,pre,c1,f1,DAE.T_SUBTYPE_BASIC(complexType = t1, equalityConstraint=SOME((fpath1,idim1,inlineType1))),_,
+                                c2,f2,DAE.T_SUBTYPE_BASIC(complexType = t2, equalityConstraint=SOME((_,_,_))),_,
+                                ct as SCode.POTENTIAL(),_,_,
+        (graph as ConnectionGraph.GRAPH(updateGraph = true)),_)
+      equation
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
+        // Connect components ignoring equality constraints
+        (cache,env,ih,sets_1,dae,_) =
+        connectComponents(cache, env, ih, sets, pre, c1, f1, t1, vt1, c2, f2,
+          t2, vt2, ct, io1, io2, ConnectionGraph.NOUPDATE_EMPTY, info);
+
+        // set the source of this element
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+
+        // Add an edge to connection graph. The edge contains the
+        // dae to be added in the case where the edge is broken.
+        zeroVector = Expression.makeRealArrayOfZeros(idim1);
+        crefExp1 = Expression.crefExp(c1_1);
+        crefExp2 = Expression.crefExp(c2_1);
+        equalityConstraintFunctionReturnType =
+          DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(idim1)},DAE.emptyTypeSource);
+
+        source = DAEUtil.addAdditionalComment(source, " equation generated by overconstrained connection graph breaking");
+
+        breakDAEElements =
+          {DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(idim1)}, zeroVector,
+                        DAE.CALL(fpath1,{crefExp1, crefExp2},
+                                 DAE.CALL_ATTR(
+                                   equalityConstraintFunctionReturnType,
+                                   false, false, false, false, inlineType1, DAE.NO_TAIL())), // use the inline type
+                        source // set the origin of the element
+                        )};
+        graph = ConnectionGraph.addConnection(graph, ComponentReference.crefStripLastSubs(c1_1), ComponentReference.crefStripLastSubs(c2_1), breakDAEElements);
+
+        // deal with equalityConstraint function!
+        // instantiate and add the equalityConstraint function to the dae function tree!
+        (cache,equalityConstraintFunction,env) = Lookup.lookupClass(cache,env,fpath1,false);
+        (cache,fpath1) = Inst.makeFullyQualified(cache,env,fpath1);
+        cache = FCore.addCachedInstFuncGuard(cache,fpath1);
         (cache,env,ih) =
           InstFunction.implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),Prefix.NOPRE(),equalityConstraintFunction,{});
       then
@@ -4419,8 +4497,8 @@ algorithm
 end generateConnectAssert;
 
 protected function connectArrayComponents
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
   input Prefix.Prefix inPrefix;
@@ -4437,8 +4515,8 @@ protected function connectArrayComponents
   input SCode.ConnectorType inConnectorType;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -4452,8 +4530,8 @@ algorithm
     local
       DAE.ComponentRef lhs, rhs;
       list<DAE.ComponentRef> rest_lhs, rest_rhs;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       InstanceHierarchy ih;
       Connect.Sets sets;
       DAE.DAElist dae1, dae2;
@@ -4483,8 +4561,8 @@ protected function connectVars
 "This function connects two subcomponents by adding the component
   name to the current path and recursively connecting the components
   using the function connectComponents."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
   input Prefix.Prefix inPrefix;
@@ -4501,8 +4579,8 @@ protected function connectVars
   input Absyn.InnerOuter io2;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -4512,7 +4590,7 @@ algorithm
   match (inCache,inEnv,inIH,inSets,inPrefix,inComponentRef3,inFace4,inTypesVarLst5,vt1,inComponentRef6,inFace7,inTypesVarLst8,vt2,inConnectorType,io1,io2,inGraph,info)
     local
       Connect.Sets sets,sets_1,sets_2;
-      Env.Env env;
+      FCore.Graph env;
       DAE.ComponentRef c1_1,c2_1,c1,c2;
       DAE.DAElist dae,dae2,dae_1;
       Connect.Face f1,f2;
@@ -4523,7 +4601,7 @@ algorithm
       list<DAE.Var> xs1,xs2;
       SCode.Variability vta,vtb;
       DAE.Type ty_2;
-      Env.Cache cache;
+      FCore.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
 
@@ -4870,8 +4948,8 @@ algorithm
 end checkForNestedWhenInEq;
 
 protected function instAssignment
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy ih;
   input Prefix.Prefix inPre;
   input SCode.Statement alg;
@@ -4880,13 +4958,13 @@ protected function instAssignment
   input Boolean impl;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input Integer numError;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Statement> stmts "more statements due to loop unrolling";
 algorithm
   (outCache,stmts) := matchcontinue (inCache,inEnv,ih,inPre,alg,source,initial_,impl,unrollForLoops,numError)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       DAE.Exp e_1;
       DAE.Properties eprop;
       Prefix.Prefix pre;
@@ -4913,8 +4991,8 @@ algorithm
 end instAssignment;
 
 protected function instAssignment2
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPre;
   input Absyn.Exp var;
@@ -4926,7 +5004,7 @@ protected function instAssignment2
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input Integer numError;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Statement> stmts "more statements due to loop unrolling";
 algorithm
   (outCache,stmts) := matchcontinue (inCache,inEnv,inIH,inPre,var,value,props,info,inSource,initial_,inBoolean,unrollForLoops,numError)
@@ -4935,7 +5013,7 @@ algorithm
       DAE.Properties cprop,eprop,prop,prop1,prop2;
       DAE.Exp e_1, e_2, cre, cre2, e2_2, e2_2_2, lhs, rhs;
       DAE.Statement stmt;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.ComponentRef cr;
       Absyn.Exp e,e1,e2, left;
       Boolean impl;
@@ -4945,7 +5023,7 @@ algorithm
       list<DAE.Attributes> attrs;
       DAE.Type lt,rt,ty,t;
       String s,lhs_str,rhs_str,lt_str,rt_str,s1,s2;
-      Env.Cache cache;
+      FCore.Cache cache;
       Prefix.Prefix pre;
       InstanceHierarchy ih;
       DAE.Pattern pattern;
@@ -5164,8 +5242,8 @@ end getIteratorType;
 
 protected function instParForStatement
 "Helper function for instStatement"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
@@ -5177,13 +5255,13 @@ protected function instParForStatement
   input SCode.Initial inInitial;
   input Boolean inBool;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
   (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Prefix.Prefix pre;
       list<SCode.Statement> sl;
       SCode.Initial initial_;
@@ -5214,8 +5292,8 @@ end instParForStatement;
 
 protected function instParForStatement_dispatch
 "function for instantiating a for statement"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
@@ -5227,14 +5305,14 @@ protected function instParForStatement_dispatch
   input SCode.Initial inInitial;
   input Boolean inBool;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
   (outCache,outStatements) :=
   matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,inSource,inInitial,inBool,unrollForLoops)
     local
-      Env.Cache cache;
-      Env.Env env,env_1;
+      FCore.Cache cache;
+      FCore.Graph env,env_1;
       Prefix.Prefix pre;
       list<SCode.Statement> sl;
       SCode.Initial initial_;
@@ -5322,8 +5400,8 @@ protected function isCrefParGlobalOrForIterator
 variable or the loop iterator(implicitly declared is OK).
 All other references are errors."
   input tuple<DAE.ComponentRef,Absyn.Info> inCrefInfo;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
 algorithm
   _ := matchcontinue(inCrefInfo,inCache,inEnv)
     local

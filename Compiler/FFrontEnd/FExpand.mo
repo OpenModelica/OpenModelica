@@ -72,12 +72,12 @@ type Msg = Option<Absyn.Info>;
 public function path
 "@author: adrpo
  expand a path in the graph."
-  input Absyn.Path inPath;
   input Graph inGraph;
+  input Absyn.Path inPath;
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef)  := match(inPath, inGraph)
+  (outGraph, outRef)  := match(inGraph, inPath)
     local
       Ref r, t;
       Name n;
@@ -85,7 +85,7 @@ algorithm
       Graph g;
       Scope s;
 
-    case (p, g)
+    case (g, p)
       equation
         t = FGraph.top(g);
         r = t;
@@ -151,6 +151,14 @@ algorithm
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
         print("Comp Refs:      " +& realString(List.first(lst)) +& "\n");
+
+        System.startTimer();
+        // resolve all modifier lhs (thisOne = binding)
+        g = FResolve.mod(FGraph.top(g), g);
+        System.stopTimer();
+        lst = List.consr(lst, System.getTimerIntervalTime());
+        print("Modifiers:      " +& realString(List.first(lst)) +& "\n");
+
         print("FExpand.all:    " +& realString(List.fold(lst, realAdd, 0.0)) +& "\n");
       then
         g;

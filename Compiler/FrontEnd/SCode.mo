@@ -596,7 +596,7 @@ public constant Attributes defaultConstAttr =
 protected import Util;
 protected import List;
 protected import NFSCodeCheck;
-
+protected import SCodeUtil;
 
 public function stripSubmod
   "Removes all submodifiers from the Mod."
@@ -4964,7 +4964,7 @@ public function mergeWithOriginal
  this function merges the original declaration with the redeclared declaration, see 7.3.2 in Spec.
  - modifiers from the constraining class on derived classes are merged into the new declaration
  - modifiers from the original derived classes are merged into the new declaration
- - if the original declaration has no constraining type the
+ - if the original declaration has no constraining type the derived declaration is used
  - prefixes and attributes are merged
  same with components
  TODO! how about non-short class definitions with constrained by with modifications?"
@@ -4991,11 +4991,20 @@ algorithm
       ClassDef cd1,cd2;
       Comment cm;
       Absyn.Info i;
+      Mod mCCNew, mCCOld;
 
+    // for functions return the new one!
+    case (_, _)
+      equation
+        true = isFunction(inNew);
+      then
+        inNew;
 
     case (CLASS(name1,prefixes1,en1,p1,restr1,cd1,cm,i),CLASS(_,prefixes2,_,_,_,cd2,_,_))
       equation
-        cd1 = mergeClassDef(cd1, cd2);
+        mCCNew = SCodeUtil.getConstrainedByModifiers(prefixes1);
+        mCCOld = SCodeUtil.getConstrainedByModifiers(prefixes2);
+        cd1 = mergeClassDef(cd1, cd2, mCCNew, mCCOld);
         prefixes1 = propagatePrefixes(prefixes2, prefixes1);
         n = CLASS(name1,prefixes1,en1,p1,restr1,cd1,cm,i);
       then
@@ -5011,9 +5020,11 @@ public function mergeClassDef
  see mergeWithOriginal"
   input ClassDef inNew;
   input ClassDef inOld;
+  input Mod inCCModNew;
+  input Mod inCCModOld;
   output ClassDef outNew;
 algorithm
-  outNew := match(inNew, inOld)
+  outNew := match(inNew, inOld, inCCModNew, inCCModOld)
     local
       ClassDef n, o;
       Absyn.TypeSpec ts1, ts2;
@@ -5021,9 +5032,11 @@ algorithm
       Attributes a1, a2;
 
     case (DERIVED(ts1,m1,a1),
-          DERIVED(_,m2,a2))
+          DERIVED(_,m2,a2), _, _)
       equation
-        m2 = mergeModifiers(m2, m1);
+        m2 = mergeModifiers(m2, inCCModOld);
+        m1 = mergeModifiers(m1, inCCModNew);
+        m2 = mergeModifiers(m1, m2);
         a2 = propagateAttributes(a2, a1);
         n = DERIVED(ts1,m2,a2);
       then
@@ -5053,9 +5066,9 @@ algorithm
     case (MOD(f1, e1, sl1, b1, i1),
           MOD(_, _, sl2, b2, _))
       equation
-        _ = mergeBindings(b1, b2);
+        b = mergeBindings(b1, b2);
         sl = mergeSubMods(sl1, sl2);
-        m = MOD(f1, e1, sl, b1, i1);
+        m = MOD(f1, e1, sl, b, i1);
       then
         m;
 
@@ -5204,7 +5217,7 @@ public function propagateParallelism
 algorithm
   outNewParallelism := matchcontinue(inOriginalParallelism, inNewParallelism)
     case (_, NON_PARALLEL()) then inOriginalParallelism;
-    case (_, _)
+    case (_,_)
       equation
         // equality(inNewParallelism = inOriginalParallelism);
       then inNewParallelism;
@@ -5234,7 +5247,7 @@ public function propagateDirection
 algorithm
   outNewDirection := matchcontinue(inOriginalDirection, inNewDirection)
     case (_, Absyn.BIDIR()) then inOriginalDirection;
-    case (_, _)
+    case(_,_)
       equation
         // equality(inNewDirection = inOriginalDirection);
       then inNewDirection;
@@ -5477,6 +5490,47 @@ algorithm
     else false;
   end match;
 end isInitial;
+
+public function checkSameRestriction
+"check if the restrictions are the same for redeclared classes"
+  input Restriction inResNew;
+  input Restriction inResOrig;
+  input Absyn.Info inInfoNew;
+  input Absyn.Info inInfoOrig;
+  output Restriction outRes;
+  output Absyn.Info outInfo;
+algorithm
+  (outRes, outInfo) := match(inResNew, inResOrig, inInfoNew, inInfoOrig)
+    case (_, _, _, _)
+      equation
+        // todo: check if the restrictions are the same for redeclared classes
+      then
+        (inResNew, inInfoNew);
+  end match;
+end checkSameRestriction;
+
+public function setComponentName
+"@auhtor: adrpo
+ set the name of the component"
+  input Element inE;
+  input Ident inName;
+  output Element outE;
+protected
+  Ident n;
+  Prefixes pr;
+  Attributes atr;
+  Absyn.TypeSpec ts;
+  Comment cmt;
+  Option<Absyn.Exp> cnd;
+  Path bc;
+  Visibility v;
+  Mod m;
+  Option<Annotation> a;
+  Absyn.Info i;
+algorithm
+  COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) := inE;
+  outE := COMPONENT(inName, pr, atr, ts, m, cmt, cnd, i);
+end setComponentName;
 
 end SCode;
 

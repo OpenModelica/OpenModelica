@@ -55,7 +55,9 @@ encapsulated package Ceval
 
 public import Absyn;
 public import DAE;
-public import Env;
+public import FCore;
+public import FGraph;
+public import FNode;
 public import GlobalScript;
 public import InstTypes;
 public import Values;
@@ -99,14 +101,14 @@ public function ceval "
   interactive environment (implicit instantiation), in which case function
   calls are evaluated.
   The last argument is an optional dimension."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter "Maximum recursion depth";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outST;
 algorithm
@@ -114,15 +116,15 @@ algorithm
 end ceval;
 
 protected function cevalWork1
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter "Maximum recursion depth";
   input Boolean iterReached;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outST;
 algorithm
@@ -138,7 +140,7 @@ algorithm
       equation
         str1 = intString(Global.recursionDepthLimit);
         str2 = ExpressionDump.printExpStr(inExp);
-        _ = Env.printEnvPathStr(inEnv);
+        _ = FGraph.printGraphPathStr(inEnv);
         Error.addSourceMessage(Error.RECURSION_DEPTH_WARNING, {str1,str2}, info);
       then fail();
   end match;
@@ -152,14 +154,14 @@ protected function cevalWork2 "
   interactive environment (implicit instantiation), in which case function
   calls are evaluated.
   The last argument is an optional dimension."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outST;
 
@@ -178,7 +180,7 @@ algorithm
       String str,lhvStr,rhvStr,s,foldName,resultName;
       Boolean impl,b,b_1,lhvBool,rhvBool,resBool, bstart, bstop;
       Absyn.Exp exp_1,exp;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Msg msg;
       Absyn.Element elt_1,elt;
       Absyn.CodeNode c;
@@ -189,7 +191,7 @@ algorithm
       DAE.Exp lh,rh,e,lhs,rhs,start,stop,step,e1,e2,cond;
       Absyn.Path funcpath, name, recName;
       DAE.Operator relop;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Exp expExp;
       list<Integer> dims;
       DAE.Dimensions arrayDims;
@@ -213,8 +215,8 @@ algorithm
 
     // uncomment for debugging
     // case (cache,env,inExp,_,st,_,_)
-    //   equation print("Ceval.ceval: " +& ExpressionDump.printExpStr(inExp) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
-    // then fail();
+    //   equation print("Ceval.ceval: " +& ExpressionDump.printExpStr(inExp) +& " in env: " +& FGraph.printGraphPathStr(env) +& "\n");
+    //   then fail();
 
     case (cache,_,DAE.ICONST(integer = i),_,stOpt,_,_) then (cache,Values.INTEGER(i),stOpt);
 
@@ -222,7 +224,7 @@ algorithm
 
     case (cache,_,DAE.SCONST(string = s),_,stOpt,_,_) then (cache,Values.STRING(s),stOpt);
 
-    case (cache,_,DAE.BCONST(bool = b),_,stOpt,_,_)  then (cache,Values.BOOL(b),stOpt);
+    case (cache,_,DAE.BCONST(bool = b),_,stOpt,_,_) then (cache,Values.BOOL(b),stOpt);
 
     case (cache,_,DAE.ENUM_LITERAL(name = name, index = i),_,stOpt,_,_)
       then (cache, Values.ENUM_LITERAL(name, i), stOpt);
@@ -355,14 +357,14 @@ algorithm
     case (cache,env,DAE.CREF(componentRef = cr),(false),SOME(st),msg,_)
       equation
         (cache,v) = cevalCref(cache, env, cr, false, msg, numIter+1) "When in interactive mode, always evaluate crefs, i.e non-implicit mode.." ;
-        //Debug.traceln("cevalCref cr: " +& ComponentReference.printComponentRefStr(c) +& " in s: " +& Env.printEnvPathStr(env) +& " v:" +& ValuesUtil.valString(v));
+        //Debug.traceln("cevalCref cr: " +& ComponentReference.printComponentRefStr(c) +& " in s: " +& FGraph.printGraphPathStr(env) +& " v:" +& ValuesUtil.valString(v));
       then
         (cache,v,SOME(st));
 
     case (cache,env,DAE.CREF(componentRef = cr),impl,stOpt,msg,_)
       equation
         (cache,v) = cevalCref(cache,env, cr, impl,msg,numIter+1);
-        //Debug.traceln("cevalCref cr: " +& ComponentReference.printComponentRefStr(c) +& " in s: " +& Env.printEnvPathStr(env) +& " v:" +& ValuesUtil.valString(v));
+        //Debug.traceln("cevalCref cr: " +& ComponentReference.printComponentRefStr(c) +& " in s: " +& FGraph.printGraphPathStr(env) +& " v:" +& ValuesUtil.valString(v));
       then
         (cache,v,stOpt);
 
@@ -862,7 +864,7 @@ algorithm
 
     case (cache, env, DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(iterType = iterType, path = path, foldName=foldName, resultName=resultName, foldExp = foldExp, defaultValue = ov, exprType = ty), expr = daeExp, iterators = iterators), impl, stOpt, msg,_)
       equation
-        env = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forScopeName), NONE());
+        env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName), NONE());
         (cache, valMatrix, names, dims, tys, stOpt) = cevalReductionIterators(cache, env, iterators, impl, stOpt,msg,numIter+1);
         // print("Before:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") +& "\n");
         valMatrix = makeReductionAllCombinations(valMatrix,iterType);
@@ -878,8 +880,8 @@ algorithm
       equation
         true = Flags.isSet(Flags.CEVAL);
         Debug.traceln("- Ceval.ceval failed: " +& ExpressionDump.printExpStr(e));
-        Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
-        // Debug.traceln("  Env:" +& Env.printEnvStr(env));
+        Debug.traceln("  Scope: " +& FGraph.printGraphPathStr(env));
+        // Debug.traceln("  Env:" +& FGraph.printGraphStr(env));
       then
         fail();
   end matchcontinue;
@@ -890,13 +892,13 @@ public function cevalIfConstant
    or if the expression is a call of parameter constness whose return type
    contains unknown dimensions (in which case we need to determine the size of
    those dimensions)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input DAE.Properties inProp;
   input Boolean impl;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProp;
 algorithm
@@ -905,7 +907,7 @@ algorithm
     local
         DAE.Exp e;
         Values.Value v;
-        Env.Cache cache;
+        FCore.Cache cache;
         DAE.Properties prop;
       DAE.Type tp;
 
@@ -971,8 +973,8 @@ protected function cevalWholedimRetCall
   "Helper function to cevalIfConstant. Determines the size of any unknown
    dimensions in a function calls return type."
   input DAE.Exp inExp;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Info inInfo;
   input Integer numIter;
   output DAE.Exp outExp;
@@ -1004,13 +1006,13 @@ end cevalWholedimRetCall;
 
 public function cevalRangeIfConstant
   "Constant evaluates the limits of a range if they are constant."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input DAE.Properties inProp;
   input Boolean impl;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
 algorithm
   (outCache, outExp) := matchcontinue(inCache, inEnv, inExp, inProp, impl, inInfo)
@@ -1018,7 +1020,7 @@ algorithm
       DAE.Exp e1, e2;
       Option<DAE.Exp> e3;
       DAE.Type ty;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (_, _, DAE.RANGE(ty = ty, start = e1, stop = e2, step = e3), _, _, _)
       equation
@@ -1034,25 +1036,25 @@ protected function cevalBuiltin
 "Helper for ceval. Parts for builtin calls are moved here, for readability.
   See ceval for documentation.
   NOTE:    It\'s ok if cevalBuiltin fails. Just means the call was not a builtin function"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
   partial function HandlerFunc
-    input Env.Cache inCache;
-    input Env.Env inEnvFrameLst;
+    input FCore.Cache inCache;
+    input FCore.Graph inEnvFrameLst;
     input list<DAE.Exp> inExpExpLst;
     input Boolean inBoolean;
     input Option<GlobalScript.SymbolTable> inST;
     input Absyn.Msg inMsg;
     input Integer numIter;
-    output Env.Cache outCache;
+    output FCore.Cache outCache;
     output Values.Value outValue;
     output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
   end HandlerFunc;
@@ -1062,7 +1064,7 @@ algorithm
     local
       Values.Value v,newval;
       Option<GlobalScript.SymbolTable> st;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp,dim,e;
       Boolean impl;
       Absyn.Msg msg;
@@ -1071,7 +1073,7 @@ algorithm
       list<DAE.Exp> args,expl;
       list<Values.Value> vallst;
       Absyn.Path funcpath,path;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (cache,env,DAE.SIZE(exp = exp,sz = SOME(dim)),impl,st,msg,_)
       equation
@@ -1109,14 +1111,14 @@ protected function cevalBuiltinHandler
   input Absyn.Ident inIdent;
   output HandlerFunc handler;
   partial function HandlerFunc
-    input Env.Cache inCache;
-    input Env.Env inEnv;
+    input FCore.Cache inCache;
+    input FCore.Graph inEnv;
     input list<DAE.Exp> inExpExpLst;
     input Boolean inBoolean;
     input Option<GlobalScript.SymbolTable> inST;
     input Absyn.Msg inMsg;
     input Integer numIter;
-    output Env.Cache outCache;
+    output FCore.Cache outCache;
     output Values.Value outValue;
     output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
   end HandlerFunc;
@@ -1207,16 +1209,16 @@ end cevalBuiltinHandler;
 
 
 public function cevalKnownExternalFuncs "Evaluates external functions that are known, e.g. all math functions."
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input Absyn.Path funcpath;
   input list<Values.Value> vals;
   input Absyn.Msg msg;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value res;
 protected
   SCode.Element cdef;
-  Env.Env env_1;
+  FCore.Graph env_1;
   String fid,id;
   Option<String> oid;
   Option<SCode.ExternalDecl> extdecl;
@@ -1431,13 +1433,13 @@ protected constant Absyn.Path EnumCompareEqual = Absyn.QUALIFIED("Modelica",Absy
 protected constant Absyn.Path EnumCompareGreater = Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Utilities",Absyn.QUALIFIED("Types",Absyn.QUALIFIED("Compare",Absyn.IDENT("Greater")))));
 
 protected function cevalMatrixElt "Evaluates the expression of a matrix constructor, e.g. {1,2;3,4}"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<list<DAE.Exp>> inMatrix "matrix constr. elts";
   input Boolean inBoolean "impl";
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Values.Value> outValues;
 algorithm
   (outCache, outValues) :=
@@ -1445,12 +1447,12 @@ algorithm
     local
       Values.Value v;
       list<Values.Value> vl;
-      Env.Env env;
+      FCore.Graph env;
       list<DAE.Exp> expl;
       list<list<DAE.Exp>> expll;
       Boolean impl;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,(expl :: expll),impl,msg,_)
       equation
         (cache,vl,_) = cevalList(cache,env,expl,impl,NONE(),msg,numIter);
@@ -1463,15 +1465,15 @@ algorithm
 end cevalMatrixElt;
 
 protected function cevalBuiltinSize "Evaluates the size operator."
-  input Env.Cache inCache;
-  input Env.Env inEnv1;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv1;
   input DAE.Exp inExp2;
   input DAE.Exp inDimExp;
   input Boolean inBoolean4;
   input Option<GlobalScript.SymbolTable> inST5;
   input Absyn.Msg inMsg6;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -1484,7 +1486,7 @@ algorithm
       list<Integer> sizelst,adims;
       Integer dim,dim_1,dimv,len,i;
       Option<GlobalScript.SymbolTable> st_1,st;
-      Env.Env env;
+      FCore.Graph env;
       DAE.ComponentRef cr;
       Boolean impl,bl;
       Absyn.Msg msg;
@@ -1494,7 +1496,7 @@ algorithm
       DAE.Exp exp,e,dimExp;
       String cr_str,dim_str,size_str,expstr;
       list<DAE.Exp> es;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<list<DAE.Exp>> mat;
       Absyn.Info info;
       DAE.Dimension ddim;
@@ -1688,14 +1690,14 @@ end cevalBuiltinSize3;
 
 protected function cevalBuiltinAbs "author: LP
   Evaluates the abs operator."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -1703,13 +1705,13 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
       Integer iv;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
@@ -1727,14 +1729,14 @@ end cevalBuiltinAbs;
 
 protected function cevalBuiltinSign "author: PA
   Evaluates the sign operator."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -1743,12 +1745,12 @@ algorithm
     local
       Real rv;
       Boolean b1,b2,b3,impl;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
       Integer iv,iv_1;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
@@ -1772,14 +1774,14 @@ end cevalBuiltinSign;
 
 protected function cevalBuiltinExp "author: PA
   Evaluates the exp function"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -1787,12 +1789,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
@@ -1806,14 +1808,14 @@ protected function cevalBuiltinNoevent "author: PA
   Evaluates the noEvent operator. During constant evaluation events are not
   considered, so evaluation will simply remove the operator and evaluate the
   operand."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -1821,12 +1823,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Values.Value v;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,v,_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
@@ -1837,14 +1839,14 @@ end cevalBuiltinNoevent;
 
 protected function cevalBuiltinCat "author: PA
   Evaluates the cat operator, for matrix concatenation."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -1854,13 +1856,13 @@ algorithm
       Integer dim_int;
       list<Values.Value> mat_lst;
       Values.Value v;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp dim;
       list<DAE.Exp> matrices;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (cache,env,(dim :: matrices),impl,st,msg,_)
       equation
@@ -1874,14 +1876,14 @@ end cevalBuiltinCat;
 
 protected function cevalBuiltinIdentity "author: PA
   Evaluates the identity operator."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -1891,12 +1893,12 @@ algorithm
       Integer dim_int,dim_int_1;
       list<DAE.Exp> expl;
       list<Values.Value> retExp;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp dim;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-       Env.Cache cache;
+       FCore.Cache cache;
 
     case (cache,env,{dim},impl,st,msg,_)
       equation
@@ -1912,14 +1914,14 @@ end cevalBuiltinIdentity;
 
 protected function cevalBuiltinPromote "author: PA
   Evaluates the internal promote operator, for promotion of arrays"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -1928,12 +1930,12 @@ algorithm
     local
       Values.Value arr_val,res;
       Integer dim_val;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp arr,dim;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (cache,env,{arr,dim},impl,st,msg,_)
       equation
@@ -1975,26 +1977,26 @@ protected function cevalBuiltinSubstring "
   author: PA
   Evaluates the String operator String(r), String(i), String(b), String(e).
   TODO: Also evaluate String(r, significantDigits=d), and String(r, format=s)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp str_exp, start_exp, stop_exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String str;
       Integer start, stop;
 
@@ -2013,26 +2015,26 @@ protected function cevalBuiltinString "
   author: PA
   Evaluates the String operator String(r), String(i), String(b), String(e).
   TODO: Also evaluate String(r, significantDigits=d), and String(r, format=s)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp, len_exp, justified_exp, sig_dig;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String str,format;
       Integer i,len,sig; Real r; Boolean b, left_just;
       Absyn.Path p;
@@ -2078,8 +2080,8 @@ end cevalBuiltinString;
 protected function cevalBuiltinStringFormat
   "This function formats a string by using the minimumLength and leftJustified
   arguments to the String function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input String inString;
   input DAE.Exp lengthExp;
   input DAE.Exp justifiedExp;
@@ -2087,13 +2089,13 @@ protected function cevalBuiltinStringFormat
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output String outString;
 algorithm
   (outCache, outString) := match(inCache, inEnv, inString, lengthExp,
       justifiedExp, inBoolean, inST, inMsg, numIter)
     local
-      Env.Cache cache;
+      FCore.Cache cache;
       Integer min_length;
       Boolean left_justified;
       String str;
@@ -2111,26 +2113,26 @@ end cevalBuiltinStringFormat;
 
 protected function cevalBuiltinPrint
   "Prints a String to stdout"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String str;
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -2142,26 +2144,26 @@ algorithm
 end cevalBuiltinPrint;
 
 protected function cevalIntString
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String str;
       Integer i;
     case (cache,env,{exp},impl,st,msg,_)
@@ -2174,26 +2176,26 @@ algorithm
 end cevalIntString;
 
 protected function cevalRealString
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String str;
       Real r;
       Values.Value v;
@@ -2208,26 +2210,26 @@ algorithm
 end cevalRealString;
 
 protected function cevalStringCharInt
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String str;
       Integer i;
     case (cache,env,{exp},impl,st,msg,_)
@@ -2240,26 +2242,26 @@ algorithm
 end cevalStringCharInt;
 
 protected function cevalIntStringChar
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String str;
       Integer i;
     case (cache,env,{exp},impl,st,msg,_)
@@ -2272,26 +2274,26 @@ algorithm
 end cevalIntStringChar;
 
 protected function cevalStringInt
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String str;
       Integer i;
     case (cache,env,{exp},impl,st,msg,_)
@@ -2305,26 +2307,26 @@ end cevalStringInt;
 
 
 protected function cevalStringLength
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String str;
       Integer i;
     case (cache,env,{exp},impl,st,msg,_)
@@ -2337,26 +2339,26 @@ algorithm
 end cevalStringLength;
 
 protected function cevalStringListStringChar
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String str;
       list<String> chList;
       list<Values.Value> valList;
@@ -2379,26 +2381,26 @@ algorithm
 end generateValueString;
 
 protected function cevalListStringCharString
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String str;
       list<String> chList;
       list<Values.Value> valList;
@@ -2417,26 +2419,26 @@ algorithm
 end cevalListStringCharString;
 
 protected function cevalStringAppendList
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String str;
       list<String> chList;
       list<Values.Value> valList;
@@ -2451,26 +2453,26 @@ algorithm
 end cevalStringAppendList;
 
 protected function cevalStringDelimitList
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String str;
       list<String> chList;
       list<Values.Value> valList;
@@ -2486,26 +2488,26 @@ algorithm
 end cevalStringDelimitList;
 
 protected function cevalListLength
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       Integer i;
       list<Values.Value> valList;
     case (cache,env,{exp},impl,st,msg,_)
@@ -2518,26 +2520,26 @@ algorithm
 end cevalListLength;
 
 protected function cevalListAppend
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<Values.Value> valList,valList1,valList2;
     case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
@@ -2550,26 +2552,26 @@ algorithm
 end cevalListAppend;
 
 protected function cevalListReverse
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp1;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<Values.Value> valList,valList1;
     case (cache,env,{exp1},impl,st,msg,_)
       equation
@@ -2581,26 +2583,26 @@ algorithm
 end cevalListReverse;
 
 protected function cevalListRest
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp1;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<Values.Value> valList1;
     case (cache,env,{exp1},impl,st,msg,_)
       equation
@@ -2611,26 +2613,26 @@ algorithm
 end cevalListRest;
 
 protected function cevalListMember
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<Values.Value> vals;
       Values.Value val;
       Boolean b;
@@ -2645,26 +2647,26 @@ algorithm
 end cevalListMember;
 
 protected function cevalAnyString
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp1;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       Values.Value v;
       String s;
     case (cache,env,{exp1},impl,st,msg,_)
@@ -2677,14 +2679,14 @@ algorithm
 end cevalAnyString;
 
 protected function cevalNumBits
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outST;
 algorithm
@@ -2700,14 +2702,14 @@ algorithm
 end cevalNumBits;
 
 protected function cevalIntegerMax
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outST;
 algorithm
@@ -2723,33 +2725,35 @@ algorithm
 end cevalIntegerMax;
 
 protected function cevalGetLoadedLibraries
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inGraph;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outST;
 algorithm
-  (outCache,outValue,outST) := match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
+  (outCache,outValue,outST) := match (inCache,inGraph,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Cache cache;
-      Env.Env env;
-      Env.Frame fr;
+      FCore.Cache cache;
+      FCore.Graph g;
       list<SCode.Element> classes;
       list<Absyn.Class> absynclasses;
       Values.Value v;
+      FCore.Ref top;
+
     case (cache,_,{},_,SOME(GlobalScript.SYMBOLTABLE(ast=Absyn.PROGRAM(classes=absynclasses))),_,_)
       equation
         v = ValuesUtil.makeArray(List.fold(absynclasses,makeLoadLibrariesEntryAbsyn,{}));
       then (cache,v,inST);
-    case (cache,env,{},_,_,_,_)
+
+    case (cache,g,{},_,_,_,_)
       equation
-        fr::_ = listReverse(env);
-        classes = Env.getClassesInFrame(fr);
+        top = FGraph.top(g);
+        classes = List.map(FNode.filter(top, FNode.isRefClass), FNode.getElementFromRef);
         v = ValuesUtil.makeArray(List.fold(classes,makeLoadLibrariesEntry,{}));
       then (cache,v,inST);
   end match;
@@ -2800,26 +2804,26 @@ algorithm
 end makeLoadLibrariesEntryAbsyn;
 
 protected function cevalListFirst
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp1;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       Values.Value v;
     case (cache,env,{exp1},impl,st,msg,_)
       equation
@@ -2918,14 +2922,14 @@ end catDimension2;
 
 protected function cevalBuiltinFloor "author: LP
   evaluates the floor operator."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -2933,12 +2937,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
@@ -2950,14 +2954,14 @@ end cevalBuiltinFloor;
 
 protected function cevalBuiltinCeil "author: LP
   evaluates the ceil operator."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -2966,12 +2970,12 @@ algorithm
     local
       Real rv,rv_1,rvt,realRet;
       Integer ri,ri_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
@@ -2995,14 +2999,14 @@ end cevalBuiltinCeil;
 
 protected function cevalBuiltinSqrt "author: LP
   Evaluates the builtin sqrt operator."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3010,12 +3014,12 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Info info;
 
     case (cache,env,{exp},impl,st, msg as Absyn.MSG(info = info),_)
@@ -3036,14 +3040,14 @@ end cevalBuiltinSqrt;
 
 protected function cevalBuiltinSin "author: LP
   Evaluates the builtin sin function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3051,12 +3055,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
@@ -3068,14 +3072,14 @@ end cevalBuiltinSin;
 
 protected function cevalBuiltinSinh "author: PA
   Evaluates the builtin sinh function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3083,12 +3087,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
@@ -3100,14 +3104,14 @@ end cevalBuiltinSinh;
 
 protected function cevalBuiltinCos "author: LP
   Evaluates the builtin cos function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3115,12 +3119,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
@@ -3132,14 +3136,14 @@ end cevalBuiltinCos;
 
 protected function cevalBuiltinCosh "author: PA
   Evaluates the builtin cosh function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3147,12 +3151,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
@@ -3164,14 +3168,14 @@ end cevalBuiltinCosh;
 
 protected function cevalBuiltinLog "author: LP
   Evaluates the builtin Log function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3179,12 +3183,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
@@ -3195,14 +3199,14 @@ algorithm
 end cevalBuiltinLog;
 
 protected function cevalBuiltinLog10
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3210,12 +3214,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
@@ -3227,14 +3231,14 @@ end cevalBuiltinLog10;
 
 protected function cevalBuiltinTan "author: LP
   Evaluates the builtin tan function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3242,12 +3246,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,sv,cv,rv_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_) /* tan is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
@@ -3261,14 +3265,14 @@ end cevalBuiltinTan;
 
 protected function cevalBuiltinTanh "author: PA
   Evaluates the builtin tanh function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3276,12 +3280,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_) /* tanh is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
@@ -3293,14 +3297,14 @@ end cevalBuiltinTanh;
 
 protected function cevalBuiltinAsin "author: PA
   Evaluates the builtin asin function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3308,12 +3312,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
@@ -3325,14 +3329,14 @@ end cevalBuiltinAsin;
 
 protected function cevalBuiltinAcos "author: PA
   Evaluates the builtin acos function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3340,12 +3344,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
@@ -3357,14 +3361,14 @@ end cevalBuiltinAcos;
 
 protected function cevalBuiltinAtan "author: PA
   Evaluates the builtin atan function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3372,12 +3376,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_) /* atan is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
@@ -3388,14 +3392,14 @@ algorithm
 end cevalBuiltinAtan;
 
 protected function cevalBuiltinAtan2
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3403,12 +3407,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1,rv_2;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv_1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
@@ -3421,14 +3425,14 @@ end cevalBuiltinAtan2;
 
 protected function cevalBuiltinDiv "author: LP
   Evaluates the builtin div operator."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3437,13 +3441,13 @@ algorithm
     local
       Real rv1,rv2,rv_1,rv_2;
       Integer ri,ri_1,ri1,ri2;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
       String exp1_str,exp2_str,lh_str,rh_str;
-      Env.Cache cache; Boolean b;
+      FCore.Cache cache; Boolean b;
       Absyn.Info info;
 
     case (cache,env,{exp1,exp2},impl,st,msg,_)
@@ -3519,14 +3523,14 @@ end cevalBuiltinDiv;
 
 protected function cevalBuiltinMod "author: LP
   Evaluates the builtin mod operator."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3534,14 +3538,14 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv1,rv2,rva,rvb,rvc,rvd;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
       Integer ri,ri1,ri2,ri_1;
       String lhs_str,rhs_str;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Info info;
 
     case (cache,env,{exp1,exp2},impl,st,msg,_)
@@ -3624,14 +3628,14 @@ end cevalBuiltinMod;
 
 protected function cevalBuiltinMax "author: LP
   Evaluates the builtin max function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3639,12 +3643,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Values.Value v,v1,v2,v_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp arr,s1,s2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{arr},impl,st,msg,_)
       equation
         (cache,v,_) = ceval(cache,env, arr, impl, st,msg,numIter+1);
@@ -3733,14 +3737,14 @@ end cevalBuiltinMaxArr;
 
 protected function cevalBuiltinMin "author: PA
   Constant evaluation of builtin min function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3748,12 +3752,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Values.Value v,v1,v2,v_1;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp arr,s1,s2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{arr},impl,st,msg,_)
       equation
         (cache,v,_) = ceval(cache,env, arr, impl, st,msg,numIter+1);
@@ -3847,14 +3851,14 @@ end cevalBuiltinMinArr;
 
 protected function cevalBuiltinDifferentiate "author: LP
   This function differentiates an equation: x^2 + x => 2x + 1"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3863,16 +3867,16 @@ algorithm
     local
       DAE.Exp differentiated_exp,differentiated_exp_1,exp1;
       String ret_val;
-      Env.Env env;
+      FCore.Graph env;
       DAE.ComponentRef cr;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.FunctionTree ft;
     case (cache,_,{exp1,DAE.CREF(componentRef = cr)},_,st,_,_)
       equation
-        ft = Env.getFunctionTree(cache);
+        ft = FCore.getFunctionTree(cache);
         differentiated_exp = Differentiate.differentiateExpCrefFunction(exp1, cr, ft);
         (differentiated_exp_1,_) = ExpressionSimplify.simplify(differentiated_exp);
         /*
@@ -3891,14 +3895,14 @@ end cevalBuiltinDifferentiate;
 
 protected function cevalBuiltinSimplify "author: LP
   this function simplifies an equation: x^2 + x => 2x + 1"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3907,11 +3911,11 @@ algorithm
     local
       DAE.Exp exp1_1,exp1;
       String ret_val;
-      Env.Env env;
+      FCore.Graph env;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Info info;
 
     case (cache,_,{exp1},_,st,_,_)
@@ -3931,14 +3935,14 @@ end cevalBuiltinSimplify;
 
 protected function cevalBuiltinRem "author: LP
   Evaluates the builtin rem operator"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -3947,13 +3951,13 @@ algorithm
     local
       Real rv1,rv2,rvd,dr;
       Integer ri,ri1,ri2,ri_1,di;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
       String exp1_str,exp2_str;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Info info;
 
     case (cache,env,{exp1,exp2},impl,st,msg,_)
@@ -4013,14 +4017,14 @@ end cevalBuiltinRem;
 
 protected function cevalBuiltinInteger "author: LP
   Evaluates the builtin integer operator"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -4029,12 +4033,12 @@ algorithm
     local
       Real rv;
       Integer ri;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
@@ -4046,14 +4050,14 @@ end cevalBuiltinInteger;
 
 protected function cevalBuiltinBoolean " @author: adrpo
   Evaluates the builtin boolean operator"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -4063,12 +4067,12 @@ algorithm
       Real rv;
       Integer iv;
       Boolean bv;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     // real -> bool
     case (cache,env,{exp},impl,st,msg,_)
@@ -4098,26 +4102,26 @@ end cevalBuiltinBoolean;
 protected function cevalBuiltinRooted
 "author: adrpo
   Evaluates the builtin rooted operator from MultiBody"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,_,_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
@@ -4128,14 +4132,14 @@ end cevalBuiltinRooted;
 
 protected function cevalBuiltinIntegerEnumeration "author: LP
   Evaluates the builtin Integer operator"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -4143,12 +4147,12 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Integer ri;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.ENUM_LITERAL(index = ri),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
@@ -4160,14 +4164,14 @@ end cevalBuiltinIntegerEnumeration;
 protected function cevalBuiltinDiagonal "This function generates a matrix{n,n} (A) of the vector {a,b,...,n}
   where the diagonal of A is the vector {a,b,...,n}
   ie A{1,1} == a, A{2,2} == b ..."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -4176,12 +4180,12 @@ algorithm
     local
       list<Values.Value> rv2,retExp;
       Integer dimension,correctDimension;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       Values.Value res;
       Absyn.Info info;
 
@@ -4205,8 +4209,8 @@ end cevalBuiltinDiagonal;
 protected function cevalBuiltinDiagonal2 " This is a help function that is calling itself recursively to
    generate the a nxn matrix with some special diagonal elements.
    See cevalBuiltinDiagonal."
-  input Env.Cache inCache;
-  input Env.Env inEnv1;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv1;
   input DAE.Exp inExp2;
   input Boolean inBoolean3;
   input Option<GlobalScript.SymbolTable> inST4;
@@ -4215,7 +4219,7 @@ protected function cevalBuiltinDiagonal2 " This is a help function that is calli
   input list<Values.Value> inValuesValueLst7;
   input Absyn.Msg inMsg8;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Values.Value> outValuesValueLst;
 algorithm
   (outCache,outValuesValueLst) :=
@@ -4224,12 +4228,12 @@ algorithm
       Real rv2;
       Integer correctDim,correctPlace,newRow,matrixDimension,row,iv2;
       list<Values.Value> zeroList,listWithElement,retExp,appendedList,listIN,list_;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp s1,s2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       Values.Value v;
       Absyn.Info info;
       String str;
@@ -4316,14 +4320,14 @@ end cevalBuiltinDiagonal2;
 
 protected function cevalBuiltinCross "
   x,y => {x[2]*y[3]-x[3]*y[2],x[3]*y[1]-x[1]*y[3],x[1]*y[2]-x[2]*y[1]}"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -4332,12 +4336,12 @@ algorithm
     local
       list<Values.Value> xv,yv;
       Values.Value res;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp xe,ye;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       String str;
       Absyn.Info info;
 
@@ -4382,14 +4386,14 @@ algorithm
 end cevalBuiltinTranspose2;
 
 protected function cevalBuiltinSizeMatrix "Helper function for cevalBuiltinSize, for size(A) where A is a matrix."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
@@ -4399,12 +4403,12 @@ algorithm
       DAE.Type tp;
       list<Integer> sizelst;
       Values.Value v;
-      Env.Env env;
+      FCore.Graph env;
       DAE.ComponentRef cr;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Exp exp;
       DAE.Dimensions dims;
 
@@ -4437,14 +4441,14 @@ end cevalBuiltinSizeMatrix;
 
 protected function cevalBuiltinFail
   "This function constant evaluates calls to the fail() function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpl;
   input Boolean inImpl;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outST;
 algorithm
@@ -4455,14 +4459,14 @@ end cevalBuiltinFail;
 
 protected function cevalBuiltinFill
   "This function constant evaluates calls to the fill function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpl;
   input Boolean inImpl;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outST;
 algorithm
@@ -4472,7 +4476,7 @@ algorithm
       DAE.Exp fill_exp;
       list<DAE.Exp> dims;
       Values.Value fill_val;
-      Env.Cache cache;
+      FCore.Cache cache;
       Option<GlobalScript.SymbolTable> st;
     case (cache, _, fill_exp :: dims, _, st, _, _)
       equation
@@ -4484,15 +4488,15 @@ algorithm
 end cevalBuiltinFill;
 
 protected function cevalBuiltinFill2
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Values.Value inFillValue;
   input list<DAE.Exp> inDims;
   input Boolean inImpl;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outST;
 algorithm
@@ -4505,7 +4509,7 @@ algorithm
       list<Integer> array_dims;
       Values.Value fill_value;
       list<Values.Value> fill_vals;
-      Env.Cache cache;
+      FCore.Cache cache;
       Option<GlobalScript.SymbolTable> st;
 
     case (cache, _, _, {}, _, st, _, _) then (cache, inFillValue, st);
@@ -4754,21 +4758,21 @@ end makeEnumValue;
 
 public function cevalList "This function does constant
   evaluation on a list of expressions."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Values.Value> outValuesValueLst;
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValuesValueLst,outInteractiveInteractiveSymbolTableOption) :=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Msg msg;
       Values.Value v;
       DAE.Exp exp;
@@ -4776,7 +4780,7 @@ algorithm
       Option<GlobalScript.SymbolTable> st;
       list<Values.Value> vs;
       list<DAE.Exp> exps;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,_,{},_,st,_,_) then (cache,{},st);
     case (cache,env,(exp :: exps ),impl,st,msg,_)
       equation
@@ -4789,13 +4793,13 @@ end cevalList;
 
 public function cevalCref "Evaluates ComponentRef, i.e. variables, by
   looking up variables in the environment."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.ComponentRef inComponentRef;
   input Boolean inBoolean "impl";
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
 algorithm
   (outCache,outValue) :=
@@ -4803,12 +4807,12 @@ algorithm
     local
       DAE.Binding binding;
       Values.Value v;
-      Env.Env env, classEnv, componentEnv;
+      FCore.Graph env, classEnv, componentEnv;
       DAE.ComponentRef c;
       Boolean impl;
       Absyn.Msg msg;
       String scope_str,str, name;
-      Env.Cache cache;
+      FCore.Cache cache;
       Option<DAE.Const> const_for_range;
       DAE.Type ty;
       DAE.Attributes attr;
@@ -4828,7 +4832,7 @@ algorithm
     case (cache,env,c,(false),Absyn.MSG(info = info),_)
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
-        scope_str = Env.printEnvPathStr(env);
+        scope_str = FGraph.printGraphPathStr(env);
         str = ComponentReference.printComponentRefStr(c);
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR, {str,scope_str}, info);
       then
@@ -4845,26 +4849,26 @@ end cevalCref;
 
 public function cevalCref_dispatch
   "Helper function to cevalCref"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.ComponentRef inCref;
   input DAE.Attributes inAttr;
   input DAE.Type inType;
   input DAE.Binding inBinding;
   input Option<DAE.Const> constForRange;
   input InstTypes.SplicedExpData inSplicedExpData;
-  input Env.Env inClassEnv;
-  input Env.Env inComponentEnv;
+  input FCore.Graph inClassEnv;
+  input FCore.Graph inComponentEnv;
   input String  inFQName;
   input Boolean inImpl;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
 algorithm
   (outCache, outValue) := match (inCache, inEnv, inCref, inAttr, inType, inBinding, constForRange, inSplicedExpData, inClassEnv, inComponentEnv, inFQName, inImpl, inMsg, numIter)
     local
-      Env.Cache cache;
+      FCore.Cache cache;
       Values.Value v;
       String str, scope_str, s1, s2, s3;
       Absyn.Info info;
@@ -4878,12 +4882,12 @@ algorithm
     case (_, _, _, _, _, DAE.UNBOUND(), NONE(), _, _, _, _, false, Absyn.MSG(info=_), _)
       equation
         str = ComponentReference.printComponentRefStr(inCref);
-        scope_str = Env.printEnvPathStr(inEnv);
+        scope_str = FGraph.printGraphPathStr(inEnv);
         // Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {str, scope_str}, info);
         Debug.fprintln(Flags.CEVAL, "- Ceval.cevalCref on: " +& str +&
           " failed with no constant binding in scope: " +& scope_str);
         // build a default binding for it!
-        s1 = Env.printEnvPathStr(inEnv);
+        s1 = FGraph.printGraphPathStr(inEnv);
         s2 = ComponentReference.printComponentRefStr(inCref);
         s3 = Types.printTypeStr(inType);
         v = Types.typeToValue(inType);
@@ -4900,11 +4904,11 @@ algorithm
     case (_, _, _, DAE.ATTR(variability=variability), _, _, _, _, _, _, _, _, _, _)
       equation
         // We might try to ceval variables in reduction scope... but it can't be helped since we do things in a ***** way in Inst/Static
-        true = SCode.isParameterOrConst(variability) or inImpl or Env.inForLoopScope(inEnv);
+        true = SCode.isParameterOrConst(variability) or inImpl or FGraph.inForLoopScope(inEnv);
         false = crefEqualValue(inCref, inBinding);
         (cache, v) = cevalCrefBinding(inCache, inEnv, inCref, inBinding, inImpl, inMsg, numIter);
-        // print("Eval cref: " +& ComponentReference.printComponentRefStr(inCref) +& "\n  in scope " +& Env.printEnvPathStr(inEnv) +& "\n");
-        cache = Env.addEvaluatedCref(cache,variability,ComponentReference.crefStripLastSubs(inCref));
+        // print("Eval cref: " +& ComponentReference.printComponentRefStr(inCref) +& "\n  in scope " +& FGraph.printGraphPathStr(inEnv) +& "\n");
+        cache = FCore.addEvaluatedCref(cache,variability,ComponentReference.crefStripLastSubs(inCref));
       then
         (cache, v);
   end match;
@@ -4912,14 +4916,14 @@ end cevalCref_dispatch;
 
 public function cevalCrefBinding "Helper function to cevalCref.
   Evaluates variables by evaluating their bindings."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.ComponentRef inComponentRef;
   input DAE.Binding inBinding;
   input Boolean inBoolean "impl";
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
 algorithm
   (outCache,outValue) := matchcontinue (inCache,inEnv,inComponentRef,inBinding,inBoolean,inMsg,numIter)
@@ -4927,12 +4931,12 @@ algorithm
       DAE.ComponentRef cr,e1;
       list<DAE.Subscript> subsc;
       Values.Value res,v,e_val;
-      Env.Env env;
+      FCore.Graph env;
       Boolean impl;
       Absyn.Msg msg;
       String rfn,iter,expstr,s1,s2,str;
       DAE.Exp elexp,iterexp,exp;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<DAE.Var> vl;
       Absyn.Path tpath;
       DAE.Type ty;
@@ -4945,7 +4949,7 @@ algorithm
       equation
         print("Ceval: " +&
           ComponentReference.printComponentRefStr(cr) +& " | " +&
-          Env.printEnvPathStr(env) +& " | " +&
+          FGraph.printGraphPathStr(env) +& " | " +&
           DAEUtil.printBindingExpStr(inBinding) +&
           "\n");
       then
@@ -5041,11 +5045,11 @@ algorithm
         true = Flags.isSet(Flags.CEVAL);
         s1 = ComponentReference.printComponentRefStr(e1);
         s2 = Types.printBindingStr(inBinding);
-        str = Env.printEnvPathStr(env);
+        str = FGraph.printGraphPathStr(env);
         str = stringAppendList({"- Ceval.cevalCrefBinding: ",
                 s1, " = [", s2, "] in env:", str, " failed"});
         Debug.traceln(str);
-        //print("ENV: " +& Env.printEnvStr(inEnv) +& "\n");
+        //print("ENV: " +& FGraph.printGraphStr(inEnv) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -5067,28 +5071,28 @@ end isRecursiveBinding;
 
 public function cevalSubscriptValue "Helper function to cevalCrefBinding. It applies
   subscripts to array values to extract array elements."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Subscript> inExpSubscriptLst "subscripts to extract";
   input Values.Value inValue;
   input Boolean inBoolean "impl";
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
 algorithm
   (outCache,outValue) := matchcontinue (inCache,inEnv,inExpSubscriptLst,inValue,inBoolean,inMsg,numIter)
     local
       Integer n,n_1;
       Values.Value subval,res,v;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
       list<DAE.Subscript> subs;
       list<Values.Value> lst,sliceLst,subvals;
       list<Integer> slice;
       Boolean impl;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     // we have a subscript which is an index, try to constant evaluate it
     case (cache,env,(DAE.INDEX(exp = exp) :: subs),Values.ARRAY(valueLst = lst),impl,msg,_)
@@ -5136,7 +5140,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Ceval.cevalSubscriptValue failed on:" +&
-          "\n env: " +& Env.printEnvPathStr(env) +&
+          "\n env: " +& FGraph.printGraphPathStr(env) +&
           "\n subs: " +& stringDelimitList(List.map(subs, ExpressionDump.printSubscriptStr), ", ") +&
           "\n value: " +& ValuesUtil.printValStr(inValue) +&
           "\n dim sizes: " +& stringDelimitList(List.map(dims, intString), ", ")
@@ -5147,26 +5151,26 @@ algorithm
 end cevalSubscriptValue;
 
 protected function cevalSubscriptValueList "Applies subscripts to array values to extract array elements."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Subscript> inExpSubscriptLst "subscripts to extract";
   input list<Values.Value> inValue;
   input Boolean inBoolean "impl";
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Values.Value> outValue;
 algorithm
   (outCache,outValue) :=
   match (inCache,inEnv,inExpSubscriptLst,inValue,inBoolean,inMsg,numIter)
     local
       Values.Value subval,res;
-      Env.Env env;
+      FCore.Graph env;
       list<Values.Value> lst,subvals;
       Boolean impl;
       Absyn.Msg msg;
       list<DAE.Subscript> subs;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,_,_,{},_,_,_) then (cache,{});
     case (cache,env,subs,subval::subvals,impl,msg,_)
       equation
@@ -5183,14 +5187,14 @@ public function cevalSubscripts "This function relates a list of subscripts to t
   the subscript list {1,p,q} (as in x[1,p,q]) where p and q have constant values 2,3 respectively will become
   {1,2,3} (resulting in x[1,2,3]).
   adrpo: do not fail if you cannot evaluate one, just move to the next one!"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Subscript> inExpSubscriptLst;
   input list<Integer> inIntegerLst;
   input Boolean inBoolean "impl";
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Subscript> outExpSubscriptLst;
 algorithm
   (outCache,outExpSubscriptLst) :=
@@ -5198,12 +5202,12 @@ algorithm
     local
       DAE.Subscript sub_1,sub;
       list<DAE.Subscript> subs_1,subs;
-      Env.Env env;
+      FCore.Graph env;
       Integer dim;
       list<Integer> dims;
       Boolean impl;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     // empty case
     case (cache,_,{},_,_,_,_) then (cache,{});
@@ -5228,26 +5232,26 @@ end cevalSubscripts;
 
 public function cevalSubscript "This function relates a subscript to its canonical forms, which
   is when all expressions are evaluated to constant values."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Subscript inSubscript;
   input Integer inInteger;
   input Boolean inBoolean "impl";
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Subscript outSubscript;
 algorithm
   (outCache,outSubscript) :=
   matchcontinue (inCache,inEnv,inSubscript,inInteger,inBoolean,inMsg,numIter)
     local
-      Env.Env env;
+      FCore.Graph env;
       Values.Value v1;
       DAE.Exp e1_1,e1;
       Integer dim;
       Boolean impl;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       Integer indx;
 
     // the entire dimension, nothing to do
@@ -5342,8 +5346,8 @@ end dimensionSliceInRange;
 protected function cevalReduction
   "Help function to ceval. Evaluates reductions calls, such as
     'sum(i for i in 1:5)'"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path opPath;
   input Option<Values.Value> inCurValue;
   input DAE.Exp exp;
@@ -5358,15 +5362,15 @@ protected function cevalReduction
   input Option<GlobalScript.SymbolTable> inSt;
   input Absyn.Msg msg;
   input Integer numIter;
-  output Env.Cache newCache;
+  output FCore.Cache newCache;
   output Option<Values.Value> result;
   output Option<GlobalScript.SymbolTable> newSymbolTable;
 algorithm
   (newCache, result, newSymbolTable) := match (inCache, inEnv, opPath, inCurValue, exp, exprType, foldName, resultName, foldExp, iteratorNames, inValueMatrix, iterTypes, impl, inSt, msg, numIter)
     local
       list<Values.Value> vals;
-      Env.Env new_env,env;
-      Env.Cache cache;
+      FCore.Graph new_env,env;
+      FCore.Cache cache;
       list<Integer> dims;
       Option<GlobalScript.SymbolTable> st;
       list<list<Values.Value>> valueMatrix;
@@ -5400,8 +5404,8 @@ algorithm
 end cevalReduction;
 
 protected function cevalReductionEvalAndFold "Evaluate the reduction body and fold"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path opPath;
   input Option<Values.Value> inCurValue;
   input DAE.Exp exp;
@@ -5413,7 +5417,7 @@ protected function cevalReductionEvalAndFold "Evaluate the reduction body and fo
   input Option<GlobalScript.SymbolTable> inSt;
   input Absyn.Msg msg;
   input Integer numIter;
-  output Env.Cache newCache;
+  output FCore.Cache newCache;
   output Option<Values.Value> result;
   output Option<GlobalScript.SymbolTable> newSymbolTable;
 algorithm
@@ -5421,8 +5425,8 @@ algorithm
     local
       Values.Value value;
       Option<Values.Value> curValue;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Option<GlobalScript.SymbolTable> st;
 
     case (cache,env,_,curValue,_,_,_,_,_,_,st,_,_)
@@ -5436,8 +5440,8 @@ algorithm
 end cevalReductionEvalAndFold;
 
 protected function cevalReductionFold "Fold the reduction body"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path opPath;
   input Option<Values.Value> inCurValue;
   input Values.Value inValue;
@@ -5449,7 +5453,7 @@ protected function cevalReductionFold "Fold the reduction body"
   input Option<GlobalScript.SymbolTable> inSt;
   input Absyn.Msg msg;
   input Integer numIter;
-  output Env.Cache newCache;
+  output FCore.Cache newCache;
   output Option<Values.Value> result;
   output Option<GlobalScript.SymbolTable> newSymbolTable;
 algorithm
@@ -5458,8 +5462,8 @@ algorithm
     local
       DAE.Exp exp;
       Values.Value value;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Option<GlobalScript.SymbolTable> st;
 
     case (cache,_,Absyn.IDENT("array"),SOME(value),_,_,_,_,_,_,st,_,_)
@@ -5481,8 +5485,8 @@ algorithm
       equation
         // print("cevalReductionFold " +& ExpressionDump.printExpStr(exp) +& ", " +& ValuesUtil.valString(inValue) +& ", " +& ValuesUtil.valString(value) +& "\n");
         /* TODO: Store the actual types somewhere... */
-        env = Env.extendFrameForIterator(env, foldName, exprType, DAE.VALBOUND(inValue, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
-        env = Env.extendFrameForIterator(env, resultName, exprType, DAE.VALBOUND(value, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
+        env = FGraph.addForIterator(env, foldName, exprType, DAE.VALBOUND(inValue, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
+        env = FGraph.addForIterator(env, resultName, exprType, DAE.VALBOUND(value, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
         (cache, value, st) = ceval(cache, env, exp, impl, st,msg,numIter+1);
       then (cache, SOME(value), st);
   end match;
@@ -5527,14 +5531,14 @@ algorithm
 end valueCons;
 
 protected function cevalReductionIterators
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.ReductionIterator> inIterators;
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> inSt;
   input Absyn.Msg msg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<list<Values.Value>> vals;
   output list<String> names;
   output list<Integer> dims;
@@ -5550,8 +5554,8 @@ algorithm
       String id;
       DAE.Exp exp;
       Option<DAE.Exp> guardExp;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Option<GlobalScript.SymbolTable> st;
       list<DAE.ReductionIterator> iterators;
 
@@ -5568,8 +5572,8 @@ algorithm
 end cevalReductionIterators;
 
 protected function filterReductionIterator
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input String id;
   input DAE.Type ty;
   input list<Values.Value> inVals;
@@ -5578,7 +5582,7 @@ protected function filterReductionIterator
   input Option<GlobalScript.SymbolTable> inSt;
   input Absyn.Msg msg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Values.Value> outVals;
   output Option<GlobalScript.SymbolTable> outSt;
 algorithm
@@ -5587,15 +5591,15 @@ algorithm
       DAE.Exp exp;
       Values.Value val;
       Boolean b;
-      Env.Env new_env,env;
-      Env.Cache cache;
+      FCore.Graph new_env,env;
+      FCore.Cache cache;
       list<Values.Value> vals;
       Option<GlobalScript.SymbolTable> st;
 
    case (cache,_,_,_,{},_,_,st,_,_) then (cache,{},st);
     case (cache,env,_,_,val::vals,SOME(exp),_,st,_,_)
       equation
-        new_env = Env.extendFrameForIterator(env, id, ty, DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
+        new_env = FGraph.addForIterator(env, id, ty, DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
         (cache,Values.BOOL(b),st) = ceval(cache,new_env,exp,impl,st,msg,numIter+1);
         (cache,vals,st) = filterReductionIterator(cache,env,id,ty,vals,guardExp,impl,st,msg,numIter);
         vals = Util.if_(b, val::vals, vals);
@@ -5605,18 +5609,18 @@ algorithm
 end filterReductionIterator;
 
 protected function extendFrameForIterators
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input list<String> inNames;
   input list<Values.Value> inVals;
   input list<DAE.Type> inTys;
-  output Env.Env outEnv;
+  output FCore.Graph outEnv;
 algorithm
   outEnv := match (inEnv,inNames,inVals,inTys)
     local
       String name;
       Values.Value val;
       DAE.Type ty;
-      Env.Env env;
+      FCore.Graph env;
       list<String> names;
       list<Values.Value> vals;
       list<DAE.Type> tys;
@@ -5624,7 +5628,7 @@ algorithm
     case (env,{},{},{}) then env;
     case (env,name::names,val::vals,ty::tys)
       equation
-        env = Env.extendFrameForIterator(env, name, ty, DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
+        env = FGraph.addForIterator(env, name, ty, DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
         env = extendFrameForIterators(env,names,vals,tys);
       then env;
   end match;
@@ -5700,7 +5704,7 @@ public function cevalSimple
   input DAE.Exp exp;
   output Values.Value val;
 algorithm
-  (_,val,_) := ceval(Env.emptyCache(),{},exp,false,NONE(),Absyn.MSG(Absyn.dummyInfo),0);
+  (_,val,_) := ceval(FCore.emptyCache(),FGraph.empty(),exp,false,NONE(),Absyn.MSG(Absyn.dummyInfo),0);
 end cevalSimple;
 
 public function cevalSimpleWithFunctionTreeReturnExp
@@ -5710,14 +5714,14 @@ public function cevalSimpleWithFunctionTreeReturnExp
   output DAE.Exp oexp;
 protected
   Values.Value val;
-  Env.Cache cache;
-  Env.StructuralParameters structuralParameters;
+  FCore.Cache cache;
+  FCore.StructuralParameters structuralParameters;
   array<DAE.FunctionTree> functionTree;
 algorithm
   structuralParameters := (HashTable.emptyHashTableSized(BaseHashTable.lowBucketSize),{});
   functionTree := arrayCreate(1,functions);
-  cache := Env.CACHE(NONE(), functionTree, structuralParameters, Absyn.IDENT(""), Absyn.dummyProgram);
-  (cache,val,_) := ceval(cache, {}, exp, false, NONE(), Absyn.NO_MSG(),0);
+  cache := FCore.CACHE(NONE(), functionTree, structuralParameters, Absyn.IDENT(""), Absyn.dummyProgram);
+  (cache,val,_) := ceval(cache, FGraph.empty(), exp, false, NONE(), Absyn.NO_MSG(),0);
   oexp := ValuesUtil.valueExp(val);
 end cevalSimpleWithFunctionTreeReturnExp;
 
@@ -5728,21 +5732,21 @@ public function cevalAstExp
 
   Example: y = Code(1 + x)
            2 + 5  ( x + Eval(y) )  =>   2 + 5  ( x + 1 + x )"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Absyn.Exp outExp;
 algorithm
   (outCache,outExp) :=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inST,inMsg,info)
     local
       Absyn.Exp e,e1_1,e2_1,e1,e2,e_1,cond_1,then_1,else_1,cond,then_,else_,exp,e3_1,e3;
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Operator op;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -5751,7 +5755,7 @@ algorithm
       Absyn.ComponentRef cr;
       Absyn.FunctionArgs fa;
       list<Absyn.Exp> expl_1,expl;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Exp daeExp;
       list<list<Absyn.Exp>> lstExpl_1,lstExpl;
 
@@ -5854,26 +5858,26 @@ end cevalAstExp;
 
 public function cevalAstExpList
 "List version of cevalAstExp"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Absyn.Exp> outAbsynExpLst;
 algorithm
   (outCache,outAbsynExpLst) :=
   match (inCache,inEnv,inAbsynExpLst,inBoolean,inST,inMsg,info)
     local
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Msg msg;
       Absyn.Exp e_1,e;
       list<Absyn.Exp> res,es;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (cache,_,{},_,_,_,_) then (cache,{});
 
@@ -5887,26 +5891,26 @@ algorithm
 end cevalAstExpList;
 
 protected function cevalAstExpListList "function: cevalAstExpListList"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<list<Absyn.Exp>> inAbsynExpLstLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<list<Absyn.Exp>> outAbsynExpLstLst;
 algorithm
   (outCache,outAbsynExpLstLst) :=
   match (inCache,inEnv,inAbsynExpLstLst,inBoolean,inST,inMsg,info)
     local
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Msg msg;
       list<Absyn.Exp> e_1,e;
       list<list<Absyn.Exp>> res,es;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (cache,_,{},_,_,_,_) then (cache,{});
 
@@ -5922,20 +5926,20 @@ end cevalAstExpListList;
 public function cevalAstElt
 "Evaluates an ast constructor for Element nodes, e.g.
   Code(parameter Real x=1;)"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Element inElement;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Absyn.Element outElement;
 algorithm
   (outCache,outElement) :=
   match (inCache,inEnv,inElement,inBoolean,inST,inMsg)
     local
       list<Absyn.ComponentItem> citems_1,citems;
-      Env.Env env;
+      FCore.Graph env;
       Boolean f,isReadOnly,impl;
       Option<Absyn.RedeclareKeywords> r;
       Absyn.InnerOuter io;
@@ -5947,7 +5951,7 @@ algorithm
       Option<Absyn.ConstrainClass> c;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = citems),info = (info as Absyn.INFO(fileName = _,lineNumberStart = _,columnNumberStart = _,lineNumberEnd = _,columnNumberEnd = _)),constrainClass = c),impl,st,msg)
       equation
         (cache,citems_1) = cevalAstCitems(cache,env, citems, impl, st, msg, info);
@@ -5958,14 +5962,14 @@ end cevalAstElt;
 
 protected function cevalAstCitems
 "Helper function to cevalAstElt."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Absyn.ComponentItem> outAbsynComponentItemLst;
 algorithm
   (outCache,outAbsynComponentItemLst) :=
@@ -5975,14 +5979,14 @@ algorithm
       list<Absyn.ComponentItem> res,xs;
       Option<Absyn.Modification> modopt_1,modopt;
       list<Absyn.Subscript> ad_1,ad;
-      Env.Env env;
+      FCore.Graph env;
       String id;
       Option<Absyn.Exp> cond;
       Option<Absyn.Comment> cmt;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.ComponentItem x;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,_,{},_,_,_,_) then (cache,{});
     case (cache,env,(Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad,modification = modopt),condition = cond,comment = cmt) :: xs),impl,st,msg,_) /* If one component fails, the rest should still succeed */
       equation
@@ -6001,25 +6005,25 @@ end cevalAstCitems;
 
 protected function cevalAstModopt
 "function: cevalAstModopt"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Option<Absyn.Modification> inAbsynModificationOption;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Option<Absyn.Modification> outAbsynModificationOption;
 algorithm
   (outCache,outAbsynModificationOption) :=
   match (inCache,inEnv,inAbsynModificationOption,inBoolean,inST,inMsg,info)
     local
       Absyn.Modification res,mod;
-      Env.Env env;
+      FCore.Graph env;
       Boolean st;
       Option<GlobalScript.SymbolTable> impl;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,env,SOME(mod),st,impl,msg,_)
       equation
         (cache,res) = cevalAstModification(cache,env, mod, st, impl, msg, info);
@@ -6031,14 +6035,14 @@ end cevalAstModopt;
 
 protected function cevalAstModification "This function evaluates Eval(variable) inside an AST Modification  and replaces
   the Eval operator with the value of the variable if it has a type \"Expression\""
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Modification inModification;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Absyn.Modification outModification;
 algorithm
   (outCache,outModification) :=
@@ -6046,11 +6050,11 @@ algorithm
     local
       Absyn.Exp e_1,e;
       list<Absyn.ElementArg> eltargs_1,eltargs;
-      Env.Env env;
+      FCore.Graph env;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Info info2;
     case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,eqMod = Absyn.EQMOD(e,info2)),impl,st,msg,_)
       equation
@@ -6067,20 +6071,20 @@ algorithm
 end cevalAstModification;
 
 protected function cevalAstEltargs "Helper function to cevalAstModification."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Absyn.ElementArg> outAbsynElementArgLst;
 algorithm
   (outCache,outAbsynElementArgLst):=
   matchcontinue (inCache,inEnv,inAbsynElementArgLst,inBoolean,inST,inMsg,info)
     local
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Msg msg;
       Absyn.Modification mod_1,mod;
       list<Absyn.ElementArg> res,args;
@@ -6089,7 +6093,7 @@ algorithm
       Option<String> stropt;
       Option<GlobalScript.SymbolTable> st;
       Absyn.ElementArg m;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Info mod_info;
       Absyn.Path p;
 
@@ -6110,26 +6114,26 @@ algorithm
 end cevalAstEltargs;
 
 protected function cevalAstArraydim "Helper function to cevaAstCitems"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ArrayDim inArrayDim;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Absyn.ArrayDim outArrayDim;
 algorithm
   (outCache,outArrayDim) :=
   match (inCache,inEnv,inArrayDim,inBoolean,inST,inMsg,info)
     local
-      Env.Env env;
+      FCore.Graph env;
       Absyn.Msg msg;
       list<Absyn.Subscript> res,xs;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Exp e_1,e;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,_,{},_,_,_,_) then (cache,{});
     case (cache,env,(Absyn.NOSUB() :: xs),impl,st,msg,_)
       equation
@@ -6147,14 +6151,14 @@ end cevalAstArraydim;
 
 protected function cevalAstExpexpList
 "For IFEXP"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<tuple<Absyn.Exp, Absyn.Exp>> inExpTpls;
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<tuple<Absyn.Exp, Absyn.Exp>> outExpTpls;
 algorithm
   (outCache, outExpTpls) :=
@@ -6163,10 +6167,10 @@ algorithm
       Absyn.Msg msg;
       Absyn.Exp e1_1,e2_1,e1,e2;
       list<tuple<Absyn.Exp, Absyn.Exp>> res,xs;
-      Env.Env env;
+      FCore.Graph env;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (cache,_,{},_,_,_,_) then (cache,{});
     case (cache,env,((e1,e2) :: xs),impl,st,msg,_)
       equation
@@ -6180,14 +6184,14 @@ end cevalAstExpexpList;
 
 public function cevalDimension
   "Constant evaluates a dimension, returning the size of the dimension as a value."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Dimension inDimension;
   input Boolean inImpl;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outST;
 algorithm
@@ -6196,7 +6200,7 @@ algorithm
     local
       Integer dim_int;
       DAE.Exp exp;
-      Env.Cache cache;
+      FCore.Cache cache;
       Values.Value res;
       Option<GlobalScript.SymbolTable> st;
 

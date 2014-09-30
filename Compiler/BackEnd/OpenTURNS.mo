@@ -44,7 +44,7 @@ public
 import Absyn;
 import BackendDAE;
 import DAE;
-import Env;
+import FCore;
 
 protected
 import BackendDAEOptimize;
@@ -73,8 +73,8 @@ constant String cStrWrapperCompileCmd       = "wrapper_template.compile.cmd";
 constant String cStrInvokeOpenTurnsCmd      = "invoke.cmd";
 
 public function generateOpenTURNSInterface "generates the dll and the python script for connections with OpenTURNS"
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph graph;
   input BackendDAE.BackendDAE inDaelow;
   input DAE.FunctionTree inFunctionTree;
   input Absyn.Path inPath;

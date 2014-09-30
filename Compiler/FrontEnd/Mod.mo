@@ -46,7 +46,8 @@ encapsulated package Mod
 
 public import Absyn;
 public import DAE;
-public import Env;
+public import FCore;
+public import FGraph;
 public import Prefix;
 public import SCode;
 public import InnerOuter;
@@ -115,15 +116,15 @@ public function elabMod "
   turns them into global expressions.  This is done because the
   expressions in modifications must be elaborated on in the context
   they are provided in, and not the context they are used in."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.Mod inMod;
   input Boolean inBoolean;
   input ModScope inModScope;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Mod outMod;
 algorithm
   (outCache,outMod) := match(inCache,inEnv,inIH,inPrefix,inMod,inBoolean,inModScope,inInfo)
@@ -131,7 +132,7 @@ algorithm
       Boolean impl;
       SCode.Final finalPrefix;
       list<DAE.SubMod> subs_1;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
       SCode.Mod m;
       SCode.Each each_;
@@ -142,7 +143,7 @@ algorithm
       Absyn.Exp e;
       tuple<SCode.Element, DAE.Mod> el_mod;
       SCode.Element elem;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       Absyn.Info info;
       String str;
@@ -161,7 +162,7 @@ algorithm
     case (cache,env,ih,pre,(SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,false)), info=info)),impl,_,_)
       equation
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl, inModScope, info);
-        // print("Mod.elabMod: calling elabExp on mod exp: " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
+        // print("Mod.elabMod: calling elabExp on mod exp: " +& Dump.printExpStr(e) +& " in env: " +& FGraph.printGraphPathStr(env) +& "\n");
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE(), Config.splitArrays(), pre, info); // Vectorize only if arrays are expanded
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_val) = elabModValue(cache, env, e_1, prop, impl, info);
@@ -174,7 +175,7 @@ algorithm
     // Delayed type checking
     case (cache,env,ih,pre,(SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,_)), info = info)),impl,_,_)
       equation
-        // print("Mod.elabMod: delayed mod : " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
+        // print("Mod.elabMod: delayed mod : " +& Dump.printExpStr(e) +& " in env: " +& FGraph.printGraphPathStr(env) +& "\n");
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl, inModScope, info);
       then
         (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.UNTYPED(e,info))));
@@ -193,7 +194,7 @@ algorithm
         str = "- Mod.elabMod  failed: " +&
               SCodeDump.printModStr(m) +&
               " in env: " +&
-              Env.printEnvStr(env);
+              FGraph.printGraphStr(env);
         Debug.fprintln(Flags.FAILTRACE, str);
       then
         fail();*/
@@ -202,15 +203,15 @@ end elabMod;
 
 public function elabModForBasicType "
   Same as elabMod, but if a named Mod is not part of a basic type, fail instead."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.Mod inMod;
   input Boolean inBoolean;
   input ModScope inModScope;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Mod outMod;
 algorithm
   checkIfModsAreBasicTypeMods(inMod);
@@ -254,8 +255,8 @@ algorithm
 end checkIfSubmodsAreBasicTypeMods;
 
 protected function elabModRedeclareElement
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.Final finalPrefix;
@@ -267,7 +268,7 @@ protected function elabModRedeclareElement
 algorithm
   modElts := matchcontinue(inCache,inEnv,inIH,inPrefix,finalPrefix,inElt,impl,inModScope,info)
     local
-      Env.Cache cache; Env.Env env; Prefix.Prefix pre;
+      FCore.Cache cache; FCore.Graph env; Prefix.Prefix pre;
       SCode.Final f,fi;
       SCode.Replaceable repl;
       SCode.Partial p;
@@ -275,7 +276,7 @@ algorithm
       SCode.Visibility vis;
       SCode.Redeclare redecl;
       Absyn.InnerOuter io;
-      SCode.Ident cn,compname;
+      SCode.Ident cn,compname,bcn;
       SCode.Restriction restr;
       Absyn.TypeSpec tp,tp1;
       DAE.Mod emod;
@@ -290,21 +291,24 @@ algorithm
       SCode.Element element, c;
       SCode.Prefixes prefixes;
 
-    // search for it locally in the freaking env as it might have been redeclared
-    case(cache,env,ih,pre,_,SCode.CLASS(name = cn,prefixes = prefixes, info = i),_,_,_)
+    /*/ search for target class locally and if it is a derived with no modifications, use it
+    // replaceable package Medium = Modelica.Media.Air.MoistAir constrainedby Modelica.Media.Interfaces.PartialMedium;
+    // modifier: redeclare Medium = Medium
+    case(cache,env,ih,pre,_,
+      SCode.CLASS(cn,
+        prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(Absyn.TPATH(Absyn.IDENT(bcn), NONE()),mod,attr1),cmt,i),_,_,_)
       equation
-        modOriginal = SCodeUtil.getConstrainedByModifiers(prefixes);
-        (c, _) = Lookup.lookupClassLocal(env, cn);
-        SCode.CLASS(cn,prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i) = c;
-        // merge modifers from the component to the modifers from the constrained by
-        mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
-        mod = SCode.mergeModifiers(mod, modOriginal);
+        true = stringEq(cn, bcn);
+        (c, _) = Lookup.lookupClassLocal(env, bcn);
+        tp = SCode.getDerivedTypeSpec(c);
+        c = SCode.mergeWithOriginal(SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i), c);
+        SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i) = c;
         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,inModScope,info);
         (cache,tp1) = elabModQualifyTypespec(cache,env,ih,pre,impl,info,cn,tp);
         // unelab mod so we get constant evaluation of parameters
         mod = unelabMod(emod);
       then
-        ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp1,mod,attr1),cmt,i),emod));
+        ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp1,mod,attr1),cmt,i),emod));*/
 
     // Only derived classdefinitions supported in redeclares for now.
     // TODO: What is allowed according to spec? adrpo: 2011-06-28: is not decided yet,
@@ -356,20 +360,20 @@ protected function elabModQualifyTypespec
 "Help function to elabModRedeclareElements.
  This function makes sure that type specifiers, i.e. class names, in redeclarations are looked up in the correct environment.
  This is achieved by making them fully qualified."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Boolean impl;
   input Absyn.Info info;
   input Absyn.Ident name;
   input Absyn.TypeSpec tp;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Absyn.TypeSpec outTp;
 algorithm
   (outCache,outTp) := match(inCache,inEnv,inIH,inPrefix,impl,info,name,tp)
       local
-        Env.Cache cache; Env.Env env;
+        FCore.Cache cache; FCore.Graph env;
         Absyn.ArrayDim dims;
         Absyn.Path p,p1;
         Absyn.ComponentRef cref;
@@ -402,13 +406,13 @@ protected function elabModValue
 "author: PA
   Helper function to elabMod. Builds values from modifier expressions if possible.
   Tries to Constant evaluate an expressions an create a Value option for it."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input DAE.Properties inProp;
   input Boolean impl;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Option<Values.Value> outValuesValueOption;
 algorithm
   (outCache,outValuesValueOption) :=
@@ -416,7 +420,7 @@ algorithm
     local
       Values.Value v;
       Absyn.Msg msg;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Const c;
     case (_,_,_,_,_,_)
       equation
@@ -564,14 +568,14 @@ end unelabSubscript;
 public function updateMod
 "This function updates an untyped modification to a typed one, by looking
   up the type of the modifier in the environment and update it."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input DAE.Mod inMod;
   input Boolean inBoolean;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Mod outMod;
 algorithm
   (outCache,outMod) := matchcontinue (inCache,inEnv,inIH,inPrefix,inMod,inBoolean,inInfo)
@@ -583,12 +587,12 @@ algorithm
       DAE.Exp e_1,e_2;
       DAE.Properties prop,p;
       Option<Values.Value> e_val;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
       SCode.Each each_;
       Absyn.Exp e;
       Option<Absyn.Exp> eOpt;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       String str;
       Absyn.Info info;
@@ -631,14 +635,14 @@ algorithm
 end updateMod;
 
 protected function updateSubmods ""
-    input Env.Cache inCache;
-  input Env.Env inEnv;
+    input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input list<DAE.SubMod> inTypesSubModLst;
   input Boolean inBoolean;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
   (outCache,outTypesSubModLst):=
@@ -646,10 +650,10 @@ algorithm
     local
       Boolean impl;
       list<DAE.SubMod> x_1,xs_1,res,xs;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
       DAE.SubMod x;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
 
     case (cache,_,_,_,{},_,_) then (cache,{});  /* impl */
@@ -664,25 +668,25 @@ algorithm
 end updateSubmods;
 
 protected function updateSubmod " "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input DAE.SubMod inSubMod;
   input Boolean inBoolean;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
   (outCache,outTypesSubModLst):=
   match (inCache,inEnv,inIH,inPrefix,inSubMod,inBoolean,info)
     local
       DAE.Mod m_1,m;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
       String i;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<Integer> idxmod;
       InstanceHierarchy ih;
 
@@ -704,7 +708,7 @@ public function elabUntypedMod "This function is used to convert SCode.Mod into 
   to be converted to Mod.
   Notice that the correct type information must be updated later on."
   input SCode.Mod inMod;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Prefix.Prefix inPrefix;
   input ModScope inModScope;
   output DAE.Mod outMod;
@@ -716,7 +720,7 @@ algorithm
       SCode.Final finalPrefix;
       SCode.Each each_;
       list<SCode.SubMod> subs;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
       Absyn.Exp e;
       SCode.Element elem;
@@ -749,15 +753,15 @@ end elabUntypedMod;
 
 protected function elabSubmods
   "This function helps elabMod by recursively elaborating on a list of submodifications."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input list<SCode.SubMod> inSCodeSubModLst;
   input Boolean inBoolean;
   input ModScope inModScope;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.SubMod> outTypesSubModLst;
 protected
   list<SCode.SubMod> submods;
@@ -769,21 +773,21 @@ end elabSubmods;
 
 protected function elabSubmods2
   "This function elaborates a list of submodifications."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input list<SCode.SubMod> inSubMods;
   input Boolean inImpl;
   input Absyn.Info inInfo;
   input list<DAE.SubMod> inAccumMods;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.SubMod> outSubMods;
 algorithm
   (outCache, outSubMods) :=
   match(inCache, inEnv, inIH, inPrefix, inSubMods, inImpl, inInfo, inAccumMods)
     local
-      Env.Cache cache;
+      FCore.Cache cache;
       SCode.SubMod smod;
       list<SCode.SubMod> rest_smods;
       DAE.SubMod dmod;
@@ -940,14 +944,14 @@ end printModScope;
 protected function elabSubmod
   "This function elaborates on a submodification, turning an
    SCode.SubMod into a DAE.SubMod."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.SubMod inSubMod;
   input Boolean inBoolean;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.SubMod outSubMod;
 protected
   SCode.Mod smod;
@@ -961,7 +965,7 @@ end elabSubmod;
 
 protected function elabUntypedSubmods
   input list<SCode.SubMod> inSubMods;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Prefix.Prefix inPrefix;
   input ModScope inModScope;
   output list<DAE.SubMod> outSubMods;
@@ -977,7 +981,7 @@ protected function elabUntypedSubmods2 "
   of submodifications.
 "
   input list<SCode.SubMod> inSubMods;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Prefix.Prefix inPrefix;
   input ModScope inModScope;
   output list<DAE.SubMod> outSubMods;
@@ -987,7 +991,7 @@ algorithm
       list<DAE.SubMod> x_1,xs_1,res;
       SCode.SubMod x;
       list<SCode.SubMod> xs;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
     case ({},_,_,_) then {};
     case ((x :: xs),env,pre,_)
@@ -1005,7 +1009,7 @@ protected function elabUntypedSubmod "
   `SCode.SubMod\' into one or more `DAE.SubMod\'s, wihtout type information.
 "
   input SCode.SubMod inSubMod;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Prefix.Prefix inPrefix;
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
@@ -1015,7 +1019,7 @@ algorithm
       DAE.Mod m_1;
       String i;
       SCode.Mod m;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
       list<Absyn.Subscript> subcr;
       list<DAE.Subscript> sList;
@@ -1160,7 +1164,7 @@ algorithm
       equation
         m = lookupCompModification(inMods, id);
         m = DAE.MOD(f, e, {DAE.NAMEMOD(n, m)}, NONE());
-        m = merge(inMod, m, {}, Prefix.NOPRE());
+        m = merge(inMod, m, FGraph.empty(), Prefix.NOPRE());
         m = mergeSubMods(inMods, m, f, e, rest);
       then
         m;
@@ -1437,9 +1441,9 @@ algorithm
     case ((DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = eq)),idx)
       equation
         (mod_1,subs_1) = lookupIdxModification2(subs,idx);
-        mod_2 = merge(DAE.MOD(f,each_,subs_1,NONE()), mod_1, {}, Prefix.NOPRE());
+        mod_2 = merge(DAE.MOD(f,each_,subs_1,NONE()), mod_1, FGraph.empty(), Prefix.NOPRE());
         eq_1 = indexEqmod(eq, {idx});
-        mod_3 = merge(mod_2, DAE.MOD(SCode.NOT_FINAL(),each_,{},eq_1), {}, Prefix.NOPRE());
+        mod_3 = merge(mod_2, DAE.MOD(SCode.NOT_FINAL(),each_,{},eq_1), FGraph.empty(), Prefix.NOPRE());
       then
         mod_3;
     case (mod,idx)
@@ -1613,7 +1617,7 @@ A mid step for merging two modifiers.
 It validates that the merging is allowed(considering final modifier)."
   input DAE.Mod inModOuter "the outer mod which should overwrite the inner mod";
   input DAE.Mod inModInner "the inner mod";
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Prefix.Prefix inPrefix;
   output DAE.Mod outMod;
 algorithm
@@ -1662,7 +1666,7 @@ algorithm
       equation
         false = merge2(inModInner);
         false = modSubsetOrEqualOrNonOverlap(inModOuter,inModInner);
-        p = Env.getEnvPath(inEnv);
+        p = FGraph.getScopePath(inEnv);
         s1 = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix);
         s2 = Absyn.optPathString(p);
         s3 = printModStr(inModOuter);
@@ -1699,7 +1703,7 @@ protected function doMerge "This function merges two modifications into one.
   should take precedence over the *inner* modification."
   input DAE.Mod inModOuter "the outer mod which should overwrite the inner mod";
   input DAE.Mod inModInner "the inner mod";
-  input Env.Env inEnv3;
+  input FCore.Graph inEnv3;
   input Prefix.Prefix inPrefix4;
   output DAE.Mod outMod;
 algorithm
@@ -1717,7 +1721,7 @@ algorithm
       SCode.Mod m1,m2,sm,cm1,cm2;
       SCode.Comment comment,comment2;
       Option<SCode.Annotation> ann;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
       list<tuple<SCode.Element, DAE.Mod>> els;
       list<DAE.SubMod> subs,subs1,subs2;
@@ -1806,18 +1810,18 @@ algorithm
         m2_1 = merge(m2_1, elabUntypedMod(SCodeUtil.getConstrainedByModifiers(pf2), env, pre, COMPONENT(id2)), env, pre);
         m = merge(m1_1, m2_1, env, pre);
         pf = SCode.propagatePrefixes(pf2, pf1);
-        (res, info) = Env.checkSameRestriction(res1, res2, info1, info2);
+        (res, info) = SCode.checkSameRestriction(res1, res2, info1, info2);
       then
         DAE.REDECL(f1, each1, {(SCode.CLASS(id1, pf, ep, pp, res, cdef, comment, info), m)});
 
     // luc_pop : this shoud return the first mod because it have been merged in merge_subs
-    case (mod as DAE.REDECL(finalPrefix = _,eachPrefix = _,
-                       tplSCodeElementModLst = {(SCode.COMPONENT(name = _),_)}),
-          DAE.MOD(subModLst = _),_,_)
+    case (DAE.REDECL(finalPrefix = f1,eachPrefix = each1,
+                       tplSCodeElementModLst = {(celm as SCode.COMPONENT(name = _),cm)}),
+          icm as DAE.MOD(subModLst = _),env,pre)
       equation
-        //mod = merge(cm,mods,env,pre);
+        cm = merge(icm,cm,env,pre);
       then
-        mod; //DAE.REDECL(f1,each1,{(el,mod)});
+        DAE.REDECL(f1,each1,{(celm,cm)});
 
     case ((icm as DAE.MOD(subModLst = _)),
           DAE.REDECL(
@@ -1864,7 +1868,7 @@ end doMerge;
 protected function mergeSubs "This function merges to list of DAE.SubMods."
   input list<DAE.SubMod> inTypesSubModLst1;
   input list<DAE.SubMod> inTypesSubModLst2;
-  input Env.Env inEnv3;
+  input FCore.Graph inEnv3;
   input Prefix.Prefix inPrefix4;
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
@@ -1872,7 +1876,7 @@ algorithm
     local
       list<DAE.SubMod> s1,s2,s2_new,s_rec;
       DAE.SubMod s,s_first;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
 
     case ({},s1,_,_) then s1;
@@ -1891,7 +1895,7 @@ Author: BZ, 2009-07
 Helper function for mergeSubs, used to detect failures in Mod.merge"
   input DAE.SubMod inSubMod;
   input list<DAE.SubMod> inTypesSubModLst;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Prefix.Prefix inPrefix;
   output DAE.SubMod outSubMod;
   output list<DAE.SubMod> outTypesSubModLst;
@@ -1902,7 +1906,7 @@ algorithm
       DAE.Mod m,m1,m2;
       String n1,n2;
       list<DAE.SubMod> ss,ss_1;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
       list<Integer> i1,i2;
 
@@ -1933,7 +1937,7 @@ protected function mergeSubs2 "This function helps in the merging of two lists o
   DAE.SubMod given in the second argument is discarded."
   input list<DAE.SubMod> inTypesSubModLst;
   input DAE.SubMod inSubMod;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Prefix.Prefix inPrefix;
   output list<DAE.SubMod> outTypesSubModLst;
   output DAE.SubMod outSubMod;
@@ -1944,7 +1948,7 @@ algorithm
       DAE.Mod m,m1,m2;
       String n1,n2;
       list<DAE.SubMod> ss,ss_1;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
       list<Integer> i1,i2;
 

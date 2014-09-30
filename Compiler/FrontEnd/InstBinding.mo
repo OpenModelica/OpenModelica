@@ -42,7 +42,8 @@ encapsulated package InstBinding
 public import Absyn;
 public import ClassInf;
 public import DAE;
-public import Env;
+public import FCore;
+public import FGraph;
 public import InnerOuter;
 public import Mod;
 public import Prefix;
@@ -310,12 +311,12 @@ public function instDaeVariableAttributes
 "this function extracts the attributes from the modification
   It returns a DAE.VariableAttributes option because
   somtimes a varible does not contain the variable-attr."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Mod inMod;
   input DAE.Type inType;
   input list<Integer> inIntegerLst;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Option<DAE.VariableAttributes> outDAEVariableAttributesOption;
 algorithm
   (outCache,outDAEVariableAttributesOption) :=
@@ -325,12 +326,12 @@ algorithm
       Option<DAE.StateSelect> stateSelect_value;
       Option<DAE.Uncertainty> uncertainty_value;
       Option<DAE.Distribution> distribution_value;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Mod mod;
       DAE.TypeSource ts;
       list<Integer> index_list;
       DAE.Type enumtype;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Type tp;
       list<DAE.Var> varLst;
 
@@ -421,25 +422,25 @@ end instDaeVariableAttributes;
 protected function instEnumerationBinding
 "author: LP
   instantiates a enumeration binding and retrieves the value."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Mod inMod;
   input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
   input DAE.Type expected_type;
   input Boolean useConstValue "if true, use constant value in TYPED (if present)";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Option<DAE.Exp> outExpExpOption;
 algorithm
   (outCache,outExpExpOption) := matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString,expected_type,useConstValue)
     local
       Option<DAE.Exp> result;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Mod mod;
       list<Integer> index_list;
       String bind_name;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (cache,_,mod,_,index_list,bind_name,_,_)
       equation
@@ -609,15 +610,15 @@ end instModEquation;
 public function makeBinding
 "This function looks at the equation part of a modification, and
   if there is a declaration equation builds a DAE.Binding for it."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SCode.Attributes inAttributes;
   input DAE.Mod inMod;
   input DAE.Type inType;
   input Prefix.Prefix inPrefix;
   input String componentName;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Binding outBinding;
 algorithm
   (outCache,outBinding) := matchcontinue (inCache,inEnv,inAttributes,inMod,inType,inPrefix,componentName,inInfo)
@@ -627,7 +628,7 @@ algorithm
       Option<Values.Value> e_val;
       DAE.Const c;
       String e_tp_str,tp_str,e_str,e_str_1,str,s,pre_str;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.Properties prop;
       DAE.Binding binding;
       DAE.Mod startValueModification;
@@ -759,8 +760,8 @@ public function makeRecordBinding
 
   This is needed when we assign a record to another record.
   "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path inRecordName;
   input DAE.Type inRecordType;
   input list<DAE.Var> inRecordVars;
@@ -781,8 +782,8 @@ protected function makeRecordBinding2
   "Helper function to makeRecordBinding. Goes through each record component and
   finds out it's binding, and at the end it assembles a single binding from
   these components."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path inRecordName;
   input DAE.Type inRecordType;
   input list<DAE.Var> inRecordVars;
@@ -853,7 +854,7 @@ algorithm
         ety = Types.simplifyType(ty);
         dims = Types.getDimensions(inRecordType);
         ty = Types.liftArrayListDims(ty, dims);
-        scope = Env.printEnvPathStr(inEnv);
+        scope = FGraph.printGraphPathStr(inEnv);
         tyStr = Types.printTypeStr(ty);
         exp = DAE.EMPTY(scope, DAE.CREF_IDENT(name, ety, {}), ety, tyStr);
         val = Types.typeToValue(ty);

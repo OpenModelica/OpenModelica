@@ -126,10 +126,12 @@ Values.mo \
 ValuesUtil.mo
 
 FFRONTEND = \
+FBuiltin.mo \
 FCore.mo \
 FExpand.mo \
 FGraph.mo \
 FGraphBuild.mo \
+FGraphBuildEnv.mo \
 FGraphDump.mo \
 FGraphStream.mo \
 FInst.mo \

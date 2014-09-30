@@ -45,7 +45,7 @@ encapsulated package InstExtends
 public import Absyn;
 public import ClassInf;
 public import DAE;
-public import Env;
+public import FCore;
 public import HashTableStringToPath;
 public import InnerOuter;
 public import SCode;
@@ -59,6 +59,8 @@ protected import Debug;
 protected import Dump;
 protected import Error;
 protected import Flags;
+protected import FGraph;
+protected import FNode;
 protected import Inst;
 protected import InstUtil;
 protected import List;
@@ -79,8 +81,8 @@ protected function instExtendsList "
   It takes an SCode.Element list and flattens out the extends nodes
   of that list. The result is a list of components and lists of equations
   and algorithms."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -90,8 +92,8 @@ protected function instExtendsList "
   input String inClassName; // the class name whose elements are getting instantiated.
   input Boolean inImplicit;
   input Boolean isPartialInst;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.Mod outMod;
   output list<tuple<SCode.Element, DAE.Mod, Boolean>> outElements;
@@ -104,11 +106,11 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inLocalElements,inElementsFromExtendsScope,inState,inClassName,inImplicit,isPartialInst)
     local
       SCode.Element c;
-      String cn,s,scope_str,className;
+      String cn,s,scope_str,className,extName;
       SCode.Encapsulated encf;
       Boolean impl,notConst,eq_name;
       SCode.Restriction r;
-      Env.Env cenv,cenv1,cenv3,env2,env,env_1;
+      FCore.Graph cenv,cenv1,cenv3,env2,env,env_1;
       DAE.Mod outermod,mods,mods_1,emod_1,mod;
       list<SCode.Element> importelts,els,els_1,rest,cdefelts,classextendselts, elsExtendsScope;
       list<SCode.Equation> eq1,ieq1,eq1_1,ieq1_1,eq2,ieq2,eq3,ieq3,eq,ieq,initeq2;
@@ -118,7 +120,7 @@ algorithm
       list<tuple<SCode.Element, DAE.Mod, Boolean>> compelts1,compelts2,compelts,compelts3;
       SCode.Mod emod;
       SCode.Element elt;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       HashTableStringToPath.HashTable ht;
       SCode.Variability var;
@@ -128,6 +130,8 @@ algorithm
       Absyn.Info info;
       SCode.Comment cmt;
       SCode.Visibility vis;
+      SCode.Element comp;
+      DAE.Var dvar;
 
     // no further elements to instantiate
     case (cache,env,ih,mod,_,{},_,_,_,_,_) then (cache,env,ih,mod,{},{},{},{},{});
@@ -156,18 +160,15 @@ algorithm
         eq_name = stringEq(className, Absyn.pathFirstIdent(tp)) and // make sure is the same freaking env!
                   Absyn.pathEqual(
                      ClassInf.getStateName(inState),
-                     Absyn.joinPaths(Env.getEnvName(env), Absyn.makeIdentPathFromString(Absyn.pathFirstIdent(tp))));
+                     Absyn.joinPaths(FGraph.getGraphName(env), Absyn.makeIdentPathFromString(Absyn.pathFirstIdent(tp))));
 
         (cache, (c as SCode.CLASS(name = cn, encapsulatedPrefix = encf,
         restriction = r)), cenv) = lookupBaseClass(tp, eq_name, className, env, cache);
 
         //print("Found " +& cn +& "\n");
         // outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
-        outermod = mod;
 
-        // cenv = Env.mergeEnv(cenv, env, "$extends_" +& cn, c, Env.M(pre, className, {}, mod, env, {}));
-        cenv = Env.addModification(cenv, Env.M(pre, className, {}, mod, env, {}));
-        (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih,outermod,pre,c,impl,info);
+        (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1,mod) = instDerivedClasses(cache,cenv,ih,mod,pre,c,impl,info);
         els = updateElementListVisibility(els, vis);
 
         //(cache,tp_1) = Inst.makeFullyQualified(cache,/* adrpo: cenv1?? FIXME */env, tp);
@@ -177,17 +178,23 @@ algorithm
         alg1_1 = Util.if_(isPartialInst, {}, alg1);
         ialg1_1 = Util.if_(isPartialInst, {}, ialg1);
 
-        cenv3 = Env.openScope(cenv1, encf, SOME(cn), Env.classInfToScopeType(ci_state));
-        _ = ClassInf.start(r, Env.getEnvName(cenv3));
+        // cenv1 = FGraph.createVersionScope(env, cenv1, cn, FNode.mkExtendsName(tp), pre, mod);
+        cenv3 = FGraph.openScope(cenv1, encf, SOME(cn), FGraph.classInfToScopeType(ci_state));
+        _ = ClassInf.start(r, FGraph.getGraphName(cenv3));
         /* Add classdefs and imports to env, so e.g. imports from baseclasses found, see Extends5.mo */
         (importelts,cdefelts,classextendselts,els_1) = InstUtil.splitEltsNoComponents(els);
-        (cenv3,ih) = InstUtil.addClassdefsToEnv(cenv3,ih,pre,importelts,impl,NONE());
-        (cenv3,ih) = InstUtil.addClassdefsToEnv(cenv3,ih,pre,cdefelts,impl,SOME(mod));
+        (cache,cenv3,ih) = InstUtil.addClassdefsToEnv(cache,cenv3,ih,pre,importelts,impl,NONE());
+        (cache,cenv3,ih) = InstUtil.addClassdefsToEnv(cache,cenv3,ih,pre,cdefelts,impl,SOME(mod));
 
         els_1 = SCodeUtil.addRedeclareAsElementsToExtends(els_1, SCodeUtil.getRedeclareAsElements(els_1));
 
-        (cache,_,ih,_,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsAndClassExtendsList2(cache,cenv3,ih,outermod,pre,els_1,classextendselts,els,ci_state,className,impl,isPartialInst)
+        emod_1 = Mod.elabUntypedMod(emod, env, Prefix.NOPRE(), Mod.EXTENDS(tp));
+        mods_1 = Mod.merge(mod, emod_1, env, Prefix.NOPRE());
+
+        (cache,_,ih,_,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsAndClassExtendsList2(cache,cenv3,ih,mods_1,pre,els_1,classextendselts,els,ci_state,className,impl,isPartialInst)
         "recurse to fully flatten extends elements env";
+
+        // print("Extended Elements Extends:\n" +& InstUtil.printElementAndModList(List.map(compelts1, Util.tuple312)));
 
         ht = getLocalIdentList(compelts1,HashTableStringToPath.emptyHashTable(),getLocalIdentElementTpl);
         ht = getLocalIdentList(cdefelts,ht,getLocalIdentElement);
@@ -201,12 +208,8 @@ algorithm
         (cache,ialg1_1) = fixList(cache, cenv3, ialg1_1, ht,fixAlgorithm);
         //Debug.traceln("fixed local idents " +& intString(tmp));
 
-        (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih,mod,pre,rest,elsExtendsScope,ci_state,className,impl,isPartialInst)
+        (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih,mods_1,pre,rest,elsExtendsScope,ci_state,className,impl,isPartialInst)
         "continue with next element in list";
-
-        emod_1 = Mod.elabUntypedMod(emod, env2, Prefix.NOPRE(), Mod.EXTENDS(tp));
-        mods_1 = Mod.merge(mod, mods_1, env2, Prefix.NOPRE());
-        mods_1 = Mod.merge(mods_1, emod_1, env2, Prefix.NOPRE());
 
         compelts = listAppend(compelts1, compelts2);
 
@@ -223,7 +226,7 @@ algorithm
       equation
         failure((_,_,_) = Lookup.lookupClass(cache, env, tp, false));
         s = Absyn.pathString(tp);
-        scope_str = Env.printEnvPathStr(env);
+        scope_str = FGraph.printGraphPathStr(env);
         Error.addSourceMessage(Error.LOOKUP_BASECLASS_ERROR, {s,scope_str}, info);
       then
         fail();
@@ -269,7 +272,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.instExtendsList failed on:\n\t" +&
           "className: " +&  className +& "\n\t" +&
-          "env:       " +&  Env.printEnvPathStr(env) +& "\n\t" +&
+          "env:       " +&  FGraph.printGraphPathStr(env) +& "\n\t" +&
           "mods:      " +&  Mod.printModStr(mod) +& "\n\t" +&
           "elems:     " +&  stringDelimitList(List.map1(rest, SCodeDump.unparseElementStr, SCodeDump.defaultOptions), ", ")
           );
@@ -283,19 +286,19 @@ protected function lookupBaseClass
   input Absyn.Path inPath;
   input Boolean inSelfReference;
   input String inClassName;
-  input Env.Env inEnv;
-  input Env.Cache inCache;
-  output Env.Cache outCache;
+  input FCore.Graph inEnv;
+  input FCore.Cache inCache;
+  output FCore.Cache outCache;
   output SCode.Element outElement;
-  output Env.Env outEnv;
+  output FCore.Graph outEnv;
 algorithm
   (outCache, outElement, outEnv) :=
   match(inPath, inSelfReference, inClassName, inEnv, inCache)
     local
       String name;
       SCode.Element elem;
-      Env.Env env;
-      Env.Cache cache;
+      FCore.Graph env;
+      FCore.Cache cache;
       Absyn.Path path;
 
     // We have a simple identifier with a self reference, i.e. a class which
@@ -344,8 +347,8 @@ public function instExtendsAndClassExtendsList "
   It takes an SCode.Element list and flattens out the extends nodes and
   class extends nodes of that list. The result is a list of components and
   lists of equations and algorithms."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -356,8 +359,8 @@ public function instExtendsAndClassExtendsList "
   input String inClassName; // the class name whose elements are getting instantiated.
   input Boolean inImpl;
   input Boolean isPartialInst;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.Mod outMod;
   output list<tuple<SCode.Element, DAE.Mod>> outElements;
@@ -378,7 +381,7 @@ algorithm
   tmpelts := List.map(outElements,Util.tuple21);
   (_,cdefelts,_,_) := InstUtil.splitEltsNoComponents(tmpelts);
   // Add the class definitions to the environment
-  (outEnv,outIH) := InstUtil.addClassdefsToEnv(outEnv,outIH,inPrefix,cdefelts,inImpl,SOME(outMod));
+  (outCache,outEnv,outIH) := InstUtil.addClassdefsToEnv(outCache,outEnv,outIH,inPrefix,cdefelts,inImpl,SOME(outMod));
   //Debug.fprintln(Flags.DEBUG,"instExtendsAndClassExtendsList: " +& inClassName +& " done");
 end instExtendsAndClassExtendsList;
 
@@ -387,8 +390,8 @@ protected function instExtendsAndClassExtendsList2 "
   It takes an SCode.Element list and flattens out the extends nodes and
   class extends nodes of that list. The result is a list of components and
   lists of equations and algorithms."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -399,8 +402,8 @@ protected function instExtendsAndClassExtendsList2 "
   input String inClassName; // the class name whose elements are getting instantiated.
   input Boolean inImpl;
   input Boolean isPartialInst;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.Mod outMod;
   output list<tuple<SCode.Element, DAE.Mod, Boolean>> outElements;
@@ -418,7 +421,7 @@ protected function instClassExtendsList
 "Instantiate element nodes of type SCode.CLASS_EXTENDS. This is done by walking
 the extended classes and performing the modifications in-place. The old class
 will no longer be accessible."
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input DAE.Mod inMod;
   input list<SCode.Element> inClassExtendsList;
   input list<tuple<SCode.Element, DAE.Mod, Boolean>> inElements;
@@ -482,7 +485,7 @@ algorithm
 end buildClassExtendsName;
 
 protected function instClassExtendsList2
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input DAE.Mod inMod;
   input String inName;
   input SCode.Element inClassExtendsElt;
@@ -524,7 +527,7 @@ algorithm
       equation
         true = name1 ==& name2; // Compare the name before pattern-matching to speed this up
 
-        env_path = Absyn.pathString(Env.getEnvName(inEnv));
+        env_path = Absyn.pathString(FGraph.getGraphName(inEnv));
         name2 = buildClassExtendsName(env_path,name2);
         SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2),comment2,info2) = cl;
 
@@ -547,7 +550,7 @@ algorithm
       equation
         true = name1 ==& name2; // Compare the name before pattern-matching to speed this up
 
-        env_path = Absyn.pathString(Env.getEnvName(inEnv));
+        env_path = Absyn.pathString(FGraph.getGraphName(inEnv));
         name2 = buildClassExtendsName(env_path,name2);
         SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.DERIVED(derivedTySpec, derivedMod, attrs),comment2,info2) = cl;
 
@@ -589,24 +592,25 @@ public function instDerivedClasses
   elements and equations and algorithms of the class.
   If the class is derived, the class is looked up and the
   derived class parts are fetched."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
   input Boolean inBoolean;
   input Absyn.Info inInfo "File information of the extends element";
-  output Env.Cache outCache;
-  output Env.Env outEnv1;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv1;
   output InnerOuter.InstHierarchy outIH;
   output list<SCode.Element> outSCodeElementLst2;
   output list<SCode.Equation> outSCodeEquationLst3;
   output list<SCode.Equation> outSCodeEquationLst4;
   output list<SCode.AlgorithmSection> outSCodeAlgorithmLst5;
   output list<SCode.AlgorithmSection> outSCodeAlgorithmLst6;
+  output DAE.Mod outMod;
 algorithm
-  (outCache,outEnv1,outIH,outSCodeElementLst2,outSCodeEquationLst3,outSCodeEquationLst4,outSCodeAlgorithmLst5,outSCodeAlgorithmLst6) :=
+  (outCache,outEnv1,outIH,outSCodeElementLst2,outSCodeEquationLst3,outSCodeEquationLst4,outSCodeAlgorithmLst5,outSCodeAlgorithmLst6,outMod) :=
   instDerivedClassesWork(inCache,inEnv,inIH,inMod,inPrefix,inClass,inBoolean,inInfo,false,0);
 end instDerivedClasses;
 
@@ -616,8 +620,8 @@ protected function instDerivedClassesWork
   elements and equations and algorithms of the class.
   If the class is derived, the class is looked up and the
   derived class parts are fetched."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -626,32 +630,33 @@ protected function instDerivedClassesWork
   input Absyn.Info inInfo "File information of the extends element";
   input Boolean overflow;
   input Integer numIter;
-  output Env.Cache outCache;
-  output Env.Env outEnv1;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv1;
   output InnerOuter.InstHierarchy outIH;
   output list<SCode.Element> outSCodeElementLst2;
   output list<SCode.Equation> outSCodeEquationLst3;
   output list<SCode.Equation> outSCodeEquationLst4;
   output list<SCode.AlgorithmSection> outSCodeAlgorithmLst5;
   output list<SCode.AlgorithmSection> outSCodeAlgorithmLst6;
+  output DAE.Mod outMod;
 algorithm
-  (outCache,outEnv1,outIH,outSCodeElementLst2,outSCodeEquationLst3,outSCodeEquationLst4,outSCodeAlgorithmLst5,outSCodeAlgorithmLst6):=
+  (outCache,outEnv1,outIH,outSCodeElementLst2,outSCodeEquationLst3,outSCodeEquationLst4,outSCodeAlgorithmLst5,outSCodeAlgorithmLst6,outMod):=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inBoolean,inInfo,overflow,numIter)
     local
       list<SCode.Element> elt;
-      Env.Env env,cenv;
-      DAE.Mod mod;
+      FCore.Graph env,cenv;
+      DAE.Mod mod,daeDMOD;
       list<SCode.Equation> eq,ieq;
       list<SCode.AlgorithmSection> alg,ialg;
       SCode.Element c;
       Absyn.Path tp;
       SCode.Mod dmod;
       Boolean impl;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
       SCode.Comment cmt;
       list<SCode.Enum> enumLst;
-      String n,name,str1,str2,strDepth;
+      String n,name,str1,str2,strDepth,cn;
       Option<SCode.ExternalDecl> extdecl;
       Prefix.Prefix pre;
       Absyn.Info info;
@@ -661,7 +666,7 @@ algorithm
       equation
         true = InstUtil.isBuiltInClass(name);
       then
-        (cache,env,ih,{},{},{},{},{});
+        (cache,env,ih,{},{},{},{},{},inMod);
 
     case (cache,env,ih,_,_,SCode.CLASS(name = name, classDef =
           SCode.PARTS(elementLst = elt,
@@ -672,34 +677,35 @@ algorithm
         /* elt_1 = noImportElements(elt); */
         Error.assertionOrAddSourceMessage(Util.isNone(extdecl), Error.EXTENDS_EXTERNAL, {name}, info);
       then
-        (cache,env,ih,elt,eq,ieq,alg,ialg);
+        (cache,env,ih,elt,eq,ieq,alg,ialg,inMod);
 
-    case (cache,env,ih,mod,pre,SCode.CLASS( info = info, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = _)),impl, _, false, _)
+    case (cache,env,ih,mod,pre,SCode.CLASS( info = info, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = dmod)),impl, _, false, _)
       equation
-        // Debug.fprintln(Flags.INST_TRACE, "DERIVED: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.unparseElementStr(inClass) +& " mods: " +& Mod.printModStr(mod));
+        // Debug.fprintln(Flags.INST_TRACE, "DERIVED: " +& FGraph.printGraphPathStr(env) +& " el: " +& SCodeDump.unparseElementStr(inClass) +& " mods: " +& Mod.printModStr(mod));
         (cache, c, cenv) = Lookup.lookupClass(cache, env, tp, true);
-        // false = Absyn.pathEqual(Env.getEnvName(env),Env.getEnvName(cenv)) and SCode.elementEqual(c,inClass);
+        dmod = InstUtil.chainRedeclares(mod, dmod);
+        // false = Absyn.pathEqual(FGraph.getGraphName(env),FGraph.getGraphName(cenv)) and SCode.elementEqual(c,inClass);
         // modifiers should be evaluated in the current scope for derived!
-        //(cache,daeDMOD) = Mod.elabMod(cache, env, ih, pre, dmod, impl, info);
-        // merge in the class env
-        //mod = Mod.merge(mod, daeDMOD, cenv, pre);
-        // cenv = Env.mergeEnv(cenv, env, "$derived_" +& getElementName(c), c, Env.M(pre, name, {}, mod, env, {}));
-        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClassesWork(cache, cenv, ih, mod, pre, c, impl, info, numIter >= Global.recursionDepthLimit, numIter+1)
+        //daeDMOD = Mod.elabUntypedMod(dmod, env, Prefix.NOPRE(), Mod.DERIVED(tp));
+        (cache,daeDMOD) = Mod.elabMod(cache, env, ih, pre, dmod, impl, Mod.DERIVED(tp), info);
+        mod = Mod.merge(mod, daeDMOD, env, pre);
+        // print("DER: " +& SCodeDump.unparseElementStr(inClass, SCodeDump.defaultOptions) +& "\n");
+        (cache,env,ih,elt,eq,ieq,alg,ialg,mod) = instDerivedClassesWork(cache, cenv, ih, mod, pre, c, impl, info, numIter >= Global.recursionDepthLimit, numIter+1)
         "Mod.lookup_modification_p(mod, c) => innermod & We have to merge and apply modifications as well!" ;
       then
-        (cache,env,ih,elt,eq,ieq,alg,ialg);
+        (cache,env,ih,elt,eq,ieq,alg,ialg,mod);
 
     case (cache,env,ih,mod,pre,SCode.CLASS(name=n, classDef = SCode.ENUMERATION(enumLst), cmt = cmt, info = info),impl,_,false,_)
       equation
         c = SCodeUtil.expandEnumeration(n, enumLst, cmt, info);
-        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClassesWork(cache, env, ih, mod, pre, c, impl,info, numIter >= Global.recursionDepthLimit, numIter+1);
+        (cache,env,ih,elt,eq,ieq,alg,ialg,mod) = instDerivedClassesWork(cache, env, ih, mod, pre, c, impl,info, numIter >= Global.recursionDepthLimit, numIter+1);
       then
-        (cache,env,ih,elt,eq,ieq,alg,ialg);
+        (cache,env,ih,elt,eq,ieq,alg,ialg,mod);
 
     case (_,_,_,_,_,_,_,_,true,_)
       equation
         str1 = SCodeDump.unparseElementStr(inClass,SCodeDump.defaultOptions);
-        str2 = Env.printEnvPathStr(inEnv);
+        str2 = FGraph.printGraphPathStr(inEnv);
         // print("instDerivedClassesWork recursion depth... " +& str1 +& " " +& str2 +& "\n");
         Error.addSourceMessage(Error.RECURSION_DEPTH_DERIVED,{str1,str2},inInfo);
       then fail();
@@ -747,7 +753,7 @@ protected function updateComponentsAndClassdefs
   from B for which modifiers should be applied to."
   input list<tuple<SCode.Element, DAE.Mod, Boolean>> inComponents;
   input DAE.Mod inMod;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output list<tuple<SCode.Element, DAE.Mod, Boolean>> outComponents;
   output DAE.Mod outRestMod;
 algorithm
@@ -757,15 +763,15 @@ end updateComponentsAndClassdefs;
 
 protected function updateComponentsAndClassdefs2
   input tuple<SCode.Element, DAE.Mod, Boolean> inComponent;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input DAE.Mod inMod;
   output tuple<SCode.Element, DAE.Mod, Boolean> outComponent;
   output DAE.Mod outRestMod;
 algorithm
   (outComponent, outRestMod) := matchcontinue(inComponent, inEnv, inMod)
     local
-      SCode.Element comp;
-      DAE.Mod cmod, cmod2, mod_rest;
+      SCode.Element comp, comp1, comp2;
+      DAE.Mod cmod, cmod1, cmod2, mod_rest;
       String id;
       Boolean b;
       SCode.Mod m;
@@ -788,13 +794,15 @@ algorithm
     case ((comp as SCode.IMPORT(imp = _), _, b), _ , _)
       then ((comp, DAE.NOMOD(), b), inMod);
 
-    case ((SCode.CLASS(name = id, prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), _, b), _, _)
+    case ((comp1 as SCode.CLASS(name = id, prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), cmod1, b), _, _)
       equation
-        DAE.REDECL(_, _, (comp, cmod)::_) = Mod.lookupCompModification(inMod, id);
+        DAE.REDECL(_, _, (comp2, cmod2)::_) = Mod.lookupCompModification(inMod, id);
         mod_rest = inMod; //mod_rest = Mod.removeMod(inMod, id);
-        comp = SCode.renameElement(comp, id);
+        cmod2 = Mod.merge(cmod2, cmod1, inEnv, Prefix.NOPRE());
+        comp2 = SCode.mergeWithOriginal(comp2, comp1);
+        // comp2 = SCode.renameElement(comp2, id);
       then
-        ((comp, cmod, b), mod_rest);
+        ((comp2, cmod2, b), mod_rest);
 
     case ((comp as SCode.CLASS(name = id), cmod, b), _, _)
       equation
@@ -827,7 +835,7 @@ algorithm
         Debug.fprintln(
           Flags.FAILTRACE,
           "- InstExtends.updateComponentsAndClassdefs2 failed on:\n" +&
-          "env = " +& Env.printEnvPathStr(inEnv) +&
+          "env = " +& FGraph.printGraphPathStr(inEnv) +&
           "\nmod = " +& Mod.printModStr(inMod) +&
           "\ncmod = " +& Mod.printModStr(cmod) +&
           "\nbool = " +& Util.if_(b, "true", "false") +& "\n" +&
@@ -937,11 +945,11 @@ protected function fixLocalIdents
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<tuple<SCode.Element,DAE.Mod,Boolean>> inElts;
   input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<tuple<SCode.Element,DAE.Mod,Boolean>> outElts;
 algorithm
   (outCache,outElts) := matchcontinue (inCache,inEnv,inElts,inHt)
@@ -949,8 +957,8 @@ algorithm
       SCode.Element elt;
       DAE.Mod mod;
       Boolean b;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
       list<tuple<SCode.Element,DAE.Mod,Boolean>> elts;
 
@@ -970,7 +978,7 @@ algorithm
         Debug.traceln("- InstExtends.fixLocalIdents failed for element:" +&
         SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions) +& " mods: " +&
         Mod.printModStr(mod) +& " class extends:" +&
-        Util.if_(b, "true", "false") +& " in env: " +& Env.printEnvPathStr(env)
+        Util.if_(b, "true", "false") +& " in env: " +& FGraph.printGraphPathStr(env)
         );
       then
         fail();
@@ -983,11 +991,11 @@ protected function fixElement
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SCode.Element inElt;
   input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SCode.Element outElts;
 algorithm
   (outCache,outElts) := matchcontinue (inCache,inEnv,inElt,inHt)
@@ -1010,8 +1018,8 @@ algorithm
       SCode.Variability var;
       SCode.Parallelism prl;
       Absyn.Direction dir;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
       SCode.Element elt;
 
@@ -1043,8 +1051,9 @@ algorithm
       equation
         //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name);
         // lookup as it might have been redeclared!!!
-        (SCode.CLASS(classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
-        (cache,env) = Builtin.initialEnv(cache);
+        (SCode.CLASS(prefixes = prefixes, partialPrefix = partialPrefix, restriction = restriction,
+                     cmt = comment, info = info,classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
+        (cache,env) = Builtin.initialGraph(cache);
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
         (cache,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
@@ -1053,7 +1062,7 @@ algorithm
     case (cache,env,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
         //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name);
-        (cache,env) = Builtin.initialEnv(cache);
+        (cache,env) = Builtin.initialGraph(cache);
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
         (cache,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
@@ -1063,7 +1072,8 @@ algorithm
       equation
         //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name +& str);
         // lookup as it might have been redeclared!!!
-        (SCode.CLASS(classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
+        (SCode.CLASS(prefixes = prefixes, partialPrefix = partialPrefix, restriction = restriction,
+                     cmt = comment, info = info,classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
         (cache,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
@@ -1098,11 +1108,11 @@ protected function fixClassdef
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SCode.ClassDef inCd;
   input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SCode.ClassDef outCd;
 algorithm
   (outCache,outCd) := matchcontinue (inCache,inEnv,inCd,inHt)
@@ -1119,8 +1129,8 @@ algorithm
       SCode.Attributes attr;
       String name;
       SCode.Mod mod;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht, htParent;
       SCode.ClassDef cd;
 
@@ -1172,18 +1182,18 @@ protected function fixEquation
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SCode.Equation inEq;
   input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SCode.Equation outEq;
 algorithm
   (outCache,outEq) := match (inCache,inEnv,inEq,inHt)
     local
       SCode.EEquation eeq;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
 
     case (cache,env,SCode.EQUATION(eeq),ht)
@@ -1204,11 +1214,11 @@ protected function fixEEquation
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SCode.EEquation inEeq;
   input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SCode.EEquation outEeq;
 algorithm
   (outCache,outEeq) := match (inCache,inEnv,inEeq,inHt)
@@ -1223,8 +1233,8 @@ algorithm
       SCode.Comment comment;
       Option<Absyn.Exp> optExp;
       Absyn.Info info;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
 
     case (cache,env,SCode.EQ_IF(expl,eqll,eql,comment,info),ht)
@@ -1281,11 +1291,11 @@ protected function fixListEEquation
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input list<SCode.EEquation> eeq;
   input HashTableStringToPath.HashTable ht;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<SCode.EEquation> outEeq;
 algorithm
   (outCache,outEeq) := fixList(cache,env,eeq,ht,fixEEquation);
@@ -1296,18 +1306,18 @@ protected function fixAlgorithm
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SCode.AlgorithmSection inAlg;
   input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SCode.AlgorithmSection outAlg;
 algorithm
   (outCache,outAlg) := match (inCache,inEnv,inAlg,inHt)
     local
       list<SCode.Statement> stmts;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
 
     case (cache,env,SCode.ALGORITHM(stmts),ht)
@@ -1322,18 +1332,18 @@ protected function fixConstraint
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SCode.ConstraintSection inConstrs;
   input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SCode.ConstraintSection outConstrs;
 algorithm
   (outCache,outConstrs) := match (inCache,inEnv,inConstrs,inHt)
     local
       list<Absyn.Exp> exps;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
 
     case (cache,env,SCode.CONSTRAINTS(exps),ht)
@@ -1348,11 +1358,11 @@ protected function fixListAlgorithmItem
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input list<SCode.Statement> alg;
   input HashTableStringToPath.HashTable ht;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<SCode.Statement> outAlg;
 algorithm
   (outCache,outAlg) := fixList(cache,env,alg,ht,fixStatement);
@@ -1363,11 +1373,11 @@ protected function fixStatement
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SCode.Statement inStmt;
   input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SCode.Statement outStmt;
 algorithm
   (outCache,outStmt) := matchcontinue (inCache,inEnv,inStmt,inHt)
@@ -1379,8 +1389,8 @@ algorithm
       list<SCode.Statement> truebranch,elsebranch,forbody,whilebody;
       SCode.Comment comment;
       Absyn.Info info;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
       SCode.Statement stmt;
 
@@ -1442,18 +1452,18 @@ protected function fixArrayDim
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Option<Absyn.ArrayDim> inAd;
   input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Option<Absyn.ArrayDim> outAd;
 algorithm
   (outCache,outAd) := match (inCache,inEnv,inAd,inHt)
     local
       list<Absyn.Subscript> ads;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
 
     case (cache,_,NONE(),_) then (cache,NONE());
@@ -1469,18 +1479,18 @@ protected function fixSubscript
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Subscript inSub;
   input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Absyn.Subscript outSub;
 algorithm
   (outCache,outSub) := match (inCache,inEnv,inSub,inHt)
     local
       Absyn.Exp exp;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
 
     case (cache,_,Absyn.NOSUB(),_) then (cache,Absyn.NOSUB());
@@ -1496,11 +1506,11 @@ protected function fixTypeSpec
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.TypeSpec inTs;
   input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Absyn.TypeSpec outTs;
 algorithm
   (outCache,outTs) := match (inCache,inEnv,inTs,inHt)
@@ -1508,8 +1518,8 @@ algorithm
       Absyn.Path path;
       Option<Absyn.ArrayDim> arrayDim;
       list<Absyn.TypeSpec> typeSpecs;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
 
     case (cache,env,Absyn.TPATH(path,arrayDim),ht)
@@ -1530,24 +1540,24 @@ protected function fixPath
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path inPath;
   input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Absyn.Path outPath;
 algorithm
   (outCache,outPath) := matchcontinue (inCache,inEnv,inPath,inHt)
     local
       String id;
       Absyn.Path path1,path2,path;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
 
     case (cache,_,path1 as Absyn.FULLYQUALIFIED(_),_)
       equation
-        // path1 = Env.pathStripEnvPrefix(path1, env, false);
+        // path1 = FGraph.pathStripGraphScopePrefix(path1, env, false);
         //Debug.fprintln(Flags.DEBUG, "Path FULLYQUAL: " +& Absyn.pathString(path));
       then
         (cache,path1);
@@ -1557,8 +1567,8 @@ algorithm
         id = Absyn.pathFirstIdent(path1);
         path2 = BaseHashTable.get(id,ht);
         path2 = Absyn.pathReplaceFirstIdent(path1,path2);
-        path2 = Env.pathStripEnvPrefix(path2, env, false);
-        //Debug.fprintln(Flags.DEBUG, "Replacing: " +& Absyn.pathString(path1) +& " with " +& Absyn.pathString(path2) +& " s:" +& Env.printEnvPathStr(env));
+        path2 = FGraph.pathStripGraphScopePrefix(path2, env, false);
+        //Debug.fprintln(Flags.DEBUG, "Replacing: " +& Absyn.pathString(path1) +& " with " +& Absyn.pathString(path2) +& " s:" +& FGraph.printGraphPathStr(env));
       then (cache,path2);
 
     // first indent is local in the env, DO NOT QUALIFY!
@@ -1566,21 +1576,21 @@ algorithm
       equation
         //Debug.fprintln(Flags.DEBUG,"Try makeFullyQualified " +& Absyn.pathString(path));
         (_, _) = Lookup.lookupClassLocal(env, Absyn.pathFirstIdent(path));
-        path = Env.pathStripEnvPrefix(path, env, false);
+        path = FGraph.pathStripGraphScopePrefix(path, env, false);
         //Debug.fprintln(Flags.DEBUG,"FullyQual: " +& Absyn.pathString(path));
       then (cache,path);
 
     case (cache,env,path,_)
       equation
-        //Debug.fprintln(Flags.DEBUG,"Try makeFullyQualified " +& Absyn.pathString(path));
+        //print("Try makeFullyQualified " +& Absyn.pathString(path) +& "\n");
         (cache,path) = Inst.makeFullyQualified(cache,env,path);
-        path = Env.pathStripEnvPrefix(path, env, false);
-        //Debug.fprintln(Flags.DEBUG,"FullyQual: " +& Absyn.pathString(path));
+        path = FGraph.pathStripGraphScopePrefix(path, env, false);
+        //print("FullyQual: " +& Absyn.pathString(path) +& "\n");
       then (cache,path);
 
     case (cache,env,path,_)
       equation
-        path = Env.pathStripEnvPrefix(path, env, false);
+        path = FGraph.pathStripGraphScopePrefix(path, env, false);
         //Debug.fprintln(Flags.DEBUG, "Path not fixed: " +& Absyn.pathString(path) +& "\n");
       then
         (cache,path);
@@ -1588,10 +1598,10 @@ algorithm
 end fixPath;
 
 protected function lookupVarNoErrorMessage
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.ComponentRef inComponentRef;
-  output Env.Env outEnv;
+  output FCore.Graph outEnv;
   output String id;
 algorithm
   (outEnv, id) := matchcontinue(inCache, inEnv, inComponentRef)
@@ -1614,11 +1624,11 @@ protected function fixCref
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.ComponentRef inCref;
   input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Absyn.ComponentRef outCref;
 algorithm
   (outCache,outCref) := matchcontinue (inCache,inEnv,inCref,inHt)
@@ -1626,8 +1636,8 @@ algorithm
       String id;
       Absyn.Path path;
       DAE.ComponentRef cref_;
-      Env.Cache cache;
-      Env.Env env, denv;
+      FCore.Cache cache;
+      FCore.Graph env, denv;
       HashTableStringToPath.HashTable ht;
       Absyn.ComponentRef cref;
       SCode.Element c;
@@ -1639,7 +1649,7 @@ algorithm
         path = BaseHashTable.get(id,ht);
         //Debug.fprintln(Flags.DEBUG,"Got path " +& Absyn.pathString(path));
         cref = Absyn.crefReplaceFirstIdent(cref,path);
-        cref = Env.crefStripEnvPrefix(cref, env, false);
+        cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
         //Debug.fprintln(Flags.DEBUG, "Cref HT fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
 
@@ -1651,24 +1661,24 @@ algorithm
         //Debug.fprintln(Flags.DEBUG,"Try lookupV " +& id);
         (denv,id) = lookupVarNoErrorMessage(cache,env,cref_);
         //Debug.fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));
-        denv = Env.openScope(denv,SCode.ENCAPSULATED(),SOME(id),NONE());
-        cref = Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(denv));
-        cref = Env.crefStripEnvPrefix(cref, env, false);
+        denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),SOME(id),NONE());
+        cref = Absyn.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
+        cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
         //Debug.fprintln(Flags.DEBUG, "Cref VAR fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
 
     case (cache,env,cref,_)
       equation
         id = Absyn.crefFirstIdent(cref);
-        //Debug.fprintln(Flags.DEBUG,"Try lookupC " +& id);
+        //print("Try lookupC " +& id +& "\n");
         (_,c,denv) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
         // id might come from named import, make sure you use the actual class name!
         id = SCode.getElementName(c);
         //Debug.fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));
-        denv = Env.openScope(denv,SCode.ENCAPSULATED(),SOME(id),NONE());
-        cref = Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(denv));
-        cref = Env.crefStripEnvPrefix(cref, env, false);
-        //Debug.fprintln(Flags.DEBUG, "Cref CLASS fixed: " +& Absyn.printComponentRefStr(cref));
+        denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),SOME(id),NONE());
+        cref = Absyn.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
+        cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
+        //print("Cref CLASS fixed: " +& Absyn.printComponentRefStr(cref) +& "\n");
       then (cache,cref);
 
     case (cache,_,cref,_)
@@ -1685,11 +1695,11 @@ protected function fixModifications
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SCode.Mod inMod;
   input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SCode.Mod outMod;
 algorithm
   (outCache,outMod) := matchcontinue (inCache,inEnv,inMod,inHt)
@@ -1700,8 +1710,8 @@ algorithm
       Absyn.Exp exp;
       Boolean b;
       SCode.Element elt;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
       SCode.Mod mod;
       Absyn.Info info;
@@ -1746,11 +1756,11 @@ protected function fixSubModList
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<SCode.SubMod> inSubMods;
   input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<SCode.SubMod> outSubMods;
 algorithm
   (outCache, outSubMods) := match (inCache, inEnv, inSubMods, inHt)
@@ -1759,7 +1769,7 @@ algorithm
       list<SCode.SubMod> rest_mods;
       Absyn.Ident ident;
       list<SCode.Subscript> subs;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (_, _, {}, _) then (inCache, {});
 
@@ -1778,11 +1788,11 @@ protected function fixExp
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Absyn.Exp outExp;
 algorithm
   (outExp,(outCache,_,_)) := Absyn.traverseExp(inExp,fixExpTraverse,(inCache,inEnv,inHt));
@@ -1794,17 +1804,17 @@ protected function fixExpTraverse
   local lookup or fully qualified in the environment.
 "
   input Absyn.Exp inExp;
-  input tuple<Env.Cache,Env.Env,HashTableStringToPath.HashTable> inTpl;
+  input tuple<FCore.Cache,FCore.Graph,HashTableStringToPath.HashTable> inTpl;
   output Absyn.Exp outExp;
-  output tuple<Env.Cache,Env.Env,HashTableStringToPath.HashTable> outTpl;
+  output tuple<FCore.Cache,FCore.Graph,HashTableStringToPath.HashTable> outTpl;
 algorithm
   (outExp,outTpl) := match (inExp,inTpl)
     local
       Absyn.FunctionArgs fargs;
       Absyn.ComponentRef cref;
       Absyn.Path path;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
 
     case (Absyn.CREF(cref),(cache,env,ht))
@@ -1828,29 +1838,29 @@ end fixExpTraverse;
 
 protected function fixOption
 " Generic function to fix an optional element."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Option<Type_A> inA;
   input HashTableStringToPath.HashTable inHt;
   input FixAFn fixA;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Option<Type_A> outA;
 
   replaceable type Type_A subtypeof Any;
   partial function FixAFn
-    input Env.Cache inCache;
-    input Env.Env inEnv;
+    input FCore.Cache inCache;
+    input FCore.Graph inEnv;
     input Type_A inA;
     input HashTableStringToPath.HashTable inHt;
-    output Env.Cache outCache;
+    output FCore.Cache outCache;
     output Type_A outTypeA;
   end FixAFn;
 algorithm
   (outCache,outA) := match (inCache,inEnv,inA,inHt,fixA)
     local
       Type_A A;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
 
     case (cache,_,NONE(),_,_) then (cache,NONE());
@@ -1863,21 +1873,21 @@ end fixOption;
 
 protected function fixList
 " Generic function to fix a list of elements."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Type_A> inA;
   input HashTableStringToPath.HashTable inHt;
   input FixAFn fixA;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Type_A> outA;
 
   replaceable type Type_A subtypeof Any;
   partial function FixAFn
-    input Env.Cache inCache;
-    input Env.Env inEnv;
+    input FCore.Cache inCache;
+    input FCore.Graph inEnv;
     input Type_A inA;
     input HashTableStringToPath.HashTable inHt;
-    output Env.Cache outCache;
+    output FCore.Cache outCache;
     output Type_A outTypeA;
   end FixAFn;
 algorithm
@@ -1885,8 +1895,8 @@ algorithm
     local
       Type_A A;
       list<Type_A> lstA;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
 
     case (cache,_,{},_,_) then (cache,{});
@@ -1900,21 +1910,21 @@ end fixList;
 
 protected function fixListList
 " Generic function to fix a list of elements."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<list<Type_A>> inA;
   input HashTableStringToPath.HashTable inHt;
   input FixAFn fixA;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<list<Type_A>> outA;
 
   replaceable type Type_A subtypeof Any;
   partial function FixAFn
-    input Env.Cache inCache;
-    input Env.Env inEnv;
+    input FCore.Cache inCache;
+    input FCore.Graph inEnv;
     input Type_A inA;
     input HashTableStringToPath.HashTable inHt;
-    output Env.Cache outCache;
+    output FCore.Cache outCache;
     output Type_A outTypeA;
   end FixAFn;
 algorithm
@@ -1922,8 +1932,8 @@ algorithm
     local
       list<Type_A> A;
       list<list<Type_A>> lstA;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
 
     case (cache,_,{},_,_) then (cache,{});
@@ -1937,31 +1947,31 @@ end fixListList;
 
 protected function fixListTuple2
 " Generic function to fix a list of elements."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<tuple<Type_A,Type_B>> inRest;
   input HashTableStringToPath.HashTable inHt;
   input FixAFn fixA;
   input FixBFn fixB;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<tuple<Type_A,Type_B>> outA;
 
   replaceable type Type_A subtypeof Any;
   replaceable type Type_B subtypeof Any;
   partial function FixAFn
-    input Env.Cache inCache;
-    input Env.Env inEnv;
+    input FCore.Cache inCache;
+    input FCore.Graph inEnv;
     input Type_A inA;
     input HashTableStringToPath.HashTable inHt;
-    output Env.Cache outCache;
+    output FCore.Cache outCache;
     output Type_A outLst;
   end FixAFn;
   partial function FixBFn
-    input Env.Cache inCache;
-    input Env.Env inEnv;
+    input FCore.Cache inCache;
+    input FCore.Graph inEnv;
     input Type_B inA;
     input HashTableStringToPath.HashTable inHt;
-    output Env.Cache outCache;
+    output FCore.Cache outCache;
     output Type_B outTypeA;
   end FixBFn;
 algorithm
@@ -1970,8 +1980,8 @@ algorithm
       Type_A a;
       Type_B b;
       list<tuple<Type_A,Type_B>> rest;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       HashTableStringToPath.HashTable ht;
 
     case (cache,_,{},_,_,_) then (cache,{});

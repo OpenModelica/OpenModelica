@@ -46,7 +46,7 @@ public import Absyn;
 public import BackendDAE;
 public import BaseHashTable;
 public import DAE;
-public import Env;
+public import FCore;
 public import HashTableCG;
 public import SCode;
 public import Util;
@@ -108,11 +108,11 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.SymbolicJacobians symjacs;
       DAE.FunctionTree functionTree;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       BackendDAE.ExtraInfo ei;
 
-    case (itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,cache=cache,env=env,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp,symjacs=symjacs,info=ei)))
+    case (itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,cache=cache,graph=graph,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp,symjacs=symjacs,info=ei)))
       equation
         tpl = (SOME(functionTree),itlst);
         eqs = List.map1(eqs,inlineEquationSystem,tpl);
@@ -122,7 +122,7 @@ algorithm
         (removedEqs,_) = inlineEquationArray(removedEqs,tpl);
         eventInfo = inlineEventInfo(eventInfo,tpl);
       then
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,env,functionTree,eventInfo,extObjClasses,btp,symjacs,ei));
+        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,graph,functionTree,eventInfo,extObjClasses,btp,symjacs,ei));
     else
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineCalls failed");
@@ -807,7 +807,7 @@ algorithm
       then
         inlineCallsInFunctions(cdr,inFunctions,res::iAcc);
 
-    case (el :: cdr,_,_)
+    case(el :: cdr,_,_)
       then
         inlineCallsInFunctions(cdr,inFunctions,el::iAcc);
     else

@@ -44,7 +44,7 @@ public import AvlTreeString;
 public import ClassInf;
 public import ConnectionGraph;
 public import DAE;
-public import Env;
+public import FCore;
 public import HashTableStringToPath;
 public import SCode;
 public import Dump;
@@ -64,6 +64,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import Error;
 protected import Flags;
+protected import FGraph;
 protected import Inst;
 protected import InstSection;
 protected import InstTypes;
@@ -157,25 +158,25 @@ algorithm
 end checkInvalidPatternNamedArgs;
 
 public function elabPattern
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input Absyn.Exp lhs;
   input DAE.Type ty;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Pattern pattern;
 algorithm
   (outCache,pattern) := elabPattern2(cache,env,lhs,ty,info,Error.getNumErrorMessages());
 end elabPattern;
 
 protected function elabPattern2
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input Absyn.Exp inLhs;
   input DAE.Type ty;
   input Absyn.Info info;
   input Integer numError;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Pattern pattern;
 algorithm
   (outCache,pattern) := matchcontinue (inCache,env,inLhs,ty,info,numError)
@@ -194,7 +195,7 @@ algorithm
       Absyn.ComponentRef fcr;
       Absyn.FunctionArgs fargs;
       Absyn.Path utPath;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Exp lhs;
       DAE.Attributes attr;
 
@@ -330,13 +331,13 @@ algorithm
 end elabPattern2;
 
 protected function elabPatternTuple
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input list<Absyn.Exp> inExps;
   input list<DAE.Type> inTys;
   input Absyn.Info info;
   input Absyn.Exp lhs "for error messages";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Pattern> patterns;
 algorithm
   (outCache,patterns) := match (inCache,env,inExps,inTys,info,lhs)
@@ -345,7 +346,7 @@ algorithm
       String s;
       DAE.Pattern pattern;
       DAE.Type ty;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<Absyn.Exp> exps;
       list<DAE.Type> tys;
 
@@ -367,14 +368,14 @@ algorithm
 end elabPatternTuple;
 
 protected function elabPatternCall
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input Absyn.Path callPath;
   input Absyn.FunctionArgs fargs;
   input Absyn.Path utPath;
   input Absyn.Info info;
   input Absyn.Exp lhs "for error messages";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Pattern pattern;
 algorithm
   (outCache,pattern) := matchcontinue (inCache,env,callPath,fargs,utPath,info,lhs)
@@ -391,7 +392,7 @@ algorithm
       list<DAE.Pattern> patterns;
       list<tuple<DAE.Pattern,String,DAE.Type>> namedPatterns;
       Boolean knownSingleton;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
       equation
@@ -611,8 +612,8 @@ algorithm
 end patternStr;
 
 public function elabMatchExpression
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Exp matchExp;
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> inSt;
@@ -620,7 +621,7 @@ public function elabMatchExpression
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   input Integer numError;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> outSt;
@@ -646,8 +647,8 @@ algorithm
       DAE.Exp exp;
       HashTableStringToPath.HashTable ht;
       DAE.MatchType elabMatchTy;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Integer hashSize;
       list<list<String>> inputAliases,inputAliasesAndCrefs;
       AvlTreeString.AvlTree declsTree;
@@ -659,7 +660,7 @@ algorithm
         (inExps,inputAliases,inputAliasesAndCrefs) = List.map_3(inExps,getInputAsBinding);
         (cache,elabExps,elabProps,st) = Static.elabExpList(cache,env,inExps,impl,st,performVectorization,pre,info);
         // Then add locals
-        (cache,SOME((env,DAE.DAE(matchDecls),declsTree))) = addLocalDecls(cache,env,decls,Env.matchScopeName,impl,info);
+        (cache,SOME((env,DAE.DAE(matchDecls),declsTree))) = addLocalDecls(cache,env,decls,FCore.matchScopeName,impl,info);
         tys = List.map(elabProps, Types.getPropType);
         env = addAliasesToEnv(env, tys, inputAliases, info);
         (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,inputAliasesAndCrefs,declsTree,impl,st,performVectorization,pre,info);
@@ -1812,8 +1813,8 @@ algorithm
 end patternsDoNotOverlap;
 
 protected function elabMatchCases
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input list<Absyn.Case> cases;
   input list<DAE.Type> tys;
   input list<list<String>> inputAliases;
@@ -1823,7 +1824,7 @@ protected function elabMatchCases
   input Boolean performVectorization;
   input Prefix.Prefix pre;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.MatchCase> elabCases;
   output DAE.Type resType;
   output Option<GlobalScript.SymbolTable> outSt;
@@ -1837,8 +1838,8 @@ algorithm
 end elabMatchCases;
 
 protected function elabMatchCases2
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.Case> cases;
   input list<DAE.Type> tys;
   input list<list<String>> inputAliases;
@@ -1850,7 +1851,7 @@ protected function elabMatchCases2
   input list<DAE.MatchCase> inAccCases "Order does matter";
   input list<DAE.Exp> inAccExps "Order does matter";
   input list<DAE.Type> inAccTypes "Order does not matter";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.MatchCase> elabCases;
   output list<DAE.Exp> resExps;
   output list<DAE.Type> resTypes;
@@ -1864,8 +1865,8 @@ algorithm
       DAE.MatchCase elabCase;
       Option<DAE.Type> optType;
       Option<DAE.Exp> optExp;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Option<GlobalScript.SymbolTable> st;
       list<DAE.Exp> accExps;
       list<DAE.Type> accTypes;
@@ -1880,8 +1881,8 @@ algorithm
 end elabMatchCases2;
 
 protected function elabMatchCase
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Case acase;
   input list<DAE.Type> tys;
   input list<list<String>> inputAliases;
@@ -1890,7 +1891,7 @@ protected function elabMatchCase
   input Option<GlobalScript.SymbolTable> inSt;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.MatchCase elabCase;
   output Option<DAE.Exp> resExp;
   output Option<DAE.Type> resType;
@@ -1912,17 +1913,20 @@ algorithm
       list<Absyn.ElementItem> decls;
       Absyn.Info patternInfo,resultInfo,info;
       Integer len;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Option<GlobalScript.SymbolTable> st;
       AvlTreeString.AvlTree caseLocalTree,localsTree,useTree;
 
     case (cache,env,Absyn.CASE(pattern=pattern,patternGuard=patternGuard,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,_,_,st,_,_)
       equation
-        (cache,SOME((env,DAE.DAE(caseDecls),caseLocalTree))) = addLocalDecls(cache,env,decls,Env.caseScopeName,impl,info);
+        (cache,SOME((env,DAE.DAE(caseDecls),caseLocalTree))) = addLocalDecls(cache,env,decls,FCore.caseScopeName,impl,info);
         patterns = MetaUtil.extractListFromTuple(pattern, 0);
         patterns = Util.if_(listLength(tys)==1, {pattern}, patterns);
         (cache,elabPatterns) = elabPatternTuple(cache, env, patterns, tys, patternInfo, pattern);
+        // open a pattern type scope
+        env = FGraph.openNewScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.patternTypeScope), NONE());
+        // and add the ID as pattern types to it
         (_,env) = traversePatternList(List.threadMap(elabPatterns,inputAliases,addPatternAliases),addEnvKnownAsBindings,env);
         (cache,eqAlgs) = Static.fromEquationsToAlgAssignments(eq1,{},cache,env,pre);
         algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
@@ -1959,8 +1963,8 @@ algorithm
 end elabMatchCase;
 
 protected function elabResultExp
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<DAE.Statement> inBody "Is input in case we want to optimize for tail-recursion";
   input Absyn.Exp exp;
   input Boolean impl;
@@ -1968,7 +1972,7 @@ protected function elabResultExp
   input Boolean performVectorization;
   input Prefix.Prefix pre;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Statement> outBody;
   output Option<DAE.Exp> resExp;
   output Absyn.Info resultInfo;
@@ -1981,8 +1985,8 @@ algorithm
       DAE.Exp elabExp;
       DAE.Properties prop;
       DAE.Type ty;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Option<GlobalScript.SymbolTable> st;
       list<DAE.Statement> body;
       Absyn.Info info;
@@ -2001,15 +2005,15 @@ algorithm
 end elabResultExp;
 
 protected function elabPatternGuard
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Option<Absyn.Exp> patternGuard;
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> inSt;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Option<DAE.Exp> outPatternGuard;
   output Option<GlobalScript.SymbolTable> outSt;
 algorithm
@@ -2019,8 +2023,8 @@ algorithm
       Absyn.Exp exp;
       DAE.Exp elabExp;
       DAE.Properties prop;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Info info;
       String str;
@@ -2226,14 +2230,14 @@ end filterEmptyPattern;
 
 protected function addLocalDecls
 "Adds local declarations to the environment and returns the DAE"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<Absyn.ElementItem> els;
   input String scopeName;
   input Boolean impl;
   input Absyn.Info info;
-  output Env.Cache outCache;
-  output Option<tuple<Env.Env,DAE.DAElist,AvlTreeString.AvlTree>> res;
+  output FCore.Cache outCache;
+  output Option<tuple<FCore.Graph,DAE.DAElist,AvlTreeString.AvlTree>> res;
 algorithm
   (outCache,res) := matchcontinue (inCache,inEnv,els,scopeName,impl,info)
     local
@@ -2241,11 +2245,11 @@ algorithm
       list<SCode.Element> ld2,ld3,ld4;
       list<tuple<SCode.Element, DAE.Mod>> ld_mod;
       DAE.DAElist dae1;
-      Env.Env env2;
+      FCore.Graph env2;
       ClassInf.State dummyFunc;
       String str;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Boolean b;
       AvlTreeString.AvlTree declsTree;
       list<String> names;
@@ -2256,7 +2260,7 @@ algorithm
       then (cache,SOME((env,DAE.emptyDae,declsTree)));
     case (cache,env,ld,_,_,_)
       equation
-        env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
+        env2 = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
 
         // Tranform declarations such as Real x,y; to Real x; Real y;
         ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
@@ -2294,7 +2298,7 @@ algorithm
 
     case (cache,env,ld,_,_,_)
       equation
-        _ = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
+        _ = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
 
         // Tranform declarations such as Real x,y; to Real x; Real y;
         ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
@@ -2316,14 +2320,14 @@ end addLocalDecls;
 
 protected function checkLocalShadowing
   input SCode.Element elt;
-  input Env.Env env;
-  input tuple<Env.Cache,Boolean> inTpl;
-  output tuple<Env.Cache,Boolean> outTpl;
+  input FCore.Graph env;
+  input tuple<FCore.Cache,Boolean> inTpl;
+  output tuple<FCore.Cache,Boolean> outTpl;
 algorithm
   outTpl := matchcontinue (elt,env,inTpl)
     local
       String name;
-      Env.Cache cache;
+      FCore.Cache cache;
       Boolean b;
       Absyn.Info info;
     case (SCode.COMPONENT(name=name),_,(cache,_))
@@ -2489,15 +2493,15 @@ algorithm
 end constantComplexity;
 
 protected function addEnvKnownAsBindings
-  input tuple<DAE.Pattern,Env.Env> inTpl;
-  output tuple<DAE.Pattern,Env.Env> outTpl;
+  input tuple<DAE.Pattern,FCore.Graph> inTpl;
+  output tuple<DAE.Pattern,FCore.Graph> outTpl;
 algorithm
   outTpl := match inTpl
     local
       Absyn.Path name,path;
       String id,scope;
       DAE.Type ty;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Pattern pat;
       list<DAE.Var> fields;
       Integer index;
@@ -2509,16 +2513,16 @@ algorithm
 end addEnvKnownAsBindings;
 
 protected function addEnvKnownAsBindings2
-  input tuple<DAE.Pattern,Env.Env> inTpl;
+  input tuple<DAE.Pattern,FCore.Graph> inTpl;
   input DAE.Pattern firstPattern;
-  output tuple<DAE.Pattern,Env.Env> outTpl;
+  output tuple<DAE.Pattern,FCore.Graph> outTpl;
 algorithm
   outTpl := match (inTpl,firstPattern)
     local
       Absyn.Path name,path;
       String id,scope;
       DAE.Type ty;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Pattern pat;
       list<DAE.Var> fields;
       Integer index;
@@ -2528,7 +2532,7 @@ algorithm
       equation
          path = Absyn.stripLast(name);
          ty = DAE.T_METARECORD(path,index,fields,knownSingleton,{name});
-         env = Env.extendFrameV(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(name,NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo), DAE.NOMOD(), Env.VAR_DAE(), Env.emptyEnv);
+         env = FGraph.mkComponentNode(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(name,NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo), DAE.NOMOD(), FCore.VAR_DAE(), FGraph.empty());
       then ((pat,env));
     else inTpl;
   end match;
@@ -2584,11 +2588,11 @@ algorithm
 end addPatternAliases;
 
 protected function addAliasesToEnv
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input list<DAE.Type> inTypes;
   input list<list<String>> inAliases;
   input Absyn.Info info;
-  output Env.Env outEnv;
+  output FCore.Graph outEnv;
 algorithm
   outEnv := match (inEnv,inTypes,inAliases,info)
     local
@@ -2596,7 +2600,7 @@ algorithm
       list<list<String>> aliases;
       list<String> rest;
       String id;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Type ty;
       DAE.Attributes attr;
     case (_,{},{},_) then inEnv;
@@ -2604,7 +2608,7 @@ algorithm
     case (env,ty::_,(id::rest)::aliases,_)
       equation
         attr = DAE.dummyAttrInput;
-        env = Env.extendFrameV(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(Absyn.IDENT("$dummy"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),info), DAE.NOMOD(), Env.VAR_DAE(), Env.emptyEnv);
+        env = FGraph.mkComponentNode(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(Absyn.IDENT("$dummy"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),info), DAE.NOMOD(), FCore.VAR_DAE(), FGraph.empty());
       then addAliasesToEnv(env,inTypes,rest::aliases,info);
   end match;
 end addAliasesToEnv;

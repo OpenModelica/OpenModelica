@@ -45,7 +45,7 @@ public import BackendDAE;
 public import BackendDAEUtil;
 public import Ceval;
 public import DAE;
-public import Env;
+public import FCore;
 public import GlobalScript;
 public import HashTableExpToIndex;
 public import HashTableStringToPath;
@@ -194,15 +194,15 @@ public function translateModelFMU
 "Entry point to translate a Modelica model for FMU export.
 
  Called from other places in the compiler."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input String inFMUVersion;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
   output BackendDAE.BackendDAE outBackendDAE;
@@ -215,24 +215,25 @@ algorithm
     local
       String FMUVersion,filenameprefix,file_dir,resstr;
       DAE.DAElist dae;
-      Env.Env env;
+      FCore.Graph graph;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow_1;
       list<String> libs;
       GlobalScript.SymbolTable st;
       Absyn.Program p;
       //DAE.Exp fileprefix;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
       String description;
       Boolean symbolicJacActivated;
       Boolean fmi20;
-    case (cache,env,_,st as GlobalScript.SYMBOLTABLE(ast=p),FMUVersion,filenameprefix,_, _)
+
+    case (cache,graph,_,st as GlobalScript.SYMBOLTABLE(ast=p),FMUVersion,filenameprefix,_, _)
       equation
         /* calculate stuff that we need to create SimCode data structure */
         System.realtimeTick(GlobalScript.RT_CLOCK_FRONTEND);
-        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
-        (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
+        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,graph, fileprefix, true, SOME(st),NONE(), msg);
+        (cache,graph,dae,st) = CevalScript.runFrontEnd(cache,graph,className,st,false);
         timeFrontend = System.realtimeTock(GlobalScript.RT_CLOCK_FRONTEND);
         System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
 
@@ -242,10 +243,10 @@ algorithm
         symbolicJacActivated = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, fmi20);
 
-        _ = Env.getFunctionTree(cache);
-        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
+        _ = FCore.getFunctionTree(cache);
+        dae = DAEUtil.transformationsBeforeBackend(cache,graph,dae);
         description = DAEUtil.daeDescription(dae);
-        dlow = BackendDAECreate.lower(dae, cache, env, BackendDAE.EXTRA_INFO(description,filenameprefix));
+        dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
         timeBackend = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
@@ -281,14 +282,14 @@ public function translateModelXML
 "Entry point to translate a Modelica model for XML export.
 
  Called from other places in the compiler."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
   output BackendDAE.BackendDAE outBackendDAE;
@@ -301,27 +302,27 @@ algorithm
     local
       String filenameprefix,file_dir,resstr,description;
       DAE.DAElist dae;
-      Env.Env env;
+      FCore.Graph graph;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow_1;
       list<String> libs;
       GlobalScript.SymbolTable st;
       Absyn.Program p;
       //DAE.Exp fileprefix;
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
-    case (cache,env,_,st as GlobalScript.SYMBOLTABLE(ast=p),filenameprefix,_, _)
+    case (cache,graph,_,st as GlobalScript.SYMBOLTABLE(ast=p),filenameprefix,_, _)
       equation
         /* calculate stuff that we need to create SimCode data structure */
         System.realtimeTick(GlobalScript.RT_CLOCK_FRONTEND);
-        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
-        (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
+        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,graph, fileprefix, true, SOME(st),NONE(), msg);
+        (cache,graph,dae,st) = CevalScript.runFrontEnd(cache,graph,className,st,false);
         timeFrontend = System.realtimeTock(GlobalScript.RT_CLOCK_FRONTEND);
         System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
-        _ = Env.getFunctionTree(cache);
-        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
+        _ = FCore.getFunctionTree(cache);
+        dae = DAEUtil.transformationsBeforeBackend(cache,graph,dae);
         description = DAEUtil.daeDescription(dae);
-        dlow = BackendDAECreate.lower(dae, cache, env, BackendDAE.EXTRA_INFO(description,filenameprefix));
+        dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
         timeBackend = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
@@ -594,15 +595,15 @@ end callTargetTemplatesXML;
 public function translateModel "
   Entry point to translate a Modelica model for simulation.
   Called from other places in the compiler."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   input Absyn.FunctionArgs args "labels for remove terms";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
   output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
@@ -614,29 +615,29 @@ algorithm
     local
       String filenameprefix, file_dir, resstr, description;
       DAE.DAElist dae;
-      Env.Env env;
+      FCore.Graph graph;
       BackendDAE.BackendDAE dlow, dlow_1, indexed_dlow_1;
       list<String> libs;
       GlobalScript.SymbolTable st;
       Absyn.Program p;
       //DAE.Exp fileprefix;
-      Env.Cache cache;
+      FCore.Cache cache;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
 
-    case (cache, env, _, (st as GlobalScript.SYMBOLTABLE(ast=p)), filenameprefix, _, _, _) equation
+    case (cache, graph, _, (st as GlobalScript.SYMBOLTABLE(ast=p)), filenameprefix, _, _, _) equation
       // calculate stuff that we need to create SimCode data structure
       System.realtimeTick(GlobalScript.RT_CLOCK_FRONTEND);
       System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT);
       System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_CUMULATIVE);
-      (cache, env, dae, st) = CevalScript.runFrontEnd(cache, env, className, st, false);
+      (cache, graph, dae, st) = CevalScript.runFrontEnd(cache, graph, className, st, false);
       SimCodeUtil.execStat("FrontEnd");
       timeFrontend = System.realtimeTock(GlobalScript.RT_CLOCK_FRONTEND);
 
       System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
-      dae = DAEUtil.transformationsBeforeBackend(cache, env, dae);
+      dae = DAEUtil.transformationsBeforeBackend(cache, graph, dae);
       SimCodeUtil.execStat("Transformations before backend");
       description = DAEUtil.daeDescription(dae);
-      dlow = BackendDAECreate.lower(dae, cache, env, BackendDAE.EXTRA_INFO(description,filenameprefix));
+      dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
       dlow_1 = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
       timeBackend = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
 

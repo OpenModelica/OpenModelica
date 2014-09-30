@@ -3319,24 +3319,6 @@ algorithm
   end match;
 end translateQualifiedImportToNamed;
 
-public function checkSameRestriction
-"check if the restrictions are the same for redeclared classes"
-  input SCode.Restriction inResNew;
-  input SCode.Restriction inResOrig;
-  input Absyn.Info inInfoNew;
-  input Absyn.Info inInfoOrig;
-  output SCode.Restriction outRes;
-  output Absyn.Info outInfo;
-algorithm
-  (outRes, outInfo) := match(inResNew, inResOrig, inInfoNew, inInfoOrig)
-    case (_, _, _, _)
-      equation
-        // todo: check if the restrictions are the same for redeclared classes
-      then
-        (inResNew, inInfoNew);
-  end match;
-end checkSameRestriction;
-
 public function crefStripEnvPrefix
   "Removes the entire environment prefix from the given component reference, or
   returns the unchanged reference. This is done because models might import

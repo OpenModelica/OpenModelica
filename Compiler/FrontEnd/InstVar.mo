@@ -45,7 +45,8 @@ public import ClassInf;
 public import Connect;
 public import ConnectionGraph;
 public import DAE;
-public import Env;
+public import FCore;
+public import FGraph;
 public import InnerOuter;
 public import InstTypes;
 public import Mod;
@@ -87,8 +88,8 @@ public function instVar
   - lookup for inner in the instanance hieararchy if we have ONLY outer
   - instantiate normally via instVar_dispatch otherwise
   - report an error if we have modifications on outer"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
@@ -106,9 +107,9 @@ public function instVar
   input Absyn.Info info;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
-  input Env.Env componentDefinitionParentEnv;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  input FCore.Graph componentDefinitionParentEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -123,7 +124,7 @@ algorithm
       componentDefinitionParentEnv)
     local
       DAE.Dimensions dims;
-      Env.Env compenv,env,innerCompEnv,outerCompEnv;
+      FCore.Graph compenv,env,innerCompEnv,outerCompEnv;
       DAE.DAElist dae, outerDAE, innerDAE;
       Connect.Sets csets,csetsInner,csetsOuter;
       DAE.Type ty;
@@ -137,7 +138,7 @@ algorithm
       InstDims inst_dims;
       Boolean impl;
       SCode.Comment comment;
-      Env.Cache cache;
+      FCore.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.ComponentRef cref, crefOuter, crefInner;
@@ -157,7 +158,7 @@ algorithm
         io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isOnlyInner(io);
 
-        // Debug.fprintln(Flags.INNER_OUTER, "- Inst.instVar inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
+        // Debug.fprintln(Flags.INNER_OUTER, "- InstVar.instVar inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
 
         // instantiate as inner
         (cache,innerCompEnv,ih,store,dae,csets,ty,graph) =
@@ -169,12 +170,12 @@ algorithm
 
         // also all the components in the environment should be updated to be outer!
         // switch components from inner to outer in the component env.
-        outerCompEnv = InnerOuter.switchInnerToOuterInEnv(innerCompEnv, cref);
+        outerCompEnv = InnerOuter.switchInnerToOuterInGraph(innerCompEnv, cref);
 
         // outer doesn't generate a visible DAE
         outerDAE = DAE.emptyDae;
 
-        innerScope = Env.printEnvPathStr(componentDefinitionParentEnv);
+        innerScope = FGraph.printGraphPathStr(componentDefinitionParentEnv);
 
         // add to instance hierarchy
         ih = InnerOuter.updateInstHierarchy(ih, pre, io,
@@ -224,7 +225,7 @@ algorithm
         // we should have NO modifications on only outer!
         true = Mod.modEqual(mod, DAE.NOMOD());
 
-        // Debug.fprintln(Flags.INNER_OUTER, "- Inst.instVar outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
+        // Debug.fprintln(Flags.INNER_OUTER, "- InstVar.instVar outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
 
         // lookup in IH
         InnerOuter.INST_INNER(
@@ -285,7 +286,7 @@ algorithm
            _,_) =
           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
 
-        // Debug.fprintln(Flags.INNER_OUTER, "- Inst.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
+        // Debug.fprintln(Flags.INNER_OUTER, "- InstVar.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
 
         // display an error message!
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
@@ -320,7 +321,7 @@ algorithm
         // lookup in IH, crap, we couldn't find it!
         failure(_ = InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io));
 
-        // Debug.fprintln(Flags.INNER_OUTER, "- Inst.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
+        // Debug.fprintln(Flags.INNER_OUTER, "- InstVar.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
 
         // display an error message!
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
@@ -349,7 +350,7 @@ algorithm
         io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isInnerOuter(io);
 
-        // Debug.fprintln(Flags.INNER_OUTER, "- Inst.instVar inner outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
+        // Debug.fprintln(Flags.INNER_OUTER, "- InstVar.instVar inner outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
 
         (cache,innerCompEnv,ih,store,dae,csetsInner,ty,graph) =
            instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph, csets);
@@ -361,12 +362,12 @@ algorithm
 
         // also all the components in the environment should be updated to be outer!
         // switch components from inner to outer in the component env.
-        outerCompEnv = InnerOuter.switchInnerToOuterInEnv(innerCompEnv, cref);
+        outerCompEnv = InnerOuter.switchInnerToOuterInGraph(innerCompEnv, cref);
 
         // keep the dae we get from the instantiation of the inner
         innerDAE = dae;
 
-        innerScope = Env.printEnvPathStr(componentDefinitionParentEnv);
+        innerScope = FGraph.printGraphPathStr(componentDefinitionParentEnv);
 
         // add inner to the instance hierarchy
         ih = InnerOuter.updateInstHierarchy(ih, pre, io,
@@ -401,7 +402,7 @@ algorithm
         io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isNotInnerOuter(io);
 
-        // Debug.fprintln(Flags.INNER_OUTER, "- Inst.instVar NO inner NO outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
+        // Debug.fprintln(Flags.INNER_OUTER, "- InstVar.instVar NO inner NO outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
 
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets);
@@ -413,9 +414,9 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.instVar failed while instatiating variable: " +&
+        Debug.fprintln(Flags.FAILTRACE, "- InstVar.instVar failed while instatiating variable: " +&
           ComponentReference.printComponentRefStr(cref) +& " " +& Mod.prettyPrintMod(mod, 0) +&
-          "\nin scope: " +& Env.printEnvPathStr(env) +& " class:\n" +& SCodeDump.unparseElementStr(cl,SCodeDump.defaultOptions));
+          "\nin scope: " +& FGraph.printGraphPathStr(env) +& " class:\n" +& SCodeDump.unparseElementStr(cl,SCodeDump.defaultOptions));
       then
         fail();
     end matchcontinue;
@@ -428,8 +429,8 @@ protected function instVar_dispatch "A component element in a class may consist 
   P.A: Most of the implementation is moved to instVar2. instVar collects
   dimensions for userdefined types, such that these can be correctly
   handled by instVar2 (using instArray)"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
@@ -447,8 +448,8 @@ protected function instVar_dispatch "A component element in a class may consist 
   input Absyn.Info info;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -460,7 +461,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inStore,inState,inMod,inPrefix,inIdent,inClass,inAttributes,inPrefixes,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inSCodeComment,info,inGraph,inSets)
     local
       DAE.Dimensions dims;
-      Env.Env compenv,env;
+      FCore.Graph compenv,env;
       DAE.DAElist dae;
       Connect.Sets csets;
       DAE.Type ty;
@@ -474,7 +475,7 @@ algorithm
       InstDims inst_dims;
       Boolean impl;
       SCode.Comment comment;
-      Env.Cache cache;
+      FCore.Cache cache;
       Absyn.Path p1;
       String str;
       ConnectionGraph.ConnectionGraph graph;
@@ -508,7 +509,7 @@ algorithm
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instVar2(cache, env, ih, store, ci_state, mod, pre, n, cl, attr,
             pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         (cache,dae) = addArrayVarEquation(cache, env, ih, ci_state, dae, ty, mod, NFInstUtil.toConst(vt), pre, n, source);
         cache = InstFunction.addRecordConstructorFunction(cache,env,Types.arrayElementType(ty));
         Error.updateCurrentComponent("",Absyn.dummyInfo);
@@ -522,13 +523,13 @@ algorithm
         p1 = PrefixUtil.prefixPath(p1,pre);
         str = Absyn.pathString(p1);
         Error.updateCurrentComponent(str,info);
-        // print("instVar: " +& str +& " in scope " +& Env.printEnvPathStr(env) +& "\t mods: " +& Mod.printModStr(mod) +& "\n");
+        // print("instVar: " +& str +& " in scope " +& FGraph.printGraphPathStr(env) +& "\t mods: " +& Mod.printModStr(mod) +& "\n");
 
         // The prefix is handled in other parts of the code. Applying it too soon gives wrong results: // attr = InstUtil.propagateClassPrefix(attr,pre);
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instVar2(cache,env,ih,store, ci_state, mod, pre, n, cl, attr,
             pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         (cache,dae) = addArrayVarEquation(cache,compenv,ih,ci_state, dae, ty, mod, NFInstUtil.toConst(vt), pre, n, source);
         cache = InstFunction.addRecordConstructorFunction(cache,env,Types.arrayElementType(ty));
         Error.updateCurrentComponent("",Absyn.dummyInfo);
@@ -543,8 +544,8 @@ algorithm
 end instVar_dispatch;
 
 protected function addArrayVarEquation
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input ClassInf.State inState;
   input DAE.DAElist inDae;
@@ -554,12 +555,12 @@ protected function addArrayVarEquation
   input Prefix.Prefix pre;
   input String n;
   input DAE.ElementSource source;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.DAElist outDae;
 algorithm
   (outCache,outDae) := matchcontinue (inCache,inEnv,inIH,inState,inDae,inType,mod,const,pre,n,source)
     local
-      Env.Cache cache;
+      FCore.Cache cache;
       list<DAE.Element> dae;
       DAE.Exp exp;
       DAE.Element eq;
@@ -593,8 +594,8 @@ end addArrayVarEquation;
 
 protected function instVar2
 "Helper function to instVar, does the main work."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
@@ -612,8 +613,8 @@ protected function instVar2
   input Absyn.Info inInfo;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -628,7 +629,7 @@ algorithm
       list<DAE.Dimension> dims_1;
       DAE.Exp e,e_1;
       DAE.Properties p;
-      Env.Env env_1,env,compenv;
+      FCore.Graph env_1,env,compenv;
       Connect.Sets csets;
       DAE.Type ty,ty_1,arrty;
       ClassInf.State st,ci_state;
@@ -647,7 +648,7 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       DAE.Subscript dime;
       DAE.Dimension dim,dim2;
-      Env.Cache cache;
+      FCore.Cache cache;
       SCode.Visibility vis;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
@@ -725,7 +726,7 @@ algorithm
         (cache, DAE.EQBOUND(e,_,_,_/*source*/)) = InstBinding.makeBinding(cache,env,attr,mod,ty_2,pre,n,info);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
 
         SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
@@ -763,7 +764,7 @@ algorithm
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,ty_2,{}));
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
 
         SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
@@ -788,7 +789,7 @@ algorithm
         (cache,dae_var_attr) = InstBinding.instDaeVariableAttributes(cache,env, mod, ty, {});
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
         dae = InstDAE.daeDeclare(cr, ci_state, ty, attr,vis,NONE(), {dims},NONE(), dae_var_attr, SOME(comment),io,fin,source,true);
@@ -895,10 +896,10 @@ algorithm
     case (_,env,_,_,_,mod,pre,n,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.instVar2 failed: " +&
+        Debug.fprintln(Flags.FAILTRACE, "- InstVar.instVar2 failed: " +&
           PrefixUtil.printPrefixStr(pre) +& "." +&
           n +& "(" +& Mod.prettyPrintMod(mod, 0) +& ")\n  Scope: " +&
-          Env.printEnvPathStr(env));
+          FGraph.printGraphPathStr(env));
       then
         fail();
   end matchcontinue;
@@ -906,8 +907,8 @@ end instVar2;
 
 public function instScalar
   "Instantiates a scalar variable."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
@@ -924,8 +925,8 @@ public function instScalar
   input Absyn.Info inInfo;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -940,8 +941,8 @@ algorithm
 
     local
       String cls_name;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       InstanceHierarchy ih;
       UnitAbsyn.InstStore store;
       Connect.Sets csets;
@@ -1007,7 +1008,7 @@ algorithm
           vt, io, inImpl, inInfo);
 
         // Set the source of this element.
-        source = DAEUtil.createElementSource(inInfo, Env.getEnvPath(env),
+        source = DAEUtil.createElementSource(inInfo, FGraph.getScopePath(env),
           PrefixUtil.prefixToCrefOpt(inPrefix), NONE(), NONE());
 
         // Instantiate the components binding.
@@ -1038,7 +1039,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.instScalar failed on " +& inName +& " in scope " +& PrefixUtil.printPrefixStr(inPrefix) +& " env: " +& Env.printEnvPathStr(inEnv) +& "\n");
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.instScalar failed on " +& inName +& " in scope " +& PrefixUtil.printPrefixStr(inPrefix) +& " env: " +& FGraph.printGraphPathStr(inEnv) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -1203,8 +1204,8 @@ protected function instArray
 "When an array is instantiated by instVar, this function is used
   to go through all the array elements and instantiate each array
   element separately."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
@@ -1223,8 +1224,8 @@ protected function instArray
   input Absyn.Info info;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -1382,8 +1383,8 @@ protected function instArray2
 "When an array is instantiated by instVar, this function is used
   to go through all the array elements and instantiate each array
   element separately."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
@@ -1402,8 +1403,8 @@ protected function instArray2
   input Absyn.Info info;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -1416,8 +1417,8 @@ algorithm
     local
       DAE.Exp e,lhs,rhs;
       DAE.Properties p;
-      Env.Cache cache;
-      Env.Env env_1,env_2,env,compenv;
+      FCore.Cache cache;
+      FCore.Graph env_1,env_2,env,compenv;
       Connect.Sets csets;
       DAE.Type ty;
       ClassInf.State st,ci_state;
@@ -1464,7 +1465,7 @@ algorithm
         (rhs,_) = Types.matchProp(e,p,DAE.PROP(ty,DAE.C_VAR()),true);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         lhs = Expression.makeCrefExp(cr,ty_1);
 
@@ -1571,8 +1572,8 @@ end instArray2;
 protected function instArrayDimInteger
 "When an array is instantiated by instVar, this function is used to go through all the array elements and instantiate each array element separately.
 Special case for DIM_INTEGER: tail-recursive implementation since the number of dimensions may grow arbitrarily large."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
@@ -1591,8 +1592,8 @@ Special case for DIM_INTEGER: tail-recursive implementation since the number of 
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   input DAE.DAElist accDae;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -1605,8 +1606,8 @@ algorithm
     local
       DAE.Exp e,lhs,rhs;
       DAE.Properties p;
-      Env.Cache cache;
-      Env.Env env_1,env_2,env,compenv;
+      FCore.Cache cache;
+      FCore.Graph env_1,env_2,env,compenv;
       Connect.Sets csets;
       DAE.Type ty;
       ClassInf.State st,ci_state;

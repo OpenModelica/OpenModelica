@@ -55,7 +55,7 @@ encapsulated package CevalFunction
 // public imports
 public import Absyn;
 public import DAE;
-public import Env;
+public import FCore;
 public import GlobalScript;
 public import SCode;
 public import Values;
@@ -78,6 +78,8 @@ protected import Lookup;
 protected import Types;
 protected import Util;
 protected import ValuesUtil;
+protected import FGraph;
+protected import FNode;
 
 // [TYPE]  Types
 protected type SymbolTable = Option<GlobalScript.SymbolTable>;
@@ -97,12 +99,12 @@ end LoopControl;
 public function evaluate
   "This is the entry point of CevalFunction. This function constant evaluates a
   function given an instantiated function and a list of function arguments."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.Function inFunction;
   input list<Values.Value> inFunctionArguments;
   input Option<GlobalScript.SymbolTable> inST;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outResult;
   output Option<GlobalScript.SymbolTable> outST;
 algorithm
@@ -114,7 +116,7 @@ algorithm
       DAE.Type ty;
       Values.Value result;
       String func_name;
-      Env.Cache cache;
+      FCore.Cache cache;
       SymbolTable st;
       Boolean partialPrefix;
       DAE.ElementSource src;
@@ -150,15 +152,15 @@ end evaluate;
 
 protected function evaluateFunctionDefinition
   "This function constant evaluates a function definition."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input String inFuncName;
   input DAE.FunctionDefinition inFunc;
   input DAE.Type inFuncType;
   input list<Values.Value> inFuncArgs;
   input DAE.ElementSource inSource;
   input SymbolTable inST;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outResult;
   output SymbolTable outST;
 algorithm
@@ -168,8 +170,8 @@ algorithm
       list<DAE.Element> body;
       list<DAE.Element> vars, output_vars;
       list<FunctionVar> func_params;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       list<Values.Value> return_values;
       Values.Value return_value;
       SymbolTable st;
@@ -359,11 +361,11 @@ end isCrefNamed;
 protected function evaluateExtInputArg
   "Evaluates an external function argument to a value."
   input DAE.ExtArg inArgument;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
   output Values.Value outValue;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SymbolTable outST;
 algorithm
   (outValue, outCache, outST) := matchcontinue(inArgument, inCache, inEnv, inST)
@@ -372,7 +374,7 @@ algorithm
       DAE.Type ty;
       DAE.Exp exp;
       Values.Value val;
-      Env.Cache cache;
+      FCore.Cache cache;
       SymbolTable st;
       String err_str;
 
@@ -409,11 +411,11 @@ end evaluateExtInputArg;
 protected function evaluateExtIntArg
   "Evaluates an external function argument to an Integer."
   input DAE.ExtArg inArg;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
   output Integer outValue;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SymbolTable outST;
 algorithm
   (Values.INTEGER(outValue), outCache, outST) :=
@@ -423,11 +425,11 @@ end evaluateExtIntArg;
 protected function evaluateExtRealArg
   "Evaluates an external function argument to a Real."
   input DAE.ExtArg inArg;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
   output Real outValue;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SymbolTable outST;
 algorithm
   (Values.REAL(outValue), outCache, outST) :=
@@ -437,11 +439,11 @@ end evaluateExtRealArg;
 protected function evaluateExtStringArg
   "Evaluates an external function argument to a String."
   input DAE.ExtArg inArg;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
   output String outValue;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SymbolTable outST;
 algorithm
   (Values.STRING(outValue), outCache, outST) :=
@@ -451,11 +453,11 @@ end evaluateExtStringArg;
 protected function evaluateExtIntArrayArg
   "Evaluates an external function argument to an Integer array."
   input DAE.ExtArg inArg;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
   output list<Integer> outValue;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SymbolTable outST;
 protected
   Values.Value val;
@@ -468,11 +470,11 @@ end evaluateExtIntArrayArg;
 protected function evaluateExtRealArrayArg
   "Evaluates an external function argument to a Real array."
   input DAE.ExtArg inArg;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
   output list<Real> outValue;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SymbolTable outST;
 protected
   Values.Value val;
@@ -485,11 +487,11 @@ end evaluateExtRealArrayArg;
 protected function evaluateExtRealMatrixArg
   "Evaluates an external function argument to a Real matrix."
   input DAE.ExtArg inArg;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
   output list<list<Real>> outValue;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SymbolTable outST;
 protected
   Values.Value val;
@@ -512,11 +514,11 @@ protected function assignExtOutputs
   environment."
   input list<DAE.ExtArg> inArgs;
   input list<Values.Value> inValues;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outST) := match(inArgs, inValues, inCache, inEnv, inST)
@@ -525,9 +527,9 @@ algorithm
       Values.Value val;
       list<DAE.ExtArg> rest_args;
       list<Values.Value> rest_vals;
-      Env.Cache cache;
+      FCore.Cache cache;
       SymbolTable st;
-      Env.Env env;
+      FCore.Graph env;
       DAE.ComponentRef cr;
 
     case ({}, {}, _, _, _) then (inCache, inEnv, inST);
@@ -550,7 +552,7 @@ protected function unliftExtOutputValue
   needed."
   input DAE.ComponentRef inCref;
   input Values.Value inValue;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output Values.Value outValue;
 algorithm
   outValue := matchcontinue(inCref, inValue, inEnv)
@@ -580,11 +582,11 @@ protected function evaluateExternalFunc
   were hurt during the generation of this function."
   input String inFuncName;
   input list<DAE.ExtArg> inFuncArgs;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outST) :=
@@ -609,8 +611,8 @@ algorithm
       list<list<Real>> A, AB, B, U, VL, VR, VT;
       list<DAE.ExtArg> arg_out;
       list<Values.Value> val_out;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       SymbolTable st;
 
     case("dgeev", {arg_JOBVL, arg_JOBVR, arg_N, arg_A, arg_LDA, arg_WR, arg_WI,
@@ -964,12 +966,12 @@ end evaluateExternalFunc;
 protected function evaluateElements
   "This function evaluates a list of elements."
   input list<DAE.Element> inElements;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input LoopControl inLoopControl;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output LoopControl outLoopControl;
   output SymbolTable outST;
 algorithm
@@ -978,8 +980,8 @@ algorithm
     local
       DAE.Element elem;
       list<DAE.Element> rest_elems;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       LoopControl loop_ctrl;
       SymbolTable st;
 
@@ -998,18 +1000,18 @@ end evaluateElements;
 protected function evaluateElement
   "This function evaluates a single element, which should be an algorithm."
   input DAE.Element inElement;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output LoopControl outLoopControl;
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outLoopControl, outST) := match(inElement, inCache, inEnv, inST)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       LoopControl loop_ctrl;
       list<DAE.Statement> sl;
       SymbolTable st;
@@ -1026,19 +1028,19 @@ end evaluateElement;
 protected function evaluateStatement
   "This function evaluates a statement."
   input DAE.Statement inStatement;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output LoopControl outLoopControl;
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outLoopControl, outST) :=
   matchcontinue(inStatement, inCache, inEnv, inST)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       DAE.Exp lhs, rhs, condition;
       DAE.ComponentRef lhs_cref;
       Values.Value rhs_val;
@@ -1143,11 +1145,11 @@ protected function evaluateStatements
   "This function evaluates a list of statements. This is just a wrapper for
   evaluateStatements2."
   input list<DAE.Statement> inStatement;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output LoopControl outLoopControl;
   output SymbolTable outST;
 algorithm
@@ -1159,12 +1161,12 @@ protected function evaluateStatements2
   "This is a helper function to evaluateStatements that evaluates a list of
   statements."
   input list<DAE.Statement> inStatement;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input LoopControl inLoopControl;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output LoopControl outLoopControl;
   output SymbolTable outST;
 algorithm
@@ -1173,8 +1175,8 @@ algorithm
     local
       DAE.Statement stmt;
       list<DAE.Statement> rest_stmts;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       LoopControl loop_ctrl;
       SymbolTable st;
     case (_, _, _, BREAK(), _) then (inCache, inEnv, inLoopControl, inST);
@@ -1195,11 +1197,11 @@ protected function evaluateTupleAssignStatement
   statements where the right hand side expression is a tuple. Ex:
     (x, y, z) := fun(...)"
   input DAE.Statement inStatement;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outST) := match(inStatement, inCache, inEnv, inST)
@@ -1208,8 +1210,8 @@ algorithm
       DAE.Exp rhs;
       list<Values.Value> rhs_vals;
       list<DAE.ComponentRef> lhs_crefs;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       SymbolTable st;
 
     case (DAE.STMT_TUPLE_ASSIGN(expExpLst = lhs_expl, exp = rhs), _, env, st)
@@ -1226,11 +1228,11 @@ end evaluateTupleAssignStatement;
 protected function evaluateIfStatement
   "This function evaluates an if statement."
   input DAE.Statement inStatement;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output LoopControl outLoopControl;
   output SymbolTable outST;
 algorithm
@@ -1240,8 +1242,8 @@ algorithm
       DAE.Exp cond;
       list<DAE.Statement> stmts;
       DAE.Else else_branch;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Boolean bool_cond;
       LoopControl loop_ctrl;
       SymbolTable st;
@@ -1262,19 +1264,19 @@ protected function evaluateIfStatement2
   input Boolean inCondition;
   input list<DAE.Statement> inStatements;
   input DAE.Else inElse;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output LoopControl outLoopControl;
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outLoopControl, outST) :=
   match(inCondition, inStatements, inElse, inCache, inEnv, inST)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       list<DAE.Statement> statements;
       DAE.Exp condition;
       Boolean bool_condition;
@@ -1316,11 +1318,11 @@ end evaluateIfStatement2;
 protected function evaluateForStatement
   "This function evaluates for statements."
   input DAE.Statement inStatement;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output LoopControl outLoopControl;
   output SymbolTable outST;
 algorithm
@@ -1333,8 +1335,8 @@ algorithm
       DAE.Exp    range;
       list<DAE.Statement> statements;
       list<Values.Value> range_vals;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       DAE.ComponentRef iter_cr;
       LoopControl loop_ctrl;
       SymbolTable st;
@@ -1363,16 +1365,16 @@ end evaluateForStatement;
 
 protected function evaluateForLoopArray
   "This function evaluates a for loop where the range is an array."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input DAE.ComponentRef inIter;
   input DAE.Type inIterType;
   input list<Values.Value> inValues;
   input list<DAE.Statement> inStatements;
   input LoopControl inLoopControl;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output LoopControl outLoopControl;
   output SymbolTable outST;
 algorithm
@@ -1381,8 +1383,8 @@ algorithm
     local
       Values.Value value;
       list<Values.Value> rest_vals;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       LoopControl loop_ctrl;
       SymbolTable st;
 
@@ -1405,20 +1407,20 @@ protected function evaluateWhileStatement
   "This function evaluates a while statement."
   input DAE.Exp inCondition;
   input list<DAE.Statement> inStatements;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input LoopControl inLoopControl;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output LoopControl outLoopControl;
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outLoopControl, outST) :=
   matchcontinue(inCondition, inStatements, inCache, inEnv, inLoopControl, inST)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       LoopControl loop_ctrl;
       SymbolTable st;
 
@@ -1466,10 +1468,10 @@ end extractLhsComponentRef;
 protected function cevalExp
   "A wrapper for Ceval with most of the arguments filled in."
   input DAE.Exp inExp;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output SymbolTable outST;
 algorithm
@@ -1479,10 +1481,10 @@ end cevalExp;
 protected function cevalExpList
   "A wrapper for Ceval with most of the arguments filled in."
   input list<DAE.Exp> inExpLst;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Values.Value> outValue;
   output SymbolTable outST;
 algorithm
@@ -1493,16 +1495,16 @@ end cevalExpList;
 
 protected function setupFunctionEnvironment
   "Opens up a new scope for the functions and adds all function variables to it."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input String inFuncName;
   input list<FunctionVar> inFuncParams;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output SymbolTable outST;
 algorithm
-  outEnv := Env.openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(inFuncName), SOME(Env.FUNCTION_SCOPE()));
+  outEnv := FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(inFuncName), SOME(FCore.FUNCTION_SCOPE()));
   (outCache, outEnv, outST) :=
     extendEnvWithFunctionVars(inCache, outEnv, inFuncParams, inST);
 end setupFunctionEnvironment;
@@ -1510,20 +1512,20 @@ end setupFunctionEnvironment;
 protected function extendEnvWithFunctionVars
   "Extends the environment with a list of variables. The list of values is the
   input arguments to the function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input list<FunctionVar> inFuncParams;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outST) := match(inCache, inEnv, inFuncParams, inST)
     local
       FunctionVar param;
       list<FunctionVar> rest_params;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       SymbolTable st;
 
     case (_, _, {}, _) then (inCache, inEnv, inST);
@@ -1539,20 +1541,20 @@ algorithm
 end extendEnvWithFunctionVars;
 
 protected function extendEnvWithFunctionVar
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input FunctionVar inFuncParam;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outST) := matchcontinue(inCache, inEnv, inFuncParam, inST)
     local
       DAE.Element e;
       Option<Values.Value> val;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Option<DAE.Exp> binding_exp;
       SymbolTable st;
 
@@ -1587,17 +1589,17 @@ protected function evaluateBinding
   "Evaluates an optional binding expression. If SOME expression is given,
   returns SOME value or fails. If NONE expression given, returns NONE value."
   input Option<DAE.Exp> inBinding;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
   output Option<Values.Value> outValue;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output SymbolTable outST;
 algorithm
   (outValue, outCache, outST) := match(inBinding, inCache, inEnv, inST)
     local
       DAE.Exp binding_exp;
-      Env.Cache cache;
+      FCore.Cache cache;
       Values.Value val;
       SymbolTable st;
 
@@ -1616,11 +1618,11 @@ protected function extendEnvWithElement
   extendEnvWithVar to add a new variable to the environment."
   input DAE.Element inElement;
   input Option<Values.Value> inBindingValue;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outST) :=
@@ -1630,8 +1632,8 @@ algorithm
       String name;
       DAE.Type ty;
       DAE.InstDims dims;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       SymbolTable st;
 
     case (DAE.VAR(componentRef = cr, ty = ty, dims = dims), _, _, _, st)
@@ -1651,11 +1653,11 @@ protected function extendEnvWithVar
   input DAE.Type inType;
   input Option<Values.Value> inOptValue;
   input DAE.InstDims inDims;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outST) :=
@@ -1664,8 +1666,8 @@ algorithm
       DAE.Type ty;
       DAE.Var var;
       DAE.Binding binding;
-      Env.Cache cache;
-      Env.Env env, record_env;
+      FCore.Cache cache;
+      FCore.Graph env, record_env;
       SymbolTable st;
 
     // Records are special, since they have their own environment with their
@@ -1679,8 +1681,8 @@ algorithm
           appendDimensions(inType, inOptValue, inDims, inCache, inEnv, inST);
         var = makeFunctionVariable(inName, ty, binding);
         (cache, record_env, st) =
-          makeRecordEnvironment(inType, inOptValue, cache, st);
-        env = Env.extendFrameV(
+          makeRecordEnvironment(inType, inOptValue, cache, inEnv, st);
+        env = FGraph.mkComponentNode(
                 inEnv,
                 var,
                 SCode.COMPONENT(
@@ -1690,7 +1692,7 @@ algorithm
                   Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
                   SCode.noComment, NONE(), Absyn.dummyInfo),
                 DAE.NOMOD(),
-                Env.VAR_TYPED(),
+                FCore.VAR_TYPED(),
                 record_env);
       then
         (cache, env, st);
@@ -1702,7 +1704,7 @@ algorithm
         (cache, ty, st) =
           appendDimensions(inType, inOptValue, inDims, inCache, inEnv, inST);
         var = makeFunctionVariable(inName, ty, binding);
-        env = Env.extendFrameV(
+        env = FGraph.mkComponentNode(
                 inEnv,
                 var,
                 SCode.COMPONENT(
@@ -1712,8 +1714,8 @@ algorithm
                   Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
                   SCode.noComment, NONE(), Absyn.dummyInfo),
                 DAE.NOMOD(),
-                Env.VAR_TYPED(),
-                {});
+                FCore.VAR_TYPED(),
+                FGraph.empty());
       then
         (cache, env, st);
 
@@ -1751,29 +1753,37 @@ protected function makeRecordEnvironment
   supplied it also gives the components a value binding."
   input DAE.Type inRecordType;
   input Option<Values.Value> inOptValue;
-  input Env.Cache inCache;
+  input FCore.Cache inCache;
+  input FCore.Graph inGraph;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outRecordEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outRecordEnv;
   output SymbolTable outST;
 algorithm
   (outCache, outRecordEnv, outST) :=
-  match(inRecordType, inOptValue, inCache, inST)
+  match(inRecordType, inOptValue, inCache, inGraph, inST)
     local
       list<DAE.Var> var_lst;
       list<Option<Values.Value>> vals;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       SymbolTable st;
+      FCore.Ref parent, child;
+      FCore.Node node;
 
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _),varLst = var_lst), _, _, st)
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _),varLst = var_lst), _, _, _, st)
       equation
-        env = Env.newEnvironment(NONE());
+        parent = FGraph.lastScopeRef(inGraph);
+        (graph, node) = FGraph.node(inGraph, FNode.feNodeName, {parent}, FCore.ND(NONE()));
+        child = FNode.toRef(node);
+        FNode.addChildRef(parent, FNode.feNodeName, child);
+        graph = FGraph.pushScopeRef(graph, child);
+
         vals = getRecordValues(inOptValue, inRecordType);
-        ((cache, env, st)) = List.threadFold(var_lst, vals,
-          extendEnvWithRecordVar, (inCache, env, st));
+        ((cache, graph, st)) = List.threadFold(var_lst, vals,
+          extendEnvWithRecordVar, (inCache, graph, st));
       then
-        (cache, env, st);
+        (cache, graph, st);
   end match;
 end makeRecordEnvironment;
 
@@ -1811,15 +1821,15 @@ protected function extendEnvWithRecordVar
   "This function extends an environment with a record component."
   input DAE.Var inVar;
   input Option<Values.Value> inOptValue;
-  input tuple<Env.Cache, Env.Env, SymbolTable> inEnv;
-  output tuple<Env.Cache, Env.Env, SymbolTable> outEnv;
+  input tuple<FCore.Cache, FCore.Graph, SymbolTable> inEnv;
+  output tuple<FCore.Cache, FCore.Graph, SymbolTable> outEnv;
 algorithm
   outEnv := match(inVar, inOptValue, inEnv)
     local
       String name;
       DAE.Type ty;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       SymbolTable st;
 
     case (DAE.TYPES_VAR(name = name, ty = ty), _, (cache, env, st))
@@ -1838,15 +1848,15 @@ protected function extendEnvWithForScope
   type and component reference of the iterator."
   input String inIterName;
   input DAE.Type inIterType;
-  input Env.Env inEnv;
-  output Env.Env outEnv;
+  input FCore.Graph inEnv;
+  output FCore.Graph outEnv;
   output DAE.Type outIterType;
   output DAE.ComponentRef outIterCref;
 protected
   DAE.ComponentRef iter_cr;
 algorithm
   outIterType := Types.expTypetoTypesType(inIterType);
-  outEnv := Env.extendFrameForIterator(inEnv, inIterName, outIterType,
+  outEnv := FGraph.addForIterator(inEnv, inIterName, outIterType,
     DAE.UNBOUND(), SCode.CONST(), SOME(DAE.C_CONST()));
   outIterCref := ComponentReference.makeCrefIdent(inIterName, inIterType, {});
 end extendEnvWithForScope;
@@ -1861,10 +1871,10 @@ protected function appendDimensions
   input DAE.Type inType;
   input Option<Values.Value> inOptBinding;
   input DAE.InstDims inDims;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Type outType;
   output SymbolTable outST;
 protected
@@ -1883,10 +1893,10 @@ protected function appendDimensions2
   input DAE.Type inType;
   input DAE.InstDims inDims;
   input list<Integer> inBindingDims;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Type outType;
   output SymbolTable outST;
 algorithm
@@ -1901,7 +1911,7 @@ algorithm
       DAE.Type ty;
       list<Integer> bind_dims;
       DAE.Subscript sub;
-      Env.Cache cache;
+      FCore.Cache cache;
       SymbolTable st;
 
     case (ty, {}, _, _, _, _) then (inCache, ty, inST);
@@ -1968,25 +1978,25 @@ protected function assignVariable
   "This function assigns a variable in the environment a new value."
   input DAE.ComponentRef inCref;
   input Values.Value inNewValue;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outST) :=
   matchcontinue(inCref, inNewValue, inCache, inEnv, inST)
     local
       DAE.ComponentRef cr, cr_rest;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       list<DAE.Subscript> subs;
       DAE.Type ty;
       DAE.Type ety;
       Values.Value val;
       DAE.Var var;
-      Env.InstStatus inst_status;
+      FCore.Status inst_status;
       String id, comp_id;
       SymbolTable st;
 
@@ -2001,7 +2011,7 @@ algorithm
           Lookup.lookupIdentLocal(inCache, inEnv, id);
         (cache, env, st) = assignRecord(ety, inNewValue, inCache, env, st);
         var = updateRecordBinding(var, inNewValue);
-        env = Env.updateFrameV(inEnv, var, inst_status, env);
+        env = FGraph.updateComp(inEnv, var, inst_status, env);
       then
         (cache, env, st);
 
@@ -2034,7 +2044,7 @@ algorithm
         (cache, env, st) = assignVariable(cr_rest, inNewValue, inCache, env, st);
         comp_id = ComponentReference.crefFirstIdent(cr_rest);
         var = updateRecordComponentBinding(var, comp_id, inNewValue);
-        env = Env.updateFrameV(inEnv, var, inst_status, env);
+        env = FGraph.updateComp(inEnv, var, inst_status, env);
       then
         (cache, env, st);
   end matchcontinue;
@@ -2045,11 +2055,11 @@ protected function assignTuple
   component."
   input list<DAE.ComponentRef> inLhsCrefs;
   input list<Values.Value> inRhsValues;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outST) :=
@@ -2059,8 +2069,8 @@ algorithm
       list<DAE.ComponentRef> rest_crefs;
       Values.Value value;
       list<Values.Value> rest_vals;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       SymbolTable st;
     case ({}, _, cache, env, st) then (cache, env, st);
     case (cr :: rest_crefs, value :: rest_vals, cache, env, st)
@@ -2075,19 +2085,19 @@ end assignTuple;
 protected function assignRecord
   input DAE.Type inType;
   input Values.Value inValue;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outST) := match(inType, inValue, inCache, inEnv, inST)
     local
       list<Values.Value> values;
       list<DAE.Var> vars;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       SymbolTable st;
     case (DAE.T_COMPLEX(varLst = vars), Values.RECORD(orderd = values), _, _, st)
       equation
@@ -2100,11 +2110,11 @@ end assignRecord;
 protected function assignRecordComponents
   input list<DAE.Var> inVars;
   input list<Values.Value> inValues;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outST) := match(inVars, inValues, inCache, inEnv, inST)
@@ -2115,8 +2125,8 @@ algorithm
       String name;
       DAE.ComponentRef cr;
       DAE.Type ty;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       SymbolTable st;
 
     case ({}, {}, _, _, _) then (inCache, inEnv, inST);
@@ -2137,10 +2147,10 @@ public function assignVector
   input Values.Value inNewValue;
   input Values.Value inOldValue;
   input list<DAE.Subscript> inSubscripts;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Option<GlobalScript.SymbolTable> inST;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outResult;
   output Option<GlobalScript.SymbolTable> outST;
 algorithm
@@ -2155,7 +2165,7 @@ algorithm
       Integer i;
       DAE.Subscript sub;
       list<DAE.Subscript> rest_subs;
-      Env.Cache cache;
+      FCore.Cache cache;
       SymbolTable st;
 
     // No subscripts, we have either reached the end of the recursion or the
@@ -2220,10 +2230,10 @@ protected function assignSlice
   input list<Values.Value> inIndices;
   input list<DAE.Subscript> inSubscripts;
   input Integer inIndex;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Values.Value> outResult;
   output SymbolTable outST;
 algorithm
@@ -2233,7 +2243,7 @@ algorithm
     local
       Values.Value v1, v2, index;
       list<Values.Value> vl1, vl2, rest_indices;
-      Env.Cache cache;
+      FCore.Cache cache;
       SymbolTable st;
 
     case (_, _, {}, _, _, _, _, _) then (inCache, inOldValues, inST);
@@ -2262,10 +2272,10 @@ protected function assignWholeDim
   input list<Values.Value> inNewValues;
   input list<Values.Value> inOldValues;
   input list<DAE.Subscript> inSubscripts;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SymbolTable inST;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<Values.Value> outResult;
   output SymbolTable outST;
 algorithm
@@ -2274,7 +2284,7 @@ algorithm
     local
       Values.Value v1, v2;
       list<Values.Value> vl1, vl2;
-      Env.Cache cache;
+      FCore.Cache cache;
       SymbolTable st;
     case ({}, _, _, _, _, _) then (inCache, {}, inST);
     case (v1 :: vl1, v2 :: vl2, _, _, _, st)
@@ -2289,10 +2299,10 @@ end assignWholeDim;
 protected function updateVariableBinding
   "This function updates a variables binding in the environment."
   input DAE.ComponentRef inVariableCref;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input DAE.Type inType;
   input Values.Value inNewValue;
-  output Env.Env outEnv;
+  output FCore.Graph outEnv;
 protected
   String var_name;
   DAE.Var var;
@@ -2300,7 +2310,7 @@ algorithm
   var_name := ComponentReference.crefStr(inVariableCref);
   var := makeFunctionVariable(var_name, inType,
     DAE.VALBOUND(inNewValue, DAE.BINDING_FROM_DEFAULT_VALUE()));
-  outEnv := Env.updateFrameV(inEnv, var, Env.VAR_TYPED(), {});
+  outEnv := FGraph.updateComp(inEnv, var, FCore.VAR_TYPED(), FGraph.empty());
 end updateVariableBinding;
 
 protected function updateRecordBinding
@@ -2361,19 +2371,19 @@ protected function getVariableTypeAndBinding
   "This function looks a variable up in the environment, and returns it's type
   and binding."
   input DAE.ComponentRef inCref;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output DAE.Type outType;
   output DAE.Binding outBinding;
 algorithm
   (_, _, outType, outBinding, _, _, _, _, _) :=
-    Lookup.lookupVar(Env.emptyCache(), inEnv, inCref);
+    Lookup.lookupVar(FCore.emptyCache(), inEnv, inCref);
 end getVariableTypeAndBinding;
 
 protected function getVariableTypeAndValue
   "This function looks a variable up in the environment, and returns it's type
   and value. If it doesn't have a value, then a default value will be returned."
   input DAE.ComponentRef inCref;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output DAE.Type outType;
   output Values.Value outValue;
 protected
@@ -2479,7 +2489,7 @@ protected function getFunctionReturnValue
   "This function fetches one return value for the function, given an output
   variable and an environment."
   input DAE.Element inOutputVar;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output Values.Value outValue;
 algorithm
   outValue := match(inOutputVar, inEnv)
@@ -2500,7 +2510,7 @@ protected function getVariableValue
   environment."
   input DAE.ComponentRef inCref;
   input DAE.Type inType;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output Values.Value outValue;
 algorithm
   outValue := matchcontinue(inCref, inType, inEnv)
@@ -2531,7 +2541,7 @@ protected function getRecordValue
   records environment and assembling a record value."
   input Absyn.Path inRecordName;
   input DAE.Type inType;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output Values.Value outValue;
 algorithm
   outValue := match(inRecordName, inType, inEnv)
@@ -2541,13 +2551,13 @@ algorithm
       list<String> var_names;
       String id;
       Absyn.Path p;
-      Env.Env env;
+      FCore.Graph env;
     case (Absyn.IDENT(name = id),
           DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = p),
                         varLst = vars), _)
       equation
         (_, _, _, _, _, env) =
-          Lookup.lookupIdentLocal(Env.emptyCache(), inEnv, id);
+          Lookup.lookupIdentLocal(FCore.emptyCache(), inEnv, id);
         vals = List.map1(vars, getRecordComponentValue, env);
         var_names = List.map(vars, Types.getVarName);
       then
@@ -2558,7 +2568,7 @@ end getRecordValue;
 protected function getRecordComponentValue
   "Looks up the value for a record component."
   input DAE.Var inVars;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output Values.Value outValues;
 algorithm
   outValues := match(inVars, inEnv)
@@ -2581,7 +2591,7 @@ algorithm
     case (DAE.TYPES_VAR(name = id, ty = ty), _)
       equation
         (_, DAE.TYPES_VAR(binding = binding), _, _, _, _) =
-          Lookup.lookupIdentLocal(Env.emptyCache(), inEnv, id);
+          Lookup.lookupIdentLocal(FCore.emptyCache(), inEnv, id);
         val = getBindingOrDefault(binding, ty);
       then
         val;
@@ -2866,9 +2876,9 @@ protected function optimizeExpTraverser
   while evaluating the function. But it's possible that more forms of
   optimization can be done too."
   input DAE.Exp inExp;
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   output DAE.Exp outExp;
-  output Env.Env outEnv;
+  output FCore.Graph outEnv;
 algorithm
   (outExp,outEnv) := match (inExp,inEnv)
     local
@@ -2876,7 +2886,7 @@ algorithm
       DAE.Type ety;
       list<DAE.Exp> sub_exps;
       list<DAE.Subscript> subs;
-      Env.Env env;
+      FCore.Graph env;
       DAE.Exp exp;
 
     case (DAE.ASUB(exp = DAE.CREF(componentRef = cref, ty = ety), sub = sub_exps), env)

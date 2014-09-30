@@ -46,7 +46,8 @@ encapsulated package PrefixUtil
 
 public import Absyn;
 public import DAE;
-public import Env;
+public import FCore;
+public import FGraph;
 public import Lookup;
 public import SCode;
 public import Prefix;
@@ -320,12 +321,12 @@ end prefixToPath;
 public function prefixCref "Prefix a ComponentRef variable by adding the supplied prefix to
   it and returning a new ComponentRef.
   LS: Changed to call prefixToCref which is more general now"
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix pre;
   input DAE.ComponentRef cref;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.ComponentRef cref_1;
 algorithm
   (outCache,cref_1) := prefixToCref2(cache,env,inIH,pre, SOME(cref));
@@ -338,25 +339,25 @@ public function prefixCrefNoContext "Prefix a ComponentRef variable by adding th
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
-  (_, outCref) := prefixToCref2(Env.noCache(), {}, InnerOuter.emptyInstHierarchy, inPre, SOME(inCref));
+  (_, outCref) := prefixToCref2(FCore.noCache(), FGraph.empty(), InnerOuter.emptyInstHierarchy, inPre, SOME(inCref));
 end prefixCrefNoContext;
 
 public function prefixToCref "Convert a prefix to a component reference."
   input Prefix.Prefix pre;
   output DAE.ComponentRef cref_1;
 algorithm
-  (_,cref_1) := prefixToCref2(Env.noCache(),{},InnerOuter.emptyInstHierarchy,pre, NONE());
+  (_,cref_1) := prefixToCref2(FCore.noCache(), FGraph.empty(), InnerOuter.emptyInstHierarchy, pre, NONE());
 end prefixToCref;
 
 protected function prefixToCref2 "Convert a prefix to a component reference. Converting Prefix.NOPRE with no
   component reference is an error because a component reference cannot be
   empty"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Option<DAE.ComponentRef> inExpComponentRefOption;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.ComponentRef outComponentRef;
 algorithm
   (outCache,outComponentRef) := match (inCache,inEnv,inIH,inPrefix,inExpComponentRefOption)
@@ -369,8 +370,8 @@ algorithm
       Prefix.ComponentPrefix xs;
       Prefix.ClassPrefix cp;
       ClassInf.State ci_state;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
 
     case (_,_,_,Prefix.NOPRE(),NONE()) then fail();
     case (_,_,_,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),NONE()) then fail();
@@ -467,25 +468,25 @@ algorithm
 end makeCrefFromPrefixNoFail;
 
 protected function prefixSubscriptsInCref "help function to prefixToCrefOpt2, deals with prefixing expressions in subscripts"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InstanceHierarchy inIH;
   input Prefix.Prefix pre;
   input DAE.ComponentRef inCr;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.ComponentRef outCr;
 algorithm
   (outCache,outCr) := prefixSubscriptsInCrefWork(inCache,inEnv,inIH,pre,inCr,{});
 end prefixSubscriptsInCref;
 
 protected function prefixSubscriptsInCrefWork "help function to prefixToCrefOpt2, deals with prefixing expressions in subscripts"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InstanceHierarchy inIH;
   input Prefix.Prefix pre;
   input DAE.ComponentRef inCr;
   input list<DAE.ComponentRef> acc;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.ComponentRef outCr;
 algorithm
   (outCache,outCr) := match (inCache,inEnv,inIH,pre,inCr,acc)
@@ -493,8 +494,8 @@ algorithm
       DAE.Ident id;
       DAE.Type tp;
       list<DAE.Subscript> subs;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       DAE.ComponentRef cr,crid;
     case(cache,env,_,_,DAE.CREF_IDENT(id,tp,subs),_)
       equation
@@ -512,19 +513,19 @@ algorithm
 end prefixSubscriptsInCrefWork;
 
 protected function prefixSubscripts "help function to prefixSubscriptsInCref, adds prefix to subscripts"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InstanceHierarchy inIH;
   input Prefix.Prefix pre;
   input list<DAE.Subscript> inSubs;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Subscript> outSubs;
 algorithm
   (outCache,outSubs) := match(inCache,inEnv,inIH,pre,inSubs)
     local
       DAE.Subscript sub;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       list<DAE.Subscript> subs;
 
     case (cache,_,_,_,{}) then (cache,{});
@@ -538,19 +539,19 @@ algorithm
 end prefixSubscripts;
 
 protected function prefixSubscript "help function to prefixSubscripts, adds prefix to one subscript, if it is an expression"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InstanceHierarchy inIH;
   input Prefix.Prefix pre;
   input DAE.Subscript sub;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Subscript outSub;
 algorithm
   (outCache,outSub) := match(inCache,inEnv,inIH,pre,sub)
     local
       DAE.Exp exp;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
 
     case(cache,_,_,_,DAE.WHOLEDIM()) then (cache,DAE.WHOLEDIM());
 
@@ -572,18 +573,18 @@ end prefixSubscript;
 public function prefixCrefInnerOuter "Search for the prefix of the inner when the cref is
   an outer and add that instead of the given prefix!
   If the cref is an inner, prefix it normally."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.ComponentRef inCref;
   input Prefix.Prefix inPrefix;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.ComponentRef outCref;
 algorithm
   (outCache,outCref) := match (inCache,inEnv,inIH,inCref,inPrefix)
     local
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       Absyn.InnerOuter io;
       InstanceHierarchy ih;
       Prefix.Prefix innerPrefix, pre;
@@ -650,19 +651,19 @@ algorithm
 end prefixCrefInnerOuter;
 
 public function prefixExp "Add the supplied prefix to all component references in an expression."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Exp inExp;
   input Prefix.Prefix inPrefix;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
 algorithm
   (outCache,outExp) := matchcontinue (inCache,inEnv,inIH,inExp,inPrefix)
     local
       DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3,cref_1,dim_1,cref,dim,start_1,stop_1,start,stop,step_1,step,e_1,exp_1,exp,crefExp;
       DAE.ComponentRef cr,cr_1;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix pre;
       DAE.Operator o;
       list<DAE.Exp> es_1,es;
@@ -671,7 +672,7 @@ algorithm
       list<DAE.Exp> x_1,x;
       list<list<DAE.Exp>> xs_1,xs;
       String s;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<DAE.Exp> expl;
       InstanceHierarchy ih;
       Prefix.Prefix p;
@@ -712,7 +713,7 @@ algorithm
       equation
         (cache, crefExp) = prefixExpCref(cache, env, ih, inExp, pre);
       then
-        (cache, crefExp);
+        (cache,crefExp);
 
     case (cache,env,ih,(DAE.ASUB(exp = e1, sub = expl)),pre)
       equation
@@ -894,16 +895,16 @@ end prefixExp;
 
 protected function prefixExpCref
   "Helper function to prefixExp for prefixing a cref expression."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InstanceHierarchy inIH;
   input DAE.Exp inCref;
   input Prefix.Prefix inPrefix;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outCref;
 protected
   Option<Boolean> is_iter;
-  Env.Cache cache;
+  FCore.Cache cache;
   DAE.ComponentRef cr;
 algorithm
   DAE.CREF(componentRef = cr) := inCref;
@@ -912,18 +913,18 @@ algorithm
 end prefixExpCref;
 
 protected function prefixExpCref2
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InstanceHierarchy inIH;
   input Option<Boolean> inIsIter;
   input DAE.Exp inCref;
   input Prefix.Prefix inPrefix;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outCref;
 algorithm
   (outCache, outCref) := match(inCache, inEnv, inIH, inIsIter, inCref, inPrefix)
     local
-      Env.Cache cache;
+      FCore.Cache cache;
       DAE.ComponentRef cr;
       DAE.Type ty;
       DAE.Exp exp;
@@ -954,12 +955,12 @@ algorithm
 end prefixExpCref2;
 
 protected function prefixIterators
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InstanceHierarchy ih;
   input DAE.ReductionIterators inIters;
   input Prefix.Prefix pre;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.ReductionIterators outIters;
 algorithm
   (outCache,outIters) := match (inCache,inEnv,ih,inIters,pre)
@@ -968,8 +969,8 @@ algorithm
       DAE.Exp exp,gexp;
       DAE.Type ty;
       DAE.ReductionIterator iter;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       DAE.ReductionIterators iters;
 
     case (cache,_,_,{},_) then (cache,{});
@@ -990,21 +991,21 @@ algorithm
 end prefixIterators;
 
 public function prefixExpList "This function prefixes a list of expressions using the prefixExp function."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input list<DAE.Exp> inExpExpLst;
   input Prefix.Prefix inPrefix;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
 algorithm
   (outCache,outExpExpLst) := match (inCache,inEnv,inIH,inExpExpLst,inPrefix)
     local
       DAE.Exp e_1,e;
       list<DAE.Exp> es_1,es;
-      Env.Env env;
+      FCore.Graph env;
       Prefix.Prefix p;
-      Env.Cache cache;
+      FCore.Cache cache;
       InstanceHierarchy ih;
 
     // handle empty case
@@ -1024,21 +1025,21 @@ end prefixExpList;
 //   PART OF THE WORKAROUND FOR VALUEBLOCKS. KS
 protected function prefixDecls "Add the supplied prefix to the DAE elements located in Expression.mo.
   PART OF THE WORKAROUND FOR VALUEBLOCKS"
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input InstanceHierarchy inIH;
   input list<DAE.Element> lDecls;
   input list<DAE.Element> accList;
   input Prefix.Prefix p;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Element> outDecls;
 algorithm
   (outCache,outDecls) := matchcontinue (cache,env,inIH,lDecls,accList,p)
     local
       list<DAE.Element> localAccList;
       Prefix.Prefix pre;
-      Env.Cache localCache;
-      Env.Env localEnv;
+      FCore.Cache localCache;
+      FCore.Graph localEnv;
       DAE.ElementSource source "the origin of the element";
       InstanceHierarchy ih;
       DAE.ComponentRef cRef;
@@ -1089,19 +1090,19 @@ end prefixDecls;
 
 protected function prefixStatements "Prefix statements.
   PART OF THE WORKAROUND FOR VALUEBLOCKS"
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input InstanceHierarchy inIH;
   input list<DAE.Statement> stmts;
   input list<DAE.Statement> accList;
   input Prefix.Prefix p;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output list<DAE.Statement> outStmts;
 algorithm
   (outCache,outStmts) := match (cache,env,inIH,stmts,accList,p)
     local
-      Env.Cache localCache;
-      Env.Env localEnv;
+      FCore.Cache localCache;
+      FCore.Graph localEnv;
       list<DAE.Statement> localAccList,rest;
       Prefix.Prefix pre;
       InstanceHierarchy ih;
@@ -1207,18 +1208,18 @@ end prefixStatements;
 
 protected function prefixElse "Prefix else statements.
   PART OF THE WORKAROUND FOR VALUEBLOCKS"
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input InstanceHierarchy inIH;
   input DAE.Else elseBranch;
   input Prefix.Prefix p;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Else outElse;
 algorithm
   (outCache,outElse) := match (cache,env,inIH,elseBranch,p)
     local
-      Env.Cache localCache;
-      Env.Env localEnv;
+      FCore.Cache localCache;
+      FCore.Graph localEnv;
       Prefix.Prefix pre;
       InstanceHierarchy ih;
       DAE.Exp e;
@@ -1258,12 +1259,12 @@ algorithm
 end makePrefixString;
 
 public function prefixExpressionsInType
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPre;
   input DAE.Type inTy;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Type outTy;
 algorithm
   (outCache, outTy) := matchcontinue(inCache, inEnv, inIH, inPre, inTy)
@@ -1285,15 +1286,15 @@ end prefixExpressionsInType;
 protected function prefixArrayDimensions
 "@author: adrpo
  this function prefixes all the expressions in types to be found by the back-end or code generation!"
-  input tuple<DAE.Type,tuple<Env.Cache,Env.Env,InnerOuter.InstHierarchy,Prefix.Prefix>> tpl;
-  output tuple<DAE.Type,tuple<Env.Cache,Env.Env,InnerOuter.InstHierarchy,Prefix.Prefix>> otpl;
+  input tuple<DAE.Type,tuple<FCore.Cache,FCore.Graph,InnerOuter.InstHierarchy,Prefix.Prefix>> tpl;
+  output tuple<DAE.Type,tuple<FCore.Cache,FCore.Graph,InnerOuter.InstHierarchy,Prefix.Prefix>> otpl;
 algorithm
   otpl := match tpl
     local
       DAE.Type ty;
       DAE.TypeSource ts;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       InnerOuter.InstHierarchy ih;
       Prefix.Prefix pre;
       DAE.Dimensions dims;
@@ -1310,12 +1311,12 @@ algorithm
 end prefixArrayDimensions;
 
 public function prefixDimensions
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPre;
   input DAE.Dimensions inDims;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Dimensions outDims;
 algorithm
   (outCache,outDims) := matchcontinue(inCache, inEnv, inIH, inPre, inDims)
@@ -1323,7 +1324,7 @@ algorithm
       DAE.Exp e;
       DAE.Dimensions rest, new;
       DAE.Dimension d;
-      Env.Cache cache;
+      FCore.Cache cache;
 
     case (_, _, _, _, {}) then (inCache, {});
 

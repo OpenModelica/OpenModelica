@@ -34,7 +34,7 @@ encapsulated package OperatorOverloading
 public
 import Absyn;
 import DAE;
-import Env;
+import FCore;
 import GlobalScript;
 import Prefix;
 import SCode;
@@ -51,6 +51,7 @@ import Error;
 import Expression;
 import ExpressionDump;
 import ExpressionSimplify;
+import FGraph;
 import Flags;
 import Global;
 import Inline;
@@ -65,8 +66,8 @@ import Values;
 public
 
 function binary
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Operator inOperator1;
   input DAE.Properties inProp1;
   input DAE.Exp inExp1;
@@ -79,15 +80,15 @@ function binary
   input Option<GlobalScript.SymbolTable> inSymTab;
   input Prefix.Prefix inPre "For error-messages only";
   input Absyn.Info inInfo "For error-messages only";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProp;
 algorithm
   (outCache, outExp, outProp) :=
    matchcontinue(inCache,inEnv,inOperator1, inProp1, inExp1, inProp2, inExp2, AbExp, AbExp1, AbExp2, inImpl, inSymTab, inPre, inInfo)
        local
-         Env.Cache cache;
-         Env.Env env;
+         FCore.Cache cache;
+         FCore.Graph env;
          list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> opList;
          DAE.Type type1,type2, otype;
          DAE.Exp exp1,exp2,exp;
@@ -139,7 +140,7 @@ algorithm
        equation
          true = Types.isRecord(Types.arrayElementType(type1)) or Types.isRecord(Types.arrayElementType(type2));
          (cache, exp, _, otype) = binaryUserdef(cache,env,aboper,inExp1,inExp2,type1,type2,inImpl,inSymTab,inPre,inInfo);
-         functionTree = Env.getFunctionTree(cache);
+         functionTree = FCore.getFunctionTree(cache);
          (exp,_) = ExpressionSimplify.simplify1(exp);
          (exp,_,didInline,_) = Inline.inlineExp(exp,(SOME(functionTree),{DAE.BUILTIN_EARLY_INLINE(),DAE.EARLY_INLINE()}),DAE.emptyElementSource);
          (exp,_) = ExpressionSimplify.condsimplify(didInline,exp);
@@ -157,8 +158,8 @@ also used to resolve user overloaded unary operators for operator records
 It looks if there is an operator function defined for the specific
 operation. If there is then it will call that function and returns the
 resulting expression. "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Operator inOperator1;
   input DAE.Properties inProp1;
   input DAE.Exp inExp1;
@@ -168,7 +169,7 @@ resulting expression. "
   input Option<GlobalScript.SymbolTable> inSymTab;
   input Prefix.Prefix inPre "For error-messages only";
   input Absyn.Info inInfo "For error-messages only";
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProp;
 algorithm
@@ -176,13 +177,13 @@ algorithm
    matchcontinue(inCache,inEnv,inOperator1, inProp1, inExp1, AbExp, AbExp1, inImpl, inSymTab, inPre, inInfo)
      local
        String str1;
-       Env.Cache cache;
+       FCore.Cache cache;
        list<Absyn.Path> operNames;
        Absyn.Path path;
-       Env.Env operatorEnv,recordEnv;
+       FCore.Graph operatorEnv,recordEnv;
        SCode.Element operatorCl;
        list<DAE.Type> types;
-       Env.Env env;
+       FCore.Graph env;
        list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> opList;
        DAE.Type type1, otype;
        DAE.Exp exp1,exp;
@@ -241,15 +242,15 @@ end unary;
 
 function string
 "This functions checks if the builtin function string is overloaded for opertor records"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Exp inExp1;
   input Boolean inImpl;
   input Option<GlobalScript.SymbolTable> inSyTabOpt;
   input Boolean inDoVect;
   input Prefix.Prefix inPre;
   input Absyn.Info inInfo;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProp;
   output Option<GlobalScript.SymbolTable> outSyTabOpt;
@@ -263,9 +264,9 @@ algorithm
       Absyn.Path path;
       Option<GlobalScript.SymbolTable> st_1;
       list<Absyn.Path> operNames;
-      Env.Env recordEnv,operatorEnv,env;
+      FCore.Graph recordEnv,operatorEnv,env;
       SCode.Element operatorCl;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<DAE.Type> types;
       DAE.Properties prop;
       DAE.Type type1;
@@ -402,7 +403,7 @@ algorithm
   outExps := matchcontinue (inTypeList,inLhs,inRhs,lhsType,rhsType,inAcc)
       local
         list<DAE.Type> types,scalartypes, arraytypes;
-        Env.Cache cache;
+        FCore.Cache cache;
         DAE.Exp daeExp;
         DAE.Properties prop;
         String str1;
@@ -455,7 +456,7 @@ algorithm
   outExps := match (types,inLhs,inRhs,rhsType,inAcc)
       local
         list<DAE.Type> scalartypes, arraytypes;
-        Env.Cache cache;
+        FCore.Cache cache;
         DAE.Properties prop;
         String str1;
         list<DAE.FuncArg> restArgs;
@@ -489,7 +490,7 @@ algorithm
   outExps := match (types,inLhs,inRhs,lhsType,inAcc)
       local
         list<DAE.Type> scalartypes, arraytypes;
-        Env.Cache cache;
+        FCore.Cache cache;
         DAE.Properties prop;
         String str1;
         list<DAE.FuncArg> restArgs;
@@ -522,7 +523,7 @@ algorithm
   outExps := matchcontinue (inTypeList,inExp,inType,inAcc)
       local
         list<DAE.Type> types,scalartypes, arraytypes;
-        Env.Cache cache;
+        FCore.Cache cache;
         DAE.Exp exp,daeExp;
         DAE.Properties prop;
         String str1;
@@ -557,8 +558,8 @@ function binaryUserdef
 It looks if there is an operator function defined for the specific
 operation. If there is then it will call that function and returns the
 resulting expression. "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Operator inOper;
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
@@ -568,7 +569,7 @@ resulting expression. "
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix pre;
   input Absyn.Info info;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output DAE.Exp outExp;
   output Option<DAE.Type> foldType;
   output DAE.Type outType;
@@ -580,9 +581,9 @@ algorithm
       String opStr;
       Absyn.Path path,path2;
       list<Absyn.Path> operNames;
-      Env.Env recordEnv,env;
+      FCore.Graph recordEnv,env;
       SCode.Element operatorCl;
-      Env.Cache cache;
+      FCore.Cache cache;
       list<DAE.Type> types,types1,types2;
       DAE.Properties prop;
       DAE.Type type1, type2;
@@ -621,8 +622,8 @@ algorithm
 end binaryUserdef;
 
 function binaryUserdefArray
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input list<tuple<DAE.Exp,Option<DAE.Type>>> inExps;
   input Boolean isArray;
   input Absyn.Operator inOper;
@@ -634,7 +635,7 @@ function binaryUserdefArray
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix pre;
   input Absyn.Info info;
-  output Env.Cache cache;
+  output FCore.Cache cache;
   output list<tuple<DAE.Exp,Option<DAE.Type>>> exps;
 algorithm
   (cache,exps) := match (inCache,env,inExps,isArray,inOper,inExp1,inExp2,inType1,inType2,impl,st,pre,info)
@@ -669,8 +670,8 @@ algorithm
 end binaryUserdefArray;
 
 function binaryUserdefArray2
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input Boolean isScalar1;
   input Boolean isVector1;
   input Boolean isMatrix1;
@@ -686,7 +687,7 @@ function binaryUserdefArray2
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix pre;
   input Absyn.Info info;
-  output Env.Cache cache;
+  output FCore.Cache cache;
   output list<tuple<DAE.Exp,Option<DAE.Type>>> exps;
 algorithm
   (cache,exps) := match (inCache,env,isScalar1,isVector1,isMatrix1,isScalar2,isVector2,isMatrix2,inOper,inExp1,inExp2,inType1,inType2,impl,st,pre,info)
@@ -1390,20 +1391,20 @@ algorithm
 end operatorReturnUnary;
 
 function getOperatorFuncsOrEmpty
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input list<DAE.Type> tys;
   input String opName;
   input Absyn.Info info;
   input list<DAE.Type> acc;
-  output Env.Cache cache;
+  output FCore.Cache cache;
   output list<DAE.Type> funcs;
 algorithm
   (cache,funcs) := matchcontinue (inCache,env,tys,opName,info,acc)
     local
       Absyn.Path path,opNamePath;
       SCode.Element operatorCl;
-      Env.Env recordEnv,operEnv;
+      FCore.Graph recordEnv,operEnv;
       list<Absyn.Path> paths;
       DAE.Type ty,scalarType;
       list<DAE.Type> rest;
@@ -1446,12 +1447,12 @@ This is required because we take the union of functions from lhs and rhs.
 If one is Complex and one is named ComplexVoltage, we would get different types.
 This also reduces the total number of functions that are instantiated.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input SCode.Element inClass;
-  output Env.Cache cache;
+  output FCore.Cache cache;
   output Absyn.Path path;
-  output Env.Env env;
+  output FCore.Graph env;
 algorithm
   (cache,path,env) := match (inCache,inEnv,inClass)
     local
@@ -1465,7 +1466,7 @@ algorithm
 
     case (cache,env,SCode.CLASS(name=name))
       equation
-        path = Env.joinEnvPath(env,Absyn.IDENT(name));
+        path = FGraph.joinScopePath(env,Absyn.IDENT(name));
       then (cache,path,env);
   end match;
 end lookupOperatorBaseClass;
@@ -2005,8 +2006,8 @@ algorithm
          Expression.dimensionsKnownAndEqual(dim1, dim2)
          // We need run-time checks for DIM_EXP=DIM_EXP
          or (not (Expression.dimensionKnown(dim1) or Expression.dimensionKnown(dim2)))
-         // If checkModel is used we might get unknown dimensions. So use
-         // dimensionsEqual instead, which matches anything against DIM_UNKNOWN.
+    // If checkModel is used we might get unknown dimensions. So use
+    // dimensionsEqual instead, which matches anything against DIM_UNKNOWN.
          or (Flags.getConfigBool(Flags.CHECK_MODEL) and Expression.dimensionsEqual(dim1, dim2));
 end isValidMatrixProductDims;
 
@@ -2082,7 +2083,7 @@ algorithm
 end replaceOperatorWithFcall;
 
 function warnUnsafeRelations "Check if we have Real == Real or Real != Real, if so give a warning."
-  input Env.Env inEnv;
+  input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input DAE.Const variability;
   input DAE.Type t1,t2;
@@ -2100,7 +2101,7 @@ algorithm
     // we're in a function.
     case (_, _, _, _, _, _, _, _, _, _)
       equation
-        true = Env.inFunctionScope(inEnv);
+        true = FGraph.inFunctionScope(inEnv);
       then ();
 
     case(_, Absyn.RELATION(_, _, _), DAE.C_VAR(),_,_,_,_,_,pre,_)
@@ -2141,8 +2142,8 @@ algorithm
 end errorMultipleValid;
 
 function binaryCastConstructor
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   input DAE.Type inType1;
@@ -2150,7 +2151,7 @@ function binaryCastConstructor
   input list<tuple<DAE.Exp,Option<DAE.Type>>> exps;
   input list<DAE.Type> types;
   input Absyn.Info info;
-  output Env.Cache cache;
+  output FCore.Cache cache;
   output list<tuple<DAE.Exp,Option<DAE.Type>>> resExps;
 algorithm
   (cache,resExps) := match (inCache,env,inExp1,inExp2,inType1,inType2,exps,types,info)
@@ -2190,13 +2191,13 @@ algorithm
 end binaryCastConstructor;
 
 function getZeroConstructor
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input list<DAE.Exp> zexps;
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> st;
   input Absyn.Info info;
-  output Env.Cache cache;
+  output FCore.Cache cache;
   output Option<Values.Value> zeroExpression;
 algorithm
   (cache,zeroExpression) := match (inCache,env,zexps,impl,st,info)

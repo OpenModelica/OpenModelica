@@ -29,12 +29,12 @@
  *
  */
 
-encapsulated package Builtin
-" file:        Builtin.mo
-  package:     Builtin
+encapsulated package FBuiltin
+" file:        FBuiltin.mo
+  package:     FBuiltin
   description: Builting tyepes and variables
 
-  RCS: $Id$
+  RCS: $Id: FBuiltin.mo 22324 2014-09-16 13:32:28Z adrpo $
 
   This module defines the builtin types, variables and functions in Modelica.
 
@@ -51,7 +51,7 @@ public import FGraph;
 protected import ClassInf;
 protected import Config;
 protected import Flags;
-protected import FGraphBuildEnv;
+protected import FGraphBuild;
 protected import Global;
 protected import List;
 protected import Parser;
@@ -621,7 +621,7 @@ algorithm
       then (p,sp);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Builtin.getInitialFunctions failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {"FBuiltin.getInitialFunctions failed."});
       then fail();
   end matchcontinue;
 end getInitialFunctions;
@@ -665,34 +665,34 @@ algorithm
     case (cache)
       equation
         graph = FGraph.new("graph", FCore.dummyTopModel);
-        graph = FGraphBuildEnv.mkProgramGraph(basicTypes, FCore.BASIC_TYPE(), graph);
+        graph = FGraphBuild.mkProgramGraph(basicTypes, FCore.BASIC_TYPE(), graph);
 
 
-        graph = FGraphBuildEnv.mkCompNode(timeComp, FGraph.top(graph), FCore.BUILTIN(), graph);
+        graph = FGraphBuild.mkCompNode(timeComp, FGraph.top(graph), FCore.BUILTIN(), graph);
         graph = FGraph.updateComp(graph, timeVar, FCore.VAR_UNTYPED(), FGraph.empty());
 
         graph = initialGraphOptimica(graph);
 
         graph = initialGraphMetaModelica(graph);
 
-        graph = FGraphBuildEnv.mkTypeNode(
+        graph = FGraphBuild.mkTypeNode(
                  {anyNonExpandableConnector2int,
                   anyExpandableConnector2int},
                  FGraph.top(graph),
                  "cardinality", graph);
-        graph = FGraphBuildEnv.mkTypeNode({enumeration2int}, FGraph.top(graph), "Integer", graph);
-        graph = FGraphBuildEnv.mkTypeNode({enumeration2int}, FGraph.top(graph), "EnumToInteger", graph);
-        graph = FGraphBuildEnv.mkTypeNode({real2real}, FGraph.top(graph), "noEvent", graph);
-        graph = FGraphBuildEnv.mkTypeNode({real2real}, FGraph.top(graph), "actualStream", graph);
-        graph = FGraphBuildEnv.mkTypeNode({real2real}, FGraph.top(graph), "inStream", graph);
-        graph = FGraphBuildEnv.mkTypeNode({realrealreal2real,
+        graph = FGraphBuild.mkTypeNode({enumeration2int}, FGraph.top(graph), "Integer", graph);
+        graph = FGraphBuild.mkTypeNode({enumeration2int}, FGraph.top(graph), "EnumToInteger", graph);
+        graph = FGraphBuild.mkTypeNode({real2real}, FGraph.top(graph), "noEvent", graph);
+        graph = FGraphBuild.mkTypeNode({real2real}, FGraph.top(graph), "actualStream", graph);
+        graph = FGraphBuild.mkTypeNode({real2real}, FGraph.top(graph), "inStream", graph);
+        graph = FGraphBuild.mkTypeNode({realrealreal2real,
                                  array1dimrealarray1dimrealarray1dimreal2array1dimreal,
                                  array1dimrealarray1dimrealarray1dimreal2array1dimreal},
                                  FGraph.top(graph), "constrain", graph);
 
         (_, initialProgram) = getInitialFunctions();
         // add the ModelicaBuiltin/MetaModelicaBuiltin classes in the initial graph
-        graph = FGraphBuildEnv.mkProgramGraph(initialProgram, FCore.BUILTIN(), graph);
+        graph = FGraphBuild.mkProgramGraph(initialProgram, FCore.BUILTIN(), graph);
 
         cache = FCore.setCachedInitialGraph(cache,graph);
         _ = getSetInitialGraph(SOME(graph));
@@ -765,7 +765,7 @@ algorithm
       equation
         true = Config.acceptMetaModelicaGrammar();
         // getGlobalRoot can not be represented by a regular function...
-        graph = FGraphBuildEnv.mkTypeNode({int2boxed}, FGraph.top(graph), "getGlobalRoot", graph);
+        graph = FGraphBuild.mkTypeNode({int2boxed}, FGraph.top(graph), "getGlobalRoot", graph);
       then
         graph;
 
@@ -786,16 +786,16 @@ algorithm
       equation
         //If Optimica add the startTime,finalTime,objectiveIntegrand and objective "builtin" variables.
         true = Config.acceptOptimicaGrammar();
-        graph = FGraphBuildEnv.mkCompNode(objectiveVarComp, FGraph.top(graph), FCore.BUILTIN(), graph);
+        graph = FGraphBuild.mkCompNode(objectiveVarComp, FGraph.top(graph), FCore.BUILTIN(), graph);
         graph = FGraph.updateComp(graph, objectiveVar, FCore.VAR_UNTYPED(), FGraph.empty());
 
-        graph = FGraphBuildEnv.mkCompNode(objectiveIntegrandComp, FGraph.top(graph), FCore.BUILTIN(), graph);
+        graph = FGraphBuild.mkCompNode(objectiveIntegrandComp, FGraph.top(graph), FCore.BUILTIN(), graph);
         graph = FGraph.updateComp(graph, objectiveIntegrandVar, FCore.VAR_UNTYPED(), FGraph.empty());
 
-        graph = FGraphBuildEnv.mkCompNode(startTimeComp, FGraph.top(graph), FCore.BUILTIN(), graph);
+        graph = FGraphBuild.mkCompNode(startTimeComp, FGraph.top(graph), FCore.BUILTIN(), graph);
         graph = FGraph.updateComp(graph, startTimeVar, FCore.VAR_UNTYPED(), FGraph.empty());
 
-        graph = FGraphBuildEnv.mkCompNode(finalTimeComp, FGraph.top(graph), FCore.BUILTIN(), graph);
+        graph = FGraphBuild.mkCompNode(finalTimeComp, FGraph.top(graph), FCore.BUILTIN(), graph);
         graph = FGraph.updateComp(graph, finalTimeVar, FCore.VAR_UNTYPED(), FGraph.empty());
       then
         graph;
@@ -805,5 +805,5 @@ algorithm
   end matchcontinue;
 end initialGraphOptimica;
 
-end Builtin;
+end FBuiltin;
 

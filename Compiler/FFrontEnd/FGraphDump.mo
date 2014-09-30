@@ -174,16 +174,15 @@ algorithm
       then
         ((gi,i));
 
-    // REF node, do not add it, just add an edge between parent and target
-    case ((gi,i), FCore.N(parents = nr::_, children = kids, data = FCore.REF(_)))
+    // empty REF node, add it with red as is unresolveds
+    case ((gi,i), FCore.N(parents = nr::_, children = kids, data = FCore.REF({})))
       equation
 
         (color, shape, nds) = graphml(node, true);
 
         labelText = nds;
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
-        // elabel = GraphML.EDGELABEL(nds, NONE(), GraphML.FONTSIZE_SMALL);
-
+        elabel = GraphML.EDGELABEL(nds, NONE(), GraphML.FONTSIZE_SMALL);
 
         (gi, _) = GraphML.addNode(
               "n" +& intString(FNode.id(node)),
@@ -202,8 +201,7 @@ algorithm
                    {},
                    gi);
 
-        /*
-        // add ref edge
+        /*/ add ref edge
         (gi, _) = GraphML.addEdge(
                    "r" +& intString(FNode.id(node)),
                    "n" +& intString(FNode.id(FNode.fromRef(target))),
@@ -219,6 +217,57 @@ algorithm
 
         nrefs = List.map(FNode.getAvlTreeValues({SOME(kids)}, {}), FNode.getAvlValue);
         ((gi,i)) = addNodes((gi,i), nrefs);
+      then
+        ((gi,i));
+
+    // something REF node, either add it as a new node or an edge (commented out)
+    case ((gi,i), FCore.N(parents = nr::_, children = kids, data = FCore.REF(target::_)))
+      equation
+
+        (color, shape, nds) = graphml(node, true);
+
+        labelText = nds;
+        label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
+        elabel = GraphML.EDGELABEL(nds, NONE(), GraphML.FONTSIZE_SMALL);
+
+        (gi, _) = GraphML.addNode(
+              "n" +& intString(FNode.id(node)),
+              color, {label}, shape, NONE(), {}, i, gi);
+
+        (gi, _) = GraphML.addEdge(
+                   "r" +& intString(FNode.id(node)),
+                   "n" +& intString(FNode.id(node)),
+                   "n" +& intString(FNode.id(FNode.fromRef(nr))),
+                   GraphML.COLOR_GREEN,
+                   GraphML.LINE(),
+                   GraphML.LINEWIDTH_STANDARD,
+                   false,
+                   {}, // {elabel},
+                   (GraphML.ARROWNONE(),GraphML.ARROWSTANDART()),
+                   {},
+                   gi);
+
+        /*/ add ref edge
+        (gi, _) = GraphML.addEdge(
+                   "r" +& intString(FNode.id(node)),
+                   "n" +& intString(FNode.id(FNode.fromRef(target))),
+                   "n" +& intString(FNode.id(FNode.fromRef(nr))),
+                   GraphML.COLOR_RED,
+                   GraphML.DASHED(),
+                   GraphML.LINEWIDTH_STANDARD,
+                   false,
+                   {elabel},
+                   (GraphML.ARROWNONE(),GraphML.ARROWSTANDART()),
+                   {},
+                   gi);*/
+
+        nrefs = List.map(FNode.getAvlTreeValues({SOME(kids)}, {}), FNode.getAvlValue);
+        ((gi,i)) = addNodes((gi,i), nrefs);
+      then
+        ((gi,i));
+
+    // ignore coref nodes
+    case ((gi,i), FCore.N(parents = nr::_, data = FCore.VR(source = _)))
       then
         ((gi,i));
 
@@ -353,13 +402,6 @@ algorithm
       then
         (GraphML.COLOR_GREEN, GraphML.ROUNDRECTANGLE(), s);
 
-    // derived
-    case (FCore.N(_, _, _, _, nd as FCore.DE(d = _)), _)
-      equation
-        s = FNode.dataStr(nd) +& ":" +& FNode.name(node);
-      then
-        (GraphML.COLOR_GREEN, GraphML.ROUNDRECTANGLE(), s);
-
     // expressions: bindings, condition in conditional components, array dim, etc
     case (FCore.N(_, _, _, _, nd as FCore.EXP(e = exp)), _)
       equation
@@ -383,19 +425,26 @@ algorithm
       then
         (GraphML.COLOR_PURPLE, GraphML.OCTAGON(), s);
 
-    // REF nodes
-    case (FCore.N(_, _, _, _, nd as FCore.REF(target)), _)
+    // ASSERT nodes
+    case (FCore.N(_, _, _, _, nd as FCore.ASSERT(s)), _)
       equation
-        s = FNode.dataStr(nd) +& ":" +& FNode.toPathStr(FNode.fromRef(target));
+        s = FNode.dataStr(nd) +& ":" +& FNode.name(node);
       then
-        (GraphML.COLOR_ORANGE, GraphML.TRAPEZOID(), s);
+        (GraphML.COLOR_RED, GraphML.PARALLELOGRAM(), s);
 
-    // CLONE nodes
-    case (FCore.N(_, _, _, _, nd as FCore.CLONE(target)), _)
+    // empty REF nodes
+    case (FCore.N(_, _, _, _, nd as FCore.REF({})), _)
+      equation
+        s = FNode.dataStr(nd) +& ":" +& "UNRESOLVED";
+      then
+        (GraphML.COLOR_RED, GraphML.PARALLELOGRAM(), s);
+
+    // non empty REF nodes
+    case (FCore.N(_, _, _, _, nd as FCore.REF(target::_)), _)
       equation
         s = FNode.dataStr(nd) +& ":" +& FNode.toPathStr(FNode.fromRef(target));
       then
-        (GraphML.COLOR_ORANGE, GraphML.TRIANGLE(), s);
+        (GraphML.COLOR_GREEN, GraphML.TRAPEZOID(), s);
 
     // all others
     case (FCore.N(_, _, _, _, nd), _)

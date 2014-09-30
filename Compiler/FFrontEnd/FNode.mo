@@ -53,9 +53,12 @@ import Error;
 import List;
 import FGraph;
 import FGraphStream;
+import Config;
+import Flags;
 
 public
 type Name = FCore.Name;
+type Names = FCore.Names;
 type Id = FCore.Id;
 type Seq = FCore.Seq;
 type Next = FCore.Next;
@@ -77,9 +80,14 @@ type AvlKey = FCore.CAvlKey;
 type AvlValue = FCore.CAvlValue;
 type AvlTreeValue = FCore.CAvlTreeValue;
 
+constant Name extendsPrefix  = "$ext_" "prefix of the extends node";
+
+constant Name topNodeName = "$top";
+
 // these names are used mostly for edges in the graph
 // the edges are saved inside the AvlTree ("name", Ref)
 constant Name tyNodeName     = "$ty" "type node";
+constant Name ftNodeName     = "$ft" "function types node";
 constant Name refNodeName    = "$ref" "reference node";
 constant Name modNodeName    = "$mod" "modifier node";
 constant Name bndNodeName    = "$bnd" "binding node";
@@ -98,6 +106,12 @@ constant Name forNodeName    = "$for" "scope for for-iterators";
 constant Name matchNodeName  = "$match" "scope for match exps";
 constant Name cloneNodeName  = "$clone" "clone of the reference node";
 constant Name origNodeName   = "$original" "the original of the clone";
+constant Name feNodeName     = "$functionEvaluation" "a node for function evaluation";
+constant Name duNodeName     = "$definedUnits" "a node for storing defined units";
+constant Name veNodeName     = "$ve" "a node for storing references to instance component";
+constant Name imNodeName     = "$imp" "an node holding the import table";
+constant Name itNodeName     = "$it" "an node holding the instance information DAE.Var";
+constant Name assertNodeName = "$assert" "an assersion node";
 
 public function toRef
 "@author: adrpo
@@ -148,16 +162,61 @@ algorithm
   b := List.isNotEmpty(parents(inNode));
 end hasParents;
 
+public function refParents
+  input Ref inRef;
+  output Parents p;
+algorithm
+  FCore.N(parents = p) := fromRef(inRef);
+end refParents;
+
+public function refPushParents
+  input Ref inRef;
+  input Parents inParents;
+  output Ref outRef;
+protected
+  Name n;
+  Id i;
+  Parents p;
+  Children c;
+  Data d;
+algorithm
+  FCore.N(n, i, p, c, d) := fromRef(inRef);
+  p := listAppend(inParents, p);
+  outRef := updateRef(inRef, FCore.N(n, i, p, c, d));
+end refPushParents;
+
+public function setParents
+  input Node inNode;
+  input  Parents inParents;
+  output Node outNode;
+protected
+  Name n;
+  Id i;
+  Parents p;
+  Children c;
+  Data d;
+algorithm
+  FCore.N(n, i, p, c, d) := inNode;
+  outNode := FCore.N(n, i, inParents, c, d);
+end setParents;
+
 public function target
 "returns a target from a REF node"
   input Node inNode;
   output Ref outRef;
 algorithm
-  outRef := match(inNode)
-    local Ref r;
-    case FCore.N(data = FCore.REF(target = r)) then r;
-  end match;
+  outRef::_ := targetScope(inNode);
 end target;
+
+public function targetScope
+"returns the target scope from a REF node"
+  input Node inNode;
+  output Scope outScope;
+algorithm
+  outScope := match(inNode)
+    case FCore.N(data = FCore.REF(target = outScope)) then outScope;
+  end match;
+end targetScope;
 
 public function new
   input Name inName;
@@ -186,7 +245,7 @@ algorithm
     case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT(path = _)),
           FCore.IMPORT_TABLE(hidden, qual_imps, unqual_imps))
       equation
-        unqual_imps = imp :: unqual_imps;
+        unqual_imps = List.unique(imp :: unqual_imps);
       then
         FCore.IMPORT_TABLE(hidden, qual_imps, unqual_imps);
 
@@ -196,7 +255,7 @@ algorithm
       equation
         imp = translateQualifiedImportToNamed(imp);
         checkUniqueQualifiedImport(imp, qual_imps, info);
-        qual_imps = imp :: qual_imps;
+        qual_imps = List.unique(imp :: qual_imps);
       then
         FCore.IMPORT_TABLE(hidden, qual_imps, unqual_imps);
   end match;
@@ -305,9 +364,9 @@ protected
   ImportTable it;
   Ref r;
 algorithm
-  FCore.N(n, id, p, c, FCore.CL(e, t, it)) := fromRef(ref);
+  FCore.N(n, id, p, c, FCore.IM(it)) := fromRef(ref);
   it := addImport(imp, it);
-  r := updateRef(ref, FCore.N(n, id, p, c, FCore.CL(e, t, it)));
+  r := updateRef(ref, FCore.N(n, id, p, c, FCore.IM(it)));
 end addImportToRef;
 
 public function addTypesToRef
@@ -325,10 +384,10 @@ protected
   list<DAE.Type> tys;
   Ref r;
 algorithm
-  FCore.N(n, id, p, c, FCore.TY(tys)) := fromRef(ref);
-  tys := listAppend(inTys, tys);
+  FCore.N(n, id, p, c, FCore.FT(tys)) := fromRef(ref);
+  tys := List.unique(listAppend(inTys, tys));
   // update the child
-  r := updateRef(ref, FCore.N(n, id, p, c, FCore.TY(tys)));
+  r := updateRef(ref, FCore.N(n, id, p, c, FCore.FT(tys)));
 end addTypesToRef;
 
 public function addIteratorsToRef
@@ -351,6 +410,25 @@ algorithm
   r := updateRef(ref, FCore.N(n, id, p, c, FCore.FS(it)));
 end addIteratorsToRef;
 
+public function addDefinedUnitToRef
+  input Ref ref;
+  input SCode.Element du;
+protected
+  Name n;
+  Integer id;
+  Parents p;
+  Children c;
+  Data d;
+  SCode.Element e;
+  Kind t;
+  ImportTable it;
+  Ref r;
+  list<SCode.Element> dus;
+algorithm
+  FCore.N(n, id, p, c, FCore.DU(dus)) := fromRef(ref);
+  r := updateRef(ref, FCore.N(n, id, p, c, FCore.DU(du::dus)));
+end addDefinedUnitToRef;
+
 public function name
   input Node n;
   output String name;
@@ -361,15 +439,28 @@ algorithm
   end match;
 end name;
 
+public function refName
+  input Ref r;
+  output String n;
+algorithm
+  n := name(fromRef(r));
+end refName;
+
 public function data
   input Node n;
-  output Data data;
+  output Data d;
 algorithm
-  data := match(n)
-    local Data d;
+  d := match(n)
     case (FCore.N(data = d)) then d;
   end match;
 end data;
+
+public function refData
+  input Ref r;
+  output Data outData;
+algorithm
+  outData := data(fromRef(r));
+end refData;
 
 public function top
 "@author: adrpo
@@ -388,11 +479,11 @@ algorithm
       then
         inRef;
 
-        // already at the top
+    // not the top
     case (_)
       equation
         true = hasParents(fromRef(inRef));
-        t = top(List.first(parents(fromRef(inRef))));
+        t = top(original(parents(fromRef(inRef))));
       then
         t;
 
@@ -405,6 +496,32 @@ public function children
 algorithm
   FCore.N(children = outChildren) := inNode;
 end children;
+
+public function hasChild
+  input Node inNode;
+  input Name inName;
+  output Boolean b;
+algorithm
+  b := matchcontinue(inNode, inName)
+
+    case (_, _)
+      equation
+        _ = childFromNode(inNode, inName);
+      then
+        true;
+
+    else false;
+
+  end matchcontinue;
+end hasChild;
+
+public function refHasChild
+  input Ref inRef;
+  input Name inName;
+  output Boolean b;
+algorithm
+  b := hasChild(fromRef(inRef), inName);
+end refHasChild;
 
 public function setChildren
   input Node inNode;
@@ -421,23 +538,47 @@ algorithm
   outNode := FCore.N(n, i, p, inChildren, d);
 end setChildren;
 
+public function setData
+  input Node inNode;
+  input  Data inData;
+  output Node outNode;
+protected
+  Name n;
+  Id i;
+  Parents p;
+  Children c;
+  Data d;
+algorithm
+  FCore.N(n, i, p, c, _) := inNode;
+  outNode := FCore.N(n, i, p, c, inData);
+end setData;
+
 public function child
   input Ref inParentRef;
+  input Name inName;
+  output Ref outChildRef;
+algorithm
+  outChildRef := childFromNode(fromRef(inParentRef), inName);
+end child;
+
+public function childFromNode
+  input Node inNode;
   input Name inName;
   output Ref outChildRef;
 protected
   Children c;
 algorithm
-  c := children(fromRef(inParentRef));
+  c := children(inNode);
   outChildRef := avlTreeGet(c, inName);
-end child;
+end childFromNode;
 
 public function element2Data
   input SCode.Element inElement;
   input Kind inKind;
   output Data outData;
+  output DAE.Var outVar;
 algorithm
-  outData := match(inElement, inKind)
+  (outData, outVar) := match(inElement, inKind)
     local
       String n;
       SCode.Final finalPrefix;
@@ -457,22 +598,21 @@ algorithm
       Absyn.Info info;
       Option<Absyn.Exp> condition;
       Data nd;
+      DAE.Var i;
 
     // a component
     case (SCode.COMPONENT(n,SCode.PREFIXES(vis,_,_,io,_),
                                     SCode.ATTR(_,ct,prl,var,dir),
                                     _,_,_,_,_), _)
       equation
-        nd = FCore.CO(inElement,
-                DAE.TYPES_VAR(
+        nd = FCore.CO(inElement, DAE.NOMOD(), inKind, FCore.VAR_UNTYPED());
+        i  = DAE.TYPES_VAR(
                   n,
                   DAE.ATTR(ct,prl,var,dir,io,vis),
                   DAE.T_UNKNOWN_DEFAULT,
-                  DAE.UNBOUND(),NONE()),
-                FCore.S_UNTYPED(),
-                inKind);
+                  DAE.UNBOUND(),NONE());
       then
-        nd;
+        (nd, i);
 
   end match;
 end element2Data;
@@ -482,15 +622,19 @@ public function dataStr
   output String outStr;
 algorithm
   outStr := match(inData)
-    local Name n;
+    local
+      Name n;
+      Absyn.ComponentRef c;
+      String m;
+
     case (FCore.TOP()) then "TOP";
+    case (FCore.IT(_)) then "I";
     case (FCore.CL(e = SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)))) then "CE";
     case (FCore.CL(e = _)) then "C";
     case (FCore.CO(e = _)) then "c";
-    case (FCore.EX(_)) then "E";
-    case (FCore.DE(_)) then "D";
+    case (FCore.EX(e =_)) then "E";
     case (FCore.DU(_)) then "U";
-    case (FCore.TY(_)) then "TY";
+    case (FCore.FT(_)) then "FT";
     case (FCore.AL(_, _)) then "ALG";
     case (FCore.EQ(_, _)) then "EQ";
     case (FCore.OT(_, _)) then "OPT";
@@ -503,10 +647,14 @@ algorithm
     case (FCore.DIMS(name=n)) then n;
     case (FCore.CR(_)) then "r";
     case (FCore.CC(_)) then "CC";
-    case (FCore.ND()) then "N";
+    case (FCore.ND(_)) then "ND";
     case (FCore.REF(_)) then "REF";
-    case (FCore.CLONE(_)) then "CLONE";
+    case (FCore.VR(source = _)) then "VR";
+    case (FCore.IM(_)) then "IM";
+    case (FCore.ASSERT(m)) then "assert(" +& m +& ")";
+
     else "UKNOWN NODE DATA";
+
   end match;
 end dataStr;
 
@@ -559,22 +707,32 @@ algorithm
       then
         outStr;
 
-    case (FCore.N(_, _, nr::_, _, _))
+    case (FCore.N(_, _, p, _, _))
       equation
+        nr = contextual(p);
         true = hasParents(fromRef(nr));
         s = toPathStr(fromRef(nr));
         outStr = s +& "." +& name(inNode);
       then
         outStr;
 
-    case (FCore.N(_, _, nr::_, _, _))
+    case (FCore.N(_, _, p, _, _))
       equation
+        nr = contextual(p);
         false = hasParents(fromRef(nr));
         outStr = "." +& name(inNode);
       then
         outStr;
   end matchcontinue;
 end toPathStr;
+
+public function scopeStr
+"note that this function returns the scopes in reverse"
+  input Scope sc;
+  output String s;
+algorithm
+  s := stringDelimitList(List.map(listReverse(sc), refName), "/");
+end scopeStr;
 
 public function isImplicitScope
 "anything that is not top, class or a component is an implicit scope!"
@@ -585,8 +743,10 @@ algorithm
     case FCore.N(data = FCore.TOP()) then false;
     case FCore.N(data = FCore.CL(e = _)) then false;
     case FCore.N(data = FCore.CO(e = _)) then false;
+    case FCore.N(data = FCore.CC(cc = _)) then false;
     case FCore.N(data = FCore.FS(fis = _)) then false;
     case FCore.N(data = FCore.MS(e = _)) then false;
+    case FCore.N(data = FCore.VR(source = _)) then false;
     else true;
   end match;
 end isImplicitScope;
@@ -603,10 +763,14 @@ public function isEncapsulated
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := matchcontinue(inNode)
     case FCore.N(data = FCore.CL(e = SCode.CLASS(encapsulatedPrefix = SCode.ENCAPSULATED()))) then true;
+    case FCore.N(data = FCore.CO(e = _))
+      equation
+        true = boolEq(Config.acceptMetaModelicaGrammar(), false) and boolNot(Flags.isSet(Flags.GRAPH_INST));
+      then true;
     else false;
-  end match;
+  end matchcontinue;
 end isEncapsulated;
 
 public function isReference
@@ -664,7 +828,8 @@ public function isDerived
   output Boolean b;
 algorithm
   b := match(inNode)
-    case FCore.N(data = FCore.DE(d = _)) then true;
+    local SCode.Element e;
+    case FCore.N(data = FCore.CL(e = e)) then SCode.isDerivedClass(e);
     else false;
   end match;
 end isDerived;
@@ -678,6 +843,17 @@ algorithm
     else false;
   end match;
 end isClass;
+
+public function isRedeclare
+  input Node inNode;
+  output Boolean b;
+algorithm
+  b := match(inNode)
+    case FCore.N(data = FCore.CL(e = SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())))) then true;
+    case FCore.N(data = FCore.CO(e = SCode.COMPONENT(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())))) then true;
+    else false;
+  end match;
+end isRedeclare;
 
 public function isClassExtends
   input Node inNode;
@@ -795,15 +971,41 @@ algorithm
   end match;
 end isMod;
 
-public function isClone
+public function isModHolder
   input Node inNode;
   output Boolean b;
 algorithm
   b := match(inNode)
-    case FCore.N(data = FCore.CLONE(_)) then true;
+    local Name n;
+    case (FCore.N(name = n, data = FCore.MO(m = _))) then stringEq(n, modNodeName);
+    else false;
+  end match;
+end isModHolder;
+
+public function isClone
+"a node is a clone if its parent is a version node"
+  input Node inNode;
+  output Boolean b;
+algorithm
+  b := match(inNode)
+    local Ref r;
+    case FCore.N(parents = r::_)
+      equation
+        b = isRefVersion(r);
+      then b;
     else false;
   end match;
 end isClone;
+
+public function isVersion
+  input Node inNode;
+  output Boolean b;
+algorithm
+  b := match(inNode)
+    case FCore.N(data = FCore.VR(source = _)) then true;
+    else false;
+  end match;
+end isVersion;
 
 public function isDims
   input Node inNode;
@@ -869,6 +1071,101 @@ algorithm
         r;
   end matchcontinue;
 end nonImplicitRefFromScope;
+
+public function namesUpToParentName
+"@author: adrpo
+ returns the names of parents up
+ to the given name. if the name
+ is not found up to the top the
+ empty list is returned.
+ note that for A.B.C.D.E.F searching for B from F will give you
+ {C, D, E, F}"
+  input Ref inRef;
+  input Name inName;
+  output Names outNames;
+algorithm
+   outNames := namesUpToParentName_dispatch(inRef, inName, {});
+end namesUpToParentName;
+
+protected function namesUpToParentName_dispatch
+"@author: adrpo
+ returns the names of parents up
+ to the given name. if the name
+ is not found up to the top the
+ empty list is returned.
+ note that for A.B.C.D.E.F searching for B from F will give you
+ {C, D, E, F}"
+  input Ref inRef;
+  input Name inName;
+  input Names acc;
+  output Names outNames;
+algorithm
+   outNames := matchcontinue(inRef, inName, acc)
+    local
+      Ref r;
+      Names names;
+      Name name;
+
+    // bah, error!
+    case (r, name, _)
+      equation
+        true = isRefTop(r);
+      then
+        {};
+
+    // we're done, return
+    case (r, name, _)
+      equation
+        true = stringEq(inName, refName(r));
+      then
+        acc;
+
+    // up the parent
+    case (r, name, _)
+      equation
+        names = namesUpToParentName_dispatch(original(refParents(r)), name, List.prepend(refName(r), acc));
+      then
+        names;
+
+  end matchcontinue;
+end namesUpToParentName_dispatch;
+
+public function getModifierTarget
+"@author: adrpo
+ returns the target of the modifer"
+  input Ref inRef;
+  output Ref outRef;
+algorithm
+   outRef := matchcontinue(inRef)
+    local
+      Ref r;
+
+    // bah, error!
+    case (r)
+      equation
+        true = isRefTop(r);
+      then
+        fail();
+
+    // we're done, return
+    case (r)
+      equation
+        true = isRefModHolder(r);
+        // get his parent
+        r = original(refParents(r));
+        r::_ = refRefTargetScope(r);
+      then
+        r;
+
+    // up the parent
+    case (r)
+      equation
+        r = getModifierTarget(original(refParents(r)));
+      then
+        r;
+
+  end matchcontinue;
+end getModifierTarget;
 
 public function originalScope
 "@author:
@@ -982,6 +1279,63 @@ algorithm
   outContextual := List.first(inParents);
 end contextual;
 
+public function lookupRef
+"@author: adrpo
+ lookup a reference based on given scope names
+ NOTE:
+  inRef/outRef could be in a totally different graph"
+  input Ref inRef;
+  input Scope inScope;
+  output Ref outRef;
+algorithm
+  outRef := matchcontinue(inRef, inScope)
+    local
+      Scope s;
+      Ref r;
+
+    // for the top, return itself
+    case (_, {_}) then inRef;
+
+    case (_, s)
+      equation
+        // print("Searching for scope: " +& toPathStr(fromRef(List.first(s))) +& " in " +& toPathStr(fromRef(inRef)) +& "\n");
+        // reverse and remove top
+        _::s = listReverse(s);
+        r = lookupRef_dispatch(inRef, s);
+      then
+        r;
+  end matchcontinue;
+end lookupRef;
+
+public function lookupRef_dispatch
+"@author: adrpo
+ lookup a reference based on given scope names
+ NOTE:
+  inRef/outRef could be in a totally different graph"
+  input Ref inRef;
+  input Scope inScope;
+  output Ref outRef;
+algorithm
+  outRef := match(inRef, inScope)
+    local
+      Ref r;
+      Scope rest;
+      Name n;
+
+    case (_, {}) then inRef;
+
+    case (_, r::rest)
+      equation
+        n = name(fromRef(r));
+        // print("Lookup child: " +& n +& " in " +& toPathStr(fromRef(inRef)) +& "\n");
+        r = child(inRef, n);
+        r = lookupRef_dispatch(r, rest);
+      then
+        r;
+
+  end match;
+end lookupRef_dispatch;
+
 public function filter
 "@author: adrpo
  filter the children of the given
@@ -1044,6 +1398,13 @@ public function isRefClass
 algorithm
   b := isClass(fromRef(inRef));
 end isRefClass;
+
+public function isRefRedeclare
+  input Ref inRef;
+  output Boolean b;
+algorithm
+  b := isRedeclare(fromRef(inRef));
+end isRefRedeclare;
 
 public function isRefClassExtends
   input Ref inRef;
@@ -1122,12 +1483,26 @@ algorithm
   b := isMod(fromRef(inRef));
 end isRefMod;
 
+public function isRefModHolder
+  input Ref inRef;
+  output Boolean b;
+algorithm
+  b := isModHolder(fromRef(inRef));
+end isRefModHolder;
+
 public function isRefClone
   input Ref inRef;
   output Boolean b;
 algorithm
   b := isClone(fromRef(inRef));
 end isRefClone;
+
+public function isRefVersion
+  input Ref inRef;
+  output Boolean b;
+algorithm
+  b := isVersion(fromRef(inRef));
+end isRefVersion;
 
 public function isRefDims
   input Ref inRef;
@@ -1451,11 +1826,14 @@ public function hasImports
 algorithm
   b := match(inNode)
     local list<Import> qi, uqi;
-    case (FCore.N(data = FCore.CL(importTable = FCore.IMPORT_TABLE(_, qi, uqi))))
+
+    case (_)
       equation
+        FCore.IMPORT_TABLE(_, qi, uqi) = importTable(fromRef(refImport(toRef(inNode))));
         b = boolOr(List.isNotEmpty(qi), List.isNotEmpty(uqi));
       then
         b;
+
     else false;
   end match;
 end hasImports;
@@ -1467,10 +1845,33 @@ public function imports
 algorithm
   (outQualifiedImports, outUnQualifiedImports) := match(inNode)
     local list<Import> qi, uqi;
-    case (FCore.N(data = FCore.CL(importTable = FCore.IMPORT_TABLE(_, qi, uqi)))) then (qi, uqi);
+    case (_)
+      equation
+         FCore.IMPORT_TABLE(_, qi, uqi) = importTable(fromRef(refImport(toRef(inNode))));
+      then
+        (qi, uqi);
     else ({}, {});
   end match;
 end imports;
+
+public function derivedRef
+  input Ref inRef;
+  output Refs outRefs;
+algorithm
+  outRefs := matchcontinue(inRef)
+    local Ref r;
+    case (_)
+      equation
+        true = isRefDerived(inRef);
+        r = child(inRef, refNodeName);
+      then
+        {r};
+
+    else {};
+
+  end matchcontinue;
+end derivedRef;
+
 
 public function extendsRefs
   input Ref inRef;
@@ -1478,15 +1879,18 @@ public function extendsRefs
 algorithm
   outRefs := matchcontinue(inRef)
     local
-      Refs refs;
+      Refs refs, rd;
 
     case (_)
       equation
         // we have a class
         true = isRefClass(inRef);
-        // see if it has extends or derived
-        refs = listAppend(filter(inRef, isRefExtends), filter(inRef, isRefDerived));
+        // get the derived ref
+        rd = derivedRef(inRef);
+        // get the extends
+        refs = filter(inRef, isRefExtends);
         refs = List.flatten(List.map1(refs, filter, isRefReference));
+        refs = listAppend(rd,refs);
       then
         refs;
 
@@ -1659,6 +2063,394 @@ algorithm
 
   end match;
 end cloneTreeValueOpt;
+
+public function copyRef
+"@author: adrpo
+ copy a node ref entire subtree
+ this is like clone but the parents are kept as they are"
+  input Ref inRef;
+  input Graph inGraph;
+  output Graph outGraph;
+  output Ref outRef;
+algorithm
+  (outGraph, outRef) := match(inRef, inGraph)
+    local
+      Node n;
+      Graph g;
+      Ref r;
+
+    case (_, g)
+      equation
+        // first copy the entire tree as it is
+        // generating new array references
+        r = copyRefNoUpdate(inRef);
+        // then update all array references
+        // in the tree to their new places
+        (g, r) = updateRefs(r, g);
+      then
+        (g, r);
+
+  end match;
+end copyRef;
+
+public function updateRefs
+"@author: adrpo
+ update all parent and node data references in the graph"
+  input Ref inRef;
+  input Graph inGraph;
+  output Graph outGraph;
+  output Ref outRef;
+algorithm
+  (outGraph, outRef) := match(inRef, inGraph)
+    local
+      Node n;
+      Graph g;
+      Ref r;
+
+    case (_, g)
+      equation
+        // for each node in the tree
+        // update all refs from the node parents or node data
+        ((r, g)) = apply1(inRef, updateRefInGraph, (inRef, g));
+      then
+        (g, r);
+
+  end match;
+end updateRefs;
+
+protected function updateRefInGraph
+  input Ref inRef;
+  input tuple<Ref, Graph> inTopRefAndGraph;
+  output tuple<Ref, Graph> outTopRefAndGraph;
+algorithm
+  outTopRefAndGraph := matchcontinue(inRef, inTopRefAndGraph)
+    local
+      Ref r, t;
+      Graph g;
+      Name n;
+      Id i;
+      Parents p;
+      Children c;
+      Data d;
+
+    case (_, (t, g))
+      equation
+        // print("Updating references in node: " +& toStr(fromRef(inRef)) +& " / [" +& toPathStr(fromRef(inRef)) +& "]\n");
+        FCore.N(n, i, p, c, d) = fromRef(inRef);
+        p = List.map1r(p, lookupRefFromRef, t);
+        d = updateRefInData(d, t);
+        r = updateRef(inRef, FCore.N(n, i, p, c, d));
+      then
+        ((t, g));
+
+  end matchcontinue;
+end updateRefInGraph;
+
+public function lookupRefFromRef
+"@author: adrpo
+ lookup a reference based on old reference in a different graph"
+  input Ref inRef;
+  input Ref inOldRef;
+  output Ref outRef;
+algorithm
+  outRef := matchcontinue(inRef, inOldRef)
+    local
+      Ref r;
+      Scope s;
+    case (_, _)
+      equation
+        // get the original scope from the old ref
+        s = originalScope(inOldRef);
+        r = lookupRef(inRef, s);
+      then
+        r;
+  end matchcontinue;
+end lookupRefFromRef;
+
+protected function updateRefInData
+"@author: adrpo
+ update references in the node data currently just REF and CLONE hold other references.
+ if you add more nodes in FCore that have references in them you need to update this function too!"
+  input Data inData;
+  input Ref inRef;
+  output Data outData;
+algorithm
+  outData := match(inData, inRef)
+    local
+      Ref oldRef, r;
+      SCode.Element e;
+      DAE.Var i;
+      DAE.Mod m;
+      FCore.Status s;
+      Kind k;
+      Scope sc;
+
+    case (FCore.REF(sc), _)
+      equation
+        sc = List.map1r(sc, lookupRefFromRef, inRef);
+      then
+        FCore.REF(sc);
+
+    else inData;
+
+  end match;
+end updateRefInData;
+
+public function copyRefNoUpdate
+"@author: adrpo
+ copy a node ref entire subtree"
+  input Ref inRef;
+  output Ref outRef;
+algorithm
+  outRef := match(inRef)
+    local
+      Node n;
+      Graph g;
+      Ref r;
+
+    case (_)
+      equation
+        r = copy(fromRef(inRef));
+      then
+        r;
+
+  end match;
+end copyRefNoUpdate;
+
+protected function copy
+"@author: adrpo
+ copy a node entire subtree.
+ this is like clone but the parents are kept as they are"
+  input Node inNode;
+  output Ref outRef;
+algorithm
+  outRef := match(inNode)
+    local
+      Node n;
+      Graph g;
+      Ref r;
+      Name name;
+      Id id;
+      Parents p;
+      Children c;
+      Data data;
+
+    case (FCore.N(name, id, p, c, data))
+      equation
+        // copy children
+        c = copyTree(c);
+        // create node copy
+        n = FCore.N(name, id, p, c, data);
+        r = toRef(n);
+      then
+        r;
+
+  end match;
+end copy;
+
+protected function copyTree
+"@author: adrpo
+ copy a node entire subtree"
+  input Children inChildren;
+  output Children outChildren;
+algorithm
+  outChildren := matchcontinue(inChildren)
+    local
+      Integer h;
+      Option<AvlTree> l, r;
+      Option<AvlTreeValue> v;
+      Graph g;
+      Ref ref;
+
+    // tree
+    case (FCore.CAVLTREENODE(v, h, l, r))
+      equation
+        v = copyTreeValueOpt(v);
+        l = copyTreeOpt(l);
+        r = copyTreeOpt(r);
+      then
+        FCore.CAVLTREENODE(v, h, l, r);
+
+  end matchcontinue;
+end copyTree;
+
+protected function copyTreeOpt
+"@author: adrpo
+ copy a node entire subtree"
+  input Option<AvlTree> inTreeOpt;
+  output Option<AvlTree> outTreeOpt;
+algorithm
+  outTreeOpt := match(inTreeOpt)
+    local
+      Ref ref;
+      Name name;
+      Integer h;
+      AvlTree t;
+      Graph g;
+
+    // empty tree
+    case (NONE()) then NONE();
+    // some tree
+    case (SOME(t))
+      equation
+        t = copyTree(t);
+      then
+        SOME(t);
+
+  end match;
+end copyTreeOpt;
+
+protected function copyTreeValueOpt
+"@author: adrpo
+ copy a tree value"
+  input Option<AvlTreeValue> inTreeValueOpt;
+  output Option<AvlTreeValue> outTreeValueOpt;
+algorithm
+  outTreeValueOpt := match(inTreeValueOpt)
+    local
+      Ref ref;
+      Name name;
+      AvlTreeValue v;
+      Graph g;
+
+    // empty value
+    case (NONE()) then NONE();
+    // some value
+    case (SOME(FCore.CAVLTREEVALUE(name, ref)))
+      equation
+        ref = copyRefNoUpdate(ref);
+      then
+        SOME(FCore.CAVLTREEVALUE(name, ref));
+
+  end match;
+end copyTreeValueOpt;
+
+public function getElement
+"@author: adrpo
+ get element from the node data"
+  input Node inNode;
+  output SCode.Element outElement;
+algorithm
+  outElement := match(inNode)
+    local
+      SCode.Element e;
+    case (FCore.N(data = FCore.CL(e = e))) then e;
+    case (FCore.N(data = FCore.CO(e = e))) then e;
+  end match;
+end getElement;
+
+public function getElementFromRef
+"@author: adrpo
+ get element from the ref"
+  input Ref inRef;
+  output SCode.Element outElement;
+algorithm
+  outElement := getElement(fromRef(inRef));
+end getElementFromRef;
+
+public function isImplicitRefName
+"returns true if the node ref is a for-loop scope or a valueblock scope.
+ This is indicated by the name of the frame."
+  input Ref r;
+  output Boolean b;
+algorithm
+  b := matchcontinue r
+
+    case _
+      equation
+        false = isRefTop(r);
+      then
+        FCore.isImplicitScope(refName(r));
+
+    else false;
+
+  end matchcontinue;
+end isImplicitRefName;
+
+public function refInstVar
+"@author: adrpo
+ get the DAE.Var from the child node named itNodeName of this reference"
+  input Ref inRef;
+  output DAE.Var v;
+protected
+  Ref r;
+algorithm
+  r := refInstance(inRef);
+  FCore.IT(i = v) := refData(r);
+end refInstVar;
+
+public function refInstance
+  input Ref inRef;
+  output Ref r;
+algorithm
+  r := child(inRef, itNodeName);
+end refInstance;
+
+public function isRefRefUnresolved
+  input Ref inRef;
+  output Boolean b;
+algorithm
+  b := matchcontinue(inRef)
+
+    case (_)
+      equation
+        _ = refRef(inRef); // node exists
+        b = List.isEmpty(refRefTargetScope(inRef)); // with non empty scope
+      then
+        b;
+
+    else true;
+
+  end matchcontinue;
+end isRefRefUnresolved;
+
+public function isRefRefResolved
+  input Ref inRef;
+  output Boolean b;
+algorithm
+  b := not isRefRefUnresolved(inRef);
+end isRefRefResolved;
+
+public function refRef
+  input Ref inRef;
+  output Ref r;
+algorithm
+  r := child(inRef, refNodeName);
+end refRef;
+
+public function refRefTargetScope
+  input Ref inRef;
+  output Scope sc;
+protected
+  Ref r;
+algorithm
+  r := refRef(inRef);
+  sc := targetScope(fromRef(r));
+end refRefTargetScope;
+
+public function refImport
+  input Ref inRef;
+  output Ref r;
+algorithm
+  r := child(inRef, imNodeName);
+end refImport;
+
+public function importTable
+"returns the import table from a IM node"
+  input Node inNode;
+  output ImportTable it;
+algorithm
+  it := match(inNode)
+    case FCore.N(data = FCore.IM(i = it)) then it;
+  end match;
+end importTable;
+
+public function mkExtendsName
+  input Absyn.Path inPath;
+  output Name outName;
+algorithm
+  outName := extendsPrefix +& Absyn.pathString(inPath);
+end mkExtendsName;
 
 // ************************ AVL Tree implementation ***************************
 // ************************ AVL Tree implementation ***************************
@@ -2237,7 +3029,7 @@ algorithm
       Option<AvlTreeValue> value;
       Option<AvlTree> left,right;
       list<Option<AvlTree>> rest;
-    case ({},_) then acc;
+    case ({},_) then listReverse(acc);
     case (SOME(FCore.CAVLTREENODE(value=value,left=left,right=right))::rest,_)
       then getAvlTreeValues(left::right::rest,List.consOption(value,acc));
     case (NONE()::rest,_) then getAvlTreeValues(rest,acc);
@@ -2262,6 +3054,7 @@ algorithm
   avlTreeValues := getAvlTreeValues({SOME(inAvlTree)}, {});
   outAvlValues := List.map(avlTreeValues, getAvlValue);
 end getAvlValues;
+
 
 // ************************ END AVL Tree implementation ***************************
 // ************************ END AVL Tree implementation ***************************

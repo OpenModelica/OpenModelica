@@ -344,10 +344,7 @@ public function isEmpty
   input list<ElementType> inList;
   output Boolean outIsEmpty;
 algorithm
-  outIsEmpty := match(inList)
-    case ({}) then true;
-    else false;
-  end match;
+  outIsEmpty := listEmpty(inList);
 end isEmpty;
 
 public function isNotEmpty

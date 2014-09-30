@@ -39,7 +39,7 @@ encapsulated package GlobalScript
 
 public import Absyn;
 public import DAE;
-public import Env;
+public import FCore;
 public import Global;
 public import SCode;
 public import Values;
@@ -61,6 +61,8 @@ public constant Integer RT_PROFILER2=21;
 public constant Integer RT_CLOCK_EXECSTAT_JACOBIANS=22;
 public constant Integer RT_CLOCK_USER_RESERVED = 23;
 public constant Integer RT_CLOCK_EXECSTAT_HPCOM_MODULES = 24;
+public constant Integer RT_CLOCK_SHOW_STATEMENT = 25;
+public constant Integer RT_CLOCK_FINST = 26;
 public constant list<Integer> buildModelClocks = {RT_CLOCK_BUILD_MODEL,RT_CLOCK_SIMULATE_TOTAL,RT_CLOCK_TEMPLATES,RT_CLOCK_LINEARIZE,RT_CLOCK_SIMCODE,RT_CLOCK_BACKEND,RT_CLOCK_FRONTEND};
 
 public
@@ -123,7 +125,7 @@ uniontype InstantiatedClass "- Instantiated Class"
   record INSTCLASS
     Absyn.Path qualName "qualName ;  The F.Q.name of the inst:ed class" ;
     DAE.DAElist daeElementLst "daeElementLst ; The list of DAE elements" ;
-    Env.Env env "env ; The env of the inst:ed class" ;
+    FCore.Graph env "env ; The env of the inst:ed class" ;
   end INSTCLASS;
 
 end InstantiatedClass;

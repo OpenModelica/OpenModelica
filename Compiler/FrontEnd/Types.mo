@@ -288,6 +288,7 @@ public function isSimpleType
   output Boolean b;
 algorithm
   b := match (inType)
+    local DAE.Type t;
     case (DAE.T_REAL(varLst = _)) then true;
     case (DAE.T_INTEGER(varLst = _)) then true;
     case (DAE.T_STRING(varLst = _)) then true;
@@ -295,6 +296,7 @@ algorithm
     // BTH
     case (DAE.T_CLOCK(varLst = _)) then true;
     case (DAE.T_ENUMERATION(path = _)) then true;
+    case (DAE.T_SUBTYPE_BASIC(complexType = t)) then isSimpleType(t);
     else false;
   end match;
 end isSimpleType;
@@ -305,8 +307,10 @@ public function isSimpleNumericType
   output Boolean b;
 algorithm
   b := match (inType)
+    local DAE.Type t;
     case (DAE.T_REAL(varLst = _)) then true;
     case (DAE.T_INTEGER(varLst = _)) then true;
+    case (DAE.T_SUBTYPE_BASIC(complexType = t)) then isSimpleNumericType(t);
     else false;
   end match;
 end isSimpleNumericType;
@@ -1947,6 +1951,7 @@ algorithm
 
     case(DAE.T_SUBTYPE_BASIC(ci,varlst,ty,ec,ts),d)
       equation
+        true = List.isNotEmpty(getDimensions(ty));
         ty_1 = liftArrayRight(ty,d);
       then
         DAE.T_SUBTYPE_BASIC(ci,varlst,ty_1,ec,ts);
@@ -2003,14 +2008,18 @@ public function arrayElementType "This function turns an array into the element 
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType := match (inType)
+  outType := matchcontinue (inType)
     local Type ty;
 
     case (DAE.T_ARRAY(ty = ty)) then arrayElementType(ty);
-    case (DAE.T_SUBTYPE_BASIC(complexType = ty)) then arrayElementType(ty);
+    case (DAE.T_SUBTYPE_BASIC(complexType = ty))
+      equation
+        true = List.isNotEmpty(getDimensions(ty));
+      then
+        arrayElementType(ty);
     else inType;
 
-  end match;
+  end matchcontinue;
 end arrayElementType;
 
 public function setArrayElementType
@@ -3836,6 +3845,8 @@ algorithm
       then
         DAE.T_ARRAY(t_1,dims,DAE.emptyTypeSource);
 
+    // do NOT simplify out equality constraint
+    // case (DAE.T_SUBTYPE_BASIC(complexType = t, equalityConstraint = SOME(_))) then simplifyType(t);
     case (DAE.T_SUBTYPE_BASIC(complexType = t)) then simplifyType(t);
 
     case (DAE.T_INTEGER(source = _)) then DAE.T_INTEGER_DEFAULT;

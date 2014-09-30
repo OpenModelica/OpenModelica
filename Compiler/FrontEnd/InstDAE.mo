@@ -43,7 +43,8 @@ encapsulated package InstDAE
 public import Absyn;
 public import ClassInf;
 public import DAE;
-public import Env;
+public import FCore;
+public import FGraph;
 public import InnerOuter;
 public import SCode;
 
@@ -204,7 +205,7 @@ algorithm
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_STRING_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
     case (_,DAE.T_ENUMERATION(index = SOME(_)),_,_,_,_,_,_,_,_,_,_,_,_,_)
-      then DAE.emptyDae;
+    then DAE.emptyDae;
 
     // We should not declare each enumeration value of an enumeration when instantiating,
     // e.g Myenum my !=> constant EnumType my.enum1,... {DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)}
@@ -216,17 +217,17 @@ algorithm
 
      // complex type that is ExternalObject
     case (vn, ty as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
-      equation
-        finst_dims = List.flatten(inst_dims);
+       equation
+         finst_dims = List.flatten(inst_dims);
       then
       DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
     // instantiation of complex type extending from basic type
     case (vn,DAE.T_SUBTYPE_BASIC(complexClassType = _,complexType = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_)
       equation
-        (_,dae_var_attr) = InstBinding.instDaeVariableAttributes(Env.emptyCache(),Env.emptyEnv, DAE.NOMOD(), tp, {});
+        (_,dae_var_attr) = InstBinding.instDaeVariableAttributes(FCore.emptyCache(),FGraph.empty(), DAE.NOMOD(), tp, {});
         dae = daeDeclare2(vn,tp,ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,source,declareComplexVars);
-      then dae;
+    then dae;
 
     // array that extends basic type
     case (vn,DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(integer = _)},ty = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_)
@@ -240,7 +241,7 @@ algorithm
         false = Config.splitArrays();
         dae = daeDeclare2(vn, tp, ct, kind, dir, daePrl, prot,e, inst_dims, start, dae_var_attr,comment,io,source,declareComplexVars);
       then
-      dae;
+        dae;
 
     // if arrays are expanded and dimension is unknown, report an error
     case (vn,DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = _),_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -250,14 +251,14 @@ algorithm
         info = DAEUtil.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {s}, info);
       then
-      fail();
+        fail();
 
     // Complex/Record components, only if declareComplexVars is true
     case(vn,ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,true)
       equation
         finst_dims = List.flatten(inst_dims);
       then
-      DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
+        DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
     // MetaModelica extensions
     case (vn,tty as DAE.T_FUNCTION(funcArg = _),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
@@ -266,7 +267,7 @@ algorithm
         path = ComponentReference.crefToPath(vn);
         ty = Types.setTypeSource(tty,Types.mkTypeSource(SOME(path)));
       then
-      DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
+        DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
     // MetaModelica extension
     case (vn,ty,ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
@@ -275,16 +276,16 @@ algorithm
         true = Types.isBoxedType(ty);
         finst_dims = List.flatten(inst_dims);
       then
-      DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
+        DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
     /*----------------------------*/
 
     case (_,ty,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Types.isBoxedType(ty);
       then
-      fail();
+        fail();
 
-      else DAE.emptyDae;
+    else DAE.emptyDae;
   end matchcontinue;
 end daeDeclare2;
 

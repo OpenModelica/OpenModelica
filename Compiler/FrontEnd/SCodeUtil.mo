@@ -93,7 +93,7 @@ algorithm
         sp = listReverse(spAbsyn);
 
         // adrpo: note that WE DO NOT NEED to add initial functions to the program
-        //        as they are already part of the initialEnv done by Builtin.initialEnv
+        //        as they are already part of the initialEnv done by Builtin.initialGraph
       then
         sp;
   end match;
@@ -200,7 +200,7 @@ algorithm
       list<Absyn.Annotation> aann;
       Option<SCode.Annotation> ann;
 
-    case (Absyn.PARTS(classParts = parts,ann=aann, comment = cmtString),_,_)
+  case (Absyn.PARTS(classParts = parts,ann=aann, comment = cmtString),_,_)
       equation
         els = translateClassdefElements(parts);
         cmt = translateCommentList(aann,cmtString);
@@ -1086,9 +1086,9 @@ algorithm
 
     case(Absyn.NAMEDARG(name,Absyn.REAL(s))::_,arg)
       equation
-        true = name ==& arg;
+      true = name ==& arg;
         r = System.stringReal(s);
-      then SOME(r);
+    then SOME(r);
     case({},_) then NONE();
     case(_::args,arg) then translateDefineunitParam2(args,arg);
   end matchcontinue;
@@ -2690,5 +2690,27 @@ algorithm
       then ();
   end match;
 end checkTypeSpec;
+
+public function mergeDimensions
+"@author: adrpo
+ redeclare T x where the original type has array dimensions
+ but the redeclare doesn't. Keep the original array dimensions then"
+  input SCode.Attributes fromRedeclare;
+  input SCode.Attributes fromOriginal;
+  output SCode.Attributes result;
+algorithm
+  result := matchcontinue(fromRedeclare,fromOriginal)
+    local
+      Absyn.ArrayDim ad1, ad2;
+      SCode.ConnectorType ct1, ct2;
+      SCode.Parallelism p1, p2;
+      SCode.Variability v1, v2;
+      Absyn.Direction d1, d2;
+
+    case(SCode.ATTR(ad1 as {}, ct1, p1, v1, d1), SCode.ATTR(ad2, ct2, p2, v2, d2)) then SCode.ATTR(ad2, ct1, p1, v1, d1);
+    else fromRedeclare;
+
+  end matchcontinue;
+end mergeDimensions;
 
 end SCodeUtil;

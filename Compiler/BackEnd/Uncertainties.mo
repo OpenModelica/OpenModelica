@@ -35,7 +35,7 @@ public import Absyn;
 public import BackendDAE;
 public import BackendVarTransform;
 public import DAE;
-public import Env;
+public import FCore;
 public import GlobalScript;
 public import HashTable;
 public import Values;
@@ -84,13 +84,13 @@ end AliasSet;
 
 
 public function modelEquationsUC
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input String outputFileIn;
   input Boolean dumpSteps;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 
@@ -101,8 +101,8 @@ algorithm
       String outputFile,resstr;
 
       DAE.DAElist dae;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph graph;
       Absyn.Program p;
 
       BackendDAE.BackendDAE dlow,dlow_1;
@@ -129,15 +129,15 @@ algorithm
       String outStringA,outStringB,outString,description;
       list<Option<DAE.Distribution>> distributions;
 
-    case (cache,env,_,(st as GlobalScript.SYMBOLTABLE(ast = p)),outputFile,_)
+    case (cache,graph,_,(st as GlobalScript.SYMBOLTABLE(ast = p)),outputFile,_)
       equation
         //print("Initiating\n");
         Print.clearBuf();
 
-        (dae,cache,env) = flattenModel(className,p,cache);
+        (dae,cache,graph) = flattenModel(className,p,cache);
         description = DAEUtil.daeDescription(dae);
         //print("- Flatten ok\n");
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,outputFile));
+        dlow = BackendDAECreate.lower(dae,cache,graph,BackendDAE.EXTRA_INFO(description,outputFile));
         //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),NONE());
         (dlow_1) = BackendDAEUtil.getSolvedSystem(dlow, SOME({"removeAllSimpleEquations","removeUnusedVariables","removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),SOME({""}));
         //print("* Lowered Ok \n");
@@ -635,29 +635,29 @@ end isApproximatedEquation3;
 protected function flattenModel
   input Absyn.Path className;
   input Absyn.Program p;
-  input Env.Cache icache;
+  input FCore.Cache icache;
   output DAE.DAElist daeOut;
-  output Env.Cache cacheOut;
-  output Env.Env envOut;
+  output FCore.Cache cacheOut;
+  output FCore.Graph graphOut;
 algorithm
-(daeOut,cacheOut,envOut):=matchcontinue(className,p,icache)
+(daeOut,cacheOut,graphOut):=matchcontinue(className,p,icache)
   local
     list<SCode.Element> p_1;
     Absyn.Program ptot;
     DAE.DAElist dae;
-    Env.Env env;
+    FCore.Graph graph;
     Real timeFrontend;
     String resstr;
-    Env.Cache cache;
+    FCore.Cache cache;
   case(_,_,_)
     equation
       System.realtimeTick(GlobalScript.RT_CLOCK_UNCERTAINTIES);
       p_1 = SCodeUtil.translateAbsyn2SCode(p);
-      (cache,env,_,dae) = Inst.instantiateClass(icache,InnerOuter.emptyInstHierarchy,p_1,className);
+      (cache,graph,_,dae) = Inst.instantiateClass(icache,InnerOuter.emptyInstHierarchy,p_1,className);
       _ = System.realtimeTock(GlobalScript.RT_CLOCK_UNCERTAINTIES);
       System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
-      dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
-    then (dae,cache,env);
+      dae = DAEUtil.transformationsBeforeBackend(cache,graph,dae);
+    then (dae,cache,graph);
   else
       equation
         resstr = Absyn.pathStringNoQual(className);
@@ -2038,8 +2038,8 @@ algorithm
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect";
     list<DAE.Constraint> constrs;
     list<DAE.ClassAttributes> clsAttrs;
-    Env.Cache cache;
-    Env.Env env;
+    FCore.Cache cache;
+    FCore.Graph graph;
     DAE.FunctionTree funcs;
     BackendDAE.EventInfo eventInfo "eventInfo";
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
@@ -2061,10 +2061,10 @@ algorithm
 
     case(BackendDAE.DAE(systList,
       shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,
-                                   removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,cache=cache,env=env,
+                                   removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,cache=cache,graph=graph,
                                    functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs,info=ei)),_,true)
     equation
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,eqns,removedEqs,constrs,clsAttrs,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs,ei);
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,eqns,removedEqs,constrs,clsAttrs,cache,graph,funcs,eventInfo,extObjClasses,backendDAEType,symjacs,ei);
     then
        BackendDAE.DAE(systList,shared);
 
@@ -2102,8 +2102,8 @@ algorithm
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect";
     list<DAE.Constraint> constrs;
     list<DAE.ClassAttributes> clsAttrs;
-    Env.Cache cache;
-    Env.Env env;
+    FCore.Cache cache;
+    FCore.Graph graph;
     DAE.FunctionTree funcs;
     BackendDAE.EventInfo eventInfo "eventInfo";
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
@@ -2116,13 +2116,13 @@ algorithm
     case(BackendDAE.DAE(
       (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind))::systList,
       (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,cache=cache,env=env,
+                                   removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,cache=cache,graph=graph,
                                    functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs,info=ei))),_,_,_)
     equation
        orderedVars = BackendVariable.listVar1(replaceVars(BackendVariable.varList(orderedVars),repl,func,replaceVariables));
        (orderedEqs,_) = BackendVarTransform.replaceEquationsArr(orderedEqs,repl,NONE());
        syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind);
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs,ei);
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,graph,funcs,eventInfo,extObjClasses,backendDAEType,symjacs,ei);
     then
        BackendDAE.DAE(syst::systList,shared);
 
@@ -2345,8 +2345,8 @@ algorithm
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect";
     list<DAE.Constraint> constrs;
     list<DAE.ClassAttributes> clsAttrs;
-    Env.Cache cache;
-    Env.Env env;
+    FCore.Cache cache;
+    FCore.Graph graph;
     DAE.FunctionTree funcs;
     BackendDAE.EventInfo eventInfo "eventInfo";
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
@@ -2355,10 +2355,10 @@ algorithm
     BackendDAE.ExtraInfo ei;
 
     case(BackendDAE.DAE(systList,(shared as BackendDAE.SHARED(externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,eventInfo=eventInfo,cache=cache,env=env,
+                                   removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,eventInfo=eventInfo,cache=cache,graph=graph,
                                    functionTree=funcs,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs,info=ei))),knownVars)
     equation
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs,ei);
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,graph,funcs,eventInfo,extObjClasses,backendDAEType,symjacs,ei);
     then
        BackendDAE.DAE(systList,shared);
 

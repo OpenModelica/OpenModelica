@@ -41,7 +41,7 @@ encapsulated package DAEUtil
 public import Absyn;
 public import ClassInf;
 public import DAE;
-public import Env;
+public import FCore;
 public import SCode;
 public import Values;
 public import ValuesUtil;
@@ -240,10 +240,10 @@ algorithm
       then SOME(DAE.VAR_ATTR_INT(e1,min,max,e2,e3,unc,distOption,SOME(bindExp),ip,fn,so));
 
     case (_,SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,_,ip,fn,so)))
-      then SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,SOME(bindExp),ip,fn,so));
+    then SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,SOME(bindExp),ip,fn,so));
 
     case (_,SOME(DAE.VAR_ATTR_STRING(e1,e2,_,ip,fn,so)))
-      then SOME(DAE.VAR_ATTR_STRING(e1,e2,SOME(bindExp),ip,fn,so));
+    then SOME(DAE.VAR_ATTR_STRING(e1,e2,SOME(bindExp),ip,fn,so));
 
     case (_,SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,max,e2,e3,_,ip,fn,so)))
       then SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,max,e2,e3,SOME(bindExp),ip,fn,so));
@@ -718,13 +718,13 @@ Author: BZ, returns a list of optional exp, {opt<Min> opt<Max} "
   output list<Option<DAE.Exp>> oExps;
 algorithm
   oExps := match(inVariableAttributesOption)
-    local
-      Option<DAE.Exp> e1,e2;
+  local
+    Option<DAE.Exp> e1,e2;
 
     case(SOME(DAE.VAR_ATTR_ENUMERATION(min = e1, max = e2))) then {e1, e2};
     case(SOME(DAE.VAR_ATTR_INT(min = e1, max = e2))) then {e1, e2};
     case(SOME(DAE.VAR_ATTR_REAL(min = e1, max = e2))) then {e1, e2};
-    else {};
+  else {};
 
   end match;
 end getMinMax;
@@ -735,19 +735,19 @@ public function getMinMaxValues
   output Option<DAE.Exp> outMaxValue;
 algorithm
   (outMinValue, outMaxValue) := match(inVariableAttributesOption)
-    local
-      Option<DAE.Exp> minValue, maxValue;
+  local
+    Option<DAE.Exp> minValue, maxValue;
 
     case(SOME(DAE.VAR_ATTR_ENUMERATION(min = minValue, max = maxValue)))
-      then (minValue, maxValue);
+  then (minValue, maxValue);
 
     case(SOME(DAE.VAR_ATTR_INT(min = minValue, max = maxValue)))
-      then (minValue, maxValue);
+  then (minValue, maxValue);
 
     case(SOME(DAE.VAR_ATTR_REAL(min = minValue, max = maxValue)))
-      then (minValue, maxValue);
+  then (minValue, maxValue);
 
-    else (NONE(), NONE());
+  else (NONE(), NONE());
   end match;
 end getMinMaxValues;
 
@@ -919,9 +919,9 @@ algorithm
     case (SOME(DAE.VAR_ATTR_INT(q,min,max,_,f,unc,distOpt,eb,ip,fn,so)),_)
       then SOME(DAE.VAR_ATTR_INT(q,min,max,SOME(start),f,unc,distOpt,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_BOOL(q,_,f,eb,ip,fn,so)),_)
-      then SOME(DAE.VAR_ATTR_BOOL(q,SOME(start),f,eb,ip,fn,so));
+    then SOME(DAE.VAR_ATTR_BOOL(q,SOME(start),f,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_STRING(q,_,eb,ip,fn,so)),_)
-      then SOME(DAE.VAR_ATTR_STRING(q,SOME(start),eb,ip,fn,so));
+    then SOME(DAE.VAR_ATTR_STRING(q,SOME(start),eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,_,du,eb,ip,fn,so)),_)
       then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,SOME(start),du,eb,ip,fn,so));
     case (NONE(),_)
@@ -950,9 +950,9 @@ algorithm
     case (SOME(DAE.VAR_ATTR_INT(q,min,max,_,f,unc,distOpt,eb,ip,fn,so)),_)
       then SOME(DAE.VAR_ATTR_INT(q,min,max,start,f,unc,distOpt,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_BOOL(q,_,f,eb,ip,fn,so)),_)
-      then SOME(DAE.VAR_ATTR_BOOL(q,start,f,eb,ip,fn,so));
+    then SOME(DAE.VAR_ATTR_BOOL(q,start,f,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_STRING(q,_,eb,ip,fn,so)),_)
-      then SOME(DAE.VAR_ATTR_STRING(q,start,eb,ip,fn,so));
+    then SOME(DAE.VAR_ATTR_STRING(q,start,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,_,du,eb,ip,fn,so)),_)
       then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,start,du,eb,ip,fn,so));
     case (NONE(),NONE()) then NONE();
@@ -983,9 +983,9 @@ algorithm
     case (SOME(DAE.VAR_ATTR_INT(q,min,max,s,f,unc,distOpt,eb,ip,fn,_)),_)
       then SOME(DAE.VAR_ATTR_INT(q,min,max,s,f,unc,distOpt,eb,ip,fn,startOrigin));
     case (SOME(DAE.VAR_ATTR_BOOL(q,s,f,eb,ip,fn,_)),_)
-      then SOME(DAE.VAR_ATTR_BOOL(q,s,f,eb,ip,fn,startOrigin));
+    then SOME(DAE.VAR_ATTR_BOOL(q,s,f,eb,ip,fn,startOrigin));
     case (SOME(DAE.VAR_ATTR_STRING(q,s,eb,ip,fn,_)),_)
-      then SOME(DAE.VAR_ATTR_STRING(q,s,eb,ip,fn,startOrigin));
+    then SOME(DAE.VAR_ATTR_STRING(q,s,eb,ip,fn,startOrigin));
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,s,du,eb,ip,fn,_)),_)
       then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,s,du,eb,ip,fn,startOrigin));
     case (NONE(),_)
@@ -1180,9 +1180,9 @@ algorithm
     case (SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,distOpt,eb,_,fn,so)),_)
       then SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,distOpt,eb,SOME(isProtected),fn,so));
     case (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,_,fn,so)),_)
-      then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,SOME(isProtected),fn,so));
+    then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,SOME(isProtected),fn,so));
     case (SOME(DAE.VAR_ATTR_STRING(q,i,eb,_,fn,so)),_)
-      then SOME(DAE.VAR_ATTR_STRING(q,i,eb,SOME(isProtected),fn,so));
+    then SOME(DAE.VAR_ATTR_STRING(q,i,eb,SOME(isProtected),fn,so));
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,_,fn,so)),_)
       then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,SOME(isProtected),fn,so));
     case (NONE(),_)
@@ -1226,9 +1226,9 @@ algorithm
     case (SOME(DAE.VAR_ATTR_INT(q,min,max,ini,_,unc,distOpt,eb,ip,fn,so)),_)
       then SOME(DAE.VAR_ATTR_INT(q,min,max,ini,fixed,unc,distOpt,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_BOOL(q,ini,_,eb,ip,fn,so)),_)
-      then SOME(DAE.VAR_ATTR_BOOL(q,ini,fixed,eb,ip,fn,so));
+    then SOME(DAE.VAR_ATTR_BOOL(q,ini,fixed,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_STRING(q,ini,eb,ip,fn,so)),_)
-      then SOME(DAE.VAR_ATTR_STRING(q,ini,eb,ip,fn,so));
+    then SOME(DAE.VAR_ATTR_STRING(q,ini,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,_,eb,ip,fn,so)),_)
       then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,fixed,eb,ip,fn,so));
   end match;
@@ -1254,12 +1254,12 @@ algorithm
     case (SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,distOpt,eb,ip,_,so)),_)
       then SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,distOpt,eb,ip,SOME(finalPrefix),so));
     case (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,ip,_,so)),_)
-      then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,ip,SOME(finalPrefix),so));
+    then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,ip,SOME(finalPrefix),so));
     // BTH
     case (SOME(DAE.VAR_ATTR_CLOCK(ip,_)),_)
       then SOME(DAE.VAR_ATTR_CLOCK(ip,SOME(finalPrefix)));
     case (SOME(DAE.VAR_ATTR_STRING(q,i,eb,ip,_,so)),_)
-      then SOME(DAE.VAR_ATTR_STRING(q,i,eb,ip,SOME(finalPrefix),so));
+    then SOME(DAE.VAR_ATTR_STRING(q,i,eb,ip,SOME(finalPrefix),so));
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,ip,_,so)),_)
       then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,ip,SOME(finalPrefix),so));
     case (NONE(),_)
@@ -2167,12 +2167,12 @@ public function daeToRecordValue "Transforms a list of elements into a record va
   TODO: This does not work for records inside records.
   For a general approach we need to build an environment from the DAE and then
   instead investigate the variables and lookup their values from the created environment."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
   input Absyn.Path inPath;
   input list<DAE.Element> inElementLst;
   input Boolean inBoolean;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
   output Values.Value outValue;
 algorithm
   (outCache, outValue) := matchcontinue (inCache,inEnv,inPath,inElementLst,inBoolean)
@@ -2188,8 +2188,8 @@ algorithm
       Boolean impl;
       Integer ix;
       DAE.Element el;
-      Env.Cache cache;
-      Env.Env env;
+      FCore.Cache cache;
+      FCore.Graph env;
       DAE.ElementSource source;
       Absyn.Info info;
 
@@ -3049,8 +3049,8 @@ end compareCrefList;
 
 public function evaluateAnnotation "lochel: This is not used.
   evaluates the annotation Evaluate"
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input DAE.DAElist inDAElist;
   output DAE.DAElist outDAElist;
 algorithm
@@ -3059,7 +3059,7 @@ algorithm
       DAE.DAElist dae;
       HashTable2.HashTable ht,pv,ht1;
       list<DAE.Element> elts,elts1,elts2;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (_,_,dae as DAE.DAE(elts))
       equation
         pv = getParameterVars(dae,HashTable2.emptyHashTable());
@@ -3246,14 +3246,14 @@ algorithm
 end evaluateParameter;
 
 protected function evaluateAnnotation2_loop
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input DAE.DAElist inDAElist;
   input HashTable2.HashTable inHt;
   input Integer sizeBefore;
   output list<DAE.Element> outDAElist;
   output HashTable2.HashTable outHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
 protected
   Integer newsize;
 algorithm
@@ -3264,20 +3264,20 @@ end evaluateAnnotation2_loop;
 
 protected function evaluateAnnotation2_loop1
   input Boolean finish;
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input DAE.DAElist inDAElist;
   input HashTable2.HashTable inHt;
   input Integer sizeBefore;
   output list<DAE.Element> outDAElist;
   output HashTable2.HashTable outHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
 algorithm
   (outDAElist,outHt,outCache) := match (finish,inCache,env,inDAElist,inHt,sizeBefore)
     local
       HashTable2.HashTable ht;
       list<DAE.Element> elst;
-      Env.Cache cache;
+      FCore.Cache cache;
     case(true,_,_,DAE.DAE(elst),_,_) then (elst,inHt,inCache);
     else
       equation
@@ -3289,19 +3289,19 @@ end evaluateAnnotation2_loop1;
 
 protected function evaluateAnnotation2
 "evaluates the parameters with bindings parameters with annotation Evaluate"
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input DAE.DAElist inDAElist;
   input HashTable2.HashTable inHt;
   output list<DAE.Element> outDAElist;
   output HashTable2.HashTable outHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
 algorithm
   (outDAElist,outHt,outCache) := matchcontinue (inCache,env,inDAElist,inHt)
     local
       list<DAE.Element> elementLst,elementLst1;
       HashTable2.HashTable ht,ht1;
-      Env.Cache cache;
+      FCore.Cache cache;
     case (_,_,DAE.DAE({}),ht) then ({},ht,inCache);
     case (_,_,DAE.DAE(elementLst=elementLst),ht)
       equation
@@ -3314,15 +3314,15 @@ end evaluateAnnotation2;
 protected function evaluateAnnotation3
 "evaluates the parameters with bindings parameters with annotation Evaluate"
   input DAE.Element iel;
-  input tuple<HashTable2.HashTable,Env.Cache,Env.Env> inHt;
+  input tuple<HashTable2.HashTable,FCore.Cache,FCore.Graph> inHt;
   output DAE.Element oel;
-  output tuple<HashTable2.HashTable,Env.Cache,Env.Env> outHt;
+  output tuple<HashTable2.HashTable,FCore.Cache,FCore.Graph> outHt;
 algorithm
   (oel,outHt) := matchcontinue (iel,inHt)
     local
-      tuple<HashTable2.HashTable,Env.Cache,Env.Env> httpl;
-      Env.Cache cache;
-      Env.Env env;
+      tuple<HashTable2.HashTable,FCore.Cache,FCore.Graph> httpl;
+      FCore.Cache cache;
+      FCore.Graph env;
       list<DAE.Element> rest,sublist,sublist1,newlst;
       HashTable2.HashTable ht,ht1,ht2;
       DAE.ComponentRef cr;
@@ -3366,8 +3366,8 @@ end evaluateAnnotation3;
 
 protected function evaluateAnnotation4
 "evaluates the parameters with bindings parameters with annotation Evaluate"
-  input Env.Cache inCache;
-  input Env.Env env;
+  input FCore.Cache inCache;
+  input FCore.Graph env;
   input DAE.ComponentRef inCr;
   input DAE.Exp inExp;
   input Integer inInteger1;
@@ -3375,7 +3375,7 @@ protected function evaluateAnnotation4
   input HashTable2.HashTable inHt;
   output DAE.Exp outExp;
   output HashTable2.HashTable outHt;
-  output Env.Cache outCache;
+  output FCore.Cache outCache;
 algorithm
   (outExp,outHt,outCache) := matchcontinue (inCache,env,inCr,inExp,inInteger1,inInteger2,inHt)
     local
@@ -3383,7 +3383,7 @@ algorithm
       DAE.Exp e,e1;
       Integer i,j;
       HashTable2.HashTable ht,ht1;
-      Env.Cache cache;
+      FCore.Cache cache;
       Values.Value value;
     case (_,_,cr,e,i,j,ht)
       equation
@@ -3578,15 +3578,18 @@ algorithm
       equation
         lst = avlTreeToList(ft);
         fns = List.mapMap(lst, Util.tuple22, Util.getOption);
+        // fns = List.mapMap(List.select(lst, isValidFunctionEntry), Util.tuple22, Util.getOption);
       then fns;
     case _
       equation
         lst = avlTreeToList(ft);
         lstInvalid = List.select(lst, isInvalidFunctionEntry);
-        str = stringDelimitList(List.map(List.map(lstInvalid, Util.tuple21), Absyn.pathString), ", ");
+        str = stringDelimitList(List.map(List.map(lstInvalid, Util.tuple21), Absyn.pathString), "\n ");
+        str = "\n " +& str +& "\n";
         Error.addMessage(Error.NON_INSTANTIATED_FUNCTION, {str});
+        fns = List.mapMap(List.select(lst, isValidFunctionEntry), Util.tuple22, Util.getOption);
       then
-        fail();
+        fns;
   end matchcontinue;
 end getFunctionList;
 
@@ -3675,6 +3678,11 @@ algorithm
         (daeFunc,extraArg) = traverseDAEFunc(daeFunc,func,extraArg);
         (funcLst,extraArg) = traverseDAEFuncLst(funcLst,func,extraArg);
       then ((p,SOME(daeFunc))::funcLst,extraArg);
+    /*
+    case((p,NONE())::funcLst,_,extraArg)
+      equation
+        (funcLst,extraArg) = traverseDAEFuncLst(funcLst,func,extraArg);
+      then (funcLst,extraArg);*/
     case((p,NONE())::_,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.traverseDAEFuncLst failed: " +& Absyn.pathString(p));
@@ -5948,8 +5956,8 @@ end getDAEDeclsFromValueblocks;
 // end simpleInlineDerEuler;
 
 public function transformationsBeforeBackend
-  input Env.Cache cache;
-  input Env.Env env;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input DAE.DAElist inDAElist;
   output DAE.DAElist outDAElist;
 protected
@@ -5957,7 +5965,7 @@ protected
   HashTable.HashTable ht;
 algorithm
   DAE.DAE(elts) := inDAElist;
-  ht := Env.getEvaluatedParams(cache);
+  ht := FCore.getEvaluatedParams(cache);
   elts := List.map1(elts, makeEvaluatedParamFinal, ht);
   Debug.bcall(Flags.isSet(Flags.PRINT_STRUCTURAL), transformationsBeforeBackendNotification, ht);
   outDAElist := DAE.DAE(elts);
@@ -6109,8 +6117,13 @@ algorithm
       DAE.Function func, fOld;
       list<DAE.Function> funcs;
       DAE.FunctionTree tree;
+      String msg;
 
-    case ({},tree) then tree;
+    case ({},tree)
+      equation
+        //showCacheFuncs(tree);
+      then
+        tree;
 /*
     case (func::funcs,tree)
       equation
@@ -6173,13 +6186,17 @@ algorithm
       DAE.Function func;
       list<DAE.Function> funcs;
       DAE.FunctionTree tree;
+      String msg;
 
+    case ({},tree)
+      equation
+        //showCacheFuncs(tree);
+      then tree;
 
-    case ({},tree) then tree;
     case (func::funcs,tree)
       equation
         true = isExtFunction(func);
-        // print("Add to cache: " +& Absyn.pathString(functionName(func)) +& "\n");
+        // print("Add ext to cache: " +& Absyn.pathString(functionName(func)) +& "\n");
         tree = avlTreeAdd(tree,functionName(func),SOME(func));
       then addDaeExtFunction(funcs,tree);
 
@@ -6187,6 +6204,59 @@ algorithm
 
   end matchcontinue;
 end addDaeExtFunction;
+
+public function getFunctionsInfo
+  input DAE.FunctionTree ft;
+  output list<String> strs;
+algorithm
+  strs := matchcontinue ft
+    local
+      list<tuple<DAE.AvlKey,DAE.AvlValue>> lst;
+
+    case _
+      equation
+        lst = avlTreeToList(ft);
+        strs = List.map(lst, getInfo);
+        strs = List.sort(strs, Util.strcmpBool);
+      then
+        strs;
+  end matchcontinue;
+end getFunctionsInfo;
+
+
+public function getInfo
+  input tuple<DAE.AvlKey,DAE.AvlValue> tpl;
+  output String str;
+algorithm
+  str := matchcontinue tpl
+    local
+      Absyn.Path p;
+    case ((p, NONE()))
+      equation
+        str = Absyn.pathString(p) +& " [invalid]";
+      then
+        str;
+    case ((p, SOME(_)))
+      equation
+        str = Absyn.pathString(p) +& " [valid]  ";
+      then
+        str;
+  end matchcontinue;
+end getInfo;
+
+protected function showCacheFuncs
+  input DAE.FunctionTree tree;
+algorithm
+  _ := matchcontinue(tree)
+    local
+      String msg;
+    case (_)
+      equation
+        msg = stringDelimitList(getFunctionsInfo(tree), "\n  ");
+        print("Cache has: \n  " +& msg +& "\n");
+      then ();
+  end matchcontinue;
+end showCacheFuncs;
 
 public function setAttrVariability "
   Sets the variability attribute in an Attributes record."

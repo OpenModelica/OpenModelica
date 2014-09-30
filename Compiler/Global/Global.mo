@@ -53,16 +53,20 @@ constant Integer builtinEnvIndex = 13;
 constant Integer profilerTime1Index = 14;
 constant Integer profilerTime2Index = 15;
 constant Integer flagsIndex = 16;
-constant Integer builtinFGraphIndex = 17;
+constant Integer builtinGraphIndex = 17;
 constant Integer rewriteRulesIndex = 18;
 
 // indexes in System.tick
-constant Integer backendDAE_fileSequence = 20;
-
-// indexes for jacobian name
-constant Integer backendDAE_jacobianSeq = 21;
-
+// ----------------------
+// temp vars index
 constant Integer tmpVariableIndex = 4;
+// file seq
+constant Integer backendDAE_fileSequence = 20;
+// jacobian name
+constant Integer backendDAE_jacobianSeq = 21;
+// nodeId
+constant Integer fgraph_nextId = 22;
+// ----------------------
 
 public function initialize "Called to initialize global roots (when needed)"
 algorithm
