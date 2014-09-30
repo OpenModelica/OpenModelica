@@ -849,7 +849,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   rt_tick(SIM_TIMER_INIT_XML);
   read_input_xml(&(data->modelData), &(data->simulationInfo));
   rt_accumulate(SIM_TIMER_INIT_XML);
-  
+
   /* initialize static data of mixed/linear/non-linear system solvers */
   initializeMixedSystems(data);
   initializeLinearSystems(data);

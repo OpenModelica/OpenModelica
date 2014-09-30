@@ -212,7 +212,7 @@ int freeNonlinearSystems(DATA *data)
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
 
   infoStreamPrint(LOG_NLS, 1, "free non-linear system solvers");
-  
+
   for(i=0; i<data->modelData.nNonLinearSystems; ++i)
   {
     free(nonlinsys[i].nlsx);

@@ -86,7 +86,7 @@ int freeMixedSystems(DATA *data)
   MIXED_SYSTEM_DATA* system = data->simulationInfo.mixedSystemData;
 
   infoStreamPrint(LOG_NLS, 1, "free mixed system solvers");
-  
+
   for(i=0;i<data->modelData.nMixedSystems;++i)
   {
 
