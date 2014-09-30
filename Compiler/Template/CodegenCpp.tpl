@@ -5,7 +5,8 @@ import CodegenUtil.*;
 // SECTION: SIMULATION TARGET, ROOT TEMPLATE
 
 
-template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
+template translateModel(SimCode simCode, Boolean useFlatArrayNotation) 
+::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   let target  = simulationCodeTarget()
@@ -37,6 +38,7 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
  ""
   // empty result of the top-level template .., only side effects
 end translateModel;
+
 
 template translateFunctions(FunctionCode functionCode)
  "Generates C code and Makefile for compiling and calling Modelica and
@@ -5620,6 +5622,7 @@ template variableType(DAE.Type type)
   case T_INTEGER(__)         then "int"
   case T_BOOL(__)        then "bool"
   case T_ENUMERATION(__) then "int"
+  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then "void*"
 end variableType;
 
 template lastIdentOfPath(Path modelName) ::=
