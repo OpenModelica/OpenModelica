@@ -100,7 +100,7 @@ protected:
         
         LOADERRESULT result;
 
-		PATH math_path = ObjectFactory<CreationPolicy>::_library_path;
+    PATH math_path = ObjectFactory<CreationPolicy>::_library_path;
         PATH math_name(MATH_LIB);
         math_path/=math_name;
 

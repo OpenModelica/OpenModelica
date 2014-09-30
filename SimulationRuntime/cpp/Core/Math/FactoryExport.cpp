@@ -2,7 +2,7 @@
 
 #if defined(__vxworks)
 
-  
+
 
 #elif defined(SIMSTER_BUILD)
 #include <Core/Modelica.h>
@@ -11,7 +11,7 @@
 extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_math(boost::extensions::factory_map & fm)
 {
 
-  
+
 }
 
  #elif defined(OMC_BUILD)
