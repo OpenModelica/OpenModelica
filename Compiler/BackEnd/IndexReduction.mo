@@ -3581,7 +3581,7 @@ algorithm
     case ((i,BackendDAE.SOLVABILITY_CONST()),_,_) then i::iRow;
     case ((i,BackendDAE.SOLVABILITY_PARAMETER(b=true)),_,_) then i::iRow;
 //    case ((i,BackendDAE.SOLVABILITY_PARAMETER(b=false)),_,_) then incidenceMatrixElementElementfromEnhanced2_1(i,vars,iRow);
-//    case ((i,BackendDAE.SOLVABILITY_TIMEVARYING(b=_)),_,_) then incidenceMatrixElementElementfromEnhanced2_1(i,vars,iRow);
+//    case ((i,BackendDAE.SOLVABILITY_LINEAR(b=_)),_,_) then incidenceMatrixElementElementfromEnhanced2_1(i,vars,iRow);
 //    case ((i,BackendDAE.SOLVABILITY_NONLINEAR()),_,_) then incidenceMatrixElementElementfromEnhanced2_1(i,vars,iRow);
 //    case ((i,BackendDAE.SOLVABILITY_NONLINEAR()),_,_) then iRow;
     else iRow;
@@ -5894,8 +5894,8 @@ algorithm
     case BackendDAE.SOLVABILITY_CONST() then 5;
     case BackendDAE.SOLVABILITY_PARAMETER(b=false) then 0;
     case BackendDAE.SOLVABILITY_PARAMETER(b=true) then 50;
-    case BackendDAE.SOLVABILITY_TIMEVARYING(b=false) then 0;
-    case BackendDAE.SOLVABILITY_TIMEVARYING(b=true) then 100;
+    case BackendDAE.SOLVABILITY_LINEAR(b=false) then 0;
+    case BackendDAE.SOLVABILITY_LINEAR(b=true) then 100;
     case BackendDAE.SOLVABILITY_NONLINEAR() then 200;
     case BackendDAE.SOLVABILITY_UNSOLVABLE() then 300;
   end match;

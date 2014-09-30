@@ -2358,7 +2358,7 @@ public function jacobianTypeStr "author: PA
 algorithm
   outString := match (inJacobianType)
     case BackendDAE.JAC_CONSTANT() then "Jacobian Constant";
-    case BackendDAE.JAC_TIME_VARYING() then "Jacobian Time varying";
+    case BackendDAE.JAC_LINEAR() then "Jacobian Linear";
     case BackendDAE.JAC_NONLINEAR() then "Jacobian Nonlinear";
     case BackendDAE.JAC_NO_ANALYTIC() then "No analytic jacobian";
   end match;
@@ -3044,7 +3044,7 @@ algorithm
     case BackendDAE.SOLVABILITY_CONSTONE() then "constone";
     case BackendDAE.SOLVABILITY_CONST() then "const";
     case BackendDAE.SOLVABILITY_PARAMETER(b=b) then "param(" +& boolString(b) +& ")";
-    case BackendDAE.SOLVABILITY_TIMEVARYING(b=b) then "variable(" +& boolString(b) +& ")";
+    case BackendDAE.SOLVABILITY_LINEAR(b=b) then "variable(" +& boolString(b) +& ")";
     case BackendDAE.SOLVABILITY_NONLINEAR() then "nonlinear";
     case BackendDAE.SOLVABILITY_UNSOLVABLE() then "unsolvable";
   end match;
@@ -3756,7 +3756,7 @@ algorithm
         e = listLength(ilst);
     then ((seq,salg,sarr,sce,swe,sie,(e::e_jc,e_jt,e_jn,e_nj),meqsys,teqsys));
 
-    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jac=BackendDAE.FULL_JACOBIAN(SOME(jac)),jacType=BackendDAE.JAC_TIME_VARYING()),(seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e_nj),meqsys,teqsys))
+    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jac=BackendDAE.FULL_JACOBIAN(SOME(jac)),jacType=BackendDAE.JAC_LINEAR()),(seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e_nj),meqsys,teqsys))
       equation
         e = listLength(ilst);
         nnz = listLength(jac);
@@ -3795,7 +3795,7 @@ algorithm
       e = listLength(ilst1);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,(m_se,m_salg,m_sarr,m_sec,(d,e)::me_jc,me_jt,me_jn,me_nj,me_lt,me_nt),teqsys));
 
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=ilst1,jacType=BackendDAE.JAC_TIME_VARYING()),disc_eqns=ilst),(seq,salg,sarr,sce,swe,sie,eqsys,(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj,me_lt,me_nt),teqsys)) equation
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=ilst1,jacType=BackendDAE.JAC_LINEAR()),disc_eqns=ilst),(seq,salg,sarr,sce,swe,sie,eqsys,(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj,me_lt,me_nt),teqsys)) equation
       d = listLength(ilst);
       e = listLength(ilst1);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,(m_se,m_salg,m_sarr,m_sec,me_jc,(d,e)::me_jt,me_jn,me_nj,me_lt,me_nt),teqsys));

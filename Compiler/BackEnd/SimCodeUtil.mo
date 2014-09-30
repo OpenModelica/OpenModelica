@@ -4005,10 +4005,10 @@ algorithm
       then
         (equations_, uniqueEqIndex, itempvars);
 
-    // Time varying jacobian. Linear system of equations that needs to be solved during runtime.
-    case (_, _, v, kv, eqn, BackendDAE.FULL_JACOBIAN(SOME(jac)), BackendDAE.JAC_TIME_VARYING(), _, _, _, _, _)
+    // Time varying linear jacobian. Linear system of equations that needs to be solved during runtime.
+    case (_, _, v, kv, eqn, BackendDAE.FULL_JACOBIAN(SOME(jac)), BackendDAE.JAC_LINEAR(), _, _, _, _, _)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem2 create linear system(time varying jacobian).");
+        Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem2 create linear system with jacobian.");
         ((simVars, _)) = BackendVariable.traverseBackendDAEVars(v, traversingdlowvarToSimvar, ({}, kv));
         simVars = listReverse(simVars);
         (beqs, sources) = BackendDAEUtil.getEqnSysRhs(eqn, v, SOME(inFuncs));

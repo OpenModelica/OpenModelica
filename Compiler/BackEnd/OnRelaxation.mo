@@ -140,7 +140,7 @@ algorithm
     case (_,_,{})
       then (isyst,ishared,false);
     case (_,shared as BackendDAE.SHARED(functionTree=funcs),
-      (BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=BackendDAE.FULL_JACOBIAN(SOME(jac)),jacType=BackendDAE.JAC_TIME_VARYING()))::comps)
+      (BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=BackendDAE.FULL_JACOBIAN(SOME(jac)),jacType=BackendDAE.JAC_LINEAR()))::comps)
       equation
         print("try to relax\n");
           BackendDAEUtil.profilerinit();

@@ -257,7 +257,7 @@ algorithm
       BackendDAE.JacobianType jacType;
 
     case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType)), _, _, _) equation
-      equality(jacType = BackendDAE.JAC_TIME_VARYING());
+      equality(jacType = BackendDAE.JAC_LINEAR());
       Debug.fcall(Flags.TEARING_DUMP, print, "\nCase linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
       true = Flags.isSet(Flags.LINEAR_TEARING);
       // TODO: Remove when cpp runtime ready for doLinearTearing
@@ -269,7 +269,7 @@ algorithm
 
     // tearing of non-linear systems
     case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType)), _, _, _) equation
-      failure(equality(jacType = BackendDAE.JAC_TIME_VARYING()));
+      failure(equality(jacType = BackendDAE.JAC_LINEAR()));
       Debug.fcall(Flags.TEARING_DUMP, print, "\nCase non-linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Jacobian:\n" +& BackendDump.dumpJacobianStr(ojac) +& "\n\n");
       (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType);
@@ -497,10 +497,10 @@ algorithm
         b1 = Debug.bcallret1(b1, unsolvable, rest, false);
       then
         b1;
-    case ((_,BackendDAE.SOLVABILITY_TIMEVARYING(b=false))::rest)
+    case ((_,BackendDAE.SOLVABILITY_LINEAR(b=false))::rest)
       then
         unsolvable(rest);
-    case ((_,BackendDAE.SOLVABILITY_TIMEVARYING(b=true))::rest)
+    case ((_,BackendDAE.SOLVABILITY_LINEAR(b=true))::rest)
       then
         unsolvable(rest);
     case ((_,BackendDAE.SOLVABILITY_NONLINEAR())::rest)
@@ -1169,8 +1169,8 @@ algorithm
     case BackendDAE.SOLVABILITY_CONST() then 5;
     case BackendDAE.SOLVABILITY_PARAMETER(b=false) then 0;
     case BackendDAE.SOLVABILITY_PARAMETER(b=true) then 50;
-    case BackendDAE.SOLVABILITY_TIMEVARYING(b=false) then 0;
-    case BackendDAE.SOLVABILITY_TIMEVARYING(b=true) then 100;
+    case BackendDAE.SOLVABILITY_LINEAR(b=false) then 0;
+    case BackendDAE.SOLVABILITY_LINEAR(b=true) then 100;
     case BackendDAE.SOLVABILITY_NONLINEAR() then 200;
     case BackendDAE.SOLVABILITY_UNSOLVABLE() then 300;
   end match;
@@ -1446,7 +1446,7 @@ algorithm
     case BackendDAE.SOLVABILITY_CONSTONE() then true;
     case BackendDAE.SOLVABILITY_CONST() then true;
     case BackendDAE.SOLVABILITY_PARAMETER(b=b) then b;
-    case BackendDAE.SOLVABILITY_TIMEVARYING(b=b) then false;
+    case BackendDAE.SOLVABILITY_LINEAR(b=b) then false;
     case BackendDAE.SOLVABILITY_NONLINEAR() then false;
     case BackendDAE.SOLVABILITY_UNSOLVABLE() then false;
   end match;
@@ -1621,7 +1621,7 @@ protected function getLinearfromJacType "  author: Frenkel TUD 2012-09"
 algorithm
   linear := match(jacType)
     case (BackendDAE.JAC_CONSTANT()) then true;
-    case (BackendDAE.JAC_TIME_VARYING()) then true;
+    case (BackendDAE.JAC_LINEAR()) then true;
     case (BackendDAE.JAC_NONLINEAR()) then false;
     case (BackendDAE.JAC_NO_ANALYTIC()) then false;
   end match;
@@ -3450,7 +3450,7 @@ algorithm
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
     case ((BackendDAE.EQUATIONSYSTEM(eqns=eqIdcs, vars=vIdcs, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType)),(eqSys,shared,outRunMatching))
       equation
-        equality(jacType = BackendDAE.JAC_TIME_VARYING());
+        equality(jacType = BackendDAE.JAC_LINEAR());
         (comp1,eqSys,outRunMatching) = shuffleTearing(eqIdcs, vIdcs, eqSys, shared,  ojac, jacType);
       then (comp1,(eqSys,shared,true));
     else

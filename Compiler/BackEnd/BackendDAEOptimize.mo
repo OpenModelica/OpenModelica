@@ -3975,7 +3975,7 @@ algorithm
 
       // do not touch linear and constand systems for now
       case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_CONSTANT()), _, _, _) then (comp, inShared);
-      case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_TIME_VARYING()), _, _, _) then (comp, inShared);
+      case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_LINEAR()), _, _, _) then (comp, inShared);
 
       case (BackendDAE.EQUATIONSYSTEM(eqns=residualequations, vars=iterationvarsInts), _, _, _)
         equation
@@ -4683,7 +4683,7 @@ algorithm
         tpl = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.listEquation(eqnlst),countOperationsExp,tpl);
       then
         countOperationstraverseComps(rest,isyst,ishared,tpl);
-    case ((comp as BackendDAE.EQUATIONSYSTEM(jac=jac,jacType=BackendDAE.JAC_TIME_VARYING()))::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
+    case ((comp as BackendDAE.EQUATIONSYSTEM(jac=jac,jacType=BackendDAE.JAC_LINEAR()))::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
       equation
         (eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.getEqnsFromEqSystem(isyst), BackendVariable.daeVars(isyst));
         tpl = addJacSpecificOperations(listLength(eqnlst),inTpl);

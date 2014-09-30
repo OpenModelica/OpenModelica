@@ -574,9 +574,9 @@ uniontype Solvability
   record SOLVABILITY_PARAMETER "Coefficient contains parameters"
     Boolean b "false if the partial derivative is zero";
   end SOLVABILITY_PARAMETER;
-  record SOLVABILITY_TIMEVARYING "Coefficient contains variables, is time varying"
+  record SOLVABILITY_LINEAR "Coefficient contains variables, is time varying"
     Boolean b "false if the partial derivative is zero";
-  end SOLVABILITY_TIMEVARYING;
+  end SOLVABILITY_LINEAR;
   record SOLVABILITY_NONLINEAR "The variable occurs non-linear in the equation." end SOLVABILITY_NONLINEAR;
   record SOLVABILITY_UNSOLVABLE "The variable occurs in the equation, but it is not possible to solve
                      the equation for it." end SOLVABILITY_UNSOLVABLE;
@@ -601,8 +601,8 @@ uniontype JacobianType
   record JAC_CONSTANT "If Jacobian has only constant values, for system
                of equations this means that it can be solved statically." end JAC_CONSTANT;
 
-  record JAC_TIME_VARYING "If Jacobian has time varying parts, like parameters or
-                  algebraic variables" end JAC_TIME_VARYING;
+  record JAC_LINEAR "If Jacobian has time varying parts, like parameters or
+                  algebraic variables" end JAC_LINEAR;
 
   record JAC_NONLINEAR "If Jacobian contains variables that are solved for,
               means that a non-linear system of equations needs to be

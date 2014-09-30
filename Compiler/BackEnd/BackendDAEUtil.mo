@@ -5768,12 +5768,12 @@ algorithm
         (e1,_) = ExpressionSimplify.simplify(e1);
         b = not Expression.isZero(e1);
       then
-       BackendDAE.SOLVABILITY_TIMEVARYING(b);
+       BackendDAE.SOLVABILITY_LINEAR(b);
     case(false,_,_,_,_,_,_)
       equation
         b = not Expression.isZero(e);
       then
-        BackendDAE.SOLVABILITY_TIMEVARYING(b);
+        BackendDAE.SOLVABILITY_LINEAR(b);
     case(true,_,_,_,_,_,_)
       equation
         (e1,_) = Expression.traverseExp(e, replaceVartraverser, kvars);
@@ -5781,17 +5781,17 @@ algorithm
         b = not Expression.isZero(e1);
         b_1 = Expression.isConst(e1);
       then
-       Util.if_(b_1,BackendDAE.SOLVABILITY_PARAMETER(b),BackendDAE.SOLVABILITY_TIMEVARYING(b));
+       Util.if_(b_1,BackendDAE.SOLVABILITY_PARAMETER(b),BackendDAE.SOLVABILITY_LINEAR(b));
     case(_,_,_,_,_,_,_)
       equation
         b = not Expression.isZero(e);
       then
-        BackendDAE.SOLVABILITY_TIMEVARYING(b);
+        BackendDAE.SOLVABILITY_LINEAR(b);
 /*    case(_,_,_,_,_,_,_)
       equation
         BackendDump.debugStrCrefStrExpStr(("Warning cannot calculate solvabilty for",cr," in ",e,"\n"));
       then
-        BackendDAE.SOLVABILITY_TIMEVARYING(true);
+        BackendDAE.SOLVABILITY_LINEAR(true);
 */  end matchcontinue;
 end adjacencyRowEnhanced3;
 
@@ -6214,8 +6214,8 @@ algorithm
     case BackendDAE.SOLVABILITY_CONST() then 5;
     case BackendDAE.SOLVABILITY_PARAMETER(b=false) then 0;
     case BackendDAE.SOLVABILITY_PARAMETER(b=true) then 50;
-    case BackendDAE.SOLVABILITY_TIMEVARYING(b=false) then 0;
-    case BackendDAE.SOLVABILITY_TIMEVARYING(b=true) then 100;
+    case BackendDAE.SOLVABILITY_LINEAR(b=false) then 0;
+    case BackendDAE.SOLVABILITY_LINEAR(b=true) then 100;
     case BackendDAE.SOLVABILITY_NONLINEAR() then 500;
     case BackendDAE.SOLVABILITY_UNSOLVABLE() then 1000;
   end match;
@@ -6224,7 +6224,7 @@ end solvabilityWights;
 public function solvabilityCMP
 "author: Frenkel TUD 2012-05,
   function to compare solvabilities in the way solvabilityA < solvabilityB with
-  solved < constone < const < parameter < timevarying < nonlinear < unsolvable."
+  solved < constone < const < parameter < linear < nonlinear < unsolvable."
   input BackendDAE.Solvability sa;
   input BackendDAE.Solvability sb;
   output Boolean b;
@@ -6244,17 +6244,17 @@ algorithm
     case (BackendDAE.SOLVABILITY_CONST(),BackendDAE.SOLVABILITY_PARAMETER(b=_)) then false;
     case (BackendDAE.SOLVABILITY_PARAMETER(b=_),BackendDAE.SOLVABILITY_PARAMETER(b=_)) then false;
     case (_,BackendDAE.SOLVABILITY_PARAMETER(b=_)) then true;
-    case (BackendDAE.SOLVABILITY_SOLVED(),BackendDAE.SOLVABILITY_TIMEVARYING(b=_)) then false;
-    case (BackendDAE.SOLVABILITY_CONSTONE(),BackendDAE.SOLVABILITY_TIMEVARYING(b=_)) then false;
-    case (BackendDAE.SOLVABILITY_CONST(),BackendDAE.SOLVABILITY_TIMEVARYING(b=_)) then false;
-    case (BackendDAE.SOLVABILITY_PARAMETER(b=_),BackendDAE.SOLVABILITY_TIMEVARYING(b=_)) then false;
-    case (BackendDAE.SOLVABILITY_TIMEVARYING(b=_),BackendDAE.SOLVABILITY_TIMEVARYING(b=_)) then false;
-    case (_,BackendDAE.SOLVABILITY_TIMEVARYING(b=_)) then true;
+    case (BackendDAE.SOLVABILITY_SOLVED(),BackendDAE.SOLVABILITY_LINEAR(b=_)) then false;
+    case (BackendDAE.SOLVABILITY_CONSTONE(),BackendDAE.SOLVABILITY_LINEAR(b=_)) then false;
+    case (BackendDAE.SOLVABILITY_CONST(),BackendDAE.SOLVABILITY_LINEAR(b=_)) then false;
+    case (BackendDAE.SOLVABILITY_PARAMETER(b=_),BackendDAE.SOLVABILITY_LINEAR(b=_)) then false;
+    case (BackendDAE.SOLVABILITY_LINEAR(b=_),BackendDAE.SOLVABILITY_LINEAR(b=_)) then false;
+    case (_,BackendDAE.SOLVABILITY_LINEAR(b=_)) then true;
     case (BackendDAE.SOLVABILITY_SOLVED(),BackendDAE.SOLVABILITY_NONLINEAR()) then false;
     case (BackendDAE.SOLVABILITY_CONSTONE(),BackendDAE.SOLVABILITY_NONLINEAR()) then false;
     case (BackendDAE.SOLVABILITY_CONST(),BackendDAE.SOLVABILITY_NONLINEAR()) then false;
     case (BackendDAE.SOLVABILITY_PARAMETER(b=_),BackendDAE.SOLVABILITY_NONLINEAR()) then false;
-    case (BackendDAE.SOLVABILITY_TIMEVARYING(b=_),BackendDAE.SOLVABILITY_NONLINEAR()) then false;
+    case (BackendDAE.SOLVABILITY_LINEAR(b=_),BackendDAE.SOLVABILITY_NONLINEAR()) then false;
     case (BackendDAE.SOLVABILITY_NONLINEAR(),BackendDAE.SOLVABILITY_NONLINEAR()) then false;
     case (_,BackendDAE.SOLVABILITY_NONLINEAR()) then true;
     case (BackendDAE.SOLVABILITY_UNSOLVABLE(),BackendDAE.SOLVABILITY_UNSOLVABLE()) then false;
@@ -6728,12 +6728,12 @@ algorithm
       equation
         true = jacobianConstant(jac);
         b = rhsConstant(vars,eqns);
-        jactype = Util.if_(b,BackendDAE.JAC_CONSTANT(),BackendDAE.JAC_TIME_VARYING());
-        //print("jac type: " +& Util.if_(b,"JAC_CONSTANT()","JAC_TIME_VARYING()")  +& "\n");
+        jactype = Util.if_(b,BackendDAE.JAC_CONSTANT(),BackendDAE.JAC_LINEAR());
+        //print("jac type: " +& Util.if_(b,"JAC_CONSTANT()","JAC_LINEAR()")  +& "\n");
       then
         (jactype,true);
 
-    case (_,_,SOME(_)) then (BackendDAE.JAC_TIME_VARYING(),false);
+    case (_,_,SOME(_)) then (BackendDAE.JAC_LINEAR(),false);
     case (_,_,NONE()) then (BackendDAE.JAC_NO_ANALYTIC(),false);
   end matchcontinue;
 end analyzeJacobian;

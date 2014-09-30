@@ -636,11 +636,11 @@ public constant Message BACKENDDAEINFO_LOWER = MESSAGE(234, SYMBOLIC(), NOTIFICA
 public constant Message BACKENDDAEINFO_STATISTICS = MESSAGE(235, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("Model statistics after passing the back-end for %s:\n * Number of independent subsystems: %s\n * Number of states: %s\n * Number of discrete variables: %s\n * Number of discrete states: %s\n * Top-level inputs: %s"));
 public constant Message BACKENDDAEINFO_MIXED = MESSAGE(236, SYMBOLIC(), NOTIFICATION(),
-  Util.gettext("Mixed equation statistics:\n * Mixed systems with single equation: %s\n * Mixed systems with array equation: %s\n * Mixed systems with algorithm: %s\n * Mixed systems with complex equation: %s\n * Mixed systems with constant Jacobian: %s\n * Mixed systems with time-varying Jacobian: %s\n * Mixed systems with non-linear Jacobian: %s\n * Mixed systems with analytic Jacobian: %s\n * Mixed systems with linear tearing system: %s\n * Mixed systems with nonlinear tearing system: %s"));
+  Util.gettext("Mixed equation statistics:\n * Mixed systems with single equation: %s\n * Mixed systems with array equation: %s\n * Mixed systems with algorithm: %s\n * Mixed systems with complex equation: %s\n * Mixed systems with constant Jacobian: %s\n * Mixed systems with linear Jacobian: %s\n * Mixed systems with non-linear Jacobian: %s\n * Mixed systems with analytic Jacobian: %s\n * Mixed systems with linear tearing system: %s\n * Mixed systems with nonlinear tearing system: %s"));
 public constant Message BACKENDDAEINFO_STRONGCOMPONENT_STATISTICS = MESSAGE(237, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("Strong component statistics for %s (%s):\n * Single equations (assignments): %s\n * Array equations: %s\n * Algorithm blocks: %s\n * Record equations: %s\n * When equations: %s\n * If-equations: %s\n * Equation systems (linear and non-linear blocks): %s\n * Torn equation systems: %s\n * Mixed (continuous/discrete) equation systems: %s"));
 public constant Message BACKENDDAEINFO_SYSTEMS = MESSAGE(238, SYMBOLIC(), NOTIFICATION(),
-  Util.gettext("Equation system details:\n * Constant Jacobian: %s\n * Time-varying Jacobian (size,density): %s\n * Non-linear Jacobian: %s\n * Without analytic Jacobian: %s"));
+  Util.gettext("Equation system details:\n * Constant Jacobian: %s\n * Linear Jacobian (size,density): %s\n * Non-linear Jacobian: %s\n * Without analytic Jacobian: %s"));
 public constant Message BACKENDDAEINFO_TORN = MESSAGE(239, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("Torn system details:\n * Linear torn systems: %s\n * Non-linear torn systems: %s"));
 public constant Message BACKEND_DAE_TO_MODELICA = MESSAGE(240, SYMBOLIC(), NOTIFICATION(),

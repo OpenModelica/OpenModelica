@@ -396,7 +396,7 @@ algorithm
       equation
         jac = buildLinearJacobian(jacValuesIn);
         //print("Jac:\n" +& BackendDump.dumpJacobianStr(jac) +& "\n");
-        comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,BackendDAE.FULL_JACOBIAN(jac),BackendDAE.JAC_TIME_VARYING());
+        comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,BackendDAE.FULL_JACOBIAN(jac),BackendDAE.JAC_LINEAR());
         //print("the eqs of the sys: "+&stringDelimitList(List.map(varIdcsIn,intString),"\n")+&"\n");
         //print("the vars of the sys: "+&stringDelimitList(List.map(eqIdcsIn,intString),"\n")+&"\n");
         //comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,NONE(),BackendDAE.JAC_NO_ANALYTIC());
