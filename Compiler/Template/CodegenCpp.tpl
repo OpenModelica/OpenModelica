@@ -5,7 +5,7 @@ import CodegenUtil.*;
 // SECTION: SIMULATION TARGET, ROOT TEMPLATE
 
 
-template translateModel(SimCode simCode, Boolean useFlatArrayNotation) 
+template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
 ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
