@@ -1832,7 +1832,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         //Initialize the state vector
         SystemDefaultImplementation::initialize();
         //Instantiate auxiliary object for event handling functionality
-        _event_handling.getCondition =  boost::bind(&<%className%>::getCondition, this, _1);
+        //_event_handling.getCondition =  boost::bind(&<%className%>::getCondition, this, _1);
 
         //Todo: reindex all arrays removed  // arrayReindex(modelInfo,useFlatArrayNotation)
         //Initialize array elements
@@ -3555,8 +3555,8 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     initializeStateVars();
     initializeDerVars();
     <%initFunctions%>
-    _event_handling.initialize(this,<%helpvarlength(simCode)%>,boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::initPreVars, this, _1,_2));
-
+    //_event_handling.initialize(this,<%helpvarlength(simCode)%>,boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::initPreVars, this, _1,_2));
+	_event_handling.initialize(this,<%helpvarlength(simCode)%>);
 
 
     <%initEventHandling%>
