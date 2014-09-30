@@ -3556,7 +3556,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     initializeDerVars();
     <%initFunctions%>
     //_event_handling.initialize(this,<%helpvarlength(simCode)%>,boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::initPreVars, this, _1,_2));
-	_event_handling.initialize(this,<%helpvarlength(simCode)%>);
+  _event_handling.initialize(this,<%helpvarlength(simCode)%>);
 
 
     <%initEventHandling%>
