@@ -39,8 +39,8 @@ currentC(x) = $CURC
 currentS(x) = $CURS
 set key right bottom Left title 'Legend'
 set style line 1 linecolor rgb "red"   pt 1 ps 1
-set style line 2 linecolor rgb "green" pt 1 ps 1
-set style line 3 linecolor rgb "blue"  pt 1 ps 1
+set style line 2 linecolor rgb "blue" pt 1 ps 1
+set style line 3 linecolor rgb "green"  pt 1 ps 1
 plot "${LIB}-trend.csv" using 1:2 title 'Target: $GOAL'   with lines ls 1, \
      "${LIB}-trend.csv" using 1:3 title 'Compile: $CURC'  with lines ls 2, \
      "${LIB}-trend.csv" using 1:4 title 'Simulate: $CURS' with lines ls 3
