@@ -170,7 +170,7 @@ end if;
 outputFormat := if outputFormat == \"default\" then (if referenceExists then \"mat\" else \"empty\") else outputFormat;
 
 if referenceExists then
-  vars := readSimulationResultVars(reference);
+  vars := readSimulationResultVars(reference,readParameters=false);
   variableFilter := sum(stringReplace(stringReplace(s,\"[\",\".\"),\"]\",\".\") + \"|\" for s in vars);
   numCompared := size(vars,1);
 else

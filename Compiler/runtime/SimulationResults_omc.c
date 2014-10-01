@@ -40,9 +40,9 @@
 #include "SimulationResults.c"
 #include "SimulationResultsCmp.c"
 
-void* SimulationResults_readVariables(const char *filename, const char *visvars)
+void* SimulationResults_readVariables(const char *filename, int readParameters)
 {
-  return SimulationResultsImpl__readVars(filename,&simresglob);
+  return SimulationResultsImpl__readVars(filename,readParameters,&simresglob);
 }
 
 extern void* _ValuesUtil_reverseMatrix(void*);

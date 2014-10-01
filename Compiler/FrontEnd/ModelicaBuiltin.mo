@@ -2553,6 +2553,7 @@ end readSimulationResultSize;
 
 function readSimulationResultVars "Returns the variables in the simulation file; you can use val() and plot() commands using these names."
   input String fileName;
+  input Boolean readParameters = true;
   output String[:] vars;
 external "builtin";
 annotation(preferredView="text");

@@ -230,7 +230,7 @@ static int SimulationResultsImpl__readSimulationResultSize(const char *filename,
   }
 }
 
-static void* SimulationResultsImpl__readVars(const char *filename, SimulationResult_Globals* simresglob)
+static void* SimulationResultsImpl__readVars(const char *filename, int readParameters, SimulationResult_Globals* simresglob)
 {
   const char *msg[2] = {"",""};
   void *res;
@@ -241,7 +241,11 @@ static void* SimulationResultsImpl__readVars(const char *filename, SimulationRes
   switch (simresglob->curFormat) {
   case MATLAB4: {
     int i;
-    for (i=simresglob->matReader.nall-1; i>=0; i--) res = mk_cons(mk_scon(simresglob->matReader.allInfo[i].name),res);
+    for (i=simresglob->matReader.nall-1; i>=0; i--) {
+      if (readParameters || !simresglob->matReader.allInfo[i].isParam) {
+        res = mk_cons(mk_scon(simresglob->matReader.allInfo[i].name),res);
+      }
+    }
     return res;
   }
   case PLT: {
@@ -293,7 +297,7 @@ static void* SimulationResultsImpl__readVarsFilterAliases(const char *filename, 
     free(vars);
     return res;
   }
-  default: return SimulationResultsImpl__readVars(filename, simresglob);
+  default: return SimulationResultsImpl__readVars(filename, 0, simresglob);
   }
 }
 

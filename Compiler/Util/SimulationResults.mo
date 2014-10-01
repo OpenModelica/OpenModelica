@@ -50,9 +50,10 @@ end val;
 
 public function readVariables
   input String filename;
+  input Boolean readParameters;
   output list<String> vars;
 
-  external "C" vars=SimulationResults_readVariables(filename) annotation(Library = "omcruntime");
+  external "C" vars=SimulationResults_readVariables(filename,readParameters) annotation(Library = "omcruntime");
 end readVariables;
 
 public function readDataset

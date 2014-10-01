@@ -44,8 +44,9 @@ RML_BEGIN_LABEL(SimulationResults__readVariables)
 {
   rml_sint_t i,size;
   char* filename = RML_STRINGDATA(rmlA0);
+  int readParameters = RML_UNTAGFIXNUM(rmlA1);
 
-  rmlA0 = SimulationResultsImpl__readVars(filename,&simresglob);
+  rmlA0 = SimulationResultsImpl__readVars(filename,readParameters,&simresglob);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
