@@ -186,6 +186,7 @@ SimCodeUtil.mo \
 SynchronousFeatures.mo \
 Tearing.mo \
 Uncertainties.mo \
+UnitCheck.mo \
 XMLDump.mo
 
 GLOBAL = \

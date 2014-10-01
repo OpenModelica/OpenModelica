@@ -914,4 +914,35 @@ algorithm
   end matchcontinue;
 end printList;
 
+
+public function ifcallret2
+"Boolean controlled calling of given functions (2nd/3rd arg).
+  The passed function gets 2 arguments."
+  input Boolean flag;
+  input FuncAB_C func1;
+  input FuncAB_C func2;
+  input Type_a arg1;
+  input Type_b arg2;
+  output Type_c res;
+  partial function FuncAB_C
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    output Type_c outTypeC;
+  end FuncAB_C;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  annotation(__OpenModelica_EarlyInline=true);
+algorithm
+  res := match (flag, func1, func2, arg1, arg2)
+    case (true, _, _, _, _) equation
+      res = func1(arg1, arg2);
+    then res;
+
+    else equation
+      res = func2(arg1, arg2);
+    then res;
+  end match;
+end ifcallret2;
+
 end Debug;

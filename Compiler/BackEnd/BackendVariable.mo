@@ -838,6 +838,63 @@ algorithm
   end match;
 end setVarMinMax;
 
+public function setUnit "author: jhagemann
+  Sets the unit attribute of a variable."
+  input BackendDAE.Var inVar;
+  input DAE.Exp inUnit;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := match (inVar,inUnit)
+    local
+      DAE.ComponentRef a;
+      BackendDAE.VarKind b;
+      DAE.VarDirection c;
+      DAE.VarParallelism prl;
+      BackendDAE.Type d;
+      Option<DAE.Exp> e,min,max;
+      Option<Values.Value> f;
+      list<DAE.Dimension> g;
+      DAE.ElementSource source;
+      DAE.VariableAttributes attr;
+      Option<DAE.VariableAttributes> oattr1;
+      Option<SCode.Comment> s;
+      DAE.ConnectorType ct;
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = NONE(),
+              comment = s,
+              connectorType = ct), _)
+      equation
+        attr = getVariableAttributefromType(d);
+        oattr1 = DAEUtil.setUnitAttr(SOME(attr),inUnit);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = SOME(attr),
+              comment = s,
+              connectorType = ct), _)
+      equation
+        oattr1 = DAEUtil.setUnitAttr(SOME(attr),inUnit);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
+  end match;
+end setUnit;
+
 public function varNominalValue
 "author: Frenkel TUD"
   input BackendDAE.Var inVar;

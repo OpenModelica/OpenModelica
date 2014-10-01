@@ -97,6 +97,7 @@ protected import System;
 protected import SynchronousFeatures;
 protected import Tearing;
 protected import Types;
+protected import UnitCheck;
 protected import Values;
 
 protected
@@ -9098,8 +9099,9 @@ algorithm
                        (BackendDAEOptimize.simplifyIfEquations, "simplifyIfEquations", false),
                        (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange", false),
                        (BackendDAEOptimize.residualForm, "residualForm", false),
-                       (ResolveLoops.resolveLoops, "resolveLoops", false),
-                       (EvaluateFunctions.evalFunctions, "evalFunc", false)
+                       (ResolveLoops.resolveLoops, "resolveLoops",false),
+                       (EvaluateFunctions.evalFunctions, "evalFunc",false),
+                       (UnitCheck.unitChecking, "unitChecking", true)
                        };
   strPreOptModules := getPreOptModulesString();
   strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);

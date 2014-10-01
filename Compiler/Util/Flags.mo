@@ -401,6 +401,13 @@ constant DebugFlag DO_SCODE_DEP = DEBUG_FLAG(117, "doSCodeDep", true,
   Util.gettext("Does scode dependency analysis prior to instantiation. Defaults to true."));
 constant DebugFlag SHOW_INST_CACHE_INFO = DEBUG_FLAG(118, "showInstCacheInfo", false,
   Util.gettext("Prints information about instantiation cache hits and additions. Defaults to false."));
+constant DebugFlag DUMP_UNIT = DEBUG_FLAG(119, "dumpUnits", false,
+  Util.gettext("Dumps all the calculated units."));
+constant DebugFlag DUMP_EQ_UNIT = DEBUG_FLAG(120, "dumpEqInUC", false,
+  Util.gettext("Dumps all equations handled by the unit checker."));
+constant DebugFlag DUMP_EQ_UNIT_STRUCT = DEBUG_FLAG(121, "dumpEqUCStruct", false,
+  Util.gettext("Dumps all the equations handled by the unit checker as tree-structure."));
+
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -524,7 +531,10 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_SYNCHRONOUS,
   STRIP_PREFIX,
   DO_SCODE_DEP,
-  SHOW_INST_CACHE_INFO
+  SHOW_INST_CACHE_INFO,
+  DUMP_UNIT,
+  DUMP_EQ_UNIT,
+  DUMP_EQ_UNIT_STRUCT
 };
 
 // CONFIGURATION FLAGS
@@ -579,6 +589,7 @@ constant Util.TranslatableContent removeSimpleEquationDesc = Util.gettext("Perfo
 public
 constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
+    "unitChecking",
     "evaluateReplaceProtectedFinalEvaluateParameters",
     "simplifyIfEquations",
     "removeEqualFunctionCalls",
@@ -910,6 +921,9 @@ constant ConfigFlag RESHUFFLE = CONFIG_FLAG(58, "reshuffle",
   NONE(), EXTERNAL(), INT_FLAG(1), NONE(),
   Util.gettext("sets tolerance of reshuffling algorithm: 1: conservative, 2: more tolerant, 3 resolve all"));
 
+constant ConfigFlag NEW_UNIT_CHECKING = CONFIG_FLAG(59,
+  "newUnitChecking", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.notrans(""));
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -972,7 +986,8 @@ constant list<ConfigFlag> allConfigFlags = {
   GENERATE_SYMBOLIC_LINEARIZATION,
   INT_ENUM_CONVERSION,
   PROFILING_LEVEL,
-  RESHUFFLE
+  RESHUFFLE,
+  NEW_UNIT_CHECKING
 };
 
 public function new

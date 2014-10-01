@@ -6472,6 +6472,7 @@ algorithm
   end match;
 end expandAlgorithmStmts;
 
+
 // =============================================================================
 // section for preOptModule >>encapsulateWhenConditions<<
 //

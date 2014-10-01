@@ -2673,18 +2673,18 @@ algorithm
   outString :=
   match (inAttr)
     local
-       Option<DAE.Exp> min,max,start,fixed,nominal;
+       Option<DAE.Exp> min,max,start,fixed,nominal,unit;
        Option<Boolean> isProtected,finalPrefix;
        Option<DAE.Distribution> dist;
        Option<DAE.StateSelect> stateSelectOption;
        Option<DAE.Uncertainty> uncertainopt;
        String str;
     case NONE() then "";
-    case SOME(DAE.VAR_ATTR_REAL(min=NONE(),max=NONE(),start=NONE(),fixed=NONE(),nominal=NONE(),stateSelectOption=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE(),uncertainOption=NONE()))
+    case SOME(DAE.VAR_ATTR_REAL(min=NONE(),max=NONE(),start=NONE(),unit=NONE(),fixed=NONE(),nominal=NONE(),stateSelectOption=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE(),uncertainOption=NONE()))
      then "";
-    case SOME(DAE.VAR_ATTR_REAL(min=min,max=max,start=start,fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist,uncertainOption=uncertainopt))
+    case SOME(DAE.VAR_ATTR_REAL(min=min,max=max,start=start,unit=unit,fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist,uncertainOption=uncertainopt))
       equation
-        str = optExpressionString(min,"min") +& optExpressionString(max,"max") +& optExpressionString(start,"start") +& optExpressionString(fixed,"fixed")
+        str = optExpressionString(min,"min") +& optExpressionString(max,"max") +& optExpressionString(start,"start") +& optExpressionString(unit,"unit") +& optExpressionString(fixed,"fixed")
              +& optExpressionString(nominal,"nominal") +& optStateSelectionString(stateSelectOption) +& optBooleanString(isProtected,"protected")
              +& optBooleanString(finalPrefix,"final") +& optDistributionString(dist) +& optUncertainty(uncertainopt);
      then str;

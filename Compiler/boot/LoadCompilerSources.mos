@@ -165,6 +165,7 @@ if true then /* Suppress output */
     "../BackEnd/SynchronousFeatures.mo",
     "../BackEnd/Tearing.mo",
     "../BackEnd/Uncertainties.mo",
+    "../BackEnd/UnitCheck.mo",
     "../BackEnd/XMLDump.mo",
 
   // "Script";
