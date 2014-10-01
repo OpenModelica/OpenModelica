@@ -3527,10 +3527,8 @@ algorithm
         mergeNodeList = iNodeIdx :: parentNodes;
         //print("HpcOmTaskGraph.mergeParentNodes0: mergeNodeList " +& stringDelimitList(List.map(mergeNodeList,intString), ", ") +& "\n");
         //print("HpcOmTaskGraph.mergeParentNodes0: Merging " +& intString(iNodeIdx) +& " with " +& stringDelimitList(List.map(parentNodes,intString), ", ") +& "\n");
-        //(tmpGraph,tmpGraphData) = contractNodesInGraph({mergeNodeList}, iGraph, iGraphData);
-        //(tmpGraph,tmpGraphData) = (iGraph, iGraphData);
         tmpMergedNodes = mergeNodeList :: iMergedNodes;
-        //tmpMergedNodes = mergeParentNodes0(iGraph,iGraphT,iGraphData,iNodeIdx+1,tmpMergedNodes);
+        tmpMergedNodes = mergeParentNodes0(iGraph,iGraphT,iGraphData,listAppend(mergeNodeList,doNotMerge),iNodeIdx+1,tmpMergedNodes);
       then tmpMergedNodes;
     case(_,_,_,_,_,_)
       equation
@@ -3634,19 +3632,32 @@ author: Waurich TUD 2013-07"
   input TaskGraphMeta graphDataIn;
   output TaskGraph graphOut;
   output TaskGraphMeta graphDataOut;
-protected
-  TaskGraph graphTmp;
-  list<Integer> deleteNodes;
-  list<list<Integer>> graphTmpLst;
 algorithm
-  deleteNodes := List.fold1(contractNodes,getMergeSet,graphIn,{}); //removes the last node in the path for every list of contracted paths
-  graphTmp := List.fold(contractNodes,contractNodesInGraph1,graphIn);
-  graphTmpLst := arrayList(graphIn);
-  graphTmpLst := List.map1(graphTmpLst,updateContinuousEntriesInList,List.unique(deleteNodes));
-  graphTmp := listArray(graphTmpLst);
-  (graphTmp,_) := deleteRowInAdjLst(graphTmp,deleteNodes);
-  graphDataOut := getMergedSystemData(graphDataIn,contractNodes);
-  graphOut := graphTmp;
+(graphOut,graphDataOut) := matchcontinue(contractNodes,graphIn,graphDataIn)
+  local
+    TaskGraph graphTmp;
+    TaskGraphMeta graphDataTmp;
+    list<Integer> deleteNodes,contrNodes;
+    list<list<Integer>> graphTmpLst,rest;
+  case({},_,_)
+    then (graphIn,graphDataIn);
+  case(contrNodes::rest,_,_)
+    equation
+      deleteNodes = List.firstN(contrNodes,listLength(contrNodes)-1);//removes the last node in the path for every list of contracted paths
+      graphTmp = contractNodesInGraph1(contrNodes,graphIn);
+      graphTmpLst = arrayList(graphIn);
+      graphTmpLst = List.map1(graphTmpLst,updateContinuousEntriesInList,List.unique(deleteNodes));
+      graphTmp = listArray(graphTmpLst);
+      (graphTmp,_) = deleteRowInAdjLst(graphTmp,deleteNodes);
+      graphDataTmp = getMergedSystemData(graphDataIn,{contrNodes});
+      rest = List.map1(rest,updateContinuousEntriesInList,List.unique(deleteNodes));
+      (graphTmp,graphDataTmp) =  contractNodesInGraph(rest,graphTmp,graphDataTmp);
+    then (graphTmp,graphDataTmp);
+  else
+    equation
+      print("contractNodesInGraph failed!\n");
+    then fail();
+  end matchcontinue;
 end contractNodesInGraph;
 
 protected function contractNodesInGraph1 " function to contract the nodes given in the list to one node, without deleting the rows in the adjacencyLst.
@@ -3725,21 +3736,6 @@ algorithm
         false;
   end matchcontinue;
 end compareListLengthOnTrue;
-
-protected function getMergeSet "get the nodes that have to be deletedfrom the adjacencyLst because they are merged i.e.  all nodes of a path except the first
-author: Waurich TUD 2013-07"
-  input list<Integer> contractNodes;
-  input TaskGraph graphIn;
-  input list<Integer> nodesIn;
-  output list<Integer> nodesOut;
-protected
-  Integer startNode;
-  list<Integer> deleteEntries;
-algorithm
-  startNode := List.last(contractNodes);
-  deleteEntries := List.deleteMember(contractNodes,startNode);
-  nodesOut := listAppend(deleteEntries,nodesIn);
-end getMergeSet;
 
 protected function getMergedSystemData " udpates the taskgraphmetadata for the merged system.
 author:Waurich TUD 2013-07"
