@@ -19,7 +19,8 @@ How to compile on Linux/BSD (all from source)
 
 $ autoconf
 # Skip some pieces of software to ease installation and only compile the base omc executable
-$ ./configure --prefix=/usr/local --without-rml --without-omc --disable-modelica3d
+# If you have a working and compatible omc that is not on the PATH, you can use --with-omc=path/to/omc to speed up compilation
+$ ./configure --prefix=/usr/local --without-rml --disable-modelica3d
 $ make
 $ sudo make install
 
@@ -79,11 +80,11 @@ You need:
     liblpsolve55
       You can now use the version from the Ubuntu repository
         $ sudo apt-get install liblpsolve55-dev
-        
+
       Alternatively you can compile lpsolve yourself:
         Download the library:
          http://www.cs.sunysb.edu/~algorith/implement/lpsolve/distrib/lp_solve_5.5.0.11_source.tar.gz
-        and unpack it, then call in the top folder: 
+        and unpack it, then call in the top folder:
         $ make -f Makefile.Linux
         then copy lpsolve55/liblpsolve55.a to /usr/local/lib
       Note that some versions of lp_solve depends on libsuitesparse-dev, which provides -lcolamd.
