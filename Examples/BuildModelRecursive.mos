@@ -183,6 +183,7 @@ writeFile(\"files/" + s + ".uses\", sum(typeNameString(c) + \"\n\" for c in Open
 // Use twice as many output points as the experiment annotation suggests. Else aim for 5000 points.
 (startTime,stopTime,tolerance,numberOfIntervals,stepSize):=getSimulationOptions("+s+",defaultTolerance="+String(default_tolerance)+",defaultNumberOfIntervals=2500);
 numberOfIntervals := 2*numberOfIntervals;
+alarm("+ulimitOmc+"); // Reset the alarm in case the other parts took a long time (reading simulation results)
 res:=buildModel("+s+",tolerance=tolerance,outputFormat=outputFormat,numberOfIntervals=numberOfIntervals,variableFilter=variableFilter);
 // We built the model fine, so reset the alarm. The simulation executable will also have an alarm, making only result verification a potential to stall.
 alarm(0);
