@@ -193,14 +193,14 @@ static inline void optimizationWithIpopt(OptData*optData){
       AddIpoptNumOption(nlp,"bound_frac", 1e-5);
       AddIpoptNumOption(nlp,"slack_bound_push", 1e-5);
       AddIpoptNumOption(nlp,"constr_mult_init_max", 1e-5);
-    }else
+      AddIpoptStrOption(nlp,"bound_mult_init_method","mu-based");
+    }else{
       AddIpoptStrOption(nlp,"mu_strategy","adaptive");
-
+      AddIpoptStrOption(nlp,"bound_mult_init_method","constant");
+    }
     AddIpoptStrOption(nlp,"fixed_variable_treatment","make_parameter");
     AddIpoptStrOption(nlp,"dependency_detection_with_rhs","yes");
-
     AddIpoptNumOption(nlp,"nu_init",1e-9);
-    AddIpoptStrOption(nlp,"bound_mult_init_method","constant");
     AddIpoptNumOption(nlp,"eta_phi",1e-10);
   }
 
