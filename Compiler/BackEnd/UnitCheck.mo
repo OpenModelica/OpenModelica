@@ -2,7 +2,7 @@
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC), 
- * c/o LinkÃ¶pings universitet, Department of Computer and Information Science, 
+ * c/o LinkÃ¶pings universitet, Department of Computer and Information Science,
  * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
@@ -10,7 +10,7 @@
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
  * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, 
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
  * ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
@@ -130,17 +130,17 @@ protected constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
 //("Gy",         UNIT(1e0, 0, 0, 2,-2, 0, 0, 1)), //Gray
 //("Sv",         UNIT(1e0, 0, 0, 2,-2, 0, 0, 1)), //Sievert=Gray
 //("eV", UNIT(1.60218e-16, 0, 0, 2,-2, 0, 0, 1)), //Elektronenvolt    1, 602...*10^-19 kg*m^2/s^2
-//("R",      UNIT(2.58e-7, 0, 0, 0, 1, 1, 0,-1)), //Röntgen    2, 58*10^-4 C/kg
+//("R",      UNIT(2.58e-7, 0, 0, 0, 1, 1, 0,-1)), //RÃ¶ntgen    2, 58*10^-4 C/kg
   ("1",          UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //1
   ("rad",        UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //rad; displayUnit ="deg"
 //("B",         UNIT(1e-2, 0, 0, 0, 0, 0, 0, 0)), //Bel (dezibel dB)
 //("phon",       UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //Phon
 //("sone",       UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //Sone
 //("sr",         UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //Steradiant=m^2/m^2
-  ("degC",       UNIT(1e0, 0, 0, 0, 0, 0, 1, 0)), //°Celsius
-  ("degF", UNIT(0.55555555555555555555555555555555555555, 0, 0, 0, 0, 0, 1, 0))};//°Fahrenheit
-//("degF", UNIT(5.0 / 9.0, 0, 0, 0, 0, 0, 1, 0, 459.67)), //°Fahrenheit
-//("degC",       UNIT(1e0, 0, 0, 0, 0, 0, 1, 0, 273.15))};//°Celsius
+  ("degC",       UNIT(1e0, 0, 0, 0, 0, 0, 1, 0)), //Â°Celsius
+  ("degF", UNIT(0.55555555555555555555555555555555555555, 0, 0, 0, 0, 0, 1, 0))};//Â°Fahrenheit
+//("degF", UNIT(5.0 / 9.0, 0, 0, 0, 0, 0, 1, 0, 459.67)), //Â°Fahrenheit
+//("degC",       UNIT(1e0, 0, 0, 0, 0, 0, 1, 0, 273.15))};//Â°Celsius
 /*                 fac, mol, cd, m, s, A, K, g*/
 
 // =============================================================================
