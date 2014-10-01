@@ -482,7 +482,7 @@ algorithm
     local
       list<tuple<DAE.ComponentRef, Unit>> lt;
       list<tuple<String, Unit>> ComplexUnits;
-      
+
     case (true, true, true, _, _, _, _)
     then ((inLt, inComplexUnits));
 
@@ -1026,12 +1026,12 @@ algorithm
   then (MASTER({}), (lt, ComplexUnits), {});
 
   //MATRIX
-	case (DAE.MATRIX(ty=_), (lt, ComplexUnits), _)
-	then (MASTER({}), (lt, ComplexUnits), {});
+  case (DAE.MATRIX(ty=_), (lt, ComplexUnits), _)
+  then (MASTER({}), (lt, ComplexUnits), {});
 
   //ARRAY
-	case (DAE.ARRAY(ty=_), (lt, ComplexUnits), _)
-	then (MASTER({}), (lt, ComplexUnits), {});
+  case (DAE.ARRAY(ty=_), (lt, ComplexUnits), _)
+  then (MASTER({}), (lt, ComplexUnits), {});
 
   //CALL
   case (DAE.CALL(expLst=ExpList), (lt, ComplexUnits), _)
@@ -1045,19 +1045,19 @@ algorithm
       (ut, (lt, ComplexUnits), expListList)=insertUnitinEquation(exp1, (lt, ComplexUnits), inUt);
   then (ut, (lt, ComplexUnits), expListList);
 
-	//ICONST
-	case (DAE.ICONST(integer=_), (lt, ComplexUnits), _)
+  //ICONST
+  case (DAE.ICONST(integer=_), (lt, ComplexUnits), _)
   then (MASTER({}), (lt, ComplexUnits) , {});
 
   //BCONST
-	case (DAE.BCONST(bool=_), (lt, ComplexUnits), _)
+  case (DAE.BCONST(bool=_), (lt, ComplexUnits), _)
   then (MASTER({}), (lt, ComplexUnits) , {});
 
   //SCONST
-	case (DAE.SCONST(string=_), (lt, ComplexUnits), _)
+  case (DAE.SCONST(string=_), (lt, ComplexUnits), _)
   then (MASTER({}), (lt, ComplexUnits) , {});
 
-	//RCONST
+  //RCONST
   case (DAE.RCONST(real=_), (lt, ComplexUnits), _)
   then (MASTER({}), (lt, ComplexUnits) , {});
 
@@ -1119,18 +1119,18 @@ end insertUnitinEquation2;
 protected function foldCallArg "help-function for CALL case in function insertUnitinEquation"
   input list<DAE.Exp> inExpList;
   input list<tuple<DAE.ComponentRef, Unit>>  inLt ;
-	input list<tuple<String, Unit>> inComplexUnits;
-	output list<tuple<DAE.ComponentRef, Unit>>  outLt ;
-	output list<tuple<String, Unit>> outComplexUnits;
+  input list<tuple<String, Unit>> inComplexUnits;
+  output list<tuple<DAE.ComponentRef, Unit>>  outLt ;
+  output list<tuple<String, Unit>> outComplexUnits;
   output list<list<tuple<DAE.Exp, Unit>>> outExpListList;
 algorithm
   (outLt, outComplexUnits, outExpListList) := match(inExpList, inLt, inComplexUnits)
     local
-			DAE.Exp exp1;
-			list<DAE.Exp> rest;
-			list<list<tuple<DAE.Exp, Unit>>> expListList, expListList2;
-			list<tuple<DAE.ComponentRef, Unit>> lt;
-			list<tuple<String, Unit>> ComplexUnits;
+      DAE.Exp exp1;
+      list<DAE.Exp> rest;
+      list<list<tuple<DAE.Exp, Unit>>> expListList, expListList2;
+      list<tuple<DAE.ComponentRef, Unit>> lt;
+      list<tuple<String, Unit>> ComplexUnits;
 
     case ({}, _, _)
     then (inLt, inComplexUnits, {});
@@ -1139,7 +1139,7 @@ algorithm
       (_, (lt, ComplexUnits), expListList)=insertUnitinEquation(exp1, (inLt, inComplexUnits), MASTER({}));
       (lt, ComplexUnits, expListList2)=foldCallArg(rest, lt, ComplexUnits);
       expListList=listAppend(expListList, expListList2);
-		then (lt, ComplexUnits, expListList);
+    then (lt, ComplexUnits, expListList);
   end match;
 end foldCallArg;
 
