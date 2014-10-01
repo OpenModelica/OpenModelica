@@ -414,9 +414,9 @@ algorithm
       true = Flags.isSet(Flags.HPCOM);
 
       // either generate code for profiling or for parallel simulation
-      Debug.bcall(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),print,"Deactivate profiling if you want to simulate in parallel.\n");
-      _ = Debug.bcallret2(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),Flags.set,Flags.HPCOM,false,true);
-      true = stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL));
+      //Debug.bcall(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),print,"Deactivate profiling if you want to simulate in parallel.\n");
+      //_ = Debug.bcallret2((not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL))) and (not stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL))),Flags.set,Flags.HPCOM,false,true);
+      //true = stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)) or stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL));
 
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = numProc == 0;
@@ -428,9 +428,9 @@ algorithm
       true = Flags.isSet(Flags.HPCOM);
 
       // either generate code for profiling or for parallel simulation
-      Debug.bcall(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),print,"Deactivate profiling if you want to simulate in parallel.\n");
-      _ = Debug.bcallret2(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),Flags.set,Flags.HPCOM,false,true);
-      true = stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL));
+      //Debug.bcall((not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL))) and (not stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL))),print,"Deactivate profiling if you want to simulate in parallel.\n");
+      //_ = Debug.bcallret2(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),Flags.set,Flags.HPCOM,false,true);
+      //true = stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)) or stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL));
 
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = (numProc > 0);

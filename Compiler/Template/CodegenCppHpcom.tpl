@@ -18,7 +18,7 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
   case SIMCODE(modelInfo = MODELINFO(__), makefileParams= MAKEFILE_PARAMS(__)) then
   let target  = simulationCodeTarget()
   let()= textFile((if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then simulationMainFileAnalyzation(simCode) else simulationMainFile(simCode)), 'OMCpp<%fileNamePrefix%>Main.cpp')
-  let()= textFile(simulationHeaderFile(simCode, Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.h')
+  let()= textFile(simulationHeaderFile(simCode, generateAdditionalIncludes(simCode, Util.isSome(hpcOmMemory)), generateAdditionalProtectedMemberDeclaration(simCode, Util.isSome(hpcOmMemory)), false, Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.h')
   let()= textFile(simulationCppFile(simCode,Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.cpp')
   let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals,false), 'OMCpp<%fileNamePrefix%>Functions.h')
   let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals,externalFunctionIncludes,false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
@@ -56,14 +56,12 @@ case SIMCODE(__) then
 end Update;
 
 // HEADER
-
-template simulationHeaderFile(SimCode simCode, Boolean useFlatArrayNotation)
+template generateAdditionalIncludes(SimCode simCode, Boolean useFlatArrayNotation)
  "Generates code for header file for simulation target."
 ::=
 match simCode
 case SIMCODE(__) then
   <<
-     <%generateHeaderIncludeString(simCode)%>
      #ifdef ANALYZATION_MODE
       #include <boost/shared_ptr.hpp>
       #include <boost/weak_ptr.hpp>
@@ -83,15 +81,10 @@ case SIMCODE(__) then
       typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
      #endif
      <%generateHpcomSpecificIncludes(simCode)%>
-     <%generateClassDeclarationCode(simCode, useFlatArrayNotation)%>
-     #ifdef MEASURE_PAPI
-     #include <papi.h>
-     #define NUM_EVENTS 1
-     #endif
    >>
-end simulationHeaderFile;
+end generateAdditionalIncludes;
 
-template generateClassDeclarationCode(SimCode simCode, Boolean useFlatArrayNotation)
+template generateAdditionalProtectedMemberDeclaration(SimCode simCode, Boolean useFlatArrayNotation)
  "Generates class declarations."
 ::=
 match simCode
@@ -99,83 +92,41 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     let addHpcomFunctionHeaders = getAddHpcomFunctionHeaders(hpcOmSchedule)
     let addHpcomVarHeaders = getAddHpcomVarHeaders(hpcOmSchedule)
     let addHpcomArrayHeaders = getAddHpcomVarArrays(hpcOmMemory)
-
-    let friendclasses = generatefriendAlgloops(listAppend(allEquations,initialEquations),simCode)
-    let algloopsolver = generateAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode )
-    let memberfuncs = generateEquationMemberFuncDecls(allEquations,"evaluate")
-    let conditionvariables =  conditionvariable(zeroCrossings,simCode)
-
-    match modelInfo
-      case MODELINFO(vars=SIMVARS(__)) then
-          let getrealvars = (List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars), 100) |> ls hasindex idx =>
-            <<
-            void getReal_<%idx%>(double* z);
-            void setReal_<%idx%>(const double* z);
-            >>
-            ;separator="\n")
-          let getintvars = (List.partition(listAppend(listAppend(vars.intAlgVars, vars.intParamVars), vars.intAliasVars), 100) |> ls hasindex idx => 'void getInteger_<%idx%>(int* z);';separator="\n")
-          <<
-          class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent, public IStepEvent, public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
-          {
-
-           <%friendclasses%>
-
-          public:
-              <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor,boost::shared_ptr<ISimData>);
-
-              virtual ~<%lastIdentOfPath(modelInfo.name)%>();
-
-               <%generateMethodDeclarationCode(simCode)%>
-             virtual  bool getCondition(unsigned int index);
-             virtual void initPreVars(unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&);
-
-          protected:
-            //Methods:
-            <%getrealvars%>
-            <%getintvars%>
-
-            <%addHpcomFunctionHeaders%>
-
-             bool isConsistent();
-            //Called to handle all  events occured at same time
-            bool handleSystemEvents( bool* events);
-             //Saves all variables before an event is handled, is needed for the pre, edge and change operator
-            void saveAll();
-            void getJacobian(SparseMatrix& matrix);
-
-
-             //Variables:
-             #ifdef __GNUC__
-                #define VARARRAY_ALIGN_PRE
-                #define VARARRAY_ALIGN_POST __attribute__((aligned(0x40)))
-             #else
-                #define VARARRAY_ALIGN_PRE __declspec(align(64))
-                #define VARARRAY_ALIGN_POST
-             #endif
-
-             <%addHpcomArrayHeaders%>
-             <%addHpcomVarHeaders%>
-
-             EventHandling _event_handling;
-             /* <%CodegenCpp.MemberVariable(modelInfo,useFlatArrayNotation)%> */
-
-             <%MemberVariable(modelInfo, hpcOmMemory,useFlatArrayNotation,false)%>
-             <%conditionvariables%>
-
-             Functions* _functions;
-
-
-             boost::shared_ptr<IAlgLoopSolverFactory> _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
-             <%algloopsolver%>
-
-             boost::shared_ptr<ISimData> _simData;
-
-
-
-             <%memberfuncs%>
-           };
-          >>
-end generateClassDeclarationCode;
+    let type = getConfigString(HPCOM_CODE)
+    
+    <<
+    // HPCOM
+    #ifdef __GNUC__
+        #define VARARRAY_ALIGN_PRE
+        #define VARARRAY_ALIGN_POST __attribute__((aligned(0x40)))
+    #else
+        #define VARARRAY_ALIGN_PRE __declspec(align(64))
+        #define VARARRAY_ALIGN_POST
+    #endif
+    
+    static long unsigned int getThreadNumber()
+    {  
+      <% match type
+            case ("openmp") then
+                <<
+                return (long unsigned int)omp_get_thread_num();
+                >>
+            else
+                'return 0;'%>
+    }
+    
+    <%addHpcomFunctionHeaders%>
+    <%addHpcomArrayHeaders%>
+    <%addHpcomVarHeaders%>
+    <%MemberVariable(modelInfo, hpcOmMemory,useFlatArrayNotation,false)%>
+    
+    <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+    <<
+    std::vector<MeasureTimeData> measureTimeArrayHpcom;
+    MeasureTimeValues *measuredStartValuesODE, *measuredEndValuesODE;
+    >>%>
+    >>
+end generateAdditionalProtectedMemberDeclaration;
 
 template getAddHpcomStructHeaders(Option<Schedule> hpcOmScheduleOpt)
 ::=
@@ -366,219 +317,7 @@ template generateThreadFunctionHeaderDecl(Integer threadIdx)
     >>
 end generateThreadFunctionHeaderDecl;
 
-template MemberVariable(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemory, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
- "Define membervariable in simulation file."
-::=
-match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
-  <<
-  <%vars.algVars |> var =>
-    MemberVariableDefine2(var, "algebraics", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-  <%vars.discreteAlgVars |> var =>
-    MemberVariableDefine2(var, "algebraics", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-  <%vars.paramVars |> var =>
-    MemberVariableDefine2(var, "parameters", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-   <%vars.aliasVars |> var =>
-    MemberVariableDefine2(var, "aliasVars", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-  <%vars.intAlgVars |> var =>
-    MemberVariableDefine("int", var, "intVariables.algebraics",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-  <%vars.intParamVars |> var =>
-    MemberVariableDefine("int", var, "intVariables.parameters",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-   <%vars.intAliasVars |> var =>
-    MemberVariableDefine("int", var, "intVariables.AliasVars",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-  <%vars.boolAlgVars |> var =>
-    MemberVariableDefine("bool",var, "boolVariables.algebraics",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-  <%vars.boolParamVars |> var =>
-    MemberVariableDefine("bool",var, "boolVariables.parameters",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-   <%vars.boolAliasVars |> var =>
-    MemberVariableDefine("bool ",var, "boolVariables.AliasVars",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-  <%vars.stringAlgVars |> var =>
-    MemberVariableDefine("string",var, "stringVariables.algebraics",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-  <%vars.stringParamVars |> var =>
-    MemberVariableDefine("string",var, "stringVariables.parameters",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-  <%vars.stringAliasVars |> var =>
-    MemberVariableDefine("string",var, "stringVariables.AliasVars",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-   <%vars.constVars |> var =>
-    MemberVariableDefine2(var, "constvariables", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-   <%vars.intConstVars |> var =>
-    MemberVariableDefine("const int", var, "intConstvariables",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-   <%vars.boolConstVars |> var =>
-    MemberVariableDefine("const bool", var, "boolConstvariables",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-   <%vars.stringConstVars |> var =>
-    MemberVariableDefine("const string",var, "stringConstvariables",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-   <%vars.extObjVars |> var =>
-    MemberVariableDefine("void*",var, "extObjVars",hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-  >>
-end MemberVariable;
 
-template MemberVariableDefine(String type,SimVar simVar, String arrayName, Option<MemoryMap> hpcOmMemoryOpt, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
-::=
-match simVar
-
-     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
-
-    case SIMVAR(name=varName,numArrayElement={},arrayCref=NONE()) then
-        match(hpcOmMemoryOpt)
-            case SOME(hpcOmMemory) then
-              <<
-              // case 2 MemberVariableDefine
-              <%MemberVariableDefine3(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,varName), simVar, useFlatArrayNotation, createConstructorDeclaration)%>
-              >>
-            else
-              <<
-              <%if createConstructorDeclaration then '' else '<%variableType(simVar.type_)%> <%cref(simVar.name,useFlatArrayNotation)%>; //no cacheMap defined'%>
-              >>
-        end match
-    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num) then
-      let &dims = buffer "" /*BUFD*/
-      let arrayName = arraycref2(name,dims)
-      <<
-      multi_array<<%variableType(type_)%>,<%dims%>>  <%arrayName%>;
-      >>
-    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(arrayCrefLocal),numArrayElement=num,type_=varType) then
-      let &dims = buffer "" /*BUFD*/
-      let arrayName = arraycref2(name,dims)
-      let typeString = variableType(type_)
-      let arraysize = arrayextentDims(name,v.numArrayElement)
-      match(hpcOmMemoryOpt)
-            case SOME(hpcOmMemory) then
-              let varDeclarations = HpcOmMemory.expandCref(name,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
-              <<
-              // case 3 MemberVariableDefine dims:<%dims%> nums:<%num%>
-              <%varDeclarations%>
-              >>
-            else
-              <<
-              <%if createConstructorDeclaration then '' else 'StatArrayDim<%dims%><<%variableType(v.type_)%>,<%arraysize%>>  <%arrayName%>; //no cacheMap defined' %>
-              >>
-      end match
-    case SIMVAR(numArrayElement=_::_) then
-      let& dims = buffer "" /*BUFD*/
-      let varName = arraycref2(name,dims)
-      let varType = variableType(type_)
-      match dims
-        case "0" then  if createConstructorDeclaration then '' else '<%varType%> <%varName%>;'
-        else ''
-      end match
-end MemberVariableDefine;
-
-template MemberVariableDefine2(SimVar simVar, String arrayName, Option<MemoryMap> hpcOmMemoryOpt, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
-::=
-match simVar
-      case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
-
-      case SIMVAR(name=varName,numArrayElement={},arrayCref=NONE()) then
-        match(hpcOmMemoryOpt)
-            case SOME(hpcOmMemory) then
-              <<
-              <%MemberVariableDefine3(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,varName), simVar, useFlatArrayNotation, createConstructorDeclaration)%>
-              >>
-            else
-              <<
-              <%if createConstructorDeclaration then '' else '<%variableType(simVar.type_)%> <%cref(simVar.name,useFlatArrayNotation)%>; //no cacheMap defined'%>
-              >>
-        end match
-    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(arrayCrefLocal),numArrayElement=num,type_=varType) then
-        let &dims = buffer "" /*BUFD*/
-        let arrayName = arraycref2(name,dims)
-        let typeString = variableType(type_)
-        let arraysize = arrayextentDims(name,v.numArrayElement)
-        match(hpcOmMemoryOpt)
-            case SOME(hpcOmMemory) then
-              let varDeclarations = HpcOmMemory.expandCref(arrayCrefLocal,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
-              <<
-              // case 2 MemberVariableDefine2
-              <%varDeclarations%>
-              >>
-            else
-              <<
-              <%if createConstructorDeclaration then '' else 'StatArrayDim<%dims%><<%typeString%>,<%arraysize%>> <%arrayName%>; //no cacheMap defined' %>
-              >>
-        end match
-    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(arrayCrefLocal),numArrayElement=num,type_=varType) then
-      let &dims = buffer "" /*BUFD*/
-      let arrayName = arraycref2(name,dims)
-      let typeString = variableType(type_)
-      let arraysize = arrayextentDims(name,v.numArrayElement)
-      match(hpcOmMemoryOpt)
-            case SOME(hpcOmMemory) then
-              let varDeclarations = HpcOmMemory.expandCref(name,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
-              <<
-              // case 3 MemberVariableDefine2 dims:<%dims%> nums:<%num%>
-              <%varDeclarations%>
-              >>
-            else
-              <<
-              <%if createConstructorDeclaration then '' else 'StatArrayDim<%dims%><<%typeString%>, <%arraysize%>> <%arrayName%>; //no cacheMap defined' %>
-              >>
-      end match
-   /*special case for varibales that marked as array but are not arrays */
-    case SIMVAR(numArrayElement=_::_) then
-      let& dims = buffer "" /*BUFD*/
-      let varName = arraycref2(name,dims)
-      let varType = variableType(type_)
-      match dims
-        case "0" then (if createConstructorDeclaration then '' else '<%varType%> <%varName%>;')
-        else ''
-      end match
-end MemberVariableDefine2;
-
-template MemberVariableDefine3(Option<tuple<Integer,Integer>> optVarArrayAssignment, SimVar simVar, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
-::=
-  match optVarArrayAssignment
-    case SOME((varIdx, arrayIdx))
-        then
-            match simVar
-                case SIMVAR(__) then
-                    <<
-                    <%if createConstructorDeclaration then ',<%cref(name, useFlatArrayNotation)%>(varArray<%arrayIdx%>[<%varIdx%>])'
-                      else '<%variableType(type_)%>& <%cref(name, useFlatArrayNotation)%>;// = varArray<%arrayIdx%>[<%varIdx%>] - MemberVariableDefine3' %>
-                    >>
-            end match
-        else
-            match simVar
-                case SIMVAR(__) then
-                <<
-                <%if createConstructorDeclaration then '/* no varIdx found for variable <%cref(name,useFlatArrayNotation)%> */' else '<%variableType(type_)%> <%cref(name, useFlatArrayNotation)%>; //not optimized' %>
-                >>
-            end match
-  end match
-end MemberVariableDefine3;
-
-template MemberVariableDefine4(Option<tuple<Integer,Integer>> optVarArrayAssignment, DAE.ComponentRef varName, DAE.Type type_, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
-::=
-  match optVarArrayAssignment
-    case SOME((varIdx, arrayIdx)) then
-        <<
-        <%if createConstructorDeclaration then ',<%cref(varName,useFlatArrayNotation)%>(varArray<%arrayIdx%>[<%varIdx%>])'
-        else '<%variableType(type_)%>& <%cref(varName,useFlatArrayNotation)%>;// = varArray<%arrayIdx%>[<%varIdx%>] - MemberVariableDefine4' %>
-        >>
-    else
-        <<
-        <%if createConstructorDeclaration then '/* no varIdx found for variable <%cref(varName,useFlatArrayNotation)%> */' else '<%variableType(type_)%> <%cref(varName,useFlatArrayNotation)%>;'%>
-        >>
-  end match
-end MemberVariableDefine4;
-
-// CODE
 
 template simulationCppFile(SimCode simCode, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for simulation target."
@@ -587,7 +326,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let hpcomConstructorExtension = getHpcomConstructorExtension(hpcOmSchedule, lastIdentOfPath(modelInfo.name))
   let hpcomDestructorExtension = getHpcomDestructorExtension(hpcOmSchedule)
-  let memoryExtension = MemberVariableAssign(modelInfo, hpcOmMemory, useFlatArrayNotation)
+
   let className = lastIdentOfPath(modelInfo.name)
   <<
    #include <Core/Modelica.h>
@@ -614,8 +353,32 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       <<
       _dimResidues=<%numResidues(allEquations)%>;
       >>
-
     %>
+        <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+            let numOfEqs = SimCodeUtil.getMaxSimEqSystemIndex(simCode)
+            <<
+            measureTimeArray = std::vector<MeasureTimeData>(<%numOfEqs%>);
+            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","profileBlocks",&measureTimeArray);
+            measuredStartValues = MeasureTime::getZeroValues();
+            measuredEndValues = MeasureTime::getZeroValues();
+
+            for(int i = 0; i < <%numOfEqs%>; i++)
+            {
+                ostringstream ss;
+                ss << i;
+                measureTimeArray[i] = MeasureTimeData(ss.str());
+            }
+            
+            measureTimeArrayHpcom = std::vector<MeasureTimeData>(2);
+            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","hpcomMeasurements",&measureTimeArrayHpcom);
+            measuredStartValuesODE = MeasureTime::getZeroValues();
+            measuredEndValuesODE = MeasureTime::getZeroValues();
+            
+            measureTimeArrayHpcom[0] = MeasureTimeData("EvaluateODE");
+            measureTimeArrayHpcom[1] = MeasureTimeData("EvaluateODE Overhead");
+            >>
+        %>
+    
     //DAE's are not supported yet, Index reduction is enabled
     _dimAE = 0; // algebraic equations
     //Initialize the state vector
@@ -715,53 +478,6 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
      else ""
 end getHpcomConstructorExtension;
 
-template MemberVariableAssign(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemory, Boolean useFlatArrayNotation)
- "Define membervariable in simulation file."
-::=
-match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
-  <<
-  <%vars.algVars |> var =>
-    MemberVariableAssign2(var, "algebraics", hpcOmMemory, useFlatArrayNotation)
-  ;separator="\n"%>
-  <%vars.discreteAlgVars |> var =>
-    MemberVariableAssign2(var, "algebraics", hpcOmMemory, useFlatArrayNotation)
-  ;separator="\n"%>
-  <%vars.paramVars |> var =>
-    MemberVariableAssign2(var, "parameters", hpcOmMemory, useFlatArrayNotation)
-  ;separator="\n"%>
-   <%vars.aliasVars |> var =>
-    MemberVariableAssign2(var, "aliasVars", hpcOmMemory, useFlatArrayNotation)
-  ;separator="\n"%>
-  >>
-end MemberVariableAssign;
-
-template MemberVariableAssign2(SimVar simVar, String arrayName, Option<MemoryMap> hpcOmMemoryOpt, Boolean useFlatArrayNotation)
-::=
-match simVar
-      case SIMVAR(numArrayElement={},arrayCref=NONE(),name=varName) then
-        match(hpcOmMemoryOpt)
-            case SOME(hpcOmMemory) then
-              <<
-              <%MemberVariableAssign3(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,varName), simVar, useFlatArrayNotation)%>
-              >>
-        end match
-end MemberVariableAssign2;
-
-template MemberVariableAssign3(Option<tuple<Integer,Integer>> optVarArrayAssignment, SimVar simVar, Boolean useFlatArrayNotation)
-::=
-  match optVarArrayAssignment
-    case SOME((varIdx, arrayIdx))
-        then
-            match simVar
-                case SIMVAR(__) then
-                    <<
-                    ,<%cref(name,useFlatArrayNotation)%> (varArray<%arrayIdx%>[<%varIdx%>])
-                    >>
-            end match
-  end match
-end MemberVariableAssign3;
-
 
 template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
 ::=
@@ -800,16 +516,16 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
     else ""
 end getHpcomDestructorExtension;
 
+
 template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context, Boolean useFlatArrayNotation)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-
 
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
       let parCode = update2(allEquationsPlusWhen, odeEquations, modelInfo.name, whenClauses, simCode, hpcOmSchedule, context, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
       <<
-       <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation)%>
+       <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation,false)%>
 
        <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation)%>
 
@@ -819,6 +535,7 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
       <%parCode%>
       >>
 end update;
+
 
 template createEvaluateConditions(SimCode simCode, list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, Absyn.Path name, Context context, Boolean useFlatArrayNotation)
 ::=
@@ -917,36 +634,38 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
           <<
           void <%lastIdentOfPath(name)%>::evaluateODE(const UPDATETYPE command)
           {
-             #ifdef MEASURE_PAPI
-             int event[NUM_EVENTS] = {PAPI_L2_TCM};
-             long long values[NUM_EVENTS];
-
-             /* Start counting events */
-             if (PAPI_start_counters(event, NUM_EVENTS) != PAPI_OK) {
-                fprintf(stderr, "PAPI_start_counters - FAILED\n");
-                exit(1);
-             }
-             #endif
-
+             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then 'MeasureTimeValues **threadValues = new MeasureTimeValues*[<%getConfigInt(NUM_PROC)%>];'%>
              #pragma omp parallel num_threads(<%getConfigInt(NUM_PROC)%>)
              {
+                <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+                <<
+                MeasureTimeValues *valuesStart = MeasureTime::getZeroValues();
+                MeasureTimeValues *valuesEnd = MeasureTime::getZeroValues();
+                MeasureTime::getInstance()->initializeThread(getThreadNumber);
+                <%generateMeasureTimeStartCode('valuesStart')%>
+                >>%>
+
                 <%odeEqs%>
+                
+                <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+                <<
+        
+                MeasureTime::getTimeValuesEnd(valuesEnd);
+                valuesEnd->sub(valuesStart);
+                valuesEnd->sub(MeasureTime::getOverhead());
+                #pragma omp critical
+                {
+                    measureTimeArrayHpcom[0].sumMeasuredValues->add(valuesEnd);
+                }
+                delete valuesStart;
+                delete valuesEnd;
+                >>%>
              }
-
-             #ifdef MEASURE_PAPI
-             /* Read the counters */
-             if (PAPI_read_counters(values, NUM_EVENTS) != PAPI_OK) {
-                fprintf(stderr, "PAPI_read_counters - FAILED\n");
-                exit(1);
-             }
-             std::cerr << "L2 Cache misses: " << values[0] << std::endl;
-
-             /* Stop counting events */
-             if (PAPI_stop_counters(values, NUM_EVENTS) != PAPI_OK) {
-                fprintf(stderr, "PAPI_stoped_counters - FAILED\n");
-                exit(1);
-             }
-             #endif
+             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then 
+             <<
+             delete threadValues;
+             ++(measureTimeArrayHpcom[0].numCalcs);
+             >>%>
           }
           >>
         else ""
@@ -1291,9 +1010,10 @@ template equationHPCOM_(SimEqSystem eq, Integer idx, Context context, Text &varD
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
-  match eq
+  equation_function_call(eq, context, &varDecls /*BUFC*/, simCode,"evaluate")
+/*  match eq
   case e as SES_SIMPLE_ASSIGN(__) then
-    let &varDeclsLocal = buffer "" /*BUFL*/
+    let &varDeclsLocal = buffer "" BUFL
     let eqText = equation_(eq,context,&varDeclsLocal,simCode, useFlatArrayNotation)
     <<
     <%varDeclsLocal%>
@@ -1312,6 +1032,7 @@ template equationHPCOM_(SimEqSystem eq, Integer idx, Context context, Text &varD
     then 'evaluate_<%idx%>();'
   else
     "NOT IMPLEMENTED EQUATION"
+*/
 end equationHPCOM_;
 
 template function_HPCOM_joinThread(String threadIdx, String iType)
@@ -1479,7 +1200,6 @@ template releaseLockByLockName(String lockName, String lockPrefix, String iType)
       >>
 end releaseLockByLockName;
 
-// MAINFILE
 
 template simulationMainFileAnalyzation(SimCode simCode)
  "Generates code for header file for simulation target."
@@ -1569,151 +1289,243 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
 >>
 end simulationMainFileAnalyzation;
 
-// MAKEFILE
 
 template simulationMakefile(String target,SimCode simCode)
- "Generates the contents of the makefile for the simulation case."
 ::=
-let type = getConfigString(HPCOM_CODE)
-match target
-case "msvc" then
-match simCode
-case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
-   let dirExtra = if modelInfo.directory then '/LIBPATH:"<%modelInfo.directory%>"' //else ""
-  let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
-  let libsPos1 = if not dirExtra then libsStr //else ""
-  let libsPos2 = if dirExtra then libsStr // else ""
-  let ParModelicaLibs = if acceptParModelicaGrammar() then '-lOMOCLRuntime -lOpenCL' // else ""
-  let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
-    '<%match s.method
-       case "inline-euler" then "-D_OMC_INLINE_EULER "
-       case "inline-rungekutta" then "-D_OMC_INLINE_RK "
-       case "dassljac" then "-D_OMC_JACOBIAN "%>'
+    let type = getConfigString(HPCOM_CODE)
+    
+    let &additionalCFlags_GCC = buffer ""
+    let &additionalCFlags_GCC += if stringEq(type,"openmp") then " -fopenmp" else ""
+    let &additionalCFlags_GCC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then ' -D ANALYZATION_MODE -I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"' else ""
 
-  let &extraHPCOMflags = buffer ""
-  let &extraHPCOMflags += if stringEq(type,"openmp") then "/openmp" else " "
-  let &extraHPCOMflags += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '/DANALYZATION_MODE /I"$(SUNDIALS_INCLUDE)" /I"$(SUNDIALS_INCLUDE)/kinsol" /I"$(SUNDIALS_INCLUDE)/nvector"' else ""
-  <<
-  # Makefile generated by OpenModelica
+    let &additionalCFlags_MSVC = buffer ""
+    let &additionalCFlags_MSVC += if stringEq(type,"openmp") then "/openmp" else ""
+    let &additionalCFlags_MSVC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '/DANALYZATION_MODE /I"$(SUNDIALS_INCLUDE)" /I"$(SUNDIALS_INCLUDE)/kinsol" /I"$(SUNDIALS_INCLUDE)/nvector"' else ""
+  
+    let &additionalLinkerFlags_GCC = buffer ""
+    let &additionalLinkerFlags_GCC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '$(LIBOMCPPOMCFACTORY) $(LIBOMCPPSIMCONTROLLER) $(LIBOMCPPSIMULATIONSETTINGS) $(LIBOMCPPSYSTEM) $(LIBOMCPPDATAEXCHANGE) $(LIBOMCPPNEWTON) $(LIBOMCPPUMFPACK) $(LIBOMCPPKINSOL) $(LIBOMCPPCVODE) $(LIBOMCPPSOLVER) $(LIBOMCPPMATH) $(LIBOMCPPMODELICAUTILITIES) $(SUNDIALS_LIBS) $(LAPACK_LIBS) $(BASE_LIB)' else '-lOMCppOMCFactory $(BASE_LIB)'
+    let &additionalLinkerFlags_GCC += if stringEq(type,"tbb") then "-ltbb" else ""
 
-  # Simulations use -O3 by default
-  SIM_OR_DYNLOAD_OPT_LEVEL=
-  MODELICAUSERCFLAGS=
-  CXX=cl
-  EXEEXT=.exe
-  DLLEXT=.dll
-  include <%makefileParams.omhome%>/include/omc/cpp/ModelicaConfig.inc
-  # /Od - Optimization disabled
-  # /EHa enable C++ EH (w/ SEH exceptions)
-  # /fp:except - consider floating-point exceptions when generating code
-  # /arch:SSE2 - enable use of instructions available with SSE2 enabled CPUs
-  # /I - Include Directories
-  # /DNOMINMAX - Define NOMINMAX (does what it says)
-  # /TP - Use C++ Compiler
-  !IF "$(PCH_FILE)" == ""
-  CFLAGS=  $(SYSTEM_CFLAGS) /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" /I. <%makefileParams.includes%>  /I"$(BOOST_INCLUDE)" /I"$(SUITESPARSE_INCLUDE)" /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY
-  !ELSE
-  CFLAGS=  $(SYSTEM_CFLAGS) /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" /I. <%makefileParams.includes%>  /I"$(BOOST_INCLUDE)" /I"$(SUITESPARSE_INCLUDE)" /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  /Fp<%makefileParams.omhome%>/include/omc/cpp/Core/$(PCH_FILE)  /YuCore/$(H_FILE)
-  !ENDIF
-  CPPFLAGS =
-  # /ZI enable Edit and Continue debug info
-  CDFLAGS = /ZI
-
-  # /MD - link with MSVCRT.LIB
-  # /link - [linker options and libraries]
-  # /LIBPATH: - Directories where libs can be found
-  #LDFLAGS=/MDd   /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppMath.lib
-  LDSYTEMFLAGS=/MD /Debug  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib   OMCppOMCFactory.lib
-  LDMAINFLAGS=/MD /Debug  /link /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" OMCppOMCFactory.lib  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
-  # /MDd link with MSVCRTD.LIB debug lib
-  # lib names should not be appended with a d just switch to lib/omc/cpp
-
-
-  FILEPREFIX=<%fileNamePrefix%>
-  FUNCTIONFILE=OMCpp<%fileNamePrefix%>Functions.cpp
-  INITFILE=OMCpp<%fileNamePrefix%>Initialize.cpp
-  FACTORYFILE=OMCpp<%fileNamePrefix%>FactoryExport.cpp
-  EXTENSIONFILE=OMCpp<%fileNamePrefix%>Extension.cpp
-  JACOBIANFILE=OMCpp<%fileNamePrefix%>Jacobian.cpp
-  STATESELECTIONFILE=OMCpp<%fileNamePrefix%>StateSelection.cpp
-  WRITEOUTPUTFILE=OMCpp<%fileNamePrefix%>WriteOutput.cpp
-  SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
-  MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
-  MAINOBJ=OMCpp<%fileNamePrefix%>Main$(EXEEXT)
-  SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
-
-  CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
-  ALGLOOPMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
-  GENERATEDFILES=$(MAINFILE) $(FUNCTIONFILE) $(ALGLOOPMAINFILE)
-
-  $(MODELICA_SYSTEM_LIB)$(DLLEXT):
-  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(CALCHELPERMAINFILE) $(ALGLOOPMAINFILE) $(CFLAGS) $(LDSYTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
-   <%\t%>$(CXX) $(CPPFLAGS) /Fe$(MAINOBJ)  $(MAINFILE)   $(CFLAGS) $(LDMAINFLAGS)
-  >>
-end match
-case "gcc" then
-match simCode
-case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
-let dirExtra = if modelInfo.directory then '-L"<%modelInfo.directory%>"' //else ""
-let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
-let libsPos1 = if not dirExtra then libsStr //else ""
-let libsPos2 = if dirExtra then libsStr // else ""
-let _extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
-    '<%match s.method
-       case "inline-euler" then "-D_OMC_INLINE_EULER"
-       case "inline-rungekutta" then "-D_OMC_INLINE_RK"%>'
-let extraCflags = '<%_extraCflags%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g"%><%if stringEq(type,"openmp") then " -fopenmp" else ""%>'
-
-let analyzationLibs = if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '$(LIBOMCPPOMCFACTORY) $(LIBOMCPPSIMCONTROLLER) $(LIBOMCPPSIMULATIONSETTINGS) $(LIBOMCPPSYSTEM) $(LIBOMCPPDATAEXCHANGE) $(LIBOMCPPNEWTON) $(LIBOMCPPUMFPACK) $(LIBOMCPPKINSOL) $(LIBOMCPPCVODE) $(LIBOMCPPSOLVER) $(LIBOMCPPMATH) $(LIBOMCPPMODELICAUTILITIES) $(SUNDIALS_LIBS) $(LAPACK_LIBS) $(BASE_LIB)' else '-lOMCppOMCFactory $(BASE_LIB)'
-let schedulerLibs = if stringEq(type,"tbb") then "-ltbb"
-
-let _extraCflags = if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '<%extraCflags%> -D ANALYZATION_MODE -I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"' else '<%extraCflags%>'
-
-<<
-# Makefile generated by OpenModelica
-include <%makefileParams.omhome%>/include/omc/cpp/ModelicaConfig.inc
-OMHOME=<%makefileParams.omhome%>
-include <%makefileParams.omhome%>/include/omc/cpp/ModelicaLibraryConfig.inc
-# Simulations use -O0 by default
-SIM_OR_DYNLOAD_OPT_LEVEL=-O0
-CC=<%makefileParams.ccompiler%>
-CXX=<%makefileParams.cxxcompiler%>
-LINK=<%makefileParams.linker%>
-EXEEXT=<%makefileParams.exeext%>
-DLLEXT=<%makefileParams.dllext%>
-CFLAGS_BASED_ON_INIT_FILE=<%_extraCflags%> # -I"<%makefileParams.omhome%>/../SimulationRuntime/cpp" -I"<%makefileParams.omhome%>/../SimulationRuntime/cpp/Core" -I"<%makefileParams.omhome%>/../SimulationRuntime/cpp/Include/SimCoreFactory" -I"<%makefileParams.omhome%>/../SimulationRuntime/cpp/Include/Core"
-CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(SUITESPARSE_INCLUDE)" <%makefileParams.includes ; separator=" "%>  <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
-LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" $(BASE_LIB)  -lOMCppOMCFactory -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath  -L"$(BOOST_LIBS)"  $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_LOG_LIB) $(BOOST_THREAD_LIB) $(LINUX_LIB_DL)
-CPP_RUNTIME_LIBS=<%analyzationLibs%>
-LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"   -L"<%makefileParams.omhome%>/bin"  -lOMCppOMCFactory -L"$(BOOST_LIBS)" <%schedulerLibs%> <%analyzationLibs%> $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL)
-CPPFLAGS = $(CFLAGS)
-SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
-MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
-MAINOBJ=OMCpp<%fileNamePrefix%>Main$(EXEEXT)
-SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
-
-CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
-ALGLOOPSMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
-
-
-
-CPPFILES=$(SYSTEMFILE) $(CALCHELPERMAINFILE) $(ALGLOOPSMAINFILE)
-OFILES=$(CPPFILES:.cpp=.o)
-
-.PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
-
-<%fileNamePrefix%>: $(MAINFILE) $(OFILES)
-<%if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then "#"%><%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%>  $(LDSYTEMFLAGS)
-<%if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then "#"%><%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
-<%if boolNot(Flags.isSet(Flags.HPCOM_ANALYZATION_MODE)) then "#"%><%\t%>$(CXX) -I. -o $(MAINOBJ) $(MAINFILE) $(OFILES) -D BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR $(CPPFLAGS) -I. $(LDMAINFLAGS)
-<% if boolNot(stringEq(makefileParams.platform, "win32")) then
-  <<
-  <%\t%>chmod +x <%fileNamePrefix%>.sh
-  <%\t%>ln -s <%fileNamePrefix%>.sh <%fileNamePrefix%>
-  >>
-%>
->>
-
+    let &additionalLinkerFlags_MSVC = buffer ""
+    
+    CodegenCpp.simulationMakefile(target, simCode, additionalLinkerFlags_GCC, additionalCFlags_MSVC, additionalCFlags_GCC, additionalLinkerFlags_MSVC)
 end simulationMakefile;
+
+
+// --------------------------------------------------------------------------------------------------------------------------------------------
+// Member Variable Stuff
+// --------------------------------------------------------------------------------------------------------------------------------------------
+
+template MemberVariable(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemory, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
+ "Define membervariable in simulation file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  <%vars.algVars |> var =>
+    MemberVariableDefine2(var, "algebraics", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+  <%vars.discreteAlgVars |> var =>
+    MemberVariableDefine2(var, "algebraics", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+  <%vars.paramVars |> var =>
+    MemberVariableDefine2(var, "parameters", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+   <%vars.aliasVars |> var =>
+    MemberVariableDefine2(var, "aliasVars", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+  <%vars.intAlgVars |> var =>
+    MemberVariableDefine("int", var, "intVariables.algebraics",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+  <%vars.intParamVars |> var =>
+    MemberVariableDefine("int", var, "intVariables.parameters",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+   <%vars.intAliasVars |> var =>
+    MemberVariableDefine("int", var, "intVariables.AliasVars",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+  <%vars.boolAlgVars |> var =>
+    MemberVariableDefine("bool",var, "boolVariables.algebraics",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+  <%vars.boolParamVars |> var =>
+    MemberVariableDefine("bool",var, "boolVariables.parameters",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+   <%vars.boolAliasVars |> var =>
+    MemberVariableDefine("bool ",var, "boolVariables.AliasVars",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+  <%vars.stringAlgVars |> var =>
+    MemberVariableDefine("string",var, "stringVariables.algebraics",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+  <%vars.stringParamVars |> var =>
+    MemberVariableDefine("string",var, "stringVariables.parameters",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+  <%vars.stringAliasVars |> var =>
+    MemberVariableDefine("string",var, "stringVariables.AliasVars",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+   <%vars.constVars |> var =>
+    MemberVariableDefine2(var, "constvariables", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+   <%vars.intConstVars |> var =>
+    MemberVariableDefine("const int", var, "intConstvariables",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+   <%vars.boolConstVars |> var =>
+    MemberVariableDefine("const bool", var, "boolConstvariables",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+   <%vars.stringConstVars |> var =>
+    MemberVariableDefine("const string",var, "stringConstvariables",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+   <%vars.extObjVars |> var =>
+    MemberVariableDefine("void*",var, "extObjVars",hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+  >>
+end MemberVariable;
+
+template MemberVariableDefine(String type,SimVar simVar, String arrayName, Option<MemoryMap> hpcOmMemoryOpt, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
+::=
+match simVar
+
+     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
+
+    case SIMVAR(name=varName,numArrayElement={},arrayCref=NONE()) then
+        match(hpcOmMemoryOpt)
+            case SOME(hpcOmMemory) then
+              <<
+              // case 2 MemberVariableDefine
+              <%MemberVariableDefine3(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,varName), simVar, useFlatArrayNotation, createConstructorDeclaration)%>
+              >>
+            else
+              <<
+              <%if createConstructorDeclaration then '' else '<%variableType(simVar.type_)%> <%cref(simVar.name,useFlatArrayNotation)%>; //no cacheMap defined'%>
+              >>
+        end match
+    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num) then
+      let &dims = buffer "" /*BUFD*/
+      let arrayName = arraycref2(name,dims)
+      <<
+      multi_array<<%variableType(type_)%>,<%dims%>>  <%arrayName%>;
+      >>
+    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(arrayCrefLocal),numArrayElement=num,type_=varType) then
+      let &dims = buffer "" /*BUFD*/
+      let arrayName = arraycref2(name,dims)
+      let typeString = variableType(type_)
+      let arraysize = arrayextentDims(name,v.numArrayElement)
+      match(hpcOmMemoryOpt)
+            case SOME(hpcOmMemory) then
+              let varDeclarations = HpcOmMemory.expandCref(name,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
+              <<
+              // case 3 MemberVariableDefine dims:<%dims%> nums:<%num%>
+              <%varDeclarations%>
+              >>
+            else
+              <<
+              <%if createConstructorDeclaration then '' else 'StatArrayDim<%dims%><<%variableType(v.type_)%>,<%arraysize%>>  <%arrayName%>; //no cacheMap defined' %>
+              >>
+      end match
+    case SIMVAR(numArrayElement=_::_) then
+      let& dims = buffer "" /*BUFD*/
+      let varName = arraycref2(name,dims)
+      let varType = variableType(type_)
+      match dims
+        case "0" then  if createConstructorDeclaration then '' else '<%varType%> <%varName%>;'
+        else ''
+      end match
+end MemberVariableDefine;
+
+template MemberVariableDefine2(SimVar simVar, String arrayName, Option<MemoryMap> hpcOmMemoryOpt, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
+::=
+match simVar
+      case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
+
+      case SIMVAR(name=varName,numArrayElement={},arrayCref=NONE()) then
+        match(hpcOmMemoryOpt)
+            case SOME(hpcOmMemory) then
+              <<
+              <%MemberVariableDefine3(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,varName), simVar, useFlatArrayNotation, createConstructorDeclaration)%>
+              >>
+            else
+              <<
+              <%if createConstructorDeclaration then '' else '<%variableType(simVar.type_)%> <%cref(simVar.name,useFlatArrayNotation)%>; //no cacheMap defined'%>
+              >>
+        end match
+    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(arrayCrefLocal),numArrayElement=num,type_=varType) then
+        let &dims = buffer "" /*BUFD*/
+        let arrayName = arraycref2(name,dims)
+        let typeString = variableType(type_)
+        let arraysize = arrayextentDims(name,v.numArrayElement)
+        match(hpcOmMemoryOpt)
+            case SOME(hpcOmMemory) then
+              let varDeclarations = HpcOmMemory.expandCref(arrayCrefLocal,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
+              <<
+              // case 2 MemberVariableDefine2
+              <%varDeclarations%>
+              >>
+            else
+              <<
+              <%if createConstructorDeclaration then '' else 'StatArrayDim<%dims%><<%typeString%>,<%arraysize%>> <%arrayName%>; //no cacheMap defined' %>
+              >>
+        end match
+    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(arrayCrefLocal),numArrayElement=num,type_=varType) then
+      let &dims = buffer "" /*BUFD*/
+      let arrayName = arraycref2(name,dims)
+      let typeString = variableType(type_)
+      let arraysize = arrayextentDims(name,v.numArrayElement)
+      match(hpcOmMemoryOpt)
+            case SOME(hpcOmMemory) then
+              let varDeclarations = HpcOmMemory.expandCref(name,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
+              <<
+              // case 3 MemberVariableDefine2 dims:<%dims%> nums:<%num%>
+              <%varDeclarations%>
+              >>
+            else
+              <<
+              <%if createConstructorDeclaration then '' else 'StatArrayDim<%dims%><<%typeString%>, <%arraysize%>> <%arrayName%>; //no cacheMap defined' %>
+              >>
+      end match
+   /*special case for varibales that marked as array but are not arrays */
+    case SIMVAR(numArrayElement=_::_) then
+      let& dims = buffer "" /*BUFD*/
+      let varName = arraycref2(name,dims)
+      let varType = variableType(type_)
+      match dims
+        case "0" then (if createConstructorDeclaration then '' else '<%varType%> <%varName%>;')
+        else ''
+      end match
+end MemberVariableDefine2;
+
+template MemberVariableDefine3(Option<tuple<Integer,Integer>> optVarArrayAssignment, SimVar simVar, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
+::=
+  match optVarArrayAssignment
+    case SOME((varIdx, arrayIdx))
+        then
+            match simVar
+                case SIMVAR(__) then
+                    <<
+                    <%if createConstructorDeclaration then ',<%cref(name, useFlatArrayNotation)%>(varArray<%arrayIdx%>[<%varIdx%>])'
+                      else '<%variableType(type_)%>& <%cref(name, useFlatArrayNotation)%>;// = varArray<%arrayIdx%>[<%varIdx%>] - MemberVariableDefine3' %>
+                    >>
+            end match
+        else
+            match simVar
+                case SIMVAR(__) then
+                <<
+                <%if createConstructorDeclaration then '/* no varIdx found for variable <%cref(name,useFlatArrayNotation)%> */' else '<%variableType(type_)%> <%cref(name, useFlatArrayNotation)%>; //not optimized' %>
+                >>
+            end match
+  end match
+end MemberVariableDefine3;
+
+template MemberVariableDefine4(Option<tuple<Integer,Integer>> optVarArrayAssignment, DAE.ComponentRef varName, DAE.Type type_, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
+::=
+  match optVarArrayAssignment
+    case SOME((varIdx, arrayIdx)) then
+        <<
+        <%if createConstructorDeclaration then ',<%cref(varName,useFlatArrayNotation)%>(varArray<%arrayIdx%>[<%varIdx%>])'
+        else '<%variableType(type_)%>& <%cref(varName,useFlatArrayNotation)%>;// = varArray<%arrayIdx%>[<%varIdx%>] - MemberVariableDefine4' %>
+        >>
+    else
+        <<
+        <%if createConstructorDeclaration then '/* no varIdx found for variable <%cref(varName,useFlatArrayNotation)%> */' else '<%variableType(type_)%> <%cref(varName,useFlatArrayNotation)%>;'%>
+        >>
+  end match
+end MemberVariableDefine4;
 
 end CodegenCppHpcom;
