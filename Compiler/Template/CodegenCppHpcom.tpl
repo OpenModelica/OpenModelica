@@ -93,7 +93,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     let addHpcomVarHeaders = getAddHpcomVarHeaders(hpcOmSchedule)
     let addHpcomArrayHeaders = getAddHpcomVarArrays(hpcOmMemory)
     let type = getConfigString(HPCOM_CODE)
-    
+
     <<
     // HPCOM
     #ifdef __GNUC__
@@ -103,9 +103,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         #define VARARRAY_ALIGN_PRE __declspec(align(64))
         #define VARARRAY_ALIGN_POST
     #endif
-    
+
     static long unsigned int getThreadNumber()
-    {  
+    {
       <% match type
             case ("openmp") then
                 <<
@@ -114,12 +114,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             else
                 'return 0;'%>
     }
-    
+
     <%addHpcomFunctionHeaders%>
     <%addHpcomArrayHeaders%>
     <%addHpcomVarHeaders%>
     <%MemberVariable(modelInfo, hpcOmMemory,useFlatArrayNotation,false)%>
-    
+
     <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
     <<
     std::vector<MeasureTimeData> measureTimeArrayHpcom;
@@ -368,17 +368,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
                 ss << i;
                 measureTimeArray[i] = MeasureTimeData(ss.str());
             }
-            
+
             measureTimeArrayHpcom = std::vector<MeasureTimeData>(2);
             MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","hpcomMeasurements",&measureTimeArrayHpcom);
             measuredStartValuesODE = MeasureTime::getZeroValues();
             measuredEndValuesODE = MeasureTime::getZeroValues();
-            
+
             measureTimeArrayHpcom[0] = MeasureTimeData("EvaluateODE");
             measureTimeArrayHpcom[1] = MeasureTimeData("EvaluateODE Overhead");
             >>
         %>
-    
+
     //DAE's are not supported yet, Index reduction is enabled
     _dimAE = 0; // algebraic equations
     //Initialize the state vector
@@ -646,10 +646,10 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
                 >>%>
 
                 <%odeEqs%>
-                
+
                 <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
                 <<
-        
+
                 MeasureTime::getTimeValuesEnd(valuesEnd);
                 valuesEnd->sub(valuesStart);
                 valuesEnd->sub(MeasureTime::getOverhead());
@@ -661,7 +661,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
                 delete valuesEnd;
                 >>%>
              }
-             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then 
+             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
              <<
              delete threadValues;
              ++(measureTimeArrayHpcom[0].numCalcs);
@@ -1293,7 +1293,7 @@ end simulationMainFileAnalyzation;
 template simulationMakefile(String target,SimCode simCode)
 ::=
     let type = getConfigString(HPCOM_CODE)
-    
+
     let &additionalCFlags_GCC = buffer ""
     let &additionalCFlags_GCC += if stringEq(type,"openmp") then " -fopenmp" else ""
     let &additionalCFlags_GCC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then ' -D ANALYZATION_MODE -I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"' else ""
@@ -1301,13 +1301,13 @@ template simulationMakefile(String target,SimCode simCode)
     let &additionalCFlags_MSVC = buffer ""
     let &additionalCFlags_MSVC += if stringEq(type,"openmp") then "/openmp" else ""
     let &additionalCFlags_MSVC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '/DANALYZATION_MODE /I"$(SUNDIALS_INCLUDE)" /I"$(SUNDIALS_INCLUDE)/kinsol" /I"$(SUNDIALS_INCLUDE)/nvector"' else ""
-  
+
     let &additionalLinkerFlags_GCC = buffer ""
     let &additionalLinkerFlags_GCC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '$(LIBOMCPPOMCFACTORY) $(LIBOMCPPSIMCONTROLLER) $(LIBOMCPPSIMULATIONSETTINGS) $(LIBOMCPPSYSTEM) $(LIBOMCPPDATAEXCHANGE) $(LIBOMCPPNEWTON) $(LIBOMCPPUMFPACK) $(LIBOMCPPKINSOL) $(LIBOMCPPCVODE) $(LIBOMCPPSOLVER) $(LIBOMCPPMATH) $(LIBOMCPPMODELICAUTILITIES) $(SUNDIALS_LIBS) $(LAPACK_LIBS) $(BASE_LIB)' else '-lOMCppOMCFactory $(BASE_LIB)'
     let &additionalLinkerFlags_GCC += if stringEq(type,"tbb") then "-ltbb" else ""
 
     let &additionalLinkerFlags_MSVC = buffer ""
-    
+
     CodegenCpp.simulationMakefile(target, simCode, additionalLinkerFlags_GCC, additionalCFlags_MSVC, additionalCFlags_GCC, additionalLinkerFlags_MSVC)
 end simulationMakefile;
 

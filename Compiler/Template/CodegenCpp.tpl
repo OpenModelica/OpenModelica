@@ -4497,7 +4497,7 @@ match modelInfo
       <%generateMethodDeclarationCode(simCode)%>
       virtual  bool getCondition(unsigned int index);
       virtual void initPreVars(unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&);
-  
+
   protected:
       //Methods:
       <%getrealvars%>
@@ -4530,7 +4530,7 @@ match modelInfo
       >>%>
 
       <%memberfuncs%>
-      
+
       <%additionalProtectedMembers%>
    };
   >>
