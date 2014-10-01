@@ -95,9 +95,16 @@ static inline void optimizationWithIpopt(OptData*optData){
                  &evalfG, &evalfDiffF, &evalfDiffG, &ipopt_h);
 
   /********************************************************************/
+  /*******************       ipopt flags       ************************/
+  /********************************************************************/
+
+  /*tol */
   AddIpoptNumOption(nlp, "tol", optData->data->simulationInfo.tolerance);
 
-  if(ACTIVE_STREAM(LOG_IPOPT)){
+  /* print level */
+  if(ACTIVE_STREAM(LOG_IPOPT_FULL)){
+    AddIpoptIntOption(nlp, "print_level", 7);
+  }else if(ACTIVE_STREAM(LOG_IPOPT)){
     AddIpoptIntOption(nlp, "print_level", 5);
   }else if(ACTIVE_STREAM(LOG_STATS)){
     AddIpoptIntOption(nlp, "print_level", 3);
@@ -106,30 +113,7 @@ static inline void optimizationWithIpopt(OptData*optData){
   }
   AddIpoptIntOption(nlp, "file_print_level", 0);
 
-  AddIpoptStrOption(nlp, "mu_strategy", "adaptive");
-  AddIpoptStrOption(nlp, "fixed_variable_treatment", "make_parameter");
-
-  cflags = (char*)omc_flagValue[FLAG_IPOPT_HESSE];
-  if(cflags){
-    if(!strcmp(cflags,"BFGS"))
-      AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");
-    else if(!strcmp(cflags,"const") || !strcmp(cflags,"CONST"))
-      AddIpoptStrOption(nlp, "hessian_constant", "yes");
-    else
-      warningStreamPrint(LOG_STDOUT, 0, "not support ipopt_hesse=%s",cflags);
-  }
-
-  cflags = (char*)omc_flagValue[FLAG_LS_IPOPT];
-  if(cflags)
-    AddIpoptStrOption(nlp, "linear_solver", cflags);
-
-  AddIpoptStrOption(nlp,"dependency_detection_with_rhs","yes");
-  AddIpoptNumOption(nlp,"bound_mult_init_val",1e-3);
-  AddIpoptNumOption(nlp,"mu_init",1e-3);
-  AddIpoptNumOption(nlp,"nu_init",1e-9);
-  AddIpoptStrOption(nlp,"bound_mult_init_method","constant");
-  AddIpoptNumOption(nlp,"eta_phi",1e-10);
-
+  /* derivative_test */
   if(ACTIVE_STREAM(LOG_IPOPT_JAC) && ACTIVE_STREAM(LOG_IPOPT_HESSE)){
     AddIpoptIntOption(nlp, "print_level", 4);
     AddIpoptStrOption(nlp, "derivative_test", "second-order");
@@ -143,10 +127,25 @@ static inline void optimizationWithIpopt(OptData*optData){
     AddIpoptStrOption(nlp, "derivative_test", "none");
   }
 
-  if(ACTIVE_STREAM(LOG_IPOPT_FULL))
-    AddIpoptIntOption(nlp, "print_level", 7);
 
-  /********************************************************************/
+  cflags = (char*)omc_flagValue[FLAG_IPOPT_HESSE];
+  if(cflags){
+    if(!strcmp(cflags,"BFGS"))
+      AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");
+    else if(!strcmp(cflags,"const") || !strcmp(cflags,"CONST"))
+      AddIpoptStrOption(nlp, "hessian_constant", "yes");
+    else
+      warningStreamPrint(LOG_STDOUT, 0, "not support ipopt_hesse=%s",cflags);
+  }
+
+  /*linear_solver e.g. mumps, MA27, MA57,...
+   * be sure HSL solver are installed if your try HSL solver*/
+  cflags = (char*)omc_flagValue[FLAG_LS_IPOPT];
+  if(cflags)
+    AddIpoptStrOption(nlp, "linear_solver", cflags);
+
+
+  /* max iter */
   cflags = (char*)omc_flagValue[FLAG_IPOPT_MAX_ITER];
   if(cflags){
     char buffer[100];
@@ -176,6 +175,34 @@ static inline void optimizationWithIpopt(OptData*optData){
     }
   }else
     AddIpoptIntOption(nlp, "max_iter", 5000);
+
+  /*heuristic optition */
+  {
+    int ws = 0;
+    cflags = (char*)omc_flagValue[FLAG_IPOPT_WARM_START];
+    if(cflags){
+      ws = atoi(cflags);
+    }
+
+    if(ws > 0){
+      double shift = pow(10,-1.0*ws);
+      AddIpoptNumOption(nlp,"mu_init",shift);
+      AddIpoptNumOption(nlp,"bound_mult_init_val",shift);
+      AddIpoptStrOption(nlp,"mu_strategy", "monotone");
+      AddIpoptNumOption(nlp,"bound_push", 1e-5);
+      AddIpoptNumOption(nlp,"bound_frac", 1e-5);
+      AddIpoptNumOption(nlp,"slack_bound_push", 1e-5);
+      AddIpoptNumOption(nlp,"constr_mult_init_max", 1e-5);
+    }else
+      AddIpoptStrOption(nlp,"mu_strategy","adaptive");
+
+    AddIpoptStrOption(nlp,"fixed_variable_treatment","make_parameter");
+    AddIpoptStrOption(nlp,"dependency_detection_with_rhs","yes");
+
+    AddIpoptNumOption(nlp,"nu_init",1e-9);
+    AddIpoptStrOption(nlp,"bound_mult_init_method","constant");
+    AddIpoptNumOption(nlp,"eta_phi",1e-10);
+  }
 
   /********************************************************************/
 
