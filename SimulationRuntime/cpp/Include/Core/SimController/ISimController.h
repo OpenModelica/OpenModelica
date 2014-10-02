@@ -11,7 +11,7 @@
 #include <string.h>
 using std::string;
 #endif
-
+#include <SimCoreFactory/Policies/FactoryConfig.h>
 struct SimSettings
 {
     string solver_name;
@@ -37,10 +37,13 @@ class ISimController
 public:
     /// Enumeration to control the time integration
     virtual ~ISimController(){ };
-
+#if defined(__vxworks)
+#else
   virtual std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > LoadSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), string modelKey)=0;
+#endif
   virtual std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > LoadSystem(string modelLib,string modelKey)=0;
-    virtual std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > LoadModelicaSystem(PATH modelica_path,string modelKey) =0;
+ 
+  virtual std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > LoadModelicaSystem(PATH modelica_path,string modelKey) =0;
 
   /*
     Starts the simulation
@@ -48,7 +51,11 @@ public:
     modelica_path: path to Modelica system dll
     */
     virtual void Start(boost::shared_ptr<IMixedSystem> mixedsystem,SimSettings simsettings,string modelKey)=0;
-
+#if defined (__vxworks)
+    virtual boost::shared_ptr<ISimData> getSimData(string modelname)=0;
+    virtual void StartVxWorks(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettings simsettings)=0;
+    virtual void calcOneStep()=0;
+#endif
     /// Stops the simulation
     virtual void Stop()= 0;
 };

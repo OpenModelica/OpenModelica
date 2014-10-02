@@ -17,17 +17,28 @@ public:
 
   ///Load and translates a Modelica modell to IMixedSystem dll
     virtual std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > LoadSystem(string modelLib,string modelKey);
-  virtual std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > LoadSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), string modelKey);
+#if defined(__vxworks)
+#else
+    virtual std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > LoadSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), string modelKey);
+#endif
     virtual std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > LoadModelicaSystem(PATH modelica_path,string modelKey);
     /// Starts the simulation
     virtual void Start(boost::shared_ptr<IMixedSystem> mixedsystem,SimSettings simsettings,string modelKey);
     /// Stops the simulation
     virtual void Stop();
+#if defined(__vxworks)
+    virtual boost::shared_ptr<ISimData> getSimData(string modelname);
+    virtual void StartVxWorks(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettings simsettings);
+    virtual void calcOneStep();
+#endif
 private:
     void initialize(PATH library_path, PATH modelicasystem_path);
     bool _initialized;
        boost::shared_ptr<Configuration> _config;
      std::map<string, std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > > _systems;
     boost::shared_ptr<IAlgLoopSolverFactory> _algloopsolverfactory;
+#if defined(__vxworks)
+	boost::shared_ptr<SimManager> _simMgr;
+#endif
 };
 
