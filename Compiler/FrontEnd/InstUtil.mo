@@ -87,6 +87,8 @@ protected import Graph;
 protected import UnitAbsynBuilder;
 protected import UnitChecker;
 protected import NFSCodeFlatten;
+protected import HashSet;
+protected import BaseHashSet;
 
 protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
@@ -3596,13 +3598,28 @@ public function checkModificationOnOuter
   input Boolean inImpl;
   input Absyn.Info inInfo;
 algorithm
-  _ := match(inCache, inEnv, inIH, inPrefix, inName, inCref, inMod,
+  _ := matchcontinue(inCache, inEnv, inIH, inPrefix, inName, inCref, inMod,
       inVariability, inInnerOuter, inImpl, inInfo)
+    local
+    HashSet.HashSet sm;
+    DAE.ComponentRef cref;
 
     case (_, _, _, _, _, _, _, SCode.CONST(), _, _, _)
       then ();
 
     case (_, _, _, _, _, _, _, SCode.PARAM(), _, _, _)
+      then ();
+
+    case (_, _, InnerOuter.TOP_INSTANCE(sm=sm)::_, _, _, _, DAE.MOD(finalPrefix = _), _, Absyn.OUTER(), _, _)
+      equation
+        // BTH: we check if the outer variable is in an instance that is
+        //      part of a Modelica state machine. In that case we have added
+        //      an equation modification, binding the inner variable to
+        //      the outer variable (instead of replacing the outer variable
+        //      by the inner variable). See InstVar.instVar(..).
+        //      Hence, such a modification should not throw an error.
+        cref = PrefixUtil.prefixToCref(inPrefix);
+        true = BaseHashSet.has(cref, sm);
       then ();
 
     else
@@ -3616,7 +3633,7 @@ algorithm
           inName, inCref, inMod, inInnerOuter, inImpl, inInfo);
       then
         ();
-  end match;
+  end matchcontinue;
 end checkModificationOnOuter;
 
 public function checkFunctionVar

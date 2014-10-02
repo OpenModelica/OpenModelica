@@ -44,6 +44,7 @@ import FNode;
 import Prefix;
 import SCode;
 import UnitAbsyn;
+import HashSet;
 
 protected import ComponentReference;
 protected import ConnectUtil;
@@ -63,6 +64,7 @@ protected import PrefixUtil;
 protected import System;
 protected import Util;
 protected import VarTransform;
+protected import BaseHashSet;
 protected import FGraph;
 
 public
@@ -114,6 +116,7 @@ uniontype TopInstance "a top instance is an instance of a model thar resides at 
     Option<Absyn.Path> path "top model path";
     InstHierarchyHashTable ht "hash table with fully qualified components";
     OuterPrefixes outerPrefixes "the outer prefixes help us prefix the outer components with the correct prefix of inner component directly";
+    HashSet.HashSet sm "Set of synchronous SM states (fully qualified components)";
   end TOP_INSTANCE;
 end TopInstance;
 
@@ -973,13 +976,13 @@ algorithm
     // no prefix, this is an error!
     // disabled as this is used in Interactive.getComponents
     // and makes mosfiles/interactive_api_attributes.mos to fail!
-    case (TOP_INSTANCE(_, _, _), Prefix.PREFIX(compPre = Prefix.NOCOMPPRE()),  _)
+    case (TOP_INSTANCE(_, _, _, _), Prefix.PREFIX(compPre = Prefix.NOCOMPPRE()),  _)
       then lookupInnerInIH(inTIH, Prefix.NOPRE(), inComponentIdent);
 
     // no prefix, this is an error!
     // disabled as this is used in Interactive.getComponents
     // and makes mosfiles/interactive_api_attributes.mos to fail!
-    case (TOP_INSTANCE(_, _, _), Prefix.NOPRE(),  name)
+    case (TOP_INSTANCE(_, _, _, _), Prefix.NOPRE(),  name)
       equation
         // Debug.fprintln(Flags.INNER_OUTER, "Error: outer component: " +& name +& " defined at the top level!");
         // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : looking for: " +& PrefixUtil.printPrefixStr(Prefix.NOPRE()) +& "/" +& name +& " REACHED TOP LEVEL!");
@@ -987,7 +990,7 @@ algorithm
       then emptyInstInner(Prefix.NOPRE(), name);
 
     // we have a prefix, remove the last cref from the prefix and search!
-    case (TOP_INSTANCE(_, ht, _), _,  name)
+    case (TOP_INSTANCE(_, ht, _, _), _,  name)
       equation
         // back one step in the instance hierarchy
 
@@ -1012,7 +1015,7 @@ algorithm
         instInner;
 
     // we have a prefix, search recursively as there was a failure before!
-    case (TOP_INSTANCE(_, ht, _), _,  name)
+    case (TOP_INSTANCE(_, ht, _, _), _,  name)
       equation
         // back one step in the instance hierarchy
         // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : looking for: " +& PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name);
@@ -1035,7 +1038,7 @@ algorithm
         instInner;
 
     // if we fail return nothing
-    case (TOP_INSTANCE(_, _, _), prefix, name)
+    case (TOP_INSTANCE(_, _, _, _), prefix, name)
       equation
         // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : looking for: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& name +& " NOT FOUND!");
         // dumpInstHierarchyHashTable(ht);
@@ -1450,6 +1453,7 @@ algorithm
       Option<Absyn.Path> pathOpt;
       OuterPrefixes outerPrefixes;
       DAE.ComponentRef cref_;
+      HashSet.HashSet sm;
 
     /* only add inner elements
     case(ih,inPrefix,inInnerOuter,inInstInner as INST_INNER(name=name))
@@ -1466,13 +1470,14 @@ algorithm
       equation
         // print ("InnerOuter.updateInstHierarchy creating an empty hash table! \n");
         ht = emptyInstHierarchyHashTable();
-        tih = TOP_INSTANCE(NONE(), ht, emptyOuterPrefixes);
+        sm = HashSet.emptyHashSet();
+        tih = TOP_INSTANCE(NONE(), ht, emptyOuterPrefixes, sm);
         ih = updateInstHierarchy({tih}, inPrefix, inInnerOuter, inInstInner);
       then
         ih;
 
     // add to the hierarchy
-    case((TOP_INSTANCE(pathOpt, ht, outerPrefixes))::restIH,_,_,
+    case((TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm))::restIH,_,_,
          INST_INNER(name=name))
       equation
         // prefix the name!
@@ -1482,7 +1487,7 @@ algorithm
         // Debug.fprintln(Flags.FAILTRACE, "InnerOuter.updateInstHierarchy adding: " +& PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name +& " to IH");
         ht = add((cref,inInstInner), ht);
       then
-        TOP_INSTANCE(pathOpt, ht, outerPrefixes)::restIH;
+        TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm)::restIH;
 
     // failure
     case(_,_,_,INST_INNER(io=_))
@@ -1495,6 +1500,62 @@ algorithm
         fail();
   end match;
 end updateInstHierarchy;
+
+public function updateSMHierarchy
+"@author: BTH
+Add State Machine state to collection of State Machine states in instance hierarchy."
+  input DAE.ComponentRef smState;
+  input Prefix.Prefix inPrefix;
+  input InstHierarchy inIH;
+  output InstHierarchy outIH;
+algorithm
+  outIH := match (smState, inPrefix, inIH)
+    local
+      TopInstance tih;
+      InstHierarchy restIH, ih;
+      DAE.ComponentRef cref;
+      SCode.Ident name;
+      InstHierarchyHashTable ht;
+      Option<Absyn.Path> pathOpt;
+      OuterPrefixes outerPrefixes;
+      DAE.ComponentRef cref_;
+      HashSet.HashSet sm;
+      HashSet.HashSet sm2;
+
+    // no hashtable, create one!
+    case(_,_,{})
+      equation
+        ht = emptyInstHierarchyHashTable();
+        sm = HashSet.emptyHashSet();
+        //sm = Debug.bcallret2(true, BaseHashSet.add, smState, sm, sm);
+        sm2 = BaseHashSet.add(smState, sm);
+        // FIXME what to put for emptyOuterPrefixes
+        tih = TOP_INSTANCE(NONE(), ht, emptyOuterPrefixes, sm2);
+
+        ih = {tih};
+      then
+        ih;
+
+    // add to the hierarchy
+    case (cref_,_,TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm)::restIH)
+      equation
+        // prefix the name!
+        cref = PrefixUtil.prefixCrefNoContext(inPrefix, cref_);
+        // add to hashtable!
+        sm = BaseHashSet.add(cref, sm); // add((cref,inInstInner), ht);
+
+      then
+        TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm)::restIH;
+
+    // failure
+    case (DAE.CREF_IDENT(ident=name),_,_)
+      equation
+        Debug.fprintln(Flags.INSTANCE, "InnerOuter.updateSMHierarchy failure for: " +&
+           PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name);
+      then
+        fail();
+  end match;
+end updateSMHierarchy;
 
 public function addClassIfInner
   input SCode.Element inClass;
@@ -1549,26 +1610,28 @@ algorithm
       InstHierarchyHashTable ht;
       Option<Absyn.Path> pathOpt;
       OuterPrefixes outerPrefixes;
+      HashSet.HashSet sm;
 
     // no hashtable, create one!
     case({}, _, _)
       equation
         // create an empty table and add the crefs to it.
         ht = emptyInstHierarchyHashTable();
-        tih = TOP_INSTANCE(NONE(), ht, {OUTER(inOuterComponentRef, inInnerComponentRef)});
+        sm = HashSet.emptyHashSet();
+        tih = TOP_INSTANCE(NONE(), ht, {OUTER(inOuterComponentRef, inInnerComponentRef)}, sm);
         ih = {tih};
       then
         ih;
 
     // add to the top instance
-    case((TOP_INSTANCE(pathOpt, ht, outerPrefixes))::restIH, _, _)
+    case((TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm))::restIH, _, _)
       equation
         // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.addOuterPrefix adding: outer cref: " +&
         //   ComponentReference.printComponentRefStr(inOuterComponentRef) +& " refers to inner cref: " +&
         //   ComponentReference.printComponentRefStr(inInnerComponentRef) +& " to IH");
         outerPrefixes = List.unionElt(OUTER(inOuterComponentRef,inInnerComponentRef), outerPrefixes);
       then
-        TOP_INSTANCE(pathOpt, ht, outerPrefixes)::restIH;
+        TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm)::restIH;
 
     // failure
     else
@@ -1601,7 +1664,7 @@ algorithm
         fail();
 
     // we have some outer references, search for our prefix + cref in them
-    case ({TOP_INSTANCE(_, _, outerPrefixes as _::_)}, _, _)
+    case ({TOP_INSTANCE(_, _, outerPrefixes as _::_, _)}, _, _)
       equation
         (_,fullCref) = PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, inPrefix, inOuterComponentRef);
 
@@ -1764,7 +1827,7 @@ algorithm
         "There are no 'inner' components defined in the model in any of the parent scopes of 'outer' component's scope: " +& FGraph.printGraphPathStr(inEnv) +& "." ;
 
     // get the list of components
-    case((TOP_INSTANCE(_, ht, _))::_, _)
+    case((TOP_INSTANCE(_, ht, _, _))::_, _)
       equation
         inners = getInnersFromInstHierarchyHashTable(ht);
         str = stringDelimitList(List.map(inners, printInnerDefStr), "\n    ");

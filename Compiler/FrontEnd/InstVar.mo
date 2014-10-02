@@ -78,6 +78,8 @@ protected import Error;
 protected import ErrorExt;
 protected import Lookup;
 protected import SCodeDump;
+protected import BaseHashSet;
+protected import HashSet;
 
 protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
@@ -87,7 +89,17 @@ public function instVar
 "this function will look if a variable is inner/outer and depending on that will:
   - lookup for inner in the instanance hieararchy if we have ONLY outer
   - instantiate normally via instVar_dispatch otherwise
-  - report an error if we have modifications on outer"
+  - report an error if we have modifications on outer
+
+BTH: Added cases that handles 'outer' and 'inner outer' variables differently if they
+are declared wihin an instance of a synchronous State Machine state: basically, instead of
+substituting 'outer' variables through their 'inner' counterparts the 'outer' variable is
+declared with a modification equation that sets the 'outer' variable equal to the 'inner'
+variable. Hence, the information in which instance an 'outer' variable was declared is
+preserved in the flattened code. This information is necessary to handle state machines in
+the backend. The current implementation doesn't handle cases in which the
+'inner' is not (yet) set.
+  "
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
@@ -142,6 +154,7 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.ComponentRef cref, crefOuter, crefInner;
+      DAE.Exp crefExp;
       list<DAE.ComponentRef> outers;
       String nInner, typeName, fullName;
       Absyn.Path typePath;
@@ -150,6 +163,10 @@ algorithm
       Option<InnerOuter.InstResult> instResult;
       SCode.Prefixes pf;
       UnitAbsyn.InstStore store;
+      InnerOuter.TopInstance topInstance;
+      HashSet.HashSet sm;
+      Absyn.Exp aexp;
+
 
     // is ONLY inner
     case (cache,env,ih,store,ci_state,mod,pre,n,cl as SCode.CLASS(name=typeName),attr,pf,dims,idxs,inst_dims,impl,comment,_,graph,csets,_)
@@ -215,6 +232,48 @@ algorithm
      then
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
+    // is ONLY outer and is inside an instance of a State Machine state
+    case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
+      equation
+        // only outer!
+        io = SCode.prefixesInnerOuter(pf);
+        true = Absyn.isOnlyOuter(io);
+
+        // we should have NO modifications on only outer!
+        true = Mod.modEqual(mod, DAE.NOMOD());
+
+        // lookup in IH
+        InnerOuter.INST_INNER(
+           innerPrefix,
+           nInner,
+           ioInner,
+           fullName,
+           typePath,
+           innerScope,
+           instResult as SOME(InnerOuter.INST_RESULT(cache,compenv,store,outerDAE,_,ty,graph)),
+           outers,_) =
+          InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
+
+
+        // the outer must be in an instance that is part of a State Machine
+        cref = PrefixUtil.prefixToCref(inPrefix);
+        topInstance = List.first(ih);
+        InnerOuter.TOP_INSTANCE(sm=sm) = topInstance;
+        true = BaseHashSet.has(cref, sm);
+
+        // create equation modification to outer that sets it equal to inner
+        (cache,crefInner) = PrefixUtil.prefixCref(cache,env,ih,innerPrefix, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        crefExp = Expression.makeCrefExp(crefInner,ty);
+        aexp = Expression.unelabExp(crefExp);
+        mod = DAE.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {},
+          SOME(DAE.TYPED(crefExp, NONE(), DAE.PROP(ty, DAE.C_VAR()),aexp, info)));
+
+        (cache,compenv,ih,store,dae,csets,ty,graph) =
+          instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets);
+      then
+        (inCache,compenv,ih,store,dae,csets,ty,graph);
+
+
     // is ONLY outer
     case (cache,env,ih,store,_,mod,pre,n,_,_,pf,_,_,_,_,_,_,graph,csets,_)
       equation
@@ -224,8 +283,6 @@ algorithm
 
         // we should have NO modifications on only outer!
         true = Mod.modEqual(mod, DAE.NOMOD());
-
-        // Debug.fprintln(Flags.INNER_OUTER, "- InstVar.instVar outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
 
         // lookup in IH
         InnerOuter.INST_INNER(
@@ -342,6 +399,56 @@ algorithm
            instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph, csets);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
+
+    // is inner outer and is inside an instance of a State Machine state!
+    case (cache,env,ih,store,ci_state,mod,pre,n,cl as SCode.CLASS(name=typeName),attr,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
+      equation
+        // both inner and outer
+        io = SCode.prefixesInnerOuter(pf);
+        true = Absyn.isInnerOuter(io);
+
+        // the inner outer must be in an instance that is part of a State Machine
+        cref = PrefixUtil.prefixToCref(inPrefix);
+        topInstance = List.first(ih);
+        InnerOuter.TOP_INSTANCE(sm=sm) = topInstance;
+        true = BaseHashSet.has(cref, sm);
+
+        (cache,innerCompEnv,ih,store,dae,csetsInner,ty,graph) =
+           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph, csets);
+
+        // add it to the instance hierarchy
+        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        fullName = ComponentReference.printComponentRefStr(cref);
+        (cache, typePath) = Inst.makeFullyQualified(cache, env, Absyn.IDENT(typeName));
+
+        // also all the components in the environment should be updated to be outer!
+        // switch components from inner to outer in the component env.
+        outerCompEnv = InnerOuter.switchInnerToOuterInGraph(innerCompEnv, cref);
+
+        // keep the dae we get from the instantiation of the inner
+        innerDAE = dae;
+
+        innerScope = FGraph.printGraphPathStr(componentDefinitionParentEnv);
+
+        // add inner to the instance hierarchy
+        ih = InnerOuter.updateInstHierarchy(ih, pre, io,
+               InnerOuter.INST_INNER(
+                  pre,
+                  n,
+                  io,
+                  fullName,
+                  typePath,
+                  innerScope,
+                  SOME(InnerOuter.INST_RESULT(cache,outerCompEnv,store,innerDAE,csetsInner,ty,graph)),
+                  {},
+                  NONE()));
+
+        // now instantiate it as an outer with no modifications
+        pf = SCode.prefixesSetInnerOuter(pf, Absyn.OUTER());
+        (cache,compenv,ih,store,dae,_,ty,graph) =
+          instVar(cache,env,ih,store,ci_state,DAE.NOMOD(),pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets,componentDefinitionParentEnv);
+      then
+        (cache,compenv,ih,store,dae,csetsInner,ty,graph);
 
     // is inner outer!
     case (cache,env,ih,store,ci_state,mod,pre,n,cl as SCode.CLASS(name=typeName),attr,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
