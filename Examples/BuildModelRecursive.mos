@@ -347,7 +347,7 @@ if javascript then
   system("cp ModelicaIcons/Modelica.Icons.Example.svg files/");
   system("cp -a " + OpenModelica.Scripting.getInstallationDirectoryPath() + "/lib/omc/emcc/mdpad/* files/");
 end if;
-results := system_parallel({omc + " +n=1 " + s + ".mos" for s in a});
+results := system_parallel({"/usr/bin/time -f '"+s+" %es' " + omc + " +n=1 " + s + ".mos" for s in a});
 getErrorString();
 
 system("rm -f " + log);
