@@ -986,13 +986,15 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   infoStreamPrint(LOG_INIT, 0, "### START INITIALIZATION ###");
 
+
   setAllParamsToStart(data);
-  data->callback->updateBoundParameters(data);
-  data->callback->updateBoundVariableAttributes(data);
 
   /* import start values from extern mat-file */
   if(pInitFile && strcmp(pInitFile, ""))
   {
+    data->callback->updateBoundParameters(data);
+    data->callback->updateBoundVariableAttributes(data);
+
     if(importStartValues(data, pInitFile, initTime))
     {
       TRACE_POP
@@ -1002,6 +1004,12 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   /* set up all variables with their start-values */
   setAllVarsToStart(data);
+
+  if(!(pInitFile && strcmp(pInitFile, "")))
+  {
+    data->callback->updateBoundParameters(data);
+    data->callback->updateBoundVariableAttributes(data);
+  }
 
   /* update static data of non-linear system solvers */
   updateStaticDataOfNonlinearSystems(data);
