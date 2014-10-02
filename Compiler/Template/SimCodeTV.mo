@@ -354,7 +354,6 @@ package SimCode
       list<SimEqSystem> residual;
       Option<JacobianMatrix> jacobianMatrix;
 
-
       list<DAE.ElementSource> sources;
       Integer indexLinearSystem;
     end SES_LINEAR;

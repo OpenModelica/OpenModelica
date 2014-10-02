@@ -284,7 +284,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_integer size;
   modelica_integer equationIndex;      /* index for EQUATION_INFO */
 
-  /* attributes for x */
+  /* attributes of iteration variables */
   modelica_real *min;
   modelica_real *max;
   modelica_real *nominal;
@@ -326,7 +326,14 @@ typedef struct LINEAR_SYSTEM_DATA
   modelica_integer jacobianIndex;
 
   void (*residualFunc)(void*, const double*, double*, const int*);
+  void (*initializeStaticLSData)(void*, void*);
 
+  
+  /* attributes of iteration variables */
+  modelica_real *min;
+  modelica_real *max;
+  modelica_real *nominal;
+  
   modelica_integer nnz;                 /* number of nonzero entries */
   modelica_integer size;
   modelica_integer equationIndex;       /* index for EQUATION_INFO */

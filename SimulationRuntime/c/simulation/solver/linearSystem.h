@@ -56,6 +56,7 @@ enum LINEAR_SOLVER
 typedef void* LS_SOLVER_DATA;
 
 int initializeLinearSystems(DATA *data);
+int updateStaticDataOfLinearSystems(DATA *data);
 int freeLinearSystems(DATA *data);
 int solve_linear_system(DATA *data, int sysNumber);
 int check_linear_solutions(DATA *data, int printFailingSystems);

@@ -1011,7 +1011,8 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
     data->callback->updateBoundVariableAttributes(data);
   }
 
-  /* update static data of non-linear system solvers */
+  /* update static data of linear/non-linear system solvers */
+  updateStaticDataOfLinearSystems(data);
   updateStaticDataOfNonlinearSystems(data);
 
   /* if there are user-specified options, use them! */

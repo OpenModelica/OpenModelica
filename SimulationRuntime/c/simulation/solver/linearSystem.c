@@ -76,6 +76,14 @@ int initializeLinearSystems(DATA *data)
         linsys[i].jacobianIndex = -1;
       }
     }
+    
+    /* allocate more system data */
+    linsys[i].nominal = (double*) malloc(size*sizeof(double));
+    linsys[i].min = (double*) malloc(size*sizeof(double));
+    linsys[i].max = (double*) malloc(size*sizeof(double));
+
+    linsys[i].initializeStaticLSData(data, &linsys[i]);
+    
     /* allocate solver data */
     /* the implementation of matrix A is solver-specific */
     switch(data->simulationInfo.lsMethod)
@@ -100,6 +108,29 @@ int initializeLinearSystems(DATA *data)
   return 0;
 }
 
+/*! \fn int updateStaticDataOfLinearSystems(DATA *data)
+ *
+ *  This function allocates memory for all linear systems.
+ *
+ *  \param [ref] [data]
+ */
+int updateStaticDataOfLinearSystems(DATA *data)
+{
+  int i, nnz;
+  int size;
+  LINEAR_SYSTEM_DATA *linsys = data->simulationInfo.linearSystemData;
+
+  infoStreamPrint(LOG_LS, 1, "update static data of linear system solvers");
+
+  for(i=0; i<data->modelData.nLinearSystems; ++i)
+  {
+    linsys[i].initializeStaticLSData(data, &linsys[i]);
+  }
+
+  messageClose(LOG_LS);
+  return 0;
+}
+
 /*! \fn freeLinearSystems
  *
  *  This function frees memory of linear systems.
@@ -118,7 +149,10 @@ int freeLinearSystems(DATA *data)
     /* free system and solver data */
     free(linsys[i].x);
     free(linsys[i].b);
-
+    free(linsys[i].nominal);
+    free(linsys[i].min);
+    free(linsys[i].max);
+    
     switch(data->simulationInfo.lsMethod)
     {
     case LS_LAPACK:

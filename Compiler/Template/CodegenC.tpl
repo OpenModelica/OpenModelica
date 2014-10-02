@@ -1529,6 +1529,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
          linearSystemData[<%eq.indexLinearSystem%>].method = 0;
          linearSystemData[<%eq.indexLinearSystem%>].setA = setLinearMatrixA<%eq.index%>;
          linearSystemData[<%eq.indexLinearSystem%>].setb = setLinearVectorb<%eq.index%>;
+         linearSystemData[<%eq.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%eq.index%>;
          >>
        case SOME(__) then
          let size = listLength(eq.vars)
@@ -1548,6 +1549,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
          linearSystemData[<%eq.indexLinearSystem%>].jacobianIndex = <%jacIndex%>;
          linearSystemData[<%eq.indexLinearSystem%>].setA = NULL;//setLinearMatrixA<%eq.index%>;
          linearSystemData[<%eq.indexLinearSystem%>].setb = NULL; //setLinearVectorb<%eq.index%>;
+         linearSystemData[<%eq.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%eq.index%>;
          >>
        else
        error(sourceInfo(), ' No jacobian create for linear system <%eq.index%>.')
@@ -1598,8 +1600,14 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations, String m
            <% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq2.index%>);' %>
            <%preExp%>res[<%i0%>] = <%expPart%>;
            <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq2.index%>);' %>
-           >>
-          ;separator="\n")
+           >> ;separator="\n")
+         let body_initializeStaticLSData = (eq.vars |> var hasindex i0 =>
+           <<
+           /* static ls data for <%cref(varName(var))%> */
+           linearSystemData->nominal[i] = $P$ATTRIBUTE<%cref(varName(var))%>.nominal;
+           linearSystemData->min[i]     = $P$ATTRIBUTE<%cref(varName(var))%>.min;
+           linearSystemData->max[i++]   = $P$ATTRIBUTE<%cref(varName(var))%>.max;
+           >> ;separator="\n")
        <<
        <%auxFunction%>
        <%tmp%>
@@ -1615,6 +1623,13 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations, String m
          <%prebody%>
          <%body%>
          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq.index%>);' %>
+       }
+       void initializeStaticLSData<%eq.index%>(void *inData, void *systemData)
+       {
+         DATA* data = (DATA*) inData;
+         LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
+         int i=0;
+         <%body_initializeStaticLSData%>
        }
        >>
        else
@@ -1632,6 +1647,13 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations, String m
            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls2, &auxFunction)
            '<%preExp%>linearSystemData->b[<%i0%>] =  <%expPart%>;'
           ;separator="\n")
+         let body_initializeStaticLSData = (eq.vars |> var hasindex i0 =>
+           <<
+           /* static ls data for <%cref(varName(var))%> */
+           linearSystemData->nominal[i] = $P$ATTRIBUTE<%cref(varName(var))%>.nominal;
+           linearSystemData->min[i]     = $P$ATTRIBUTE<%cref(varName(var))%>.min;
+           linearSystemData->max[i++]   = $P$ATTRIBUTE<%cref(varName(var))%>.max;
+           >> ;separator="\n")
        <<
        <%auxFunction%>
        void setLinearMatrixA<%eq.index%>(void *inData, void *systemData)
@@ -1649,6 +1671,13 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations, String m
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          <%varDecls2%>
          <%vectorb%>
+       }
+       void initializeStaticLSData<%eq.index%>(void *inData, void *systemData)
+       {
+         DATA* data = (DATA*) inData;
+         LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
+         int i=0;
+         <%body_initializeStaticLSData%>
        }
        >>
      end match
