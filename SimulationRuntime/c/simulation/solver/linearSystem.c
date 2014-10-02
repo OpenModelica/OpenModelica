@@ -76,14 +76,14 @@ int initializeLinearSystems(DATA *data)
         linsys[i].jacobianIndex = -1;
       }
     }
-    
+
     /* allocate more system data */
     linsys[i].nominal = (double*) malloc(size*sizeof(double));
     linsys[i].min = (double*) malloc(size*sizeof(double));
     linsys[i].max = (double*) malloc(size*sizeof(double));
 
     linsys[i].initializeStaticLSData(data, &linsys[i]);
-    
+
     /* allocate solver data */
     /* the implementation of matrix A is solver-specific */
     switch(data->simulationInfo.lsMethod)
@@ -152,7 +152,7 @@ int freeLinearSystems(DATA *data)
     free(linsys[i].nominal);
     free(linsys[i].min);
     free(linsys[i].max);
-    
+
     switch(data->simulationInfo.lsMethod)
     {
     case LS_LAPACK:
