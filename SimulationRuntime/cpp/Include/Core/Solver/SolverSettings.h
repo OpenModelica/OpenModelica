@@ -64,5 +64,5 @@ private:
 
   bool
     _denseOutput;
-  
+
 };
