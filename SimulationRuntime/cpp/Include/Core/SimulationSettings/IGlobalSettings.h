@@ -17,9 +17,9 @@ Copyright (c) 2008, OSMC
 using std::string;
 #endif
 
-enum OutputFormat {CSV, MAT, EMPTY};
-enum LogType {OFF,STATS, NLS, ODE};
-enum OutputPointType {ALL,STEP,NONE};
+enum OutputFormat {CSV, MAT, EMPTY} ;
+enum LogType {OFF,STATS, NLS, ODE} ;
+enum OutputPointType {ALL,STEP,EMPTY2} ;
 class IGlobalSettings
 {
 
