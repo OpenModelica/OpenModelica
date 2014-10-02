@@ -249,7 +249,7 @@ void Cvode::initialize()
 void Cvode::solve(const SOLVERCALL action)
 {
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == NONE);
+  bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == EMPTY2);
 
   if (_cvodesettings && _system)
   {
@@ -333,7 +333,7 @@ void Cvode::CVodeCore()
     throw std::runtime_error("CVode::ReInit");
 
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == NONE);
+  bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == EMPTY2);
 
   while (_solverStatus & ISolver::CONTINUE)
   {
