@@ -35,7 +35,7 @@ using namespace std;
 #include <boost/circular_buffer.hpp>
 #include <boost/foreach.hpp>
 #if defined (__vxworks)
-#else 
+#else
 #include "Utils/extension/shared_library.hpp"
 #include "Utils/extension/extension.hpp"
 #include "Utils/extension/factory.hpp"
@@ -75,7 +75,7 @@ using namespace std;
 #include <Core/Utils/extension/type_map.hpp>
 #include <Core/Utils/extension/factory_map.hpp>
 #if defined (__vxworks)
-#else 
+#else
 #include <Core/Utils/extension/shared_library.hpp>
 #include <Core/Utils/extension/convenience.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -93,7 +93,7 @@ using namespace std;
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/unordered_map.hpp>
 #if defined (__vxworks)
-#else 
+#else
 #include <boost/program_options.hpp>
 #endif
 #include <boost/assign/list_inserter.hpp>
@@ -105,7 +105,7 @@ using namespace std;
     /*Namespaces*/
 using namespace boost::extensions;
 #if defined (__vxworks)
-#else 
+#else
 namespace fs = boost::filesystem;
 #endif
 using boost::unordered_map;
