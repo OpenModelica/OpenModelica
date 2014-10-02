@@ -43,7 +43,7 @@ Hybrj::~Hybrj()
     if(_xHelp)    delete []    _xHelp;
     if(_f)        delete []    _f;    
     if(_fHelp)    delete []    _fHelp;    
-	if(_iHelp)    delete []    _iHelp; 
+  if(_iHelp)    delete []    _iHelp; 
     if(_jac)    delete []    _jac;
     if( _diag ) delete[] _diag; 
     if(_r) delete[] _r;   
@@ -92,7 +92,7 @@ void Hybrj::initialize()
             if(_f)        delete []    _f;    
             if(_xHelp)    delete []    _xHelp;
             if(_fHelp)    delete []    _fHelp;  
-    if(_iHelp)    delete []    _iHelp; 			
+    if(_iHelp)    delete []    _iHelp;       
             if(_jac)    delete []    _jac;
             if(_x0) delete[] _x0;
             if(_x1) delete[] _x1;
@@ -105,7 +105,7 @@ void Hybrj::initialize()
             _f            = new double[_dimSys];    
             _xHelp        = new double[_dimSys];
             _fHelp        = new double[_dimSys];
-			_iHelp        = new long int[_dimSys];
+      _iHelp        = new long int[_dimSys];
             _jac        = new double[_dimSys*_dimSys];
              _x0 = new double[_dimSys];
              _x1 = new double[_dimSys];

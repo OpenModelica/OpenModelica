@@ -13,7 +13,7 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
     , _fScale   (NULL)
     , _f        (NULL)
     , _helpArray    (NULL)
-	, _ihelpArray    (NULL)
+  , _ihelpArray    (NULL)
   , _zeroVec (NULL)
   , _currentIterate (NULL)
     , _jac    (NULL)
@@ -36,7 +36,7 @@ Kinsol::~Kinsol()
     if(_fScale)     delete []  _fScale;
     if(_f)      delete []  _f;
     if(_helpArray)      delete []  _helpArray;
-	if(_ihelpArray)      delete []  _ihelpArray;
+  if(_ihelpArray)      delete []  _ihelpArray;
     if(_jac)      delete []  _jac;
     if(_fHelp)    delete []    _fHelp;
   if(_zeroVec)    delete []    _zeroVec;
@@ -78,7 +78,7 @@ void Kinsol::initialize()
             if(_fScale)     delete []  _fScale;
             if(_f)         delete []  _f;
             if(_helpArray)     delete []  _helpArray;
-			if(_ihelpArray)     delete []  _ihelpArray;
+      if(_ihelpArray)     delete []  _ihelpArray;
             if(_jac)     delete []  _jac;
             if(_yHelp)    delete []    _yHelp;
              if(_fHelp)    delete []    _fHelp;
@@ -91,7 +91,7 @@ void Kinsol::initialize()
             _fScale     = new double[_dimSys];
             _f      = new double[_dimSys];
             _helpArray    = new double[_dimSys];
-			_ihelpArray    = new long int[_dimSys];
+      _ihelpArray    = new long int[_dimSys];
        _zeroVec   = new double[_dimSys];
        _currentIterate   = new double[_dimSys];
 
@@ -103,7 +103,7 @@ void Kinsol::initialize()
 
             memset(_f,0,_dimSys*sizeof(double));
             memset(_helpArray,0,_dimSys*sizeof(double));
-			memset(_ihelpArray,0,_dimSys*sizeof(long int));
+      memset(_ihelpArray,0,_dimSys*sizeof(long int));
             memset(_yHelp,0,_dimSys*sizeof(double));
             memset(_fHelp,0,_dimSys*sizeof(double));
             memset(_jac,0,_dimSys*_dimSys*sizeof(double));

@@ -12,7 +12,7 @@ Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 , _yHelp            (NULL)
 , _f                (NULL)
 , _fHelp            (NULL)
-,_iHelp				(NULL)
+,_iHelp        (NULL)
 , _jac                (NULL)
 , _dimSys            (0)
 , _firstCall        (true)
@@ -26,7 +26,7 @@ Newton::~Newton()
     if(_yHelp)    delete []    _yHelp;
     if(_f)        delete []    _f;
     if(_fHelp)    delete []    _fHelp;
-	if(_iHelp)    delete []    _iHelp;
+  if(_iHelp)    delete []    _iHelp;
     if(_jac)    delete []    _jac;
 }
 
@@ -55,14 +55,14 @@ void Newton::initialize()
             if(_f)        delete []    _f;
             if(_yHelp)    delete []    _yHelp;
             if(_fHelp)    delete []    _fHelp;
-			if(_iHelp)    delete []    _iHelp;
+      if(_iHelp)    delete []    _iHelp;
             if(_jac)    delete []    _jac;
 
             _y            = new double[_dimSys];
             _f            = new double[_dimSys];
             _yHelp        = new double[_dimSys];
             _fHelp        = new double[_dimSys];
-			_iHelp 		  = new long int[_dimSys];
+      _iHelp       = new long int[_dimSys];
             _jac        = new double[_dimSys*_dimSys];
 
             _algLoop->getReal(_y);

@@ -89,6 +89,6 @@ private:
         *_yHelp,                    ///< Temp        - Auxillary variables
         *_fHelp,                    ///< Temp        - Auxillary variables
         *_jac;                        ///< Temp        - Jacobian
-		
-	long int *_iHelp;
+
+  long int *_iHelp;
 };

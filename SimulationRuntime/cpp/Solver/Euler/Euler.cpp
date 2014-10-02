@@ -336,8 +336,8 @@ void Euler::doEulerBackward()
         *jac    = new double[_dimSys*_dimSys],        // Jacobimatrix
         *yHelp    = new double[_dimSys],
         *fHelp  = new double[_dimSys];
-        
-	long int *pHelp    = new long int[_dimSys];                // Hilfsvariale Pivotisierun
+
+  long int *pHelp    = new long int[_dimSys];                // Hilfsvariale Pivotisierun
     memset(pHelp,0,_dimSys*sizeof(long int));
 
     while(  _idid == 0 && _solverStatus != USER_STOP )
@@ -542,7 +542,7 @@ void Euler::doMidpoint()
         *LSErhs    = new double[_dimSys],
         *fHelp    = new double[_dimSys];                    // Hilfsvariable für rechte Seite
 
-		long int  *pHelp    = new long int[_dimSys];                // Hilfsvariale Pivotisierun
+    long int  *pHelp    = new long int[_dimSys];                // Hilfsvariale Pivotisierun
     // Rechte Seite
     double* k1 = new double[_dimSys];
 
