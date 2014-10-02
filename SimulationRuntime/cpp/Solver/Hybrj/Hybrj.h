@@ -59,6 +59,7 @@ private:
     bool
         _firstCall;                    ///< Temp        - Denotes the first call to the solver, initialize() is called
   
+    long int* _iHelp;
     double
         *_x,                        ///< Temp        - Unknowns variables
         *_f,                        ///< Temp        - Residuals

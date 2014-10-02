@@ -12,6 +12,7 @@ Hybrj::Hybrj(IAlgLoop* algLoop, INonLinSolverSettings* settings)
     , _xHelp            (NULL)
     , _f                (NULL)
     , _fHelp            (NULL)
+    , _iHelp            (NULL)
     , _jac                (NULL)
     ,_diag(NULL)
     ,_r(NULL)
@@ -42,6 +43,7 @@ Hybrj::~Hybrj()
     if(_xHelp)    delete []    _xHelp;
     if(_f)        delete []    _f;    
     if(_fHelp)    delete []    _fHelp;    
+	if(_iHelp)    delete []    _iHelp; 
     if(_jac)    delete []    _jac;
     if( _diag ) delete[] _diag; 
     if(_r) delete[] _r;   
@@ -89,7 +91,8 @@ void Hybrj::initialize()
             if(_x)         delete []    _x;
             if(_f)        delete []    _f;    
             if(_xHelp)    delete []    _xHelp;
-            if(_fHelp)    delete []    _fHelp;    
+            if(_fHelp)    delete []    _fHelp;  
+    if(_iHelp)    delete []    _iHelp; 			
             if(_jac)    delete []    _jac;
             if(_x0) delete[] _x0;
             if(_x1) delete[] _x1;
@@ -102,6 +105,7 @@ void Hybrj::initialize()
             _f            = new double[_dimSys];    
             _xHelp        = new double[_dimSys];
             _fHelp        = new double[_dimSys];
+			_iHelp        = new long int[_dimSys];
             _jac        = new double[_dimSys*_dimSys];
              _x0 = new double[_dimSys];
              _x1 = new double[_dimSys];
@@ -177,7 +181,7 @@ void Hybrj::solve()
         _algLoop->getReal(_x);
         _algLoop->getRHS(_f);
     _algLoop->getSystemMatrix(_jac);
-        dgesv_(&dimSys,&dimRHS,_jac,&dimSys,_fHelp,_f,&dimSys,&irtrn);
+        dgesv_(&dimSys,&dimRHS,_jac,&dimSys,_iHelp,_f,&dimSys,&irtrn);
         memcpy(_x,_f,_dimSys*sizeof(double));
         _algLoop->setReal(_x);
         _iterationStatus = DONE;
