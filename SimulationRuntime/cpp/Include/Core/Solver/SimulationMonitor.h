@@ -1,5 +1,9 @@
 #pragma once
 
+#if defined(__vxworks)
+#define BOOST_EXTENSION_MONITOR_DECL
+#endif
+
 class BOOST_EXTENSION_MONITOR_DECL SimulationMonitor
 {
 public:
