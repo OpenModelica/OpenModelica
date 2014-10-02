@@ -34,12 +34,15 @@ using namespace std;
 #include <boost/tuple/tuple.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/foreach.hpp>
-#include <Core/Utils/extension/shared_library.hpp>
-#include <Core/Utils/extension/extension.hpp>
-#include <Core/Utils/extension/factory.hpp>
-#include <Core/Utils/extension/factory_map.hpp>
-#include <Core/Utils/extension/type_map.hpp>
-#include <Core/Utils/extension/convenience.hpp>
+#if defined (__vxworks)
+#else 
+#include "Utils/extension/shared_library.hpp"
+#include "Utils/extension/extension.hpp"
+#include "Utils/extension/factory.hpp"
+#include "Utils/extension/factory_map.hpp"
+#include "Utils/extension/type_map.hpp"
+#include "Utils/extension/convenience.hpp"
+#endif
 #include <boost/numeric/ublas/storage.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
@@ -70,11 +73,14 @@ using namespace std;
 #include <Core/Utils/extension/extension.hpp>
 #include <Core/Utils/extension/factory.hpp>
 #include <Core/Utils/extension/type_map.hpp>
+#include <Core/Utils/extension/factory_map.hpp>
+#if defined (__vxworks)
+#else 
 #include <Core/Utils/extension/shared_library.hpp>
 #include <Core/Utils/extension/convenience.hpp>
-#include <Core/Utils/extension/factory_map.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
+#endif
 #include <boost/assert.hpp>
 #include <boost/algorithm/minmax_element.hpp>
 #include <boost/multi_array.hpp>
@@ -86,7 +92,10 @@ using namespace std;
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/unordered_map.hpp>
+#if defined (__vxworks)
+#else 
 #include <boost/program_options.hpp>
+#endif
 #include <boost/assign/list_inserter.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/array.hpp>
@@ -95,7 +104,10 @@ using namespace std;
 #include <boost/noncopyable.hpp>
     /*Namespaces*/
 using namespace boost::extensions;
+#if defined (__vxworks)
+#else 
 namespace fs = boost::filesystem;
+#endif
 using boost::unordered_map;
 namespace uBlas = boost::numeric::ublas;
 using namespace boost::extensions;
@@ -117,8 +129,11 @@ using std::max;
 using std::min;
 using std::string;
 using std::vector;
+#if defined (__vxworks)
+#else
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+#endif
 //using boost::timer::cpu_timer;
 //using boost::timer::cpu_times;
 //using boost::timer::nanosecond_type;
@@ -156,3 +171,6 @@ typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<
 #include <Core/HistoryImpl.h>
 #include <Core/DataExchange/Policies/TextfileWriter.h>
 #include <Core/DataExchange/Policies/MatfileWriter.h>
+#if defined (__vxworks)
+#include <Core/SimulationSettings/ISettingsFactory.h>
+#endif
