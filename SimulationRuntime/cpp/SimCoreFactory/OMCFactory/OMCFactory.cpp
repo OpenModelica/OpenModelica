@@ -34,7 +34,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      int portnum;
      std::map<std::string,OutputFormat> outputFormatMap = map_list_of("csv", CSV)("mat", MAT)("empty",EMPTY);
      std::map<std::string,LogType> logTypeMap = map_list_of("stats", STATS)("nls", NLS)("ode",ODE)("off",OFF);
-     std::map<std::string,OutputPointType> outputPointTypeMap = map_list_of("all", ALL)("step", STEP)("none",NONE);
+     std::map<std::string,OutputPointType> outputPointTypeMap = map_list_of("all", ALL)("step", STEP)("empty2",EMPTY2);
      po::options_description desc("Allowed options");
      desc.add_options()
           ("help", "produce help message")
