@@ -12,6 +12,7 @@ Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 , _yHelp            (NULL)
 , _f                (NULL)
 , _fHelp            (NULL)
+,_iHelp				(NULL)
 , _jac                (NULL)
 , _dimSys            (0)
 , _firstCall        (true)
@@ -25,6 +26,7 @@ Newton::~Newton()
     if(_yHelp)    delete []    _yHelp;
     if(_f)        delete []    _f;
     if(_fHelp)    delete []    _fHelp;
+	if(_iHelp)    delete []    _iHelp;
     if(_jac)    delete []    _jac;
 }
 
@@ -53,12 +55,14 @@ void Newton::initialize()
             if(_f)        delete []    _f;
             if(_yHelp)    delete []    _yHelp;
             if(_fHelp)    delete []    _fHelp;
+			if(_iHelp)    delete []    _iHelp;
             if(_jac)    delete []    _jac;
 
             _y            = new double[_dimSys];
             _f            = new double[_dimSys];
             _yHelp        = new double[_dimSys];
             _fHelp        = new double[_dimSys];
+			_iHelp 		  = new long int[_dimSys];
             _jac        = new double[_dimSys*_dimSys];
 
             _algLoop->getReal(_y);
@@ -129,7 +133,7 @@ void Newton::solve()
                 {
                     //calcFunction(_yHelp,_fHelp);
                     _algLoop->getSystemMatrix(_jac);
-                    dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_fHelp,_f,&_dimSys,&irtrn);
+                    dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_iHelp,_f,&_dimSys,&irtrn);
                     memcpy(_y,_f,_dimSys*sizeof(double));
                     _algLoop->setReal(_y);
                     _iterationStatus = DONE;
@@ -141,7 +145,7 @@ void Newton::solve()
                     calcJacobian();
                 }
                 // Solve linear System
-                dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_fHelp,_f,&_dimSys,&irtrn);
+                dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_iHelp,_f,&_dimSys,&irtrn);
 
                 if(irtrn!=0)
                 {
