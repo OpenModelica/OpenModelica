@@ -38,7 +38,7 @@ private:
      std::map<string, std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > > _systems;
     boost::shared_ptr<IAlgLoopSolverFactory> _algloopsolverfactory;
 #if defined(__vxworks)
-	boost::shared_ptr<SimManager> _simMgr;
+  boost::shared_ptr<SimManager> _simMgr;
 #endif
 };
 
