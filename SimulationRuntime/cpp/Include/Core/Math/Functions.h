@@ -23,6 +23,10 @@ Copyright (c) 2008, OSMC
 
 #define EPSILON    (std::numeric_limits<double>::epsilon( ))
 
+#if defined(__vxworks)
+#define BOOST_EXTENSION_EXPORT_DECL
+#endif
+
 /// Definition of Signum function
 inline static int sgn (const double &c)
 {
@@ -155,7 +159,7 @@ inline int solveLGS(long int* dim, double* A, double* b)
             dimRHS = 1,                            // number of right hand sides (dimension of b)
             irtrn = 0;                            // return value
 
-        double* p = new double[(int)*dim];        // Pivot elements
+        long int* p = new long int[(int)*dim];        // Pivot elements
 
         // Solution is written to b
         /*dgesv_*/dgesv_(dim,&dimRHS,A,dim,p,b,dim,&irtrn);

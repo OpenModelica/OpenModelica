@@ -13,8 +13,9 @@
 *  system of equations A * X = B.
 ********************************/
 
-extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, double *pivot,
-                      double *b, long int *ldb, long int *idid);
+extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, long int *pivot,double *b, long int *ldb, long int *idid);
+extern "C" void dgetrf_(long int *m, long int *n, double *a, long int *lda, long int *ipiv, long int *info);
+extern "C" void dgetrs_(char *trans, long int *n, long int *nrhs, double *a, long int *lda, long int *ipiv, double *b, long int *ldb, long int *info);
 
 
 
