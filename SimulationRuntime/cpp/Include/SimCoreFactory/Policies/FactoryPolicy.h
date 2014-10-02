@@ -7,12 +7,14 @@
     #include <SimCoreFactory/Policies/SolverSettingsVxWorksFactory.h>
     #include <SimCoreFactory/Policies/SystemVxWorksFactory.h>
     #include <SimCoreFactory/Policies/NonLinSolverVxWorksFactory.h>
+    #include <SimCoreFactory/Policies/LinSolverVxWorksFactory.h>
     /*Policy defines*/
     typedef SystemVxWorksFactory<VxWorksFactory> SimControllerPolicy;
     typedef SolverVxWorksFactory<VxWorksFactory> ConfigurationPolicy;
     //typedef LinSolverVxWorksFactory<VxWorksFactory> NonLinSolverPolicy;
     typedef NonLinSolverVxWorksFactory<VxWorksFactory> NonLinSolverPolicy;
     typedef SolverSettingsVxWorksFactory<VxWorksFactory> SolverSettingsPolicy;
+    typedef LinSolverVxWorksFactory<VxWorksFactory> LinSolverPolicy;
 
 #elif defined(SIMSTER_BUILD)
 
