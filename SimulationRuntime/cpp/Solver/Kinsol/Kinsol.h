@@ -58,7 +58,7 @@ private:
 
   bool
     _firstCall;         ///< Temp   - Denotes the first call to the solver, init() is called
-
+  long int * _ihelpArray;
   double
     *_y,             ///< Temp   - Unknowns
     *_f,             ///< Temp   - Residuals
