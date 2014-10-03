@@ -6531,6 +6531,17 @@ algorithm
   DAE.TYPES_VAR(name=name) := var;
 end typeVarIdent;
 
+public function typeVarIdentEqual
+  input String name;
+  input DAE.Var var;
+  output Boolean b;
+protected
+  String name2;
+algorithm
+  DAE.TYPES_VAR(name=name2) := var;
+  b := stringEq(name,name2);
+end typeVarIdentEqual;
+
 public function VarType
   input DAE.Var var;
   output DAE.Type type_;

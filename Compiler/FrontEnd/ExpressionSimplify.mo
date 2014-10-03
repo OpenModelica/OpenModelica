@@ -5116,14 +5116,18 @@ protected function replaceIteratorWithExpTraverser
 algorithm
   (outExp,outTpl) := matchcontinue (inExp,inTpl)
     local
-      String id,name,replName;
+      String id,id2,name,replName;
       DAE.Exp iterExp;
-      DAE.Type ty,ty1;
+      DAE.Type ty,ty1,ty2;
       list<DAE.Subscript> ss;
       Boolean b;
       DAE.ComponentRef cr;
       DAE.Exp exp;
       tuple<String,DAE.Exp,Boolean> tpl;
+      Absyn.Path callPath,recordPath;
+      list<DAE.Var> varLst;
+      list<DAE.Exp> exps;
+      Integer i;
     case (_,(_,_,false)) then (inExp,inTpl);
     case (DAE.CREF(DAE.CREF_IDENT(id,_,{}),_),tpl as (name,iterExp,_))
       equation
@@ -5142,6 +5146,14 @@ algorithm
       equation
         true = stringEq(name,id);
         exp = DAE.CREF(DAE.CREF_QUAL(replName,ty1,ss,cr),ty);
+      then (exp,tpl);
+    case (DAE.CREF(DAE.CREF_QUAL(id,ty1,{},DAE.CREF_IDENT(id2,ty2,{})),ty),tpl as (name,DAE.CALL(expLst=exps,path=callPath,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(recordPath)))),_))
+      equation
+        true = stringEq(name,id);
+        true = Absyn.pathEqual(callPath,recordPath);
+        true = listLength(varLst) == listLength(exps);
+        i = List.positionOnTrue(id2,varLst,DAEUtil.typeVarIdentEqual);
+        exp = listGet(exps,i+1);
       then (exp,tpl);
     case (exp as DAE.CREF(componentRef=DAE.CREF_QUAL(ident=id)),(name,iterExp,_))
       equation
