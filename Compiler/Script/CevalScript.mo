@@ -7678,17 +7678,17 @@ protected function writeModuleDepends
 algorithm
   str := matchcontinue (cl,prefix,suffix,deps)
     local
-      String name;
+      String name,fileName;
       list<String> allDepends,protectedDepends;
       list<SCode.Element> elts;
       Absyn.Info info;
-    case (SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts)),_,_,_)
+    case (SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts), info = Absyn.INFO(fileName=fileName)),_,_,_)
       equation
         protectedDepends = List.map(List.select(elts,SCode.elementIsProtectedImport),importDepenency);
         _::allDepends = Graph.allReachableNodes((name::protectedDepends,{}),deps,stringEq);
         allDepends = List.map1r(allDepends, stringAppend, prefix);
         allDepends = List.map1(allDepends, stringAppend, ".interface.mo");
-        str = prefix +& name +& suffix +& ": " +& prefix +& name +& ".mo " +& stringDelimitList(allDepends," ");
+        str = prefix +& name +& suffix +& ": $(RELPATH_" +& name +& ") " +& stringDelimitList(allDepends," ");
       then str;
     case (SCode.CLASS(name=name,info=info),_,_,_)
       equation

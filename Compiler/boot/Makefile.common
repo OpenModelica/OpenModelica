@@ -52,15 +52,15 @@ ifeq ($(INCLUDEDEPENDS),1)
 include Makefile.depends
 endif
 
-generate-files: $(ALL_FILES:%.mo=%.stamp) $(GEN_DIR)_main.c
+generate-files: $(ALL_INTERFACES:%.stamp.mo=%.stamp) $(GEN_DIR)_main.c
 	@test ! -z "$^" || (echo "*** Empty dependencies for $@"; false)
 
-ALL_OBJECTS=$(ALL_FILES:%.mo=%.o) $(ALL_FILES:%.mo=%_records.o)
+ALL_OBJECTS=$(ALL_INTERFACES:%.stamp.mo=%.o) $(ALL_INTERFACES:%.stamp.mo=%_records.o)
 
 compile-files: $(ALL_OBJECTS) $(GEN_DIR)_main.o
 	@test ! -z "$^" || (echo "*** Empty dependencies for $@"; false)
 
-interfaces: $(ALL_INTERFACES) $(ALL_FILES)
+interfaces: $(ALL_INTERFACES) $(ALL_SOURCES)
 
 %.stamp.mo:
 	@mkdir -p build
