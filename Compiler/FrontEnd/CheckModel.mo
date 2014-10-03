@@ -567,26 +567,22 @@ algorithm
     case (e as DAE.CREF(ty=DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path=_))), (expand,ht))
       then (e, false, (expand,ht));
 
-    // empty subs
-    case (e as DAE.CREF(componentRef=cr), (expand,ht))
-      equation
-        ({}) = ComponentReference.crefLastSubs(cr);
-        crlst = ComponentReference.expandCref(cr, true);
-        ht = List.fold(crlst, BaseHashSet.add, ht);
-      then (e, false, (expand,ht));
-
-    // some subs - NOT_EXPAND strategy (needed for equations translated to algorithms)
+    // NOT_EXPAND strategy (needed for equations translated to algorithms)
     case (e as DAE.CREF(componentRef=cr), (expand as DAE.NOT_EXPAND(),ht))
       equation
         ht = List.fold({cr}, BaseHashSet.add, ht);
       then (e, false, (expand,ht));
 
-    // some subs - EXPAND
+    // EXPAND
+    /* mahge:
+      We go through the component reference and replace any unknown subscripts (exp subs. mostly crefs) with whole-dims.
+      This means if we don't know which array member is referenced exactly we assume the whole
+      array is used. Sure variable subscripts maynot update/go-through the whole array. 
+      we just can't tell before simulation. So we assume whole array here.
+    */
     case (e as DAE.CREF(componentRef=cr), (expand,ht))
       equation
-        (subs as _::_) = ComponentReference.crefLastSubs(cr);
-        subs = List.fill(DAE.WHOLEDIM(), listLength(subs));
-        cr = ComponentReference.crefSetLastSubs(cr, subs);
+        cr = ComponentReference.crefRepalceNonConstantSubs(cr);
         crlst = ComponentReference.expandCref(cr, true);
         ht = List.fold(crlst, BaseHashSet.add, ht);
       then (e, false, (expand,ht));
