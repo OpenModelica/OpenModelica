@@ -1650,7 +1650,8 @@ algorithm
       equation
         true = Config.acceptMetaModelicaGrammar() or
                isTargetClassBuiltin(inTargetClassEnv, inTargetClass) or
-               inFunctionScope(inSourceEnv);
+               inFunctionScope(inSourceEnv) or
+               SCode.isOperatorRecord(inTargetClass);
       then
         (inTargetClassEnv, inTargetClass, inIH);
 
