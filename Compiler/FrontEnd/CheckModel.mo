@@ -577,7 +577,7 @@ algorithm
     /* mahge:
       We go through the component reference and replace any unknown subscripts (exp subs. mostly crefs) with whole-dims.
       This means if we don't know which array member is referenced exactly we assume the whole
-      array is used. Sure variable subscripts maynot update/go-through the whole array. 
+      array is used. Sure variable subscripts maynot update/go-through the whole array.
       we just can't tell before simulation. So we assume whole array here.
     */
     case (e as DAE.CREF(componentRef=cr), (expand,ht))
