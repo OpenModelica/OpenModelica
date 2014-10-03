@@ -15,7 +15,7 @@ c = 2.0
 
 #model functions:
 
-function initFun(i,x)
+function initFun(p,i,x)
     if i == 1 || i == 2 
         0.0 
     else 
@@ -27,7 +27,7 @@ function l1BCFun(t)
     if 0.0 < t < 0.5 sin(2.0*pi*t) else 0.0 end
 end
 
-function BCFun(nState,side,t,X,U)
+function BCFun(nState,side,p,t,X,U)
     if nState == 1
         if side == left 
             l1BCFun(t)
@@ -39,15 +39,15 @@ function BCFun(nState,side,t,X,U)
     end
 end
 
-function maxEigValFun()
+function maxEigValFun(p)
     c
 end
 
-function vFun(x,u,u_x,t)
+function vFun(p,x,u,u_x,t)
 []
 end
 
-function utFun(x,u,ux,v,vx,t,)
+function utFun(p,x,u,ux,v,vx,t,)
     [c*ux[2]; ux[1]]
 end
 

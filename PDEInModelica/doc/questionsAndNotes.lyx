@@ -966,7 +966,13 @@ start[1]
 \begin_layout Section
 
 \lang british
-Generated code
+Translation and generated code
+\end_layout
+
+\begin_layout Itemize
+Should it be possible to write more BC (connecting PDE with ODE) than needed
+ to solve the PDE model and let the compiler determine the causality of
+ them (which are input and which output)
 \end_layout
 
 \begin_layout Itemize

@@ -11,7 +11,7 @@ c = 1.0
 
 #model functions:
 
-function initFun(i,x)
+function initFun(p,i,x)
     if i == 1 
         0.0 
     else 
@@ -27,7 +27,7 @@ function lBCFun(t)
     end
 end
 
-function BCFun(nState,side,t,X,U)
+function BCFun(nState,side,p,t,X,U)
     if nState == 1
         if side == left lBCFun(t)
         elseif side == right extrapolate(X,U,nState,side) 
@@ -37,11 +37,15 @@ function BCFun(nState,side,t,X,U)
     end
 end
 
-function maxEigValFun()
+function maxEigValFun(p)
     c
 end
 
-function utFun(x,u,ux,t,iState)
+function vFun(p,x,u,u_x,t)
+    []
+end
+
+function utFun(p,x,u,ux,t,iState)
     if iState == 1
         -c*ux
     else

@@ -6,6 +6,6 @@ model advection "advection equation"
   parameter DomainLineSegment1D omega(length = L);
   field Real u(domain = omega, start = 0);
 equation
-  pder(u,time) + c*pder(u,x) = 0  in omega.interior;
+  pder(u,time) + c*pder(u,x) = 0;
   u = sin(2*C.pi*time)            in omega.left;
 end advection;

@@ -1,5 +1,5 @@
 #numerics setup
-nX = 20               #number of nodes
+nX = 200               #number of nodes
 
 
 #numerics functions
@@ -16,13 +16,13 @@ end
 function updateV(X,U,U_x,t,V)
     for i = 1:size(X,1) #over all grid nodes
 #FIX: V[:,1] and V[:,nX] are evaluated using unassigned U_x
-        V[:,i] = vFun(X[i],U[:,i],U_x[:,i],t)
+        V[:,i] = vFun(p,X[i],U[:,i],U_x[:,i],t)
     end
 end
 
 function updateU_t(X,U,U_x,V,V_x,t,U_t)
     for i = 2:nX-1 #over inner grid nodes
-        U_t[:,i] = utFun(X[i],U[:,i],U_x[:,i],V[:,i],V_x[:,i],t)
+        U_t[:,i] = utFun(p,X[i],U[:,i],U_x[:,i],V[:,i],V_x[:,i],t)
     end
 end
 
@@ -58,20 +58,18 @@ function simulate(tEnd)
     #dt                         #time step
     cfl = 0.2
 
+    initializeBoundParameters(p)
 
     for i = 1:nU
         for j = 1:nX 
-            U[i,j] = initFun(i,X[j])
+            U[i,j] = initFun(p,i,X[j])
         end
     end
 
     while t < tEnd 
-        dt = cfl*maxEigValFun()*dx
+        dt = cfl*maxEigValFun(p)*dx
         t = t + dt
-        for i = 1:nU
-            U[i,1]  = BCFun(i,left,t,X,U)
-            U[i,nX] = BCFun(i,right,t,X,U)
-        end
+        (U[:,1],U[:,nX]) = BCFun(p,t,X,U)
         diff_x_LF(X,U,dx,U_x)
         updateV(X,U,U_x,t,V)
         diff_x_LF(X,V,dx,V_x)

@@ -11,12 +11,19 @@ nV = 1                 #number of algebraic fields v[nv,nx]  w
 # - model values
 L = 2.0                #length of domain
 
-c = 2.0
+type Parameters
+    c
+end
+
+p = Parameters(2.0)
 
 
 #model functions:
 
-function initFun(i,x)
+function initializeBoundParameters(p)
+end
+
+function initFun(p,i,x)
     if i == 1 || i == 2 
         0.0 
     else 
@@ -28,28 +35,20 @@ function l1BCFun(t)
     if 0.0 < t < 0.5 sin(2.0*pi*t) else 0.0 end
 end
 
-function BCFun(nState,side,t,X,U)
-    if nState == 1
-        if side == left 
-            l1BCFun(t)
-        elseif side == right
-            0.0
-        end
-    else
-        extrapolate(nState,side,X,U)
-    end
+function BCFun(p,t,X,U)
+    ([l1BCFun(t); extrapolate(2,left,X,U)],[0.0; extrapolate(2,right,X,U)])
 end
 
-function maxEigValFun()
-    c
+function maxEigValFun(p)
+    p.c
 end
 
-function vFun(x,u,u_x,t)
-    [c*u[2]]          #w = c*v;
+function vFun(p,x,u,u_x,t)
+    [p.c*u[2]]          #w = c*v;
 end
 
 
-function utFun(x,u,ux,v,vx,t)
+function utFun(p,x,u,ux,v,vx,t)
     [vx[1]; ux[1]]    #pder(u,time) - pder(w,x) = 0 ;  pder(v,time) - pder(u,x) = 0
 end
 

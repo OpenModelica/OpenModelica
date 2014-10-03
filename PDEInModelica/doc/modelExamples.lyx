@@ -307,12 +307,21 @@ or
 \end_layout
 
 \begin_layout Standard
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
 \begin_inset Formula 
 \begin{multline*}
 \frac{\partial^{2}u}{\partial t^{2}}-c\frac{\partial^{2}v}{\partial t\partial x}=\\
 =\frac{\partial^{2}u}{\partial t^{2}}-c\frac{\partial^{2}v}{\partial x\partial t}=\\
 \frac{\partial^{2}u}{\partial t^{2}}-c\frac{\partial^{2}u}{\partial x^{2}}
 \end{multline*}
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -1236,6 +1245,18 @@ key "alastrueyarterial,sherwin2003one,voges2012normal"
 \end_layout
 
 \begin_layout Standard
+(May be more feasible model in 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "arnez2003simulations"
+
+\end_inset
+
+ -- chapter A heterogeneous approach for modelling blood flow in an arterial
+ segment)
+\end_layout
+
+\begin_layout Standard
 \begin_inset Float figure
 wide false
 sideways false
@@ -1290,7 +1311,7 @@ Arteria scheme
 \end_inset
 
  ..
- average velocity of blood
+ velocity of blood (average over the crossection)
 \end_layout
 
 \begin_layout Standard
@@ -1734,7 +1755,7 @@ Q^{A}(0,t)=0 & \quad t\in\langle\frac{1}{3}T_{c},T_{c})
 
 \begin_layout Standard
 \begin_inset Note Note
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Formula 
