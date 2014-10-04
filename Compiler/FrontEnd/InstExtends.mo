@@ -1054,6 +1054,8 @@ algorithm
         (SCode.CLASS(prefixes = prefixes, partialPrefix = partialPrefix, restriction = restriction,
                      cmt = comment, info = info,classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
         (cache,env) = Builtin.initialGraph(cache);
+
+        env = FGraph.openScope(env, SCode.ENCAPSULATED(), SOME(name), FGraph.restrictionToScopeType(restriction));
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
         (cache,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
@@ -1063,6 +1065,8 @@ algorithm
       equation
         //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name);
         (cache,env) = Builtin.initialGraph(cache);
+
+        env = FGraph.openScope(env, SCode.ENCAPSULATED(), SOME(name), FGraph.restrictionToScopeType(restriction));
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
         (cache,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
@@ -1074,6 +1078,8 @@ algorithm
         // lookup as it might have been redeclared!!!
         (SCode.CLASS(prefixes = prefixes, partialPrefix = partialPrefix, restriction = restriction,
                      cmt = comment, info = info,classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
+
+        env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(name), FGraph.restrictionToScopeType(restriction));
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
         (cache,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
@@ -1082,6 +1088,7 @@ algorithm
     case (cache,env,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
         //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name +& str);
+        env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(name), FGraph.restrictionToScopeType(restriction));
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
         (cache,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
@@ -1554,6 +1561,7 @@ algorithm
       FCore.Cache cache;
       FCore.Graph env;
       HashTableStringToPath.HashTable ht;
+      Boolean isOutside;
 
     case (cache,_,path1 as Absyn.FULLYQUALIFIED(_),_)
       equation
@@ -1596,6 +1604,29 @@ algorithm
         (cache,path);
   end matchcontinue;
 end fixPath;
+
+public function isPathOutsideScope
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input Absyn.Path inPath;
+  output Boolean yes;
+algorithm
+  yes := matchcontinue(inCache, inEnv, inPath)
+    local
+      FCore.Graph env;
+
+    case (_, _, _)
+      equation
+        // see where the first ident from the path leads, if is outside the current env DO NOT strip!
+        (_, _, env) = Lookup.lookupClass(inCache, inEnv, Absyn.makeIdentPathFromString(Absyn.pathFirstIdent(inPath)), false);
+        // if envClass is prefix of env then is outside scope
+        yes = FGraph.graphPrefixOf(env, inEnv);
+      then
+        yes;
+
+     else false;
+  end matchcontinue;
+end isPathOutsideScope;
 
 protected function lookupVarNoErrorMessage
   input FCore.Cache inCache;
@@ -1641,6 +1672,7 @@ algorithm
       HashTableStringToPath.HashTable ht;
       Absyn.ComponentRef cref;
       SCode.Element c;
+      Boolean isOutside;
 
     case (cache,env,cref,ht)
       equation
@@ -1824,7 +1856,9 @@ algorithm
 
     case (Absyn.CALL(cref,fargs),(cache,env,ht))
       equation
+        // print("cref actual: " +& Absyn.crefString(cref) +& " scope: " +& FGraph.printGraphPathStr(env) +& "\n");
         (cache,cref) = fixCref(cache,env,cref,ht);
+        // print("cref fixed : " +& Absyn.crefString(cref) +& "\n");
       then (Absyn.CALL(cref,fargs),(cache,env,ht));
 
     case (Absyn.PARTEVALFUNCTION(cref,fargs),(cache,env,ht))
@@ -1993,4 +2027,5 @@ algorithm
       then (cache,(a,b)::rest);
   end match;
 end fixListTuple2;
+
 end InstExtends;

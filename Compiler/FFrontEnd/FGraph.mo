@@ -64,6 +64,7 @@ import Flags;
 import SCodeDump;
 import Mod;
 import Error;
+import ComponentReference;
 
 public
 type Name = FCore.Name;
@@ -1545,8 +1546,7 @@ algorithm
       SCode.Element c;
       Name targetClassName, newTargetClassName;
       InnerOuter.InstHierarchy ih;
-
-    /*
+/*
     case (_, _, _, _, _, _, _)
       equation
         c = inTargetClass;
@@ -1557,10 +1557,10 @@ algorithm
 
         // get the last scope from target
         targetClassParentRef = lastScopeRef(inTargetClassEnv);
-        _ = FNode.child(targetClassParentRef, newTargetClassName);
-        Error.addCompilerWarning("FGraph.mkVersionNode: failed to create version node as node already exists: " +& newTargetClassName +& " in scope: " +& getGraphNameStr(inTargetClassEnv));
+        classRef = FNode.child(targetClassParentRef, newTargetClassName);
+        c = FNode.getElementFromRef(classRef);
       then
-        (inTargetClassEnv, inTargetClass, inIH);*/
+        (inTargetClassEnv, c, inIH);*/
 
     case (_, _, _, _, _, _, _)
       equation
@@ -1714,6 +1714,7 @@ algorithm
       equation
         crefPrefix = PrefixUtil.prefixAdd(inSourceName,{},{},inPrefix,SCode.CONST(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
 
+        // name = inTargetClassName +& "$" +& ComponentReference.printComponentRefStr(PrefixUtil.prefixToCref(crefPrefix));
         name = inTargetClassName +& "$" +& Absyn.pathString2NoLeadingDot(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix)))), "$");
         // name = "'$" +& inTargetClassName +& "@" +& Absyn.pathString(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) +& "'";
         // name = "'$" +& getGraphNameStr(inSourceEnv) +& "." +& Absyn.pathString(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) +& "'";
@@ -1783,6 +1784,43 @@ algorithm
 
   end matchcontinue;
 end getInstanceOriginalName;
+
+public function graphPrefixOf
+"note that A.B.C is not prefix of A.B.C,
+ only A.B is a prefix of A.B.C"
+  input Graph inPrefixEnv;
+  input Graph inEnv;
+  output Boolean outIsPrefix;
+algorithm
+  outIsPrefix := graphPrefixOf2(listReverse(currentScope(inPrefixEnv)), listReverse(currentScope(inEnv)));
+end graphPrefixOf;
+
+public function graphPrefixOf2
+"Checks if one environment is a prefix of another.
+ note that A.B.C is not prefix of A.B.C,
+ only A.B is a prefix of A.B.C"
+  input Scope inPrefixEnv;
+  input Scope inEnv;
+  output Boolean outIsPrefix;
+algorithm
+  outIsPrefix := matchcontinue(inPrefixEnv, inEnv)
+    local
+      String n1, n2;
+      Scope rest1, rest2;
+      Ref r1, r2;
+
+    case ({}, _::_) then true;
+
+    case (r1 :: rest1, r2 :: rest2)
+      equation
+        true = stringEq(FNode.refName(r1), FNode.refName(r2));
+      then
+        graphPrefixOf2(rest1, rest2);
+
+    else false;
+
+  end matchcontinue;
+end graphPrefixOf2;
 
 end FGraph;
 
