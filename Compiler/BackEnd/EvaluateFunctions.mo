@@ -87,7 +87,7 @@ end FuncInfo;
 //
 // =============================================================================
 
-public function evalFunctions"backend optmization module to evaluate functions completely or partially.
+public function evalFunctions "backend optmization module to evaluate functions completely or partially.
 partial constant outputs are added as extra equations. Therefore removeSimpleEquations is necessary afterwards
 author:Waurich TUD 2014-04"
   input BackendDAE.BackendDAE inDAE;
@@ -100,7 +100,7 @@ algorithm
       BackendDAE.Shared shared;
     case(_)
       equation
-        false = Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS);
+        true = Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS);
         BackendDAE.DAE(eqs = eqSysts,shared = shared) = inDAE;
         (eqSysts,(shared,_,changed)) = List.mapFold(eqSysts,evalFunctions_main,(shared,1,false));
         //shared = evaluateShared(shared);

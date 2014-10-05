@@ -375,7 +375,7 @@ constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(104, "disableR
   Util.gettext("Disables output of record constructors in the flat code."));
 constant DebugFlag DUMP_TRANSFORMED_MODELICA_MODEL = DEBUG_FLAG(105, "dumpTransformedModelica", false,
   Util.gettext("Dumps the back-end DAE to a Modelica-like model after all symbolic transformations are applied."));
-constant DebugFlag EVALUATE_CONST_FUNCTIONS = DEBUG_FLAG(106, "evalConstFuncs", false,
+constant DebugFlag EVALUATE_CONST_FUNCTIONS = DEBUG_FLAG(106, "evalConstFuncs", true,
   Util.gettext("Evaluates functions complete and partially and checks for constant output."));
 constant DebugFlag HPCOM_ANALYZATION_MODE = DEBUG_FLAG(107, "hpcomAnalyzationMode", false,
   Util.gettext("Creates statically linked c++ - code for analyzation (requires statically build cpp-runtime)"));
