@@ -9677,6 +9677,8 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
         case T_COMPLEX(complexClassType = record_state) then
           let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
           'alloc_generic_array(&<%res%>,sizeof(<%rec_name%>),1,<%length%>);'
+        case T_ARRAY(__) then
+          error(sourceInfo(), 'array reduction unable to generate code for element of type <%unparseType(typeof(r.expr))%>: <%ExpressionDump.printExpStr(r.expr)%>')
         else
           'simple_alloc_1d_<%arrayTypeResult%>(&<%res%>,<%length%>);'%>
        >>
