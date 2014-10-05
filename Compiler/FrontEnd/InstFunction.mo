@@ -874,6 +874,7 @@ algorithm
 
           DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src) = recType;
 
+          vars = Types.filterRecordComponents(vars, SCode.elementInfo(recordCl));
           (inputs,locals) = List.extractOnTrue(vars, Types.isModifiableTypesVar);
           inputs = List.map(inputs,Types.setVarDefaultInput);
           locals = List.map(locals,Types.setVarProtected);

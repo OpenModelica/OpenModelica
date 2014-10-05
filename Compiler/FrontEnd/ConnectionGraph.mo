@@ -700,6 +700,7 @@ algorithm
               modelNameQualified,
               definiteRoots,
               potentialRoots,
+              uniqueRoots,
               branches,
               connections,
               finalRoots,
@@ -735,6 +736,7 @@ algorithm
               modelNameQualified,
               definiteRoots,
               potentialRoots,
+              uniqueRoots,
               branches,
               connections,
               finalRoots,
@@ -1451,27 +1453,28 @@ protected function generateGraphViz
   input String modelNameQualified;
   input DefiniteRoots definiteRoots;
   input PotentialRoots potentialRoots;
+  input UniqueRoots uniqueRoots;
   input Edges branches;
   input DaeEdges connections;
   input DefiniteRoots finalRoots;
   input DaeEdges broken;
   output String brokenConnectsViaGraphViz;
 algorithm
-  brokenConnectsViaGraphViz := matchcontinue(modelNameQualified, definiteRoots, potentialRoots, branches, connections, finalRoots, broken)
+  brokenConnectsViaGraphViz := matchcontinue(modelNameQualified, definiteRoots, potentialRoots, uniqueRoots, branches, connections, finalRoots, broken)
     local
-      String fileName, i, nrDR, nrPR, nrBR, nrCO, nrFR, nrBC, timeStr,  infoNodeStr, brokenConnects;
+      String fileName, i, nrDR, nrPR, nrUR, nrBR, nrCO, nrFR, nrBC, timeStr,  infoNodeStr, brokenConnects;
       Real tStart, tEnd, t;
       IOStream.IOStream graphVizStream;
       list<String> infoNode;
 
     // don't do anything if we don't have +d=cgraphGraphVizFile or +d=cgraphGraphVizShow
-    case(_, _, _, _, _, _, _)
+    case(_, _, _, _, _, _, _, _)
       equation
         false = boolOr(Flags.isSet(Flags.CGRAPH_GRAPHVIZ_FILE), Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW));
       then
         "";
 
-    case(_, _, _, _, _, _, _)
+    case(_, _, _, _, _, _, _, _)
       equation
         tStart = clock();
         i = "\t";
@@ -1480,6 +1483,7 @@ algorithm
         graphVizStream = IOStream.create(fileName, IOStream.LIST());
         nrDR = intString(listLength(definiteRoots));
         nrPR = intString(listLength(potentialRoots));
+        nrUR = intString(listLength(uniqueRoots));
         nrBR = intString(listLength(branches));
         nrCO = intString(listLength(connections));
         nrFR = intString(listLength(finalRoots));
@@ -1493,6 +1497,7 @@ algorithm
           "// Summary: \n",
           "//   Roots:              ", nrDR, "\n",
           "//   Potential Roots:    ", nrPR, "\n",
+          "//   Unique Roots:       ", nrUR, "\n",
           "//   Branches:           ", nrBR, "\n",
           "//   Connections:        ", nrCO, "\n",
           "//   Final Roots:        ", nrFR, "\n",
@@ -1556,6 +1561,7 @@ algorithm
         brokenConnects = showGraphViz(fileName, modelNameQualified);
       then
         brokenConnects;
+
   end matchcontinue;
 end generateGraphViz;
 

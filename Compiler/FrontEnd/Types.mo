@@ -1192,10 +1192,10 @@ public function extendsBasicType "Test whether a type extends one of the builtin
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inType)
+  outBoolean := match(inType)
     case DAE.T_SUBTYPE_BASIC(complexType = _) then true;
     else false;
-  end matchcontinue;
+  end match;
 end extendsBasicType;
 
 public function derivedBasicType
@@ -2165,8 +2165,8 @@ algorithm
 
     case (DAE.T_SUBTYPE_BASIC(complexClassType = ci_state, varLst = _, complexType = bc_tp))
       equation
-        res = Absyn.pathString(ClassInf.getStateName(ci_state));
-        st_str = ClassInf.printStateStr(ci_state);
+        st_str = Absyn.pathString(ClassInf.getStateName(ci_state));
+        res = ClassInf.printStateStr(ci_state);
         bc_tp_str = unparseType(bc_tp);
         res = stringAppendList({"(",res," ",st_str," bc:",bc_tp_str,")"});
       then
@@ -2174,8 +2174,8 @@ algorithm
 
     case (DAE.T_COMPLEX(complexClassType = ci_state,varLst = _))
       equation
-        res = Absyn.pathString(ClassInf.getStateName(ci_state));
-        st_str = ClassInf.printStateStr(ci_state);
+        st_str = Absyn.pathString(ClassInf.getStateName(ci_state));
+        res = ClassInf.printStateStr(ci_state);
         res = stringAppendList({res," ",st_str});
       then
         res;
@@ -8299,5 +8299,61 @@ algorithm
     else false;
   end match;
 end isFunctionReferenceVar;
+
+public function filterRecordComponents
+  input list<DAE.Var> inRecordVars;
+  input Absyn.Info inInfo;
+  output list<DAE.Var> outRecordVars;
+algorithm
+  outRecordVars := matchcontinue(inRecordVars, inInfo)
+    local
+      list<DAE.Var> rest;
+      DAE.Var v;
+      DAE.Type ty;
+      Boolean allow;
+      String str;
+
+    case ({}, _) then {};
+
+    // record cannot contain anything but basic types or other records
+    // TODO! FIXME! check other restrictions too (no protected input output inner outer stream flow)
+    case ((v as DAE.TYPES_VAR(ty = ty))::rest, _)
+      equation
+        false = allowedInRecord(ty);
+        str = unparseVar(v);
+        Error.addSourceMessage(Error.ILLEGAL_RECORD_COMPONENT, {str}, inInfo);
+        rest = filterRecordComponents(rest, inInfo);
+      then
+        rest;
+
+    case (v::rest, _)
+      equation
+        rest = filterRecordComponents(rest, inInfo);
+      then
+        v::rest;
+
+  end matchcontinue;
+end filterRecordComponents;
+
+public function allowedInRecord
+  input DAE.Type ty;
+  output Boolean yes;
+algorithm
+  yes := matchcontinue(ty)
+    local DAE.Type t;
+
+    // basic types, records or arrays of the same
+    case (_)
+      equation
+        t = arrayElementType(ty);
+        true = basicType(t) or isRecord(t) or extendsBasicType(t);
+      then
+        true;
+
+    // nothing else please!
+    else false;
+
+  end matchcontinue;
+end allowedInRecord;
 
 end Types;

@@ -758,6 +758,8 @@ public constant Message NON_STANDARD_OPERATOR = MESSAGE(547, TRANSLATION(), WARN
   Util.gettext("Usage of non-standard operator (not specified in the Modelica specification): %s. Functionality might be partially supported but is not guaranteed."));
 public constant Message CONNECT_ARRAY_SIZE_ZERO = MESSAGE(548, TRANSLATION(), WARNING(),
   Util.gettext("Ignoring connection of array components having size zero: %s and %s."));
+public constant Message ILLEGAL_RECORD_COMPONENT = MESSAGE(549, TRANSLATION(), WARNING(),
+  Util.gettext("Ignoring record component:\n%swhen building record the constructor. Records are allowed to contain only components of basic types, arrays of basic types or other records."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
