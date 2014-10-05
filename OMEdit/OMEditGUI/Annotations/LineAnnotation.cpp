@@ -700,17 +700,19 @@ void LineAnnotation::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
   if ((mLineType == LineAnnotation::ConnectionType || mLineType == LineAnnotation::ShapeType) && mpGraphicsView)
   {
-    if (mpGraphicsView->isCreatingConnection())
-    {
+    if (mpGraphicsView->isCreatingConnection()) {
       setFlag(QGraphicsItem::ItemIsSelectable, false);
       setFlag(QGraphicsItem::ItemIsMovable, false);
-    }
-    else
-    {
+    } else {
       setFlag(QGraphicsItem::ItemIsSelectable, true);
-      /* Only set the ItemIsMovable flag on shape if the class is not a system library class OR shape is not an inherited shape. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape())
+      /* Only set the ItemIsMovable flag on Line if the class is not a system library class AND Line is not an inherited Line AND Line type
+         is not ConnectionType.
+        */
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() &&
+          !isInheritedShape() &&
+          mLineType != LineAnnotation::ConnectionType) {
         setFlag(QGraphicsItem::ItemIsMovable, true);
+      }
     }
   }
   QGraphicsItem::mousePressEvent(event);
