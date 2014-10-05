@@ -140,8 +140,8 @@ extern void simple_index_real_array2(const real_array_t * source,
                               real_array_t* dest);
 
 /* array(A,B,C) for arrays A,B,C */
-extern void array_real_array(real_array_t* dest,int n,real_array_t* first,...);
-extern void array_alloc_real_array(real_array_t* dest,int n,real_array_t* first,...);
+extern void array_real_array(real_array_t* dest,int n,real_array_t first,...);
+extern void array_alloc_real_array(real_array_t* dest,int n,real_array_t first,...);
 
 /* array(s1,s2,s3)  for scalars s1,s2,s3 */
 extern void array_scalar_real_array(real_array_t* dest,int n,modelica_real first,...);

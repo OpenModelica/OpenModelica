@@ -94,17 +94,17 @@ int base_array_ok(const base_array_t *a)
  * Checks that all arrays have the same number of dimensions and same
  * dimension sizes.
  */
-void check_base_array_dim_sizes(const base_array_t * const *elts, int n)
+void check_base_array_dim_sizes(const base_array_t *elts, int n)
 {
     int i, curdim;
-    int ndims = elts[0]->ndims;
+    int ndims = elts[0].ndims;
     for(i = 1; i < n; ++i) {
-        assert(elts[i]->ndims == ndims && "Not same number of dimensions");
+        assert(elts[i].ndims == ndims && "Not same number of dimensions");
     }
     for(curdim = 0; curdim < ndims; ++curdim) {
-        int dimsize = elts[0]->dim_size[curdim];
+        int dimsize = elts[0].dim_size[curdim];
         for(i = 1; i < n; ++i) {
-            assert(dimsize == elts[i]->dim_size[curdim]
+            assert(dimsize == elts[i].dim_size[curdim]
                    && "Dimensions size not same");
         }
     }
@@ -114,22 +114,22 @@ void check_base_array_dim_sizes(const base_array_t * const *elts, int n)
  * Checks that all arrays have the same number of dimensions and same
  * dimension sizes  for all sizes except for dimension k.
  */
-void check_base_array_dim_sizes_except(int k, const base_array_t * const *elts, int n)
+void check_base_array_dim_sizes_except(int k, const base_array_t *elts, int n)
 {
     int i, curdim, dimsize;
     int k_loc = k - 1;
-    int ndims = elts[0]->ndims;
+    int ndims = elts[0].ndims;
     for(i = 1; i < n; ++i) {
-        assert(elts[i]->ndims == ndims && "Not same number of dimensions");
+        assert(elts[i].ndims == ndims && "Not same number of dimensions");
     }
     for(curdim = 0; curdim < ndims; ++curdim) {
         if(curdim != k_loc) {
-            assert(elts[0]);
-            assert(elts[0]->dim_size[curdim]);
-            dimsize = elts[0]->dim_size[curdim];
+            assert(elts);
+            assert(elts[0].dim_size[curdim]);
+            dimsize = elts[0].dim_size[curdim];
 
             for(i = 1; i < n; ++i) {
-                assert(dimsize == elts[i]->dim_size[curdim]
+                assert(dimsize == elts[i].dim_size[curdim]
                        && "Dimensions size not same");
             }
         }

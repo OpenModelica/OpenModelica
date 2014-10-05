@@ -145,9 +145,9 @@ extern void simple_index_boolean_array2(const boolean_array_t* source,
 
 /* array(A,B,C) for arrays A,B,C */
 extern void array_boolean_array(boolean_array_t* dest,int n,
-                         boolean_array_t* first,...);
+                         boolean_array_t first,...);
 extern void array_alloc_boolean_array(boolean_array_t* dest,int n,
-                               boolean_array_t* first,...);
+                               boolean_array_t first,...);
 
 /* array(s1,s2,s3)  for scalars s1,s2,s3 */
 extern void array_scalar_boolean_array(boolean_array_t* dest,int n,

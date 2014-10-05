@@ -146,9 +146,9 @@ extern void simple_index_integer_array2(const integer_array_t * source,
 
 /* array(A,B,C) for arrays A,B,C */
 extern void array_integer_array(integer_array_t* dest,int n,
-                                integer_array_t* first,...);
+                                integer_array_t first,...);
 extern void array_alloc_integer_array(integer_array_t* dest,int n,
-                                      integer_array_t* first,...);
+                                      integer_array_t first,...);
 
 /* array(s1,s2,s3)  for scalars s1,s2,s3 */
 extern void array_scalar_integer_array(integer_array_t* dest,int n,

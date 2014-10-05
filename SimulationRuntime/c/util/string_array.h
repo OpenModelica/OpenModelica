@@ -122,9 +122,9 @@ extern void simple_index_string_array2(const string_array_t * source,
 
 /* array(A,B,C) for arrays A,B,C */
 extern void array_string_array(string_array_t* dest,int n,
-                               string_array_t* first,...);
+                               string_array_t first,...);
 extern void array_alloc_string_array(string_array_t* dest,int n,
-                                     string_array_t* first,...);
+                                     string_array_t first,...);
 
 /* array(s1,s2,s3)  for scalars s1,s2,s3 */
 extern void array_scalar_string_array(string_array_t* dest,int n,

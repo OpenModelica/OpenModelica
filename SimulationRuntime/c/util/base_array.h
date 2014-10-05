@@ -78,8 +78,8 @@ static OMC_INLINE int size_of_dimension_base_array(const base_array_t a, int i)
 
 /* Helper functions */
 int base_array_ok(const base_array_t *a);
-void check_base_array_dim_sizes(const base_array_t * const *elts, int n);
-void check_base_array_dim_sizes_except(int k, const base_array_t * const *elts, int n);
+void check_base_array_dim_sizes(const base_array_t *elts, int n);
+void check_base_array_dim_sizes_except(int k, const base_array_t *elts, int n);
 int base_array_shape_eq(const base_array_t *a, const base_array_t *b);
 int base_array_one_element_ok(const base_array_t *a);
 

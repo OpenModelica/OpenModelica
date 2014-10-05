@@ -549,68 +549,66 @@ void simple_index_real_array2(const real_array_t * source,
     }
 }
 
-void array_real_array(real_array_t* dest,int n,real_array_t* first,...)
+void array_real_array(real_array_t* dest,int n,real_array_t first,...)
 {
     int i,j,c;
     va_list ap;
 
-    real_array_t **elts = (real_array_t**)malloc(sizeof(real_array_t *) * n);
+    real_array_t *elts = (real_array_t*)malloc(sizeof(real_array_t) * n);
     assert(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap,first);
     elts[0] = first;
     for(i = 1; i < n; ++i) {
-        elts[i] = va_arg(ap, real_array_t*);
+        elts[i] = va_arg(ap, real_array_t);
     }
     va_end(ap);
 
-    check_base_array_dim_sizes((const base_array_t **)elts,n);
+    check_base_array_dim_sizes(elts,n);
 
     for(i = 0, c = 0; i < n; ++i) {
-        int m = base_array_nr_of_elements(*elts[i]);
+        int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
-            real_set(dest, c, real_get(*elts[i], j));
+            real_set(dest, c, real_get(elts[i], j));
             c++;
         }
     }
     free(elts);
 }
 
-void array_alloc_real_array(real_array_t* dest, int n, real_array_t* first,...)
+void array_alloc_real_array(real_array_t* dest, int n, real_array_t first,...)
 {
     int i,j,c;
     va_list ap;
 
-    real_array_t **elts = (real_array_t**)malloc(sizeof(real_array_t *) * n);
+    real_array_t *elts = (real_array_t*)malloc(sizeof(real_array_t) * n);
     assert(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap,first);
     elts[0] = first;
     for(i = 1; i < n; ++i) {
-        elts[i] = va_arg(ap, real_array_t*);
+        elts[i] = va_arg(ap, real_array_t);
     }
     va_end(ap);
 
-    check_base_array_dim_sizes((const base_array_t **)elts,n);
+    check_base_array_dim_sizes(elts,n);
 
-    if(first->ndims == 1) {
-        alloc_real_array(dest,2,n,first->dim_size[0]);
-    } else if(first->ndims == 2) {
-        alloc_real_array(dest,3,n,first->dim_size[0],first->dim_size[1]);
-    } else if(first->ndims == 3) {
-        alloc_real_array(dest,4,n,first->dim_size[0],first->dim_size[1],
-                         first->dim_size[2]);
-    } else if(first->ndims == 4) {
-        alloc_real_array(dest,5,n,first->dim_size[0],first->dim_size[1],
-                         first->dim_size[2],first->dim_size[3]);
+    if (first.ndims == 1) {
+        alloc_real_array(dest,2, n, first.dim_size[0]);
+    } else if (first.ndims == 2) {
+        alloc_real_array(dest,3, n, first.dim_size[0], first.dim_size[1]);
+    } else if (first.ndims == 3) {
+        alloc_real_array(dest,4, n, first.dim_size[0], first.dim_size[1], first.dim_size[2]);
+    } else if (first.ndims == 4) {
+        alloc_real_array(dest, 5, n, first.dim_size[0], first.dim_size[1], first.dim_size[2], first.dim_size[3]);
     } else {
         assert(0 && "Dimension size > 4 not impl. yet");
     }
 
     for(i = 0, c = 0; i < n; ++i) {
-        int m = base_array_nr_of_elements(*elts[i]);
+        int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
-            real_set(dest, c, real_get(*elts[i], j));
+            real_set(dest, c, real_get(elts[i], j));
             c++;
         }
     }

@@ -9259,7 +9259,7 @@ case ARRAY(__) then
   let scalarPrefix = if scalar then "scalar_" else ""
   let scalarRef = if scalar then "&" else ""
   let params = (array |> e =>
-      let prefix = if scalar then '(<%expTypeFromExpModelica(e)%>)' else '&'
+      let prefix = if scalar then '(<%expTypeFromExpModelica(e)%>)' else ""
       '<%prefix%><%daeExp(e, context, &preExp, &varDecls, &auxFunction)%>'
     ;separator=", ")
   let &preExp += 'array_alloc_<%scalarPrefix%><%arrayTypeStr%>(&<%arrayVar%>, <%listLength(array)%><%if params then ", "%><%params%>);<%\n%>'
