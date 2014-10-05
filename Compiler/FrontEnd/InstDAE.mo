@@ -58,6 +58,9 @@ protected import InstBinding;
 protected import InstUtil;
 protected import List;
 protected import Types;
+protected import DAEDump;
+protected import System;
+protected import Util;
 
 protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
@@ -68,8 +71,10 @@ public function daeDeclare
   Altough this function returns a list of DAE.Element, only one component is actually declared.
   The functions daeDeclare2 and daeDeclare3 below are helper functions that perform parts of the task.
   Note: Currently, this function can only declare scalar variables, i.e. the element type of an array type is used. To indicate that the variable
-  is an array, the InstDims attribute is used. This will need to be redesigned in the futurue, when array variables should not be flattened out in the frontend.
-  "
+  is an array, the InstDims attribute is used. This will need to be redesigned in the futurue, when array variables should not be flattened out in the frontend."
+  input FCore.Cache inCache;
+  input FCore.Graph inParentEnv;
+  input FCore.Graph inClassEnv;
   input DAE.ComponentRef inComponentRef;
   input ClassInf.State inState;
   input DAE.Type inType;
@@ -86,7 +91,7 @@ public function daeDeclare
   input Boolean declareComplexVars "if true, declare variables for complex variables, e.g. record vars in functions";
   output DAE.DAElist outDae;
 algorithm
-  outDae := matchcontinue(inComponentRef, inState, inType, inAttributes,
+  outDae := matchcontinue(inCache, inParentEnv, inClassEnv, inComponentRef, inState, inType, inAttributes,
       visibility, inBinding, inInstDims, inStartValue, inVarAttr, inComment, io,
       finalPrefix, source, declareComplexVars)
     local
@@ -110,7 +115,7 @@ algorithm
       DAE.VarDirection vd;
       DAE.VarVisibility vv;
 
-    case (vn,ci_state,ty,
+    case (_,_,_,vn,ci_state,ty,
           SCode.ATTR(connectorType = ct, parallelism = prl, variability = var,
             direction = dir),
           vis,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
@@ -122,7 +127,9 @@ algorithm
         vd = InstUtil.makeDaeDirection(dir);
         vv = InstUtil.makeDaeProt(vis);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr, SCode.finalBool(finalPrefix));
-        dae = daeDeclare2(vn, ty, ct1, vk, vd, daeParallelism, vv, e, inst_dims, start, dae_var_attr, comment,io,source,declareComplexVars );
+        dae = daeDeclare2(vn, ty, ct1, vk, vd, daeParallelism, vv, e, inst_dims, start, dae_var_attr, comment, io, source, declareComplexVars);
+
+        showDAE(inCache,inParentEnv,inClassEnv,inState,dae);
       then
         dae;
 
@@ -134,6 +141,51 @@ algorithm
 
   end matchcontinue;
 end daeDeclare;
+
+protected function showDAE
+  input FCore.Cache inCache;
+  input FCore.Graph inParentEnv;
+  input FCore.Graph inClassEnv;
+  input ClassInf.State inState;
+  input DAE.DAElist inDAE;
+algorithm
+  _ := matchcontinue(inCache, inParentEnv, inClassEnv, inState, inDAE)
+    local
+      String str, sstr;
+      DAE.Element comp;
+      DAE.DAElist dae;
+      list<DAE.Element> els;
+
+    case (_, _, _, _, _)
+      equation
+        false = Flags.isSet(Flags.SHOW_DAE_GENERATION);
+      then
+        ();
+
+    case (_, _, _, _, _)
+      equation
+        els = DAEUtil.daeElements(inDAE);
+        sstr = ClassInf.printStateStr(inState);
+        sstr = "'" +& sstr +& "'";
+        comp = DAE.COMP(sstr, els, DAE.emptyElementSource, NONE());
+        dae = DAE.DAE({comp});
+        str = Util.if_(System.getPartialInstantiation(), " partial", " full");
+        print("DAE: parent: " +& FGraph.getGraphNameStr(inParentEnv) +&
+              " class: " +& FGraph.getGraphNameStr(inClassEnv) +& " state: " +& sstr +& str +& "\n" +&
+              DAEDump.dumpStr(dae, DAE.emptyFuncTree) +& "\n");
+      then
+        ();
+
+    case (_, _, _, _, _)
+      equation
+        str = Util.if_(System.getPartialInstantiation(), " partial", " full");
+        print("DAE: " +& ClassInf.printStateStr(inState) +& str +& " - could not print\n");
+      then ();
+
+    else ();
+
+  end matchcontinue;
+end showDAE;
 
 protected function daeDeclare2
 "Helper function to daeDeclare."

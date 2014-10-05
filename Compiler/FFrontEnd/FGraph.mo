@@ -1546,7 +1546,8 @@ algorithm
       SCode.Element c;
       Name targetClassName, newTargetClassName;
       InnerOuter.InstHierarchy ih;
-/*
+
+    /*
     case (_, _, _, _, _, _, _)
       equation
         c = inTargetClass;
@@ -1715,7 +1716,8 @@ algorithm
         crefPrefix = PrefixUtil.prefixAdd(inSourceName,{},{},inPrefix,SCode.CONST(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
 
         // name = inTargetClassName +& "$" +& ComponentReference.printComponentRefStr(PrefixUtil.prefixToCref(crefPrefix));
-        name = inTargetClassName +& "$" +& Absyn.pathString2NoLeadingDot(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix)))), "$");
+        name = inTargetClassName +& "$" +& Absyn.pathString2NoLeadingDot(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix)))), "$")
+               ; // +& "$" +& Absyn.pathString2NoLeadingDot(getGraphName(inSourceEnv), "$");
         // name = "'$" +& inTargetClassName +& "@" +& Absyn.pathString(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) +& "'";
         // name = "'$" +& getGraphNameStr(inSourceEnv) +& "." +& Absyn.pathString(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) +& "'";
         // name = "$'" +& getGraphNameStr(inSourceEnv) +& "." +&

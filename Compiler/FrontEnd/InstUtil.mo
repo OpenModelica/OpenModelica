@@ -4626,6 +4626,8 @@ algorithm
       then
         (cache, dim);
 
+    case (cache,env,cref,_,{},_,impl,st,doVect,_,pre,info,_) then (cache, {});
+
     case (cache,env,cref,_,ad,NONE(),impl,st,doVect,_,pre,info,_) /* impl */
       equation
         (cache,dim) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);

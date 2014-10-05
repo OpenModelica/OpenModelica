@@ -2636,6 +2636,7 @@ algorithm
 
       then
         (compWSplElem);
+
   end match;
 end dumpDAEList;
 
@@ -2655,7 +2656,7 @@ algorithm
           Flags.isSet(Flags.DISABLE_RECORD_CONSTRUCTOR_OUTPUT),
           Flags.isSet(Flags.INLINE_FUNCTIONS));
         funcs = sortFunctions(funcs);
-        funList = FUNCTION_LIST(funcs) ;
+        funList = FUNCTION_LIST(funcs);
       then
         (funList);
 

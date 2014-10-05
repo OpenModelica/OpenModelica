@@ -79,6 +79,8 @@ protected import Static;
 protected import UnitAbsyn;
 protected import SCodeDump;
 protected import ErrorExt;
+protected import ValuesUtil;
+protected import Values;
 
 /*   - Lookup functions
 
@@ -124,6 +126,18 @@ algorithm
     case (cache,env,Absyn.IDENT("rooted"),_)
       equation
         t = DAE.T_FUNCTION({DAE.FUNCARG("x", DAE.T_ANYTYPE_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE())}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT, DAE.emptyTypeSource);
+      then
+        (cache, t, env);
+
+    // Special handling for Connections.uniqueRootIndices
+    case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")),_)
+      equation
+        t = DAE.T_FUNCTION({
+              DAE.FUNCARG("roots", DAE.T_ARRAY(DAE.T_ANYTYPE_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource), DAE.C_VAR(), DAE.NON_PARALLEL(), NONE()),
+              DAE.FUNCARG("nodes", DAE.T_ARRAY(DAE.T_ANYTYPE_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource), DAE.C_VAR(), DAE.NON_PARALLEL(), NONE()),
+              DAE.FUNCARG("message", DAE.T_STRING_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE())},
+              DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource),
+              DAE.FUNCTION_ATTRIBUTES_DEFAULT, DAE.emptyTypeSource);
       then
         (cache, t, env);
 
@@ -2727,17 +2741,15 @@ algorithm
       SCode.Parallelism prl;
       SCode.Variability vt,vt2;
       Absyn.Direction di;
-      DAE.Type ty,ty_1,idTp;
-      DAE.Binding bind,binding;
+      DAE.Type ty,ty_1,idTp,ty2_2, tyParent, tyChild, ty1,ty2;
+      DAE.Binding bind,binding, parentBinding;
       FCore.Children ht;
       list<DAE.Subscript> ss;
       FCore.Graph componentEnv;
       DAE.ComponentRef ids;
       FCore.Cache cache;
-      DAE.Type ty2_2;
       Absyn.InnerOuter io;
       Option<DAE.Exp> texp;
-      DAE.Type ty1,ty2;
       DAE.ComponentRef xCref,tCref,cref_;
       list<DAE.ComponentRef> ltCref;
       DAE.Exp splicedExp;
@@ -2763,36 +2775,38 @@ algorithm
     // Qualified variables looked up through component environment with a spliced exp
     case (cache,ht,DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids), _)
       equation
-        (cache,DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),ty2,_,cnstForRange),_,_,_,componentEnv) = lookupVar2(cache, ht, id, inEnv);
+        (cache,DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),tyParent,parentBinding,cnstForRange),_,_,_,componentEnv) = lookupVar2(cache, ht, id, inEnv);
         // outer variables are not local!
         // this doesn't work yet!
         // false = Absyn.isOuter(io);
         //
-        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
-        ty = Debug.bcallret1(Types.isBoxedType(ty2), Types.boxIfUnboxedType, ty, ty) "The internal types in a metarecord are lookup up in a clean environment, so we have to box them";
+        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),tyChild,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
+        ty = Debug.bcallret1(Types.isBoxedType(tyParent), Types.boxIfUnboxedType, tyChild, tyChild) "The internal types in a metarecord are lookup up in a clean environment, so we have to box them";
         (tCref::_) = elabComponentRecursive((texp));
-        ty1 = checkSubscripts(ty2, ss);
+        ty1 = checkSubscripts(tyParent, ss);
         ty = sliceDimensionType(ty1,ty);
-        ss = addArrayDimensions(ty2,ss);
-        ty2_2 = Types.simplifyType(ty2);
+        ss = addArrayDimensions(tyParent,ss);
+        ty2_2 = Types.simplifyType(tyParent);
         xCref = ComponentReference.makeCrefQual(id,ty2_2,ss,tCref);
         eType = Types.simplifyType(ty);
         splicedExp = Expression.makeCrefExp(xCref,eType);
         vt = SCode.variabilityOr(vt,vt2);
+        binding = lookupBinding(inComponentRef, tyParent, ty, parentBinding, binding);
       then
         (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(SOME(splicedExp),idTp),componentEnv,name);
 
     // Qualified componentname without spliced Expression.
     case (cache,ht,(DAE.CREF_QUAL(ident = id,subscriptLst = _,componentRef = ids)), _)
       equation
-        (cache,DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),_,_,cnstForRange),_,_,_,componentEnv) = lookupVar2(cache,ht, id, inEnv);
-        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
+        (cache,DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),tyParent,parentBinding,cnstForRange),_,_,_,componentEnv) = lookupVar2(cache, ht, id, inEnv);
+        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),tyChild,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
         {} = elabComponentRecursive((texp));
         vt = SCode.variabilityOr(vt,vt2);
+        binding = lookupBinding(inComponentRef, tyParent, tyChild, parentBinding, binding);
       then
-        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(NONE(),idTp),componentEnv,name);
+        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),tyChild,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(NONE(),idTp),componentEnv,name);
 
-    // Qualified componentname without spliced Expression.
+    // MetaModelica meta-records
     case (cache,ht,(DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = DAE.CREF_IDENT(ident=id2,subscriptLst={}))), _)
       equation
         true = Config.acceptMetaModelicaGrammar();
@@ -2803,6 +2817,90 @@ algorithm
 
   end matchcontinue;
 end lookupVarF;
+
+protected function lookupBinding
+"@author: adrpo
+ this function uses the binding of the parent
+ if the parent is an array of records"
+  input DAE.ComponentRef inCref;
+  input DAE.Type inParentType;
+  input DAE.Type inChildType;
+  input DAE.Binding inParentBinding;
+  input DAE.Binding inChildBinding;
+  output DAE.Binding outBinding;
+algorithm
+  outBinding := matchcontinue(inCref, inParentType, inChildType, inParentBinding, inChildBinding)
+    local
+      DAE.Type tyElement;
+      DAE.Binding b;
+      DAE.Exp e;
+      Option<Values.Value> ov;
+      Values.Value v;
+      DAE.Const c;
+      DAE.BindingSource s;
+      list<DAE.Subscript> ss;
+      DAE.ComponentRef rest;
+      String id, cId;
+      list<DAE.Exp> exps;
+      list<String> comp;
+
+    case (DAE.CREF_QUAL(id, _, ss, DAE.CREF_IDENT(cId, _, {})), _, _, DAE.EQBOUND(e, ov, c, s), _)
+      equation
+        true = Types.isArray(inParentType, {});
+        tyElement = Types.arrayElementType(inParentType);
+        true = Types.isRecord(tyElement);
+
+        // print("CREF EB: " +& ComponentReference.printComponentRefStr(inCref) +& "\nTyParent: " +& Types.printTypeStr(inParentType) +& "\nParent:\n" +& Types.printBindingStr(inParentBinding) +& "\nChild:\n" +& Types.printBindingStr(inChildBinding) +& "\n");
+
+        DAE.RECORD(_, exps, comp, _) = Expression.subscriptExp(e, ss);
+
+        e = listNth(exps, List.position(cId, comp));
+        b = DAE.EQBOUND(e, NONE(), c, s);
+
+        // print("CREF EB RESULT: " +& ComponentReference.printComponentRefStr(inCref) +& "\nBinding:\n" +& Types.printBindingStr(b) +& "\n");
+      then
+        b;
+
+    case (DAE.CREF_QUAL(id, _, ss, DAE.CREF_IDENT(cId, _, {})), _, _, DAE.EQBOUND(e, ov, c, s), _)
+      equation
+        true = Types.isArray(inParentType, {});
+        tyElement = Types.arrayElementType(inParentType);
+        true = Types.isRecord(tyElement);
+        // e = Expression.makeCrefExp(inCref, Expression.typeof(e));
+        // b = DAE.EQBOUND(e, NONE(), c, s);
+      then
+        inChildBinding;
+
+    case (DAE.CREF_QUAL(id, _, ss, DAE.CREF_IDENT(cId, _, {})), _, _, DAE.VALBOUND(v, s), _)
+      equation
+        true = Types.isArray(inParentType, {});
+        tyElement = Types.arrayElementType(inParentType);
+        true = Types.isRecord(tyElement);
+        // print("CREF VB: " +& ComponentReference.printComponentRefStr(inCref) +& "\nTyParent: " +& Types.printTypeStr(inParentType) +& "\nParent:\n" +& Types.printBindingStr(inParentBinding) +& "\nChild:\n" +& Types.printBindingStr(inChildBinding) +& "\n");
+        e = ValuesUtil.valueExp(v);
+        DAE.RECORD(_, exps, comp, _) = Expression.subscriptExp(e, ss);
+
+        e = listNth(exps, List.position(cId, comp));
+
+        b = DAE.EQBOUND(e, NONE(), DAE.C_CONST(), s);
+        // print("CREF VB RESULT: " +& ComponentReference.printComponentRefStr(inCref) +& "\nBinding:\n" +& Types.printBindingStr(b) +& "\n");
+      then
+        b;
+
+    case (DAE.CREF_QUAL(id, _, ss, DAE.CREF_IDENT(cId, _, {})), _, _, DAE.VALBOUND(v, s), _)
+      equation
+        true = Types.isArray(inParentType, {});
+        tyElement = Types.arrayElementType(inParentType);
+        true = Types.isRecord(tyElement);
+        //e = Expression.makeCrefExp(inCref, inChildType);
+        //b = DAE.EQBOUND(e, NONE(), DAE.C_CONST(), s);
+      then
+        inChildBinding;
+
+    else inChildBinding;
+
+  end matchcontinue;
+end lookupBinding;
 
 protected function elabComponentRecursive "
 Helper function for lookupvarF, to return an ComponentRef if there is one."

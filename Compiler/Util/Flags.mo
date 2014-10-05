@@ -407,6 +407,8 @@ constant DebugFlag DUMP_EQ_UNIT = DEBUG_FLAG(120, "dumpEqInUC", false,
   Util.gettext("Dumps all equations handled by the unit checker."));
 constant DebugFlag DUMP_EQ_UNIT_STRUCT = DEBUG_FLAG(121, "dumpEqUCStruct", false,
   Util.gettext("Dumps all the equations handled by the unit checker as tree-structure."));
+constant DebugFlag SHOW_DAE_GENERATION = DEBUG_FLAG(122, "showDaeGeneration", false,
+  Util.gettext("Show the dae variable declarations as they happen."));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -534,7 +536,8 @@ constant list<DebugFlag> allDebugFlags = {
   SHOW_INST_CACHE_INFO,
   DUMP_UNIT,
   DUMP_EQ_UNIT,
-  DUMP_EQ_UNIT_STRUCT
+  DUMP_EQ_UNIT_STRUCT,
+  SHOW_DAE_GENERATION
 };
 
 // CONFIGURATION FLAGS

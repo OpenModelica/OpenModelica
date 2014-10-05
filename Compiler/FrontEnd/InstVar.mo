@@ -837,7 +837,7 @@ algorithm
 
 
         SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
-        dae = InstDAE.daeDeclare(cr, ci_state, ty, attr, vis, SOME(e), {dims}, NONE(), dae_var_attr, SOME(comment), io, fin, source, true);
+        dae = InstDAE.daeDeclare(cache, env, env_1, cr, ci_state, ty, attr, vis, SOME(e), {dims}, NONE(), dae_var_attr, SOME(comment), io, fin, source, true);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
         (cache,env_1,ih,store,dae,csets,ty_1,graph);
@@ -862,7 +862,7 @@ algorithm
         ty_1 = InstUtil.makeArrayType(dims, ty);
         InstUtil.checkFunctionVarType(ty_1, ci_state, n, info);
 
-        (cache,dae_var_attr) = InstBinding.instDaeVariableAttributes(cache,env, mod, ty, {});
+        (cache,dae_var_attr) = InstBinding.instDaeVariableAttributes(cache, env, mod, ty, {});
         // Check binding type matches variable type
         (e_1,_) = Types.matchProp(e,p,DAE.PROP(ty_1,DAE.C_VAR()),true);
 
@@ -875,7 +875,7 @@ algorithm
 
 
         SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
-        dae = InstDAE.daeDeclare(cr, ci_state, ty, attr, vis, SOME(e_1), {dims}, NONE(), dae_var_attr, SOME(comment), io, fin, source, true);
+        dae = InstDAE.daeDeclare(cache, env, env_1, cr, ci_state, ty, attr, vis, SOME(e_1), {dims}, NONE(), dae_var_attr, SOME(comment), io, fin, source, true);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
         (cache,env_1,ih,store,dae,csets,ty_1,graph);
@@ -899,7 +899,7 @@ algorithm
         source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
-        dae = InstDAE.daeDeclare(cr, ci_state, ty, attr,vis,NONE(), {dims},NONE(), dae_var_attr, SOME(comment),io,fin,source,true);
+        dae = InstDAE.daeDeclare(cache, env, env_1, cr, ci_state, ty, attr,vis,NONE(), {dims},NONE(), dae_var_attr, SOME(comment),io,fin,source,true);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
         (cache,env_1,ih,store,dae,csets,arrty,graph);
@@ -1049,7 +1049,7 @@ algorithm
     local
       String cls_name;
       FCore.Cache cache;
-      FCore.Graph env;
+      FCore.Graph env, env_1;
       InstanceHierarchy ih;
       UnitAbsyn.InstStore store;
       Connect.Sets csets;
@@ -1085,12 +1085,12 @@ algorithm
         ci_state = ClassInf.start(res, Absyn.IDENT(cls_name));
         predims = List.lastListOrEmpty(inInstDims);
         pre = PrefixUtil.prefixAdd(inName, predims, idxs, inPrefix, vt, ci_state);
-        (cache, env, ih, store, dae1, csets, ty,_, opt_attr, graph) =
+        (cache, env_1, ih, store, dae1, csets, ty,_, opt_attr, graph) =
           Inst.instClass(cache, env, ih, store, inMod, pre, inClass, inInstDims,
             inImpl, InstTypes.INNER_CALL(), inGraph, inSets);
 
         // Propagate and instantiate attributes.
-        (cache, dae_var_attr) = InstBinding.instDaeVariableAttributes(cache, env, inMod, ty, {});
+        (cache, dae_var_attr) = InstBinding.instDaeVariableAttributes(cache, env_1, inMod, ty, {});
         attr = InstUtil.propagateAbSCDirection(vt, inAttributes, opt_attr, inInfo);
         attr = SCode.removeAttributeDimensions(attr);
 
@@ -1111,11 +1111,11 @@ algorithm
         //        Dymola doesn't report modifications on outer as error!
         //        instead we check here if the modification is not the same
         //        as the one on inner
-        InstUtil.checkModificationOnOuter(cache, env, ih, inPrefix, inName, cr, inMod,
+        InstUtil.checkModificationOnOuter(cache, env_1, ih, inPrefix, inName, cr, inMod,
           vt, io, inImpl, inInfo);
 
         // Set the source of this element.
-        source = DAEUtil.createElementSource(inInfo, FGraph.getScopePath(env),
+        source = DAEUtil.createElementSource(inInfo, FGraph.getScopePath(env_1),
           PrefixUtil.prefixToCrefOpt(inPrefix), NONE(), NONE());
 
         // Instantiate the components binding.
@@ -1133,7 +1133,7 @@ algorithm
         dae1 = InstUtil.propagateAttributes(dae1, attr, inPrefixes, inInfo);
 
         // Add the component to the DAE.
-        dae2 = InstDAE.daeDeclare(cr, inState, ty, attr, vis, opt_binding, inInstDims,
+        dae2 = InstDAE.daeDeclare(cache, env, env_1, cr, inState, ty, attr, vis, opt_binding, inInstDims,
           start, dae_var_attr, inComment, io, fin, source, false);
         dae2 = DAEUtil.addComponentTypeOpt(dae2, Types.getClassnameOpt(ty));
         store = UnitAbsynBuilder.instAddStore(store, ty, cr);
@@ -1141,7 +1141,7 @@ algorithm
         // The remaining work is done in instScalar2.
         dae = instScalar2(cr, ty, vt, inMod, dae2, dae1, source, inImpl);
       then
-        (cache, env, ih, store, dae, csets, ty, graph);
+        (cache, env_1, ih, store, dae, csets, ty, graph);
 
     else
       equation

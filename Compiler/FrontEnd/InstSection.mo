@@ -416,9 +416,9 @@ algorithm
       SCode.Initial initial_;
       Boolean impl;
       String i,s;
-      Absyn.Exp e2,e1,e,ee,e3;
+      Absyn.Exp e2,e1,e,ee,e3,msg;
       list<Absyn.Exp> conditions;
-      DAE.Exp e1_1,e2_1,e1_2,e2_2,e_1,e_2,e3_1,e3_2;
+      DAE.Exp e1_1,e2_1,e1_2,e2_2,e_1,e_2,e3_1,e3_2,msg_1;
       DAE.Properties prop1,prop2,prop3;
       list<SCode.EEquation> b,fb,el,eel;
       list<list<SCode.EEquation>> tb;
@@ -800,8 +800,7 @@ algorithm
               function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(_)}, {Absyn.NAMEDARG("priority", Absyn.REAL(_))}))),_,_,graph,_)
       equation
-        Error.addSourceMessage(Error.ARGUMENT_MUST_BE_INTEGER,
-          {"Second", "Connections.potentialRoot", ""}, info);
+        Error.addSourceMessage(Error.ARGUMENT_MUST_BE_INTEGER, {"Second", "Connections.potentialRoot", ""}, info);
       then
         (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
 
@@ -815,6 +814,34 @@ algorithm
         (cache,cr1_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr1_);
         (cache,cr2_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr2_);
         graph = ConnectionGraph.addBranch(graph, cr1_, cr2_);
+      then
+        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
+
+    // Connections.uniqueRoot(cr, message)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("uniqueRoot", {})),
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr), msg}, {}))),_,_,graph,_)
+      equation
+        (cache,exp,_,_) = Static.elabExp(cache, env, Absyn.CREF(cr), false, NONE(), true, pre, info);
+        (cache,msg_1,_,_) = Static.elabExp(cache, env, msg, false, NONE(), false, pre, info);
+        (cache,exp) = PrefixUtil.prefixExp(cache,env,ih,exp,pre);
+        (cache,msg_1) = PrefixUtil.prefixExp(cache,env,ih,msg_1,pre);
+        graph = ConnectionGraph.addUniqueRoots(graph, exp, msg_1);
+        Error.addSourceMessage(Error.NON_STANDARD_OPERATOR, {"Connections.uniqueRoot"}, info);
+      then
+        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
+
+    // Connections.uniqueRoot(cr, message = message)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("uniqueRoot", {})),
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {Absyn.NAMEDARG("message", msg)}))),_,_,graph,_)
+      equation
+        (cache,exp,_,_) = Static.elabExp(cache, env, Absyn.CREF(cr), false, NONE(), true, pre, info);
+        (cache,msg_1,_,_) = Static.elabExp(cache, env, msg, false, NONE(), false, pre, info);
+        (cache,exp) = PrefixUtil.prefixExp(cache,env,ih,exp,pre);
+        (cache,msg_1) = PrefixUtil.prefixExp(cache,env,ih,msg_1,pre);
+        graph = ConnectionGraph.addUniqueRoots(graph, exp, msg_1);
+        Error.addSourceMessage(Error.NON_STANDARD_OPERATOR, {"Connections.uniqueRoot"}, info);
       then
         (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
 
@@ -3557,7 +3584,7 @@ algorithm
         // get the dimensions from the ty1 type!
         daeDims = Types.getDimensions(ty1);
         arrDims = List.map(daeDims,Expression.unelabDimension);
-        daeExpandable = generateExpandableDAE(
+        daeExpandable = generateExpandableDAE(cache,env,envExpandable,
           c1_2,
           state,
           ty1,
@@ -3603,6 +3630,9 @@ protected function generateExpandableDAE
  connect(expandable, non-expandable)
  should generate a DAE for the expandable part.
  Expand the array if needed."
+ input FCore.Cache inCache;
+ input FCore.Graph inParentEnv;
+ input FCore.Graph inClassEnv;
  input DAE.ComponentRef cref;
  input ClassInf.State state;
  input DAE.Type ty;
@@ -3612,7 +3642,7 @@ protected function generateExpandableDAE
  input DAE.ElementSource source;
  output DAE.DAElist outDAE;
 algorithm
-  outDAE := matchcontinue(cref, state, ty, attrs, vis, io, source)
+  outDAE := matchcontinue(inCache, inParentEnv, inClassEnv, cref, state, ty, attrs, vis, io, source)
     local
       Absyn.ArrayDim arrDims;
       DAE.Dimensions daeDims;
@@ -3620,12 +3650,12 @@ algorithm
       list<DAE.ComponentRef> crefs;
 
     // scalars!
-    case (_, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _, _, _)
       equation
         // get the dimensions from the type!
         (daeDims as {}) = Types.getDimensions(ty);
         _ = List.map(daeDims,Expression.unelabDimension);
-        daeExpandable = InstDAE.daeDeclare(cref, state, ty,
+        daeExpandable = InstDAE.daeDeclare(inCache, inParentEnv, inClassEnv, cref, state, ty,
            attrs,
            vis, NONE(), {}, NONE(), NONE(),
            SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))),
@@ -3634,14 +3664,14 @@ algorithm
         daeExpandable;
 
     // arrays
-    case (_, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _, _, _)
       equation
         // get the dimensions from the type!
         (daeDims as _::_) = Types.getDimensions(ty);
         _ = List.map(daeDims,Expression.unelabDimension);
         crefs = ComponentReference.expandCref(cref, false);
         // print(" crefs: " +& stringDelimitList(List.map(crefs, ComponentReference.printComponentRefStr),", ") +& "\n");
-        daeExpandable = daeDeclareList(listReverse(crefs), state, ty, attrs, vis, io, source, DAE.emptyDae);
+        daeExpandable = daeDeclareList(inCache, inParentEnv, inClassEnv, listReverse(crefs), state, ty, attrs, vis, io, source, DAE.emptyDae);
       then
         daeExpandable;
 
@@ -3650,6 +3680,9 @@ end generateExpandableDAE;
 
 protected function daeDeclareList
 "declare a list of crefs, one for each array element"
+ input FCore.Cache inCache;
+ input FCore.Graph inParentEnv;
+ input FCore.Graph inClassEnv;
  input list<DAE.ComponentRef> crefs;
  input ClassInf.State state;
  input DAE.Type ty;
@@ -3660,7 +3693,7 @@ protected function daeDeclareList
  input DAE.DAElist acc;
  output DAE.DAElist outDAE;
 algorithm
-  outDAE := match(crefs, state, ty, attrs, vis, io, source, acc)
+  outDAE := match(inCache, inParentEnv, inClassEnv, crefs, state, ty, attrs, vis, io, source, acc)
     local
       Absyn.ArrayDim arrDims;
       DAE.Dimensions daeDims;
@@ -3668,17 +3701,17 @@ algorithm
       list<DAE.ComponentRef> lst;
       DAE.ComponentRef cref;
 
-    case ({}, _, _, _, _, _, _, _) then acc;
+    case (_, _, _, {}, _, _, _, _, _, _, _) then acc;
 
-    case (cref::lst, _, _, _, _, _, _, _)
+    case (_, _, _, cref::lst, _, _, _, _, _, _, _)
       equation
-        daeExpandable = InstDAE.daeDeclare(cref, state, ty,
+        daeExpandable = InstDAE.daeDeclare(inCache, inParentEnv, inClassEnv, cref, state, ty,
            attrs,
            vis, NONE(), {}, NONE(), NONE(),
            SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))),
            io, SCode.NOT_FINAL(), source, true);
         daeExpandable = DAEUtil.joinDaes(daeExpandable, acc);
-        daeExpandable = daeDeclareList(lst, state, ty, attrs, vis, io, source, daeExpandable);
+        daeExpandable = daeDeclareList(inCache, inParentEnv, inClassEnv, lst, state, ty, attrs, vis, io, source, daeExpandable);
       then
         daeExpandable;
   end match;
@@ -4395,8 +4428,8 @@ algorithm
                                 ct as SCode.POTENTIAL(),_,_,
         (graph as ConnectionGraph.GRAPH(updateGraph = true)),_)
       equation
-        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
-        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
+        (cache,c1_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c2);
         // Connect components ignoring equality constraints
         (cache,env,ih,sets_1,dae,_) =
         connectComponents(cache, env, ih, sets, pre, c1, f1, t1, vt1, c2, f2,

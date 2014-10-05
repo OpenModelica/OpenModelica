@@ -6534,6 +6534,84 @@ algorithm
   end match;
 end elabBuiltinRooted;
 
+protected function elabBuiltinUniqueRootIndices
+"This function elaborates on the builtin operator Connections.uniqueRootIndices.
+ TODO: assert size(second arg) <= size(first arg)
+ See Modelica_StateGraph2:
+  https://github.com/modelica/Modelica_StateGraph2
+  and
+  https://trac.modelica.org/Modelica/ticket/984
+  and
+  http://www.ep.liu.se/ecp/043/041/ecp09430108.pdf
+ for a specification of this operator"
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output FCore.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties):=
+  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+    local
+      FCore.Graph env;
+      FCore.Cache cache;
+      Boolean impl;
+      Absyn.Exp aexp1, aexp2, aexp3;
+      DAE.Exp exp1, exp2, exp3;
+      Prefix.Prefix pre;
+      DAE.Dimensions dims;
+      DAE.Properties props;
+      list<DAE.Exp> lst;
+      Integer dim;
+      DAE.Type ty;
+
+    case (cache,env,{aexp1,aexp2},{},_,pre,_)
+      equation
+        (cache,exp1 as DAE.ARRAY(array = lst),_,_) = elabExpInExpression(cache, env, aexp1, false, NONE(), false, pre, info);
+        dim = listLength(lst);
+        (cache,exp2,_,_) = elabExpInExpression(cache, env, aexp2, false, NONE(), false, pre, info);
+        exp3 = DAE.SCONST("");
+        ty = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource);
+      then
+        (cache,
+        DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")), {exp1, exp2, exp3},
+                 DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),
+        DAE.PROP(ty, DAE.C_VAR()));
+
+    case (cache,env,{aexp1,aexp2,aexp3},{},_,pre,_)
+      equation
+        (cache,exp1 as DAE.ARRAY(array = lst),_,_) = elabExpInExpression(cache, env, aexp1, false, NONE(), false, pre, info);
+        dim = listLength(lst);
+        (cache,exp2,_,_) = elabExpInExpression(cache, env, aexp2, false, NONE(), false, pre, info);
+        (cache,exp3,_,_) = elabExpInExpression(cache, env, aexp2, false, NONE(), false, pre, info);
+        ty = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource);
+      then
+        (cache,
+        DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")), {exp1, exp2, exp3},
+                 DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),
+        DAE.PROP(ty, DAE.C_VAR()));
+
+    case (cache,env,{aexp1,aexp2},{Absyn.NAMEDARG("message", aexp3)},_,pre,_)
+      equation
+        (cache,exp1 as DAE.ARRAY(array = lst),_,_) = elabExpInExpression(cache, env, aexp1, false, NONE(), false, pre, info);
+        dim = listLength(lst);
+        (cache,exp2,_,_) = elabExpInExpression(cache, env, aexp2, false,NONE(), false,pre,info);
+        (cache,exp3,_,_) = elabExpInExpression(cache, env, aexp2, false,NONE(), false,pre,info);
+        ty = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource);
+      then
+        (cache,
+        DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")), {exp1, exp2, exp3},
+                 DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),
+        DAE.PROP(ty, DAE.C_VAR()));
+
+  end match;
+end elabBuiltinUniqueRootIndices;
+
 protected function elabBuiltinScalar "author: PA
 
   This function handles the built in scalar operator.
@@ -7434,7 +7512,15 @@ algorithm
     // special handling for Connections.isRoot() operator
     case (cache,env,Absyn.CREF_QUAL(name = "Connections", componentRef = Absyn.CREF_IDENT(name = "isRoot")),args,nargs,impl,pre,_)
       equation
-        (cache,exp,prop) = elabBuiltinIsRoot(cache,env, args, nargs, impl,pre,info);
+        (cache,exp,prop) = elabBuiltinIsRoot(cache, env, args, nargs, impl, pre, info);
+      then
+        (cache,exp,prop);
+
+    // special handling for Connections.uniqueRootIndices(roots, nodes, message) operator
+    case (cache,env,Absyn.CREF_QUAL(name = "Connections", componentRef = Absyn.CREF_IDENT(name = "uniqueRootIndices")),args,nargs,impl,pre,_)
+      equation
+        (cache,exp,prop) = elabBuiltinUniqueRootIndices(cache, env, args, nargs, impl, pre, info);
+        Error.addSourceMessage(Error.NON_STANDARD_OPERATOR, {"Connections.uniqueRootIndices"}, info);
       then
         (cache,exp,prop);
 

@@ -708,6 +708,21 @@ encapsulated package Connections
     output Boolean isroot;
     external "builtin";
   end isRoot;
+
+  function uniqueRoot
+    input VariableName root;
+    input String message = "";
+    external "builtin";
+  end uniqueRoot;
+
+  function uniqueRootIndices
+    input VariableName[:] roots;
+    input VariableName[:] nodes;
+    input String message = "";
+    output Integer[size(roots, 1)] rootIndices;
+    // adrpo: I would like an assert here: size(nodes) <= size (roots)
+    external "builtin";
+  end uniqueRootIndices;
 end Connections;
 
 encapsulated package Subtask

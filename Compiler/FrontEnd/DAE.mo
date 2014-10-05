@@ -733,7 +733,7 @@ uniontype Var "- Variables"
   record TYPES_VAR
     Ident name "name";
     Attributes attributes "attributes";
-    Type ty "type" ;
+    Type ty "type";
     Binding binding "equation modification";
     Option<Const> constOfForIteratorRange "the constant-ness of the range if this is a for iterator, NONE() if is NOT a for iterator";
   end TYPES_VAR;
@@ -855,7 +855,7 @@ public uniontype Type "models the different front-end and back-end types"
 
   record T_ARRAY
     "an array can be represented in two equivalent ways:
-       1. T_ARRAY(non_array_type, {dim1, dim2, dim3}) =
+       1. T_ARRAY(non_array_type, {dim1, dim2, dim3})
        2. T_ARRAY(T_ARRAY(T_ARRAY(non_array_type, {dim1}), {dim2}), {dim3})
        In general Inst generates 1 and all the others generates 2"
     Type ty "Type";
@@ -872,14 +872,14 @@ public uniontype Type "models the different front-end and back-end types"
   end T_UNKNOWN;
 
   record T_COMPLEX
-    ClassInf.State complexClassType "The type of a class" ;
-    list<Var> varLst "The variables of a complex type" ;
+    ClassInf.State complexClassType "The type of a class";
+    list<Var> varLst "The variables of a complex type";
     EqualityConstraint equalityConstraint;
     TypeSource source;
   end T_COMPLEX;
 
   record T_SUBTYPE_BASIC
-    ClassInf.State complexClassType "The type of a class" ;
+    ClassInf.State complexClassType "The type of a class";
     list<Var> varLst "complexVarLst; The variables of a complex type! Should be empty, kept here to verify!";
     Type complexType "complexType; A complex type can be a subtype of another (primitive) type (through extends)";
     EqualityConstraint equalityConstraint;
@@ -1318,8 +1318,8 @@ uniontype Exp "Expressions
 
   record ARRAY
     Type ty;
-    Boolean scalar "scalar for codegen" ;
-    list<Exp> array "Array constructor, e.g. {1,3,4}" ;
+    Boolean scalar "scalar for codegen";
+    list<Exp> array "Array constructor, e.g. {1,3,4}";
   end ARRAY;
 
   record MATRIX

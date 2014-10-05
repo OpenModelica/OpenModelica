@@ -2392,7 +2392,7 @@ algorithm
         compType = printTypeStr(t);
         s1 = ClassInf.printStateStr(st);
         s2 = stringDelimitList(List.map(vars, printVarStr),", ");
-        str = stringAppendList({"composite(",s1,"{",s2,"} derived from ", compType});
+        str = stringAppendList({"composite(",s1,"{",s2,"}, derived from ", compType, ")"});
         str = str +& printTypeSourceStr(getTypeSource(inType));
       then
         str;
@@ -2410,7 +2410,7 @@ algorithm
       equation
         s1 = stringDelimitList(List.map(dims, ExpressionDump.dimensionString), ", ");
         s2 = printTypeStr(t);
-        str = stringAppendList({s2,"[",s1,"]"});
+        str = stringAppendList({"array(",s2,")[",s1,"]"});
         str = str +& printTypeSourceStr(getTypeSource(inType));
       then
         str;

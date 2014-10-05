@@ -53,7 +53,19 @@ encapsulated package ConnectionGraph
   Roots are represented as connections to dummy root
   element. In this way, all elements will be in the
   same component after the algorithm finishes assuming
-  that the model is valid."
+  that the model is valid.
+
+  TODO! FIXME! adrpo 2014-10-05
+  - non standard operators: Connections.uniqueRoot and Connections.uniqueRootIndices are only partially implemented
+  - Connections.uniqueRoot currently does nothing, only collects information
+  - Connections.uniqueRootIndices needs to be implemented, it returns an array of ones (1) of size of first input
+  - See specification for these here (Modelica_StateGraph2):
+    https://github.com/modelica/Modelica_StateGraph2 and
+    https://trac.modelica.org/Modelica/ticket/984 and
+    http://www.ep.liu.se/ecp/043/041/ecp09430108.pdf
+  - any takers for the actual implementation? :)
+
+"
 
 public import Absyn;
 public import DAE;
@@ -75,6 +87,7 @@ public type DaeEdges = list<DaeEdge>
 
 public type DefiniteRoot  = DAE.ComponentRef "root defined with Connection.root";
 public type DefiniteRoots = list<DAE.ComponentRef> "roots defined with Connection.root";
+public type UniqueRoots = list<tuple<DAE.ComponentRef,DAE.Exp>> "roots defined with Connection.uniqueRoot";
 
 public type PotentialRoot = tuple<DAE.ComponentRef,Real> "potential root defined with Connections.potentialRoot";
 public type PotentialRoots = list<tuple<DAE.ComponentRef,Real>> "potential roots defined with Connections.potentialRoot";
@@ -85,20 +98,22 @@ uniontype ConnectionGraph "Input structure for connection breaking algorithm. It
     Boolean updateGraph;
     DefiniteRoots definiteRoots "Roots defined with Connection.root";
     PotentialRoots potentialRoots "Roots defined with Connection.potentialRoot";
+    UniqueRoots uniqueRoots "Roots defined with Connection.uniqueRoot";
     Edges branches "Edges defined with Connection.branch";
     DaeEdges connections "Edges defined with connect statement";
   end GRAPH;
 end ConnectionGraph;
 
-public constant ConnectionGraph EMPTY = GRAPH( true, {}, {}, {}, {} ) "Initial connection graph with no edges in it.";
+public constant ConnectionGraph EMPTY = GRAPH( true, {}, {}, {}, {}, {} ) "Initial connection graph with no edges in it.";
 
-public constant ConnectionGraph NOUPDATE_EMPTY = GRAPH( false, {}, {}, {}, {} ) "Initial connection graph with updateGraph set to false.";
+public constant ConnectionGraph NOUPDATE_EMPTY = GRAPH( false, {}, {}, {}, {}, {} ) "Initial connection graph with updateGraph set to false.";
 
 public function handleOverconstrainedConnections
 "author: adrpo
  this function gets the connection graph and the existing DAE and:
  - returns a list of broken connects and one list of connected connects
  - evaluates Connections.isRoot in the input DAE
+ - evaluates Connections.uniqueRootIndices in the input DAE
  - evaluates the rooted operator in the input DAE"
   input ConnectionGraph inGraph;
   input String modelNameQualified;
@@ -115,7 +130,7 @@ algorithm
       DaeEdges broken, connected;
 
     // empty graph gives you the same dae
-    case (GRAPH(_, {}, {}, {}, {}), _, _) then (inDAE, {}, {});
+    case (GRAPH(_, {}, {}, {}, {}, {}), _, _) then (inDAE, {}, {});
 
     // handle the connection braking
     case (graph, _, DAE.DAE(elts))
@@ -124,6 +139,7 @@ algorithm
         Debug.fprintln(Flags.CGRAPH, "Summary: \n\t" +&
            "Nr Roots:           " +& intString(listLength(getDefiniteRoots(graph))) +& "\n\t" +&
            "Nr Potential Roots: " +& intString(listLength(getPotentialRoots(graph))) +& "\n\t" +&
+           "Nr Unique Roots:    " +& intString(listLength(getUniqueRoots(graph))) +& "\n\t" +&
            "Nr Branches:        " +& intString(listLength(getBranches(graph))) +& "\n\t" +&
            "Nr Connections:     " +& intString(listLength(getConnections(graph))));
 
@@ -133,7 +149,7 @@ algorithm
         Debug.fprintln(Flags.CGRAPH, "Broken connections: " +& stringDelimitList(List.map1(broken, printConnectionStr, "broken"), ", "));
         Debug.fprintln(Flags.CGRAPH, "Allowed connections: " +& stringDelimitList(List.map1(connected, printConnectionStr, "allowed"), ", "));
 
-        elts = evalRootedAndIsRoot(roots, graph, elts);
+        elts = evalConnectionsOperators(roots, graph, elts);
       then
         (DAE.DAE(elts), connected, broken);
 
@@ -158,15 +174,15 @@ algorithm
       DAE.ComponentRef root;
       DefiniteRoots definiteRoots;
       PotentialRoots potentialRoots;
+      UniqueRoots uniqueRoots;
       Edges branches;
       DaeEdges connections;
 
-    case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,branches = branches,connections = connections), root)
+    case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,branches = branches,connections = connections), root)
       equation
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.addDefiniteRoot(" +&
-            ComponentReference.printComponentRefStr(root) +& ")");
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.addDefiniteRoot(" +& ComponentReference.printComponentRefStr(root) +& ")");
       then
-        GRAPH(updateGraph,root::definiteRoots,potentialRoots,branches,connections);
+        GRAPH(updateGraph,root::definiteRoots,potentialRoots,uniqueRoots,branches,connections);
   end match;
 end addDefiniteRoot;
 
@@ -184,17 +200,76 @@ algorithm
       Real priority;
       DefiniteRoots definiteRoots;
       PotentialRoots potentialRoots;
+      UniqueRoots uniqueRoots;
       Edges branches;
       DaeEdges connections;
 
-    case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,branches = branches,connections = connections), root, priority)
+    case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,branches = branches,connections = connections), root, priority)
       equation
         Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.addPotentialRoot(" +&
             ComponentReference.printComponentRefStr(root) +& ", " +& realString(priority) +& ")");
       then
-        GRAPH(updateGraph,definiteRoots,(root,priority)::potentialRoots,branches,connections);
+        GRAPH(updateGraph,definiteRoots,(root,priority)::potentialRoots,uniqueRoots,branches,connections);
   end match;
 end addPotentialRoot;
+
+public function addUniqueRoots
+"Adds a new definite root to ConnectionGraph"
+  input ConnectionGraph inGraph;
+  input DAE.Exp inRoots;
+  input DAE.Exp inMessage;
+  output ConnectionGraph outGraph;
+algorithm
+  outGraph := match(inGraph, inRoots, inMessage)
+    local
+      Boolean updateGraph;
+      DAE.ComponentRef root;
+      DAE.Exp roots;
+      DefiniteRoots definiteRoots;
+      PotentialRoots potentialRoots;
+      UniqueRoots uniqueRoots;
+      Edges branches;
+      DaeEdges connections;
+      ConnectionGraph graph;
+      DAE.Type ty;
+      Boolean scalar;
+      list<DAE.Exp> rest;
+
+    // just one component reference
+    case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,
+                branches = branches,connections = connections),
+                roots as DAE.CREF(root, _), _)
+      equation
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.addUniqueRoots(" +& ComponentReference.printComponentRefStr(root) +& ", " +& ExpressionDump.printExpStr(inMessage) +& ")");
+      then
+        GRAPH(updateGraph,definiteRoots,potentialRoots,(root,inMessage)::uniqueRoots,branches,connections);
+
+    // array of component references, empty case
+    case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,
+                branches = branches,connections = connections),
+                roots as DAE.ARRAY(_, _, {}), _)
+      then
+        inGraph;
+
+    // array of component references, something still there
+    case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,
+                branches = branches,connections = connections),
+                roots as DAE.ARRAY(ty, scalar, DAE.CREF(root, _)::rest), _)
+      equation
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.addUniqueRoots(" +& ComponentReference.printComponentRefStr(root) +& ", " +& ExpressionDump.printExpStr(inMessage) +& ")");
+        graph = GRAPH(updateGraph,definiteRoots,potentialRoots,(root,inMessage)::uniqueRoots,branches,connections);
+        graph = addUniqueRoots(graph, DAE.ARRAY(ty, scalar, rest), inMessage);
+      then
+        graph;
+
+    case (_, _, _)
+      equation
+        // TODO! FIXME! print some meaningful error message here that the input is not an array of roots or a cref
+      then
+        inGraph;
+
+  end match;
+end addUniqueRoots;
 
 public function addBranch
 "Adds a new branch to ConnectionGraph"
@@ -210,16 +285,15 @@ algorithm
       DAE.ComponentRef ref2;
       DefiniteRoots definiteRoots;
       PotentialRoots potentialRoots;
+      UniqueRoots uniqueRoots;
       Edges branches;
       DaeEdges connections;
 
-    case (GRAPH(updateGraph = updateGraph, definiteRoots = definiteRoots,potentialRoots = potentialRoots,branches = branches,connections = connections), ref1, ref2)
+    case (GRAPH(updateGraph = updateGraph, definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,branches = branches,connections = connections), ref1, ref2)
       equation
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.addBranch(" +&
-            ComponentReference.printComponentRefStr(ref1) +& ", " +&
-            ComponentReference.printComponentRefStr(ref2) +& ")");
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.addBranch(" +& ComponentReference.printComponentRefStr(ref1) +& ", " +& ComponentReference.printComponentRefStr(ref2) +& ")");
       then
-        GRAPH(updateGraph, definiteRoots,potentialRoots,(ref1,ref2)::branches,connections);
+        GRAPH(updateGraph, definiteRoots,potentialRoots,uniqueRoots,(ref1,ref2)::branches,connections);
   end match;
 end addBranch;
 
@@ -239,15 +313,14 @@ algorithm
       list<DAE.Element> dae;
       DefiniteRoots definiteRoots;
       PotentialRoots potentialRoots;
+      UniqueRoots uniqueRoots;
       Edges branches;
       DaeEdges connections;
 
-    case (GRAPH(updateGraph = updateGraph, definiteRoots = definiteRoots,potentialRoots = potentialRoots,branches = branches,connections = connections), ref1, ref2, dae)
+    case (GRAPH(updateGraph = updateGraph, definiteRoots = definiteRoots, potentialRoots = potentialRoots, uniqueRoots = uniqueRoots, branches = branches, connections = connections), ref1, ref2, dae)
       equation
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.addConnection(" +&
-            ComponentReference.printComponentRefStr(ref1) +& ", " +&
-            ComponentReference.printComponentRefStr(ref2) +& ")");
-    then GRAPH(updateGraph, definiteRoots,potentialRoots,branches,(ref1,ref2,dae)::connections);
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.addConnection(" +& ComponentReference.printComponentRefStr(ref1) +& ", " +& ComponentReference.printComponentRefStr(ref2) +& ")");
+    then GRAPH(updateGraph, definiteRoots,potentialRoots,uniqueRoots,branches,(ref1,ref2,dae)::connections);
   end match;
 end addConnection;
 
@@ -584,6 +657,7 @@ algorithm
     local
       DefiniteRoots definiteRoots, finalRoots;
       PotentialRoots potentialRoots, orderedPotentialRoots;
+      UniqueRoots uniqueRoots;
       Edges branches;
       DaeEdges connections, broken, connected;
       HashTableCG.HashTable table;
@@ -594,11 +668,11 @@ algorithm
       list<tuple<String,String>> userBrokenTplLst;
 
     // deal with empty connection graph
-    case (GRAPH(_, definiteRoots = {}, potentialRoots = {}, branches = {}, connections = {}), _)
+    case (GRAPH(_, definiteRoots = {}, potentialRoots = {}, uniqueRoots = {}, branches = {}, connections = {}), _)
       then ({}, {}, {});
 
     // we have something in the connection graph
-    case (GRAPH(_, definiteRoots = definiteRoots, potentialRoots = potentialRoots,
+    case (GRAPH(_, definiteRoots = definiteRoots, potentialRoots = potentialRoots, uniqueRoots = uniqueRoots,
                    branches = branches, connections = connections), _)
       equation
         // reverse the conenction list to have them as in the model
@@ -610,8 +684,7 @@ algorithm
         // order potential roots in the order or priority
         orderedPotentialRoots = List.sort(potentialRoots, ord);
 
-        Debug.fprintln(Flags.CGRAPH, "Ordered Potential Roots: " +&
-          stringDelimitList(List.map(orderedPotentialRoots, printPotentialRootTuple), ", "));
+        Debug.fprintln(Flags.CGRAPH, "Ordered Potential Roots: " +& stringDelimitList(List.map(orderedPotentialRoots, printPotentialRootTuple), ", "));
 
         // add connections to the table and return the broken/connected connections
         (table, connected, broken) = addConnections(table, connections);
@@ -635,7 +708,7 @@ algorithm
         (finalRoots, connected, broken);
 
     // we have something in the connection graph
-    case (GRAPH(_, definiteRoots = definiteRoots, potentialRoots = potentialRoots,
+    case (GRAPH(_, definiteRoots = definiteRoots, potentialRoots = potentialRoots, uniqueRoots = uniqueRoots,
                    branches = branches, connections = connections), _)
       equation
         // reverse the conenction list to have them as in the model
@@ -647,8 +720,7 @@ algorithm
         // order potential roots in the order or priority
         orderedPotentialRoots = List.sort(potentialRoots, ord);
 
-        Debug.fprintln(Flags.CGRAPH, "Ordered Potential Roots: " +&
-          stringDelimitList(List.map(orderedPotentialRoots, printPotentialRootTuple), ", "));
+        Debug.fprintln(Flags.CGRAPH, "Ordered Potential Roots: " +& stringDelimitList(List.map(orderedPotentialRoots, printPotentialRootTuple), ", "));
 
         // add connections to the table and return the broken/connected connections
         (table,_, broken) = addConnections(table, connections);
@@ -671,8 +743,7 @@ algorithm
         userBrokenLst = Util.stringSplitAtChar(brokenConnectsViaGraphViz, "#");
         userBrokenLstLst = List.map1(userBrokenLst, Util.stringSplitAtChar, "|");
         userBrokenTplLst = makeTuple(userBrokenLstLst);
-        Debug.traceln("User selected the following connect edges for breaking:\n\t" +&
-           stringDelimitList(List.map(userBrokenTplLst, printTupleStr), "\n\t"));
+        Debug.traceln("User selected the following connect edges for breaking:\n\t" +& stringDelimitList(List.map(userBrokenTplLst, printTupleStr), "\n\t"));
         // print("\nBefore ordering:\n");
         printDaeEdges(connections);
         // order the connects with the input given by the user!
@@ -683,7 +754,7 @@ algorithm
         // printDaeEdges(connections);
         // call findResultGraph again with ordered connects!
         (finalRoots, connected, broken) =
-           findResultGraph(GRAPH(false, definiteRoots, potentialRoots, branches, connections),
+           findResultGraph(GRAPH(false, definiteRoots, potentialRoots, uniqueRoots, branches, connections),
                            modelNameQualified);
       then
         (finalRoots, connected, broken);
@@ -909,8 +980,16 @@ algorithm
   end matchcontinue;
 end addConnectionRooted;
 
-protected function evalRootedAndIsRoot
-"Replaces all rooted calls by true or false depending on wheter branche frame_a or frame_b is closer to root"
+protected function evalConnectionsOperators
+"evaluation of Connections.rooted, Connections.isRoot, Connections.uniqueRootIndices
+ - replaces all [Connections.]rooted calls by true or false depending on wheter branche frame_a or frame_b is closer to root
+ - return true or false for Connections.isRoot operator if is a root or not
+ - return an array of indices for Connections.uniqueRootIndices, see Modelica_StateGraph2
+   See Modelica_StateGraph2:
+    https://github.com/modelica/Modelica_StateGraph2 and
+    https://trac.modelica.org/Modelica/ticket/984 and
+    http://www.ep.liu.se/ecp/043/041/ecp09430108.pdf
+   for a specification of this operator"
   input list<DAE.ComponentRef> inRoots;
   input ConnectionGraph graph;
   input list<DAE.Element> inDae;
@@ -940,14 +1019,14 @@ algorithm
         //  BaseHashTable.dumpHashTable(table);
         rooted = setRootDistance(inRoots,table,0,{},HashTable.emptyHashTable());
         //  BaseHashTable.dumpHashTable(rooted);
-        (outDae, _) = DAEUtil.traverseDAE2(inDae, evalRootedAndIsRootHelper, (rooted,inRoots,graph));
+        (outDae, _) = DAEUtil.traverseDAE2(inDae, evalConnectionsOperatorsHelper, (rooted,inRoots,graph));
       then outDae;
 
   end matchcontinue;
-end evalRootedAndIsRoot;
+end evalConnectionsOperators;
 
-protected function evalRootedAndIsRootHelper
-"Helper function for evalIsRoot."
+protected function evalConnectionsOperatorsHelper
+"Helper function for evaluation of Connections.rooted, Connections.isRoot, Connections.uniqueRootIndices"
   input DAE.Exp inExp;
   input tuple<HashTable.HashTable,list<DAE.ComponentRef>,ConnectionGraph> inRoots;
   output DAE.Exp outExp;
@@ -956,12 +1035,13 @@ algorithm
   (outExp,outRoots) := matchcontinue (inExp,inRoots)
     local
       ConnectionGraph graph;
-      DAE.Exp exp;
+      DAE.Exp exp, uroots, nodes, message;
       HashTable.HashTable rooted;
       DAE.ComponentRef cref,cref1;
       Boolean result;
       Edges branches;
       list<DAE.ComponentRef> roots;
+      list<DAE.Exp> lst;
 
     // handle rooted
     case (DAE.CALL(path=Absyn.IDENT("rooted"), expLst={DAE.CREF(componentRef = cref)}), (rooted,roots,graph))
@@ -969,14 +1049,14 @@ algorithm
         // find partner in branches
         branches = getBranches(graph);
         cref1 = getEdge(cref,branches);
-        //print("- ConnectionGraph.evalRootedAndIsRootHelper: Found Branche Partner " +&
+        // print("- ConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +&
         //   ComponentReference.printComponentRefStr(cref) +& ", " +& ComponentReference.printComponentRefStr(cref1) +& "\n");
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalRootedAndIsRootHelper: Found Branche Partner " +&
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +&
            ComponentReference.printComponentRefStr(cref) +& ", " +& ComponentReference.printComponentRefStr(cref1));
         result = getRooted(cref,cref1,rooted);
         //print("- ConnectionGraph.evalRootedAndIsRootHelper: " +&
         //   ComponentReference.printComponentRefStr(cref) +& " is " +& boolString(result) +& " rooted\n");
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalRootedAndIsRootHelper: " +&
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalConnectionsOperatorsHelper: " +&
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
       then (DAE.BCONST(result), (rooted,roots,graph));
 
@@ -987,7 +1067,7 @@ algorithm
     case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.CREF(componentRef = cref)}), (rooted,roots,graph))
       equation
         result = List.isMemberOnTrue(cref, roots, ComponentReference.crefEqualNoStringCompare);
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalIsRootHelper: " +&
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalConnectionsOperatorsHelper: " +&
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
       then (DAE.BCONST(result), (rooted,roots,graph));
 
@@ -996,15 +1076,27 @@ algorithm
       equation
         result = List.isMemberOnTrue(cref, roots, ComponentReference.crefEqualNoStringCompare);
         result = boolNot(result);
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalIsRootHelper: " +&
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalConnectionsOperatorsHelper: " +&
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
       then (DAE.BCONST(result), (rooted,roots,graph));
 
+    // deal with Connections.uniqueRootIndices, TODO! FIXME! actually implement this
+    case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")),
+          expLst={uroots as DAE.ARRAY(array = lst),nodes,message}), (rooted,roots,graph))
+      equation
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalConnectionsOperatorsHelper: Connections.uniqueRootsIndicies(" +&
+          ExpressionDump.printExpStr(uroots) +& "," +&
+          ExpressionDump.printExpStr(nodes) +& "," +&
+          ExpressionDump.printExpStr(message) +& ")");
+          lst = List.fill(DAE.ICONST(1), listLength(lst)); // TODO! FIXME! actually implement this correctly
+      then
+        (DAE.ARRAY(DAE.T_INTEGER_DEFAULT, false, lst), (rooted,roots,graph));
+
     // no replacement needed
     else (inExp, inRoots);
-        // Debug.fprintln(Flags.CGRAPH, ExpressionDump.printExpStr(exp) +& " not found in roots!");
+    // Debug.fprintln(Flags.CGRAPH, ExpressionDump.printExpStr(exp) +& " not found in roots!");
   end matchcontinue;
-end evalRootedAndIsRootHelper;
+end evalConnectionsOperatorsHelper;
 
 protected function getRooted
   input DAE.ComponentRef cref1;
@@ -1157,16 +1249,28 @@ algorithm
 end printConnectionGraph;
 
 protected function getDefiniteRoots
-"Accessor for ConnectionGraph.definititeRoots."
+"Accessor for ConnectionGraph.definiteRoots."
   input ConnectionGraph inGraph;
-  output list<DAE.ComponentRef> outResult;
+  output DefiniteRoots outResult;
 algorithm
   outResult := match(inGraph)
     local
-      list<DAE.ComponentRef> result;
-    case (GRAPH(_,result,_,_,_)) then result;
+      DefiniteRoots result;
+    case (GRAPH(definiteRoots = result)) then result;
   end match;
 end getDefiniteRoots;
+
+protected function getUniqueRoots
+"Accessor for ConnectionGraph.uniqueRoots."
+  input ConnectionGraph inGraph;
+  output UniqueRoots outResult;
+algorithm
+  outResult := match(inGraph)
+    local
+      UniqueRoots result;
+    case (GRAPH(uniqueRoots = result)) then result;
+  end match;
+end getUniqueRoots;
 
 protected function getPotentialRoots
 "Accessor for ConnectionGraph.potentialRoots."
@@ -1186,8 +1290,7 @@ protected function getBranches
 algorithm
   outResult := match(inGraph)
     local Edges result;
-    case (GRAPH(_,_,_,result,_))
-    then result;
+    case (GRAPH(branches = result)) then result;
   end match;
 end getBranches;
 
@@ -1198,7 +1301,7 @@ protected function getConnections
 algorithm
   outResult := match(inGraph)
     local DaeEdges result;
-    case (GRAPH(_,_,_,_,result)) then result;
+    case (GRAPH(connections = result)) then result;
   end match;
 end getConnections;
 
@@ -1212,17 +1315,18 @@ algorithm
     local
       Boolean updateGraph, updateGraph1, updateGraph2;
       DefiniteRoots definiteRoots, definiteRoots1, definiteRoots2;
+      UniqueRoots uniqueRoots, uniqueRoots1, uniqueRoots2;
       PotentialRoots potentialRoots, potentialRoots1, potentialRoots2;
       Edges branches, branches1, branches2;
       DaeEdges connections, connections1, connections2;
 
     // left is empty, return right
-    case (_, GRAPH(updateGraph = _,definiteRoots = {},potentialRoots = {},branches = {},connections = {}))
+    case (_, GRAPH(updateGraph = _,definiteRoots = {},potentialRoots = {},uniqueRoots = {},branches = {},connections = {}))
       then
         inGraph1;
 
     // right is empty, return left
-    case (GRAPH(updateGraph = _,definiteRoots = {},potentialRoots = {},branches = {},connections = {}), _)
+    case (GRAPH(updateGraph = _,definiteRoots = {},potentialRoots = {},uniqueRoots = {},branches = {},connections = {}), _)
       then
         inGraph2;
 
@@ -1234,17 +1338,20 @@ algorithm
         inGraph1;
 
     // they are NOT equal, merge them
-    case (GRAPH(updateGraph = updateGraph1,definiteRoots = definiteRoots1,potentialRoots = potentialRoots1,branches = branches1,connections = connections1),
-          GRAPH(updateGraph = updateGraph2,definiteRoots = definiteRoots2,potentialRoots = potentialRoots2,branches = branches2,connections = connections2))
+    case (GRAPH(updateGraph = updateGraph1, definiteRoots = definiteRoots1, potentialRoots = potentialRoots1, uniqueRoots=uniqueRoots1,
+                branches = branches1, connections = connections1),
+          GRAPH(updateGraph = updateGraph2, definiteRoots = definiteRoots2, potentialRoots = potentialRoots2, uniqueRoots=uniqueRoots2,
+                branches = branches2,connections = connections2))
       equation
         Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.merge()");
         updateGraph    = boolOr(updateGraph1, updateGraph2);
         definiteRoots  = List.union(definiteRoots1, definiteRoots2);
         potentialRoots = List.union(potentialRoots1, potentialRoots2);
+        uniqueRoots    = List.union(uniqueRoots1, uniqueRoots2);
         branches       = List.union(branches1, branches2);
         connections    = List.union(connections1, connections2);
       then
-        GRAPH(updateGraph,definiteRoots,potentialRoots,branches,connections);
+        GRAPH(updateGraph,definiteRoots,potentialRoots,uniqueRoots,branches,connections);
   end matchcontinue;
 end merge;
 

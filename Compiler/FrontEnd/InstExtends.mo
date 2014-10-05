@@ -1590,8 +1590,10 @@ algorithm
 
     case (cache,env,path,_)
       equation
+        // isOutside = isPathOutsideScope(cache, env, path);
         //print("Try makeFullyQualified " +& Absyn.pathString(path) +& "\n");
         (cache,path) = Inst.makeFullyQualified(cache,env,path);
+        // path = Util.if_(isOutside, path, FGraph.pathStripGraphScopePrefix(path, env, false));
         path = FGraph.pathStripGraphScopePrefix(path, env, false);
         //print("FullyQual: " +& Absyn.pathString(path) +& "\n");
       then (cache,path);
@@ -1693,8 +1695,10 @@ algorithm
         //Debug.fprintln(Flags.DEBUG,"Try lookupV " +& id);
         (denv,id) = lookupVarNoErrorMessage(cache,env,cref_);
         //Debug.fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));
+        // isOutside = FGraph.graphPrefixOf(denv, env);
         denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),SOME(id),NONE());
         cref = Absyn.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
+        // cref = Util.if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
         //Debug.fprintln(Flags.DEBUG, "Cref VAR fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
@@ -1704,11 +1708,13 @@ algorithm
         id = Absyn.crefFirstIdent(cref);
         //print("Try lookupC " +& id +& "\n");
         (_,c,denv) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
+        // isOutside = FGraph.graphPrefixOf(denv, env);
         // id might come from named import, make sure you use the actual class name!
         id = SCode.getElementName(c);
         //Debug.fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));
         denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),SOME(id),NONE());
         cref = Absyn.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
+        // cref = Util.if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
         //print("Cref CLASS fixed: " +& Absyn.printComponentRefStr(cref) +& "\n");
       then (cache,cref);

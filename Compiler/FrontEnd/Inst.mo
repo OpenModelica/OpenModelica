@@ -230,7 +230,7 @@ algorithm
         //System.startTimer();
         //print("\nInstClass");
         (cache,env_2,ih,_,dae,_,_,_,_,_) = instClass(cache,env_2,ih,
-          UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), Prefix.NOPRE(), cdef,
+          UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), makeTopComponentPrefix(env_2, n), cdef,
           {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl";
         //System.stopTimer();
         //print("\nInstClass: " +& realString(System.getTimerIntervalTime()));
@@ -373,7 +373,7 @@ algorithm
         cdef = SCode.classSetPartial(cdef, SCode.NOT_PARTIAL());
 
         (cache,env_2,ih,_,dae,_,_,_,_,_) =
-          instClass(cache, env_2, ih, UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), Prefix.NOPRE(),
+          instClass(cache, env_2, ih, UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), makeTopComponentPrefix(env_2, n),
             cdef, {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl" ;
         pathstr = Absyn.pathString(path);
 
@@ -394,6 +394,18 @@ algorithm
         fail();
   end matchcontinue;
 end instantiatePartialClass;
+
+protected function makeTopComponentPrefix
+  input FGraph.Graph inGraph;
+  input Absyn.Ident inName;
+  output Prefix.Prefix outPrefix;
+protected
+  Absyn.Path p;
+algorithm
+  //p := FGraph.joinScopePath(inGraph, Absyn.IDENT(inName));
+  //outPrefix := Prefix.PREFIX(Prefix.PRE("$i", {}, {}, Prefix.NOCOMPPRE(), ClassInf.MODEL(p)), Prefix.CLASSPRE(SCode.VAR()));
+  outPrefix := Prefix.NOPRE();
+end makeTopComponentPrefix;
 
 protected function instClassInProgram
   "Instantiates a specific top level class in a Program."
@@ -431,7 +443,7 @@ algorithm
         cls = InstUtil.lookupTopLevelClass(name, inProgram, true);
 
         (cache, env, ih, _, dae, _, _, _, _, _) = instClass(inCache, inEnv,
-          inIH, UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(),
+          inIH, UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), makeTopComponentPrefix(inEnv, name),
           cls, {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         dae = InstUtil.reEvaluateInitialIfEqns(cache, env, dae, true);
         elts = DAEUtil.daeElements(dae);
@@ -1700,7 +1712,7 @@ algorithm
       Prefix.Prefix pre;
       ClassInf.State ci_state,ci_state_1;
       SCode.Element c;
-      String n;
+      String n, str;
       SCode.Restriction r;
       SCode.ClassDef d;
       SCode.Visibility vis;
@@ -1738,9 +1750,13 @@ algorithm
         System.setPartialInstantiation(partialInst);
       then (cache,env,ih,ci_state,{});
 
-    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = _,restriction = _,classDef = d)),vis,inst_dims,_,_)
+    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),vis,inst_dims,_,_)
       equation
         // t1 = clock();
+
+        // str = Util.if_(valueEq(r, SCode.R_PACKAGE()), "", "Instantiating non package: " +& FGraph.getGraphNameStr(env) +& "/" +& n +& "\n");
+        // print(str);
+
         (cache,env_1,ih,ci_state_1,vars) =
           partialInstClassdef(cache,env,ih, mods, pre, ci_state, c, d, vis, inst_dims, numIter);
 
@@ -1752,12 +1768,6 @@ algorithm
         // s = realString(time);
         // s2 = FGraph.printGraphPathStr(env);
         // Debug.fprintln(Flags.INSTTR, "ICLASSPARTIAL " +& n +& " inst time: " +& s +& " in env " +& s2 +& " mods: " +& Mod.printModStr(mods));
-        //print(Util.if_(b,s,""));
-        //print("inCache:");print(Env.printCacheStr(cache));print("\n");
-        // adrpo: never add a partial environment to the cache!
-        // cache = Env.addCachedEnv(cache,n,env_1);
-        // print("outCache:");print(Env.printCacheStr(cache));print("\n");
-        // print("partialInstClassDef, outenv:");print(FGraph.printGraphStr(env_1));
       then
         (cache,env_1,ih,ci_state_1,vars);
 
@@ -1904,11 +1914,6 @@ algorithm
 
         (cache,env1,ih) = InstUtil.addClassdefsToEnv(cache, env, ih, pre, cdefelts, impl, SOME(mods)) "1. CLASS & IMPORT nodes and COMPONENT nodes(add to env)" ;
         cdefelts_1 = InstUtil.addNomod(cdefelts) "instantiate CDEFS so redeclares are carried out" ;
-        /*
-        (cache,env2,ih,cdefelts_2) =
-          updateCompeltsMods(cache, env1, ih, pre,
-            InstUtil.sortElementList(cdefelts_1, env1, FGraph.inFunctionScope(env1)),
-            ci_state, impl);*/
         env2 = env1;
         cdefelts_2 = cdefelts_1;
 
@@ -2196,11 +2201,6 @@ algorithm
         (cache,env3,ih) = InstUtil.addComponentsToEnv(cache, env2, ih, mods, pre, ci_state, compelts_1, compelts_1, eqs_1, inst_dims, impl);
         //Update the modifiers of elements to typed ones, needed for modifiers
         //on components that are inherited.
-        /*
-        (cache,env4,ih,compelts_2) =
-          updateCompeltsMods(cache, env3, ih, pre,
-            InstUtil.sortElementList(compelts_1, env3, FGraph.inFunctionScope(env3)),
-            ci_state, impl);*/
         compelts_2 = compelts_1;
         env4 = env3;
 
@@ -3002,18 +3002,13 @@ algorithm
                                              lst_constantEls, lst_constantEls, {},
                                              inst_dims, false); // adrpo: here SHOULD BE IMPL=TRUE! not FALSE!
 
-        /*(cache,env3,ih,lst_constantEls) =
-           updateCompeltsMods(cache, env3, ih, pre,
-             InstUtil.sortElementList(lst_constantEls, env3, FGraph.inFunctionScope(env3)),
-             ci_state, true);*/
-
         (cache,env3,ih,_,_,_,ci_state2,vars,_) =
            instElementList(cache, env3, ih, UnitAbsyn.noStore, mods, pre, ci_state1, lst_constantEls,
               inst_dims, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, false) "instantiate constants";
-        /*
-        ci_state2 = ci_state1;
-        vars = {};
-        */
+
+        //ci_state2 = ci_state1;
+        //vars = {};
+
         // Debug.traceln("partialInstClassdef OK " +& className);
       then
         (cache,env3,ih,ci_state2,vars);
@@ -3410,7 +3405,7 @@ algorithm
               "\n");*/
 
         (cache,env_1,ih,store,DAE.DAE(elts),csets,ci_state_1,tys1,graph) =
-          instElement(cache,env,ih,store, mod, pre, ci_state, el, inst_dims, impl, callscope, graph, csets);
+          instElement(cache, env, ih, store, mod, pre, ci_state, el, inst_dims, impl, callscope, graph, csets);
         /*s1 = Util.if_(stringEq("n", str),DAE.dumpElementsStr(dae1),"");
         print(s1) "To print what happened to a specific var";*/
         Error.updateCurrentComponent("",Absyn.dummyInfo);
@@ -3508,28 +3503,14 @@ algorithm
     case (_, _, _, _, _, _, _,(SCode.IMPORT(imp = _),_), _, _, _, _, _)
       then (inCache, inEnv, inIH, inUnitStore, DAE.emptyDae, inSets, inState, {}, inGraph);
 
-    // A new class definition. Put it in the current frame in the environment
-    case (cache, env, ih, _, _, _, _, (SCode.CLASS(name = name,
-        prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), _),
-        _, _, _, _, _)
-      equation
-        /*/Redeclare of class definition, replaceable is true
-        (class_mod as DAE.REDECL(tplSCodeElementModLst = (cls,_)::_)) =
-          Mod.lookupModificationP(inMod, Absyn.IDENT(name));
-        class_mod = Mod.removeMod(class_mod, name);
-        env = FGraph.mkClassNode(env, cls, inPrefix, class_mod);*/
-      then
-        (cache, env, ih, inUnitStore, DAE.emptyDae, inSets, inState, {}, inGraph);
-
-    // Classdefinition without redeclaration
+    // classdefinitions
     case (cache, env, ih, _, _, _, _, (cls as SCode.CLASS(name = name), _), _, _, _, _, _)
       equation
-        /*class_mod = Mod.lookupModificationP(inMod, Absyn.IDENT(name));
-        // This was an attempt to fix multiple class definition bug. Unfortunately, it breaks some tests. -- alleb
-        // _ = InstUtil.checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
-        env = FGraph.mkClassNode(env, cls, inPrefix, class_mod);*/
+        //(cache, cenv, ih, store, dae, csets, ty, ci_state, _, graph) = instClass(cache, env, ih, inUnitStore, inMod, inPrefix, cls, inInstDims, inImplicit, inCallingScope, inGraph, inSets);
+        //env = FGraph.updateClass(env, cls, inPrefix, inMod, FCore.CLS_INSTANCE(name), cenv);
       then
-        (cache, env, ih, inUnitStore, DAE.emptyDae, inSets, inState, {}, inGraph);
+        //(cache, env, ih, store, dae, csets, ci_state, {}, graph);
+        (inCache, inEnv, inIH, inUnitStore, DAE.emptyDae, inSets, inState, {}, inGraph);
 
     // A component
     // This is the rule for instantiating a model component.  A component can be
@@ -3608,7 +3589,7 @@ algorithm
 
         // can call instVar
         (cache, env2, ih) = updateComponentsInEnv(cache, env, ih, pre, mods, crefs, ci_state, impl);
-        //env2 = env;
+        // env2 = env;
 
         // Update the untyped modifiers to typed ones, and extract class and
         // component modifiers again.
@@ -3658,6 +3639,8 @@ algorithm
         //Instantiate the component
         // Start a new "set" of inst_dims for this component (in instance hierarchy), see InstDims
         inst_dims = listAppend(inst_dims,{{}});
+
+        (cache,mod) = Mod.updateMod(cache, env2 /* cenv */, ih, pre, mod, impl, info);
         (cache,mod_1) = Mod.updateMod(cache, env2 /* cenv */, ih, pre, mod_1, impl, info);
 
         // print("Before InstUtil.selectModifiers:\n\tmod: " +& Mod.printModStr(mod) +& "\n\t" +&"mod_1: " +& Mod.printModStr(mod_1) +& "\n\t" +&"comp: " +& SCodeDump.unparseElementStr(comp) +& "\n");
@@ -4007,7 +3990,7 @@ algorithm
       list<Absyn.ComponentRef> crefs;
       FCore.Graph env_1,env;
       DAE.Mod m_1,old_m_1,m_2,m_3,m,rmod,innerCompMod,compMod;
-      SCode.Element redecl,newcomp,comp,redComp;
+      SCode.Element redecl,newcomp,comp,redComp, cl;
       String n1,n2;
       SCode.Final finalPrefix,redfin;
       SCode.Each each_;
@@ -4542,7 +4525,7 @@ algorithm
     // if we don't have a redeclare, take the binding from mod_3
     case (cache,env,cenv,ih,_,_,_,_,_,_,_,_,_,_,_,mod,_,_,_,updatedComps)
       equation
-        (cache, m_1) = updateComponentInEnv3(cache, env, ih, m, impl, Mod.COMPONENT(name), info);
+        (cache, m_1) = updateComponentInEnv3(cache, env, ih, SCode.mergeModifiers(m, SCodeUtil.getConstrainedByModifiers(inPrefixes)), impl, Mod.COMPONENT(name), info);
         classmod = Mod.lookupModificationP(mod, path);
         mm = Mod.lookupCompModification(mod, name);
         // make sure is not a redeclare
@@ -4594,7 +4577,7 @@ algorithm
     // mod is a redeclare, take binding from m!
     case (cache,env,cenv,ih,_,_,_,_,_,_,_,_,_,_,_,mod,_,_,_,updatedComps)
       equation
-        (cache, m_1) = updateComponentInEnv3(cache, env, ih, m, impl, Mod.COMPONENT(name), info);
+        (cache, m_1) = updateComponentInEnv3(cache, env, ih, SCode.mergeModifiers(m, SCodeUtil.getConstrainedByModifiers(inPrefixes)), impl, Mod.COMPONENT(name), info);
         classmod = Mod.lookupModificationP(mod, path);
         mm = Mod.lookupCompModification(mod, name);
         mod = Mod.merge(classmod, mm, env, Prefix.NOPRE());
