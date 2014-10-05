@@ -9597,6 +9597,14 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
         case T_COMPLEX(complexClassType = record_state) then
           let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
           '*((<%rec_name%>*)generic_array_element_addr(&<%res%>, sizeof(<%rec_name%>), 1, <%arrIndex%>++)) = <%reductionBodyExpr%>;'
+        case T_ARRAY(__) then
+          let tmp = tempDecl("index_spec_t", &varDecls)
+          let nridx_str = intAdd(1,listLength(dims))
+          let idx_str = (dims |> dim => ", (1), (int*)0, 'W'")
+          <<
+          create_index_spec(&<%tmp%>, <%nridx_str%>, (0), make_index_array(1, (int) <%arrIndex%>++), 'S'<%idx_str%>);
+          indexed_assign_<%expTypeArray(ty)%>(<%reductionBodyExpr%>, &<%res%>, &<%tmp%>);
+          >>
         else
           '*(<%arrayTypeResult%>_element_addr1(&<%res%>, 1, <%arrIndex%>++)) = <%reductionBodyExpr%>;'
     else match ri.foldExp case SOME(fExp) then
@@ -9678,7 +9686,13 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
           let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
           'alloc_generic_array(&<%res%>,sizeof(<%rec_name%>),1,<%length%>);'
         case T_ARRAY(__) then
-          error(sourceInfo(), 'array reduction unable to generate code for element of type <%unparseType(typeof(r.expr))%>: <%ExpressionDump.printExpStr(r.expr)%>')
+          let dimSizes = dims |> dim => match dim
+            case DIM_INTEGER(__) then ', <%integer%>'
+            case DIM_BOOLEAN(__) then ", 2"
+            case DIM_ENUM(__) then ', <%size%>'
+            else error(sourceInfo(), 'array reduction unable to generate code for element of unknown dimension sizes; type <%unparseType(typeof(r.expr))%>: <%ExpressionDump.printExpStr(r.expr)%>')
+            ; separator = ", "
+          'alloc_<%arrayTypeResult%>(&<%res%>, <%intAdd(1,listLength(dims))%>, <%length%><%dimSizes%>);'
         else
           'simple_alloc_1d_<%arrayTypeResult%>(&<%res%>,<%length%>);'%>
        >>
