@@ -65,6 +65,7 @@ import SCodeDump;
 import Mod;
 import Error;
 import ComponentReference;
+import Types;
 
 public
 type Name = FCore.Name;
@@ -389,7 +390,7 @@ algorithm
     // create one and update it
     case (r, _)
       equation
-        print("FNode.updateSourceTargetScope: node does not yet have a reference child: " +& FNode.toPathStr(FNode.fromRef(r)) +&
+        Error.addCompilerWarning("FNode.updateSourceTargetScope: node does not yet have a reference child: " +& FNode.toPathStr(FNode.fromRef(r)) +&
               " target scope: " +& FNode.scopeStr(inTargetScope) +& "\n");
       then
         inRef;
@@ -419,8 +420,9 @@ algorithm
 
    else
     equation
-      print("FGraph.updateInstance failed!\n");
-    then fail();
+      Error.addCompilerError("FGraph.updateInstance failed for node: " +& FNode.toPathStr(FNode.fromRef(inRef)) +& " variable:" +& Types.printVarStr(inVar));
+    then
+      fail();
 
   end matchcontinue;
 end updateInstance;
@@ -651,7 +653,7 @@ algorithm
 
     else
       equation
-        print("FGraph.openNewScope: failed to open new scope in scope: " +& getGraphNameStr(inGraph) +& " name: " +& Util.stringOption(inName) +& "\n");
+        Error.addCompilerError("FGraph.openNewScope: failed to open new scope in scope: " +& getGraphNameStr(inGraph) +& " name: " +& Util.stringOption(inName) +& "\n");
       then
         fail();
 
@@ -709,7 +711,7 @@ algorithm
 
     else
       equation
-        print("FGraph.openScope: failed to open new scope in scope: " +& getGraphNameStr(inGraph) +& " name: " +& Util.stringOption(inName) +& "\n");
+        Error.addCompilerError("FGraph.openScope: failed to open new scope in scope: " +& getGraphNameStr(inGraph) +& " name: " +& Util.stringOption(inName) +& "\n");
       then
         fail();
 
@@ -1078,7 +1080,7 @@ algorithm
       equation
         // maks sure the element name and the DAE.TYPES_VAR name is the same!
         false = stringEq(n, SCode.elementName(c));
-        print("The component name: " +& SCode.elementName(c) +& " is not the same as its DAE.TYPES_VAR: " +& n +& "\n");
+        Error.addCompilerError("FGraph.mkComponentNode: The component name: " +& SCode.elementName(c) +& " is not the same as its DAE.TYPES_VAR: " +& n +& "\n");
       then
         fail();
 
@@ -1611,11 +1613,12 @@ algorithm
         targetClassName = SCode.elementName(c);
         (newTargetClassName, crefPrefix) = mkVersionName(inSourceEnv, inSourceName, inPrefix, inMod, inTargetClassEnv, targetClassName);
 
-        print("FGraph.mkVersionNode: failed to create version node:\n");
-        print("Instance: CL(" +& getGraphNameStr(inSourceEnv) +& ").CO(" +&
-              inSourceName +& ").CL(" +& getGraphNameStr(inTargetClassEnv) +& "." +&
-              targetClassName +& SCodeDump.printModStr(Mod.unelabMod(inMod), SCodeDump.defaultOptions) +& ")\n\t" +&
-              newTargetClassName +& "\n");
+        Error.addCompilerWarning(
+          "FGraph.mkVersionNode: failed to create version node:\n" +&
+          "Instance: CL(" +& getGraphNameStr(inSourceEnv) +& ").CO(" +&
+          inSourceName +& ").CL(" +& getGraphNameStr(inTargetClassEnv) +& "." +&
+          targetClassName +& SCodeDump.printModStr(Mod.unelabMod(inMod), SCodeDump.defaultOptions) +& ")\n\t" +&
+          newTargetClassName +& "\n");
       then
         (inTargetClassEnv, inTargetClass, inIH);
 

@@ -6782,6 +6782,8 @@ algorithm
     case DAE.REINIT(source=source) then source;
     case DAE.NORETCALL(source=source) then source;
     case DAE.CONSTRAINT(source=source) then source;
+    case DAE.INITIAL_NORETCALL(source=source) then source;
+
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"DAEUtil.getElementSource failed: Element does not have a source"});

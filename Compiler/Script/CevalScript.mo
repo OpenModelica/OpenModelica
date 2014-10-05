@@ -522,8 +522,8 @@ algorithm
 
     case (exp,    _)
       equation
-        str = "CevalScript.getConst: Not handled exp: " +& Dump.printExpStr(exp) +& " of type " +& Types.unparseType(inExpType) +& "\n";
-        print(str);
+        str = "CevalScript.getConst: experiment annotation contains unsupported expression: " +& Dump.printExpStr(exp) +& " of type " +& Types.unparseType(inExpType) +& "\n";
+        Error.addCompilerError(str);
       then
         fail();
   end matchcontinue;

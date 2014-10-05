@@ -402,6 +402,12 @@ algorithm
       then
         (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
 
+    case (DAE.INITIAL_NORETCALL(exp = _), _, _, _, _, _, _, _, _, _, _, _, _, _)
+      equation
+        (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst, DAE.NOT_EXPAND());
+      then
+        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
+
     // constraint (Optimica) Just pass the constraints for now. Should anything more be done here?
     case (DAE.CONSTRAINT(constraints = cons_1), _, _, _, _, _, _, _, _, _, _, _, _, _)
       then
@@ -1337,6 +1343,12 @@ algorithm
         (inEquations,inREquations,BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg,source)}), source, DAE.NOT_EXPAND(), BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inIEquations);
 
     case (DAE.NORETCALL(exp = _),_,_,_,_)
+      equation
+        (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations, DAE.NOT_EXPAND());
+      then
+        (eqns,reqns,ieqns);
+
+    case (DAE.INITIAL_NORETCALL(exp = _),_,_,_,_)
       equation
         (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations, DAE.NOT_EXPAND());
       then
@@ -2414,6 +2426,12 @@ algorithm
         (e, source, _, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         alg = DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(e, source)});
       then (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inREquations, inIEquations);
+
+    case (DAE.INITIAL_NORETCALL(exp=e, source=source), _, _, _, _, _)
+      equation
+        (e, source, _, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        alg = DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(e, source)});
+      then (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_INITIAL)::inREquations, inIEquations);
 
     case (_, _, _, _, _, _)
       equation
