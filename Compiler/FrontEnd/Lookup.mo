@@ -2764,8 +2764,8 @@ algorithm
       equation
         (cache,DAE.TYPES_VAR(name,attr,ty,bind,cnstForRange),_,_,_,componentEnv) = lookupVar2(cache, ht, id, inEnv);
         ty_1 = checkSubscripts(ty, ss);
-        ss = addArrayDimensions(ty,ss);
         tty = Types.simplifyType(ty);
+        ss = addArrayDimensions(tty,ss);
         cref_ = ComponentReference.makeCrefIdent(id,tty, ss);
         splicedExp = Expression.makeCrefExp(cref_,tty);
         //print("splicedExp ="+&ExpressionDump.dumpExpStr(splicedExp,0)+&"\n");
@@ -2785,8 +2785,8 @@ algorithm
         (tCref::_) = elabComponentRecursive((texp));
         ty1 = checkSubscripts(tyParent, ss);
         ty = sliceDimensionType(ty1,ty);
-        ss = addArrayDimensions(tyParent,ss);
         ty2_2 = Types.simplifyType(tyParent);
+        ss = addArrayDimensions(ty2_2,ss);
         xCref = ComponentReference.makeCrefQual(id,ty2_2,ss,tCref);
         eType = Types.simplifyType(ty);
         splicedExp = Expression.makeCrefExp(xCref,eType);

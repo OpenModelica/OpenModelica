@@ -2096,6 +2096,7 @@ algorithm
       list<DAE.Type> tys;
       DAE.CodeType codeType;
       DAE.TypeSource ts;
+      Boolean b;
 
     case (DAE.T_INTEGER(varLst = {})) then "Integer";
     case (DAE.T_REAL(varLst = {})) then "Real";
@@ -2149,6 +2150,16 @@ algorithm
         vars = List.map(vs, unparseVar);
         vstr = stringAppendList(vars);
         res = stringAppendList({"record ",name,"\n",vstr,"end ", name, ";"});
+      then
+        res;
+
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(_, b),varLst = vs, source = {path}))
+      equation
+        name = Absyn.pathStringNoQual(path);
+        vars = List.map(vs, unparseVar);
+        vstr = stringAppendList(vars);
+        str = Util.if_(b, "expandable ", "");
+        res = stringAppendList({str, "connector ",name,"\n",vstr,"end ", name, ";"});
       then
         res;
 
@@ -2653,17 +2664,35 @@ public function unparseVar
 algorithm
   outString := match (inVar)
     local
-      String t,res,n;
+      String t,res,n, s;
       DAE.Type typ;
+      SCode.ConnectorType ct;
 
-    case DAE.TYPES_VAR(name = n,ty = typ)
+    case DAE.TYPES_VAR(name = n,ty = typ,attributes = DAE.ATTR(connectorType = ct))
       equation
+        s = connectorTypeStr(ct);
         t = unparseType(typ);
-        res = stringAppendList({t," ",n,";\n"});
+        res = stringAppendList({"  ", s, t," ", n, ";\n"});
       then
         res;
+
   end match;
 end unparseVar;
+
+public function connectorTypeStr
+  input SCode.ConnectorType ct;
+  output String str;
+algorithm
+  str := matchcontinue(ct)
+    local String s;
+    case (_)
+      equation
+        "" = SCodeDump.connectorTypeStr(ct);
+      then
+        "";
+    else SCodeDump.connectorTypeStr(ct) +& " ";
+  end matchcontinue;
+end connectorTypeStr;
 
 protected function unparseParam "Prints a function argument to a string."
   input DAE.FuncArg inFuncArg;
@@ -3846,7 +3875,7 @@ algorithm
         DAE.T_ARRAY(t_1,dims,DAE.emptyTypeSource);
 
     // do NOT simplify out equality constraint
-    // case (DAE.T_SUBTYPE_BASIC(complexType = t, equalityConstraint = SOME(_))) then simplifyType(t);
+    case (DAE.T_SUBTYPE_BASIC(complexType = t, equalityConstraint = SOME(_))) then simplifyType(t);
     case (DAE.T_SUBTYPE_BASIC(complexType = t)) then simplifyType(t);
 
     case (DAE.T_INTEGER(source = _)) then DAE.T_INTEGER_DEFAULT;

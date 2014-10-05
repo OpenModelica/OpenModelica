@@ -11890,24 +11890,21 @@ protected function fillSubscripts
 algorithm
   outExpSubscriptLst := matchcontinue (inExpSubscriptLst,inType)
     local
-      list<DAE.Subscript> subs_1,subs_2,subs;
-      DAE.Type t;
-      DAE.Subscript fs;
-    // empty list
-    case ({},DAE.T_ARRAY(ty = t))
+      list<DAE.Subscript> subs;
+      DAE.Dimensions dims;
+
+    // an array
+    case (_, DAE.T_ARRAY(ty = _))
       equation
-        subs_1 = fillSubscripts({}, t);
-        subs_2 = listAppend({DAE.WHOLEDIM()}, subs_1);
+        subs = List.fill(DAE.WHOLEDIM(), listLength(Types.getDimensions(inType)));
+        subs = List.stripN(subs, listLength(inExpSubscriptLst));
+        subs = listAppend(inExpSubscriptLst, subs);
       then
-        subs_2;
-    // some subscripts present
-    case ((fs :: subs),DAE.T_ARRAY(ty = t))
-      equation
-        subs_1 = fillSubscripts(subs, t);
-      then
-        (fs :: subs_1);
+        subs;
+
     // not an array type!
     case (subs,_) then subs;
+
   end matchcontinue;
 end fillSubscripts;
 

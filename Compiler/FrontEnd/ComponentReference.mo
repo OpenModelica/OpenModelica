@@ -3455,6 +3455,14 @@ algorithm
       list<DAE.Exp> expl;
       DAE.Exp exp;
 
+    /*/ allow index 0 with dimension 0
+    case (DAE.INDEX(exp = exp as DAE.ICONST(integer = idx)),
+          DAE.DIM_INTEGER(integer = dim), _, _, _)
+      equation
+        true = idx == 0 and dim == 0;
+      then
+        true;*/
+
     case (DAE.INDEX(exp = exp as DAE.ICONST(integer = idx)),
           DAE.DIM_INTEGER(integer = dim), _, _, _)
       equation

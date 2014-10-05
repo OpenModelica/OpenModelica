@@ -4317,6 +4317,29 @@ algorithm
       then
         (cache,env,ih,sets_1,DAE.emptyDae,graph);
 
+    /* - weird, seems not to be needed
+    // Connection of arrays of size zero!
+    case (cache,env,ih,sets,pre,
+        c1,f1,t1 as DAE.T_ARRAY(dims = {dim1}, ty = _),_,
+        c2,f2,t2 as DAE.T_ARRAY(dims = {dim2}, ty = _),_,
+        ct,_,_,graph,_)
+      equation
+        0 = Expression.dimensionSize(dim1);
+        0 = Expression.dimensionSize(dim2);
+        (cache,_) = PrefixUtil.prefixCref(cache,env,ih,pre,c1);
+        (cache,_) = PrefixUtil.prefixCref(cache,env,ih,pre,c2);
+        c1_str = Types.connectorTypeStr(ct) +& ComponentReference.printComponentRefStr(c1);
+        (t1, _) = Types.stripTypeVars(t1);
+        t1_str = Types.unparseType(t1);
+        c2_str = Types.connectorTypeStr(ct) +& ComponentReference.printComponentRefStr(c2);
+        (t2, _) = Types.stripTypeVars(t2);
+        t2_str = Types.unparseType(t2);
+        c1_str = stringAppendList({c1_str," type: ",t1_str});
+        c2_str = stringAppendList({c2_str," type: ",t2_str});
+        Error.addSourceMessage(Error.CONNECT_ARRAY_SIZE_ZERO, {c1_str,c2_str},info);
+      then
+        (cache,env,ih,sets,DAE.emptyDae,graph);*/
+
     // Connection of arrays of complex types
     case (cache,env,ih,sets,pre,
         c1,f1,DAE.T_ARRAY(dims = {dim1}, ty = t1),_,
@@ -4501,9 +4524,9 @@ algorithm
         t1_str = Types.unparseType(t1);
         c2_str = ComponentReference.printComponentRefStr(c2);
         t2_str = Types.unparseType(t2);
-        c1_str = stringAppendList({c1_str," and ",c2_str});
-        t1_str = stringAppendList({t1_str," and ",t2_str});
-        Error.addSourceMessage(Error.INVALID_CONNECTOR_VARIABLE, {c1_str,t1_str},info);
+        c1_str = stringAppendList({"\n",c1_str," type:\n",t1_str});
+        c2_str = stringAppendList({"\n",c2_str," type:\n",t2_str});
+        Error.addSourceMessage(Error.INVALID_CONNECTOR_VARIABLE, {c1_str,c2_str},info);
       then
         fail();
 

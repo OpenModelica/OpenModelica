@@ -153,6 +153,7 @@ protected import ValuesUtil;
 protected import System;
 protected import SCodeDump;
 protected import UnitAbsynBuilder;
+protected import NFSCodeFlattenRedeclare;
 
 protected function instantiateClass_dispatch
 " instantiate a class.
@@ -4027,7 +4028,7 @@ algorithm
 
 
     // constrainting type on the component
-    case (cache,env,ih,(DAE.REDECL(tplSCodeElementModLst = (((          SCode.COMPONENT(name = n1,
+    case (cache,env,ih,(DAE.REDECL(tplSCodeElementModLst = ((( redComp as SCode.COMPONENT(name = n1,
                           prefixes = SCode.PREFIXES(
                             finalPrefix = finalPrefix,
                             replaceablePrefix = _,
@@ -4037,7 +4038,7 @@ algorithm
                             attributes = at,condition = cond, info = info
                             )),rmod) :: _))),
           // adrpo: always take the inner outer from the component, not the redeclaration!!!!
-          SCode.COMPONENT(name = n2,
+          comp as SCode.COMPONENT(name = n2,
                           prefixes = SCode.PREFIXES(
                             finalPrefix = SCode.NOT_FINAL(),
                             replaceablePrefix = repl2 as SCode.REPLACEABLE((cc as SOME(_))),
@@ -4050,7 +4051,6 @@ algorithm
       equation
         true = stringEq(n1, n2);
         mod = InstUtil.chainRedeclares(inMod, mod);
-        at = SCodeUtil.mergeDimensions(at, at2); // take the array dims from the original if the redeclare does not have any
         compsOnConstrain = InstUtil.extractConstrainingComps(cc,env,pre) "extract components belonging to constraining class";
         crefs = InstUtil.getCrefFromMod(mod);
         (cache,env_1,ih) = updateComponentsInEnv(cache, env, ih, pre, DAE.NOMOD(), crefs, ci_state, impl);
@@ -4064,14 +4064,13 @@ algorithm
         m_3 = Mod.merge(m_2, old_m_1, env_1, pre);
         m_3 = Mod.merge(m_3, cmod, env_1, pre);
 
-        redComp = SCode.COMPONENT(n1,
-                    SCode.PREFIXES(vis, redeclp, finalPrefix, io, repl2),
-                    at,t,mod,comment,cond,info);
+        redecl = NFSCodeFlattenRedeclare.propagateAttributesVar(comp, redComp);
+        redecl = SCode.setComponentMod(redecl, mod);
       then
-        (cache,env_1,ih,redComp,m_3);
+        (cache,env_1,ih,redecl,m_3);
 
     // no constraining type on comp, throw away modifiers prior to redeclaration
-    case (cache,env,ih,(DAE.REDECL(tplSCodeElementModLst = (((redecl as
+    case (cache,env,ih,(DAE.REDECL(tplSCodeElementModLst = (((redComp as
           SCode.COMPONENT(name = n1,
                           prefixes = SCode.PREFIXES(
                             finalPrefix = finalPrefix,
@@ -4082,7 +4081,7 @@ algorithm
                             attributes = at,condition = cond, info = info
                             )),rmod) :: _))),
           // adrpo: always take the inner outer from the component, not the redeclaration!!!!
-          SCode.COMPONENT(name = n2,
+          comp as SCode.COMPONENT(name = n2,
                           prefixes = SCode.PREFIXES(
                             finalPrefix = SCode.NOT_FINAL(),
                             replaceablePrefix = repl2 as SCode.REPLACEABLE(NONE()),
@@ -4095,7 +4094,6 @@ algorithm
       equation
         true = stringEq(n1, n2);
         mod = InstUtil.chainRedeclares(inMod, mod);
-        at = SCodeUtil.mergeDimensions(at, at2); // take the array dims from the original if the redeclare does not have any
         crefs = InstUtil.getCrefFromMod(mod);
         (cache,env_1,ih) = updateComponentsInEnv(cache,env,ih, pre, DAE.NOMOD(), crefs, ci_state, impl) "m" ;
         (cache,m_1) = Mod.elabMod(cache, env_1, ih, pre, mod, impl, Mod.COMPONENT(n1), info);
@@ -4103,11 +4101,11 @@ algorithm
         m_2 = Mod.merge(m_1, rmod, env_1, pre);
         m_3 = Mod.merge(m_2, old_m_1, env_1, pre);
         m_3 = Mod.merge(m_3,cmod,env_1,pre);
-        redComp = SCode.COMPONENT(n1,
-                    SCode.PREFIXES(vis, redeclp, finalPrefix, io, repl),
-                    at,t,mod,comment,cond,info);
+
+        redecl = NFSCodeFlattenRedeclare.propagateAttributesVar(comp, redComp);
+        redecl = SCode.setComponentMod(redecl, mod);
       then
-        (cache,env_1,ih,redComp,m_3);
+        (cache,env_1,ih,redecl,m_3);
 
     // redeclaration of classes:
     case (cache,env,ih,

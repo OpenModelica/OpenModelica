@@ -228,7 +228,7 @@ public constant Message UNDECLARED_CONNECTION = MESSAGE(50, TRANSLATION(), ERROR
 public constant Message CONNECT_PREFIX_MISMATCH = MESSAGE(51, TRANSLATION(), ERROR(),
   Util.gettext("Cannot connect %1 component %2 to non-%1 component %3."));
 public constant Message INVALID_CONNECTOR_VARIABLE = MESSAGE(52, TRANSLATION(), ERROR(),
-  Util.gettext("The type of variables %s (%s) are inconsistent in connect equations."));
+  Util.gettext("The type of variables %s and %s\nare inconsistent in connect equations."));
 public constant Message TYPE_ERROR = MESSAGE(53, TRANSLATION(), ERROR(),
   Util.gettext("Wrong type on %s, expected %s."));
 public constant Message MODIFY_PROTECTED = MESSAGE(54, TRANSLATION(), WARNING(),
@@ -756,7 +756,8 @@ public constant Message EXEC_STAT = MESSAGE(547, TRANSLATION(), NOTIFICATION(),
   Util.gettext("Performance of %s: time %s/%s, memory: %s/%s MB (%s)."));
 public constant Message NON_STANDARD_OPERATOR = MESSAGE(547, TRANSLATION(), WARNING(),
   Util.gettext("Usage of non-standard operator (not specified in the Modelica specification): %s. Functionality might be partially supported but is not guaranteed."));
-
+public constant Message CONNECT_ARRAY_SIZE_ZERO = MESSAGE(548, TRANSLATION(), WARNING(),
+  Util.gettext("Ignoring connection of array components having size zero: %s and %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
