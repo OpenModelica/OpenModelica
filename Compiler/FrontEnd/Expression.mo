@@ -556,6 +556,24 @@ algorithm
   end match;
 end liftArrayR;
 
+public function dimensionSizeConstantExp
+  "Converts (extracts) a dimension to an expression.
+  This function will fail if dimension is unknown or an expression (in case the dimension is from a different scope).
+  If you want to(kind of) handle unknown dims use dimensionSizeExpHandleUnkown."
+  input DAE.Dimension dim;
+  output DAE.Exp exp;
+algorithm
+  exp := match(dim)
+    local
+      Integer i;
+      DAE.Exp e;
+
+    case DAE.DIM_INTEGER(integer = i) then DAE.ICONST(i);
+    case DAE.DIM_ENUM(size = i) then DAE.ICONST(i);
+    case DAE.DIM_BOOLEAN() then DAE.ICONST(2);
+  end match;
+end dimensionSizeConstantExp;
+
 public function dimensionSizeExp
   "Converts (extracts) a dimension to an expression.
   This function will fail if dimension is unknown. i.e. DIM_UNKNOWN.

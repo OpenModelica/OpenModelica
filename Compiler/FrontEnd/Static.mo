@@ -3352,7 +3352,7 @@ algorithm
         dim_count = listLength(inDimensions);
         true = (dim_int > 0 and dim_int <= dim_count);
         dim = listNth(inDimensions, dim_int - 1);
-        exp = Expression.dimensionSizeExp(dim);
+        exp = Expression.dimensionSizeConstantExp(dim);
         prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, DAE.C_CONST());
       then
         (SOME(exp), SOME(prop));
