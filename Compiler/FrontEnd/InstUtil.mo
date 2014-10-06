@@ -2052,10 +2052,9 @@ algorithm
     // branch will be used, which causes some problems with Fluid. So we just
     // reset everything up to this point and pray that we didn't miss anything
     // important.
-    case (exp as Absyn.IFEXP(ifExp = ifExp), (all_el, stack_el::rest_stack, accum_el))
+    case (exp as Absyn.IFEXP(ifExp = ifExp), (all_el, stack_el::rest_stack, _))
       equation
         (_, (_, _, deps)) = Absyn.traverseExpBidir(ifExp, getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (all_el, {}, {}));
-        stack_el = listAppend(stack_el, accum_el);
         deps = listAppend(deps, stack_el);
       then
         (exp, (all_el, rest_stack, deps));
