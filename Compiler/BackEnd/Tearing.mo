@@ -859,7 +859,7 @@ algorithm
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Assignable equations containing new tvar:\n");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,BackendDump.dumpAdjacencyRowEnhanced,vareqns);Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"\n");
         // cheap matching
-        tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
+        tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,{});
         // check for unassigned vars, if there some rerun
         unassigned = Matching.getUnassigned(size,ass1,{});
         (outTVars,oMark) = omcTearing3(unassigned,{},tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
@@ -878,7 +878,7 @@ algorithm
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Assignable equations containing new tvar:\n");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,BackendDump.dumpAdjacencyRowEnhanced,vareqns);Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"\n");
         // cheap matching
-        tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
+        tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,{});
         // check for unassigned vars, if there some rerun
         unassigned = Matching.getUnassigned(size,ass1,{});
         (outTVars,oMark) = omcTearing3(unassigned,rest,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
@@ -897,7 +897,7 @@ algorithm
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Assignable equations containing new tvars:\n");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,BackendDump.dumpAdjacencyRowEnhanced,vareqns);Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"\n");
         // cheap matching
-        tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1_,ass2,columark,mark,{});
+        tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1_,ass2,{});
         // check for unassigned vars, if there some rerun
         unassigned = Matching.getUnassigned(size,ass1_,{});
         (outTVars,oMark) = omcTearing3(unassigned,unsolv,{},tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1_,ass2,columark,mark+1,listAppend(tSel_always,inTVars));
@@ -1282,29 +1282,29 @@ protected function tearingBFS " function to find maximum matching
   input Integer size;
   input array<Integer> ass1;
   input array<Integer> ass2;
-  input array<Integer> columark;
-  input Integer mark;
+  //input array<Integer> columark;
+  //input Integer mark;
   input BackendDAE.AdjacencyMatrixElementEnhanced nextQueue;
 algorithm
-  _ := match(queue,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,nextQueue)
+  _ := match(queue,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,nextQueue)
     local
       Integer c,eqnsize,cnonscalar;
       BackendDAE.AdjacencyMatrixElementEnhanced rest,newqueue,rows;
     // if there are no more equations in queue maximum matching is found
-    case ({},_,_,_,_,_,_,_,_,_,{}) then ();
+    case ({},_,_,_,_,_,_,_,{}) then ();
 
     // if queue is empty, use next queue
-    case ({},_,_,_,_,_,_,_,_,_,_)
+    case ({},_,_,_,_,_,_,_,_)
       equation
         // use only equations from next queue which are not assigned yet
         newqueue = List.removeOnTrue(ass2, isAssignedSaveEnhanced, nextQueue);
         // use linear equations first
         newqueue = sortEqnsSolvable(newqueue,m);
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Use next Queue!\n");
-        tearingBFS(newqueue,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
+        tearingBFS(newqueue,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,{});
       then
         ();
-    case((c,_)::rest,_,_,_,_,_,_,_,_,_,_)
+    case((c,_)::rest,_,_,_,_,_,_,_,_)
       equation
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Queue:\n");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,BackendDump.dumpAdjacencyRowEnhanced,queue);
@@ -1320,10 +1320,10 @@ algorithm
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Rows (not assigned variables in eqn " +& intString(c) +& "):\n");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,BackendDump.dumpAdjacencyRowEnhanced,rows);Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"\n");
         // make assignment and find next equations to get causalized
-        newqueue = tearingBFS1(rows,eqnsize,mapEqnIncRow[cnonscalar],mt,ass1,ass2,columark,mark,nextQueue);
+        newqueue = tearingBFS1(rows,eqnsize,mapEqnIncRow[cnonscalar],mt,ass1,ass2,nextQueue);
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Next Queue:\n");
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,BackendDump.dumpAdjacencyRowEnhanced,newqueue);Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"\n\n");
-        tearingBFS(rest,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,newqueue);
+        tearingBFS(rest,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,newqueue);
       then
         ();
   end match;
@@ -1384,23 +1384,23 @@ protected function tearingBFS1 " function checks for possible assignments and ca
   input BackendDAE.AdjacencyMatrixTEnhanced mt;
   input array<Integer> ass1;
   input array<Integer> ass2;
-  input array<Integer> columark;
-  input Integer mark;
+  //input array<Integer> columark;
+  //input Integer mark;
   input BackendDAE.AdjacencyMatrixElementEnhanced inNextQueue;
   output BackendDAE.AdjacencyMatrixElementEnhanced outNextQueue;
 algorithm
-  outNextQueue := matchcontinue(rows,size,c,mt,ass1,ass2,columark,mark,inNextQueue)
+  outNextQueue := matchcontinue(rows,size,c,mt,ass1,ass2,inNextQueue)
     local
     // there is only one variable assignable from this equation and the equation is solvable for this variable
-    case (_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_)
       equation
         true = intEq(listLength(rows),size);
         true = solvableLst(rows);
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Assign Eqns: " +& stringDelimitList(List.map(c,intString),", ") +& "\n");
       then
         // make assignment and get next equations
-        tearingBFS2(rows,c,mt,ass1,ass2,columark,mark,inNextQueue);
-/*    case (_,_,_,_,_,_,_,_,_)
+        tearingBFS2(rows,c,mt,ass1,ass2,inNextQueue);
+/*    case (_,_,_,_,_,_,_)
       equation
         true = intEq(listLength(rows),size);
         false = solvableLst(rows);
@@ -1461,19 +1461,19 @@ protected function tearingBFS2 " function to make an assignment and determine th
   input BackendDAE.AdjacencyMatrixTEnhanced mt;
   input array<Integer> ass1;
   input array<Integer> ass2;
-  input array<Integer> columark;
-  input Integer mark;
+  //input array<Integer> columark;
+  //input Integer mark;
   input BackendDAE.AdjacencyMatrixElementEnhanced inNextQueue;
   output BackendDAE.AdjacencyMatrixElementEnhanced outNextQueue;
 algorithm
-  outNextQueue := match(rows,clst,mt,ass1,ass2,columark,mark,inNextQueue)
+  outNextQueue := match(rows,clst,mt,ass1,ass2,inNextQueue)
     local
       Integer r,c;
       list<Integer> ilst;
       BackendDAE.Solvability s;
       BackendDAE.AdjacencyMatrixElementEnhanced rest,vareqns,newqueue;
-    case ({},_,_,_,_,_,_,_) then inNextQueue;
-    case ((r,_)::rest,c::ilst,_,_,_,_,_,_)
+    case ({},_,_,_,_,_) then inNextQueue;
+    case ((r,_)::rest,c::ilst,_,_,_,_)
       equation
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Assignment: Eq " +& intString(c) +& " - Var " +& intString(r) +& "\n");
         // assign
@@ -1485,7 +1485,7 @@ algorithm
         vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[r]);
         newqueue = listAppend(inNextQueue,vareqns);
       then
-        tearingBFS2(rest,ilst,mt,ass1,ass2,columark,mark,newqueue);
+        tearingBFS2(rest,ilst,mt,ass1,ass2,newqueue);
   end match;
 end tearingBFS2;
 
@@ -3616,7 +3616,7 @@ algorithm
         subSys = BackendDAE.EQSYSTEM(varsIn,eqsReplaced,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
         (me,meT,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subSys,shared);
         vareqns = List.map1(replEqIdcs,Util.makeTuple,BackendDAE.SOLVABILITY_UNSOLVABLE()); //just check the resolved equations
-        tearingBFS(vareqns,me,meT,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
+        tearingBFS(vareqns,me,meT,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,{});
             Debug.fcall(Flags.TEARING_DUMPVERBOSE,print, "ass1_assigned with updated system!: "+&stringDelimitList(List.map(arrayList(ass1),intString),", ")+&"\n");
             Debug.fcall(Flags.TEARING_DUMPVERBOSE,print, "ass2_assigned with updated system!: "+&stringDelimitList(List.map(arrayList(ass2),intString),", ")+&"\n");
             //BackendDump.dumpAdjacencyMatrixEnhanced(me);
@@ -3629,7 +3629,7 @@ algorithm
             Debug.fcall(Flags.TEARING_DUMPVERBOSE,print, "ass1: "+&stringDelimitList(List.map(arrayList(ass1),intString),", ")+&"\n");
             Debug.fcall(Flags.TEARING_DUMPVERBOSE,print, "ass2: "+&stringDelimitList(List.map(arrayList(ass2),intString),", ")+&"\n");
         vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, meT[tvar]);
-        tearingBFS(vareqns,me,meT,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
+        tearingBFS(vareqns,me,meT,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,{});
             Debug.fcall(Flags.TEARING_DUMPVERBOSE,print, "ass1_assigned after tearing selection: "+&stringDelimitList(List.map(arrayList(ass1),intString),", ")+&"\n");
             Debug.fcall(Flags.TEARING_DUMPVERBOSE,print, "ass2_assigned after tearing selection: "+&stringDelimitList(List.map(arrayList(ass2),intString),", ")+&"\n");
 
