@@ -9153,8 +9153,8 @@ algorithm
                         (Tearing.tearingSystem, "tearingSystem", false),
                         (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false),
                         (BackendDAEOptimize.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false),
-                        (BackendDAEOptimize.calculateStateSetsJacobians, "calculateStateSetsJacobians", false)
-                        //(BackendDAEOptimize.resolveLoopsInComps,"resolveLoops", false)
+                        (BackendDAEOptimize.calculateStateSetsJacobians, "calculateStateSetsJacobians", false),
+                        (ResolveLoops.reshuffling_post,"reshufflePost", false)
                         };
 
   strpostOptModules := getPostOptModulesString();

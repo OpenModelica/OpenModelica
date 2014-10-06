@@ -409,6 +409,8 @@ constant DebugFlag DUMP_EQ_UNIT_STRUCT = DEBUG_FLAG(121, "dumpEqUCStruct", false
   Util.gettext("Dumps all the equations handled by the unit checker as tree-structure."));
 constant DebugFlag SHOW_DAE_GENERATION = DEBUG_FLAG(122, "showDaeGeneration", false,
   Util.gettext("Show the dae variable declarations as they happen."));
+constant DebugFlag RESHUFFLE_POST = DEBUG_FLAG(123, "reshufflePost", false,
+  Util.gettext("Reshuffles the systems of equations."));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -537,7 +539,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_UNIT,
   DUMP_EQ_UNIT,
   DUMP_EQ_UNIT_STRUCT,
-  SHOW_DAE_GENERATION
+  SHOW_DAE_GENERATION,
+  RESHUFFLE_POST
 };
 
 // CONFIGURATION FLAGS
@@ -678,6 +681,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "simplifysemiLinear",
     "removeSimpleEquations",
     "encapsulateWhenConditions",  // must called after remove simple equations
+    "reshufflePost",
     "tearingSystem", // must be the last one, otherwise the torn systems are lost when throw away the matching information
     "countOperations",
     "inputDerivativesUsed",
@@ -690,7 +694,6 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "removeConstants"
     // "partitionIndependentBlocks",
     // "addInitialStmtsToAlgorithms"
-    //"resolveLoops"
     }),
   SOME(STRING_DESC_OPTION({
     ("encapsulateWhenConditions", Util.gettext("Replace each when-condition with an discrete variable.")),
@@ -722,7 +725,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("detectJacobianSparsePattern", Util.gettext("Detects the sparse pattern for Jacobian A.")),
     ("calculateStrongComponentJacobians", Util.gettext("Generates analytical jacobian for non-linear strong components.")),
     ("calculateStateSetsJacobians", Util.gettext("Generates analytical jacobian for dynamic state selection sets.")),
-    ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs."))
+    ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
+    ("reshufflePost", Util.gettext("Reshuffles algebraic loops."))
     })),
   Util.gettext("Sets the post optimization modules to use in the back end. See +help=optmodules for more info."));
 
@@ -841,8 +845,7 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(44, "tearingMethod",
   SOME(STRING_DESC_OPTION({
     ("noTearing", Util.gettext("Skip tearing.")),
     ("omcTearing", Util.gettext("Tearing method developed by TU Dresden: Frenkel, Schubert.")),
-    ("cellier", Util.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick")),
-    ("shuffleTearing", Util.gettext("experimental tearing method developed by TU Dresden: Waurich."))})),
+    ("cellier", Util.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"))})),
     Util.gettext("Sets the tearing method to use. Select no tearing or choose tearing method."));
 
 constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(45, "scalarizeMinMax",

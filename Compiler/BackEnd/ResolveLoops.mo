@@ -43,14 +43,18 @@ public import DAE;
 protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import BackendDump;
 protected import ComponentReference;
 protected import Debug;
 protected import Expression;
 protected import ExpressionSimplify;
+protected import ExpressionSolve;
 protected import Flags;
 protected import HpcOmEqSystems;
+protected import HpcOmTaskGraph;
 protected import List;
 protected import Util;
+protected import Tearing;
 
 public function resolveLoops "author:Waurich TUD 2013-12
   traverses the equations and finds simple equations(i.e. linear functions
@@ -1738,5 +1742,326 @@ algorithm
   path := List.delete(path, last);
   loopsOut := List.map1(closingPaths,listAppend,path);
 end connectPaths;
+
+
+//____________________________________________________
+//reshuffle systems of equations, not yet finished
+//____________________________________________________
+
+public function reshuffling_post
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystems eqSystems;
+  BackendDAE.Shared shared;
+algorithm
+  outDAE := matchcontinue(inDAE)
+    local
+      BackendDAE.BackendDAE dae;
+  case(_)
+    equation
+      true = Flags.isSet(Flags.RESHUFFLE_POST);
+      //print("RESHUFFLING\n");
+      //BackendDump.dumpBackendDAE(inDAE,"INDAE");
+      BackendDAE.DAE(eqs=eqSystems, shared=shared) = inDAE;
+      eqSystems = List.map1(eqSystems,reshuffling_post0,shared);
+      dae = BackendDAE.DAE(eqSystems,shared);
+      //BackendDump.dumpBackendDAE(dae,"OUTDAE");
+    then dae;
+  else
+    then inDAE;
+  end matchcontinue;
+end reshuffling_post;
+
+protected function reshuffling_post0 "author: waurich TUD 2014-09"
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared shared;
+  output BackendDAE.EqSystem osyst;
+protected
+  BackendDAE.StrongComponents comps;
+  BackendDAE.EqSystem syst;
+  Boolean b;
+algorithm
+  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)):=isyst;
+  osyst := List.fold1(comps,reshuffling_post1,shared,isyst);
+end reshuffling_post0;
+
+protected function reshuffling_post1
+  input BackendDAE.StrongComponent compIn;
+  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem systIn;
+  output BackendDAE.EqSystem systOut;
+algorithm
+  systOut := matchcontinue(compIn,shared,systIn)
+    local
+      list<Integer> vIdcs,eqIdcs;
+      BackendDAE.EqSystem eqSys;
+      BackendDAE.JacobianType jacType;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
+    case ((BackendDAE.EQUATIONSYSTEM(eqns=eqIdcs, vars=vIdcs, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType)),_,_)
+      equation
+        equality(jacType = BackendDAE.JAC_LINEAR());
+        (eqSys,_) = reshuffling_post2(eqIdcs, vIdcs, systIn, shared,  ojac, jacType);
+      then eqSys;
+    else
+      then systIn;
+  end matchcontinue;
+end reshuffling_post1;
+
+protected function reshuffling_post2 ""
+  input list<Integer> eqIdcs;
+  input list<Integer> varIdcs;
+  input BackendDAE.EqSystem dae;
+  input BackendDAE.Shared shared;
+  input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
+  input BackendDAE.JacobianType jacType;
+  output BackendDAE.EqSystem daeOut;
+  output Boolean outRunMatching;
+protected
+  Integer size;
+  list<list<Integer>> resEqs;
+  array<list<Integer>> mapEqnIncRow;
+  array<Integer> mapIncRowEqn,ass1,ass2,ass1_,ass2_,ass1Sys,ass2Sys;
+  list<tuple<Boolean,String>> varAtts,eqAtts;
+  BackendDAE.EquationArray eqs,replEqs,daeEqs;
+  BackendDAE.Variables vars,daeVars;
+  BackendDAE.EqSystem subSys;
+  BackendDAE.AdjacencyMatrixEnhanced me, me2, meT;
+  DAE.FunctionTree funcs;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  list<BackendDAE.Equation> eqLst,eqsInLst;
+  list<BackendDAE.Var> varLst;
+algorithm
+  //prepare everything
+  size := listLength(varIdcs);
+  BackendDAE.EQSYSTEM(orderedVars=daeVars,orderedEqs=daeEqs,matching=BackendDAE.MATCHING(ass1=ass1Sys,ass2=ass2Sys),stateSets=stateSets,partitionKind=partitionKind) := dae;
+  funcs := BackendDAEUtil.getFunctions(shared);
+  eqLst := BackendEquation.getEqns(eqIdcs,daeEqs);
+  eqs := BackendEquation.listEquation(eqLst);
+  varLst := List.map1r(varIdcs, BackendVariable.getVarAt, daeVars);
+  vars := BackendVariable.listVar1(varLst);
+  subSys := BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+  (me,meT,_,_) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subSys,shared);
+  ass1 := arrayCreate(size,-1);
+  ass2 := arrayCreate(size,-1);
+
+  // dump system as graphML
+  varAtts := List.threadMap(List.fill(false,listLength(varLst)),List.map(eqIdcs,intString),Util.makeTuple);
+  eqAtts := List.threadMap(List.fill(false,listLength(eqLst)),List.map(varIdcs,intString),Util.makeTuple);
+  HpcOmEqSystems.dumpEquationSystemBipartiteGraphSolve2(vars,eqs,me,varAtts,eqAtts,"shuffle_pre");
+
+  //start reshuffling
+  resEqs := reshuffling_post3_selectShuffleEqs(me,meT);
+  //print("selected equation pairs: "+&stringDelimitList(List.map(resEqs,HpcOmTaskGraph.intLstString)," | ")+&"\n");
+
+  eqsInLst := reshuffling_post4_resolveAndReplace(resEqs,eqLst,varLst,me,meT);
+
+  // dump system as graphML
+  //subSys := BackendDAE.EQSYSTEM(vars,replEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+  //(me2,_,_,_) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subSys,shared);
+  //HpcOmEqSystems.dumpEquationSystemBipartiteGraphSolve2(vars,replEqs,me2,varAtts,eqAtts,"shuffle_post");
+
+  // the new eqSystem
+  daeEqs := List.threadFold(eqIdcs,eqsInLst,BackendEquation.setAtIndexFirst,daeEqs);
+  daeOut := BackendDAE.EQSYSTEM(daeVars,daeEqs,NONE(),NONE(),BackendDAE.MATCHING(ass1Sys,ass2Sys,{}),stateSets,partitionKind);
+  (daeOut,_,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(daeOut, BackendDAE.NORMAL(), SOME(funcs));
+
+  outRunMatching := true;
+end reshuffling_post2;
+
+protected function reshuffling_post3_selectShuffleEqs
+  input BackendDAE.AdjacencyMatrixEnhanced me;
+  input BackendDAE.AdjacencyMatrixEnhanced meT;
+  output list<list<Integer>> resolveEqs;
+algorithm
+  resolveEqs := matchcontinue(me,meT)
+    local
+      Integer resEq1, resEq2, resVar;
+      array<Boolean> bArr;
+      list<Integer> suitableEqs;
+      list<list<Integer>> eqPairs;
+    case(_,_)
+      equation
+        bArr = Util.arrayMap1(me,chooseEquation,meT);
+        (_,suitableEqs) = List.filter1OnTrueSync(arrayList(bArr),boolEq,true,List.intRange(arrayLength(me)));
+        //print("suitableEqs: \n"+&stringDelimitList(List.map(suitableEqs,intString)," / ")+&"\n");
+        eqPairs = List.map2(suitableEqs,getEqPairs,me,meT);
+        eqPairs = List.filterOnTrue(eqPairs,List.hasSeveralElements);
+      then eqPairs;
+    else
+      equation
+        print("reshuffling_post3_selectShuffleEqs failed!\n");
+     then {};
+  end matchcontinue;
+end reshuffling_post3_selectShuffleEqs;
+
+protected function reshuffling_post4_resolveAndReplace
+  input list<list<Integer>> resolveEqLst;
+  input list<BackendDAE.Equation> unassEqsIn;
+  input list<BackendDAE.Var> unassVarsIn;
+  input BackendDAE.AdjacencyMatrixEnhanced me;
+  input BackendDAE.AdjacencyMatrixEnhanced meT;
+  output list<BackendDAE.Equation> unassEqsOut;
+algorithm
+  unassEqsOut := matchcontinue(resolveEqLst,unassEqsIn,unassVarsIn,me,meT)
+    local
+      Integer maxNum, replEqIdx;
+      list<Integer> numOfAdjVars, resolveEqs;
+      list<list<Integer>> rest;
+      list<BackendDAE.Equation> unassEqs;
+      BackendDAE.Equation resolvedEq;
+    case({},_,_,_,_)
+      then unassEqsIn;
+    case(resolveEqs::rest,_,_,_,_)
+      equation
+        resolvedEq = resolveEquations(NONE(),resolveEqs,me,meT,unassEqsIn,unassVarsIn);
+            //BackendDump.dumpEquationList({resolvedEq},"resolvedEq");
+
+        //replace a former equation
+        numOfAdjVars = List.map(List.map1(resolveEqs,Util.arrayGetIndexFirst,me),listLength);
+        maxNum = List.fold(numOfAdjVars,intMax,List.first(numOfAdjVars));
+        replEqIdx = listGet(resolveEqs,List.position(maxNum,numOfAdjVars)+1);
+            //BackendDump.dumpEquationList(unassEqsIn," not updated unassEqs");
+        unassEqs = List.replaceAt(resolvedEq,replEqIdx-1,unassEqsIn);
+        //print("replace equation "+&intString(replEqIdx)+&"\n");
+            //BackendDump.dumpEquationList(unassEqs,"updated unassEqs");
+      then reshuffling_post4_resolveAndReplace(rest,unassEqs,unassVarsIn,me,meT);
+   else
+     equation
+       print("reshuffling_post4_resolveAndReplace failed!\n");
+     then fail();
+  end matchcontinue;
+end reshuffling_post4_resolveAndReplace;
+
+protected function getEqPairs
+  input Integer eq;
+  input BackendDAE.AdjacencyMatrixEnhanced me;
+  input BackendDAE.AdjacencyMatrixEnhanced meT;
+  output list<Integer> lstOut;
+protected
+  list<Integer> vars,eqs;
+algorithm
+  vars := List.map(arrayGet(me,eq),Util.tuple21);
+          //print("vars: \n"+&stringDelimitList(List.map(vars,intString)," / ")+&"\n");
+  eqs := List.map(List.flatten(List.map1(vars,Util.arrayGetIndexFirst,meT)),Util.tuple21);
+          //print("eqs: \n"+&stringDelimitList(List.map(eqs,intString)," / ")+&"\n");
+  eqs := getDoublicates(eqs);
+          //print("eqs: \n"+&stringDelimitList(List.map(eqs,intString)," / ")+&"\n");
+  lstOut := List.unique(eq::eqs);
+end getEqPairs;
+
+protected function chooseEquation
+  input list<BackendDAE.AdjacencyMatrixElementEnhancedEntry> row;
+  input BackendDAE.AdjacencyMatrixEnhanced meT;
+  output Boolean chooseThis;
+protected
+  Boolean b1,b2,b3;
+  list<Integer> vars,eqs,numEqs;
+  list<list<Integer>> eqLst;
+algorithm
+  vars := List.map(row,Util.tuple21);
+  b1 := intEq(listLength(row),2);  // only two variables
+  eqLst := List.mapList((List.map1(vars,Util.arrayGetIndexFirst,meT)),Util.tuple21);
+  numEqs := List.map(eqLst,listLength);
+  b3 := List.fold(List.map1(numEqs,intEq,2),boolOr,false);  // at least one adjacent variable hast only 2 adj equations
+  eqs := List.flatten(eqLst);
+  b2 := intEq(listLength(eqs),listLength(List.unique(eqs))+2);
+  b1 := b1 and b2 and b3;
+  chooseThis := b1 and List.fold(List.map(row,isSolvable),boolAnd,true);
+end chooseEquation;
+
+protected function getDoublicates
+  input list<Integer> lstIn;  // only positive Integer
+  output list<Integer> lstOut;
+protected
+  Integer max;
+  array<Integer> arr;
+algorithm
+  max := List.fold(lstIn,intMax,List.first(lstIn));
+  arr := arrayCreate(max,-1);
+  List.map1_0(lstIn,getDoublicates2,arr);
+  (_,lstOut) := List.filter1OnTrueSync(arrayList(arr),intGe,1,List.intRange(arrayLength(arr)));
+end getDoublicates;
+
+protected function getDoublicates2
+  input Integer idx;
+  input array<Integer> arr;
+protected
+  Integer entry;
+algorithm
+  entry := arrayGet(arr,idx);
+  _ := arrayUpdate(arr,idx,entry+1);
+end getDoublicates2;
+
+protected function isSolvable
+  input BackendDAE.AdjacencyMatrixElementEnhancedEntry entry;
+  output Boolean solvable;
+algorithm
+  solvable := not Tearing.unsolvable({entry});
+end isSolvable;
+
+public function resolveEquations
+  input Option<BackendDAE.Equation> eq;
+  input list<Integer> loopIn;
+  input BackendDAE.AdjacencyMatrixEnhanced me;
+  input BackendDAE.AdjacencyMatrixEnhanced meT;
+  input list<BackendDAE.Equation> eqsIn;
+  input list<BackendDAE.Var> varsIn;
+  output BackendDAE.Equation eqOut;
+protected
+algorithm
+  eqOut := matchcontinue(eq,loopIn,me,meT,eqsIn,varsIn)
+    local
+      Integer startEq,nextEq,sharedVar, min;
+      list<Integer> rest,vars1,vars2,numEqs;
+      BackendDAE.Equation eq1,eq2;
+      BackendDAE.Var var;
+      BackendDAE.EquationAttributes attr;
+      DAE.Exp lhs1, lhs2, rhs1, rhs2 ,varExp,eqExp;
+      DAE.ElementSource source;
+    case(SOME(eq1),{},_,_,_,_)
+      equation
+        // resolved the whole cycle
+        then eq1;
+    case(NONE(),startEq::rest,_,_,_,_)
+      equation
+        // start resolving the first 2 equations
+        nextEq::rest = rest;
+        //BackendDump.dumpIncidenceMatrix(m);
+        vars1 = List.map(arrayGet(me,startEq),Util.tuple21);
+        vars2 = List.map(arrayGet(me,nextEq),Util.tuple21);
+        (vars1,_,_) = List.intersection1OnTrue(vars1,vars2,intEq);
+        numEqs = List.map(List.map1(vars1,Util.arrayGetIndexFirst,meT),listLength);
+        (_,vars1) = List.filter1OnTrueSync(numEqs,intEq,2,vars1);
+        sharedVar = List.first(vars1);
+        eq1 = listGet(eqsIn,startEq);
+        eq2 = listGet(eqsIn,nextEq);
+        var = listGet(varsIn,sharedVar);
+        varExp = Expression.crefExp(BackendVariable.varCref(var));
+            //BackendDump.dumpEquationList({eq1},"eq1");
+            //BackendDump.dumpEquationList({eq2},"eq2");
+            //BackendDump.dumpVarList({var},"var");
+
+        BackendDAE.EQUATION(exp=lhs1,scalar=rhs1,source=source,attr=attr) = eq1;
+        BackendDAE.EQUATION(exp=lhs2,scalar=rhs2) = eq2;
+        (eqExp,_) = ExpressionSolve.solve(lhs1,rhs1,varExp);
+        eq1 = BackendDAE.EQUATION(varExp,eqExp,source,attr);
+          //BackendDump.dumpEquationList({eq1},"solved Eq");
+
+        ((lhs2,_)) = Expression.replaceExp(lhs2,varExp,eqExp);
+        ((rhs2,_)) = Expression.replaceExp(rhs2,varExp,eqExp);
+        (lhs2,_) = ExpressionSimplify.simplify(lhs2);
+        (rhs2,_) = ExpressionSimplify.simplify(rhs2);
+          eq2 = BackendDAE.EQUATION(lhs2,rhs2,source,attr);
+          //BackendDump.dumpEquationList({eq2},"resolved Eq");
+     then resolveEquations(SOME(eq2),rest,me,meT,eqsIn,varsIn);
+    else
+      equation
+      print("resolveEquations failed!\n");
+    then fail();
+  end matchcontinue;
+end resolveEquations;
+
 
 end ResolveLoops;
