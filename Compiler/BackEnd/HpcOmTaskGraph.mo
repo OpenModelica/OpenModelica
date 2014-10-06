@@ -1725,7 +1725,8 @@ algorithm
   TASKGRAPHMETA(inComps = inComps, varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, rootNodes = rootNodes, nodeNames =nodeNames, nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
   inComps := listArray(List.deletePositions(arrayList(inComps),List.map1(cutNodes,intSub,1)));
   rootNodes := listAppend(rootNodes,cutNodeChildren);
-  rootNodes := arrayList(removeContinuousEntries(listArray(rootNodes),cutNodes));
+  (_,rootNodes,_) := List.intersection1OnTrue(rootNodes,cutNodes,intEq);
+  rootNodes := updateContinuousEntriesInList(rootNodes,cutNodes);
   rootNodes := List.removeOnTrue(-1, intEq, rootNodes);
   rangeLst := List.intRange(arrayLength(nodeMark));
   nodeMark := List.fold1(rangeLst, markRemovedNodes,cutNodes,nodeMark);
@@ -1889,88 +1890,50 @@ protected function updateContinuousEntriesInList" updates the entries in a list
 the entries in the list belong to a continuous series.
 the deleteEntries have been previously removed from the array and the indices are adapted so that the new array consists again of continuous series of numbers.therefore the indices have to be smallen
 e.g. updateContinuousEntriesInList({4,2,1,7,9},{3,6}) = {3,2,1,5,7};
+!! only for positive entries.
 author: Waurich TUD 2013-07"
   input list<Integer> lstIn;
   input list<Integer> deleteEntriesIn;
   output list<Integer> lstOut;
-protected
-  list<Integer> deleteEntries;
-  array<Integer> lstArray;
-  array<Integer> lstArrayTmp;
-  list<Integer> lstTmp;
 algorithm
-  deleteEntries := List.sort(deleteEntriesIn,intLt);
-  lstArray := listArray(lstIn);
-  lstArrayTmp := Util.arrayMap1(lstArray,removeContinuousEntries1,deleteEntries);
-  lstOut := arrayList(lstArrayTmp);
+  lstOut := match(lstIn,deleteEntriesIn)
+    local
+      Integer start;
+      list<Integer> deleteEntries, rest, lstTmp;
+      array<Integer> deleteArr;
+   case({},_)
+     then {};
+   case(_,{})
+     then lstIn;
+   case(start::rest,_)
+     equation
+        deleteArr = arrayCreate(List.fold(listAppend(rest,deleteEntriesIn),intMax,start),0);
+        List.map2_0(deleteEntriesIn,Util.arrayUpdateIndexFirst,1,deleteArr);
+        (deleteEntries,_) = List.mapFold(arrayList(deleteArr),setDeleteArr,0);
+        deleteArr = listArray(deleteEntries);
+        lstTmp = List.map1(lstIn,removeContinuousEntries1,deleteArr);
+     then lstTmp;
+    end match;
 end updateContinuousEntriesInList;
 
-protected function removeContinuousEntries " updates the entries.
-the entries in the array belong to a continuous series. (all numbers from 1 to max(array) belong to the array).
-the deleteEntries are removed from the array and the indices are adapted so that the new array consists againn of continuous series of numbers.
-e.g. removeContinuousEntries([4,6,2,3,1,7,5],{3,6}) = [3,-1,2,-1,1,5,4];
-REMARK : does not shorten the array, but sets deleted entries to -1 TODO: change this
-author: Waurich TUD 2013-07"
-  input array<Integer> arrayIn;
-  input list<Integer> deleteEntriesIn;
-  output array<Integer> arrayOut;
-protected
-  list<Integer> deleteEntries;
-  array<Integer> arrayTmp;
-algorithm
-  arrayTmp := Util.arrayMap1(arrayIn,invalidateEntry,deleteEntriesIn);
-  deleteEntries := List.sort(deleteEntriesIn,intLt);
-  arrayOut := Util.arrayMap1(arrayTmp,removeContinuousEntries1,deleteEntries);
-end removeContinuousEntries;
-
-protected function invalidateEntry " map function that sets the entryOut -1 if entryIn is member of lstIn.
-author: Waurich TUD 2013-07"
+protected function setDeleteArr
   input Integer entryIn;
-  input list<Integer> lstIn;
+  input Integer offsetIn;
   output Integer entryOut;
+  output Integer offsetOut;
 algorithm
-  entryOut := matchcontinue(entryIn,lstIn)
-    local
-    case(_,_)
-      equation
-        false = List.isMemberOnTrue(entryIn,lstIn,intEq);
-      then
-        entryIn;
-    case(_,_)
-      equation
-        //true = List.isMemberOnTrue(entryIn,lstIn,intEq);
-      then
-        -1;
+  (entryOut,offsetOut) := matchcontinue(entryIn,offsetIn)
+  case(0,_)
+      then (offsetIn,offsetIn);
+  case(1,_)
+      then (offsetIn+1,offsetIn+1);
   end matchcontinue;
-end invalidateEntry;
-
-protected function invalidateEntryTuple " map function that sets the entryOut -1 if entryIn is member of lstIn.
-author: Waurich TUD 2013-07"
-  input tuple<Integer,Integer,Integer> entryTplIn;
-  input list<Integer> lstIn;
-  output tuple<Integer,Integer,Integer> entryTplOut;
-protected
-  Integer entryIn, eqSysIdx, entryOffset;
-algorithm
-  entryTplOut := matchcontinue(entryTplIn,lstIn)
-    local
-    case((entryIn,_,_),_)
-      equation
-        false = List.isMemberOnTrue(entryIn,lstIn,intEq);
-      then
-        entryTplIn;
-    case((_,eqSysIdx,entryOffset),_)
-      equation
-        //true = List.isMemberOnTrue(entryIn,lstIn,intEq);
-      then
-        ((-1,eqSysIdx,entryOffset));
-  end matchcontinue;
-end invalidateEntryTuple;
+end setDeleteArr;
 
 protected function removeContinuousEntries1" map function for removeContinuousEntries to update the indices.
 author:Waurich TUD 2013-07."
   input Integer entryIn;
-  input list<Integer> deleteEntriesIn;
+  input array<Integer> deleteEntriesIn;
   output Integer entryOut;
 protected
   Integer eqSysIdx, entryOffset;
@@ -1978,15 +1941,13 @@ algorithm
   entryOut := matchcontinue(entryIn,deleteEntriesIn)
   local
     Integer offset;
-    Integer entry;
   case(_,_)
     equation
-      entry = List.getMemberOnTrue(entryIn,deleteEntriesIn,intGe);
-      offset = listLength(deleteEntriesIn)-List.position(entry,deleteEntriesIn);
-      entry = entryIn-offset;
-    then entry;
+      offset = arrayGet(deleteEntriesIn,entryIn);
+    then entryIn-offset;
   else
     equation
+      print("removeContinuousEntries1 failed!\n");
     then entryIn;
   end matchcontinue;
 end removeContinuousEntries1;
