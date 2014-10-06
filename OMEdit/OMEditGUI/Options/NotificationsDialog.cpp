@@ -300,8 +300,7 @@ void NotificationsDialog::saveReleaseInformationNotificationSettings()
 void NotificationsDialog::sendCrashReport()
 {
   QString OMCCommandsLogFilePath, OMCOutputFile, stackTraceFile, tmpPath;
-  tmpPath = QDir::tempPath();
-  tmpPath.remove("\"");
+  tmpPath = OpenModelica::tempDirectory();
   OMCCommandsLogFilePath = QString("%1omeditcommands.log").arg(tmpPath);
   OMCOutputFile = QString("%1openmodelica.omc.output.%2").arg(tmpPath).arg(Helper::OMCServerName);
   stackTraceFile = QString("%1openmodelica.stacktrace.%2").arg(tmpPath).arg(Helper::OMCServerName);

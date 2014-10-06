@@ -289,8 +289,6 @@ bool OMCProxy::startServer()
 {
   /* create the tmp path */
   QString& tmpPath = OpenModelica::tempDirectory();
-  if (!QDir().exists(tmpPath))
-    QDir().mkpath(tmpPath);
   /* create a file to write OMEdit commands log */
   mCommandsLogFile.setFileName(QString("%1omeditcommands.log").arg(tmpPath));
   if (mCommandsLogFile.open(QIODevice::WriteOnly | QIODevice::Text))
@@ -552,7 +550,7 @@ void OMCProxy::openOMCLoggerWidget()
   mpOMCLoggerWidget->show();
   mpOMCLoggerWidget->raise();
   mpOMCLoggerWidget->activateWindow();
-  mpOMCLoggerWidget->setWindowState(mpOMCLoggerWidget->windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
+  mpOMCLoggerWidget->setWindowState(mpOMCLoggerWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
 }
 
 /*!
