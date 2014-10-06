@@ -8504,7 +8504,7 @@ algorithm
     case (_, (_, moduleStr, b)::rest) equation
       SimCodeUtil.execStat("<failed> preOpt " +& moduleStr);
       str = stringAppendList({"pre-optimization module ", moduleStr, " failed."});
-      Debug.bcall2(not b, Error.addMessage, Error.INTERNAL_ERROR, {str});
+      Error.addMessage(Error.INTERNAL_ERROR, {str});
       (dae,status) = preOptimizeDAE(inDAE,rest);
     then (dae, Util.if_(b, Util.FAILURE(), status));
   end matchcontinue;
@@ -8806,7 +8806,7 @@ algorithm
       equation
         SimCodeUtil.execStat("postOpt <failed> " +& moduleStr);
         str = stringAppendList({"post-optimization module ", moduleStr, " failed."});
-        Debug.bcall2(not b,Error.addMessage, Error.INTERNAL_ERROR, {str});
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
         (dae,status) = postOptimizeDAE(inDAE,rest,matchingAlgorithm,daeHandler);
       then (dae, Util.if_(b, Util.FAILURE(), status));
   end matchcontinue;
@@ -9122,7 +9122,7 @@ protected
   list<tuple<BackendDAEFunc.postOptimizationDAEModule,String,Boolean>> allpostOptModules;
   list<String> strpostOptModules;
 algorithm
-  allpostOptModules := {(BackendDAEOptimize.encapsulateWhenConditions, "encapsulateWhenConditions", false),
+  allpostOptModules := {(BackendDAEOptimize.encapsulateWhenConditions, "encapsulateWhenConditions", true),
                         (Inline.lateInlineFunction,"lateInlineFunction",false),
                         (RemoveSimpleEquations.causal,"removeSimpleEquations",false),
                         (RemoveSimpleEquations.fastAcausal,"removeSimpleEquationsFast",false),
@@ -9552,13 +9552,15 @@ algorithm
       list<DAE.ComponentRef> conditionVarList;
       Boolean initialCall;
 
-    case DAE.ARRAY(array=conditionList) equation
-      (conditionVarList, initialCall) = getConditionList1(conditionList, {}, false);
-    then (conditionVarList, initialCall);
+    case DAE.ARRAY(array=conditionList)
+      equation
+        (conditionVarList, initialCall) = getConditionList1(conditionList, {}, false);
+      then (conditionVarList, initialCall);
 
-    else equation
-      (conditionVarList, initialCall) = getConditionList1({inCondition}, {}, false);
-    then (conditionVarList, initialCall);
+    else
+      equation
+        (conditionVarList, initialCall) = getConditionList1({inCondition}, {}, false);
+      then (conditionVarList, initialCall);
   end match;
 end getConditionList;
 
@@ -9579,20 +9581,23 @@ algorithm
       String msg;
 
     case ({}, _, _)
-    then (inConditionVarList, inInitialCall);
+      then (inConditionVarList, inInitialCall);
 
-    case (DAE.CALL(path = Absyn.IDENT(name = "initial"))::conditionList, _, _) equation
-      (conditionVarList, initialCall) = getConditionList1(conditionList, inConditionVarList, true);
-    then (conditionVarList, initialCall);
+    case (DAE.CALL(path = Absyn.IDENT(name = "initial"))::conditionList, _, _)
+      equation
+        (conditionVarList, initialCall) = getConditionList1(conditionList, inConditionVarList, true);
+      then (conditionVarList, initialCall);
 
-    case (DAE.CREF(componentRef=componentRef)::conditionList, _, _) equation
-      (conditionVarList, initialCall) = getConditionList1(conditionList, componentRef::inConditionVarList, inInitialCall);
-    then (conditionVarList, initialCall);
+    case (DAE.CREF(componentRef=componentRef)::conditionList, _, _)
+      equation
+        (conditionVarList, initialCall) = getConditionList1(conditionList, componentRef::inConditionVarList, inInitialCall);
+      then (conditionVarList, initialCall);
 
-    case (exp::_, _ ,_) equation
-      msg = "./Compiler/BackEnd/BackendDAEOptimize.mo: function getConditionList1 failed for " +& ExpressionDump.printExpStr(exp) +& "\n";
-      Error.addMessage(Error.INTERNAL_ERROR, {msg});
-   then fail();
+    case (exp::_, _ ,_)
+      equation
+        msg = "./Compiler/BackEnd/BackendDAEUtil.mo: function getConditionList1 failed for " +& ExpressionDump.printExpStr(exp) +& "\n";
+        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+     then fail();
   end matchcontinue;
 end getConditionList1;
 
