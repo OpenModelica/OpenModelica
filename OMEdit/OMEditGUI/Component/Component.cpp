@@ -55,13 +55,13 @@ Component::Component(QString annotation, QString name, QString className, Compon
   setAcceptHoverEvents(true);
   getClassInheritedComponents(true);
   parseAnnotationString(annotation);
-  getClassComponents();
   /* if component doesn't exists show it as red cross box. */
-  if (!mpOMCProxy->existClass(className))
+  if (!mpOMCProxy->existClass(className)) {
     parseAnnotationString(Helper::errorComponentAnnotationString);
-  /* if component doesn't have any annotation then assign it a default one. */
-  else if (canUseDefaultAnnotation(this))
+  } else if (canUseDefaultAnnotation(this)) { /* if component doesn't have any annotation then assign it a default one. */
     parseAnnotationString(Helper::defaultComponentAnnotationString);
+  }
+  getClassComponents();
   // transformation
   mpTransformation = new Transformation(mpGraphicsView->getViewType());
   mpTransformation->parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
@@ -384,13 +384,9 @@ bool Component::canUseDefaultAnnotation(Component *pComponent)
     draw = true;
   else
     return false;
-  // check components list
-  foreach (Component *pChildComponent, pComponent->mpComponentsList)
-  {
-    draw = canUseDefaultAnnotation(pChildComponent);
-    if (!draw)
-      return draw;    // return whenever we get false
-  }
+  /* We don't check the components list because even if components/connectors exist still we want default annotation.
+     Remove the components list check in r22603.
+    */
   // check inherited components list
   foreach (Component *pInheritedComponent, pComponent->mpInheritanceList)
   {

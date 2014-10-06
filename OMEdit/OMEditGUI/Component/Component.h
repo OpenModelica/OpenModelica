@@ -129,6 +129,7 @@ public:
 private:
   QString mName;
   QString mClassName;
+  ComponentInfo *mpComponentInfo;
   StringHandler::ModelicaClasses mType;
   OMCProxy *mpOMCProxy;
   GraphicsView *mpGraphicsView;
@@ -155,7 +156,6 @@ private:
   QPointF mPivotPoint;
   qreal mXFactor;
   qreal mYFactor;
-  ComponentInfo *mpComponentInfo;
   QList<Component*> mpInheritanceList;
   QList<ShapeAnnotation*> mpShapesList;
   QList<Component*> mpComponentsList;
