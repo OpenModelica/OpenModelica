@@ -760,6 +760,8 @@ public constant Message CONNECT_ARRAY_SIZE_ZERO = MESSAGE(548, TRANSLATION(), WA
   Util.gettext("Ignoring connection of array components having size zero: %s and %s."));
 public constant Message ILLEGAL_RECORD_COMPONENT = MESSAGE(549, TRANSLATION(), WARNING(),
   Util.gettext("Ignoring record component:\n%swhen building record the constructor. Records are allowed to contain only components of basic types, arrays of basic types or other records."));
+public constant Message EQ_WITHOUT_TIME_DEP_VARS = MESSAGE(550, SYMBOLIC(), ERROR(),
+  Util.gettext("Found equation without time-dependent variables: %s = %s"));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

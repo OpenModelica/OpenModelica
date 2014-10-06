@@ -1190,7 +1190,7 @@ algorithm
       DAE.ComponentRef cr1, cr2;
       list<Integer> colum;
       DAE.Exp crexp1, crexp2;
-      String msg;
+      String lhs, rhs;
       DAE.ElementSource source;
 
     case (BackendDAE.VAR(varName=cr1), _, _, false, BackendDAE.VAR(varName=cr2), _, _, false, _, _, _, _)
@@ -1222,9 +1222,9 @@ algorithm
         crexp2 = Expression.crefExp(cr2);
         crexp1 = negateExpression(negatedCr1, crexp1, crexp1, " generateSimpleContainter ");
         crexp2 = negateExpression(negatedCr2, crexp2, crexp2, " generateSimpleContainter ");
-        msg = "Found Equation without time dependent variables ";
-        msg = msg +& ExpressionDump.printExpStr(crexp1) +& " = " +& ExpressionDump.printExpStr(crexp2) +& "\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+        lhs = ExpressionDump.printExpStr(crexp1);
+        rhs = ExpressionDump.printExpStr(crexp2);
+        Error.addSourceMessage(Error.EQ_WITHOUT_TIME_DEP_VARS, {lhs, rhs}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
 
@@ -2541,7 +2541,7 @@ algorithm
       DAE.ElementSource source;
       DAE.Exp crexp, exp1;
       Option<DAE.Exp> dexp, derReplacement;
-      String msg;
+      String lhs,rhs;
       VarSetAttributes vsattr;
       BackendDAE.EquationAttributes eqAttr;
 
@@ -2575,27 +2575,26 @@ algorithm
         negated = boolOr(negatedCr1, negatedCr2);
         crexp = Expression.crefExp(cr);
         crexp = negateExpression(negated, crexp, crexp, " PARAMETERLAIAS ");
-        msg = "Found Equation without time dependent variables ";
-        msg = msg +& ExpressionDump.printExpStr(exp) +& " = " +& ExpressionDump.printExpStr(crexp) +& "\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+        lhs = ExpressionDump.printExpStr(exp);
+        rhs = ExpressionDump.printExpStr(crexp);
+        Error.addSourceMessage(Error.EQ_WITHOUT_TIME_DEP_VARS, {lhs, rhs}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
 
-    case (TIMEALIAS(negatedCr2=_), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
+    case (TIMEALIAS(eqnAttributes=(source,_)), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         // report error
-        msg = "Found Equation without time dependent variables ";
-        msg = msg +& " time = " +& ExpressionDump.printExpStr(exp) +& "\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+        rhs = ExpressionDump.printExpStr(exp);
+        Error.addSourceMessage(Error.EQ_WITHOUT_TIME_DEP_VARS, {"time", rhs}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
 
-    case (TIMEINDEPENTVAR( exp=exp1), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
+    case (TIMEINDEPENTVAR(exp=exp1, eqnAttributes=(source,_)), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         // report error
-        msg = "Found Equation without time dependent variables ";
-        msg = msg +& ExpressionDump.printExpStr(exp) +& " = " +& ExpressionDump.printExpStr(exp1) +& "\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+        lhs = ExpressionDump.printExpStr(exp);
+        rhs = ExpressionDump.printExpStr(exp1);
+        Error.addSourceMessage(Error.EQ_WITHOUT_TIME_DEP_VARS, {lhs, rhs}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
 
