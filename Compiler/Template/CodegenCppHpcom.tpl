@@ -1308,7 +1308,7 @@ template simulationMakefile(String target,SimCode simCode)
 
     let &additionalLinkerFlags_MSVC = buffer ""
 
-    CodegenCpp.simulationMakefile(target, simCode, additionalLinkerFlags_GCC, additionalCFlags_MSVC, additionalCFlags_GCC, additionalLinkerFlags_MSVC)
+    CodegenCpp.simulationMakefile(target, simCode, additionalLinkerFlags_GCC, additionalCFlags_MSVC, additionalCFlags_GCC, additionalCFlags_MSVC)
 end simulationMakefile;
 
 
