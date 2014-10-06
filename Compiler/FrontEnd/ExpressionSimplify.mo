@@ -401,6 +401,9 @@ algorithm
       true = Expression.isZero(e2);
       e = Expression.makePureBuiltinCall("sign", {e1}, DAE.T_REAL_DEFAULT);
      then DAE.BINARY(DAE.RCONST(1.570796326794896619231321691639751442),DAE.MUL(DAE.T_REAL_DEFAULT),e);
+    // atan2(0,x) = 0
+    case (DAE.CALL(path=Absyn.IDENT("atan2"),expLst={e1 as DAE.RCONST(0.0),_}))
+      then e1;
 
     // MetaModelica builtin operators are calls
     case _
