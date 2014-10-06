@@ -112,6 +112,7 @@ constant Name veNodeName     = "$ve" "a node for storing references to instance 
 constant Name imNodeName     = "$imp" "an node holding the import table";
 constant Name itNodeName     = "$it" "an node holding the instance information DAE.Var";
 constant Name assertNodeName = "$assert" "an assersion node";
+constant Name statusNodeName = "$status" "an status node";
 
 public function toRef
 "@author: adrpo

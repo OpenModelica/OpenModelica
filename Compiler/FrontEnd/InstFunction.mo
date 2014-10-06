@@ -915,9 +915,10 @@ public function addRecordConstructorFunction "Add record constructor whenever we
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input DAE.Type inType;
+  input Absyn.Info inInfo;
   output FCore.Cache outCache;
 algorithm
-  outCache := matchcontinue (inCache,inEnv,inType)
+  outCache := matchcontinue (inCache,inEnv,inType,inInfo)
     local
       list<DAE.Var> vars, inputs, locals;
       DAE.Type ty,recType,fixedTy,funcTy;
@@ -931,7 +932,7 @@ algorithm
       list<DAE.FuncArg> fargs;
 
     // try to instantiate class
-    case (cache, _, DAE.T_COMPLEX(ClassInf.RECORD(path), _, _, _))
+    case (cache, _, DAE.T_COMPLEX(ClassInf.RECORD(path), _, _, _), _)
       equation
         path = Absyn.makeFullyQualified(path);
         (cache, _) = getRecordConstructorFunction(cache, inEnv, path);
@@ -939,10 +940,11 @@ algorithm
         cache;
 
     // if previous stuff didn't work, try to use the ty directly
-    case (cache, _, DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src))
+    case (cache, _, DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src), _)
       equation
         path = Absyn.makeFullyQualified(path);
 
+        vars = Types.filterRecordComponents(vars, inInfo);
         (inputs,locals) = List.extractOnTrue(vars, Types.isModifiableTypesVar);
         inputs = List.map(inputs,Types.setVarDefaultInput);
         locals = List.map(locals,Types.setVarProtected);

@@ -25,7 +25,6 @@ if true then /* Suppress output */
     "../FrontEnd/DAEUtil.mo",
     "../FrontEnd/DumpGraphviz.mo",
     "../FrontEnd/Dump.mo",
-    "../FrontEnd/Env.mo",
     "../FrontEnd/ExpressionDump.mo",
     "../FrontEnd/Expression.mo",
     "../FrontEnd/ExpressionSimplify.mo",

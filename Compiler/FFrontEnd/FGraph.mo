@@ -1827,5 +1827,94 @@ algorithm
   end matchcontinue;
 end graphPrefixOf2;
 
+public function setStatus
+  input Graph inEnv;
+  input Name inName;
+  input FCore.Data inStatus;
+  output Graph outEnv;
+algorithm
+  outEnv := matchcontinue(inEnv, inName, inStatus)
+    local
+      Graph g;
+      Node n;
+      Ref ref, refParent;
+
+    // child does not exist, do nothing, is an import or extends
+    case (g, _, _)
+      equation
+        refParent = lastScopeRef(g);
+        false = FNode.refHasChild(refParent, inName);
+      then
+        g;
+
+    // child exists and has a status node
+    case (g, _, _)
+      equation
+        refParent = lastScopeRef(g);
+        true = FNode.refHasChild(refParent, inName);
+        ref = FNode.child(refParent, inName);
+        true = FNode.refHasChild(ref, FNode.statusNodeName);
+        ref = FNode.child(ref, FNode.statusNodeName);
+        n = FNode.setData(FNode.fromRef(ref), inStatus);
+        ref = FNode.updateRef(ref, n);
+      then
+        g;
+
+    // child exists but has no status node
+    case (g, _, _)
+      equation
+        refParent = lastScopeRef(g);
+        true = FNode.refHasChild(refParent, inName);
+        ref = FNode.child(refParent, inName);
+        false = FNode.refHasChild(ref, FNode.statusNodeName);
+        (g, n) = node(g, FNode.statusNodeName, {ref}, inStatus);
+        FNode.addChildRef(ref, FNode.statusNodeName, FNode.toRef(n));
+      then
+        g;
+
+    // did we fail for some weird reson?
+    case (g, _, _)
+      equation
+        print("FGraph.setStatus failed on: " +& getGraphNameStr(g) +& " element: " +& inName +& "\n");
+      then
+        g;
+
+  end matchcontinue;
+end setStatus;
+
+public function getStatus
+  input Graph inEnv;
+  input Name inName;
+  output FCore.Data outStatus;
+algorithm
+  outStatus := matchcontinue(inEnv, inName)
+    local
+      Graph g;
+      Node n;
+      Ref ref, refParent;
+      FCore.Data s;
+
+    // child exists and has a status node
+    case (g, _)
+      equation
+        refParent = lastScopeRef(g);
+        true = FNode.refHasChild(refParent, inName);
+        ref = FNode.child(refParent, inName);
+        true = FNode.refHasChild(ref, FNode.statusNodeName);
+        ref = FNode.child(ref, FNode.statusNodeName);
+        s = FNode.refData(ref);
+      then
+        s;
+
+    // we can fail here with no problem, there is no status node!
+    case (g, _)
+      equation
+        // print("FGraph.getStatus failed on: " +& getGraphNameStr(g) +& " element: " +& inName +& "\n");
+      then
+        fail();
+
+  end matchcontinue;
+end getStatus;
+
 end FGraph;
 

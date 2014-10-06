@@ -618,7 +618,7 @@ algorithm
             pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
         source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         (cache,dae) = addArrayVarEquation(cache, env, ih, ci_state, dae, ty, mod, NFInstUtil.toConst(vt), pre, n, source);
-        cache = InstFunction.addRecordConstructorFunction(cache,env,Types.arrayElementType(ty));
+        cache = InstFunction.addRecordConstructorFunction(cache,env,Types.arrayElementType(ty),SCode.elementInfo(inClass));
         Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
@@ -638,7 +638,7 @@ algorithm
             pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
         source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         (cache,dae) = addArrayVarEquation(cache,compenv,ih,ci_state, dae, ty, mod, NFInstUtil.toConst(vt), pre, n, source);
-        cache = InstFunction.addRecordConstructorFunction(cache,env,Types.arrayElementType(ty));
+        cache = InstFunction.addRecordConstructorFunction(cache,env,Types.arrayElementType(ty),SCode.elementInfo(inClass));
         Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);

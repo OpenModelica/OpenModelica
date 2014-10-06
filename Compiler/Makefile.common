@@ -52,7 +52,6 @@ DAEUtil.mo \
 Dump.mo \
 DumpGraphviz.mo \
 DynamicOptimization.mo \
-Env.mo \
 Expression.mo \
 ExpressionDump.mo \
 ExpressionSimplify.mo \

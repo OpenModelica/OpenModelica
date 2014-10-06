@@ -1526,6 +1526,7 @@ algorithm
     local
       list<Element> outE,cycleElts;
       list<tuple<Element, list<Element>>> cycles;
+      list<tuple<Element, list<Element>>> g;
 
     // no sorting for meta-modelica!
     case (_, _, _)
@@ -1537,14 +1538,36 @@ algorithm
     // sort the elements according to the dependencies
     else
       equation
-        (outE, cycles) = Graph.topologicalSort(Graph.buildGraph(inElements, getElementDependencies, (inElements,isFunctionScope)), isElementEqual);
-         // append the elements in the cycles as they might not actually be cycles, but they depend on elements not in the list (i.e. package constants, etc)!
+        g = Graph.buildGraph(inElements, getElementDependencies, (inElements,isFunctionScope));
+        (outE, cycles) = Graph.topologicalSort(g, isElementEqual);
+        // printGraph(inEnv, g, outE, cycles);
+        // append the elements in the cycles as they might not actually be cycles, but they depend on elements not in the list (i.e. package constants, etc)!
         outE = List.appendNoCopy(outE, List.map(cycles, Util.tuple21));
         checkCyclicalComponents(cycles, inEnv);
       then
         outE;
   end matchcontinue;
 end sortElementList;
+
+protected function printGraph
+  input FGraph.Graph env;
+  input list<tuple<Element, list<Element>>> g;
+  input list<Element> order;
+  input list<tuple<Element, list<Element>>> cycles;
+  type Element = tuple<SCode.Element, DAE.Mod>;
+algorithm
+  _ := matchcontinue(env, g, order, cycles)
+    // nothing for empty graph
+    case (_, {}, _, _) then ();
+    // show me something!
+    case (_, _, _, _)
+      equation
+        print("Graph for env: " +& FGraph.printGraphPathStr(env) +& "\n" +& Graph.printGraph(g, elementName) +& "\n");
+        print("Element order:\n\t" +& stringDelimitList(List.map(order, elementName), "\n\t") +& "\n");
+        print("Cycles:\n" +& Graph.printGraph(cycles, elementName) +& "\n");
+      then ();
+  end matchcontinue;
+end printGraph;
 
 protected function getDepsFromExps
   input list<Absyn.Exp> inExps;
@@ -2029,9 +2052,10 @@ algorithm
     // branch will be used, which causes some problems with Fluid. So we just
     // reset everything up to this point and pray that we didn't miss anything
     // important.
-    case (exp as Absyn.IFEXP(ifExp = ifExp), (all_el, stack_el::rest_stack, _))
+    case (exp as Absyn.IFEXP(ifExp = ifExp), (all_el, stack_el::rest_stack, accum_el))
       equation
         (_, (_, _, deps)) = Absyn.traverseExpBidir(ifExp, getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (all_el, {}, {}));
+        stack_el = listAppend(stack_el, accum_el);
         deps = listAppend(deps, stack_el);
       then
         (exp, (all_el, rest_stack, deps));
@@ -2087,7 +2111,8 @@ algorithm
           (SCode.CLASS(name = id2), _))
       then stringEqual(id1, id2);
 
-    else false;
+    else stringEq(elementName(inElement1), elementName(inElement2));
+
   end matchcontinue;
 end isElementEqual;
 
@@ -2152,8 +2177,23 @@ protected function elementName
 protected
   SCode.Element elem;
 algorithm
-  (elem, _) := inElement;
-  outName := SCode.elementName(elem);
+  outName := matchcontinue(inElement)
+    local
+      String str;
+
+    case (_)
+      equation
+        (elem, _) = inElement;
+        outName = SCode.elementName(elem);
+      then
+        outName;
+
+    case (_)
+      equation
+        str = SCodeDump.shortElementStr(Util.tuple21(inElement));
+      then
+        str;
+  end matchcontinue;
 end elementName;
 
 public function classdefElts2

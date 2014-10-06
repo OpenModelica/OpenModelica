@@ -4027,7 +4027,7 @@ algorithm
         fail();
 
 
-    // constrainting type on the component
+    // constraining type on the component
     case (cache,env,ih,(DAE.REDECL(tplSCodeElementModLst = ((( redComp as SCode.COMPONENT(name = n1,
                           prefixes = SCode.PREFIXES(
                             finalPrefix = finalPrefix,
@@ -4193,6 +4193,46 @@ protected function updateComponentsInEnv
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
+algorithm
+  (outCache,outEnv,outIH) := matchcontinue(cache, env, inIH, pre, mod, crefs, ci_state, impl)
+
+    // case (_, _, _, _, _, _, _, _) then (cache,env,inIH);
+
+    // do NOT fail and do not display any errors from this function as it tries to type and evaluate dependent things but not with enough information
+    case (_, _, _, _, _, _, _, _)
+      equation
+        ErrorExt.setCheckpoint("updateComponentsInEnv__");
+        (outCache,outEnv,outIH) = updateComponentsInEnv_dispatch(cache, env, inIH, pre, mod, crefs, ci_state, impl);
+        ErrorExt.rollBack("updateComponentsInEnv__") "roll back any errors";
+      then
+        (outCache,outEnv,outIH);
+
+    // do NOT fail and do not display any errors from this function as it tries to type and evaluate dependent things but not with enough information
+    else
+      equation
+        ErrorExt.rollBack("updateComponentsInEnv__") "roll back any errors";
+      then
+        (cache,env,inIH);
+   end matchcontinue;
+end updateComponentsInEnv;
+
+protected function updateComponentsInEnv_dispatch
+"author: PA
+  This function is the second pass of component instantiation, when a
+  component can be instantiated fully and the type of the component can be
+  determined. The type is added/updated to the environment such that other
+  components can use it when they are instantiated."
+  input FCore.Cache cache;
+  input FCore.Graph env;
+  input InnerOuter.InstHierarchy inIH;
+  input Prefix.Prefix pre;
+  input DAE.Mod mod;
+  input list<Absyn.ComponentRef> crefs;
+  input ClassInf.State ci_state;
+  input Boolean impl;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
+  output InnerOuter.InstHierarchy outIH;
 protected
   String myTick, crefsStr;
 algorithm
@@ -4203,7 +4243,7 @@ algorithm
     updateComponentsInEnv2(cache,env,inIH,pre,mod,crefs,ci_state,impl,NONE(),NONE());
   //Debug.fprintln(Flags.DEBUG,"finished update comps" +& myTick);
   //print("outEnv:");print(FGraph.printGraphStr(outEnv));print("\n");
-end updateComponentsInEnv;
+end updateComponentsInEnv_dispatch;
 
 protected function getUpdatedCompsHashTable
   "Routine to lazily create the hashtable as it usually unused"
@@ -4398,7 +4438,7 @@ algorithm
     case (cache,env,ih,_,_,_,_,_,_,_)
       equation
         id = Absyn.crefFirstIdent(cref);
-        (cache,_,_) = Lookup.lookupClass(cache,env, Absyn.IDENT(id), false);
+        // (cache,_,_) = Lookup.lookupClass(cache,env, Absyn.IDENT(id), false);
       then
         (cache,env,ih,inUpdatedComps);
     // report an error!

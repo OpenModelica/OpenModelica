@@ -233,6 +233,10 @@ uniontype Data
     String message;
   end ASSERT;
 
+  record STATUS "status node"
+    Boolean isInstantiating;
+  end STATUS;
+
 end Data;
 
 type Refs = list<Ref>;
