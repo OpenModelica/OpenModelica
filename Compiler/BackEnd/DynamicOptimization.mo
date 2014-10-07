@@ -113,7 +113,7 @@ algorithm
 
         constraints = findFinalConstraints(varlst, {});
         (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$finalConstarintTerm", BackendDAE.OPT_FCONSTR());
-        
+
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
     then (v, e, inClassAttr);
     case (v, e, true, _, _, _,_)
@@ -143,7 +143,7 @@ algorithm
 
         constraints = findFinalConstraints(varlst, {});
         (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$finalConstarintTerm", BackendDAE.OPT_FCONSTR());
-        
+
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
        then (v, e,{DAE.OPTIMIZATION_ATTRS(mayer1, lagrange1, NONE(), NONE())});
     case (v, e, false, _, _, _, true)
