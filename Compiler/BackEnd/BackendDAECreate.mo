@@ -73,6 +73,7 @@ protected import SCode;
 protected import System;
 protected import Types;
 protected import Util;
+protected import VarTransform;
 
 protected type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 
@@ -111,6 +112,7 @@ algorithm
   // reset dumped file sequence number
   System.tmpTickResetIndex(0, Global.backendDAE_fileSequence);
   functionTree := FCore.getFunctionTree(inCache);
+  functionTree := renameFunctionParameter(functionTree);
   (DAE.DAE(elems), functionTree, timeEvents) := processBuiltinExpressions(lst, functionTree);
   vars := BackendVariable.emptyVars();
   knvars := BackendVariable.emptyVars();
@@ -3267,6 +3269,97 @@ algorithm
       then i;
   end match;
 end expInt;
+
+protected function renameFunctionParameter"renames the parameters in function calls. the function path is prepended to the parameter cref.
+This is used for the Cpp runtime for initializing parameters in function calls. The names have to be unique in case there are equally named parameters in different functions.
+author:Waurich TUD 2014-10"
+  input DAE.FunctionTree fTreeIn;
+  output DAE.FunctionTree fTreeOut;
+algorithm
+  fTreeOut := matchcontinue(fTreeIn)
+    local
+      list<tuple<DAE.AvlKey,DAE.AvlValue>> funcLst;
+      DAE.FunctionTree funcs;
+  case(_)
+    equation
+      true = stringEq(Flags.getConfigString(Flags.SIMCODE_TARGET),"Cpp");
+      funcLst = DAEUtil.avlTreeToList(fTreeIn);
+      funcLst = List.map(funcLst,renameFunctionParameter1);
+      funcs = DAEUtil.avlTreeAddLst(funcLst,DAEUtil.avlTreeNew());
+    then funcs;
+  else
+    then fTreeIn;
+  end matchcontinue;
+end renameFunctionParameter;
+
+protected function renameFunctionParameter1"
+author:Waurich TUD 2014-10"
+  input tuple<DAE.AvlKey,DAE.AvlValue> funcIn;
+  output tuple<DAE.AvlKey,DAE.AvlValue> funcOut;
+algorithm
+  funcOut := matchcontinue(funcIn)
+    local
+      Boolean pPref;
+      Boolean isImpure;
+      String pathName;
+      Absyn.Path path;
+      DAE.AvlKey key;
+      DAE.ElementSource source;
+      DAE.Function func;
+      DAE.InlineType iType;
+      DAE.Type type_;
+      SCode.Visibility vis;
+      list<DAE.FunctionDefinition> functions;
+      Option<SCode.Comment> comment;
+  case((key,SOME(DAE.FUNCTION(path=path,functions=functions,type_=type_,visibility=vis,partialPrefix=pPref,isImpure=isImpure,inlineType=iType,source=source,comment=comment))))
+    equation
+      pathName = Absyn.pathString(path);
+      pathName = Util.stringReplaceChar(pathName,".","_")+&"_";
+      functions = List.map1(functions,renameFunctionParameter2,pathName);
+  then((key,SOME(DAE.FUNCTION(path,functions,type_,vis,pPref,isImpure,iType,source,comment))));
+  else
+    then funcIn;
+  end matchcontinue;
+end renameFunctionParameter1;
+
+protected function renameFunctionParameter2"
+author:Waurich TUD 2014-10"
+  input DAE.FunctionDefinition funcIn;
+  input String pathName;
+  output DAE.FunctionDefinition funcOut;
+algorithm
+  funcOut := matchcontinue(funcIn,pathName)
+    local
+      list<DAE.Element> body, params;
+      list<DAE.ComponentRef> crefs, crefs_new;
+      list<DAE.Exp> params_new;
+      VarTransform.VariableReplacements repl;
+   case(DAE.FUNCTION_DEF(body=body),_)
+     equation
+       params = List.filter(body,DAEUtil.isParameter);
+       true = List.isNotEmpty(params);
+       crefs = List.map(params,DAEUtil.varCref);
+       crefs_new = List.map1r(crefs,ComponentReference.prependStringCref,pathName);
+       params_new = List.map(crefs_new,Expression.crefExp);
+       repl = VarTransform.emptyReplacements();
+       repl =  VarTransform.addReplacementLst(repl,crefs,params_new);
+       (body,_) = DAEUtil.traverseDAE2(body,replaceParameters,repl);
+     then DAE.FUNCTION_DEF(body);
+   else
+     then funcIn;
+  end matchcontinue;
+end renameFunctionParameter2;
+
+protected function replaceParameters"
+author:Waurich TUD 2014-10"
+  input DAE.Exp inExp;
+  input VarTransform.VariableReplacements replIn;
+  output DAE.Exp outExp;
+  output VarTransform.VariableReplacements replOut;
+algorithm
+  replOut := replIn;
+  (outExp,_) := VarTransform.replaceExp(inExp,replIn,NONE());
+end replaceParameters;
 
 end BackendDAECreate;
 
