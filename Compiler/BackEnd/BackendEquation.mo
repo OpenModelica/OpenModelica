@@ -1474,7 +1474,7 @@ public function equationToScalarResidualForm "author: Frenkel TUD 2012-06
   input BackendDAE.Equation inEquation;
   output list<BackendDAE.Equation> outEquations;
 algorithm
-  outEquations := matchcontinue (inEquation)
+  outEquations := match (inEquation)
     local
       DAE.Exp e, e1, e2, exp;
       DAE.ComponentRef cr;
@@ -1492,18 +1492,14 @@ algorithm
       ((_, eqns)) = List.fold3(explst,equationTupleToScalarResidualForm, e2, source, attr, (1, {}));
     then eqns;
 
-    // workaround, should changed to DAE.RCONST(0.0)
-    // when new rml is available
-    case (BackendDAE.EQUATION(exp=DAE.RCONST(r), scalar=e2, source=source, attr=attr)) equation
-      true = realEq(r, 0.0);
-      eqns ={BackendDAE.RESIDUAL_EQUATION(e2, source, attr)};
+    case (BackendDAE.EQUATION(exp= DAE.RCONST(real= 0.0), scalar=e2, source=source, attr=attr)) equation
+      (e, _) = ExpressionSimplify.simplify(e2);
+      eqns ={BackendDAE.RESIDUAL_EQUATION(e, source, attr)};
     then eqns;
 
-    // workaround, should changed to DAE.RCONST(0.0)
-    // when new rml is available
-    case (BackendDAE.EQUATION(exp=e1, scalar=DAE.RCONST(r), source=source, attr=attr)) equation
-      true = realEq(r, 0.0);
-      eqns ={BackendDAE.RESIDUAL_EQUATION(e1, source, attr)};
+    case (BackendDAE.EQUATION(exp=e1, scalar= DAE.RCONST(real=0.0), source=source, attr=attr)) equation
+      (e, _) = ExpressionSimplify.simplify(e1);
+      eqns ={BackendDAE.RESIDUAL_EQUATION(e, source, attr)};
     then eqns;
 
     case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=attr)) equation
@@ -1542,7 +1538,7 @@ algorithm
     else equation
       Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationToScalarResidualForm failed");
     then fail();
-  end matchcontinue;
+  end match;
 end equationToScalarResidualForm;
 
 protected function equationTupleToScalarResidualForm "
