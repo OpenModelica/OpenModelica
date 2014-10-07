@@ -2136,16 +2136,16 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let aname = 'A<%uid%>'
   let bname = 'b<%uid%>'
     let &varDecls = buffer "" /*BUFD*/
-     let &preExp = buffer "" /*BUFD*/
 
  let Amatrix=
     (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+      let &preExp = buffer "" /*BUFD*/
       let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
       '<%preExp%>(*__A)(<%row%>+1,<%col%>+1)=<%expPart%>;'
   ;separator="\n")
 
  let bvector =  (beqs |> exp hasindex i0 fromindex 1=>
-
+     let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
      '<%preExp%>__b(<%i0%>)=<%expPart%>;'
   ;separator="\n")
@@ -2597,7 +2597,7 @@ template functionBodyRecordConstructor(Function fn,SimCode simCode, Boolean useF
 ::=
 match fn
 case RECORD_CONSTRUCTOR(__) then
-  let()= System.tmpTickReset(1)
+  //let()= System.tmpTickReset(1)
   let &varDecls = buffer "" /*BUFD*/
   let fname = underscorePath(name)
   let retType = '<%fname%>Type'
@@ -2681,7 +2681,7 @@ template functionBodyRegularFunction(Function fn, Boolean inFunc,SimCode simCode
 ::=
 match fn
 case FUNCTION(__) then
-  let()= System.tmpTickReset(1)
+  //let()= System.tmpTickReset(1)
   let fname = underscorePath(name)
   let retType = if outVars then '<%fname%>RetType ' else "void" /* functionBodyRegularFunction */
   let &varDecls = buffer "" /*BUFD*/
@@ -2766,7 +2766,7 @@ template functionBodyExternalFunction(Function fn, Boolean inFunc,SimCode simCod
 ::=
 match fn
 case efn as EXTERNAL_FUNCTION(__) then
-  let()= System.tmpTickReset(1)
+  //let()= System.tmpTickReset(1)
   let fname = underscorePath(name)
   let retType = if outVars then '<%fname%>RetType' else "void"
   let &preExp = buffer "" /*BUFD*/
@@ -3592,7 +3592,7 @@ template init2(SimCode simCode,ModelInfo modelInfo,Boolean useFlatArrayNotation)
 match modelInfo
 case modelInfo as MODELINFO(vars=SIMVARS(__))  then
 
-   let () = System.tmpTickReset(0)
+   //let () = System.tmpTickReset(0)
    let &varDecls1 = buffer "" /*BUFD*/
    let &varDecls2 = buffer "" /*BUFD*/
    let &varDecls3 = buffer "" /*BUFD*/
@@ -3738,7 +3738,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      void <%modelname%>Algloop<%index%>::initialize()
      {
 
-         <%initAlgloopEquation(eq,varDecls,simCode,context,useFlatArrayNotation)%>
+         <%initAlgloopEquation(eq,simCode,context,useFlatArrayNotation)%>
          AlgLoopDefaultImplementation::initialize();
 
         // Update the equations once before start of simulation
@@ -3766,8 +3766,8 @@ template initAlgloopTemplate(SimCode simCode,SimEqSystem eq,Context context,Bool
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
-  let &varDecls = buffer ""
-  let &preExp = buffer ""
+  //let &varDecls = buffer ""
+  //let &preExp = buffer ""
   //let initalgvars = initAlgloopvars(preExp,varDecls,modelInfo,simCode,context,useFlatArrayNotation)
 
   match eq
@@ -3790,7 +3790,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      template <typename T>
      void <%modelname%>Algloop<%index%>::initialize(T *__A)
      {
-        <%initAlgloopEquation(eq,varDecls,simCode,context,useFlatArrayNotation)%>
+        <%initAlgloopEquation(eq,simCode,context,useFlatArrayNotation)%>
         // Update the equations once before start of simulation
         evaluate();
      }
@@ -3971,7 +3971,7 @@ end isLinearTearingCode;
 
 
 
-template initAlgloopEquation(SimEqSystem eq, Text &varDecls /*BUFP*/,SimCode simCode,Context context, Boolean useFlatArrayNotation)
+template initAlgloopEquation(SimEqSystem eq, SimCode simCode,Context context, Boolean useFlatArrayNotation)
  "Generates a non linear equation system."
 ::=
 let &varDeclsCref = buffer "" /*BUFD*/
@@ -3988,21 +3988,21 @@ case SES_NONLINEAR(__) then
   ;separator="\n"%>
    >>
  case SES_LINEAR(__)then
-  let &varDecls = buffer "" /*BUFD*/
-     let &preExp = buffer "" /*BUFD*/
+     let &varDecls = buffer "" /*BUFD*/
+    
  let Amatrix=
     (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+      let &preExp = buffer "" /*BUFD*/
       let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
       '<%preExp%>(*__A)(<%row%>+1,<%col%>+1)=<%expPart%>;'
   ;separator="\n")
 
 
- let bvector =  (beqs |> exp hasindex i0 fromindex 1 =>
-
+let bvector =  (beqs |> exp hasindex i0 fromindex 1=>
+     let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
      '<%preExp%>__b(<%i0%>)=<%expPart%>;'
   ;separator="\n")
-
  <<
      <%varDecls%>
       <%Amatrix%>
@@ -7592,6 +7592,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     void <%lastIdentOfPathFromSimCode(simCode)%><%classnameext%>::<%method%>_<%ix_str%>()
     {
       <%varDeclsLocal%>
+     
       <%if(enableMeasureTime) then measureTimeStartVar else ''%>
       <%body%>
       <%if(enableMeasureTime) then measureTimeEndVar else ''%>
@@ -8428,8 +8429,11 @@ case SES_SIMPLE_ASSIGN(__) then
   >>
   else
   <<
+ 
   <%preExp%>
+ 
   <%cref1(cref, simCode, context, varDecls,useFlatArrayNotation)%> = <%expPart%>;
+ 
   >>
  end match
 end match
@@ -8992,11 +8996,12 @@ match exp
 case ARRAY(array=_::_, ty = arraytype) then
   let arrayTypeStr = expTypeArray(ty)
   let ArrayType = expTypeArrayforDim(ty)
-  let &tmpdecl = buffer "" /*BUFD*/
-  let arrayVar = tempDecl(arrayTypeStr, &tmpdecl /*BUFD*/)
+ // let &tmpdecl = buffer "" /*BUFD*/
+  let &tmpVar = buffer ""
+  let arrayVar = tempDecl(arrayTypeStr, &tmpVar /*BUFD*/)
   // let scalarPrefix = if scalar then "scalar_" else ""
   //let scalarRef = if scalar then "&" else ""
-  let &tmpVar = buffer ""
+
 
   let params = if scalar then (array |> e =>
     '<%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)%>';separator=", ")
@@ -9007,15 +9012,14 @@ case ARRAY(array=_::_, ty = arraytype) then
 
   // previous mulit_array
   //  let boostExtents = if scalar then '<%ArrayType%> <%arrayVar%>({<%params%>});'
-   //                   else        '<%ArrayType%> <%arrayVar%>(<%boostExtents(arraytype)%>/*,boost::fortran_storage_order()*/);'
-   let arraydefine = '<%ArrayType%> '
+  //                   else        '<%ArrayType%> <%arrayVar%>(<%boostExtents(arraytype)%>/*,boost::fortran_storage_order()*/);'
 
  /*  previous mulit_array
  let arrayassign =  if scalar then '<%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
  <%arrayVar%>.assign(<%arrayVar%>_data,<%arrayVar%>_data+<%listLength(array)%>);<%\n%>'
  */
    let arrayassign =  if scalar then '<%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
-    <%arraydefine%> <%arrayVar%>(<%arrayVar%>_data);<%\n%>'
+    <%ArrayType%> <%arrayVar%>(<%arrayVar%>_data);<%\n%>'
                       else    '<%ArrayType%> <%arrayVar%>;
                                <%arrayVar%>.setDims(<%allocateDimensions(arraytype,context)%>);
                                <%params%>'
@@ -9029,7 +9033,7 @@ case ARRAY(__) then
   let arrayTypeStr = expTypeArray(ty)
   let arrayDef = expTypeArrayforDim(ty)
   let &tmpdecl = buffer "" /*BUFD*/
-  let arrayVar = tempDecl(arrayTypeStr, &tmpdecl /*BUFD*/)
+  let arrayVar = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
   // let scalarPrefix = if scalar then "scalar_" else ""
   //let scalarRef = if scalar then "&" else ""
   let &tmpVar = buffer ""
@@ -9696,7 +9700,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     /*Function calls with array return type*/
     case exp as CALL(attr=attr as CALL_ATTR(ty=T_ARRAY(ty=ty,dims=dims))) then
 
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)%>' ;separator=", ")
+    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)%>' ;separator=",")
     let funName = '<%underscorePath(path)%>'
     let retType = '<%funName%>RetType /* undefined */'
     let retVar = tempDecl(retType, &varDecls)
@@ -10098,7 +10102,7 @@ case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
   let record_type_name = underscorePath(ClassInf.getStateName(record_state))
   let ret_type = '<%record_type_name%>RetType'
   let ret_var = tempDecl(ret_type, &varDecls)
-  let &preExp += '_functions-><%record_type_name%>(<%vars%>,<%ret_var%>);<%\n%>'
+  let &preExp += '_functions-><%record_type_name%>(<%vars%>,<%ret_var%>);<%\n%>/*testfunction*/'
   '<%ret_var%>'
 end daeExpRecordCrefRhs;
 
