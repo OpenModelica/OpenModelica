@@ -3868,7 +3868,7 @@ algorithm
       BackendDAE.ExtraInfo ei;
       BackendDAE.Jacobian jacobian;
       SimCode.BackendMapping tmpBackendMapping;
-      
+
     // EQUATIONSYSTEM: continuous system of equations
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars,
                                            orderedEqs=eqns), BackendDAE.SHARED(knownVars=knvars,
