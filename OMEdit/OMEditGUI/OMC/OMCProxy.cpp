@@ -214,7 +214,11 @@ void OMCProxy::writeCommandsMosFile(QString expression)
 {
   if (mCommandsLogFileTextStream.device())
   {
-    mCommandsLogFileTextStream << expression << ";\n";
+    if (expression.compare("quit()") == 0) {
+      mCommandsLogFileTextStream << expression << ";\n";
+    } else {
+      mCommandsLogFileTextStream << expression << "; getErrorString();\n";
+    }
     mCommandsLogFileTextStream.flush();
   }
 }
