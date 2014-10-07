@@ -926,6 +926,11 @@ constant ConfigFlag RESHUFFLE = CONFIG_FLAG(58, "reshuffle",
 constant ConfigFlag NEW_UNIT_CHECKING = CONFIG_FLAG(59,
   "newUnitChecking", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.notrans(""));
+  
+constant ConfigFlag GENERATE_DYN_OPTIMIZATION_PROBLEM = CONFIG_FLAG(60, "gDynOpt",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Generate dynamic optimization problem based on annation approach."));
+  
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -989,7 +994,8 @@ constant list<ConfigFlag> allConfigFlags = {
   INT_ENUM_CONVERSION,
   PROFILING_LEVEL,
   RESHUFFLE,
-  NEW_UNIT_CHECKING
+  NEW_UNIT_CHECKING,
+  GENERATE_DYN_OPTIMIZATION_PROBLEM
 };
 
 public function new

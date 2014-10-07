@@ -51,6 +51,7 @@ protected import BackendVariable;
 protected import ComponentReference;
 
 protected import Expression;
+protected import Flags;
 protected import List;
 protected import Util;
 
@@ -63,11 +64,12 @@ public function addOptimizationVarsEqns
   input list< .DAE.ClassAttributes> inClassAttr;
   input list< .DAE.Constraint> inConstraint;
   input BackendDAE.Variables knvars;
+  input Boolean inDynOptimization;
   output BackendDAE.Variables outVars;
   output list<BackendDAE.Equation>  outEqns;
   output list< .DAE.ClassAttributes> outClassAttr;
 algorithm
-  (outVars, outEqns, outClassAttr) := match(inVars, inEqns, inOptimicaFlag, inClassAttr, inConstraint, knvars)
+  (outVars, outEqns, outClassAttr) := match(inVars, inEqns, inOptimicaFlag, inClassAttr, inConstraint, knvars, inDynOptimization)
   local
       DAE.ComponentRef leftcref;
       list<BackendDAE.Equation> objectEqn;
@@ -79,8 +81,9 @@ algorithm
       list< .DAE.Exp> constraintLst;
       list< .DAE.Constraint> constraints;
       list<BackendDAE.Var> varlst;
+      list< .DAE.ClassAttributes> tmpClassAttr;
 
-    case (v, e, true, {DAE.OPTIMIZATION_ATTRS(objetiveE=mayer, objectiveIntegrandE=lagrange)}, _, _)
+    case (v, e, true, {DAE.OPTIMIZATION_ATTRS(objetiveE=mayer, objectiveIntegrandE=lagrange)}, _, _,_)
       equation
         inVarsAndknvars = BackendVariable.mergeVariables(inVars, knvars);
         varlst = BackendVariable.varList(inVarsAndknvars);
@@ -110,9 +113,10 @@ algorithm
 
         constraints = findFinalConstraints(varlst, {});
         (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$finalConstarintTerm", BackendDAE.OPT_FCONSTR());
-
-    then (v, e,inClassAttr);
-    case (v, e, true, _, _, _)
+        
+        Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
+    then (v, e, inClassAttr);
+    case (v, e, true, _, _, _,_)
       equation
         inVarsAndknvars = BackendVariable.mergeVariables(inVars, knvars);
         varlst = BackendVariable.varList(inVarsAndknvars);
@@ -139,8 +143,14 @@ algorithm
 
         constraints = findFinalConstraints(varlst, {});
         (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$finalConstarintTerm", BackendDAE.OPT_FCONSTR());
-
+        
+        Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
        then (v, e,{DAE.OPTIMIZATION_ATTRS(mayer1, lagrange1, NONE(), NONE())});
+    case (v, e, false, _, _, _, true)
+      equation
+        Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
+        (v, e, tmpClassAttr) =  addOptimizationVarsEqns(inVars, inEqns, true, inClassAttr, inConstraint, knvars, true);
+       then (v,e,tmpClassAttr);
     else then(inVars, inEqns, inClassAttr);
   end match;
 end addOptimizationVarsEqns;

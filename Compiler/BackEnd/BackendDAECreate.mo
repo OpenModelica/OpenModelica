@@ -122,7 +122,7 @@ algorithm
   // handle alias equations
   (vars, knvars, extVars, aliasVars, eqns, reqns, ieqns, whenclauses_1) := handleAliasEquations(aliaseqns, vars, knvars, extVars, aliasVars, eqns, reqns, ieqns, whenclauses_1);
   vars_1 := detectImplicitDiscrete(vars, knvars, eqns);
-  (vars_1, eqns, clsAttrs) := DynamicOptimization.addOptimizationVarsEqns(vars_1, eqns, Config.acceptOptimicaGrammar(), clsAttrs, constrs, knvars);
+  (vars_1, eqns, clsAttrs) := DynamicOptimization.addOptimizationVarsEqns(vars_1, eqns, Config.acceptOptimicaGrammar(), clsAttrs, constrs, knvars,Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM));
   eqnarr := BackendEquation.listEquation(eqns);
   reqnarr := BackendEquation.listEquation(reqns);
   ieqnarr := BackendEquation.listEquation(ieqns);

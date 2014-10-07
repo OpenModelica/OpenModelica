@@ -482,9 +482,10 @@ protected
   DAE.Exp startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, cflags, simflags;
   Boolean UseOtimica;
 algorithm
-  UseOtimica := Config.acceptOptimicaGrammar();
+  UseOtimica := Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM);
   GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, options, outputFormat, variableFilter, cflags, simflags) := inSimOpt;
   method := Util.if_(UseOtimica, DAE.SCONST("optimization"),method);
+  numberOfIntervals := Util.if_(UseOtimica, DAE.ICONST(50),numberOfIntervals);
   outSimOpt := GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, DAE.SCONST(inFileNamePrefix), options, outputFormat, variableFilter, cflags, simflags);
 end setFileNamePrefixInSimulationOptions;
 
@@ -1605,8 +1606,9 @@ algorithm
 
         System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
 
-        b = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
-        Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
+        Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION,true);
+        Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
+        Flags.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
 
         (cache,st,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
         cit = winCitation();
@@ -1627,8 +1629,6 @@ algorithm
         timeSimulation = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
         timeTotal = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
         (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file,logFile);
-        //reset config flag
-        Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, b);
       then
         (cache,simValue,newst);
 
