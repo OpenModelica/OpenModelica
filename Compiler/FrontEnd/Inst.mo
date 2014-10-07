@@ -2415,12 +2415,17 @@ algorithm
         (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
         // print("mods: " +& Absyn.pathString(cn) +& " " +& Mod.printModStr(mods_1) +& "\n");
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
+
+        //print("DEF:--->" +& FGraph.printGraphPathStr(env) +& " = " +& Absyn.pathString(cn) +& " mods: " +& Mod.printModStr(mods_1) +& "\n");
+        //System.startTimer();
         // use instExtends for derived with no array dimensions and no modification (given via the mods_1)
         (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) =
         instClassdef2(cache, env, ih, store, mods_1, pre, ci_state, className,
            SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},{},{},NONE()),
            re, vis, partialPrefix, encapsulatedPrefix, inst_dims, impl,
            callscope, graph, inSets, instSingleCref,comment,info,stopInst);
+        //System.stopTimer();
+        //print("DEF:<---" +& FGraph.printGraphPathStr(env) +& " took: " +& realString(System.getTimerIntervalTime()) +& "\n");
         oDA = SCode.mergeAttributes(DA,oDA);
       then
         (cache,env,ih,store,dae,csets,ci_state,vars,bc,oDA,eqConstraint,graph);
@@ -3090,10 +3095,14 @@ algorithm
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
 
         // use instExtends for derived with no array dimensions and no modification (given via the mods_1)
+        //print("DEP:>>>" +& FGraph.printGraphPathStr(env) +& " = " +& Absyn.pathString(cn) +& " mods: " +& Mod.printModStr(mods_1) +& "\n");
+        //System.startTimer();
         (cache, env, ih, ci_state,vars) =
         partialInstClassdef(cache, env, ih, mods_1, pre, ci_state, parentClass,
            SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},{},{},NONE()),
            vis, inst_dims, numIter);
+        //System.stopTimer();
+        //print("DEP:<<<" +& FGraph.printGraphPathStr(env) +& " took: " +& realString(System.getTimerIntervalTime()) +& "\n");
       then
         (cache, env, ih, ci_state, vars);
 

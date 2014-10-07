@@ -652,6 +652,8 @@ algorithm
     // First look for cached version
     case (cache) equation
       graph = FCore.getCachedInitialGraph(cache);
+      // we have references in the graph so we need to clone it before giving it away
+      graph = FGraph.clone(graph);
     then (cache,graph);
 
     // then look in the global roots[builtinEnvIndex]
@@ -671,10 +673,6 @@ algorithm
         graph = FGraphBuildEnv.mkCompNode(timeComp, FGraph.top(graph), FCore.BUILTIN(), graph);
         graph = FGraph.updateComp(graph, timeVar, FCore.VAR_UNTYPED(), FGraph.empty());
 
-        graph = initialGraphOptimica(graph);
-
-        graph = initialGraphMetaModelica(graph);
-
         graph = FGraphBuildEnv.mkTypeNode(
                  {anyNonExpandableConnector2int,
                   anyExpandableConnector2int},
@@ -693,6 +691,11 @@ algorithm
         (_, initialProgram) = getInitialFunctions();
         // add the ModelicaBuiltin/MetaModelicaBuiltin classes in the initial graph
         graph = FGraphBuildEnv.mkProgramGraph(initialProgram, FCore.BUILTIN(), graph);
+
+        graph = initialGraphOptimica(graph);
+        graph = initialGraphMetaModelica(graph);
+
+        graph = FGraph.clone(graph); // we have references in the graph so we need to clone it before storing
 
         cache = FCore.setCachedInitialGraph(cache,graph);
         _ = getSetInitialGraph(SOME(graph));
@@ -724,8 +727,10 @@ algorithm
     case (NONE())
       equation
         assocLst = getGlobalRoot(Global.builtinGraphIndex);
+        // we have references in the graph so we need to clone it before giving it away
+        graph = FGraph.clone(Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst));
       then
-        Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst);
+        graph;
 
     case (SOME(graph))
       equation
