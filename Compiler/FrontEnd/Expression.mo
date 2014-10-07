@@ -3239,6 +3239,13 @@ algorithm
     case (_,DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=e))
       then
         expSub(e1,e);
+    /* -b + a = a - b */
+    case (DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=e),_)
+      then
+        expSub(e2,e);
+    case (DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=e),_)
+      then
+        expSub(e2,e);
     case (_,_)
       equation
         tp = typeof(e1);
@@ -3366,7 +3373,7 @@ algorithm
       equation
         true = isZero(e1);
       then negate(e2);
-    else expAdd(e1,negate(e2));
+    else expSub(e1,e2);
   end matchcontinue;
 end makeDifference;
 
@@ -3488,21 +3495,13 @@ algorithm
       equation
         true = isZero(e2);
       then e2;
-    case(DAE.RCONST(r1),_)
-      equation
-        true = realEq(r1, 1.0);
+    case(DAE.RCONST(real = 1.0),_)
       then e2;
-    case(_,DAE.RCONST(r2))
-      equation
-        true = realEq(r2, 1.0);
+    case(_,DAE.RCONST(real = 1.0))
       then e1;
-    case(DAE.ICONST(i1),_)
-      equation
-        true = intEq(i1, 1);
+    case(DAE.ICONST(1),_)
       then e2;
-    case(_,DAE.ICONST(i2))
-      equation
-        true = intEq(i2, 1);
+    case(_,DAE.ICONST(1))
       then e1;
     case(DAE.RCONST(r1),DAE.RCONST(r2))
       equation
@@ -3605,7 +3604,7 @@ algorithm
     e = expPow(e,DAE.RCONST(r2));
   then e;
 
-  // e ^ -r1 / 1/(e^r1)
+  // e ^ -r1 = 1/(e^r1)
   case (_, DAE.RCONST(real = r1)) equation
     true = realLt(r1, 0.0);
     r1 = realNeg(r1);
@@ -3805,6 +3804,7 @@ algorithm
   res := matchcontinue(e1,e2)
     case(_,_) equation
       true = isZero(e1);
+      false = isZero(e2);
     then e1;
     case(_,_) equation
       true = isOne(e2);
