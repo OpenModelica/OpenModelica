@@ -2084,8 +2084,8 @@ algorithm
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
 
     case (BackendDAE.RESIDUAL_EQUATION(exp=e2, source=source, attr=eqAttr), _) equation
-      e1 = Expression.makeConstOne(Expression.typeof(e2));
-      (res, _) = ExpressionSolve.solve(e1, e2, crefExp);
+      e1 = Expression.makeConstZero(Expression.typeof(e2));
+      (res, _) = ExpressionSolve.solve(e2, e1, crefExp);
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
 
     case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=eqAttr), _) equation
