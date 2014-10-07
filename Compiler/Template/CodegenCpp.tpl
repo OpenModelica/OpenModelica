@@ -3989,7 +3989,7 @@ case SES_NONLINEAR(__) then
    >>
  case SES_LINEAR(__)then
      let &varDecls = buffer "" /*BUFD*/
-    
+
  let Amatrix=
     (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
       let &preExp = buffer "" /*BUFD*/
@@ -7592,7 +7592,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     void <%lastIdentOfPathFromSimCode(simCode)%><%classnameext%>::<%method%>_<%ix_str%>()
     {
       <%varDeclsLocal%>
-     
+
       <%if(enableMeasureTime) then measureTimeStartVar else ''%>
       <%body%>
       <%if(enableMeasureTime) then measureTimeEndVar else ''%>
@@ -8429,11 +8429,11 @@ case SES_SIMPLE_ASSIGN(__) then
   >>
   else
   <<
- 
+
   <%preExp%>
- 
+
   <%cref1(cref, simCode, context, varDecls,useFlatArrayNotation)%> = <%expPart%>;
- 
+
   >>
  end match
 end match
