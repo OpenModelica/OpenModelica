@@ -4,7 +4,7 @@
 #include <Core/SimController/ISimData.h>
 #include <Core/System/IMixedSystem.h>
 #include <Core/System/IAlgLoopSolverFactory.h>
-#include <Core/SimulationSettings//IGlobalSettings.h>
+#include <Core/SimulationSettings/IGlobalSettings.h>
 #include <boost/weak_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -27,7 +27,7 @@ struct SimSettings
     OutputFormat outputFormat;
     unsigned int timeOut;
     OutputPointType outputPointType;
-
+    LogType logType;
 };
 
 /*SimController to start and stop the simulation*/

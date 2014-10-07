@@ -137,6 +137,14 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
           throw std::invalid_argument("results-filename  is not set");
      }
 
+     string logType_str;
+     LogType logType;
+     if (vm.count("log-type"))
+     {
+         logType_str = vm["log-type"].as<string>();
+         logType = logTypeMap[logType_str];
+     }
+
      /*fs::path results_file_path = fs::path( resultsfilename) ;
     if(!(results_file_path.extension().string() == ".csv"))
     {
@@ -153,7 +161,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
 
 
 
-     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,outputFomat,time_out,outputPointType};
+     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,outputFomat,time_out,outputPointType,logType};
 
 
      _library_path = libraries_path;

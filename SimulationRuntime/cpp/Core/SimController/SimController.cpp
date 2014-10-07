@@ -86,6 +86,7 @@ void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem,SimSetting
     global_settings->setSelectedNonLinSolver(simsettings.nonlinear_solver_name);
     global_settings->setSelectedSolver(simsettings.solver_name);
     global_settings->setOutputFormat(simsettings.outputFormat);
+    global_settings->setLogType(simsettings.logType);
 
     global_settings->setAlarmTime(simsettings.timeOut);
 

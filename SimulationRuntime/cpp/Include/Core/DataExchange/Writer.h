@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef USE_PARALLEL_OUTPUT
+#if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
 #include <boost/lockfree/queue.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
@@ -20,11 +20,11 @@ class Writer
     Writer()
             : _writeContainers()
             ,_freeContainers()
-#ifdef USE_PARALLEL_OUTPUT
-            ,_freeContainerMutex(0)
-            ,_writeContainerMutex(0)
+#if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
+            ,_freeContainerMutex(1)
+            ,_writeContainerMutex(1)
             ,_nempty(CONTAINER_COUNT)
-            ,_writerThread(&Writer::writeThread, this);
+            ,_writerThread(&Writer::writeThread, this)
             ,_threadWorkDone(false)
 #endif
     {
@@ -37,18 +37,14 @@ class Writer
             get < 1 > (*tpl) = dv;
             _freeContainers.push_back(tpl);
         }
-
-#ifdef USE_PARALLEL_OUTPUT
-        _writerThread->start();
-#endif
     }
 
     virtual ~Writer()
     {
-#ifdef USE_PARALLEL_OUTPUT
+#if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
         //wait until the writer-thread has written all results
         _threadWorkDone = true;
-        _writeThread.join()
+        _writerThread.join();
 #endif
     }
 
@@ -57,50 +53,48 @@ class Writer
     boost::tuple<value_type_v*, value_type_dv*, double>* getFreeContainer()
     {
         boost::tuple<value_type_v*, value_type_dv*, double>* container = NULL;
-#ifdef USE_PARALLEL_OUTPUT
+#if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
         _nempty.wait();
         _freeContainerMutex.wait();
 #endif
         container = _freeContainers.front();
         _freeContainers.pop_front();
-#ifdef USE_PARALLEL_OUTPUT
+#if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
         _freeContainerMutex.post();
 #endif
         return container;
-    }
-    ;
+    };
 
     void addContainerToWriteQueue(boost::tuple<value_type_v*, value_type_dv*, double> *container)
     {
-#ifdef USE_PARALLEL_OUTPUT
+#if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
         _writeContainerMutex.wait();
 #endif
         _writeContainers.push_back(container);
-#ifdef USE_PARALLEL_OUTPUT
+#if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
         _writeContainerMutex.post();
 #else
         writeContainer();
 #endif
-    }
-    ;
+    };
 
  protected:
     void writeContainer()
     {
         boost::tuple<value_type_v*, value_type_dv*, double>* container = NULL;
 
-#ifdef USE_PARALLEL_OUTPUT
+#if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
         _writeContainerMutex.wait();
 #endif
         if (!_writeContainers.empty())
             container = _writeContainers.front();
-#ifdef USE_PARALLEL_OUTPUT
+#if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
         _writeContainerMutex.post();
 #endif
 
         if (container == NULL)
         {
-#ifdef USE_PARALLEL_OUTPUT
+#if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
             usleep(1);
 #endif
             return;
@@ -112,19 +106,19 @@ class Writer
 
         write(*v_list, *v2_list, time);
 
-#ifdef USE_PARALLEL_OUTPUT
+#if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
         _writeContainerMutex.wait();
 #endif
         _writeContainers.pop_front();
-#ifdef USE_PARALLEL_OUTPUT
+#if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
         _writeContainerMutex.post();
 #endif
 
-#ifdef USE_PARALLEL_OUTPUT
+#if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
         _freeContainerMutex.wait();
 #endif
         _freeContainers.push_back(container);
-#ifdef USE_PARALLEL_OUTPUT
+#if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
         _freeContainerMutex.post();
         _nempty.post();
 #endif
@@ -132,7 +126,7 @@ class Writer
 
     void writeThread()
     {
-#ifdef USE_PARALLEL_OUTPUT
+#if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
         while(!_threadWorkDone)
         {
             writeContainer();
@@ -145,7 +139,7 @@ class Writer
 
     std::deque<boost::tuple<value_type_v*, value_type_dv*, double>*> _writeContainers;
     std::deque<boost::tuple<value_type_v*, value_type_dv*, double>*> _freeContainers;
-#ifdef USE_PARALLEL_OUTPUT
+#if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
     boost::interprocess::interprocess_semaphore _freeContainerMutex;
     boost::interprocess::interprocess_semaphore _writeContainerMutex;
     boost::interprocess::interprocess_semaphore _nempty;
