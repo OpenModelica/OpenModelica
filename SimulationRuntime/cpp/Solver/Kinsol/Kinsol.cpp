@@ -24,12 +24,12 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
     , _currentIterateNorm (100.0)
     , _firstCall    (true)
     , _iterationStatus  (CONTINUE)
-	,_Kin_y(NULL)
-	,_Kin_y0(NULL)
-	,_Kin_yScale(NULL)
-	,_Kin_fScale(NULL)
-	,_kinMem(NULL)
-		
+  ,_Kin_y(NULL)
+  ,_Kin_y0(NULL)
+  ,_Kin_yScale(NULL)
+  ,_Kin_fScale(NULL)
+  ,_kinMem(NULL)
+
 {
     _data = ((void*)this);
 }
@@ -48,15 +48,15 @@ Kinsol::~Kinsol()
   if(_zeroVec)    delete []    _zeroVec;
   if(_currentIterate)    delete []    _currentIterate;
     if(_Kin_y)
-	  N_VDestroy_Serial(_Kin_y);
+    N_VDestroy_Serial(_Kin_y);
     if(_Kin_y0)
-		N_VDestroy_Serial(_Kin_y0);
-	if(_Kin_yScale)
-		N_VDestroy_Serial(_Kin_yScale);
+    N_VDestroy_Serial(_Kin_y0);
+  if(_Kin_yScale)
+    N_VDestroy_Serial(_Kin_yScale);
     if(_Kin_fScale)
-		N_VDestroy_Serial(_Kin_fScale);
-	if(_kinMem)
-		KINFree(&_kinMem);
+    N_VDestroy_Serial(_Kin_fScale);
+  if(_kinMem)
+    KINFree(&_kinMem);
 }
 
 void Kinsol::initialize()
