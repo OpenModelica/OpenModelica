@@ -371,7 +371,7 @@ algorithm
 
   // check if tearing makes sense
   tornsize := listLength(tvars);
-  true := intLt(tornsize,size-1);
+  true := intLt(tornsize, size);
 
   // create incidence matrices w/o tvar and residual
   m1 := arrayCreate(size,{});
@@ -1688,9 +1688,11 @@ algorithm
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of TearingSystemCellier\n\n");
   (OutTVars, ass1, ass2, order) := TearingSystemCellier(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,orderIn,mapEqnIncRow,mapIncRowEqn);
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of TearingSystemCellier\n" +& BORDER +& "\n\n");
+
   // check if tearing makes sense
   tornsize := listLength(OutTVars);
-  true := intLt(tornsize,size-1);
+  true := intLt(tornsize, size);
+
   // Unassigned equations are residual equations
   ((_,residual)) := List.fold(ass2,getUnassigned,(1,{}));
   residual_coll := List.map1r(residual,arrayGet,mapIncRowEqn);
