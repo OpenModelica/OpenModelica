@@ -254,22 +254,6 @@ algorithm
       (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType);
     then (comp1, true);
 
-    // only continues part of a mixed system
-    case ((BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1, disc_eqns=eindex, disc_vars=vindx)), _, _, _) equation
-      Debug.fcall(Flags.TEARING_DUMP, print, "\nCase mixed in traverseComponents\nUse '+d=tearingdumpV' for more details\n\n");
-      false = Flags.isSet(Flags.MIXED_TEARING);
-      Debug.fcall(Flags.TEARING_DUMP, print, "Flag 'MixedTearing' is not set\n(disabled by user)\n\n");
-      (comp1, true) = traverseComponents1(comp1, isyst, ishared, inMethod);
-    then (BackendDAE.MIXEDEQUATIONSYSTEM(comp1, eindex, vindx), true);
-
-    // mixed and continues part
-    case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1, disc_eqns=eindex, disc_vars=vindx)), _, _, _) equation
-      true = Flags.isSet(Flags.MIXED_TEARING);
-      Debug.fcall(Flags.TEARING_DUMP, print, "Flag 'MixedTearing' is set\n(enabled by default)\n\n");
-      (eindex, vindx) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
-      (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, NONE(), BackendDAE.JAC_NO_ANALYTIC());
-    then (comp1, true);
-
     // no component for tearing
     else (inComp, false);
   end matchcontinue;

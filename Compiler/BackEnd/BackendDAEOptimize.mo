@@ -1766,10 +1766,6 @@ algorithm
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, vars);
         (syst,shared) = solveLinearSystem(syst,shared,eqn_lst,eindex,var_lst,vindx,jac);
       then (syst,shared,true);
-    case (syst,shared,(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1)))
-      equation
-        (syst,shared,b) = constantLinearSystemWork(syst,shared,comp1);
-      then (syst,shared,b);
     else (isyst,ishared,false);
   end matchcontinue;
 end constantLinearSystemWork;
@@ -2267,36 +2263,6 @@ algorithm
         inputVarsLst = List.map(otherEqnVarTpl,Util.tuple22);
         vars1 = List.flatten(inputVarsLst);
         eqns1 = List.map(otherEqnVarTpl,Util.tuple21);
-        eqns = listAppend(eqns, eqns1);
-        solvedVars = listAppend(vars, vars1);
-
-        inputVarsLst = List.map1(eqns, Util.arrayGetIndexFirst, inMatrix);
-        inputVars = List.flatten(inputVarsLst);
-        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
-
-        getSparsePattern2(inputVars, solvedVars, eqns, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
-
-        result = getSparsePattern(rest, result,  invarSparse, inMark, inUsed, inmarkValue+1, inMatrix, inMatrixT);
-      then result;
-    case(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=eqns1,vars=vars1), disc_eqns=eqns,disc_vars=vars)::rest,result,_,_,_,_,_,_)
-      equation
-        eqns = listAppend(eqns, eqns1);
-        solvedVars = listAppend(vars, vars1);
-        inputVarsLst = List.map1(eqns, Util.arrayGetIndexFirst, inMatrix);
-        inputVars = List.flatten(inputVarsLst);
-        inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
-
-        getSparsePattern2(inputVars, solvedVars, eqns, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
-
-        result = getSparsePattern(rest, result,  invarSparse, inMark, inUsed, inmarkValue+1, inMatrix, inMatrixT);
-      then result;
-    case(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.TORNSYSTEM(residualequations=eqns1,tearingvars=vars1,otherEqnVarTpl=otherEqnVarTpl), disc_eqns=eqns,disc_vars=vars)::rest,result,_,_,_,_,_,_)
-      equation
-        inputVarsLst = List.map(otherEqnVarTpl,Util.tuple22);
-        vars2 = List.flatten(inputVarsLst);
-        eqns2 = List.map(otherEqnVarTpl,Util.tuple21);
-        eqns1 = listAppend(eqns1, eqns2);
-        vars1 = listAppend(vars1, vars2);
         eqns = listAppend(eqns, eqns1);
         solvedVars = listAppend(vars, vars1);
 
@@ -4676,13 +4642,6 @@ algorithm
         (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);
-    case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::rest,_,_,_)
-      equation
-        tpl = countOperationstraverseComps({comp1},isyst,ishared,inTpl);
-        (eqnlst,_,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.getEqnsFromEqSystem(isyst), BackendVariable.daeVars(isyst));
-        tpl = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.listEquation(eqnlst),countOperationsExp,tpl);
-      then
-        countOperationstraverseComps(rest,isyst,ishared,tpl);
     case ((comp as BackendDAE.EQUATIONSYSTEM(jac=jac,jacType=BackendDAE.JAC_LINEAR()))::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
       equation
         (eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.getEqnsFromEqSystem(isyst), BackendVariable.daeVars(isyst));
@@ -7484,14 +7443,6 @@ algorithm
 
     case ({}, _)
     then {};
-
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(disc_vars=vlst)::rest, _) equation
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
-      false = List.isEmpty(varlst);
-
-      warning = "Iteration variables of mixed equation system:\n" +& warnAboutVars(varlst);
-      warningList = listAllIterationVariables2(rest, inVars);
-    then warning::warningList;
 
     case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_NONLINEAR())::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);

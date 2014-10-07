@@ -47,7 +47,6 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import ComponentReference;
 protected import DAEDump;
-protected import DAEUtil;
 protected import Debug;
 protected import Expression;
 protected import ExpressionSolve;
@@ -639,13 +638,6 @@ algorithm
        descLst = desc::iEqDesc;
      then
        descLst;
-  case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns = _), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs),_)
-     equation
-       _ = BackendEquation.equationList(orderedEqs);
-       desc = ("MixedEquation System");
-       descLst = desc::iEqDesc;
-     then
-       descLst;
    case(BackendDAE.SINGLEARRAY(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2=_)),_)
      equation
       //get the equation string
@@ -971,11 +963,6 @@ algorithm
         tmpVars = getUnsolvedVarsBySCC0(component,incidenceMatrix,orderedVars,{varIdx},eventVarLst);
       then
         tmpVars;
-    case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_vars=varIdc),_,_,_)
-      equation
-        tmpVars = getUnsolvedVarsBySCC0(component,incidenceMatrix,orderedVars,varIdc,eventVarLst);
-      then
-        tmpVars;
     case(BackendDAE.EQUATIONSYSTEM(vars=varIdc),_,_,_)
       equation
         tmpVars = getUnsolvedVarsBySCC0(component,incidenceMatrix,orderedVars,varIdc,eventVarLst);
@@ -1186,15 +1173,6 @@ algorithm
         eqnVars = List.flatten(List.map1(eqns, getVarsByEqn, incidenceMatrix));
       then
         eqnVars;
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns=eqns, condSystem = condSys),_)
-      equation
-        //the when condition is a predecessor of the equation system. the affected equation is in the condSys
-        eqnVars = List.flatten(List.map1(eqns, getVarsByEqn, incidenceMatrix));
-        eqnVarsCond = getVarsBySCC(condSys,incidenceMatrix);
-        eqnVars = listAppend(eqnVars,eqnVarsCond);
-        eqnVars = List.unique(eqnVars);
-      then
-        eqnVars;
     case (BackendDAE.SINGLEARRAY(eqn=eqnIdx),_)
       equation
         eqnVars = getVarsByEqn(eqnIdx,incidenceMatrix);
@@ -1357,14 +1335,6 @@ algorithm
       equation
         tmpvarCompMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
         tmpeqCompMapping = List.fold3(eqns,updateMappingTuple,iSccIdx,iEqSysIdx,iEqOffset,eqCompMapping);
-      then
-        iSccIdx+1;
-    case(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem = condSys, disc_vars = compVarIdc, disc_eqns = eqns),_,_,_,(iVarOffset,iEqOffset),_)
-      equation
-        tmpvarCompMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
-        tmpeqCompMapping = List.fold3(eqns,updateMappingTuple,iSccIdx,iEqSysIdx,iEqOffset,eqCompMapping);
-        //gets the whole equationsystem (necessary for the adjacencyList)
-        _ = List.fold4({condSys}, getVarEqCompMapping0, tmpvarCompMapping,tmpeqCompMapping, iEqSysIdx, iVarEqOffset, iSccIdx);
       then
         iSccIdx+1;
     case(BackendDAE.SINGLEWHENEQUATION(vars = compVarIdc,eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
@@ -2413,13 +2383,6 @@ algorithm
     case(BackendDAE.EQUATIONSYSTEM(vars=vars,eqns=eqns),_)
       equation
         //print("Vars of single equation system: " +& stringDelimitList(List.map(vars, intString), ",") +& "\n");
-        backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
-        solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
-        eqn = List.first(eqns);
-      then (solvesDiscreteValue,eqn);
-    case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_vars=vars,disc_eqns=eqns),_)
-      equation
-        //print("Vars of mixed equation system (" +& intString(List.first(eqns)) +& "):" +& stringDelimitList(List.map(vars, intString), ",") +& "\n");
         backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
         solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
         eqn = List.first(eqns);

@@ -52,7 +52,6 @@ public import BackendDAE;
 public import DAE;
 public import FCore;
 
-protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
@@ -437,16 +436,6 @@ algorithm
       equation
         eqn = BackendEquation.equationNth1(iEqns, e);
         arg = inFunc({eqn}, inTypeA);
-      then
-        traverseComponents(rest, iEqns, inFunc, arg);
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp, disc_eqns=elst)::rest, _, _, _)
-      equation
-        // collect alle equations
-        eqnlst = BackendEquation.getEqns(elst, iEqns);
-        (elst, _) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
-        eqnlst1 = BackendEquation.getEqns(elst, iEqns);
-        eqnlst = listAppend(eqnlst, eqnlst1);
-        arg = inFunc(eqnlst, inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);
     case (BackendDAE.EQUATIONSYSTEM(eqns=elst)::rest, _, _, _)

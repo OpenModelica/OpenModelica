@@ -7413,11 +7413,6 @@ algorithm
         arg = traverseBackendDAEExps(bdae, inFunc, inTypeA);
       then
         traverseStrongComponentsJacobiansExp(rest, inFunc, arg);
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp)::rest, _, _)
-      equation
-         arg = traverseStrongComponentsJacobiansExp({comp}, inFunc, inTypeA);
-      then
-        traverseStrongComponentsJacobiansExp(rest, inFunc, arg);
     case (_::rest, _, _) then
         traverseStrongComponentsJacobiansExp(rest, inFunc, inTypeA);
   end matchcontinue;

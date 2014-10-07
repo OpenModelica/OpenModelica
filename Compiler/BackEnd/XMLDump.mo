@@ -1206,15 +1206,6 @@ algorithm
         result = getOrderedEqs2(rest,eqns,vars,result);
       then
         result;
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=elst,disc_vars=vlst)::rest,_,_,_)
-      equation
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        eqnlst = BackendEquation.getEqns(elst,eqns);
-        result = listAppend(inAccum,{(eqnlst,varlst)});
-        result = getOrderedEqs2({comp},eqns,vars,result);
-        result = getOrderedEqs2(rest,eqns,vars,result);
-      then
-        result;
     case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst)::rest,_,_,_)
       equation
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);

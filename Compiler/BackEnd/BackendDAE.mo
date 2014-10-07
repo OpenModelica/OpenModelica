@@ -392,12 +392,6 @@ uniontype StrongComponent
     JacobianType jacType;
   end EQUATIONSYSTEM;
 
-  record MIXEDEQUATIONSYSTEM
-    StrongComponent condSystem;
-    list<Integer> disc_eqns;
-    list<Integer> disc_vars;
-  end MIXEDEQUATIONSYSTEM;
-
   record SINGLEARRAY
     Integer eqn;
     list<Integer> vars "be careful with states, this are solved for der(x)";

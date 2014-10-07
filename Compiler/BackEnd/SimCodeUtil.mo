@@ -3868,34 +3868,7 @@ algorithm
       BackendDAE.ExtraInfo ei;
       BackendDAE.Jacobian jacobian;
       SimCode.BackendMapping tmpBackendMapping;
-
-    // MIXEDEQUATIONSYSTEM: mixed system of equations, continuous part only
-    case (false, _, syst, shared, BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1), _, _, _, _, _) equation
-      Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem create mixed system continuous part.");
-      (_, noDiscequations_, uniqueEqIndex, tempvars) = createEquations(true, false, false, skipDiscInAlgorithm, syst, shared, {comp1}, iuniqueEqIndex, itempvars);
-      tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
-      tmpBackendMapping = iBackendMapping;
-    then ({}, noDiscequations_, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpBackendMapping);
-
-    // MIXEDEQUATIONSYSTEM: mixed system of equations, both continous and discrete eqns
-    case (true, _, syst as BackendDAE.EQSYSTEM(orderedVars=vars,
-                                                      orderedEqs=eqns), shared as BackendDAE.SHARED(knownVars=knvars), BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,
-                                                                                                                                                        disc_eqns=ieqns,
-                                                                                                                                                        disc_vars=ivars), _, _, _, _, _) equation
-      Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem create mixed system.");
-      // print("\ncreateOdeSystem -> Mixed: cont. and discrete\n");
-      // BackendDump.printEquations(block_, dlow);
-      disc_eqn = BackendEquation.getEqns(ieqns, eqns);
-      disc_var = List.map1r(ivars, BackendVariable.getVarAt, vars);
-      (_, {equation_}, uniqueEqIndex, tempvars) = createEquations(true, false, false, skipDiscInAlgorithm, syst, shared, {comp1}, iuniqueEqIndex, itempvars);
-      simVarsDisc = List.map2(disc_var, dlowvarToSimvar, NONE(), knvars);
-      uniqueEqIndexMapping = uniqueEqIndex;
-      (discEqs,uniqueEqIndex) = extractDiscEqs(disc_eqn, disc_var, uniqueEqIndex);
-      tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndexMapping - 1), appendSccIdx, isccIndex, ieqSccMapping);
-      // was madness
-      tmpBackendMapping = iBackendMapping;
-    then ({SimCode.SES_MIXED(uniqueEqIndex, equation_, simVarsDisc, discEqs, 0)}, {equation_}, uniqueEqIndex+1, tempvars, tmpEqSccMapping, tmpBackendMapping);
-
+      
     // EQUATIONSYSTEM: continuous system of equations
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars,
                                            orderedEqs=eqns), BackendDAE.SHARED(knownVars=knvars,

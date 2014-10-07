@@ -402,12 +402,6 @@ algorithm
         (syst,shared,_) = relaxSystem1(syst,shared,comps);
       then
         (syst,shared,true);
-    case (_,_,(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps)
-      equation
-        (syst,shared,b) = relaxSystem1(isyst,ishared,{comp1});
-        (syst,shared,b1) = relaxSystem1(syst,shared,comps);
-      then
-        (syst,shared,b1 or b);
     case (_,_,_::comps)
       equation
         (syst,shared,b) = relaxSystem1(isyst,ishared,comps);
