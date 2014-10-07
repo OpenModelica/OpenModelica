@@ -174,34 +174,47 @@ QString OMCProxy::getExpression()
   return mExpression;
 }
 
-
 /*!
-  Writes the commands to the omeditcommands.log file.
+  Writes the commands to the omeditcommunication.log file.
   \param expression - the command to write
   \param commandTime - the command start time
   */
-void OMCProxy::writeCommandLog(QString expression, QTime* commandTime)
+void OMCProxy::writeCommunicationCommandLog(QString expression, QTime* commandTime)
 {
-  if (mCommandsLogFileTextStream.device())
+  if (mCommunicationLogFileTextStream.device())
   {
-    mCommandsLogFileTextStream << expression << " " << commandTime->currentTime().toString("hh:mm:ss:zzz");
-    mCommandsLogFileTextStream << "\n";
-    mCommandsLogFileTextStream.flush();
+    mCommunicationLogFileTextStream << expression << " " << commandTime->currentTime().toString("hh:mm:ss:zzz");
+    mCommunicationLogFileTextStream << "\n";
+    mCommunicationLogFileTextStream.flush();
   }
 }
 
 /*!
-  Writes the command response to the omeditcommands.log file.
+  Writes the command response to the omeditcommunication.log file.
   \param commandTime - the command end time
   */
-void OMCProxy::writeCommandResponseLog(QTime* commandTime)
+void OMCProxy::writeCommunicationResponseLog(QTime* commandTime)
+{
+  if (mCommunicationLogFileTextStream.device())
+  {
+    mCommunicationLogFileTextStream << getResult() << " " << commandTime->currentTime().toString("hh:mm:ss:zzz");
+    mCommunicationLogFileTextStream << "\n";
+    mCommunicationLogFileTextStream << "Elapsed Time :: " << QString::number((double)commandTime->elapsed() / 1000).append(" secs");
+    mCommunicationLogFileTextStream << "\n\n";
+    mCommunicationLogFileTextStream.flush();
+  }
+}
+
+/*!
+  Writes the commands to the omeditcommands.mos file.
+  \param expression - the command to write
+  \param commandTime - the command start time
+  */
+void OMCProxy::writeCommandsMosFile(QString expression)
 {
   if (mCommandsLogFileTextStream.device())
   {
-    mCommandsLogFileTextStream << getResult() << " " << commandTime->currentTime().toString("hh:mm:ss:zzz");
-    mCommandsLogFileTextStream << "\n";
-    mCommandsLogFileTextStream << "Elapsed Time :: " << QString::number((double)commandTime->elapsed() / 1000).append(" secs");
-    mCommandsLogFileTextStream << "\n\n";
+    mCommandsLogFileTextStream << expression << ";\n";
     mCommandsLogFileTextStream.flush();
   }
 }
@@ -289,11 +302,15 @@ bool OMCProxy::startServer()
 {
   /* create the tmp path */
   QString& tmpPath = OpenModelica::tempDirectory();
-  /* create a file to write OMEdit commands log */
-  mCommandsLogFile.setFileName(QString("%1omeditcommands.log").arg(tmpPath));
-  if (mCommandsLogFile.open(QIODevice::WriteOnly | QIODevice::Text))
-  {
-    mCommandsLogFileTextStream.setDevice(&mCommandsLogFile);
+  /* create a file to write OMEdit communication log */
+  mCommunicationLogFile.setFileName(QString("%1omeditcommunication.log").arg(tmpPath));
+  if (mCommunicationLogFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    mCommunicationLogFileTextStream.setDevice(&mCommunicationLogFile);
+  }
+  /* create a file to write OMEdit commands */
+  mCommandsMosFile.setFileName(QString("%1omeditcommands.mos").arg(tmpPath));
+  if (mCommandsMosFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    mCommandsLogFileTextStream.setDevice(&mCommandsMosFile);
   }
   try
   {
@@ -402,7 +419,8 @@ bool OMCProxy::startServer()
 void OMCProxy::stopServer()
 {
   sendCommand("quit()");
-  mCommandsLogFile.close();
+  mCommunicationLogFile.close();
+  mCommandsMosFile.close();
 }
 
 /*!
@@ -432,7 +450,8 @@ void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString 
       QTime commandTime;
       commandTime.start();
       QString cacheString = QString("Using the cached OMC Command :: ");
-      writeCommandLog(QString(cacheString).append(expression), &commandTime);
+      writeCommunicationCommandLog(QString(cacheString).append(expression), &commandTime);
+      writeCommandsMosFile(expression);
       logOMCMessages(QString(cacheString).append(expression));
       return;
     }
@@ -440,7 +459,8 @@ void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString 
   // write command to the commands log.
   QTime commandTime;
   commandTime.start();
-  writeCommandLog(expression, &commandTime);
+  writeCommunicationCommandLog(expression, &commandTime);
+  writeCommandsMosFile(expression);
   // Send command to server
   try
   {
@@ -461,7 +481,7 @@ void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString 
       timer.stop();
     }
     future.waitForFinished();
-    writeCommandResponseLog(&commandTime);
+    writeCommunicationResponseLog(&commandTime);
     logOMCMessages(expression);
     // cahce the OMC command
     if (cacheCommand)

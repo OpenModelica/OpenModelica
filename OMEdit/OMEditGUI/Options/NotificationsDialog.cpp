@@ -163,10 +163,7 @@ QString NotificationsDialog::getNotificationTitleString()
   */
 QString NotificationsDialog::getNotificationLabelString()
 {
-  QString tmpPath, OMCCommandsLogFilePath, OMCOutputFile, stackTraceFile;
-#ifndef WIN32
-  char *user;
-#endif
+  QString tmpPath, OMCCommunicationLogFilePath, OMCCommandsLogFilePath, OMCOutputFile, stackTraceFile;
   switch (mNotificationType)
   {
     case NotificationsDialog::QuitApplication:
@@ -185,14 +182,16 @@ QString NotificationsDialog::getNotificationLabelString()
                 "Contact us [OpenModelica@ida.liu.se] or Adeel Asghar [adeel.asghar@liu.se] with any comments, suggestions or problems.");
     case NotificationsDialog::CrashReport:
       tmpPath = OpenModelica::tempDirectory();
-      OMCCommandsLogFilePath = QString("%1omeditcommands.log").arg(tmpPath);
+      OMCCommunicationLogFilePath = QString("%1omeditcommunication.log").arg(tmpPath);
+      OMCCommandsLogFilePath = QString("%1omeditcommands.mos").arg(tmpPath);
       OMCOutputFile = QString("%1openmodelica.omc.output.%2").arg(tmpPath).arg(Helper::OMCServerName);
       stackTraceFile = QString("%1openmodelica.stacktrace.%2").arg(tmpPath).arg(Helper::OMCServerName);
       return QString(tr("Opps! Something went wrong. Click \"OK\" to send the crash report.<br /><br />")
                      .append(tr("Please attach the following files alongwith your bug description in your crash report,")).append("<br /><br />")
-                     .append("1. " + OMCCommandsLogFilePath + "<br />")
-                     .append("2. " + OMCOutputFile + "<br />")
-                     .append("3. " + stackTraceFile));
+                     .append("1. " + OMCCommunicationLogFilePath + "<br />")
+                     .append("2. " + OMCCommandsLogFilePath + "<br />")
+                     .append("3. " + OMCOutputFile + "<br />")
+                     .append("4. " + stackTraceFile));
     default:
       // should never be reached
       return "No String is defined for your notification type in NotificationsDialog::getNotificationLabelString()";
@@ -299,15 +298,17 @@ void NotificationsDialog::saveReleaseInformationNotificationSettings()
   */
 void NotificationsDialog::sendCrashReport()
 {
-  QString OMCCommandsLogFilePath, OMCOutputFile, stackTraceFile, tmpPath;
+  QString OMCCommunicationLogFilePath, OMCCommandsLogFilePath, OMCOutputFile, stackTraceFile, tmpPath;
   tmpPath = OpenModelica::tempDirectory();
-  OMCCommandsLogFilePath = QString("%1omeditcommands.log").arg(tmpPath);
+  OMCCommunicationLogFilePath = QString("%1omeditcommunication.log").arg(tmpPath);
+  OMCCommandsLogFilePath = QString("%1omeditcommands.mos").arg(tmpPath);
   OMCOutputFile = QString("%1openmodelica.omc.output.%2").arg(tmpPath).arg(Helper::OMCServerName);
   stackTraceFile = QString("%1openmodelica.stacktrace.%2").arg(tmpPath).arg(Helper::OMCServerName);
   QString body = QString("Please attach the following files alongwith your bug description in your crash report,\n\n")
-      .append("1. " + OMCCommandsLogFilePath + "\n")
-      .append("2. " + OMCOutputFile + "\n")
-      .append("3. " + stackTraceFile);
+      .append("1. " + OMCCommunicationLogFilePath + "\n")
+      .append("2. " + OMCCommandsLogFilePath + "\n")
+      .append("3. " + OMCOutputFile + "\n")
+      .append("4. " + stackTraceFile);
   QUrl mailToUrl ("mailto:openmodelicacrashreports@ida.liu.se?CC=adeel.asghar@liu.se&subject=OpenModelica Crash Report&body=" + body);
   QDesktopServices::openUrl(mailToUrl);
 }

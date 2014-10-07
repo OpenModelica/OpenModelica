@@ -73,7 +73,9 @@ private:
   QString mObjectRefFile;
   QList<QString> mCommandsList;
   int mCurrentCommandIndex;
-  QFile mCommandsLogFile;
+  QFile mCommunicationLogFile;
+  QTextStream mCommunicationLogFileTextStream;
+  QFile mCommandsMosFile;
   QTextStream mCommandsLogFileTextStream;
   MainWindow *mpMainWindow;
   int mAnnotationVersion;
@@ -89,8 +91,9 @@ public:
   void getNextCommand();
   void setExpression(QString expression);
   QString getExpression();
-  void writeCommandLog(QString expression, QTime* commandTime);
-  void writeCommandResponseLog(QTime* commandTime);
+  void writeCommunicationCommandLog(QString expression, QTime* commandTime);
+  void writeCommunicationResponseLog(QTime* commandTime);
+  void writeCommandsMosFile(QString expression);
   cachedOMCCommand getcachedOMCCommand(QString className, QString command);
   void cacheOMCCommand(QString className, QString command, QString commandResult);
   void removeCachedOMCCommand(QString className);
