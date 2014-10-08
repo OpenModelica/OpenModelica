@@ -19,7 +19,7 @@ ifneq ("$(USE_PARALLEL_OUTPUT)","true")
 	$(eval PARALLEL_OUTPUT_COMMAND="")
 endif
 	cd ./Build && echo "change to Build" && cmake $(ANALYZATION_MODE_COMMAND) $(PARALLEL_OUTPUT_COMMAND) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
-	$(MAKE) -C Build;
+	$(MAKE) -C Build VERBOSE=1; 
 
 install: runtimeCpp
 	(cd Build; $(MAKE) install)

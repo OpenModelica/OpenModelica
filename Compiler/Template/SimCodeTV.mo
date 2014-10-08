@@ -2548,6 +2548,11 @@ package Util
     input Option<Type_a> inOption;
     output Boolean out;
   end isSome;
+  
+  function stringBool
+  input String inString;
+  output Boolean outBoolean;
+  end stringBool;
 
 end Util;
 
