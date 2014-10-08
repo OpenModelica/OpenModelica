@@ -1916,5 +1916,37 @@ algorithm
   end matchcontinue;
 end getStatus;
 
+public function selectScope
+"return the environment pointed by the path if it exists, else fails"
+  input Graph inEnv;
+  input Absyn.Path inPath;
+  output Graph outEnv;
+algorithm
+  outEnv := matchcontinue(inEnv, inPath)
+    local
+      Graph env;
+      list<String> pl, el;
+      Integer lp, le, diff;
+      Scope cs;
+      Absyn.Path p;
+
+    case (_, _)
+      equation
+        p = Absyn.stripLast(inPath);
+        true = Absyn.pathPrefixOf(p, getGraphName(inEnv));
+        pl = Absyn.pathToStringList(p);
+        lp = listLength(pl);
+        cs = currentScope(inEnv);
+        le = listLength(cs) - 1;
+        diff = le - lp;
+        cs = List.stripN(cs, diff);
+        env = setScope(inEnv, cs);
+        // print("F: " +& Absyn.pathString(inPath) +& "\n"); print("E: " +& getGraphNameStr(inEnv) +& "\n"); print("R: " +& getGraphNameStr(env) +& "\n");
+      then
+        env;
+
+  end matchcontinue;
+end selectScope;
+
 end FGraph;
 

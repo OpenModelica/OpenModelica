@@ -1552,12 +1552,11 @@ algorithm
      then
        fail();
 
-    // uq paths are different!
+    // here we do some bad things which unfortunately are needed for some MSL models (MoistAir1)
+    // we search the environment in reverse instead of finding out where the first id of the path is
     case (cache,env,id,_)
       equation
-        // true = FGraph.hasModifications(env); // Absyn.pathContainsString(id, "$uq");
-        true = Absyn.pathPrefixOf(Absyn.stripLast(id), FGraph.getGraphName(env));
-        (env, _) = FGraph.stripLastScopeRef(env);
+        env = FGraph.selectScope(env, id);
         name = Absyn.pathLastIdent(id);
         (cache, res) = lookupFunctionsInEnv(cache, env, Absyn.IDENT(name), inInfo);
       then
@@ -2362,40 +2361,6 @@ algorithm
           SCode.NOMOD(),SCode.noComment,NONE(),info);
   annotation(__OpenModelica_EarlyInline = true);
 end buildRecordConstructorResultElt;
-
-public function isInBuiltinEnv
-"class lookup
- function: isInBuiltinEnv
-  Returns true if function can be found in the builtin environment."
-  input FCore.Cache inCache;
-  input Absyn.Path inPath;
-  output FCore.Cache outCache;
-  output Boolean outBoolean;
-algorithm
-  (outCache,outBoolean) := matchcontinue (inCache,inPath)
-    local
-      FCore.Graph i_env;
-      Absyn.Path path;
-      FCore.Cache cache;
-      SCode.FunctionRestriction funcRest;
-
-    case (cache,path)
-      equation
-        (cache,i_env) = Builtin.initialGraph(cache);
-        (cache,SCode.CLASS(restriction = SCode.R_FUNCTION(funcRest)),_) = lookupClass(cache,i_env,path,false);
-        // External functions without external declaration have parts. We don't consider them builtin.
-        false = SCode.isExternalFunctionRestriction(funcRest);
-      then (cache,false);
-
-    case (cache,path)
-      equation
-        (cache,i_env) = Builtin.initialGraph(cache);
-        (cache,_::_) = lookupFunctionsInEnv2(cache,i_env,path,true,Absyn.dummyInfo);
-      then
-        (cache,true);
-    case (cache,_) then (cache,false);
-  end matchcontinue;
-end isInBuiltinEnv;
 
 protected function lookupClassInEnv
  "Helper function to lookupClass2. Searches the environment for the class.
