@@ -9038,7 +9038,7 @@ case ARRAY(__) then
   let arrayTypeStr = expTypeArray(ty)
   let arrayDef = expTypeArrayforDim(ty)
   let &tmpdecl = buffer "" /*BUFD*/
-  let arrayVar = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
+  let arrayVar = tempDecl(arrayTypeStr, &tmpdecl /*BUFD*/)
   // let scalarPrefix = if scalar then "scalar_" else ""
   //let scalarRef = if scalar then "&" else ""
   let &tmpVar = buffer ""
