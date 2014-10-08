@@ -468,7 +468,7 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
                 >>
             case ("mpi") then
                 <<
-                //MFlehmig: Initialize MPI related stuff 
+                //MFlehmig: Initialize MPI related stuff
                 >>
             else
                 let threadLocksInit = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => initializeLockByLockName(i0, "th_lock", type); separator="\n"
@@ -497,11 +497,11 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match type
-    case "mpi" then 
+    case "mpi" then
       <<
       //MF: Destruct MPI related stuff - nothing at the moment.
       >>
-    else 
+    else
       match hpcOmScheduleOpt
         case SOME(hpcOmSchedule as LEVELSCHEDULE(__)) then
           match type
@@ -924,7 +924,7 @@ template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<lis
       }
       >>
     case ("mpi") then
-      let odeEqs = arrayList(threadTasks) |> tt hasindex i0 => 
+      let odeEqs = arrayList(threadTasks) |> tt hasindex i0 =>
         function_HPCOM_Thread0(allEquationsPlusWhen, tt, i0, iType, &varDecls, simCode, useFlatArrayNotation); separator="\n"
       <<
       int world_rank;
@@ -1348,7 +1348,7 @@ end simulationMainFileAnalyzation;
 
 template MPIInMainFile(String type)
 ::=
-  match type 
+  match type
     case "mpi" then
       <<
       char** argvNotConst = const_cast<char**>(argv);
@@ -1357,7 +1357,7 @@ template MPIInMainFile(String type)
       MPI_Comm_size(MPI_COMM_WORLD, &world_size);
       MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-      std::cout << "Hello World! This is MPI process " << world_rank 
+      std::cout << "Hello World! This is MPI process " << world_rank
                 << " of " << world_size << " processes."  << endl;
       >>
     else
@@ -1376,14 +1376,14 @@ template IncludeMPIHeader()
 end IncludeMPIHeader;
 
 
-// MF: Added MPI header and MPI code ("Hello World!") to main file. 
+// MF: Added MPI header and MPI code ("Hello World!") to main file.
 template simulationMainFile(SimCode simCode)
  "Generates code for header file for simulation target."
 ::=
   let type = getConfigString(HPCOM_CODE)
   let MPICode = MPIInMainFile(type)
-  let MPIFinalize = (match type case "mpi" then 'MPI_Finalize();' else '') 
-  let MPIHeaderInclude = (match type case "mpi" then IncludeMPIHeader() else '') 
+  let MPIFinalize = (match type case "mpi" then 'MPI_Finalize();' else '')
+  let MPIHeaderInclude = (match type case "mpi" then IncludeMPIHeader() else '')
 
   match simCode
     case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
@@ -1435,8 +1435,8 @@ end simulationMainFile;
 // MF
 template MPIRunCommandInRunScript(String type, Text &getNumOfProcs, Text &executionCommand)
  "If MPI is used:
-    - Add the run execution command 'mpirun -np $NPROCESSORS', 
-    - number of MPI processors can be passed as command line argument to simulation 
+    - Add the run execution command 'mpirun -np $NPROCESSORS',
+    - number of MPI processors can be passed as command line argument to simulation
       run script."
 ::=
   match type
@@ -1451,7 +1451,7 @@ template MPIRunCommandInRunScript(String type, Text &getNumOfProcs, Text &execut
 end MPIRunCommandInRunScript;
 
 
-// MF: Added the 'getNumOfProcs' and branching of execution command in case of MPI usage. 
+// MF: Added the 'getNumOfProcs' and branching of execution command in case of MPI usage.
 template simulationMainRunScript(SimCode simCode)
  "Generates code for header file for simulation target."
 ::=
@@ -1527,8 +1527,8 @@ template simulationMakefile(String target, SimCode simCode)
   let &compileForMPI += if stringEq(type, "mpi") then "true" else "false"
 
   CodegenCpp.simulationMakefile(target, simCode, additionalLinkerFlags_GCC,
-                                additionalCFlags_MSVC, additionalCFlags_GCC, 
-                                additionalLinkerFlags_MSVC, Util.stringBool(compileForMPI)) 
+                                additionalCFlags_MSVC, additionalCFlags_GCC,
+                                additionalLinkerFlags_MSVC, Util.stringBool(compileForMPI))
 end simulationMakefile;
 
 
