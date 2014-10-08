@@ -188,7 +188,7 @@ algorithm
         Debug.fcall(Flags.HPCOM_DUMP,print,"handle linear torn systems of size: "+&intString(listLength(tvarIdcs)+listLength(otherEqnVarTpl))+&"\n");
            //print("handle tornsystem with compnumber:"+&intString(compIdx)+&"\n");
            //BackendDump.dumpEqSystem(systIn,"the original system");
-           
+
         // build the new components, the new variables and the new equations
         (varsNew,eqsNew,_,resEqs,matchingNew) = reduceLinearTornSystem2(systIn,sharedIn,tvarIdcs,resEqIdcs,otherEqnVarTpl,tornSysIdxIn);
 
@@ -324,7 +324,7 @@ algorithm
      //dumpEqLstLst(g_i_lst,"g");
 
    //  compute residualValues h_i(xt=e_i,xa_i,r_i) for r_i
-   (h_i_lst,r_i_lst) := addResidualVarToEquation(tVarRange,reqns,{},{},tornSysIdx);  
+   (h_i_lst,r_i_lst) := addResidualVarToEquation(tVarRange,reqns,{},{},tornSysIdx);
    h_i_lst := replaceVarsInResidualEquations(tVarRange,h_i_lst,replLst,{});
    (h_i_lst1,r_i_lst1,repl1) := simplifyEquations(h_i_lst,r_i_lst,repl1);
      //dumpVarLstLst(r_i_lst,"r");
@@ -341,7 +341,7 @@ algorithm
    varsNewOut := List.flatten(listAppend(listAppend(xa_i_lst1,r_i_lst1),a_i_lst1));
      //BackendDump.dumpVarList(varsNewOut,"varsNew");
      //BackendDump.dumpEquationList(eqsNewOut,"eqsNew");
-   
+
    matchingNew := buildSingleEquationSystem(compSize,eqsNewOut,varsNewOut,ishared,{});
    BackendDAE.MATCHING(ass1=ass1New, ass2=ass2New, comps=compsNew) := matchingNew;
    compsNew := List.map2(compsNew,updateIndicesInComp,listLength(varLst),listLength(eqLst));
@@ -1049,7 +1049,7 @@ algorithm
   resExp := Expression.makeCrefExp(resCRef,ty);
   resVal := BackendDAE.VAR(resCRef,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR());
   resEq := addResidualVarToEquation2(resEq,resExp);
-  
+
   // update the resEq and resVar lists
   r_i_lst := Debug.bcallret1(List.isEmpty(r_i_lst), List.create, {resVal},varInFrontList(resVal,r_i_lst));
   h_i_lst := Debug.bcallret1(List.isEmpty(h_i_lst), List.create, {resEq}, eqInFrontList(resEq,h_i_lst));
