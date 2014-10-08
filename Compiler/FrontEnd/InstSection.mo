@@ -1714,11 +1714,11 @@ protected function instArrayEquation
   input DAE.Exp rhs;
   input DAE.Type tp;
   input DAE.Const inConst;
-  input DAE.ElementSource source;
+  input DAE.ElementSource inSource;
   input SCode.Initial initial_;
   output DAE.DAElist dae;
 algorithm
-  dae := matchcontinue(lhs, rhs, tp, inConst, source, initial_)
+  dae := matchcontinue(lhs, rhs, tp, inConst, inSource, initial_)
     local
       Boolean b, b1, b2;
       DAE.Dimensions ds;
@@ -1727,24 +1727,29 @@ algorithm
       DAE.Type t;
       String lhs_str, rhs_str, eq_str;
       DAE.Element elt;
+      DAE.ElementSource source;
 
     /* Initial array equations with function calls => initial array equations */
-    case (_, _, _, _, _, SCode.INITIAL())
+    case (_, _, _, _, source, SCode.INITIAL())
       equation
         b1 = Expression.containVectorFunctioncall(lhs);
         b2 = Expression.containVectorFunctioncall(rhs);
         true = boolOr(b1, b2);
         ds = Types.getDimensions(tp);
+        elt = DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source);
+        source = DAEUtil.addSymbolicTransformationFlattenedEqs(source, elt);
       then
         DAE.DAE({DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source)});
 
     /* Arrays with function calls => array equations */
-    case (_, _, _, _, _, SCode.NON_INITIAL())
+    case (_, _, _, _, source, SCode.NON_INITIAL())
       equation
         b1 = Expression.containVectorFunctioncall(lhs);
         b2 = Expression.containVectorFunctioncall(rhs);
         true = boolOr(b1, b2);
         ds = Types.getDimensions(tp);
+        elt = DAE.ARRAY_EQUATION(ds, lhs, rhs, source);
+        source = DAEUtil.addSymbolicTransformationFlattenedEqs(source, elt);
       then
         DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)});
 
@@ -1758,7 +1763,7 @@ algorithm
         DAE.T_ARRAY(dims = rhs_dim :: _) = Expression.typeof(rhs);
         lhs_idxs = expandArrayDimension(lhs_dim, lhs);
         rhs_idxs = expandArrayDimension(rhs_dim, rhs);
-        dae = instArrayElEq(lhs, rhs, t, inConst, lhs_idxs, rhs_idxs, source, initial_);
+        dae = instArrayElEq(lhs, rhs, t, inConst, lhs_idxs, rhs_idxs, inSource, initial_);
       then
         dae;
 
@@ -1773,17 +1778,19 @@ algorithm
         DAE.T_ARRAY(dims = rhs_dim :: _) = Expression.typeof(rhs);
         lhs_idxs = expandArrayDimension(lhs_dim, lhs);
         rhs_idxs = expandArrayDimension(rhs_dim, rhs);
-        dae = instArrayElEq(lhs, rhs, t, inConst, lhs_idxs, rhs_idxs, source, initial_);
+        dae = instArrayElEq(lhs, rhs, t, inConst, lhs_idxs, rhs_idxs, inSource, initial_);
       then
         dae;
 
-    case (_, _, DAE.T_ARRAY(ty = _, dims = {dim}), _, _, _)
+    case (_, _, DAE.T_ARRAY(ty = _, dims = {dim}), _, source, _)
       equation
         true = Config.splitArrays();
         true = Expression.dimensionKnown(dim);
         true = Expression.isRange(lhs) or Expression.isRange(rhs) or Expression.isReduction(lhs) or Expression.isReduction(rhs);
         ds = Types.getDimensions(tp);
         b = SCode.isInitial(initial_);
+        elt = Util.if_(b, DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source), DAE.ARRAY_EQUATION(ds, lhs, rhs, source));
+        source = DAEUtil.addSymbolicTransformationFlattenedEqs(source, elt);
         elt = Util.if_(b, DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source), DAE.ARRAY_EQUATION(ds, lhs, rhs, source));
       then
         DAE.DAE({elt});
@@ -1801,29 +1808,33 @@ algorithm
         DAE.T_ARRAY(dims = rhs_dim :: _) = Expression.typeof(rhs);
         lhs_idxs = expandArrayDimension(lhs_dim, lhs);
         rhs_idxs = expandArrayDimension(rhs_dim, rhs);
-        dae = instArrayElEq(lhs, rhs, t, inConst, lhs_idxs, rhs_idxs, source, initial_);
+        dae = instArrayElEq(lhs, rhs, t, inConst, lhs_idxs, rhs_idxs, inSource, initial_);
       then
         dae;
 
     // Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)
-    case (_, _, DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}), _, _, SCode.INITIAL())
+    case (_, _, DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}), _, source, SCode.INITIAL())
       equation
         true = Config.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
         // generate an initial array equation of dim 1
         // Now the dimension can be made DAE.DIM_UNKNOWN(), I just don't want to break anything for now -- alleb
+        elt = DAE.INITIAL_ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source);
+        source = DAEUtil.addSymbolicTransformationFlattenedEqs(source, elt);
       then
         DAE.DAE({DAE.INITIAL_ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)});
 
     // Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)
-    case (_, _, DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}), _, _, SCode.NON_INITIAL())
+    case (_, _, DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}), _, source, SCode.NON_INITIAL())
       equation
          true = Config.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
         // generate an array equation of dim 1
         // Now the dimension can be made DAE.DIM_UNKNOWN(), I just don't want to break anything for now -- alleb
+        elt = DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source);
+        source = DAEUtil.addSymbolicTransformationFlattenedEqs(source, elt);
       then
         DAE.DAE({DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)});
 
@@ -1836,7 +1847,7 @@ algorithm
         lhs_str = ExpressionDump.printExpStr(lhs);
         rhs_str = ExpressionDump.printExpStr(rhs);
         eq_str = stringAppendList({lhs_str, "=", rhs_str});
-        Error.addSourceMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {eq_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {eq_str}, DAEUtil.getElementSourceFileInfo(inSource));
       then
         fail();
 
