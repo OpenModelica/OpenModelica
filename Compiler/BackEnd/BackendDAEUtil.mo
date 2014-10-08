@@ -5072,6 +5072,7 @@ algorithm
       list<BackendDAE.Equation> eqns,eqnselse;
       list<DAE.ComponentRef> algoutCrefs;
       DAE.Expand crefExpand;
+      DAE.ElementSource source;
 
     // EQUATION
     case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2),_,_,_)
@@ -5142,10 +5143,10 @@ algorithm
 
     // ALGORITHM For now assume that algorithm will be solvable for
     // output variables. Mark this as solved and input variables as unsolvable:
-    case (vars,BackendDAE.ALGORITHM(size=size,alg=alg,expand=crefExpand),_,_,_)
+    case (vars,BackendDAE.ALGORITHM(size=size,alg=alg,source=source,expand=crefExpand),_,_,_)
       equation
         // get outputs
-        algoutCrefs = CheckModel.algorithmOutputs(alg, crefExpand);
+        algoutCrefs = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         // mark outputs as solved
         row = adjacencyRowAlgorithmOutputs(algoutCrefs,vars,mark,rowmark,{});
         // get inputs

@@ -2936,8 +2936,8 @@ algorithm
     // Algorithm for single variable.
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, true, _, _)
       equation
-        BackendDAE.ALGORITHM(alg=alg, expand=crefExpand)  = BackendEquation.equationNth1(eqns, eqNum);
-        varOutput::{} = CheckModel.algorithmOutputs(alg, crefExpand);
+        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)  = BackendEquation.equationNth1(eqns, eqNum);
+        varOutput::{} = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         v = BackendVariable.getVarAt(vars, varNum);
         // The output variable of the algorithm must be the variable solved
         // for, otherwise we need to solve an inverse problem of an algorithm
@@ -2951,8 +2951,8 @@ algorithm
     // algorithm for single variable
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _,false, _, _)
       equation
-        BackendDAE.ALGORITHM(alg=alg, expand=crefExpand) = BackendEquation.equationNth1(eqns, eqNum);
-        varOutput::{} = CheckModel.algorithmOutputs(alg, crefExpand);
+        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand) = BackendEquation.equationNth1(eqns, eqNum);
+        varOutput::{} = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         v = BackendVariable.getVarAt(vars, varNum);
         // The output variable of the algorithm must be the variable solved
         // for, otherwise we need to solve an inverse problem of an algorithm
@@ -2965,8 +2965,8 @@ algorithm
     // inverse Algorithm for single variable
     case (_, _, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns), _, _, _, _)
       equation
-        BackendDAE.ALGORITHM(alg=alg,  expand=crefExpand) = BackendEquation.equationNth1(eqns, eqNum);
-        varOutput::{} = CheckModel.algorithmOutputs(alg, crefExpand);
+        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand) = BackendEquation.equationNth1(eqns, eqNum);
+        varOutput::{} = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         v = BackendVariable.getVarAt(vars, varNum);
         // We need to solve an inverse problem of an algorithm section.
         false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v), varOutput);
@@ -2979,7 +2979,7 @@ algorithm
     case (_, _, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns), _, _, _, _)
       equation
         BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand) = BackendEquation.equationNth1(eqns, eqNum);
-        varOutput::{} = CheckModel.algorithmOutputs(alg, crefExpand);
+        varOutput::{} = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         v = BackendVariable.getVarAt(vars, varNum);
         // We need to solve an inverse problem of an algorithm section.
         false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v), varOutput);
@@ -3663,7 +3663,7 @@ algorithm
     then fail();
 
     case ((BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(algStatements), source=source, expand=crefExpand)::rest), _, _) equation
-      crefs = CheckModel.algorithmOutputs(DAE.ALGORITHM_STMTS(algStatements), crefExpand);
+      crefs = CheckModel.checkAndGetAlgorithmOutputs(DAE.ALGORITHM_STMTS(algStatements), source, crefExpand);
       // BackendDump.debugStrCrefLstStr(("Crefs : ", crefs, ", ", "\n"));
       (crefstmp, repl) = createTmpCrefs(crefs, iuniqueEqIndex, {}, BackendVarTransform.emptyReplacements());
       // BackendDump.debugStrCrefLstStr(("Crefs : ", crefstmp, ", ", "\n"));
@@ -6327,10 +6327,10 @@ algorithm
       DAE.Expand crefExpand;
 
       // normal call
-    case (BackendDAE.ALGORITHM(alg=alg, expand=crefExpand)::_, _, false, _)
+    case (BackendDAE.ALGORITHM(alg=alg, source = source, expand=crefExpand)::_, _, false, _)
       equation
         solvedVars = List.map(vars, BackendVariable.varCref);
-        algOutVars = CheckModel.algorithmOutputs(alg, crefExpand);
+        algOutVars = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         // The variables solved for musst all be part of the output variables of the algorithm.
         List.map2AllValue(solvedVars, List.isMemberOnTrue, true, algOutVars, ComponentReference.crefEqualNoStringCompare);
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
@@ -6338,10 +6338,10 @@ algorithm
         ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1);
 
         // remove discrete Vars
-    case (BackendDAE.ALGORITHM(alg=alg, expand=crefExpand)::_, _, true, _)
+    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, _, true, _)
       equation
         solvedVars = List.map(vars, BackendVariable.varCref);
-        algOutVars = CheckModel.algorithmOutputs(alg, crefExpand);
+        algOutVars = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         // The variables solved for musst all be part of the output variables of the algorithm.
         List.map2AllValue(solvedVars, List.isMemberOnTrue, true, algOutVars, ComponentReference.crefEqualNoStringCompare);
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
@@ -6350,10 +6350,10 @@ algorithm
         ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1);
 
         // inverse Algorithm for single variable.
-    case (BackendDAE.ALGORITHM(alg=alg, expand=crefExpand)::_, _, false, _)
+    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, _, false, _)
       equation
         _ = List.map(vars, BackendVariable.varCref);
-        _ = CheckModel.algorithmOutputs(alg, crefExpand);
+        _ = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         // We need to solve an inverse problem of an algorithm section.
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
         algStatements = solveAlgorithmInverse(algStatements, vars);
@@ -6364,7 +6364,7 @@ algorithm
     case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, _, _, _)
       equation
         solvedVars = List.map(vars, BackendVariable.varCref);
-        algOutVars = CheckModel.algorithmOutputs(alg, crefExpand);
+        algOutVars = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         // The variables solved for musst all be part of the output variables of the algorithm.
         failure(List.map2AllValue(solvedVars, List.isMemberOnTrue, true, algOutVars, ComponentReference.crefEqualNoStringCompare));
         algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});

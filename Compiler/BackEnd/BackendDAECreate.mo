@@ -2394,7 +2394,7 @@ algorithm
       equation
         // calculate the size of the algorithm by collecting the left hand sites of the statemens
         (alg, _) = Inline.inlineAlgorithm(alg, (SOME(functionTree), {DAE.NORM_INLINE()}));
-        crefLst = CheckModel.algorithmOutputs(alg, inCrefExpansion);
+        crefLst = CheckModel.checkAndGetAlgorithmOutputs(alg, source, inCrefExpansion);
         size = listLength(crefLst);
         (eqns, reqns) = List.consOnBool(intGt(size, 0), BackendDAE.ALGORITHM(size, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), inEquations, inREquations);
       then (eqns, reqns, inIEquations);
@@ -2403,7 +2403,7 @@ algorithm
       equation
         // calculate the size of the algorithm by collecting the left hand sites of the statemens
         (alg, _) = Inline.inlineAlgorithm(alg, (SOME(functionTree), {DAE.NORM_INLINE()}));
-        crefLst = CheckModel.algorithmOutputs(alg, inCrefExpansion);
+        crefLst = CheckModel.checkAndGetAlgorithmOutputs(alg, source, inCrefExpansion);
         size = listLength(crefLst);
       then (inEquations, inREquations, BackendDAE.ALGORITHM(size, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_INITIAL)::inIEquations);
 

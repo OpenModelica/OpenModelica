@@ -6390,7 +6390,7 @@ algorithm
 
     case (BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statements), source=source, expand=crExpand, attr=attr), vars)
       equation
-        crlst = CheckModel.algorithmOutputs(alg, crExpand);
+        crlst = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crExpand);
         outputs = List.map(crlst, Expression.crefExp);
         statements = expandAlgorithmStmts(statements, outputs, vars);
       then (BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(statements), source, crExpand, attr), vars);

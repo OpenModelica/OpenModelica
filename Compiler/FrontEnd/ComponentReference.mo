@@ -2387,47 +2387,6 @@ algorithm
   end match;
 end crefStripSubs;
 
-public function crefRepalceNonConstantSubs "
-Removes all subscript of a componentref"
-  input DAE.ComponentRef inCref;
-  output DAE.ComponentRef outCref;
-algorithm
-  outCref := match(inCref)
-    local
-      DAE.Ident id;
-      DAE.ComponentRef cr;
-      DAE.Type ty;
-      list<DAE.Subscript> subs;
-
-    case (DAE.CREF_IDENT(id, ty, subs))
-      equation
-        subs = List.map(subs,replaceNonConstantSub);
-      then makeCrefIdent(id,ty,subs);
-
-    case (DAE.CREF_QUAL(id, ty, subs, cr))
-      equation
-        subs = List.map(subs,replaceNonConstantSub);
-        outCref = crefRepalceNonConstantSubs(cr);
-      then
-        makeCrefQual(id,ty,subs,outCref);
-  end match;
-end crefRepalceNonConstantSubs;
-
-protected function replaceNonConstantSub "
-helper function for stripCrefIdentSliceSubs"
-  input DAE.Subscript sub;
-  output DAE.Subscript osub;
-algorithm
-  osub := matchcontinue(sub)
-
-    case DAE.INDEX(exp=DAE.ICONST(_)) then sub;
-    case DAE.INDEX(exp=DAE.ENUM_LITERAL(_,_)) then sub;
-    case DAE.INDEX(_) then DAE.WHOLEDIM();
-    /*We should probably check slices for constness here as well.*/
-    else sub;
-  end matchcontinue;
-end replaceNonConstantSub;
-
 public function crefStripPrefix
 "Strips a prefix/cref from a component reference"
   input DAE.ComponentRef cref;

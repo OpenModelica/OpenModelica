@@ -51,6 +51,7 @@ protected import Flags;
 protected import HashSet;
 protected import List;
 protected import Util;
+protected import Error;
 
 public function checkModel "This function perform a model check. Count Variables and equations and
   detect the simple equations."
@@ -278,9 +279,9 @@ algorithm
         (varSize, eqnSize, eqns, hs);
 
     // algorithm
-    case (DAE.ALGORITHM(algorithm_ = alg)::rest, _, _, _, _)
+    case (DAE.ALGORITHM(algorithm_ = alg, source = source)::rest, _, _, _, _)
       equation
-        crlst = algorithmOutputs(alg, DAE.EXPAND());
+        crlst = checkAndGetAlgorithmOutputs(alg, source, DAE.EXPAND());
         size = listLength(crlst);
         (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize+size, ieqnslst, ihs);
       then
@@ -367,7 +368,48 @@ algorithm
   end match;
 end topLevelInput;
 
-public function algorithmOutputs "This function finds the the outputs of an algorithm.
+public function checkAndGetAlgorithmOutputs
+"mahge: 
+counts the ouputs of algorithms depending on where the
+section came from. If the algorithm section came from a scalar 
+component the it is counted acorrding to the inCrefExpansionRule.
+However in some cases where algorithms come from a member of an array
+of components expanding arrays and counting them as full in every 
+algorithm secion will cause duplicate countings. 
+See spec 3.3 Modelica spec 3.3 rev 11.1.2 and ticket 2452
+"
+  input DAE.Algorithm inAlgorithm;
+  input DAE.ElementSource inSource; 
+  input DAE.Expand inCrefExpansionRule;
+  output list<DAE.ComponentRef> outCrefLst;
+algorithm
+  outCrefLst := matchcontinue(inAlgorithm, inSource, inCrefExpansionRule)
+    local
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> crefLst;
+      
+    case (_, DAE.SOURCE(instanceOpt = NONE()), _) 
+      then algorithmOutputs(inAlgorithm, inCrefExpansionRule);
+      
+    case (_, DAE.SOURCE(instanceOpt = SOME(cr)), _)
+      equation
+        false = ComponentReference.crefHaveSubs(cr);
+      then algorithmOutputs(inAlgorithm, inCrefExpansionRule);
+        
+    /*the algorithm came from a component that is member of an array*/    
+    case (_, DAE.SOURCE(instanceOpt = SOME(cr)), _)
+      equation
+        true = ComponentReference.crefHaveSubs(cr);
+      then algorithmOutputs(inAlgorithm, DAE.NOT_EXPAND());
+                  
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"checkAndGetAlgorithmOutputs failed."});
+      then fail();
+  end matchcontinue;
+end checkAndGetAlgorithmOutputs;
+
+protected function algorithmOutputs "This function finds the the outputs of an algorithm.
   An input is all values that are reffered on the right hand side of any
   statement in the algorithm and an output is a variables belonging to the
   variables that are assigned a value in the algorithm. If a variable is an
@@ -575,14 +617,14 @@ algorithm
 
     // EXPAND
     /* mahge:
-      We go through the component reference and replace any unknown subscripts (exp subs. mostly crefs) with whole-dims.
-      This means if we don't know which array member is referenced exactly we assume the whole
-      array is used. Sure variable subscripts maynot update/go-through the whole array.
-      we just can't tell before simulation. So we assume whole array here.
+      Modelica spec 3.3 rev 11.1.2  
+      "If at least one element of an array appears on the left hand side of the assignment operator, then the
+       complete array is initialized in this algorithm section"
+      So we strip the subs and send the whole array to expansion. i.e. we consider the whole array as modified.
     */
     case (e as DAE.CREF(componentRef=cr), (expand,ht))
       equation
-        cr = ComponentReference.crefRepalceNonConstantSubs(cr);
+        cr = ComponentReference.crefStripSubs(cr);
         crlst = ComponentReference.expandCref(cr, true);
         ht = List.fold(crlst, BaseHashSet.add, ht);
       then (e, false, (expand,ht));

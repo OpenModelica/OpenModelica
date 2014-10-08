@@ -342,7 +342,7 @@ algorithm
       DAE.ALGORITHM_STMTS(statementLst=stmts) = alg;
       (stmts, leftCrs) = generateInitialWhenAlg(stmts, true, {}, HashTable.emptyHashTableSized(50));
       alg = DAE.ALGORITHM_STMTS(stmts);
-      size = listLength(CheckModel.algorithmOutputs(alg, crefExpand));
+      size = listLength(CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand));
       crintLst = BaseHashTable.hashTableList(leftCrs);
       crefLst = List.fold(crintLst, selectSecondZero, {});
       (eqns, vars) = generateInactiveWhenEquationForInitialization(crefLst, source, eqns, vars);
