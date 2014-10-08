@@ -369,17 +369,17 @@ algorithm
 end topLevelInput;
 
 public function checkAndGetAlgorithmOutputs
-"mahge: 
+"mahge:
 counts the ouputs of algorithms depending on where the
-section came from. If the algorithm section came from a scalar 
+section came from. If the algorithm section came from a scalar
 component the it is counted acorrding to the inCrefExpansionRule.
 However in some cases where algorithms come from a member of an array
-of components expanding arrays and counting them as full in every 
-algorithm secion will cause duplicate countings. 
+of components expanding arrays and counting them as full in every
+algorithm secion will cause duplicate countings.
 See spec 3.3 Modelica spec 3.3 rev 11.1.2 and ticket 2452
 "
   input DAE.Algorithm inAlgorithm;
-  input DAE.ElementSource inSource; 
+  input DAE.ElementSource inSource;
   input DAE.Expand inCrefExpansionRule;
   output list<DAE.ComponentRef> outCrefLst;
 algorithm
@@ -387,21 +387,21 @@ algorithm
     local
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crefLst;
-      
-    case (_, DAE.SOURCE(instanceOpt = NONE()), _) 
+
+    case (_, DAE.SOURCE(instanceOpt = NONE()), _)
       then algorithmOutputs(inAlgorithm, inCrefExpansionRule);
-      
+
     case (_, DAE.SOURCE(instanceOpt = SOME(cr)), _)
       equation
         false = ComponentReference.crefHaveSubs(cr);
       then algorithmOutputs(inAlgorithm, inCrefExpansionRule);
-        
-    /*the algorithm came from a component that is member of an array*/    
+
+    /*the algorithm came from a component that is member of an array*/
     case (_, DAE.SOURCE(instanceOpt = SOME(cr)), _)
       equation
         true = ComponentReference.crefHaveSubs(cr);
       then algorithmOutputs(inAlgorithm, DAE.NOT_EXPAND());
-                  
+
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"checkAndGetAlgorithmOutputs failed."});
@@ -617,7 +617,7 @@ algorithm
 
     // EXPAND
     /* mahge:
-      Modelica spec 3.3 rev 11.1.2  
+      Modelica spec 3.3 rev 11.1.2
       "If at least one element of an array appears on the left hand side of the assignment operator, then the
        complete array is initialized in this algorithm section"
       So we strip the subs and send the whole array to expansion. i.e. we consider the whole array as modified.
