@@ -186,11 +186,10 @@ algorithm
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
         Debug.fcall(Flags.HPCOM_DUMP,print,"handle linear torn systems of size: "+&intString(listLength(tvarIdcs)+listLength(otherEqnVarTpl))+&"\n");
-        //Debug.fcall2(Flags.HPCOM_DUMP,dumpEquationSystemGraphML,(systIn,tornSysIdxIn),comp);
            //print("handle tornsystem with compnumber:"+&intString(compIdx)+&"\n");
            //BackendDump.dumpEqSystem(systIn,"the original system");
+           
         // build the new components, the new variables and the new equations
-
         (varsNew,eqsNew,_,resEqs,matchingNew) = reduceLinearTornSystem2(systIn,sharedIn,tvarIdcs,resEqIdcs,otherEqnVarTpl,tornSysIdxIn);
 
         BackendDAE.MATCHING(ass1=ass1New, ass2=ass2New, comps=compsNew) = matchingNew;
@@ -306,6 +305,10 @@ algorithm
    ovarsLst := List.map(ovarsLst, BackendVariable.transformXToXd);  //try this
    ovars := BackendVariable.listVar1(ovarsLst);
    ovcrs := List.map(ovarsLst, BackendVariable.varCref);
+     //BackendDump.dumpVarList(tvarsReplaced,"tvars");
+     //BackendDump.dumpVarList(ovarsLst,"ovars");
+     //BackendDump.dumpEquationList(reqns,"residualEquations");
+     //BackendDump.dumpEquationList(otherEqnsLstReplaced,"otherEqnsLstReplaced");
 
    //build the components and systems to get the system for computing the tearingVars
    size := listLength(tvars);
@@ -317,37 +320,32 @@ algorithm
    //  get g_i(xt=e_i, xa=xa_i) with xa_i as variables to be solved
    (g_i_lst,xa_i_lst,replLst) := getAlgebraicEquationsForEI(tVarRange,size,otherEqnsLstReplaced,tvarsReplaced,tcrs,ovarsLst,ovcrs,{},{},{},tornSysIdx);
    (g_i_lst1,xa_i_lst1,repl1) := simplifyEquations(g_i_lst,xa_i_lst,repl1);
-
-     //dumpVarLstLst(xa_i_lst,"xa");
+     //dumpVarLst(xa_i_lst,"xa");
      //dumpEqLstLst(g_i_lst,"g");
 
    //  compute residualValues h_i(xt=e_i,xa_i,r_i) for r_i
-   (h_i_lst,r_i_lst) := addResidualVarToEquation(tVarRange,reqns,{},{},tornSysIdx);
+   (h_i_lst,r_i_lst) := addResidualVarToEquation(tVarRange,reqns,{},{},tornSysIdx);  
    h_i_lst := replaceVarsInResidualEquations(tVarRange,h_i_lst,replLst,{});
    (h_i_lst1,r_i_lst1,repl1) := simplifyEquations(h_i_lst,r_i_lst,repl1);
-
-      //dumpVarLstLst(r_i_lst,"r");
-      //dumpEqLstLst(h_i_lst,"h");
+     //dumpVarLstLst(r_i_lst,"r");
+     //dumpEqLstLst(h_i_lst,"h");
 
    //  get the co-efficients for the new residualEquations a_i from hs_i(r_i,xt=e_i, a_i)
    (hs_i_lst,a_i_lst) := getTornSystemCoefficients(tVarRange,size,r_i_lst,{},{},tornSysIdx);
    (hs_i_lst1,a_i_lst1,repl1) := simplifyEquations(hs_i_lst,a_i_lst,repl1);
-
       //dumpVarLstLst(a_i_lst,"a");
       //dumpEqLstLst(hs_i_lst,"hs_i");
 
    // gather all additional equations and build the strongComponents (not including the new residual equation)
    eqsNewOut := List.flatten(listAppend(listAppend(g_i_lst1,h_i_lst1),hs_i_lst1));
    varsNewOut := List.flatten(listAppend(listAppend(xa_i_lst1,r_i_lst1),a_i_lst1));
+     //BackendDump.dumpVarList(varsNewOut,"varsNew");
+     //BackendDump.dumpEquationList(eqsNewOut,"eqsNew");
+   
    matchingNew := buildSingleEquationSystem(compSize,eqsNewOut,varsNewOut,ishared,{});
    BackendDAE.MATCHING(ass1=ass1New, ass2=ass2New, comps=compsNew) := matchingNew;
-
-   //BackendDump.dumpComponents(compsNew);
-
    compsNew := List.map2(compsNew,updateIndicesInComp,listLength(varLst),listLength(eqLst));
-
-   //BackendDump.dumpVarList(varsNewOut,"varsNew");
-   //BackendDump.dumpEquationList(eqsNewOut,"eqsNew");
+     //BackendDump.dumpComponents(compsNew);
 
    // compute the tearing vars in the new residual equations hs
    (a_0::a_i_lst) := a_i_lst;
@@ -755,7 +753,6 @@ algorithm
         BackendDAEEXT.getAssignment(ass2, ass1);
         matching = BackendDAE.MATCHING(ass1, ass2, {});
         sysTmp = BackendDAE.EQSYSTEM(vars,eqArr,SOME(m),SOME(mt),matching,{},BackendDAE.UNKNOWN_PARTITION());
-
         // perform BLT to order the StrongComponents
         mapIncRowEqn = listArray(List.intRange(nEqs));
         mapEqnIncRow = Util.arrayMap(mapIncRowEqn,List.create);
@@ -1051,7 +1048,8 @@ algorithm
   resCRef := ComponentReference.makeCrefIdent(resName,ty,{});
   resExp := Expression.makeCrefExp(resCRef,ty);
   resVal := BackendDAE.VAR(resCRef,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR());
-  (resEq,(resExp,_)) := BackendEquation.traverseBackendDAEExpsEqn(resEq,addResidualVarToEquation2,(resExp,false));
+  resEq := addResidualVarToEquation2(resEq,resExp);
+  
   // update the resEq and resVar lists
   r_i_lst := Debug.bcallret1(List.isEmpty(r_i_lst), List.create, {resVal},varInFrontList(resVal,r_i_lst));
   h_i_lst := Debug.bcallret1(List.isEmpty(h_i_lst), List.create, {resEq}, eqInFrontList(resEq,h_i_lst));
@@ -1107,25 +1105,26 @@ end eqInFrontList;
 
 protected function addResidualVarToEquation2 " adds the residual variable to the equation
 author: waurich TUD 2013-08"
-  input DAE.Exp inExp;
-  input tuple<DAE.Exp,Boolean> tplIn;
-  output DAE.Exp outExp;
-  output tuple<DAE.Exp,Boolean> tplOut;
+  input BackendDAE.Equation eqIn;
+  input DAE.Exp addExp;
+  output BackendDAE.Equation eqOut;
 algorithm
-  (outExp,tplOut) := match (inExp,tplIn)
+  eqOut := match (eqIn,addExp)
     local
-      Boolean rhs;
-      tuple<DAE.Exp,Boolean> tpl;
-      DAE.Exp exp1;
-      DAE.Exp exp2;
-    case (exp1,(exp2,true))
+      DAE.Exp exp1,exp2;
+      DAE.ElementSource source;
+      BackendDAE.EquationAttributes attr;
+    case(BackendDAE.EQUATION(exp=exp1,scalar=exp2,source=source,attr=attr),_)
       equation
         //print("rhs expression: "+&ExpressionDump.dumpExpStr(exp1,0)+&"\n");
         //print("\n append with \n");
         //print("residualValue: "+&ExpressionDump.dumpExpStr(exp2,0)+&"\n");
-        exp1 = Expression.expAdd(exp1,exp2);
-      then (exp1,tplIn);
-    else (inExp,tplIn);
+        exp1 = Expression.expAdd(exp1,addExp);
+      then BackendDAE.EQUATION(exp1,exp2,source,attr);
+    else
+      equation
+        print("addResidualVarToEquation2 failed!\n");
+      then fail();
   end match;
 end addResidualVarToEquation2;
 
