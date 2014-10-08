@@ -82,6 +82,7 @@ protected import FindZeroCrossings;
 protected import Flags;
 protected import Global;
 protected import GlobalScript;
+protected import HpcOmEqSystems;
 protected import IndexReduction;
 protected import InlineArrayEquations;
 protected import Initialization;
@@ -9146,6 +9147,7 @@ algorithm
                         (Initialization.optimizeInitialSystem,"optimizeInitialSystem",false),
                         (BackendDAEOptimize.detectSparsePatternODE,"detectJacobianSparsePattern",false),
                         (Tearing.tearingSystem, "tearingSystem", false),
+                        (HpcOmEqSystems.partitionLinearTornSystem,"partlintornsystem",false),
                         (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false),
                         (BackendDAEOptimize.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false),
                         (BackendDAEOptimize.calculateStateSetsJacobians, "calculateStateSetsJacobians", false),

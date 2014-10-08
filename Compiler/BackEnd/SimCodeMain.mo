@@ -76,7 +76,6 @@ protected import Debug;
 protected import Error;
 protected import Flags;
 protected import FMI;
-protected import HpcOmEqSystems;
 protected import HpcOmSimCodeMain;
 protected import SimCodeDump;
 protected import TaskSystemDump;
@@ -407,7 +406,6 @@ algorithm
   simCode := matchcontinue(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args)
     local
       Integer numProc;
-      BackendDAE.BackendDAE backendDAE2;
       SimCode.SimCode tmpSimCode;
 
     case(_, _, _, _, _, _, _, _, _, _, _, _) equation
@@ -421,8 +419,7 @@ algorithm
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = numProc == 0;
       print("hpcom computes the ideal number of processors. If you want to set the number manually, use the flag +n=_ \n");
-      backendDAE2 = Debug.fcallret3(Flags.PARTLINTORNSYSTEM, HpcOmEqSystems.traverseEqSystemsWithIndex, 1,1, inBackendDAE, inBackendDAE);
-    then HpcOmSimCodeMain.createSimCode(backendDAE2, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
 
     case(_, _, _, _, _, _, _, _, _, _, _, _) equation
       true = Flags.isSet(Flags.HPCOM);
@@ -434,12 +431,10 @@ algorithm
 
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = (numProc > 0);
-      backendDAE2 = Debug.fcallret3(Flags.PARTLINTORNSYSTEM, HpcOmEqSystems.traverseEqSystemsWithIndex, 1,1, inBackendDAE, inBackendDAE);
-    then HpcOmSimCodeMain.createSimCode(backendDAE2, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
 
     else equation
-      backendDAE2 = Debug.fcallret3(Flags.PARTLINTORNSYSTEM, HpcOmEqSystems.traverseEqSystemsWithIndex, 1,1, inBackendDAE, inBackendDAE);
-      (tmpSimCode, _) = SimCodeUtil.createSimCode(backendDAE2, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
     then tmpSimCode;
   end matchcontinue;
 end createSimCode;

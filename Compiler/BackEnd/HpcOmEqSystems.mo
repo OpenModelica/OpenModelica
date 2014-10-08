@@ -67,37 +67,25 @@ protected import Util;
 // start functions for handling linearTornSystems from here
 //-------------------------------------------------//
 
-public function traverseEqSystemsWithIndex  "traverse alle EqSystems of the BackendDAE and hold an index of the current torn system.
-author:Waurich TUD 2013-10"
-  input Integer eqSysIdx;
-  input Integer tornSysIdxIn;
+public function partitionLinearTornSystem"checks the EqSystem for tornSystems in order to dissassemble them into various SingleEquation and a reduced EquationSystem.
+This is useful in order to reduce the execution costs of the equationsystem and generate a bunch of parallel singleEquations. use +d=doLienarTearing,partlintornsystem to activate it.
+Remark: this is still under development
+author:Waurich TUD 2013-09"
   input BackendDAE.BackendDAE daeIn;
   output BackendDAE.BackendDAE daeOut;
 algorithm
-  daeOut := matchcontinue(eqSysIdx,tornSysIdxIn,daeIn)
+  daeOut := matchcontinue(daeIn)
     local
-      Integer tornSysIdx;
-      BackendDAE.BackendDAE daeTmp;
-      BackendDAE.EqSystem eqSyst;
-      BackendDAE.EqSystems eqSysts;
+      BackendDAE.EqSystems eqs;
       BackendDAE.Shared shared;
-    case(_,_,BackendDAE.DAE(eqs=eqSysts, shared=shared))
-      equation
-        true = listLength(eqSysts) >= eqSysIdx;
-        eqSyst = listGet(eqSysts,eqSysIdx);
-        (eqSyst,shared,tornSysIdx) = reduceLinearTornSystem(eqSyst,shared,tornSysIdxIn);
-        eqSysts = List.replaceAt(eqSyst,eqSysIdx-1,eqSysts);
-        daeTmp = BackendDAE.DAE(eqSysts,shared);
-        daeTmp = traverseEqSystemsWithIndex(eqSysIdx+1,tornSysIdx,daeTmp);
-      then
-        daeTmp;
-    case(_,_,BackendDAE.DAE(eqs=eqSysts))
-      equation
-        true = listLength(eqSysts) < eqSysIdx;
-      then
-        daeIn;
+    case(BackendDAE.DAE(eqs=eqs,shared=shared))
+     equation
+       true = Flags.isSet(Flags.PARTLINTORNSYSTEM);
+       (eqs,_) = List.map1Fold(eqs,reduceLinearTornSystem,shared,1);
+    then BackendDAE.DAE(eqs,shared);
+    else then daeIn;
   end matchcontinue;
-end traverseEqSystemsWithIndex;
+end partitionLinearTornSystem;
 
 
 public function reduceLinearTornSystem  "checks the EqSystem for tornSystems in order to dissassemble them into various SingleEquation and a reduced EquationSystem.
@@ -108,28 +96,25 @@ author:Waurich TUD 2013-09"
   input BackendDAE.Shared sharedIn;
   input Integer tornSysIdxIn;
   output BackendDAE.EqSystem systOut;
-  output BackendDAE.Shared sharedOut;
   output Integer tornSysIdxOut;
 algorithm
-  (systOut, sharedOut, tornSysIdxOut) := matchcontinue(systIn,sharedIn,tornSysIdxIn)
+  (systOut, tornSysIdxOut) := matchcontinue(systIn,sharedIn,tornSysIdxIn)
     local
       Integer tornSysIdx;
       array<Integer> ass1, ass2;
       BackendDAE.EqSystem systTmp;
       BackendDAE.EquationArray eqs, eqsTmp;
       BackendDAE.Matching matching;
-      BackendDAE.Shared sharedTmp;
       BackendDAE.StrongComponents allComps, compsTmp;
       BackendDAE.Variables vars, varsTmp;
     case(_,_,_)
       equation
         BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps= allComps)) = systIn;
           //BackendDump.dumpEqSystem(systIn,"original system");
-        (systTmp,tornSysIdx) = reduceLinearTornSystem1(1, allComps, ass1, ass2, systIn,sharedIn,tornSysIdxIn);
+        (systTmp,tornSysIdx) = reduceLinearTornSystem1(1, allComps, ass1, ass2, systIn, sharedIn, tornSysIdxIn);
           //BackendDump.dumpEqSystem(systTmp,"new system");
-        sharedTmp = sharedIn;
       then
-        (systTmp, sharedTmp, tornSysIdx);
+        (systTmp, tornSysIdx);
     else
       equation
         print("reduceLinearTornSystem failed!");
