@@ -7562,13 +7562,26 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
     <%type%> <%iterName%>;
     <% match type
     case "modelica_metatype" then
-      <<
-      for (<%tvar%> = <%evar%>; !listEmpty(<%tvar%>); <%tvar%>=listRest(<%tvar%>))
-      {
-        <%iterName%> = listHead(<%tvar%>);
-        <%body%>
-      }
-      >>
+      (match typeof(exp)
+      case T_METATYPE(ty=T_METAARRAY(__)) then
+        let tmp = tempDecl("modelica_integer",&varDecls)
+        let len = tempDecl("modelica_integer",&varDecls)
+        <<
+        for (<%tvar%> = <%evar%>, <%len%> = arrayLength(<%tvar%>), <%tmp%> = 1; <%tmp%> <= <%len%>; <%tmp%>++)
+        {
+          <%iterName%> = arrayGet(<%tvar%>,<%tmp%>);
+          <%body%>
+        }
+        >>
+      case T_METATYPE(ty=T_METALIST(__)) then
+        <<
+        for (<%tvar%> = <%evar%>; !listEmpty(<%tvar%>); <%tvar%>=listRest(<%tvar%>))
+        {
+          <%iterName%> = listHead(<%tvar%>);
+          <%body%>
+        }
+        >>
+      case ty then error(sourceInfo(), '<%unparseType(ty)%> iterator is not supported'))
     else
       let stmtStuff = if iterIsArray then
           'simple_index_alloc_<%type%>1(&<%evar%>, <%tvar%>, &<%ivar%>);'

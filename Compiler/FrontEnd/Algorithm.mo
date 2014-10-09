@@ -639,6 +639,11 @@ algorithm
         t = Types.simplifyType(t);
       then DAE.STMT_FOR(t, false, i, -1, e, stmts, source);
 
+    case (i, e, DAE.PROP(type_ = DAE.T_METAARRAY(ty = t)), stmts, _)
+      equation
+        t = Types.simplifyType(t);
+      then DAE.STMT_FOR(t, false, i, -1, e, stmts, source);
+
     case (_, e, DAE.PROP(type_ = t), _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
