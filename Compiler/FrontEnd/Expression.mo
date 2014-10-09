@@ -10699,4 +10699,12 @@ algorithm
   outExp := Util.if_(Types.isZeroLengthArray(ty),DAE.CREF(DAE.WILD(),ty),exp);
 end emptyToWild;
 
+public function makeVectorCall
+  input DAE.Exp exp;
+  input DAE.Type tp;
+  output DAE.Exp outExp;
+algorithm
+  outExp := makePureBuiltinCall("vector",{exp},tp);
+end makeVectorCall;
+
 end Expression;

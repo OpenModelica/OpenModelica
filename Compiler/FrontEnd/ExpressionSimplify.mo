@@ -909,6 +909,7 @@ algorithm
       Real r1;
       array<array<DAE.Exp>> marr;
       String name;
+      DAE.TypeSource source;
 
     // If the argument to min/max is an array, try to flatten it.
     case (DAE.CALL(path=Absyn.IDENT(name),expLst={e as DAE.ARRAY(array=_)},
@@ -1201,6 +1202,29 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT("scalar"),expLst=e::{},attr=DAE.CALL_ATTR(ty=tp))
       equation
         e = simplifyScalar(e,tp);
+      then e;
+
+    case DAE.CALL(path=Absyn.IDENT("vector"),expLst=es as (e::_),attr=DAE.CALL_ATTR(ty=DAE.T_ARRAY(tp,_,source)))
+      equation
+        false = Types.isArray(Expression.typeof(e),{});
+        i = listLength(es);
+        tp = DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(i)},source);
+      then DAE.ARRAY(tp,true,es);
+
+    case DAE.CALL(path=Absyn.IDENT("vector"),expLst=(e as DAE.ARRAY(array=es,scalar=true))::{},attr=DAE.CALL_ATTR(ty=tp))
+      then e;
+
+    case DAE.CALL(path=Absyn.IDENT("vector"),expLst=DAE.MATRIX(matrix=mexpl)::{},attr=DAE.CALL_ATTR(ty=tp))
+      equation
+        es = List.flatten(mexpl);
+        es = List.map1(es, Expression.makeVectorCall, tp);
+        e = Expression.makePureBuiltinCall("cat", DAE.ICONST(1)::es, tp);
+      then e;
+
+    case DAE.CALL(path=Absyn.IDENT("vector"),expLst=DAE.ARRAY(array=es)::{},attr=DAE.CALL_ATTR(ty=tp))
+      equation
+        es = List.map1(es, Expression.makeVectorCall, tp);
+        e = Expression.makePureBuiltinCall("cat", DAE.ICONST(1)::es, tp);
       then e;
 
   end matchcontinue;
