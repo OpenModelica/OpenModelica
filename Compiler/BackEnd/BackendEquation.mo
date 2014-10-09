@@ -2747,7 +2747,7 @@ algorithm
     else
       equation print("BackendEquation.getEquationRHS failed!\n!");
       then fail();
-  end matchcontinue;        
+  end matchcontinue;
 end getEquationRHS;
 
 public function getEquationLHS"gets the left hand side expression of an equation.
@@ -2763,7 +2763,7 @@ algorithm
     else
       equation print("BackendEquation.getEquationLHS failed!\n!");
       then fail();
-  end matchcontinue;        
+  end matchcontinue;
 end getEquationLHS;
 
 end BackendEquation;

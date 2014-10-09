@@ -339,12 +339,12 @@ algorithm
    //insert the xa_i in the h_i equations
    hLst := insertEquationsAndEliminateVars(List.flatten(h_i_lst),List.flatten(g_i_lst),List.flatten(xa_i_lst)); // insert the xai, get equations for ri
          //dumpEqLstLst({hLst},"hLst");
-         
+
    hs_0::hs_i_lst := hs_i_lst;
    a_0::a_i_lst := a_i_lst;
    hsLst := insertEquationsAndEliminateVars(List.flatten(hs_i_lst),hs_0,a_0); //insert a0 (i.e. dh)
          //dumpEqLstLst({hsLst},"hsLst1");
-         
+
    hsLst := insertEquationsAndEliminateVars(hsLst,hLst,List.flatten(r_i_lst));  // insert the ri
    hs_0 := insertEquationsAndEliminateVars(hs_0,hLst,List.flatten(r_i_lst));// insert the r0
          //dumpEqLstLst({hs_0},"hs_0");
@@ -355,7 +355,7 @@ algorithm
    //eqsNewOut := List.flatten(listAppend(listAppend(g_i_lst1,h_i_lst1),hs_i_lst1));
    eqsNewOut := hsLst;
    //varsNewOut := List.flatten(listAppend(listAppend(xa_i_lst1,r_i_lst1),a_i_lst1));
-   varsNewOut := List.flatten(a_i_lst);  
+   varsNewOut := List.flatten(a_i_lst);
      //BackendDump.dumpVarList(varsNewOut,"varsNew");
      //BackendDump.dumpEquationList(eqsNewOut,"eqsNew");
 
@@ -370,10 +370,10 @@ algorithm
    hs1 := insertEquationsAndEliminateVars(hs1,hs_0,a_0);// insert the a0
    tVarsOut := tvars;
    resEqsOut := hs1;
-   
+
      //BackendDump.dumpEquationList(resEqsOut,"the equations of the system\n");
      //BackendDump.dumpVarList(tVarsOut, "the vars of the system\n");
-   
+
    //// get the strongComponent for the residual equations and add it at the end of the new StrongComponents
    isSingleEq := intEq(listLength(resEqsOut),1);
    rComp := buildEqSystemComponent(isSingleEq,tearingVars,residualEqs,a_i_lst);
@@ -422,7 +422,7 @@ algorithm
         BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
         BackendDAEEXT.getAssignment(ass2, ass1);
         //print("ass1 "+&stringDelimitList(List.map(arrayList(ass1),intString),"\n")+&"\n");
-        
+
         // order vars to assigned equations
         elimVarLst = List.map1(arrayList(ass1),List.getIndexFirst,elimVars);
         // solve the equations for the elimVars
@@ -431,11 +431,11 @@ algorithm
         rhsLst = List.map(solveEquations,BackendEquation.getEquationRHS);
         lhsLst = List.map(solveEquations,BackendEquation.getEquationLHS);
         (rhsLst,_) = List.thread3Map_2(lhsLst,rhsLst,elimExps,ExpressionSolve.solve);
-        
+
         // build replacements
         repl = BackendVarTransform.emptyReplacements();
         repl = BackendVarTransform.addReplacements(repl,elimCrefs,rhsLst,NONE());
-        
+
         //apply replacements
         (eqLst,_) = BackendVarTransform.replaceEquations(replaceLst,repl,NONE());
     then eqLst;
