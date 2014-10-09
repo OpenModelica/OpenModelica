@@ -2746,7 +2746,7 @@ algorithm
         // false = Absyn.isOuter(io);
         //
         (cache,DAE.ATTR(ct,prl,vt,di,io,vis),tyChild,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
-        ty = Debug.bcallret1(Types.isBoxedType(tyParent), Types.boxIfUnboxedType, tyChild, tyChild) "The internal types in a metarecord are lookup up in a clean environment, so we have to box them";
+        ty = Debug.bcallret1(Types.isBoxedType(tyParent) and not Types.isUnknownType(tyParent), Types.boxIfUnboxedType, tyChild, tyChild) "The internal types in a metarecord are lookup up in a clean environment, so we have to box them";
         (tCref::_) = elabComponentRecursive((texp));
         ty1 = checkSubscripts(tyParent, ss);
         ty = sliceDimensionType(ty1,ty);
