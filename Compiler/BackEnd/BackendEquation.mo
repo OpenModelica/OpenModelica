@@ -2733,4 +2733,37 @@ algorithm
   end matchcontinue;
 end replaceDerOpInEquation;
 
+
+public function getEquationRHS"gets the right hand side expression of an equation.
+author:Waurich TUD 2014-10"
+  input BackendDAE.Equation eq;
+  output DAE.Exp rhs;
+algorithm
+  rhs := matchcontinue(eq)
+    local
+      DAE.Exp exp1;
+    case(BackendDAE.EQUATION(scalar = exp1))
+      then exp1;
+    else
+      equation print("BackendEquation.getEquationRHS failed!\n!");
+      then fail();
+  end matchcontinue;        
+end getEquationRHS;
+
+public function getEquationLHS"gets the left hand side expression of an equation.
+author:Waurich TUD 2014-10"
+  input BackendDAE.Equation eq;
+  output DAE.Exp lhs;
+algorithm
+  lhs := matchcontinue(eq)
+    local
+      DAE.Exp exp1;
+    case(BackendDAE.EQUATION(exp = exp1))
+      then exp1;
+    else
+      equation print("BackendEquation.getEquationLHS failed!\n!");
+      then fail();
+  end matchcontinue;        
+end getEquationLHS;
+
 end BackendEquation;
