@@ -192,12 +192,8 @@ end dumpClassDef;
 template dumpClassFooter(SCode.ClassDef classDef, String cdefStr, String name, String cmt, String ann, String cc_str)
 ::=
 match classDef
-  case DERIVED(__) then
-    let cmt_spacer = if cmt then " "
-    '<%cdefStr%><%cmt_spacer%><%cmt%><%ann%><%cc_str%>'
-  case ENUMERATION(__) then
-    let cmt_spacer = if cmt then " "
-    '<%cdefStr%><%cmt_spacer%><%cmt%><%ann%><%cc_str%>'
+  case DERIVED(__) then '<%cdefStr%><%cmt%><%ann%><%cc_str%>'
+  case ENUMERATION(__) then '<%cdefStr%><%cmt%><%ann%><%cc_str%>'
   case PDER(__) then cdefStr
   case _ then
     let annstr = if ann then '<%ann%>; ' else ''
@@ -205,7 +201,7 @@ match classDef
       <<
 
       <%cdefStr%>
-       <%annstr%>
+      <%if annstr then " "%><%annstr%>
       end <%name%><%cc_str%>
       >>
     else
@@ -683,7 +679,7 @@ match modifier
 end dumpRedeclModifier;
 
 template dumpModifierBinding(Option<tuple<Absyn.Exp, Boolean>> binding)
-::= match binding case SOME((exp, _)) then ' = <%AbsynDumpTpl.dumpExp(exp)%>'
+::= match binding case SOME((exp, _)) then '<%\ %>= <%AbsynDumpTpl.dumpExp(exp)%>'
 end dumpModifierBinding;
 
 template dumpSubModifier(SCode.SubMod submod, SCodeDumpOptions options)
@@ -769,14 +765,14 @@ template dumpAnnotation(SCode.Annotation annotation, SCodeDumpOptions options)
   match annotation
     case ANNOTATION(__) then
      let modifStr = dumpAnnotationModifier(modification,options)
-     if modifStr then ' annotation<%modifStr%>'
+     if modifStr then '<%\ %>annotation<%modifStr%>'
 end dumpAnnotation;
 
 template dumpAnnotationElement(SCode.Annotation annotation, SCodeDumpOptions options)
 ::=
   let annstr = '<%dumpAnnotation(annotation, options)%>'
   if annstr then
-    '<%annstr%>;'
+    '<%\ %><%annstr%>;'
 end dumpAnnotationElement;
 
 template dumpExternalDeclOpt(Option<ExternalDecl> externalDecl, SCodeDumpOptions options)
@@ -806,12 +802,11 @@ template dumpComment(SCode.Comment comment, SCodeDumpOptions options)
     case COMMENT(__) then
       let ann_str = dumpAnnotationOpt(annotation_, options)
       let cmt_str = dumpCommentStr(comment)
-      let cmt_spacer = if cmt_str then " "
-      '<%cmt_spacer%><%cmt_str%><%ann_str%>'
+      '<%cmt_str%><%ann_str%>'
 end dumpComment;
 
 template dumpCommentStr(Option<String> comment)
-::= if Config.showAnnotations() then match comment case SOME(cmt) then '"<%cmt%>"'
+::= if Config.showAnnotations() then match comment case SOME(cmt) then '<%\ %>"<%cmt%>"'
 end dumpCommentStr;
 
 template errorMsg(String errMessage)

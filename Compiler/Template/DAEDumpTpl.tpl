@@ -26,11 +26,11 @@ template dumpComp(DAEDump.compWithSplitElements fixedDae)
 ::=
   match fixedDae case COMP_WITH_SPLIT(__) then
     let cmt_str = dumpCommentOpt(comment)
-    let cmt_spacer = if cmt_str then " "
+    let ann_str = dumpClassAnnotation(comment)
     <<
-    class <%name%><%cmt_spacer%><%cmt_str%>
+    class <%name%><%cmt_str%>
     <%dumpCompStream(spltElems)%>
-      <%dumpClassAnnotation(comment)%>
+    <%if ann_str then "  "%><%ann_str%>
     end <%name%>;<%\n%>
     >>
 end dumpComp;
@@ -67,12 +67,12 @@ template dumpFunction(DAE.Function function)
     case FUNCTION(__) then
       let inline_str = dumpInlineType(inlineType)
       let cmt_str = dumpCommentOpt(comment)
-      let cmt_spacer = if cmt_str then " "
+      let ann_str = dumpClassAnnotation(comment)
       let impure_str = if isImpure then 'impure '
       <<
-      <%impure_str%>function <%AbsynDumpTpl.dumpPathNoQual(path)%><%inline_str%><%cmt_spacer%><%cmt_str%>
+      <%impure_str%>function <%AbsynDumpTpl.dumpPathNoQual(path)%><%inline_str%><%cmt_str%>
       <%dumpFunctionDefinitions(functions)%>
-        <%dumpClassAnnotation(comment)%>
+      <%if ann_str then "  "%><%ann_str%>
       end <%AbsynDumpTpl.dumpPathNoQual(path)%>;
       >>
     case RECORD_CONSTRUCTOR(__) then
@@ -232,16 +232,14 @@ match lst
    let bindingExp = match binding case SOME(exp) then dumpExp(exp)
    let varAttr = match variableAttributesOption case SOME(VariableAttributes) then dumpVariableAttributes(VariableAttributes)
    let cmt_str = dumpCommentOpt(comment)
-   let cmt_spacer = if cmt_str then " "
-   let ann_str = dumpCommentAnnotation(comment)
-   let ann_spacer = if ann_str then " "
+   let ann_str = dumpCompAnnotation(comment)
    if bindingExp then
    <<
-    <%varVisibility%><%final%><%varParallelism%><%varKind%><%varDirection%> <%varType%><%dim_str%> <%varName%><%attr%><%varAttr%> = <%bindingExp%><%cmt_spacer%><%cmt_str%><%ann_spacer%><%ann_str%>;
+    <%varVisibility%><%final%><%varParallelism%><%varKind%><%varDirection%> <%varType%><%dim_str%> <%varName%><%attr%><%varAttr%> = <%bindingExp%><%cmt_str%><%ann_str%>;
    >>
    else
    <<
-    <%varVisibility%><%final%><%varParallelism%><%varKind%><%varDirection%> <%varType%><%dim_str%> <%varName%><%attr%><%varAttr%><%cmt_spacer%><%cmt_str%><%ann_spacer%><%ann_str%>;
+    <%varVisibility%><%final%><%varParallelism%><%varKind%><%varDirection%> <%varType%><%dim_str%> <%varName%><%attr%><%varAttr%><%cmt_str%><%ann_str%>;
    >>
 end dumpVar;
 
@@ -958,6 +956,12 @@ template dumpClassAnnotation(Option<SCode.Comment> comment)
   if cmt_str then '<%cmt_str%>;'
 end dumpClassAnnotation;
 
+template dumpCompAnnotation(Option<SCode.Comment> comment)
+::=
+  let cmt_str = dumpCommentAnnotation(comment)
+  if cmt_str then '<%\ %><%cmt_str%>'
+end dumpCompAnnotation;
+
 template dumpCommentAnnotation(Option<SCode.Comment> comment)
 ::=
 if Config.showAnnotations() then
@@ -975,10 +979,7 @@ template dumpComment(SCode.Comment comment)
 end dumpComment;
 
 template dumpCommentStr(Option<String> comment)
-  // Comments usually need a space in front of them, but adding the space here
-  // messes up multiline string comments because of how Susan formats things.
-  // The space should be added separately before the comment instead.
-::= match comment case SOME(cmt) then '"<%System.escapedString(cmt,false)%>"'
+::= match comment case SOME(cmt) then '<%\ %>"<%System.escapedString(cmt,false)%>"'
 end dumpCommentStr;
 
 template dumpPathLastIndent(Absyn.Path path)
@@ -993,10 +994,7 @@ end dumpPathLastIndent;
 template dumpSource(DAE.ElementSource source)
 ::=
 match source
-  case SOURCE(__) then
-    let cmt = (comment |> c => dumpComment(c) ;separator=" + ")
-    let cmt_spacer = if cmt then " "
-    '<%cmt_spacer%><%cmt%>'
+  case SOURCE(__) then (comment |> c => dumpComment(c) ;separator=" + ")
 end dumpSource;
 
 template errorMsg(String errMessage)
