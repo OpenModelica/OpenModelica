@@ -10689,4 +10689,14 @@ algorithm
   end match;
 end renameExpCrefIdent;
 
+public function emptyToWild
+  input DAE.Exp exp;
+  output DAE.Exp outExp;
+protected
+  DAE.Type ty;
+algorithm
+  ty := typeof(exp);
+  outExp := Util.if_(Types.isZeroLengthArray(ty),DAE.CREF(DAE.WILD(),ty),exp);
+end emptyToWild;
+
 end Expression;

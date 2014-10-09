@@ -1394,7 +1394,8 @@ protected function instEqEquation2
 algorithm
   outDae := matchcontinue (inExp1,inExp2,inType3, inConst, source,inInitial4)
     local
-      DAE.DAElist dae; DAE.Exp e1,e2;
+      DAE.DAElist dae;
+      DAE.Exp e,e1,e2;
       SCode.Initial initial_;
       DAE.ComponentRef cr;
       DAE.Type t;
@@ -1402,6 +1403,7 @@ algorithm
       DAE.Type tt;
       list<DAE.Exp> exps1,exps2;
       list<DAE.Type> tys;
+      Boolean b;
 
     case (e1,e2,DAE.T_INTEGER(varLst = _),_,_,initial_)
       equation
@@ -1443,11 +1445,17 @@ algorithm
       then dae;
 
     // tuples
+    case (DAE.TUPLE(exps1),e2,DAE.T_TUPLE(tupleType = t::tys),_,_,initial_)
+      equation
+        exps1 = List.map(exps1,Expression.emptyToWild);
+        e1 = DAE.TUPLE(exps1);
+        dae = makeDaeEquation(e1, e2, source, initial_);
+      then dae;
+
     case (e1,e2,DAE.T_TUPLE(tupleType = _),_,_,initial_)
       equation
         dae = makeDaeEquation(e1, e2, source, initial_);
-      then
-        dae;
+      then dae;
 
     // MetaModelica types
     case (e1,e2,DAE.T_METALIST(listType = _),_,_,initial_)
