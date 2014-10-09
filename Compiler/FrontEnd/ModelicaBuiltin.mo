@@ -3636,20 +3636,16 @@ package '1.9.0' "Version 1.9.0 (r17628, 2013-10-09)"
   <body>Redirecting to the <a href=\"https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.9.0\">on-line release notes</a>.</body>
 </html>"));
 end '1.9.0';
-package '1.9.1' "Version 1.9.1 Beta 2 (2014-03-08)"
+package '1.9.1' "Version 1.9.1 Beta 4 (2014-10-07)"
   annotation(Documentation(info = "<html>
   <head><meta http-equiv=\"refresh\" content=\"0; url=https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.9.1\"></head>
   <body>Redirecting to the <a href=\"https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.9.1\">on-line release notes</a>.</body>
 </html>"));
 end '1.9.1';
-package trunk "Development version"
-annotation(Documentation(info="<html>
-</html>"));
-end trunk;
 annotation(Documentation(info="<html>
 This section summarizes the major releases of OpenModelica and what changed between the major versions.
-However, OpenModelica is developed rapidly and updated on a continuous basis. There are probably changes
-in the <a href=\"modelica://OpenModelica.UsersGuide.ReleaseNotes.trunk\">current version</a>.
+Note that OpenModelica is developed rapidly.
+The nightly builds are updated on a continuous basis and the release notes for these are not always up to date.</a>.
 </html>"));
 end ReleaseNotes;
 end UsersGuide;
