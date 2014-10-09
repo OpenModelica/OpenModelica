@@ -192,8 +192,12 @@ end dumpClassDef;
 template dumpClassFooter(SCode.ClassDef classDef, String cdefStr, String name, String cmt, String ann, String cc_str)
 ::=
 match classDef
-  case DERIVED(__) then '<%cdefStr%><%cmt%><%ann%><%cc_str%>'
-  case ENUMERATION(__) then '<%cdefStr%><%cmt%><%ann%><%cc_str%>'
+  case DERIVED(__) then
+    let cmt_spacer = if cmt then " "
+    '<%cdefStr%><%cmt_spacer%><%cmt%><%ann%><%cc_str%>'
+  case ENUMERATION(__) then
+    let cmt_spacer = if cmt then " "
+    '<%cdefStr%><%cmt_spacer%><%cmt%><%ann%><%cc_str%>'
   case PDER(__) then cdefStr
   case _ then
     let annstr = if ann then '<%ann%>; ' else ''
@@ -802,15 +806,12 @@ template dumpComment(SCode.Comment comment, SCodeDumpOptions options)
     case COMMENT(__) then
       let ann_str = dumpAnnotationOpt(annotation_, options)
       let cmt_str = dumpCommentStr(comment)
-      '<%cmt_str%><%ann_str%>'
+      let cmt_spacer = if cmt_str then " "
+      '<%cmt_spacer%><%cmt_str%><%ann_str%>'
 end dumpComment;
 
 template dumpCommentStr(Option<String> comment)
-::=
-if Config.showAnnotations() then
-  match comment
-    case SOME(cmt) then ' "<%cmt%>"'
-    else ''
+::= if Config.showAnnotations() then match comment case SOME(cmt) then '"<%cmt%>"'
 end dumpCommentStr;
 
 template errorMsg(String errMessage)

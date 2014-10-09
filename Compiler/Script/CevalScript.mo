@@ -1931,6 +1931,12 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
+    case (cache,_,"compareFiles",{Values.STRING(str1),Values.STRING(str2)},st,_)
+      equation
+        b = System.fileContentsEqual(str1,str2);
+      then
+        (cache,Values.BOOL(b),st);
+
     case (cache,_,"compareFilesAndMove",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
         true = System.regularFileExists(str1);

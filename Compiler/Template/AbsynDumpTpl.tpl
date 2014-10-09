@@ -49,7 +49,7 @@ match cls
   case CLASS(__) then
     let header_str = dumpClassHeader(cls, final_str, redecl_str, repl_str, io_str)
     let body_str = dumpClassDef(body, name)
-    '<%header_str%><%body_str%>'
+    '<%header_str%> <%body_str%>'
 end dumpClassElement;
 
 template dumpClassDef(Absyn.ClassDef cdef, String cls_name)
@@ -59,10 +59,11 @@ match cdef
     let tvs_str = if typeVars then '<<%(typeVars |> typevar => typevar ;separator=", ")%>>'
     let ann_str = (listReverse(ann) |> a => dumpAnnotation(a) ;separator=";\n")
     let cmt_str = dumpStringCommentOption(comment)
+    let cmt_spacer = if cmt_str then " "
     let body_str = (classParts |> class_part hasindex idx =>
         dumpClassPart(class_part, idx) ;separator="")
     <<
-     <%cls_name%><%tvs_str%><%cmt_str%><%\n%>
+    <%cls_name%><%tvs_str%><%cmt_spacer%><%cmt_str%><%\n%>
     <%body_str%>
       <%if ann_str then '<%ann_str%>;'%>
     end <%cls_name%>
@@ -73,16 +74,17 @@ match cdef
     let mod_str = if arguments then
       '(<%(arguments |> arg => dumpElementArg(arg) ;separator=", ")%>)'
     let cmt_str = dumpCommentOpt(comment)
-    ' <%cls_name%> = <%attr_str%><%ty_str%><%mod_str%><%cmt_str%>'
+    '<%cls_name%> = <%attr_str%><%ty_str%><%mod_str%><%cmt_str%>'
   case CLASS_EXTENDS(__) then
     let body_str = (parts |> class_part hasindex idx =>
       dumpClassPart(class_part, idx) ;separator="\n")
     let mod_str = if modifications then
       '(<%(modifications |> mod => dumpElementArg(mod) ;separator=", ")%>)'
     let cmt_str = dumpStringCommentOption(comment)
+    let cmt_spacer = if cmt_str then " "
     let ann_str = (listReverse(ann) |> a => dumpAnnotation(a) ;separator=";\n")
     <<
-     extends <%baseClassName%><%mod_str%><%cmt_str%>
+    extends <%baseClassName%><%mod_str%><%cmt_spacer%><%cmt_str%>
       <%body_str%>
       <%if ann_str then '<%ann_str%>;'%>
     end <%cls_name%>
@@ -90,15 +92,15 @@ match cdef
   case ENUMERATION(__) then
     let enum_str = dumpEnumDef(enumLiterals)
     let cmt_str = dumpCommentOpt(comment)
-    ' <%cls_name%> = enumeration(<%enum_str%>)<%cmt_str%>'
+    '<%cls_name%> = enumeration(<%enum_str%>)<%cmt_str%>'
   case OVERLOAD(__) then
     let funcs_str = (functionNames |> fn => dumpPath(fn) ;separator=", ")
     let cmt_str = dumpCommentOpt(comment)
-    ' <%cls_name%> = $overload(<%funcs_str%>)<%cmt_str%>'
+    '<%cls_name%> = $overload(<%funcs_str%>)<%cmt_str%>'
   case PDER(__) then
     let fn_str = dumpPath(functionName)
     let vars_str = (vars |> var => var ;separator=", ")
-    ' <%cls_name%> = der(<%fn_str%>, <%vars_str%>)'
+    '<%cls_name%> = der(<%fn_str%>, <%vars_str%>)'
 end dumpClassDef;
 
 template dumpEnumDef(Absyn.EnumDef enum_def)
@@ -308,7 +310,8 @@ match cmt
   case COMMENT(__) then
     let ann_str = dumpAnnotationOpt(annotation_)
     let cmt_str = dumpStringCommentOption(comment)
-    '<%cmt_str%><%spaceString(ann_str)%>'
+    let cmt_spacer = if cmt_str then " "
+    '<%cmt_spacer%><%cmt_str%><%spaceString(ann_str)%>'
 end dumpComment;
 
 template dumpCommentOpt(Option<Absyn.Comment> ocmt)
@@ -324,7 +327,8 @@ match earg
     let path_str = dumpPath(path)
     let mod_str = match modification case SOME(mod) then dumpModification(mod)
     let cmt_str = dumpStringCommentOption(comment)
-    '<%each_str%><%final_str%><%path_str%><%mod_str%><%cmt_str%>'
+    let cmt_spacer = if cmt_str then " "
+    '<%each_str%><%final_str%><%path_str%><%mod_str%><%cmt_spacer%><%cmt_str%>'
   case REDECLARATION(__) then
     let each_str = dumpEach(eachPrefix)
     let final_str = dumpFinal(finalPrefix)
@@ -694,7 +698,10 @@ match path
 end dumpPathNoQual;
 
 template dumpStringCommentOption(Option<String> cmt)
-::= match cmt case SOME(str) then ' "<%str%>"'
+  // Comments usually need a space in front of them, but adding the space here
+  // messes up multiline string comments because of how Susan formats things.
+  // The space should be added separately before the comment instead.
+::= match cmt case SOME(str) then '"<%str%>"'
 end dumpStringCommentOption;
 
 template dumpTypeSpec(Absyn.TypeSpec typeSpec)
@@ -877,10 +884,11 @@ match match_exp
     let locals_str = dumpMatchLocals(localDecls)
     let cases_str = (cases |> c => dumpMatchCase(c) ;separator="\n\n")
     let cmt_str = dumpStringCommentOption(comment)
+    let cmt_spacer = if cmt_str then " "
     <<
     <%ty_str%> <%input_str%>
     <%locals_str%>
-      <%cases_str%><%cmt_str%>
+      <%cases_str%><%cmt_spacer%><%cmt_str%>
     end <%ty_str%>
     >>
 end dumpMatchExp;
@@ -926,8 +934,9 @@ match c
       >>
       else 'then <%result_str%>'
     let cmt_str = dumpStringCommentOption(comment)
+    let cmt_spacer = if cmt_str then " "
     <<
-    case <%pattern_str%> <%guard_str%><%eql_str%><%then_str%>;
+    case <%pattern_str%> <%guard_str%><%cmt_spacer%><%cmt_str%><%eql_str%><%then_str%>;
     >>
 end dumpMatchCase;
 

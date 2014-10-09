@@ -1530,6 +1530,15 @@ external "builtin" annotation(__OpenModelica_Impure=true,Documentation(info="<ht
 </html>"));
 end compareFilesAndMove;
 
+impure function compareFiles
+  input String file1;
+  input String file2;
+  output Boolean isEqual;
+external "builtin" annotation(__OpenModelica_Impure=true,Documentation(info="<html>
+<p>Compares <i>file1</i> and <i>file2</i> and returns true if their content is equal, otherwise false.</p>
+</html>"));
+end compareFiles;
+
 impure function alarm
   input Integer seconds;
   output Integer previousSeconds;
