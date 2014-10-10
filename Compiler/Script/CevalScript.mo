@@ -2590,9 +2590,10 @@ algorithm
         senddata = System.getRTLibs();
         gcc = System.getCCompiler();
         have_corba = Corba.haveCorba();
-        gcc_res = 0 == System.systemCall(gcc +& " -v", touch_file);
+        _ = System.systemCall("rm -f " +& touch_file, "");
+        gcc_res = 0 == System.systemCall(gcc +& " --version", touch_file);
         gccVersion = System.readFile(touch_file);
-        _ = System.systemCall("rm " +& touch_file, "");
+        _ = System.systemCall("rm -f " +& touch_file, "");
         confcmd = System.configureCommandLine();
         vals = {Values.STRING(omhome),
                 Values.STRING(omlib),
