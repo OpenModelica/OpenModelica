@@ -1872,7 +1872,7 @@ algorithm
     case (_,DAE.MUL_ARRAY_SCALAR(ty = tp),e2)
       equation
         true = Expression.isZero(e2);
-        a1 = Expression.makeConstZero(tp);
+        (a1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then a1;
 
     case (e1,DAE.DIV_ARR(ty = _),_)
