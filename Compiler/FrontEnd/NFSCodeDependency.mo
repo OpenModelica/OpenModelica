@@ -56,7 +56,6 @@ protected import NFSCodeLookup;
 protected import SCodeDump;
 protected import System;
 protected import Util;
-protected import Dump;
 
 protected type Item = NFSCodeEnv.Item;
 protected type Extends = NFSCodeEnv.Extends;
@@ -1592,15 +1591,8 @@ algorithm
       Absyn.Path path;
       Item item;
       Env env;
-      String id1, id2;
 
     case (Absyn.WILD(), _, _) then ();
-
-    case (Absyn.CREF_QUAL(name = id1), NFSCodeEnv.FRAME(name = SOME(id2)) :: _, _)
-      equation
-        true = stringEq(id1, id2);
-      then
-        ();
 
     case (_, _, _)
       equation
