@@ -1601,7 +1601,7 @@ algorithm
         true = stringEq(id1, id2);
       then
         ();
-        
+
     case (_, _, _)
       equation
         // We want to use lookupClass since we need the item and environment, and
