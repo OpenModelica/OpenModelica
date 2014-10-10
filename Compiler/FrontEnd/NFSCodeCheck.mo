@@ -214,16 +214,17 @@ algorithm
       SCode.Visibility vis1, vis2;
       String ty;
       Integer err_count;
+      Absyn.TypeSpec ty1, ty2;
 
     case (NFSCodeEnv.VAR(var =
         SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(
             visibility = _, finalPrefix = fin, replaceablePrefix = repl),
-          attributes = SCode.ATTR(variability = var), info = info)),
-        SCode.COMPONENT(prefixes = SCode.PREFIXES(visibility = _)), _)
+          attributes = SCode.ATTR(variability = var), typeSpec = ty1, info = info)),
+        SCode.COMPONENT(prefixes = SCode.PREFIXES(visibility = _), typeSpec = ty2), _)
       equation
         err_count = Error.getNumErrorMessages();
         ty = "component";
-        checkRedeclarationReplaceable(name, ty, repl, inInfo, info);
+        checkCompRedeclarationReplaceable(name, repl, ty1, ty2, inInfo, info);
         checkRedeclarationFinal(name, ty, fin, inInfo, info);
         checkRedeclarationVariability(name, ty, var, inInfo, info);
         //checkRedeclarationVisibility(name, ty, vis1, vis2, inInfo, info);
@@ -239,7 +240,7 @@ algorithm
       equation
         err_count = Error.getNumErrorMessages();
         ty = SCodeDump.restrictionStringPP(res);
-        checkRedeclarationReplaceable(name, ty, repl, inInfo, info);
+        checkClassRedeclarationReplaceable(name, ty, repl, inInfo, info);
         checkRedeclarationFinal(name, ty, fin, inInfo, info);
         //checkRedeclarationVisibility(name, ty, vis1, vis2, inInfo, info);
         true = intEq(err_count, Error.getNumErrorMessages());
@@ -271,7 +272,7 @@ algorithm
   end match;
 end checkRedeclaredElementPrefix;
 
-protected function checkRedeclarationReplaceable
+protected function checkClassRedeclarationReplaceable
   input SCode.Ident inName;
   input String inType;
   input SCode.Replaceable inReplaceable;
@@ -279,7 +280,6 @@ protected function checkRedeclarationReplaceable
   input Absyn.Info inInfo;
 algorithm
   _ := match(inName, inType, inReplaceable, inOriginInfo, inInfo)
-
     case (_, _, SCode.REPLACEABLE(cc = _), _, _) then ();
 
     case (_, _, SCode.NOT_REPLACEABLE(), _, _)
@@ -290,7 +290,39 @@ algorithm
       then
         ();
   end match;
-end checkRedeclarationReplaceable;
+end checkClassRedeclarationReplaceable;
+
+protected function checkCompRedeclarationReplaceable
+  input SCode.Ident inName;
+  input SCode.Replaceable inReplaceable;
+  input Absyn.TypeSpec inType1;
+  input Absyn.TypeSpec inType2;
+  input Absyn.Info inOriginInfo;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inName, inReplaceable, inType1, inType2, inOriginInfo, inInfo)
+    local
+      SCode.Element var;
+      Absyn.TypeSpec ty1, ty2;
+
+    case (_, SCode.REPLACEABLE(cc = _), _, _, _, _) then ();
+
+    case (_, SCode.NOT_REPLACEABLE(), _, _, _, _)
+      equation
+        true = Absyn.pathEqual(Absyn.typeSpecPath(inType1),
+                               Absyn.typeSpecPath(inType2));
+      then
+        ();
+
+    case (_, SCode.NOT_REPLACEABLE(), _, _, _, _)
+      equation
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
+        Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE,
+          {"component", inName}, inInfo);
+      then
+        ();
+  end matchcontinue;
+end checkCompRedeclarationReplaceable;
 
 protected function checkRedeclarationFinal
   input SCode.Ident inName;
