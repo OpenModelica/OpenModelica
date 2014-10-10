@@ -594,6 +594,8 @@ algorithm
     // Scalar
     case (DAE.TYPES_VAR(name = name, ty = DAE.T_REAL(varLst = _)))
       then {DAE.CREF_IDENT(name, DAE.T_REAL_DEFAULT, {})};
+    case (DAE.TYPES_VAR(name = name, ty = DAE.T_SUBTYPE_BASIC(complexType = DAE.T_REAL(varLst = _))))
+      then {DAE.CREF_IDENT(name, DAE.T_REAL_DEFAULT, {})};
 
     // Complex type
     case (DAE.TYPES_VAR(name = name,
@@ -617,7 +619,8 @@ algorithm
 
     else
       equation
-        print("Unknown var in ConnectUtil.daeVarToCrefs\n");
+        name = Types.unparseVar(inVar);
+        Error.addInternalError("Unknown var " +& name +& " in ConnectUtil.daeVarToCrefs");
       then
         fail();
 
