@@ -3,7 +3,7 @@
 package PDEDomains
   import C = Modelica.Constants;
 
-  type Domain  //Domain is built-in, but this is his "interface"
+  type Domain  //Domain is built-in, but this is its "interface"
     prameter Integer ndim;
     Coordinate coord[ndim];
     replaceable Region interior;
