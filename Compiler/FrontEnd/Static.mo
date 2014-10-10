@@ -2467,7 +2467,7 @@ algorithm
 
     case (DAE.PROP(tp,_) :: _)
       equation
-        DAE.T_INTEGER(varLst = _) = Types.arrayElementType(tp);
+        true = Types.isInteger(tp);
       then
         ();
 
@@ -2494,15 +2494,14 @@ algorithm
 
     case ((DAE.PROP(type_ = tp) :: _))
       equation
-        DAE.T_REAL(varLst = _) = Types.arrayElementType(tp);
-      then
-        tp;
+        true = Types.isReal(tp);
+      then tp;
 
     case ((_ :: rest))
       equation
         tp = elabArrayFirstPropsReal(rest);
-      then
-        tp;
+      then tp;
+
   end matchcontinue;
 end elabArrayFirstPropsReal;
 
