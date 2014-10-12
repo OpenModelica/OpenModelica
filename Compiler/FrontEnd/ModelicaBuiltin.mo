@@ -3188,7 +3188,7 @@ function getDerivedClassModifierValue "Returns the derived class modifier value.
   Example command:
   type Resistance = Real(final quantity=\"Resistance\",final unit=\"Ohm\");
   getDerivedClassModifierValue(Resistance, unit); => \" = \"Ohm\"\"
-  getDerivedClassModifierValue(Resistance, unit); => \" = \"Resistance\"\""
+  getDerivedClassModifierValue(Resistance, quantity); => \" = \"Resistance\"\""
   input TypeName className;
   input TypeName modifierName;
   output String modifierValue;
