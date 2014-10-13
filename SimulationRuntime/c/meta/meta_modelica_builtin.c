@@ -154,7 +154,7 @@ modelica_integer stringHashDjb2(metamodelica_string_const s)
 {
   const char* str = MMC_STRINGDATA(s);
   long res = djb2_hash((const unsigned char*)str);
-  res = abs(res);
+  res = labs(res);
   /* fprintf(stderr, "stringHashDjb2 %s-> %ld %ld %ld\n", str, res, mmc_mk_icon(res), mmc_unbox_integer(mmc_mk_icon(res))); */
   return res;
 }
@@ -164,7 +164,7 @@ modelica_integer stringHashDjb2Mod(metamodelica_string_const s, modelica_integer
 {
   const char* str = MMC_STRINGDATA(s);
   long res = djb2_hash((const unsigned char*)str) % (unsigned int) mod;
-  res = abs(res);
+  res = labs(res);
   /* fprintf(stderr, "stringHashDjb2Mod %s %ld-> %ld %ld %ld\n", str, mod, res, mmc_mk_icon(res), mmc_unbox_integer(mmc_mk_icon(res))); */
   return res;
 }

@@ -35,6 +35,7 @@
 #include "../OptimizerLocalFunction.h"
 #include "../../simulation/results/simulation_result.h"
 #include "../../simulation/options.h"
+#include "../../simulation/solver/model_help.h"
 
 static inline void pickUpDim(OptDataDim * dim, DATA* data);
 static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, const double preSimTime);
@@ -718,7 +719,7 @@ void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
     DATA * data = optData->data;
     int i,j,l,ii, ll;
     const int index = 4;
-    const h_index = optData->s.indexABCD[index];
+    const int h_index = optData->s.indexABCD[index];
     const unsigned int * const cC = data->simulationInfo.analyticJacobians[h_index].sparsePattern.colorCols;
     const unsigned int * const lindex  = optData->s.lindex[index];
     const int nx = data->simulationInfo.analyticJacobians[h_index].sizeCols;

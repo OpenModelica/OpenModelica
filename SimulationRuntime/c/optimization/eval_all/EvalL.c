@@ -33,12 +33,13 @@
 
 #include "../OptimizerData.h"
 #include "../OptimizerLocalFunction.h"
+#include "../../simulation/solver/model_help.h"
 
 static inline void num_hessian0(double * v, const double * const lambda, const double objFactor , OptData *optData, const int i, const int j);
 static inline void sumLagrange0(const int i, const int j, double * res,  const modelica_boolean upC, OptData *optData);
 static inline void num_hessian1(double * v, const double * const lambda, const double objFactor, OptData *optData, const int i, const int j);
 static inline void sumLagrange1(const int i, const int j, double * res,  const modelica_boolean upC, const modelica_boolean upC2, OptData *optData);
-#define DF_STEP(v) (1e-5*fabs(v) + 1e-8)
+#define DF_STEP(v) (1e-5*fabsl(v) + 1e-8)
 
 /* eval hessian
  * author: Vitalij Ruge

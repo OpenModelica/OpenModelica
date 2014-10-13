@@ -425,7 +425,7 @@ static int initKinsol(KINODE *kinOde)
     for(i=0;i<n;++i,++k)
     {
       hf = 0.5*nlp->dt*nlp->a[j]*(3*nlp->f0[i]-f2[i]);
-      if(fabs(hf) < hf_min) hf_min = fabs(hf);
+      if(fabsl(hf) < hf_min) hf_min = fabsl(hf);
       x[k] = (nlp->x0[i] + hf);
       tmp = fabs(x[k] + nlp->x0[i]) + 1e-12;
       tmp = (tmp < 1e-9) ? nlp->s[i] : 2.0/tmp;
