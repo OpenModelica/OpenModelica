@@ -8646,14 +8646,22 @@ algorithm
       Absyn.Info resultInfo,info;
       Integer jump;
       DAE.MatchCase case_;
-      DAE.Exp exp;
+      DAE.Exp exp,exp1;
       list<DAE.MatchCase> cases,acc;
+      DAE.ElementSource sourceStmt;
 
     case (_,{},true,acc,_,_) then listReverse(acc);
     case (_,DAE.CASE(patterns,patternGuard,localDecls,body,SOME(exp),resultInfo,jump,info)::cases,_,acc,_,_)
       equation
         (exp,true) = optimizeStatementTail3(path,exp,vars,source);
         case_ = DAE.CASE(patterns,patternGuard,localDecls,body,SOME(exp),resultInfo,jump,info);
+      then optimizeStatementTailMatchCases(path,cases,true,case_::acc,vars,source);
+    case (_,DAE.CASE(patterns,patternGuard,localDecls,body,SOME(DAE.TUPLE({})),resultInfo,jump,info)::cases,_,acc,_,_)
+      equation
+        DAE.STMT_NORETCALL(exp,sourceStmt) = List.last(body);
+        (exp,true) = optimizeStatementTail3(path,exp,vars,source);
+        body = List.set(body,listLength(body),DAE.STMT_NORETCALL(exp,sourceStmt));
+        case_ = DAE.CASE(patterns,patternGuard,localDecls,body,SOME(DAE.TUPLE({})),resultInfo,jump,info);
       then optimizeStatementTailMatchCases(path,cases,true,case_::acc,vars,source);
     case (_,case_::cases,_,acc,_,_)
       then optimizeStatementTailMatchCases(path,cases,changed,case_::acc,vars,source);
