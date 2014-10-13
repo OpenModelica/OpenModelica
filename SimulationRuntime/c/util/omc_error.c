@@ -389,6 +389,7 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
   case ERROR_SIMULATION:
   case ERROR_NONLINEARSOLVER:
   case ERROR_INTEGRATOR:
+  case ERROR_OPTIMIZE:
 #ifndef OMC_EMCC
     return threadData->simulationJumpBuffer;
 #endif

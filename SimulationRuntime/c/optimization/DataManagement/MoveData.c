@@ -31,6 +31,9 @@
 /*! MoveData.c
  */
 
+#include "../../openmodelica.h"
+#include "../../openmodelica_types.h"
+#include "../../meta/meta_modelica.h"
 #include "../OptimizerData.h"
 #include "../OptimizerLocalFunction.h"
 #include "../../simulation/results/simulation_result.h"
@@ -572,6 +575,7 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
   DATA * data = optData->data;
   const int * indexBC = optData->s.indexABCD + 3;
   OptDataDim * dim = &optData->dim;
+  threadData_t *threadData = data->threadData;
 
   for(l = 0; l < 3; ++l)
     realVars[l] = data->localData[l]->realVars;
@@ -606,14 +610,19 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
       for(; k <nv; ++k){
         data->simulationInfo.inputVars[k-nx] = (modelica_real) vopt[shift + k]*vnom[k];
       }
-
+    /* try */
+#if !defined(OMC_EMCC)
+    MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
       data->callback->input_function(data);
       /*data->callback->functionDAE(data);*/
       updateDiscreteSystem(data);
-
       if(index){
         diffSynColoredOptimizerSystem(optData, optData->J[i][j], i,j,2);
       }
+#if !defined(OMC_EMCC)
+    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
 
     }
   }
@@ -634,7 +643,10 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
     for(; k <nv; ++k){
       data->simulationInfo.inputVars[k-nx] = (modelica_real) vopt[shift + k]*vnom[k];
     }
-
+    /* try */
+#if !defined(OMC_EMCC)
+    MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
     data->callback->input_function(data);
     /*data->callback->functionDAE(data);*/
     updateDiscreteSystem(data);
@@ -642,6 +654,11 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
     if(index){
       diffSynColoredOptimizerSystem(optData, optData->J[i][j], i,j, (j+1 == np)? 3 : 2);
     }
+#if !defined(OMC_EMCC)
+    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+
+
   }
 
   /*terminal constraint(s)*/
