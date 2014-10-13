@@ -23,14 +23,15 @@ $(srcdir)/runtime/runtime.a \
 FRONTEND_DIR=$(srcdir)/FrontEnd
 FFRONTEND_DIR=$(srcdir)/FFrontEnd
 BACKEND_DIR=$(srcdir)/BackEnd
+SIMCODE_DIR=$(srcdir)/SimCode
 GLOBAL_DIR=$(srcdir)/Global
 TEMPLATE_DIR=$(srcdir)/Template
 SCRIPT_DIR=$(srcdir)/Script
 UTIL_DIR=$(srcdir)/Util
 MAIN_DIR=$(srcdir)/Main
-ALL_DIRS = $(FRONTEND_DIR) $(FFRONTEND_DIR) $(BACKEND_DIR) $(TEMPLATE_DIR) $(UTIL_DIR) $(SCRIPT_DIR) $(MAIN_DIR) $(GLOBAL_DIR)
-RML_INCLUDE_ALL_DIRS = -I$(FRONTEND_DIR) -I$(FFRONTEND_DIR) -I$(BACKEND_DIR) -I$(TEMPLATE_DIR) -I$(UTIL_DIR) -I$(SCRIPT_DIR) -I$(MAIN_DIR) -I$(GLOBAL_DIR)
-RMLC_INCLUDE_ALL_DIRS = -I$(FRONTEND_DIR),-I$(FFRONTEND_DIR),-I$(BACKEND_DIR),-I$(TEMPLATE_DIR),-I$(UTIL_DIR),-I$(SCRIPT_DIR),-I$(MAIN_DIR),-I$(GLOBAL_DIR)
+ALL_DIRS = $(FRONTEND_DIR) $(FFRONTEND_DIR) $(BACKEND_DIR) $(SIMCODE_DIR) $(TEMPLATE_DIR) $(UTIL_DIR) $(SCRIPT_DIR) $(MAIN_DIR) $(GLOBAL_DIR)
+RML_INCLUDE_ALL_DIRS = -I$(FRONTEND_DIR) -I$(FFRONTEND_DIR) -I$(BACKEND_DIR)  -I$(SIMCODE_DIR) -I$(TEMPLATE_DIR) -I$(UTIL_DIR) -I$(SCRIPT_DIR) -I$(MAIN_DIR) -I$(GLOBAL_DIR)
+RMLC_INCLUDE_ALL_DIRS = -I$(FRONTEND_DIR),-I$(FFRONTEND_DIR),-I$(BACKEND_DIR),-I$(SIMCODE_DIR),-I$(TEMPLATE_DIR),-I$(UTIL_DIR),-I$(SCRIPT_DIR),-I$(MAIN_DIR),-I$(GLOBAL_DIR)
 
 FRONTEND = \
 Absyn.mo \
@@ -167,8 +168,6 @@ HpcOmBenchmark.mo \
 HpcOmEqSystems.mo \
 HpcOmMemory.mo \
 HpcOmScheduler.mo \
-HpcOmSimCode.mo \
-HpcOmSimCodeMain.mo \
 HpcOmTaskGraph.mo \
 IndexReduction.mo \
 Initialization.mo \
@@ -179,14 +178,18 @@ OnRelaxation.mo \
 OpenTURNS.mo \
 RemoveSimpleEquations.mo \
 ResolveLoops.mo \
-SimCode.mo \
-SimCodeMain.mo \
-SimCodeUtil.mo \
 SynchronousFeatures.mo \
 Tearing.mo \
 Uncertainties.mo \
 UnitCheck.mo \
 XMLDump.mo
+
+SIMCODE = \
+HpcOmSimCode.mo \
+HpcOmSimCodeMain.mo \
+SimCode.mo \
+SimCodeMain.mo \
+SimCodeUtil.mo \
 
 GLOBAL = \
 Global.mo
@@ -290,7 +293,7 @@ FMIExt.mo \
 GraphStreamExt.mo \
 
 # all modules
-SRCMO   = $(FRONTEND) $(FFRONTEND) $(BACKEND) $(GLOBAL) $(TEMPLATE) $(UTIL) $(SCRIPT) $(MAIN)
+SRCMO   = $(FRONTEND) $(FFRONTEND) $(BACKEND) $(SIMCODE) $(GLOBAL) $(TEMPLATE) $(UTIL) $(SCRIPT) $(MAIN)
 ALLMO   = $(SRCMO) $(EXTERNAL)
 SRCC    = $(SRCMO:%.mo=%.c)
 SRCH    = $(SRCC:%.c=%.h)

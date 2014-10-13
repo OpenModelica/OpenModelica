@@ -146,8 +146,6 @@ if true then /* Suppress output */
     "../BackEnd/HpcOmMemory.mo",
     "../BackEnd/HpcOmScheduler.mo",
     "../BackEnd/HpcOmSchedulerExt.mo",
-    "../BackEnd/HpcOmSimCode.mo",
-    "../BackEnd/HpcOmSimCodeMain.mo",
     "../BackEnd/HpcOmTaskGraph.mo",
     "../BackEnd/IndexReduction.mo",
     "../BackEnd/InlineArrayEquations.mo",
@@ -158,14 +156,18 @@ if true then /* Suppress output */
     "../BackEnd/OpenTURNS.mo",
     "../BackEnd/RemoveSimpleEquations.mo",
     "../BackEnd/ResolveLoops.mo",
-    "../BackEnd/SimCode.mo",
-    "../BackEnd/SimCodeMain.mo",
-    "../BackEnd/SimCodeUtil.mo",
     "../BackEnd/SynchronousFeatures.mo",
     "../BackEnd/Tearing.mo",
     "../BackEnd/Uncertainties.mo",
     "../BackEnd/UnitCheck.mo",
     "../BackEnd/XMLDump.mo",
+
+  // "SimCode";
+    "../SimCode/HpcOmSimCode.mo",
+    "../SimCode/HpcOmSimCodeMain.mo",
+    "../SimCode/SimCode.mo",
+    "../SimCode/SimCodeMain.mo",
+    "../SimCode/SimCodeUtil.mo",
 
   // "Script";
     "../Script/CevalScript.mo",
