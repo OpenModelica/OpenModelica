@@ -9353,7 +9353,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
 
   case CALL(path=IDENT(name="abs"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode,useFlatArrayNotation)
-    'fabs(<%var1%>)'
+    'std::abs(<%var1%>)'
 
   case CALL(path=IDENT(name="sqrt"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
@@ -9539,7 +9539,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
 
     let tvar = tempDecl(tmp_type_str, &varDecls /*BUFD*/)
 
-    let &varDecls += '<%tvar%>.setDims(<%dimsExp%>);<%\n%>'
+    let &preExp += '<%tvar%>.setDims(<%dimsExp%>);<%\n%>'
 
     let &preExp += 'fill_array<<%ty_str%>>(<%tvar%>, <%valExp%>);<%\n%>'
     '<%tvar%>'
@@ -9698,7 +9698,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
     let &preExp += match context
-                        case FUNCTION_CONTEXT(__) then '<%funName%>(<%argStr%>);<%\n%>/*funccall*/'
+                        case FUNCTION_CONTEXT(__) then '<%funName%>(<%argStr%>);<%\n%>'
             /*multi_array else 'assign_array(<%retVar%> ,_functions.<%funName%>(<%argStr%>));<%\n%>'*/
                         else '_functions-><%funName%>(<%argStr%>);<%\n%>'
     ""
