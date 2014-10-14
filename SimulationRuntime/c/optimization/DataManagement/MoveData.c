@@ -50,7 +50,7 @@ static inline void calculatedScalingHelper(OptDataBounds * bounds, OptDataTime *
 static inline void setRKCoeff(OptDataRK *rk, const int np);
 static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim, DATA* data);
 static inline void pickUpStates(OptData* optdata);
-static inline void updateDOSystem(OptData * optData, DATA * data, threadData_t *threadData, 
+static inline void updateDOSystem(OptData * optData, DATA * data, threadData_t *threadData,
                                    const int i, const int j, const int index, const int m);
 
 static inline void setLocalVars(OptData * optData, DATA * data, const double * const vopt,
