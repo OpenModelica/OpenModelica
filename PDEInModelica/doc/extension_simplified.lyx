@@ -3,6 +3,12 @@
 \begin_document
 \begin_header
 \textclass article
+\begin_preamble
+\usepackage{microtype}
+\DisableLigatures{encoding = *, family = * }
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\end_preamble
 \use_default_options true
 \begin_modules
 theorems-ams
@@ -136,7 +142,7 @@ Example models
 Advection equation
 \end_layout
 
-\begin_layout Paragraph
+\begin_layout Standard
 \begin_inset CommandInset include
 LatexCommand lstinputlisting
 filename "../models/advection.mo"
@@ -1154,7 +1160,7 @@ Coordinate x(name = "cartesian") = coord[1]; //alias for the coord
 \begin_inset space ~
 \end_inset
 
-Region1D interior(x in (0,l) /*or 0<x and x<l ??*/); 
+Region1D interior(x in {0,l}); 
 \end_layout
 
 \begin_layout Plain Layout
@@ -1204,10 +1210,11 @@ end DomainLineSegment1D;
 \begin_layout Standard
 New syntax (
 \family typewriter
-x in (0,l)
+x in {0,l
 \family default
-) is used here to specify the range for the coordinate x within the region.
- I'm not sure about it, may be something better could be proposed.
+}) is used here to specify the interval for the coordinate x within the
+ region.
+ 
 \end_layout
 
 \begin_layout Standard
@@ -1632,6 +1639,99 @@ der(u),
 der(u,x,y)
 \end_layout
 
+\begin_layout Standard
+this is kept.
+ 
+\end_layout
+
+\begin_layout Paragraph*
+Further specification
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+for higher order time derivative and mixed time and space derivative, we
+ write 
+\family typewriter
+time 
+\family default
+explicitly, 
+\family typewriter
+e
+\family default
+.g.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+der(u,time,time)
+\end_layout
+
+\begin_layout Standard
+or
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+der(u,x,time).
+\end_layout
+
+\begin_layout Section*
+\begin_inset Note Note
+status open
+
+\begin_layout Section*
+Partial derivatives
+\end_layout
+
+\begin_layout Plain Layout
+Higher order derivatives are discussed here even though not supported for
+ now.
+\end_layout
+
+\begin_layout Paragraph*
+Originally
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+see 4.3.2.1
+\end_layout
+
+\begin_layout Plain Layout
+e.g.
+ 
+\family typewriter
+
+\begin_inset Formula $\frac{\partial u}{\partial t}$
+\end_inset
+
+
+\family default
+ ..
+ 
+\family typewriter
+der(u), 
+\begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial y}$
+\end_inset
+
+
+\family default
+ ..
+ 
+\family typewriter
+der(u,x,y)
+\end_layout
+
 \begin_layout Paragraph*
 Problem
 \begin_inset Newline newline
@@ -1640,7 +1740,7 @@ Problem
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 There is no way to write mixed time and space derivative 
 \begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial t}$
 \end_inset
@@ -1648,7 +1748,7 @@ There is no way to write mixed time and space derivative
  in this notation.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 This notation doesn't agree with mathematics, where we have different operators
  for ordinary (
 \begin_inset Formula $\frac{du}{dx}$
@@ -1662,7 +1762,7 @@ This notation doesn't agree with mathematics, where we have different operators
  
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 
 \family typewriter
 der(u)
@@ -1680,7 +1780,7 @@ Alternative approach
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 
 \family typewriter
 \begin_inset Formula $\frac{\partial u}{\partial t}$
@@ -1707,7 +1807,7 @@ Alternative approach
 pder(u,x,y)
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Now we can also write 
 \begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial t}$
 \end_inset
@@ -1715,6 +1815,11 @@ Now we can also write
  as 
 \family typewriter
 pder(u,x,time)
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection*
@@ -1988,6 +2093,47 @@ coord
 LatexCommand bibtex
 bibfiles "bibliography"
 options "plain"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+changes:
+\end_layout
+
+\begin_layout Itemize
+der(u) instead of pder(u,time)
+\end_layout
+
+\begin_layout Itemize
+{0,1} instead of (0,1) for interval
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+in
+\family default
+ not mandatory (
+\family typewriter
+interior
+\family default
+ by default)
+\end_layout
+
+\begin_layout Itemize
+modified field literal constructor
+\end_layout
+
+\begin_layout Itemize
+modified domain/region classes 
+\end_layout
 
 \end_inset
 
