@@ -404,6 +404,11 @@ algorithm
     // atan2(0,x) = 0
     case (DAE.CALL(path=Absyn.IDENT("atan2"),expLst={e1 as DAE.RCONST(0.0),_}))
       then e1;
+    // abs(-x) = abs(x)
+    case(DAE.CALL(path=Absyn.IDENT("abs"),expLst={DAE.UNARY(operator = DAE.UMINUS(ty = tp),exp = e1)}))
+      equation
+       e = Expression.makePureBuiltinCall("abs", {e1}, tp);
+      then e;
 
     // MetaModelica builtin operators are calls
     case _
@@ -4061,7 +4066,9 @@ algorithm
     // a/(-b-c) = (-a)/(c + b)
     case (_,op2 as DAE.DIV(ty = _),e1,DAE.BINARY(DAE.UNARY(operator = op3 as DAE.UMINUS(ty = _),exp = e2), DAE.SUB(ty = ty), e3),_,_)
     then DAE.BINARY(DAE.UNARY(op3,e1),op2,DAE.BINARY(e2, DAE.ADD(ty),e3));
-
+    // (-x)^2 = x^2
+    case (_,op2 as DAE.POW(ty = _), DAE.UNARY(operator = op3 as DAE.UMINUS(ty = _),exp = e1), e2 as DAE.RCONST(2.0),_,_)
+    then DAE.BINARY(e1, op2, e2);
     // e1 / -e2  => -e1 / e2
     case (_,DAE.DIV(ty = ty),e1,DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e2),_,_)
       equation
