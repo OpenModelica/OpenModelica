@@ -214,6 +214,165 @@ public:
     boost::array<T,size> _real_array;
 };
 
+/*Specialization for string arrays*/
+
+
+template<std::size_t size>class StatArrayDim1<string,size> : public BaseArray<string>
+{
+
+public:
+  StatArrayDim1(const string data[])
+  :BaseArray<string>(true)
+  {
+    for(int i=0;i<size;i++)
+    {
+      _real_array[i]=data[i];
+    }
+  }
+
+  StatArrayDim1(const StatArrayDim1<string,size>& otherarray)
+  :BaseArray<string>(true)
+  {
+     _real_array = otherarray._real_array;
+  }
+  StatArrayDim1(const DynArrayDim1<string>& otherarray)
+  :BaseArray<string>(true)
+  {
+    
+  }
+
+  StatArrayDim1()
+  :BaseArray<string>(true)
+  {
+  }
+
+  ~StatArrayDim1() {}
+
+  //void assign(StatArrayDim1<T,size> otherArray)
+  //{
+  //  _real_array = otherArray._real_array;
+  //}
+
+
+  StatArrayDim1<string,size>& operator=(BaseArray<string>& rhs)
+ {
+  if (this != &rhs)
+  {
+
+      try
+      {
+         if(rhs.isStatic())
+         {
+            StatArrayDim1<string,size>&  a = dynamic_cast<StatArrayDim1<string,size>&  >(rhs);
+            _real_array = a._real_array;
+         }
+         else
+         {
+             for(unsigned int i=0;i<size;i++)
+             {
+                  _real_array[i]=rhs(i);
+             }
+             
+
+         }
+      }
+      catch(std::bad_exception & be)
+      {
+        throw std::runtime_error("Wrong array type assign");
+
+      }
+
+  }
+  return *this;
+ }
+ StatArrayDim1<string,size>& operator=(const StatArrayDim1<string,size>& rhs)
+ {
+  if (this != &rhs)
+  {
+      _real_array= rhs._real_array;
+  }
+  return *this;
+ }
+
+   virtual void assign(const string data[])
+  {
+     for(int i=0;i<size;i++)
+    {
+      _real_array[i]=data[i];
+    }
+  }
+
+
+   virtual void assign(const BaseArray<string>& otherArray)
+  {
+    for(int i=0;i<size;i++)
+    {
+      _real_array[i]=otherArray(i);
+    }
+  }
+  virtual string& operator()(vector<size_t> idx)
+  {
+    
+  };
+
+
+  inline virtual string& operator()(unsigned int index)
+  {
+    return _real_array[index - 1];
+  }
+  inline virtual const string& operator()(unsigned int index) const
+  {
+    return _real_array[index - 1];
+  }
+
+  virtual std::vector<size_t> getDims() const
+  {
+    std::vector<size_t> v;
+    v.push_back(size);
+    return v;
+  }
+ /*
+  access to data
+  */
+  virtual string* getData()
+  {
+    return _real_array.c_array();
+  }
+  /*
+  access to data (read-only)
+  */
+  virtual const string* getData() const
+  {
+     return _real_array.data();
+  }
+  virtual unsigned int getNumElems()
+  {
+    return size;
+  }
+  virtual unsigned int getNumDims()
+  {
+     return 1;
+  }
+
+  virtual void setDims(std::vector<size_t> v) {  }
+  void setDims(size_t size1)  { }
+
+  typedef typename boost::array<string,size>::const_iterator                              const_iterator;
+  typedef typename  boost::array<string,size>::iterator                                   iterator;
+  iterator begin()
+  {
+    return   _real_array.begin();
+  }
+   iterator end()
+   {
+    return   _real_array.end();
+   }
+
+  private:
+    boost::array<string,size> _real_array;
+};
+
+
 template<typename T ,std::size_t size1,std::size_t size2,bool fotran = false>class StatArrayDim2 : public BaseArray<T>
 {
 
