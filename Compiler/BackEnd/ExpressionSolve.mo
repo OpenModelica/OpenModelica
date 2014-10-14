@@ -281,16 +281,19 @@ algorithm
          (res, asserts) = solve(e1,inExp2,inExp3);
        then
          (res,asserts);
-    // f(a)^n = c => f(a) = c^(1/n)
+    // f(a)^x = c => f(a) = {+,-}*c^(1/x)
     // where n is odd
-    case (DAE.BINARY(e1,DAE.POW(_),e2 as DAE.RCONST(r)), _, DAE.CREF(componentRef = cr))
+    case (DAE.BINARY(e1,DAE.POW(tp),e2), _, DAE.CREF(componentRef = cr))
        equation
-         1.0 = realMod(r,2.0);
          false = Expression.expHasCref(inExp2, cr);
          true = Expression.expHasCref(e1, cr);
+         false = Expression.expHasCref(e2, cr);
          res = Expression.expDiv(DAE.RCONST(1.0),e2);
          res = Expression.expPow(inExp2,res);
          (res, asserts) = solve(e1,res,inExp3);
+         e11 = Expression.makePureBuiltinCall("pre",{inExp3},tp);
+         e11 = DAE.IFEXP(DAE.RELATION(e11,DAE.GREATEREQ(tp),DAE.RCONST(0.0),-1,NONE()),DAE.RCONST(1.0),DAE.RCONST(-1.0));
+         res = Expression.expMul(e11,res);
        then
          (res,asserts);
 
