@@ -49,8 +49,12 @@ static inline void calculatedScalingHelper(OptDataBounds * bounds, OptDataTime *
 
 static inline void setRKCoeff(OptDataRK *rk, const int np);
 static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim, DATA* data);
-
 static inline void pickUpStates(OptData* optdata);
+static inline void updateDOSystem(OptData * optData, DATA * data, threadData_t *threadData, 
+                                   const int i, const int j, const int index, const int m);
+
+static inline void setLocalVars(OptData * optData, DATA * data, const double * const vopt,
+                                const int i, const int j, const int shift);
 
 /* pick up model data
  * author: Vitalij Ruge
@@ -581,7 +585,8 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
     realVars[l] = data->localData[l]->realVars;
 
   for(l = 0; l< 2; ++l){
-    tmpVars[l] = data->simulationInfo.analyticJacobians[indexBC[l]].tmpVars;
+    if(optData->s.matrix[l])
+      tmpVars[l] = data->simulationInfo.analyticJacobians[indexBC[l]].tmpVars;
   }
 
   memcpy(data->localData[0]->integerVars, optData->i0, nInteger*sizeof(modelica_integer));
@@ -596,70 +601,17 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
 
   for(i = 0, shift = 0; i < nsi-1; ++i){
     for(j = 0; j < np; ++j, shift += nv){
-
-      for(l = 0; l < 3; ++l){
-        data->localData[l]->realVars = optData->v[i][j];
-        data->localData[l]->timeValue = (modelica_real) optData->time.t[i][j];
-      }
-      for(l = 0; l < 2; ++l)
-        data->simulationInfo.analyticJacobians[indexBC[l]].tmpVars = dim->analyticJacobians_tmpVars[l][i][j];
-
-      for(k = 0; k < nx; ++k)
-        data->localData[0]->realVars[k] = vopt[shift + k]*vnom[k];
-
-      for(; k <nv; ++k){
-        data->simulationInfo.inputVars[k-nx] = (modelica_real) vopt[shift + k]*vnom[k];
-      }
-    /* try */
-#if !defined(OMC_EMCC)
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
-      data->callback->input_function(data);
-      /*data->callback->functionDAE(data);*/
-      updateDiscreteSystem(data);
-      if(index){
-        diffSynColoredOptimizerSystem(optData, optData->J[i][j], i,j,2);
-      }
-#if !defined(OMC_EMCC)
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
-
+      setLocalVars(optData, data, vopt, i, j, shift);
+      updateDOSystem(optData, data, threadData, i, j, index, 2);
     }
   }
 
-
-  for(j = 0; j < np; ++j, shift += nv){
-
-    for(l = 0; l < 3; ++l){
-      data->localData[l]->realVars = optData->v[i][j];
-      data->localData[l]->timeValue = (modelica_real) optData->time.t[i][j];
-    }
-
-    for(k = 0; k < nx; ++k)
-      data->localData[0]->realVars[k] = vopt[shift + k]*vnom[k];
-    for(l = 0; l < 2; ++l)
-      data->simulationInfo.analyticJacobians[indexBC[l]].tmpVars = dim->analyticJacobians_tmpVars[l][i][j];
-
-    for(; k <nv; ++k){
-      data->simulationInfo.inputVars[k-nx] = (modelica_real) vopt[shift + k]*vnom[k];
-    }
-    /* try */
-#if !defined(OMC_EMCC)
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
-    data->callback->input_function(data);
-    /*data->callback->functionDAE(data);*/
-    updateDiscreteSystem(data);
-
-    if(index){
-      diffSynColoredOptimizerSystem(optData, optData->J[i][j], i,j, (j+1 == np)? 3 : 2);
-    }
-#if !defined(OMC_EMCC)
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
-
-
+  for(j = 0; j < np-1; ++j, shift += nv){
+    setLocalVars(optData, data, vopt, i, j, shift);
+    updateDOSystem(optData, data, threadData, i, j, index, 2);
   }
+  setLocalVars(optData, data, vopt, i, j, shift);
+  updateDOSystem(optData, data, threadData, i, j, index, 3);
 
   /*terminal constraint(s)*/
   if(index){
@@ -671,9 +623,66 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
     data->localData[l]->realVars = realVars[l];
 
   for(l = 0; l< 2; ++l)
-    data->simulationInfo.analyticJacobians[indexBC[l]].tmpVars = tmpVars[l];
+    if(optData->s.matrix[l])
+      data->simulationInfo.analyticJacobians[indexBC[l]].tmpVars = tmpVars[l];
 
 }
+
+
+/*!
+ *  helper optData2ModelData
+ *  author: Vitalij Ruge
+ **/
+static inline void updateDOSystem(OptData * optData, DATA * data, threadData_t *threadData,
+                                   const int i, const int j, const int index, const int m){
+    /* try */
+#if !defined(OMC_EMCC)
+    MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
+    data->callback->input_function(data);
+    /*data->callback->functionDAE(data);*/
+    updateDiscreteSystem(data);
+
+    if(index){
+      diffSynColoredOptimizerSystem(optData, optData->J[i][j], i, j, m);
+    }
+#if !defined(OMC_EMCC)
+    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+}
+
+/*!
+ *  helper optData2ModelData
+ *  author: Vitalij Ruge
+ **/
+static inline void setLocalVars(OptData * optData, DATA * data, const double * const vopt,
+                                const int i, const int j, const int shift){
+  short l;
+  int k;
+
+  const int * indexBC = optData->s.indexABCD + 3;
+  OptDataDim * dim = &optData->dim;
+  const modelica_real * vnom = optData->bounds.vnom;
+  const int nx = optData->dim.nx;
+  const int nv = optData->dim.nv;
+
+  for(l = 0; l < 3; ++l){
+    data->localData[l]->realVars = optData->v[i][j];
+    data->localData[l]->timeValue = (modelica_real) optData->time.t[i][j];
+  }
+  for(l = 0; l < 2; ++l)
+    if(optData->s.matrix[l])
+      data->simulationInfo.analyticJacobians[indexBC[l]].tmpVars = dim->analyticJacobians_tmpVars[l][i][j];
+
+  for(k = 0; k < nx; ++k)
+    data->localData[0]->realVars[k] = vopt[shift + k]*vnom[k];
+
+  for(; k <nv; ++k){
+    data->simulationInfo.inputVars[k-nx] = (modelica_real) vopt[shift + k]*vnom[k];
+  }
+
+};
+
 
 /*
  *  function calculates a symbolic colored jacobian matrix of the optimization system
