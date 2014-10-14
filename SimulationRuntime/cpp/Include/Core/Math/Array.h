@@ -238,7 +238,7 @@ public:
   StatArrayDim1(const DynArrayDim1<string>& otherarray)
   :BaseArray<string>(true)
   {
-    
+
   }
 
   StatArrayDim1()
@@ -272,7 +272,7 @@ public:
              {
                   _real_array[i]=rhs(i);
              }
-             
+
 
          }
       }
@@ -312,7 +312,7 @@ public:
   }
   virtual string& operator()(vector<size_t> idx)
   {
-    
+
   };
 
 
