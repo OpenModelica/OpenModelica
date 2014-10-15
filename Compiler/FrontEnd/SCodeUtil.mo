@@ -903,6 +903,12 @@ algorithm
         stmts = translateClassdefAlgorithmitems(body);
       then SCode.ALG_FAILURE(stmts,comment,info);
 
+    case (Absyn.ALG_TRY(body,elseBody),_,_)
+      equation
+        stmts1 = translateClassdefAlgorithmitems(body);
+        stmts2 = translateClassdefAlgorithmitems(elseBody);
+      then SCode.ALG_TRY(stmts1,stmts2,comment,info);
+
     /*
     case (_,comment,info)
       equation

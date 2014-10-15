@@ -566,11 +566,15 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
   record ALG_BREAK
   end ALG_BREAK;
 
-  // Part of MetaModelica extension. KS
+  // MetaModelica extensions
   record ALG_FAILURE
     list<AlgorithmItem> equ;
   end ALG_FAILURE;
-  //-------------------------------
+
+  record ALG_TRY
+    list<AlgorithmItem> body;
+    list<AlgorithmItem> elseBody;
+  end ALG_TRY;
 
 end Algorithm;
 
@@ -820,7 +824,7 @@ uniontype Case "case in match or matchcontinue"
     Option<Exp> patternGuard;
     Info patternInfo "file information of the pattern";
     list<ElementItem> localDecls " local decls ";
-    list<EquationItem>  equations " equations [] for no equations ";
+    ClassPart classPart " equation or algorithm section ";
     Exp result " result ";
     Info resultInfo "file information of the result-exp";
     Option<String> comment " comment after case like: case pattern string_comment ";
@@ -829,7 +833,7 @@ uniontype Case "case in match or matchcontinue"
 
   record ELSE "else in match or matchcontinue"
     list<ElementItem> localDecls " local decls ";
-    list<EquationItem>  equations " equations [] for no equations ";
+    ClassPart classPart " equation or algorithm section ";
     Exp result " result ";
     Info resultInfo "file information of the result-exp";
     Option<String> comment " comment after case like: case pattern string_comment ";
@@ -2011,29 +2015,62 @@ algorithm
       Exp pattern, result;
       Info info, resultInfo, pinfo;
       list<ElementItem> ldecls;
-      list<EquationItem> eql;
+      ClassPart cp;
       Option<String> cmt;
       Option<Exp> patternGuard;
 
-    case (CASE(pattern, patternGuard, pinfo, ldecls, eql, result, resultInfo, cmt, info), _, _, arg)
+    case (CASE(pattern, patternGuard, pinfo, ldecls, cp, result, resultInfo, cmt, info), _, _, arg)
       equation
         (pattern, arg) = traverseExpBidir(pattern, enterFunc, exitFunc, arg);
         (patternGuard, arg) = traverseExpOptBidir(patternGuard, enterFunc, exitFunc, arg);
-        (eql, arg) = List.map2Fold(eql, traverseEquationItemBidir, enterFunc, exitFunc, arg);
+        (cp, arg) = traverseClassPartBidir(cp, enterFunc, exitFunc, arg);
         (result, arg) = traverseExpBidir(result, enterFunc, exitFunc, arg);
       then
-        (CASE(pattern, patternGuard, pinfo, ldecls, eql, result, resultInfo, cmt, info), arg);
+        (CASE(pattern, patternGuard, pinfo, ldecls, cp, result, resultInfo, cmt, info), arg);
 
-    case (ELSE(localDecls = ldecls, equations = eql, result = result, resultInfo = resultInfo,
+    case (ELSE(localDecls = ldecls, classPart = cp, result = result, resultInfo = resultInfo,
         comment = cmt, info = info), _, _, arg)
       equation
-        (eql, arg) = List.map2Fold(eql, traverseEquationItemBidir, enterFunc, exitFunc, arg);
+        (cp, arg) = traverseClassPartBidir(cp, enterFunc, exitFunc, arg);
         (result, arg) = traverseExpBidir(result, enterFunc, exitFunc, arg);
       then
-        (ELSE(ldecls, eql, result, resultInfo, cmt, info), arg);
+        (ELSE(ldecls, cp, result, resultInfo, cmt, info), arg);
 
   end match;
 end traverseMatchCase;
+
+protected function traverseClassPartBidir
+  input ClassPart cp;
+  input FuncType enterFunc;
+  input FuncType exitFunc;
+  input Argument inArg;
+  output ClassPart outCp;
+  output Argument outArg;
+
+  partial function FuncType
+    input Exp inExp;
+    input Argument inArg;
+    output Exp outExp;
+    output Argument outArg;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  (outCp, outArg) := match (cp,enterFunc,exitFunc,inArg)
+    local
+      list<AlgorithmItem> algs;
+      list<EquationItem> eqs;
+      Argument arg;
+    case (ALGORITHMS(algs),_,_,arg)
+      equation
+        (algs, arg) = List.map2Fold(algs, traverseAlgorithmItemBidir, enterFunc, exitFunc, arg);
+      then (ALGORITHMS(algs),arg);
+    case (EQUATIONS(eqs),_,_,arg)
+      equation
+        (eqs, arg) = List.map2Fold(eqs, traverseEquationItemBidir, enterFunc, exitFunc, arg);
+      then (EQUATIONS(eqs),arg);
+  end match;
+end traverseClassPartBidir;
 
 protected function traverseEquationItemListBidir
   input list<EquationItem> inEquationItems;
@@ -2054,6 +2091,60 @@ protected function traverseEquationItemListBidir
 algorithm
   (outEquationItems, outArg) := List.map2Fold(inEquationItems, traverseEquationItemBidir, enterFunc, exitFunc, inArg);
 end traverseEquationItemListBidir;
+
+protected function traverseAlgorithmItemListBidir
+  input list<AlgorithmItem> inAlgs;
+  input FuncType enterFunc;
+  input FuncType exitFunc;
+  input Argument inArg;
+  output list<AlgorithmItem> outAlgs;
+  output Argument outArg;
+
+  partial function FuncType
+    input Exp inExp;
+    input Argument inArg;
+    output Exp outExp;
+    output Argument outArg;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  (outAlgs, outArg) := List.map2Fold(inAlgs, traverseAlgorithmItemBidir, enterFunc, exitFunc, inArg);
+end traverseAlgorithmItemListBidir;
+
+protected function traverseAlgorithmItemBidir
+  input AlgorithmItem inAlgorithmItem;
+  input FuncType enterFunc;
+  input FuncType exitFunc;
+  input Argument inArg;
+  output AlgorithmItem outAlgorithmItem;
+  output Argument outArg;
+
+  partial function FuncType
+    input Exp inExp;
+    input Argument inArg;
+    output Exp outExp;
+    output Argument outArg;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  (outAlgorithmItem, outArg) := match(inAlgorithmItem, enterFunc, exitFunc, inArg)
+    local
+      Argument arg;
+      Algorithm alg;
+      Option<Comment> cmt;
+      Info info;
+
+    case (ALGORITHMITEM(algorithm_ = alg, comment = cmt, info = info), _, _, arg)
+      equation
+        (alg, arg) = traverseAlgorithmBidir(alg, enterFunc, exitFunc, arg);
+      then
+        (ALGORITHMITEM(alg, cmt, info), arg);
+
+    case (ALGORITHMITEMCOMMENT(comment=_), _, _, _) then (inAlgorithmItem,inArg);
+  end match;
+end traverseAlgorithmItemBidir;
 
 protected function traverseEquationItemBidir
   input EquationItem inEquationItem;
@@ -2196,6 +2287,129 @@ algorithm
   (eqil, arg) := traverseEquationItemListBidir(eqil, enterFunc, exitFunc, arg);
   outElse := (e, eqil);
 end traverseEquationBidirElse;
+
+protected function traverseAlgorithmBidirElse
+  input tuple<Exp, list<AlgorithmItem>> inElse;
+  input FuncType enterFunc;
+  input FuncType exitFunc;
+  input Argument inArg;
+  output tuple<Exp, list<AlgorithmItem>> outElse;
+  output Argument arg;
+
+  partial function FuncType
+    input Exp inExp;
+    input Argument inArg;
+    output Exp outExp;
+    output Argument outArg;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+protected
+  Exp e;
+  list<AlgorithmItem> algs;
+algorithm
+  (e, algs) := inElse;
+  (e, arg) := traverseExpBidir(e, enterFunc, exitFunc, inArg);
+  (algs, arg) := traverseAlgorithmItemListBidir(algs, enterFunc, exitFunc, arg);
+  outElse := (e, algs);
+end traverseAlgorithmBidirElse;
+
+protected function traverseAlgorithmBidir
+  input Algorithm inAlg;
+  input FuncType enterFunc;
+  input FuncType exitFunc;
+  input Argument inArg;
+  output Algorithm outAlg;
+  output Argument outArg;
+
+  partial function FuncType
+    input Exp inExp;
+    input Argument inArg;
+    output Exp outExp;
+    output Argument outArg;
+  end FuncType;
+
+  replaceable type Argument subtypeof Any;
+algorithm
+  (outAlg, outArg) := match(inAlg, enterFunc, exitFunc, inArg)
+    local
+      Argument arg;
+      Exp e1, e2;
+      list<AlgorithmItem> algs1, algs2;
+      list<tuple<Exp, list<AlgorithmItem>>> else_branch;
+      ComponentRef cref1, cref2;
+      ForIterators iters;
+      FunctionArgs func_args;
+      AlgorithmItem alg;
+
+    case (ALG_ASSIGN(e1, e2), _, _, arg)
+      equation
+        (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
+        (e2, arg) = traverseExpBidir(e2, enterFunc, exitFunc, arg);
+      then
+        (ALG_ASSIGN(e1, e2), arg);
+
+    case (ALG_IF(e1, algs1, else_branch, algs2), _, _, arg)
+      equation
+        (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
+        (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
+        (else_branch, arg) = List.map2Fold(else_branch, traverseAlgorithmBidirElse, enterFunc, exitFunc, arg);
+        (algs2, arg) = traverseAlgorithmItemListBidir(algs2, enterFunc, exitFunc, arg);
+      then (ALG_IF(e1, algs1, else_branch, algs2), arg);
+
+    case (ALG_FOR(iters, algs1), _, _, arg)
+      equation
+        (iters, arg) = List.map2Fold(iters, traverseExpBidirIterator, enterFunc, exitFunc, arg);
+        (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
+      then (ALG_FOR(iters, algs1), arg);
+
+    case (ALG_PARFOR(iters, algs1), _, _, arg)
+      equation
+        (iters, arg) = List.map2Fold(iters, traverseExpBidirIterator, enterFunc, exitFunc, arg);
+        (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
+      then (ALG_PARFOR(iters, algs1), arg);
+
+    case (ALG_WHILE(e1, algs1), _, _, arg)
+      equation
+        (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
+        (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
+      then (ALG_WHILE(e1, algs1), arg);
+
+    case (ALG_WHEN_A(e1, algs1, else_branch), _, _, arg)
+      equation
+        (e1, arg) = traverseExpBidir(e1, enterFunc, exitFunc, arg);
+        (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
+        (else_branch, arg) = List.map2Fold(else_branch, traverseAlgorithmBidirElse, enterFunc, exitFunc, arg);
+      then (ALG_WHEN_A(e1, algs1, else_branch), arg);
+
+    case (ALG_NORETCALL(cref1, func_args), _, _, arg)
+      equation
+        (cref1, arg) = traverseExpBidirCref(cref1, enterFunc, exitFunc, arg);
+        (func_args, arg) = traverseExpBidirFunctionArgs(func_args, enterFunc, exitFunc, arg);
+      then
+        (ALG_NORETCALL(cref1, func_args), arg);
+
+    case (ALG_RETURN(), _, _, arg)
+      then (inAlg, arg);
+
+    case (ALG_BREAK(), _, _, arg)
+      then (inAlg, arg);
+
+    case (ALG_FAILURE(algs1), _, _, arg)
+      equation
+        (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
+      then
+        (ALG_FAILURE(algs1), arg);
+
+    case (ALG_TRY(algs1, algs2), _, _, arg)
+      equation
+        (algs1, arg) = traverseAlgorithmItemListBidir(algs1, enterFunc, exitFunc, arg);
+        (algs2, arg) = traverseAlgorithmItemListBidir(algs2, enterFunc, exitFunc, arg);
+      then
+        (ALG_TRY(algs1, algs2), arg);
+
+  end match;
+end traverseAlgorithmBidir;
 
 public function makeIdentPathFromString
   input String s;

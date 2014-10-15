@@ -654,6 +654,16 @@ match alg
   case ALG_FAILURE(__) then
     let arg_str = if equ then dumpAlgorithmItems(equ) else "..."
     'failure(<%arg_str%>)'
+  case ALG_TRY(__) then
+    let arg1 = dumpAlgorithmItems(body)
+    let arg2 = dumpAlgorithmItems(elseBody)
+    <<
+    try
+      <%arg1%>
+    else
+      <%arg2%>
+    end try;
+    >>
 end dumpAlgorithm;
 
 template dumpAlgorithmBranch(Absyn.Exp cond, list<Absyn.AlgorithmItem> body,
@@ -897,12 +907,22 @@ template dumpMatchLocals(list<ElementItem> locals)
   >>
 end dumpMatchLocals;
 
-template dumpMatchEquations(list<EquationItem> eql)
-::= if eql then
+template dumpMatchEquations(ClassPart cp)
+::=
+  match cp
+  case EQUATIONS(contents={}) then ""
+  case EQUATIONS(contents=eql) then
   <<
 
     equation
       <%(eql |> eq => dumpEquationItem(eq) ;separator="\n")%>
+  >>
+  case ALGORITHMS(contents={}) then ""
+  case ALGORITHMS(contents=algs) then
+  <<
+
+    algorithm
+      <%(algs |> alg => dumpAlgorithmItem(alg) ;separator="\n")%>
   >>
 end dumpMatchEquations;
 
@@ -912,7 +932,7 @@ match c
   case CASE(__) then
     let pattern_str = dumpExp(pattern)
     let guard_str = match patternGuard case SOME(g) then 'guard <%dumpExp(g)%> '
-    let eql_str = dumpMatchEquations(equations)
+    let eql_str = dumpMatchEquations(classPart)
     let result_str = dumpExp(result)
     let then_str = if eql_str then
       <<
@@ -924,6 +944,20 @@ match c
     let cmt_str = dumpStringCommentOption(comment)
     <<
     case <%pattern_str%> <%guard_str%><%cmt_str%><%eql_str%><%then_str%>;
+    >>
+  case ELSE(__) then
+    let eql_str = dumpMatchEquations(classPart)
+    let result_str = dumpExp(result)
+    let then_str = if eql_str then
+      <<
+
+        then
+          <%result_str%>
+      >>
+      else 'then <%result_str%>'
+    let cmt_str = dumpStringCommentOption(comment)
+    <<
+    else <%cmt_str%><%eql_str%><%then_str%>;
     >>
 end dumpMatchCase;
 

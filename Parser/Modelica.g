@@ -730,17 +730,17 @@ constraint_annotation_list [void **ann] returns [void* ast]
   ;
 
 algorithm_clause [void **ann] returns [void* ast]
-@init{ as = 0; } :
-  T_ALGORITHM as=algorithm_annotation_list[ann] { ast = Absyn__ALGORITHMS(as); }
+@init{ as.ast = 0; } :
+  T_ALGORITHM as=algorithm_annotation_list[ann,0] { ast = Absyn__ALGORITHMS(as.ast); }
   ;
 
 initial_algorithm_clause [void **ann] returns [void* ast]
-@init{ as = 0; } :
+@init{ as.ast = 0; } :
   { LA(2)==T_ALGORITHM }?
-  INITIAL T_ALGORITHM as=algorithm_annotation_list[ann] { ast = Absyn__INITIALALGORITHMS(as); }
+  INITIAL T_ALGORITHM as=algorithm_annotation_list[ann,0] { ast = Absyn__INITIALALGORITHMS(as.ast); }
   ;
 
-algorithm_annotation_list [void **ann] returns [void* ast]
+algorithm_annotation_list [void **ann, int matchCase] returns [void* ast]
 @init {
   int first,last,isalg = 0;
   $ast = 0;
@@ -749,30 +749,39 @@ algorithm_annotation_list [void **ann] returns [void* ast]
   omc_first_comment = last;
   a = 0;
   al.ast = 0;
-  as = 0;
+  as.ast = 0;
 } :
-  { LA(1) == END_IDENT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }?
+  { matchCase ? LA(1) == THEN : (LA(1) == END_IDENT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC) }?
     {
-      ast = mk_nil();
+      $ast = mk_nil();
       for (;first<last;last--) {
         pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
         if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-          ast = mk_cons(Absyn__ALGORITHMITEMCOMMENT(mk_scon((char*)tok->getText(tok)->chars)),ast);
+          $ast = mk_cons(Absyn__ALGORITHMITEMCOMMENT(mk_scon((char*)tok->getText(tok)->chars)),$ast);
         }
       }
     }
   |
-  ( al=algorithm SEMICOLON | a=annotation SEMICOLON { *ann = mk_cons(a,*ann); }) as=algorithm_annotation_list[ann]
+  ( al=algorithm SEMICOLON | a=annotation SEMICOLON {
+      if (ann) {
+        *ann = mk_cons(a,*ann);
+      } else {
+        ModelicaParser_lexerError = ANTLR3_TRUE;
+        c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_error, "Annotations are not allowed in an algorithm list.",
+              NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition,
+              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+      }
+    }) as=algorithm_annotation_list[ann,matchCase]
   {
     if (a) {
-      ast = as;
+      $ast = as.ast;
     } else {
-      ast = mk_cons(al.ast,as);
+      $ast = mk_cons(al.ast,as.ast);
     }
     for (;first<last;last--) {
       pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
       if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-        ast = mk_cons(Absyn__ALGORITHMITEMCOMMENT(mk_scon((char*)tok->getText(tok)->chars)),ast);
+        $ast = mk_cons(Absyn__ALGORITHMITEMCOMMENT(mk_scon((char*)tok->getText(tok)->chars)),$ast);
       }
     }
   }
@@ -828,6 +837,7 @@ algorithm returns [void* ast]
   | a=for_clause_a
   | a=parfor_clause_a
   | a=while_clause
+  | a=try_clause
   | a=when_clause_a
   | BREAK { a = Absyn__ALG_5fBREAK; }
   | RETURN { a = Absyn__ALG_5fRETURN; }
@@ -937,6 +947,11 @@ parfor_clause_a returns [void* ast]
 while_clause returns [void* ast]
 @init { e = 0; as = 0; } :
   WHILE e=expression LOOP as=algorithm_list END_WHILE { ast = Absyn__ALG_5fWHILE(e,as); }
+  ;
+
+try_clause returns [void* ast]
+@init { as1 = 0; as2 = 0; } :
+  TRY as1=algorithm_list ELSE as2=algorithm_list END_TRY { ast = Absyn__ALG_5fTRY(as1,as2); }
   ;
 
 when_clause_e returns [void* ast]
@@ -1596,6 +1611,7 @@ top_algorithm returns [void* ast, int isExp]
     | a=for_clause_a
     | a=parfor_clause_a
     | a=while_clause
+    | a=try_clause
     )
     cmt=comment
   )
@@ -1674,17 +1690,18 @@ cases returns [void* ast]
 
 cases2 returns [void* ast]
 @init{ el = 0; cmt = 0; es = 0; eqs = 0; th = 0; exp = 0; c.ast = 0; cs.ast = 0; } :
-  ( (el=ELSE (cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? th=THEN)? exp=expression SEMICOLON)?
+  ( (el=ELSE (cmt=string_comment es=local_clause ((EQUATION eqs=equation_list_then)|(T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN)? exp=expression SEMICOLON)?
     {
       if (es != NULL)
         c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
                              NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
                              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
       if ($th) $el = $th;
-      if (exp)
-       $ast = mk_cons(Absyn__ELSE(or_nil(es),or_nil(eqs),exp,PARSER_INFO($el),mk_some_or_none(cmt),PARSER_INFO($start)),mk_nil());
-      else
+      if (exp) {
+       $ast = mk_cons(Absyn__ELSE(or_nil(es),eqs ? Absyn__EQUATIONS(eqs) : (algs.ast ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mk_nil())),exp,PARSER_INFO($el),mk_some_or_none(cmt),PARSER_INFO($start)),mk_nil());
+      } else {
        $ast = mk_nil();
+      }
     }
   | c=onecase cs=cases2
     {
@@ -1695,13 +1712,14 @@ cases2 returns [void* ast]
 
 onecase returns [void* ast]
 @init{ pat.ast = 0; guard = 0; cmt = 0; es = 0; eqs = 0; th = 0; exp = 0; } :
-  (CASE pat=pattern (GUARD guard=expression)? cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? th=THEN exp=expression SEMICOLON)
+  (CASE pat=pattern (GUARD guard=expression)? cmt=string_comment es=local_clause ((EQUATION eqs=equation_list_then)|(T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN exp=expression SEMICOLON)
     {
-        if (es != NULL)
+        if (es != NULL) {
           c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
                                NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
                                ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
-        $ast = Absyn__CASE(pat.ast,mk_some_or_none(guard),pat.info,or_nil(es),or_nil(eqs),exp,PARSER_INFO($th),mk_some_or_none(cmt),PARSER_INFO($start));
+        }
+        $ast = Absyn__CASE(pat.ast,mk_some_or_none(guard),pat.info,or_nil(es),eqs ? Absyn__EQUATIONS(eqs) : (algs.ast ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mk_nil())),exp,PARSER_INFO($th),mk_some_or_none(cmt),PARSER_INFO($start));
     }
   ;
 

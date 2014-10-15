@@ -9082,6 +9082,7 @@ algorithm
       list<DAE.Exp> inputs;
       list<DAE.Element> localDecls;
       list<DAE.MatchCase> cases;
+      list<list<String>> unbounds;
     case (exp as DAE.SIZE(exp=_),arg) then (exp,false,arg);
     case (exp as DAE.CREF(componentRef=cr),(unbound,info))
       equation
@@ -9094,7 +9095,9 @@ algorithm
       equation
         (_,(unbound,_)) = Expression.traverseExpTopDown(DAE.LIST(inputs),findUnboundVariableUse,(unbound,info));
         unboundLocal = checkFunctionDefUse2(localDecls,NONE(),unbound,{},info);
-        List.map1_0(cases,findUnboundVariableUseInCase,unboundLocal);
+        unbounds = List.map1(cases,findUnboundVariableUseInCase,unboundLocal);
+        // Find variables assigned in a case, like: _ = match () case () equation o = 1.5; then ();
+        unbound = List.fold1r(unbounds, List.intersectionOnTrue, stringEq, unbound);
       then (exp,false,(unbound,info));
     case (exp,arg) then (exp,true,arg);
   end match;
@@ -9103,10 +9106,10 @@ end findUnboundVariableUse;
 protected function findUnboundVariableUseInCase "Check if the expression is used before it is defined"
   input DAE.MatchCase case_;
   input list<String> inUnbound;
+  output list<String> unbound;
 algorithm
-  _ := match (case_,inUnbound)
+  unbound := match (case_,inUnbound)
     local
-      list<String> unbound;
       Absyn.Info info,resultInfo;
       Option<DAE.Exp> patternGuard,result;
       list<DAE.Pattern> patterns;
@@ -9117,7 +9120,7 @@ algorithm
         (_,(unbound,info)) = Expression.traverseExpTopDown(DAE.META_OPTION(patternGuard),findUnboundVariableUse,(unbound,info));
         ((_,_,unbound)) = List.fold1(body, checkFunctionDefUseStmt, true, (false,false,unbound));
         (_,(unbound,_)) = Expression.traverseExpTopDown(DAE.META_OPTION(result),findUnboundVariableUse,(unbound,resultInfo));
-      then ();
+      then unbound;
   end match;
 end findUnboundVariableUseInCase;
 

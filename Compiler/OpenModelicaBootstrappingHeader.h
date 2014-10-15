@@ -2153,6 +2153,21 @@ extern struct record_description Absyn_Algorithm_ALG__FAILURE__desc;
 #define Absyn__ALG_5fFAILURE_3dBOX1 12
 #define Absyn__ALG_5fFAILURE(equ) (mmc_mk_box2(12,&Absyn_Algorithm_ALG__FAILURE__desc,equ))
 #ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_Algorithm_ALG__TRY__desc_added
+#define Absyn_Algorithm_ALG__TRY__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_Algorithm_ALG__TRY__desc__fields[2] = {"body","elseBody"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_Algorithm_ALG__TRY__desc = {
+  "Absyn_Algorithm_ALG__TRY",
+  "Absyn.Algorithm.ALG_TRY",
+  Absyn_Algorithm_ALG__TRY__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Algorithm_ALG__TRY__desc;
+#endif
+#define Absyn__ALG_5fTRY_3dBOX2 13
+#define Absyn__ALG_5fTRY(body,elseBody) (mmc_mk_box3(13,&Absyn_Algorithm_ALG__TRY__desc,body,elseBody))
+#ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Modification_CLASSMOD__desc_added
 #define Absyn_Modification_CLASSMOD__desc_added
 ADD_METARECORD_DEFINITIONS const char* Absyn_Modification_CLASSMOD__desc__fields[2] = {"elementArgLst","eqMod"};
@@ -2880,7 +2895,7 @@ extern struct record_description Absyn_Exp_LIST__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Case_CASE__desc_added
 #define Absyn_Case_CASE__desc_added
-ADD_METARECORD_DEFINITIONS const char* Absyn_Case_CASE__desc__fields[9] = {"pattern","patternGuard","patternInfo","localDecls","equations","result","resultInfo","comment","info"};
+ADD_METARECORD_DEFINITIONS const char* Absyn_Case_CASE__desc__fields[9] = {"pattern","patternGuard","patternInfo","localDecls","classPart","result","resultInfo","comment","info"};
 ADD_METARECORD_DEFINITIONS struct record_description Absyn_Case_CASE__desc = {
   "Absyn_Case_CASE",
   "Absyn.Case.CASE",
@@ -2891,11 +2906,11 @@ ADD_METARECORD_DEFINITIONS struct record_description Absyn_Case_CASE__desc = {
 extern struct record_description Absyn_Case_CASE__desc;
 #endif
 #define Absyn__CASE_3dBOX9 3
-#define Absyn__CASE(pattern,patternGuard,patternInfo,localDecls,equations,result,resultInfo,comment,info) (mmc_mk_box(10, 3,&Absyn_Case_CASE__desc,pattern,patternGuard,patternInfo,localDecls,equations,result,resultInfo,comment,info))
+#define Absyn__CASE(pattern,patternGuard,patternInfo,localDecls,classPart,result,resultInfo,comment,info) (mmc_mk_box(10, 3,&Absyn_Case_CASE__desc,pattern,patternGuard,patternInfo,localDecls,classPart,result,resultInfo,comment,info))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Case_ELSE__desc_added
 #define Absyn_Case_ELSE__desc_added
-ADD_METARECORD_DEFINITIONS const char* Absyn_Case_ELSE__desc__fields[6] = {"localDecls","equations","result","resultInfo","comment","info"};
+ADD_METARECORD_DEFINITIONS const char* Absyn_Case_ELSE__desc__fields[6] = {"localDecls","classPart","result","resultInfo","comment","info"};
 ADD_METARECORD_DEFINITIONS struct record_description Absyn_Case_ELSE__desc = {
   "Absyn_Case_ELSE",
   "Absyn.Case.ELSE",
@@ -2906,7 +2921,7 @@ ADD_METARECORD_DEFINITIONS struct record_description Absyn_Case_ELSE__desc = {
 extern struct record_description Absyn_Case_ELSE__desc;
 #endif
 #define Absyn__ELSE_3dBOX6 4
-#define Absyn__ELSE(localDecls,equations,result,resultInfo,comment,info) (mmc_mk_box7(4,&Absyn_Case_ELSE__desc,localDecls,equations,result,resultInfo,comment,info))
+#define Absyn__ELSE(localDecls,classPart,result,resultInfo,comment,info) (mmc_mk_box7(4,&Absyn_Case_ELSE__desc,localDecls,classPart,result,resultInfo,comment,info))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_MatchType_MATCH__desc_added
 #define Absyn_MatchType_MATCH__desc_added

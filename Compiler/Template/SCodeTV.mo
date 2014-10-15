@@ -602,12 +602,6 @@ package SCode
       Absyn.Info info;
     end ALG_BREAK;
 
-    record ALG_TRY
-      list<Statement> tryBody;
-      Comment comment;
-      Absyn.Info info;
-    end ALG_TRY;
-
     record ALG_CATCH
       list<Statement> catchBody;
       Comment comment;
@@ -624,6 +618,14 @@ package SCode
       Comment comment;
       Absyn.Info info;
     end ALG_FAILURE;
+
+    record ALG_TRY
+      list<Statement> body;
+      list<Statement> elseBody;
+      Comment comment;
+      Absyn.Info info;
+    end ALG_TRY;
+
   end Statement;
 
   uniontype Visibility

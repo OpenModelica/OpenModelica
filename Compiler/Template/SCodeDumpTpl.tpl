@@ -436,6 +436,7 @@ match statement
   case ALG_FAILURE(stmts={stmt}) then
     let cmt_str = dumpComment(comment, options)
     'failure(<%dumpStatement(stmt,options)%>)<%cmt_str%>;'
+  case SCode.ALG_TRY(__) then dumpTryStatement(statement, options)
   else errorMsg("SCodeDump.dumpStatement: Unknown statement.")
 end dumpStatement;
 
@@ -526,6 +527,22 @@ match when_statement
     end when;
     >>
 end dumpWhenStatement;
+
+template dumpTryStatement(SCode.Statement try_statement, SCodeDumpOptions options)
+::=
+match try_statement
+  case s as ALG_TRY(__) then
+    let cmt_str = dumpComment(comment, options)
+    let algs1 = dumpStatements(body, options)
+    let algs2 = dumpStatements(elseBody, options)
+    <<
+    try
+      <%algs1%>
+    else
+      <%algs2%>
+    end try<%cmt_str%>;
+    >>
+end dumpTryStatement;
 
 template dumpPrefixes(SCode.Prefixes prefixes, String each)
 ::=

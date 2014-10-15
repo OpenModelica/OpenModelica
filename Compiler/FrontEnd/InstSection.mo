@@ -2231,7 +2231,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- InstSection.instAlgorithm failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- InstSection.instAlgorithm failed");
       then
         fail();
   end matchcontinue;
@@ -2456,6 +2457,7 @@ algorithm
       Option<Absyn.Exp> range;
       DAE.CallAttributes attr;
       DAE.ElementSource source;
+      list<DAE.MatchCase> cases;
 
 
     // assign
@@ -2645,11 +2647,27 @@ algorithm
       then
         (cache,{stmt});
 
+    // try-else becomes matchcontinue () case () equation *body* then (); else equation *elseBody* then (); end matchcontinue;
+    case (cache,env,ih,pre,_,SCode.ALG_TRY(body = tb, elseBody = fb, info = info),source,_,impl,_,_)
+      equation
+        true = Config.acceptMetaModelicaGrammar();
+        (cache,tb_1) = instStatements(cache,env,ih,pre,ci_state,tb,source,initial_,impl,unrollForLoops,{});
+        (cache,fb_1) = instStatements(cache,env,ih,pre,ci_state,fb,source,initial_,impl,unrollForLoops,{});
+        source = DAEUtil.addElementSourceFileInfo(source, info);
+        cases = {
+          DAE.CASE({},NONE(),{},tb_1,SOME(DAE.TUPLE({})),info,0,info),
+          DAE.CASE({},NONE(),{},fb_1,SOME(DAE.TUPLE({})),info,0,info)
+        };
+        e_1 = DAE.MATCHEXPRESSION(DAE.MATCHCONTINUE(),{},{},{},cases,DAE.T_NORETCALL_DEFAULT);
+        stmt = DAE.STMT_NORETCALL(e_1,source);
+      then
+        (cache,{stmt});
+
     // error handling
     case (_,_,_,_,_,alg,_,_,_,_,_)
       equation
         true = numErrorMessages == Error.getNumErrorMessages();
-        str = Dump.unparseAlgorithmStr(SCode.statementToAlgorithmItem(alg));
+        str = SCodeDump.statementStr(alg, SCodeDump.defaultOptions);
         Error.addSourceMessage(Error.STATEMENT_GENERIC_FAILURE,{str},SCode.getStatementInfo(alg));
       then
         fail();
@@ -2817,7 +2835,7 @@ algorithm
     case (_,_,_,_,_,_,v,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- InstSection.loopOverRange failed to loop over range: " +& ValuesUtil.valString(v));
+        Debug.traceln("- InstSection.loopOverRange failed to loop over range: " +& ValuesUtil.valString(v));
       then
         fail();
   end matchcontinue;

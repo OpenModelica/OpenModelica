@@ -59,6 +59,8 @@ WILD : '_';
 SUBTYPEOF : 'subtypeof';
 COLONCOLON : '::';
 MOD : '%';
+TRY : 'try';
+END_TRY : 'end' EAT_WS_COMMENT 'try';
 
 /*mahge: moved from BaseModelica_Lexer. e.g. function match end match; should not be error with out MetaModelica*/
 END_MATCH : 'end' EAT_WS_COMMENT 'match';

@@ -1503,6 +1503,14 @@ algorithm
   end match;
 end printEquationitem;
 
+public function unparseClassPart
+  "Prettyprints an Equation to a string."
+  input Absyn.ClassPart classPart;
+  output String outString;
+algorithm
+  outString := Tpl.tplString2(AbsynDumpTpl.dumpClassPart, classPart, 0);
+end unparseClassPart;
+
 public function unparseEquationStr
   "Prettyprints an Equation to a string."
   input Absyn.Equation inEquation;
@@ -2136,23 +2144,6 @@ algorithm
       then
         ();
 
-    case Absyn.MATCHEXP(matchType, inputExp, localDecls, cases, comment)
-      equation
-        Print.printBuf("Absyn.MATCHEXP(MatchType(");
-        s = printMatchType(matchType);
-        Print.printBuf(s);
-        Print.printBuf("), Input Exps(");
-        printExp(inputExp);
-        Print.printBuf("), \nLocal Decls(");
-        printElementitems(localDecls);
-        Print.printBuf("), \nCASES(");
-        printListDebug("CASE", cases, printCase, ";");
-        Print.printBuf(")");
-        printStringCommentOption(comment);
-        Print.printBuf(")");
-      then
-        ();
-
     else
       equation
         Print.printBuf("#UNKNOWN EXPRESSION#");
@@ -2172,48 +2163,6 @@ algorithm
     case Absyn.MATCHCONTINUE() then "matchcontinue";
   end match;
 end printMatchType;
-
-public function printCase "
-MetaModelica construct printing
-@author Adrian Pop "
-  input Absyn.Case cas;
-algorithm
-  _ := match cas
-    local
-      Absyn.Exp p;
-      list<Absyn.ElementItem> l;
-      list<Absyn.EquationItem> e;
-      Absyn.Exp r;
-      Option<String> c;
-    case Absyn.CASE(p, _, _, l, e, r, _, c, _)
-      equation
-        Print.printBuf("Absyn.CASE(");
-        Print.printBuf("Pattern(");
-        printExp(p);
-        Print.printBuf("), \nLocal Decls(");
-        printElementitems(l);
-        Print.printBuf("), \nEQUATIONS(");
-        printListDebug("EQUATION", e, printEquationitem, ";");
-        Print.printBuf("), ");
-        printExp(r);
-        Print.printBuf(", ");
-        printStringCommentOption(c);
-        Print.printBuf(")");
-      then ();
-    case Absyn.ELSE(l, e, r, _, c, _)
-      equation
-        Print.printBuf("Absyn.ELSE(\nLocal Decls(");
-        printElementitems(l);
-        Print.printBuf("), \nEQUATIONS(");
-        printListDebug("EQUATION", e, printEquationitem, ";");
-        Print.printBuf("), ");
-        printExp(r);
-        Print.printBuf(", ");
-        printStringCommentOption(c);
-        Print.printBuf(")");
-      then ();
-  end match;
-end printCase;
 
 protected function printFunctionArgs "
   Prints FunctionArgs to Print buffer.
@@ -4713,10 +4662,10 @@ algorithm
       Option<Absyn.Exp> patternGuard;
       Absyn.Info patternInfo,info,resultInfo;
       list<Absyn.ElementItem> localDecls;
-      list<Absyn.EquationItem>  equations;
+      Absyn.ClassPart classPart;
       Absyn.Exp result;
       Option<String> comment;
-    case Absyn.CASE(pattern,patternGuard,patternInfo,localDecls,equations,result,resultInfo,comment,info)
+    case Absyn.CASE(pattern,patternGuard,patternInfo,localDecls,classPart,result,resultInfo,comment,info)
       equation
         Print.printBuf("record Absyn.CASE pattern = ");
         printExpAsCorbaString(pattern);
@@ -4726,8 +4675,8 @@ algorithm
         printInfoAsCorbaString(patternInfo);
         Print.printBuf(", localDecls = ");
         printListAsCorbaString(localDecls, printElementItemAsCorbaString, ",");
-        Print.printBuf(", equations = ");
-        printListAsCorbaString(equations, printEquationItemAsCorbaString, ",");
+        Print.printBuf(", classPart = ");
+        printClassPartAsCorbaString(classPart);
         Print.printBuf(", result = ");
         printExpAsCorbaString(result);
         Print.printBuf(", resultInfo = ");
@@ -4738,12 +4687,12 @@ algorithm
         printInfoAsCorbaString(info);
         Print.printBuf(" end Absyn.CASE;");
       then ();
-    case Absyn.ELSE(localDecls,equations,result,resultInfo,comment,info)
+    case Absyn.ELSE(localDecls,classPart,result,resultInfo,comment,info)
       equation
         Print.printBuf("record Absyn.ELSE localDecls = ");
         printListAsCorbaString(localDecls, printElementItemAsCorbaString, ",");
-        Print.printBuf(", equations = ");
-        printListAsCorbaString(equations, printEquationItemAsCorbaString, ",");
+        Print.printBuf(", classPart = ");
+        printClassPartAsCorbaString(classPart);
         Print.printBuf(", result = ");
         printExpAsCorbaString(result);
         Print.printBuf(", resultInfo = ");

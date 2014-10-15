@@ -1906,7 +1906,7 @@ algorithm
       Option<Absyn.Exp> patternGuard;
       Option<DAE.Exp> elabResult,dPatternGuard;
       list<DAE.Element> caseDecls;
-      list<Absyn.EquationItem> eq1;
+      Absyn.ClassPart cp;
       list<Absyn.AlgorithmItem> eqAlgs;
       list<SCode.Statement> algs;
       list<DAE.Statement> body;
@@ -1918,7 +1918,7 @@ algorithm
       Option<GlobalScript.SymbolTable> st;
       AvlTreeString.AvlTree caseLocalTree,localsTree,useTree;
 
-    case (cache,env,Absyn.CASE(pattern=pattern,patternGuard=patternGuard,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,_,_,st,_,_)
+    case (cache,env,Absyn.CASE(pattern=pattern,patternGuard=patternGuard,patternInfo=patternInfo,localDecls=decls,classPart=cp,result=result,resultInfo=resultInfo,info=info),_,_,_,_,st,_,_)
       equation
         (cache,SOME((env,DAE.DAE(caseDecls),caseLocalTree))) = addLocalDecls(cache,env,decls,FCore.caseScopeName,impl,info);
         patterns = MetaUtil.extractListFromTuple(pattern, 0);
@@ -1928,7 +1928,7 @@ algorithm
         env = FGraph.openNewScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.patternTypeScope), NONE());
         // and add the ID as pattern types to it
         (_,env) = traversePatternList(List.threadMap(elabPatterns,inputAliases,addPatternAliases),addEnvKnownAsBindings,env);
-        (cache,eqAlgs) = Static.fromEquationsToAlgAssignments(eq1,{},cache,env,pre);
+        eqAlgs = Static.fromEquationsToAlgAssignments(cp);
         algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
         (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match"), false), algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, InstTypes.neverUnroll, {});
         (cache,body,elabResult,resultInfo,resType,st) = elabResultExp(cache,env,body,result,impl,st,performVectorization,pre,resultInfo);
@@ -1950,13 +1950,13 @@ algorithm
       then (cache,elabCase,elabResult,resType,st);
 
       // ELSE is the same as CASE, but without pattern
-    case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,_,_,st,_,_)
+    case (cache,env,Absyn.ELSE(localDecls=decls,classPart=cp,result=result,resultInfo=resultInfo,info=info),_,_,_,_,st,_,_)
       equation
         // Needs to be same length as any other pattern for the simplification algorithms, etc to work properly
         len = listLength(tys);
         patterns = List.fill(Absyn.CREF(Absyn.WILD()),listLength(tys));
         pattern = Util.if_(len == 1, Absyn.CREF(Absyn.WILD()), Absyn.TUPLE(patterns));
-        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache, env, Absyn.CASE(pattern,NONE(),info,decls,eq1,result,resultInfo,NONE(),info), tys, inputAliases, matchExpLocalTree, impl, st, performVectorization, pre);
+        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache, env, Absyn.CASE(pattern,NONE(),info,decls,cp,result,resultInfo,NONE(),info), tys, inputAliases, matchExpLocalTree, impl, st, performVectorization, pre);
       then (cache,elabCase,elabResult,resType,st);
 
   end match;

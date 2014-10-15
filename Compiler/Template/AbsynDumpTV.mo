@@ -379,6 +379,11 @@ package Absyn
     record ALG_FAILURE
       list<AlgorithmItem> equ;
     end ALG_FAILURE;
+
+    record ALG_TRY
+      list<AlgorithmItem> body;
+      list<AlgorithmItem> elseBody;
+    end ALG_TRY;
   end Algorithm;
 
   uniontype Modification
@@ -591,7 +596,7 @@ package Absyn
       Option<Exp> patternGuard;
       Info patternInfo;
       list<ElementItem> localDecls;
-      list<EquationItem>  equations;
+      ClassPart classPart;
       Exp result;
       Info resultInfo;
       Option<String> comment;
@@ -600,7 +605,7 @@ package Absyn
 
     record ELSE
       list<ElementItem> localDecls;
-      list<EquationItem>  equations;
+      ClassPart classPart;
       Exp result;
       Info resultInfo;
       Option<String> comment;

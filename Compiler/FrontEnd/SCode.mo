@@ -407,13 +407,19 @@ public uniontype Statement "The Statement type describes one algorithm statement
     Absyn.Info info;
   end ALG_BREAK;
 
-  // Part of MetaModelica extension. KS
+  // MetaModelica extensions
   record ALG_FAILURE
     list<Statement> stmts;
     Comment comment;
     Absyn.Info info;
   end ALG_FAILURE;
-  //-------------------------------
+
+  record ALG_TRY
+    list<Statement> body;
+    list<Statement> elseBody;
+    Comment comment;
+    Absyn.Info info;
+  end ALG_TRY;
 
 end Statement;
 
@@ -593,6 +599,7 @@ public constant Attributes defaultConstAttr =
   ATTR({}, POTENTIAL(), NON_PARALLEL(), CONST(), Absyn.BIDIR());
 
 // .......... functionality .........
+protected import Error;
 protected import Util;
 protected import List;
 protected import NFSCodeCheck;
@@ -3097,6 +3104,11 @@ algorithm
     case ALG_RETURN(info = info) then info;
     case ALG_BREAK(info = info) then info;
     case ALG_FAILURE(info = info) then info;
+    case ALG_TRY(info = info) then info;
+    else
+      equation
+        Error.addInternalError("SCode.getStatementInfo failed");
+      then Absyn.dummyInfo;
   end match;
 end getStatementInfo;
 
