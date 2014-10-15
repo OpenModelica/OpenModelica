@@ -1690,7 +1690,7 @@ cases returns [void* ast]
 
 cases2 returns [void* ast]
 @init{ el = 0; cmt = 0; es = 0; eqs = 0; th = 0; exp = 0; c.ast = 0; cs.ast = 0; } :
-  ( (el=ELSE (cmt=string_comment es=local_clause ((EQUATION eqs=equation_list_then)|(T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN)? exp=expression SEMICOLON)?
+  ( (el=ELSE (cmt=string_comment es=local_clause ((EQUATION eqs=equation_list_then)|(al=T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN)? exp=expression SEMICOLON)?
     {
       if (es != NULL)
         c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
@@ -1698,7 +1698,7 @@ cases2 returns [void* ast]
                              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
       if ($th) $el = $th;
       if (exp) {
-       $ast = mk_cons(Absyn__ELSE(or_nil(es),eqs ? Absyn__EQUATIONS(eqs) : (algs.ast ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mk_nil())),exp,PARSER_INFO($el),mk_some_or_none(cmt),PARSER_INFO($start)),mk_nil());
+       $ast = mk_cons(Absyn__ELSE(or_nil(es),eqs ? Absyn__EQUATIONS(eqs) : (al ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mk_nil())),exp,PARSER_INFO($el),mk_some_or_none(cmt),PARSER_INFO($start)),mk_nil());
       } else {
        $ast = mk_nil();
       }
@@ -1712,14 +1712,14 @@ cases2 returns [void* ast]
 
 onecase returns [void* ast]
 @init{ pat.ast = 0; guard = 0; cmt = 0; es = 0; eqs = 0; th = 0; exp = 0; } :
-  (CASE pat=pattern (GUARD guard=expression)? cmt=string_comment es=local_clause ((EQUATION eqs=equation_list_then)|(T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN exp=expression SEMICOLON)
+  (CASE pat=pattern (GUARD guard=expression)? cmt=string_comment es=local_clause ((EQUATION eqs=equation_list_then)|(al=T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN exp=expression SEMICOLON)
     {
         if (es != NULL) {
           c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
                                NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
                                ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
         }
-        $ast = Absyn__CASE(pat.ast,mk_some_or_none(guard),pat.info,or_nil(es),eqs ? Absyn__EQUATIONS(eqs) : (algs.ast ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mk_nil())),exp,PARSER_INFO($th),mk_some_or_none(cmt),PARSER_INFO($start));
+        $ast = Absyn__CASE(pat.ast,mk_some_or_none(guard),pat.info,or_nil(es),eqs ? Absyn__EQUATIONS(eqs) : (al ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mk_nil())),exp,PARSER_INFO($th),mk_some_or_none(cmt),PARSER_INFO($start));
     }
   ;
 
