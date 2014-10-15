@@ -1839,7 +1839,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         //_event_handling.getCondition =  boost::bind(&<%className%>::getCondition, this, _1);
 
         //Todo: reindex all arrays removed  // arrayReindex(modelInfo,useFlatArrayNotation)
-              
+
         _functions = new Functions(_simTime,__z,__zDot,_initial,_terminate);
     }
 
@@ -5105,7 +5105,7 @@ case MODELINFO(vars=SIMVARS(__)) then
 
   >>
 end MemberVariable;
- 
+
 template VariableAliasDefinition(SimVar simVar, Boolean useFlatArrayNotation)
 "make a #define to the state vector"
 ::=
@@ -5165,7 +5165,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.stringAliasVars |> var =>
     MemberVariableDefineReference("string",var, "stringVariables.AliasVars","",useFlatArrayNotation)
   ;separator=";\n"%><%if vars.stringAliasVars then ";" else ""%>
-   
+
   >>
 end MemberVariableAlgloop;
 
@@ -5216,7 +5216,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.stringAliasVars |> var =>
     MemberVariableDefineReference("string",var, "stringVariables.AliasVars","_",useFlatArrayNotation)
   ;separator=","%><%if vars.stringAliasVars then "," else ""%>
- 
+
   >>
 end ConstructorParamAlgloop;
 
@@ -5537,7 +5537,7 @@ case MODELINFO(vars = vars as SIMVARS(__))
   <%arrayConstruct1(vars.intAliasVars, useFlatArrayNotation)%>
   <%arrayConstruct1(vars.boolAliasVars, useFlatArrayNotation)%>
   <%arrayConstruct1(vars.stringAliasVars, useFlatArrayNotation)%>
- 
+
   >>
 end arrayConstruct;
 
