@@ -24,40 +24,40 @@ template tasksystemdump_dispatch(SimCode code, Boolean withOperations)
   <?xml-stylesheet type="application/xml" href="tasksystemdump.xsl"?>
   <tasksystemdump model="<%name%>">
   <initial-equations size="<%listLength(initialEquations)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(initialEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(initialEquations),0,withOperations)%>
   </initial-equations>
   <dae-equations size="<%listLength(allEquations)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(allEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(allEquations),0,withOperations)%>
   </dae-equations>
   <ode-equations size="<%listLength(listGet(odeEquations,1))%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(listGet(odeEquations,1)),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(listGet(odeEquations,1)),0,withOperations)%>
   </ode-equations>  
   <alg-equations size="<%listLength(listGet(algebraicEquations,1))%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(listGet(algebraicEquations,1)),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(listGet(algebraicEquations,1)),0,withOperations)%>
   </alg-equations>
   <residual-equations size="<%listLength(residualEquations)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(residualEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(residualEquations),0,withOperations)%>
   </residual-equations>
   <start-equations size="<%listLength(startValueEquations)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(startValueEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(startValueEquations),0,withOperations)%>
   </start-equations>
   <nominal-equations size="<%listLength(nominalValueEquations)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(nominalValueEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(nominalValueEquations),0,withOperations)%>
   </nominal-equations>
   <min-equations size="<%listLength(minValueEquations)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(minValueEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(minValueEquations),0,withOperations)%>
   </min-equations>
   <max-equations size="<%listLength(maxValueEquations)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(maxValueEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(maxValueEquations),0,withOperations)%>
   </max-equations>
   <parameter-equations size="<%listLength(parameterEquations)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(parameterEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(parameterEquations),0,withOperations)%>
   </parameter-equations>
   <assertions size="<%listLength(algorithmAndEquationAsserts)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(algorithmAndEquationAsserts),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(algorithmAndEquationAsserts),0,withOperations)%>
   </assertions>
   <jacobian-equations>
-    <%dumpEqs(SimCodeUtil.sortEqSystems(jacobianEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(jacobianEquations),0,withOperations)%>
   </jacobian-equations>
   <literals size="<%listLength(literals)%>">
     <% literals |> exp => '<exp><%printExpStrEscaped(exp)%></exp>' ; separator="\n" %>
@@ -91,31 +91,43 @@ match eq
     else error(sourceInfo(), "dumpEqs: Unknown equation")
 end eqIndex;
 
-template dumpEqs(list<SimEqSystem> eqs, Boolean withOperations)
+template hasParent(Integer parent)
+::=
+  if intEq(parent,0) then "" else ' parent="<%parent%>"'
+end hasParent;
+
+template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
 ::= eqs |> eq hasindex i0 =>
   match eq
     case e as SES_RESIDUAL(__) then
+      let &defines = buffer ""
+      let &depends = buffer ""
+      let _ = eqDefinesDepends(e, defines, depends)
       <<
-      <equation index="<%eqIndex(eq)%>">
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <residual>
-          <% extractUniqueCrefsFromExpDerPreStart(e.exp) |> cr => '<depends name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
+          <%defines%>
+          <%depends%>
           <rhs><%printExpStrEscaped(e.exp)%></rhs>
         </residual>
       </equation><%\n%>
       >>
     case e as SES_SIMPLE_ASSIGN(__) then
+      let &defines = buffer ""
+      let &depends = buffer ""
+      let _ = eqDefinesDepends(e, defines, depends)
       <<
-      <equation index="<%eqIndex(eq)%>">
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <assign>
-          <defines name="<%crefStrNoUnderscore(e.cref)%>" />
-          <% extractUniqueCrefsFromExpDerPreStart(e.exp) |> cr => '<depends name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
+          <%defines%>
+          <%depends%>
           <rhs><%printExpStrEscaped(e.exp)%></rhs>
         </assign>
       </equation><%\n%>
       >>
     case e as SES_ARRAY_CALL_ASSIGN(__) then
       <<
-      <equation index="<%eqIndex(eq)%>">
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <assign type="array">
           <defines name="<%crefStrNoUnderscore(e.componentRef)%>" />
           <rhs><%printExpStrEscaped(e.exp)%></rhs>
@@ -125,69 +137,80 @@ template dumpEqs(list<SimEqSystem> eqs, Boolean withOperations)
     case e as SES_ALGORITHM(statements={}) then 'empty algorithm<%\n%>'
     case e as SES_ALGORITHM(statements=first::_)
       then
-      let uniqcrefs = getdependsices(extractUniqueCrefsFromStatmentS(e.statements))
+      let uniqcrefs = getdependcies(extractUniqueCrefsFromStatmentS(e.statements))
       <<
-      <equation index="<%eqIndex(eq)%>">
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <statement>
           <%uniqcrefs%>
           <stmt>
           <%e.statements |> stmt => escapeModelicaStringToXmlString(ppStmtStr(stmt,2)) %>
           </stmt>
         </statement>
-        <%dumpElementSource(getStatementSource(first),withOperations)%>
       </equation><%\n%>
       >>
     case e as SES_LINEAR(__) then
+      let &defines = buffer ""
+      let &depends = buffer ""
+      let &defines += e.vars |> SIMVAR(name=cr) => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n"
+      let _ = SimCodeUtil.sortEqSystems(e.residual) |> reseq  =>
+                eqDefinesDepends(reseq, defines, depends)
+      let _ = (match e.jacobianMatrix 
+        case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then 
+          let _ = SimCodeUtil.sortEqSystems(eqns) |> jeq  =>
+                  eqDefinesDepends(jeq, defines, depends)
+          ""
+       )
       <<
-      <equation index="<%eqIndex(eq)%>">
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <linear size="<%listLength(e.vars)%>" nnz="<%listLength(simJac)%>">
-          <%e.vars |> SIMVAR(name=cr) => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
-          <%beqs |> exp => '<%extractUniqueCrefsFromExpDerPreStart(exp) |> cr => '<depends name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>' ; separator = "\n" %><%\n%>
-          <row>
-            <%beqs |> exp => '<cell><%printExpStrEscaped(exp)%></cell>' ; separator = "\n" %><%\n%>
-          </row>
-          <matrix>
-            <%simJac |> (i1,i2,eq) =>
-            <<
-            <cell row="<%i1%>" col="<%i2%>">
-              <%match eq case e as SES_RESIDUAL(__) then
-                <<
-                <residual><%printExpStrEscaped(e.exp)%></residual>
-                >>
-               %>
-            </cell><%\n%>
-            >>
-            %>
-          </matrix>
+          <%defines%>
+          <%depends%>
+          <residuals>
+          <%e.residual |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
+          </residuals>
+          <jacobian>
+          <%match e.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then (eqns |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n") else ''%>
+          </jacobian>
         </linear>
       </equation><%\n%>
       >>
     case e as SES_NONLINEAR(__) then
+      let &defines = buffer ""
+      let &depends = buffer ""
+      let &defines += e.crefs |> cr => '<defines name="<%crefStrNoUnderscore(cr)%>"/>' ; separator = "\n"
+      let _ = SimCodeUtil.sortEqSystems(e.eqs) |> nleq  =>
+                eqDefinesDepends(nleq, defines, depends)
+      let _ = (match e.jacobianMatrix 
+        case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then 
+          let _ = SimCodeUtil.sortEqSystems(eqns) |> jeq  =>
+                  eqDefinesDepends(jeq, defines, depends)
+          ""
+       )
       <<
-      <%match e.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),withOperations) else ''%>
-      <equation index="<%eqIndex(eq)%>">
+      <%match e.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),e.index,withOperations) else ''%>
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <nonlinear indexNonlinear="<%indexNonLinearSystem%>">
-          <%e.crefs |> cr => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
+          <%defines%>
+          <%depends%>
           <%e.eqs |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
         </nonlinear>
       </equation><%\n%>
-      <%dumpEqs(SimCodeUtil.sortEqSystems(e.eqs),withOperations)%>
       >>
     case e as SES_MIXED(__) then
       <<
-      <equation index="<%eqIndex(eq)%>">
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <mixed size="<%intAdd(listLength(e.discEqs),1)%>">
           <%e.discVars |> SIMVAR(name=cr) => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = ","%>
           <%e.discEqs |> eq => '<discrete index="<%eqIndex(eq)%>" />'%>
           <continuous index="<%eqIndex(e.cont)%>" />
         </mixed>
       </equation><%\n%>
-      <%dumpEqs(fill(e.cont,1),withOperations)%>
-      <%dumpEqs(e.discEqs,withOperations)%>
+      <%dumpEqs(fill(e.cont,1),e.index,withOperations)%>
+      <%dumpEqs(e.discEqs,e.index,withOperations)%>
       >>
     case e as SES_WHEN(__) then
       <<
-      <equation index="<%eqIndex(eq)%>">
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
       <when>
         <%conditions |> cond => '<cond><%crefStrNoUnderscore(cond)%></cond>' ; separator="\n" %>
         <defines name="<%crefStrNoUnderscore(e.left)%>" />
@@ -197,19 +220,19 @@ template dumpEqs(list<SimEqSystem> eqs, Boolean withOperations)
       </equation><%\n%>
       >>
     case e as SES_IFEQUATION(__) then
-      let branches = ifbranches |> (_,eqs) => dumpEqs(eqs,withOperations)
-      let elsebr = dumpEqs(elsebranch,withOperations)
+      let branches = ifbranches |> (_,eqs) => dumpEqs(eqs,e.index,withOperations)
+      let elsebr = dumpEqs(elsebranch,e.index,withOperations)
       <<
       <%branches%>
       <%elsebr%>
-      <equation index="<%eqIndex(eq)%>">
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
       <ifequation /> <!-- TODO: Fix me -->
       </equation><%\n%>
       >>
     else error(sourceInfo(),"dumpEqs: Unknown equation")
 end dumpEqs;
 
-template getdependsices(tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>> ocrefs)
+template getdependcies(tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>> ocrefs)
 ::=
   match ocrefs
   case (olhscrefs,orhscrefs) then 
@@ -218,7 +241,20 @@ template getdependsices(tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>> oc
   <%orhscrefs |> cr => '<depends name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n"%>
   >>
   else "Error Printing dependenices"
-end getdependsices;
+end getdependcies;
+
+template eqDefinesDepends(SimEqSystem eq, Text &defines, Text &depends)
+::=
+  match eq
+  case e as SES_RESIDUAL(__) then
+    let &depends += extractUniqueCrefsFromExpDerPreStart(e.exp) |> cr => '<depends name="<%crefStrNoUnderscore(cr)%>"/>' ; separator = "\n"
+    ""
+  case e as SES_SIMPLE_ASSIGN(__) then
+    let &defines += '<defines name="<%crefStrNoUnderscore(e.cref)%>"/><%\n%>'
+    let &depends += extractUniqueCrefsFromExpDerPreStart(e.exp) |> cr => '<depends name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n"
+    ""
+  else "Unrecognized Equation in eqDefinesDepends"
+end eqDefinesDepends;
 
 template dumpWithin(Within w)
 ::=

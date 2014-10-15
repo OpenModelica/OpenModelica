@@ -287,7 +287,7 @@ struct cluster_merge_level_for_cost {
         ClusterLevels& clusters_by_level = task_system.clusters_by_level;
         GraphType& sys_graph = task_system.sys_graph;
 
-        int nr_of_clusters = 8;
+        int nr_of_clusters = 4;
 
         if(task_system.levels_valid == false)
             task_system.update_node_levels();
@@ -309,7 +309,7 @@ struct cluster_merge_level_for_cost {
                 target_cost = sys_graph[current_level.front()].cost;
             }
 
-            target_cost = std::max(target_cost, 0.1);
+            target_cost = std::max(target_cost, 0.01);
 
             int cluster_count = 0;
             typename SameLevelClusterIdsType::iterator clustid_iter = current_level.begin();

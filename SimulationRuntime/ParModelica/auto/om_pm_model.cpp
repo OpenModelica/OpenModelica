@@ -193,28 +193,19 @@ void load_equation(Equation& current_node, pugi::xml_node& xml_equ) {
 
         pugi::xml_node current = eq_type.first_child();
 
+        int nls_size = 0;
         while(std::strcmp(current.name(),"defines") == 0) {
             current_node.lhs.insert(current.attribute("name").value());
             current = current.next_sibling();
-        }
-
-
-        long nls_size = 0;
-        while(std::strcmp(current.name(),"eq") == 0) {
-            // current_node.eqs.push_back(current.attribute("index").as_int());
-            current = current.next_sibling();
             ++nls_size;
+        }
+        
+        while(std::strcmp(current.name(),"depends") == 0) {
+            current_node.rhs.insert(current.attribute("name").value());
+            current = current.next_sibling();
         }
 
         current_node.cost = nls_size;
-
-        for(int count = 0; count < nls_size; ++count) {
-            xml_equ = xml_equ.next_sibling();
-            Equation nls_eq_node;
-            load_node(nls_eq_node, xml_equ);
-            current_node.lhs.insert(nls_eq_node.lhs.begin(), nls_eq_node.lhs.end());
-            current_node.rhs.insert(nls_eq_node.rhs.begin(), nls_eq_node.rhs.end());
-        }
         utility::warning() << current_node.index << ": Non linear equations not fully handled yet: " << nls_size << newl;
     }
 

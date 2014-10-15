@@ -147,7 +147,7 @@ public:
             task_timer.stop_timer();
             elapsed = task_timer.get_elapsed_time();
             if(elapsed == 0)
-                t_iter->cost = 0.005;
+                t_iter->cost = 0.0005;
             else
                 t_iter->cost = elapsed * 10000;
 
