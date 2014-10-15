@@ -199,7 +199,7 @@ void load_equation(Equation& current_node, pugi::xml_node& xml_equ) {
             current = current.next_sibling();
             ++nls_size;
         }
-        
+
         while(std::strcmp(current.name(),"depends") == 0) {
             current_node.rhs.insert(current.attribute("name").value());
             current = current.next_sibling();
