@@ -1839,8 +1839,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         //_event_handling.getCondition =  boost::bind(&<%className%>::getCondition, this, _1);
 
         //Todo: reindex all arrays removed  // arrayReindex(modelInfo,useFlatArrayNotation)
-        //Initialize array elements
-        <%initializeArrayElements(simCode, useFlatArrayNotation)%>
+              
         _functions = new Functions(_simTime,__z,__zDot,_initial,_terminate);
     }
 
@@ -5100,25 +5099,13 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.stringAliasVars |> var =>
     MemberVariableDefine("string",var, "stringVariables.AliasVars", useFlatArrayNotation)
   ;separator="\n"%>
-   <%vars.constVars |> var =>
-    MemberVariableDefine2(var, "constvariables", useFlatArrayNotation)
-  ;separator="\n"%>
-   <%vars.intConstVars |> var =>
-    MemberVariableDefine("const int", var, "intConstvariables", useFlatArrayNotation)
-  ;separator="\n"%>
-   <%vars.boolConstVars |> var =>
-    MemberVariableDefine("const bool", var, "boolConstvariables", useFlatArrayNotation)
-  ;separator="\n"%>
-   <%vars.stringConstVars |> var =>
-    MemberVariableDefine("const string",var, "stringConstvariables", useFlatArrayNotation)
-  ;separator="\n"%>
-   <%vars.extObjVars |> var =>
+  <%vars.extObjVars |> var =>
     MemberVariableDefine("void*",var, "extObjVars", useFlatArrayNotation)
   ;separator="\n"%>
 
   >>
 end MemberVariable;
-
+ 
 template VariableAliasDefinition(SimVar simVar, Boolean useFlatArrayNotation)
 "make a #define to the state vector"
 ::=
@@ -5178,18 +5165,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.stringAliasVars |> var =>
     MemberVariableDefineReference("string",var, "stringVariables.AliasVars","",useFlatArrayNotation)
   ;separator=";\n"%><%if vars.stringAliasVars then ";" else ""%>
-   <%vars.constVars |> var =>
-    MemberVariableDefineReference2(var, "constvariables","",useFlatArrayNotation)
-  ;separator=";\n"%><%if vars.constVars then ";" else " "%>
-   <%vars.intConstVars |> var =>
-    MemberVariableDefineReference("const int", var, "intConstvariables","",useFlatArrayNotation)
-  ;separator=";\n"%><%if vars.intConstVars then ";" else ""%>
-   <%vars.boolConstVars |> var =>
-    MemberVariableDefineReference("const bool", var, "boolConstvariables","",useFlatArrayNotation)
-  ;separator=";\n"%><%if vars.boolConstVars then ";" else ""%>
-   <%vars.stringConstVars |> var =>
-    MemberVariableDefineReference("const string",var, "stringConstvariables","",useFlatArrayNotation)
-  ;separator=";\n"%><%if vars.stringConstVars then ";" else ""%>
+   
   >>
 end MemberVariableAlgloop;
 
@@ -5240,18 +5216,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.stringAliasVars |> var =>
     MemberVariableDefineReference("string",var, "stringVariables.AliasVars","_",useFlatArrayNotation)
   ;separator=","%><%if vars.stringAliasVars then "," else ""%>
-  <%vars.constVars |> var =>
-    MemberVariableDefineReference2(var, "constvariables","_",useFlatArrayNotation)
-  ;separator=","%><%if vars.constVars then "," else ""%>
-  <%vars.intConstVars |> var =>
-    MemberVariableDefineReference("const int", var, "intConstvariables","_",useFlatArrayNotation)
-  ;separator=","%><%if vars.intConstVars then "," else ""%>
-  <%vars.boolConstVars |> var =>
-    MemberVariableDefineReference("const bool", var, "boolConstvariables","_",useFlatArrayNotation)
-  ;separator=","%> <%if vars.boolConstVars then "," else "" %>
-  <%vars.stringConstVars |> var =>
-    MemberVariableDefineReference("const string",var, "stringConstvariables","_",useFlatArrayNotation)
-  ;separator=","%><%if vars.stringConstVars then "," else ""%>
+ 
   >>
 end ConstructorParamAlgloop;
 
@@ -5299,18 +5264,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.stringAliasVars |> var =>
     CallAlgloopParam(var, useFlatArrayNotation)
   ;separator=","%><%if vars.stringAliasVars then "," else ""%>
-  <%vars.constVars |> var =>
-    CallAlgloopParam(var, useFlatArrayNotation)
-  ;separator=","%><%if vars.constVars then "," else ""%>
-  <%vars.intConstVars |> var =>
-    CallAlgloopParam(var, useFlatArrayNotation)
-  ;separator=","%><%if vars.intConstVars then "," else ""%>
-  <%vars.boolConstVars |> var =>
-    CallAlgloopParam(var, useFlatArrayNotation)
-  ;separator=","%><%if vars.boolConstVars then "," else "" %>
-  <%vars.stringConstVars |> var =>
-    CallAlgloopParam(var, useFlatArrayNotation)
-  ;separator=","%> <%if vars.stringConstVars then "," else "" %>>>
+ >>
 end CallAlgloopParams;
 
 
@@ -5375,22 +5329,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.stringAliasVars |> var =>
     InitAlgloopParam(var, "stringVariables.AliasVars",arrayInit, useFlatArrayNotation)
   ;separator=","%><%if vars.stringAliasVars then "," else "" %>
-   /* vars.constVars */
-  <%vars.constVars |> var =>
-    InitAlgloopParam(var, "constvariables",arrayInit, useFlatArrayNotation)
-  ;separator=","%><%if vars.constVars then "," else ""%>
-   /* vars.intConstVars */
-  <%vars.intConstVars |> var =>
-    InitAlgloopParam( var, "intConstvariables",arrayInit, useFlatArrayNotation)
-  ;separator=","%> <%if vars.intConstVars then "," else ""%>
-   /* vars.boolConstVars */
-  <%vars.boolConstVars |> var =>
-    InitAlgloopParam( var, "boolConstvariables",arrayInit, useFlatArrayNotation)
-  ;separator=","%><%if vars.boolConstVars then "," else ""%>
-   /* vars.stringConstVars */
-   <%vars.stringConstVars |> var =>
-    InitAlgloopParam(var, "stringConstvariables",arrayInit, useFlatArrayNotation)
-  ;separator=","%><%if vars.stringConstVars then "," else ""%> >>
+ >>
  end InitAlgloopParams;
 
 template MemberVariableDefine(String type,SimVar simVar, String arrayName, Boolean useFlatArrayNotation)
@@ -5598,10 +5537,7 @@ case MODELINFO(vars = vars as SIMVARS(__))
   <%arrayConstruct1(vars.intAliasVars, useFlatArrayNotation)%>
   <%arrayConstruct1(vars.boolAliasVars, useFlatArrayNotation)%>
   <%arrayConstruct1(vars.stringAliasVars, useFlatArrayNotation)%>
-  <%arrayConstruct1(vars.constVars, useFlatArrayNotation)%>
-  <%arrayConstruct1(vars.intConstVars, useFlatArrayNotation)%>
-  <%arrayConstruct1(vars.boolConstVars, useFlatArrayNotation)%>
-  <%arrayConstruct1(vars.stringConstVars, useFlatArrayNotation)%>
+ 
   >>
 end arrayConstruct;
 
@@ -5879,11 +5815,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as S
   <<
 
   <%if (boolNot(useFlatArrayNotation)) then arrayConstruct(modelInfo, useFlatArrayNotation) else ""%>
-  <%initconstVals(vars.constVars,simCode,useFlatArrayNotation)%>
-  <%initconstVals(vars.intConstVars,simCode,useFlatArrayNotation)%>
-  <%initconstVals(vars.boolConstVars,simCode,useFlatArrayNotation)%>
-  <%initconstVals(vars.stringConstVars,simCode,useFlatArrayNotation)%>
-   <%initconstVals(vars.stringParamVars,simCode,useFlatArrayNotation)%>
+  <%initconstVals(vars.stringParamVars,simCode,useFlatArrayNotation)%>
   >>
 end simulationInitFile;
 
@@ -5972,11 +5904,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as S
   <%initVals1(vars.intParamVars,simCode, useFlatArrayNotation)%>
   <%initVals1(vars.boolParamVars,simCode, useFlatArrayNotation)%>
   <%initVals1(vars.stringParamVars,simCode, useFlatArrayNotation)%>
-  <%initVals1(vars.constVars,simCode, useFlatArrayNotation)%>
-  <%initVals1(vars.intConstVars,simCode, useFlatArrayNotation)%>
-  <%initVals1(vars.boolConstVars,simCode, useFlatArrayNotation)%>
-  <%initVals1(vars.stringConstVars,simCode, useFlatArrayNotation)%>
-  >>
+   >>
 end arrayInit;
 
 template initVals1(list<SimVar> varsLst, SimCode simCode, Boolean useFlatArrayNotation) ::=
