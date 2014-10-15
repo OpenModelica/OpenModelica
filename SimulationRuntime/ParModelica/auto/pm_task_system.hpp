@@ -59,7 +59,7 @@ struct TaskNode {
     , cost(0)
     {};
 
-    long node_id;
+    long task_id;
     int level;
     double cost;
 

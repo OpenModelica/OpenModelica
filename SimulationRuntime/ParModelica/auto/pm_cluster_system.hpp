@@ -61,7 +61,7 @@ namespace parmodelica {
     // , cost(0)
     // {};
 
-    // long node_id;
+    // long task_id;
     // int level;
     // double cost;
 
@@ -250,7 +250,7 @@ public:
         total_cost = 0;
         root_node_id = boost::add_vertex(sys_graph);
         TaskType& root_node = sys_graph[root_node_id].add_task(TaskType());
-        root_node.node_id = -1;
+        root_node.task_id = -1;
     }
 
     TaskType& add_node(const TaskType& task)
@@ -261,7 +261,7 @@ public:
         ClusterType& new_clust = sys_graph[new_clust_id];
 
         TaskType& new_task = new_clust.add_task(task);
-        new_task.node_id = node_count;
+        new_task.task_id = node_count;
         ++node_count;
 
         int parent_count = 0;

@@ -76,7 +76,7 @@ bool Equation::depends_on(const TaskNode& other_b) const {
 
 
 void Equation::execute() {
-    function_system[node_id](data);
+    function_system[task_id](data);
 }
 
 

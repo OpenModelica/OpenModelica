@@ -112,6 +112,7 @@ private:
 public:
 
     PMTimer execution_timer;
+	PMTimer clustering_timer;
 
     StepLevels(TaskSystemType& ts) :
       task_system(ts)
@@ -156,6 +157,8 @@ public:
         if(schedule_valid)
             return;
 
+        clustering_timer.start_timer();
+
         if(task_system.levels_valid == false)
             task_system.update_node_levels();
 
@@ -180,6 +183,7 @@ public:
         task_system.levels_valid = false;
 
         estimate_speedup();
+		clustering_timer.stop_timer();
 
     }
 

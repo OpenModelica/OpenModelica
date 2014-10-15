@@ -56,9 +56,11 @@ void PM_functionInitialEquations(int size, void* data, FunctionType* functionIni
 
     // pm_om_model.ini_system_funcs = functionInitialEquations_systems;
     // pm_om_model.INI_scheduler.execute();
-
+	pm_om_model.INI_scheduler.execution_timer.start_timer();
     for(int i = 0; i < size; ++i)
         functionInitialEquations_systems[i](data);
+	pm_om_model.INI_scheduler.execution_timer.stop_timer();
+
 }
 
 
@@ -67,8 +69,10 @@ void PM_functionDAE(int size, void* data, FunctionType* functionDAE_systems) {
     // pm_om_model.dae_system_funcs = functionDAE_systems;
     // pm_om_model.DAE_scheduler.execute();
 
+	pm_om_model.DAE_scheduler.execution_timer.start_timer();
     for(int i = 0; i < size; ++i)
         functionDAE_systems[i](data);
+	pm_om_model.DAE_scheduler.execution_timer.stop_timer();
 
 }
 
@@ -76,10 +80,11 @@ void PM_functionDAE(int size, void* data, FunctionType* functionDAE_systems) {
 void PM_functionODE(int size, void* data, FunctionType* functionODE_systems) {
 
     pm_om_model.ODE_scheduler.execute();
-
+	
+	// pm_om_model.ODE_scheduler.execution_timer.start_timer();
     // for(int i = 0; i < size; ++i)
         // functionODE_systems[i](data);
-
+	// pm_om_model.ODE_scheduler.execution_timer.stop_timer();
 }
 
 void PM_functionAlg(int size, void* data, FunctionType* functionAlg_systems) {
@@ -97,6 +102,7 @@ void dump_times() {
     utility::log("") << "Total INI: " << pm_om_model.INI_scheduler.execution_timer.get_elapsed_time() << std::endl;
     utility::log("") << "Total DAE: " << pm_om_model.DAE_scheduler.execution_timer.get_elapsed_time() << std::endl;
     utility::log("") << "Total ODE: " << pm_om_model.ODE_scheduler.execution_timer.get_elapsed_time() << std::endl;
+	utility::log("") << "Total ODE: " << pm_om_model.ODE_scheduler.clustering_timer.get_elapsed_time() << std::endl;
     utility::log("") << "Total ALG: " << pm_om_model.total_alg_time.get_elapsed_time() << std::endl;
 }
 

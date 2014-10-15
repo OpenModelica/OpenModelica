@@ -30,10 +30,10 @@ libom_pm_autort.a: $(OBJS)
 	$(AR_) $@ $(OBJS)
     
 .cpp.o: $(DPFILE)
-	$(CC) $(CPPFLAGS) -c $<    
+	$(CC) $(CPPFLAGS) $(INCDIRS) -c $<    
     
 test: test_task_graph.cpp transfer
-	$(CXX) $(CPPFLAGS) -I. test_task_graph.cpp -o gen_graph$(EXEEXT) libom_pm_autort.a -Wl,-rpath,$(TBB_LIB) -L$(TBB_LIB) -ltbb
+	$(CXX) $(CPPFLAGS) -I. $(INCDIRS) test_task_graph.cpp -o gen_graph$(EXEEXT) libom_pm_autort.a -L$(TBB_LIB) -ltbb 
 
 clean :
 	rm -f *.o *.a

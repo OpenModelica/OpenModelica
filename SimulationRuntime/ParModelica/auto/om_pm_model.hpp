@@ -42,6 +42,7 @@
 
 #include "pm_task_system.hpp"
 #include "pm_cluster_level_scheduler.hpp"
+#include "pm_cluster_dynamic_scheduler.hpp"
 
 #include "pm_level_scheduler.hpp"
 #include "pm_dynamic_scheduler.hpp"
@@ -91,6 +92,7 @@ class OMModel : boost::noncopyable {
     // typedef TaskSystem<Equation> TaskSystemT;
 
     typedef StepLevels<Equation> SchedulerT;
+    // typedef ClusterDynamicScheduler<Equation> SchedulerT;
     typedef TaskSystem_v2<Equation> TaskSystemT;
 
 
