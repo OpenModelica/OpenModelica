@@ -560,12 +560,10 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
  *  author: Vitalij Ruge
  **/
 void optData2ModelData(OptData *optData, double *vopt, const int index){
-  const int nx = optData->dim.nx;
   const int nv = optData->dim.nv;
   const int nsi = optData->dim.nsi;
   const int np = optData->dim.np;
 
-  const modelica_real * vnom = optData->bounds.vnom;
   const int nBoolean = optData->data->modelData.nVariablesBoolean;
   const int nInteger = optData->data->modelData.nVariablesInteger;
   const int nReal = optData->dim.nReal;
@@ -578,7 +576,6 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
   int i, j, k, shift, l;
   DATA * data = optData->data;
   const int * indexBC = optData->s.indexABCD + 3;
-  OptDataDim * dim = &optData->dim;
   threadData_t *threadData = data->threadData;
 
   for(l = 0; l < 3; ++l)
