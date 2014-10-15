@@ -95,7 +95,7 @@ ParModelica_Lexer.stamp: ParModelica_Lexer.g BaseModelica_Lexer.g
 	$(ANTLRCMD) $<
 	@touch -c $(parmodelicagen)
 	@mv -f $@.tmp $@
-	
+
 $(parsergen) : ModelicaParser.stamp
 	## Recover from the removal of $@
 	@if test -f $@; then :; else \
@@ -116,7 +116,7 @@ $(metamodelicagen) : MetaModelica_Lexer.stamp
 	rm -f $<; \
 	$(MAKE) $<; \
 	fi
-	
+
 $(parmodelicagen) : ParModelica_Lexer.stamp
 	## Recover from the removal of $@
 	@if test -f $@; then :; else \

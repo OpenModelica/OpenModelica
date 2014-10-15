@@ -563,7 +563,7 @@ component_declaration returns [void* ast]
   ;
 
 conditional_attribute returns [void* ast] :
-        IF e=expression {ast = e;}
+        IF e=expression[metamodelica_enabled()] {ast = e.ast;}
         ;
 
 declaration returns [void* ast]
@@ -579,13 +579,13 @@ declaration returns [void* ast]
  */
 
 modification returns [void* ast]
-@init { e = 0; eq = 0; cm = 0; } :
-  ( cm=class_modification ( eq=EQUALS e=expression )?
-  | eq=EQUALS e=expression
-  | eq=ASSIGN e=expression
+@init { e.ast = 0; eq = 0; cm = 0; } :
+  ( cm=class_modification ( eq=EQUALS e=expression[metamodelica_enabled()] )?
+  | eq=EQUALS e=expression[metamodelica_enabled()]
+  | eq=ASSIGN e=expression[metamodelica_enabled()]
   )
     {
-      ast = Absyn__CLASSMOD(or_nil(cm), e ? Absyn__EQMOD(e,PARSER_INFO($eq)) : Absyn__NOMOD);
+      ast = Absyn__CLASSMOD(or_nil(cm), e.ast ? Absyn__EQMOD(e.ast,PARSER_INFO($eq)) : Absyn__NOMOD);
     }
   ;
 
@@ -788,7 +788,7 @@ algorithm_annotation_list [void **ann, int matchCase] returns [void* ast]
   ;
 
 equation returns [void* ast]
-@init { cmt = 0; e = 0; e1 = 0; e2 = 0; eq.ast = 0; ee.ast = 0; } :
+@init { cmt = 0; e = 0; e1.ast = 0; e2.ast = 0; eq.ast = 0; ee.ast = 0; } :
   ( ee=equality_or_noretcall_equation { e = ee.ast; }
   | e=conditional_equation_e
   | e=for_clause_e
@@ -796,9 +796,9 @@ equation returns [void* ast]
   | e=connect_clause
   | e=when_clause_e
   | FAILURE LPAR eq=equation RPAR { e = Absyn__EQ_5fFAILURE(eq.ast); }
-  | EQUALITY LPAR e1=expression EQUALS e2=expression RPAR
+  | EQUALITY LPAR e1=expression[metamodelica_enabled()] EQUALS e2=expression[metamodelica_enabled()] RPAR
     {
-      e = Absyn__EQ_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),Absyn__FUNCTIONARGS(mk_cons(e1,mk_cons(e2,mk_nil())),mk_nil()));
+      e = Absyn__EQ_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),Absyn__FUNCTIONARGS(mk_cons(e1.ast,mk_cons(e2.ast,mk_nil())),mk_nil()));
     }
   )
   cmt=comment
@@ -808,7 +808,7 @@ equation returns [void* ast]
   ;
 
 constraint returns [void* ast]
-@init { a = 0; al.ast = 0; e1 = 0; e2 = 0; cmt = 0; } :
+@init { a = 0; al.ast = 0; e1.ast = 0; e2.ast = 0; cmt = 0; } :
   ( a = simple_expr
   | a=conditional_equation_a
   | a=for_clause_a
@@ -818,9 +818,9 @@ constraint returns [void* ast]
   | BREAK { a = Absyn__ALG_5fBREAK; }
   | RETURN { a = Absyn__ALG_5fRETURN; }
   | FAILURE LPAR al=algorithm RPAR { a = Absyn__ALG_5fFAILURE(mk_cons(al.ast,mk_nil())); }
-  | EQUALITY LPAR e1=expression ASSIGN e2=expression RPAR
+  | EQUALITY LPAR e1=expression[metamodelica_enabled()] ASSIGN e2=expression[metamodelica_enabled()] RPAR
     {
-      a = Absyn__ALG_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),Absyn__FUNCTIONARGS(mk_cons(e1,mk_cons(e2,mk_nil())),mk_nil()));
+      a = Absyn__ALG_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),Absyn__FUNCTIONARGS(mk_cons(e1.ast,mk_cons(e2.ast,mk_nil())),mk_nil()));
     }
   )
   cmt=comment
@@ -831,7 +831,7 @@ constraint returns [void* ast]
 
 
 algorithm returns [void* ast]
-@init { aa.ast = 0; al.ast = 0; a = 0; e1 = 0; e2 = 0; cmt = 0; } :
+@init { aa.ast = 0; al.ast = 0; a = 0; e1.ast = 0; e2.ast = 0; cmt = 0; } :
   ( aa=assign_clause_a { a = aa.ast; }
   | a=conditional_equation_a
   | a=for_clause_a
@@ -842,9 +842,9 @@ algorithm returns [void* ast]
   | BREAK { a = Absyn__ALG_5fBREAK; }
   | RETURN { a = Absyn__ALG_5fRETURN; }
   | FAILURE LPAR al=algorithm RPAR { a = Absyn__ALG_5fFAILURE(mk_cons(al.ast,mk_nil())); }
-  | EQUALITY LPAR e1=expression ASSIGN e2=expression RPAR
+  | EQUALITY LPAR e1=expression[metamodelica_enabled()] ASSIGN e2=expression[metamodelica_enabled()] RPAR
     {
-      a = Absyn__ALG_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),Absyn__FUNCTIONARGS(mk_cons(e1,mk_cons(e2,mk_nil())),mk_nil()));
+      a = Absyn__ALG_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),Absyn__FUNCTIONARGS(mk_cons(e1.ast,mk_cons(e2.ast,mk_nil())),mk_nil()));
     }
   )
   cmt=comment
@@ -855,15 +855,15 @@ algorithm returns [void* ast]
 
 assign_clause_a returns [void* ast]
 @declarations { char *s1 = 0; }
-@init { e1 = 0; eq = 0; e2 = 0; } :
+@init { e1 = 0; eq = 0; e2.ast = 0; } :
   /* MetaModelica allows pattern matching on arbitrary expressions in algorithm sections... */
   e1=simple_expression
-    ( (ASSIGN|eq=EQUALS) e2=expression
+    ( (ASSIGN|eq=EQUALS) e2=expression[metamodelica_enabled()]
       {
         modelicaParserAssert(eq==0,"Algorithms can not contain equations ('='), use assignments (':=') instead", assign_clause_a, $eq->line, $eq->charPosition+1, $eq->line, $eq->charPosition+2);
         {
           int looks_like_cref = (RML_GETHDR(e1) == RML_STRUCTHDR(1, Absyn__CREF_3dBOX1));
-          int looks_like_call = ((RML_GETHDR(e1) == RML_STRUCTHDR(1, Absyn__TUPLE_3dBOX1)) && (RML_GETHDR(e2) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2)));
+          int looks_like_call = ((RML_GETHDR(e1) == RML_STRUCTHDR(1, Absyn__TUPLE_3dBOX1)) && (RML_GETHDR(e2.ast) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2)));
           int looks_like_der_cr = !looks_like_cref && !looks_like_call && call_looks_like_der_cr(e1);
           modelicaParserAssert(eq!=0 || metamodelica_enabled() || looks_like_cref || looks_like_call || looks_like_der_cr,
               "Modelica assignment statements are either on the form 'component_reference := expression' or '( output_expression_list ) := function_call'",
@@ -874,7 +874,7 @@ assign_clause_a returns [void* ast]
               ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
           }
         }
-        $ast = Absyn__ALG_5fASSIGN(e1,e2);
+        $ast = Absyn__ALG_5fASSIGN(e1,e2.ast);
       }
     |
       {
@@ -889,12 +889,12 @@ assign_clause_a returns [void* ast]
   ;
 
 equality_or_noretcall_equation returns [void* ast]
-@init { ass = 0; e1 = 0; ass = 0; e2 = 0; } :
+@init { ass = 0; e1 = 0; ass = 0; e2.ast = 0; } :
   e1=simple_expression
-    (  (EQUALS | ass=ASSIGN) e2=expression
+    (  (EQUALS | ass=ASSIGN) e2=expression[metamodelica_enabled()]
       {
         modelicaParserAssert(ass==0,"Equations can not contain assignments (':='), use equality ('=') instead", equality_or_noretcall_equation, $ass->line, $ass->charPosition+1, $ass->line, $ass->charPosition+2);
-        $ast = Absyn__EQ_5fEQUALS(e1,e2);
+        $ast = Absyn__EQ_5fEQUALS(e1,e2.ast);
       }
     | {LA(1) != EQUALS && LA(1) != ASSIGN}? /* It has to be a CALL */
        {
@@ -908,19 +908,19 @@ equality_or_noretcall_equation returns [void* ast]
 
 conditional_equation_e returns [void* ast]
 @init { i = 0; else_b = 0; then_b = 0; else_if_b = 0; } :
-  IF e=expression THEN then_b=equation_list else_if_b=equation_elseif_list? ( ELSE else_b=equation_list )? (i=END_IF|t=END_IDENT|t=END_FOR|t=END_WHEN)
+  IF e=expression[metamodelica_enabled()] THEN then_b=equation_list else_if_b=equation_elseif_list? ( ELSE else_b=equation_list )? (i=END_IF|t=END_IDENT|t=END_FOR|t=END_WHEN)
     {
       modelicaParserAssert(i,else_b ? "Expected 'end if'; did you use a nested 'else if' instead of 'elseif'?" : "Expected 'end if'",conditional_equation_e,t->line, t->charPosition+1, LT(1)->line, LT(1)->charPosition+1);
-      ast = Absyn__EQ_5fIF(e, then_b, or_nil(else_if_b), or_nil(else_b));
+      ast = Absyn__EQ_5fIF(e.ast, then_b, or_nil(else_if_b), or_nil(else_b));
     }
   ;
 
 conditional_equation_a returns [void* ast]
 @init { i = 0; else_b = 0; else_if_b = 0; } :
-  IF e=expression THEN then_b=algorithm_list else_if_b=algorithm_elseif_list? ( ELSE else_b=algorithm_list )? (i=END_IF|t=END_IDENT|t=END_FOR|t=END_WHEN|t=END_WHILE)
+  IF e=expression[metamodelica_enabled()] THEN then_b=algorithm_list else_if_b=algorithm_elseif_list? ( ELSE else_b=algorithm_list )? (i=END_IF|t=END_IDENT|t=END_FOR|t=END_WHEN|t=END_WHILE)
   {
     modelicaParserAssert(i,else_b ? "Expected 'end if'; did you use a nested 'else if' instead of 'elseif'?" : "Expected 'end if'",conditional_equation_a,t->line, t->charPosition+1, LT(1)->line, LT(1)->charPosition+1);
-    ast = Absyn__ALG_5fIF(e, then_b, or_nil(else_if_b), or_nil(else_b));
+    ast = Absyn__ALG_5fIF(e.ast, then_b, or_nil(else_if_b), or_nil(else_b));
   }
   ;
 
@@ -945,8 +945,8 @@ parfor_clause_a returns [void* ast]
   ;
 
 while_clause returns [void* ast]
-@init { e = 0; as = 0; } :
-  WHILE e=expression LOOP as=algorithm_list END_WHILE { ast = Absyn__ALG_5fWHILE(e,as); }
+@init { e.ast = 0; as = 0; } :
+  WHILE e=expression[metamodelica_enabled()] LOOP as=algorithm_list END_WHILE { ast = Absyn__ALG_5fWHILE(e.ast,as); }
   ;
 
 try_clause returns [void* ast]
@@ -956,9 +956,9 @@ try_clause returns [void* ast]
 
 when_clause_e returns [void* ast]
 @init{ es = 0; body = 0; es = 0; } :
-  WHEN e=expression THEN body=equation_list es=else_when_e_list? END_WHEN
+  WHEN e=expression[metamodelica_enabled()] THEN body=equation_list es=else_when_e_list? END_WHEN
     {
-      ast = Absyn__EQ_5fWHEN_5fE(e,body,or_nil(es));
+      ast = Absyn__EQ_5fWHEN_5fE(e.ast,body,or_nil(es));
     }
   ;
 
@@ -969,14 +969,14 @@ else_when_e_list returns [void* ast]
 
 else_when_e returns [void* ast]
 @init{ es = 0; es = 0; } :
-  ELSEWHEN e=expression THEN es=equation_list { ast = mk_tuple2(e,es); }
+  ELSEWHEN e=expression[metamodelica_enabled()] THEN es=equation_list { ast = mk_tuple2(e.ast,es); }
   ;
 
 when_clause_a returns [void* ast]
-@init{ e = 0; body = 0; es = 0; } :
-  WHEN e=expression THEN body=algorithm_list es=else_when_a_list? END_WHEN
+@init{ e.ast = 0; body = 0; es = 0; } :
+  WHEN e=expression[metamodelica_enabled()] THEN body=algorithm_list es=else_when_a_list? END_WHEN
     {
-      ast = Absyn__ALG_5fWHEN_5fA(e,body,or_nil(es));
+      ast = Absyn__ALG_5fWHEN_5fA(e.ast,body,or_nil(es));
     }
   ;
 
@@ -986,8 +986,8 @@ else_when_a_list returns [void* ast]
   ;
 
 else_when_a returns [void* ast]
-@init{ e = 0; as = 0; } :
-  ELSEWHEN e=expression THEN as=algorithm_list { ast = mk_tuple2(e,as); }
+@init{ e.ast = 0; as = 0; } :
+  ELSEWHEN e=expression[metamodelica_enabled()] THEN as=algorithm_list { ast = mk_tuple2(e.ast,as); }
   ;
 
 equation_elseif_list returns [void* ast]
@@ -996,8 +996,8 @@ equation_elseif_list returns [void* ast]
   ;
 
 equation_elseif returns [void* ast]
-@init{ e = 0; es = 0; } :
-  ELSEIF e=expression THEN es=equation_list { ast = mk_tuple2(e,es); }
+@init{ e.ast = 0; es = 0; } :
+  ELSEIF e=expression[metamodelica_enabled()] THEN es=equation_list { ast = mk_tuple2(e.ast,es); }
   ;
 
 algorithm_elseif_list returns [void* ast]
@@ -1006,8 +1006,8 @@ algorithm_elseif_list returns [void* ast]
   ;
 
 algorithm_elseif returns [void* ast]
-@init{ e = 0; as = 0; } :
-  ELSEIF e=expression THEN as=algorithm_list { ast = mk_tuple2(e,as); }
+@init{ e.ast = 0; as = 0; } :
+  ELSEIF e=expression[metamodelica_enabled()] THEN as=algorithm_list { ast = mk_tuple2(e.ast,as); }
   ;
 
 equation_list_then returns [void* ast]
@@ -1088,11 +1088,19 @@ connector_ref_2 returns [void* ast]
 /*
  * 2.2.7 Expressions
  */
-expression returns [void* ast] :
-  ( e=if_expression { ast = e; }
-  | e=simple_expression { ast = e; }
-  | e=code_expression { ast = e; }
-  | e=match_expression { ast = e; }
+expression[int allowPartEvalFunc] returns [void* ast] :
+  ( e=if_expression { $ast = e; }
+  | e=simple_expression { $ast = e; }
+  | e=code_expression { $ast = e; }
+  | e=match_expression { $ast = e; }
+  | e=part_eval_function_expression
+    {
+      if (!allowPartEvalFunc) {
+        c_add_source_message(NULL,2,ErrorType_syntax, ErrorLevel_error, "Function partial application expressions are only allowed as inputs to functions.", NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1, ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+                ModelicaParser_lexerError = ANTLR3_TRUE;
+      }
+      $ast = e;
+    }
   )
   ;
 
@@ -1102,10 +1110,10 @@ part_eval_function_expression returns [void* ast]
   ;
 
 if_expression returns [void* ast]
-@init{ cond = 0; e1 = 0; es = 0; e2 = 0; } :
-  IF cond=expression THEN e1=expression es=elseif_expression_list? ELSE e2=expression
+@init{ cond.ast = 0; e1.ast = 0; es = 0; e2.ast = 0; } :
+  IF cond=expression[metamodelica_enabled()] THEN e1=expression[metamodelica_enabled()] es=elseif_expression_list? ELSE e2=expression[metamodelica_enabled()]
   {
-    ast = Absyn__IFEXP(cond,e1,e2,or_nil(es));
+    ast = Absyn__IFEXP(cond.ast,e1.ast,e2.ast,or_nil(es));
   }
   ;
 
@@ -1115,8 +1123,8 @@ elseif_expression_list returns [void* ast]
   ;
 
 elseif_expression returns [void* ast]
-@init { e1 = 0; e2 = 0; } :
-  ELSEIF e1=expression THEN e2=expression { ast = mk_tuple2(e1,e2); }
+@init { e1.ast = 0; e2.ast = 0; } :
+  ELSEIF e1=expression[metamodelica_enabled()] THEN e2=expression[metamodelica_enabled()] { ast = mk_tuple2(e1.ast,e2.ast); }
   ;
 
 for_indices returns [void* ast]
@@ -1125,10 +1133,10 @@ for_indices returns [void* ast]
   ;
 
 for_index returns [void* ast]
-@init{ i = 0; e = 0; guard = 0; } :
-  (i=IDENT ((GUARD guard=expression)? T_IN e=expression)?
+@init{ i = 0; e.ast = 0; guard.ast = 0; } :
+  (i=IDENT ((GUARD guard=expression[metamodelica_enabled()])? T_IN e=expression[metamodelica_enabled()])?
    {
-     ast = Absyn__ITERATOR(token_to_scon(i),mk_some_or_none(guard),mk_some_or_none(e));
+     ast = Absyn__ITERATOR(token_to_scon(i),mk_some_or_none(guard.ast),mk_some_or_none(e.ast));
    }
   )
   ;
@@ -1429,20 +1437,20 @@ function_arguments returns [void* ast]
   ;
 
 for_or_expression_list returns [void* ast, int isFor]
-@init{ e = 0; el = 0; forind = 0; } :
+@init{ e.ast = 0; el = 0; forind = 0; } :
   ( {LA(1)==IDENT || LA(1)==OPERATOR && LA(2) == EQUALS || LA(1) == RPAR || LA(1) == RBRACE}? { $ast = mk_nil(); $isFor = 0; }
-  | ( (e=expression | e=part_eval_function_expression)
+  | ( e=expression[1]
       ( (COMMA el=for_or_expression_list2)
       | (threaded=THREADED? FOR forind=for_indices)
       )?
     )
     {
       if (el != NULL) {
-        $ast = mk_cons(e,el);
+        $ast = mk_cons(e.ast,el);
       } else if (forind != NULL) {
-        $ast = Absyn__FOR_5fITER_5fFARG(e, threaded ? Absyn__THREAD : Absyn__COMBINE, forind);
+        $ast = Absyn__FOR_5fITER_5fFARG(e.ast, threaded ? Absyn__THREAD : Absyn__COMBINE, forind);
       } else {
-        $ast = mk_cons(e, mk_nil());
+        $ast = mk_cons(e.ast, mk_nil());
       }
       $isFor = forind != 0;
     }
@@ -1450,9 +1458,9 @@ for_or_expression_list returns [void* ast, int isFor]
   ;
 
 for_or_expression_list2 returns [void* ast]
-@init{ e = 0; el = 0; } :
+@init{ e.ast = 0; el = 0; } :
     {LA(2) == EQUALS}? { ast = mk_nil(); }
-  | (e=expression | e=part_eval_function_expression) (COMMA el=for_or_expression_list2)? { ast = mk_cons(e, or_nil(el)); }
+  | e=expression[1] (COMMA el=for_or_expression_list2)? { ast = mk_cons(e.ast, or_nil(el)); }
   ;
 
 named_arguments returns [void* ast]
@@ -1461,12 +1469,12 @@ named_arguments returns [void* ast]
   ;
 
 named_argument returns [void* ast]
-@init{ id = 0; e = 0; } :
-  ( id=IDENT | id=OPERATOR) EQUALS (e=expression | e=part_eval_function_expression) { ast = Absyn__NAMEDARG(token_to_scon(id),e); }
+@init{ id = 0; e.ast = 0; } :
+  ( id=IDENT | id=OPERATOR) EQUALS e=expression[1] { ast = Absyn__NAMEDARG(token_to_scon(id),e.ast); }
   ;
 
 output_expression_list [int* isTuple] returns [void* ast]
-@init{ el = 0; e1 = 0; } :
+@init{ el = 0; e1.ast = 0; } :
   ( RPAR
     {
       ast = mk_nil();
@@ -1476,29 +1484,29 @@ output_expression_list [int* isTuple] returns [void* ast]
       {
         $ast = mk_cons(Absyn__CREF(Absyn__WILD), el);
       }
-  | e1=expression
+  | e1=expression[metamodelica_enabled()]
     ( COMMA {*isTuple = true;} el=output_expression_list[isTuple]
       {
         if (RML_NILHDR != RML_GETHDR(el))
         {
-          ast = mk_cons(e1, el);
+          ast = mk_cons(e1.ast, el);
         }
         else
         {
-          ast = mk_cons(e1, mk_cons(Absyn__CREF(Absyn__WILD), el));
+          ast = mk_cons(e1.ast, mk_cons(Absyn__CREF(Absyn__WILD), el));
         }
       }
     | RPAR
       {
-        ast = *isTuple ? mk_cons(e1, mk_nil()) : e1;
+        ast = *isTuple ? mk_cons(e1.ast, mk_nil()) : e1.ast;
       }
     )
   )
   ;
 
 expression_list returns [void* ast]
-@init { e1 = 0; el = 0; } :
-  e1=expression (COMMA el=expression_list)? { ast = (el == NULL ? mk_cons(e1,mk_nil()) : mk_cons(e1,el)); }
+@init { e1.ast = 0; el = 0; } :
+  e1=expression[metamodelica_enabled()] (COMMA el=expression_list)? { ast = (el == NULL ? mk_cons(e1.ast,mk_nil()) : mk_cons(e1.ast,el)); }
   ;
 
 array_subscripts returns [void* ast]
@@ -1512,8 +1520,8 @@ subscript_list returns [void* ast]
   ;
 
 subscript returns [void* ast]
-@init{ e = 0; } :
-    e=expression { ast = Absyn__SUBSCRIPT(e); }
+@init{ e.ast = 0; } :
+    e=expression[metamodelica_enabled()] { ast = Absyn__SUBSCRIPT(e.ast); }
   | COLON { ast = Absyn__NOSUB; }
   ;
 
@@ -1544,20 +1552,20 @@ annotation returns [void* ast]
 /* Code quotation mechanism */
 
 code_expression returns [void* ast]
-@init{ initial = 0; eq = 0; constr = 0; alg = 0; e = 0; m = 0; el.ast = 0; name = 0; cr.ast = 0; } :
+@init{ initial = 0; eq = 0; constr = 0; alg = 0; e.ast = 0; m = 0; el.ast = 0; name = 0; cr.ast = 0; } :
   ( CODE LPAR
     ( (initial=INITIAL)?
       ( (EQUATION eq=code_equation_clause)
        |(CONSTRAINT constr=code_constraint_clause)
        |(T_ALGORITHM alg=code_algorithm_clause))
-    | (LPAR expression RPAR) => e=expression   /* Allow Code((<expr>)) */
+    | (LPAR expression[metamodelica_enabled()] RPAR) => e=expression[metamodelica_enabled()]   /* Allow Code((<expr>)) */
     | m=modification
-    | (expression RPAR) => e=expression
+    | (expression[metamodelica_enabled()] RPAR) => e=expression[metamodelica_enabled()]
     | el=element (SEMICOLON)?
     )  RPAR
       {
-        if (e) {
-          ast = Absyn__CODE(Absyn__C_5fEXPRESSION(e));
+        if (e.ast) {
+          ast = Absyn__CODE(Absyn__C_5fEXPRESSION(e.ast));
         } else if (m) {
           ast = Absyn__CODE(Absyn__C_5fMODIFICATION(m));
         } else if (eq) {
@@ -1604,8 +1612,8 @@ code_algorithm_clause returns [void* ast]
 
 
 top_algorithm returns [void* ast, int isExp]
-@init{ e = 0; a = 0; cmt = 0; } :
-  ( (expression (SEMICOLON|EOF))=> e=expression
+@init{ e.ast = 0; a = 0; cmt = 0; } :
+  ( (expression[metamodelica_enabled()] (SEMICOLON|EOF))=> e=expression[metamodelica_enabled()]
   | ( a=top_assign_clause_a
     | a=conditional_equation_a
     | a=for_clause_a
@@ -1616,21 +1624,21 @@ top_algorithm returns [void* ast, int isExp]
     cmt=comment
   )
     {
-      if (!e) {
+      if (!e.ast) {
         $ast = Absyn__ALGORITHMITEM(a, mk_some_or_none(cmt), PARSER_INFO($start));
         $isExp = 0;
       } else {
-        $ast = e;
+        $ast = e.ast;
         $isExp = 1;
       }
     }
   ;
 
 top_assign_clause_a returns [void* ast]
-@init{ e1 = 0; e2 = 0; } :
-  e1=simple_expression ASSIGN e2=expression
+@init{ e1 = 0; e2.ast = 0; } :
+  e1=simple_expression ASSIGN e2=expression[metamodelica_enabled()]
     {
-      ast = Absyn__ALG_5fASSIGN(e1,e2);
+      ast = Absyn__ALG_5fASSIGN(e1,e2.ast);
     }
   ;
 
@@ -1657,18 +1665,18 @@ interactive_stmt_list [int *last_sc] returns [void* ast]
 
 /* MetaModelica */
 match_expression returns [void* ast]
-@init{ ty = 0; exp = 0; cmt = 0; es = 0; cs = 0; } :
-  ( (ty=MATCHCONTINUE exp=expression cmt=string_comment
+@init{ ty = 0; exp.ast = 0; cmt = 0; es = 0; cs = 0; } :
+  ( (ty=MATCHCONTINUE exp=expression[metamodelica_enabled()] cmt=string_comment
      es=local_clause
      cs=cases
      END_MATCHCONTINUE)
-  | (ty=MATCH exp=expression cmt=string_comment
+  | (ty=MATCH exp=expression[metamodelica_enabled()] cmt=string_comment
      es=local_clause
      cs=cases
      END_MATCH)
   )
      {
-       ast = Absyn__MATCHEXP(ty->type==MATCHCONTINUE ? Absyn__MATCHCONTINUE : Absyn__MATCH, exp, or_nil(es), cs, mk_some_or_none(cmt));
+       ast = Absyn__MATCHEXP(ty->type==MATCHCONTINUE ? Absyn__MATCHCONTINUE : Absyn__MATCH, exp.ast, or_nil(es), cs, mk_some_or_none(cmt));
      }
   ;
 
@@ -1689,16 +1697,16 @@ cases returns [void* ast]
   ;
 
 cases2 returns [void* ast]
-@init{ el = 0; cmt = 0; es = 0; eqs = 0; th = 0; exp = 0; c.ast = 0; cs.ast = 0; } :
-  ( (el=ELSE (cmt=string_comment es=local_clause ((EQUATION eqs=equation_list_then)|(al=T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN)? exp=expression SEMICOLON)?
+@init{ el = 0; cmt = 0; es = 0; eqs = 0; th = 0; exp.ast = 0; c.ast = 0; cs.ast = 0; } :
+  ( (el=ELSE (cmt=string_comment es=local_clause ((EQUATION eqs=equation_list_then)|(al=T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN)? exp=expression[metamodelica_enabled()] SEMICOLON)?
     {
       if (es != NULL)
         c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
                              NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
                              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
       if ($th) $el = $th;
-      if (exp) {
-       $ast = mk_cons(Absyn__ELSE(or_nil(es),eqs ? Absyn__EQUATIONS(eqs) : (al ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mk_nil())),exp,PARSER_INFO($el),mk_some_or_none(cmt),PARSER_INFO($start)),mk_nil());
+      if (exp.ast) {
+       $ast = mk_cons(Absyn__ELSE(or_nil(es),eqs ? Absyn__EQUATIONS(eqs) : (al ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mk_nil())),exp.ast,PARSER_INFO($el),mk_some_or_none(cmt),PARSER_INFO($start)),mk_nil());
       } else {
        $ast = mk_nil();
       }
@@ -1711,18 +1719,18 @@ cases2 returns [void* ast]
   ;
 
 onecase returns [void* ast]
-@init{ pat.ast = 0; guard = 0; cmt = 0; es = 0; eqs = 0; th = 0; exp = 0; } :
-  (CASE pat=pattern (GUARD guard=expression)? cmt=string_comment es=local_clause ((EQUATION eqs=equation_list_then)|(al=T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN exp=expression SEMICOLON)
+@init{ pat.ast = 0; guard.ast = 0; cmt = 0; es = 0; eqs = 0; th = 0; exp.ast = 0; } :
+  (CASE pat=pattern (GUARD guard=expression[metamodelica_enabled()])? cmt=string_comment es=local_clause ((EQUATION eqs=equation_list_then)|(al=T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN exp=expression[metamodelica_enabled()] SEMICOLON)
     {
         if (es != NULL) {
           c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
                                NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
                                ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
         }
-        $ast = Absyn__CASE(pat.ast,mk_some_or_none(guard),pat.info,or_nil(es),eqs ? Absyn__EQUATIONS(eqs) : (al ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mk_nil())),exp,PARSER_INFO($th),mk_some_or_none(cmt),PARSER_INFO($start));
+        $ast = Absyn__CASE(pat.ast,mk_some_or_none(guard.ast),pat.info,or_nil(es),eqs ? Absyn__EQUATIONS(eqs) : (al ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mk_nil())),exp.ast,PARSER_INFO($th),mk_some_or_none(cmt),PARSER_INFO($start));
     }
   ;
 
 pattern returns [void* ast, void* info] :
-  e=expression {$ast = e; $info = PARSER_INFO($start);}
+  e=expression[0] {$ast = e.ast; $info = PARSER_INFO($start);}
   ;
