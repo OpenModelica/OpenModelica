@@ -81,6 +81,7 @@ protected import ExpressionSolve;
 protected import FindZeroCrossings;
 protected import Flags;
 protected import GlobalScript;
+protected import Graph;
 protected import HashSet;
 protected import HpcOmSimCode;
 protected import Initialization;
@@ -567,6 +568,7 @@ protected
   list<SimCode.Function> fns;
   list<String> outRecordTypes;
   HashTableStringToPath.HashTable ht;
+  list<tuple<SimCode.RecordDeclaration,list<SimCode.RecordDeclaration>>> g;
 algorithm
   (extraRecordDecls, outRecordTypes) := elaborateRecordDeclarationsForMetarecords(literals, {}, {});
   (functions, outRecordTypes, extraRecordDecls, outIncludes, includeDirs, libs) := elaborateFunctions2(program, daeElements, {}, outRecordTypes, extraRecordDecls, includes, {}, {});
@@ -575,7 +577,85 @@ algorithm
   extraRecordDecls := List.sort(extraRecordDecls, orderRecordDecls);
   ht := HashTableStringToPath.emptyHashTableSized(BaseHashTable.lowBucketSize);
   (extraRecordDecls,_) := List.mapFold(extraRecordDecls, aliasRecordDeclarations, ht);
+  // Topological sort since we have no guarantees in the order of generated records
+  g := Graph.buildGraph(extraRecordDecls, getRecordDependencies, extraRecordDecls);
+  (extraRecordDecls, {}) := Graph.topologicalSort(g, isRecordDeclEqual);
 end elaborateFunctions;
+
+protected function getRecordDependencies
+  input SimCode.RecordDeclaration decl;
+  input list<SimCode.RecordDeclaration> allDecls;
+  output list<SimCode.RecordDeclaration> dependencies;
+algorithm
+  dependencies := match (decl,allDecls)
+    local
+      String name;
+      list<SimCode.Variable> vars;
+      list<DAE.Type> tys;
+      list<list<DAE.Type>> tyss;
+    case (SimCode.RECORD_DECL_FULL(aliasName=SOME(name)),_)
+      then List.select1(allDecls, isRecordDecl, name);
+    case (SimCode.RECORD_DECL_FULL(variables=vars),_)
+      equation
+        tys = List.map(vars, getVarType);
+        tyss = List.map1(tys, Types.getAllInnerTypesOfType, Util.anyReturnTrue);
+        tys = List.flatten(tyss);
+        dependencies = List.filterMap1(tys, getRecordDependenciesFromType, allDecls);
+      then List.unique(dependencies);
+    else {};
+  end match;
+end getRecordDependencies;
+
+protected function getVarType
+  input SimCode.Variable var;
+  output DAE.Type ty;
+algorithm
+  ty := match var
+    case SimCode.VARIABLE(ty=ty) then ty;
+    else DAE.T_ANYTYPE_DEFAULT;
+  end match;
+end getVarType;
+
+protected function getRecordDependenciesFromType
+  input DAE.Type ty;
+  input list<SimCode.RecordDeclaration> allDecls;
+  output SimCode.RecordDeclaration decl;
+protected
+  Absyn.Path path;
+  String name;
+algorithm
+  DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path)) := ty;
+  name := Absyn.pathStringUnquoteReplaceDot(path, "_");
+  decl := List.selectFirst1(allDecls, isRecordDecl, name);
+end getRecordDependenciesFromType;
+
+protected function isRecordDecl
+  input SimCode.RecordDeclaration decl;
+  input String name;
+  output Boolean b;
+algorithm
+  b := match (decl,name)
+    local
+      String name1;
+    case (SimCode.RECORD_DECL_FULL(name=name1),_) then stringEq(name,name1);
+    else false;
+  end match;
+end isRecordDecl;
+
+protected function isRecordDeclEqual
+  input SimCode.RecordDeclaration decl1;
+  input SimCode.RecordDeclaration decl2;
+  output Boolean b;
+algorithm
+  b := match (decl1,decl2)
+    local
+      String name1,name2;
+      Absyn.Path path1,path2;
+    case (SimCode.RECORD_DECL_FULL(name=name1),SimCode.RECORD_DECL_FULL(name=name2)) then stringEq(name1,name2);
+    case (SimCode.RECORD_DECL_DEF(path=path1),SimCode.RECORD_DECL_DEF(path=path2)) then Absyn.pathEqual(path1,path2);
+    else false;
+  end match;
+end isRecordDeclEqual;
 
 protected function elaborateFunctions2
   input Absyn.Program program;

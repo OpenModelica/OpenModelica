@@ -4285,4 +4285,12 @@ algorithm
   name := stringAppend("$tmpVar",intString(System.tmpTickIndex(Global.tmpVariableIndex)));
 end getTempVariableIndex;
 
+public function anyReturnTrue
+  input Type_a a;
+  output Boolean b;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  b := true;
+end anyReturnTrue;
+
 end Util;
