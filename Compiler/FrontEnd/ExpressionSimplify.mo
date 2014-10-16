@@ -2902,9 +2902,16 @@ algorithm
       then
         e;
 
+    case(DAE.CREF(c,DAE.T_METATYPE(ty=DAE.T_METAARRAY(ty=t))), _, _)
+      equation
+        t = Types.simplifyType(t);
+        exp = Expression.makeBuiltinCall("arrayGet",{ie,inSubExp},t,false);
+      then exp;
+
     // name subscript
     case(DAE.CREF(c,t), _, _)
       equation
+        true = Types.isArray(t,{});
         t = Expression.unliftArray(t);
         c_1 = simplifyAsubCref(c, inSubExp);
         exp = Expression.makeCrefExp(c_1, t);

@@ -1066,6 +1066,10 @@ algorithm
       then tp;
     case (DAE.T_ARRAY(ty = tp,dims = (_ :: ds),source = ts))
       then DAE.T_ARRAY(tp,ds,ts);
+    case (DAE.T_METATYPE(ty = tp))
+      then Types.simplifyType(unliftArray(tp));
+    case (DAE.T_METAARRAY(ty = tp))
+      then tp;
     else inType;
   end match;
 end unliftArray;
