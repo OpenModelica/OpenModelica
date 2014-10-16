@@ -405,11 +405,6 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
        void writeBoolParameterDescription(vector<string>& names);
 
        HistoryImplType* _historyImpl;
-       <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-       <<
-       MeasureTimeValues *measuredStartValues, *measuredStartValues1, *measuredEndValues, *measuredEndValues1;
-       std::vector<MeasureTimeData> measureTimeWriteOutput;
-       >>%>
   };
  >>
 end simulationWriteOutputHeaderFile;
@@ -621,18 +616,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
    {
       _historyImpl = new HistoryImplType(*globalSettings);
-
-      <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-      <<
-      measureTimeWriteOutput = std::vector<MeasureTimeData>(2);
-      measureTimeWriteOutput[0] = MeasureTimeData("writeOutputComplete");
-      measureTimeWriteOutput[1] = MeasureTimeData("writeOutputAssignVars");
-      MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","writeOutputMeasurements", &measureTimeWriteOutput);
-      measuredStartValues = MeasureTime::getZeroValues();
-      measuredEndValues = MeasureTime::getZeroValues();
-      measuredStartValues1 = MeasureTime::getZeroValues();
-      measuredEndValues1 = MeasureTime::getZeroValues();
-      >>%>
    }
 
 
@@ -1652,7 +1635,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let libsPos1 = if not dirExtra then libsStr //else ""
   let libsPos2 = if dirExtra then libsStr // else ""
   let ParModelicaLibs = if acceptParModelicaGrammar() then '-lOMOCLRuntime -lOpenCL' // else ""
-  let &timeMeasureLink += if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then "OMCppExtensionUtilities.lib"
+  let &timeMeasureLink += "OMCppExtensionUtilities.lib"
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
     match s.method case "dassljac" then "-D_OMC_JACOBIAN "
 
@@ -1729,7 +1712,6 @@ case "gcc" then
             let omHome = makefileParams.omhome
             let &timeMeasureLink +=
                 match(getConfigString(PROFILING_LEVEL))
-                    case("none") then ''
                     case("all_perf") then ' -Wl,-rpath,"<%omHome%>/lib/omc/cpp" -lOMCppExtensionUtilities -lOMCppExtensionUtilities_papi -lpapi'
                     else ' -Wl,-rpath,"<%omHome%>/lib/omc/cpp" -lOMCppExtensionUtilities'
                 end match
@@ -1753,7 +1735,7 @@ case "gcc" then
             CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
             CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(SUITESPARSE_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%>
             LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" $(BASE_LIB)  -lOMCppOMCFactory -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath <%timeMeasureLink%> -L"$(BOOST_LIBS)"  $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_LOG_LIB) $(BOOST_THREAD_LIB) $(LINUX_LIB_DL)
-            LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L"<%makefileParams.omhome%>/bin" -lOMCppOMCFactory <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) -Wl,-rpath,$(LIBOMCPPEXTENSIONUTILITIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%>
+            LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L"<%makefileParams.omhome%>/bin" -lOMCppOMCFactory <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%>
             CPPFLAGS = $(CFLAGS)
             SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
             MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
@@ -1818,17 +1800,25 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
             let numOfEqs = SimCodeUtil.getMaxSimEqSystemIndex(simCode)
             <<
-            measureTimeArray = std::vector<MeasureTimeData>(<%numOfEqs%>);
-            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","profileBlocks",&measureTimeArray);
-            measuredStartValues = MeasureTime::getZeroValues();
-            measuredEndValues = MeasureTime::getZeroValues();
+            measureTimeProfileBlocksArray = std::vector<MeasureTimeData>(<%numOfEqs%>);
+            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","profileBlocks",&measureTimeProfileBlocksArray);
+            measureTimeFunctionsArray = std::vector<MeasureTimeData>(3); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput
+            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",&measureTimeFunctionsArray);            
+            measuredProfileBlockStartValues = MeasureTime::getZeroValues();
+            measuredProfileBlockEndValues = MeasureTime::getZeroValues();
+            measuredFunctionStartValues = MeasureTime::getZeroValues();
+            measuredFunctionEndValues = MeasureTime::getZeroValues();
 
             for(int i = 0; i < <%numOfEqs%>; i++)
             {
                 ostringstream ss;
                 ss << i;
-                measureTimeArray[i] = MeasureTimeData(ss.str());
+                measureTimeProfileBlocksArray[i] = MeasureTimeData(ss.str());
             }
+            
+            measureTimeFunctionsArray[0] = MeasureTimeData("evaluateODE");
+            measureTimeFunctionsArray[1] = MeasureTimeData("evaluateAll");
+            measureTimeFunctionsArray[2] = MeasureTimeData("writeOutput");
             >>
         %>
         //DAE's are not supported yet, Index reduction is enabled
@@ -4215,7 +4205,7 @@ template Update(SimCode simCode, Boolean useFlatArrayNotation)
 match simCode
 case SIMCODE(__) then
   <<
-  <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation,true)%>
+  <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation,false)%>
   <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation)%>
   <%createEvaluate(odeEquations,whenClauses,simCode,contextOther)%>
   <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode,contextOther)%>
@@ -4255,8 +4245,6 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
   <<
    void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeOutput(const IWriteOutput::OUTPUT command)
    {
-    <%generateMeasureTimeStartCode("measuredStartValues")%>
-
     //Write head line
     if (command & IWriteOutput::HEAD_LINE)
     {
@@ -4313,7 +4301,7 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
     //Write the current values
     else
     {
-      <%generateMeasureTimeStartCode("measuredStartValues1")%>
+      <%generateMeasureTimeStartCode("measuredFunctionStartValues")%>
       /* HistoryImplType::value_type_v v;
       HistoryImplType::value_type_dv v2; */
 
@@ -4338,20 +4326,19 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode, useFlatArrayNotation));separator=","%>};
       for(int i=0;i<<%numResidues(allEquations)%>;i++) v3(i) = residues[i];
 
-      <%generateMeasureTimeEndCode("measuredStartValues1", "measuredEndValues1", "measureTimeWriteOutput[1]")%>
+      <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[2]")%>
 
       _historyImpl->write(v,v2,v3,_simTime);
       >>
     else
       <<
-      <%generateMeasureTimeEndCode("measuredStartValues1", "measuredEndValues1", "measureTimeWriteOutput[1]")%>
+      <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[2]")%>
 
       //_historyImpl->write(v,v2,_simTime);
       _historyImpl->addContainerToWriteQueue(container);
       >>
     %>
     }
-    <%generateMeasureTimeEndCode("measuredStartValues", "measuredEndValues", "measureTimeWriteOutput[0]")%>
    }
    <%generateWriteOutputFunctionsForVars(modelInfo, simCode, '<%lastIdentOfPath(modelInfo.name)%>WriteOutput', useFlatArrayNotation)%>
 
@@ -4431,7 +4418,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_IMPORT_DECL
   #include "System/EventHandling.h"
   #include "System/SystemDefaultImplementation.h"
-   <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '#include "Core/Utils/extension/measure_time.hpp"'%>
+  #include "Core/Utils/extension/measure_time.hpp"
 
   //Forward declaration to speed-up the compilation process
   class Functions;
@@ -4501,7 +4488,7 @@ match modelInfo
       <%generateMethodDeclarationCode(simCode)%>
       virtual  bool getCondition(unsigned int index);
       virtual void initPreVars(unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&);
-
+  
   protected:
       //Methods:
       <%getrealvars%>
@@ -4529,12 +4516,13 @@ match modelInfo
 
       <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
       <<
-      std::vector<MeasureTimeData> measureTimeArray;
-      MeasureTimeValues *measuredStartValues, *measuredEndValues;
+      std::vector<MeasureTimeData> measureTimeProfileBlocksArray;
+      std::vector<MeasureTimeData> measureTimeFunctionsArray;
+      MeasureTimeValues *measuredProfileBlockStartValues, *measuredProfileBlockEndValues, *measuredFunctionStartValues, *measuredFunctionEndValues;
       >>%>
 
       <%memberfuncs%>
-
+      
       <%additionalProtectedMembers%>
    };
   >>
@@ -7515,8 +7503,8 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     else
       "NOT IMPLEMENTED EQUATION"
   end match
-  let &measureTimeStartVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then generateMeasureTimeStartCode("measuredStartValues") //else ""
-  let &measureTimeEndVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then generateMeasureTimeEndCode("measuredStartValues", "measuredEndValues", 'measureTimeArray[<%ix_str_array%>]') //else ""
+  let &measureTimeStartVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then generateMeasureTimeStartCode("measuredProfileBlockStartValues") //else ""
+  let &measureTimeEndVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then generateMeasureTimeEndCode("measuredProfileBlockStartValues", "measuredProfileBlockEndValues", 'measureTimeProfileBlocksArray[<%ix_str_array%>]') //else ""
   <<
     <%additionalFuncs%>
     /*
@@ -11570,12 +11558,15 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
   <<
   bool <%className%>::evaluateAll(const UPDATETYPE command)
   {
+    <%generateMeasureTimeStartCode("measuredFunctionStartValues")%>
     bool state_var_reinitialized = false;
     <%varDecls%>
     /* Evaluate Equations*/
     <%equation_all_func_calls%>
     /* Reinits */
     <%reinit%>
+    
+    <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[1]")%>
     return state_var_reinitialized;
   }
  >>
@@ -11626,11 +11617,11 @@ template createEvaluate(list<list<SimEqSystem>> odeEquations,list<SimWhenClause>
   <<
   void <%className%>::evaluateODE(const UPDATETYPE command)
   {
-
+    <%generateMeasureTimeStartCode("measuredFunctionStartValues")%>
     <%varDecls%>
     /* Evaluate Equations*/
     <%equation_ode_func_calls%>
-
+    <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]")%>
   }
   >>
 end createEvaluate;

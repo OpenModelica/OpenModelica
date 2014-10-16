@@ -4,10 +4,14 @@ MeasureTimeValuesPAPI::MeasureTimeValuesPAPI(unsigned long long time, long long 
 
 MeasureTimeValuesPAPI::~MeasureTimeValuesPAPI() {}
 
-std::string MeasureTimeValuesPAPI::serializeToJson() const
+std::string MeasureTimeValuesPAPI::serializeToJson(unsigned int numCalcs)
 {
   std::stringstream ss;
-  ss << "\"time\":" << time << ",\"maxTime\":" << max_time << ",\"l2cacheMisses\":" << l2CacheMisses << ",\"instructions\":" << instructions;
+  ss << "\"time\":" << time << ",\"maxTime\":" << max_time << ",\"l2cacheMisses\":" << l2CacheMisses
+          << ",\"instructions\":" << instructions
+          << ",\"meanTime\":" << (numCalcs == 0 ? 0 : time/numCalcs)
+          << ",\"meanInstructions\":" << (numCalcs == 0 ? 0 : instructions/numCalcs)
+          << ",\"meanL2CacheMisses\":" << (numCalcs == 0 ? 0 : l2CacheMisses/numCalcs);
   return ss.str();
 }
 
@@ -27,24 +31,6 @@ MeasureTimePAPI::MeasureTimePAPI() : MeasureTime()
   {
     std::cerr << "PAPI library init failed!" << std::endl;
     exit(1);
-  }
-
-  if (PAPI_create_eventset(&eventSet) != PAPI_OK)
-  {
-    std::cerr << "PAPI create eventset failed!" << " Error: " << PAPI_create_eventset(&eventSet) << std::endl;
-    exit(1);
-  }
-
-  if (PAPI_add_events(eventSet, events, NUM_PAPI_EVENTS) != PAPI_OK)
-  {
-    std::cerr << "PAPI add events failed!" << std::endl;
-    exit(1);
-  }
-
-  if (PAPI_start(eventSet) != PAPI_OK)
-  {
-    std::cerr << "PAPI_start_counters - FAILED" << std::endl;
-    throw std::runtime_error("PAPI_start_counters - FAILED");
   }
 #else
   eventSet = 0;
@@ -77,15 +63,24 @@ void MeasureTimePAPI::getTimeValuesStartP(MeasureTimeValues *res)
 #ifdef USE_PAPI
   MeasureTimeValuesPAPI *val = static_cast<MeasureTimeValuesPAPI*>(res);
 
-  if (PAPI_reset(eventSet) != PAPI_OK)
+//  if (PAPI_reset(eventSet) != PAPI_OK)
+//  {
+//    std::cerr << "PAPI_reset - FAILED" << std::endl;
+//    throw std::runtime_error("PAPI_reset_counters - FAILED");
+//  }
+  long long values[NUM_PAPI_EVENTS];
+  if (PAPI_read(eventSet, values) != PAPI_OK)
   {
-    std::cerr << "PAPI_reset - FAILED" << std::endl;
-    throw std::runtime_error("PAPI_reset_counters - FAILED");
+          std::cerr << "PAPI_read_counters - FAILED" << std::endl;
+          throw std::runtime_error("PAPI_read_counters - FAILED");
   }
 
-  val->time = 0;
-  val->l2CacheMisses = 0;
-  val->instructions = 0;
+//  val->time = 0;
+//  val->l2CacheMisses = 0;
+//  val->instructions = 0;
+  val->time = values[0];
+  val->l2CacheMisses = values[1];
+  val->instructions = values[2];
 #endif
 }
 

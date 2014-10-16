@@ -31,6 +31,16 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
     _ysave(NULL)
 {
   _data = ((void*) this);
+
+  if(MeasureTime::getInstance() != NULL)
+  {
+      measureTimeFunctionsArray = std::vector<MeasureTimeData>(1); //1 calcFunction
+      MeasureTime::addResultContentBlock("Modelica.Electrical.Analog.Examples.CauerLowPassSC","cvode",&measureTimeFunctionsArray);
+      measuredFunctionStartValues = MeasureTime::getZeroValues();
+      measuredFunctionEndValues = MeasureTime::getZeroValues();
+
+      measureTimeFunctionsArray[0] = MeasureTimeData("calcFunction");
+  }
 }
 
 Cvode::~Cvode()
@@ -519,21 +529,34 @@ bool Cvode::stateSelection()
 }
 int Cvode::calcFunction(const double& time, const double* y, double* f)
 {
+  if(MeasureTime::getInstance() != NULL)
+  {
+      MeasureTime::getTimeValuesStart(measuredFunctionStartValues);
+  }
+  int returnValue = 0;
   try
   {
     _time_system->setTime(time);
     _continuous_system->setContinuousStates(y);
     _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
     _continuous_system->getRHS(f);
-
   }      //workaround until exception can be catch from c- libraries
   catch (std::exception& ex)
   {
     std::string error = ex.what();
     cerr << "CVode integration error: " << error;
-    return 1;
+    returnValue = 1;
   }
-  return 0;
+
+  if(MeasureTime::getInstance() != NULL)
+  {
+      MeasureTime::getTimeValuesEnd(measuredFunctionEndValues);
+      measuredFunctionEndValues->sub(measuredFunctionStartValues);
+      measuredFunctionEndValues->sub(MeasureTime::getOverhead());
+      measureTimeFunctionsArray[0].sumMeasuredValues->add(measuredFunctionEndValues);
+      ++(measureTimeFunctionsArray[0].numCalcs);
+  }
+  return returnValue;
 }
 
 int Cvode::CV_fCallback(double t, N_Vector y, N_Vector ydot, void *user_data)

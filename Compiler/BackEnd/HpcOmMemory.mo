@@ -36,6 +36,7 @@ encapsulated package HpcOmMemory
   public import HpcOmSimCode;
   public import HpcOmTaskGraph;
   public import SimCode;
+  public import SimCodeVar;
 
   protected import BackendDAEUtil;
   protected import BackendDump;
@@ -58,7 +59,7 @@ encapsulated package HpcOmMemory
     //CacheMap that stores variables of same type in the same array (different arrays for bool, float and int vars)
     record CACHEMAP
       Integer cacheLineSize; //cache line size in bytes
-      list<SimCode.SimVar> cacheVariables; //all variables that are stored in the cache
+      list<SimCodeVar.SimVar> cacheVariables; //all variables that are stored in the cache
       list<CacheLineMap> cacheLinesFloat;
       //list<CacheLineMap> cacheLinesBool;
       //list<CacheLineMap> cacheLinesInt;
@@ -66,7 +67,7 @@ encapsulated package HpcOmMemory
     //CacheMap that stores variables of different types in the same array
     record UNIFORM_CACHEMAP
       Integer cacheLineSize; //cache line size in bytes
-      list<SimCode.SimVar> cacheVariables; //all variables that are stored in the cache
+      list<SimCodeVar.SimVar> cacheVariables; //all variables that are stored in the cache
       list<CacheLineMap> cacheLines;
     end UNIFORM_CACHEMAP;
   end CacheMap;
@@ -89,7 +90,7 @@ encapsulated package HpcOmMemory
 
   protected uniontype CacheMapMeta
     record CACHEMAPMETA
-      array<Option<SimCode.SimVar>> allSCVarsMapping;
+      array<Option<SimCodeVar.SimVar>> allSCVarsMapping;
       array<tuple<Integer, Integer>> simCodeVarTypes; //<type, numberOfBytesRequired>
       array<tuple<Integer, Integer>> scVarCLMapping; //mapping for each scVar -> <CLIdx,varType>
     end CACHEMAPMETA;
@@ -116,10 +117,10 @@ encapsulated package HpcOmMemory
     input BackendDAE.StrongComponents iAllComponents;
     output Option<HpcOmSimCode.MemoryMap> oMemoryMap;
   protected
-    SimCode.SimVars simCodeVars;
-    list<SimCode.SimVar> stateVars, derivativeVars, algVars, paramVars, aliasVars;
-    list<SimCode.SimVar> notOptimizedVars;
-    array<Option<SimCode.SimVar>> allVarsMapping;
+    SimCodeVar.SimVars simCodeVars;
+    list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, paramVars, aliasVars;
+    list<SimCodeVar.SimVar> notOptimizedVars;
+    array<Option<SimCodeVar.SimVar>> allVarsMapping;
     HashTableCrILst.HashTable hashTable;
     Integer numScVars, numCL, threadAttIdx;
     array<list<Integer>> clTaskMapping;
@@ -143,7 +144,7 @@ encapsulated package HpcOmMemory
           //HpcOmTaskGraph.printTaskGraphMeta(iTaskGraphMeta);
           //Create var hash table
           SimCode.MODELINFO(vars=simCodeVars) = iModelInfo;
-          SimCode.SIMVARS(stateVars=stateVars, derivativeVars=derivativeVars, algVars=algVars, paramVars=paramVars, aliasVars=aliasVars) = simCodeVars;
+          SimCodeVar.SIMVARS(stateVars=stateVars, derivativeVars=derivativeVars, algVars=algVars, paramVars=paramVars, aliasVars=aliasVars) = simCodeVars;
           allVarsMapping = SimCodeUtil.createIdxSCVarMapping(simCodeVars);
           //SimCodeUtil.dumpIdxScVarMapping(allVarsMapping);
           //print("--------------------------------\n");
@@ -203,11 +204,11 @@ encapsulated package HpcOmMemory
 
   protected function createCacheMapOptimized "author: marcusw
      Creates a CacheMap optimized for the selected scheduler. All variables that are part of the created cache map are marked with 1 in the iVarMark-array."
-    input array<Option<SimCode.SimVar>> iAllSCVarsMapping;
-    input list<SimCode.SimVar> iStateVars; //float
-    input list<SimCode.SimVar> iDerivativeVars; //float
-    input list<SimCode.SimVar> iAlgVars; //float
-    input list<SimCode.SimVar> iParamVars; //float
+    input array<Option<SimCodeVar.SimVar>> iAllSCVarsMapping;
+    input list<SimCodeVar.SimVar> iStateVars; //float
+    input list<SimCodeVar.SimVar> iDerivativeVars; //float
+    input list<SimCodeVar.SimVar> iAlgVars; //float
+    input list<SimCodeVar.SimVar> iParamVars; //float
     input array<Integer> iScVarTaskMapping;
     input Integer iCacheLineSize;
     input BackendDAE.StrongComponents iAllComponents;
@@ -241,7 +242,7 @@ encapsulated package HpcOmMemory
     Append all parameters to new cachelines (dense) at the end of the cachemap."
     input CacheMap iCacheMap;
     input Integer iNumCL;
-    input list<SimCode.SimVar> iParamVars;
+    input list<SimCodeVar.SimVar> iParamVars;
     input CacheMapMeta iCacheMapMeta;
     output CacheMap oCacheMap;
     output CacheMapMeta oCacheMapMeta;
@@ -252,7 +253,7 @@ encapsulated package HpcOmMemory
 
   protected function appendParamToCacheMap "author: marcusw
     Append all parameters to new cachelines at the end of the cachemap."
-    input SimCode.SimVar iParamVar;
+    input SimCodeVar.SimVar iParamVar;
     input tuple<CacheMap, CacheMapMeta, Integer, list<tuple<Integer, Integer>>> iCacheInfoTpl; //<CacheMap, CacheMapMeta, numCL, cacheLineCandidates
     output tuple<CacheMap, CacheMapMeta, Integer, list<tuple<Integer, Integer>>> oCacheInfoTpl;
   protected
@@ -265,7 +266,7 @@ encapsulated package HpcOmMemory
     list<CacheLineMap> cacheLinesFloat;
   algorithm
     oCacheInfoTpl := match(iParamVar, iCacheInfoTpl)
-      case(SimCode.SIMVAR(index=index),(tmpCacheMap, tmpCacheMapMeta, tmpNumNewCL, tmpCacheLineCandidates))
+      case(SimCodeVar.SIMVAR(index=index),(tmpCacheMap, tmpCacheMapMeta, tmpNumNewCL, tmpCacheLineCandidates))
         equation
           ((tmpCacheMap as CACHEMAP(cacheLinesFloat=cacheLinesFloat,cacheLineSize=cacheLineSize),tmpCacheMapMeta,tmpNumNewCL,tmpCacheLineCandidates,tmpWrittenCLs,_)) = appendSCVarToCacheMap(index,(tmpCacheMap,tmpCacheMapMeta,0,{},{},1));
           detailedWrittenCacheLines = createDetailedCacheMapInformations(tmpWrittenCLs,cacheLinesFloat,cacheLineSize);
@@ -280,7 +281,7 @@ encapsulated package HpcOmMemory
 
   protected function createCacheMapLevelOptimized "author: marcusw
     Create the optimized cache map for the level-scheduler."
-    input array<Option<SimCode.SimVar>> iAllSCVarsMapping;
+    input array<Option<SimCodeVar.SimVar>> iAllSCVarsMapping;
     input array<tuple<Integer,Integer>> iSimCodeVarTypes; //<type, numberOfBytesRequired>
     input array<Integer> iScVarTaskMapping;
     input Integer iCacheLineSize;
@@ -372,13 +373,13 @@ encapsulated package HpcOmMemory
 
   protected function createCacheMapDefault "author: marcusw
     Create a default cacheMap without optimization."
-    input array<Option<SimCode.SimVar>> iAllSCVars;
+    input array<Option<SimCodeVar.SimVar>> iAllSCVars;
     input Integer iCacheLineSize;
     output CacheMap oCacheMap;
     output array<tuple<Integer,Integer>> oScVarCLMapping; //mapping for each scVar -> CLIdx
     output Integer oNumCL;
   protected
-    list<SimCode.SimVar> iAllFloatVars;
+    list<SimCodeVar.SimVar> iAllFloatVars;
     list<CacheLineMap> cacheLineFloatMaps;
     array<tuple<Integer,Integer>> tmpScVarCLMapping;
   algorithm
@@ -441,17 +442,17 @@ encapsulated package HpcOmMemory
     input tuple<CacheMap, CacheMapMeta, Integer, list<tuple<Integer,Integer>>, list<Integer>, Integer> iInfo; //<CacheMap, CacheMapMeta, numNewCL, cacheLineCandidates <ClIdx,freeBytes>, writtenCL, currentCLCandidate>
     output tuple<CacheMap, CacheMapMeta, Integer, list<tuple<Integer,Integer>>, list<Integer>, Integer> oInfo;
   protected
-    array<Option<SimCode.SimVar>> iAllSCVarsMapping;
+    array<Option<SimCodeVar.SimVar>> iAllSCVarsMapping;
     array<tuple<Integer,Integer>> iSimCodeVarTypes; //<type, numberOfBytesRequired>
     array<tuple<Integer,Integer>> iScVarCLMapping; //will be updated: mapping scVar (arrayIdx) -> <clIdx,varType>
     Integer currentCLCandidateIdx, currentCLCandidateCLIdx, clIdx, currentCLCandidateFreeBytes, cacheLineSize, numNewCL, varType, numBytesRequired, entryStart;
     tuple<Integer,Integer> currentCLCandidate;
     list<tuple<Integer,Integer>> cacheLineCandidates;
     list<CacheLineMap> cacheLinesFloat;
-    list<SimCode.SimVar> cacheVariables;
+    list<SimCodeVar.SimVar> cacheVariables;
     CacheLineMap cacheLine;
     list<CacheLineEntry> CLentries;
-    SimCode.SimVar scVar;
+    SimCodeVar.SimVar scVar;
     Integer numCacheVars, freeSpace;
     CacheMap cacheMap;
     CacheMapMeta cacheMapMeta;
@@ -633,11 +634,11 @@ encapsulated package HpcOmMemory
     Convert the informations of the given cache-map to a memory-map that can be used by susan."
     input CacheMap iCacheMap;
     input HashTableCrILst.HashTable iScVarNameIdxMapping;
-    input list<SimCode.SimVar> iNotOptimizedVars;
+    input list<SimCodeVar.SimVar> iNotOptimizedVars;
     output HpcOmSimCode.MemoryMap oMemoryMap;
   protected
     Integer cacheLineSize, highestIdx, floatArraySize;
-    list<SimCode.SimVar> cacheVariables;
+    list<SimCodeVar.SimVar> cacheVariables;
     list<CacheLineMap> cacheLinesFloat;
     HpcOmSimCode.MemoryMap tmpMemoryMap;
     array<tuple<Integer,Integer>> positionMappingArray;
@@ -665,7 +666,7 @@ encapsulated package HpcOmMemory
     input HashTableCrILst.HashTable iScVarNameIdxMapping;
     input Integer iArrayIdx;
     input Integer iCacheLineSize;
-    input list<SimCode.SimVar> iCacheVariables;
+    input list<SimCodeVar.SimVar> iCacheVariables;
     input tuple<list<tuple<Integer, Integer, Integer>>, Integer> iPositionMappingListIdx; //<<scVarIdx, arrayPosition, arrayIdx>, highestIdx>
     output tuple<list<tuple<Integer, Integer, Integer>>, Integer> oPositionMappingListIdx; //<<scVarIdx, arrayPosition, arrayIdx>, highestIdx>
   protected
@@ -691,7 +692,7 @@ encapsulated package HpcOmMemory
     input HashTableCrILst.HashTable iScVarNameIdxMapping;
     input Integer iArrayIdx;
     input tuple<Integer,Integer> iClIdxSize; //<CLIdx, CLSize>>
-    input list<SimCode.SimVar> iCacheVariables;
+    input list<SimCodeVar.SimVar> iCacheVariables;
     input tuple<list<tuple<Integer, Integer, Integer>>, Integer> iPositionMappingListIdx; //<<scVarIdx, arrayPosition, arrayIdx>, highestIdx>
     output tuple<list<tuple<Integer, Integer, Integer>>, Integer> oPositionMappingListIdx; //<<scVarIdx, arrayPosition, arrayIdx>, highestIdx>
   protected
@@ -706,7 +707,7 @@ encapsulated package HpcOmMemory
         equation
           arrayPosition = intDiv(start, size);
           arrayPosition = arrayPosition + (clIdx - 1) * intDiv(clSize, size);
-          SimCode.SIMVAR(name=name) = listGet(iCacheVariables, listLength(iCacheVariables) - scVarIdx + 1);
+          SimCodeVar.SIMVAR(name=name) = listGet(iCacheVariables, listLength(iCacheVariables) - scVarIdx + 1);
           realSimVarIdxLst = BaseHashTable.get(name, iScVarNameIdxMapping);
           realScVarIdx = listGet(realSimVarIdxLst, 1) + listGet(realSimVarIdxLst, 2);
           iPositionMappingList = (realScVarIdx,arrayPosition,iArrayIdx)::iPositionMappingList;
@@ -735,8 +736,8 @@ encapsulated package HpcOmMemory
   protected function getNotOptimizedVarsByCacheLineMapping "author: marcusw
     Get all sim code variables that have no valid cl-mapping."
     input array<tuple<Integer,Integer>> iScVarCLMapping;
-    input array<Option<SimCode.SimVar>> iAllVarsMapping;
-    output list<SimCode.SimVar> oNotOptimizedVars;
+    input array<Option<SimCodeVar.SimVar>> iAllVarsMapping;
+    output list<SimCodeVar.SimVar> oNotOptimizedVars;
   algorithm
     ((oNotOptimizedVars,_)) := Util.arrayFold1(iScVarCLMapping, getNotOptimizedVarsByCacheLineMapping0, iAllVarsMapping, ({},1));
   end getNotOptimizedVarsByCacheLineMapping;
@@ -744,12 +745,12 @@ encapsulated package HpcOmMemory
   protected function getNotOptimizedVarsByCacheLineMapping0 "author: marcusw
     Add the sc-variable to the output list if it has no valid mapping."
     input tuple<Integer,Integer> iScVarCLMapping;
-    input array<Option<SimCode.SimVar>> iAllVarsMapping;
-    input tuple<list<SimCode.SimVar>, Integer> iEntries; //<input-list,scVarindex>
-    output tuple<list<SimCode.SimVar>, Integer> oEntries; //<input-list,scVarindex>
+    input array<Option<SimCodeVar.SimVar>> iAllVarsMapping;
+    input tuple<list<SimCodeVar.SimVar>, Integer> iEntries; //<input-list,scVarindex>
+    output tuple<list<SimCodeVar.SimVar>, Integer> oEntries; //<input-list,scVarindex>
   protected
-    SimCode.SimVar var;
-    list<SimCode.SimVar> tmpSimVars;
+    SimCodeVar.SimVar var;
+    list<SimCodeVar.SimVar> tmpSimVars;
     Integer scVarIdx;
   algorithm
     oEntries := matchcontinue(iScVarCLMapping, iAllVarsMapping, iEntries)
@@ -769,7 +770,7 @@ encapsulated package HpcOmMemory
 
   protected function fillSimVarHashTable "author: marcusw
     Function to create a mapping for each simVar-name to the simVar-Index+Offset."
-    input list<SimCode.SimVar> iSimVars;
+    input list<SimCodeVar.SimVar> iSimVars;
     input Integer iOffset;
     input Integer iType; //1 = real ; 2 = int
     input HashTableCrILst.HashTable iHt; //contains a list of type Integer for each simVar. List.First: Index, List.Secons: Offset, List.Third: Type
@@ -780,7 +781,7 @@ encapsulated package HpcOmMemory
 
   protected function fillSimVarHashTableTraverse "author: marcusw
     Helper function to extend the given mapping for the iSimVar."
-    input SimCode.SimVar iSimVar;
+    input SimCodeVar.SimVar iSimVar;
     input Integer iOffset;
     input Integer iType;
     input HashTableCrILst.HashTable iHt;
@@ -790,7 +791,7 @@ encapsulated package HpcOmMemory
     HashTableCrILst.HashTable tmpHt;
     DAE.ComponentRef name;
   algorithm
-    SimCode.SIMVAR(name=name,index=index) := iSimVar;
+    SimCodeVar.SIMVAR(name=name,index=index) := iSimVar;
     index := index + 1;
     //print("fillSimVarHashTableTraverse: " +& ComponentReference.debugPrintComponentRefTypeStr(name) +& " with index: " +& intString(index+ iOffset) +& "\n");
     oHt := BaseHashTable.add((name,{index,iOffset,iType}),iHt);
@@ -1124,7 +1125,7 @@ encapsulated package HpcOmMemory
     Integer clGroupNodeIdx, graphCount;
     GraphML.GraphInfo tmpGraphInfo;
     array<list<Integer>> knownEdges; //edges from task to variables
-    list<SimCode.SimVar> cacheVariables;
+    list<SimCodeVar.SimVar> cacheVariables;
     list<CacheLineMap> cacheLinesFloat;
     CacheMap cacheMap;
   algorithm
@@ -1188,7 +1189,7 @@ encapsulated package HpcOmMemory
 
   protected function appendCacheLineMapToGraph
     input CacheLineMap iCacheLineMap;
-    input list<SimCode.SimVar> iCacheVariables;
+    input list<SimCodeVar.SimVar> iCacheVariables;
     input array<tuple<Integer,Integer,Real>> iSchedulerInfo;
     input tuple<Integer,Integer> iTopGraphAttThreadIdIdx; //<topGraphIdx,threadIdAttIdx>
     input array<Integer> iScVarTaskMapping; //maps each scVar (arrayIdx) to the task that solves her
@@ -1208,7 +1209,7 @@ encapsulated package HpcOmMemory
 
   protected function appendCacheLineEntryToGraph
     input CacheLineEntry iCacheLineEntry;
-    input list<SimCode.SimVar> iCacheVariables;
+    input list<SimCodeVar.SimVar> iCacheVariables;
     input array<tuple<Integer,Integer,Real>> iSchedulerInfo;
     input tuple<Integer,Integer> iTopGraphAttThreadIdIdx; //<topGraphIdx,threadIdAttIdx>
     input array<Integer> iScVarTaskMapping; //maps each scVar (arrayIdx) to the task that solves her
@@ -1220,13 +1221,13 @@ encapsulated package HpcOmMemory
     Integer scVarIdx, realScVarIdx, realScVarOffset, taskIdx, iTopGraphIdx, iAttThreadIdIdx;
     String varString, threadText, nodeLabelText, nodeId;
     GraphML.NodeLabel nodeLabel;
-    SimCode.SimVar iVar;
+    SimCodeVar.SimVar iVar;
     DAE.ComponentRef name;
   algorithm
     CACHELINEENTRY(scVarIdx=scVarIdx) := iCacheLineEntry;
     (iTopGraphIdx, iAttThreadIdIdx) := iTopGraphAttThreadIdIdx;
     iVar := listGet(iCacheVariables, listLength(iCacheVariables) - scVarIdx + 1);
-    SimCode.SIMVAR(name=name) := iVar;
+    SimCodeVar.SIMVAR(name=name) := iVar;
     realScVarIdxOffset := BaseHashTable.get(name, iVarNameSCVarIdxMapping);
     realScVarIdx := listGet(realScVarIdxOffset,1);
     realScVarOffset := listGet(realScVarIdxOffset,2);
@@ -1271,7 +1272,7 @@ encapsulated package HpcOmMemory
   protected
     Integer cacheLineSize;
     list<CacheLineMap> cacheLinesFloat;
-    list<SimCode.SimVar> cacheVariables;
+    list<SimCodeVar.SimVar> cacheVariables;
   algorithm
     print("\n\nCacheMap\n---------------\n");
     CACHEMAP(cacheLineSize=cacheLineSize, cacheVariables=cacheVariables, cacheLinesFloat=cacheLinesFloat) := iCacheMap;
@@ -1280,7 +1281,7 @@ encapsulated package HpcOmMemory
 
   protected function printCacheLineMap
     input CacheLineMap iCacheLineMap;
-    input list<SimCode.SimVar> iCacheVariables;
+    input list<SimCodeVar.SimVar> iCacheVariables;
   protected
     Integer idx;
     list<CacheLineEntry> entries;
@@ -1311,7 +1312,7 @@ encapsulated package HpcOmMemory
 
   protected function cacheLineEntryToString
     input CacheLineEntry iCacheLineEntry;
-    input list<SimCode.SimVar> iCacheVariables;
+    input list<SimCodeVar.SimVar> iCacheVariables;
     input tuple<String,String> iString; //<variable names seperated by |, byte positions string>
     output tuple<String,String> oString;
   protected
@@ -1320,7 +1321,7 @@ encapsulated package HpcOmMemory
     Integer size;
     Integer scVarIdx;
     String scVarStr;
-    SimCode.SimVar iVar;
+    SimCodeVar.SimVar iVar;
     String iVarsString, iBytesString, iBytesStringNew, byteStartString;
   algorithm
     (iVarsString, iBytesString) := iString;
@@ -1357,12 +1358,12 @@ encapsulated package HpcOmMemory
   end cacheLineEntryToStringClean;
 
   protected function dumpSimCodeVar
-    input SimCode.SimVar iVar;
+    input SimCodeVar.SimVar iVar;
     output String oString;
   protected
     DAE.ComponentRef name;
   algorithm
-    SimCode.SIMVAR(name=name) := iVar;
+    SimCodeVar.SIMVAR(name=name) := iVar;
     oString := ComponentReference.printComponentRefStr(name);
   end dumpSimCodeVar;
 
@@ -1666,12 +1667,12 @@ encapsulated package HpcOmMemory
   // -------------------------------------------
 
   protected function appendFloatVarToCacheMap
-    input SimCode.SimVar iFloatVar;
+    input SimCodeVar.SimVar iFloatVar;
     input tuple<CacheMap,Integer,Integer> iCacheInfo;
     output tuple<CacheMap,Integer,Integer> oCacheInfo; //<cacheMap,numCL,numBytesUsedLastCL>
   protected
     Integer cacheLineSize, numCL, numBytesUsedLastCL;
-    list<SimCode.SimVar> cacheVariables;
+    list<SimCodeVar.SimVar> cacheVariables;
     list<CacheLineMap> tail;
     CacheLineMap head;
     Integer cacheLineIdx, cacheVarIdx, newCacheLineIdx;
@@ -1708,7 +1709,7 @@ encapsulated package HpcOmMemory
   end appendFloatVarToCacheMap;
 
   protected function getSCVarCacheLineMapping
-    input list<SimCode.SimVar> iSimVars;
+    input list<SimCodeVar.SimVar> iSimVars;
     input Integer iNumVarsCL; //number of bytes per cache line
     output array<Integer> oCacheLineMapping;
   protected
@@ -1719,7 +1720,7 @@ encapsulated package HpcOmMemory
   end getSCVarCacheLineMapping;
 
   protected function getSCVarCacheLineMapping0
-    input SimCode.SimVar iSimVar;
+    input SimCodeVar.SimVar iSimVar;
     input Integer iNumCL;
     input tuple<array<Integer>,Integer> iCacheLineMappingSimVarIdx;
     output tuple<array<Integer>,Integer> oCacheLineMappingSimVarIdx;
@@ -1728,7 +1729,7 @@ encapsulated package HpcOmMemory
     array<Integer> iCacheLineMapping;
     DAE.ComponentRef name;
   algorithm
-    SimCode.SIMVAR(name=name) := iSimVar;
+    SimCodeVar.SIMVAR(name=name) := iSimVar;
     (iCacheLineMapping,iSimVarIdx) := iCacheLineMappingSimVarIdx;
     clIdx := intDiv(iSimVarIdx-1,iNumCL)+1;
     //print("Sc-Var" +& intString(iSimVarIdx) +& ":" +& ComponentReference.debugPrintComponentRefTypeStr(name) +& " is part of cl: " +& intString(clIdx) +& "\n");
@@ -1737,7 +1738,7 @@ encapsulated package HpcOmMemory
   end getSCVarCacheLineMapping0;
 
   protected function getSCVarCacheLineMappingFloat
-    input list<SimCode.SimVar> iFloatVars;
+    input list<SimCodeVar.SimVar> iFloatVars;
     input Integer iNumBytes; //number of bytes per cache line
     input Integer iStartCL; //the cache line index of the first variable
     input array<tuple<Integer,Integer>> iSVarCLMapping;
@@ -1752,7 +1753,7 @@ encapsulated package HpcOmMemory
   end getSCVarCacheLineMappingFloat;
 
   protected function getSCVarCacheLineMappingFloat0
-    input SimCode.SimVar iSimVar;
+    input SimCodeVar.SimVar iSimVar;
     input Integer iNumBytes;
     input tuple<list<CacheLineMap>,Integer,Integer,Integer,array<tuple<Integer,Integer>>> iCacheLineMappingSimVarIdx; //<filledCacheLines,CacheLineIdx,BytesCLAlreadyUsed,SimVarIdx,scVarCLMapping>
     output tuple<list<CacheLineMap>,Integer,Integer,Integer,array<tuple<Integer,Integer>>> oCacheLineMappingSimVarIdx;

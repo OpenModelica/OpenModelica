@@ -168,6 +168,7 @@ if true then /* Suppress output */
     "../SimCode/SimCode.mo",
     "../SimCode/SimCodeMain.mo",
     "../SimCode/SimCodeUtil.mo",
+    "../SimCode/SimCodeVar.mo",
 
   // "Script";
     "../Script/CevalScript.mo",

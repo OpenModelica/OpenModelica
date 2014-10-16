@@ -190,6 +190,7 @@ HpcOmSimCodeMain.mo \
 SimCode.mo \
 SimCodeMain.mo \
 SimCodeUtil.mo \
+SimCodeVar.mo
 
 GLOBAL = \
 Global.mo

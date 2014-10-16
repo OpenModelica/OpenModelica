@@ -20,7 +20,7 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValues
   MeasureTimeValues();
   virtual ~MeasureTimeValues();
 
-  virtual std::string serializeToJson() const = 0;
+  virtual std::string serializeToJson(unsigned int numCalcs) = 0;
 
   virtual void add(MeasureTimeValues *values) = 0;
   virtual void sub(MeasureTimeValues *values) = 0;
@@ -32,14 +32,13 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimeData
  public:
   std::string id;
   MeasureTimeValues *sumMeasuredValues;
-  //MeasureTimeValues *maxMeasuredValues;
   unsigned int numCalcs;
 
   MeasureTimeData();
   MeasureTimeData(std::string id);
   virtual ~MeasureTimeData();
 
-  std::string serializeToJson() const;
+  std::string serializeToJson();
 
   void addValuesToSum(MeasureTimeValues *values);
 };
@@ -47,8 +46,7 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimeData
 class BOOST_EXTENSION_EXPORT_DECL MeasureTime
 {
  public:
-  typedef void (*getTimeValuesFctType)(MeasureTimeValues*);
-  typedef std::map<std::string, const std::vector<MeasureTimeData> *> block_map;
+  typedef std::map<std::string, std::vector<MeasureTimeData> *> block_map;
   typedef std::map<std::string, block_map> file_map;
 
   virtual ~MeasureTime();
@@ -77,7 +75,7 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTime
 
   static void deinitialize();
 
-  static void addResultContentBlock(const std::string filename, const std::string blockname, const std::vector<MeasureTimeData> * in);
+  static void addResultContentBlock(std::string filename, std::string blockname, std::vector<MeasureTimeData> * in);
 
   static void writeToJson();
 
@@ -90,8 +88,6 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTime
 
  protected:
   static MeasureTime * instance;
-  static getTimeValuesFctType getTimeValuesStartFct;
-  static getTimeValuesFctType getTimeValuesEndFct;
   static file_map toWrite;
 
   MeasureTimeValues * overhead;

@@ -4,10 +4,10 @@ MeasureTimeValuesRDTSC::MeasureTimeValuesRDTSC(unsigned long long time) : Measur
 
 MeasureTimeValuesRDTSC::~MeasureTimeValuesRDTSC() {}
 
-std::string MeasureTimeValuesRDTSC::serializeToJson() const
+std::string MeasureTimeValuesRDTSC::serializeToJson(unsigned int numCalcs)
 {
   std::stringstream ss;
-  ss << "\"time\":" << time << ",\"maxTime\":" << max_time;
+  ss << "\"time\":" << time << ",\"maxTime\":" <<  max_time << ",\"meanTime\":" << (numCalcs == 0 ? 0 : time/numCalcs);
   return ss.str();
 }
 

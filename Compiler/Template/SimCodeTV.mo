@@ -144,17 +144,92 @@ package builtin
 
 end builtin;
 
+package SimCodeVar
+  uniontype SimVars
+    record SIMVARS
+      list<SimVar> stateVars;
+      list<SimVar> derivativeVars;
+      list<SimVar> algVars;
+      list<SimVar> discreteAlgVars;
+      list<SimVar> intAlgVars;
+      list<SimVar> boolAlgVars;
+      list<SimVar> inputVars;
+      list<SimVar> outputVars;
+      list<SimVar> aliasVars;
+      list<SimVar> intAliasVars;
+      list<SimVar> boolAliasVars;
+      list<SimVar> paramVars;
+      list<SimVar> intParamVars;
+      list<SimVar> boolParamVars;
+      list<SimVar> stringAlgVars;
+      list<SimVar> stringParamVars;
+      list<SimVar> stringAliasVars;
+      list<SimVar> extObjVars;
+      list<SimVar> constVars;
+      list<SimVar> intConstVars;
+      list<SimVar> boolConstVars;
+      list<SimVar> stringConstVars;
+      list<SimVar> jacobianVars;
+      list<SimVar> realOptimizeConstraintsVars;
+      list<SimVar> realOptimizeFinalConstraintsVars;
+    end SIMVARS;
+  end SimVars;
+
+  uniontype SimVar
+    record SIMVAR
+      DAE.ComponentRef name;
+      BackendDAE.VarKind varKind;
+      String comment;
+      String unit;
+      String displayUnit;
+      Integer index;
+      Option<DAE.Exp> minValue;
+      Option<DAE.Exp> maxValue;
+      Option<DAE.Exp> initialValue;
+      Option<DAE.Exp> nominalValue;
+      Boolean isFixed;
+      DAE.Type type_;
+      Boolean isDiscrete;
+      Option<DAE.ComponentRef> arrayCref;
+      AliasVariable aliasvar;
+      DAE.ElementSource source;
+      Causality causality;
+      Option<Integer> variable_index;
+      list<String> numArrayElement;
+      Boolean isValueChangeable;
+      Boolean isProtected;
+    end SIMVAR;
+  end SimVar;
+
+  uniontype AliasVariable
+    record NOALIAS end NOALIAS;
+    record ALIAS
+      DAE.ComponentRef varName;
+    end ALIAS;
+    record NEGATEDALIAS
+      DAE.ComponentRef varName;
+    end NEGATEDALIAS;
+  end AliasVariable;
+
+  uniontype Causality
+    record NONECAUS end NONECAUS;
+    record INTERNAL end INTERNAL;
+    record OUTPUT end OUTPUT;
+    record INPUT end INPUT;
+  end Causality;
+end SimCodeVar;
+
 
 package SimCode
 
   type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
   type ExtDestructor = tuple<String, DAE.ComponentRef>;
   type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
-  type JacobianColumn = tuple<list<SimEqSystem>, list<SimVar>, String>; // column equations, column vars, column length
+  type JacobianColumn = tuple<list<SimEqSystem>, list<SimCodeVar.SimVar>, String>; // column equations, column vars, column length
   type JacobianMatrix = tuple<list<JacobianColumn>, // column
-                            list<SimVar>,           // seed vars
+                            list<SimCodeVar.SimVar>,           // seed vars
                             String,                 // matrix name
-                            tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimVar>,list<SimVar>>>,    // sparse pattern
+                            tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimCodeVar.SimVar>,list<SimCodeVar.SimVar>>>,    // sparse pattern
                             list<list<DAE.ComponentRef>>,    // colored cols
                             Integer,                         // max color used
                             Integer>;                        // jacobian index
@@ -188,7 +263,7 @@ package SimCode
       list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<BackendDAE.ZeroCrossing> relations;
-      list<list<SimVar>> zeroCrossingsNeedSave;
+      list<list<SimCodeVar.SimVar>> zeroCrossingsNeedSave;
       list<BackendDAE.TimeEvent> timeEvents;
       list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
@@ -294,7 +369,6 @@ package SimCode
       String name;
       list<DAE.Type> tys;
       list<Variable> args;
-      Option<DAE.Exp> defaultValue;
     end FUNCTION_PTR;
   end Variable;
 
@@ -306,7 +380,7 @@ package SimCode
 
   uniontype ExtObjInfo
     record EXTOBJINFO
-      list<SimVar> vars;
+      list<SimCodeVar.SimVar> vars;
       list<ExtAlias> aliases;
     end EXTOBJINFO;
   end ExtObjInfo;
@@ -348,7 +422,7 @@ package SimCode
       Integer index;
       Boolean partOfMixed;
 
-      list<SimVar> vars;
+      list<SimCodeVar.SimVar> vars;
       list<DAE.Exp> beqs;
       list<tuple<Integer, Integer, SimEqSystem>> simJac;
       /* solver linear tearing system */
@@ -371,7 +445,7 @@ package SimCode
     record SES_MIXED
       Integer index;
       SimEqSystem cont;
-      list<SimVar> discVars;
+      list<SimCodeVar.SimVar> discVars;
       list<SimEqSystem> discEqs;
       Integer indexMixedSystem;
     end SES_MIXED;
@@ -415,7 +489,7 @@ package SimCode
       String description;
       String directory;
       VarInfo varInfo;
-      SimVars vars;
+      SimCodeVar.SimVars vars;
       list<Function> functions;
       list<String> labels;
     end MODELINFO;
@@ -457,79 +531,6 @@ package SimCode
       Integer numOptimizeFinalConstraints;
       end VARINFO;
   end VarInfo;
-
-  uniontype SimVars
-    record SIMVARS
-      list<SimVar> stateVars;
-      list<SimVar> derivativeVars;
-      list<SimVar> algVars;
-      list<SimVar> discreteAlgVars;
-      list<SimVar> intAlgVars;
-      list<SimVar> boolAlgVars;
-      list<SimVar> inputVars;
-      list<SimVar> outputVars;
-      list<SimVar> aliasVars;
-      list<SimVar> intAliasVars;
-      list<SimVar> boolAliasVars;
-      list<SimVar> paramVars;
-      list<SimVar> intParamVars;
-      list<SimVar> boolParamVars;
-      list<SimVar> stringAlgVars;
-      list<SimVar> stringParamVars;
-      list<SimVar> stringAliasVars;
-      list<SimVar> extObjVars;
-      list<SimVar> constVars;
-      list<SimVar> intConstVars;
-      list<SimVar> boolConstVars;
-      list<SimVar> stringConstVars;
-      list<SimVar> jacobianVars;
-      list<SimVar> realOptimizeConstraintsVars;
-      list<SimVar> realOptimizeFinalConstraintsVars;
-    end SIMVARS;
-  end SimVars;
-
-  uniontype SimVar
-    record SIMVAR
-      DAE.ComponentRef name;
-      BackendDAE.VarKind varKind;
-      String comment;
-      String unit;
-      String displayUnit;
-      Integer index;
-      Option<DAE.Exp> minValue;
-      Option<DAE.Exp> maxValue;
-      Option<DAE.Exp> initialValue;
-      Option<DAE.Exp> nominalValue;
-      Boolean isFixed;
-      DAE.Type type_;
-      Boolean isDiscrete;
-      Option<DAE.ComponentRef> arrayCref;
-      AliasVariable aliasvar;
-      DAE.ElementSource source;
-      Causality causality;
-      Option<Integer> variable_index;
-      list<String> numArrayElement;
-      Boolean isValueChangeable;
-      Boolean isProtected;
-    end SIMVAR;
-  end SimVar;
-
-  uniontype AliasVariable
-    record NOALIAS end NOALIAS;
-    record ALIAS
-      DAE.ComponentRef varName;
-    end ALIAS;
-    record NEGATEDALIAS
-      DAE.ComponentRef varName;
-    end NEGATEDALIAS;
-  end AliasVariable;
-
-  uniontype Causality
-    record NONECAUS end NONECAUS;
-    record INTERNAL end INTERNAL;
-    record OUTPUT end OUTPUT;
-    record INPUT end INPUT;
-  end Causality;
 
   uniontype Function
     record FUNCTION
@@ -711,13 +712,13 @@ package SimCodeUtil
   end decrementInt;
 
   function isProtected
-    input SimCode.SimVar simVar;
+    input SimCodeVar.SimVar simVar;
     output Boolean isProtected;
   end isProtected;
 
   function protectedVars
-    input list<SimCode.SimVar> InSimVars;
-    output list<SimCode.SimVar> OutSimVars;
+    input list<SimCodeVar.SimVar> InSimVars;
+    output list<SimCodeVar.SimVar> OutSimVars;
   end protectedVars;
 
   function makeCrefRecordExp
@@ -729,7 +730,7 @@ package SimCodeUtil
   function cref2simvar
     input DAE.ComponentRef cref;
     input SimCode.SimCode simCode;
-    output SimCode.SimVar outSimVar;
+    output SimCodeVar.SimVar outSimVar;
   end cref2simvar;
 
   function isModelTooBigForCSharpInOneFile
@@ -806,7 +807,7 @@ package SimCodeUtil
   end eqInfo;
 
   function varName
-    input SimCode.SimVar var;
+    input SimCodeVar.SimVar var;
     output DAE.ComponentRef cr;
   end varName;
 
@@ -826,8 +827,8 @@ package SimCodeUtil
   end isParallelFunctionContext;
 
   function getEnumerationTypes
-    input SimCode.SimVars inVars;
-    output list<SimCode.SimVar> outVars;
+    input SimCodeVar.SimVars inVars;
+    output list<SimCodeVar.SimVar> outVars;
   end getEnumerationTypes;
 
   function getFMIModelStructure
@@ -837,13 +838,13 @@ package SimCodeUtil
   end getFMIModelStructure;
 
   function getStateSimVarIndexFromIndex
-    input list<SimCode.SimVar> inStateVars;
+    input list<SimCodeVar.SimVar> inStateVars;
     input Integer inIndex;
     output Integer outVariableIndex;
   end getStateSimVarIndexFromIndex;
 
   function getVariableIndex
-    input SimCode.SimVar inVar;
+    input SimCodeVar.SimVar inVar;
     output Integer outVariableIndex;
   end getVariableIndex;
 
@@ -3016,7 +3017,7 @@ package BackendQSS
 
   function getRHSVars
     input list<DAE.Exp> beqs;
-    input list<SimCode.SimVar> vars;
+    input list<SimCodeVar.SimVar> vars;
     input list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
     input list<DAE.ComponentRef> states;
     input list<DAE.ComponentRef> disc;
@@ -3026,7 +3027,7 @@ package BackendQSS
 
   function getDiscRHSVars
     input list<DAE.Exp> beqs;
-    input list<SimCode.SimVar> vars;
+    input list<SimCodeVar.SimVar> vars;
     input list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
     input list<DAE.ComponentRef> states;
     input list<DAE.ComponentRef> disc;
@@ -3038,7 +3039,7 @@ package BackendQSS
   function generateDInit
     input  list<DAE.ComponentRef> disc;
     //input  list<SimCode.SampleCondition> sample;
-    input  SimCode.SimVars vars;
+    input  SimCodeVar.SimVars vars;
     input  Integer acc;
     input  Integer total;
     input  Integer nWhenClause;
@@ -3047,7 +3048,7 @@ package BackendQSS
 
   function generateExtraParams
     input SimCode.SimEqSystem eq;
-    input SimCode.SimVars vars;
+    input SimCodeVar.SimVars vars;
     output String s;
   end generateExtraParams;
 
@@ -3323,13 +3324,17 @@ package HpcOmSimCodeMain
     input Integer iIdx;
     output SimCode.SimEqSystem oEq;
   end getSimCodeEqByIndex;
-
-  function analyzeOdeEquations
-    input list<list<SimCode.SimEqSystem>> systems;
-  end analyzeOdeEquations;
 end HpcOmSimCodeMain;
 
 package HpcOmSimCode
+  uniontype CommunicationInfo //stores more detailed information about a communication (edge)
+    record COMMUNICATION_INFO
+      list<SimCodeVar.SimVar> floatVars; //the float, int and boolean variables that have to be transfered
+      list<SimCodeVar.SimVar> intVars;
+      list<SimCodeVar.SimVar> boolVars;
+    end COMMUNICATION_INFO;
+  end CommunicationInfo;
+  
   uniontype Task
     record CALCTASK //Task which calculates something
       Integer weighting;
@@ -3348,6 +3353,7 @@ package HpcOmSimCode
       Task sourceTask;
       Task targetTask;
       Boolean outgoing; //true if the dependency is leading to the task of another thread
+      CommunicationInfo communicationInfo;
     end DEPTASK;
   end Task;
 
@@ -3363,6 +3369,7 @@ package HpcOmSimCode
   uniontype Schedule
     record LEVELSCHEDULE
       list<TaskList> tasksOfLevels;
+      Boolean useFixedAssignments;
     end LEVELSCHEDULE;
     record THREADSCHEDULE
       array<list<Task>> threadTasks;
@@ -3403,5 +3410,13 @@ package HpcOmMemory
     output list<list<DAE.Subscript>> oSubscriptList;
   end getSubscriptListOfArrayCref;
 end HpcOmMemory;
+
+package HpcOmScheduler
+  function convertFixedLevelScheduleToTaskLists 
+    input HpcOmSimCode.Schedule iSchedule;
+    input Integer iNumOfThreads;
+    output array<list<list<HpcOmSimCode.Task>>> oThreadLevelTasks;
+  end convertFixedLevelScheduleToTaskLists;
+end HpcOmScheduler;
 
 end SimCodeTV;

@@ -10,6 +10,7 @@
 #include <sundials/sundials_direct.h>
 #include <cvode/cvode_dense.h>
 #include <cvode/cvode_spgmr.h>
+#include <Core/Utils/extension/measure_time.hpp>
 
 #ifdef USE_BOOST_LOG
 #include <boost/log/core.hpp>
@@ -226,6 +227,9 @@ double
    IEvent* _event_system;
    IMixedSystem* _mixed_system;
    ITime* _time_system;
+
+   std::vector<MeasureTimeData> measureTimeFunctionsArray;
+   MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues;
 
 };
 

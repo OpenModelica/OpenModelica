@@ -40,6 +40,7 @@ encapsulated package BackendQSS
 
 public import ExpressionSimplify;
 public import SimCode;
+public import SimCodeVar;
 public import System;
 public import BackendDAE;
 public import DAE;
@@ -601,7 +602,7 @@ end generateHandler;
 //   algs:=matchcontinue (eqs,states,i_algs)
 //     local
 //       list<SimCode.SimEqSystem> tail;
-//       list<SimCode.SimVar> vars;
+//       list<SimCodeVar.SimVar> vars;
 //       DAE.ComponentRef cref;
 //       list<DAE.ComponentRef> vars_cref;
 //     case (SimCode.SES_SIMPLE_ASSIGN(cref=cref) :: tail,_,_)
@@ -669,7 +670,7 @@ end getCrefs;
 
 public function getRHSVars
   input list<DAE.Exp> beqs;
-  input list<SimCode.SimVar> vars;
+  input list<SimCodeVar.SimVar> vars;
   input list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
   input list<DAE.ComponentRef> states,disc,algs;
   output list<DAE.ComponentRef> out;
@@ -690,19 +691,19 @@ algorithm
 end getRHSVars;
 
 function getInitExp
-  input  list<SimCode.SimVar> vars;
+  input  list<SimCodeVar.SimVar> vars;
   input  DAE.ComponentRef d;
   output String s;
 algorithm
   s:=
     matchcontinue(vars,d)
     local
-      list<SimCode.SimVar> tail;
+      list<SimCodeVar.SimVar> tail;
       DAE.Exp initialExp;
       DAE.ComponentRef name;
       String t;
     case ({},_) then stringAppend(stringAppend("0.0 /* ",ComponentReference.crefStr(d))," */ ;");
-    case (SimCode.SIMVAR(name=name,initialValue=SOME(initialExp as DAE.BCONST(_))):: _,_)
+    case (SimCodeVar.SIMVAR(name=name,initialValue=SOME(initialExp as DAE.BCONST(_))):: _,_)
     equation
       true = ComponentReference.crefEqual(name,d);
       t = stringAppend("(",ExpressionDump.printExpStr(replaceVars(initialExp,{},{},{})));
@@ -710,7 +711,7 @@ algorithm
       t = stringAppend(t,ComponentReference.crefStr(d));
       t = stringAppend(t,"*/;");
     then t;
-    case (SimCode.SIMVAR(name=name,initialValue=SOME(initialExp)):: _,_)
+    case (SimCodeVar.SIMVAR(name=name,initialValue=SOME(initialExp)):: _,_)
     equation
       true = ComponentReference.crefEqual(name,d);
       t = stringAppend("",ExpressionDump.printExpStr(replaceVars(initialExp,{},{},{})));
@@ -726,7 +727,7 @@ end getInitExp;
 public function generateDInit
   input  list<DAE.ComponentRef> disc;
   //input  list<SimCode.SampleCondition> sample;
-  input  SimCode.SimVars vars;
+  input  SimCodeVar.SimVars vars;
   input  Integer acc;
   input  Integer total;
   input  Integer nWhenClause;
@@ -737,9 +738,9 @@ algorithm
       list<DAE.ComponentRef> tail;
       DAE.ComponentRef cref;
       String s;
-      list<SimCode.SimVar> intAlgVars;
-      list<SimCode.SimVar> boolAlgVars;
-      list<SimCode.SimVar> algVars;
+      list<SimCodeVar.SimVar> intAlgVars;
+      list<SimCodeVar.SimVar> boolAlgVars;
+      list<SimCodeVar.SimVar> algVars;
     case ({},_,_,_,_) then "";
     case (_::tail,_,_,_,_)
     equation
@@ -751,7 +752,7 @@ algorithm
       s=stringAppend(s,";\n");
     then stringAppend(s,generateDInit(tail,vars,acc+1,total,nWhenClause));
 
-    case (cref::tail,SimCode.SIMVARS(intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,algVars=algVars),_,_,_)
+    case (cref::tail,SimCodeVar.SIMVARS(intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,algVars=algVars),_,_,_)
     equation
       s=stringAppend("","d[");
       s=stringAppend(s,intString(acc+1));
@@ -786,21 +787,21 @@ end generateInitialParamEquations;
 
 public function generateExtraParams
   input SimCode.SimEqSystem eq;
-  input SimCode.SimVars vars;
+  input SimCodeVar.SimVars vars;
   output String s;
 algorithm
   s:=
   match (eq,vars)
   local
     DAE.ComponentRef cref;
-    list<SimCode.SimVar> paramVars;
-    list<SimCode.SimVar> intParamVars;
-    list<SimCode.SimVar> boolParamVars;
+    list<SimCodeVar.SimVar> paramVars;
+    list<SimCodeVar.SimVar> intParamVars;
+    list<SimCodeVar.SimVar> boolParamVars;
     Integer i;
     DAE.Exp exp;
     String t;
   case (SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp),
-        SimCode.SIMVARS(paramVars=paramVars,intParamVars=intParamVars,boolParamVars=boolParamVars))
+        SimCodeVar.SIMVARS(paramVars=paramVars,intParamVars=intParamVars,boolParamVars=boolParamVars))
   equation
     failure(_ = List.position(cref,List.map(paramVars,SimCodeUtil.varName)));
     failure(_ = List.position(cref,List.map(intParamVars,SimCodeUtil.varName)));
@@ -861,7 +862,7 @@ end replaceInExpInputs;
 
 public function getDiscRHSVars
   input list<DAE.Exp> beqs;
-  input list<SimCode.SimVar> vars;
+  input list<SimCodeVar.SimVar> vars;
   input list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
   input list<DAE.ComponentRef> states;
   input list<DAE.ComponentRef> disc;

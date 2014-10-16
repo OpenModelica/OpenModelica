@@ -55,6 +55,7 @@ encapsulated package SimCode
 public import Absyn;
 public import BackendDAE;
 public import DAE;
+public import SimCodeVar;
 public import HpcOmSimCode;
 public import SCode;
 
@@ -62,11 +63,11 @@ public
 type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
 type ExtDestructor = tuple<String, DAE.ComponentRef>;
 type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
-type JacobianColumn = tuple<list<SimEqSystem>, list<SimVar>, String>;     // column equations, column vars, column length
+type JacobianColumn = tuple<list<SimEqSystem>, list<SimCodeVar.SimVar>, String>;     // column equations, column vars, column length
 type JacobianMatrix = tuple<list<JacobianColumn>,                         // column
-                            list<SimVar>,                                 // seed vars
+                            list<SimCodeVar.SimVar>,                                 // seed vars
                             String,                                       // matrix name
-                            tuple<list< tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,list< tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimVar>,list<SimVar>>>,    // sparse pattern
+                            tuple<list< tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,list< tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimCodeVar.SimVar>,list<SimCodeVar.SimVar>>>,    // sparse pattern
                             list<list<DAE.ComponentRef>>,                 // colored cols
                             Integer,                                      // max color used
                             Integer>;                                     // jacobian index
@@ -134,6 +135,7 @@ uniontype BackendMapping
     array<Integer> eqMatch;  //indx:eq entry:var
     array<Integer> varMatch;  //indx:var entry:eq
     array<list<Integer>> eqTree;  // arrayIndx:eq list:required eqs
+    array<list<SimCodeVar.SimVar>> simVarMapping; //indx: backendVar-idx entry: simVar-obj
   end BACKENDMAPPING;
   record NO_MAPPING
   end NO_MAPPING;
@@ -167,7 +169,7 @@ uniontype ModelInfo "Container for metadata about a Modelica model."
     String description;
     String directory;
     VarInfo varInfo;
-    SimVars vars;
+    SimCodeVar.SimVars vars;
     list<Function> functions;
     list<String> labels;
     //Files files "all the files from Absyn.Info and DAE.ELementSource";
@@ -224,84 +226,6 @@ uniontype VarInfo "Number of variables of various types in a Modelica model."
     Integer numOptimizeFinalConstraints;
   end VARINFO;
 end VarInfo;
-
-uniontype SimVars "Container for metadata about variables in a Modelica model."
-  record SIMVARS
-    list<SimVar> stateVars;
-    list<SimVar> derivativeVars;
-    list<SimVar> algVars;
-    list<SimVar> discreteAlgVars;
-    list<SimVar> intAlgVars;
-    list<SimVar> boolAlgVars;
-    list<SimVar> inputVars;
-    list<SimVar> outputVars;
-    list<SimVar> aliasVars;
-    list<SimVar> intAliasVars;
-    list<SimVar> boolAliasVars;
-    list<SimVar> paramVars;
-    list<SimVar> intParamVars;
-    list<SimVar> boolParamVars;
-    list<SimVar> stringAlgVars;
-    list<SimVar> stringParamVars;
-    list<SimVar> stringAliasVars;
-    list<SimVar> extObjVars;
-    list<SimVar> constVars;
-    list<SimVar> intConstVars;
-    list<SimVar> boolConstVars;
-    list<SimVar> stringConstVars;
-    list<SimVar> jacobianVars;
-    list<SimVar> realOptimizeConstraintsVars;
-    list<SimVar> realOptimizeFinalConstraintsVars;
-  end SIMVARS;
-end SimVars;
-
-public constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {},
-  {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
-
-uniontype SimVar "Information about a variable in a Modelica model."
-  record SIMVAR
-    DAE.ComponentRef name;
-    BackendDAE.VarKind varKind;
-    String comment;
-    String unit;
-    String displayUnit;
-    Integer index;
-    Option<DAE.Exp> minValue;
-    Option<DAE.Exp> maxValue;
-    Option<DAE.Exp> initialValue;
-    Option<DAE.Exp> nominalValue;
-    Boolean isFixed;
-    DAE.Type type_;
-    Boolean isDiscrete;
-    // arrayCref is the name of the array if this variable is the first in that
-    // array
-    Option<DAE.ComponentRef> arrayCref;
-    AliasVariable aliasvar;
-    DAE.ElementSource source;
-    Causality causality;
-    Option<Integer> variable_index;
-    list<String> numArrayElement;
-    Boolean isValueChangeable;
-    Boolean isProtected;
-  end SIMVAR;
-end SimVar;
-
-uniontype AliasVariable
-  record NOALIAS end NOALIAS;
-  record ALIAS
-    DAE.ComponentRef varName;
-  end ALIAS;
-  record NEGATEDALIAS
-    DAE.ComponentRef varName;
-  end NEGATEDALIAS;
-end AliasVariable;
-
-uniontype Causality
-  record NONECAUS end NONECAUS;
-  record INTERNAL end INTERNAL;
-  record OUTPUT end OUTPUT;
-  record INPUT end INPUT;
-end Causality;
 
 // TODO: I believe some of these fields can be removed. Check to see what is
 //       used in templates.
@@ -417,7 +341,6 @@ uniontype Variable
     String name;
     list<DAE.Type> tys;
     list<Variable> args;
-    Option<DAE.Exp> defaultValue "default value";
   end FUNCTION_PTR;
 end Variable;
 
@@ -466,7 +389,7 @@ uniontype SimEqSystem
       Integer index;
       Boolean partOfMixed;
 
-      list<SimVar> vars;
+      list<SimCodeVar.SimVar> vars;
       list<DAE.Exp> beqs;
       list<tuple<Integer, Integer, SimEqSystem>> simJac;
       /* solver linear tearing system */
@@ -490,7 +413,7 @@ uniontype SimEqSystem
   record SES_MIXED
     Integer index;
     SimEqSystem cont;
-    list<SimVar> discVars;
+    list<SimCodeVar.SimVar> discVars;
     list<SimEqSystem> discEqs;
     Integer indexMixedSystem;
   end SES_MIXED;
@@ -530,7 +453,7 @@ end SimWhenClause;
 
 uniontype ExtObjInfo
   record EXTOBJINFO
-    list<SimVar> vars;
+    list<SimCodeVar.SimVar> vars;
     list<ExtAlias> aliases;
   end EXTOBJINFO;
 end ExtObjInfo;
@@ -614,13 +537,13 @@ public constant Context contextParallelFunction       = PARALLEL_FUNCTION_CONTEX
 public constant Context contextZeroCross              = ZEROCROSSINGS_CONTEXT();
 public constant Context contextOptimization           = OPTIMIZATION_CONTEXT();
 
-/****** HashTable ComponentRef -> SimCode.SimVar ******/
+/****** HashTable ComponentRef -> SimCodeVar.SimVar ******/
 /* a workaround to enable "cross public import" */
 
 /* HashTable instance specific code */
 public
 type Key = DAE.ComponentRef;
-type Value = SimVar;
+type Value = SimCodeVar.SimVar;
 /* end of HashTable instance specific code */
 
 /* Generic hashtable code below!! */

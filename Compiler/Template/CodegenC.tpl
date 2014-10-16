@@ -6311,11 +6311,6 @@ case var as VARIABLE(__) then
 
 case var as FUNCTION_PTR(__) then
   let &varDecls += 'modelica_fnptr _<%name%>;<%\n%>'
-  let varInitText = (match defaultValue
-    case SOME(exp) then
-      let v = daeExp(exp, contextFunction, &varInits, &varDecls, &auxFunction)
-      '_<%name%> = <%v%>;<%\n%>')
-  let &varInits += varInitText
   ""
 else error(sourceInfo(), 'Unknown local variable type')
 end varInit;

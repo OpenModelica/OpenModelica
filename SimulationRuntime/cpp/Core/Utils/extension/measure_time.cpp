@@ -17,10 +17,10 @@ MeasureTimeData::~MeasureTimeData()
     //delete sumMeasuredValues;
 }
 
-std::string MeasureTimeData::serializeToJson() const
+std::string MeasureTimeData::serializeToJson()
 {
   std::stringstream ss("");
-  ss << "\"ncall\":" << numCalcs << "," << sumMeasuredValues->serializeToJson();
+  ss << "\"ncall\":" << numCalcs << "," << sumMeasuredValues->serializeToJson(numCalcs);
   return ss.str();
 }
 
@@ -101,7 +101,7 @@ void MeasureTime::benchOverhead()
   delete overheadMeasureEnd;
 }
 
-void MeasureTime::addResultContentBlock(const std::string model_name, const std::string blockname, const std::vector<MeasureTimeData> * in)
+void MeasureTime::addResultContentBlock(std::string model_name, std::string blockname, std::vector<MeasureTimeData> * in)
 {
   toWrite[model_name][blockname] = in;
 }
@@ -114,7 +114,7 @@ void MeasureTime::writeToJson()
   tm * date_t = localtime(&sec);
   date << date_t->tm_year + 1900 << "-" << date_t->tm_mon + 1 << "-" << date_t->tm_mday << " " << date_t->tm_hour << ":" << date_t->tm_min << ":" << date_t->tm_sec;
 
-  for( file_map::const_iterator model = toWrite.begin() ; model != toWrite.end() ; ++model ) // iterate files
+  for( file_map::iterator model = toWrite.begin() ; model != toWrite.end() ; ++model ) // iterate files
   {
     std::ofstream os;
     os.open((model->first + std::string("_prof.json")).c_str());
@@ -124,9 +124,9 @@ void MeasureTime::writeToJson()
 
     //write blocks:
     bool isFirstBlock = true;
-    for( block_map::const_iterator block = model->second.begin() ; block != model->second.end() ; ++block ) // iterate blocks
+    for( block_map::iterator block = model->second.begin() ; block != model->second.end() ; ++block ) // iterate blocks
     {
-      const std::vector<MeasureTimeData> * data = block->second;
+      std::vector<MeasureTimeData> * data = block->second;
 
       if(isFirstBlock) isFirstBlock = false;
       else
@@ -147,6 +147,8 @@ void MeasureTime::writeToJson()
 
     os << "\n}\n";
     os.close();
+
+    std::cout << "Profiling results written to " << (model->first + std::string("_prof.json")) << std::endl;
 
   } // end files
 }

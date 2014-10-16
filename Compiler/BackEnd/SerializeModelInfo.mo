@@ -68,7 +68,7 @@ algorithm
   (success,fileName) := matchcontinue code
     local
       SimCode.ModelInfo mi;
-      SimCode.SimVars vars;
+      SimCodeVar.SimVars vars;
       // SimCode.SimEqSystem eq;
       list<SimCode.SimEqSystem> eqs;
     case SimCode.SIMCODE(modelInfo=mi as SimCode.MODELINFO(vars=vars))
@@ -108,13 +108,13 @@ end serializeWork;
 
 function serializeVars
   input File.File file;
-  input SimCode.SimVars vars;
+  input SimCodeVar.SimVars vars;
   input Boolean withOperations;
 algorithm
   _ := matchcontinue vars
     local
       Integer i;
-    case SimCode.SIMVARS()
+    case SimCodeVar.SIMVARS()
       equation
         serializeVar(file,listGet(vars.stateVars,1),withOperations,first=true); // Assume we always have 1 state variable in the model
         min(serializeVar(file,v,withOperations) for v in List.restOrEmpty(vars.stateVars));
@@ -144,7 +144,7 @@ end serializeVars;
 
 function serializeVar
   input File.File file;
-  input SimCode.SimVar var;
+  input SimCodeVar.SimVar var;
   input Boolean withOperations;
   input Boolean first := false;
   output Boolean ok;
@@ -152,7 +152,7 @@ algorithm
   ok := match var
     local
       DAE.ElementSource source;
-    case SimCode.SIMVAR()
+    case SimCodeVar.SIMVAR()
       equation
         File.write(file,if first then "\"" else ",\n\"");
         File.writeEscape(file,crefStr(var.name),escape=File.Escape.JSON);
@@ -451,7 +451,7 @@ algorithm
         File.write(file, section);
         // Ax=b
         File.write(file, "\",\"tag\":\"linear\",\"defines\":[");
-        serializeUses(file,list(match v case SimCode.SIMVAR() then v.name; end match
+        serializeUses(file,list(match v case SimCodeVar.SIMVAR() then v.name; end match
                                 for v in eq.vars));
         File.write(file, "],\"equation\":{\"size\":");
         File.write(file,intString(i));

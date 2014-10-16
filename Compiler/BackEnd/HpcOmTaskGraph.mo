@@ -90,7 +90,7 @@ public uniontype TaskGraphMeta   // stores all the metadata for the TaskGraph
     array<String> nodeNames; // the name of the nodes for the graphml generation
     array<String> nodeDescs;  // a description of the nodes for the graphml generation - this is a component-description
     array<tuple<Integer,Real>> exeCosts;  // the execution cost for the nodes <numberOfOperations, requiredCycles
-    array<Communications> commCosts;  // the communication cost tuple(_,numberOfVars,requiredCycles) for an edge from array[parentNode] to tuple(childNode,_,_)
+    array<Communications> commCosts;  // the communication cost tuple(_,numberOfVars,requiredCycles) for an edge from array[parentSCC] to tuple(childSCC,_,_)
     array<Integer> nodeMark;  // used for level informations -> this is currently not a nodeMark, its a componentMark
   end TASKGRAPHMETA;
 end TaskGraphMeta; //TODO: Remove rootNodes from structure
@@ -3064,7 +3064,7 @@ algorithm
   end matchcontinue;
 end printCommCosts;
 
-protected function printCommCost "author:marcusw
+public function printCommCost "author:marcusw
 Prints the information about the the communication costs of one edge."
   input Communication iComm;
   output String oCommString;

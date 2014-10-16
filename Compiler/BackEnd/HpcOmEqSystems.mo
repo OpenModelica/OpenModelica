@@ -2140,11 +2140,12 @@ author:Waurich TUD 2014-07"
   input HpcOmTaskGraph.TaskGraph graphIn;
   input HpcOmTaskGraph.TaskGraphMeta metaIn;
   input array<list<Integer>> sccSimEqMapping;
+  input array<list<SimCodeVar.SimVar>> simVarMapping;
   input BackendDAE.BackendDAE inDAE;
   output list<HpcOmSimCode.Task> scheduledTasks;
   output list<Integer> daeNodeIdcs;
 algorithm
-  (scheduledTasks,daeNodeIdcs) := matchcontinue(graphIn,metaIn,sccSimEqMapping,inDAE)
+  (scheduledTasks,daeNodeIdcs) := matchcontinue(graphIn,metaIn,sccSimEqMapping,simVarMapping,inDAE)
     local
       BackendDAE.EqSystems eqSysts;
       BackendDAE.Shared shared;
@@ -2152,10 +2153,10 @@ algorithm
       list<Integer> daeNodes;
       array<list<Integer>> inComps;
       array<Integer> nodeMark;
-    case (_,_,_,_) equation
+    case (_,_,_,_,_) equation
       true = false;
       BackendDAE.DAE(eqs=eqSysts, shared=shared) = inDAE;
-      (_,taskLst) = pts_traverseEqSystems(eqSysts,sccSimEqMapping,1,{});
+      (_,taskLst) = pts_traverseEqSystems(eqSysts,sccSimEqMapping,simVarMapping,1,{});
       // calculate the node idcs for the dae-task-gaph
       daeNodes = List.map(taskLst,getScheduledTaskCompIdx);
       //HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = metaIn;
@@ -2181,12 +2182,13 @@ protected function pts_traverseEqSystems "
 author: Waurich TUD 2014-07"
   input BackendDAE.EqSystems eqSysIn;
   input array<list<Integer>> sccSimEqMapping;
+  input array<list<SimCodeVar.SimVar>> simVarMapping;
   input Integer compIdxIn;
   input list<HpcOmSimCode.Task> taskLstIn;
   output Integer compIdxOut;
   output list<HpcOmSimCode.Task> taskLstOut;
 algorithm
-  (compIdxOut,taskLstOut) := matchcontinue(eqSysIn,sccSimEqMapping,compIdxIn,taskLstIn)
+  (compIdxOut,taskLstOut) := matchcontinue(eqSysIn,sccSimEqMapping,simVarMapping,compIdxIn,taskLstIn)
     local
       Integer compIdx;
       BackendDAE.EquationArray eqs;
@@ -2196,14 +2198,14 @@ algorithm
       list<BackendDAE.Equation> eqLst;
       list<BackendDAE.Var> varLst;
       list<HpcOmSimCode.Task> taskLst;
-    case(BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,matching = BackendDAE.MATCHING(comps=comps))::eqSysRest,_,_,_)
+    case(BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,matching = BackendDAE.MATCHING(comps=comps))::eqSysRest,_,_,_,_)
       equation
         eqLst = BackendEquation.equationList(eqs);
         varLst = BackendVariable.varList(vars);
-        (compIdx,taskLst) = pts_traverseCompsAndParallelize(comps,eqLst,varLst,sccSimEqMapping,compIdxIn,taskLstIn);
-        (compIdx,taskLst) = pts_traverseEqSystems(eqSysRest,sccSimEqMapping,compIdx,taskLst);
+        (compIdx,taskLst) = pts_traverseCompsAndParallelize(comps,eqLst,varLst,sccSimEqMapping,simVarMapping,compIdxIn,taskLstIn);
+        (compIdx,taskLst) = pts_traverseEqSystems(eqSysRest,sccSimEqMapping,simVarMapping,compIdx,taskLst);
       then (compIdx,taskLst);
-   case({},_,_,_)
+   case({},_,_,_,_)
      then (compIdxIn,taskLstIn);
     else
       equation
@@ -2218,12 +2220,13 @@ author:Waurich TUD 2014-07"
   input list<BackendDAE.Equation> eqsIn;
   input list<BackendDAE.Var> varsIn;
   input array<list<Integer>> sccSimEqMapping;
+  input array<list<SimCodeVar.SimVar>> simVarMapping;
   input Integer compIdxIn;
   input list<HpcOmSimCode.Task> taskLstIn;
   output Integer compIdxOut;
   output list<HpcOmSimCode.Task> taskLstOut;
 algorithm
-  (compIdxOut,taskLstOut) := matchcontinue(inComps,eqsIn,varsIn,sccSimEqMapping,compIdxIn,taskLstIn)
+  (compIdxOut,taskLstOut) := matchcontinue(inComps,eqsIn,varsIn,sccSimEqMapping,simVarMapping,compIdxIn,taskLstIn)
     local
       Integer numEqs, numVars, compIdx, numResEqs;
       list<Integer> eqIdcs, varIdcs, tVars, resEqs, eqIdcsSys, simEqSysIdcs,resSimEqSysIdcs,otherSimEqSysIdcs;
@@ -2242,10 +2245,10 @@ algorithm
       list<BackendDAE.Equation> otherEqLst;
       list<BackendDAE.Var> otherVarLst;
       list<BackendDAE.StrongComponent> rest;
-  case({},_,_,_,_,_)
+  case({},_,_,_,_,_,_)
     equation
     then (compIdxIn,taskLstIn);
-  case((comp as BackendDAE.TORNSYSTEM(residualequations=resEqs,tearingvars=tVars,otherEqnVarTpl=otherEqnVarTplIdcs))::rest,_,_,_,_,_)
+  case((comp as BackendDAE.TORNSYSTEM(residualequations=resEqs,tearingvars=tVars,otherEqnVarTpl=otherEqnVarTplIdcs))::rest,_,_,_,_,_,_)
     equation
       eqIdcs = List.map(otherEqnVarTplIdcs,Util.tuple21);
       varIdcsLsts = List.map(otherEqnVarTplIdcs,Util.tuple22);
@@ -2286,24 +2289,24 @@ algorithm
       dumpEquationSystemDAG(graph,meta,"tornSys_matched_"+&intString(compIdxIn));
 
       //GRS
-      (graphMerged,metaMerged) = HpcOmSimCodeMain.applyFiltersToGraph(graph,meta,true,{});
+      (graphMerged,metaMerged) = HpcOmSimCodeMain.applyFiltersToGraph(graph,meta,true,{},1);
 
       dumpEquationSystemDAG(graphMerged,metaMerged,"tornSys_matched2_"+&intString(compIdxIn));
         //HpcOmTaskGraph.printTaskGraph(graphMerged);
         //HpcOmTaskGraph.printTaskGraphMeta(metaMerged);
 
       //Schedule
-      schedule = HpcOmScheduler.createListSchedule(graphMerged,metaMerged,2,otherSimEqMapping);
+      schedule = HpcOmScheduler.createListSchedule(graphMerged,metaMerged,2,otherSimEqMapping,simVarMapping);
       HpcOmScheduler.printSchedule(schedule);
 
       //transform into scheduled task object
       task = pts_transformScheduleToTask(schedule,resSimEqSysIdcs,compIdxIn);
       //HpcOmScheduler.printTask(task);
-      (compIdx,taskLst) = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,sccSimEqMapping,compIdxIn+1,task::taskLstIn);
+      (compIdx,taskLst) = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,sccSimEqMapping,simVarMapping,compIdxIn+1,task::taskLstIn);
     then (compIdx,taskLst);
-  case(comp::rest,_,_,_,_,_)
+  case(comp::rest,_,_,_,_,_,_)
     equation
-      (compIdx,taskLst) = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,sccSimEqMapping,compIdxIn+1,taskLstIn);
+      (compIdx,taskLst) = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,sccSimEqMapping,simVarMapping,compIdxIn+1,taskLstIn);
     then (compIdx,taskLst);
   end matchcontinue;
 end pts_traverseCompsAndParallelize;

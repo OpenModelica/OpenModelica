@@ -13,7 +13,7 @@ public:
   MeasureTimeValuesRDTSC(unsigned long long time);
   virtual ~MeasureTimeValuesRDTSC();
 
-  virtual std::string serializeToJson() const;
+  virtual std::string serializeToJson(unsigned int numCalcs);
 
   virtual void add(MeasureTimeValues *values);
   virtual void sub(MeasureTimeValues *values);

@@ -32,7 +32,7 @@
 encapsulated package HpcOmSimCode
 
   public import HashTableCrILst;
-  //public import SimCode;
+  public import SimCodeVar;
 
   public uniontype MemoryMap //stores information to organize the memory for the parallel code in an efficient way
     record MEMORYMAP_ARRAY
@@ -43,12 +43,11 @@ encapsulated package HpcOmSimCode
     end MEMORYMAP_ARRAY;
   end MemoryMap;
 
-  public uniontype CommunicationInfo //stored more detailed informations about a communication (edge)
+  public uniontype CommunicationInfo //stores more detailed information about a communication (edge)
     record COMMUNICATION_INFO
-      //leading to circular dependency
-      //list<SimCode.SimVar> floatVars; //the float, int and boolean variables that have to be transfered
-      //list<SimCode.SimVar> intVars;
-      //list<SimCode.SimVar> boolVars;
+      list<SimCodeVar.SimVar> floatVars; //the float, int and boolean variables that have to be transfered
+      list<SimCodeVar.SimVar> intVars;
+      list<SimCodeVar.SimVar> boolVars;
     end COMMUNICATION_INFO;
   end CommunicationInfo;
 
@@ -75,7 +74,7 @@ encapsulated package HpcOmSimCode
       Task sourceTask;
       Task targetTask;
       Boolean outgoing; //true if the dependency is leading to the task of another thread
-      //CommunicationInfo communicationInfo;
+      CommunicationInfo communicationInfo;
     end DEPTASK;
     record PREFETCHTASK //This task will load variables in the cache
       list<Integer> varIdc;
@@ -99,6 +98,7 @@ encapsulated package HpcOmSimCode
   public uniontype Schedule   // stores all scheduling-informations
     record LEVELSCHEDULE
       list<TaskList> tasksOfLevels; //List of tasks solved in the same level in parallel
+      Boolean useFixedAssignments; //true if the scheduling is fully static -> all tasks need to have a threadIdx
     end LEVELSCHEDULE;
     record THREADSCHEDULE
       array<list<Task>> threadTasks; //List of tasks assigned to the thread <%idx%>
