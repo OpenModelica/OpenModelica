@@ -6274,11 +6274,11 @@ algorithm
         ht = BaseHashSet.delete(cr, iht);
       then
         (true, ht);
-    /* consider also array and record crefs */ 
+    /* consider also array and record crefs */
     case (DAE.CREF(componentRef=cr), _)
       equation
         crefs = ComponentReference.expandCref(cr, true);
-        expLst = List.map(crefs, Expression.crefExp); 
+        expLst = List.map(crefs, Expression.crefExp);
         List.foldAllValue(expLst, createSingleComplexEqnCode3, true, iht);
       then (true, iht);
     case (DAE.RCONST(_), _) then (true, iht);
