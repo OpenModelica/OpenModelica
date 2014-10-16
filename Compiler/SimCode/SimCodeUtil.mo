@@ -3657,7 +3657,6 @@ algorithm
   end matchcontinue;
 end createNonlinearResidualExp;
 
-
 protected function createNonlinearResidualExp_2
 "author Vitalij
   do some numerical helpfull thinks on like
@@ -3666,7 +3665,7 @@ protected function createNonlinearResidualExp_2
   input DAE.Exp iExp2;
   output DAE.Exp resExp;
 algorithm
-
+  
   resExp := matchcontinue(iExp1, iExp2)
     local DAE.Exp e;
     case(_,_)
@@ -3688,7 +3687,7 @@ end createNonlinearResidualExp_2;
 
 protected function createNonlinearResidualExp_3
 "author Vitalij
-  helper: createNonlinearResidualExp_2
+  helper: createNonlinearResidualExp_2 
   swaps args"
   input DAE.Exp iExp1;
   input DAE.Exp iExp2;
@@ -3698,6 +3697,8 @@ algorithm
   resExp := matchcontinue(iExp1, iExp2)
       local DAE.Exp e,e1,e2,e3,e4,e5,res;
             String s1, s2;
+            DAE.Type tp;
+            Real r;
 
     // f(x) = f(y) -> x - y = 0
     case(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2}))
@@ -3716,9 +3717,32 @@ algorithm
     // sqrt(f(x)) = 0.0 -> f(x) = 0
     case(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), DAE.RCONST(0.0))
       then e1;
-    // log(f(x)) = 1.0 -> f(x) = 0
-    case(DAE.CALL(path = Absyn.IDENT("log"), expLst={e1}), DAE.RCONST(1.0))
+    // sqrt(f(x)) = c -> f(x) = c^2
+    case(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), DAE.RCONST(_))
+      equation
+       e = Expression.expPow(iExp2, DAE.RCONST(2.0));
+       res = Expression.expSub(e1,e);
+      then res;
+    // log(f(x)) = c -> f(x) = exp(c)
+    case(DAE.CALL(path = Absyn.IDENT("log"), expLst={e1}), DAE.RCONST(r))
+      equation
+       true = r <=. 10.0;
+       tp = Expression.typeof(iExp2);
+       e = Expression.makePureBuiltinCall("exp", {iExp2}, tp);
+       res = Expression.expSub(e1,e);
+      then res;
+    // log10(f(x)) = c -> f(x) = 10^(c)
+    case(DAE.CALL(path = Absyn.IDENT("log10"), expLst={e1}), DAE.RCONST(r))
+      equation
+       true = r <=. 10.0;
+       e = Expression.expPow(DAE.RCONST(10.0),iExp2);
+       res = Expression.expSub(e1,e);
+      then res;
+    /*
+    // f(x)^y = 0 -> x = 0
+    case(DAE.BINARY(e1,DAE.POW(_),e2),DAE.RCONST(0.0))
       then e1;
+    */
     // abs(f(x)) = 0.0 -> f(x) = 0
     case(DAE.CALL(path = Absyn.IDENT("abs"), expLst={e1}), DAE.RCONST(0.0))
       then e1;
