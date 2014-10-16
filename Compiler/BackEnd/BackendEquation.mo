@@ -518,7 +518,7 @@ protected function traverseBackendDAEExpsEqnListWithStop "author: Frenkel TUD 20
     input DAE.Exp inExp;
     input Type_a inTypeA;
     output DAE.Exp outExp;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outA;
   end FuncExpType;
 algorithm
@@ -552,7 +552,7 @@ protected function traverseBackendDAEExpsEqnListListWithStop "author: Frenkel TU
     input DAE.Exp inExp;
     input Type_a inTypeA;
     output DAE.Exp outExp;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outA;
   end FuncExpType;
 algorithm
@@ -676,7 +676,7 @@ public function traverseBackendDAEExpsEqnWithStop "author: Frenkel TUD 2010-11
     input DAE.Exp inExp;
     input Type_a inTypeA;
     output DAE.Exp outExp;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outA;
   end FuncExpType;
 algorithm
@@ -798,7 +798,7 @@ protected function traverseBackendDAEExpListWithStop "author Frenkel TUD
     input DAE.Exp inExp;
     input Type_a inTypeA;
     output DAE.Exp outExp;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outA;
   end FuncExpType;algorithm
   (outBoolean, outTypeA) := match (inExpl, rel, ext_arg)
@@ -889,7 +889,7 @@ public function traverseBackendDAEEqnsWithStop "author: Frenkel TUD
     input BackendDAE.Equation inEq;
     input Type_a inA;
     output BackendDAE.Equation outEq;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outA;
   end FuncExpType;
 algorithm
@@ -918,7 +918,7 @@ protected function traverseBackendDAEOptEqnWithStop "author: Frenkel TUD 2010-11
     input BackendDAE.Equation inEq;
     input Type_a inA;
     output BackendDAE.Equation outEq;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outA;
   end FuncExpType;
 algorithm

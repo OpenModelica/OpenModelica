@@ -3262,10 +3262,10 @@ protected function expHasCreftraverser "author: Frenkel TUD 2012-05
   input DAE.Exp e;
   input tuple<HashSet.HashSet,Boolean> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<HashSet.HashSet,Boolean> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue(e,inTpl)
+  (outExp,cont,outTpl) := matchcontinue(e,inTpl)
     local
       Boolean b;
       DAE.ComponentRef cr;

@@ -480,10 +480,10 @@ protected function traversingTimeEqnsFinder "author: Frenkel 2010-12"
   input DAE.Exp inExp;
   input tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables,Boolean,Boolean> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables,Boolean,Boolean> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.Exp e;
       Boolean b,b1,b2;
@@ -6120,10 +6120,10 @@ protected function traverserExpinputDerivativesUsed
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables,list<DAE.Exp>> tpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<BackendDAE.Variables,list<DAE.Exp>> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue (inExp,tpl)
+  (outExp,cont,outTpl) := matchcontinue (inExp,tpl)
     local
       BackendDAE.Variables vars;
       DAE.Type tp;

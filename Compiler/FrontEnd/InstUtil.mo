@@ -9067,10 +9067,10 @@ protected function findUnboundVariableUse "Check if the expression is used befor
   input DAE.Exp inExp;
   input tuple<list<String>,Absyn.Info> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<list<String>,Absyn.Info> outTpl;
 algorithm
-  (outExp,continue,outTpl) := match (inExp,inTpl)
+  (outExp,cont,outTpl) := match (inExp,inTpl)
     local
       DAE.Exp exp;
       list<String> unbound,unboundLocal;

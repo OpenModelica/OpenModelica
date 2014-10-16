@@ -1983,10 +1983,10 @@ protected function evaluateConstantFunctionWrapper
   input DAE.Exp inExp;
   input tuple<DAE.Exp, DAE.FunctionTree,Integer,list<DAE.Statement>> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<DAE.Exp,DAE.FunctionTree,Integer,list<DAE.Statement>> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue(inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue(inExp,inTpl)
     local
       Integer idx;
       DAE.Exp rhs, lhs;

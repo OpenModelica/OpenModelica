@@ -1357,10 +1357,10 @@ protected function traversingTimeVarsFinder "author: Frenkel 2012-12"
   input DAE.Exp inExp;
   input tuple<Boolean, BackendDAE.Variables, BackendDAE.Variables, Boolean, Boolean, list<Integer>> inTuple;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<Boolean, BackendDAE.Variables, BackendDAE.Variables, Boolean, Boolean, list<Integer>> outTuple;
 algorithm
-  (outExp,continue,outTuple) := matchcontinue (inExp,inTuple)
+  (outExp,cont,outTuple) := matchcontinue (inExp,inTuple)
     local
       Boolean b, b1, b2;
       BackendDAE.Variables vars, knvars;
@@ -1695,7 +1695,7 @@ algorithm
       SimpleContainer s;
       Option<tuple<Integer, Integer>> rmax, smax;
       Option<Integer> unremovable, const;
-      Boolean b, continue;
+      Boolean b, cont;
 
     case ({}, _, _, _, _, _, _, _, _, _, _, _, _) then (iRmax, iSmax, iUnremovable, iConst, true);
 
@@ -1703,9 +1703,9 @@ algorithm
       equation
         s = simpleeqnsarr[r];
         b = isVisited(mark, s);
-        (rmax, smax, unremovable, const, continue) = getAlias1(b, s, r, rest, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst);
+        (rmax, smax, unremovable, const, cont) = getAlias1(b, s, r, rest, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst);
       then
-        (rmax, smax, unremovable, const, continue);
+        (rmax, smax, unremovable, const, cont);
 
   end match;
 end getAlias;
@@ -1738,7 +1738,7 @@ algorithm
     local
       Option<tuple<Integer, Integer>> rmax, smax;
       Option<Integer> unremovable, const;
-      Boolean continue;
+      Boolean cont;
       String msg;
       DAE.ComponentRef cr;
 
@@ -1747,11 +1747,11 @@ algorithm
         // set visited
         _= arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
         // check alias connection
-        (rmax, smax, unremovable, const, continue) = getAlias2(s, r, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, r::stack, iRmax, iSmax, iUnremovable, iConst);
+        (rmax, smax, unremovable, const, cont) = getAlias2(s, r, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, r::stack, iRmax, iSmax, iUnremovable, iConst);
         // next arm
-        (rmax, smax, unremovable, const, continue) = getAliasContinue(continue, rows, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, rmax, smax, unremovable, const);
+        (rmax, smax, unremovable, const, cont) = getAliasContinue(cont, rows, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, rmax, smax, unremovable, const);
       then
-        (rmax, smax, unremovable, const, continue);
+        (rmax, smax, unremovable, const, cont);
 
     // valid circular equality
     case (true, _, _, _, _, _, _, _, _, _, true, _, _, _, SOME(_), _)
@@ -1878,7 +1878,7 @@ algorithm
       Option<Integer> unremovable, const;
       BackendDAE.Var v;
       Integer i1, i2, i;
-      Boolean state, replaceable_, continue, replaceble1, neg, negatedCr1, negatedCr2;
+      Boolean state, replaceable_, cont, replaceble1, neg, negatedCr1, negatedCr2;
 
     case (ALIAS(i1=i1, negatedCr1=negatedCr1, i2=i2, negatedCr2=negatedCr2), _, NONE(), _, _, _, _, _, _, _, _, _, _, _)
       equation
@@ -1892,7 +1892,7 @@ algorithm
         (rmax, smax, unremovable) = getAlias3(v, i1, state, replaceable_ and replaceble1, r, iRmax, iSmax, iUnremovable);
         // go deeper
         neg = Util.if_(neg, not negate, negate);
-        (rmax, smax, unremovable, const, continue) = getAlias(next, SOME(i1), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, iConst);
+        (rmax, smax, unremovable, const, cont) = getAlias(next, SOME(i1), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, iConst);
         // collect next rows
         next = List.removeOnTrue(r, intEq, iMT[i2]);
         v = BackendVariable.getVarAt(vars, i2);
@@ -1901,9 +1901,9 @@ algorithm
         state = BackendVariable.isStateVar(v);
         (rmax, smax, unremovable) = getAlias3(v, i2, state, replaceable_ and replaceble1, r, rmax, smax, unremovable);
         // go deeper
-        (rmax, smax, unremovable, const, continue) = getAliasContinue(continue, next, SOME(i2), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, const);
+        (rmax, smax, unremovable, const, cont) = getAliasContinue(cont, next, SOME(i2), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, const);
        then
-         (rmax, smax, unremovable, const, continue);
+         (rmax, smax, unremovable, const, cont);
 
     case (ALIAS(i1=i1, negatedCr1=negatedCr1, i2=i2, negatedCr2=negatedCr2), _, SOME(i), _, _, _, _, _, _, _, _, _, _, _)
       equation
@@ -1918,9 +1918,9 @@ algorithm
         (rmax, smax, unremovable) = getAlias3(v, i, state, replaceable_ and replaceble1, r, iRmax, iSmax, iUnremovable);
         // go deeper
         neg = Util.if_(neg, not negate, negate);
-        (rmax, smax, unremovable, const, continue) = getAlias(next, SOME(i), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, iConst);
+        (rmax, smax, unremovable, const, cont) = getAlias(next, SOME(i), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, iConst);
        then
-         (rmax, smax, unremovable, const, continue);
+         (rmax, smax, unremovable, const, cont);
 
     case (PARAMETERALIAS(visited=_), _, _, _, _, _, _, _, _, _, _, _, _, _)
        then
@@ -2016,13 +2016,13 @@ algorithm
     local
       Option<tuple<Integer, Integer>> rmax, smax;
       Option<Integer> unremovable, const;
-      Boolean continue;
+      Boolean cont;
     case (true, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         // update candidates
-        (rmax, smax, unremovable, const, continue) = getAlias(rows, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst);
+        (rmax, smax, unremovable, const, cont) = getAlias(rows, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst);
       then
-        (rmax, smax, unremovable, const, continue);
+        (rmax, smax, unremovable, const, cont);
     case (false, _, _, _, _, _, _, _, _, _, _, _, _, _)
       then
         (iRmax, iSmax, iUnremovable, iConst, iContinue);

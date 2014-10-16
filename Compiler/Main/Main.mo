@@ -80,12 +80,12 @@ protected import Util;
 protected function serverLoop
 "This function is the main loop of the server listening
   to a port which recieves modelica expressions."
-  input Boolean continue;
+  input Boolean cont;
   input Integer inInteger;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
-  outInteractiveSymbolTable := match (continue,inInteger,inInteractiveSymbolTable)
+  outInteractiveSymbolTable := match (cont,inInteger,inInteractiveSymbolTable)
     local
       Boolean b;
       String str,replystr;

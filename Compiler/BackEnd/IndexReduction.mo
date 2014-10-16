@@ -918,10 +918,10 @@ protected function replaceStateOrderExpFinder
   input DAE.Exp inExp;
   input BackendDAE.Variables inVars;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output BackendDAE.Variables outVars;
 algorithm
-  (outExp,continue,outVars) := matchcontinue (inExp,inVars)
+  (outExp,cont,outVars) := matchcontinue (inExp,inVars)
     local
       DAE.Exp e;
       BackendDAE.Variables vars;
@@ -1332,10 +1332,10 @@ protected function replaceAliasStateExp1
   input DAE.Exp inExp;
   input tuple<DAE.ComponentRef,DAE.Exp,DAE.Exp> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<DAE.ComponentRef,DAE.Exp,DAE.Exp> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.Exp e,e1,de1;
       DAE.ComponentRef cr,acr;

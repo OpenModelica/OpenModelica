@@ -1248,10 +1248,10 @@ protected function replaceLiteralArrayExp
   input DAE.Exp inExp;
   input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.Exp exp,exp2;
       tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> tpl;

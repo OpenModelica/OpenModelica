@@ -835,10 +835,10 @@ protected function traverserVaraddDummyStateIfNeeded
   input BackendDAE.Var v;
   input Boolean b;
   output BackendDAE.Var ov;
-  output Boolean continue;
+  output Boolean cont;
   output Boolean ob;
 algorithm
-  (ov,continue,ob) := match (v,b)
+  (ov,cont,ob) := match (v,b)
     case (BackendDAE.VAR(varKind=BackendDAE.STATE(index=_)),_)
       then (v,false,false);
     case (_,_) then (v,b,b);
@@ -1400,10 +1400,10 @@ protected function traversingisDiscreteExpFinder "Helper for isDiscreteExp"
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables,BackendDAE.Variables,Option<Boolean>> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<BackendDAE.Variables,BackendDAE.Variables,Option<Boolean>> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
       BackendDAE.Variables vars,knvars;
       DAE.ComponentRef cr;
@@ -1578,10 +1578,10 @@ Helper for statesAndVarsExp"
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables,list<DAE.Exp>> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<BackendDAE.Variables,list<DAE.Exp>> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.ComponentRef cr;
       list<DAE.Exp> expl,res,creexps;
@@ -3640,10 +3640,10 @@ public function traversingincidenceRowExpSolvableFinder "Helper for statesAndVar
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables,list<Integer>,Option<DAE.FunctionTree>> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<BackendDAE.Variables,list<Integer>,Option<DAE.FunctionTree>> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
       list<Integer> p,pa,ilst;
       DAE.ComponentRef cr;
@@ -3740,10 +3740,10 @@ public function traversingIncidenceRowExpFinderBaseClock "author: lochel
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables, list<Integer>> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<BackendDAE.Variables, list<Integer>> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
       list<Integer> p, pa, res;
       DAE.ComponentRef cr;
@@ -3803,10 +3803,10 @@ public function traversingIncidenceRowExpFinderSubClock "author: lochel
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables, list<Integer>> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<BackendDAE.Variables, list<Integer>> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
       list<Integer> p, pa, res;
       DAE.ComponentRef cr;
@@ -3875,10 +3875,10 @@ public function traversingincidenceRowExpFinder "
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables,list<Integer>> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<BackendDAE.Variables,list<Integer>> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue(inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue(inExp,inTpl)
   local
       list<Integer> p,pa,res;
       DAE.ComponentRef cr;
@@ -3968,10 +3968,10 @@ public function traversingincidenceRowExpFinderwithInput "Helper for statesAndVa
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables,list<Integer>> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<BackendDAE.Variables,list<Integer>> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
   local
       list<Integer> p,pa,res;
       DAE.ComponentRef cr;
@@ -5866,10 +5866,10 @@ protected function traversingadjacencyRowExpSolvableEnhancedFinder "Helper for a
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables,Boolean,tuple<Integer,array<Integer>>,list<Integer>> inTpl "(exp,(variables,unsolvable,(mark,rowmark),row))";
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<BackendDAE.Variables,Boolean,tuple<Integer,array<Integer>>,list<Integer>> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
       list<Integer> p,pa,res;
       DAE.ComponentRef cr;
@@ -6031,10 +6031,10 @@ protected function getIfExpBranchVarOccurency "Helper for getIfExpBranchVarOccur
   input DAE.Exp inExp;
   input BinaryTree.BinTree inBt;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output BinaryTree.BinTree bt;
 algorithm
-  (outExp,continue,bt) := match (inExp,inBt)
+  (outExp,cont,bt) := match (inExp,inBt)
     local
       DAE.ComponentRef cr;
       DAE.Exp e,e1,e2;
@@ -6745,10 +6745,10 @@ protected function varsNotInRelations
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables,Boolean> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<BackendDAE.Variables,Boolean> outTpl;
 algorithm
-  (outExp,continue,outTpl) := match (inExp,inTpl)
+  (outExp,cont,outTpl) := match (inExp,inTpl)
     local
       DAE.Exp cond,t,f,e,e1;
       BackendDAE.Variables vars;
@@ -6827,10 +6827,10 @@ protected function rhsConstant2 "Helper function to rhsConstant, traverses equat
   input BackendDAE.Equation inEq;
   input tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements> inTpl;
   output BackendDAE.Equation outEq;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements> outTpl;
 algorithm
-  (outEq,continue,outTpl) := matchcontinue (inEq,inTpl)
+  (outEq,cont,outTpl) := matchcontinue (inEq,inTpl)
     local
       DAE.Exp new_exp,rhs_exp,e1,e2,e;
       Boolean b,res;
@@ -6975,10 +6975,10 @@ protected function traverserjacobianNonlinearExp "author: Frenkel TUD 2012-08"
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables,Boolean> tpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<BackendDAE.Variables,Boolean> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue (inExp,tpl)
+  (outExp,cont,outTpl) := matchcontinue (inExp,tpl)
     local
       BackendDAE.Variables vars;
       DAE.Exp e;
@@ -7157,10 +7157,10 @@ protected function getEqnsysRhsExp1
   input DAE.Exp inExp;
   input tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,Option<DAE.FunctionTree>,Boolean> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,Option<DAE.FunctionTree>,Boolean> outTpl;
 algorithm
-  (outExp,continue,outTpl) := match (inExp,inTpl)
+  (outExp,cont,outTpl) := match (inExp,inTpl)
     local
       DAE.Exp cond,t,f,e, e1, e2, zero,exp;
       DAE.Type tp;
@@ -7239,10 +7239,10 @@ protected function getEqnsysRhsExp2
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables,Boolean> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<BackendDAE.Variables,Boolean> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.Exp e;
       BackendDAE.Variables vars;
@@ -7728,7 +7728,7 @@ public function traverseBackendDAEArrayNoCopyWithStop "
     input Type_c inC;
     input Type_b inB;
     output Type_c outC;
-    output Boolean continue;
+    output Boolean cont;
     output Type_b outB;
   end FuncExpTypeWithStop;
   partial function FuncArrayTypeWithStop
@@ -7741,7 +7741,7 @@ public function traverseBackendDAEArrayNoCopyWithStop "
       input Type_c inC;
       input Type_b inB;
       output Type_c outC;
-      output Boolean continue;
+      output Boolean cont;
       output Type_b outB;
     end FuncExpTypeWithStop;
   end FuncArrayTypeWithStop;
@@ -8153,7 +8153,7 @@ public function traverseBackendDAEExpsEqnsWithStop "author: Frenkel TUD
     input DAE.Exp inExp;
     input Type_a inTypeA;
     output DAE.Exp outExp;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outA;
   end FuncExpType;
 algorithm
@@ -8232,7 +8232,7 @@ protected function traverseBackendDAEExpsOptEqnWithStop "author: Frenkel TUD 201
     input DAE.Exp inExp;
     input Type_a inTypeA;
     output DAE.Exp outExp;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outA;
   end FuncExpType;
 algorithm

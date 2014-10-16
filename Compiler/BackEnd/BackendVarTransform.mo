@@ -361,10 +361,10 @@ Author: Frenkel 2012-12"
   input DAE.Exp e;
   input HashSet.HashSet ihs;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output HashSet.HashSet set;
 algorithm
-  (outExp,continue,set) := matchcontinue (e,ihs)
+  (outExp,cont,set) := matchcontinue (e,ihs)
     local
       DAE.ComponentRef cr;
     case (DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), set)

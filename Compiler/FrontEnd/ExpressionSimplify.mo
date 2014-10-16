@@ -423,10 +423,10 @@ protected function preCref
   input DAE.Exp ie;
   input Boolean ib;
   output DAE.Exp oe;
-  output Boolean continue;
+  output Boolean cont;
   output Boolean ob;
 algorithm
-  (oe,continue,ob) := match (ie,ib)
+  (oe,cont,ob) := match (ie,ib)
     local
       DAE.Exp e;
       Boolean b;
@@ -441,10 +441,10 @@ protected function changeCref
   input DAE.Exp ie;
   input Boolean ib;
   output DAE.Exp oe;
-  output Boolean continue;
+  output Boolean cont;
   output Boolean ob;
 algorithm
-  (oe,continue,ob) := match (ie,ib)
+  (oe,cont,ob) := match (ie,ib)
     local
       DAE.Exp e;
       Boolean b;
@@ -459,10 +459,10 @@ protected function edgeCref
   input DAE.Exp ie;
   input Boolean ib;
   output DAE.Exp oe;
-  output Boolean continue;
+  output Boolean cont;
   output Boolean ob;
 algorithm
-  (oe,continue,ob) := match (ie,ib)
+  (oe,cont,ob) := match (ie,ib)
     local
       DAE.Exp e;
       Boolean b;

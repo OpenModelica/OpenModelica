@@ -3422,10 +3422,10 @@ protected function markDimExpAsStructuralTraverser
   input DAE.Exp exp;
   input SymbolTable inSt;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output SymbolTable st;
 algorithm
-  (outExp,continue,st) := match (exp,inSt)
+  (outExp,cont,st) := match (exp,inSt)
     local
       DAE.Exp index_exp;
       DAE.ComponentRef cref;

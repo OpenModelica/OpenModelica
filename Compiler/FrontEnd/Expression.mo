@@ -4254,10 +4254,10 @@ protected function replaceExpWork
   input DAE.Exp inExp;
   input tuple<DAE.Exp,DAE.Exp,Integer> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<DAE.Exp,DAE.Exp,Integer> otpl;
 algorithm
-  (outExp,continue,otpl) := matchcontinue (inExp,inTpl) /* TODO: match */
+  (outExp,cont,otpl) := matchcontinue (inExp,inTpl) /* TODO: match */
     local
       tuple<DAE.Exp,DAE.Exp,Integer> tpl;
       DAE.Exp expr,source,target;
@@ -4762,7 +4762,7 @@ The extra argument is a tuple of the actul function to call on each subexpressio
     input DAE.Exp inExp;
     input Type_a inTypeA;
     output DAE.Exp outExp;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outA;
   end FuncExpType;
 protected
@@ -4782,7 +4782,7 @@ The extra argument is a tuple of the actul function to call on each subexpressio
   input DAE.Exp inExp;
   input tuple<FuncExpType,Type_a> itpl;
   output DAE.Exp e;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<FuncExpType,Type_a> otpl;
   partial function FuncExpType
     input DAE.Exp inExp;
@@ -4792,7 +4792,7 @@ The extra argument is a tuple of the actul function to call on each subexpressio
   end FuncExpType;
 algorithm
   // TODO: Implement flags to traverseExp to handle special cases like WithoutRelations or without updating the expressions?
-  (e,continue,otpl) := match (inExp,itpl)
+  (e,cont,otpl) := match (inExp,itpl)
     local
       FuncExpType f;
       Type_a ea1,ea2;
@@ -4891,7 +4891,7 @@ public function traverseExpTopDown
     input DAE.Exp exp;
     input Type_a arg;
     output DAE.Exp outExp;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outArg;
   end FuncExpType;
 protected
@@ -4904,7 +4904,7 @@ end traverseExpTopDown;
 protected function traverseExpTopDown1
 "Helper for traverseExpTopDown."
   replaceable type Type_a subtypeof Any;
-  input Boolean continue;
+  input Boolean cont;
   input DAE.Exp inExp;
   input FuncExpType func;
   input Type_a inArg;
@@ -4914,11 +4914,11 @@ protected function traverseExpTopDown1
     input DAE.Exp exp;
     input Type_a arg;
     output DAE.Exp outExp;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outArg;
   end FuncExpType;
 algorithm
-  (outExp,outArg) := match (continue,inExp,func,inArg)
+  (outExp,outArg) := match (cont,inExp,func,inArg)
     local
       DAE.Exp e1_1,e,e1,e2_1,e2,e3_1,e3;
       Type_a ext_arg_1,ext_arg_2,ext_arg,ext_arg_3;
@@ -5149,7 +5149,7 @@ protected function traverseExpMatrixTopDown
     input DAE.Exp exp;
     input Type_a arg;
     output DAE.Exp outExp;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outArg;
   end FuncExpType;
 algorithm
@@ -5183,7 +5183,7 @@ public function traverseExpListTopDown
     input DAE.Exp exp;
     input Type_a arg;
     output DAE.Exp outExp;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outArg;
   end FuncExpType;
 algorithm
@@ -5235,7 +5235,7 @@ public function traverseExpOptTopDown "Calls traverseExpTopDown for SOME(exp) an
     input DAE.Exp inExp;
     input Type_a inTypeA;
     output DAE.Exp outExp;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outA;
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
@@ -5357,10 +5357,10 @@ public function traversingComponentRefPresent "Returns a true if the exp is a co
   input DAE.Exp inExp;
   input Boolean found;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output Boolean outFound;
 algorithm
-  (outExp,continue,outFound) := match (inExp,found)
+  (outExp,cont,outFound) := match (inExp,found)
     case (_,true) then (inExp,false,true);
     case (DAE.CREF(componentRef = _), _) then (inExp, false, true);
     else (inExp,true,false);
@@ -5394,10 +5394,10 @@ Returns a list containing, unique, all componentRef in an Expression."
   input DAE.Exp inExp;
   input list<DAE.ComponentRef> inCrefs;
   output DAE.Exp e;
-  output Boolean continue;
+  output Boolean cont;
   output list<DAE.ComponentRef> crefs;
 algorithm
-  (e,continue,crefs) := match (inExp,inCrefs)
+  (e,cont,crefs) := match (inExp,inCrefs)
     local
       ComponentRef cr;
     case (DAE.CREF(componentRef=cr), crefs)
@@ -5459,10 +5459,10 @@ Returns a true if the exp the componentRef"
   input DAE.Exp inExp;
   input tuple<DAE.ComponentRef,Boolean> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<DAE.ComponentRef,Boolean> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue(inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue(inExp,inTpl)
     local
       Boolean b;
       ComponentRef cr,cr1;
@@ -5498,10 +5498,10 @@ public function traversingexpHasName "Returns a true if the exp contains a cref 
   input DAE.Exp inExp;
   input tuple<String,Boolean> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<String,Boolean> outTpl;
 algorithm
-  (outExp,continue,outTpl) := match (inExp,inTpl)
+  (outExp,cont,outTpl) := match (inExp,inTpl)
     local
       Boolean b;
       String name;
@@ -5530,10 +5530,10 @@ Returns a true if the exp contains the componentRef in der"
   input DAE.Exp inExp;
   input tuple<DAE.ComponentRef,Boolean> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<DAE.ComponentRef,Boolean> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue(inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue(inExp,inTpl)
     local
       Boolean b;
       ComponentRef cr,cr1;
@@ -5569,10 +5569,10 @@ Returns a true if the exp the componentRef"
   input DAE.Exp inExp;
   input tuple<DAE.ComponentRef,Boolean> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<DAE.ComponentRef,Boolean> outTpl;
 algorithm
-  (outExp,continue,outTpl) := match (inExp,inTpl)
+  (outExp,cont,outTpl) := match (inExp,inTpl)
     local
       Boolean b;
       DAE.ComponentRef cr,cr1;
@@ -6181,7 +6181,7 @@ public function traverseExpTopDownCrefHelper
     input DAE.Exp inExp;
     input Argument inArg;
     output DAE.Exp outExp;
-    output Boolean continue;
+    output Boolean cont;
     output Argument outArg;
   end FuncType;
 
@@ -6266,7 +6266,7 @@ protected function traverseExpTopDownSubs
     input DAE.Exp inExp;
     input Argument inArg;
     output DAE.Exp outExp;
-    output Boolean continue;
+    output Boolean cont;
     output Argument outArg;
   end FuncType;
 
@@ -6491,10 +6491,10 @@ protected function isImpureWork "author: lochel"
   input DAE.Exp inExp;
   input Boolean isImpure;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output Boolean outImpure;
 algorithm
-  (outExp,continue,outImpure) := matchcontinue (inExp,isImpure)
+  (outExp,cont,outImpure) := matchcontinue (inExp,isImpure)
     case (_, true) then (inExp,true,true);
 
     case (DAE.CALL(attr=DAE.CALL_ATTR(isImpure=true)), _)
@@ -8851,7 +8851,7 @@ protected function traverseReductionIteratorTopDown
     input DAE.Exp inExp;
     input Type_a inTypeA;
     output DAE.Exp outExp;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outA;
   end FuncExpType;
 
@@ -8883,7 +8883,7 @@ protected function traverseReductionIteratorsTopDown
     input DAE.Exp inExp;
     input Type_a inTypeA;
     output DAE.Exp outExp;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outA;
   end FuncExpType;
 

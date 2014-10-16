@@ -585,10 +585,10 @@ protected function statementOutputsCrefFinder "author: Frenkel TUD 2012-06"
   input DAE.Exp inExp;
   input tuple<DAE.Expand, HashSet.HashSet> inTpl;
   output DAE.Exp outExp;
-  output Boolean continue;
+  output Boolean cont;
   output tuple<DAE.Expand, HashSet.HashSet> outTpl;
 algorithm
-  (outExp,continue,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.Exp e, exp, e1, e2;
       HashSet.HashSet ht;

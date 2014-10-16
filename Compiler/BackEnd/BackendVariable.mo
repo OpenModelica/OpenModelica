@@ -4075,7 +4075,7 @@ public function traverseBackendDAEVarsWithStop "author: Frenkel TUD
     input BackendDAE.Var inVar;
     input Type_a inA;
     output BackendDAE.Var outVar;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outA;
   end FuncExpType;
 algorithm
@@ -4142,7 +4142,7 @@ protected function traverseBackendDAEVarWithStop "author: Frenkel TUD
     input BackendDAE.Var inVar;
     input Type_a inA;
     output BackendDAE.Var outVar;
-    output Boolean continue;
+    output Boolean cont;
     output Type_a outA;
   end FuncExpType;
 algorithm
