@@ -6092,6 +6092,7 @@ algorithm
       list<DAE.Var> varLst;
       HashSet.HashSet ht;
       list<Integer> positions;
+      String s, s1, s2, s3;
 
     case (_, DAE.CAST(exp = e1), _, _, _, _)
       equation
@@ -6242,16 +6243,13 @@ algorithm
 
 
     // failure
-    case (_, _, _, _, _, _)
+    case (_, e1, e2, _, _, _)
       equation
-      /*
-       equation
-       s1 = ExpressionDump.printExpStr(e1);
-       s2 = ExpressionDump.printExpStr(e2);
-       s3 = ComponentReference.crefStr(cr);
-       s = stringAppendList({"./Compiler/BackEnd/SimCodeUtil.mo: function createSingleComplexEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
-       Error.addMessage(Error.INTERNAL_ERROR, {s});
-       */
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        s3 = ComponentReference.printComponentRefListStr(crefs);
+        s = stringAppendList({"./Compiler/BackEnd/SimCodeUtil.mo: function createSingleComplexEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
+        Debug.fcall(Flags.FAILTRACE, print, s);
     then
       fail();
   end matchcontinue;
@@ -6267,12 +6265,22 @@ algorithm
     local
       DAE.ComponentRef cr;
       HashSet.HashSet ht;
+      list<DAE.ComponentRef> crefs;
+      list<DAE.Exp> expLst;
+
     case (DAE.CREF(componentRef=cr), _)
       equation
         _ = BaseHashSet.get(cr, iht);
         ht = BaseHashSet.delete(cr, iht);
       then
         (true, ht);
+    /* consider also array and record crefs */ 
+    case (DAE.CREF(componentRef=cr), _)
+      equation
+        crefs = ComponentReference.expandCref(cr, true);
+        expLst = List.map(crefs, Expression.crefExp); 
+        List.foldAllValue(expLst, createSingleComplexEqnCode3, true, iht);
+      then (true, iht);
     case (DAE.RCONST(_), _) then (true, iht);
     case (DAE.ICONST(_), _) then (true, iht);
     case (DAE.BCONST(_), _) then (true, iht);
