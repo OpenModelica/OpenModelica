@@ -160,7 +160,6 @@ if true then /* Suppress output */
     "../BackEnd/Tearing.mo",
     "../BackEnd/Uncertainties.mo",
     "../BackEnd/UnitCheck.mo",
-    "../BackEnd/Unit.mo",
     "../BackEnd/XMLDump.mo",
 
   // "SimCode";
@@ -251,9 +250,6 @@ if true then /* Suppress output */
     "../Util/HashTableExpToIndex.mo",
     "../Util/HashTablePathToFunction.mo",
     "../Util/HashTableStringToPath.mo",
-    "../Util/HashTableStringToUnit.mo",
-    "../Util/HashTableCrToUnit.mo",
-    "../Util/HashTableUnitToString.mo",
     "../Util/IOStreamExt.mo",
     "../Util/IOStream.mo",
     "../Util/Lapack.mo",
