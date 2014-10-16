@@ -782,7 +782,7 @@ algorithm
         DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_NON_PARALLEL()) = funAttrs;
 
         outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
-        funArgs = List.map(args, typesSimFunctionArg);
+        funArgs = List.map1(args, typesSimFunctionArg, NONE());
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         vars = List.filter(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
@@ -802,7 +802,7 @@ algorithm
         DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_KERNEL_FUNCTION()) = funAttrs;
 
         outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
-        funArgs = List.map(args, typesSimFunctionArg);
+        funArgs = List.map1(args, typesSimFunctionArg, NONE());
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         vars = List.filter(daeElts, isVarNotInputNotOutput);
         varDecls = List.map(vars, daeInOutSimVar);
@@ -822,7 +822,7 @@ algorithm
         DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_PARALLEL_FUNCTION()) = funAttrs;
 
         outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
-        funArgs = List.map(args, typesSimFunctionArg);
+        funArgs = List.map1(args, typesSimFunctionArg, NONE());
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         vars = List.filter(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
@@ -842,7 +842,7 @@ algorithm
         // outvars = DAEUtil.getOutputVars(daeElts);
         // invars = DAEUtil.getInputVars(daeElts);
         // bivars = DAEUtil.getBidirVars(daeElts);
-        funArgs = List.map(args, typesSimFunctionArg);
+        funArgs = List.map1(args, typesSimFunctionArg, NONE());
         outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
         inVars = List.map(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         biVars = List.map(DAEUtil.getBidirVars(daeElts), daeInOutSimVar);
@@ -867,7 +867,7 @@ algorithm
         // Record constructor.
     case (_, DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name))),kind=kind), rt, recordDecls, includes, includeDirs, libs)
       equation
-        funArgs = List.map(args, typesSimFunctionArg);
+        funArgs = List.map1(args, typesSimFunctionArg, NONE());
         (recordDecls, rt_1) = elaborateRecordDeclarationsForRecord(restype, recordDecls, rt);
         DAE.T_COMPLEX(varLst = varlst) = restype;
         varlst = List.filterOnTrue(varlst, Types.isProtectedVar);
@@ -889,9 +889,10 @@ end elaborateFunction;
 protected function typesSimFunctionArg
 "Generates code from a function argument."
   input DAE.FuncArg inFuncArg;
+  input Option<DAE.Exp> binding;
   output SimCode.Variable outVar;
 algorithm
-  outVar := matchcontinue (inFuncArg)
+  outVar := matchcontinue (inFuncArg, binding)
     local
       DAE.Type tty;
       String name;
@@ -904,33 +905,33 @@ algorithm
       DAE.VarKind kind;
       DAE.VarParallelism prl;
 
-    case DAE.FUNCARG(name=name, ty=DAE.T_FUNCTION(funcArg = args, funcResultType = DAE.T_TUPLE(tupleType = tys)))
+    case (DAE.FUNCARG(name=name, ty=DAE.T_FUNCTION(funcArg = args, funcResultType = DAE.T_TUPLE(tupleType = tys))), _)
       equation
-        var_args = List.map(args, typesSimFunctionArg);
+        var_args = List.map1(args, typesSimFunctionArg, NONE());
         tys = List.map(tys, Types.simplifyType);
       then
-        SimCode.FUNCTION_PTR(name, tys, var_args);
+        SimCode.FUNCTION_PTR(name, tys, var_args, binding);
 
-    case DAE.FUNCARG(name=name, ty=DAE.T_FUNCTION(funcArg = args, funcResultType = DAE.T_NORETCALL(source = _)))
+    case (DAE.FUNCARG(name=name, ty=DAE.T_FUNCTION(funcArg = args, funcResultType = DAE.T_NORETCALL(source = _))), _)
       equation
-        var_args = List.map(args, typesSimFunctionArg);
+        var_args = List.map1(args, typesSimFunctionArg, NONE());
       then
-        SimCode.FUNCTION_PTR(name, {}, var_args);
+        SimCode.FUNCTION_PTR(name, {}, var_args, binding);
 
-    case DAE.FUNCARG(name=name, ty=DAE.T_FUNCTION(funcArg = args, funcResultType = res_ty))
+    case (DAE.FUNCARG(name=name, ty=DAE.T_FUNCTION(funcArg = args, funcResultType = res_ty)), _)
       equation
         res_ty = Types.simplifyType(res_ty);
-        var_args = List.map(args, typesSimFunctionArg);
+        var_args = List.map1(args, typesSimFunctionArg, NONE());
       then
-        SimCode.FUNCTION_PTR(name, {res_ty}, var_args);
+        SimCode.FUNCTION_PTR(name, {res_ty}, var_args, binding);
 
-    case DAE.FUNCARG(name=name, ty=tty, par=prl, const=const)
+    case (DAE.FUNCARG(name=name, ty=tty, par=prl, const=const), _)
       equation
         tty = Types.simplifyType(tty);
         cref_  = ComponentReference.makeCrefIdent(name, tty, {});
         kind = DAEUtil.const2VarKind(const);
       then
-        SimCode.VARIABLE(cref_, tty, NONE(), {}, prl, kind);
+        SimCode.VARIABLE(cref_, tty, binding, {}, prl, kind);
   end matchcontinue;
 end typesSimFunctionArg;
 
@@ -949,9 +950,9 @@ algorithm
       list<DAE.Exp> inst_dims_exp;
       Option<DAE.Exp> binding;
       SimCode.Variable var;
-    case (DAE.VAR(componentRef = DAE.CREF_IDENT(ident=name), ty = daeType as DAE.T_FUNCTION(funcArg=_), parallelism = prl))
+    case (DAE.VAR(componentRef = DAE.CREF_IDENT(ident=name), ty = daeType as DAE.T_FUNCTION(funcArg=_), parallelism = prl, binding = binding))
       equation
-        var = typesSimFunctionArg(DAE.FUNCARG(name, daeType, DAE.C_VAR(), prl, NONE()));
+        var = typesSimFunctionArg(DAE.FUNCARG(name, daeType, DAE.C_VAR(), prl, NONE()), binding);
       then var;
 
     case (DAE.VAR(componentRef = id,

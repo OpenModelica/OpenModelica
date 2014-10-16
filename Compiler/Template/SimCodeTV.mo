@@ -294,6 +294,7 @@ package SimCode
       String name;
       list<DAE.Type> tys;
       list<Variable> args;
+      Option<DAE.Exp> defaultValue;
     end FUNCTION_PTR;
   end Variable;
 
