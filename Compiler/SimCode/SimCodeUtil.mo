@@ -3665,7 +3665,7 @@ protected function createNonlinearResidualExp_2
   input DAE.Exp iExp2;
   output DAE.Exp resExp;
 algorithm
-  
+
   resExp := matchcontinue(iExp1, iExp2)
     local DAE.Exp e;
     case(_,_)
@@ -3687,7 +3687,7 @@ end createNonlinearResidualExp_2;
 
 protected function createNonlinearResidualExp_3
 "author Vitalij
-  helper: createNonlinearResidualExp_2 
+  helper: createNonlinearResidualExp_2
   swaps args"
   input DAE.Exp iExp1;
   input DAE.Exp iExp2;
