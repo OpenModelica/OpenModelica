@@ -3582,6 +3582,9 @@ algorithm
   end match;
 end moveDivToMul;
 
+
+
+
 protected function createNonlinearResidualExp
 "author Frenkel TUD 2012-10
   do some numerical helpfull thinks like
@@ -3595,16 +3598,12 @@ algorithm
       DAE.Exp e,   res;
       list<DAE.Exp> explst, explst1, mexplst;
       DAE.Type ty;
-    case(_, _)
-      equation
-        true = Expression.isZero(iExp1);
-      then
-        iExp2;
-    case(_, _)
-      equation
-        true = Expression.isZero(iExp2);
-      then
-        iExp1;
+
+    case(_,_) then createNonlinearResidualExp_2(iExp1, iExp2);
+    case(_, DAE.RCONST(real = 0.0)) then iExp1;
+    case(_, DAE.ICONST(0)) then iExp1;
+    case(DAE.RCONST(real = 0.0), _) then iExp2;
+    case(DAE.ICONST(0), _) then iExp2;
     case(_, _)
       equation
         ty = Expression.typeof(iExp1);
@@ -3657,6 +3656,127 @@ algorithm
         res;
   end matchcontinue;
 end createNonlinearResidualExp;
+
+
+protected function createNonlinearResidualExp_2
+"author Vitalij
+  do some numerical helpfull thinks on like
+  sqrt(f()) - sqrt(g(.)) = 0 -> f(.) - g(.)"
+  input DAE.Exp iExp1;
+  input DAE.Exp iExp2;
+  output DAE.Exp resExp;
+algorithm
+  
+  resExp := matchcontinue(iExp1, iExp2)
+    local DAE.Exp e;
+    case(_,_)
+     equation
+      e = createNonlinearResidualExp_3(iExp1, iExp2);
+      (e,_) = ExpressionSimplify.simplify1(e);
+    then e;
+
+    case(_,_)
+     equation
+      e = createNonlinearResidualExp_3(iExp2, iExp1);
+      (e,_) = ExpressionSimplify.simplify1(e);
+     then e;
+    else fail();
+
+    end matchcontinue;
+
+end createNonlinearResidualExp_2;
+
+protected function createNonlinearResidualExp_3
+"author Vitalij
+  helper: createNonlinearResidualExp_2 
+  swaps args"
+  input DAE.Exp iExp1;
+  input DAE.Exp iExp2;
+  output DAE.Exp resExp;
+
+algorithm
+  resExp := matchcontinue(iExp1, iExp2)
+      local DAE.Exp e,e1,e2,e3,e4,e5,res;
+            String s1, s2;
+
+    // f(x) = f(y) -> x - y = 0
+    case(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2}))
+     equation
+       true = s1 ==& s2;
+       true = createNonlinearResidualExp_4(s1);
+       res = Expression.expSub(e1,e2);
+     then res;
+    // f(x) = -f(y) -> x + y = 0
+    case(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}), DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})))
+     equation
+       true = s1 ==& s2;
+       true = createNonlinearResidualExp_4(s1);
+       res = Expression.expAdd(e1,e2);
+     then res;
+    // sqrt(f(x)) = 0.0 -> f(x) = 0
+    case(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), DAE.RCONST(0.0))
+      then e1;
+    // log(f(x)) = 1.0 -> f(x) = 0
+    case(DAE.CALL(path = Absyn.IDENT("log"), expLst={e1}), DAE.RCONST(1.0))
+      then e1;
+    // abs(f(x)) = 0.0 -> f(x) = 0
+    case(DAE.CALL(path = Absyn.IDENT("abs"), expLst={e1}), DAE.RCONST(0.0))
+      then e1;
+   // semiLinear(0,e1,e2) = 0 -> e1 - e2 = 0    
+   case(DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst={DAE.RCONST(0.0), e1, e2}), DAE.RCONST(0.0))
+     equation
+       res = Expression.expSub(e1,e2);
+      then res;
+   // -f(.) = 0 -> f(.) = 0
+   case(DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e1), e2 as DAE.RCONST(0.0))
+    equation
+     res = createNonlinearResidualExp_3(e1,e2);
+    then res;
+  // f(x) + f(y) = 0 -> x + y = 0
+    case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.ADD(_),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})), DAE.RCONST(0.0))
+     equation
+       true = s1 ==& s2;
+       true = createNonlinearResidualExp_4(s1);
+       res = Expression.expAdd(e1,e2);
+     then res;
+  // f(x) - f(y) = 0 -> x - y = 0
+    case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.SUB(_),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})), DAE.RCONST(0.0))
+     equation
+       true = s1 ==& s2;
+       true = createNonlinearResidualExp_4(s1);
+       res = Expression.expSub(e1,e2);
+     then res;
+
+   else fail();
+  end matchcontinue;
+
+end createNonlinearResidualExp_3;
+
+protected function createNonlinearResidualExp_4
+"
+ author Vitalij
+ helper: createNonlinearResidualExp_3
+ return true if f(x) = f(y) can be transform in x = y
+ list is not complit!
+"
+ input String f;
+ output Boolean resB;
+
+algorithm
+ resB := match(f) 
+         //case("abs") then true;
+         case("sqrt") then true;
+         case("exp") then true;
+         case("log") then true;
+         case("log10") then true;
+         //case("atan") then true;
+         //case("atan2") then true;
+         case("der") then true;
+         else then false; 
+  end match;
+
+end createNonlinearResidualExp_4;
+
 
 protected function createNonlinearResidualEquations
   input list<BackendDAE.Equation> eqs;
