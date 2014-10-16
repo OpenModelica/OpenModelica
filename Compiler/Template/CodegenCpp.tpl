@@ -1803,7 +1803,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             measureTimeProfileBlocksArray = std::vector<MeasureTimeData>(<%numOfEqs%>);
             MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","profileBlocks",&measureTimeProfileBlocksArray);
             measureTimeFunctionsArray = std::vector<MeasureTimeData>(3); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput
-            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",&measureTimeFunctionsArray);            
+            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",&measureTimeFunctionsArray);
             measuredProfileBlockStartValues = MeasureTime::getZeroValues();
             measuredProfileBlockEndValues = MeasureTime::getZeroValues();
             measuredFunctionStartValues = MeasureTime::getZeroValues();
@@ -1815,7 +1815,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
                 ss << i;
                 measureTimeProfileBlocksArray[i] = MeasureTimeData(ss.str());
             }
-            
+
             measureTimeFunctionsArray[0] = MeasureTimeData("evaluateODE");
             measureTimeFunctionsArray[1] = MeasureTimeData("evaluateAll");
             measureTimeFunctionsArray[2] = MeasureTimeData("writeOutput");
@@ -4488,7 +4488,7 @@ match modelInfo
       <%generateMethodDeclarationCode(simCode)%>
       virtual  bool getCondition(unsigned int index);
       virtual void initPreVars(unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&);
-  
+
   protected:
       //Methods:
       <%getrealvars%>
@@ -4522,7 +4522,7 @@ match modelInfo
       >>%>
 
       <%memberfuncs%>
-      
+
       <%additionalProtectedMembers%>
    };
   >>
@@ -11565,7 +11565,7 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
     <%equation_all_func_calls%>
     /* Reinits */
     <%reinit%>
-    
+
     <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[1]")%>
     return state_var_reinitialized;
   }

@@ -981,7 +981,7 @@ public function arrayFold5
   replaceable type ArgType3 subtypeof Any;
   replaceable type ArgType4 subtypeof Any;
   replaceable type ArgType5 subtypeof Any;
-  
+
   partial function FoldFunc5
     input ElementType inElement;
     input ArgType1 _inExtraArg1;
@@ -1074,7 +1074,7 @@ public function arrayFold6
   replaceable type ArgType4 subtypeof Any;
   replaceable type ArgType5 subtypeof Any;
   replaceable type ArgType6 subtypeof Any;
-  
+
   partial function FoldFunc6
     input ElementType inElement;
     input ArgType1 _inExtraArg1;

@@ -373,7 +373,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             measureTimeProfileBlocksArray = std::vector<MeasureTimeData>(<%numOfEqs%>);
             MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","profileBlocks",&measureTimeProfileBlocksArray);
             measureTimeFunctionsArray = std::vector<MeasureTimeData>(3); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput
-            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",&measureTimeFunctionsArray);            
+            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",&measureTimeFunctionsArray);
             measuredProfileBlockStartValues = MeasureTime::getZeroValues();
             measuredProfileBlockEndValues = MeasureTime::getZeroValues();
             measuredFunctionStartValues = MeasureTime::getZeroValues();
@@ -385,7 +385,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
                 ss << i;
                 measureTimeProfileBlocksArray[i] = MeasureTimeData(ss.str());
             }
-            
+
             measureTimeFunctionsArray[0] = MeasureTimeData("evaluateODE");
             measureTimeFunctionsArray[1] = MeasureTimeData("evaluateAll");
             measureTimeFunctionsArray[2] = MeasureTimeData("writeOutput");
@@ -458,9 +458,9 @@ template getHpcomMemberVariableDefinition(Option<Schedule> hpcOmScheduleOpt)
                 ,<%initializeBarrierByName("levelBarrier","",getConfigInt(NUM_PROC),type)%>
                 >>
             else ""
-        end match 
+        end match
     else ""
-  end match   
+  end match
 end getHpcomMemberVariableDefinition;
 
 template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String modelNamePrefixStr)
@@ -473,7 +473,7 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
             case ("pthreads_spin") then
                 let threadFuncs = List.intRange(getConfigInt(NUM_PROC)) |> tt hasindex i0 fromindex 0 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
                 <<
-                
+
                 <%threadFuncs%>
                 >>
             else ""
@@ -536,10 +536,10 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
                 <<
                 <%destroylocks%>
                 >>
-			case "mpi" then
-			  <<
-			  //MF: Destruct MPI related stuff - nothing at the moment.
-			  >>
+      case "mpi" then
+        <<
+        //MF: Destruct MPI related stuff - nothing at the moment.
+        >>
             else
                 let joinThreads = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_joinThread(i0, type); separator="\n"
                 let threadReleaseLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => releaseLockByLockName(i0, "th_lock", type); separator="\n"
@@ -649,7 +649,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
              /*delete threadValues;
              ++(measureTimeArrayHpcom[0].numCalcs);*/
              >>%>
-             
+
              <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]")%>
           }
           >>
@@ -818,7 +818,7 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
     MeasureTime::getInstance()->initializeThread(getThreadNumber);
     //<%generateMeasureTimeStartCode('valuesStart')%>
     >>%>
-  
+
     while(!_simulationFinished)
     {
         _evaluateBarrier.wait();
@@ -829,7 +829,7 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
         }
         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '<%generateMeasureTimeStartCode("valuesStart")%>'%>
         <%odeEqs%>
-        
+
         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
         <<
         //MeasureTime::getTimeValuesEnd(valuesEnd);
@@ -842,7 +842,7 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
         //_measureTimeArrayLock.unlock();
         <%generateMeasureTimeEndCode("valuesStart", "valuesEnd", "measureTimeFunctionsArray[0]")%>
         >>%>
-        
+
         _evaluateBarrier.wait();
     }
     <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then

@@ -3334,7 +3334,7 @@ package HpcOmSimCode
       list<SimCodeVar.SimVar> boolVars;
     end COMMUNICATION_INFO;
   end CommunicationInfo;
-  
+
   uniontype Task
     record CALCTASK //Task which calculates something
       Integer weighting;
@@ -3412,7 +3412,7 @@ package HpcOmMemory
 end HpcOmMemory;
 
 package HpcOmScheduler
-  function convertFixedLevelScheduleToTaskLists 
+  function convertFixedLevelScheduleToTaskLists
     input HpcOmSimCode.Schedule iSchedule;
     input Integer iNumOfThreads;
     output array<list<list<HpcOmSimCode.Task>>> oThreadLevelTasks;

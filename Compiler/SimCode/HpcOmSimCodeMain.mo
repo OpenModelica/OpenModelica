@@ -172,7 +172,7 @@ algorithm
       list<tuple<HpcOmSimCode.Task, list<Integer>>> eventSystemTasks;
       list<SimCode.SimEqSystem> equationsForConditions;
       array<Option<SimCode.SimEqSystem>> simEqIdxSimEqMapping;
-      
+
       array<list<SimCodeVar.SimVar>> simVarMapping; //maps each backend variable to a list of simVars
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _, _, _, _, _, _, _, _) equation
 
@@ -307,7 +307,7 @@ algorithm
       SimCodeUtil.execStat("hpcom dump simplified TaskGraph");
 
       Debug.fcall(Flags.HPCOM_DUMP,print,"Filter successful applied\n");
-      
+
       //Create schedule
       //---------------
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
@@ -329,7 +329,7 @@ algorithm
       //HpcOmScheduler.printSchedule(schedule);
 
       SimCodeUtil.execStat("hpcom dump schedule TaskGraph");
-      
+
       Debug.fcall(Flags.HPCOM_DUMP,print,"Schedule created\n");
 
       //Check ODE-System size
@@ -455,7 +455,7 @@ algorithm
         //doNotMerge = List.map3(doNotMergeIn,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
         //(taskGraph1,taskGraphMeta1,changed1) = HpcOmTaskGraph.mergeSimpleNodes(taskGraph1, taskGraphMeta1, doNotMerge);
         changed1 = false;
-        
+
         //HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = taskGraphMeta1;
         //doNotMerge = List.map3(doNotMergeIn,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
         //(taskGraph1,taskGraphMeta1,changed2) = HpcOmTaskGraph.mergeParentNodes(taskGraph1, taskGraphMeta1, doNotMerge);

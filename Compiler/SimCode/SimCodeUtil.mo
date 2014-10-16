@@ -12969,7 +12969,7 @@ algorithm
         simVars = List.map1(crefs,get,ht);
         simVarIdcs = List.map2(simVars,getSimVarIndex,varInfo,allVars);
         varMapping = makeVarMapTuple(simVarIdcs,bVarIdcs,{});
-        _ = List.fold1(simVars, fillSimVarMapping, simVarMapping, 1); 
+        _ = List.fold1(simVars, fillSimVarMapping, simVarMapping, 1);
         //print(stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
         //List.map_0(simVars,dumpVar);
       then

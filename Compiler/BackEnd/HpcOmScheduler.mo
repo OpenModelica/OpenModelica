@@ -624,7 +624,7 @@ algorithm
 end createDepTask;
 
 protected function createDepTaskAndCommunicationInfo "author: marcusw
-  Create a dependeny task that indicates that variables of another task are required. 
+  Create a dependeny task that indicates that variables of another task are required.
   The communication info is created out of the given communication array and the simvar-mapping."
   input HpcOmSimCode.Task iSourceTask;
   input HpcOmSimCode.Task iTargetTask;
@@ -665,7 +665,7 @@ algorithm
         commInfo = convertCommunicationToCommInfo(commBetweenTasks, iSimVarMapping);
         tmpTask = createDepTask(iSourceTask, iTargetTask, false, commInfo);
       then tmpTask;
-    else 
+    else
       equation
         print("CreateDepTaskAndCommunicationInfo failed!\n");
       then fail();
@@ -5757,8 +5757,8 @@ algorithm
   end match;
 end isEmptyTask;
 
-public function convertFixedLevelScheduleToTaskLists 
-  "Convert the given LevelSchedule to an list of task for each level and each thread. 
+public function convertFixedLevelScheduleToTaskLists
+  "Convert the given LevelSchedule to an list of task for each level and each thread.
   author:marcusw"
   input HpcOmSimCode.Schedule iSchedule;
   input Integer iNumOfThreads;
@@ -5784,7 +5784,7 @@ algorithm
 end convertFixedLevelScheduleToTaskLists;
 
 protected function convertFixedLevelScheduleToTaskLists1
-  "Add the task list of the given array-index to the result list. 
+  "Add the task list of the given array-index to the result list.
   author:marcusw"
   input array<list<HpcOmSimCode.Task>> iLevelTasks;
   input Integer iCurrentArrayIdx;
@@ -5806,7 +5806,7 @@ algorithm
       then tmpResultList;
     else
       then iResultList;
-  end matchcontinue; 
+  end matchcontinue;
 end convertFixedLevelScheduleToTaskLists1;
 
 protected function revertTaskLists
@@ -5828,7 +5828,7 @@ algorithm
       then tmpResultList;
     else
       then iResultList;
-  end matchcontinue;  
+  end matchcontinue;
 end revertTaskLists;
 
 protected function revertTaskList
@@ -5850,11 +5850,11 @@ algorithm
       then tmpResultList;
     else
       then iResultList;
-  end matchcontinue;  
+  end matchcontinue;
 end revertTaskList;
 
 protected function convertFixedLevelScheduleToTaskListsForLevel
-  "Convert a level task list into a task list for each thread. 
+  "Convert a level task list into a task list for each thread.
   author:marcusw"
   input HpcOmSimCode.TaskList iTasksOfLevel;
   input Integer iThreadCount;
