@@ -66,6 +66,7 @@
 #include "MainWindow.h"
 #include "Helper.h"
 #include "../../Compiler/runtime/config.h"
+#include "CrashReportDialog.h"
 
 #ifdef QT_NO_DEBUG
 #ifndef WIN32
