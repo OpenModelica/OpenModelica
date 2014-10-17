@@ -114,14 +114,14 @@ algorithm
         replaceablePrefix = SCode.REPLACEABLE(cc = _)))), _)
       then ();
 
-    case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name, prefixes = SCode.PREFIXES(
-        replaceablePrefix = SCode.NOT_REPLACEABLE()), info = info)), _)
-      equation
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-        Error.addSourceMessage(Error.NON_REPLACEABLE_CLASS_EXTENDS,
-          {name}, info);
-      then
-        fail();
+    //case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name, prefixes = SCode.PREFIXES(
+    //    replaceablePrefix = SCode.NOT_REPLACEABLE()), info = info)), _)
+    //  equation
+    //    Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
+    //    Error.addSourceMessage(Error.NON_REPLACEABLE_CLASS_EXTENDS,
+    //      {name}, info);
+    //  then
+    //    fail();
   end match;
 end checkClassExtendsReplaceability;
 

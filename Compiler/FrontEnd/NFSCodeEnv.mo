@@ -729,7 +729,6 @@ protected
   Absyn.Info info;
 algorithm
   SCode.COMPONENT(name = var_name, typeSpec = ty, info = info) := inVar;
-  true := NFSCodeCheck.checkIdentNotEqTypeName(var_name, ty, info);
   is_used := Util.makeStatefulBoolean(false);
   outEnv := extendEnvWithItem(VAR(inVar, SOME(is_used)), inEnv, var_name);
 end extendEnvWithVar;
@@ -808,7 +807,6 @@ algorithm
         IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest)
       equation
         imp = translateQualifiedImportToNamed(imp);
-        checkUniqueQualifiedImport(imp, qual_imps, info);
         qual_imps = imp :: qual_imps;
       then
         FRAME(name, ty, tree, exts,
@@ -2017,13 +2015,7 @@ algorithm
       Absyn.Info info;
 
     // Don't allow replacing of nodes.
-    case (_, 0, _, _)
-      equation
-        info = getItemInfo(inValue);
-        Error.addSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,
-          {inKey}, info);
-      then
-        fail();
+    case (_, 0, _, _) then inAvlTree;
 
     // Insert into right subtree.
     case (AVLTREENODE(value = oval, height = h, left = left, right = right),

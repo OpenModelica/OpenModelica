@@ -233,6 +233,7 @@ algorithm
       Absyn.TPATH(path = type_path), modifications = mods, info = info)), _, _)
       equation
         (item, type_env) = lookupClass(type_path, inEnv, true, info, inErrorType);
+        true = NFSCodeEnv.isClassItem(item);
         redeclares = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
         (item, type_env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redeclares, item, type_env, inEnv, NFInstPrefix.emptyPrefix);

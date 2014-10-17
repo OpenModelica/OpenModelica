@@ -1216,7 +1216,7 @@ protected function updateClassExtends2
   output SCode.Element outClass;
   output Env outEnv;
 algorithm
-  (outClass, outEnv) := match(inClass, inName, inMods, inInfo, inEnv)
+  (outClass, outEnv) := matchcontinue(inClass, inName, inMods, inInfo, inEnv)
     local
       SCode.Element ext;
       Frame cls_frame;
@@ -1235,7 +1235,8 @@ algorithm
       then
         (cls, cls_frame :: env);
 
-  end match;
+    else (inClass, inEnv);
+  end matchcontinue;
 end updateClassExtends2;
 
 protected function lookupClassExtendsBaseClass
