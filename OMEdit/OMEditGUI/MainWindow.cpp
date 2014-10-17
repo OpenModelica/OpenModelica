@@ -214,7 +214,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   mpStatusBar->addPermanentWidget(mpPerspectiveTabbar);
   // set status bar for MainWindow
   setStatusBar(mpStatusBar);
-  QMetaObject::connectSlotsByName(this);
   // set the matching algorithm.
   mpOMCProxy->setMatchingAlgorithm(mpOptionsDialog->getSimulationPage()->getMatchingAlgorithmComboBox()->currentText());
   // set the index reduction methods.
