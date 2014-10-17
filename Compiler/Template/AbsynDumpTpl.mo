@@ -4195,6 +4195,12 @@ algorithm
       then txt;
 
     case ( txt,
+           Absyn.ALG_CONTINUE() )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("continue"));
+      then txt;
+
+    case ( txt,
            _ )
       then txt;
   end match;

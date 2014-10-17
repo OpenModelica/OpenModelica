@@ -8934,6 +8934,7 @@ algorithm
       then ((false,false,unbound));
     case (DAE.STMT_BREAK(source=_),_,(_,_,unbound)) then ((true,false,unbound));
     case (DAE.STMT_RETURN(source=_),_,(_,_,unbound)) then ((true,true,unbound));
+    case (DAE.STMT_CONTINUE(source=_),_,(_,_,unbound)) then ((false,false,unbound));
     case (DAE.STMT_ARRAY_INIT(name=_),_,_) then inUnbound;
     case (DAE.STMT_FAILURE(body=stmts),_,(_,_,unbound))
       equation

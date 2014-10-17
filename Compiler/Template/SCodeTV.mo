@@ -626,6 +626,11 @@ package SCode
       Absyn.Info info;
     end ALG_TRY;
 
+    record ALG_CONTINUE
+      Comment comment;
+      Absyn.Info info;
+    end ALG_CONTINUE;
+
   end Statement;
 
   uniontype Visibility

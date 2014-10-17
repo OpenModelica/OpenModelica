@@ -4720,6 +4720,10 @@ algorithm
       then
         traverseStmts(xs, func, extraArg);
 
+    case (((DAE.STMT_CONTINUE(source = _))::xs),_,extraArg)
+      then
+        traverseStmts(xs, func, extraArg);
+
     // MetaModelica extension. KS
     case (((DAE.STMT_FAILURE(body=stmts))::xs),_,extraArg)
       equation

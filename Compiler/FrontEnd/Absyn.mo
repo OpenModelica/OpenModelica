@@ -576,6 +576,9 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
     list<AlgorithmItem> elseBody;
   end ALG_TRY;
 
+  record ALG_CONTINUE
+  end ALG_CONTINUE;
+
 end Algorithm;
 
 public
@@ -2393,6 +2396,9 @@ algorithm
       then (inAlg, arg);
 
     case (ALG_BREAK(), _, _, arg)
+      then (inAlg, arg);
+
+    case (ALG_CONTINUE(), _, _, arg)
       then (inAlg, arg);
 
     case (ALG_FAILURE(algs1), _, _, arg)

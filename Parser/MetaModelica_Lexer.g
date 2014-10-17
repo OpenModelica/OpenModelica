@@ -47,6 +47,7 @@ import BaseModelica_Lexer;
 /* MetaModelica extensions */
 AS : 'as';
 CASE : 'case';
+CONTINUE : 'continue';
 EQUALITY : 'equality';
 FAILURE : 'failure';
 GUARD : 'guard';

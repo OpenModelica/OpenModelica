@@ -6950,6 +6950,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls, Text 
   case s as STMT_TERMINATE(__)      then algStmtTerminate(s, context, &varDecls, &auxFunction)
   case s as STMT_WHEN(__)           then algStmtWhen(s, context, &varDecls, &auxFunction)
   case s as STMT_BREAK(__)          then 'break;<%\n%>'
+  case s as STMT_CONTINUE(__)       then 'continue;<%\n%>'
   case s as STMT_FAILURE(__)        then algStmtFailure(s, context, &varDecls, &auxFunction)
   case s as STMT_RETURN(__)         then 'goto _return;<%\n%>'
   case s as STMT_NORETCALL(__)      then algStmtNoretcall(s, context, &varDecls, &auxFunction)

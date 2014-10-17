@@ -880,6 +880,7 @@ algorithm
     case DAE.STMT_NORETCALL(source=source) then source;
     case DAE.STMT_RETURN(source=source) then source;
     case DAE.STMT_BREAK(source=source) then source;
+    case DAE.STMT_CONTINUE(source=source) then source;
     case DAE.STMT_FAILURE(source=source) then source;
     else
       equation

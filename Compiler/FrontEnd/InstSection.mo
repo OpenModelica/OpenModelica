@@ -2627,6 +2627,13 @@ algorithm
       then
         (cache,{stmt});
 
+    case (cache,_,_,_,_,SCode.ALG_CONTINUE( info = info),source,_,_,_,_)
+      equation
+        source = DAEUtil.addElementSourceFileInfo(source, info);
+        stmt = DAE.STMT_CONTINUE(source);
+      then
+        (cache,{stmt});
+
     // return
     case (cache,_,_,_,ClassInf.FUNCTION(path=_),SCode.ALG_RETURN( info = info),source,_,_,_,_)
       equation

@@ -4318,6 +4318,9 @@ algorithm
     case (x as DAE.STMT_BREAK(source=_),_,_,extraArg)
       then (x::{},extraArg);
 
+    case (x as DAE.STMT_CONTINUE(source=_),_,_,extraArg)
+      then (x::{},extraArg);
+
     // MetaModelica extension. KS
     case (DAE.STMT_FAILURE(body=stmts, source = source),_,_,extraArg)
       equation
@@ -4520,6 +4523,11 @@ algorithm
       then (x::xs_1,extraArg);
 
     case (((x as DAE.STMT_BREAK(source=_))::xs),_,extraArg)
+      equation
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (x::xs_1,extraArg);
+
+    case (((x as DAE.STMT_CONTINUE(source=_))::xs),_,extraArg)
       equation
         (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
       then (x::xs_1,extraArg);

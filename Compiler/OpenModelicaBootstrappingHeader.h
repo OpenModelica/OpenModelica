@@ -2168,6 +2168,22 @@ extern struct record_description Absyn_Algorithm_ALG__TRY__desc;
 #define Absyn__ALG_5fTRY_3dBOX2 13
 #define Absyn__ALG_5fTRY(body,elseBody) (mmc_mk_box3(13,&Absyn_Algorithm_ALG__TRY__desc,body,elseBody))
 #ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_Algorithm_ALG__CONTINUE__desc_added
+#define Absyn_Algorithm_ALG__CONTINUE__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_Algorithm_ALG__CONTINUE__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_Algorithm_ALG__CONTINUE__desc = {
+  "Absyn_Algorithm_ALG__CONTINUE",
+  "Absyn.Algorithm.ALG_CONTINUE",
+  Absyn_Algorithm_ALG__CONTINUE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Algorithm_ALG__CONTINUE__desc;
+#endif
+#define Absyn__ALG_5fCONTINUE_3dBOX0 14
+static const MMC_DEFSTRUCTLIT(Absyn__ALG_5fCONTINUE__struct,1,14) {&Absyn_Algorithm_ALG__CONTINUE__desc}};
+static void *Absyn__ALG_5fCONTINUE = MMC_REFSTRUCTLIT(Absyn__ALG_5fCONTINUE__struct);
+#ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Modification_CLASSMOD__desc_added
 #define Absyn_Modification_CLASSMOD__desc_added
 ADD_METARECORD_DEFINITIONS const char* Absyn_Modification_CLASSMOD__desc__fields[2] = {"elementArgLst","eqMod"};

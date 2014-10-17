@@ -696,6 +696,10 @@ uniontype Statement "There are four kinds of statements:
     ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_BREAK;
 
+  record STMT_CONTINUE
+    ElementSource source "the origin of the component/equation/algorithm" ;
+  end STMT_CONTINUE;
+
   record STMT_ARRAY_INIT "For function initialization"
     String name;
     Type ty;

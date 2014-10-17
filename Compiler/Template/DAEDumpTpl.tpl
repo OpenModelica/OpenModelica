@@ -806,6 +806,7 @@ match stmt
   case STMT_NORETCALL(__) then dumpNoRetCall(exp, source)
   case STMT_RETURN(__) then 'return;'
   case STMT_BREAK(__) then 'break;'
+  case STMT_CONTINUE(__) then 'continue;'
   case STMT_FAILURE(__) then 'fail();'
   else errorMsg("DAEDump.dumpStatement: Unknown statement.")
 

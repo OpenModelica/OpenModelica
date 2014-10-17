@@ -909,6 +909,9 @@ algorithm
         stmts2 = translateClassdefAlgorithmitems(elseBody);
       then SCode.ALG_TRY(stmts1,stmts2,comment,info);
 
+    case (Absyn.ALG_CONTINUE(),_,_)
+    then SCode.ALG_CONTINUE(comment,info);
+
     /*
     case (_,comment,info)
       equation

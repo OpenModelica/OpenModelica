@@ -384,6 +384,8 @@ package Absyn
       list<AlgorithmItem> body;
       list<AlgorithmItem> elseBody;
     end ALG_TRY;
+
+    record ALG_CONTINUE end ALG_CONTINUE;
   end Algorithm;
 
   uniontype Modification

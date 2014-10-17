@@ -817,6 +817,7 @@ constraint returns [void* ast]
   | a=when_clause_a
   | BREAK { a = Absyn__ALG_5fBREAK; }
   | RETURN { a = Absyn__ALG_5fRETURN; }
+  | CONTINUE { a = Absyn__ALG_5fCONTINUE; }
   | FAILURE LPAR al=algorithm RPAR { a = Absyn__ALG_5fFAILURE(mk_cons(al.ast,mk_nil())); }
   | EQUALITY LPAR e1=expression[metamodelica_enabled()] ASSIGN e2=expression[metamodelica_enabled()] RPAR
     {
@@ -841,6 +842,7 @@ algorithm returns [void* ast]
   | a=when_clause_a
   | BREAK { a = Absyn__ALG_5fBREAK; }
   | RETURN { a = Absyn__ALG_5fRETURN; }
+  | CONTINUE { a = Absyn__ALG_5fCONTINUE; }
   | FAILURE LPAR al=algorithm RPAR { a = Absyn__ALG_5fFAILURE(mk_cons(al.ast,mk_nil())); }
   | EQUALITY LPAR e1=expression[metamodelica_enabled()] ASSIGN e2=expression[metamodelica_enabled()] RPAR
     {

@@ -1599,6 +1599,9 @@ package DAE
     record STMT_BREAK
       ElementSource source;
     end STMT_BREAK;
+    record STMT_CONTINUE
+      ElementSource source;
+    end STMT_CONTINUE;
     record STMT_FAILURE
       list<Statement> body;
       ElementSource source;

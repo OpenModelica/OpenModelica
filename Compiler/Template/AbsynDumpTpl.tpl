@@ -664,6 +664,7 @@ match alg
       <%arg2%>
     end try;
     >>
+  case ALG_CONTINUE(__) then "continue"
 end dumpAlgorithm;
 
 template dumpAlgorithmBranch(Absyn.Exp cond, list<Absyn.AlgorithmItem> body,

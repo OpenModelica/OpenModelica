@@ -500,17 +500,18 @@ package DAE
 
     record STMT_RETURN
       ElementSource source;
-      ElementSource source;
     end STMT_RETURN;
 
-    record STMT_BREAK
+    record STMT_CONTINUE
       ElementSource source;
+    end STMT_CONTINUE;
+
+    record STMT_BREAK
       ElementSource source;
     end STMT_BREAK;
 
     record STMT_FAILURE
       list<Statement> body;
-      ElementSource source;
       ElementSource source;
     end STMT_FAILURE;
   end Statement;

@@ -437,6 +437,9 @@ match statement
     let cmt_str = dumpComment(comment, options)
     'failure(<%dumpStatement(stmt,options)%>)<%cmt_str%>;'
   case SCode.ALG_TRY(__) then dumpTryStatement(statement, options)
+  case ALG_CONTINUE(__) then
+    let cmt_str = dumpComment(comment, options)
+    'continue<%cmt_str%>;'
   else errorMsg("SCodeDump.dumpStatement: Unknown statement.")
 end dumpStatement;
 

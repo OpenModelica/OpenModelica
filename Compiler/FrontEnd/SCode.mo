@@ -421,6 +421,11 @@ public uniontype Statement "The Statement type describes one algorithm statement
     Absyn.Info info;
   end ALG_TRY;
 
+  record ALG_CONTINUE
+    Comment comment;
+    Absyn.Info info;
+  end ALG_CONTINUE;
+
 end Statement;
 
 // common prefixes to elements
@@ -2083,6 +2088,9 @@ algorithm
     case ALG_BREAK(_,info)
     then Absyn.ALGORITHMITEM(Absyn.ALG_BREAK(),NONE(),info);
 
+    case ALG_CONTINUE(_,info)
+    then Absyn.ALGORITHMITEM(Absyn.ALG_CONTINUE(),NONE(),info);
+
     case ALG_FAILURE(body,_,info)
       equation
         algs1 = List.map(body,statementToAlgorithmItem);
@@ -3105,6 +3113,7 @@ algorithm
     case ALG_BREAK(info = info) then info;
     case ALG_FAILURE(info = info) then info;
     case ALG_TRY(info = info) then info;
+    case ALG_CONTINUE(info = info) then info;
     else
       equation
         Error.addInternalError("SCode.getStatementInfo failed");
