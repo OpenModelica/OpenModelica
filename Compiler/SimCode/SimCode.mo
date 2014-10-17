@@ -341,6 +341,7 @@ uniontype Variable
     String name;
     list<DAE.Type> tys;
     list<Variable> args;
+    Option<DAE.Exp> defaultValue "default value";
   end FUNCTION_PTR;
 end Variable;
 
