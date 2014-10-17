@@ -201,7 +201,7 @@ void CrashReportDialog::sendReport()
     pHttpMultiPart->append(OMStackTraceFileCheckBoxHttpPart);
   }
   // create the request
-  QUrl url("https://dev.openmodelica.org/~adeas/cgi-bin/server.py");
+  QUrl url("https://dev.openmodelica.org/omeditcrashreports/cgi-bin/server.py");
   QNetworkRequest networkRequest(url);
   QNetworkAccessManager *pNetworkAccessManager = new QNetworkAccessManager;
   QNetworkReply *pNetworkReply = pNetworkAccessManager->post(networkRequest, pHttpMultiPart);
