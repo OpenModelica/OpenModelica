@@ -271,6 +271,7 @@ QString Helper::stepOver;
 QString Helper::stepInto;
 QString Helper::stepReturn;
 QString Helper::attachToRunningProcess;
+QString Helper::crashReport;
 
 void Helper::initHelperVariables()
 {
@@ -429,6 +430,7 @@ void Helper::initHelperVariables()
   Helper::stepInto = tr("Step Into");
   Helper::stepReturn = tr("Step Return");
   Helper::attachToRunningProcess = tr("Attach to Running Process");
+  Helper::crashReport = tr("Crash Report");
 }
 
 QString GUIMessages::getMessage(int type)

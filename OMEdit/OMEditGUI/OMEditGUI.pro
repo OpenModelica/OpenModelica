@@ -107,7 +107,8 @@ SOURCES += main.cpp\
     Debugger/Breakpoints/BreakpointDialog.cpp \
     Debugger/DebuggerMainWindow.cpp \
     Debugger/Attach/AttachToProcessDialog.cpp \
-    Debugger/Attach/ProcessListModel.cpp
+    Debugger/Attach/ProcessListModel.cpp \
+    CrashReport/CrashReportDialog.cpp
 
 HEADERS  += Util/backtrace.h \
     Util/Helper.h \
@@ -160,7 +161,8 @@ HEADERS  += Util/backtrace.h \
     Debugger/Breakpoints/BreakpointDialog.h \
     Debugger/DebuggerMainWindow.h \
     Debugger/Attach/AttachToProcessDialog.h \
-    Debugger/Attach/ProcessListModel.h
+    Debugger/Attach/ProcessListModel.h \
+    CrashReport/CrashReportDialog.h
 
 # Windows libraries and includes
 win32 {
@@ -210,6 +212,7 @@ INCLUDEPATH += ../../3rdParty/qjson-0.8.1/build/include
 INCLUDEPATH += . \
                 Annotations \
                 Component \
+                CrashReport \
                 Debugger \
                 Debugger/Attach \
                 Debugger/Breakpoints \

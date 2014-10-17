@@ -41,6 +41,7 @@
 #include "MainWindow.h"
 #include "VariablesWidget.h"
 #include "Helper.h"
+#include "CrashReportDialog.h"
 
 MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   : QMainWindow(parent), mExitApplicationStatus(false), mDebugApplication(false)
@@ -1660,6 +1661,12 @@ void MainWindow::openAboutOMEdit()
   mpAboutOMEditDialog->show();
 }
 
+void MainWindow::crashReport()
+{
+  CrashReportDialog *pCrashReportDialog = new CrashReportDialog;
+  pCrashReportDialog->exec();
+}
+
 void MainWindow::toggleShapesButton()
 {
   QAction *clickedAction = qobject_cast<QAction*>(const_cast<QObject*>(sender()));
@@ -2050,6 +2057,10 @@ void MainWindow::createActions()
   mpAboutOMEditAction = new QAction(tr("About OMEdit"), this);
   mpAboutOMEditAction->setStatusTip(tr("Information about OMEdit"));
   connect(mpAboutOMEditAction, SIGNAL(triggered()), SLOT(openAboutOMEdit()));
+
+  mpCrashReportAction = new QAction(tr("Crash Report"), this);
+  connect(mpCrashReportAction, SIGNAL(triggered()), SLOT(crashReport()));
+
   /* Toolbar Actions */
   // custom shapes group
   mpShapesActionGroup = new QActionGroup(this);
@@ -2271,6 +2282,7 @@ void MainWindow::createMenus()
   //  pHelpMenu->addAction(mpModelicaWebReferenceAction);
   //  pHelpMenu->addSeparator();
   pHelpMenu->addAction(mpAboutOMEditAction);
+  pHelpMenu->addAction(mpCrashReportAction);
   // add Help menu to menu bar
   menuBar()->addAction(pHelpMenu->menuAction());
 }

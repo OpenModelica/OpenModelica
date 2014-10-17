@@ -149,8 +149,6 @@ QString NotificationsDialog::getNotificationTitleString()
     case NotificationsDialog::SaveModelForBitmapInsertion:
     case NotificationsDialog::ReleaseInformation:
       return Helper::information;
-    case NotificationsDialog::CrashReport:
-      return Helper::error;
     default:
       // should never be reached
       return "No String is defined for your notification type in NotificationsDialog::getNotificationTitleString()";
@@ -180,18 +178,6 @@ QString NotificationsDialog::getNotificationLabelString()
                 "This version includes a lot of improvements and bug fixes. Check release notes for more details.<br /><br />"
                 "It is highly recommended to delete the old OMEdit settings file. Click \"OK\" to delete.<br />"
                 "Contact us [OpenModelica@ida.liu.se] or Adeel Asghar [adeel.asghar@liu.se] with any comments, suggestions or problems.");
-    case NotificationsDialog::CrashReport:
-      tmpPath = OpenModelica::tempDirectory();
-      OMCCommunicationLogFilePath = QString("%1omeditcommunication.log").arg(tmpPath);
-      OMCCommandsLogFilePath = QString("%1omeditcommands.mos").arg(tmpPath);
-      OMCOutputFile = QString("%1openmodelica.omc.output.%2").arg(tmpPath).arg(Helper::OMCServerName);
-      stackTraceFile = QString("%1openmodelica.stacktrace.%2").arg(tmpPath).arg(Helper::OMCServerName);
-      return QString(tr("Opps! Something went wrong. Click \"OK\" to send the crash report.<br /><br />")
-                     .append(tr("Please attach the following files alongwith your bug description in your crash report,")).append("<br /><br />")
-                     .append("1. " + OMCCommunicationLogFilePath + "<br />")
-                     .append("2. " + OMCCommandsLogFilePath + "<br />")
-                     .append("3. " + OMCOutputFile + "<br />")
-                     .append("4. " + stackTraceFile));
     default:
       // should never be reached
       return "No String is defined for your notification type in NotificationsDialog::getNotificationLabelString()";
@@ -223,7 +209,6 @@ QString NotificationsDialog::getNotificationCheckBoxString()
     case NotificationsDialog::SaveModelForBitmapInsertion:
       return Helper::dontShowThisMessageAgain;
     case NotificationsDialog::ReleaseInformation:
-    case NotificationsDialog::CrashReport:
     default:
       // should never be reached
       return "No String is defined for your notification type in NotificationsDialog::getNotificationCheckBoxString()";
@@ -294,26 +279,6 @@ void NotificationsDialog::saveReleaseInformationNotificationSettings()
 }
 
 /*!
-  Sends the crash report.
-  */
-void NotificationsDialog::sendCrashReport()
-{
-  QString OMCCommunicationLogFilePath, OMCCommandsLogFilePath, OMCOutputFile, stackTraceFile, tmpPath;
-  tmpPath = OpenModelica::tempDirectory();
-  OMCCommunicationLogFilePath = QString("%1omeditcommunication.log").arg(tmpPath);
-  OMCCommandsLogFilePath = QString("%1omeditcommands.mos").arg(tmpPath);
-  OMCOutputFile = QString("%1openmodelica.omc.output.%2").arg(tmpPath).arg(Helper::OMCServerName);
-  stackTraceFile = QString("%1openmodelica.stacktrace.%2").arg(tmpPath).arg(Helper::OMCServerName);
-  QString body = QString("Please attach the following files alongwith your bug description in your crash report,\n\n")
-      .append("1. " + OMCCommunicationLogFilePath + "\n")
-      .append("2. " + OMCCommandsLogFilePath + "\n")
-      .append("3. " + OMCOutputFile + "\n")
-      .append("4. " + stackTraceFile);
-  QUrl mailToUrl ("mailto:openmodelicacrashreports@ida.liu.se?CC=adeel.asghar@liu.se&subject=OpenModelica Crash Report&body=" + body);
-  QDesktopServices::openUrl(mailToUrl);
-}
-
-/*!
   Slot activated when mpOkButton clicked signal is raised.\n
   Checks the notification type and calls the appropriate method.
   */
@@ -341,9 +306,6 @@ void NotificationsDialog::saveNotification()
       case NotificationsDialog::ReleaseInformation:
         saveReleaseInformationNotificationSettings();
         break;
-      case NotificationsDialog::CrashReport:
-        sendCrashReport();
-        break;
       default:
         // should never be reached
         break;
@@ -355,9 +317,6 @@ void NotificationsDialog::saveNotification()
     {
       case NotificationsDialog::ReleaseInformation:
         saveReleaseInformationNotificationSettings();
-        break;
-      case NotificationsDialog::CrashReport:
-        sendCrashReport();
         break;
       default:
         // should never be reached

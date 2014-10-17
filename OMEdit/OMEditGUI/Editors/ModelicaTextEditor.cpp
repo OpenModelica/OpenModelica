@@ -668,9 +668,6 @@ void ModelicaTextHighlighter::initializeSettings()
   rule.mPattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\()");
   rule.mFormat = mFunctionFormat;
   mHighlightingRules.append(rule);
-
-  mCommentStartExpression = QRegExp("/\\*");
-  mCommentEndExpression = QRegExp("\\*/");
 }
 
 //! Highlights the multilines text.

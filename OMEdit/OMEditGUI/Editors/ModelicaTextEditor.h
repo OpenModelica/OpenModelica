@@ -120,10 +120,6 @@ private:
     QTextCharFormat mFormat;
   };
   QVector<HighlightingRule> mHighlightingRules;
-  QRegExp mCommentStartExpression;
-  QRegExp mCommentEndExpression;
-  QRegExp mStringStartExpression;
-  QRegExp mStringEndExpression;
   QTextCharFormat mTextFormat;
   QTextCharFormat mKeywordFormat;
   QTextCharFormat mTypeFormat;

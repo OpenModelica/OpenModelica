@@ -63,6 +63,7 @@
 #include "DebuggerMainWindow.h"
 #include "ImportFMUDialog.h"
 #include "NotificationsDialog.h"
+#include "CrashReportDialog.h"
 
 class OMCProxy;
 class OptionsDialog;
@@ -251,6 +252,7 @@ private:
   QAction *mpModelicaByExampleAction;
   QAction *mpModelicaWebReferenceAction;
   QAction *mpAboutOMEditAction;
+  QAction *mpCrashReportAction;
   // Toolbar Actions
   // Shapes Toolbar Actions
   QActionGroup *mpShapesActionGroup;
@@ -324,6 +326,7 @@ public slots:
   void openModelicaByExample();
   void openModelicaWebReference();
   void openAboutOMEdit();
+  void crashReport();
   void toggleShapesButton();
   void openRecentModelWidget();
   void addNewPlotWindow();

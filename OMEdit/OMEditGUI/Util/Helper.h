@@ -273,6 +273,7 @@ public:
   static QString stepInto;
   static QString stepReturn;
   static QString attachToRunningProcess;
+  static QString crashReport;
 };
 
 class GUIMessages : public QObject

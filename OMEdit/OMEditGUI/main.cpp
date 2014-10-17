@@ -127,9 +127,8 @@ void signalHandler(int signum)
     fprintf(stderr, "Caught signal %d", signum);
   else
     fprintf(stderr, "Caught signal %d (%s)", signum, name);
-  NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::CrashReport, NotificationsDialog::CriticalIcon, 0);
-  pNotificationsDialog->getNotificationCheckBox()->setHidden(true);
-  pNotificationsDialog->exec();
+  CrashReportDialog *pCrashReportDialog = new CrashReportDialog;
+  pCrashReportDialog->exec();
 
   // If you caught one of the above signals, it is likely you just
   // want to quit your program right now.
@@ -172,9 +171,8 @@ LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
     out.flush();
     stackTraceFile.close();
   }
-  NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::CrashReport, NotificationsDialog::CriticalIcon, 0);
-  pNotificationsDialog->getNotificationCheckBox()->setHidden(true);
-  pNotificationsDialog->exec();
+  CrashReportDialog *pCrashReportDialog = new CrashReportDialog;
+  pCrashReportDialog->exec();
   exit(1);
 }
 #endif // #ifdef WIN32
