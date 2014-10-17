@@ -3,6 +3,12 @@
 \begin_document
 \begin_header
 \textclass article
+\begin_preamble
+\usepackage{microtype}
+\DisableLigatures{encoding = *, family = * }
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\end_preamble
 \use_default_options true
 \begin_modules
 theorems-ams
@@ -901,6 +907,9 @@ end Half-circularDomain;
 \end_layout
 
 \begin_layout Paragraph*
+\begin_inset VSpace defskip
+\end_inset
+
 
 \series bold
 Problem
@@ -911,9 +920,9 @@ Problem
 \end_layout
 
 \begin_layout Standard
-This approach doesn't work well in 3D: if boundary is composed of several
- surfaces, parameters (arguments) of shape-function of these surfaces must
- be bounded not just in 
+This approach doesn't work well in 3D: if boundaries of the whole domain
+ are composed of several surfaces, parameters (arguments) of shape-functions
+ of these surfaces must be bounded not just in 
 \begin_inset Formula $[0,a]\times[0,b]$
 \end_inset
 
@@ -932,7 +941,7 @@ reference "fig:Boundary-in-3D"
 \end_layout
 
 \begin_layout Standard
-Even if the syntax allowed this, it would be difficult for the user to compute
+Even if the syntax allowed this, it would be difficult for the user to determine
  these sets where parameters are bounded.
 \end_layout
 
@@ -978,6 +987,9 @@ name "fig:Boundary-in-3D"
 \end_layout
 
 \begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
 There is also no simple way to generate grid points during translation/solution.
 \end_layout
 
@@ -985,44 +997,26 @@ There is also no simple way to generate grid points during translation/solution.
 
 \series bold
 Alternative approach
-\begin_inset Newline newline
-\end_inset
-
-
 \end_layout
 
 \begin_layout Standard
-According to Peter's book 
-\begin_inset CommandInset citation
-LatexCommand cite
-key "fritzson2010principles"
-
-\end_inset
-
- -- 8.5.2, we define interior and boundaries of domain (these elements are
- called 
+We define explicitely both interior and boundaries of the domain (these
+ elements are called 
 \emph on
 regions
 \emph default
- here) with one shape-function and for each region specify intervals for
- the shape-function arguments.
- This approach isn't more general (actually less), but is consistent in
- 1, 2 and 3D and (to me) is more natural.
- Inner points may be generated using this shape-function.
+ here).
+ 
 \end_layout
 
 \begin_layout Standard
 
 \series medium
-We have several new built-in
+We have new built-in
 \series default
- types.
-\end_layout
-
-\begin_layout Standard
-Built-in 
+ type 
 \family typewriter
-type Coordinate:
+Coordinate:
 \family default
 
 \begin_inset VSpace defskip
@@ -1059,12 +1053,13 @@ type Coordinate = Real;
 
 
 \series medium
-Built-in 
+Another new built-in type is
 \family typewriter
 \series default
-type Domain
+ Domain
 \family default
- contains 
+.
+ It contains also 
 \family typewriter
 type Region
 \family default
@@ -1083,21 +1078,9 @@ Region
 \family default
  outside a 
 \family typewriter
-Domain.
-\end_layout
-
-\begin_layout Standard
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-Tady pokračovat v úpravách (kombinuju nově navržený změny z extension_simplified.
-lyx s původním 3D z tohoto dokumentu (níže):
-\end_layout
-
-\end_inset
-
-
+Domain
+\family default
+.
 \begin_inset VSpace defskip
 \end_inset
 
@@ -1215,6 +1198,81 @@ end Region;
 \begin_inset space ~
 \end_inset
 
+replaceable function shapeFunc 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+input Real u[ndim]; 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+output Real coord[ndim]; 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+end shapeFunc; 
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
 parameter Integer ndimD; //dimension of the domain
 \end_layout
 
@@ -1245,84 +1303,6 @@ replaceable Region interior; //main region of the domain
 \begin_inset Newline newline
 \end_inset
 
-
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-replaceable function shape
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-input Real u[ndims];
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-output Real coord[ndims];
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-end shape;
-\begin_inset Newline newline
-\end_inset
-
-
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
 end Domain;
 \end_layout
 
@@ -1337,7 +1317,7 @@ end Domain;
 type Domain
 \family default
  is extended by domain types for particular dimensions, e.g.
- in 1D:
+ in 2D:
 \begin_inset VSpace defskip
 \end_inset
 
@@ -1361,7 +1341,7 @@ status open
 \begin_layout Plain Layout
 
 \family typewriter
-type Domain1D 
+type Domain2D 
 \end_layout
 
 \begin_layout Plain Layout
@@ -1374,7 +1354,7 @@ type Domain1D
 \begin_inset space ~
 \end_inset
 
-extends Domain(ndimD = 1); 
+extends Domain(ndimD = 2); 
 \end_layout
 
 \begin_layout Plain Layout
@@ -1387,7 +1367,7 @@ extends Domain(ndimD = 1);
 \begin_inset space ~
 \end_inset
 
-type Region0D = Region(ndim = 0); //for boundaries
+type Region0D = Region(ndim = 0); //for points
 \end_layout
 
 \begin_layout Plain Layout
@@ -1400,13 +1380,26 @@ type Region0D = Region(ndim = 0); //for boundaries
 \begin_inset space ~
 \end_inset
 
-type Region1D = Region(ndim = 1); //for interior
+type Region1D = Region(ndim = 1); //for boundaries
 \end_layout
 
 \begin_layout Plain Layout
 
 \family typewriter
-end Domain1D;
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+type Region2D = Region(ndim = 2); //for interior
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end Domain2D;
 \end_layout
 
 \end_inset
@@ -1439,7 +1432,7 @@ status open
 \begin_layout Plain Layout
 
 \family typewriter
-type DomainLineSegment1D 
+type DomainRectangle2D 
 \end_layout
 
 \begin_layout Plain Layout
@@ -1452,7 +1445,7 @@ type DomainLineSegment1D
 \begin_inset space ~
 \end_inset
 
-extends Domain1D;
+extends Domain2D;
 \end_layout
 
 \begin_layout Plain Layout
@@ -1465,7 +1458,7 @@ extends Domain1D;
 \begin_inset space ~
 \end_inset
 
-parameter Real l = 1; //length
+parameter Real lx = 1; //length in x dir.
 \end_layout
 
 \begin_layout Plain Layout
@@ -1478,7 +1471,7 @@ parameter Real l = 1; //length
 \begin_inset space ~
 \end_inset
 
-Coordinate x(name = "cartesian") = coord[1]; //alias for the coord
+parameter Real ly = 1; //lenght in y dir.
 \end_layout
 
 \begin_layout Plain Layout
@@ -1491,7 +1484,7 @@ Coordinate x(name = "cartesian") = coord[1]; //alias for the coord
 \begin_inset space ~
 \end_inset
 
-Region1D interior(x in {0,l}); 
+Coordinate x(name = "cartesian") = coord[1]; //alias for the first coordinate
 \end_layout
 
 \begin_layout Plain Layout
@@ -1504,7 +1497,7 @@ Region1D interior(x in {0,l});
 \begin_inset space ~
 \end_inset
 
-Region0D left(x = 0); //boundaries
+Coordinate y(name = "cartesian") = coord[2]; //alias for the second coordinate
 \end_layout
 
 \begin_layout Plain Layout
@@ -1517,13 +1510,65 @@ Region0D left(x = 0); //boundaries
 \begin_inset space ~
 \end_inset
 
-Region0D right(x = l); 
+Region2D interior(x in {0,lx}, y in {0,ly}); 
 \end_layout
 
 \begin_layout Plain Layout
 
 \family typewriter
-end DomainLineSegment1D;
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D top(x in {0,ly}, y = ly); //boundaries 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D right(x = lx, y in {0,ly}); 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D bottom(x in {0,ly}, y = 0); 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D left(x = 0, y in {0,ly});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end DomainRectangle2D;
 \end_layout
 
 \end_inset
@@ -1543,193 +1588,29 @@ New syntax (
 \family typewriter
 x in {0,l
 \family default
-}) is used here to specify the interval for the coordinate x within the
+x}) is used here to specify the interval for the coordinate x within the
  region.
  
 \end_layout
 
 \begin_layout Standard
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-Původní:
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-Modified 
-\family typewriter
-Domain
-\family default
- built-in type:
-\end_layout
-
-\begin_layout Standard
-\begin_inset VSpace defskip
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\align center
-\begin_inset Box Frameless
-position "t"
-hor_pos "c"
-has_inner_box 1
-inner_pos "t"
-use_parbox 0
-use_makebox 0
-width "80text%"
-special "none"
-height "1in"
-height_special "totalheight"
-status open
-
-\begin_layout Plain Layout
-
-\family typewriter
-type Domain
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-parameter Integer ndims;
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-Coordinate Real cartesian[ndims];
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-replaceable Region interior;
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-replaceable function shape
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-input Real u[ndims];
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-output Real cartesian[ndims];
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-end shape;
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-end Domain;
-\end_layout
+If the domain geometry is more complex than just cartesian product of intervals
+ we define all regions of the domain using one common
+\emph on
+ shape-function
+\emph default
+ (or assignment or equation) and for each region we specify intervals for
+ the shape-function arguments (idea from Peters Book 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "fritzson2010principles"
 
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset VSpace defskip
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-Region
-\family default
- built-in type instead of 
-\family typewriter
-Boundary:
+).
+ This approach isn't more general (actualy less), but is consistent in 1,
+ 2 and 3D and (to me) si more natural.
+ Example half-circular domain:
 \end_layout
 
 \begin_layout Standard
@@ -1757,7 +1638,40 @@ status open
 \begin_layout Plain Layout
 
 \family typewriter
-type Region
+type DomainHalf-circle 
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+//1.
+ variant
 \end_layout
 
 \begin_layout Plain Layout
@@ -1770,23 +1684,7 @@ type Region
 \begin_inset space ~
 \end_inset
 
-parameter Integer ndims;
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-//dim of space
+extends Domain2D;
 \end_layout
 
 \begin_layout Plain Layout
@@ -1799,23 +1697,7 @@ parameter Integer ndims;
 \begin_inset space ~
 \end_inset
 
-parameter Integer ndimr;
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-//dim of region
+Coordinate x(name = "cartesian") = coord[1]; 
 \end_layout
 
 \begin_layout Plain Layout
@@ -1828,190 +1710,7 @@ parameter Integer ndimr;
 \begin_inset space ~
 \end_inset
 
-parameter Real[ndims][2] interval;
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-replaceable function shape;
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-input Real u[ndims];
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-output Real cartesian[ndims];
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-end shape;
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-end Region;
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset VSpace defskip
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\align center
-\begin_inset Box Frameless
-position "t"
-hor_pos "c"
-has_inner_box 1
-inner_pos "t"
-use_parbox 0
-use_makebox 0
-width "80text%"
-special "none"
-height "1in"
-height_special "totalheight"
-status open
-
-\begin_layout Plain Layout
-
-\family typewriter
-type Region1D
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-extends Region(ndimr = 1);
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-end Region1D;
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset VSpace defskip
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-Example circular domain:
-\end_layout
-
-\begin_layout Standard
-\begin_inset VSpace defskip
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\align center
-\begin_inset Box Frameless
-position "t"
-hor_pos "c"
-has_inner_box 1
-inner_pos "t"
-use_parbox 0
-use_makebox 0
-width "80text%"
-special "none"
-height "1in"
-height_special "totalheight"
-status open
-
-\begin_layout Plain Layout
-
-\family typewriter
-class DomainHalf-circle
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-extends Domain;
+Coordinate y(name = "cartesian") = coord[2];
 \end_layout
 
 \begin_layout Plain Layout
@@ -2050,7 +1749,53 @@ parameter Real[2] c = {0,0};
 \begin_inset space ~
 \end_inset
 
-function shapeFunc
+Region2D interior(interval = {{O,1},{O,1}});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D arc(interval = {1,{0,1}});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D line(interval = {{-1,1},0});
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+redaclare function shapeFunc
 \end_layout
 
 \begin_layout Plain Layout
@@ -2092,7 +1837,7 @@ input Real r,v;
 \begin_inset space ~
 \end_inset
 
-output Real cartesian[2];
+output Real coordinate[2];
 \end_layout
 
 \begin_layout Plain Layout
@@ -2177,45 +1922,6 @@ end shapeFunc;
 \begin_layout Plain Layout
 
 \family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-Region2D interior(shape = shapeFunc, interval = {{O,1},{O,1}});
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-Region1D arc(shape = shapeFunc, interval = {1,{0,1}});
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-Region1D line(shape = shapeFunc, interval = {{-1,1},0});
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
 end DomainHalf-circle;
 \end_layout
 
@@ -2232,25 +1938,24 @@ end DomainHalf-circle;
 \end_layout
 
 \begin_layout Standard
-Shape-function is not a pure function and thus it is not supported in current
- Modelica.
- To avoid this problem modified version was designed:
-\end_layout
-
-\begin_layout Paragraph*
-
-\series bold
-Modified version
-\begin_inset Newline newline
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-Shape-function is replaced by equation and parameters of shape-function
- by new general coordinate system (that may not have a good physical meaning
- for some domains) here:
+Shape-function is not a pure function (here parameters 
+\family typewriter
+c 
+\family default
+and 
+\family typewriter
+radius
+\family default
+ are defined outside the function body) and thus it is not supported in
+ current Modelica.
+ The shape-function may be replaced by just algorithm inserted directly
+ into the domain class to avoid this problem.
+ Parameters of shape-function are replaced by new general auxiliary coordinate
+ system (
+\family typewriter
+r,v
+\family default
+ here) (that may not have a good physical meaning in some cases):
 \end_layout
 
 \begin_layout Standard
@@ -2261,7 +1966,6 @@ Shape-function is replaced by equation and parameters of shape-function
 \end_layout
 
 \begin_layout Standard
-\align center
 \begin_inset Box Frameless
 position "t"
 hor_pos "c"
@@ -2269,7 +1973,7 @@ has_inner_box 1
 inner_pos "t"
 use_parbox 0
 use_makebox 0
-width "80text%"
+width "100col%"
 special "none"
 height "1in"
 height_special "totalheight"
@@ -2278,7 +1982,40 @@ status open
 \begin_layout Plain Layout
 
 \family typewriter
-class DomainHalf-circle
+type DomainHalf-circle
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+//2.
+ variant
 \end_layout
 
 \begin_layout Plain Layout
@@ -2291,7 +2028,33 @@ class DomainHalf-circle
 \begin_inset space ~
 \end_inset
 
-extends Domain;
+extends Domain2D;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate x(name = "cartesian") = coord[1]; 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate y(name = "cartesian") = coord[2];
 \end_layout
 
 \begin_layout Plain Layout
@@ -2330,7 +2093,7 @@ parameter Real[2] c = {0,0};
 \begin_inset space ~
 \end_inset
 
-Real r, v;
+Coordinate r,v;
 \end_layout
 
 \begin_layout Plain Layout
@@ -2343,7 +2106,7 @@ Real r, v;
 \begin_inset space ~
 \end_inset
 
-Region2D interior(v in {0,1}, r in {O,1});
+Region2D interior(r in {O,1}, v in {O,1});
 \end_layout
 
 \begin_layout Plain Layout
@@ -2356,7 +2119,7 @@ Region2D interior(v in {0,1}, r in {O,1});
 \begin_inset space ~
 \end_inset
 
-Region1D arc(v in {0,1}, r = 1);
+Region1D arc(r = 1, v in {0,1});
 \end_layout
 
 \begin_layout Plain Layout
@@ -2369,7 +2132,236 @@ Region1D arc(v in {0,1}, r = 1);
 \begin_inset space ~
 \end_inset
 
-Region1D line(v = 0, r in {-1,1});
+Region1D line(r in {-1,1}, v = 0);
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+algorithm
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+coord := c + radius * r * { cos(Pi*(1/2 + v), sin(Pi*(1/2 + v) };
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end DomainHalf-circle;
+\end_layout
+
+\end_inset
+
+
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Probably the algorithm is not needed and may be replaced by equations:
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+type DomainHalf-circle
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+//3.
+ variant
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+extends Domain2D;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate x(name = "cartesian") = coord[1]; 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate y(name = "cartesian") = coord[2];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real radius = 2;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real[2] c = {0,0};
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate r,v;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region2D interior(r in {O,1}, v in {O,1});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D arc(r = 1, v in {0,1});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D line(r in {-1,1}, v = 0);
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace smallskip
+\end_inset
+
+
 \end_layout
 
 \begin_layout Plain Layout
@@ -2388,20 +2380,7 @@ equation
 \begin_inset space ~
 \end_inset
 
-//coordinate transformation equation:
-\end_layout
-
-\begin_layout Plain Layout
-
-\family typewriter
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-cartesian = c + radius * r * { cos(Pi*(1/2 + v), sin(Pi*(1/2 + v) };
+coord = c + radius * r * { cos(Pi*(1/2 + v), sin(Pi*(1/2 + v) };
 \end_layout
 
 \begin_layout Plain Layout
@@ -2419,11 +2398,8 @@ end DomainHalf-circle;
 \begin_inset VSpace defskip
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
 One of these approches should be chosen.
+ I prefare the third one.
 \end_layout
 
 \begin_layout Standard
@@ -3632,7 +3608,7 @@ More complex geometries
 \end_layout
 
 \begin_layout Standard
-More complex geometries may be defined using 
+May be more complex geometries could be defined using 
 \emph on
 Constructive Solid Geometry
 \emph default
@@ -3693,7 +3669,7 @@ der(u,x,y)
 \end_layout
 
 \begin_layout Paragraph*
-Problem
+Further specification
 \begin_inset Newline newline
 \end_inset
 
@@ -3701,6 +3677,66 @@ Problem
 \end_layout
 
 \begin_layout Standard
+for higher order time derivative and mixed time and space derivative, we
+ write 
+\family typewriter
+time 
+\family default
+explicitly, 
+\family typewriter
+e
+\family default
+.g.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+der(u,time,time)
+\family default
+ for 
+\family typewriter
+
+\begin_inset Formula $\frac{\partial^{2}u}{\partial t^{2}}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+and
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+der(u,x,time)
+\family default
+ for 
+\family typewriter
+
+\begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial t}$
+\end_inset
+
+
+\family default
+.
+\end_layout
+
+\begin_layout Paragraph*
+\begin_inset Note Note
+status open
+
+\begin_layout Paragraph*
+Problem
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
 There is no way to write mixed time and space derivative 
 \begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial t}$
 \end_inset
@@ -3708,7 +3744,7 @@ There is no way to write mixed time and space derivative
  in this notation.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 This notation doesn't agree with mathematics, where we have different operators
  for ordinary (
 \begin_inset Formula $\frac{du}{dx}$
@@ -3722,7 +3758,7 @@ This notation doesn't agree with mathematics, where we have different operators
  
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 
 \family typewriter
 der(u)
@@ -3738,7 +3774,7 @@ Alternative approach
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 
 \family typewriter
 \begin_inset Formula $\frac{\partial u}{\partial t}$
@@ -3765,7 +3801,7 @@ Alternative approach
 pder(u,x,y)
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Now we can also write 
 \begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial t}$
 \end_inset
@@ -3773,6 +3809,11 @@ Now we can also write
  as 
 \family typewriter
 pder(u,x,time)
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section*
@@ -3981,7 +4022,7 @@ Fields are differentiated with respect to coordinates or normal vector only
  (or may be also some other vector for directional derivative??).
  Thus in place of second and following operands of 
 \family typewriter
-pder()
+der()
 \family default
  operator may be given only coordinates or normal vector.
  So variables in this positions may be treated specially and coordinates
@@ -3998,7 +4039,7 @@ domainName.
 If coordinates or normal vector is used in different context (not in place
  of second and following operands of 
 \family typewriter
-pder()
+der()
 \family default
 ), an alias for it may be defined in the model, e.g.
 \end_layout
@@ -4013,33 +4054,7 @@ pder()
 \begin_layout Standard
 
 \family typewriter
-Real x = omega.x; 
-\end_layout
-
-\begin_layout Standard
-\begin_inset VSpace defskip
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-or
-\family typewriter
- (discussed later)
-\end_layout
-
-\begin_layout Standard
-\begin_inset VSpace defskip
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-coordinate Real x = omega.x;
+Coordinate x = omega.x; 
 \end_layout
 
 \begin_layout Standard
@@ -4111,7 +4126,7 @@ startSecond
 \begin_layout Standard
 
 \family typewriter
-field Real u(start = 0, startPrime = field(sin(x*y) for (x,y) in omega);
+field Real u(start = 0, startPrime = sin(omega.x*omega.y));
 \begin_inset Newline newline
 \end_inset
 
@@ -4122,6 +4137,36 @@ Initial values for higher derivatives must be assigned in
 initial equation
 \family default
  section.
+\end_layout
+
+\begin_layout Part*
+
+\family typewriter
+In
+\family default
+ operator
+\end_layout
+
+\begin_layout Standard
+Just a remark: All equations containing a field variable (defined on a domain)
+ hold on particular region of the domain.
+ If the region is not specified (using 
+\family typewriter
+
+\begin_inset Quotes eld
+\end_inset
+
+in domain.region
+\begin_inset Quotes erd
+\end_inset
+
+
+\family default
+) region 
+\family typewriter
+interior
+\family default
+ is assumed implicitly.
 \end_layout
 
 \begin_layout Part*
@@ -4503,9 +4548,9 @@ Solution
 \end_layout
 
 \begin_layout Standard
-new modifier 
+new type C
 \family typewriter
-coordinate
+oordinate
 \family default
  to define coordinates.
  Usage e.g.
@@ -4518,7 +4563,7 @@ status open
 
 \begin_layout Plain Layout
 
-"coordinate Real" coordName;
+Coordinate coordName;
 \end_layout
 
 \end_inset
@@ -4588,71 +4633,93 @@ problem
 \end_layout
 
 \begin_layout Standard
-It allows to define the field values in terms of only one coordinate system.
- There may be two (or more -- if 
-\family typewriter
-coordinate
-\family default
- keyword admitted) coordinate systems defined and it may be useful to be
- able to define fields using any of them.
-\end_layout
 
-\begin_layout Standard
-And the syntax suggested below is shorter and simpler anyway.
+\series medium
+This syntactic feature is redundant (explained in next paragraph).
+
+\series default
+ Another problem is that it enables to define the field values in terms
+ of only one coordinate system.
+ There may be two (or more) coordinate systems defined and it may be useful
+ to be able to define fields using any of them.
 \end_layout
 
 \begin_layout Paragraph*
 solution
-\begin_inset Newline newline
+\end_layout
+
+\begin_layout Standard
+
+\series medium
+Coordinate variables are special kind of fields.
+ (Coordinates vary their value over space as other fields.) Thus any expression
+ depending on coordinates should be evaluated to another field.
+ 
+\series default
+So we can write just
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+u = 2*omega.x+omega.y;
+\end_layout
+
+\begin_layout Paragraph*
+
+\series medium
+According to the section 
+\begin_inset Quotes eld
+\end_inset
+
+In operator
+\begin_inset Quotes erd
+\end_inset
+
+ this is equivalent to
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+u = 2*omega.x+omega.y
+\begin_inset space ~
+\end_inset
+
+in omega.interior;
+\end_layout
+
+\begin_layout Standard
+If coordinates are used often (not only in 
+\family typewriter
+pder()
+\family default
+), an alias for it may be defined to avoid 
+\family typewriter
+
+\begin_inset Quotes eld
+\end_inset
+
+omega.
+\begin_inset Quotes erd
+\end_inset
+
+
+\family default
+ prefix, e.g.
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
 \end_inset
 
 
 \end_layout
 
 \begin_layout Standard
-modified syntax:
-\end_layout
-
-\begin_layout Standard
 
 \family typewriter
-\begin_inset Quotes sld
-\end_inset
-
-field (” expr ”in” dom ”)”
-\begin_inset Newline newline
-\end_inset
-
-
-\family default
-or just shortcut 
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-”{” expr ”in” dom ”}”
-\begin_inset Newline newline
-\end_inset
-
-
-\family default
-where 
-\family typewriter
-dom
-\family default
- is a domain and 
-\family typewriter
-expr
-\family default
- may depend on coordinates defined in this domain.
- E.g.
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-field Real f = field(2*omega.x+omega.y in omega.interior);
+Coordinate x = omega.x; 
 \end_layout
 
 \begin_layout Part*

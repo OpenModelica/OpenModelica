@@ -8,7 +8,7 @@ package PDEDomains
     Coordinate coord[ndim];
     replaceable Region interior;
     replaceable function shapeFunc
-      input Real u[ndim-1];
+      input Real u[ndim];
       output Real coord[ndim];
     end shapeFunc;
   end Domain
@@ -18,10 +18,10 @@ type Region //Region is built-in, looks like
   parameter Integer  ndim; //dimension of the region
   //e.g. sphere in 3D has ndimS = 3, ndim = 2
   replaceable function shape;
-    input Real u[ndim];
+    input Real u[ndimS];
     output Real coord[ndimS];
   end shape;
-  parameter Real[ndim][2] interval;
+  parameter Real[ndimS][2] interval;
 equation
   assert(ndim <= ndimS, "Dimension of region must be lower or equal to dimension of space where it is defined.");
 end Region;

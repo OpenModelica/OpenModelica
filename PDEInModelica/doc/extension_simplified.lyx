@@ -1673,7 +1673,7 @@ der(u,time,time)
 \end_layout
 
 \begin_layout Standard
-or
+and
 \end_layout
 
 \begin_layout Standard
@@ -1684,7 +1684,7 @@ der(u,x,time).
 
 \begin_layout Section*
 \begin_inset Note Note
-status open
+status collapsed
 
 \begin_layout Section*
 Partial derivatives
