@@ -2174,6 +2174,11 @@ void MainWindow::createMenus()
   pEditMenu->addSeparator();
   pEditMenu->addAction(mpFindReplaceAction);
   pEditMenu->addAction(mpClearFindReplaceTextsAction);
+  pEditMenu->addSeparator();
+  QAction *pSearchClassAction = mpSearchClassDockWidget->toggleViewAction();
+  pSearchClassAction->setShortcut(QKeySequence("Ctrl+Shift+f"));
+  pEditMenu->addAction(pSearchClassAction);
+  pEditMenu->addSeparator();
   pEditMenu->addAction(mpGotoLineNumberAction);
   // add Edit menu to menu bar
   menuBar()->addAction(pEditMenu->menuAction());
@@ -2199,8 +2204,6 @@ void MainWindow::createMenus()
   pViewToolbarsMenu->addAction(mpModelSwitcherToolBar->toggleViewAction());
   pViewMenu->addAction(pViewToolbarsMenu->menuAction());
   // Add Actions to Windows View Sub Menu
-  QAction *pSearchClassAction = mpSearchClassDockWidget->toggleViewAction();
-  pSearchClassAction->setShortcut(QKeySequence("Ctrl+Shift+f"));
   pViewWindowsMenu->addAction(pSearchClassAction);
   pViewWindowsMenu->addAction(mpLibraryTreeDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
