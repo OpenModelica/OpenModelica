@@ -36,6 +36,7 @@
  */
 
 #include "CrashReportDialog.h"
+#include "Helper.h"
 
 /*!
   \class CrashReportDialog
