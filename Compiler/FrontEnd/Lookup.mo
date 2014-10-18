@@ -1073,7 +1073,7 @@ algorithm
     case (cache,env,cref)
       equation
         (cache,classEnv,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env,cref,{},Util.makeStatefulBoolean(false));
-        checkPackageVariableConstant(classEnv,attr,ty,cref);
+        checkPackageVariableConstant(env,classEnv,componentEnv,attr,ty,cref);
         // optional Expression.exp to return
       then
         (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv,name);
@@ -1091,23 +1091,35 @@ end lookupVar;
 protected function checkPackageVariableConstant "
 Variables in packages must be constant. This function produces an error message and fails
 if variable is not constant."
-  input FCore.Graph env;
+  input FCore.Graph parentEnv;
+  input FCore.Graph classEnv;
+  input FCore.Graph componentEnv;
   input DAE.Attributes attr;
   input DAE.Type tp;
   input DAE.ComponentRef cref;
 algorithm
-  _ := matchcontinue(env,attr,tp,cref)
+  _ := matchcontinue(parentEnv,classEnv,componentEnv,attr,tp,cref)
     local
       String s1,s2;
+      SCode.Element cl;
 
     // do not fail if is a constant
-    case (_,DAE.ATTR(variability= SCode.CONST()),_,_) then ();
+    case (_, _, _,DAE.ATTR(variability= SCode.CONST()),_,_) then ();
+
+    /*/ do not fail if is not a constant in non-package
+    case (_, _, _,DAE.ATTR(variability=_),_,_)
+      equation
+        FCore.CL(e = cl) = FNode.refData(FGraph.lastScopeRef(parentEnv));
+        false = SCode.isPackage(cl);
+        // print("cref:  " +& ComponentReference.printComponentRefStr(cref) +& "\nprenv: " +& FGraph.getGraphNameStr(parentEnv) +& "\nclenv: " +& FGraph.getGraphNameStr(classEnv) +& "\ncoenv: " +& FGraph.getGraphNameStr(componentEnv) +& "\n");
+      then
+        ();*/
 
     // fail if is not a constant
     else
       equation
         s1 = ComponentReference.printComponentRefStr(cref);
-        s2 = FGraph.printGraphPathStr(env);
+        s2 = FGraph.printGraphPathStr(classEnv);
         Error.addMessage(Error.PACKAGE_VARIABLE_NOT_CONSTANT,{s1,s2});
         Debug.fprintln(Flags.FAILTRACE, "- Lookup.checkPackageVariableConstant failed: " +& s1 +& " in " +& s2);
       then fail();
@@ -2745,6 +2757,10 @@ algorithm
         // this doesn't work yet!
         // false = Absyn.isOuter(io);
         //
+
+        // leave just the last scope from component env as it SHOULD BE ONLY THERE, i.e. don't go on searching the parents!
+        componentEnv = FGraph.setScope(componentEnv, List.create(FGraph.lastScopeRef(componentEnv)));
+
         (cache,DAE.ATTR(ct,prl,vt,di,io,vis),tyChild,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
         ty = Debug.bcallret1(Types.isBoxedType(tyParent) and not Types.isUnknownType(tyParent), Types.boxIfUnboxedType, tyChild, tyChild) "The internal types in a metarecord are lookup up in a clean environment, so we have to box them";
         (tCref::_) = elabComponentRecursive((texp));
@@ -2764,6 +2780,10 @@ algorithm
     case (cache,ht,(DAE.CREF_QUAL(ident = id,subscriptLst = _,componentRef = ids)), _)
       equation
         (cache,DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),tyParent,parentBinding,cnstForRange),_,_,_,componentEnv) = lookupVar2(cache, ht, id, inEnv);
+
+        // leave just the last scope from component env as it SHOULD BE ONLY THERE, i.e. don't go on searching the parents!
+        componentEnv = FGraph.setScope(componentEnv, List.create(FGraph.lastScopeRef(componentEnv)));
+
         (cache,DAE.ATTR(ct,prl,vt,di,io,vis),tyChild,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
         {} = elabComponentRecursive((texp));
         vt = SCode.variabilityOr(vt,vt2);
