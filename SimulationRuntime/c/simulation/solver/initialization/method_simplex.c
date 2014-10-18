@@ -164,6 +164,9 @@ int simplex_initialization(INIT_DATA* initData)
   {
     infoStreamPrint(LOG_INIT, 0, "simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system", funcValue);
   }
+  /* now free allocated memory again */
+  free(STEP);
+  free(VAR);
 
   funcValue = leastSquareWithLambda(initData, 1.0);
   infoStreamPrint(LOG_INIT, 0, "leastSquare=%g", funcValue);
