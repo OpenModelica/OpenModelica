@@ -38,6 +38,10 @@
 #include "simulation/simulation_info_xml.h"
 #include "simulation/simulation_input_xml.h"
 
+/*
+pthread_key_t fmu2_thread_data_key;
+*/
+
 // macro to be used to log messages. The macro check if current
 // log category is valid and, if true, call the logger provided by simulator.
 #define FILTERED_LOG(instance, status, categoryIndex, message, ...) if (isCategoryLogged(instance, categoryIndex)) \
@@ -295,7 +299,14 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     comp->instanceName = functions->allocateMemory(1 + strlen(instanceName), sizeof(char));
     comp->GUID = functions->allocateMemory(1 + strlen(fmuGUID), sizeof(char));
     DATA* fmudata = (DATA *)functions->allocateMemory(1, sizeof(DATA));
-    threadData_t *threadData = (threadData_t *)functions->allocateMemory(1, sizeof(threadData));
+
+    threadData_t *threadData = (threadData_t *)functions->allocateMemory(1, sizeof(threadData_t));
+    memset(threadData, 0, sizeof(threadData_t));
+    /*
+    pthread_key_create(&fmu2_thread_data_key,NULL);
+    pthread_setspecific(fmu2_thread_data_key, threadData);
+    */
+
     fmudata->threadData = threadData;
     comp->fmuData = fmudata;
     if (!comp->fmuData) {
