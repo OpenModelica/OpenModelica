@@ -63,12 +63,12 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTime
    */
   static inline void getTimeValuesStart(MeasureTimeValues *res) //__attribute__((always_inline))
   {
-    instance->getTimeValuesStartP(res);
+    getInstance()->getTimeValuesStartP(res);
   }
 
   static inline void getTimeValuesEnd(MeasureTimeValues *res)
   {
-    instance->getTimeValuesEndP(res);
+    getInstance()->getTimeValuesEndP(res);
   }
 
   static MeasureTimeValues* getZeroValues();
