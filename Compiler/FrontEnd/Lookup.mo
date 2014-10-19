@@ -1104,12 +1104,12 @@ algorithm
       SCode.Element cl;
 
     // do not fail if is a constant
-    case (_, _, _,DAE.ATTR(variability= SCode.CONST()),_,_) then ();
+    case (_, _, _,DAE.ATTR(variability = SCode.CONST()),_,_) then ();
 
-    /*/ do not fail if is not a constant in non-package
-    case (_, _, _,DAE.ATTR(variability=_),_,_)
+    /*/ do not fail if is a parameter in non-package
+    case (_, _, _,DAE.ATTR(variability = SCode.PARAM()),_,_)
       equation
-        FCore.CL(e = cl) = FNode.refData(FGraph.lastScopeRef(parentEnv));
+        FCore.CL(e = cl) = FNode.refData(FGraph.lastScopeRef(classEnv));
         false = SCode.isPackage(cl);
         // print("cref:  " +& ComponentReference.printComponentRefStr(cref) +& "\nprenv: " +& FGraph.getGraphNameStr(parentEnv) +& "\nclenv: " +& FGraph.getGraphNameStr(classEnv) +& "\ncoenv: " +& FGraph.getGraphNameStr(componentEnv) +& "\n");
       then

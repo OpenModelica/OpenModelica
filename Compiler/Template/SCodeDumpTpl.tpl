@@ -129,17 +129,20 @@ match class
     let cmt_str = dumpClassComment(cmt)
     let ann_str = dumpClassAnnotation(cmt, options)
     let cc_str = dumpReplaceableConstrainClass(prefixes, options)
-    let header_str = dumpClassHeader(classDef, name, cmt_str)
+    let header_str = dumpClassHeader(classDef, name, cmt_str, options)
     let footer_str = dumpClassFooter(classDef, cdef_str, name, cmt_str, ann_str, cc_str)
     <<
     <%prefixes_str%> <%header_str%> <%footer_str%>
     >>
 end dumpClass;
 
-template dumpClassHeader(SCode.ClassDef classDef, String name, String cmt)
+template dumpClassHeader(SCode.ClassDef classDef, String name, String cmt, SCodeDumpOptions options)
 ::=
 match classDef
-  case CLASS_EXTENDS(__) then 'extends <%name%> <%cmt%>'
+  case CLASS_EXTENDS(__)
+    then
+    let mod_str = dumpModifier(modifications, options)
+    'extends <%name%><%mod_str%> <%cmt%>'
   case PARTS(__) then '<%name%> <%cmt%>'
   else '<%name%>'
 end dumpClassHeader;
@@ -212,7 +215,6 @@ end dumpClassFooter;
 
 template dumpClassComment(SCode.Comment comment)
 ::=
-if Config.showAnnotations() then
   match comment
     case COMMENT(__) then dumpCommentStr(comment)
 end dumpClassComment;
@@ -826,7 +828,7 @@ template dumpComment(SCode.Comment comment, SCodeDumpOptions options)
 end dumpComment;
 
 template dumpCommentStr(Option<String> comment)
-::= if Config.showAnnotations() then match comment case SOME(cmt) then '<%\ %>"<%cmt%>"'
+::= match comment case SOME(cmt) then '<%\ %>"<%System.escapedString(cmt,false)%>"'
 end dumpCommentStr;
 
 template errorMsg(String errMessage)

@@ -151,11 +151,6 @@ algorithm
       equation
         emod = InstUtil.chainRedeclares(mod, emod);
 
-        // build a ht with the constant elements from the extends scope
-        ht = getLocalIdentList(InstUtil.constantAndParameterEls(elsExtendsScope),HashTableStringToPath.emptyHashTable(),getLocalIdentElement);
-        // fully qualify modifiers in extends in the extends environment!
-        (cache, emod) = fixModifications(cache, env, emod, ht);
-
         // function names might be the same but IT DOES NOT MEAN THEY ARE IN THE SAME SCOPE!
         eq_name = stringEq(className, Absyn.pathFirstIdent(tp)) and // make sure is the same freaking env!
                   Absyn.pathEqual(
@@ -170,6 +165,12 @@ algorithm
 
         (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1,mod) = instDerivedClasses(cache,cenv,ih,mod,pre,c,impl,info);
         els = updateElementListVisibility(els, vis);
+
+        // build a ht with the constant elements from the extends scope
+        ht = getLocalIdentList(InstUtil.constantAndParameterEls(elsExtendsScope),HashTableStringToPath.emptyHashTable(),getLocalIdentElement);
+        ht = getLocalIdentList(InstUtil.constantAndParameterEls(els),ht,getLocalIdentElement);
+        // fully qualify modifiers in extends in the extends environment!
+        (cache, emod) = fixModifications(cache, env, emod, ht);
 
         //(cache,tp_1) = Inst.makeFullyQualified(cache,/* adrpo: cenv1?? FIXME */env, tp);
 

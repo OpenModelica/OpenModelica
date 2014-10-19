@@ -3666,6 +3666,21 @@ algorithm
         // then connect the components normally.
       then
         fail(); // fail to enter connect normally
+
+    // failtrace
+    case (cache,env,_,_,pre,c1,c2,impl,_,_)
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        (cache,_) = Static.elabCref(cache, env, c1, impl, false, pre, info);
+        (cache,_) = Static.elabCref(cache, env, c2, impl, false, pre, info);
+
+        Debug.fprintln(Flags.FAILTRACE,
+           "connect(?, ?)(" +&
+             Dump.printComponentRefStr(c1) +& ", " +&
+             Dump.printComponentRefStr(c2) +& ")"
+           );
+      then
+        fail();
   end matchcontinue;
 end connectExpandableConnectors;
 

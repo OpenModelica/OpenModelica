@@ -7740,7 +7740,7 @@ protected function saveTotalModel
   output GlobalScript.SymbolTable outSt;
 protected
   SCode.Program scodeP;
-  String str,str1,str2;
+  String str,str1,str2,str3;
   NFSCodeEnv.Env env;
   SCode.Comment cmt;
 algorithm
@@ -7749,10 +7749,12 @@ algorithm
   (NFSCodeEnv.CLASS(cls=SCode.CLASS(cmt=cmt)),_,_) := NFSCodeLookup.lookupClassName(classpath, env, Absyn.dummyInfo);
   scodeP := SCode.removeBuiltinsFromTopScope(scodeP);
   str := SCodeDump.programStr(scodeP,SCodeDump.defaultOptions);
-  str1 := Absyn.pathLastIdent(classpath);
-  str2 := SCodeDump.printCommentStr(cmt,SCodeDump.defaultOptions);
-  str2 := Util.if_(stringEq(str2,""), "", " " +& str2 +& ";\n");
-  str1 := "\nmodel " +& str1 +& "\n  extends " +& Absyn.pathString(classpath) +& ";\n" +& str2 +& "end " +& str1 +& ";\n";
+  str1 := Absyn.pathLastIdent(classpath) +& "_total";
+  str2 := SCodeDump.printCommentStr(cmt);
+  str2 := Util.if_(stringEq(str2,""), "", " " +& str2);
+  str3 := SCodeDump.printAnnotationStr(cmt,SCodeDump.defaultOptions);
+  str3 := Util.if_(stringEq(str3,""), "", str3 +& ";\n");
+  str1 := "\nmodel " +& str1 +& str2 +& "\n  extends " +& Absyn.pathString(classpath) +& ";\n" +& str3 +& "end " +& str1 +& ";\n";
   System.writeFile(filename, str +& str1);
 end saveTotalModel;
 

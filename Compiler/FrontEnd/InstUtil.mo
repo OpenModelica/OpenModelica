@@ -6650,6 +6650,37 @@ algorithm
     // handle empty case
     case (cache, _, _, _, {}, _, eEq, nEq) then (cache, listReverse(eEq), listReverse(nEq));
 
+    // connect, expandable non existing, expandable, put it in front and at the end!
+    case (cache, env, _, _, (eq as SCode.EQUATION(SCode.EQ_CONNECT(crefLeft, crefRight, _, info)))::rest, _, eEq, nEq)
+      equation
+        (cache,NONE()) = Static.elabCref(cache, env, crefLeft, impl, false, inPre, info);
+        crefLeft = Absyn.crefStripLast(crefLeft);
+        (cache,SOME((DAE.CREF(componentRef=_),DAE.PROP(ty1,_),_))) = Static.elabCref(cache, env, crefLeft, impl, false, inPre, info);
+        (cache,SOME((DAE.CREF(componentRef=_),DAE.PROP(ty2,_),_))) = Static.elabCref(cache, env, crefRight, impl, false, inPre, info);
+
+        // type of left var is an expandable connector!
+        true = InstSection.isExpandableConnectorType(ty1);
+        // type of right left var is an expandable connector!
+        true = InstSection.isExpandableConnectorType(ty2);
+        (cache, eEq, nEq) = splitConnectEquationsExpandable(cache, env, inIH, inPre, rest, impl, eq::eEq, listAppend(nEq, {eq}));
+      then
+        (cache, eEq, nEq);
+
+    // connect, expandable, expandable non existing, put it in front and at the end!
+    case (cache, env, _, _, (eq as SCode.EQUATION(SCode.EQ_CONNECT(crefLeft, crefRight, _, info)))::rest, _, eEq, nEq)
+      equation
+        (cache,SOME((DAE.CREF(componentRef=_),DAE.PROP(ty1,_),_))) = Static.elabCref(cache, env, crefLeft, impl, false, inPre, info);
+        (cache,NONE()) = Static.elabCref(cache, env, crefRight, impl, false, inPre, info);
+        crefRight = Absyn.crefStripLast(crefRight);
+        (cache,SOME((DAE.CREF(componentRef=_),DAE.PROP(ty2,_),_))) = Static.elabCref(cache, env, crefRight, impl, false, inPre, info);
+        // type of left var is an expandable connector!
+        true = InstSection.isExpandableConnectorType(ty1);
+        // type of right left var is an expandable connector!
+        true = InstSection.isExpandableConnectorType(ty2);
+        (cache, eEq, nEq) = splitConnectEquationsExpandable(cache, env, inIH, inPre, rest, impl, eq::eEq, listAppend(nEq, {eq}));
+      then
+        (cache, eEq, nEq);
+
     // connect, both expandable
     case (cache, env, _, _, (eq as SCode.EQUATION(SCode.EQ_CONNECT(crefLeft, crefRight, _, info)))::rest, _, eEq, nEq)
       equation

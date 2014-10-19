@@ -100,14 +100,41 @@ algorithm
   outString := Tpl.tplString2(SCodeDumpTpl.dumpModifier, inMod, options);
 end printModStr;
 
-public function printCommentStr
-"Prints SCode.Mod to a string."
+public function printCommentAndAnnotationStr
+"Prints SCode.Comment to a string."
   input SCode.Comment inComment;
   input SCodeDumpOptions options;
   output String outString;
 algorithm
   outString := Tpl.tplString2(SCodeDumpTpl.dumpComment, inComment, options);
+end printCommentAndAnnotationStr;
+
+public function printCommentStr
+"Prints SCode.Comment.comment to a string."
+  input SCode.Comment inComment;
+  output String outString;
+algorithm
+  outString := match(inComment)
+    local Option<String> comment;
+    case (SCode.COMMENT(comment = comment))
+      then Tpl.tplString(SCodeDumpTpl.dumpCommentStr, comment);
+    else "";
+  end match;
 end printCommentStr;
+
+public function printAnnotationStr
+"Prints SCode.Comment.annotation to a string."
+  input SCode.Comment inComment;
+  input SCodeDumpOptions options;
+  output String outString;
+algorithm
+  outString := match(inComment, options)
+    local Option<SCode.Annotation> annotation_;
+    case (SCode.COMMENT(annotation_ = annotation_), _)
+      then Tpl.tplString2(SCodeDumpTpl.dumpAnnotationOpt, annotation_, options);
+    else "";
+  end match;
+end printAnnotationStr;
 
 public function restrString
 "Prints SCode.Restriction to a string."

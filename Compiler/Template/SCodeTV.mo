@@ -798,4 +798,12 @@ package Config
   end showAnnotations;
 end Config;
 
+package System
+  function escapedString
+    input String unescapedString;
+    input Boolean unescapeNewline;
+    output String escapedString;
+  end escapedString;
+end System;
+
 end SCodeTV;
