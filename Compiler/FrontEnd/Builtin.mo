@@ -695,10 +695,10 @@ algorithm
         graph = initialGraphOptimica(graph);
         graph = initialGraphMetaModelica(graph);
 
-        graph = FGraph.clone(graph); // we have references in the graph so we need to clone it before storing
-
         cache = FCore.setCachedInitialGraph(cache,graph);
         _ = getSetInitialGraph(SOME(graph));
+
+        graph = FGraph.clone(graph); // we have references in the graph so we need to clone it before returning it
       then
         (cache,graph);
 

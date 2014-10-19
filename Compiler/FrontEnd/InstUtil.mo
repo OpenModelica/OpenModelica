@@ -6650,7 +6650,7 @@ algorithm
     // handle empty case
     case (cache, _, _, _, {}, _, eEq, nEq) then (cache, listReverse(eEq), listReverse(nEq));
 
-    // connect, expandable non existing, expandable, put it in front and at the end!
+    /*/ connect, expandable non existing, expandable, put it in front and at the end!
     case (cache, env, _, _, (eq as SCode.EQUATION(SCode.EQ_CONNECT(crefLeft, crefRight, _, info)))::rest, _, eEq, nEq)
       equation
         (cache,NONE()) = Static.elabCref(cache, env, crefLeft, impl, false, inPre, info);
@@ -6679,7 +6679,7 @@ algorithm
         true = InstSection.isExpandableConnectorType(ty2);
         (cache, eEq, nEq) = splitConnectEquationsExpandable(cache, env, inIH, inPre, rest, impl, eq::eEq, listAppend(nEq, {eq}));
       then
-        (cache, eEq, nEq);
+        (cache, eEq, nEq);*/
 
     // connect, both expandable
     case (cache, env, _, _, (eq as SCode.EQUATION(SCode.EQ_CONNECT(crefLeft, crefRight, _, info)))::rest, _, eEq, nEq)

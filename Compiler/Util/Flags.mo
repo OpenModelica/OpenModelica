@@ -408,7 +408,8 @@ constant DebugFlag SHOW_DAE_GENERATION = DEBUG_FLAG(121, "showDaeGeneration", fa
   Util.gettext("Show the dae variable declarations as they happen."));
 constant DebugFlag RESHUFFLE_POST = DEBUG_FLAG(122, "reshufflePost", false,
   Util.gettext("Reshuffles the systems of equations."));
-
+constant DebugFlag SHOW_EXPANDABLE_INFO = DEBUG_FLAG(123, "showExpandableInfo", false,
+  Util.gettext("Show information about expandable connector handling."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -536,7 +537,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_EQ_UNIT,
   DUMP_EQ_UNIT_STRUCT,
   SHOW_DAE_GENERATION,
-  RESHUFFLE_POST
+  RESHUFFLE_POST,
+  SHOW_EXPANDABLE_INFO
 };
 
 // CONFIGURATION FLAGS

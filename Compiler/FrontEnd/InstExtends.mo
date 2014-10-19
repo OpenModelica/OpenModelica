@@ -1054,8 +1054,6 @@ algorithm
         // lookup as it might have been redeclared!!!
         (SCode.CLASS(prefixes = prefixes, partialPrefix = partialPrefix, restriction = restriction,
                      cmt = comment, info = info,classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
-        (cache,env) = Builtin.initialGraph(cache);
-
         env = FGraph.openScope(env, SCode.ENCAPSULATED(), SOME(name), FGraph.restrictionToScopeType(restriction));
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
@@ -1065,8 +1063,6 @@ algorithm
     case (cache,env,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
         //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name);
-        (cache,env) = Builtin.initialGraph(cache);
-
         env = FGraph.openScope(env, SCode.ENCAPSULATED(), SOME(name), FGraph.restrictionToScopeType(restriction));
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
