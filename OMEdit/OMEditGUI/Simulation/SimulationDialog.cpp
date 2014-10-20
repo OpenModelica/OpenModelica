@@ -185,6 +185,8 @@ void SimulationDialog::setUpForm()
   // Variable filter
   mpVariableFilterLabel = new Label(tr("Variable Filter (Optional):"));
   mpVariableFilterTextBox = new QLineEdit;
+  // Protected Variabels
+  mpProtectedVariablesCheckBox = new QCheckBox(tr("Protected Variables"));
   // show generated files checkbox
   mpShowGeneratedFilesCheckBox = new QCheckBox(tr("Show Generated Files"));
   // set Output Tab Layout
@@ -198,7 +200,8 @@ void SimulationDialog::setUpForm()
   pOutputTabLayout->addWidget(mpFileNameTextBox, 2, 1);
   pOutputTabLayout->addWidget(mpVariableFilterLabel, 3, 0);
   pOutputTabLayout->addWidget(mpVariableFilterTextBox, 3, 1);
-  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 4, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpProtectedVariablesCheckBox, 4, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 5, 0, 1, 2);
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
@@ -983,64 +986,56 @@ void SimulationDialog::simulate()
       mSimulationParameters.append(", cflags=").append("\"").append(mpCflagsTextBox->text()).append("\"");
     mpMainWindow->getOMCProxy()->setCommandLineOptions("+profiling=" + mpProfilingComboBox->currentText());
     // setup simulation flags
+    // emit protected variables
+    if (mpProtectedVariablesCheckBox->isChecked()) {
+      mSimulationFlags.append("-emit_protected");
+    }
     // setup Model Setup file flag
-    if (!mpModelSetupFileTextBox->text().isEmpty())
-    {
+    if (!mpModelSetupFileTextBox->text().isEmpty()) {
       mSimulationFlags.append(QString("-f=").append(mpModelSetupFileTextBox->text()));
     }
     // setup initiaization method flag
-    if (!mpInitializationMethodComboBox->currentText().isEmpty())
-    {
+    if (!mpInitializationMethodComboBox->currentText().isEmpty()) {
       mSimulationFlags.append(QString("-iim=").append(mpInitializationMethodComboBox->currentText()));
     }
     // setup Optimization Method flag
-    if (!mpOptimizationMethodComboBox->currentText().isEmpty())
-    {
+    if (!mpOptimizationMethodComboBox->currentText().isEmpty()) {
       mSimulationFlags.append(QString("-iom=").append(mpOptimizationMethodComboBox->currentText()));
     }
     // setup Equation System Initialization file flag
-    if (!mpEquationSystemInitializationFileTextBox->text().isEmpty())
-    {
+    if (!mpEquationSystemInitializationFileTextBox->text().isEmpty()) {
       mSimulationFlags.append(QString("-iif=").append(mpEquationSystemInitializationFileTextBox->text()));
     }
     // setup Equation System Initialization time flag
-    if (!mpEquationSystemInitializationTimeTextBox->text().isEmpty())
-    {
+    if (!mpEquationSystemInitializationTimeTextBox->text().isEmpty()) {
       mSimulationFlags.append(QString("-iit=").append(mpEquationSystemInitializationTimeTextBox->text()));
     }
     // clock
-    if (!mpClockComboBox->currentText().isEmpty())
-    {
+    if (!mpClockComboBox->currentText().isEmpty()) {
       mSimulationFlags.append(QString("-clock=").append(mpClockComboBox->currentText()));
     }
     // linear solver
-    if (!mpLinearSolverComboBox->currentText().isEmpty())
-    {
+    if (!mpLinearSolverComboBox->currentText().isEmpty()) {
       mSimulationFlags.append(QString("-ls=").append(mpLinearSolverComboBox->currentText()));
     }
     // non linear solver
-    if (!mpNonLinearSolverComboBox->currentText().isEmpty())
-    {
+    if (!mpNonLinearSolverComboBox->currentText().isEmpty()) {
       mSimulationFlags.append(QString("-nls=").append(mpNonLinearSolverComboBox->currentText()));
     }
     // time where the linearization of the model should be performed
-    if (!mpLinearizationTimeTextBox->text().isEmpty())
-    {
+    if (!mpLinearizationTimeTextBox->text().isEmpty()) {
       mSimulationFlags.append(QString("-l=").append(mpLinearizationTimeTextBox->text()));
     }
     // output variables
-    if (!mpOutputVariablesTextBox->text().isEmpty())
-    {
+    if (!mpOutputVariablesTextBox->text().isEmpty()) {
       mSimulationFlags.append(QString("-output=").append(mpOutputVariablesTextBox->text()));
     }
     // setup cpu time flag
-    if (mpCPUTimeCheckBox->isChecked())
-    {
+    if (mpCPUTimeCheckBox->isChecked()) {
       mSimulationFlags.append("-cpu");
     }
     // setup enable all warnings flag
-    if (mpEnableAllWarningsCheckBox->isChecked())
-    {
+    if (mpEnableAllWarningsCheckBox->isChecked()) {
       mSimulationFlags.append("-w");
     }
     // setup Logging flags
@@ -1104,8 +1099,7 @@ void SimulationDialog::simulate()
 
       mSimulationFlags.append(QString(loggingFlagName).append(loggingFlagValues));
     }
-    if (!mpAdditionalSimulationFlagsTextBox->text().isEmpty())
-    {
+    if (!mpAdditionalSimulationFlagsTextBox->text().isEmpty()) {
       mSimulationFlags.append(StringHandler::splitStringWithSpaces(mpAdditionalSimulationFlagsTextBox->text()));
     }
     // before simulating save the simulation options.
@@ -1126,16 +1120,16 @@ void SimulationDialog::simulate()
     mpProgressDialog->hide();
     accept();
     /* if we have a new SimulationOutputWidget then make it the active window. */
-    if (mSimulationOutputWidgetsList.size() > numberOfSimulationOutputWidgets)
-    {
+    if (mSimulationOutputWidgetsList.size() > numberOfSimulationOutputWidgets) {
       QWidget *pSimulationOutputWidget = mSimulationOutputWidgetsList.last();
       showSimulationOutputWidget();
       pSimulationOutputWidget->raise();
       pSimulationOutputWidget->activateWindow();
     }
     /* if launch debugger is checked then show the algorithmic debugger window */
-    if (mpLaunchDebuggerCheckBox->isChecked())
+    if (mpLaunchDebuggerCheckBox->isChecked()) {
       mpMainWindow->showAlgorithmicDebugger();
+    }
   }
 }
 

@@ -152,6 +152,7 @@ private:
   QLineEdit *mpFileNameTextBox;
   Label *mpVariableFilterLabel;
   QLineEdit *mpVariableFilterTextBox;
+  QCheckBox *mpProtectedVariablesCheckBox;
   QCheckBox *mpShowGeneratedFilesCheckBox;
   // Simulation Flags Tab
   QWidget *mpSimulationFlagsTab;
