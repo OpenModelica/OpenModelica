@@ -123,6 +123,7 @@ public:
   QAction* getZoomInAction();
   QAction* getZoomOutAction();
   QAction* getSimulateModelAction();
+  QAction* getSimulateWithAlgorithmicDebuggerAction() {return mpSimulateWithAlgorithmicDebuggerAction;}
   QAction* getSimulationSetupAction();
   QAction* getInstantiateModelAction();
   QAction* getCheckModelAction();
@@ -152,6 +153,7 @@ public:
   void openDroppedFile(QDropEvent *event);
   void openResultFiles(QStringList fileNames);
   void simulate(LibraryTreeNode *pLibraryTreeNode);
+  void simulateWithAlgorithmicDebugger(LibraryTreeNode *pLibraryTreeNode);
   void simulationSetup(LibraryTreeNode *pLibraryTreeNode);
   void instantiatesModel(LibraryTreeNode *pLibraryTreeNode);
   void checkModel(LibraryTreeNode *pLibraryTreeNode);
@@ -230,6 +232,7 @@ private:
   QAction *mpCheckModelAction;
   QAction *mpCheckAllModelsAction;
   QAction *mpSimulateModelAction;
+  QAction *mpSimulateWithAlgorithmicDebuggerAction;
   QAction *mpSimulationSetupAction;
   // FMI Menu
   QAction *mpExportFMUAction;
@@ -304,6 +307,7 @@ public slots:
   void checkModel();
   void checkAllModels();
   void simulateModel();
+  void simulateModelWithAlgorithmicDebugger();
   void openSimulationDialog();
   void openInteractiveSimulation();
   void showFindReplaceDialog();

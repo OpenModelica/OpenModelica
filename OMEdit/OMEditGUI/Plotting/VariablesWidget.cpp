@@ -1189,7 +1189,7 @@ void VariablesWidget::showContextMenu(QPoint point)
     pDeleteResultAction->setStatusTip(tr("Delete the result"));
     connect(pDeleteResultAction, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(removeVariableTreeItem()));
     /* re-simulate action */
-    QAction *pReSimulateAction = new QAction(QIcon(":/Resources/icons/simulate.png"), tr("Re-simulate"), this);
+    QAction *pReSimulateAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), tr("Re-simulate"), this);
     pReSimulateAction->setData(pVariablesTreeItem->getSimulationOptions());
     pReSimulateAction->setStatusTip(Helper::simulateTip);
     pReSimulateAction->setEnabled(pVariablesTreeItem->getSimulationOptions().isValid());

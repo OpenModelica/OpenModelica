@@ -3182,6 +3182,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   getMainWindow()->getZoomInAction()->setEnabled(enabled && modelica);
   getMainWindow()->getZoomOutAction()->setEnabled(enabled && modelica);
   getMainWindow()->getSimulateModelAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getSimulateWithAlgorithmicDebuggerAction()->setEnabled(enabled && modelica);
   getMainWindow()->getSimulationSetupAction()->setEnabled(enabled && modelica);
   getMainWindow()->getInstantiateModelAction()->setEnabled(enabled && modelica);
   getMainWindow()->getCheckModelAction()->setEnabled(enabled && modelica);

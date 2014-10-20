@@ -86,11 +86,12 @@ void SimulationDialog::show(LibraryTreeNode *pLibraryTreeNode, bool isInteractiv
   \param pLibraryTreeNode - pointer to LibraryTreeNode
   \param isInteractive - true indicates that the simulation is interactive.
   */
-void SimulationDialog::directSimulate(LibraryTreeNode *pLibraryTreeNode, bool isInteractive)
+void SimulationDialog::directSimulate(LibraryTreeNode *pLibraryTreeNode, bool isInteractive, bool attachDebugger)
 {
   mIsInteractive = isInteractive;
   mpLibraryTreeNode = pLibraryTreeNode;
   initializeFields();
+  mpLaunchDebuggerCheckBox->setChecked(attachDebugger);
   simulate();
 }
 

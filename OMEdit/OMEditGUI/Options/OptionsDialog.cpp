@@ -682,7 +682,7 @@ void OptionsDialog::addListItems()
   pGraphicalViewsItem->setText(tr("Graphical Views"));
   // Simulation Item
   QListWidgetItem *pSimulationItem = new QListWidgetItem(mpOptionsList);
-  pSimulationItem->setIcon(QIcon(":/Resources/icons/simulate.png"));
+  pSimulationItem->setIcon(QIcon(":/Resources/icons/simulate.svg"));
   pSimulationItem->setText(Helper::simulation);
   // Notifications Item
   QListWidgetItem *pNotificationsItem = new QListWidgetItem(mpOptionsList);
@@ -2928,7 +2928,13 @@ DebuggerPage::DebuggerPage(OptionsDialog *pParent)
   // GDB Path
   mpGDBPathLabel = new Label(tr("GDB Path:"));
 #ifdef WIN32
-  mpGDBPathTextBox = new QLineEdit(QString(Helper::OpenModelicaHome).append("/MinGW/bin/gdb.exe"));
+  const char *OMDEV = getenv("OMDEV");
+  if (QString(OMDEV).isEmpty()) {
+    mpGDBPathTextBox = new QLineEdit(QString(Helper::OpenModelicaHome).append("/MinGW/bin/gdb.exe"));
+  } else {
+    QString qOMDEV = QString(OMDEV).replace("\\", "/");
+    mpGDBPathTextBox = new QLineEdit(QString(qOMDEV).append("/tools/mingw/bin/gdb.exe"));
+  }
 #else
   mpGDBPathTextBox = new QLineEdit("gdb");
 #endif

@@ -704,7 +704,18 @@ void MainWindow::simulate(LibraryTreeNode *pLibraryTreeNode)
     if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
       return;
   }
-  mpSimulationDialog->directSimulate(pLibraryTreeNode, false);
+  mpSimulationDialog->directSimulate(pLibraryTreeNode, false, false);
+}
+
+void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeNode *pLibraryTreeNode)
+{
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeNode->getModelWidget())
+  {
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
+      return;
+  }
+  mpSimulationDialog->directSimulate(pLibraryTreeNode, false, true);
 }
 
 void MainWindow::simulationSetup(LibraryTreeNode *pLibraryTreeNode)
@@ -1341,7 +1352,10 @@ void MainWindow::checkAllModels()
   }
 }
 
-//! Open Simulation Window
+/*!
+  Simualtes the model directly.
+  */
+//!
 void MainWindow::simulateModel()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
@@ -1353,7 +1367,23 @@ void MainWindow::simulateModel()
   }
 }
 
-//! Open Simulation Window
+/*!
+  Simualtes the model with algorithmic debugger
+  */
+void MainWindow::simulateModelWithAlgorithmicDebugger()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget)
+  {
+    LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
+    if (pLibraryTreeNode)
+      simulateWithAlgorithmicDebugger(pLibraryTreeNode);
+  }
+}
+
+/*!
+  Opens the Simualtion Dialog
+  */
 void MainWindow::openSimulationDialog()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
@@ -1965,11 +1995,16 @@ void MainWindow::createActions()
   mpCheckAllModelsAction->setEnabled(false);
   connect(mpCheckAllModelsAction, SIGNAL(triggered()), SLOT(checkAllModels()));
   // simulate action
-  mpSimulateModelAction = new QAction(QIcon(":/Resources/icons/simulate.png"), Helper::simulate, this);
+  mpSimulateModelAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::simulate, this);
   mpSimulateModelAction->setStatusTip(Helper::simulateTip);
   mpSimulateModelAction->setShortcut(QKeySequence("Ctrl+b"));
   mpSimulateModelAction->setEnabled(false);
   connect(mpSimulateModelAction, SIGNAL(triggered()), SLOT(simulateModel()));
+  // simulate with algorithmic debugger action
+  mpSimulateWithAlgorithmicDebuggerAction = new QAction(QIcon(":/Resources/icons/simulate-debug.svg"), Helper::simulateWithAlgorithmicDebugger, this);
+  mpSimulateWithAlgorithmicDebuggerAction->setStatusTip(Helper::simulateWithAlgorithmicDebuggerTip);
+  mpSimulateWithAlgorithmicDebuggerAction->setEnabled(false);
+  connect(mpSimulateWithAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(simulateModelWithAlgorithmicDebugger()));
   // simulation setup action
   mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
@@ -2227,6 +2262,7 @@ void MainWindow::createMenus()
   pSimulationMenu->addAction(mpCheckModelAction);
   pSimulationMenu->addAction(mpCheckAllModelsAction);
   pSimulationMenu->addAction(mpSimulateModelAction);
+  pSimulationMenu->addAction(mpSimulateWithAlgorithmicDebuggerAction);
   pSimulationMenu->addAction(mpSimulationSetupAction);
   // add Simulation menu to menu bar
   menuBar()->addAction(pSimulationMenu->menuAction());
@@ -2382,6 +2418,7 @@ void MainWindow::createToolbars()
   mpSimulationToolBar->addAction(mpCheckModelAction);
   mpSimulationToolBar->addAction(mpCheckAllModelsAction);
   mpSimulationToolBar->addAction(mpSimulateModelAction);
+  mpSimulationToolBar->addAction(mpSimulateWithAlgorithmicDebuggerAction);
   mpSimulationToolBar->addAction(mpSimulationSetupAction);
   // Model Swithcer Toolbar
   mpModelSwitcherToolBar = addToolBar(tr("ModelSwitcher Toolbar"));

@@ -18,7 +18,8 @@
         <file>Resources/icons/save.png</file>
         <file>Resources/icons/saveall.png</file>
         <file>Resources/icons/saveas.png</file>
-        <file>Resources/icons/simulate.png</file>
+        <file>Resources/icons/simulate.svg</file>
+        <file>Resources/icons/simulate-debug.svg</file>
         <file>Resources/icons/simulation-center.svg</file>
         <file>Resources/icons/tool.png</file>
         <file>Resources/icons/undo.png</file>
