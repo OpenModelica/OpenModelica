@@ -788,8 +788,8 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 
-    comp->functions.logger(c, comp->instanceName, fmiError, "error", "fmiEventUpdate: terminated by an assertion.");
-    return fmiError;
+  comp->functions.logger(c, comp->instanceName, fmiError, "error", "fmiEventUpdate: terminated by an assertion.");
+  return fmiError;
 }
 
 fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate)
@@ -828,8 +828,8 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 
-    comp->functions.logger(c, comp->instanceName, fmiError, "error", "fmiEventUpdate: terminated by an assertion.");
-    return fmiError;
+  comp->functions.logger(c, comp->instanceName, fmiError, "error", "fmiCompletedIntegratorStep: terminated by an assertion.");
+  return fmiError;
 }
 
 fmiStatus fmiTerminate(fmiComponent c)
