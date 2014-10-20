@@ -6486,6 +6486,26 @@ algorithm
   end matchcontinue;
 end elabBuiltinIdentity;
 
+protected function zeroSizeOverconstrainedOperator
+  input DAE.Exp inExp;
+  input DAE.Exp inFExp;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inExp, inFExp, inInfo)
+    local String s;
+
+    case (DAE.ARRAY(array = {}), _, _)
+      equation
+        s = ExpressionDump.printExpStr(inFExp);
+        Error.addSourceMessage(Error.OVERCONSTRAINED_OPERATOR_SIZE_ZERO_RETURN_FALSE, {s}, inInfo);
+      then
+        ();
+
+    else ();
+
+  end matchcontinue;
+end zeroSizeOverconstrainedOperator;
+
 protected function elabBuiltinIsRoot
 "This function elaborates on the builtin operator Connections.isRoot."
   input FCore.Cache inCache;
@@ -6506,15 +6526,16 @@ algorithm
       FCore.Cache cache;
       Boolean impl;
       Absyn.Exp exp0;
-      DAE.Exp exp;
+      DAE.Exp exp, fexp;
       Prefix.Prefix pre;
+
     case (cache,env,{exp0},{},_,pre,_)
       equation
-      (cache,exp,_,_) = elabExpInExpression(cache, env, exp0, false,NONE(), false,pre,info);
+        (cache,exp,_,_) = elabExpInExpression(cache, env, exp0, false, NONE(), false, pre, info);
+        fexp = DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), {exp}, DAE.callAttrBuiltinBool);
+        zeroSizeOverconstrainedOperator(exp, fexp, info);
       then
-        (cache,
-        DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), {exp}, DAE.callAttrBuiltinBool),
-        DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR()));
+        (cache, fexp, DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR()));
   end match;
 end elabBuiltinIsRoot;
 
@@ -6539,19 +6560,17 @@ algorithm
       FCore.Cache cache;
       Boolean impl;
       Absyn.Exp exp0;
-      DAE.Exp exp;
+      DAE.Exp exp, fexp;
       Prefix.Prefix pre;
 
-    //        this operator is not even specified in the specification!
-    //        http://trac.modelica.org/Modelica/ticket/95
+    // this operator is not even specified in the specification! see: http://trac.modelica.org/Modelica/ticket/95
     case (cache,env,{exp0},{},_,pre,_)
       equation
         (cache, exp, _, _) = elabExpInExpression(cache, env, exp0, false,NONE(), false,pre,info);
+        fexp = DAE.CALL(Absyn.IDENT("rooted"), {exp}, DAE.callAttrBuiltinBool);
+        zeroSizeOverconstrainedOperator(exp, fexp, info);
       then
-        (cache,
-        DAE.CALL(Absyn.IDENT("rooted"), {exp}, DAE.callAttrBuiltinBool),
-        DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR()));
-
+        (cache, fexp, DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR()));
   end match;
 end elabBuiltinRooted;
 

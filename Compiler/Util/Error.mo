@@ -762,6 +762,10 @@ public constant Message ILLEGAL_RECORD_COMPONENT = MESSAGE(549, TRANSLATION(), W
   Util.gettext("Ignoring record component:\n%swhen building record the constructor. Records are allowed to contain only components of basic types, arrays of basic types or other records."));
 public constant Message EQ_WITHOUT_TIME_DEP_VARS = MESSAGE(550, SYMBOLIC(), ERROR(),
   Util.gettext("Found equation without time-dependent variables: %s = %s"));
+public constant Message OVERCONSTRAINED_OPERATOR_SIZE_ZERO = MESSAGE(551, TRANSLATION(), WARNING(),
+  Util.gettext("Ignoring overconstrained operator applied to array components having size zero: %s."));
+public constant Message OVERCONSTRAINED_OPERATOR_SIZE_ZERO_RETURN_FALSE = MESSAGE(552, TRANSLATION(), WARNING(),
+  Util.gettext("Returning false from overconstrained operator applied to array components having size zero: %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

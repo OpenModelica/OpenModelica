@@ -761,93 +761,18 @@ algorithm
       then
         (cache,env,ih,dae,csets,ci_state,graph);
 
-    // Connections.root(cr)
-    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
-              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("root", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}))),_,_,graph,_)
+    // handle Connections.* operators
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(exp = e, info = info),_,impl,graph,_)
       equation
-        (cache,SOME((DAE.CREF(cr_,_),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
-        (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
-        graph = ConnectionGraph.addDefiniteRoot(graph, cr_);
+        true = isConnectionsOperator(e);
+        (cache,env,ih,dae,csets,ci_state,graph) = handleConnectionsOperators(cache,env,ih,pre,csets,ci_state,inEEquation,inInitial,impl,graph,flattenOp);
       then
-        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
-
-    // Connections.potentialRoot(cr)
-    // TODO: Merge all cases for potentialRoot below using standard way of handling named/positional arguments and type conversion Integer->Real
-    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
-              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}))),_,_,graph,_)
-      equation
-        (cache,SOME((DAE.CREF(cr_,_),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
-        (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
-        graph = ConnectionGraph.addPotentialRoot(graph, cr_, 0.0);
-      then
-        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
-
-    // Connections.potentialRoot(cr,priority) - priority as Integer positinal argument
-    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
-              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr),Absyn.INTEGER(ipriority)}, {}))),_,_,graph,_)
-      equation
-        (cache,SOME((DAE.CREF(cr_,_),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
-        (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
-        graph = ConnectionGraph.addPotentialRoot(graph, cr_, intReal(ipriority));
-      then
-        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
-
-    // Connections.potentialRoot(cr,priority =prio ) - priority as named argument
-    case (cache,env,ih,_,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
-              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(_)}, {Absyn.NAMEDARG("priority", Absyn.REAL(_))}))),_,_,graph,_)
-      equation
-        Error.addSourceMessage(Error.ARGUMENT_MUST_BE_INTEGER, {"Second", "Connections.potentialRoot", ""}, info);
-      then
-        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
-
-    // Connections.branch(cr1,cr2)
-    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
-              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("branch", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}))),_,_,graph,_)
-      equation
-        (cache,SOME((DAE.CREF(cr1_,_),_,_))) = Static.elabCref(cache,env, cr1, false /* ??? */,false,pre,info);
-        (cache,SOME((DAE.CREF(cr2_,_),_,_))) = Static.elabCref(cache,env, cr2, false /* ??? */,false,pre,info);
-        (cache,cr1_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr1_);
-        (cache,cr2_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr2_);
-        graph = ConnectionGraph.addBranch(graph, cr1_, cr2_);
-      then
-        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
-
-    // Connections.uniqueRoot(cr, message)
-    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
-              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("uniqueRoot", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr), msg}, {}))),_,_,graph,_)
-      equation
-        (cache,exp,_,_) = Static.elabExp(cache, env, Absyn.CREF(cr), false, NONE(), true, pre, info);
-        (cache,msg_1,_,_) = Static.elabExp(cache, env, msg, false, NONE(), false, pre, info);
-        (cache,exp) = PrefixUtil.prefixExp(cache,env,ih,exp,pre);
-        (cache,msg_1) = PrefixUtil.prefixExp(cache,env,ih,msg_1,pre);
-        graph = ConnectionGraph.addUniqueRoots(graph, exp, msg_1);
-        Error.addSourceMessage(Error.NON_STANDARD_OPERATOR, {"Connections.uniqueRoot"}, info);
-      then
-        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
-
-    // Connections.uniqueRoot(cr, message = message)
-    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
-              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("uniqueRoot", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {Absyn.NAMEDARG("message", msg)}))),_,_,graph,_)
-      equation
-        (cache,exp,_,_) = Static.elabExp(cache, env, Absyn.CREF(cr), false, NONE(), true, pre, info);
-        (cache,msg_1,_,_) = Static.elabExp(cache, env, msg, false, NONE(), false, pre, info);
-        (cache,exp) = PrefixUtil.prefixExp(cache,env,ih,exp,pre);
-        (cache,msg_1) = PrefixUtil.prefixExp(cache,env,ih,msg_1,pre);
-        graph = ConnectionGraph.addUniqueRoots(graph, exp, msg_1);
-        Error.addSourceMessage(Error.NON_STANDARD_OPERATOR, {"Connections.uniqueRoot"}, info);
-      then
-        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
+        (cache,env,ih,dae,csets,ci_state,graph);
 
     // no return calls
     case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(exp = e, info = info),_,impl,graph,_)
       equation
+        false = isConnectionsOperator(e);
         (cache,exp,_,_) = Static.elabExp(cache,env,e,impl,NONE(),false,pre,info);
         // This is probably an external function call that the user wants to evaluat at runtime
         // (cache, exp, prop1) = Ceval.cevalIfConstant(cache, env, exp, prop1, impl, info);
@@ -873,6 +798,251 @@ algorithm
         fail();
   end matchcontinue;
 end instEquationCommonWork;
+
+protected function isConnectionsOperator
+  input Absyn.Exp inExp;
+  output Boolean yes;
+algorithm
+  yes := matchcontinue(inExp)
+    local Absyn.Ident id;
+    case (Absyn.CALL(function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT(id, {}))))
+      equation
+        true = listMember(id, {"root", "potentialRoot", "branch", "uniqueRoot"});
+      then true;
+    else false;
+  end matchcontinue;
+end isConnectionsOperator;
+
+protected function handleConnectionsOperators
+"This function handles Connections.* no return operators"
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input InnerOuter.InstHierarchy inIH;
+  input Prefix.Prefix inPrefix;
+  input Connect.Sets inSets;
+  input ClassInf.State inState;
+  input SCode.EEquation inEEquation;
+  input SCode.Initial inInitial;
+  input Boolean inBoolean;
+  input ConnectionGraph.ConnectionGraph inGraph;
+  input DAE.SymbolicOperation flattenOp;
+  output FCore.Cache outCache;
+  output FCore.Graph outEnv;
+  output InnerOuter.InstHierarchy outIH;
+  output DAE.DAElist outDae;
+  output Connect.Sets outSets;
+  output ClassInf.State outState;
+  output ConnectionGraph.ConnectionGraph outGraph;
+algorithm
+  (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,flattenOp)
+    local
+      list<DAE.Properties> props;
+      Connect.Sets csets_1,csets;
+      DAE.DAElist dae;
+      ClassInf.State ci_state_1,ci_state,ci_state_2;
+      FCore.Graph env,env_1,env_2;
+      Prefix.Prefix pre;
+      Absyn.ComponentRef c1,c2,cr,cr1,cr2;
+      SCode.Initial initial_;
+      Boolean impl, b1, b2;
+      String i,s;
+      Absyn.Exp e2,e1,e,ee,e3,msg;
+      list<Absyn.Exp> conditions;
+      DAE.Exp e1_1,e2_1,e1_2,e2_2,e_1,e_2,e3_1,e3_2,msg_1;
+      DAE.Properties prop1,prop2,prop3;
+      list<SCode.EEquation> b,fb,el,eel;
+      list<list<SCode.EEquation>> tb;
+      list<tuple<Absyn.Exp, list<SCode.EEquation>>> eex;
+      DAE.Type id_t;
+      Values.Value v;
+      DAE.ComponentRef cr_1;
+      SCode.EEquation eqn,eq;
+      FCore.Cache cache;
+      list<Values.Value> valList;
+      list<DAE.Exp> expl1;
+      list<Boolean> blist;
+      ConnectionGraph.ConnectionGraph graph;
+      InstanceHierarchy ih;
+      list<tuple<Absyn.ComponentRef, Integer>> lst;
+      tuple<Absyn.ComponentRef, Integer> tpl;
+      DAE.ElementSource source "the origin of the element";
+      list<DAE.Element> daeElts1,daeElts2;
+      list<list<DAE.Element>> daeLLst;
+      DAE.Const cnst;
+      Absyn.Info info;
+      DAE.Element daeElt2;
+      list<DAE.ComponentRef> lhsCrefs,lhsCrefsRec;
+      Integer i1,ipriority;
+      list<DAE.Element> daeElts,daeElts3;
+      DAE.ComponentRef cr_,cr1_,cr2_;
+      DAE.Type t;
+      DAE.Properties tprop1,tprop2;
+      Real priority;
+      DAE.Exp exp;
+      Option<Values.Value> containsEmpty;
+      SCode.Comment comment;
+      Absyn.FunctionArgs functionArgs;
+
+    // Connections.root(cr) - zero sized cref
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("root", {})),
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}))),_,_,graph,_)
+      equation
+        (cache,SOME((DAE.ARRAY(array = {}),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
+        s = SCodeDump.equationStr(inEEquation,SCodeDump.defaultOptions);
+        Error.addSourceMessage(Error.OVERCONSTRAINED_OPERATOR_SIZE_ZERO, {s}, info);
+      then
+        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
+
+    // Connections.root(cr)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("root", {})),
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}))),_,_,graph,_)
+      equation
+        (cache,SOME((DAE.CREF(cr_,_),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
+        (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
+        graph = ConnectionGraph.addDefiniteRoot(graph, cr_);
+      then
+        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
+
+    // Connections.potentialRoot(cr, priority = p) - zero sized cref
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
+              functionArgs = functionArgs)),_,_,graph,_)
+      equation
+        (cr, ipriority) = potentialRootArguments(functionArgs, info, pre, inEEquation);
+        (cache,SOME((DAE.ARRAY(array = {}),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
+        s = SCodeDump.equationStr(inEEquation,SCodeDump.defaultOptions);
+        Error.addSourceMessage(Error.OVERCONSTRAINED_OPERATOR_SIZE_ZERO, {s}, info);
+      then
+        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
+
+    // Connections.potentialRoot(cr, priority = p)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
+              functionArgs = functionArgs)),_,_,graph,_)
+      equation
+        (cr, ipriority) = potentialRootArguments(functionArgs, info, pre, inEEquation);
+        (cache,SOME((DAE.CREF(cr_,_),_,_))) = Static.elabCref(cache, env, cr, false /* ??? */,false, pre, info);
+        (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
+        graph = ConnectionGraph.addPotentialRoot(graph, cr_, intReal(ipriority));
+      then
+        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
+
+    // Connections.uniqueRoot(cr, message) - zero sized cref
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("uniqueRoot", {})),
+              functionArgs = functionArgs)),_,_,graph,_)
+      equation
+        (cr, msg) = uniqueRootArguments(functionArgs, info, pre, inEEquation);
+        (cache,SOME((DAE.ARRAY(array = {}),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
+        s = SCodeDump.equationStr(inEEquation,SCodeDump.defaultOptions);
+        Error.addSourceMessage(Error.OVERCONSTRAINED_OPERATOR_SIZE_ZERO, {s}, info);
+        Error.addSourceMessage(Error.NON_STANDARD_OPERATOR, {"Connections.uniqueRoot"}, info);
+      then
+        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
+
+    // Connections.uniqueRoot(cr, message)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("uniqueRoot", {})),
+              functionArgs = functionArgs)),_,_,graph,_)
+      equation
+        (cr, msg) = uniqueRootArguments(functionArgs, info, pre, inEEquation);
+        (cache,exp,_,_) = Static.elabExp(cache, env, Absyn.CREF(cr), false, NONE(), true, pre, info);
+        (cache,msg_1,_,_) = Static.elabExp(cache, env, msg, false, NONE(), false, pre, info);
+        (cache,exp) = PrefixUtil.prefixExp(cache,env,ih,exp,pre);
+        (cache,msg_1) = PrefixUtil.prefixExp(cache,env,ih,msg_1,pre);
+        graph = ConnectionGraph.addUniqueRoots(graph, exp, msg_1);
+        Error.addSourceMessage(Error.NON_STANDARD_OPERATOR, {"Connections.uniqueRoot"}, info);
+      then
+        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
+
+    // Connections.branch(cr1,cr2) - zero sized crefs
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("branch", {})),
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}))),_,_,graph,_)
+      equation
+        (cache,SOME((e_1,_,_))) = Static.elabCref(cache,env, cr1, false /* ??? */,false,pre,info);
+        (cache,SOME((e_2,_,_))) = Static.elabCref(cache,env, cr2, false /* ??? */,false,pre,info);
+        b1 = Types.isZeroLengthArray(Expression.typeof(e_1));
+        b2 = Types.isZeroLengthArray(Expression.typeof(e_2));
+        true = boolOr(b1, b2);
+        s = SCodeDump.equationStr(inEEquation,SCodeDump.defaultOptions);
+        Error.addSourceMessage(Error.OVERCONSTRAINED_OPERATOR_SIZE_ZERO, {s}, info);
+      then
+        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
+
+    // Connections.branch(cr1,cr2)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("branch", {})),
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}))),_,_,graph,_)
+      equation
+        (cache,SOME((DAE.CREF(cr1_,_),_,_))) = Static.elabCref(cache,env, cr1, false /* ??? */,false,pre,info);
+        (cache,SOME((DAE.CREF(cr2_,_),_,_))) = Static.elabCref(cache,env, cr2, false /* ??? */,false,pre,info);
+        (cache,cr1_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr1_);
+        (cache,cr2_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr2_);
+        graph = ConnectionGraph.addBranch(graph, cr1_, cr2_);
+      then
+        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
+
+    // failure
+    case (_,env,_,_,_,_,eqn,_,_,_,_)
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        s = SCodeDump.equationStr(eqn,SCodeDump.defaultOptions);
+        Debug.fprint(Flags.FAILTRACE, "- handleConnectionsOperators failed for eqn: ");
+        Debug.fprint(Flags.FAILTRACE, s +& " in scope:" +& FGraph.getGraphNameStr(env) +& "\n");
+      then
+        fail();
+  end matchcontinue;
+end handleConnectionsOperators;
+
+protected function potentialRootArguments
+  input Absyn.FunctionArgs inFunctionArgs;
+  input Absyn.Info info;
+  input Prefix.Prefix inPrefix;
+  input SCode.EEquation inEEquation;
+  output Absyn.ComponentRef outCref;
+  output Integer outPriority;
+algorithm
+  (outCref, outPriority) := matchcontinue(inFunctionArgs, info, inPrefix, inEEquation)
+    local Absyn.ComponentRef cr; Integer p; String s1, s2;
+    case (Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}), _, _, _) then (cr, 0);
+    case (Absyn.FUNCTIONARGS({Absyn.CREF(cr),Absyn.INTEGER(p)}, {}), _, _, _) then (cr, p);
+    case (Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {Absyn.NAMEDARG("priority", Absyn.INTEGER(p))}), _, _, _) then (cr, p);
+    case (_, _, _, _)
+      equation
+        s1 = SCodeDump.equationStr(inEEquation,SCodeDump.defaultOptions);
+        s2 = PrefixUtil.printPrefixStr3(inPrefix);
+        Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS,{s1,s2},info);
+      then
+        fail();
+  end matchcontinue;
+end potentialRootArguments;
+
+protected function uniqueRootArguments
+  input Absyn.FunctionArgs inFunctionArgs;
+  input Absyn.Info info;
+  input Prefix.Prefix inPrefix;
+  input SCode.EEquation inEEquation;
+  output Absyn.ComponentRef outCref;
+  output Absyn.Exp outMessage;
+algorithm
+  (outCref, outMessage) := matchcontinue(inFunctionArgs, info, inPrefix, inEEquation)
+    local Absyn.ComponentRef cr; Absyn.Exp msg; String s1, s2;
+    case (Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}), _, _, _) then (cr, Absyn.STRING(""));
+    case (Absyn.FUNCTIONARGS({Absyn.CREF(cr), msg}, {}), _, _, _) then (cr, msg);
+    case (Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {Absyn.NAMEDARG("message", msg)}), _, _, _) then (cr, msg);
+    case (_, _, _, _)
+      equation
+        s1 = SCodeDump.equationStr(inEEquation,SCodeDump.defaultOptions);
+        s2 = PrefixUtil.printPrefixStr3(inPrefix);
+        Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS,{s1,s2},info);
+      then
+        fail();
+  end matchcontinue;
+end uniqueRootArguments;
 
 protected function checkReinitType
   "Checks that the base type of the given type is Real, otherwise it prints an

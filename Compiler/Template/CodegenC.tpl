@@ -10264,22 +10264,22 @@ template expTypeShort(DAE.Type type)
  "Generate type helper."
 ::=
   match type
-  case T_INTEGER(__)         then "integer"
-  case T_REAL(__)        then "real"
-  case T_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
-  case T_BOOL(__)        then "boolean"
-  case T_ENUMERATION(__) then "integer"
-  case T_ARRAY(__)       then expTypeShort(ty)
-  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
-                      then "complex"
-  case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>'
+  case T_INTEGER(__)       then "integer"
+  case T_REAL(__)          then "real"
+  case T_STRING(__)        then if acceptMetaModelicaGrammar() then "metatype" else "string"
+  case T_BOOL(__)          then "boolean"
+  case T_ENUMERATION(__)   then "integer"
+  case T_SUBTYPE_BASIC(__) then expTypeShort(complexType)
+  case T_ARRAY(__)         then expTypeShort(ty)
+  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then "complex"
+  case T_COMPLEX(__)       then '<%underscorePath(ClassInf.getStateName(complexClassType))%>'
   case T_METAUNIONTYPE(__)
   case T_METALIST(__)
   case T_METATUPLE(__)
   case T_METAOPTION(__)
   case T_METAPOLYMORPHIC(__)
   case T_METATYPE(__)
-  case T_METABOXED(__)    then "metatype"
+  case T_METABOXED(__)     then "metatype"
   case T_FUNCTION(__)
   case T_FUNCTION_REFERENCE_FUNC(__)
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
@@ -10409,10 +10409,9 @@ template expTypeFlag(DAE.Type ty, Integer flag)
     case T_BOOL(__) then 'int'
     case T_REAL(__) then 'double'
     case T_STRING(__) then 'const char*'
+    case T_SUBTYPE_BASIC(__) then '<%expTypeFlag(complexType,8)%>*'
     else error(sourceInfo(),'I do not know the external type of <%unparseType(ty)%>'))
 end expTypeFlag;
-
-
 
 template expTypeFromExpFlag(Exp exp, Integer flag)
  "Generate type helper."

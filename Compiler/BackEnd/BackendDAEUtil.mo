@@ -3346,7 +3346,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation we,elsewe;
       Integer size;
-      String eqnstr;
+      String eqnstr, str;
       list<DAE.Statement> statementLst;
       list<list<BackendDAE.Equation>> eqnslst;
       list<BackendDAE.Equation> eqns;
@@ -3410,6 +3410,7 @@ algorithm
         res = incidenceRowWhen(vars,elsewe,inIndexType,functionTree,res);
       then
         (res,size);
+
     // ALGORITHM For now assume that algorithm will be solvable for
     // correct variables. I.e. find all variables in algorithm and add to lst.
     // If algorithm later on needs to be inverted, i.e. solved for
@@ -3433,9 +3434,8 @@ algorithm
     else
       equation
         eqnstr = BackendDump.equationString(inEquation);
-        print("- BackendDAE.incidenceRow failed for eqn: ");
-        print(eqnstr);
-        print("\n");
+        str = "- BackendDAE.incidenceRow failed for equation: " +& eqnstr;
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
   end matchcontinue;

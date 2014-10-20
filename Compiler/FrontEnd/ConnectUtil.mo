@@ -3583,7 +3583,7 @@ algorithm
     case ({}) then (0, 0, 0);
 
     // A connector inside a connector.
-    case ((DAE.TYPES_VAR( ty = ty)) :: rest)
+    case ((DAE.TYPES_VAR(ty = ty)) :: rest)
       equation
         // Check that it's a connector.
         ty2 = Types.arrayElementType(ty);
@@ -3683,6 +3683,8 @@ algorithm
     // The size of a complex type with an equalityConstraint function is
     // determined by the size of the return value of that function.
     case (DAE.T_COMPLEX(equalityConstraint = SOME((_, n, _)))) then n;
+    // The size of a basic subtype with equality constraint is ZERO.
+    case (DAE.T_SUBTYPE_BASIC(complexType = t, equalityConstraint = SOME(_))) then 0;
     // The size of a basic subtype is the size of the extended type.
     case (DAE.T_SUBTYPE_BASIC(complexType = t)) then sizeOfVariable2(t);
     // Anything we forgot?

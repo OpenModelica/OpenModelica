@@ -75,6 +75,8 @@ public import HashTable3;
 public import HashTableCG;
 public import Connect;
 
+protected import Error;
+
 public type Edge  = tuple<DAE.ComponentRef,DAE.ComponentRef> "an edge is a tuple with two component references";
 public type Edges = list<Edge> "A list of edges";
 
@@ -1045,6 +1047,13 @@ algorithm
       list<DAE.ComponentRef> roots;
       list<DAE.Exp> lst;
 
+    // handle rooted - with zero size array
+    case (DAE.CALL(path=Absyn.IDENT("rooted"), expLst={DAE.ARRAY(array = {})}), (rooted,roots,graph))
+      equation
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalConnectionsOperatorsHelper: " +& ExpressionDump.printExpStr(inExp) +& " = " +& "false");
+      then
+        (DAE.BCONST(false), (rooted,roots,graph));
+
     // handle rooted
     case (DAE.CALL(path=Absyn.IDENT("rooted"), expLst={DAE.CREF(componentRef = cref)}), (rooted,roots,graph))
       equation
@@ -1064,6 +1073,20 @@ algorithm
 
     // no roots, same exp
     case (exp, (rooted,roots as {},graph)) then (exp, (rooted,roots,graph));
+
+    // deal with Connections.isRoot - with zero size array
+    case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.ARRAY(array = {})}), (rooted,roots,graph))
+      equation
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalConnectionsOperatorsHelper: " +& ExpressionDump.printExpStr(inExp) +& " = " +& "false");
+      then
+        (DAE.BCONST(false), (rooted,roots,graph));
+
+    // deal with NOT Connections.isRoot - with zero size array
+    case (DAE.LUNARY(DAE.NOT(_), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.ARRAY(array = {})})), (rooted,roots,graph))
+      equation
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalConnectionsOperatorsHelper: " +& ExpressionDump.printExpStr(inExp) +& " = " +& "false");
+      then
+        (DAE.BCONST(false), (rooted,roots,graph));
 
     // deal with Connections.isRoot
     case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.CREF(componentRef = cref)}), (rooted,roots,graph))

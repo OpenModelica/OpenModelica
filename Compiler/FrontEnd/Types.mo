@@ -3491,6 +3491,11 @@ algorithm
       then
         (ty_1, dimlist);
 
+    // Complex type extending basetype with equality constraint
+    case (DAE.T_SUBTYPE_BASIC(complexType = ty, equalityConstraint = SOME(_)))
+      then
+        (inType,{});
+
     // Complex type extending basetype.
     case (DAE.T_SUBTYPE_BASIC(complexType = ty))
       equation
@@ -3875,7 +3880,7 @@ algorithm
         DAE.T_ARRAY(t_1,dims,DAE.emptyTypeSource);
 
     // do NOT simplify out equality constraint
-    case (DAE.T_SUBTYPE_BASIC(complexType = t, equalityConstraint = SOME(_))) then simplifyType(t);
+    case (DAE.T_SUBTYPE_BASIC(complexType = t, equalityConstraint = SOME(_))) then inType;
     case (DAE.T_SUBTYPE_BASIC(complexType = t)) then simplifyType(t);
 
     case (DAE.T_INTEGER(source = _)) then DAE.T_INTEGER_DEFAULT;
