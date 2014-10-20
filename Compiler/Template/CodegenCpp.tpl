@@ -5,6 +5,8 @@ import CodegenUtil.*;
 // SECTION: SIMULATION TARGET, ROOT TEMPLATE
 
 
+
+
 template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
 ::=
   match simCode
@@ -10712,9 +10714,6 @@ case SOME(when as STMT_WHEN(__)) then
 end algStatementWhenElse;
 
 
-
-
-
 template writeLhsCref(Exp exp, String rhsStr, Context context, Text &preExp /*BUFP*/,
               Text &varDecls /*BUFP*/, SimCode simCode, Boolean useFlatArrayNotation)
  "Generates code for writing a returnStructur to var."
@@ -10727,7 +10726,7 @@ case CREF(ty= t as DAE.T_ARRAY(__)) then
   match context
   case SIMULATION_CONTEXT(__) then
     <<
-    assign_array(<%lhsStr%>,<%rhsStr%> );
+    <%lhsStr%>.assign(<%rhsStr%> );
     >>
   else
     '<%lhsStr%>.assign(<%rhsStr%>);'
