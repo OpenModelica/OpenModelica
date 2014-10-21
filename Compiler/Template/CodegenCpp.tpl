@@ -2358,13 +2358,13 @@ case func as EXTERNAL_FUNCTION(extReturn= return) then
      * The function has annotation(Include=...>)
      * the external function definition should be present
      * in one of these files and have this prototype:
-   * extern <%extReturnType(extReturn)%> <%fn_name%>(<%fargsStrEscaped%>);
-   */
+     * extern <%extReturnType(extReturn)%> <%fn_name%>(<%fargsStrEscaped%>);
+     */
     >>
    else
     <<
-  extern <%extReturnType(return)%> <%extName%>(<%fargsStr%>);/*extern c*/
-  >>
+    extern <%extReturnType(return)%> <%extName%>(<%fargsStr%>);/*extern c*/
+    >>
   end match
 end extFunDef;
 
@@ -3043,8 +3043,8 @@ match arg
 case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
   match oi case 0 then
     <<
-   /*testarg<%extVarName2(c)%>*/
-  >>
+    /*testarg<%extVarName2(c)%>*/
+    >>
   else
     let cr = '<%extVarName2(c)%>'
     match useTuple
@@ -10866,7 +10866,7 @@ case CREF(ty= t as DAE.T_ARRAY(__)) then
   match context
   case SIMULATION_CONTEXT(__) then
     <<
-   <%lhsStr%>.assign(<%rhsStr%> )/*blabla*/;
+    <%lhsStr%>.assign(<%rhsStr%> )/*blabla*/;
     >>
   else
     '<%lhsStr%>.assign(<%rhsStr%>);'
