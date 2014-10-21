@@ -316,10 +316,12 @@ algorithm
       String id;
       Values.Value v;
       DAE.Type tp;
+      DAE.ComponentRef cref;
 
     case (GlobalScript.IVAR(varIdent = id, value = v, type_ = tp), env)
       equation
-        (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(FCore.emptyCache(), env, ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
+        cref = ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {});
+        (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(FCore.emptyCache(), env, cref);
         env = FGraph.updateComp(
                   env,
                   DAE.TYPES_VAR(
