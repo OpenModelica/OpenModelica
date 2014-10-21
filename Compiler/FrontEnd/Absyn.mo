@@ -6258,15 +6258,15 @@ algorithm
 end dummyTraverseExp;
 
 public function getDefineUnitsInElements "retrives defineunit definitions in elements"
-  input list<Absyn.ElementItem> elts;
-  output list<Absyn.Element> outElts;
+  input list<ElementItem> elts;
+  output list<Element> outElts;
 algorithm
   outElts := matchcontinue(elts)
     local
-      Absyn.Element e;
-      list<Absyn.ElementItem> rest;
+      Element e;
+      list<ElementItem> rest;
     case {} then {};
-    case (Absyn.ELEMENTITEM(e as Absyn.DEFINEUNIT(name=_))::rest)
+    case (ELEMENTITEM(e as DEFINEUNIT(name=_))::rest)
       equation
         outElts = getDefineUnitsInElements(rest);
       then e::outElts;
