@@ -1219,10 +1219,11 @@ let tol = settings.tolerance
 let solver = settings.method
 let moLib =  makefileParams.compileDir
 let home = makefileParams.omhome
+let libFolder =simulationLibDir(simulationCodeTarget(),simCode)
 <<
 @echo off
-::export PATH=<%home%>/lib/omc/cpp:$PATH REPLACE C: with /C/
-SET PATH=<%home%>/lib/omc/cpp;%PATH%
+REM ::export PATH=<%libFolder%>:$PATH REPLACE C: with /C/
+SET PATH=<%makefileParams.omhome%>/bin;<%libFolder%>;%PATH%
 <%moLib%>/OMCpp<%fileNamePrefix%>Main.exe -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%> -o <%settings.outputFormat%>
 >>
 end match)
@@ -1236,12 +1237,12 @@ match target
 case "msvc" then
 match simCode
 case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
-<< <%makefileParams.omhome%>/lib/omc/cpp/msvc >>
+'<%makefileParams.omhome%>/lib/omc/cpp/msvc'
 end match
 else
 match simCode
 case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
-<<<%makefileParams.omhome%>/lib/omc/cpp/ >>
+'<%makefileParams.omhome%>/lib/omc/cpp/'
 end match
 end simulationLibDir;
 
