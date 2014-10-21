@@ -312,7 +312,7 @@ protected function addVarToEnv
 algorithm
   outEnv := matchcontinue(inVariable, inEnv)
     local
-      FCore.Graph env;
+      FCore.Graph env, empty_env;
       String id;
       Values.Value v;
       DAE.Type tp;
@@ -321,6 +321,7 @@ algorithm
     case (GlobalScript.IVAR(varIdent = id, value = v, type_ = tp), env)
       equation
         cref = ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {});
+        empty_env = FGraph.empty();
         (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(FCore.emptyCache(), env, cref);
         env = FGraph.updateComp(
                   env,
@@ -331,12 +332,13 @@ algorithm
                     DAE.VALBOUND(v, DAE.BINDING_FROM_DEFAULT_VALUE()),
                     NONE()),
                   FCore.VAR_TYPED(),
-                  FGraph.empty());
+                  empty_env);
       then
         env;
 
     case (GlobalScript.IVAR(varIdent = id, value = v, type_ = tp), env)
       equation
+        empty_env = FGraph.empty();
         env = FGraph.mkComponentNode(
                  env,
                  DAE.TYPES_VAR(id,DAE.dummyAttrVar,tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()),
@@ -348,7 +350,7 @@ algorithm
                     SCode.noComment, NONE(), Absyn.dummyInfo),
                   DAE.NOMOD(),
                  FCore.VAR_UNTYPED(),
-                 FGraph.empty());
+                 empty_env);
       then
         env;
 
