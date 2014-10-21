@@ -1042,7 +1042,7 @@ TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName)
   pTransformationsWidget->show();
   pTransformationsWidget->raise();
   pTransformationsWidget->activateWindow();
-  pTransformationsWidget->setWindowState(pTransformationsWidget->windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
+  pTransformationsWidget->setWindowState(pTransformationsWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
   return pTransformationsWidget;
 }
 
@@ -1297,7 +1297,7 @@ void MainWindow::showAlgorithmicDebugger()
   mpDebuggerMainWindow->show();
   mpDebuggerMainWindow->raise();
   mpDebuggerMainWindow->activateWindow();
-  mpDebuggerMainWindow->setWindowState(mpDebuggerMainWindow->windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
+  mpDebuggerMainWindow->setWindowState(mpDebuggerMainWindow->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
   mpDebuggerMainWindow->restoreWindows();
 }
 

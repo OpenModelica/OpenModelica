@@ -439,6 +439,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       }
     }
   }
+  return false;
 }
 
 void GraphicsView::addComponentToView(QString name, QString className, QString transformationString, QPointF point,
@@ -2190,11 +2191,9 @@ void ModelWidget::setModelModified()
   LibraryTreeWidget *pLibraryTreeWidget = mpModelWidgetContainer->getMainWindow()->getLibraryTreeWidget();
   LibraryTreeNode *pLibraryTreeNode;
   pLibraryTreeNode = pLibraryTreeWidget->getLibraryTreeNode(StringHandler::getFirstWordBeforeDot(mpLibraryTreeNode->getNameStructure()));
-  if (pLibraryTreeNode->getFileName().compare(mpLibraryTreeNode->getFileName()) == 0)
-  {
+  if (pLibraryTreeNode->getFileName().compare(mpLibraryTreeNode->getFileName()) == 0) {
     // Add a * in the model window title.
-    if (pLibraryTreeNode->getModelWidget())
-    {
+    if (pLibraryTreeNode->getModelWidget()) {
       pLibraryTreeNode->getModelWidget()->setWindowTitle(QString(pLibraryTreeNode->getNameStructure()).append("*"));
     }
     pLibraryTreeNode->setIsSaved(false);
@@ -2202,8 +2201,9 @@ void ModelWidget::setModelModified()
   /*
     If this model is child model inside a package then reflect the change in the text view of the package as well.
     */
-  if (!mpLibraryTreeNode->getParentName().isEmpty())
+  if (!mpLibraryTreeNode->getParentName().isEmpty()) {
     updateParentModelsText(mpLibraryTreeNode->getNameStructure());
+  }
 }
 
 void ModelWidget::updateParentModelsText(QString className)
@@ -2832,7 +2832,7 @@ void ModelWidget::closeEvent(QCloseEvent *event)
 }
 
 ModelWidgetContainer::ModelWidgetContainer(MainWindow *pParent)
-  : MdiArea(pParent), mShowGridLines(false), mPreviousViewType(StringHandler::NoView)
+  : MdiArea(pParent), mPreviousViewType(StringHandler::NoView), mShowGridLines(false)
 {
   if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getModelingViewMode().compare(Helper::subWindow) == 0)
     setViewMode(QMdiArea::SubWindowView);

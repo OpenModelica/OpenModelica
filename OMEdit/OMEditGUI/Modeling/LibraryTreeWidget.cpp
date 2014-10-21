@@ -1856,8 +1856,7 @@ void LibraryTreeWidget::showModelWidget(LibraryTreeNode *pLibraryTreeNode, bool 
   QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
   if (pLibraryTreeNode == 0)
   {
-    if (selectedItemsList.isEmpty())
-    {
+    if (selectedItemsList.isEmpty()) {
       QApplication::restoreOverrideCursor();
       return;
     }
@@ -1865,25 +1864,21 @@ void LibraryTreeWidget::showModelWidget(LibraryTreeNode *pLibraryTreeNode, bool 
   }
   mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(1);
   /* Search Tree Items never have model widget so find the equivalent Library Tree Node */
-  if (isSearchedTree())
-  {
+  if (isSearchedTree()) {
     pLibraryTreeNode = mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNode(pLibraryTreeNode->getNameStructure());
     mpMainWindow->getLibraryTreeWidget()->showModelWidget(pLibraryTreeNode, newClass, extendsClass);
     QApplication::restoreOverrideCursor();
     return;
   }
-  if (pLibraryTreeNode->getModelWidget())
-  {
+  if (pLibraryTreeNode->getModelWidget()) {
     pLibraryTreeNode->getModelWidget()->setWindowTitle(pLibraryTreeNode->getNameStructure() + (pLibraryTreeNode->isSaved() ? "" : "*"));
     mpMainWindow->getModelWidgetContainer()->addModelWidget(pLibraryTreeNode->getModelWidget());
-  }
-  else
-  {
+  } else {
     ModelWidget *pModelWidget = NULL;
     if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica) {
       pModelWidget = new ModelWidget(newClass, extendsClass, pLibraryTreeNode, mpMainWindow->getModelWidgetContainer());
     } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text) {
-        pModelWidget = new ModelWidget(text, pLibraryTreeNode, mpMainWindow->getModelWidgetContainer());
+      pModelWidget = new ModelWidget(text, pLibraryTreeNode, mpMainWindow->getModelWidgetContainer());
     } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::TLM) {
       pModelWidget = new ModelWidget(text, text, pLibraryTreeNode, mpMainWindow->getModelWidgetContainer());
     } else {
