@@ -465,18 +465,18 @@ protected function classHasLocalClasses
   output Boolean res;
 algorithm
   res := match(cl)
-    local 
+    local
       list<Absyn.ClassPart> parts;
 
     // A class with parts.
-    case (Absyn.CLASS(body= Absyn.PARTS(classParts = parts))) 
+    case (Absyn.CLASS(body= Absyn.PARTS(classParts = parts)))
       equation
         res = partsHasLocalClass(parts);
       then
         res;
 
     // An extended class with parts: model extends M end M;
-    case (Absyn.CLASS(body= Absyn.CLASS_EXTENDS(parts = parts))) 
+    case (Absyn.CLASS(body= Absyn.CLASS_EXTENDS(parts = parts)))
       equation
         res = partsHasLocalClass(parts);
       then
@@ -491,7 +491,7 @@ protected function partsHasLocalClass
   output Boolean res;
 algorithm
   res := matchcontinue(inParts)
-    local 
+    local
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> parts;
 
@@ -518,7 +518,7 @@ protected function eltsHasLocalClass
   output Boolean res;
 algorithm
   res := matchcontinue(inElts)
-    local 
+    local
       list<Absyn.ElementItem> elts;
 
     case Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=_))) :: _ then true;

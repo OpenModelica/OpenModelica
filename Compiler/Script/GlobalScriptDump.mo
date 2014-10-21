@@ -42,7 +42,7 @@ public import GlobalScript;
 
 protected import Dump;
 protected import List;
-  
+
 public function printIstmtsStr
   "Prints a group of interactive statements to a string."
   input GlobalScript.Statements inStatements;

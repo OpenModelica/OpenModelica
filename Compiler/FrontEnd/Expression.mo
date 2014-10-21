@@ -10723,9 +10723,9 @@ algorithm
       DAE.Exp exp;
       Boolean b;
 
-    case (outExp, _) 
-      equation 
-        (exp, b) = traverseExp(inExp, traversingextendArrExp, false); 
+    case (outExp, _)
+      equation
+        (exp, b) = traverseExp(inExp, traversingextendArrExp, false);
       then
         (exp, b);
 
@@ -10773,7 +10773,7 @@ algorithm
         mat = makeMatrix(expl,j,j,{});
         e_new = DAE.MATRIX(t,i,mat);
         (e, b) = traverseExp(e_new, traversingextendArrExp, true);
-      then 
+      then
         (e, b);
 
     // CASE for Matrix and checkModel is on
@@ -10820,7 +10820,7 @@ algorithm
         expl = List.map1(crlst,Expression.makeCrefExp,ty);
         e_new = DAE.ARRAY(t,true,expl);
         (e, b) = traverseExp(e_new, traversingextendArrExp, true);
-      then 
+      then
         (e, b);
 
     // CASE for Records
@@ -10831,7 +10831,7 @@ algorithm
         true = intGt(i,0);
         e_new = DAE.CALL(name,expl,DAE.CALL_ATTR(t,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
         (e, b) = traverseExp(e_new, traversingextendArrExp, true);
-      then 
+      then
         (e, b);
 
     else (inExp, inExpanded);
