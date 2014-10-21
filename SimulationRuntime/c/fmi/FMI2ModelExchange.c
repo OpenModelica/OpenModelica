@@ -184,7 +184,7 @@ void fmi2GetDerivatives_OMC(void* in_fmi2me, int numberOfContinuousStates, doubl
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
   if (FMI2ME->FMISolvingMode == fmi2_continuousTime_mode){
-	  fmi2_import_get_derivatives(FMI2ME->FMIImportInstance, (fmi2_real_t*)states, numberOfContinuousStates);
+    fmi2_import_get_derivatives(FMI2ME->FMIImportInstance, (fmi2_real_t*)states, numberOfContinuousStates);
   }
 }
 
@@ -227,10 +227,10 @@ int fmi2CompletedIntegratorStep_OMC(void* in_fmi2me, double flowStates)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
   if (FMI2ME->FMISolvingMode == fmi2_continuousTime_mode){
-	  fmi2_boolean_t callEventUpdate = fmi2_false;
-	  fmi2_boolean_t terminateSimulation = fmi2_false;
-	  fmi2_import_completed_integrator_step(FMI2ME->FMIImportInstance, fmi2_true, &callEventUpdate, &terminateSimulation);
-	  return callEventUpdate;
+    fmi2_boolean_t callEventUpdate = fmi2_false;
+    fmi2_boolean_t terminateSimulation = fmi2_false;
+    fmi2_import_completed_integrator_step(FMI2ME->FMIImportInstance, fmi2_true, &callEventUpdate, &terminateSimulation);
+    return callEventUpdate;
   }
   return fmi2_false;
 }
