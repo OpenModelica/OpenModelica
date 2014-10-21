@@ -151,4 +151,5 @@ algorithm
   end matchcontinue;
 end expandCalcTimes;
 
+annotation(__OpenModelica_Interface="backend");
 end HpcOmBenchmark;

@@ -245,4 +245,5 @@ public constant DAE.Type BUILTIN_TYPE_STATE_SELECT = DAE.T_ENUMERATION(
   DAE.emptyTypeSource
 );
 
+annotation(__OpenModelica_Interface="frontend");
 end NFBuiltin;

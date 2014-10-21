@@ -105,5 +105,5 @@ public function stringCref
   external "C" cref=ParserExt_stringCref(str, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
 end stringCref;
 
+annotation(__OpenModelica_Interface="frontend");
 end ParserExt;
-

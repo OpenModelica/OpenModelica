@@ -4200,4 +4200,5 @@ end instWhenBranch;
 //  end match;
 //end evaluateConditionalExp;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFInst;

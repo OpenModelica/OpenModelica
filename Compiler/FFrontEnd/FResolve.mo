@@ -704,4 +704,5 @@ algorithm
   end matchcontinue;
 end elred_one;
 
+annotation(__OpenModelica_Interface="frontend");
 end FResolve;

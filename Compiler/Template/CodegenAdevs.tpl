@@ -5650,5 +5650,6 @@ let() = Tpl.addSourceTemplateError(errMessage, srcInfo)
 >>
 end error;
 
+annotation(__OpenModelica_Interface="backend");
 end CodegenAdevs;
 

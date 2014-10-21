@@ -1001,4 +1001,5 @@ algorithm
   end match;
 end simpleEquations;
 
+annotation(__OpenModelica_Interface="frontend");
 end CheckModel;

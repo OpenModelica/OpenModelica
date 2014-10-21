@@ -652,4 +652,5 @@ algorithm
   outCopy := (hv, (vs, ve, vae), bs, sz, ft);
 end copy;
 
+annotation(__OpenModelica_Interface="util");
 end BaseHashTable;

@@ -656,5 +656,5 @@ algorithm
   end match;
 end printNode;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFConnectionSets;
-

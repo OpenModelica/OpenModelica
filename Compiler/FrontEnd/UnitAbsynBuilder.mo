@@ -1800,5 +1800,6 @@ protected
     };
  end buildTest8;
  */
+annotation(__OpenModelica_Interface="frontend");
 end UnitAbsynBuilder;
 

@@ -10711,4 +10711,5 @@ algorithm
   outExp := makePureBuiltinCall("vector",{exp},tp);
 end makeVectorCall;
 
+annotation(__OpenModelica_Interface="frontend");
 end Expression;

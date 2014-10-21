@@ -99,5 +99,5 @@ algorithm
   end match;
 end walk;
 
-
+annotation(__OpenModelica_Interface="frontend");
 end FTraverse;

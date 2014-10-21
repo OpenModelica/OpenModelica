@@ -565,4 +565,5 @@ record Bitmap
 end Bitmap;
 */
 
+annotation(__OpenModelica_Interface="frontend");
 end Constants;

@@ -266,4 +266,5 @@ algorithm
   end matchcontinue;
 end getEnumerationTypeFromTypes;
 
+annotation(__OpenModelica_Interface="util");
 end FMI;

@@ -5883,53 +5883,6 @@ algorithm
   end matchcontinue;
 end elabBuiltinDiagonal3;
 
-protected function elabBuiltinDifferentiate "This function elaborates on the builtin operator differentiate, by deriving the Exp"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output FCore.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      list<Absyn.ComponentRef> cref_list1,cref_list2,cref_list;
-      GlobalScript.SymbolTable symbol_table;
-      FCore.Graph gen_env,env;
-      DAE.Exp s1_1,s2_1,call;
-      DAE.Properties st;
-      Absyn.Exp s1,s2;
-      Boolean impl;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
-
-    case (cache,_,{s1,s2},_,impl,pre,_)
-      equation
-        cref_list1 = Absyn.getCrefFromExp(s1,true,false);
-        cref_list2 = Absyn.getCrefFromExp(s2,true,false);
-        cref_list = listAppend(cref_list1, cref_list2);
-        symbol_table = absynCrefListToInteractiveVarList(cref_list, GlobalScript.emptySymboltable,
-          DAE.T_REAL_DEFAULT);
-        (gen_env,_) = Interactive.buildEnvFromSymboltable(symbol_table);
-        (cache,s1_1,st,_) = elabExpInExpression(cache,gen_env, s1, impl,NONE(),true,pre,info);
-        (cache,s2_1,st,_) = elabExpInExpression(cache,gen_env, s2, impl,NONE(),true,pre,info);
-        call = Expression.makePureBuiltinCall("differentiate", {s1_1, s2_1}, DAE.T_REAL_DEFAULT);
-      then
-        (cache, call, st);
-
-    // failure
-    else
-      equation
-        print("#-- elabBuiltinDifferentiate: Couldn't elaborate differentiate()\n");
-      then
-        fail();
-  end matchcontinue;
-end elabBuiltinDifferentiate;
-
 protected function elabBuiltinSimplify "This function elaborates the simplify function.
   The call in mosh is: simplify(x+yx-x,\"Real\") if the variable should be
   Real or simplify(x+yx-x,\"Integer\") if the variable should be Integer
@@ -7338,7 +7291,6 @@ algorithm
     case "interval" then elabBuiltinInterval;
     case "boolean" then elabBuiltinBoolean;
     case "diagonal" then elabBuiltinDiagonal;
-    case "differentiate" then elabBuiltinDifferentiate;
     case "noEvent" then elabBuiltinNoevent;
     case "edge" then elabBuiltinEdge;
     case "der" then elabBuiltinDer;
@@ -14375,4 +14327,5 @@ algorithm
   end match;
 end fixTupleMetaModelica;
 
+annotation(__OpenModelica_Interface="frontend");
 end Static;

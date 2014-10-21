@@ -1494,4 +1494,5 @@ algorithm
   end match;
 end elementSplitterInherited;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFLookup;

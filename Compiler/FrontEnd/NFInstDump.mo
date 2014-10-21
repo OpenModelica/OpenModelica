@@ -124,4 +124,5 @@ algorithm
   end match;
 end dumpUntypedComponentDims;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFInstDump;

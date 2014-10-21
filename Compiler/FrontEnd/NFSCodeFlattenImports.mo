@@ -732,4 +732,5 @@ algorithm
   end match;
 end flattenComponentRefSubs;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFSCodeFlattenImports;

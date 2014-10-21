@@ -3361,5 +3361,5 @@ algorithm
   (outExp,_) := VarTransform.replaceExp(inExp,replIn,NONE());
 end replaceParameters;
 
+annotation(__OpenModelica_Interface="backend");
 end BackendDAECreate;
-

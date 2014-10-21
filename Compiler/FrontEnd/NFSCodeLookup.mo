@@ -1837,4 +1837,5 @@ algorithm
   end matchcontinue;
 end qualifyPath;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFSCodeLookup;

@@ -90,4 +90,5 @@ algorithm
   hashSet := BaseHashSet.emptyHashSetWork(size,(ComponentReference.hashComponentRefMod,ComponentReference.crefEqual,ComponentReference.printComponentRefStr));
 end emptyHashSetSized;
 
+annotation(__OpenModelica_Interface="frontend");
 end HashSet;

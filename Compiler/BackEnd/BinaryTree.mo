@@ -563,4 +563,5 @@ algorithm
   end matchcontinue;
 end binTreeintersection1;
 
+annotation(__OpenModelica_Interface="backend");
 end BinaryTree;

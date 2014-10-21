@@ -167,5 +167,6 @@ end Set;
 
 public constant Sets emptySet = SETS(SET_TRIE_NODE("", DAE.WILD(), {}, 0), 0, {}, {});
 
+annotation(__OpenModelica_Interface="frontend");
 end Connect;
 

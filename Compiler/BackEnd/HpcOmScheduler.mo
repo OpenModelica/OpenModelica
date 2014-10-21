@@ -5936,4 +5936,5 @@ algorithm
   s := stringDelimitList(List.map(lstIn,intListString)," | ");
 end intListListString;
 
+annotation(__OpenModelica_Interface="backend");
 end HpcOmScheduler;

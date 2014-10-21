@@ -594,4 +594,5 @@ algorithm
   end match;
 end elementExternalHeader;
 
+annotation(__OpenModelica_Interface="backend");
 end Unparsing;

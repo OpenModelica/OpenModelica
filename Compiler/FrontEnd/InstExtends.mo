@@ -2031,4 +2031,5 @@ algorithm
   end match;
 end fixListTuple2;
 
+annotation(__OpenModelica_Interface="frontend");
 end InstExtends;

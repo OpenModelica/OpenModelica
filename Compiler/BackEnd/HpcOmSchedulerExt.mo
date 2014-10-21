@@ -64,4 +64,5 @@ public function schedulehMetis
   external "C" res=HpcOmSchedulerExt_schedulehMetis(vwgts,eptr,eint,hewgts,nparts) annotation(Library = "omcruntime");
 end schedulehMetis;
 
+annotation(__OpenModelica_Interface="backend");
 end HpcOmSchedulerExt;

@@ -91,4 +91,5 @@ partial function matchingAlgorithmFunc
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 end matchingAlgorithmFunc;
 
+annotation(__OpenModelica_Interface="backend");
 end BackendDAEFunc;

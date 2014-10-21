@@ -217,4 +217,5 @@ template dumpStrongComponent(Integer clusterID, BackendDAE.Matching matching)
         '<%cmpNodes%>'
 end dumpStrongComponent;
 
+annotation(__OpenModelica_Interface="backend");
 end GraphvizDump;

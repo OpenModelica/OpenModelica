@@ -166,4 +166,5 @@ algorithm
   end match;
 end all;
 
+annotation(__OpenModelica_Interface="frontend");
 end FExpand;

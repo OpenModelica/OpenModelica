@@ -782,4 +782,5 @@ end getAvlValue;
 // ************************ END AVL Tree implementation ***************************
 // ************************ END AVL Tree implementation ***************************
 
+annotation(__OpenModelica_Interface="frontend");
 end FVisit;

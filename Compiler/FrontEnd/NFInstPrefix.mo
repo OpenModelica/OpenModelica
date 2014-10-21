@@ -413,4 +413,5 @@ algorithm
   end match;
 end toPackagePrefix;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFInstPrefix;

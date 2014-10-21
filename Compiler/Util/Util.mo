@@ -4481,4 +4481,5 @@ algorithm
   b := true;
 end anyReturnTrue;
 
+annotation(__OpenModelica_Interface="util");
 end Util;

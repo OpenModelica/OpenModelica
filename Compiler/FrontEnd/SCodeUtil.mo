@@ -2722,4 +2722,5 @@ algorithm
   end matchcontinue;
 end mergeDimensions;
 
+annotation(__OpenModelica_Interface="frontend");
 end SCodeUtil;

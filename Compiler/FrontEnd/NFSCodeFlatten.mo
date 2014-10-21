@@ -193,4 +193,5 @@ algorithm
   end matchcontinue;
 end flattenCompleteProgram;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFSCodeFlatten;

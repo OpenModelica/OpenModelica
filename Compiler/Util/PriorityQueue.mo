@@ -291,4 +291,5 @@ algorithm
   end match;
 end getMin;
 
+annotation(__OpenModelica_Interface="backend");
 end PriorityQueue;

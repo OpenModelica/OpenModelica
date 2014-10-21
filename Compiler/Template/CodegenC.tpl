@@ -11220,6 +11220,7 @@ template daeDimensionExp(Exp exp, Context context, Text &preExp, Text &varDecls,
   else '/* <%expTypeFromExpModelica(exp)%> */ <%res%>'
 end daeDimensionExp;
 
+annotation(__OpenModelica_Interface="backend");
 end CodegenC;
 
 // vim: filetype=susan sw=2 sts=2

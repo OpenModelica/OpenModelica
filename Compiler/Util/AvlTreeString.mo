@@ -542,4 +542,5 @@ algorithm
   end match;
 end getHeight;
 
+annotation(__OpenModelica_Interface="util");
 end AvlTreeString;

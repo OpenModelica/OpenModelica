@@ -884,4 +884,5 @@ algorithm
   end matchcontinue;
 end tracePushRedeclareIntoExtends;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFSCodeFlattenRedeclare;

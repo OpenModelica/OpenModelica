@@ -311,6 +311,7 @@ uniontype TemplPackage
     //list<PathIdent> extendsList;
     list<ASTDef> astDefs;
     list<tuple<Ident,TemplateDef>> templateDefs;
+    String annotationFooter;
   end TEMPL_PACKAGE;
 end TemplPackage;
 
@@ -340,6 +341,7 @@ uniontype MMPackage
   record MM_PACKAGE
     PathIdent name;
     list<MMDeclaration> mmDeclarations;
+    String annotationFooter;
   end MM_PACKAGE;
 end MMPackage;
 
@@ -586,17 +588,18 @@ algorithm
       list<MMDeclaration> mmDeclarations;
       TemplPackage tp;
       list<ASTDef> astDefs;
+      String annotationFooter;
 
     case _
       equation
         tp = fullyQualifyTemplatePackage(inTplPackage);
-        TEMPL_PACKAGE(name, astDefs, templateDefs) = tp;
+        TEMPL_PACKAGE(name, astDefs, templateDefs, annotationFooter) = tp;
         mmDeclarations = importDeclarations(astDefs, {});
         mmDeclarations
          = transformTemplateDefs(templateDefs, tp, mmDeclarations);
         mmDeclarations = listReverse(mmDeclarations);
       then
-        MM_PACKAGE(name, mmDeclarations);
+        MM_PACKAGE(name, mmDeclarations, annotationFooter);
   end match;
 end transformAST;
 
@@ -609,16 +612,14 @@ algorithm
       PathIdent name;
       list<tuple<Ident,TemplateDef>>  templateDefs;
       list<ASTDef> astDefs;
+      String ann;
 
-    case (TEMPL_PACKAGE(
-            name = name,
-            astDefs = astDefs,
-            templateDefs = templateDefs))
+    case TEMPL_PACKAGE(name,astDefs,templateDefs,ann)
       equation
         astDefs = fullyQualifyASTDefs(astDefs);
         templateDefs = listMap1Tuple22(templateDefs, fullyQualifyTemplateDef, astDefs);
       then
-        TEMPL_PACKAGE(name, astDefs, templateDefs);
+        TEMPL_PACKAGE(name, astDefs, templateDefs,ann);
   end match;
 end fullyQualifyTemplatePackage;
 
@@ -6784,8 +6785,5 @@ algorithm
   outStr := Tpl.textString(txt);
 end stmtsString;
 
-
-
+annotation(__OpenModelica_Interface="susan");
 end TplAbsyn;
-
-

@@ -54,4 +54,5 @@ public function query "query a datbase with the given index (previously open). f
   external "C" result = Database_query(index, sql) annotation(Library = "omcruntime");
 end query;
 
+annotation(__OpenModelica_Interface="util");
 end Database;

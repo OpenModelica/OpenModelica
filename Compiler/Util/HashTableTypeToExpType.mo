@@ -122,4 +122,5 @@ algorithm
   hashTable := BaseHashTable.emptyHashTableWork(size,(myHash,Types.typesElabEquivalent,Types.printTypeStr,Types.printExpTypeStr));
 end emptyHashTableSized;
 
+annotation(__OpenModelica_Interface="util");
 end HashTableTypeToExpType;

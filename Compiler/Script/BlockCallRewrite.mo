@@ -22,4 +22,5 @@ algorithm
   end match;
 end rewriteBlockCall;
 
+annotation(__OpenModelica_Interface="frontend");
 end BlockCallRewrite;

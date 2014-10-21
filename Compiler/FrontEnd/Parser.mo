@@ -110,5 +110,5 @@ algorithm
   cref := ParserExt.stringCref(str, "<internal>", Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
 end stringCref;
 
+annotation(__OpenModelica_Interface="frontend");
 end Parser;
-

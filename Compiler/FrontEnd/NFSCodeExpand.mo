@@ -1088,4 +1088,5 @@ algorithm
   b := match inKind case EXPAND_FUNCTION() then true; else false; end match;
 end isExpandFunction;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFSCodeExpand;

@@ -766,6 +766,10 @@ public constant Message OVERCONSTRAINED_OPERATOR_SIZE_ZERO = MESSAGE(551, TRANSL
   Util.gettext("Ignoring overconstrained operator applied to array components having size zero: %s."));
 public constant Message OVERCONSTRAINED_OPERATOR_SIZE_ZERO_RETURN_FALSE = MESSAGE(552, TRANSLATION(), WARNING(),
   Util.gettext("Returning false from overconstrained operator applied to array components having size zero: %s."));
+public constant Message MISMATCHING_INTERFACE_TYPE = MESSAGE(553, SCRIPTING(), ERROR(),
+  Util.gettext("__OpenModelica_Interface types are incompatible. Got interface type '%s', expected something compatible with '%s'."));
+public constant Message MISSING_INTERFACE_TYPE = MESSAGE(554, SCRIPTING(), ERROR(),
+  Util.gettext("Annotation __OpenModelica_Interface is missing or the string is not in the input list."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
@@ -1225,4 +1229,5 @@ algorithm
   addMessage(INTERNAL_ERROR, {message});
 end addInternalError;
 
+annotation(__OpenModelica_Interface="util");
 end Error;

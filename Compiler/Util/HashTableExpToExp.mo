@@ -114,4 +114,5 @@ algorithm
   hashTable := BaseHashTable.emptyHashTableWork(size,(Expression.hashExpMod,Expression.expEqual,ExpressionDump.printExpStr,ExpressionDump.printExpStr));
 end emptyHashTableSized;
 
+annotation(__OpenModelica_Interface="frontend");
 end HashTableExpToExp;

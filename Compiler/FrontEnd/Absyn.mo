@@ -6257,4 +6257,5 @@ algorithm
   outArg := inArg;
 end dummyTraverseExp;
 
+annotation(__OpenModelica_Interface="absyn"); // TODO: Should be a frontend module
 end Absyn;

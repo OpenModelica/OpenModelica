@@ -650,4 +650,5 @@ algorithm
   end matchcontinue;
 end filterVariables;
 
+annotation(__OpenModelica_Interface="backend");
 end SynchronousFeatures;

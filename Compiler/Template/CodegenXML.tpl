@@ -4044,5 +4044,6 @@ template endModelicaLineXml()
   "/*#endModelicaLine*/"
 end endModelicaLineXml;
 
+annotation(__OpenModelica_Interface="backend");
 end CodegenXML;
 // vim: filetype=susan sw=2 sts=2

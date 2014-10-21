@@ -63,4 +63,5 @@ function readCalcTimesFromJson
   external "C" requiredTime=HpcOmBenchmarkExt_readCalcTimesFromJson(fileName) annotation(Library = "omcruntime");
 end readCalcTimesFromJson;
 
+annotation(__OpenModelica_Interface="backend");
 end HpcOmBenchmarkExt;

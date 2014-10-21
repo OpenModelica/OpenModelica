@@ -1106,4 +1106,5 @@ algorithm
   osyst := Util.if_(b,BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind),isyst);
 end replaceEvaluatedParametersSystemEqns;
 
+annotation(__OpenModelica_Interface="backend");
 end EvaluateParameter;

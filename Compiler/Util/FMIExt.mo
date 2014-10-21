@@ -62,4 +62,5 @@ public function releaseFMIImport
   external "C" FMIImpl__releaseFMIImport(inFMIModelVariablesInstance, inFMIInstance, inFMIContext, inFMIVersion) annotation(Library = {"omcruntime","fmilib"});
 end releaseFMIImport;
 
+annotation(__OpenModelica_Interface="util");
 end FMIExt;

@@ -142,4 +142,5 @@ end InstStore;
 
 public constant InstStore noStore = NOSTORE();
 
+annotation(__OpenModelica_Interface="frontend");
 end UnitAbsyn;

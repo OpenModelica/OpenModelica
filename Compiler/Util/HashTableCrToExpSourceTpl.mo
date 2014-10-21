@@ -122,4 +122,5 @@ algorithm
   res := ExpressionDump.printExpStr(e);
 end printExpSourceTplStr;
 
+annotation(__OpenModelica_Interface="frontend");
 end HashTableCrToExpSourceTpl;

@@ -2534,4 +2534,5 @@ algorithm
   end matchcontinue;
 end optimizeInitialAliasesFinder;
 
+annotation(__OpenModelica_Interface="backend");
 end Initialization;

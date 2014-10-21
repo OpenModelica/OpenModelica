@@ -358,4 +358,5 @@ template dumpShapeType(GraphML.ShapeType shape)
     end match
 end dumpShapeType;
 
+annotation(__OpenModelica_Interface="backend");
 end GraphMLDumpTpl;

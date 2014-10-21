@@ -970,5 +970,5 @@ algorithm
   end matchcontinue;
 end isInverseCref;
 
+annotation(__OpenModelica_Interface="backend");
 end ExpressionSolve;
-

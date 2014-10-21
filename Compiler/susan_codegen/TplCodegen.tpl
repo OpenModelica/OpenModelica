@@ -18,6 +18,7 @@ template mmPackage(MMPackage it) ::=
 
     <%mmDeclarations |> it => mmDeclaration(it);separator="\n"%>
 
+    <%annotationFooter%>
     end <%pathIdent(name)%>;
     >>
 end mmPackage;
@@ -304,6 +305,5 @@ template sActualMMParams(list<tuple<MMExp, TypeSignature>> argValues) ::=
 >>
 end sActualMMParams;
 
-
-
+annotation(__OpenModelica_Interface="susan");
 end TplCodegen;

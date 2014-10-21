@@ -1765,4 +1765,5 @@ end Expand;
 public constant AvlTree emptyFuncTree = AVLTREENODE(NONE(),0,NONE(),NONE());
 public constant DAElist emptyDae = DAE({});
 
+annotation(__OpenModelica_Interface="frontend");
 end DAE;

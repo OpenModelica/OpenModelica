@@ -146,4 +146,5 @@ public function cleanup
   external "C" GraphStreamExt_cleanup(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end cleanup;
 
+annotation(__OpenModelica_Interface="frontend");
 end GraphStreamExt;

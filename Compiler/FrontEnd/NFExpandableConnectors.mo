@@ -420,4 +420,5 @@ algorithm
   end match;
 end updateExpandableConnection;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFExpandableConnectors;

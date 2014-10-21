@@ -3372,4 +3372,5 @@ algorithm
   end matchcontinue;
 end findNEntries;
 
+annotation(__OpenModelica_Interface="backend");
 end Tearing;

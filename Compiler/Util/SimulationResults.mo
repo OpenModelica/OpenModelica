@@ -116,5 +116,5 @@ public function diffSimulationResultsHtml
   external "C" html=SimulationResults_diffSimulationResultsHtml(runningTestsuite,var,filename,reffilename,refTol,relTolDiffMaxMin,rangeDelta) annotation(Library = "omcruntime");
 end diffSimulationResultsHtml;
 
+annotation(__OpenModelica_Interface="frontend");
 end SimulationResults;
-

@@ -774,5 +774,5 @@ algorithm
   end matchcontinue;
 end getRecordConstructorPath;
 
-
+annotation(__OpenModelica_Interface="frontend");
 end FCore;

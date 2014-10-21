@@ -1209,4 +1209,5 @@ algorithm
   end matchcontinue;
 end outputTimeBenchmark3;
 
+annotation(__OpenModelica_Interface="backend");
 end HpcOmSimCodeMain;

@@ -3312,8 +3312,8 @@ algorithm
     /* a = f() */
     case (e1 as DAE.CREF(componentRef = cr), e2, _, _, _)
       equation
-        // ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((e1, (NONE(), false)));
-        (e2_1, (_, _)) = BackendDAEUtil.extendArrExp(e2, (NONE(), false));
+        // ((e1_1, (_, _))) = DAEUtil.extendArrExp((e1, (NONE(), false)));
+        (e2_1, (_, _)) = DAEUtil.extendArrExp(e2, (NONE(), false));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         (tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(e1);
         // tmp
@@ -3335,8 +3335,8 @@ algorithm
     case (e1, (e2 as DAE.CREF(componentRef = cr)), _, _, _)
       equation
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-        (e1_1, (_, _)) = BackendDAEUtil.extendArrExp(e1, (NONE(), false));
-        // ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (NONE(), false)));
+        (e1_1, (_, _)) = DAEUtil.extendArrExp(e1, (NONE(), false));
+        // ((e2_1, (_, _))) = DAEUtil.extendArrExp((e2, (NONE(), false)));
         (tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(e2);
         // tmp
         ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
@@ -3357,7 +3357,7 @@ algorithm
     case (DAE.CALL(path=path, expLst=e2lst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(rpath)))), e2, _, _, _)
       equation
         true = Absyn.pathEqual(path, rpath);
-        (e2_1, (_, _)) = BackendDAEUtil.extendArrExp(e2, (NONE(), false));
+        (e2_1, (_, _)) = DAEUtil.extendArrExp(e2, (NONE(), false));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
         ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
@@ -3378,7 +3378,7 @@ algorithm
     case (_, e2 as DAE.CALL(path=path, expLst=e2lst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(rpath)))), _, _, _)
       equation
         true = Absyn.pathEqual(path, rpath);
-        (e1_1, (_, _)) = BackendDAEUtil.extendArrExp(e2, (NONE(), false));
+        (e1_1, (_, _)) = DAEUtil.extendArrExp(e2, (NONE(), false));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
         ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
@@ -4472,8 +4472,8 @@ algorithm
         (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2)) = BackendEquation.equationNth1(inEqns, e);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
         ad = List.map(ds, Util.makeOption);
-        subslst = BackendDAEUtil.arrayDimensionsToRange(ad);
-        subslst = BackendDAEUtil.rangesToSubscripts(subslst);
+        subslst = DAEUtil.arrayDimensionsToRange(ad);
+        subslst = DAEUtil.rangesToSubscripts(subslst);
         explst1 = List.map1r(subslst, Expression.applyExpSubscripts, e1);
         explst1 = ExpressionSimplify.simplifyList(explst1, {});
         explst2 = List.map1r(subslst, Expression.applyExpSubscripts, e2);
@@ -6257,8 +6257,8 @@ algorithm
     case (_, e1 as DAE.CREF(componentRef = cr2), e2, _, _, _)
       equation
         List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, cr2);
-        // ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((e1, (SOME(inFuncs), false)));
-        (e2_1, (_, _)) = BackendDAEUtil.extendArrExp(e2, (NONE(), false));
+        // ((e1_1, (_, _))) = DAEUtil.extendArrExp((e1, (SOME(inFuncs), false)));
+        (e2_1, (_, _)) = DAEUtil.extendArrExp(e2, (NONE(), false));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         tp = Expression.typeof(e1);
         stms = DAE.STMT_ASSIGN(tp, e1, e2_1, source);
@@ -6269,8 +6269,8 @@ algorithm
       equation
         List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, cr2);
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-        (e1_1, (_, _)) = BackendDAEUtil.extendArrExp(e1, (NONE(), false));
-        // ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (SOME(inFuncs)), false)));
+        (e1_1, (_, _)) = DAEUtil.extendArrExp(e1, (NONE(), false));
+        // ((e2_1, (_, _))) = DAEUtil.extendArrExp((e2, (SOME(inFuncs)), false)));
         tp = Expression.typeof(e2);
         stms = DAE.STMT_ASSIGN(tp, e2, e1_1, source);
       then
@@ -6283,7 +6283,7 @@ algorithm
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
         List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
-        (e2_1, (_, _)) = BackendDAEUtil.extendArrExp(e2, (NONE(), false));
+        (e2_1, (_, _)) = DAEUtil.extendArrExp(e2, (NONE(), false));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
         ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
@@ -6308,7 +6308,7 @@ algorithm
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
         List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
-        (e1_1, (_, _)) = BackendDAEUtil.extendArrExp(e1, (NONE(), false));
+        (e1_1, (_, _)) = DAEUtil.extendArrExp(e1, (NONE(), false));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
         ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
@@ -6515,8 +6515,8 @@ algorithm
       e1 = Expression.replaceDerOpInExp(e1);
       e2 = Expression.replaceDerOpInExp(e2);
       ad = List.map(ds, Util.makeOption);
-      subslst = BackendDAEUtil.arrayDimensionsToRange(ad);
-      subslst = BackendDAEUtil.rangesToSubscripts(subslst);
+      subslst = DAEUtil.arrayDimensionsToRange(ad);
+      subslst = DAEUtil.rangesToSubscripts(subslst);
       ea1 = List.map1r(subslst, Expression.applyExpSubscripts, e1);
       ea2 = List.map1r(subslst, Expression.applyExpSubscripts, e2);
       re = List.threadMap2(ea1, ea2, BackendEquation.generateEQUATION, source, eqKind);
@@ -14470,4 +14470,5 @@ algorithm
   str := System.snprintff("%.4g",20,realDiv(bytes,realMul(1024.0,1024.0)));
 end bytesToRealMBString;
 
+annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

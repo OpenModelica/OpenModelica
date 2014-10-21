@@ -1266,4 +1266,5 @@ algorithm
   end matchcontinue;
 end stmtsToRules;
 
+annotation(__OpenModelica_Interface="frontend");
 end RewriteRules;

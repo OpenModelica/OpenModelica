@@ -1138,4 +1138,5 @@ algorithm
   outEnv := List.fold(inProgram, insertElement, env);
 end buildInitialEnv;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFEnv;

@@ -599,4 +599,5 @@ algorithm
   outBoolean := not stringEq(Flags.getConfigString(Flags.PROFILING_LEVEL), "none");
 end profileFunctions;
 
+annotation(__OpenModelica_Interface="util");
 end Config;

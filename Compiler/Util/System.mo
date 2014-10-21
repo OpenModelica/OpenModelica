@@ -1130,4 +1130,5 @@ public function stringReal
 external "builtin";
 end stringReal;
 
+annotation(__OpenModelica_Interface="util");
 end System;

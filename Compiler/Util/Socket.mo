@@ -73,4 +73,5 @@ public function cleanup
   external "C" Socket_cleanup() annotation(Library = "omcruntime");
 end cleanup;
 
+annotation(__OpenModelica_Interface="util");
 end Socket;

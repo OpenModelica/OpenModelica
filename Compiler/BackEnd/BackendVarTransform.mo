@@ -1050,7 +1050,7 @@ algorithm
         true = replaceExpCond(cond, e);
         (cr,_) = replaceCrefSubs(cr,repl,cond);
         _ = getExtendReplacement(repl, cr);
-        (e2,(_,true)) = BackendDAEUtil.extendArrExp(e,(NONE(),false));
+        (e2,(_,true)) = DAEUtil.extendArrExp(e,(NONE(),false));
         (e3,_) = replaceExp(e2,repl,cond);
       then
         (e3,true);
@@ -2348,8 +2348,8 @@ algorithm
       equation
         ds = Expression.dimensionsSizes(Expression.arrayDimension(type_));
         ad = List.map(ds,Util.makeOption);
-        subslst = BackendDAEUtil.arrayDimensionsToRange(ad);
-        subslst = BackendDAEUtil.rangesToSubscripts(subslst);
+        subslst = DAEUtil.arrayDimensionsToRange(ad);
+        subslst = DAEUtil.rangesToSubscripts(subslst);
         elst1 = List.map1r(subslst,Expression.applyExpSubscripts,rhs);
         e = listGet(elst1,1);
         tp = Expression.typeof(e);
@@ -2720,4 +2720,5 @@ algorithm
   print("derConst: " +& intString(BaseHashTable.hashTableCurrentSize(extht)) +& "\n");
 end dumpStatistics;
 
+annotation(__OpenModelica_Interface="backend");
 end BackendVarTransform;

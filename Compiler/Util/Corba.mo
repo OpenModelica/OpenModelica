@@ -89,5 +89,6 @@ public function close
   external "C" Corba_close() annotation(Library = {"omcruntime","OpenModelicaCorba"});
 end close;
 
+annotation(__OpenModelica_Interface="util");
 end Corba;
 

@@ -786,4 +786,5 @@ algorithm
   outPaths := BaseHashTable.hashTableValueList(ht);
 end getCalledFunctionsInFunction;
 
+annotation(__OpenModelica_Interface="backend");
 end SimCodeMain;

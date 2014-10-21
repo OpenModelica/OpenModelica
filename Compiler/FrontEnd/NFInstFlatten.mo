@@ -401,5 +401,5 @@ algorithm
   end match;
 end flattenExtendedElements;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFInstFlatten;
-

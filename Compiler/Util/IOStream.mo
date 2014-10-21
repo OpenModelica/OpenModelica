@@ -304,4 +304,5 @@ IOStream = IOStream.aquire(id);
 IOStream.forget(IOStream, id);
 */
 
+annotation(__OpenModelica_Interface="util");
 end IOStream;

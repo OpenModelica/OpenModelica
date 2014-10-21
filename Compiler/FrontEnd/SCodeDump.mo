@@ -504,4 +504,5 @@ algorithm
   end match;
 end filterElement;
 
+annotation(__OpenModelica_Interface="frontend");
 end SCodeDump;

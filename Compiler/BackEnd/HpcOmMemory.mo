@@ -2102,4 +2102,5 @@ encapsulated package HpcOmMemory
   //  end matchcontinue;
   //end appendCacheLineEdgeToGraph;
 
+annotation(__OpenModelica_Interface="backend");
 end HpcOmMemory;

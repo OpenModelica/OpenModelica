@@ -2145,4 +2145,5 @@ algorithm
   end match;
 end getValidStringOptions;
 
+annotation(__OpenModelica_Interface="util");
 end Flags;

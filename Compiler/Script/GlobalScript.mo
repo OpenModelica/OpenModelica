@@ -217,4 +217,5 @@ public constant SymbolTable emptySymboltable =
                  {},
                  {}) "Empty Interactive Symbol Table" ;
 
+annotation(__OpenModelica_Interface="frontend");
 end GlobalScript;

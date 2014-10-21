@@ -1007,4 +1007,5 @@ algorithm
   end matchcontinue;
 end makeVariableBinding;
 
+annotation(__OpenModelica_Interface="frontend");
 end InstBinding;

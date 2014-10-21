@@ -769,4 +769,5 @@ algorithm
     inInfo, inEquations);
 end generateAssertion4;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFConnectEquations;

@@ -8390,4 +8390,5 @@ algorithm
   end matchcontinue;
 end allowedInRecord;
 
+annotation(__OpenModelica_Interface="frontend");
 end Types;

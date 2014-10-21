@@ -3473,5 +3473,6 @@ algorithm
     {sub_str, idx_str, dim_str, cref_str}, inInfo);
 end printSubscriptBoundsError;
 
+annotation(__OpenModelica_Interface="frontend");
 end ComponentReference;
 

@@ -900,6 +900,8 @@ algorithm
       Absyn.TimeStamp ts;
       Real stoptime,starttime,tol,stepsize,interval;
       String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str,description,prefix;
+      list<String> interfaceType;
+      list<tuple<String,list<String>>> interfaceTypeAssoc;
     case (cache,_,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
         Absyn.PROGRAM(classes=classes,within_=within_) = Parser.parsestring(str1,str2);
@@ -1169,6 +1171,15 @@ algorithm
         (cache,Values.STRING(str),st);
 
     case (cache,_,"list",_,st,_) then (cache,Values.STRING(""),st);
+
+    case (cache,_,"sortStrings",{Values.ARRAY(valueLst=vals)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+      equation
+        strs = List.map(vals, ValuesUtil.extractValueString);
+        strs = List.sort(strs,Util.strcmpBool);
+        v = ValuesUtil.makeArray(List.map(strs,ValuesUtil.makeString));
+      then
+        (cache,v,st);
+
 
   // exportToFigaro cases added by Alexander Carlqvist
     case (cache, _, "exportToFigaro", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3)}, st as GlobalScript.SYMBOLTABLE(ast = p), _)
@@ -2075,6 +2086,18 @@ algorithm
       then (cache,Values.BOOL(true),st);
 
     case (cache,_,"generateEntryPoint",_,st as GlobalScript.SYMBOLTABLE(ast = _),_)
+      then (cache,Values.BOOL(false),st);
+
+    case (cache,_,"checkInterfaceOfPackages",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=vals)},(st as GlobalScript.SYMBOLTABLE(ast = _)),_)
+      equation
+        (sp,st) = Interactive.symbolTableToSCode(st);
+        cl = SCode.getElementWithPath(sp,path);
+        interfaceTypeAssoc = List.map1(vals, getInterfaceTypeAssocElt, SCode.elementInfo(cl));
+        interfaceType = getInterfaceType(cl, interfaceTypeAssoc);
+        List.map1_0(sp, verifyInterfaceType, interfaceType);
+      then (cache,Values.BOOL(true),st);
+
+    case (cache,_,"checkInterfaceOfPackages",_,(st as GlobalScript.SYMBOLTABLE(ast = _)),_)
       then (cache,Values.BOOL(false),st);
 
     case (cache,_,"generateSeparateCodeDependenciesMakefile",{Values.STRING(filename),Values.STRING(prefix),Values.STRING(suffix)},(st as GlobalScript.SYMBOLTABLE(ast = _)),_)
@@ -7758,4 +7781,70 @@ algorithm
   System.writeFile(filename, str +& str1);
 end saveTotalModel;
 
+protected function verifyInterfaceType
+  input SCode.Element elt;
+  input list<String> expected;
+algorithm
+  _ := matchcontinue (elt,expected)
+    local
+      String str,name;
+      SCode.Annotation ann;
+      Absyn.Info info;
+    case (SCode.CLASS(cmt=SCode.COMMENT(annotation_=SOME(ann))),name::_)
+      equation
+        (Absyn.STRING(str),info) = SCode.getNamedAnnotation(ann,"__OpenModelica_Interface");
+        Error.assertionOrAddSourceMessage(listMember(str, expected), Error.MISMATCHING_INTERFACE_TYPE, {str,name}, info);
+      then ();
+    else
+      equation
+        Error.addSourceMessage(Error.MISSING_INTERFACE_TYPE,{},SCode.elementInfo(elt));
+      then fail();
+  end matchcontinue;
+end verifyInterfaceType;
+
+protected function getInterfaceType
+  input SCode.Element elt;
+  input list<tuple<String,list<String>>> assoc;
+  output list<String> it;
+algorithm
+  it := matchcontinue (elt,assoc)
+    local
+      String name;
+      SCode.Annotation ann;
+      String str;
+      Absyn.Info info;
+    case (SCode.CLASS(name=name,cmt=SCode.COMMENT(annotation_=SOME(ann))),_)
+      equation
+        (Absyn.STRING(str),info) = SCode.getNamedAnnotation(ann,"__OpenModelica_Interface");
+        it = Util.assoc(str,assoc);
+      then it;
+    else
+      equation
+        Error.addSourceMessage(Error.MISSING_INTERFACE_TYPE,{},SCode.elementInfo(elt));
+      then fail();
+  end matchcontinue;
+end getInterfaceType;
+
+protected function getInterfaceTypeAssocElt
+  input Values.Value val;
+  input Absyn.Info info;
+  output tuple<String,list<String>> assoc;
+algorithm
+  assoc := match (val,info)
+    local
+      String str;
+      list<String> strs;
+      list<Values.Value> vals;
+    case (Values.ARRAY(valueLst=Values.STRING("")::_),_)
+      equation
+        Error.addSourceMessage(Error.MISSING_INTERFACE_TYPE,{},info);
+      then fail();
+    case (Values.ARRAY(valueLst=Values.STRING(str)::vals),_)
+      equation
+        strs = List.select(List.map(vals,ValuesUtil.extractValueString), Util.isNotEmptyString);
+      then ((str,str::strs));
+  end match;
+end getInterfaceTypeAssocElt;
+
+annotation(__OpenModelica_Interface="backendInterface"); // TODO: Remove once we have a smaller interface module
 end CevalScript;

@@ -1127,5 +1127,6 @@ algorithm
   end matchcontinue;
 end main2;
 
+annotation(__OpenModelica_Interface="backend");
 end Main;
 

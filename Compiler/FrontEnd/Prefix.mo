@@ -85,4 +85,5 @@ uniontype ClassPrefix "Prefix for classes is its variability"
   end CLASSPRE;
 end ClassPrefix;
 
+annotation(__OpenModelica_Interface="frontend");
 end Prefix;

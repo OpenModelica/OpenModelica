@@ -2402,4 +2402,5 @@ algorithm
   end match;
 end printAvlTreeStrPP2;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFSCodeEnv;

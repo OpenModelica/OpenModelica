@@ -95,6 +95,7 @@ match elt
   case SCode.CLASS(__) then classExternalHeader(elt,pack)
 end elementExternalHeader;
 
+annotation(__OpenModelica_Interface="backend");
 end Unparsing;
 
 // vim: filetype=susan sw=2 sts=2

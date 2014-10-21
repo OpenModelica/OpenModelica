@@ -1077,4 +1077,5 @@ algorithm
   end matchcontinue;
 end printToken;
 
+annotation(__OpenModelica_Interface="frontend");
 end Figaro;

@@ -805,5 +805,5 @@ algorithm
   end matchcontinue;
 end initialGraphOptimica;
 
+annotation(__OpenModelica_Interface="frontend");
 end FBuiltin;
-

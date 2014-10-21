@@ -3631,4 +3631,5 @@ algorithm
   end matchcontinue;
 end cmtListToString;
 
+annotation(__OpenModelica_Interface="frontend");
 end DAEDump;

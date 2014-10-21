@@ -3726,6 +3726,38 @@ algorithm
   end match;
 end isNotBuiltinClass;
 
+public function getNamedAnnotation
+  "Checks if the given annotation contains an entry with the given name with the
+   value true."
+  input Annotation inAnnotation;
+  input String inName;
+  output Absyn.Exp exp;
+  output Absyn.Info info;
+protected
+  list<SubMod> submods;
+algorithm
+  ANNOTATION(modification = MOD(subModLst = submods)) := inAnnotation;
+  NAMEMOD(mod = MOD(info = info, binding = SOME((exp, _)))) := List.selectFirst1(submods, hasNamedAnnotation, inName);
+end getNamedAnnotation;
+
+protected function hasNamedAnnotation
+  "Checks if a submod has the same name as the given name, and if its binding
+   in that case is true."
+  input SubMod inSubMod;
+  input String inName;
+  output Boolean outIsMatch;
+algorithm
+  outIsMatch := match(inSubMod, inName)
+    local
+      String id;
+
+    case (NAMEMOD(ident = id, mod = MOD(binding = SOME(_))), _)
+      then stringEq(id, inName);
+
+    else false;
+  end match;
+end hasNamedAnnotation;
+
 public function hasBooleanNamedAnnotationInClass
   input Element inClass;
   input String namedAnnotation;
@@ -5553,5 +5585,5 @@ algorithm
   outE := COMPONENT(inName, pr, atr, ts, m, cmt, cnd, i);
 end setComponentName;
 
+annotation(__OpenModelica_Interface="frontend");
 end SCode;
-

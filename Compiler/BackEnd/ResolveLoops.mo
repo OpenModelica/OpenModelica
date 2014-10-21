@@ -2063,5 +2063,5 @@ algorithm
   end matchcontinue;
 end resolveEquations;
 
-
+annotation(__OpenModelica_Interface="backend");
 end ResolveLoops;

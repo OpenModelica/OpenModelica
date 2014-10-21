@@ -1460,4 +1460,5 @@ algorithm
 end mkCloneNode;
 */
 
+annotation(__OpenModelica_Interface="frontend");
 end FGraphBuildEnv;

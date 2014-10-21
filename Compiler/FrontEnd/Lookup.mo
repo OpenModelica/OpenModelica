@@ -3162,5 +3162,5 @@ algorithm
   end matchcontinue;
 end isFunctionCallViaComponent;
 
+annotation(__OpenModelica_Interface="frontend");
 end Lookup;
-

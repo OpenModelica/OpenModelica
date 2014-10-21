@@ -5940,6 +5940,7 @@ let() = Tpl.addSourceTemplateError(errMessage, srcInfo)
 >>
 end error;
 
+annotation(__OpenModelica_Interface="backend");
 end CodegenSparseFMI;
 
 // vim: filetype=susan sw=2 sts=2

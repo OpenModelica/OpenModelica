@@ -377,4 +377,5 @@ algorithm
   end match;
 end findFinalConstraints;
 
+annotation(__OpenModelica_Interface="backend");
 end DynamicOptimization;

@@ -726,4 +726,5 @@ algorithm
   end matchcontinue;
 end strictRMLCheck2;
 
+annotation(__OpenModelica_Interface="frontend");
 end MetaUtil;

@@ -738,5 +738,5 @@ algorithm
   end match;
 end printTreeStrPP2;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFEnvAvlTree;
-

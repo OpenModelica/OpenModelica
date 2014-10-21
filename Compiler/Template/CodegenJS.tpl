@@ -233,6 +233,7 @@ for this page.
 >>
 end markdownContents;
 
+annotation(__OpenModelica_Interface="backend");
 end CodegenJS;
 
 // vim: filetype=susan sw=2 sts=2

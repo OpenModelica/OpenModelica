@@ -676,5 +676,6 @@ algorithm
   end match;
 end checkOnLoadMessageWork;
 
+annotation(__OpenModelica_Interface="frontend");
 end ClassLoader;
 

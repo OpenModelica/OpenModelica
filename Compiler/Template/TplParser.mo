@@ -1201,6 +1201,7 @@ algorithm
       TplAbsyn.PathIdent pid;
       list<TplAbsyn.ASTDef> astDefs;
       list<tuple<TplAbsyn.Ident, TplAbsyn.TemplateDef>> templDefs;
+      String annotationFooter;
 
     case (chars, linfo)
       equation
@@ -1214,8 +1215,10 @@ algorithm
         astDefs = listReverse(astDefs);
         templDefs = listReverse(templDefs);
         (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, annotationFooter) = annotationFooter(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);
         (chars, linfo) = endDefPathIdent(chars, linfo,pid);
-      then (chars, linfo, TplAbsyn.TEMPL_PACKAGE(pid, astDefs,templDefs));
+      then (chars, linfo, TplAbsyn.TEMPL_PACKAGE(pid, astDefs, templDefs, annotationFooter));
 
     case (_, _)
       equation
@@ -6361,5 +6364,32 @@ algorithm
   end matchcontinue;
 end fieldBinding_rest;
 
+/*
+annotationFooter:
+  'annotation(...)' => str
+  |
+  _ => ""
 
+*/
+protected function annotationFooter
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+
+  output list<String> chars;
+  output LineInfo linfo;
+  output String footer;
+algorithm
+  (chars,linfo,footer) := match (inChars,inLineInfo)
+    local
+      list<String> footerChars;
+    case ("a"::"n"::"n"::"o"::"t"::"a"::"t"::"i"::"o"::"n"::chars, linfo)
+      equation
+        (footerChars,chars) = List.split(inChars,List.position(";", inChars)+1);
+        footer = stringAppendList(footerChars);
+      then (chars,linfo,footer);
+    else (inChars,inLineInfo,"annotation(__OpenModelica_generator=\"Susan\");"); // No annotation; put default footer
+  end match;
+end annotationFooter;
+
+annotation(__OpenModelica_Interface="susan");
 end TplParser;

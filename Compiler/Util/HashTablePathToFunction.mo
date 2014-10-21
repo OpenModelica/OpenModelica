@@ -121,4 +121,5 @@ algorithm
   hashTable := BaseHashTable.emptyHashTableWork(size,(hashFunc,Absyn.pathEqual,Absyn.pathString,valString));
 end emptyHashTableSized;
 
+annotation(__OpenModelica_Interface="frontend");
 end HashTablePathToFunction;

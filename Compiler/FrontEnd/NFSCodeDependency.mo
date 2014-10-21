@@ -2289,4 +2289,5 @@ algorithm
   true := NFSCodeEnv.isItemUsed(item);
 end removeUnusedRedeclares3;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFSCodeDependency;

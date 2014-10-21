@@ -178,4 +178,5 @@ algorithm
 end edge;
 
 
+annotation(__OpenModelica_Interface="frontend");
 end FGraphStream;

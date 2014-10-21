@@ -4114,5 +4114,6 @@ algorithm
   end match;
 end firstElementIsTrieNodeNamed;
 
+annotation(__OpenModelica_Interface="frontend");
 end ConnectUtil;
 

@@ -6083,4 +6083,5 @@ algorithm
   end match;
 end extractSMStates;
 
+annotation(__OpenModelica_Interface="frontend");
 end InstSection;

@@ -50,4 +50,5 @@ of values."
   external "C" outVal=DynLoad_executeFunction(inFuncHandle,inValLst,inPrintDebug) annotation(Library = "omcruntime");
 end executeFunction;
 
+annotation(__OpenModelica_Interface="frontend");
 end DynLoad;

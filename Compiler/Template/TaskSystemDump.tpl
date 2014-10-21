@@ -31,7 +31,7 @@ template tasksystemdump_dispatch(SimCode code, Boolean withOperations)
   </dae-equations>
   <ode-equations size="<%listLength(listGet(odeEquations,1))%>">
     <%dumpEqs(SimCodeUtil.sortEqSystems(listGet(odeEquations,1)),0,withOperations)%>
-  </ode-equations>  
+  </ode-equations>
   <alg-equations size="<%listLength(listGet(algebraicEquations,1))%>">
     <%dumpEqs(SimCodeUtil.sortEqSystems(listGet(algebraicEquations,1)),0,withOperations)%>
   </alg-equations>
@@ -154,8 +154,8 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
       let &defines += e.vars |> SIMVAR(name=cr) => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n"
       let _ = SimCodeUtil.sortEqSystems(e.residual) |> reseq  =>
                 eqDefinesDepends(reseq, defines, depends)
-      let _ = (match e.jacobianMatrix 
-        case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then 
+      let _ = (match e.jacobianMatrix
+        case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then
           let _ = SimCodeUtil.sortEqSystems(eqns) |> jeq  =>
                   eqDefinesDepends(jeq, defines, depends)
           ""
@@ -180,8 +180,8 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
       let &defines += e.crefs |> cr => '<defines name="<%crefStrNoUnderscore(cr)%>"/>' ; separator = "\n"
       let _ = SimCodeUtil.sortEqSystems(e.eqs) |> nleq  =>
                 eqDefinesDepends(nleq, defines, depends)
-      let _ = (match e.jacobianMatrix 
-        case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then 
+      let _ = (match e.jacobianMatrix
+        case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then
           let _ = SimCodeUtil.sortEqSystems(eqns) |> jeq  =>
                   eqDefinesDepends(jeq, defines, depends)
           ""
@@ -235,7 +235,7 @@ end dumpEqs;
 template getdependcies(tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>> ocrefs)
 ::=
   match ocrefs
-  case (olhscrefs,orhscrefs) then 
+  case (olhscrefs,orhscrefs) then
   <<
   <%olhscrefs |> cr => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n"%>
   <%orhscrefs |> cr => '<depends name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n"%>
@@ -406,6 +406,7 @@ template printEquationExpStrEscaped(EquationExp eq)
     '<%printExpStrEscaped(lhs)%> = <%printExpStrEscaped(rhs)%>'
 end printEquationExpStrEscaped;
 
+annotation(__OpenModelica_Interface="backend");
 end TaskSystemDump;
 
 // vim: filetype=susan sw=2 sts=2

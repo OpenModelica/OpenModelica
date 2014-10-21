@@ -3178,6 +3178,7 @@ case ENUMERATIONVARIABLE(variability = "",causality="output") then
   >>
 end dumpOutputGetEnumerationVariable;
 
+annotation(__OpenModelica_Interface="backend");
 end CodegenFMU;
 
 // vim: filetype=susan sw=2 sts=2

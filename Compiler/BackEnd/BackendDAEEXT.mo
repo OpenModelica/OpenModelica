@@ -289,5 +289,5 @@ public function setAssignment
   external "C" outBoolean=BackendDAEEXT_setAssignment(lenass1,lenass2,ass1,ass2) annotation(Library = "omcruntime");
 end setAssignment;
 
+annotation(__OpenModelica_Interface="backend");
 end BackendDAEEXT;
-

@@ -125,4 +125,5 @@ end Connections;
 
 public constant Connections emptyConnections = CONNECTIONS({}, {}, {}, {});
 
+annotation(__OpenModelica_Interface="frontend");
 end NFConnect2;

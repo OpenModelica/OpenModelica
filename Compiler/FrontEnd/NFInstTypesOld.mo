@@ -210,4 +210,5 @@ public uniontype Modifier
   record NOMOD end NOMOD;
 end Modifier;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFInstTypesOld;

@@ -500,4 +500,5 @@ public uniontype AvlTreeValue
   end AVLTREEVALUE;
 end AvlTreeValue;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFInstTypes;

@@ -1353,4 +1353,5 @@ template externalFunctionIncludes(list<String> includes)
   >>
 end externalFunctionIncludes;
 
+annotation(__OpenModelica_Interface="backend");
 end CodegenJava;

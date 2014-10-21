@@ -495,4 +495,6 @@ all: <%name%>.mo <%name%>_parameters.h <%name%>_external_functions.c
 <%\t%>echo "set terminal wxt persist; set grid; plot \"<%name%>_x0.dat\" with lines " | gnuplot
 >>
 end generateMakefile;
+
+annotation(__OpenModelica_Interface="backend");
 end CodegenQSS;

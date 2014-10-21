@@ -475,6 +475,7 @@ let() = Tpl.addTemplateError(errMessage)
 >>
 end errorMsg;
 
+annotation(__OpenModelica_Interface="backend");
 end CodegenUtil;
 
 // vim: filetype=susan sw=2 sts=2

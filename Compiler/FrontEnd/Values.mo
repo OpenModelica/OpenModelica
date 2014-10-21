@@ -139,5 +139,5 @@ public uniontype IntRealOp
   record LESSEQOP end LESSEQOP;
 end IntRealOp;
 
+annotation(__OpenModelica_Interface="frontend");
 end Values;
-

@@ -1285,7 +1285,7 @@ algorithm
     // Special Case for Arrays
     case (e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(vars,vars1))
       equation
-        (e1,(_,true)) = BackendDAEUtil.extendArrExp(e,(NONE(),false));
+        (e1,(_,true)) = DAEUtil.extendArrExp(e,(NONE(),false));
         (_,(vars,vars1)) = Expression.traverseExp(e1,checkUnusedParameterExp,(vars,vars1));
       then (e, (vars,vars1));
 
@@ -1400,7 +1400,7 @@ algorithm
     // Special Case for Arrays
     case (e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(vars,vars1))
       equation
-        (e1,(_,true)) = BackendDAEUtil.extendArrExp(e,(NONE(),false));
+        (e1,(_,true)) = DAEUtil.extendArrExp(e,(NONE(),false));
         (_,(vars,vars1)) = Expression.traverseExp(e1,checkUnusedVariablesExp,(vars,vars1));
       then (e, (vars,vars1));
 
@@ -7146,13 +7146,13 @@ algorithm
     // case for arrays
     case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=_, ty = DAE.T_ARRAY(dims=_))}), (vars, shared as BackendDAE.SHARED(functionTree=funcs), b))
       equation
-        (e2, (_, true)) = BackendDAEUtil.extendArrExp(e1, (SOME(funcs), false));
+        (e2, (_, true)) = DAEUtil.extendArrExp(e1, (SOME(funcs), false));
         (e,tpl) = Expression.traverseExp(e2, expandDerExp, (vars, shared, b));
       then (e,tpl);
     // case for records
     case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=_, ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))}), (vars, shared as BackendDAE.SHARED(functionTree=funcs), b))
       equation
-        (e2, (_, true)) = BackendDAEUtil.extendArrExp(e1, (SOME(funcs), false));
+        (e2, (_, true)) = DAEUtil.extendArrExp(e1, (SOME(funcs), false));
         (e,tpl) = Expression.traverseExp(e2, expandDerExp, (vars, shared, b));
       then (e,tpl);
     case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)}), (vars, shared, _))
@@ -7508,4 +7508,5 @@ algorithm
   end match;
 end warnAboutVars;
 
+annotation(__OpenModelica_Interface="backend");
 end BackendDAEOptimize;

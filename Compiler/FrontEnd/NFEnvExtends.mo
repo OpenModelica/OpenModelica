@@ -1389,4 +1389,5 @@ algorithm
   end matchcontinue;
 end addClassExtendsInfoToEnv;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFEnvExtends;

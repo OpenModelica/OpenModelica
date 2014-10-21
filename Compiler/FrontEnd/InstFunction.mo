@@ -1015,4 +1015,5 @@ algorithm
   end match;
 end checkExtObjOutputWork;
 
+annotation(__OpenModelica_Interface="frontend");
 end InstFunction;

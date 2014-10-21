@@ -164,4 +164,5 @@ public function setShowErrorMessages
   external "C" Error_setShowErrorMessages(OpenModelica.threadData(),inShow) annotation(Library = "omcruntime");
 end setShowErrorMessages;
 
+annotation(__OpenModelica_Interface="util");
 end ErrorExt;

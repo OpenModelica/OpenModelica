@@ -923,4 +923,5 @@ algorithm
   end match;
 end printResult;
 
+annotation(__OpenModelica_Interface="frontend");
 end UnitChecker;

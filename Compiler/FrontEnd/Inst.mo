@@ -5935,4 +5935,5 @@ algorithm
   end matchcontinue;
 end showCacheInfo;
 
+annotation(__OpenModelica_Interface="frontend");
 end Inst;

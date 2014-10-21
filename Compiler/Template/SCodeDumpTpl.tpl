@@ -221,7 +221,6 @@ end dumpClassComment;
 
 template dumpClassAnnotation(SCode.Comment comment, SCodeDumpOptions options)
 ::=
-if Config.showAnnotations() then
   match comment
     case COMMENT(__) then dumpAnnotationOpt(annotation_, options)
 end dumpClassAnnotation;
@@ -728,6 +727,11 @@ match submod
       case "Icon"
       case "Line"
       case "Placement"
+      case "preferredView"
+      case "conversion"
+      case "defaultComponentName"
+      case "revisionId"
+      case "uses"
         then ""
       else '<%dumpModifierPrefix(nameMod)%><%ident%><%dumpAnnotationModifier(nameMod,options)%>')
   case NAMEMOD(mod = REDECL(__)) then
@@ -839,5 +843,6 @@ let() = Tpl.addTemplateError(errMessage)
 >>
 end errorMsg;
 
+annotation(__OpenModelica_Interface="frontend");
 end SCodeDumpTpl;
 // vim: filetype=susan sw=2 sts=2

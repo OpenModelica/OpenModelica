@@ -1278,4 +1278,5 @@ algorithm
   end match;
 end extractRedeclareFromSubMod;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFMod;

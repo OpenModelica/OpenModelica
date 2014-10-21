@@ -9262,4 +9262,5 @@ algorithm
   end match;
 end propagateModFinal;
 
+annotation(__OpenModelica_Interface="frontend");
 end InstUtil;

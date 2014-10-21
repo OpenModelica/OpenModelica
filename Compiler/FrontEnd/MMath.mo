@@ -173,4 +173,5 @@ algorithm
   end matchcontinue;
 end testRational;
 
+annotation(__OpenModelica_Interface="frontend");
 end MMath;

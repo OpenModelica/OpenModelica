@@ -589,4 +589,5 @@ algorithm
   outTuple := (ty, cty, var, dir);
 end varConnectorTuple;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFConnectCheck;

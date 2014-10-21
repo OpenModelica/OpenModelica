@@ -3310,5 +3310,6 @@ algorithm
   end match;
 end getModInfo;
 
+annotation(__OpenModelica_Interface="frontend");
 end Mod;
 

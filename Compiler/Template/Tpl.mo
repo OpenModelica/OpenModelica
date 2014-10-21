@@ -8,17 +8,15 @@ encapsulated package Tpl
   $Id$
 "
 
-//import Util;
+public import Absyn;
 protected import Config;
 protected import Debug;
-protected import System;
-protected import Util;
-protected import Print;
-protected import GlobalScript;
 protected import Error;
 protected import Flags;
-public import Absyn;
-
+protected import GlobalScript;
+protected import Print;
+protected import System;
+protected import Util;
 
 // indentation will be implemented through spaces
 // where tabs will be converted where 1 tab = 4 spaces ??
@@ -1794,4 +1792,5 @@ algorithm
   Error.addMessage(Error.TEMPLATE_ERROR, {inErrMsg});
 end addTemplateError;
 
+annotation(__OpenModelica_Interface="susan");
 end Tpl;

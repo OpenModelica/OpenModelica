@@ -69,7 +69,6 @@ protected import CevalScript;
 protected import ComponentReference;
 protected import Config;
 protected import Debug;
-protected import Differentiate;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
@@ -1150,7 +1149,6 @@ algorithm
     case "min" then cevalBuiltinMin;
     case "rem" then cevalBuiltinRem;
     case "diagonal" then cevalBuiltinDiagonal;
-    case "differentiate" then cevalBuiltinDifferentiate;
     case "simplify" then cevalBuiltinSimplify;
     case "sign" then cevalBuiltinSign;
     case "exp" then cevalBuiltinExp;
@@ -3849,50 +3847,6 @@ algorithm
   end matchcontinue;
 end cevalBuiltinMinArr;
 
-protected function cevalBuiltinDifferentiate "author: LP
-  This function differentiates an equation: x^2 + x => 2x + 1"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input list<DAE.Exp> inExpExpLst;
-  input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inST;
-  input Absyn.Msg inMsg;
-  input Integer numIter;
-  output FCore.Cache outCache;
-  output Values.Value outValue;
-  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
-  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
-    local
-      DAE.Exp differentiated_exp,differentiated_exp_1,exp1;
-      String ret_val;
-      FCore.Graph env;
-      DAE.ComponentRef cr;
-      Boolean impl;
-      Option<GlobalScript.SymbolTable> st;
-      Absyn.Msg msg;
-      FCore.Cache cache;
-      DAE.FunctionTree ft;
-    case (cache,_,{exp1,DAE.CREF(componentRef = cr)},_,st,_,_)
-      equation
-        ft = FCore.getFunctionTree(cache);
-        differentiated_exp = Differentiate.differentiateExpCrefFunction(exp1, cr, ft);
-        (differentiated_exp_1,_) = ExpressionSimplify.simplify(differentiated_exp);
-        /*
-         this is wrong... this should be used instead but unelabExp must be able to unelaborate a complete exp
-         now it doesn't so the expression is returned as string Expression.unelabExp(differentiated_exp') => absyn_exp
-        */
-        ret_val = ExpressionDump.printExpStr(differentiated_exp_1);
-      then
-        (cache,Values.STRING(ret_val),st);
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"#- Differentiation failed. Celab.cevalBuiltinDifferentiate failed."});
-      then fail();
-  end matchcontinue;
-end cevalBuiltinDifferentiate;
-
 protected function cevalBuiltinSimplify "author: LP
   this function simplifies an equation: x^2 + x => 2x + 1"
   input FCore.Cache inCache;
@@ -6236,5 +6190,5 @@ algorithm
   end match;
 end makeReductionAllCombinations;
 
+annotation(__OpenModelica_Interface="frontend");
 end Ceval;
-

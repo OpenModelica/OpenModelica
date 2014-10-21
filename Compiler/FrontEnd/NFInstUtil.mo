@@ -2037,4 +2037,5 @@ algorithm
   end match;
 end markComponentAsProtected;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFInstUtil;

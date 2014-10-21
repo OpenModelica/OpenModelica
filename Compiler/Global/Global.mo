@@ -74,4 +74,5 @@ algorithm
   setGlobalRoot(rewriteRulesIndex,  NONE());
 end initialize;
 
+annotation(__OpenModelica_Interface="util");
 end Global;

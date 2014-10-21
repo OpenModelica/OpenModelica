@@ -100,4 +100,5 @@ algorithm
   hashTable := BaseHashTable.emptyHashTableWork(size,(Expression.hashExpMod,Expression.expEqual,ExpressionDump.printExpStr,ComponentReference.printComponentRefStr));
 end emptyHashTableSized;
 
+annotation(__OpenModelica_Interface="frontend");
 end HashTable4;

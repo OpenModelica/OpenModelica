@@ -341,4 +341,5 @@ algorithm
   end matchcontinue;
 end daeDeclare2;
 
+annotation(__OpenModelica_Interface="frontend");
 end InstDAE;

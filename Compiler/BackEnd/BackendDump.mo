@@ -3775,4 +3775,5 @@ algorithm
   print(preStr +& " NrOfEquations: " +& intString(n) +& "\n");
 end dumpNrOfEquations;
 
+annotation(__OpenModelica_Interface="backend");
 end BackendDump;

@@ -1817,4 +1817,5 @@ template MemberVariableDefine4(Option<tuple<Integer,Integer>> optVarArrayAssignm
   end match
 end MemberVariableDefine4;
 
+annotation(__OpenModelica_Interface="backend");
 end CodegenCppHpcom;

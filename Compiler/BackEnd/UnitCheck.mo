@@ -2327,4 +2327,5 @@ algorithm
   end match;
 end unitRoot;
 
+annotation(__OpenModelica_Interface="backend");
 end UnitCheck;

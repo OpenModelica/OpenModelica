@@ -200,5 +200,5 @@ algorithm
   end matchcontinue;
 end simplifyElements;
 
+annotation(__OpenModelica_Interface="frontend");
 end SCodeSimplify;
-

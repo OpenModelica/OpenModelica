@@ -365,5 +365,5 @@ algorithm
   oBuffer := name +& ": " +& value;
 end dumpStyle;
 
-
+annotation(__OpenModelica_Interface="backend");
 end DumpHTML;

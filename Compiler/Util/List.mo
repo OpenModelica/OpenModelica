@@ -10133,4 +10133,5 @@ algorithm
   end match;
 end mkOption;
 
+annotation(__OpenModelica_Interface="util");
 end List;

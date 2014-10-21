@@ -1110,4 +1110,5 @@ algorithm
     (hashFunc, Absyn.pathEqual, Absyn.pathString, printMod));
 end emptyModifierTable;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFSCodeMod;

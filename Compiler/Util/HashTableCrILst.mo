@@ -106,4 +106,5 @@ algorithm
   res := "{" +& stringDelimitList(List.map(ilst, intString), ",") +& "}";
 end printIntListStr;
 
+annotation(__OpenModelica_Interface="frontend");
 end HashTableCrILst;

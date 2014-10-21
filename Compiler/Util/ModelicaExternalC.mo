@@ -105,5 +105,5 @@ function Strings_advanced_skipWhiteSpace
   external "C" nextIndex = ModelicaStrings_skipWhiteSpace(string,startIndex) annotation(Library = "ModelicaExternalC");
 end Strings_advanced_skipWhiteSpace;
 
-
+annotation(__OpenModelica_Interface="util");
 end ModelicaExternalC;

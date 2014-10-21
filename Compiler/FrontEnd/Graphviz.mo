@@ -285,5 +285,5 @@ algorithm
   end matchcontinue;
 end makeAttrReq;
 
+annotation(__OpenModelica_Interface="frontend");
 end Graphviz;
-

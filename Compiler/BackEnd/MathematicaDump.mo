@@ -890,4 +890,5 @@ out:=matchcontinue(inVariableAttributesOption)
    end matchcontinue;
 end getStartAttribute;
 
+annotation(__OpenModelica_Interface="backend");
 end MathematicaDump;

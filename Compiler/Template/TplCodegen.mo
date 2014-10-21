@@ -46,11 +46,12 @@ algorithm
   match(in_txt, in_a_it)
     local
       Tpl.Text txt;
+      String i_annotationFooter;
       list<TplAbsyn.MMDeclaration> i_mmDeclarations;
       TplAbsyn.PathIdent i_name;
 
     case ( txt,
-           TplAbsyn.MM_PACKAGE(name = i_name, mmDeclarations = i_mmDeclarations) )
+           TplAbsyn.MM_PACKAGE(name = i_name, mmDeclarations = i_mmDeclarations, annotationFooter = i_annotationFooter) )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("encapsulated package "));
         txt = pathIdent(txt, i_name);
@@ -77,10 +78,10 @@ algorithm
         txt = lm_3(txt, i_mmDeclarations);
         txt = Tpl.popIter(txt);
         txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
-                                    "\n",
-                                    "end "
-                                }, false));
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+        txt = Tpl.writeStr(txt, i_annotationFooter);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("end "));
         txt = pathIdent(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
       then txt;
@@ -2286,4 +2287,5 @@ algorithm
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING(")"));
 end sActualMMParams;
 
+annotation(__OpenModelica_Interface="susan");
 end TplCodegen;

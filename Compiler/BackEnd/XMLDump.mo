@@ -4453,4 +4453,5 @@ algorithm
   end matchcontinue;
 end unparseCommentOptionNoAnnotation;
 
+annotation(__OpenModelica_Interface="backend");
 end XMLDump;

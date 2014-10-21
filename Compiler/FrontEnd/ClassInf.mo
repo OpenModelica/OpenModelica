@@ -795,5 +795,6 @@ algorithm
   end match;
 end stateToSCodeRestriction;
 
+annotation(__OpenModelica_Interface="frontend");
 end ClassInf;
 

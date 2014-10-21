@@ -300,4 +300,5 @@ public function dorgqr
     outA, outWORK, outINFO) annotation(Library = {"omcruntime", "Lapack"});
 end dorgqr;
 
+annotation(__OpenModelica_Interface="util");
 end Lapack;

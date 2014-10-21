@@ -455,4 +455,5 @@ algorithm
   end matchcontinue;
 end graphml;
 
+annotation(__OpenModelica_Interface="frontend");
 end FGraphDump;

@@ -235,4 +235,5 @@ package Examples
 
 end Examples;
 
+annotation(__OpenModelica_Interface="util");
 end File;

@@ -395,7 +395,7 @@ template pathIdentIf(PathIdent pid, Boolean cond) ::=
 end pathIdentIf;
 
 template hasIndexTest(list<String> lst, Boolean cond) ::=
-  lst |> str hasindex strIdx from 10 =>
+  lst |> str hasindex strIdx fromindex 10 =>
     if cond then str
     else str + strIdx
 end hasIndexTest;

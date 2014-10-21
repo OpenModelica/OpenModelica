@@ -945,4 +945,5 @@ algorithm
   end match;
 end ifcallret2;
 
+annotation(__OpenModelica_Interface="util");
 end Debug;

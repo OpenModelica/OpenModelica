@@ -2025,5 +2025,5 @@ algorithm
   end matchcontinue;
 end treeAdd2;
 
+annotation(__OpenModelica_Interface="frontend");
 end VarTransform;
-

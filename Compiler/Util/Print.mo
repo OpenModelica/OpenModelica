@@ -125,4 +125,5 @@ public function hasBufNewLineAtEnd
   external "C" outHasNewLineAtEnd = Print_hasBufNewLineAtEnd(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end hasBufNewLineAtEnd;
 
+annotation(__OpenModelica_Interface="util");
 end Print;

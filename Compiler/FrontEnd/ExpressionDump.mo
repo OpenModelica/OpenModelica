@@ -1803,5 +1803,5 @@ algorithm
   end match;
 end clockKindString;
 
+annotation(__OpenModelica_Interface="frontend");
 end ExpressionDump;
-

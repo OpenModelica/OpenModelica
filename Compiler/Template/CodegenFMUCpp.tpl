@@ -551,7 +551,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   >>
 end fmuMakefile;
 
-
+annotation(__OpenModelica_Interface="backend");
 end CodegenFMUCpp;
 
 // vim: filetype=susan sw=2 sts=2

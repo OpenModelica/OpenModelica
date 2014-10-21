@@ -2790,4 +2790,5 @@ algorithm
   end match;
 end makeTupleFromMetaTuple;
 
+annotation(__OpenModelica_Interface="frontend");
 end Patternm;

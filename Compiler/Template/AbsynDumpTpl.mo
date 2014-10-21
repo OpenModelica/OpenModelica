@@ -6324,4 +6324,5 @@ algorithm
   out_txt := Tpl.writeStr(txt, a_errMessage);
 end errorMsg;
 
+annotation(__OpenModelica_Interface="absyn");
 end AbsynDumpTpl;

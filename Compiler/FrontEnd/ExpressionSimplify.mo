@@ -5537,4 +5537,5 @@ algorithm
   end match;
 end removeMinMaxFoldableValues;
 
+annotation(__OpenModelica_Interface="frontend");
 end ExpressionSimplify;

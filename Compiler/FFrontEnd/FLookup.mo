@@ -581,5 +581,5 @@ algorithm
   end matchcontinue;
 end cr;
 
+annotation(__OpenModelica_Interface="frontend");
 end FLookup;
-

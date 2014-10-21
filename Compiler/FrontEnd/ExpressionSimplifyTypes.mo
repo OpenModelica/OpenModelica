@@ -86,4 +86,5 @@ end IntOp;
 
 public constant Options optionSimplifyOnly = (NONE(),NO_EVAL());
 
+annotation(__OpenModelica_Interface="frontend");
 end ExpressionSimplifyTypes;

@@ -471,5 +471,6 @@ algorithm
   end match;
 end directionSymbol;
 
+annotation(__OpenModelica_Interface="frontend");
 end DumpGraphviz;
 

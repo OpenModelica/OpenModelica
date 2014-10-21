@@ -744,4 +744,5 @@ algorithm
   end match;
 end isUndeclaredConnector;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFConnectUtil2;

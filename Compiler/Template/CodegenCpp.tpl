@@ -13135,4 +13135,5 @@ template generateMeasureTimeEndCode(String varNameStartValues, String varNameEnd
   >>
 end generateMeasureTimeEndCode;
 
+annotation(__OpenModelica_Interface="backend");
 end CodegenCpp;

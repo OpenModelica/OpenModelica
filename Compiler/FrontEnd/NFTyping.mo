@@ -2135,4 +2135,5 @@ algorithm
   end matchcontinue;
 end typeFunction2;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFTyping;

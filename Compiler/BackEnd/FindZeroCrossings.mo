@@ -1485,5 +1485,5 @@ algorithm
   end match;
 end makeZeroCrossings;
 
+annotation(__OpenModelica_Interface="backend");
 end FindZeroCrossings;
-

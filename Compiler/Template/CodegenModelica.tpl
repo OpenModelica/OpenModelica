@@ -93,4 +93,5 @@ template dumpBackendDAE(BackendDAE.BackendDAE backendDAE)
       >>
 end dumpBackendDAE;
 
+annotation(__OpenModelica_Interface="backend");
 end CodegenModelica;

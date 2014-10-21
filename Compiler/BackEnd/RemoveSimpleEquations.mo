@@ -828,8 +828,8 @@ algorithm
   dims := Expression.arrayDimension(ty);
   ds := Expression.dimensionsSizes(dims);
   ad := List.map(ds, Util.makeOption);
-  subslst := BackendDAEUtil.arrayDimensionsToRange(ad);
-  subslst := BackendDAEUtil.rangesToSubscripts(subslst);
+  subslst := DAEUtil.arrayDimensionsToRange(ad);
+  subslst := DAEUtil.rangesToSubscripts(subslst);
   elst1 := List.map1r(subslst, Expression.applyExpSubscripts, lhs);
   elst2 := List.map1r(subslst, Expression.applyExpSubscripts, rhs);
   outTpl := List.threadFold2(elst1, elst2, simpleEquationAcausal, eqnAttributes, true, inTpl);
@@ -4110,4 +4110,5 @@ algorithm
   end match;
 end negateExpression;
 
+annotation(__OpenModelica_Interface="backend");
 end RemoveSimpleEquations;

@@ -1739,4 +1739,5 @@ end getNextIndex;
 // ************************************************************** //
 
 
+annotation(__OpenModelica_Interface="frontend");
 end NFTypeCheck;

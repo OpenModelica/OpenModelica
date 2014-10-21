@@ -115,4 +115,5 @@ public function dumpSettings
   external "C" Settings_dumpSettings() annotation(Library = "omcruntime");
 end dumpSettings;*/
 
+annotation(__OpenModelica_Interface="util");
 end Settings;

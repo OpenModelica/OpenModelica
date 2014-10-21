@@ -52,4 +52,5 @@ public function checkCodeGraph
   external "C" res=TaskGraphResults_checkCodeGraph(graphfile,codefile) annotation(Library = "omcruntime");
 end checkCodeGraph;
 
+annotation(__OpenModelica_Interface="util");
 end TaskGraphResults;

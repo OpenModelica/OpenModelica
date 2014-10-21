@@ -72,4 +72,5 @@ end LoopControl;
 public function evaluate
 end evaluate;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFEvalFunction;

@@ -573,4 +573,5 @@ algorithm
   end match;
 end valueArrayNth;
 
+annotation(__OpenModelica_Interface="util");
 end BaseHashSet;

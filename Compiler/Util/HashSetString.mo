@@ -91,4 +91,5 @@ algorithm
   hashSet := BaseHashSet.emptyHashSetWork(size,(System.stringHashDjb2Mod,stringEq,Util.id));
 end emptyHashSetSized;
 
+annotation(__OpenModelica_Interface="util");
 end HashSetString;

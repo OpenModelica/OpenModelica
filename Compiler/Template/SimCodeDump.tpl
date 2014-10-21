@@ -441,6 +441,7 @@ template printEquationExpStrEscaped(EquationExp eq)
     '<%printExpStrEscaped(lhs)%> = <%printExpStrEscaped(rhs)%>'
 end printEquationExpStrEscaped;
 
+annotation(__OpenModelica_Interface="backend");
 end SimCodeDump;
 
 // vim: filetype=susan sw=2 sts=2

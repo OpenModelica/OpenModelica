@@ -254,4 +254,5 @@ algorithm
   end match;
 end printModScope;
 
+annotation(__OpenModelica_Interface="frontend");
 end FMod;

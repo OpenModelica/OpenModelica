@@ -5088,4 +5088,5 @@ algorithm
   end matchcontinue;
 end isRecordVar;
 
+annotation(__OpenModelica_Interface="backend");
 end BackendVariable;

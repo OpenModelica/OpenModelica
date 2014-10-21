@@ -691,4 +691,5 @@ uniontype DifferentiationType "Define the behaviour of differentiation method fo
   end GENERIC_GRADIENT;
 end DifferentiationType;
 
+annotation(__OpenModelica_Interface="backendInterface"); // TODO: Make backend once Inline.mo is split in different parts
 end BackendDAE;

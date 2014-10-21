@@ -1079,4 +1079,5 @@ algorithm
   end match;
 end dumpSymbolTable;
 
+annotation(__OpenModelica_Interface="frontend");
 end NFInstSymbolTable;

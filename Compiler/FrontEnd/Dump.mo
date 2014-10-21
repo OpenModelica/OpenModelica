@@ -4868,5 +4868,5 @@ algorithm
   Print.printBuf("\"");
 end printStringAsCorbaString;
 
+annotation(__OpenModelica_Interface="absyn"); // TODO: Should be a frontend module
 end Dump;
-

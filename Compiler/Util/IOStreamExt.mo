@@ -141,4 +141,5 @@ function printReversedList
   external "C" IOStreamExt_printReversedList(inStringLst, whereToPrint) annotation(Library = "omcruntime");
 end printReversedList;
 
+annotation(__OpenModelica_Interface="util");
 end IOStreamExt;

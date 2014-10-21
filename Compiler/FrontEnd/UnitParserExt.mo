@@ -101,4 +101,5 @@ with addBase or addDerived."
   external "C" UnitParserExtImpl__commit() annotation(Library = {"omcruntime","lpsolve55"});
 end commit;
 
+annotation(__OpenModelica_Interface="frontend");
 end UnitParserExt;

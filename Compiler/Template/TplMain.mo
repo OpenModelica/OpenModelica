@@ -410,8 +410,8 @@ input Pa.Li inSusan;", true, true, "typedIdentsEx", notPassedCnt);
                 },
                 TplAbsyn.GI_TEMPL_FUN()
                )
-            }
-
+            },
+            ""
           )
         );
         str = Tpl.textString(txt);
@@ -558,7 +558,8 @@ typedIdents(TypedIdents decls) <>=
                            )
              )
 
-           }
+           },
+           ""
            );
         mmPckg = TplAbsyn.transformAST(tplPackage);
         txt = emptyTxt;
@@ -1736,4 +1737,5 @@ txt := 1;
 end MuchFun2;
 */
 
+annotation(__OpenModelica_Interface="susan");
 end TplMain;

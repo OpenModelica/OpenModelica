@@ -3268,6 +3268,28 @@ annotation(
 </html>"));
 end GC_gcollect_and_unmap;
 
+function checkInterfaceOfPackages
+  input TypeName cl;
+  input String dependencyMatrix[:,:];
+  output Boolean success;
+  external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Verifies the __OpenModelica_Interface=str annotation of all loaded packages with respect to the given main class.</p>
+<p>For each row in the dependencyMatrix, the first element is the name of a dependency type. The rest of the elements are the other accepted dependency types for this one (frontend can call frontend and util, for example). Empty entries are ignored (necessary in order to have a rectangular matrix).</p>
+</html>"));
+end checkInterfaceOfPackages;
+
+function sortStrings
+  input String arr[:];
+  output String sorted;
+  external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Sorts a string array in ascending order.</p>
+</html>"));
+end sortStrings;
+
 annotation(preferredView="text");
 end Scripting;
 

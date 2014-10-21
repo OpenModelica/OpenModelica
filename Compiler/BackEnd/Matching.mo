@@ -6227,4 +6227,5 @@ algorithm
   oAcc := List.consOnTrue(b,i,iAcc);
 end getAssignedVars;
 
+annotation(__OpenModelica_Interface="backend");
 end Matching;

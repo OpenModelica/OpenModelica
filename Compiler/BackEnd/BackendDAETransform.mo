@@ -1561,4 +1561,5 @@ algorithm
   end match;
 end traverseBackendDAEExpsEqnList;
 
+annotation(__OpenModelica_Interface="backend");
 end BackendDAETransform;

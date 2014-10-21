@@ -3727,4 +3727,5 @@ algorithm
   end matchcontinue;
 end getConstOneVariable;
 
+annotation(__OpenModelica_Interface="backend");
 end OnRelaxation;

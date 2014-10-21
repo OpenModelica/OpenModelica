@@ -264,7 +264,7 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
  <p>The external C code of this package is inserted using Include annotations, so there should be no need to compile any libraries prior to using the package.</p>
  </html>"));
   end UsersGuide;
-  annotation(version = "0.1", Documentation(info = "<html>
+  annotation(version = "0.1", __OpenModelica_Interface="util", Documentation(info = "<html>
  <p>MessagePack is an efficient binary serialization format for multiple languages. Details on the binary format can be found on <a href=\"http://msgpack.org\">msgpack.org</a>.</p>
  </html>"));
 end MessagePack;

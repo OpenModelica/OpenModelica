@@ -2903,4 +2903,5 @@ algorithm
   end match;
 end optimizeExpTraverser;
 
+annotation(__OpenModelica_Interface="frontend");
 end CevalFunction;

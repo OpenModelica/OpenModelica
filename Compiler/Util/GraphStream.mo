@@ -184,4 +184,5 @@ algorithm
   GraphStreamExt.cleanup();
 end cleanup;
 
+annotation(__OpenModelica_Interface="frontend");
 end GraphStream;

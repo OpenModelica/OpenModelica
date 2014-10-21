@@ -1948,5 +1948,5 @@ algorithm
   end matchcontinue;
 end selectScope;
 
+annotation(__OpenModelica_Interface="frontend");
 end FGraph;
-

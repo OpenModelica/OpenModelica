@@ -5659,4 +5659,5 @@ algorithm
   end matchcontinue;
 end getNodeForVarIdx;
 
+annotation(__OpenModelica_Interface="backend");
 end HpcOmTaskGraph;

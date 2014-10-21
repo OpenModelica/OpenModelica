@@ -98,4 +98,5 @@ algorithm
   hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRefMod,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,ComponentReference.printComponentRefListStr));
 end emptyHashTableSized;
 
+annotation(__OpenModelica_Interface="frontend");
 end HashTable3;

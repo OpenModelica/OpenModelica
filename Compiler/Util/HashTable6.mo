@@ -137,4 +137,5 @@ algorithm
   hashTable := BaseHashTable.emptyHashTableWork(size,(hashFunc,keyEqual,printKey,ExpressionDump.printExpStr));
 end emptyHashTableSized;
 
+annotation(__OpenModelica_Interface="util");
 end HashTable6;

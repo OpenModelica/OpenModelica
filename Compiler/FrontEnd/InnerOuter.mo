@@ -2372,4 +2372,5 @@ algorithm
   end matchcontinue;
 end valueArrayNth;
 
+annotation(__OpenModelica_Interface="frontend");
 end InnerOuter;

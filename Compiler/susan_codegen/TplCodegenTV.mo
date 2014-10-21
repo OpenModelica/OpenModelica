@@ -132,6 +132,7 @@ package TplAbsyn
     record MM_PACKAGE
       PathIdent name;
       list<MMDeclaration> mmDeclarations;
+      String annotationFooter;
     end MM_PACKAGE;
   end MMPackage;
 
@@ -323,6 +324,7 @@ package TplAbsyn
       //list<PathIdent> extendsList;
       list<ASTDef> astDefs;
       list<tuple<Ident,TemplateDef>> templateDefs;
+      String annotationFooter;
     end TEMPL_PACKAGE;
   end TemplPackage;
 

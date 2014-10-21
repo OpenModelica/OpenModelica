@@ -1793,4 +1793,5 @@ algorithm
   end match;
 end instArrayDimInteger;
 
+annotation(__OpenModelica_Interface="frontend");
 end InstVar;

@@ -2216,4 +2216,5 @@ algorithm
   end match;
 end getZeroConstructor;
 
+annotation(__OpenModelica_Interface="frontend");
 end OperatorOverloading;

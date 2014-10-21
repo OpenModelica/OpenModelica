@@ -2608,4 +2608,5 @@ algorithm
   end match;
 end containsEmpty;
 
+annotation(__OpenModelica_Interface="frontend");
 end ValuesUtil;

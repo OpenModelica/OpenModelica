@@ -836,4 +836,5 @@ algorithm
   serializePath(file, SimCodeUtil.functionPath(func));
 end serializeFunction;
 
+annotation(__OpenModelica_Interface="backend");
 end SerializeModelInfo;

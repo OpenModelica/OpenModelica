@@ -2299,4 +2299,5 @@ algorithm
   end matchcontinue;
 end getReplacementCheckComplex;
 
+annotation(__OpenModelica_Interface="frontend");
 end Inline;

@@ -1206,4 +1206,5 @@ algorithm
   end match;
 end merge3;
 
+annotation(__OpenModelica_Interface="util");
 end Graph;

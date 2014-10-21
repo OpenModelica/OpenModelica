@@ -1763,4 +1763,5 @@ algorithm
   end matchcontinue;
 end addBrokenEqualityConstraintEquations;
 
+annotation(__OpenModelica_Interface="frontend");
 end ConnectionGraph;

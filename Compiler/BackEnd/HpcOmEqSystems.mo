@@ -2607,4 +2607,5 @@ algorithm
                                       graphInfoIn);
 end addDirectedEdge;
 
+annotation(__OpenModelica_Interface="backend");
 end HpcOmEqSystems;
