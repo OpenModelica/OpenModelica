@@ -44,10 +44,13 @@ public import GlobalScript;
 public import Values;
 
 protected import CevalFunction;
+protected import ComponentReference;
 protected import Error;
+protected import FGraph;
 protected import List;
 protected import Lookup;
 protected import Inst;
+protected import SCode;
 protected import SCodeUtil;
 
 public function addVarsToSymboltable

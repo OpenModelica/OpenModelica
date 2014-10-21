@@ -64,6 +64,7 @@ protected import Error;
 protected import ErrorExt;
 protected import Flags;
 protected import Global;
+protected import GlobalScript;
 protected import Interactive;
 protected import List;
 protected import Parser;
