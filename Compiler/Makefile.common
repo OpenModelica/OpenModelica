@@ -152,6 +152,7 @@ BackendDAETransform.mo \
 BackendDAEUtil.mo \
 BackendDump.mo \
 BackendEquation.mo \
+BackendInline.mo \
 BackendQSS.mo \
 BackendVariable.mo \
 BackendVarTransform.mo \

@@ -7847,5 +7847,5 @@ algorithm
   end match;
 end getInterfaceTypeAssocElt;
 
-annotation(__OpenModelica_Interface="backend"); // TODO: Remove once we have a smaller interface module
+annotation(__OpenModelica_Interface="backend");
 end CevalScript;
