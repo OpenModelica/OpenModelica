@@ -451,7 +451,7 @@ algorithm
     // special case for arrays
     case (e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)), _)
       equation
-        (e1, (_, true)) = DAEUtil.extendArrExp(e, (NONE(), false));
+        (e1, true) = Expression.extendArrExp(e, false);
         (_, outTuple) = Expression.traverseExp(e1, checkEquationsUnknownCrefsExp, inTuple);
       then (e, outTuple);
 
@@ -1481,7 +1481,6 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.Equation backendEq;
       list<Integer> ds;
-      list<Option<Integer>> ad;
       list<DAE.Exp> explst;
       list<BackendDAE.Equation> eqns;
       list<list<DAE.Subscript>> subslst;
@@ -1515,9 +1514,8 @@ algorithm
 
     case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source, attr=attr)) equation
       exp = Expression.expSub(e1, e2);
-      ad = List.map(ds, Util.makeOption);
-      subslst = DAEUtil.arrayDimensionsToRange(ad);
-      subslst = DAEUtil.rangesToSubscripts(subslst);
+      subslst = Expression.dimensionSizesSubscripts(ds);
+      subslst = Expression.rangesToSubscripts(subslst);
       explst = List.map1r(subslst, Expression.applyExpSubscripts, exp);
       explst = ExpressionSimplify.simplifyList(explst, {});
       eqns = List.map2(explst, generateRESIDUAL_EQUATION, source, attr);

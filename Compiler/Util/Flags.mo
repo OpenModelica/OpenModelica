@@ -897,7 +897,7 @@ constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(53, "replaceHomotopy",
   SOME(STRING_DESC_OPTION({
     ("none", Util.gettext("Default, do not replace homotopy.")),
     ("actual", Util.gettext("Replace homotopy(actual, simplified) with actual.")),
-    ("simplified", Util.gettext("Replace homotopy(actual, simplified with simplified."))
+    ("simplified", Util.gettext("Replace homotopy(actual, simplified) with simplified."))
     })),
     Util.gettext("Replaces homotopy(actual, simplified) with the actual expression or the simplified expression. Good for debugging models which use homotopy. The default is to not replace homotopy."));
 

@@ -656,5 +656,5 @@ algorithm
   print("attIdx: "+&intString(attIdx)+&" name: "+&name+&"\n");
 end printAttribute;
 
-annotation(__OpenModelica_Interface="backendInterface");
+annotation(__OpenModelica_Interface="susan");
 end GraphML;

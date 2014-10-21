@@ -6257,5 +6257,58 @@ algorithm
   outArg := inArg;
 end dummyTraverseExp;
 
+public function getDefineUnitsInElements "retrives defineunit definitions in elements"
+  input list<Absyn.ElementItem> elts;
+  output list<Absyn.Element> outElts;
+algorithm
+  outElts := matchcontinue(elts)
+    local
+      Absyn.Element e;
+      list<Absyn.ElementItem> rest;
+    case {} then {};
+    case (Absyn.ELEMENTITEM(e as Absyn.DEFINEUNIT(name=_))::rest)
+      equation
+        outElts = getDefineUnitsInElements(rest);
+      then e::outElts;
+    case (_::rest)
+      then getDefineUnitsInElements(rest);
+  end matchcontinue;
+end getDefineUnitsInElements;
+
+public function getElementItemsInClass
+  "Returns the public and protected elements in a class."
+  input Class inClass;
+  output list<ElementItem> outElements;
+algorithm
+  outElements := match(inClass)
+    local
+      list<ClassPart> parts;
+
+    case CLASS(body = PARTS(classParts = parts))
+      then List.mapFlat(parts, getElementItemsInClassPart);
+
+    case CLASS(body = CLASS_EXTENDS(parts = parts))
+      then List.mapFlat(parts, getElementItemsInClassPart);
+
+    else {};
+
+  end match;
+end getElementItemsInClass;
+
+protected function getElementItemsInClassPart
+  "Returns the public and protected elements in a class part."
+  input ClassPart inClassPart;
+  output list<ElementItem> outElements;
+algorithm
+  outElements := match(inClassPart)
+    local
+      list<ElementItem> elts;
+
+    case PUBLIC(contents = elts) then elts;
+    case PROTECTED(contents = elts) then elts;
+    else {};
+  end match;
+end getElementItemsInClassPart;
+
 annotation(__OpenModelica_Interface="absyn"); // TODO: Should be a frontend module
 end Absyn;

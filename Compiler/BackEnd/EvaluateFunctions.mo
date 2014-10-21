@@ -2143,7 +2143,7 @@ algorithm
         true = listLength(dim) == 1;
         dim = List.intRange(List.first(dim));
         ranges = List.map1(dim,List.fill,1);
-        subslst = List.map(ranges,DAEUtil.rangesToSubscript);
+        subslst = List.map(ranges, Expression.intSubscripts);
         crefs = List.map1r(subslst,ComponentReference.subscriptCref,cref);
       then
         crefs;

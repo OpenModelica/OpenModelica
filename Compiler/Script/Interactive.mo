@@ -77,6 +77,8 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import FGraph;
+protected import GlobalScriptDump;
+protected import GlobalScriptUtil;
 protected import InnerOuter;
 protected import Inst;
 protected import InstUtil;
@@ -392,7 +394,7 @@ algorithm
           functionArgs = Absyn.FUNCTIONARGS(args = {cond,_}))),
           (st as GlobalScript.SYMBOLTABLE(ast = _)))
       equation
-        (env,st) = buildEnvFromSymboltable(st);
+        (env,st) = GlobalScriptUtil.buildEnvFromSymboltable(st);
         (cache,econd,_,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(), env, cond, true, SOME(st), true, Prefix.NOPRE(), info);
         (_,Values.BOOL(true),SOME(st_2)) = CevalScript.ceval(cache,env, econd, true, SOME(st_1), Absyn.MSG(info), 0);
       then
@@ -402,7 +404,7 @@ algorithm
           functionArgs = Absyn.FUNCTIONARGS(args = {_,msg}))),
           (st as GlobalScript.SYMBOLTABLE(ast = _)))
       equation
-        (env,st) = buildEnvFromSymboltable(st);
+        (env,st) = GlobalScriptUtil.buildEnvFromSymboltable(st);
         (cache,msg_1,_,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(), env, msg, true, SOME(st), true, Prefix.NOPRE(), info);
         (_,Values.STRING(str),SOME(st_2)) = CevalScript.ceval(cache,env, msg_1, true, SOME(st_1), Absyn.MSG(info), 0);
       then
@@ -410,7 +412,7 @@ algorithm
 
     case (Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_NORETCALL(functionCall = cr,functionArgs = fargs)),st)
       equation
-        (env,st) = buildEnvFromSymboltable(st);
+        (env,st) = GlobalScriptUtil.buildEnvFromSymboltable(st);
         exp = Absyn.CALL(cr,fargs);
         (cache,sexp,_,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), info);
         (_,_,SOME(st_2)) = CevalScript.ceval(cache, env, sexp, true, SOME(st_1), Absyn.MSG(info), 0);
@@ -428,7 +430,7 @@ algorithm
         value = getVariableValueLst(Absyn.pathToStringList(Absyn.crefToPath(cr)), vars);
         str = ValuesUtil.valString(value);
         t = Types.typeOfValue(value);
-        newst = addVarToSymboltable(DAE.CREF_IDENT(ident, t, {}), value, FGraph.empty(), st);
+        newst = GlobalScriptUtil.addVarToSymboltable(DAE.CREF_IDENT(ident, t, {}), value, FGraph.empty(), st);
       then (str,newst);
 
     case
@@ -437,14 +439,14 @@ algorithm
         Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = asubs)),value = exp)),
         (st as GlobalScript.SYMBOLTABLE(ast = _)))
       equation
-        (env,st) = buildEnvFromSymboltable(st);
+        (env,st) = GlobalScriptUtil.buildEnvFromSymboltable(st);
         (cache,sexp,DAE.PROP(_,_),SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
         (_,value,SOME(st_2)) = CevalScript.ceval(cache,env, sexp, true,SOME(st_1),Absyn.MSG(info),0);
         (_, dsubs, _) = Static.elabSubscripts(cache, env, asubs, true, Prefix.NOPRE(), info);
 
         t = Types.typeOfValue(value) "This type can be more specific than the elaborated type; if the dimensions are unknown...";
         str = ValuesUtil.valString(value);
-        newst = addVarToSymboltable(DAE.CREF_IDENT(ident, t, dsubs), value, env, st_2);
+        newst = GlobalScriptUtil.addVarToSymboltable(DAE.CREF_IDENT(ident, t, dsubs), value, env, st_2);
       then
         (str,newst);
 
@@ -455,12 +457,12 @@ algorithm
         Absyn.TUPLE(expressions = crefexps),value = rexp)),
         (st as GlobalScript.SYMBOLTABLE(ast = _)))
       equation
-        (env,st) = buildEnvFromSymboltable(st);
+        (env,st) = GlobalScriptUtil.buildEnvFromSymboltable(st);
         (cache,srexp,rprop,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(),env, rexp, true, SOME(st),true,Prefix.NOPRE(),info);
         DAE.T_TUPLE(tupleType = types) = Types.getPropType(rprop);
         crefs = makeTupleCrefs(crefexps, types, env, cache, info);
         (_,Values.TUPLE(values),SOME(st_2)) = CevalScript.ceval(cache, env, srexp, true, SOME(st_1), Absyn.MSG(info),0);
-        newst = addVarsToSymboltable(crefs, values, env, st_2);
+        newst = GlobalScriptUtil.addVarsToSymboltable(crefs, values, env, st_2);
       then
         ("",newst);
 
@@ -548,9 +550,9 @@ algorithm
       GlobalScript.SymbolTable st1,st2,st3,st4,st5;
     case (_, val::vallst, algItems, st1)
     equation
-      st2 = appendVarToSymboltable(iter, val, Types.typeOfValue(val), st1);
+      st2 = GlobalScriptUtil.appendVarToSymboltable(iter, val, Types.typeOfValue(val), st1);
       st3 = evaluateAlgStmtLst(algItems, st2);
-      st4 = deleteVarFromSymboltable(iter, st3);
+      st4 = GlobalScriptUtil.deleteVarFromSymboltable(iter, st3);
       st5 = evaluateForStmt(iter, vallst, algItems, st4);
     then
       st5;
@@ -580,9 +582,9 @@ algorithm
     case (_, startv, stepv, stopv, algItems, st1)
       equation
         true = ValuesUtil.safeLessEq(startv, stopv);
-        st2 = appendVarToSymboltable(iter, startv, Types.typeOfValue(startv), st1);
+        st2 = GlobalScriptUtil.appendVarToSymboltable(iter, startv, Types.typeOfValue(startv), st1);
         st3 = evaluateAlgStmtLst(algItems, st2);
-        st4 = deleteVarFromSymboltable(iter, st3);
+        st4 = GlobalScriptUtil.deleteVarFromSymboltable(iter, st3);
         nextv = ValuesUtil.safeIntRealOp(startv, stepv, Values.ADDOP());
         st5 = evaluateForStmtRangeOpt(iter, nextv, stepv, stopv, algItems, st4);
       then
@@ -783,7 +785,7 @@ algorithm
 
     case (exp,(st as GlobalScript.SYMBOLTABLE(ast = _)),_)
       equation
-        (env,st) = buildEnvFromSymboltable(st);
+        (env,st) = GlobalScriptUtil.buildEnvFromSymboltable(st);
         (cache,sexp,_,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), info);
         (_,value,SOME(st_2)) = CevalScript.ceval(cache, env, sexp, true, SOME(st_1), Absyn.MSG(info),0);
       then
@@ -805,7 +807,7 @@ protected
   DAE.Properties prop;
   GlobalScript.SymbolTable st_1;
 algorithm
-  (env,st) := buildEnvFromSymboltable(ist);
+  (env,st) := GlobalScriptUtil.buildEnvFromSymboltable(ist);
   (_,sexp,prop,SOME(st_1)) := StaticScript.elabExp(FCore.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), Absyn.dummyInfo);
   (_, sexp, prop) := Ceval.cevalIfConstant(FCore.emptyCache(), env, sexp, prop, true, Absyn.dummyInfo);
   estr := ExpressionDump.printExpStr(sexp);
@@ -916,269 +918,6 @@ algorithm
         tp;
   end matchcontinue;
 end getTypeOfVariable;
-
-protected function addVarsToSymboltable
-  "Adds a list of variables to the interactive symboltable."
-  input list<DAE.ComponentRef> inCref;
-  input list<Values.Value> inValues;
-  input FCore.Graph inEnv;
-  input GlobalScript.SymbolTable inSymbolTable;
-  output GlobalScript.SymbolTable outSymbolTable;
-algorithm
-  outSymbolTable := List.threadFold1(inCref, inValues, addVarToSymboltable,
-    inEnv, inSymbolTable);
-end addVarsToSymboltable;
-
-public function addVarToSymboltable
-  "Adds a variable to the interactive symboltable."
-  input DAE.ComponentRef inCref;
-  input Values.Value inValue;
-  input FCore.Graph inEnv;
-  input GlobalScript.SymbolTable inSymbolTable;
-  output GlobalScript.SymbolTable outSymbolTable;
-protected
-  list<GlobalScript.Variable> vars;
-algorithm
-  GlobalScript.SYMBOLTABLE(lstVarVal = vars) := inSymbolTable;
-  vars := addVarToVarList(inCref, inValue, inEnv, vars);
-  outSymbolTable := setSymbolTableVars(vars, inSymbolTable);
-end addVarToSymboltable;
-
-public function appendVarToSymboltable
-"Appends a variable to the interactive symbol table.
- Compared to addVarToSymboltable, this function does
- not search for the identifier, it adds the variable
- to the beginning of the list.
- Used in for example iterators in for statements."
-  input Absyn.Ident inIdent;
-  input Values.Value inValue;
-  input DAE.Type inType;
-  input GlobalScript.SymbolTable inSymbolTable;
-  output GlobalScript.SymbolTable outSymbolTable;
-protected
-  list<GlobalScript.Variable> vars;
-algorithm
-  GlobalScript.SYMBOLTABLE(lstVarVal = vars) := inSymbolTable;
-  vars := GlobalScript.IVAR(inIdent, inValue, inType) :: vars;
-  outSymbolTable := setSymbolTableVars(vars, inSymbolTable);
-end appendVarToSymboltable;
-
-public function deleteVarFromSymboltable
-  input Absyn.Ident inIdent;
-  input GlobalScript.SymbolTable inSymbolTable;
-  output GlobalScript.SymbolTable outSymbolTable;
-protected
-  list<GlobalScript.Variable> vars;
-algorithm
-  GlobalScript.SYMBOLTABLE(lstVarVal = vars) := inSymbolTable;
-  vars := deleteVarFromVarlist(inIdent, vars);
-  outSymbolTable := setSymbolTableVars(vars, inSymbolTable);
-end deleteVarFromSymboltable;
-
-protected function deleteVarFromVarlist
-"deletes the first variable found"
-  input Absyn.Ident inIdent;
-  input list<GlobalScript.Variable> inVariableLst;
-  output list<GlobalScript.Variable> outVariableLst;
-algorithm
-  outVariableLst := matchcontinue (inIdent,inVariableLst)
-    local
-      String ident,id2;
-      list<GlobalScript.Variable> rest, rest2;
-      GlobalScript.Variable var;
-
-    case (_,{})
-      then {};
-
-    case (ident,(GlobalScript.IVAR(varIdent = id2) :: rest))
-      equation
-        true = stringEq(ident, id2);
-      then
-        rest;
-
-    case (ident,var::rest)
-      equation
-        rest2 = deleteVarFromVarlist(ident, rest);
-      then
-        var::rest2;
-  end matchcontinue;
-end deleteVarFromVarlist;
-
-protected function addVarToVarList
-  "Assigns a value to a variable with a specific identifier."
-  input DAE.ComponentRef inCref;
-  input Values.Value inValue;
-  input FCore.Graph inEnv;
-  input list<GlobalScript.Variable> inVariables;
-  output list<GlobalScript.Variable> outVariables;
-protected
-  Boolean found;
-algorithm
-  (outVariables, found) :=
-    List.findMap3(inVariables, addVarToVarList2, inCref, inValue, inEnv);
-  outVariables := addVarToVarList4(found, inCref, inValue, outVariables);
-end addVarToVarList;
-
-protected function addVarToVarList2
-  input GlobalScript.Variable inOldVariable;
-  input DAE.ComponentRef inCref;
-  input Values.Value inValue;
-  input FCore.Graph inEnv;
-  output GlobalScript.Variable outVariable;
-  output Boolean outFound;
-protected
-  Absyn.Ident id1, id2;
-algorithm
-  GlobalScript.IVAR(varIdent = id1) := inOldVariable;
-  DAE.CREF_IDENT(ident = id2) := inCref;
-  outFound := stringEq(id1, id2);
-  outVariable := addVarToVarList3(outFound, inOldVariable, inCref, inValue, inEnv);
-end addVarToVarList2;
-
-protected function addVarToVarList3
-  input Boolean inFound;
-  input GlobalScript.Variable inOldVariable;
-  input DAE.ComponentRef inCref;
-  input Values.Value inValue;
-  input FCore.Graph inEnv;
-  output GlobalScript.Variable outVariable;
-algorithm
-  outVariable := match(inFound, inOldVariable, inCref, inValue, inEnv)
-    local
-      Absyn.Ident id;
-      Values.Value val;
-      DAE.Type ty;
-      list<DAE.Subscript> subs;
-
-    // GlobalScript.Variable is not a match, keep the old one.
-    case (false, _, _, _, _) then inOldVariable;
-
-    // Assigning whole variable => return new variable.
-    case (true, _, DAE.CREF_IDENT(id, ty, {}), _, _) then GlobalScript.IVAR(id, inValue, ty);
-
-    // Assigning array slice => update the old variable's value.
-    case (true, GlobalScript.IVAR(id, val, ty), DAE.CREF_IDENT(subscriptLst = subs), _, _)
-      equation
-        (_, val, _) = CevalFunction.assignVector(inValue, val, subs,
-          FCore.emptyCache(), inEnv, NONE());
-      then
-        GlobalScript.IVAR(id, val, ty);
-
-  end match;
-end addVarToVarList3;
-
-protected function addVarToVarList4
-  input Boolean inFound;
-  input DAE.ComponentRef inCref;
-  input Values.Value inValue;
-  input list<GlobalScript.Variable> inVariables;
-  output list<GlobalScript.Variable> outVariables;
-algorithm
-  outVariables := match(inFound, inCref, inValue, inVariables)
-    local
-      Absyn.Ident id;
-      DAE.Type ty;
-
-    // GlobalScript.Variable was already updated in addVarToVar, do nothing.
-    case (true, _, _, _) then inVariables;
-
-    // GlobalScript.Variable is new, add it to the list of variables.
-    case (false, DAE.CREF_IDENT(id, ty, {}), _, _)
-      then GlobalScript.IVAR(id, inValue, ty) :: inVariables;
-
-    // Assigning to an array slice is only allowed for variables that have
-    // already been defined, i.e. that have a size. Print an error otherwise.
-    case (false, DAE.CREF_IDENT(ident = id, subscriptLst = _ :: _), _, _)
-      equation
-        Error.addMessage(Error.SLICE_ASSIGN_NON_ARRAY, {id});
-      then
-        fail();
-
-  end match;
-end addVarToVarList4;
-
-public function buildEnvFromSymboltable
-" author: PA
-   Builds an environment from a symboltable by adding all
-   interactive variables and their bindings to the environment."
-  input GlobalScript.SymbolTable inSymbolTable;
-  output FCore.Graph outEnv;
-  output GlobalScript.SymbolTable st;
-algorithm
-  (outEnv,st) := match (inSymbolTable)
-    local
-      list<SCode.Element> p_1;
-      FCore.Graph env,env_1;
-      list<GlobalScript.Variable> vars;
-
-    case (st as GlobalScript.SYMBOLTABLE(lstVarVal = vars))
-      equation
-        (p_1,st) = symbolTableToSCode(st);
-        (_,env) = Inst.makeEnvFromProgram(FCore.emptyCache(), p_1, Absyn.IDENT(""));
-        // Reverse the variable list to make sure iterators overwrite other
-        // variables (iterators are appended to the front of the list).
-        vars = listReverse(vars);
-        env_1 = addVarsToEnv(vars, env);
-      then
-        (env_1,st);
-
-  end match;
-end buildEnvFromSymboltable;
-
-protected function addVarsToEnv
-"Helper function to buildEnvFromSymboltable."
-  input list<GlobalScript.Variable> inVariableLst;
-  input FCore.Graph inEnv;
-  output FCore.Graph outEnv;
-algorithm
-  outEnv := matchcontinue (inVariableLst,inEnv)
-    local
-      FCore.Graph env_1,env_2,env;
-      String id;
-      Values.Value v;
-      DAE.Type tp;
-      list<GlobalScript.Variable> rest;
-
-    case ((GlobalScript.IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
-      equation
-        (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(FCore.emptyCache(), env, ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
-        env_1 = FGraph.updateComp(
-                  env,
-                  DAE.TYPES_VAR(
-                    id,
-                    DAE.dummyAttrVar,
-                    tp,
-                    DAE.VALBOUND(v, DAE.BINDING_FROM_DEFAULT_VALUE()),
-                    NONE()),
-                  FCore.VAR_TYPED(),
-                  FGraph.empty());
-        env_2 = addVarsToEnv(rest, env_1);
-      then
-        env_2;
-
-    case ((GlobalScript.IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
-      equation
-        failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(FCore.emptyCache(),env, ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{})));
-        env_1 = FGraph.mkComponentNode(
-                 env,
-                 DAE.TYPES_VAR(id,DAE.dummyAttrVar,tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()),
-                  SCode.COMPONENT(
-                    id,
-                    SCode.defaultPrefixes,
-                    SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
-                    Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                    SCode.noComment, NONE(), Absyn.dummyInfo),
-                  DAE.NOMOD(),
-                 FCore.VAR_UNTYPED(),
-                 FGraph.empty());
-        env_2 = addVarsToEnv(rest, env_1);
-      then
-        env_2;
-
-    case ({},env) then env;
-
-  end matchcontinue;
-end addVarsToEnv;
 
 protected function matchApiFunction
   "Checks if the interactive statement list contains a function with the given name."
@@ -2198,7 +1937,7 @@ algorithm
         b1 = useQuotes(nargs);
         path = Absyn.crefToPath(cr);
         cls = getPathedClassInProgram(path, p);
-        (env,st) = buildEnvFromSymboltable(st);
+        (env,st) = GlobalScriptUtil.buildEnvFromSymboltable(st);
         resstr = getLocalVariables(cls, b1, env);
       then
         (resstr,st);
@@ -2439,7 +2178,7 @@ algorithm
     case (p,comp_reps)
       equation
         comp_rep = firstComponentReplacement(comp_reps);
-        ((p_1,_,_)) = traverseClasses(p,NONE(), renameComponentVisitor, comp_rep, true) "traverse protected" ;
+        ((p_1,_,_)) = GlobalScriptUtil.traverseClasses(p,NONE(), renameComponentVisitor, comp_rep, true) "traverse protected" ;
         res = restComponentReplacementRules(comp_reps);
         p_2 = renameComponentFromComponentreplacements(p_1, res);
       then
@@ -3981,7 +3720,7 @@ algorithm
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
-        ((_,_,(comps,_,_))) = traverseClasses(p, NONE(), extractAllComponentsVisitor,(GlobalScript.COMPONENTS({},0),p,env), true) "traverse protected";
+        ((_,_,(comps,_,_))) = GlobalScriptUtil.traverseClasses(p, NONE(), extractAllComponentsVisitor,(GlobalScript.COMPONENTS({},0),p,env), true) "traverse protected";
       then
         comps;
   end match;
@@ -7130,7 +6869,7 @@ algorithm
         new_path = Absyn.crefToPath(new_name);
         pa_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),pa_1, Absyn.IDENT(""));
-        ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p, NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
+        ((p_1,_,(_,_,_,path_str_lst,_))) = GlobalScriptUtil.traverseClasses(p, NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
         path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
         res = stringAppendList({"{",path_str_lst_no_empty,"}"});
@@ -7144,7 +6883,7 @@ algorithm
         new_path = Absyn.joinPaths(old_path_no_last, new_path_1);
         pa_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),pa_1, Absyn.IDENT(""));
-        ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p,NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
+        ((p_1,_,(_,_,_,path_str_lst,_))) = GlobalScriptUtil.traverseClasses(p,NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
         path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
         res = stringAppendList({"{",path_str_lst_no_empty,"}"});
@@ -7521,398 +7260,6 @@ algorithm
         res;
   end match;
 end changeLastIdent;
-
-public function traverseClasses
-" This function traverses all classes of a program and applies a function
-   to each class. The function takes the Absyn.Class, Absyn.Path option
-   and an additional argument and returns an updated class and the
-   additional values. The Absyn.Path option contains the path to the class
-   that is traversed.
-   inputs:  (Absyn.Program,
-               Absyn.Path option,
-               ((Absyn.Class  Absyn.Path option  \'a) => (Absyn.Class  Absyn.Path option  \'a)),  /* rel-ation to apply */
-            \'a, /* extra value passed to re-lation */
-            bool) /* true = traverse protected elements */
-   outputs: (Absyn.Program   Absyn.Path option  \'a)"
-  input Absyn.Program inProgram;
-  input Option<Absyn.Path> inAbsynPathOption;
-  input FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA;
-  input Type_a inTypeA;
-  input Boolean inBoolean;
-  output tuple<Absyn.Program, Option<Absyn.Path>, Type_a> outTplAbsynProgramAbsynPathOptionTypeA;
-  partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
-    input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
-    output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTplAbsynClassAbsynPathOptionTypeA;
-    replaceable type Type_a subtypeof Any;
-  end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTplAbsynProgramAbsynPathOptionTypeA:=
-  match (inProgram,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
-    local
-      list<Absyn.Class> lst_1,lst;
-      Option<Absyn.Path> pa_1,pa;
-      Type_a args_1,args;
-      Absyn.Within within_;
-      FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a visitor;
-      Boolean traverse_prot;
-      Absyn.TimeStamp ts;
-
-    case (Absyn.PROGRAM(classes = lst,within_ = within_,globalBuildTimes=ts),pa,visitor,args,traverse_prot)
-      equation
-        ((lst_1,pa_1,args_1)) = traverseClasses2(lst, pa, visitor, args, traverse_prot);
-      then
-        ((Absyn.PROGRAM(lst_1,within_,ts),pa_1,args_1));
-  end match;
-end traverseClasses;
-
-protected function traverseClasses2
-" Helperfunction to traverseClasses."
-  input list<Absyn.Class> inAbsynClassLst;
-  input Option<Absyn.Path> inAbsynPathOption;
-  input FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA;
-  input Type_a inTypeA "extra argument";
-  input Boolean inBoolean "visit protected elements";
-  output tuple<list<Absyn.Class>, Option<Absyn.Path>, Type_a> outTplAbsynClassLstAbsynPathOptionTypeA;
-  partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
-    input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
-    output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTplAbsynClassAbsynPathOptionTypeA;
-    replaceable type Type_a subtypeof Any;
-  end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTplAbsynClassLstAbsynPathOptionTypeA:=
-  matchcontinue (inAbsynClassLst,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
-    local
-      Option<Absyn.Path> pa,pa_1,pa_2,pa_3;
-      FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a visitor;
-      Type_a args,args_1,args_2,args_3;
-      Absyn.Class class_1,class_2,class_;
-      list<Absyn.Class> classes_1,classes;
-      Boolean traverse_prot;
-    case ({},pa,_,args,_) then (({},pa,args));
-    case ((class_ :: classes),pa,visitor,args,traverse_prot)
-      equation
-        ((class_1,_,args_1)) = visitor((class_,pa,args));
-        ((class_2,_,args_2)) = traverseInnerClass(class_1, pa, visitor, args_1, traverse_prot);
-        ((classes_1,pa_3,args_3)) = traverseClasses2(classes, pa, visitor, args_2, traverse_prot);
-      then
-        (((class_2 :: classes_1),pa_3,args_3));
-
-    /* Visitor failed, but class contains inner classes after traversal, i.e. those inner classes didn't fail, and thus
-    the class must be included also */
-      case ((class_ :: classes),pa,visitor,args,traverse_prot)
-      equation
-        ((class_2,_,args_2)) = traverseInnerClass(class_, pa, visitor, args, traverse_prot);
-        true = classHasLocalClasses(class_2);
-        ((classes_1,pa_3,args_3)) = traverseClasses2(classes, pa, visitor, args_2, traverse_prot);
-      then
-        (((class_2 :: classes_1),pa_3,args_3));
-
-    /* Visitor failed, remove class */
-    case ((_ :: classes),pa,visitor,args,traverse_prot)
-      equation
-        ((classes_1,pa_3,args_3)) = traverseClasses2(classes, pa, visitor, args, traverse_prot);
-      then
-        ((classes_1,pa_3,args_3));
-    case ((class_ :: _),_,_,_,_)
-      equation
-        print("-traverse_classes2 failed on class:");
-        print(Absyn.pathString(Absyn.className(class_)));
-        print("\n");
-      then
-        fail();
-  end matchcontinue;
-end traverseClasses2;
-
-protected function classHasLocalClasses
-"Returns true if class contains a local class"
-  input Absyn.Class cl;
-  output Boolean res;
-algorithm
-  res := match(cl)
-  local list<Absyn.ClassPart> parts;
-    /* a class with parts */
-    case(Absyn.CLASS(body= Absyn.PARTS(classParts = parts))) equation
-      res = partsHasLocalClass(parts);
-    then res;
-    /* an extended class with parts: model extends M end M; */
-    case(Absyn.CLASS(body= Absyn.CLASS_EXTENDS(parts = parts))) equation
-      res = partsHasLocalClass(parts);
-    then res;
-  end match;
-end classHasLocalClasses;
-
-protected function partsHasLocalClass
-"Help function to classHasLocalClass"
-  input list<Absyn.ClassPart> inParts;
-  output Boolean res;
-algorithm
-  res := matchcontinue(inParts)
-  local list<Absyn.ElementItem> elts; list<Absyn.ClassPart> parts;
-    case(Absyn.PUBLIC(elts)::_) equation
-      true = eltsHasLocalClass(elts);
-    then true;
-    case(Absyn.PROTECTED(elts)::_) equation
-      true = eltsHasLocalClass(elts);
-    then true;
-    case(_::parts) then partsHasLocalClass(parts);
-    case(_) then false;
-  end matchcontinue;
-end partsHasLocalClass;
-
-protected function eltsHasLocalClass
-"help function to partsHasLocalClass"
-  input list<Absyn.ElementItem> inElts;
-  output Boolean res;
-algorithm
-  res := matchcontinue(inElts)
-    local list<Absyn.ElementItem> elts;
-    case(Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=_)))::_) then true;
-    case(_::elts) then eltsHasLocalClass(elts);
-    case(_) then false;
-  end matchcontinue;
-end eltsHasLocalClass;
-
-protected function traverseInnerClass
-" Helperfunction to traverseClasses2. This function traverses all inner classes of a class."
-  input Absyn.Class inClass;
-  input Option<Absyn.Path> inAbsynPathOption;
-  input FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA;
-  input Type_a inTypeA "extra value";
-  input Boolean inBoolean "if true, traverse protected elts";
-  output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTplAbsynClassAbsynPathOptionTypeA;
-  partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
-    input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
-    output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTplAbsynClassAbsynPathOptionTypeA;
-    replaceable type Type_a subtypeof Any;
-  end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTplAbsynClassAbsynPathOptionTypeA:=
-  matchcontinue (inClass,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
-    local
-      Absyn.Path tmp_pa,pa;
-      list<Absyn.ClassPart> parts_1,parts;
-      Option<Absyn.Path> pa_1;
-      Type_a args_1,args;
-      String name,bcname;
-      Boolean p,f,e,visit_prot;
-      Absyn.Restriction r;
-      Option<String> str_opt;
-      Absyn.Info file_info;
-      FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a visitor;
-      Absyn.Class cl;
-      list<Absyn.ElementArg> modif;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      Absyn.Comment cmt;
-      list<Absyn.Annotation> ann;
-
-    /* a class with parts */
-    case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann, comment = str_opt),info = file_info),
-          SOME(pa),visitor,args,visit_prot)
-      equation
-        tmp_pa = Absyn.joinPaths(pa, Absyn.IDENT(name));
-        ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, SOME(tmp_pa), visitor, args, visit_prot);
-      then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,str_opt),file_info),pa_1,args_1));
-
-    case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts, ann = ann, comment = str_opt),info = file_info),
-          NONE(),visitor,args,visit_prot)
-      equation
-        ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, SOME(Absyn.IDENT(name)), visitor, args, visit_prot);
-      then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(typeVars, classAttrs, parts_1, ann, str_opt),file_info),pa_1,args_1));
-
-    case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts, ann = ann, comment = str_opt),info = file_info),
-          pa_1,visitor,args,visit_prot)
-      equation
-        ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, pa_1, visitor, args, visit_prot);
-      then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,str_opt),file_info),pa_1,args_1));
-
-    /* adrpo: handle also an extended class with parts: model extends M end M; */
-    case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,comment = str_opt, modifications=modif,parts = parts,ann = ann),info = file_info),
-          SOME(pa),visitor,args,visit_prot)
-      equation
-        tmp_pa = Absyn.joinPaths(pa, Absyn.IDENT(name));
-        ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, SOME(tmp_pa), visitor, args, visit_prot);
-      then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,str_opt,parts_1,ann),file_info),pa_1,args_1));
-
-    case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,comment = str_opt, modifications=modif,parts = parts,ann = ann),info = file_info),
-          NONE(),visitor,args,visit_prot)
-      equation
-        ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, SOME(Absyn.IDENT(name)), visitor, args, visit_prot);
-      then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,str_opt,parts_1,ann),file_info),pa_1,args_1));
-
-    case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,comment = str_opt,modifications=modif,parts = parts,ann = ann),info = file_info),
-          pa_1,visitor,args,visit_prot)
-      equation
-        ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, pa_1, visitor, args, visit_prot);
-      then
-        ((Absyn.CLASS(name,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,str_opt,parts_1,ann),file_info),pa_1,args_1));
-
-    /* otherwise */
-    case (cl,pa_1,_,args,_) then ((cl,pa_1,args));
-  end matchcontinue;
-end traverseInnerClass;
-
-protected function traverseInnerClassParts
-" Helper function to traverseInnerClass"
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input Option<Absyn.Path> inAbsynPathOption;
-  input FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA;
-  input Type_a inTypeA "extra argument";
-  input Boolean inBoolean "visist protected elts";
-  output tuple<list<Absyn.ClassPart>, Option<Absyn.Path>, Type_a> outTplAbsynClassPartLstAbsynPathOptionTypeA;
-  partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
-    input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
-    output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTplAbsynClassAbsynPathOptionTypeA;
-    replaceable type Type_a subtypeof Any;
-  end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTplAbsynClassPartLstAbsynPathOptionTypeA:=
-  matchcontinue (inAbsynClassPartLst,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
-    local
-      Option<Absyn.Path> pa,pa_1,pa_2;
-      Type_a args,args_1,args_2;
-      list<Absyn.ElementItem> elts_1,elts;
-      list<Absyn.ClassPart> parts_1,parts;
-      FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a visitor;
-      Boolean visit_prot;
-      Absyn.ClassPart part;
-    case ({},pa,_,args,_) then (({},pa,args));
-    case ((Absyn.PUBLIC(contents = elts) :: parts),pa,visitor,args,visit_prot)
-      equation
-        ((elts_1,_,args_1)) = traverseInnerClassElements(elts, pa, visitor, args, visit_prot);
-        ((parts_1,pa_2,args_2)) = traverseInnerClassParts(parts, pa, visitor, args_1, visit_prot);
-      then
-        (((Absyn.PUBLIC(elts_1) :: parts_1),pa_2,args_2));
-    case ((Absyn.PROTECTED(contents = elts) :: parts),pa,visitor,args,true)
-      equation
-        ((elts_1,_,args_1)) = traverseInnerClassElements(elts, pa, visitor, args, true);
-        ((parts_1,pa_2,args_2)) = traverseInnerClassParts(parts, pa, visitor, args_1, true);
-      then
-        (((Absyn.PROTECTED(elts_1) :: parts_1),pa_2,args_2));
-    case ((part :: parts),pa,visitor,args,true)
-      equation
-        ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, pa, visitor, args, true);
-      then
-        (((part :: parts_1),pa_1,args_1));
-  end matchcontinue;
-end traverseInnerClassParts;
-
-protected function traverseInnerClassElements
-" Helper function to traverseInnerClassParts"
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input Option<Absyn.Path> inAbsynPathOption;
-  input FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA;
-  input Type_a inTypeA;
-  input Boolean inBoolean "visit protected elts";
-  output tuple<list<Absyn.ElementItem>, Option<Absyn.Path>, Type_a> outTplAbsynElementItemLstAbsynPathOptionTypeA;
-  partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
-    input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
-    output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTplAbsynClassAbsynPathOptionTypeA;
-    replaceable type Type_a subtypeof Any;
-  end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTplAbsynElementItemLstAbsynPathOptionTypeA:=
-  matchcontinue (inAbsynElementItemLst,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
-    local
-      Option<Absyn.Path> pa,pa_1,pa_2;
-      Type_a args,args_1,args_2;
-      Absyn.ElementSpec elt_spec_1,elt_spec;
-      list<Absyn.ElementItem> elts_1,elts;
-      Boolean f,visit_prot;
-      Option<Absyn.RedeclareKeywords> r;
-      Absyn.InnerOuter io;
-      Absyn.Info info;
-      Option<Absyn.ConstrainClass> constr;
-      FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a visitor;
-      Absyn.ElementItem elt;
-      Boolean repl;
-      Absyn.Class cl;
-    case ({},pa,_,args,_) then (({},pa,args));
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,specification = elt_spec,info = info,constrainClass = constr)) :: elts),pa,visitor,args,visit_prot)
-      equation
-        ((elt_spec_1,_,args_1)) = traverseInnerClassElementspec(elt_spec, pa, visitor, args, visit_prot);
-        ((elts_1,pa_2,args_2)) = traverseInnerClassElements(elts, pa, visitor, args_1, visit_prot);
-      then
-        ((
-          (Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,io,elt_spec_1,info,constr)) :: elts_1),pa_2,args_2));
-
-   /* Visitor failed in elementspec, but inner classes succeeded, include class */
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,specification = Absyn.CLASSDEF(repl,cl),info = info,constrainClass = constr)) :: elts),pa,visitor,args,visit_prot)
-      equation
-         ((cl,_,args_1)) = traverseInnerClass(cl, pa, visitor, args, visit_prot);
-        true  = classHasLocalClasses(cl);
-        ((elts_1,pa_2,args_2)) = traverseInnerClassElements(elts, pa, visitor, args_1, visit_prot);
-      then
-        ((
-          (Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,io,Absyn.CLASSDEF(repl,cl),info,constr))::elts_1),pa_2,args_2));
-
-   /* Visitor failed in elementspec, remove class */
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = _,constrainClass = _)) :: elts),pa,visitor,args,visit_prot)
-      equation
-        ((elts_1,pa_2,args_2)) = traverseInnerClassElements(elts, pa, visitor, args, visit_prot);
-      then
-        ((
-          elts_1,pa_2,args_2));
-
-    case ((elt :: elts),pa,visitor,args,visit_prot)
-      equation
-        ((elts_1,pa_1,args_1)) = traverseInnerClassElements(elts, pa, visitor, args, visit_prot);
-      then
-        (((elt :: elts_1),pa_1,args_1));
-  end matchcontinue;
-end traverseInnerClassElements;
-
-protected function traverseInnerClassElementspec
-" Helperfunction to traverseInnerClassElements"
-  input Absyn.ElementSpec inElementSpec;
-  input Option<Absyn.Path> inAbsynPathOption;
-  input FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA;
-  input Type_a inTypeA;
-  input Boolean inBoolean "visit protected elts";
-  output tuple<Absyn.ElementSpec, Option<Absyn.Path>, Type_a> outTplAbsynElementSpecAbsynPathOptionTypeA;
-  partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
-    input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
-    output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTplAbsynClassAbsynPathOptionTypeA;
-    replaceable type Type_a subtypeof Any;
-  end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTplAbsynElementSpecAbsynPathOptionTypeA:=
-  match (inElementSpec,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
-    local
-      Absyn.Class class_1,class_2,class_;
-      Option<Absyn.Path> pa_1,pa_2,pa;
-      Type_a args_1,args_2,args;
-      Boolean repl,visit_prot;
-      FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a visitor;
-      Absyn.ElementSpec elt_spec;
-    case (Absyn.CLASSDEF(replaceable_ = repl,class_ = class_),pa,visitor,args,visit_prot)
-      equation
-        ((class_1,_,args_1)) = visitor((class_,pa,args));
-        ((class_2,pa_2,args_2)) = traverseInnerClass(class_1, pa, visitor, args_1, visit_prot);
-      then
-        ((Absyn.CLASSDEF(repl,class_2),pa_2,args_2));
-    case (elt_spec as Absyn.EXTENDS(path=_),pa,_,args,_) then ((elt_spec,pa,args));
-    case (elt_spec as Absyn.IMPORT(import_=_),pa,_,args,_) then ((elt_spec,pa,args));
-    case (elt_spec as Absyn.COMPONENTS(attributes=_),pa,_,args,_) then ((elt_spec,pa,args));
-  end match;
-end traverseInnerClassElementspec;
 
 public function isPrimitive
 "Thisfunction takes a component reference and a program.
@@ -10291,7 +9638,7 @@ algorithm
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
-        (p_1,st) = symbolTableToSCode(st);
+        (p_1,st) = GlobalScriptUtil.symbolTableToSCode(st);
         (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
         (_,(c as SCode.CLASS(name=_,encapsulatedPrefix=_,restriction=_)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         str = getNthInheritedClass2(c, cdef, n, env_1);
@@ -10842,7 +10189,7 @@ algorithm
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
-        (p_1,st) = symbolTableToSCode(st);
+        (p_1,st) = GlobalScriptUtil.symbolTableToSCode(st);
         (cache,env) = Inst.makeEnvFromProgram(FCore.emptyCache(),p_1, Absyn.IDENT(""));
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
@@ -14658,85 +14005,6 @@ algorithm
   end matchcontinue;
 end getNthComponentInClass;
 
-public function getDefineunitsInElements "retrives defineunit definitions in elements"
-  input list<Absyn.ElementItem> elts;
-  output list<Absyn.Element> outElts;
-algorithm
-  outElts := matchcontinue(elts)
-    local
-      Absyn.Element e;
-      list<Absyn.ElementItem> rest;
-    case {} then {};
-    case (Absyn.ELEMENTITEM(e as Absyn.DEFINEUNIT(name=_))::rest)
-      equation
-        outElts = getDefineunitsInElements(rest);
-      then e::outElts;
-    case (_::rest)
-      then getDefineunitsInElements(rest);
-  end matchcontinue;
-end getDefineunitsInElements;
-
-public function getElementitemsInClass
-" Both public and protected lists are searched."
-  input Absyn.Class inClass;
-  output list<Absyn.ElementItem> outAbsynElementItemLst;
-algorithm
-  outAbsynElementItemLst:=
-  matchcontinue (inClass)
-    local
-      String a;
-      Boolean b,c,d;
-      Absyn.Restriction e;
-      Option<String> cmt;
-      list<Absyn.ElementItem> lst1,elts;
-      list<Absyn.ClassPart> lst;
-      Absyn.Info file_info;
-      list<Absyn.Annotation> ann;
-
-    case (Absyn.CLASS(name = _,partialPrefix = _,finalPrefix = _,encapsulatedPrefix = _,restriction = _,
-                      body = Absyn.PARTS(classParts = {},comment = _)))
-       then {};
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elts) :: lst),ann = ann,comment = cmt),
-                      info = file_info)) /* Search in public list */
-      equation
-        lst1 = getElementitemsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
-        lst1 = listAppend(elts, lst1);
-      then
-        lst1;
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elts) :: lst),ann = ann,comment = cmt),
-                      info = file_info)) /* Search in protected list */
-      equation
-        lst1 = getElementitemsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
-        lst1 = listAppend(elts, lst1);
-      then
-        lst1;
-
-    /* adrpo: handle also the case model extends X end X; */
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {})))
-       then {};
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elts) :: lst),ann = ann,comment = cmt),
-                      info = file_info)) /* Search in public list */
-      equation
-        lst1 = getElementitemsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
-        lst1 = listAppend(elts, lst1);
-      then
-        lst1;
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elts) :: lst),ann = ann,comment = cmt),
-                      info = file_info)) /* Search in protected list */
-      equation
-        lst1 = getElementitemsInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info));
-        lst1 = listAppend(elts, lst1);
-      then
-        lst1;
-
-    case (_) then {};
-  end matchcontinue;
-end getElementitemsInClass;
-
 protected function getNthComponentInElementitems
 " This function takes an ElementItem list and and integer
    and returns the nth component in the list, indexed from 1..n."
@@ -17003,7 +16271,7 @@ output Absyn.Program newP;
 algorithm
   newP := match(p)
     case _ equation
-      ((newP,_,_)) = traverseClasses(p,NONE(), transformFlatClass, 0, true) "traverse protected" ;
+      ((newP,_,_)) = GlobalScriptUtil.traverseClasses(p,NONE(), transformFlatClass, 0, true) "traverse protected" ;
       then newP;
   end match;
 end transformFlatProgram;
@@ -18714,21 +17982,6 @@ algorithm
   end match;
 end getSymbolTableAST;
 
-protected function setSymbolTableVars
-  input list<GlobalScript.Variable> inVars;
-  input GlobalScript.SymbolTable inSymbolTable;
-  output GlobalScript.SymbolTable outSymbolTable;
-protected
-  Absyn.Program ast;
-  Option<SCode.Program> exp_ast;
-  list<GlobalScript.InstantiatedClass> cls;
-  list<GlobalScript.CompiledCFunction> comp_funcs;
-  list<GlobalScript.LoadedFile> files;
-algorithm
-  GlobalScript.SYMBOLTABLE(ast, exp_ast, cls, _, comp_funcs, files) := inSymbolTable;
-  outSymbolTable := GlobalScript.SYMBOLTABLE(ast, exp_ast, cls, inVars, comp_funcs, files);
-end setSymbolTableVars;
-
 public function getFunctionsInProgram
   input Absyn.Program prog;
   output list<Absyn.Class> funcs;
@@ -18772,29 +18025,6 @@ algorithm
     case (_) then {};
   end matchcontinue;
 end getAllClassesInClass;
-
-public function symbolTableToSCode
-"Similar to SCodeUtil.translateAbsyn2SCode
-  But this updates the symboltable to cache the translation."
-  input GlobalScript.SymbolTable st;
-  output SCode.Program program;
-  output GlobalScript.SymbolTable outSt;
-algorithm
-  (program,outSt) := match st
-    local
-      Absyn.Program ast;
-      list<GlobalScript.InstantiatedClass> instClsLst;
-      list<GlobalScript.Variable> lstVarVal;
-      list<GlobalScript.CompiledCFunction> compiledFunctions;
-      list<GlobalScript.LoadedFile> loadedFiles;
-
-    case GlobalScript.SYMBOLTABLE(explodedAst=SOME(program)) then (program,st);
-    case GlobalScript.SYMBOLTABLE(ast,_,instClsLst,lstVarVal,compiledFunctions,loadedFiles)
-      equation
-        program = SCodeUtil.translateAbsyn2SCode(ast);
-      then (program,GlobalScript.SYMBOLTABLE(ast,SOME(program),instClsLst,lstVarVal,compiledFunctions,loadedFiles));
-  end match;
-end symbolTableToSCode;
 
 public function getCompiledFunctions
 "function: getCompiledFunctions"
@@ -18876,41 +18106,7 @@ public function printIstmtStr "Prints an interactive statement to a string."
   input GlobalScript.Statements inStatements;
   output String strIstmt;
 algorithm
-  strIstmt := matchcontinue (inStatements)
-    local
-      Absyn.AlgorithmItem alg;
-      Absyn.Exp expr;
-      list<GlobalScript.Statement> l;
-      Boolean sc;
-      String str;
-
-    case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IALG(algItem = alg)}))
-      equation
-        str = Dump.unparseAlgorithmStr(alg);
-      then
-        str;
-
-    case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = expr)}))
-      equation
-        str = Dump.printExpStr(expr);
-      then
-        str;
-
-    case (GlobalScript.ISTMTS(interactiveStmtLst = (GlobalScript.IALG(algItem = alg) :: l),semicolon = sc))
-      equation
-        str = Dump.unparseAlgorithmStr(alg);
-        str = str +& "; " +& printIstmtStr(GlobalScript.ISTMTS(l,sc));
-      then
-        str;
-
-    case (GlobalScript.ISTMTS(interactiveStmtLst = (GlobalScript.IEXP(exp = expr) :: l),semicolon = sc))
-      equation
-        str = Dump.printExpStr(expr);
-        str = str +& "; " +& printIstmtStr(GlobalScript.ISTMTS(l,sc));
-      then
-        str;
-    else "unknown";
-  end matchcontinue;
+  strIstmt := GlobalScriptDump.printIstmtsStr(inStatements);
 end printIstmtStr;
 
 protected function getClassEnvNoElaboration " Retrieves the environment of the class, including the frame of the class

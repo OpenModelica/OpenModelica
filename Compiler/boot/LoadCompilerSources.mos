@@ -9,6 +9,7 @@ if true then /* Suppress output */
     "../BackEnd/SerializeModelInfo.mo", // TODO: Add once we bootstrapped omc
     "../FrontEnd/Absyn.mo",
     "../FrontEnd/Algorithm.mo",
+    "../FrontEnd/BackendInterface.mo",
     "../FrontEnd/Builtin.mo",
     "../FrontEnd/CevalFunction.mo",
     "../FrontEnd/Ceval.mo",
@@ -173,6 +174,8 @@ if true then /* Suppress output */
   // "Script";
     "../Script/CevalScript.mo",
     "../Script/GlobalScript.mo",
+    "../Script/GlobalScriptDump.mo",
+    "../Script/GlobalScriptUtil.mo",
     "../Script/StaticScript.mo",
     "../Script/Interactive.mo",
     "../Script/Refactor.mo",

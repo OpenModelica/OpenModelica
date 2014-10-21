@@ -1050,7 +1050,7 @@ algorithm
         true = replaceExpCond(cond, e);
         (cr,_) = replaceCrefSubs(cr,repl,cond);
         _ = getExtendReplacement(repl, cr);
-        (e2,(_,true)) = DAEUtil.extendArrExp(e,(NONE(),false));
+        (e2,true) = Expression.extendArrExp(e,false);
         (e3,_) = replaceExp(e2,repl,cond);
       then
         (e3,true);
@@ -2337,7 +2337,6 @@ algorithm
       DAE.Type tp;
       DAE.Exp e;
       list<Integer> ds;
-      list<Option<Integer>> ad;
       list<list<DAE.Subscript>> subslst;
       String msg;
     case (_,DAE.CREF(componentRef=cr),_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,cr,rhs,source)::inStatementLst;
@@ -2347,9 +2346,8 @@ algorithm
     case (_,DAE.ARRAY(array=elst),_,_,_,_)
       equation
         ds = Expression.dimensionsSizes(Expression.arrayDimension(type_));
-        ad = List.map(ds,Util.makeOption);
-        subslst = DAEUtil.arrayDimensionsToRange(ad);
-        subslst = DAEUtil.rangesToSubscripts(subslst);
+        subslst = Expression.dimensionSizesSubscripts(ds);
+        subslst = Expression.rangesToSubscripts(subslst);
         elst1 = List.map1r(subslst,Expression.applyExpSubscripts,rhs);
         e = listGet(elst1,1);
         tp = Expression.typeof(e);

@@ -2945,7 +2945,7 @@ protected
   list<list<DAE.Subscript>> subs;
 algorithm
   // Expand each subscript into a list of subscripts.
-  subs := List.threadMap(inSubscripts, inDimensions, expandSubscript);
+  subs := List.threadMap(inSubscripts, inDimensions, Expression.expandSubscript);
   subs := listReverse(subs);
   // Use expandCref3 to construct a cref for each combination of subscripts.
   outCrefs := expandCref3(inId, inType, subs, {}, {});
@@ -2985,114 +2985,6 @@ algorithm
 
   end match;
 end expandCref3;
-
-protected function expandSubscript
-  "Expands a subscript into a list of subscripts. Also takes a dimension to be
-   able to evaluate : subscripts."
-  input DAE.Subscript inSubscript;
-  input DAE.Dimension inDimension;
-  output list<DAE.Subscript> outSubscripts;
-algorithm
-  outSubscripts := match(inSubscript, inDimension)
-    local
-      DAE.Exp exp;
-
-    // An index subscript from range.
-    case (DAE.INDEX(exp = exp as DAE.RANGE(ty=_)), _)
-      then getRangeContents(exp);
-
-    // An index subscript, return it as an array.
-    case (DAE.INDEX(exp = _), _) then {inSubscript};
-
-    // A : subscript, use the dimension to generate all subscripts.
-    case (DAE.WHOLEDIM(), _)
-      then expandDimension(inDimension);
-
-    // A slice subscript.
-    case (DAE.SLICE(exp = exp), _)
-      then expandSlice(exp);
-
-  end match;
-end expandSubscript;
-
-protected function getRangeContents
-  input DAE.Exp e;
-  output list<DAE.Subscript> outSubscripts;
-algorithm
-  outSubscripts := match e
-    local
-      Integer istart,istep,istop;
-      list<Integer> ilst;
-      list<DAE.Exp> explst;
-    case DAE.RANGE(DAE.T_INTEGER(varLst = _),DAE.ICONST(istart),NONE(),DAE.ICONST(istop))
-      equation
-        ilst = List.intRange3(istart, 1, istop);
-        explst = List.map(ilst, Expression.makeIntegerExp);
-      then List.map(explst, Expression.makeIndexSubscript);
-
-    case DAE.RANGE(DAE.T_INTEGER(varLst = _),DAE.ICONST(istart),SOME(DAE.ICONST(istep)),DAE.ICONST(istop))
-      equation
-        ilst = List.intRange3(istart, istep, istop);
-        explst = List.map(ilst, Expression.makeIntegerExp);
-      then List.map(explst, Expression.makeIndexSubscript);
-  end match;
-end getRangeContents;
-
-public function expandDimension
-  "Generates a list of subscripts given an array dimension."
-  input DAE.Dimension inDimension;
-  output list<DAE.Subscript> outSubscript;
-algorithm
-  outSubscript := match(inDimension)
-    local
-      Integer dim_int;
-      Absyn.Path enum_ty;
-      list<String> enum_lits;
-      list<DAE.Exp> enum_expl;
-
-    // An integer dimension, generate a list of integer subscripts.
-    case DAE.DIM_INTEGER(integer=dim_int)
-    then List.generateReverse(dim_int, makeIntegerSubscript);
-
-    // An enumeration dimension, construct all enumeration literals and make
-    // subscript out of them.
-    case DAE.DIM_ENUM(enumTypeName=enum_ty, literals=enum_lits) equation
-      enum_expl = Expression.makeEnumLiterals(enum_ty, enum_lits);
-    then List.map(enum_expl, Expression.makeIndexSubscript);
-
-    case DAE.DIM_BOOLEAN()
-    then DAE.INDEX(DAE.BCONST(false))::DAE.INDEX(DAE.BCONST(true))::{};
-  end match;
-end expandDimension;
-
-protected function makeIntegerSubscript
-  "Generates an integer subscript. For use with List.generate."
-  input Integer inIndex;
-  output Integer outNextIndex;
-  output DAE.Subscript outSubscript;
-  output Boolean outContinue;
-algorithm
-  (outNextIndex, outSubscript, outContinue) := match(inIndex)
-    case 0 then (0, DAE.WHOLEDIM(), false);
-    else (inIndex - 1, DAE.INDEX(DAE.ICONST(inIndex)), true);
-  end match;
-end makeIntegerSubscript;
-
-protected function expandSlice
-  "Expands a slice subscript expression."
-  input DAE.Exp inSliceExp;
-  output list<DAE.Subscript> outSubscripts;
-algorithm
-  outSubscripts := match(inSliceExp)
-    local
-      list<DAE.Exp> expl;
-      String exp_str, err_str;
-
-    case DAE.ARRAY(array = expl)
-      then List.map(expl, Expression.makeIndexSubscript);
-
-  end match;
-end expandSlice;
 
 public function replaceSubsWithString
   input DAE.ComponentRef inCref;
@@ -3171,7 +3063,7 @@ protected
 algorithm
   subs := List.fill(DAE.WHOLEDIM(), listLength(dims));
   // Expand each subscript into a list of subscripts.
-  subslst := List.threadMap(subs, dims, expandSubscript);
+  subslst := List.threadMap(subs, dims, Expression.expandSubscript);
   subslst := listReverse(subslst);
   // Use expandCref3 to construct a cref for each combination of subscripts.
   outCrefs := expandArrayCref1(inCr, subslst, {}, {});

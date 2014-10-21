@@ -96,6 +96,7 @@ protected import FInst;
 protected import FGraph;
 protected import FGraphDump;
 protected import Global;
+protected import GlobalScriptUtil;
 protected import Graph;
 protected import HashSetString;
 protected import Inst;
@@ -1010,7 +1011,7 @@ algorithm
 
     case (cache,env,"getUsedClassNames",{Values.CODE(Absyn.C_TYPENAME(path))},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
-        (sp, st) = Interactive.symbolTableToSCode(st);
+        (sp, st) = GlobalScriptUtil.symbolTableToSCode(st);
         (sp, _) = NFSCodeFlatten.flattenClassInProgram(path, sp);
         sp = SCode.removeBuiltinsFromTopScope(sp);
         paths = Interactive.getSCodeClassNamesRecursive(sp);
@@ -1144,7 +1145,7 @@ algorithm
 
     case (cache,_,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),Values.BOOL(false),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
-        (scodeP,st) = Interactive.symbolTableToSCode(st);
+        (scodeP,st) = GlobalScriptUtil.symbolTableToSCode(st);
         name = Absyn.pathLastIdent(path);
         str = Debug.bcallret2(name ==& "Absyn", Dump.unparseStr, p, false, "");
         str = Debug.bcallret2(name ==& "SCode", SCodeDump.programStr, scodeP, SCodeDump.defaultOptions, str);
@@ -1156,7 +1157,7 @@ algorithm
     case (cache,_,"list",{Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(b1),Values.BOOL(b2),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         false = valueEq(Absyn.IDENT("AllLoadedClasses"),className);
-        (scodeP,st) = Interactive.symbolTableToSCode(st);
+        (scodeP,st) = GlobalScriptUtil.symbolTableToSCode(st);
         name = Absyn.pathLastIdent(path);
         absynClass = Interactive.getPathedClassInProgram(className, p);
         absynClass = Debug.bcallret1(b1,Absyn.getFunctionInterface,absynClass,absynClass);
@@ -1184,7 +1185,7 @@ algorithm
   // exportToFigaro cases added by Alexander Carlqvist
     case (cache, _, "exportToFigaro", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3)}, st as GlobalScript.SYMBOLTABLE(ast = p), _)
       equation
-    (scodeP, _) = Interactive.symbolTableToSCode(st);
+    (scodeP, _) = GlobalScriptUtil.symbolTableToSCode(st);
     /* The following line of code should be commented out when building from trunk.
     Uncomment when bootstrapping. */
     //Figaro.run(scodeP, path, str, str1, str2, str3);
@@ -1604,7 +1605,7 @@ algorithm
            ("timeTotal", Values.REAL(timeTotal)) ::
            ("timeSimulation", Values.REAL(timeSimulation)) ::
           resultValues);
-        newst = Interactive.addVarToSymboltable(
+        newst = GlobalScriptUtil.addVarToSymboltable(
           DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}),
           Values.STRING(result_file), FGraph.empty(), st);
         //reset config flag
@@ -2090,7 +2091,7 @@ algorithm
 
     case (cache,_,"checkInterfaceOfPackages",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=vals)},(st as GlobalScript.SYMBOLTABLE(ast = _)),_)
       equation
-        (sp,st) = Interactive.symbolTableToSCode(st);
+        (sp,st) = GlobalScriptUtil.symbolTableToSCode(st);
         cl = SCode.getElementWithPath(sp,path);
         interfaceTypeAssoc = List.map1(vals, getInterfaceTypeAssocElt, SCode.elementInfo(cl));
         interfaceType = getInterfaceType(cl, interfaceTypeAssoc);
@@ -2102,7 +2103,7 @@ algorithm
 
     case (cache,_,"generateSeparateCodeDependenciesMakefile",{Values.STRING(filename),Values.STRING(prefix),Values.STRING(suffix)},(st as GlobalScript.SYMBOLTABLE(ast = _)),_)
       equation
-        (sp,st) = Interactive.symbolTableToSCode(st);
+        (sp,st) = GlobalScriptUtil.symbolTableToSCode(st);
         names = List.filterMap(sp,SCode.getElementName);
         deps = Graph.buildGraph(names,buildDependencyGraphPublicImports,sp);
         strs = List.map3(sp,writeModuleDepends,prefix,suffix,deps);
@@ -2114,7 +2115,7 @@ algorithm
 
     case (cache,_,"generateSeparateCodeDependencies",{Values.STRING(suffix)},(st as GlobalScript.SYMBOLTABLE(ast = _)),_)
       equation
-        (sp,st) = Interactive.symbolTableToSCode(st);
+        (sp,st) = GlobalScriptUtil.symbolTableToSCode(st);
         names = List.filterMap(sp,SCode.getElementName);
 
         deps = Graph.buildGraph(names,buildDependencyGraph,sp);
@@ -2153,7 +2154,7 @@ algorithm
 
     case (cache,env,"generateSeparateCode",{v,Values.BOOL(b)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
-        (sp,st) = Interactive.symbolTableToSCode(st);
+        (sp,st) = GlobalScriptUtil.symbolTableToSCode(st);
         name = getTypeNameIdent(v);
         setGlobalRoot(Global.instOnlyForcedFunctions,SOME(true));
         cl = List.getMemberOnTrue(name, sp, SCode.isClassNamed);
@@ -2163,7 +2164,7 @@ algorithm
 
     case (_,_,"generateSeparateCode",{v,Values.BOOL(_)},st,_)
       equation
-        (sp,st) = Interactive.symbolTableToSCode(st);
+        (sp,st) = GlobalScriptUtil.symbolTableToSCode(st);
         name = getTypeNameIdent(v);
         failure(_ = List.getMemberOnTrue(name, sp, SCode.isClassNamed));
         Error.addMessage(Error.LOOKUP_ERROR, {name,"<TOP>"});
@@ -4120,7 +4121,7 @@ algorithm
            ("timeTotal", Values.REAL(timeTotal)) ::
            ("timeSimulation", Values.REAL(timeSimulation)) ::
           resultValues);
-        newst = Interactive.addVarToSymboltable(
+        newst = GlobalScriptUtil.addVarToSymboltable(
           DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}),
           Values.STRING(result_file), FGraph.empty(), inSt);
       then
@@ -4484,7 +4485,7 @@ protected function setBuildTime "sets the build time of a class.
   input Absyn.Path path;
   output Absyn.Program outP;
 algorithm
-  ((outP,_,_)) := Interactive.traverseClasses(p,NONE(), setBuildTimeVisitor, path, false /* Skip protected */);
+  ((outP,_,_)) := GlobalScriptUtil.traverseClasses(p,NONE(), setBuildTimeVisitor, path, false /* Skip protected */);
 end setBuildTime;
 
 protected function setBuildTimeVisitor "Visitor function to set build time"
@@ -7767,7 +7768,7 @@ protected
   NFSCodeEnv.Env env;
   SCode.Comment cmt;
 algorithm
-  (scodeP, outSt) := Interactive.symbolTableToSCode(st);
+  (scodeP, outSt) := GlobalScriptUtil.symbolTableToSCode(st);
   (scodeP, env) := NFSCodeFlatten.flattenClassInProgram(classpath, scodeP);
   (NFSCodeEnv.CLASS(cls=SCode.CLASS(cmt=cmt)),_,_) := NFSCodeLookup.lookupClassName(classpath, env, Absyn.dummyInfo);
   scodeP := SCode.removeBuiltinsFromTopScope(scodeP);

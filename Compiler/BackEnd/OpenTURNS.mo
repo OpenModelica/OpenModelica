@@ -431,8 +431,8 @@ algorithm
 
     case((DAE.DISTRIBUTION(e1,e2,e3),cr),_)
       equation
-        (e2_1,_) = DAEUtil.extendArrExp(e2,(NONE(),false));
-        (e3_1,_) = DAEUtil.extendArrExp(e3,(NONE(),false));
+        (e2_1,_) = Expression.extendArrExp(e2,false);
+        (e3_1,_) = Expression.extendArrExp(e3,false);
         false = Expression.expEqual(e2,e2_1); // Prevent infinte recursion
         false = Expression.expEqual(e3,e3_1);
         //print("extended arr="+&ExpressionDump.printExpStr(e2_1)+&"\n");

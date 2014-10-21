@@ -36,6 +36,7 @@ RMLC_INCLUDE_ALL_DIRS = -I$(FRONTEND_DIR),-I$(FFRONTEND_DIR),-I$(BACKEND_DIR),-I
 FRONTEND = \
 Absyn.mo \
 Algorithm.mo \
+BackendInterface.mo \
 Builtin.mo \
 Ceval.mo \
 CevalFunction.mo \
@@ -266,6 +267,8 @@ BlockCallRewrite.mo \
 CevalScript.mo \
 Interactive.mo \
 GlobalScript.mo \
+GlobalScriptDump.mo \
+GlobalScriptUtil.mo \
 Refactor.mo \
 StaticScript.mo \
 RewriteRules.mo

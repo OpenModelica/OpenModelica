@@ -821,15 +821,13 @@ protected function simpleArrayEquationAcausal "author Frenkel TUD 2012-12
 protected
   DAE.Dimensions dims;
   list<Integer> ds;
-  list<Option<Integer>> ad;
   list<list<DAE.Subscript>> subslst;
   list<DAE.Exp> elst1, elst2;
 algorithm
   dims := Expression.arrayDimension(ty);
   ds := Expression.dimensionsSizes(dims);
-  ad := List.map(ds, Util.makeOption);
-  subslst := DAEUtil.arrayDimensionsToRange(ad);
-  subslst := DAEUtil.rangesToSubscripts(subslst);
+  subslst := List.map(ds, Expression.dimensionSizeSubscripts);
+  subslst := Expression.rangesToSubscripts(subslst);
   elst1 := List.map1r(subslst, Expression.applyExpSubscripts, lhs);
   elst2 := List.map1r(subslst, Expression.applyExpSubscripts, rhs);
   outTpl := List.threadFold2(elst1, elst2, simpleEquationAcausal, eqnAttributes, true, inTpl);

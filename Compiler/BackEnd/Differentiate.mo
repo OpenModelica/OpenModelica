@@ -1136,7 +1136,7 @@ algorithm
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\n Array " +& se1);
 
-        (e1,(_,true)) = DAEUtil.extendArrExp(e,(SOME(inFunctionTree),false));
+        (e1,true) = Expression.extendArrExp(e,false);
         (res, outFunctionTree) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
 
         //se1 = ExpressionDump.printExpStr(res);

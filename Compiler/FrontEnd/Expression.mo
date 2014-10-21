@@ -10711,5 +10711,337 @@ algorithm
   outExp := makePureBuiltinCall("vector",{exp},tp);
 end makeVectorCall;
 
+public function extendArrExp "author: Frenkel TUD 2010-07
+  alternative name: vectorizeExp"
+  input DAE.Exp inExp;
+  input Boolean inExpanded "True if something was expanded, otherwise false.";
+  output DAE.Exp outExp;
+  output Boolean outExpanded;
+algorithm
+  (outExp, outExpanded) := matchcontinue (inExp, inExpanded)
+    local
+      DAE.Exp exp;
+      Boolean b;
+
+    case (outExp, _) 
+      equation 
+        (exp, b) = traverseExp(inExp, traversingextendArrExp, false); 
+      then
+        (exp, b);
+
+    else (inExp, inExpanded);
+
+  end matchcontinue;
+end extendArrExp;
+
+protected function traversingextendArrExp "author: Frenkel TUD 2010-07.
+  This function extend all array and record componentrefs to their
+  elements. This is necessary for BLT and substitution of simple
+  equations."
+  input DAE.Exp inExp;
+  input Boolean inExpanded;
+  output DAE.Exp outExp;
+  output Boolean outExpanded;
+algorithm
+  (outExp, outExpanded) := matchcontinue(inExp, inExpanded)
+    local
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> crlst;
+      DAE.Type t,ty;
+      DAE.Dimension id, jd;
+      list<DAE.Dimension> ad;
+      Integer i,j;
+      list<list<DAE.Subscript>> subslst,subslst1;
+      list<DAE.Subscript> sublstcref;
+      list<DAE.Exp> expl;
+      DAE.Exp e,e_new;
+      list<DAE.Var> varLst;
+      Absyn.Path name;
+      list<list<DAE.Exp>> mat;
+      Boolean b;
+
+    // CASE for Matrix
+    case (DAE.CREF(componentRef=cr,ty= t as DAE.T_ARRAY(ty=ty,dims=ad as {id, jd})), _)
+      equation
+        i = dimensionSize(id);
+        j = dimensionSize(jd);
+        subslst = List.map(ad, expandDimension);
+        subslst1 = rangesToSubscripts(subslst);
+        cr = ComponentReference.crefStripLastSubs(cr);
+        crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
+        expl = List.map1(crlst,makeCrefExp,ty);
+        mat = makeMatrix(expl,j,j,{});
+        e_new = DAE.MATRIX(t,i,mat);
+        (e, b) = traverseExp(e_new, traversingextendArrExp, true);
+      then 
+        (e, b);
+
+    // CASE for Matrix and checkModel is on
+    case (DAE.CREF(componentRef=cr,ty= t as DAE.T_ARRAY(ty=ty,dims=ad as {_, _})), _)
+      equation
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
+        // consider size 1
+        i = dimensionSize(DAE.DIM_INTEGER(1));
+        j = dimensionSize(DAE.DIM_INTEGER(1));
+        subslst = List.map(ad, expandDimension);
+        subslst1 = rangesToSubscripts(subslst);
+        crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
+        expl = List.map1(crlst,makeCrefExp,ty);
+        mat = makeMatrix(expl,j,j,{});
+        e_new = DAE.MATRIX(t,i,mat);
+        (e, b) = traverseExp(e_new, traversingextendArrExp, true);
+      then
+        (e, b);
+
+    // CASE for Array
+    case (DAE.CREF(componentRef=cr,ty= t as DAE.T_ARRAY(ty=ty,dims=ad)), _)
+      equation
+        sublstcref = ComponentReference.crefSubs(cr);
+        subslst = List.map(ad, expandDimension);
+        subslst1 = rangesToSubscripts(subslst);
+        subslst = insertSubScripts(sublstcref,subslst1,{});
+        subslst1 = subslst;
+        cr = ComponentReference.crefStripLastSubs(cr);
+        crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
+        expl = List.map1(crlst,makeCrefExp,ty);
+        e_new = DAE.ARRAY(t,true,expl);
+        (e, b) = traverseExp(e_new, traversingextendArrExp, true);
+      then
+        (e, b);
+
+    // CASE for Array and checkModel is on
+    case (DAE.CREF(componentRef=cr,ty= t as DAE.T_ARRAY(ty=ty,dims=_)), _)
+      equation
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
+        // consider size 1
+        subslst = {{DAE.INDEX(DAE.ICONST(1))}};
+        subslst1 = rangesToSubscripts(subslst);
+        crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
+        expl = List.map1(crlst,Expression.makeCrefExp,ty);
+        e_new = DAE.ARRAY(t,true,expl);
+        (e, b) = traverseExp(e_new, traversingextendArrExp, true);
+      then 
+        (e, b);
+
+    // CASE for Records
+    case (DAE.CREF(componentRef=cr,ty= t as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(name))), _)
+      equation
+        expl = List.map1(varLst,generateCrefsExpFromExpVar,cr);
+        i = listLength(expl);
+        true = intGt(i,0);
+        e_new = DAE.CALL(name,expl,DAE.CALL_ATTR(t,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+        (e, b) = traverseExp(e_new, traversingextendArrExp, true);
+      then 
+        (e, b);
+
+    else (inExp, inExpanded);
+
+  end matchcontinue;
+end traversingextendArrExp;
+
+protected function insertSubScripts"traverses the subscripts of the templSubScript and searches for wholedim. the value replaces the wholedim.
+If there are multiple values, the templSubScript will be used for each of them and multiple new subScriptLsts are created.
+author:Waurich TUD 2014-04"
+  input list<DAE.Subscript> templSubScript;
+  input list<list<DAE.Subscript>> value;
+  input list<DAE.Subscript> lstIn;
+  output list<list<DAE.Subscript>> outSubScript;
+algorithm
+  outSubScript := matchcontinue(templSubScript,value,lstIn)
+    local
+      Integer i;
+      DAE.Subscript sub;
+      list<DAE.Subscript> rest,lst,val;
+      list<list<DAE.Subscript>> lsts;
+    case(DAE.WHOLEDIM()::rest,_,_)
+      equation
+        // found a wholedim, replace with value, insert in lst
+        lsts = List.map(value,listReverse);
+        lsts = List.map1(lsts,listAppend,lstIn);
+        rest = listReverse(rest);
+        lsts = List.map1(lsts,List.appendr,rest);
+        lsts = List.map(lsts,listReverse);
+      then
+        lsts;
+    case(DAE.INDEX(exp=_)::rest,_,_)
+      equation
+        sub = List.first(templSubScript);
+        lsts = insertSubScripts(rest,value,sub::lstIn);
+      then
+        lsts;
+    else
+      then
+        value;
+  end matchcontinue;
+end insertSubScripts;
+
+protected function makeMatrix
+  input list<DAE.Exp> expl;
+  input Integer r;
+  input Integer n;
+  input list<DAE.Exp> incol;
+  output list<list<DAE.Exp>> scalar;
+algorithm
+  scalar := matchcontinue (expl, r, n, incol)
+    local
+      DAE.Exp e;
+      list<DAE.Exp> rest;
+      list<list<DAE.Exp>> res;
+      list<DAE.Exp> col;
+  case({},_,_,_)
+    equation
+      col = listReverse(incol);
+    then {col};
+  case(e::rest,_,_,_)
+    equation
+      true = intEq(r,0);
+      col = listReverse(incol);
+      res = makeMatrix(e::rest,n,n,{});
+    then
+      (col::res);
+  case(e::rest,_,_,_)
+    equation
+      res = makeMatrix(rest,r-1,n,e::incol);
+    then
+      res;
+  end matchcontinue;
+end makeMatrix;
+
+public function rangesToSubscripts
+  "This function takes a list of subscript ranges representing dimensions, e.g.
+    {{1, 2, 3}, {1, 2}} which corresponds to dimensions [3, 2], and generates
+    all subscript combinations, e.g. {{1, 1}, {1, 2}, {2, 1}, {2, 2}, {3, 1},
+    {3, 2}}."
+  input list<list<DAE.Subscript>> inRangelist;
+  output list<list<DAE.Subscript>> outSubslst;
+algorithm
+  outSubslst := Util.allCombinations(inRangelist, NONE(), Absyn.dummyInfo);
+end rangesToSubscripts;
+
+public function expandSubscript
+  "Expands a subscript into a list of subscripts. Also takes a dimension to be
+   able to evaluate : subscripts."
+  input DAE.Subscript inSubscript;
+  input DAE.Dimension inDimension;
+  output list<DAE.Subscript> outSubscripts;
+algorithm
+  outSubscripts := match(inSubscript, inDimension)
+    local
+      DAE.Exp exp;
+
+    // An index subscript from range.
+    case (DAE.INDEX(exp = exp as DAE.RANGE(ty=_)), _)
+      then getRangeContents(exp);
+
+    // An index subscript, return it as an array.
+    case (DAE.INDEX(exp = _), _) then {inSubscript};
+
+    // A : subscript, use the dimension to generate all subscripts.
+    case (DAE.WHOLEDIM(), _)
+      then expandDimension(inDimension);
+
+    // A slice subscript.
+    case (DAE.SLICE(exp = exp), _)
+      then expandSlice(exp);
+
+  end match;
+end expandSubscript;
+
+protected function getRangeContents
+  input DAE.Exp inExp;
+  output list<DAE.Subscript> outSubscripts;
+protected
+  Integer istart, istep, istop;
+  Option<DAE.Exp> iostep;
+algorithm
+  DAE.RANGE(DAE.T_INTEGER(varLst = _), DAE.ICONST(istart), iostep,
+    DAE.ICONST(istop)) := inExp;
+  DAE.ICONST(istep) := Util.getOptionOrDefault(iostep, DAE.ICONST(1));
+  outSubscripts := intSubscripts(List.intRange3(istart, istep, istop));
+end getRangeContents;
+
+public function expandDimension
+  "Generates a list of subscripts given an array dimension."
+  input DAE.Dimension inDimension;
+  output list<DAE.Subscript> outSubscript;
+algorithm
+  outSubscript := match(inDimension)
+    local
+      Integer dim_int;
+      Absyn.Path enum_ty;
+      list<String> enum_lits;
+      list<DAE.Exp> enum_expl;
+
+    // An integer dimension, generate a list of integer subscripts.
+    case DAE.DIM_INTEGER(integer = dim_int)
+      then dimensionSizeSubscripts(dim_int);
+
+    // An enumeration dimension, construct all enumeration literals and make
+    // subscript out of them.
+    case DAE.DIM_ENUM(enumTypeName = enum_ty, literals = enum_lits)
+      equation
+        enum_expl = makeEnumLiterals(enum_ty, enum_lits);
+      then
+        List.map(enum_expl, makeIndexSubscript);
+
+    case DAE.DIM_BOOLEAN()
+      then DAE.INDEX(DAE.BCONST(false))::DAE.INDEX(DAE.BCONST(true))::{};
+
+    else {};
+  end match;
+end expandDimension;
+
+protected function makeIntegerSubscript
+  "Generates an integer subscript. For use with List.generate."
+  input Integer inIndex;
+  output Integer outNextIndex;
+  output DAE.Subscript outSubscript;
+  output Boolean outContinue;
+algorithm
+  (outNextIndex, outSubscript, outContinue) := match(inIndex)
+    case 0 then (0, DAE.WHOLEDIM(), false);
+    else (inIndex - 1, DAE.INDEX(DAE.ICONST(inIndex)), true);
+  end match;
+end makeIntegerSubscript;
+
+protected function expandSlice
+  "Expands a slice subscript expression."
+  input DAE.Exp inSliceExp;
+  output list<DAE.Subscript> outSubscripts;
+algorithm
+  outSubscripts := match(inSliceExp)
+    local
+      list<DAE.Exp> expl;
+      String exp_str, err_str;
+
+    case DAE.ARRAY(array = expl)
+      then List.map(expl, makeIndexSubscript);
+
+  end match;
+end expandSlice;
+
+public function dimensionSizesSubscripts
+  input list<Integer> inDimSizes;
+  output list<list<DAE.Subscript>> outSubscripts;
+algorithm
+  outSubscripts := List.map(inDimSizes, dimensionSizeSubscripts);
+end dimensionSizesSubscripts;
+
+public function dimensionSizesSubcriptsOpt
+  input list<Option<Integer>> inDimSizes;
+  output list<list<DAE.Subscript>> outSubscripts;
+algorithm
+  outSubscripts := List.mapOption(inDimSizes, dimensionSizeSubscripts);
+end dimensionSizesSubcriptsOpt;
+
+public function dimensionSizeSubscripts
+  "Converts a dimension size in the form of an integer into a list of
+   subscripts, e.g.: [3] => {1, 2, 3}."
+  input Integer inDimSize;
+  output list<DAE.Subscript> outSubscripts;
+algorithm
+  outSubscripts := List.generateReverse(inDimSize, makeIntegerSubscript);
+end dimensionSizeSubscripts;
+
 annotation(__OpenModelica_Interface="frontend");
 end Expression;

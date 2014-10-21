@@ -39,8 +39,8 @@ encapsulated package RewriteRules
 "
 
 public import Absyn;
-public import Global;
 public import DAE;
+public import Global;
 
 public uniontype Rule
  "rule to rewrite fromExp -> toExp,
@@ -76,17 +76,17 @@ end Bind;
 
 public type Binds = list<Bind>;
 
-protected import Parser;
-protected import GlobalScript;
-protected import Error;
-protected import Interactive;
-protected import Flags;
 protected import Dump;
-protected import Util;
-protected import System;
-protected import List;
+protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import Flags;
+protected import GlobalScript;
+protected import GlobalScriptDump;
+protected import List;
+protected import Parser;
+protected import System;
+protected import Util;
 
 // frontend rewrite stuff
 // ----------------------
@@ -1259,7 +1259,7 @@ algorithm
     case (s::_, _)
       equation
         Error.addInternalError("Unable to parse rewrite rule: " +&
-          Interactive.printIstmtStr(GlobalScript.ISTMTS({s}, true)));
+          GlobalScriptDump.printIstmtStr(s));
       then
         fail();
 

@@ -329,7 +329,7 @@ algorithm
     // Special Case for Arrays
     case (e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(vars,crefs))
       equation
-        (e1,(_,true)) = DAEUtil.extendArrExp(e,(NONE(),false));
+        (e1,true) = Expression.extendArrExp(e,false);
         (_,(vars1,crefs1)) = Expression.traverseExp(e1,traversecheckBackendDAEExp,(vars,crefs));
       then (e, (vars1,crefs1));
 
@@ -1597,7 +1597,7 @@ algorithm
     // Special Case for unextended arrays
     case ((e as DAE.CREF(componentRef = _,ty = DAE.T_ARRAY(dims=_))),(vars,expl))
       equation
-        (e1,(_,true)) = DAEUtil.extendArrExp(e,(NONE(),false));
+        (e1,true) = Expression.extendArrExp(e,false);
         (_,(_,res)) = Expression.traverseExpTopDown(e1, traversingstatesAndVarsExpFinder, (vars,expl));
       then (e,true,(vars,res));
     // Special Case for time variable
@@ -2673,25 +2673,25 @@ algorithm
     case (e as DAE.MATRIX(integer=_,matrix=((e1 as DAE.CREF(componentRef = _))::_)::_), (x, funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
-        (e1_2,(_,true)) = DAEUtil.extendArrExp(e1_1,(funcs,false));
+        (e1_2,true) = Expression.extendArrExp(e1_1,false);
         true = Expression.expEqual(e,e1_2);
       then (e1_1,(x,funcs));
     case (e as DAE.MATRIX(integer=_,matrix=(((e1 as DAE.UNARY(exp = DAE.CREF(componentRef = _))))::_)::_), (x, funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
-        (e1_2,(_,true)) = DAEUtil.extendArrExp(e1_1,(funcs,false));
+        (e1_2,true) = Expression.extendArrExp(e1_1,false);
         true = Expression.expEqual(e,e1_2);
       then (e1_1,(x,funcs));
     case (e as DAE.ARRAY(scalar=_,array=(e1 as DAE.CREF(componentRef = _))::_), (x, funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
-        (e1_2,(_,true)) = DAEUtil.extendArrExp(e1_1,(funcs,false));
+        (e1_2,true) = Expression.extendArrExp(e1_1,false);
         true = Expression.expEqual(e,e1_2);
       then (e1_1,(x,funcs));
     case (e as DAE.ARRAY(scalar=_,array=(e1 as DAE.UNARY(exp = DAE.CREF(componentRef = _)))::_), (x, funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
-        (e1_2,(_,true)) = DAEUtil.extendArrExp(e1_1,(funcs,false));
+        (e1_2,true) = Expression.extendArrExp(e1_1,false);
         true = Expression.expEqual(e,e1_2);
       then (e1_1,(x,funcs));
     else (inExp,inTpl);
@@ -2746,28 +2746,28 @@ algorithm
     case (e as DAE.MATRIX(integer=_,matrix=((e1 as DAE.CREF(componentRef = _))::_)::_),funcs)
       equation
         e1_1 = Expression.expStripLastSubs(e1);
-        (e1_2,(_,true)) = DAEUtil.extendArrExp(e1_1,(funcs,false));
+        (e1_2,true) = Expression.extendArrExp(e1_1,false);
         true = Expression.expEqual(e,e1_2);
       then (e1_1,funcs);
 
     case (e as DAE.MATRIX(integer=_,matrix=(((e1 as DAE.UNARY(exp = DAE.CREF(componentRef = _))))::_)::_),funcs)
       equation
         e1_1 = Expression.expStripLastSubs(e1);
-        (e1_2,(_,true)) = DAEUtil.extendArrExp(e1_1,(funcs,false));
+        (e1_2,true) = Expression.extendArrExp(e1_1,false);
         true = Expression.expEqual(e,e1_2);
       then (e1_1,funcs);
 
     case (e as DAE.ARRAY(scalar=_,array=(e1 as DAE.CREF(componentRef = _))::_),funcs)
       equation
         e1_1 = Expression.expStripLastSubs(e1);
-        (e1_2,(_,true)) = DAEUtil.extendArrExp(e1_1,(funcs,false));
+        (e1_2,true) = Expression.extendArrExp(e1_1,false);
         true = Expression.expEqual(e,e1_2);
       then (e1_1,funcs);
 
     case (e as DAE.ARRAY(scalar=_,array=(e1 as DAE.UNARY(exp = DAE.CREF(componentRef = _)))::_),funcs)
       equation
         e1_1 = Expression.expStripLastSubs(e1);
-        (e1_2,(_,true)) = DAEUtil.extendArrExp(e1_1,(funcs,false));
+        (e1_2,true) = Expression.extendArrExp(e1_1,false);
         true = Expression.expEqual(e,e1_2);
       then (e1_1,funcs);
 
@@ -6177,7 +6177,6 @@ algorithm
   (outLst, size, oShared):=  match (inEquation,vars,m,eqn_indx,scalar_eqn_indx,differentiateIfExp,iShared,fvarsInEqn,iAcc)
     local
       list<Integer> var_indxs,var_indxs_1,ds;
-      list<Option<Integer>> ad;
       list<tuple<Integer, Integer, BackendDAE.Equation>> eqns;
       DAE.Exp e,e1,e2;
       list<DAE.Exp> expl;
@@ -6223,10 +6222,9 @@ algorithm
       equation
         _ = Expression.typeof(e1);
         e = Expression.expSub(e1,e2);
-        (e,_) = DAEUtil.extendArrExp(e,(NONE(),false));
-        ad = List.map(ds,Util.makeOption);
-        subslst = DAEUtil.arrayDimensionsToRange(ad);
-        subslst = DAEUtil.rangesToSubscripts(subslst);
+        (e,_) = Expression.extendArrExp(e,false);
+        subslst = Expression.dimensionSizesSubscripts(ds);
+        subslst = Expression.rangesToSubscripts(subslst);
         expl = List.map1r(subslst,Expression.applyExpSubscripts,e);
         var_indxs = fvarsInEqn(m, eqn_indx);
         var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: acsending index";
@@ -6266,8 +6264,8 @@ algorithm
     // new entry
     case (i,ad,{})
       equation
-        subslst = DAEUtil.arrayDimensionsToRange(ad);
-        (subs::subslst1) = DAEUtil.rangesToSubscripts(subslst);
+        subslst = Expression.dimensionSizesSubcriptsOpt(ad);
+        (subs::subslst1) = Expression.rangesToSubscripts(subslst);
       then
         (subs,{(i,subslst1)});
     // found last entry
@@ -6799,9 +6797,8 @@ algorithm
     case (eqn as BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1, right=e2,source=source),(v,explst,sources,funcs,repl))
       equation
         new_exp = Expression.expSub(e1,e2);
-        ad = List.map(ds,Util.makeOption);
-        subslst = DAEUtil.arrayDimensionsToRange(ad);
-        subslst = DAEUtil.rangesToSubscripts(subslst);
+        subslst = Expression.dimensionSizesSubscripts(ds);
+        subslst = Expression.rangesToSubscripts(subslst);
         explst1 = List.map1r(subslst,Expression.applyExpSubscripts,new_exp);
         explst1 = List.map3(explst1,getEqnsysRhsExp,v,funcs,SOME(repl));
         explst1 = List.map(explst1,Expression.negate);
@@ -7756,8 +7753,8 @@ algorithm
    case(NONE(),_,outExtraArg) then (NONE(),outExtraArg);
 
    case(SOME(DAE.DISTRIBUTION(name,arr,sarr)),_,_) equation
-     (arr,_) = DAEUtil.extendArrExp(arr,(NONE(),false));
-     (sarr,_) = DAEUtil.extendArrExp(sarr,(NONE(),false));
+     (arr,_) = Expression.extendArrExp(arr,false);
+     (sarr,_) = Expression.extendArrExp(sarr,false);
      (name,outExtraArg) = Expression.traverseExp(name,func,extraArg);
      (arr,outExtraArg) = Expression.traverseExp(arr,func,outExtraArg);
      (sarr,outExtraArg) = Expression.traverseExp(sarr,func,outExtraArg);

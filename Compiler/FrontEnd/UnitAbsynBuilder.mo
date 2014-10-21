@@ -46,7 +46,7 @@ protected import ExpressionDump;
 protected import Flags;
 protected import FNode;
 protected import FGraph;
-protected import Interactive;
+protected import GlobalScriptUtil;
 protected import List;
 protected import Lookup;
 protected import SCode;
@@ -175,7 +175,7 @@ algorithm
     case _
       equation
         true = Flags.getConfigBool(Flags.UNIT_CHECKING);
-        ((_,_,_)) = Interactive.traverseClasses(prg,NONE(),registerUnitInClass,0,false); // defineunits must be in public section.
+        ((_,_,_)) = GlobalScriptUtil.traverseClasses(prg,NONE(),registerUnitInClass,0,false); // defineunits must be in public section.
       then ();
 
     else
@@ -197,8 +197,8 @@ algorithm
     list<Absyn.ElementItem> elts;
     String n;
     case((cl as Absyn.CLASS(name=_),pa,i)) equation
-      elts = Interactive.getElementitemsInClass(cl);
-      defunits = Interactive.getDefineunitsInElements(elts);
+      elts = Absyn.getElementItemsInClass(cl);
+      defunits = Absyn.getDefineUnitsInElements(elts);
       registerDefineunits(defunits);
     then ((cl,pa,i));
     case((cl,pa,i)) then ((cl,pa,i));

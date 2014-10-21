@@ -86,6 +86,7 @@ uniontype Slot
   end SLOT;
 end Slot;
 
+protected import BackendInterface;
 protected import Ceval;
 protected import ClassInf;
 protected import ComponentReference;
@@ -99,12 +100,12 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import Global;
+protected import GlobalScriptUtil;
 protected import Inline;
 protected import Inst;
 protected import InstFunction;
 protected import InstTypes;
 protected import InnerOuter;
-protected import Interactive;
 protected import List;
 protected import Lookup;
 protected import OperatorOverloading;
@@ -117,7 +118,6 @@ protected import DAEUtil;
 protected import PrefixUtil;
 protected import VarTransform;
 protected import SCodeDump;
-protected import StaticScript;
 protected import RewriteRules;
 
 public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."
@@ -5915,7 +5915,7 @@ algorithm
         cref_list = Absyn.getCrefFromExp(s1,true,false);
         symbol_table = absynCrefListToInteractiveVarList(cref_list, GlobalScript.emptySymboltable,
           DAE.T_REAL_DEFAULT);
-        (gen_env,_) = Interactive.buildEnvFromSymboltable(symbol_table);
+        (gen_env,_) = GlobalScriptUtil.buildEnvFromSymboltable(symbol_table);
         (cache,s1_1,st,_) = elabExpInExpression(cache,gen_env, s1, impl,NONE(),true,pre,info);
         s1_1 = Expression.makePureBuiltinCall("simplify", {s1_1}, DAE.T_REAL_DEFAULT);
       then
@@ -5925,7 +5925,7 @@ algorithm
         cref_list = Absyn.getCrefFromExp(s1,true,false);
         symbol_table = absynCrefListToInteractiveVarList(cref_list, GlobalScript.emptySymboltable,
           DAE.T_INTEGER_DEFAULT);
-        (gen_env,_) = Interactive.buildEnvFromSymboltable(symbol_table);
+        (gen_env,_) = GlobalScriptUtil.buildEnvFromSymboltable(symbol_table);
         (cache,s1_1,st,_) = elabExpInExpression(cache,gen_env, s1, impl,NONE(),true,pre,info);
         s1_1 = Expression.makePureBuiltinCall("simplify", {s1_1}, DAE.T_INTEGER_DEFAULT);
       then
@@ -5963,7 +5963,7 @@ algorithm
       equation
         path = Absyn.crefToPath(cr);
         path_str = Absyn.pathString(path);
-        symbol_table_1 = Interactive.addVarToSymboltable(
+        symbol_table_1 = GlobalScriptUtil.addVarToSymboltable(
           DAE.CREF_IDENT(path_str, tp, {}),
           Values.CODE(Absyn.C_VARIABLENAME(cr)), FGraph.empty(), symbol_table);
         symbol_table_2 = absynCrefListToInteractiveVarList(rest, symbol_table_1, tp);
@@ -7549,9 +7549,9 @@ function: elabCall
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<GlobalScript.SymbolTable> outST;
 algorithm
-  (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
+  (outCache,outExp,outProperties,outST):=
   matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,inST,inPrefix,info,numErrorMessages)
     local
       DAE.Exp e;
@@ -7623,7 +7623,7 @@ algorithm
         fail();
     case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,_,_) /* impl LS: Check if a builtin function call, e.g. size() and calculate if so */
       equation
-        (cache,e,prop,st) = StaticScript.elabCallInteractive(cache,env, fn, args, nargs, impl,st,pre,info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
+        (cache,e,prop,st) = BackendInterface.elabCallInteractive(cache,env, fn, args, nargs, impl,st,pre,info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
         ErrorExt.rollBack("elabCall_InteractiveFunction");
       then
         (cache,e,prop,st);

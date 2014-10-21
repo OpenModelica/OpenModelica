@@ -1777,9 +1777,9 @@ algorithm
         expcrA = DAE.CAST(tp,expcrA);
         op = Util.if_(intGt(rang,1),DAE.MUL_MATRIX_PRODUCT(DAE.T_REAL_DEFAULT),DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT));
         mulAstates = DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrstates));
-        (mulAstates,(_,_)) = DAEUtil.extendArrExp(mulAstates,(NONE(),false));
+        (mulAstates,_) = Expression.extendArrExp(mulAstates,false);
         mulAdstates = DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrdstates));
-        (mulAdstates,(_,_)) = DAEUtil.extendArrExp(mulAdstates,(NONE(),false));
+        (mulAdstates,_) = Expression.extendArrExp(mulAdstates,false);
         expset = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrset),listGet(expcrset,1));
         expderset = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrdset),listGet(expcrdset,1));
         source = DAE.SOURCE(Absyn.INFO("stateselection",false,0,0,0,0,Absyn.dummyTimeStamp),{},NONE(),{},{},{},{});
@@ -1791,7 +1791,7 @@ algorithm
                                       BackendDAE.EQUATION(expderset,mulAdstates,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC));
         // start values for the set
         expsetstart = DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrstatesstart));
-        (expsetstart,(_,_)) = DAEUtil.extendArrExp(expsetstart,(NONE(),false));
+        (expsetstart,_) = Expression.extendArrExp(expsetstart,false);
         (setVars,_) = List.map2Fold(setVars,setStartExp,expsetstart,rang,1);
         // add set states
         vars = BackendVariable.addVars(setVars,iVars);

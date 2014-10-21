@@ -59,8 +59,8 @@ protected function calculateSimulationTimes
   input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Boolean inImplInst;
+  input Option<GlobalScript.SymbolTable> inSymbolTable;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
   input GlobalScript.SimulationOptions inSimOpt;
@@ -70,7 +70,7 @@ protected function calculateSimulationTimes
   output DAE.Exp numberOfIntervals "number of intervals, default 500";
 algorithm
   (outCache, startTime, stopTime, numberOfIntervals) :=
-  matchcontinue (inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo, inSimOpt)
+  matchcontinue (inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, inImplInst, inSymbolTable, inPrefix, inInfo, inSimOpt)
     local
       Absyn.ComponentRef cr;
       list<Absyn.NamedArg> args;
@@ -142,8 +142,8 @@ public function getSimulationArguments
   input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Boolean inImplInst;
+  input Option<GlobalScript.SymbolTable> inSymbolTable;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
   input Option<GlobalScript.SimulationOptions> defaultOption;
@@ -151,7 +151,7 @@ public function getSimulationArguments
   output list<DAE.Exp> outSimulationArguments;
 algorithm
   (outCache, outSimulationArguments) :=
-  match (inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo, defaultOption)
+  match (inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, inImplInst, inSymbolTable, inPrefix, inInfo, defaultOption)
     local
       Absyn.Exp crexp;
       list<Absyn.NamedArg> args;
@@ -180,7 +180,7 @@ algorithm
         defaulSimOpt = CevalScript.buildSimulationOptionsFromModelExperimentAnnotation(st, className, cname_str, defaultOption);
 
         (cache, startTime, stopTime, numberOfIntervals) =
-          calculateSimulationTimes(inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, impl, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo, defaulSimOpt);
+          calculateSimulationTimes(inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, impl, inSymbolTable, inPrefix, inInfo, defaulSimOpt);
 
         (cache,tolerance) =
           Static.getOptionalNamedArg(cache, env, SOME(st), impl, "tolerance", DAE.T_REAL_DEFAULT,
@@ -247,17 +247,18 @@ public function elabCallInteractive "This function elaborates the functions defi
   input Absyn.ComponentRef inComponentRef;
   input list<Absyn.Exp> inExps;
   input list<Absyn.NamedArg> inNamedArgs;
-  input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Boolean inImplInst;
+  input Option<GlobalScript.SymbolTable> inSymbolTable;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<GlobalScript.SymbolTable> outSymbolTable;
  algorithm
-  (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inComponentRef,inExps,inNamedArgs,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
+   (outCache,outExp,outProperties,outSymbolTable):=
+   matchcontinue
+     (inCache,inEnv,inComponentRef,inExps,inNamedArgs,inImplInst,inSymbolTable,inPrefix,info)
     local
       DAE.ComponentRef cr_1;
       FCore.Graph env;
@@ -293,7 +294,7 @@ public function elabCallInteractive "This function elaborates the functions defi
 
     case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_)
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
       then
         (cache,Expression.makePureBuiltinCall("translateModel",simulationArgs,DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
@@ -370,42 +371,42 @@ public function elabCallInteractive "This function elaborates the functions defi
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_)
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
       then
         (cache,Expression.makePureBuiltinCall("buildModel",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
          DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)},DAE.emptyTypeSource),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_)
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
       then
         (cache,Expression.makePureBuiltinCall("buildModelBeast",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
          DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)},DAE.emptyTypeSource),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
         recordtype = CevalScript.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("simulate",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulation"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
         recordtype = CevalScript.getDrModelicaSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("simulation",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "linearize"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
         recordtype = CevalScript.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("linearize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "optimize"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
         recordtype = CevalScript.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("optimize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
@@ -478,7 +479,7 @@ function: elabExp
   input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input Boolean inImplicit;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inSymbolTable;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -487,7 +488,7 @@ function: elabExp
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> st;
 algorithm
-  (outCache,outExp,outProperties,st) := elabExp2(inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,Error.getNumErrorMessages());
+  (outCache,outExp,outProperties,st) := elabExp2(inCache,inEnv,inExp,inImplicit,inSymbolTable,performVectorization,inPrefix,info,Error.getNumErrorMessages());
 end elabExp;
 
 
@@ -497,7 +498,7 @@ function: Auxiliary function to elabExp that considers elabCallInteractive. If t
   input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input Boolean inImplicit;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inSymbolTable;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -505,10 +506,10 @@ function: Auxiliary function to elabExp that considers elabCallInteractive. If t
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<GlobalScript.SymbolTable> outSymbolTable;
 algorithm
-  (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,numErrorMessages)
+  (outCache,outExp,outProperties,outSymbolTable):=
+  matchcontinue (inCache,inEnv,inExp,inImplicit,inSymbolTable,performVectorization,inPrefix,info,numErrorMessages)
     local
       Boolean impl,doVect;
       Option<GlobalScript.SymbolTable> st,st_1;
@@ -546,18 +547,18 @@ function: elabCall
   input Absyn.ComponentRef inComponentRef;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Boolean inImplInst;
+  input Option<GlobalScript.SymbolTable> inSymbolTable;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   input Integer numErrorMessages;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<GlobalScript.SymbolTable> outSymbolTable;
 algorithm
-  (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inComponentRef,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info,numErrorMessages)
+  (outCache,outExp,outProperties,outSymbolTable):=
+  match (inCache,inEnv,inComponentRef,inAbsynExpLst,inAbsynNamedArgLst,inImplInst,inSymbolTable,inPrefix,info,numErrorMessages)
     local
       DAE.Exp e;
       DAE.Properties prop;
@@ -582,7 +583,7 @@ public function elabGraphicsExp
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Exp inExp;
-  input Boolean inBoolean;
+  input Boolean inImplInst;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output FCore.Cache outCache;
@@ -590,7 +591,7 @@ public function elabGraphicsExp
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inExp,inBoolean,inPrefix,info)
+  matchcontinue (inCache,inEnv,inExp,inImplInst,inPrefix,info)
     local
       Boolean impl;
       DAE.Exp e_1;

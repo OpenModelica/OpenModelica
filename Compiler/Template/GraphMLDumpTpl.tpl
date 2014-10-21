@@ -5,7 +5,6 @@
 package GraphMLDumpTpl
 
 import interface GraphMLDumpTplTV;
-import CodegenUtil.*;
 
 template dumpGraphInfo(GraphML.GraphInfo graphInfo, String fileName)
 ::=
@@ -358,5 +357,5 @@ template dumpShapeType(GraphML.ShapeType shape)
     end match
 end dumpShapeType;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="susan");
 end GraphMLDumpTpl;
