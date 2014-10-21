@@ -1854,8 +1854,7 @@ void LibraryTreeWidget::showModelWidget(LibraryTreeNode *pLibraryTreeNode, bool 
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
-  if (pLibraryTreeNode == 0)
-  {
+  if (pLibraryTreeNode == 0) {
     if (selectedItemsList.isEmpty()) {
       QApplication::restoreOverrideCursor();
       return;

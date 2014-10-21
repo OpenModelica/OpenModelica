@@ -201,7 +201,6 @@ ModelicaClassDialog::ModelicaClassDialog(MainWindow *pParent)
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::createNewModelicaClass));
   setMinimumWidth(400);
   mpMainWindow = pParent;
-  setModal(true);
   // Create the name label and text box
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit;

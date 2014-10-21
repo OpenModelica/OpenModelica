@@ -44,7 +44,6 @@ using namespace OMPlot;
 PlotWindowContainer::PlotWindowContainer(MainWindow *pParent)
   : MdiArea(pParent)
 {
-  mpMainWindow = pParent;
   setActivationOrder(QMdiArea::CreationOrder);
   if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPlottingViewMode().compare(Helper::subWindow) == 0)
     setViewMode(QMdiArea::SubWindowView);
@@ -81,14 +80,14 @@ PlotWindow* PlotWindowContainer::getCurrentWindow()
 bool PlotWindowContainer::eventFilter(QObject *pObject, QEvent *pEvent)
 {
   PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pObject);
-  if (pPlotWindow && pEvent->type() == QEvent::Paint)
-  {
+  if (pPlotWindow && pEvent->type() == QEvent::Paint) {
     QPainter painter (pPlotWindow);
     painter.setPen(Qt::gray);
     QRect rectangle = pPlotWindow->rect();
     rectangle.setWidth(pPlotWindow->rect().width() - 1);
     rectangle.setHeight(pPlotWindow->rect().height() - 1);
     painter.drawRect(rectangle);
+    return true;
   }
   return QMdiArea::eventFilter(pObject, pEvent);
 }

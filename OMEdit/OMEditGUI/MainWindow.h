@@ -192,6 +192,7 @@ private:
   WelcomePageWidget *mpWelcomePageWidget;
   AboutOMEditWidget *mpAboutOMEditDialog;
   InfoBar *mpInfoBar;
+  QStackedWidget *mpCentralStackedWidget;
   QStatusBar *mpStatusBar;
   QProgressBar *mpProgressBar;
   Label *mpPointerXPositionLabel;

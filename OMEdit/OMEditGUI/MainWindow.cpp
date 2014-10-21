@@ -171,15 +171,16 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   mpInfoBar->hide();
   //Create a centralwidget for the main window
   QWidget *pCentralwidget = new QWidget;
+  mpCentralStackedWidget = new QStackedWidget;
+  mpCentralStackedWidget->addWidget(mpWelcomePageWidget);
+  mpCentralStackedWidget->addWidget(mpModelWidgetContainer);
+  mpCentralStackedWidget->addWidget(mpPlotWindowContainer);
   // set the layout
   QGridLayout *pCentralgrid = new QGridLayout;
   pCentralgrid->setVerticalSpacing(4);
   pCentralgrid->setContentsMargins(0, 1, 0, 0);
   pCentralgrid->addWidget(mpInfoBar, 0, 0);
-  pCentralgrid->addWidget(mpWelcomePageWidget, 1, 0);
-  pCentralgrid->addWidget(mpModelWidgetContainer, 1, 0);
-  pCentralgrid->addWidget(mpPlotWindowContainer, 1, 0);
-  //pCentralgrid->addWidget(mpInteractiveSimualtionTabWidget, 1, 0);
+  pCentralgrid->addWidget(mpCentralStackedWidget, 1, 0);
   pCentralwidget->setLayout(pCentralgrid);
   //Set the centralwidget
   setCentralWidget(pCentralwidget);
@@ -207,9 +208,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/omedit.png"), tr("Welcome"));
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/modeling.png"), tr("Modeling"));
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/omplot.png"), tr("Plotting"));
-  /* Remove the interactive simulation tab until we make it run again. */
-  //  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/interactive-simulation.png"), tr("Interactive Simulation"));
-  //  mpPerspectiveTabbar->setTabEnabled(3, false);
   connect(mpPerspectiveTabbar, SIGNAL(currentChanged(int)), SLOT(perspectiveTabChanged(int)));
   mpStatusBar->addPermanentWidget(mpPerspectiveTabbar);
   // set status bar for MainWindow
@@ -1050,7 +1048,7 @@ TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName)
 void MainWindow::createNewModelicaClass()
 {
   ModelicaClassDialog *pModelicaClassDialog = new ModelicaClassDialog(this);
-  pModelicaClassDialog->show();
+  pModelicaClassDialog->exec();
 }
 
 void MainWindow::createNewTLMFile()
@@ -1798,9 +1796,6 @@ void MainWindow::perspectiveTabChanged(int tabIndex)
     case 2:
       switchToPlottingPerspective();
       break;
-      //    case 3:
-      //      switchToInteractiveSimulationPerspective();
-      //      break;
     default:
       switchToWelcomePerspective();
       break;
@@ -2315,53 +2310,37 @@ void MainWindow::createMenus()
 
 void MainWindow::switchToWelcomePerspective()
 {
-  mpWelcomePageWidget->setVisible(true);
-  mpModelWidgetContainer->setVisible(false);
+  mpPlotWindowContainer->tileSubWindows();
+  mpCentralStackedWidget->setCurrentWidget(mpWelcomePageWidget);
   mpModelWidgetContainer->currentModelWidgetChanged(0);
   mpModelSwitcherToolButton->setEnabled(false);
-  mpPlotWindowContainer->setVisible(false);
   mpVariablesDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
-  //mpInteractiveSimualtionTabWidget->setVisible(false);
 }
 
 void MainWindow::switchToModelingPerspective()
 {
-  mpWelcomePageWidget->setVisible(false);
-  mpModelWidgetContainer->setVisible(true);
+  mpPlotWindowContainer->tileSubWindows();
+  mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpModelSwitcherToolButton->setEnabled(true);
-  mpPlotWindowContainer->setVisible(false);
   mpVariablesDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
-  //mpInteractiveSimualtionTabWidget->setVisible(false);
 }
 
 void MainWindow::switchToPlottingPerspective()
 {
-  mpWelcomePageWidget->setVisible(false);
-  mpModelWidgetContainer->setVisible(false);
+  mpCentralStackedWidget->setCurrentWidget(mpPlotWindowContainer);
   mpModelWidgetContainer->currentModelWidgetChanged(0);
   mpModelSwitcherToolButton->setEnabled(false);
   // if not plotwindow is opened then open one for user
-  if (mpPlotWindowContainer->subWindowList().size() == 0)
+  if (mpPlotWindowContainer->subWindowList().size() == 0) {
     mpPlotWindowContainer->addPlotWindow();
-  mpPlotWindowContainer->setVisible(true);
+  } else {
+    mpPlotWindowContainer->getCurrentWindow()->setWindowState(Qt::WindowMaximized);
+  }
   mpVariablesDockWidget->show();
   mpPlotToolBar->setEnabled(true);
-  //mpInteractiveSimualtionTabWidget->setVisible(false);
-}
-
-void MainWindow::switchToInteractiveSimulationPerspective()
-{
-  mpWelcomePageWidget->setVisible(false);
-  mpModelWidgetContainer->setVisible(false);
-  mpModelWidgetContainer->currentModelWidgetChanged(0);
-  mpModelSwitcherToolButton->setEnabled(false);
-  mpPlotWindowContainer->setVisible(false);
-  mpVariablesDockWidget->hide();
-  mpPlotToolBar->setEnabled(false);
-  //mpInteractiveSimualtionTabWidget->setVisible(true);
 }
 
 //! Creates the toolbars
