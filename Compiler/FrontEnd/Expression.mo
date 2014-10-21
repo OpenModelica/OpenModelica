@@ -10817,7 +10817,7 @@ algorithm
         subslst = {{DAE.INDEX(DAE.ICONST(1))}};
         subslst1 = rangesToSubscripts(subslst);
         crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
-        expl = List.map1(crlst,Expression.makeCrefExp,ty);
+        expl = List.map1(crlst,makeCrefExp,ty);
         e_new = DAE.ARRAY(t,true,expl);
         (e, b) = traverseExp(e_new, traversingextendArrExp, true);
       then
