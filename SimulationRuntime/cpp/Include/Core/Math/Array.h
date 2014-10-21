@@ -312,7 +312,7 @@ public:
   }
   virtual string& operator()(vector<size_t> idx)
   {
-
+     return _real_array[idx[0]-1];
   };
 
 

@@ -92,3 +92,6 @@ cross product of two arrays (a,b type as template parameter)
 */
 template < typename T >
 void cross_array( BaseArray<T> & a ,BaseArray<T> & b, BaseArray<T> & res );
+
+void BOOST_EXTENSION_EXPORT_DECL convertBoolToInt( BaseArray<bool> & a ,BaseArray<int> & b  );
+void BOOST_EXTENSION_EXPORT_DECL convertIntToBool( BaseArray<int> & a ,BaseArray<bool> & b  );

@@ -292,6 +292,42 @@ min_max (BaseArray<T>& x)
   boost::minmax_element(data, data + x.getNumElems());
   return std::make_pair(*(ret.first),*(ret.second));
 }
+
+void  convertBoolToInt( BaseArray<bool> & a ,BaseArray<int> & b  )
+{
+	b.setDims(a.getDims());
+	int numEle = a.getNumElems();
+	for (int i = 0; i <= numEle; i++)
+	{
+		if (a(i))
+		{
+			b(i) = 1;
+		}
+		else
+		{
+			b(i) = 0;
+		}
+	}
+}
+void  convertIntToBool( BaseArray<int> & a ,BaseArray<bool> & b  )
+{
+	b.setDims(a.getDims());
+	int numEle = a.getNumElems();
+	for (int i = 0; i <= numEle; i++)
+	{
+		if (a(i))
+		{
+			b(i) = true;
+		}
+		else
+		{
+			b(i) = false;
+		}
+	}
+}
+
+
+
 /*
 Explicit template instantiation for double,int,bool
 */
