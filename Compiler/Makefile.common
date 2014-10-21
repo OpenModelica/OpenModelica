@@ -232,6 +232,7 @@ UTIL = \
 AvlTreeString.mo \
 BaseHashTable.mo \
 BaseHashSet.mo \
+ClockIndexes.mo \
 Config.mo \
 Debug.mo \
 Error.mo \

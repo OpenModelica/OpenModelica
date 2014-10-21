@@ -66,6 +66,7 @@ protected import BackendVarTransform;
 protected import BaseHashTable;
 protected import BaseHashSet;
 protected import Builtin;
+protected import ClockIndexes;
 protected import CevalScript;
 protected import CheckModel;
 protected import ClassInf;
@@ -81,7 +82,6 @@ protected import ExpressionSimplify;
 protected import ExpressionSolve;
 protected import FindZeroCrossings;
 protected import Flags;
-protected import GlobalScript;
 protected import Graph;
 protected import HashSet;
 protected import HpcOmSimCode;
@@ -14445,8 +14445,8 @@ algorithm
     case (false,_) then ();
     else
       equation
-        t = System.realtimeTock(GlobalScript.RT_CLOCK_EXECSTAT);
-        total = System.realtimeTock(GlobalScript.RT_CLOCK_EXECSTAT_CUMULATIVE);
+        t = System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT);
+        total = System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
         (used,allocated) = System.getGCStatus();
         timeStr = System.snprintff("%.4g",20,t);
         totalTimeStr = System.snprintff("%.4g",20,total);
@@ -14454,7 +14454,7 @@ algorithm
         allocatedStr = bytesToRealMBString(allocated);
         fractionStr = System.snprintff("%.4g%%",20,realMul(100.0,realDiv(used,allocated)));
         Error.addMessage(Error.EXEC_STAT,{name,timeStr,totalTimeStr,usedStr,allocatedStr,fractionStr});
-        System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
       then ();
   end match;
 end execStat2;

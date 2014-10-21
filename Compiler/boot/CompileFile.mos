@@ -9,7 +9,7 @@ if not checkInterfaceOfPackages(mainClass, {
   {"backendInterface", "absyn", "backend", "frontend", "util", "susan"},
   {"backend", "absyn", "frontend", "util", "susan", "backendInterface"},
   {"frontend", "absyn", "util", "susan", "backendInterface", ""},
-  {"susan", "frontend" /* TODO: Remove this once GlobalScript is a util module */, "util", "absyn", "", ""},
+  {"susan", "util", "absyn", "", "", ""},
   {"util", "absyn", "", "", "", ""},
   {"absyn", "susan", "util", "", "", ""}// Its own module because Absyn-Dump-Util depend on each other...
 }) then

@@ -67,6 +67,7 @@ protected import Causalize;
 protected import Ceval;
 protected import CheckModel;
 protected import ClassInf;
+protected import ClockIndexes;
 protected import ComponentReference;
 protected import Config;
 protected import DAEDump;
@@ -82,7 +83,6 @@ protected import ExpressionSimplify;
 protected import FindZeroCrossings;
 protected import Flags;
 protected import Global;
-protected import GlobalScript;
 protected import HpcOmEqSystems;
 protected import IndexReduction;
 protected import InlineArrayEquations;
@@ -8948,14 +8948,14 @@ public function profilerinit
 algorithm
   setGlobalRoot(Global.profilerTime1Index, 0.0);
   setGlobalRoot(Global.profilerTime2Index, 0.0);
-  System.realtimeTick(GlobalScript.RT_PROFILER0);
+  System.realtimeTick(ClockIndexes.RT_PROFILER0);
 end profilerinit;
 
 public function profilerresults
 protected
    Real tg,t1,t2;
 algorithm
-  tg := System.realtimeTock(GlobalScript.RT_PROFILER0);
+  tg := System.realtimeTock(ClockIndexes.RT_PROFILER0);
   t1 := getGlobalRoot(Global.profilerTime1Index);
   t2 := getGlobalRoot(Global.profilerTime2Index);
   print("Time all: "); print(realString(tg)); print("\n");
@@ -8978,19 +8978,19 @@ end profilertime2;
 
 public function profilerstart1
 algorithm
-   System.realtimeTick(GlobalScript.RT_PROFILER1);
+   System.realtimeTick(ClockIndexes.RT_PROFILER1);
 end profilerstart1;
 
 public function profilerstart2
 algorithm
-   System.realtimeTick(GlobalScript.RT_PROFILER2);
+   System.realtimeTick(ClockIndexes.RT_PROFILER2);
 end profilerstart2;
 
 public function profilerstop1
 protected
    Real t;
 algorithm
-   t := System.realtimeTock(GlobalScript.RT_PROFILER1);
+   t := System.realtimeTock(ClockIndexes.RT_PROFILER1);
    setGlobalRoot(Global.profilerTime1Index,
      realAdd(getGlobalRoot(Global.profilerTime1Index),t));
 end profilerstop1;
@@ -8999,7 +8999,7 @@ public function profilerstop2
 protected
    Real t;
 algorithm
-   t := System.realtimeTock(GlobalScript.RT_PROFILER2);
+   t := System.realtimeTock(ClockIndexes.RT_PROFILER2);
    setGlobalRoot(Global.profilerTime2Index,
      realAdd(getGlobalRoot(Global.profilerTime2Index),t));
 end profilerstop2;
@@ -9017,7 +9017,7 @@ end profilerreset2;
 public function profilertock1
   output Real t;
 algorithm
-   t := System.realtimeTock(GlobalScript.RT_PROFILER1);
+   t := System.realtimeTock(ClockIndexes.RT_PROFILER1);
 end profilertock1;
 
 

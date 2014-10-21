@@ -64,6 +64,7 @@ protected import Ceval;
 protected import CevalFunction;
 protected import CevalScript;
 protected import ClassInf;
+protected import ClockIndexes;
 protected import ComponentReference;
 protected import Config;
 protected import Connect;
@@ -252,14 +253,14 @@ algorithm
     case (_, _, true)
       equation
         true = Flags.isSet(Flags.SHOW_STATEMENT);
-        System.realtimeTick(GlobalScript.RT_CLOCK_SHOW_STATEMENT);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_SHOW_STATEMENT);
         print("Evaluating:   > " +& printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) +& "\n");
       then
         ();
     case (_, _, false)
       equation
         true = Flags.isSet(Flags.SHOW_STATEMENT);
-        print("Evaluated:    < " +& realString(System.realtimeTock(GlobalScript.RT_CLOCK_SHOW_STATEMENT)) +& " / " +& printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) +& "\n");
+        print("Evaluated:    < " +& realString(System.realtimeTock(ClockIndexes.RT_CLOCK_SHOW_STATEMENT)) +& " / " +& printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) +& "\n");
       then
         ();
 

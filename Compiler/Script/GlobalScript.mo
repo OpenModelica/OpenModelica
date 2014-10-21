@@ -44,27 +44,6 @@ public import Global;
 public import SCode;
 public import Values;
 
-public constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;
-public constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;
-public constant Integer RT_CLOCK_BUILD_MODEL = 10;
-public constant Integer RT_CLOCK_EXECSTAT = 11;
-public constant Integer RT_CLOCK_EXECSTAT_CUMULATIVE = 12;
-public constant Integer RT_CLOCK_FRONTEND = 13;
-public constant Integer RT_CLOCK_BACKEND = 14;
-public constant Integer RT_CLOCK_SIMCODE = 15;
-public constant Integer RT_CLOCK_LINEARIZE = 16;
-public constant Integer RT_CLOCK_TEMPLATES = 17;
-public constant Integer RT_CLOCK_UNCERTAINTIES = 18;
-public constant Integer RT_PROFILER0=19;
-public constant Integer RT_PROFILER1=20;
-public constant Integer RT_PROFILER2=21;
-public constant Integer RT_CLOCK_EXECSTAT_JACOBIANS=22;
-public constant Integer RT_CLOCK_USER_RESERVED = 23;
-public constant Integer RT_CLOCK_EXECSTAT_HPCOM_MODULES = 24;
-public constant Integer RT_CLOCK_SHOW_STATEMENT = 25;
-public constant Integer RT_CLOCK_FINST = 26;
-public constant list<Integer> buildModelClocks = {RT_CLOCK_BUILD_MODEL,RT_CLOCK_SIMULATE_TOTAL,RT_CLOCK_TEMPLATES,RT_CLOCK_LINEARIZE,RT_CLOCK_SIMCODE,RT_CLOCK_BACKEND,RT_CLOCK_FRONTEND};
-
 public
 uniontype SimulationOptions "these are the simulation/buildModel* options"
   record SIMULATION_OPTIONS "simulation/buildModel* options"

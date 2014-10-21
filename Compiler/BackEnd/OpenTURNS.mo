@@ -51,6 +51,7 @@ import BackendDAEOptimize;
 import BackendDAEUtil;
 import BackendEquation;
 import BackendVariable;
+import ClockIndexes;
 import CevalScript;
 import ComponentReference;
 import DAEUtil;
@@ -113,7 +114,7 @@ algorithm
 
   //print("strippedDae :");
   //BackendDump.dump(strippedDae);
-  _ := System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND); // Is this necessary?
+  _ := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
   (_,libs,fileDir,_,_) := SimCodeMain.generateModelCode(strippedDae,inProgram,inDAElist,inPath,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
 
   //print("..compiling, fileNamePrefix = "+&fileNamePrefix+&"\n");

@@ -79,6 +79,7 @@ protected import CevalFunction;
 protected import CheckModel;
 protected import ClassInf;
 protected import ClassLoader;
+protected import ClockIndexes;
 protected import CodegenC;
 protected import Config;
 protected import Corba;
@@ -1442,8 +1443,8 @@ algorithm
 
     case (cache,env,"buildModel",vals,st,_)
       equation
-        List.map_0(GlobalScript.buildModelClocks,System.realtimeClear);
-        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
+        List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         (cache,st,compileDir,executable,_,_,initfilename,_,_) = buildModel(cache,env, vals, st, msg);
         executable = Util.if_(not Config.getRunningTestsuite(),compileDir +& executable,executable);
       then
@@ -1493,7 +1494,7 @@ algorithm
 
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st_1,_)
       equation
-        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         (cache,st,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
 
         cit = winCitation();
@@ -1510,11 +1511,11 @@ algorithm
         // as the buildModel log file will be deleted here and that gives less information to the user!
         0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);
         sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags});
-        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         resI = System.systemCall(sim_call,logFile);
-        timeSimulation = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
-        timeTotal = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
+        timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+        timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file,logFile);
       then
         (cache,simValue,newst);
@@ -1578,7 +1579,7 @@ algorithm
     case (cache,env,"linearize",(vals as Values.CODE(Absyn.C_TYPENAME(_))::_),st_1,_)
       equation
 
-        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
         b = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
@@ -1591,13 +1592,13 @@ algorithm
         0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);
         strlinearizeTime = realString(linearizeTime);
         sim_call = stringAppendList({cit,compileDir,executableSuffixedExe,cit," ","-l=",strlinearizeTime," ",simflags});
-        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         0 = System.systemCall(sim_call,logFile);
 
         result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
-        timeSimulation = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
-        timeTotal = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
+        timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+        timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         simValue = createSimulationResult(
            result_file,
            simOptionsAsString(vals),
@@ -1616,7 +1617,7 @@ algorithm
    case (cache,env,"optimize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_),st_1,_)
       equation
 
-        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION,true);
         Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
@@ -1635,11 +1636,11 @@ algorithm
         // as the buildModel log file will be deleted here and that gives less information to the user!
         0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);
         sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags});
-        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         resI = System.systemCall(sim_call,logFile);
-        timeSimulation = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
-        timeTotal = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
+        timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+        timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file,logFile);
       then
         (cache,simValue,newst);
@@ -3514,18 +3515,18 @@ algorithm
         true = Flags.isSet(Flags.GRAPH_INST);
         false = Flags.isSet(Flags.SCODE_INST);
 
-        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         str = Absyn.pathString(className);
         (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);
         re = Absyn.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
         (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp)),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true);
-        print("Load deps:      " +& realString(System.realtimeTock(GlobalScript.RT_CLOCK_FINST)) +& "\n");
+        print("Load deps:      " +& realString(System.realtimeTock(ClockIndexes.RT_CLOCK_FINST)) +& "\n");
 
-        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
-        print("Absyn->SCode:   " +& realString(System.realtimeTock(GlobalScript.RT_CLOCK_FINST)) +& "\n");
+        print("Absyn->SCode:   " +& realString(System.realtimeTock(ClockIndexes.RT_CLOCK_FINST)) +& "\n");
 
         dae = FInst.instPath(className, scodeP);
         ic_1 = ic;
@@ -4068,7 +4069,7 @@ algorithm
         //SimCodeUtil.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
         //  starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);
 
-        System.realtimeTick(GlobalScript.RT_CLOCK_BUILD_MODEL);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         init_filename = filenameprefix +& "_init.xml"; //a hack ? should be at one place somewhere
         //win1 = getWithinStatement(classname);
 
@@ -4077,7 +4078,7 @@ algorithm
         Debug.fprintln(Flags.DYN_LOAD, "buildModel: Compiling done.");
         p = setBuildTime(p,classname);
         st2 = st;// Interactive.replaceSymbolTableProgram(st,p);
-        timeCompile = System.realtimeTock(GlobalScript.RT_CLOCK_BUILD_MODEL);
+        timeCompile = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         resultValues = ("timeCompile",Values.REAL(timeCompile)) :: resultValues;
       then
         (cache,st2,compileDir,filenameprefix,method_str,outputFormat_str,init_filename,simflags,resultValues);

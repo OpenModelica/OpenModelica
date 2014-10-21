@@ -57,6 +57,7 @@ public import SimCode;
 protected import BackendDAECreate;
 protected import BackendQSS;
 protected import BaseHashTable;
+protected import ClockIndexes;
 protected import CevalScript;
 protected import CodegenC;
 protected import CodegenFMU;
@@ -133,19 +134,19 @@ protected
   Absyn.ComponentRef a_cref;
   tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
 algorithm
-  System.realtimeTick(GlobalScript.RT_CLOCK_SIMCODE);
+  System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScript.getFileDir(a_cref, p);
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
     SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
   (simCode,_) := SimCodeUtil.createSimCode(outIndexedBackendDAE,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
-  timeSimCode := System.realtimeTock(GlobalScript.RT_CLOCK_SIMCODE);
+  timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   SimCodeUtil.execStat("SimCode");
 
-  System.realtimeTick(GlobalScript.RT_CLOCK_TEMPLATES);
+  System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
   callTargetTemplatesFMU(simCode, Config.simCodeTarget(), FMUVersion);
-  timeTemplates := System.realtimeTock(GlobalScript.RT_CLOCK_TEMPLATES);
+  timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
 end generateModelCodeFMU;
 
 
@@ -173,19 +174,19 @@ protected
   Absyn.ComponentRef a_cref;
   tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
 algorithm
-  System.realtimeTick(GlobalScript.RT_CLOCK_SIMCODE);
+  System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScript.getFileDir(a_cref, p);
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
     SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
   (simCode,_) := SimCodeUtil.createSimCode(outIndexedBackendDAE,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
-  timeSimCode := System.realtimeTock(GlobalScript.RT_CLOCK_SIMCODE);
+  timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   SimCodeUtil.execStat("SimCode");
 
-  System.realtimeTick(GlobalScript.RT_CLOCK_TEMPLATES);
+  System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
   callTargetTemplatesXML(simCode, Config.simCodeTarget());
-  timeTemplates := System.realtimeTock(GlobalScript.RT_CLOCK_TEMPLATES);
+  timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
 end generateModelCodeXML;
 
 
@@ -230,11 +231,11 @@ algorithm
     case (cache,graph,_,st as GlobalScript.SYMBOLTABLE(ast=p),FMUVersion,filenameprefix,_, _)
       equation
         /* calculate stuff that we need to create SimCode data structure */
-        System.realtimeTick(GlobalScript.RT_CLOCK_FRONTEND);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
         //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,graph, fileprefix, true, SOME(st),NONE(), msg);
         (cache,graph,dae,st) = CevalScript.runFrontEnd(cache,graph,className,st,false);
-        timeFrontend = System.realtimeTock(GlobalScript.RT_CLOCK_FRONTEND);
-        System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
+        timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
 
         // activate symolic jacobains for fmi 2.0
         // to provide dependence information and partial derivatives
@@ -248,7 +249,7 @@ algorithm
         dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
-        timeBackend = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
+        timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
         (indexed_dlow_1,libs,file_dir,timeSimCode,timeTemplates) =
           generateModelCodeFMU(dlow_1, p, dae,  className, FMUVersion, filenameprefix, inSimSettingsOpt);
@@ -313,18 +314,18 @@ algorithm
     case (cache,graph,_,st as GlobalScript.SYMBOLTABLE(ast=p),filenameprefix,_, _)
       equation
         /* calculate stuff that we need to create SimCode data structure */
-        System.realtimeTick(GlobalScript.RT_CLOCK_FRONTEND);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
         //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,graph, fileprefix, true, SOME(st),NONE(), msg);
         (cache,graph,dae,st) = CevalScript.runFrontEnd(cache,graph,className,st,false);
-        timeFrontend = System.realtimeTock(GlobalScript.RT_CLOCK_FRONTEND);
-        System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
+        timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
         _ = FCore.getFunctionTree(cache);
         dae = DAEUtil.transformationsBeforeBackend(cache,graph,dae);
         description = DAEUtil.daeDescription(dae);
         dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
-        timeBackend = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
+        timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
         (indexed_dlow_1,libs,file_dir,timeSimCode,timeTemplates) =
           generateModelCodeXML(dlow_1, p, dae, className, filenameprefix, inSimSettingsOpt);
@@ -373,17 +374,17 @@ protected
   Absyn.ComponentRef a_cref;
   tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
 algorithm
-  System.realtimeTick(GlobalScript.RT_CLOCK_SIMCODE);
+  System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScript.getFileDir(a_cref, p);
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) := SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
   simCode := createSimCode(outIndexedBackendDAE, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
-  timeSimCode := System.realtimeTock(GlobalScript.RT_CLOCK_SIMCODE);
+  timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   SimCodeUtil.execStat("SimCode");
 
-  System.realtimeTick(GlobalScript.RT_CLOCK_TEMPLATES);
+  System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
   callTargetTemplates(simCode, inBackendDAE, Config.simCodeTarget());
-  timeTemplates := System.realtimeTock(GlobalScript.RT_CLOCK_TEMPLATES);
+  timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
   SimCodeUtil.execStat("Templates");
 end generateModelCode;
 
@@ -481,18 +482,18 @@ algorithm
       equation
         guid = System.getUUIDStr();
 
-        System.realtimeTick(GlobalScript.RT_PROFILER0);
+        System.realtimeTick(ClockIndexes.RT_PROFILER0);
         Tpl.tplNoret2(CodegenC.translateInitFile, simCode, guid);
-        // print("SimCode -> init.xml: " + realString(System.realtimeTock(GlobalScript.RT_PROFILER0)*1000) + "ms\n");
-        // System.realtimeTick(GlobalScript.RT_PROFILER0);
+        // print("SimCode -> init.xml: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
+        // System.realtimeTick(ClockIndexes.RT_PROFILER0);
         Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
         dumpTaskSystemIfFlag(simCode);
-        // print("SimCode -> info.xml: " + realString(System.realtimeTock(GlobalScript.RT_PROFILER0)*1000) + "ms\n");
-        // System.realtimeTick(GlobalScript.RT_PROFILER0);
+        // print("SimCode -> info.xml: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
+        // System.realtimeTick(ClockIndexes.RT_PROFILER0);
         // SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS)); // TODO: Add this once we switch to the bootstrapped compiler
-        // print("SimCode -> info.json: " + realString(System.realtimeTock(GlobalScript.RT_PROFILER0)*1000) + "ms\n");
+        // print("SimCode -> info.json: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
         Tpl.tplNoret2(CodegenC.translateModel, simCode, guid);
-        // print("SimCode -> C-files: " + realString(System.realtimeTock(GlobalScript.RT_PROFILER0)*1000) + "ms\n");
+        // print("SimCode -> C-files: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
       then ();
 
     case (_, _, "JavaScript")
@@ -621,20 +622,20 @@ algorithm
 
     case (cache, graph, _, (st as GlobalScript.SYMBOLTABLE(ast=p)), filenameprefix, _, _, _) equation
       // calculate stuff that we need to create SimCode data structure
-      System.realtimeTick(GlobalScript.RT_CLOCK_FRONTEND);
-      System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT);
-      System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_CUMULATIVE);
+      System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
+      System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
+      System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
       (cache, graph, dae, st) = CevalScript.runFrontEnd(cache, graph, className, st, false);
       SimCodeUtil.execStat("FrontEnd");
-      timeFrontend = System.realtimeTock(GlobalScript.RT_CLOCK_FRONTEND);
+      timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
 
-      System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
+      System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
       dae = DAEUtil.transformationsBeforeBackend(cache, graph, dae);
       SimCodeUtil.execStat("Transformations before backend");
       description = DAEUtil.daeDescription(dae);
       dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
       dlow_1 = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
-      timeBackend = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
+      timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
       (indexed_dlow_1, libs, file_dir, timeSimCode, timeTemplates) =
         generateModelCode(dlow_1, p, dae, className, filenameprefix, inSimSettingsOpt, args);

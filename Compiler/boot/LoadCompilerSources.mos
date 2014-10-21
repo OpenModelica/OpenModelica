@@ -226,6 +226,7 @@ if true then /* Suppress output */
     "../Util/AvlTreeString.mo",
     "../Util/BaseHashTable.mo",
     "../Util/BaseHashSet.mo",
+    "../Util/ClockIndexes.mo",
     "../Util/Config.mo",
     "../Util/Corba.mo",
   //  "../Util/Database.mo",

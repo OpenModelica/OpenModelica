@@ -47,10 +47,10 @@ public import HpcOmEqSystems;
 public import SimCode;
 
 // protected imports
+protected import ClockIndexes;
 protected import Debug;
 protected import Error;
 protected import Flags;
-protected import GlobalScript;
 protected import HpcOmMemory;
 protected import HpcOmScheduler;
 protected import Initialization;
@@ -186,7 +186,7 @@ algorithm
 
       //Setup
       //-----
-      System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
+      System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       (simCode,(lastEqMappingIdx,equationSccMapping)) = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
 
       SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
@@ -334,7 +334,7 @@ algorithm
 
       //Check ODE-System size
       //---------------------
-      System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
+      System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       checkOdeSystemSize(taskGraphOde,odeEquations);
       SimCodeUtil.execStat("hpcom check ODE system size");
 

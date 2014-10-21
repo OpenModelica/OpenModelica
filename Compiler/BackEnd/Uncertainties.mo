@@ -42,6 +42,7 @@ public import Values;
 
 protected import Algorithm;
 protected import BackendVariable;
+protected import ClockIndexes;
 protected import List;
 protected import SCode;
 protected import Flags;
@@ -651,11 +652,11 @@ algorithm
     FCore.Cache cache;
   case(_,_,_)
     equation
-      System.realtimeTick(GlobalScript.RT_CLOCK_UNCERTAINTIES);
+      System.realtimeTick(ClockIndexes.RT_CLOCK_UNCERTAINTIES);
       p_1 = SCodeUtil.translateAbsyn2SCode(p);
       (cache,graph,_,dae) = Inst.instantiateClass(icache,InnerOuter.emptyInstHierarchy,p_1,className);
-      _ = System.realtimeTock(GlobalScript.RT_CLOCK_UNCERTAINTIES);
-      System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
+      _ = System.realtimeTock(ClockIndexes.RT_CLOCK_UNCERTAINTIES);
+      System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
       dae = DAEUtil.transformationsBeforeBackend(cache,graph,dae);
     then (dae,cache,graph);
   else

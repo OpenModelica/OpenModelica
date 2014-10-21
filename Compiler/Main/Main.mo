@@ -47,6 +47,7 @@ protected import BackendDAECreate;
 protected import BackendDAEUtil;
 protected import CevalScript;
 protected import ClassLoader;
+protected import ClockIndexes;
 protected import Config;
 protected import Corba;
 protected import DAE;
@@ -63,7 +64,6 @@ protected import Error;
 protected import ErrorExt;
 protected import Flags;
 protected import Global;
-protected import GlobalScript;
 protected import Interactive;
 protected import List;
 protected import Parser;
@@ -507,8 +507,8 @@ algorithm
     case (f :: libs)
       equation
         //print("Class to instantiate: " +& Config.classToInstantiate() +& "\n");
-        System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT);
-        System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_CUMULATIVE);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
         // Check that it's a .mo-file.
         isModelicaFile(f);
         // Parse the first file.
@@ -730,7 +730,7 @@ algorithm
         Print.clearBuf();
         cname_str = Absyn.pathString(classname);
         simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","mat",".*","");
-        _ = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND); // Is this necessary?
+        _ = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
         (_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
         SimCodeUtil.execStat("Codegen Done");
       then
@@ -747,7 +747,7 @@ algorithm
         Print.clearBuf();
         cname_str = Absyn.pathString(classname);
         simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 1, 1e-6,"dassl","","plt",".*","");
-        _ = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND); // Is this necessary?
+        _ = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
         (_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
         SimCodeUtil.execStat("Codegen Done");
       then
@@ -982,7 +982,7 @@ algorithm
         // for the bootstrapped compiler
         _ = Absyn.isDerCref(Absyn.INTEGER(0));
 
-        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         args_1 = Flags.new(args);
         System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
         setDefaultCC();

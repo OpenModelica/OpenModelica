@@ -46,6 +46,7 @@ import DAE;
 import FCore;
 
 protected
+import ClockIndexes;
 import FBuiltin;
 import FGraph;
 import FExpand;
@@ -55,7 +56,6 @@ import System;
 import InstUtil;
 import Flags;
 import List;
-import GlobalScript;
 import FNode;
 
 public
@@ -98,21 +98,21 @@ algorithm
 
         lst = {};
 
-        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         (_, g) = FBuiltin.initialGraph(FCore.emptyCache());
         g = FGraphBuild.mkProgramGraph(
                  p,
                  FCore.USERDEFINED(),
                  g);
-        lst = List.consr(lst, System.realtimeTock(GlobalScript.RT_CLOCK_FINST));
+        lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("SCode->FGraph:  " +& realString(List.first(lst)) +& "\n");
         //print("FGraph nodes:   " +& intString(listLength(FNode.dfs(FGraph.top(g)))) +& "\n");
         //print("FGraph refs:    " +& intString(listLength(FNode.dfs_filter(FGraph.top(g), FNode.isRefReference))) +& "\n");
 
-        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         // resolve all
         g = FExpand.all(g);
-        lst = List.consr(lst, System.realtimeTock(GlobalScript.RT_CLOCK_FINST));
+        lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
 
         //print("FGraph nodes:   " +& intString(listLength(FNode.dfs(FGraph.top(g)))) +& "\n");
         //print("FGraph refs:    " +& intString(listLength(FNode.dfs_filter(FGraph.top(g), FNode.isRefReference))) +& "\n");
@@ -120,9 +120,9 @@ algorithm
 
         FGraphDump.dumpGraph(g, "F:\\dev\\" +& Absyn.pathString(inPath) +& ".graph.graphml");
 
-        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         gclone = FGraph.clone(g);
-        lst = List.consr(lst, System.realtimeTock(GlobalScript.RT_CLOCK_FINST));
+        lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("FGraph->clone:  " +& realString(List.first(lst)) +& "\n");
 
         // FGraphDump.dumpGraph(gclone, "F:\\dev\\" +& Absyn.pathString(inPath) +& ".graph.clone.graphml");
@@ -158,28 +158,28 @@ algorithm
       equation
         lst = {};
 
-        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         p = doSCodeDep(inProgram, inPath);
-        lst = List.consr(lst, System.realtimeTock(GlobalScript.RT_CLOCK_FINST));
+        lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("SCode depend:   " +& realString(List.first(lst)) +& "\n");
 
-        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         (_, g) = FBuiltin.initialGraph(FCore.emptyCache());
-        lst = List.consr(lst, System.realtimeTock(GlobalScript.RT_CLOCK_FINST));
+        lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("Initial graph:  " +& realString(List.first(lst)) +& "\n");
 
-        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         g = FGraphBuild.mkProgramGraph(
                  p,
                  FCore.USERDEFINED(),
                  g);
-        lst = List.consr(lst, System.realtimeTock(GlobalScript.RT_CLOCK_FINST));
+        lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("SCode->FGraph:  " +& realString(List.first(lst)) +& "\n");
 
-        System.realtimeTick(GlobalScript.RT_CLOCK_FINST);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         // resolve all references on path
         (g, r) = FExpand.path(g, inPath);
-        lst = List.consr(lst, System.realtimeTock(GlobalScript.RT_CLOCK_FINST));
+        lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("FExpand.path:   " +& realString(List.first(lst)) +& "\n");
 
         print("FGraph nodes:   " +& intString(FGraph.lastId(g)) +& "\n");

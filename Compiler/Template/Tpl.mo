@@ -10,10 +10,10 @@ encapsulated package Tpl
 
 public import Absyn;
 protected import Config;
+protected import ClockIndexes;
 protected import Debug;
 protected import Error;
 protected import Flags;
-protected import GlobalScript;
 protected import Print;
 protected import System;
 protected import Util;
@@ -1698,17 +1698,17 @@ algorithm
       Real rtTickTxt, rtTickW;
     case (txt, file)
       equation
-        rtTickTxt = System.realtimeTock(GlobalScript.RT_CLOCK_BUILD_MODEL);
+        rtTickTxt = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         Print.clearBuf();
         textStringBuf(txt);
-        rtTickW = System.realtimeTock(GlobalScript.RT_CLOCK_BUILD_MODEL);
+        rtTickW = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         Print.writeBuf(file);
         Debug.bcall2(Config.getRunningTestsuite(), System.appendFile, Config.getRunningTestsuiteFile(), file +& "\n");
         Print.clearBuf();
         Debug.fprintln(Flags.TPL_PERF_TIMES,
                 "textFile " +& file
            +& "\n    text:" +& realString(realSub(rtTickW,rtTickTxt))
-           +& "\n   write:" +& realString(realSub(System.realtimeTock(GlobalScript.RT_CLOCK_BUILD_MODEL), rtTickW))
+           +& "\n   write:" +& realString(realSub(System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL), rtTickW))
            );
       then
         ();
@@ -1735,10 +1735,10 @@ algorithm
       Real rtTickTxt, rtTickW;
     case (txt, file)
       equation
-        rtTickTxt = System.realtimeTock(GlobalScript.RT_CLOCK_BUILD_MODEL);
+        rtTickTxt = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         Print.clearBuf();
         textStringBuf(txt);
-        rtTickW = System.realtimeTock(GlobalScript.RT_CLOCK_BUILD_MODEL);
+        rtTickW = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         System.writeFile(file, "") /* To make realpath work */;
         Debug.bcall1(boolOr(Config.acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)), Print.writeBufConvertLines, System.realpath(file));
         Debug.bcall1(not boolOr(Config.acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)), Print.writeBuf, file);
@@ -1747,7 +1747,7 @@ algorithm
         Debug.fprintln(Flags.TPL_PERF_TIMES,
                 "textFile " +& file
            +& "\n    text:" +& realString(realSub(rtTickW,rtTickTxt))
-           +& "\n   write:" +& realString(realSub(System.realtimeTock(GlobalScript.RT_CLOCK_BUILD_MODEL), rtTickW))
+           +& "\n   write:" +& realString(realSub(System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL), rtTickW))
            );
       then
         ();

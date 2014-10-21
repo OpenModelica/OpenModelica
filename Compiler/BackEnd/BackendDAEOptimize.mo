@@ -61,6 +61,7 @@ protected import BaseHashTable;
 protected import Ceval;
 protected import CheckModel;
 protected import ClassInf;
+protected import ClockIndexes;
 protected import Config;
 protected import ComponentReference;
 protected import DAEUtil;
@@ -73,7 +74,6 @@ protected import ExpressionSimplify;
 protected import Error;
 protected import Flags;
 protected import Global;
-protected import GlobalScript;
 protected import Graph;
 protected import HashSet;
 protected import HashTableExpToIndex;
@@ -2065,9 +2065,9 @@ algorithm
         usedvar = arrayCreate(adjSizeT, 0);
         usedvar = Util.arraySet(adjSizeT-(sizeN-1), adjSizeT, usedvar, 1);
 
-        //Debug.execStat("generateSparsePattern -> start ",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        //Debug.execStat("generateSparsePattern -> start ",ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         eqnSparse = getSparsePattern(comps, eqnSparse, varSparse, mark, usedvar, 1, adjMatrix, adjMatrixT);
-        //Debug.execStat("generateSparsePattern -> end ",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        //Debug.execStat("generateSparsePattern -> end ",ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // debug dump
         Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,BackendDump.dumpSparsePatternArray,eqnSparse);
         Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,print, "analytical Jacobians[SPARSE] -> prepared arrayList for transpose list: " +& realString(clock()) +& "\n");
@@ -2077,20 +2077,20 @@ algorithm
         sparsepattern = arrayList(sparseArray);
         sparsepattern = List.map1List(sparsepattern, intSub, adjSizeT-sizeN);
 
-        //Debug.execStat("generateSparsePattern -> postProcess ",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        //Debug.execStat("generateSparsePattern -> postProcess ",ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
 
         // transpose the column-based pattern to row-based pattern
         sparseArrayT = arrayCreate(sizeN,{});
         sparseArrayT = transposeSparsePattern(sparsepattern, sparseArrayT, 1);
         sparsepatternT = arrayList(sparseArrayT);
-        //Debug.execStat("generateSparsePattern -> postProcess2 " ,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        //Debug.execStat("generateSparsePattern -> postProcess2 " ,ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
 
         // dump statistics
         nonZeroElements = List.lengthListElements(sparsepattern);
         dumpSparsePatternStatistics(Flags.isSet(Flags.DUMP_SPARSE),nonZeroElements,sparsepatternT);
         Debug.fcall(Flags.DUMP_SPARSE,BackendDump.dumpSparsePattern,sparsepattern);
         Debug.fcall(Flags.DUMP_SPARSE,BackendDump.dumpSparsePattern,sparsepatternT);
-        //Debug.execStat("generateSparsePattern -> nonZeroElements: " +& intString(nonZeroElements) +& " " ,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        //Debug.execStat("generateSparsePattern -> nonZeroElements: " +& intString(nonZeroElements) +& " " ,ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
 
         // translated to DAE.ComRefs
         translated = List.mapList1_1(sparsepattern, List.getIndexFirst, diffCompRefs);
@@ -2116,9 +2116,9 @@ algorithm
         forbiddenColor = arrayCreate(sizeN,NONE());
         colored = arrayCreate(sizeN,0);
         arraysparseGraph = listArray(sparseGraph);
-        //Debug.execStat("generateSparsePattern -> coloring start " ,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        //Debug.execStat("generateSparsePattern -> coloring start " ,ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         colored1 = Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
-        //Debug.execStat("generateSparsePattern -> coloring end " ,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        //Debug.execStat("generateSparsePattern -> coloring end " ,ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // get max color used
         maxColor = Util.arrayFold(colored1, intMax, 0);
 
@@ -2923,7 +2923,7 @@ algorithm
 
   case(_) equation
     true = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN);
-    System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+    System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
     BackendDAE.DAE(eqs=eqs,shared=shared) = inBackendDAE;
     (symJacA , sparsePattern, sparseColoring, funcs) = createSymbolicJacobianforStates(inBackendDAE);
     shared = BackendDAEUtil.addBackendDAESharedJacobian(symJacA, sparsePattern, sparseColoring, shared);
@@ -2931,7 +2931,7 @@ algorithm
     functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
     shared = BackendDAEUtil.addFunctionTree(functionTree, shared);
     outBackendDAE = BackendDAE.DAE(eqs,shared);
-    _ = System.realtimeTock(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+    _ = System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
   then outBackendDAE;
 
   else inBackendDAE;
@@ -2951,7 +2951,7 @@ algorithm
     list< .DAE.Constraint> constraints;
   case(_) equation
     true = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
-    System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+    System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
     BackendDAE.DAE(eqs=eqs,shared=shared) = inBackendDAE;
     BackendDAE.SHARED(constraints=constraints) = shared;
     (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar());
@@ -2960,7 +2960,7 @@ algorithm
     functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
     shared = BackendDAEUtil.addFunctionTree(functionTree, shared);
     outBackendDAE = BackendDAE.DAE(eqs,shared);
-    _  = System.realtimeTock(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+    _  = System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
   then outBackendDAE;
 
   else inBackendDAE;
