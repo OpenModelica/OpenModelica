@@ -82,7 +82,7 @@ void fmi2GetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realVal
  * Wrapper for the FMI function fmiSetReal.
  * Returns status.
  */
-void fmi2SetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realValuesReferences, double* realValues, double* out_Values, int fmiType)
+void fmi2SetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realValuesReferences, double* realValues, int fmiType)
 {
   if (fmiType == 1) {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
@@ -115,7 +115,7 @@ void fmi2GetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* inte
  * Wrapper for the FMI function fmiSetInteger.
  * Returns status.
  */
-void fmi2SetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* integerValuesReferences, int* integerValues, double* out_Values, int fmiType)
+void fmi2SetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* integerValuesReferences, int* integerValues, int fmiType)
 {
   if (fmiType == 1) {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
@@ -148,7 +148,7 @@ void fmi2GetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* bool
  * Wrapper for the FMI function fmiSetBoolean.
  * Returns status.
  */
-void fmi2SetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues, double* out_Values, int fmiType)
+void fmi2SetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues, int fmiType)
 {
   if (fmiType == 1) {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
@@ -181,7 +181,7 @@ void fmi2GetString_OMC(void* in_fmi2, int numberOfValueReferences, double* strin
  * Wrapper for the FMI function fmiSetString.
  * Returns status.
  */
-void fmi2SetString_OMC(void* in_fmi2, int numberOfValueReferences, double* stringValuesReferences, char** stringValues, double* out_Values, int fmiType)
+void fmi2SetString_OMC(void* in_fmi2, int numberOfValueReferences, double* stringValuesReferences, char** stringValues, int fmiType)
 {
   if (fmiType == 1) {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;

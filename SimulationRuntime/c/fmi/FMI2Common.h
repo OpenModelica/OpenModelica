@@ -34,6 +34,16 @@
 #include "FMICommon.h"
 
 /*
+ * type to separate the different solving stages.
+ */
+typedef enum {
+  fmi2_initialization_mode,
+  fmi2_continuousTime_mode,
+  fmi2_event_mode,
+  fmi2_none_mode
+} fmi2_solving_mode_t;
+
+/*
  * Structure used as an External Object in the generated Modelica code of the imported FMU.
  * Used for FMI 2.0 Model Exchange.
  */
@@ -49,6 +59,7 @@ typedef struct {
   int FMIToleranceControlled;
   double FMIRelativeTolerance;
   fmi2_event_info_t* FMIEventInfo;
+  fmi2_solving_mode_t FMISolvingMode;
 } FMI2ModelExchange;
 
 void fmi2logger(fmi2_component_t c, fmi2_string_t instanceName, fmi2_status_t status, fmi2_string_t category, fmi2_string_t message, ...);

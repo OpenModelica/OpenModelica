@@ -703,7 +703,7 @@ Functions for FMI2 for Model Exchange
 ****************************************************/
 fmi2Status fmi2EnterEventMode(fmi2Component c) {
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2EnterEventMode", modelContinuousTimeMode))
+  if (invalidState(comp, "fmi2EnterEventMode", modelInitializationMode|modelContinuousTimeMode|modelEventMode))
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_EVENTS, "fmi2EnterEventMode")
   comp->state = modelEventMode;
@@ -819,7 +819,7 @@ fmi2Status fmi2SetContinuousStates(fmi2Component c, const fmi2Real x[], size_t n
 #if NUMBER_OF_REALS>0
   for (i = 0; i < nx; i++) {
     fmi2ValueReference vr = vrStates[i];
-    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetContinuousStates: #r%d#=%.16g", vr, x[i])
+    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetContinuousStates: #r%d# = %.16g", vr, x[i])
     assert(vr >= 0 && vr < NUMBER_OF_REALS);
     if (setReal(comp, vr, x[i]) != fmi2OK) // to be implemented by the includer of this file
       return fmi2Error;
@@ -895,7 +895,7 @@ fmi2Status fmi2GetEventIndicators(fmi2Component c, fmi2Real eventIndicators[], s
 fmi2Status fmi2GetContinuousStates(fmi2Component c, fmi2Real x[], size_t nx) {
   int i;
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2GetContinuousStates", modelEventMode|modelContinuousTimeMode|modelTerminated|modelError))
+  if (invalidState(comp, "fmi2GetContinuousStates", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError))
     return fmi2Error;
   if (invalidNumber(comp, "fmi2GetContinuousStates", "nx", nx, NUMBER_OF_STATES))
     return fmi2Error;

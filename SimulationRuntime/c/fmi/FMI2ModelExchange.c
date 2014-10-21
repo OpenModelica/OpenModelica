@@ -87,8 +87,7 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   FMI2ME->FMIToleranceControlled = fmi2_true;
   FMI2ME->FMIRelativeTolerance = 0.001;
   FMI2ME->FMIEventInfo = malloc(sizeof(fmi2_event_info_t));
-  fmi2_import_enter_initialization_mode(FMI2ME->FMIImportInstance);
-  fmi2_import_exit_initialization_mode(FMI2ME->FMIImportInstance);
+  FMI2ME->FMISolvingMode = fmi2_none_mode;
   return FMI2ME;
 }
 
@@ -106,13 +105,39 @@ void FMI2ModelExchangeDestructor_OMC(void* in_fmi2me)
 }
 
 /*
+ * Wrapper for the FMI function to enter the initialization mode.
+ *
+ * Returns status.
+ */
+void fmi2EnterInitializationModel_OMC(void* in_fmi2me)
+{
+  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
+  fmi2_import_enter_initialization_mode(FMI2ME->FMIImportInstance);
+  FMI2ME->FMISolvingMode = fmi2_initialization_mode;
+}
+
+/*
+ * Wrapper for the FMI function to exit the initialization mode.
+ *
+ * Returns status.
+ */
+void fmi2ExitInitializationModel_OMC(void* in_fmi2me)
+{
+  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
+  fmi2_import_exit_initialization_mode(FMI2ME->FMIImportInstance);
+  FMI2ME->FMISolvingMode = fmi2_event_mode;
+}
+
+/*
  * Wrapper for the FMI function fmiSetTime.
  * Returns status.
  */
 double fmi2SetTime_OMC(void* in_fmi2me, double time)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  fmi2_import_set_time(FMI2ME->FMIImportInstance, time);
+  if (FMI2ME->FMISolvingMode != fmi2_initialization_mode){
+    fmi2_import_set_time(FMI2ME->FMIImportInstance, time);
+  }
   return time;
 }
 
@@ -158,7 +183,9 @@ void fmi2GetEventIndicators_OMC(void* in_fmi2me, int numberOfEventIndicators, do
 void fmi2GetDerivatives_OMC(void* in_fmi2me, int numberOfContinuousStates, double flowStates, double* states)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  fmi2_import_get_derivatives(FMI2ME->FMIImportInstance, (fmi2_real_t*)states, numberOfContinuousStates);
+  if (FMI2ME->FMISolvingMode == fmi2_continuousTime_mode){
+	  fmi2_import_get_derivatives(FMI2ME->FMIImportInstance, (fmi2_real_t*)states, numberOfContinuousStates);
+  }
 }
 
 /*
@@ -166,19 +193,19 @@ void fmi2GetDerivatives_OMC(void* in_fmi2me, int numberOfContinuousStates, doubl
  * parameter flowStates is dummy and is only used to run the equations in sequence.
  * Returns FMI Event Info i.e fmi2_event_info_t
  */
-int fmi2EventUpdate_OMC(void* in_fmi2me, int intermediateResults, double flowStates)
+int fmi2EventUpdate_OMC(void* in_fmi2me, double flowStates)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
   fmi2_event_info_t *eventInfo = FMI2ME->FMIEventInfo;
   fmi2_import_enter_event_mode(FMI2ME->FMIImportInstance);
+  FMI2ME->FMISolvingMode = fmi2_event_mode;
   eventInfo->newDiscreteStatesNeeded = fmi2_true;
   eventInfo->terminateSimulation = fmi2_false;
 
-  while(eventInfo->newDiscreteStatesNeeded && !eventInfo->terminateSimulation) {
-    fmi2_import_new_discrete_states(FMI2ME->FMIImportInstance, eventInfo);
-  }
+  fmi2_import_new_discrete_states(FMI2ME->FMIImportInstance, eventInfo);
 
   fmi2_import_enter_continuous_time_mode(FMI2ME->FMIImportInstance);
+  FMI2ME->FMISolvingMode = fmi2_continuousTime_mode;
   return eventInfo->valuesOfContinuousStatesChanged;
 }
 
@@ -199,10 +226,13 @@ double fmi2nextEventTime_OMC(void* in_fmi2me, double flowStates)
 int fmi2CompletedIntegratorStep_OMC(void* in_fmi2me, double flowStates)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  fmi2_boolean_t callEventUpdate = fmi2_false;
-  fmi2_boolean_t terminateSimulation = fmi2_false;
-  fmi2_import_completed_integrator_step(FMI2ME->FMIImportInstance, fmi2_true, &callEventUpdate, &terminateSimulation);
-  return callEventUpdate;
+  if (FMI2ME->FMISolvingMode == fmi2_continuousTime_mode){
+	  fmi2_boolean_t callEventUpdate = fmi2_false;
+	  fmi2_boolean_t terminateSimulation = fmi2_false;
+	  fmi2_import_completed_integrator_step(FMI2ME->FMIImportInstance, fmi2_true, &callEventUpdate, &terminateSimulation);
+	  return callEventUpdate;
+  }
+  return fmi2_false;
 }
 
 #ifdef __cplusplus
