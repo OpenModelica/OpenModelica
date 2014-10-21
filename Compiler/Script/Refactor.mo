@@ -2361,5 +2361,5 @@ algorithm
   end matchcontinue;
 end fixPaths;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="backend");
 end Refactor;

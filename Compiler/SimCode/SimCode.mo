@@ -602,5 +602,5 @@ public uniontype FmiModelStructure
   end FMIMODELSTRUCTURE;
 end FmiModelStructure;
 
-annotation(__OpenModelica_Interface="backendInterface"); // TODO: Remove once we have a smaller interface module
+annotation(__OpenModelica_Interface="backend");
 end SimCode;

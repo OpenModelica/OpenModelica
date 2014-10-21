@@ -59,6 +59,7 @@ protected import BackendDAEOptimize;
 protected import BackendDAETransform;
 protected import BackendDump;
 protected import BackendEquation;
+protected import BackendInline;
 protected import BackendVariable;
 protected import BackendVarTransform;
 protected import BinaryTree;
@@ -8256,7 +8257,7 @@ algorithm
   (systs,shared,args,causalized) := mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,{},{},false);
   SimCodeUtil.execStat("matching");
   // do late inline
-  outDAE := Debug.bcallret1(dolateinline,Inline.lateInlineFunction,BackendDAE.DAE(systs,shared),BackendDAE.DAE(systs,shared));
+  outDAE := Debug.bcallret1(dolateinline,BackendInline.lateInlineFunction,BackendDAE.DAE(systs,shared),BackendDAE.DAE(systs,shared));
   // do state selection
   BackendDAE.DAE(systs,shared) := stateDeselectionDAE(causalized,outDAE,args,stateDeselection);
   // sort assigned equations to blt form
@@ -8833,7 +8834,7 @@ protected
   list<String> strpostOptModules;
 algorithm
   allpostOptModules := {(BackendDAEOptimize.encapsulateWhenConditions, "encapsulateWhenConditions", true),
-                        (Inline.lateInlineFunction,"lateInlineFunction",false),
+                        (BackendInline.lateInlineFunction,"lateInlineFunction",false),
                         (RemoveSimpleEquations.causal,"removeSimpleEquations",false),
                         (RemoveSimpleEquations.fastAcausal,"removeSimpleEquationsFast",false),
                         (BackendDAEOptimize.removeEqualFunctionCalls,"removeEqualFunctionCalls",false),

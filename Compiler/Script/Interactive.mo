@@ -18164,5 +18164,5 @@ algorithm
 
 end getClassEnvNoElaboration;
 
-annotation(__OpenModelica_Interface="backendInterface");
+annotation(__OpenModelica_Interface="backend");
 end Interactive;

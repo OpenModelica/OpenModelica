@@ -127,6 +127,7 @@ if true then /* Suppress output */
     "../BackEnd/BackendDAEUtil.mo",
     "../BackEnd/BackendDump.mo",
     "../BackEnd/BackendEquation.mo",
+    "../BackEnd/BackendInline.mo",
     "../BackEnd/BackendQSS.mo",
     "../BackEnd/BackendVariable.mo",
     "../BackEnd/BackendVarTransform.mo",

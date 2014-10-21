@@ -46,6 +46,7 @@ protected import Absyn;
 protected import BackendDAEEXT;
 protected import BackendDump;
 protected import BackendEquation;
+protected import BackendInline;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendVariable;
@@ -1583,7 +1584,7 @@ algorithm
     case ({},_,_) then listReverse(inAcc);
     case ((e,orgeqns)::rest,_,_)
       equation
-        (orgeqns,_) = Inline.inlineEqs(orgeqns, inA,{},false);
+        (orgeqns,_) = BackendInline.inlineEqs(orgeqns, inA,{},false);
       then
         inlineOrgEqns(rest,inA,(e,orgeqns)::inAcc);
   end match;
