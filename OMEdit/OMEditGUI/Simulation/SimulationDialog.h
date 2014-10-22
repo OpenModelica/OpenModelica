@@ -117,7 +117,8 @@ public:
   SimulationDialog(MainWindow *pParent = 0);
   ~SimulationDialog();
   void show(LibraryTreeNode *pLibraryTreeNode, bool isInteractive);
-  void directSimulate(LibraryTreeNode *pLibraryTreeNode, bool isInteractive, bool attachDebugger);
+  void directSimulate(LibraryTreeNode *pLibraryTreeNode, bool isInteractive, bool launchTransformationalDebugger,
+                      bool launchAlgorithmicDebugger);
 private:
   MainWindow *mpMainWindow;
   Label *mpSimulationHeading;
@@ -141,7 +142,8 @@ private:
   Label *mpNumberOfProcessorsLabel;
   QSpinBox *mpNumberOfProcessorsSpinBox;
   Label *mpNumberOfProcessorsNoteLabel;
-  QCheckBox *mpLaunchDebuggerCheckBox;
+  QCheckBox *mpLaunchTransformationalDebuggerCheckBox;
+  QCheckBox *mpLaunchAlgorithmicDebuggerCheckBox;
   // Output Tab
   QWidget *mpOutputTab;
   Label *mpNumberofIntervalLabel;

@@ -86,12 +86,14 @@ void SimulationDialog::show(LibraryTreeNode *pLibraryTreeNode, bool isInteractiv
   \param pLibraryTreeNode - pointer to LibraryTreeNode
   \param isInteractive - true indicates that the simulation is interactive.
   */
-void SimulationDialog::directSimulate(LibraryTreeNode *pLibraryTreeNode, bool isInteractive, bool attachDebugger)
+void SimulationDialog::directSimulate(LibraryTreeNode *pLibraryTreeNode, bool isInteractive, bool launchTransformationalDebugger,
+                                      bool launchAlgorithmicDebugger)
 {
   mIsInteractive = isInteractive;
   mpLibraryTreeNode = pLibraryTreeNode;
   initializeFields();
-  mpLaunchDebuggerCheckBox->setChecked(attachDebugger);
+  mpLaunchTransformationalDebuggerCheckBox->setChecked(launchTransformationalDebugger);
+  mpLaunchAlgorithmicDebuggerCheckBox->setChecked(launchAlgorithmicDebugger);
   simulate();
 }
 
@@ -149,8 +151,10 @@ void SimulationDialog::setUpForm()
   mpNumberOfProcessorsSpinBox = new QSpinBox;
   mpNumberOfProcessorsSpinBox->setSpecialValueText("<Auto>");
   mpNumberOfProcessorsNoteLabel = new Label(tr("Use 1 processor if you encounter problems during compilation."));
-  // Launch Debugger checkbox
-  mpLaunchDebuggerCheckBox = new QCheckBox(tr("Launch Debugger"));
+  // Launch Transformational Debugger checkbox
+  mpLaunchTransformationalDebuggerCheckBox = new QCheckBox(tr("Launch Transformational Debugger"));
+  // Launch Algorithmic Debugger checkbox
+  mpLaunchAlgorithmicDebuggerCheckBox = new QCheckBox(tr("Launch Algorithmic Debugger"));
   // set General Tab Layout
   QGridLayout *pGeneralTabLayout = new QGridLayout;
   pGeneralTabLayout->setAlignment(Qt::AlignTop);
@@ -161,7 +165,8 @@ void SimulationDialog::setUpForm()
   pGeneralTabLayout->addWidget(mpNumberOfProcessorsLabel, 3, 0);
   pGeneralTabLayout->addWidget(mpNumberOfProcessorsSpinBox, 3, 1);
   pGeneralTabLayout->addWidget(mpNumberOfProcessorsNoteLabel, 3, 2);
-  pGeneralTabLayout->addWidget(mpLaunchDebuggerCheckBox, 4, 0, 1, 3);
+  pGeneralTabLayout->addWidget(mpLaunchTransformationalDebuggerCheckBox, 4, 0, 1, 3);
+  pGeneralTabLayout->addWidget(mpLaunchAlgorithmicDebuggerCheckBox, 5, 0, 1, 3);
   mpGeneralTab->setLayout(pGeneralTabLayout);
   // add General Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpGeneralTab, Helper::general);
@@ -473,7 +478,7 @@ void SimulationDialog::translateModel()
     set the debugging flag before translation
     we will remove it when gdb process is finished
     */
-  if (mpLaunchDebuggerCheckBox->isChecked())
+  if (mpLaunchAlgorithmicDebuggerCheckBox->isChecked())
   {
     mpMainWindow->getOMCProxy()->setCommandLineOptions("+d=gendebugsymbols");
   }
@@ -1127,7 +1132,7 @@ void SimulationDialog::simulate()
       pSimulationOutputWidget->activateWindow();
     }
     /* if launch debugger is checked then show the algorithmic debugger window */
-    if (mpLaunchDebuggerCheckBox->isChecked()) {
+    if (mpLaunchAlgorithmicDebuggerCheckBox->isChecked()) {
       mpMainWindow->showAlgorithmicDebugger();
     }
   }
@@ -1158,10 +1163,12 @@ void SimulationDialog::compilationProcessFinished(int exitCode, QProcess::ExitSt
                                         mpMainWindow->getOMCProxy()->changeDirectory());
     mSimulationOptions = simulationOptions;
     /* show the Transformational Debugger */
-    if (mpMainWindow->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked())
+    if (mpMainWindow->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
+        mpLaunchTransformationalDebuggerCheckBox->isChecked()) {
       mpMainWindow->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getFileNamePrefix() + "_info.xml");
+    }
     /* launch the algorithmic debugger */
-    if (mpLaunchDebuggerCheckBox->isChecked())
+    if (mpLaunchAlgorithmicDebuggerCheckBox->isChecked())
     {
       QString fileName = QString(simulationOptions.getOutputFileName()).remove(QRegExp("(_res.mat|_res.plt|_res.csv)"));
       // start the executable

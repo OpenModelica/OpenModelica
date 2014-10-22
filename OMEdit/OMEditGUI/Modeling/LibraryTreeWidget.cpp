@@ -574,6 +574,10 @@ void LibraryTreeWidget::createActions()
   mpSimulateAction->setStatusTip(Helper::simulateTip);
   mpSimulateAction->setShortcut(QKeySequence("Ctrl+b"));
   connect(mpSimulateAction, SIGNAL(triggered()), SLOT(simulate()));
+  // simulate with transformational debugger Action
+  mpSimulateWithTransformationalDebuggerAction = new QAction(QIcon(":/Resources/icons/simulate-equation.svg"), Helper::simulateWithTransformationalDebugger, this);
+  mpSimulateWithTransformationalDebuggerAction->setStatusTip(Helper::simulateWithTransformationalDebuggerTip);
+  connect(mpSimulateWithTransformationalDebuggerAction, SIGNAL(triggered()), SLOT(simulateWithTransformationalDebugger()));
   // simulate with algorithmic debugger Action
   mpSimulateWithAlgorithmicDebuggerAction = new QAction(QIcon(":/Resources/icons/simulate-debug.svg"), Helper::simulateWithAlgorithmicDebugger, this);
   mpSimulateWithAlgorithmicDebuggerAction->setStatusTip(Helper::simulateWithAlgorithmicDebuggerTip);
@@ -1517,6 +1521,7 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
         menu.addAction(mpCheckModelAction);
         menu.addAction(mpCheckAllModelsAction);
         menu.addAction(mpSimulateAction);
+        menu.addAction(mpSimulateWithTransformationalDebuggerAction);
         menu.addAction(mpSimulateWithAlgorithmicDebuggerAction);
         menu.addAction(mpSimulationSetupAction);
         /* If item is OpenModelica or part of it or is search tree item then don't show the unload for it. */
@@ -1579,6 +1584,16 @@ void LibraryTreeWidget::simulate()
   LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
   if (pLibraryTreeNode)
     mpMainWindow->simulate(pLibraryTreeNode);
+}
+
+void LibraryTreeWidget::simulateWithTransformationalDebugger()
+{
+  QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
+  if (selectedItemsList.isEmpty())
+    return;
+  LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
+  if (pLibraryTreeNode)
+    mpMainWindow->simulateWithTransformationalDebugger(pLibraryTreeNode);
 }
 
 void LibraryTreeWidget::simulateWithAlgorithmicDebugger()

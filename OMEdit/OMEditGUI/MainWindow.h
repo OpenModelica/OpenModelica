@@ -123,6 +123,7 @@ public:
   QAction* getZoomInAction();
   QAction* getZoomOutAction();
   QAction* getSimulateModelAction();
+  QAction* getSimulateWithTransformationalDebuggerAction() {return mpSimulateWithTransformationalDebuggerAction;}
   QAction* getSimulateWithAlgorithmicDebuggerAction() {return mpSimulateWithAlgorithmicDebuggerAction;}
   QAction* getSimulationSetupAction();
   QAction* getInstantiateModelAction();
@@ -153,6 +154,7 @@ public:
   void openDroppedFile(QDropEvent *event);
   void openResultFiles(QStringList fileNames);
   void simulate(LibraryTreeNode *pLibraryTreeNode);
+  void simulateWithTransformationalDebugger(LibraryTreeNode *pLibraryTreeNode);
   void simulateWithAlgorithmicDebugger(LibraryTreeNode *pLibraryTreeNode);
   void simulationSetup(LibraryTreeNode *pLibraryTreeNode);
   void instantiatesModel(LibraryTreeNode *pLibraryTreeNode);
@@ -233,6 +235,7 @@ private:
   QAction *mpCheckModelAction;
   QAction *mpCheckAllModelsAction;
   QAction *mpSimulateModelAction;
+  QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
   QAction *mpSimulationSetupAction;
   // FMI Menu
@@ -309,6 +312,7 @@ public slots:
   void checkModel();
   void checkAllModels();
   void simulateModel();
+  void simulateModelWithTransformationalDebugger();
   void simulateModelWithAlgorithmicDebugger();
   void openSimulationDialog();
   void openInteractiveSimulation();

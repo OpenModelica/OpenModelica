@@ -19,6 +19,7 @@
         <file>Resources/icons/saveall.png</file>
         <file>Resources/icons/saveas.png</file>
         <file>Resources/icons/simulate.svg</file>
+        <file>Resources/icons/simulate-equation.svg</file>
         <file>Resources/icons/simulate-debug.svg</file>
         <file>Resources/icons/simulation-center.svg</file>
         <file>Resources/icons/tool.png</file>

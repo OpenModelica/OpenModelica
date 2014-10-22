@@ -199,6 +199,7 @@ private:
   QAction *mpCheckModelAction;
   QAction *mpCheckAllModelsAction;
   QAction *mpSimulateAction;
+  QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
   QAction *mpSimulationSetupAction;
   QAction *mpUnloadClassAction;
@@ -225,6 +226,7 @@ public slots:
   void createNewModelicaClass();
   void viewDocumentation();
   void simulate();
+  void simulateWithTransformationalDebugger();
   void simulateWithAlgorithmicDebugger();
   void simulationSetup();
   void instantiateModel();
