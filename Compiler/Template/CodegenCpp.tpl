@@ -2858,7 +2858,7 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
   void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%><%if funArgs then if outVars then "," else ""%> <%if retVar then '<%retType%>& output' %>)/*function2*/
   {
     /* functionBodyExternalFunction: varDecls */
-    <%varDecls%> 
+    <%varDecls%>
     /* functionBodyExternalFunction: preExp */
     <%preExp%>
   <%inputAssign%>
@@ -3148,7 +3148,7 @@ template extCBoolCast(SimExtArg extArg, Text &preExp, Text &varDecls /*BUFP*/, T
      '(<%extType2(t,iI,true)%>)<%name%>.getData() '
     end match
 
- 
+
 end extCBoolCast;
 
 template inputAssignTest(DAE.ComponentRef cref, Context context, Text tmp, Text &inputAssign /*BUFD*/)
