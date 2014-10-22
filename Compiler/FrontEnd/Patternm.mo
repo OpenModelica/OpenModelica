@@ -2724,6 +2724,7 @@ algorithm
       then (inStatement,useTree);
 
     case (DAE.STMT_BREAK(source=_),_,_) then (inStatement,inUseTree);
+    case (DAE.STMT_CONTINUE(source=_),_,_) then (inStatement,inUseTree);
     case (DAE.STMT_ARRAY_INIT(source=_),_,_) then (inStatement,inUseTree);
     case (DAE.STMT_FAILURE(body=body,source=source),_,_)
       equation
