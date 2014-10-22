@@ -692,7 +692,7 @@ algorithm
         // send "" priority if that is it, don't send "default"
         // see https://trac.openmodelica.org/OpenModelica/ticket/2422
         // prio = Util.if_(stringEq(prio,""), "default", prio);
-        mp = System.realpath(dir +& "/../");
+        mp = System.realpath(dir +& "/../") +& System.groupDelimiter() +& Settings.getModelicaPath(Config.getRunningTestsuite());
         (p1,true) = loadModel((Absyn.IDENT(cname),{prio})::{}, mp, p, true, true);
       then p1;
 
@@ -745,12 +745,19 @@ algorithm
         (p,b1) = loadModel(Interactive.getUsesAnnotationOrDefault(pnew),modelicaPath,p,false,notifyLoad);
         (p,b2) = loadModel(modelsToLoad,modelicaPath,p,forceLoad,notifyLoad);
       then (p,b1 and b2);
-    case ((path,strings)::_,_,p,_,_)
+    case ((path,strings)::_,_,p,true,_)
       equation
         pathStr = Absyn.pathString(path);
         versions = stringDelimitList(strings,",");
         Error.addMessage(Error.LOAD_MODEL,{pathStr,versions,modelicaPath});
       then (p,false);
+    case ((path,strings)::modelsToLoad,_,p,false,_)
+      equation
+        pathStr = Absyn.pathString(path);
+        versions = stringDelimitList(strings,",");
+        Error.addMessage(Error.NOTIFY_LOAD_MODEL_FAILED,{pathStr,versions,modelicaPath});
+        (p,b) = loadModel(modelsToLoad,modelicaPath,p,forceLoad,notifyLoad);
+      then (p,b);
   end matchcontinue;
 end loadModel;
 

@@ -772,6 +772,8 @@ public constant Message MISSING_INTERFACE_TYPE = MESSAGE(554, SCRIPTING(), ERROR
   Util.gettext("Annotation __OpenModelica_Interface is missing or the string is not in the input list."));
 public constant Message CLASS_NOT_FOUND = MESSAGE(555, SCRIPTING(), WARNING(),
   Util.gettext("Class %s not found inside class %s."));
+public constant Message NOTIFY_LOAD_MODEL_FAILED = MESSAGE(556, SCRIPTING(), NOTIFICATION(),
+  Util.gettext("Skipped loading package %s (%s) using MODELICAPATH %s (uses-annotation may be wrong)."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

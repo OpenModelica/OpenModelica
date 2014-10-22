@@ -1021,7 +1021,7 @@ annotation(Documentation(info="<html>
 <p>
   Note that if the file basename is package.mo and the parent directory is the top-level class, the library structure is loaded as if loadModel(ClassName) was called.
   Uses-annotations are respected.
-  The main difference from loadModel is that loadFile sets the MODELICAPATH to only contain this directory (if it uses Modelica and it is not available in the same directory as this library, it is not loaded).
+  The main difference from loadModel is that loadFile appends this directory to the MODELICAPATH (for this call only).
 </p>
 </html>"), preferredView="text");
 end loadFile;
