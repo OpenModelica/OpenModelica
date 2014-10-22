@@ -1016,7 +1016,14 @@ function loadFile "load file (*.mo) and merge it with the loaded AST."
   input String encoding := "UTF-8";
   output Boolean success;
 external "builtin";
-annotation(preferredView="text");
+annotation(Documentation(info="<html>
+<p>Loads the given file using the given encoding.</p>
+<p>
+  Note that if the file basename is package.mo and the parent directory is the top-level class, the library structure is loaded as if loadModel(ClassName) was called.
+  Uses-annotations are respected.
+  The main difference from loadModel is that loadFile sets the MODELICAPATH to only contain this directory (if it uses Modelica and it is not available in the same directory as this library, it is not loaded).
+</p>
+</html>"), preferredView="text");
 end loadFile;
 
 function loadFiles "load files (*.mo) and merges them with the loaded AST."

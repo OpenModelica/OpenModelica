@@ -671,7 +671,51 @@ algorithm
   end matchcontinue;
 end simOptionsAsString;
 
-protected function loadModel
+protected function loadFile "load the file or the directory structure if the file is named package.mo"
+  input String name;
+  input String encoding;
+  input Absyn.Program p;
+  output Absyn.Program outProgram;
+algorithm
+  outProgram := matchcontinue (name,encoding,p)
+    local
+      String dir,filename,cname,prio,mp;
+      Absyn.Program p1;
+      list<String> rest;
+
+    case (_, _, _)
+      equation
+        true = System.regularFileExists(name);
+        (dir,"package.mo") = Util.getAbsoluteDirectoryAndFile(name);
+        cname::rest = System.strtok(List.last(System.strtok(dir,"/"))," ");
+        prio = stringDelimitList(rest, " ");
+        // send "" priority if that is it, don't send "default"
+        // see https://trac.openmodelica.org/OpenModelica/ticket/2422
+        // prio = Util.if_(stringEq(prio,""), "default", prio);
+        mp = System.realpath(dir +& "/../");
+        (p1,true) = loadModel((Absyn.IDENT(cname),{prio})::{}, mp, p, true, true);
+      then p1;
+
+    case (_, _, _)
+      equation
+        true = System.regularFileExists(name);
+        (_,filename) = Util.getAbsoluteDirectoryAndFile(name);
+        false = stringEq(filename,"package.mo");
+        p1 = Parser.parse(name,encoding);
+        ClassLoader.checkOnLoadMessage(p1);
+        p1 = Interactive.updateProgram(p1, p);
+      then p1;
+
+    // failing
+    else
+      equation
+        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadFile failed: "+&name+&"\n");
+      then
+        fail();
+  end matchcontinue;
+end loadFile;
+
+public function loadModel
   input list<tuple<Absyn.Path,list<String>>> imodelsToLoad;
   input String modelicaPath;
   input Absyn.Program ip;
@@ -696,7 +740,7 @@ algorithm
         pnew = Debug.bcallret4(not b, ClassLoader.loadClass, path, strings, modelicaPath, NONE(), Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp));
         className = Absyn.pathString(path);
         version = Debug.bcallret2(not b, getPackageVersion, path, pnew, "");
-        Error.assertionOrAddSourceMessage(b or not notifyLoad,Error.NOTIFY_NOT_LOADED,{className,version},Absyn.dummyInfo);
+        Error.assertionOrAddSourceMessage(b or not notifyLoad or forceLoad,Error.NOTIFY_NOT_LOADED,{className,version},Absyn.dummyInfo);
         p = Interactive.updateProgram(pnew, p);
         (p,b1) = loadModel(Interactive.getUsesAnnotationOrDefault(pnew),modelicaPath,p,false,notifyLoad);
         (p,b2) = loadModel(modelsToLoad,modelicaPath,p,forceLoad,notifyLoad);
@@ -935,9 +979,8 @@ algorithm
 
     case (cache,_,"loadFileInteractive",{Values.STRING(str1),Values.STRING(encoding)},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
-        pnew = ClassLoader.loadFile(str1,encoding) "System.regularFileExists(name) => 0 &    Parser.parse(name) => p1 &" ;
+        pnew = loadFile(str1, encoding, p) "System.regularFileExists(name) => 0 &    Parser.parse(name) => p1 &" ;
         vals = List.map(Interactive.getTopClassnames(pnew),ValuesUtil.makeCodeTypeName);
-        p = Interactive.updateProgram(pnew, p);
         st = Interactive.setSymbolTableAST(st, p);
       then (cache,ValuesUtil.makeArray(vals),st);
 
@@ -2210,8 +2253,7 @@ algorithm
             loadedFiles = lf)),_)
       equation
         name = Util.testsuiteFriendlyPath(name);
-        newp = ClassLoader.loadFile(name,encoding);
-        newp = Interactive.updateProgram(newp, p);
+        newp = loadFile(name, encoding, p);
       then
         (FCore.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
 
@@ -7681,7 +7723,7 @@ algorithm
   program := matchcontinue inFileEncoding
     local
       String filename,encoding;
-    case ((filename,encoding)) then ClassLoader.loadFile(filename,encoding);
+    case ((filename,encoding)) then Parser.parse(filename, encoding);
     /* TODO: Add locking mechanism to write to parent's error stream instead of stdout */
     else equation print(Error.printMessagesStr(false)); then fail();
   end matchcontinue;

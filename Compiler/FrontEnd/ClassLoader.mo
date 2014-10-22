@@ -43,6 +43,7 @@ encapsulated package ClassLoader
 
 public import Absyn;
 
+protected import BackendInterface;
 protected import Config;
 protected import Debug;
 protected import Error;
@@ -302,50 +303,6 @@ algorithm
 
   end matchcontinue;
 end loadCompletePackageFromMp2;
-
-public function loadFile
-"author: x02lucpo
-  load the file or the directory structure if the file is named package.mo"
-  input String name;
-  input String encoding;
-  output Absyn.Program outProgram;
-algorithm
-  outProgram := matchcontinue (name,encoding)
-    local
-      String dir,filename,cname,prio,mp;
-      Absyn.Program p1;
-      list<String> rest;
-
-    case (_,_)
-      equation
-        true = System.regularFileExists(name);
-        (dir,"package.mo") = Util.getAbsoluteDirectoryAndFile(name);
-        cname::rest = System.strtok(List.last(System.strtok(dir,"/"))," ");
-        prio = stringDelimitList(rest, " ");
-        // send "" priority if that is it, don't send "default"
-        // see https://trac.openmodelica.org/OpenModelica/ticket/2422
-        // prio = Util.if_(stringEq(prio,""), "default", prio);
-        mp = System.realpath(dir +& "/../");
-        p1 = loadClass(Absyn.IDENT(cname),{prio},mp,SOME(encoding));
-      then p1;
-
-    case (_,_)
-      equation
-        true = System.regularFileExists(name);
-        (_,filename) = Util.getAbsoluteDirectoryAndFile(name);
-        false = stringEq(filename,"package.mo");
-        p1 = Parser.parse(name,encoding);
-        checkOnLoadMessage(p1);
-      then p1;
-
-    // failing
-    else
-      equation
-        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadFile failed: "+&name+&"\n");
-      then
-        fail();
-  end matchcontinue;
-end loadFile;
 
 public function parsePackageFile
   "Parses a file containing a single class that matches the within"
@@ -650,7 +607,7 @@ algorithm
   end match;
 end packageOrderName;
 
-protected function checkOnLoadMessage
+public function checkOnLoadMessage
   "Checks annotation __OpenModelica_messageOnLoad for a message to display"
   input Absyn.Program p1;
 protected
