@@ -1711,6 +1711,15 @@ void MainWindow::openRecentModelWidget()
   }
 }
 
+/*!
+  Slot activated when Re-simulateAction triggered signal is raised..\n
+  Re-simulates the model.
+  */
+void MainWindow::reSimulateModel()
+{
+  mpVariablesWidget->reSimulate();
+}
+
 void MainWindow::addNewPlotWindow()
 {
   mpPlotWindowContainer->addPlotWindow();
@@ -2126,6 +2135,10 @@ void MainWindow::createActions()
     mpModelSwitcherActions[i]->setVisible(false);
     connect(mpModelSwitcherActions[i], SIGNAL(triggered()), this, SLOT(openRecentModelWidget()));
   }
+  // resimulate action
+  mpReSimulateModelAction = new QAction(QIcon(":/Resources/icons/re-simulate.svg"), Helper::reSimulate, this);
+  mpReSimulateModelAction->setStatusTip(Helper::reSimulateTip);
+  connect(mpReSimulateModelAction, SIGNAL(triggered()), SLOT(reSimulateModel()));
   // new plot window action
   mpNewPlotWindowAction = new QAction(QIcon(":/Resources/icons/plot-window.svg"), tr("New Plot Window"), this);
   mpNewPlotWindowAction->setStatusTip(tr("Inserts new plot window"));
@@ -2422,6 +2435,8 @@ void MainWindow::createToolbars()
   mpPlotToolBar->setAllowedAreas(Qt::TopToolBarArea);
   mpPlotToolBar->setEnabled(false);
   // add actions to Plot Toolbar
+  mpPlotToolBar->addAction(mpReSimulateModelAction);
+  mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpNewPlotWindowAction);
   mpPlotToolBar->addAction(mpNewParametricPlotWindowAction);
   mpPlotToolBar->addAction(mpClearPlotWindowAction);

@@ -187,6 +187,8 @@ QString Helper::unloadXMLTip;
 QString Helper::refresh;
 QString Helper::simulate;
 QString Helper::simulateTip;
+QString Helper::reSimulate;
+QString Helper::reSimulateTip;
 QString Helper::simulateWithAlgorithmicDebugger;
 QString Helper::simulateWithAlgorithmicDebuggerTip;
 QString Helper::simulationSetup;
@@ -348,6 +350,8 @@ void Helper::initHelperVariables()
   Helper::refresh = tr("Refresh");
   Helper::simulate = tr("Simulate");
   Helper::simulateTip = tr("Simulate the Modelica class");
+  Helper::reSimulate = tr("Re-simulate");
+  Helper::reSimulateTip = tr("Re-simulate the Modelica class");
   Helper::simulateWithAlgorithmicDebugger = tr("Simulate with Algorithmic Debugger");
   Helper::simulateWithAlgorithmicDebuggerTip = tr("Simulate the Modelica class with Algorithmic Debugger");
   Helper::simulationSetup = tr("Simulation Setup");

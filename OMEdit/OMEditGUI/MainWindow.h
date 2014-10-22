@@ -268,6 +268,7 @@ private:
   // Model Switcher Toolbar Actions
   QAction *mpModelSwitcherActions[MaxRecentFiles];
   // Plot Toolbar Actions
+  QAction *mpReSimulateModelAction;
   QAction *mpNewPlotWindowAction;
   QAction *mpNewParametricPlotWindowAction;
   QAction *mpClearPlotWindowAction;
@@ -331,6 +332,7 @@ public slots:
   void openAboutOMEdit();
   void toggleShapesButton();
   void openRecentModelWidget();
+  void reSimulateModel();
   void addNewPlotWindow();
   void addNewParametricPlotWindow();
   void clearPlotWindow();

@@ -66,14 +66,15 @@ public:
   void setSimulationOptions(SimulationOptions simulationOptions) {mSimulationOptions = simulationOptions;}
   QIcon getVariableTreeItemIcon(QString name) const;
   void insertChild(int position, VariablesTreeItem *pVariablesTreeItem);
-  VariablesTreeItem *child(int row);
+  VariablesTreeItem* child(int row);
   void removeChildren();
   void removeChild(VariablesTreeItem *pVariablesTreeItem);
   int columnCount() const;
   bool setData(int column, const QVariant &value, int role = Qt::EditRole);
   QVariant data(int column, int role = Qt::DisplayRole) const;
   int row() const;
-  VariablesTreeItem *parent();
+  VariablesTreeItem* parent();
+  VariablesTreeItem* rootParent();
 private:
   QList<VariablesTreeItem*> mChildren;
   VariablesTreeItem *mpParentVariablesTreeItem;
@@ -160,6 +161,7 @@ public:
   MainWindow* getMainWindow() {return mpMainWindow;}
   VariableTreeProxyModel* getVariableTreeProxyModel() {return mpVariableTreeProxyModel;}
   VariablesTreeModel* getVariablesTreeModel() {return mpVariablesTreeModel;}
+  VariablesTreeView* getVariablesTreeView() {return mpVariablesTreeView;}
   void insertVariablesItemsToTree(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   void variablesUpdated();
   void updateVariablesTreeHelper(QMdiSubWindow *pSubWindow);

@@ -3139,32 +3139,24 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   bool enabled, modelica, text, xml;
   ModelWidget *pModelWidget;
   LibraryTreeNode *pLibraryTreeNode;
-  if (pSubWindow)
-  {
+  if (pSubWindow) {
     enabled = true;
     pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
     pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
-    if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica)
-    {
+    if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica) {
       modelica = true;
       text = false;
       xml = false;
-    }
-    else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text)
-    {
+    } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text) {
       modelica = false;
       text = true;
       xml = false;
-    }
-    else
-    {
+    } else {
       modelica = false;
       text = false;
       xml = true;
     }
-  }
-  else
-  {
+  } else {
     enabled = false;
     modelica = false;
     text = false;
@@ -3194,18 +3186,15 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   getMainWindow()->getExportAsImageAction()->setEnabled(enabled && modelica);
   getMainWindow()->getPrintModelAction()->setEnabled(enabled);
   /* disable the save actions if class is a system library class. */
-  if (pModelWidget)
-  {
-    if (pModelWidget->getLibraryTreeNode()->isSystemLibrary())
-    {
+  if (pModelWidget) {
+    if (pModelWidget->getLibraryTreeNode()->isSystemLibrary()) {
       getMainWindow()->getSaveAction()->setEnabled(false);
       getMainWindow()->getSaveAsAction()->setEnabled(false);
       getMainWindow()->getSaveAllAction()->setEnabled(false);
     }
   }
   /* enable/disable the find/replace and goto line actions depending on the text editor visibility. */
-  if (pModelWidget)
-  {
+  if (pModelWidget) {
     if (pModelWidget->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Modelica && pModelWidget->getModelicaTextEditor()->isVisible())
       enabled = true;
     else if (pModelWidget->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Text && pModelWidget->getTextEditor()->isVisible())
@@ -3214,9 +3203,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
       enabled = true;
     else
       enabled = false;
-  }
-  else
-  {
+  } else {
     enabled = false;
   }
   getMainWindow()->getFindReplaceAction()->setEnabled(enabled);

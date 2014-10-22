@@ -92,6 +92,7 @@
         <file>Resources/icons/omplot.png</file>
         <file>Resources/icons/parametric-plot-window.svg</file>
         <file>Resources/icons/plot-window.svg</file>
+        <file>Resources/icons/re-simulate.svg</file>
         <file>Resources/icons/export-fmu.svg</file>
         <file>Resources/icons/import-fmu.svg</file>
         <file>Resources/icons/libraries.png</file>
