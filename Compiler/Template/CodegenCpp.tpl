@@ -2858,7 +2858,7 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
   void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%><%if funArgs then if outVars then "," else ""%> <%if retVar then '<%retType%>& output' %>)/*function2*/
   {
     /* functionBodyExternalFunction: varDecls */
-    <%varDecls%>
+    <%varDecls%> 
     /* functionBodyExternalFunction: preExp */
     <%preExp%>
   <%inputAssign%>
@@ -3057,7 +3057,7 @@ case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     >>
     else
     <<
-     _<%fnName%> = <%cr%>;
+     _<%fnName%> = <%cr%> ;
     >>
     end match
 end extFunCallVarcopy;
@@ -3077,7 +3077,7 @@ case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
       let assginEnd = ')'
 
     <<
-     <%assginBegin%>_<%fnName%>.data<%assginEnd%> = <%cr%>;
+     <%assginBegin%>_<%fnName%>.data<%assginEnd%> = <%cr%> ;
     >>
 end extFunCallVarcopyTuple;
 
@@ -3144,10 +3144,11 @@ template extCBoolCast(SimExtArg extArg, Text &preExp, Text &varDecls /*BUFP*/, T
          <%tmp%>.getData()
          <%outputAssignTest(c, contextFunction, tmp, &outputAssign)%>
         >>
+    else
+     '(<%extType2(t,iI,true)%>)<%name%>.getData() '
     end match
 
-  else
-    '(<%extType2(t,iI,true)%>)<%name%>.getData() '
+ 
 end extCBoolCast;
 
 template inputAssignTest(DAE.ComponentRef cref, Context context, Text tmp, Text &inputAssign /*BUFD*/)
@@ -3184,7 +3185,7 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls /*BUFP*/)
     match ty case T_STRING(__) then
       ""
     else
-      let &varDecls += '<%extType2(ty,true,false)%> <%extVarName2(c)%>;<%\n%>'
+      let &varDecls += '<%extType2(ty,true,false)%> <%extVarName2(c)%>;<%\n%> '
       <<
       <%extVarName2(c)%> = (<%extType2(ty,true,false)%>)<%contextCref2(c,contextFunction)%>;
       >>
@@ -3192,7 +3193,7 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls /*BUFP*/)
     match oi case 0 then
       ""
     else
-      let &varDecls += '<%extType2(ty,true,false)%> <%extVarName2(c)%>;<%\n%>'
+      let &varDecls += '<%extType2(ty,true,false)%> <%extVarName2(c)%>;<%\n%> '
       ""
 end extFunCallVardecl;
 
