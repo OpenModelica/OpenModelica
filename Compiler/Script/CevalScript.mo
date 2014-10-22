@@ -675,15 +675,16 @@ protected function loadFile "load the file or the directory structure if the fil
   input String name;
   input String encoding;
   input Absyn.Program p;
+  input Boolean checkUses;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := matchcontinue (name,encoding,p)
+  outProgram := matchcontinue (name, encoding, p, checkUses)
     local
       String dir,filename,cname,prio,mp;
       Absyn.Program p1;
       list<String> rest;
 
-    case (_, _, _)
+    case (_, _, _, _)
       equation
         true = System.regularFileExists(name);
         (dir,"package.mo") = Util.getAbsoluteDirectoryAndFile(name);
@@ -693,10 +694,10 @@ algorithm
         // see https://trac.openmodelica.org/OpenModelica/ticket/2422
         // prio = Util.if_(stringEq(prio,""), "default", prio);
         mp = System.realpath(dir +& "/../") +& System.groupDelimiter() +& Settings.getModelicaPath(Config.getRunningTestsuite());
-        (p1,true) = loadModel((Absyn.IDENT(cname),{prio})::{}, mp, p, true, true);
+        (p1,true) = loadModel((Absyn.IDENT(cname),{prio})::{}, mp, p, true, true, checkUses);
       then p1;
 
-    case (_, _, _)
+    case (_, _, _, _)
       equation
         true = System.regularFileExists(name);
         (_,filename) = Util.getAbsoluteDirectoryAndFile(name);
@@ -715,16 +716,17 @@ algorithm
   end matchcontinue;
 end loadFile;
 
-public function loadModel
+protected function loadModel
   input list<tuple<Absyn.Path,list<String>>> imodelsToLoad;
   input String modelicaPath;
   input Absyn.Program ip;
   input Boolean forceLoad;
   input Boolean notifyLoad;
+  input Boolean checkUses;
   output Absyn.Program pnew;
   output Boolean success;
 algorithm
-  (pnew,success) := matchcontinue (imodelsToLoad,modelicaPath,ip,forceLoad,notifyLoad)
+  (pnew,success) := matchcontinue (imodelsToLoad,modelicaPath,ip,forceLoad,notifyLoad,checkUses)
     local
       Absyn.Path path;
       String pathStr,versions,className,version;
@@ -733,8 +735,8 @@ algorithm
       Absyn.Program p;
       list<tuple<Absyn.Path,list<String>>> modelsToLoad;
 
-    case ({},_,p,_,_) then (p,true);
-    case ((path,strings)::modelsToLoad,_,p,_,_)
+    case ({},_,p,_,_,_) then (p,true);
+    case ((path,strings)::modelsToLoad,_,p,_,_,_)
       equation
         b = checkModelLoaded((path,strings),p,forceLoad,NONE());
         pnew = Debug.bcallret4(not b, ClassLoader.loadClass, path, strings, modelicaPath, NONE(), Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp));
@@ -742,21 +744,21 @@ algorithm
         version = Debug.bcallret2(not b, getPackageVersion, path, pnew, "");
         Error.assertionOrAddSourceMessage(b or not notifyLoad or forceLoad,Error.NOTIFY_NOT_LOADED,{className,version},Absyn.dummyInfo);
         p = Interactive.updateProgram(pnew, p);
-        (p,b1) = loadModel(Interactive.getUsesAnnotationOrDefault(pnew),modelicaPath,p,false,notifyLoad);
-        (p,b2) = loadModel(modelsToLoad,modelicaPath,p,forceLoad,notifyLoad);
+        (p,b1) = loadModel(Util.if_(checkUses, Interactive.getUsesAnnotationOrDefault(pnew), {}), modelicaPath, p, false, notifyLoad, checkUses);
+        (p,b2) = loadModel(modelsToLoad, modelicaPath, p, forceLoad, notifyLoad, checkUses);
       then (p,b1 and b2);
-    case ((path,strings)::_,_,p,true,_)
+    case ((path,strings)::_,_,p,true,_,_)
       equation
         pathStr = Absyn.pathString(path);
         versions = stringDelimitList(strings,",");
         Error.addMessage(Error.LOAD_MODEL,{pathStr,versions,modelicaPath});
       then (p,false);
-    case ((path,strings)::modelsToLoad,_,p,false,_)
+    case ((path,strings)::modelsToLoad,_,p,false,_,_)
       equation
         pathStr = Absyn.pathString(path);
         versions = stringDelimitList(strings,",");
         Error.addMessage(Error.NOTIFY_LOAD_MODEL_FAILED,{pathStr,versions,modelicaPath});
-        (p,b) = loadModel(modelsToLoad,modelicaPath,p,forceLoad,notifyLoad);
+        (p,b) = loadModel(modelsToLoad, modelicaPath, p, forceLoad, notifyLoad, checkUses);
       then (p,b);
   end matchcontinue;
 end loadModel;
@@ -986,7 +988,7 @@ algorithm
 
     case (cache,_,"loadFileInteractive",{Values.STRING(str1),Values.STRING(encoding)},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
-        pnew = loadFile(str1, encoding, p) "System.regularFileExists(name) => 0 &    Parser.parse(name) => p1 &" ;
+        pnew = loadFile(str1, encoding, p, false) "System.regularFileExists(name) => 0 &    Parser.parse(name) => p1 &" ;
         vals = List.map(Interactive.getTopClassnames(pnew),ValuesUtil.makeCodeTypeName);
         st = Interactive.setSymbolTableAST(st, p);
       then (cache,ValuesUtil.makeArray(vals),st);
@@ -2239,7 +2241,7 @@ algorithm
         oldLanguageStd = Config.getLanguageStandard();
         b1 = not stringEq(str,"");
         Debug.bcall1(b1,Config.setLanguageStandard,Debug.bcallret1(b1,Config.versionStringToStd,str,Config.MODELICA_LATEST() /* Unused */));
-        (p,b) = loadModel({(path,strings)},mp,p,true,b);
+        (p,b) = loadModel({(path,strings)},mp,p,true,b,true);
         Debug.bcall1(b1,Config.setLanguageStandard,oldLanguageStd);
         _ = Print.getString();
         newst = GlobalScript.SYMBOLTABLE(p,NONE(),{},iv,cf,lf);
@@ -2253,14 +2255,14 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
-    case (_,_,"loadFile",{Values.STRING(name),Values.STRING(encoding)},
+    case (_,_,"loadFile",{Values.STRING(name),Values.STRING(encoding),Values.BOOL(b)},
           (GlobalScript.SYMBOLTABLE(
             ast = p,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_)
       equation
         name = Util.testsuiteFriendlyPath(name);
-        newp = loadFile(name, encoding, p);
+        newp = loadFile(name, encoding, p, b);
       then
         (FCore.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
 
@@ -3527,9 +3529,45 @@ public function runFrontEnd
 algorithm
   // add program to the cache so it can be used to lookup modelica://
   // URIs in external functions IncludeDirectory/LibraryDirectory
-  cache := FCore.setProgramInCache(inCache, Interactive.getSymbolTableAST(inInteractiveSymbolTable));
-  (cache,env,dae,st) := runFrontEndWork(cache,inEnv,className,inInteractiveSymbolTable,relaxedFrontEnd,Error.getNumErrorMessages());
+  st := runFrontEndLoadProgram(className, inInteractiveSymbolTable);
+  cache := FCore.setProgramInCache(inCache, Interactive.getSymbolTableAST(st));
+  (cache,env,dae,st) := runFrontEndWork(cache,inEnv,className,st,relaxedFrontEnd,Error.getNumErrorMessages());
 end runFrontEnd;
+
+protected function runFrontEndLoadProgram
+  input Absyn.Path className;
+  input GlobalScript.SymbolTable inSt;
+  output GlobalScript.SymbolTable st;
+algorithm
+  st := matchcontinue (className, inSt)
+    local
+      Absyn.Restriction restriction;
+      Absyn.Class absynClass;
+      String str,re;
+      Option<SCode.Program> fp;
+      SCode.Program scodeP, scodePNew, scode_builtin;
+      list<GlobalScript.InstantiatedClass> ic,ic_1;
+      Absyn.Program p,ptot,p_builtin;
+      list<GlobalScript.Variable> iv;
+      list<GlobalScript.CompiledCFunction> cf;
+      list<GlobalScript.LoadedFile> lf;
+      NFSCodeEnv.Env senv;
+      NFEnv.Env nfenv;
+      DAE.FunctionTree funcs;
+      Boolean b;
+    case (_, GlobalScript.SYMBOLTABLE(ast=p))
+      equation
+        _ = Interactive.getPathedClassInProgram(className, p);
+      then inSt;
+    case (_, GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf))
+      equation
+        str = Absyn.pathFirstIdent(className);
+        (p,b) = loadModel({(Absyn.IDENT(str),{"default"})},Settings.getModelicaPath(Config.getRunningTestsuite()),p,true,true,true);
+        Error.assertionOrAddSourceMessage(not b,Error.NOTIFY_NOT_LOADED,{str,"default"},Absyn.dummyInfo);
+        // print(stringDelimitList(list(Absyn.pathString(path) for path in Interactive.getTopClassnames(p)), ",") + "\n");
+      then GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf);
+  end matchcontinue;
+end runFrontEndLoadProgram;
 
 protected function runFrontEndWork
   input FCore.Cache inCache;
@@ -3559,7 +3597,7 @@ algorithm
       NFEnv.Env nfenv;
       DAE.FunctionTree funcs;
 
-    case (cache,env,_,GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf),_,_)
+   case (cache,env,_,GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf),_,_)
       equation
         true = Flags.isSet(Flags.GRAPH_INST);
         false = Flags.isSet(Flags.SCODE_INST);
@@ -3570,7 +3608,7 @@ algorithm
         re = Absyn.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
-        (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp)),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true);
+        (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp)),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true);
         print("Load deps:      " +& realString(System.realtimeTock(ClockIndexes.RT_CLOCK_FINST)) +& "\n");
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
@@ -3613,7 +3651,7 @@ algorithm
         re = Absyn.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
-        (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp)),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true);
+        (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp)),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true);
 
         //System.stopTimer();
         //print("\nExists+Dependency: " +& realString(System.getTimerIntervalTime()));
@@ -4085,7 +4123,7 @@ algorithm
     then (cache,st,compileDir,filenameprefix,method_str,outputFormat_str,init_filename,simflags,zeroAdditionalSimulationResultValues);
 
     // compile the model
-    case (cache,env,vals,(st_1 as GlobalScript.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,vals,st,msg)
       equation
         // buildModel expects these arguments:
         // className, startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix,
@@ -4104,16 +4142,13 @@ algorithm
         (_,vals) = getListFirstShowError(vals, "while retreaving the cflags (11 arg) from the buildModel arguments");
         (Values.STRING(simflags),vals) = getListFirstShowError(vals, "while retreaving the simflags (12 arg) from the buildModel arguments");
 
-        (Absyn.CLASS(info = Absyn.INFO(buildTimes=Absyn.TIMESTAMP(_,_)))) = Interactive.getPathedClassInProgram(classname,p);
-        Absyn.PROGRAM(_,_,Absyn.TIMESTAMP(_,_)) = p;
-
         Error.clearMessages() "Clear messages";
         compileDir = System.pwd() +& System.pathDelimiter();
-        (cache,simSettings) = calculateSimulationSettings(cache,env,values,st_1,msg);
+        (cache,simSettings) = calculateSimulationSettings(cache, env, values, st, msg);
         SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str)
            = simSettings;
 
-        (cache,st,_,libs,file_dir,resultValues) = translateModel(cache,env, classname, st_1, filenameprefix,true, SOME(simSettings));
+        (cache,st as GlobalScript.SYMBOLTABLE(ast=p),_,libs,file_dir,resultValues) = translateModel(cache,env, classname, st, filenameprefix,true, SOME(simSettings));
         //cname_str = Absyn.pathString(classname);
         //SimCodeUtil.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
         //  starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);
@@ -4125,7 +4160,7 @@ algorithm
         Debug.fprintln(Flags.DYN_LOAD, "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
         compileModel(filenameprefix, libs, file_dir, method_str);
         Debug.fprintln(Flags.DYN_LOAD, "buildModel: Compiling done.");
-        p = setBuildTime(p,classname);
+        // p = setBuildTime(p,classname);
         st2 = st;// Interactive.replaceSymbolTableProgram(st,p);
         timeCompile = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         resultValues = ("timeCompile",Values.REAL(timeCompile)) :: resultValues;
