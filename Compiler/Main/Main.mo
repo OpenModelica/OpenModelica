@@ -320,6 +320,17 @@ algorithm
   end matchcontinue;
 end isModelicaFile;
 
+protected function isEmptyOrFirstIsModelicaFile
+  input list<String> libs;
+algorithm
+  _ := match libs
+    local
+      String f;
+    case {} then ();
+    case f::_ equation isModelicaFile(f); then ();
+  end match;
+end isEmptyOrFirstIsModelicaFile;
+
 protected function isFlatModelicaFile
 "Succeeds if filename ends with .mof"
   input String filename;
@@ -430,12 +441,12 @@ algorithm
   end matchcontinue;
 end parsePathFromString;
 
-protected function loadLibs
- input list<String> inLibs;
+protected function loadLib
+ input String inLib;
  input GlobalScript.SymbolTable inSymTab;
  output GlobalScript.SymbolTable outSymTab;
 algorithm
- outSymTab := matchcontinue(inLibs, inSymTab)
+ outSymTab := matchcontinue(inLib, inSymTab)
    local
      String lib, mp, f;
      list<String> rest;
@@ -447,40 +458,39 @@ algorithm
      GlobalScript.SymbolTable st, newst;
      Absyn.Path path;
 
-   // no libs or end, return!
-   case ({}, st) then st;
-
    // A .mo-file.
-   case (f :: rest, GlobalScript.SYMBOLTABLE(p, _, ic, iv, cf, lf))
+   case (f, GlobalScript.SYMBOLTABLE(p, _, ic, iv, cf, lf))
      equation
        isModelicaFile(f);
        pnew = Parser.parse(f,"UTF-8");
        pnew = Interactive.updateProgram(pnew, p);
        newst = GlobalScript.SYMBOLTABLE(pnew, NONE(), ic, iv, cf, lf);
-       newst = loadLibs(rest, newst);
      then
       newst;
 
    // some libs present
-   case (lib::rest, GlobalScript.SYMBOLTABLE(p,_,ic,iv,cf,lf))
+   case (lib, GlobalScript.SYMBOLTABLE(p,_,ic,iv,cf,lf))
      equation
+       failure(isModelicaFile(lib));
        path = parsePathFromString(lib);
        mp = Settings.getModelicaPath(Config.getRunningTestsuite());
-       pnew = ClassLoader.loadClass(path, {"default"}, mp, NONE());
-       pnew = Interactive.updateProgram(pnew, p);
+       (pnew, true) = CevalScript.loadModel({(path, {"default"})}, mp, p, true, true, true);
        newst = GlobalScript.SYMBOLTABLE(pnew,NONE(),ic,iv,cf,lf);
-       newst = loadLibs(rest, newst); // load the remaining
      then
        newst;
    // problem with the libs, ignore!
-   case (lib::rest, st)
+   case (f, st)
      equation
-       Print.printErrorBuf("Failed to load library: " +& lib +& " ... ignoring!\n");
-       newst = loadLibs(rest, st); // load the remaining
-     then
-       newst;
+       failure(isModelicaFile(f));
+       Print.printErrorBuf("Failed to load library: " +& f +& "!\n");
+     then fail();
+   case (f, st)
+     equation
+       isModelicaFile(f);
+       Print.printErrorBuf("Failed to parse file: " +& f +& "!\n");
+     then fail();
   end matchcontinue;
-end loadLibs;
+end loadLib;
 
 protected function translateFile
 "This function invokes the translator on a source file.  The argument should be
@@ -505,30 +515,22 @@ algorithm
 
     // A .mo-file, followed by an optional list of extra .mo-files and libraries.
     // The last class in the first file will be instantiated.
-    case (f :: libs)
+    case (libs)
       equation
         //print("Class to instantiate: " +& Config.classToInstantiate() +& "\n");
+        isEmptyOrFirstIsModelicaFile(libs);
         System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
         System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
-        // Check that it's a .mo-file.
-        isModelicaFile(f);
-        // Parse the first file.
-        (p as Absyn.PROGRAM(classes = _)) = Parser.parse(f,"UTF-8");
         // Parse libraries and extra mo-files that might have been given at the command line.
-        GlobalScript.SYMBOLTABLE(ast = pLibs) = loadLibs(libs, GlobalScript.emptySymboltable);
+        GlobalScript.SYMBOLTABLE(ast = p) = List.fold(libs, loadLib, GlobalScript.emptySymboltable);
         // Show any errors that occured during parsing.
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
-
-        // Merge our program with the possible libs and models from extra .mo-files.
-        p = Interactive.updateProgram(pLibs, p);
 
         Debug.fprint(Flags.DUMP, "\n--------------- Parsed program ---------------\n");
         Debug.fcall(Flags.DUMP_GRAPHVIZ, DumpGraphviz.dump, p);
         Debug.fcall(Flags.DUMP, Dump.dump, p);
         s = Debug.fcallret0(Flags.DUMP, Print.getString, "");
         Debug.fcall(Flags.DUMP,print,s);
-
-        p = transformFlatProgram(p,f);
 
         SimCodeUtil.execStat("Parsed file");
 
@@ -567,7 +569,7 @@ algorithm
       equation
         isModelicaScriptFile(f);
         // loading possible libraries given at the command line
-        st = loadLibs(libs, GlobalScript.emptySymboltable);
+        st = List.fold(libs, loadLib, GlobalScript.emptySymboltable);
 
         //System.startTimer();
         //print("\nParseExp");
@@ -611,22 +613,6 @@ algorithm
         fail();
   end matchcontinue;
 end translateFile;
-
-protected function transformFlatProgram
-"Transforms the variables in equations to have the same format as for variables,
-i.e. a.b[3].c[2] becomes CREF_IDENT(\"a.b[3].c\",[INDEX(ICONST(2))])"
-input Absyn.Program p;
-input String filename;
-output Absyn.Program outP;
-algorithm
-  outP := matchcontinue(p,filename)
-    case(_,_) equation
-      isFlatModelicaFile(filename);
-      outP = Interactive.transformFlatProgram(p);
-      then outP;
-    case (_,_) then p;
-  end matchcontinue;
-end transformFlatProgram;
 
 protected function instantiate
   "Translates the Absyn.Program to SCode and instantiates either a given class
@@ -1053,7 +1039,7 @@ algorithm
         interactivemodeCorba(symbolTable);
       then ();
 
-    case _::_
+    case _
       equation
         false = Flags.isSet(Flags.INTERACTIVE);
         false = Flags.isSet(Flags.INTERACTIVE_CORBA);

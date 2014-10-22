@@ -716,7 +716,7 @@ algorithm
   end matchcontinue;
 end loadFile;
 
-protected function loadModel
+public function loadModel
   input list<tuple<Absyn.Path,list<String>>> imodelsToLoad;
   input String modelicaPath;
   input Absyn.Program ip;
