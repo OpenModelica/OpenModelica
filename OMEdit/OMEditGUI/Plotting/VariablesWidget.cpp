@@ -687,6 +687,13 @@ bool VariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &
   return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
 }
 
+bool VariableTreeProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
+{
+  QVariant l = (left.model() ? left.model()->data(left) : QVariant());
+  QVariant r = (right.model() ? right.model()->data(right) : QVariant());
+  return StringHandler::naturalSort(l.toString(), r.toString());
+}
+
 VariablesTreeView::VariablesTreeView(VariablesWidget *pVariablesWidget)
   : QTreeView(pVariablesWidget)
 {

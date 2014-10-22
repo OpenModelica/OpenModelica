@@ -137,7 +137,8 @@ class VariableTreeProxyModel : public QSortFilterProxyModel
 public:
   VariableTreeProxyModel(QObject *parent = 0);
 protected:
-  bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
+  virtual bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
+  virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const;
 };
 
 class VariablesWidget;
