@@ -726,21 +726,7 @@ fmi2Status fmi2NewDiscreteStates(fmi2Component c, fmi2EventInfo* eventInfo) {
   eventInfo->nextEventTimeDefined = fmi2False;
   eventInfo->nextEventTime = 0;
 
-  /* Get next event time (sample calls)*/
-
-  nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
-  if (nextSampleEvent == -1) {
-    eventInfo->nextEventTimeDefined = fmi2False;
-  } else {
-    eventInfo->nextEventTimeDefined = fmi2True;
-    eventInfo->nextEventTime = nextSampleEvent;
-    returnValue = fmi2EventUpdate(comp, eventInfo);
-  }
-
-  // set the state
-  if (eventInfo->newDiscreteStatesNeeded) {
-    comp->state = modelContinuousTimeMode;
-  }
+  returnValue = fmi2EventUpdate(comp, eventInfo);
 
   return returnValue;
 }
