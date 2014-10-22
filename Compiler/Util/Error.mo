@@ -770,6 +770,8 @@ public constant Message MISMATCHING_INTERFACE_TYPE = MESSAGE(553, SCRIPTING(), E
   Util.gettext("__OpenModelica_Interface types are incompatible. Got interface type '%s', expected something compatible with '%s'."));
 public constant Message MISSING_INTERFACE_TYPE = MESSAGE(554, SCRIPTING(), ERROR(),
   Util.gettext("Annotation __OpenModelica_Interface is missing or the string is not in the input list."));
+public constant Message CLASS_NOT_FOUND = MESSAGE(555, SCRIPTING(), WARNING(),
+  Util.gettext("Class %s not found inside class %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
