@@ -45,6 +45,7 @@ mkbuilddirs:
 	mkdir -p $(builddir_java)
 	mkdir -p $(builddir_share)/omc/scripts/OpenTurns/
 	mkdir -p $(builddir_doc)/omc/testmodels
+	mkdir -p $(builddir_doc)/omc/SimulationRuntime/IntegrationAlgorithms
 	mkdir -p $(builddir_man)/man1/
 
 release: omc-diff omc
@@ -70,6 +71,7 @@ interactive: .testvariables mkbuilddirs boehm-gc fmil msl-external-libs lis Cdas
 docs: mkbuilddirs
 	$(MAKE) -C Compiler/Translation release
 	(cp -p doc/*.pdf doc/OpenModelicaAPI-Howto/*.pdf $(builddir_doc)/omc)
+	(cp -p doc/SimulationRuntime/IntegrationAlgorithms/IntegrationAlgorithms.pdf $(builddir_doc)/omc/SimulationRuntime/IntegrationAlgorithms)
 	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)
 	rm -f $(builddir_doc)/omc/testmodels/CMake*.txt
 	cp -p ./SimulationRuntime/interactive/README.txt $(builddir_doc)/omc/OpenModelica-InteractiveSimulation-README.txt
