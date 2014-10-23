@@ -453,7 +453,7 @@ algorithm
         //false = BackendVariable.hasDiscreteVar(var_lst); //lochel: mixed systems and non-linear systems are treated the same
         true = BackendVariable.hasContinousVar(var_lst);   //lochel: pure discrete equation systems are not supported
         varindxs = List.map(var_varindx_lst,Util.tuple22);
-        eqn_lst1 = replaceDerOpInEquationList(eqn_lst);
+        eqn_lst1 = BackendEquation.replaceDerOpInEquationList(eqn_lst);
         // States are solved for der(x) not x.
         var_lst_1 = List.map(var_lst, transformXToXd);
         vars_1 = BackendVariable.listVar1(var_lst_1);
@@ -581,51 +581,6 @@ algorithm
     else inVar;
   end match;
 end transformXToXd;
-
-public function replaceDerOpInEquationList
-  "Replaces all der(cref) with $DER.cref in a list of equations."
-  input list<BackendDAE.Equation> inEqns;
-  output list<BackendDAE.Equation> outEqns;
-algorithm
-  (outEqns,_) := BackendEquation.traverseBackendDAEExpsEqnList(inEqns, Expression.traverseSubexpressionsHelper, (replaceDerOpInExpTraverser, NONE()));
-end replaceDerOpInEquationList;
-
-protected function replaceDerOpInExpTraverser
-  "Used with Expression.traverseExp to traverse an expression an replace calls to
-  der(cref) with a component reference $DER.cref. If an optional component
-  reference is supplied, then only that component reference is replaced.
-  Otherwise all calls to der are replaced.
-
-  This is done since some parts of the compiler can't handle der-calls, such as
-  Derive.differentiateExpression. Ideally these parts should be fixed so that they can
-  handle der-calls, but until that happens we just replace the der-calls with
-  crefs."
-  input DAE.Exp inExp;
-  input Option<DAE.ComponentRef> inCr;
-  output DAE.Exp outExp;
-  output Option<DAE.ComponentRef> outCr;
-algorithm
-  (outExp,outCr) := matchcontinue(inExp,inCr)
-    local
-      DAE.ComponentRef cr, der_cr;
-      DAE.Exp cref_exp;
-      DAE.ComponentRef cref;
-
-    case (DAE.CALL(path = Absyn.IDENT("der"),expLst = {DAE.CREF(componentRef = cr)}), SOME(cref))
-      equation
-        der_cr = ComponentReference.crefPrefixDer(cr);
-        true = ComponentReference.crefEqualNoStringCompare(der_cr, cref);
-        cref_exp = Expression.crefExp(der_cr);
-      then (cref_exp, inCr);
-
-    case (DAE.CALL(path = Absyn.IDENT("der"),expLst = {DAE.CREF(componentRef = cr)}), NONE())
-      equation
-        cr = ComponentReference.crefPrefixDer(cr);
-        cref_exp = Expression.crefExp(cr);
-      then (cref_exp, NONE());
-    else (inExp,inCr);
-  end matchcontinue;
-end replaceDerOpInExpTraverser;
 
 public function getEquationAndSolvedVar "author: PA
   Retrieves the equation and the variable solved in that equation

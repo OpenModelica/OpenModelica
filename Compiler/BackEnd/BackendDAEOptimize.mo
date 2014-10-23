@@ -3438,7 +3438,7 @@ algorithm
       (derivedEquations, functions) = deriveAll(eqns, arrayList(ass2), x, diffData, {}, functions);
 
       // replace all der(x), since ExpressionSolve can't handle der(x) proper
-      derivedEquations = BackendDAETransform.replaceDerOpInEquationList(derivedEquations);
+      derivedEquations = BackendEquation.replaceDerOpInEquationList(derivedEquations);
       Debug.fcall(Flags.JAC_DUMP2, print, "*** analytical Jacobians -> created all derived equation time: " +& realString(clock()) +& "\n");
 
       // create BackendDAE.DAE with derivied vars and equations
