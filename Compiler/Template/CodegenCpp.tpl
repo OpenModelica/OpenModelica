@@ -85,7 +85,7 @@ let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
   * Simulation code to initialize the Modelica system
   *
   *****************************************************************************/
-  
+
   class <%lastIdentOfPath(modelInfo.name)%>Initialize: virtual public <%lastIdentOfPath(modelInfo.name)%>
   {
      public:
@@ -305,7 +305,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
   #pragma once
   #include "OMCpp<%fileNamePrefix%>.h"
-  
+
   /*****************************************************************************
   *
   * Simulation code to initialize the Modelica system
@@ -436,13 +436,13 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     public:
     <%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>Extension();
-	
+
     ///Intialization methods from ISystemInitialization
     virtual bool initial();
     virtual void setInitial(bool);
     virtual void initialize();
     virtual void initEquations();
-	
+
     ///Write simulation results methods from IWriteOutput
     /// Output routine (to be called by the solver after every successful integration step)
     virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
@@ -454,7 +454,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     virtual bool handleSystemEvents(bool* events);
     //Saves all variables before an event is handled, is needed for the pre, edge and change operator
     virtual void saveAll();
-	
+
     //StateSelction methods
     virtual int getDimStateSets() const;
     virtual int getDimStates(unsigned int index) const;
@@ -498,7 +498,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   {
      return new <%lastIdentOfPath(modelInfo.name)%>Extension(globalSettings, nonlinsolverfactor, simData);
   }
- 
+
   #else
 
   using boost::extensions::factory;
@@ -506,7 +506,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     types.get<std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory>,boost::shared_ptr<ISimData> > > >()
     ["<%lastIdentOfPath(modelInfo.name)%>"].set<<%lastIdentOfPath(modelInfo.name)%>Extension>();
     }
-  #endif  
+  #endif
   >>
 end simulationFactoryFile;
 
@@ -698,7 +698,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    void <%lastIdentOfPath(modelInfo.name)%>Extension::getJacobian(SparseMatrix& matrix)
    {
            getAJacobian(matrix);
-   
+
    }
    void <%lastIdentOfPath(modelInfo.name)%>Extension::getStateSetJacobian(unsigned int index,SparseMatrix& matrix)
    {
@@ -725,7 +725,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
        return <%lastIdentOfPath(modelInfo.name)%>::handleSystemEvents(events);
    }
-   
+
    void <%lastIdentOfPath(modelInfo.name)%>Extension::saveAll()
    {
        return <%lastIdentOfPath(modelInfo.name)%>::saveAll();
@@ -1832,7 +1832,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         //_event_handling.getCondition =  boost::bind(&<%className%>::getCondition, this, _1);
 
         //Todo: reindex all arrays removed  // arrayReindex(modelInfo,useFlatArrayNotation)
-	
+
         _functions = new Functions(_simTime,__z,__zDot,_initial,_terminate);
     }
 
@@ -1853,11 +1853,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%setConditions(simCode)%>
     <%geConditions(simCode)%>
     <%isConsistent(simCode)%>
-   
+
     <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode,useFlatArrayNotation)%>
-	
+
     <%generateStepStarted(listAppend(allEquations,initialEquations),simCode,useFlatArrayNotation)%>
-   
+
     <%generatehandleTimeEvent(timeEvents, simCode)%>
     <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode)%>
     <%generateTimeEvent(timeEvents, simCode, true)%>
@@ -4559,7 +4559,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #if defined(__TRICORE__) || defined(__vxworks)
   #define BOOST_EXTENSION_SYSTEM_DECL
   #define BOOST_EXTENSION_EVENTHANDLING_DECL
-  #else  
+  #else
   #define BOOST_EXTENSION_SYSTEM_DECL BOOST_EXTENSION_IMPORT_DECL
   #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_IMPORT_DECL
   #endif
@@ -4595,7 +4595,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #if defined(__TRICORE__)
   #define BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL
   #define BOOST_EXTENSION_EVENTHANDLING_DECL
-  #else  
+  #else
   #define BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL BOOST_EXTENSION_IMPORT_DECL
   #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_IMPORT_DECL
   #endif
@@ -7736,24 +7736,24 @@ let store_delay_expr = functionStoreDelay(delayedExps,simCode, useFlatArrayNotat
                  match modelInfo
                    case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
                     let &varOptDecls = buffer "" /*BUFD*/
-					let &optpreExp = buffer "" /*BUFD*/
-	
-					let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
-					   'dynamic_cast<SimDouble*>(_simData->Get("<%cref(name, useFlatArrayNotation)%>"))->getValue() = <%cref(name, useFlatArrayNotation)%>;';separator="\n"	
-					<<
-					#if defined(__TRICORE__) || defined(__vxworks)
-					    <%outputnames%>
-					#endif
-					>>		
+          let &optpreExp = buffer "" /*BUFD*/
+
+          let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
+             'dynamic_cast<SimDouble*>(_simData->Get("<%cref(name, useFlatArrayNotation)%>"))->getValue() = <%cref(name, useFlatArrayNotation)%>;';separator="\n"
+          <<
+          #if defined(__TRICORE__) || defined(__vxworks)
+              <%outputnames%>
+          #endif
+          >>
 
   <<
   bool <%lastIdentOfPath(modelInfo.name)%>::stepCompleted(double time)
   {
   <%algloopsolver%>
   <%store_delay_expr%>
-   
+
   <%outputBounds%>
-   
+
   saveAll();
   return _terminate;
   }
@@ -7772,21 +7772,21 @@ then
                  match modelInfo
                    case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
                     let &varOptDecls = buffer "" /*BUFD*/
-					let &optpreExp = buffer "" /*BUFD*/
-	
-					let inputnames = vars.inputVars |>  SIMVAR(__) hasindex i0 =>
-					   '<%cref(name, useFlatArrayNotation)%> = dynamic_cast<SimDouble*>(_simData->Get("<%cref(name, useFlatArrayNotation)%>"))->getValue();';separator="\n"	
-					<<
-					#if defined(__TRICORE__) || defined(__vxworks)
-					    <%inputnames%>
-					#endif
-					>>	
+          let &optpreExp = buffer "" /*BUFD*/
+
+          let inputnames = vars.inputVars |>  SIMVAR(__) hasindex i0 =>
+             '<%cref(name, useFlatArrayNotation)%> = dynamic_cast<SimDouble*>(_simData->Get("<%cref(name, useFlatArrayNotation)%>"))->getValue();';separator="\n"
+          <<
+          #if defined(__TRICORE__) || defined(__vxworks)
+              <%inputnames%>
+          #endif
+          >>
 
   <<
   bool <%lastIdentOfPath(modelInfo.name)%>::stepStarted(double time)
-  {   
+  {
   <%inputBounds%>
-  
+
   return true;
   }
   >>
@@ -11766,15 +11766,15 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
   {
     <%generateMeasureTimeStartCode("measuredFunctionStartValues")%>
     bool state_var_reinitialized = false;
-	
+
     <%varDecls%>
     /* Evaluate Equations*/
     <%equation_all_func_calls%>
     /* Reinits */
     <%reinit%>
-	
+
     <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[1]")%>
-	
+
     return state_var_reinitialized;
   }
   >>
