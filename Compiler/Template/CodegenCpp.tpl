@@ -1779,7 +1779,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     #include <Core/ModelicaDefine.h>
     #include "OMCpp<%fileNamePrefix%>.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
-    #if defined(__TRICORE__)
+    #if defined(__TRICORE__) || defined(__vxworks)
     #include <DataExchange/SimDouble.h>
     #endif
 
