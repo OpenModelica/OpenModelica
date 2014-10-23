@@ -9618,7 +9618,7 @@ algorithm
       SCode.Mod mod;
       Boolean b;
       String target;
-     
+
     case (_, _, SOME(SCode.ANNOTATION(mod)))
       equation
         b = generateExtFunctionDynamicLoad(mod);
