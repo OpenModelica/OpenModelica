@@ -9612,7 +9612,7 @@ protected function generateExtFunctionIncludes "by investigating the annotation 
   output list<String> paths;
   output Boolean dynamcLoad;
 algorithm
-  (includes, includeDirs, libs, dynamcLoad):=
+  (includes, includeDirs, libs,paths, dynamcLoad):=
   match (program, path, inAbsynAnnotationOption)
     local
       SCode.Mod mod;
