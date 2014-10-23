@@ -7,6 +7,7 @@ import CodegenUtil.*;
 
 
 
+
 template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
 ::=
   match simCode
@@ -1856,6 +1857,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%geConditions(simCode)%>
    <%isConsistent(simCode)%>
    <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode,useFlatArrayNotation)%>
+   
+   bool <%className%>::stepStarted(double time)
+   {
+   
+	return true;
+   }
+   
    <%generatehandleTimeEvent(timeEvents, simCode)%>
    <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode)%>
    <%generateTimeEvent(timeEvents, simCode, true)%>
@@ -5105,6 +5113,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual bool provideSymbolicJacobian();
 
     virtual bool stepCompleted(double time);
+	
+	virtual bool stepStarted(double time);
 
     <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<
