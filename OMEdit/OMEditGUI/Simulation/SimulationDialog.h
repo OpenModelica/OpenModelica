@@ -155,6 +155,7 @@ private:
   Label *mpVariableFilterLabel;
   QLineEdit *mpVariableFilterTextBox;
   QCheckBox *mpProtectedVariablesCheckBox;
+  QCheckBox *mpStoreVariablesAtEventsCheckBox;
   QCheckBox *mpShowGeneratedFilesCheckBox;
   // Simulation Flags Tab
   QWidget *mpSimulationFlagsTab;

@@ -192,6 +192,8 @@ void SimulationDialog::setUpForm()
   mpVariableFilterTextBox = new QLineEdit;
   // Protected Variabels
   mpProtectedVariablesCheckBox = new QCheckBox(tr("Protected Variables"));
+  mpStoreVariablesAtEventsCheckBox = new QCheckBox(tr("Store Variables at Events"));
+  mpStoreVariablesAtEventsCheckBox->setChecked(true);
   // show generated files checkbox
   mpShowGeneratedFilesCheckBox = new QCheckBox(tr("Show Generated Files"));
   // set Output Tab Layout
@@ -206,7 +208,8 @@ void SimulationDialog::setUpForm()
   pOutputTabLayout->addWidget(mpVariableFilterLabel, 3, 0);
   pOutputTabLayout->addWidget(mpVariableFilterTextBox, 3, 1);
   pOutputTabLayout->addWidget(mpProtectedVariablesCheckBox, 4, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 5, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 5, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 6, 0, 1, 2);
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
@@ -994,6 +997,10 @@ void SimulationDialog::simulate()
     // emit protected variables
     if (mpProtectedVariablesCheckBox->isChecked()) {
       mSimulationFlags.append("-emit_protected");
+    }
+    // store variables at events
+    if (!mpStoreVariablesAtEventsCheckBox->isChecked()) {
+      mSimulationFlags.append("-noEventEmit");
     }
     // setup Model Setup file flag
     if (!mpModelSetupFileTextBox->text().isEmpty()) {
