@@ -473,6 +473,7 @@ uniontype MakefileParams
     String runtimelibs "Libraries that are required by the runtime library";
     list<String> includes;
     list<String> libs;
+    list<String> libPaths;
     String platform;
     String compileDir;
   end MAKEFILE_PARAMS;

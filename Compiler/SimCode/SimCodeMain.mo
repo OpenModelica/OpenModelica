@@ -132,15 +132,16 @@ protected
   list<SimCode.RecordDeclaration> recordDecls;
   BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
   Absyn.ComponentRef a_cref;
+  list<String> libPaths;
   tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScript.getFileDir(a_cref, p);
-  (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
+  (libs,libPaths,includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
     SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
   (simCode,_) := SimCodeUtil.createSimCode(outIndexedBackendDAE,
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths,simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   SimCodeUtil.execStat("SimCode");
 
@@ -171,16 +172,17 @@ protected
   SimCode.SimCode simCode;
   list<SimCode.RecordDeclaration> recordDecls;
   BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
+  list<String> libPaths;
   Absyn.ComponentRef a_cref;
   tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScript.getFileDir(a_cref, p);
-  (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
+  (libs, libPaths, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
     SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
   (simCode,_) := SimCodeUtil.createSimCode(outIndexedBackendDAE,
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   SimCodeUtil.execStat("SimCode");
 
@@ -367,7 +369,7 @@ public function generateModelCode "
   output Real timeSimCode;
   output Real timeTemplates;
 protected
-  list<String> includes, includeDirs;
+  list<String> includes, includeDirs,libPaths;
   list<SimCode.Function> functions;
   SimCode.SimCode simCode;
   list<SimCode.RecordDeclaration> recordDecls;
@@ -377,8 +379,8 @@ algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScript.getFileDir(a_cref, p);
-  (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) := SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
-  simCode := createSimCode(outIndexedBackendDAE, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+  (libs, libPaths,includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) := SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
+  simCode := createSimCode(outIndexedBackendDAE, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   SimCodeUtil.execStat("SimCode");
 
@@ -398,18 +400,19 @@ protected function createSimCode "
   input list<String> externalFunctionIncludes;
   input list<String> includeDirs;
   input list<String> libs;
+  input list<String> libPaths;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   input list<SimCode.RecordDeclaration> recordDecls;
   input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
   input Absyn.FunctionArgs args;
   output SimCode.SimCode simCode;
 algorithm
-  simCode := matchcontinue(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args)
+  simCode := matchcontinue(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,simSettingsOpt, recordDecls, literals, args)
     local
       Integer numProc;
       SimCode.SimCode tmpSimCode;
 
-    case(_, _, _, _, _, _, _, _, _, _, _, _) equation
+    case(_, _, _, _, _, _, _, _, _, _,_, _, _) equation
       true = Flags.isSet(Flags.HPCOM);
 
       // either generate code for profiling or for parallel simulation
@@ -420,9 +423,9 @@ algorithm
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = numProc == 0;
       print("hpcom computes the ideal number of processors. If you want to set the number manually, use the flag +n=_ \n");
-    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
 
-    case(_, _, _, _, _, _, _, _, _, _, _, _) equation
+    case(_, _, _, _, _, _, _, _, _,_, _, _, _) equation
       true = Flags.isSet(Flags.HPCOM);
 
       // either generate code for profiling or for parallel simulation
@@ -432,10 +435,10 @@ algorithm
 
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = (numProc > 0);
-    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+    then HpcOmSimCodeMain.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,simSettingsOpt, recordDecls, literals, args);
 
     else equation
-      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
     then tmpSimCode;
   end matchcontinue;
 end createSimCode;
@@ -670,7 +673,7 @@ algorithm
       DAE.Function daeMainFunction;
       SimCode.Function mainFunction;
       list<SimCode.Function> fns;
-      list<String> includes, libs, includeDirs;
+      list<String> includes, libs, libPaths,includeDirs;
       SimCode.MakefileParams makefileParams;
       SimCode.FunctionCode fnCode;
       list<SimCode.RecordDeclaration> extraRecordDecls;
@@ -681,9 +684,9 @@ algorithm
       equation
         // Create SimCode.FunctionCode
         (daeElements,literals) = SimCodeUtil.findLiterals(daeMainFunction::daeElements);
-        (mainFunction::fns, extraRecordDecls, includes, includeDirs, libs) = SimCodeUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
+        (mainFunction::fns, extraRecordDecls, includes, includeDirs, libs,libPaths) = SimCodeUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
         SimCodeUtil.checkValidMainFunction(name, mainFunction);
-        makefileParams = SimCodeUtil.createMakefileParams(includeDirs, libs, true);
+        makefileParams = SimCodeUtil.createMakefileParams(includeDirs, libs,libPaths, true);
         fnCode = SimCode.FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
         // Generate code
         _ = Tpl.tplString(CodegenC.translateFunctions, fnCode);
@@ -693,8 +696,8 @@ algorithm
       equation
         // Create SimCode.FunctionCode
         (daeElements,literals) = SimCodeUtil.findLiterals(daeElements);
-        (fns, extraRecordDecls, includes, includeDirs, libs) = SimCodeUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
-        makefileParams = SimCodeUtil.createMakefileParams(includeDirs, libs, true);
+        (fns, extraRecordDecls, includes, includeDirs, libs,libPaths) = SimCodeUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
+        makefileParams = SimCodeUtil.createMakefileParams(includeDirs, libs,libPaths, true);
         // remove OpenModelica.threadData.ThreadData
         fns = removeThreadDataFunction(fns, {});
         extraRecordDecls = removeThreadDataRecord(extraRecordDecls, {});

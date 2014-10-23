@@ -312,6 +312,7 @@ package SimCode
       String runtimelibs;
       list<String> includes;
       list<String> libs;
+      list<String> libPaths;
       String platform;
       String compileDir;
     end MAKEFILE_PARAMS;
