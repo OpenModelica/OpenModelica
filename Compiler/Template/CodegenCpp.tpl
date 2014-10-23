@@ -5114,7 +5114,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     virtual bool stepCompleted(double time);
 
-  virtual bool stepStarted(double time);
+    virtual bool stepStarted(double time);
 
     <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<
