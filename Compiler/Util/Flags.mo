@@ -410,6 +410,8 @@ constant DebugFlag RESHUFFLE_POST = DEBUG_FLAG(122, "reshufflePost", false,
   Util.gettext("Reshuffles the systems of equations."));
 constant DebugFlag SHOW_EXPANDABLE_INFO = DEBUG_FLAG(123, "showExpandableInfo", false,
   Util.gettext("Show information about expandable connector handling."));
+constant DebugFlag DUMP_HOMOTOPY = DEBUG_FLAG(124, "dumpHomotopy", false,
+  Util.gettext("Dumps the results of the postOptModule optimizeHomotopyCalls."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -538,7 +540,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_EQ_UNIT_STRUCT,
   SHOW_DAE_GENERATION,
   RESHUFFLE_POST,
-  SHOW_EXPANDABLE_INFO
+  SHOW_EXPANDABLE_INFO,
+  DUMP_HOMOTOPY
 };
 
 // CONFIGURATION FLAGS
@@ -608,6 +611,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "evalFunc"
     }),
   SOME(STRING_DESC_OPTION({
+    ("unitChecking", Util.gettext("advanced unit checking: 1. calculation of unspecified unit information for variables; 2. unit consistency check for equations")),
     ("removeSimpleEquations", removeSimpleEquationDesc),
     ("removeAllSimpleEquations", removeSimpleEquationDesc),
     ("inlineArrayEqn", Util.gettext("This module expands all array equations to scalar equations.")),
@@ -624,6 +628,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("removeUnusedVariables", Util.gettext("Strips all variables not present in the equations from the system.")),
     ("clockPartitioning", Util.gettext("Does the clock partitioning.")),
     ("expandDerOperator", Util.notrans("DESCRIBE ME")),
+    ("findStateOrder", Util.notrans("DESCRIBE ME")),
     ("simplifyIfEquations", Util.gettext("Tries to simplify if equations by use of information from evaluated parameters.")),
     ("replaceEdgeChange", Util.gettext("Replace edge(b) = b and not pre(b) and change(b) = v <> pre(v).")),
     ("residualForm", Util.gettext("Transforms simple equations x=y to zero-sum equations 0=y-x.")),
