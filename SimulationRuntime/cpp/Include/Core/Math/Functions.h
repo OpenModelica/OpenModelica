@@ -23,7 +23,7 @@ Copyright (c) 2008, OSMC
 
 #define EPSILON    (std::numeric_limits<double>::epsilon( ))
 
-#if defined(__vxworks)
+#if defined(__vxworks) || defined(__TRICORE__)
 #define BOOST_EXTENSION_EXPORT_DECL
 #endif
 

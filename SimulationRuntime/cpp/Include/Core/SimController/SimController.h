@@ -2,6 +2,7 @@
 
 #include "SimManager.h"
 #include <SimCoreFactory/Policies/FactoryPolicy.h>
+#include <Core/SimController/ISimController.h>
 
 #ifdef ANALYZATION_MODE
 #include <boost/function.hpp>
