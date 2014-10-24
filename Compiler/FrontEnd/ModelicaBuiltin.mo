@@ -2259,6 +2259,19 @@ external "builtin";
 annotation(preferredView="text");
 end importFMU;
 
+function translateModelFMU 
+"translates a modelica model into a Functional Mockup Unit.
+The only required argument is the className, while all others have some default values.
+  Example command:
+  translateModelFMU(className, version=\"2.0\");"
+  input TypeName className "the class that should translated";
+  input String version := "1.0" "The output directory for imported FMU files. <default> will put the files to current working directory.";
+  input String fileNamePrefix := "<default>" "fileNamePrefix. <default> = \"className\"";
+  output String generatedFileName "Returns the full path of the generated FMU.";
+external "builtin";
+annotation(preferredView="text");
+end translateModelFMU;
+
 function simulate "simulates a modelica model by generating c code, build it and run the simulation executable.
  The only required argument is the className, while all others have some default values.
  simulate(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])

@@ -322,13 +322,13 @@ public function elabCallInteractive "This function elaborates the functions defi
         (cache,Expression.makePureBuiltinCall("translateModelCPP",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "translateModelFMU"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
+    case (cache,env,Absyn.CREF_IDENT(name = "translateModelFMU"),{Absyn.CREF(componentRef = cr), fmuversion, filenameprefix},args,impl,SOME(st),pre,_)
       equation
         className = Absyn.crefToPath(cr);
         cname_str = Absyn.pathString(className);
         (cache,fmuversion) = Static.getOptionalNamedArg(cache,env, SOME(st), impl, "version",
                                                      DAE.T_STRING_DEFAULT, args, DAE.SCONST("1.0"),pre,info);
-        (cache,filenameprefix) = Static.getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
+        (cache, filenameprefix) = Static.getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
                                                      DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
         recordtype =
           DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),

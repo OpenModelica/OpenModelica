@@ -1322,6 +1322,8 @@ algorithm
     case (cache,env,"translateModelFMU", {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(str1),Values.STRING(filenameprefix)},st,_)
       equation
         true = FMI.checkFMIVersion(str1);
+        str = Absyn.pathString(className);
+        filenameprefix = Util.if_(filenameprefix ==& "<default>", str, filenameprefix);
         filenameprefix = Util.stringReplaceChar(filenameprefix,".","_");
         defaulSimOpt = buildSimulationOptionsFromModelExperimentAnnotation(st, className, filenameprefix, SOME(defaultSimulationOptions));
         simSettings = convertSimulationOptionsToSimCode(defaulSimOpt);
