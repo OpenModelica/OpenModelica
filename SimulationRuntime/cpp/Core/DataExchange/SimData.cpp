@@ -69,7 +69,7 @@ void  SimData::getOutputResults(string name,uBlas::vector<double>& v)
     //Prüfen ob die Ergebnisse  in Liste ist.
     if(iter!=_result_vars.end())
     {
-        
+
         v = boost::ref(iter->second);
     }
     else

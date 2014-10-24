@@ -6,15 +6,15 @@
 #include <Core/Math/Constants.h>
 
 SolverSettings::SolverSettings(IGlobalSettings* globalSettings)
-	: _hInit		(1e-3)
-	, _hUpperLimit  (1e-3)
-	, _hLowerLimit  (10*UROUND)
-	, _endTimeTol	(1e-7)
-	, _dRtol		(1e-6)
-	, _dAtol		(1e-6)
-	, _denseOutput	(false)
+  : _hInit    (1e-3)
+  , _hUpperLimit  (1e-3)
+  , _hLowerLimit  (10*UROUND)
+  , _endTimeTol  (1e-7)
+  , _dRtol    (1e-6)
+  , _dAtol    (1e-6)
+  , _denseOutput  (false)
 {
-	_globalSettings = globalSettings ;
+  _globalSettings = globalSettings ;
 }
 
 SolverSettings::~SolverSettings()
@@ -23,77 +23,77 @@ SolverSettings::~SolverSettings()
 
 double SolverSettings::gethInit()
 {
-	return _hInit;
+  return _hInit;
 }
 
 void SolverSettings::sethInit(double h)
 {
-	_hInit = h;
+  _hInit = h;
 }
 
 double SolverSettings::getATol()
 {
-	return _dAtol;
+  return _dAtol;
 }
 
 void SolverSettings::setATol(double atol)
 {
-	_dAtol = atol;
+  _dAtol = atol;
 }
 
 double SolverSettings::getRTol()
 {
-	return _dRtol;
+  return _dRtol;
 }
 
 void SolverSettings::setRTol(double rtol)
 {
-	_dRtol = rtol;
+  _dRtol = rtol;
 }
 
 double SolverSettings::getLowerLimit()
 {
-	return _hLowerLimit;
+  return _hLowerLimit;
 }
 
 void SolverSettings::setLowerLimit(double h)
 {
-	_hLowerLimit = h;
+  _hLowerLimit = h;
 }
 
 double SolverSettings::getUpperLimit()
 {
-	return _hUpperLimit;
+  return _hUpperLimit;
 }
 
 void SolverSettings::setUpperLimit(double h)
 {
-	_hUpperLimit = h;
+  _hUpperLimit = h;
 }
 
 double SolverSettings::getEndTimeTol()
 {
-	return _endTimeTol;
+  return _endTimeTol;
 }
 
 void SolverSettings::setEndTimeTol(double tol)
 {
-	_endTimeTol = tol;
+  _endTimeTol = tol;
 }
 
 bool SolverSettings::getDenseOutput()
 {
-	return _denseOutput;
+  return _denseOutput;
 }
 
 void SolverSettings::setDenseOutput(bool dense)
 {
-	_denseOutput = dense;
+  _denseOutput = dense;
 }
 
 IGlobalSettings* SolverSettings::getGlobalSettings()
 {
-	return _globalSettings;
+  return _globalSettings;
 }
 
 void SolverSettings::load(string)

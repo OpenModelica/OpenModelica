@@ -33,7 +33,7 @@ public:
     ~SimManager();
     void runSimulation();
     void initialize();
-	void runSingleStep();
+  void runSingleStep();
 
 private:
 

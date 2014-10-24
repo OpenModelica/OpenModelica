@@ -4,11 +4,11 @@
 #define PATH string
 #include <VxWorksFactory/VxWorksFactory.h>
 
-#elif defined(__TRICORE__)	
+#elif defined(__TRICORE__)
 
 /*Defines*/
 #define PATH string
-#include <BodasFactory/BodasFactory.h>	
+#include <BodasFactory/BodasFactory.h>
 
 #elif defined(SIMSTER_BUILD)
 
