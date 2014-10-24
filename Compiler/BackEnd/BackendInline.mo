@@ -229,7 +229,7 @@ algorithm
   end match;
 end inlineEqOpt;
 
-public function inlineEq "
+protected function inlineEq "
   inlines function calls in equations"
   input BackendDAE.Equation inEquation;
   input Inline.Functiontuple fns;
@@ -503,7 +503,7 @@ algorithm
   end match;
 end inlineVarOpt;
 
-public function inlineVar
+protected function inlineVar
 "functio: inlineVar
   inlines calls in a variable"
   input BackendDAE.Var inVar;

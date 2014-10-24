@@ -55,33 +55,8 @@ protected import Flags;
 protected import List;
 protected import Matching;
 
-/*
- * types
- *
- *
- *
- */
 
-public partial function stateDeselectionFunc
-  input BackendDAE.BackendDAE inDAE;
-  input list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> inArgs;
-  output BackendDAE.BackendDAE outDAE;
-end stateDeselectionFunc;
-
-protected type DAEHandler = tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String>;
-
-/*
- * public part
- *
- *
- *
- */
-
-/*
- * protected part
- *
- */
-
+protected type DAEHandler = tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc,String,BackendDAEFunc.stateDeselectionFunc,String>;
 
 
 /*****************************************
