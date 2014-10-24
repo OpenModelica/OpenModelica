@@ -9,13 +9,13 @@ class SimInteger : public ISimVar
 {
 
 public:
-	
-	virtual ~SimInteger()	{};
-	SimInteger(int value) {_value = value;}
-	virtual string getName() {return _name;}
-	virtual void setName(string name) {_name = name;}
-	int& getValue() { return _value;}
+
+  virtual ~SimInteger()  {};
+  SimInteger(int value) {_value = value;}
+  virtual string getName() {return _name;}
+  virtual void setName(string name) {_name = name;}
+  int& getValue() { return _value;}
 private:
-	string _name;
-	int _value;
+  string _name;
+  int _value;
 };
