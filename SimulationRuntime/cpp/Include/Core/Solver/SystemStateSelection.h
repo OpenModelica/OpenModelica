@@ -1,5 +1,9 @@
 #pragma once
 
+#if defined(__TRICORE__) || defined(__vxworks)
+#define BOOST_EXTENSION_STATESELECT_DECL
+#endif
+
 #include <Core/System/IStateSelection.h>
 #include <boost/shared_array.hpp>
 
@@ -7,33 +11,29 @@
 #undef BOOST_EXTENSION_STATESELECT_DECL
 #define BOOST_EXTENSION_STATESELECT_DECL
 #endif
-#if defined(__vxworks)
-#undef BOOST_EXTENSION_STATESELECT_DECL
-#define BOOST_EXTENSION_STATESELECT_DECL
-#endif
+
 class BOOST_EXTENSION_STATESELECT_DECL SystemStateSelection
 {
 public:
-    SystemStateSelection(IMixedSystem* system);
+	SystemStateSelection(IMixedSystem* system);
 
-    ~SystemStateSelection();
+	~SystemStateSelection();
 
-    bool stateSelection(int switchStates);
-  void initialize();
-  private:
+	bool stateSelection(int switchStates);
+	void initialize();
 
-   void setAMatrix(int* newEnable,unsigned int index);
-   int comparePivot(int *oldPivot, int *newPivot,int switchStates,unsigned int index);
+private:
+	void setAMatrix(int* newEnable, unsigned int index);
+	int comparePivot(int *oldPivot, int *newPivot, int switchStates, unsigned int index);
 
-
-   IMixedSystem* _system;
-   IStateSelection* _state_selection;
-   std::vector<boost::shared_array<int> > _rowPivot;
-   std::vector<boost::shared_array<int> > _colPivot;
-   unsigned int _dimStateSets;
-   std::vector<unsigned int>  _dimStates;
-   std::vector<unsigned int>  _dimDummyStates;
-   std::vector<unsigned int>  _dimStateCanditates;
-  bool _initialized;
+	IMixedSystem* _system;
+	IStateSelection* _state_selection;
+	std::vector<boost::shared_array<int> > _rowPivot;
+	std::vector<boost::shared_array<int> > _colPivot;
+	unsigned int _dimStateSets;
+	std::vector<unsigned int> _dimStates;
+	std::vector<unsigned int> _dimDummyStates;
+	std::vector<unsigned int> _dimStateCanditates;
+	bool _initialized;
 };
 

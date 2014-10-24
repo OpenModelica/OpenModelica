@@ -33,9 +33,8 @@ public:
     ~SimManager();
     void runSimulation();
     void initialize();
-#if defined(__vxworks)
-    void runSingleStep();
-#endif
+	void runSingleStep();
+
 private:
 
 

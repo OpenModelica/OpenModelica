@@ -34,7 +34,7 @@ using namespace std;
 #include <boost/tuple/tuple.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/foreach.hpp>
-#if defined (__vxworks)
+#if defined (__vxworks) || defined (__TRICORE__)
 #else
 #include "Utils/extension/shared_library.hpp"
 #include "Utils/extension/extension.hpp"
@@ -70,11 +70,14 @@ using namespace std;
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/math/special_functions/trunc.hpp>
+#if defined (__TRICORE__)
+#else
 #include <Core/Utils/extension/extension.hpp>
 #include <Core/Utils/extension/factory.hpp>
 #include <Core/Utils/extension/type_map.hpp>
 #include <Core/Utils/extension/factory_map.hpp>
-#if defined (__vxworks)
+#endif
+#if defined (__vxworks) || defined(__TRICORE__)
 #else
 #include <Core/Utils/extension/shared_library.hpp>
 #include <Core/Utils/extension/convenience.hpp>
@@ -103,14 +106,16 @@ using namespace std;
 //#include <boost/timer/timer.hpp>
 #include <boost/noncopyable.hpp>
     /*Namespaces*/
+#if defined(__TRICORE__)
+#else
 using namespace boost::extensions;
-#if defined (__vxworks)
+#endif
+#if defined (__vxworks) || defined (__TRICORE__)
 #else
 namespace fs = boost::filesystem;
 #endif
 using boost::unordered_map;
 namespace uBlas = boost::numeric::ublas;
-using namespace boost::extensions;
 using namespace boost::assign;
 using namespace boost::numeric;
 using boost::multi_array;
@@ -123,13 +128,12 @@ using boost::tuple;
 using boost::tie;
 using boost::get;
 using boost::make_tuple;
-using boost::multi_array;
 using boost::array;
 using std::max;
 using std::min;
 using std::string;
 using std::vector;
-#if defined (__vxworks)
+#if defined (__vxworks) || defined(__TRICORE__)
 #else
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -171,6 +175,7 @@ typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<
 #include <Core/HistoryImpl.h>
 #include <Core/DataExchange/Policies/TextfileWriter.h>
 #include <Core/DataExchange/Policies/MatfileWriter.h>
-#if defined (__vxworks)
 #include <Core/SimulationSettings/ISettingsFactory.h>
+#if defined(__vxworks) || defined(__TRICORE__)
+#include <Core/DataExchange/SimDouble.h>
 #endif

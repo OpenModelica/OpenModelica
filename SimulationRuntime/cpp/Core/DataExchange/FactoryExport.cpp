@@ -1,8 +1,14 @@
-//#pragma once
-
-#if defined(__vxworks)
-
-
+#pragma once
+    
+#if defined(__TRICORE__) || defined(__vxworks)
+	
+#include <Core/Modelica.h>
+#include <Core/DataExchange/SimData.h>
+extern "C" ISimData* createSimData()
+{
+	return new SimData();
+}
+		
 
 #elif defined(OMC_BUILD)
 #include <Core/Modelica.h>

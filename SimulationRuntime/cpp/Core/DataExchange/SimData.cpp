@@ -2,13 +2,6 @@
 #include <Core/DataExchange/SimData.h>
 
 
-/*Vxworks
- * extern "C"  ISimData* createSimData()
-{
-    return new SimData();
-}
-*/
-
 SimData::SimData(void)
 {
 }
@@ -26,7 +19,7 @@ ISimVar* SimData::Get(string key)
 {
     Objects_type::const_iterator iter =_sim_vars.find(key);
 
-    //Pr�fen ob das Simobjekt in Liste ist.
+    //Prüfen ob das Simobjekt in Liste ist.
     if(iter!=_sim_vars.end())
     {
         boost::shared_ptr<ISimVar> obj= iter->second;
@@ -73,10 +66,10 @@ void  SimData::getOutputResults(string name,uBlas::vector<double>& v)
 {
     OutputResults_type::const_iterator iter =_result_vars.find(name);
 
-    //Pr�fen ob die Ergebnisse  in Liste ist.
+    //Prüfen ob die Ergebnisse  in Liste ist.
     if(iter!=_result_vars.end())
     {
-
+        
         v = boost::ref(iter->second);
     }
     else

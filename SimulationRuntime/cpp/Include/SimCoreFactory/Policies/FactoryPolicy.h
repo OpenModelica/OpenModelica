@@ -8,14 +8,34 @@
     #include <SimCoreFactory/Policies/SystemVxWorksFactory.h>
     #include <SimCoreFactory/Policies/NonLinSolverVxWorksFactory.h>
     #include <SimCoreFactory/Policies/LinSolverVxWorksFactory.h>
+    #include <Policies/LinSolverVxWorksFactory.h>	
     /*Policy defines*/
     typedef SystemVxWorksFactory<VxWorksFactory> SimControllerPolicy;
     typedef SolverVxWorksFactory<VxWorksFactory> ConfigurationPolicy;
     //typedef LinSolverVxWorksFactory<VxWorksFactory> NonLinSolverPolicy;
     typedef NonLinSolverVxWorksFactory<VxWorksFactory> NonLinSolverPolicy;
     typedef SolverSettingsVxWorksFactory<VxWorksFactory> SolverSettingsPolicy;
-    typedef LinSolverVxWorksFactory<VxWorksFactory> LinSolverPolicy;
+	typedef LinSolverVxWorksFactory<VxWorksFactory> LinSolverPolicy;
 
+	
+#elif defined(__TRICORE__)
+      /*Policy include*/
+	  
+    #include <Policies/SolverBodasFactory.h>
+    #include <Policies/SolverSettingsBodasFactory.h>
+    #include <Policies/SystemBodasFactory.h>
+    #include <Policies/NonLinSolverBodasFactory.h>
+	#include <Policies/LinSolverBodasFactory.h>
+    /*Policy defines*/
+    typedef SystemBodasFactory<BodasFactory> SimControllerPolicy;
+    typedef SolverBodasFactory<BodasFactory> ConfigurationPolicy;
+    //typedef LinSolverBodasFactory<BodasFactory> NonLinSolverPolicy;
+    typedef NonLinSolverBodasFactory<BodasFactory> NonLinSolverPolicy;
+    typedef SolverSettingsBodasFactory<BodasFactory> SolverSettingsPolicy;
+    typedef LinSolverBodasFactory<BodasFactory> LinSolverPolicy;	
+	
+	
+	
 #elif defined(SIMSTER_BUILD)
 
       /*Policy include*/

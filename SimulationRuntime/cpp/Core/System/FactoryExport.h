@@ -1,11 +1,10 @@
 #pragma once
 
-#if defined(__vxworks)
+#if defined(__vxworks) || defined(__TRICORE__)
 
 #define BOOST_EXTENSION_SYSTEM_DECL
 #define BOOST_EXTENSION_EVENTHANDLING_DECL
 #define BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL
-
 
 #elif defined(OMC_BUILD) || defined(SIMSTER_BUILD)
 
