@@ -2259,7 +2259,7 @@ external "builtin";
 annotation(preferredView="text");
 end importFMU;
 
-function translateModelFMU 
+function translateModelFMU
 "translates a modelica model into a Functional Mockup Unit.
 The only required argument is the className, while all others have some default values.
   Example command:
