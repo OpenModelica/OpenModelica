@@ -11,6 +11,13 @@ AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings* global_settings,PATH
   ,_global_settings(global_settings)
 {
 }
+#elif defined(__vxworks)
+AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings* global_settings,PATH library_path,PATH modelicasystem_path)
+  : NonLinSolverPolicy(library_path,modelicasystem_path,library_path)
+  , LinSolverPolicy(library_path,modelicasystem_path,library_path)
+  , _global_settings(global_settings)
+{
+}
 #else
 AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings* global_settings,PATH library_path,PATH modelicasystem_path)
   : ObjectFactory<OMCFactory>(library_path,modelicasystem_path,library_path)

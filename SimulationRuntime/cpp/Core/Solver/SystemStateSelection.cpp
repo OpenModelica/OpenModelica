@@ -11,13 +11,17 @@ SystemStateSelection::SystemStateSelection(IMixedSystem* system)
   ,_rowPivot()
   ,_initialized(false)
 {
+	
   _state_selection = dynamic_cast<IStateSelection*>(system);
   if ( !_state_selection)
     throw std::invalid_argument("No state selection system");
+
 }
 
 void SystemStateSelection::initialize()
 {
+#if defined(__vxworks)
+#else
   _dimStateSets = _state_selection->getDimStateSets();
 
   _dimStates.clear();
@@ -41,16 +45,24 @@ void SystemStateSelection::initialize()
   }
 
   _initialized = true;
+#endif
 }
 
 SystemStateSelection::~SystemStateSelection()
 {
+#if defined(__vxworks)
+#else
   _rowPivot.clear();
   _colPivot.clear();
+#endif
 }
 
 bool SystemStateSelection::stateSelection(int switchStates)
 {
+#if defined(__vxworks)
+return true;
+
+#else
   if(!_initialized)
     initialize();
   int res=0;
@@ -63,6 +75,7 @@ bool SystemStateSelection::stateSelection(int switchStates)
     _system->getStateSetJacobian(i,stateset_matrix);
 
     /* call pivoting function to select the states */
+
 
 
     memcpy(oldColPivot.get(), _colPivot[i].get(), _dimStateCanditates[i]*sizeof(int));
@@ -100,11 +113,13 @@ bool SystemStateSelection::stateSelection(int switchStates)
       changed = false;
   }
   return changed;
-
+#endif
 }
 
 void SystemStateSelection::setAMatrix(int* newEnable, unsigned int index)
 {
+#if defined(__vxworks)
+#else
   int col;
   int row=0;
   DynArrayDim2<int> A2;
@@ -156,6 +171,7 @@ void SystemStateSelection::setAMatrix(int* newEnable, unsigned int index)
   _state_selection->setStates(index,states);
   delete [] states ;
   delete [] states2 ;
+#endif 
 }
 
 
