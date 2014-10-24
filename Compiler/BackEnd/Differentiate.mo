@@ -76,7 +76,6 @@ protected import Util;
 //  - differentiateEquationTime
 //  - differentiateExpTime
 //  - differentiateExpSolve
-//  - differentiateExpCref
 //
 // =============================================================================
 
@@ -186,80 +185,6 @@ algorithm
   end matchcontinue;
 end differentiateExpSolve;
 
-protected function differentiateExpCref "function: differentiateEquationTime
-  Differentiates an equation with respect to the time variable."
-  input DAE.Exp inExp;
-  input DAE.ComponentRef inCref;
-  input BackendDAE.Variables inVariables;
-  input BackendDAE.Shared ishared;
-  output DAE.Exp outExp;
-  output BackendDAE.Shared oshared;
-algorithm
-  (outExp, oshared) := matchcontinue(inExp, inCref, inVariables, ishared)
-  local
-    String msg;
-    BackendDAE.Shared shared;
-    DAE.Exp dexp;
-    DAE.FunctionTree funcs;
-    BackendDAE.DifferentiateInputData diffData;
-    BackendDAE.Variables knvars;
-    case (_, _, _, _)
-    equation
-      funcs = BackendDAEUtil.getFunctions(ishared);
-      knvars = BackendDAEUtil.getknvars(ishared);
-      diffData = BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), NONE(), SOME({}), NONE(), NONE());
-      (dexp, funcs) = differentiateExp(inExp, inCref, diffData, BackendDAE.SIMPLE_DIFFERENTIATION(), funcs);
-      (dexp,_) = ExpressionSimplify.simplify(dexp);
-      oshared = BackendDAEUtil.addFunctionTree(funcs, ishared);
-      then (dexp, oshared);
-    else
-    equation
-        // expandDerOperator expectes sometime that differentiate fails,
-        // so the calling function need to take care of the error messages.
-        // TODO: change that in expandDerOperator
-        //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource));
-
-        true = Flags.isSet(Flags.FAILTRACE);
-        msg = "\nDifferentiate.differentiateExpCref failed for " +& ExpressionDump.printExpStr(inExp) +& "\n\n";
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
-      then fail();
-
-  end matchcontinue;
-end differentiateExpCref;
-
-protected function differentiateExpCrefFunction "function: differentiateEquationTime
-  Differentiates an equation with respect to the time variable."
-  input DAE.Exp inExp;
-  input DAE.ComponentRef inCref;
-  input DAE.FunctionTree inFuncs;
-  output DAE.Exp outExp;
-algorithm
-  outExp := matchcontinue(inExp, inCref, inFuncs)
-  local
-    String msg;
-    DAE.Exp dexp;
-    BackendDAE.DifferentiateInputData diffData;
-    case (_, _, _)
-    equation
-      diffData = BackendDAE.DIFFINPUTDATA(NONE(), NONE(), NONE(), NONE(), SOME({}), NONE(), NONE());
-      (dexp, _) = differentiateExp(inExp, inCref, diffData, BackendDAE.SIMPLE_DIFFERENTIATION(), inFuncs);
-      (dexp,_) = ExpressionSimplify.simplify(dexp);
-      then dexp;
-    else
-    equation
-        // expandDerOperator expectes sometime that differentiate fails,
-        // so the calling function need to take care of the error messages.
-        // TODO: change that in expandDerOperator
-        //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource));
-
-        true = Flags.isSet(Flags.FAILTRACE);
-        msg = "\nDifferentiate.differentiateExpCrefFunction failed for " +& ExpressionDump.printExpStr(inExp) +& "\n\n";
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
-      then fail();
-
-  end matchcontinue;
-end differentiateExpCrefFunction;
-
 public function differentiateExpCrefFullJacobian "function: differentiateEquationTime
   Differentiates an equation with respect to the time variable."
   input DAE.Exp inExp;
@@ -301,37 +226,6 @@ algorithm
   end matchcontinue;
 end differentiateExpCrefFullJacobian;
 
-protected function differentiateFunctionPartial "function: differentiateFunctionPartial
-  Differentiates an function with respect to a list of ComponentReference
-  with are inputs arguments of that function."
-  input DAE.Function inFunction;
-  input list<DAE.ComponentRef> inCrefs;
-  input Absyn.Path inDerFunctionName;
-  input DAE.FunctionTree inFunctionTree;
-  output DAE.Function outFunction;
-  output DAE.FunctionTree outFunctionTree;
-algorithm
-  (outFunction, outFunctionTree) := matchcontinue(inFunction, inCrefs, inDerFunctionName, inFunctionTree)
-  local
-    String msg;
-    DAE.Function dfunction;
-    BackendDAE.DifferentiateInputData diffData;
-    Absyn.Path fname;
-    case (_, _, _, _)
-    equation
-      diffData = BackendDAE.DIFFINPUTDATA(NONE(), NONE(), NONE(), NONE(), SOME({}), NONE(), NONE());
-      (dfunction, outFunctionTree) = differentiatePartialFunctionwrt(inFunction, inCrefs, inDerFunctionName, diffData, BackendDAE.DIFFERENTIATION_FUNCTION(), inFunctionTree);
-    then (dfunction, outFunctionTree);
-    else
-    equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        fname = DAEUtil.functionName(inFunction);
-        msg = "\nDifferentiate.differentiateFunctionPartial failed for function: " +& Absyn.pathString(fname) +& "\n";
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
-      then fail();
-
-  end matchcontinue;
-end differentiateFunctionPartial;
 
 // =============================================================================
 // further interface functions to differentiation
@@ -2451,42 +2345,6 @@ algorithm
   end match;
 end prepareArgumentsExplArray;
 
-protected function differentiatePartialFunctionwrt "Author: wbraun"
-  input DAE.Function inFunction;
-  input list<DAE.ComponentRef> inDiffwrtCrefs;
-  input Absyn.Path inDerFunctionName;
-  input BackendDAE.DifferentiateInputData inInputData;
-  input BackendDAE.DifferentiationType inDiffType;
-  input DAE.FunctionTree inFunctionTree;
-  output DAE.Function outDerFunction;
-  output DAE.FunctionTree outFunctionTree;
-algorithm
-  (outDerFunction, outFunctionTree) := matchcontinue(inFunction, inDiffwrtCrefs, inDerFunctionName, inInputData, inDiffType, inFunctionTree)
-    local
-      DAE.FunctionTree functions;
-      DAE.ComponentRef diffwrtCref;
-      list<DAE.ComponentRef> diffwrtCrefs;
-      DAE.Function dfunc;
-      Absyn.Path path, dpath;
-      String str;
-
-    case (_, {}, _, _, _, _)
-    then (inFunction, inFunctionTree);
-
-    // differentiate functions
-    case (_, diffwrtCref::diffwrtCrefs, dpath, _, _, _) equation
-      (dfunc, functions, _) = differentiatePartialFunction(inFunction, diffwrtCref, SOME(dpath), inInputData, inDiffType, inFunctionTree);
-      (dfunc, functions) = differentiatePartialFunctionwrt(dfunc, diffwrtCrefs, dpath, inInputData, inDiffType, functions);
-    then (dfunc, functions);
-
-    else equation
-      path = DAEUtil.functionName(inFunction);
-      str = "\nDifferentiate.differentiatePartialFunctionwrt failed for function: " +& Absyn.pathString(path) +& "\n";
-      Debug.fprint(Flags.FAILTRACE, str);
-    then fail();
-  end matchcontinue;
-end differentiatePartialFunctionwrt;
-
 protected function differentiatePartialFunction "Author: wbraun"
   input DAE.Function inFunction;
   input DAE.ComponentRef inDiffwrtCref;
@@ -2902,21 +2760,6 @@ algorithm
   end matchcontinue;
 end getFunctionMapper1;
 
-protected function getFunctionResultTypes"
-Author: Frenkel TUD"
-  input DAE.Type inType;
-  output list<DAE.Type> outTypLst;
-algorithm
-  outTypLst := matchcontinue (inType)
-     local
-       list<DAE.Type> tlst;
-       DAE.Type t;
-    case (DAE.T_FUNCTION(funcResultType=DAE.T_TUPLE(tupleType=tlst))) then tlst;
-    case (DAE.T_FUNCTION(funcResultType=t)) then {t};
-    case _ then {inType};
-  end matchcontinue;
-end getFunctionResultTypes;
-
 //
 // util functions for Types: DifferentiateInputData, DifferentiateInputArguments, DifferentiationType
 //
@@ -2948,32 +2791,6 @@ algorithm
     then BackendDAE.DIFFINPUTDATA(indepVars, SOME(depVars), knownVars, allVars, algVars, diffCrefs, diffname);
   end match;
 end addDependentVars;
-
-protected function addIndependentVars
-  input list<BackendDAE.Var> inVarsLst;
-  input BackendDAE.DifferentiateInputData inDiffData;
-  output BackendDAE.DifferentiateInputData outDiffData;
-algorithm
-  outDiffData := match(inVarsLst, inDiffData)
-    local
-      Option<BackendDAE.Variables> depVars, knownVars, allVars;
-      BackendDAE.Variables indepVars;
-      Option<list< BackendDAE.Var>> algVars;
-      Option<list< .DAE.ComponentRef>> diffCrefs;
-      Option<String> diffname;
-
-    case ({}, _)
-    then inDiffData;
-
-    case (_, BackendDAE.DIFFINPUTDATA(NONE(), depVars, knownVars, allVars, algVars, diffCrefs, diffname)) equation
-      indepVars = BackendVariable.listVar(inVarsLst);
-    then BackendDAE.DIFFINPUTDATA(SOME(indepVars), depVars, knownVars, allVars, algVars, diffCrefs, diffname);
-
-    case (_, BackendDAE.DIFFINPUTDATA(SOME(indepVars), depVars, knownVars, allVars, algVars, diffCrefs, diffname)) equation
-      indepVars = BackendVariable.addVars(inVarsLst, indepVars);
-    then BackendDAE.DIFFINPUTDATA(SOME(indepVars), depVars, knownVars, allVars, algVars, diffCrefs, diffname);
-  end match;
-end addIndependentVars;
 
 protected function addAllVars
   input list<BackendDAE.Var> inVarsLst;
@@ -3057,56 +2874,6 @@ algorithm
       then fail();
   end matchcontinue;
 end addElementVars2Dep;
-
-protected function addElementVars2InDep
-  input list<DAE.Element> inElementLstVars;
-  input DAE.FunctionTree functions;
-  input BackendDAE.DifferentiateInputData inDiffData;
-  output BackendDAE.DifferentiateInputData outDiffData;
-  output list< BackendDAE.Equation> eqnsLst;
-algorithm
-  (outDiffData, eqnsLst) := matchcontinue(inElementLstVars, functions, inDiffData)
-    local
-      BackendDAE.Variables indepVars, vars, knvars, exvars;
-      list<BackendDAE.Equation> eqns;
-      list< BackendDAE.Var> varsLst;
-      String str;
-
-    case (_, _, _) equation
-      (varsLst, eqns) = lowerVarsElementVars(inElementLstVars, functions);
-    then (addIndependentVars(varsLst, inDiffData), eqns);
-
-    else equation
-      str = "Differentiate.addElementVars2InDep failed";
-      Error.addMessage(Error.INTERNAL_ERROR, {str});
-    then fail();
-  end matchcontinue;
-end addElementVars2InDep;
-
-protected function addElementVars2AllVars
-  input list<DAE.Element> inElementLstVars;
-  input DAE.FunctionTree functions;
-  input BackendDAE.DifferentiateInputData inDiffData;
-  output BackendDAE.DifferentiateInputData outDiffData;
-  output list< BackendDAE.Equation> eqnsLst;
-algorithm
-  (outDiffData, eqnsLst) := matchcontinue(inElementLstVars, functions, inDiffData)
-    local
-      BackendDAE.Variables indepVars, vars, knvars, exvars;
-      list<BackendDAE.Equation> eqns;
-      list< BackendDAE.Var> varsLst;
-      String str;
-
-    case(_, _, _) equation
-      (varsLst, eqns) = lowerVarsElementVars(inElementLstVars, functions);
-    then (addAllVars(varsLst, inDiffData), eqns);
-
-    else equation
-      str = "Differentiate.addVars2AllVars failed";
-      Error.addMessage(Error.INTERNAL_ERROR, {str});
-    then fail();
-  end matchcontinue;
-end addElementVars2AllVars;
 
 annotation(__OpenModelica_Interface="backend");
 end Differentiate;
