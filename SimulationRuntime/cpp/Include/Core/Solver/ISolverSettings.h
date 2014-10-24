@@ -1,5 +1,5 @@
 #pragma once
-#include <Core/SimulationSettings//IGlobalSettings.h>
+#include <Core/SimulationSettings/IGlobalSettings.h>
 //#include "Math/Implementation/Constants.h"
 /*****************************************************************************/
 /**

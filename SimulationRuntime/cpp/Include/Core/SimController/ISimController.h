@@ -1,5 +1,5 @@
 #pragma once
-
+#include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 
 #ifdef ANALYZATION_MODE
@@ -13,7 +13,7 @@
 #include <string.h>
 using std::string;
 #endif
-#include <SimCoreFactory/Policies/FactoryConfig.h>
+
 struct SimSettings
 {
   string solver_name;

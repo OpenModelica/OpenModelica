@@ -2,7 +2,7 @@
 
 /*Defines*/
 #define PATH string
-#include <VxWorksFactory/VxWorksFactory.h>
+#include <SimCoreFactory/VxWorksFactory/VxWorksFactory.h>
 
 #elif defined(__TRICORE__)
 
