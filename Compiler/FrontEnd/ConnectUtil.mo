@@ -1904,7 +1904,7 @@ protected
 algorithm
   outDae := match(inTopScope, inSets, inDae, inConnectionGraph, inModelNameQualified)
     local
-      DAE.DAElist dae;
+      DAE.DAElist dae, dae2;
       Boolean has_stream, has_expandable, has_cardinality;
       ConnectionGraph.DaeEdges broken, connected;
 
@@ -1923,7 +1923,8 @@ algorithm
         // we do this here so we do it once and not for every EQU set.
         (dae, connected, broken) = ConnectionGraph.handleOverconstrainedConnections(inConnectionGraph, inModelNameQualified, dae);
         // adrpo: FIXME: maybe we should just remove them from the sets then send the updates sets further
-        dae = List.fold2(sets, equationsDispatch, connected, broken, dae);
+        dae2 = List.fold2(listReverse(sets), equationsDispatch, connected, broken, DAE.emptyDae);
+        dae = DAEUtil.joinDaes(dae, dae2);
         has_stream = System.getHasStreamConnectors();
         has_cardinality = System.getUsesCardinality();
         dae = evaluateConnectionOperators(has_stream, has_cardinality, inSets, set_array, dae);
@@ -2494,19 +2495,19 @@ algorithm
         eql = ConnectionGraph.removeBrokenConnects(eql, inConnected, inBroken);
         dae = generateEquEquations(eql);
       then
-        DAEUtil.joinDaes(inDae, dae);
+        DAEUtil.joinDaes(dae, inDae);
 
     case (Connect.SET(ty = Connect.FLOW(), elements = eql), _, _, _)
       equation
         dae = generateFlowEquations(eql);
       then
-        DAEUtil.joinDaes(inDae, dae);
+        DAEUtil.joinDaes(dae, inDae);
 
     case (Connect.SET(ty = Connect.STREAM(_), elements = eql), _, _, _)
       equation
         dae = generateStreamEquations(eql);
       then
-        DAEUtil.joinDaes(inDae, dae);
+        DAEUtil.joinDaes(dae, inDae);
 
     case (Connect.SET(ty = Connect.NO_TYPE()), _, _, _)
       equation

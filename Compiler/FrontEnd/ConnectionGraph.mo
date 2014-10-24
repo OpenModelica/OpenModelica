@@ -1756,7 +1756,7 @@ algorithm
     else
       equation
         equalityConstraintElements = List.flatten(List.map(inBroken, Util.tuple33));
-        dae = DAEUtil.joinDaes(inDAE, DAE.DAE(equalityConstraintElements));
+        dae = DAEUtil.joinDaes(DAE.DAE(equalityConstraintElements), inDAE);
       then
         dae;
 
