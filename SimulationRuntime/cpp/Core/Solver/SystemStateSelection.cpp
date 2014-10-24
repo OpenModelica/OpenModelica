@@ -11,7 +11,7 @@ SystemStateSelection::SystemStateSelection(IMixedSystem* system)
   ,_rowPivot()
   ,_initialized(false)
 {
-	
+
   _state_selection = dynamic_cast<IStateSelection*>(system);
   if ( !_state_selection)
     throw std::invalid_argument("No state selection system");
@@ -171,7 +171,7 @@ void SystemStateSelection::setAMatrix(int* newEnable, unsigned int index)
   _state_selection->setStates(index,states);
   delete [] states ;
   delete [] states2 ;
-#endif 
+#endif
 }
 
 
