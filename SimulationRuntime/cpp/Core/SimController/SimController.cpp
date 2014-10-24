@@ -79,7 +79,7 @@ boost::shared_ptr<ISimData> SimController::getSimData(string modelname)
 
 
 
-// HINZUGEFÜGT WEGEN VXWORKS
+// HINZUGEFÃœGT WEGEN VXWORKS
 void SimController::StartVxWorks(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettings simsettings)
 {
   /*vxworks: double startTime,endTime,llimit,ulimit,stepSize;
