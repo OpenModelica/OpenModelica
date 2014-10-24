@@ -2300,16 +2300,16 @@ algorithm
       DAE.Exp de, res;
       DAE.Type ty;
       Integer ix;
-      
+
     case ({}, _, _, _)
     then inAccum;
-    
+
     case (expLst::rest, de::restDiff, DAE.TSUB(exp=DAE.CALL(path=path, expLst=_, attr=attr), ix =ix, ty=ty), _) equation
       res = DAE.TSUB(DAE.CALL(path, expLst, attr), ix, ty);
       res = Expression.expMul(de, res);
       res = Expression.expAdd(inAccum, res);
     then createPartialSum(rest, restDiff, inCall, res);
-     
+
     case (expLst::rest, de::restDiff, DAE.CALL(path=path, expLst=_, attr=attr), _) equation
       res = DAE.CALL(path, expLst, attr);
       res = Expression.expMul(de, res);
@@ -2335,7 +2335,7 @@ algorithm
 
     case ({}, _, _, _)
     then listReverse(inAccum);
-    
+
     case (e::rest, _, _, _) equation
       tp = Expression.typeof(e);
       dims = Expression.arrayDimension(tp);
