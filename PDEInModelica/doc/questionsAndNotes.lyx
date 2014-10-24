@@ -1117,6 +1117,66 @@ Build whole solver in some PDE framework, perhaps Overture (http://www.overturef
 amework.org/)
 \end_layout
 
+\begin_layout Itemize
+
+\lang british
+libraries to solve PDEs: 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\series bold
+\lang british
+clawpack
+\series default
+, http://www.amath.washington.edu/~claw/
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+pydstool, http://www.cam.cornell.edu/~rclewley/cgi-bin/moin.cgi/
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+FemHub, http://femhub.org/welcome.html
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+Hermes
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+\lang british
+dealII
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+overture, http://www.overtureframework.org/
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+hiflow3, http://www.hiflow3.org/
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+flex, http://www.pdesolutions.com/
+\end_layout
+
+\end_deeper
 \begin_layout Section
 TODO
 \end_layout

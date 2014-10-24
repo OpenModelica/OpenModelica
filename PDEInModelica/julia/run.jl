@@ -1,7 +1,8 @@
 #include("advection.jl")
 #include("string.jl")
-include("stringAlg.jl")
-(X,U) = simulate(1.0)
+#include("stringAlg.jl")
+include("artery.jl")
+(X,U) = simulate(5.0)
 
 function writeData(X,U)
 f = open("result.txt","w")

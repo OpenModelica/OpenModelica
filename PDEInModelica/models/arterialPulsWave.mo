@@ -22,11 +22,11 @@ model arterialPulsWave
 initial equation
   U*A = CO                                                      in omega;
 equation
-  pder(A,time) + pder(A*U,x) = 0                                in omega;
+  pder(A,time) + pder(A*U,x) = 0                                in omega;//4 -> A_t (utFun)
   pder(U,time) + (2*alpha-1)*U*pder(U,x) + (alpha-1)*U*U/A*pder(A,x)
-                                  + 1/rho*pder(P,x) = f/(rho*A) in omega;
-  f = -2*(zeta+2)*mu*C.pi*U                                     in omega;
-  P = P_ext + beta/A_0*(sqrt(A) - sqrt(A_0))                    in omega;
+                                  + 1/rho*pder(P,x) = f/(rho*A) in omega;//3 -> U_t (utFun)
+  f = -2*(zeta+2)*mu*C.pi*U                                     in omega;//2 -> f (vFun)
+  P = P_ext + beta/A_0*(sqrt(A) - sqrt(A_0))                    in omega;//1 -> P (vFun)
   A*U = Q_heart;                                          in omega.left;
   A*U = CO;                                               in omega.right;
 end arterialPulsWave;

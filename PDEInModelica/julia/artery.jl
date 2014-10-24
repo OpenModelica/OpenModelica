@@ -21,7 +21,7 @@ nV = 2                 #number of algebraic fields
 
 L = 2.0                #length of domain
 
-type Parameters
+type P
     alpha
     zeta
     rho
@@ -36,11 +36,12 @@ type Parameters
     R_out
 end
 
-p = Parameters(1.1, 0.0, 1000, 4e-3, 0.0, 24e-3, 0.0, 0.002, 6500000.0, 5.6/1000/6, 90*133.322387415, 0.0)
+p = P(1.1, 0.0, 1000, 4e-3, 0.0, 24e-3, 0.0, 0.002, 6500000.0, 5.6/1000/60, 90*133.322387415, 0.0)
+#             alpha zeta rho   mu   P_ext A_0    beta h      E          CO           MAP              R_out
 
 function initializeBoundParameters(p)
     p.zeta = (2 - p.alpha)/(p.alpha-1)
-    p.beta = 4.0/3.0*sqrt(pi)*h*E
+    p.beta = 4.0/3.0*sqrt(pi)*p.h*p.E
 end
 
 
@@ -63,36 +64,46 @@ function Q_heart(p,t)
     T1 = mod(t,Tc)
     SV = p.CO/HR
     Q_max = SV / (10 * TcP)
-    
-    if T1 < TcP T1/TcP*Q_max
-    elseif T1 < 9*TcP Q_max
-    elseif T1 < 10*TcP (10*TcP-t)/TcP*Q_max
-    else 0.0
+    if T1 < TcP 
+        T1/TcP*Q_max
+    elseif T1 < 9*TcP 
+        Q_max
+    elseif T1 < 10*TcP 
+        (10*TcP-T1)/TcP*Q_max
+    else 
+        0.0
     end
 end
-else 0.0 end
-end
 
-function BCFun(t,X,U)
+function BCFun(p,t,X,U)
     Ql = Q_heart(p,t)
     Al = extrapolate(2,left,X,U)
     Ul = Ql/Al
     Ar = extrapolate(2,right,X,U)
-    Ur = CO/Ar
+    Ur = p.CO/Ar
     ([Ul;Al],[Ur,Ar])
     
 end
 
-function maxEigValFun()
-    c
+function maxEigValFun(p,U,V)
+    sqrt(p.E*p.h/(2*p.rho*sqrt(A/pi))) #TODO: dopsat, upravit signaturu maxEigValFun v solveru a ostatních modelech
 end
 
-function vFun(p,x,u,U_x,t)
-#TODO: implement
+function vFun(p,x,u,ux,t)
+    #P = P_ext + beta/A_0*(sqrt(A) - sqrt(A_0)) :
+    P = p.P_ext + p.beta/p.A_0*(sqrt(u[2]) - sqrt(p.A_0))
+    #f = -2*(zeta+2)*mu*C.pi*U :
+    f = -2*(p.zeta+2)*p.mu*pi*u[1]
+    [P, f]
 end
 
 function utFun(p,x,u,ux,v,vx,t,)
-    [c*ux[2]; ux[1]]
+    #pder(U,time) = f/(rho*A) - (2*alpha-1)*U*pder(U,x) - (alpha-1)*U*U/A*pder(A,x) - 1/rho*pder(P,x)
+    U_t = v[2]/(p.rho*u[2]) - (2*p.alpha-1)*u[1]*ux[1] - (p.alpha-1)*u[1]*u[1]/u[2]ux[2] - 1/p.rho*vx[1]
+    #pder(A,time) = - pder(A*U,x)
+    #                  A_x*U + A*U_x
+    A_t = - ux[2]*u[1] - ux[1]*u[2]
+    [A_t, A_t]
 end
 
 include("solver.jl")
