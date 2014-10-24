@@ -183,6 +183,7 @@ ResolveLoops.mo \
 SynchronousFeatures.mo \
 Tearing.mo \
 Uncertainties.mo \
+Unit.mo \
 UnitCheck.mo \
 XMLDump.mo
 
@@ -253,8 +254,11 @@ HashTableCrIntToExp.mo \
 HashTableCrToExpSourceTpl.mo \
 HashTablePathToFunction.mo \
 HashTableStringToPath.mo \
+HashTableStringToUnit.mo \
+HashTableCrToUnit.mo \
 HashTableExpToExp.mo \
 HashTableExpToIndex.mo \
+HashTableUnitToString.mo \
 GraphML.mo \
 IOStream.mo \
 List.mo \
