@@ -930,7 +930,6 @@ date=`date "+%Y-%m-%d %H:%M:%S"`
 GENERATED_AUTOCONF_FILES="Makefile \
 Compiler/Makefile \
 Compiler/Template/Makefile \
-Compiler/omc_release/Makefile \
 Compiler/runtime/Makefile \
 Compiler/runtime/config.unix.h \
 PythonInterface/Makefile \
