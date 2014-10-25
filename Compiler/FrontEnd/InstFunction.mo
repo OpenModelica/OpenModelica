@@ -278,7 +278,6 @@ algorithm
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(restriction = r,partialPrefix = pPrefix)),inst_dims)
       equation
         failure(SCode.R_RECORD(_) = r);
-        true = MetaUtil.strictRMLCheck(Flags.isSet(Flags.STRICT_RML),c);
         (cache,env,ih,funs) = implicitFunctionInstantiation2(cache,env,ih,mod,pre,c,inst_dims,false);
         cache = InstUtil.addFunctionsToDAE(cache, funs, pPrefix);
       then (cache,env,ih);

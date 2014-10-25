@@ -1702,12 +1702,6 @@ external "builtin";
 annotation(preferredView="text");
 end getClassesInModelicaPath;
 
-function strictRMLCheck "Checks if any loaded function."
-  output String message "empty if there was no problem";
-external "builtin";
-annotation(preferredView="text");
-end strictRMLCheck;
-
 /* These don't influence anything...
 function getClassNamesForSimulation
   output String classNamesForSimulation;

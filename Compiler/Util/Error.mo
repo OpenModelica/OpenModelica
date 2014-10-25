@@ -801,8 +801,6 @@ public constant Message META_MATCH_GENERAL_FAILURE = MESSAGE(5014, TRANSLATION()
   Util.gettext("Failed to elaborate match expression %s"));
 public constant Message META_CONS_TYPE_MATCH = MESSAGE(5015, TRANSLATION(), ERROR(),
   Util.gettext("Failed to match types of cons expression %s. The head has type %s and the tail %s."));
-public constant Message META_STRICT_RML_MATCH_IN_OUT = MESSAGE(5016, TRANSLATION(), ERROR(),
-  Util.gettext("%s. Strict RML enforces match expression input and output to be the same as the function's."));
 public constant Message META_NONE_CREF = MESSAGE(5017, TRANSLATION(), ERROR(),
   Util.gettext("NONE is not acceptable syntax. Use NONE() instead."));
 public constant Message META_INVALID_PATTERN_NAMED_FIELD = MESSAGE(5018, TRANSLATION(), ERROR(),

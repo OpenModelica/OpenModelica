@@ -3332,13 +3332,6 @@ algorithm
         setEcho(bval);
       then (cache,v,st);
 
-    case (cache,_,"strictRMLCheck",_,st as GlobalScript.SYMBOLTABLE(ast = p),_)
-      equation
-        _ = List.map1r(List.map(Interactive.getFunctionsInProgram(p), SCodeUtil.translateClass), MetaUtil.strictRMLCheck, true);
-        str = Error.printMessagesStr(false);
-        v = Values.STRING(str);
-      then (cache,v,st);
-
     case (cache,env,"dumpXMLDAE",vals,st,_)
       equation
         (cache,st,xml_filename) = dumpXMLDAE(cache,env,vals,st, msg);
