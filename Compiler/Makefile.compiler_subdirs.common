@@ -1,53 +1,23 @@
 #
-# A common Makefile for omc_release, omc_debug, omc_profiler
+# A common Makefile for subdirectories (runtime and parser)
 # Should be used for both OMDev and Linux
 #
 
 include $(srcdir)/Makefile.common
 
-all : .testvariables .depend $(ALLMO) $(SRCSIGX)
-	# Updated dependencies; reload make and compile the target
-	$(MAKE) -f $(MAKETARGET) $(PROG)
+all : .testvariables .depend runtime parser
 
 SUBDIRS	= runtime parser
 SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
 
 .SUFFIXES: .o .mo .h .c
-.PHONY: all vctarget absyn_subdir clean reallyclean nolink $(SUBDIRS) $(PROG)
-
-vpath %.mo $(FRONTEND_DIR)
-vpath %.mo $(FFRONTEND_DIR)
-vpath %.mo $(BACKEND_DIR)
-vpath %.mo $(SIMCODE_DIR)
-vpath %.mo $(GLOBAL_DIR)
-vpath %.mo $(TEMPLATE_DIR)
-vpath %.mo $(SCRIPT_DIR)
-vpath %.mo $(UTIL_DIR)
-vpath %.mo $(MAIN_DIR)
-
-.depend: $(ALLMO)
-	-$(RM) .depend
-	time $(RMLHOME)/bin/rml $(RML_INCLUDE_ALL_DIRS) -fdump-depends $(SRCMO) > .depend
+.PHONY: all clean reallyclean $(SUBDIRS)
 
 $(SRCO): %.o : %.c %.h
 	$(CC) $(CFLAGS) $(RMLINC) -c $<
 
-%.c %.h : %.mo
-	$(RMLC) $(RMLCFLAGS) +C $<
-
-%.h : %.c
-
 $(SRCHSRCDIR) : $(srcdir)/%.h : %.h
 	cp $< $@
-
-$(SRCSIGX): %.sigx : %.mo
-	$(srcdir)/rml2sig/rmldep-new.sh $(RML) $<
-	@touch $@
-
-vctarget: $(SRCC) absyn_subdir
-
-absyn_subdir: $(SRCHSRCDIR)
-	(cd $(top_builddir)/Parser && $(MAKE) -f $(MAKETARGET) vctarget)
 
 runtime: $(SRCHSRCDIR)
 	$(MAKE) -C ../runtime/ -f $(MAKETARGET)
@@ -60,14 +30,12 @@ clean:
 	done
 	(cd $(srcdir) && $(RM) $(SRCH))
 	$(RM) -f .depend
-	$(RM) -f $(SRCO) $(SRCC) $(SRCH) $(PROG)$(EXEEXT) *~ \
-	$(ALLMO:%.mo=%.srz) $(SRCSIGX) $(SRCSIG) *.srz *.o *.sig *.sigx *.c *.h
+	$(RM) -f $(SRCO) $(SRCC) $(SRCH) *~
 
 reallyclean: clean
-	$(RM) -f $(ALLMO:%.mo=%.srz) $(SRCSIGX) $(SRCSIG) $(PROG)$(EXEEXT)
 
 # don't remove these files after intermediate build steps
-.PRECIOUS: Makefile $(ALLMO)
+.PRECIOUS: Makefile
 
 Makefile: Makefile.in
 	cd $(top_builddir); ./config.status

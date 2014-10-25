@@ -39,7 +39,7 @@ SUBDIRS	= runtime
 
 .SUFFIXES:
 .SUFFIXES: .o .mo .h
-.PHONY: all subdirs report vctarget debug release depend clean dclean test reallyclean omc_release simcode builtin
+.PHONY: all subdirs report vctarget debug release depend clean dclean test reallyclean simcode builtin
 
 #all : debug
 all : release
@@ -50,27 +50,16 @@ debug:	dinstall
 
 release: install
 
-$(PROG): omc_release
-	echo Copying $(PROG)$(EXEEXT) into $(builddir_bin)
-	cp omc_release/$(PROG)$(EXEEXT) $(builddir_bin)/
-
 install_scripts:
 	cd scripts; cp $(SCRIPT_FILES) ../$(builddir_scripts)
 	cp OpenModelicaBootstrappingHeader.h $(top_builddir)/build/include/omc/c/
 
-install: install_scripts $(PROG)
-
-nodepend:
-	(cd omc_release && $(MAKE))
-
-omc_release: simcode builtin
-	(cd omc_release && $(MAKE))
+install: install_scripts
 
 clean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) clean) \
 	done
-	(cd omc_release; $(MAKE) clean)
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(builddir_bin)/$(PROG)$(EXEEXT)
 	-cd $(builddir_bin) && rm -f $(SCRIPT_FILES)
@@ -79,7 +68,6 @@ reallyclean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) reallyclean) \
 	done
-	(cd omc_release; $(MAKE) reallyclean)
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(builddir)/$(PROG)$(EXEEXT)
 
