@@ -38,203 +38,203 @@
 QT += network core gui webkit xml svg
 
 TRANSLATIONS = Resources/nls/OMEdit_de.ts \
-    Resources/nls/OMEdit_es.ts \
-    Resources/nls/OMEdit_fr.ts \
-    Resources/nls/OMEdit_it.ts \
-    Resources/nls/OMEdit_ja.ts \
-    Resources/nls/OMEdit_ro.ts \
-    Resources/nls/OMEdit_ru.ts \
-    Resources/nls/OMEdit_sv.ts \
-    Resources/nls/OMEdit_zh_CN.ts
+  Resources/nls/OMEdit_es.ts \
+  Resources/nls/OMEdit_fr.ts \
+  Resources/nls/OMEdit_it.ts \
+  Resources/nls/OMEdit_ja.ts \
+  Resources/nls/OMEdit_ro.ts \
+  Resources/nls/OMEdit_ru.ts \
+  Resources/nls/OMEdit_sv.ts \
+  Resources/nls/OMEdit_zh_CN.ts
 
 TARGET = OMEdit
 TEMPLATE = app
 
 # This is very evil, lupdate just look for SOURCES variable and creates translations. This section is not compiled at all :)
 evil_hack_to_fool_lupdate {
-    SOURCES += ../../OMPlot/OMPlotGUI/*.cpp
+  SOURCES += ../../OMPlot/OMPlotGUI/*.cpp
 }
 
-SOURCES += main.cpp\
-    Util/backtrace.c \
-    Util/Helper.cpp \
-    MainWindow.cpp \
-    omc_communication.cc \
-    OMC/OMCProxy.cpp \
-    Util/StringHandler.cpp \
-    Modeling/MessagesWidget.cpp \
-    Modeling/LibraryTreeWidget.cpp \
-    Modeling/ModelWidgetContainer.cpp \
-    Modeling/ModelicaClassDialog.cpp \
-    Options/OptionsDialog.cpp \
-    Editors/BaseEditor.cpp \
-    Editors/FindReplaceDialog.cpp \
-    Editors/ModelicaTextEditor.cpp \
-    Editors/TransformationsEditor.cpp \
-    Editors/DebuggerSourceEditor.cpp \
-    Editors/TextEditor.cpp \
-    Editors/TLMEditor.cpp \
-    Plotting/PlotWindowContainer.cpp \
-    Component/Component.cpp \
-    Annotations/ShapeAnnotation.cpp \
-    Component/CornerItem.cpp \
-    Annotations/LineAnnotation.cpp \
-    Annotations/PolygonAnnotation.cpp \
-    Annotations/RectangleAnnotation.cpp \
-    Annotations/EllipseAnnotation.cpp \
-    Annotations/TextAnnotation.cpp \
-    Annotations/BitmapAnnotation.cpp \
-    Component/ComponentProperties.cpp \
-    Component/Transformation.cpp \
-    Modeling/DocumentationWidget.cpp \
-    Simulation/SimulationDialog.cpp \
-    FMI/ImportFMUDialog.cpp \
-    Plotting/VariablesWidget.cpp \
-    Options/NotificationsDialog.cpp \
-    Annotations/ShapePropertiesDialog.cpp \
-    Util/OMDumpXML.cpp \
-    Util/Utilities.cpp \
-    Util/diff_match_patch.cpp \
-    TransformationalDebugger/TransformationsWidget.cpp \
-#    Simulation/SimulationBrowserWidget.cpp
-    Debugger/GDB/CommandFactory.cpp \
-    Debugger/GDB/GDBAdapter.cpp \
-    Debugger/StackFrames/StackFramesWidget.cpp \
-    Debugger/Locals/LocalsWidget.cpp \
-    Debugger/Locals/ModelicaValue.cpp \
-    Debugger/Breakpoints/BreakpointMarker.cpp \
-    Debugger/Breakpoints/BreakpointsWidget.cpp \
-    Debugger/Breakpoints/BreakpointDialog.cpp \
-    Debugger/DebuggerMainWindow.cpp \
-    Debugger/Attach/AttachToProcessDialog.cpp \
-    Debugger/Attach/ProcessListModel.cpp \
-    CrashReport/CrashReportDialog.cpp
+SOURCES += main.cpp \
+  Util/backtrace.c \
+  Util/Helper.cpp \
+  MainWindow.cpp \
+  omc_communication.cc \
+  OMC/OMCProxy.cpp \
+  Util/StringHandler.cpp \
+  Modeling/MessagesWidget.cpp \
+  Modeling/LibraryTreeWidget.cpp \
+  Modeling/ModelWidgetContainer.cpp \
+  Modeling/ModelicaClassDialog.cpp \
+  Options/OptionsDialog.cpp \
+  Editors/BaseEditor.cpp \
+  Editors/FindReplaceDialog.cpp \
+  Editors/ModelicaTextEditor.cpp \
+  Editors/TransformationsEditor.cpp \
+  Editors/DebuggerSourceEditor.cpp \
+  Editors/TextEditor.cpp \
+  Editors/TLMEditor.cpp \
+  Plotting/PlotWindowContainer.cpp \
+  Component/Component.cpp \
+  Annotations/ShapeAnnotation.cpp \
+  Component/CornerItem.cpp \
+  Annotations/LineAnnotation.cpp \
+  Annotations/PolygonAnnotation.cpp \
+  Annotations/RectangleAnnotation.cpp \
+  Annotations/EllipseAnnotation.cpp \
+  Annotations/TextAnnotation.cpp \
+  Annotations/BitmapAnnotation.cpp \
+  Component/ComponentProperties.cpp \
+  Component/Transformation.cpp \
+  Modeling/DocumentationWidget.cpp \
+  Simulation/SimulationDialog.cpp \
+  FMI/ImportFMUDialog.cpp \
+  Plotting/VariablesWidget.cpp \
+  Options/NotificationsDialog.cpp \
+  Annotations/ShapePropertiesDialog.cpp \
+  Util/OMDumpXML.cpp \
+  Util/Utilities.cpp \
+  Util/diff_match_patch.cpp \
+  TransformationalDebugger/TransformationsWidget.cpp \
+#  Simulation/SimulationBrowserWidget.cpp
+  Debugger/GDB/CommandFactory.cpp \
+  Debugger/GDB/GDBAdapter.cpp \
+  Debugger/StackFrames/StackFramesWidget.cpp \
+  Debugger/Locals/LocalsWidget.cpp \
+  Debugger/Locals/ModelicaValue.cpp \
+  Debugger/Breakpoints/BreakpointMarker.cpp \
+  Debugger/Breakpoints/BreakpointsWidget.cpp \
+  Debugger/Breakpoints/BreakpointDialog.cpp \
+  Debugger/DebuggerMainWindow.cpp \
+  Debugger/Attach/AttachToProcessDialog.cpp \
+  Debugger/Attach/ProcessListModel.cpp \
+  CrashReport/CrashReportDialog.cpp
 
 HEADERS  += Util/backtrace.h \
-    Util/Helper.h \
-    MainWindow.h \
-    omc_communication.h \
-    OMC/OMCProxy.h \
-    Util/StringHandler.h \
-    Modeling/MessagesWidget.h \
-    Modeling/LibraryTreeWidget.h \
-    Modeling/ModelWidgetContainer.h \
-    Modeling/ModelicaClassDialog.h \
-    Options/OptionsDialog.h \
-    Editors/BaseEditor.h \
-    Editors/FindReplaceDialog.h \
-    Editors/ModelicaTextEditor.h \
-    Editors/TransformationsEditor.h \
-    Editors/DebuggerSourceEditor.h \
-    Editors/TextEditor.h \
-    Editors/TLMEditor.h \
-    Plotting/PlotWindowContainer.h \
-    Component/Component.h \
-    Annotations/ShapeAnnotation.h \
-    Component/CornerItem.h \
-    Annotations/LineAnnotation.h \
-    Annotations/PolygonAnnotation.h \
-    Annotations/RectangleAnnotation.h \
-    Annotations/EllipseAnnotation.h \
-    Annotations/TextAnnotation.h \
-    Annotations/BitmapAnnotation.h \
-    Component/ComponentProperties.h \
-    Component/Transformation.h \
-    Modeling/DocumentationWidget.h \
-    Simulation/SimulationDialog.h \
-    FMI/ImportFMUDialog.h \
-    Plotting/VariablesWidget.h \
-    Options/NotificationsDialog.h \
-    Annotations/ShapePropertiesDialog.h \
-    Util/OMDumpXML.cpp \
-    Util/Utilities.h \
-    Util/diff_match_patch.h \
-    TransformationalDebugger/TransformationsWidget.h \
-#    Simulation/SimulationBrowserWidget.h
-    Debugger/GDB/CommandFactory.h \
-    Debugger/GDB/GDBAdapter.h \
-    Debugger/StackFrames/StackFramesWidget.h \
-    Debugger/Locals/LocalsWidget.h \
-    Debugger/Locals/ModelicaValue.h \
-    Debugger/Breakpoints/BreakpointMarker.h \
-    Debugger/Breakpoints/BreakpointsWidget.h \
-    Debugger/Breakpoints/BreakpointDialog.h \
-    Debugger/DebuggerMainWindow.h \
-    Debugger/Attach/AttachToProcessDialog.h \
-    Debugger/Attach/ProcessListModel.h \
-    CrashReport/CrashReportDialog.h
+  Util/Helper.h \
+  MainWindow.h \
+  omc_communication.h \
+  OMC/OMCProxy.h \
+  Util/StringHandler.h \
+  Modeling/MessagesWidget.h \
+  Modeling/LibraryTreeWidget.h \
+  Modeling/ModelWidgetContainer.h \
+  Modeling/ModelicaClassDialog.h \
+  Options/OptionsDialog.h \
+  Editors/BaseEditor.h \
+  Editors/FindReplaceDialog.h \
+  Editors/ModelicaTextEditor.h \
+  Editors/TransformationsEditor.h \
+  Editors/DebuggerSourceEditor.h \
+  Editors/TextEditor.h \
+  Editors/TLMEditor.h \
+  Plotting/PlotWindowContainer.h \
+  Component/Component.h \
+  Annotations/ShapeAnnotation.h \
+  Component/CornerItem.h \
+  Annotations/LineAnnotation.h \
+  Annotations/PolygonAnnotation.h \
+  Annotations/RectangleAnnotation.h \
+  Annotations/EllipseAnnotation.h \
+  Annotations/TextAnnotation.h \
+  Annotations/BitmapAnnotation.h \
+  Component/ComponentProperties.h \
+  Component/Transformation.h \
+  Modeling/DocumentationWidget.h \
+  Simulation/SimulationDialog.h \
+  FMI/ImportFMUDialog.h \
+  Plotting/VariablesWidget.h \
+  Options/NotificationsDialog.h \
+  Annotations/ShapePropertiesDialog.h \
+  Util/OMDumpXML.cpp \
+  Util/Utilities.h \
+  Util/diff_match_patch.h \
+  TransformationalDebugger/TransformationsWidget.h \
+#  Simulation/SimulationBrowserWidget.h
+  Debugger/GDB/CommandFactory.h \
+  Debugger/GDB/GDBAdapter.h \
+  Debugger/StackFrames/StackFramesWidget.h \
+  Debugger/Locals/LocalsWidget.h \
+  Debugger/Locals/ModelicaValue.h \
+  Debugger/Breakpoints/BreakpointMarker.h \
+  Debugger/Breakpoints/BreakpointsWidget.h \
+  Debugger/Breakpoints/BreakpointDialog.h \
+  Debugger/DebuggerMainWindow.h \
+  Debugger/Attach/AttachToProcessDialog.h \
+  Debugger/Attach/ProcessListModel.h \
+  CrashReport/CrashReportDialog.h
 
 # Windows libraries and includes
 win32 {
-    QMAKE_LFLAGS += -enable-auto-import
+  QMAKE_LFLAGS += -enable-auto-import
 
-    DEFINES += __x86__ \
-        __NT__ \
-        __OSVERSION__=4 \
-        __WIN32__
-    CONFIG(debug, debug|release){
-    LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rtd -lomnithread34_rtd \
-        -L../../build/lib/omc -lOMPlot -lomqwtd \
-        -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
-        -L../../Parser -lantlr3
-} else {
-# In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
-# We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
-# -s will remove all symbol table and relocation information from the executable.
+  DEFINES += __x86__ \
+    __NT__ \
+    __OSVERSION__=4 \
+    __WIN32__
+  CONFIG(debug, debug|release) {
+  LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rtd -lomnithread34_rtd \
+    -L../../build/lib/omc -lOMPlot -lomqwtd \
+    -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
+    -L../../Parser -lantlr3
+  } else {
+    # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
+    # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
+    # -s will remove all symbol table and relocation information from the executable.
     QMAKE_CXXFLAGS += -g
     QMAKE_LFLAGS_RELEASE =
     LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rt -lomnithread34_rt \
-        -L../../build/lib/omc -lOMPlot -lomqwt \
-        -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
-        -L../../Parser -lantlr3 \
-        # required for backtrace
-        -L$$(OMDEV)/tools/mingw/bin -lintl-8 -lbfd -liberty -limagehlp
-}
-INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.6-mingw/include \
-               ../../3rdParty/qwt/build/include \
-               ../../OMPlot/OMPlotGUI \
-               ../../
+      -L../../build/lib/omc -lOMPlot -lomqwt \
+      -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
+      -L../../Parser -lantlr3 \
+      # required for backtrace
+      -L$$(OMDEV)/tools/mingw/bin -lintl-8 -lbfd -liberty -limagehlp
+  }
+  INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.6-mingw/include \
+    ../../3rdParty/qwt/build/include \
+    ../../OMPlot/OMPlotGUI \
+    ../../
 } else { # Unix libraries and includes
-    include(OMEdit.config)
-# On unix we use backtrace of execinfo.h which requires -rdynamic
-# The symbol names may be unavailable without the use of special linker
-# options.  For systems using the GNU linker, it is necessary to use
-# the -rdynamic linker option.  Note that names of "static" functions
-# are not exposed, and won't be available in the backtrace.
-    CONFIG(release, debug|release){
-        QMAKE_LFLAGS_RELEASE += -rdynamic
-    }
+  include(OMEdit.config)
+  # On unix we use backtrace of execinfo.h which requires -rdynamic
+  # The symbol names may be unavailable without the use of special linker
+  # options.  For systems using the GNU linker, it is necessary to use
+  # the -rdynamic linker option.  Note that names of "static" functions
+  # are not exposed, and won't be available in the backtrace.
+  CONFIG(release, debug|release){
+      QMAKE_LFLAGS_RELEASE += -rdynamic
+  }
 }
 
 LIBS += -lqjson
 INCLUDEPATH += ../../3rdParty/qjson-0.8.1/build/include
 
 INCLUDEPATH += . \
-                Annotations \
-                Component \
-                CrashReport \
-                Debugger \
-                Debugger/Attach \
-                Debugger/Breakpoints \
-                Debugger/GDB \
-                Debugger/Locals \
-                Debugger/Parser \
-                Debugger/StackFrames \
-                Editors \
-                FMI \
-                Modeling \
-                OMC \
-                Options \
-                Plotting \
-                Simulation \
-                TransformationalDebugger \
-                Util
+  Annotations \
+  Component \
+  CrashReport \
+  Debugger \
+  Debugger/Attach \
+  Debugger/Breakpoints \
+  Debugger/GDB \
+  Debugger/Locals \
+  Debugger/Parser \
+  Debugger/StackFrames \
+  Editors \
+  FMI \
+  Modeling \
+  OMC \
+  Options \
+  Plotting \
+  Simulation \
+  TransformationalDebugger \
+  Util
 
 OTHER_FILES += Resources/css/stylesheet.qss \
-    Debugger/Parser/GDBMIOutput.g \
-    Debugger/Parser/GDBMIParser.h \
-    Debugger/Parser/GDBMIParser.cpp \
-    Debugger/Parser/main.cpp
+  Debugger/Parser/GDBMIOutput.g \
+  Debugger/Parser/GDBMIParser.h \
+  Debugger/Parser/GDBMIParser.cpp \
+  Debugger/Parser/main.cpp
 
 # Please read the warnings. They are like vegetables; good for you even if you hate them.
 CONFIG += warn_on
