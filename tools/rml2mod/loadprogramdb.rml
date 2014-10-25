@@ -1,8 +1,0 @@
-module LoadProgramDB:
-  with "absyn.rml"
-  relation parse: (string) => Absyn.RMLDb
-  (* use this when you want to turn ON debuggin of the parser *)
-  relation debug_on: () => ()
-  (* use this when you want to turn OFF debuggin of the parser *)
-  relation debug_off: () => ()
-end
