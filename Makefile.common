@@ -312,11 +312,10 @@ checkcompiler:
 	$(MAKE) -C testsuite/openmodelica/bootstrapping -f $(MAKEFILE_BOOT) build
 
 cleancompiler:
-	cd Compiler/omc_release && rm -f *.srz *.c *.h *.sig *.o omc *.exe
+	cd Compiler/boot && rm -f ./build
 
 distclean: clean
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
-	(cd Compiler/omc_release && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
 	rm -f Compiler/.depend
 	rm -f OMShell/Makefile OMNotebook/ext/Makefile OMNotebook/OMNotebookQT4/Makefile
 	rm -f $(autoconfGeneratedFiles)
@@ -336,7 +335,6 @@ clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMi
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd SimulationRuntime/interactive && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
-	(cd Compiler/omc_release && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd mosh/src && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd PythonInterface && $(MAKE) -f $(defaultMakefileTarget) clean)
 	if test -f 3rdParty/modelica3d/build/Makefile; then $(MAKE) -C 3rdParty/modelica3d/build clean; fi
