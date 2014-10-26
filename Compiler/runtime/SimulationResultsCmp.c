@@ -131,7 +131,7 @@ static char ** getVars(void *vars, unsigned int* nvars)
   /* Allocate a new string array to contain the variable names. */
   cmpvars = (char**)GC_malloc(sizeof(char*)*(ncmpvars));
 
-  /* Copy the variable names from the RML list to the string array. */
+  /* Copy the variable names from the MetaModelica list to the string array. */
   for(; MMC_NILHDR != MMC_GETHDR(vars); vars = MMC_CDR(vars)) {
     cmpvars[i++] = GC_strdup(MMC_STRINGDATA(MMC_CAR(vars)));
   }

@@ -307,12 +307,8 @@ sustst:
 
 include Makefile.libraries
 
-# a rule to check the .mo sources with the bootstrapped compiler!
-checkcompiler:
-	$(MAKE) -C testsuite/openmodelica/bootstrapping -f $(MAKEFILE_BOOT) build
-
 cleancompiler:
-	cd Compiler/boot && rm -f ./build
+	cd Compiler/boot && rm -rf ./build
 
 distclean: clean
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)

@@ -52,7 +52,7 @@ extern "C"
 #include "ptolemyio.h"
 #include "errorext.h"
 
-/* Given a file name and an array of variables, return the RML datastructure
+/* Given a file name and an array of variables, return the MetaModelica datastructure
    in Values for Real[size(vars,1],:] i.e. a matrix of variable values, one column for each variable. */
 void * read_ptolemy_dataset(const char*filename, void* vars,int datasize)
 {

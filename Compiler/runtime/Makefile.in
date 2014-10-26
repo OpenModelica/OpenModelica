@@ -6,12 +6,6 @@
 
 USE_CORBA = @USE_CORBA@
 
-ifeq ("@rmlinc@","")
-RMLINCLUDE =
-else
-RMLINCLUDE = -I@rmlinc@
-endif
-
 FMIINCLUDE = ../../3rdParty/FMIL/install/include
 GRAPHSTREAMINCLUDE = ../../3rdParty/graphstream/gs-netstream/c++/src/
 CJSONINCLUDE = ../../3rdParty/cJSON
@@ -19,14 +13,10 @@ CFLAGS = @CFLAGS@ $(USE_CORBA)
 OMPCC = @OMPCC@
 
 ifdef USE_CORBA
-  CORBASRC = omc_communication.cc omc_communication_impl.cpp Corba_rml.cpp
-  CORBAOBJ = omc_communication.o omc_communication_impl.o Corba_rml.o
   CORBAINCL = @CORBACFLAGS@
   OMCCORBASRC = omc_communication.o omc_communication_impl.o Corba_omc.o
   IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/stubs/omc_communication_idl.py
 else
-  CORBASRC = corbaimpl_stub.c
-  CORBAOBJ = corbaimpl_stub.o
   CORBAINCL =
   OMCCORBASRC = corbaimpl_stub_omc.o
   IDLPYTHONTARGET =
@@ -38,7 +28,7 @@ CXX	= @CXX@
 IDL	= @IDLCMD@
 IDLPYTHON = @IDLPYTHONCMD@
 CXXFLAGS = $(CFLAGS)
-CPPFLAGS = @CPPFLAGS@ $(RMLINCLUDE) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/simulation/libf2c -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I$(srcdir) -I. $(CORBAINCL) -I$(FMIINCLUDE) -I$(top_builddir)/3rdParty/gc-7.2/include -I$(GRAPHSTREAMINCLUDE) -I$(CJSONINCLUDE)
+CPPFLAGS = @CPPFLAGS@ -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/simulation/libf2c -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I$(srcdir) -I. $(CORBAINCL) -I$(FMIINCLUDE) -I$(top_builddir)/3rdParty/gc-7.2/include -I$(GRAPHSTREAMINCLUDE) -I$(CJSONINCLUDE)
 
 include Makefile.common
 

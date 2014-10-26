@@ -22,10 +22,6 @@ LIBSOCKET = @LIBSOCKET@
 SHELL	= /bin/sh
 CC	= gcc
 CFLAGS	= $(USE_CORBA) -DCYGWIN
-RMLHOME	= @rmlhome@
-#RML	= @rmlc_bin@ -g -Wc,-O3 -Wr,-East,-Ecps,-Efol
-RML	= $(RMLHOME)/bin/rml
-RMLINC  = -I$(RMLHOME)/include/plain
 
 USE_CORBA = @USE_CORBA@
 CORBAHOME = @CORBAHOME@
@@ -34,14 +30,12 @@ PROG = omc
 
 SCRIPT_FILES = openmodelica.lefty default_profiling.xsl replace-startValue.sh replace-startValue.xsl simcodedump.xsl ngspicetoModelica.py
 
-#SUBDIRS= ast runtime
 SUBDIRS	= runtime
 
 .SUFFIXES:
 .SUFFIXES: .o .mo .h
-.PHONY: all subdirs report vctarget debug release depend clean dclean test reallyclean simcode builtin
+.PHONY: all subdirs report depend clean dclean test reallyclean simcode builtin
 
-#all : debug
 all : release
 
 include Makefile.common
@@ -60,16 +54,12 @@ clean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) clean) \
 	done
-	-$(RM) -f $(SRCH)
-	-$(RM) -f $(builddir_bin)/$(PROG)$(EXEEXT)
 	-cd $(builddir_bin) && rm -f $(SCRIPT_FILES)
 
 reallyclean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) reallyclean) \
 	done
-	-$(RM) -f $(SRCH)
-	-$(RM) -f $(builddir)/$(PROG)$(EXEEXT)
 
 report:
 	@(cd report ; $(MAKE))
