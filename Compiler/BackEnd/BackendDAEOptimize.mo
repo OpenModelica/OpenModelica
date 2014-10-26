@@ -1563,7 +1563,7 @@ algorithm
   (funcs, used_funcs) := inTuple;
   (outExp, used_funcs) := checkUnusedFunctions(inExp, funcs, used_funcs);
   outTuple := (funcs, used_funcs);
-end checkUnusedFunctionsTupleWrapper; 
+end checkUnusedFunctionsTupleWrapper;
 
 protected function checkUnusedFunctions
   input DAE.Exp inExp;
@@ -1587,7 +1587,7 @@ algorithm
   (funcs, used_funcs) := inTuple;
   (outExp, used_funcs) := checkUnusedFunctionsExp(inExp, funcs, used_funcs);
   outTuple := (funcs, used_funcs);
-end checkUnusedFunctionsExpTupleWrapper; 
+end checkUnusedFunctionsExpTupleWrapper;
 
 protected function checkUnusedFunctionsExp
   input DAE.Exp inExp;
