@@ -1454,9 +1454,9 @@ protected
 
   partial function FuncType
     input DAE.Exp inExp;
-    input DAE.FunctionTree inUsedFunctions;
+    input tuple<DAE.FunctionTree, DAE.FunctionTree> inTuple;
     output DAE.Exp outExp;
-    output DAE.FunctionTree outUsedFunctions;
+    output tuple<DAE.FunctionTree, DAE.FunctionTree> outTuple;
   end FuncType;
 
   FuncType func;
@@ -1468,15 +1468,15 @@ algorithm
 
   usedfuncs := copyRecordConstructorAndExternalObjConstructorDestructor(funcs);
 
-  func := function checkUnusedFunctions(inFunctions = funcs);
-  usedfuncs := List.fold1(eqs, BackendDAEUtil.traverseBackendDAEExpsEqSystem, func, usedfuncs);
-  usedfuncs := List.fold1(eqs, BackendDAEUtil.traverseBackendDAEExpsEqSystemJacobians, func, usedfuncs);
-  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(knvars, func, usedfuncs);
-  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(exobj, func, usedfuncs);
-  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(aliasVars, func, usedfuncs);
-  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns, func, usedfuncs);
-  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns, func, usedfuncs);
-  (_, usedfuncs) := BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst, func, usedfuncs);
+  func := checkUnusedFunctionsTupleWrapper;
+  (_, usedfuncs) := List.fold1(eqs, BackendDAEUtil.traverseBackendDAEExpsEqSystem, func, (funcs, usedfuncs));
+  (_, usedfuncs) := List.fold1(eqs, BackendDAEUtil.traverseBackendDAEExpsEqSystemJacobians, func, (funcs, usedfuncs));
+  (_, usedfuncs) := BackendDAEUtil.traverseBackendDAEExpsVars(knvars, func, (funcs, usedfuncs));
+  (_, usedfuncs) := BackendDAEUtil.traverseBackendDAEExpsVars(exobj, func, (funcs, usedfuncs));
+  (_, usedfuncs) := BackendDAEUtil.traverseBackendDAEExpsVars(aliasVars, func, (funcs, usedfuncs));
+  (_, usedfuncs) := BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns, func, (funcs, usedfuncs));
+  (_, usedfuncs) := BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns, func, (funcs, usedfuncs));
+  (_, (_, usedfuncs)) := BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst, func, (funcs, usedfuncs));
 
   //traverse Symbolic jacobians
   usedfuncs := removeUnusedFunctionsSymJacs(symjacs, funcs, usedfuncs);
@@ -1552,6 +1552,19 @@ algorithm
   end for;
 end removeUnusedFunctionsSymJacs;
 
+protected function checkUnusedFunctionsTupleWrapper
+  input DAE.Exp inExp;
+  input tuple<DAE.FunctionTree, DAE.FunctionTree> inTuple;
+  output DAE.Exp outExp;
+  output tuple<DAE.FunctionTree, DAE.FunctionTree> outTuple;
+protected
+  DAE.FunctionTree funcs, used_funcs;
+algorithm
+  (funcs, used_funcs) := inTuple;
+  (outExp, used_funcs) := checkUnusedFunctions(inExp, funcs, used_funcs);
+  outTuple := (funcs, used_funcs);
+end checkUnusedFunctionsTupleWrapper; 
+
 protected function checkUnusedFunctions
   input DAE.Exp inExp;
   input DAE.FunctionTree inFunctions;
@@ -1559,9 +1572,22 @@ protected function checkUnusedFunctions
   output DAE.Exp outExp;
   output DAE.FunctionTree outUsedFunctions;
 algorithm
-  (outExp, outUsedFunctions) := Expression.traverseExp(inExp, function
-      checkUnusedFunctionsExp(inFunctions = inFunctions), inUsedFunctions);
+  (outExp, (_, outUsedFunctions)) := Expression.traverseExp(inExp,
+      checkUnusedFunctionsExpTupleWrapper, (inFunctions, inUsedFunctions));
 end checkUnusedFunctions;
+
+protected function checkUnusedFunctionsExpTupleWrapper
+  input DAE.Exp inExp;
+  input tuple<DAE.FunctionTree, DAE.FunctionTree> inTuple;
+  output DAE.Exp outExp;
+  output tuple<DAE.FunctionTree, DAE.FunctionTree> outTuple;
+protected
+  DAE.FunctionTree funcs, used_funcs;
+algorithm
+  (funcs, used_funcs) := inTuple;
+  (outExp, used_funcs) := checkUnusedFunctionsExp(inExp, funcs, used_funcs);
+  outTuple := (funcs, used_funcs);
+end checkUnusedFunctionsExpTupleWrapper; 
 
 protected function checkUnusedFunctionsExp
   input DAE.Exp inExp;
@@ -1590,8 +1616,8 @@ algorithm
     // If it's a cref, check the cref's dimensions for function calls.
     case DAE.CREF(componentRef = cr)
       algorithm
-        (_, usedfuncs) := Expression.traverseExpCrefDims(cr,
-          function checkUnusedFunctions(inFunctions = inFunctions), inUsedFunctions);
+        (_, (usedfuncs, _)) := Expression.traverseExpCrefDims(cr,
+          checkUnusedFunctionsTupleWrapper, (inFunctions, inUsedFunctions));
       then
         usedfuncs;
 
@@ -1615,8 +1641,8 @@ algorithm
     (f, body) := getFunctionAndBody(inPath, inFunctions);
     if isNone(f) then return; end if; // Return if the function couldn't be found.
     outUsedFunctions := DAEUtil.avlTreeAdd(outUsedFunctions, inPath, f);
-    (_, outUsedFunctions) := DAEUtil.traverseDAE2(body,
-      function checkUnusedFunctions(inFunctions = inFunctions), outUsedFunctions);
+    (_, (_, outUsedFunctions)) := DAEUtil.traverseDAE2(body,
+      checkUnusedFunctionsTupleWrapper, (inFunctions, outUsedFunctions));
   end try;
 end addUnusedFunction;
 
