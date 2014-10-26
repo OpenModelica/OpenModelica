@@ -702,7 +702,7 @@ void OptionsDialog::addListItems()
   pCurveStyleItem->setText(Helper::curveStyle);
   // Figaro Item
   QListWidgetItem *pFigaroItem = new QListWidgetItem(mpOptionsList);
-  pFigaroItem->setIcon(QIcon(":/Resources/icons/console.png"));
+  pFigaroItem->setIcon(QIcon(":/Resources/icons/console.svg"));
   pFigaroItem->setText(Helper::figaro);
   // Debugger Item
   QListWidgetItem *pDebuggerItem = new QListWidgetItem(mpOptionsList);

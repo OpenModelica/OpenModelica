@@ -1952,14 +1952,14 @@ void MainWindow::createActions()
   connect(mpQuitAction, SIGNAL(triggered()), SLOT(close()));
   // Edit Menu
   // cut action
-  mpCutAction = new QAction(QIcon(":/Resources/icons/cut.png"), tr("Cut"), this);
+  mpCutAction = new QAction(QIcon(":/Resources/icons/cut.svg"), tr("Cut"), this);
   mpCutAction->setShortcut(QKeySequence("Ctrl+x"));
   // copy action
-  mpCopyAction = new QAction(QIcon(":/Resources/icons/copy.png"), tr("Copy"), this);
+  mpCopyAction = new QAction(QIcon(":/Resources/icons/copy.svg"), tr("Copy"), this);
   //! @todo opening this will stop copying data from messages window.
   //copyAction->setShortcut(QKeySequence("Ctrl+c"));
   // paste action
-  mpPasteAction = new QAction(QIcon(":/Resources/icons/paste.png"), tr("Paste"), this);
+  mpPasteAction = new QAction(QIcon(":/Resources/icons/paste.svg"), tr("Paste"), this);
   mpPasteAction->setShortcut(QKeySequence("Ctrl+v"));
   // find replace class action
   mpFindReplaceAction = new QAction(QIcon(":/Resources/icons/search.png"), QString(Helper::findReplaceModelicaText), this);
@@ -1979,7 +1979,7 @@ void MainWindow::createActions()
   connect(mpGotoLineNumberAction, SIGNAL(triggered()), SLOT(showGotoLineNumberDialog()));
   // View Menu
   // show/hide gridlines action
-  mpShowGridLinesAction = new QAction(QIcon(":/Resources/icons/grid.png"), tr("Grid Lines"), this);
+  mpShowGridLinesAction = new QAction(QIcon(":/Resources/icons/grid.svg"), tr("Grid Lines"), this);
   mpShowGridLinesAction->setStatusTip(tr("Show/Hide the grid lines"));
   mpShowGridLinesAction->setCheckable(true);
   mpShowGridLinesAction->setEnabled(false);
@@ -2061,13 +2061,13 @@ void MainWindow::createActions()
   mpExportXMLAction->setEnabled(false);
   connect(mpExportXMLAction, SIGNAL(triggered()), SLOT(exportModelXML()));
   // export XML action
-  mpExportFigaroAction = new QAction(QIcon(":/Resources/icons/console.png"), Helper::exportFigaro, this);
+  mpExportFigaroAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::exportFigaro, this);
   mpExportFigaroAction->setStatusTip(Helper::exportFigaroTip);
   mpExportFigaroAction->setEnabled(false);
   connect(mpExportFigaroAction, SIGNAL(triggered()), SLOT(exportModelFigaro()));
   // Tools Menu
   // show OMC Logger widget action
-  mpShowOMCLoggerWidgetAction = new QAction(QIcon(":/Resources/icons/console.png"), tr("OMC Logger"), this);
+  mpShowOMCLoggerWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), tr("OMC Logger"), this);
   mpShowOMCLoggerWidgetAction->setStatusTip(tr("Shows OMC Logger Window"));
   connect(mpShowOMCLoggerWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCLoggerWidget()));
   // export to OMNotebook action
@@ -2390,7 +2390,7 @@ void MainWindow::switchToPlottingPerspective()
 //! Creates the toolbars
 void MainWindow::createToolbars()
 {
-  setIconSize(QSize(16, 16));
+  setIconSize(QSize(24, 24));
   // File Toolbar
   mpFileToolBar = addToolBar(tr("File Toolbar"));
   mpFileToolBar->setObjectName("File Toolbar");

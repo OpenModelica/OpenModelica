@@ -1,17 +1,16 @@
 <RCC>
     <qresource prefix="/">
-        <file>Resources/icons/close.png</file>
-        <file>Resources/icons/console.png</file>
-        <file>Resources/icons/copy.png</file>
-        <file>Resources/icons/cut.png</file>
+        <file>Resources/icons/console.svg</file>
+        <file>Resources/icons/copy.svg</file>
+        <file>Resources/icons/cut.svg</file>
         <file>Resources/icons/delete.svg</file>
-        <file>Resources/icons/grid.png</file>
-        <file>Resources/icons/model.png</file>
+        <file>Resources/icons/grid.svg</file>
+        <file>Resources/icons/model.svg</file>
         <file>Resources/icons/modeltext.png</file>
         <file>Resources/icons/flatmodel.png</file>
         <file>Resources/icons/new.svg</file>
         <file>Resources/icons/open.png</file>
-        <file>Resources/icons/paste.png</file>
+        <file>Resources/icons/paste.svg</file>
         <file>Resources/icons/redo.png</file>
         <file>Resources/icons/rotateanticlockwise.png</file>
         <file>Resources/icons/rotateclockwise.png</file>

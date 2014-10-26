@@ -274,7 +274,7 @@ MessagesTreeWidget::MessagesTreeWidget(MessagesWidget *pMessagesWidget)
   mpSelectAllAction = new QAction(tr("Select All"), this);
   mpSelectAllAction->setStatusTip(tr("Selects all the Messages"));
   connect(mpSelectAllAction, SIGNAL(triggered()), SLOT(selectAllMessages()));
-  mpCopyAction = new QAction(QIcon(":/Resources/icons/copy.png"), Helper::copy, this);
+  mpCopyAction = new QAction(QIcon(":/Resources/icons/copy.svg"), Helper::copy, this);
   mpCopyAction->setStatusTip(tr("Copy the Message"));
   connect(mpCopyAction, SIGNAL(triggered()), SLOT(copyMessages()));
   mpRemoveAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::remove, this);

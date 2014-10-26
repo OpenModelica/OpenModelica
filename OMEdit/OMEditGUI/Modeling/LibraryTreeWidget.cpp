@@ -611,7 +611,7 @@ void LibraryTreeWidget::createActions()
   mpExportXMLAction->setStatusTip(Helper::exportXMLTip);
   connect(mpExportXMLAction, SIGNAL(triggered()), SLOT(exportModelXML()));
   // Export Figaro Action
-  mpExportFigaroAction = new QAction(QIcon(":/Resources/icons/console.png"), Helper::exportFigaro, this);
+  mpExportFigaroAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::exportFigaro, this);
   mpExportFigaroAction->setStatusTip(Helper::exportFigaroTip);
   connect(mpExportFigaroAction, SIGNAL(triggered()), SLOT(exportModelFigaro()));
 }

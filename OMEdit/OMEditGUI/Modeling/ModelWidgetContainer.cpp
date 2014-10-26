@@ -1936,7 +1936,7 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   // icon view tool button
   mpIconViewToolButton = new QToolButton;
   mpIconViewToolButton->setText(Helper::iconView);
-  mpIconViewToolButton->setIcon(QIcon(":/Resources/icons/model.png"));
+  mpIconViewToolButton->setIcon(QIcon(":/Resources/icons/model.svg"));
   mpIconViewToolButton->setIconSize(Helper::buttonIconSize);
   mpIconViewToolButton->setToolTip(Helper::iconView);
   mpIconViewToolButton->setAutoRaise(true);
@@ -2634,7 +2634,7 @@ void ModelWidget::showIconView(bool checked)
   }
   QMdiSubWindow *pSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow();
   if (pSubWindow)
-    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/model.png"));
+    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/model.svg"));
   mpIconGraphicsView->setFocus();
   if (!checked or (checked and mpIconGraphicsView->isVisible()))
     return;

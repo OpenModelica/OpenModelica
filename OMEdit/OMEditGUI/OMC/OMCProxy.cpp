@@ -58,7 +58,7 @@ OMCProxy::OMCProxy(MainWindow *pMainWindow)
   // OMC Commands Logger Widget
   mpOMCLoggerWidget = new QWidget;
   mpOMCLoggerWidget->resize(640, 480);
-  mpOMCLoggerWidget->setWindowIcon(QIcon(":/Resources/icons/console.png"));
+  mpOMCLoggerWidget->setWindowIcon(QIcon(":/Resources/icons/console.svg"));
   mpOMCLoggerWidget->setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("OMC Messages Log")));
   // OMC Logger textbox
   mpOMCLoggerTextBox = new QPlainTextEdit();

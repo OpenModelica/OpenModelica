@@ -408,7 +408,7 @@ void Component::createActions()
   mpAttributesAction->setStatusTip(tr("Shows the component attributes"));
   connect(mpAttributesAction, SIGNAL(triggered()), SLOT(showAttributes()));
   // View Class Action
-  mpViewClassAction = new QAction(QIcon(":/Resources/icons/model.png"), Helper::viewClass, mpGraphicsView);
+  mpViewClassAction = new QAction(QIcon(":/Resources/icons/model.svg"), Helper::viewClass, mpGraphicsView);
   mpViewClassAction->setStatusTip(Helper::viewClassTip);
   connect(mpViewClassAction, SIGNAL(triggered()), SLOT(viewClass()));
   // View Documentation Action
