@@ -1616,7 +1616,7 @@ algorithm
     // If it's a cref, check the cref's dimensions for function calls.
     case DAE.CREF(componentRef = cr)
       algorithm
-        (_, (usedfuncs, _)) := Expression.traverseExpCrefDims(cr,
+        (_, (_, usedfuncs)) := Expression.traverseExpCrefDims(cr,
           checkUnusedFunctionsTupleWrapper, (inFunctions, inUsedFunctions));
       then
         usedfuncs;
