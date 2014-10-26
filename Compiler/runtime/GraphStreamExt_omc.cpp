@@ -38,7 +38,6 @@
 
 extern "C" {
 #include "meta_modelica.h"
-#include "rml_compatibility.h"
 #define ADD_METARECORD_DEFINITIONS static
 #include "OpenModelicaBootstrappingHeader.h"
 }

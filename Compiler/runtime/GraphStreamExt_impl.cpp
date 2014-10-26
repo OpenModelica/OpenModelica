@@ -49,17 +49,17 @@ using namespace netstream;
 static map<string, NetStreamSender *> streams;
 static map<string, GS_LONG> streamsTime;
 
-int isInt(void* value) { return (RML_HDRCTOR(RML_GETHDR(value)) == Values__INTEGER_3dBOX1); }
-GS_LONG getInt(void* value) { return (GS_LONG)(RML_UNTAGFIXNUM(RML_STRUCTDATA(value)[UNBOX_OFFSET])); }
+int isInt(void* value) { return (MMC_HDRCTOR(MMC_GETHDR(value)) == Values__INTEGER_3dBOX1); }
+GS_LONG getInt(void* value) { return (GS_LONG)(MMC_UNTAGFIXNUM(MMC_STRUCTDATA(value)[UNBOX_OFFSET])); }
 
-int isDouble(void* value) { return (RML_HDRCTOR(RML_GETHDR(value)) == Values__REAL_3dBOX1); }
-GS_DOUBLE getDouble(void* value) { return (GS_DOUBLE)rml_prim_get_real(RML_STRUCTDATA(value)[UNBOX_OFFSET]); }
+int isDouble(void* value) { return (MMC_HDRCTOR(MMC_GETHDR(value)) == Values__REAL_3dBOX1); }
+GS_DOUBLE getDouble(void* value) { return (GS_DOUBLE)mmc_prim_get_real(MMC_STRUCTDATA(value)[UNBOX_OFFSET]); }
 
-int isBool(void* value) { return (RML_HDRCTOR(RML_GETHDR(value)) == Values__BOOL_3dBOX1); }
-GS_BOOL getBool(void* value) { return (GS_BOOL)(RML_UNTAGFIXNUM(RML_STRUCTDATA(value)[UNBOX_OFFSET])); }
+int isBool(void* value) { return (MMC_HDRCTOR(MMC_GETHDR(value)) == Values__BOOL_3dBOX1); }
+GS_BOOL getBool(void* value) { return (GS_BOOL)(MMC_UNTAGFIXNUM(MMC_STRUCTDATA(value)[UNBOX_OFFSET])); }
 
-int isString(void* value) { return (RML_HDRCTOR(RML_GETHDR(value)) == Values__STRING_3dBOX1); }
-GS_STRING getString(void* value) { return (GS_STRING)(RML_STRINGDATA(RML_STRUCTDATA(value)[UNBOX_OFFSET])); }
+int isString(void* value) { return (MMC_HDRCTOR(MMC_GETHDR(value)) == Values__STRING_3dBOX1); }
+GS_STRING getString(void* value) { return (GS_STRING)(MMC_STRINGDATA(MMC_STRUCTDATA(value)[UNBOX_OFFSET])); }
 
 void GraphStreamExtImpl_newStream(const char* streamName, const char* host, int port, int debug)
 {

@@ -74,7 +74,7 @@ extern mmc_GC_state_type* mmc_GC_state;
 int GC_pthread_create(pthread_t *,const pthread_attr_t *,void *(*)(void *), void *);
 int GC_pthread_join(pthread_t, void **);
 
-static inline void  mmc_GC_init(void)
+static inline void mmc_GC_init(void)
 {
   GC_init();
   GC_register_displacement(0);

@@ -47,7 +47,7 @@ void* HpcOmBenchmarkExtImpl__requiredTimeForOp() {
 //  unsigned long long calcTimesMul[REPLICATIONS];
 //  unsigned long long calcTimesAdd[REPLICATIONS];
 //  unsigned int sumCalc = 0;
-//  void *res = mk_nil();
+//  void *res = mmc_mk_nil();
 //
 //  //warmup
 //  for (int i = 0; i < REPLICATIONS; i++)
@@ -83,11 +83,11 @@ void* HpcOmBenchmarkExtImpl__requiredTimeForOp() {
 //  }
 //
 //  int m = 1;
-//  res = mk_cons(mk_icon((sumCalc/(REPLICATIONS*2))),res); //push n
-//  res = mk_cons(mk_icon(m),res); //push m
-  void *res = mk_nil();
-  res = mk_cons(mk_icon(24), res); //push n
-  res = mk_cons(mk_icon(1), res); //push m
+//  res = mmc_mk_cons(mmc_mk_icon((sumCalc/(REPLICATIONS*2))),res); //push n
+//  res = mmc_mk_cons(mmc_mk_icon(m),res); //push m
+  void *res = mmc_mk_nil();
+  res = mmc_mk_cons(mmc_mk_icon(24), res); //push n
+  res = mmc_mk_cons(mmc_mk_icon(1), res); //push m
   return res;
 }
 
@@ -147,7 +147,7 @@ void* HpcOmBenchmarkExtImpl__requiredTimeForOp() {
  * result: 2-parameters (m,n) y=mx+n
  */
 void* HpcOmBenchmarkExtImpl__requiredTimeForComm() {
-//  void *res = mk_nil();
+//  void *res = mmc_mk_nil();
 //  unsigned int sumComSmall = 0;
 //  unsigned int sumComBig = 0;
 //
@@ -208,11 +208,11 @@ void* HpcOmBenchmarkExtImpl__requiredTimeForComm() {
 //  for (int i = 0; i < REPLICATIONS; i++)
 //    sumComBig += comTimes[i];
 //
-//  res = mk_cons(mk_icon(sumComSmall/(REPLICATIONS*2)),res); //push n
-//  res = mk_cons(mk_icon((sumComBig-sumComSmall)/((PACKAGE_SIZE_BIG-PACKAGE_SIZE_SMALL)*(REPLICATIONS*2))),res); //push m
-  void *res = mk_nil();
-  res = mk_cons(mk_icon(70), res); //push n
-  res = mk_cons(mk_icon(4), res); //push m
+//  res = mmc_mk_cons(mmc_mk_icon(sumComSmall/(REPLICATIONS*2)),res); //push n
+//  res = mmc_mk_cons(mmc_mk_icon((sumComBig-sumComSmall)/((PACKAGE_SIZE_BIG-PACKAGE_SIZE_SMALL)*(REPLICATIONS*2))),res); //push m
+  void *res = mmc_mk_nil();
+  res = mmc_mk_cons(mmc_mk_icon(70), res); //push n
+  res = mmc_mk_cons(mmc_mk_icon(4), res); //push m
   return res;
 }
 
@@ -406,7 +406,7 @@ std::list<std::list<double> > ReadJsonBenchFileEquations(std::string filePath)
 
 void* HpcOmBenchmarkExtImpl__readCalcTimesFromXml(const char *filename)
 {
-  void *res = mk_nil();
+  void *res = mmc_mk_nil();
   std::string errorMsg = std::string("");
   std::ifstream ifile(filename);
   if (!ifile)
@@ -414,7 +414,7 @@ void* HpcOmBenchmarkExtImpl__readCalcTimesFromXml(const char *filename)
     errorMsg = "File '";
     errorMsg += std::string(filename);
     errorMsg += "' does not exist";
-    res = mk_cons(mk_scon(errorMsg.c_str()), mk_nil());
+    res = mmc_mk_cons(mmc_mk_scon(errorMsg.c_str()), mmc_mk_nil());
     printf("%s\n",errorMsg.c_str());
     return res;
   }
@@ -429,7 +429,7 @@ void* HpcOmBenchmarkExtImpl__readCalcTimesFromXml(const char *filename)
         iter != (*it).end(); iter++) {
       if (i >= 3)
         break;
-      res = mk_cons(mk_rcon(*iter), res);
+      res = mmc_mk_cons(mmc_mk_rcon(*iter), res);
       //std::cerr << "value " << *iter << std::endl;
     }
   }
@@ -439,7 +439,7 @@ void* HpcOmBenchmarkExtImpl__readCalcTimesFromXml(const char *filename)
 
 void* HpcOmBenchmarkExtImpl__readCalcTimesFromJson(const char *filename)
 {
-  void *res = mk_nil();
+  void *res = mmc_mk_nil();
   std::string errorMsg = std::string("");
   std::ifstream ifile(filename);
   if (!ifile)
@@ -447,7 +447,7 @@ void* HpcOmBenchmarkExtImpl__readCalcTimesFromJson(const char *filename)
     errorMsg = "File '";
     errorMsg += std::string(filename);
     errorMsg += "' does not exist";
-    res = mk_cons(mk_scon(errorMsg.c_str()), mk_nil());
+    res = mmc_mk_cons(mmc_mk_scon(errorMsg.c_str()), mmc_mk_nil());
     printf("%s\n",errorMsg.c_str());
     return res;
   }
@@ -461,7 +461,7 @@ void* HpcOmBenchmarkExtImpl__readCalcTimesFromJson(const char *filename)
         iter != (*it).end(); iter++) {
       if (i >= 3)
         break;
-      res = mk_cons(mk_rcon(*iter), res);
+      res = mmc_mk_cons(mmc_mk_rcon(*iter), res);
       //std::cerr << "value " << *iter << std::endl;
     }
   }

@@ -19,18 +19,6 @@ ifndef OMDEV
 else
 	configUnix =
 endif
-RML_COMPAT=$(top_builddir)/SimulationRuntime/c/meta/rml_compatibility.h
-
-SRC	= Print_rml.c System_rml.c Settings_rml.c \
-  SimulationResults_rml.c IOStreamExt_rml.c Database_rml.c Socket_rml.c Lapack_rml.c ModelicaExternalC_rml.c  matching.c matching_cheap.c \
-  FMI_rml.c
-
-CPPSRC  = unitparser.cpp UnitParserExt_rml.cpp ptolemyio_rml.cpp \
-  BackendDAEEXT_rml.cpp ErrorMessage.cpp Error_rml.cpp \
-  TaskGraphResults_rml.cpp HpcOmBenchmarkExt_rml.cpp HpcOmSchedulerExt_rml.cpp systemimplmisc.cpp Dynload_rml.cpp \
-  GraphStreamExt_rml.cpp
-
-OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CORBAOBJ)
 
 OMC_OBJ = Error_omc.o Print_omc.o System_omc.o Settings_omc.o \
   IOStreamExt_omc.o ErrorMessage.o FMI_omc.o systemimplmisc.o \
@@ -38,11 +26,8 @@ OMC_OBJ = Error_omc.o Print_omc.o System_omc.o Settings_omc.o \
   Database_omc.o Dynload_omc.o SimulationResults_omc.o TaskGraphResults_omc.o HpcOmSchedulerExt_omc.o HpcOmBenchmarkExt_omc.o ptolemyio_omc.o \
   Lapack_omc.o getMemorySize.o GraphStreamExt_omc.o $(OMCCORBASRC)
 
-all: runtime.a install
+all: install
 .PHONY: all install
-runtime.a : $(OBJ)
-	rm -f $@
-	$(AR) -s -r $@ $(OBJ)
 install: libomcruntime.a
 	cp libomcruntime.a $(builddir_lib)/omc/
 libomcruntime.a : $(OMC_OBJ)
@@ -54,46 +39,25 @@ omc_communication.cc : omc_communication.idl
 omc_communication.h: omc_communication.cc
 
 omc_communication_impl.o: omc_communication.h
-Corba_rml.o: omc_communication.h corbaimpl.cpp
 Corba_omc.o: omc_communication.h corbaimpl.cpp
-Dynload_rml.o: systemimpl.h errorext.h ../Absyn.h ../Values.h $(SimRuntimeCDir)/read_write.h $(SimRuntimeCDir)/memory_pool.h Dynload.cpp
 Dynload_omc.o: systemimpl.h errorext.h ../OpenModelicaBootstrappingHeader.h $(SimRuntimeCDir)/read_write.h $(SimRuntimeCDir)/memory_pool.h Dynload.cpp $(RML_COMPAT)
-Database_rml.o: Database.c Database_rml.c
 Database_omc.o: Database.c Database_omc.c
-Print_rml.o : printimpl.c
 Print_omc.o : printimpl.c
-Error_rml.o : errorext.cpp ErrorMessage.hpp
 Error_omc.o : errorext.cpp ErrorMessage.hpp ../OpenModelicaBootstrappingHeader.h
-System_rml.o : System_rml.c systemimpl.c config.h errorext.h $(configUnix)
 System_omc.o : System_omc.c systemimpl.c config.h errorext.h $(configUnix) $(RML_COMPAT)
-Lapack_rml.o : lapackimpl.c config.h $(configUnix)
 Lapack_omc.o : lapackimpl.c config.h $(configUnix) $(RML_COMPAT)
-IOStreamExt_rml.o : IOStreamExt.c
 IOStreamExt_omc.o : IOStreamExt.c
-Settings_rml.o : settingsimpl.c config.h $(configUnix)
 Settings_omc.o : settingsimpl.c config.h $(configUnix)
-UnitParserExt_rml.o : unitparserext.cpp unitparser.h
 UnitParserExt_omc.o : unitparserext.cpp unitparser.h
-BackendDAEEXT_rml.o : BackendDAEEXT.cpp matching.c matchmaker.h matching_cheap.c
-BackendDAEEXT_omc.o : BackendDAEEXT.cpp $(RML_COMPAT)
-Socket_rml.o : socketimpl.c
+BackendDAEEXT_omc.o : BackendDAEEXT.cpp $(RML_COMPAT) matching.c matchmaker.h matching_cheap.c
 Socket_omc.o : socketimpl.c
-SimulationResults_rml.o : SimulationResults.c SimulationResultsCmp.c SimulationResultsCmpTubes.c errorext.h $(SimRuntimeCDir)/read_matlab4.h
 SimulationResults_omc.o : SimulationResults.c SimulationResultsCmp.c SimulationResultsCmpTubes.c errorext.h $(SimRuntimeCDir)/read_matlab4.h
-TaskGraphResults_rml.o : TaskGraphResultsCmp.h TaskGraphResultsCmp.cpp
 TaskGraphResults_omc.o : TaskGraphResultsCmp.h TaskGraphResultsCmp.cpp
-HpcOmBenchmarkExt_rml.o : HpcOmBenchmarkExt.cpp
 HpcOmBenchmarkExt_omc.o : HpcOmBenchmarkExt.cpp
-HpcOmSchedulerExt_rml.o : TaskGraphResultsCmp.h HpcOmSchedulerExt.cpp
 HpcOmSchedulerExt_omc.o : TaskGraphResultsCmp.h HpcOmSchedulerExt.cpp
-ptolemyio_rml.o : ptolemyio.cpp errorext.h
 ptolemyio_omc.o : ptolemyio.cpp errorext.h $(RML_COMPAT)
 ErrorMessage.o : ErrorMessage.cpp ErrorMessage.hpp errorext.h
-FMI_rml.o : FMI_rml.c FMIImpl.c
 FMI_omc.o : FMIImpl.c ../OpenModelicaBootstrappingHeader.h
-ModelicaExternalC_rml.o : $(SimRuntimeCDir)/../meta/meta_modelica.h
-getMemorySize_rml.o: getMemorySize_rml.c getMemorySize.c
-GraphStreamExt_rml.o : ../Values.h GraphStreamExt_impl.cpp
 GraphStreamExt_omc.o : ../OpenModelicaBootstrappingHeader.h GraphStreamExt_impl.cpp $(RML_COMPAT)
 
 clean:

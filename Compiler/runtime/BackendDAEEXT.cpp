@@ -102,9 +102,9 @@ int BackendDAEEXTImpl__getEMark(int i)
 void* BackendDAEEXTImpl__getMarkedEqns()
 {
   std::set<int>::iterator it;
-  void *res = mk_nil();
+  void *res = mmc_mk_nil();
   for (it=e_mark.begin(); it != e_mark.end(); it++) {
-    res = mk_cons(mk_icon(*it),res);
+    res = mmc_mk_cons(mmc_mk_icon(*it),res);
   }
   return res;
 }
@@ -122,9 +122,9 @@ void BackendDAEEXTImpl__clearDifferentiated()
 void* BackendDAEEXTImpl__getDifferentiatedEqns()
 {
   std::set<int>::iterator it;
-  void *res = mk_nil();
+  void *res = mmc_mk_nil();
   for (it=differentiated_mark.begin(); it != differentiated_mark.end(); it++) {
-    res = mk_cons(mk_icon(*it),res);
+    res = mmc_mk_cons(mmc_mk_icon(*it),res);
   }
   return res;
 }
@@ -132,9 +132,9 @@ void* BackendDAEEXTImpl__getDifferentiatedEqns()
 void* BackendDAEEXTImpl__getMarkedVariables()
 {
   std::set<int>::iterator it;
-  void *res = mk_nil();
+  void *res = mmc_mk_nil();
   for (it=v_mark.begin(); it != v_mark.end(); it++) {
-    res = mk_cons(mk_icon(*it),res);
+    res = mmc_mk_cons(mmc_mk_icon(*it),res);
   }
   return res;
 }

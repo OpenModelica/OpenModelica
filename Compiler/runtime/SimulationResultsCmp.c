@@ -124,7 +124,7 @@ static char ** getVars(void *vars, unsigned int* nvars)
   void *v;
 
   /* Count the number of variables in the list. */
-  for(v = vars; RML_NILHDR != RML_GETHDR(v); v = RML_CDR(v)) {
+  for(v = vars; MMC_NILHDR != MMC_GETHDR(v); v = MMC_CDR(v)) {
     ++ncmpvars;
   }
 
@@ -132,8 +132,8 @@ static char ** getVars(void *vars, unsigned int* nvars)
   cmpvars = (char**)GC_malloc(sizeof(char*)*(ncmpvars));
 
   /* Copy the variable names from the RML list to the string array. */
-  for(; RML_NILHDR != RML_GETHDR(vars); vars = RML_CDR(vars)) {
-    cmpvars[i++] = GC_strdup(RML_STRINGDATA(RML_CAR(vars)));
+  for(; MMC_NILHDR != MMC_GETHDR(vars); vars = MMC_CDR(vars)) {
+    cmpvars[i++] = GC_strdup(MMC_STRINGDATA(MMC_CAR(vars)));
   }
 
   *nvars = ncmpvars;
@@ -149,8 +149,8 @@ static DataField getData(const char *varname,const char *filename, unsigned int 
   res.data = NULL;
 
   /* fprintf(stderr, "getData of Var: %s from file %s\n", varname,filename);  */
-  cmpvar = mk_nil();
-  cmpvar =  mk_cons(mk_scon(varname),cmpvar);
+  cmpvar = mmc_mk_nil();
+  cmpvar =  mmc_mk_cons(mmc_mk_scon(varname),cmpvar);
   dataset = SimulationResultsImpl__readDataset(filename,cmpvar,size,suggestRealAll,srg,runningTestsuite);
   if (dataset==NULL) {
     /* fprintf(stderr, "getData of Var: %s failed!\n",varname); */
@@ -160,13 +160,13 @@ static DataField getData(const char *varname,const char *filename, unsigned int 
   /* fprintf(stderr, "Data of Var: %s\n", varname); */
   /*  First calculate the length of the matrix */
   datasetBackup = dataset;
-  while (RML_NILHDR != RML_GETHDR(dataset)) {
-    lst = RML_CAR(dataset);
-    while (RML_NILHDR != RML_GETHDR(lst)) {
+  while (MMC_NILHDR != MMC_GETHDR(dataset)) {
+    lst = MMC_CAR(dataset);
+    while (MMC_NILHDR != MMC_GETHDR(lst)) {
       res.n++;
-      lst = RML_CDR(lst);
+      lst = MMC_CDR(lst);
     }
-    dataset = RML_CDR(dataset);
+    dataset = MMC_CDR(dataset);
   }
   if (res.n == 0) return res;
 
@@ -174,13 +174,13 @@ static DataField getData(const char *varname,const char *filename, unsigned int 
   dataset = datasetBackup;
   i = res.n;
   res.data = (double*) malloc(sizeof(double)*res.n);
-  while (RML_NILHDR != RML_GETHDR(dataset)) {
-    lst = RML_CAR(dataset);
-    while (RML_NILHDR != RML_GETHDR(lst)) {
-      res.data[--i] = rml_prim_get_real(RML_CAR(lst));
-      lst = RML_CDR(lst);
+  while (MMC_NILHDR != MMC_GETHDR(dataset)) {
+    lst = MMC_CAR(dataset);
+    while (MMC_NILHDR != MMC_GETHDR(lst)) {
+      res.data[--i] = mmc_prim_get_real(MMC_CAR(lst));
+      lst = MMC_CDR(lst);
     }
-    dataset = RML_CDR(dataset);
+    dataset = MMC_CDR(dataset);
   }
   assert(i == 0);
 
@@ -524,7 +524,7 @@ static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, Dat
     cmpdiffvars[vardiffindx] = varname;
     vardiffindx++;
     if (!isResultCmp) {
-      *diffLst = mk_cons(mk_scon(varname),*diffLst);
+      *diffLst = mmc_mk_cons(mmc_mk_scon(varname),*diffLst);
     }
   }
   if (fout) {
@@ -564,14 +564,14 @@ static int writeLogFile(const char *filename,DiffDataField *ddf,const char *f,co
 
 static const char* getTimeVarName(void *vars) {
   const char *res = "time";
-  while (RML_NILHDR != RML_GETHDR(vars)) {
-    char *var = RML_STRINGDATA(RML_CAR(vars));
+  while (MMC_NILHDR != MMC_GETHDR(vars)) {
+    char *var = MMC_STRINGDATA(MMC_CAR(vars));
     if (0==strcmp("time",var)) break;
     if (0==strcmp("Time",var)) {
       res="Time";
       break;
     }
-    vars = RML_CDR(vars);
+    vars = MMC_CDR(vars);
   }
   return res;
 }
@@ -605,18 +605,18 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
     char *str = (char*) malloc(25+strlen(filename));
     *str = 0;
     strcat(strcat(str,"Error opening file: "),runningTestsuite ? SystemImpl__basename(filename) : filename);
-    void *res = mk_scon(str);
+    void *res = mmc_mk_scon(str);
     free(str);
-    return mk_cons(res,mk_nil());
+    return mmc_mk_cons(res,mmc_mk_nil());
   }
   /* fprintf(stderr, "Open File %s\n", reffilename); */
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(reffilename,&simresglob_ref)) {
     char *str = (char*) malloc(35+strlen(reffilename));
     *str = 0;
     strcat(strcat(str,"Error opening reference file: "),runningTestsuite ? SystemImpl__basename(reffilename) : reffilename);
-    void *res = mk_scon(str);
+    void *res = mmc_mk_scon(str);
     free(str);
-    return mk_cons(res,mk_nil());
+    return mmc_mk_cons(res,mmc_mk_nil());
   }
 
   size = SimulationResultsImpl__readSimulationResultSize(filename,&simresglob_c);
@@ -632,7 +632,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   if (ncmpvars==0) {
     suggestReadAll = 1;
     cmpvars = getVars(allvarsref,&ncmpvars);
-    if (ncmpvars==0) return mk_cons(mk_scon("Error Get Vars!"),mk_nil());
+    if (ncmpvars==0) return mmc_mk_cons(mmc_mk_scon("Error Get Vars!"),mmc_mk_nil());
   }
 #ifdef DEBUGOUTPUT
   fprintf(stderr, "Compare Vars:\n");
@@ -645,16 +645,16 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   timeVarNameRef = getTimeVarName(allvarsref);
   time = getData(timeVarName,filename,size,suggestReadAll,&simresglob_c,runningTestsuite);
   if (time.n==0) {
-    return mk_cons(mk_scon("Error get time!"),mk_nil());
+    return mmc_mk_cons(mmc_mk_scon("Error get time!"),mmc_mk_nil());
   }
   /* fprintf(stderr, "get reftime\n"); */
   timeref = getData(timeVarNameRef,reffilename,size_ref,suggestReadAll,&simresglob_ref,runningTestsuite);
   if (timeref.n==0) {
-    return mk_cons(mk_scon("Error get ref time!"),mk_nil());
+    return mmc_mk_cons(mmc_mk_scon("Error get ref time!"),mmc_mk_nil());
   }
   cmpdiffvars = (char**)malloc(sizeof(char*)*(ncmpvars));
   /* check if time is larger or less reftime */
-  res = mk_nil();
+  res = mmc_mk_nil();
   if (fabs(time.data[time.n-1]-timeref.data[timeref.n-1]) > reltol*fabs(timeref.data[timeref.n-1])) {
     char buf[WARNINGBUFFSIZE];
 #ifdef DEBUGOUTPUT
@@ -738,12 +738,12 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
       /* for (i=0;i<vardiffindx;i++)
       fprintf(stderr, "diffVar: %s\n",cmpdiffvars[i]); */
       for (i=0;i<vardiffindx;i++){
-        res = (void*)mk_cons(mk_scon(cmpdiffvars[i]),res);
+        res = (void*)mmc_mk_cons(mmc_mk_scon(cmpdiffvars[i]),res);
       }
-      res = mk_cons(mk_scon("Files not Equal!"),res);
+      res = mmc_mk_cons(mmc_mk_scon("Files not Equal!"),res);
       c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_warning, gettext("Files not Equal\n"), msg, 0);
     } else {
-      res = mk_cons(mk_scon("Files Equal!"),res);
+      res = mmc_mk_cons(mmc_mk_scon("Files Equal!"),res);
     }
   } else {
     if (success) {

@@ -64,7 +64,7 @@
 #define CONFIG_CORBALIBS "-L$(OPENMODELICAHOME)/lib/omc -lmico2313"
 #define CONFIG_LPSOLVEINC "lpsolve/lp_lib.h"
 /* Windows is always "special" */
-#define CONFIG_SYSTEMLIBS mk_nil()
+#define CONFIG_SYSTEMLIBS mmc_mk_nil()
 
 
 #if defined(__i386__) || defined(__x86_64__) || defined(_MSC_VER)

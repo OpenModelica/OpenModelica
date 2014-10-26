@@ -276,7 +276,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int langStd, int runningTes
   ModelicaParser_filename_C = SystemImpl__iconv(ModelicaParser_filename_C,"UTF-8","UTF-8",1);
   if (!*ModelicaParser_filename_C) return NULL;
   ModelicaParser_filename_C = strdup(ModelicaParser_filename_C);
-  ModelicaParser_filename_RML = mk_scon(ModelicaParser_filename_C);
+  ModelicaParser_filename_OMC = mmc_mk_scon(ModelicaParser_filename_C);
   ModelicaParser_langStd = langStd;
 
   if (ModelicaParser_flags & PARSE_META_MODELICA) {
@@ -373,7 +373,7 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
   members.flags = flags;
   members.readonly = 0;
   members.first_comment = 0;
-  members.timestamp = Absyn__TIMESTAMP(mk_rcon(0),mk_rcon((double)current_time));
+  members.timestamp = Absyn__TIMESTAMP(mmc_mk_rcon(0),mmc_mk_rcon((double)current_time));
 
   if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", members.filename_C); fflush(stderr); }
 
@@ -422,7 +422,7 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
    */
   struct stat st;
   stat(members.filename_C, &st);
-  members.timestamp = Absyn__TIMESTAMP(mk_rcon(0),mk_rcon((double)st.st_mtime));
+  members.timestamp = Absyn__TIMESTAMP(mmc_mk_rcon(0),mmc_mk_rcon((double)st.st_mtime));
   if (0 == st.st_size) return parseString("",members.filename_C,ModelicaParser_flags, langStd, runningTestsuite);
 
   fName  = (pANTLR3_UINT8)fileName;

@@ -391,7 +391,7 @@ int SystemImpl__writeFile(const char* filename, const char* data)
   const char *fileOpenMode = "wb";  /* on Unixes don't bother, do it binary mode */
 #endif
   FILE * file = NULL;
-  int len = strlen(data); /* RML_HDRSTRLEN(RML_GETHDR(rmlA1)); */
+  int len = strlen(data); /* MMC_HDRSTRLEN(MMC_GETHDR(rmlA1)); */
   /* adrpo: 2010-09-22 open the file in BINARY mode as otherwise \r\n becomes \r\r\n! */
   file = fopen(filename,fileOpenMode);
   if (file == NULL) {
@@ -502,10 +502,10 @@ void* SystemImpl__trimChar(const char* str, char char_to_be_trimmed)
     res = (char*)GC_malloc_atomic(end_pos - start_pos +2);
     strncpy(res,&str[start_pos],end_pos - start_pos+1);
     res[end_pos - start_pos+1] = '\0';
-    rmlRes = (void*) mk_scon(res);
+    rmlRes = (void*) mmc_mk_scon(res);
     return rmlRes;
   } else {
-    return mk_scon("");
+    return mmc_mk_scon("");
   }
 }
 
@@ -651,11 +651,11 @@ void* SystemImpl__systemCallParallel(void *lst, int numThreads)
   int sz = 0, i = 0;
   char **calls;
   int *results;
-  while (RML_NILHDR != RML_GETHDR(tmp)) {
+  while (MMC_NILHDR != MMC_GETHDR(tmp)) {
     sz++;
-    tmp = RML_CDR(tmp);
+    tmp = MMC_CDR(tmp);
   }
-  if (sz == 0) return mk_nil();
+  if (sz == 0) return mmc_mk_nil();
   calls = (char**) GC_malloc(sz*sizeof(char*));
   assert(calls);
   results = (int*) GC_malloc_atomic(sz*sizeof(int));
@@ -665,9 +665,9 @@ void* SystemImpl__systemCallParallel(void *lst, int numThreads)
     numThreads = sz;
   }
   sz=0;
-  while (RML_NILHDR != RML_GETHDR(tmp)) {
-    calls[sz++] = RML_STRINGDATA(RML_CAR(tmp));
-    tmp = RML_CDR(tmp);
+  while (MMC_NILHDR != MMC_GETHDR(tmp)) {
+    calls[sz++] = MMC_STRINGDATA(MMC_CAR(tmp));
+    tmp = MMC_CDR(tmp);
   }
   if (sz == 1) {
     results[i] = SystemImpl__systemCall(calls[0],"");
@@ -688,9 +688,9 @@ void* SystemImpl__systemCallParallel(void *lst, int numThreads)
     pthread_mutex_destroy(&mutex);
   }
   GC_free(calls);
-  tmp = mk_nil();
+  tmp = mmc_mk_nil();
   for (i=sz-1; i>=0; i--) {
-    tmp = mk_cons(mk_icon(results[i]),tmp);
+    tmp = mmc_mk_cons(mmc_mk_icon(results[i]),tmp);
   }
   GC_free(results);
   return tmp;
@@ -1352,9 +1352,9 @@ static int SystemImpl__getVariableValue(double timeStamp, void* timeValues, void
   // break loop and return value
   int valueFound = 0;
 
-  for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML_CDR(timeValues), varValues = RML_CDR(varValues)) {
-    nowValue   = rml_prim_get_real(RML_CAR(varValues));
-    nowTime   =  rml_prim_get_real(RML_CAR(timeValues));
+  for(; MMC_GETHDR(timeValues) == MMC_CONSHDR && valueFound == 0; timeValues = MMC_CDR(timeValues), varValues = MMC_CDR(varValues)) {
+    nowValue   = mmc_prim_get_real(MMC_CAR(varValues));
+    nowTime   =  mmc_prim_get_real(MMC_CAR(timeValues));
 
     if(timeStamp == nowTime){
       valueFound   = 1;
@@ -1607,23 +1607,23 @@ int SystemImpl__dgesv(void *lA, void *lB, void **res)
   double *A,*B;
   integer *ipiv;
   integer info = 0,nrhs=1,lda,ldb;
-  while (RML_NILHDR != RML_GETHDR(tmp)) {
+  while (MMC_NILHDR != MMC_GETHDR(tmp)) {
     sz++;
-    tmp = RML_CDR(tmp);
+    tmp = MMC_CDR(tmp);
   }
   A = (double*) GC_malloc_atomic(sz*sz*sizeof(double));
   assert(A != NULL);
   B = (double*) GC_malloc_atomic(sz*sizeof(double));
   assert(B != NULL);
   for (i=0; i<sz; i++) {
-    tmp = RML_CAR(lA);
+    tmp = MMC_CAR(lA);
     for (j=0; j<sz; j++) {
-      A[j*sz+i] = rml_prim_get_real(RML_CAR(tmp));
-      tmp = RML_CDR(tmp);
+      A[j*sz+i] = mmc_prim_get_real(MMC_CAR(tmp));
+      tmp = MMC_CDR(tmp);
     }
-    B[i] = rml_prim_get_real(RML_CAR(lB));
-    lA = RML_CDR(lA);
-    lB = RML_CDR(lB);
+    B[i] = mmc_prim_get_real(MMC_CAR(lB));
+    lA = MMC_CDR(lA);
+    lB = MMC_CDR(lB);
   }
   ipiv = (integer*) GC_malloc_atomic(sz*sizeof(integer));
   memset(ipiv,0,sz*sizeof(integer));
@@ -1632,9 +1632,9 @@ int SystemImpl__dgesv(void *lA, void *lB, void **res)
   ldb = sz;
   dgesv_(&sz,&nrhs,A,&lda,ipiv,B,&ldb,&info);
 
-  tmp = mk_nil();
+  tmp = mmc_mk_nil();
   while (sz--) {
-    tmp = mk_cons(mk_rcon(B[sz]),tmp);
+    tmp = mmc_mk_cons(mmc_mk_rcon(B[sz]),tmp);
   }
   *res = tmp;
   return info;
@@ -1649,9 +1649,9 @@ int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
   lprec *lp;
   double inf,*vres;
 
-  while (RML_NILHDR != RML_GETHDR(tmp)) {
+  while (MMC_NILHDR != MMC_GETHDR(tmp)) {
     sz++;
-    tmp = RML_CDR(tmp);
+    tmp = MMC_CDR(tmp);
   }
   vres = (double*)GC_malloc_atomic(sz*sizeof(double));
   memset(vres,0,sz*sizeof(double));
@@ -1662,25 +1662,25 @@ int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
   for (i=0; i<sz; i++) {
     set_lowbo(lp, i+1, -inf);
     set_constr_type(lp, i+1, EQ);
-    tmp = RML_CAR(lA);
+    tmp = MMC_CAR(lA);
     for (j=0; j<sz; j++) {
-      set_mat(lp, i+1, j+1, rml_prim_get_real(RML_CAR(tmp)));
-      tmp = RML_CDR(tmp);
+      set_mat(lp, i+1, j+1, mmc_prim_get_real(MMC_CAR(tmp)));
+      tmp = MMC_CDR(tmp);
     }
-    set_rh(lp, i+1, rml_prim_get_real(RML_CAR(lB)));
-    lA = RML_CDR(lA);
-    lB = RML_CDR(lB);
+    set_rh(lp, i+1, mmc_prim_get_real(MMC_CAR(lB)));
+    lA = MMC_CDR(lA);
+    lB = MMC_CDR(lB);
   }
-  while (RML_NILHDR != RML_GETHDR(ix)) {
-    if (RML_UNTAGFIXNUM(RML_CAR(ix)) != -1) set_int(lp, RML_UNTAGFIXNUM(RML_CAR(ix)), 1);
-    ix = RML_CDR(ix);
+  while (MMC_NILHDR != MMC_GETHDR(ix)) {
+    if (MMC_UNTAGFIXNUM(MMC_CAR(ix)) != -1) set_int(lp, MMC_UNTAGFIXNUM(MMC_CAR(ix)), 1);
+    ix = MMC_CDR(ix);
   }
   info=solve(lp);
   //print_lp(lp);
   if (info==0 || info==1) get_ptr_variables(lp,&vres);
-  *res = mk_nil();
+  *res = mmc_mk_nil();
   while (sz--) {
-    *res = mk_cons(mk_rcon(vres[sz]),*res);
+    *res = mmc_mk_cons(mmc_mk_rcon(vres[sz]),*res);
   }
   delete_lp(lp);
   return info;
@@ -1738,11 +1738,11 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
   *numMatches = 0;
   modelicaPathEntry* res;
   void *save_mps = mps;
-  while (RML_NILHDR != RML_GETHDR(mps)) {
-    const char *mp = RML_STRINGDATA(RML_CAR(mps));
+  while (MMC_NILHDR != MMC_GETHDR(mps)) {
+    const char *mp = MMC_STRINGDATA(MMC_CAR(mps));
     DIR *dir = opendir(mp);
     struct dirent *ent;
-    mps = RML_CDR(mps);
+    mps = MMC_CDR(mps);
     if (!dir) continue;
     while ((ent = readdir(dir))) {
       if (0 == strncmp(name, ent->d_name, nlen) && (ent->d_name[nlen] == '\0' || ent->d_name[nlen] == ' ' || ent->d_name[nlen] == '.')) {
@@ -1770,11 +1770,11 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
   /*** NOTE: Doing the same thing again. It is very important the same (number of) entries are match as in the loop above ***/
   res = (modelicaPathEntry*) GC_malloc(*numMatches*sizeof(modelicaPathEntry));
   mps = save_mps;
-  while (RML_NILHDR != RML_GETHDR(mps)) {
-    const char *mp = RML_STRINGDATA(RML_CAR(mps));
+  while (MMC_NILHDR != MMC_GETHDR(mps)) {
+    const char *mp = MMC_STRINGDATA(MMC_CAR(mps));
     DIR *dir = opendir(mp);
     struct dirent *ent;
-    mps = RML_CDR(mps);
+    mps = MMC_CDR(mps);
     if (!dir) continue;
     while ((ent = readdir(dir))) {
       if (0 == strncmp(name, ent->d_name, nlen) && (ent->d_name[nlen] == '\0' || ent->d_name[nlen] == ' ' || ent->d_name[nlen] == '.')) {
@@ -1918,8 +1918,8 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
   int numEntries,res=1;
   size_t nameLen = strlen(name);
   modelicaPathEntry *entries = getAllModelicaPaths(name, nameLen, mps, &numEntries);
-  while (RML_NILHDR != RML_GETHDR(prios)) {
-    const char *prio = RML_STRINGDATA(RML_CAR(prios));
+  while (MMC_NILHDR != MMC_GETHDR(prios)) {
+    const char *prio = MMC_STRINGDATA(MMC_CAR(prios));
     if (0==strcmp("default",prio)) {
       if (!getLoadModelPathFromDefaultTarget(name,entries,numEntries,outDir,outName,isDir)) {
         res = 0;
@@ -1931,7 +1931,7 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
         break;
       }
     }
-    prios = RML_CDR(prios);
+    prios = MMC_CDR(prios);
   }
   /* fprintf(stderr, "result: %d %s %s %d", res, *outDir, *outName, *isDir); */
   *outName = *outName ? GC_strdup(*outName) : 0;

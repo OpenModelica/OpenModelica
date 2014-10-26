@@ -881,7 +881,7 @@ bool GraphComparator::FillEdgesWithNodeNames(std::list<Edge*> edges, std::map<st
 #define TGRC_CHECKTG
 void* TaskGraphResultsCmp_checkTaskGraph(const char *filename, const char *reffilename)
 {
-  void *res = mk_nil();
+  void *res = mmc_mk_nil();
   Graph g1;
   Graph g2;
   GraphMLParser parser;
@@ -892,7 +892,7 @@ void* TaskGraphResultsCmp_checkTaskGraph(const char *filename, const char *reffi
     errorMsg = "File '";
     errorMsg += std::string(filename);
     errorMsg += "' does not exist";
-    res = mk_cons(mk_scon(errorMsg.c_str()), mk_nil());
+    res = mmc_mk_cons(mmc_mk_scon(errorMsg.c_str()), mmc_mk_nil());
     return res;
   }
 
@@ -901,7 +901,7 @@ void* TaskGraphResultsCmp_checkTaskGraph(const char *filename, const char *reffi
     errorMsg = "File '";
     errorMsg += std::string(reffilename);
     errorMsg += "' does not exist";
-    res = mk_cons(mk_scon(errorMsg.c_str()), mk_nil());
+    res = mmc_mk_cons(mmc_mk_scon(errorMsg.c_str()), mmc_mk_nil());
     return res;
   }
 
@@ -909,19 +909,19 @@ void* TaskGraphResultsCmp_checkTaskGraph(const char *filename, const char *reffi
   parser.ParseGraph(&g2, reffilename, NodeComparator(&NodeComparator::CompareNodeNamesInt), &errorMsg);
 
   if (GraphComparator::CompareGraphs(&g1, &g2, FULL, &errorMsg))
-    res = mk_cons(mk_scon("Taskgraph correct"), mk_nil());
+    res = mmc_mk_cons(mmc_mk_scon("Taskgraph correct"), mmc_mk_nil());
   else
-    res = mk_cons(mk_scon("Taskgraph not correct"), mk_nil());
+    res = mmc_mk_cons(mmc_mk_scon("Taskgraph not correct"), mmc_mk_nil());
 
   if (errorMsg.length() != 0)
-    res = mk_cons(mk_scon(errorMsg.c_str()), res);
+    res = mmc_mk_cons(mmc_mk_scon(errorMsg.c_str()), res);
 
   return res;
 }
 
 void* TaskGraphResultsCmp_checkCodeGraph(const char *filename, const char *codeFileName)
 {
-  void *res = mk_nil();
+  void *res = mmc_mk_nil();
   Graph g1;
   Graph g2;
   GraphMLParser parser;
@@ -933,7 +933,7 @@ void* TaskGraphResultsCmp_checkCodeGraph(const char *filename, const char *codeF
     errorMsg = "File '";
     errorMsg += std::string(filename);
     errorMsg += "' does not exist";
-    res = mk_cons(mk_scon(errorMsg.c_str()), mk_nil());
+    res = mmc_mk_cons(mmc_mk_scon(errorMsg.c_str()), mmc_mk_nil());
     return res;
   }
 
@@ -942,7 +942,7 @@ void* TaskGraphResultsCmp_checkCodeGraph(const char *filename, const char *codeF
     errorMsg = "File '";
     errorMsg += std::string(codeFileName);
     errorMsg += "' does not exist";
-    res = mk_cons(mk_scon(errorMsg.c_str()), mk_nil());
+    res = mmc_mk_cons(mmc_mk_scon(errorMsg.c_str()), mmc_mk_nil());
     return res;
   }
 
@@ -950,12 +950,12 @@ void* TaskGraphResultsCmp_checkCodeGraph(const char *filename, const char *codeF
   codeParser.ParseGraph(&g2, codeFileName, NodeComparator(&NodeComparator::CompareNodeNamesInt), &errorMsg);
 
   if (GraphComparator::CompareGraphs(&g1, &g2, NodeComparator(&NodeComparator::CompareNodeIdsInt),EdgeComparator(&EdgeComparator::CompareEdgesByNodeIdsInt), false, false, FULL, &errorMsg))
-    res = mk_cons(mk_scon("Codegraph correct"), mk_nil());
+    res = mmc_mk_cons(mmc_mk_scon("Codegraph correct"), mmc_mk_nil());
   else
-    res = mk_cons(mk_scon("Codegraph not correct"), mk_nil());
+    res = mmc_mk_cons(mmc_mk_scon("Codegraph not correct"), mmc_mk_nil());
 
   if (errorMsg.length() != 0)
-    res = mk_cons(mk_scon(errorMsg.c_str()), res);
+    res = mmc_mk_cons(mmc_mk_scon(errorMsg.c_str()), res);
 
   return res;
 }

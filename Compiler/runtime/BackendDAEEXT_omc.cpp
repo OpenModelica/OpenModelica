@@ -42,7 +42,6 @@
  */
 
 #include "meta_modelica.h"
-#include "rml_compatibility.h"
 #include "BackendDAEEXT.cpp"
 #include <stdlib.h>
 #include "errorext.h"
@@ -160,17 +159,17 @@ extern void BackendDAEEXT_getAssignment(modelica_metatype ass1, modelica_metatyp
   if (match != NULL) {
     for(i=0; i<n; ++i) {
       if (match[i] >= 0)
-        MMC_STRUCTDATA(ass1)[i] = mk_icon(match[i]+1);
+        MMC_STRUCTDATA(ass1)[i] = mmc_mk_icon(match[i]+1);
       else
-        MMC_STRUCTDATA(ass1)[i] = mk_icon(-1);
+        MMC_STRUCTDATA(ass1)[i] = mmc_mk_icon(-1);
     }
   }
   if (row_match != NULL) {
     for(i=0; i<m; ++i) {
       if (row_match[i] >= 0)
-        MMC_STRUCTDATA(ass2)[i] = mk_icon(row_match[i]+1);
+        MMC_STRUCTDATA(ass2)[i] = mmc_mk_icon(row_match[i]+1);
       else
-        MMC_STRUCTDATA(ass2)[i] = mk_icon(-1);
+        MMC_STRUCTDATA(ass2)[i] = mmc_mk_icon(-1);
     }
   }
 }

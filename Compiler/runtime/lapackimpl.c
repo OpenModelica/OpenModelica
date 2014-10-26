@@ -143,12 +143,12 @@ double* alloc_real_matrix(int N, int M, void *data)
 
   if(data) {
     for(i = 0; i < N; ++i) {
-      tmp = RML_CAR(data);
+      tmp = MMC_CAR(data);
       for(j = 0; j < M; ++j) {
-        matrix[j * N + i] = rml_prim_get_real(RML_CAR(tmp));
-        tmp = RML_CDR(tmp);
+        matrix[j * N + i] = mmc_prim_get_real(MMC_CAR(tmp));
+        tmp = MMC_CDR(tmp);
       }
-      data = RML_CDR(data);
+      data = MMC_CDR(data);
     }
   }
 
@@ -166,8 +166,8 @@ double* alloc_real_vector(int N, void *data)
 
   if(data) {
     for(i = 0; i < N; ++i) {
-      vector[i] = rml_prim_get_real(RML_CAR(tmp));
-      tmp = RML_CDR(tmp);
+      vector[i] = mmc_prim_get_real(MMC_CAR(tmp));
+      tmp = MMC_CDR(tmp);
     }
   }
 
@@ -185,8 +185,8 @@ integer* alloc_int_vector(int N, void *data)
 
   if(data) {
     for(i = 0; i < N; ++i) {
-      vector[i] = RML_UNTAGFIXNUM(RML_CAR(tmp));
-      tmp = RML_CDR(tmp);
+      vector[i] = MMC_UNTAGFIXNUM(MMC_CAR(tmp));
+      tmp = MMC_CDR(tmp);
     }
   }
 
@@ -213,13 +213,13 @@ void* mk_rml_real_matrix(int N, int M, double *data)
   void *res, *tmp;
   int i, j;
 
-  res = mk_nil();
+  res = mmc_mk_nil();
   for(i = N - 1; i >= 0; --i) {
-    tmp = mk_nil();
+    tmp = mmc_mk_nil();
     for(j = M - 1; j >= 0; --j) {
-      tmp = mk_cons(mk_rcon(data[j * N + i]), tmp);
+      tmp = mmc_mk_cons(mmc_mk_rcon(data[j * N + i]), tmp);
     }
-    res = mk_cons(tmp, res);
+    res = mmc_mk_cons(tmp, res);
   }
 
   return res;
@@ -230,9 +230,9 @@ void* mk_rml_real_vector(int N, double *data)
   void *res;
   int i;
 
-  res = mk_nil();
+  res = mmc_mk_nil();
   for(i = N - 1; i >= 0; --i) {
-    res = mk_cons(mk_rcon(data[i]), res);
+    res = mmc_mk_cons(mmc_mk_rcon(data[i]), res);
   }
 
   return res;
@@ -243,9 +243,9 @@ void* mk_rml_int_vector(int N, integer *data)
   void *res;
   int i;
 
-  res = mk_nil();
+  res = mmc_mk_nil();
   for(i = N - 1; i >= 0; --i) {
-    res = mk_cons(mk_icon(data[i]), res);
+    res = mmc_mk_cons(mmc_mk_icon(data[i]), res);
   }
 
   return res;

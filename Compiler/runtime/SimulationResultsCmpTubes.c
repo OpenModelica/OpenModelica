@@ -769,7 +769,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
     cmpdiffvars[vardiffindx] = varname;
     vardiffindx++;
     if (!isResultCmp) {
-      *diffLst = mk_cons(mk_scon(varname),*diffLst);
+      *diffLst = mmc_mk_cons(mmc_mk_scon(varname),*diffLst);
     }
   }
   if (fout) {

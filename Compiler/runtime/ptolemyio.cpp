@@ -83,13 +83,13 @@ void * read_ptolemy_dataset(const char*filename, void* vars,int datasize)
       return NULL;
     }
   }
-  olst = mk_nil();
-  while (RML_NILHDR != RML_GETHDR(vars)) {
+  olst = mmc_mk_nil();
+  while (MMC_NILHDR != MMC_GETHDR(vars)) {
     string readstr;
     double val; char ch;
-    const char *cvar = RML_STRINGDATA(RML_CAR(vars));
+    const char *cvar = MMC_STRINGDATA(MMC_CAR(vars));
     string var(string("DataSet: ")+cvar);
-    vars = RML_CDR(vars);
+    vars = MMC_CDR(vars);
 
     stream.seekg(0); //Reset stream
     // Search to the correct position.
@@ -102,7 +102,7 @@ void * read_ptolemy_dataset(const char*filename, void* vars,int datasize)
       }
     }
 
-    lst = mk_nil();
+    lst = mmc_mk_nil();
     int j=0;
     while(j<datasize) {
       const char* buf1;
@@ -132,11 +132,11 @@ void * read_ptolemy_dataset(const char*filename, void* vars,int datasize)
         else val = NAN;
       }
 
-      lst = (void*)mk_cons(mk_rcon(val),lst);
+      lst = (void*)mmc_mk_cons(mmc_mk_rcon(val),lst);
       j++;
     }
 
-    olst = (void*)mk_cons(lst,olst);
+    olst = (void*)mmc_mk_cons(lst,olst);
   }
   return olst;
 }
@@ -147,10 +147,10 @@ void* read_ptolemy_variables(const char* filename)
   void *res;
   char var[256];
   ifstream stream(filename);
-  if (!stream) return mk_nil();
-  res = mk_nil();
+  if (!stream) return mmc_mk_nil();
+  res = mmc_mk_nil();
   while (getline(stream,intervalText)) {
-    if (sscanf(intervalText.c_str(),"DataSet: %250s", var) == 1) res = mk_cons(mk_scon(var),res);
+    if (sscanf(intervalText.c_str(),"DataSet: %250s", var) == 1) res = mmc_mk_cons(mmc_mk_scon(var),res);
   }
   return res;
 }

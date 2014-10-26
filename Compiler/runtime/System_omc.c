@@ -43,7 +43,6 @@ extern "C"
 #include "omc_msvc.h"
 #include "openmodelica.h"
 #include "meta_modelica.h"
-#include "rml_compatibility.h"
 #include "ModelicaUtilities.h"
 #define ADD_METARECORD_DEFINITIONS static
 #include "OpenModelicaBootstrappingHeader.h"
@@ -849,12 +848,12 @@ extern void* System_strtokIncludingDelimiters(const char *str0, const char *deli
     /* in the list add only the end */
     if (pos == MMC_UNTAGFIXNUM(MMC_CAR(lst)))
     {
-      lst = mmc_mk_cons(mk_icon(pos+dlen), lst);
+      lst = mmc_mk_cons(mmc_mk_icon((void*)(pos+dlen)), lst);
     }
     else /* not in the list, add both */
     {
       lst = mmc_mk_cons(mmc_mk_icon(pos), lst);
-      lst = mmc_mk_cons(mmc_mk_icon(pos+dlen), lst);
+      lst = mmc_mk_cons(mmc_mk_icon((void*)(pos+dlen)), lst);
     }
   }
   /* this means it was not found in the entire string */
@@ -889,7 +888,7 @@ extern void* System_strtokIncludingDelimiters(const char *str0, const char *deli
     stmp = (char*)malloc((pos+1) * sizeof(char));
     strncpy(stmp, str + start, pos);
     stmp[pos] = '\0';
-    slst = mk_cons(mk_scon(stmp), slst);
+    slst = mmc_mk_cons(mmc_mk_scon(stmp), slst);
     free(stmp);
   }
   return slst;

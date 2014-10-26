@@ -16,7 +16,7 @@ using namespace std;
 
 void* HpcOmSchedulerExtImpl__readScheduleFromGraphMl(const char *filename)
 {
-  void *res = mk_nil();
+  void *res = mmc_mk_nil();
   std::string errorMsg = std::string("");
   Graph g;
   GraphMLParser parser;
@@ -27,7 +27,7 @@ void* HpcOmSchedulerExtImpl__readScheduleFromGraphMl(const char *filename)
     errorMsg = "File '";
     errorMsg += std::string(filename);
     errorMsg += "' does not exist";
-    res = mk_cons(mk_scon(errorMsg.c_str()), mk_nil());
+    res = mmc_mk_cons(mmc_mk_scon(errorMsg.c_str()), mmc_mk_nil());
     return res;
   }
 
@@ -41,7 +41,7 @@ void* HpcOmSchedulerExtImpl__readScheduleFromGraphMl(const char *filename)
 
       if((*iter)->threadId.size() < 3)
         continue;
-      res = mk_cons(mk_icon(atoi((*iter)->threadId.substr(3).c_str())), res);
+      res = mmc_mk_cons(mmc_mk_icon(atoi((*iter)->threadId.substr(3).c_str())), res);
     }
   return res;
 }
@@ -49,7 +49,7 @@ void* HpcOmSchedulerExtImpl__readScheduleFromGraphMl(const char *filename)
 #if USE_METIS
 void* HpcOmSchedulerExtImpl__scheduleMetis(int* xadj, int* adjncy, int* vwgt, int* adjwgt, int xadjCount, int adjncyCount, int nparts)
 {
-    void *res = mk_nil();
+    void *res = mmc_mk_nil();
     int nvert=xadjCount-1;
     idx_t met_nvtxs=xadjCount-1;
   idx_t met_ncon=1;
@@ -79,7 +79,7 @@ void* HpcOmSchedulerExtImpl__scheduleMetis(int* xadj, int* adjncy, int* vwgt, in
     returnval=METIS_PartGraphKway(&met_nvtxs,&met_ncon,met_xadj,met_adjncy,met_vwgt,NULL,met_adjwgt,&met_nparts,NULL,NULL,NULL,&met_objval,met_part);
     for(int i=nvert-1; i>=0; i--) {
         result[i]=met_part[i]+1;
-        res = mk_cons(mk_icon(result[i]),res);
+        res = mmc_mk_cons(mmc_mk_icon(result[i]),res);
     }
     delete[] met_xadj;
     delete[] met_adjncy;
@@ -91,7 +91,7 @@ void* HpcOmSchedulerExtImpl__scheduleMetis(int* xadj, int* adjncy, int* vwgt, in
 #elif USE_PATOH
 void* HpcOmSchedulerExtImpl__scheduleMetis(int* vwgts, int* eptr, int* eint, int* hewgts, int vwgtsNelts, int eptrNelts, int nparts)
 {
-    void *res = mk_nil();
+    void *res = mmc_mk_nil();
     int * result=new int[vwgtsNelts];
     PaToH_Parameters args;
     int c, n, nconst, cut, *partweights;
@@ -104,7 +104,7 @@ void* HpcOmSchedulerExtImpl__scheduleMetis(int* vwgts, int* eptr, int* eint, int
 
 
     for(int i=vwgtsNelts-1; i>=0; i--) {
-        res = mk_cons(mk_icon(result[i]+1),res);
+        res = mmc_mk_cons(mmc_mk_icon(result[i]+1),res);
     }
     cout<<endl;
     delete [] result;
@@ -115,6 +115,6 @@ void* HpcOmSchedulerExtImpl__scheduleMetis(int* vwgts, int* eptr, int* eint, int
 void* HpcOmSchedulerExtImpl__scheduleMetis(int* vwgts, int* eptr, int* eint, int* hewgts, int vwgtsNelts, int eptrNelts, int nparts)
 {
     std::cerr<<"OpenModelica was not compiled with PATOH or METIS."<<std::endl;
-    return mk_nil();
+    return mmc_mk_nil();
 }
 #endif

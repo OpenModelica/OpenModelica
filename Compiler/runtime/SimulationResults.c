@@ -235,15 +235,15 @@ static void* SimulationResultsImpl__readVars(const char *filename, int readParam
   const char *msg[2] = {"",""};
   void *res;
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename,simresglob)) {
-    return mk_nil();
+    return mmc_mk_nil();
   }
-  res = mk_nil();
+  res = mmc_mk_nil();
   switch (simresglob->curFormat) {
   case MATLAB4: {
     int i;
     for (i=simresglob->matReader.nall-1; i>=0; i--) {
       if (readParameters || !simresglob->matReader.allInfo[i].isParam) {
-        res = mk_cons(mk_scon(simresglob->matReader.allInfo[i].name),res);
+        res = mmc_mk_cons(mmc_mk_scon(simresglob->matReader.allInfo[i].name),res);
       }
     }
     return res;
@@ -257,7 +257,7 @@ static void* SimulationResultsImpl__readVars(const char *filename, int readParam
       int i;
       for (i=simresglob->csvReader->numvars-1; i>=0; i--) {
         if (variables[i][0] != '\0') {
-          res = mk_cons(mk_scon(variables[i]),res);
+          res = mmc_mk_cons(mmc_mk_scon(variables[i]),res);
         }
       }
     }
@@ -266,7 +266,7 @@ static void* SimulationResultsImpl__readVars(const char *filename, int readParam
   default:
     msg[0] = PlotFormatStr[simresglob->curFormat];
     c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("readSimulationResultSize() not implemented for plot format: %s"), msg, 1);
-    return mk_nil();
+    return mmc_mk_nil();
   }
 }
 
@@ -274,11 +274,11 @@ static void* SimulationResultsImpl__readVarsFilterAliases(const char *filename, 
 {
   const char *msg[2] = {"",""};
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename,simresglob)) {
-    return mk_nil();
+    return mmc_mk_nil();
   }
   switch (simresglob->curFormat) {
   case MATLAB4: {
-    void *res = mk_nil();
+    void *res = mmc_mk_nil();
     int i;
     int *params = (int*) calloc(simresglob->matReader.nparam+1,sizeof(int));
     int *vars = (int*) calloc(simresglob->matReader.nvar+1,sizeof(int));
@@ -291,7 +291,7 @@ static void* SimulationResultsImpl__readVarsFilterAliases(const char *filename, 
       } else {
         vars[simresglob->matReader.allInfo[i].index] = 1;
       }
-      res = mk_cons(mk_scon(simresglob->matReader.allInfo[i].name),res);
+      res = mmc_mk_cons(mmc_mk_scon(simresglob->matReader.allInfo[i].name),res);
     }
     free(params);
     free(vars);
@@ -311,7 +311,7 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename,simresglob)) {
     return NULL;
   }
-  res = mk_nil();
+  res = mmc_mk_nil();
   switch (simresglob->curFormat) {
   case MATLAB4: {
     ModelicaMatVariable_t *mat_var;
@@ -325,9 +325,9 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
     if (suggestReadAllVars) {
       omc_matlab4_read_all_vals(&simresglob->matReader);
     }
-    while (RML_NILHDR != RML_GETHDR(vars)) {
-      var = RML_STRINGDATA(RML_CAR(vars));
-      vars = RML_CDR(vars);
+    while (MMC_NILHDR != MMC_GETHDR(vars)) {
+      var = MMC_STRINGDATA(MMC_CAR(vars));
+      vars = MMC_CDR(vars);
       mat_var = omc_matlab4_find_var(&simresglob->matReader,var);
       if (mat_var == NULL) {
         msg[0] = runningTestsuite ? SystemImpl__basename(filename) : filename;
@@ -335,14 +335,14 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
         c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not read variable %s in file %s."), msg, 2);
         return NULL;
       } else if (mat_var->isParam) {
-        col=mk_nil();
-        for (i=0;i<dimsize;i++) col=mk_cons(mk_rcon((mat_var->index<0)?-simresglob->matReader.params[abs(mat_var->index)-1]:simresglob->matReader.params[abs(mat_var->index)-1]),col);
-        res = mk_cons(col,res);
+        col=mmc_mk_nil();
+        for (i=0;i<dimsize;i++) col=mmc_mk_cons(mmc_mk_rcon((mat_var->index<0)?-simresglob->matReader.params[abs(mat_var->index)-1]:simresglob->matReader.params[abs(mat_var->index)-1]),col);
+        res = mmc_mk_cons(col,res);
       } else {
         vals = omc_matlab4_read_vals(&simresglob->matReader,mat_var->index);
-        col=mk_nil();
-        for (i=0;i<dimsize;i++) col=mk_cons(mk_rcon(vals[i]),col);
-        res = mk_cons(col,res);
+        col=mmc_mk_nil();
+        for (i=0;i<dimsize;i++) col=mmc_mk_cons(mmc_mk_rcon(vals[i]),col);
+        res = mmc_mk_cons(col,res);
       }
     }
     return res;
@@ -351,9 +351,9 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
     return read_ptolemy_dataset(filename,vars,dimsize);
   }
   case CSV: {
-    while (RML_NILHDR != RML_GETHDR(vars)) {
-      var = RML_STRINGDATA(RML_CAR(vars));
-      vars = RML_CDR(vars);
+    while (MMC_NILHDR != MMC_GETHDR(vars)) {
+      var = MMC_STRINGDATA(MMC_CAR(vars));
+      vars = MMC_CDR(vars);
       vals = simresglob->csvReader ? read_csv_dataset(simresglob->csvReader,var) : NULL;
       if (vals == NULL) {
         msg[0] = runningTestsuite ? SystemImpl__basename(filename) : filename;
@@ -361,11 +361,11 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
         c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not read variable %s in file %s."), msg, 2);
         return NULL;
       } else {
-        col=mk_nil();
+        col=mmc_mk_nil();
         for (i=0;i<dimsize;i++) {
-          col=mk_cons(mk_rcon(vals[i]),col);
+          col=mmc_mk_cons(mmc_mk_rcon(vals[i]),col);
         }
-        res = mk_cons(col,res);
+        res = mmc_mk_cons(col,res);
       }
     }
     return res;

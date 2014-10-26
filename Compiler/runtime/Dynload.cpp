@@ -38,6 +38,8 @@ extern "C" {
 #include "systemimpl.h"
 #include "errorext.h"
 
+#define MMC_NUM_ARGS 32
+#define UNBOX_OFFSET 1
 
 static void *type_desc_to_value(type_description *desc);
 static int value_to_type_desc(void *value, type_description *desc);
@@ -52,46 +54,46 @@ static int value_to_type_desc(void *value, type_description *desc)
 {
   init_type_description(desc);
 
-  switch (RML_HDRCTOR(RML_GETHDR(value))) {
+  switch (MMC_HDRCTOR(MMC_GETHDR(value))) {
   case Values__INTEGER_3dBOX1: {
-    void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET];
+    void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET];
     desc->type = TYPE_DESC_INT;
-    desc->data.integer = RML_UNTAGFIXNUM(data);
+    desc->data.integer = MMC_UNTAGFIXNUM(data);
   }; break;
   case Values__ENUM_5fLITERAL_3dBOX2: {
-    void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET+1];
+    void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET+1];
     desc->type = TYPE_DESC_INT;
-    desc->data.integer = RML_UNTAGFIXNUM(data);
+    desc->data.integer = MMC_UNTAGFIXNUM(data);
   }; break;
   case Values__REAL_3dBOX1: {
-    void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET];
+    void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET];
     desc->type = TYPE_DESC_REAL;
-    desc->data.real = rml_prim_get_real(data);
+    desc->data.real = mmc_prim_get_real(data);
   }; break;
   case Values__BOOL_3dBOX1: {
-    void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET];
+    void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET];
     desc->type = TYPE_DESC_BOOL;
-    desc->data.boolean = (data == RML_TRUE);
+    desc->data.boolean = (data == MMC_TRUE);
   }; break;
   case Values__STRING_3dBOX1: {
-    void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET];
-    int len = RML_HDRSTRLEN(RML_GETHDR(data));
+    void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET];
+    int len = MMC_HDRSTRLEN(MMC_GETHDR(data));
     desc->type = TYPE_DESC_STRING;
-    desc->data.string = GC_strdup(RML_STRINGDATA(data));
+    desc->data.string = GC_strdup(MMC_STRINGDATA(data));
   }; break;
   case Values__ARRAY_3dBOX2: {
-    void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET];
-    void *dimLst = RML_STRUCTDATA(value)[UNBOX_OFFSET+1];
+    void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET];
+    void *dimLst = MMC_STRUCTDATA(value)[UNBOX_OFFSET+1];
     if (parse_array(desc, data, dimLst)) {
       printf("Parsing of array failed\n");
       return -1;
     }
   }; break;
   case Values__RECORD_3dBOX4: {
-    void *path = RML_STRUCTDATA(value)[UNBOX_OFFSET];
-    void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET+1];
-    void *names = RML_STRUCTDATA(value)[UNBOX_OFFSET+2];
-    void *index = RML_STRUCTDATA(value)[UNBOX_OFFSET+3];
+    void *path = MMC_STRUCTDATA(value)[UNBOX_OFFSET];
+    void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET+1];
+    void *names = MMC_STRUCTDATA(value)[UNBOX_OFFSET+2];
+    void *index = MMC_STRUCTDATA(value)[UNBOX_OFFSET+3];
     if (-1 != ((long)index >> 1)) {
       desc->type = TYPE_DESC_MMC;
       desc->data.mmc = value_to_mmc(value);
@@ -100,35 +102,35 @@ static int value_to_type_desc(void *value, type_description *desc)
     desc->type = TYPE_DESC_RECORD;
     //fprintf(stderr, "makepath: %s\n", path_to_name(path));
     desc->data.record.record_name = path_to_name(path, '.');
-    while ((RML_GETHDR(names) != RML_NILHDR) &&
-           (RML_GETHDR(data) != RML_NILHDR)) {
+    while ((MMC_GETHDR(names) != MMC_NILHDR) &&
+           (MMC_GETHDR(data) != MMC_NILHDR)) {
       type_description *elem;
       void *nptr;
 
-      nptr = RML_CAR(names);
-      elem = add_modelica_record_member(desc, RML_STRINGDATA(nptr),
-                                        RML_HDRSTRLEN(RML_GETHDR(nptr)));
+      nptr = MMC_CAR(names);
+      elem = add_modelica_record_member(desc, MMC_STRINGDATA(nptr),
+                                        MMC_HDRSTRLEN(MMC_GETHDR(nptr)));
 
-      if (value_to_type_desc(RML_CAR(data), elem)) {
+      if (value_to_type_desc(MMC_CAR(data), elem)) {
         return -1;
       }
-      data = RML_CDR(data);
-      names = RML_CDR(names);
+      data = MMC_CDR(data);
+      names = MMC_CDR(names);
     }
   }; break;
 
   case Values__TUPLE_3dBOX1: {
-    void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET];
+    void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET];
     desc->type = TYPE_DESC_TUPLE;
-    while (RML_GETHDR(data) != RML_NILHDR) {
+    while (MMC_GETHDR(data) != MMC_NILHDR) {
       type_description *elem;
 
       elem = add_tuple_member(desc);
 
-      if (value_to_type_desc(RML_CAR(data), elem)) {
+      if (value_to_type_desc(MMC_CAR(data), elem)) {
         return -1;
       }
-      data = RML_CDR(data);
+      data = MMC_CDR(data);
     }
   }; break;
   case Values__META_5fTUPLE_3dBOX1:
@@ -160,7 +162,7 @@ static int execute_function(void *in_arg, void **out_arg,
                             int (* func)(type_description *,
                                          type_description *), int printDebug)
 {
-  type_description arglst[RML_NUM_ARGS + 1], crashbuf[50], *arg = NULL;
+  type_description arglst[MMC_NUM_ARGS + 1], crashbuf[50], *arg = NULL;
   type_description crashbufretarg, retarg;
   void *v = NULL;
   int retval = 0;
@@ -171,7 +173,7 @@ static int execute_function(void *in_arg, void **out_arg,
   arg = arglst;
 
   while (!listEmpty(v)) {
-    void *val = RML_CAR(v);
+    void *val = MMC_CAR(v);
     if (value_to_type_desc(val, arg)) {
       if (printDebug)
       {
@@ -182,7 +184,7 @@ static int execute_function(void *in_arg, void **out_arg,
     }
     if (printDebug) puttype(arg);
     ++arg;
-    v = RML_CDR(v);
+    v = MMC_CDR(v);
   }
 
   init_type_description(arg);
@@ -236,8 +238,8 @@ static int execute_function(void *in_arg, void **out_arg,
 static void *generate_array(enum type_desc_e type, int curdim, int ndims,
                      _index_t *dim_size, void **data)
 {
-  void *lst = (void *) mk_nil();
-  void *dimLst = (void*) mk_nil();
+  void *lst = (void *) mmc_mk_nil();
+  void *dimLst = (void*) mmc_mk_nil();
   int i, cur_dim_size = dim_size[curdim - 1];
 
   if (curdim == ndims) {
@@ -249,7 +251,7 @@ static void *generate_array(enum type_desc_e type, int curdim, int ndims,
       modelica_real *ptr = *((modelica_real**)data);
       for (i = 0; i < cur_dim_size; ++i, --ptr) {
         tmp.data.real = *ptr;
-        lst = (void *) mk_cons(type_desc_to_value(&tmp), lst);
+        lst = (void *) mmc_mk_cons(type_desc_to_value(&tmp), lst);
       }
       *data = ptr;
     }; break;
@@ -257,7 +259,7 @@ static void *generate_array(enum type_desc_e type, int curdim, int ndims,
       modelica_integer *ptr = *((modelica_integer**)data);
       for (i = 0; i < cur_dim_size; ++i, --ptr) {
         tmp.data.integer = *ptr;
-        lst = (void *) mk_cons(type_desc_to_value(&tmp), lst);
+        lst = (void *) mmc_mk_cons(type_desc_to_value(&tmp), lst);
       }
       *data = ptr;
     }; break;
@@ -265,7 +267,7 @@ static void *generate_array(enum type_desc_e type, int curdim, int ndims,
       modelica_boolean *ptr = *((modelica_boolean**)data);
       for (i = 0; i < cur_dim_size; ++i, --ptr) {
         tmp.data.boolean = *ptr;
-        lst = (void *) mk_cons(type_desc_to_value(&tmp), lst);
+        lst = (void *) mmc_mk_cons(type_desc_to_value(&tmp), lst);
       }
       *data = ptr;
     }; break;
@@ -273,7 +275,7 @@ static void *generate_array(enum type_desc_e type, int curdim, int ndims,
       modelica_string_const *ptr = *((modelica_string_const**)data);
       for (i = 0; i < cur_dim_size; ++i, --ptr) {
         tmp.data.string = *ptr;
-        lst = (void *) mk_cons(type_desc_to_value(&tmp), lst);
+        lst = (void *) mmc_mk_cons(type_desc_to_value(&tmp), lst);
       }
       *data = ptr;
     }; break;
@@ -283,12 +285,12 @@ static void *generate_array(enum type_desc_e type, int curdim, int ndims,
     }
   } else {
     for (i = 0; i < cur_dim_size; ++i) {
-      lst = (void *) mk_cons(generate_array(type, curdim + 1, ndims, dim_size,
+      lst = (void *) mmc_mk_cons(generate_array(type, curdim + 1, ndims, dim_size,
                                             data), lst);
     }
   }
   for (i = ndims; i >= curdim; i--) {
-    dimLst = (void *) mk_cons(mk_icon(dim_size[i-1]), dimLst);
+    dimLst = (void *) mmc_mk_cons(mmc_mk_icon(dim_size[i-1]), dimLst);
   }
 
   return Values__ARRAY(lst, dimLst);
@@ -313,11 +315,11 @@ static void *name_to_path(const char *name)
   if (pos == NULL) {
     if (need_replace) {
       tmp = _replace(name, "__", "_");
-      ident = mk_scon(tmp);
+      ident = mmc_mk_scon(tmp);
       GC_free(tmp);
     } else {
       /* memcpy(&tmp, &name, sizeof(char *)); */ /* don't try this at home */
-      ident = mk_scon((char*)name);
+      ident = mmc_mk_scon((char*)name);
     }
     return Absyn__IDENT(ident);
   } else {
@@ -327,10 +329,10 @@ static void *name_to_path(const char *name)
     tmp[len] = '\0';
     if (need_replace) {
       char *tmp2 = _replace(tmp, "__", "_");
-      ident = mk_scon(tmp2);
+      ident = mmc_mk_scon(tmp2);
       GC_free(tmp2);
     } else {
-      ident = mk_scon(tmp);
+      ident = mmc_mk_scon(tmp);
     }
     GC_free(tmp);
     return Absyn__QUALIFIED(ident, name_to_path(pos + 1));
@@ -345,22 +347,22 @@ static int mmc_to_value(void* mmc, void** res)
   int i;
   void* t;
   if (MMC_IS_INTEGER(mmc)) {
-    *res = Values__INTEGER(mk_icon(MMC_UNTAGFIXNUM(mmc)));
+    *res = Values__INTEGER(mmc_mk_icon(MMC_UNTAGFIXNUM(mmc)));
     return 0;
   }
   hdr = MMC_GETHDR(mmc);
   if (hdr == MMC_REALHDR) {
-    *res = Values__REAL(mk_rcon(mmc_unbox_real(mmc)));
+    *res = Values__REAL(mmc_mk_rcon(mmc_unbox_real(mmc)));
     return 0;
   }
   if (MMC_HDRISSTRING(hdr)) {
     MMC_CHECK_STRING(mmc);
     // We need to duplicate the string because literals may not be accessible anymore... Bleh
-    *res = Values__STRING(mk_scon(MMC_STRINGDATA(mmc)));
+    *res = Values__STRING(mmc_mk_scon(MMC_STRINGDATA(mmc)));
     return 0;
   }
   if (hdr == MMC_NILHDR) {
-    *res = Values__LIST(mk_nil());
+    *res = Values__LIST(mmc_mk_nil());
     return 0;
   }
 
@@ -369,49 +371,49 @@ static int mmc_to_value(void* mmc, void** res)
 
 
   if (numslots>0 && ctor == MMC_ARRAY_TAG) {
-    void *varlst = (void *) mk_nil();
+    void *varlst = (void *) mmc_mk_nil();
     for (i=numslots; i>0; i--) {
       assert(0 == mmc_to_value(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),i)),&t));
-      varlst = mk_cons(t, varlst);
+      varlst = mmc_mk_cons(t, varlst);
     }
     *res = (void *) Values__META_5fARRAY(varlst);
     return 0;
   }
 
   if (numslots>0 && ctor > 1) { /* RECORD */
-    void *namelst = (void *) mk_nil();
-    void *varlst = (void *) mk_nil();
+    void *namelst = (void *) mmc_mk_nil();
+    void *varlst = (void *) mmc_mk_nil();
     struct record_description* desc = (struct record_description*) MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),1));
     assert(desc != NULL);
     for (i=numslots; i>1; i--) {
       assert(0 == mmc_to_value(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),i)),&t));
-      varlst = mk_cons(t, varlst);
+      varlst = mmc_mk_cons(t, varlst);
       t = (void*) desc->fieldNames[i-2];
-      namelst = mk_cons(mk_scon(t != NULL ? (const char*) t : "(null)"), namelst);
+      namelst = mmc_mk_cons(mmc_mk_scon(t != NULL ? (const char*) t : "(null)"), namelst);
     }
     *res = (void *) Values__RECORD(name_to_path(desc->path),
-                                   varlst, namelst, mk_icon(((long)ctor)-3));
+                                   varlst, namelst, mmc_mk_icon(((long)ctor)-3));
     return 0;
   }
 
   if (numslots>0 && ctor == 0) { /* TUPLE */
-    void *varlst = (void *) mk_nil();
+    void *varlst = (void *) mmc_mk_nil();
     for (i=numslots; i>0; i--) {
       assert(0 == mmc_to_value(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),i)),&t));
-      varlst = mk_cons(t, varlst);
+      varlst = mmc_mk_cons(t, varlst);
     }
     *res = (void *) Values__META_5fTUPLE(varlst);
     return 0;
   }
 
   if (numslots==0 && ctor==1) /* NONE() */ {
-    *res = Values__OPTION(mk_none());
+    *res = Values__OPTION(mmc_mk_none());
     return 0;
   }
 
   if (numslots==1 && ctor==1) /* SOME(x) */ {
     assert(0 == mmc_to_value(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),1)),&t));
-    *res = Values__OPTION(mk_some(t));
+    *res = Values__OPTION(mmc_mk_some(t));
     return 0;
   }
 
@@ -419,10 +421,10 @@ static int mmc_to_value(void* mmc, void** res)
     /* Transform list by first reversing it to preserve the order */
     void *varlst;
     mmc = listReverse(mmc);
-    varlst = (void *) mk_nil();
+    varlst = (void *) mmc_mk_nil();
     while (!MMC_NILTEST(mmc)) {
       assert(0 == mmc_to_value(MMC_CAR(mmc),&t));
-      varlst = mk_cons(t, varlst);
+      varlst = mmc_mk_cons(t, varlst);
       mmc = MMC_CDR(mmc);
     }
     *res = (void *) Values__LIST(varlst);
@@ -435,27 +437,27 @@ static int mmc_to_value(void* mmc, void** res)
 
 static void *value_to_mmc(void* value)
 {
-  switch (RML_HDRCTOR(RML_GETHDR(value))) {
+  switch (MMC_HDRCTOR(MMC_GETHDR(value))) {
   case Values__INTEGER_3dBOX1:
   case Values__BOOL_3dBOX1: {
-    return mmc_mk_icon(RML_UNTAGFIXNUM(RML_STRUCTDATA(value)[UNBOX_OFFSET+0]));
+    return mmc_mk_icon(MMC_UNTAGFIXNUM(MMC_STRUCTDATA(value)[UNBOX_OFFSET+0]));
   };
   case Values__STRING_3dBOX1: {
-    void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
-    return mmc_mk_scon(RML_STRINGDATA(data));
+    void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET+0];
+    return mmc_mk_scon(MMC_STRINGDATA(data));
   };
   case Values__REAL_3dBOX1: {
-    void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
-    return mmc_mk_rcon(rml_prim_get_real(data));
+    void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET+0];
+    return mmc_mk_rcon(mmc_prim_get_real(data));
   }
   case Values__ARRAY_3dBOX2:
     printf("[dynload]: Parsing of array inside uniontype failed\n");
     return 0;
   case Values__RECORD_3dBOX4: {
-    void *path = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
-    void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET+1];
-    void *names = RML_STRUCTDATA(value)[UNBOX_OFFSET+2];
-    void *index = RML_STRUCTDATA(value)[UNBOX_OFFSET+3];
+    void *path = MMC_STRUCTDATA(value)[UNBOX_OFFSET+0];
+    void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET+1];
+    void *names = MMC_STRUCTDATA(value)[UNBOX_OFFSET+2];
+    void *index = MMC_STRUCTDATA(value)[UNBOX_OFFSET+3];
     int index_int = ((long)index >> 1);
     int i=0;
     void *tmp = names;
@@ -465,8 +467,8 @@ static void *value_to_mmc(void* value)
       fprintf(stderr, "[dynload]: value_to_mmc: malloc failed\n");
       return 0;
     }
-    while (RML_GETHDR(tmp) != RML_NILHDR) {
-      i++; tmp = RML_CDR(tmp);
+    while (MMC_GETHDR(tmp) != MMC_NILHDR) {
+      i++; tmp = MMC_CDR(tmp);
     }
     /* duplicate string? will this give problems with GC? */
     desc->path = path_to_name(path, '_');
@@ -475,56 +477,56 @@ static void *value_to_mmc(void* value)
     data_mmc = (void**) malloc((i+1)*sizeof(void*));
     i=0;
     data_mmc[0] = desc;
-    while (RML_GETHDR(names) != RML_NILHDR) {
-      desc->fieldNames[i] = RML_STRINGDATA(RML_CAR(names));
-      names = RML_CDR(names);
-      data_mmc[i+1] = value_to_mmc(RML_CAR(data));
+    while (MMC_GETHDR(names) != MMC_NILHDR) {
+      desc->fieldNames[i] = MMC_STRINGDATA(MMC_CAR(names));
+      names = MMC_CDR(names);
+      data_mmc[i+1] = value_to_mmc(MMC_CAR(data));
       i++;
       data = MMC_CDR(data);
     }
     return mmc_mk_box_arr(i+1, index_int+3, (void**) data_mmc);
   }; break;
   case Values__OPTION_3dBOX1: {
-    void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
-    int numslots = RML_HDRSLOTS(RML_GETHDR(data));
+    void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET+0];
+    int numslots = MMC_HDRSLOTS(MMC_GETHDR(data));
     if (numslots == 0) return mmc_mk_none();
-    return mmc_mk_some(value_to_mmc(RML_STRUCTDATA(data)[0]));
+    return mmc_mk_some(value_to_mmc(MMC_STRUCTDATA(data)[0]));
   }; break;
   case Values__LIST_3dBOX1: {
-    void* data = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
+    void* data = MMC_STRUCTDATA(value)[UNBOX_OFFSET+0];
     void* tmp = mmc_mk_nil();
-    while (RML_GETHDR(data) != RML_NILHDR) {
-      tmp = mmc_mk_cons(value_to_mmc(RML_CAR(data)), tmp);
-      data = RML_CDR(data);
+    while (MMC_GETHDR(data) != MMC_NILHDR) {
+      tmp = mmc_mk_cons(value_to_mmc(MMC_CAR(data)), tmp);
+      data = MMC_CDR(data);
     }
     /* Transform list by first reversing it to preserve the order */
     return listReverse(tmp);
   };
   case Values__META_5fARRAY_3dBOX1: {
-    void* data = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
+    void* data = MMC_STRUCTDATA(value)[UNBOX_OFFSET+0];
     void* tmp = mmc_mk_nil();
-    while (RML_GETHDR(data) != RML_NILHDR) {
-      tmp = mmc_mk_cons(value_to_mmc(RML_CAR(data)), tmp);
-      data = RML_CDR(data);
+    while (MMC_GETHDR(data) != MMC_NILHDR) {
+      tmp = mmc_mk_cons(value_to_mmc(MMC_CAR(data)), tmp);
+      data = MMC_CDR(data);
     }
     return listArray(listReverse(tmp));
   };
   case Values__META_5fTUPLE_3dBOX1: {
-    void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
+    void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET+0];
     int len=0;
     void *tmp = data;
     void **data_mmc;
     void *res;
 
-    while (RML_GETHDR(tmp) != RML_NILHDR) {
-      len++; tmp = RML_CDR(tmp);
+    while (MMC_GETHDR(tmp) != MMC_NILHDR) {
+      len++; tmp = MMC_CDR(tmp);
     }
     data_mmc = (void**) malloc(len*sizeof(void*));
     len = 0;
     tmp = data;
-    while (RML_GETHDR(tmp) != RML_NILHDR) {
-      data_mmc[len++] = value_to_mmc(RML_CAR(tmp));
-      tmp = RML_CDR(tmp);
+    while (MMC_GETHDR(tmp) != MMC_NILHDR) {
+      data_mmc[len++] = value_to_mmc(MMC_CAR(tmp));
+      tmp = MMC_CDR(tmp);
     }
     res = mmc_mk_box_arr(len, 0, (void**) data_mmc);
     free(data_mmc);
@@ -552,44 +554,44 @@ void *type_desc_to_value(type_description *desc)
   case TYPE_DESC_NORETCALL:
     return (void *) Values__NORETCALL;
   case TYPE_DESC_REAL:
-    return (void *) Values__REAL(mk_rcon(desc->data.real));
+    return (void *) Values__REAL(mmc_mk_rcon(desc->data.real));
   case TYPE_DESC_INT:
-    return (void *) Values__INTEGER(mk_icon(desc->data.integer));
+    return (void *) Values__INTEGER(mmc_mk_icon(desc->data.integer));
   case TYPE_DESC_BOOL:
     if(getMyBool(desc))
-      return (void *) Values__BOOL(RML_TRUE);
-    return (void *) Values__BOOL(RML_FALSE);
+      return (void *) Values__BOOL(MMC_TRUE);
+    return (void *) Values__BOOL(MMC_FALSE);
   case TYPE_DESC_STRING:
-    return (void *) Values__STRING(mk_scon(desc->data.string));
+    return (void *) Values__STRING(mmc_mk_scon(desc->data.string));
   case TYPE_DESC_TUPLE: {
     type_description *e = desc->data.tuple.element + desc->data.tuple.elements;
-    void *lst = (void *) mk_nil();
+    void *lst = (void *) mmc_mk_nil();
     while (e > desc->data.tuple.element) {
       void *t = type_desc_to_value(--e);
       if (t == NULL)
         return NULL;
-      lst = mk_cons(t, lst);
+      lst = mmc_mk_cons(t, lst);
     }
     return (void *) Values__TUPLE(lst);
   };
   case TYPE_DESC_RECORD: {
     char **name = desc->data.record.name + desc->data.record.elements;
     type_description *e = desc->data.record.element + desc->data.record.elements;
-    void *namelst = (void *) mk_nil();
-    void *varlst = (void *) mk_nil();
+    void *namelst = (void *) mmc_mk_nil();
+    void *varlst = (void *) mmc_mk_nil();
     while (e > desc->data.record.element) {
       void *n, *t;
       --name;
       --e;
-      n = mk_scon(*name);
+      n = mmc_mk_scon(*name);
       t = type_desc_to_value(e);
       if (n == NULL || t == NULL)
         return NULL;
-      namelst = mk_cons(n, namelst);
-      varlst = mk_cons(t, varlst);
+      namelst = mmc_mk_cons(n, namelst);
+      varlst = mmc_mk_cons(t, varlst);
     }
     return (void *) Values__RECORD(name_to_path(desc->data.record.record_name),
-                                   varlst, namelst, mk_icon(-1));
+                                   varlst, namelst, mmc_mk_icon(-1));
   };
   case TYPE_DESC_REAL_ARRAY: {
     void *ptr = (modelica_real *) desc->data.real_array.data
@@ -634,14 +636,14 @@ static int get_array_type_and_dims(type_description *desc, void *arrdata)
 {
   void *item = NULL;
 
-  if (RML_GETHDR(arrdata) == RML_NILHDR) {
+  if (MMC_GETHDR(arrdata) == MMC_NILHDR) {
     /* Empty arrays automaticly get to be real arrays */
     desc->type = TYPE_DESC_REAL_ARRAY;
     return 1;
   }
 
-  item = RML_CAR(arrdata);
-  switch (RML_HDRCTOR(RML_GETHDR(item))) {
+  item = MMC_CAR(arrdata);
+  switch (MMC_HDRCTOR(MMC_GETHDR(item))) {
   case Values__INTEGER_3dBOX1:
     desc->type = TYPE_DESC_INT_ARRAY;
     return 1;
@@ -655,7 +657,7 @@ static int get_array_type_and_dims(type_description *desc, void *arrdata)
     desc->type = TYPE_DESC_STRING_ARRAY;
     return 1;
   case Values__ARRAY_3dBOX2:
-    return (1 + get_array_type_and_dims(desc, RML_STRUCTDATA(item)[UNBOX_OFFSET+0]));
+    return (1 + get_array_type_and_dims(desc, MMC_STRUCTDATA(item)[UNBOX_OFFSET+0]));
   case Values__ENUM_5fLITERAL_3dBOX2:
   case Values__LIST_3dBOX1:
   case Values__TUPLE_3dBOX1:
@@ -673,9 +675,9 @@ static int get_array_sizes(int dims, _index_t *dim_size, void *dimLst)
   void *ptr = dimLst;
 
   for (i = 0; i < dims; i++) {
-    assert(RML_GETHDR(ptr) != RML_NILHDR);
-    dim_size[i] = RML_UNTAGFIXNUM(RML_CAR(ptr));
-    ptr = RML_CDR(ptr);
+    assert(MMC_GETHDR(ptr) != MMC_NILHDR);
+    dim_size[i] = MMC_UNTAGFIXNUM(MMC_CAR(ptr));
+    ptr = MMC_CDR(ptr);
   }
 
   return 0;
@@ -687,40 +689,40 @@ static int get_array_data(int curdim, int dims, const _index_t *dim_size,
   void *ptr = arrdata;
   assert(curdim > 0 && curdim <= dims);
   if (curdim == dims) {
-    while (RML_GETHDR(ptr) != RML_NILHDR) {
-      void *item = RML_CAR(ptr);
+    while (MMC_GETHDR(ptr) != MMC_NILHDR) {
+      void *item = MMC_CAR(ptr);
 
       switch (type) {
       case TYPE_DESC_REAL: {
         modelica_real *ptr = *((modelica_real**)data);
-        if (RML_HDRCTOR(RML_GETHDR(item)) != Values__REAL_3dBOX1)
+        if (MMC_HDRCTOR(MMC_GETHDR(item)) != Values__REAL_3dBOX1)
           return -1;
-        *ptr = rml_prim_get_real(RML_STRUCTDATA(item)[UNBOX_OFFSET+0]);
+        *ptr = mmc_prim_get_real(MMC_STRUCTDATA(item)[UNBOX_OFFSET+0]);
         *data = ++ptr;
       }; break;
       case TYPE_DESC_INT: {
         modelica_integer *ptr = *((modelica_integer**)data);
-        if (RML_HDRCTOR(RML_GETHDR(item)) != Values__INTEGER_3dBOX1)
+        if (MMC_HDRCTOR(MMC_GETHDR(item)) != Values__INTEGER_3dBOX1)
           return -1;
-        *ptr = RML_UNTAGFIXNUM(RML_STRUCTDATA(item)[UNBOX_OFFSET+0]);
+        *ptr = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(item)[UNBOX_OFFSET+0]);
         *data = ++ptr;
       }; break;
       case TYPE_DESC_BOOL: {
         modelica_boolean *ptr = *((modelica_boolean**)data);
-        if (RML_HDRCTOR(RML_GETHDR(item)) != Values__BOOL_3dBOX1)
+        if (MMC_HDRCTOR(MMC_GETHDR(item)) != Values__BOOL_3dBOX1)
           return -1;
-        *ptr = (RML_STRUCTDATA(item)[UNBOX_OFFSET+0] == RML_TRUE);
+        *ptr = (MMC_STRUCTDATA(item)[UNBOX_OFFSET+0] == MMC_TRUE);
         *data = ++ptr;
       }; break;
       case TYPE_DESC_STRING: {
         modelica_string_const *ptr = *((modelica_string_const**)data);
         int len;
         void *str;
-        if (RML_HDRCTOR(RML_GETHDR(item)) != Values__STRING_3dBOX1)
+        if (MMC_HDRCTOR(MMC_GETHDR(item)) != Values__STRING_3dBOX1)
           return -1;
-        str = RML_STRUCTDATA(item)[UNBOX_OFFSET+0];
-        len = RML_HDRSTRLEN(RML_GETHDR(str));
-        *ptr = init_modelica_string(RML_STRINGDATA(str));
+        str = MMC_STRUCTDATA(item)[UNBOX_OFFSET+0];
+        len = MMC_HDRSTRLEN(MMC_GETHDR(str));
+        *ptr = init_modelica_string(MMC_STRINGDATA(str));
         *data = ++ptr;
       }; break;
       default:
@@ -728,19 +730,19 @@ static int get_array_data(int curdim, int dims, const _index_t *dim_size,
         return -1;
       }
 
-      ptr = RML_CDR(ptr);
+      ptr = MMC_CDR(ptr);
     }
   } else {
-    while (RML_GETHDR(ptr) != RML_NILHDR) {
-      void *item = RML_CAR(ptr);
-      if (RML_HDRCTOR(RML_GETHDR(item)) != Values__ARRAY_3dBOX2)
+    while (MMC_GETHDR(ptr) != MMC_NILHDR) {
+      void *item = MMC_CAR(ptr);
+      if (MMC_HDRCTOR(MMC_GETHDR(item)) != Values__ARRAY_3dBOX2)
         return -1;
 
-      if (get_array_data(curdim + 1, dims, dim_size, RML_STRUCTDATA(item)[UNBOX_OFFSET+0],
+      if (get_array_data(curdim + 1, dims, dim_size, MMC_STRUCTDATA(item)[UNBOX_OFFSET+0],
                          type, data))
         return -1;
 
-      ptr = RML_CDR(ptr);
+      ptr = MMC_CDR(ptr);
     }
   }
 

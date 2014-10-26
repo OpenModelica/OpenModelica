@@ -421,9 +421,9 @@ extern void ErrorImpl__clearMessages(threadData_t *threadData)
 extern void* ErrorImpl__getMessages(threadData_t *threadData)
 {
   errorext_members *members = getMembers(threadData);
-  void *res = mk_nil();
+  void *res = mmc_mk_nil();
   while(!members->errorMessageQueue->empty()) {
-    void *id = mk_icon(members->errorMessageQueue->top()->getID());
+    void *id = mmc_mk_icon(members->errorMessageQueue->top()->getID());
     void *ty,*severity;
     switch (members->errorMessageQueue->top()->getSeverity()) {
     case ErrorLevel_internal: severity=Error__INTERNAL; break;
@@ -439,17 +439,17 @@ extern void* ErrorImpl__getMessages(threadData_t *threadData)
     case ErrorType_runtime: ty=Error__SIMULATION; break;
     case ErrorType_scripting: ty=Error__SCRIPTING; break;
     }
-    void *message = Util__notrans(mk_scon(members->errorMessageQueue->top()->getShortMessage().c_str()));
+    void *message = Util__notrans(mmc_mk_scon(members->errorMessageQueue->top()->getShortMessage().c_str()));
     void *msg = Error__MESSAGE(id,ty,severity,message);
-    void *sl = mk_icon(members->errorMessageQueue->top()->getStartLineNo());
-    void *sc = mk_icon(members->errorMessageQueue->top()->getStartColumnNo());
-    void *el = mk_icon(members->errorMessageQueue->top()->getEndLineNo());
-    void *ec = mk_icon(members->errorMessageQueue->top()->getEndColumnNo());
-    void *filename = mk_scon(members->errorMessageQueue->top()->getFileName().c_str());
-    void *readonly = mk_icon(members->errorMessageQueue->top()->getIsFileReadOnly());
-    void *info = Absyn__INFO(filename,readonly,sl,sc,el,ec,Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)));
+    void *sl = mmc_mk_icon(members->errorMessageQueue->top()->getStartLineNo());
+    void *sc = mmc_mk_icon(members->errorMessageQueue->top()->getStartColumnNo());
+    void *el = mmc_mk_icon(members->errorMessageQueue->top()->getEndLineNo());
+    void *ec = mmc_mk_icon(members->errorMessageQueue->top()->getEndColumnNo());
+    void *filename = mmc_mk_scon(members->errorMessageQueue->top()->getFileName().c_str());
+    void *readonly = mmc_mk_icon(members->errorMessageQueue->top()->getIsFileReadOnly());
+    void *info = Absyn__INFO(filename,readonly,sl,sc,el,ec,Absyn__TIMESTAMP(mmc_mk_rcon(0),mmc_mk_rcon(0)));
     void *totmsg = Error__TOTALMESSAGE(msg,info);
-    res = mk_cons(totmsg,res);
+    res = mmc_mk_cons(totmsg,res);
     pop_message(threadData,false);
   }
   return res;
