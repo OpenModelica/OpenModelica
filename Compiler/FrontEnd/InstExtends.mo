@@ -215,10 +215,10 @@ algorithm
         compelts = listAppend(compelts1, compelts2);
 
         (compelts3,mods_1) = updateComponentsAndClassdefs(compelts, mods_1, env2) "update components with new merged modifiers";
-        eq = List.unionOnTrueList({eq1_1,eq2,eq3},Util.equal);
-        ieq = List.unionOnTrueList({ieq1_1,ieq2,ieq3},Util.equal);
-        alg = List.unionOnTrueList({alg1_1,alg2,alg3},Util.equal);
-        ialg = List.unionOnTrueList({ialg1_1,ialg2,ialg3},Util.equal);
+        eq = List.unionOnTrueList({eq1_1,eq2,eq3},valueEq);
+        ieq = List.unionOnTrueList({ieq1_1,ieq2,ieq3},valueEq);
+        alg = List.unionOnTrueList({alg1_1,alg2,alg3},valueEq);
+        ialg = List.unionOnTrueList({ialg1_1,ialg2,ialg3},valueEq);
       then
         (cache,env2,ih,mods_1,compelts3,eq,ieq,alg,ialg);
 

@@ -3186,7 +3186,7 @@ public function instElementList
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input UnitAbsyn.InstStore store;
+  input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
@@ -3197,19 +3197,23 @@ public function instElementList
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   input Boolean inStopOnError;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output InnerOuter.InstHierarchy outIH;
-  output UnitAbsyn.InstStore outStore;
+  output FCore.Cache outCache := inCache;
+  output FCore.Graph outEnv := inEnv;
+  output InnerOuter.InstHierarchy outIH := inIH;
+  output UnitAbsyn.InstStore outStore := inStore;
   output DAE.DAElist outDae;
-  output Connect.Sets outSets;
-  output ClassInf.State outState;
-  output list<DAE.Var> outTypesVarLst;
-  output ConnectionGraph.ConnectionGraph outGraph;
+  output Connect.Sets outSets := inSets;
+  output ClassInf.State outState := inState;
+  output list<DAE.Var> outVars;
+  output ConnectionGraph.ConnectionGraph outGraph := inGraph;
 protected
   list<tuple<SCode.Element, DAE.Mod>> el;
   FCore.Cache cache;
   Integer i1,i2;
+  list<DAE.Var> vars;
+  list<list<DAE.Var>> varsl := {};
+  list<DAE.Element> dae;
+  list<list<DAE.Element>> dael := {};
 algorithm
   // print("push " +& PrefixUtil.printPrefixStr(inPrefix) +& "\n");
   cache := InstUtil.pushStructuralParameters(inCache);
@@ -3221,11 +3225,17 @@ algorithm
   el := InstUtil.sortInnerFirstTplLstElementMod(el);
   //System.stopTimer();
   //Debug.fprintln(Flags.IDEP, "After: " +& stringDelimitList(List.map(List.map(el, Util.tuple21), SCode.elementName), ", "));
-  //Mod.verifySingleMod(inMod, inPrefix);
 
-  (cache, outEnv, outIH, outStore, outDae, outSets, outState, outTypesVarLst, outGraph) :=
-    instElementList2(cache, inEnv, inIH, store, inMod, inPrefix,
-      inState, el, inInstDims, inImplInst, inCallingScope, inGraph, inSets, inStopOnError, {}, {});
+  for e in el loop
+    (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph) :=
+      instElement2(cache, outEnv, outIH, outStore, inMod, inPrefix, outState, e,
+        inInstDims, inImplInst, inCallingScope, outGraph, outSets, inStopOnError);
+    varsl := vars :: varsl;
+    dael := dae :: dael;
+  end for;
+
+  outVars := List.flattenReverse(varsl);
+  outDae := DAE.DAE(List.flattenReverse(dael));
 
   // sort in program order!
   outDae := DAEUtil.sortDAEInModelicaCodeOrder(InstUtil.isTopCall(inCallingScope), inElements, outDae);
@@ -3236,98 +3246,7 @@ algorithm
   outCache := InstUtil.popStructuralParameters(cache,inPrefix);
 end instElementList;
 
-protected function instElementList2
-"Moved to instClassdef, FIXME: Move commments later
-  Instantiate elements one at a time, and concatenate the resulting
-  lists of equations.
-  P.A, Modelica1.4: (allows declare before use)
-  1. 'First names of declared local classes (and components) are found.
-      Redeclarations are performed.'
-      This means that we first handle all CLASS nodes and apply modifiers and
-      declarations to them and also COMPONENT nodes to add the variables to the
-      environment.
-  2.  Second, 'base-classes are looked up, flattened and inserted into the class.'
-      This means that all EXTENDS nodes are handled.
-  3.  Third, 'Flatten the class, apply modifiers and instantiate all local elements.'
-      This handles COMPONENT nodes."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input InnerOuter.InstHierarchy inIH;
-  input UnitAbsyn.InstStore inStore;
-  input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
-  input ClassInf.State inState;
-  input list<tuple<SCode.Element, DAE.Mod>> inElements;
-  input list<list<DAE.Dimension>> inInstDims;
-  input Boolean inImplicit;
-  input InstTypes.CallingScope inCallingScope;
-  input ConnectionGraph.ConnectionGraph inGraph;
-  input Connect.Sets inSets;
-  input Boolean inStopOnError;
-  input list<list<DAE.Element>> daeAcc;
-  input list<list<DAE.Var>> varAcc;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output InnerOuter.InstHierarchy outIH;
-  output UnitAbsyn.InstStore outStore;
-  output DAE.DAElist outDae;
-  output Connect.Sets outSets;
-  output ClassInf.State outState;
-  output list<DAE.Var> outTypesVarLst;
-  output ConnectionGraph.ConnectionGraph outGraph;
-algorithm
-  (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outGraph):=
-  match (inCache, inEnv, inIH, inStore, inMod, inPrefix, inState,
-      inElements, inInstDims, inImplicit, inCallingScope, inGraph, inSets, inStopOnError, daeAcc, varAcc)
-    local
-      FCore.Graph env;
-      Connect.Sets csets;
-      ClassInf.State ci_state;
-      DAE.DAElist dae;
-      list<DAE.Var> tys;
-      DAE.Mod mod;
-      Prefix.Prefix pre;
-      tuple<SCode.Element, DAE.Mod> el;
-      list<tuple<SCode.Element, DAE.Mod>> els;
-      InstDims inst_dims;
-      Boolean impl;
-      FCore.Cache cache;
-      InstTypes.CallingScope callscope;
-      ConnectionGraph.ConnectionGraph graph;
-      InstanceHierarchy ih;
-      UnitAbsyn.InstStore store;
-      list<DAE.Element> elts;
-
-    case (cache,env,ih,store,_,_,ci_state,{},_,_,_,graph,_,_,_,_)
-      equation
-        elts = List.flatten(listReverse(daeAcc));
-        tys = List.flatten(listReverse(varAcc));
-      then (cache,env,ih,store,DAE.DAE(elts),inSets,ci_state,tys,graph);
-
-    // Don't instantiate conditional components with condition = false.
-    case (cache, env, ih, store, mod, pre, ci_state,  el :: els, inst_dims, impl, callscope, graph, _, _, _, _)
-      equation
-        (cache, env, ih, store, elts, csets, ci_state, tys, graph) = instElement2(cache, env, ih, store, mod, pre, ci_state, el, inst_dims, impl, callscope, graph, inSets, inStopOnError);
-        (cache, env, ih, store, dae, csets, ci_state, tys, graph) = instElementList2(cache, env, ih, store, mod, pre, ci_state, els, inst_dims, impl, callscope, graph, csets, inStopOnError, elts::daeAcc, tys::varAcc);
-      then
-        (cache, env, ih, store, dae, csets, ci_state, tys, graph);
-  end match;
-end instElementList2;
-
 public function instElement2
-"Moved to instClassdef, FIXME: Move commments later
-  Instantiate elements one at a time, and concatenate the resulting
-  lists of equations.
-  P.A, Modelica1.4: (allows declare before use)
-  1. 'First names of declared local classes (and components) are found.
-      Redeclarations are performed.'
-      This means that we first handle all CLASS nodes and apply modifiers and
-      declarations to them and also COMPONENT nodes to add the variables to the
-      environment.
-  2.  Second, 'base-classes are looked up, flattened and inserted into the class.'
-      This means that all EXTENDS nodes are handled.
-  3.  Third, 'Flatten the class, apply modifiers and instantiate all local elements.'
-      This handles COMPONENT nodes."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
@@ -3343,102 +3262,103 @@ public function instElement2
   input Connect.Sets inSets;
   input Boolean inStopOnError;
   output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output InnerOuter.InstHierarchy outIH;
-  output UnitAbsyn.InstStore outStore;
-  output list<DAE.Element> outDae;
+  output FCore.Graph outEnv := inEnv;
+  output InnerOuter.InstHierarchy outIH := inIH;
+  output UnitAbsyn.InstStore outStore := inStore;
+  output list<DAE.Element> outDae := {};
   output Connect.Sets outSets;
-  output ClassInf.State outState;
-  output list<DAE.Var> outTypesVarLst;
-  output ConnectionGraph.ConnectionGraph outGraph;
+  output ClassInf.State outState := inState;
+  output list<DAE.Var> outVars := {};
+  output ConnectionGraph.ConnectionGraph outGraph := inGraph;
+protected
+  tuple<SCode.Element, DAE.Mod> elt;
+  Boolean is_deleted;
 algorithm
-  (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outGraph):=
-  matchcontinue (inCache, inEnv, inIH, inStore, inMod, inPrefix, inState,
-      inElement, inInstDims, inImplicit, inCallingScope, inGraph, inSets, inStopOnError)
-    local
-      FCore.Graph env,env_1;
-      Connect.Sets csets;
-      ClassInf.State ci_state,ci_state_1;
-      list<DAE.Var> tys1;
-      DAE.Mod mod;
-      Prefix.Prefix pre;
-      tuple<SCode.Element, DAE.Mod> el;
-      InstDims inst_dims;
-      Boolean impl;
-      FCore.Cache cache;
-      Absyn.Info info;
-      InstTypes.CallingScope callscope;
-      ConnectionGraph.ConnectionGraph graph;
-      InstanceHierarchy ih;
-      String elementName;
-      SCode.Element ele;
-      String comp_name;
-      UnitAbsyn.InstStore store;
-      list<DAE.Element> elts;
-      DAE.Mod daeMod;
+  // Check if the component has a conditional expression that evaluates to false.
+  (is_deleted, outSets, outCache) := isDeletedComponent(inElement, inCache,
+      inEnv, inPrefix, inSets, inStopOnError);
 
-    // Don't instantiate conditional components with condition = false.
-    case (cache, env, ih, store, mod, pre, ci_state,
-        (el as (SCode.COMPONENT(name = comp_name, info = info, condition=SOME(_)), _)), _,
-        _, _, graph, _, _)
-      equation
-        // check for duplicate modifications
-        ele = Util.tuple21(el);
-        (elementName, info) = InstUtil.extractCurrentName(ele);
+  // Skip the component if it was deleted by a conditional expression.
+  if is_deleted then
+    return;
+  end if;
 
-        (true, cache) = InstUtil.isConditionalComponent(cache, env, ele, pre, info);
-
-        // Add the deleted component to the connection set, so that we know
-        // which connections to ignore.
-        csets = ConnectUtil.addDeletedComponent(comp_name, inSets);
-      then
-        (cache, env, ih, store, {}, csets, ci_state, {}, graph);
-
-    // most work done in inst_element.
-    case (cache,env,ih,store,mod,pre,ci_state,el,inst_dims,impl,callscope,graph, csets, _)
-      equation
-        ErrorExt.setCheckpoint("instElementList2");
-        (cache,env,ih,{el}) = updateCompeltsMods(cache, env, ih, pre, {el}, ci_state, impl);
-        // Debug.fprintln(Flags.INST_TRACE, "INST ELEMENT: " +& FGraph.printGraphPathStr(env) +& " el: " +& SCodeDump.shortElementStr(Util.tuple21(el)) +& " mods: " +& Mod.printModStr(mod));
-        // check for duplicate modifications
-        ele = Util.tuple21(el);
-        (elementName, info) = InstUtil.extractCurrentName(ele);
-
-        /*
-        classmod = Mod.lookupModificationP(mods, t);
-        mm = Mod.lookupCompModification(mods, n);
-        */
-        /*// A frequent used debugging line
-        print("Instantiating element: " +& elementName +&
-              "\n\tin scope " +& FGraph.getScopeName(env) +&
-              "\n\telements to go: " +& intString(listLength(els)) +&
-              "\n\tmods: " +& Mod.printModStr(mod) +&
-              "\n\telement: " +& SCodeDump.shortElementStr(ele) +&
-              "\n");*/
-
-        (cache,env_1,ih,store,DAE.DAE(elts),csets,ci_state_1,tys1,graph) =
-          instElement(cache, env, ih, store, mod, pre, ci_state, el, inst_dims, impl, callscope, graph, csets);
-        /*s1 = Util.if_(stringEq("n", str),DAE.dumpElementsStr(dae1),"");
-        print(s1) "To print what happened to a specific var";*/
-        Error.updateCurrentComponent("",Absyn.dummyInfo);
-        ErrorExt.delCheckpoint("instElementList2");
-      then
-        (cache,env_1,ih,store,elts,csets,ci_state_1,tys1,graph);
-
-    // If inStopOnError is false, skip the failed element and continue.
-    case (cache, env, ih, store, _, _, ci_state, _, _,
-        _, _, graph, _, false)
-      equation
-        ErrorExt.rollBack("instElementList2");
-      then (cache,env,ih,store,{},inSets,ci_state,{},graph);
-
+  try // Try to instantiate the element.
+    ErrorExt.setCheckpoint("instElement2");
+    (outCache, outEnv, outIH, {elt}) := updateCompeltsMods(inCache, outEnv,
+      outIH, inPrefix, {inElement}, outState, inImplicit);
+    (outCache, outEnv, outIH, outStore, DAE.DAE(outDae), outSets, outState, outVars, outGraph) := 
+      instElement(outCache, outEnv, outIH, outStore, inMod, inPrefix, outState, elt, inInstDims,
+        inImplicit, inCallingScope, outGraph, inSets);
+    Error.updateCurrentComponent("", Absyn.dummyInfo);
+    ErrorExt.delCheckpoint("instElement2");
+  else // Instantiation failed, fail or skip the element depending on inStopOnError.
+    if inStopOnError then
+      ErrorExt.delCheckpoint("instElement2");
+      fail();
     else
-      equation
-        ErrorExt.delCheckpoint("instElementList2");
-      then fail();
-  end matchcontinue;
+      ErrorExt.rollBack("instElement2");
+      outCache := inCache;
+      outEnv := inEnv;
+      outIH := inIH;
+      return;
+    end if;
+  end try; 
 end instElement2;
 
+protected function isDeletedComponent
+  "Checks if an element has a conditional expression that evaluates to false,
+   and adds it to the set of deleted components if it does. Otherwise the
+   function does nothing."
+  input tuple<SCode.Element, DAE.Mod> inElement;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input Prefix.Prefix inPrefix;
+  input Connect.Sets inSets;
+  input Boolean inStopOnError;
+  output Boolean outIsDeleted;
+  output Connect.Sets outSets := inSets;
+  output FCore.Cache outCache;
+protected
+  SCode.Element el;
+  String el_name;
+  Absyn.Info info;
+  Option<Boolean> cond_val_opt;
+  Boolean cond_val;
+algorithm
+  // If the element has a conditional expression, try to evaluate it.
+  if InstUtil.componentHasCondition(inElement) then
+    (el, _) := inElement;
+    (el_name, info) := InstUtil.extractCurrentName(el);
+
+    (cond_val_opt, outCache) :=
+      InstUtil.instElementCondExp(inCache, inEnv, el, inPrefix, info);
+
+    // If a conditional expression was present but couldn't be instantiatied, stop.
+    if isNone(cond_val_opt) then
+      if inStopOnError then // We should stop instantiation completely, fail.
+        fail();
+      else  // We should continue instantiation, pretend that it was deleted.
+        outIsDeleted := false;
+        return;
+      end if;
+    end if;
+
+    // If we succeeded, check if the condition is true or false.
+    SOME(cond_val) := cond_val_opt;
+    outIsDeleted := not cond_val;
+
+    // The component was deleted, add it to the connection set so we can ignore
+    // connections to it.
+    if outIsDeleted == true then
+      outSets := ConnectUtil.addDeletedComponent(el_name, inSets);
+    end if;
+  else
+    outIsDeleted := false;
+    outCache := inCache;
+  end if;
+end isDeletedComponent;
+    
 public function instElement "
   This monster function instantiates an element of a class definition.  An
   element is either a class definition, a variable, or an import clause."

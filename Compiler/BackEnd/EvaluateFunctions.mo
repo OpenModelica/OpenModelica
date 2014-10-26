@@ -300,10 +300,10 @@ algorithm
         elements = DAEUtil.getFunctionElements(func);
         true = List.isNotEmpty(elements);
         protectVars = List.filterOnTrue(elements,DAEUtil.isProtectedVar);
-        algs = List.filter(elements,DAEUtil.isAlgorithm);
+        algs = List.filterOnTrue(elements,DAEUtil.isAlgorithm);
 
         // get all input crefs and expresssions (scalar and one dimensioanl)
-        allInputs = List.filter(elements,DAEUtil.isInputVar);
+        allInputs = List.filterOnTrue(elements,DAEUtil.isInputVar);
         scalarInputs = List.map(allInputs,expandComplexElementsToCrefs);
         allInputCrefs = List.flatten(scalarInputs);
         //print("\nallInputCrefs\n"+&stringDelimitList(List.map(allInputCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
@@ -313,7 +313,7 @@ algorithm
         //print("\nallInputExps\n"+&stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+&"\n");
 
         // get all output crefs (complex and scalar)
-        allOutputs = List.filter(elements,DAEUtil.isOutputVar);
+        allOutputs = List.filterOnTrue(elements,DAEUtil.isOutputVar);
         outputCrefs = List.map(allOutputs,DAEUtil.varCref);
         scalarOutputs = List.map(allOutputs,getScalarsForComplexVar);
         allOutputCrefs = listAppend(outputCrefs,List.flatten(scalarOutputs));
@@ -402,7 +402,7 @@ algorithm
         lhsExps = getCrefsForRecord(lhsExpIn);
         outputExp = Util.if_(isConstRec,DAE.TUPLE(lhsExps),outputExp);
         // which rhs
-        newOutputVars = List.filter(updatedVarOutputs,DAEUtil.isOutputVar);
+        newOutputVars = List.filterOnTrue(updatedVarOutputs,DAEUtil.isOutputVar);
         outputVarTypes = List.map(newOutputVars,DAEUtil.getVariableType);
         attr2 = DAEUtil.replaceCallAttrType(attr1,DAE.T_TUPLE(outputVarTypes,DAE.emptyTypeSource));
         DAE.CALL_ATTR(ty = singleOutputType) = attr1;
@@ -432,6 +432,11 @@ algorithm
         ((rhsExpIn,lhsExpIn,{},funcsIn,eqIdx,false));
   end matchcontinue;
 end evaluateConstantFunction;
+
+protected function listLengthStr<T>
+  input list<T> inList;
+  output String outLength := intString(listLength(inList));
+end listLengthStr;
 
 protected function expandComplexEpressions"gets the complex contents or if its not complex, then the exp itself
 author:Waurich TUD 2014-05"
@@ -1908,7 +1913,7 @@ algorithm
     equation
       SOME(func) = DAEUtil.avlTreeGet(funcTree,path);
       elements = DAEUtil.getFunctionElements(func);
-      algs = List.filter(elements,DAEUtil.isAlgorithm);
+      algs = List.filterOnTrue(elements,DAEUtil.isAlgorithm);
       stmtLstLst = List.map(algs,DAEUtil.getStatement);
       stmtLst1 = List.flatten(stmtLstLst);
       expLst = List.fold1(stmtLst1,getStatementLHSScalar,funcTree,expsIn);

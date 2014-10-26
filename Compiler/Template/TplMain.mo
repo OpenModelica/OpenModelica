@@ -720,7 +720,7 @@ end Susan;", false, false, "transformAST - pathIdent() + typedIdents()", notPass
         chars = stringListStringChar( str );
 
         (chars,_, ts) = TplParser.typeSig(chars, TplParser.makeStartLineInfo(chars, "in memory test"));
-        tequal = Util.equal(ts, TplAbsyn.NAMED_TYPE(TplAbsyn.PATH_IDENT("Tpl", TplAbsyn.IDENT("Susan"))));
+        tequal = valueEq(ts, TplAbsyn.NAMED_TYPE(TplAbsyn.PATH_IDENT("Tpl", TplAbsyn.IDENT("Susan"))));
         txt = emptyTxt;
         txt = TplCodegen.typeSig(txt, ts);
         ident = Tpl.textString(txt);
@@ -733,7 +733,7 @@ end Susan;", false, false, "transformAST - pathIdent() + typedIdents()", notPass
         chars = stringListStringChar( str );
 
         (chars,_, ts) = TplParser.typeSig(chars, TplParser.makeStartLineInfo(chars, "in memory test"));
-        tequal = Util.equal(ts, TplAbsyn.LIST_TYPE(TplAbsyn.TUPLE_TYPE({
+        tequal = valueEq(ts, TplAbsyn.LIST_TYPE(TplAbsyn.TUPLE_TYPE({
                     TplAbsyn.NAMED_TYPE(TplAbsyn.PATH_IDENT("Hej", TplAbsyn.IDENT("Susan"))),
                     TplAbsyn.LIST_TYPE(TplAbsyn.STRING_TYPE()),
                     TplAbsyn.OPTION_TYPE(TplAbsyn.INTEGER_TYPE())})));
@@ -776,7 +776,7 @@ end Susan;:)";
                              }) )
           ::_) = types;*/
 
-        tequal = Util.equal(astDefs,
+        tequal = valueEq(astDefs,
            { TplAbsyn.AST_DEF(TplAbsyn.IDENT("TplAbsyn"), true,
              { ("Ident", TplAbsyn.TI_ALIAS_TYPE(TplAbsyn.STRING_TYPE())),
                ("TypedIdents", TplAbsyn.TI_ALIAS_TYPE(TplAbsyn.LIST_TYPE(TplAbsyn.TUPLE_TYPE({TplAbsyn.NAMED_TYPE(TplAbsyn.IDENT("Ident")), TplAbsyn.NAMED_TYPE(TplAbsyn.IDENT("PathIdent"))})))),
@@ -810,7 +810,7 @@ end Susan;:)";
 
         (chars,_, pid, astDefs) = TplParser.interfacePackage(chars, TplParser.makeStartLineInfo(chars, "in memory test"),{});
 
-        tequal = Util.equal(astDefs,
+        tequal = valueEq(astDefs,
             { TplAbsyn.AST_DEF(TplAbsyn.IDENT("builtin"), true,
              { ("stringListStringChar",
                   TplAbsyn.TI_FUN_TYPE(
@@ -820,7 +820,7 @@ end Susan;:)";
                )
              } )
             } )
-           and Util.equal(pid, TplAbsyn.IDENT("Susan"));
+           and valueEq(pid, TplAbsyn.IDENT("Susan"));
 
         txt = emptyTxt;
         txt = TplCodegen.pathIdent(txt, pid);
@@ -1050,7 +1050,7 @@ end Susan;:)";
 
         (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = Util.equal(
+        tequal = valueEq(
           expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING("Susan"))
         );
@@ -1069,7 +1069,7 @@ end Susan;:)";
 
         (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = Util.equal(
+        tequal = valueEq(
           expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_NEW_LINE())
         );
@@ -1089,7 +1089,7 @@ end Susan;:)";
 
         (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = Util.equal(
+        tequal = valueEq(
           expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_LINE(",\n"))
         );
@@ -1110,7 +1110,7 @@ is\\nfantastic!\"~:)";
 
         (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = Util.equal(
+        tequal = valueEq(
           expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST({"Susan\n", "is\n", "fantastic!"}, false))
         );
@@ -1132,7 +1132,7 @@ is\\n new lined!
 
         (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = Util.equal(
+        tequal = valueEq(
           expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST({"\n","Susan\n", "is\n", " new lined!\n"}, true))
         );
@@ -1152,7 +1152,7 @@ is\\n new lined!
 
         (chars,_, exp) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = Util.equal(
+        tequal = valueEq(
           exp,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING("Susan"))
         );
@@ -1175,7 +1175,7 @@ is\\n verbatim!
 
         (chars,_, exp) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = Util.equal(
+        tequal = valueEq(
           exp,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST({"Susan\n", "is\\n verbatim!"}, false))
         );
@@ -1194,7 +1194,7 @@ is\\n verbatim!
 
         (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = Util.equal(
+        tequal = valueEq(
           expB,
           TplAbsyn.LITERAL("1234567", TplAbsyn.INTEGER_TYPE())
         );
@@ -1210,7 +1210,7 @@ is\\n verbatim!
 
         (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = Util.equal(
+        tequal = valueEq(
           expB,
           TplAbsyn.LITERAL("-1234567", TplAbsyn.INTEGER_TYPE())
         );
@@ -1226,7 +1226,7 @@ is\\n verbatim!
 
         (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = Util.equal(
+        tequal = valueEq(
           expB,
           TplAbsyn.LITERAL("-1234567.0123e-12", TplAbsyn.REAL_TYPE())
         );
@@ -1242,7 +1242,7 @@ is\\n verbatim!
 
         (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = Util.equal(
+        tequal = valueEq(
           expB,
           TplAbsyn.LITERAL(".0123E12", TplAbsyn.REAL_TYPE())
         );
@@ -1258,7 +1258,7 @@ is\\n verbatim!
 
         (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = Util.equal(
+        tequal = valueEq(
           expB,
           TplAbsyn.LITERAL("true", TplAbsyn.BOOLEAN_TYPE())
         );
@@ -1274,7 +1274,7 @@ is\\n verbatim!
 
         (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = Util.equal(
+        tequal = valueEq(
           expB,
           TplAbsyn.LITERAL("false", TplAbsyn.BOOLEAN_TYPE())
         );
@@ -1290,7 +1290,7 @@ is\\n verbatim!
 
         (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = Util.equal(
+        tequal = valueEq(
           expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_NEW_LINE())
         );
@@ -1310,7 +1310,7 @@ is\\n verbatim!
 
         (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = Util.equal(
+        tequal = valueEq(
           expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST({"\"\n", "\n"," "}, false))
         );
@@ -1329,7 +1329,7 @@ is\\n verbatim!
 
         (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = Util.equal(
+        tequal = valueEq(
           expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING("Susan"))
         );

@@ -39,6 +39,7 @@ encapsulated package OnRelaxation "
 public import BackendDAE;
 public import DAE;
 
+protected import Array;
 protected import BackendDAEUtil;
 protected import BackendDAEEXT;
 protected import BackendDump;
@@ -244,8 +245,8 @@ algorithm
         //   BackendDump.debuglst((eorphans,intString,", ","\n"));
 
         // transform to nonscalar
-        ass1 = BackendDAETransform.varAssignmentNonScalar(1,size,ass1,mapIncRowEqn,{});
-        ass22 = BackendDAETransform.eqnAssignmentNonScalar(1,arrayLength(mapEqnIncRow),mapEqnIncRow,ass2,{});
+        ass1 = BackendDAETransform.varAssignmentNonScalar(ass1,mapIncRowEqn);
+        ass22 = BackendDAETransform.eqnAssignmentNonScalar(mapEqnIncRow,ass2);
         eorphans = List.uniqueIntN(List.map1r(eorphans,arrayGet,mapIncRowEqn),arrayLength(mapIncRowEqn));
         (subsyst,m,mt) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs));
         //  BackendDump.dumpIncidenceMatrix(m);
@@ -259,8 +260,8 @@ algorithm
         vorphansarray1 = arrayCreate(size,{});
         mc = arrayCreate(esize,{});
         mct = arrayCreate(size,{});
-        mc = Util.arrayCopy(m, mc);
-        mct = Util.arrayCopy(mt, mct);
+        mc = Array.copy(m, mc);
+        mct = Array.copy(mt, mct);
         mark = 1 "init mark value";
         (mark,constraintresidual) = generateCliquesResidual(eorphans,ass1,ass22,mc,mct,mark,rowmarks,colummarks,vars,{}) "generate cliques for residual equations";
         //  print("constraintresidual: \n");
@@ -328,7 +329,7 @@ algorithm
         //  _ = List.fold1(arrayList(vec2),transposeOrphanVec,vec3,1);
         //  IndexReduction.dumpSystemGraphML(subsyst,shared,SOME(vec3),"System.graphml");
 
-        ((_,_,_,eqns,vars)) = Util.arrayFold(vec2,getEqnsinOrder,(eqns,vars,ass22,BackendEquation.listEquation({}),BackendVariable.emptyVars()));
+        ((_,_,_,eqns,vars)) = Array.fold(vec2,getEqnsinOrder,(eqns,vars,ass22,BackendEquation.listEquation({}),BackendVariable.emptyVars()));
           BackendDAEUtil.profilerstop1();
           print("Indizierung  time: " +& realString(BackendDAEUtil.profilertime1()) +& "\n");
           BackendDAEUtil.profilerreset1();
@@ -453,7 +454,7 @@ protected
   list<Integer> lst;
 algorithm
   lst := orphansarray[index];
-  outOrphansarrayT := List.fold1(lst,Util.arrayCons,index,orphansarrayT);
+  outOrphansarrayT := List.fold1(lst,Array.consToElement,index,orphansarrayT);
 end transposeMatrix;
 
 protected function replaceFinalParameter "author: Frenkel TUD 2012-06"
@@ -1557,7 +1558,7 @@ algorithm
         lst = List.map1r(vorphansarray[o],arrayGet,invmap);
         i = invmap[o];
         lst = List.consOnTrue(addself,i,lst);
-        amT = List.fold1(lst,Util.arrayCons,i,mT);
+        amT = List.fold1(lst,Array.consToElement,i,mT);
         (am,amT) = getOrphansIncidenceMatrix(rest,invmap,vorphansarray,lst::m,amT,addself);
       then
         (am,amT);

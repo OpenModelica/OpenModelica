@@ -5962,7 +5962,7 @@ algorithm
         (funpckgOpt, fident) = splitPackageAndIdent(fname);
         (funpckg, TI_FUN_TYPE(inArgs = iargs, outArgs = oargs, tyVars = tyVars))
          = getTypeInfo(funpckgOpt, fident, astDefs);
-        fname = Util.if_(Util.equal(IDENT("builtin"), funpckg),
+        fname = Util.if_(valueEq(IDENT("builtin"), funpckg),
                      IDENT(fident),
                      makePathIdent(funpckg, fident));
       then

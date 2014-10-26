@@ -520,7 +520,7 @@ algorithm
         containsEmpty = ValuesUtil.containsEmpty(valList);
         generateNoConstantBindingError(containsEmpty, info);
         blist = List.map(valList,ValuesUtil.valueBool);
-        b = Util.selectList(blist, tb, fb);
+        b = List.selectFirstBoolList(blist, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache, env, ih, pre, csets, ci_state, instEEquation, b, impl, alwaysUnroll, graph);
       then
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph);
@@ -535,7 +535,7 @@ algorithm
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
         (cache, _,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         DAE.PROP(DAE.T_BOOL(varLst = _),DAE.C_PARAM()) = Types.propsAnd(props);
-        b = Util.selectList({true}, tb, fb);
+        b = List.selectFirstBoolList({true}, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache, env, ih, pre, csets, ci_state, instEEquation, b, impl, alwaysUnroll, graph);
       then
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph);
@@ -549,7 +549,7 @@ algorithm
         true = Types.isParameterOrConstant(cnst);
         (cache,valList,_) = Ceval.cevalList(cache, env, expl1, impl, NONE(), Absyn.NO_MSG(),0);
         blist = List.map(valList,ValuesUtil.valueBool);
-        b = Util.selectList(blist, tb, fb);
+        b = List.selectFirstBoolList(blist, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, pre, csets, ci_state, instEInitialEquation, b, impl, alwaysUnroll, graph);
       then
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph);

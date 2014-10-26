@@ -42,6 +42,7 @@ public import BackendDAE;
 public import BackendDAEFunc;
 public import DAE;
 
+protected import Array;
 protected import BackendDAEEXT;
 protected import BackendDAEUtil;
 protected import BackendDump;
@@ -5649,7 +5650,7 @@ algorithm
         //  print("Seach for unassigned Eqns " +& stringDelimitList(List.map(eqns,intString),", ") +& "\n");
         eqns = getEqnsforIndexReductionphase(eqns,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,eqns);
         //  print("Found Eqns " +& stringDelimitList(List.map(eqns,intString),", ") +& "\n");
-        _ = Util.arrayListAppend(mark,eqns,inSubsets);
+        Array.appendToElement(mark,eqns,inSubsets);
       then
         getEqnsforIndexReduction1(rest,m,mT,mark+1,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets);
     case (_::rest,_,_,_,_,_,_,_,_,_)
@@ -5756,9 +5757,9 @@ protected
   list<Integer> eqns;
 algorithm
   eqns := inSubsets[markColum];
-  _ := Util.arrayListAppend(mark,eqns,inSubsets);
-  _ := arrayUpdate(inSubsets,markColum,{});
-  _ := List.fold1r(eqns,arrayUpdate,mark,colummarks);
+  Array.appendToElement(mark,eqns,inSubsets);
+  arrayUpdate(inSubsets,markColum,{});
+  List.fold1r(eqns,arrayUpdate,mark,colummarks);
 end mergeSubsets;
 
 protected function reduceIndexifNecessary
@@ -5834,7 +5835,7 @@ algorithm
       equation
         false = intGt(memsize,needed);
       then
-        Util.arrayExpand(needed-memsize, ass, default);
+        Array.expand(needed-memsize, ass, default);
     else
       equation
         Error.addInternalError("./Compiler/BackEnd/Matching.mo: function assignmentsArrayExpand failed");

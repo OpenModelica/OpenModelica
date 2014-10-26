@@ -1124,7 +1124,7 @@ algorithm
     // up the parent
     case (r, name, _)
       equation
-        names = namesUpToParentName_dispatch(original(refParents(r)), name, List.prepend(refName(r), acc));
+        names = namesUpToParentName_dispatch(original(refParents(r)), name, refName(r) :: acc);
       then
         names;
 

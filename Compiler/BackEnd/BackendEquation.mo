@@ -43,6 +43,7 @@ public import BackendDAE;
 public import DAE;
 
 protected import Algorithm;
+protected import Array;
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendVariable;
@@ -190,7 +191,7 @@ protected
 algorithm
   BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr) := inEquationArray;
   newEquOptArr := arrayCreate(arrSize, NONE());
-  newEquOptArr := Util.arrayCopy(equOptArr, newEquOptArr);
+  newEquOptArr := Array.copy(equOptArr, newEquOptArr);
   outEquationArray := BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, newEquOptArr);
 end copyEquationArray;
 
@@ -1132,7 +1133,7 @@ algorithm
       expandsize = realInt(rexpandsize);
       expandsize_1 = intMax(expandsize, 1);
       newsize = expandsize_1 + arrSize;
-      arr_1 = Util.arrayExpand(expandsize_1, equOptArr, NONE());
+      arr_1 = Array.expand(expandsize_1, equOptArr, NONE());
       n_1 = numberOfElement + 1;
       arr_2 = arrayUpdate(arr_1, n_1, SOME(e));
       size = equationSize(e) + size;
@@ -1985,7 +1986,7 @@ algorithm
       (rhs, _) = ExpressionSimplify.simplify1(rhs);
       expNull = DAE.RCONST(0.0);
       lowBound = DAE.RCONST(-1e21);
-      dummyVar = BackendVariable.setVarMinMax(dummyVar, (SOME(lowBound), SOME(expNull)));
+      dummyVar = BackendVariable.setVarMinMax(dummyVar, SOME(lowBound), SOME(expNull));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
     case (_, DAE.RELATION(e1, DAE.LESSEQ(_), e2, _, _), _,_,_,_) equation
@@ -1995,7 +1996,7 @@ algorithm
       (rhs, _) = ExpressionSimplify.simplify1(rhs);
       expNull = DAE.RCONST(0.0);
       lowBound = DAE.RCONST(-1e21);
-      dummyVar = BackendVariable.setVarMinMax(dummyVar, (SOME(lowBound), SOME(expNull)));
+      dummyVar = BackendVariable.setVarMinMax(dummyVar, SOME(lowBound), SOME(expNull));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
     case (_, DAE.RELATION(e1, DAE.GREATER(_), e2, _, _), _,_,_,_) equation
@@ -2005,7 +2006,7 @@ algorithm
       (rhs, _) = ExpressionSimplify.simplify1(rhs);
       expNull = DAE.RCONST(0.0);
       lowBound = DAE.RCONST(-1e21);
-      dummyVar = BackendVariable.setVarMinMax(dummyVar, (SOME(lowBound), SOME(expNull)));
+      dummyVar = BackendVariable.setVarMinMax(dummyVar, SOME(lowBound), SOME(expNull));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
     case (_, DAE.RELATION(e1, DAE.GREATEREQ(_), e2, _, _), _,_,_,_) equation
@@ -2015,7 +2016,7 @@ algorithm
       (rhs, _) = ExpressionSimplify.simplify(rhs);
       expNull = DAE.RCONST(0.0);
       lowBound = DAE.RCONST(-1e21);
-      dummyVar = BackendVariable.setVarMinMax(dummyVar, (SOME(lowBound), SOME(expNull)));
+      dummyVar = BackendVariable.setVarMinMax(dummyVar, SOME(lowBound), SOME(expNull));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
     case (_, DAE.RELATION(e1, DAE.EQUAL(_), e2, _, _), _,_,_,_) equation
@@ -2024,7 +2025,7 @@ algorithm
       rhs =  Expression.expSub(e2,e1);
       (rhs, _) = ExpressionSimplify.simplify(rhs);
       expNull = DAE.RCONST(0.0);
-      dummyVar = BackendVariable.setVarMinMax(dummyVar, (SOME(expNull), SOME(expNull)));
+      dummyVar = BackendVariable.setVarMinMax(dummyVar, SOME(expNull), SOME(expNull));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
     case(_,e1 as DAE.CREF(componentRef = cr),_,_,_,_) equation

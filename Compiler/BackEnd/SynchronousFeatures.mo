@@ -88,7 +88,6 @@ protected function clockPartitioning1
   input BackendDAE.Shared inShared;
   output list<BackendDAE.EqSystem> outSysts;
 protected
-  list<BackendDAE.EqSystem> systs;
   BackendDAE.IncidenceMatrix m,mT;
   array<Integer> ixs;
   Boolean b;
@@ -112,14 +111,12 @@ algorithm
   //BackendDump.dumpIncidenceMatrix(m);
 
   ixs := arrayCreate(arrayLength(m), 0);
-  i := partitionIndependentBlocks0(arrayLength(m), 0, m, mT, ixs);
-  b := i > 1;
+  i := partitionIndependentBlocks0(m, mT, ixs);
 
-  //print("Got partition!\n");
-  //print(stringDelimitList(List.map(arrayList(ixs), intString), ","));
-  //print("\n");
-
-  outSysts := Debug.bcallret5(b, partitionIndependentBlocksSplitBlocks, i, syst, ixs, mT, false, {syst});
+  outSysts := if i > 1 then
+      partitionIndependentBlocksSplitBlocks(i, syst, ixs, mT, false) 
+    else 
+      {syst}; 
 
   // analyze partition kind
   outSysts := List.map1(outSysts, analyzePartitionKind, inShared);
@@ -128,22 +125,14 @@ algorithm
 end clockPartitioning1;
 
 public function partitionIndependentBlocks0
-  input Integer n;
-  input Integer n2;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> ixs;
-  output Integer on;
+  output Integer on := 0;
 algorithm
-  on := match (n, n2, m, mT, ixs)
-    local
-      Boolean b;
-
-    case (0, _, _, _, _) then n2;
-    case (_, _, _, _, _) equation
-      b = partitionIndependentBlocks1(n, n2+1, m, mT, ixs);
-    then partitionIndependentBlocks0(n-1, Util.if_(b, n2+1, n2), m, mT, ixs);
-  end match;
+  for i in arrayLength(m):-1:1 loop
+    on := if partitionIndependentBlocks1(i, on + 1, m, mT, ixs) then on + 1 else on; 
+  end for;
 end partitionIndependentBlocks0;
 
 protected function partitionIndependentBlocks1
@@ -154,45 +143,18 @@ protected function partitionIndependentBlocks1
   input array<Integer> ixs;
   output Boolean ochange;
 algorithm
-  ochange := partitionIndependentBlocks2(ixs[ix] == 0, ix, n, m, mT, ixs);
+  ochange := arrayGet(ixs, ix) == 0;
+
+  if ochange then
+    arrayUpdate(ixs, ix, n);
+
+    for i in arrayGet(m, ix) loop
+      for j in arrayGet(mT, intAbs(i)) loop
+        partitionIndependentBlocks1(intAbs(j), n, m, mT, ixs);
+      end for;
+    end for;
+  end if;
 end partitionIndependentBlocks1;
-
-protected function partitionIndependentBlocks2
-  input Boolean b;
-  input Integer ix;
-  input Integer n;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
-  input array<Integer> inIxs;
-  output Boolean change;
-algorithm
-  change := match (b, ix, n, m, mT, inIxs)
-    local
-      list<Integer> lst;
-      list<list<Integer>> lsts;
-      array<Integer> ixs;
-
-    case (false, _, _, _, _, _)
-    then false;
-
-    case (true, _, _, _, _, ixs) equation
-      // i = ixs[ix];
-      // print(intString(ix) +& "; update crap\n");
-      // print("mark\n");
-      ixs = arrayUpdate(ixs, ix, n);
-      // print("mark OK\n");
-      lst = List.map(m[ix], intAbs);
-      // print(stringDelimitList(List.map(lst, intString), ", ") +& "\n");
-      // print("len:" +& intString(arrayLength(mT)) +& "\n");
-      lsts = List.map1r(lst, arrayGet, mT);
-      // print("arrayNth OK\n");
-      lst = List.map(List.flatten(lsts), intAbs);
-      // print(stringDelimitList(List.map(lst, intString), ", ") +& "\n");
-      // print("lst get\n");
-      _ = List.map4(lst, partitionIndependentBlocks1, n, m, mT, ixs);
-    then true;
-  end match;
-end partitionIndependentBlocks2;
 
 public function partitionIndependentBlocksSplitBlocks
   "Partitions the independent blocks into list<array<...>> by first constructing
@@ -204,7 +166,7 @@ public function partitionIndependentBlocksSplitBlocks
   input Boolean throwNoError;
   output list<BackendDAE.EqSystem> systs;
 algorithm
-  systs := match (n, syst, ixs, mT, throwNoError)
+  systs := match (syst)
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray arr;
@@ -216,24 +178,29 @@ algorithm
       String s1, s2;
       Boolean b;
 
-    case (_, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=arr), _, _, _) equation
-      ea = arrayCreate(n, {});
-      va = arrayCreate(n, {});
-      i1 = BackendDAEUtil.equationSize(arr);
-      i2 = BackendVariable.numVariables(vars);
-      s1 = intString(i1);
-      s2 = intString(i2);
-      Error.assertionOrAddSourceMessage((i1 == i2) or throwNoError,
-        Util.if_(i1 > i2, Error.OVERDET_EQN_SYSTEM, Error.UNDERDET_EQN_SYSTEM),
-        {s1, s2}, Absyn.dummyInfo);
+    case BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=arr)
+      equation
+        ea = arrayCreate(n, {});
+        va = arrayCreate(n, {});
+        i1 = BackendDAEUtil.equationSize(arr);
+        i2 = BackendVariable.numVariables(vars);
 
-      partitionEquations(BackendDAEUtil.equationArraySize(arr), arr, ixs, ea);
-      partitionVars(i2, arr, vars, ixs, mT, va);
-      el = arrayList(ea);
-      vl = arrayList(va);
-      (systs, (b, _)) = List.threadMapFold(el, vl, createEqSystem, (true, throwNoError));
-      true = throwNoError or b;
-    then systs;
+        if i1 <> i2 and not throwNoError then
+          s1 = intString(i1);
+          s2 = intString(i2);
+          Error.addSourceMessage(if i1 > i2 then Error.OVERDET_EQN_SYSTEM else Error.UNDERDET_EQN_SYSTEM,
+            {s1, s2}, Absyn.dummyInfo);
+          fail();
+        end if;
+
+        partitionEquations(BackendDAEUtil.equationArraySize(arr), arr, ixs, ea);
+        partitionVars(i2, arr, vars, ixs, mT, va);
+        el = arrayList(ea);
+        vl = arrayList(va);
+        (systs, (b, _)) = List.threadMapFold(el, vl, createEqSystem, (true, throwNoError));
+        true = throwNoError or b;
+      then
+        systs;
   end match;
 end partitionIndependentBlocksSplitBlocks;
 
@@ -256,13 +223,18 @@ algorithm
   arr := BackendEquation.listEquation(el);
   i1 := BackendDAEUtil.equationSize(arr);
   i2 := BackendVariable.numVariables(vars);
-  s1 := intString(i1);
-  s2 := intString(i2);
-  crs := Debug.bcallret3(i1<>i2, List.mapMap, vl, BackendVariable.varCref, ComponentReference.printComponentRefStr, {});
-  s3 := stringDelimitList(crs, "\n");
-  s4 := Debug.bcallret1(i1<>i2, BackendDump.dumpEqnsStr, el, "");
+
   // Can this even be triggered? We check that all variables are defined somewhere, so everything should be balanced already?
-  Debug.bcall3((i1<>i2) and not throwNoError, Error.addSourceMessage, Error.IMBALANCED_EQUATIONS, {s1, s2, s3, s4}, Absyn.dummyInfo);
+  if i1 <> i2 and not throwNoError then
+    s1 := intString(i1);
+    s2 := intString(i2);
+    crs := List.mapMap(vl, BackendVariable.varCref, ComponentReference.printComponentRefStr);
+    s3 := stringDelimitList(crs, "\n");
+    s4 := BackendDump.dumpEqnsStr(el);
+    Error.addSourceMessage(Error.IMBALANCED_EQUATIONS, {s1, s2, s3, s4}, Absyn.dummyInfo);
+    fail();
+  end if;
+
   syst := BackendDAE.EQSYSTEM(vars, arr, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
   success := success and i1==i2;
   oTpl := (success, throwNoError);
@@ -273,26 +245,19 @@ protected function partitionEquations
   input BackendDAE.EquationArray arr;
   input array<Integer> ixs;
   input array<list<BackendDAE.Equation>> ea;
+protected
+  Integer ix;
+  list<BackendDAE.Equation> lst;
+  BackendDAE.Equation eq;
 algorithm
-  _ := match (n, arr, ixs, ea)
-    local
-      Integer ix;
-      list<BackendDAE.Equation> lst;
-      BackendDAE.Equation eq;
-
-    case (0, _, _, _)
-    then ();
-
-    case (_, _, _, _) equation
-      ix = ixs[n];
-      lst = ea[ix];
-      eq = BackendEquation.equationNth1(arr, n);
-      lst = eq::lst;
-      // print("adding eq " +& intString(n) +& " to group " +& intString(ix) +& "\n");
-      _ = arrayUpdate(ea, ix, lst);
-      partitionEquations(n-1, arr, ixs, ea);
-    then ();
-  end match;
+  for i in n:-1:1 loop
+    ix := ixs[i];
+    lst := ea[ix];
+    eq := BackendEquation.equationNth1(arr, i);
+    lst := eq::lst;
+    // print("adding eq " +& intString(n) +& " to group " +& intString(ix) +& "\n");
+    arrayUpdate(ea, ix, lst);
+  end for;
 end partitionEquations;
 
 protected function partitionVars
@@ -302,41 +267,38 @@ protected function partitionVars
   input array<Integer> ixs;
   input BackendDAE.IncidenceMatrix mT;
   input array<list<BackendDAE.Var>> va;
+protected
+  Integer ix, eqix;
+  list<BackendDAE.Var> lst;
+  BackendDAE.Var v;
+  Boolean b;
+  DAE.ComponentRef cr;
+  String name;
+  Absyn.Info info;
 algorithm
-  _ := match (n, arr, vars, ixs, mT, va)
-    local
-      Integer ix, eqix;
-      list<BackendDAE.Var> lst;
-      BackendDAE.Var v;
-      Boolean b;
-      DAE.ComponentRef cr;
-      String name;
-      Absyn.Info info;
+  for i in n:-1:1 loop
+    v := BackendVariable.getVarAt(vars, i);
+    cr := BackendVariable.varCref(v);
 
-    case (0, _, _, _, _, _)
-    then ();
+    // Select any equation that could define this variable
+    if List.isEmpty(mT[i]) then
+      name := ComponentReference.printComponentRefStr(cr);
+      info := DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(v));
+      Error.addSourceMessage(Error.EQUATIONS_VAR_NOT_DEFINED, {name}, info);
+      fail();
+    end if;
 
-    case (_, _, _, _, _, _) equation
-      v = BackendVariable.getVarAt(vars, n);
-      cr = BackendVariable.varCref(v);
-      // Select any equation that could define this variable
-      b = not List.isEmpty(mT[n]);
-      name = Debug.bcallret1(not b, ComponentReference.printComponentRefStr, cr, "");
-      info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(v));
-      Error.assertionOrAddSourceMessage(b, Error.EQUATIONS_VAR_NOT_DEFINED, {name}, info);
-      // print("adding var " +& intString(n) +& " to group ???\n");
-      eqix::_ = mT[n];
-      eqix = intAbs(eqix);
-      // print("var " +& intString(n) +& " has eq " +& intString(eqix) +& "\n");
-      // That's the index of the indep.system
-      ix = ixs[eqix];
-      lst = va[ix];
-      lst = v::lst;
-      // print("adding var " +& intString(n) +& " to group " +& intString(ix) +& " (comes from eq: "+& intString(eqix) +&")\n");
-      _ = arrayUpdate(va, ix, lst);
-      partitionVars(n-1, arr, vars, ixs, mT, va);
-    then ();
-  end match;
+    // print("adding var " +& intString(i) +& " to group ???\n");
+    eqix::_ := mT[i];
+    eqix := intAbs(eqix);
+    // print("var " +& intString(i) +& " has eq " +& intString(eqix) +& "\n");
+    // That's the index of the indep.system
+    ix := ixs[eqix];
+    lst := va[ix];
+    lst := v::lst;
+    // print("adding var " +& intString(i) +& " to group " +& intString(ix) +& " (comes from eq: "+& intString(eqix) +&")\n");
+    arrayUpdate(va, ix, lst);
+  end for;
 end partitionVars;
 
 protected function analyzePartitionKind "author: lochel
@@ -383,7 +345,8 @@ algorithm
 // print("clockedVars (pre):\n");
 // BackendDump.debuglst((clockedVars, ComponentReference.printComponentRefStr, "\n", "\n"));
 
-  (continuousTimeVars, clockedVars) := filterVariables(orderedVars, continuousTimeVars, clockedVars);
+  continuousTimeVars := filterVariables(orderedVars, continuousTimeVars);
+  clockedVars := filterVariables(orderedVars, clockedVars);
 // print("continuousTimeVars (post):\n");
 // BackendDump.debuglst((continuousTimeVars, ComponentReference.printComponentRefStr, "\n", "\n"));
 // print("clockedVars (post):\n");
@@ -421,7 +384,7 @@ algorithm
   (syst, m, mT) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.SUBCLOCK(), SOME(funcs));
 
   ixs := arrayCreate(arrayLength(m), 0);
-  i := partitionIndependentBlocks0(arrayLength(m), 0, m, mT, ixs);
+  i := partitionIndependentBlocks0(m, mT, ixs);
 
   // print("Got sub-partitioning!\n");
   // print(stringDelimitList(List.map(arrayList(ixs), intString), ","));
@@ -437,24 +400,11 @@ end subClockPartitioning;
 
 protected function setSubClockPartition
   input list<BackendDAE.Equation> inEqnLst;
-  input list<Integer> inPartionIndices;
+  input list<Integer> inPartitionIndices;
   output list<BackendDAE.Equation> outEqnLst;
 algorithm
-  outEqnLst := match (inEqnLst, inPartionIndices)
-    local
-      Integer index;
-      list<Integer> indices;
-      BackendDAE.Equation eq;
-      list<BackendDAE.Equation> eqs;
-
-    case ({}, {})
-    then {};
-
-    case (eq::eqs, index::indices) equation
-      eq = BackendEquation.setSubPartition(eq, index);
-      eqs = setSubClockPartition(eqs, indices);
-    then eq::eqs;
-  end match;
+  outEqnLst := list(BackendEquation.setSubPartition(eq, index)
+    threaded for eq in inEqnLst, index in inPartitionIndices);
 end setSubClockPartition;
 
 protected function getVariableLists
@@ -465,27 +415,26 @@ protected function getVariableLists
 algorithm
   (outExp,outTpl) := match(inExp,inTpl)
     local
-      DAE.Exp exp;
       list<DAE.ComponentRef> continuousTimeVars, clockedVars;
       DAE.ComponentRef cr;
 
-    case (exp as DAE.CALL(path=Absyn.IDENT(name="sample"), expLst=_::DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
-    then (exp, (cr::continuousTimeVars, clockedVars));
+    case (DAE.CALL(path=Absyn.IDENT(name="sample"), expLst=_::DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
+      then (inExp, (cr::continuousTimeVars, clockedVars));
 
-    case (exp as DAE.CALL(path=Absyn.IDENT(name="subSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
-    then (exp, (continuousTimeVars, cr::clockedVars));
+    case (DAE.CALL(path=Absyn.IDENT(name="subSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
+      then (inExp, (continuousTimeVars, cr::clockedVars));
 
-    case (exp as DAE.CALL(path=Absyn.IDENT(name="superSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
-    then (exp, (continuousTimeVars, cr::clockedVars));
+    case (DAE.CALL(path=Absyn.IDENT(name="superSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
+      then (inExp, (continuousTimeVars, cr::clockedVars));
 
-    case (exp as DAE.CALL(path=Absyn.IDENT(name="shiftSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
-    then (exp, (continuousTimeVars, cr::clockedVars));
+    case (DAE.CALL(path=Absyn.IDENT(name="shiftSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
+      then (inExp, (continuousTimeVars, cr::clockedVars));
 
-    case (exp as DAE.CALL(path=Absyn.IDENT(name="backSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
-    then (exp, (continuousTimeVars, cr::clockedVars));
+    case (DAE.CALL(path=Absyn.IDENT(name="backSample"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
+      then (inExp, (continuousTimeVars, cr::clockedVars));
 
-    case (exp as DAE.CALL(path=Absyn.IDENT(name="previous"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
-    then (exp, (continuousTimeVars, cr::clockedVars));
+    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst=DAE.CREF(componentRef=cr)::_), (continuousTimeVars, clockedVars))
+      then (inExp, (continuousTimeVars, cr::clockedVars));
 
     else (inExp,inTpl);
   end match;
@@ -493,114 +442,84 @@ end getVariableLists;
 
 protected function getVariableLists2
   input list<BackendDAE.Equation> inEqnLst;
+  output list<DAE.ComponentRef> outContinuousTimeVars := {};
+  output list<DAE.ComponentRef> outClockedVars := {};
+protected
+  DAE.ComponentRef cr;
+  String func_id;
+  list<DAE.Exp> args;
+algorithm
+  for eq in inEqnLst loop
+    _ := match(eq)
+      case BackendDAE.EQUATION(exp = DAE.CREF(componentRef = cr),
+          scalar = DAE.CALL(path = Absyn.IDENT(name = func_id), expLst = args))
+        algorithm
+          (outContinuousTimeVars, outClockedVars) := getVariableLists3(func_id,
+            args, cr, outContinuousTimeVars, outClockedVars);
+        then ();
+
+      case BackendDAE.EQUATION(scalar = DAE.CREF(componentRef = cr),
+          exp = DAE.CALL(path = Absyn.IDENT(name = func_id), expLst = args))
+        algorithm
+          (outContinuousTimeVars, outClockedVars) := getVariableLists3(func_id,
+            args, cr, outContinuousTimeVars, outClockedVars);
+        then ();
+
+      else
+        algorithm
+          (_, (outContinuousTimeVars, outClockedVars)) :=
+            BackendEquation.traverseBackendDAEExpsEqn(eq, getVariableLists, 
+              (outContinuousTimeVars, outClockedVars));
+        then
+          ();
+    end match;
+  end for;
+end getVariableLists2;
+
+protected function getVariableLists3
+  input String inFunctionName;
+  input list<DAE.Exp> inFunctionArgs;
+  input DAE.ComponentRef inVarCref;
+  input list<DAE.ComponentRef> inContinuousTimeVars;
+  input list<DAE.ComponentRef> inClockedVars;
   output list<DAE.ComponentRef> outContinuousTimeVars;
   output list<DAE.ComponentRef> outClockedVars;
 algorithm
-  (outContinuousTimeVars, outClockedVars) := match (inEqnLst)
+  (outContinuousTimeVars, outClockedVars) := match(inFunctionName, inFunctionArgs)
     local
-      DAE.Exp exp;
-      list<DAE.ComponentRef> continuousTimeVars1, clockedVars1;
-      list<DAE.ComponentRef> continuousTimeVars2, clockedVars2;
       DAE.ComponentRef cr;
-      DAE.ComponentRef cr1;
-      DAE.ComponentRef cr2;
-      BackendDAE.Equation curr;
-      list<BackendDAE.Equation> rest;
 
-    case ({}) then ({}, {});
+    // y = sample(u) or sample(u) = y
+    case ("sample", _ :: DAE.CREF(componentRef = cr) :: _) 
+      then (cr :: inContinuousTimeVars, inVarCref :: inClockedVars);
 
-    // y = sample(u)
-    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr1), scalar=DAE.CALL(path=Absyn.IDENT(name="sample"), expLst=_::DAE.CREF(componentRef=cr2)::_))::rest) equation
-      clockedVars1 = {cr1};
-      continuousTimeVars1 = {cr2};
-      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
-    then (listAppend(continuousTimeVars1, continuousTimeVars2), listAppend(clockedVars1, clockedVars2));
+    // y = hold(...) or hold(...) = y
+    case ("hold", _)
+      then (inVarCref :: inContinuousTimeVars, inClockedVars);
 
-    // sample(u) = y
-    case (BackendDAE.EQUATION(scalar=DAE.CREF(componentRef=cr1), exp=DAE.CALL(path=Absyn.IDENT(name="sample"), expLst=_::DAE.CREF(componentRef=cr2)::_))::rest) equation
-      clockedVars1 = {cr1};
-      continuousTimeVars1 = {cr2};
-      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
-    then (listAppend(continuousTimeVars1, continuousTimeVars2), listAppend(clockedVars1, clockedVars2));
+    // y = subSample(u) or subSample(u) = y
+    case ("subSample", DAE.CREF(componentRef = cr) :: _)
+      then (inContinuousTimeVars, inVarCref :: cr :: inClockedVars);
 
-    // y = hold(...)
-    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr1), scalar=DAE.CALL(path=Absyn.IDENT(name="hold")))::rest) equation
-      continuousTimeVars1 = {cr1};
-      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
-    then (listAppend(continuousTimeVars1, continuousTimeVars2), clockedVars2);
+    // y = superSample(u) or superSample(u) = y
+    case ("superSample", DAE.CREF(componentRef = cr) :: _)
+      then (inContinuousTimeVars, inVarCref :: cr :: inClockedVars);
 
-    // hold(...) = y
-    case (BackendDAE.EQUATION(scalar=DAE.CREF(componentRef=cr1), exp=DAE.CALL(path=Absyn.IDENT(name="hold")))::rest) equation
-      continuousTimeVars1 = {cr1};
-      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
-    then (listAppend(continuousTimeVars1, continuousTimeVars2), clockedVars2);
+    // y = shiftSample(u) or shiftSample(u) = y
+    case ("shiftSample", DAE.CREF(componentRef = cr) :: _)
+      then (inContinuousTimeVars, inVarCref :: cr :: inClockedVars);
 
-    // y = subSample(u)
-    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr1), scalar=DAE.CALL(path=Absyn.IDENT(name="subSample"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
-      clockedVars1 = {cr1, cr2};
-      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
-    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
+    // y = backSample(u) or backSample(u) = y
+    case ("backSample", DAE.CREF(componentRef = cr) :: _)
+      then (inContinuousTimeVars, inVarCref :: cr :: inClockedVars);
 
-    // subSample(u) = y
-    case (BackendDAE.EQUATION(scalar=DAE.CREF(componentRef=cr1), exp=DAE.CALL(path=Absyn.IDENT(name="subSample"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
-      clockedVars1 = {cr1, cr2};
-      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
-    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
+    // y = previous(u) or previous(u) = y
+    case ("previous", DAE.CREF(componentRef = cr) :: _)
+      then (inContinuousTimeVars, inVarCref :: cr :: inClockedVars);
 
-    // y = superSample(u)
-    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr1), scalar=DAE.CALL(path=Absyn.IDENT(name="superSample"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
-      clockedVars1 = {cr1, cr2};
-      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
-    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
-
-    // superSample(u) = y
-    case (BackendDAE.EQUATION(scalar=DAE.CREF(componentRef=cr1), exp=DAE.CALL(path=Absyn.IDENT(name="superSample"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
-      clockedVars1 = {cr1, cr2};
-      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
-    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
-
-    // y = shiftSample(u)
-    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr1), scalar=DAE.CALL(path=Absyn.IDENT(name="shiftSample"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
-      clockedVars1 = {cr1, cr2};
-      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
-    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
-
-    // shiftSample(u) = y
-    case (BackendDAE.EQUATION(scalar=DAE.CREF(componentRef=cr1), exp=DAE.CALL(path=Absyn.IDENT(name="shiftSample"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
-      clockedVars1 = {cr1, cr2};
-      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
-    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
-
-    // y = backSample(u)
-    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr1), scalar=DAE.CALL(path=Absyn.IDENT(name="backSample"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
-      clockedVars1 = {cr1, cr2};
-      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
-    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
-
-    // backSample(u) = y
-    case (BackendDAE.EQUATION(scalar=DAE.CREF(componentRef=cr1), exp=DAE.CALL(path=Absyn.IDENT(name="backSample"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
-      clockedVars1 = {cr1, cr2};
-      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
-    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
-
-    // y = previous(u)
-    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr1), scalar=DAE.CALL(path=Absyn.IDENT(name="previous"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
-      clockedVars1 = {cr1, cr2};
-      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
-    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
-
-    // previous(u) = y
-    case (BackendDAE.EQUATION(scalar=DAE.CREF(componentRef=cr1), exp=DAE.CALL(path=Absyn.IDENT(name="previous"), expLst=DAE.CREF(componentRef=cr2)::_))::rest) equation
-      clockedVars1 = {cr1, cr2};
-      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
-    then (continuousTimeVars2, listAppend(clockedVars1, clockedVars2));
-
-    case (curr::rest) equation
-      (_, (continuousTimeVars1, clockedVars1)) = BackendEquation.traverseBackendDAEExpsEqn(curr, getVariableLists, ({}, {}));
-      (continuousTimeVars2, clockedVars2) = getVariableLists2(rest);
-    then (listAppend(continuousTimeVars1, continuousTimeVars2), listAppend(clockedVars1, clockedVars2));
+    else (inContinuousTimeVars, inClockedVars);
   end match;
-end getVariableLists2;
+end getVariableLists3;
 
 protected function getPartitionKind
   input list<DAE.ComponentRef> inContinuousTimeVars;
@@ -617,37 +536,18 @@ end getPartitionKind;
 
 protected function filterVariables
   input BackendDAE.Variables inVars;
-  input list<DAE.ComponentRef> inContinuousTimeVars;
-  input list<DAE.ComponentRef> inClockedVars;
-  output list<DAE.ComponentRef> outContinuousTimeVars;
-  output list<DAE.ComponentRef> outClockedVars;
+  input list<DAE.ComponentRef> inCrefs;
+  output list<DAE.ComponentRef> outCrefs := {};
 algorithm
-  (outContinuousTimeVars, outClockedVars) := matchcontinue(inVars, inContinuousTimeVars, inClockedVars)
-    local
-      list<DAE.ComponentRef> continuousTimeVars;
-      list<DAE.ComponentRef> clockedVars;
-      DAE.ComponentRef curr;
-      list<DAE.ComponentRef> rest;
-    case (_, {}, {}) then ({}, {});
+  for cr in inCrefs loop
+    try
+      BackendVariable.getVar(cr, inVars);
+      outCrefs := cr :: outCrefs;
+    else
+    end try;
+  end for;
 
-    case (_, {}, curr::rest) equation
-      (_, _) = BackendVariable.getVar(curr, inVars);
-      (_, clockedVars) = filterVariables(inVars, {}, rest);
-    then ({}, curr::clockedVars);
-
-    case (_, {}, curr::rest) equation
-      (_, clockedVars) = filterVariables(inVars, {}, rest);
-    then ({}, clockedVars);
-
-    case (_, curr::rest, _) equation
-      (_, _) = BackendVariable.getVar(curr, inVars);
-      (continuousTimeVars, clockedVars) = filterVariables(inVars, rest, inClockedVars);
-    then (curr::continuousTimeVars, clockedVars);
-
-    case (_, curr::rest, _) equation
-      (continuousTimeVars, clockedVars) = filterVariables(inVars, rest, inClockedVars);
-    then (continuousTimeVars, clockedVars);
-  end matchcontinue;
+  outCrefs := listReverse(outCrefs);
 end filterVariables;
 
 annotation(__OpenModelica_Interface="backend");

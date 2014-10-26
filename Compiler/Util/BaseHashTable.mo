@@ -52,8 +52,8 @@ encapsulated package BaseHashTable
 // hashFunc - A function that maps a key to a positive integer.
 // keyEqual - A comparison function between two keys, returns true if equal.
 
+protected import Array;
 protected import List;
-protected import Util;
 
 // Generic hashtable code below
 
@@ -461,7 +461,7 @@ public function hashTableValueList
   input HashTable hashTable;
   output list<Value> valLst;
 algorithm
-   valLst := List.map(hashTableList(hashTable), Util.tuple22);
+  valLst := List.unzipSecond(hashTableList(hashTable));
 end hashTableValueList;
 
 public function hashTableKeyList
@@ -469,7 +469,7 @@ public function hashTableKeyList
   input HashTable hashTable;
   output list<Key> valLst;
 algorithm
-   valLst := List.map(hashTableList(hashTable), Util.tuple21);
+  valLst := List.unzipFirst(hashTableList(hashTable));
 end hashTableKeyList;
 
 public function hashTableList
@@ -491,7 +491,7 @@ protected
   array<Option<HashEntry>> arr;
 algorithm
   (_, _, arr) := valueArray;
-  outEntries := Util.arrayFold(arr, List.consOption, {});
+  outEntries := Array.fold(arr, List.consOption, {});
   outEntries := listReverse(outEntries);
 end valueArrayList;
 
@@ -543,7 +543,7 @@ algorithm
         expandsize = realInt(rexpandsize);
         expandsize = intMax(expandsize, 1);
         newsize = expandsize + size;
-        arr = Util.arrayExpand(expandsize, arr, NONE());
+        arr = Array.expand(expandsize, arr, NONE());
         n = n + 1;
         arr = arrayUpdate(arr, n, SOME(entry));
       then

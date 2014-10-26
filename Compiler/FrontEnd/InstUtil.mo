@@ -214,7 +214,7 @@ algorithm
         //print(" Ceval res: ("+&stringDelimitList(List.map(valList,ValuesUtil.printValStr),",")+&")\n");
 
         blist = List.map(valList,ValuesUtil.valueBool);
-        selectedBranch = Util.selectList(blist, tbs, fb);
+        selectedBranch = List.selectFirstBoolList(blist, tbs, fb);
         selectedBranch = makeDAEElementInitial(selectedBranch);
       then listAppend(selectedBranch,acc);
     else elem::acc;
@@ -5417,7 +5417,7 @@ protected
   list<DAE.Element> invars,vars,algs;
 algorithm
   (vars,_,_,_,algs,_,_,_) := DAEUtil.splitElements(elts);
-  invars := List.filter(vars,DAEUtil.isInputVar);
+  invars := List.filterOnTrue(vars,DAEUtil.isInputVar);
   invars := List.select(invars,checkInputUsedAnnotation);
   invars := checkExternalDeclInputUsed(invars,decl);
   invars := List.select1(invars,checkVarBindingsInputUsed,vars);
@@ -7702,95 +7702,89 @@ public function componentHasCondition
   input tuple<SCode.Element, DAE.Mod> component;
   output Boolean hasCondition;
 algorithm
-  hasCondition := matchcontinue(component)
+  hasCondition := match(component)
     case ((SCode.COMPONENT(condition = SOME(_)), _)) then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end componentHasCondition;
 
-public function isConditionalComponent
+public function instElementCondExp
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input SCode.Element component;
   input Prefix.Prefix prefix;
   input Absyn.Info info;
-  output Boolean isConditional;
+  output Option<Boolean> outCondValue;
   output FCore.Cache outCache;
 algorithm
-  (isConditional, outCache) := matchcontinue(inCache, inEnv, component, prefix, info)
+  (outCondValue, outCache) := matchcontinue(component)
     local
       String name;
       Absyn.Exp cond_exp;
-      Boolean is_cond;
+      Boolean cond_val;
       FCore.Cache cache;
 
-    case (_, _, SCode.COMPONENT(name = name, condition = SOME(cond_exp)), _, _)
+    case SCode.COMPONENT(condition = SOME(cond_exp))
       equation
-        (is_cond, cache) = instConditionalDeclaration(inCache, inEnv, cond_exp, name, prefix, info);
+        (cond_val, cache) = instConditionalDeclaration(inCache, inEnv, cond_exp, prefix, info);
       then
-        (not is_cond, cache);
-    else (false, inCache);
+        (SOME(cond_val), cache);
+
+    case SCode.COMPONENT(condition = SOME(_)) then (NONE(), inCache);
+    else (SOME(true), inCache);
   end matchcontinue;
-end isConditionalComponent;
+end instElementCondExp;
 
 protected function instConditionalDeclaration
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input Absyn.Exp cond;
-  input String compName;
-  input Prefix.Prefix pre;
-  input Absyn.Info info;
-  output Boolean isConditional;
+  input Absyn.Exp inCondition;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info inInfo;
+  output Boolean outIsConditional;
   output FCore.Cache outCache;
+protected
+  FCore.Cache cache;
+  DAE.Exp e;
+  DAE.Type t;
+  DAE.Const c;
+  Boolean is_bool, is_param, b;
+  Values.Value val;
 algorithm
-  (isConditional, outCache) := matchcontinue(inCache, inEnv, cond, compName, pre, info)
-    local
-      DAE.Exp e;
-      DAE.Type t;
-      DAE.Const c;
-      Boolean b;
-      String exp_str, type_str;
-      FCore.Cache cache;
+  // Elaborate the conditional expression.
+  (outCache, e, DAE.PROP(type_ = t, constFlag = c), _) :=
+    Static.elabExp(inCache, inEnv, inCondition, false, NONE(), false, inPrefix, inInfo);
+  
+  // The expression must be of boolean type.
+  if not Types.isBoolean(t) then
+    Error.addSourceMessageAndFail(Error.IF_CONDITION_TYPE_ERROR,
+      {Dump.printExpStr(inCondition), Types.unparseTypeNoAttr(t)}, inInfo);
+  end if;
 
+  // The expression must be a parameter expression that can be evaluated at compile-time.
+  if not Types.isParameterOrConstant(c) then
+    Error.addSourceMessageAndFail(Error.COMPONENT_CONDITION_VARIABILITY,
+      {Dump.printExpStr(inCondition)}, inInfo);
+  end if;
 
-    case (_, _, _, _, _, _)
-      equation
-        (cache, e, DAE.PROP(type_ = t, constFlag = c), _) =
-          Static.elabExp(inCache, inEnv, cond, false, NONE(), false, pre, info);
-        true = Types.isBoolean(t);
-        true = Types.isParameterOrConstant(c);
-        (cache, Values.BOOL(b), _) = Ceval.ceval(cache, inEnv, e, false, NONE(), Absyn.MSG(info), 0);
-      then
-        (b, cache);
+  // If it is a boolean parameter expression, try to evaluate it.
+  (outCache, val, _) := Ceval.ceval(outCache, inEnv, e, false, NONE(), Absyn.MSG(inInfo), 0);
 
-    case (_, _, _, _, _, _)
+  outIsConditional := match(val) 
+    case Values.BOOL(b) then b;
+    case Values.EMPTY(__) // Print an error if the expression has no value.
       equation
-        (_, e, DAE.PROP(type_ = t), _) =
-          Static.elabExp(inCache, inEnv, cond, false, NONE(), false, pre, info);
-        false = Types.isBoolean(t);
-        exp_str = ExpressionDump.printExpStr(e);
-        type_str = Types.unparseTypeNoAttr(t);
-        Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {exp_str, type_str}, info);
-      then
-        fail();
-    case (_, _, _, _, _, _)
-      equation
-        (_, e, DAE.PROP(type_ = t, constFlag = c), _) =
-          Static.elabExp(inCache, inEnv, cond, false, NONE(), false, pre, info);
-        true = Types.isBoolean(t);
-        false = Types.isParameterOrConstant(c);
-        exp_str = ExpressionDump.printExpStr(e);
-        Error.addSourceMessage(Error.COMPONENT_CONDITION_VARIABILITY, {exp_str}, info);
+        Error.addSourceMessage(Error.CONDITIONAL_EXP_WITHOUT_VALUE,
+          {Dump.printExpStr(inCondition)}, inInfo);
       then
         fail();
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE,
-          "- Inst.instConditionalDeclaration failed on component: " +& compName +&
-          " for cond: " +& Dump.printExpStr(cond));
+        Error.addInternalError("- InstUtil.instConditionalDeclaration got unexpected value " +
+          ValuesUtil.valString(val));
       then
         fail();
-  end matchcontinue;
+  end match;  
 end instConditionalDeclaration;
 
 public function propagateClassPrefix

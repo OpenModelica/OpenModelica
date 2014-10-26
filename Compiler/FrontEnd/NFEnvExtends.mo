@@ -1228,7 +1228,6 @@ algorithm
     case (_, _, _, _, cls_frame :: env)
       equation
         (path, item) = lookupClassExtendsBaseClass(inName, env, inInfo);
-        NFSCodeCheck.checkClassExtendsReplaceability(item, Absyn.dummyInfo);
         ext = SCode.EXTENDS(path, SCode.PUBLIC(), inMods, NONE(), inInfo);
         {cls_frame} = NFSCodeEnv.extendEnvWithExtends(ext, {cls_frame});
         cls = SCode.addElementToClass(ext, inClass);

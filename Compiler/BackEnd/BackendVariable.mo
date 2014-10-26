@@ -45,6 +45,7 @@ public import SCode;
 public import Values;
 
 protected import Absyn;
+protected import Array;
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BaseHashSet;
@@ -99,65 +100,30 @@ algorithm
   end match;
 end varEqual;
 
-
-
 public function setVarFixed "author: PA
   Sets the fixed attribute of a variable."
   input BackendDAE.Var inVar;
   input Boolean inBoolean;
   output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef a;
+  BackendDAE.VarKind b;
+  DAE.VarDirection c;
+  DAE.VarParallelism prl;
+  BackendDAE.Type d;
+  Option<DAE.Exp> e;
+  Option<Values.Value> f;
+  list<DAE.Dimension> g;
+  DAE.ElementSource source;
+  DAE.VariableAttributes attr;
+  Option<DAE.VariableAttributes> oattr;
+  Option<SCode.Comment> s;
+  DAE.ConnectorType ct;
 algorithm
-  outVar := match (inVar,inBoolean)
-    local
-      DAE.ComponentRef a;
-      BackendDAE.VarKind b;
-      DAE.VarDirection c;
-      DAE.VarParallelism prl;
-      BackendDAE.Type d;
-      Option<DAE.Exp> e;
-      Option<Values.Value> f;
-      list<DAE.Dimension> g;
-      DAE.ElementSource source;
-      DAE.VariableAttributes attr;
-      Option<DAE.VariableAttributes> oattr;
-      Option<SCode.Comment> s;
-      DAE.ConnectorType ct;
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = SOME(attr),
-              comment = s,
-              connectorType = ct),_)
-      equation
-        oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(inBoolean)));
-      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr,s,ct);
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = NONE(),
-              comment = s,
-              connectorType = ct),_)
-      equation
-        attr = getVariableAttributefromType(d);
-        oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(inBoolean)));
-      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr,s,ct);
-
-
-  end match;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+  oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
+  oattr := DAEUtil.setFixedAttr(oattr, SOME(DAE.BCONST(inBoolean)));
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
 end setVarFixed;
 
 public function varFixed "author: PA
@@ -187,7 +153,7 @@ algorithm
       then
         not fixed;
 */
-    case (_) then false;  /* rest defaults to false */
+    else false;  /* rest defaults to false */
   end matchcontinue;
 end varFixed;
 
@@ -196,57 +162,25 @@ public function setVarStartValue "author: Frenkel TUD
   input BackendDAE.Var inVar;
   input DAE.Exp inExp;
   output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef a;
+  BackendDAE.VarKind b;
+  DAE.VarDirection c;
+  DAE.VarParallelism prl;
+  BackendDAE.Type d;
+  Option<DAE.Exp> e;
+  Option<Values.Value> f;
+  list<DAE.Dimension> g;
+  DAE.ElementSource source;
+  DAE.VariableAttributes attr;
+  Option<DAE.VariableAttributes> oattr;
+  Option<SCode.Comment> s;
+  DAE.ConnectorType ct;
 algorithm
-  outVar := match (inVar,inExp)
-    local
-      DAE.ComponentRef a;
-      BackendDAE.VarKind b;
-      DAE.VarDirection c;
-      DAE.VarParallelism prl;
-      BackendDAE.Type d;
-      Option<DAE.Exp> e;
-      Option<Values.Value> f;
-      list<DAE.Dimension> g;
-      DAE.ElementSource source;
-      DAE.VariableAttributes attr;
-      Option<DAE.VariableAttributes> oattr1;
-      Option<SCode.Comment> s;
-      DAE.ConnectorType ct;
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = SOME(attr),
-              comment = s,
-              connectorType = ct),_)
-      equation
-        oattr1 = DAEUtil.setStartAttr(SOME(attr),inExp);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = NONE(),
-              comment = s,
-              connectorType = ct),_)
-      equation
-        attr = getVariableAttributefromType(d);
-        oattr1 = DAEUtil.setStartAttr(SOME(attr),inExp);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
-
-  end match;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+  oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
+  oattr := DAEUtil.setStartAttr(oattr, inExp);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
 end setVarStartValue;
 
 public function setVarStartValueOption "author: Frenkel TUD
@@ -254,58 +188,25 @@ public function setVarStartValueOption "author: Frenkel TUD
   input BackendDAE.Var inVar;
   input Option<DAE.Exp> inExp;
   output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef a;
+  BackendDAE.VarKind b;
+  DAE.VarDirection c;
+  DAE.VarParallelism prl;
+  BackendDAE.Type d;
+  Option<DAE.Exp> e;
+  Option<Values.Value> f;
+  list<DAE.Dimension> g;
+  DAE.ElementSource source;
+  DAE.VariableAttributes attr;
+  Option<DAE.VariableAttributes> oattr;
+  Option<SCode.Comment> s;
+  DAE.ConnectorType ct;
 algorithm
-  outVar := match (inVar,inExp)
-    local
-      DAE.ComponentRef a;
-      BackendDAE.VarKind b;
-      DAE.VarDirection c;
-      DAE.VarParallelism prl;
-      BackendDAE.Type d;
-      Option<DAE.Exp> e;
-      Option<Values.Value> f;
-      list<DAE.Dimension> g;
-      DAE.ElementSource source;
-      DAE.VariableAttributes attr;
-      Option<DAE.VariableAttributes> oattr1;
-      Option<SCode.Comment> s;
-      DAE.ConnectorType ct;
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = SOME(attr),
-              comment = s,
-              connectorType = ct),_)
-      equation
-        oattr1 = DAEUtil.setStartAttrOption(SOME(attr),inExp);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
-
-    case (BackendDAE.VAR(values = NONE()),NONE()) then inVar;
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = NONE(),
-              comment = s,
-              connectorType = ct),_)
-      equation
-        attr = getVariableAttributefromType(d);
-        oattr1 = DAEUtil.setStartAttrOption(SOME(attr),inExp);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
-  end match;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+  oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
+  oattr := DAEUtil.setStartAttrOption(oattr, inExp);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
 end setVarStartValueOption;
 
 public function setVarStartOrigin "author: Frenkel TUD
@@ -313,57 +214,25 @@ public function setVarStartOrigin "author: Frenkel TUD
   input BackendDAE.Var inVar;
   input Option<DAE.Exp> startOrigin;
   output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef a;
+  BackendDAE.VarKind b;
+  DAE.VarDirection c;
+  DAE.VarParallelism prl;
+  BackendDAE.Type d;
+  Option<DAE.Exp> e;
+  Option<Values.Value> f;
+  list<DAE.Dimension> g;
+  DAE.ElementSource source;
+  DAE.VariableAttributes attr;
+  Option<DAE.VariableAttributes> oattr;
+  Option<SCode.Comment> s;
+  DAE.ConnectorType ct;
 algorithm
-  outVar := match (inVar,startOrigin)
-    local
-      DAE.ComponentRef a;
-      BackendDAE.VarKind b;
-      DAE.VarDirection c;
-      DAE.VarParallelism prl;
-      BackendDAE.Type d;
-      Option<DAE.Exp> e;
-      Option<Values.Value> f;
-      list<DAE.Dimension> g;
-      DAE.ElementSource source;
-      DAE.VariableAttributes attr;
-      Option<DAE.VariableAttributes> oattr1;
-      Option<SCode.Comment> s;
-      DAE.ConnectorType ct;
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = SOME(attr),
-              comment = s,
-              connectorType = ct),_)
-      equation
-        oattr1 = DAEUtil.setStartOrigin(SOME(attr),startOrigin);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = NONE(),
-              comment = s,
-              connectorType = ct),_)
-      equation
-        attr = getVariableAttributefromType(d);
-        oattr1 = DAEUtil.setStartOrigin(SOME(attr),startOrigin);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
-
-  end match;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+  oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
+  oattr := DAEUtil.setStartOrigin(oattr, startOrigin);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
 end setVarStartOrigin;
 
 public function setVarAttributes "sets the variable attributes of a variable.
@@ -506,6 +375,16 @@ algorithm
    end matchcontinue;
 end varStartValueOption;
 
+public function varHasStartValue
+  input BackendDAE.Var inVar;
+  output Boolean outHasStartValue;
+protected
+  Option<DAE.VariableAttributes> attr;
+algorithm
+  BackendDAE.VAR(values = attr) := inVar;
+  outHasStartValue := DAEUtil.hasStartAttr(attr);
+end varHasStartValue;
+    
 public function varStartOrigin
 "author: Frenkel TUD
   Returns the StartOrigin of a variable."
@@ -591,59 +470,25 @@ public function setVarStateSelect "author: Frenkel TUD
   input BackendDAE.Var inVar;
   input DAE.StateSelect stateSelect;
   output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef a;
+  BackendDAE.VarKind b;
+  DAE.VarDirection c;
+  DAE.VarParallelism prl;
+  BackendDAE.Type d;
+  Option<DAE.Exp> e;
+  Option<Values.Value> f;
+  list<DAE.Dimension> g;
+  DAE.ElementSource source;
+  DAE.VariableAttributes attr;
+  Option<DAE.VariableAttributes> oattr;
+  Option<SCode.Comment> s;
+  DAE.ConnectorType ct;
 algorithm
-  outVar := match (inVar,stateSelect)
-    local
-      DAE.ComponentRef a;
-      BackendDAE.VarKind b;
-      DAE.VarDirection c;
-      DAE.VarParallelism prl;
-      BackendDAE.Type d;
-      Option<DAE.Exp> e;
-      Option<Values.Value> f;
-      list<DAE.Dimension> g;
-      DAE.ElementSource source;
-      DAE.VariableAttributes attr;
-      Option<DAE.VariableAttributes> oattr;
-      Option<SCode.Comment> s;
-      DAE.ConnectorType ct;
-      Boolean fixed;
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = SOME(attr),
-              comment = s,
-              connectorType = ct),_)
-      equation
-        oattr = DAEUtil.setStateSelect(SOME(attr),stateSelect);
-      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr,s,ct);
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = NONE(),
-              comment = s,
-              connectorType = ct),_)
-      equation
-        attr = getVariableAttributefromType(d);
-        oattr = DAEUtil.setStateSelect(SOME(attr),stateSelect);
-      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr,s,ct);
-
-
-  end match;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+  oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
+  oattr := DAEUtil.setStateSelect(oattr, stateSelect);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
 end setVarStateSelect;
 
 public function varStateDerivative
@@ -729,113 +574,56 @@ public function setVarFinal "author: Frenkel TUD
   input BackendDAE.Var inVar;
   input Boolean finalPrefix;
   output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef a;
+  BackendDAE.VarKind b;
+  DAE.VarDirection c;
+  DAE.VarParallelism prl;
+  BackendDAE.Type d;
+  Option<DAE.Exp> e;
+  Option<Values.Value> f;
+  list<DAE.Dimension> g;
+  DAE.ElementSource source;
+  DAE.VariableAttributes attr;
+  Option<DAE.VariableAttributes> oattr;
+  Option<SCode.Comment> s;
+  DAE.ConnectorType ct;
 algorithm
-  outVar := match (inVar,finalPrefix)
-    local
-      DAE.ComponentRef a;
-      BackendDAE.VarKind b;
-      DAE.VarDirection c;
-      DAE.VarParallelism prl;
-      BackendDAE.Type d;
-      Option<DAE.Exp> e;
-      Option<Values.Value> f;
-      list<DAE.Dimension> g;
-      DAE.ElementSource source;
-      DAE.VariableAttributes attr;
-      Option<DAE.VariableAttributes> oattr1;
-      Option<SCode.Comment> s;
-      DAE.ConnectorType ct;
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = NONE(),
-              comment = s,
-              connectorType = ct),_)
-      equation
-        attr = getVariableAttributefromType(d);
-        oattr1 = DAEUtil.setFinalAttr(SOME(attr),finalPrefix);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = SOME(attr),
-              comment = s,
-              connectorType = ct),_)
-      equation
-        oattr1 = DAEUtil.setFinalAttr(SOME(attr),finalPrefix);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
-  end match;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+  oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
+  oattr := DAEUtil.setFinalAttr(oattr, finalPrefix);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
 end setVarFinal;
 
 public function setVarMinMax "author: Frenkel TUD
   Sets the minmax attribute of a variable."
   input BackendDAE.Var inVar;
-  input tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+  input Option<DAE.Exp> inMin;
+  input Option<DAE.Exp> inMax;
   output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef a;
+  BackendDAE.VarKind b;
+  DAE.VarDirection c;
+  DAE.VarParallelism prl;
+  BackendDAE.Type d;
+  Option<DAE.Exp> e;
+  Option<Values.Value> f;
+  list<DAE.Dimension> g;
+  DAE.ElementSource source;
+  DAE.VariableAttributes attr;
+  Option<DAE.VariableAttributes> oattr;
+  Option<SCode.Comment> s;
+  DAE.ConnectorType ct;
 algorithm
-  outVar := match (inVar,minMax)
-    local
-      DAE.ComponentRef a;
-      BackendDAE.VarKind b;
-      DAE.VarDirection c;
-      DAE.VarParallelism prl;
-      BackendDAE.Type d;
-      Option<DAE.Exp> e,min,max;
-      Option<Values.Value> f;
-      list<DAE.Dimension> g;
-      DAE.ElementSource source;
-      DAE.VariableAttributes attr;
-      Option<DAE.VariableAttributes> oattr1;
-      Option<SCode.Comment> s;
-      DAE.ConnectorType ct;
-    case (_,(NONE(),NONE())) then inVar;
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = NONE(),
-              comment = s,
-              connectorType = ct), (min, max))
-      equation
-        attr = getVariableAttributefromType(d);
-        oattr1 = DAEUtil.setMinMax(SOME(attr),min,max);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = SOME(attr),
-              comment = s,
-              connectorType = ct), (min, max))
-      equation
-        oattr1 = DAEUtil.setMinMax(SOME(attr),min,max);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
-  end match;
+  if isSome(inMin) or isSome(inMax) then 
+    BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+    oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
+    oattr := DAEUtil.setMinMax(oattr, inMin, inMax);
+    outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
+  else
+    outVar := inVar;
+  end if;
 end setVarMinMax;
 
 public function setUnit "author: jhagemann
@@ -843,56 +631,25 @@ public function setUnit "author: jhagemann
   input BackendDAE.Var inVar;
   input DAE.Exp inUnit;
   output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef a;
+  BackendDAE.VarKind b;
+  DAE.VarDirection c;
+  DAE.VarParallelism prl;
+  BackendDAE.Type d;
+  Option<DAE.Exp> e;
+  Option<Values.Value> f;
+  list<DAE.Dimension> g;
+  DAE.ElementSource source;
+  DAE.VariableAttributes attr;
+  Option<DAE.VariableAttributes> oattr;
+  Option<SCode.Comment> s;
+  DAE.ConnectorType ct;
 algorithm
-  outVar := match (inVar,inUnit)
-    local
-      DAE.ComponentRef a;
-      BackendDAE.VarKind b;
-      DAE.VarDirection c;
-      DAE.VarParallelism prl;
-      BackendDAE.Type d;
-      Option<DAE.Exp> e,min,max;
-      Option<Values.Value> f;
-      list<DAE.Dimension> g;
-      DAE.ElementSource source;
-      DAE.VariableAttributes attr;
-      Option<DAE.VariableAttributes> oattr1;
-      Option<SCode.Comment> s;
-      DAE.ConnectorType ct;
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = NONE(),
-              comment = s,
-              connectorType = ct), _)
-      equation
-        attr = getVariableAttributefromType(d);
-        oattr1 = DAEUtil.setUnitAttr(SOME(attr),inUnit);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = SOME(attr),
-              comment = s,
-              connectorType = ct), _)
-      equation
-        oattr1 = DAEUtil.setUnitAttr(SOME(attr),inUnit);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
-  end match;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+  oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
+  oattr := DAEUtil.setUnitAttr(oattr, inUnit);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
 end setUnit;
 
 public function varNominalValue
@@ -912,56 +669,25 @@ public function setVarNominalValue "author: Frenkel TUD
   input BackendDAE.Var inVar;
   input DAE.Exp inExp;
   output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef a;
+  BackendDAE.VarKind b;
+  DAE.VarDirection c;
+  DAE.VarParallelism prl;
+  BackendDAE.Type d;
+  Option<DAE.Exp> e;
+  Option<Values.Value> f;
+  list<DAE.Dimension> g;
+  DAE.ElementSource source;
+  DAE.VariableAttributes attr;
+  Option<DAE.VariableAttributes> oattr;
+  Option<SCode.Comment> s;
+  DAE.ConnectorType ct;
 algorithm
-  outVar := match (inVar,inExp)
-    local
-      DAE.ComponentRef a;
-      BackendDAE.VarKind b;
-      DAE.VarDirection c;
-      DAE.VarParallelism prl;
-      BackendDAE.Type d;
-      Option<DAE.Exp> e;
-      Option<Values.Value> f;
-      list<DAE.Dimension> g;
-      DAE.ElementSource source;
-      DAE.VariableAttributes attr;
-      Option<DAE.VariableAttributes> oattr1;
-      Option<SCode.Comment> s;
-      DAE.ConnectorType ct;
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = NONE(),
-              comment = s,
-              connectorType = ct),_)
-      equation
-        attr = getVariableAttributefromType(d);
-        oattr1 = DAEUtil.setNominalAttr(SOME(attr),inExp);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = SOME(attr),
-              comment = s,
-              connectorType = ct),_)
-      equation
-        oattr1 = DAEUtil.setNominalAttr(SOME(attr),inExp);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
-  end match;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+  oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
+  oattr := DAEUtil.setNominalAttr(oattr, inExp);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
 end setVarNominalValue;
 
 public function varType "author: PA
@@ -1840,6 +1566,8 @@ end hasVarEvaluateAnnotationOrFinal;
 public function hasVarEvaluateAnnotationOrFinalOrProtected
   input BackendDAE.Var inVar;
   output Boolean select;
+protected
+  DAE.ComponentRef cref;
 algorithm
   select := isFinalOrProtectedVar(inVar) or hasVarEvaluateAnnotation(inVar);
 end hasVarEvaluateAnnotationOrFinalOrProtected;
@@ -1869,6 +1597,19 @@ algorithm
     else false;
   end match;
 end hasAnnotation;
+
+public function getNamedAnnotation
+  "Returns the value of the given annotation, or fails if the variable doesn't
+   have the annotation."
+  input BackendDAE.Var inVar;
+  input String inName;
+  output Absyn.Exp outValue;
+protected
+  SCode.Annotation ann;
+algorithm
+  BackendDAE.VAR(comment = SOME(SCode.COMMENT(annotation_ = SOME(ann)))) := inVar;
+  outValue := SCode.getNamedAnnotation(ann, inName);
+end getNamedAnnotation;
 
 public function getAnnotationComment"gets the annotation comment, if there is one"
   input BackendDAE.Var inVar;
@@ -2464,9 +2205,9 @@ algorithm
   BackendDAE.VARIABLES(crefIdxLstArr,varArr,bucketSize,numberOfVars) := inVarArray;
   BackendDAE.VARIABLE_ARRAY(n1,size1,varOptArr) := varArr;
   crefIdxLstArr1 := arrayCreate(bucketSize, {});
-  crefIdxLstArr1 := Util.arrayCopy(crefIdxLstArr, crefIdxLstArr1);
+  crefIdxLstArr1 := Array.copy(crefIdxLstArr, crefIdxLstArr1);
   varOptArr1 := arrayCreate(size1, NONE());
-  varOptArr1 := Util.arrayCopy(varOptArr, varOptArr1);
+  varOptArr1 := Array.copy(varOptArr, varOptArr1);
   outVarArray := BackendDAE.VARIABLES(crefIdxLstArr1,BackendDAE.VARIABLE_ARRAY(n1,size1,varOptArr1),bucketSize,numberOfVars);
 end copyVariables;
 
@@ -2528,7 +2269,7 @@ algorithm
         expandsize = realInt(rexpandsize);
         expandsize_1 = intMax(expandsize, 1);
         newsize = expandsize_1 + size;
-        arr_1 = Util.arrayExpand(expandsize_1, arr,NONE());
+        arr_1 = Array.expand(expandsize_1, arr,NONE());
         n_1 = n + 1;
         arr_2 = arrayUpdate(arr_1, n_1, SOME(v));
       then
@@ -3544,7 +3285,7 @@ algorithm
         size1 = noe + needed;
         true = intGt(size1,size);
         expandsize = size1-size;
-        arr_1 = Util.arrayExpand(expandsize, arr, NONE());
+        arr_1 = Array.expand(expandsize, arr, NONE());
       then
         BackendDAE.VARIABLES(hashvec,BackendDAE.VARIABLE_ARRAY(noe,size1,arr_1),bsize,n);
 
@@ -4749,176 +4490,119 @@ algorithm
     local
       BackendDAE.Var v,var,var1;
       Option<DAE.VariableAttributes> attr,attr1;
-      list<Option<DAE.Exp>> ominmax,ominmax1;
-      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+      Option<DAE.Exp> min1, min2, max1, max2;
       DAE.ComponentRef cr,cr1;
+
     case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),_)
       equation
         // minmax
-        ominmax = DAEUtil.getMinMax(attr);
-        ominmax1 = DAEUtil.getMinMax(attr1);
+        (min1, max1) = DAEUtil.getMinMaxValues(attr);
+        (min2, max2) = DAEUtil.getMinMaxValues(attr1);
         cr = varCref(v);
         cr1 = varCref(var);
-        minMax = mergeMinMax(negate,ominmax,ominmax1,cr,cr1);
-        var1 = setVarMinMax(var,minMax);
+        (min1, max1) = mergeMinMax(negate, min1, min2, max1, max2, cr, cr1);
+        var1 = setVarMinMax(var, min1, max1);
       then var1;
-    case(_,_,_) then inVar;
+
+    else inVar;
   end matchcontinue;
 end mergeMinMaxAttribute;
 
 protected function mergeMinMax
   input Boolean negate;
-  input list<Option<DAE.Exp>> ominmax;
-  input list<Option<DAE.Exp>> ominmax1;
+  input Option<DAE.Exp> inMin1;
+  input Option<DAE.Exp> inMin2;
+  input Option<DAE.Exp> inMax1;
+  input Option<DAE.Exp> inMax2;
   input DAE.ComponentRef cr;
   input DAE.ComponentRef cr1;
-  output tuple<Option<DAE.Exp>, Option<DAE.Exp>> outMinMax;
+  output Option<DAE.Exp> outMin;
+  output Option<DAE.Exp> outMax;
 algorithm
-  outMinMax :=
-  match (negate,ominmax,ominmax1,cr,cr1)
-    local
-      Option<DAE.Exp> omin1,omax1,omin2,omax2;
-      DAE.Exp min,max,min1,max1;
-      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
-    case (false,{omin1,omax1},{omin2,omax2},_,_)
-      equation
-        minMax = mergeMinMax1({omin1,omax1},{omin2,omax2});
-        checkMinMax(minMax,cr,cr1,negate);
-      then
-        minMax;
-    // in case of a=-b, min and max have to be changed and negated
-    case (true,{SOME(min),SOME(max)},{omin2,omax2},_,_)
-      equation
-        min1 = Expression.negate(min);
-        max1 = Expression.negate(max);
-        minMax = mergeMinMax1({SOME(max1),SOME(min1)},{omin2,omax2});
-        checkMinMax(minMax,cr,cr1,negate);
-      then
-        minMax;
-    case (true,{NONE(),SOME(max)},{omin2,omax2},_,_)
-      equation
-        max1 = Expression.negate(max);
-        minMax = mergeMinMax1({SOME(max1),NONE()},{omin2,omax2});
-        checkMinMax(minMax,cr,cr1,negate);
-      then
-        minMax;
-    case (true,{SOME(min),NONE()},{omin2,omax2},_,_)
-      equation
-        min1 = Expression.negate(min);
-        minMax = mergeMinMax1({NONE(),SOME(min1)},{omin2,omax2});
-        checkMinMax(minMax,cr,cr1,negate);
-      then
-        minMax;
-  end match;
+  // In case of a = -b, min and max have to be changed and negated.
+  outMin := if negate then Util.applyOption(inMin1, Expression.negate) else inMin1;
+  outMax := if negate then Util.applyOption(inMax1, Expression.negate) else inMax1;
+  outMin := mergeMin(outMin, inMin2);
+  outMax := mergeMax(outMax, inMax2);
+  checkMinMax(outMin, outMax, cr, cr1, negate);
 end mergeMinMax;
 
 protected function checkMinMax
-  input tuple<Option<DAE.Exp>, Option<DAE.Exp>> minmax;
+  input Option<DAE.Exp> inMin;
+  input Option<DAE.Exp> inMax;
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
   input Boolean negate;
 algorithm
-  _ :=
-  matchcontinue (minmax,cr1,cr2,negate)
+  _ := matchcontinue(inMin, inMax)
     local
       DAE.Exp min,max;
       String s,s1,s2,s3,s4,s5;
       Real rmin,rmax;
-    case ((SOME(min),SOME(max)),_,_,_)
+
+    case (SOME(min),SOME(max))
       equation
         rmin = Expression.expReal(min);
         rmax = Expression.expReal(max);
         true = realGt(rmin,rmax);
         s1 = ComponentReference.printComponentRefStr(cr1);
-        s2 = Util.if_(negate," = -"," = ");
+        s2 = if negate then " = -" else " = ";
         s3 = ComponentReference.printComponentRefStr(cr2);
         s4 = ExpressionDump.printExpStr(min);
         s5 = ExpressionDump.printExpStr(max);
         s = stringAppendList({"Alias variables ",s1,s2,s3," with invalid limits min ",s4," > max ",s5});
         Error.addMessage(Error.COMPILER_WARNING,{s});
-      then ();
+      then
+        ();
+
     // no error
-    else
-      ();
+    else ();
   end matchcontinue;
 end checkMinMax;
 
-protected function mergeMinMax1
-  input list<Option<DAE.Exp>> ominmax;
-  input list<Option<DAE.Exp>> ominmax1;
-  output tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+protected function mergeMin
+  input Option<DAE.Exp> inMin1;
+  input Option<DAE.Exp> inMin2;
+  output Option<DAE.Exp> outMin;
 algorithm
-  minMax :=
-  match (ominmax,ominmax1)
+  outMin := match(inMin1, inMin2)
     local
-      DAE.Exp min,max,min1,max1,min_2,max_2,smin,smax;
-    // (min,max),()
-    case ({SOME(min),SOME(max)},{})
-      then ((SOME(min),SOME(max)));
-    case ({SOME(min),SOME(max)},{NONE(),NONE()})
-      then ((SOME(min),SOME(max)));
-    // (min,),()
-    case ({SOME(min),NONE()},{})
-      then ((SOME(min),NONE()));
-    case ({SOME(min),NONE()},{NONE(),NONE()})
-      then ((SOME(min),NONE()));
-    // (,max),()
-    case ({NONE(),SOME(max)},{})
-      then ((NONE(),SOME(max)));
-    case ({NONE(),SOME(max)},{NONE(),NONE()})
-      then ((NONE(),SOME(max)));
-    // (min,),(min,)
-    case ({SOME(min),NONE()},{SOME(min1),NONE()})
-      equation
-        min_2 = Expression.expMaxScalar(min,min1);
-        (smin,_) = ExpressionSimplify.simplify(min_2);
-      then ((SOME(smin),NONE()));
-    // (,max),(,max)
-    case ({NONE(),SOME(max)},{NONE(),SOME(max1)})
-      equation
-        max_2 = Expression.expMinScalar(max,max1);
-        (smax,_) = ExpressionSimplify.simplify(max_2);
-      then ((NONE(),SOME(smax)));
-    // (min,),(,max)
-    case ({SOME(min),NONE()},{NONE(),SOME(max1)})
-      then ((SOME(min),SOME(max1)));
-    // (,max),(min,)
-    case ({NONE(),SOME(max)},{SOME(min1),NONE()})
-      then ((SOME(min1),SOME(max)));
-    // (,max),(min,max)
-    case ({NONE(),SOME(max)},{SOME(min1),SOME(max1)})
-      equation
-        max_2 = Expression.expMinScalar(max,max1);
-        (smax,_) = ExpressionSimplify.simplify(max_2);
-      then ((SOME(min1),SOME(smax)));
-    // (min,max),(,max)
-    case ({SOME(min),SOME(max)},{NONE(),SOME(max1)})
-      equation
-        max_2 = Expression.expMinScalar(max,max1);
-        (smax,_) = ExpressionSimplify.simplify(max_2);
-      then ((SOME(min),SOME(smax)));
-    // (min,),(min,max)
-    case ({SOME(min),NONE()},{SOME(min1),SOME(max1)})
-      equation
-        min_2 = Expression.expMaxScalar(min,min1);
-        (smin,_) = ExpressionSimplify.simplify(min_2);
-      then ((SOME(smin),SOME(max1)));
-    // (min,max),(min,)
-    case ({SOME(min),SOME(max)},{SOME(min1),NONE()})
-      equation
-        min_2 = Expression.expMaxScalar(min,min1);
-        (smin,_) = ExpressionSimplify.simplify(min_2);
-      then ((SOME(smin),SOME(max)));
-    // (min,max),(min,max)
-    case ({SOME(min),SOME(max)},{SOME(min1),SOME(max1)})
-      equation
-        min_2 = Expression.expMaxScalar(min,min1);
-        max_2 = Expression.expMinScalar(max,max1);
-        (smin,_) = ExpressionSimplify.simplify(min_2);
-        (smax,_) = ExpressionSimplify.simplify(max_2);
-      then ((SOME(smin),SOME(smax)));
+      DAE.Exp min1, min2, min;
+
+    case (SOME(min1), SOME(min2))
+      algorithm
+        min := Expression.expMaxScalar(min1, min2);
+        min := ExpressionSimplify.simplify(min);
+      then
+        SOME(min);
+
+    case (NONE(), _) then inMin2;
+    case (_, NONE()) then inMin1;
+    else inMin1;
   end match;
-end mergeMinMax1;
+end mergeMin;
+
+protected function mergeMax
+  input Option<DAE.Exp> inMax1;
+  input Option<DAE.Exp> inMax2;
+  output Option<DAE.Exp> outMax;
+algorithm
+  outMax := match(inMax1, inMax2)
+    local
+      DAE.Exp max1, max2, max;
+
+    case (SOME(max1), SOME(max2))
+      algorithm
+        max := Expression.expMinScalar(max1, max2);
+        max := ExpressionSimplify.simplify(max);
+      then
+        SOME(max);
+
+    case (NONE(), _) then inMax2;
+    case (_, NONE()) then inMax1;
+    else inMax1;
+  end match;
+end mergeMax;
 
 // protected function mergeDirection
 //   input BackendDAE.Var inAVar;

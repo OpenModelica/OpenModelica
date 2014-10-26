@@ -1632,7 +1632,7 @@ algorithm
     /* else-if branches are put as if branches in false branch */
     case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = eis,equationElseItems = fb),com,info,_)
       equation
-        (conditions,trueBranches) = Util.splitTuple2List((e,tb)::eis);
+        (conditions,trueBranches) = List.unzip((e,tb)::eis);
         trueEEquations = List.map1(trueBranches,translateEEquations,inIsInitial);
         fb_1 = translateEEquations(fb, inIsInitial);
       then

@@ -257,7 +257,7 @@ case _ then
       ;separator="\n")
       let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn;separator="\n")
       let index_ = listLength(seedVars)
-      let sp_size_index =  lengthListElements(splitTuple212List(sparsepattern))
+      let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
 
 
@@ -12040,7 +12040,7 @@ case _ then
   match matrixname
   case "A" then
       let &eachCrefParts = buffer ""
-      let sp_size_index =  lengthListElements(splitTuple212List(sparsepattern))
+      let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
       let leadindex = (sparsepattern |> (cref,indexes) hasindex index0 =>
       <<
@@ -12195,7 +12195,7 @@ case _ then
       ;separator="\n")
       let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn;separator="\n")
       let index_ = listLength(seedVars)
-      let sp_size_index =  lengthListElements(splitTuple212List(sparsepattern))
+      let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
 
 
@@ -12296,7 +12296,7 @@ template initialAnalyticJacobians(Integer indexJacobian, list<JacobianColumn> ja
            }
            >>
          case _ then
-          let sp_size_index =  lengthListElements(splitTuple212List(sparsepattern))
+          let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
           let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn;separator="\n")
           let tmpvarsSize = (jacobianColumn |> (_,vars,_) => listLength(vars);separator="\n")
           let index_ = listLength(seedVars)

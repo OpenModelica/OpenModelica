@@ -1575,7 +1575,7 @@ algorithm
 
         // get the last item in the source env
         sourceRef = FNode.child(lastScopeRef(inSourceEnv), inSourceName);
-        sourceScope = List.prepend(sourceRef, currentScope(inSourceEnv));
+        sourceScope = sourceRef :: currentScope(inSourceEnv);
 
         // get the last scope from target
         targetClassParentRef = lastScopeRef(inTargetClassEnv);
@@ -1594,7 +1594,7 @@ algorithm
         // parent the classRef
         FNode.addChildRef(targetClassParentRef, newTargetClassName, classRef);
         // update the source target scope
-        sourceRef = updateSourceTargetScope(sourceRef, List.prepend(classRef, currentScope(gclass)));
+        sourceRef = updateSourceTargetScope(sourceRef, classRef :: currentScope(gclass));
 
         // we never need to add the instance as inner!
         ih = inIH; // ih = InnerOuter.addClassIfInner(c, crefPrefix, gclass, inIH);

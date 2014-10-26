@@ -187,7 +187,7 @@ algorithm
 
         // Save the output variables, so that we can return their values when
         // we're done.
-        output_vars = List.filter(vars, DAEUtil.isOutputVar);
+        output_vars = List.filterOnTrue(vars, DAEUtil.isOutputVar);
 
         // Pair the input arguments to input parameters and sort the function
         // variables by dependencies.
@@ -218,7 +218,7 @@ algorithm
 
         // Save the output variables, so that we can return their values when
         // we're done.
-        output_vars = List.filter(vars, DAEUtil.isOutputVar);
+        output_vars = List.filterOnTrue(vars, DAEUtil.isOutputVar);
 
         // Pair the input arguments to input parameters and sort the function
         // variables by dependencies.
@@ -2650,11 +2650,11 @@ algorithm
 
     case ((DAE.VAR(binding = SOME(bind_exp), dims = dims), _), _)
       equation
-        (_, (_, _, arg as (_, deps, _))) = Expression.traverseExpBidir(
+        (_, arg as (_, deps, _)) = Expression.traverseExpBidir(
           bind_exp,
-          (getElementDependenciesTraverserEnter,
-           getElementDependenciesTraverserExit,
-           (inAllElements, {}, {})));
+          getElementDependenciesTraverserEnter,
+          getElementDependenciesTraverserExit,
+          (inAllElements, {}, {}));
         (_, (_, deps, _)) = List.mapFold(dims,
           getElementDependenciesFromDims, arg);
       then
@@ -2688,11 +2688,11 @@ algorithm
     case (_, _)
       equation
         dim_exp = Expression.dimensionSizeExp(inDimension);
-        (_, (_, _, arg)) = Expression.traverseExpBidir(
+        (_, arg) = Expression.traverseExpBidir(
           dim_exp,
-          (getElementDependenciesTraverserEnter,
-           getElementDependenciesTraverserExit,
-           inArg));
+          getElementDependenciesTraverserEnter,
+          getElementDependenciesTraverserExit,
+          inArg);
        then
         (inDimension, arg);
 
@@ -2704,11 +2704,13 @@ protected function getElementDependenciesTraverserEnter
   "Traverse function used by getElementDependencies to collect all dependencies
   for an element. The extra arguments are a list of all elements, a list of
   accumulated depencies and a list of iterators from enclosing for-loops."
-  input tuple<DAE.Exp, Arg> inTuple;
-  output tuple<DAE.Exp, Arg> outTuple;
+  input DAE.Exp inExp;
+  input Arg inArg;
+  output DAE.Exp outExp;
+  output Arg outArg;
   type Arg = tuple<list<FunctionVar>, list<FunctionVar>, list<DAE.Ident>>;
 algorithm
-  outTuple := matchcontinue(inTuple)
+  (outExp, outArg) := matchcontinue(inExp, inArg)
     local
       DAE.Exp exp;
       DAE.ComponentRef cref;
@@ -2719,44 +2721,46 @@ algorithm
       DAE.ReductionIterators riters;
 
     // Check if the crefs matches any of the iterators that might shadow a
-    // function variable, and don't add it as a depency if that's the case.
-    case ((exp as DAE.CREF(componentRef = DAE.CREF_IDENT(ident = iter)),
-        (all_el, accum_el, iters as _ :: _)))
+    // function variable, and don't add it as a dependency if that's the case.
+    case (exp as DAE.CREF(componentRef = DAE.CREF_IDENT(ident = iter)),
+        (all_el, accum_el, iters as _ :: _))
       equation
         true = List.isMemberOnTrue(iter, iters, stringEqual);
       then
-        ((exp, (all_el, accum_el, iters)));
+        (exp, (all_el, accum_el, iters));
 
     // Otherwise, try to delete the cref from the list of all elements. If that
     // succeeds, add it to the list of dependencies. Since we have deleted the
     // element from the list of all variables this ensures that the dependency
     // list only contains unique elements.
-    case ((exp as DAE.CREF(componentRef = cref), (all_el, accum_el, iters)))
+    case (exp as DAE.CREF(componentRef = cref), (all_el, accum_el, iters))
       equation
         (all_el, SOME(e)) = List.deleteMemberOnTrue(cref, all_el,
           isElementNamed);
       then
-        ((exp, (all_el, e :: accum_el, iters)));
+        (exp, (all_el, e :: accum_el, iters));
 
     // If we encounter a reduction, add the iterator to the iterator list so
     // that we know which iterators shadow function variables.
-    case ((exp as DAE.REDUCTION(iterators = riters), (all_el, accum_el, iters)))
+    case (exp as DAE.REDUCTION(iterators = riters), (all_el, accum_el, iters))
       equation
         iters = listAppend(List.map(riters, Expression.reductionIterName), iters);
       then
-        ((exp, (all_el, accum_el, iters)));
+        (exp, (all_el, accum_el, iters));
 
-    else inTuple;
+    else (inExp, inArg);
   end matchcontinue;
 end getElementDependenciesTraverserEnter;
 
 protected function getElementDependenciesTraverserExit
   "Exit traversal function used by getElementDependencies."
-  input tuple<DAE.Exp, Arg> inTuple;
-  output tuple<DAE.Exp, Arg> outTuple;
+  input DAE.Exp inExp;
+  input Arg inArg;
+  output DAE.Exp outExp;
+  output Arg outArg;
   type Arg = tuple<list<FunctionVar>, list<FunctionVar>, list<DAE.Ident>>;
 algorithm
-  outTuple := match(inTuple)
+  (outExp, outArg) := match(inExp, inArg)
     local
       DAE.Exp exp;
       list<FunctionVar> all_el, accum_el;
@@ -2765,13 +2769,13 @@ algorithm
 
     // If we encounter a reduction, make sure that its iterator matches the
     // first iterator in the iterator list, and if so remove it from the list.
-    case ((exp as DAE.REDUCTION(iterators = riters), (all_el, accum_el, iters)))
+    case (exp as DAE.REDUCTION(iterators = riters), (all_el, accum_el, iters))
       equation
         iters = compareIterators(listReverse(riters), iters);
       then
-        ((exp, (all_el, accum_el, iters)));
+        (exp, (all_el, accum_el, iters));
 
-    else inTuple;
+    else (inExp, inArg);
   end match;
 end getElementDependenciesTraverserExit;
 

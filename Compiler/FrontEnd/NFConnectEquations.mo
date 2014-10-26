@@ -237,7 +237,7 @@ protected function generateFlowEquations
    from a non-flow set. Only one equation is generated, but it has to consider
    whether the components were inside or outside connectors. This function
    creates a sum expression of all components (some of which will be negated),
-   and the returns the equation where this sum is equal to 0.0."
+   and then returns the equation where this sum is equal to 0.0."
   input list<Connector> inElements;
   output DAE.DAElist outDae;
 protected

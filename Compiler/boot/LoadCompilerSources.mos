@@ -223,6 +223,7 @@ if true then /* Suppress output */
     "../Main/Main.mo",
 
   // "Util";
+    "../Util/Array.mo",
   //  "../Util/AvlTree.mo",
     "../Util/AvlTreeString.mo",
     "../Util/BaseHashTable.mo",

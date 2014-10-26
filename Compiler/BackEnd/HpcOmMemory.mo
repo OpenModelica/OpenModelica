@@ -38,6 +38,7 @@ encapsulated package HpcOmMemory
   public import SimCode;
   public import SimCodeVar;
 
+  protected import Array;
   protected import BackendDAEUtil;
   protected import BackendDump;
   protected import BackendEquation;
@@ -739,7 +740,7 @@ encapsulated package HpcOmMemory
     input array<Option<SimCodeVar.SimVar>> iAllVarsMapping;
     output list<SimCodeVar.SimVar> oNotOptimizedVars;
   algorithm
-    ((oNotOptimizedVars,_)) := Util.arrayFold1(iScVarCLMapping, getNotOptimizedVarsByCacheLineMapping0, iAllVarsMapping, ({},1));
+    ((oNotOptimizedVars,_)) := Array.fold1(iScVarCLMapping, getNotOptimizedVarsByCacheLineMapping0, iAllVarsMapping, ({},1));
   end getNotOptimizedVarsByCacheLineMapping;
 
   protected function getNotOptimizedVarsByCacheLineMapping0 "author: marcusw
@@ -814,7 +815,7 @@ encapsulated package HpcOmMemory
     numOfSysComps := List.fold(iEqSystems, HpcOmTaskGraph.getNumberOfEqSystemComponents, 0);
     iCompNodeMapping := HpcOmTaskGraph.getSccNodeMapping(numOfSysComps, iTaskGraphMeta);
     tmpMapping := arrayCreate(arrayLength(inComps),{});
-    ((oMapping,_)) := Util.arrayFold3(varCompMapping, getNodeSimCodeVarMapping0, iCompNodeMapping, iEqSystems, iSCVarNameHashTable, (tmpMapping,1));
+    ((oMapping,_)) := Array.fold3(varCompMapping, getNodeSimCodeVarMapping0, iCompNodeMapping, iEqSystems, iSCVarNameHashTable, (tmpMapping,1));
   end getNodeSimCodeVarMapping;
 
   protected function getNodeSimCodeVarMapping0 "author: marcusw
@@ -956,7 +957,7 @@ encapsulated package HpcOmMemory
     scVarTaskMapping := arrayCreate(iNumScVars,-1);
     HpcOmTaskGraph.TASKGRAPHMETA(varCompMapping=varCompMapping) := iTaskGraphMeta;
     //iterate over all variables
-    ((oScVarTaskMapping,_)) := Util.arrayFold3(varCompMapping, getSimCodeVarNodeMapping0, iEqSystems, iVarNameSCVarIdxMapping, iCompNodeMapping, (scVarTaskMapping,1));
+    ((oScVarTaskMapping,_)) := Array.fold3(varCompMapping, getSimCodeVarNodeMapping0, iEqSystems, iVarNameSCVarIdxMapping, iCompNodeMapping, (scVarTaskMapping,1));
   end getSimCodeVarNodeMapping;
 
   protected function getSimCodeVarNodeMapping0 "author: marcusw
@@ -1047,9 +1048,9 @@ encapsulated package HpcOmMemory
     scVarTaskMapping := arrayCreate(arrayLength(iSCVarCLMapping),-1);
     HpcOmTaskGraph.TASKGRAPHMETA(varCompMapping=varCompMapping) := iTaskGraphMeta;
     //iterate over all variables
-    ((tmpCLTaskMapping,oScVarTaskMapping,_)) := Util.arrayFold3(varCompMapping, getCacheLineTaskMapping0, iEqSystems, iVarNameSCVarIdxMapping, iSCVarCLMapping, (tmpCLTaskMapping,scVarTaskMapping,1));
-    tmpCLTaskMapping := Util.arrayMap1(tmpCLTaskMapping, List.sort, intLt);
-    oCLTaskMapping := Util.arrayMap1(tmpCLTaskMapping, List.sortedUnique, intEq);
+    ((tmpCLTaskMapping,oScVarTaskMapping,_)) := Array.fold3(varCompMapping, getCacheLineTaskMapping0, iEqSystems, iVarNameSCVarIdxMapping, iSCVarCLMapping, (tmpCLTaskMapping,scVarTaskMapping,1));
+    tmpCLTaskMapping := Array.map1(tmpCLTaskMapping, List.sort, intLt);
+    oCLTaskMapping := Array.map1(tmpCLTaskMapping, List.sortedUnique, intEq);
   end getCacheLineTaskMapping;
 
   protected function getCacheLineTaskMapping0 "author: marcusw
@@ -1136,8 +1137,8 @@ encapsulated package HpcOmMemory
           knownEdges = arrayCreate(iNumberOfNodes,{});
           (tmpGraphInfo,(_,_),(_,clGroupNodeIdx)) = GraphML.addGroupNode("CL_GoupNode", 1, false, "CL", iGraphInfo);
           tmpGraphInfo = List.fold5(cacheLinesFloat, appendCacheLineMapToGraph, cacheVariables, iSchedulerInfo, (clGroupNodeIdx,iAttributeIdc), iScVarTaskMapping, iVarNameSCVarIdxMapping, tmpGraphInfo);
-          //((_,knownEdges,tmpGraphInfo)) = Util.arrayFold3(arrayGet(iEqSimCodeVarMapping,1), appendCacheLineEdgesToGraphTraverse, ieqCompMapping, iCompNodeMapping, iScVarTaskMapping, (1,knownEdges,tmpGraphInfo));
-          ((_,tmpGraphInfo)) = Util.arrayFold(iNodeSimCodeVarMapping, appendCacheLineEdgeToGraphSolvedVar, (1,tmpGraphInfo));
+          //((_,knownEdges,tmpGraphInfo)) = Array.fold3(arrayGet(iEqSimCodeVarMapping,1), appendCacheLineEdgesToGraphTraverse, ieqCompMapping, iCompNodeMapping, iScVarTaskMapping, (1,knownEdges,tmpGraphInfo));
+          ((_,tmpGraphInfo)) = Array.fold(iNodeSimCodeVarMapping, appendCacheLineEdgeToGraphSolvedVar, (1,tmpGraphInfo));
         then tmpGraphInfo;
       case(_,_,_,_,_,_,_,_,_,_,_,GraphML.GRAPHINFO(graphCount=graphCount))
         equation
@@ -1371,7 +1372,7 @@ encapsulated package HpcOmMemory
     input array<list<Integer>> iMapping;
   algorithm
     print("Node - SimCodeVar - Mapping\n------------------\n");
-    _ := Util.arrayFold(iMapping, printNodeSimCodeVarMapping0,1);
+    _ := Array.fold(iMapping, printNodeSimCodeVarMapping0,1);
     print("\n");
   end printNodeSimCodeVarMapping;
 
@@ -1388,7 +1389,7 @@ encapsulated package HpcOmMemory
     input array<Integer> iMapping;
   algorithm
     print("----------------------\nSCVar - Task - Mapping\n----------------------\n");
-    _ := Util.arrayFold(iMapping, printScVarTaskMapping0, 1);
+    _ := Array.fold(iMapping, printScVarTaskMapping0, 1);
     print("\n");
   end printScVarTaskMapping;
 
@@ -1404,7 +1405,7 @@ encapsulated package HpcOmMemory
   protected function printCacheLineTaskMapping
     input array<list<Integer>> iCacheLineTaskMapping;
   algorithm
-    _ := Util.arrayFold(iCacheLineTaskMapping, printCacheLineTaskMapping0, 1);
+    _ := Array.fold(iCacheLineTaskMapping, printCacheLineTaskMapping0, 1);
   end printCacheLineTaskMapping;
 
   protected function printCacheLineTaskMapping0
@@ -1420,7 +1421,7 @@ encapsulated package HpcOmMemory
     input array<Integer> iMapping;
   algorithm
     print("--------------------\nScc - Node - Mapping\n--------------------\n");
-    _ := Util.arrayFold(iMapping, printSccNodeMapping0, 1);
+    _ := Array.fold(iMapping, printSccNodeMapping0, 1);
   end printSccNodeMapping;
 
   protected function printSccNodeMapping0
@@ -1842,7 +1843,7 @@ encapsulated package HpcOmMemory
     BackendDAE.VARIABLES(varArr=varArr,numberOfVars=numberOfVars) := orderedVars;
     BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr) := varArr;
     tmpMapping := arrayCreate(numberOfVars,-1);
-    ((oMapping,_)) := Util.arrayFold1(varOptArr,getVarSCVarMapping0,iHt,(tmpMapping,1));
+    ((oMapping,_)) := Array.fold1(varOptArr,getVarSCVarMapping0,iHt,(tmpMapping,1));
   end getVarSCVarMapping;
 
   protected function getVarSCVarMapping0
@@ -1881,7 +1882,7 @@ encapsulated package HpcOmMemory
     array<Integer> tmpMapping;
   algorithm
     tmpMapping := arrayCreate(iNumScVars, -1);
-    ((oSCVarVarMapping,_)) := Util.arrayFold(iVarSCVarMapping, getSCVarVarMapping0, (tmpMapping,1));
+    ((oSCVarVarMapping,_)) := Array.fold(iVarSCVarMapping, getSCVarVarMapping0, (tmpMapping,1));
   end getSCVarVarMapping;
 
   protected function getSCVarVarMapping0
@@ -1906,7 +1907,7 @@ encapsulated package HpcOmMemory
   algorithm
     //print("transposeCacheLineTaskMapping with nodeCount: " +& intString(iNumberOfTasks) +& "\n");
     taskCLMapping := arrayCreate(iNumberOfTasks,{});
-    ((oCLTaskMappingT,_)) := Util.arrayFold(iCLTaskMapping,transposeCacheLineTaskMapping0,(taskCLMapping,1));
+    ((oCLTaskMappingT,_)) := Array.fold(iCLTaskMapping,transposeCacheLineTaskMapping0,(taskCLMapping,1));
     //print("transposeCacheLineTaskMapping finished\n");
   end transposeCacheLineTaskMapping;
 
@@ -1951,7 +1952,7 @@ encapsulated package HpcOmMemory
     input array<list<Integer>> iTaskCLMapping;
   algorithm
     //Iterate over all tasks (nodes in graph)
-    _ := Util.arrayFold4(iSchedulerInfo, evaluateCacheBehaviour0, iSchedulerInfo, iGraphData, iCLTaskMapping, iTaskCLMapping, 1);
+    _ := Array.fold4(iSchedulerInfo, evaluateCacheBehaviour0, iSchedulerInfo, iGraphData, iCLTaskMapping, iTaskCLMapping, 1);
   end evaluateCacheBehaviour;
 
   protected function evaluateCacheBehaviour0

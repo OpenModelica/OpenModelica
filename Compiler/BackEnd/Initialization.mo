@@ -45,6 +45,7 @@ public import FCore;
 public import HashSet;
 public import Util;
 
+protected import Array;
 protected import BackendDAEEXT;
 protected import BackendDAEOptimize;
 protected import BackendDAETransform;
@@ -662,117 +663,82 @@ protected
   list<BackendDAE.EqSystem> eqs;
 algorithm
   BackendDAE.DAE(eqs=eqs) := inBackendDAE;
-  outWarning := warnAboutIterationVariablesWithDefaultZeroStartAttribute0(eqs);
+  outWarning := warnAboutIterationVariablesWithDefaultZeroStartAttribute0(eqs,
+    Flags.isSet(Flags.INITIALIZATION));
 end warnAboutIterationVariablesWithDefaultZeroStartAttribute;
 
 protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute0 "author: lochel"
   input list<BackendDAE.EqSystem> inEqs;
-  output Boolean outWarning;
+  input Boolean inShowWarnings;
+  output Boolean outWarning := false;
+protected
+  Boolean warn;
 algorithm
-  outWarning := match(inEqs)
-    local
-      Boolean b1, b2;
-      BackendDAE.EqSystem eq;
-      list<BackendDAE.EqSystem> eqs;
-    case ({}) then false;
-    case (eq::eqs) equation
-      b1 = warnAboutIterationVariablesWithDefaultZeroStartAttribute0(eqs);
-      b2 = warnAboutIterationVariablesWithDefaultZeroStartAttribute1(eq);
-    then (b1 or b2);
-  end match;
+  for eqs in inEqs loop
+    warn := warnAboutIterationVariablesWithDefaultZeroStartAttribute1(eqs, inShowWarnings);
+    outWarning := outWarning or warn;
+
+    // If we found an iteration variable with default zero start attribute but
+    // +initialization wasn't given, we don't need to continue searching.
+    if warn and not inShowWarnings then
+      return;
+    end if;
+  end for;
 end warnAboutIterationVariablesWithDefaultZeroStartAttribute0;
 
 protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute1 "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
-  output Boolean outWarning;
+  input Boolean inShowWarnings;
+  output Boolean outWarning := false "True if any warnings were printed.";
 protected
-  BackendDAE.Variables vars;
   BackendDAE.StrongComponents comps;
+  BackendDAE.Variables ordered_vars;
+  list<Integer> vlst := {};
+  list<BackendDAE.Var> vars;
+  String err;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,
-                      matching=BackendDAE.MATCHING(comps=comps)) := inEqSystem;
-  outWarning := warnAboutIterationVariablesWithDefaultZeroStartAttribute2(comps, vars);
+  BackendDAE.EQSYSTEM(orderedVars = ordered_vars,
+                      matching = BackendDAE.MATCHING(comps = comps)) := inEqSystem;
+
+  // Go through all the strongly connected components.
+  for comp in comps loop
+    // Get the component's variables and select the correct error message.
+    (err, vlst) := matchcontinue(comp)
+      case BackendDAE.EQUATIONSYSTEM(vars = vlst, jacType = BackendDAE.JAC_NONLINEAR())
+        then ("nonlinear equation system:\n", vlst);
+      case BackendDAE.EQUATIONSYSTEM(vars = vlst, jacType = BackendDAE.JAC_GENERIC())
+        then ("equation system w/o analytic Jacobian:\n", vlst);
+      case BackendDAE.EQUATIONSYSTEM(vars = vlst, jacType = BackendDAE.JAC_NO_ANALYTIC())
+        then ("equation system w/o analytic Jacobian:\n", vlst);
+      case BackendDAE.TORNSYSTEM(tearingvars = vlst, linear = false)
+        then ("torn nonlinear equation system:\n", vlst);
+      else ("", {});
+      // If the component is none of these types, do nothing.
+    end matchcontinue;
+
+    if not List.isEmpty(vlst) then
+      // Filter out the variables that are missing start values.
+      vars := List.map1r(vlst, BackendVariable.getVarAt, ordered_vars);
+      //vars := list(BackendVariable.getVarAt(ordered_vars, idx) for idx in vlst);
+      vars := list(v for v guard(not BackendVariable.varHasStartValue(v)) in vars);
+      //vars := List.filterOnTrue(vars, BackendVariable.varHasStartValue);
+
+      // Print a warning if we found any variables with missing start values.
+      if not List.isEmpty(vars) then
+        outWarning := true;
+
+        if inShowWarnings then
+          Error.addCompilerWarning("Iteration variables with default zero start attribute in "
+            + err + warnAboutVars2(vars));
+        else
+          // If +initialization wasn't given we don't need to continue searching
+          // once we've found one.
+          return;
+        end if;
+      end if;
+    end if;
+  end for;
 end warnAboutIterationVariablesWithDefaultZeroStartAttribute1;
-
-protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute2 "author: lochel"
-  input BackendDAE.StrongComponents inComps;
-  input BackendDAE.Variables inVars;
-  output Boolean outWarning;
-algorithm
-  outWarning := matchcontinue(inComps, inVars)
-    local
-      BackendDAE.StrongComponents rest;
-      list<BackendDAE.Var> varlst;
-      list<Integer> vlst;
-      Boolean b;
-
-    case ({}, _) then false;
-
-    case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_NONLINEAR())::rest, _) equation
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
-      varlst = filterVarsWithoutStartValue(varlst);
-      false = List.isEmpty(varlst);
-
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in nonlinear equation system:\n" +& warnAboutVars2(varlst));
-      _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
-    then true;
-
-     case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_GENERIC())::rest, _) equation
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
-      varlst = filterVarsWithoutStartValue(varlst);
-      false = List.isEmpty(varlst);
-
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in equation system w/o analytic Jacobian:\n" +& warnAboutVars2(varlst));
-      _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
-    then true;
-
-    case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_NO_ANALYTIC())::rest, _) equation
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
-      varlst = filterVarsWithoutStartValue(varlst);
-      false = List.isEmpty(varlst);
-
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in equation system w/o analytic Jacobian:\n" +& warnAboutVars2(varlst));
-      _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
-    then true;
-
-    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, linear=false)::rest, _) equation
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
-      varlst = filterVarsWithoutStartValue(varlst);
-      false = List.isEmpty(varlst);
-
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in torn nonlinear equation system:\n" +& warnAboutVars2(varlst));
-      _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
-    then true;
-
-    case (_::rest, _) equation
-      b = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
-    then b;
-  end matchcontinue;
-end warnAboutIterationVariablesWithDefaultZeroStartAttribute2;
-
-function filterVarsWithoutStartValue "author: lochel"
-  input list<BackendDAE.Var> inVars;
-  output list<BackendDAE.Var> outVars;
-algorithm
-  outVars := matchcontinue(inVars)
-    local
-      BackendDAE.Var v;
-      list<BackendDAE.Var> vars;
-
-    case ({}) then {};
-
-    case (v::vars) equation
-      _ = BackendVariable.varStartValueFail(v);
-      vars = filterVarsWithoutStartValue(vars);
-    then vars;
-
-    case (v::vars) equation
-      vars = filterVarsWithoutStartValue(vars);
-    then v::vars;
-
-    else fail();
-  end matchcontinue;
-end filterVarsWithoutStartValue;
 
 protected function warnAboutVars2 "author: lochel
   TODO: Replace this with an general BackendDump implementation."
@@ -1295,7 +1261,7 @@ algorithm
     case (_, _, _, _) equation
       true = (inNAddEqns > 0) "just to be careful";
       m = arrayCreate(inNEqns+inNAddEqns, {});
-      m = Util.arrayCopy(inM, m);
+      m = Array.copy(inM, m);
       newEqIndices = List.intRange2(inNEqns+1, inNEqns+inNAddEqns);
       m = List.fold1(newEqIndices, squareIncidenceMatrix1, inInitVarIndices, m);
     then m;

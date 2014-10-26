@@ -3566,7 +3566,7 @@ case _ then
     >>
   case _ then
       let &eachCrefParts = buffer ""
-      let sp_size_index =  lengthListElements(splitTuple212List(sparsepattern))
+      let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
       let leadindex = (sparsepattern |> (cref,indexes) hasindex index0 =>
       <<

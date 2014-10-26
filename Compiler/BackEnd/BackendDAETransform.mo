@@ -103,7 +103,7 @@ algorithm
         comps = tarjanAlgorithm(mt,ass2);
         markarray = arrayCreate(BackendDAEUtil.equationArraySize(eqs),-1);
         comps1 = analyseStrongComponentsScalar(comps,syst,shared,ass1,ass2,mapEqnIncRow,mapIncRowEqn,1,markarray,{});
-        ass1 = varAssignmentNonScalar(1,arrayLength(ass1),ass1,mapIncRowEqn,{});
+        ass1 = varAssignmentNonScalar(ass1,mapIncRowEqn);
         //noscalass2 = eqnAssignmentNonScalar(1,arrayLength(mapEqnIncRow),mapEqnIncRow,ass2,{});
       then
         // Frenkel TUD: Do not hand over the scalar incidence Matrix because following modules does not check if scalar or not
@@ -117,59 +117,36 @@ algorithm
 end strongComponentsScalar;
 
 public function eqnAssignmentNonScalar
-  input Integer index;
-  input Integer size;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> ass2;
-  input list<list<Integer>> iAcc;
-  output array<list<Integer>> oAcc;
+  output array<list<Integer>> outAcc;
+protected
+  list<Integer> elst, vlst;
+  list<list<Integer>> acc := {};
 algorithm
-  oAcc := matchcontinue(index,size,mapEqnIncRow,ass2,iAcc)
-    local
-      list<Integer> elst,vlst;
-    case (_,_,_,_,_)
-      equation
-        false = intGt(index,size);
-        elst = mapEqnIncRow[index];
-        vlst = List.map1r(elst,arrayGet,ass2);
-        vlst = List.select1(vlst,intGt,0);
-      then
-        eqnAssignmentNonScalar(index+1,size,mapEqnIncRow,ass2,vlst::iAcc);
-    else
-      then
-        listArray(listReverse(iAcc));
-  end matchcontinue;
+  for i in 1:arrayLength(mapEqnIncRow) loop
+    elst := mapEqnIncRow[i];
+    vlst := list(arrayGet(ass2, e) for e guard(arrayGet(ass2, e) > 0) in elst);
+  end for;
+
+  outAcc := listArray(listReverse(acc));
 end eqnAssignmentNonScalar;
 
 public function varAssignmentNonScalar
-  input Integer index;
-  input Integer size;
   input array<Integer> ass1;
   input array<Integer> mapIncRowEqn;
-  input list<Integer> iAcc;
-  output array<Integer> oAcc;
+  output array<Integer> outAcc;
+protected
+  Integer e;
+  list<Integer> acc := {};
 algorithm
-  oAcc := matchcontinue(index,size,ass1,mapIncRowEqn,iAcc)
-    local
-      Integer e;
-    case (_,_,_,_,_)
-      equation
-        false = intGt(index,size);
-        e = ass1[index];
-        true = intGt(e,0);
-        e = mapIncRowEqn[e];
-      then
-        varAssignmentNonScalar(index+1,size,ass1,mapIncRowEqn,e::iAcc);
-    case (_,_,_,_,_)
-      equation
-        false = intGt(index,size);
-        e = ass1[index];
-        false = intGt(e,0);
-        e = -1;
-      then
-        varAssignmentNonScalar(index+1,size,ass1,mapIncRowEqn,e::iAcc);
-    else listArray(listReverse(iAcc));
-  end matchcontinue;
+  for i in 1:arrayLength(ass1) loop
+    e := ass1[i];
+    e := if e > 0 then mapIncRowEqn[e] else -1;
+    acc := e :: acc;
+  end for;
+
+  outAcc := listArray(listReverse(acc));
 end varAssignmentNonScalar;
 
 protected function analyseStrongComponentsScalar"author: Frenkel TUD 2011-05
@@ -1376,144 +1353,124 @@ algorithm
   end match;
 end traverseBackendDAEExpsEqnLstLstWithSymbolicOperation;
 
-protected function traverseBackendDAEExpsWhenOperator
+protected function traverseBackendDAEExpsWhenOperator<ArgT>
 "author: Frenkel TUD 2010-11
   Traverse all expressions of a list of Equations. It is possible to change the equations
   and the multidim equations and the algorithms."
-  replaceable type Type_a subtypeof Any;
   input list<BackendDAE.WhenOperator> inReinitStmtLst;
   input FuncExpType func;
-  input Type_a inTypeA;
-  output list<BackendDAE.WhenOperator> outReinitStmtLst;
-  output Type_a outTypeA;
+  input ArgT inArg;
+  output list<BackendDAE.WhenOperator> outReinitStmtLst := {};
+  output ArgT outArg := inArg;
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+    input ArgT inArg;
     output DAE.Exp outExp;
-    output Type_a outA;
+    output ArgT outArg;
   end FuncExpType;
 algorithm
-  (outReinitStmtLst,outTypeA) := matchcontinue (inReinitStmtLst,func,inTypeA)
-    local
-      list<BackendDAE.WhenOperator> res,res1;
-      BackendDAE.WhenOperator wop;
-      DAE.Exp cond,cond1,msg,level,cre,exp;
-      DAE.ComponentRef cr,cr1;
-      DAE.ElementSource source;
-      Type_a ext_arg_1,ext_arg_2;
-      Absyn.Path functionName;
-      list<DAE.Exp> functionArgs;
+  for rs in inReinitStmtLst loop
+    rs := match(rs)
+      local
+        DAE.ComponentRef cr;
+        DAE.Exp cond, msg, level, exp;
+        DAE.ElementSource src;
 
-    case ({},_,_) then ({},inTypeA);
+      case BackendDAE.REINIT(cr, cond, src)
+        equation
+          (cond, outArg) = func(cond, outArg);
+          (DAE.CREF(componentRef = cr), outArg) = func(Expression.crefExp(cr), outArg);
+        then
+          BackendDAE.REINIT(cr, cond, src);
 
-    case (BackendDAE.REINIT(stateVar=cr,value=cond,source=source)::res,_,_)
-      equation
-        (res1,ext_arg_1) =  traverseBackendDAEExpsWhenOperator(res,func,inTypeA);
-        (cond1,ext_arg_2) = func(cond,ext_arg_1);
-        cre = Expression.crefExp(cr);
-        (DAE.CREF(componentRef=cr1),ext_arg_2) = func(cre,ext_arg_2);
-      then
-        (BackendDAE.REINIT(cr1,cond1,source)::res1,ext_arg_2);
+      case BackendDAE.ASSERT(cond, msg, level, src)
+        equation
+          (cond, outArg) = func(cond, outArg);
+        then
+          BackendDAE.ASSERT(cond, msg, level, src);
 
-    case (BackendDAE.ASSERT(condition=cond,message=msg,level=level,source=source)::res,_,_)
-      equation
-        (res1,ext_arg_1) =  traverseBackendDAEExpsWhenOperator(res,func,inTypeA);
-        (cond1,ext_arg_2) = func(cond,ext_arg_1);
-      then
-        (BackendDAE.ASSERT(cond1,msg,level,source)::res1,ext_arg_2);
+      case BackendDAE.NORETCALL(exp, src)
+        equation
+          (exp, outArg) = Expression.traverseExp(exp, func, outArg);
+        then
+          BackendDAE.NORETCALL(exp, src);
 
-    case (BackendDAE.NORETCALL(exp=exp,source=source)::res,_,_)
-      equation
-        (res1,ext_arg_1) =  traverseBackendDAEExpsWhenOperator(res,func,inTypeA);
-        (exp,ext_arg_2) = Expression.traverseExp(exp,func,ext_arg_1);
-      then
-        (BackendDAE.NORETCALL(exp,source)::res1,ext_arg_2);
+      else rs;
+    end match;
 
-    case (wop::res,_,_)
-      equation
-        (res1,ext_arg_1) =  traverseBackendDAEExpsWhenOperator(res,func,inTypeA);
-      then
-        (wop::res1,ext_arg_1);
-     case (_,_,_)
-      equation
-        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function traverseBackendDAEExpsWhenOperator failed");
-      then
-        fail();
-  end matchcontinue;
+    outReinitStmtLst := rs :: outReinitStmtLst;
+  end for;
+
+  outReinitStmtLst := listReverse(outReinitStmtLst);
 end traverseBackendDAEExpsWhenOperator;
 
-public function traverseBackendDAEExpsWhenClauseLst
+public function traverseBackendDAEExpsWhenClauseLst<ArgT>
 "author: Frenkel TUD 2010-11
   Traverse all expressions of a when clause list. It is possible to change the expressions"
-  replaceable type Type_a subtypeof Any;
   input list<BackendDAE.WhenClause> inWhenClauseLst;
   input FuncExpType func;
-  input Type_a inTypeA;
-  output list<BackendDAE.WhenClause> outWhenClauseLst;
-  output Type_a outTypeA;
+  input ArgT inArg;
+  output list<BackendDAE.WhenClause> outWhenClauseLst := {};
+  output ArgT outArg := inArg;
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+    input ArgT inArg;
     output DAE.Exp outExp;
-    output Type_a outA;
+    output ArgT outArg;
   end FuncExpType;
 algorithm
-  (outWhenClauseLst,outTypeA) := matchcontinue (inWhenClauseLst,func,inTypeA)
-    local
-      Option<Integer> elsindx;
-      list<BackendDAE.WhenOperator> reinitStmtLst,reinitStmtLst1;
-      DAE.Exp cond,cond1;
-      list<BackendDAE.WhenClause> wclst,wclst1;
-      Type_a ext_arg_1,ext_arg_2,ext_arg_3;
+  for wc in inWhenClauseLst loop
+    wc := matchcontinue(wc)
+      local
+        DAE.Exp cond;
+        list<BackendDAE.WhenOperator> reinit_lst;
+        Option<Integer> else_idx;
 
-    case ({},_,_) then ({},inTypeA);
+      case BackendDAE.WHEN_CLAUSE(cond, reinit_lst, else_idx)
+        equation
+          (cond, outArg) = func(cond, inArg);
+          (reinit_lst, outArg) = traverseBackendDAEExpsWhenOperator(reinit_lst, func, outArg);
+        then
+          BackendDAE.WHEN_CLAUSE(cond, reinit_lst, else_idx);
 
-    case (BackendDAE.WHEN_CLAUSE(cond,reinitStmtLst,elsindx)::wclst,_,_)
-      equation
-        (cond1,ext_arg_1) = func(cond,inTypeA);
-        (reinitStmtLst1,ext_arg_2) = traverseBackendDAEExpsWhenOperator(reinitStmtLst,func,ext_arg_1);
-        (wclst1,ext_arg_3) = traverseBackendDAEExpsWhenClauseLst(wclst,func,ext_arg_2);
-      then
-        (BackendDAE.WHEN_CLAUSE(cond1,reinitStmtLst1,elsindx)::wclst1,ext_arg_3);
-     case (_,_,_)
-      equation
-        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function traverseBackendDAEExpsWhenClauseLst failed");
-      then
-        fail();
-  end matchcontinue;
+      else
+        equation
+          Error.addInternalError("BackendDAETransform.mo: function
+            traverseBackendDAEExpsWhenClauseLst failed.");
+        then
+          fail();
+    end matchcontinue;
+
+    outWhenClauseLst := wc :: outWhenClauseLst;
+  end for;
+
+  outWhenClauseLst := listReverse(outWhenClauseLst);
 end traverseBackendDAEExpsWhenClauseLst;
 
-public function traverseBackendDAEExpsEqnList
+public function traverseBackendDAEExpsEqnList<ArgT>
 "author: Frenkel TUD 2010-11
   Traverse all expressions of a list of Equations. It is possible to change the equations
   and the multidim equations and the algorithms."
-  replaceable type Type_a subtypeof Any;
   input list<BackendDAE.Equation> inEquations;
   input FuncExpType func;
-  input Type_a inTypeA;
-  output list<BackendDAE.Equation> outEquations;
-  output Type_a outTypeA;
+  input ArgT inArg;
+  output list<BackendDAE.Equation> outEquations := {};
+  output ArgT outArg := inArg;
+
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+    input ArgT inArg;
     output DAE.Exp outExp;
-    output Type_a outA;
+    output ArgT outArg;
   end FuncExpType;
+protected
 algorithm
-  (outEquations,outTypeA):=
-  match (inEquations,func,inTypeA)
-    local
-      list<BackendDAE.Equation> eqns1,eqns;
-      BackendDAE.Equation e,e1;
-      Type_a ext_arg_1,ext_arg_2;
-    case ({},_,_) then ({},inTypeA);
-    case (e::eqns,_,_)
-      equation
-         (e1,ext_arg_1) = traverseBackendDAEExpsEqn(e,func,inTypeA);
-         (eqns1,ext_arg_2) = traverseBackendDAEExpsEqnList(eqns,func,ext_arg_1);
-      then
-        (e1::eqns1,ext_arg_2);
-  end match;
+  for eq in inEquations loop
+    (eq, outArg) := traverseBackendDAEExpsEqn(eq, func, outArg);
+    outEquations := eq :: outEquations;
+  end for;
+
+  outEquations := listReverse(outEquations);
 end traverseBackendDAEExpsEqnList;
 
 annotation(__OpenModelica_Interface="backend");

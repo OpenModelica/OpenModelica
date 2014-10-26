@@ -55,6 +55,7 @@ public import FCore;
 public import Util;
 
 protected import Algorithm;
+protected import Array;
 protected import BackendDAEOptimize;
 protected import BackendDAETransform;
 protected import BackendDump;
@@ -584,9 +585,9 @@ algorithm
     case (BackendDAE.MATCHING(ass1=ass1,ass2=ass2,comps=comps))
       equation
         cass1 = arrayCreate(arrayLength(ass1),0);
-        _ = Util.arrayCopy(ass1, cass1);
+        _ = Array.copy(ass1, cass1);
         cass2 = arrayCreate(arrayLength(ass2),0);
-        _ = Util.arrayCopy(ass2, cass2);
+        _ = Array.copy(ass2, cass2);
       then BackendDAE.MATCHING(cass1,cass2,comps);
   end match;
 end copyMatching;
@@ -2900,7 +2901,7 @@ algorithm
   outLst := match(inLst, inIndexType)
 
     // transform to absolute indexes
-    case (_, BackendDAE.ABSOLUTE()) then Util.absIntegerList(inLst);
+    case (_, BackendDAE.ABSOLUTE()) then List.map(inLst, intAbs);
 
     // leave as it is
     case (_, _) then inLst;
@@ -3818,7 +3819,7 @@ public function transposeMatrix
   output BackendDAE.IncidenceMatrixT mt;
 algorithm
   mt := arrayCreate(nRowsMt,{});
-  ((mt,_)) := Util.arrayFold(m,transposeRow,(mt,1));
+  ((mt,_)) := Array.fold(m,transposeRow,(mt,1));
 end transposeMatrix;
 
 protected function transposeRow
@@ -3842,7 +3843,7 @@ algorithm
     case (i::res,(mt,indx))
       equation
         iabs = intAbs(i);
-        mt = Util.arrayExpand(iabs - arrayLength(mt),mt,{});
+        mt = Array.expand(iabs - arrayLength(mt),mt,{});
         col = mt[iabs];
         indx1 = Util.if_(intLt(i,0),-indx,indx);
         _ = arrayUpdate(mt,iabs,indx1::col);
@@ -3952,7 +3953,7 @@ algorithm
         eqn = BackendEquation.equationNth1(daeeqns, abse);
         (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,{});
         oldvars = getOldVars(m,abse);
-        m_1 = Util.arrayReplaceAtWithFill(abse,row,{},m);
+        m_1 = Array.replaceAtWithFill(abse,row,{},m);
         (_,outvars,invars) = List.intersection1OnTrue(oldvars,row,intEq);
         mt_1 = removeValuefromMatrix(abse,outvars,mt);
         mt_2 = addValuetoMatrix(abse,invars,mt_1);
@@ -4005,14 +4006,14 @@ algorithm
         // extend the mapping arrays
         oldsize = arrayLength(iMapEqnIncRow);
         newsize = equationArraySize(daeeqns);
-        mapEqnIncRow = Util.arrayExpand(newsize-oldsize,iMapEqnIncRow,{});
+        mapEqnIncRow = Array.expand(newsize-oldsize,iMapEqnIncRow,{});
         oldsize1 = arrayLength(iMapIncRowEqn);
         newsize1 = equationSize(daeeqns);
         deltasize = newsize1-oldsize1;
-        mapIncRowEqn = Util.arrayExpand(deltasize,iMapIncRowEqn,0);
+        mapIncRowEqn = Array.expand(deltasize,iMapIncRowEqn,0);
         // extend the incidenceMatrix
-        m = Util.arrayExpand(deltasize,m,{});
-        mt = Util.arrayExpand(deltasize,mt,{});
+        m = Array.expand(deltasize,m,{});
+        mt = Array.expand(deltasize,mt,{});
         // fill the extended parts first
         (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar2(oldsize+1,newsize,oldsize1,vars,daeeqns,m,mt,mapEqnIncRow,mapIncRowEqn,inIndxType,functionTree);
         // update the old
@@ -4209,7 +4210,7 @@ algorithm
         mlst = getOldVars(mt,kabs);
         v_1 = Util.if_(intGt(k,0),v,-v);
         false = listMember(v_1, mlst);
-        mt_1 = Util.arrayReplaceAtWithFill(kabs,v_1::mlst,{},mt);
+        mt_1 = Array.replaceAtWithFill(kabs,v_1::mlst,{},mt);
         mt_2 = addValuetoMatrix(v,keys,mt_1);
       then
         mt_2;
@@ -4237,7 +4238,7 @@ algorithm
     case (SOME(m))
       equation
         m1 = arrayCreate(arrayLength(m),{});
-        m1 = Util.arrayCopy(m, m1);
+        m1 = Array.copy(m, m1);
       then SOME(m1);
    end match;
 end copyIncidenceMatrix;

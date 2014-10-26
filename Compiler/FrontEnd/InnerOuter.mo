@@ -46,6 +46,7 @@ import SCode;
 import UnitAbsyn;
 import HashSet;
 
+protected import Array;
 protected import ComponentReference;
 protected import ConnectUtil;
 protected import DAEUtil;
@@ -2277,7 +2278,7 @@ algorithm
         expandsize = realInt(rexpandsize);
         expandsize_1 = intMax(expandsize, 1);
         newsize = expandsize_1 + size;
-        arr_1 = Util.arrayExpand(expandsize_1, arr,NONE());
+        arr_1 = Array.expand(expandsize_1, arr,NONE());
         n_1 = n + 1;
         arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
       then

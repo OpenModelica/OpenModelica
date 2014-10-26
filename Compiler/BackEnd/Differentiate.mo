@@ -2576,7 +2576,7 @@ algorithm
          // get bool list
          (_,blst) = differentiateFunction1(fname,mapper,tp,expl,inDiffArgs);
          // count true
-         (bl1,_) = List.split1OnTrue(blst,Util.isEqual,true);
+         (bl1,_) = List.split1OnTrue(blst, valueEq, true);
          bl2 = List.fill(false,listLength(blst));
          bl = listAppend(bl2,bl1);
          bl3 = checkDerFunctionConds(bl,cr,expl,inDiffArgs);

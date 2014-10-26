@@ -47,6 +47,7 @@ public import HpcOmEqSystems;
 public import SimCode;
 
 // protected imports
+protected import Array;
 protected import ClockIndexes;
 protected import Debug;
 protected import Error;
@@ -227,7 +228,7 @@ algorithm
 
       //fileName = ("taskGraph"+&filenamePrefix+&"DAE.graphml");
       //daeSccMapping = listArray(List.map(SimCodeUtil.getRemovedEquationSimEqSysIdxes(simCode),List.create));
-      //daeSccMapping = Util.arrayAppend(sccSimEqMapping,daeSccMapping);
+      //daeSccMapping = Array.append(sccSimEqMapping,daeSccMapping);
       //schedulerInfo = arrayCreate(arrayLength(taskGraphDAE), (-1,-1,-1.0));
       //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDAE, taskGraphDataDAE,inBackendDAE, fileName, "", {}, {}, daeSccMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
       SimCodeUtil.execStat("hpcom create and dump DAE TaskGraph");
@@ -720,7 +721,7 @@ protected
   String text;
 algorithm
   text := "SimEqToSCCMapping";
-  ((_,text)) := Util.arrayFold(iSccMapping, dumpSimEqSCCMapping1, (1,text));
+  ((_,text)) := Array.fold(iSccMapping, dumpSimEqSCCMapping1, (1,text));
   print(text +& "\n");
 end dumpSimEqSCCMapping;
 
@@ -747,7 +748,7 @@ protected
   String text;
 algorithm
   text := "SccToSimEqMapping";
-  ((_,text)) := Util.arrayFold(iSccMapping, dumpSccSimEqMapping1, (1,text));
+  ((_,text)) := Array.fold(iSccMapping, dumpSccSimEqMapping1, (1,text));
   print(text +& "\n");
 end dumpSccSimEqMapping;
 

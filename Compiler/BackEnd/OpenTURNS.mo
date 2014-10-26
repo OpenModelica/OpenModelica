@@ -47,6 +47,7 @@ import DAE;
 import FCore;
 
 protected
+import Array;
 import BackendDAEOptimize;
 import BackendDAEUtil;
 import BackendEquation;
@@ -378,7 +379,8 @@ algorithm
 
   varLst := BackendDAEUtil.getAllVarLst(dae2);
   varLst := List.select(varLst,BackendVariable.varHasDistributionAttribute);
-  Util.addInternalError(List.isEmpty(varLst), "OpenTURNS.generateDistributions: No variable in the DAE has the distribution attribute! Check your model ...");
+
+  Error.assertion(List.isEmpty(varLst), "OpenTURNS.generateDistributions: No variable in the DAE has the distribution attribute! Check your model ...", Absyn.dummyInfo);
   dists := List.map(varLst,BackendVariable.varDistribution);
   (sLst,distributionVarLst) := List.map1_2(List.threadTuple(dists,List.map(varLst,BackendVariable.varCref)),generateDistributionVariable,dae2);
 
@@ -460,7 +462,7 @@ algorithm
       equation
         algs = BackendDAEUtil.getAlgorithms(dae);
         header = "RS = CorrelationMatrix("+&intString(numDists)+&")\n";
-        SOME(correlationAlg) = Util.arrayFindFirstOnTrue(algs,hasCorrelationStatement);
+        SOME(correlationAlg) = Array.findFirstOnTrue(algs,hasCorrelationStatement);
         correlationMatrix = header +& generateCorrelationMatrix2(correlationAlg,uncertainVars);
      then
        correlationMatrix;
@@ -469,14 +471,14 @@ algorithm
       equation
         algs = BackendDAEUtil.getAlgorithms(dae);
         header = "RS = CorrelationMatrix("+&intString(numDists)+&")\n";
-        NONE() = Util.arrayFindFirstOnTrue(algs,hasCorrelationStatement);
-        Util.addInternalError(true, "OpenTURNS.generateCorrelationMatrix failed because it could not find any correlation statement in algorithm.");
+        NONE() = Array.findFirstOnTrue(algs,hasCorrelationStatement);
+        Error.addInternalError("OpenTURNS.generateCorrelationMatrix failed because it could not find any correlation statement in algorithm.");
      then
        fail();
 
     else
       equation
-        Util.addInternalError(true, "OpenTURNS.generateCorrelationMatrix failed ...");
+        Error.addInternalError("OpenTURNS.generateCorrelationMatrix failed ...");
       then
         fail();
   end matchcontinue;

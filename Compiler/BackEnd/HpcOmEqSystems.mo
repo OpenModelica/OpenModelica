@@ -44,6 +44,7 @@ public import HpcOmTaskGraph;
 public import HpcOmSimCode;
 
 // protected imports
+protected import Array;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendDAEEXT;
@@ -204,8 +205,8 @@ algorithm
         // build the matching
         ass1All = arrayCreate(listLength(varLst),-1);
         ass2All = arrayCreate(listLength(varLst),-1);  // actually has to be listLength(eqLst), but there is stille the probelm taht ass1 and ass2 have the same size
-        ass1All = Util.arrayCopy(ass1,ass1All);  // the comps before and after the tornsystem
-        ass2All = Util.arrayCopy(ass2,ass2All);
+        ass1All = Array.copy(ass1,ass1All);  // the comps before and after the tornsystem
+        ass2All = Array.copy(ass2,ass2All);
         ((ass1All, ass2All)) = List.fold2(List.intRange(listLength(tvarIdcs)),updateResidualMatching,tvarIdcs,resEqIdcs,(ass1All,ass2All));  // sets matching info for the tearingVars and residuals
 
         // get the otherComps and and update the matching for the othercomps
@@ -833,7 +834,7 @@ algorithm
         sysTmp = BackendDAE.EQSYSTEM(vars,eqArr,SOME(m),SOME(mt),matching,{},BackendDAE.UNKNOWN_PARTITION());
         // perform BLT to order the StrongComponents
         mapIncRowEqn = listArray(List.intRange(nEqs));
-        mapEqnIncRow = Util.arrayMap(mapIncRowEqn,List.create);
+        mapEqnIncRow = Array.map(mapIncRowEqn,List.create);
         (sysTmp,compsTmp) = BackendDAETransform.strongComponentsScalar(sysTmp,shared,mapEqnIncRow,mapIncRowEqn);
         compsTmp = listAppend(compsIn,compsTmp);
         matchingTmp = BackendDAE.MATCHING(ass1, ass2, compsTmp);
@@ -2343,7 +2344,7 @@ algorithm
         //outgoingDepTasks = List.map1(lockIdc,stringAppend,lockSuffix);
         //outgoingDepTasksEnd = List.map1r(List.map(List.intRange(numThreads),intString),stringAppend,"lock_comp"+&intString(compIdx)+&"_th");
         //outgoingDepTasks = listAppend(outgoingDepTasks,outgoingDepTasksEnd);
-        //threadTasks = Util.arrayMap1(threadTasks,appendStringToLockIdcs,lockSuffix);
+        //threadTasks = Array.map1(threadTasks,appendStringToLockIdcs,lockSuffix);
 
         // build missing residual tasks and locks
         //assLocks = List.map(outgoingDepTasksEnd,HpcOmScheduler.getAssignLockTask);
@@ -2422,7 +2423,7 @@ algorithm
         true = listLength(eqsIn) >= idx;
         vars = listGet(varsIn,idx);
         eq = listGet(eqsIn,idx);
-        depEqs = List.flatten(List.map1(vars,Util.arrayGetIndexFirst,mt));
+        depEqs = List.flatten(List.map1(vars,Array.getIndexFirst,mt));
         depEqs = List.deleteMember(depEqs,eq);
         graph = arrayUpdate(graphIn,eq,depEqs);
         graph = buildMatchedGraphForTornSystem(idx+1,eqsIn,varsIn,m,mt,graph);
@@ -2461,7 +2462,7 @@ algorithm
   //get the exeCost
   exeCosts := arrayCreate(numNodes,(3,20.0));
   //get the commCosts
-  commCosts := Util.arrayMap(graph,buildDummyCommCosts);
+  commCosts := Array.map(graph,buildDummyCommCosts);
   //get the node description
   eqStrings := List.map(eqLst,BackendDump.equationString);
   varStrings := List.map(varLst,HpcOmTaskGraph.getVarString);
@@ -2504,7 +2505,7 @@ protected
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) := metaIn;
   nodes := List.intRange(arrayLength(graphIn));
-  comps := List.map1(nodes,Util.arrayGetIndexFirst,inComps);
+  comps := List.map1(nodes,Array.getIndexFirst,inComps);
   simEqSys := HpcOmScheduler.getSimEqSysIdcsForNodeLst(comps,sccSimEqMapping);
   simEqSys := List.map1(simEqSys,List.sort,intGt);
   thread1 := List.threadMap1(simEqSys,nodes,HpcOmScheduler.makeCalcTask,1);

@@ -6120,121 +6120,79 @@ a list of all those types."
   output list<DAE.Type> outTypes;
   partial function TypeFn
     input DAE.Type fnInType;
-    output Boolean b;
+    output Boolean outMatch;
   end TypeFn;
 algorithm
   outTypes := getAllInnerTypes({inType},{},inFn);
 end getAllInnerTypesOfType;
 
 protected function getAllInnerTypes
-"Traverses all the types the input DAE.Type contains."
+  "Traverses all the types that the input DAE.Type contains, and returns all
+   types for which the given function returns true."
   input list<DAE.Type> inTypes;
-  input list<DAE.Type> inAcc;
-  input TypeFn fn;
-  output list<DAE.Type> outTypes;
-  partial function TypeFn
-    input DAE.Type fnInType;
-    output Boolean b;
-  end TypeFn;
+  input list<DAE.Type> inAccum := {};
+  input MatchFunc inFunc;
+  output list<DAE.Type> outTypes := inAccum;
+
+  partial function MatchFunc
+    input DAE.Type inType;
+    output Boolean outMatch;
+  end MatchFunc;
+protected
+  DAE.Type ty;
+  list<DAE.Type> tys;
 algorithm
-  outTypes := matchcontinue (inTypes,inAcc,fn)
-    local
-      Type ty,first;
-      list<DAE.Type> tys,rest,acc;
-      list<DAE.Var> fields;
-      list<DAE.FuncArg> funcArgs;
-      Boolean b;
+  for t in inTypes loop
+    // Add the type to the result list if the match function return true.
+    if inFunc(t) then
+      outTypes := t :: outTypes;
+    end if; 
 
-    case ({},_,_) then inAcc;
+    // Get the inner types of the type.
+    tys := match(t)
+      local
+        list<DAE.Var> fields;
+        list<DAE.FuncArg> funcArgs;
+      case DAE.T_ARRAY(ty = ty) then {ty};
+      case DAE.T_METALIST(listType = ty) then {ty};
+      case DAE.T_METAARRAY(ty = ty) then {ty};
+      case DAE.T_METABOXED(ty = ty) then {ty};
+      case DAE.T_METAOPTION(optionType = ty) then {ty};
+      case DAE.T_TUPLE(tupleType = tys) then tys;
+      case DAE.T_METATUPLE(types = tys) then tys;
+      case DAE.T_METARECORD(fields = fields)
+        then List.map(fields, getVarType);
+      case DAE.T_COMPLEX(varLst = fields)
+        then List.map(fields, getVarType);
+      case DAE.T_SUBTYPE_BASIC(varLst = fields)
+        then List.map(fields, getVarType);
+      case DAE.T_FUNCTION(funcArg = funcArgs, funcResultType = ty)
+        then ty :: List.map(funcArgs, funcArgType);
+      else {};
+    end match;
 
-    case ((first as DAE.T_ARRAY(ty = ty))::rest,acc,_)
-      equation
-        b = fn(first);
-      then getAllInnerTypes(ty::rest,List.consOnTrue(b,first,acc),fn);
-
-    case ((first as DAE.T_METALIST(listType = ty))::rest,acc,_)
-      equation
-        b = fn(first);
-      then getAllInnerTypes(ty::rest,List.consOnTrue(b,first,acc),fn);
-
-    case ((first as DAE.T_METAARRAY(ty = ty))::rest,acc,_)
-      equation
-        b = fn(first);
-      then getAllInnerTypes(ty::rest,List.consOnTrue(b,first,acc),fn);
-
-    case ((first as DAE.T_METABOXED(ty = ty))::rest,acc,_)
-      equation
-        b = fn(first);
-      then getAllInnerTypes(ty::rest,List.consOnTrue(b,first,acc),fn);
-
-    case ((first as DAE.T_METAOPTION(optionType = ty))::rest,acc,_)
-      equation
-        b = fn(first);
-      then getAllInnerTypes(ty::rest,List.consOnTrue(b,first,acc),fn);
-
-    case ((first as DAE.T_TUPLE(tupleType = tys))::rest,acc,_)
-      equation
-        b = fn(first);
-        acc = getAllInnerTypes(tys,List.consOnTrue(b,first,acc),fn);
-      then getAllInnerTypes(rest,acc,fn);
-
-    case ((first as DAE.T_METATUPLE(types = tys))::rest,acc,_)
-      equation
-        b = fn(first);
-        acc = getAllInnerTypes(tys,List.consOnTrue(b,first,acc),fn);
-      then getAllInnerTypes(rest,acc,fn);
-
-    case ((first as DAE.T_METARECORD(fields = fields))::rest,acc,_)
-      equation
-        tys = List.map(fields, getVarType);
-        b = fn(first);
-        acc = getAllInnerTypes(tys,List.consOnTrue(b,first,acc),fn);
-      then getAllInnerTypes(rest,acc,fn);
-
-    case ((first as DAE.T_COMPLEX(varLst = fields))::rest,acc,_)
-      equation
-        tys = List.map(fields, getVarType);
-        b = fn(first);
-        acc = getAllInnerTypes(tys,List.consOnTrue(b,first,acc),fn);
-      then getAllInnerTypes(rest,acc,fn);
-
-    case ((first as DAE.T_SUBTYPE_BASIC(varLst = fields))::rest,acc,_)
-      equation
-        tys = List.map(fields, getVarType);
-        b = fn(first);
-        acc = getAllInnerTypes(tys,List.consOnTrue(b,first,acc),fn);
-      then getAllInnerTypes(rest,acc,fn);
-
-    case ((first as DAE.T_FUNCTION(funcArgs,ty,_,_))::rest,acc,_)
-      equation
-        tys = List.map(funcArgs, funcArgType);
-        b = fn(first);
-        acc = getAllInnerTypes(tys,List.consOnTrue(b,first,acc),fn);
-      then getAllInnerTypes(ty::rest,acc,fn);
-
-    case (first::rest,acc,_)
-      equation
-        b = fn(first);
-      then getAllInnerTypes(rest,List.consOnTrue(b,first,acc),fn);
-  end matchcontinue;
+    // Call this function recursively to filter out the matching inner types and
+    // add them to the result.
+    outTypes := getAllInnerTypes(tys, outTypes, inFunc);
+  end for;
 end getAllInnerTypes;
 
 public function uniontypeFilter
   input DAE.Type ty;
-  output Boolean b;
+  output Boolean outMatch;
 algorithm
-  b := match ty
-    case DAE.T_METAUNIONTYPE(paths = _) then true;
+  outMatch := match ty
+    case DAE.T_METAUNIONTYPE(__) then true;
     else false;
   end match;
 end uniontypeFilter;
 
 public function metarecordFilter
   input DAE.Type ty;
-  output Boolean b;
+  output Boolean outMatch;
 algorithm
-  b := match ty
-    case DAE.T_METARECORD(utPath = _) then true;
+  outMatch := match ty
+    case DAE.T_METARECORD(__) then true;
     else false;
   end match;
 end metarecordFilter;
@@ -6389,10 +6347,10 @@ end getRealOrIntegerDimensions;
 
 protected function isPolymorphic
   input DAE.Type ty;
-  output Boolean b;
+  output Boolean outMatch;
 algorithm
-  b := match ty
-    case DAE.T_METAPOLYMORPHIC(name = _) then true;
+  outMatch := match(ty)
+    case DAE.T_METAPOLYMORPHIC(__) then true;
     else false;
   end match;
 end isPolymorphic;

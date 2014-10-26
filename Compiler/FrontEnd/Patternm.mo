@@ -849,7 +849,7 @@ algorithm
       equation
         ixs = List.map1(ixs, intMod, mod);
         ixs = List.sort(ixs, intLt);
-        (_,{}) = Util.splitUniqueOnBool(ixs, intEq);
+        {} = List.sortedDuplicates(ixs, intEq);
         // This mod was high enough that all values were distinct
       then mod;
     else

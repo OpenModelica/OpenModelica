@@ -379,7 +379,7 @@ algorithm
         contents = System.readFile(filename);
         namesToFind = System.strtok(contents, "\n");
         namesToFind = List.removeOnTrue("",stringEqual,List.map(namesToFind,System.trimWhitespace));
-        duplicates = List.sortedFilterDuplicates(List.sort(namesToFind,Util.strcmpBool),stringEq);
+        duplicates = List.sortedDuplicates(List.sort(namesToFind,Util.strcmpBool),stringEq);
         duplicatesStr = stringDelimitList(duplicates, ", ");
         Error.assertionOrAddSourceMessage(List.isEmpty(duplicates),Error.PACKAGE_ORDER_DUPLICATES,{duplicatesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
 
@@ -415,7 +415,7 @@ algorithm
         subdirs = List.filter1OnTrue(subdirs, existPackage, mp);
         mofiles = List.sort(listAppend(subdirs,mofiles), Util.strcmpBool);
         // Look for duplicates
-        intersection = List.sortedFilterDuplicates(mofiles,stringEq);
+        intersection = List.sortedDuplicates(mofiles,stringEq);
         differencesStr = stringDelimitList(List.map1(intersection, getBothPackageAndFilename, mp), ", ");
         Error.assertionOrAddSourceMessage(List.isEmpty(intersection),Error.PACKAGE_DUPLICATE_CHILDREN,{differencesStr},info);
 

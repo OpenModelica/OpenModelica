@@ -42,6 +42,7 @@ encapsulated package IndexReduction
 public import BackendDAE;
 public import DAE;
 
+protected import Array;
 protected import Absyn;
 protected import BackendDAEEXT;
 protected import BackendDump;
@@ -1881,8 +1882,8 @@ algorithm
         funcs = BackendDAEUtil.getFunctions(ishared);
         (syst,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs));
         // expand the matching
-        ass1 = Util.arrayExpand(nfreeStates,ass1,-1);
-        ass2 =Util.arrayExpand(nOrgEqns,ass2,-1);
+        ass1 = Array.expand(nfreeStates,ass1,-1);
+        ass2 = Array.expand(nOrgEqns,ass2,-1);
         nv = BackendVariable.varsSize(BackendVariable.daeVars(syst));
         ne = BackendDAEUtil.systemSize(syst);
         true = BackendDAEEXT.setAssignment(ne,nv,ass2,ass1);
@@ -1998,8 +1999,8 @@ algorithm
         // genereate new Matching
         nv1 = BackendVariable.varsSize(BackendVariable.daeVars(syst));
         ne1 = BackendDAEUtil.systemSize(syst);
-        ass1 = Util.arrayExpand(nv1-nv,ass1,-1);
-        ass2 = Util.arrayExpand(ne1-ne,ass2,-1);
+        ass1 = Array.expand(nv1-nv,ass1,-1);
+        ass2 = Array.expand(ne1-ne,ass2,-1);
         true = BackendDAEEXT.setAssignment(ne1,nv1,ass2,ass1);
         Matching.matchingExternalsetIncidenceMatrix(nv1, ne1, m);
         BackendDAEEXT.matching(nv1, ne1, 5, -1, 0.0, 0);
@@ -2189,16 +2190,16 @@ algorithm
         //  BackendDump.dumpMatching(indexmap);
         m1 = arrayCreate(ne1,{});
         mT1 = arrayCreate(nv1,{});
-        mapEqnIncRow = Util.arrayExpand(neqns,iMapEqnIncRow,{});
-        mapIncRowEqn = Util.arrayExpand(neqns,iMapIncRowEqn,-1);
+        mapEqnIncRow = Array.expand(neqns,iMapEqnIncRow,{});
+        mapIncRowEqn = Array.expand(neqns,iMapIncRowEqn,-1);
         // replace state indexes in original incidencematrix
         getIncidenceMatrixSelectStates(ne,m1,mT1,m,indexmap);
         // add level equations
         funcs = BackendDAEUtil.getFunctions(ishared);
         getIncidenceMatrixLevelEquations(eqnslst,vars,neqnarr,ne,m1,mT1,m,mapEqnIncRow,mapIncRowEqn,indexmap,funcs);
         // match the variables not the equations, to have prevered states unmatched
-        vec1 = Util.arrayExpand(nfreeStates,ass1,-1);
-        vec2 = Util.arrayExpand(neqns,ass2,-1);
+        vec1 = Array.expand(nfreeStates,ass1,-1);
+        vec2 = Array.expand(neqns,ass2,-1);
         true = BackendDAEEXT.setAssignment(nv1,ne1,vec1,vec2);
         Matching.matchingExternalsetIncidenceMatrix(ne1, nv1, mT1);
         BackendDAEEXT.matching(ne1, nv1, 3, -1, 0.0, 0);
@@ -2413,9 +2414,9 @@ algorithm
         _ = arrayUpdate(m,nEqns,row);
         // update mT
         (row,negrow) = List.split1OnTrue(row, intGt, 0);
-        _ = List.fold1(row,Util.arrayCons,nEqns,mT);
+        _ = List.fold1(row,Array.consToElement,nEqns,mT);
         row = List.map(negrow,intAbs);
-        _ = List.fold1(row,Util.arrayCons,-nEqns,mT);
+        _ = List.fold1(row,Array.consToElement,-nEqns,mT);
         // next
         getIncidenceMatrixSelectStates(nEqns-1,m,mT,mo,stateindexs);
       then
@@ -2484,10 +2485,10 @@ algorithm
         _ = List.fold1r(rowindxs,arrayUpdate,row,m);
         // update mT
         (row,negrow) = List.split1OnTrue(row, intGt, 0);
-        _ = List.fold1(row,Util.arrayListAppend,rowindxs,mT);
+        _ = List.fold1(row,Array.appendToElement,rowindxs,mT);
         row = List.map(negrow,intAbs);
         rowindxs = List.map(rowindxs,intNeg);
-        _ = List.fold1(row,Util.arrayListAppend,rowindxs,mT);
+        _ = List.fold1(row,Array.appendToElement,rowindxs,mT);
         // next equation
         getIncidenceMatrixLevelEquations(rest, vars, i1, rowSize, m, mT, om, mapEqnIncRow, mapIncRowEqn, stateindexs, functionTree);
       then
@@ -2602,7 +2603,7 @@ algorithm
     case (_,_,_)
       equation
         i = rowmarkarr[index];
-        arr = Util.arrayCons(i, index, systsarr);
+        arr = Array.consToElement(i, index, systsarr);
       then
         partitionSystemSplitt(index-1,rowmarkarr,arr);
   end match;
@@ -3552,7 +3553,7 @@ protected function incidenceMatrixfromEnhanced2
   input BackendDAE.Variables vars;
   output BackendDAE.IncidenceMatrix m;
 algorithm
-  m := Util.arrayMap1(me,incidenceMatrixElementfromEnhanced2,vars);
+  m := Array.map1(me,incidenceMatrixElementfromEnhanced2,vars);
 end incidenceMatrixfromEnhanced2;
 
 protected function incidenceMatrixElementfromEnhanced2
@@ -3808,7 +3809,7 @@ algorithm
   (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,replaceDummyDerivativesVar,ht);
   _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
   // extend assignments
-  ass1 := Util.arrayExpand(nv1-nv, ass1, -1);
+  ass1 := Array.expand(nv1-nv, ass1, -1);
   // set the new assignments
   List.map2_0(addassign,setHigerDerivativeAssignment,ass1,ass2);
   osyst := BackendDAE.EQSYSTEM(vars,eqns,om,omT,BackendDAE.MATCHING(ass1,ass2,{}),stateSets,partitionKind);

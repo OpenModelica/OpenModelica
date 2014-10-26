@@ -87,7 +87,6 @@ end DateTime;
 
 public import Absyn;
 protected import Config;
-protected import Debug;
 protected import Error;
 protected import Flags;
 protected import Global;
@@ -110,32 +109,23 @@ protected constant list<ReplacePattern> replaceStringPatterns=
           REPLACEPATTERN(",",commaStr)};
 
 public function isIntGreater "Author: BZ"
-input Integer lhs;
-input Integer rhs;
-output Boolean b;
-algorithm b := lhs>rhs;
+  input Integer lhs;
+  input Integer rhs;
+  output Boolean b := lhs > rhs;
 end isIntGreater;
 
 public function isRealGreater "Author: BZ"
-input Real lhs;
-input Real rhs;
-output Boolean b;
-algorithm b := lhs>. rhs;
+  input Real lhs;
+  input Real rhs;
+  output Boolean b := lhs > rhs;
 end isRealGreater;
 
 public function linuxDotSlash "If operating system is Linux/Unix, return a './', otherwise return empty string"
   output String str;
 algorithm
-  str := matchcontinue()
-    case()
-      equation
-        str = System.os();
-        true = ("linux" ==& str) or ("OSX" ==& str);
-      then "./";
-    case() then "";
-  end matchcontinue;
+  str := System.os();
+  str := if str == "linux" or str == "OSX" then "./" else "";
 end linuxDotSlash;
-
 
 public function flagValue "author: x02lucpo
   Extracts the flagvalue from an argument list:
@@ -143,1431 +133,43 @@ public function flagValue "author: x02lucpo
   input String flag;
   input list<String> arguments;
   output String flagVal;
+protected
+  String arg;
+  list<String> rest := arguments;
 algorithm
-  flagVal :=
-   matchcontinue(flag,arguments)
-   local
-      String arg,value;
-      list<String> args;
-   case (_,{}) then "";
-   case(_,arg::{})
-      equation
-        0 = stringCompare(flag,arg);
-      then
-        "";
-   case(_,arg::value::_)
-      equation
-        0 = stringCompare(flag,arg);
-      then
-        value;
-   case(_,_::args)
-      equation
-        value = flagValue(flag,args);
-      then
-        value;
-   case(_,_)
-      equation
-       print("- Util.flagValue failed\n");
-      then
-       fail();
-   end matchcontinue;
+  while not listEmpty(rest) loop
+    arg :: rest := rest;
+
+    if arg == flag then
+      break;
+    end if;  
+  end while;
+
+  flagVal := if listEmpty(rest) then "" else listHead(rest);
 end flagValue;
 
-public function isEqual "this function does equal(e1,e2) and returns true if it succedes."
-  input Type_a input1;
-  input Type_a input2;
-  output Boolean isequal;
-  replaceable type Type_a subtypeof Any;
-algorithm isequal := matchcontinue(input1,input2)
-  case(_,_)
-    equation
-      equality(input1 = input2);
-      then true;
-  case(_,_) then false;
-  end matchcontinue;
-end isEqual;
-
-public function applyAndAppend
-"@author adrpo
- fun f(x) => y
- fun applyAndAppend(x,f,a) => a @ {(f x)})"
-  input Type_a element;
-  input FuncTypeType_aToType_b f;
-  input list<Type_b> accLst;
-  output list<Type_b> outLst;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  partial function FuncTypeType_aToType_b
-    input Type_a inTypeA;
-    output Type_b outTypeB;
-  end FuncTypeType_aToType_b;
-protected
-  Type_b result;
+public function selectFirstNonEmptyString 
+  "Selects the first non-empty string from a list of strings.
+   Returns an empty string if no such string exists."
+  input list<String> inStrings;
+  output String outResult;
 algorithm
-  result := f(element);
-  outLst := listAppend(accLst, {result});
-end applyAndAppend;
-
-
-public function applyAndCons
-"@author adrpo
- fun f(x) => y
- fun applyAndCons(x,f,a) => (f x)::a)"
-  input Type_a element;
-  input FuncTypeType_aToType_b f;
-  input list<Type_b> accLst;
-  output list<Type_b> outLst;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  partial function FuncTypeType_aToType_b
-    input Type_a inTypeA;
-    output Type_b outTypeB;
-  end FuncTypeType_aToType_b;
-protected
-  Type_b e;
-algorithm
-  e := f(element);
-  outLst := e :: accLst;
-end applyAndCons;
-
-public function arrayMapNoCopy "Takes an array and a function over the elements of the array, which is applied for each element.
-Since it will update the array values the returned array must have the same type, and thus the applied function must also return
-the same type.
-
-See also listMap, arrayMap
-  "
-  input array<Type_a> array;
-  input FuncType func;
-  output array<Type_a> outArray;
-  replaceable type Type_a subtypeof Any;
-  partial function FuncType
-    input Type_a x;
-    output Type_a y;
-  end FuncType;
-algorithm
-  outArray := arrayMapNoCopyHelp1(array,func,1,arrayLength(array));
-end arrayMapNoCopy;
-
-protected function arrayMapNoCopyHelp1 "help function to arrayMap"
-  input array<Type_a> array;
-  input FuncType func;
-  input Integer pos "iterated 1..len";
-  input Integer len "length of array";
-  output array<Type_a> outArray;
-  replaceable type Type_a subtypeof Any;
-  partial function FuncType
-    input Type_a x;
-    output Type_a y;
-  end FuncType;
-algorithm
-  outArray := matchcontinue(array,func,pos,len)
-    local
-      Type_a newElt;
-
-    case (_,_,_,_)
-      equation
-        true = pos > len;
-      then array;
-
-    case (_,_,_,_)
-      equation
-        newElt = func(array[pos]);
-        _ = arrayUpdate(array,pos,newElt);
-        _ = arrayMapNoCopyHelp1(array,func,pos+1,len);
-      then array;
-  end matchcontinue;
-end arrayMapNoCopyHelp1;
-
-public function arrayMapNoCopy_1 "
-same as arrayMapcopy but with additional argument
-
-See also listMap, arrayMap
-  "
-  input array<Type_a> array;
-  input FuncType func;
-  input Type_b inArg;
-  output array<Type_a> outArray;
-  output Type_b outArg;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  partial function FuncType
-    input tuple<Type_a,Type_b> inTpl;
-    output tuple<Type_a,Type_b> outTpl;
-  end FuncType;
-algorithm
-  (outArray,outArg) := arrayMapNoCopyHelp1_1(array,func,1,arrayLength(array),inArg);
-end arrayMapNoCopy_1;
-
-protected function arrayMapNoCopyHelp1_1 "help function to arrayMap"
-  input array<Type_a> inArray;
-  input FuncType func;
-  input Integer pos "iterated 1..len";
-  input Integer len "length of array";
-  input Type_b inArg;
-  output array<Type_a> outArray;
-  output Type_b outArg;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  partial function FuncType
-    input tuple<Type_a,Type_b> inTpl;
-    output tuple<Type_a,Type_b> outTpl;
-  end FuncType;
-algorithm
-  (outArray,outArg) := matchcontinue(inArray,func,pos,len,inArg)
-    local
-      array<Type_a> a,a1;
-      Type_a newElt;
-      Type_b extarg,extarg1;
-
-    case(_,_,_,_,_)
-      equation
-        true = pos > len;
-      then (inArray,inArg);
-
-    else
-      equation
-        ((newElt,extarg)) = func((inArray[pos],inArg));
-        a = arrayUpdate(inArray,pos,newElt);
-        (a1,extarg1) = arrayMapNoCopyHelp1_1(a,func,pos+1,len,extarg);
-      then (a1,extarg1);
-  end matchcontinue;
-end arrayMapNoCopyHelp1_1;
-
-public function arrayFindFirstOnTrue "finds the first element in the array that the predicate function returns true on"
-  replaceable type Type_a subtypeof Any;
-  input array<Type_a> array;
-  input ArrayPredFunc func;
-  partial function ArrayPredFunc
-    input Type_a elt;
-    output Boolean res;
-  end ArrayPredFunc;
-
-  output Option<Type_a> elt;
-algorithm
-  elt :=arrayFindFirstOnTrue2(array,func,1);
-end arrayFindFirstOnTrue;
-
-protected function arrayFindFirstOnTrue2 "help function"
-  input array<Type_a> array;
-  input ArrayPredFunc func;
-  input Integer pos;
-  replaceable type Type_a subtypeof Any;
-  partial function ArrayPredFunc
-    input Type_a elt;
-    output Boolean res;
-  end ArrayPredFunc;
-
-  output Option<Type_a> elt;
-algorithm
-  elt := matchcontinue(array,func,pos)
-  local
-    Type_a e;
-
-    case(_,_,_) equation
-      true = pos > arrayLength(array);
-    then NONE();
-    case(_,_,_) equation
-      e = array[pos];
-      true = func(e);
-    then SOME(e);
-    case (_,_,_) then  arrayFindFirstOnTrue2(array,func,pos+1);
-  end matchcontinue;
-end arrayFindFirstOnTrue2;
-
-public function arraySelect
-"Takes an array and a list with index and output a new array with the indexed elements.
- Since it will update the array values the returned array must not have the same type,
- the array will first be initialized with the result of the first call.
- assume the Indecies are in range 1,arrayLength(array)."
-  input array<Type_a> array;
-  input list<Integer> lst;
-  output array<Type_a> outArray;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outArray := arrayCreate(listLength(lst),array[1]);
-  outArray := arraySelectHelp(array,lst,outArray,1);
-end arraySelect;
-
-protected function arraySelectHelp "help function to arrayMap"
-  input array<Type_a> array;
-  input list<Integer> posistions;
-  input array<Type_a> inArray;
-  input Integer lstpos;
-  output array<Type_a> outArray;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outArray := matchcontinue(array,posistions,inArray,lstpos)
-    local
-    Integer pos,i;
-    list<Integer> rest;
-    Type_a elmt;
-    case(_,{},_,_) then inArray;
-    case(_,pos::rest,_,i) equation
-      elmt = array[pos];
-      outArray = arrayUpdate(inArray,i,elmt);
-      outArray = arraySelectHelp(array,rest,inArray,i+1);
-    then outArray;
-    case(_,_,_,i) equation
-      print("arraySelectHelp failed\n for i : " +& intString(i));
-    then fail();
-  end matchcontinue;
-end arraySelectHelp;
-
-public function arrayMap
-"@author: unkwnown, adrpo
-  Takes an array and a function over the elements of the array, which is applied for each element.
-  Since it will update the array values the returned array must not have the same type, the array
-  will first be initialized with the result of the first call if it exists.
-  If the input array is empty use listArray->listMap->arrayList way.
-  See also listMap, arrayMapNoCopy"
-  input array<Type_a> array;
-  input FuncType func;
-  output array<Type_b> outArray;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  partial function FuncType
-    input Type_a x;
-    output Type_b y;
-  end FuncType;
-protected
-  Type_b initElt;
-algorithm
-  outArray := matchcontinue(array, func)
-    // if the array is empty, use list transformations to fix the types!
-    case (_, _)
-      equation
-        true = intEq(0, arrayLength(array));
-        outArray = listArray({});
-      then
-        outArray;
-    // otherwise, use the first element to create the new array
-    case (_, _)
-      equation
-        false = intEq(0, arrayLength(array));
-        initElt = func(array[1]);
-        outArray = arrayMapHelp(array,arrayCreate(arrayLength(array),initElt),func,1,arrayLength(array));
-      then
-        outArray;
-
-  end matchcontinue;
-end arrayMap;
-
-protected function arrayMapHelp "help function to arrayMap"
-  input array<Type_a> array;
-  input array<Type_b> inNewArray;
-  input FuncType func;
-  input Integer pos "iterated 1..len";
-  input Integer len "length of array";
-  output array<Type_b> outArray;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  partial function FuncType
-    input Type_a x;
-    output Type_b y;
-  end FuncType;
-algorithm
-  outArray := matchcontinue(array,inNewArray,func,pos,len)
-    local
-      Type_b newElt;
-      array<Type_b> newArray;
-
-    case(_,newArray,_,_,_) equation
-      true = pos > len;
-    then newArray;
-
-    case(_,newArray,_,_,_) equation
-      newElt = func(array[pos]);
-      newArray = arrayUpdate(newArray,pos,newElt);
-      newArray = arrayMapHelp(array,newArray,func,pos+1,len);
-    then newArray;
-    case(_,_,_,_,_) equation
-      print("arrayMapHelp failed\n");
-    then fail();
-  end matchcontinue;
-end arrayMapHelp;
-
-public function arrayMap1
-"@author: Frenkel TUD
-  Takes an array and a function and an extra argument over the elements of the array, which is applied for each element.
-  Since it will update the array values the returned array must not have the same type, the array
-  will first be initialized with the result of the first call if it exists.
-  If the input array is empty use listArray->listMap->arrayList way.
-  See also listMap, arrayMapNoCopy"
-  input array<Type_a> array;
-  input FuncType func;
-  input Type_arg1 arg1;
-  output array<Type_b> outArray;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_arg1 subtypeof Any;
-  partial function FuncType
-    input Type_a x;
-    input Type_arg1 arg1;
-    output Type_b y;
-  end FuncType;
-algorithm
-  outArray := matchcontinue(array, func, arg1)
-    local
-      Type_b initElt;
-    // if the array is empty, use list transformations to fix the types!
-    case (_, _, _)
-      equation
-        true = intEq(0, arrayLength(array));
-        outArray = listArray({});
-      then
-        outArray;
-    // otherwise, use the first element to create the new array
-    case (_, _, _)
-      equation
-        false = intEq(0, arrayLength(array));
-        initElt = func(array[1], arg1);
-        outArray = arrayMapHelp1(array,arrayCreate(arrayLength(array),initElt),func,1,arrayLength(array),arg1);
-      then
-        outArray;
-  end matchcontinue;
-end arrayMap1;
-
-protected function arrayMapHelp1 "help function to arrayMap"
-  input array<Type_a> array;
-  input array<Type_b> inNewArray;
-  input FuncType func;
-  input Integer pos "iterated 1..len";
-  input Integer len "length of array";
-  input Type_arg1 arg1;
-  output array<Type_b> outArray;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_arg1 subtypeof Any;
-  partial function FuncType
-    input Type_a x;
-    input Type_arg1 arg1;
-    output Type_b y;
-  end FuncType;
-algorithm
-  outArray := matchcontinue(array,inNewArray,func,pos,len,arg1)
-    local
-      Type_b newElt;
-      array<Type_b> newArray;
-
-    case(_,newArray,_,_,_,_) equation
-      true = pos > len;
-    then newArray;
-
-    case(_,newArray,_,_,_,_) equation
-      newElt = func(array[pos],arg1);
-      newArray = arrayUpdate(newArray,pos,newElt);
-      newArray = arrayMapHelp1(array,newArray,func,pos+1,len,arg1);
-    then newArray;
-    case(_,_,_,_,_,_) equation
-      print("arrayMapHelp1 failed\n");
-    then fail();
-  end matchcontinue;
-end arrayMapHelp1;
-
-public function arrayMap0
-  input array<Type_a> array;
-  input FuncType func;
-  replaceable type Type_a subtypeof Any;
-  partial function FuncType
-    input Type_a x;
-  end FuncType;
-algorithm
-  arrayMap0work(arrayLength(array),array,func);
-end arrayMap0;
-
-public function arrayMap0work
-  ""
-  input Integer ix;
-  input array<Type_a> array;
-  input FuncType func;
-  replaceable type Type_a subtypeof Any;
-  partial function FuncType
-    input Type_a x;
-  end FuncType;
-algorithm
-  _ := match (ix,array,func)
-    local
-      Integer i;
-    case (0,_,_) then ();
-    case (_,_,_)
-      equation
-        i = arrayLength(array)-ix+1;
-        func(array[i]);
-        arrayMap0work(ix-1,array,func);
-      then ();
-  end match;
-end arrayMap0work;
-
-public function arrayFold
-  "Takes an array, a function, and a start value. The function is applied to
-   each array element, and the start value is passed to the function and
-   updated."
-  input array<ElementType> inArray;
-  input FoldFunc inFoldFunc;
-  input FoldType inStartValue;
-  output FoldType outResult;
-
-  replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
-
-  partial function FoldFunc
-    input ElementType inElement;
-    input FoldType inFoldArg;
-    output FoldType outFoldArg;
-  end FoldFunc;
-algorithm
-  outResult := arrayFold_impl(1 > arrayLength(inArray), inArray, inFoldFunc, inStartValue, 1, arrayLength(inArray));
-end arrayFold;
-
-public function arrayFold_impl
-  "Implementation of arrayFold."
-  input Boolean stopCond;
-  input array<ElementType> inArray;
-  input FoldFunc inFoldFunc;
-  input FoldType inFoldValue;
-  input Integer inIndex;
-  input Integer inArraySize;
-  output FoldType outResult;
-
-  replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
-
-  partial function FoldFunc
-    input ElementType inElement;
-    input FoldType inFoldArg;
-    output FoldType outFoldArg;
-  end FoldFunc;
-algorithm
-  outResult := match (stopCond, inArray, inFoldFunc, inFoldValue, inIndex, inArraySize)
-    local
-      ElementType e;
-      FoldType res;
-
-    case (true, _, _, _, _, _)
-      then
-        inFoldValue;
-
-    else
-      equation
-        e = arrayGet(inArray, inIndex);
-        res = inFoldFunc(e, inFoldValue);
-      then
-        arrayFold_impl(inIndex + 1 > inArraySize, inArray, inFoldFunc, res, inIndex + 1, inArraySize);
-
-  end match;
-end arrayFold_impl;
-
-public function arrayFold1
-  "Takes an array, a function, one constant parameters and a start value. The function is applied to
-   each array element, and the start value is passed to the function and
-   updated."
-  input array<ElementType> inArray;
-  input FoldFunc1 inFoldFunc;
-  input ArgType1 inExtraArg1;
-  input FoldType inStartValue;
-  output FoldType outResult;
-
-  replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
-  replaceable type ArgType1 subtypeof Any;
-  replaceable type ArgType2 subtypeof Any;
-
-  partial function FoldFunc1
-    input ElementType inElement;
-    input ArgType1 _inExtraArg1;
-    input FoldType inFoldArg;
-    output FoldType outFoldArg;
-  end FoldFunc1;
-algorithm
-  outResult := arrayFold1_impl(1 > arrayLength(inArray), inArray, inFoldFunc, inExtraArg1, inStartValue, 1, arrayLength(inArray));
-end arrayFold1;
-
-public function arrayFold1_impl
-  "Implementation of arrayFold1."
-  input Boolean stopCond;
-  input array<ElementType> inArray;
-  input FoldFunc1 inFoldFunc;
-  input ArgType1 inExtraArg1;
-  input FoldType inFoldValue;
-  input Integer inIndex;
-  input Integer inArraySize;
-  output FoldType outResult;
-
-  replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
-  replaceable type ArgType1 subtypeof Any;
-  replaceable type ArgType2 subtypeof Any;
-
-  partial function FoldFunc1
-    input ElementType inElement;
-    input ArgType1 _inExtraArg1;
-    input FoldType inFoldArg;
-    output FoldType outFoldArg;
-  end FoldFunc1;
-algorithm
-  outResult :=
-  match(stopCond, inArray, inFoldFunc, inExtraArg1, inFoldValue, inIndex, inArraySize)
-    local
-      ElementType e;
-      FoldType res;
-
-    case (true, _, _, _, _, _, _)
-      then
-        inFoldValue;
-
-    else
-      equation
-        e = arrayGet(inArray, inIndex);
-        res = inFoldFunc(e, inExtraArg1, inFoldValue);
-      then
-        arrayFold1_impl(inIndex + 1 > inArraySize, inArray, inFoldFunc, inExtraArg1, res, inIndex + 1, inArraySize);
-
-  end match;
-end arrayFold1_impl;
-
-public function arrayFold2
-  "Takes an array, a function, two constant parameters and a start value. The function is applied to
-   each array element, and the start value is passed to the function and
-   updated."
-  input array<ElementType> inArray;
-  input FoldFunc2 inFoldFunc;
-  input ArgType1 inExtraArg1;
-  input ArgType2 inExtraArg2;
-  input FoldType inStartValue;
-  output FoldType outResult;
-
-  replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
-  replaceable type ArgType1 subtypeof Any;
-  replaceable type ArgType2 subtypeof Any;
-
-  partial function FoldFunc2
-    input ElementType inElement;
-    input ArgType1 _inExtraArg1;
-    input ArgType2 _inExtraArg2;
-    input FoldType inFoldArg;
-    output FoldType outFoldArg;
-  end FoldFunc2;
-algorithm
-  outResult := arrayFold2_impl(1 > arrayLength(inArray), inArray, inFoldFunc, inExtraArg1, inExtraArg2, inStartValue, 1, arrayLength(inArray));
-end arrayFold2;
-
-public function arrayFold2_impl
-  "Implementation of arrayFold2."
-  input Boolean stopCond;
-  input array<ElementType> inArray;
-  input FoldFunc2 inFoldFunc;
-  input ArgType1 inExtraArg1;
-  input ArgType2 inExtraArg2;
-  input FoldType inFoldValue;
-  input Integer inIndex;
-  input Integer inArraySize;
-  output FoldType outResult;
-
-  replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
-  replaceable type ArgType1 subtypeof Any;
-  replaceable type ArgType2 subtypeof Any;
-
-  partial function FoldFunc2
-    input ElementType inElement;
-    input ArgType1 _inExtraArg1;
-    input ArgType2 _inExtraArg2;
-    input FoldType inFoldArg;
-    output FoldType outFoldArg;
-  end FoldFunc2;
-algorithm
-  outResult :=
-  match (stopCond, inArray, inFoldFunc, inExtraArg1, inExtraArg2, inFoldValue, inIndex, inArraySize)
-    local
-      ElementType e;
-      FoldType res;
-
-    case (true, _, _, _, _, _, _, _)
-      then
-        inFoldValue;
-
-    else
-      equation
-        e = arrayGet(inArray, inIndex);
-        res = inFoldFunc(e, inExtraArg1, inExtraArg2, inFoldValue);
-      then
-        arrayFold2_impl(inIndex + 1 > inArraySize, inArray, inFoldFunc, inExtraArg1, inExtraArg2, res, inIndex + 1, inArraySize);
-
-  end match;
-end arrayFold2_impl;
-
-public function arrayFold3
-  "Takes an array, a function, three constant parameters and a start value. The function is applied to
-   each array element, and the start value is passed to the function and
-   updated."
-  input array<ElementType> inArray;
-  input FoldFunc3 inFoldFunc;
-  input ArgType1 inExtraArg1;
-  input ArgType2 inExtraArg2;
-  input ArgType3 inExtraArg3;
-  input FoldType inStartValue;
-  output FoldType outResult;
-
-  replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
-  replaceable type ArgType1 subtypeof Any;
-  replaceable type ArgType2 subtypeof Any;
-  replaceable type ArgType3 subtypeof Any;
-
-  partial function FoldFunc3
-    input ElementType inElement;
-    input ArgType1 _inExtraArg1;
-    input ArgType2 _inExtraArg2;
-    input ArgType3 _inExtraArg3;
-    input FoldType inFoldArg;
-    output FoldType outFoldArg;
-  end FoldFunc3;
-algorithm
-  outResult := arrayFold3_impl(1 > arrayLength(inArray), inArray, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inStartValue, 1, arrayLength(inArray));
-end arrayFold3;
-
-public function arrayFold3_impl
-  "Implementation of arrayFold3."
-  input Boolean stopCond;
-  input array<ElementType> inArray;
-  input FoldFunc3 inFoldFunc;
-  input ArgType1 inExtraArg1;
-  input ArgType2 inExtraArg2;
-  input ArgType3 inExtraArg3;
-  input FoldType inFoldValue;
-  input Integer inIndex;
-  input Integer inArraySize;
-  output FoldType outResult;
-
-  replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
-  replaceable type ArgType1 subtypeof Any;
-  replaceable type ArgType2 subtypeof Any;
-  replaceable type ArgType3 subtypeof Any;
-
-  partial function FoldFunc3
-    input ElementType inElement;
-    input ArgType1 _inExtraArg1;
-    input ArgType2 _inExtraArg2;
-    input ArgType3 _inExtraArg3;
-    input FoldType inFoldArg;
-    output FoldType outFoldArg;
-  end FoldFunc3;
-algorithm
-  outResult :=
-  match(stopCond, inArray, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inFoldValue, inIndex, inArraySize)
-    local
-      ElementType e;
-      FoldType res;
-
-    case (true, _, _, _, _, _, _, _, _)
-      then
-        inFoldValue;
-
-    else
-      equation
-        e = arrayGet(inArray, inIndex);
-        res = inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3, inFoldValue);
-      then
-        arrayFold3_impl(inIndex + 1 > inArraySize, inArray, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, res, inIndex + 1, inArraySize);
-
-  end match;
-end arrayFold3_impl;
-
-public function arrayFold4
-  "Takes an array, a function, four constant parameters and a start value. The function is applied to
-   each array element, and the start value is passed to the function and
-   updated."
-  input array<ElementType> inArray;
-  input FoldFunc4 inFoldFunc;
-  input ArgType1 inExtraArg1;
-  input ArgType2 inExtraArg2;
-  input ArgType3 inExtraArg3;
-  input ArgType4 inExtraArg4;
-  input FoldType inStartValue;
-  output FoldType outResult;
-
-  replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
-  replaceable type ArgType1 subtypeof Any;
-  replaceable type ArgType2 subtypeof Any;
-  replaceable type ArgType3 subtypeof Any;
-  replaceable type ArgType4 subtypeof Any;
-
-  partial function FoldFunc4
-    input ElementType inElement;
-    input ArgType1 _inExtraArg1;
-    input ArgType2 _inExtraArg2;
-    input ArgType3 _inExtraArg3;
-    input ArgType4 _inExtraArg4;
-    input FoldType inFoldArg;
-    output FoldType outFoldArg;
-  end FoldFunc4;
-algorithm
-  outResult := arrayFold4_impl(1 > arrayLength(inArray), inArray, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inStartValue, 1,
-    arrayLength(inArray));
-end arrayFold4;
-
-public function arrayFold4_impl
-  "Implementation of arrayFold4."
-  input Boolean stopCond;
-  input array<ElementType> inArray;
-  input FoldFunc4 inFoldFunc;
-  input ArgType1 inExtraArg1;
-  input ArgType2 inExtraArg2;
-  input ArgType3 inExtraArg3;
-  input ArgType4 inExtraArg4;
-  input FoldType inFoldValue;
-  input Integer inIndex;
-  input Integer inArraySize;
-  output FoldType outResult;
-
-  replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
-  replaceable type ArgType1 subtypeof Any;
-  replaceable type ArgType2 subtypeof Any;
-  replaceable type ArgType3 subtypeof Any;
-  replaceable type ArgType4 subtypeof Any;
-
-  partial function FoldFunc4
-    input ElementType inElement;
-    input ArgType1 _inExtraArg1;
-    input ArgType2 _inExtraArg2;
-    input ArgType3 _inExtraArg3;
-    input ArgType4 _inExtraArg4;
-    input FoldType inFoldArg;
-    output FoldType outFoldArg;
-  end FoldFunc4;
-algorithm
-  outResult :=
-  match(stopCond, inArray, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inFoldValue, inIndex, inArraySize)
-    local
-      ElementType e;
-      FoldType res;
-
-    case (true, _, _, _, _, _, _, _, _, _)
-      then
-        inFoldValue;
-
-    else
-      equation
-        e = arrayGet(inArray, inIndex);
-        res = inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inFoldValue);
-      then
-        arrayFold4_impl(inIndex + 1 > inArraySize, inArray, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, res, inIndex + 1, inArraySize);
-
-  end match;
-end arrayFold4_impl;
-
-public function arrayFold5
-  "Takes an array, a function, five constant parameters and a start value. The function is applied to
-   each array element, and the start value is passed to the function and
-   updated."
-  input array<ElementType> inArray;
-  input FoldFunc5 inFoldFunc;
-  input ArgType1 inExtraArg1;
-  input ArgType2 inExtraArg2;
-  input ArgType3 inExtraArg3;
-  input ArgType4 inExtraArg4;
-  input ArgType5 inExtraArg5;
-  input FoldType inStartValue;
-  output FoldType outResult;
-
-  replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
-  replaceable type ArgType1 subtypeof Any;
-  replaceable type ArgType2 subtypeof Any;
-  replaceable type ArgType3 subtypeof Any;
-  replaceable type ArgType4 subtypeof Any;
-  replaceable type ArgType5 subtypeof Any;
-
-  partial function FoldFunc5
-    input ElementType inElement;
-    input ArgType1 _inExtraArg1;
-    input ArgType2 _inExtraArg2;
-    input ArgType3 _inExtraArg3;
-    input ArgType4 _inExtraArg4;
-    input ArgType5 _inExtraArg5;
-    input FoldType inFoldArg;
-    output FoldType outFoldArg;
-  end FoldFunc5;
-algorithm
-  outResult := arrayFold5_impl(1 > arrayLength(inArray), inArray, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inExtraArg5, inStartValue, 1,
-    arrayLength(inArray));
-end arrayFold5;
-
-public function arrayFold5_impl
-  "Implementation of arrayFold5."
-  input Boolean stopCond;
-  input array<ElementType> inArray;
-  input FoldFunc5 inFoldFunc;
-  input ArgType1 inExtraArg1;
-  input ArgType2 inExtraArg2;
-  input ArgType3 inExtraArg3;
-  input ArgType4 inExtraArg4;
-  input ArgType4 inExtraArg5;
-  input FoldType inFoldValue;
-  input Integer inIndex;
-  input Integer inArraySize;
-  output FoldType outResult;
-
-  replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
-  replaceable type ArgType1 subtypeof Any;
-  replaceable type ArgType2 subtypeof Any;
-  replaceable type ArgType3 subtypeof Any;
-  replaceable type ArgType4 subtypeof Any;
-  replaceable type ArgType5 subtypeof Any;
-
-  partial function FoldFunc5
-    input ElementType inElement;
-    input ArgType1 _inExtraArg1;
-    input ArgType2 _inExtraArg2;
-    input ArgType3 _inExtraArg3;
-    input ArgType4 _inExtraArg4;
-    input ArgType5 _inExtraArg5;
-    input FoldType inFoldArg;
-    output FoldType outFoldArg;
-  end FoldFunc5;
-algorithm
-  outResult :=
-  match(stopCond, inArray, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inExtraArg5, inFoldValue, inIndex, inArraySize)
-    local
-      ElementType e;
-      FoldType res;
-
-    case (true, _, _, _, _, _, _, _, _, _, _)
-      then
-        inFoldValue;
-
-    else
-      equation
-        e = arrayGet(inArray, inIndex);
-        res = inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inExtraArg5, inFoldValue);
-      then
-        arrayFold5_impl(inIndex + 1 > inArraySize, inArray, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inExtraArg5, res, inIndex + 1, inArraySize);
-
-  end match;
-end arrayFold5_impl;
-
-public function arrayFold6
-  "Takes an array, a function, six constant parameters and a start value. The function is applied to
-   each array element, and the start value is passed to the function and
-   updated."
-  input array<ElementType> inArray;
-  input FoldFunc6 inFoldFunc;
-  input ArgType1 inExtraArg1;
-  input ArgType2 inExtraArg2;
-  input ArgType3 inExtraArg3;
-  input ArgType4 inExtraArg4;
-  input ArgType5 inExtraArg5;
-  input ArgType6 inExtraArg6;
-  input FoldType inStartValue;
-  output FoldType outResult;
-
-  replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
-  replaceable type ArgType1 subtypeof Any;
-  replaceable type ArgType2 subtypeof Any;
-  replaceable type ArgType3 subtypeof Any;
-  replaceable type ArgType4 subtypeof Any;
-  replaceable type ArgType5 subtypeof Any;
-  replaceable type ArgType6 subtypeof Any;
-
-  partial function FoldFunc6
-    input ElementType inElement;
-    input ArgType1 _inExtraArg1;
-    input ArgType2 _inExtraArg2;
-    input ArgType3 _inExtraArg3;
-    input ArgType4 _inExtraArg4;
-    input ArgType5 _inExtraArg5;
-    input ArgType6 _inExtraArg6;
-    input FoldType inFoldArg;
-    output FoldType outFoldArg;
-  end FoldFunc6;
-algorithm
-  outResult := arrayFold6_impl(1 > arrayLength(inArray), inArray, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inExtraArg5, inExtraArg6, inStartValue, 1,
-    arrayLength(inArray));
-end arrayFold6;
-
-public function arrayFold6_impl
-  "Implementation of arrayFold6."
-  input Boolean stopCond;
-  input array<ElementType> inArray;
-  input FoldFunc6 inFoldFunc;
-  input ArgType1 inExtraArg1;
-  input ArgType2 inExtraArg2;
-  input ArgType3 inExtraArg3;
-  input ArgType4 inExtraArg4;
-  input ArgType5 inExtraArg5;
-  input ArgType6 inExtraArg6;
-  input FoldType inFoldValue;
-  input Integer inIndex;
-  input Integer inArraySize;
-  output FoldType outResult;
-
-  replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
-  replaceable type ArgType1 subtypeof Any;
-  replaceable type ArgType2 subtypeof Any;
-  replaceable type ArgType3 subtypeof Any;
-  replaceable type ArgType4 subtypeof Any;
-  replaceable type ArgType5 subtypeof Any;
-  replaceable type ArgType6 subtypeof Any;
-
-  partial function FoldFunc6
-    input ElementType inElement;
-    input ArgType1 _inExtraArg1;
-    input ArgType2 _inExtraArg2;
-    input ArgType3 _inExtraArg3;
-    input ArgType4 _inExtraArg4;
-    input ArgType5 _inExtraArg5;
-    input ArgType6 _inExtraArg6;
-    input FoldType inFoldArg;
-    output FoldType outFoldArg;
-  end FoldFunc6;
-algorithm
-  outResult :=
-  match(stopCond, inArray, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inExtraArg5, inExtraArg6, inFoldValue, inIndex, inArraySize)
-    local
-      ElementType e;
-      FoldType res;
-
-    case (true, _, _, _, _, _, _, _, _, _, _, _)
-      then
-        inFoldValue;
-
-    else
-      equation
-        e = arrayGet(inArray, inIndex);
-        res = inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inExtraArg5, inExtraArg6, inFoldValue);
-      then
-        arrayFold6_impl(inIndex + 1 > inArraySize, inArray, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inExtraArg5, inExtraArg6, res, inIndex + 1, inArraySize);
-
-  end match;
-end arrayFold6_impl;
-
-public function arrayUpdateIndexFirst
-" author: wbraun
-Perfoms an array update with arrayUpdate,
-but index is the first argument so it's
-usable with List.map..."
-  input Integer inIndex;
-  input ElementType value;
-  input array<ElementType> inArrayA;
-  //output array<ElementType> outArrayA;
-  replaceable type ElementType subtypeof Any;
-
-algorithm
-  _ := arrayUpdate(inArrayA, inIndex, value);
-end arrayUpdateIndexFirst;
-
-public function arrayUpdatewithArrayIndexFirst
-" author: wbraun
-Perfoms an array update with arrayUpdate,
-but index is the first argument so it's
-usable with List.map..."
-  input Integer inIndex;
-  input array<ElementType> inArrayA;
-  input array<ElementType> inArrayB;
-  //output array<ElementType> outArrayA;
-  replaceable type ElementType subtypeof Any;
-
-protected
-  ElementType value;
-algorithm
-  value := arrayGet(inArrayA, inIndex);
-  _ := arrayUpdate(inArrayB, inIndex, value);
-end arrayUpdatewithArrayIndexFirst;
-
-public function arrayUpdatewithListIndexFirst
-" author: wbraun
-Perfoms an array update with arrayUpdate,
-but index is the first argument so it's
-usable with List.map..."
-  input list<Integer> inListA;
-  input Integer inStartListLength;
-  input array<ElementType> inArrayA;
-  input array<ElementType> inArrayB;
-  //output array<ElementType> outArrayA;
-  replaceable type ElementType subtypeof Any;
-
-algorithm
-  _ := match(inListA, inStartListLength, inArrayA, inArrayB)
-    local
-      list<Integer> rest;
-    case ({}, _, _, _) then ();
-    case (_::rest, _, _, _)
-      equation
-        arrayUpdatewithArrayIndexFirst(inStartListLength, inArrayA, inArrayB);
-        arrayUpdatewithListIndexFirst(rest, inStartListLength+1, inArrayA, inArrayB);
-    then ();
-   end match;
-end arrayUpdatewithListIndexFirst;
-
-public function arrayUpdateElementListUnion
-" author: wbraun
-Perfoms an array update with arrayUpdate,
-but index is the first argument so it's
-usable with List.map..."
-  input Integer inIndex;
-  input list<ElementType> inValue;
-  input array<list<ElementType>> inArrayA;
-  //output array<ElementType> outArrayA;
-  replaceable type ElementType subtypeof Any;
-
-protected
- list<ElementType> value;
-algorithm
-  value := arrayGet(inArrayA, inIndex);
-  value := List.unionAppendonUnion(value, inValue);
-  _ := arrayUpdate(inArrayA, inIndex, value);
-end arrayUpdateElementListUnion;
-
-public function arrayUpdateElementListAppend
-" author: wbraun
-Perfoms an array update with arrayUpdate,
-but index is the first argument so it's
-usable with List.map..."
-  input Integer inIndex;
-  input list<ElementType> inValue;
-  input array<list<ElementType>> inArrayA;
-  //output array<ElementType> outArrayA;
-  replaceable type ElementType subtypeof Any;
-
-protected
- list<ElementType> value;
-algorithm
-  value := arrayGet(inArrayA, inIndex);
-  value := listAppend(value, inValue);
-  _ := arrayUpdate(inArrayA, inIndex, value);
-end arrayUpdateElementListAppend;
-
-public function arrayGetIndexFirst
-" author: wbraun
-Perfoms an array get with arrayGet,
-but index is the first argument so it's
-usable with List.map..."
-  input Integer inIndex;
-  input array<ElementType> inArrayA;
-  output ElementType outElement;
-
-  replaceable type ElementType subtypeof Any;
-algorithm
-  outElement := arrayGet(inArrayA, inIndex);
-end arrayGetIndexFirst;
-
-public function selectFirstNonEmptyString "Selects the first non-empty string from a list of strings.
-If all strings a empty or empty list return empty string.
-"
-  input list<String> slst;
-  output String res;
-algorithm
-  res := matchcontinue(slst)
-    local
-      String s;
-      list<String> rest;
-    case (s::rest)
-      equation
-        true = (s ==& "");
-        res = selectFirstNonEmptyString(rest);
-      then res;
-    case (s::_)
-      equation
-        false = stringEq(s,"");
-      then s;
-    case {} then "";
-  end matchcontinue;
+  for e in inStrings loop
+    if e <> "" then
+      outResult := e;
+      return;
+    end if;
+  end for;
+  outResult := "";
 end selectFirstNonEmptyString;
 
-public function equal "
-This function is intended to be a replacement for equality,
-when sending function as an input argument."
-  input Type_a arg1;
-  input Type_a arg2;
-  output Boolean b;
-  replaceable type Type_a subtypeof Any;
-algorithm b := matchcontinue(arg1,arg2)
-  case(_,_)
-    equation
-      equality(arg1 = arg2);
-    then
-      true;
-  case(_,_) then false;
-end matchcontinue;
-end equal;
-
-public function arrayReplaceAtWithFill "
-  Takes
-  - an element,
-  - a position (1..n)
-  - an array and
-  - a fill value
-  The function replaces the value at the given position in the array, if the given position is
-  out of range, the fill value is used to padd the array up to that element position and then
-  insert the value at the position.
-  Example:
-    arrayReplaceAtWithFill(\"A\", 5, {\"a\",\"b\",\"c\"},\"dummy\") => {\"a\",\"b\",\"c\",\"dummy\",\"A\"}"
-  input Integer inPos;
-  input Type_a inTypeReplace;
-  input Type_a inTypeFill;
-  input array<Type_a> inTypeAArray;
-  output array<Type_a> outTypeAArray;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTypeAArray:=
-  matchcontinue (inPos,inTypeReplace,inTypeFill,inTypeAArray)
-    local
-      Integer alen,pos;
-      array<Type_a> res,arr,newarr,res_1;
-      Type_a x,fillv;
-    case (pos,x,_,arr)
-      equation
-        alen = arrayLength(arr) "Replacing element with index in range of the array" ;
-        (pos <= alen) = true;
-        res = arrayUpdate(arr, pos, x);
-      then
-        res;
-    case (pos,x,fillv,arr)
-      equation
-        //Replacing element out of range of array, create new array, and copy elts.
-        newarr = arrayCreate(pos, fillv);
-        res = arrayCopy(arr, newarr);
-        res_1 = arrayUpdate(res, pos, x);
-      then
-        res_1;
-    case (_,_,_,_)
-      equation
-        print("- Util.arrayReplaceAtWithFill failed\n");
-      then
-        fail();
-  end matchcontinue;
-end arrayReplaceAtWithFill;
-
-public function arrayExpand "Increases the number of elements of a list with n.
-  Each of the new elements have the value v."
-  input Integer n;
-  input array<Type_a> arr;
-  input Type_a v;
-  output array<Type_a> newarr_1;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  newarr_1 := matchcontinue(n,arr,v)
-    local
-      Integer len,newlen;
-      array<Type_a> newarr;
-    case (_,_,_)
-      equation
-        // do nothing if n is negative or zero
-        true = intLt(n,1);
-      then
-        arr;
-    case (_,_,_)
-      equation
-       len = arrayLength(arr);
-       newlen = n + len;
-       newarr = arrayCreate(newlen, v);
-       newarr_1 = arrayCopy(arr, newarr);
-      then
-       newarr_1;
-    else
-      equation
-        print("Util.arrayExpand failed!\n");
-        print("OldSize: " +& intString(arrayLength(arr)) +& " additional elements: " +& intString(n) +& "\n");
-      then
-        fail();
-  end matchcontinue;
-end arrayExpand;
-
-public function arrayExpandOnDemand
-  "Resizes an array if needed."
-  input Integer inNewSize "The number of elements that should fit in the array.";
-  input array<ElementType> inArray "The array to resize.";
-  input Real inExpansionFactor "The factor to resize the array with.";
-  input ElementType inFillValue "The value to fill the new part of the array.";
-  output array<ElementType> outArray "The resulting array.";
-
-  replaceable type ElementType subtypeof Any;
-algorithm
-  outArray :=
-  matchcontinue(inNewSize, inArray, inExpansionFactor, inFillValue)
-    local
-      Integer new_size;
-      array<ElementType> new_arr;
-
-    // Space left in the array, do nothing.
-    case (_, _, _, _)
-      equation
-        true = inNewSize <= arrayLength(inArray);
-      then
-        inArray;
-
-    // Otherwise, resize the array.
-    else
-      equation
-        new_size = realInt(intReal(arrayLength(inArray)) *. inExpansionFactor);
-        new_arr = arrayCreate(new_size, inFillValue);
-        new_arr = arrayCopy(inArray, new_arr);
-      then
-        new_arr;
-
-  end matchcontinue;
-end arrayExpandOnDemand;
-
-public function arrayNCopy "The function fails if all elements can not be fit into dest array."
-  input array<Type_a> src;
-  input array<Type_a> dst;
-  input Integer n;
-  output array<Type_a> dst_1;
-  replaceable type Type_a subtypeof Any;
-protected
-  Integer n_1;
-algorithm
-  n_1 := n - 1;
-  dst_1 := arrayCopy2(src, dst, n_1);
-end arrayNCopy;
-
-public function arrayAppend "Function: arrayAppend
-function for appending two arrays"
-  input array<Type_a> arr1;
-  input array<Type_a> arr2;
-  output array<Type_a> out;
-  replaceable type Type_a subtypeof Any;
-protected
-  list<Type_a> l1,l2,l3;
-algorithm
-  l1 := arrayList(arr1);
-  l2 := arrayList(arr2);
-  l3 := listAppend(l1,l2);
-  out := listArray(l3);
-end arrayAppend;
-
-public function arrayCons
-"function for concate an element on an array of list"
-  input Integer index;
-  input Type_a element;
-  input array<list<Type_a>> arr;
-  output array<list<Type_a>> out;
-replaceable type Type_a subtypeof Any;
-protected
-  list<Type_a> l;
-algorithm
-  l := arr[index];
-  out := arrayUpdate(arr,index,element::l);
-end arrayCons;
-
-public function arrayListAppend
-"function for listAppend an list on an array of list"
-  input Integer index;
-  input list<Type_a> elements;
-  input array<list<Type_a>> arr;
-  output array<list<Type_a>> out;
-replaceable type Type_a subtypeof Any;
-protected
-  list<Type_a> l;
-algorithm
-  l := arr[index];
-  l := listAppend(l,elements);
-  out := arrayUpdate(arr,index,l);
-end arrayListAppend;
-
-public function arrayCopy "copies all values in src array into dest array.
-  The function fails if all elements can not be fit into dest array."
-  input array<Type_a> inTypeAArray1;
-  input array<Type_a> inTypeAArray2;
-  output array<Type_a> outTypeAArray;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTypeAArray:=
-  matchcontinue (inTypeAArray1,inTypeAArray2)
-    local
-      Integer srclen,dstlen;
-      array<Type_a> src,dst,dst_1;
-    case (src,dst) /* src dst */
-      equation
-        srclen = arrayLength(src);
-        dstlen = arrayLength(dst);
-        (srclen > dstlen) = true;
-        print(
-          "- Util.arrayCopy failed. Can not fit elements into dest array\n");
-      then
-        fail();
-    case (src,dst)
-      equation
-        srclen = arrayLength(src);
-        srclen = srclen - 1;
-        dst_1 = arrayCopy2(src, dst, srclen);
-      then
-        dst_1;
-  end matchcontinue;
-end arrayCopy;
-
-protected function arrayCopy2
-  input array<Type_a> inTypeAArray1;
-  input array<Type_a> inTypeAArray2;
-  input Integer inInteger3;
-  output array<Type_a> outTypeAArray;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTypeAArray:=
-  match (inTypeAArray1,inTypeAArray2,inInteger3)
-    local
-      array<Type_a> src,dst,dst_1,dst_2;
-      Type_a elt;
-      Integer pos;
-    case (_,dst,-1) then dst;  /* src dst current pos */
-    case (src,dst,pos)
-      equation
-        elt = src[pos + 1];
-        dst_1 = arrayUpdate(dst, pos + 1, elt);
-        pos = pos - 1;
-        dst_2 = arrayCopy2(src, dst_1, pos);
-      then
-        dst_2;
-  end match;
-end arrayCopy2;
-
-public function arraySet "Sets from position start to position end_ the value v."
-  input Integer start;
-  input Integer end_;
-  input array<Type_a> arr;
-  input Type_a v;
-  output array<Type_a> oarr;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  oarr := matchcontinue(start,end_,arr,v)
-    local
-      array<Type_a> newarr;
-    case (_,_,_,_)
-      equation
-        // do nothing if start is grather than end_
-        true = intGt(start,end_);
-      then
-        arr;
-    case (_,_,_,_)
-      equation
-        false = intGt(start,end_);
-        newarr = arrayUpdate(arr, start, v);
-      then
-        arraySet(start+1,end_,newarr,v);
-    else
-      equation
-        print("Util.arraySet failed!\n");
-        print("Size: " +& intString(arrayLength(arr)) +& " start: " +& intString(start) +& " end: " +& intString(end_) +& "\n");
-      then
-        fail();
-  end matchcontinue;
-end arraySet;
-
-public function compareTuple2IntGt
+public function compareTuple2IntGt<T>
 "  Function could used with List.sort to sort a
   List as list< tuple<Type_a,Integer> > by second argument.
   "
-  input tuple<Type_a,Integer> inTplA;
-  input tuple<Type_a,Integer> inTplB;
+  input tuple<T, Integer> inTplA;
+  input tuple<T, Integer> inTplB;
   output Boolean res;
-  replaceable type Type_a subtypeof Any;
 protected
   Integer a,b;
 algorithm
@@ -1576,14 +178,13 @@ algorithm
   res := intGt(a,b);
 end compareTuple2IntGt;
 
-public function compareTuple2IntLt
+public function compareTuple2IntLt<T>
 "  Function could used with List.sort to sort a
   List as list< tuple<Type_a,Integer> > by second argument.
   "
-  input tuple<Type_a,Integer> inTplA;
-  input tuple<Type_a,Integer> inTplB;
+  input tuple<T, Integer> inTplA;
+  input tuple<T, Integer> inTplB;
   output Boolean res;
-  replaceable type Type_a subtypeof Any;
 protected
   Integer a,b;
 algorithm
@@ -1592,356 +193,159 @@ algorithm
   res := intLt(a,b);
 end compareTuple2IntLt;
 
-public function tuple21 "Takes a tuple of two values and returns the first value.
-  Example: tuple21((\"a\",1)) => \"a\""
-  input tuple<Type_a, Type_b> inTplTypeATypeB;
-  output Type_a outTypeA;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
+public function tuple21<T1, T2>
+  "Takes a tuple of two values and returns the first value.
+   Example: tuple21(('a', 1)) => 'a'"
+  input tuple<T1, T2> inTuple;
+  output T1 outValue;
 algorithm
-  outTypeA:=match (inTplTypeATypeB)
-    local Type_a a;
-    case ((a,_)) then a;
-  end match;
+  (outValue, _) := inTuple;
 end tuple21;
 
-public function tuple22 "Takes a tuple of two values and returns the second value.
-  Example: tuple22((\"a\",1)) => 1"
-  input tuple<Type_a, Type_b> inTplTypeATypeB;
-  output Type_b outTypeB;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
+public function tuple22<T1, T2>
+  "Takes a tuple of two values and returns the second value.
+   Example: tuple22(('a',1)) => 1"
+  input tuple<T1, T2> inTuple;
+  output T2 outValue;
 algorithm
-  outTypeB:=
-  match (inTplTypeATypeB)
-    local Type_b b;
-    case ((_,b)) then b;
-  end match;
+  (_, outValue) := inTuple;
 end tuple22;
 
-public function optTuple22 "Takes an option tuple of two values and returns the second value.
-  Example: optTuple22(SOME(\"a\",1)) => 1"
-  input Option<tuple<Type_a, Type_b>> inTplTypeATypeB;
-  output Type_b outTypeB;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
+public function optTuple22<T1, T2>
+  "Takes an option tuple of two values and returns the second value.
+   Example: optTuple22(SOME('a',1)) => 1"
+  input Option<tuple<T1, T2>> inTuple;
+  output T2 outValue;
 algorithm
-  SOME((_,outTypeB)) := inTplTypeATypeB;
+  SOME((_, outValue)) := inTuple;
 end optTuple22;
 
-public function tuple312 "
-  Takes a tuple of three values and returns the tuple of the two first values.
-  Example: tuple312((\"a\",1,2)) => (\"a\",1)"
-  input tuple<Type_a, Type_b,Type_c> tpl;
-  output tuple<Type_a, Type_b> outTypeA;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
+public function tuple312<T1, T2, T3>
+  "Takes a tuple of three values and returns the tuple of the two first values.
+   Example: tuple312(('a',1,2)) => ('a',1)"
+  input tuple<T1, T2, T3> inTuple;
+  output tuple<T1, T2> outTuple;
+protected
+  T1 e1;
+  T2 e2;
 algorithm
-  outTypeA:=
-  match (tpl)
-    local
-      Type_a a;
-      Type_b b;
-    case ((a,b,_)) then ((a,b));
-  end match;
+  (e1, e2, _) := inTuple;
+  outTuple := (e1, e2);
 end tuple312;
 
-public function tuple31 "
-  Takes a tuple of three values and returns the first value.
-  Example: tuple31((\"a\",1,2)) => \"a\""
-  input tuple<Type_a, Type_b,Type_c> tpl;
-  output Type_a outTypeA;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
+public function tuple31<T1, T2, T3>
+  "Takes a tuple of three values and returns the first value.
+   Example: tuple31(('a',1,2)) => 'a'"
+  input tuple<T1, T2, T3> inValue;
+  output T1 outValue;
 algorithm
-  outTypeA:=
-  match (tpl)
-    local Type_a a;
-    case ((a,_,_)) then a;
-  end match;
+  (outValue, _, _) := inValue;
 end tuple31;
 
-public function tuple32 "
-  Takes a tuple of three values and returns the second value.
-  Example: tuple32((\"a\",1,2)) => 1 "
-  input tuple<Type_a, Type_b,Type_c> tpl;
-  output Type_b outTypeB;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
+public function tuple32<T1, T2, T3>
+  "Takes a tuple of three values and returns the second value.
+   Example: tuple32(('a',1,2)) => 1"
+  input tuple<T1, T2, T3> inValue;
+  output T2 outValue;
 algorithm
-  outTypeB:=
-  match (tpl)
-    local Type_b b;
-    case ((_,b,_)) then b;
-  end match;
+  (_, outValue, _) := inValue;
 end tuple32;
 
-public function tuple33 "
-  Takes a tuple of three values and returns the third value.
-  Example: tuple33((\"a\",1,2)) => 2 "
-  input tuple<Type_a, Type_b,Type_c> tpl;
-  output Type_c outTypeC;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
+public function tuple33<T1, T2, T3>
+  "Takes a tuple of three values and returns the first value.
+   Example: tuple33(('a',1,2)) => 2"
+  input tuple<T1, T2, T3> inValue;
+  output T3 outValue;
 algorithm
-  outTypeC:=
-  match (tpl)
-    local Type_c c;
-    case ((_,_,c)) then c;
-  end match;
+  (_, _, outValue) := inValue;
 end tuple33;
 
-public function tuple41
-  input tuple<Type_a,Type_b,Type_c,Type_d> tpl;
-  output Type_a out;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  replaceable type Type_d subtypeof Any;
+public function tuple41<T1, T2, T3, T4>
+  input tuple<T1, T2, T3, T4> inTuple;
+  output T1 outValue;
 algorithm
-  (out,_,_,_) := tpl;
+  (outValue, _, _, _) := inTuple;
 end tuple41;
 
-public function tuple42
-  input tuple<Type_a,Type_b,Type_c,Type_d> tpl;
-  output Type_b out;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  replaceable type Type_d subtypeof Any;
+public function tuple42<T1, T2, T3, T4>
+  input tuple<T1, T2, T3, T4> inTuple;
+  output T2 outValue;
 algorithm
-  (_,out,_,_) := tpl;
+  (_, outValue, _, _) := inTuple;
 end tuple42;
 
-public function tuple43
-  input tuple<Type_a,Type_b,Type_c,Type_d> tpl;
-  output Type_c out;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  replaceable type Type_d subtypeof Any;
+public function tuple43<T1, T2, T3, T4>
+  input tuple<T1, T2, T3, T4> inTuple;
+  output T3 outValue;
 algorithm
-  (_,_,out,_) := tpl;
+  (_, _, outValue, _) := inTuple;
 end tuple43;
 
-public function tuple44
-  input tuple<Type_a,Type_b,Type_c,Type_d> tpl;
-  output Type_d out;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  replaceable type Type_d subtypeof Any;
+public function tuple44<T1, T2, T3, T4>
+  input tuple<T1, T2, T3, T4> inTuple;
+  output T4 outValue;
 algorithm
-  (_,_,_,out) := tpl;
+  (_, _, _, outValue) := inTuple;
 end tuple44;
 
-public function tuple51
-  input tuple<Type_a,Type_b,Type_c,Type_d,Type_e> tpl;
-  output Type_a out;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  replaceable type Type_d subtypeof Any;
-  replaceable type Type_e subtypeof Any;
+public function tuple51<T1, T2, T3, T4, T5>
+  input tuple<T1, T2, T3, T4, T5> inTuple;
+  output T1 outValue;
 algorithm
-  (out,_,_,_,_) := tpl;
+  (outValue, _, _, _, _) := inTuple;
 end tuple51;
 
-public function tuple52
-  input tuple<Type_a,Type_b,Type_c,Type_d,Type_e> tpl;
-  output Type_b out;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  replaceable type Type_d subtypeof Any;
-  replaceable type Type_e subtypeof Any;
+public function tuple52<T1, T2, T3, T4, T5>
+  input tuple<T1, T2, T3, T4, T5> inTuple;
+  output T2 outValue;
 algorithm
-  (_,out,_,_,_) := tpl;
+  (_, outValue, _, _, _) := inTuple;
 end tuple52;
 
-public function tuple53
-  input tuple<Type_a,Type_b,Type_c,Type_d,Type_e> tpl;
-  output Type_c out;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  replaceable type Type_d subtypeof Any;
-  replaceable type Type_e subtypeof Any;
+public function tuple53<T1, T2, T3, T4, T5>
+  input tuple<T1, T2, T3, T4, T5> inTuple;
+  output T3 outValue;
 algorithm
-  (_,_,out,_,_) := tpl;
+  (_, _, outValue, _, _) := inTuple;
 end tuple53;
 
-public function tuple54
-  input tuple<Type_a,Type_b,Type_c,Type_d,Type_e> tpl;
-  output Type_d out;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  replaceable type Type_d subtypeof Any;
-  replaceable type Type_e subtypeof Any;
+public function tuple54<T1, T2, T3, T4, T5>
+  input tuple<T1, T2, T3, T4, T5> inTuple;
+  output T4 outValue;
 algorithm
-  (_,_,_,out,_) := tpl;
+  (_, _, _, outValue, _) := inTuple;
 end tuple54;
 
-public function tuple55
-  input tuple<Type_a,Type_b,Type_c,Type_d,Type_e> tpl;
-  output Type_e out;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  replaceable type Type_d subtypeof Any;
-  replaceable type Type_e subtypeof Any;
+public function tuple55<T1, T2, T3, T4, T5>
+  input tuple<T1, T2, T3, T4, T5> inTuple;
+  output T5 outValue;
 algorithm
-  (_,_,_,_,out) := tpl;
+  (_, _, _, _, outValue) := inTuple;
 end tuple55;
 
-public function tuple61
-  input tuple<Type_a,Type_b,Type_c,Type_d,Type_e,Type_f> tpl;
-  output Type_a out;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  replaceable type Type_d subtypeof Any;
-  replaceable type Type_e subtypeof Any;
-  replaceable type Type_f subtypeof Any;
+public function tuple61<T1, T2, T3, T4, T5, T6>
+  input tuple<T1, T2, T3, T4, T5, T6> inTuple;
+  output T1 outValue;
 algorithm
-  (out,_,_,_,_,_) := tpl;
+  (outValue, _, _ ,_ ,_ ,_ ) := inTuple;
 end tuple61;
 
-public function tuple62
-  input tuple<Type_a,Type_b,Type_c,Type_d,Type_e,Type_f> tpl;
-  output Type_b out;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  replaceable type Type_d subtypeof Any;
-  replaceable type Type_e subtypeof Any;
-  replaceable type Type_f subtypeof Any;
+public function tuple62<T1, T2, T3, T4, T5, T6>
+  input tuple<T1, T2, T3, T4, T5, T6> inTuple;
+  output T2 outValue;
 algorithm
-  (_,out,_,_,_,_) := tpl;
+  (_, outValue, _ ,_ ,_ ,_ ) := inTuple;
 end tuple62;
 
-public function splitTuple2List "Takes a list of two-tuples and splits it into two lists.
-  Example: splitTuple2List({(\"a\",1),(\"b\",2),(\"c\",3)}) => ({\"a\",\"b\",\"c\"}, {1,2,3})"
-  input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
-  output list<Type_a> outTypeALst;
-  output list<Type_b> outTypeBLst;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-algorithm
-  (outTypeALst,outTypeBLst):=
-  match (inTplTypeATypeBLst)
-    local
-      list<Type_a> xs;
-      list<Type_b> ys;
-      Type_a x;
-      Type_b y;
-      list<tuple<Type_a, Type_b>> rest;
-    case ({}) then ({},{});
-    case (((x,y) :: rest))
-      equation
-        (xs,ys) = splitTuple2List(rest);
-      then
-        ((x :: xs),(y :: ys));
-  end match;
-end splitTuple2List;
-
-public function splitTuple211List
-"Takes a list of two-tuples and outputs the first one."
-  input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
-  output list<Type_a> outTypeALst;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-algorithm
-  (outTypeALst):=
-  match (inTplTypeATypeBLst)
-    local
-      list<Type_a> xs;
-      Type_a x;
-      list<tuple<Type_a, Type_b>> rest;
-    case ({}) then ({});
-    case (((x,_) :: rest))
-      equation
-        (xs) = splitTuple211List(rest);
-      then
-        ((x :: xs));
-  end match;
-end splitTuple211List;
-
-public function splitTuple212List
- "Takes a list of two-tuples and outputs the second one."
-  input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
-  output list<Type_b> outTypeBLst;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-algorithm
-  (outTypeBLst):=
-  match (inTplTypeATypeBLst)
-    local
-      list<Type_b> xs;
-      Type_b x;
-      list<tuple<Type_a, Type_b>> rest;
-    case ({}) then ({});
-    case (((_,x) :: rest))
-      equation
-        (xs) = splitTuple212List(rest);
-      then
-        ((x :: xs));
-  end match;
-end splitTuple212List;
-
-
-public function filterList "
-Author BZ
-Taking a list of a generic type and a integer list which are the positions
-we are supposed to remove. The final position is the offset, where to start from(normal = 0 )."
-  input list<Type_a> lst;
-  input list<Integer> positions;
-  input Integer pos;
-  output list<Type_a> outList;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outList := matchcontinue(lst,positions,pos)
-    local
-      list<Type_a> tail,res;
-      Type_a head;
-      Integer x;
-      list<Integer> xs;
-    case ({},_,_) then {};
-    case (_,{},_) then lst;
-    case (_::tail,x::xs,_)
-      equation
-        true = intEq(x, pos); // equality(x=pos);
-        res = filterList(tail,xs,pos+1);
-      then
-        res;
-    case (head::tail,x::xs,_)
-      equation
-        res = filterList(tail,x::xs,pos+1);
-      then
-        head::res;
-  end matchcontinue;
-end filterList;
-
-public function if_ "Takes a boolean and two values.
+public function if_<T> "Takes a boolean and two values.
   Returns the first value (second argument) if the boolean value is
   true, otherwise the second value (third argument) is returned.
   Example: if_(true,\"a\",\"b\") => \"a\""
   input Boolean cond;
-  input Type_a valTrue;
-  input Type_a valFalse;
-  output Type_a outVal;
-  replaceable type Type_a subtypeof Any;
-  // annotation(__OpenModelica_EarlyInline = true);
-algorithm
-  outVal := match (cond,valTrue,valFalse)
-    case (true,_,_) then valTrue;
-    else valFalse;
-  end match;
+  input T valTrue;
+  input T valFalse;
+  output T outVal := if cond then valTrue else valFalse;
+  annotation(__OpenModelica_EarlyInline = true);
 end if_;
 
 public function stringContainsChar "Returns true if a string contains a specified character"
@@ -1949,8 +353,8 @@ public function stringContainsChar "Returns true if a string contains a specifie
   input String char;
   output Boolean res;
 algorithm
-  res := matchcontinue(str,char)
-    case (_,_)
+  res := matchcontinue()
+    case ()
       equation
         _::_::_ = stringSplitAtChar(str,char);
       then true;
@@ -1964,21 +368,20 @@ Same funcitonality as stringDelimitListPrint, but writes to print buffer instead
 Usefull for heavy string operations(causes malloc error on some models when generating init file).
 "
   input list<String> inStringLst;
-  input String inString;
+  input String inDelimiter;
 algorithm
   _:=
-  matchcontinue (inStringLst,inString)
+  matchcontinue (inStringLst)
     local
       String f,delim,str1,str2,str;
       list<String> r;
-    case ({},_) then ();
-    case ({f},_) equation Print.printBuf(f); then ();
-    case ((f :: r),delim)
+    case {} then ();
+    case {f} equation Print.printBuf(f); then ();
+    case f :: r
       equation
-        stringDelimitListPrintBuf(r, delim);
+        stringDelimitListPrintBuf(r, inDelimiter);
         Print.printBuf(f);
-        Print.printBuf(delim);
-
+        Print.printBuf(inDelimiter);
       then
         ();
   end matchcontinue;
@@ -2041,7 +444,7 @@ algorithm
         stringDelimitListAndSeparate2(r, sep1, sep2, n, iter_1);
       then
         ();
-    case (_,_,_,_,_)
+    else
       equation
         print("- stringDelimitListAndSeparate2 failed\n");
       then
@@ -2073,70 +476,7 @@ public function stringReplaceChar "Takes a string and two chars and replaces the
   output String outString;
 algorithm
   outString := System.stringReplace(inString1, inString2, inString3);
-  /*
-  matchcontinue (inString1,inString2,inString3)
-    local
-      list<String> strList,resList;
-      String res,str;
-      String fromChar,toChar;
-    case (str,fromChar,toChar)
-      equation
-        strList = stringListStringChar(str);
-        resList = stringReplaceChar2(strList, fromChar, toChar);
-        res = stringCharListString(resList);
-      then
-        res;
-    case (_,_,_)
-      equation
-        print("- Util.stringReplaceChar failed\n");
-      then
-        fail();
-  end matchcontinue;
-  */
 end stringReplaceChar;
-
-protected function stringReplaceChar2
-  input list<String> inStringLst1;
-  input String inString2;
-  input String inString3;
-  output list<String> outStringLst;
-algorithm
-  outStringLst := matchcontinue (inStringLst1,inString2,inString3)
-    local
-      list<String> res,rest,strList, charList2;
-      String firstChar,fromChar,toChar;
-
-    case ({},_,_) then {};
-    case ((firstChar :: rest),fromChar,"") // added special case for removal of char.
-      equation
-        true = stringEq(firstChar, fromChar);
-        res = stringReplaceChar2(rest, fromChar, "");
-      then
-        (res);
-
-    case ((firstChar :: rest),fromChar,toChar)
-      equation
-        true = stringEq(firstChar, fromChar);
-        res = stringReplaceChar2(rest, fromChar, toChar);
-        charList2 = stringListStringChar(toChar);
-        res = listAppend(charList2,res);
-      then
-        res;
-
-    case ((firstChar :: rest),fromChar,toChar)
-      equation
-        false = stringEq(firstChar, fromChar);
-        res = stringReplaceChar2(rest, fromChar, toChar);
-      then
-        (firstChar :: res);
-
-    case (strList,_,_)
-      equation
-        print("- Util.stringReplaceChar2 failed\n");
-      then
-        strList;
-  end matchcontinue;
-end stringReplaceChar2;
 
 public function stringSplitAtChar "Takes a string and a char and split the string at the char returning the list of components.
   Example: stringSplitAtChar(\"hej.b.c\",\".\") => {\"hej,\"b\",\"c\"}"
@@ -2317,17 +657,14 @@ public function boolOrList "Example:
     boolOrList({true,false,false})  => true
     boolOrList({false,false,false}) => false"
   input list<Boolean> inBooleanLst;
-  output Boolean outBoolean;
+  output Boolean outBoolean := false;
 algorithm
-  outBoolean := match (inBooleanLst)
-    local
-      Boolean b;
-      list<Boolean> rest;
-    case({}) then false;
-    case ({b}) then b;
-    case ((true :: _))  then true;
-    case ((false :: rest)) then boolOrList(rest);
-  end match;
+  for b in inBooleanLst loop
+    if b then
+      outBoolean := true;
+      return;
+    end if;
+  end for;
 end boolOrList;
 
 public function boolAndList "Takes a list of boolean values and applies the boolean AND operator on the elements
@@ -2336,20 +673,17 @@ public function boolAndList "Takes a list of boolean values and applies the bool
   boolAndList({true, true}) => true
   boolAndList({false,false,true}) => false"
   input list<Boolean> inBooleanLst;
-  output Boolean outBoolean;
+  output Boolean outBoolean := true;
 algorithm
-  outBoolean := match (inBooleanLst)
-    local
-      Boolean b;
-      list<Boolean> rest;
-    case({}) then true;
-    case ({b}) then b;
-    case ((false :: _)) then false;
-    case ((true :: rest))  then boolAndList(rest);
-  end match;
+  for b in inBooleanLst loop
+    if not b then
+      outBoolean := false;
+      return;
+    end if;
+  end for;
 end boolAndList;
 
-public function applyOption
+public function applyOption<TI, TO>
   "Takes an option value and a function over the value. It returns in another
    option value, resulting from the application of the function on the value.
 
@@ -2357,181 +691,138 @@ public function applyOption
      applyOption(SOME(1), intString) => SOME(\"1\")
      applyOption(NONE(),  intString) => NONE()
   "
-  input Option<InType> inOption;
+  input Option<TI> inOption;
   input FuncType inFunc;
-  output Option<OutType> outOption;
+  output Option<TO> outOption;
 
   partial function FuncType
-    input InType inArg;
-    output OutType outArg;
+    input TI inValue;
+    output TO outValue;
   end FuncType;
-
-  replaceable type InType subtypeof Any;
-  replaceable type OutType subtypeof Any;
 algorithm
-  outOption := match(inOption, inFunc)
+  outOption := match(inOption)
     local
-      InType ival;
-      OutType oval;
+      TI ival;
+      TO oval;
 
-    case (SOME(ival), _)
-      equation
-        oval = inFunc(ival);
-      then
-        SOME(oval);
-
+    case SOME(ival) then SOME(inFunc(ival));
     else NONE();
   end match;
 end applyOption;
 
-public function applyOption1 "Like applyOption but takes an additional argument"
-  input Option<Type_a> ao;
-  input Func func;
-  input Type_b b;
-  output Option<Type_c> co;
-  partial function Func
-    input Type_a a;
-    input Type_b b;
-    output Type_c c;
-  end Func;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
+public function applyOption1<TI, TO, ArgT>
+  "Like applyOption but takes an additional argument"
+  input Option<TI> inOption;
+  input FuncType inFunc;
+  input ArgT inArg;
+  output Option<TO> outOption;
+
+  partial function FuncType
+    input TI inValue;
+    input ArgT inArg;
+    output TO outValue;
+  end FuncType;
 algorithm
-  co := match (ao,func,b)
+  outOption := match(inOption)
     local
-      Type_a a;
-      Type_c c;
-    case (NONE(),_,_) then NONE();
-    case (SOME(a),_,_)
-      equation
-        c = func(a,b);
-      then SOME(c);
+      TI ival;
+      TO oval;
+
+    case SOME(ival) then SOME(inFunc(ival, inArg));
+    else NONE();
   end match;
 end applyOption1;
 
-public function applyOptionOrDefault
+public function applyOptionOrDefault<TI, TO>
   "Takes an optional value, a function and an extra value. If the optional value
    is SOME, applies the function on that value and returns the result.
    Otherwise returns the extra value."
-  input Option<Type_a> inValue;
+  input Option<TI> inValue;
   input FuncType inFunc;
-  input Type_b inDefaultValue;
-  output Type_b outValue;
+  input TO inDefaultValue;
+  output TO outValue;
 
   partial function FuncType
-    input Type_a inValue;
-    output Type_b outValue;
+    input TI inValue;
+    output TO outValue;
   end FuncType;
-
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
 algorithm
-  outValue := match(inValue, inFunc, inDefaultValue)
+  outValue := match(inValue)
     local
-      Type_a value;
-      Type_b res;
+      TI value;
+      TO res;
 
-    case (SOME(value), _, _)
-      equation
-        res = inFunc(value);
-      then
-        res;
-
+    case SOME(value) then inFunc(value);
     else inDefaultValue;
-
   end match;
 end applyOptionOrDefault;
 
-public function applyOptionOrDefault1
+public function applyOptionOrDefault1<TI, TO, ArgT>
   "Takes an optional value, a function, an extra argument and an extra value.
    If the optional value is SOME, applies the function on that value and the
    extra argument and returns the result. Otherwise returns the extra value."
-  input Option<Type_a> inValue;
+  input Option<TI> inValue;
   input FuncType inFunc;
-  input Type_c inArg;
-  input Type_b inDefaultValue;
-  output Type_b outValue;
+  input ArgT inArg;
+  input TO inDefaultValue;
+  output TO outValue;
 
   partial function FuncType
-    input Type_a inValue;
-    input Type_c inArg;
-    output Type_b outValue;
+    input TI inValue;
+    input ArgT inArg;
+    output TO outValue;
   end FuncType;
-
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
 algorithm
-  outValue := match(inValue, inFunc, inArg, inDefaultValue)
+  outValue := match(inValue)
     local
-      Type_a value;
-      Type_b res;
+      TI value;
+      TO res;
 
-    case (SOME(value), _, _, _)
-      equation
-        res = inFunc(value, inArg);
-      then
-        res;
-
+    case SOME(value) then inFunc(value, inArg);
     else inDefaultValue;
-
   end match;
 end applyOptionOrDefault1;
 
-public function applyOptionOrDefault2
-  input Option<InType> inValue;
+public function applyOptionOrDefault2<TI, TO, ArgT1, ArgT2>
+  "Takes an optional value, a function, two extra arguments and an extra value.
+   If the optional value is SOME, applies the function on that value and the
+   extra argument and returns the result. Otherwise returns the extra value."
+  input Option<TI> inValue;
   input FuncType inFunc;
-  input ArgType1 inArg1;
-  input ArgType2 inArg2;
-  input OutType inDefault;
-  output OutType outValue;
+  input ArgT1 inArg1;
+  input ArgT2 inArg2;
+  input TO inDefaultValue;
+  output TO outValue;
 
   partial function FuncType
-    input InType inValue;
-    input ArgType1 inArg1;
-    input ArgType2 inArg2;
-    output OutType outValue;
+    input TI inValue;
+    input ArgT1 inArg1;
+    input ArgT2 inArg2;
+    output TO outValue;
   end FuncType;
-
-  replaceable type InType subtypeof Any;
-  replaceable type ArgType1 subtypeof Any;
-  replaceable type ArgType2 subtypeof Any;
-  replaceable type OutType subtypeof Any;
 algorithm
-  outValue := match(inValue, inFunc, inArg1, inArg2, inDefault)
+  outValue := match(inValue)
     local
-      InType value;
-      OutType res;
+      TI value;
+      TO res;
 
-    case (SOME(value), _, _, _, _)
-      equation
-        res = inFunc(value, inArg1, inArg2);
-      then
-        res;
-
-    else inDefault;
+    case SOME(value) then inFunc(value, inArg1, inArg2);
+    else inDefaultValue;
   end match;
 end applyOptionOrDefault2;
 
-public function makeOption "Makes a value into value option, using SOME(value)"
-  input Type_a inTypeA;
-  output Option<Type_a> outTypeAOption;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTypeAOption:= SOME(inTypeA);
+public function makeOption<T>
+  "Makes a value into value option, using SOME(value)"
+  input T inValue;
+  output Option<T> outOption := SOME(inValue);
+  annotation(__OpenModelica_EarlyInline = true);
 end makeOption;
 
-public function makeOptionOnTrue
+public function makeOptionOnTrue<T>
   input Boolean inCondition;
-  input ArgType inArg;
-  output Option<ArgType> outArg;
-  replaceable type ArgType subtypeof Any;
-algorithm
-  outArg := match(inCondition, inArg)
-    case (true, _) then SOME(inArg);
-    else NONE();
-  end match;
+  input T inValue;
+  output Option<T> outOption := if inCondition then SOME(inValue) else NONE();
+  annotation(__OpenModelica_EarlyInline = true);
 end makeOptionOnTrue;
 
 public function stringOption "author: PA
@@ -2548,102 +839,44 @@ algorithm
   end match;
 end stringOption;
 
-public function getOption "
-  author: PA
-  Returns an option value if SOME, otherwise fails"
-  input Option<Type_a> inOption;
-  output Type_a unOption;
-  replaceable type Type_a subtypeof Any;
+public function getOption<T>
+  "Returns an option value if SOME, otherwise fails"
+  input Option<T> inOption;
+  output T outValue;
 algorithm
-  SOME(unOption) := inOption;
+  SOME(outValue) := inOption;
 end getOption;
 
-public function getOptionOrDefault
-"Returns an option value if SOME, otherwise the default"
-  input Option<Type_a> inOption;
-  input Type_a inDefault;
-  output Type_a outOption;
-  replaceable type Type_a subtypeof Any;
+public function getOptionOrDefault<T>
+  "Returns an option value if SOME, otherwise the default"
+  input Option<T> inOption;
+  input T inDefault;
+  output T outValue;
 algorithm
-  outOption := match(inOption, inDefault)
+  outValue := match(inOption)
     local
-      Type_a item;
+      T value;
 
-    case (SOME(item), _) then item;
+    case SOME(value) then value;
     else inDefault;
   end match;
 end getOptionOrDefault;
 
-public function genericOption "author: BZ
-  Returns a list with single value or an empty list if there is no optional value."
-  input Option<Type_a> inOption;
-  output list<Type_a> outOption;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outOption := match(inOption)
-    local
-      Type_a item;
-
-    case SOME(item) then {item};
-    else {};
-  end match;
-end genericOption;
-
-public function isNone
-"
-  function: isNone
-  Author: DH, 2010-03
-"
-  input Option<Type_a> inOption;
-  output Boolean out;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  out := match (inOption)
-    case (NONE()) then true;
-    else false;
-  end match;
-end isNone;
-
-public function isSome
-"
-  function: isSome
-  Author: DH, 2010-03
-"
-  input Option<Type_a> inOption;
-  output Boolean out;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  out := match (inOption)
-    case NONE() then false;
-    else true;
-  end match;
-end isSome;
-
-public function intPositive "Returns true if integer value is positive (>= 0)"
+public function intPositive
+  "Returns true if integer value is positive (>= 0)"
   input Integer v;
-  output Boolean res;
-algorithm
-  res := (v >= 0);
+  output Boolean res := v >= 0;
 end intPositive;
 
-public function intNegative "Returns true if integer value is negative (< 0)"
+public function intNegative
+  "Returns true if integer value is negative (< 0)"
   input Integer v;
-  output Boolean res;
-algorithm
-  res := (v < 0);
+  output Boolean res := v < 0;
 end intNegative;
 
 public function intSign
   input Integer i;
-  output Integer o;
-algorithm
-  o := match i local Integer j;
-    case 0 then 0;
-    case _
-      equation
-        j = if_(i>0,1,-1);
-      then j;
-  end match;
+  output Integer o := if i == 0 then 0 elseif i > 0 then 1 else -1;
 end intSign;
 
 public function intCompare
@@ -2651,88 +884,56 @@ public function intCompare
    is smallest, or 0 if they are equal."
   input Integer inN;
   input Integer inM;
-  output Integer outResult;
-algorithm
-  outResult := matchcontinue(inN, inM)
-    case (_, _) equation true = intLt(inN, inM); then -1;
-    case (_, _) equation true = intGt(inN, inM); then 1;
-    else 0;
-  end matchcontinue;
+  output Integer outResult := if inN == inM then 0 elseif inN > inM then 1 else -1;
 end intCompare;
 
-public function flattenOption "Returns the second argument if NONE() or the element in SOME(element)"
-  input Option<Type_a> inTypeAOption;
-  input Type_a inTypeA;
-  output Type_a outTypeA;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTypeA := match (inTypeAOption,inTypeA)
-    local Type_a n,c;
-    case (NONE(),n) then n;
-    case (SOME(c),_) then c;
-  end match;
-end flattenOption;
-
-public function isEmptyString "Returns true if string is the empty string."
+public function isEmptyString
+  "Returns true if string is the empty string."
   input String inString;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := stringEq(inString, "");
+  output Boolean outIsEmpty := stringLength(inString) == 0;
 end isEmptyString;
 
 public function isNotEmptyString "Returns true if string is not the empty string."
   input String inString;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := boolNot(stringEq(inString, ""));
+  output Boolean outIsNotEmpty := stringLength(inString) > 0;
 end isNotEmptyString;
 
 public function writeFileOrErrorMsg "This function tries to write to a file and if it fails then it
   outputs \"# Cannot write to file: <filename>.\" to errorBuf"
-  input String inString1;
-  input String inString2;
+  input String inFilename;
+  input String inString;
 algorithm
-  _:=
-  matchcontinue (inString1,inString2)
-    local String filename,str,error_str;
-    case (filename,str) /* filename the string to be written */
-      equation
-        System.writeFile(filename, str);
-      then
-        ();
-    case (filename,_)
-      equation
-        error_str = stringAppendList({"# Cannot write to file: ",filename,"."});
-        Print.printErrorBuf(error_str);
-      then
-        ();
-  end matchcontinue;
+  try
+    System.writeFile(inFilename, inString);
+  else
+    Print.printErrorBuf("# Cannot write to file: " + inFilename + ".");
+  end try;
 end writeFileOrErrorMsg;
 
 public function strncmp "Compare two strings up to the nth character
   Returns true if they are equal."
   input String inString1;
   input String inString2;
-  input Integer inInteger3;
-  output Boolean outBoolean;
+  input Integer inLength;
+  output Boolean outEqual;
 algorithm
-  outBoolean := (0==System.strncmp(inString1,inString2,inInteger3));
+  outEqual := (0 == System.strncmp(inString1, inString2, inLength));
 end strncmp;
 
 public function notStrncmp
+  "Compares two strings up to the nth character. Returns true if they are not
+  equal."
   input String inString1;
   input String inString2;
-  input Integer inInteger3;
-  output Boolean outBoolean;
+  input Integer inLength;
+  output Boolean outEqual;
 algorithm
-  outBoolean := not strncmp(inString1,inString2,inInteger3);
+  outEqual := (0 <> System.strncmp(inString1, inString2, inLength));
 end notStrncmp;
 
 public function tickStr "author: PA
   Returns tick as a string, i.e. an unique number."
-  output String s;
-algorithm
-  s := intString(tick());
+  output String s := intString(tick());
 end tickStr;
 
 public function replaceWindowsBackSlashWithPathDelimiter
@@ -2741,21 +942,11 @@ public function replaceWindowsBackSlashWithPathDelimiter
   input String inPath;
   output String outPath;
 algorithm
-  outPath := matchcontinue(inPath)
-    local
-      String pd;
-
-    case _
-      equation
-        true = stringEq("Windows_NT", System.os());
-        pd = System.pathDelimiter();
-        outPath = System.stringReplace(inPath, "\\", pd);
-      then
-        outPath;
-
-    else inPath;
-
- end matchcontinue;
+  if System.os() == "Windows_NT" then
+    outPath := System.stringReplace(inPath, "\\", System.pathDelimiter());
+  else
+    outPath := inPath;
+  end if;
 end replaceWindowsBackSlashWithPathDelimiter;
 
 public function getAbsoluteDirectoryAndFile "author: x02lucpo
@@ -2777,20 +968,11 @@ end getAbsoluteDirectoryAndFile;
 public function rawStringToInputString "author: x02lucpo
   replace the double-backslash with backslash"
   input String inString;
-  output String s;
+  output String outString;
 algorithm
-  (s) :=
-  match (inString)
-    local
-      String retString,rawString;
-    case (rawString)
-      equation
-         retString = System.stringReplace(rawString, "\\\"", "\"") "change backslash-double-quote to double-quote ";
-         retString = System.stringReplace(retString, "\\\\", "\\") "double-backslash with backslash ";
-      then
-        (retString);
-  end match;
-end  rawStringToInputString;
+  outString := System.stringReplace(inString, "\\\"", "\"") "change backslash-double-quote to double-quote ";
+  outString := System.stringReplace(outString, "\\\\", "\\") "double-backslash with backslash ";
+end rawStringToInputString;
 
 public function escapeModelicaStringToCString
   input String modelicaString;
@@ -2816,58 +998,41 @@ algorithm
   // xmlString := System.iconv(xmlString, "", "UTF-8");
 end escapeModelicaStringToXmlString;
 
-public function makeTuple
-  input Type_a a;
-  input Type_b b;
-  output tuple<Type_a,Type_b> out;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-algorithm
-  out := (a,b);
+public function makeTuple<T1, T2>
+  input T1 inValue1;
+  input T2 inValue2;
+  output tuple<T1, T2> outTuple := (inValue1, inValue2);
+  annotation(__OpenModelica_EarlyInline = true);
 end makeTuple;
 
-
-public function makeTupleR
-  input Type_a a;
-  input Type_b b;
-  output tuple<Type_b,Type_a> out;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-algorithm
-  out := (b,a);
+public function makeTupleR<T1, T2>
+  input T1 inValue1;
+  input T2 inValue2;
+  output tuple<T2, T1> outTuple := (inValue2, inValue1);
+  annotation(__OpenModelica_EarlyInline = true);
 end makeTupleR;
 
-
-public function make3Tuple
-  input Type_a a;
-  input Type_b b;
-  input Type_c c;
-  output tuple<Type_a,Type_b,Type_c> out;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-algorithm
-  out := (a,b,c);
+public function make3Tuple<T1, T2, T3>
+  input T1 inValue1;
+  input T2 inValue2;
+  input T3 inValue3;
+  output tuple<T1, T2, T3> outTuple := (inValue1, inValue2, inValue3);
+  annotation(__OpenModelica_EarlyInline = true);
 end make3Tuple;
 
 public function mulListIntegerOpt
-  input list<Option<Integer>> ad;
-  input Integer acc "accumulator, should be given 1";
-  output Integer i;
+  input list<Option<Integer>> inList;
+  input Integer inAccum := 1;
+  output Integer outResult;
 algorithm
-  i := match(ad, acc)
+  outResult := match(inList)
     local
-      Integer ii, iii;
+      Integer i;
       list<Option<Integer>> rest;
-    case ({}, _) then acc;
-    case (SOME(ii)::rest, _)
-      equation
-        iii = mulListIntegerOpt(rest, ii * acc);
-      then iii;
-    case (NONE()::rest, _)
-      equation
-        iii = mulListIntegerOpt(rest, acc);
-      then iii;
+
+    case {} then inAccum;
+    case SOME(i) :: rest then mulListIntegerOpt(rest, i * inAccum);
+    case NONE() :: rest then mulListIntegerOpt(rest, inAccum);
   end match;
 end mulListIntegerOpt;
 
@@ -2876,17 +1041,13 @@ public type StatefulBoolean = array<Boolean> "A single boolean value that can be
 public function makeStatefulBoolean
 "Create a boolean with state (that is, it is mutable)"
   input Boolean b;
-  output StatefulBoolean sb;
-algorithm
-  sb := arrayCreate(1, b);
+  output StatefulBoolean sb := arrayCreate(1, b);
 end makeStatefulBoolean;
 
 public function getStatefulBoolean
 "Create a boolean with state (that is, it is mutable)"
   input StatefulBoolean sb;
-  output Boolean b;
-algorithm
-  b := sb[1];
+  output Boolean b := sb[1];
 end getStatefulBoolean;
 
 public function setStatefulBoolean
@@ -2894,62 +1055,50 @@ public function setStatefulBoolean
   input StatefulBoolean sb;
   input Boolean b;
 algorithm
-  _ := arrayUpdate(sb,1,b);
+  arrayUpdate(sb,1,b);
 end setStatefulBoolean;
 
-public function optionEqual "
-Takes two options and a function to compare the type."
-  input Option<Type_a> inOpt1;
-  input Option<Type_a> inOpt2;
+public function optionEqual<T1, T2>
+  "Takes two options and a function to compare the type."
+  input Option<T1> inOption1;
+  input Option<T2> inOption2;
   input CompareFunc inFunc;
-  output Boolean outBool;
+  output Boolean outEqual;
 
-  replaceable type Type_a subtypeof Any;
   partial function CompareFunc
-    input Type_a inType_a1;
-    input Type_a inType_a2;
-    output Boolean outBool;
+    input T1 inValue1;
+    input T2 inValue2;
+    output Boolean outEqual;
   end CompareFunc;
 algorithm
-  outBool := matchcontinue(inOpt1,inOpt2,inFunc)
-  local
-    Type_a a1,a2;
-    Boolean b;
-    CompareFunc fn;
+  outEqual := match(inOption1, inOption2)
+    local
+      T1 val1;
+      T2 val2;
 
-    case (NONE(),NONE(),_) then true;
-    case (SOME(a1),SOME(a2),fn)
-      equation
-        b = fn(a1,a2);
-      then
-        b;
-    case (_,_,_) then false;
-  end matchcontinue;
+    case (SOME(val1), SOME(val2)) then inFunc(val1, val2);
+    case (NONE(), NONE()) then true;
+    else false;
+  end match;
 end optionEqual;
 
-public function makeValueOrDefault
-"Returns the value if the function call succeeds, otherwise the default"
-  input FuncAToB inFunc;
-  input Type_a inArg;
-  input Type_b default;
-  output Type_b res;
+public function makeValueOrDefault<TI, TO>
+  "Returns the value if the function call succeeds, otherwise the default"
+  input FuncType inFunc;
+  input TI inArg;
+  input TO inDefaultValue;
+  output TO outValue;
 
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  partial function FuncAToB
-    input Type_a inTypeA;
-    output Type_b outTypeB;
-  end FuncAToB;
+  partial function FuncType
+    input TI inValue;
+    output TO outValue;
+  end FuncType;
 algorithm
-  res := matchcontinue (inFunc,inArg,default)
-    local
-      FuncAToB fn;
-    case (fn,_,_)
-      equation
-        res = fn(inArg);
-      then res;
-    case (_,_,_) then default;
-  end matchcontinue;
+  try
+    outValue := inFunc(inArg);
+  else
+    outValue := inDefaultValue;
+  end try;
 end makeValueOrDefault;
 
 public function xmlEscape "Escapes a String so that it can be used in xml"
@@ -2962,22 +1111,19 @@ algorithm
   s2 := stringReplaceChar(s2,"\"","&quot;");
 end xmlEscape;
 
-public function strcmpBool "As strcmp, but has Boolean output as is expected by the sort function"
+public function strcmpBool
+  "As strcmp, but has Boolean output as is expected by the sort function"
   input String s1;
   input String s2;
-  output Boolean b;
-algorithm
-  b := if_(stringCompare(s1,s2) > 0, true, false);
+  output Boolean b := stringCompare(s1, s2) > 0;
 end strcmpBool;
 
 public function stringAppendReverse
-"@author: adrpo
- This function will append the first string to the second string"
+  "@author: adrpo
+  This function will append the first string to the second string"
   input String str1;
   input String str2;
-  output String str;
-algorithm
-  str := stringAppend(str2, str1);
+  output String str := stringAppend(str2, str1);
 end stringAppendReverse;
 
 public function stringAppendNonEmpty
@@ -2985,38 +1131,11 @@ public function stringAppendNonEmpty
   input String inString2;
   output String outString;
 algorithm
-  outString := match(inString1, inString2)
-    case (_, "") then inString2;
+  outString := match(inString2)
+    case "" then inString2;
     else stringAppend(inString1, inString2);
   end match;
 end stringAppendNonEmpty;
-
-// moved from Inst.
-public function selectList
-"Author BZ, 2008-09
-  This utility function selects one of two objects depending on a list of boolean variables.
-  Used to constant evaluate if-equations."
-  input list<Boolean> inBools;
-  input list<Type_a> inList;
-  input Type_a inFalse;
-  output Type_a outTypeA;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTypeA:=
-  match (inBools,inList,inFalse)
-    local
-      Type_a x,head;
-      list<Boolean> bools;
-      list<Type_a> lst;
-
-    case({},{},x) then x;
-    case (true::_,head::_,_) then head;
-    case (false::bools,_::lst,x)
-      equation
-        head = selectList(bools,lst,x);
-      then head;
-  end match;
-end selectList;
 
 public function getCurrentDateTime
   output DateTime dt;
@@ -3042,110 +1161,10 @@ algorithm
   end match;
 end isSuccess;
 
-public function id
-  input A a;
-  output A oa;
-  replaceable type A subtypeof Any;
-algorithm
-  oa := a;
+public function id<T>
+  input T inValue;
+  output T outValue := inValue;
 end id;
-
-public function absIntegerList
-"@author: adrpo
-  Applies absolute value to all entries in the given list."
-  input list<Integer> inLst;
-  output list<Integer> outLst;
-algorithm
-  outLst := List.map(inLst, intAbs);
-end absIntegerList;
-
-/*
-public function arrayMap "Takes a list and a function over the elements of the array, which is applied
-  for each element, producing a new array.
-  Example: arrayMap({1,2,3}, intString) => { \"1\", \"2\", \"3\"}"
-  input array<Type_a> inTypeAArr;
-  input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
-  output array<Type_b> outTypeBArr;
-  replaceable type Type_a subtypeof Any;
-  partial function FuncTypeType_aToType_b
-    input Type_a inTypeA;
-    output Type_b outTypeB;
-    replaceable type Type_b subtypeof Any;
-  end FuncTypeType_aToType_b;
-  replaceable type Type_b subtypeof Any;
-protected
-  array<Type_b> outTypeBArr;
-  Type_b elB;
-  Type_a elA;
-  Integer sizeOfArr;
-algorithm
-  // get the size
-  sizeOfArr := arrayLength(inTypeAArr);
-  // get the first elment of the input array
-  elA := arrayGet(inTypeAArr, 1);
-  // apply the function and transform it to Type_b
-  elB := inFuncTypeTypeAToTypeB(elA);
-  // create an array populated with the first element trasformed
-  outTypeBArr := arrayCreate(sizeOfArr, elA);
-  // set all the other elements on the array!
-  outTypeBArr := arrayMapDispatch(inTypeAArr,inFuncTypeTypeAToTypeB,1,sizeOfArr,outTypeBArr);
-end arrayMap;
-
-protected function arrayMapDispatch
-"@author: adrpo
-  Calculates the incidence matrix as an array of list of integers"
-  input array<Type_a> inTypeAArr;
-  input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
-  input Integer index;
-  input Integer sizeOfArr;
-  input array<Type_b> accTypeBArr;
-  output array<Type_b> outTypeBArr;
-  replaceable type Type_a subtypeof Any;
-  partial function FuncTypeType_aToType_b
-    input Type_a inTypeA;
-    output Type_b outTypeB;
-    replaceable type Type_b subtypeof Any;
-  end FuncTypeType_aToType_b;
-  replaceable type Type_b subtypeof Any;
-algorithm
-  outIncidenceArray := matchcontinue (inTypeAArr, inFuncTypeAToTypeB, index, sizeOfArr, accTypeBArr)
-    local
-      array<Type_a> aArr;
-      array<Type_b> bArr;
-      Integer i,n;
-      Type_a elA;
-      Type_b elB;
-
-    // i = n (we reach the end)
-    case (aArr, inFuncTypeAToTypeB, i, n, bArr)
-      equation
-        false = intLt(i, n);
-      then
-        bArr;
-
-    // i < n
-    case (aArr, inFuncTypeAToTypeB, i, n, bArr)
-      equation
-        true = intLt(i, n);
-        // get the element from the input array
-        elA = arrayGet(aArr, i + 1);
-        // transform the element
-        elB = inFuncTypeAToTypeB(elA);
-        // put it in the array
-        iArr = arrayUpdate(bArr, i+1, elB);
-        iArr = arrayMapDispatch(iArr, inFuncTypeAToTypeB, i + 1, n, bArr);
-      then
-        iArr;
-
-    // failure!
-    case (aArr, inFuncTypeAToTypeB, i, n, bArr)
-      equation
-        print("- Util.arrayMapDispatch failed\n");
-      then
-        fail();
-  end matchcontinue;
-end arrayMapDispatch;
-*/
 
 public function buildMapStr "Takes two lists of the same type and builds a string like x = val1, y = val2, ....
   Example: listThread({1,2,3},{4,5,6},'=',',') => 1=4, 2=5, 3=6"
@@ -3155,152 +1174,55 @@ public function buildMapStr "Takes two lists of the same type and builds a strin
   input String inEndDelimiter;
   output String outStr;
 algorithm
-  outStr := matchcontinue (inLst1,inLst2, inMiddleDelimiter, inEndDelimiter)
+  outStr := match (inLst1, inLst2, inMiddleDelimiter, inEndDelimiter)
     local
       list<String> ra,rb;
       String fa,fb, md, ed, str;
 
-    case ({},{}, _, _) then "";
+    case ({}, {}, _, _) then "";
 
-    case ({fa},{fb}, md, _)
+    case ({fa}, {fb}, md, _)
       equation
         str = stringAppendList({fa, md, fb});
       then
         str;
 
-    case (fa :: ra,fb :: rb, md, ed)
+    case (fa :: ra, fb :: rb, md, ed)
       equation
         str = buildMapStr(ra, rb, md, ed);
         str = stringAppendList({fa, md, fb, ed, str});
       then
         str;
-  end matchcontinue;
+
+  end match;
 end buildMapStr;
 
-public function splitUniqueOnBool
-"Takes a sorted list and returns two sorted lists:
-  * The first is the input with all duplicate elements removed
-  * The second is the removed elements
-"
-  input list<TypeA> sorted;
-  input Comp comp;
-  output list<TypeA> uniqueLst;
-  output list<TypeA> duplicateLst;
-  replaceable type TypeA subtypeof Any;
-  partial function Comp
-    input TypeA a1;
-    input TypeA a2;
-    output Boolean b;
-  end Comp;
+public function assoc<Key, Val>
+  "assoc(key,lst) => value, where lst is a tuple of (key,value) pairs.
+  Does linear search using equality(). This means it is slow for large
+  inputs (many elements or large elements); if you have large inputs, you
+  should use a hash-table instead."
+  input Key inKey;
+  input list<tuple<Key,Val>> inList;
+  output Val outValue;
+protected
+  Key k;
+  Val v;
 algorithm
-  (uniqueLst,duplicateLst) := splitUniqueOnBoolWork(sorted,comp,{},{});
-end splitUniqueOnBool;
-
-
-protected function splitUniqueOnBoolWork
-"Takes a sorted list and returns two sorted lists:
-  * The first is the input with all duplicate elements removed
-  * The second is the removed elements
-"
-  input list<TypeA> sorted;
-  input Comp comp;
-  input list<TypeA> inUniqueAcc;
-  input list<TypeA> inDuplicateAcc;
-  output list<TypeA> uniqueLst;
-  output list<TypeA> duplicateLst;
-  replaceable type TypeA subtypeof Any;
-  partial function Comp
-    input TypeA a1;
-    input TypeA a2;
-    output Boolean b;
-  end Comp;
-algorithm
-  (uniqueLst,duplicateLst) := match (sorted,comp,inUniqueAcc,inDuplicateAcc)
-    local
-      TypeA a1,a2;
-      list<TypeA> rest, uniqueAcc, duplicateAcc;
-      Boolean b;
-
-
-    case ({},_,uniqueAcc,duplicateAcc)
-      equation
-        uniqueAcc = listReverse(uniqueAcc);
-        duplicateAcc = listReverse(duplicateAcc);
-      then (uniqueAcc,duplicateAcc);
-    case ({a1},_,uniqueAcc,duplicateAcc)
-      equation
-        uniqueAcc = listReverse(a1::uniqueAcc);
-        duplicateAcc = listReverse(duplicateAcc);
-      then (uniqueAcc,duplicateAcc);
-    case (a1::a2::rest,_,uniqueAcc,duplicateAcc)
-      equation
-        b = comp(a1,a2);
-        (uniqueAcc,duplicateAcc) = splitUniqueOnBoolWork(a2::rest,comp,if_(b,uniqueAcc,a1::uniqueAcc),if_(b,a1::duplicateAcc,duplicateAcc));
-      then (uniqueAcc,duplicateAcc);
-  end match;
-end splitUniqueOnBoolWork;
-
-public function assoc
-"assoc(key,lst) => value, where lst is a tuple of (key,value) pairs.
-Does linear search using equality(). This means it is slow for large
-inputs (many elements or large elements); if you have large inputs, you
-should use a hash-table instead."
-  input Key key;
-  input list<tuple<Key,Val>> lst;
-  output Val val;
-  replaceable type Key subtypeof Any;
-  replaceable type Val subtypeof Any;
-algorithm
-  val := match (key,lst)
-    local
-      Key k1,k2;
-      Val v;
-      list<tuple<Key,Val>> rest;
-
-    case (k1,(k2,v)::rest) then Debug.bcallret2(not valueEq(k1,k2), assoc, k1, rest, v);
-  end match;
+  (k, v) := listHead(inList);
+  outValue := if valueEq(inKey, k) then v else assoc(inKey, listRest(inList));
 end assoc;
 
-//public function transposeList
-//  "Transposes a 2-dimensional rectangular list"
-//  input list<list<A>> lst;
-//  output list<list<A>> olst;
-//  replaceable type A subtypeof Any;
-//algorithm
-//  olst := transposeList2(lst,{});
-//end transposeList;
-//
-//protected function transposeList2
-//  "Transposes a 2-dimensional rectangular list"
-//  input list<list<A>> lst;
-//  input list<list<A>> acc;
-//  output list<list<A>> olst;
-//  replaceable type A subtypeof Any;
-//algorithm
-//  olst := match (lst,acc)
-//    local
-//      list<A> a;
-//    case ({},_) then listReverse(acc);
-//    case ({}::_,_) then listReverse(acc);
-//    case (lst,acc)
-//      equation
-//        a = List.map(lst,List.first);
-//        lst = List.map(lst,List.rest);
-//      then transposeList2(lst,a::acc);
-//  end match;
-//end transposeList2;
-
-public function allCombinations
+public function allCombinations<T>
   "{{1,2,3},{4,5},{6}} => {{1,4,6},{1,5,6},{2,4,6},...}.
   The output is a 2-dim list with lengths (len1*len2*...*lenN)) and N.
 
   This function screams WARNING I USE COMBINATORIAL EXPLOSION.
   So there are flags that limit the size of the set it works on."
-  input list<list<Type_a>> lst;
+  input list<list<T>> lst;
   input Option<Integer> maxTotalSize;
   input Absyn.Info info;
-  output list<list<Type_a>> out;
-  replaceable type Type_a subtypeof Any;
+  output list<list<T>> out;
 algorithm
   out := matchcontinue (lst,maxTotalSize,info)
     local
@@ -3320,19 +1242,18 @@ algorithm
   end matchcontinue;
 end allCombinations;
 
-protected function allCombinations2
+protected function allCombinations2<T>
   "{{1,2,3},{4,5},{6}} => {{1,4,6},{1,5,6},{2,4,6},...}.
   The output is a 2-dim list with lengths (len1*len2*...*lenN)) and N.
 
   This function screams WARNING I USE COMBINATORIAL EXPLOSION."
-  input list<list<Type_a>> ilst;
-  output list<list<Type_a>> out;
-  replaceable type Type_a subtypeof Any;
+  input list<list<T>> ilst;
+  output list<list<T>> out;
 algorithm
   out := match (ilst)
     local
-      list<Type_a> x;
-      list<list<Type_a>> lst;
+      list<T> x;
+      list<list<T>> lst;
 
     case {} then {};
     case (x::lst)
@@ -3343,19 +1264,18 @@ algorithm
   end match;
 end allCombinations2;
 
-protected function allCombinations3
-  input list<Type_a> ilst1;
-  input list<list<Type_a>> ilst2;
-  input list<list<Type_a>> iacc;
-  output list<list<Type_a>> out;
-  replaceable type Type_a subtypeof Any;
+protected function allCombinations3<T>
+  input list<T> ilst1;
+  input list<list<T>> ilst2;
+  input list<list<T>> iacc;
+  output list<list<T>> out;
 algorithm
   out := match (ilst1,ilst2,iacc)
     local
-      Type_a x;
-      list<Type_a> lst1;
-      list<list<Type_a>> lst2;
-      list<list<Type_a>> acc;
+      T x;
+      list<T> lst1;
+      list<list<T>> lst2;
+      list<list<T>> acc;
 
 
     case ({},_,acc) then listReverse(acc);
@@ -3367,18 +1287,17 @@ algorithm
   end match;
 end allCombinations3;
 
-protected function allCombinations4
-  input Type_a x;
-  input list<list<Type_a>> ilst;
-  input list<list<Type_a>> iacc;
-  output list<list<Type_a>> out;
-  replaceable type Type_a subtypeof Any;
+protected function allCombinations4<T>
+  input T x;
+  input list<list<T>> ilst;
+  input list<list<T>> iacc;
+  output list<list<T>> out;
 algorithm
   out := match (x,ilst,iacc)
     local
-      list<Type_a> l;
-      list<list<Type_a>> lst;
-      list<list<Type_a>> acc;
+      list<T> l;
+      list<list<T>> lst;
+      list<list<T>> acc;
 
     case (_,{},acc) then {x}::acc;
     case (_,{l},acc) then (x::l)::acc;
@@ -3389,533 +1308,16 @@ algorithm
   end match;
 end allCombinations4;
 
-public function arrayMember
-"returns the index if found or 0 if not found.
- considers array indexed from 1"
-  input array<Option<Type_a>> inArr;
-  input Integer inFilledSize "the filled size of the array, it might be less than arrayLength";
-  input Option<Type_a> inElement;
-  output Integer index;
-protected
-  replaceable type Type_a subtypeof Any;
-algorithm
-  index := matchcontinue(inArr, inFilledSize, inElement)
-    local
-      array<Option<Type_a>> arr;
-      Integer i, len, pos;
-
-    // array is empty
-    case (_, _, _)
-      equation
-        true = intEq(0, inFilledSize);
-      then 0;
-
-    // array is not empty
-    case (arr, _, _)
-      equation
-        i = arrayMemberLoop(arr, inElement, 1, inFilledSize);
-      then i;
-  end matchcontinue;
-end arrayMember;
-
-
-public function arrayMemberNoOpt
-"returns the index if found or 0 if not found.
- considers array indexed from 1"
-  input array<Type_a> inArr;
-  input Integer inFilledSize "the filled size of the array, it might be less than arrayLength";
-  input Type_a inElement;
-  output Integer index;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  index := matchcontinue(inArr, inFilledSize, inElement)
-    local
-      array<Type_a> arr;
-      Integer i, len, pos;
-    // array is empty
-    case (_, _, _)
-      equation
-        true = intEq(0, inFilledSize);
-      then 0;
-    // array is not empty
-    case (arr, _, _)
-      equation
-        i = arrayMemberLoopNoOpt(arr, inElement, 1, inFilledSize);
-      then i;
-  end matchcontinue;
-end arrayMemberNoOpt;
-
-
-protected function arrayMemberLoopNoOpt
-"returns the index if found or 0 if not found.The array has no Option like in arrayMember
- considers array indexed from 1"
-  input array<Type_a> inArr;
-  input Type_a inElement;
-  input Integer currentIndex;
-  input Integer length;
-  output Integer index;
-protected
-  replaceable type Type_a subtypeof Any;
-algorithm
-  index := matchcontinue(inArr, inElement, currentIndex, length)
-    local
-      array<Type_a> arr;
-      Integer i, len, pos;
-      Type_a e;
-
-    // we're at the end
-    case (_, _, i, len)
-      equation
-        true = intEq(i, len);
-      then 0;
-
-    // not at the end, see if we find it
-    case (arr, _, i, _)
-      equation
-        e = arrayGet(arr, i);
-        true = valueEq(e, inElement);
-      then i;
-
-    // not at the end, see if we find it
-    case (arr, _, i, len)
-      equation
-        e = arrayGet(arr, i);
-        false = valueEq(e, inElement);
-        i = arrayMemberLoopNoOpt(arr, inElement, i + 1, len);
-      then i;
-  end matchcontinue;
-end arrayMemberLoopNoOpt;
-
-
-protected function arrayMemberLoop
-"returns the index if found or 0 if not found.
- considers array indexed from 1"
-  input array<Option<Type_a>> inArr;
-  input Option<Type_a> inElement;
-  input Integer currentIndex;
-  input Integer length;
-  output Integer index;
-protected
-  replaceable type Type_a subtypeof Any;
-algorithm
-  index := matchcontinue(inArr, inElement, currentIndex, length)
-    local
-      array<Option<Type_a>> arr;
-      Integer i, len, pos;
-      Option<Type_a> e;
-
-    // we're at the end
-    case (_, _, i, len)
-      equation
-        true = intEq(i, len);
-      then 0;
-
-    // not at the end, see if we find it
-    case (arr, _, i, _)
-      equation
-        e = arrayGet(arr, i);
-        true = valueEq(e, inElement);
-      then i;
-
-    // not at the end, see if we find it
-    case (arr, _, i, len)
-      equation
-        e = arrayGet(arr, i);
-        false = valueEq(e, inElement);
-        i = arrayMemberLoop(arr, inElement, i + 1, len);
-      then i;
-  end matchcontinue;
-end arrayMemberLoop;
-
-public function arrayFind
-"returns the index if found or 0 if not found.
- considers array indexed from 1"
-  input array<Option<Type_a>> inArr;
-  input Integer inFilledSize "the filled size of the array, it might be less than arrayLength";
-  input FuncType inFunc;
-  input Type_b inExtra;
-  output Integer index;
-protected
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  partial function FuncType
-    input Type_a inElement;
-    input Type_b inExtra;
-    output Boolean isMatch;
-  end FuncType;
-algorithm
-  index := matchcontinue(inArr, inFilledSize, inFunc, inExtra)
-    local
-      Integer i, len, pos;
-
-    // array is empty
-    case (_, _, _, _)
-      equation
-        true = intEq(0, inFilledSize);
-      then 0;
-
-    // array is not empty
-    case (_, _, _, _)
-      equation
-        i = arrayFindLoop(inArr, inFunc, inExtra, 1, inFilledSize);
-      then i;
-  end matchcontinue;
-end arrayFind;
-
-protected function arrayFindLoop
-"returns the index if found or 0 if not found.
- considers array indexed from 1"
-  input array<Option<Type_a>> inArr;
-  input FuncType inFunc;
-  input Type_b inExtra;
-  input Integer currentIndex;
-  input Integer length;
-  output Integer index;
-protected
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  partial function FuncType
-    input Type_a inElement;
-    input Type_b inExtra;
-    output Boolean isMatch;
-  end FuncType;
-algorithm
-  index := matchcontinue(inArr, inFunc, inExtra, currentIndex, length)
-    local
-      array<Option<Type_a>> arr;
-      Integer i, len, pos;
-      Type_a e;
-
-    // we're at the end
-    case (_, _, _, i, len)
-      equation
-        true = intEq(i, len);
-      then
-        0;
-
-    // not at the end, see if we find it
-    case (arr, _, _, i, _)
-      equation
-        SOME(e) = arrayGet(arr, i);
-        true = inFunc(e, inExtra);
-      then
-        i;
-
-    // not at the end, see if we find it
-    case (arr, _, _, i, len)
-      equation
-        SOME(e) = arrayGet(arr, i);
-        false = inFunc(e, inExtra);
-        i = arrayFindLoop(arr, inFunc, inExtra, i + 1, len);
-      then
-        i;
-
-    // not at the end, see if we find it
-    case (arr, _, _, i, len)
-      equation
-        NONE() = arrayGet(arr, i);
-        i = arrayFindLoop(arr, inFunc, inExtra, i + 1, len);
-      then
-        i;
-  end matchcontinue;
-end arrayFindLoop;
-
-public function arrayApply
-"apply a function to each element of the array"
-  input array<Option<Type_a>> inArr;
-  input Integer inFilledSize "the filled size of the array, it might be less than arrayLength";
-  input FuncType inFunc;
-  input Type_b inExtra;
-  output array<Option<Type_a>> outArr;
-protected
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  partial function FuncType
-    input Option<Type_a> inElement;
-    input Type_b inExtra;
-  end FuncType;
-algorithm
-  outArr := matchcontinue(inArr, inFilledSize, inFunc, inExtra)
-    local
-      array<Option<Type_a>> arr;
-      Integer i, len, pos;
-
-    // array is empty
-    case (arr, _, _, _)
-      equation
-        true = intEq(0, inFilledSize);
-      then arr;
-
-    // array is not empty
-    case (arr, _, _, _)
-      equation
-        arr = arrayApplyLoop(arr, inFunc, inExtra, 1, inFilledSize);
-      then arr;
-  end matchcontinue;
-end arrayApply;
-
-protected function arrayApplyLoop
-"returns the index if found or 0 if not found.
- considers array indexed from 1"
-  input array<Option<Type_a>> inArr;
-  input FuncType inFunc;
-  input Type_b inExtra;
-  input Integer currentIndex;
-  input Integer length;
-  output array<Option<Type_a>> outArr;
-protected
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  partial function FuncType
-    input Option<Type_a> inElement;
-    input Type_b inExtra;
-  end FuncType;
-algorithm
-  outArr := matchcontinue(inArr, inFunc, inExtra, currentIndex, length)
-    local
-      array<Option<Type_a>> arr;
-      Integer i, len, pos;
-      Option<Type_a> e;
-
-    // we're at the end
-    case (arr, _, _, i, len)
-      equation
-        true = intEq(i, len);
-      then
-        arr;
-
-    // not at the end, see if we find it
-    case (arr, _, _, i, len)
-      equation
-        e = arrayGet(arr, i);
-        inFunc(e, inExtra);
-        arr = arrayApplyLoop(arr, inFunc, inExtra, i + 1, len);
-      then arr;
-  end matchcontinue;
-end arrayApplyLoop;
-
-public function arrayApplyR
-"apply a function to each element of the array;
- the extra is the first argument in the apply function"
-  input array<Option<Type_a>> inArr;
-  input Integer inFilledSize "the filled size of the array, it might be less than arrayLength";
-  input FuncType inFunc;
-  input Type_b inExtra;
-  output array<Option<Type_a>> outArr;
-protected
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  partial function FuncType
-    input Type_b inExtra;
-    input Option<Type_a> inElement;
-  end FuncType;
-algorithm
-  outArr := matchcontinue(inArr, inFilledSize, inFunc, inExtra)
-    local
-      array<Option<Type_a>> arr;
-      Integer i, len, pos;
-
-    // array is empty
-    case (arr, _, _, _)
-      equation
-        true = intEq(0, inFilledSize);
-      then arr;
-
-    // array is not empty
-    case (arr, _, _, _)
-      equation
-        arr = arrayApplyRLoop(arr, inFunc, inExtra, 1, inFilledSize);
-      then arr;
-  end matchcontinue;
-end arrayApplyR;
-
-protected function arrayApplyRLoop
-"returns the index if found or 0 if not found.
- considers array indexed from 1"
-  input array<Option<Type_a>> inArr;
-  input FuncType inFunc;
-  input Type_b inExtra;
-  input Integer currentIndex;
-  input Integer length;
-  output array<Option<Type_a>> outArr;
-protected
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  partial function FuncType
-    input Type_b inExtra;
-    input Option<Type_a> inElement;
-  end FuncType;
-algorithm
-  outArr := matchcontinue(inArr, inFunc, inExtra, currentIndex, length)
-    local
-      array<Option<Type_a>> arr;
-      Integer i, len, pos;
-      Option<Type_a> e;
-
-    // we're at the end
-    case (arr, _, _, i, len)
-      equation
-        true = intEq(i, len);
-      then
-        arr;
-
-    // not at the end, see if we find it
-    case (arr, _, _, i, len)
-      equation
-        e = arrayGet(arr, i);
-        inFunc(inExtra, e);
-        arr = arrayApplyRLoop(arr, inFunc, inExtra, i + 1, len);
-      then arr;
-  end matchcontinue;
-end arrayApplyRLoop;
-
-public function arrayMemberEqualityFunc
-"returns the index if found or 0 if not found.
- considers array indexed from 1.
- it gets an equality check function!"
-  input array<Option<Type_a>> inArr;
-  input Integer inFilledSize "the filled size of the array, it might be less than arrayLength";
-  input Option<Type_a> inElement;
-  input FuncTypeEquality inEqualityCheckFunction;
-  output Integer index;
-protected
-  replaceable type Type_a subtypeof Any;
-  partial function FuncTypeEquality
-    input Option<Type_a> inElOld;
-    input Option<Type_a> inElNew;
-    output Boolean isEqual;
-  end FuncTypeEquality;
-algorithm
-  index := matchcontinue(inArr, inFilledSize, inElement, inEqualityCheckFunction)
-    local
-      array<Option<Type_a>> arr;
-      Integer i, len, pos;
-
-    // array is empty
-    case (_, _, _, _)
-      equation
-        true = intEq(0, inFilledSize);
-      then
-        0;
-
-    // array is not empty
-    case (arr, _, _, _)
-      equation
-        i = arrayMemberEqualityFuncLoop(arr, inElement, inEqualityCheckFunction, 1, inFilledSize);
-      then
-        i;
-  end matchcontinue;
-end arrayMemberEqualityFunc;
-
-protected function arrayMemberEqualityFuncLoop
-"returns the index if found or 0 if not found.
- considers array indexed from 1"
-  input array<Option<Type_a>> inArr;
-  input Option<Type_a> inElement;
-  input FuncTypeEquality inEqualityCheckFunction;
-  input Integer currentIndex;
-  input Integer length;
-  output Integer index;
-protected
-  replaceable type Type_a subtypeof Any;
-  partial function FuncTypeEquality
-    input Option<Type_a> inElOld;
-    input Option<Type_a> inElNew;
-    output Boolean isEqual;
-  end FuncTypeEquality;
-algorithm
-  index := matchcontinue(inArr, inElement, inEqualityCheckFunction, currentIndex, length)
-    local
-      array<Option<Type_a>> arr;
-      Integer i, len, pos;
-      Option<Type_a> e;
-
-    // we're at the end
-    case (_, _, _, i, len)
-      equation
-        true = intEq(i, len);
-      then 0;
-
-    // not at the end, see if we find it
-    case (arr, _, _, i, _)
-      equation
-        e = arrayGet(arr, i);
-        true = inEqualityCheckFunction(e, inElement);
-      then i;
-
-    // not at the end, see if we find it
-    case (arr, _, _, i, len)
-      equation
-        e = arrayGet(arr, i);
-        false = inEqualityCheckFunction(e, inElement);
-        i = arrayMemberEqualityFuncLoop(arr, inElement, inEqualityCheckFunction, i + 1, len);
-      then i;
-  end matchcontinue;
-end arrayMemberEqualityFuncLoop;
-
-public function arrayGetMemberOnTrue
-  input ValueType inValue;
-  input array<ElementType> inArray;
-  input CompFunc inCompFunc;
-  output ElementType outElement;
-  output Integer outIndex;
-
-  partial function CompFunc
-    input ValueType inValue;
-    input ElementType inElement;
-    output Boolean outIsEqual;
-  end CompFunc;
-
-  replaceable type ValueType subtypeof Any;
-  replaceable type ElementType subtypeof Any;
-algorithm
-  ((outElement, outIndex)) :=
-    arrayGetMemberOnTrue2(inValue, inArray, inCompFunc, 1);
-end arrayGetMemberOnTrue;
-
-protected function arrayGetMemberOnTrue2
-  input ValueType inValue;
-  input array<ElementType> inArray;
-  input CompFunc inCompFunc;
-  input Integer inIndex;
-  output tuple<ElementType, Integer> outTuple;
-
-  partial function CompFunc
-    input ValueType inValue;
-    input ElementType inElement;
-    output Boolean outIsEqual;
-  end CompFunc;
-
-  replaceable type ValueType subtypeof Any;
-  replaceable type ElementType subtypeof Any;
-protected
-  ElementType e;
-  Boolean b;
-algorithm
-  true := inIndex <= arrayLength(inArray);
-  e := arrayGet(inArray, inIndex);
-  b := inCompFunc(inValue, e);
-  outTuple := Debug.bcallret4(boolNot(b), arrayGetMemberOnTrue2,
-    inValue, inArray, inCompFunc, inIndex + 1, (e, inIndex));
-end arrayGetMemberOnTrue2;
-
 public function boolInt
   "Returns 1 if the given boolean is true, otherwise 0."
   input Boolean inBoolean;
-  output Integer outInteger;
-algorithm
-  outInteger := match(inBoolean)
-    case true then 1;
-    else 0;
-  end match;
+  output Integer outInteger := if inBoolean then 1 else 0;
 end boolInt;
 
 public function intBool
   "Returns true if the given integer is larger than 0, otherwise false."
   input Integer inInteger;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := inInteger > 0;
+  output Boolean outBoolean := inInteger > 0;
 end intBool;
 
 public function stringBool
@@ -3940,18 +1342,18 @@ algorithm
   end match;
 end stringBool2;
 
-public function optionList
-"@author: adrpo
- SOME(a) => {a}
- NONE()  => {}"
-  input Option<Type_a> inOption;
-  output list<Type_a> outLst;
-  replaceable type Type_a subtypeof Any;
+public function optionList<T>
+  "SOME(a) => {a}
+   NONE()  => {}"
+  input Option<T> inOption;
+  output list<T> outList;
 algorithm
-  outLst := match(inOption)
-    local Type_a a;
-    case SOME(a) then {a};
-    case NONE() then {};
+  outList := match(inOption)
+    local
+      T value;
+
+    case SOME(value) then {value};
+    else {};
   end match;
 end optionList;
 
@@ -3963,22 +1365,18 @@ public function stringPadRight
   input Integer inPadWidth;
   input String inPadString;
   output String outString;
+protected
+  Integer pad_length;
+  String pad_str;
 algorithm
-  outString := matchcontinue(inString, inPadWidth, inPadString)
-    local
-      Integer pad_length;
-      String pad_str;
+  pad_length := inPadWidth - stringLength(inString);
 
-    case (_, _, _)
-      equation
-        pad_length = inPadWidth - stringLength(inString);
-        true = pad_length > 0;
-        pad_str = stringAppendList(List.fill(inPadString, pad_length));
-      then
-        inString +& pad_str;
-
-    else inString;
-  end matchcontinue;
+  if pad_length > 0 then
+    pad_str := stringAppendList(list(inPadString for i in 1:pad_length));
+    outString := inString + pad_str;
+  else
+    outString := inString;
+  end if;
 end stringPadRight;
 
 public function stringPadLeft
@@ -3989,22 +1387,18 @@ public function stringPadLeft
   input Integer inPadWidth;
   input String inPadString;
   output String outString;
+protected
+  Integer pad_length;
+  String pad_str;
 algorithm
-  outString := matchcontinue(inString, inPadWidth, inPadString)
-    local
-      Integer pad_length;
-      String pad_str;
+  pad_length := inPadWidth - stringLength(inString);
 
-    case (_, _, _)
-      equation
-        pad_length = inPadWidth - stringLength(inString);
-        true = pad_length > 0;
-        pad_str = stringAppendList(List.fill(inPadString, pad_length));
-      then
-        pad_str +& inString;
-
-    else inString;
-  end matchcontinue;
+  if pad_length > 0 then
+    pad_str := stringAppendList(list(inPadString for i in 1:pad_length));
+    outString := pad_str + inString;
+  else
+    outString := inString;
+  end if;
 end stringPadLeft;
 
 public function stringWrap
@@ -4053,7 +1447,7 @@ algorithm
     case ("\n" :: rest_str, wl, delim, dl, acc_str, _, acc_strl)
       equation
         // The delimiter should not be applied to the first string.
-        delim = if_(List.isEmpty(acc_strl), "", delim);
+        delim = if_(listEmpty(acc_strl), "", delim);
         str = delim +& stringAppendList(listReverse(acc_str));
         acc_strl = str :: acc_strl;
       then
@@ -4064,7 +1458,7 @@ algorithm
     case ({}, _, delim, _, acc_str, _, acc_strl)
       equation
         // The delimiter should not be applied to the first string.
-        delim = if_(List.isEmpty(acc_strl), "", delim);
+        delim = if_(listEmpty(acc_strl), "", delim);
         str = delim +& stringAppendList(listReverse(acc_str));
         acc_strl = str :: acc_strl;
       then
@@ -4075,7 +1469,7 @@ algorithm
     case (_, wl, delim, dl, acc_str, sl, acc_strl)
       equation
         // The delimiter should not be applied to the first string.
-        ((delim, dl)) = if_(List.isEmpty(acc_strl), ("", 0), (delim, dl));
+        ((delim, dl)) = if_(listEmpty(acc_strl), ("", 0), (delim, dl));
         true = sl + dl >= wl;
         // Split the string at the first space (will be the last since the
         // string is reversed). The first part before the space will be the new
@@ -4110,9 +1504,7 @@ end stringRest;
 
 public function intProduct
   input list<Integer> lst;
-  output Integer i;
-algorithm
-  i := List.fold(lst,intMul,1);
+  output Integer i := List.fold(lst, intMul, 1);
 end intProduct;
 
 public function nextPrime
@@ -4125,31 +1517,7 @@ public function nextPrime
   input Integer inN;
   output Integer outNextPrime;
 algorithm
-  outNextPrime := matchcontinue(inN)
-    local
-
-    // If the given number is larger than 2, round it up to the nearest odd
-    // number and call nextPrime2.
-    case _
-      equation
-        true = inN > 2;
-      then
-        nextPrime2(inN + intMod(inN + 1, 2));
-
-    // Cases for number 0, 1 and 2.
-    case 0 then 2;
-    case 1 then 2;
-    case 2 then 2;
-
-    // Anything else must be negative.
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"Util.nextPrime called with negative number."});
-      then
-        fail();
-
-  end matchcontinue;
+  outNextPrime := if inN <= 2 then 2 else nextPrime2(inN + intMod(inN + 1, 2));
 end nextPrime;
 
 protected function nextPrime2
@@ -4158,17 +1526,7 @@ protected function nextPrime2
   input Integer inN;
   output Integer outNextPrime;
 algorithm
-  outNextPrime := matchcontinue(inN)
-    // Return the given number if it's a prime.
-    case _
-      equation
-        true = nextPrime_isPrime(inN);
-      then
-        inN;
-
-    // Otherwise, check the next possible prime.
-    else nextPrime2(inN + 2);
-  end matchcontinue;
+  outNextPrime := if nextPrime_isPrime(inN) then inN else nextPrime2(inN + 2);
 end nextPrime2;
 
 protected function nextPrime_isPrime
@@ -4177,52 +1535,28 @@ protected function nextPrime_isPrime
    positive odd numbers."
   input Integer inN;
   output Boolean outIsPrime;
+protected
+  Integer i := 3, q := intDiv(inN, 3);
 algorithm
-  outIsPrime := nextPrime_isPrime2(inN, 3, intDiv(inN, 3));
+  // Check all factors up to sqrt(inN)
+  while q >= i loop
+    // The number is divisible by a factor => not a prime.
+    if inN == q * i then
+      outIsPrime := false;
+      return;
+    end if;
+
+    i := i + 2;
+    q := intDiv(inN, i);
+  end while;
+
+  // All factors have been checked, inN is a prime.
+  outIsPrime := true;
 end nextPrime_isPrime;
 
-protected function nextPrime_isPrime2
-  "Checks if a number is a prime or not, by checking for divisibility."
-  input Integer inN;
-  input Integer inI;
-  input Integer inQ;
-  output Boolean outIsPrime;
-algorithm
-  outIsPrime := matchcontinue(inN, inI, inQ)
-    local
-      Integer i, q;
-
-    // Stop when all factors up to sqrt(inN) has been checked.
-    case (_, _, _)
-      equation
-        true = inQ < inI;
-      then
-        true;
-
-    // The number is divisible by a factor => not a prime.
-    case (_, _, _)
-      equation
-        true = (inN == inQ * inI);
-      then
-        false;
-
-    // Continue checking factors.
-    else
-      equation
-        i = inI + 2;
-        q = intDiv(inN, i);
-      then
-        nextPrime_isPrime2(inN, i, q);
-
-  end matchcontinue;
-end nextPrime_isPrime2;
-
-public function anyToEmptyString "Useful if you do not want to write an unparser"
-  input A a;
-  output String empty;
-  replaceable type A subtypeof Any;
-algorithm
-  empty := "";
+public function anyToEmptyString<T> "Useful if you do not want to write an unparser"
+  input T a;
+  output String empty := "";
 end anyToEmptyString;
 
 public uniontype TranslatableContent
@@ -4257,21 +1591,18 @@ end removeLast3Char;
 public function stringNotEqual
   input String str1;
   input String str2;
-  output Boolean b;
-algorithm
-  b := not stringEq(str1,str2);
+  output Boolean b := not stringEq(str1,str2);
 end stringNotEqual;
 
-public function swap
+public function swap<T>
   input Boolean cond;
-  input A in1;
-  input A in2;
-  output A out1;
-  output A out2;
-  replaceable type A subtypeof Any;
+  input T in1;
+  input T in2;
+  output T out1;
+  output T out2;
 algorithm
-  (out1,out2) := match (cond,in1,in2)
-    case (true, _, _) then (in2, in1);
+  (out1,out2) := match (cond)
+    case true then (in2, in1);
     else (in1, in2);
   end match;
 end swap;
@@ -4287,20 +1618,6 @@ algorithm
   outSize := intMax(outSize, 0);
 end realRangeSize;
 
-public function addInternalError
-  input Boolean shouldShow;
-  input String message;
-algorithm
-  _ := match(shouldShow, message)
-    case (false, _) then ();
-    case (true, _)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{message});
-      then
-        ();
-  end match;
-end addInternalError;
-
 public function testsuiteFriendly "Testsuite friendly name (start after testsuite/ or build/)"
   input String name;
   output String friendly;
@@ -4308,42 +1625,45 @@ algorithm
   friendly := testsuiteFriendly2(Config.getRunningTestsuite(),Config.getRunningWSMTestsuite(),name);
 end testsuiteFriendly;
 
-protected function testsuiteFriendly2 "Testsuite friendly name (start after testsuite/ or build/)"
+protected function testsuiteFriendly2
+  "Testsuite friendly name (start after testsuite/ or build/)"
   input Boolean cond;
   input Boolean wsmTestsuite;
   input String name;
   output String friendly;
 algorithm
-  friendly := match (cond,wsmTestsuite,name)
+  friendly := match (cond,wsmTestsuite)
     local
       Integer i;
       list<String> strs;
       String newName;
-    case (_,true,_) then System.basename(name);
 
-    case (true,_,_)
-      equation
-        newName = Debug.bcallret3("Windows_NT" ==& System.os(), System.stringReplace, name, "\\", "/", name);
-        (i,strs) = System.regex(newName, "^(.*/testsuite/)?(.*/lib/omlibrary/)?(.*/build/)?(.*)$", 5, true, false);
-        friendly = listGet(strs,i);
-      then friendly;
+    case (_,true) then System.basename(name);
+
+    case (true,_)
+      algorithm
+        newName := if System.os() == "Windows_NT" then System.stringReplace(name, "\\", "/") else name;
+        (i,strs) := System.regex(newName, "^(.*/testsuite/)?(.*/lib/omlibrary/)?(.*/build/)?(.*)$", 5, true, false);
+        friendly := listGet(strs,i);
+      then
+        friendly;
 
     else name;
   end match;
 end testsuiteFriendly2;
 
 public function testsuiteFriendlyPath
-"Adds ../ in front of a relative file path if we're running
- the testsuite, to compensate for tests being sandboxed.
- adrpo: only when running with partest the tests are sandboxed!"
+  "Adds ../ in front of a relative file path if we're running
+   the testsuite, to compensate for tests being sandboxed.
+   adrpo: only when running with partest the tests are sandboxed!"
   input String inPath;
   output String outPath;
 algorithm
-  outPath := matchcontinue(inPath)
+  outPath := matchcontinue()
     local
       String path;
 
-    case _
+    case ()
       equation
         // we're running the testsuite
         true = Config.getRunningTestsuite();
@@ -4366,26 +1686,26 @@ protected function createDirectoryTreeH
   input Boolean parentDirExists;
   output Boolean outBool;
 algorithm
-  outBool := matchcontinue(inString,parentDir,parentDirExists)
+  outBool := matchcontinue(parentDirExists)
     local
       Boolean b;
 
-    case (_, _, _)
+    case _
       equation
         true = stringEqual(parentDir, System.dirname(parentDir));
         b = System.createDirectory(inString);
-    then b;
+      then b;
 
-    case (_, _, true)
+    case true
       equation
         b = System.createDirectory(inString);
     then b;
 
-    case (_, _, false)
+    case false
       equation
         true = createDirectoryTree(parentDir);
         b = System.createDirectory(inString);
-    then b;
+      then b;
 
     else false;
   end matchcontinue;
@@ -4408,7 +1728,7 @@ public function nextPowerOf2
   input Integer i;
   output Integer v;
 algorithm
-  v := i-1;
+  v := i - 1;
   v := intBitOr(v, intBitLShift(v, 1));
   v := intBitOr(v, intBitLShift(v, 2));
   v := intBitOr(v, intBitLShift(v, 4));
@@ -4418,19 +1738,20 @@ algorithm
 end nextPowerOf2;
 
 public function endsWith
-  input String str;
-  input String suffix;
-  output Boolean b;
+  input String inString;
+  input String inSuffix;
+  output Boolean outEndsWith;
+protected
+  Integer start, stop, str_len, suf_len;
 algorithm
-  b := match (str,suffix)
-    local
-      String strSuffix;
-    case ("",_) then false;
-    case (_,_)
-      equation
-        strSuffix = substring(str, if_(stringLength(str) > stringLength(suffix)+1, stringLength(str) - stringLength(suffix) + 1, 1), stringLength(str));
-      then stringEq(strSuffix,suffix);
-  end match;
+  if inString == "" then
+    outEndsWith := false;
+  else
+    str_len := stringLength(inString);
+    suf_len := stringLength(inSuffix);
+    start := if str_len > suf_len then str_len - suf_len + 1 else 1;
+    outEndsWith := inSuffix == substring(inString, start, str_len);
+  end if;
 end endsWith;
 
 public function isCIdentifier
@@ -4451,20 +1772,7 @@ public function stringTrunc
   input Integer len;
   output String truncatedStr;
 algorithm
-  truncatedStr := matchcontinue(str, len)
-    case (_, _)
-      equation
-        true = stringLength(str) <= len;
-      then
-        str;
-
-    case (_, _)
-      equation
-        true = stringLength(str) > len;
-        truncatedStr = substring(str, 0, len);
-      then
-        truncatedStr;
-  end matchcontinue;
+  truncatedStr := if stringLength(str) <= len then str else substring(str, 0, len);
 end stringTrunc;
 
 public function getTempVariableIndex "Create an iterator or the like with a unique name"
@@ -4473,12 +1781,9 @@ algorithm
   name := stringAppend("$tmpVar",intString(System.tmpTickIndex(Global.tmpVariableIndex)));
 end getTempVariableIndex;
 
-public function anyReturnTrue
-  input Type_a a;
-  output Boolean b;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  b := true;
+public function anyReturnTrue<T>
+  input T a;
+  output Boolean b := true;
 end anyReturnTrue;
 
 annotation(__OpenModelica_Interface="util");

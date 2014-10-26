@@ -7374,7 +7374,7 @@ algorithm
     case (_, _, _, Absyn.NO_MSG())
       equation
         (funcpath2, Absyn.IDENT("constructor")) = Absyn.splitQualAndIdentPath(funcpath);
-        info = Util.if_(Util.isEqual(msg, Absyn.NO_MSG()), NONE(), SOME(Absyn.dummyInfo));
+        info = Util.if_(valueEq(msg, Absyn.NO_MSG()), NONE(), SOME(Absyn.dummyInfo));
         (_, tp, _) = Lookup.lookupType(cache, env, funcpath2, info);
         Types.externalObjectConstructorType(tp);
       then

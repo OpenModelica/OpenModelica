@@ -38,6 +38,7 @@ public import FCore;
 public import HashTable;
 public import Absyn;
 
+protected import Array;
 protected import BaseHashTable;
 protected import ComponentReference;
 protected import DAEUtil;
@@ -335,7 +336,7 @@ algorithm
   local array<Option<UnitAbsyn.Unit>> vector; Integer indx,incr;
     case(UnitAbsyn.STORE(vector,indx)) equation
         incr = intMin(1,realInt(intReal(indx) *. 0.4));
-        vector = arrayExpand(incr,vector,NONE());
+        vector = Array.expand(incr,vector,NONE());
      then UnitAbsyn.STORE(vector,indx);
   end match;
 end expandStore;
@@ -419,82 +420,6 @@ algorithm
    vector := arrayCreate(10,NONE());
    st := UnitAbsyn.STORE(vector,0);
 end emptyStore;
-
-public function arrayExpand "
-copied from Util.mo in OpenModelica
-
-  Increases the number of elements of a vector with n.
-  Each of the new elements have the value v."
-  input Integer n;
-  input array<Type_a> arr;
-  input Type_a v;
-  output array<Type_a> newarr_1;
-  replaceable type Type_a subtypeof Any;
-protected
-  Integer len,newlen;
-  array<Type_a> newarr;
-algorithm
-  len := arrayLength(arr);
-  newlen := n + len;
-  newarr := arrayCreate(newlen, v);
-  newarr_1 := arrayCopy(arr, newarr);
-end arrayExpand;
-
-public function arrayCopy "copies all values in src array into dest array.
-  The function fails if all elements can not be fit into dest array."
-  input array<Type_a> inTypeAArray1;
-  input array<Type_a> inTypeAArray2;
-  output array<Type_a> outTypeAArray;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTypeAArray:=
-  matchcontinue (inTypeAArray1,inTypeAArray2)
-    local
-      Integer srclen,dstlen;
-      array<Type_a> src,dst,dst_1;
-    case (src,dst) /* src dst */
-      equation
-        srclen = arrayLength(src);
-        dstlen = arrayLength(dst);
-        (srclen > dstlen) = true;
-        print(
-          "- Util.arrayCopy failed. Can not fit elements into dest array\n");
-      then
-        fail();
-    case (src,dst)
-      equation
-        srclen = arrayLength(src);
-        srclen = srclen - 1;
-        dst_1 = arrayCopy2(src, dst, srclen);
-      then
-        dst_1;
-  end matchcontinue;
-end arrayCopy;
-
-protected function arrayCopy2
-  input array<Type_a> inTypeAArray1;
-  input array<Type_a> inTypeAArray2;
-  input Integer inInteger3;
-  output array<Type_a> outTypeAArray;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTypeAArray:=
-  matchcontinue (inTypeAArray1,inTypeAArray2,inInteger3)
-    local
-      array<Type_a> src,dst,dst_1,dst_2;
-      Type_a elt;
-      Integer pos;
-    case (_,dst,-1) then dst;  /* src dst current pos */
-    case (src,dst,pos)
-      equation
-        elt = src[pos + 1];
-        dst_1 = arrayUpdate(dst, pos + 1, elt);
-        pos = pos - 1;
-        dst_2 = arrayCopy2(src, dst_1, pos);
-      then
-        dst_2;
-  end matchcontinue;
-end arrayCopy2;
 
 public function printTerms "print the terms to stdout"
 input UnitAbsyn.UnitTerms terms;

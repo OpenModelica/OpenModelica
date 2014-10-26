@@ -4845,34 +4845,29 @@ algorithm
   end match;
 end traverseExpMatrix;
 
-public function traverseExpList "Calls traverseExp for each element of list."
-  replaceable type Type_a subtypeof Any;
+public function traverseExpList<ArgT> "Calls traverseExp for each element of list."
   input list<DAE.Exp> inExpl;
   input FuncExpType rel;
-  input Type_a iext_arg;
-  output list<DAE.Exp> expl;
-  output Type_a ext_arg;
+  input ArgT iext_arg;
+  output list<DAE.Exp> expl := {};
+  output ArgT ext_arg := iext_arg;
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+    input ArgT inTypeA;
     output DAE.Exp outExp;
-    output Type_a outA;
+    output ArgT outA;
   end FuncExpType;
+protected
+  DAE.Exp e1;
+  Boolean same := true;
 algorithm
-  (expl,ext_arg) := match(inExpl,rel,iext_arg)
-    local
-      DAE.Exp e,e1;
-      list<DAE.Exp> expl1;
+  for e in inExpl loop
+    (e1, ext_arg) := traverseExp(e, rel, ext_arg);
+    expl := e1 :: expl;
+    same := same and referenceEq(e, e1);
+  end for;
 
-    case ({},_,ext_arg) then (inExpl,ext_arg);
-
-    case(e::expl,_,ext_arg)
-      equation
-        (e1,ext_arg) = traverseExp(e, rel, ext_arg);
-        (expl1,ext_arg) = traverseExpList(expl,rel,ext_arg);
-        expl = Util.if_(referenceEq(e,e1) and referenceEq(expl,expl1),inExpl,e1::expl1);
-      then (expl,ext_arg);
-  end match;
+  expl := if same then inExpl else listReverse(expl);
 end traverseExpList;
 
 public function traverseExpTopDown
@@ -5249,6 +5244,138 @@ algorithm
       then (SOME(e),a);
   end match;
 end traverseExpOptTopDown;
+
+public function traverseExpCrefDims<ArgT>
+  input DAE.ComponentRef inCref;
+  input FuncType inFunc;
+  input ArgT inArg;
+  output DAE.ComponentRef outCref;
+  output ArgT outArg;
+
+  partial function FuncType
+    input DAE.Exp inExp;
+    input ArgT inArg;
+    output DAE.Exp outExp;
+    output ArgT outArg;
+  end FuncType;
+algorithm
+  (outCref, outArg) := match(inCref)
+    local
+      DAE.Ident id;
+      DAE.Type ty, new_ty;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cr, new_cr;
+      ArgT arg;
+      Integer idx;
+
+    case DAE.CREF_QUAL(id, ty, subs, cr)
+      equation
+        (new_cr, arg) = traverseExpCrefDims(cr, inFunc, inArg);
+        (new_ty, arg) = traverseExpTypeDims(ty, inFunc, inArg);
+        cr = if referenceEq(new_cr, cr) and referenceEq(new_ty, ty)
+          then inCref else DAE.CREF_QUAL(id, new_ty, subs, new_cr);
+      then
+        (cr, arg);
+
+    case DAE.CREF_IDENT(id, ty, subs)
+      equation
+        (new_ty, arg) = traverseExpTypeDims(ty, inFunc, inArg);
+        cr = if referenceEq(new_ty, ty) 
+          then inCref else DAE.CREF_IDENT(id, new_ty, subs);
+      then
+        (cr, arg);
+
+    case DAE.CREF_ITER(id, idx, ty, subs)
+      equation
+        (new_ty, arg) = traverseExpTypeDims(ty, inFunc, inArg);
+        cr = if referenceEq(new_ty, ty)
+          then inCref else DAE.CREF_ITER(id, idx, new_ty, subs);
+      then
+        (cr, arg);
+
+    else (inCref, inArg);
+  end match;
+end traverseExpCrefDims;
+
+public function traverseExpTypeDims<ArgT>
+  input DAE.Type inType;
+  input FuncType inFunc;
+  input ArgT inArg;
+  output DAE.Type outType;
+  output ArgT outArg;
+
+  partial function FuncType
+    input DAE.Exp inExp;
+    input ArgT inArg;
+    output DAE.Exp outExp;
+    output ArgT outArg;
+  end FuncType;
+algorithm
+  (outType, outArg) := match(inType)
+    local
+      DAE.Type ty, new_ty;
+      list<DAE.Dimension> dims, new_dims;
+      DAE.TypeSource src;
+      ArgT arg;
+      Boolean changed;
+      ClassInf.State state;
+      list<DAE.Var> vars;
+      DAE.EqualityConstraint ec;
+
+    case DAE.T_ARRAY(ty, dims, src)
+      equation
+        (new_dims, arg, changed) = traverseExpTypeDims2(dims, inFunc, inArg);
+        ty = if changed then DAE.T_ARRAY(ty, dims, src) else inType;
+      then
+        (ty, arg);
+
+    case DAE.T_SUBTYPE_BASIC(state, vars, ty, ec, src)
+      equation
+        (new_ty, arg) = traverseExpTypeDims(ty, inFunc, inArg);
+        ty = if referenceEq(new_ty, ty) then inType else DAE.T_SUBTYPE_BASIC(state, vars, ty, ec, src);
+      then
+        (ty, arg);
+        
+    else (inType, inArg);
+  end match;
+end traverseExpTypeDims;
+
+protected function traverseExpTypeDims2<ArgT>
+  input list<DAE.Dimension> inDims;
+  input FuncType inFunc;
+  input ArgT inArg;
+  output list<DAE.Dimension> outDims := {};
+  output ArgT outArg := inArg;
+  output Boolean outChanged := false;
+
+  partial function FuncType
+    input DAE.Exp inExp;
+    input ArgT inArg;
+    output DAE.Exp outExp;
+    output ArgT outArg;
+  end FuncType;
+protected
+  Boolean changed := false;
+  DAE.Exp exp, new_exp;
+algorithm
+  for dim in inDims loop
+    dim := match(dim)
+      case DAE.DIM_EXP(exp)
+        equation
+          (new_exp, outArg) = inFunc(exp, outArg);
+          changed = not referenceEq(new_exp, exp);
+          outChanged = outChanged or changed;
+        then
+          if changed then DAE.DIM_EXP(exp) else dim;
+    
+      else dim;
+    end match;
+
+    outDims := dim :: outDims;
+  end for;
+
+  outDims := if outChanged then listReverse(outDims) else inDims;
+end traverseExpTypeDims2;
 
 public function extractCrefsFromExp "
 Author: BZ 2008-06, Extracts all ComponentRef from an Expression."
@@ -5683,26 +5810,28 @@ algorithm
   end match;
 end traversingDivExpFinder;
 
-public function traverseExpListBidir
+public function traverseExpListBidir<ArgT>
   "Traverses a list of expressions, calling traverseExpBidir on each
   expression."
   input list<DAE.Exp> inExpl;
-  input tuple<FuncType, FuncType, Argument> inTuple;
+  input FuncType inEnterFunc;
+  input FuncType inExitFunc;
+  input ArgT inArg;
   output list<DAE.Exp> outExpl;
-  output tuple<FuncType, FuncType, Argument> outTuple;
+  output ArgT outArg;
 
   partial function FuncType
-    input tuple<DAE.Exp, Argument> inTuple;
-    output tuple<DAE.Exp, Argument> outTuple;
+    input DAE.Exp inExp;
+    input ArgT inArg;
+    output DAE.Exp outExp;
+    output ArgT outArg;
   end FuncType;
-
-  replaceable type Argument subtypeof Any;
 algorithm
-  (outExpl, outTuple) :=
-    List.mapFold(inExpl, traverseExpBidir, inTuple);
+  (outExpl, outArg) :=
+    List.map2Fold(inExpl, traverseExpBidir, inEnterFunc, inExitFunc, inArg);
 end traverseExpListBidir;
 
-public function traverseExpBidir
+public function traverseExpBidir<ArgT>
   "This function takes an expression and a tuple with an enter function, an exit
   function, and an extra argument. For each expression it encounters it calls
   the enter function with the expression and the extra argument. It then
@@ -5711,82 +5840,79 @@ public function traverseExpBidir
   the updated argument. This means that this function is bidirectional, and can
   be used to emulate both top-down and bottom-up traversal."
   input DAE.Exp inExp;
-  input tuple<FuncType, FuncType, Argument> inTuple;
+  input FuncType inEnterFunc;
+  input FuncType inExitFunc;
+  input ArgT inArg;
   output DAE.Exp outExp;
-  output tuple<FuncType, FuncType, Argument> outTuple;
+  output ArgT outArg;
 
   partial function FuncType
-    input tuple<DAE.Exp, Argument> inTuple;
-    output tuple<DAE.Exp, Argument> outTuple;
+    input DAE.Exp inExp;
+    input ArgT inArg;
+    output DAE.Exp outExp;
+    output ArgT outArg;
   end FuncType;
-
-  replaceable type Argument subtypeof Any;
-protected
-  FuncType enterFunc, exitFunc;
-  Argument arg;
-  DAE.Exp e;
-  tuple<FuncType, FuncType, Argument> tup;
 algorithm
-  (enterFunc, exitFunc, arg) := inTuple;
-  ((e, arg)) := enterFunc((inExp, arg));
-  (e, (_, _, arg)) := traverseExpBidirSubExps(e,
-    (enterFunc, exitFunc, arg));
-  ((outExp, arg)) := exitFunc((e, arg));
-  outTuple := (enterFunc, exitFunc, arg);
+  (outExp, outArg) := inEnterFunc(inExp, inArg);
+  (outExp, outArg) := traverseExpBidirSubExps(outExp, inEnterFunc, inExitFunc, outArg);
+  (outExp, outArg) := inExitFunc(outExp, outArg);
 end traverseExpBidir;
 
-public function traverseExpOptBidir
+public function traverseExpOptBidir<ArgT>
   "Same as traverseExpBidir, but with an optional expression. Calls
   traverseExpBidir if the option is SOME(), or just returns the input if it's
   NONE()"
   input Option<DAE.Exp> inExp;
-  input tuple<FuncType, FuncType, Argument> inTuple;
+  input FuncType inEnterFunc;
+  input FuncType inExitFunc;
+  input ArgT inArg;
   output Option<DAE.Exp> outExp;
-  output tuple<FuncType, FuncType, Argument> outTuple;
+  output ArgT outArg;
 
   partial function FuncType
-    input tuple<DAE.Exp, Argument> inTuple;
-    output tuple<DAE.Exp, Argument> outTuple;
+    input Exp inExp;
+    input ArgT inArg;
+    output Exp outExp;
+    output ArgT outArg;
   end FuncType;
-
-  replaceable type Argument subtypeof Any;
 algorithm
-  (outExp, outTuple) := match(inExp, inTuple)
+  (outExp, outArg) := match(inExp)
     local
       DAE.Exp e;
-      tuple<FuncType, FuncType, Argument> tup;
+      ArgT arg;
 
-    case (SOME(e), tup)
+    case SOME(e)
       equation
-        (e, tup) = traverseExpBidir(e, tup);
+        (e, arg) = traverseExpBidir(e, inEnterFunc, inExitFunc, inArg);
       then
-        (SOME(e), tup);
+        (SOME(e), arg);
 
-    case (NONE(), _) then (inExp, inTuple);
+    else (inExp, inArg);
   end match;
 end traverseExpOptBidir;
 
-protected function traverseExpBidirSubExps
+protected function traverseExpBidirSubExps<ArgT>
   "Helper function to traverseExpBidir. Traverses the subexpressions of an
   expression and calls traverseExpBidir on them."
   input DAE.Exp inExp;
-  input tuple<FuncType, FuncType, Argument> inTuple;
+  input FuncType inEnterFunc;
+  input FuncType inExitFunc;
+  input ArgT inArg;
   output DAE.Exp outExp;
-  output tuple<FuncType, FuncType, Argument> outTuple;
+  output ArgT outArg;
 
   partial function FuncType
-    input tuple<DAE.Exp, Argument> inTuple;
-    output tuple<DAE.Exp, Argument> outTuple;
+    input DAE.Exp inExp;
+    input ArgT inArg;
+    output DAE.Exp outExp;
+    output ArgT outArg;
   end FuncType;
-
-  replaceable type Argument subtypeof Any;
 algorithm
-  (outExp, outTuple) := match(inExp, inTuple)
+  (outExp, outArg) := match(inExp)
     local
       Integer i;
       DAE.Exp e1, e2, e3;
       Option<DAE.Exp> oe1;
-      tuple<FuncType, FuncType, Argument> tup;
       DAE.Operator op;
       ComponentRef cref;
       list<DAE.Exp> expl;
@@ -5805,196 +5931,198 @@ algorithm
       DAE.ReductionIterators riters;
       DAE.CallAttributes attr;
       list<list<String>> aliases;
+      ArgT arg;
 
-    case (DAE.ICONST(integer = _), _) then (inExp, inTuple);
-    case (DAE.RCONST(real = _), _) then (inExp, inTuple);
-    case (DAE.SCONST(string = _), _) then (inExp, inTuple);
-    case (DAE.BCONST(bool = _), _) then (inExp, inTuple);
-    case (DAE.ENUM_LITERAL(name = _), _) then (inExp, inTuple);
+    case DAE.ICONST(integer = _) then (inExp, inArg);
+    case DAE.RCONST(real = _) then (inExp, inArg);
+    case DAE.SCONST(string = _) then (inExp, inArg);
+    case DAE.BCONST(bool = _) then (inExp, inArg);
+    case DAE.ENUM_LITERAL(name = _) then (inExp, inArg);
 
-    case (DAE.CREF(componentRef = cref, ty = ty), tup)
+    case DAE.CREF(componentRef = cref, ty = ty)
       equation
-        (cref, tup) = traverseExpBidirCref(cref, tup);
+        (cref, arg) = traverseExpBidirCref(cref, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.CREF(cref, ty), tup);
+        (DAE.CREF(cref, ty), arg);
 
-    case (DAE.BINARY(exp1 = e1, operator = op, exp2 = e2), tup)
+    case DAE.BINARY(exp1 = e1, operator = op, exp2 = e2)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (e2, tup) = traverseExpBidir(e2, tup);
+        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (e2, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.BINARY(e1, op, e2), tup);
+        (DAE.BINARY(e1, op, e2), arg);
 
-    case (DAE.UNARY(operator = op, exp = e1), tup)
+    case DAE.UNARY(operator = op, exp = e1)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
+        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.UNARY(op, e1), tup);
+        (DAE.UNARY(op, e1), arg);
 
-    case (DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2), tup)
+    case DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (e2, tup) = traverseExpBidir(e2, tup);
+        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (e2, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.LBINARY(e1, op, e2), tup);
+        (DAE.LBINARY(e1, op, e2), arg);
 
-    case (DAE.LUNARY(operator = op, exp = e1), tup)
+    case DAE.LUNARY(operator = op, exp = e1)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
+        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.LUNARY(op, e1), tup);
+        (DAE.LUNARY(op, e1), arg);
 
-    case (DAE.RELATION(exp1 = e1, operator = op, exp2 = e2, index = index,
-       optionExpisASUB = opt_exp_asub), tup)
+    case DAE.RELATION(exp1 = e1, operator = op, exp2 = e2, index = index,
+         optionExpisASUB = opt_exp_asub)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (e2, tup) = traverseExpBidir(e2, tup);
+        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (e2, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.RELATION(e1, op, e2, index, opt_exp_asub), tup);
+        (DAE.RELATION(e1, op, e2, index, opt_exp_asub), arg);
 
-    case (DAE.IFEXP(expCond = e1, expThen = e2, expElse = e3), tup)
+    case DAE.IFEXP(expCond = e1, expThen = e2, expElse = e3)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (e2, tup) = traverseExpBidir(e2, tup);
-        (e3, tup) = traverseExpBidir(e3, tup);
+        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (e2, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
+        (e3, arg) = traverseExpBidir(e3, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.IFEXP(e1, e2, e3), tup);
+        (DAE.IFEXP(e1, e2, e3), arg);
 
-    case (DAE.CALL(path = path, expLst = expl, attr = attr), tup)
+    case DAE.CALL(path = path, expLst = expl, attr = attr)
       equation
-        (expl, tup) = traverseExpListBidir(expl, tup);
+        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.CALL(path, expl, attr), tup);
+        (DAE.CALL(path, expl, attr), arg);
 
-    case (DAE.RECORD(path = path, exps = expl, comp = strl, ty = ty), tup)
+    case DAE.RECORD(path = path, exps = expl, comp = strl, ty = ty)
       equation
-        (expl, tup) = traverseExpListBidir(expl, tup);
+        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.RECORD(path, expl, strl, ty), tup);
+        (DAE.RECORD(path, expl, strl, ty), arg);
 
-    case (DAE.PARTEVALFUNCTION(path, expl, ty, t), tup)
+    case DAE.PARTEVALFUNCTION(path, expl, ty, t)
       equation
-        (expl, tup) = traverseExpListBidir(expl, tup);
+        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.PARTEVALFUNCTION(path, expl, ty, t), tup);
+        (DAE.PARTEVALFUNCTION(path, expl, ty, t), arg);
 
-    case (DAE.ARRAY(ty = ty, scalar = b1, array = expl), tup)
+    case DAE.ARRAY(ty = ty, scalar = b1, array = expl)
       equation
-        (expl, tup) = traverseExpListBidir(expl, tup);
+        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.ARRAY(ty, b1, expl), tup);
+        (DAE.ARRAY(ty, b1, expl), arg);
 
-    case (DAE.MATRIX(ty = ty, integer = dim, matrix = mat_expl), tup)
+    case DAE.MATRIX(ty = ty, integer = dim, matrix = mat_expl)
       equation
-        (mat_expl, tup) = List.mapFoldList(mat_expl, traverseExpBidir, tup);
+        (mat_expl, arg) = List.map2Fold(mat_expl, traverseExpListBidir,
+          inEnterFunc, inExitFunc, inArg); 
       then
-        (DAE.MATRIX(ty, dim, mat_expl), tup);
+        (DAE.MATRIX(ty, dim, mat_expl), arg);
 
-    case (DAE.RANGE(ty = ty, start = e1, step = oe1, stop = e2), tup)
+    case DAE.RANGE(ty = ty, start = e1, step = oe1, stop = e2)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (oe1, tup) = traverseExpOptBidir(oe1, tup);
-        (e2, tup) = traverseExpBidir(e2, tup);
+        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (oe1, arg) = traverseExpOptBidir(oe1, inEnterFunc, inExitFunc, arg);
+        (e2, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.RANGE(ty, e1, oe1, e2), tup);
+        (DAE.RANGE(ty, e1, oe1, e2), arg);
 
-    case (DAE.TUPLE(PR = expl), tup)
+    case DAE.TUPLE(PR = expl)
       equation
-        (expl, tup) = traverseExpListBidir(expl, tup);
+        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.TUPLE(expl), tup);
+        (DAE.TUPLE(expl), arg);
 
-    case (DAE.CAST(ty = ty, exp = e1), tup)
+    case DAE.CAST(ty = ty, exp = e1)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
+        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.CAST(ty, e1), tup);
+        (DAE.CAST(ty, e1), arg);
 
-    case (DAE.ASUB(exp = e1, sub = expl), tup)
+    case DAE.ASUB(exp = e1, sub = expl)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (expl, tup) = traverseExpListBidir(expl, tup);
+        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.ASUB(e1, expl), tup);
+        (DAE.ASUB(e1, expl), arg);
 
-    case (DAE.TSUB(e1,i,ty), tup)
+    case DAE.TSUB(e1, i, ty)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
+        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.TSUB(e1,i,ty), tup);
+        (DAE.TSUB(e1, i, ty), arg);
 
-    case (DAE.SIZE(exp = e1, sz = oe1), tup)
+    case DAE.SIZE(exp = e1, sz = oe1)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (oe1, tup) = traverseExpOptBidir(oe1, tup);
+        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (oe1, arg) = traverseExpOptBidir(oe1, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.SIZE(e1, oe1), tup);
+        (DAE.SIZE(e1, oe1), arg);
 
-    case (DAE.CODE(code = _), tup)
-      then (inExp, tup);
+    case DAE.CODE(code = _)
+      then (inExp, inArg);
 
-    case (DAE.REDUCTION(reductionInfo = reductionInfo, expr = e1, iterators = riters), tup)
+    case DAE.REDUCTION(reductionInfo = reductionInfo, expr = e1, iterators = riters)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (riters, tup) = List.mapFold(riters, traverseReductionIteratorBidir, tup);
+        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (riters, arg) = List.map2Fold(riters, traverseReductionIteratorBidir,
+          inEnterFunc, inExitFunc, arg);
       then
-        (DAE.REDUCTION(reductionInfo, e1, riters), tup);
+        (DAE.REDUCTION(reductionInfo, e1, riters), arg);
 
-    case (DAE.LIST(valList = expl), tup)
+    case DAE.LIST(valList = expl)
       equation
-        (expl, tup) = traverseExpListBidir(expl, tup);
+        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.LIST(expl), tup);
+        (DAE.LIST(expl), arg);
 
-    case (DAE.CONS(car = e1, cdr = e2), tup)
+    case DAE.CONS(car = e1, cdr = e2)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
-        (e2, tup) = traverseExpBidir(e2, tup);
+        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (e2, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.CONS(e1, e2), tup);
+        (DAE.CONS(e1, e2), arg);
 
-    case (DAE.META_TUPLE(listExp = expl), tup)
+    case DAE.META_TUPLE(listExp = expl)
       equation
-        (expl, tup) = traverseExpListBidir(expl, tup);
+        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.TUPLE(expl), tup);
+        (DAE.TUPLE(expl), arg);
 
-    case (DAE.META_OPTION(exp = oe1), tup)
+    case DAE.META_OPTION(exp = oe1)
       equation
-        (oe1, tup) = traverseExpOptBidir(oe1, tup);
+        (oe1, arg) = traverseExpOptBidir(oe1, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.META_OPTION(oe1), tup);
+        (DAE.META_OPTION(oe1), arg);
 
-    case (DAE.METARECORDCALL(path = path, args = expl, fieldNames = strl,
-        index = index), tup)
+    case DAE.METARECORDCALL(path = path, args = expl, fieldNames = strl, index = index)
       equation
-        (expl, tup) = traverseExpListBidir(expl, tup);
+        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.METARECORDCALL(path, expl, strl, index), tup);
+        (DAE.METARECORDCALL(path, expl, strl, index), arg);
 
-    case (DAE.MATCHEXPRESSION(matchType = match_ty, inputs = expl, aliases=aliases,
-        localDecls = match_decls, cases = match_cases, et = ty), tup)
+    case DAE.MATCHEXPRESSION(matchType = match_ty, inputs = expl, aliases=aliases,
+        localDecls = match_decls, cases = match_cases, et = ty)
       equation
-        (expl, tup) = traverseExpListBidir(expl, tup);
+        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
         /* TODO: Implement traverseMatchCase! */
         //(cases, tup) = List.mapFold(cases, traverseMatchCase, tup);
       then
-        (DAE.MATCHEXPRESSION(match_ty, expl, aliases, match_decls, match_cases, ty), tup);
+        (DAE.MATCHEXPRESSION(match_ty, expl, aliases, match_decls, match_cases, ty), arg);
 
-    case (DAE.BOX(exp = e1), tup)
+    case DAE.BOX(exp = e1)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
+        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.BOX(e1), tup);
+        (DAE.BOX(e1), arg);
 
-    case (DAE.UNBOX(exp = e1, ty = ty), tup)
+    case DAE.UNBOX(exp = e1, ty = ty)
       equation
-        (e1, tup) = traverseExpBidir(e1, tup);
+        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.UNBOX(e1, ty), tup);
+      (DAE.UNBOX(e1, ty), arg);
 
-    case (DAE.SHARED_LITERAL(index = _), tup) then (inExp, tup);
-    case (DAE.PATTERN(pattern = _), tup) then (inExp, tup);
+    case DAE.SHARED_LITERAL(index = _) then (inExp, inArg);
+    case DAE.PATTERN(pattern = _) then (inExp, inArg);
 
     else
       equation
@@ -6007,44 +6135,47 @@ algorithm
   end match;
 end traverseExpBidirSubExps;
 
-public function traverseExpBidirCref
+public function traverseExpBidirCref<ArgT>
   "Helper function to traverseExpBidirSubExps. Traverses any expressions in a
   component reference (i.e. in it's subscripts)."
   input DAE.ComponentRef inCref;
-  input tuple<FuncType, FuncType, Argument> inTuple;
+  input FuncType inEnterFunc;
+  input FuncType inExitFunc;
+  input ArgT inArg;
   output DAE.ComponentRef outCref;
-  output tuple<FuncType, FuncType, Argument> outTuple;
+  output ArgT outArg;
 
   partial function FuncType
-    input tuple<DAE.Exp, Argument> inTuple;
-    output tuple<DAE.Exp, Argument> outTuple;
+    input DAE.Exp inExp;
+    input ArgT inArg;
+    output DAE.Exp outExp;
+    output ArgT outArg;
   end FuncType;
-
-  replaceable type Argument subtypeof Any;
 algorithm
-  (outCref, outTuple) := match(inCref, inTuple)
+  (outCref, outArg) := match(inCref)
     local
       String name;
       ComponentRef cr;
       Type ty;
       list<DAE.Subscript> subs;
-      tuple<FuncType, FuncType, Argument> tup;
+      ArgT arg;
 
-    case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs,
-        componentRef = cr), tup)
+    case DAE.CREF_QUAL(name, ty, subs, cr)
       equation
-        (subs, tup) = List.mapFold(subs, traverseExpBidirSubs, tup);
-        (cr, tup) = traverseExpBidirCref(cr, tup);
+        (subs, arg) = List.map2Fold(subs, traverseExpBidirSubs, inEnterFunc,
+          inExitFunc, inArg);
+        (cr, arg) = traverseExpBidirCref(cr, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.CREF_QUAL(name, ty, subs, cr), tup);
+        (DAE.CREF_QUAL(name, ty, subs, cr), arg);
 
-    case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), tup)
+    case DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs)
       equation
-        (subs, tup) = List.mapFold(subs, traverseExpBidirSubs, tup);
+        (subs, arg) = List.map2Fold(subs, traverseExpBidirSubs, inEnterFunc,
+          inExitFunc, inArg);
       then
-        (DAE.CREF_IDENT(name, ty, subs), tup);
+        (DAE.CREF_IDENT(name, ty, subs), arg);
 
-    case (DAE.WILD(), _) then (inCref, inTuple);
+    else (inCref, inArg);
   end match;
 end traverseExpBidirCref;
 
@@ -6212,45 +6343,47 @@ algorithm
   end match;
 end traverseExpTopDownCrefHelper;
 
-protected function traverseExpBidirSubs
+protected function traverseExpBidirSubs<ArgT>
   "Helper function to traverseExpBidirCref. Traverses expressions in a
   subscript."
   input DAE.Subscript inSubscript;
-  input tuple<FuncType, FuncType, Argument> inTuple;
+  input FuncType inEnterFunc;
+  input FuncType inExitFunc;
+  input ArgT inArg;
   output DAE.Subscript outSubscript;
-  output tuple<FuncType, FuncType, Argument> outTuple;
+  output ArgT outArg;
 
   partial function FuncType
-    input tuple<DAE.Exp, Argument> inTuple;
-    output tuple<DAE.Exp, Argument> outTuple;
+    input DAE.Exp inExp;
+    input ArgT inArg;
+    output DAE.Exp outExp;
+    output ArgT outArg;
   end FuncType;
-
-  replaceable type Argument subtypeof Any;
 algorithm
-  (outSubscript, outTuple) := match(inSubscript, inTuple)
+  (outSubscript, outArg) := match(inSubscript)
     local
       DAE.Exp sub_exp;
-      tuple<FuncType, FuncType, Argument> tup;
+      ArgT arg;
 
-    case (DAE.WHOLEDIM(), tup) then (inSubscript, tup);
+    case DAE.WHOLEDIM() then (inSubscript, inArg);
 
-    case (DAE.SLICE(exp = sub_exp), tup)
+    case DAE.SLICE(exp = sub_exp)
       equation
-        (sub_exp, tup) = traverseExpBidir(sub_exp, tup);
+        (sub_exp, arg) = traverseExpBidir(sub_exp, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.SLICE(sub_exp), tup);
+        (DAE.SLICE(sub_exp), arg);
 
-    case (DAE.INDEX(exp = sub_exp), tup)
+    case DAE.INDEX(exp = sub_exp)
       equation
-        (sub_exp, tup) = traverseExpBidir(sub_exp, tup);
+        (sub_exp, arg) = traverseExpBidir(sub_exp, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.INDEX(sub_exp), tup);
+        (DAE.INDEX(sub_exp), arg);
 
-    case (DAE.WHOLE_NONEXP(exp = sub_exp), tup)
+    case DAE.WHOLE_NONEXP(exp = sub_exp)
       equation
-        (sub_exp, tup) = traverseExpBidir(sub_exp, tup);
+        (sub_exp, arg) = traverseExpBidir(sub_exp, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.WHOLE_NONEXP(sub_exp), tup);
+        (DAE.WHOLE_NONEXP(sub_exp), arg);
 
   end match;
 end traverseExpBidirSubs;
@@ -8812,31 +8945,36 @@ algorithm
   DAE.REDUCTIONITER(id=name) := iter;
 end reductionIterName;
 
-protected function traverseReductionIteratorBidir
-  input DAE.ReductionIterator iter;
-  input tuple<FuncType, FuncType, Argument> inTuple;
+protected function traverseReductionIteratorBidir<ArgT>
+  input DAE.ReductionIterator inIter;
+  input FuncType inEnterFunc;
+  input FuncType inExitFunc;
+  input ArgT inArg;
   output DAE.ReductionIterator outIter;
-  output tuple<FuncType, FuncType, Argument> outTuple;
+  output ArgT outArg;
 
   partial function FuncType
-    input tuple<DAE.Exp, Argument> inTuple;
-    output tuple<DAE.Exp, Argument> outTuple;
+    input DAE.Exp inExp;
+    input ArgT inArg;
+    output DAE.Exp outExp;
+    output ArgT outArg;
   end FuncType;
-
-  replaceable type Argument subtypeof Any;
 algorithm
-  (outIter,outTuple) := match (iter,inTuple)
+  (outIter, outArg) := match(inIter)
     local
       String id;
       DAE.Exp exp;
       Option<DAE.Exp> gexp;
       DAE.Type ty;
-      tuple<FuncType, FuncType, Argument> tup;
-    case (DAE.REDUCTIONITER(id,exp,gexp,ty),tup)
+      ArgT arg;
+
+    case DAE.REDUCTIONITER(id, exp, gexp, ty)
       equation
-        (exp, tup) = traverseExpBidir(exp, tup);
-        (gexp, tup) = traverseExpOptBidir(gexp, tup);
-      then (DAE.REDUCTIONITER(id,exp,gexp,ty),tup);
+        (exp, arg) = traverseExpBidir(exp, inEnterFunc, inExitFunc, inArg);
+        (gexp, arg) = traverseExpOptBidir(gexp, inEnterFunc, inExitFunc, arg);
+      then 
+        (DAE.REDUCTIONITER(id, exp, gexp, ty), arg);
+
   end match;
 end traverseReductionIteratorBidir;
 
@@ -10710,7 +10848,7 @@ public function makeVectorCall
 algorithm
   outExp := makePureBuiltinCall("vector",{exp},tp);
 end makeVectorCall;
-
+  
 public function extendArrExp "author: Frenkel TUD 2010-07
   alternative name: vectorizeExp"
   input DAE.Exp inExp;

@@ -45,6 +45,7 @@ public import BaseHashTable;
 public import NFConnect2;
 public import DAE;
 
+protected import Array;
 protected import ComponentReference;
 protected import NFConnectUtil2;
 protected import Debug;
@@ -461,7 +462,7 @@ algorithm
         nc = nc + 1;
         node = makeNode(inConnector, nc);
         // Make sure that we have space available in the node array.
-        nodes = Util.arrayExpandOnDemand(nc, nodes, 1.4, NO_NODE());
+        nodes = Array.expandOnDemand(nc, nodes, 1.4, NO_NODE());
         // Add the new node to the node array and register its index in the
         // index table.
         nodes = arrayUpdate(nodes, nc, node);

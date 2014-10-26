@@ -65,6 +65,7 @@ public import BackendDAE;
 public import DAE;
 public import FCore;
 
+protected import Array;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendDump;
@@ -269,7 +270,7 @@ algorithm
         selectedParameter = List.consOnTrue(select, index, selectedParameter);
         ass = arrayUpdate(ass,index,index);
         m = arrayUpdate(m,index,ilst);
-        mt = List.fold1(index::ilst,Util.arrayCons,index,mt);
+        mt = List.fold1(index::ilst,Array.consToElement,index,mt);
       then (v,(knvars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt));
 
     case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),values=attr),(knvars,index,selectParameter,selectedParameter,nselect,ass,m,mt))
@@ -280,7 +281,7 @@ algorithm
         selectedParameter = List.consOnTrue(select, index, selectedParameter);
         ass = arrayUpdate(ass,index,index);
         m = arrayUpdate(m,index,ilst);
-        mt = List.fold1(index::ilst,Util.arrayCons,index,mt);
+        mt = List.fold1(index::ilst,Array.consToElement,index,mt);
       then (v,(knvars,index+1,selectParameter,selectedParameter,nselect,ass,m,mt));
 
     case (v,(knvars,index,selectParameter,selectedParameter,nselect,ass,m,mt))

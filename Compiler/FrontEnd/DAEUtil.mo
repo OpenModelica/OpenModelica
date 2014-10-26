@@ -1346,9 +1346,10 @@ public function getMatchingElements "author:  LS
   output list<DAE.Element> oelist;
   partial function FuncTypeElementTo
     input DAE.Element inElement;
+    output Boolean outMatch;
   end FuncTypeElementTo;
 algorithm
-  oelist := List.filter(elist, cond);
+  oelist := List.filterOnTrue(elist, cond);
 end getMatchingElements;
 
 public function getAllMatchingElements "author:  PA
@@ -1562,7 +1563,7 @@ public function getProtectedVars "
   input list<DAE.Element> vl;
   output list<DAE.Element> vl_1;
 algorithm
-  vl_1 := getMatchingElements(vl, assertProtectedVar);
+  vl_1 := getMatchingElements(vl, isProtectedVar);
 end getProtectedVars;
 
 public function getBidirVars "author: LS
@@ -1621,9 +1622,11 @@ end isStream;
 public function isOutputVar
 "Succeeds if Element is an output variable."
   input DAE.Element inElement;
+  output Boolean outMatch;
 algorithm
-  _ := match (inElement)
-    case DAE.VAR(kind = DAE.VARIABLE(),direction = DAE.OUTPUT()) then ();
+  outMatch := match (inElement)
+    case DAE.VAR(kind = DAE.VARIABLE(),direction = DAE.OUTPUT()) then true;
+    else false;
   end match;
 end isOutputVar;
 
@@ -1651,9 +1654,11 @@ public function isPublicVar "
   Succeeds if Element is a public variable.
 "
   input DAE.Element inElement;
+  output Boolean outMatch;
 algorithm
-  _ := match (inElement)
-    case DAE.VAR(protection=DAE.PUBLIC()) then ();
+  outMatch := match (inElement)
+    case DAE.VAR(protection=DAE.PUBLIC()) then true;
+    else false;
   end match;
 end isPublicVar;
 
@@ -1661,9 +1666,11 @@ public function isBidirVar "
   Succeeds if Element is a bidirectional variable.
 "
   input DAE.Element inElement;
+  output Boolean outMatch;
 algorithm
-  _ := match (inElement)
-    case DAE.VAR(kind = DAE.VARIABLE(),direction = DAE.BIDIR()) then ();
+  outMatch := match (inElement)
+    case DAE.VAR(kind = DAE.VARIABLE(),direction = DAE.BIDIR()) then true;
+    else false;
   end match;
 end isBidirVar;
 
@@ -1681,9 +1688,11 @@ public function isInputVar "
   Succeeds if Element is an input variable.
 "
   input DAE.Element inElement;
+  output Boolean outMatch;
 algorithm
-  _ := match (inElement)
-    case DAE.VAR(kind = DAE.VARIABLE(),direction = DAE.INPUT()) then ();
+  outMatch := match (inElement)
+    case DAE.VAR(kind = DAE.VARIABLE(),direction = DAE.INPUT()) then true;
+    else false;
   end match;
 end isInputVar;
 
@@ -1691,25 +1700,33 @@ public function isInput "
   Succeeds if Element is an input .
 "
   input DAE.Element inElement;
+  output Boolean outMatch;
 algorithm
-  _ := match (inElement)
-    case DAE.VAR(direction = DAE.INPUT()) then ();
+  outMatch := match (inElement)
+    case DAE.VAR(direction = DAE.INPUT()) then true;
+    else false;
   end match;
 end isInput;
 
-public function isNotVar "
-  Succeeds if Element is *not* a variable."
+public function isNotVar
+  "Returns true if the element is not a variable, otherwise false."
   input DAE.Element e;
+  output Boolean outMatch;
 algorithm
-  failure(isVar(e));
+  outMatch := match e
+    case DAE.VAR(__) then false;
+    else true;
+  end match;
 end isNotVar;
 
-public function isVar "
-  Succeeds if Element is a variable."
+public function isVar 
+  "Returns true if the element is a variable, otherwise false."
   input DAE.Element inElement;
+  output Boolean outMatch;
 algorithm
-  _ := match (inElement)
-    case DAE.VAR(componentRef = _) then ();
+  outMatch := match inElement
+    case DAE.VAR(__) then true; 
+    else false;
   end match;
 end isVar;
 
@@ -1727,9 +1744,11 @@ end isFunctionRefVar;
 public function isAlgorithm "author: LS
   Succeeds if Element is an algorithm."
   input DAE.Element inElement;
+  output Boolean outMatch;
 algorithm
-  _ := match (inElement)
-    case DAE.ALGORITHM(algorithm_ = _) then ();
+  outMatch := match (inElement)
+    case DAE.ALGORITHM(__) then true;
+    else false;
   end match;
 end isAlgorithm;
 
@@ -1739,10 +1758,8 @@ author:Waurich TUD 2014-04"
   output Boolean b;
 algorithm
   b := match(stmt)
-    case(DAE.STMT_ASSERT(cond=_,msg=_,level=_,source=_))
-      then true;
-    else
-     then false;
+    case DAE.STMT_ASSERT(__) then true;
+    else false;
   end match;
 end isStmtAssert;
 
@@ -1752,10 +1769,8 @@ author:Waurich TUD 2014-04"
   output Boolean b;
 algorithm
   b := match(stmt)
-    case(DAE.STMT_RETURN(source=_))
-      then true;
-    else
-     then false;
+    case DAE.STMT_RETURN(__) then true;
+    else false;
   end match;
 end isStmtReturn;
 
@@ -1765,10 +1780,8 @@ author:Waurich TUD 2014-04"
   output Boolean b;
 algorithm
   b := match(stmt)
-    case(DAE.STMT_REINIT(var=_, value=_, source=_))
-      then true;
-    else
-     then false;
+    case DAE.STMT_REINIT(__) then true;
+    else false;
   end match;
 end isStmtReinit;
 
@@ -1778,19 +1791,19 @@ author:Waurich TUD 2014-04"
   output Boolean b;
 algorithm
   b := match(stmt)
-    case(DAE.STMT_TERMINATE(msg=_,source=_))
-      then true;
-    else
-     then false;
+    case DAE.STMT_TERMINATE(__) then true;
+    else false;
   end match;
 end isStmtTerminate;
 
 public function isComplexEquation "author: LS
   Succeeds if Element is an complex equation."
   input DAE.Element inElement;
+  output Boolean outMatch;
 algorithm
-  _ := match (inElement)
-    case DAE.COMPLEX_EQUATION(lhs=_,rhs=_,source=_) then ();
+  outMatch := match (inElement)
+    case DAE.COMPLEX_EQUATION(__) then true;
+    else false;
   end match;
 end isComplexEquation;
 
@@ -2767,7 +2780,7 @@ protected
   list<DAE.Element> elements;
 algorithm
   elements := getFunctionElements(fn);
-  outEls := List.filter(elements, isInputVar);
+  outEls := List.filterOnTrue(elements, isInputVar);
 end getFunctionInputVars;
 
 public function getFunctionOutputVars
@@ -2777,7 +2790,7 @@ protected
   list<DAE.Element> elements;
 algorithm
   elements := getFunctionElements(fn);
-  outEls := List.filter(elements, isOutputVar);
+  outEls := List.filterOnTrue(elements, isOutputVar);
 end getFunctionOutputVars;
 
 public function getFunctionProtectedVars
@@ -2787,7 +2800,7 @@ protected
   list<DAE.Element> elements;
 algorithm
   elements := getFunctionElements(fn);
-  outEls := List.filter(elements, assertProtectedVar);
+  outEls := List.filterOnTrue(elements, isProtectedVar);
 end getFunctionProtectedVars;
 
 public function getFunctionAlgorithms
@@ -2797,7 +2810,7 @@ protected
   list<DAE.Element> elements;
 algorithm
   elements := getFunctionElements(fn);
-  outEls := List.filter(elements, isAlgorithm);
+  outEls := List.filterOnTrue(elements, isAlgorithm);
 end getFunctionAlgorithms;
 
 public function getFunctionAlgorithmStmts
@@ -2807,7 +2820,7 @@ protected
   list<DAE.Element> elements;
 algorithm
   elements := getFunctionElements(fn);
-  bodyStmts := List.mapFlat(List.filter(elements, isAlgorithm), getStatement);
+  bodyStmts := List.mapFlat(List.filterOnTrue(elements, isAlgorithm), getStatement);
 end getFunctionAlgorithmStmts;
 
 public function getStatement

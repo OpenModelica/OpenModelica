@@ -1951,106 +1951,81 @@ algorithm
 end lookupTypeInFrame2;
 
 protected function lookupFunctionsInFrame
-"This actually only looks up the function name and find all
-  corresponding types that have this function name."
+  "This actually only looks up the function name and find all
+   corresponding types that have this function name."
   input FCore.Cache inCache;
-  input FCore.Children inBinTree1;
-  input FCore.Children inBinTree2;
-  input FCore.Graph inEnv3;
-  input SCode.Ident inIdent4;
-  input Absyn.Info info;
+  input FCore.Children inClasses;
+  input FCore.Children inFuncTypes;
+  input FCore.Graph inEnv;
+  input SCode.Ident inFuncName;
+  input Absyn.Info inInfo;
   output FCore.Cache outCache;
-  output list<DAE.Type> outTypesTypeLst;
+  output list<DAE.Type> outFuncTypes;
+protected
+  FCore.Ref r;
+  FNode.Data data;
+  DAE.Type ty;
 algorithm
-  (outCache,outTypesTypeLst) := matchcontinue (inCache,inBinTree1,inBinTree2,inEnv3,inIdent4,info)
-    local
-      list<DAE.Type> tps;
-      FCore.Children httypes;
-      FCore.Children ht;
-      FCore.Graph env,cenv,env_1;
-      String id,n;
-      SCode.Element cdef;
-      DAE.Type ftype,t;
-      DAE.Type tty;
-      FCore.Cache cache;
-      SCode.Restriction restr;
-      FCore.Ref r;
+  try // Try to look up the function among the function types first.
+    r := FNode.avlTreeGet(inFuncTypes, inFuncName);
+    FCore.N(data = FCore.FT(outFuncTypes)) := FNode.fromRef(r);
+    outCache := inCache;
+  else // If not found, try to look the function up in the environment instead.
+    r := FNode.avlTreeGet(inClasses, inFuncName);
+    FCore.N(data = data) := FNode.fromRef(r);
 
-    // Classes and vars Types
-    case (cache,_,httypes,_,id,_)
-      equation
-        r = FNode.avlTreeGet(httypes, id);
-        FCore.N(data=FCore.FT(tps)) = FNode.fromRef(r);
-      then
-        (cache,tps);
+    (outCache, outFuncTypes) := matchcontinue(data)
+      local
+        SCode.Element cl;
+        list<DAE.Type> tps;
+        FCore.Cache cache;
+        FCore.Graph env;
 
-    // MetaModelica Partial Function. sjoelund
-    case (cache,ht,_,_,id,_)
-      equation
-        r = FNode.avlTreeGet(ht, id);
-        DAE.TYPES_VAR(ty = tty as DAE.T_FUNCTION(funcArg = _)) = FNode.refInstVar(r);
-        tty = Types.setTypeSource(tty, Types.mkTypeSource(SOME(Absyn.IDENT(id))));
-      then
-        (cache,{tty});
+      // MetaModelica partial functions.
+      case _ 
+        algorithm
+          DAE.TYPES_VAR(ty = ty as DAE.T_FUNCTION(__)) := FNode.refInstVar(r);
+          ty := Types.setTypeSource(ty, Types.mkTypeSource(SOME(Absyn.IDENT(inFuncName))));
+        then
+          (inCache, {ty});
 
-    case (_,ht,_,_,id,_)
-      equation
-        r = FNode.avlTreeGet(ht, id);
-        FCore.N(data = FCore.CO(e = _)) = FNode.fromRef(r);
-        Error.addSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id}, info);
-      then
-        fail();
+      // Found a component, print an error.
+      case FCore.CO(__)
+        algorithm
+          Error.addSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP, {inFuncName}, inInfo);
+        then
+          fail();
 
-    // Records, create record constructor function
-    case (cache,ht,_,env,id,_)
-      equation
-        r = FNode.avlTreeGet(ht, id);
-        FCore.N(data = FCore.CL(e = cdef as SCode.CLASS(name=_,restriction=SCode.R_RECORD(_)))) = FNode.fromRef(r);
-        (cache,_,ftype) = buildRecordType(cache,env,cdef);
-      then
-        (cache,{ftype});
+      // A record, create a record constructor.
+      case FCore.CL(e = cl as SCode.CLASS(restriction = SCode.R_RECORD(__)))
+        algorithm
+          (cache, _, ty) := buildRecordType(inCache, inEnv, cl);
+        then
+          (cache, {ty});
 
-    // Found class that is function, instantiate to get type
-    case (cache,ht,_,env,id,_)
-      equation
-        r = FNode.avlTreeGet(ht, id);
-        FCore.N(data = FCore.CL(e = cdef as SCode.CLASS(restriction=restr))) = FNode.fromRef(r);
-        true = SCode.isFunctionRestriction(restr) "If found class that is function.";
+      // A function, instantiate to get the type.
+      case FCore.CL(e = cl) guard(SCode.isFunction(cl))
+        algorithm
+          (cache, env) := InstFunction.implicitFunctionTypeInstantiation(
+            inCache, inEnv, InnerOuter.emptyInstHierarchy, cl);
+          (cache, tps) := lookupFunctionsInEnv2(cache, env,
+            Absyn.IDENT(inFuncName), true, inInfo);
+        then
+          (cache, tps);
 
-        // select the env if is the same as cenv as is updated!
-        cenv = env; // selectUpdatedEnv(env, cenv);
-
-        //function dae collected from instantiation
-        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN FRAME ICD: " +& FGraph.printGraphPathStr(env) +& "." +& id);
-        (cache,env_1,_) =
-        InstFunction.implicitFunctionTypeInstantiation(cache,cenv,InnerOuter.emptyInstHierarchy,cdef) ;
-
-        (cache,tps) = lookupFunctionsInEnv2(cache,env_1,Absyn.IDENT(id),true,info);
-      then
-        (cache,tps);
-
-    // Found class that is is external object
-    case (cache,ht,_,env,id,_)
-      equation
-        r = FNode.avlTreeGet(ht, id);
-        FCore.N(data = FCore.CL(e = cdef)) = FNode.fromRef(r);
-        true = SCode.classIsExternalObject(cdef);
-
-        // select the env if is the same as cenv as is updated!
-        cenv = env; // selectUpdatedEnv(env, cenv);
-
-        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN FRAME ICD: " +& FGraph.printGraphPathStr(env) +& "." +& id);
-        (cache,env_1,_,_,_,_,t,_,_,_) =
-          Inst.instClass(cache,cenv,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
-            DAE.NOMOD(), Prefix.NOPRE(), cdef, {}, false, InstTypes.TOP_CALL(),
+      // An external object.
+      case FCore.CL(e = cl) guard(SCode.classIsExternalObject(cl))
+        algorithm
+          (cache, env) := Inst.instClass(inCache, inEnv,
+            InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore, DAE.NOMOD(),
+            Prefix.NOPRE(), cl, {}, false, InstTypes.TOP_CALL(),
             ConnectionGraph.EMPTY, Connect.emptySet);
-        (cache,t,_) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
-        // s = Types.unparseType(t);
-        // print("type :");print(s);print("\n");
-      then
-        (cache,{t});
+          (cache, ty) := lookupTypeInEnv(cache, env, Absyn.IDENT(inFuncName));
+        then
+          (cache, {ty});
 
-  end matchcontinue;
+    end matchcontinue;
+  end try;
 end lookupFunctionsInFrame;
 
 public function selectUpdatedEnv

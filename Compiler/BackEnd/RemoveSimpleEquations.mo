@@ -2986,6 +2986,7 @@ algorithm
       tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>> startvalues;
       BackendDAE.Var v;
       BackendDAE.Variables vars;
+      Option<DAE.Exp> min, max;
 
     case((fixedset, startvalues, nominalset, minmaxset), _, _, _) equation
       isdiscrete = BackendVariable.isVarDiscrete(inVar);
@@ -2995,7 +2996,8 @@ algorithm
       // nominal
       v = mergeNominalAttribute(nominalset, v);
       // min max
-      v = BackendVariable.setVarMinMax(v, minmaxset);
+      (min, max) = minmaxset;
+      v = BackendVariable.setVarMinMax(v, min, max);
 
       // update vars
       vars = BackendVariable.addVar(v, inVars);

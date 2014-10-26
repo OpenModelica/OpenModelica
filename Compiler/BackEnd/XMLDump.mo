@@ -83,6 +83,7 @@ public import DAE;
 public import Values;
 public import SCode;
 
+protected import Array;
 protected import BackendDAEUtil;
 protected import BackendVariable;
 protected import BackendDAETransform;
@@ -2414,7 +2415,7 @@ protected
 algorithm
   funcs := BackendDAEUtil.getFunctions(shared);
   (_,m,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),SOME(funcs));
-  _ := Util.arrayFold(m,dumpIncidenceMatrix2,(inOffset,1));
+  _ := Array.fold(m,dumpIncidenceMatrix2,(inOffset,1));
   outOffset := inOffset + arrayLength(m);
 end dumpIncidenceMatrixWork;
 
@@ -2788,7 +2789,7 @@ algorithm
   case(_,_,_)
     equation
       true = intGt(arrayLength(v),0);
-      _ = Util.arrayFold(v,dumpMatching2,(1,voffset,eoffset));
+      _ = Array.fold(v,dumpMatching2,(1,voffset,eoffset));
   then();
     end matchcontinue;
 end dumpMatching1;

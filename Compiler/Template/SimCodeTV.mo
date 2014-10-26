@@ -2527,13 +2527,6 @@ package Util
     output Integer i;
   end intProduct;
 
-  function splitTuple212List
-    replaceable type Type_b subtypeof Any;
-    input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
-    output list<Type_b> outTypeALst;
-    replaceable type Type_a subtypeof Any;
-  end splitTuple212List;
-
   function testsuiteFriendly
     input String in;
     output String out;
@@ -2661,6 +2654,13 @@ package List
     input Integer inPartitionLength;
     output list<list<ElementType>> outPartitions;
   end partition;
+
+  function unzipSecond
+    replaceable type Type_b subtypeof Any;
+    input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
+    output list<Type_b> outTypeALst;
+    replaceable type Type_a subtypeof Any;
+  end unzipSecond;
 end List;
 
 package ComponentReference

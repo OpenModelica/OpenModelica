@@ -50,6 +50,7 @@ public import FGraph;
 public import HashTable2;
 
 protected import Algorithm;
+protected import Array;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendDump;
@@ -1434,40 +1435,55 @@ public function removeUnusedFunctions "author: Frenkel TUD 2012-03
   for compilation of target code."
   input BackendDAE.BackendDAE inDlow;
   output BackendDAE.BackendDAE outDlow;
-algorithm
-  outDlow := match (inDlow)
-    local
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcs,usedfuncs;
-      BackendDAE.Variables knvars,exobj,aliasVars;
-      BackendDAE.EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      BackendDAE.EventInfo einfo;
-      list<BackendDAE.WhenClause> whenClauseLst;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.EqSystems eqs;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.ExtraInfo ei;
+protected
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree funcs,usedfuncs;
+  BackendDAE.Variables knvars,exobj,aliasVars;
+  BackendDAE.EquationArray remeqns,inieqns;
+  list<DAE.Constraint> constrs;
+  list<DAE.ClassAttributes> clsAttrs;
+  BackendDAE.EventInfo einfo;
+  list<BackendDAE.WhenClause> whenClauseLst;
+  BackendDAE.ExternalObjectClasses eoc;
+  BackendDAE.SymbolicJacobians symjacs;
+  BackendDAE.EqSystems eqs;
+  BackendDAE.BackendDAEType btp;
+  BackendDAE.ExtraInfo ei;
+  BackendDAE.Shared shared;
 
-    case (BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp,symjacs,ei)))
-      equation
-        usedfuncs = copyRecordConstructorAndExternalObjConstructorDestructor(funcs);
-        ((_,usedfuncs)) = List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem,checkUnusedFunctions,(funcs,usedfuncs));
-        ((_,usedfuncs)) = List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystemJacobians,checkUnusedFunctions,(funcs,usedfuncs));
-        ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsVars(knvars,checkUnusedFunctions,(funcs,usedfuncs));
-        ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsVars(exobj,checkUnusedFunctions,(funcs,usedfuncs));
-        ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsVars(aliasVars,checkUnusedFunctions,(funcs,usedfuncs));
-        ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns,checkUnusedFunctions,(funcs,usedfuncs));
-        ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns,checkUnusedFunctions,(funcs,usedfuncs));
-        (_,(_,usedfuncs)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkUnusedFunctions,(funcs,usedfuncs));
-        //traverse Symbolic jacobians
-        ((funcs,usedfuncs)) = removeUnusedFunctionsSymJacs(symjacs,(funcs,usedfuncs));
-      then
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,usedfuncs,einfo,eoc,btp,symjacs,ei));
-  end match;
+  partial function FuncType
+    input DAE.Exp inExp;
+    input DAE.FunctionTree inUsedFunctions;
+    output DAE.Exp outExp;
+    output DAE.FunctionTree outUsedFunctions;
+  end FuncType;
+
+  FuncType func;
+algorithm
+  BackendDAE.DAE(eqs, shared) := inDlow;
+  BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs,
+      clsAttrs, cache, graph, funcs, einfo, eoc, btp, symjacs, ei) := shared;
+  BackendDAE.EVENT_INFO(whenClauseLst = whenClauseLst) := einfo;
+
+  usedfuncs := copyRecordConstructorAndExternalObjConstructorDestructor(funcs);
+
+  func := function checkUnusedFunctions(inFunctions = funcs);
+  usedfuncs := List.fold1(eqs, BackendDAEUtil.traverseBackendDAEExpsEqSystem, func, usedfuncs);
+  usedfuncs := List.fold1(eqs, BackendDAEUtil.traverseBackendDAEExpsEqSystemJacobians, func, usedfuncs);
+  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(knvars, func, usedfuncs);
+  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(exobj, func, usedfuncs);
+  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(aliasVars, func, usedfuncs);
+  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns, func, usedfuncs);
+  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns, func, usedfuncs);
+  (_, usedfuncs) := BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst, func, usedfuncs);
+
+  //traverse Symbolic jacobians
+  usedfuncs := removeUnusedFunctionsSymJacs(symjacs, funcs, usedfuncs);
+
+  shared := BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns,
+    constrs, clsAttrs, cache, graph, usedfuncs, einfo, eoc, btp, symjacs, ei);
+  outDlow := BackendDAE.DAE(eqs, shared);
 end removeUnusedFunctions;
 
 protected function copyRecordConstructorAndExternalObjConstructorDestructor
@@ -1512,99 +1528,97 @@ end copyRecordConstructorAndExternalObjConstructorDestructorFold;
 
 protected function removeUnusedFunctionsSymJacs
   input BackendDAE.SymbolicJacobians inSymJacs;
-  input tuple<DAE.FunctionTree,DAE.FunctionTree> inFuncsTpl;
-  output tuple<DAE.FunctionTree,DAE.FunctionTree> outFuncsTpl;
+  input DAE.FunctionTree inFunctions;
+  input DAE.FunctionTree inUsedFunctions;
+  output DAE.FunctionTree outUsedFunctions := inUsedFunctions;
 algorithm
-  outFuncsTpl := match(inSymJacs,inFuncsTpl)
-  local
-    BackendDAE.BackendDAE bdae;
-    BackendDAE.SymbolicJacobians rest;
-    DAE.FunctionTree funcs, usedfuncs, usedfuncs2;
-    list<tuple<DAE.AvlKey, DAE.AvlValue>> treelst;
+  for sjac in inSymJacs loop
+    _ := match(sjac)
+      local
+        BackendDAE.BackendDAE bdae;
+        DAE.FunctionTree usedfuncs;
 
-    case ({},(funcs,usedfuncs)) then ((funcs,usedfuncs));
-    case ((NONE(),_,_)::rest,(funcs,usedfuncs))
-      then removeUnusedFunctionsSymJacs(rest,(funcs,usedfuncs));
-    case ((SOME((bdae,_,_,_,_)),_,_)::rest,(funcs,usedfuncs))
-      equation
-         bdae = BackendDAEUtil.addBackendDAEFunctionTree(funcs,bdae);
-         BackendDAE.DAE(shared=BackendDAE.SHARED(functionTree=usedfuncs2)) = removeUnusedFunctions(bdae);
-         treelst = DAEUtil.avlTreeToList(usedfuncs2);
-         usedfuncs = DAEUtil.avlTreeAddLst(treelst, usedfuncs);
-      then removeUnusedFunctionsSymJacs(rest,(funcs,usedfuncs));
-      //else inFuncsTpl;
-  end match;
+      case (SOME((bdae, _, _, _, _)), _, _)
+        equation
+          bdae = BackendDAEUtil.addBackendDAEFunctionTree(inFunctions, bdae);
+          BackendDAE.DAE(shared = BackendDAE.SHARED(functionTree = usedfuncs)) =
+            removeUnusedFunctions(bdae);
+          outUsedFunctions = DAEUtil.joinAvlTrees(outUsedFunctions, usedfuncs);
+        then
+          ();
+
+      else ();
+    end match;
+  end for;
 end removeUnusedFunctionsSymJacs;
 
 protected function checkUnusedFunctions
   input DAE.Exp inExp;
-  input tuple<DAE.FunctionTree,DAE.FunctionTree> inTpl;
+  input DAE.FunctionTree inFunctions;
+  input DAE.FunctionTree inUsedFunctions;
   output DAE.Exp outExp;
-  output tuple<DAE.FunctionTree,DAE.FunctionTree> outTpl;
+  output DAE.FunctionTree outUsedFunctions;
 algorithm
-  (outExp,outTpl) := Expression.traverseExp(inExp,checkUnusedFunctionsExp,inTpl);
+  (outExp, outUsedFunctions) := Expression.traverseExp(inExp, function
+      checkUnusedFunctionsExp(inFunctions = inFunctions), inUsedFunctions);
 end checkUnusedFunctions;
 
 protected function checkUnusedFunctionsExp
   input DAE.Exp inExp;
-  input tuple<DAE.FunctionTree,DAE.FunctionTree> inTuple;
-  output DAE.Exp outExp;
-  output tuple<DAE.FunctionTree,DAE.FunctionTree> outTuple;
+  input DAE.FunctionTree inFunctions;
+  input DAE.FunctionTree inUsedFunctions;
+  output DAE.Exp outExp := inExp;
+  output DAE.FunctionTree outUsedFunctions;
 algorithm
-  (outExp,outTuple) := matchcontinue (inExp,inTuple)
+  outUsedFunctions := match(inExp)
     local
-      DAE.Exp e;
-      DAE.FunctionTree func,usefuncs,usefuncs1,usefuncs2;
       Absyn.Path path;
-      Option<DAE.Function> f;
-      list<DAE.Element> body;
+      DAE.ComponentRef cr;
+      DAE.FunctionTree usedfuncs;
 
-    // already there
-    case (DAE.CALL(path = path),(func,usefuncs))
-      equation
-         _ = DAEUtil.avlTreeGet(usefuncs, path);
-      then (inExp,inTuple);
+    // If the expression is some kind of function call, add it to the used functions.
+    case DAE.CALL(path = path)
+      then addUnusedFunction(path, inFunctions, inUsedFunctions);
 
-    // add it
-    case (e as DAE.CALL(path = path),(func,usefuncs))
-      equation
-         (f,body) = getFunctionAndBody(path,func);
-         usefuncs1 = DAEUtil.avlTreeAdd(usefuncs, path, f);
-         // print("add function " +& Absyn.pathStringNoQual(path) +& "\n");
-         (_,(_,usefuncs2)) = DAEUtil.traverseDAE2(body,checkUnusedFunctions,(func,usefuncs1));
+    case DAE.PARTEVALFUNCTION(path = path)
+      then addUnusedFunction(path, inFunctions, inUsedFunctions);
+
+    case DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(functionType =
+        DAE.T_FUNCTION(source = {path})))
+      then addUnusedFunction(path, inFunctions, inUsedFunctions);
+
+    // If it's a cref, check the cref's dimensions for function calls.
+    case DAE.CREF(componentRef = cr)
+      algorithm
+        (_, usedfuncs) := Expression.traverseExpCrefDims(cr,
+          function checkUnusedFunctions(inFunctions = inFunctions), inUsedFunctions);
       then
-        (e, (func,usefuncs2));
+        usedfuncs;
 
-    case (e as DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(functionType=DAE.T_FUNCTION(source={path}))),(func,usefuncs))
-      equation
-         _ = DAEUtil.avlTreeGet(usefuncs, path);
-      then (inExp,inTuple);
-
-    case (e as DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(functionType=DAE.T_FUNCTION(source={path}))),(func,usefuncs))
-      equation
-         (f,body) = getFunctionAndBody(path,func);
-         usefuncs1 = DAEUtil.avlTreeAdd(usefuncs, path, f);
-         // print("add function " +& Absyn.pathStringNoQual(path) +& "\n");
-         (_,(_,usefuncs2)) = DAEUtil.traverseDAE2(body,checkUnusedFunctions,(func,usefuncs1));
-      then (e, (func,usefuncs2));
-
-    // already there
-    case (e as DAE.PARTEVALFUNCTION(path = path),(func,usefuncs))
-      equation
-         _ = DAEUtil.avlTreeGet(usefuncs, path);
-      then (inExp,inTuple);
-
-    // add it
-    case (e as DAE.PARTEVALFUNCTION(path = path),(func,usefuncs))
-      equation
-         (f,body) = getFunctionAndBody(path,func);
-         usefuncs1 = DAEUtil.avlTreeAdd(usefuncs, path, f);
-         (_,(_,usefuncs2)) = DAEUtil.traverseDAE2(body,checkUnusedFunctions,(func,usefuncs1));
-      then (e, (func,usefuncs2));
-
-    else (inExp,inTuple);
-  end matchcontinue;
+    // Otherwise, do nothing.
+    else inUsedFunctions;
+  end match;
 end checkUnusedFunctionsExp;
+
+protected function addUnusedFunction
+  input Absyn.Path inPath;
+  input DAE.FunctionTree inFunctions;
+  input DAE.FunctionTree inUsedFunctions;
+  output DAE.FunctionTree outUsedFunctions := inUsedFunctions;
+protected
+  Option<DAE.Function> f;
+  list<DAE.Element> body;
+algorithm
+  try // Check if the function has already been added.
+    _ := DAEUtil.avlTreeGet(inUsedFunctions, inPath);
+  else // Otherwise, try to add it.
+    (f, body) := getFunctionAndBody(inPath, inFunctions);
+    if isNone(f) then return; end if; // Return if the function couldn't be found.
+    outUsedFunctions := DAEUtil.avlTreeAdd(outUsedFunctions, inPath, f);
+    (_, outUsedFunctions) := DAEUtil.traverseDAE2(body,
+      function checkUnusedFunctions(inFunctions = inFunctions), outUsedFunctions);
+  end try;
+end addUnusedFunction;
 
 protected function getFunctionAndBody
 "returns the body of a function"
@@ -1612,34 +1626,16 @@ protected function getFunctionAndBody
   input DAE.FunctionTree fns;
   output Option<DAE.Function> outFn;
   output list<DAE.Element> outFnBody;
+protected
+  DAE.Function fn;
 algorithm
-  (outFn,outFnBody) := matchcontinue(inPath,fns)
-    local
-      Absyn.Path p;
-      Option<DAE.Function> fn;
-      list<DAE.Element> body;
-      DAE.FunctionTree ftree;
-      String msg;
-    // handle normal functions
-    case(p,ftree)
-      equation
-        (fn as SOME(DAE.FUNCTION(functions = DAE.FUNCTION_DEF(body = body)::_))) = DAEUtil.avlTreeGet(ftree,p);
-      then (fn,body);
-    // adrpo: also the external functions!
-    case(p,ftree)
-      equation
-        (fn as SOME(DAE.FUNCTION(functions = DAE.FUNCTION_EXT(body = body)::_))) = DAEUtil.avlTreeGet(ftree,p);
-      then (fn,body);
-
-    case(p,_)
-      equation
-        msg = "BackendDAEOptimize.getFunctionBody failed for function " +& Absyn.pathStringNoQual(p);
-        // print(msg +& "\n");
-        Debug.fprintln(Flags.FAILTRACE, msg);
-        // Error.addMessage(Error.INTERNAL_ERROR, {msg});
-      then
-        fail();
-  end matchcontinue;
+  try
+    outFn as SOME(fn) := DAEUtil.avlTreeGet(fns, inPath);
+    outFnBody := DAEUtil.getFunctionElements(fn);
+  else
+    outFn := NONE();
+    outFnBody := {};
+  end try;
 end getFunctionAndBody;
 
 /*
@@ -2050,7 +2046,7 @@ algorithm
         // get indexes of diffed vars (rows)
         diffedVars = BackendVariable.listVar1(indiffedVars);
         nodesEqnsIndex = BackendVariable.getVarIndexFromVariables(diffedVars,varswithDiffs);
-        nodesEqnsIndex = List.map1(nodesEqnsIndex, Util.arrayGetIndexFirst, ass1);
+        nodesEqnsIndex = List.map1(nodesEqnsIndex, Array.getIndexFirst, ass1);
 
         // debug dump
         Debug.fcall(Flags.DUMP_SPARSE_VERBOSE, print, "nodesEqnsIndexs: ");
@@ -2063,7 +2059,7 @@ algorithm
         varSparse = arrayCreate(adjSizeT, {});
         mark = arrayCreate(adjSizeT, 0);
         usedvar = arrayCreate(adjSizeT, 0);
-        usedvar = Util.arraySet(adjSizeT-(sizeN-1), adjSizeT, usedvar, 1);
+        usedvar = Array.setRange(adjSizeT-(sizeN-1), adjSizeT, usedvar, 1);
 
         //Debug.execStat("generateSparsePattern -> start ",ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         eqnSparse = getSparsePattern(comps, eqnSparse, varSparse, mark, usedvar, 1, adjMatrix, adjMatrixT);
@@ -2073,7 +2069,7 @@ algorithm
         Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,print, "analytical Jacobians[SPARSE] -> prepared arrayList for transpose list: " +& realString(clock()) +& "\n");
 
         // select nodesEqnsIndex and map index to incoming vars
-        sparseArray = Util.arraySelect(eqnSparse, nodesEqnsIndex);
+        sparseArray = Array.select(eqnSparse, nodesEqnsIndex);
         sparsepattern = arrayList(sparseArray);
         sparsepattern = List.map1List(sparsepattern, intSub, adjSizeT-sizeN);
 
@@ -2120,7 +2116,7 @@ algorithm
         colored1 = Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
         //Debug.execStat("generateSparsePattern -> coloring end " ,ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // get max color used
-        maxColor = Util.arrayFold(colored1, intMax, 0);
+        maxColor = Array.fold(colored1, intMax, 0);
 
         // map index of that array into colors
         coloredArray = arrayCreate(maxColor, {});
@@ -2250,7 +2246,7 @@ algorithm
       then result;
     case(BackendDAE.EQUATIONSYSTEM(eqns=eqns,vars=solvedVars)::rest,result,_,_,_,_,_,_)
       equation
-        inputVarsLst = List.map1(eqns, Util.arrayGetIndexFirst, inMatrix);
+        inputVarsLst = List.map1(eqns, Array.getIndexFirst, inMatrix);
         inputVars = List.flatten(inputVarsLst);
         inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
 
@@ -2266,7 +2262,7 @@ algorithm
         eqns = listAppend(eqns, eqns1);
         solvedVars = listAppend(vars, vars1);
 
-        inputVarsLst = List.map1(eqns, Util.arrayGetIndexFirst, inMatrix);
+        inputVarsLst = List.map1(eqns, Array.getIndexFirst, inMatrix);
         inputVars = List.flatten(inputVarsLst);
         inputVars = List.fold1(solvedVars, List.removeOnTrue, intEq, inputVars);
 
@@ -2296,8 +2292,8 @@ protected
   list<Integer> localList;
 algorithm
   localList := getSparsePatternHelp(inInputVars, invarSparse, inMark, inUsed, inmarkValue, {});
-  List.map2_0(inSolvedVars, Util.arrayUpdateIndexFirst, localList, invarSparse);
-  List.map2_0(inEqns, Util.arrayUpdateIndexFirst, localList, ineqnSparse);
+  List.map2_0(inSolvedVars, Array.updateIndexFirst, localList, invarSparse);
+  List.map2_0(inEqns, Array.updateIndexFirst, localList, ineqnSparse);
 end getSparsePattern2;
 
 protected function getSparsePatternHelp
@@ -4472,8 +4468,8 @@ algorithm
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),SOME(funcs));
         ixs = arrayCreate(arrayLength(m),0);
         // ixsT = arrayCreate(arrayLength(mT),0);
-        i = SynchronousFeatures.partitionIndependentBlocks0(arrayLength(m),0,m,mT,ixs);
-        // i2 = SynchronousFeatures.partitionIndependentBlocks0(arrayLength(mT),0,mT,m,ixsT);
+        i = SynchronousFeatures.partitionIndependentBlocks0(m,mT,ixs);
+        // i2 = SynchronousFeatures.partitionIndependentBlocks0(mT,m,ixsT);
         b = i > 1;
         // Debug.bcall2(b,BackendDump.dumpBackendDAE,BackendDAE.DAE({syst},shared), "partitionIndependentBlocksHelper");
         // printPartition(b,ixs);
@@ -5883,7 +5879,7 @@ algorithm
       equation
         ht = BaseHashTable.add((y,size), iHt);
         // expand if necesarray
-        eqnsarray = Debug.bcallret3(intGt(size,arrayLength(iEqnsarray)), Util.arrayExpand,5, iEqnsarray, {},iEqnsarray);
+        eqnsarray = Debug.bcallret3(intGt(size,arrayLength(iEqnsarray)), Array.expand,5, iEqnsarray, {},iEqnsarray);
         eqnsarray = arrayUpdate(eqnsarray,size,{(eqn,index)});
       then
         semiLinearSort(rest,ht,size+1,eqnsarray);
@@ -5910,7 +5906,7 @@ algorithm
     case ((tpl::{})::rest,_,_)
       equation
         // expand if necesarray
-        eqnsarray = Debug.bcallret3(intGt(size,arrayLength(iEqnsarray)), Util.arrayExpand,5, iEqnsarray, {},iEqnsarray);
+        eqnsarray = Debug.bcallret3(intGt(size,arrayLength(iEqnsarray)), Array.expand,5, iEqnsarray, {},iEqnsarray);
         eqnsarray = arrayUpdate(eqnsarray,size,{tpl});
       then
         semiLinearSort1(rest,size+1,eqnsarray);
@@ -5954,7 +5950,7 @@ algorithm
       equation
         ht = BaseHashTable.add((x,size), iHt);
         // expand if necesarray
-        eqnsarray = Debug.bcallret3(intGt(size,arrayLength(iEqnsarray)), Util.arrayExpand,5, iEqnsarray, {},iEqnsarray);
+        eqnsarray = Debug.bcallret3(intGt(size,arrayLength(iEqnsarray)), Array.expand,5, iEqnsarray, {},iEqnsarray);
         eqnsarray = arrayUpdate(eqnsarray,size,{(eqn,index)});
         (i,eqnsarray) = semiLinearSort2(rest,ht,size+1,eqnsarray);
       then

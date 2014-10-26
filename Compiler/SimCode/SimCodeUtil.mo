@@ -56,6 +56,7 @@ public import SimCode;
 public import SimCodeVar;
 
 // protected imports
+protected import Array;
 protected import BackendDAEOptimize;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
@@ -793,7 +794,7 @@ algorithm
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         vars = List.filter(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
-        algs = List.filter(daeElts, DAEUtil.isAlgorithm);
+        algs = List.filterOnTrue(daeElts, DAEUtil.isAlgorithm);
         bodyStmts = List.map(algs, elaborateStatement);
         info = DAEUtil.getElementSourceFileInfo(source);
       then
@@ -813,7 +814,7 @@ algorithm
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         vars = List.filter(daeElts, isVarNotInputNotOutput);
         varDecls = List.map(vars, daeInOutSimVar);
-        algs = List.filter(daeElts, DAEUtil.isAlgorithm);
+        algs = List.filterOnTrue(daeElts, DAEUtil.isAlgorithm);
         bodyStmts = List.map(algs, elaborateStatement);
         info = DAEUtil.getElementSourceFileInfo(source);
       then
@@ -833,7 +834,7 @@ algorithm
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         vars = List.filter(daeElts, isVarQ);
         varDecls = List.map(vars, daeInOutSimVar);
-        algs = List.filter(daeElts, DAEUtil.isAlgorithm);
+        algs = List.filterOnTrue(daeElts, DAEUtil.isAlgorithm);
         bodyStmts = List.map(algs, elaborateStatement);
         info = DAEUtil.getElementSourceFileInfo(source);
       then
@@ -2402,9 +2403,9 @@ algorithm
         tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex - 1), appendSccIdx, index, ieqBackendSimCodeMapping);
         tmpBackendMapping = setEqMapping(List.intRange2(firstEqIndex, uniqueEqIndex - 1),{index}, iBackendMapping);
 
-        odeEquations = Debug.bcallret2(bdynamic and (not bwhen), List.prepend, equations1, odeEquations, odeEquations);
-        algebraicEquations = Debug.bcallret2((not bdynamic) and (not bwhen), List.prepend, equations1, algebraicEquations, algebraicEquations);
-        equationsforZeroCrossings = Debug.bcallret2(bzceqns and (not bwhen), List.prepend, equations1, equationsforZeroCrossings, equationsforZeroCrossings);
+        odeEquations = Debug.bcallret2(bdynamic and (not bwhen), cons, equations1, odeEquations, odeEquations);
+        algebraicEquations = Debug.bcallret2((not bdynamic) and (not bwhen), cons, equations1, algebraicEquations, algebraicEquations);
+        equationsforZeroCrossings = Debug.bcallret2(bzceqns and (not bwhen), cons, equations1, equationsforZeroCrossings, equationsforZeroCrossings);
         allEquations = equations1::allEquations;
       then
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping);
@@ -2427,9 +2428,9 @@ algorithm
         tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, e, ieqBackendSimCodeMapping);
         tmpBackendMapping = iBackendMapping;
 
-        odeEquations = Debug.bcallret2(bdynamic, List.prepend, noDiscEquations1, odeEquations, odeEquations);
-        algebraicEquations = Debug.bcallret2((not bdynamic), List.prepend, noDiscEquations1, algebraicEquations, algebraicEquations);
-        equationsforZeroCrossings = Debug.bcallret2(bzceqns, List.prepend, noDiscEquations1, equationsforZeroCrossings, equationsforZeroCrossings);
+        odeEquations = Debug.bcallret2(bdynamic, cons, noDiscEquations1, odeEquations, odeEquations);
+        algebraicEquations = Debug.bcallret2((not bdynamic), cons, noDiscEquations1, algebraicEquations, algebraicEquations);
+        equationsforZeroCrossings = Debug.bcallret2(bzceqns, cons, noDiscEquations1, equationsforZeroCrossings, equationsforZeroCrossings);
         allEquations = equations1::allEquations;
       then
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping);
@@ -2450,9 +2451,9 @@ algorithm
         tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, e, ieqBackendSimCodeMapping);
         tmpBackendMapping = iBackendMapping;
 
-        odeEquations = Debug.bcallret2(bdynamic, List.prepend, equations1, odeEquations, odeEquations);
-        algebraicEquations = Debug.bcallret2((not bdynamic), List.prepend, equations1, algebraicEquations, algebraicEquations);
-        equationsforZeroCrossings = Debug.bcallret2(bzceqns, List.prepend, equations1, equationsforZeroCrossings, equationsforZeroCrossings);
+        odeEquations = Debug.bcallret2(bdynamic, cons, equations1, odeEquations, odeEquations);
+        algebraicEquations = Debug.bcallret2((not bdynamic), cons, equations1, algebraicEquations, algebraicEquations);
+        equationsforZeroCrossings = Debug.bcallret2(bzceqns, cons, equations1, equationsforZeroCrossings, equationsforZeroCrossings);
         allEquations = equations1::allEquations;
       then
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings, uniqueEqIndex, itempvars, tmpEqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping);
@@ -2474,9 +2475,9 @@ algorithm
         tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, e, ieqBackendSimCodeMapping);
         tmpBackendMapping = iBackendMapping;
 
-        odeEquations = Debug.bcallret2(bdynamic, List.prepend, equations1, odeEquations, odeEquations);
-        algebraicEquations = Debug.bcallret2((not bdynamic), List.prepend, equations1, algebraicEquations, algebraicEquations);
-        equationsforZeroCrossings = Debug.bcallret2(bzceqns, List.prepend, equations1, equationsforZeroCrossings, equationsforZeroCrossings);
+        odeEquations = Debug.bcallret2(bdynamic, cons, equations1, odeEquations, odeEquations);
+        algebraicEquations = Debug.bcallret2((not bdynamic), cons, equations1, algebraicEquations, algebraicEquations);
+        equationsforZeroCrossings = Debug.bcallret2(bzceqns, cons, equations1, equationsforZeroCrossings, equationsforZeroCrossings);
         allEquations = equations1::allEquations;
       then
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping);
@@ -2519,9 +2520,9 @@ algorithm
         tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, index, ieqBackendSimCodeMapping);
         tmpBackendMapping = iBackendMapping;
 
-        odeEquations = Debug.bcallret2(bdynamic, List.prepend, equations1, odeEquations, odeEquations);
-        algebraicEquations = Debug.bcallret2((not bdynamic), List.prepend, equations1, algebraicEquations, algebraicEquations);
-        equationsforZeroCrossings = Debug.bcallret2(bzceqns, List.prepend, equations1, equationsforZeroCrossings, equationsforZeroCrossings);
+        odeEquations = Debug.bcallret2(bdynamic, cons, equations1, odeEquations, odeEquations);
+        algebraicEquations = Debug.bcallret2((not bdynamic), cons, equations1, algebraicEquations, algebraicEquations);
+        equationsforZeroCrossings = Debug.bcallret2(bzceqns, cons, equations1, equationsforZeroCrossings, equationsforZeroCrossings);
         allEquations = equations1::allEquations;
       then
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping);
@@ -2539,9 +2540,9 @@ algorithm
           createOdeSystem(true, false, syst, shared, comp, iuniqueEqIndex, itempvars, isccIndex, ieqSccMapping, iBackendMapping);
         //tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
 
-        odeEquations = Debug.bcallret2(bdynamic, List.prepend, noDiscEquations1, odeEquations, odeEquations);
-        algebraicEquations = Debug.bcallret2((not bdynamic), List.prepend, noDiscEquations1, algebraicEquations, algebraicEquations);
-        equationsforZeroCrossings = Debug.bcallret2(bzceqns, List.prepend, noDiscEquations1, equationsforZeroCrossings, equationsforZeroCrossings);
+        odeEquations = Debug.bcallret2(bdynamic, cons, noDiscEquations1, odeEquations, odeEquations);
+        algebraicEquations = Debug.bcallret2((not bdynamic), cons, noDiscEquations1, algebraicEquations, algebraicEquations);
+        equationsforZeroCrossings = Debug.bcallret2(bzceqns, cons, noDiscEquations1, equationsforZeroCrossings, equationsforZeroCrossings);
         allEquations = equations1::allEquations;
       then
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings, uniqueEqIndex, tempvars, tmpEqSccMapping, ieqBackendSimCodeMapping, tmpBackendMapping);
@@ -7637,14 +7638,13 @@ algorithm
       list<Absyn.Path> rest;
       DAE.ComponentRef cref;
     case(DAE.CREF_IDENT(identType=DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))),path::rest)
-      equation
-        then path;
-    case(DAE.CREF_QUAL(identType=DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))),path::rest)
-      equation
       then path;
+    case(DAE.CREF_QUAL(identType=DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))),path::rest)
+      then path;
+    case(DAE.CREF_QUAL(ident = "$DER", componentRef = cref),_)
+      then getRecordPathFromCref(cref, pathsIn);
     case(DAE.CREF_QUAL(componentRef=cref),path::rest)
-      equation
-        then getRecordPathFromCref(cref,rest);
+      then getRecordPathFromCref(cref,rest);
     else
       equation
         print("getRecordPathFromCref failed for "+&ComponentReference.debugPrintComponentRefTypeStr(crefIn)+&"\n");
@@ -10911,7 +10911,7 @@ algorithm
         expandsize = realInt(rexpandsize);
         expandsize_1 = intMax(expandsize, 1);
         newsize = expandsize_1 + size;
-        arr_1 = Util.arrayExpand(expandsize_1, arr, NONE());
+        arr_1 = Array.expand(expandsize_1, arr, NONE());
         n_1 = n + 1;
         arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
       then
@@ -11288,7 +11288,7 @@ algorithm (out, sysOrdOneVars) := matchcontinue(derExp, inEqns, inEqnsOrg)
   case( (DAE.CALL( expLst = {deriveVar as DAE.CREF(cr, _)})), (eq as BackendDAE.EQUATION(exp=e1, scalar=e2))::eqs, _)
     equation
       true = Expression.expEqual(e1, derExp);
-      eqsOrg = List.removeOnTrue(eq, Util.isEqual, inEqnsOrg);
+      eqsOrg = List.removeOnTrue(eq, valueEq, inEqnsOrg);
       Debug.fcall(Flags.FAILTRACE, print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e2) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n");
       (rec, crefs) = locateDerAndSerachOtherSide2(DAE.CALL(Absyn.IDENT("der"), {e2}, DAE.callAttrBuiltinReal), eqsOrg);
       (highestIndex as (_, i1), _) = locateDerAndSerachOtherSide(derExp, eqs, eqsOrg);
@@ -11300,7 +11300,7 @@ algorithm (out, sysOrdOneVars) := matchcontinue(derExp, inEqns, inEqnsOrg)
   case( (DAE.CALL( expLst = {deriveVar as DAE.CREF(cr, _)})), (eq as BackendDAE.EQUATION(exp=e1, scalar=e2))::eqs, _)
     equation
       true = Expression.expEqual(e2, derExp);
-      eqsOrg = List.removeOnTrue(eq, Util.isEqual, inEqnsOrg);
+      eqsOrg = List.removeOnTrue(eq, valueEq, inEqnsOrg);
       Debug.fcall(Flags.FAILTRACE, print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e1) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n");
       (rec, crefs) = locateDerAndSerachOtherSide2(DAE.CALL(Absyn.IDENT("der"), {e1}, DAE.callAttrBuiltinReal), eqsOrg);
       (highestIndex as (_, i1), _) = locateDerAndSerachOtherSide(derExp, eqs, eqsOrg);
@@ -13031,7 +13031,7 @@ algorithm
         ((_,_,m,mt,eqMatch,varMatch)) = List.fold(tpl,appendAdjacencyMatrices,(0,0,m,mt,eqMatch,varMatch));
         tree = arrayCreate(sizeE,{});
         tree = List.fold4(List.intRange(sizeE),setUpEqTree,m,mt,eqMatch,varMatch,tree);
-        tree = Util.arrayMap(tree,List.unique);
+        tree = Array.map(tree,List.unique);
         mapping = SimCode.BACKENDMAPPING(m,mt,eqMap,varMap,eqMatch,varMatch,tree,simVarMapping);
       then
         mapping;
@@ -13058,8 +13058,8 @@ algorithm
   depVars := arrayGet(m,beq);
   depVars := List.filter1OnTrue(depVars,intGt,0);
   depVars := List.filter1OnTrue(depVars,intNe,assVar);
-  preEqs := List.map1(depVars,Util.arrayGetIndexFirst,varMatch);
-  Util.arrayUpdateElementListAppend(beq,preEqs,treeIn);
+  preEqs := List.map1(depVars,Array.getIndexFirst,varMatch);
+  Array.updateElementListAppend(beq,preEqs,treeIn);
   treeOut := treeIn;
 end setUpEqTree;
 
@@ -13078,10 +13078,10 @@ algorithm
       BackendDAE.IncidenceMatrixT mtIn,mt;
     case((addE,addV,m,mt,eqMatch,varMatch),(sizeE,sizeV,mIn,mtIn,eqMatchIn,varMatchIn))
       equation
-        m = Util.arrayMap1(m,addIntLst,sizeV);
-        mt = Util.arrayMap1(mt,addIntLst,sizeE);
-        eqMatch = Util.arrayMap1(eqMatch,intAdd,sizeV);
-        varMatch = Util.arrayMap1(varMatch,intAdd,sizeE);
+        m = Array.map1(m,addIntLst,sizeV);
+        mt = Array.map1(mt,addIntLst,sizeE);
+        eqMatch = Array.map1(eqMatch,intAdd,sizeV);
+        varMatch = Array.map1(varMatch,intAdd,sizeE);
         mIn = List.fold2(List.intRange(addE),updateInAdjacencyMatrix,sizeE,m,mIn);
         mtIn = List.fold2(List.intRange(addV),updateInAdjacencyMatrix,sizeV,mt,mtIn);
         eqMatchIn = List.fold2(List.intRange(addE),updateInMatching,sizeE,eqMatch,eqMatchIn);
@@ -13329,7 +13329,7 @@ protected
 algorithm
   SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping) := map;
   bEqs := getBackendEqsForSimEq(simEq,map);
-  bVarsLst := List.map1(bEqs,Util.arrayGetIndexFirst,m);
+  bVarsLst := List.map1(bEqs,Array.getIndexFirst,m);
   bVars := List.flatten(bVarsLst);
   bVars := Debug.bcallret3(intEq(opt,2),List.filter1OnTrue,bVars,intGt,0,bVars);
   bVars := Debug.bcallret3(intEq(opt,3),List.filter1OnTrue,bVars,intLt,0,bVars);
@@ -14142,7 +14142,7 @@ public function dumpIdxScVarMapping
   input array<Option<SimCodeVar.SimVar>> iMapping;
 algorithm
   print("Idx-ScVar-Mapping:\n");
-  _ := Util.arrayFold(iMapping, dumpIdxScVarMapping0, 1);
+  _ := Array.fold(iMapping, dumpIdxScVarMapping0, 1);
 end dumpIdxScVarMapping;
 
 protected function dumpIdxScVarMapping0

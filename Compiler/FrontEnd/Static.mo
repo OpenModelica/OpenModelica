@@ -86,6 +86,7 @@ uniontype Slot
   end SLOT;
 end Slot;
 
+protected import Array;
 protected import BackendInterface;
 protected import Ceval;
 protected import ClassInf;
@@ -9174,7 +9175,7 @@ algorithm
 
     case (_, _)
       equation
-        ((slot, _), _) = Util.arrayGetMemberOnTrue(inSlotName, inSlots, isSlotNamed);
+        ((slot, _), _) = Array.getMemberOnTrue(inSlotName, inSlots, isSlotNamed);
       then
         SOME(slot);
 
@@ -11813,7 +11814,7 @@ algorithm bool := matchcontinue( subs, ty )
   case(subs, ty as DAE.T_ARRAY(dims=ad))
     equation
       x = listLength(subs);
-      ill = List.map(ad,Util.genericOption);
+      ill = List.map(ad,Util.optionList);
       il = List.flatten(ill);
       y = listLength(il);
       true = intEq(x, y );

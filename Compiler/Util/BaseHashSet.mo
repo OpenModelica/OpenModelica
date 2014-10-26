@@ -51,8 +51,7 @@ encapsulated package BaseHashSet
 // hashFunc - A function that maps a key to a positive integer.
 // keyEqual - A comparison function between two keys, returns true if equal.
 
-protected import List;
-protected import Util;
+protected import Array;
 
 // Generic hashset code below
 
@@ -365,7 +364,7 @@ protected
   FuncKeyString printKey;
 algorithm
   (_, _, _, _, (_, _, printKey)) := hashSet;
-  print(stringDelimitList(List.map(hashSetList(hashSet), printKey), "\n"));
+  print(stringDelimitList(list(printKey(e) for e in hashSetList(hashSet)), "\n"));
 end printHashSet;
 
 public function dumpHashSet ""
@@ -390,57 +389,25 @@ algorithm
 end hashSetList;
 
 public function valueArrayList
-"Transforms a ValueArray to a Key list"
-  input ValueArray valueArray;
-  output list<Key> lst;
+  "Transforms a ValueArray to a Key list"
+  input ValueArray inValueArray;
+  output list<Key> outList := {};
+protected
+  array<Option<Key>> arr;
+  Integer size;
+  Key e;
 algorithm
-  lst := matchcontinue (valueArray)
-    local
-      array<Option<Key>> arr;
-      Key elt;
-      Integer lastpos,n,size;
+  (size, _, arr) := inValueArray; 
+  
+  for i in 1:size loop
+    if isSome(arr[i]) then
+      SOME(e) := arr[i];
+      outList := e :: outList;
+    end if;
+  end for;
 
-    case ((0,_,_)) then {};
-    case ((1,_,arr))
-      equation
-        SOME(elt) = arr[0 + 1];
-      then
-        {elt};
-    case ((n,_,arr))
-      equation
-        lastpos = n - 1;
-      then
-        valueArrayList2(arr, false, 0, lastpos, {});
-  end matchcontinue;
+  outList := listReverse(outList);
 end valueArrayList;
-
-protected function valueArrayList2 "Helper function to valueArrayList"
-  input array<Option<Key>> inVarOptionArray1;
-  input Boolean posEq;
-  input Integer inInteger2;
-  input Integer inInteger3;
-  input list<Key> iacc;
-  output list<Key> outVarLst;
-algorithm
-  outVarLst := match (inVarOptionArray1,posEq,inInteger2,inInteger3, iacc)
-    local
-      array<Option<Key>> arr;
-      Integer pos,lastpos,pos_1;
-      list<Key>  acc;
-
-    case (arr,true,pos,_,acc)
-      equation
-        acc = List.consOption(arr[pos + 1],acc);
-      then listReverse(acc);
-
-    case (arr,false,pos,lastpos,acc)
-      equation
-        pos_1 = pos + 1;
-        acc = List.consOption(arr[pos + 1],acc);
-      then valueArrayList2(arr, pos_1==lastpos, pos_1, lastpos, acc);
-
-  end match;
-end valueArrayList2;
 
 public function currentSize
   "Returns the number of elements inserted into the table"
@@ -490,7 +457,7 @@ algorithm
         expandsize = realInt(rexpandsize);
         expandsize_1 = intMax(expandsize, 1);
         newsize = expandsize_1 + size;
-        arr_1 = Util.arrayExpand(expandsize_1, arr, NONE());
+        arr_1 = Array.expand(expandsize_1, arr, NONE());
         n_1 = n + 1;
         arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
       then

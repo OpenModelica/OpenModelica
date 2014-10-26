@@ -50,6 +50,7 @@ public import SCode;
 public import NFEnv;
 public import NFMod;
 
+protected import Array;
 protected import BaseHashTable;
 protected import ClassInf;
 protected import ComponentReference;
@@ -3383,7 +3384,7 @@ algorithm
 
     case (NFInstTypes.UNTYPED_COMPONENT(dimensions = dims), st)
       equation
-        st = Util.arrayFold(dims, assignParamTypesToDim, st);
+        st = Array.fold(dims, assignParamTypesToDim, st);
       then
         (inComponent, st);
 
@@ -3844,8 +3845,8 @@ algorithm
       equation
         elseif_branches = (if_condition,if_branch) :: elseif_branches;
         /* Save some memory by making this more complicated than it is */
-        (inst_branches, globals) = List.map2Fold_tail(elseif_branches, instStatementBranch, inEnv, info, globals, {});
-        (inst_branches, globals) = List.map2Fold_tail({(Absyn.BOOL(true), else_branch)}, instStatementBranch, inEnv, info, globals, inst_branches);
+        (inst_branches, globals) = List.map2Fold(elseif_branches, instStatementBranch, inEnv, info, globals, {});
+        (inst_branches, globals) = List.map2Fold({(Absyn.BOOL(true), else_branch)}, instStatementBranch, inEnv, info, globals, inst_branches);
         inst_branches = listReverse(inst_branches);
       then
         (NFInstTypes.IF_STMT(inst_branches, info), globals);

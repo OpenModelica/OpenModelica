@@ -40,6 +40,7 @@ public import BackendDAE;
 public import DAE;
 public import GraphML;
 
+protected import Array;
 protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
 protected import BackendDump;
@@ -364,25 +365,25 @@ algorithm
   idxOffset := arrayLength(graph1In);
   varOffset := arrayLength(varCompMapping1);
   eqOffset := arrayLength(eqCompMapping1);
-  graph2 := Util.arrayMap1(graph2In,updateTaskGraphSystem,idxOffset);
-  graphOut := Util.arrayAppend(graph1In,graph2);
-  inComps2 := Util.arrayMap1(inComps2,updateTaskGraphSystem,idxOffset);
-  inComps2 := Util.arrayAppend(inComps1,inComps2);
-  //varCompMapping2 := Util.arrayMap1(varCompMapping2,modifyMapping,varOffset);
-  varCompMapping2 := Util.arrayMap1(varCompMapping2,modifyMapping,idxOffset);
-  varCompMapping2 := Util.arrayAppend(varCompMapping1,varCompMapping2);
-  //eqCompMapping2 := Util.arrayMap1(eqCompMapping2,modifyMapping,eqOffset);
-  eqCompMapping2 := Util.arrayMap1(eqCompMapping2,modifyMapping,idxOffset);
-  eqCompMapping2 := Util.arrayAppend(eqCompMapping1,eqCompMapping2);
+  graph2 := Array.map1(graph2In,updateTaskGraphSystem,idxOffset);
+  graphOut := Array.append(graph1In,graph2);
+  inComps2 := Array.map1(inComps2,updateTaskGraphSystem,idxOffset);
+  inComps2 := Array.append(inComps1,inComps2);
+  //varCompMapping2 := Array.map1(varCompMapping2,modifyMapping,varOffset);
+  varCompMapping2 := Array.map1(varCompMapping2,modifyMapping,idxOffset);
+  varCompMapping2 := Array.append(varCompMapping1,varCompMapping2);
+  //eqCompMapping2 := Array.map1(eqCompMapping2,modifyMapping,eqOffset);
+  eqCompMapping2 := Array.map1(eqCompMapping2,modifyMapping,idxOffset);
+  eqCompMapping2 := Array.append(eqCompMapping1,eqCompMapping2);
   rootNodes2 := List.map1(rootNodes2,intAdd,idxOffset);
   rootNodes2 := listAppend(rootNodes1,rootNodes2);
-  nodeNames2 := Util.arrayMap1(nodeNames2,stringAppend," subsys");  //TODO: change this
-  nodeNames2 := Util.arrayAppend(nodeNames1,nodeNames2);
-  nodeDescs2 := Util.arrayAppend(nodeDescs1,nodeDescs2);
-  exeCosts2 := Util.arrayAppend(exeCosts1,exeCosts2);
-  commCosts2 := Util.arrayMap1(commCosts2,updateCommCosts,idxOffset);
-  commCosts2 := Util.arrayAppend(commCosts1,commCosts2);
-  nodeMark2 := Util.arrayAppend(nodeMark1,nodeMark2);
+  nodeNames2 := Array.map1(nodeNames2,stringAppend," subsys");  //TODO: change this
+  nodeNames2 := Array.append(nodeNames1,nodeNames2);
+  nodeDescs2 := Array.append(nodeDescs1,nodeDescs2);
+  exeCosts2 := Array.append(exeCosts1,exeCosts2);
+  commCosts2 := Array.map1(commCosts2,updateCommCosts,idxOffset);
+  commCosts2 := Array.append(commCosts1,commCosts2);
+  nodeMark2 := Array.append(nodeMark1,nodeMark2);
   graphDataOut := TASKGRAPHMETA(inComps2,varCompMapping2,eqCompMapping2,rootNodes2,nodeNames2,nodeDescs2,exeCosts2,commCosts2,nodeMark2);
 end taskGraphAppend;
 
@@ -477,10 +478,10 @@ algorithm
   requiredSccs := List.fold2(Util.tuple42(unsolvedVars),fillSccList,2,varCompMapping,requiredSccs);
   requiredSccs := List.fold2(List.map1(Util.tuple43(unsolvedVars),Util.makeTuple,1),fillSccList,3,varCompMapping,requiredSccs);
   requiredSccs := List.fold2(List.map1(Util.tuple44(unsolvedVars),Util.makeTuple,1),fillSccList,4,varCompMapping,requiredSccs);
-  ((_,requiredSccs_RefCount)) := Util.arrayFold(requiredSccs, convertRefArrayToList, (1,{}));
+  ((_,requiredSccs_RefCount)) := Array.fold(requiredSccs, convertRefArrayToList, (1,{}));
   (commCosts,commCostsOfNode) := updateCommCostBySccRef(requiredSccs_RefCount, componentIndex, commCosts);
   (graphTmp,rootNodes) := fillAdjacencyList(graphIn,rootNodes,componentIndex,commCostsOfNode,1);
-  graphTmp := Util.arrayMap1(graphTmp,List.sort,intGt);
+  graphTmp := Array.map1(graphTmp,List.sort,intGt);
   graphInfoOut := (graphTmp,inComps,commCosts,nodeNames,rootNodes,nodeMark,componentIndex+1);
 end createTaskGraph1;
 
@@ -858,7 +859,7 @@ author:Waurich TUD 2013-06"
 protected
   list<tuple<Integer,Integer,Integer>> tplLst;
 algorithm
-   tplLst := List.map1(list1,Util.arrayGetIndexFirst,assign);
+   tplLst := List.map1(list1,Array.getIndexFirst,assign);
    list2Out := List.map(tplLst,Util.tuple31);
 end getArrayTuple31;
 
@@ -1396,7 +1397,7 @@ protected
 algorithm
   tmpMappingArray := arrayCreate(iNumberOfSccs,-1);
   TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) := iTaskGraphMeta;
-  ((oMapping,_)) := Util.arrayFold1(inComps, getSccNodeMapping0, nodeMark, (tmpMappingArray,1));
+  ((oMapping,_)) := Array.fold1(inComps, getSccNodeMapping0, nodeMark, (tmpMappingArray,1));
 end getSccNodeMapping;
 
 protected function getSccNodeMapping0 "author: marcusw
@@ -1515,7 +1516,7 @@ algorithm
   whenNodes := getEventNodes(systIn,eqCompMapping);
   graphTmp := arrayCopy(graphIn);
   (graphOdeOut,cutNodes) := cutTaskGraph(graphTmp,stateNodes,whenNodes);
-  cutNodeChildren := List.flatten(List.map1(listAppend(cutNodes,whenNodes),Util.arrayGetIndexFirst,graphIn)); // for computing new root-nodes when cutting out when-equations
+  cutNodeChildren := List.flatten(List.map1(listAppend(cutNodes,whenNodes),Array.getIndexFirst,graphIn)); // for computing new root-nodes when cutting out when-equations
   (_,cutNodeChildren,_) := List.intersection1OnTrue(cutNodeChildren,cutNodes,intEq);
   graphDataOdeOut := cutSystemData(graphDataIn,listAppend(cutNodes,{}),cutNodeChildren);
 end getOdeSystem;
@@ -1540,7 +1541,7 @@ algorithm
       varLst = BackendVariable.varList(orderedVars);
       stateVars = getStates(varLst,{},1);
       //print("stateVars: " +& stringDelimitList(List.map(stateVars,intString),",") +& " varOffset: " +& intString(varOffset) +& "\n");
-      //print("varCompMapping: " +& stringDelimitList(arrayList(Util.arrayMap(varCompMapping,tuple3ToString)),",") +& "\n");
+      //print("varCompMapping: " +& stringDelimitList(arrayList(Array.map(varCompMapping,tuple3ToString)),",") +& "\n");
       true = List.isNotEmpty(stateVars);
       stateVars = List.map1(stateVars,intAdd,varOffset);
       stateNodes = getArrayTuple31(stateVars,varCompMapping);
@@ -1626,7 +1627,7 @@ algorithm
         odeNodes = List.sort(odeNodes,intGt);
         sizeODE = listLength(odeNodes);
         odeMap = arrayCreate(sizeDAE,-1);
-        List.threadMap1_0(odeNodes,List.intRange(sizeODE),Util.arrayUpdateIndexFirst,odeMap);
+        List.threadMap1_0(odeNodes,List.intRange(sizeODE),Array.updateIndexFirst,odeMap);
         graphODE = arrayCreate(sizeODE,{});
         (graphODE,cutNodes) = cutTaskGraph2(List.intRange(sizeDAE),graphODE,{},graphIn,odeMap);
       then (graphODE,cutNodes);
@@ -1658,7 +1659,7 @@ algorithm
         odeIdx = arrayGet(odeMap,daeIdx);
         true = intGt(odeIdx,0);  // this node is still in the ODE system
         row = arrayGet(graphDAE,daeIdx);
-        row = List.map1(row,Util.arrayGetIndexFirst,odeMap);
+        row = List.map1(row,Array.getIndexFirst,odeMap);
         row = List.filter1OnTrue(row,intGt,0);
         _ = arrayUpdate(graphODE,odeIdx,row);
         (_,cutNodes) = cutTaskGraph2(rest,graphODE,cutNodesIn,graphDAE,odeMap);
@@ -1725,7 +1726,7 @@ algorithm
   case(_,_,_)
     equation
       true = List.isMemberOnTrue(nodeMarkIdx,removedNodes,intEq);
-      nodeMarkTmp = Util.arrayReplaceAtWithFill(nodeMarkIdx,-1,999,nodeMarkIn);
+      nodeMarkTmp = Array.replaceAtWithFill(nodeMarkIdx,-1,999,nodeMarkIn);
     then
       nodeMarkTmp;
   end matchcontinue;
@@ -1789,9 +1790,9 @@ algorithm
     case(_,_)
       equation
         alreadyVisited = arrayCreate(arrayLength(graph),false);
-        List.map2_0(nodes,Util.arrayUpdateIndexFirst,true,alreadyVisited); // dont use the except nodes
-        successors1 = List.flatten(List.map1(nodes,Util.arrayGetIndexFirst,graph));
-        check = List.map1(successors1,Util.arrayGetIndexFirst,alreadyVisited);  //check if it was already visited?
+        List.map2_0(nodes,Array.updateIndexFirst,true,alreadyVisited); // dont use the except nodes
+        successors1 = List.flatten(List.map1(nodes,Array.getIndexFirst,graph));
+        check = List.map1(successors1,Array.getIndexFirst,alreadyVisited);  //check if it was already visited?
         (_,successors1) = List.filterOnTrueSync(check,boolNot,successors1);
         successors1 = List.unique(successors1);
       then getAllSuccessors2(successors1,graph,alreadyVisited,successors1);
@@ -1818,12 +1819,12 @@ algorithm
       then List.unique(successorsIn);
     case(_,_,_,_)
       equation
-        successors1 = List.flatten(List.map1(nodes,Util.arrayGetIndexFirst,graph));
-        check = List.map1(successors1,Util.arrayGetIndexFirst,alreadyVisited);  //check if it was already visited?
+        successors1 = List.flatten(List.map1(nodes,Array.getIndexFirst,graph));
+        check = List.map1(successors1,Array.getIndexFirst,alreadyVisited);  //check if it was already visited?
         (_,successors1) = List.filterOnTrueSync(check,boolNot,successors1);
         successors1 = List.unique(successors1);
         //print("successors1: "+&intLstString(successors1)+&"\n");
-        List.map2_0(successors1,Util.arrayUpdateIndexFirst,true,alreadyVisited);
+        List.map2_0(successors1,Array.updateIndexFirst,true,alreadyVisited);
     then getAllSuccessors2(successors1,graph,alreadyVisited,listAppend(successors1,successorsIn));
   end match;
 end getAllSuccessors2;
@@ -1878,7 +1879,7 @@ algorithm
    case(start::rest,_)
      equation
         deleteArr = arrayCreate(List.fold(listAppend(rest,deleteEntriesIn),intMax,start),0);
-        List.map2_0(deleteEntriesIn,Util.arrayUpdateIndexFirst,1,deleteArr);
+        List.map2_0(deleteEntriesIn,Array.updateIndexFirst,1,deleteArr);
         (deleteEntries,_) = List.mapFold(arrayList(deleteArr),setDeleteArr,0);
         deleteArr = listArray(deleteEntries);
         lstTmp = List.map1(lstIn,removeContinuousEntries1,deleteArr);
@@ -1962,7 +1963,7 @@ algorithm
         true = listLength(copiedRows) >= Idx;
         copyRow = listGet(copiedRows,Idx);
         row = arrayGet(inArray,copyRow);
-        arrayTmp = Util.arrayReplaceAtWithFill(Idx, row, {111,222}, newArray);
+        arrayTmp = Array.replaceAtWithFill(Idx, row, {111,222}, newArray);
         arrayTmp = arrayCopyRows(inArray,arrayTmp,copiedRows,Idx+1);
       then
         arrayTmp;
@@ -1992,7 +1993,7 @@ public function getLeafNodes "author: marcusw
   input TaskGraph iTaskGraph;
   output list<Integer> oLeaveNodes;
 algorithm
-  ((oLeaveNodes,_)) := Util.arrayFold(iTaskGraph, getLeafNodes0, ({},1));
+  ((oLeaveNodes,_)) := Array.fold(iTaskGraph, getLeafNodes0, ({},1));
 end getLeafNodes;
 
 public function getLeafNodes0 "author: marcusw
@@ -2101,7 +2102,7 @@ protected
   array<Integer> tmpRefCounter;
 algorithm
   tmpRefCounter := arrayCreate(arrayLength(iTaskGraph), 0);
-  tmpRefCounter := Util.arrayFold(iTaskGraph, createRefCounter0, tmpRefCounter);
+  tmpRefCounter := Array.fold(iTaskGraph, createRefCounter0, tmpRefCounter);
   oRefCounter := tmpRefCounter;
 end createRefCounter;
 
@@ -2131,7 +2132,7 @@ protected function getNodesWithRefCountZero "author: marcusw
   input array<Integer> iRefCounter;
   output list<Integer> oZeroIdc; //list of all indices with reference counter == zero
 algorithm
-  ((oZeroIdc,_)) := Util.arrayFold(iRefCounter, getNodesWithRefCountZero0, ({},1));
+  ((oZeroIdc,_)) := Array.fold(iRefCounter, getNodesWithRefCountZero0, ({},1));
 end getNodesWithRefCountZero;
 
 protected function getNodesWithRefCountZero0 "author: marcusw
@@ -2191,7 +2192,7 @@ algorithm
   //print("Discrete nodes: " +& stringDelimitList(List.map(discreteNodes, intString), ",") +& " (len: " +& intString(listLength(discreteNodes)) +& ")\n");
   graphTmp := iTaskGraph; //arrayCopy(graphIn);
   (graphTmp,cutNodes) := cutTaskGraph(graphTmp,discreteNodes,{});
-  cutNodeChildren := List.flatten(List.map1(cutNodes,Util.arrayGetIndexFirst,iTaskGraph)); // for computing new root-nodes when cutting out nodes
+  cutNodeChildren := List.flatten(List.map1(cutNodes,Array.getIndexFirst,iTaskGraph)); // for computing new root-nodes when cutting out nodes
   (_,cutNodeChildren,_) := List.intersection1OnTrue(cutNodeChildren,cutNodes,intEq);
   oTaskGraphMeta := cutSystemData(iTaskGraphMeta,cutNodes,cutNodeChildren);
   oTaskGraph := graphTmp;
@@ -2210,7 +2211,7 @@ algorithm
       equation
         occurEquLst = List.filter1OnTrue(occurEquLst, intGt, 0);
         //print("getComponentsOfZeroCrossing: simEqs: " +& stringDelimitList(List.map(occurEquLst, intString), ",") +& "\n");
-        tmpCompIdc = List.map1(occurEquLst, Util.arrayGetIndexFirst, iSimCodeEqCompMapping);
+        tmpCompIdc = List.map1(occurEquLst, Array.getIndexFirst, iSimCodeEqCompMapping);
         tmpCompIdc = List.filter1OnTrue(tmpCompIdc, intGt, 0);
         //print("getComponentsOfZeroCrossing: components: " +& stringDelimitList(List.map(tmpCompIdc, intString), ",") +& "\n");
       then tmpCompIdc;
@@ -2638,7 +2639,7 @@ algorithm
         primalComp = List.last(components);
         //print("node in the taskGraph (case 2) "+&intString(nodeIdx)+&" primalComp "+&intString(primalComp)+&"\n");
         compText = arrayGet(nodeNames,primalComp);
-        nodeDesc = stringDelimitList(List.map1(components, Util.arrayGetIndexFirst, nodeDescs), "\n");// arrayGet(nodeDescs,primalComp);
+        nodeDesc = stringDelimitList(List.map1(components, Array.getIndexFirst, nodeDescs), "\n");// arrayGet(nodeDescs,primalComp);
         yCoord = arrayGet(nodeMark,nodeIdx)*100;
         yCoordString = intString(yCoord);
         annotationString = arrayGet(annotationInfo,nodeIdx);
@@ -2648,7 +2649,7 @@ algorithm
         childNodes = arrayGet(tGraphIn,nodeIdx);
         //componentsString = List.fold(components, addNodeToGraphML2, " ");
         componentsString = (" "+&intString(nodeIdx)+&" ");
-        simCodeEqs = List.flatten(List.map1(components, Util.arrayGetIndexFirst, sccSimEqMapping));
+        simCodeEqs = List.flatten(List.map1(components, Array.getIndexFirst, sccSimEqMapping));
         simCodeEqString = stringDelimitList(List.map(simCodeEqs,intString),", ");
 
         ((schedulerThreadId,schedulerTaskNumber,taskFinishTime)) = arrayGet(schedulerInfo,nodeIdx);
@@ -3249,9 +3250,9 @@ algorithm
   clusters := listArray(List.map(List.intRange(listLength(items)),List.create));
   clusterValues := listArray(values);
   itemArr := listArray(items);
-  itemsCopy := Util.arrayMap(itemArr,List.create);
-  clusters := Debug.bcallret2(true,Util.arrayCopy,itemsCopy,clusters,clusters);
-  clusterValues := Debug.bcallret2(not b,Util.arrayCopy,listArray(values),clusterValues,clusterValues);
+  itemsCopy := Array.map(itemArr,List.create);
+  clusters := Debug.bcallret2(true,Array.copy,itemsCopy,clusters,clusters);
+  clusterValues := Debug.bcallret2(not b,Array.copy,listArray(values),clusterValues,clusterValues);
   (clustersOut,clusterValuesOut) := Debug.bcallret3_2(b,distributeToClusters1,(items,values),(clusters,clusterValues),numClusters,clusters,clusterValues);
 end distributeToClusters;
 
@@ -3274,8 +3275,8 @@ algorithm
     equation
       true = listLength(itemsIn) <= numClusters;
       idcsLst1 = List.intRange(numClusters);
-      clustersFinal = Util.arraySelect(clusters,idcsLst1);
-      clusterValuesFinal = Util.arraySelect(clusterValues,idcsLst1);
+      clustersFinal = Array.select(clusters,idcsLst1);
+      clusterValuesFinal = Array.select(clusterValues,idcsLst1);
     then (clustersFinal,clusterValuesFinal);
   case((itemsIn,valuesIn),(clusters,clusterValues),_)
     equation
@@ -3286,16 +3287,16 @@ algorithm
       idcsLst1 = List.intRange2(numClusters-diff+1,numClusters);
       idcsLst2 = List.intRange2(numClusters+1,listLength(itemsIn));
       // update the clusters array
-      entries = List.map1(idcsLst2,Util.arrayGetIndexFirst,clusters);
+      entries = List.map1(idcsLst2,Array.getIndexFirst,clusters);
       entries = listReverse(entries);
-      entries2 = List.map1(idcsLst1,Util.arrayGetIndexFirst,clusters);
+      entries2 = List.map1(idcsLst1,Array.getIndexFirst,clusters);
       entries = List.threadMap(entries,entries2,listAppend);
-      List.threadMap1_0(idcsLst1,entries,Util.arrayUpdateIndexFirst,clusters);
+      List.threadMap1_0(idcsLst1,entries,Array.updateIndexFirst,clusters);
       // update the clusterValues array
-      values = List.map1(idcsLst1,Util.arrayGetIndexFirst,clusterValues);
-      addValues = List.map1(idcsLst2,Util.arrayGetIndexFirst,clusterValues);
+      values = List.map1(idcsLst1,Array.getIndexFirst,clusterValues);
+      addValues = List.map1(idcsLst2,Array.getIndexFirst,clusterValues);
       values = List.threadMap(values,addValues,realAdd);
-      List.threadMap1_0(idcsLst1,values,Util.arrayUpdateIndexFirst,clusterValues);
+      List.threadMap1_0(idcsLst1,values,Array.updateIndexFirst,clusterValues);
       // finish
       (clusters,clusterValues) = distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);
     then (clusters,clusterValues);
@@ -3308,16 +3309,16 @@ algorithm
       // update the clusters array
       idcsLst2 = List.intRange2(intDiv(numCl,2)+1,listLength(itemsIn));
       idcsLst1_2 = List.intRange2(intDiv(numCl,2)-listLength(idcsLst2)+1, intDiv(numCl,2));
-      entries = List.map1(idcsLst2,Util.arrayGetIndexFirst,clusters);  // the clustered task from  the second list
+      entries = List.map1(idcsLst2,Array.getIndexFirst,clusters);  // the clustered task from  the second list
       entries = listReverse(entries);
-      entries2 = List.map1(idcsLst1_2,Util.arrayGetIndexFirst,clusters);
+      entries2 = List.map1(idcsLst1_2,Array.getIndexFirst,clusters);
       entries = List.threadMap(entries,entries2,listAppend);
-      List.threadMap1_0(idcsLst1_2,entries,Util.arrayUpdateIndexFirst,clusters);
+      List.threadMap1_0(idcsLst1_2,entries,Array.updateIndexFirst,clusters);
       // update the clusterValues array
-      values = List.map1(idcsLst1_2,Util.arrayGetIndexFirst,clusterValues);
-      addValues = List.map1(idcsLst2,Util.arrayGetIndexFirst,clusterValues);
+      values = List.map1(idcsLst1_2,Array.getIndexFirst,clusterValues);
+      addValues = List.map1(idcsLst2,Array.getIndexFirst,clusterValues);
       values = List.threadMap(values,addValues,realAdd);
-      List.threadMap1_0(idcsLst1_2,values,Util.arrayUpdateIndexFirst,clusterValues);
+      List.threadMap1_0(idcsLst1_2,values,Array.updateIndexFirst,clusterValues);
       // again
       (clusters,clusterValues) = distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);
     then (clusters,clusterValues);
@@ -3446,7 +3447,7 @@ algorithm
         ((_,highestParentExeCost)) = getHighestExecCost(parentExeCosts, (0,0.0));
         true = realGt(realAdd(highestCommCost, highestParentExeCost), sumParentExeCosts);
         //We can only merge the parents if they have no other child-nodes -> check this
-        parentChilds = List.map1(parentNodes, Util.arrayGetIndexFirst, iGraph);
+        parentChilds = List.map1(parentNodes, Array.getIndexFirst, iGraph);
         true = intEq(listLength(List.removeOnTrue(1, intEq, List.map(parentChilds, listLength))), 0);
         mergeNodeList = iNodeIdx :: parentNodes;
         //print("HpcOmTaskGraph.mergeParentNodes0: mergeNodeList " +& stringDelimitList(List.map(mergeNodeList,intString), ", ") +& "\n");
@@ -3606,7 +3607,7 @@ algorithm
   startNode := List.last(contractNodes);
   deleteEntries := List.deleteMember(contractNodes,startNode); //all nodes which should be deleted
   //print("HpcOmTaskGraph.contractNodesInGraph1 deleteEntries: " +& stringDelimitList(List.map(deleteEntries,intString),",") +& "\n");
-  deleteNodesParents := List.flatten(List.map1(deleteEntries, Util.arrayGetIndexFirst, graphInT));
+  deleteNodesParents := List.flatten(List.map1(deleteEntries, Array.getIndexFirst, graphInT));
   //print("HpcOmTaskGraph.contractNodesInGraph1 deleteNodesParents: " +& stringDelimitList(List.map(deleteNodesParents,intString),",") +& "\n");
   deleteNodesParents := List.sortedUnique(List.sort(deleteNodesParents, intGt),intEq);
   deleteNodesParents := List.setDifferenceOnTrue(deleteNodesParents, contractNodes, intEq);
@@ -3794,7 +3795,7 @@ algorithm
         mergeGroupIdx = List.position(nodeIdx,startNodes)+1;
         mergedNodes = listGet(mergedPaths,mergeGroupIdx);
         //print("updateInComps1 mergedNodes:" +& stringDelimitList(List.map(mergedNodes,intString),",") +& "\n");
-        mergedSet = List.flatten(List.map1(mergedNodes,Util.arrayGetIndexFirst,primInComps));
+        mergedSet = List.flatten(List.map1(mergedNodes,Array.getIndexFirst,primInComps));
         //print("updateInComps1 mergedSet:" +& stringDelimitList(List.map(mergedSet,intString),",") +& "\n");
         inCompLstTmp = List.fold(mergedNodes, updateInComps2, inCompLstIn);
         inCompLstTmp = List.replaceAt(mergedSet,nodeIdx-1,inCompLstTmp);
@@ -4034,7 +4035,7 @@ algorithm
     case(BackendDAE.DAE(shared=shared),_,_,TASKGRAPHMETA(inComps=inComps, commCosts=commCosts))
       equation
         (comps,compMapping_withIdx) = getSystemComponents(iDae);
-        compMapping = Util.arrayMap(compMapping_withIdx, Util.tuple21);
+        compMapping = Array.map(compMapping_withIdx, Util.tuple21);
         ((_,reqTimeCom)) = HpcOmBenchmark.benchSystem();
         reqTimeOpLstSimCode = HpcOmBenchmark.readCalcTimesFromFile(benchFilePrefix);
         //print("createCosts: read files\n");
@@ -4045,7 +4046,7 @@ algorithm
         reqTimeOp = convertSimEqToSccCosts(reqTimeOpSimCode, simeqCompMapping, reqTimeOp);
         //print("createCosts: scc costs converted\n");
         commCosts = createCommCosts(commCosts,1,reqTimeCom);
-        ((_,tmpTaskGraphMeta)) = Util.arrayFold4(inComps,createCosts0,(comps,shared),compMapping, reqTimeOp, reqTimeCom, (1,iTaskGraphMeta));
+        ((_,tmpTaskGraphMeta)) = Array.fold4(inComps,createCosts0,(comps,shared),compMapping, reqTimeOp, reqTimeCom, (1,iTaskGraphMeta));
       then tmpTaskGraphMeta;
     else
       equation
@@ -4242,7 +4243,7 @@ protected function convertSimEqToSccCosts
   input array<Real> iReqTimeOp;
   output array<Real> oReqTimeOp; //calcTime for each scc
 algorithm
-  ((_,oReqTimeOp)) := Util.arrayFold1(iReqTimeOpSimCode, convertSimEqToSccCosts1, iSimeqCompMapping, (1,iReqTimeOp));
+  ((_,oReqTimeOp)) := Array.fold1(iReqTimeOpSimCode, convertSimEqToSccCosts1, iSimeqCompMapping, (1,iReqTimeOp));
 end convertSimEqToSccCosts;
 
 protected function convertSimEqToSccCosts1
@@ -4604,8 +4605,8 @@ algorithm
   tmpComps := {};
   tmpMapping := {};
   TASKGRAPHMETA(inComps=inComps, nodeMark=nodeMarks) := iTaskGraphMeta;
-  ((tmpComps,tmpMapping)) := Util.arrayFold2(inComps,getGraphComponents0,iSystComps,iCompEqSysMapping,(tmpComps,tmpMapping));
-  ((_,(tmpComps,tmpMapping))) := Util.arrayFold2(nodeMarks,getGraphComponents2, iSystComps, iCompEqSysMapping, (1,(tmpComps,tmpMapping)));
+  ((tmpComps,tmpMapping)) := Array.fold2(inComps,getGraphComponents0,iSystComps,iCompEqSysMapping,(tmpComps,tmpMapping));
+  ((_,(tmpComps,tmpMapping))) := Array.fold2(nodeMarks,getGraphComponents2, iSystComps, iCompEqSysMapping, (1,(tmpComps,tmpMapping)));
   oComps := tmpComps;
   oCompEqGraphMapping := listArray(tmpMapping);
 end getGraphComponents;
@@ -4880,7 +4881,7 @@ author: Waurich TUD 2013-07"
 protected
   Integer numLevels;
 algorithm
-  numLevels := Util.arrayFold(nodeInfo,numberOfLevels,0);
+  numLevels := Array.fold(nodeInfo,numberOfLevels,0);
   parallelSetsOut := List.fold1(List.intRange(arrayLength(nodeInfo)),gatherParallelSets1,nodeInfo,List.fill({},numLevels));
 end gatherParallelSets;
 
@@ -5135,7 +5136,7 @@ protected
   array<Communications> tmpCommCosts;
 algorithm
   tmpCommCosts := arrayCreate(arrayLength(iCommCosts), {});
-  ((_,tmpCommCosts)) := Util.arrayFold(iCommCosts, transposeCommCosts0, (1,tmpCommCosts));
+  ((_,tmpCommCosts)) := Array.fold(iCommCosts, transposeCommCosts0, (1,tmpCommCosts));
   oCommCosts := tmpCommCosts;
 end transposeCommCosts;
 
@@ -5331,8 +5332,8 @@ algorithm
   execCosts := match(iGraph,iMeta)
     case(_,TASKGRAPHMETA(inComps=inComps, exeCosts=exeCosts))
       equation
-        comps = List.flatten(List.map1(List.intRange(arrayLength(iGraph)),Util.arrayGetIndexFirst,inComps));
-        exeCostLst = List.map1(comps,Util.arrayGetIndexFirst,exeCosts);
+        comps = List.flatten(List.map1(List.intRange(arrayLength(iGraph)),Array.getIndexFirst,inComps));
+        exeCostLst = List.map1(comps,Array.getIndexFirst,exeCosts);
         cost1 = List.fold(List.map(exeCostLst,Util.tuple21),intAdd,0);
         cost2 = List.fold(List.map(exeCostLst,Util.tuple22),realAdd,0.0);
       then ((cost1,cost2));
@@ -5478,7 +5479,7 @@ algorithm
       //print("nodes: "+&stringDelimitList(List.map(nodeLst,intLstString)," | ")+&"\n");
 
       TASKGRAPHMETA(inComps = inComps1 ,varCompMapping=varCompMapping1, eqCompMapping=eqCompMapping1, rootNodes = rootNodes1, nodeNames =nodeNames1, nodeDescs= nodeDescs1, exeCosts = exeCosts1, commCosts=commCosts1, nodeMark=nodeMark1) = graphDataIn;
-      graph = Util.arrayAppend(graphIn,arrayCreate(numNewComps,{}));
+      graph = Array.append(graphIn,arrayCreate(numNewComps,{}));
       newComps = List.intRange2(arrayLength(graphIn)+1,arrayLength(graphIn)+numNewComps);
       //print("newComps: "+&stringDelimitList(List.map(newComps,intString)," | ")+&"\n");
       graph =  List.threadFold(nodeVarLst,newComps,addEdgesToGraph,graph);
@@ -5488,11 +5489,11 @@ algorithm
       nodeDescs2 = listArray(List.map(eqLst,BackendDump.equationString));
       nodeMark2 = arrayCreate(numNewComps,-2);
       exeCosts2 = arrayCreate(numNewComps,(1,1.0));
-      inComps1 = Util.arrayAppend(inComps1,inComps2);
-      nodeNames1 = Util.arrayAppend(nodeNames1,nodeNames2);
-      nodeDescs1 = Util.arrayAppend(nodeDescs1,nodeDescs2);
-      nodeMark1 = Util.arrayAppend(nodeMark1,nodeMark2);
-      exeCosts1 = Util.arrayAppend(exeCosts1,exeCosts2);
+      inComps1 = Array.append(inComps1,inComps2);
+      nodeNames1 = Array.append(nodeNames1,nodeNames2);
+      nodeDescs1 = Array.append(nodeDescs1,nodeDescs2);
+      nodeMark1 = Array.append(nodeMark1,nodeMark2);
+      exeCosts1 = Array.append(exeCosts1,exeCosts2);
       commCosts1 = List.threadFold1(nodeVarLst,newComps,setCommCostsToParent,74.0,commCosts1);
       graphData = TASKGRAPHMETA(inComps1,varCompMapping1,eqCompMapping1,rootNodes1,nodeNames1,nodeDescs1,exeCosts1,commCosts1,nodeMark1);
     then (graph,graphData);
