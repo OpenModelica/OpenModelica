@@ -635,11 +635,11 @@ end listHead;
 
 function listDelete<A> "O(index)"
   input List<A> inLst;
-  input Integer index "zero-based index (TODO: make it a one-based index)" ;
+  input Integer index "one-based index" ;
   output List<A> outLst;
 external "builtin";
   annotation(Documentation(info="<html>
-<p>listDelete is using a zero-based index. This will be fixed as soon as the rml version is gone. Until then List.delete should be used.</p>
+<p>listDelete is using a zero-based index. This will be fixed as soon as the rml version is gone. Until then listDelete should be used.</p>
 </html>"));
 end listDelete;
 

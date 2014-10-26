@@ -1001,7 +1001,7 @@ algorithm
         // assemble the path-name
         s = Absyn.pathString(path);
         chars = stringListStringChar(s);
-        chars = List.delete(chars, 1);
+        chars = listDelete(chars, 1);
         s = stringCharListString(chars);
         path = Absyn.stringPath(s+&"_eval"+&intString(idx));
         // update the type

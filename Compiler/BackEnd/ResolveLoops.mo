@@ -1737,9 +1737,9 @@ protected
   list<Integer> path;
   Integer last;
 algorithm
-  path := List.delete(pathIn, 1);
+  path := listDelete(pathIn, 1);
   last := listLength(path);
-  path := List.delete(path, last);
+  path := listDelete(path, last);
   loopsOut := List.map1(closingPaths,listAppend,path);
 end connectPaths;
 

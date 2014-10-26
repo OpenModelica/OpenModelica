@@ -4349,7 +4349,7 @@ protected
 algorithm
   types := List.map(inProps, Types.getPropType);
   dims := List.map(types, Types.getDimensions);
-  dims := List.map1(dims, List.delete, dimException);
+  dims := List.map1(dims, listDelete, dimException);
   res := sameDimensions2(dims);
 end sameDimensionsExceptionDimX;
 

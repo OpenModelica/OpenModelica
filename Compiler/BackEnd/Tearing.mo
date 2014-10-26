@@ -1795,9 +1795,9 @@ algorithm
     equation
       true = intLe(indx, listLength(rowIn));
       b = intLe(listGet(rowIn,indx),0);
-      indx = Util.if_(b,indx-1,indx);
+      indx = Util.if_(b,indx,indx+1);
       newLst = Debug.bcallret2(b,listDelete,rowIn,indx,rowIn);
-   then deleteNegativeEntries(newLst,indx+1);
+   then deleteNegativeEntries(newLst,indx);
   case(_,_)
     equation
       true = intGt(index,listLength(rowIn));

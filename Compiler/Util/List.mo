@@ -8737,16 +8737,6 @@ algorithm
   end match;
 end select2_tail;
 
-public function delete
-  "This is a wrapper of the built-in function listDelete as a workaround. It
-   will be removed as soon as the rml version got removed."
-  input list<ElementType> lst;
-  input Integer index "one-based index" ;
-  output list<ElementType> result;
-algorithm
-  result := listDelete(lst, index-1);
-end delete;
-
 public function deleteMember
   "Takes a list and a value, and deletes the first occurence of the value in the
    list. Example: deleteMember({1, 2, 3, 2}, 2) => {1, 3, 2}"
@@ -8756,7 +8746,7 @@ public function deleteMember
 algorithm
   outList := matchcontinue(inList, inElement)
 
-    case (_, _) then listDelete(inList, position(inElement, inList));
+    case (_, _) then listDelete(inList, position(inElement, inList)+1);
     else inList;
 
   end matchcontinue;
@@ -8768,7 +8758,7 @@ public function deleteMemberF
   input ElementType inElement;
   output list<ElementType> outList;
 algorithm
-  outList := listDelete(inList, position(inElement, inList));
+  outList := listDelete(inList, position(inElement, inList)+1);
 end deleteMemberF;
 
 public function deleteMemberOnTrue

@@ -515,29 +515,25 @@ modelica_metatype boxptr_listNth(threadData_t *threadData,modelica_metatype lst,
   return boxptr_listGet(threadData,lst,mmc_mk_icon(mmc_unbox_integer(i)+1));
 }
 
-modelica_metatype boxptr_listDelete(threadData_t *threadData,modelica_metatype lst, modelica_metatype iix)
+modelica_metatype boxptr_listDelete(threadData_t *threadData, modelica_metatype lst, modelica_metatype iix)
 {
   /* TODO: If we assume the index exists we can do this in a much better way */
   int ix = mmc_unbox_integer(iix);
   modelica_metatype *tmpArr = NULL;
   int i = 0;
 
-  if (ix < 0) {
+  if (ix <= 0) {
     MMC_THROW_INTERNAL();
   }
-  if (ix == 0) {
-    if (listEmpty(lst)) {
-      MMC_THROW_INTERNAL();
-    }
-    return MMC_CDR(lst);
-  }
-  tmpArr = (modelica_metatype *) GC_malloc(sizeof(modelica_metatype)*(ix)); /* We know the size of the first part of the list (+1 for the element to delete) */
+
+  tmpArr = (modelica_metatype *) GC_malloc(sizeof(modelica_metatype)*(ix-1)); /* We know the size of the first part of the list */
   if (tmpArr == NULL) {
     fprintf(stderr, "%s:%d: malloc failed", __FILE__, __LINE__);
     EXIT(1);
   }
-  for (i=0; i<ix; i++) {
-    if (MMC_NILTEST(lst)) {
+
+  for (i=0; i<ix-1; i++) {
+    if (listEmpty(lst)) {
       if (tmpArr) {
         GC_free(tmpArr);
       }
@@ -546,13 +542,14 @@ modelica_metatype boxptr_listDelete(threadData_t *threadData,modelica_metatype l
     tmpArr[i] = MMC_CAR(lst);
     lst = MMC_CDR(lst);
   }
+
   if (listEmpty(lst)) {
     GC_free(tmpArr);
     MMC_THROW_INTERNAL();
   }
-
   lst = MMC_CDR(lst);
-  for (i=ix-1; i>=0; i--) {
+
+  for (i=ix-2; i>=0; i--) {
     lst = mmc_mk_cons(tmpArr[i], lst);
   }
   GC_free(tmpArr);

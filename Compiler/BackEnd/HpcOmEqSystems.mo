@@ -879,8 +879,8 @@ algorithm
     case({},_,_,_,_,_)
       equation
         //completed
-        hs_i_lstTmp = List.delete(hs_i_lstIn,1);
-        a_i_lstTmp = List.delete(a_i_lstIn,1);
+        hs_i_lstTmp = listDelete(hs_i_lstIn,1);
+        a_i_lstTmp = listDelete(a_i_lstIn,1);
         hs_i_lstTmp = listReverse(hs_i_lstTmp);
         a_i_lstTmp = listReverse(a_i_lstTmp);
       then
@@ -1073,8 +1073,8 @@ algorithm
     case({},_,_,_,_)
       // completed
       equation
-        h_i_lstTmp = List.delete(h_i_lstIn, 1);
-        r_i_lstTmp = List.delete(r_i_lstIn, 1);
+        h_i_lstTmp = listDelete(h_i_lstIn, 1);
+        r_i_lstTmp = listDelete(r_i_lstIn, 1);
         h_i_lstTmp = listReverse(h_i_lstTmp);
         r_i_lstTmp = listReverse(r_i_lstTmp);
       then
@@ -1268,7 +1268,7 @@ algorithm
       str1 = "$xa"+&intString(tornSysIdx)+&intString(iValue);
       _ = "$g"+&intString(tornSysIdx)+&intString(iValue);
       tVarCRef = listGet(tVarCRefLstIn,iValue);
-      tVarCRefLst1 = List.delete(tVarCRefLstIn,iValue);
+      tVarCRefLst1 = listDelete(tVarCRefLstIn,iValue);
       replTmp = BackendVarTransform.emptyReplacementsSized(size);
       replTmp = replaceTVarWithReal(tVarCRef,1.0,replTmp);
       replTmp = List.fold1(tVarCRefLst1,replaceTVarWithReal,0.0,replTmp);
@@ -1599,7 +1599,7 @@ algorithm
         vars = BackendVariable.listVar(varLstIn);
         vars = BackendVariable.removeCref(cref,vars);
         varLst = BackendVariable.varList(vars);
-        eqLst = List.delete(eqLstIn, eqIdx);
+        eqLst = listDelete(eqLstIn, eqIdx);
         repl = BackendVarTransform.addReplacement(replIn,cref,constExp,NONE());
       then
         (eqLst,varLst,repl,true);
@@ -1664,7 +1664,7 @@ algorithm
         true = BackendVariable.existsVar(cref1,vars,false);
         vars = BackendVariable.removeCref(cref1,vars);
         varLst = BackendVariable.varList(vars);
-        eqLst = List.delete(eqLstIn, eqIdx);
+        eqLst = listDelete(eqLstIn, eqIdx);
         newExp = DAE.RCONST(0.0);
         repl = BackendVarTransform.addReplacement(replIn,cref1,newExp,NONE());
       then
@@ -1678,7 +1678,7 @@ algorithm
         true = BackendVariable.existsVar(cref1,vars,false);
         vars = BackendVariable.removeCref(cref1,vars);
         varLst = BackendVariable.varList(vars);
-        eqLst = List.delete(eqLstIn, eqIdx);
+        eqLst = listDelete(eqLstIn, eqIdx);
         newExp = DAE.RCONST(0.0);
         repl = BackendVarTransform.addReplacement(replIn,cref1,newExp,NONE());
       then
@@ -1719,7 +1719,7 @@ algorithm
         true = BackendVariable.existsVar(cref1,vars,false);
         vars = BackendVariable.removeCref(cref1,vars);
         varLst = BackendVariable.varList(vars);
-        eqLst = List.delete(eqLstIn, eqIdx);
+        eqLst = listDelete(eqLstIn, eqIdx);
         newExp = DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),exp2);
         //print("checkForNegAlias: replace "+&ComponentReference.printComponentRefStr(cref2)+&" with "+&ExpressionDump.printExpStr(newExp)+&"\n");
         repl = BackendVarTransform.addReplacement(replIn,cref1,newExp,NONE());
@@ -1732,7 +1732,7 @@ algorithm
         true = BackendVariable.existsVar(cref2,vars,false);
         vars = BackendVariable.removeCref(cref2,vars);
         varLst = BackendVariable.varList(vars);
-        eqLst = List.delete(eqLstIn, eqIdx);
+        eqLst = listDelete(eqLstIn, eqIdx);
         newExp = DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),exp1);
         //print("checkForNegAlias: replace "+&ComponentReference.printComponentRefStr(cref2)+&" with - "+&ExpressionDump.printExpStr(newExp)+&"\n");
         repl = BackendVarTransform.addReplacement(replIn,cref2,newExp,NONE());
@@ -1774,7 +1774,7 @@ algorithm
         //print("checkForPosAlias: replace "+&ComponentReference.printComponentRefStr(cref1)+&" with "+&ExpressionDump.printExpStr(exp2)+&"\n");
         vars = BackendVariable.removeCref(cref1,vars);
         varLst = BackendVariable.varList(vars);
-        eqLst = List.delete(eqLstIn, eqIdx);
+        eqLst = listDelete(eqLstIn, eqIdx);
         repl = BackendVarTransform.addReplacement(replIn,cref1,exp2,NONE());
       then
         (eqLst,varLst,repl,true);
@@ -1786,7 +1786,7 @@ algorithm
         //print("checkForPosAlias: replace "+&ComponentReference.printComponentRefStr(cref2)+&" with "+&ExpressionDump.printExpStr(exp1)+&"\n");
         vars = BackendVariable.removeCref(cref2,vars);
         varLst = BackendVariable.varList(vars);
-        eqLst = List.delete(eqLstIn, eqIdx);
+        eqLst = listDelete(eqLstIn, eqIdx);
         repl = BackendVarTransform.addReplacement(replIn,cref2,exp1,NONE());
       then
         (eqLst,varLst,repl,true);
