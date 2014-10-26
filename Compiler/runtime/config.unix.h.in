@@ -49,7 +49,7 @@
 @WITH_HWLOC@
 #endif
 
-#define CONFIG_SYSTEMLIBS mk_cons(mk_scon("-lomcruntime"),mk_cons(mk_scon("-lexpat"),mk_cons(mk_scon("-lsqlite3"),mk_cons(mk_scon(CONFIG_LPSOLVE55),mk_cons(mk_scon(CONFIG_CORBALIBS),mk_nil())))))
+#define CONFIG_SYSTEMLIBS mmc_mk_cons(mmc_mk_scon("-lomcruntime"),mmc_mk_cons(mmc_mk_scon("-lexpat"),mmc_mk_cons(mmc_mk_scon("-lsqlite3"),mmc_mk_cons(mmc_mk_scon(CONFIG_LPSOLVE55),mmc_mk_cons(mmc_mk_scon(CONFIG_CORBALIBS),mmc_mk_nil())))))
 
 #define USE_GRAPH @USE_GRAPH@
 #if usegraph
