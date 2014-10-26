@@ -114,9 +114,9 @@ algorithm
   i := partitionIndependentBlocks0(m, mT, ixs);
 
   outSysts := if i > 1 then
-      partitionIndependentBlocksSplitBlocks(i, syst, ixs, mT, false) 
-    else 
-      {syst}; 
+      partitionIndependentBlocksSplitBlocks(i, syst, ixs, mT, false)
+    else
+      {syst};
 
   // analyze partition kind
   outSysts := List.map1(outSysts, analyzePartitionKind, inShared);
@@ -131,7 +131,7 @@ public function partitionIndependentBlocks0
   output Integer on := 0;
 algorithm
   for i in arrayLength(m):-1:1 loop
-    on := if partitionIndependentBlocks1(i, on + 1, m, mT, ixs) then on + 1 else on; 
+    on := if partitionIndependentBlocks1(i, on + 1, m, mT, ixs) then on + 1 else on;
   end for;
 end partitionIndependentBlocks0;
 
@@ -468,7 +468,7 @@ algorithm
       else
         algorithm
           (_, (outContinuousTimeVars, outClockedVars)) :=
-            BackendEquation.traverseBackendDAEExpsEqn(eq, getVariableLists, 
+            BackendEquation.traverseBackendDAEExpsEqn(eq, getVariableLists,
               (outContinuousTimeVars, outClockedVars));
         then
           ();
@@ -490,7 +490,7 @@ algorithm
       DAE.ComponentRef cr;
 
     // y = sample(u) or sample(u) = y
-    case ("sample", _ :: DAE.CREF(componentRef = cr) :: _) 
+    case ("sample", _ :: DAE.CREF(componentRef = cr) :: _)
       then (cr :: inContinuousTimeVars, inVarCref :: inClockedVars);
 
     // y = hold(...) or hold(...) = y

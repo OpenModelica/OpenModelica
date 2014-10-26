@@ -633,7 +633,7 @@ public function stripN<T>
   output list<T> outList := inList;
 algorithm
   true := inN >= 0;
-  
+
   for i in 1:inN loop
     _ :: outList := outList;
   end for;
@@ -668,7 +668,7 @@ algorithm
         (left, right) = split(inList, middle);
         left = sort(left, inCompFunc);
         right = sort(right, inCompFunc);
-      then 
+      then
         merge(left, right, inCompFunc, {});
 
   end match;
@@ -786,7 +786,7 @@ algorithm
           r_rest := inRight;
           el := l;
         else
-          l_rest := inLeft;  
+          l_rest := inLeft;
           el := r;
         end if;
       then
@@ -815,12 +815,12 @@ public function mergeSorted<T>
     output Boolean outIsEqual;
   end CompFunc;
 protected
-  list<T> l1, l2; 
+  list<T> l1, l2;
   T e1, e2;
 algorithm
   l1 := inList1;
   l2 := inList2;
-  
+
   // While both lists contain elements.
   while not listEmpty(l1) and not listEmpty(l2) loop
     e1 :: _ := l1;
@@ -884,7 +884,7 @@ protected
   array<Boolean> arr;
 algorithm
   arr := arrayCreate(inN, true);
-  
+
   for i in inList loop
     if arrayGet(arr, i) then
       outList := i :: outList;
@@ -1412,7 +1412,7 @@ algorithm
     end if;
   end for;
 
-  outIntersection := listReverse(outIntersection);  
+  outIntersection := listReverse(outIntersection);
 end intersectionOnTrue;
 
 public function intersection1OnTrue<T>
@@ -1624,11 +1624,11 @@ public function unionOnTrue<T>
 algorithm
   for e in inList1 loop
     outUnion := unionEltOnTrue(e, outUnion, inCompFunc);
-  end for; 
+  end for;
 
   for e in inList2 loop
     outUnion := unionEltOnTrue(e, outUnion, inCompFunc);
-  end for; 
+  end for;
 
   outUnion := listReverse(outUnion);
 end unionOnTrue;
@@ -1658,7 +1658,7 @@ public function unionOnTrueList<T>
     output Boolean outIsEqual;
   end CompFunc;
 algorithm
-  outUnion := if listEmpty(inList) then {} 
+  outUnion := if listEmpty(inList) then {}
               else reduce1(inList, unionOnTrue, inCompFunc);
 end unionOnTrueList;
 
@@ -1728,7 +1728,7 @@ public function map_3<TI, TO1, TO2, TO3>
   output list<TO1> outList1 := {};
   output list<TO2> outList2 := {};
   output list<TO3> outList3 := {};
-  
+
   partial function MapFunc
     input TI inElement;
     output TO1 outElement1;
@@ -1959,7 +1959,7 @@ public function map1_3<TI, TO1, TO2, TO3, ArgT1>
   output list<TO1> outList1 := {};
   output list<TO2> outList2 := {};
   output list<TO3> outList3 := {};
-  
+
   partial function MapFunc
     input TI inElement;
     input ArgT1 inArg1;
@@ -2488,7 +2488,7 @@ public function mapFlat<TI, TO>
     output list<TO> outList;
   end MapFunc;
 algorithm
-  outList := listReverse(mapFlatReverse(inList, inMapFunc)); 
+  outList := listReverse(mapFlatReverse(inList, inMapFunc));
 end mapFlat;
 
 public function mapFlatReverse<TI, TO>
@@ -2611,7 +2611,7 @@ algorithm
   for e in inList loop
     eo := inMapFunc(e);
     true := valueEq(eo, inValue);
-  end for; 
+  end for;
 end mapAllValue;
 
 public function mapAllValueBool<TI, TO, VT>
@@ -2655,7 +2655,7 @@ algorithm
   for e in inList loop
     eo := inMapFunc(e, inArg1);
     true := valueEq(eo, inValue);
-  end for; 
+  end for;
 end map1AllValue;
 
 public function map1rAllValue<TI, TO, VT, ArgT1>
@@ -2678,7 +2678,7 @@ algorithm
   for e in inList loop
     eo := inMapFunc(inArg1, e);
     true := valueEq(eo, inValue);
-  end for; 
+  end for;
 end map1rAllValue;
 
 public function map2AllValue<TI, TO, VT, ArgT1, ArgT2>
@@ -2703,7 +2703,7 @@ algorithm
   for e in inList loop
     eo := inMapFunc(e, inArg1, inArg2);
     true := valueEq(eo, inValue);
-  end for; 
+  end for;
 end map2AllValue;
 
 public function mapListAllValueBool<TI, TO, VT>
@@ -3070,7 +3070,7 @@ algorithm
     for e in lst loop
       outResult := inFoldFunc(e, inExtraArg1, inExtraArg2, outResult);
     end for;
-  end for; 
+  end for;
 end foldList2;
 
 public function fold2r<T, FT, ArgT1, ArgT2>
@@ -3446,7 +3446,7 @@ algorithm
   for e in inList loop
     ((res, outArg)) := inFunc((e, outArg));
     outList := res :: outList;
-  end for; 
+  end for;
   outList := listReverse(outList);
 end mapFoldTuple;
 
@@ -3571,7 +3571,7 @@ algorithm
   outResult :: rest := inList;
   for e in rest loop
     outResult := inReduceFunc(outResult, e);
-  end for; 
+  end for;
 end reduce;
 
 public function reduce1<T, ArgT1>
@@ -4127,7 +4127,7 @@ algorithm
     case (e1 :: rest1, e2 :: rest2)
       equation
         (res,foldArg) = inMapFunc(e1, e2, inArg1, inArg2, inArg3, inFoldArg);
-        (outList,foldArg) = threadMap3ReverseFold(rest1, rest2, inMapFunc, 
+        (outList,foldArg) = threadMap3ReverseFold(rest1, rest2, inMapFunc,
             inArg1, inArg2, inArg3, foldArg, res :: inAccum);
       then
         (outList,foldArg);
@@ -4415,7 +4415,7 @@ algorithm
     case (e1 :: rest1, e2 :: rest2)
       equation
         res = inFoldFunc(e1, e2, inArg1, inArg2, inArg3, inArg4, inFoldArg);
-      then 
+      then
         threadFold4(rest1, rest2, inFoldFunc, inArg1, inArg2, inArg3, inArg4, res);
 
     case ({}, {}) then inFoldArg;
@@ -4667,7 +4667,7 @@ algorithm
   for e in inList loop
     if inFindFunc(e) then
       outExists := true;
-      return; 
+      return;
     end if;
   end for;
 
@@ -4970,7 +4970,7 @@ public function filter1<T, ArgT1>
   input list<T> inList;
   input FilterFunc inFilterFunc;
   input ArgT1 inArg1;
-  output list<T> outList := {}; 
+  output list<T> outList := {};
 
   partial function FilterFunc
     input T inElement;
@@ -5150,7 +5150,7 @@ algorithm
       outList := listAppend(listReverse(outList), rest);
       return;
     end if;
-    
+
     outList := e :: outList;
   end while;
   outList := inList;
@@ -5232,7 +5232,7 @@ algorithm
       outList := e :: outList;
       i := i + 1;
     end while;
-     
+
     _ :: rest := rest;
     i := i + 1;
   end for;
@@ -5269,7 +5269,7 @@ protected
   T e;
   list<T> rest := inList;
 algorithm
-  true := inPosition >= 0; 
+  true := inPosition >= 0;
 
   // Shuffle elements from inList to outList until the position is reached.
   for i in 0:inPosition-1 loop
@@ -5309,7 +5309,7 @@ protected
   T e;
   list<T> rest := inList;
 algorithm
-  true := inPosition >= 0; 
+  true := inPosition >= 0;
 
   // Shuffle elements from inList to outList until the position is reached.
   for i in 0:inPosition-1 loop
@@ -5345,7 +5345,7 @@ protected
 algorithm
   true := inPosition >= 0;
   len := listLength(inList);
-  
+
   if inPosition <= len then
     outList := replaceAt(inElement, inPosition - 1, inList);
   else
@@ -5873,11 +5873,11 @@ algorithm
     case head :: rest
       algorithm
         for e in head loop
-          acc := combinationMap_tail(rest, inMapFunc, e :: inCombination, inAccumElems);    
+          acc := combinationMap_tail(rest, inMapFunc, e :: inCombination, inAccumElems);
         end for;
       then
         acc;
-          
+
     else inMapFunc(inCombination) :: inAccumElems;
 
   end match;

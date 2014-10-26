@@ -7754,7 +7754,7 @@ algorithm
   // Elaborate the conditional expression.
   (outCache, e, DAE.PROP(type_ = t, constFlag = c), _) :=
     Static.elabExp(inCache, inEnv, inCondition, false, NONE(), false, inPrefix, inInfo);
-  
+
   // The expression must be of boolean type.
   if not Types.isBoolean(t) then
     Error.addSourceMessageAndFail(Error.IF_CONDITION_TYPE_ERROR,
@@ -7770,7 +7770,7 @@ algorithm
   // If it is a boolean parameter expression, try to evaluate it.
   (outCache, val, _) := Ceval.ceval(outCache, inEnv, e, false, NONE(), Absyn.MSG(inInfo), 0);
 
-  outIsConditional := match(val) 
+  outIsConditional := match(val)
     case Values.BOOL(b) then b;
     case Values.EMPTY(__) // Print an error if the expression has no value.
       equation
@@ -7784,7 +7784,7 @@ algorithm
           ValuesUtil.valString(val));
       then
         fail();
-  end match;  
+  end match;
 end instConditionalDeclaration;
 
 public function propagateClassPrefix

@@ -3287,7 +3287,7 @@ algorithm
     ErrorExt.setCheckpoint("instElement2");
     (outCache, outEnv, outIH, {elt}) := updateCompeltsMods(inCache, outEnv,
       outIH, inPrefix, {inElement}, outState, inImplicit);
-    (outCache, outEnv, outIH, outStore, DAE.DAE(outDae), outSets, outState, outVars, outGraph) := 
+    (outCache, outEnv, outIH, outStore, DAE.DAE(outDae), outSets, outState, outVars, outGraph) :=
       instElement(outCache, outEnv, outIH, outStore, inMod, inPrefix, outState, elt, inInstDims,
         inImplicit, inCallingScope, outGraph, inSets);
     Error.updateCurrentComponent("", Absyn.dummyInfo);
@@ -3303,7 +3303,7 @@ algorithm
       outIH := inIH;
       return;
     end if;
-  end try; 
+  end try;
 end instElement2;
 
 protected function isDeletedComponent
@@ -3358,7 +3358,7 @@ algorithm
     outCache := inCache;
   end if;
 end isDeletedComponent;
-    
+
 public function instElement "
   This monster function instantiates an element of a class definition.  An
   element is either a class definition, a variable, or an import clause."

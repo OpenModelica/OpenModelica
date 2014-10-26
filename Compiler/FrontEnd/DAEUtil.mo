@@ -1719,13 +1719,13 @@ algorithm
   end match;
 end isNotVar;
 
-public function isVar 
+public function isVar
   "Returns true if the element is a variable, otherwise false."
   input DAE.Element inElement;
   output Boolean outMatch;
 algorithm
   outMatch := match inElement
-    case DAE.VAR(__) then true; 
+    case DAE.VAR(__) then true;
     else false;
   end match;
 end isVar;

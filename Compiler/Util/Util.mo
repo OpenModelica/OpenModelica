@@ -142,13 +142,13 @@ algorithm
 
     if arg == flag then
       break;
-    end if;  
+    end if;
   end while;
 
   flagVal := if listEmpty(rest) then "" else listHead(rest);
 end flagValue;
 
-public function selectFirstNonEmptyString 
+public function selectFirstNonEmptyString
   "Selects the first non-empty string from a list of strings.
    Returns an empty string if no such string exists."
   input list<String> inStrings;

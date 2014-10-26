@@ -6146,7 +6146,7 @@ algorithm
     // Add the type to the result list if the match function return true.
     if inFunc(t) then
       outTypes := t :: outTypes;
-    end if; 
+    end if;
 
     // Get the inner types of the type.
     tys := match(t)

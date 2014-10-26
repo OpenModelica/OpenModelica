@@ -5280,7 +5280,7 @@ algorithm
     case DAE.CREF_IDENT(id, ty, subs)
       equation
         (new_ty, arg) = traverseExpTypeDims(ty, inFunc, inArg);
-        cr = if referenceEq(new_ty, ty) 
+        cr = if referenceEq(new_ty, ty)
           then inCref else DAE.CREF_IDENT(id, new_ty, subs);
       then
         (cr, arg);
@@ -5335,7 +5335,7 @@ algorithm
         ty = if referenceEq(new_ty, ty) then inType else DAE.T_SUBTYPE_BASIC(state, vars, ty, ec, src);
       then
         (ty, arg);
-        
+
     else (inType, inArg);
   end match;
 end traverseExpTypeDims;
@@ -5367,7 +5367,7 @@ algorithm
           outChanged = outChanged or changed;
         then
           if changed then DAE.DIM_EXP(exp) else dim;
-    
+
       else dim;
     end match;
 
@@ -6014,7 +6014,7 @@ algorithm
     case DAE.MATRIX(ty = ty, integer = dim, matrix = mat_expl)
       equation
         (mat_expl, arg) = List.map2Fold(mat_expl, traverseExpListBidir,
-          inEnterFunc, inExitFunc, inArg); 
+          inEnterFunc, inExitFunc, inArg);
       then
         (DAE.MATRIX(ty, dim, mat_expl), arg);
 
@@ -8972,7 +8972,7 @@ algorithm
       equation
         (exp, arg) = traverseExpBidir(exp, inEnterFunc, inExitFunc, inArg);
         (gexp, arg) = traverseExpOptBidir(gexp, inEnterFunc, inExitFunc, arg);
-      then 
+      then
         (DAE.REDUCTIONITER(id, exp, gexp, ty), arg);
 
   end match;
@@ -10848,7 +10848,7 @@ public function makeVectorCall
 algorithm
   outExp := makePureBuiltinCall("vector",{exp},tp);
 end makeVectorCall;
-  
+
 public function extendArrExp "author: Frenkel TUD 2010-07
   alternative name: vectorizeExp"
   input DAE.Exp inExp;

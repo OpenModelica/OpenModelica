@@ -397,8 +397,8 @@ protected
   Integer size;
   Key e;
 algorithm
-  (size, _, arr) := inValueArray; 
-  
+  (size, _, arr) := inValueArray;
+
   for i in 1:size loop
     if isSome(arr[i]) then
       SOME(e) := arr[i];

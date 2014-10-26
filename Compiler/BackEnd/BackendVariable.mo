@@ -384,7 +384,7 @@ algorithm
   BackendDAE.VAR(values = attr) := inVar;
   outHasStartValue := DAEUtil.hasStartAttr(attr);
 end varHasStartValue;
-    
+
 public function varStartOrigin
 "author: Frenkel TUD
   Returns the StartOrigin of a variable."
@@ -616,7 +616,7 @@ protected
   Option<SCode.Comment> s;
   DAE.ConnectorType ct;
 algorithm
-  if isSome(inMin) or isSome(inMax) then 
+  if isSome(inMin) or isSome(inMax) then
     BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
     oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
     oattr := DAEUtil.setMinMax(oattr, inMin, inMax);

@@ -1982,7 +1982,7 @@ algorithm
         FCore.Graph env;
 
       // MetaModelica partial functions.
-      case _ 
+      case _
         algorithm
           DAE.TYPES_VAR(ty = ty as DAE.T_FUNCTION(__)) := FNode.refInstVar(r);
           ty := Types.setTypeSource(ty, Types.mkTypeSource(SOME(Absyn.IDENT(inFuncName))));

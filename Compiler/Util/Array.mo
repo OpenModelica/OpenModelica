@@ -52,7 +52,7 @@ public function mapNoCopy<T>
   end FuncType;
 algorithm
   for i in 1:arrayLength(inArray) loop
-    arrayUpdate(inArray, i, 
+    arrayUpdate(inArray, i,
       inFunc(MetaModelica.Dangerous.arrayGetNoBoundsChecking(inArray, i)));
   end for;
 end mapNoCopy;
@@ -74,7 +74,7 @@ protected
   T e;
 algorithm
   for i in 1:arrayLength(inArray) loop
-    (e, outArg) := 
+    (e, outArg) :=
       inFunc((MetaModelica.Dangerous.arrayGetNoBoundsChecking(inArray, i), outArg));
     arrayUpdate(inArray, i, e);
   end for;
@@ -84,7 +84,7 @@ public function findFirstOnTrue<T>
   input array<T> inArray;
   input FuncType inPredicate;
   output Option<T> outElement;
-  
+
   partial function FuncType
     input T inElement;
     output Boolean outMatch;
@@ -108,7 +108,7 @@ protected
   Integer i := 1;
 algorithm
   outArray := arrayCreate(listLength(inIndices), inArray[1]);
-  
+
   for e in inIndices loop
     arrayUpdate(outArray, i, arrayGet(inArray, e));
     i := i + 1;
@@ -388,7 +388,7 @@ public function getIndexFirst<T>
   input array<T> inArray;
   output T outElement := arrayGet(inArray, inIndex);
 end getIndexFirst;
-  
+
 public function updatewithArrayIndexFirst<T>
   "Replaces the element with the given index in the second array with the value
    of the corresponding element in the first array."
@@ -417,7 +417,7 @@ public function updateElementListAppend<T>
 algorithm
   arrayUpdate(inArray, inIndex, listAppend(inArray[inIndex], inValue));
 end updateElementListAppend;
-    
+
 public function replaceAtWithFill<T>
   "Takes
    - an element,
@@ -471,7 +471,7 @@ algorithm
     copy(inArray, outArray);
   end if;
 end expand;
-    
+
 public function expandOnDemand<T>
   "Resizes an array with the given factor if the array is smaller than the
    requested size."
@@ -491,7 +491,7 @@ algorithm
     copy(inArray, outArray);
   end if;
 end expandOnDemand;
-    
+
 public function append<T>
   input array<T> inArray1;
   input array<T> inArray2;
@@ -588,7 +588,7 @@ algorithm
     end if;
   end for;
   outIndex := 0;
-end position; 
+end position;
 
 public function getMemberOnTrue<VT, ET>
   "Takes a value and returns the first element for which the comparison
