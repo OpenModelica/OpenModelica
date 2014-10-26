@@ -2390,7 +2390,7 @@ void MainWindow::switchToPlottingPerspective()
 //! Creates the toolbars
 void MainWindow::createToolbars()
 {
-  setIconSize(QSize(24, 24));
+  setIconSize(QSize(16, 16));
   // File Toolbar
   mpFileToolBar = addToolBar(tr("File Toolbar"));
   mpFileToolBar->setObjectName("File Toolbar");
