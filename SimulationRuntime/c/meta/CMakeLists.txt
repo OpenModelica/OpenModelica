@@ -7,8 +7,7 @@ SET(META_SRC 	meta_modelica_builtin.c
 				meta_modelica_segv.c
 				gc/mmc_gc.c)
 
-SET(META_HFILES rml_compatibility.h
-                meta_modelica_builtin.h
+SET(META_HFILES meta_modelica_builtin.h
 				meta_modelica_builtin_boxptr.h
 				meta_modelica_segv.h
 				meta_modelica_string_lit.h
