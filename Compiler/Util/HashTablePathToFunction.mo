@@ -90,7 +90,7 @@ protected
   String str;
 algorithm
   str := Absyn.pathString(path);
-  res := System.stringHashDjb2Mod(str,mod);
+  res := stringHashDjb2Mod(str,mod);
 end hashFunc;
 
 protected function valString

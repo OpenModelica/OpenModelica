@@ -4105,7 +4105,7 @@ protected
   Integer len;
 algorithm
   len := stringLength(inString);
-  outRest := System.substring(inString, 2, len);
+  outRest := substring(inString, 2, len);
 end stringRest;
 
 public function intProduct
@@ -4251,7 +4251,7 @@ public function removeLast3Char
   input String str;
   output String outStr;
 algorithm
-  outStr := System.substring(str,1,stringLength(str)-3);
+  outStr := substring(str,1,stringLength(str)-3);
 end removeLast3Char;
 
 public function stringNotEqual
@@ -4428,7 +4428,7 @@ algorithm
     case ("",_) then false;
     case (_,_)
       equation
-        strSuffix = System.substring(str, if_(stringLength(str) > stringLength(suffix)+1, stringLength(str) - stringLength(suffix) + 1, 1), stringLength(str));
+        strSuffix = substring(str, if_(stringLength(str) > stringLength(suffix)+1, stringLength(str) - stringLength(suffix) + 1, 1), stringLength(str));
       then stringEq(strSuffix,suffix);
   end match;
 end endsWith;
@@ -4461,7 +4461,7 @@ algorithm
     case (_, _)
       equation
         true = stringLength(str) > len;
-        truncatedStr = System.substring(str, 0, len);
+        truncatedStr = substring(str, 0, len);
       then
         truncatedStr;
   end matchcontinue;

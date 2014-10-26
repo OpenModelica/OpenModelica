@@ -168,15 +168,6 @@ public function strtokIncludingDelimiters
   external "C" strings=System_strtokIncludingDelimiters(string,token) annotation(Library = "omcruntime");
 end strtokIncludingDelimiters;
 
-public function substring
-  input String inString;
-  input Integer start;
-  input Integer stop;
-  output String outString;
-
-  external "builtin" annotation(Library = "omcruntime");
-end substring;
-
 public function setCCompiler
   input String inString;
 
@@ -836,14 +827,6 @@ literal in C. For example unescapedStringLength('\"')=1, unescapedStringLength('
   external "C" length=SystemImpl__unescapedStringLength(unescapedString) annotation(Library = "omcruntime");
 end unescapedStringLength;
 
-public function stringHashDjb2Mod
-  "Roughly the same as intMod(stringHashDjb2(str),mod); but works even when the size of an RML integer differs from OMC"
-  input String str;
-  input Integer mod;
-  output Integer hash;
-  external "builtin";
-end stringHashDjb2Mod;
-
 public function unquoteIdentifier
   "Quoted identifiers, for example 'xyz' need to be translated into canonical form; for example _omcQuot_0x78797A"
   input String str;
@@ -1118,17 +1101,6 @@ public function covertTextFileToCLiteral
   output Boolean success;
 external "C" success=SystemImpl__covertTextFileToCLiteral(textFile,outFile);
 end covertTextFileToCLiteral;
-
-public function isRML
-  output Boolean b;
-external "C" b=System_isRML() annotation(Library = {"omcruntime"});
-end isRML;
-
-public function stringReal
-  input String str;
-  output Real r;
-external "builtin";
-end stringReal;
 
 annotation(__OpenModelica_Interface="util");
 end System;
