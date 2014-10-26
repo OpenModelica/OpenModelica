@@ -810,6 +810,12 @@ void System_threadFail(threadData_t *threadData)
   longjmp(*threadData->mmc_thread_work_exit,1);
 }
 
+/* TODO: Remove once we make a new tarball */
+int System_isRML()
+{
+  return 0;
+}
+
 extern void* System_strtokIncludingDelimiters(const char *str0, const char *delimit)
 {
   char* str = (char*)str0;
