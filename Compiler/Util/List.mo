@@ -2992,7 +2992,7 @@ public function fold1<T, FT, ArgT1>
   input FoldFunc inFoldFunc;
   input ArgT1 inExtraArg;
   input FT inStartValue;
-  output FT outResult;
+  output FT outResult := inStartValue;
 
   partial function FoldFunc
     input T inElement;
@@ -3001,7 +3001,9 @@ public function fold1<T, FT, ArgT1>
     output FT outFoldArg;
   end FoldFunc;
 algorithm
-  outResult := fold(inList, function inFoldFunc(inArg = inExtraArg), inStartValue);
+  for e in inList loop
+    outResult := inFoldFunc(e, inExtraArg, outResult);
+  end for;
 end fold1;
 
 public function fold1r<T, FT, ArgT1>
@@ -3010,7 +3012,7 @@ public function fold1r<T, FT, ArgT1>
   input FoldFunc inFoldFunc;
   input ArgT1 inExtraArg;
   input FT inStartValue;
-  output FT outResult;
+  output FT outResult := inStartValue;
 
   partial function FoldFunc
     input FT inFoldArg;
@@ -3019,7 +3021,9 @@ public function fold1r<T, FT, ArgT1>
     output FT outFoldArg;
   end FoldFunc;
 algorithm
-  outResult := foldr(inList, function inFoldFunc(inArg = inExtraArg), inStartValue);
+  for e in inList loop
+    outResult := inFoldFunc(outResult, e, inExtraArg);
+  end for;
 end fold1r;
 
 public function fold2<T, FT, ArgT1, ArgT2>
@@ -3032,7 +3036,7 @@ public function fold2<T, FT, ArgT1, ArgT2>
   input ArgT1 inExtraArg1;
   input ArgT2 inExtraArg2;
   input FT inStartValue;
-  output FT outResult;
+  output FT outResult := inStartValue;
 
   partial function FoldFunc
     input T inElement;
@@ -3042,8 +3046,9 @@ public function fold2<T, FT, ArgT1, ArgT2>
     output FT outFoldArg;
   end FoldFunc;
 algorithm
-  outResult := fold(inList, function inFoldFunc(inArg1 = inExtraArg1,
-    inArg2 = inExtraArg2), inStartValue);
+  for e in inList loop
+    outResult := inFoldFunc(e, inExtraArg1, inExtraArg2, outResult);
+  end for;
 end fold2;
 
 public function foldList2<T, FT, ArgT1, ArgT2>
@@ -3090,8 +3095,9 @@ public function fold2r<T, FT, ArgT1, ArgT2>
     output FT outFoldArg;
   end FoldFunc;
 algorithm
-  outResult := foldr(inList, function inFoldFunc(inArg1 = inExtraArg1,
-    inArg2 = inExtraArg2), inStartValue);
+  for e in inList loop
+    outResult := inFoldFunc(outResult, e, inExtraArg1, inExtraArg2);
+  end for;
 end fold2r;
 
 public function fold3<T, FT, ArgT1, ArgT2, ArgT3>
@@ -3116,8 +3122,9 @@ public function fold3<T, FT, ArgT1, ArgT2, ArgT3>
     output FT outFoldArg;
   end FoldFunc;
 algorithm
-  outResult := fold(inList, function inFoldFunc(inArg1 = inExtraArg1,
-    inArg2 = inExtraArg2, inArg3 = inExtraArg3), inStartValue);
+  for e in inList loop
+    outResult := inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3, outResult);
+  end for;
 end fold3;
 
 public function fold3r<T, FT, ArgT1, ArgT2, ArgT3>
@@ -3139,8 +3146,9 @@ public function fold3r<T, FT, ArgT1, ArgT2, ArgT3>
     output FT outFoldArg;
   end FoldFunc;
 algorithm
-  outResult := foldr(inList, function inFoldFunc(inArg1 = inExtraArg1,
-    inArg2 = inExtraArg2, inArg3 = inExtraArg3), inStartValue);
+  for e in inList loop
+    outResult := inFoldFunc(outResult, e, inExtraArg1, inExtraArg2, inExtraArg3);
+  end for;
 end fold3r;
 
 public function fold4<T, FT, ArgT1, ArgT2, ArgT3, ArgT4>
@@ -3167,8 +3175,10 @@ public function fold4<T, FT, ArgT1, ArgT2, ArgT3, ArgT4>
     output FT outFoldArg;
   end FoldFunc;
 algorithm
-  outResult := fold(inList, function inFoldFunc(inArg1 = inExtraArg1,
-    inArg2 = inExtraArg2, inArg3 = inExtraArg3, inArg4 = inExtraArg4), inStartValue);
+  for e in inList loop
+    outResult := inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3,
+        inExtraArg4, outResult);
+  end for;
 end fold4;
 
 public function fold43<T, FT1, FT2, FT3, ArgT1, ArgT2, ArgT3, ArgT4>
@@ -3235,9 +3245,10 @@ public function fold5<T, FT, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5>
     output FT outFoldArg;
   end FoldFunc;
 algorithm
-  outResult := fold(inList, function inFoldFunc(inArg1 = inExtraArg1,
-    inArg2 = inExtraArg2, inArg3 = inExtraArg3, inArg4 = inExtraArg4,
-    inArg5 = inExtraArg5), inStartValue);
+  for e in inList loop
+    outResult := inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3,
+        inExtraArg4, inExtraArg5, outResult);
+  end for;
 end fold5;
 
 public function fold6<T, FT, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5, ArgT6>
@@ -3268,9 +3279,10 @@ public function fold6<T, FT, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5, ArgT6>
     output FT outFoldArg;
   end FoldFunc;
 algorithm
-  outResult := fold(inList, function inFoldFunc(inArg1 = inExtraArg1,
-    inArg2 = inExtraArg2, inArg3 = inExtraArg3, inArg4 = inExtraArg4,
-    inArg5 = inExtraArg5, inArg6 = inExtraArg6), inStartValue);
+  for e in inList loop
+    outResult := inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3,
+        inExtraArg4, inExtraArg5, inExtraArg6, outResult);
+  end for;
 end fold6;
 
 public function mapFold<TI, TO, FT>
