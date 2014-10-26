@@ -312,9 +312,16 @@ algorithm
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,{id,""},info);
       then fail();
 
+    case (cache,_,Absyn.CREF(Absyn.CREF_IDENT("NONE",{})),_,_,_)
+      equation
+        failure((_,_,_,_,_,_) = Lookup.lookupIdent(cache,env,"NONE"));
+        Error.addSourceMessage(Error.META_NONE_CREF,{},info);
+      then fail();
+
     case (cache,_,Absyn.CREF(Absyn.CREF_IDENT(id,{})),_,_,_)
       equation
         failure((_,_,_,_,_,_) = Lookup.lookupIdent(cache,env,id));
+        false = "NONE" == id;
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,{id,""},info);
       then fail();
 
