@@ -1402,7 +1402,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
    ,_terminate(terminate)
    {
      <%literals |> literal hasindex i0 fromindex 0 => literalExpConstImpl(literal,i0) ; separator="\n";empty%>
-  
+
    }
 
    Functions::~Functions()
@@ -1414,7 +1414,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
             throw std::runtime_error(msg);
     }
 
-  
+
 
     <%functionBodies(functions,simCode,useFlatArrayNotation)%>
   >>
@@ -1492,7 +1492,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        //Literals
         <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n";empty%>
      private:
-    
+
 
        //Function return variables
        <%functionHeaderBodies3(functions,simCode)%>
@@ -1502,7 +1502,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        double* __z;
        double* __zDot;
 
- 
+
 
      };
   >>
@@ -1533,7 +1533,7 @@ template funParamDecl(Variable var, SimCode simCode)
 match var
 case VARIABLE(__) then
   match kind
-    case PARAM(__) then  
+    case PARAM(__) then
     <<
       <%funParamDecl2(var,simCode, false)%>
     >>
@@ -1576,7 +1576,7 @@ template funParamDecl3(Variable var,String varName, list<DAE.Exp> instDims, SimC
      arrayexpression1
   else
     arrayexpression2
-  paramdecl  
+  paramdecl
 end funParamDecl3;
 
 
