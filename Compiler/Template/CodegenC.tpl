@@ -10274,6 +10274,7 @@ template expTypeShort(DAE.Type type)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then "complex"
   case T_COMPLEX(__)       then '<%underscorePath(ClassInf.getStateName(complexClassType))%>'
   case T_METAUNIONTYPE(__)
+  case T_METAARRAY(__)
   case T_METALIST(__)
   case T_METATUPLE(__)
   case T_METAOPTION(__)
