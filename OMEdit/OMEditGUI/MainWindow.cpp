@@ -1716,14 +1716,19 @@ void MainWindow::toggleShapesButton()
 {
   QAction *clickedAction = qobject_cast<QAction*>(const_cast<QObject*>(sender()));
   QList<QAction*> shapeActions = mpShapesActionGroup->actions();
-  foreach (QAction *shapeAction, shapeActions)
-    if (shapeAction != clickedAction)
+  foreach (QAction *shapeAction, shapeActions) {
+    if (shapeAction != clickedAction) {
       shapeAction->setChecked(false);
-
-  // cancel connection if another tools is chosen
-  GraphicsView *pGraphicsView = mpModelWidgetContainer->getCurrentModelWidget()->getDiagramGraphicsView();
-  if (pGraphicsView->isCreatingConnection())
-    pGraphicsView->removeConnection();
+    }
+  }
+  // cancel connection if another tool is chosen
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+    GraphicsView *pGraphicsView = pModelWidget->getDiagramGraphicsView();
+    if (pGraphicsView->isCreatingConnection()) {
+      pGraphicsView->removeConnection();
+    }
+  }
 }
 
 void MainWindow::openRecentModelWidget()
