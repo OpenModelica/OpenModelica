@@ -302,7 +302,7 @@ protected
   String file_ext;
 algorithm
   lst := System.strtok(inFilename, ".");
- 
+
   if listEmpty(lst) then
     outIsModelicaFile := false;
   else
@@ -310,7 +310,7 @@ algorithm
     outIsModelicaFile := file_ext == "mo" or file_ext == "mof";
   end if;
 end isModelicaFile;
-    
+
 protected function isEmptyOrFirstIsModelicaFile
   input list<String> libs;
 algorithm
@@ -418,7 +418,7 @@ algorithm
     case false
       equation
         Print.printErrorBuf("Failed to load library: " +& inLib +& "!\n");
-      then 
+      then
         fail();
 
     case true
@@ -426,7 +426,7 @@ algorithm
         Print.printErrorBuf("Failed to parse file: " +& inLib +& "!\n");
       then
         fail();
-        
+
   end matchcontinue;
 end loadLib;
 
@@ -636,7 +636,7 @@ algorithm
   else
     Print.printBuf("Failed to initialize Corba! Is another OMC already running?\n");
     Print.printBuf("Exiting!\n");
-  end try; 
+  end try;
 end interactivemodeCorba;
 
 protected function serverLoopCorba
