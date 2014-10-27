@@ -1233,15 +1233,7 @@ public function setAtIndexFirst "author: waurich
   input Integer inPos "one-based indexing";
   input BackendDAE.Equation inEquation;
   input BackendDAE.EquationArray inEquationArray;
-  output BackendDAE.EquationArray outEquationArray;
-protected
-  array<Option<BackendDAE.Equation>> equOptArr, newEquOptArr;
-  Integer size, numberOfElement, arrSize;
-algorithm
-  BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr) := inEquationArray;
-  size := size -equationOptSize(equOptArr[inPos]) +equationSize(inEquation);
-  newEquOptArr := arrayUpdate(equOptArr, inPos, SOME(inEquation));
-  outEquationArray := BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, newEquOptArr);
+  output BackendDAE.EquationArray outEquationArray := setAtIndex(inEquationArray, inPos, inEquation);
 end setAtIndexFirst;
 
 public function getEqns "author: Frenkel TUD 2011-05

@@ -80,24 +80,17 @@ protected constant Real HASHVECFACTOR = 1.4;
  * =======================================================
  */
 
-public function varEqual
-"author: PA
-  Returns true if two Vars are equal."
+public function varEqual "author: PA
+  Returns true if two vars are equal."
   input BackendDAE.Var inVar1;
   input BackendDAE.Var inVar2;
   output Boolean outBoolean;
+protected
+  DAE.ComponentRef cr1, cr2;
 algorithm
-  outBoolean:=
-  match (inVar1,inVar2)
-    local
-      Boolean res;
-      DAE.ComponentRef cr1,cr2;
-    case (BackendDAE.VAR(varName = cr1),BackendDAE.VAR(varName = cr2))
-      equation
-        res = ComponentReference.crefEqualNoStringCompare(cr1, cr2) "A BackendDAE.Var is identified by its component reference";
-      then
-        res;
-  end match;
+  BackendDAE.VAR(varName=cr1) := inVar1;
+  BackendDAE.VAR(varName=cr2) := inVar2;
+  outBoolean := ComponentReference.crefEqualNoStringCompare(cr1, cr2) "a BackendDAE.Var is identified by its component reference";
 end varEqual;
 
 public function setVarFixed "author: PA
@@ -136,24 +129,18 @@ algorithm
   outBoolean := matchcontinue(inVar)
     local
       Boolean fixed;
+
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
-    // params are by default fixed
+
+    // params and consts are by default fixed
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM())) then true;
     case (BackendDAE.VAR(varKind = BackendDAE.CONST(),bindExp=SOME(_))) then true;
-/*  See Modelica Spec 3.2 page 88:
-    For constants and parameters, the attribute fixed is by default true. For other variables
-    fixed is by default false. For all variables declared as constant it is an error to have "fixed = false".
-  case (v) // states are by default fixed.
-      equation
-        BackendDAE.STATE(index=_) = varKind(v);
-        fixes = Flags.isSet(Flags.INIT_DLOW_DUMP);
-      then
-        not fixed;
-*/
-    else false;  /* rest defaults to false */
+
+    // rest defaults to false
+    else false;
   end matchcontinue;
 end varFixed;
 
@@ -240,28 +227,24 @@ public function setVarAttributes "sets the variable attributes of a variable.
   input BackendDAE.Var v;
   input Option<DAE.VariableAttributes> attr;
   output BackendDAE.Var outV;
+protected
+   DAE.ComponentRef a;
+    BackendDAE.VarKind b;
+    DAE.VarDirection c;
+    DAE.VarParallelism prl;
+    BackendDAE.Type d;
+    Option<DAE.Exp> e;
+    Option<Values.Value> f;
+    list<DAE.Dimension> g;
+    DAE.ElementSource source;
+    Option<SCode.Comment> s;
+    DAE.ConnectorType ct;
 algorithm
-  outV := match(v,attr)
-  local
-     DAE.ComponentRef a;
-      BackendDAE.VarKind b;
-      DAE.VarDirection c;
-      DAE.VarParallelism prl;
-      BackendDAE.Type d;
-      Option<DAE.Exp> e;
-      Option<Values.Value> f;
-      list<DAE.Dimension> g;
-      DAE.ElementSource source;
-      Option<SCode.Comment> s;
-      DAE.ConnectorType ct;
-
-    case(BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,_,s,ct),_)
-      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,attr,s,ct);
-  end match;
+  BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,_,s,ct) := v;
+  outV := BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,attr,s,ct);
 end setVarAttributes;
 
-public function varStartValue
-"author: PA
+public function varStartValue "author: PA
   Returns the DAE.StartValue of a variable."
   input BackendDAE.Var v;
   output DAE.Exp sv;
@@ -272,8 +255,7 @@ algorithm
   sv := DAEUtil.getStartAttr(attr);
 end varStartValue;
 
-public function varStartValueFail
-"author: Frenkel TUD
+public function varStartValueFail "author: Frenkel TUD
   Returns the DAE.StartValue of a variable if there is one.
   Otherwise fail"
   input BackendDAE.Var v;
@@ -321,8 +303,7 @@ algorithm
   sv := DAEUtil.getMaxAttrFail(attr);
 end varMaxValueFail;
 
-public function varStartValueType
-"author: Frenkel TUD 2012-11
+public function varStartValueType "author: Frenkel TUD 2012-11
   Returns the DAE.StartValue of a variable. If nothing is set the type specific one is used"
   input BackendDAE.Var v;
   output DAE.Exp sv;
@@ -331,33 +312,28 @@ algorithm
     local
       Option<DAE.VariableAttributes> attr;
       DAE.Type ty;
-    case (BackendDAE.VAR(values = attr))
-      equation
-        sv=DAEUtil.getStartAttrFail(attr);
-      then sv;
-    case BackendDAE.VAR(varType=ty)
-      equation
-        true = Types.isIntegerOrSubTypeInteger(ty);
-      then
-        DAE.ICONST(0);
-    case BackendDAE.VAR(varType=ty)
-      equation
-        true = Types.isBooleanOrSubTypeBoolean(ty);
-      then
-        DAE.BCONST(false);
-    case BackendDAE.VAR(varType=ty)
-      equation
-        true = Types.isStringOrSubTypeString(ty);
-      then
-        DAE.SCONST("");
-    else
-      then
-        DAE.RCONST(0.0);
-   end matchcontinue;
+
+    case (BackendDAE.VAR(values=attr)) equation
+      sv = DAEUtil.getStartAttrFail(attr);
+    then sv;
+
+    case BackendDAE.VAR(varType=ty) equation
+      true = Types.isIntegerOrSubTypeInteger(ty);
+    then DAE.ICONST(0);
+
+    case BackendDAE.VAR(varType=ty) equation
+      true = Types.isBooleanOrSubTypeBoolean(ty);
+    then DAE.BCONST(false);
+
+    case BackendDAE.VAR(varType=ty) equation
+      true = Types.isStringOrSubTypeString(ty);
+    then DAE.SCONST("");
+
+    else DAE.RCONST(0.0);
+  end matchcontinue;
 end varStartValueType;
 
-public function varStartValueOption
-"author: Frenkel TUD
+public function varStartValueOption "author: Frenkel TUD
   Returns the DAE.StartValue of a variable if there is one.
   Otherwise fail"
   input BackendDAE.Var v;
@@ -367,10 +343,11 @@ algorithm
     local
       Option<DAE.VariableAttributes> attr;
       DAE.Exp exp;
-    case (BackendDAE.VAR(values = attr))
-      equation
-        exp=DAEUtil.getStartAttrFail(attr);
-      then SOME(exp);
+
+    case (BackendDAE.VAR(values=attr)) equation
+      exp = DAEUtil.getStartAttrFail(attr);
+    then SOME(exp);
+
     else NONE();
    end matchcontinue;
 end varStartValueOption;
@@ -381,12 +358,11 @@ public function varHasStartValue
 protected
   Option<DAE.VariableAttributes> attr;
 algorithm
-  BackendDAE.VAR(values = attr) := inVar;
+  BackendDAE.VAR(values=attr) := inVar;
   outHasStartValue := DAEUtil.hasStartAttr(attr);
 end varHasStartValue;
 
-public function varStartOrigin
-"author: Frenkel TUD
+public function varStartOrigin "author: Frenkel TUD
   Returns the StartOrigin of a variable."
   input BackendDAE.Var v;
   output Option<DAE.Exp> so;
@@ -397,16 +373,12 @@ algorithm
   so := DAEUtil.getStartOrigin(attr);
 end varStartOrigin;
 
-public function varBindExp
-"author: Frenkel TUD 2010-12
-  Returns the bindExp of a variable."
+public function varBindExp "author: Frenkel TUD 2010-12
+  Returns the bindExp of a variable if available otherwise fails."
   input BackendDAE.Var v;
   output DAE.Exp sv;
 algorithm
-  sv := match(v)
-    local DAE.Exp e;
-    case (BackendDAE.VAR(bindExp = SOME(e))) then e;
-   end match;
+  BackendDAE.VAR(bindExp=SOME(sv)) := v;
 end varBindExp;
 
 public function varHasConstantBindExp
@@ -415,11 +387,14 @@ public function varHasConstantBindExp
   output Boolean  out;
 algorithm
   out := match(v)
-    local DAE.Exp e;
-    case (BackendDAE.VAR(bindExp = SOME(e)))
-      then Expression.isConst(e);
+    local
+      DAE.Exp e;
+
+    case (BackendDAE.VAR(bindExp=SOME(e)))
+    then Expression.isConst(e);
+
     else false;
-   end match;
+  end match;
 end varHasConstantBindExp;
 
 public function varHasBindExp
@@ -428,40 +403,46 @@ public function varHasBindExp
   output Boolean  out;
 algorithm
   out := match(v)
-    local DAE.Exp e;
+    local
+      DAE.Exp e;
+
     case (BackendDAE.VAR(bindExp = SOME(_)))
-      then true;
+    then true;
+
     else false;
-   end match;
+  end match;
 end varHasBindExp;
 
-public function varBindExpStartValue
-"author: Frenkel TUD 2010-12
+public function varBindExpStartValue "author: Frenkel TUD 2010-12
   Returns the bindExp or the start value if no bind is there of a variable."
   input BackendDAE.Var v;
   output DAE.Exp sv;
 algorithm
   sv := match(v)
-    local DAE.Exp e;
-    case (BackendDAE.VAR(bindExp = SOME(e))) then e;
-    else
-      varStartValueFail(v);
-   end match;
+    local
+      DAE.Exp e;
+
+    case (BackendDAE.VAR(bindExp=SOME(e)))
+    then e;
+
+    else varStartValueFail(v);
+  end match;
 end varBindExpStartValue;
 
-public function varStateSelect
-"author: PA
+public function varStateSelect "author: PA
   Extracts the state select attribute of a variable. If no stateselect explicilty set, return
   StateSelect.default"
   input BackendDAE.Var inVar;
   output DAE.StateSelect outStateSelect;
 algorithm
-  outStateSelect:=
-  matchcontinue (inVar)
+  outStateSelect := matchcontinue (inVar)
     local
       DAE.StateSelect stateselect;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption=SOME(stateselect))))) then stateselect;
-    case (_) then DAE.DEFAULT();
+
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(stateSelectOption=SOME(stateselect)))))
+    then stateselect;
+
+    else DAE.DEFAULT();
   end matchcontinue;
 end varStateSelect;
 
@@ -491,8 +472,7 @@ algorithm
   outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
 end setVarStateSelect;
 
-public function varStateDerivative
-"author: Frenkel TUD 2013-01
+public function varStateDerivative "author: Frenkel TUD 2013-01
   Returns the name of the Derivative. Is no Derivative known the function will fail."
   input BackendDAE.Var inVar;
   output DAE.ComponentRef dcr;
@@ -500,8 +480,7 @@ algorithm
   BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(dcr))) := inVar;
 end varStateDerivative;
 
-public function varHasStateDerivative
-"author: Frenkel TUD 2013-01
+public function varHasStateDerivative "author: Frenkel TUD 2013-01
   Returns the name of the Derivative. Is no Derivative known the function will fail."
   input BackendDAE.Var inVar;
   output Boolean b;
@@ -509,7 +488,7 @@ algorithm
   b := match(inVar)
     case BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(_))) then true;
     else false;
-end match;
+  end match;
 end varHasStateDerivative;
 
 public function setStateDerivative "author: Frenkel TUD
@@ -517,36 +496,33 @@ public function setStateDerivative "author: Frenkel TUD
   input BackendDAE.Var inVar;
   input Option<DAE.ComponentRef> dcr;
   output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef a;
+  Integer indx;
+  DAE.VarDirection c;
+  DAE.VarParallelism prl;
+  BackendDAE.Type d;
+  Option<DAE.Exp> e;
+  Option<Values.Value> f;
+  list<DAE.Dimension> g;
+  DAE.ElementSource source;
+  Option<DAE.VariableAttributes> oattr;
+  Option<SCode.Comment> s;
+  DAE.ConnectorType ct;
 algorithm
-  outVar := match (inVar,dcr)
-    local
-      DAE.ComponentRef a;
-      Integer indx;
-      DAE.VarDirection c;
-      DAE.VarParallelism prl;
-      BackendDAE.Type d;
-      Option<DAE.Exp> e;
-      Option<Values.Value> f;
-      list<DAE.Dimension> g;
-      DAE.ElementSource source;
-      Option<DAE.VariableAttributes> oattr;
-      Option<SCode.Comment> s;
-      DAE.ConnectorType ct;
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = BackendDAE.STATE(index=indx),
-              varDirection = c,
-              varParallelism = prl,
-              varType = d,
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              source = source,
-              values = oattr,
-              comment = s,
-              connectorType = ct),_)
-      then BackendDAE.VAR(a,BackendDAE.STATE(indx,dcr),c,prl,d,e,f,g,source,oattr,s,ct);
-  end match;
+  BackendDAE.VAR(varName=a,
+              varKind=BackendDAE.STATE(index=indx),
+              varDirection=c,
+              varParallelism=prl,
+              varType=d,
+              bindExp=e,
+              bindValue=f,
+              arryDim=g,
+              source=source,
+              values=oattr,
+              comment=s,
+              connectorType=ct) := inVar;
+  outVar := BackendDAE.VAR(a,BackendDAE.STATE(indx,dcr),c,prl,d,e,f,g,source,oattr,s,ct);
 end setStateDerivative;
 
 public function getVariableAttributefromType
@@ -560,12 +536,10 @@ algorithm
     case DAE.T_BOOL(source=_) then DAE.VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
     case DAE.T_STRING(source=_) then DAE.VAR_ATTR_STRING(NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
     case DAE.T_ENUMERATION(source=_) then DAE.VAR_ATTR_ENUMERATION(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
-    else
-      equation
-        // repord a warning on failtrace
-        Debug.fprint(Flags.FAILTRACE,"getVariableAttributefromType called with unsopported Type!\n");
-      then
-        DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+    else equation
+      // repord a warning on failtrace
+      Debug.fprint(Flags.FAILTRACE,"getVariableAttributefromType called with unsopported Type!\n");
+    then DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
   end match;
 end getVariableAttributefromType;
 
@@ -652,16 +626,11 @@ algorithm
   outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
 end setUnit;
 
-public function varNominalValue
-"author: Frenkel TUD"
+public function varNominalValue "author: Frenkel TUD"
   input BackendDAE.Var inVar;
   output DAE.Exp outExp;
 algorithm
-  outExp:=
-  match (inVar)
-    local DAE.Exp e;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))))) then e;
-  end match;
+  BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(nominal=SOME(outExp)))) := inVar;
 end varNominalValue;
 
 public function setVarNominalValue "author: Frenkel TUD
@@ -691,58 +660,36 @@ algorithm
 end setVarNominalValue;
 
 public function varType "author: PA
-
-  extracts the type of a variable.
-"
+  extracts the type of a variable"
   input BackendDAE.Var inVar;
   output BackendDAE.Type outType;
 algorithm
-  outType:=
-  match (inVar)
-    local BackendDAE.Type tp;
-    case (BackendDAE.VAR(varType = tp)) then tp;
-  end match;
+  BackendDAE.VAR(varType=outType) := inVar;
 end varType;
 
 public function varKind "author: PA
-  extracts the kind of a variable."
+  extracts the kind of a variable"
   input BackendDAE.Var inVar;
   output BackendDAE.VarKind outVarKind;
 algorithm
-  outVarKind:=
-  match (inVar)
-    local BackendDAE.VarKind kind;
-    case (BackendDAE.VAR(varKind = kind)) then kind;
-  end match;
+  BackendDAE.VAR(varKind=outVarKind) := inVar;
 end varKind;
 
 public function varBindValue "author: PA
-
-  extracts the bindValue of a variable.
-"
+  extracts the bindValue of a variable"
   input BackendDAE.Var inVar;
   output Values.Value outBindValue;
 algorithm
-  outBindValue:=
-  match (inVar)
-    local Values.Value bindValue;
-    case (BackendDAE.VAR(bindValue = SOME(bindValue))) then bindValue;
-  end match;
+  BackendDAE.VAR(bindValue=SOME(outBindValue)) := inVar;
 end varBindValue;
 
 public function varNominal "author: PA
-
   Extacts the nominal attribute of a variable. If the variable has no
-  nominal value, the function fails.
-"
+  nominal value, the function fails."
   input BackendDAE.Var inVar;
   output Real outReal;
 algorithm
-  outReal := match (inVar)
-    local
-      Real nominal;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(nominal=SOME(DAE.RCONST(nominal)))))) then nominal;
-  end match;
+  BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(nominal=SOME(DAE.RCONST(outReal))))) := inVar;
 end varNominal;
 
 public function varCref "author: PA
@@ -758,11 +705,10 @@ public function isStateVar
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inVar)
+  outBoolean := match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(index=_))) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isStateVar;
 
 public function isState
@@ -771,16 +717,12 @@ public function isState
   output Boolean outBool;
 algorithm
   outBool:=
-  matchcontinue(inCref,inVars)
-    local
-      DAE.ComponentRef cr;
-      BackendDAE.Variables vars;
-    case(cr,vars)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE(index=_)) :: _),_) = getVar(cr, vars);
-      then
-        true;
-    case(_,_) then false;
+  matchcontinue(inCref, inVars)
+    case(_, _) equation
+      ((BackendDAE.VAR(varKind = BackendDAE.STATE(index=_)) :: _),_) = getVar(inCref, inVars);
+    then true;
+
+    else false;
   end matchcontinue;
 end isState;
 
@@ -790,139 +732,110 @@ public function isNonStateVar
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inVar)
-    case _
-    equation
+  outBoolean := matchcontinue (inVar)
+    case _ equation
       failIfNonState(inVar);
-     then true;
-    case (_) then false;
+    then true;
+
+    else false;
   end matchcontinue;
 end isNonStateVar;
 
-  public function varHasUncertainValueRefine
-"
-  author: Daniel Hedberg, 2011-01
+public function varHasUncertainValueRefine "author: Daniel Hedberg, 2011-01
   modified by: Leonardo Laguna, 2012-01
 
   Returns true if the specified variable has the attribute uncertain and the
-  value of it is Uncertainty.refine, false otherwise.
-"
+  value of it is Uncertainty.refine, false otherwise."
   input BackendDAE.Var var;
   output Boolean b;
 algorithm
   b := matchcontinue (var)
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(uncertainOption = SOME(DAE.REFINE()))))) then true;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(uncertainOption = SOME(DAE.REFINE()))))) then true;
-    case (_) then false;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(uncertainOption=SOME(DAE.REFINE()))))) then true;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_INT(uncertainOption=SOME(DAE.REFINE()))))) then true;
+    else false;
   end matchcontinue;
 end varHasUncertainValueRefine;
 
-public function varDistribution
-"
-  author: Peter Aronsson, 2012-05
-
-  Returns Distribution record of a variable.
-"
+public function varDistribution "author: Peter Aronsson, 2012-05
+  Returns Distribution record of a variable."
   input BackendDAE.Var var;
   output DAE.Distribution d;
 algorithm
   d := match (var)
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(distributionOption = SOME(d))))) then d;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(distributionOption  = SOME(d))))) then d;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(distributionOption=SOME(d))))) then d;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_INT(distributionOption=SOME(d))))) then d;
   end match;
 end varDistribution;
 
-public function varTryGetDistribution
-"
-  author: Peter Aronsson, 2012-05
-
-  Returns Distribution record of a variable.
-"
+public function varTryGetDistribution "author: Peter Aronsson, 2012-05
+  Returns Distribution record of a variable."
   input BackendDAE.Var var;
   output Option<DAE.Distribution> dout;
   protected DAE.Distribution d;
 algorithm
   dout := match (var)
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(distributionOption = SOME(d))))) then SOME(d);
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(distributionOption  = SOME(d))))) then SOME(d);
-    case (_) then NONE();
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(distributionOption=SOME(d))))) then SOME(d);
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_INT(distributionOption=SOME(d))))) then SOME(d);
+    else NONE();
   end match;
 end varTryGetDistribution;
 
-public function varUncertainty
-"
-  author: Peter Aronsson, 2012-05
-
-  Returns Uncertainty of a variable.
-"
+public function varUncertainty "author: Peter Aronsson, 2012-05
+  Returns Uncertainty of a variable."
   input BackendDAE.Var var;
   output DAE.Uncertainty u;
 algorithm
   u := match (var)
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(uncertainOption = SOME(u))))) then u;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(uncertainOption  = SOME(u))))) then u;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(uncertainOption=SOME(u))))) then u;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_INT(uncertainOption=SOME(u))))) then u;
   end match;
 end varUncertainty;
 
-public function varHasDistributionAttribute
-"
-  author: Peter Aronsson, 2012-05
-
-  Returns true if the specified variable has the attribute distribution set.
-"
+public function varHasDistributionAttribute "author: Peter Aronsson, 2012-05
+  Returns true if the specified variable has the attribute distribution set."
   input BackendDAE.Var var;
   output Boolean b;
 algorithm
-  b := matchcontinue (var)
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(distributionOption = SOME(_))))) then true;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(distributionOption  = SOME(_))))) then true;
-    case (_) then false;
-  end matchcontinue;
+  b := match (var)
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(distributionOption=SOME(_))))) then true;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_INT(distributionOption=SOME(_))))) then true;
+    else false;
+  end match;
 end varHasDistributionAttribute;
 
-public function varHasUncertaintyAttribute
-"
-  author: Peter Aronsson, 2012-05
-
-  Returns true if the specified variable has the attribute uncertain set.
-"
+public function varHasUncertaintyAttribute "author: Peter Aronsson, 2012-05
+  Returns true if the specified variable has the attribute uncertain set."
   input BackendDAE.Var var;
   output Boolean b;
 algorithm
-  b := matchcontinue (var)
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(uncertainOption = SOME(_))))) then true;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(uncertainOption  = SOME(_))))) then true;
-    case (_) then false;
-  end matchcontinue;
+  b := match (var)
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(uncertainOption=SOME(_))))) then true;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_INT(uncertainOption=SOME(_))))) then true;
+    else false;
+  end match;
 end varHasUncertaintyAttribute;
 
-protected function failIfNonState
-"Fails if the given variable kind is state."
+protected function failIfNonState "Fails if the given variable kind is state."
   input BackendDAE.Var inVar;
 algorithm
-  _ :=
-  match (inVar)
-    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE())) then ();
-    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER())) then ();
-    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())) then ();
-    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())) then ();
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())) then ();
-    case (BackendDAE.VAR(varKind = BackendDAE.OPT_CONSTR())) then ();
-      case (BackendDAE.VAR(varKind = BackendDAE.OPT_FCONSTR())) then ();
+  _ := match (inVar)
+    case (BackendDAE.VAR(varKind=BackendDAE.VARIABLE())) then ();
+    case (BackendDAE.VAR(varKind=BackendDAE.DUMMY_DER())) then ();
+    case (BackendDAE.VAR(varKind=BackendDAE.DUMMY_STATE())) then ();
+    case (BackendDAE.VAR(varKind=BackendDAE.DISCRETE())) then ();
+    case (BackendDAE.VAR(varKind=BackendDAE.STATE_DER())) then ();
+    case (BackendDAE.VAR(varKind=BackendDAE.OPT_CONSTR())) then ();
+    case (BackendDAE.VAR(varKind=BackendDAE.OPT_FCONSTR())) then ();
   end match;
 end failIfNonState;
 
-public function isDummyStateVar
-"Returns true for dummy state variables, false otherwise."
+public function isDummyStateVar "Returns true for dummy state variables, false otherwise."
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  match (inVar)
+  outBoolean := match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())) then true;
-  else
-   then false;
+    else false;
   end match;
 end isDummyStateVar;
 
@@ -931,25 +844,20 @@ public function isDummyDerVar
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  match (inVar)
+  outBoolean := match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER())) then true;
-  else
-   then false;
+    else false;
   end match;
 end isDummyDerVar;
 
-public function isStateDerVar
-"function: isStateDerVar
+public function isStateDerVar "
   Returns true for der(state) variables, false otherwise."
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  match (inVar)
+  outBoolean := match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())) then true;
-  else
-   then false;
+    else false;
   end match;
 end isStateDerVar;
 
@@ -958,27 +866,24 @@ public function isStateorStateDerVar
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  match (inVar)
+  outBoolean := match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(index=_))) then true;
     case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())) then true;
-  else
-   then false;
+    else false;
   end match;
 end isStateorStateDerVar;
 
 public function isVarDiscrete
-" This functions checks if BackendDAE.Var is discrete"
+"This functions checks if BackendDAE.Var is discrete"
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
-  outBoolean :=
-  match (inVar)
+  outBoolean := match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())) then true;
     case (BackendDAE.VAR(varType = DAE.T_INTEGER(source = _))) then true;
     case (BackendDAE.VAR(varType = DAE.T_BOOL(source = _))) then true;
     case (BackendDAE.VAR(varType = DAE.T_ENUMERATION(source = _))) then true;
-    case (_) then false;
+    else false;
   end match;
 end isVarDiscrete;
 
@@ -998,13 +903,16 @@ algorithm
     local
       BackendDAE.Var v;
       list<BackendDAE.Var> vs;
-    case (v :: _)
-      equation
-        true = isVarDiscrete(v);
-      then
-        true;
-    case (_ :: vs) then hasDiscreteVar(vs);
-    case ({}) then false;
+
+    case (v :: _) equation
+      true = isVarDiscrete(v);
+    then true;
+
+    case (_ :: vs)
+    then hasDiscreteVar(vs);
+
+    case ({})
+    then false;
   end matchcontinue;
 end hasDiscreteVar;
 
@@ -1017,6 +925,7 @@ algorithm
     local
       BackendDAE.Var v;
       list<BackendDAE.Var> vs;
+
     case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_REAL(source = _)) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_ARRAY(ty=DAE.T_REAL(source = _))) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.STATE(index=_)) :: _)) then true;
@@ -1039,15 +948,13 @@ algorithm
       BackendDAE.VarKind kind;
       BackendDAE.Type typeVar;
       list<BackendDAE.VarKind> kind_lst;
+
     /* Real non discrete variable */
-    case (BackendDAE.VAR(varKind = kind, varType = DAE.T_REAL(_,_)))
-      equation
-        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DUMMY_DER(),
-                    BackendDAE.DUMMY_STATE()};
-      then listMember(kind, kind_lst);
+    case (BackendDAE.VAR(varKind = kind, varType = DAE.T_REAL(_,_))) equation
+      kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DUMMY_DER(), BackendDAE.DUMMY_STATE()};
+    then listMember(kind, kind_lst);
 
     else false;
-
   end match;
 end isVarNonDiscreteAlg;
 
@@ -1060,12 +967,12 @@ algorithm
       BackendDAE.VarKind kind;
       BackendDAE.Type typeVar;
       list<BackendDAE.VarKind> kind_lst;
+
     /* Real discrete variable */
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), varType = DAE.T_REAL(_,_)))
-      then true;
+    then true;
 
     else false;
-
   end match;
 end isVarDiscreteAlg;
 
@@ -1079,18 +986,15 @@ algorithm
       BackendDAE.VarKind kind;
       BackendDAE.Type typeVar;
       list<BackendDAE.VarKind> kind_lst;
+
     /* string variable */
-    case (BackendDAE.VAR(varKind = kind,
-                     varType = DAE.T_STRING(source = _)))
-      equation
-        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
-                    BackendDAE.DUMMY_STATE()};
-      then listMember(kind, kind_lst);
+    case (BackendDAE.VAR(varKind = kind, varType = DAE.T_STRING(source = _))) equation
+      kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(), BackendDAE.DUMMY_STATE()};
+    then listMember(kind, kind_lst);
+
     else false;
   end match;
 end isVarStringAlg;
-
-
 
 public function isVarIntAlg
   input BackendDAE.Var var;
@@ -2187,10 +2091,11 @@ protected function vararrayList2
   input list<BackendDAE.Var> inVarLst;
   output list<BackendDAE.Var> outVarLst;
 algorithm
-  outVarLst := match (arr,pos,inVarLst)
-    case (_,0,_) then inVarLst;
-    else vararrayList2(arr,pos-1,List.consOption(arr[pos],inVarLst));
-  end match;
+  if pos == 0 then
+    outVarLst := inVarLst;
+  else
+    outVarLst := vararrayList2(arr, pos-1, List.consOption(arr[pos], inVarLst));
+  end if;
 end vararrayList2;
 
 public function copyVariables
@@ -2228,16 +2133,12 @@ algorithm
   BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(numberOfElements = n)) := vars;
 end numVariables;
 
-protected function vararrayLength
-"author: PA
+protected function vararrayLength "author: PA
   Returns the number of variable in the BackendDAE.VariableArray"
   input BackendDAE.VariableArray inVariableArray;
   output Integer outInteger;
 algorithm
-  outInteger := match (inVariableArray)
-    local Integer n;
-    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n)) then n;
-  end match;
+  BackendDAE.VARIABLE_ARRAY(numberOfElements=outInteger) := inVariableArray;
 end vararrayLength;
 
 protected function vararrayAdd
@@ -3705,7 +3606,7 @@ public function getVarIndexFromVar
   input BackendDAE.Variables inVariables2;
   output list<Integer> v_lst;
 algorithm
-  ((_,v_lst)) := traverseBackendDAEVars(inVariables,traversingVarIndexFinder,(inVariables2,{}));
+  ((_, v_lst)) := traverseBackendDAEVars(inVariables, traversingVarIndexFinder, (inVariables2, {}));
 end getVarIndexFromVar;
 
 protected function traversingVarIndexFinder
@@ -3762,15 +3663,14 @@ algorithm
   end matchcontinue;
 end mergeVariables;
 
-protected function mergeVariables1
-"author: Frenkel TUD 2013-02"
+protected function mergeVariables1 "author: Frenkel TUD 2013-02"
  input BackendDAE.Var inVar;
  input BackendDAE.Variables inVars;
  output BackendDAE.Var v;
  output BackendDAE.Variables vars;
 algorithm
   v := inVar;
-  vars := addVar(inVar,inVars);
+  vars := addVar(inVar, inVars);
 end mergeVariables1;
 
 public function traverseBackendDAEVars "author: Frenkel TUD
@@ -3804,9 +3704,7 @@ algorithm
 end traverseBackendDAEVars;
 
 public function traverseBackendDAEVarsWithStop "author: Frenkel TUD
-
-  traverse all vars of a BackenDAE.Variables array.
-"
+  traverse all vars of a BackenDAE.Variables array."
   replaceable type Type_a subtypeof Any;
   input BackendDAE.Variables inVariables;
   input FuncExpType func;
@@ -4136,16 +4034,7 @@ algorithm
   end match;
 end mergeVariableOperations;
 
-public function greater
-  input BackendDAE.Var lhs;
-  input BackendDAE.Var rhs;
-  output Boolean greater;
-algorithm
-  greater := stringCompare(ComponentReference.printComponentRefStr(varCref(lhs)),ComponentReference.printComponentRefStr(varCref(rhs))) > 0;
-end greater;
-
-public function mergeAliasVars
-"author: Frenkel TUD 2011-04"
+public function mergeAliasVars "author: Frenkel TUD 2011-04"
   input BackendDAE.Var inVar;
   input BackendDAE.Var inAVar "the alias var";
   input Boolean negate;
