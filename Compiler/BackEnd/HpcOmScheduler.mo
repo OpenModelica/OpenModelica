@@ -354,7 +354,7 @@ protected
   list<HpcOmSimCode.Task> threadTasks;
 algorithm
   (allThreadTasks,threadId) := iThreadTasks;
-  threadTasks := List.fold6(iThreadTaskList, addSuccessorLocksToSchedule1, iTaskGraph, iAllCalcTasks, iSimVarMapping, iCommCosts, iCompTaskMapping, (threadId, iCreateLockFunction), {});
+  threadTasks := List.fold(iThreadTaskList, function addSuccessorLocksToSchedule1(iTaskGraph=iTaskGraph, iAllCalcTasks=iAllCalcTasks, iSimVarMapping=iSimVarMapping, iCommCosts=iCommCosts, iCompTaskMapping=iCompTaskMapping, iThreadIdLockFunction=(threadId, iCreateLockFunction)), {});
   allThreadTasks := arrayUpdate(allThreadTasks,threadId,threadTasks);
   oThreadTasks := ((allThreadTasks,threadId+1));
 end addSuccessorLocksToSchedule0;
@@ -481,7 +481,7 @@ protected function getLocksByPredecessorList "author: marcusw
 protected
   list<HpcOmSimCode.Task> tmpTaskList;
 algorithm
-  oLockTasks := List.fold5(iPredecessorList, getLockTasksByPredecessorList, iTask, iThreadIdx, iCommCosts, iCompTaskMapping, iSimVarMapping, {});
+  oLockTasks := List.fold(iPredecessorList, function getLockTasksByPredecessorList(iTask=iTask, iThreadIdx=iThreadIdx, iCommCosts=iCommCosts, iCompTaskMapping=iCompTaskMapping, iSimVarMapping=iSimVarMapping), {});
   oOutgoingDepTasks := oLockTasks;
 end getLocksByPredecessorList;
 
@@ -523,7 +523,7 @@ protected function getLockTasksByPredecessorListReverse
   output list<HpcOmSimCode.Task> oLockTasks;
   output list<HpcOmSimCode.Task> oOutgoingDepTasks;
 algorithm
-  oLockTasks := List.fold5(iPredecessorList, getLockTasksByPredecessorListReverse0, iTask, iThreadIdx, iCommCosts, iCompTaskMapping, iSimVarMapping, {});
+  oLockTasks := List.fold(iPredecessorList, function getLockTasksByPredecessorListReverse0(iTask=iTask, iThreadIdx=iThreadIdx, iCommCosts=iCommCosts, iCompTaskMapping=iCompTaskMapping, iSimVarMapping=iSimVarMapping), {});
   oOutgoingDepTasks := oLockTasks;
 end getLockTasksByPredecessorListReverse;
 
@@ -1864,7 +1864,7 @@ algorithm
   //    2.2.3. Add the thread to the advice-list of all successor tasks
   levelTasks := HpcOmTaskGraph.getLevelNodes(iGraph);
   adviceLists := arrayCreate(arrayLength(iGraph), {});
-  levelTaskLists := List.fold5(levelTasks, createFixedLevelScheduleForLevel, adviceLists, iGraph, iMeta, iNumberOfThreads, iSccSimEqMapping, {});
+  levelTaskLists := List.fold(levelTasks, function createFixedLevelScheduleForLevel(iAdviceList=adviceLists, iGraph=iGraph, iMeta=iMeta, iNumberOfThreads=iNumberOfThreads, iSccSimEqMapping=iSccSimEqMapping), {});
   levelTaskLists := listReverse(levelTaskLists);
   oSchedule := HpcOmSimCode.LEVELSCHEDULE(levelTaskLists,true);
   oMeta := iMeta;
@@ -1894,7 +1894,7 @@ algorithm
   levelExecCosts := HpcOmTaskGraph.getCostsForContractedNodes(iTasksOfLevel, exeCosts);
   threadReadyList := arrayCreate(iNumberOfThreads, 0.0);
   threadTaskList := arrayCreate(iNumberOfThreads, {});
-  _ := List.fold5(iTasksOfLevel, createFixedLevelScheduleForTask, levelExecCosts, iAdviceList, threadReadyList, iGraph, iMeta, threadTaskList);
+  _ := List.fold(iTasksOfLevel, function createFixedLevelScheduleForTask(iLevelExecCosts=levelExecCosts, iAdviceList=iAdviceList, iThreadReadyList=threadReadyList, iGraph=iGraph, iMeta=iMeta), threadTaskList);
   threadTaskList := Array.map(threadTaskList, listReverse);
   ((_,tasksOfLevel)) := Array.fold2(threadTaskList, createFixedLevelScheduleForLevel0, inComps, iSccSimEqMapping, (1,{}));
   taskList := HpcOmSimCode.PARALLELTASKLIST(tasksOfLevel);
@@ -2737,7 +2737,14 @@ protected
 algorithm
   HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,allCalcTasks=allCalcTasks) := iSchedule;
   threads := arrayList(threadTasks);
-  ((threads,outgoingDepTasks)) := List.fold6(threads,insertLocksInSchedule1,(iTaskGraph,iTaskGraphT),(taskAss,procAss),allCalcTasks,iCommCosts,iCompTaskMapping,iSimVarMapping,({},{}));
+  ((threads,outgoingDepTasks)) := List.fold(threads,function insertLocksInSchedule1(
+    iTaskGraphTransposed=(iTaskGraph,iTaskGraphT),
+    taskProcAss=(taskAss,procAss),
+    iAllCalcTasks=allCalcTasks,
+    iCommCosts=iCommCosts,
+    iCompTaskMapping=iCompTaskMapping,
+    iSimVarMapping=iSimVarMapping),
+    ({},{}));
   threads := List.filterOnTrue(threads,List.isNotEmpty);
   threads := List.map(threads,listReverse);
   threads := listReverse(threads);

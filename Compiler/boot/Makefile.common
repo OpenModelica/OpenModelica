@@ -19,15 +19,18 @@ generate-files-in-steps:
 GEN_DIR=build/
 
 bootstrap-from-tarball:
-	$(MAKE) -f $(defaultMakefileTarget) clean
+	$(MAKE) -f $(defaultMakefileTarget) clean OMC=.omc
 	tar xJf bootstrap-sources.tar.xz
-	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1
-	$(MAKE) -f $(defaultMakefileTarget) clean
+	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=.omc
+	@echo "Bootstrapping phase 1/3 completed"
+	$(MAKE) -f $(defaultMakefileTarget) clean OMC=$(BOOTSTRAP_OMC)
 	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC=$(BOOTSTRAP_OMC)
-	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1
-	$(MAKE) -f $(defaultMakefileTarget) clean
+	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=$(BOOTSTRAP_OMC)
+	@echo "Bootstrapping phase 2/3 completed"
+	$(MAKE) -f $(defaultMakefileTarget) clean OMC=$(BOOTSTRAP_OMC)
 	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC=$(BOOTSTRAP_OMC)
-	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1
+	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=$(BOOTSTRAP_OMC)
+	@echo "Bootstrapping phase 3/3 completed"
 
 bootstrap-from-compiled: make-separate
 

@@ -3001,9 +3001,12 @@ public function fold1<T, FT, ArgT1>
     output FT outFoldArg;
   end FoldFunc;
 algorithm
+/*
   for e in inList loop
     outResult := inFoldFunc(e, inExtraArg, outResult);
   end for;
+ */
+  outResult := fold(inList, function inFoldFunc(inArg=inExtraArg), outResult);
 end fold1;
 
 public function fold1r<T, FT, ArgT1>
@@ -3250,40 +3253,6 @@ algorithm
         inExtraArg4, inExtraArg5, outResult);
   end for;
 end fold5;
-
-public function fold6<T, FT, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5, ArgT6>
-  "Takes a list and a function operating on list elements having an extra
-   argument that is 'updated', thus returned from the function, and five constant
-   arguments that is not updated. fold will call the function for each element in
-   a sequence, updating the start value."
-  input list<T> inList;
-  input FoldFunc inFoldFunc;
-  input ArgT1 inExtraArg1;
-  input ArgT2 inExtraArg2;
-  input ArgT3 inExtraArg3;
-  input ArgT4 inExtraArg4;
-  input ArgT5 inExtraArg5;
-  input ArgT6 inExtraArg6;
-  input FT inStartValue;
-  output FT outResult := inStartValue;
-
-  partial function FoldFunc
-    input T inElement;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    input ArgT3 inArg3;
-    input ArgT4 inArg4;
-    input ArgT5 inArg5;
-    input ArgT6 inArg6;
-    input FT inFoldArg;
-    output FT outFoldArg;
-  end FoldFunc;
-algorithm
-  for e in inList loop
-    outResult := inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3,
-        inExtraArg4, inExtraArg5, inExtraArg6, outResult);
-  end for;
-end fold6;
 
 public function mapFold<TI, TO, FT>
   "Takes a list, an extra argument and a function. The function will be applied

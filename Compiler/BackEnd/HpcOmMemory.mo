@@ -1136,7 +1136,7 @@ encapsulated package HpcOmMemory
           true = intLe(1, graphCount);
           knownEdges = arrayCreate(iNumberOfNodes,{});
           (tmpGraphInfo,(_,_),(_,clGroupNodeIdx)) = GraphML.addGroupNode("CL_GoupNode", 1, false, "CL", iGraphInfo);
-          tmpGraphInfo = List.fold5(cacheLinesFloat, appendCacheLineMapToGraph, cacheVariables, iSchedulerInfo, (clGroupNodeIdx,iAttributeIdc), iScVarTaskMapping, iVarNameSCVarIdxMapping, tmpGraphInfo);
+          tmpGraphInfo = List.fold(cacheLinesFloat, function appendCacheLineMapToGraph(iCacheVariables=cacheVariables, iSchedulerInfo=iSchedulerInfo, iTopGraphAttThreadIdIdx=(clGroupNodeIdx,iAttributeIdc), iScVarTaskMapping=iScVarTaskMapping, iVarNameSCVarIdxMapping=iVarNameSCVarIdxMapping), tmpGraphInfo);
           //((_,knownEdges,tmpGraphInfo)) = Array.fold3(arrayGet(iEqSimCodeVarMapping,1), appendCacheLineEdgesToGraphTraverse, ieqCompMapping, iCompNodeMapping, iScVarTaskMapping, (1,knownEdges,tmpGraphInfo));
           ((_,tmpGraphInfo)) = Array.fold(iNodeSimCodeVarMapping, appendCacheLineEdgeToGraphSolvedVar, (1,tmpGraphInfo));
         then tmpGraphInfo;
@@ -1205,7 +1205,7 @@ encapsulated package HpcOmMemory
     CACHELINEMAP(idx=idx,entries=entries) := iCacheLineMap;
     (iTopGraphIdx, iAttThreadIdIdx) := iTopGraphAttThreadIdIdx;
     (tmpGraphInfo, (_,_),(_,graphIdx)) := GraphML.addGroupNode("CL_Meta_" +& intString(idx), iTopGraphIdx, true, "CL" +& intString(idx), iGraphInfo);
-    oGraphInfo := List.fold5(entries, appendCacheLineEntryToGraph, iCacheVariables, iSchedulerInfo, (graphIdx,iAttThreadIdIdx), iScVarTaskMapping, iVarNameSCVarIdxMapping, tmpGraphInfo);
+    oGraphInfo := List.fold(entries, function appendCacheLineEntryToGraph(iCacheVariables=iCacheVariables, iSchedulerInfo=iSchedulerInfo, iTopGraphAttThreadIdIdx=(graphIdx,iAttThreadIdIdx), iScVarTaskMapping=iScVarTaskMapping, iVarNameSCVarIdxMapping=iVarNameSCVarIdxMapping), tmpGraphInfo);
   end appendCacheLineMapToGraph;
 
   protected function appendCacheLineEntryToGraph

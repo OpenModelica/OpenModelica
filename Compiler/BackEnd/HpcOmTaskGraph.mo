@@ -2521,12 +2521,13 @@ algorithm
         (graphInfo,(_,critPathAttIdx)) = GraphML.addAttribute("", "CriticalPath", GraphML.TYPE_STRING(), GraphML.TARGET_GRAPH(), graphInfo);
         graphInfo = GraphML.addGraphAttributeValue((critPathAttIdx, iCriticalPathInfo), iGraphIdx, graphInfo);
         nodeIdc = List.intRange(arrayLength(iGraph));
-        ((graphInfo,_)) = List.fold5(nodeIdc, addNodeToGraphML, (iGraph, iGraphData),
-                                     (nameAttIdx,opCountAttIdx,calcTimeAttIdx,taskIdAttIdx,yCoordAttIdx,commCostAttIdx,commVarsAttIdx,
+        ((graphInfo,_)) = List.fold(nodeIdc, function addNodeToGraphML(
+                                     tGraphDataTuple=(iGraph, iGraphData),
+                                     attIdc=(nameAttIdx,opCountAttIdx,calcTimeAttIdx,taskIdAttIdx,yCoordAttIdx,commCostAttIdx,commVarsAttIdx,
                                       commVarsIntAttIdx,commVarsFloatAttIdx,commVarsBoolAttIdx,simCodeEqAttIdx,threadIdAttIdx,taskNumberAttIdx,annotAttIdx),
-                                     iSccSimEqMapping,
-                                     (iCriticalPath,iCriticalPathWoC,iSchedulerInfo, iAnnotationInfo),
-                                     iGraphDumpOptions,
+                                     sccSimEqMapping=iSccSimEqMapping,
+                                     iSchedulerInfoCritPath=(iCriticalPath,iCriticalPathWoC,iSchedulerInfo, iAnnotationInfo),
+                                     iGraphDumpOptions=iGraphDumpOptions),
                                      (graphInfo,iGraphIdx));
       then graphInfo;
   end match;
@@ -2625,7 +2626,13 @@ algorithm
                                               {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)),((yCoordAttIdx,yCoordString)),((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString)),((annotationAttIdx,annotationString))},
                                               graphIdx,
                                               tmpGraph);
-        tmpGraph = List.fold5(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, (commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx), (criticalPath,criticalPathWoC), iGraphDumpOptions, tmpGraph);
+        tmpGraph = List.fold(childNodes, function addDepToGraph(
+           parentIdx=nodeIdx,
+           tGraphDataIn=tGraphDataIn,
+           iCommAttIdc=(commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx),
+           iCriticalPathEdges=(criticalPath,criticalPathWoC),
+           iGraphDumpOptions=iGraphDumpOptions),
+           tmpGraph);
       then
         ((tmpGraph,graphIdx));
     case(_,(tGraphIn,tGraphDataIn),_,_,(criticalPath,criticalPathWoC,schedulerInfo,annotationInfo),GRAPHDUMPOPTIONS(visualizeTaskStartAndFinishTime=visualizeTaskStartAndFinishTime,visualizeTaskCalcTime=visualizeTaskCalcTime),(tmpGraph,graphIdx))
@@ -2672,7 +2679,13 @@ algorithm
                                       {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((yCoordAttIdx,yCoordString)),((taskIdAttIdx,componentsString)), ((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString)),((annotationAttIdx,annotationString))},
                                       graphIdx,
                                       tmpGraph);
-        tmpGraph = List.fold5(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, (commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx), (criticalPath,criticalPathWoC), iGraphDumpOptions, tmpGraph);
+        tmpGraph = List.fold(childNodes, function addDepToGraph(
+           parentIdx=nodeIdx,
+           tGraphDataIn=tGraphDataIn,
+           iCommAttIdc=(commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx),
+           iCriticalPathEdges=(criticalPath,criticalPathWoC),
+           iGraphDumpOptions=iGraphDumpOptions),
+           tmpGraph);
       then
         ((tmpGraph,graphIdx));
     else
