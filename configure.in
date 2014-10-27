@@ -3,9 +3,6 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.63])
 AC_INIT([OpenModelica],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
 AC_SUBST(date)
-AC_SUBST(rmlc_bin)
-AC_SUBST(rmlhome)
-AC_SUBST(rmlinc)
 AC_SUBST(omc_antlr_jar)
 AC_SUBST(antlrinc)
 AC_SUBST(antlrlib)
@@ -43,7 +40,6 @@ AC_SUBST(IPOPT_LDFLAGS)
 AC_SUBST(IPOPT_CFLAGS)
 AC_SUBST(QMAKE)
 AC_SUBST(EXE)
-AC_SUBST(RML_TRACE)
 AC_SUBST(SOURCE_REVISION)
 AC_SUBST(LIBF2C)
 AC_SUBST(OMSHELL_TERMINAL)
@@ -215,54 +211,6 @@ elif "$OMC" ++v > /dev/null 2>&1; then
 else
   AC_MSG_RESULT([failed (tried $OMC). Building it through bootstrapping (you might end up unable to recompile omc if you modify source code).])
   OMC="$ac_pwd$ac_dir_suffix/build/bin/omc"
-fi
-
-AC_ARG_WITH(rml,  [  --with-rml=[no]       (use =no if you are using experimental bootstrapping)],[WANT_RML="$withval";OMCTARGET=omc-rml],[WANT_RML="yes";OMCTARGET=omc-rml])
-
-if test "$WANT_RML" != "no"; then
-AC_MSG_CHECKING([for \$RMLHOME])
-if test ! -z "$RMLHOME" ; then
-  rmlhome=$RMLHOME
-  AC_MSG_RESULT([$RMLHOME])
-
-  AC_MSG_CHECKING([for rmlc])
-  if test -x $rmlhome/bin/rmlc ; then
-    rmlc_bin=$rmlhome/bin/rmlc
-    AC_MSG_RESULT([yes])
-  else
-    AC_MSG_ERROR([rmlc not found in \$rmlhome/bin])
-  fi
-
-else
-  AC_MSG_RESULT([no])
-  AC_PATH_PROG(RMLC,rmlc)
-  if test -z $RMLC ; then
-    AC_MSG_ERROR([RML not installed])
-  fi
-  rmlhome=`dirname \`dirname $RMLC\``
-  rmlc_bin=$RMLC
-fi
-
-AC_MSG_CHECKING([for rml includefiles in $rmlhome])
-if test ! -f "$rmlhome/include/plain/rml.h" ; then
-  AC_MSG_ERROR([rml headers not found])
-  AC_MSG_RESULT([no])
-else
-  AC_MSG_RESULT([yes])
-fi
-rmlinc=$rmlhome/include/plain/
-
-AC_MSG_CHECKING([if the user wants RML -trace support])
-RML_TRACE=",-ftrace"
-AC_ARG_ENABLE(rml-trace,        [  --disable-rml-trace           RML -trace support (enabled by default)],[test "xno" = x"$enableval" && RML_TRACE=""])
-if test -z "$RML_TRACE" ; then
-AC_MSG_RESULT([no])
-else
-AC_MSG_RESULT([yes])
-fi
-else
-  rmlhome=CONFIGUREDWITHOUTRMLDONTTRYTHISMAKEFILETARGETAGAIN
-  OMCTARGET=omc-bootstrapped
 fi
 
 dnl Checks for libraries.
