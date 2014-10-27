@@ -6432,6 +6432,7 @@ algorithm
     case (DAE.CREF(componentRef=cr), _)
       equation
         crefs = ComponentReference.expandCref(cr, true);
+        false = valueEq({cr},crefs); // Not an expanded element
         expLst = List.map(crefs, Expression.crefExp);
         List.foldAllValue(expLst, createSingleComplexEqnCode3, true, iht);
       then (true, iht);
