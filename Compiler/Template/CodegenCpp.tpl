@@ -7,7 +7,6 @@ import CodegenUtil.*;
 
 
 
-
 template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
 ::=
   match simCode
@@ -1403,7 +1402,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
    ,_terminate(terminate)
    {
      <%literals |> literal hasindex i0 fromindex 0 => literalExpConstImpl(literal,i0) ; separator="\n";empty%>
-   initialize();
+  
    }
 
    Functions::~Functions()
@@ -1415,10 +1414,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
             throw std::runtime_error(msg);
     }
 
-  void Functions::initialize()
-  {
-    <%initParams1(functions, simCode)%>
-  }
+  
 
     <%functionBodies(functions,simCode,useFlatArrayNotation)%>
   >>
@@ -1496,7 +1492,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        //Literals
         <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n";empty%>
      private:
-     void initialize();
+    
 
        //Function return variables
        <%functionHeaderBodies3(functions,simCode)%>
@@ -1506,83 +1502,163 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        double* __z;
        double* __zDot;
 
-     // function paramter variables
-     <%allocateParams1(functions, simCode)%>
+ 
 
      };
   >>
 
 end simulationFunctionsHeaderFile;
 
-template allocateParams1( list<Function> functions, SimCode simCode)
+template declFunParams( list<Function> functions, SimCode simCode)
 ::=
-let params = (functions |> fn => allocateParams2(fn, simCode) ;separator="\n")
+let params = (functions |> fn => declFunParams2(fn, simCode) ;separator="\n")
 <<
 <%params%>
 >>
-end allocateParams1;
+end declFunParams;
 
-template allocateParams2(Function fn, SimCode simCode)
+template declFunParams2(Function fn, SimCode simCode)
 ::=
 match fn
 case FUNCTION(__) then
 let params = (variableDeclarations |> var hasindex i1 fromindex 1 =>
-      paramInit(var, "", i1,simCode) ; separator="" /* increase the counter! */)
+      funParamDecl(var, simCode) ; separator="" /* increase the counter! */)
 <<
 <%params%>
 >>
-end allocateParams2;
+end declFunParams2;
 
-template paramInit(Variable var, String outStruct, Integer i,SimCode simCode)
+template funParamDecl(Variable var, SimCode simCode)
 ::=
-let &varDecls = buffer "" /*BUFD*/
-let &varInits = buffer "" /*BUFD*/
-let dump  = match var
+match var
 case VARIABLE(__) then
   match kind
-    case PARAM(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
-    //case CONST(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
+    case PARAM(__) then  
+    <<
+      <%funParamDecl2(var,simCode, false)%>
+    >>
+    else
+    ''
   end match
-end match
-<<
-<%varDecls%>
->>
-end paramInit;
+else
+''
+end funParamDecl;
+
+
+template funParamDecl2(Variable var, SimCode simCode, Boolean useFlatArrayNotation)
+::=
+ match var
+case var as VARIABLE(__) then
+  let varName = '<%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>'
+  //let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits , &varDecls,simCode, useFlatArrayNotation);separator=",")
+  funParamDecl3(var,varName,instDims,simCode, useFlatArrayNotation)
+
+end funParamDecl2;
+
+
+
+template funParamDecl3(Variable var,String varName, list<DAE.Exp> instDims, SimCode simCode, Boolean useFlatArrayNotation)
+::=
+ let &varDecls = buffer "" /*BUFD*/ //should be empty
+  let &varInits = buffer "" /*BUFD*/ //should be empty
+  let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits , &varDecls,simCode,useFlatArrayNotation);separator=",")
+  match var
+  case var as VARIABLE(__) then
+  let type = '<%varType(var)%>'
+  let testinstDimsInit = (instDims |> exp => testDaeDimensionExp(exp);separator="")
+  let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits , &varDecls,simCode, useFlatArrayNotation);separator=",")
+  let arrayexpression1 = (if instDims then 'StatArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>,<%instDimsInit%>> <%varName%>;<%\n%>'
+  else '<%type%> <%varName%>')
+  let arrayexpression2 = (if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>> <%varName%>;<%\n%>'
+  else '<%type%> <%varName%>')
+  let paramdecl= match testinstDimsInit
+  case "" then
+     arrayexpression1
+  else
+    arrayexpression2
+  paramdecl  
+end funParamDecl3;
+
+
+
 
 template initParams1( list<Function> functions, SimCode simCode)
 ::=
-let params = (functions |> fn => initParams2(fn, simCode) ;separator="\n")
+let &varDecls = buffer "" /*BUFD*/
+let &varInits = buffer "" /*BUFD*/
+let _ = (functions |> fn => initParams2(fn,varDecls,varInits ,simCode) ;separator="\n")
 <<
-<%params%>
+<%varDecls%>
+<%varInits%>
 >>
 end initParams1;
 
-template initParams2(Function fn, SimCode simCode)
+template initParams2(Function fn, Text &varDecls /*BUFP*/, Text &varInits, SimCode simCode)
 ::=
 match fn
 case FUNCTION(__) then
-let params = (variableDeclarations |> var hasindex i1 fromindex 1 =>
-      paramInit2(var, "", i1,simCode) ; separator="" /* increase the counter! */)
-<<
-<%params%>
->>
+let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
+      paramInit2(var, "", i1,varDecls,varInits,simCode) ; separator="" /* increase the counter! */)
+""
 end initParams2;
 
-template paramInit2(Variable var, String outStruct, Integer i,SimCode simCode)
+template paramInit2(Variable var, String outStruct, Integer i, Text &varDecls /*BUFP*/, Text &varInits,SimCode simCode)
 ::=
-let &varDecls = buffer "" /*BUFD*/
-let &varInits = buffer "" /*BUFD*/
-let dump  = match var
+match var
 case VARIABLE(__) then
   match kind
-    case PARAM(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
-    //case CONST(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
-  end match
-end match
-<<
-<%varInits%>
->>
+    case PARAM(__) then  paramInit3(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, false)
+  else ''
+else
+''
 end paramInit2;
+
+
+template paramInit3(Variable var, String outStruct, Integer i, Text &varDecls /*BUFP*/, Text &varInits /*BUFP*/, SimCode simCode, Boolean useFlatArrayNotation)
+::=
+match var
+case var as VARIABLE(__) then
+  let varName = '<%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>'
+
+  let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits , &varDecls,simCode, useFlatArrayNotation);separator=",")
+
+  if instDims then
+    let testinstDimsInit = (instDims |> exp => testDaeDimensionExp(exp);separator="")
+    let temp = setDims(testinstDimsInit, varName , &varInits, instDimsInit)
+
+
+  (match var.value
+    case SOME(exp) then
+
+  let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits,simCode, useFlatArrayNotation)
+    let &varInits += defaultValue
+  let var_name = if outStruct then
+        '<%extVarName(var.name,simCode, useFlatArrayNotation)%>' else
+        '<%contextCref(var.name, contextFunction,simCode, useFlatArrayNotation)%>'
+   let defaultValue1 = '<%var_name%>.assign(<%daeExp(exp, contextFunction, &varInits  , &varDecls,simCode, useFlatArrayNotation)%>);<%\n%>'
+      let &varInits += defaultValue1
+    ""
+    else
+       let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits, simCode, useFlatArrayNotation)
+
+      let &varInits += defaultValue
+      ""
+   )
+  else
+    (match var.value
+    case SOME(exp) then
+      let defaultValue = '<%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%> = <%daeExp(exp, contextFunction, &varInits  /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)%>;<%\n%>'
+      let &varInits += defaultValue
+      " "
+    else
+      "")
+case var as FUNCTION_PTR(__) then
+  let &ignore = buffer ""
+  let &varDecls += functionArg(var,&ignore)
+  ""
+
+end paramInit3;
+
 
 
 
@@ -2711,7 +2787,7 @@ case FUNCTION(__) then
   //let retVar = if outVars then tempDecl(retType, &varDecls /*BUFD*/)
   //let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
   let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
-      notparamInit(var, "", i1, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, useFlatArrayNotation) ; empty /* increase the counter! */)
+      varInit(var, "", i1, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode, useFlatArrayNotation) ; empty /* increase the counter! */)
 
   //let addRootsInputs = (functionArguments |> var => addRoots(var) ;separator="\n")
   //let addRootsOutputs = (outVars |> var => addRoots(var) ;separator="\n")
@@ -2801,7 +2877,7 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
                   else
                   extFunCall(fn, &preExp /*BUFC*/, &varDecls /*BUFD*/, &inputAssign /*BUFD*/, &outputAssign /*BUFD*/, simCode, useFlatArrayNotation,true)
   let _ = ( outVars |> var hasindex i1 fromindex 1 =>
-            notparamInit(var, retVar, i1, &varDecls /*BUFD*/, &outVarInits /*BUFC*/,simCode,useFlatArrayNotation) ///TOODOO
+            varInit(var, retVar, i1, &varDecls /*BUFD*/, &outVarInits /*BUFC*/,simCode,useFlatArrayNotation) ///TOODOO
             ; empty /* increase the counter! */
           )
   let &outVarAssign = buffer ""

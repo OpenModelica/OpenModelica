@@ -112,7 +112,7 @@ algorithm
   // reset dumped file sequence number
   System.tmpTickResetIndex(0, Global.backendDAE_fileSequence);
   functionTree := FCore.getFunctionTree(inCache);
-  functionTree := renameFunctionParameter(functionTree);
+  //deactivated because of some codegen errors: functionTree := renameFunctionParameter(functionTree);
   (DAE.DAE(elems), functionTree, timeEvents) := processBuiltinExpressions(lst, functionTree);
   vars := BackendVariable.emptyVars();
   knvars := BackendVariable.emptyVars();
