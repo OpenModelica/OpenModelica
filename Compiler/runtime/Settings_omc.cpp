@@ -77,7 +77,7 @@ extern void Settings_setEcho(int _echo)
 
 extern const char* Settings_getVersionNr()
 {
-  return CONFIG_VERSION " (Bootstrapping version)";
+  return CONFIG_VERSION;
 }
 
 extern const char* Settings_getTempDirectoryPath()
