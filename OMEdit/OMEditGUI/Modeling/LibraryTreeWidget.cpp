@@ -550,7 +550,7 @@ void LibraryTreeWidget::createActions()
   mpViewClassAction->setStatusTip(Helper::viewClassTip);
   connect(mpViewClassAction, SIGNAL(triggered()), SLOT(showModelWidget()));
   // view documentation Action
-  mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/info-icon.png"), Helper::viewDocumentation, this);
+  mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/info-icon.svg"), Helper::viewDocumentation, this);
   mpViewDocumentationAction->setStatusTip(Helper::viewDocumentationTip);
   connect(mpViewDocumentationAction, SIGNAL(triggered()), SLOT(viewDocumentation()));
   // new Modelica Class Action
@@ -558,7 +558,7 @@ void LibraryTreeWidget::createActions()
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
   connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
   // instantiate Model Action
-  mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.png"), Helper::instantiateModel, this);
+  mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.svg"), Helper::instantiateModel, this);
   mpInstantiateModelAction->setStatusTip(Helper::instantiateModelTip);
   connect(mpInstantiateModelAction, SIGNAL(triggered()), SLOT(instantiateModel()));
   // check Model Action
@@ -1930,7 +1930,7 @@ void LibraryTreeWidget::loadLibraryComponent(LibraryTreeNode *pLibraryTreeNode)
       pixmap = libComponent->getComponentPixmap(Helper::iconSize);
       // if still the pixmap is null for some unknown reasons then used the pre defined image
       if (pixmap.isNull())
-        pLibraryTreeNode->setIcon(0, QIcon(":/Resources/icons/info-icon.png"));
+        pLibraryTreeNode->setIcon(0, QIcon(":/Resources/icons/info-icon.svg"));
       else
         pLibraryTreeNode->setIcon(0, QIcon(pixmap));
     }

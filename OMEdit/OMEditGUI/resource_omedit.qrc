@@ -6,33 +6,30 @@
         <file>Resources/icons/delete.svg</file>
         <file>Resources/icons/grid.svg</file>
         <file>Resources/icons/model.svg</file>
-        <file>Resources/icons/modeltext.png</file>
-        <file>Resources/icons/flatmodel.png</file>
+        <file>Resources/icons/modeltext.svg</file>
+        <file>Resources/icons/flatmodel.svg</file>
         <file>Resources/icons/new.svg</file>
-        <file>Resources/icons/open.png</file>
+        <file>Resources/icons/open.svg</file>
         <file>Resources/icons/paste.svg</file>
-        <file>Resources/icons/redo.png</file>
-        <file>Resources/icons/rotateanticlockwise.png</file>
-        <file>Resources/icons/rotateclockwise.png</file>
-        <file>Resources/icons/save.png</file>
-        <file>Resources/icons/saveall.png</file>
-        <file>Resources/icons/saveas.png</file>
+        <file>Resources/icons/rotateanticlockwise.svg</file>
+        <file>Resources/icons/rotateclockwise.svg</file>
+        <file>Resources/icons/save.svg</file>
+        <file>Resources/icons/saveall.svg</file>
+        <file>Resources/icons/saveas.svg</file>
         <file>Resources/icons/simulate.svg</file>
         <file>Resources/icons/simulate-equation.svg</file>
         <file>Resources/icons/simulate-debug.svg</file>
         <file>Resources/icons/simulation-center.svg</file>
-        <file>Resources/icons/tool.png</file>
-        <file>Resources/icons/undo.png</file>
         <file>Resources/css/stylesheet.qss</file>
         <file>Resources/icons/check.svg</file>
         <file>Resources/icons/check-all.svg</file>
-        <file>Resources/icons/rename.png</file>
-        <file>Resources/icons/zoomReset.png</file>
-        <file>Resources/icons/zoomIn.png</file>
-        <file>Resources/icons/zoomOut.png</file>
+        <file>Resources/icons/zoomReset.svg</file>
+        <file>Resources/icons/zoomIn.svg</file>
+        <file>Resources/icons/zoomOut.svg</file>
         <file>Resources/icons/vline.png</file>
         <file>Resources/icons/branch-closed.png</file>
         <file>Resources/icons/branch-open.png</file>
+        <file>Resources/icons/branch-end.png</file>
         <file>Resources/icons/branch-more.png</file>
         <file>Resources/icons/txt.svg</file>
         <file>Resources/icons/model-icon.svg</file>
@@ -42,17 +39,17 @@
         <file>Resources/icons/record-icon.svg</file>
         <file>Resources/icons/class-icon.svg</file>
         <file>Resources/icons/connector-icon.svg</file>
-        <file>Resources/icons/branch-end.png</file>
-        <file>Resources/icons/info-icon.png</file>
-        <file>Resources/icons/ellipse-shape.png</file>
-        <file>Resources/icons/text-shape.png</file>
-        <file>Resources/icons/line-shape.png</file>
-        <file>Resources/icons/rectangle-shape.png</file>
-        <file>Resources/icons/polygon-shape.png</file>
+        <file>Resources/icons/info-icon.svg</file>
+        <file>Resources/icons/ellipse-shape.svg</file>
+        <file>Resources/icons/text-shape.svg</file>
+        <file>Resources/icons/line-shape.svg</file>
+        <file>Resources/icons/rectangle-shape.svg</file>
+        <file>Resources/icons/polygon-shape.svg</file>
         <file>Resources/icons/search.png</file>
         <file>Resources/icons/next.png</file>
         <file>Resources/icons/previous.png</file>
         <file>Resources/icons/type-icon.svg</file>
+        <file>Resources/icons/bitmap-shape.svg</file>
         <file>Resources/icons/bitmap-shape.png</file>
         <file>Resources/icons/import-omnotebook.svg</file>
         <file>Resources/icons/export-omnotebook.svg</file>
@@ -64,7 +61,6 @@
         <file>Resources/icons/omshell.svg</file>
         <file>Resources/icons/fillstyle.png</file>
         <file>Resources/icons/linestyle.png</file>
-        <file>Resources/icons/modeltextoptions.png</file>
         <file>Resources/icons/line-dash.png</file>
         <file>Resources/icons/line-dash-dot.png</file>
         <file>Resources/icons/line-dash-dot-dot.png</file>
@@ -112,8 +108,8 @@
         <file>Resources/icons/options.png</file>
         <file>Resources/icons/general.png</file>
         <file>Resources/icons/about-us.png</file>
-        <file>Resources/icons/flip-horizontal.png</file>
-        <file>Resources/icons/flip-vertical.png</file>
+        <file>Resources/icons/flip-horizontal.svg</file>
+        <file>Resources/icons/flip-vertical.svg</file>
         <file>Resources/icons/connect-mode.png</file>
         <file>Resources/icons/export-xml.svg</file>
         <file>Resources/icons/clear.png</file>

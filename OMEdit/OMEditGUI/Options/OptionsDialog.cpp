@@ -674,7 +674,7 @@ void OptionsDialog::addListItems()
   pLibrariesItem->setText(Helper::libraries);
   // Modelica Text Item
   QListWidgetItem *pModelicaTextEditorItem = new QListWidgetItem(mpOptionsList);
-  pModelicaTextEditorItem->setIcon(QIcon(":/Resources/icons/modeltextoptions.png"));
+  pModelicaTextEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
   pModelicaTextEditorItem->setText(tr("Modelica Text Editor"));
   // Graphical Views Item
   QListWidgetItem *pGraphicalViewsItem = new QListWidgetItem(mpOptionsList);

@@ -412,7 +412,7 @@ void Component::createActions()
   mpViewClassAction->setStatusTip(Helper::viewClassTip);
   connect(mpViewClassAction, SIGNAL(triggered()), SLOT(viewClass()));
   // View Documentation Action
-  mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/info-icon.png"), Helper::viewDocumentation, mpGraphicsView);
+  mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/info-icon.svg"), Helper::viewDocumentation, mpGraphicsView);
   mpViewDocumentationAction->setStatusTip(Helper::viewDocumentationTip);
   connect(mpViewDocumentationAction, SIGNAL(triggered()), SLOT(viewDocumentation()));
 }

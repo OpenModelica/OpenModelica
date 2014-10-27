@@ -1892,7 +1892,7 @@ void MainWindow::createActions()
   //mpNewTLMFileAction->setShortcut(QKeySequence("Ctrl+x"));
   connect(mpNewTLMFileAction, SIGNAL(triggered()), SLOT(createNewTLMFile()));
   // open Modelica file action
-  mpOpenModelicaFileAction = new QAction(QIcon(":/Resources/icons/open.png"), Helper::openModelicaFiles, this);
+  mpOpenModelicaFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), Helper::openModelicaFiles, this);
   mpOpenModelicaFileAction->setShortcut(QKeySequence("Ctrl+o"));
   mpOpenModelicaFileAction->setStatusTip(tr("Opens the Modelica file(s)"));
   connect(mpOpenModelicaFileAction, SIGNAL(triggered()), SLOT(openModelicaFile()));
@@ -1914,16 +1914,16 @@ void MainWindow::createActions()
   mpOpenTransformationFileAction->setStatusTip(tr("Opens the class transformations file"));
   connect(mpOpenTransformationFileAction, SIGNAL(triggered()), SLOT(showOpenTransformationFileDialog()));
   // save file action
-  mpSaveAction = new QAction(QIcon(":/Resources/icons/save.png"), tr("Save"), this);
+  mpSaveAction = new QAction(QIcon(":/Resources/icons/save.svg"), tr("Save"), this);
   mpSaveAction->setShortcut(QKeySequence("Ctrl+s"));
   mpSaveAction->setStatusTip(tr("Save a file"));
   mpSaveAction->setEnabled(false);
   // save as file action
-  mpSaveAsAction = new QAction(QIcon(":/Resources/icons/saveas.png"), tr("Save As"), this);
+  mpSaveAsAction = new QAction(QIcon(":/Resources/icons/saveas.svg"), tr("Save As"), this);
   mpSaveAsAction->setStatusTip(tr("Save As a File"));
   mpSaveAsAction->setEnabled(false);
   // save all file action
-  mpSaveAllAction = new QAction(QIcon(":/Resources/icons/saveall.png"), tr("Save All"), this);
+  mpSaveAllAction = new QAction(QIcon(":/Resources/icons/saveall.svg"), tr("Save All"), this);
   mpSaveAllAction->setStatusTip(tr("Save All Files"));
   mpSaveAllAction->setEnabled(false);
   // Dump Total Model action
@@ -1985,19 +1985,19 @@ void MainWindow::createActions()
   mpShowGridLinesAction->setEnabled(false);
   connect(mpShowGridLinesAction, SIGNAL(toggled(bool)), SLOT(setShowGridLines(bool)));
   // reset zoom action
-  mpResetZoomAction = new QAction(QIcon(":/Resources/icons/zoomReset.png"), tr("Reset Zoom"), this);
+  mpResetZoomAction = new QAction(QIcon(":/Resources/icons/zoomReset.svg"), tr("Reset Zoom"), this);
   mpResetZoomAction->setStatusTip(tr("Resets the zoom"));
   mpResetZoomAction->setShortcut(QKeySequence("Ctrl+0"));
   mpResetZoomAction->setEnabled(false);
   connect(mpResetZoomAction, SIGNAL(triggered()), SLOT(resetZoom()));
   // zoom in action
-  mpZoomInAction = new QAction(QIcon(":/Resources/icons/zoomIn.png"), tr("Zoom In"), this);
+  mpZoomInAction = new QAction(QIcon(":/Resources/icons/zoomIn.svg"), tr("Zoom In"), this);
   mpZoomInAction->setStatusTip(tr("Zoom in"));
   mpZoomInAction->setShortcut(QKeySequence("Ctrl++"));
   mpZoomInAction->setEnabled(false);
   connect(mpZoomInAction, SIGNAL(triggered()), SLOT(zoomIn()));
   // zoom out action
-  mpZoomOutAction = new QAction(QIcon(":/Resources/icons/zoomOut.png"), tr("Zoom Out"), this);
+  mpZoomOutAction = new QAction(QIcon(":/Resources/icons/zoomOut.svg"), tr("Zoom Out"), this);
   mpZoomOutAction->setStatusTip(tr("Zoom out"));
   mpZoomOutAction->setShortcut(QKeySequence("Ctrl+-"));
   mpZoomOutAction->setEnabled(false);
@@ -2009,7 +2009,7 @@ void MainWindow::createActions()
   connect(mpShowAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(showAlgorithmicDebugger()));
   // Simulation Menu
   // instantiate model action
-  mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.png"), tr("Instantiate Model"), this);
+  mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.svg"), tr("Instantiate Model"), this);
   mpInstantiateModelAction->setStatusTip(tr("Instantiates the modelica model"));
   mpInstantiateModelAction->setEnabled(false);
   connect(mpInstantiateModelAction, SIGNAL(triggered()), SLOT(instantiatesModel()));
@@ -2123,32 +2123,32 @@ void MainWindow::createActions()
   mpShapesActionGroup = new QActionGroup(this);
   mpShapesActionGroup->setExclusive(false);
   // line creation action
-  mpLineShapeAction = new QAction(QIcon(":/Resources/icons/line-shape.png"), Helper::line, mpShapesActionGroup);
+  mpLineShapeAction = new QAction(QIcon(":/Resources/icons/line-shape.svg"), Helper::line, mpShapesActionGroup);
   mpLineShapeAction->setStatusTip(tr("Draws a line shape"));
   mpLineShapeAction->setCheckable(true);
   connect(mpLineShapeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
   // polygon creation action
-  mpPolygonShapeAction = new QAction(QIcon(":/Resources/icons/polygon-shape.png"), tr("Polygon"), mpShapesActionGroup);
+  mpPolygonShapeAction = new QAction(QIcon(":/Resources/icons/polygon-shape.svg"), tr("Polygon"), mpShapesActionGroup);
   mpPolygonShapeAction->setStatusTip(tr("Draws a polygon shape"));
   mpPolygonShapeAction->setCheckable(true);
   connect(mpPolygonShapeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
   // rectangle creation action
-  mpRectangleShapeAction = new QAction(QIcon(":/Resources/icons/rectangle-shape.png"), tr("Rectangle"), mpShapesActionGroup);
+  mpRectangleShapeAction = new QAction(QIcon(":/Resources/icons/rectangle-shape.svg"), tr("Rectangle"), mpShapesActionGroup);
   mpRectangleShapeAction->setStatusTip(tr("Draws a rectangle shape"));
   mpRectangleShapeAction->setCheckable(true);
   connect(mpRectangleShapeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
   // ellipse creation action
-  mpEllipseShapeAction = new QAction(QIcon(":/Resources/icons/ellipse-shape.png"), tr("Ellipse"), mpShapesActionGroup);
+  mpEllipseShapeAction = new QAction(QIcon(":/Resources/icons/ellipse-shape.svg"), tr("Ellipse"), mpShapesActionGroup);
   mpEllipseShapeAction->setStatusTip(tr("Draws an ellipse shape"));
   mpEllipseShapeAction->setCheckable(true);
   connect(mpEllipseShapeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
   // text creation action
-  mpTextShapeAction = new QAction(QIcon(":/Resources/icons/text-shape.png"), tr("Text"), mpShapesActionGroup);
+  mpTextShapeAction = new QAction(QIcon(":/Resources/icons/text-shape.svg"), tr("Text"), mpShapesActionGroup);
   mpTextShapeAction->setStatusTip(tr("Draws a text shape"));
   mpTextShapeAction->setCheckable(true);
   connect(mpTextShapeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
   // bitmap creation action
-  mpBitmapShapeAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.png"), tr("Bitmap"), mpShapesActionGroup);
+  mpBitmapShapeAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.svg"), tr("Bitmap"), mpShapesActionGroup);
   mpBitmapShapeAction->setStatusTip(tr("Inserts a bitmap"));
   mpBitmapShapeAction->setCheckable(true);
   connect(mpBitmapShapeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
@@ -2183,7 +2183,7 @@ void MainWindow::createActions()
   connect(mpClearPlotWindowAction, SIGNAL(triggered()), SLOT(clearPlotWindow()));
   // Other Actions
   // export as image action
-  mpExportAsImageAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.png"), Helper::exportAsImage, this);
+  mpExportAsImageAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.svg"), Helper::exportAsImage, this);
   mpExportAsImageAction->setStatusTip(Helper::exportAsImageTip);
   mpExportAsImageAction->setEnabled(false);
   connect(mpExportAsImageAction, SIGNAL(triggered()), SLOT(exportModelAsImage()));

@@ -852,21 +852,21 @@ void GraphicsView::createActions()
   mpDuplicateAction->setShortcut(QKeySequence("Ctrl+d"));
   mpDuplicateAction->setDisabled(isSystemLibrary);
   // Rotate ClockWise Action
-  mpRotateClockwiseAction = new QAction(QIcon(":/Resources/icons/rotateclockwise.png"), tr("Rotate Clockwise"), this);
+  mpRotateClockwiseAction = new QAction(QIcon(":/Resources/icons/rotateclockwise.svg"), tr("Rotate Clockwise"), this);
   mpRotateClockwiseAction->setStatusTip(tr("Rotates the item clockwise"));
   mpRotateClockwiseAction->setShortcut(QKeySequence("Ctrl+r"));
   mpRotateClockwiseAction->setDisabled(isSystemLibrary);
   // Rotate Anti-ClockWise Action
-  mpRotateAntiClockwiseAction = new QAction(QIcon(":/Resources/icons/rotateanticlockwise.png"), tr("Rotate Anticlockwise"), this);
+  mpRotateAntiClockwiseAction = new QAction(QIcon(":/Resources/icons/rotateanticlockwise.svg"), tr("Rotate Anticlockwise"), this);
   mpRotateAntiClockwiseAction->setStatusTip(tr("Rotates the item anticlockwise"));
   mpRotateAntiClockwiseAction->setShortcut(QKeySequence("Ctrl+Shift+r"));
   mpRotateAntiClockwiseAction->setDisabled(isSystemLibrary);
   // Flip Horizontal Action
-  mpFlipHorizontalAction = new QAction(QIcon(":/Resources/icons/flip-horizontal.png"), tr("Flip Horizontal"), this);
+  mpFlipHorizontalAction = new QAction(QIcon(":/Resources/icons/flip-horizontal.svg"), tr("Flip Horizontal"), this);
   mpFlipHorizontalAction->setStatusTip(tr("Flips the item horizontally"));
   mpFlipHorizontalAction->setDisabled(isSystemLibrary);
   // Flip Vertical Action
-  mpFlipVerticalAction = new QAction(QIcon(":/Resources/icons/flip-vertical.png"), tr("Flip Vertical"), this);
+  mpFlipVerticalAction = new QAction(QIcon(":/Resources/icons/flip-vertical.svg"), tr("Flip Vertical"), this);
   mpFlipVerticalAction->setStatusTip(tr("Flips the item vertically"));
   mpFlipVerticalAction->setDisabled(isSystemLibrary);
 }
@@ -1956,7 +1956,7 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   // modelica text view tool button
   mpTextViewToolButton = new QToolButton;
   mpTextViewToolButton->setText(Helper::textView);
-  mpTextViewToolButton->setIcon(QIcon(":/Resources/icons/modeltext.png"));
+  mpTextViewToolButton->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
   mpTextViewToolButton->setIconSize(Helper::buttonIconSize);
   mpTextViewToolButton->setToolTip(Helper::textView);
   mpTextViewToolButton->setAutoRaise(true);
@@ -1966,7 +1966,7 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   // documentation view tool button
   mpDocumentationViewToolButton = new QToolButton;
   mpDocumentationViewToolButton->setText(Helper::documentationView);
-  mpDocumentationViewToolButton->setIcon(QIcon(":/Resources/icons/info-icon.png"));
+  mpDocumentationViewToolButton->setIcon(QIcon(":/Resources/icons/info-icon.svg"));
   mpDocumentationViewToolButton->setIconSize(Helper::buttonIconSize);
   mpDocumentationViewToolButton->setToolTip(Helper::documentationView);
   mpDocumentationViewToolButton->setAutoRaise(true);
@@ -2056,7 +2056,7 @@ ModelWidget::ModelWidget(QString text, LibraryTreeNode *pLibraryTreeNode, ModelW
   // text view tool button
   mpTextViewToolButton = new QToolButton;
   mpTextViewToolButton->setText(Helper::textView);
-  mpTextViewToolButton->setIcon(QIcon(":/Resources/icons/modeltext.png"));
+  mpTextViewToolButton->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
   mpTextViewToolButton->setIconSize(Helper::buttonIconSize);
   mpTextViewToolButton->setToolTip(Helper::textView);
   mpTextViewToolButton->setAutoRaise(true);
@@ -2141,7 +2141,7 @@ ModelWidget::ModelWidget(QString text, QString Xml, LibraryTreeNode *pLibraryTre
   // xml view tool button
   mpTextViewToolButton = new QToolButton;
   mpTextViewToolButton->setText(Helper::textView);
-  mpTextViewToolButton->setIcon(QIcon(":/Resources/icons/modeltext.png"));
+  mpTextViewToolButton->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
   mpTextViewToolButton->setIconSize(Helper::buttonIconSize);
   mpTextViewToolButton->setToolTip(Helper::textView);
   mpTextViewToolButton->setAutoRaise(true);
@@ -2677,7 +2677,7 @@ void ModelWidget::showModelicaTextView(bool checked)
 {
   QMdiSubWindow *pSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow();
   if (pSubWindow)
-    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeltext.png"));
+    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeltext.svg"));
   if (!checked or (checked and mpModelicaTextEditor->isVisible()))
     return;
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ModelicaText));
