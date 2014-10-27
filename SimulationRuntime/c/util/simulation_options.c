@@ -144,11 +144,11 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT, -clock=CYC or -clock=CPU\n  RT=monotonic real-time clock, CPU=process-based CPU-time, CYC=cpu cycles measured with RDTSC",
   /* FLAG_CPU */                   "  - dumps the cpu-time into the result-file\n  - $cpuTime is the variable name inside the result-file",
   /* FLAG_DASSL_JACOBIAN */        "selects the type of the jacobians that is used for the dassl solver:"
-		  "\n\t -dasslJacobian=coloredNumerical  - colored numerical jacobian."
-		  "\n\t -dasslJacobian=intenalNumerical  - internal dassl numerical jacobian."
-		  "\n\t -dasslJacobian=coloredSymbolical - colored symbolical jacobian. Only usable if the simulation is compiled with +generateSymbolicJacobian or +generateSymbolicLinearization."
-		  "\n\t -dasslJacobian=numerical - numerical jacobian"
-  	  "\n\t -dasslJacobian=symbolical - symbolical jacobian. Only usable if the simulation is compiled with +generateSymbolicJacobian or +generateSymbolicLinearization.",
+      "\n\t -dasslJacobian=coloredNumerical  - colored numerical jacobian."
+      "\n\t -dasslJacobian=intenalNumerical  - internal dassl numerical jacobian."
+      "\n\t -dasslJacobian=coloredSymbolical - colored symbolical jacobian. Only usable if the simulation is compiled with +generateSymbolicJacobian or +generateSymbolicLinearization."
+      "\n\t -dasslJacobian=numerical - numerical jacobian"
+      "\n\t -dasslJacobian=symbolical - symbolical jacobian. Only usable if the simulation is compiled with +generateSymbolicJacobian or +generateSymbolicLinearization.",
   /* FLAG_DASSL_NO_ROOTFINDUNG */  "flag deactivates the internal root finding procedure of dassl.",
   /* FLAG_DASSL_NO_RESTART */      "flag deactivates the restart of dassl after an event is performed.",
   /* FLAG_EMIT_PROTECTED */        "emits protected variables to the result-file",

@@ -269,11 +269,11 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
   /* if FLAG_NOEQUIDISTANT_GRID is set, choose dassl step method */
   if (omc_flag[FLAG_NOEQUIDISTANT_GRID])
   {
-	  dasslData->dasslSteps = 1; /* TRUE */
+    dasslData->dasslSteps = 1; /* TRUE */
   }
   else
   {
-	  dasslData->dasslSteps = 0; /* FALSE */
+    dasslData->dasslSteps = 0; /* FALSE */
   }
   infoStreamPrint(LOG_SOLVER, 0, " - use equidistant time grid %s", dasslData->dasslSteps?"NO":"YES");
 
