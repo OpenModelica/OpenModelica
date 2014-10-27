@@ -1428,7 +1428,7 @@ algorithm
   case(_,_)
     equation
       true = List.isMemberOnTrue(index,map,intEq);
-      pos = List.position(index,map)+1;
+      pos = List.position(index,map);
     then
       (pos,map);
   case(_,_)

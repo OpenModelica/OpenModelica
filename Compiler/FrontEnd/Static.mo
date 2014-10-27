@@ -183,7 +183,7 @@ algorithm
         path = Absyn.crefToPath(cr);
         (path1,Absyn.IDENT(name)) = Absyn.splitQualAndIdentPath(path);
         true = Absyn.pathEqual(path1,path2);
-        ix = List.position(name,names)+1;
+        ix = List.position(name,names);
         exp = DAE.ENUM_LITERAL(path,ix);
         p = DAE.PROP(ty,DAE.C_CONST());
         (cache,exps,props,st_2) = elabExpList2(cache, env, rest, ty, impl, st, doVect, pre, info);

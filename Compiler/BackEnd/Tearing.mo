@@ -2569,7 +2569,7 @@ algorithm
    case(_,_,_,_,_)
      equation
        true = intLe(index,listLength(preferAvoidIn));
-     pos = List.position(listGet(preferAvoidIn,index),varsIn)+1;
+     pos = List.position(listGet(preferAvoidIn,index),varsIn);
      points = List.set(pointsIn,pos,realInt(realMul(factor,intReal(listGet(pointsIn,pos)))));
   then preferAvoidVariables(varsIn,points,preferAvoidIn,factor,index+1);
    case(_,_,_,_,_)

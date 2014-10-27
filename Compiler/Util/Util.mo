@@ -1475,7 +1475,7 @@ algorithm
         // string is reversed). The first part before the space will be the new
         // accumulated string, while the rest is added to the list of result
         // strings.
-        pos = List.position(" ", acc_str);
+        pos = List.position(" ", acc_str)-1 "zero-based index needed" ;
         (acc_str, rest_str) = List.split(acc_str, pos);
         sl = listLength(acc_str);
         str = delim +& stringAppendList(listReverse(rest_str));

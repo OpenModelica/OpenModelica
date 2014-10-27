@@ -427,7 +427,7 @@ end replaceVars;
 //       print(ComponentReference.crefStr(listNth(stateVarsList,3)));
 //       print("\n");
 //       */
-//       p = List.position(cref,stateVarsList)+1;
+//       p = List.position(cref,stateVarsList);
 //       acc_1 = listAppend(acc,{{p}});
 //     then computeStateRef(stateVarsList,tail,acc_1);
 //     case (_,(_::tail),_) then computeStateRef(stateVarsList,tail,acc);

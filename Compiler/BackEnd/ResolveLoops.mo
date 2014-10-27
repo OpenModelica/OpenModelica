@@ -129,8 +129,7 @@ algorithm
 
         // get the linear equations and their vars
         simpEqLst = BackendEquation.traverseBackendDAEEqns(eqs, getSimpleEquations, {});
-        eqMapping = List.map1(simpEqLst,List.position,eqLst);//index starts at zero
-        eqMapping = List.map1(eqMapping,intAdd,1);
+        eqMapping = List.map1(simpEqLst,List.position,eqLst);
         simpEqs = BackendEquation.listEquation(simpEqLst);
         crefs = BackendEquation.getAllCrefFromEquations(simpEqs);
         (simpVarLst,varMapping) = BackendVariable.getVarLst(crefs,vars,{},{});
@@ -1922,7 +1921,7 @@ algorithm
         //replace a former equation
         numOfAdjVars = List.map(List.map1(resolveEqs,Array.getIndexFirst,me),listLength);
         maxNum = List.fold(numOfAdjVars,intMax,List.first(numOfAdjVars));
-        replEqIdx = listGet(resolveEqs,List.position(maxNum,numOfAdjVars)+1);
+        replEqIdx = listGet(resolveEqs,List.position(maxNum,numOfAdjVars));
             //BackendDump.dumpEquationList(unassEqsIn," not updated unassEqs");
         unassEqs = List.replaceAt(resolvedEq,replEqIdx-1,unassEqsIn);
         //print("replace equation "+&intString(replEqIdx)+&"\n");

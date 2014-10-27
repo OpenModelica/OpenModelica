@@ -4515,12 +4515,11 @@ end threadMapFold;
 
 public function position<T>
   "Takes a value and a list, and returns the position of the first list element
-  that whose value is equal to the given value. The index starts at zero.
-    Example: position(2, {0, 1, 2, 3}) => 2
-  TODO: make the index start at one"
+  that whose value is equal to the given value.
+    Example: position(2, {0, 1, 2, 3}) => 3"
   input T inElement;
   input list<T> inList;
-  output Integer outPosition := 0 "zero-based index";
+  output Integer outPosition := 1 "one-based index";
 algorithm
   for e in inList loop
     if valueEq(e, inElement) then

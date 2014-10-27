@@ -3488,7 +3488,6 @@ algorithm
         (clPredTasks,origPredTasks,_) = List.intersection1OnTrue(origPredTasks,clTasks,intEq);
         //print("origPredTasks :"+&intListString(origPredTasks)+&"\n");
         pos = List.map1(clPredTasks,List.position,clTasks);
-        pos = List.map1(pos,intAdd,1);
         clTasks = arrayGet(procAssIn,threadIdx);
         clTasks = listReverse(clTasks);  // the current cluster with duplicated taskIdcs
         //print("clTasks :"+&intListString(clTasks)+&"\n");
@@ -3642,7 +3641,6 @@ algorithm
   (clPredTasks,origPredTasks,_) := List.intersection1OnTrue(origPredTasks,clTasks,intEq);
   //print("origPredTasks :"+&intListString(origPredTasks)+&"\n");
   pos := List.map1(clPredTasks,List.position,clTasks);
-  pos := List.map1(pos,intAdd,1);
   clTasks := arrayGet(procAssOut,threadIdx);
   clTasks := listReverse(clTasks);  // the current cluster with duplicated taskIdcs
   //print("clTasks :"+&intListString(clTasks)+&"\n");
@@ -4126,7 +4124,7 @@ algorithm
         parents = Util.if_(List.isEmpty(unAssParents),parents,unAssParents);
         parentExeCost = List.map1(parents,HpcOmTaskGraph.getExeCostReqCycles,iTaskGraphMeta);
         maxExeCost = List.fold(parentExeCost,realMax,0.0);
-        pos = List.position(maxExeCost,parentExeCost) + 1;
+        pos = List.position(maxExeCost,parentExeCost);
         fpred = listGet(parents,pos);
         // go to predecessor
         rest = List.removeOnTrue(fpred,intEq,rest);
@@ -4197,7 +4195,7 @@ algorithm
         commCosts = List.map2(parents,HpcOmTaskGraph.getCommCostTimeBetweenNodes,nodeIdx,iTaskGraphMeta);
         costs = List.threadMap(parentECTs,commCosts,realAdd);
         maxCost = List.fold(costs,realMax,0.0);
-        fpredPos = List.position(maxCost,costs)+1;
+        fpredPos = List.position(maxCost,costs);
         fpred = listGet(parents,fpredPos); // if there is no predecessor, the fpred value is 0
         fpredOut = arrayUpdate(fpredIn,nodeIdx,fpred);
       then fpredOut;
@@ -4309,7 +4307,7 @@ algorithm
     case(node::rest,_,_,_,_,_)
       equation
         eft = List.fold(processorTimeIn,realMin,listGet(processorTimeIn,1));
-        processor = List.position(eft,processorTimeIn)+1;
+        processor = List.position(eft,processorTimeIn);
         taskAss = arrayUpdate(taskAssIn,node,processor);
         taskLst = arrayGet(procAssIn,processor);
         taskLst = node::taskLst;
@@ -4582,6 +4580,7 @@ algorithm
     case(_,_)
       equation
         posInOrder = List.map1(taskLstIn,List.position,taskOrderIn);  //just to remember, index starts at one
+        posInOrder = List.map1(posInOrder,intSub,1);                  //convert indices to zero-based (TODO: remove this)
         latestTask = List.fold(posInOrder,intMax,-1);
         latestTask = listGet(taskOrderIn,latestTask+1);
         taskLst = List.removeOnTrue(latestTask,intEq,taskLstIn);
@@ -4645,7 +4644,7 @@ algorithm
         r2 = List.last(lstIn);
         r3 = listGet(lstIn,intDiv(length,2));
         (pivotValue,_) = getMedian3(r1,r2,r3);  // the pivot element.
-        pivotIdx = List.position(pivotValue,lstIn)+1;
+        pivotIdx = List.position(pivotValue,lstIn);
         (lstTmp,orderTmp) = quicksortWithOrder1(lstIn,orderTmp,pivotIdx,lstIn,length);
       then
         (lstTmp,orderTmp);
@@ -4732,7 +4731,7 @@ algorithm
         midIdx = Util.if_(intEq(midIdx,0),1,midIdx);
         r3 = listGet(marked,midIdx);
         (pivotElement,_) = getMedian3(r1,r2,r3);
-        newIdx = List.position(pivotElement,lstIn)+1;
+        newIdx = List.position(pivotElement,lstIn);
       then
         ((marked,newIdx));
   end match;
@@ -4821,7 +4820,7 @@ protected
 algorithm
   r := List.sort({r1,r2,r3},realGt);
   rOut := listGet(r,2);
-  which := List.position(rOut,{r1,r2,r3})+1;
+  which := List.position(rOut,{r1,r2,r3});
 end getMedian3;
 
 //----------------------------
@@ -5197,7 +5196,7 @@ protected
   Integer minWLThread;
 algorithm
   minWorkLoad := Array.fold(threadWorkLoadIn,realMin,arrayGet(threadWorkLoadIn,1));
-  minWLThread := List.position(minWorkLoad,arrayList(threadWorkLoadIn))+1;
+  minWLThread := List.position(minWorkLoad,arrayList(threadWorkLoadIn));
   threadWorkLoadOut := arrayUpdate(threadWorkLoadIn,minWLThread,minWorkLoad +. sectionCost);
 end getLevelParallelTime1;
 

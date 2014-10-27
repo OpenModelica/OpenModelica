@@ -668,7 +668,6 @@ algorithm
         allOutputCrefs = List.map(allOutputs,DAEUtil.varCref);
         (protCrefs,_,outputCrefs) = List.intersection1OnTrue(constComplexCrefs,allOutputCrefs,ComponentReference.crefEqual);
         pos = List.map1(outputCrefs,List.position,allOutputCrefs);
-        pos = List.map1(pos,intAdd,1);
         varScalarExps = List.map1(pos,List.getIndexFirst,expLst);
         outputExp = Debug.bcallret1(List.hasOneElement(varScalarExps),List.first,varScalarExps,DAE.TUPLE(varScalarExps));
         funcOutputs = List.map2(outputCrefs,generateOutputElements,allOutputs,lhsExpIn);
@@ -699,7 +698,6 @@ algorithm
 
         //the lhs-exp of the evaluated function call
         pos = List.map1(outputCrefs,List.position,allOutputCrefs);
-        pos = List.map1(pos,intAdd,1);
         varScalarExps = List.map1(pos,List.getIndexFirst,expLst);
         varScalarExps = List.map(varScalarExps,scalarRecExpForOneDimRec);
         outputExp = Debug.bcallret1(List.hasOneElement(varScalarExps),List.first,varScalarExps,DAE.TUPLE(varScalarExps));
@@ -716,7 +714,6 @@ algorithm
         allOutputCrefs = List.map(allOutputs,DAEUtil.varCref);
         (protCrefs,_,outputCrefs) = List.intersection1OnTrue(constScalarCrefs,allOutputCrefs,ComponentReference.crefEqual);
         pos = List.map1(outputCrefs,List.position,allOutputCrefs);
-        pos = List.map1(pos,intAdd,1);
         varScalarExps = List.map1(pos,List.getIndexFirst,expLst);
         outputExp = Debug.bcallret1(List.hasOneElement(varScalarExps),List.first,varScalarExps,DAE.TUPLE(varScalarExps));
         funcOutputs = List.map2(outputCrefs,generateOutputElements,allOutputs,lhsExpIn);
@@ -792,7 +789,6 @@ algorithm
       equation
         // tuple equation with only 1d or completely complex outputs
        pos = List.map1(constComplCrefs,List.position,allOutputCrefs);
-       pos = List.map1(pos,intAdd,1);
        constExps = List.map1(pos,List.getIndexFirst,expLst);
        constCrefs = List.map(constExps,Expression.expCref);
        then

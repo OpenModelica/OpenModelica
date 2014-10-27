@@ -636,8 +636,8 @@ protected
 algorithm
   DAE.CALL(path = Absyn.IDENT("Correlation"),expLst = {DAE.CREF(cr1,_),DAE.CREF(cr2,_),val}) := exp;
   valStr := ExpressionDump.printExpStr(val);
-  p1 := List.position(ComponentReference.crefStr(cr1),uncertainVars);
-  p2 := List.position(ComponentReference.crefStr(cr2),uncertainVars);
+  p1 := List.position(ComponentReference.crefStr(cr1),uncertainVars)-1 "TODO: remove shift if possible";
+  p2 := List.position(ComponentReference.crefStr(cr2),uncertainVars)-1 "TODO: remove shift if possible";
   plow := intMin(p1,p2);
   phigh := intMax(p1,p2);
   str := "RS["+&intString(plow)+&","+&intString(phigh)+&"] = "+&valStr;

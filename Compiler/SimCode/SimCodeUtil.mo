@@ -6363,8 +6363,6 @@ algorithm
         //print("ExpList : " +& ExpressionDump.printExpListStr(expLst) +& "\n");
         positions = List.map1(expLst, List.position, expl);
         //print("Positions : " +& stringDelimitList(List.map(positions, intString), ", ") +& "\n");
-        positions = List.map1(positions, intAdd, 1);
-        //print("Positions : " +& stringDelimitList(List.map(positions, intString), ", ") +& "\n");
         expLst = List.map1r(positions, listGet, expl1);
         //print("ExpList rhs : " +& ExpressionDump.printExpListStr(expLst) +& "\n");
         expl = List.map1r(positions, listGet, expl);
@@ -6386,7 +6384,6 @@ algorithm
 
         expLst = List.map(crefs, Expression.crefExp);
         positions = List.map1(expLst, List.position, expl);
-        positions = List.map1(positions, intAdd, 1);
         expLst = List.map1r(positions, listGet, expl1);
         expl = List.map1r(positions, listGet, expl);
 

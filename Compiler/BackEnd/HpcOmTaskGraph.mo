@@ -777,7 +777,7 @@ author:Waurich TUD 2013-06"
 protected
   Integer pos;
 algorithm
-  pos := List.position(":",iString);
+  pos := List.position(":",iString)-1;
   (oString,_) := List.split(iString,pos);
 end shortenVarString;
 
@@ -3792,7 +3792,7 @@ algorithm
         _ = listGet(inComps,1);
         //print("updateInComps1 inComp:" +& intString(inComp) +& "\n");
         true = List.isMemberOnTrue(nodeIdx,startNodes,intEq);
-        mergeGroupIdx = List.position(nodeIdx,startNodes)+1;
+        mergeGroupIdx = List.position(nodeIdx,startNodes);
         mergedNodes = listGet(mergedPaths,mergeGroupIdx);
         //print("updateInComps1 mergedNodes:" +& stringDelimitList(List.map(mergedNodes,intString),",") +& "\n");
         mergedSet = List.flatten(List.map1(mergedNodes,Array.getIndexFirst,primInComps));

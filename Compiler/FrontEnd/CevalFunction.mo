@@ -2360,7 +2360,7 @@ protected
   Integer pos;
 algorithm
   Values.RECORD(name, vals, comps, -1) := inRecordValue;
-  pos := List.position(inComponentId, comps);
+  pos := List.position(inComponentId, comps)-1 "shift to zero-based index";
   vals := List.replaceAt(inComponentValue, pos, vals);
   outRecordValue := Values.RECORD(name, vals, comps, -1);
 end updateRecordComponentValue;
