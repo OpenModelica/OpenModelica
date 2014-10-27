@@ -1036,7 +1036,7 @@ algorithm
          Absyn.CODE(code = Absyn.C_MODIFICATION(modification = Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=exp))))} =
           getApiFunctionArgs(istmts);
         (p_1,resstr) = setParameterValue(class_, ident, exp, p) "expressions" ;
-        st = setSymbolTableAST(st, p_1);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p_1);
       then
         (resstr, st);
 
@@ -1050,7 +1050,7 @@ algorithm
            (mod as Absyn.CLASSMOD(elementArgLst = {},eqMod = Absyn.NOMOD()))))} =
           getApiFunctionArgs(istmts);
         (p_1,resstr) = setComponentModifier(class_, ident, Absyn.CREF_IDENT("",{}),mod, p)  ;
-        st = setSymbolTableAST(st, p_1);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p_1);
       then
         (resstr, st);
 
@@ -1061,7 +1061,7 @@ algorithm
          Absyn.CREF(componentRef = Absyn.CREF_QUAL(name = str,componentRef = subident)),
          Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))} = getApiFunctionArgs(istmts);
         (p_1,resstr) = setComponentModifier(class_, Absyn.CREF_IDENT(str,{}), subident, mod, p);
-        st = setSymbolTableAST(st, p_1);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p_1);
       then
         (resstr, st);
 
@@ -1078,7 +1078,7 @@ algorithm
         matchApiFunction(istmts, "setParameterValue");
         {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = ident),exp} = getApiFunctionArgs(istmts);
         (p_1,resstr) = setParameterValue(class_, ident, exp, p);
-        st = setSymbolTableAST(st, p_1);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p_1);
       then
         (resstr, st);
 
@@ -1099,7 +1099,7 @@ algorithm
           Absyn.PROGRAM({Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
                          Absyn.dummyParts,Absyn.dummyInfo)},
                          Absyn.TOP(),Absyn.dummyTimeStamp), p);
-        newst = setSymbolTableAST(st, newp);
+        newst = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
         ("true",newst);
 
@@ -1116,7 +1116,7 @@ algorithm
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
                       Absyn.dummyParts,Absyn.dummyInfo)},
                       Absyn.WITHIN(wpath),Absyn.dummyTimeStamp), p);
-        newst = setSymbolTableAST(st, newp);
+        newst = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
         ("true",newst);
 
@@ -1130,7 +1130,7 @@ algorithm
           Absyn.PROGRAM({
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),Absyn.dummyParts,Absyn.dummyInfo)
           }, Absyn.WITHIN(path_1),Absyn.dummyTimeStamp), p);
-        newst = setSymbolTableAST(st, newp);
+        newst = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
         ("true",newst);
 
@@ -1140,7 +1140,7 @@ algorithm
         matchApiFunction(istmts, "deleteClass");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         (resstr,newp) = deleteClass(cr, p);
-        st = setSymbolTableAST(st, newp);
+        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
         (resstr, st);
 
@@ -1154,7 +1154,7 @@ algorithm
         (newp,_) = addComponent(name, tp, model_, nargs, p);
         _ = Print.getString();
         //resstr_1 = stringAppend(resstr, str);
-        st = setSymbolTableAST(st, newp);
+        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
         ("true", st);
 
@@ -1166,7 +1166,7 @@ algorithm
          Absyn.CREF(componentRef = model_)} = getApiFunctionArgs(istmts);
         nargs = getApiFunctionNamedArgs(istmts);
         (newp,res) = updateComponent(name, tp, model_, nargs, p);
-        st = setSymbolTableAST(st, newp);
+        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
         (res, st);
 
@@ -1179,7 +1179,7 @@ algorithm
         (newp,_) = deleteComponent(name, model_, p);
         _ = Print.getString();
         //resstr_1 = stringAppend(resstr, str);
-        st = setSymbolTableAST(st, newp);
+        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
         ("true", st);
 
@@ -1294,7 +1294,7 @@ algorithm
          Absyn.CREF(componentRef = cr2),
          Absyn.STRING(value = cmt)} = getApiFunctionArgs(istmts);
         (newp,resstr) = setConnectionComment(cr, cr1, cr2, cmt, p);
-        st = setSymbolTableAST(st, newp);
+        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
         (resstr, st);
 
@@ -1306,7 +1306,7 @@ algorithm
          Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         nargs = getApiFunctionNamedArgs(istmts);
         (resstr,newp) = addConnection(cr, c1, c2, nargs, p);
-        st = setSymbolTableAST(st, newp);
+        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
         (resstr, st);
 
@@ -1317,7 +1317,7 @@ algorithm
          Absyn.CREF(componentRef = c2),
          Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         (resstr,newp) = deleteConnection(cr, c1, c2, p);
-        st = setSymbolTableAST(st, newp);
+        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
         (resstr, st);
 
@@ -1330,7 +1330,7 @@ algorithm
         nargs = getApiFunctionNamedArgs(istmts);
         (_,newp) = deleteConnection(cr, c1, c2, p);
         (resstr,newp) = addConnection(cr, c1, c2, nargs, newp);
-        st = setSymbolTableAST(st, newp);
+        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
         (resstr, st);
 
@@ -1453,7 +1453,7 @@ algorithm
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
         p = updateProgram(Absyn.PROGRAM({refactoredClass}, Absyn.TOP(), Absyn.dummyTimeStamp), p);
          resstr = Dump.unparseStr(Absyn.PROGRAM({refactoredClass},Absyn.TOP(),Absyn.dummyTimeStamp),false);
-        st = setSymbolTableAST(st, p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
       then
         (resstr, st);
 
@@ -1463,7 +1463,7 @@ algorithm
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         s1 = Dump.printComponentRefStr(cr);
         resstr = stringAppendList({"Failed in translating", s1, " to Modelica v2.0 graphicall annotations"});
-        st = setSymbolTableAST(st, p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
       then
         (resstr, st);
 
@@ -1477,7 +1477,7 @@ algorithm
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
 
         resstr = getAnnotationInClass(refactoredClass, ICON_ANNOTATION(), p, path);
-        st = setSymbolTableAST(st, p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
       then
         (resstr, st);
 
@@ -1491,7 +1491,7 @@ algorithm
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
 
         resstr = getAnnotationInClass(refactoredClass, DIAGRAM_ANNOTATION(), p, path);
-        st = setSymbolTableAST(st, p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
       then
         (resstr, st);
 
@@ -1765,7 +1765,7 @@ algorithm
          Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))} =
            getApiFunctionArgs(istmts);
         (newp,resstr) = setExtendsModifierValue(class_, crident, subident, mod, p);
-        st = setSymbolTableAST(st, newp);
+        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
         (resstr,st);
 
@@ -1861,7 +1861,7 @@ algorithm
          Absyn.STRING(value = cmt)} =
           getApiFunctionArgs(istmts);
         (resstr,newp) = setComponentComment(class_, cr, cmt, p);
-        st = setSymbolTableAST(st, newp);
+        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
         (resstr,st);
 
@@ -1881,7 +1881,7 @@ algorithm
           Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})} =
           getApiFunctionArgs(istmts);
         (resstr,p_1) = setComponentProperties(Absyn.crefToPath(class_), cr, finalPrefix, flowPrefix, streamPrefix, protected_, repl, /*parallelism,*/ variability, {dref1,dref2}, causality, p);
-        st = setSymbolTableAST(st, p_1);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p_1);
       then
         (resstr,st);
 
@@ -1902,7 +1902,7 @@ algorithm
          Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})} =
           getApiFunctionArgs(istmts);
         (resstr,p_1) = setComponentProperties(Absyn.crefToPath(class_), cr, finalPrefix, flowPrefix, false, protected_, repl, /*parallelism,*/ variability, {dref1,dref2}, causality, p);
-        st = setSymbolTableAST(st, p_1);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p_1);
       then
         (resstr,st);
 
@@ -18226,32 +18226,6 @@ algorithm
    then comp;
  end match;
 end getComponentInClass;
-
-public function setSymbolTableAST
-  input GlobalScript.SymbolTable inSymTab;
-  input Absyn.Program inAST;
-  output GlobalScript.SymbolTable outSymTab;
-algorithm
-  outSymTab := match(inSymTab, inAST)
-    local
-      list<GlobalScript.InstantiatedClass> i;
-      list<GlobalScript.Variable> v;
-      list<GlobalScript.CompiledCFunction> c;
-      list<GlobalScript.LoadedFile> l;
-    case (GlobalScript.SYMBOLTABLE(instClsLst = i,
-                      lstVarVal = v, compiledFunctions = c, loadedFiles = l), _)
-      then GlobalScript.SYMBOLTABLE(inAST, NONE(), i, v, c, l);
-  end match;
-end setSymbolTableAST;
-
-public function getSymbolTableAST
-  input GlobalScript.SymbolTable inSymTab;
-  output Absyn.Program outAST;
-algorithm
-  outAST := match(inSymTab)
-    case (GlobalScript.SYMBOLTABLE(ast = outAST)) then outAST;
-  end match;
-end getSymbolTableAST;
 
 public function getFunctionsInProgram
   input Absyn.Program prog;

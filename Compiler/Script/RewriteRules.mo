@@ -187,31 +187,20 @@ public function replaceBindFrontEnd
   input Absyn.Exp inExp;
   input Binds inBinds;
   output Absyn.Exp outExp;
+protected
+  Boolean found;
+  Absyn.Exp e, to;
 algorithm
-  outExp := matchcontinue(inExp, inBinds)
-    local
-      Absyn.Exp e, to;
-      Binds rest;
+  for bind in inBinds loop
+    FRONTEND_BIND(e, outExp) := bind;
 
-    // no more bindings to check, return exp
-    case (_, {}) then inExp;
+    if Absyn.expEqual(inExp, e) then
+      return;
+    end if;
+  end for;
 
-    // found it
-    case (_, FRONTEND_BIND(e, to)::_)
-      equation
-        true = Absyn.expEqual(inExp, e);
-      then
-        to;
-
-    // not found it
-    case (_, FRONTEND_BIND(e, _)::rest)
-      equation
-        false = Absyn.expEqual(inExp, e);
-        to = replaceBindFrontEnd(inExp, rest);
-      then
-        to;
-
-  end matchcontinue;
+  // Couldn't find matching binding, return inExp.
+  outExp := inExp;
 end replaceBindFrontEnd;
 
 public function matchesFrontEnd
@@ -655,31 +644,21 @@ public function replaceBindBackEnd
   input DAE.Exp inExp;
   input Binds inBinds;
   output DAE.Exp outExp;
+protected
+  Boolean found;
+  DAE.Exp e, to;
 algorithm
-  outExp := matchcontinue(inExp, inBinds)
-    local
-      DAE.Exp e, to;
-      Binds rest;
+  for bind in inBinds loop
+    BACKEND_BIND(e, to) := bind;
 
-    // no more bindings to check, return exp
-    case (_, {}) then inExp;
+    if expEqual(inExp, e) then
+      outExp := to;
+      return;
+    end if;
+  end for;
 
-    // found it
-    case (_, BACKEND_BIND(e, to)::_)
-      equation
-        true = expEqual(inExp, e);
-      then
-        to;
-
-    // not found it
-    case (_, BACKEND_BIND(e, _)::rest)
-      equation
-        false = expEqual(inExp, e);
-        to = replaceBindBackEnd(inExp, rest);
-      then
-        to;
-
-  end matchcontinue;
+  // Couldn't find matching binding, return inExp.
+  outExp := inExp;
 end replaceBindBackEnd;
 
 public function matchesBackEnd
@@ -1105,7 +1084,7 @@ algorithm
     case _
       equation
         NONE() = getGlobalRoot(Global.rewriteRulesIndex);
-        GlobalScript.ISTMTS(stmts, _) = parse(inFile);
+        GlobalScript.ISTMTS(stmts, _) = Parser.parseexp(inFile);
         rules = stmtsToRules(stmts, {});
         print("-------------\n");
         setGlobalRoot(Global.rewriteRulesIndex, SOME(rules));
@@ -1179,31 +1158,6 @@ algorithm
 
   end match;
 end getRulesBackEnd;
-
-protected function parse
-  input String inFile;
-  output GlobalScript.Statements outStmts;
-algorithm
-  outStmts := matchcontinue(inFile)
-    local
-      GlobalScript.Statements stmts;
-
-    // parse OK
-    case _
-      equation
-        stmts = Parser.parseexp(inFile);
-      then
-        stmts;
-
-    // parse not OK
-    case _
-      equation
-        failure(_ = Parser.parseexp(inFile));
-      then
-        fail();
-
-  end matchcontinue;
-end parse;
 
 protected function stmtsToRules
   input list<GlobalScript.Statement> inStmts;

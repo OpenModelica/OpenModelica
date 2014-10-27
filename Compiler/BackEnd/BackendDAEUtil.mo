@@ -8122,10 +8122,10 @@ end traverseZeroCrossingExps;
 public function getSolvedSystem "
   Run the equation system pipeline."
   input BackendDAE.BackendDAE inDAE;
-  input Option<list<String>> strPreOptModules;
-  input Option<String> strmatchingAlgorithm;
-  input Option<String> strdaeHandler;
-  input Option<list<String>> strPostOptModules;
+  input Option<list<String>> strPreOptModules := NONE();
+  input Option<String> strmatchingAlgorithm := NONE();
+  input Option<String> strdaeHandler := NONE();
+  input Option<list<String>> strPostOptModules := NONE();
   output BackendDAE.BackendDAE outSODE;
 protected
   BackendDAE.BackendDAE optdae, sode, sode1, optsode;

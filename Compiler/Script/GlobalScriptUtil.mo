@@ -126,6 +126,32 @@ algorithm
   outSymbolTable := GlobalScript.SYMBOLTABLE(ast, exp_ast, cls, inVars, comp_funcs, files);
 end setSymbolTableVars;
 
+public function setSymbolTableAST
+  input GlobalScript.SymbolTable inSymTab;
+  input Absyn.Program inAST;
+  output GlobalScript.SymbolTable outSymTab;
+algorithm
+  outSymTab := match(inSymTab, inAST)
+    local
+      list<GlobalScript.InstantiatedClass> i;
+      list<GlobalScript.Variable> v;
+      list<GlobalScript.CompiledCFunction> c;
+      list<GlobalScript.LoadedFile> l;
+    case (GlobalScript.SYMBOLTABLE(instClsLst = i,
+                      lstVarVal = v, compiledFunctions = c, loadedFiles = l), _)
+      then GlobalScript.SYMBOLTABLE(inAST, NONE(), i, v, c, l);
+  end match;
+end setSymbolTableAST;
+
+public function getSymbolTableAST
+  input GlobalScript.SymbolTable inSymTab;
+  output Absyn.Program outAST;
+algorithm
+  outAST := match(inSymTab)
+    case (GlobalScript.SYMBOLTABLE(ast = outAST)) then outAST;
+  end match;
+end getSymbolTableAST;
+
 protected function deleteVarFromVarlist
 "deletes the first variable found"
   input Absyn.Ident inIdent;

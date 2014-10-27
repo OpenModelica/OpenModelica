@@ -59,7 +59,7 @@ import DAEUtil;
 import Expression;
 import ExpressionDump;
 import GlobalScript;
-import Interactive;
+import GlobalScriptUtil;
 import List;
 import Settings;
 import SimCode;
@@ -98,7 +98,7 @@ algorithm
 
   simSettings := CevalScript.convertSimulationOptionsToSimCode(
     CevalScript.buildSimulationOptionsFromModelExperimentAnnotation(
-      Interactive.setSymbolTableAST(GlobalScript.emptySymboltable,inProgram),inPath,fileNamePrefix,NONE())
+      GlobalScriptUtil.setSymbolTableAST(GlobalScript.emptySymboltable,inProgram),inPath,fileNamePrefix,NONE())
   );
   // correlation matrix form (vector of records) currently not supported by OpenModelica backend, remove it .
   //print("enter dae:");
@@ -111,7 +111,7 @@ algorithm
  // Strip correlation vector from dae to be able to compile (bug in OpenModelica with vectors of records )
   strippedDae := stripCorrelationFromDae(inDaelow);
 
-  strippedDae := BackendDAEUtil.getSolvedSystem(strippedDae, NONE(), NONE(), NONE(),NONE());
+  strippedDae := BackendDAEUtil.getSolvedSystem(strippedDae);
 
   //print("strippedDae :");
   //BackendDump.dump(strippedDae);

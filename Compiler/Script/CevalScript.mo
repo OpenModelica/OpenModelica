@@ -448,7 +448,7 @@ algorithm
         experimentAnnotationStr =
           Interactive.getNamedAnnotation(
             inModelPath,
-            Interactive.getSymbolTableAST(inSymTab),
+            GlobalScriptUtil.getSymbolTableAST(inSymTab),
             Absyn.IDENT("experiment"),
             SOME("{}"),
             Interactive.getExperimentAnnotationString);
@@ -990,7 +990,7 @@ algorithm
       equation
         pnew = loadFile(str1, encoding, p, false) "System.regularFileExists(name) => 0 &    Parser.parse(name) => p1 &" ;
         vals = List.map(Interactive.getTopClassnames(pnew),ValuesUtil.makeCodeTypeName);
-        st = Interactive.setSymbolTableAST(st, p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
       then (cache,ValuesUtil.makeArray(vals),st);
 
     case (cache,_,"getSourceFile",{Values.CODE(Absyn.C_TYPENAME(path))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
@@ -1002,14 +1002,14 @@ algorithm
     case (cache,_,"setSourceFile",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         (b,p) = Interactive.setSourceFile(path, str, p);
-        st = Interactive.setSymbolTableAST(st,p);
+        st = GlobalScriptUtil.setSymbolTableAST(st,p);
       then
         (cache,Values.BOOL(b),st);
 
     case (cache,_,"setClassComment",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         (p,b) = Interactive.setClassComment(path, str, p);
-        st = Interactive.setSymbolTableAST(st, p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
       then
         (cache,Values.BOOL(b),st);
 
@@ -1258,7 +1258,7 @@ algorithm
         within_ = Interactive.buildWithin(classpath);
         pnew = BlockCallRewrite.rewriteBlockCall(Absyn.PROGRAM({absynClass}, within_,ts), (Absyn.PROGRAM(classes, within_,ts)));
         pnew = Interactive.updateProgram(pnew, p);
-        newst = Interactive.setSymbolTableAST(st, pnew);
+        newst = GlobalScriptUtil.setSymbolTableAST(st, pnew);
       then
         (FCore.emptyCache(),Values.BOOL(true), newst);
 
@@ -1612,7 +1612,7 @@ algorithm
         crefCName = Absyn.pathToCref(className);
         true = Interactive.existClass(crefCName, p);
         p = moveClass(className, direction, p);
-        st = Interactive.setSymbolTableAST(st, p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
         simValue = Values.BOOL(true);
       then
         (cache,simValue,st);
@@ -3525,7 +3525,7 @@ algorithm
   // add program to the cache so it can be used to lookup modelica://
   // URIs in external functions IncludeDirectory/LibraryDirectory
   st := runFrontEndLoadProgram(className, inInteractiveSymbolTable);
-  cache := FCore.setProgramInCache(inCache, Interactive.getSymbolTableAST(st));
+  cache := FCore.setProgramInCache(inCache, GlobalScriptUtil.getSymbolTableAST(st));
   (cache,env,dae,st) := runFrontEndWork(cache,inEnv,className,st,relaxedFrontEnd,Error.getNumErrorMessages());
 end runFrontEnd;
 
@@ -4792,7 +4792,7 @@ algorithm
         filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
 
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
-        indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
+        indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow);
         xml_filename = stringAppendList({filenameprefix,".xml"});
 
         // apply rewrite rules to the back-end
@@ -4831,7 +4831,7 @@ algorithm
         filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
 
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
-        indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
+        indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow);
         xml_filename = stringAppendList({filenameprefix,".xml"});
 
         // apply rewrite rules to the back-end
@@ -7777,7 +7777,7 @@ algorithm
   GlobalScript.SYMBOLTABLE(ast=p) := inST;
   newp := Parser.parse(filename,encoding); /* Don't use the classloader since that can pull in entire directory structures. We only want to reload one single file. */
   newp := Interactive.updateProgram(newp, p);
-  outST := Interactive.setSymbolTableAST(inST, newp);
+  outST := GlobalScriptUtil.setSymbolTableAST(inST, newp);
 end reloadClass;
 
 protected function writeModuleDepends

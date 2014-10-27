@@ -65,6 +65,7 @@ protected import ErrorExt;
 protected import Flags;
 protected import Global;
 protected import GlobalScript;
+protected import GlobalScriptUtil;
 protected import Interactive;
 protected import List;
 protected import Parser;
@@ -124,7 +125,7 @@ algorithm
         debugstr = Print.getString();
         res_with_debug = stringAppendList({res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",flagstr,")---\n"});
       then res_with_debug;
-    case (_,_) then res;
+    else res;
   end matchcontinue;
 end makeDebugResult;
 
@@ -212,7 +213,7 @@ protected function handleCommand2
   output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   (outResult, outSymbolTable) :=
-  matchcontinue(inStatements, inProgram, inCommand, inSymbolTable)
+  matchcontinue(inStatements, inProgram, inSymbolTable)
     local
       GlobalScript.Statements stmts;
       Absyn.Program prog, prog2, ast;
@@ -221,13 +222,13 @@ algorithm
       list<GlobalScript.Variable> vars;
 
     // Interactively evaluate an algorithm statement or expression.
-    case (SOME(stmts), NONE(), _, _)
+    case (SOME(stmts), NONE(), _)
       equation
         (result, st) = Interactive.evaluate(stmts, inSymbolTable, false);
       then (result, st);
 
     // Add a class or function to the interactive symbol table.
-    case (NONE(), SOME(prog), _, GlobalScript.SYMBOLTABLE(ast = ast, lstVarVal = vars))
+    case (NONE(), SOME(prog), GlobalScript.SYMBOLTABLE(ast = ast, lstVarVal = vars))
       equation
         prog2 = Interactive.addScope(prog, vars);
         prog2 = Interactive.updateProgram(prog2, ast);
@@ -235,13 +236,13 @@ algorithm
         Debug.fcall(Flags.DUMP_GRAPHVIZ, DumpGraphviz.dump, prog2);
         Debug.fcall(Flags.DUMP, Dump.dump, prog2);
         result = makeClassDefResult(prog) "Return vector of toplevel classnames.";
-        st = Interactive.setSymbolTableAST(inSymbolTable, prog2);
+        st = GlobalScriptUtil.setSymbolTableAST(inSymbolTable, prog2);
       then (result, st);
 
     // A parser error occured in parseCommand, display the error message. This
     // is handled here instead of in parseCommand, since parseCommand does not
     // return a result string.
-    case (NONE(), NONE(), _, _)
+    case (NONE(), NONE(), _)
       equation
         Print.printBuf("Error occurred building AST\n");
         result = Print.getString();
@@ -250,7 +251,7 @@ algorithm
       then (result, inSymbolTable);
 
     // A non-parser error occured, display the error message.
-    case (_, _, _, _)
+    case (_, _, _)
       equation
         true = Util.isSome(inStatements) or Util.isSome(inProgram);
         result = Error.printMessagesStr(false);
@@ -293,33 +294,23 @@ algorithm
 end makeClassDefResult;
 
 protected function isModelicaFile
-"Succeeds if filename ends with .mo or .mof"
-  input String inString;
+  "Succeeds if filename ends with .mo or .mof"
+  input String inFilename;
+  output Boolean outIsModelicaFile;
+protected
+  list<String> lst;
+  String file_ext;
 algorithm
-  _ := matchcontinue (inString)
-    local
-      list<String> lst;
-      String last,filename;
-
-    case (filename)
-      equation
-        lst = System.strtok(filename, ".");
-        last :: _ = listReverse(lst);
-        true = stringEq(last, "mo");
-      then
-        ();
-
-    case (filename)
-      equation
-        lst = System.strtok(filename, ".");
-        last :: _ = listReverse(lst);
-        true = stringEq(last, "mof");
-      then
-        ();
-
-  end matchcontinue;
+  lst := System.strtok(inFilename, ".");
+ 
+  if listEmpty(lst) then
+    outIsModelicaFile := false;
+  else
+    file_ext := List.last(lst);
+    outIsModelicaFile := file_ext == "mo" or file_ext == "mof";
+  end if;
 end isModelicaFile;
-
+    
 protected function isEmptyOrFirstIsModelicaFile
   input list<String> libs;
 algorithm
@@ -327,12 +318,12 @@ algorithm
     local
       String f;
     case {} then ();
-    case f::_ equation isModelicaFile(f); then ();
+    case f::_ equation true = isModelicaFile(f); then ();
   end match;
 end isEmptyOrFirstIsModelicaFile;
 
 protected function isFlatModelicaFile
-"Succeeds if filename ends with .mof"
+  "Succeeds if filename ends with .mof"
   input String filename;
 protected
   list<String> lst;
@@ -344,7 +335,7 @@ algorithm
 end isFlatModelicaFile;
 
 protected function isModelicaScriptFile
-"Succeeds if filname end with .mos"
+  "Succeeds if filname end with .mos"
   input String filename;
 protected
   list<String> lst;
@@ -357,7 +348,7 @@ algorithm
 end isModelicaScriptFile;
 
 protected function isCodegenTemplateFile
-"Succeeds if filname end with .tpl"
+  "Succeeds if filname end with .tpl"
   input String filename;
 protected
   list<String> lst;
@@ -372,123 +363,70 @@ protected function showErrors
   input String errorString;
   input String errorMessages;
 algorithm
-  _ := matchcontinue(errorString, errorMessages)
-    case("", "") then ();
-    case(_, "")
-      equation
-        print(errorString); print("\n");
-      then ();
-    case("", _)
-      equation
-        print(errorMessages); print("\n");
-      then ();
-    case(_, _)
-      equation
-        print(errorString); print("\n");
-        print(errorMessages); print("\n");
-      then ();
- end matchcontinue;
+  if errorString <> "" then
+    print(errorString); print("\n");
+  end if;
+
+  if errorMessages <> "" then
+    print(errorMessages); print("\n");
+  end if;
 end showErrors;
 
-protected function createPathFromStringList
- input list<String> inStringLst;
- output Absyn.Path path;
-algorithm
- path := matchcontinue(inStringLst)
-   local
-     String strID;
-     list<String> rest;
-     Absyn.Path p, pDepth;
-
-   // we cannot have an empty list!
-   case ({}) then fail();
-
-   // last element in the list
-   case ({strID}) then Absyn.IDENT(strID);
-
-   // we have some more elements
-   case (strID::rest)
-     equation
-       pDepth = createPathFromStringList(rest);
-       p = Absyn.QUALIFIED(strID, pDepth);
-     then
-       p;
-  end matchcontinue;
-end createPathFromStringList;
-
-protected function parsePathFromString
- input String inString;
- output Absyn.Path path;
-algorithm
- path := matchcontinue(inString)
-   local
-     String str;
-     list<String> strLst;
-     Absyn.Path p;
-
-   case (str)
-     equation
-        strLst = Util.stringSplitAtChar(str, ".");
-        p = createPathFromStringList(strLst);
-     then p;
-
-   case (str)
-     equation
-       failure(_ = Util.stringSplitAtChar(str, "."));
-       // no "." present in the string, say is a path!
-     then
-       Absyn.IDENT(str);
-  end matchcontinue;
-end parsePathFromString;
-
 protected function loadLib
- input String inLib;
- input GlobalScript.SymbolTable inSymTab;
- output GlobalScript.SymbolTable outSymTab;
+  input String inLib;
+  input GlobalScript.SymbolTable inSymTab;
+  output GlobalScript.SymbolTable outSymTab;
+protected
+  Boolean is_modelica_file;
 algorithm
- outSymTab := matchcontinue(inLib, inSymTab)
-   local
-     String lib, mp, f;
-     list<String> rest;
-     Absyn.Program pnew, p;
-     list<GlobalScript.InstantiatedClass> ic;
-     list<GlobalScript.Variable> iv;
-     list<GlobalScript.CompiledCFunction> cf;
-     list<GlobalScript.LoadedFile> lf;
-     GlobalScript.SymbolTable st, newst;
-     Absyn.Path path;
+  is_modelica_file := isModelicaFile(inLib);
 
-   // A .mo-file.
-   case (f, GlobalScript.SYMBOLTABLE(p, _, ic, iv, cf, lf))
-     equation
-       isModelicaFile(f);
-       pnew = Parser.parse(f,"UTF-8");
-       pnew = Interactive.updateProgram(pnew, p);
-       newst = GlobalScript.SYMBOLTABLE(pnew, NONE(), ic, iv, cf, lf);
-     then
-      newst;
+  outSymTab := matchcontinue(is_modelica_file)
+    local
+      String lib, mp;
+      list<String> rest;
+      Absyn.Program pnew, p;
+      list<GlobalScript.InstantiatedClass> ic;
+      list<GlobalScript.Variable> iv;
+      list<GlobalScript.CompiledCFunction> cf;
+      list<GlobalScript.LoadedFile> lf;
+      GlobalScript.SymbolTable st, newst;
+      Absyn.Path path;
 
-   // some libs present
-   case (lib, GlobalScript.SYMBOLTABLE(p,_,ic,iv,cf,lf))
-     equation
-       failure(isModelicaFile(lib));
-       path = parsePathFromString(lib);
-       mp = Settings.getModelicaPath(Config.getRunningTestsuite());
-       (pnew, true) = CevalScript.loadModel({(path, {"default"})}, mp, p, true, true, true);
-       newst = GlobalScript.SYMBOLTABLE(pnew,NONE(),ic,iv,cf,lf);
-     then
+    // A .mo-file.
+    case true
+      equation
+        pnew = Parser.parse(inLib, "UTF-8");
+        p = GlobalScriptUtil.getSymbolTableAST(inSymTab);
+        pnew = Interactive.updateProgram(pnew, p);
+        newst = GlobalScriptUtil.setSymbolTableAST(inSymTab, pnew);
+      then
        newst;
-   // problem with the libs, ignore!
-   case (f, st)
-     equation
-       failure(isModelicaFile(f));
-       Print.printErrorBuf("Failed to load library: " +& f +& "!\n");
-     then fail();
-   case (f, st)
-     equation
-       isModelicaFile(f);
-       Print.printErrorBuf("Failed to parse file: " +& f +& "!\n");
-     then fail();
+
+    // some libs present
+    case false
+      equation
+        path = Absyn.stringPath(inLib);
+        mp = Settings.getModelicaPath(Config.getRunningTestsuite());
+        p = GlobalScriptUtil.getSymbolTableAST(inSymTab);
+        (pnew, true) = CevalScript.loadModel({(path, {"default"})}, mp, p, true, true, true);
+        newst = GlobalScriptUtil.setSymbolTableAST(inSymTab, pnew);
+      then
+        newst;
+
+    // problem with the libs, ignore!
+    case false
+      equation
+        Print.printErrorBuf("Failed to load library: " +& inLib +& "!\n");
+      then 
+        fail();
+
+    case true
+      equation
+        Print.printErrorBuf("Failed to parse file: " +& inLib +& "!\n");
+      then
+        fail();
+        
   end matchcontinue;
 end loadLib;
 
@@ -595,22 +533,19 @@ algorithm
 
     // deal with problems
     case (f::_)
-      equation
-        false = System.regularFileExists(f);
-        print(System.gettext("File does not exist: ")); print(f); print("\n");
+      algorithm
+        if System.regularFileExists(f) then
+          print("Error processing file: ");
+        else
+          print(System.gettext("File does not exist: "));
+        end if;
+
+        print(f); print("\n");
         // show errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
       then
         fail();
 
-    case (f::_)
-      equation
-        true = System.regularFileExists(f);
-        print("Error processing file: "); print(f); print("\n");
-        // show errors if there are any
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
-      then
-        fail();
   end matchcontinue;
 end translateFile;
 
@@ -623,39 +558,16 @@ protected function instantiate
   output FCore.Graph env;
   output DAE.DAElist dae;
   output Absyn.Path cname;
+protected
+  String cls;
+  GlobalScript.SymbolTable st;
 algorithm
-  (cache, env, dae, cname) := matchcontinue(program)
-    local
-      FCore.Cache c;
-      FCore.Graph e;
-      DAE.DAElist d;
-      Absyn.Path class_path;
-      String class_to_instantiate;
-      GlobalScript.SymbolTable st;
-    case (_)
-      equation
-        // If no class was explicitly specified, instantiate the last class in
-        // the program.
-        class_to_instantiate = Config.classToInstantiate();
-        true = stringEq(class_to_instantiate,"");
-        class_path = Absyn.lastClassname(program);
-        st = Interactive.setSymbolTableAST(GlobalScript.emptySymboltable,program);
-        (c, e, d, _) = CevalScript.runFrontEnd(FCore.emptyCache(),FGraph.empty(),class_path,st,true);
-      then
-        (c, e, d, class_path);
-
-    case (_)
-      equation
-        // If a class to instantiate was given on the command line, instantiate
-        // that class.
-        class_to_instantiate = Config.classToInstantiate();
-        false = stringEq(class_to_instantiate,"");
-        class_path = Absyn.stringPath(class_to_instantiate);
-        st = Interactive.setSymbolTableAST(GlobalScript.emptySymboltable,program);
-        (c, e, d, _) = CevalScript.runFrontEnd(FCore.emptyCache(),FGraph.empty(),class_path,st,true);
-      then
-        (c, e, d, class_path);
-  end matchcontinue;
+  cls := Config.classToInstantiate();
+  // If no class was explicitly specified, instantiate the last class in the
+  // program. Otherwise, instantiate the given class name.
+  cname := if stringLength(cls) == 0 then Absyn.lastClassname(program) else Absyn.stringPath(cls);
+  st := GlobalScriptUtil.setSymbolTableAST(GlobalScript.emptySymboltable, program);
+  (cache, env, dae) := CevalScript.runFrontEnd(FCore.emptyCache(), FGraph.empty(), cname, st, true);
 end instantiate;
 
 protected function optimizeDae
@@ -664,89 +576,46 @@ protected function optimizeDae
   input FCore.Graph inEnv;
   input DAE.DAElist dae;
   input Absyn.Program ap;
-  input Absyn.Path inPath5;
+  input Absyn.Path inClassName;
+protected
+  BackendDAE.ExtraInfo info;
+  BackendDAE.BackendDAE dlow;
 algorithm
-  _:=
-  matchcontinue (inCache,inEnv,dae,ap,inPath5)
-    local
-      BackendDAE.BackendDAE dlow,dlow_1;
-      Absyn.Path classname;
-      FCore.Cache cache;
-      FCore.Graph env;
-      String description,filenameprefix;
-
-    case (cache,env,_,_,classname)
-      equation
-        true = Config.simulationCg();
-        filenameprefix = Absyn.pathString(classname);
-        description = DAEUtil.daeDescription(dae);
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
-        dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(),NONE(),NONE(),NONE());
-        simcodegen(dlow_1,classname,ap,dae);
-      then
-        ();
-    else
-      equation
-        false = Config.simulationCg() "so main can print error messages" ;
-      then ();
-  end matchcontinue;
+  if Config.simulationCg() then
+    info := BackendDAE.EXTRA_INFO(DAEUtil.daeDescription(dae), Absyn.pathString(inClassName));
+    dlow := BackendDAECreate.lower(dae, inCache, inEnv, info);
+    dlow := BackendDAEUtil.getSolvedSystem(dlow);
+    simcodegen(dlow, inClassName, ap, dae);
+  end if;
 end optimizeDae;
 
 protected function simcodegen "
   Genereates simulation code using the SimCode module"
-  input BackendDAE.BackendDAE inBackendDAE5;
-  input Absyn.Path inPath;
-  input Absyn.Program inProgram3;
-  input DAE.DAElist inDAElist4;
+  input BackendDAE.BackendDAE inBackendDAE;
+  input Absyn.Path inClassName;
+  input Absyn.Program inProgram;
+  input DAE.DAElist inDAE;
+protected
+  String cname;
+  SimCode.SimulationSettings sim_settings;
+  Integer intervals;
 algorithm
-  _:=
-  matchcontinue (inBackendDAE5,inPath,inProgram3,inDAElist4)
-    local
-      BackendDAE.BackendDAE dlow;
-      String cname_str;
-      Absyn.Path classname;
-      Absyn.Program ap;
-      DAE.DAElist dae;
-      SimCode.SimulationSettings simSettings;
+  if Config.simulationCg() then
+    Print.clearErrorBuf();
+    Print.clearBuf();
+    cname := Absyn.pathString(inClassName);
 
-    case (dlow,classname,ap,dae) /* classname ass1 ass2 blocks */
-      equation
-        true = Config.simulationCg();
-        false = Config.acceptParModelicaGrammar();
-        Print.clearErrorBuf();
-        Print.clearBuf();
-        cname_str = Absyn.pathString(classname);
-        simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","mat",".*","");
-        _ = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
-        (_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
-        SimCodeUtil.execStat("Codegen Done");
-      then
-        ();
+    // If accepting parModelica create a slightly different default settings.
+    // Temporary solution for now since Intel OpenCL dll calls hang.
+    sim_settings := if Config.acceptParModelicaGrammar() then
+      SimCodeMain.createSimulationSettings(0.0, 1.0, 1, 1e-6, "dassl", "", "plt", ".*", "") else
+      SimCodeMain.createSimulationSettings(0.0, 1.0, 500, 1e-6, "dassl", "", "mat", ".*", "");
 
-     // If accepting parModelica create a slightly different default settings.
-     // Temporary solution for now since Intel OpenCL dll calls hang.
-     // So use simple Models and call the needed functions.
-     case (dlow,classname,ap,dae) /* classname ass1 ass2 blocks */
-      equation
-        true = Config.simulationCg();
-        true = Config.acceptParModelicaGrammar();
-        Print.clearErrorBuf();
-        Print.clearBuf();
-        cname_str = Absyn.pathString(classname);
-        simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 1, 1e-6,"dassl","","plt",".*","");
-        _ = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
-        (_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
-        SimCodeUtil.execStat("Codegen Done");
-      then
-        ();
-
-    /* If not generating simulation code: Succeed so no error messages are printed */
-    else
-      equation
-        false = Config.simulationCg();
-      then
-        ();
-  end matchcontinue;
+    System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
+    SimCodeMain.generateModelCode(inBackendDAE, inProgram, inDAE, inClassName,
+      cname, SOME(sim_settings), Absyn.FUNCTIONARGS({}, {}));
+    SimCodeUtil.execStat("Codegen Done");
+  end if;
 end simcodegen;
 
 protected function interactivemode
@@ -754,121 +623,80 @@ protected function interactivemode
   input GlobalScript.SymbolTable symbolTable;
 algorithm
   print("Opening a socket on port " +& intString(29500) +& "\n");
-  _ := serverLoop(true, Socket.waitforconnect(29500), symbolTable);
+  serverLoop(true, Socket.waitforconnect(29500), symbolTable);
 end interactivemode;
 
 protected function interactivemodeCorba
 "Initiate the interactive mode using corba communication."
-  input GlobalScript.SymbolTable inInteractiveSymbolTable;
+  input GlobalScript.SymbolTable inArguments;
 algorithm
-  _:=
-  matchcontinue inInteractiveSymbolTable
-   local
-     GlobalScript.SymbolTable symbolTable;
-    case symbolTable
-      equation
-        Corba.initialize();
-        _ = serverLoopCorba(symbolTable);
-      then
-        ();
-    case _
-      equation
-        failure(Corba.initialize());
-        Print.printBuf("Failed to initialize Corba! Is another OMC already running?\n");
-        Print.printBuf("Exiting!\n");
-      then
-        ();
-  end matchcontinue;
+  try
+    Corba.initialize();
+    serverLoopCorba(inArguments);
+  else
+    Print.printBuf("Failed to initialize Corba! Is another OMC already running?\n");
+    Print.printBuf("Exiting!\n");
+  end try; 
 end interactivemodeCorba;
-
 
 protected function serverLoopCorba
 "This function is the main loop of the server for a CORBA impl."
-  input GlobalScript.SymbolTable inInteractiveSymbolTable;
-  output GlobalScript.SymbolTable outInteractiveSymbolTable;
+  input GlobalScript.SymbolTable inSettings;
+  output GlobalScript.SymbolTable outSettings;
+protected
+  String str, reply_str;
+  GlobalScript.SymbolTable settings;
+  Boolean cont;
 algorithm
-  outInteractiveSymbolTable := match (inInteractiveSymbolTable)
-    local
-      Boolean b;
-      String str,replystr;
-      GlobalScript.SymbolTable newsymb,ressymb,isymb;
-    case (isymb)
-      equation
-        str = Corba.waitForCommand();
-        Print.clearBuf();
-        (b,replystr,newsymb) = handleCommand(str, isymb);
-        Corba.sendreply(Util.if_(b,replystr,"quit requested, shutting server down\n"));
-        Debug.bcall0(not b,Corba.close);
-        ressymb = Debug.bcallret1(b,serverLoopCorba,newsymb,isymb);
-      then ressymb;
-  end match;
+  str := Corba.waitForCommand();
+  Print.clearBuf();
+  (cont, reply_str, settings) := handleCommand(str, inSettings);
+
+  if cont then
+    Corba.sendreply(reply_str);
+    outSettings := serverLoopCorba(settings);
+  else
+    Corba.sendreply("quit requested, shutting server down\n");
+    Corba.close();
+    outSettings := inSettings;
+  end if;
 end serverLoopCorba;
 
 protected function readSettings
-" author: x02lucpo
- Checks if 'settings.mos' exist and uses handleCommand with runScript(...) to execute it.
- Checks if '-s <file>.mos' has been
- returns GlobalScript.SymbolTable which is used in the rest of the loop"
-  input list<String> inStringLst;
-  output GlobalScript.SymbolTable outInteractiveSymbolTable;
+  " author: x02lucpo
+   Checks if 'settings.mos' exist and uses handleCommand with runScript(...) to execute it.
+   Checks if '-s <file>.mos' has been
+   returns GlobalScript.SymbolTable which is used in the rest of the loop"
+  input list<String> inArguments;
+  output GlobalScript.SymbolTable outSettings;
+protected
+  String settings_file;
 algorithm
-  outInteractiveSymbolTable:=
-  matchcontinue (inStringLst)
-    local
-      list<String> args;
-      String str;
-      GlobalScript.SymbolTable outSymbolTable;
-    case (args)
-      equation
-        outSymbolTable = GlobalScript.emptySymboltable;
-         "" = Util.flagValue("-s",args);
-//         this is out-commented because automatically reading settings.mos
-//         can make a system bad
-//         outSymbolTable = readSettingsFile("settings.mos", GlobalScript.emptySymboltable);
-      then
-       outSymbolTable;
-    case (args)
-      equation
-        str = Util.flagValue("-s",args);
-        str = System.trim(str," \"");
-        outSymbolTable = readSettingsFile(str, GlobalScript.emptySymboltable);
-      then
-       outSymbolTable;
-  end matchcontinue;
+  settings_file := Util.flagValue("-s", inArguments);
+
+  if settings_file == "" then
+    outSettings := GlobalScript.emptySymboltable;
+  else
+    settings_file := System.trim(settings_file, " \"");
+    outSettings := readSettingsFile(settings_file, GlobalScript.emptySymboltable);
+  end if;
 end readSettings;
 
 
 protected function readSettingsFile
- input String filePath;
-  input GlobalScript.SymbolTable inInteractiveSymbolTable;
-  output GlobalScript.SymbolTable outInteractiveSymbolTable;
+  input String filePath;
+  input GlobalScript.SymbolTable inSettings;
+  output GlobalScript.SymbolTable outSettings;
+protected
+  String command;
 algorithm
- outInteractiveSymbolTable :=
-  matchcontinue (filePath,inInteractiveSymbolTable)
-    local
-      String file;
-      GlobalScript.SymbolTable inSymbolTable, outSymbolTable;
-      String str;
-    case (file,inSymbolTable)
-      equation
-        true = System.regularFileExists(file);
-        str = stringAppendList({"runScript(\"",file,"\")"});
-        (_,_,outSymbolTable) = handleCommand(str,inSymbolTable);
-      then
-        outSymbolTable;
-    case (file,inSymbolTable)
-      equation
-        false = System.regularFileExists(file);
-      then
-        inSymbolTable;
-    case (_,inSymbolTable)
-      equation
-        print("-readSettingsFile another error\n");
-      then
-        inSymbolTable;
-  end matchcontinue;
+  if System.regularFileExists(filePath) then
+    command := "runScript(\"" + filePath + "\")";
+    (_, _, outSettings) := handleCommand(command, inSettings);
+  else
+    outSettings := inSettings;
+  end if;
 end readSettingsFile;
-
 
 public function setWindowsPaths
 "@author: adrpo
@@ -938,180 +766,110 @@ algorithm
   end matchcontinue;
 end setWindowsPaths;
 
-protected function setDefaultCC "Reads the enviornment variable CC to change the default CC"
+protected function setDefaultCC "Reads the environment variable CC to change the default CC"
 algorithm
-  _ := matchcontinue ()
-    case ()
-      equation
-        System.setCCompiler(System.readEnv("CC"));
-      then ();
-    else ();
-  end matchcontinue;
+  try
+    System.setCCompiler(System.readEnv("CC"));
+  else
+  end try;
 end setDefaultCC;
 
 public function main
-"This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
-  start the translation."
+  "This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
+   start the translation."
   input list<String> args;
 protected
   list<String> args_1;
 algorithm
-  _ := matchcontinue args
-    case _
-      equation
-        // call GC_init() the first thing we do!
-        System.initGarbageCollector();
-        Global.initialize();
-        ErrorExt.registerModelicaFormatError();
+  try
+    // call GC_init() the first thing we do!
+    System.initGarbageCollector();
+    Global.initialize();
+    ErrorExt.registerModelicaFormatError();
 
-        // cheat the function generation that this function is used
-        // this is needed because this function is used in the parser
-        // for the bootstrapped compiler
-        _ = Absyn.isDerCref(Absyn.INTEGER(0));
+    // cheat the function generation that this function is used
+    // this is needed because this function is used in the parser
+    // for the bootstrapped compiler
+    Absyn.isDerCref(Absyn.INTEGER(0));
 
-        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        args_1 = Flags.new(args);
-        System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
-        setDefaultCC();
-        main2(args_1);
-      then ();
-    else
-      equation
-        ErrorExt.clearMessages();
-        failure(_ = Flags.new(args));
-        print(ErrorExt.printMessagesStr(false)); print("\n");
-      then fail();
-  end matchcontinue;
+    System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+    args_1 := Flags.new(args);
+    System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
+    setDefaultCC();
+    main2(args_1);
+  else
+    ErrorExt.clearMessages();
+    failure(_ := Flags.new(args));
+    print(ErrorExt.printMessagesStr(false)); print("\n");
+    fail();
+  end try;
 end main;
 
 protected function main2
-"This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
-  start the translation."
+  "This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
+   start the translation."
   input list<String> args;
 algorithm
-  _ := matchcontinue (args)
-    local
-      String errstr;
-      String omhome;
-      GlobalScript.SymbolTable symbolTable;
+  // Version requested using --version.
+  if Config.versionRequest() then
+    print(Settings.getVersionNr() + "\n");
+    return;
+  end if;
 
-    // Version requested using --version
-    case _ // try first to see if we had a version request among flags.
-      equation
-        true = Config.versionRequest();
-        print(Settings.getVersionNr());
-        print("\n");
-      then ();
+  // Don't allow running omc as root due to security risks.
+  if System.userIsRoot() then
+    print(System.gettext("You are trying to run OpenModelica as root.\n"));
+    print("This is a very bad idea. Why you ask?\n");
+    print("* The socket interface does not authenticate the user.\n");
+    print("* OpenModelica allows execution of arbitrary commands.\n");
+    print("The good news is there is no reason to run OpenModelica as root.\n");
+    return;
+  end if;
 
-    // Setup mingw path only once
-    // adrpo: NEVER MOVE THIS CASE FROM HERE OR PUT ANY OTHER CASES BEFORE IT
-    //        without asking Adrian.Pop@liu.se
-    case _
-      equation
-        true = "Windows_NT" ==& System.os();
-        omhome = Settings.getInstallationDirectoryPath();
-        setWindowsPaths(omhome);
+  // Setup mingw path only once
+  // adrpo: NEVER MOVE THIS CASE FROM HERE OR PUT ANY OTHER CASES BEFORE IT
+  //        without asking Adrian.Pop@liu.se
+  if System.os() == "Windows_NT" then
+    setWindowsPaths(Settings.getInstallationDirectoryPath());
+  end if;
 
-        // setup an file database (for in-memory use :memory: as name)
-        //Database.open(0, "omc.db");
-        //_ = Database.query(0, "create table if not exists Inst(id string not null, value real not null)");
-        //_ = Database.query(0, "begin transaction;");
-      then
-        fail();
+  // OMC called with no arguments, print usage information and quit.
+  if listEmpty(args) then
+    if not Config.helpRequest() then
+      print(Flags.printUsage());
+    end if;
+    return;
+  end if;
 
-    case _
-      equation
-        true = not System.userIsRoot() or Config.getRunningTestsuite();
-        true = Flags.isSet(Flags.INTERACTIVE);
-        false = Flags.isSet(Flags.INTERACTIVE_CORBA);
-        _ = Settings.getInstallationDirectoryPath();
-        symbolTable = readSettings(args);
-        interactivemode(symbolTable);
-      then ();
+  try
+    Settings.getInstallationDirectoryPath();
 
-    case _
-      equation
-        true = not System.userIsRoot() or Config.getRunningTestsuite();
-        false = Flags.isSet(Flags.INTERACTIVE);
-        true = Flags.isSet(Flags.INTERACTIVE_CORBA);
-        _ = Settings.getInstallationDirectoryPath();
-        symbolTable = readSettings(args);
-        interactivemodeCorba(symbolTable);
-      then ();
-
-    case _
-      equation
-        false = Flags.isSet(Flags.INTERACTIVE);
-        false = Flags.isSet(Flags.INTERACTIVE_CORBA);
-        true = not System.userIsRoot() or Config.getRunningTestsuite();
-        _ = Settings.getInstallationDirectoryPath();
-
-        // reset the timer used to calculate
-        // cummulative time of some functions
-        // search for System.startTimer/System.stopTimer/System.getTimerIntervalTimer
-        // System.resetTimer();
-
-        //setGlobalRoot(Global.crefIndex,  ComponentReference.createEmptyCrefMemory());
-        //Env.globalCache = fill(FCore.emptyCache,1);
-        _ = readSettings(args);
-
-        FGraphStream.start();
-
-        // non of the interactive mode was set, flatten the file
-        translateFile(args);
-
-        FGraphStream.finish();
-        /*
-        errstr = Print.getErrorString();
-        Debug.fcall(Flags.ERRORBUF, print, errstr);
-        */
-        //print("Total time for timer: " +& realString(System.getTimerCummulatedTime()) +& "\n");
-        //dbResult = Database.query(0, "end transaction;");
-        //dbResult = Database.query(0, "select * from Inst");
-      then
-        ();
-
-    case _
-      equation
-        true = System.userIsRoot();
-        print(System.gettext("You are trying to run OpenModelica as root.\n"));
-        print("This is a very bad idea. Why you ask?\n");
-        print("* The socket interface does not authenticate the user.\n");
-        print("* OpenModelica allows execution of arbitrary commands.\n");
-        print("The good news is there is no reason to run OpenModelica as root.\n");
-      then fail();
-
-    case {}
-      equation
-        false = System.userIsRoot();
-        print(Debug.bcallret0(not Config.helpRequest() /* Already printed help */, Flags.printUsage, ""));
-      then ();
-
-    case _
-      equation
-        true = not System.userIsRoot() or Config.getRunningTestsuite();
-        _ = Settings.getInstallationDirectoryPath();
-        print("# Error encountered! Exiting...\n");
-        print("# Please check the error message and the flags.\n");
-        errstr = Print.getErrorString();
-        Print.printBuf("\n\n----\n\nError buffer:\n\n");
-        print(errstr);
-        print(ErrorExt.printMessagesStr(false)); print("\n");
-        FGraphStream.finish();
-      then
-        fail();
-
-    case _
-      equation
-        true = not System.userIsRoot() or Config.getRunningTestsuite();
-        failure(_ = Settings.getInstallationDirectoryPath());
-        print("Error: OPENMODELICAHOME was not set.\n");
-        print("  Read the documentation for instructions on how to set it properly.\n");
-        print("  Most OpenModelica release distributions have scripts that set OPENMODELICAHOME for you.\n\n");
-
-        // Functions used by external code that needs to be included for linking
-      then fail();
-  end matchcontinue;
+    if Flags.isSet(Flags.INTERACTIVE) then
+      interactivemode(readSettings(args));
+    elseif Flags.isSet(Flags.INTERACTIVE_CORBA) then
+      interactivemodeCorba(readSettings(args));
+    else // No interactive flag given, try to flatten the file.
+      readSettings(args);
+      FGraphStream.start();
+      translateFile(args);
+      FGraphStream.finish();
+    end if;
+  else // Something went wrong, print an appropriate error.
+    try
+      Settings.getInstallationDirectoryPath();
+      print("# Error encountered! Exiting...\n");
+      print("# Please check the error message and the flags.\n");
+      Print.printBuf("\n\n----\n\nError buffer:\n\n");
+      print(Print.getErrorString());
+      print(ErrorExt.printMessagesStr(false)); print("\n");
+      FGraphStream.finish();
+    else
+      print("Error: OPENMODELICAHOME was not set.\n");
+      print("  Read the documentation for instructions on how to set it properly.\n");
+      print("  Most OpenModelica release distributions have scripts that set OPENMODELICAHOME for you.\n\n");
+    end try;
+    fail();
+  end try;
 end main2;
 
 annotation(__OpenModelica_Interface="backend");
