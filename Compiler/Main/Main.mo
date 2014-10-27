@@ -833,14 +833,6 @@ algorithm
     setWindowsPaths(Settings.getInstallationDirectoryPath());
   end if;
 
-  // OMC called with no arguments, print usage information and quit.
-  if listEmpty(args) then
-    if not Config.helpRequest() then
-      print(Flags.printUsage());
-    end if;
-    return;
-  end if;
-
   try
     Settings.getInstallationDirectoryPath();
 
@@ -855,6 +847,14 @@ algorithm
       FGraphStream.finish();
     end if;
   else // Something went wrong, print an appropriate error.
+    // OMC called with no arguments, print usage information and quit.
+    if listEmpty(args) then
+      if not Config.helpRequest() then
+        print(Flags.printUsage());
+      end if;
+      return;
+    end if;
+
     try
       Settings.getInstallationDirectoryPath();
       print("# Error encountered! Exiting...\n");
