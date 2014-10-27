@@ -391,16 +391,12 @@ algorithm
     case (_, DAE.SOURCE(instanceOpt = NONE()), _)
       then algorithmOutputs(inAlgorithm, inCrefExpansionRule);
 
+    // the algorithm came from a component that is member of an array or not
     case (_, DAE.SOURCE(instanceOpt = SOME(cr)), _)
-      equation
-        false = ComponentReference.crefHaveSubs(cr);
-      then algorithmOutputs(inAlgorithm, inCrefExpansionRule);
-
-    /*the algorithm came from a component that is member of an array*/
-    case (_, DAE.SOURCE(instanceOpt = SOME(cr)), _)
-      equation
-        true = ComponentReference.crefHaveSubs(cr);
-      then algorithmOutputs(inAlgorithm, DAE.NOT_EXPAND());
+      then
+        if ComponentReference.crefHaveSubs(cr)
+        then algorithmOutputs(inAlgorithm, DAE.NOT_EXPAND())
+        else algorithmOutputs(inAlgorithm, inCrefExpansionRule);
 
     else
       equation
@@ -474,20 +470,15 @@ algorithm
         (_, (_, ht)) = Expression.traverseExpListTopDown(expl, statementOutputsCrefFinder, (inCrefExpansion, iht));
       then ht;
 
-    // a := expr;  // where a is array with an empty list as subscript
-    case (DAE.STMT_ASSIGN_ARR(componentRef=cr), _, _)
-      equation
-        ({}) = ComponentReference.crefLastSubs(cr);
-        crlst = ComponentReference.expandCref(cr, true);
-        ht = List.fold(crlst, BaseHashSet.add, iht);
-      then ht;
-
     // a := expr;  // where a is array
     case (DAE.STMT_ASSIGN_ARR(componentRef=cr), _, _)
       equation
-        (subs as _::_) = ComponentReference.crefLastSubs(cr);
-        subs = List.fill(DAE.WHOLEDIM(), listLength(subs));
-        cr = ComponentReference.crefSetLastSubs(cr, subs);
+        subs = ComponentReference.crefLastSubs(cr);
+        if not listEmpty(subs) // not an empty subs list
+        then
+          subs = List.fill(DAE.WHOLEDIM(), listLength(subs));
+          cr = ComponentReference.crefSetLastSubs(cr, subs);
+        end if;
         crlst = ComponentReference.expandCref(cr, true);
         ht = List.fold(crlst, BaseHashSet.add, iht);
       then ht;

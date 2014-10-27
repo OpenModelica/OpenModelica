@@ -714,6 +714,7 @@ algorithm
     local
       list<tuple<Integer,FGraph.Graph>> assocLst;
       FGraph.Graph graph;
+      Integer f;
 
     // nothing there
     case (_)
@@ -734,27 +735,19 @@ algorithm
 
     case (SOME(graph))
       equation
-        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
         assocLst = getGlobalRoot(Global.builtinGraphIndex);
-        setGlobalRoot(Global.builtinGraphIndex, (Flags.METAMODELICA,graph)::assocLst);
+        f = Flags.getConfigEnum(Flags.GRAMMAR);
+        assocLst = if f == Flags.METAMODELICA
+                   then (Flags.METAMODELICA,graph)::assocLst
+                   else if f == Flags.PARMODELICA
+                        then (Flags.PARMODELICA,graph)::assocLst
+                        else if f == Flags.MODELICA
+                             then (Flags.MODELICA,graph)::assocLst
+                             else assocLst;
+        setGlobalRoot(Global.builtinGraphIndex, assocLst);
       then
         graph;
 
-    case (SOME(graph))
-      equation
-        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
-        assocLst = getGlobalRoot(Global.builtinGraphIndex);
-        setGlobalRoot(Global.builtinGraphIndex, (Flags.PARMODELICA,graph)::assocLst);
-      then
-        graph;
-
-    case (SOME(graph))
-      equation
-        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
-        assocLst = getGlobalRoot(Global.builtinGraphIndex);
-        setGlobalRoot(Global.builtinGraphIndex, (Flags.MODELICA,graph)::assocLst);
-      then
-        graph;
   end matchcontinue;
 end getSetInitialGraph;
 

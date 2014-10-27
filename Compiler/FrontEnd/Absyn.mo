@@ -5863,68 +5863,46 @@ algorithm
       ElementArg mod;
       Annotation a;
       Path p;
+
     case (ANNOTATION(elementArgs = ((mod as MODIFICATION(path = p)) :: oldrest)),ANNOTATION(elementArgs = eltargs))
       equation
-        failure(_ = removeModificationInElementargs(eltargs, p));
         ANNOTATION(neweltargs) = mergeAnnotations(ANNOTATION(oldrest), ANNOTATION(eltargs));
       then
-        ANNOTATION((mod :: neweltargs));
-    case (ANNOTATION(elementArgs = ((MODIFICATION(path = p)) :: oldrest)),ANNOTATION(elementArgs = eltargs))
-      equation
-        _ = removeModificationInElementargs(eltargs, p);
-        ANNOTATION(neweltargs) = mergeAnnotations(ANNOTATION(oldrest), ANNOTATION(eltargs));
-      then ANNOTATION(neweltargs);
+        if modificationInElementargs(eltargs, p)
+        then ANNOTATION(neweltargs)
+        else ANNOTATION(mod :: neweltargs);
+
     case (ANNOTATION(elementArgs = {}),a) then a;
+
   end matchcontinue;
 end mergeAnnotations;
 
-protected function removeModificationInElementargs
-" This function removes the class modification named by the second argument.
-   If no such class modification is found thefunction fails.
-   Currently, only identifiers are allowed as class modifiers,
-   i.e. a(...) and not a.b(...)"
+protected function modificationInElementargs
+"returns true or false if the given path is in the list of modifications"
   input list<ElementArg> inAbsynElementArgLst;
   input Path inPath;
-  output list<ElementArg> outAbsynElementArgLst;
+  output Boolean yes;
 algorithm
-  outAbsynElementArgLst := matchcontinue (inAbsynElementArgLst,inPath)
+  yes := match (inAbsynElementArgLst,inPath)
     local
       String id1,id2;
       ElementArg m;
-      list<ElementArg> res,xs;
-
-    case ({MODIFICATION(path = IDENT(name = id1))},IDENT(name = id2))
-      equation
-        true = stringEq(id1, id2);
-      then {};
-
-    case ({(MODIFICATION(path = IDENT(name = id1)))},IDENT(name = id2))
-      equation
-        false = stringEq(id1, id2);
-      then
-        fail();
+      list<ElementArg> xs;
+      Boolean b;
 
     case ((MODIFICATION(path = IDENT(name = id1)) :: xs),IDENT(name = id2))
       equation
-        true = stringEq(id1, id2);
-        res = removeModificationInElementargs(xs, inPath);
+        b = match(stringEq(id1, id2))
+              case (true) then true;
+              case (false) then modificationInElementargs(xs, inPath);
+            end match;
       then
-        res;
+        b;
 
-    case (((m as MODIFICATION(path = IDENT(name = id1))) :: xs),IDENT(name = id2))
-      equation
-        false = stringEq(id1, id2);
-        res = removeModificationInElementargs(xs, inPath);
-      then
-        (m :: res);
+    else false;
 
-    case (((m as MODIFICATION(path = IDENT(name = _))) :: xs),IDENT(name = _))
-      equation
-        res = removeModificationInElementargs(xs, inPath);
-      then
-        (m :: res);
-  end matchcontinue;
-end removeModificationInElementargs;
+  end match;
+end modificationInElementargs;
 
 public function annotationToElementArgs
   input Annotation ann;

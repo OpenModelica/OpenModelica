@@ -1423,25 +1423,23 @@ algorithm
       FCore.Graph env;
       LoopControl loop_ctrl;
       SymbolTable st;
+      Boolean b;
 
     case (_, _, _, _, BREAK(), _) then (inCache, inEnv, NEXT(), inST);
     case (_, _, _, _, RETURN(), _) then (inCache, inEnv, inLoopControl, inST);
     case (_, _, _, _, _, st)
       equation
-        (cache, Values.BOOL(boolean = true), st) =
-          cevalExp(inCondition, inCache, inEnv, st);
-        (cache, env, loop_ctrl, st) =
-          evaluateStatements(inStatements, cache, inEnv, st);
-        (cache, env, loop_ctrl, st) =
-          evaluateWhileStatement(inCondition, inStatements, cache, env, loop_ctrl, st);
+        (cache, Values.BOOL(boolean = b), st) = cevalExp(inCondition, inCache, inEnv, st);
+        if b then
+          (cache, env, loop_ctrl, st) = evaluateStatements(inStatements, cache, inEnv, st);
+          (cache, env, loop_ctrl, st) = evaluateWhileStatement(inCondition, inStatements, cache, env, loop_ctrl, st);
+        else
+          loop_ctrl = NEXT();
+          env = inEnv;
+        end if;
       then
         (cache, env, loop_ctrl, st);
-    else
-      equation
-        (cache, Values.BOOL(boolean = false), st) =
-          cevalExp(inCondition, inCache, inEnv, inST);
-      then
-        (cache, inEnv, NEXT(), st);
+
   end matchcontinue;
 end evaluateWhileStatement;
 
