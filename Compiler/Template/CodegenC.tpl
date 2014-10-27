@@ -4227,7 +4227,15 @@ template simulationFunctionsFile(String filePrefix, list<Function> functions, Te
   #include "<%filePrefix%>_literals.h"
   #include "<%filePrefix%>_includes.h"
 
+  <%if staticPrototypes then
+  <<
+  /* default, do not make protected functions static */
+  #if !defined(PROTECTED_FUNCTION_STATIC)
+  #define PROTECTED_FUNCTION_STATIC
+  #endif
   <%staticPrototypes%>
+  >>
+  %>
 
   <%functionBodies(functions,true)%>
 
@@ -4313,7 +4321,15 @@ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functio
   <%\n%>
   <%functionHeaders(functions, true, staticPrototypes)%>
   <%\n%>
+  <%if staticPrototypes then
+  <<
+  /* default, do not make protected functions static */
+  #if !defined(PROTECTED_FUNCTION_STATIC)
+  #define PROTECTED_FUNCTION_STATIC
+  #endif
   <%staticPrototypes%>
+  >>
+  %>
   <%\n%>
   #ifdef __cplusplus
   }
@@ -4615,7 +4631,15 @@ template functionsFile(String filePrefix,
 
   #include "<%filePrefix%>_includes.h"
 
+  <%if staticPrototypes then
+  <<
+  /* default, do not make protected functions static */
+  #if !defined(PROTECTED_FUNCTION_STATIC)
+  #define PROTECTED_FUNCTION_STATIC
+  #endif
   <%staticPrototypes%>
+  >>
+  %>
 
   <% if mainFunction then
   <<
@@ -5108,7 +5132,7 @@ end functionHeaderImpl;
 template functionPrototype(String fname, list<Variable> fargs, list<Variable> outVars, Boolean boxed, SCode.Visibility visibility, Boolean isSimulation)
  "Generates function header definition for a Modelica/MetaModelica function. Generates a boxed version of the header if boxed = true, otherwise a normal definition"
 ::=
-  let static = if isSimulation then "" else (match visibility case PROTECTED(__) then 'static ')
+  let static = if isSimulation then "" else (match visibility case PROTECTED(__) then 'PROTECTED_FUNCTION_STATIC ')
   let fargsStr = if boxed then
       (fargs |> var => ", " + funArgBoxedDefinition(var) )
     else
@@ -6086,7 +6110,7 @@ case RECORD_CONSTRUCTOR(__) then
      else error(sourceInfo(),"boxRecordConstructor:Unknown variable"))
   let start = daeExpMetaHelperBoxStart(incrementInt(listLength(funArgs), 1))
   <<
-  <%if isSimulation then "" else match visibility case PROTECTED(__) then "static "%>modelica_metatype boxptr_<%fname%>(threadData_t *threadData<%funArgs |> var => (", " + funArgBoxedDefinition(var))%>)
+  <%if isSimulation then "" else match visibility case PROTECTED(__) then "PROTECTED_FUNCTION_STATIC "%>modelica_metatype boxptr_<%fname%>(threadData_t *threadData<%funArgs |> var => (", " + funArgBoxedDefinition(var))%>)
   {
     return mmc_mk_box<%start%>3, &<%fname%>__desc<%funArgsStr%>);
   }

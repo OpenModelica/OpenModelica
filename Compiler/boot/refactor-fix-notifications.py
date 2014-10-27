@@ -244,7 +244,7 @@ def runStamp(arg):
     print('Expected all arguments to have suffix .stamp.mos')
     sys.exit(1)
   f = open(arg)
-  moFile = os.readlink(f.readline().split('"')[1])
+  moFile = f.readline().split('"')[1]
   logFile = arg.replace('.stamp.mos','.log')
   if os.path.exists(moFile.replace('.mo','.tpl')):
     print 'Skipping Susan-generated file %s' % arg
