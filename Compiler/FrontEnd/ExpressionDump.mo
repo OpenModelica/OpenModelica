@@ -1650,12 +1650,13 @@ algorithm
       Integer x;
       Absyn.Path p;
       DAE.Exp e;
-
+      Integer size;
     case DAE.DIM_UNKNOWN() then ":";
 
-    case DAE.DIM_ENUM(enumTypeName = p)
+    case DAE.DIM_ENUM(enumTypeName = p, size =size)
       equation
-        s = Absyn.pathString(p);
+        //s = Absyn.pathString(p);
+        s = intString(size);
       then
         s;
 
