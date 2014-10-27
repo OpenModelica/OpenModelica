@@ -18,7 +18,6 @@ Copyright (c) 2008, OSMC
 *****************************************************************************/
 class IAlgLoopSolver
 {
-
 public:
     /// Enumeration to denote the status of iteration
     enum ITERATIONSTATUS
@@ -28,7 +27,7 @@ public:
         DONE,
     };
 
-    virtual ~IAlgLoopSolver()    {};
+    virtual ~IAlgLoopSolver() {};
 
     /// (Re-) initialize the solver
     virtual void initialize() = 0;

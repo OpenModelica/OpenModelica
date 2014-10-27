@@ -10,9 +10,8 @@ class StaticOMCFactory : public OMCFactory
 {
     public:
     StaticOMCFactory();
-        StaticOMCFactory(PATH library_path, PATH modelicasystem_path);
+    StaticOMCFactory(PATH library_path, PATH modelicasystem_path);
+    virtual ~StaticOMCFactory();
 
-        virtual ~StaticOMCFactory();
-
-        virtual std::pair<boost::shared_ptr<ISimController>,SimSettings> createSimulation(int argc,  const char* argv[]);
+    virtual std::pair<boost::shared_ptr<ISimController>, SimSettings> createSimulation(int argc, const char* argv[]);
 };

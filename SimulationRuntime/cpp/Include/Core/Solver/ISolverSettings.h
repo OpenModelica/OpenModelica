@@ -30,7 +30,7 @@ public:
   /// Tolerance to reach _endTime (default: 1e-6)
   virtual double getEndTimeTol() = 0;
   virtual void setEndTimeTol(double) = 0;
-  //DenseOut
+  // DenseOut
   virtual bool getDenseOutput() = 0;
   virtual void setDenseOutput(bool) = 0;
 
@@ -39,7 +39,7 @@ public:
   virtual double getRTol() = 0;
   virtual void setRTol(double) = 0;
 
-  ///  Global simulation settings
-  virtual IGlobalSettings* getGlobalSettings()=0;
-  virtual void load(string)=0;
+  /// Global simulation settings
+  virtual IGlobalSettings* getGlobalSettings() = 0;
+  virtual void load(string) = 0;
 };

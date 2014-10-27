@@ -1,11 +1,8 @@
 #pragma once
-
-
 #include <fstream>
 
-class  GlobalSettings : public IGlobalSettings
+class GlobalSettings : public IGlobalSettings
 {
-
 public:
     GlobalSettings(void);
     ~GlobalSettings(void);
@@ -21,29 +18,27 @@ public:
     ///< Write out results ([false,true]; default: true)
     virtual bool getResultsOutput();
     virtual void setResultsOutput(bool);
-    ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
+    ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false, true]; default: true)
     virtual bool getInfoOutput();
     virtual void setInfoOutput(bool);
     virtual bool useEndlessSim();
     virtual void useEndlessSim(bool);
     ///path for simulation results in textfile
-    virtual string    getOutputPath();
+    virtual string getOutputPath();
     virtual void setOutputPath(string);
     virtual OutputFormat getOutputFormat();
     virtual void setOutputFormat(OutputFormat format);
-
     virtual OutputPointType getOutputPointType();
     virtual void setOutputPointType(OutputPointType);
-
-     virtual LogType getLogType();
+    virtual LogType getLogType();
     virtual void setLogType(LogType);
 
     //solver used for simulation
-    virtual string    getSelectedSolver();
+    virtual string getSelectedSolver();
     virtual void setSelectedSolver(string);
-    virtual string    getSelectedNonLinSolver();
+    virtual string getSelectedNonLinSolver();
     virtual void setSelectedNonLinSolver(string);
-    virtual string    getSelectedLinSolver();
+    virtual string getSelectedLinSolver();
     virtual void setSelectedLinSolver(string);
     virtual void setResultsFileName(string);
     virtual string getResultsFileName();
@@ -53,12 +48,12 @@ public:
     virtual string getRuntimeLibrarypath();
     virtual void setAlarmTime(unsigned int);
     virtual unsigned int getAlarmTime();
+	
 private:
     double
         _startTime,///< Start time of integration (default: 0.0)
         _endTime,///< End time of integraiton (default: 1.0)
         _hOutput;//< Output step size (default: 20 ms)
-
     bool
         _resultsOutput,   ///< Write out results ([false,true]; default: true)
         _infoOutput,      ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
@@ -74,6 +69,4 @@ private:
     OutputPointType _outputPointType;
     LogType _log_type;
     unsigned int _alarm_time;
-
-
 };

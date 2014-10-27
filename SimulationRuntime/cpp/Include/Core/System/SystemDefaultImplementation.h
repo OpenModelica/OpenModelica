@@ -44,15 +44,11 @@ class InitVars
    boost::unordered_map<std::string, T> _start_values;
 };
 
-
 class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
 {
 public:
     SystemDefaultImplementation(IGlobalSettings* globalSettings);
-
     virtual ~SystemDefaultImplementation();
-
-
 
     /// Provide number (dimension) of boolean variables
     virtual int getDimBoolean() const;
@@ -73,97 +69,91 @@ public:
     virtual int getDimRHS() const;
 
 
-
-
-    /// Provide boolean variables
-    virtual void getBoolean(bool* z);
-
-    /// Provide boolean variables
-    virtual void getContinuousStates(double* z);
-
-    /// Provide integer variables
-    virtual void getInteger(int* z);
-
-    /// Provide real variables
-    virtual void getReal(double* z);
-
-    /// Provide real variables
-    virtual void getString(std::string* z);
-
-    /// Provide the right hand side
-    virtual void getRHS(double* f);
-
-    virtual void  setConditions(bool* c);
-    virtual void getConditions(bool* c);
-    /// Provide boolean variables
-    virtual void setBoolean(const bool* z);
-
-    /// Provide boolean variables
-    virtual void setContinuousStates(const double* z);
-
-    /// Provide integer variables
-    virtual void setInteger(const int* z);
-
-    /// Provide real variables
-    virtual void setReal(const double* z);
-
-    /// Provide real variables
-    virtual void setString(const std::string* z);
-
-    /// Provide the right hand side
-    virtual void setRHS(const double* f);
-
-
-
-    /// (Re-) initialize the system of equations
-     void initialize();
-    /// Set current integration time
-     void setTime(const double& t);
+	/// Provide boolean variables
+	virtual void getBoolean(bool* z);
+	
+	/// Provide boolean variables
+	virtual void getContinuousStates(double* z);
+	
+	/// Provide integer variables
+	virtual void getInteger(int* z);
+	
+	/// Provide real variables
+	virtual void getReal(double* z);
+	
+	/// Provide real variables
+	virtual void getString(std::string* z);
+	
+	/// Provide the right hand side
+	virtual void getRHS(double* f);
+	
+	virtual void  setConditions(bool* c);
+	virtual void getConditions(bool* c);
+	/// Provide boolean variables
+	virtual void setBoolean(const bool* z);
+	
+	/// Provide boolean variables
+	virtual void setContinuousStates(const double* z);
+	
+	/// Provide integer variables
+	virtual void setInteger(const int* z);
+	
+	/// Provide real variables
+	virtual void setReal(const double* z);
+	
+	/// Provide real variables
+	virtual void setString(const std::string* z);
+	
+	/// Provide the right hand side
+	virtual void setRHS(const double* f);
+	
+	/// (Re-) initialize the system of equations
+	void initialize();
+	/// Set current integration time
+	void setTime(const double& t);
 
 protected:
-     void Assert(bool cond, const string& msg);
-     void Terminate(string msg);
-     void intDelay(vector<unsigned int> expr,vector<double> delay_max);
-     void storeDelay(unsigned int expr_id,double expr_value,double time);
-     void storeTime(double time);
-     double delay(unsigned int expr_id,double expr_value, double delayTime, double delayMax);
-     bool isConsistent();
-
+    void Assert(bool cond, const string& msg);
+    void Terminate(string msg);
+    void intDelay(vector<unsigned int> expr,vector<double> delay_max);
+    void storeDelay(unsigned int expr_id,double expr_value,double time);
+    void storeTime(double time);
+    double delay(unsigned int expr_id,double expr_value, double delayTime, double delayMax);
+    bool isConsistent();
 
     double getRealStartValue(string key);
-    bool  getBoolStartValue(string key);
-    int   getIntStartValue(string key);
+    bool getBoolStartValue(string key);
+    int getIntStartValue(string key);
     void setRealStartValue(double& var,double val,string key);
     void setBoolStartValue(bool& var,bool val, string key);
     void setIntStartValue(int& var,int val, string key);
 
     double
-        _simTime;        ///< current simulation time (given by the solver)
+        _simTime;        		///< current simulation time (given by the solver)
 
     double
-        *__z,        ///< "Extended state vector", containing all states and algebraic variables of all types
-        *__zDot;       ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
+        *__z,        			///< "Extended state vector", containing all states and algebraic variables of all types
+        *__zDot;       			///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
     bool
-        * _conditions,    ///< External conditions changed by the solver
+        * _conditions,    		///< External conditions changed by the solver
         * _time_conditions;
 
     int
-         _dimContinuousStates,
-         _dimRHS,            ///< Dimension der rechten Seite
-         _dimReal,            ///< Anzahl der reelwertigen Variablen
-         _dimInteger,            ///< Anzahl der integerwertigen Variablen
-         _dimBoolean,            ///< Anzahl der boolwertigen Variablen
-         _dimString,          ///< Anzahl der stringwertigen Variablen
-         _dimZeroFunc,          ///< Dimension (=Anzahl) Nullstellenfunktion
-         _dimTimeEvent,          ///< Dimension (=Anzahl) Time event (start zeit und frequenz)
-         _dimAE;        ///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
+        _dimContinuousStates,
+        _dimRHS,            	///< Dimension der rechten Seite
+        _dimReal,            	///< Anzahl der reelwertigen Variablen
+        _dimInteger,          	///< Anzahl der integerwertigen Variablen
+        _dimBoolean,         	///< Anzahl der boolwertigen Variablen
+        _dimString,          	///< Anzahl der stringwertigen Variablen
+        _dimZeroFunc,          	///< Dimension (=Anzahl) Nullstellenfunktion
+        _dimTimeEvent,      	///< Dimension (=Anzahl) Time event (start zeit und frequenz)
+        _dimAE;        			///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
 
     int
-       * _time_event_counter;
-       std::ostream *_outputStream;        ///< Output stream for results
+		* _time_event_counter;
+		std::ostream *_outputStream;        ///< Output stream for results
 
-     IContinuous::UPDATETYPE _callType;
-
+    IContinuous::UPDATETYPE _callType;
 
     bool _initial;
     bool _terminal;
@@ -174,7 +164,6 @@ protected:
     InitVars<int> _int_start_values;
     InitVars<bool> _bool_start_values;
 
-
     EventHandling _event_handling;
 
     typedef boost::circular_buffer<double> buffer_type;
@@ -182,7 +171,7 @@ protected:
     buffer_type _time_buffer;
     double _delay_max;
     double _start_time;
-    IGlobalSettings*  _global_settings; //this should be a reference, but this is not working if the libraries are linked statically
+    IGlobalSettings* _global_settings; //this should be a reference, but this is not working if the libraries are linked statically
 };
 
 

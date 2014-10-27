@@ -12,12 +12,12 @@ class  SettingsFactory : public ISettingsFactory
 #endif
 {
 public:
-   SettingsFactory(PATH libraries_path,PATH config_path,PATH modelicasystem_path);
-   virtual boost::shared_ptr<ISolverSettings>  createSelectedSolverSettings();
-  virtual boost::shared_ptr<IGlobalSettings> createSolverGlobalSettings();
-  ~SettingsFactory(void);
+	SettingsFactory(PATH libraries_path, PATH config_path, PATH modelicasystem_path);
+	virtual boost::shared_ptr<ISolverSettings> createSelectedSolverSettings();
+	virtual boost::shared_ptr<IGlobalSettings> createSolverGlobalSettings();
+	~SettingsFactory(void);
+  
 private:
     boost::shared_ptr<IGlobalSettings> _global_settings;
     boost::shared_ptr<ISolverSettings> _solver_settings;
-
 };

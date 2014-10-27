@@ -1,13 +1,12 @@
 #pragma once
 class IStepEvent
 {
- public:
-
-  virtual ~IStepEvent(){};
-  virtual bool isStepEvent() = 0;
-  //sets the initial status
-  virtual void setTerminal(bool) = 0;
-  //returns the intial status
-  virtual bool terminal() = 0;
+public:
+	virtual ~IStepEvent(){};
+	virtual bool isStepEvent() = 0;
+	//sets the initial status
+	virtual void setTerminal(bool) = 0;
+	//returns the intial status
+	virtual bool terminal() = 0;
 };
 

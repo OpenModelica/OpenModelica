@@ -16,6 +16,3 @@
 #else
     error "operating system not supported"
 #endif
-
-
-

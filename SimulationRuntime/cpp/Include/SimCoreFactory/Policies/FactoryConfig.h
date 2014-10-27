@@ -29,8 +29,6 @@
 #include <Core/Utils/extension/factory_map.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
-
-
 #include <boost/unordered_map.hpp>
 
 /*Namespaces*/
