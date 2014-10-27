@@ -10,7 +10,7 @@ public:
     IGlobalSettings* getGlobalSettings();
     ISolverSettings* getSolverSettings();
     ISimControllerSettings* getSimControllerSettings();
-	
+
 private:
      boost::shared_ptr<ISettingsFactory> _settings_factory;
      boost::shared_ptr<ISolverSettings> _solver_settings;

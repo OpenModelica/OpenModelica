@@ -49,7 +49,7 @@ public:
   virtual void Start(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettings simsettings, string modelKey)=0;
   // Stops the simulation
   virtual void Stop() = 0;
-  
+
   // Functions for realtime-usage (VxWorks and BODAS)
   virtual void StartVxWorks(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettings simsettings) = 0;
   virtual boost::shared_ptr<ISimData> getSimData(string modelname) = 0;

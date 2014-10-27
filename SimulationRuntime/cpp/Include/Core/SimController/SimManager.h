@@ -33,9 +33,9 @@ public:
     ~SimManager();
     void runSimulation();
     void initialize();
-	
-	// for real-time usage (VxWorks and BODAS)
-	void runSingleStep();
+
+  // for real-time usage (VxWorks and BODAS)
+  void runSingleStep();
 
 private:
     void computeEndTimes(std::vector<std::pair<double,int> > &tStopsSub);
@@ -45,21 +45,21 @@ private:
     boost::shared_ptr<IMixedSystem> _mixed_system;
     Configuration* _config;
 
-    std::vector<std::vector<std::pair<double,int> > >  	_tStops;	///< - Stopzeitpunkte aufgrund von Time-Events        
-    boost::shared_ptr<ISolver>			_solver;			///<             - Solver
-	int            						_dimtimeevent,  	///< Temp        - Timeevent-Dimensionen-Array
-										_dimZeroFunc;   	///< 			 - Number of zero functions
-    int*      							_timeeventcounter;	///< Temp        - Timeevent-Counter-Array
-    int									_totStps,           ///< Output      - Anzahl Steps der Prozesse
-										_accStps,			///< Output      - Anzahl akzeptierte Steps der Prozesse
-										_rejStps;			///< Output      - Anzahl verworfene steps der Prozesse
-    ISolver::SOLVERCALL					_solverTask;		///< Temporary   - Beschreibt die Aufgabe mit der der Solver aufgerufen wird
-    int									_idid;				///< Output		 - DebugID
-    bool								_continueSimulation,///< 		     - Flag für Endlossimulation (wird gesetzt, wenn Solver zurückkehrt)
-										_writeFinalState;   ///< Temporary   - Ist am Ende noch ein Time-Event???
-    bool*								_events;			///< 			 - Vector (of dimension _dimZeroF) indicating which zero function caused an event
-    double								_H,                 ///< Input, Output - Koppelschrittweite
-										_tStart,
-										_tEnd;
-    boost::shared_ptr<Initialization> 	_initialization;
+    std::vector<std::vector<std::pair<double,int> > >    _tStops;  ///< - Stopzeitpunkte aufgrund von Time-Events
+    boost::shared_ptr<ISolver>      _solver;      ///<             - Solver
+  int                        _dimtimeevent,    ///< Temp        - Timeevent-Dimensionen-Array
+                    _dimZeroFunc;     ///<        - Number of zero functions
+    int*                    _timeeventcounter;  ///< Temp        - Timeevent-Counter-Array
+    int                  _totStps,           ///< Output      - Anzahl Steps der Prozesse
+                    _accStps,      ///< Output      - Anzahl akzeptierte Steps der Prozesse
+                    _rejStps;      ///< Output      - Anzahl verworfene steps der Prozesse
+    ISolver::SOLVERCALL          _solverTask;    ///< Temporary   - Beschreibt die Aufgabe mit der der Solver aufgerufen wird
+    int                  _idid;        ///< Output     - DebugID
+    bool                _continueSimulation,///<          - Flag für Endlossimulation (wird gesetzt, wenn Solver zurückkehrt)
+                    _writeFinalState;   ///< Temporary   - Ist am Ende noch ein Time-Event???
+    bool*                _events;      ///<        - Vector (of dimension _dimZeroF) indicating which zero function caused an event
+    double                _H,                 ///< Input, Output - Koppelschrittweite
+                    _tStart,
+                    _tEnd;
+    boost::shared_ptr<Initialization>   _initialization;
 };

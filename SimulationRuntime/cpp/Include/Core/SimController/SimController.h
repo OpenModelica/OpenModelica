@@ -28,7 +28,7 @@ public:
     /// Stops the simulation
     virtual void Stop();
 
-	// for real-time usage (VxWorks and BODAS)	
+  // for real-time usage (VxWorks and BODAS)
     virtual boost::shared_ptr<ISimData> getSimData(string modelname);
     virtual void StartVxWorks(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettings simsettings);
     virtual void calcOneStep();
@@ -40,7 +40,7 @@ private:
     std::map<string, std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > > _systems;
     boost::shared_ptr<IAlgLoopSolverFactory> _algloopsolverfactory;
 
-	// for real-time usage (VxWorks and BODAS)
+  // for real-time usage (VxWorks and BODAS)
     boost::shared_ptr<SimManager> _simMgr;
 
 };

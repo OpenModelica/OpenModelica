@@ -19,13 +19,13 @@ public:
     /// Enumeration to control the evaluation of equations within the system
     enum UPDATETYPE
     {
-        UNDEF_UPDATE  	= 0x00000000,
-        ACROSS      	= 0x00000001,
-        THROUGH      	= 0x00000002,
-        ALL        		= 0x00000003,
-        DISCRETE   		= 0x00000004,
-        CONTINUOUS  	= 0x00000008,
-        RANKING      	= 0x00000016      ///< Ranking Method
+        UNDEF_UPDATE    = 0x00000000,
+        ACROSS        = 0x00000001,
+        THROUGH        = 0x00000002,
+        ALL            = 0x00000003,
+        DISCRETE       = 0x00000004,
+        CONTINUOUS    = 0x00000008,
+        RANKING        = 0x00000016      ///< Ranking Method
     };
 
     virtual ~IContinuous()  {};
@@ -100,7 +100,7 @@ public:
     /// (see: Simeon, B.: "Numerische Integration mechanischer Mehrkörpersysteme", PhD-Thesis, Düsseldorf, 1994)
     enum INDEX
     {
-        UNDEF_INDEX   	=    0x00000,
+        UNDEF_INDEX     =    0x00000,
         VAR_INDEX0      =    0x00001,    ///< Variable Index 0 (States of systems of 1st order)
         VAR_INDEX1      =    0x00002,    ///< Variable Index 1 (1st order States of systems of 2nd order, e.g. positions)
         VAR_INDEX2      =    0x00004,    ///< Variable Index 2 (2nd order States of systems of 2nd order, e.g. velocities)

@@ -6,24 +6,24 @@
  Policy class to create lin solver object
  */
 template<class CreationPolicy>
-struct LinSolverOMCFactory : virtual public ObjectFactory<CreationPolicy> 
+struct LinSolverOMCFactory : virtual public ObjectFactory<CreationPolicy>
 {
 public:
-	LinSolverOMCFactory(PATH library_path, PATH modelicasystem_path, PATH config_path)
-		: ObjectFactory<CreationPolicy>(library_path, modelicasystem_path, config_path)
-		, _last_selected_solver("empty")
-	{
-		_linsolver_type_map = new type_map();
-	}
-	virtual ~LinSolverOMCFactory()
-	{
-		delete _linsolver_type_map;
-		// ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs(); todo solver lib wird in linsolver factory entlanden
-	}
+  LinSolverOMCFactory(PATH library_path, PATH modelicasystem_path, PATH config_path)
+    : ObjectFactory<CreationPolicy>(library_path, modelicasystem_path, config_path)
+    , _last_selected_solver("empty")
+  {
+    _linsolver_type_map = new type_map();
+  }
+  virtual ~LinSolverOMCFactory()
+  {
+    delete _linsolver_type_map;
+    // ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs(); todo solver lib wird in linsolver factory entlanden
+  }
 
-	virtual boost::shared_ptr<ILinSolverSettings> createLinSolverSettings(string lin_solver)
+  virtual boost::shared_ptr<ILinSolverSettings> createLinSolverSettings(string lin_solver)
     {
-		string lin_solver_key;
+    string lin_solver_key;
 
         if(lin_solver.compare("umfpack") == 0)
         {
@@ -51,12 +51,12 @@ public:
         }
         boost::shared_ptr<ILinSolverSettings> linsolversetting = boost::shared_ptr<ILinSolverSettings>(iter->second.create());
         return linsolversetting;
-	}
+  }
 
-	virtual boost::shared_ptr<IAlgLoopSolver> createLinSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<ILinSolverSettings> solver_settings)
-	{
-		if(_last_selected_solver.compare(solver_name) == 0)
-		{
+  virtual boost::shared_ptr<IAlgLoopSolver> createLinSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<ILinSolverSettings> solver_settings)
+  {
+    if(_last_selected_solver.compare(solver_name) == 0)
+    {
             std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, ILinSolverSettings*> >::iterator iter;
             std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, ILinSolverSettings*> >& linSolverFactory(_linsolver_type_map->get());
             iter = linSolverFactory.find(solver_name);
@@ -67,14 +67,14 @@ public:
             boost::shared_ptr<IAlgLoopSolver> solver = boost::shared_ptr<IAlgLoopSolver>(iter->second.create(algLoop,solver_settings.get()));
 
             return solver;
-		}
-		else
+    }
+    else
            throw std::invalid_argument("Selected linear solver is not available");
-	}
-	
+  }
+
 protected:
-	string _last_selected_solver;
-	
+  string _last_selected_solver;
+
 private:
     type_map* _linsolver_type_map;
 };

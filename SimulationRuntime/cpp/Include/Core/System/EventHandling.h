@@ -14,7 +14,7 @@ public:
     virtual ~EventHandling(void);
     //Inits the event variables
     //void initialize(IEvent* system,int dim,init_prevars_type init_prevars);
-	void initialize(IEvent* system, int dim);
+  void initialize(IEvent* system, int dim);
     //Returns the help vector
     //void getHelpVars(double* h);
     //sets the help vector
@@ -28,7 +28,7 @@ public:
     void saveDiscretPreVars(double vars [], unsigned int n);
     //saves all helpvariables
     //void saveH();
-	// void setHelpVar(unsigned int i,double var);
+  // void setHelpVar(unsigned int i,double var);
     //const double& operator[](unsigned int i) const;
     //Implementation of the Modelica pre  operator
     double pre(double var, string key);
@@ -47,7 +47,7 @@ public:
     bool changeDiscreteVar(double var, string key);
 
     getCondition_type  getCondition;
-	
+
 private:
     //Stores all varibales occured before an event
     unordered_map<string,unsigned int> _pre_vars_idx;

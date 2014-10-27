@@ -23,7 +23,7 @@
     #include <SimCoreFactory/Policies/SolverSettingsBodasFactory.h>
     #include <SimCoreFactory/Policies/SystemBodasFactory.h>
     #include <SimCoreFactory/Policies/NonLinSolverBodasFactory.h>
-	#include <SimCoreFactory/Policies/LinSolverBodasFactory.h>
+  #include <SimCoreFactory/Policies/LinSolverBodasFactory.h>
     /*Policy defines*/
     typedef SystemBodasFactory<BodasFactory> SimControllerPolicy;
     typedef SolverBodasFactory<BodasFactory> ConfigurationPolicy;
@@ -39,14 +39,14 @@
     #include <SimCoreFactory/Policies/SolverSettingsFactory.h>
     #include <SimCoreFactory/Policies/SystemFactory.h>
     #include <SimCoreFactory/Policies/NonLinSolverFactory.h>
-	#include <SimCoreFactory/Policies/LinSolverFactory.h>
+  #include <SimCoreFactory/Policies/LinSolverFactory.h>
     /*Policy defines*/
     typedef SystemFactory<GenericFactory> SimControllerPolicy;
     typedef SolverFactory<GenericFactory> ConfigurationPolicy;
     //typedef LinSolverFactory<GenericFactory> ConfigurationPolicy;
     typedef NonLinSolverFactory<GenericFactory> NonLinSolverPolicy;
     typedef SolverSettingsFactory<GenericFactory> SolverSettingsPolicy;
-	typedef LinSolverFactory<GenericFactory> LinSolverPolicy;
+  typedef LinSolverFactory<GenericFactory> LinSolverPolicy;
 
 #elif defined(OMC_BUILD) && !defined(ANALYZATION_MODE)
 
