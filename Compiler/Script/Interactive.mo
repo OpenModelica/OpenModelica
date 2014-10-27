@@ -8957,7 +8957,7 @@ algorithm
       equation
         true = stringEq(id1, id3);
         ix = List.positionOnTrue(id2, comp, stringEq);
-        v = listNth(vals, ix);
+        v = listGet(vals, ix);
         v = getVariableValueLst(id2::srest, {GlobalScript.IVAR(id2,v,DAE.T_UNKNOWN_DEFAULT)});
       then
         v;
@@ -9701,8 +9701,7 @@ algorithm
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         extends_ = getExtendsInClass(cdef);
-        n_1 = n - 1;
-        Absyn.EXTENDS(path,_,_) = listNth(extends_, n_1);
+        Absyn.EXTENDS(path,_,_) = listGet(extends_, n);
         s = Absyn.pathString(path);
       then
         (s,st);
@@ -9746,8 +9745,7 @@ algorithm
       equation
         cdef = inClass;
         extends_ = getExtendsInClass(cdef);
-        n_1 = n - 1;
-        Absyn.EXTENDS(path,_,annOpt) = listNth(extends_, n_1);
+        Absyn.EXTENDS(path,_,annOpt) = listGet(extends_, n);
         s = Absyn.pathString(path);
       then
         (s, annOpt);
@@ -9950,8 +9948,7 @@ algorithm
     case ((SCode.CLASS(name = _)),cdef,n,env)
       equation
         lst = getBaseClasses(cdef, env);
-        n_1 = n - 1;
-        cref = listNth(lst, n_1);
+        cref = listGet(lst, n);
         path = Absyn.crefToPath(cref);
         str = Absyn.pathString(path);
       then
@@ -9965,8 +9962,7 @@ algorithm
           Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
             DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         lst = getBaseClasses(cdef, env_2);
-        n_1 = n - 1;
-        cref = listNth(lst, n_1);
+        cref = listGet(lst, n);
         path = Absyn.crefToPath(cref);
         str = Absyn.pathString(path);
       then
@@ -14177,8 +14173,7 @@ algorithm
       equation
         numcomps = listLength(lst);
         (n <= numcomps) = true;
-        n_1 = n - 1;
-        item = listNth(lst, n_1);
+        item = listGet(lst, n);
       then
         Absyn.ELEMENT(a,b,c,Absyn.COMPONENTS(e,f,{item}),info,i);
 

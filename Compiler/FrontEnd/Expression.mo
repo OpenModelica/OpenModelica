@@ -1018,7 +1018,7 @@ algorithm
 
     case(DAE.ARRAY(_, _, explst), sub::restsubs)
       equation
-        exp = listNth(explst, subscriptInt(sub) - 1);
+        exp = listGet(explst, subscriptInt(sub));
       then
         subscriptExp(exp, restsubs);
 

@@ -3373,7 +3373,7 @@ algorithm
         dim_int = Expression.expInt(inIndexExp);
         dim_count = listLength(inDimensions);
         true = (dim_int > 0 and dim_int <= dim_count);
-        dim = listNth(inDimensions, dim_int - 1);
+        dim = listGet(inDimensions, dim_int);
         exp = Expression.dimensionSizeConstantExp(dim);
         prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, DAE.C_CONST());
       then
@@ -5869,7 +5869,7 @@ algorithm
       equation
         tp = Expression.typeof(e);
         expl = List.fill(Expression.makeConstZero(tp), dim);
-        expl_1 = List.replaceAt(e, indx, expl);
+        expl_1 = List.replaceAt(e, indx+1, expl);
       then
         DAE.MATRIX(ty,dim,{expl_1});
 
@@ -5878,7 +5878,7 @@ algorithm
         indx_1 = indx + 1;
         DAE.MATRIX(tp,mdim,rows) = elabBuiltinDiagonal3(es, indx_1, dim, ty);
         expl = List.fill(Expression.makeConstZero(tp), dim);
-        expl_1 = List.replaceAt(e, indx, expl);
+        expl_1 = List.replaceAt(e, indx_1, expl);
       then
         DAE.MATRIX(ty,mdim,(expl_1 :: rows));
   end matchcontinue;
@@ -12576,7 +12576,7 @@ algorithm
       equation
         exp2 = flattenSubscript2(subs1,id,ety);
         expl2 = List.map3(expl1,applySubscript,exp2,id,ety);
-        exp3 = listNth(expl2,0);
+        exp3 = listGet(expl2, 1);
         //exp3 = removeDoubleEmptyArrays(exp3);
       then
         exp3;

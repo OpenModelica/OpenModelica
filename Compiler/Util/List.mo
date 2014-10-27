@@ -4533,11 +4533,11 @@ end position;
 public function positionOnTrue<T, VT>
   "Takes a value and a list, and returns the position of the first list element
   that whose value is equal to the given value. The index starts at zero.
-    Example: position(2, {0, 1, 2, 3}) => 2"
+    Example: position(2, {0, 1, 2, 3}) => 3"
   input VT inValue;
   input list<T> inList;
   input CompFunc inCompFunc;
-  output Integer outPosition := 0;
+  output Integer outPosition := 1 "one-based index";
 
   partial function CompFunc
     input VT inValue;
@@ -4557,15 +4557,15 @@ end positionOnTrue;
 public function positionList<T>
   "Takes a value and a list of lists, and returns the position of the value.
    outListIndex is the index of the list the value was found in, and outPosition
-   is the position in that list. Indices start from 0.
-     Example: positionList(3, {{4, 2}, {6, 4, 3, 1}}) => (1, 2)"
+   is the position in that list.
+     Example: positionList(3, {{4, 2}, {6, 4, 3, 1}}) => (2, 3)"
   input T inElement;
   input list<list<T>> inList;
-  output Integer outListIndex := 0;
-  output Integer outPosition;
+  output Integer outListIndex := 1 "one-based index";
+  output Integer outPosition "one-based index";
 algorithm
   for lst in inList loop
-    outPosition := 0;
+    outPosition := 1;
 
     for e in lst loop
       if valueEq(e, inElement) then
@@ -5269,21 +5269,21 @@ end removeMatchesFirst;
 
 public function replaceAt<T>
   "Takes an element, a position and a list, and replaces the value at the given
-   position in the list. Position is an integer between 0 and n - 1 for a list of
+   position in the list. Position is an integer between 1 and n for a list of
    n elements.
-     Example: replaceAt('A', 2, {'a', 'b', 'c'}) => {'a', 'b', 'A'}"
+     Example: replaceAt('A', 2, {'a', 'b', 'c'}) => {'a', 'A', 'c'}"
   input T inElement;
-  input Integer inPosition;
+  input Integer inPosition "one-based index" ;
   input list<T> inList;
   output list<T> outList := {};
 protected
   T e;
   list<T> rest := inList;
 algorithm
-  true := inPosition >= 0;
+  true := inPosition >= 1;
 
   // Shuffle elements from inList to outList until the position is reached.
-  for i in 0:inPosition-1 loop
+  for i in 1:inPosition-1 loop
     e :: rest := rest;
     outList := e :: outList;
   end for;
@@ -5298,13 +5298,13 @@ public function replaceAtIndexFirst<T>
   "Takes an element, a position and a list, and replaces the value at the given
    position in the list. Position is an integer between 1 and n for a list of
    n elements.
-     Example: replaceAt('A', 2, {'a', 'b', 'c'}) => {'a', 'A', 'c'}"
-  input Integer inPosition;
+     Example: replaceAtIndexFirst(2, 'A', {'a', 'b', 'c'}) => {'a', 'A', 'c'}"
+  input Integer inPosition "one-based index" ;
   input T inElement;
   input list<T> inList;
   output list<T> outList;
 algorithm
-  outList := replaceAt(inElement, inPosition - 1, inList);
+  outList := replaceAt(inElement, inPosition, inList);
 end replaceAtIndexFirst;
 
 public function replaceAtWithList<T>
@@ -5358,7 +5358,7 @@ algorithm
   len := listLength(inList);
 
   if inPosition <= len then
-    outList := replaceAt(inElement, inPosition - 1, inList);
+    outList := replaceAt(inElement, inPosition, inList);
   else
     fill_lst := {inElement};
     for i in 2:(inPosition - len) loop

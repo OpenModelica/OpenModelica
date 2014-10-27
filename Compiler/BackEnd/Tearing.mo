@@ -2843,9 +2843,9 @@ algorithm
   case(_,_,_,_,_,_,_,_,_,_)
     equation
       ((eqQueue,eq_coll,eqns,vars)) = getpossibleEqn((eqQueueIn,m,me,listArray(ass1),listArray(ass2),mapEqnIncRow));
-      order = listGet(orderIn,1);
+      order = listGet(orderIn, 1);
       order = eq_coll::order;
-      orderOut = List.replaceAt(order,0,orderIn);
+      orderOut = List.replaceAt(order, 1, orderIn);
     then (eqQueue,eqns,vars,orderOut,true);
   else
     then ({},{},{},orderIn,false);

@@ -188,21 +188,11 @@ public function nthArrayelt "author: PA
   input Values.Value inValue;
   input Integer inInteger;
   output Values.Value outValue;
+protected
+  list<Values.Value> vlst;
 algorithm
-  outValue := match (inValue,inInteger)
-    local
-      Integer n_1,n;
-      Values.Value res;
-      list<Values.Value> vlst;
-
-    case (Values.ARRAY(valueLst = vlst),n)
-      equation
-        n_1 = n - 1;
-        res = listNth(vlst, n_1);
-      then
-        res;
-
-  end match;
+  Values.ARRAY(valueLst=vlst) := inValue;
+  outValue := listGet(vlst, inInteger);
 end nthArrayelt;
 
 public function unparseValues "Prints a list of Value to a string."

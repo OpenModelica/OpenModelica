@@ -587,7 +587,7 @@ algorithm
         //print("replace equation "+&intString(pos)+&"\n");
       replEqs = pos::replEqsIn;
       pos = listGet(eqMapping,pos);
-      eqLst = List.replaceAt(resolvedEq,pos-1,eqLstIn);
+      eqLst = List.replaceAt(resolvedEq,pos,eqLstIn);
 
       (eqLst,replEqs) = resolveLoops_resolveAndReplace(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,eqLst,varLstIn,replEqs);
     then
@@ -640,7 +640,7 @@ algorithm
         //print("replace equation "+&intString(pos)+&"\n");
       replEqs = pos::replEqsIn;
       pos = listGet(eqMapping,pos);
-      eqLst = List.replaceAt(resolvedEq,pos-1,eqLstIn);
+      eqLst = List.replaceAt(resolvedEq,pos,eqLstIn);
 
       (eqLst,replEqs) = resolveLoops_resolveAndReplace(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,eqLst,varLstIn,replEqs);
     then
@@ -665,7 +665,7 @@ algorithm
         //print("replace equation "+&intString(pos)+&"\n");
       pos = listGet(eqMapping,pos);
       replEqs = pos::replEqsIn;
-      eqLst = List.replaceAt(resolvedEq,pos-1,eqLstIn);
+      eqLst = List.replaceAt(resolvedEq,pos,eqLstIn);
       (eqLst,replEqs) = resolveLoops_resolveAndReplace(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,eqLst,varLstIn,replEqs);
     then
       (eqLst,replEqs);
@@ -1923,7 +1923,7 @@ algorithm
         maxNum = List.fold(numOfAdjVars,intMax,List.first(numOfAdjVars));
         replEqIdx = listGet(resolveEqs,List.position(maxNum,numOfAdjVars));
             //BackendDump.dumpEquationList(unassEqsIn," not updated unassEqs");
-        unassEqs = List.replaceAt(resolvedEq,replEqIdx-1,unassEqsIn);
+        unassEqs = List.replaceAt(resolvedEq,replEqIdx,unassEqsIn);
         //print("replace equation "+&intString(replEqIdx)+&"\n");
             //BackendDump.dumpEquationList(unassEqs,"updated unassEqs");
       then reshuffling_post4_resolveAndReplace(rest,unassEqs,unassVarsIn,me,meT);

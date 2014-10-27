@@ -2814,7 +2814,7 @@ algorithm
 
         DAE.RECORD(_, exps, comp, _) = Expression.subscriptExp(e, ss);
 
-        e = listNth(exps, List.position(cId, comp)-1 /*shift to zero-based index*/);
+        e = listGet(exps, List.position(cId, comp));
         b = DAE.EQBOUND(e, NONE(), c, s);
 
         // print("CREF EB RESULT: " +& ComponentReference.printComponentRefStr(inCref) +& "\nBinding:\n" +& Types.printBindingStr(b) +& "\n");
@@ -2840,7 +2840,7 @@ algorithm
         e = ValuesUtil.valueExp(v);
         DAE.RECORD(_, exps, comp, _) = Expression.subscriptExp(e, ss);
 
-        e = listNth(exps, List.position(cId, comp)-1 /*shift to zero-based index*/);
+        e = listGet(exps, List.position(cId, comp));
 
         b = DAE.EQBOUND(e, NONE(), DAE.C_CONST(), s);
         // print("CREF VB RESULT: " +& ComponentReference.printComponentRefStr(inCref) +& "\nBinding:\n" +& Types.printBindingStr(b) +& "\n");

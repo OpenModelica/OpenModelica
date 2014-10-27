@@ -2175,8 +2175,8 @@ algorithm
     case (_, Values.ARRAY(valueLst = values, dimLst = dims), DAE.INDEX(exp = e) :: rest_subs, _, _, st)
       equation
         (cache, index, st) = cevalExp(e, inCache, inEnv, st);
-        i = ValuesUtil.valueInteger(index) - 1;
-        val = listNth(values, i);
+        i = ValuesUtil.valueInteger(index);
+        val = listGet(values, i);
         (cache, val, st) = assignVector(inNewValue, val, rest_subs, cache, inEnv, st);
         values = List.replaceAt(val, i, values);
       then
@@ -2360,7 +2360,7 @@ protected
   Integer pos;
 algorithm
   Values.RECORD(name, vals, comps, -1) := inRecordValue;
-  pos := List.position(inComponentId, comps)-1 "shift to zero-based index";
+  pos := List.position(inComponentId, comps);
   vals := List.replaceAt(inComponentValue, pos, vals);
   outRecordValue := Values.RECORD(name, vals, comps, -1);
 end updateRecordComponentValue;

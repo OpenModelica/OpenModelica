@@ -607,7 +607,7 @@ end listMember;
 
 function listGet<A> "O(index)"
   input List<A> lst;
-  input Integer index;
+  input Integer index "one-based index";
   output A element;
 external "builtin";
 end listGet;

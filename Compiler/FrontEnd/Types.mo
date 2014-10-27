@@ -4607,7 +4607,7 @@ algorithm
         // It would be good to have the source location of exp here, so that we could pass it to typeConvertIntToEnumCheck.
         true = typeConvertIntToEnumCheck(exp, t2); // Will warn or report error depending on whether oi is out of range.
         // select from enum list:
-        name = listNth(l, oi-1); // listNth indexes from 0
+        name = listGet(l, oi);
         tp = Absyn.joinPaths(tp, Absyn.IDENT(name));
       then
         (DAE.ENUM_LITERAL(tp, oi),expected);
@@ -8058,7 +8058,7 @@ algorithm
         true = (1 <= oi and oi <= listLength(l));
         pathStr = Absyn.pathString(tp);
         intStr = intString(oi);
-        enumConst = listNth(l, oi - 1);
+        enumConst = listGet(l, oi);
         Error.addMessage(Error.INTEGER_ENUMERATION_CONVERSION_WARNING, {intStr, pathStr, enumConst});
       then true;
     case (DAE.ICONST(oi),
@@ -8086,7 +8086,7 @@ public function findVarIndex
   input list<DAE.Var> vars;
   output Integer index;
 algorithm
-  index := List.positionOnTrue(id,vars,selectVar);
+  index := List.positionOnTrue(id,vars,selectVar)-1 "shift to zero-based index";
 end findVarIndex;
 
 protected function selectVar

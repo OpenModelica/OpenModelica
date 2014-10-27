@@ -2795,7 +2795,7 @@ algorithm
         tasks = listAppend(tasks,assLocks);
         thread = Debug.bcallret1(List.isNotEmpty(threads),List.first,threads,{});
         thread = listAppend(tasks,thread);
-        threads = Debug.bcallret3(List.isNotEmpty(threads),List.replaceAt,thread,0,threads,{thread});
+        threads = Debug.bcallret3(List.isNotEmpty(threads),List.replaceAt,thread,1,threads,{thread});
         //_ = printThreadSchedule(thread,thr);
         outgoingDepTasks = listAppend(relLocks,outgoingDepTasks);
         outgoingDepTasks = listAppend(assLocks,outgoingDepTasks);
@@ -4080,7 +4080,7 @@ algorithm
         //assign rootNode to current thread and start a new thread(cluster)
         thread = listGet(clustersIn,currThread);
         thread = front::thread;
-        clusters = List.replaceAt(thread,currThread-1,clustersIn);
+        clusters = List.replaceAt(thread,currThread,clustersIn);
         //print("cluster: "+&intListString(thread)+&"\n");
         clusters = listAppend(clusters,{{}});
         clusters = TDS_InitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssIn,currThread+1,rest,clusters);
@@ -4095,7 +4095,7 @@ algorithm
         //assign node from queue to a thread (in reversed order)
         thread = listGet(clustersIn,currThread);
         thread = front::thread;
-        clusters = List.replaceAt(thread,currThread-1,clustersIn);
+        clusters = List.replaceAt(thread,currThread,clustersIn);
         //print("cluster: "+&intListString(thread)+&"\n");
         _ = arrayUpdate(taskAssIn,front,currThread);
         // go to predecessor
@@ -4112,7 +4112,7 @@ algorithm
         //assign node from queue to a thread (in reversed order)
         thread = listGet(clustersIn,currThread);
         thread = front::thread;
-        clusters = List.replaceAt(thread,currThread-1,clustersIn);
+        clusters = List.replaceAt(thread,currThread,clustersIn);
         //print("cluster: "+&intListString(thread)+&"\n");
         _ = arrayUpdate(taskAssIn,front,currThread);
         // check for other parents to get the next fpred
@@ -4315,7 +4315,7 @@ algorithm
         // update the processorTimes
         ((_,exeCost)) = HpcOmTaskGraph.getExeCost(node,taskGraphMetaIn);
         newTime = eft +. exeCost;
-        processorTime = List.replaceAt(newTime,processor-1,processorTimeIn);
+        processorTime = List.replaceAt(newTime,processor,processorTimeIn);
         // next node
         (taskAss,procAss) = MCP_getTaskAssignment1(rest,taskAss,procAss,processorTime,taskGraphIn,taskGraphMetaIn);
       then
@@ -4803,10 +4803,10 @@ protected
   ElementType r1,r2;
   list<ElementType> lstTmp;
 algorithm
-  r1 := listGet(lstIn,idx1);
-  r2 := listGet(lstIn,idx2);
-  lstTmp := List.replaceAt(r1,idx2-1,lstIn);
-  lstOut := List.replaceAt(r2,idx1-1,lstTmp);
+  r1 := listGet(lstIn, idx1);
+  r2 := listGet(lstIn, idx2);
+  lstTmp := List.replaceAt(r1, idx2, lstIn);
+  lstOut := List.replaceAt(r2, idx1, lstTmp);
 end swapEntriesInList;
 
 protected function getMedian3 "gets the median of the 3 reals and the info which of the inputs is the median"
@@ -5592,7 +5592,7 @@ algorithm
         ((_,exeCost)) = HpcOmTaskGraph.getExeCost(taskIdx,taskGraphMeta);
         finishingTime = finishingTime +. exeCost;
         task = updateTimeFinished(task, finishingTime);
-        thread = List.replaceAt(task,taskNum-1,thread);
+        thread = List.replaceAt(task, taskNum, thread);
         threadTasks = arrayUpdate(threadTasksIn,threadIdx,thread);
         checkedTasks = arrayUpdate(checkedTasksIn,taskIdx,task);
       then
@@ -5620,7 +5620,7 @@ algorithm
         finishingTime = realMax(finishingTime,finishingTime1);
         // update
         task = updateTimeFinished(task, finishingTime);
-        thread = List.replaceAt(task,taskNum-1,thread);
+        thread = List.replaceAt(task, taskNum, thread);
         threadTasks = arrayUpdate(threadTasksIn,threadIdx,thread);
         checkedTasks = arrayUpdate(checkedTasksIn,taskIdx,task);
        then

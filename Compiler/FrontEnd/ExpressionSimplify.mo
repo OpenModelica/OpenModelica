@@ -2190,12 +2190,12 @@ algorithm
         {};
     case (i::{},row::{},e)
       equation
-        row1 = List.replaceAt(e,i,row);
+        row1 = List.replaceAt(e,i+1,row);
       then
         {row1};
     case (i::rr,row::rm,e)
       equation
-        row1 = List.replaceAt(e,i,row);
+        row1 = List.replaceAt(e,i+1,row);
         rm1 = simplifyMatrixPow1(rr,rm,e);
       then
         row1::rm1;
@@ -2851,7 +2851,7 @@ algorithm
     // subscript of an array
     case(DAE.ARRAY(_,_,exps),_, _)
       equation
-        exp = listNth(exps, sub - 1);
+        exp = listGet(exps, sub);
       then
         exp;
 
@@ -2889,7 +2889,7 @@ algorithm
     case(DAE.MATRIX(t,_,mexps), _, _)
       equation
         t1 = Expression.unliftArray(t);
-        (mexpl) = listNth(mexps, sub - 1);
+        (mexpl) = listGet(mexps, sub);
       then
         DAE.ARRAY(t1,true,mexpl);
 
@@ -3156,16 +3156,14 @@ algorithm
     case (DAE.ARRAY(ty = _,scalar = _,array = exps),sub)
       equation
         indx = Expression.expInt(sub);
-        i_1 = indx - 1;
-        exp = listNth(exps, i_1);
+        exp = listGet(exps, indx);
       then
         exp;
 
     case (DAE.MATRIX(ty = t,integer = _,matrix = lstexps),sub)
       equation
         indx = Expression.expInt(sub);
-        i_1 = indx - 1;
-        (expl) = listNth(lstexps, i_1);
+        (expl) = listGet(lstexps, indx);
         t_1 = Expression.unliftArray(t);
       then DAE.ARRAY(t_1,true,expl);
 
@@ -5194,7 +5192,7 @@ algorithm
         true = Absyn.pathEqual(callPath,recordPath);
         true = listLength(varLst) == listLength(exps);
         i = List.positionOnTrue(id2,varLst,DAEUtil.typeVarIdentEqual);
-        exp = listGet(exps,i+1);
+        exp = listGet(exps,i);
       then (exp,tpl);
     case (exp as DAE.CREF(componentRef=DAE.CREF_QUAL(ident=id)),(name,iterExp,_))
       equation
@@ -5450,7 +5448,7 @@ algorithm
         i = Expression.expInt(dimExp);
         t = Expression.typeof(exp);
         dims = Expression.arrayDimension(t);
-        dim = listNth(dims,i-1);
+        dim = listGet(dims,i);
         n = Expression.dimensionSize(dim);
       then DAE.ICONST(n);
     // TODO: Handle optDim=NONE() when dims are known

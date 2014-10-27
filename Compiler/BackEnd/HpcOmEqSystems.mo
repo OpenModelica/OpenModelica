@@ -642,7 +642,7 @@ protected
 algorithm
   idx := listGet(positionLst,n);
   entry := listGet(replacingLst,n);
-  outLst := List.replaceAt(entry,idx-1,inLst);
+  outLst := List.replaceAt(entry,idx,inLst);
 end replaceAtPositionFromList;
 
 
@@ -1152,7 +1152,7 @@ algorithm
       equation
         varLst = List.first(lstLstIn);
         varLst = varIn::varLst;
-        lstLstOut = List.replaceAt(varLst,0,lstLstIn);
+        lstLstOut = List.replaceAt(varLst, 1, lstLstIn);
       then
         lstLstOut;
   end matchcontinue;
@@ -1175,7 +1175,7 @@ algorithm
       equation
         eqLst = List.first(lstLstIn);
         eqLst = eqIn::eqLst;
-        lstLstOut = List.replaceAt(eqLst,0,lstLstIn);
+        lstLstOut = List.replaceAt(eqLst, 1, lstLstIn);
       then
         lstLstOut;
   end matchcontinue;
@@ -1460,8 +1460,8 @@ algorithm
   varLst := listGet(varLstLst,idx);
   // remove all vars that are assigned to a constant or alias, remove the equations, update the replacement rule
   ((eqLst,varLst,repl)) := simplifyEquations2((eqLst,varLst,repl));
-  eqLstLst := List.replaceAt(eqLst,idx-1,eqLstLst);
-  varLstLst := List.replaceAt(varLst,idx-1,varLstLst);
+  eqLstLst := List.replaceAt(eqLst, idx, eqLstLst);
+  varLstLst := List.replaceAt(varLst, idx, varLstLst);
   tplOut := ((eqLstLst,varLstLst,repl));
 end simplifyEquations1;
 

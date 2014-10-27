@@ -797,7 +797,7 @@ algorithm
     case (cache,env,DAE.CAST(ty = DAE.T_ENUMERATION(path = path, names = n), exp = e), impl, stOpt, msg,_)
       equation
         (cache, Values.INTEGER(i), stOpt) = ceval(cache, env, e, impl, stOpt,msg,numIter+1);
-        str = listNth(n, i - 1);
+        str = listGet(n, i);
         path = Absyn.joinPaths(path, Absyn.IDENT(str));
       then
         (cache, Values.ENUM_LITERAL(path, i), stOpt);
@@ -824,8 +824,7 @@ algorithm
     case (cache,env,DAE.ASUB(exp = e,sub = ((DAE.ICONST(indx))::{})),impl,stOpt,msg,_)
       equation
         (cache,Values.ARRAY(vals,_),stOpt) = ceval(cache,env, e, impl, stOpt,msg,numIter+1) "asub" ;
-        indx_1 = indx - 1;
-        v = listNth(vals, indx_1);
+        v = listGet(vals, indx);
       then
         (cache,v,stOpt);
 
@@ -1513,8 +1512,7 @@ algorithm
         true = Types.dimensionsKnown(tp);
         (sizelst as (_ :: _)) = Types.getDimensionSizes(tp);
         (cache,Values.INTEGER(dim),st_1) = ceval(cache, env, dimExp, impl, st,msg,numIter+1);
-        dim_1 = dim - 1;
-        i = listNth(sizelst, dim_1);
+        i = listGet(sizelst, dim);
       then
         (cache,Values.INTEGER(i),st_1);
 
@@ -4134,8 +4132,7 @@ algorithm
         (cache,Values.REAL(rv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,msg,numIter+1);
         correctDim = matrixDimension - 1;
         zeroList = List.fill(Values.REAL(0.0), correctDim);
-        correctPlace = row - 1;
-        listWithElement = List.replaceAt(Values.REAL(rv2), correctPlace, zeroList);
+        listWithElement = List.replaceAt(Values.REAL(rv2), row, zeroList);
         newRow = row + 1;
         v = ValuesUtil.makeArray(listWithElement);
         (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, {v},msg,numIter);
@@ -4151,8 +4148,7 @@ algorithm
 
         correctDim = matrixDimension - 1;
         zeroList = List.fill(Values.REAL(0.0), correctDim);
-        correctPlace = row - 1;
-        listWithElement = List.replaceAt(Values.REAL(rv2), correctPlace, zeroList);
+        listWithElement = List.replaceAt(Values.REAL(rv2), row, zeroList);
         newRow = row + 1;
         v = ValuesUtil.makeArray(listWithElement);
         appendedList = listAppend(listIN, {v});
@@ -4166,8 +4162,7 @@ algorithm
         (cache,Values.INTEGER(iv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,msg,numIter+1);
         correctDim = matrixDimension - 1;
         zeroList = List.fill(Values.INTEGER(0), correctDim);
-        correctPlace = row - 1;
-        listWithElement = List.replaceAt(Values.INTEGER(iv2), correctPlace, zeroList);
+        listWithElement = List.replaceAt(Values.INTEGER(iv2), row, zeroList);
         newRow = row + 1;
         v = ValuesUtil.makeArray(listWithElement);
         (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, {v},msg,numIter);
@@ -4183,8 +4178,7 @@ algorithm
 
         correctDim = matrixDimension - 1;
         zeroList = List.fill(Values.INTEGER(0), correctDim);
-        correctPlace = row - 1;
-        listWithElement = List.replaceAt(Values.INTEGER(iv2), correctPlace, zeroList);
+        listWithElement = List.replaceAt(Values.INTEGER(iv2), row, zeroList);
         newRow = row + 1;
         v = ValuesUtil.makeArray(listWithElement);
         appendedList = listAppend(listIN, {v});

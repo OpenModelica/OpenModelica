@@ -3798,7 +3798,7 @@ algorithm
         mergedSet = List.flatten(List.map1(mergedNodes,Array.getIndexFirst,primInComps));
         //print("updateInComps1 mergedSet:" +& stringDelimitList(List.map(mergedSet,intString),",") +& "\n");
         inCompLstTmp = List.fold(mergedNodes, updateInComps2, inCompLstIn);
-        inCompLstTmp = List.replaceAt(mergedSet,nodeIdx-1,inCompLstTmp);
+        inCompLstTmp = List.replaceAt(mergedSet, nodeIdx, inCompLstTmp);
       then
         inCompLstTmp;
     else
@@ -3812,7 +3812,7 @@ protected function updateInComps2 "Replaces the entry <%iNodeIdx - 1%> in inComp
   input list<list<Integer>> inCompLstIn;
   output list<list<Integer>> inCompLstOut;
 algorithm
-  inCompLstOut := List.replaceAt({},iNodeIdx-1,inCompLstIn);
+  inCompLstOut := List.replaceAt({}, iNodeIdx, inCompLstIn);
 end updateInComps2;
 
 protected function equalLists " compares two lists and sets true if they are equal.
@@ -3919,7 +3919,7 @@ algorithm
         child = listGet(nodeChildren,1);
         pathLst = List.first(lstIn);
         pathLst = inPath::pathLst;
-        lstTmp = List.replaceAt(pathLst,0,lstIn);
+        lstTmp = List.replaceAt(pathLst, 1, lstIn);
         rest = List.deleteMember(allNodes,inPath);
         lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,child);
       then
@@ -3933,7 +3933,7 @@ algorithm
         true = List.isEmpty(nodeChildren) and listLength(parents) == 1;
         pathLst = List.first(lstIn);
         pathLst = inPath::pathLst;
-        lstTmp = List.replaceAt(pathLst,0,lstIn);
+        lstTmp = List.replaceAt(pathLst, 1, lstIn);
         rest = List.deleteMember(allNodes,inPath);
         lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,0);
       then
@@ -3991,7 +3991,7 @@ algorithm
       childLst = listReverse(childLst);
       childLst = parent :: childLst;
       childLst = listReverse(childLst);
-      lstTmp = List.replaceAt(childLst, lstIdx-1, lstIn);
+      lstTmp = List.replaceAt(childLst, lstIdx, lstIn);
       then
         lstTmp;
   case(_,_,_)
@@ -4910,7 +4910,7 @@ algorithm
   ((level,_,_)) := arrayGet(nodeInfo,idx);
   pSet := listGet(parallelSetIn,level);
   pSet := idx :: pSet;
-  parallelSetOut := List.replaceAt(pSet,level-1,parallelSetIn);
+  parallelSetOut := List.replaceAt(pSet, level, parallelSetIn);
 end gatherParallelSets1;
 
 protected function getCostsForNode " function to compute the costs for the next node (including the execution costs and the communication costs).
