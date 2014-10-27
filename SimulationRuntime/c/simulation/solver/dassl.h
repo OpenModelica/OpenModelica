@@ -40,22 +40,23 @@ static const unsigned int numStatistics = 5;
 static const unsigned int infoLength = 20;
 static const unsigned int SIZERINGBUFFER = 3;
 
-enum DASSL_METHOD
+enum DASSL_JACOBIAN
 {
-  DASSL_UNKNOWN = 0,
-  DASSL_RT,
-  DASSL_WORT,
-  DASSL_STEPS,
-  DASSL_SYMJAC,
-  DASSL_NUMJAC,
+  DASSL_JAC_UNKNOWN = 0,
+  DASSL_COLOREDNUMJAC,
   DASSL_COLOREDSYMJAC,
   DASSL_INTERNALNUMJAC,
-  DASSL_MAX
+  DASSL_NUMJAC,
+  DASSL_SYMJAC,
+  DASSL_JAC_MAX
 };
 
 typedef struct DASSL_DATA{
 
-  int dasslMethod;
+  int dasslSteps;				/* if TRUE then dassl internal steps are used to store results */
+  int dasslRootFinding; 		/* if TRUE then the internal root finding is used */
+  int dasslJacobian;			/* specifices the method to calculate the jacobian matrix */
+  int dasslAvoidEventRestart;   /* if TRUE then no restart after an event is performed */
 
   unsigned int* dasslStatistics;
   unsigned int* dasslStatisticsTmp;
@@ -74,7 +75,6 @@ typedef struct DASSL_DATA{
   double *rtol;
   double *atol;
 
-  int ngdummy;
   int ng;
   int *jroot;
 
@@ -84,6 +84,10 @@ typedef struct DASSL_DATA{
   double *delta_hh;
   double *newdelta;
   double *stateDer;
+
+  /* function pointer of provied functions */
+  void* jacobianFunction;
+  void* zeroCrossingFunction;
 
   /* internal dassl ring buffer */
   RINGBUFFER* simulationData;          /* RINGBUFFER of SIMULATION_DATA */

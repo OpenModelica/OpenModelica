@@ -80,12 +80,6 @@ typedef struct SOLVER_INFO
     S_LOBATTO2,      /*  8 */
     S_LOBATTO4,      /*  9 */
     S_LOBATTO6,      /* 10 */
-    S_DASSLWORT,
-    S_DASSLSTEPS,
-    S_DASSLSYMJAC,
-    S_DASSLNUMJAC,
-    S_DASSLCOLORSYMJAC,
-    S_DASSLINTERNALNUMJAC,
     S_QSS,
 
     S_MAX
@@ -103,12 +97,6 @@ typedef struct SOLVER_INFO
     "lobatto2",
     "lobatto4",
     "lobatto6",
-    "dasslwort",
-    "dasslsteps",
-    "dasslSymJac",
-    "dasslNumJac",
-    "dasslColorSymJac",
-    "dasslInternalNumJac",
     "qss"
   };
   static const char *SOLVER_METHOD_DESC[S_MAX] = {
@@ -123,12 +111,6 @@ typedef struct SOLVER_INFO
     "lobatto2 [sundial/kinsol needed]",
     "lobatto4 [sundial/kinsol needed]",
     "lobatto6 [sundial/kinsol needed]",
-    "dassl without internal root finding",
-    "dassl as default, but without consideration of numberOfintervals or stepSize. Output point are internal dassl steps.",
-    "dassl with symbolic jacobian",
-    "dassl with numerical jacobian",
-    "dassl with colored symbolic jacobian",
-    "dassl with internal numerical jacobian",
     "qss"
   };
 

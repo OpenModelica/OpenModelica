@@ -180,7 +180,6 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   {
     /* Initial DASSL solver */
     DASSL_DATA* dasslData = (DASSL_DATA*) malloc(sizeof(DASSL_DATA));
-    infoStreamPrint(LOG_SOLVER, 0, "Initializing DASSL");
     retValue = dassl_initial(data, solverInfo, dasslData);
     solverInfo->solverData = dasslData;
   }
@@ -540,15 +539,6 @@ int solver_main(DATA* data, const char* init_initMethod,
   /* do some solver specific checks */
   switch(solverInfo.solverMethod)
   {
-  case S_DASSLWORT:
-  case S_DASSLSTEPS:
-  case S_DASSLSYMJAC:
-  case S_DASSLNUMJAC:
-  case S_DASSLCOLORSYMJAC:
-  case S_DASSLINTERNALNUMJAC:
-    solverInfo.solverMethod = S_DASSL;
-    break;
-
 #ifndef WITH_SUNDIALS
   case S_RADAU1:
   case S_RADAU3:

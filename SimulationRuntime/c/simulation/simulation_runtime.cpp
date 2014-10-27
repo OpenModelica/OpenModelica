@@ -677,8 +677,6 @@ int initializeResultData(DATA* simData, int cpuTime)
  * "" & "dassl" calls a DASSL Solver
  * "euler" calls an Euler solver
  * "rungekutta" calls a fourth-order Runge-Kutta Solver
- * "dassl" & "dassl2" calls the same DASSL Solver with synchronous event handling
- * "dopri5" calls an embedded DOPRI5(4)-solver with stepsize control
  */
 int callSolver(DATA* simData, string init_initMethod,
     string init_optiMethod, string init_file, double init_time, int lambda_steps, string outputVariablesAtEnd, int cpuTime)
