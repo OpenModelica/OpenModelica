@@ -89,7 +89,7 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
   double * vv[np+1];
   int i, j, k, shift;
 
-  
+
   if(new_x){
     optData2ModelData(optData, vopt, 1);
   }
@@ -707,14 +707,14 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
       gmax = tmp;
     }
   }
-   
+
   if(kk>-1){
     if(kk < nx){
       printf("\nmax error is %g for the approximation of the state %s(time = %g)\n",
               gmax, data->modelData.realVarsData[kk].info.name, (double)t[ii][jj]);
     }else if(kk < nJ){
       const int ll = kk - nx + optData->dim.index_con;
-      printf("\nmax violation is %g for the constraint %s(time = %g)\n", 
+      printf("\nmax violation is %g for the constraint %s(time = %g)\n",
               gmax, data->modelData.realVarsData[ll].info.name, (double)t[ii][jj]);
     }else{
       const int ll = kk - nx + optData->dim.index_con;
@@ -737,20 +737,20 @@ static inline void debugeJac(OptData * optData){
   const int np = optData->dim.np;
   const int npv = np*nv;
   double **J;
-  
+
   FILE *pFile;
   char buffer[4096];
-  
+
   sprintf(buffer, "jac_ana_step_%i.csv", optData->iter_);
   pFile = fopen(buffer, "wt");
-  
+
   fprintf(pFile,"name;time;");
   for(j = 0; j < nx; ++j)
     fprintf(pFile,"%s;",optData->data->modelData.realVarsData[j].info.name);
   for(j = 0; j < nu; ++j)
     fprintf(pFile, "%s;", optData->dim.inputName[j]);
   fprintf(pFile,"\n");
-  
+
   for(i=0;i < nsi; ++i){
     for(j = 0; j < nJ; ++j){
       J = optData->J[i][j];
@@ -762,6 +762,6 @@ static inline void debugeJac(OptData * optData){
       }
     }
   }
-  
-  fclose(pFile); 
+
+  fclose(pFile);
 }
