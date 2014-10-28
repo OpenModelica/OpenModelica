@@ -1541,7 +1541,7 @@ template simulationMainFile(SimCode simCode)
           simulation.first->Start(system.first, simulation.second, "<%lastIdentOfPath(modelInfo.name)%>");
 
           <%MPIFinalize%>
-          
+
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
                 <<
                 MeasureTime::getInstance()->writeToJson();
