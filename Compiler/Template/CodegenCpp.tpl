@@ -18,7 +18,7 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
   let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals,false), 'OMCpp<%fileNamePrefix%>Functions.h')
   let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals,externalFunctionIncludes, false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
   let()= textFile(simulationTypesHeaderFile(simCode,modelInfo.functions,literals, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
-  let()= textFile(simulationMakefile(target,simCode,"","","","",false), '<%fileNamePrefix%>.makefile')
+  let()= textFile(simulationMakefile(target,simCode,"","","","",false,false), '<%fileNamePrefix%>.makefile')
   let()= textFile(simulationInitHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Initialize.h')
   let()= textFile(simulationInitCppFile(simCode,false),'OMCpp<%fileNamePrefix%>Initialize.cpp')
   let()= textFile(simulationJacobianHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Jacobian.h')
@@ -1700,7 +1700,7 @@ end simulationMainDLLib2;
 
 template simulationMakefile(String target, SimCode simCode, String additionalLinkerFlags_GCC,
                             String additionalLinkerFlags_MSVC, String additionalCFlags_GCC,
-                            String additionalCFlags_MSVC, Boolean compileForMPI)
+                            String additionalCFlags_MSVC, Boolean compileForMPI, Boolean createStaticBinary)
  "Generates the contents of the makefile for the simulation case."
 ::=
 let &timeMeasureLink = buffer "" /*BUFD*/
@@ -1813,7 +1813,7 @@ case "gcc" then
             CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
             CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(SUITESPARSE_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%>
             LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" $(BASE_LIB)  -lOMCppOMCFactory -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath <%timeMeasureLink%> -L"$(BOOST_LIBS)"  $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_LOG_LIB) $(BOOST_THREAD_LIB) $(LINUX_LIB_DL)
-            LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L"<%makefileParams.omhome%>/bin" -lOMCppOMCFactory <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%>
+            LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L"<%makefileParams.omhome%>/bin" -lOMCppOMCFactory -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%> <%timeMeasureLink%> $(BOOST_LOG_LIB)
             CPPFLAGS = $(CFLAGS)
             SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
             MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
@@ -1829,9 +1829,16 @@ case "gcc" then
             .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
 
             <%fileNamePrefix%>: $(MAINFILE) $(OFILES)
-            <%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%>  $(LDSYTEMFLAGS)
-            <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
-
+            <%if(createStaticBinary) then
+              <<
+              <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(OFILES) $(MAINFILE) $(LDMAINFLAGS)
+              >>
+            else
+              <<
+              <%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%>  $(LDSYTEMFLAGS)
+              <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
+              >>
+            %>
             <%if boolNot(stringEq(makefileParams.platform, "win32")) then
                 <<
                 <%\t%>chmod +x <%fileNamePrefix%>.sh

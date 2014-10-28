@@ -416,22 +416,24 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%Update(simCode,useFlatArrayNotation)%>
 
-   <%DefaultImplementationCode(simCode,useFlatArrayNotation)%>
-   <%checkForDiscreteEvents(discreteModelVars,simCode,useFlatArrayNotation)%>
-   <%giveZeroFunc1(zeroCrossings,simCode,useFlatArrayNotation)%>
-   <%setConditions(simCode)%>
-   <%geConditions(simCode)%>
-   <%isConsistent(simCode)%>
-   <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode,useFlatArrayNotation)%>
-   <%generatehandleTimeEvent(timeEvents, simCode)%>
-   <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode)%>
-   <%generateTimeEvent(timeEvents, simCode, false)%>
+    <%DefaultImplementationCode(simCode,useFlatArrayNotation)%>
+    <%checkForDiscreteEvents(discreteModelVars,simCode,useFlatArrayNotation)%>
+    <%giveZeroFunc1(zeroCrossings,simCode,useFlatArrayNotation)%>
 
+    <%setConditions(simCode)%>
+    <%geConditions(simCode)%>
+    <%isConsistent(simCode)%>
 
-   <%isODE(simCode)%>
-   <%DimZeroFunc(simCode)%>
+    <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode,useFlatArrayNotation)%>
 
+    <%generateStepStarted(listAppend(allEquations,initialEquations),simCode,useFlatArrayNotation)%>
 
+    <%generatehandleTimeEvent(timeEvents, simCode)%>
+    <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode)%>
+    <%generateTimeEvent(timeEvents, simCode, true)%>
+
+    <%isODE(simCode)%>
+    <%DimZeroFunc(simCode)%>
 
    <%getCondition(zeroCrossings,whenClauses,simCode,useFlatArrayNotation)%>
    <%handleSystemEvents(zeroCrossings,whenClauses,simCode)%>
@@ -1335,18 +1337,12 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   <<
 
   #ifndef BOOST_ALL_DYN_LINK
-  #define BOOST_ALL_DYN_LINK
-    #endif
-  #include <boost/shared_ptr.hpp>
-  #include <boost/weak_ptr.hpp>
-  #include <boost/numeric/ublas/vector.hpp>
-  #include <boost/numeric/ublas/matrix.hpp>
-  #include <string>
-  #include <vector>
-  #include <map>
-  using std::string;
-  using std::vector;
-  using std::map;
+    #define BOOST_ALL_DYN_LINK
+  #endif
+  #include <Core/Modelica.h>
+  #include <Core/ModelicaDefine.h>
+  #include <SimCoreFactory/Policies/FactoryConfig.h>
+  #include <SimController/ISimController.h>
 
   #ifdef ANALYZATION_MODE
   #include "Solver/IAlgLoopSolver.h"
@@ -1397,11 +1393,11 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
 
         //create Modelica system
          #ifdef ANALYZATION_MODE
-            std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > system = simulation.first->LoadSystem(&createSimData, &createSystem, "<%lastIdentOfPath(modelInfo.name)%>");
+            std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem(&createSimData, &createSystem, "<%lastIdentOfPath(modelInfo.name)%>");
          #else
-            std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
+            std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
          #endif
-            simulation.first->Start(system.first,simulation.second);
+            simulation.first->Start(system.first,simulation.second, "<%lastIdentOfPath(modelInfo.name)%>");
 
 
       }
@@ -1597,7 +1593,7 @@ template simulationMakefile(String target,SimCode simCode)
 
     CodegenCpp.simulationMakefile(target, simCode, additionalLinkerFlags_GCC,
                                 additionalCFlags_MSVC, additionalCFlags_GCC,
-                                additionalLinkerFlags_MSVC, Util.stringBool(compileForMPI))
+                                additionalLinkerFlags_MSVC, Util.stringBool(compileForMPI), Flags.isSet(Flags.HPCOM_ANALYZATION_MODE))
 end simulationMakefile;
 
 
