@@ -90,20 +90,20 @@ libgc-dev: /usr/include/gc/new_gc_alloc.h
 libgc-dev: /usr/include/gc/weakpointer.h
 
 boehm-gc: mkbuilddirs boehm-gc-lib build/include/omc/c/gc.h build/include/omc/c/gc_config_macros.h build/include/omc/c/gc_version.h build/include/omc/c/gc_pthread_redirects.h
-build/lib/omc/libgc.a: 3rdParty/gc-7.2/.libs/libgc.a mkbuilddirs
+build/lib/omc/libgc.a: 3rdParty/gc/.libs/libgc.a mkbuilddirs
 	cp -p $< $@
-3rdParty/gc-7.2/.libs/libgc.a: 3rdParty/gc-7.2/Makefile
-	$(MAKE) -C 3rdParty/gc-7.2/
-build/include/omc/c/gc.h: 3rdParty/gc-7.2/include/gc.h mkbuilddirs
+3rdParty/gc/.libs/libgc.a: 3rdParty/gc/Makefile
+	$(MAKE) -C 3rdParty/gc/
+build/include/omc/c/gc.h: 3rdParty/gc/include/gc.h mkbuilddirs
 	cp -pPR $< $@
-build/include/omc/c/gc_config_macros.h: 3rdParty/gc-7.2/include/gc_config_macros.h mkbuilddirs
+build/include/omc/c/gc_config_macros.h: 3rdParty/gc/include/gc_config_macros.h mkbuilddirs
 	cp -pPR $< $@
-build/include/omc/c/gc_version.h: 3rdParty/gc-7.2/include/gc_version.h mkbuilddirs
+build/include/omc/c/gc_version.h: 3rdParty/gc/include/gc_version.h mkbuilddirs
 	cp -pPR $< $@
-build/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc-7.2/include/gc_pthread_redirects.h mkbuilddirs
+build/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc/include/gc_pthread_redirects.h mkbuilddirs
 	cp -pPR $< $@
-3rdParty/gc-7.2/Makefile: 3rdParty/gc-7.2/Makefile.in 3rdParty/gc-7.2/configure
-	(cd 3rdParty/gc-7.2 && ./configure "--host=$(host)" $(LIBGC_EXTRA_CONFIGURATION) --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DLARGE_CONFIG -DTHREAD_LOCAL_ALLOC")
+3rdParty/gc/Makefile: 3rdParty/gc/configure.ac
+	(cd 3rdParty/gc && autoreconf -vif && automake --add-missing && ./configure "--host=$(host)" $(LIBGC_EXTRA_CONFIGURATION) --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DLARGE_CONFIG -DTHREAD_LOCAL_ALLOC")
 
 3rdParty/Ipopt-3.11.6/Makefile: $(LAPACK_TARGET)
 	(cd 3rdParty/Ipopt-3.11.6 && ./configure --with-pic "CC=$(CC)" CXX="$(CXX)" F77="$(FC)" LDFLAGS="-L${abs_top_builddir}/build/lib/omc $(LDFLAGS)" --with-lapack-lib="$(LD_LAPACK)" --with-blas-lib="$(LD_LAPACK)" --without-metis --without-HSLold --without-HSL)
@@ -320,8 +320,8 @@ distclean: clean
 fmil-clean:
 	rm -rf 3rdParty/FMIL/build 3rdParty/FMIL/install 3rdParty/FMIL/Makefile
 gc-clean:
-	if test -f 3rdParty/gc-7.2/Makefile; then make -C 3rdParty/gc-7.2 clean; fi
-	rm -f 3rdParty/gc-7.2/Makefile
+	if test -f 3rdParty/gc/Makefile; then make -C 3rdParty/gc clean; fi
+	rm -f 3rdParty/gc/Makefile
 bootstrap-clean:
 	$(MAKE) -C Compiler/boot clean -f $(defaultMakefileTarget)
 openblas-clean:

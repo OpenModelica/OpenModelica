@@ -6,7 +6,7 @@
 
 include Makefile.objs
 
-CPPFLAGS = -I. -I$(UTILPATH) -I. -I$(METAPATH) -I$(METAPATH)gc $(LIBF2CINC) -I$(top_builddir)/3rdParty/gc-7.2/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(top_builddir)/3rdParty/Ipopt-3.11.6/include/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL
+CPPFLAGS = -I. -I$(UTILPATH) -I. -I$(METAPATH) -I$(METAPATH)gc $(LIBF2CINC) -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(top_builddir)/3rdParty/Ipopt-3.11.6/include/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL
 CFLAGS = $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
 CXXFLAGS = $(CFLAGS)
 FFLAGS  = -O -fexceptions
