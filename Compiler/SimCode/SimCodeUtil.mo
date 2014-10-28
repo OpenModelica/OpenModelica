@@ -7888,15 +7888,25 @@ protected
   list<SimCodeVar.SimVar> derivativeVars;
   list<SimCodeVar.SimVar> algVars;
   list<SimCodeVar.SimVar> discreteAlgVars;
+  list<SimCodeVar.SimVar> paramVars;
+  list<SimCodeVar.SimVar> intParamVars;
+  list<SimCodeVar.SimVar> constVars;
+  list<SimCodeVar.SimVar> intConstVars;
+  list<SimCodeVar.SimVar> stringConstVars;
   list<SimCode.Function> functions;
 algorithm
   SimCode.MODELINFO(vars=simVars, varInfo=varInfo, functions=functions) := modelInfo;
-  SimCodeVar.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,discreteAlgVars=discreteAlgVars) := simVars;
+  SimCodeVar.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,discreteAlgVars=discreteAlgVars,paramVars=paramVars,intParamVars=intParamVars, constVars=constVars,intConstVars=intConstVars,stringConstVars=stringConstVars) := simVars;
   SimCode.VARINFO(numStateVars=nsv,numAlgVars=nalgv) := varInfo;
   Debug.bcall2(List.isNotEmpty(stateVars),dumpVarLst,stateVars,"stateVars ("+&intString(nsv)+&")");
   Debug.bcall2(List.isNotEmpty(derivativeVars),dumpVarLst,derivativeVars,"derivativeVars");
   Debug.bcall2(List.isNotEmpty(algVars),dumpVarLst,algVars,"algVars ("+&intString(nalgv)+&")");
   Debug.bcall2(List.isNotEmpty(discreteAlgVars),dumpVarLst,discreteAlgVars,"discreteAlgVars");
+  Debug.bcall2(List.isNotEmpty(paramVars),dumpVarLst,paramVars,"paramVars");
+  Debug.bcall2(List.isNotEmpty(intParamVars),dumpVarLst,intParamVars,"intParamVars");
+  Debug.bcall2(List.isNotEmpty(constVars),dumpVarLst,constVars,"constVars");
+  Debug.bcall2(List.isNotEmpty(intConstVars),dumpVarLst,intConstVars,"intConstVars");
+  Debug.bcall2(List.isNotEmpty(stringConstVars),dumpVarLst,stringConstVars,"stringConstVars");
   print("functions:\n-----------\n\n");
   Debug.bcall1(List.isNotEmpty(functions),dumpFunctions,functions);
 end dumpModelInfo;
@@ -9375,7 +9385,7 @@ algorithm
         arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         caus = getCausality(dlowVar, vars);
-        numArrayElement = List.map(inst_dims, ExpressionDump.dimensionString);
+        numArrayElement = List.map(inst_dims, ExpressionDump.dimensionIntString);
         // print("name: " +& ComponentReference.printComponentRefStr(cr) +& "indx: " +& intString(indx) +& "\n");
         // check if the variable has changeable value
         // parameter which are final = true or Evaluate Annotation are not
@@ -9408,7 +9418,7 @@ algorithm
         arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         caus = getCausality(dlowVar, vars);
-        numArrayElement = List.map(inst_dims, ExpressionDump.dimensionString);
+        numArrayElement = List.map(inst_dims, ExpressionDump.dimensionIntString);
         // print("name: " +& ComponentReference.printComponentRefStr(cr) +& "indx: " +& intString(indx) +& "\n");
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
@@ -9435,7 +9445,7 @@ algorithm
         arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         caus = getCausality(dlowVar, vars);
-        numArrayElement = List.map(inst_dims, ExpressionDump.dimensionString);
+        numArrayElement = List.map(inst_dims, ExpressionDump.dimensionIntString);
         // print("name: " +& ComponentReference.printComponentRefStr(cr) +& "indx: " +& intString(indx) +& "\n");
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,

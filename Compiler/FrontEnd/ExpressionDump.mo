@@ -1655,8 +1655,7 @@ algorithm
 
     case DAE.DIM_ENUM(enumTypeName = p, size =size)
       equation
-        //s = Absyn.pathString(p);
-        s = intString(size);
+        s = Absyn.pathString(p);
       then
         s;
 
@@ -1683,6 +1682,29 @@ public function dimensionsString
 algorithm
   str := stringDelimitList(List.map(dims,dimensionString),",");
 end dimensionsString;
+
+public function dimensionIntString
+  "Returns a integer string representation of an array dimension."
+  input DAE.Dimension dim;
+  output String str;
+algorithm
+  str := match(dim)
+    local
+      String s;
+      Integer x, size;
+      DAE.Exp e;
+    case DAE.DIM_UNKNOWN() then ":";
+    case DAE.DIM_ENUM(size =size)
+      then intString(size);
+    case DAE.DIM_BOOLEAN() then "1";
+    case DAE.DIM_INTEGER(integer = x)
+      then intString(x);
+    case DAE.DIM_EXP(exp = e)
+      equation
+        s = printExpStr(e);
+      then s;
+  end match;
+end dimensionIntString;
 
 public function dumpExpWithTitle
   input String title;
