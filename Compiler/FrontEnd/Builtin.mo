@@ -54,6 +54,7 @@ protected import Flags;
 protected import FGraphBuildEnv;
 protected import Global;
 protected import List;
+protected import MetaUtil;
 protected import Parser;
 protected import SCodeUtil;
 protected import Settings;
@@ -590,6 +591,7 @@ algorithm
         Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(fileMetaModelica,"UTF-8");
         classes = listAppend(classes1,classes2);
         p = Absyn.PROGRAM(classes,Absyn.TOP(),Absyn.dummyTimeStamp);
+        (p as Absyn.PROGRAM(classes=classes)) = MetaUtil.createMetaClassesInProgram(p);
         sp = List.map(classes, SCodeUtil.translateClass);
         assocLst = getGlobalRoot(Global.builtinIndex);
         setGlobalRoot(Global.builtinIndex, (Flags.METAMODELICA,(p,sp))::assocLst);

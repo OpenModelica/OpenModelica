@@ -7796,6 +7796,7 @@ algorithm
     case (SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts), info = Absyn.INFO(fileName=fileName)),_,_,_)
       equation
         protectedDepends = List.map(List.select(elts,SCode.elementIsProtectedImport),importDepenency);
+        protectedDepends = List.select(protectedDepends, isNotBuiltinImport);
         _::allDepends = Graph.allReachableNodes((name::protectedDepends,{}),deps,stringEq);
         allDepends = List.map1r(allDepends, stringAppend, prefix);
         allDepends = List.map1(allDepends, stringAppend, ".interface.mo");
@@ -7807,6 +7808,11 @@ algorithm
       then fail();
   end matchcontinue;
 end writeModuleDepends;
+
+protected function isNotBuiltinImport
+  input String module;
+  output Boolean b := module <> "MetaModelica";
+end isNotBuiltinImport;
 
 protected function findFunctionsToCompile
   input SCode.Element elt;

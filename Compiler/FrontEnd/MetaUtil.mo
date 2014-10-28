@@ -179,27 +179,22 @@ public function createMetaClassesInProgram "Adds metarecord classes to the AST. 
   input Absyn.Program program;
   output Absyn.Program out;
 algorithm
-  out := matchcontinue(program)
+  out :=  match (program)
     local
       list<Absyn.Class> classes, metaClassesFlat;
       list<list<Absyn.Class>> metaClasses;
       Absyn.Within w;
       Absyn.TimeStamp ts;
 
-    case _
-      equation
-        false = Config.acceptMetaModelicaGrammar();
-      then program;
-
-    case (Absyn.PROGRAM(classes = classes,within_ = w,globalBuildTimes=ts))
+    case (Absyn.PROGRAM(classes = classes,within_ = w,globalBuildTimes=ts)) guard Config.acceptMetaModelicaGrammar()
       equation
         metaClasses = List.map(classes, createMetaClasses);
         metaClassesFlat = List.flatten(metaClasses);
         classes = List.map(classes, createMetaClassesFromPackage);
         classes = listAppend(classes, metaClassesFlat);
-      then
-        Absyn.PROGRAM(classes,w,ts);
-  end matchcontinue;
+      then Absyn.PROGRAM(classes,w,ts);
+    else program;
+  end match;
 end createMetaClassesInProgram;
 
 protected function createMetaClassesFromPackage "Helper function to createMetaClassesInProgram"

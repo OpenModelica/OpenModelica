@@ -992,4 +992,24 @@ external "builtin";
 end listReverseInPlace;
 
 end Dangerous;
+
 end MetaModelica;
+
+uniontype FileInfo "The Info attribute provides location information for elements and classes."
+  record FILEINFO
+    String fileName "fileName where the class is defined in";
+    Boolean isReadOnly "isReadOnly : (true|false). Should be true for libraries";
+    Integer lineNumberStart "lineNumberStart";
+    Integer columnNumberStart "columnNumberStart";
+    Integer lineNumberEnd "lineNumberEnd";
+    Integer columnNumberEnd "columnNumberEnd";
+    TimeStamp buildTimes "Build and edit times";
+  end FILEINFO;
+end FileInfo;
+
+uniontype TimeStamp
+ record TIMESTAMP
+   Real lastBuildTime "Last Build Time";
+   Real lastEditTime "Last Edit Time; this is the same as mtime in stat(2)";
+  end TIMESTAMP;
+end TimeStamp;
