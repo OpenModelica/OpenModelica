@@ -160,6 +160,8 @@ if true then /* Suppress output */
     "../BackEnd/ResolveLoops.mo",
     "../BackEnd/SymbolicJacobian.mo",
     "../BackEnd/SynchronousFeatures.mo",
+    "../BackEnd/StateMachineFeatures.mo",
+    "../BackEnd/HashTableSM.mo",
     "../BackEnd/Tearing.mo",
     "../BackEnd/Uncertainties.mo",
     "../BackEnd/UnitCheck.mo",

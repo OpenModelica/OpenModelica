@@ -103,6 +103,7 @@ protected import Tearing;
 protected import Types;
 protected import UnitCheck;
 protected import Values;
+protected import StateMachineFeatures;
 
 protected
 type Var = BackendDAE.Var;
@@ -8807,6 +8808,7 @@ algorithm
                        (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", false),
                        (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables", false),
                        (SynchronousFeatures.clockPartitioning, "clockPartitioning", true),
+                       (StateMachineFeatures.stateMachineElab, "stateMachineElab", true),
                        (BackendDAEOptimize.expandDerOperator, "expandDerOperator", false),
                        (IndexReduction.findStateOrder, "findStateOrder", false),
                        (BackendDAEOptimize.simplifyIfEquations, "simplifyIfEquations", false),
