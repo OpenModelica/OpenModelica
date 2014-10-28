@@ -92,11 +92,14 @@ protected
   BackendDAE.BackendDAE dae;
   list<BackendDAE.Var> vars;
 algorithm
+  //BackendDump.dumpBackendDAE(inDAE, "findZeroCrossings: inDAE");
   (dae, vars) := BackendDAEUtil.mapEqSystemAndFold(inDAE, findZeroCrossings1, {});
   outDAE := findZeroCrossingsShared(dae, vars);
+  //BackendDump.dumpBackendDAE(outDAE, "findZeroCrossings: outDAE");
 end findZeroCrossings;
 
-protected function findZeroCrossingsShared "This function finds all zerocrossings in the shared part of the DAE."
+protected function findZeroCrossingsShared "This function finds all zerocrossings in the shared part of the DAE.
+  search in simple equations for zerocrossings"
   input BackendDAE.BackendDAE inDAE;
   input list<BackendDAE.Var> allvars;
   output BackendDAE.BackendDAE outDAE;
@@ -122,19 +125,16 @@ protected
   BackendDAE.ExtraInfo ei;
 algorithm
   BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs,
-    cache, graph, funcs, einfo as BackendDAE.EVENT_INFO(timeEvents=timeEvents, zeroCrossingLst=zero_crossings, relationsLst=relationsLst,
+    cache, graph, funcs, einfo, eoc, btp, symjacs, ei)) := inDAE;
+
+ BackendDAE.EVENT_INFO(timeEvents=timeEvents, zeroCrossingLst=zero_crossings, relationsLst=relationsLst,
     sampleLst=sampleLst, whenClauseLst=whenclauses, relationsNumber=countRelations,
-    numberMathEvents=countMathFunctions), eoc, btp, symjacs, ei)) := inDAE;
+    numberMathEvents=countMathFunctions) := einfo;
 
   vars := BackendVariable.listVar1(allvars);
   eqs_lst := BackendEquation.equationList(remeqns);
-  (zero_crossings, eqs_lst1, whenclauses, countRelations, countMathFunctions, relationsLst, sampleLst) := findZeroCrossings2(vars, knvars, eqs_lst, 0, whenclauses, 0, countRelations, countMathFunctions, zero_crossings, relationsLst, sampleLst, {}, {});
-  eqs_lst1 := listReverse(eqs_lst1);
-  remeqns := BackendEquation.listEquation(eqs_lst1);
-  eqs_lst := BackendEquation.equationList(inieqns);
-  (zero_crossings, eqs_lst1, _, countRelations, countMathFunctions, relationsLst, sampleLst) := findZeroCrossings2(vars, knvars, eqs_lst, 0, {}, 0, countRelations, countMathFunctions, zero_crossings, relationsLst, sampleLst, {}, {});
-  eqs_lst1 := listReverse(eqs_lst1);
-  inieqns := BackendEquation.listEquation(eqs_lst1);
+  (zero_crossings, _, whenclauses, countRelations, countMathFunctions, relationsLst, sampleLst) := findZeroCrossings2(vars, knvars, eqs_lst, 0, whenclauses, 0, countRelations, countMathFunctions, zero_crossings, relationsLst, sampleLst, {}, {});
+
   Debug.fcall(Flags.RELIDX, print, "findZeroCrossings1 sample index: " +& intString(listLength(sampleLst)) +& "\n");
   einfo1 := BackendDAE.EVENT_INFO(timeEvents, whenclauses, zero_crossings, sampleLst, relationsLst, countRelations, countMathFunctions);
   outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo1, eoc, btp, symjacs, ei));
@@ -241,7 +241,8 @@ algorithm
       DAE.Expand expand;
       BackendDAE.EquationAttributes eqAttr;
 
-    case (_, _, {}, _, {}, _, countRelations, countMathFunctions, res, relationsLst, sampleLst, _, _) then (res, inEquationLstAccum, inWhenClauseAccum, countRelations, countMathFunctions, relationsLst, sampleLst);
+    case (_, _, {}, _, {}, _, countRelations, countMathFunctions, res, relationsLst, sampleLst, _, _)
+    then (res, inEquationLstAccum, inWhenClauseAccum, countRelations, countMathFunctions, relationsLst, sampleLst);
 
     // all algorithm stmts are processed firstly
    case (v, _, ((BackendDAE.ALGORITHM(size=size, alg=DAE.ALGORITHM_STMTS(stmts), source= source_, expand=expand, attr=eqAttr))::xs), eq_count, {}, _, countRelations, countMathFunctions, zcs, relationsLst, sampleLst, eqnsAccum, whenClauseAccum)
