@@ -1382,11 +1382,11 @@ algorithm
 
     case (_, {}, _, _, _, _)
     then (inStmts, iextraArg);
-    
+
     case (_, _, _, _, _, (_, _, _, (zcs, rels, samples, idx, idx2), tpl3)) equation
       ((statementLst, extraArg)) = traverseStmtsExps(inStmts, collectZCAlgsFor, (inIteratorExp, inExplst, inRange, (zcs, rels, samples, idx, idx2), tpl3), knvars);
     then (statementLst, extraArg);
-      
+
     else equation
       Error.addInternalError("./Compiler/BackEnd/FindZeroCrossings.mo: function traverseStmtsForExps failed");
     then fail();
@@ -1394,7 +1394,7 @@ algorithm
 end traverseStmtsForExps;
 
 protected function createZeroCrossings "
-  Constructs a list of zero crossings from a list of relations. Each zero 
+  Constructs a list of zero crossings from a list of relations. Each zero
   crossing gets the same equation indices and when clause indices."
   input list<DAE.Exp> inExpExpLst1;
   input list<Integer> inOccurEquLst;
