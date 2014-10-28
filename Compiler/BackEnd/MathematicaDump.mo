@@ -540,8 +540,8 @@ dotted names and replaces '.' with ','"
 algorithm
   //b := Util.stringContainsChar(str,".");
   b := true; // always wrap the names
-  //s1 := Util.if_(b,"Member[","");
-  //s2 := Util.if_(b,"]","");
+  //s1 := if_(b,"Member[","");
+  //s2 := if_(b,"]","");
   s3 := System.stringReplace(str,".","\\[UpPointer]");
   //outStr := stringAppendList({s1,s3,s2});
   outStr := s3;

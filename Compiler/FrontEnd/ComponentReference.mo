@@ -592,7 +592,7 @@ algorithm
         b = Config.modelicaOutput();
         str = printComponentRef2Str(s, subs);
         strrest = printComponentRefStr(cr);
-        strseb = Util.if_(b,"__",".");
+        strseb = if b then "__" else ".";
         str = stringAppendList({str, strseb, strrest});
       then
         str;
@@ -637,7 +637,7 @@ algorithm
       equation
         b = Config.modelicaOutput();
         str = ExpressionDump.printListStr(l, ExpressionDump.printSubscriptStr, ",");
-        ((strseba,strsebb)) = Util.if_(b,("_L","_R"),("[","]"));
+        ((strseba,strsebb)) = if b then ("_L","_R") else ("[","]");
         str = stringAppendList({s, strseba, str, strsebb});
       then
         str;
@@ -662,7 +662,7 @@ algorithm
     case DAE.CREF_IDENT(ident = s,identType=ty,subscriptLst = subs)
       equation
         str_1 = ExpressionDump.printListStr(subs, ExpressionDump.debugPrintSubscriptStr, ", ");
-        str = s +& Util.if_(stringLength(str_1) > 0, "["+& str_1 +& "]", "");
+        str = s + (if stringLength(str_1) > 0 then "["+& str_1 +& "]" else "");
         str2 = Types.unparseType(ty);
         str = stringAppendList({str," [",str2,"]"});
       then
@@ -672,7 +672,7 @@ algorithm
       equation
         false = Config.modelicaOutput();
         str_1 = ExpressionDump.printListStr(subs, ExpressionDump.debugPrintSubscriptStr, ", ");
-        str = s +& Util.if_(stringLength(str_1) > 0, "["+& str_1 +& "]", "");
+        str = s + (if stringLength(str_1) > 0 then "["+& str_1 +& "]" else "");
         str2 = Types.unparseType(ty);
         strrest = debugPrintComponentRefTypeStr(cr);
         str = stringAppendList({str," [",str2,"] ", ".", strrest});

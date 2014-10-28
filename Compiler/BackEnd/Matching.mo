@@ -2459,7 +2459,7 @@ algorithm
         _ = arrayUpdate(level,c,l);
         (queue2,rows,b) = HKBFStraverseRows(cr,{},i,l,m,mT,rowmarks,level,ass1,ass2,inRows,false);
         queue2 = listAppend(queue1,queue2);
-        ll = Util.if_(b,SOME(l),lowestL);
+        ll = if b then SOME(l) else lowestL;
         (rows,ll) = HKBFSBphase(rest,i,l,ll,nv,ne,m,mT,rowmarks,level,ass1,ass2,rows,queue2);
       then
         (rows,ll);
@@ -4917,7 +4917,7 @@ algorithm
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,1,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,1,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
@@ -4969,7 +4969,7 @@ algorithm
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,2,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,2,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
@@ -5021,7 +5021,7 @@ algorithm
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,3,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,3,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
@@ -5073,7 +5073,7 @@ algorithm
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,4,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,4,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
@@ -5125,7 +5125,7 @@ algorithm
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,5,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,5,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
@@ -5177,7 +5177,7 @@ algorithm
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,6,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,6,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
@@ -5229,7 +5229,7 @@ algorithm
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,7,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,7,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
@@ -5281,7 +5281,7 @@ algorithm
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,8,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,8,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
@@ -5333,7 +5333,7 @@ algorithm
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
         true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,10,Config.getCheapMatchingAlgorithm(),Util.if_(clearMatching,1,0),isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,10,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
@@ -5431,7 +5431,7 @@ protected function countincidenceMatrixElementEntries
   input Integer inCount;
   output Integer outCount;
 algorithm
-  outCount := Util.if_(intGt(i,0),inCount+1,inCount);
+  outCount := if intGt(i,0) then inCount+1 else inCount;
 end countincidenceMatrixElementEntries;
 
 protected function countincidenceMatrixEntries

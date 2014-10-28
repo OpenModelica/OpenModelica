@@ -53,7 +53,6 @@ TODO: Implement meld() in O(1) time
 "
 
 protected import List;
-protected import Util;
 public import SimCode;
 
 public
@@ -158,7 +157,7 @@ algorithm
       equation
         x = root(t);
         y = findMin(ts);
-      then Util.if_(compareElement(x,y),x,y);
+      then if compareElement(x,y) then x else y;
   end match;
 end findMin;
 
@@ -251,9 +250,7 @@ algorithm
         r2 = r2+1;
         ts1 = t2::ts1;
         ts2 = t1::ts2;
-      then Util.if_(compareElement(root(t1),root(t2)),
-        NODE(e1,r1,ts1),
-        NODE(e2,r2,ts2));
+      then if compareElement(root(t1),root(t2)) then NODE(e1,r1,ts1) else NODE(e2,r2,ts2);
   end match;
 end link;
 
@@ -267,8 +264,7 @@ algorithm
       Tree t1,t2;
       T ts;
     case (_,{}) then {t};
-    case (t1,t2::ts) then
-      Util.if_(rank(t1) < rank(t2),t1::t2::ts,ins(link(t1,t2),ts));
+    case (t1,t2::ts) then if rank(t1) < rank(t2) then t1::t2::ts else ins(link(t1,t2),ts);
   end match;
 end ins;
 
@@ -287,7 +283,7 @@ algorithm
       equation
         (t2,ts2) = getMin(ts1);
         b = compareElement(root(t1),root(t2));
-      then (Util.if_(b,t1,t2), Util.if_(b,ts1,t1::ts2));
+      then (if b then t1 else t2, if b then ts1 else t1::ts2);
   end match;
 end getMin;
 

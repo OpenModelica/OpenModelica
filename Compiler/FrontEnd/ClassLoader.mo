@@ -537,8 +537,8 @@ algorithm
       equation
         compNames = List.map(comps,Absyn.componentName);
         (names,b) = matchCompNames(inNamesToSort,compNames,info);
-        orderElt = Util.if_(b, makeElement(ei,pub), makeClassLoad(name1));
-        (outOrder,names) = getPackageContentNamesinElts(names,Util.if_(b,elts,inElts),orderElt :: po,pub);
+        orderElt = if b then makeElement(ei,pub) else makeClassLoad(name1);
+        (outOrder,names) = getPackageContentNamesinElts(names,if b then elts else inElts,orderElt :: po,pub);
       then (outOrder,names);
 
     case (name1::namesToSort,(ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2,info=info)))))::elts,_,_)
@@ -546,8 +546,8 @@ algorithm
         load = makeClassLoad(name1);
         b = name1 ==& name2;
         Error.assertionOrAddSourceMessage(not Debug.bcallret2(b,listMember,load,po,false), Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
-        orderElt = Util.if_(b, makeElement(ei,pub), load);
-        (outOrder,names) = getPackageContentNamesinElts(namesToSort,Util.if_(b,elts,inElts),orderElt :: po, pub);
+        orderElt = if b then makeElement(ei,pub) else load;
+        (outOrder,names) = getPackageContentNamesinElts(namesToSort,if b then elts else inElts,orderElt :: po, pub);
       then (outOrder,names);
 
     case ({},(Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2,info=info)))))::_,_,_)

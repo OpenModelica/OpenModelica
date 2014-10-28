@@ -295,7 +295,7 @@ algorithm
     case (exp,(vars,lstExpCrefs))
       equation
         (_,(_,crefs)) = Expression.traverseExp(exp,traversecheckBackendDAEExp,(vars,{}));
-        lstExpCrefs1 = Util.if_(List.isNotEmpty(crefs),(exp,crefs)::lstExpCrefs,lstExpCrefs);
+        lstExpCrefs1 = if List.isNotEmpty(crefs) then (exp,crefs)::lstExpCrefs else lstExpCrefs;
        then (exp,(vars,lstExpCrefs1));
     else (inExp,inTpl);
   end matchcontinue;
@@ -812,7 +812,7 @@ algorithm
   daeContainsNoStates := addDummyStateIfNeeded1(systs);
   // adrpo: add the dummy derivative state ONLY IF the DAE contains no states
   systs := Debug.bcallret1(daeContainsNoStates,addDummyState,systs,systs);
-  outBackendDAE := Util.if_(daeContainsNoStates,BackendDAE.DAE(systs,shared),inBackendDAE);
+  outBackendDAE := if daeContainsNoStates then BackendDAE.DAE(systs,shared) else inBackendDAE;
 end addDummyStateIfNeeded;
 
 protected function addDummyStateIfNeeded1
@@ -3686,13 +3686,13 @@ algorithm
          index reduction using dummy derivatives */
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(derName=SOME(_)))::rest,i::irest,_,_)
       equation
-        i1 = Util.if_(intGe(diffindex,1),i,-i);
+        i1 = if intGe(diffindex,1) then i else -i;
         b = List.isMemberOnTrue(i1, inVarIndxLst, intEq);
         vars = List.consOnTrue(not b, i1, inVarIndxLst);
       then incidenceRowExp1(rest,irest,vars,diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(index=diffidx))::rest,i::irest,_,_)
       equation
-        i1 = Util.if_(intGe(diffindex,diffidx),i,-i);
+        i1 = if intGe(diffindex,diffidx) then i else -i;
         b = List.isMemberOnTrue(i1, inVarIndxLst, intEq);
         vars = List.consOnTrue(not b, i1, inVarIndxLst);
       then incidenceRowExp1(rest,irest,vars,diffindex);
@@ -3846,7 +3846,7 @@ algorithm
         iabs = intAbs(i);
         mt = Array.expand(iabs - arrayLength(mt),mt,{});
         col = mt[iabs];
-        indx1 = Util.if_(intLt(i,0),-indx,indx);
+        indx1 = if intLt(i,0) then -indx else indx;
         _ = arrayUpdate(mt,iabs,indx1::col);
       then
         transposeRow(res, (mt,indx));
@@ -4170,7 +4170,7 @@ algorithm
       equation
         kabs = intAbs(k);
         mlst = mt[kabs];
-        v_1 = Util.if_(intGt(k,0),v,-v);
+        v_1 = if intGt(k,0) then v else -v;
         mlst1 = List.removeOnTrue(v_1,intEq,mlst);
         mt_1 = arrayUpdate(mt, kabs , mlst1);
         mt_2 = removeValuefromMatrix(v,keys,mt_1);
@@ -4209,7 +4209,7 @@ algorithm
       equation
         kabs = intAbs(k);
         mlst = getOldVars(mt,kabs);
-        v_1 = Util.if_(intGt(k,0),v,-v);
+        v_1 = if intGt(k,0) then v else -v;
         false = listMember(v_1, mlst);
         mt_1 = Array.replaceAtWithFill(kabs,v_1::mlst,{},mt);
         mt_2 = addValuetoMatrix(v,keys,mt_1);
@@ -5477,7 +5477,7 @@ algorithm
       equation
         b = Expression.isConstOne(e) or Expression.isConstMinusOne(e);
       then
-        Util.if_(b,BackendDAE.SOLVABILITY_CONSTONE(),BackendDAE.SOLVABILITY_CONST());
+        if b then BackendDAE.SOLVABILITY_CONSTONE() else BackendDAE.SOLVABILITY_CONST();
     case(_,_,_,_,_)
       equation
         true = List.isMemberOnTrue(cr,crlst,ComponentReference.crefEqualNoStringCompare);
@@ -5528,7 +5528,7 @@ algorithm
         b = not Expression.isZero(e1);
         b_1 = Expression.isConst(e1);
       then
-       Util.if_(b_1,BackendDAE.SOLVABILITY_PARAMETER(b),BackendDAE.SOLVABILITY_LINEAR(b));
+       if b_1 then BackendDAE.SOLVABILITY_PARAMETER(b) else BackendDAE.SOLVABILITY_LINEAR(b);
     case(_,_,_,_,_,_,_)
       equation
         b = not Expression.isZero(e);
@@ -5857,7 +5857,7 @@ algorithm
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(index=_))::rest,i::irest,_,false,_,_,_)
       equation
         false = intEq(intAbs(rowmark[i]),mark);
-        _ = arrayUpdate(rowmark,i,Util.if_(unsolvable,-mark,mark));
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
         res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(index=_))::rest,i::irest,_,true,_,_,_)
@@ -5869,7 +5869,7 @@ algorithm
     case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())::rest,i::irest,_,_,_,_,_)
       equation
         false = intEq(intAbs(rowmark[i]),mark);
-        _ = arrayUpdate(rowmark,i,Util.if_(unsolvable,-mark,mark));
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
         res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())::rest,i::irest,_,_,_,_,true)
@@ -5877,14 +5877,14 @@ algorithm
         b = intEq(rowmark[i],mark);
         b1 = intEq(rowmark[i],-mark);
         b = b or b1;
-        _ = arrayUpdate(rowmark,i,Util.if_(unsolvable,-mark,mark));
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
         res = List.consOnTrue(not b, i, vars);
         res = adjacencyRowExpEnhanced1(rest,irest,res,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE())::rest,i::irest,_,_,_,_,_)
       equation
         false = intEq(intAbs(rowmark[i]),mark);
-        _ = arrayUpdate(rowmark,i,Util.if_(unsolvable,-mark,mark));
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
         res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE())::rest,i::irest,_,_,_,_,true)
@@ -5892,14 +5892,14 @@ algorithm
         b = intEq(rowmark[i],mark);
         b1 = intEq(rowmark[i],-mark);
         b = b or b1;
-        _ = arrayUpdate(rowmark,i,Util.if_(unsolvable,-mark,mark));
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
         res = List.consOnTrue(not b, i, vars);
         res = adjacencyRowExpEnhanced1(rest,irest,res,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())::rest,i::irest,_,_,_,_,_)
       equation
         false = intEq(intAbs(rowmark[i]),mark);
-        _ = arrayUpdate(rowmark,i,Util.if_(unsolvable,-mark,mark));
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
         res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())::rest,i::irest,_,_,_,_,true)
@@ -5907,14 +5907,14 @@ algorithm
         b = intEq(rowmark[i],mark);
         b1 = intEq(rowmark[i],-mark);
         b = b or b1;
-        _ = arrayUpdate(rowmark,i,Util.if_(unsolvable,-mark,mark));
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
         res = List.consOnTrue(not b, i, vars);
         res = adjacencyRowExpEnhanced1(rest,irest,res,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER())::rest,i::irest,_,_,_,_,_)
       equation
         false = intEq(intAbs(rowmark[i]),mark);
-        _ = arrayUpdate(rowmark,i,Util.if_(unsolvable,-mark,mark));
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
         res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER())::rest,i::irest,_,_,_,_,true)
@@ -5922,14 +5922,14 @@ algorithm
         b = intEq(rowmark[i],mark);
         b1 = intEq(rowmark[i],-mark);
         b = b or b1;
-        _ = arrayUpdate(rowmark,i,Util.if_(unsolvable,-mark,mark));
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
         res = List.consOnTrue(not b, i, vars);
         res = adjacencyRowExpEnhanced1(rest,irest,res,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())::rest,i::irest,_,_,_,_,_)
       equation
         false = intEq(intAbs(rowmark[i]),mark);
-        _ = arrayUpdate(rowmark,i,Util.if_(unsolvable,-mark,mark));
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
         res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())::rest,i::irest,_,_,_,_,true)
@@ -5937,7 +5937,7 @@ algorithm
         b = intEq(rowmark[i],mark);
         b1 = intEq(rowmark[i],-mark);
         b = b or b1;
-        _ = arrayUpdate(rowmark,i,Util.if_(unsolvable,-mark,mark));
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
         res = List.consOnTrue(not b, i, vars);
         res = adjacencyRowExpEnhanced1(rest,irest,res,notinder,mark,rowmark,unsolvable);
       then res;
@@ -6448,8 +6448,8 @@ algorithm
       equation
         true = jacobianConstant(jac);
         b = rhsConstant(vars,eqns);
-        jactype = Util.if_(b,BackendDAE.JAC_CONSTANT(),BackendDAE.JAC_LINEAR());
-        //print("jac type: " +& Util.if_(b,"JAC_CONSTANT()","JAC_LINEAR()")  +& "\n");
+        jactype = if b then BackendDAE.JAC_CONSTANT() else BackendDAE.JAC_LINEAR();
+        //print("jac type: " +& if_(b,"JAC_CONSTANT()","JAC_LINEAR()")  +& "\n");
       then
         (jactype,true);
 
@@ -6889,7 +6889,7 @@ algorithm
     case (e as DAE.CREF(ty=_),(repl,vars,funcs,b))
       equation
         (e1,b1) = BackendVarTransform.replaceExp(e, repl, NONE());
-        e1 = Util.if_(b1,e1,e);
+        e1 = if b1 then e1 else e;
       then (e1,false,(repl,vars,funcs,b));
 
     case (DAE.IFEXP(cond,t,f),(repl,vars,funcs,b))
@@ -8047,7 +8047,7 @@ algorithm
     case (DAE.ALGORITHM_STMTS(statementLst = stmts),_,_)
       equation
         (stmts1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
-        alg = Util.if_(referenceEq(stmts,stmts1),inAlgorithm,DAE.ALGORITHM_STMTS(stmts1));
+        alg = if referenceEq(stmts,stmts1) then inAlgorithm else DAE.ALGORITHM_STMTS(stmts1);
       then
         (alg,ext_arg_1);
   end match;
@@ -8219,7 +8219,7 @@ algorithm
       str = stringAppendList({"pre-optimization module ", moduleStr, " failed."});
       Error.addMessage(Error.INTERNAL_ERROR, {str});
       (dae,status) = preOptimizeDAE(inDAE,rest);
-    then (dae, Util.if_(b, Util.FAILURE(), status));
+    then (dae, if b then Util.FAILURE() else status);
   end matchcontinue;
 end preOptimizeDAE;
 
@@ -8521,7 +8521,7 @@ algorithm
         str = stringAppendList({"post-optimization module ", moduleStr, " failed."});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
         (dae,status) = postOptimizeDAE(inDAE,rest,matchingAlgorithm,daeHandler);
-      then (dae, Util.if_(b, Util.FAILURE(), status));
+      then (dae, if b then Util.FAILURE() else status);
   end matchcontinue;
 end postOptimizeDAE;
 

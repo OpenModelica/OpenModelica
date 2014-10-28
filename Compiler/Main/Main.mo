@@ -103,7 +103,7 @@ algorithm
         Debug.fprint(Flags.INTERACTIVE_DUMP, "------- End recieved Data-----\n");
         Print.clearBuf();
         (b,replystr,newsymb) = handleCommand(str, isymb) "Print.clearErrorBuf &" ;
-        replystr = Util.if_(b, replystr, "quit requested, shutting server down\n");
+        replystr = if b then replystr else "quit requested, shutting server down\n";
         Socket.sendreply(shandle, replystr);
         Debug.bcall1(not b, Socket.close, shandle);
         Debug.bcall0(not b, Socket.cleanup);
@@ -794,7 +794,7 @@ algorithm
 
     System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
     args_1 := Flags.new(args);
-    System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
+    System.gettextInit(if Config.getRunningTestsuite() then "C" else Flags.getConfigString(Flags.LOCALE_FLAG));
     setDefaultCC();
     main2(args_1);
   else

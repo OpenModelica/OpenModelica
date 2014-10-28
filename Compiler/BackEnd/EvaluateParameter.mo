@@ -1104,7 +1104,7 @@ algorithm
   lsteqns := BackendEquation.equationList(eqns);
   (eqns_1,b) := BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
   eqns1 := Debug.bcallret1(b, BackendEquation.listEquation,eqns_1,eqns);
-  osyst := Util.if_(b,BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind),isyst);
+  osyst := if b then BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind) else isyst;
 end replaceEvaluatedParametersSystemEqns;
 
 annotation(__OpenModelica_Interface="backend");

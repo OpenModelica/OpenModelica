@@ -1531,7 +1531,7 @@ algorithm
       //print("\neq with const: "+&BackendDump.dumpEqnsStr({eq})+&"\n");
       //print("one side is constant\n");
       (eqLst,varLst,repl,changed1) = handleConstantSide(varExp,const,eqIdx,eqLstIn,varLstIn,replIn,changed);
-      eqIdxTmp = Util.if_(changed1, eqIdx, eqIdx+1);
+      eqIdxTmp = if changed1 then eqIdx else (eqIdx+1);
       changed = changed1 or changed;
       //print("changed? "+&boolString(changed)+&"\n");
       ((varLst,eqLst,repl,changed)) = removeConstOrAlias(eqIdxTmp,(varLst,eqLst,repl,changed));
@@ -1546,7 +1546,7 @@ algorithm
       true = Expression.isCref(exp2);
       //print("\neq with both sides CREFs: "+&BackendDump.dumpEqnsStr({eq})+&"\n");
       (eqLst,varLst,repl,changed1) = checkForPosAlias(exp1,exp2,eqIdx,eqLstIn,varLstIn,replIn);
-      eqIdxTmp = Util.if_(changed1, eqIdx, eqIdx+1);
+      eqIdxTmp = if changed1 then eqIdx else (eqIdx+1);
       changed = changed1 or changed;
       //print("changed? "+&boolString(changed)+&"\n");
       ((varLst,eqLst,repl,changed)) = removeConstOrAlias(eqIdxTmp,(varLst,eqLst,repl,changed));
@@ -2002,7 +2002,7 @@ algorithm
   idxAttrIdx:= listGet(attributeIdcs,3);
   isTearVar := Util.tuple21(listGet(attsIn,indx));
   daeIdxStr := Util.tuple22(listGet(attsIn,indx));
-  typeStr := Util.if_(isTearVar,"tearingVar","otherVar");
+  typeStr := if isTearVar then "tearingVar" else "otherVar";
   var := BackendVariable.getVarAt(vars,indx);
   varString := BackendDump.varString(var);
   varNodeId := getVarNodeIdx(indx);
@@ -2035,7 +2035,7 @@ algorithm
   idxAttrIdx := listGet(attributeIdcs,3);
   isResEq := Util.tuple21(listGet(attsIn,indx));
   daeIdxStr := Util.tuple22(listGet(attsIn,indx));
-  typeStr := Util.if_(isResEq,"residualEq","otherEq");
+  typeStr := if isResEq then "residualEq" else "otherEq";
   {eq} := BackendEquation.getEqns({indx}, eqs);
   eqString := BackendDump.equationString(eq);
   eqNodeId := getEqNodeIdx(indx);
@@ -2101,7 +2101,7 @@ algorithm
   solvable := Tearing.unsolvable({var});
   eqNodeId := getEqNodeIdx(eqIdx);
   varNodeId := getVarNodeIdx(varIdx);
-  lineWidth := Util.if_(solvable,GraphML.LINEWIDTH_BOLD,GraphML.LINEWIDTH_STANDARD);
+  lineWidth := if solvable then GraphML.LINEWIDTH_BOLD else GraphML.LINEWIDTH_STANDARD;
   (graphInfoOut,_) := GraphML.addEdge("Edge_"+&intString(varIdx)+&"_"+&intString(eqIdx),varNodeId,eqNodeId,GraphML.COLOR_BLACK,GraphML.LINE(),lineWidth,false,{},(GraphML.ARROWNONE(),GraphML.ARROWNONE()),{}, graphInfoIn);
 end addSolvEdgeToGraph2;
 

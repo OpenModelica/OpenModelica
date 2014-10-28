@@ -1833,7 +1833,7 @@ algorithm
 
     case Absyn.ALLWILD() then "__";
 
-    case Absyn.WILD() then Util.if_(Config.acceptMetaModelicaGrammar(),"_","");
+    case Absyn.WILD() then if Config.acceptMetaModelicaGrammar() then "_" else "";
 
   end match;
 end printComponentRefStr;
@@ -3182,11 +3182,11 @@ algorithm
         Print.printBuf("record Absyn.CLASS name = \"");
         Print.printBuf(name);
         Print.printBuf("\", partialPrefix = ");
-        Print.printBuf(Util.if_(partialPrefix,"true","false"));
+        Print.printBuf(boolString(partialPrefix));
         Print.printBuf(", finalPrefix = ");
-        Print.printBuf(Util.if_(finalPrefix,"true","false"));
+        Print.printBuf(boolString(finalPrefix));
         Print.printBuf(", encapsulatedPrefix = ");
-        Print.printBuf(Util.if_(encapsulatedPrefix,"true","false"));
+        Print.printBuf(boolString(encapsulatedPrefix));
         Print.printBuf(", restriction = ");
         printRestrictionAsCorbaString(restriction);
         Print.printBuf(", body = ");
@@ -3213,7 +3213,7 @@ algorithm
         Print.printBuf("record Absyn.INFO fileName = \"");
         Print.printBuf(fileName);
         Print.printBuf("\", isReadOnly = ");
-        Print.printBuf(Util.if_(isReadOnly,"true","false"));
+        Print.printBuf(boolString(isReadOnly));
         Print.printBuf(", lineNumberStart = ");
         Print.printBuf(intString(lineNumberStart));
         Print.printBuf(", columnNumberStart = ");
@@ -3651,7 +3651,7 @@ algorithm
     case Absyn.ELEMENT(finalPrefix,redeclareKeywords,innerOuter,specification,info,constrainClass)
       equation
         Print.printBuf("\nrecord Absyn.ELEMENT finalPrefix = ");
-        Print.printBuf(Util.if_(finalPrefix,"true","false"));
+        Print.printBuf(boolString(finalPrefix));
         Print.printBuf(",redeclareKeywords = ");
         printOption(redeclareKeywords, printRedeclareKeywordsAsCorbaString);
         Print.printBuf(",innerOuter = ");
@@ -3765,7 +3765,7 @@ algorithm
     case Absyn.CLASSDEF(replaceable_,class_)
       equation
         Print.printBuf("record Absyn.CLASSDEF replaceable_ = ");
-        Print.printBuf(Util.if_(replaceable_, "true", "false"));
+        Print.printBuf(boolString(replaceable_));
         Print.printBuf(", class_ = ");
         printClassAsCorbaString(class_);
         Print.printBuf(" end Absyn.CLASSDEF;");
@@ -4248,9 +4248,9 @@ algorithm
     case Absyn.ATTR(flowPrefix,streamPrefix,parallelism,variability,direction,arrayDim)
       equation
         Print.printBuf("record Absyn.ATTR flowPrefix = ");
-        Print.printBuf(Util.if_(flowPrefix, "true", "false"));
+        Print.printBuf(boolString(flowPrefix));
         Print.printBuf(", streamPrefix = ");
-        Print.printBuf(Util.if_(streamPrefix, "true", "false"));
+        Print.printBuf(boolString(streamPrefix));
         Print.printBuf(", parallelism = ");
         printParallelismAsCorbaString(parallelism);
         Print.printBuf(", variability = ");
@@ -4342,7 +4342,7 @@ algorithm
     case Absyn.MODIFICATION(finalPrefix,eachPrefix,p,modification,comment,info)
       equation
         Print.printBuf("record Absyn.MODIFICATION finalPrefix = ");
-        Print.printBuf(Util.if_(finalPrefix,"true","false"));
+        Print.printBuf(boolString(finalPrefix));
         Print.printBuf(", eachPrefix = ");
         printEachAsCorbaString(eachPrefix);
         Print.printBuf(", path = ");
@@ -4358,7 +4358,7 @@ algorithm
     case Absyn.REDECLARATION(finalPrefix,redeclareKeywords,eachPrefix,elementSpec,constrainClass,info)
       equation
         Print.printBuf("record Absyn.REDECLARATION finalPrefix = ");
-        Print.printBuf(Util.if_(finalPrefix,"true","false"));
+        Print.printBuf(boolString(finalPrefix));
         Print.printBuf(", redeclareKeywords = ");
         printRedeclareKeywordsAsCorbaString(redeclareKeywords);
         Print.printBuf(", eachPrefix = ");
@@ -4489,7 +4489,7 @@ algorithm
     case Absyn.BOOL(value = b)
       equation
         Print.printBuf("record Absyn.BOOL value = ");
-        Print.printBuf(Util.if_(b, "true", "false"));
+        Print.printBuf(boolString(b));
         Print.printBuf(" end Absyn.BOOL;");
       then ();
     case Absyn.BINARY(exp1,op,exp2)
@@ -4734,7 +4734,7 @@ algorithm
     case Absyn.C_EQUATIONSECTION(boolean, equationItemLst)
       equation
         Print.printBuf("record Absyn.C_EQUATIONSECTION boolean = ");
-        Print.printBuf(Util.if_(boolean,"true","false"));
+        Print.printBuf(boolString(boolean));
         Print.printBuf(", equationItemLst = ");
         printListAsCorbaString(equationItemLst, printEquationItemAsCorbaString, ",");
         Print.printBuf(" end Absyn.C_EQUATIONSECTION;");
@@ -4742,7 +4742,7 @@ algorithm
     case Absyn.C_ALGORITHMSECTION(boolean, algorithmItemLst)
       equation
         Print.printBuf("record Absyn.C_ALGORITHMSECTION boolean = ");
-        Print.printBuf(Util.if_(boolean,"true","false"));
+        Print.printBuf(boolString(boolean));
         Print.printBuf(", algorithmItemLst = ");
         printListAsCorbaString(algorithmItemLst, printAlgorithmItemAsCorbaString, ",");
         Print.printBuf(" end Absyn.C_ALGORITHMSECTION;");

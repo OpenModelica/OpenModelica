@@ -1275,9 +1275,9 @@ algorithm
           = statementsFromExp(txtexp, {}, stmts, emptyTxt, freshIdent, locals,
                RECURSIVE_SCOPE(ident, freshIdent) :: scEnv, tplPackage, accMMDecls);
         //explicitly initialize when  let &ident = buffer ""
-        stmts = Util.if_(letOuttxt ==& emptyTxt,
-                  MM_ASSIGN({freshIdent}, MM_IDENT(IDENT(emptyTxt))) :: stmts,
-                  stmts);
+        stmts = if letOuttxt == emptyTxt then
+                  MM_ASSIGN({freshIdent}, MM_IDENT(IDENT(emptyTxt))) :: stmts else
+                  stmts;
         //push the ident in the let scope
         scEnv = LET_SCOPE(ident, TEXT_TYPE(), freshIdent, false) :: scEnv;
         (stmts, locals, scEnv, accMMDecls, intxt)
@@ -2679,7 +2679,7 @@ algorithm
         useiter = shouldUseIterFunctions(isfirst, useiter, true, isUsed, iopts, restargs);
         //add nextIter() if needed
         stmt = tplStatement("nextIter", {}, imlicitTxt, imlicitTxt);
-        mapstmts = Util.if_(useiter, stmt :: mapstmts, mapstmts);
+        mapstmts = if useiter then stmt :: mapstmts else mapstmts;
         //(mapstmts,_) = addNextIter(useiter, mapstmts, imlicitTxt, imlicitTxt);
         //create a new list-map function
         fname = listMapFunPrefix +& intString(listLength(accMMDecls));
@@ -2712,8 +2712,7 @@ algorithm
         mmFailCons = makeMMMatchCase(
           (LIST_CONS_MATCH(REST_MATCH(), BIND_MATCH("rest")), encodedExtargs, {mmRecCall}),
           encodedExtargs, oargs);
-        mmmcases = Util.if_(isAlwaysMatchedBool(mexp), { mmmcEmptyList, mmmcCons },
-                            { mmmcEmptyList, mmmcCons, mmFailCons });
+        mmmcases = if isAlwaysMatchedBool(mexp) then { mmmcEmptyList, mmmcCons } else { mmmcEmptyList, mmmcCons, mmFailCons };
          //  listAppend({ mmmcEmptyList, mmmcCons },
          //  { makeMMMatchCase(
          // (LIST_CONS_MATCH(REST_MATCH(), BIND_MATCH("rest")), encodedExtargs, {mmRecCall}),
@@ -2784,7 +2783,7 @@ algorithm
 
         //add nextIter() if needed
         stmt = tplStatement("nextIter", {}, imlicitTxt, imlicitTxt);
-        mapstmts = Util.if_(useiter, stmt :: mapstmts, mapstmts);
+        mapstmts = if useiter then stmt :: mapstmts else mapstmts;
         //(mapstmts,_) = addNextIter(useiter, mapstmts, imlicitTxt, imlicitTxt);
 
         //create a new scalar-map function,
@@ -5962,9 +5961,7 @@ algorithm
         (funpckgOpt, fident) = splitPackageAndIdent(fname);
         (funpckg, TI_FUN_TYPE(inArgs = iargs, outArgs = oargs, tyVars = tyVars))
          = getTypeInfo(funpckgOpt, fident, astDefs);
-        fname = Util.if_(valueEq(IDENT("builtin"), funpckg),
-                     IDENT(fident),
-                     makePathIdent(funpckg, fident));
+        fname = if valueEq(IDENT("builtin"), funpckg) then IDENT(fident) else makePathIdent(funpckg, fident);
       then
         (fname, iargs, oargs, tyVars);
 

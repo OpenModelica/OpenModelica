@@ -1967,9 +1967,9 @@ algorithm
         true = Expression.isRange(lhs) or Expression.isRange(rhs) or Expression.isReduction(lhs) or Expression.isReduction(rhs);
         ds = Types.getDimensions(tp);
         b = SCode.isInitial(initial_);
-        elt = Util.if_(b, DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source), DAE.ARRAY_EQUATION(ds, lhs, rhs, source));
+        elt = if b then DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source) else DAE.ARRAY_EQUATION(ds, lhs, rhs, source);
         source = DAEUtil.addSymbolicTransformationFlattenedEqs(source, elt);
-        elt = Util.if_(b, DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source), DAE.ARRAY_EQUATION(ds, lhs, rhs, source));
+        elt = if b then DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source) else DAE.ARRAY_EQUATION(ds, lhs, rhs, source);
       then
         DAE.DAE({elt});
 
@@ -2785,7 +2785,7 @@ algorithm
         (cache,e_1) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_NORETCALL(e_1,source);
-        stmts = Util.if_(Expression.isTuple(e_1),{},{stmt});
+        stmts = if Expression.isTuple(e_1) then {} else {stmt};
       then
         (cache,stmts);
 
@@ -4326,8 +4326,9 @@ algorithm
         cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
         pre_str1 = SCodeDump.connectorTypeStr(inLhsConnectorType);
         pre_str2 = SCodeDump.connectorTypeStr(inRhsConnectorType);
-        err_strl = Util.if_(SCode.potentialBool(inLhsConnectorType),
-          {pre_str2, cref_str2, cref_str1}, {pre_str1, cref_str1, cref_str2});
+        err_strl = if SCode.potentialBool(inLhsConnectorType)
+          then {pre_str2, cref_str2, cref_str1}
+          else {pre_str1, cref_str1, cref_str2};
         Error.addSourceMessage(Error.CONNECT_PREFIX_MISMATCH, err_strl, inInfo);
       then
         fail();
@@ -5416,7 +5417,7 @@ algorithm
         (e_1,ty) = Types.convertTupleToMetaTuple(e_1,ty);
         (cache,pattern) = Patternm.elabPattern(cache,env,left,ty,info);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = Util.if_(Types.isEmptyOrNoRetcall(ty),DAE.STMT_NORETCALL(e_1,source),DAE.STMT_ASSIGN(DAE.T_UNKNOWN_DEFAULT,DAE.PATTERN(pattern),e_1,source));
+        stmt = if Types.isEmptyOrNoRetcall(ty) then DAE.STMT_NORETCALL(e_1,source) else DAE.STMT_ASSIGN(DAE.T_UNKNOWN_DEFAULT,DAE.PATTERN(pattern),e_1,source);
       then (cache,{stmt});
 
     /* Tuple with rhs constant */
@@ -5868,7 +5869,7 @@ algorithm
         alreadyInList = List.isMemberOnTrue(foundCref,crefInfoList,crefInfoListCrefsEqual);
 
         // add it to the list if it is not in there
-        crefInfoList = Util.if_(alreadyInList, crefInfoList, (foundCref,inInfo)::crefInfoList);
+        crefInfoList = if alreadyInList then crefInfoList else ((foundCref,inInfo)::crefInfoList);
 
         //check the subscripts (that is: if they are crefs)
         DAE.CREF_IDENT(_,_,subscriptLst) = foundCref;

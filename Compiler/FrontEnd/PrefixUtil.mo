@@ -604,8 +604,8 @@ algorithm
       equation
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
         // Debug.fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +&
-        //   Util.if_(Absyn.isOuter(io), " [outer] ", " ") +&
-        //   Util.if_(Absyn.isInner(io), " [inner] ", " "));
+        //   if_(Absyn.isOuter(io), " [outer] ", " ") +&
+        //   if_(Absyn.isInner(io), " [inner] ", " "));
         true = Absyn.isInner(io);
         false = Absyn.isOuter(io);
         // prefix normally
@@ -619,8 +619,8 @@ algorithm
       equation
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
         // Debug.fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +&
-        //   Util.if_(Absyn.isOuter(io), " [outer] ", " ") +&
-        //   Util.if_(Absyn.isInner(io), " [inner] ", " "));
+        //   if_(Absyn.isOuter(io), " [outer] ", " ") +&
+        //   if_(Absyn.isInner(io), " [inner] ", " "));
         true = Absyn.isOuter(io);
         n = ComponentReference.crefLastIdent(cref);
         lastCref = Expression.crefIdent(cref);

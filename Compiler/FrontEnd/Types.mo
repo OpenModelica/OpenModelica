@@ -1165,7 +1165,7 @@ algorithm
 
     case (v)
       equation
-        str = "- Types.typeOfValue failed: " +& ValuesUtil.valString(v);
+        str = "- Types.typeOfValue failed: " + ValuesUtil.valString(v);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -1721,7 +1721,7 @@ algorithm
 
     else
       equation
-        // Print.printBuf("- Looking up " +& id +& " in noncomplex type\n");
+        // Print.printBuf("- Looking up " + id + " in noncomplex type\n");
       then fail();
   end matchcontinue;
 end lookupComponent;
@@ -2108,29 +2108,29 @@ algorithm
     case (DAE.T_INTEGER(varLst = vs))
       equation
         s1 = stringDelimitList(List.map(vs, unparseVarAttr),", ");
-        s2 = "Integer(" +& s1 +& ")";
+        s2 = "Integer(" + s1 + ")";
       then s2;
     case (DAE.T_REAL(varLst = vs))
       equation
         s1 = stringDelimitList(List.map(vs, unparseVarAttr),", ");
-        s2 = "Real(" +& s1 +& ")";
+        s2 = "Real(" + s1 + ")";
       then s2;
     case (DAE.T_STRING(varLst = vs))
       equation
         s1 = stringDelimitList(List.map(vs, unparseVarAttr),", ");
-        s2 = "String(" +& s1 +& ")";
+        s2 = "String(" + s1 + ")";
       then s2;
     case (DAE.T_BOOL(varLst = vs))
       equation
         s1 = stringDelimitList(List.map(vs, unparseVarAttr),", ");
-        s2 = "Boolean(" +& s1 +& ")";
+        s2 = "Boolean(" + s1 + ")";
       then s2;
     case (DAE.T_ENUMERATION(path = path, names = l, literalVarLst=_))
       equation
-        s1 = Util.if_(Config.typeinfo(), " /*" +& Absyn.pathString(path) +& "*/ (", "(");
+        s1 = if Config.typeinfo() then " /*" + Absyn.pathString(path) + "*/ (" else "(";
         s2 = stringDelimitList(l, ", ");
         /* s2 = stringAppendList(List.map(vs, unparseVar));
-        s2 = Util.if_(s2 ==& "", "", "(" +& s2 +& ")"); */
+        s2 = if_(s2 ==& "", "", "(" + s2 + ")"); */
         str = stringAppendList({"enumeration",s1,s2,")"});
       then
         str;
@@ -2158,7 +2158,7 @@ algorithm
         name = Absyn.pathStringNoQual(path);
         vars = List.map(vs, unparseVar);
         vstr = stringAppendList(vars);
-        str = Util.if_(b, "expandable ", "");
+        str = if b then "expandable " else "";
         res = stringAppendList({str, "connector ",name,"\n",vstr,"end ", name, ";"});
       then
         res;
@@ -2253,7 +2253,7 @@ algorithm
     case (DAE.T_METABOXED(ty = ty))
       equation
         res = unparseType(ty);
-        res = "#" /* this is a box */ +& res;
+        res = "#" /* this is a box */ + res;
       then res;
 
     // MetaModelica Option type
@@ -2271,8 +2271,8 @@ algorithm
     case (DAE.T_UNKNOWN(_))                then "#T_UNKNOWN#";
     case (DAE.T_ANYTYPE(anyClassType = _)) then "#ANYTYPE#";
     case (DAE.T_CODE(ty = codeType)) then printCodeTypeStr(codeType);
-    case (DAE.T_FUNCTION_REFERENCE_VAR(functionType=ty)) then "#FUNCTION_REFERENCE_VAR#" +& unparseType(ty);
-    case (DAE.T_FUNCTION_REFERENCE_FUNC(functionType=ty)) then "#FUNCTION_REFERENCE_FUNC#" +& unparseType(ty);
+    case (DAE.T_FUNCTION_REFERENCE_VAR(functionType=ty)) then "#FUNCTION_REFERENCE_VAR#" + unparseType(ty);
+    case (DAE.T_FUNCTION_REFERENCE_FUNC(functionType=ty)) then "#FUNCTION_REFERENCE_FUNC#" + unparseType(ty);
     else "Internal error Types.unparseType: not implemented yet\n";
   end match;
 end unparseType;
@@ -2359,42 +2359,42 @@ algorithm
     case (DAE.T_INTEGER(varLst = vars))
       equation
         s1 = List.toString(vars, printVarStr, "Integer", "(", ", ", ")", false);
-        str = s1 +& printTypeSourceStr(getTypeSource(inType));
+        str = s1 + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
     case (DAE.T_REAL(varLst = vars))
       equation
         s1 = List.toString(vars, printVarStr, "Real", "(", ", ", ")", false);
-        str = s1 +& printTypeSourceStr(getTypeSource(inType));
+        str = s1 + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
     case (DAE.T_STRING(varLst = vars))
       equation
         s1 = List.toString(vars, printVarStr, "String", "(", ", ", ")", false);
-        str = s1 +& printTypeSourceStr(getTypeSource(inType));
+        str = s1 + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
     case (DAE.T_BOOL(varLst = vars))
       equation
         s1 = List.toString(vars, printVarStr, "Boolean", "(", ", ", ")", false);
-        str = s1 +& printTypeSourceStr(getTypeSource(inType));
+        str = s1 + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
     case (DAE.T_CLOCK(varLst = vars))
       equation
         s1 = List.toString(vars, printVarStr, "Clock", "(", ", ", ")", false);
-        str = s1 +& printTypeSourceStr(getTypeSource(inType));
+        str = s1 + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
     case (DAE.T_ENUMERATION(names = _, literalVarLst = vars))
       equation
         s1 = List.toString(vars, printVarStr, "Enumeration", "(", ", ", ")", false);
-        str = s1 +& printTypeSourceStr(getTypeSource(inType));
+        str = s1 + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
@@ -2404,7 +2404,7 @@ algorithm
         s1 = ClassInf.printStateStr(st);
         s2 = stringDelimitList(List.map(vars, printVarStr),", ");
         str = stringAppendList({"composite(",s1,"{",s2,"}, derived from ", compType, ")"});
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
@@ -2413,7 +2413,7 @@ algorithm
         s1 = ClassInf.printStateStr(st);
         s2 = stringDelimitList(List.map(vars, printVarStr),", ");
         str = stringAppendList({"composite(",s1,"{",s2,"})"});
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
@@ -2422,7 +2422,7 @@ algorithm
         s1 = stringDelimitList(List.map(dims, ExpressionDump.dimensionString), ", ");
         s2 = printTypeStr(t);
         str = stringAppendList({"array(",s2,")[",s1,"]"});
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
@@ -2431,7 +2431,7 @@ algorithm
         s1 = printParamsStr(params);
         s2 = printTypeStr(restype);
         str = stringAppendList({"function(", s1,") => ",s2});
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
@@ -2439,7 +2439,7 @@ algorithm
       equation
         s1 = stringDelimitList(List.map(tys, printTypeStr),", ");
         str = stringAppendList({"(",s1,")"});
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
@@ -2447,7 +2447,7 @@ algorithm
     case (DAE.T_METATUPLE(types = tys, source = ts))
       equation
         str = printTypeStr(DAE.T_TUPLE(tys,ts));
-        str = str +& printTypeSourceStr(ts);
+        str = str + printTypeSourceStr(ts);
       then
         str;
 
@@ -2456,7 +2456,7 @@ algorithm
       equation
         s1 = printTypeStr(ty);
         str = stringAppendList({"list<",s1,">"});
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
@@ -2465,7 +2465,7 @@ algorithm
       equation
         s1 = printTypeStr(ty);
         str = stringAppendList({"Option<",s1,">"});
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
@@ -2474,7 +2474,7 @@ algorithm
       equation
         s1 = printTypeStr(ty);
         str = stringAppendList({"array<",s1,">"});
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
@@ -2483,7 +2483,7 @@ algorithm
       equation
         s1 = printTypeStr(ty);
         str = stringAppendList({"boxed<",s1,">"});
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
@@ -2491,7 +2491,7 @@ algorithm
     case (DAE.T_METAPOLYMORPHIC(name = s1))
       equation
         str = stringAppendList({"polymorphic<",s1,">"});
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
@@ -2499,7 +2499,7 @@ algorithm
     case (DAE.T_UNKNOWN(_))
       equation
         str = "T_UNKNOWN";
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
@@ -2507,22 +2507,22 @@ algorithm
     case (DAE.T_ANYTYPE(anyClassType = NONE()))
       equation
         str = "ANYTYPE()";
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
     // AnyType of some
     case (DAE.T_ANYTYPE(anyClassType = SOME(st)))
       equation
         s1 = ClassInf.printStateStr(st);
-        str = "ANYTYPE(" +& s1 +& ")";
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = "ANYTYPE(" + s1 + ")";
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
     case (DAE.T_NORETCALL(_))
       equation
         str = "()";
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
@@ -2531,7 +2531,7 @@ algorithm
       equation
         s1 = printTypeStr(t);
         str = stringAppendList({"METATYPE(", s1, ")"});
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
@@ -2540,8 +2540,8 @@ algorithm
       equation
         {path} = getTypeSource(t);
         s1 = Absyn.pathStringNoQual(path);
-        str = "#" +& s1 +& "#";
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = "#" + s1 + "#";
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
@@ -2555,7 +2555,7 @@ algorithm
     else
       equation
         str = "Types.printTypeStr failed";
-        str = str +& printTypeSourceStr(getTypeSource(inType));
+        str = str + printTypeSourceStr(getTypeSource(inType));
       then
         str;
 
@@ -2583,9 +2583,9 @@ algorithm
     case(DAE.T_COMPLEX(complexClassType = (ClassInf.CONNECTOR(connectorName,isExpandable)),varLst = vars, source = _))
       equation
         varNames = List.map(vars,varName);
-        isExpandableStr = Util.if_(isExpandable,"/* expandable */ ", "");
-        s = isExpandableStr +& Absyn.pathString(connectorName);
-        s2 = "{" +& stringDelimitList(varNames,", ") +& "}";
+        isExpandableStr = if isExpandable then "/* expandable */ " else "";
+        s = isExpandableStr + Absyn.pathString(connectorName);
+        s2 = "{" + stringDelimitList(varNames,", ") + "}";
       then
         (s,s2);
 
@@ -2593,9 +2593,9 @@ algorithm
     case(DAE.T_SUBTYPE_BASIC(complexClassType = (ClassInf.CONNECTOR(connectorName,isExpandable)), varLst = vars, complexType = t, source = _))
       equation
         varNames = List.map(vars,varName);
-        isExpandableStr = Util.if_(isExpandable,"/* expandable */ ", "");
-        s = isExpandableStr +& Absyn.pathString(connectorName);
-        s2 = "{" +& stringDelimitList(varNames,", ") +& "}" +& " subtype of: " +& printTypeStr(t);
+        isExpandableStr = if isExpandable then "/* expandable */ " else "";
+        s = isExpandableStr + Absyn.pathString(connectorName);
+        s2 = "{" + stringDelimitList(varNames,", ") + "}" + " subtype of: " + printTypeStr(t);
       then
         (s,s2);
 
@@ -2690,7 +2690,7 @@ algorithm
         "" = SCodeDump.connectorTypeStr(ct);
       then
         "";
-    else SCodeDump.connectorTypeStr(ct) +& " ";
+    else SCodeDump.connectorTypeStr(ct) + " ";
   end matchcontinue;
 end connectorTypeStr;
 
@@ -2864,7 +2864,7 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Types.makeEnumerationType failed on " +& printTypeStr(inType));
+        Debug.fprintln(Flags.FAILTRACE, "- Types.makeEnumerationType failed on " + printTypeStr(inType));
       then
         fail();
   end matchcontinue;
@@ -3197,7 +3197,7 @@ algorithm
     case(DAE.TYPES_VAR(binding=DAE.EQBOUND(exp=exp)), _) then exp;
     case(DAE.TYPES_VAR(name=name, binding=DAE.UNBOUND()), _)
       equation
-        str = "Record '" +& Absyn.pathString(inPath) +& "' member '" +& name +& "' has no default value and is not modifiable by a constructor function.\n";
+        str = "Record '" + Absyn.pathString(inPath) + "' member '" + name + "' has no default value and is not modifiable by a constructor function.\n";
         Error.addCompilerWarning(str);
       then
         DAE.ICONST(0);
@@ -3935,7 +3935,7 @@ algorithm
 
     else
       equation
-        str = "Types.simplifyType failed for: " +& unparseType(inType);
+        str = "Types.simplifyType failed for: " + unparseType(inType);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
@@ -4149,8 +4149,8 @@ algorithm
       equation
         // activate on +d=types flag
         true = Flags.isSet(Flags.TYPES);
-        Debug.traceln("- Types.matchProp failed on exp: " +& ExpressionDump.printExpStr(e));
-        Debug.traceln(printPropStr(inActualType) +& " != ");
+        Debug.traceln("- Types.matchProp failed on exp: " + ExpressionDump.printExpStr(e));
+        Debug.traceln(printPropStr(inActualType) + " != ");
         Debug.traceln(printPropStr(inExpectedType));
       then fail();
   end matchcontinue;
@@ -5138,10 +5138,10 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE,"- Types.matchWithPromote failed on: " +&
-           "\nprop1: " +& printPropStr(inProperties1) +&
-           "\nprop2: " +& printPropStr(inProperties2) +&
-           "\nhaveReal: " +& Util.if_(inBoolean3, "true", "false"));
+        Debug.fprintln(Flags.FAILTRACE,"- Types.matchWithPromote failed on: " +
+           "\nprop1: " + printPropStr(inProperties1) +
+           "\nprop2: " + printPropStr(inProperties2) +
+           "\nhaveReal: " + boolString(inBoolean3));
       then fail();
   end matchcontinue;
 end matchWithPromote;
@@ -5335,7 +5335,7 @@ algorithm
       equation
         ty2 = simplifyType(ty);
         cr_1 = ComponentReference.crefPrependIdent(cr, id,{},ty2);
-        // print("\n created: " +& ComponentReference.debugPrintComponentRefTypeStr(cr_1) +& "\n");
+        // print("\n created: " + ComponentReference.debugPrintComponentRefTypeStr(cr_1) + "\n");
         res = flowVariables(vs, cr);
       then
         (cr_1 :: res);
@@ -5464,7 +5464,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = unparseType(tty);
-        Debug.fprintln(Flags.FAILTRACE, "-- Types.getAllExpsTt failed " +& str);
+        Debug.fprintln(Flags.FAILTRACE, "-- Types.getAllExpsTt failed " + str);
       then
         fail();
   end matchcontinue;
@@ -5559,7 +5559,7 @@ algorithm
         tys = List.map(tys, boxIfUnboxedType);
       then DAE.T_METATUPLE(tys,DAE.emptyTypeSource); // TODO?! should now propagate the type source?
 
-    case _ then Util.if_(isBoxedType(ty), ty, DAE.T_METABOXED(ty,DAE.emptyTypeSource));
+    case _ then if isBoxedType(ty) then ty else DAE.T_METABOXED(ty,DAE.emptyTypeSource);
 
   end matchcontinue;
 end boxIfUnboxedType;
@@ -5660,7 +5660,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = ExpressionDump.printExpStr(e);
-        Debug.fprintln(Flags.FAILTRACE, "- Types.listMatchSuperType2 failed: " +& str);
+        Debug.fprintln(Flags.FAILTRACE, "- Types.listMatchSuperType2 failed: " + str);
       then fail();
   end matchcontinue;
 end listMatchSuperType2;
@@ -5797,11 +5797,11 @@ algorithm
       equation
         true = Config.acceptMetaModelicaGrammar();
         _::_ = getAllInnerTypesOfType(expected, isPolymorphic);
-        // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& "\n");
+        // print("match type: " + ExpressionDump.printExpStr(exp) + " of " + unparseType(actual) + " with " + unparseType(expected) + "\n");
         (exp,actual) = matchType(exp,actual,DAE.T_METABOXED(DAE.T_UNKNOWN_DEFAULT,DAE.emptyTypeSource),printFailtrace);
-        // print("matched type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " (boxed)\n");
+        // print("matched type: " + ExpressionDump.printExpStr(exp) + " of " + unparseType(actual) + " with " + unparseType(expected) + " (boxed)\n");
         polymorphicBindings = subtypePolymorphic(getUniontypeIfMetarecordReplaceAllSubtypes(actual),getUniontypeIfMetarecordReplaceAllSubtypes(expected),envPath,polymorphicBindings);
-        // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " and bindings " +& polymorphicBindingsStr(polymorphicBindings) +& " (OK)\n");
+        // print("match type: " + ExpressionDump.printExpStr(exp) + " of " + unparseType(actual) + " with " + unparseType(expected) + " and bindings " + polymorphicBindingsStr(polymorphicBindings) + " (OK)\n");
       then
         (exp,actual,polymorphicBindings);
     case (e,e_type,expected_type,_,_,true)
@@ -5946,8 +5946,8 @@ algorithm
 
     else
       equation
-        str = "- Types.matchTypes failed for " +& ExpressionDump.printExpStr(inExp)
-           +& " from " +& unparseType(inType) +& " to " +& unparseType(inExpected) +& "\n";
+        str = "- Types.matchTypes failed for " + ExpressionDump.printExpStr(inExp)
+           + " from " + unparseType(inType) + " to " + unparseType(inExpected) + "\n";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -5970,8 +5970,8 @@ algorithm
     case (_, _, _, _, _)
       equation
         true = Flags.isSet(flag);
-        Debug.traceln("- Types." +& source +& " failed on:" +& ExpressionDump.printExpStr(e));
-        Debug.traceln("  type:" +& unparseType(e_type) +& " differs from expected\n  type:" +& unparseType(expected_type));
+        Debug.traceln("- Types." + source + " failed on:" + ExpressionDump.printExpStr(e));
+        Debug.traceln("  type:" + unparseType(e_type) + " differs from expected\n  type:" + unparseType(expected_type));
       then ();
     else
       equation
@@ -5988,7 +5988,7 @@ protected
 algorithm
   (str,tys) := binding;
   // Don't bother doing this fast; it's just for error messages
-  str := "    " +& str +& ":\n" +& stringDelimitList(List.map1r(List.map(tys, unparseType), stringAppend, "      "), "\n");
+  str := "    " + str + ":\n" + stringDelimitList(List.map1r(List.map(tys, unparseType), stringAppend, "      "), "\n");
 end polymorphicBindingStr;
 
 public function polymorphicBindingsStr
@@ -6005,9 +6005,9 @@ public function fixPolymorphicRestype
   input Absyn.Info info;
   output DAE.Type resType;
 algorithm
-  //print("Trying to fix restype: " +& unparseType(ty) +& "\n");
+  //print("Trying to fix restype: " + unparseType(ty) + "\n");
   resType := fixPolymorphicRestype2(ty,"$",bindings,info);
-  //print("OK: " +& unparseType(resType) +& "\n");
+  //print("OK: " + unparseType(resType) + "\n");
 end fixPolymorphicRestype;
 
 protected function fixPolymorphicRestype2
@@ -6032,7 +6032,7 @@ algorithm
 
     case (DAE.T_METAPOLYMORPHIC(name = id),_,_,_)
       equation
-        {t1} = polymorphicBindingsLookup(prefix +& id, bindings);
+        {t1} = polymorphicBindingsLookup(prefix + id, bindings);
         t1 = fixPolymorphicRestype2(t1, "", bindings, info);
       then t1;
 
@@ -6084,7 +6084,7 @@ algorithm
       equation
         tstr = unparseType(ty);
         bstr = polymorphicBindingsStr(bindings);
-        id = "Types.fixPolymorphicRestype failed for type: " +& tstr +& " using bindings: " +& bstr;
+        id = "Types.fixPolymorphicRestype failed for type: " + tstr + " using bindings: " + bstr;
         Error.addSourceMessage(Error.INTERNAL_ERROR, {id}, info);
       then fail();
   end matchcontinue;
@@ -6406,7 +6406,7 @@ possible)."
 protected
   InstTypes.PolymorphicBindings unsolvedBindings;
 algorithm
-  // print("solvePoly " +& Absyn.optPathString(path) +& " " +& polymorphicBindingsStr(bindings) +& "\n");
+  // print("solvePoly " + Absyn.optPathString(path) + " " + polymorphicBindingsStr(bindings) + "\n");
   (solvedBindings,unsolvedBindings) := solvePolymorphicBindingsLoop(bindings, {}, {});
   checkValidBindings(bindings, solvedBindings, unsolvedBindings, info, pathLst);
 end solvePolymorphicBindings;
@@ -6523,8 +6523,8 @@ algorithm
         false = id1 ==& id2;
         // If we have $X,Y,..., bind $X = Y instead of Y = $X
         fromOtherFunction = System.stringFind(id1,"$") <> -1;
-        id = Util.if_(fromOtherFunction, id1, id2);
-        ty = Util.if_(fromOtherFunction, ty2, ty1); // Lookup from one id to the other type
+        id = if fromOtherFunction then id1 else id2;
+        ty = if fromOtherFunction then ty2 else ty1; // Lookup from one id to the other type
         failure(_ = polymorphicBindingsLookup(id, solvedBindings));
         solvedBindings = addPolymorphicBinding(id,ty,solvedBindings);
       then (ty::tys2, solvedBindings);
@@ -6730,10 +6730,10 @@ algorithm
       InstTypes.PolymorphicBindings bindings;
 
     case (_,DAE.T_METAPOLYMORPHIC(name = id),_,bindings)
-      then addPolymorphicBinding("$" +& id,actual,bindings);
+      then addPolymorphicBinding("$" + id,actual,bindings);
 
     case (DAE.T_METAPOLYMORPHIC(name = id),_,_,bindings)
-      then addPolymorphicBinding("$$" +& id,expected,bindings);
+      then addPolymorphicBinding("$$" + id,expected,bindings);
 
     case (DAE.T_METABOXED(ty = ty1),ty2,_,bindings)
       equation
@@ -6786,7 +6786,7 @@ algorithm
     case (DAE.T_FUNCTION(source = {path1}),DAE.T_FUNCTION(farg2,ty2,_,{_}),_,bindings)
       equation
         false = Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1);
-        prefix = "$" +& Absyn.pathString(path1) +& ".";
+        prefix = "$" + Absyn.pathString(path1) + ".";
         ((DAE.T_FUNCTION(farg1,ty1,_,_),_)) = traverseType((actual,prefix),prefixTraversedPolymorphicType);
         tList1 = List.map(farg1, funcArgType);
         tList2 = List.map(farg2, funcArgType);
@@ -6810,7 +6810,7 @@ algorithm
 
     else
       equation
-        // print("subtypePolymorphic failed: " +& unparseType(actual) +& " and " +& unparseType(expected) +& "\n");
+        // print("subtypePolymorphic failed: " + unparseType(actual) + " and " + unparseType(expected) + "\n");
       then fail();
 
   end matchcontinue;
@@ -6940,7 +6940,7 @@ algorithm
 
     case ((DAE.T_METAPOLYMORPHIC(id,_),prefix))
       equation
-        id = prefix +& id;
+        id = prefix + id;
       then
         ((DAE.T_METAPOLYMORPHIC(id,DAE.emptyTypeSource),prefix)); // TODO! FIXME! should not propagate the ts here?
 
@@ -7108,7 +7108,7 @@ algorithm
 
     case ((ty,_),_)
       equation
-        str = "Types.traverseType not implemented correctly: " +& unparseType(ty);
+        str = "Types.traverseType not implemented correctly: " + unparseType(ty);
         Error.addMessage(Error.INTERNAL_ERROR,{str});
       then
         fail();
@@ -7738,8 +7738,8 @@ algorithm
     case (DAE.T_METATYPE(t, _), ts) then DAE.T_METATYPE(t, ts);
     case (t,ts)
       equation
-        print("Could not set type source:" +& printTypeSourceStr(ts) +& " in type: " +&
-          printTypeStr(t) +& "\n");
+        print("Could not set type source:" + printTypeSourceStr(ts) + " in type: " +
+          printTypeStr(t) + "\n");
       then
         t;
   end matchcontinue;
@@ -7756,7 +7756,7 @@ algorithm
     // yeha, we have some
     case (ts)
       equation
-        s = " origin: " +& stringDelimitList(List.map(ts, Absyn.pathString), ", ");
+        s = " origin: " + stringDelimitList(List.map(ts, Absyn.pathString), ", ");
       then
         s;
   end matchcontinue;

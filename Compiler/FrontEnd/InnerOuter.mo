@@ -512,8 +512,7 @@ algorithm
           retrieveOuterConnections2(inCache, inEnv, inIH, inPrefix, rest_oc, sets, inTopCall, graph);
 
         // if is also outer, then keep it also in the outer connects
-        rest_oc = Util.if_(outer1,
-          Connect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2, source) :: rest_oc, rest_oc);
+        rest_oc = if outer1 then Connect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2, source) :: rest_oc else rest_oc;
       then
         (rest_oc, sets, ioc, graph);
 
@@ -1008,7 +1007,7 @@ algorithm
         instInner = get(cref, ht);
 
         // isInner = Absyn.isInner(io);
-        // instInner = Util.if_(isInner, instInner, emptyInstInner(inPrefix, name));
+        // instInner = if_(isInner, instInner, emptyInstInner(inPrefix, name));
         // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : Looking up: " +&
         //  ComponentReference.printComponentRefStr(cref) +& " FOUND with innerPrefix: " +&
         //  PrefixUtil.printPrefixStr(innerPrefix));
@@ -1795,10 +1794,10 @@ algorithm
     case(INST_INNER(_, _, _, fullName, typePath, scope, _, outers, _))
       equation
         outers = List.uniqueOnTrue(outers, ComponentReference.crefEqualNoStringCompare);
-        strOuters = Util.if_(List.isEmpty(outers),
-                      "",
-                      " Referenced by 'outer' components: {" +&
-                      stringDelimitList(List.map(outers, ComponentReference.printComponentRefStr), ", ") +& "}");
+        strOuters = if List.isEmpty(outers)
+                      then ""
+                      else (" Referenced by 'outer' components: {" +&
+                        stringDelimitList(List.map(outers, ComponentReference.printComponentRefStr), ", ") +& "}");
         str = Absyn.pathString(typePath) +& " " +& fullName +& "; defined in scope: " +& scope +& "." +& strOuters;
       then
         str;

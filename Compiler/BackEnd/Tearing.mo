@@ -381,17 +381,21 @@ algorithm
   (residual, mark) := sortResidualDepentOnTVars(residual, tvars, ass1, m, mt1, columark, mark);
   (ocomp,outRunMatching) := omcTearing4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn,columark,mark);
 
-     Debug.fcall(Flags.TEARING_DUMP, print,Util.if_(outRunMatching,"\nStatus:\nOk system torn\n\n","\nStatus:\nSystem not torn\n\n"));
-     Debug.fcall(Flags.TEARING_DUMP, print, "\n" +& BORDER +& "\n* TEARING RESULTS:\n*\n* No of equations in strong Component: "+&intString(size)+&"\n");
-     Debug.fcall(Flags.TEARING_DUMP, print, "* No of tVars: "+&intString(tornsize)+&"\n");
-     Debug.fcall(Flags.TEARING_DUMP, print, "*\n* tVars: "+& stringDelimitList(List.map(tvars,intString),",") +& "\n");
-     Debug.fcall(Flags.TEARING_DUMP, print, "*\n* resEq: "+& stringDelimitList(List.map(residual,intString),",") +& "\n*\n*");
-  BackendDAE.TORNSYSTEM(tearingvars=tvars,residualequations=residual) := ocomp;
-     Debug.fcall(Flags.TEARING_DUMP, print, "\n* Related to entire Equationsystem:\n* =====\n* tVars: "+& stringDelimitList(List.map(tvars,intString),",") +& "\n* =====\n");
-     Debug.fcall(Flags.TEARING_DUMP, print, "*\n* =====\n* resEq: "+& stringDelimitList(List.map(residual,intString),",") +& "\n* =====\n" +& BORDER +& "\n");
-     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nStrongComponents:\n");
-     Debug.fcall(Flags.TEARING_DUMPVERBOSE, BackendDump.dumpComponent,ocomp);
-     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nEND of omcTearing\n" +& BORDER +& "\n\n");
+  if Flags.isSet(Flags.TEARING_DUMP) then
+     print(if outRunMatching then "\nStatus:\nOk system torn\n\n" else "\nStatus:\nSystem not torn\n\n");
+     print("\n" +& BORDER +& "\n* TEARING RESULTS:\n*\n* No of equations in strong Component: "+&intString(size)+&"\n");
+     print("* No of tVars: "+&intString(tornsize)+&"\n");
+     print("*\n* tVars: "+& stringDelimitList(List.map(tvars,intString),",") +& "\n");
+     print("*\n* resEq: "+& stringDelimitList(List.map(residual,intString),",") +& "\n*\n*");
+     BackendDAE.TORNSYSTEM(tearingvars=tvars,residualequations=residual) := ocomp;
+     print("\n* Related to entire Equationsystem:\n* =====\n* tVars: "+& stringDelimitList(List.map(tvars,intString),",") +& "\n* =====\n");
+     print("*\n* =====\n* resEq: "+& stringDelimitList(List.map(residual,intString),",") +& "\n* =====\n" +& BORDER +& "\n");
+  end if;
+  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+     print("\n\nStrongComponents:\n");
+     BackendDump.dumpComponent(ocomp);
+     print("\n\nEND of omcTearing\n" +& BORDER +& "\n\n");
+  end if;
 end omcTearing;
 
 
@@ -1201,7 +1205,7 @@ algorithm
   var := BackendVariable.getVarAt(vars, v);
   b := BackendVariable.isVarDiscrete(var);
   p := iPoints[v];
-  p := Util.if_(b,intDiv(p,10),p);
+  p := if b then intDiv(p,10) else p;
   oPoints := arrayUpdate(iPoints,v,p);
 end discriminateDiscrete;
 
@@ -1769,7 +1773,7 @@ algorithm
     equation
       true = intLe(indx, listLength(rowIn));
       b = intLe(listGet(rowIn,indx),0);
-      indx = Util.if_(b,indx,indx+1);
+      indx = if b then indx else (indx+1);
       newLst = Debug.bcallret2(b,listDelete,rowIn,indx,rowIn);
    then deleteNegativeEntries(newLst,indx);
   case(_,_)
@@ -2409,7 +2413,7 @@ algorithm
     counts2 := listReverse(counts2);
     // 12. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points2
     points2 := List.threadMap(counts1,counts2,intAdd);
-    points2 := Util.if_(listLength(points2)==0,{0},points2);
+    points2 := if listLength(points2)==0 then {0} else points2;
        Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nPoints: "+& stringDelimitList(List.map(points2,intString),",")+&"\n(Sum of impossible assignments and causalizable equations)\n");
     // 13. Choose vars with most points as potentials and convert indexes
     potentials2 := maxListInt(points2);
@@ -2418,7 +2422,7 @@ algorithm
        Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n2nd: "+& stringDelimitList(List.map(potentials2,intString),",")+&"\n(Variables from (1st) with most points (" +& intString(potpoints2) +& " points) - potentials2)\n\n");
     // 14. choose potentials-set with most points
     b := intGe(potpoints1,potpoints2);
-    potentials := Util.if_(b,potentials1,potentials2);
+    potentials := if b then potentials1 else potentials2;
        Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n=====================\nChosen potential-set: " +& stringDelimitList(List.map(potentials,intString),",") +& "\n=====================\n(from round 1: " +& boolString(b) +& ")\n\n");
 end potentialsCellier9;
 
@@ -2639,7 +2643,7 @@ algorithm
   ass1 := List.set(ass1In,Var,1);
   Vars := List.removeOnTrue(listArray(ass1), isAssignedSaveEnhanced,me[Eqn]);
   b := solvableLst(Vars);
-  outSize := Util.if_(b,inSize+1,inSize);
+  outSize := if b then inSize+1 else inSize;
 end sizeOfAssignable;
 
 

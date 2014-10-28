@@ -49,14 +49,12 @@ public import FCore;
 public import HashTableCG;
 public import Inline;
 public import SCode;
-public import Util;
 public import Values;
 
 protected import Ceval;
 protected import ClassInf;
 protected import ComponentReference;
 protected import Config;
-protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Expression;
@@ -146,7 +144,7 @@ algorithm
       equation
         (orderedVars,b1) = inlineVariables(orderedVars,tpl);
         (orderedEqs,b2) = inlineEquationArray(orderedEqs,tpl);
-        syst = Util.if_(b1 or b2,BackendDAE.EQSYSTEM(orderedVars,orderedEqs,NONE(),NONE(),matching,stateSets,partitionKind),syst);
+        syst = if b1 or b2 then BackendDAE.EQSYSTEM(orderedVars,orderedEqs,NONE(),NONE(),matching,stateSets,partitionKind) else syst;
       then
         syst;
   end match;
@@ -557,7 +555,7 @@ algorithm
       (wclst_1, b1) = inlineWhenClauses(wclst, fns, {}, false);
       (zclst_1, b2) = inlineZeroCrossings(zclst, fns, {}, false);
       (relations, b3) = inlineZeroCrossings(relations, fns, {}, false);
-      ev = Util.if_(b1 or b2 or b3, BackendDAE.EVENT_INFO(timeEvents, wclst_1, zclst_1, samples, relations, numberOfRelations, numberOfMathEvents), inEventInfo);
+      ev = if b1 or b2 or b3 then BackendDAE.EVENT_INFO(timeEvents, wclst_1, zclst_1, samples, relations, numberOfRelations, numberOfMathEvents) else inEventInfo;
     then ev;
 
     else equation

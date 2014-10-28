@@ -728,7 +728,7 @@ algorithm
         true = boolOr(stringEq(replaceWith, "actual"), stringEq(replaceWith, "simplified"));
         // TODO, handle empy args and nargs for homotopy!
         {e1, e2} = getHomotopyArguments(args, nargs);
-        e = Util.if_(stringEq(replaceWith, "actual"), e1, e2);
+        e = if stringEq(replaceWith, "actual") then e1 else e2;
         (cache,e_1,prop,st_1) = elabExpInExpression(cache, env, e, impl, st, doVect, pre, info);
       then
         (cache,e_1,prop,st_1);
@@ -802,7 +802,7 @@ algorithm
         havereal = Types.containReal(tps_2);
         (cache,mexp,DAE.PROP(t,c),dim1,dim2)
         = elabMatrixSemi(cache,env, dess, tps, impl, st, havereal, nmax,doVect,pre,info);
-        mexp = Util.if_(havereal,DAE.CAST(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{dim1,dim2},DAE.emptyTypeSource),mexp),mexp);
+        mexp = if havereal then DAE.CAST(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{dim1,dim2},DAE.emptyTypeSource),mexp) else mexp;
         (mexp,_) = ExpressionSimplify.simplify1(mexp); // to propagate cast down to scalar elts
         mexp_1 = elabMatrixToMatrixExp(mexp);
         t_1 = Types.unliftArray(t);
@@ -970,7 +970,7 @@ algorithm
         ErrorExt.setCheckpoint("Static.elabExp:IFEXP:HACK") "Extra rollback point so we get the regular error message only once if the hack fails";
         true = Types.isParameterOrConstant(Types.propAllConst(condProp));
         (cache,Values.BOOL(b),_) = Ceval.ceval(cache,env,condExp,impl,NONE(),Absyn.MSG(info),0);
-        (cache,outExp,prop,st) = elabExpInExpression(cache,env,Util.if_(b,trueExp,falseExp),impl,st,vect,pre,info);
+        (cache,outExp,prop,st) = elabExpInExpression(cache,env,if b then trueExp else falseExp,impl,st,vect,pre,info);
         ErrorExt.delCheckpoint("Static.elabExp:IFEXP:HACK");
         ErrorExt.rollBack("Static.elabExp:IFEXP");
       then (cache,outExp,prop,st);
@@ -1423,7 +1423,7 @@ algorithm
         envWithIterators = FGraph.addForIterator(envWithIterators, iter, iterty, DAE.UNBOUND(), SCode.CONST(), SOME(iterconst));
         const = Types.constAnd(guardconst, iterconst);
         hasGuardExp = hasGuardExp or Util.isSome(guardExp);
-        dim = Util.if_(Util.isSome(guardExp), DAE.DIM_UNKNOWN(), dim);
+        dim = if Util.isSome(guardExp) then DAE.DIM_UNKNOWN() else dim;
       then (cache,envWithIterators,diter::diters,dim::dims,const,hasGuardExp,st);
   end match;
 end elabCallReductionIterators;
@@ -1637,7 +1637,7 @@ algorithm
       equation
         (cache,fnTypes) = Lookup.lookupFunctionsInEnv(cache, env, path, info);
         (typeA,typeB,resType,defaultBinding,path) = checkReductionType1(env,path,fnTypes,info);
-        ty2 = Util.if_(Util.isSome(defaultBinding),typeB,ty);
+        ty2 = if Util.isSome(defaultBinding) then typeB else ty;
         (exp,typeA,bindings) = Types.matchTypePolymorphicWithError(exp,ty,typeA,SOME(path),{},info);
         (_,typeB,bindings) = Types.matchTypePolymorphicWithError(DAE.CREF(DAE.CREF_IDENT("$result",DAE.T_ANYTYPE_DEFAULT,{}),DAE.T_ANYTYPE_DEFAULT),ty2,typeB,SOME(path),bindings,info);
         bindings = Types.solvePolymorphicBindings(bindings, info, {path});
@@ -2357,14 +2357,17 @@ algorithm
         tty = Types.makeFunctionPolymorphicReference(tty);
         (cache,args,consts,_,tty as DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isFunctionPointer=isFunctionPointer)),_,slots) = elabTypes(cache, env, posArgs, namedArgs, {tty}, true, true, impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), NONE(), pre, info);
         // {p} = Types.getTypeSource(tty);
-        (cache, p2) = Inst.makeFullyQualified(cache, env, Util.if_(isFunctionPointer,Absyn.FULLYQUALIFIED(Absyn.IDENT("sin")),p));
-        p = Util.if_(isFunctionPointer,p,p2); // RML hacks because it doesn't have if statements
+        if not isFunctionPointer then
+          (cache, p) = Inst.makeFullyQualified(cache, env, p);
+        end if;
         tty_1 = stripExtraArgsFromType(slots,tty);
         tty_1 = Types.makeFunctionPolymorphicReference(tty_1);
         ty = Types.simplifyType(tty_1);
         c = List.fold(consts,Types.constAnd,DAE.C_CONST());
         prop_1 = DAE.PROP(tty_1,c);
-        (cache,Util.SUCCESS()) = instantiateDaeFunction(cache, env, p2, false, NONE(), true);
+        if not isFunctionPointer then
+          (cache,Util.SUCCESS()) = instantiateDaeFunction(cache, env, p, false, NONE(), true);
+        end if;
         tty = Types.simplifyType(tty);
       then
         (cache,DAE.PARTEVALFUNCTION(p,args,ty,tty),prop_1,st);
@@ -3400,7 +3403,7 @@ algorithm
       equation
         exp = DAE.SIZE(inArrayExp, SOME(inIndexExp));
         cnst = DAE.C_PARAM(); // Types.getPropConst(inArrayProp);
-        cnst = Util.if_(FGraph.inFunctionScope(inEnv), DAE.C_VAR(), cnst);
+        cnst = if FGraph.inFunctionScope(inEnv) then DAE.C_VAR() else cnst;
         prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, cnst);
       then
         (SOME(exp), SOME(prop));
@@ -4574,7 +4577,7 @@ algorithm
                 DAE.T_REAL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN,
                 DAE.emptyTypeSource);
-        ty = Util.if_(i==2,ty1,ty2);
+        ty = if i==2 then ty1 else ty2;
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("delay"), args, nargs, impl, NONE(), pre, info);
         call = Expression.traverseExpDummy(call,elabBuiltinDelay2);
       then (cache, call, prop);
@@ -5458,8 +5461,8 @@ protected
   String s1,s2,strPos,strMsg1;
   Boolean b1;
 algorithm
-  strPos := Util.if_(argName ==& "from", "first", "second");
-  nPos := Util.if_(argName ==& "from", 1, 2);
+  strPos := if argName ==& "from" then "first" else "second";
+  nPos := if argName ==& "from" then 1 else 2;
   b1 := List.isMemberOnTrue(argName, nargs, elabBuiltinTransition3);
 
   s1 := strMsg0 +& ", named argument \"" +& argName +& "\" already has a value.";
@@ -6418,7 +6421,7 @@ algorithm
       equation
         (cache,dim_exp,DAE.PROP(DAE.T_INTEGER(varLst = _),c),_) = elabExpInExpression(cache,env, dim, impl,NONE(),true,pre,info);
         true = Types.isParameterOrConstant(c);
-        msg = Util.if_(Flags.getConfigBool(Flags.CHECK_MODEL), Absyn.NO_MSG(), Absyn.MSG(info));
+        msg = if Flags.getConfigBool(Flags.CHECK_MODEL) then Absyn.NO_MSG() else Absyn.MSG(info);
         (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), msg,0);
         dim_size = DAE.DIM_INTEGER(size);
         ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {dim_size, dim_size});
@@ -6639,7 +6642,7 @@ algorithm
           elabExpInExpression(cache, env, aexp, inImpl, NONE(), true, inPrefix, inInfo);
         (scalar_tp,dims) = Types.flattenArrayTypeOpt(tp);
         List.map2_0(dims,checkTypeScalar,tp,inInfo);
-        e = Util.if_(List.isEmpty(dims), e, Expression.makePureBuiltinCall("scalar", {e}, scalar_tp));
+        e = if List.isEmpty(dims) then e else Expression.makePureBuiltinCall("scalar", {e}, scalar_tp);
         (e,_) = ExpressionSimplify.simplify1(e);
       then
         (cache, e, DAE.PROP(scalar_tp, c));
@@ -6730,9 +6733,9 @@ algorithm
                  SLOT(DAE.FUNCARG("minimumLength",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.ICONST(0)),{},2),
                  SLOT(DAE.FUNCARG("leftJustified",DAE.T_BOOL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.BCONST(true)),{},3)};
         // Only String(Real) has the significantDigits option.
-        slots = Util.if_(Types.isRealOrSubTypeReal(tp),
-          listAppend(slots, {SLOT(DAE.FUNCARG("significantDigits",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.ICONST(6)),{},4)}),
-          slots);
+        slots = if Types.isRealOrSubTypeReal(tp)
+          then listAppend(slots, {SLOT(DAE.FUNCARG("significantDigits",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.ICONST(6)),{},4)})
+          else slots;
         (cache,args_1,_,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, false, true/*checkTypes*/ ,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, NONE(), pre, info, DAE.T_UNKNOWN_DEFAULT, Absyn.IDENT("String"));
         c = List.fold(constlist, Types.constAnd, DAE.C_CONST());
         exp = Expression.makePureBuiltinCall("String", args_1, DAE.T_STRING_DEFAULT);
@@ -6746,15 +6749,15 @@ algorithm
 
         slots = {SLOT(DAE.FUNCARG("x",tp,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,NONE(),{},1)};
 
-        slots = Util.if_(Types.isRealOrSubTypeReal(tp),
-          listAppend(slots, {SLOT(DAE.FUNCARG("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("f")),{},2)}),
-          slots);
-        slots = Util.if_(Types.isIntegerOrSubTypeInteger(tp),
-          listAppend(slots, {SLOT(DAE.FUNCARG("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("d")),{},2)}),
-          slots);
-        slots = Util.if_(Types.isString(tp),
-          listAppend(slots, {SLOT(DAE.FUNCARG("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("s")),{},2)}),
-          slots);
+        slots = if Types.isRealOrSubTypeReal(tp)
+          then listAppend(slots, {SLOT(DAE.FUNCARG("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("f")),{},2)})
+          else slots;
+        slots = if Types.isIntegerOrSubTypeInteger(tp)
+          then listAppend(slots, {SLOT(DAE.FUNCARG("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("d")),{},2)})
+          else slots;
+        slots = if Types.isString(tp)
+          then listAppend(slots, {SLOT(DAE.FUNCARG("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("s")),{},2)})
+          else slots;
         (cache,args_1,_,constlist,_) = elabInputArgs(cache, env, args, nargs, slots, false, true /*checkTypes*/, impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, NONE(), pre, info, DAE.T_UNKNOWN_DEFAULT, Absyn.IDENT("String"));
         c = List.fold(constlist, Types.constAnd, DAE.C_CONST());
         exp = Expression.makePureBuiltinCall("String", args_1, DAE.T_STRING_DEFAULT);
@@ -8437,7 +8440,7 @@ protected
 algorithm
   onlyOneFunction := listLength(typelist) == 1;
   (cache,b) := isExternalObjectFunction(inCache,inEnv,fn);
-  isExternalObject := Util.if_(b and not FGraph.inFunctionScope(inEnv), IS_EXTERNAL_OBJECT_MODEL_SCOPE(), NOT_EXTERNAL_OBJECT_MODEL_SCOPE());
+  isExternalObject := if b and not FGraph.inFunctionScope(inEnv) then IS_EXTERNAL_OBJECT_MODEL_SCOPE() else NOT_EXTERNAL_OBJECT_MODEL_SCOPE();
   (cache,
    args_1,
    constlist,
@@ -8459,7 +8462,7 @@ algorithm
   true := isValidWRTParallelScope(fn,builtin,funcParal,inEnv,info);
 
   const := List.fold(constlist, Types.constAnd, DAE.C_CONST());
-  const := Util.if_((Flags.isSet(Flags.RML) and not builtin) or (not isPure), DAE.C_VAR(), const) "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
+  const := if (Flags.isSet(Flags.RML) and not builtin) or (not isPure) then DAE.C_VAR() else const "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
   (cache,const) := determineConstSpecialFunc(cache,inEnv,const,fn_1);
   tyconst := elabConsts(restype, const);
   prop := getProperties(restype, tyconst);
@@ -8478,12 +8481,12 @@ algorithm
   // replace references to inputs in the arguments
   //callExp = VarTransform.replaceExp(callExp, inputVarsRepl, NONE());
 
-  //debugPrintString = Util.if_(Util.isEqual(DAE.NORM_INLINE,inline)," Inline: " +& Absyn.pathString(fn_1) +& "\n", "");print(debugPrintString);
+  //debugPrintString = if_(Util.isEqual(DAE.NORM_INLINE,inline)," Inline: " +& Absyn.pathString(fn_1) +& "\n", "");print(debugPrintString);
   (call_exp,prop_1) := vectorizeCall(callExp, vect_dims, slots2, prop, info);
   // print("3 Prefix: " +& PrefixUtil.printPrefixStr(pre) +& " path: " +& Absyn.pathString(fn_1) +& "\n");
   // Instantiate the function and add to dae function tree
   (cache,status) := instantiateDaeFunction(cache,inEnv,
-    Util.if_(Lookup.isFunctionCallViaComponent(cache, inEnv, fn), fn, fn_1), // don't use the fully qualified name for calling component functions
+    if Lookup.isFunctionCallViaComponent(cache, inEnv, fn) then fn else fn_1, // don't use the fully qualified name for calling component functions
     builtin,NONE(),true);
   // Instantiate any implicit record constructors needed and add them to the dae function tree
   cache := instantiateImplicitRecordConstructors(cache, inEnv, args_1, st);
@@ -8493,7 +8496,7 @@ algorithm
   didInline := didInline and (not Config.acceptMetaModelicaGrammar() /* Some weird errors when inlining. Becomes boxed even if it shouldn't... */);
   prop_1 := Debug.bcallret2(didInline, Types.setPropType, prop_1, restype, prop_1);
   (cache, call_exp, prop_1) := Ceval.cevalIfConstant(cache, inEnv, call_exp, prop_1, impl, info);
-  expProps := Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
+  expProps := if Util.isSuccess(status) then SOME((call_exp,prop_1)) else NONE();
   outCache := cache;
 end elabCallArgs3;
 
@@ -9356,7 +9359,7 @@ algorithm
         (e,prop) = vectorizeCall(e,ad,slots,prop,info); // Recurse...
         foldName = Util.getTempVariableIndex();
         resultName = Util.getTempVariableIndex();
-        iterType = Util.if_(listLength(riters)>1,Absyn.THREAD(),Absyn.COMBINE());
+        iterType = if listLength(riters)>1 then Absyn.THREAD() else Absyn.COMBINE();
         rinfo = DAE.REDUCTIONINFO(Absyn.IDENT("array"),iterType,tp,SOME(Values.ARRAY({},{0})),foldName,resultName,NONE());
         e = DAE.REDUCTION(rinfo,e,riters);
       then (e,prop);
@@ -10777,7 +10780,7 @@ algorithm
     case ((SLOT(defaultArg = farg,slotFilled = filled,arg = exp,dims = ds) :: xs))
       equation
         farg_str = Types.printFargStr(farg);
-        filledStr = Util.if_(filled, "filled", "not filled");
+        filledStr = if filled then "filled" else "not filled";
         str = Dump.getOptionStr(exp, ExpressionDump.printExpStr);
         str_lst = List.map(ds, ExpressionDump.dimensionString);
         s = stringDelimitList(str_lst, ", ");
@@ -11474,7 +11477,7 @@ algorithm
         isBuiltinFnOrInlineBuiltin = not valueEq(DAE.FUNCTION_NOT_BUILTIN(),isBuiltin);
         tySource = Types.getTypeSource(t);
         // some builtin functions store {} there
-        tySource = Util.if_(isBuiltinFn, Types.mkTypeSource(SOME(path)), tySource);
+        tySource = if isBuiltinFn then Types.mkTypeSource(SOME(path)) else tySource;
         tt = Types.setTypeSource(t, tySource);
         origt = tt;
         {fpath} = Types.getTypeSource(t);
@@ -13579,16 +13582,16 @@ algorithm
         false = valueEq(Types.getDimensionSizes(trueType),Types.getDimensionSizes(falseType));
         // We have different dimensions in the branches, so we should consider the condition structural in order to handle more models
         (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st, Absyn.NO_MSG(),0);
-        res = Util.if_(cond, e2, e3);
-        ty = Util.if_(cond, trueType, falseType);
+        res = if cond then e2 else e3;
+        ty = if cond then trueType else falseType;
       then (cache,res,ty);
     case (cache,_,e1,e2,e3,DAE.C_PARAM(),_,_,_,_,_,_) then (cache,DAE.IFEXP(e1,e2,e3),defaultType);
     case (cache,env,e1,e2,e3,DAE.C_CONST(),_,_,_,impl,st,_)
       equation
-        msg = Util.if_(FGraph.inFunctionScope(env) or FGraph.inForOrParforIterLoopScope(env), Absyn.NO_MSG(), Absyn.MSG(inInfo));
+        msg = if FGraph.inFunctionScope(env) or FGraph.inForOrParforIterLoopScope(env) then Absyn.NO_MSG() else Absyn.MSG(inInfo);
         (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st,msg,0);
-        res = Util.if_(cond, e2, e3);
-        ty = Util.if_(cond, trueType, falseType);
+        res = if cond then e2 else e3;
+        ty = if cond then trueType else falseType;
       then
         (cache,res,ty);
     // Allow ceval of constant if expressions to fail. This is needed because of
@@ -14228,10 +14231,10 @@ algorithm
     case (_,(crs,i::li,bs as (inc::_)))
       equation
         isCr = Absyn.isCref(inExp);
-        bs = Util.if_(isCr,true::bs,false::bs);
-        ni = Util.if_(isCr,0,i+1);
-        li = Util.if_(inc,ni::li,i::li);
-        li = Util.if_(isCr,0::li,li);
+        bs = if isCr then true::bs else false::bs;
+        ni = if isCr then 0 else i+1;
+        li = if inc then ni::li else i::li;
+        li = if isCr then 0::li else li;
         crs = consStrippedCref(inExp,crs);
       then (inExp,(crs,li,bs));
   end match;

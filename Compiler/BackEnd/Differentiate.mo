@@ -1347,7 +1347,7 @@ algorithm
         b = ComponentReference.crefEqual(DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), inDiffwrtCref);
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
 
-        res = Util.if_(b, zero, res);
+        res = if b then zero else res;
       then
         (res,  inFunctionTree);
 
@@ -1579,7 +1579,7 @@ algorithm
       equation
         (res1, funcs) = differentiateExp(e2,inDiffwrtCref,inInputData,inDiffType,inFunctionTree);
         e1 = Expression.expSub(DAE.ICONST(i), DAE.ICONST(1));
-        res2 = Util.if_(intGe(i,1), Expression.makePureBuiltinCall("smooth", {e1, res1}, tp), res1);
+        res2 = if intGe(i,1) then Expression.makePureBuiltinCall("smooth", {e1, res1}, tp) else res1;
       then
         (res2, funcs);
 

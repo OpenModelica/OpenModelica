@@ -50,7 +50,6 @@ import Values;
 protected
 import GraphStreamExt;
 import System;
-import Util;
 import Settings;
 
 public function startExternalViewer
@@ -67,7 +66,7 @@ algorithm
         omhome = Settings.getInstallationDirectoryPath();
         commandWin = "start /b java -jar " +& omhome +& "/share/omc/java/org.omc.graphstream.jar";
         commandLinux = "java -jar " +& omhome +& "/share/omc/java/org.omc.graphstream.jar &";
-        command = Util.if_("Windows_NT" ==& System.os(), commandWin, commandLinux);
+        command = if "Windows_NT" == System.os() then commandWin else commandLinux;
         status = System.systemCall(command, "");
         true = status == 0;
       then

@@ -2465,7 +2465,7 @@ protected
   Integer e;
   String s;
 algorithm
-  e := Util.if_(intGt(x,0),x+offset,x-offset);
+  e := if intGt(x,0) then (x+offset) else (x-offset);
   s := intString(e);
   dumpStrOpenTag(MathMLVariable);
   Print.printBuf(s);

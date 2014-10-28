@@ -428,7 +428,7 @@ algorithm
         // Don't ceval variables.
         false = Types.constIsVariable(c);
         // Show error messages from ceval only if the expression is a constant.
-        msg = Util.if_(Types.constIsConst(c) and not impl, Absyn.MSG(inInfo), Absyn.NO_MSG());
+        msg = if Types.constIsConst(c) and not impl then Absyn.MSG(inInfo) else Absyn.NO_MSG();
         (_,v,_) = Ceval.ceval(inCache,inEnv,inExp,false,NONE(),msg,0);
       then
         (inCache /*Yeah; this makes sense :)*/,SOME(v));
@@ -1394,7 +1394,7 @@ public function printSubsStr
   output String s;
 algorithm
   s := stringDelimitList(List.map(inSubMods, prettyPrintSubmod), ", ");
-  s := Util.if_(addParan,"(","") +& s +& Util.if_(addParan,")","");
+  s := (if addParan then "(" else "") +& s +& (if addParan then ")" else "");
 end printSubsStr;
 
 protected function lookupCompModification2
@@ -2361,7 +2361,7 @@ algorithm
         prefix =  SCodeDump.finalStr(finalPrefix) +& SCodeDump.eachStr(eachPrefix);
         s1 = printSubs1Str(subs);
         s1_1 = stringDelimitList(s1, ", ");
-        s1_1 = Util.if_(List.isNotEmpty(subs)," {" +& s1_1 +& "} ",s1_1);
+        s1_1 = if List.isNotEmpty(subs) then " {" +& s1_1 +& "} " else s1_1;
         s2 = printEqmodStr(eq);
         str = stringAppendList({prefix,s1_1,s2});
       then
@@ -2403,7 +2403,7 @@ algorithm
 
     case(DAE.MOD(finalPrefix = fp, eqModOption=SOME(eq)),_)
       equation
-        str = Util.if_(SCode.finalBool(fp),"final ","") +& " = " +& Types.unparseEqMod(eq);
+        str = (if SCode.finalBool(fp) then "final " else "") +& " = " +& Types.unparseEqMod(eq);
       then
         str;
 
@@ -2448,7 +2448,7 @@ algorithm
     case((DAE.NAMEMOD(id,m))::_,_)
       equation
         s2  = prettyPrintMod(m,depth+1);
-        s2 = Util.if_(stringLength(s2) == 0, "", s2);
+        s2 = if stringLength(s2) == 0 then "" else s2;
         s2 = "(" +& id +& s2 +& "), class or component " +& id;
       then
         s2;
@@ -2473,15 +2473,15 @@ algorithm
       equation
         s1 = stringDelimitList(List.map1(List.map(elist, Util.tuple21), SCodeDump.unparseElementStr, SCodeDump.defaultOptions), ", ");
         s2 = id +& "(redeclare " +&
-             Util.if_(SCode.eachBool(ep),"each ","") +&
-             Util.if_(SCode.finalBool(fp),"final ","") +& s1 +& ")";
+             (if SCode.eachBool(ep) then "each " else "") +&
+             (if SCode.finalBool(fp) then "final " else "") +& s1 +& ")";
       then
         s2;
 
     case(DAE.NAMEMOD(id,m))
       equation
         s2  = prettyPrintMod(m,0);
-        s2 = Util.if_(stringLength(s2) == 0, "", s2);
+        s2 = if stringLength(s2) == 0 then "" else s2;
         s2 = id +& s2;
       then
         s2;
@@ -2829,9 +2829,9 @@ algorithm
         fullMods1 = getFullModsFromMod(cref, mod);
         fullMods2 = getFullModsFromSubMods(inTopCref, rest);
         fullMods = listAppend(
-                     Util.if_(List.isEmpty(fullMods1),
-                              SUB_MOD(cref, subMod)::fullMods1, // add if LEAF
-                              fullMods1),
+                     if List.isEmpty(fullMods1)
+                              then SUB_MOD(cref, subMod)::fullMods1 // add if LEAF
+                              else fullMods1,
                      fullMods2);
       then
         fullMods;
@@ -3105,7 +3105,7 @@ algorithm
       equation
         //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");
         redecls = removeRedeclareMods(redecls,componentModified);
-        outmod = Util.if_(List.isNotEmpty(redecls),DAE.REDECL(f,e,redecls), DAE.NOMOD());
+        outmod = if List.isNotEmpty(redecls) then DAE.REDECL(f,e,redecls) else DAE.NOMOD();
         //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
       then
         outmod;
@@ -3174,7 +3174,7 @@ algorithm
     case({},_) then {};
     case((DAE.NAMEMOD(s1,m1))::subs,_)
       equation
-        subs1 = Util.if_(stringEq(s1,componentName),{},{DAE.NAMEMOD(s1,m1)});
+        subs1 = if stringEq(s1,componentName) then {} else {DAE.NAMEMOD(s1,m1)};
         subs2 = removeModInSubs(subs,componentName) "check for multiple mod on same comp";
         outsubs = listAppend(subs1,subs2);
       then

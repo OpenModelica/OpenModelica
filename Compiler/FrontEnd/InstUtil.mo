@@ -483,7 +483,7 @@ algorithm
     case(true,UnitAbsyn.INSTSTORE(st,_,SOME(UnitAbsyn.CONSISTENT())))
       equation
         (complete,_) = UnitChecker.isComplete(st);
-        Error.addMessage(Util.if_(complete,Error.CONSISTENT_UNITS,Error.INCOMPLETE_UNITS),{});
+        Error.addMessage(if complete then Error.CONSISTENT_UNITS else Error.INCOMPLETE_UNITS,{});
       then
         ();
 
@@ -666,7 +666,7 @@ algorithm
     case("String") then true;
     case("Boolean") then true;
     // BTH
-    case("Clock") then Util.if_(intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33), true, false);
+    case("Clock") then intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
     else false;
   end match;
 end isBuiltInClass;
@@ -912,14 +912,14 @@ protected
   list<SCode.Restriction> rstLst;
 algorithm
   // BTH add Clock type to both lists if Flags.SYNCHRONOUS_FEATURES == true
-  strLst := Util.if_(intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33),
-      {"Real", "Integer", "String", "Boolean", "Clock"},
-      {"Real", "Integer", "String", "Boolean"});
+  strLst := if intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33)
+      then {"Real", "Integer", "String", "Boolean", "Clock"}
+      else {"Real", "Integer", "String", "Boolean"};
   b1 := listMember(childName, strLst);
 
-  rstLst := Util.if_(intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33),
-      {SCode.R_TYPE(), SCode.R_PREDEFINED_INTEGER(), SCode.R_PREDEFINED_REAL(), SCode.R_PREDEFINED_STRING(), SCode.R_PREDEFINED_BOOLEAN(), SCode.R_PREDEFINED_CLOCK()},
-      {SCode.R_TYPE(), SCode.R_PREDEFINED_INTEGER(), SCode.R_PREDEFINED_REAL(), SCode.R_PREDEFINED_STRING(), SCode.R_PREDEFINED_BOOLEAN()});
+  rstLst := if intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33)
+      then {SCode.R_TYPE(), SCode.R_PREDEFINED_INTEGER(), SCode.R_PREDEFINED_REAL(), SCode.R_PREDEFINED_STRING(), SCode.R_PREDEFINED_BOOLEAN(), SCode.R_PREDEFINED_CLOCK()}
+      else {SCode.R_TYPE(), SCode.R_PREDEFINED_INTEGER(), SCode.R_PREDEFINED_REAL(), SCode.R_PREDEFINED_STRING(), SCode.R_PREDEFINED_BOOLEAN()};
   b2 := listMember(childRestriction, rstLst);
 
   b3 := valueEq(parentRestriction, SCode.R_TYPE());
@@ -1881,14 +1881,14 @@ algorithm
         exps = listAppend(sexps, exps);
         // DO *NOT* ignore the bindings in function scope. We do not want to keep the order!
         exps = listAppend(bexps, exps);
-        // exps = Util.if_(hasUnknownDims, listAppend(bexps, exps), exps);
+        // exps = if_(hasUnknownDims, listAppend(bexps, exps), exps);
         (bexps, sexps) = getExpsFromConstrainClass(rp);
         exps = listAppend(bexps, listAppend(sexps, exps));
         (bexps, sexps) = getExpsFromMod(Mod.unelabMod(daeMod));
         exps = listAppend(sexps, exps);
         // DO *NOT* ignore the bindings in function scope so we keep the order!
         exps = listAppend(bexps, exps);
-        // exps = Util.if_(hasUnknownDims, listAppend(bexps, exps), exps);
+        // exps = if_(hasUnknownDims, listAppend(bexps, exps), exps);
         deps = getDepsFromExps(exps, inAllElements, {});
         // remove the current element from the deps as it is usally Real A[size(A,1)];
         deps = removeCurrentElementFromArrayDimDeps(name, deps);
@@ -3506,7 +3506,7 @@ algorithm
       equation
         osubs = keepConstrainingTypeModifersOnly2(subs,elems);
         b = List.isMemberOnTrue(n,elems,stringEq);
-        osubs2 = Util.if_(b, {sub},{});
+        osubs2 = if b then {sub} else {};
         osubs = listAppend(osubs2,osubs);
       then
         osubs;
@@ -4924,7 +4924,7 @@ algorithm
         true = System.getPartialInstantiation();
         // if all the functions are complete, add them, otherwise, NO
         fLst = List.select(funcs, DAEUtil.isNotCompleteFunction);
-        fLst = Util.if_(List.isEmpty(fLst), funcs, {});
+        fLst = if_(List.isEmpty(fLst), funcs, {});
         cache = FCore.addDaeFunction(cache, fLst);
       then
         cache;*/
@@ -5098,7 +5098,7 @@ algorithm element := matchcontinue(inSubs,elemDecl,baseFunc,inCache,inEnv,inIH,i
 
       /*print("\n adding conditions on derivative count: " +& intString(listLength(conditionRefs)) +& "\n");
       dbgString = Absyn.optPathString(defaultDerivative);
-      dbgString = Util.if_(stringEq(dbgString,""),"", "**** Default Derivative: " +& dbgString +& "\n");
+      dbgString = if_(stringEq(dbgString,""),"", "**** Default Derivative: " +& dbgString +& "\n");
       print("**** Function derived: " +& Absyn.pathString(baseFunc) +& " \n");
       print("**** Deriving function: " +& Absyn.pathString(deriveFunc) +& "\n");
       print("**** Conditions: " +& stringDelimitList(DAEDump.dumpDerivativeCond(conditionRefs),", ") +& "\n");
@@ -8229,13 +8229,13 @@ algorithm
       Absyn.Info info;
     case (SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(subModLst=mods1,info=info))),str1),SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(subModLst=mods2))),str2))
       equation
-        str = Util.if_(Util.isSome(str1),str1,str2);
+        str = if Util.isSome(str1) then str1 else str2;
         mods = listAppend(mods1,mods2);
       then SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),mods,NONE(),info))),str);
     case (SCode.COMMENT(ann1,str1),SCode.COMMENT(ann2,str2))
       equation
-        str = Util.if_(Util.isSome(str1),str1,str2);
-        ann = Util.if_(Util.isSome(ann1),ann1,ann2);
+        str = if Util.isSome(str1) then str1 else str2;
+        ann = if Util.isSome(ann1) then ann1 else ann2;
       then SCode.COMMENT(ann,str);
   end matchcontinue;
 end mergeClassComments;
@@ -8294,7 +8294,7 @@ algorithm
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION())),_)
       equation
         inlineType = isInlineFunc(cl);
-        isBuiltin = Util.if_(SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_BuiltinPtr"), DAE.FUNCTION_BUILTIN_PTR(), DAE.FUNCTION_NOT_BUILTIN());
+        isBuiltin = if SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
         isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
       then DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,false,isBuiltin,DAE.FP_PARALLEL_FUNCTION());
 
@@ -8306,7 +8306,7 @@ algorithm
       equation
         inlineType = isInlineFunc(cl);
         hasOutVars = List.exist(vl,Types.isOutputVar);
-        isBuiltin = Util.if_(SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_BuiltinPtr"), DAE.FUNCTION_BUILTIN_PTR(), DAE.FUNCTION_NOT_BUILTIN());
+        isBuiltin = if SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
         isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
         // In Modelica 3.2 and before, external functions with side-effects are not marked
         isImpure = SCode.isRestrictionImpure(restriction,hasOutVars or Config.languageStandardAtLeast(Config.MODELICA_3_3()));
@@ -8549,13 +8549,13 @@ algorithm
       equation
         name = Expression.simpleCrefName(lhs);
         rhs = optimizeStatementTail2(path,rhs,{name},invars,outvars,source);
-        stmt = Util.if_(Expression.isTailCall(rhs),DAE.STMT_NORETCALL(rhs,source),DAE.STMT_ASSIGN(tp,lhs,rhs,source));
+        stmt = if Expression.isTailCall(rhs) then DAE.STMT_NORETCALL(rhs,source) else DAE.STMT_ASSIGN(tp,lhs,rhs,source);
       then stmt;
     case (_,DAE.STMT_TUPLE_ASSIGN(tp,lhsLst,rhs,source),_,_)
       equation
         lhsNames = List.map(lhsLst,Expression.simpleCrefName);
         rhs = optimizeStatementTail2(path,rhs,lhsNames,invars,outvars,source);
-        stmt = Util.if_(Expression.isTailCall(rhs),DAE.STMT_NORETCALL(rhs,source),DAE.STMT_TUPLE_ASSIGN(tp,lhsLst,rhs,source));
+        stmt = if Expression.isTailCall(rhs) then DAE.STMT_NORETCALL(rhs,source) else DAE.STMT_TUPLE_ASSIGN(tp,lhsLst,rhs,source);
       then stmt;
     case (_,DAE.STMT_IF(cond,stmts,else_,source),_,_)
       equation
@@ -8824,8 +8824,8 @@ algorithm
         names = List.map1r(List.map(vars, Types.varName), stringAppend, name +& ".");
         // print("for record: " +& stringDelimitList(names,",") +& "\n");
         // Arrays with unknown bounds (size(cr,1), etc) are treated as initialized because they may have 0 dimensions checked for in the code
-        outNames = Util.if_(DAEUtil.varDirectionEqual(dir,DAE.OUTPUT()), names, {});
-        names = Util.if_(Expression.dimensionsKnownAndNonZero(dims), names, {});
+        outNames = if DAEUtil.varDirectionEqual(dir,DAE.OUTPUT()) then names else {};
+        names = if Expression.dimensionsKnownAndNonZero(dims) then names else {};
         unbound = listAppend(names,unbound);
         outputs = listAppend(outNames,inOutputs);
         unbound = checkFunctionDefUse2(rest,alg,unbound,outputs,inInfo);

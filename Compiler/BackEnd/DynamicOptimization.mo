@@ -53,7 +53,6 @@ protected import ComponentReference;
 protected import Expression;
 protected import Flags;
 protected import List;
-protected import Util;
 
 public function addOptimizationVarsEqns
 "author: Vitalij Ruge
@@ -95,8 +94,8 @@ algorithm
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, mayer1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
         b = not List.isEmpty(objectEqn);
 
-        v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
-        e = Util.if_(b, listAppend(e, objectEqn), e);
+        v = if b then BackendVariable.addNewVar(dummyVar, v) else v;
+        e = if b then listAppend(e, objectEqn) else e;
 
         leftcref = ComponentReference.makeCrefIdent("$OMC$objectLagrangeTerm", DAE.T_REAL_DEFAULT, {});
         dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
@@ -105,8 +104,8 @@ algorithm
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, lagrange1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
         b = not List.isEmpty(objectEqn);
 
-        v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
-        e = Util.if_(b, listAppend(e, objectEqn), e);
+        v = if b then BackendVariable.addNewVar(dummyVar, v) else v;
+        e = if b then listAppend(e, objectEqn) else e;
 
         constraints = addConstraints(varlst, inConstraint);
         (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$constarintTerm", BackendDAE.OPT_CONSTR());
@@ -127,16 +126,16 @@ algorithm
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, mayer1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
         b = not List.isEmpty(objectEqn);
 
-        v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
-        e = Util.if_(b, listAppend(e, objectEqn), e);
+        v = if b then BackendVariable.addNewVar(dummyVar, v) else v;
+        e = if b then listAppend(e, objectEqn) else e;
 
         leftcref = ComponentReference.makeCrefIdent("$OMC$objectLagrangeTerm", DAE.T_REAL_DEFAULT, {});
         dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
         lagrange1 = findLagrangeTerm(varlst);
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, lagrange1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
         b = not List.isEmpty(objectEqn);
-        v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
-        e = Util.if_(b, listAppend(e, objectEqn), e);
+        v = if b then BackendVariable.addNewVar(dummyVar, v) else v;
+        e = if b then listAppend(e, objectEqn) else e;
 
         constraints = addConstraints(varlst, inConstraint);
         (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$constarintTerm", BackendDAE.OPT_CONSTR());

@@ -213,7 +213,7 @@ algorithm
     case ((e1 as NFConnect2.CONNECTOR(name = x)) ::
           (e2 as NFConnect2.CONNECTOR(name = y)) :: rest_el)
       equation
-        e1 = Util.if_(Config.orderConnections(), e1, e2);
+        e1 = if Config.orderConnections() then e1 else e2;
         DAE.DAE(eq) = generatePotentialEquations(e1 :: rest_el);
         src = DAE.emptyElementSource;
       then

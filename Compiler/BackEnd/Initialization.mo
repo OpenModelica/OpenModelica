@@ -937,7 +937,7 @@ algorithm
   (_, _, mt) := BackendDAEUtil.getIncidenceMatrix(inSystem, BackendDAE.NORMAL(), NONE());
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) := inSystem;
   (orderedVars, orderedEqs, b, outDumpVars) := preBalanceInitialSystem1(arrayLength(mt), mt, orderedVars, orderedEqs, false, {});
-  outSystem := Util.if_(b, BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), inSystem);
+  outSystem := if b then BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind) else inSystem;
 end preBalanceInitialSystem;
 
 protected function preBalanceInitialSystem1 "author: lochel"
@@ -1056,7 +1056,7 @@ protected
   list<Integer> lst;
 algorithm
   (pos, lst) := inTpl;
-  lst := listAppend(lst, Util.if_(BackendEquation.isInitialEquation(inEquation), {pos}, {}));
+  lst := listAppend(lst, if BackendEquation.isInitialEquation(inEquation) then {pos} else {});
   outTpl := (pos+1, lst);
 end getInitEqIndex;
 
@@ -1212,8 +1212,7 @@ algorithm
   0 := listLength(unassigned); // if this fails, the system is singular (mixed-determined)
 
   // map to equations
-  range := List.intRange2(nVars+1, nVars+nAddVars);
-  range := Util.if_(nAddVars > 0, range, {});
+  range := if nAddVars > 0 then List.intRange2(nVars+1, nVars+nAddVars) else {};
   redundantEqns := mapIndices(range, vec1);
 //print("{" +& stringDelimitList(List.map(redundantEqns, intString),",") +& "}\n");
 
@@ -1228,8 +1227,7 @@ algorithm
 //BackendDump.dumpEquationArray(outEqns, "remaining equations");
 
   // map to variables
-  range := List.intRange2(nEqns+1, nEqns+nAddEqs);
-  range := Util.if_(nAddEqs > 0, range, {});
+  range := if nAddEqs > 0 then List.intRange2(nEqns+1, nEqns+nAddEqs) else {};
   range := mapIndices(range, vec2);
 //print("{" +& stringDelimitList(List.map(range, intString),",") +& "}\n");
 
@@ -2473,7 +2471,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind) := inSyst;
   (vars, (_, b)) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, optimizeInitialAliasesFinder, (initalAliases, false));
-  outSyst := Util.if_(b, BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind), inSyst);
+  outSyst := if b then BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind) else inSyst;
 end optimizeInitialAliases;
 
 protected function optimizeInitialAliasesFinder "author: Frenkel TUD 2011-03"

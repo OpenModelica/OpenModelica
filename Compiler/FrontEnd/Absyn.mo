@@ -3510,13 +3510,13 @@ algorithm
     case (CALL(function_ = cr, functionArgs = farg),_,_)
       equation
         res = getCrefFromFarg(farg,includeSubs,includeFunctions);
-        res = Util.if_(includeFunctions, cr::res, res);
+        res = if includeFunctions then cr::res else res;
       then
         res;
     case (PARTEVALFUNCTION(function_ = cr, functionArgs = farg),_,_)
       equation
         res = getCrefFromFarg(farg,includeSubs,includeFunctions);
-        res = Util.if_(includeFunctions, cr::res, res);
+        res = if includeFunctions then cr::res else res;
       then
         res;
     case (ARRAY(arrayExp = expl),_,_)
@@ -4583,7 +4583,7 @@ algorithm
         equation
           lst_1=findIteratorInExp(id,exp);
           (bool,lst_2)=findIteratorInForIteratorsBounds2(id,forIterators);
-          lst_1=Util.if_(bool, {}, lst_1);
+          lst_1=if bool then {} else lst_1;
           lst=listAppend(lst_1,lst_2);
         then lst;
   end match;

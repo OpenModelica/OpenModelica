@@ -44,7 +44,6 @@ public
 import Absyn;
 import DAE;
 import SCode;
-import Util;
 import FCore;
 
 // protected imports
@@ -2874,14 +2873,14 @@ algorithm
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
-        res = "\n" +& valueStr(rval) +& ",  " +& Util.if_(stringEq(s2, ""), "", s2 +& ", ") +& s3;
+        res = "\n" +& valueStr(rval) +& ",  " +& (if stringEq(s2, "") then "" else (s2 +& ", ")) +& s3;
       then
         res;
     case (FCore.CAVLTREENODE(value = NONE(),left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
-        res = Util.if_(stringEq(s2, ""), "", s2 +& ", ") +& s3;
+        res = (if stringEq(s2, "") then "" else (s2 +& ", ")) +& s3;
       then
         res;
   end match;

@@ -296,9 +296,9 @@ algorithm
     case (d,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(purity)))
       equation
         isImpure = translatePurity(purity);
-      then Util.if_(containsExternalFuncDecl(d),
-             SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure)),
-             SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure)));
+      then if containsExternalFuncDecl(d)
+             then SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure))
+             else SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure));
 
     case (_,Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION())) then SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION());
     case (_,Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION())) then SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION());
@@ -1165,7 +1165,7 @@ algorithm
         sRed = SCode.boolRedeclare(redecl);
         sFin = SCode.boolFinal(finalPrefix);
         scc = translateConstrainClass(cc);
-        sRep = Util.if_(rp,SCode.REPLACEABLE(scc),SCode.NOT_REPLACEABLE());
+        sRep = if rp then SCode.REPLACEABLE(scc) else SCode.NOT_REPLACEABLE();
         sEnc = SCode.boolEncapsulated(e);
         sPar = SCode.boolPartial(pa);
         cls = SCode.CLASS(
@@ -1185,7 +1185,7 @@ algorithm
         sRed = SCode.boolRedeclare(redecl);
         sFin = SCode.boolFinal(finalPrefix);
         scc = translateConstrainClass(cc);
-        sRep = Util.if_(rp,SCode.REPLACEABLE(scc),SCode.NOT_REPLACEABLE());
+        sRep = if rp then SCode.REPLACEABLE(scc) else SCode.NOT_REPLACEABLE();
         sEnc = SCode.boolEncapsulated(e);
         sPar = SCode.boolPartial(pa);
         cls = SCode.CLASS(
@@ -1233,7 +1233,7 @@ algorithm
         sFin = SCode.boolFinal(finalPrefix);
         sRed = SCode.boolRedeclare(redecl);
         scc = translateConstrainClass(cc);
-        sRep = Util.if_(repl_1,SCode.REPLACEABLE(scc),SCode.NOT_REPLACEABLE());
+        sRep = if repl_1 then SCode.REPLACEABLE(scc) else SCode.NOT_REPLACEABLE();
         ct = translateConnectorType(fl, st);
       then
         (SCode.COMPONENT(n,
@@ -2323,7 +2323,7 @@ algorithm
           SCode.MOD(_, _, subMods2, b2, _))
       equation
         subMods1 = listAppend(subMods1, subMods2);
-        b1 = Util.if_(Util.isSome(b1), b1, b2);
+        b1 = if Util.isSome(b1) then b1 else b2;
       then
         SCode.MOD(f1, e1, subMods1, b1, info);
 
@@ -2452,7 +2452,7 @@ algorithm
 
     case (SCode.MOD(fp, ep, sl, binding, i), _)
       equation
-        binding = Util.if_(onlyRedeclares, NONE(), constantBindingOrNone(binding));
+        binding = if onlyRedeclares then NONE() else constantBindingOrNone(binding);
         sl = removeNonConstantBindingsKeepRedeclaresFromSubMod(sl, onlyRedeclares);
       then
         SCode.MOD(fp, ep, sl, binding, i);

@@ -892,7 +892,7 @@ algorithm
         false = isarr1 and isarr2;
 
         // Get the dims from the array operand
-        arrtp = Util.if_(isarr1,inType1,inType2);
+        arrtp = if isarr1 then inType1 else inType2;
         DAE.T_ARRAY(_,dims,_) = arrtp;
 
         //match their scalar types
@@ -1065,7 +1065,7 @@ algorithm
         false = isarr1 and isarr2;
 
         // Get the dims from the array operand
-        arrtp = Util.if_(isarr1,inType1,inType2);
+        arrtp = if isarr1 then inType1 else inType2;
         DAE.T_ARRAY(_,dims,_) = arrtp;
 
         //match their scalar types

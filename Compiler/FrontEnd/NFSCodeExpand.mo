@@ -318,7 +318,7 @@ algorithm
 
     case (_, _, DAE.DIM_INTEGER(integer = dim) :: rest_dims, _, _, _)
       equation
-        start = Util.if_(isExpandFunction(inKind),dim,1);
+        start = if isExpandFunction(inKind) then dim else 1;
         el = expandArrayIntDim(inElement, inKind, start, dim, rest_dims, inSubscripts,
             inAccumEl, inScalarFunc);
       then
@@ -924,8 +924,8 @@ algorithm
   (stmt,kind,isInitial) := inTpl;
   dstmt := listReverse(List.fold2(stmt, expandStatement, kind, inSubscripts, {}));
   alg := DAE.ALGORITHM_STMTS(dstmt);
-  el := Util.if_(isInitial,DAE.INITIALALGORITHM(alg,DAE.emptyElementSource),DAE.ALGORITHM(alg,DAE.emptyElementSource));
-  outAccumEl := Util.if_(List.isEmpty(dstmt),inAccumEl,el::inAccumEl);
+  el := if isInitial then DAE.INITIALALGORITHM(alg,DAE.emptyElementSource) else DAE.ALGORITHM(alg,DAE.emptyElementSource);
+  outAccumEl := if List.isEmpty(dstmt) then inAccumEl else el::inAccumEl;
 end expandStatements;
 
 protected function expandStatementsList
@@ -982,9 +982,9 @@ algorithm
 
     case (NFInstTypes.FUNCTION_ARRAY_INIT(name = name, ty = ty as DAE.T_ARRAY(dims=dims)), _, _, _)
       equation
-        accum_el = Util.if_(not Expression.arrayContainWholeDimension(dims),
-          DAE.STMT_ARRAY_INIT(name,ty,DAE.emptyElementSource) :: inAccumEl,
-          inAccumEl);
+        accum_el = if not Expression.arrayContainWholeDimension(dims)
+          then DAE.STMT_ARRAY_INIT(name,ty,DAE.emptyElementSource) :: inAccumEl
+          else inAccumEl;
       then
         accum_el;
 

@@ -56,7 +56,6 @@ protected import Flags;
 protected import List;
 protected import Print;
 protected import SCodeDump;
-protected import Util;
 
 public
 uniontype State "- Machine states, the string contains the classname."
@@ -219,7 +218,7 @@ algorithm
     case TYPE_CLOCK(path = _) then "Clock";
     case HAS_RESTRICTIONS(path = _, hasEquations = false, hasAlgorithms = false, hasConstraints = false) then "new def";
     case HAS_RESTRICTIONS(path = _, hasEquations = b1, hasAlgorithms = b2, hasConstraints = _)
-      then "has" +& Util.if_(b1," equations","") +& Util.if_(b2," algorithms","") +& Util.if_(b1," constraints","");
+      then "has" +& (if b1 then " equations" else "") +& (if b2 then " algorithms" else "") +& (if b1 then " constraints" else "");
     case EXTERNAL_OBJ(_) then "ExternalObject";
     case META_TUPLE(_) then "tuple";
     case META_LIST(_) then "list";

@@ -1454,7 +1454,7 @@ algorithm
       DAE.Exp exp;
     case (exp,DAE.T_FUNCTION_REFERENCE_FUNC(functionType=DAE.T_FUNCTION(funcResultType=t)))
       equation
-        exp = Util.if_(Types.isBoxedType(t), exp, DAE.BOX(exp));
+        exp = if Types.isBoxedType(t) then exp else DAE.BOX(exp);
       then exp;
     else iexp;
   end match;

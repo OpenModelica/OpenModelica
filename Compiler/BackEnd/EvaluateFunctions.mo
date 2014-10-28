@@ -104,7 +104,7 @@ algorithm
         BackendDAE.DAE(eqs = eqSysts,shared = shared) = inDAE;
         (eqSysts,(shared,_,changed)) = List.mapFold(eqSysts,evalFunctions_main,(shared,1,false));
         //shared = evaluateShared(shared);
-        outDAE = Util.if_(changed,BackendDAE.DAE(eqSysts,shared),inDAE);
+        outDAE = if changed then BackendDAE.DAE(eqSysts,shared) else inDAE;
         outDAE = Debug.bcallret1(changed,RemoveSimpleEquations.fastAcausal,outDAE,inDAE);
         outDAE = Debug.bcallret1(changed,updateVarKinds,outDAE,inDAE);
       then
@@ -246,7 +246,7 @@ algorithm
         sizeL = getScalarExpSize(lhsExp);
         sizeR = getScalarExpSize(rhsExp);
         size = intMax(sizeR,sizeL);
-        eq = Util.if_(intEq(size,0),BackendDAE.EQUATION(lhsExp,rhsExp,source,attr),BackendDAE.COMPLEX_EQUATION(size,lhsExp,rhsExp,source,attr));
+        eq = if intEq(size,0) then BackendDAE.EQUATION(lhsExp,rhsExp,source,attr) else BackendDAE.COMPLEX_EQUATION(size,lhsExp,rhsExp,source,attr);
         //since tuple=tuple is not supported, these equations are converted into a list of simple equations
         (eq,addEqs) = convertTupleEquations(eq,addEqs);
       then
@@ -374,9 +374,9 @@ algorithm
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not funcIsPartConst and not funcIsConst,print,"the function output is not constant in any case\n");
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and hasAssert and funcIsConst,print,"the function output is completely constant but there is an assert\n");
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and abort,print,"the evaluated function is not used because there is a return or a terminate or a reinit statement\n");
-        funcIsConst = Util.if_((hasAssert and funcIsConst) or abort,false,funcIsConst); // quit if there is a return or terminate or use partial evaluation if there is an assert
-        funcIsPartConst = Util.if_(hasAssert and funcIsConst,true,funcIsPartConst);
-        funcIsPartConst = Util.if_(abort,false,funcIsPartConst);  // quit if there is a return or terminate
+        funcIsConst = if (hasAssert and funcIsConst) or abort then false else funcIsConst; // quit if there is a return or terminate or use partial evaluation if there is an assert
+        funcIsPartConst = if hasAssert and funcIsConst then true else funcIsPartConst;
+        funcIsPartConst = if abort then false else funcIsPartConst;  // quit if there is a return or terminate
 
         true =  funcIsPartConst or funcIsConst;
         changed = funcIsPartConst or funcIsConst;
@@ -395,12 +395,12 @@ algorithm
         elements = List.unique(elements);
         (func,path) = updateFunctionBody(func,elements,idx, updatedVarOutputs, allOutputs);
         funcs = Debug.bcallret2(funcIsPartConst,DAEUtil.addDaeFunction,{func},funcs,funcs);
-        idx = Util.if_(funcIsPartConst or funcIsConst,idx+1,idx);
+        idx = if funcIsPartConst or funcIsConst then (idx+1) else idx;
 
         //decide which lhs to take (tuple or 1d)
-        outputExp = Util.if_(funcIsPartConst,outputExp,lhsExpIn);
+        outputExp = if funcIsPartConst then outputExp else lhsExpIn;
         lhsExps = getCrefsForRecord(lhsExpIn);
-        outputExp = Util.if_(isConstRec,DAE.TUPLE(lhsExps),outputExp);
+        outputExp = if isConstRec then DAE.TUPLE(lhsExps) else outputExp;
         // which rhs
         newOutputVars = List.filterOnTrue(updatedVarOutputs,DAEUtil.isOutputVar);
         outputVarTypes = List.map(newOutputVars,DAEUtil.getVariableType);
@@ -408,13 +408,13 @@ algorithm
         DAE.CALL_ATTR(ty = singleOutputType) = attr1;
         singleOutputType = Debug.bcallret1(List.isNotEmpty(newOutputVars),List.first,outputVarTypes,singleOutputType);//if the function is evaluated completely
         attr1 = DAEUtil.replaceCallAttrType(attr1,singleOutputType);
-        attr2 = Util.if_(intEq(listLength(newOutputVars),1),attr1,attr2);
+        attr2 = if intEq(listLength(newOutputVars),1) then attr1 else attr2;
         //DAEDump.dumpCallAttr(attr2);
 
         exp2 = Debug.bcallret1(List.hasOneElement(constComplexExps) and funcIsConst,List.first,constComplexExps,DAE.TUPLE(constComplexExps));  // either a single equation or a tuple equation
-        exp = Util.if_(funcIsConst,exp2,rhsExpIn);
-        exp = Util.if_(funcIsPartConst,DAE.CALL(path, exps, attr2),exp);
-        exp = Util.if_(isConstRec,DAE.TUPLE(constScalarExps),exp);
+        exp = if funcIsConst then exp2 else rhsExpIn;
+        exp = if funcIsPartConst then DAE.CALL(path, exps, attr2) else exp;
+        exp = if isConstRec then DAE.TUPLE(constScalarExps) else exp;
 
         //BackendDump.dumpEquationList(constEqs,"the additional equations\n");
         //print("LHS EXP:\n");
@@ -838,14 +838,14 @@ algorithm
         const = intEq(listLength(scalars),listLength(constVars));
         constScalarCrefs = List.filter1OnTrue(constCrefs,ComponentReference.crefInLst,constVars);
         (_,varCrefs,_) = List.intersection1OnTrue(scalars,constScalarCrefs,ComponentReference.crefEqual);
-        //constCompl = Util.if_(const,cref::constComplexLstIn,constComplexLstIn);
-        constCompl = Util.if_(false,cref::constComplexLstIn,constComplexLstIn);
-        //varCompl = Util.if_(not const,cref::varComplexLstIn,varComplexLstIn);
+        //constCompl = if_(const,cref::constComplexLstIn,constComplexLstIn);
+        constCompl = if false then cref::constComplexLstIn else constComplexLstIn;
+        //varCompl = if_(not const,cref::varComplexLstIn,varComplexLstIn);
         varCompl = varComplexLstIn;
-        //constScalar = Util.if_(not const,listAppend(constScalarCrefs,constScalarLstIn),constScalarLstIn);
-        constScalar = Util.if_(true,listAppend(constScalarCrefs,constScalarLstIn),constScalarLstIn);
+        //constScalar = if_(not const,listAppend(constScalarCrefs,constScalarLstIn),constScalarLstIn);
+        constScalar = if true then listAppend(constScalarCrefs,constScalarLstIn) else constScalarLstIn;
 
-        varScalar = Util.if_(not const,listAppend(varCrefs,varScalarLstIn),varScalarLstIn);
+        varScalar = if not const then listAppend(varCrefs,varScalarLstIn) else varScalarLstIn;
         (constCompl,varCompl,constScalar,varScalar) = checkIfOutputIsEvaluatedConstant(rest,constCrefs,constCompl,varCompl,constScalar,varScalar);
       then
         (constCompl,varCompl,constScalar,varScalar);
@@ -856,8 +856,8 @@ algorithm
         // function output is one dimensional
         true = List.isEmpty(scalars);
         const = listMember(cref,constCrefs);
-        constCompl = Util.if_(const,cref::constComplexLstIn,constComplexLstIn);
-        varCompl = Util.if_(not const,cref::varComplexLstIn,varComplexLstIn);
+        constCompl = if const then cref::constComplexLstIn else constComplexLstIn;
+        varCompl = if not const then cref::varComplexLstIn else varComplexLstIn;
         (constCompl,varCompl,constScalar,varScalar) = checkIfOutputIsEvaluatedConstant(rest,constCrefs,constCompl,varCompl,constScalarLstIn,varScalarLstIn);
       then
         (constCompl,varCompl,constScalar,varScalar);
@@ -1107,7 +1107,7 @@ algorithm
         DAE.STMT_ASSIGN(type_=_,exp1=e1,exp=e2,source=_) = stmt;
         b1 = Expression.isConst(e1);
         b2 = Expression.isConst(e2) and b1;
-        //stmt = Util.if_(b1,stmtIn,stmt);
+        //stmt = if_(b1,stmtIn,stmt);
         stmt = stmtIn;
       then
         ((stmt,b1 and b2));
@@ -1160,7 +1160,7 @@ algorithm
     case(x::rest,_,_,_)
       equation
         ((x,b)) = func(x,argIn);
-        xs = Util.if_(b,stmtsFold,x::stmtsFold);
+        xs = if b then stmtsFold else x::stmtsFold;
         xs = traverseStmtsAndUpdate(rest,func,argIn,xs);
       then
         xs;
@@ -1438,8 +1438,8 @@ algorithm
         // remove the variable crefs and add the constant crefs to the replacements
         //print("scalars\n"+&stringDelimitList(List.map(scalars,ComponentReference.printComponentRefStr),"\n")+&"\n");
         //print("expLst\n"+&stringDelimitList(List.map(expLst,ExpressionDump.printExpStr),"\n")+&"\n");
-        scalars = Util.if_(isRec and eqDim,scalars,{});
-        expLst = Util.if_(isRec and eqDim,expLst,{});
+        scalars = if isRec and eqDim then scalars else {};
+        expLst = if isRec and eqDim then expLst else {};
         (_,varScalars) = List.filterOnTrueSync(expLst,Expression.isNotConst,scalars);
         (expLst,constScalars) = List.filterOnTrueSync(expLst,Expression.isConst,scalars);
         //print("variable scalars\n"+&stringDelimitList(List.map(varScalars,ComponentReference.printComponentRefStr),"\n")+&"\n");
@@ -1456,12 +1456,12 @@ algorithm
         //BackendVarTransform.dumpReplacements(repl);
 
         // build the new statements
-        alg = Util.if_(isCon,DAE.STMT_ASSIGN(typ,exp1,exp2,source),List.first(algsIn));
+        alg = if isCon then DAE.STMT_ASSIGN(typ,exp1,exp2,source) else List.first(algsIn);
         tplExpsLHS = Debug.bcallret1(isTpl,Expression.getComplexContents,exp1,{});
         tplExpsRHS = Debug.bcallret1(isTpl,Expression.getComplexContents,exp2,{});
         tplStmts = List.map2(List.intRange(listLength(tplExpsLHS)),makeAssignmentMap,tplExpsLHS,tplExpsRHS);
-        //alg = Util.if_(isTpl,DAE.STMT_TUPLE_ASSIGN(typ,tplExpsLHS,exp2,source),alg);
-        stmts1 = Util.if_(isTpl,tplStmts,{alg});
+        //alg = if_(isTpl,DAE.STMT_TUPLE_ASSIGN(typ,tplExpsLHS,exp2,source),alg);
+        stmts1 = if isTpl then tplStmts else {alg};
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluated assignment to:\n"+&stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+&"\n");
 
         //stmts1 = listAppend({alg},lstIn);
@@ -1503,9 +1503,9 @@ algorithm
         repl = Debug.bcallret3(not predicted and not isEval, BackendVarTransform.removeReplacements, repl,outputs,NONE(),repl);
         //print("REMOVE THE REPLACEMENTS\n"+&stringDelimitList(List.map(outputs,ComponentReference.printComponentRefStr),"\n")+&"\n");
 
-        //stmts1 = Util.if_(simplified and isCon, listAppend(stmts1,addStmts), stmts1);
+        //stmts1 = if_(simplified and isCon, listAppend(stmts1,addStmts), stmts1);
 
-        stmts1 = Util.if_(predicted, stmtsNew,stmts1);
+        stmts1 = if predicted then stmtsNew else stmts1;
         rest = listAppend(addStmts,rest);
 
         //BackendVarTransform.dumpReplacements(repl);
@@ -1540,7 +1540,7 @@ algorithm
         //print(ExpressionDump.printExpStr(exp1));
         //BackendDump.dumpEquationList(addEqs,"the additional equations after");
         isCon = Expression.isConst(exp1);
-        exp1 = Util.if_(isCon,exp1,exp0);
+        exp1 = if isCon then exp1 else exp0;
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"--> is the tuple const? "+&boolString(isCon)+&"\n");
 
         // add the replacements
@@ -1554,14 +1554,14 @@ algorithm
         expLst = DAEUtil.getTupleExps(exp2);
 
         tplExpsLHS = DAEUtil.getTupleExps(exp2);
-        tplExpsLHS = Util.if_(isCon,tplExpsLHS,{});
+        tplExpsLHS = if isCon then tplExpsLHS else {};
         tplExpsRHS = DAEUtil.getTupleExps(exp1);
-        tplExpsRHS = Util.if_(isCon,tplExpsRHS,{});
+        tplExpsRHS = if isCon then tplExpsRHS else {};
         stmtsNew = List.map2(List.intRange(listLength(tplExpsLHS)),makeAssignmentMap,tplExpsLHS,tplExpsRHS); // if the tuple is completely constant
 
         alg = List.first(algsIn);
-        stmtsNew = Util.if_(isCon,stmtsNew,{alg});
-        stmts2 = Util.if_(intEq(size,0),{DAE.STMT_ASSIGN(typ,exp2,exp1,DAE.emptyElementSource)},stmtsNew);
+        stmtsNew = if isCon then stmtsNew else {alg};
+        stmts2 = if intEq(size,0) then {DAE.STMT_ASSIGN(typ,exp2,exp1,DAE.emptyElementSource)} else stmtsNew;
         stmts1 = List.map(addEqs,equationToStatement);
         stmts2 = listAppend(stmts2,stmts1);
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluated Tuple-statements to (incl. addEqs):\n"+&stringDelimitList(List.map(stmts2,DAEDump.ppStatementStr),"\n")+&"\n");
@@ -2656,7 +2656,7 @@ algorithm
   bLst := List.map1(rest,Expression.expEqual,firstExp);
   b2 := List.fold(bLst,boolAnd,true);
   posLst := idx::posIn;
-  posOut := Util.if_(b1 and b2,posLst,posIn);
+  posOut := if b1 and b2 then posLst else posIn;
 end compareConstantExps2;
 
 protected function makeAssignmentMap"mapping functino fo build the statements for a list of lhs and rhs exps.

@@ -1889,7 +1889,7 @@ algorithm
         state = BackendVariable.isStateVar(v);
         (rmax, smax, unremovable) = getAlias3(v, i1, state, replaceable_ and replaceble1, r, iRmax, iSmax, iUnremovable);
         // go deeper
-        neg = Util.if_(neg, not negate, negate);
+        neg = if neg then not negate else negate;
         (rmax, smax, unremovable, const, cont) = getAlias(next, SOME(i1), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, iConst);
         // collect next rows
         next = List.removeOnTrue(r, intEq, iMT[i2]);
@@ -1905,7 +1905,7 @@ algorithm
 
     case (ALIAS(i1=i1, negatedCr1=negatedCr1, i2=i2, negatedCr2=negatedCr2), _, SOME(i), _, _, _, _, _, _, _, _, _, _, _)
       equation
-        i = Util.if_(intEq(i, i1), i2, i1);
+        i = if intEq(i, i1) then i2 else i1;
         neg = boolOr(negatedCr1, negatedCr2);
         // collect next rows
         next = List.removeOnTrue(r, intEq, iMT[i]);
@@ -1915,7 +1915,7 @@ algorithm
         state = BackendVariable.isStateVar(v);
         (rmax, smax, unremovable) = getAlias3(v, i, state, replaceable_ and replaceble1, r, iRmax, iSmax, iUnremovable);
         // go deeper
-        neg = Util.if_(neg, not negate, negate);
+        neg = if neg then not negate else negate;
         (rmax, smax, unremovable, const, cont) = getAlias(next, SOME(i), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, iConst);
        then
          (rmax, smax, unremovable, const, cont);
@@ -1970,7 +1970,7 @@ algorithm
     case(_, _, true, _, _, _, SOME((_, w2)), _)
       equation
         w1 = BackendVariable.varStateSelectPrioAlias(var);
-        tpl = Util.if_(intGt(w1, w2), SOME((i, w1)), iSmax);
+        tpl = if intGt(w1, w2) then SOME((i, w1)) else iSmax;
       then
         (iRmax, tpl, iUnremovable);
     case(_, _, false, _, _, NONE(), _, _)
@@ -1981,7 +1981,7 @@ algorithm
     case(_, _, false, _, _, SOME((_, w2)), _, _)
       equation
         w1 = BackendVariable.calcAliasKey(var);
-        tpl = Util.if_(intLt(w1, w2), SOME((i, w1)), iRmax);
+        tpl = if intLt(w1, w2) then SOME((i, w1)) else iRmax;
       then
         (tpl, iSmax, iUnremovable);
   end match;
@@ -2225,7 +2225,7 @@ algorithm
        ALIAS(i1=i, i2=i2, eqnAttributes=eqnAttributes) = s;
        _= arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars, i);
-       exp = Util.if_(Types.isRealOrSubTypeReal(ComponentReference.crefLastType(cr)), DAE.RCONST(0.0), DAE.ICONST(0));
+       exp = if Types.isRealOrSubTypeReal(ComponentReference.crefLastType(cr)) then DAE.RCONST(0.0) else DAE.ICONST(0);
        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
        (vars, shared, isState, eqnslst) = optMoveVarShared(replaceable_, v, i, eqnAttributes, exp, BackendVariable.addKnVarDAE, iMT, iVars, ishared, iEqnslst);
        constExp = Expression.isConstValue(exp);
@@ -2534,13 +2534,13 @@ algorithm
 
     case (ALIAS(_, negatedCr1, i1, _, negatedCr2, i2, (source, eqAttr), _), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
-        i = Util.if_(intEq(i1, ilast), i2, i1);
+        i = if intEq(i1, ilast) then i2 else i1;
         negated = boolOr(negatedCr2, negatedCr1);
         (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars, i);
         (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
         crexp = Expression.crefExp(cr);
         // negate if necessary
-        globalnegated1 = Util.if_(negated, not globalnegated, globalnegated);
+        globalnegated1 = if negated then not globalnegated else globalnegated;
         exp1 = negateExpression(globalnegated1, exp, exp, " ALIAS_1 ");
         derReplacement = Debug.bcallret1(globalnegated1, negateOptExp, derReplaceState, derReplaceState);
         // replace alias with selected variable if replaceable_
@@ -2558,7 +2558,7 @@ algorithm
     case (PARAMETERALIAS(cr1, negatedCr1, i1, cr2, negatedCr2, i2, (source, _), _), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         // report error
-        cr = Util.if_(intEq(i1, ilast), cr2, cr1);
+        cr = if intEq(i1, ilast) then cr2 else cr1;
         negated = boolOr(negatedCr1, negatedCr2);
         crexp = Expression.crefExp(cr);
         crexp = negateExpression(negated, crexp, crexp, " PARAMETERLAIAS ");
@@ -2681,8 +2681,8 @@ algorithm
         b = intGt(originvalue, setorigin);
         b1 = intEq(originvalue, setorigin);
         startvalues = List.consOnTrue(b1 and fixed, (start, cr), startvalues);
-        startvalues1 = Util.if_(fixed, {(start, cr)}, {});
-        ((setorigin, startvalues)) = Util.if_(b, (originvalue, startvalues1), ((setorigin, startvalues)));
+        startvalues1 = if fixed then {(start, cr)} else {};
+        ((setorigin, startvalues)) = if b then (originvalue, startvalues1) else ((setorigin, startvalues));
       then
         (fixedset, (setorigin, startvalues));
     case (_, _, _, SOME(startexp), _, _, _, _, (setorigin, startvalues))
@@ -2692,7 +2692,7 @@ algorithm
         b = intGt(originvalue, setorigin);
         b1 = intEq(originvalue, setorigin);
         startvalues = List.consOnTrue(b1, (SOME(startexp), cr), startvalues);
-        ((setorigin, startvalues)) = Util.if_(b, (originvalue, {(SOME(startexp), cr)}), ((setorigin, startvalues)));
+        ((setorigin, startvalues)) = if b then (originvalue, {(SOME(startexp), cr)}) else ((setorigin, startvalues));
       then
         (fixedset, (setorigin, startvalues));
     else
@@ -3238,7 +3238,7 @@ algorithm
     case ((e, cr)::zerofreevalues, (_, _, is)::_, _, _, _, _) equation
       s = iStr +& " * candidate: " +& ComponentReference.printComponentRefStr(cr) +& "(" +& iAttributeName +& " = " +& ExpressionDump.printExpStr(e) +& ")\n";
       i = selectMinDepth(ComponentReference.crefDepth(cr), e);
-      favorit = Util.if_(intLt(i, is), {(e, cr, i)}, iFavorit);
+      favorit = if intLt(i, is) then {(e, cr, i)} else iFavorit;
     then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar);
   end matchcontinue;
 end selectFreeValue1;
@@ -3515,7 +3515,7 @@ algorithm
         eqnslst = Debug.bcallret1(b, listReverse, eqnslst, eqnslst);
         eqns = Debug.bcallret1(b, BackendEquation.listEquation, eqnslst, eqns);
         (stateSets, b1, statesetrepl1) = removeAliasVarsStateSets(stateSets, statesetrepl, v, aliasVars, {}, false);
-        syst = Util.if_(b or b1, BackendDAE.EQSYSTEM(v, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), syst);
+        syst = if b or b1 then BackendDAE.EQSYSTEM(v, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind) else syst;
       then
         removeSimpleEquationsShared1(rest, syst::inSysts1, repl, statesetrepl1, aliasVars);
     end match;

@@ -342,7 +342,7 @@ encapsulated package HpcOmMemory
     //print("createCacheMapLevelOptimized0: New cacheLines created: " +& intString(createdCL) +& "\n");
     writtenCL := List.setDifferenceIntN(availableCLold,availableCL,numCL);
     //print("createCacheMapLevelOptimized0: Written CL_0: " +& stringDelimitList(List.map(writtenCL,intString), ",") +& " -- numCL: " +& intString(numCL) +& "\n");
-    writtenCL := listAppend(writtenCL, Util.if_(intLe(numCL+1, numCL+createdCL), List.intRange2(numCL+1, numCL+createdCL), {}));
+    writtenCL := listAppend(writtenCL, if intLe(numCL+1, numCL+createdCL) then List.intRange2(numCL+1, numCL+createdCL) else {});
     //print("createCacheMapLevelOptimized0: Written CL_1: " +& stringDelimitList(List.map(writtenCL,intString), ",") +& "\n");
     //print("======================================\n");
     //printCacheMap(cacheMap);
@@ -1526,7 +1526,7 @@ encapsulated package HpcOmMemory
     list<Integer> dimList, intNumArrayElems;
     Integer dims;
   algorithm
-    dims := Util.if_(intLe(iDims,0), listLength(iNumArrayElems), iDims);
+    dims := if intLe(iDims,0) then listLength(iNumArrayElems) else iDims;
     dimList := List.intRange(dims);
     intNumArrayElems := List.map(iNumArrayElems,stringInt);
     print("getDimElemCount: dims=" +& intString(dims) +& " elems=" +& intString(listLength(iNumArrayElems)) +& "\n");

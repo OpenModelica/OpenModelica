@@ -333,7 +333,7 @@ algorithm
         true = SCode.isElementRedeclare(e);
         true = SCode.isElementReplaceable(e);
         b = FNode.isClassExtends(node);
-        s = Util.if_(b, "rdrpCE:", "rdrpC:");
+        s = if b then "rdrpCE:" else "rdrpC:";
         s = s +& FNode.name(node);
       then
         (GraphML.COLOR_YELLOW, GraphML.HEXAGON(), s);
@@ -343,7 +343,7 @@ algorithm
       equation
         true = SCode.isElementRedeclare(e);
         b = FNode.isClassExtends(node);
-        s = Util.if_(b, "rdCE:", "rdC:");
+        s = if b then "rdCE:" else "rdC:";
         s = s +& FNode.name(node);
       then
         (GraphML.COLOR_YELLOW, GraphML.HEXAGON(), s);
@@ -406,7 +406,7 @@ algorithm
     case (FCore.N(_, _, _, _, nd as FCore.EXP(e = exp)), _)
       equation
         s = Dump.printExpStr(exp);
-        s = FNode.dataStr(nd) +& ":" +& Util.if_(escape, Util.escapeModelicaStringToXmlString(s), Util.stringTrunc(s, 100));
+        s = FNode.dataStr(nd) +& ":" +& (if escape then Util.escapeModelicaStringToXmlString(s) else Util.stringTrunc(s, 100));
       then
         (GraphML.COLOR_PURPLE, GraphML.HEXAGON(), s);
 
@@ -414,7 +414,7 @@ algorithm
     case (FCore.N(name, _, _, _, nd as FCore.DIMS(name = _, dims = dims)), _)
       equation
         s = Dump.printArraydimStr(dims);
-        s = FNode.dataStr(nd) +& ":" +& Util.if_(escape, Util.escapeModelicaStringToXmlString(s), Util.stringTrunc(s, 100));
+        s = FNode.dataStr(nd) +& ":" +& (if escape then Util.escapeModelicaStringToXmlString(s) else Util.stringTrunc(s, 100));
       then
         (GraphML.COLOR_PINK, GraphML.TRIANGLE(), s);
 

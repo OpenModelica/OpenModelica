@@ -442,7 +442,8 @@ function overloadFoldType "It is only possible to fold this overloaded function 
   input DAE.Type inType3;
   output Option<DAE.Type> optType;
 algorithm
-  optType := Util.if_(Types.equivtypesOrRecordSubtypeOf(inType1,inType2) and Types.equivtypesOrRecordSubtypeOf(inType1,inType3), SOME(inType1), NONE());
+  optType := if Types.equivtypesOrRecordSubtypeOf(inType1,inType2) and Types.equivtypesOrRecordSubtypeOf(inType1,inType3)
+    then SOME(inType1) else NONE();
 end overloadFoldType;
 
 function deoverloadBinaryUserdefNoConstructorListLhs
@@ -596,19 +597,20 @@ algorithm
    case (cache, env, op, exp1, exp2, type1, type2, _, _, _, _)
       equation
         // Step 1 already failed (pre-defined types)
-        //scalarType1 = Types.arrayElementType(type1);
-        //scalarType2 = Types.arrayElementType(type2);
-        opStr = "'" +& Dump.opSymbolCompact(op) +& "'";
-        // print("Try overloading for " + opStr + " " + Types.unparseType(inType1) + "," + Types.unparseType(inType2) + "\n");
-        (cache,types1) = getOperatorFuncsOrEmpty(cache,env,{type1},opStr,info,{});
-        (cache,types2) = getOperatorFuncsOrEmpty(cache,env,{type2},opStr,info,{});
-        // Spec: [...] function f in the union of A.op and B.op [...]
-        types = List.union(types1,types2);
-        types = List.select1(types, isOperatorBinaryFunctionOrWarn, info);
         // Apply operation according to the Specifications.See the function.
         bool1 = Types.arrayType(type1);
         bool2 = Types.arrayType(type2);
-        types = Util.if_(bool1 and bool2 and Absyn.opIsElementWise(op), {},types); // TODO: Make faster... Refactor
+        if bool1 and bool2 and Absyn.opIsElementWise(op) then
+          types = {};
+        else
+          opStr = "'" +& Dump.opSymbolCompact(op) +& "'";
+          // print("Try overloading for " + opStr + " " + Types.unparseType(inType1) + "," + Types.unparseType(inType2) + "\n");
+          (cache,types1) = getOperatorFuncsOrEmpty(cache,env,{type1},opStr,info,{});
+          (cache,types2) = getOperatorFuncsOrEmpty(cache,env,{type2},opStr,info,{});
+          // Spec: [...] function f in the union of A.op and B.op [...]
+          types = List.union(types1,types2);
+          types = List.select1(types, isOperatorBinaryFunctionOrWarn, info);
+        end if;
         // Step 2: Look for exactly 1 matching function
         exps = deoverloadBinaryUserdefNoConstructor(types,exp1,exp2,type1,type2,{});
         // Step 3: Look for constructors to call that would have made Step 2 work
@@ -1163,9 +1165,9 @@ algorithm
     case (Absyn.EQUAL(),t1,e1,t2,e2)
       equation
         enum_op = makeEnumOperator(DAE.EQUAL(DAE.T_ENUMERATION_DEFAULT), t1, t2);
-        types = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2),
-                                  {(DAE.EQUAL(DAE.T_METABOXED_DEFAULT),{t1,t2},DAE.T_BOOL_DEFAULT)},
-                                  {});
+        types = if Types.isBoxedType(t1) and Types.isBoxedType(t2)
+                  then {(DAE.EQUAL(DAE.T_METABOXED_DEFAULT),{t1,t2},DAE.T_BOOL_DEFAULT)}
+                  else {};
         types =
           (DAE.EQUAL(DAE.T_INTEGER_DEFAULT),
             {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT)::
@@ -1183,9 +1185,9 @@ algorithm
     case (Absyn.NEQUAL(),t1,e1,t2,e2)
       equation
         enum_op = makeEnumOperator(DAE.NEQUAL(DAE.T_ENUMERATION_DEFAULT), t1, t2);
-        types = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2),
-                                  {(DAE.NEQUAL(DAE.T_METABOXED_DEFAULT),{t1,t2},DAE.T_BOOL_DEFAULT)},
-                                  {});
+        types = if Types.isBoxedType(t1) and Types.isBoxedType(t2)
+                  then {(DAE.NEQUAL(DAE.T_METABOXED_DEFAULT),{t1,t2},DAE.T_BOOL_DEFAULT)}
+                  else {};
         types =
           (DAE.NEQUAL(DAE.T_INTEGER_DEFAULT),
             {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT)::
@@ -1425,8 +1427,7 @@ algorithm
         // get the list of functions in the operator. !! there can be multiple options
         paths = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
         (cache,funcs) = Lookup.lookupFunctionsListInEnv(cache, operEnv, paths, info, {});
-        funcs = List.select2(funcs,
-          Util.if_(stringEq(opName,"'constructor'") or stringEq(opName,"'0'"),checkOperatorFunctionOutput,checkOperatorFunctionOneOutput),
+        funcs = List.select2(funcs, if opName=="'constructor'" or opName=="'0'" then checkOperatorFunctionOutput else checkOperatorFunctionOneOutput,
           scalarType,info);
         (cache,funcs) = getOperatorFuncsOrEmpty(cache,env,rest,opName,info,listAppend(funcs,acc));
       then (cache,funcs);

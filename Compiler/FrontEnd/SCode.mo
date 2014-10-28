@@ -2146,7 +2146,7 @@ algorithm
           forIterators = {Absyn.ITERATOR(iter,NONE(),range)};
           lst_1=findIteratorInStatements(id,algLst_1);
           (bool,lst_2)=Absyn.findIteratorInForIteratorsBounds2(id,forIterators);
-          lst_1=Util.if_(bool, {}, lst_1);
+          lst_1= if bool then {} else lst_1;
           lst=listAppend(lst_1,lst_2);
         then lst;
       case (id, ALG_PARFOR(index = iter, range = range, parforBody = algLst_1))
@@ -2154,7 +2154,7 @@ algorithm
           forIterators = {Absyn.ITERATOR(iter,NONE(),range)};
           lst_1=findIteratorInStatements(id,algLst_1);
           (bool,lst_2)=Absyn.findIteratorInForIteratorsBounds2(id,forIterators);
-          lst_1=Util.if_(bool, {}, lst_1);
+          lst_1=if bool then {} else lst_1;
           lst=listAppend(lst_1,lst_2);
         then lst;
       case (id, ALG_WHILE(boolExpr = e_1, whileBody = algLst_1))

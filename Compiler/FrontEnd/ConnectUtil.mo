@@ -358,7 +358,7 @@ algorithm
     case (false, ClassInf.CONNECTOR(path = class_path, isExpandable = false), _, _, cs, _, _)
       equation
         checkConnectorBalance(inVars, class_path, info);
-        vars = Util.if_(Flags.isSet(Flags.DISABLE_SINGLE_FLOW_EQ), {}, inVars);
+        vars = if Flags.isSet(Flags.DISABLE_SINGLE_FLOW_EQ) then {} else inVars;
         (flows, streams) = getStreamAndFlowVariables(vars, {}, {});
         cs = List.fold2(flows, addFlowVariableFromDAE, inElementSource, inPrefix, cs);
         cs = addStreamFlowAssociations(cs, inPrefix, streams, flows);
@@ -488,9 +488,9 @@ algorithm
     case (DAE.VAR(componentRef = name, binding = bnd) :: rest_vars, _)
       equation
         potential =
-          Util.if_(Util.isSome(bnd),
-            inAccPotential,
-            List.consOnTrue(isExpandable(name), name, inAccPotential));
+          if Util.isSome(bnd)
+            then inAccPotential
+            else List.consOnTrue(isExpandable(name), name, inAccPotential);
         potential = getExpandableVariablesWithNoBinding(rest_vars, potential);
       then
         potential;
@@ -2554,7 +2554,7 @@ algorithm
           (e2 as Connect.CONNECTOR_ELEMENT(name = y, source = y_src)) :: rest_el)
       equation
         order_conn = Config.orderConnections();
-        e1 = Util.if_(order_conn, e1, e2);
+        e1 = if order_conn then e1 else e2;
         DAE.DAE(eq) = generateEquEquations(e1 :: rest_el);
         (x, y) = Util.swap(shouldFlipEquEquation(x, x_src, order_conn), x, y);
         src = DAEUtil.mergeSources(x_src, y_src);
@@ -3520,7 +3520,7 @@ algorithm
       equation
         true = intEq(inPotentialVars, inFlowVars) or
           Config.languageStandardAtMost(Config.MODELICA_2_X());
-        true = Util.if_(intEq(inStreamVars, 0), true, intEq(inFlowVars, 1));
+        true = if intEq(inStreamVars, 0) then true else intEq(inFlowVars, 1);
       then
         true;
 
@@ -3724,9 +3724,9 @@ algorithm
         // error message (or might actually succeed if +std=2.x or 1.x).
         bf = SCode.flowBool(ct);
         bs = SCode.streamBool(ct);
-        fv = Util.if_(bf, 1, 0);
-        sv = Util.if_(bs, 1, 0);
-        pv = Util.if_(bf or bs, 0, 1);
+        fv = if bf then 1 else 0;
+        sv = if bs then 1 else 0;
+        pv = if bf or bs then 0 else 1;
         true = checkConnectorBalance2(pv, fv, sv, class_path, inInfo);
       then
         true;

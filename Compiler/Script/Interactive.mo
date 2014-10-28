@@ -239,7 +239,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.SHOW_STATEMENT);
         true = Config.getRunningTestsuite();
-        print("Evaluating: " +& printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) +& "\n");
+        print("Evaluating: " + printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) + "\n");
       then
         ();
     case (_, _, false)
@@ -254,13 +254,13 @@ algorithm
       equation
         true = Flags.isSet(Flags.SHOW_STATEMENT);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SHOW_STATEMENT);
-        print("Evaluating:   > " +& printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) +& "\n");
+        print("Evaluating:   > " + printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) + "\n");
       then
         ();
     case (_, _, false)
       equation
         true = Flags.isSet(Flags.SHOW_STATEMENT);
-        print("Evaluated:    < " +& realString(System.realtimeTock(ClockIndexes.RT_CLOCK_SHOW_STATEMENT)) +& " / " +& printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) +& "\n");
+        print("Evaluated:    < " + realString(System.realtimeTock(ClockIndexes.RT_CLOCK_SHOW_STATEMENT)) + " / " + printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) + "\n");
       then
         ();
 
@@ -1751,7 +1751,7 @@ algorithm
         matchApiFunction(istmts, "setOption");
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(str, _)), Absyn.BOOL(value = _)} =
           getApiFunctionArgs(istmts);
-        str = "--" +& str;
+        str = "--" + str;
         _ = Flags.readArgs({str});
       then
         ("true",st);
@@ -2049,7 +2049,7 @@ algorithm
         model_path = Absyn.crefToPath(class_);
         true = isClassReadOnly(getPathedClassInProgram(model_path,p));
         str = Absyn.pathString(model_path);
-        str = "Error: class: " +& str +& " is in a read only file!";
+        str = "Error: class: " + str + " is in a read only file!";
       then
         (str, p);
 
@@ -2097,7 +2097,7 @@ algorithm
         model_path = Absyn.crefToPath(class_);
         true = isClassReadOnly(getPathedClassInProgram(model_path,p));
         str = Absyn.pathString(model_path);
-        str = "Error: class: " +& str +& " is in a read only file!";
+        str = "Error: class: " + str + " is in a read only file!";
       then
         (str, p);
 
@@ -5581,7 +5581,7 @@ algorithm
         exts_1 = List.map1(exts, makeExtendsFullyQualified, env);
         {Absyn.EXTENDS(_,extmod,_)} = List.select1(exts_1, extendsElementspecNamed, name);
         finalPrefix = isModifierfinal(extmod, Absyn.crefToPath(subident));
-        res = Util.if_(finalPrefix,"true","false");
+        res = boolString(finalPrefix);
       then
         res;
     case (_,_,_,_) then "Error";
@@ -5686,7 +5686,7 @@ algorithm
         exts_1 = List.map1(exts, makeExtendsFullyQualified, env);
         {Absyn.EXTENDS(_,extmod,_)} = List.select1(exts_1, extendsElementspecNamed, name);
         res = getModificationNames(extmod);
-        res1 = Util.if_(b,insertQuotesToList(res),res);
+        res1 = if b then insertQuotesToList(res) else res;
         res_1 = stringDelimitList(res1, ", ");
         res_2 = stringAppendList({"{",res_1,"}"});
       then
@@ -6579,7 +6579,7 @@ algorithm
         cdef = getPathedClassInProgram(p_class, p);
         (cdef_1, b) = setVariableBindingInClass(cdef, varname, exp);
         newp = updateProgram(Absyn.PROGRAM({cdef_1},within_,ts), p);
-        str = Util.if_(b, "Ok", "Error: component with name: " +& varname +& " in class: " +& Absyn.pathString(p_class) +& " not found.");
+        str = if b then "Ok" else ("Error: component with name: " + varname + " in class: " + Absyn.pathString(p_class) + " not found.");
       then
         (newp,str);
 
@@ -6589,7 +6589,7 @@ algorithm
         Absyn.IDENT(_) = Absyn.crefToPath(name);
         _ = buildWithin(p_class);
         failure(_ = getPathedClassInProgram(p_class, p));
-        str = "Error: class: " +& Absyn.pathString(p_class) +& " not found.";
+        str = "Error: class: " + Absyn.pathString(p_class) + " not found.";
       then
         (p,str);
 
@@ -6980,8 +6980,7 @@ algorithm
         path_1 = Absyn.joinPaths(pa, Absyn.IDENT(id));
         cenv = getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
         (class_1,changed) = renameClassInClass(class_, old_class_path, new_class_path, cenv);
-        path_str_1 = Absyn.pathString(path_1);
-        path_str = Util.if_(changed, path_str_1, "");
+        path_str = if changed then Absyn.pathString(path_1) else "";
       then
         ((class_1,SOME(pa),
           (old_class_path,new_class_path,p,(path_str :: path_str_lst),
@@ -6992,8 +6991,7 @@ algorithm
         path_1 = Absyn.IDENT(id);
         cenv = getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
         (class_1,changed) = renameClassInClass(class_, old_class_path, new_class_path, cenv);
-        path_str_1 = Absyn.pathString(path_1);
-        path_str = Util.if_(changed, path_str_1, "");
+        path_str = if changed then Absyn.pathString(path_1) else "";
       then
         ((class_1,NONE(),
           (old_class_path,new_class_path,p,(path_str :: path_str_lst),
@@ -7604,8 +7602,8 @@ algorithm
         = getPathedClassInProgram(path, p);
         dim_str = getClassDimensions(cdef);
         strBaseClassPath = Absyn.pathString(baseClassPath);
-        strFlow = Util.if_(flowPrefix, "\"flow\"", "\"\"");
-        strStream = Util.if_(streamPrefix, "\"stream\"", "\"\"");
+        strFlow = if flowPrefix then "\"flow\"" else "\"\"";
+        strStream = if streamPrefix then "\"stream\"" else "\"\"";
         strVariability = attrVariabilityStr(attr);
         strDirection = attrDirectionStr(attr);
         str = stringAppendList({"{",strBaseClassPath, ",", strFlow,",", strStream, ",", strVariability, ",", strDirection, ",", dim_str,"}"});
@@ -7640,15 +7638,15 @@ algorithm
         path = Absyn.crefToPath(cr);
         cls = getPathedClassInProgram(path, p);
         Absyn.EXTERNAL(Absyn.EXTERNALDECL(funcName, lang, output_, args, ann1), ann2) = Absyn.getExternalDecl(cls);
-        strLanguage  = "\"" +& Util.getOptionOrDefault(lang, "") +& "\"";
-        strOutput  = "\"" +& Absyn.printComponentRefStr(
+        strLanguage  = "\"" + Util.getOptionOrDefault(lang, "") + "\"";
+        strOutput  = "\"" + Absyn.printComponentRefStr(
                                 Util.getOptionOrDefault(
                                   output_,
-                                  Absyn.CREF_IDENT("", {}))) +& "\"";
-        strFuncName  = "\"" +& Util.getOptionOrDefault(funcName, "") +& "\"";
-        strArguments = "\"" +& Dump.printExpLstStr(args) +& "\"";
-        strAnn1 = "\"" +& Dump.unparseAnnotationOption(ann1) +& "\"";
-        strAnn2 = "\"" +& Dump.unparseAnnotationOption(ann2) +& "\"";
+                                  Absyn.CREF_IDENT("", {}))) + "\"";
+        strFuncName  = "\"" + Util.getOptionOrDefault(funcName, "") + "\"";
+        strArguments = "\"" + Dump.printExpLstStr(args) + "\"";
+        strAnn1 = "\"" + Dump.unparseAnnotationOption(ann1) + "\"";
+        strAnn2 = "\"" + Dump.unparseAnnotationOption(ann2) + "\"";
         str = stringAppendList({"{", strLanguage, ",", strOutput, ",", strFuncName, ",", strArguments, ",", strAnn1, ",", strAnn2, "}"});
       then
         str;
@@ -7668,8 +7666,8 @@ algorithm
   str := matchcontinue(cdef)
   local Absyn.ArrayDim ad;
     case(Absyn.DERIVED(typeSpec=Absyn.TPATH(arrayDim=SOME(ad)))) equation
-      str = "{"+& stringDelimitList(List.map(ad,Dump.printSubscriptStr),",")
-      +& "}";
+      str = "{"+ stringDelimitList(List.map(ad,Dump.printSubscriptStr),",")
+      + "}";
     then str;
     case(_) then "{}";
   end matchcontinue;
@@ -8250,40 +8248,32 @@ algorithm
         modelpath = Absyn.crefToPath(model_);
         Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(modelpath, p);
         public_elementitem_list = getPublicList(parts);
-        public_res = isReplaceableInElements(public_elementitem_list, str);
-        res = Util.if_(public_res, true, false);
-      then
-        res;
+        res = isReplaceableInElements(public_elementitem_list, str);
+      then res;
     /* a class with parts - protected elements */
     case (model_,str,p)
       equation
         modelpath = Absyn.crefToPath(model_);
         Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(modelpath, p);
         protected_elementitem_list = getProtectedList(parts);
-        protected_res = isReplaceableInElements(protected_elementitem_list, str);
-        res = Util.if_(protected_res, true, false);
-      then
-        res;
+        res = isReplaceableInElements(protected_elementitem_list, str);
+      then res;
     /* an extended class with parts: model extends M end M; public elements */
     case (model_,str,p)
       equation
         modelpath = Absyn.crefToPath(model_);
         Absyn.CLASS(body=Absyn.CLASS_EXTENDS(parts=parts)) = getPathedClassInProgram(modelpath, p);
         public_elementitem_list = getPublicList(parts);
-        public_res = isReplaceableInElements(public_elementitem_list, str);
-        res = Util.if_(public_res, true, false);
-      then
-        res;
+        res = isReplaceableInElements(public_elementitem_list, str);
+      then res;
     /* an extended class with parts: model extends M end M; protected elements */
     case (model_,str,p)
       equation
         modelpath = Absyn.crefToPath(model_);
         Absyn.CLASS(body=Absyn.CLASS_EXTENDS(parts=parts)) = getPathedClassInProgram(modelpath, p);
         protected_elementitem_list = getProtectedList(parts);
-        protected_res = isReplaceableInElements(protected_elementitem_list, str);
-        res = Util.if_(protected_res, true, false);
-      then
-        res;
+        res = isReplaceableInElements(protected_elementitem_list, str);
+      then res;
     else false;
   end matchcontinue;
 end isReplaceable;
@@ -8335,19 +8325,15 @@ algorithm
       equation
         Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(path, p);
         protected_elementitem_list = getProtectedList(parts);
-        protected_res = isProtectedClassInElements(protected_elementitem_list, str);
-        res = Util.if_(protected_res, true, false);
-      then
-        res;
+        res = isProtectedClassInElements(protected_elementitem_list, str);
+      then res;
     /* an extended class with parts: model extends M end M; protected elements */
     case (_,str,p)
       equation
         Absyn.CLASS(body=Absyn.CLASS_EXTENDS(parts=parts)) = getPathedClassInProgram(path, p);
         protected_elementitem_list = getProtectedList(parts);
-        protected_res = isProtectedClassInElements(protected_elementitem_list, str);
-        res = Util.if_(protected_res, true, false);
-      then
-        res;
+        res = isProtectedClassInElements(protected_elementitem_list, str);
+      then res;
     case (_,_,_) then false;
   end matchcontinue;
 end isProtectedClass;
@@ -8991,7 +8977,7 @@ algorithm
 
     case (path,inmodel,p as Absyn.PROGRAM(globalBuildTimes=ts))
       equation
-        //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 1 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));
+        //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 1 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
         // remove self reference, otherwise we go into an infinite loop!
         path = InstUtil.removeSelfReference(Absyn.pathLastIdent(inmodel),path);
         inmodeldef = getPathedClassInProgram(inmodel, p) "Look first inside \'inmodel\'" ;
@@ -9002,7 +8988,7 @@ algorithm
 
     case (path,inmodel,p) /* Then look inside next level */
       equation
-        //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 2 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));
+        //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 2 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
         innewpath = Absyn.stripLast(inmodel);
         (cdef,respath) = lookupClassdef(path, innewpath, p);
       then
@@ -9010,7 +8996,7 @@ algorithm
 
     case (path,_,p)
       equation
-        //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 3 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));
+        //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 3 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
         cdef = getPathedClassInProgram(path, p) "Finally look in top level" ;
       then
         (cdef,path);
@@ -9035,7 +9021,7 @@ algorithm
 
     case (path,inmodel,_)
       equation
-        //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 8 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));
+        //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 8 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
         s1 = Absyn.pathString(path);
         s2 = Absyn.pathString(inmodel);
         Error.addMessage(Error.LOOKUP_ERROR, {s1,s2});
@@ -9813,14 +9799,14 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p);
         (s, SOME(Absyn.ANNOTATION(elArgs))) = getNthInheritedClassAnnotationOpt(modelpath, n, cdef, p);
         annStr = getMapAnnotationStr(elArgs,inMapType, cdef, p, modelpath);
-        s = "{" +& s +& ", " +& annStr +& "}";
+        s = "{" + s + ", " + annStr + "}";
       then
         s;
     case (modelpath,n,p,_)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
         (s, NONE()) = getNthInheritedClassAnnotationOpt(modelpath, n, cdef, p);
-        s = "{" +& s +& ",{}}";
+        s = "{" + s + ",{}}";
       then
         s;
     case (_,_,_,_) then "Error";
@@ -12411,7 +12397,7 @@ algorithm
     case (Absyn.MODIFICATION(path = Absyn.IDENT(name = name),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::xs)
       equation
-          s =  name +& "=" +& Dump.printExpStr(exp);
+          s =  name + "=" + Dump.printExpStr(exp);
           ss = getExperimentAnnotationString2(xs);
       then s::ss;
 
@@ -13509,9 +13495,9 @@ algorithm
         graphicProgramSCode = SCodeUtil.translateAbsyn2SCode(graphicProgram);
 
         // debugging
-        // print("Get annotation via full instantiation of: " +& Absyn.pathString(inModelPath) +& "\n");
-        // print("Annotation to get: (" +& stringDelimitList(List.map(inAnnotationMod, Dump.unparseElementArgStr), ", ") +& ")\n");
-        // print("Annotation class: " +& inAnnotationClass +& "\n");
+        // print("Get annotation via full instantiation of: " + Absyn.pathString(inModelPath) + "\n");
+        // print("Annotation to get: (" + stringDelimitList(List.map(inAnnotationMod, Dump.unparseElementArgStr), ", ") + ")\n");
+        // print("Annotation class: " + inAnnotationClass + "\n");
 
         // fully instantiate the class that contains the annotation!
         // set check model on so that partial classes can be instantiated!
@@ -13530,9 +13516,9 @@ algorithm
       equation
         true = Absyn.onlyLiteralsInAnnotationMod(inAnnotationMod);
         // debugging
-        // print("Get annotation via small instantiation of: " +& Absyn.pathString(inModelPath) +& "\n");
-        // print("Annotation to get: (" +& stringDelimitList(List.map(inAnnotationMod, Dump.unparseElementArgStr), ", ") +& ")\n");
-        // print("Annotation class: " +& inAnnotationClass +& "\n");
+        // print("Get annotation via small instantiation of: " + Absyn.pathString(inModelPath) + "\n");
+        // print("Annotation to get: (" + stringDelimitList(List.map(inAnnotationMod, Dump.unparseElementArgStr), ", ") + ")\n");
+        // print("Annotation class: " + inAnnotationClass + "\n");
 
         graphicProgram = modelicaAnnotationProgram(Config.getAnnotationVersion());
         graphicProgramSCode = SCodeUtil.translateAbsyn2SCode(graphicProgram);
@@ -13598,7 +13584,7 @@ algorithm
 
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
 
-        // print("Env: " +& FGraph.printGraphStr(env) +& "\n");
+        // print("Env: " + FGraph.printGraphStr(env) + "\n");
 
         (_,graphicexp2,prop) = StaticScript.elabGraphicsExp(cache, env, graphicexp, false, Prefix.NOPRE(), Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add Absyn.Info to this function's input
         (cache, graphicexp2, prop) = Ceval.cevalIfConstant(cache, env, graphicexp2, prop, false, Absyn.dummyInfo);
@@ -13653,7 +13639,7 @@ algorithm
             InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
 
-        // print("Env: " +& FGraph.printGraphStr(env) +& "\n");
+        // print("Env: " + FGraph.printGraphStr(env) + "\n");
 
         (_,graphicexp2,_) = StaticScript.elabGraphicsExp(cache, env, graphicexp, false,Prefix.NOPRE(), Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add Absyn.Info to this function's input
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
@@ -13713,7 +13699,7 @@ algorithm
     // if we fail, just return the annotation as it is
     case (_, _, _, _)
       equation
-        str = Dump.unparseAnnotation(inAnnotation) +& " ";
+        str = Dump.unparseAnnotation(inAnnotation) + " ";
       then
         str;
 
@@ -13721,7 +13707,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprintln(Flags.FAILTRACE,
-          "- Interactive.getAnnotationString failed on annotation: " +&
+          "- Interactive.getAnnotationString failed on annotation: " +
           Dump.unparseAnnotation(inAnnotation));
       then
         fail();
@@ -14226,20 +14212,20 @@ algorithm
         tpname = Absyn.pathLastIdent(p);
         p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
         typename = Absyn.pathString(p_1);
-        typename = Util.if_(b,stringAppendList({"\"",typename,"\""}),typename);
+        typename = if b then stringAppendList({"\"",typename,"\""}) else typename;
         names = getComponentitemsName(lst,b);
         dims = getComponentitemsDimension(lst);
         strLst = prefixTypename(typename, names);
         finalPrefix = boolString(f);
-        finalPrefix = Util.if_(b,stringAppendList({"\"",finalPrefix,"\""}),finalPrefix);
+        finalPrefix = if b then stringAppendList({"\"",finalPrefix,"\""}) else finalPrefix;
         r_1 = keywordReplaceable(r);
         repl = boolString(r_1);
-        repl = Util.if_(b,stringAppendList({"\"",repl,"\""}),repl);
+        repl = if b then stringAppendList({"\"",repl,"\""}) else repl;
         inout_str = innerOuterStr(inout);
         flowPrefixstr = attrFlowStr(attr);
-        flowPrefixstr = Util.if_(b,stringAppendList({"\"",flowPrefixstr,"\""}),flowPrefixstr);
+        flowPrefixstr = if b then stringAppendList({"\"",flowPrefixstr,"\""}) else flowPrefixstr;
         streamPrefixstr = attrStreamStr(attr);
-        streamPrefixstr = Util.if_(b,stringAppendList({"\"",streamPrefixstr,"\""}),streamPrefixstr);
+        streamPrefixstr = if b then stringAppendList({"\"",streamPrefixstr,"\""}) else streamPrefixstr;
         // parallelism_str = attrParallelismStr(attr);
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
@@ -14255,20 +14241,20 @@ algorithm
           b,access,_)
       equation
         typename = Absyn.pathString(p);
-        typename = Util.if_(b,stringAppendList({"\"",typename,"\""}),typename);
+        typename = if b then stringAppendList({"\"",typename,"\""}) else typename;
         names = getComponentitemsName(lst,b);
         dims = getComponentitemsDimension(lst);
         strLst = prefixTypename(typename, names);
         finalPrefix = boolString(f);
-        finalPrefix = Util.if_(b,stringAppendList({"\"",finalPrefix,"\""}),finalPrefix);
+        finalPrefix = if b then stringAppendList({"\"",finalPrefix,"\""}) else finalPrefix;
         r_1 = keywordReplaceable(r);
         repl = boolString(r_1);
-        repl = Util.if_(b,stringAppendList({"\"",repl,"\""}),repl);
+        repl = if b then stringAppendList({"\"",repl,"\""}) else repl;
         inout_str = innerOuterStr(inout);
         flowPrefixstr = attrFlowStr(attr);
-        flowPrefixstr = Util.if_(b,stringAppendList({"\"",flowPrefixstr,"\""}),flowPrefixstr);
+        flowPrefixstr = if b then stringAppendList({"\"",flowPrefixstr,"\""}) else flowPrefixstr;
         streamPrefixstr = attrStreamStr(attr);
-        streamPrefixstr = Util.if_(b,stringAppendList({"\"",streamPrefixstr,"\""}),streamPrefixstr);
+        streamPrefixstr = if b then stringAppendList({"\"",streamPrefixstr,"\""}) else streamPrefixstr;
         //parallelism_str = attrParallelismStr(attr);
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
@@ -14604,7 +14590,7 @@ algorithm
       equation
         res = suffixInfos(rest, dims,typeAd,suffix,b);
         s1 = Util.stringDelimitListNonEmptyElts({dim,typeAd},",");
-        str_1 = Util.if_(b,stringAppendList({str,", ",suffix,",\"{",s1,"}\""}),stringAppendList({str,", ",suffix,",{",s1,"}"}));
+        str_1 = if b then stringAppendList({str,", ",suffix,",\"{",s1,"}\""}) else stringAppendList({str,", ",suffix,",{",s1,"}"});
       then
         (str_1 :: res);
   end match;
@@ -14648,13 +14634,13 @@ algorithm
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = SOME(Absyn.COMMENT(_,SOME(s2)))) :: (c2 :: rest)),b)
       equation
         lst = getComponentitemsName((c2 :: rest),b);
-        str = Util.if_(b,stringAppendList({"\"", c1, "\"", ",", "\"", s2, "\""}),stringAppendList({c1, ",", "\"", s2, "\""}));
+        str = if b then stringAppendList({"\"", c1, "\"", ",", "\"", s2, "\""}) else stringAppendList({c1, ",", "\"", s2, "\""});
       then
         (str :: lst);
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = NONE()) :: (c2 :: rest)),b)
       equation
         lst = getComponentitemsName((c2 :: rest),b);
-        str = Util.if_(b,stringAppendList({"\"", c1, "\"", ",", "\"\""}),stringAppendList({c1, ",", "\"\""}));
+        str = if b then stringAppendList({"\"", c1, "\"", ",", "\"\""}) else stringAppendList({c1, ",", "\"\""});
       then
         (str :: lst);
     case ((_ :: rest),b)
@@ -14664,12 +14650,12 @@ algorithm
         res;
     case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = SOME(Absyn.COMMENT(_,SOME(s2))))},b)
       equation
-        str = Util.if_(b,stringAppendList({"\"", c1, "\"", ",", "\"", s2, "\""}),stringAppendList({c1, ",", "\"", s2, "\""}));
+        str = if b then stringAppendList({"\"", c1, "\"", ",", "\"", s2, "\""}) else stringAppendList({c1, ",", "\"", s2, "\""});
       then
         {str};
     case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1))},b)
       equation
-        str = Util.if_(b,stringAppendList({"\"", c1, "\"", ",", "\"\""}),stringAppendList({c1, ",", "\"\""}));
+        str = if b then stringAppendList({"\"", c1, "\"", ",", "\"\""}) else stringAppendList({c1, ",", "\"\""});
       then
         {str};
     case ({_},_) then {};
@@ -15874,7 +15860,7 @@ algorithm
 
     case (_,_,Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(_,_))))
       equation
-        // print("Looking up -> lookupClassdef(" +& Absyn.pathString(path) +& ", " +& Absyn.pathString(modelpath) +& ")\n");
+        // print("Looking up -> lookupClassdef(" + Absyn.pathString(path) + ", " + Absyn.pathString(modelpath) + ")\n");
         /* adrpo 2009-10-27: do not dive into derived classes!
         (cdef,newpath) = lookupClassdef(path, modelpath, p);
         res = getClassesInClass(newpath, p, cdef);
@@ -17353,7 +17339,7 @@ algorithm
       equation
         strList1 = getLocalVariablesInAlgorithmsItems(algs, b, env);
         strList = getLocalVariablesInClassParts(xs, b, env);
-        strList2 = Util.if_(strList ==& "", strList1, stringAppendList({strList1, ",", strList}));
+        strList2 = if strList == "" then strList1 else stringAppendList({strList1, ",", strList});
       then
         strList2;
     case ((_ :: xs), b, env)
@@ -17458,7 +17444,7 @@ algorithm
       String indexArg, pathArg;
     case (Absyn.CLASS(name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_PACKAGE()),_)
       equation
-        ident = "(package " +& ident;
+        ident = "(package " + ident;
         strs = getDefinitionParts(parts, addFunctions);
         strs = ident :: strs;
       then stringDelimitList(strs, "\n");
@@ -17504,13 +17490,13 @@ algorithm
     case (Absyn.CLASS(name = ident, body = Absyn.DERIVED(typeSpec = ts, attributes = attr)),_)
       equation
         numDim = getDefinitionDimensions(ts,attr);
-        tyStr = Util.if_(numDim == 0, "", "[" +& intString(numDim)) +& getDefinitionTypeSpecPathString(ts);
+        tyStr = (if numDim == 0 then "" else "[" + intString(numDim)) + getDefinitionTypeSpecPathString(ts);
         strs = {"(type", ident, tyStr, ")"};
       then stringDelimitList(strs, " ");
     // Do enumerations really work properly in OMC?
     //case Absyn.CLASS(name = ident, body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(el))) equation
     //  enumList = List.map(el, getEnumerationLiterals);
-    //then "enumeration " +& ident +& "(" +& stringDelimitList(enumList, ",") +& ")";
+    //then "enumeration " + ident + "(" + stringDelimitList(enumList, ",") + ")";
     case (_,_) then "";
   end matchcontinue;
 end getDefinitionsClass;
@@ -17523,7 +17509,7 @@ algorithm
   local
     String ident;
     case Absyn.CLASS(name = ident, body = Absyn.DERIVED(typeSpec = Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE())), restriction = Absyn.R_TYPE())
-    then "(replaceable type " +& ident +& ")";
+    then "(replaceable type " + ident + ")";
   end match;
 end getDefinitionsReplaceableClass;
 
@@ -17545,7 +17531,7 @@ protected function getDefinitionPathString
   output String out;
 algorithm
   out := match (path)
-    // Doesn't work because we only know the AST after parsing... case (Absyn.FULLYQUALIFIED(path)) then "#" +& Absyn.pathString(path);
+    // Doesn't work because we only know the AST after parsing... case (Absyn.FULLYQUALIFIED(path)) then "#" + Absyn.pathString(path);
     // Thus, scope/lookup is done by the application recieving this information
     case _ then Absyn.pathString(path);
   end match;
@@ -17563,7 +17549,7 @@ algorithm s := matchcontinue(tp)
   then getDefinitionPathString(p);
   case(Absyn.TCOMPLEX(path = p, typeSpecs = tspecs)) equation
     tspecsStr = List.map(tspecs, getDefinitionTypeSpecPathString);
-  then getDefinitionPathString(p) +& "<" +& stringDelimitList(tspecsStr,",") +& ">";
+  then getDefinitionPathString(p) + "<" + stringDelimitList(tspecsStr,",") + ">";
   case(Absyn.TPATH(path = p)) then getDefinitionPathString(p);
 end matchcontinue;
 end getDefinitionTypeSpecPathString;
@@ -17641,7 +17627,7 @@ algorithm
       then listAppend(res,res2);
     case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path)))::rest,false,true)
       equation
-        typeStr = "(extends " +& getDefinitionPathString(path) +& ")";
+        typeStr = "(extends " + getDefinitionPathString(path) + ")";
         res = getDefinitionContent(rest,addFunctions,isPublic);
       then typeStr :: res;
     case (_::rest,_,_)
@@ -17682,8 +17668,8 @@ algorithm
     case (_,_,_,{}) then {};
     case (_,_,_,Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = ident, arrayDim = l))::rest) equation
       sumDim = numDim + listLength(l);
-      ident = (dirStr +& Util.if_(numDim == 0, "", "[" +& intString(sumDim)) +& typeStr +& " " +& ident);
-      ident = "(" +& ident +& ")";
+      ident = dirStr + (if numDim == 0 then "" else ("[" + intString(sumDim))) + typeStr + " " + ident;
+      ident = "(" + ident + ")";
       res = getDefinitionComponents(typeStr,dirStr,numDim,rest);
     then ident :: res;
     case (_,_,_,_::rest) then getDefinitionComponents(typeStr,dirStr,numDim,rest);
@@ -17757,7 +17743,7 @@ algorithm
 //        str = Dump.unparseTypeSpec(typeSpec);
         names = getComponentitemsName(lst,false);
         str = stringDelimitList(names, ", ");
-        //print("names: " +& str +& "\n");
+        //print("names: " + str + "\n");
       then
         str;
   end match;
@@ -17819,7 +17805,7 @@ algorithm
 //        Absyn.CLASSDEF(class_ = cl) = elementSpec;
         //comps = getComponentsInClass(cl);
         desc = getElementName(elementSpec);
-        desc = desc +& ":" +& getElementTypeName(elementSpec);//getElementInfo(elitem);
+        desc = desc + ":" + getElementTypeName(elementSpec);//getElementInfo(elitem);
       then
         desc;
   end match;
@@ -18282,7 +18268,7 @@ protected
   list<GlobalScript.CompiledCFunction> compiledFunctions;
 algorithm
   compiledFunctions := getCompiledFunctions(inSymTab);
-  compiledFunctionsStr := "Functions:\n\t" +& stringDelimitList(List.map(compiledFunctions, dumpCompiledFunction), "\n\t");
+  compiledFunctionsStr := "Functions:\n\t" + stringDelimitList(List.map(compiledFunctions, dumpCompiledFunction), "\n\t");
 end dumpCompiledFunctions;
 
 public function dumpCompiledFunction
@@ -18297,11 +18283,11 @@ protected
   String loadedFromFile "the file we loaded this function from";
 algorithm
   GlobalScript.CFunction(path, retType, funcHandle, buildTime, loadedFromFile) := inCompiledFunction;
-  compiledFunctionStr := Absyn.pathString(path) +&
-                         " ty[" +& Types.printTypeStr(retType) +&
-                         "] hndl[" +& intString(funcHandle) +&
-                         "] build[" +& realString(buildTime) +&
-                         "] file[" +& loadedFromFile +& "]";
+  compiledFunctionStr := Absyn.pathString(path) +
+                         " ty[" + Types.printTypeStr(retType) +
+                         "] hndl[" + intString(funcHandle) +
+                         "] build[" + realString(buildTime) +
+                         "] file[" + loadedFromFile + "]";
 end dumpCompiledFunction;
 
 public function getAllInheritedClasses

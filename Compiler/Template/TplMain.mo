@@ -43,7 +43,6 @@ and contains some tests for basic parts of Susan.
 
 protected import Debug;
 protected import Flags;
-protected import Util;
 protected import Print;
 protected import System;
 protected import Error;
@@ -77,8 +76,7 @@ algorithm
         Print.clearBuf();
         translateFile(file);
         strErrBuf = Print.getErrorString();
-        strErrBuf = Util.if_(strErrBuf ==& "","",
-          "### Error Buffer ###\n"+&strErrBuf+&"\n### End of Error Buffer ###\n");
+        strErrBuf = if strErrBuf == "" then "" else ("### Error Buffer ###\n"+strErrBuf+"\n### End of Error Buffer ###\n");
         print(strErrBuf);
       then ();
 
@@ -101,10 +99,10 @@ algorithm
 
     case ( file )
       equation
-        print("\nProcessing file '" +& file +& "'\n");
+        print("\nProcessing file '" + file + "'\n");
         nErrors = Error.getNumErrorMessages();
 
-        destFile = System.stringReplace(file +& "*", ".tpl*", ".mo");
+        destFile = System.stringReplace(file + "*", ".tpl*", ".mo");
         false = stringEq(file, destFile);
 
         //print(destFile);
@@ -113,15 +111,15 @@ algorithm
         mmPckg = TplAbsyn.transformAST(tplPackage);
         txt = emptyTxt;
         txt = TplCodegen.mmPackage(txt, mmPckg);
-        //res = "/* generated on " +& System.getCurrentTimeStr() +& "*/\n" +& Tpl.textString(txt);
+        //res = "/* generated on " + System.getCurrentTimeStr() + "*/\n" + Tpl.textString(txt);
         res = Tpl.textString(txt);
         wasError = nErrors < Error.getNumErrorMessages();
         //prevent overriding the previously generated .mo without errors
-        destFile = destFile +& Util.if_(wasError, ".err.mo", "");
-        print("\nWriting result to file '" +& destFile +& "'\n");
+        destFile = destFile + (if wasError then ".err.mo" else "");
+        print("\nWriting result to file '" + destFile + "'\n");
 
         System.writeFile(destFile, res);
-        //print("\nReamining characters:\n" +& stringCharListString(chars) +& "\n<<");
+        //print("\nReamining characters:\n" + stringCharListString(chars) + "\n<<");
         //Error.addMessage(Error.INTERNAL_ERROR, {"Pokus"});
         //fail when a new error
         false = wasError;
@@ -129,7 +127,7 @@ algorithm
 
     case (file)
       equation
-        print("\n### translation of file '"+& file +& "' failed!  ###\n" );
+        print("\n### translation of file '"+ file + "' failed!  ###\n" );
         print("### Error Buffer ###\n");
         print(Print.getErrorString());
         print("\n### End of Error Buffer ###\n");
@@ -164,15 +162,15 @@ algorithm
     case ( strRet, strShouldBe, printResult, printErrBuf, strLabel, notPassedCnt)
       equation
         true = stringEq(strRet, strShouldBe);
-        print("\n**************************************************\n" +& strLabel);
+        print("\n**************************************************\n" + strLabel);
 
-        strRes = Util.if_(printResult, "  returned <<\n" +& strRet +& ">>\n", "\n result not shown \n");
+        strRes = if printResult then ("  returned <<\n" + strRet + ">>\n") else "\n result not shown \n";
         print(strRes);
 
         strErrBuf = Print.getErrorString();
-        strErrBuf = Util.if_(strErrBuf ==& "","",
-          Util.if_(printErrBuf, "### Error Buffer ###\n"+&strErrBuf+&"\n### End of Error Buffer ###\n",
-                                "### Error Buffer is NOT empty - not shown ###\n"));
+        strErrBuf = if strErrBuf == "" then "" else
+          (if printErrBuf then ("### Error Buffer ###\n"+strErrBuf+"\n### End of Error Buffer ###\n") else
+                                "### Error Buffer is NOT empty - not shown ###\n");
         print(strErrBuf);
         print("*** OK ***\n");
         Print.clearErrorBuf();
@@ -183,17 +181,17 @@ algorithm
       equation
         false = stringEq(strRet, strShouldBe);
         print("\n##################################################\n"
-                +& strLabel );
+                + strLabel );
 
-        strRes = Util.if_(printResult,
-           "  returned <<\n" +& strRet +& ">>\nshould be <<\n" +& strShouldBe +& ">>\n"
-          ,"\n result not shown \n");
+        strRes = if printResult then
+           ("  returned <<\n" + strRet + ">>\nshould be <<\n" + strShouldBe + ">>\n")
+          else "\n result not shown \n";
         print(strRes);
 
         strErrBuf = Print.getErrorString();
-        strErrBuf = Util.if_(strErrBuf ==& "","",
-          Util.if_(printErrBuf, "### Error Buffer ###\n"+&strErrBuf+&"\n### End of Error Buffer ###\n",
-                                "### Error Buffer is NOT empty - not shown ###\n"));
+        strErrBuf = if strErrBuf == "" then "" else
+          (if printErrBuf then ("### Error Buffer ###\n"+strErrBuf+"\n### End of Error Buffer ###\n") else
+                                "### Error Buffer is NOT empty - not shown ###\n");
         print(strErrBuf);
 
         print("### NOT Passed ###\n");
@@ -227,23 +225,23 @@ algorithm
 
     case ( file, printRes, printErrBuf, notPassedCnt)
       equation
-        System.writeFile(file +& ".mo", "Test failed.");
-        translateFile(file +& ".tpl");
-        res = System.stringReplace(System.readFile(file +& ".mo"), intStringChar(13), "");
-        resToBe = System.stringReplace(System.readFile(file +& "__testShouldBe.mo"), intStringChar(13), "");
+        System.writeFile(file + ".mo", "Test failed.");
+        translateFile(file + ".tpl");
+        res = System.stringReplace(System.readFile(file + ".mo"), intStringChar(13), "");
+        resToBe = System.stringReplace(System.readFile(file + "__testShouldBe.mo"), intStringChar(13), "");
         notPassedCnt = testStringEquality(res,resToBe, printRes, printErrBuf,
-                       "translateFile "+& file +& ".tpl", notPassedCnt);
+                       "translateFile "+ file + ".tpl", notPassedCnt);
       then notPassedCnt;
 
     //failed
     case ( file, printRes, printErrBuf, notPassedCnt)
       equation
-        System.writeFile(file +& ".mo", "Test failed.");
-        //failure( translateFile(file +& ".tpl") );
-        res = System.stringReplace(System.readFile(file +& ".mo"), intStringChar(13), "");
-        resToBe = System.stringReplace(System.readFile(file +& "__testShouldBe.mo"), intStringChar(13), "");
+        System.writeFile(file + ".mo", "Test failed.");
+        //failure( translateFile(file + ".tpl") );
+        res = System.stringReplace(System.readFile(file + ".mo"), intStringChar(13), "");
+        resToBe = System.stringReplace(System.readFile(file + "__testShouldBe.mo"), intStringChar(13), "");
         notPassedCnt = testStringEquality(res,resToBe, printRes, printErrBuf,
-                       "translateFile "+& file +& ".tpl", notPassedCnt);
+                       "translateFile "+ file + ".tpl", notPassedCnt);
       then notPassedCnt;
 
   end matchcontinue;
@@ -671,7 +669,7 @@ end Susan;", false, false, "transformAST - pathIdent() + typedIdents()", notPass
         (chars, _) = TplParser.interleave(chars, TplParser.makeStartLineInfo(chars, "in memory test"));
         strOut = stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "Susan lives!", true, true, "TplParser.interleave \n\""+& str +&"\"\n", notPassedCnt);
+           "Susan lives!", true, true, "TplParser.interleave \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
         str = "(Susan)";
@@ -680,16 +678,16 @@ end Susan;", false, false, "transformAST - pathIdent() + typedIdents()", notPass
         TplParser.afterKeyword(chars); //not fail
         strOut = stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "(Susan)", true, true, "TplParser.afterKeyword \n\""+& str +&"\"\n", notPassedCnt);
+           "(Susan)", true, true, "TplParser.afterKeyword \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
         str = "Susan2:)";
         chars = stringListStringChar( str );
 
         (chars, ident) = TplParser.identifier(chars);
-        strOut = "*" +& ident +& "*" +& stringCharListString(chars);
+        strOut = "*" + ident + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "*Susan2*:)", true, true, "TplParser.identifier \n\""+& str +&"\"\n", notPassedCnt);
+           "*Susan2*:)", true, true, "TplParser.identifier \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
         str = "Susan:)";
@@ -699,9 +697,9 @@ end Susan;", false, false, "transformAST - pathIdent() + typedIdents()", notPass
         txt = emptyTxt;
         txt = TplCodegen.pathIdent(txt, pid);
         ident = Tpl.textString(txt);
-        strOut = "*" +& ident +& "*" +& stringCharListString(chars);
+        strOut = "*" + ident + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "*Susan*:)", true, true, "TplParser.pathIdent \n\""+& str +&"\"\n", notPassedCnt);
+           "*Susan*:)", true, true, "TplParser.pathIdent \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
         str = "Susan./*comment*/ Susan2 . tpl3_h4:)";
@@ -711,9 +709,9 @@ end Susan;", false, false, "transformAST - pathIdent() + typedIdents()", notPass
         txt = emptyTxt;
         txt = TplCodegen.pathIdent(txt, pid);
         ident = Tpl.textString(txt);
-        strOut = "*" +& ident +& "*" +& stringCharListString(chars);
+        strOut = "*" + ident + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "*Susan.Susan2.tpl3_h4*:)", true, true, "TplParser.pathIdent \n\""+& str +&"\"\n", notPassedCnt);
+           "*Susan.Susan2.tpl3_h4*:)", true, true, "TplParser.pathIdent \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
         str = "Tpl.Susan:)";
@@ -724,9 +722,9 @@ end Susan;", false, false, "transformAST - pathIdent() + typedIdents()", notPass
         txt = emptyTxt;
         txt = TplCodegen.typeSig(txt, ts);
         ident = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +& "*" +& ident +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + ident + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*Tpl.Susan*:)", true, true, "TplParser.typeSig \n\""+& str +&"\"\n", notPassedCnt);
+           "true*Tpl.Susan*:)", true, true, "TplParser.typeSig \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
         str = "list< tuple<Hej.Susan,list <String>,Option< /*uáá*/Integer>> >:)";
@@ -740,9 +738,9 @@ end Susan;", false, false, "transformAST - pathIdent() + typedIdents()", notPass
         txt = emptyTxt;
         txt = TplCodegen.typeSig(txt, ts);
         ident = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +&"*" +& ident +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) +"*" + ident + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*list<tuple<Hej.Susan, list<String>, Option<Integer>>>*:)", true, true, "TplParser.typeSig \n\""+& str +&"\"\n", notPassedCnt);
+           "true*list<tuple<Hej.Susan, list<String>, Option<Integer>>>*:)", true, true, "TplParser.typeSig \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
         str = "
@@ -791,7 +789,7 @@ end Susan;:)";
         txt = emptyTxt;
         txt = TplCodegen.pathIdent(txt, pid);
         ident = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +&"*" +& ident +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) +"*" + ident + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
            "true*Susan*:)", true, true, "TplParser.templPackage - absyn - type Ident, TypedIdents, PathIdent \n", notPassedCnt);
 
@@ -825,7 +823,7 @@ end Susan;:)";
         txt = emptyTxt;
         txt = TplCodegen.pathIdent(txt, pid);
         _ = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +&"*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) +"*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
            "true*:)", true, true, "TplParser.templPackage - function stringListStringChar\n", notPassedCnt);
 
@@ -1040,7 +1038,7 @@ end Susan;:)";
         txt = emptyTxt;
         txt = TplCodegen.pathIdent(txt, pid);
         _ = Tpl.textString(txt);
-        strOut = "parsed*" +& stringCharListString(chars);
+        strOut = "parsed*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
            "parsed*:)", true, true, "TplParser.templPackage - all types for Susan's backend\n", notPassedCnt);
 
@@ -1059,9 +1057,9 @@ end Susan;:)";
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
         strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +& "*" +& strOut +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*Susan*~:)", true, true, "TplParser.expression \n>"+& str +&"<\n", notPassedCnt);
+           "true*Susan*~:)", true, true, "TplParser.expression \n>"+ str +"<\n", notPassedCnt);
 
         //*************
         str = "\"\\n\"~:)";
@@ -1079,9 +1077,9 @@ end Susan;:)";
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
         strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +& "*" +& strOut +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*\n*~:)", true, true, "TplParser.expression \n>"+& str +&"<\n", notPassedCnt);
+           "true*\n*~:)", true, true, "TplParser.expression \n>"+ str +"<\n", notPassedCnt);
 
         //*************
         str = "\",\\n\"~:)";
@@ -1099,9 +1097,9 @@ end Susan;:)";
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
         strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +& "*" +& strOut +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*,\n*~:)", true, true, "TplParser.expression \n>"+& str +&"<\n", notPassedCnt);
+           "true*,\n*~:)", true, true, "TplParser.expression \n>"+ str +"<\n", notPassedCnt);
 
         //*************
         str = "\"Susan
@@ -1119,9 +1117,9 @@ is\\nfantastic!\"~:)";
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
         strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +& "*" +& strOut +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*Susan\nis\nfantastic!*~:)", true, true, "TplParser.expression \n>"+& str +&"<\n", notPassedCnt);
+           "true*Susan\nis\nfantastic!*~:)", true, true, "TplParser.expression \n>"+ str +"<\n", notPassedCnt);
 
         //*************
         str = "\"
@@ -1141,9 +1139,9 @@ is\\n new lined!
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
         strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +& "*" +& strOut +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*\nSusan\nis\n new lined!\n*~:)", true, true, "TplParser.expression \n>"+& str +&"<\n", notPassedCnt);
+           "true*\nSusan\nis\n new lined!\n*~:)", true, true, "TplParser.expression \n>"+ str +"<\n", notPassedCnt);
 
         //*************
         /*
@@ -1161,9 +1159,9 @@ is\\n new lined!
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
         strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +& "*" +& strOut +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*Susan*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);
+           "true*Susan*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
         */
         //*************
         /*
@@ -1184,9 +1182,9 @@ is\\n verbatim!
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
         strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +& "*" +& strOut +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*Susan\nis\\n verbatim!*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);
+           "true*Susan\nis\\n verbatim!*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
         */
         //*************
         str = "1234567~:)";
@@ -1200,9 +1198,9 @@ is\\n verbatim!
         );
 
         TplAbsyn.LITERAL(cval,_) = expB;
-        strOut = Tpl.booleanString(tequal) +& "*" +& cval +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*1234567*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);
+           "true*1234567*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
         str = "- 1234567~:)";
@@ -1216,9 +1214,9 @@ is\\n verbatim!
         );
 
         TplAbsyn.LITERAL(cval,_) = expB;
-        strOut = Tpl.booleanString(tequal) +& "*" +& cval +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*-1234567*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);
+           "true*-1234567*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
         str = "- 1234567.0123e-12~:)";
@@ -1232,9 +1230,9 @@ is\\n verbatim!
         );
 
         TplAbsyn.LITERAL(cval,_) = expB;
-        strOut = Tpl.booleanString(tequal) +& "*" +& cval +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*-1234567.0123e-12*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);
+           "true*-1234567.0123e-12*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
         str = ".0123E12~:)";
@@ -1248,9 +1246,9 @@ is\\n verbatim!
         );
 
         TplAbsyn.LITERAL(cval,_) = expB;
-        strOut = Tpl.booleanString(tequal) +& "*" +& cval +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*.0123E12*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);
+           "true*.0123E12*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
         str = "true~:)";
@@ -1264,9 +1262,9 @@ is\\n verbatim!
         );
 
         TplAbsyn.LITERAL(cval,_) = expB;
-        strOut = Tpl.booleanString(tequal) +& "*" +& cval +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*true*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);
+           "true*true*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
         str = "false~:)";
@@ -1280,9 +1278,9 @@ is\\n verbatim!
         );
 
         TplAbsyn.LITERAL(cval,_) = expB;
-        strOut = Tpl.booleanString(tequal) +& "*" +& cval +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*false*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);
+           "true*false*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
         str = "\\n~:)";
@@ -1300,9 +1298,9 @@ is\\n verbatim!
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
         strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +& "*" +& strOut +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*\n*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);
+           "true*\n*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
         str = "\\\"\\n\\n\\ ~:)";
@@ -1319,9 +1317,9 @@ is\\n verbatim!
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
         strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +& "*" +& strOut +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*\"\n\n *~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);
+           "true*\"\n\n *~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
         str = "'Susan'~:)";
@@ -1338,9 +1336,9 @@ is\\n verbatim!
         txt = emptyTxt;
         txt = Tpl.writeTok(txt, tok);
         strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +& "*" +& strOut +& "*" +& stringCharListString(chars);
+        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
-           "true*Susan*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);
+           "true*Susan*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
 
         //*************
@@ -1349,7 +1347,7 @@ is\\n verbatim!
         llen = TplParser.charsTillEndOfLine(chars, 1);
         (_ :: _ :: chars) = chars;
         (lnum,colnum) = TplParser.getPosition(chars, TplParser.LINE_INFO(TplParser.PARSE_INFO("test - no file",{},false), 11, llen, chars));
-        notPassedCnt = testStringEquality(intString(lnum) +& "," +& intString(colnum) +& " of " +& intString(llen),
+        notPassedCnt = testStringEquality(intString(lnum) + "," + intString(colnum) + " of " + intString(llen),
            "11,3 of 8", true, true, "TplParser.charsTillEndOfLine and getPosition \n", notPassedCnt);
 
 
@@ -1400,10 +1398,10 @@ is\\n verbatim!
         //notPassedCnt = testTranslateTplFile("SimCodeC", false, true, notPassedCnt);
 
 
-        print("All tests took " +& realString(clock() -. tstart) +& " seconds.\n");
-        str = Util.if_(notPassedCnt == 0,
-          "\n ***** All a) tests OK *****\n\n",
-          "\n #### " +& intString(notPassedCnt) +& " test" +& Util.if_(notPassedCnt > 1,"s","") +& " DID NOT passed ####\n\n");
+        print("All tests took " + realString(clock() -. tstart) + " seconds.\n");
+        str = if notPassedCnt == 0 then
+          "\n ***** All a) tests OK *****\n\n" else
+          ("\n #### " + intString(notPassedCnt) + " test" + (if notPassedCnt > 1 then "s" else"") + " DID NOT passed ####\n\n");
         print(str);
         //print("TplCodegen.tpl:258.1-259.1 Error: Toto je uff!\n");
         //print("TplCodegen.tpl:263.1-263.3 Error: Toto je algor uff!\n");
@@ -1415,7 +1413,7 @@ is\\n verbatim!
     //should not ever happen -  a badly designed test ?
     case (str)
       equation
-        print("\n######## tplMainTest '"+& str +& "' (fatally) failed!  ########\n" );
+        print("\n######## tplMainTest '"+ str + "' (fatally) failed!  ########\n" );
         print("### Error Buffer ###\n");
         print(Print.getErrorString());
         print("\n### End of Error Buffer ###\n");

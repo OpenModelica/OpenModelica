@@ -1926,7 +1926,7 @@ algorithm
         false = Expression.isConstTrue(cond);
         str = str +& ExpressionDump.printExpStr(cond) +& " has value: ";
         // if is real use %g otherwise use %d (ints and enums)
-        format = Util.if_(Types.isRealOrSubTypeReal(tp), "g", "d");
+        format = if Types.isRealOrSubTypeReal(tp) then "g" else "d";
         msg = DAE.BINARY(
               DAE.SCONST(str),
               DAE.ADD(DAE.T_STRING_DEFAULT),
@@ -1990,7 +1990,7 @@ algorithm
         false = Expression.isConstTrue(cond);
         str = str +& ExpressionDump.printExpStr(cond) +& " has value: ";
         // if is real use %g otherwise use %d (ints and enums)
-        format = Util.if_(Types.isRealOrSubTypeReal(tp), "g", "d");
+        format = if Types.isRealOrSubTypeReal(tp) then "g" else "d";
         msg = DAE.BINARY(
               DAE.SCONST(str),
               DAE.ADD(DAE.T_STRING_DEFAULT),
@@ -3435,7 +3435,7 @@ algorithm
       equation
         (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
         const = Expression.isConst(sub_exp);
-        res = Util.if_(const,DAE.SLICE(sub_exp)::rest,DAE.WHOLEDIM()::rest);
+        res = if const then DAE.SLICE(sub_exp)::rest else (DAE.WHOLEDIM()::rest);
       then
         (res, b or not const);
 
@@ -3444,14 +3444,14 @@ algorithm
         (sub_exp,calcRange) = computeRangeExps(sub_exp); // the fact that if it can be calculated, we can take the wholedim is a bit weird, anyway, the whole function is weird
         (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
         const = Expression.isConst(sub_exp);
-        res = Util.if_(const,DAE.INDEX(sub_exp)::rest,DAE.WHOLEDIM()::rest);
+        res = if const then DAE.INDEX(sub_exp)::rest else (DAE.WHOLEDIM()::rest);
       then
         (res, b or not const or calcRange);
     case (DAE.WHOLE_NONEXP(exp = sub_exp)::rest, _)
       equation
         (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
         const = Expression.isConst(sub_exp);
-        res = Util.if_(const,DAE.WHOLE_NONEXP(sub_exp)::rest,DAE.WHOLEDIM()::rest);
+        res = if const then DAE.WHOLE_NONEXP(sub_exp)::rest else (DAE.WHOLEDIM()::rest);
       then
         (res, b or not const);
   end match;
@@ -3867,7 +3867,7 @@ algorithm
     case (ovar as SOME(v),_,_)
       equation
         (v1,ext_arg) = func(v,inTypeA);
-        ovar = Util.if_(referenceEq(v,v1),ovar,SOME(v1));
+        ovar = if referenceEq(v,v1) then ovar else SOME(v1);
       then (ovar,ext_arg);
     else
       equation
@@ -4218,7 +4218,7 @@ algorithm
     case (false,_,_,_,_,_,_,_,_)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = Util.if_(negate," = -"," = ");
+        s2 = if negate then " = -" else " = ";
         s3 = ComponentReference.printComponentRefStr(cra);
         s5 = ExpressionDump.printExpStr(sv);
         s6 = ExpressionDump.printExpStr(sva);
@@ -4229,7 +4229,7 @@ algorithm
     case (true,_,_,_,_,_,_,_,_)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = Util.if_(negate," = -"," = ");
+        s2 = if negate then " = -" else " = ";
         s3 = ComponentReference.printComponentRefStr(cra);
         s5 = ExpressionDump.printExpStr(sv);
         s6 = ExpressionDump.printExpStr(sva);
@@ -4294,7 +4294,7 @@ algorithm
         // use highest origin
         i = startOriginToValue(so);
         ia = startOriginToValue(sao);
-        origin = Util.if_(intGt(ia,i),sao,so);
+        origin = if intGt(ia,i) then sao else so;
       then (exp1,origin);
     case (false,_,_,_,_,_)
       equation
@@ -4302,7 +4302,7 @@ algorithm
         i = startOriginToValue(so);
         ia = startOriginToValue(sao);
         false = intEq(i,ia);
-        ((exp1_1,origin)) = Util.if_(intGt(ia,i),(exp2,sao),(exp1,so));
+        ((exp1_1,origin)) = if intGt(ia,i) then (exp2,sao) else (exp1,so);
       then
         (exp1_1,origin);
     case (_,_,_,_,_,_)
@@ -4313,11 +4313,11 @@ algorithm
         (exp1_1,_) = ExpressionSimplify.condsimplify(b1,exp1_1);
         (exp2_1,_) = ExpressionSimplify.condsimplify(b2,exp2_1);
         true = Expression.expEqual(exp1_1, exp2_1);
-        exp1_1 = Util.if_(b1,exp1,exp2);
+        exp1_1 = if b1 then exp1 else exp2;
         // use highest origin
         i = startOriginToValue(so);
         ia = startOriginToValue(sao);
-        origin = Util.if_(intGt(ia,i),sao,so);
+        origin = if intGt(ia,i) then sao else so;
       then
         (exp1_1,origin);
   end matchcontinue;
@@ -4534,21 +4534,21 @@ algorithm
   BackendDAE.VAR(varName=cr) := var;
   // records
   b := ComponentReference.isRecord(cr);
-  i := Util.if_(b,-1,0);
+  i := if b then -1 else 0;
   // array elements
   b := ComponentReference.isArrayElement(cr);
-  i := intAdd(i,Util.if_(b,-1,0));
+  i := intAdd(i,if b then -1 else 0);
   // protected
   b := isProtectedVar(var);
-  i := intAdd(i,Util.if_(b,5,0));
+  i := intAdd(i,if b then 5 else 0);
   // connectors
   b := isVarConnector(var);
-  i := intAdd(i,Util.if_(b,1,0));
+  i := intAdd(i,if b then 1 else 0);
   // self generated var
   b := isDummyDerVar(var);
-  i := intAdd(i,Util.if_(b,10,0));
+  i := intAdd(i,if b then 10 else 0);
   b := selfGeneratedVar(cr);
-  i := intAdd(i,Util.if_(b,100,0));
+  i := intAdd(i,if b then 100 else 0);
   // length of name (number of dots)
   d := ComponentReference.crefDepth(cr);
   i := i+d;
@@ -4582,7 +4582,7 @@ algorithm
   prio := stateSelectToInteger(ss);
   knownDer := varHasStateDerivative(v);
   prio := prio*2;
-  prio := Util.if_(knownDer,prio+1,prio);
+  prio := if knownDer then prio+1 else prio;
 end varStateSelectPrioAlias;
 
 public function stateSelectToInteger "Never: -1

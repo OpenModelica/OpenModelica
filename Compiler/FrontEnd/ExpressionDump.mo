@@ -53,7 +53,6 @@ protected import Expression;
 public import ExpressionDumpTpl;
 protected import List;
 protected import Patternm;
-protected import Util;
 protected import Print;
 protected import System;
 protected import Tpl;
@@ -255,8 +254,8 @@ public function unaryopSymbol
 algorithm
   outString:=
   match (inOperator)
-    case (DAE.UMINUS(ty = _)) then Util.if_(Config.typeinfo(),"-<UMINUS>","-");
-    case (DAE.UMINUS_ARR(ty = _)) then Util.if_(Config.typeinfo(),"-<UMINUS_ARR>","-");
+    case (DAE.UMINUS(ty = _)) then if Config.typeinfo() then "-<UMINUS>" else "-";
+    case (DAE.UMINUS_ARR(ty = _)) then if Config.typeinfo() then "-<UMINUS_ARR>" else "-";
   end match;
 end unaryopSymbol;
 

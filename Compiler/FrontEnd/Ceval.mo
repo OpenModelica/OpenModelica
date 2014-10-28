@@ -2021,7 +2021,7 @@ algorithm
         (cache,Values.INTEGER(len),_) = ceval(cache,env, len_exp, impl, st,msg,numIter+1);
         (cache,Values.BOOL(left_just),_) = ceval(cache,env, justified_exp, impl, st,msg,numIter+1);
         (cache,Values.INTEGER(sig),_) = ceval(cache,env, sig_dig, impl, st,msg,numIter+1);
-        format = "%" +& Util.if_(left_just,"-","") +& intString(len) +& "." +& intString(sig) +& "g";
+        format = "%" +& (if left_just then "-" else "") +& intString(len) +& "." +& intString(sig) +& "g";
         str = System.snprintff(format,len+20,r);
       then
         (cache,Values.STRING(str),st);
@@ -3407,7 +3407,7 @@ algorithm
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rv_1 = rv1/. rv2;
         b = rv_1 <. 0.0;
-        rv_2 = Util.if_(b,realCeil(rv_1),realFloor(rv_1));
+        rv_2 = if b then realCeil(rv_1) else realFloor(rv_1);
       then
         (cache,Values.REAL(rv_2),st);
     case (cache,env,{exp1,exp2},impl,st,msg,_)
@@ -3418,7 +3418,7 @@ algorithm
         Error.addInternalError("cevalBuiltinDiv got Integer and Real (type error)\n");
         rv_1 = rv1/. rv2;
          b = rv_1 <. 0.0;
-        rv_2 = Util.if_(b,realCeil(rv_1),realFloor(rv_1));
+        rv_2 = if b then realCeil(rv_1) else realFloor(rv_1);
       then
         (cache,Values.REAL(rv_2),st);
     case (cache,env,{exp1,exp2},impl,st,msg,_)
@@ -3429,7 +3429,7 @@ algorithm
         rv2 = intReal(ri);
         rv_1 = rv1/. rv2;
         b = rv_1 <. 0.0;
-        rv_2 = Util.if_(b,realCeil(rv_1),realFloor(rv_1));
+        rv_2 = if b then realCeil(rv_1) else realFloor(rv_1);
       then
         (cache,Values.REAL(rv_2),st);
     case (cache,env,{exp1,exp2},impl,st,msg,_)
@@ -5466,7 +5466,7 @@ algorithm
         new_env = FGraph.addForIterator(env, id, ty, DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
         (cache,Values.BOOL(b),st) = ceval(cache,new_env,exp,impl,st,msg,numIter+1);
         (cache,vals,st) = filterReductionIterator(cache,env,id,ty,vals,guardExp,impl,st,msg,numIter);
-        vals = Util.if_(b, val::vals, vals);
+        vals = if b then val::vals else vals;
       then (cache,vals,st);
     case (cache,_,_,_,vals,NONE(),_,st,_,_) then (cache,vals,st);
   end match;

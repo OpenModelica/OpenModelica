@@ -2,7 +2,6 @@ package TplCodegen
 
 //import Debug;
 public import Tpl;
-public import Util;
 
 public import TplAbsyn;
 
@@ -1130,7 +1129,7 @@ algorithm
       Boolean v_escapeNewLine;
       String nl;
     equation
-      nl = Util.if_(v_escapeNewLine, "\\n", "\n");
+      nl = if v_escapeNewLine then "\\n" else "\n";
       txt = Tpl.writeStr(txt, nl);
     then txt;
   /*

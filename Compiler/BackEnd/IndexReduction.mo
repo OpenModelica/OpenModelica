@@ -1777,20 +1777,20 @@ algorithm
         expcrdset = List.map(expcrset,makeder);
         expcrA = Expression.crefExp(crA);
         expcrA = DAE.CAST(tp,expcrA);
-        op = Util.if_(intGt(rang,1),DAE.MUL_MATRIX_PRODUCT(DAE.T_REAL_DEFAULT),DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT));
+        op = if intGt(rang,1) then DAE.MUL_MATRIX_PRODUCT(DAE.T_REAL_DEFAULT) else DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT);
         mulAstates = DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrstates));
         (mulAstates,_) = Expression.extendArrExp(mulAstates,false);
         mulAdstates = DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrdstates));
         (mulAdstates,_) = Expression.extendArrExp(mulAdstates,false);
-        expset = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrset),listGet(expcrset,1));
-        expderset = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrdset),listGet(expcrdset,1));
+        expset = if intGt(rang,1) then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrset) else listGet(expcrset,1);
+        expderset = if intGt(rang,1) then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrdset) else listGet(expcrdset,1);
         source = DAE.SOURCE(Absyn.INFO("stateselection",false,0,0,0,0,Absyn.dummyTimeStamp),{},NONE(),{},{},{},{});
         // set.x = set.A*set.statecandidates
-        eqn  = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},expset,mulAstates,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC),
-                                      BackendDAE.EQUATION(expset,mulAstates,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC));
+        eqn  = if intGt(rang,1) then BackendDAE.ARRAY_EQUATION({rang},expset,mulAstates,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)
+                                else BackendDAE.EQUATION(expset,mulAstates,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
         // der(set.x) = set.A*der(set.candidates)
-        deqn  = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},expderset,mulAdstates,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC),
-                                      BackendDAE.EQUATION(expderset,mulAdstates,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC));
+        deqn  = if intGt(rang,1) then BackendDAE.ARRAY_EQUATION({rang},expderset,mulAdstates,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)
+                                 else BackendDAE.EQUATION(expderset,mulAdstates,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
         // start values for the set
         expsetstart = DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrstatesstart));
         (expsetstart,_) = Expression.extendArrExp(expsetstart,false);
@@ -2912,7 +2912,7 @@ algorithm
         (set,found) = getEqnsforDynamicStateSelectionRows(rows,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubset,false);
         // print("add " +& boolString(found) +& " equation " +& intString(e) +& "\n");
         set = List.consOnTrue(found, e, set);
-        _ = arrayUpdate(colummarks,e,Util.if_(found,mark,colummarks[e]));
+        _ = arrayUpdate(colummarks,e,if found then mark else colummarks[e]);
         (set,found) = getEqnsforDynamicStateSelectionPhase(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,set,found or iFound);
       then
         (set,found);
@@ -2964,10 +2964,10 @@ algorithm
         // if it is a multi dim equation take all scalare equations
         e = mapIncRowEqn[rc];
         eqns = mapEqnIncRow[e];
-        _ = List.fold1r(eqns,arrayUpdate,Util.if_(iFound,mark,-mark),colummarks);
+        List.fold1r(eqns,arrayUpdate,if iFound then mark else -mark,colummarks);
         // print("traverse Eqns " +& stringDelimitList(List.map(eqns,intString),", ") +& "\n");
         (set,b) = getEqnsforDynamicStateSelectionPhase(eqns,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubset,false);
-        eqns = Util.if_(b and not iFound,eqns,{});
+        eqns = if b and not iFound then eqns else {};
         _ = List.fold1r(eqns,arrayUpdate,mark,colummarks);
         (set,b) = getEqnsforDynamicStateSelectionRows(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,set,b or iFound);
       then
@@ -3209,7 +3209,7 @@ algorithm
       equation
         ({v},_) = BackendVariable.getVar(cr, vars);
         b = BackendVariable.isDummyStateVar(v);
-        prio = Util.if_(b,-1.0,3.0);
+        prio = if b then -1.0 else 3.0;
       then prio;
     else 0.0;
   end matchcontinue;
@@ -3470,7 +3470,7 @@ algorithm
           blst = List.map1(crlst1,ComponentReference.crefEqualNoStringCompare,cr);
           true = Util.boolAndList(blst);
           size = listLength(states);
-          tp = Util.if_(intEq(setsize,1),DAE.T_REAL_DEFAULT,DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource));
+          tp = if intEq(setsize,1) then DAE.T_REAL_DEFAULT else DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource);
           cr = ComponentReference.crefSetLastType(cr, DAE.T_COMPLEX_DEFAULT);
           cr = ComponentReference.crefStripLastSubs(cr);
           set = ComponentReference.joinCrefs(cr,ComponentReference.makeCrefIdent("set",tp,{}));
@@ -3482,8 +3482,8 @@ algorithm
           vars = List.map1(vars,BackendVariable.setVarFixed,false);
           vcont = generateVar(cont,BackendDAE.DISCRETE(),DAE.T_INTEGER_DEFAULT,{},SOME(DAE.VAR_ATTR_INT(NONE(),NONE(),NONE(),SOME(DAE.ICONST(size)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())));
           nosetvar = generateVar(cont,BackendDAE.DISCRETE(),DAE.T_INTEGER_DEFAULT,{},SOME(DAE.VAR_ATTR_INT(NONE(),NONE(),NONE(),SOME(DAE.ICONST(size)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())));
-          tp = Util.if_(intGt(setsize,1),DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource),
-                                         DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource));
+          tp = if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource)
+                                    else DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource);
           crA = ComponentReference.joinCrefs(cr,ComponentReference.makeCrefIdent("A",tp,{}));
           varA = generateArrayVar(crA,BackendDAE.VARIABLE(),tp,NONE());
           tp = DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nUnassigned),DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource);
@@ -3495,7 +3495,7 @@ algorithm
         equation
           cr = List.fold(crlst, ComponentReference.joinCrefs, cr);
           size = listLength(states);
-          tp = Util.if_(intEq(setsize,1),DAE.T_REAL_DEFAULT,DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource));
+          tp = if intEq(setsize,1) then DAE.T_REAL_DEFAULT else DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource);
           set = ComponentReference.joinCrefs(cr,ComponentReference.makeCrefIdent("set",tp,{}));
           cont = ComponentReference.joinCrefs(cr,ComponentReference.makeCrefIdent("cond",DAE.T_INTEGER_DEFAULT,{}));
           noset = ComponentReference.joinCrefs(cr,ComponentReference.makeCrefIdent("noset",tp,{}));
@@ -3505,8 +3505,8 @@ algorithm
           vars = List.map1(vars,BackendVariable.setVarFixed,false);
           vcont = generateVar(cont,BackendDAE.DISCRETE(),DAE.T_INTEGER_DEFAULT,{},SOME(DAE.VAR_ATTR_INT(NONE(),NONE(),NONE(),SOME(DAE.ICONST(size)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())));
           nosetvar = generateVar(cont,BackendDAE.DISCRETE(),DAE.T_INTEGER_DEFAULT,{},SOME(DAE.VAR_ATTR_INT(NONE(),NONE(),NONE(),SOME(DAE.ICONST(size)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())));
-          tp = Util.if_(intGt(setsize,1),DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource),
-                                         DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource));
+          tp = if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource)
+                                   else DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource);
           crA = ComponentReference.joinCrefs(cr,ComponentReference.makeCrefIdent("A",tp,{}));
           varA = generateArrayVar(crA,BackendDAE.VARIABLE(),tp,NONE());
           tp = DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nUnassigned),DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource);
@@ -3765,7 +3765,7 @@ algorithm
         /* Dummy variables are algebraic variables without start value, min/max, .., hence fixed = false */
         dattr = BackendVariable.getVariableAttributefromType(tp);
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
-        //kind = Util.if_(intGt(n,1),BackendDAE.DUMMY_DER(),BackendDAE.STATE(1,NONE()));
+        //kind = if_(intGt(n,1),BackendDAE.DUMMY_DER(),BackendDAE.STATE(1,NONE()));
         var = BackendDAE.VAR(cr,BackendDAE.STATE(1,NONE()),dir,prl,tp,NONE(),NONE(),dim,source,odattr,comment,ct);
       then (var,ht);
    // state
@@ -3909,7 +3909,7 @@ algorithm
         /* Dummy variables are algebraic variables without start value, min/max, .., hence fixed = false */
         dattr = BackendVariable.getVariableAttributefromType(tp);
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
-        kind = Util.if_(intGt(diffCount,0),BackendDAE.STATE(diffCount,NONE()),BackendDAE.DUMMY_DER());
+        kind = if intGt(diffCount,0) then BackendDAE.STATE(diffCount,NONE()) else BackendDAE.DUMMY_DER();
         var = BackendDAE.VAR(name,kind,dir,prl,tp,NONE(),NONE(),dim,source,odattr,comment,ct);
         (vlst,ht,n) = makeHigherStatesRepl1(diffCount-1,diffedCount+1,iOrigName,name,inVar,vars,var::iVarLst,ht,iN+1);
       then (vlst,ht,n);
@@ -4158,9 +4158,9 @@ algorithm
         dattr = BackendVariable.getVariableAttributefromType(tp);
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
         dummy_derstate = BackendDAE.VAR(dummyderName,BackendDAE.DUMMY_DER(),dir,prl,tp,NONE(),NONE(),dim,source,odattr,comment,ct);
-        kind = Util.if_(intEq(dn,0),BackendDAE.DUMMY_STATE(),BackendDAE.DUMMY_DER());
+        kind = if intEq(dn,0) then BackendDAE.DUMMY_STATE() else BackendDAE.DUMMY_DER();
         dummy_state = BackendDAE.VAR(name,kind,dir,prl,tp,NONE(),NONE(),dim,source,odattr,comment,ct);
-        dummy_state = Util.if_(intEq(dn,0),inVar,dummy_state);
+        dummy_state = if intEq(dn,0) then inVar else dummy_state;
         dummy_state = BackendVariable.setVarKind(dummy_state, kind);
         vars = BackendVariable.addVar(dummy_derstate, vars);
         vars = BackendVariable.addVar(dummy_state, vars);
@@ -4826,7 +4826,7 @@ algorithm
               connectorType = ct)::vlst,i::ilst,_,_,_)
     equation
       b = intGt(counter,diffcounter);
-      diffcounter = Util.if_(b, counter, diffcounter);
+      diffcounter = if b then counter else diffcounter;
       var = BackendDAE.VAR(cr, BackendDAE.STATE(diffcounter,dcr), dir, prl, tp, bind, v, dim, source, attr, comment, ct);
       vars = Debug.bcallret2(b, BackendVariable.addVar, var, inVars, inVars);
       changedVars = List.consOnTrue(b,i,iChangedVars);
@@ -5044,22 +5044,22 @@ protected
 algorithm
 //  set := ComponentReference.makeCrefIdent("$STATESET",DAE.T_COMPLEX_DEFAULT,{DAE.INDEX(DAE.ICONST(index))});
   set := ComponentReference.makeCrefIdent("$STATESET" +& intString(index),DAE.T_COMPLEX_DEFAULT,{});
-  tp := Util.if_(intGt(setsize,1),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource),DAE.T_REAL_DEFAULT);
+  tp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource) else DAE.T_REAL_DEFAULT;
   crstates := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("x",tp,{}));
   oSetVars := generateArrayVar(crstates,BackendDAE.STATE(1,NONE()),tp,NONE());
   oSetVars := List.map1(oSetVars,BackendVariable.setVarFixed,false);
   crset := List.map(oSetVars,BackendVariable.varCref);
-  tp := Util.if_(intGt(setsize,1),DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource),
-                                 DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource));
-  realtp := Util.if_(intGt(setsize,1),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource),
-                                 DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource));
+  tp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource)
+                            else DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource);
+  realtp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource)
+                                else DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource);
   ocrA := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("A",tp,{}));
   oAVars := generateArrayVar(ocrA,BackendDAE.VARIABLE(),tp,NONE());
   oAVars := List.map1(oAVars,BackendVariable.setVarFixed,true);
   // add start value A[i,j] = if i==j then 1 else 0 via initial equations
   oAVars := List.map1(oAVars,BackendVariable.setVarStartValue,DAE.ICONST(0));
   oAVars := setSetAStart(oAVars,1,1,setsize,{});
-  tp := Util.if_(intGt(nCEqns,1),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nCEqns)}, DAE.emptyTypeSource),DAE.T_REAL_DEFAULT);
+  tp := if intGt(nCEqns,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nCEqns)}, DAE.emptyTypeSource) else DAE.T_REAL_DEFAULT;
   ocrJ := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("J",tp,{}));
   oJVars := generateArrayVar(ocrJ,BackendDAE.VARIABLE(),tp,NONE());
   oJVars := List.map1(oJVars,BackendVariable.setVarFixed,false);
@@ -5082,10 +5082,10 @@ algorithm
     case({},_,_,_,_) then listReverse(iAcc);
     case(v::rest,_,_,_,_)
       equation
-        start = Util.if_(intEq(n,r),1,0);
+        start = if intEq(n,r) then 1 else 0;
         v = BackendVariable.setVarStartValue(v,DAE.ICONST(start));
-        n1 = Util.if_(intEq(n,nStates),1,n+1);
-        r1 = Util.if_(intEq(n,nStates),r+1,r);
+        n1 = if intEq(n,nStates) then 1 else (n+1);
+        r1 = if intEq(n,nStates) then (r+1) else r;
       then
         setSetAStart(rest,n1,r1,nStates,v::iAcc);
   end match;
@@ -5247,7 +5247,7 @@ algorithm
     case (v as BackendDAE.VAR(varName=cr),(true,id,(graphInfo,graph)))
       equation
         b = BackendVariable.isVarDiscrete(v);
-        color = Util.if_(b,GraphML.COLOR_PURPLE,GraphML.COLOR_RED);
+        color = if b then GraphML.COLOR_PURPLE else GraphML.COLOR_RED;
         labelText = intString(id);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
         desc = ComponentReference.printComponentRefStr(cr);
@@ -5259,7 +5259,7 @@ algorithm
     case (v as BackendDAE.VAR(varName=cr),(false,id,(graphInfo,graph)))
       equation
         b = BackendVariable.isVarDiscrete(v);
-        color = Util.if_(b,GraphML.COLOR_PURPLE,GraphML.COLOR_RED);
+        color = if b then GraphML.COLOR_PURPLE else GraphML.COLOR_RED;
         labelText = intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
         (graphInfo,_) = GraphML.addNode("v" +& intString(id),color, {label}, GraphML.ELLIPSE(),NONE(),{},graph, graphInfo);
@@ -5290,7 +5290,7 @@ algorithm
     case (v as BackendDAE.VAR(varName=cr),(false,id,vec1,(graphInfo,graph)))
       equation
         true = BackendVariable.isStateVar(v);
-        color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_BLUE,GraphML.COLOR_YELLOW);
+        color = if intGt(vec1[id],0) then GraphML.COLOR_BLUE else GraphML.COLOR_YELLOW;
         labelText = intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
@@ -5301,7 +5301,7 @@ algorithm
     case (v as BackendDAE.VAR(varName=cr),(true,id,vec1,(graphInfo,graph)))
       equation
         true = BackendVariable.isStateVar(v);
-        color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_BLUE,GraphML.COLOR_YELLOW);
+        color = if intGt(vec1[id],0) then GraphML.COLOR_BLUE else GraphML.COLOR_YELLOW;
         desc = ComponentReference.printComponentRefStr(cr);
         labelText = intString(id);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
@@ -5310,7 +5310,7 @@ algorithm
 
     case (v as BackendDAE.VAR(varName=cr),(false,id,vec1,(graphInfo,graph)))
       equation
-        color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_RED,GraphML.COLOR_YELLOW);
+        color = if intGt(vec1[id],0) then GraphML.COLOR_RED else GraphML.COLOR_YELLOW;
         labelText = intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
@@ -5320,7 +5320,7 @@ algorithm
 
     case (v as BackendDAE.VAR(varName=cr),(true,id,vec1,(graphInfo,graph)))
       equation
-        color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_RED,GraphML.COLOR_YELLOW);
+        color = if intGt(vec1[id],0) then GraphML.COLOR_RED else GraphML.COLOR_YELLOW;
         desc = ComponentReference.printComponentRefStr(cr);
         labelText = intString(id);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
@@ -5418,7 +5418,7 @@ algorithm
        str = intString(e) +& ": " +&  str;
        //str = intString(inNode);
        str = Util.xmlEscape(str);
-       color = Util.if_(intGt(vec2[inNode],0),GraphML.COLOR_GREEN,GraphML.COLOR_PURPLE);
+       color = if intGt(vec2[inNode],0) then GraphML.COLOR_GREEN else GraphML.COLOR_PURPLE;
        label = GraphML.NODELABEL_INTERNAL(str,NONE(),GraphML.FONTPLAIN());
        (graphInfo,_) = GraphML.addNode("n" +& intString(e),color, {label}, GraphML.RECTANGLE(),NONE(),{},graph,graphInfo);
      then ((graphInfo,graph));
@@ -5431,7 +5431,7 @@ algorithm
        //str = intString(e) +& ": " +&  str;
        //str = intString(inNode);
        str = Util.xmlEscape(str);
-       color = Util.if_(intGt(vec2[inNode],0),GraphML.COLOR_GREEN,GraphML.COLOR_PURPLE);
+       color = if intGt(vec2[inNode],0) then GraphML.COLOR_GREEN else GraphML.COLOR_PURPLE;
        labelText = intString(e);
        label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
        (graphInfo,_) = GraphML.addNode("n" +& intString(e),color, {label}, GraphML.RECTANGLE(),SOME(str),{},graph,graphInfo);
@@ -5457,7 +5457,7 @@ protected
 algorithm
   (id,graph) := inTpl;
   v := intAbs(V);
-  ln := Util.if_(intGt(V,0),GraphML.LINE(),GraphML.DASHED());
+  ln := if intGt(V,0) then GraphML.LINE() else GraphML.DASHED();
   (graph,_) := GraphML.addEdge("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,ln,GraphML.LINEWIDTH_STANDARD, false, {},(GraphML.ARROWNONE(),GraphML.ARROWNONE()),{},graph);
   outTpl := ((id+1,graph));
 end addEdgeGraph;
@@ -5495,8 +5495,8 @@ protected
 algorithm
   (id,r,graph) := inTpl;
   absv := intAbs(v);
-  arrow := Util.if_(intEq(r,absv),(GraphML.ARROWSTANDART(),GraphML.ARROWNONE()),(GraphML.ARROWNONE(),GraphML.ARROWSTANDART()));
-  lt := Util.if_(intGt(v,0),GraphML.LINE(),GraphML.DASHED());
+  arrow := if intEq(r,absv) then (GraphML.ARROWSTANDART(),GraphML.ARROWNONE()) else (GraphML.ARROWNONE(),GraphML.ARROWSTANDART());
+  lt := if intGt(v,0) then GraphML.LINE() else GraphML.DASHED();
   (graph,_) := GraphML.addEdge("e" +& intString(id),"n" +& intString(e),"v" +& intString(absv),GraphML.COLOR_BLACK,lt,GraphML.LINEWIDTH_STANDARD, false, {},arrow,{},graph);
   outTpl := ((id+1,r,graph));
 end addDirectedEdgeGraph;
@@ -5535,8 +5535,8 @@ protected
   List<GraphML.EdgeLabel> labels;
 algorithm
   (id,r,text,graph) := inTpl;
-  arrow := Util.if_(intEq(r,v),(GraphML.ARROWSTANDART(),GraphML.ARROWNONE()),(GraphML.ARROWNONE(),GraphML.ARROWSTANDART()));
-  labels := Util.if_(intEq(r,v),{GraphML.EDGELABEL(text,SOME("#0000FF"),GraphML.FONTSIZE_STANDARD)},{});
+  arrow := if intEq(r,v) then (GraphML.ARROWSTANDART(),GraphML.ARROWNONE()) else (GraphML.ARROWNONE(),GraphML.ARROWSTANDART());
+  labels := if intEq(r,v) then {GraphML.EDGELABEL(text,SOME("#0000FF"),GraphML.FONTSIZE_STANDARD)} else {};
   (graph,_) := GraphML.addEdge("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,false,labels,arrow,{},graph);
   outTpl := ((id+1,r,text,graph));
 end addDirectedNumEdgeGraph;
@@ -5597,7 +5597,7 @@ algorithm
   (e,prefix,ass2) := inTpl;
   (graph,id) := inGraph;
   evar :=ass2[e];
-  arrow := Util.if_(intGt(evar,0) and intEq(evar,v) ,GraphML.ARROWSTANDART(),GraphML.ARROWNONE());
+  arrow := if intGt(evar,0) and intEq(evar,v) then GraphML.ARROWSTANDART() else GraphML.ARROWNONE();
   (graph,_) := GraphML.addEdge("e" +& intString(id),"n" +& intString(e),prefix +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD, false, {},(GraphML.ARROWNONE(),arrow),{},graph);
   outGraph := (graph,id+1);
 end addEdge;
@@ -5615,7 +5615,7 @@ protected
   String labelText;
 algorithm
   (graphInfo,graph) := inGraph;
-  color := Util.if_(intGt(ass2[inNode],0),GraphML.COLOR_GREEN,GraphML.COLOR_BLUE);
+  color := if intGt(ass2[inNode],0) then GraphML.COLOR_GREEN else GraphML.COLOR_BLUE;
   labelText := intString(inNode);
   label := GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
   (graphInfo,_) := GraphML.addNode("n" +& intString(inNode),color,{label},GraphML.RECTANGLE(),NONE(),{},graph,graphInfo);
@@ -5642,7 +5642,7 @@ algorithm
   (prefix,vars,ass1,color,color1) := inTpl;
   var := BackendVariable.getVarAt(vars,inNode);
   cr := BackendVariable.varCref(var);
-  c := Util.if_(intGt(ass1[inNode],0),color1,color);
+  c := if intGt(ass1[inNode],0) then color1 else color;
   labelText := ComponentReference.printComponentRefStr(cr);
   label := GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
   (graphInfo,_) := GraphML.addNode(prefix +& intString(inNode),c,{label},GraphML.ELLIPSE(),NONE(),{},graph,graphInfo);
@@ -6068,7 +6068,7 @@ end addStateOrder;
 //         {cr1} = BaseHashTable.get(dcr,dht);
 //         ht1 = BaseHashTable.delete(acr,ht1);
 //         b = ComponentReference.crefEqualNoStringCompare(cr1, acr);
-//         crlst = Util.if_(b,{cr},{cr,cr1});
+//         crlst = if_(b,{cr},{cr,cr1});
 //         dht1 = BaseHashTable.add((dcr, crlst),dht);
 //       then
 //         BackendDAE.STATEORDER(ht1,dht1);
@@ -6092,7 +6092,7 @@ end addStateOrder;
 //         {cr1} = BaseHashTable.get(dcr,dht);
 //         ht1 = BaseHashTable.delete(acr,ht);
 //         b = ComponentReference.crefEqualNoStringCompare(cr1, acr);
-//         crlst = Util.if_(b,{cr},{cr,cr1});
+//         crlst = if_(b,{cr},{cr,cr1});
 //         dht1 = BaseHashTable.add((dcr, crlst),dht);
 //       then
 //         BackendDAE.STATEORDER(ht1,dht1);

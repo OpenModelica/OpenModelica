@@ -712,7 +712,7 @@ protected
 algorithm
   SCode.CLASS(name = cls_name, classDef = cdef, info = info) := inClassDefElement;
   env := openScope(emptyEnv, inClassDefElement);
-  enclosing_env := Util.if_(inInModifierScope, emptyEnv, env);
+  enclosing_env := if inInModifierScope then emptyEnv else env;
   outClassEnv :=
     extendEnvWithClassComponents(cls_name, cdef, env, enclosing_env, info);
 end makeClassEnvironment;

@@ -46,7 +46,6 @@ import FNode;
 // protected imports
 protected
 import List;
-import Util;
 import Error;
 
 public
@@ -188,7 +187,7 @@ public function keyCompare "compare 2 keys"
   input AvlKey k2;
   output Integer i;
 algorithm
-  i := Util.if_(intGt(k1, k2), 1, Util.if_(intLt(k1, k2), -1, 0));
+  i := if intGt(k1, k2) then 1 else (if intLt(k1, k2) then -1 else 0);
 end keyCompare;
 
 public function keyStr "prints a key to a string"
@@ -605,14 +604,14 @@ algorithm
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
-        res = "\n" +& valueStr(rval) +& ",  " +& Util.if_(stringEq(s2, ""), "", s2 +& ", ") +& s3;
+        res = "\n" +& valueStr(rval) +& ",  " +& (if stringEq(s2, "") then "" else (s2 + ", ")) +& s3;
       then
         res;
     case (FCore.VAVLTREENODE(value = NONE(),left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
-        res = Util.if_(stringEq(s2, ""), "", s2 +& ", ") +& s3;
+        res = (if stringEq(s2, "") then "" else (s2 +& ", ")) +& s3;
       then
         res;
   end match;

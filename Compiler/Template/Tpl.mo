@@ -16,7 +16,6 @@ protected import Error;
 protected import Flags;
 protected import Print;
 protected import System;
-protected import Util;
 
 // indentation will be implemented through spaces
 // where tabs will be converted where 1 tab = 4 spaces ??
@@ -920,7 +919,7 @@ algorithm
         Print.printBuf(str);
         blen = Print.getBufLength() - blen;
         hasNL = Print.hasBufNewLineAtEnd();
-        nchars = Util.if_(hasNL, aind, blen);
+        nchars = if hasNL then aind else blen;
         (nchars, isstart, aind) = stringListString(strLst, nchars, hasNL, aind);
 
         //"\n" = stringGetStringChar(str, stringLength(str));
@@ -950,7 +949,7 @@ algorithm
         Print.printBuf(str);
         blen = Print.getBufLength() - blen;
         hasNL = Print.hasBufNewLineAtEnd();
-        nchars = Util.if_(hasNL, aind, nchars+blen);
+        nchars = if hasNL then aind else nchars+blen;
         (nchars, isstart, aind) = stringListString(strLst, nchars, hasNL, aind);
 
         //"\n" = stringGetStringChar(str, stringLength(str));
@@ -1010,7 +1009,7 @@ algorithm
       equation
         (tsnchars, isstart)
           = tokensString(toks, w + nchars, true, w + aind);
-        nchars = Util.if_(isstart, nchars, tsnchars); //pop indent when at the start of a line
+        nchars = if isstart then nchars else tsnchars; //pop indent when at the start of a line
       then
         (nchars, isstart, aind);
 
@@ -1019,7 +1018,7 @@ algorithm
         Print.printBufSpace(w);
         (tsnchars, isstart)
           = tokensString(toks, w + nchars, false, w + aind);
-        nchars = Util.if_(isstart, aind, tsnchars); //pop indent when at the start of a line - there were a new line, so use the aind
+        nchars = if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
       then
         (nchars, isstart, aind);
 
@@ -1029,7 +1028,7 @@ algorithm
         (tsnchars, isstart)
           = tokensString(toks, 0, true, w); //discard an indent when at the start of a line
         blen = Print.getBufLength() - blen;
-        nchars = Util.if_(blen == 0, nchars, Util.if_(isstart, aind, tsnchars)); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
+        nchars = if blen == 0 then nchars else (if isstart then aind else tsnchars); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
       then
         (nchars, isstart, aind);
 
@@ -1037,7 +1036,7 @@ algorithm
       equation
         (tsnchars, isstart)
           = tokensString(toks, nchars, false, w);
-        nchars = Util.if_(isstart, aind, tsnchars); //pop indent when at the start of a line - there were a new line, so use the aind
+        nchars = if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
       then
         (nchars, isstart, aind);
 
@@ -1047,7 +1046,7 @@ algorithm
         (tsnchars, isstart)
           = tokensString(toks, nchars, true, aind + w);
         blen = Print.getBufLength() - blen;
-        nchars = Util.if_(blen == 0, nchars, Util.if_(isstart, aind, tsnchars)); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
+        nchars = if blen == 0 then nchars else (if isstart then aind else tsnchars); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
       then
         (nchars, isstart, aind);
 
@@ -1055,7 +1054,7 @@ algorithm
       equation
         (tsnchars, isstart)
           = tokensString(toks, nchars, false, aind + w);
-        nchars = Util.if_(isstart, aind, tsnchars); //pop indent when at the start of a line - there were a new line, so use the aind
+        nchars = if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
       then
         (nchars, isstart, aind);
 
@@ -1065,7 +1064,7 @@ algorithm
         (tsnchars, isstart)
           = tokensString(toks, nchars, true, nchars + w);
         blen = Print.getBufLength() - blen;
-        nchars = Util.if_(blen == 0, nchars, Util.if_(isstart, aind, tsnchars)); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
+        nchars = if blen == 0 then nchars else (if isstart then aind else tsnchars); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
       then
         (nchars, isstart, aind);
 
@@ -1073,7 +1072,7 @@ algorithm
       equation
         (tsnchars, isstart)
           = tokensString(toks, nchars, false, nchars + w);
-        nchars = Util.if_(isstart, aind, tsnchars); //pop indent when at the start of a line - there were a new line, so use the aind
+        nchars = if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
       then
         (nchars, isstart, aind);
 

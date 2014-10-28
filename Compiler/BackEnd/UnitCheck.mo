@@ -60,7 +60,6 @@ protected import HashTableCrToUnit;
 protected import HashTableStringToUnit;
 protected import HashTableUnitToString;
 protected import List;
-protected import Util;
 
 protected uniontype Token
   record T_NUMBER
@@ -263,50 +262,50 @@ algorithm
     case (Unit.UNIT(factor, i1, i2, i3, i4, i5, i6, i7), _) equation
       s = prefix2String(factor);
 
-      s=Util.if_(realEq(factor, 1.0), "", s);
+      s= if realEq(factor, 1.0) then "" else s;
       b = false;
-      sExponent = Util.if_(intEq(i1, 1), "", intString(i1));
+      sExponent = if intEq(i1, 1) then "" else intString(i1);
       s1 = "mol" +& sExponent;
-      s1 = Util.if_(intEq(i1, 0), "", s1);
+      s1 = if intEq(i1, 0) then "" else s1;
       b = b or intNe(i1, 0);
 
-      s2 = Util.if_(b and intNe(i2, 0), ".", "");
-      sExponent = Util.if_(intEq(i2, 1), "", intString(i2));
+      s2 = if b and intNe(i2, 0) then "." else "";
+      sExponent = if intEq(i2, 1) then "" else intString(i2);
       s2 = s2 +& "cd" +& sExponent;
-      s2 = Util.if_(intEq(i2, 0), "", s2);
+      s2 = if intEq(i2, 0) then "" else s2;
       b = b or intNe(i2, 0);
 
-      s3 = Util.if_(b and intNe(i3, 0), ".", "");
-      sExponent = Util.if_(intEq(i3, 1), "", intString(i3));
+      s3 = if b and intNe(i3, 0) then "." else "";
+      sExponent = if intEq(i3, 1) then "" else intString(i3);
       s3 = s3 +& "m" +& sExponent;
-      s3 = Util.if_(intEq(i3, 0), "", s3);
+      s3 = if intEq(i3, 0) then "" else s3;
       b = b or intNe(i3, 0);
 
-      s4 = Util.if_(b and intNe(i4, 0), ".", "");
-      sExponent = Util.if_(intEq(i4, 1), "", intString(i4));
+      s4 = if b and intNe(i4, 0) then "." else "";
+      sExponent = if intEq(i4, 1) then "" else intString(i4);
       s4 = s4 +& "s" +& sExponent;
-      s4 = Util.if_(intEq(i4, 0), "", s4);
+      s4 = if intEq(i4, 0) then "" else s4;
       b = b or intNe(i4, 0);
 
-      s5 = Util.if_(b and intNe(i5, 0), ".", "");
-      sExponent = Util.if_(intEq(i5, 1), "", intString(i5));
+      s5 = if b and intNe(i5, 0) then "." else "";
+      sExponent = if intEq(i5, 1) then "" else intString(i5);
       s5 = s5 +& "A" +& sExponent;
-      s5 = Util.if_(intEq(i5, 0), "", s5);
+      s5 = if intEq(i5, 0) then "" else s5;
       b = b or intNe(i5, 0);
 
-      s6 = Util.if_(b and intNe(i6, 0), ".", "");
-      sExponent = Util.if_(intEq(i6, 1), "", intString(i6));
+      s6 = if b and intNe(i6, 0) then "." else "";
+      sExponent = if intEq(i6, 1) then "" else intString(i6);
       s6 = s6 +& "K" +& sExponent;
-      s6 = Util.if_(intEq(i6, 0), "", s6);
+      s6 = if intEq(i6, 0) then "" else s6;
       b = b or intNe(i6, 0);
 
-      s7 = Util.if_(b and intNe(i7, 0), ".", "");
-      sExponent = Util.if_(intEq(i7, 1), "", intString(i7));
+      s7 = if b and intNe(i7, 0) then "." else "";
+      sExponent = if intEq(i7, 1) then "" else intString(i7);
       s7 = s7 +& "g" +& sExponent;
-      s7 = Util.if_(intEq(i7, 0), "", s7);
+      s7 = if intEq(i7, 0) then "" else s7;
       b = b or intNe(i7, 0);
       s = s +& s1 +& s2 +& s3 +& s4 +& s5 +& s6 +& s7;
-      s = Util.if_(b, s, "1");
+      s = if b then s else "1";
     then s;
 
     else equation

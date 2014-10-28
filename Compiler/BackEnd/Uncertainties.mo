@@ -239,7 +239,9 @@ algorithm
 
         (setC,removed_equations_squared)=getEquationsForKnownsSystem(mExt,knowns,unknowns,setS,allEqs,allVars,sharedVars,mapIncRowEqn);
 
-        print(Util.if_(List.isNotEmpty(removed_equations_squared),"Warning: the system is ill-posed. One or more equations have been removed from squared system of knowns.\n",""));
+        if List.isNotEmpty(removed_equations_squared) then
+          print("Warning: the system is ill-posed. One or more equations have been removed from squared system of knowns.\n");
+        end if;
               printSep(getMathematicaText("Equations removed from squared blocks (with more than one equation)"));
               printSep(equationsToMathematicaGrid(removed_equations_squared,allEqs,allVars,sharedVars,mapIncRowEqn));
 
@@ -272,7 +274,7 @@ algorithm
         Print.printBuf("{"+&getMathematicaText("Extraction finished")+&"}");
         outStringA = "Grid[{"+&Print.getString()+&"}]";
 
-        outString=Util.if_(dumpSteps,outStringA,outStringB);
+        outString=if dumpSteps then outStringA else outStringB;
         resstr=writeFileIfNonEmpty(outputFile,outString);
         //resstr="Done...";
       then
@@ -783,7 +785,7 @@ algorithm
         (xEqMap,xVarMap,mx)=prepareForMatching(knownsSystemComp);
         nxVarMap = listLength(xVarMap);
         nxEqMap = listLength(xEqMap);
-        size=Util.if_(nxEqMap>nxVarMap,nxEqMap,nxVarMap);
+        size=if nxEqMap>nxVarMap then nxEqMap else nxVarMap;
         //print("Final matching of "+&intString(nxEqMap)+&" equations and "+&intString(nxVarMap)+&" variables \n");
         Matching.matchingExternalsetIncidenceMatrix(size,size,mx);
 
@@ -1148,7 +1150,7 @@ algorithm
        compsSorted=listReverse(sortEquations(compEqns,unknowns));
        (removeEquation,_)::tailEquations=compsSorted;
        (inner_ret,removed_inner)=removeEquationInSquaredBlock(m,knowns,unknowns,t);
-       removed_inner = Util.if_(listLength(compsSorted)>1,removeEquation::removed_inner,removed_inner);
+       removed_inner = if listLength(compsSorted)>1 then removeEquation::removed_inner else removed_inner;
     then (listAppend(tailEquations,inner_ret),removed_inner);
   case(_,_,_,h::t)
     equation
@@ -2556,11 +2558,11 @@ algorithm
   BackendDAE.VAR(varName=cr) := var;
   i := 1.0 /. (1.0 +. intReal(ComponentReference.crefDepth(cr))); // larger names = lower rating
   acc:=acc +. i;
-  i:=Util.if_(BackendVariable.isParam(var),3.0,0.0); // parametes has higher rating than variables
+  i:=if BackendVariable.isParam(var) then 3.0 else 0.0; // parametes has higher rating than variables
   acc:=acc +. i;
-  i:=Util.if_(BackendVariable.isStateVar(var),5.0,0.0); // states have higher rating than variables and parameters
+  i:=if BackendVariable.isStateVar(var) then 5.0 else 0.0; // states have higher rating than variables and parameters
   acc:=acc +. i;
-  i:=Util.if_(BackendVariable.varHasUncertainValueRefine(var),7.0,0.0); // uncertain variables have the highest rating for this elimination
+  i:=if BackendVariable.varHasUncertainValueRefine(var) then 7.0 else 0.0; // uncertain variables have the highest rating for this elimination
   acc:=acc +. i;
   out:=acc;
 end rateVariable;
@@ -2584,7 +2586,7 @@ out:= match(vars)
       equation
         r1 = rateVariable(h);
         r2 = rateVariableList(t);
-        r = Util.if_(realGt(r1,r2),r1,r2);
+        r = if realGt(r1,r2) then r1 else r2;
       then r;
 end match;
 end rateVariableList;
@@ -2743,7 +2745,7 @@ algorithm
         true=isRemovableSymbol(h,vars,knvars);
         (sign1,e)=getAliasSetExpressionAndSign(solution,set);
         (sign2,_)=getAliasSetExpressionAndSign(h,set);
-        sign=Util.if_(sign2<0,-sign1,sign1);
+        sign=if sign2<0 then -sign1 else sign1;
         e=fixSingOfExp(sign,e);
         new_repl=BackendVarTransform.addReplacement(repl_acc,h,e,NONE());
         new_removed_vars=h::removed_vars_acc;
@@ -2754,7 +2756,7 @@ algorithm
         false=isRemovableSymbol(h,vars,knvars);
         (sign1,e)=getAliasSetExpressionAndSign(solution,set);
         (sign2,_)=getAliasSetExpressionAndSign(h,set);
-        sign=Util.if_(sign2<0,-sign1,sign1);
+        sign=if sign2<0 then -sign1 else sign1;
         e=fixSingOfExp(sign,e);
         source=getAliasSetSource(set);
         eqn=generateEquation(h,e,source);
@@ -2892,7 +2894,7 @@ protected function getSourceIfApproximated "Returns SOME(source) if the equation
     protected DAE.ElementSource temp;
 algorithm
     temp:=BackendEquation.equationSource(eqn);
-    source:=Util.if_(isApproximatedEquation(eqn),SOME(temp),NONE());
+    source:=if isApproximatedEquation(eqn) then SOME(temp) else NONE();
 end getSourceIfApproximated;
 
 /*     Set handling functions    */
@@ -2956,8 +2958,8 @@ algorithm
         // fix the signs of the new alias
         current_sign=BaseHashTable.get(cr1,signs); // get existing sign of cr1
         sign1_temp=sign1;
-        sign1=Util.if_(intEq(sign1_temp,current_sign),sign1,-sign1); //If the sign of the existing set is different, change both signs
-        sign2=Util.if_(intEq(sign1_temp,current_sign),sign2,-sign2);
+        sign1=if intEq(sign1_temp,current_sign) then sign1 else -sign1; //If the sign of the existing set is different, change both signs
+        sign2=if intEq(sign1_temp,current_sign) then sign2 else -sign2;
         new_signs=BaseHashTable.add((cr2,sign2),signs);
         new_symbols=BaseHashSet.add(cr2,symbols);
         new_expl=BaseHashTable.add((cr2,e2),expl);
@@ -3134,7 +3136,7 @@ algorithm
       then ();
     case(cr::cr_t,i::i_t)
       equation
-        s = Util.if_(i>0,"+","-");
+        s = if i>0 then "+" else "-";
         print(s+&ComponentReference.printComponentRefStr(cr)+&", ");
         dumpAliasSets2(cr_t,i_t);
       then ();
@@ -3155,7 +3157,7 @@ algorithm
   then ();
   case(SOME(DAE.SOURCE(comment=comment)))
   equation
-    str = Util.if_(isApproximatedEquation2(comment),"true","false");
+    str = boolString(isApproximatedEquation2(comment));
     print(" *Approximated = "+&str);
   then ();
   end match;

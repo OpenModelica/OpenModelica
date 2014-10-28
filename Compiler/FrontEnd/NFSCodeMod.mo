@@ -87,7 +87,7 @@ algorithm
 
     case (SCode.MOD(fp, ep, submods, binding_exp, info), _, _, _, _)
       equation
-        pd = Util.if_(SCode.eachBool(ep), 0, inDimensions);
+        pd = if SCode.eachBool(ep) then 0 else inDimensions;
         mods = List.map3(submods, translateSubMod, pd, inPrefix, inEnv);
         binding = translateBinding(binding_exp, ep, pd, inPrefix, inEnv, info);
       then
@@ -132,7 +132,7 @@ algorithm
     // See propagateMod for how this works.
     case (SOME((bind_exp, _)), _, _, _, _, _)
       equation
-        pd = Util.if_(SCode.eachBool(inEachPrefix), -1, inDimensions);
+        pd = if SCode.eachBool(inEachPrefix) then -1 else inDimensions;
       then
         NFInstTypesOld.RAW_BINDING(bind_exp, inEnv, inPrefix, pd, inInfo);
 

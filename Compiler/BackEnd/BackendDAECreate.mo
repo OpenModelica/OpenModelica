@@ -1277,9 +1277,9 @@ algorithm
       equation
         b1 = stringEq(Absyn.pathLastIdent(path),"equalityConstraint");
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) = Inline.simplifyAndInlineEquationExp(DAE.EQUALITY_EXPS(e1,e2), (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-        eqns = Util.if_(b1,inREquations,inEquations);
+        eqns = if b1 then inREquations else inEquations;
         eqns = lowerArrayEqn(dims,e1_1,e2_1,source,BackendDAE.DYNAMIC_EQUATION(),eqns);
-        ((eqns,_)) = Util.if_(b1,(inEquations,eqns),(eqns,inREquations));
+        ((eqns,_)) = if b1 then (inEquations,eqns) else (eqns,inREquations);
       then
         (eqns,inREquations,inIEquations);
 
@@ -2846,7 +2846,7 @@ algorithm
         w2 = BackendVariable.calcAliasKey(v2);
         b = intGt(w2, w1);
         // select alias
-        ((acr, avar, aindx, _, _, var, e)) = Util.if_(b, (cr2, v2, index2, e2, cr1, v1, e1), (cr1, v1, index1, e1, cr2, v2, e2));
+        ((acr, avar, aindx, _, _, var, e)) = if b then (cr2, v2, index2, e2, cr1, v1, e1) else (cr1, v1, index1, e1, cr2, v2, e2);
         // merge fixed, start, nominal
         var = BackendVariable.mergeAliasVars(var, avar, false, iKnVars);
         // setAliasType

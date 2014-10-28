@@ -899,7 +899,7 @@ algorithm
         lsteqns = BackendEquation.equationList(eqns);
         (eqns_1,b) = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
         eqns1 = Debug.bcallret1(b, BackendEquation.listEquation,eqns_1,eqns);
-        syst = Util.if_(b,BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind),isyst);
+        syst = if b then BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind) else isyst;
       then
         syst;
   end match;
@@ -1160,7 +1160,7 @@ algorithm
   (ops, (se, te, i)) := inTpl;
   // BackendDump.debugStrExpStrExpStr(("Repalce ", se, " with ", te, "\n"));
   ((e1, j)) := Expression.replaceExp(e, se, te);
-  ops := Util.if_(j>0, DAE.SUBSTITUTION({e1}, e)::ops, ops);
+  ops := if j>0 then DAE.SUBSTITUTION({e1}, e)::ops else ops;
   // BackendDump.debugStrExpStrExpStr(("Old ", e, " new ", e1, "\n"));
   outTpl := (ops, (se, te, i+j));
 end replaceExp;
@@ -2448,7 +2448,7 @@ algorithm
     case (e1 as DAE.IFEXP(expCond=cond, expThen=expThen, expElse=expElse),(knvars,b))
       equation
         (cond,(_,b1)) = Expression.traverseExp(cond, simplifyEvaluatedParamter, (knvars,false));
-        e2 = Util.if_(b1,DAE.IFEXP(cond,expThen,expElse),e1);
+        e2 = if b1 then DAE.IFEXP(cond,expThen,expElse) else e1;
         (e2,_) = ExpressionSimplify.condsimplify(b1,e2);
       then (e2,(knvars,b or b1));
     else (inExp,tpl1);
@@ -3578,7 +3578,7 @@ algorithm
   lsteqns := BackendEquation.equationList(eqns);
   (eqns_1, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
   eqns1 := Debug.bcallret1(b, BackendEquation.listEquation, eqns_1, eqns);
-  outEqSystem := Util.if_(b, BackendDAE.EQSYSTEM(vars, eqns1, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), inEqSystem);
+  outEqSystem := if b then BackendDAE.EQSYSTEM(vars, eqns1, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind) else inEqSystem;
 end removeConstantsWork;
 
 protected function removeConstantsFinder
@@ -3799,7 +3799,7 @@ algorithm
       type_ = Expression.arrayEltType(type_);
       (var::_, _) = BackendVariable.getVar(cref, inVars);
       b = BackendVariable.isVarDiscrete(var);
-      initExp = Expression.makePureBuiltinCall(Util.if_(b, "pre", "$_start"), {out}, type_);
+      initExp = Expression.makePureBuiltinCall(if b then "pre" else "$_start", {out}, type_);
       stmt = Algorithm.makeAssignment(DAE.CREF(cref, type_), DAE.PROP(type_, DAE.C_VAR()), initExp, DAE.PROP(type_, DAE.C_VAR()), DAE.dummyAttrVar, SCode.NON_INITIAL(), DAE.emptyElementSource);
     then expandAlgorithmStmts(stmt::statements, rest, inVars);
   end match;
@@ -3911,7 +3911,7 @@ algorithm
                               backendDAEType,
                               symjacs,
                               ei);
-  outDAE := Util.if_(intGt(index, 1), BackendDAE.DAE(systs, shared), inDAE);
+  outDAE := if intGt(index, 1) then BackendDAE.DAE(systs, shared) else inDAE;
   Debug.fcall2(Flags.DUMP_ENCAPSULATEWHENCONDITIONS, BackendDump.dumpBackendDAE, outDAE, "DAE after PreOptModule >>encapsulateWhenConditions<<");
 end encapsulateWhenConditions;
 
@@ -4029,7 +4029,7 @@ algorithm
 
         alg_ = DAE.ALGORITHM_STMTS(preStmts);
         eqn2 = BackendDAE.ALGORITHM(sizePre, alg_, source, crefExpand, attr);
-        eqns = Util.if_(intGt(sizePre, 0), eqn2::eqns, eqns);
+        eqns = if intGt(sizePre, 0) then eqn2::eqns else eqns;
       then (eqn, (equationArray, vars1, eqns, index, ht));
 
     // algorithm
@@ -4846,7 +4846,7 @@ algorithm
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = List.isEmpty(varlst);
 
-      str = Util.if_(linear, "linear", "nonlinear");
+      str = if linear then "linear" else "nonlinear";
       warning = "Iteration variables of torn " +& str +& " equation system:\n" +& warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
     then warning::warningList;

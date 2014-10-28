@@ -2615,8 +2615,8 @@ algorithm
         taskStartTimeString = System.snprintff("%.0f", 25, taskStartTime);
         //Setup nodeLabels
         nodeLabels = {GraphML.NODELABEL_INTERNAL(componentsString, NONE(), GraphML.FONTPLAIN())};
-        nodeLabels = Util.if_(visualizeTaskCalcTime, GraphML.NODELABEL_CORNER(calcTimeString, SOME(GraphML.COLOR_YELLOW), GraphML.FONTBOLD(), "se")::nodeLabels, nodeLabels);
-        nodeLabels = Util.if_(visualizeTaskStartAndFinishTime, listAppend(nodeLabels, {GraphML.NODELABEL_CORNER(taskStartTimeString, SOME(GraphML.COLOR_CYAN), GraphML.FONTBOLD(), "nw"), GraphML.NODELABEL_CORNER(taskFinishTimeString, SOME(GraphML.COLOR_PINK), GraphML.FONTBOLD(), "sw")}), nodeLabels);
+        nodeLabels = if visualizeTaskCalcTime then GraphML.NODELABEL_CORNER(calcTimeString, SOME(GraphML.COLOR_YELLOW), GraphML.FONTBOLD(), "se")::nodeLabels else nodeLabels;
+        nodeLabels = if visualizeTaskStartAndFinishTime then listAppend(nodeLabels, {GraphML.NODELABEL_CORNER(taskStartTimeString, SOME(GraphML.COLOR_CYAN), GraphML.FONTBOLD(), "nw"), GraphML.NODELABEL_CORNER(taskFinishTimeString, SOME(GraphML.COLOR_PINK), GraphML.FONTBOLD(), "sw")}) else nodeLabels;
         //print("Node " +& intString(nodeIdx) +& " has child nodes " +& stringDelimitList(List.map(childNodes,intString),", ") +& "\n");
         (tmpGraph,(_,_)) = GraphML.addNode("Node" +& intString(nodeIdx),
                                               GraphML.COLOR_ORANGE,
@@ -2668,8 +2668,8 @@ algorithm
         taskFinishTimeString = System.snprintff("%.0f", 25, taskFinishTime);
         taskStartTimeString = System.snprintff("%.0f", 25, taskStartTime);
         nodeLabels = {GraphML.NODELABEL_INTERNAL(componentsString, NONE(), GraphML.FONTPLAIN())};
-        nodeLabels = Util.if_(visualizeTaskCalcTime, GraphML.NODELABEL_CORNER(calcTimeString, SOME(GraphML.COLOR_YELLOW), GraphML.FONTBOLD(), "se")::nodeLabels, nodeLabels);
-        nodeLabels = Util.if_(visualizeTaskStartAndFinishTime, listAppend(nodeLabels, {GraphML.NODELABEL_CORNER(taskStartTimeString, SOME(GraphML.COLOR_CYAN), GraphML.FONTBOLD(), "nw"), GraphML.NODELABEL_CORNER(taskFinishTimeString, SOME(GraphML.COLOR_PINK), GraphML.FONTBOLD(), "sw")}), nodeLabels);
+        nodeLabels = if visualizeTaskCalcTime then GraphML.NODELABEL_CORNER(calcTimeString, SOME(GraphML.COLOR_YELLOW), GraphML.FONTBOLD(), "se")::nodeLabels else nodeLabels;
+        nodeLabels = if visualizeTaskStartAndFinishTime then listAppend(nodeLabels, {GraphML.NODELABEL_CORNER(taskStartTimeString, SOME(GraphML.COLOR_CYAN), GraphML.FONTBOLD(), "nw"), GraphML.NODELABEL_CORNER(taskFinishTimeString, SOME(GraphML.COLOR_PINK), GraphML.FONTBOLD(), "sw")}) else nodeLabels;
         //print("Node " +& intString(nodeIdx) +& " has child nodes " +& stringDelimitList(List.map(childNodes,intString),", ") +& "\n");
         (tmpGraph,(_,_)) = GraphML.addNode("Node" +& intString(nodeIdx),
                                       GraphML.COLOR_ORANGE,
@@ -2750,8 +2750,8 @@ algorithm
         numOfCommVarsBoolString = intString(listLength(booleanVars));
         commCostString = System.snprintff("%.0f", 25, commCost);
         visualizeCriticalPath = boolAnd(visualizeCriticalPath,List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx)));
-        edgeColor = Util.if_(visualizeCriticalPath, GraphML.COLOR_GRAY, GraphML.COLOR_BLACK);
-        edgeLabels = Util.if_(visualizeCommTime, {GraphML.EDGELABEL(commCostString, SOME(edgeColor), GraphML.FONTSIZE_STANDARD)}, {});
+        edgeColor = if visualizeCriticalPath then GraphML.COLOR_GRAY else GraphML.COLOR_BLACK;
+        edgeLabels = if visualizeCommTime then {GraphML.EDGELABEL(commCostString, SOME(edgeColor), GraphML.FONTSIZE_STANDARD)} else {};
         (tmpGraph,(_,_)) = GraphML.addEdge("Edge" +& intString(parentIdx) +& intString(childIdx),
                                               "Node" +& intString(childIdx), "Node" +& intString(parentIdx),
                                               edgeColor,
@@ -2773,8 +2773,8 @@ algorithm
         numOfCommVarsBoolString = intString(listLength(booleanVars));
         commCostString = System.snprintff("%.0f", 25, commCost);
         visualizeCriticalPath = boolAnd(visualizeCriticalPath,List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx)));
-        edgeColor = Util.if_(visualizeCriticalPath, GraphML.COLOR_GRAY, GraphML.COLOR_BLACK);
-        edgeLabels = Util.if_(visualizeCommTime, {GraphML.EDGELABEL(commCostString, SOME(edgeColor), GraphML.FONTSIZE_STANDARD)}, {});
+        edgeColor = if visualizeCriticalPath then GraphML.COLOR_GRAY else GraphML.COLOR_BLACK;
+        edgeLabels = if visualizeCommTime then {GraphML.EDGELABEL(commCostString, SOME(edgeColor), GraphML.FONTSIZE_STANDARD)} else {};
         (tmpGraph,(_,_)) = GraphML.addEdge( "Edge" +& intString(parentIdx) +& intString(childIdx),
                                             "Node" +& intString(childIdx),
                                             "Node" +& intString(parentIdx),
@@ -3126,7 +3126,7 @@ protected
   String str;
 algorithm
   str := stringDelimitList(List.map(lstIn,intString),",");
-  strOut := Util.if_(List.isEmpty(lstIn),"---",str);
+  strOut := if List.isEmpty(lstIn) then "---" else str;
 end intLstString;
 
 public function dumpCriticalPathInfo "author:marcusw
@@ -4813,7 +4813,7 @@ algorithm
         criticalPathIdx = getCriticalPath2(criticalPaths, 1, -1.0, -1);
         ((cpCalcTime, criticalPathChild)) = listGet(criticalPaths, criticalPathIdx);
         criticalPath = iNode :: criticalPathChild;
-        commCost = Util.if_(iHandleCommCosts, getCommCostBetweenNodes(iNode, List.first(criticalPathChild), iGraphData), COMMUNICATION(0,{},{},{},{},-1,0.0));
+        commCost = if iHandleCommCosts then getCommCostBetweenNodes(iNode, List.first(criticalPathChild), iGraphData) else COMMUNICATION(0,{},{},{},{},-1,0.0);
         //print("Comm cost from node " +& intString(iNode) +& " to " +& intString(List.first(criticalPathChild)) +& " with costs " +& intString(Util.tuple33(commCost)) +& "\n");
         nodeComps = arrayGet(inComps, iNode);
         calcTime = addUpExeCostsForNode(nodeComps, exeCosts, 0.0); //sum up calc times of all components

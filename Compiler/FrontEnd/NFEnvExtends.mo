@@ -706,9 +706,9 @@ algorithm
         (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = part, info = info)), _, _) =
           NFSCodeLookup.lookupFullyQualified(inPartPath, inEnv);
         bc_str = Absyn.pathString(inBaseClass);
-        msg = Util.if_(stringEq(bc_str, part),
-          Error.REPLACEABLE_BASE_CLASS_SIMPLE,
-          Error.REPLACEABLE_BASE_CLASS);
+        msg = if bc_str==part
+          then Error.REPLACEABLE_BASE_CLASS_SIMPLE
+          else Error.REPLACEABLE_BASE_CLASS;
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
         Error.addSourceMessage(msg, {part, bc_str}, info);
       then

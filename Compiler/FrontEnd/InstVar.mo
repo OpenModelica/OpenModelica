@@ -354,7 +354,7 @@ algorithm
         (cache, typePath) = Inst.makeFullyQualified(cache, env, Absyn.IDENT(typeName));
         s1 = Absyn.pathString(typePath) +& " " +& s1;
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
-        // print(Util.if_(impl, "impl crap\n", "no impl\n"));
+        // print(if_(impl, "impl crap\n", "no impl\n"));
         Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.setCheckpoint, "innerouter-instVar-implicit");
         Error.addSourceMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3}, info);
         Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.rollBack, "innerouter-instVar-implicit");
@@ -388,7 +388,7 @@ algorithm
         typeName = SCode.className(cl);
         (cache, typePath) = Inst.makeFullyQualified(cache, env, Absyn.IDENT(typeName));
         s1 = Absyn.pathString(typePath) +& " " +& s1;
-        // print(Util.if_(impl, "impl crap\n", "no impl\n"));
+        // print(if_(impl, "impl crap\n", "no impl\n"));
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
         Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.setCheckpoint, "innerouter-instVar-implicit");
         Error.addSourceMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3}, info);
@@ -1119,7 +1119,9 @@ algorithm
           PrefixUtil.prefixToCrefOpt(inPrefix), NONE(), NONE());
 
         // Instantiate the components binding.
-        mod = Util.if_(List.isNotEmpty(inSubscripts) and not SCode.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings(),DAE.NOMOD(),inMod);
+        mod = if List.isNotEmpty(inSubscripts) and not SCode.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings()
+                 then DAE.NOMOD()
+                 else inMod;
         opt_binding = InstBinding.makeVariableBinding(ty, mod, NFInstUtil.toConst(vt), inPrefix, inName);
         start = InstBinding.instStartBindingExp(inMod /* Yup, let's keep the start-binding. It seems sane. */, ty, vt);
 

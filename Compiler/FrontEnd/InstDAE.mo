@@ -169,7 +169,7 @@ algorithm
         sstr = "'" +& sstr +& "'";
         comp = DAE.COMP(sstr, els, DAE.emptyElementSource, NONE());
         dae = DAE.DAE({comp});
-        str = Util.if_(System.getPartialInstantiation(), " partial", " full");
+        str = if System.getPartialInstantiation() then " partial" else " full";
         print("DAE: parent: " +& FGraph.getGraphNameStr(inParentEnv) +&
               " class: " +& FGraph.getGraphNameStr(inClassEnv) +& " state: " +& sstr +& str +& "\n" +&
               DAEDump.dumpStr(dae, DAE.emptyFuncTree) +& "\n");
@@ -178,7 +178,7 @@ algorithm
 
     case (_, _, _, _, _)
       equation
-        str = Util.if_(System.getPartialInstantiation(), " partial", " full");
+        str = if System.getPartialInstantiation() then " partial" else " full";
         print("DAE: " +& ClassInf.printStateStr(inState) +& str +& " - could not print\n");
       then ();
 

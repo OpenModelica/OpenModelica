@@ -154,7 +154,7 @@ protected function translateSubMods
 protected
   Integer pd;
 algorithm
-  pd := Util.if_(SCode.eachBool(inEach), 0, inDimensions);
+  pd := if SCode.eachBool(inEach) then 0 else inDimensions;
   outSubMods := List.map2(inSubMods, translateSubMod, pd, inEnv);
 end translateSubMods;
 
@@ -187,7 +187,7 @@ algorithm
     // See propagateMod for how this works.
     case (SOME((bind_exp, _)), _, _, _, _)
       equation
-        pd = Util.if_(SCode.eachBool(inEachPrefix), -1, inDimensions);
+        pd = if SCode.eachBool(inEachPrefix) then -1 else inDimensions;
       then
         NFInstTypes.RAW_BINDING(bind_exp, inEnv, pd, inInfo);
 

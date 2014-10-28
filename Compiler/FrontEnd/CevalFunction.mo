@@ -144,7 +144,7 @@ algorithm
         partialPrefix = partialPrefix), _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- CevalFunction.evaluate failed for function: " +& Util.if_(partialPrefix, "partial ", "") +& Absyn.pathString(p));
+        Debug.traceln("- CevalFunction.evaluate failed for function: " +& (if partialPrefix then "partial " else "") +& Absyn.pathString(p));
       then
         fail();
   end matchcontinue;

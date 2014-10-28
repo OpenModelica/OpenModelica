@@ -1248,16 +1248,16 @@ algorithm
       equation
         (subs_1, c1) = replaceCrefSubs2(subs, repl, cond);
         (cr_1, c2) = replaceCrefSubs(cr, repl, cond);
-        subs = Util.if_(c1,subs_1,subs);
-        cr = Util.if_(c2,cr_1,cr);
-        cr = Util.if_(c1 or c2,DAE.CREF_QUAL(name, ty, subs, cr),inCref);
+        subs = if c1 then subs_1 else subs;
+        cr = if c2 then cr_1 else cr;
+        cr = if c1 or c2 then DAE.CREF_QUAL(name, ty, subs, cr) else inCref;
       then
         (cr, c1 or c2);
 
     case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), _, _)
       equation
         (subs, c1) = replaceCrefSubs2(subs, repl, cond);
-        cr = Util.if_(c1,DAE.CREF_IDENT(name, ty, subs),inCref);
+        cr = if c1 then DAE.CREF_IDENT(name, ty, subs) else inCref;
       then
         (cr, c1);
 
@@ -1709,7 +1709,7 @@ algorithm
         (stmts1,true) = replaceStatementLst(stmts,repl,inFuncTypeExpExpToBooleanOption,{},false);
         alg = DAE.ALGORITHM_STMTS(stmts1);
         // if all statements are removed, remove the whole algorithm
-        eqns = Util.if_(listLength(stmts1)>0, BackendDAE.ALGORITHM(size,alg,source,crefExpand,eqAttr)::inAcc, inAcc);
+        eqns = if listLength(stmts1)>0 then BackendDAE.ALGORITHM(size,alg,source,crefExpand,eqAttr)::inAcc else inAcc;
       then
         (eqns,true);
 
@@ -1866,7 +1866,7 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,cond,cond2);
         source = DAEUtil.addSymbolicTransformationSubstitution(b3,source,cre,cre1);
         b4 = b1 or b2 or b3;
-        weqn = Util.if_(b4,BackendDAE.WHEN_EQ(cond2,cr1,e2,NONE()),whenEqn);
+        weqn = if b4 then BackendDAE.WHEN_EQ(cond2,cr1,e2,NONE()) else whenEqn;
       then
         (weqn,source,b4);
 
@@ -1884,7 +1884,7 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,cond,cond2);
         source = DAEUtil.addSymbolicTransformationSubstitution(b3,source,cre,cre1);
         b1 = b1 or b2 or b3 or b4;
-        weqn = Util.if_(b1,BackendDAE.WHEN_EQ(cond2,cr1,e2,SOME(elsePart2)),whenEqn);
+        weqn = if b1 then BackendDAE.WHEN_EQ(cond2,cr1,e2,SOME(elsePart2)) else whenEqn;
       then
         (weqn,source,b1);
   end match;
@@ -1960,7 +1960,7 @@ algorithm
         (cond1,_) = ExpressionSimplify.condsimplify(b1,cond1);
         (reinitStmtLst1,b2) = replaceWhenOperator(reinitStmtLst,repl,inFuncTypeExpExpToBooleanOption,false,{});
         b = b1 or b2;
-        wc1 = Util.if_(b,BackendDAE.WHEN_CLAUSE(cond1,reinitStmtLst1,elsindx),wc);
+        wc1 = if b then BackendDAE.WHEN_CLAUSE(cond1,reinitStmtLst1,elsindx) else wc;
         (wclst1,b) = replaceWhenClausesLst(wclst,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed or b,wc1::iAcc);
       then
         (wclst1,b);
@@ -2006,7 +2006,7 @@ algorithm
         (cond1,_) = ExpressionSimplify.condsimplify(b2,cond1);
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,cond,cond1);
         b = b1 or b2;
-        wop1 = Util.if_(b,BackendDAE.REINIT(cr1,cond1,source),wop);
+        wop1 = if b then BackendDAE.REINIT(cr1,cond1,source) else wop;
         (res1,b) =  replaceWhenOperator(res,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed or b,wop1::iAcc);
       then
         (res1,b);
@@ -2015,7 +2015,7 @@ algorithm
         (cond1,b) = replaceExp(cond,repl,inFuncTypeExpExpToBooleanOption);
         (cond1,_) = ExpressionSimplify.condsimplify(b,cond1);
         source = DAEUtil.addSymbolicTransformationSubstitution(b,source,cond,cond1);
-        wop1 = Util.if_(b,BackendDAE.ASSERT(cond1,msg,level,source),wop);
+        wop1 = if b then BackendDAE.ASSERT(cond1,msg,level,source) else wop;
         (res1,b) =  replaceWhenOperator(res,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed or b,wop1::iAcc);
       then
         (res1,b);
@@ -2029,7 +2029,7 @@ algorithm
         (exp1,b) = replaceExp(exp,repl,inFuncTypeExpExpToBooleanOption);
         (exp1,_) = ExpressionSimplify.condsimplify(b,exp1);
         source = DAEUtil.addSymbolicTransformationSubstitution(b,source,exp,exp1);
-        wop1 = Util.if_(b,BackendDAE.NORETCALL(exp,source),wop);
+        wop1 = if b then BackendDAE.NORETCALL(exp,source) else wop;
         (res1,b) =  replaceWhenOperator(res,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed or b,wop1::iAcc);
       then
         (res1,b);
@@ -2083,7 +2083,7 @@ algorithm
       equation
         (e1_1,b1) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
         //isCon = Expression.isConst(e1_1);
-        //e1_1 = Util.if_(isCon,e1,e1_1);
+        //e1_1 = if_(isCon,e1,e1_1);
         //cr = Expression.expCref(e1);
         //repl = Debug.bcallret3(isCon,removeReplacement,repl,cr,NONE(),repl);
         (e2_1,b2) = replaceExp(e2, repl,inFuncTypeExpExpToBooleanOption);

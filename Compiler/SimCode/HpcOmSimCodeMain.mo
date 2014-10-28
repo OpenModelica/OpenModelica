@@ -178,7 +178,9 @@ algorithm
       array<list<SimCodeVar.SimVar>> simVarMapping; //maps each backend variable to a list of simVars
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _,_, _, _, _, _, _, _, _) equation
 
-      print(Util.if_(Flags.isSet(Flags.HPCOM_ANALYZATION_MODE), "Using analyzation mode\n", ""));
+      if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then
+        print("Using analyzation mode\n");
+      end if;
 
       //Initial System
       //--------------
@@ -205,7 +207,7 @@ algorithm
       compCountPlusDummy = listLength(allComps)+1;
       equationSccMapping1 = removeDummyStateFromMapping(equationSccMapping);
       //the mapping can contain a dummy state as first scc
-      equationSccMapping = Util.if_(intEq(highestSccIdx, compCountPlusDummy), equationSccMapping1, equationSccMapping);
+      equationSccMapping = if intEq(highestSccIdx, compCountPlusDummy) then equationSccMapping1 else equationSccMapping;
       sccSimEqMapping = convertToSccSimEqMapping(equationSccMapping, listLength(allComps));
       simeqCompMapping = convertToSimeqCompMapping(equationSccMapping, lastEqMappingIdx);
       simEqIdxSimEqMapping = getSimEqIdxSimEqMapping(allEquations, arrayLength(simeqCompMapping));
@@ -265,7 +267,7 @@ algorithm
       SimCodeUtil.execStat("hpcom create ODE TaskGraph");
 
       taskGraphMetaValid = HpcOmTaskGraph.validateTaskGraphMeta(taskGraphDataOde, inBackendDAE);
-      taskGraphMetaMessage = Util.if_(taskGraphMetaValid, "TaskgraphMeta valid\n", "TaskgraphMeta invalid\n");
+      taskGraphMetaMessage = if taskGraphMetaValid then "TaskgraphMeta valid\n" else "TaskgraphMeta invalid\n";
       print(taskGraphMetaMessage);
 
       //print("ODE\n");
@@ -411,7 +413,7 @@ algorithm
         numProc = intMin(numProcSched,numProcSys);
         string1 = "Your system provides only "+&intString(numProcSys)+&" processors!\n";
         string2 = intString(numProcSched)+&" processors might be a reasonable number of processors.\n";
-        string1 = Util.if_(intGt(numProcSched,numProcSys),string1,string2);
+        string1 = if intGt(numProcSched,numProcSys) then string1 else string2;
         print("Please set the number of processors you want to use!\n");
         print(string1);
         Flags.setConfigInt(Flags.NUM_PROC,numProc);
@@ -420,7 +422,7 @@ algorithm
     else
       equation
         numProcSys = System.numProcessors();
-        numProc = Util.if_(intGt(numProcFlag,numProcSys),numProcSys,numProcFlag); // the system does not provide so many cores
+        numProc = if intGt(numProcFlag,numProcSys) then numProcSys else numProcFlag; // the system does not provide so many cores
         Debug.bcall(intGt(numProcFlag,numProcSys) and Flags.isSet(Flags.HPCOM_DUMP),print,"Warning: Your system provides only "+&intString(numProcSys)+&" processors!\n");
       then
         (numProcFlag,true);
@@ -1072,8 +1074,8 @@ algorithm
         numIt = numIterIn-1; // lower the counter of scheduling runs
         scheduleAgain = intLe(numProc,maxNumProc);
         //print("schedule again\n");
-        numProc = Util.if_(scheduleAgain,numProc,numProcIn);
-        numIt = Util.if_(scheduleAgain,numIt,0);
+        numProc = if_(scheduleAgain,numProc,numProcIn);
+        numIt = if_(scheduleAgain,numIt,0);
         schedule= Debug.bcallret6(scheduleAgain,createSchedule,taskGraphIn,taskGraphMetaIn,sccSimEqMappingIn,fileNamePrefix,numProc,scheduleIn);
         (schedule,numProc,numIt) = repeatScheduleWithOtherNumProc1(taskGraphIn,taskGraphMetaIn,sccSimEqMappingIn,fileNamePrefix,cpCostsWoC,schedule,numProc,numFixed,maxNumProc,maxDiff,numIt);
       then

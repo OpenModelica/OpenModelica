@@ -1166,7 +1166,7 @@ algorithm
     case(HpcOmSimCode.DEPTASK(sourceTask=HpcOmSimCode.CALCTASK(index=sourceIndex), targetTask=HpcOmSimCode.CALCTASK(index=targetIndex),outgoing=outgoing))
       equation
         s = "Dependency task ";
-        s = s +& Util.if_(outgoing, "(outgoing)", "(incoming)");
+        s = s +& (if outgoing then "(outgoing)" else "(incoming)");
         s = s +& " between " +& intString(sourceIndex) +& " and " +& intString(targetIndex) +& "\n";
       then s;
     case(HpcOmSimCode.SCHEDULED_TASK(compIdx=compIdx,numThreads=numThreads,taskSchedule=taskSchedule))
@@ -1656,7 +1656,7 @@ algorithm
       clusterCostsTmp = List.map(mergedNodesIn,Util.tuple22);
       clusterTmp = listReverse(List.map(mergedNodesIn,Util.tuple21));
       cluster::clusterTmp = clusterTmp;  // reverse the first cluster if there is only one cluster
-      cluster = Util.if_(List.isEmpty(clusterTmp),listReverse(cluster),cluster);
+      cluster = if List.isEmpty(clusterTmp) then listReverse(cluster) else cluster;
       clusterTmp = cluster::clusterTmp;
     then (clusterTmp,clusterCostsTmp);
    case(node::nodeRest,cost::costRest,_, {})
@@ -2097,8 +2097,8 @@ algorithm
     case(_,(firstThreadIdx,readyTime,currentThreadIdx))
       equation
         isLower = realLt(iThreadReadyTime, readyTime);
-        firstThreadIdx = Util.if_(isLower, currentThreadIdx, firstThreadIdx);
-        readyTime = Util.if_(isLower, iThreadReadyTime, readyTime);
+        firstThreadIdx = if isLower then currentThreadIdx else firstThreadIdx;
+        readyTime = if isLower then iThreadReadyTime else readyTime;
       then ((firstThreadIdx, readyTime, currentThreadIdx+1));
     else
       equation
@@ -3330,8 +3330,8 @@ algorithm
   // get new values
   numStateVars := listLength(stateVars);
   numAlgVars := listLength(algVars);
-  numLinearSystems := Util.if_(intEq(numLinearSystems,0),0,lsIdx);
-  numNonLinearSystems := Util.if_(intEq(numNonLinearSystems,0),0,nlsIdx);
+  numLinearSystems := if intEq(numLinearSystems,0) then 0 else lsIdx;
+  numNonLinearSystems := if intEq(numNonLinearSystems,0) then 0 else nlsIdx;
   //numMixedSystems := mIdx;
   //update objects
   varInfo := SimCode.VARINFO(numZeroCrossings,numTimeEvents,numRelations,numMathEventFunctions,numStateVars,numAlgVars,numDiscreteReal,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,
@@ -3690,7 +3690,7 @@ algorithm
      equation
        //print("the systemSimEqSys "+&SimCodeUtil.dumpSimEqSystemLst(residual)+&"\n");
        numEqs = listLength(residual);
-       systSimEqSysIdcs2 = Util.if_(intEq(numEqs,0),{},List.intRange2(simEqSysIdxIn,simEqSysIdxIn+numEqs-1));
+       systSimEqSysIdcs2 = if intEq(numEqs,0) then {} else List.intRange2(simEqSysIdxIn,simEqSysIdxIn+numEqs-1);
        //print("systSimEqSysIdcs2 :"+&intListString(systSimEqSysIdcs2)+&"\n");
        (duplicated,_) = List.map1_2(residual,replaceExpsInSimEqSystem,repl);// replace the exps and crefs
        duplicated = List.threadMap(duplicated,systSimEqSysIdcs2,SimCodeUtil.replaceSimEqSysIndex);
@@ -4128,7 +4128,7 @@ algorithm
         parentAssgmnts = List.map1(parentsNofpred,Array.getIndexFirst,taskAssIn);
         (_,unAssParents) = List.filter1OnTrueSync(parentAssgmnts,intEq,-1,parentsNofpred); // not yet assigned parents
         // if there are unassigned parents, use them, otherwise all parents including fpred. take the one with the least execution cost
-        parents = Util.if_(List.isEmpty(unAssParents),parents,unAssParents);
+        parents = if List.isEmpty(unAssParents) then parents else unAssParents;
         parentExeCost = List.map1(parents,HpcOmTaskGraph.getExeCostReqCycles,iTaskGraphMeta);
         maxExeCost = List.fold(parentExeCost,realMax,0.0);
         pos = List.position(maxExeCost,parentExeCost);
@@ -4735,7 +4735,7 @@ algorithm
         r1 = List.first(marked);
         r2 = List.last(marked);
         midIdx = intDiv(listLength(marked),2);
-        midIdx = Util.if_(intEq(midIdx,0),1,midIdx);
+        midIdx = if intEq(midIdx,0) then 1 else midIdx;
         r3 = listGet(marked,midIdx);
         (pivotElement,_) = getMedian3(r1,r2,r3);
         newIdx = List.position(pivotElement,lstIn);
@@ -5457,7 +5457,7 @@ algorithm
       equation
         // next thread
         true = threadIdxIn > arrayLength(taskIdcsIn);
-        nextThreadIdx = Util.if_(intGe(threadIdxIn,numProc),1,threadIdxIn+1);
+        nextThreadIdx = if intGe(threadIdxIn,numProc) then 1 else (threadIdxIn+1);
         threadTasks = computeTimeFinished(threadTasksIn,taskIdcsIn,nextThreadIdx,checkedTasksIn,taskGraphIn,taskGraphTIn,taskGraphMetaIn,numProc,closedThreads);
       then
         threadTasks;
@@ -5469,7 +5469,7 @@ algorithm
         thread = arrayGet(threadTasksIn,threadIdxIn);
         true = taskIdx > listLength(thread);
         false = listLength(closedThreads) == numProc;
-        nextThreadIdx = Util.if_(intGe(threadIdxIn,numProc),1,threadIdxIn+1);
+        nextThreadIdx = if intGe(threadIdxIn,numProc) then 1 else (threadIdxIn+1);
         closedThreads1 = threadIdxIn::closedThreads;
         closedThreads1 = List.unique(closedThreads1);
         threadTasks = computeTimeFinished(threadTasksIn,taskIdcsIn,nextThreadIdx,checkedTasksIn,taskGraphIn,taskGraphTIn,taskGraphMetaIn,numProc,closedThreads1);
@@ -5501,7 +5501,7 @@ protected
   Integer nextThread;
 algorithm
   isLastThread := intEq(threadId,numThreads);
-  nextThread := Util.if_(isLastThread,1,threadId+1);
+  nextThread := if isLastThread then 1 else (threadId+1);
   isClosed := List.isMemberOnTrue(nextThread,closedThreads,intEq);
   nextThreadOut := Debug.bcallret3(isClosed, getNextThreadIdx, nextThread, closedThreads, numThreads, nextThread);
 end getNextThreadIdx;
@@ -5534,7 +5534,7 @@ algorithm
         // gets the parentIdcs which are not yet checked and computes the latest finishingTime of all parentNodes
         ((parentLst, latestTask)) = List.fold1(parentLst, updateFinishingTime1, checkedTasksIn, ({},HpcOmSimCode.TASKEMPTY()));
         isComputable = List.isEmpty(parentLst);
-        taskIdxNew = Util.if_(isComputable,taskIdxIn+1,taskIdxIn);
+        taskIdxNew = if isComputable then (taskIdxIn+1) else taskIdxIn;
         //update the threadTasks and checked Tasks
         ((threadTasks,checkedTasks)) = Debug.bcallret1(isComputable, computeFinishingTimeForOneTask, (threadTasksIn,checkedTasksIn,taskIdxIn,threadIdxIn,latestTask,taskGraphMetaIn),(threadTasksIn,checkedTasksIn));
       then
@@ -5565,8 +5565,8 @@ algorithm
   task := arrayGet(checkedTaskIn,parentIdx);
   isCalc := isCalcTask(task);
   finishingTime := Debug.bcallret1(isCalc,getTimeFinished,task,-1.0);
-  task := Util.if_(realGt(finishingTime,finishingTimeIn),task,taskIn);
-  parentLst := Util.if_(isCalc,parentLstIn,parentIdx::parentLstIn);
+  task := if realGt(finishingTime,finishingTimeIn) then task else taskIn;
+  parentLst := if isCalc then parentLstIn else (parentIdx::parentLstIn);
   tplOut := (parentLst,task);
 end updateFinishingTime1;
 
@@ -5619,7 +5619,7 @@ algorithm
         ((_,exeCost)) = HpcOmTaskGraph.getExeCost(taskIdx,taskGraphMeta);
         finishingTime = finishingTime +. exeCost;
         finishingTimeComm = finishingTime +. commCost;
-        finishingTime = Util.if_(intEq(threadIdxLatest,threadIdx),finishingTime,finishingTimeComm);
+        finishingTime = if intEq(threadIdxLatest,threadIdx) then finishingTime else finishingTimeComm;
         // choose if the parentTask or the preTask(task on the same processor) is later.
         preTask = getPredecessorCalcTask(thread,taskNum);
         finishingTime1 = getTimeFinished(preTask);
@@ -5933,7 +5933,7 @@ protected function intListString
   output String s;
 algorithm
   s := stringDelimitList(List.map(lstIn,intString)," , ");
-  s := Util.if_(List.isEmpty(lstIn),"{}",s);
+  s := if List.isEmpty(lstIn) then "{}" else s;
 end intListString;
 
 protected function intListListString

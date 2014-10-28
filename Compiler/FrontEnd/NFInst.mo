@@ -1881,7 +1881,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         //bval = isBuiltinFunctionName(funcName);
         bval = false;
-        str = Util.if_(bval, "*builtin*", "*regular*");
+        str = if bval then "*builtin*" else "*regular*";
         Debug.traceln("Failed to instantiate call to " +& str +& " function: " +&
           Dump.printExpStr(inExp) +& " at position:" +& Error.infoStr(inInfo));
       then
@@ -2324,7 +2324,7 @@ algorithm
     // given prefix should be used. Otherwise it's not a package constant and
     // will be instantiated normally, in which case NONE() is returned.
     case (false, SOME(prefix), _, _)
-      then Util.if_(NFInstPrefix.isPackagePrefix(prefix), inPrefix, NONE());
+      then if NFInstPrefix.isPackagePrefix(prefix) then inPrefix else NONE();
 
     // Otherwise we have a component without a prefix or a class.
     else
@@ -2976,9 +2976,9 @@ algorithm
     case (elt as NFInstTypes.ELEMENT(NFInstTypes.UNTYPED_COMPONENT(name=Absyn.IDENT(name),dimensions=dimensions,info=info),_),_)
       equation
         dims = List.map(arrayList(dimensions),NFInstUtil.unwrapDimension);
-        bindings = Util.if_(arrayLength(dimensions)>0,
-          NFInstTypes.FUNCTION_ARRAY_INIT(name, DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,dims,DAE.emptyTypeSource), info)::inBindings,
-          inBindings);
+        bindings = if arrayLength(dimensions)>0
+          then NFInstTypes.FUNCTION_ARRAY_INIT(name, DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,dims,DAE.emptyTypeSource), info)::inBindings
+          else inBindings;
       then (elt,bindings);
     else (inElt,inBindings);
   end match;

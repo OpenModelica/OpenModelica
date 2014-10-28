@@ -41,7 +41,6 @@ encapsulated package Unit
 public import DAE;
 
 protected import ComponentReference;
-protected import Util;
 public import System;
 
 
@@ -199,54 +198,54 @@ algorithm
 
       b = false;
       s = "mol^(" +& intString(i1) +& ")";
-      s = Util.if_(intEq(i1, 0), "", s);
+      s = if intEq(i1, 0) then "" else s;
       b = b or intNe(i1, 0);
       str = str +& s;
 
-      s = Util.if_(b and intNe(i2, 0), " * ", "");
+      s = if b and intNe(i2, 0) then " * " else "";
       str = str +& s;
       s = "cd^(" +& intString(i2) +& ")";
-      s = Util.if_(intEq(i2, 0), "", s);
+      s = if intEq(i2, 0) then "" else s;
       b = b or intNe(i2, 0);
       str = str +& s;
 
-      s = Util.if_(b and intNe(i3, 0), " * ", "");
+      s = if b and intNe(i3, 0) then " * " else "";
       str = str +& s;
       s = "m^(" +& intString(i3) +& ")";
-      s = Util.if_(intEq(i3, 0), "", s);
+      s = if intEq(i3, 0) then "" else s;
       b = b or intNe(i3, 0);
       str = str +& s;
 
-      s = Util.if_(b and intNe(i4, 0), " * ", "");
+      s = if b and intNe(i4, 0) then " * " else "";
       str = str +& s;
       s = "s^(" +& intString(i4) +& ")";
-      s = Util.if_(intEq(i4, 0), "", s);
+      s = if intEq(i4, 0) then "" else s;
       b = b or intNe(i4, 0);
       str = str +& s;
 
-      s = Util.if_(b and intNe(i5, 0), " * ", "");
+      s = if b and intNe(i5, 0) then " * " else "";
       str = str +& s;
       s = "A^(" +& intString(i5) +& ")";
-      s = Util.if_(intEq(i5, 0), "", s);
+      s = if intEq(i5, 0) then "" else s;
       b = b or intNe(i5, 0);
       str = str +& s;
 
-      s = Util.if_(b and intNe(i6, 0), " * ", "");
+      s = if b and intNe(i6, 0) then " * " else "";
       str = str +& s;
       //s = "(K-" +& realString(shift1) +& ")^(" +& intString(i6) +& ")";
       s = "K^(" +& intString(i6) +& ")";
-      s = Util.if_(intEq(i6, 0), "", s);
+      s = if intEq(i6, 0) then "" else s;
       b = b or intNe(i6, 0);
       str = str +& s;
 
-      s = Util.if_(b and intNe(i7, 0), " * ", "");
+      s = if b and intNe(i7, 0) then " * " else "";
       str = str +& s;
       s = "g^(" +& intString(i7) +& ")";
-      s = Util.if_(intEq(i7, 0), "", s);
+      s = if intEq(i7, 0) then "" else s;
       b = b or intNe(i7, 0);
       str = str +& s;
 
-      s = Util.if_(b , "", "1");
+      s = if b then "" else "1";
       str = str +& s;
     then str;
 

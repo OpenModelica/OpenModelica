@@ -101,7 +101,7 @@ protected
   Real stepSize;
   Integer numberOfIntervals;
 algorithm
-  numberOfIntervals := Util.if_(inumberOfIntervals <= 0, 1, inumberOfIntervals);
+  numberOfIntervals := if inumberOfIntervals <= 0 then 1 else inumberOfIntervals;
   stepSize := (stopTime -. startTime) /. intReal(numberOfIntervals);
   simSettings := SimCode.SIMULATION_SETTINGS(
     startTime, stopTime, numberOfIntervals, stepSize, tolerance,

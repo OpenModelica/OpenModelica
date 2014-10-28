@@ -710,7 +710,7 @@ algorithm
     case(UnitAbsyn.INSTSTORE(st,ht,res),DAE.T_REAL(varLst = DAE.TYPES_VAR(name="unit",binding = DAE.EQBOUND(exp=DAE.SCONST(unitStr)))::_),_)
       equation
         unit = str2unit(unitStr,NONE());
-        unit = Util.if_(0 == stringCompare(unitStr,""),UnitAbsyn.UNSPECIFIED(),unit);
+        unit = if 0 == stringCompare(unitStr,"") then UnitAbsyn.UNSPECIFIED() else unit;
         (st,indx) = add(unit,st);
         ht = BaseHashTable.add((cr,indx),ht);
       then UnitAbsyn.INSTSTORE(st,ht,res);
@@ -975,7 +975,7 @@ algorithm
 
     case(_,e as DAE.ICONST(i),divOrMul,ht,store) equation
       s1 = "$"+&intString(tick())+&"_"+&intString(i);
-      u = Util.if_(divOrMul,str2unit("1",NONE()),UnitAbsyn.UNSPECIFIED());
+      u = if divOrMul then str2unit("1",NONE()) else UnitAbsyn.UNSPECIFIED();
       (store,indx) = add(u,store);
        ht = BaseHashTable.add((ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
@@ -983,7 +983,7 @@ algorithm
     /* for each constant, add new unspecified unit*/
     case(_,e as DAE.RCONST(r),divOrMul,ht,store)equation
       s1 = "$"+&intString(tick())+&"_"+&realString(r);
-      u = Util.if_(divOrMul,str2unit("1",NONE()),UnitAbsyn.UNSPECIFIED());
+      u = if divOrMul then str2unit("1",NONE()) else UnitAbsyn.UNSPECIFIED();
       (store,indx) = add(u,store);
        ht = BaseHashTable.add((ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
@@ -1157,7 +1157,7 @@ algorithm
       unspec = 0 == stringCompare(unitStr,"");
 
       unit = str2unit(unitStr,SOME(funcInstId));
-      unit = Util.if_(unspec,UnitAbsyn.UNSPECIFIED(),unit);
+      unit = if unspec then UnitAbsyn.UNSPECIFIED() else unit;
      (store,indx) = add(unit,store);
      (store,indx2) = add(UnitAbsyn.UNSPECIFIED(),store);
       then ({UnitAbsyn.LOC(indx2,funcCallExp)},{UnitAbsyn.EQN(UnitAbsyn.LOC(indx2,funcCallExp),UnitAbsyn.LOC(indx,funcCallExp),funcCallExp)},store);
@@ -1265,7 +1265,7 @@ algorithm
       unitStr = getUnitStr(tp);
 
       unit = str2unit(unitStr,SOME(funcInstId));
-      unit = Util.if_(0 == stringCompare(unitStr,""),UnitAbsyn.UNSPECIFIED(),unit);
+      unit = if 0 == stringCompare(unitStr,"") then UnitAbsyn.UNSPECIFIED() else unit;
       (store,indx) = add(unit,store);
       (store,indxs) = buildFuncTypeStores2(fargs,funcInstId,store);
     then (store,indx::indxs);

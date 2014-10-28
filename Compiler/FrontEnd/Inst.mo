@@ -310,7 +310,7 @@ algorithm
         // adrpo: NOTE THAT THE NEXT FUNCTION CALL MUST BE THE FIRST IN THIS CASE, otherwise the stack overflow will not be caught!
         stackOverflow = setStackOverflowSignal(false);
 
-        cname_str = Absyn.pathString(path) +& Util.if_(stackOverflow, ". The compiler got into Stack Overflow!", "");
+        cname_str = Absyn.pathString(path) +& (if stackOverflow then ". The compiler got into Stack Overflow!" else "");
         Error.addMessage(Error.ERROR_FLATTENING, {cname_str});
 
         // let the GC collect these as they are used only by Inst!
@@ -1124,7 +1124,7 @@ algorithm
         names = SCode.componentNames(c);
         ty2 = DAE.T_ENUMERATION(NONE(), fq_class, names, tys1, tys, DAE.emptyTypeSource);
         bc = arrayBasictypeBaseclass(inst_dims, ty2);
-        bc = Util.if_(Util.isSome(bc), bc, SOME(ty2));
+        bc = if Util.isSome(bc) then bc else SOME(ty2);
         ty = InstUtil.mktype(fq_class, ci_state_1, tys1, bc, eqConstraint, c);
         // update Enumerationtypes in environment
         (cache,env_3) = InstUtil.updateEnumerationEnvironment(cache,env_2,ty,c,ci_state_1);
@@ -1140,7 +1140,7 @@ algorithm
         ErrorExt.setCheckpoint("instClassParts");
         false = InstUtil.isBuiltInClass(n) "If failed above, no need to try again";
         // Debug.fprint(Flags.INSTTR, "ICLASS [");
-        _ = Util.if_(impl, "impl] ", "expl] ");
+        // _ = if_(impl, "impl] ", "expl] ");
         // Debug.fprint(Flags.INSTTR, implstr);
         // Debug.fprintln(Flags.INSTTR, FGraph.printGraphPathStr(env) +& "." +& n +& " mods: " +& Mod.printModStr(mods));
         // t1 = clock();
@@ -1153,7 +1153,7 @@ algorithm
         // b=realGt(time,0.05);
         // s = realString(time);
         // Debug.fprintln(Flags.INSTTR, " -> ICLASS " +& n +& " inst time: " +& s +& " in env: " +& FGraph.printGraphPathStr(env) +& " mods: " +& Mod.printModStr(mods));
-        dae = Util.if_(SCode.isFunction(c) and not impl, DAE.DAE({}), dae);
+        dae = if SCode.isFunction(c) and not impl then DAE.DAE({}) else dae;
         ErrorExt.delCheckpoint("instClassParts");
       then
         (cache,env_1,ih,store,dae,csets,ci_state_1,tys,bc,oDA,eqConstraint,graph);
@@ -1755,7 +1755,7 @@ algorithm
       equation
         // t1 = clock();
 
-        // str = Util.if_(valueEq(r, SCode.R_PACKAGE()), "", "Instantiating non package: " +& FGraph.getGraphNameStr(env) +& "/" +& n +& "\n");
+        // str = if_(valueEq(r, SCode.R_PACKAGE()), "", "Instantiating non package: " +& FGraph.getGraphNameStr(env) +& "/" +& n +& "\n");
         // print(str);
 
         (cache,env_1,ih,ci_state_1,vars) =
@@ -2133,14 +2133,14 @@ algorithm
         (cdefelts,extendsclasselts,extendselts,compelts) = InstUtil.splitElts(els);
 
         // remove components from expandable connectors
-        // compelts = Util.if_(valueEq(re, SCode.R_CONNECTOR(true)), {}, compelts);
+        // compelts = if_(valueEq(re, SCode.R_CONNECTOR(true)), {}, compelts);
 
         extendselts = SCodeUtil.addRedeclareAsElementsToExtends(extendselts, SCodeUtil.getRedeclareAsElements(els));
 
         (cache, env1,ih) = InstUtil.addClassdefsToEnv(cache, env, ih, pre, cdefelts, impl, SOME(mods));
 
 
-        //// Debug.fprintln(Flags.INST_TRACE, "after InstUtil.addClassdefsToEnv ENV: " +& Util.if_(stringEq(className, "PortVolume"), FGraph.printGraphStr(env1), " no env print "));
+        //// Debug.fprintln(Flags.INST_TRACE, "after InstUtil.addClassdefsToEnv ENV: " +& if_(stringEq(className, "PortVolume"), FGraph.printGraphStr(env1), " no env print "));
 
         // adrpo: TODO! DO SOME CHECKS HERE!
         // restriction on what can inherit what, see 7.1.3 Restrictions on the Kind of Base Class
@@ -2262,7 +2262,7 @@ algorithm
           instList(cache, env5, ih, pre, csets2, ci_state3, InstSection.instInitialEquation, initeqs_1, impl, InstTypes.alwaysUnroll, graph);
 
         // do NOT unroll for loops for functions!
-        unrollForLoops = Util.if_(SCode.isFunctionRestriction(re), InstTypes.neverUnroll, InstTypes.alwaysUnroll);
+        unrollForLoops = if SCode.isFunctionRestriction(re) then InstTypes.neverUnroll else InstTypes.alwaysUnroll;
 
         //Instantiate algorithms  (see function "instAlgorithm")
         (cache,env5,ih,dae4,csets4,ci_state5,graph) =
@@ -2987,7 +2987,7 @@ algorithm
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
 
         // this does not work, see Modelica.Media SingleGasNasa!
-        // els = Util.if_(SCode.partialBool(partialPrefix), {}, els);
+        // els = if_(SCode.partialBool(partialPrefix), {}, els);
 
         // If we partially instantiate a partial package, we filter out constants (maybe we should also filter out functions) /sjoelund
         lst_constantEls = listAppend(extcomps,InstUtil.addNomod(InstUtil.constantEls(els))) " Retrieve all constants";
@@ -3472,7 +3472,7 @@ algorithm
           condition = cond,
           info = info) = el;
 
-        true = Util.if_(Config.acceptParModelicaGrammar(), InstUtil.checkParallelismWRTEnv(env,name,attr,info), true);
+        true = if Config.acceptParModelicaGrammar() then InstUtil.checkParallelismWRTEnv(env,name,attr,info) else true;
 
         // merge modifers from the component to the modifers from the constrained by
         m = SCode.mergeModifiers(m, SCodeUtil.getConstrainedByModifiers(prefixes));
@@ -3620,8 +3620,8 @@ algorithm
         // If the type is one of the simple, predifined types a simple variable
         // declaration is added to the DAE.
         env = FGraph.updateComp(env2, new_var, FCore.VAR_DAE(), comp_env);
-        vars = Util.if_(already_declared, {}, {new_var});
-        dae = Util.if_(already_declared, DAE.emptyDae, dae);
+        vars = if already_declared then {} else {new_var};
+        dae = if already_declared then DAE.emptyDae else dae;
         (_, ih, graph) = InnerOuter.handleInnerOuterEquations(io, DAE.emptyDae, ih, graph_new, graph);
 
       then
@@ -3693,8 +3693,8 @@ algorithm
         // If the type is one of the simple, predifined types a simple variable
         // declaration is added to the DAE.
         env = FGraph.updateComp(env, new_var, FCore.VAR_DAE(), comp_env);
-        vars = Util.if_(already_declared, {}, {new_var});
-        dae = Util.if_(already_declared, DAE.emptyDae, dae);
+        vars = if already_declared then {} else {new_var};
+        dae = if already_declared then DAE.emptyDae else dae;
         (_, ih, graph) = InnerOuter.handleInnerOuterEquations(io, DAE.emptyDae, ih, graph_new, graph);
       then
         (cache, env, ih, store, dae, csets, ci_state, vars, graph);
@@ -5138,9 +5138,9 @@ algorithm
       equation
         (p1,p2) = modifyInstantiateClass2(redecls,path);
         i1 = listLength(p1);
-        omod1 = Util.if_(i1==0,DAE.NOMOD(), DAE.REDECL(f,e,p1));
+        omod1 = if i1==0 then DAE.NOMOD() else DAE.REDECL(f,e,p1);
         i1 = listLength(p2);
-        omod2 = Util.if_(i1==0,DAE.NOMOD(), DAE.REDECL(f,e,p2));
+        omod2 = if i1==0 then DAE.NOMOD() else DAE.REDECL(f,e,p2);
       then
         (omod1,omod2);
 

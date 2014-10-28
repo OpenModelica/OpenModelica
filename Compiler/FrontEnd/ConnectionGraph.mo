@@ -1050,7 +1050,9 @@ algorithm
     // handle rooted - with zero size array
     case (DAE.CALL(path=Absyn.IDENT("rooted"), expLst={DAE.ARRAY(array = {})}), (rooted,roots,graph))
       equation
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalConnectionsOperatorsHelper: " +& ExpressionDump.printExpStr(inExp) +& " = " +& "false");
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = false");
+        end if;
       then
         (DAE.BCONST(false), (rooted,roots,graph));
 
@@ -1067,8 +1069,9 @@ algorithm
         result = getRooted(cref,cref1,rooted);
         //print("- ConnectionGraph.evalRootedAndIsRootHelper: " +&
         //   ComponentReference.printComponentRefStr(cref) +& " is " +& boolString(result) +& " rooted\n");
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalConnectionsOperatorsHelper: " +&
-           ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = " + boolString(result));
+        end if;
       then (DAE.BCONST(result), (rooted,roots,graph));
 
     // no roots, same exp
@@ -1077,14 +1080,18 @@ algorithm
     // deal with Connections.isRoot - with zero size array
     case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.ARRAY(array = {})}), (rooted,roots,graph))
       equation
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalConnectionsOperatorsHelper: " +& ExpressionDump.printExpStr(inExp) +& " = " +& "false");
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = false");
+        end if;
       then
         (DAE.BCONST(false), (rooted,roots,graph));
 
     // deal with NOT Connections.isRoot - with zero size array
     case (DAE.LUNARY(DAE.NOT(_), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.ARRAY(array = {})})), (rooted,roots,graph))
       equation
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalConnectionsOperatorsHelper: " +& ExpressionDump.printExpStr(inExp) +& " = " +& "false");
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = false");
+        end if;
       then
         (DAE.BCONST(false), (rooted,roots,graph));
 
@@ -1092,8 +1099,9 @@ algorithm
     case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.CREF(componentRef = cref)}), (rooted,roots,graph))
       equation
         result = List.isMemberOnTrue(cref, roots, ComponentReference.crefEqualNoStringCompare);
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalConnectionsOperatorsHelper: " +&
-           ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = " + boolString(result));
+        end if;
       then (DAE.BCONST(result), (rooted,roots,graph));
 
     // deal with NOT Connections.isRoot
@@ -1101,19 +1109,22 @@ algorithm
       equation
         result = List.isMemberOnTrue(cref, roots, ComponentReference.crefEqualNoStringCompare);
         result = boolNot(result);
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalConnectionsOperatorsHelper: " +&
-           ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = " + boolString(result));
+        end if;
       then (DAE.BCONST(result), (rooted,roots,graph));
 
     // deal with Connections.uniqueRootIndices, TODO! FIXME! actually implement this
     case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")),
           expLst={uroots as DAE.ARRAY(array = lst),nodes,message}), (rooted,roots,graph))
       equation
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalConnectionsOperatorsHelper: Connections.uniqueRootsIndicies(" +&
-          ExpressionDump.printExpStr(uroots) +& "," +&
-          ExpressionDump.printExpStr(nodes) +& "," +&
-          ExpressionDump.printExpStr(message) +& ")");
-          lst = List.fill(DAE.ICONST(1), listLength(lst)); // TODO! FIXME! actually implement this correctly
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: Connections.uniqueRootsIndicies(" +
+            ExpressionDump.printExpStr(uroots) + "," +
+            ExpressionDump.printExpStr(nodes) + "," +
+            ExpressionDump.printExpStr(message) + ")");
+        end if;
+        lst = List.fill(DAE.ICONST(1), listLength(lst)); // TODO! FIXME! actually implement this correctly
       then
         (DAE.ARRAY(DAE.T_INTEGER_DEFAULT, false, lst), (rooted,roots,graph));
 
@@ -1412,12 +1423,12 @@ algorithm
     case ((c1, c2, _), _)
       equation
         isBroken = listMember(inDaeEdge, inBrokenDaeEdges);
-        label = Util.if_(isBroken, "[[broken connect]]", "connect");
-        color = Util.if_(isBroken, "red", "green");
-        style = Util.if_(isBroken, "\"bold, dashed\"", "solid");
-        decorate = Util.if_(isBroken, "true", "false");
-        fontColor = Util.if_(isBroken, "red", "green");
-        labelFontSize = Util.if_(isBroken, "labelfontsize = 20.0, ", "");
+        label = if isBroken then "[[broken connect]]" else "connect";
+        color = if isBroken then "red" else "green";
+        style = if isBroken then "\"bold, dashed\"" else "solid";
+        decorate = boolString(isBroken);
+        fontColor = if isBroken then "red" else "green";
+        labelFontSize = if isBroken then "labelfontsize = 20.0, " else "";
         sc1 = ComponentReference.printComponentRefStr(c1);
         sc2 = ComponentReference.printComponentRefStr(c2);
         strDaeEdge = stringAppendList({
@@ -1446,7 +1457,7 @@ algorithm
         isSelectedRoot = listMember(c, inFinalRoots);
         strDefiniteRoot = "\"" +& ComponentReference.printComponentRefStr(c) +& "\"" +&
            " [fillcolor = red, rank = \"source\", label = " +& "\"" +& ComponentReference.printComponentRefStr(c) +& "\", " +&
-           Util.if_(isSelectedRoot, "shape=polygon, sides=8, distortion=\"0.265084\", orientation=26, skew=\"0.403659\"", "shape=box") +&
+           (if isSelectedRoot then "shape=polygon, sides=8, distortion=\"0.265084\", orientation=26, skew=\"0.403659\"" else "shape=box") +&
            "];\n\t";
       then strDefiniteRoot;
   end match;
@@ -1464,7 +1475,7 @@ algorithm
         isSelectedRoot = listMember(c, inFinalRoots);
         strPotentialRoot = "\"" +& ComponentReference.printComponentRefStr(c) +& "\"" +&
            " [fillcolor = orangered, rank = \"min\" label = " +& "\"" +& ComponentReference.printComponentRefStr(c) +& "\\n" +& realString(priority) +& "\", " +&
-           Util.if_(isSelectedRoot, "shape=ploygon, sides=7, distortion=\"0.265084\", orientation=26, skew=\"0.403659\"", "shape=box") +&
+           (if isSelectedRoot then "shape=ploygon, sides=7, distortion=\"0.265084\", orientation=26, skew=\"0.403659\"" else "shape=box") +&
            "];\n\t";
       then strPotentialRoot;
   end match;

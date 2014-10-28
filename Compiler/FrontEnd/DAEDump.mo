@@ -301,7 +301,7 @@ algorithm
       equation
         extargsstr = Dump.getStringList(extargs, dumpExtArgStr, ", ");
         rettystr = dumpExtArgStr(retty);
-        rettystr = Util.if_(stringEq(rettystr, ""), rettystr, rettystr +& " = ");
+        rettystr = if stringEq(rettystr, "") then rettystr else (rettystr +& " = ");
         str = stringAppendList({"external \"", lang, "\" ", rettystr, id,"(",extargsstr,");"});
       then
         str;
@@ -591,9 +591,8 @@ algorithm
         res_1 = Util.stringDelimitListNonEmptyElts(
           {quantity,unit_str,displayUnit_str,min_str,max_str,
           initial_str,fixed_str,nominal_str,stateSel_str,uncertainty_str,dist_str,startOriginStr}, ", ");
-        res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
-        res = Util.if_(is_empty, "", res1);
+        res = if is_empty then "" else stringAppendList({"(",res_1,")"});
       then
         res;
 
@@ -610,9 +609,8 @@ algorithm
         startOriginStr = getStartOrigin(startOrigin);
 
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,initial_str,fixed_str,uncertainty_str,dist_str,startOriginStr}, ", ");
-        res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
-        res = Util.if_(is_empty, "", res1);
+        res = if is_empty then "" else stringAppendList({"(",res_1,")"});
       then
         res;
 
@@ -625,9 +623,8 @@ algorithm
         startOriginStr = getStartOrigin(startOrigin);
 
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,initial_str,fixed_str,startOriginStr}, ", ");
-        res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
-        res = Util.if_(is_empty, "", res1);
+        res = if is_empty then "" else stringAppendList({"(",res_1,")"});
       then
         res;
 
@@ -639,9 +636,8 @@ algorithm
         startOriginStr = getStartOrigin(startOrigin);
 
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,initial_str,startOriginStr}, ", ");
-        res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
-        res = Util.if_(is_empty, "", res1);
+        res = if is_empty then "" else stringAppendList({"(",res_1,")"});
       then
         res;
 
@@ -656,9 +652,8 @@ algorithm
         startOriginStr = getStartOrigin(startOrigin);
 
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,initial_str,fixed_str,startOriginStr}, ", ");
-        res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
-        res = Util.if_(is_empty, "", res1);
+        res = if is_empty then "" else stringAppendList({"(",res_1,")"});
       then
         res;
 
@@ -1161,7 +1156,7 @@ algorithm
         Print.printBuf(typeStr);
         parallelism_str = dumpParallelismStr(t);
         Print.printBuf(parallelism_str);
-        impureStr = Util.if_(isImpure, "impure ", "");
+        impureStr = if isImpure then "impure " else "";
         Print.printBuf(impureStr);
         Print.printBuf("function ");
         fstr = Absyn.pathStringNoQual(fpath);
@@ -1185,7 +1180,7 @@ algorithm
     case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),
                       type_ = _, isImpure = isImpure, comment = c)
       equation
-        impureStr = Util.if_(isImpure, "impure ", "");
+        impureStr = if isImpure then "impure " else "";
         Print.printBuf(impureStr);
         Print.printBuf("function ");
         fstr = Absyn.pathStringNoQual(fpath);
@@ -1353,7 +1348,9 @@ algorithm
         ExpressionDump.printExp(e2);
         Print.printBuf(" := ");
         ExpressionDump.printExp(e);
-        Print.printBuf(Util.if_(Config.typeinfo(), " /* " +& Error.infoStr(DAEUtil.getElementSourceFileInfo(source)) +& " */", ""));
+        if Config.typeinfo() then
+          Print.printBuf(" /* " +& Error.infoStr(DAEUtil.getElementSourceFileInfo(source)) +& " */");
+        end if;
         Print.printBuf(";\n");
       then
         ();
@@ -1628,7 +1625,7 @@ algorithm
     case (DAE.STMT_FOR(iter = id,index = index,range = e,statementLst = stmts),i)
       equation
         s1 = indentStr(i);
-        s2 = Util.if_(index == -1, "", "/* iter index " +& intString(index) +& " */");
+        s2 = if index == -1 then "" else ("/* iter index " +& intString(index) +& " */");
         s3 = ExpressionDump.printExpStr(e);
         i_1 = i + 2;
         s4 = ppStmtListStr(stmts, i_1);
@@ -1640,7 +1637,7 @@ algorithm
     case (DAE.STMT_PARFOR(iter = id,index = index,range = e,statementLst = stmts),i)
       equation
         s1 = indentStr(i);
-        s2 = Util.if_(index == -1, "", "/* iter index " +& intString(index) +& " */");
+        s2 = if index == -1 then "" else ("/* iter index " +& intString(index) +& " */");
         s3 = ExpressionDump.printExpStr(e);
         i_1 = i + 2;
         s4 = ppStmtListStr(stmts, i_1);
@@ -2741,17 +2738,17 @@ algorithm
        // dump variables
        str = dumpVarsStream(v, false, str);
 
-       str = IOStream.append(str, Util.if_(List.isEmpty(ie), "", "initial equation\n"));
+       str = IOStream.append(str, if List.isEmpty(ie) then "" else "initial equation\n");
        str = dumpInitialEquationsStream(ie, str);
 
        str = dumpInitialAlgorithmsStream(ia, str);
 
-       str = IOStream.append(str, Util.if_(List.isEmpty(e), "", "equation\n"));
+       str = IOStream.append(str, if List.isEmpty(e) then "" else "equation\n");
        str = dumpEquationsStream(e, str);
 
        str = dumpAlgorithmsStream(a, str);
 
-       str = IOStream.append(str, Util.if_(List.isEmpty(co), "", "constraint\n"));
+       str = IOStream.append(str, if List.isEmpty(co) then "" else "constraint\n");
        str = dumpConstraintStream(co, str);
      then
        str;
@@ -2866,7 +2863,7 @@ algorithm
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
         s3 = Debug.bcallret1(Config.typeinfo(), Types.printDimensionsStr, dims, "");
-        s3 = Util.if_(Config.typeinfo()," /* array equation [" +& s3 +& "] */","");
+        s3 = if Config.typeinfo() then " /* array equation [" +& s3 +& "] */" else "";
         str = IOStream.appendList(str, {"  ", s1, " = ", s2, s3, sourceStr, ";\n"});
         str = dumpEquationsStream(xs, str);
       then
@@ -3279,7 +3276,7 @@ algorithm
                   variableAttributesOption = attr,
                   comment = cmt), _, str)
       equation
-        final_str = Util.if_(DAEUtil.getFinalAttr(attr), "final ", "");
+        final_str = if DAEUtil.getFinalAttr(attr) then "final " else "";
         kind_str = dumpKindStr(kind);
         dir_str = dumpDirectionStr(dir);
         (ty_str, ty_vars_str) = printTypeStr(ty);
@@ -3427,7 +3424,7 @@ algorithm
       equation
         str = IOStream.append(str, dumpParallelismStr(t));
         fstr = Absyn.pathStringNoQual(fpath);
-        impureStr = Util.if_(isImpure, "impure ", "");
+        impureStr = if isImpure then "impure " else "";
         str = IOStream.append(str, impureStr);
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);
@@ -3450,7 +3447,7 @@ algorithm
                          type_ = _, isImpure = isImpure, comment = c), str)
       equation
         fstr = Absyn.pathStringNoQual(fpath);
-        impureStr = Util.if_(isImpure, "impure ", "");
+        impureStr = if isImpure then "impure " else "";
         str = IOStream.append(str, impureStr);
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);

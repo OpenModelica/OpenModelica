@@ -97,7 +97,7 @@ algorithm
 
     else
       equation
-        Error.addSourceMessage(Util.if_(isFirst,Error.INVALID_ARGUMENT_TYPE_BRANCH_FIRST,Error.INVALID_ARGUMENT_TYPE_BRANCH_SECOND), {inFuncName}, inInfo);
+        Error.addSourceMessage(if isFirst then Error.INVALID_ARGUMENT_TYPE_BRANCH_FIRST else Error.INVALID_ARGUMENT_TYPE_BRANCH_SECOND, {inFuncName}, inInfo);
       then
         ();
 
@@ -121,7 +121,7 @@ algorithm
 
     else
       equation
-        Error.addSourceMessage(Util.if_(isFirst,Error.INVALID_ARGUMENT_TYPE_OVERDET_FIRST,Error.INVALID_ARGUMENT_TYPE_OVERDET_SECOND),
+        Error.addSourceMessage(if isFirst then Error.INVALID_ARGUMENT_TYPE_OVERDET_FIRST else Error.INVALID_ARGUMENT_TYPE_OVERDET_SECOND,
           {inFuncName}, inInfo);
       then
         fail();
@@ -338,8 +338,9 @@ algorithm
         cref_str2 = ComponentReference.printComponentRefStr(rhs_cref);
         cty_str1 = NFConnectUtil2.unparseConnectorType(inLhsType);
         cty_str2 = NFConnectUtil2.unparseConnectorType(inRhsType);
-        err_strl = Util.if_(NFConnectUtil2.isPotential(inLhsType),
-          {cty_str2, cref_str2, cref_str1}, {cty_str1, cref_str1, cref_str2});
+        err_strl = if NFConnectUtil2.isPotential(inLhsType)
+          then {cty_str2, cref_str2, cref_str1}
+          else {cty_str1, cref_str1, cref_str2};
         Error.addSourceMessage(Error.CONNECT_PREFIX_MISMATCH, err_strl, info);
       then
         fail();
@@ -376,8 +377,9 @@ algorithm
         cref_str2 = ComponentReference.printComponentRefStr(rhs_cref);
         dir_str1 = DAEDump.unparseVarDirection(inLhsDirection);
         dir_str2 = DAEDump.unparseVarDirection(inRhsDirection);
-        err_strl = Util.if_(DAEUtil.isBidirVarDirection(inLhsDirection),
-          {dir_str2, cref_str2, cref_str1}, {dir_str1, cref_str1, cref_str2});
+        err_strl = if DAEUtil.isBidirVarDirection(inLhsDirection)
+          then {dir_str2, cref_str2, cref_str1}
+          else {dir_str1, cref_str1, cref_str2};
         Error.addSourceMessage(Error.CONNECT_PREFIX_MISMATCH, err_strl, info);
       then
         fail();
@@ -450,8 +452,9 @@ algorithm
         rhs_str = ComponentReference.printComponentRefStr(cref2);
         lhs_var_str = DAEDump.unparseVarKind(inVariability1);
         rhs_var_str = DAEDump.unparseVarKind(inVariability2);
-        tokens = Util.if_(DAEUtil.isParamOrConstVarKind(inVariability1),
-          {lhs_var_str, lhs_str, rhs_str}, {rhs_var_str, rhs_str, lhs_str});
+        tokens = if DAEUtil.isParamOrConstVarKind(inVariability1)
+          then {lhs_var_str, lhs_str, rhs_str}
+          else {rhs_var_str, rhs_str, lhs_str};
         Error.addSourceMessage(Error.INCOMPATIBLE_CONNECTOR_VARIABILITY,
           tokens, info);
       then

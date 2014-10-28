@@ -295,7 +295,7 @@ algorithm
         Static.checkAssignmentToInput(lhs, attr, env, false, info);
         et = validPatternType(ty2,ty1,inLhs,info);
         (cache,pattern) = elabPattern(cache,env,exp,ty2,info);
-        pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,pattern), DAE.PAT_AS(id,et,attr,pattern));
+        pattern = if Types.isFunctionType(ty2) then DAE.PAT_AS_FUNC_PTR(id,pattern) else DAE.PAT_AS(id,et,attr,pattern);
       then (cache,pattern);
 
     case (cache,_,Absyn.CREF(Absyn.CREF_IDENT(id,{})),ty2,_,_)
@@ -303,7 +303,7 @@ algorithm
         (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr),_,_,_,_) = Lookup.lookupIdent(cache,env,id);
         Static.checkAssignmentToInput(inLhs, attr, env, false, info);
         et = validPatternType(ty2,ty1,inLhs,info);
-        pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()), DAE.PAT_AS(id,et,attr,DAE.PAT_WILD()));
+        pattern = if Types.isFunctionType(ty2) then DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()) else DAE.PAT_AS(id,et,attr,DAE.PAT_WILD());
       then (cache,pattern);
 
     case (cache,_,Absyn.AS(id,_),_,_,_)
@@ -753,8 +753,8 @@ algorithm
     case (pats::patternMatrix,acc,numAcc)
       equation
         alwaysMatch = allPatternsAlwaysMatch(List.stripLast(pats));
-        optPats = Util.if_(alwaysMatch,NONE(),SOME(pats));
-        numAcc = Util.if_(alwaysMatch,numAcc,numAcc+1);
+        optPats = if alwaysMatch then NONE() else SOME(pats);
+        numAcc = if alwaysMatch then numAcc else numAcc+1;
         (acc,numAcc) = removeWildPatternColumnsFromMatrix(patternMatrix,optPats::acc,numAcc);
       then (acc,numAcc);
   end match;
@@ -1321,15 +1321,15 @@ algorithm
     case ((DAE.PAT_CALL_NAMED(name, namedPatterns),a))
       equation
         namedPatterns = List.filter(namedPatterns, filterEmptyPattern);
-        pat = Util.if_(List.isEmpty(namedPatterns), DAE.PAT_WILD(), DAE.PAT_CALL_NAMED(name, namedPatterns));
+        pat = if List.isEmpty(namedPatterns) then DAE.PAT_WILD() else DAE.PAT_CALL_NAMED(name, namedPatterns);
       then ((pat,a));
     case ((pat as DAE.PAT_CALL_TUPLE(patterns),a))
       equation
-        pat2 = Util.if_(allPatternsWild(patterns), DAE.PAT_WILD(), pat);
+        pat2 = if allPatternsWild(patterns) then DAE.PAT_WILD() else pat;
       then ((pat2,a));
     case ((pat as DAE.PAT_META_TUPLE(patterns),a))
       equation
-        pat2 = Util.if_(allPatternsWild(patterns), DAE.PAT_WILD(), pat);
+        pat2 = if allPatternsWild(patterns) then DAE.PAT_WILD() else pat;
       then ((pat2,a));
     else itpl;
   end match;
@@ -1929,7 +1929,7 @@ algorithm
       equation
         (cache,SOME((env,DAE.DAE(caseDecls),caseLocalTree))) = addLocalDecls(cache,env,decls,FCore.caseScopeName,impl,info);
         patterns = MetaUtil.extractListFromTuple(pattern, 0);
-        patterns = Util.if_(listLength(tys)==1, {pattern}, patterns);
+        patterns = if listLength(tys)==1 then {pattern} else patterns;
         (cache,elabPatterns) = elabPatternTuple(cache, env, patterns, tys, patternInfo, pattern);
         // open a pattern type scope
         env = FGraph.openNewScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.patternTypeScope), NONE());
@@ -1962,7 +1962,7 @@ algorithm
         // Needs to be same length as any other pattern for the simplification algorithms, etc to work properly
         len = listLength(tys);
         patterns = List.fill(Absyn.CREF(Absyn.WILD()),listLength(tys));
-        pattern = Util.if_(len == 1, Absyn.CREF(Absyn.WILD()), Absyn.TUPLE(patterns));
+        pattern = if len == 1 then Absyn.CREF(Absyn.WILD()) else Absyn.TUPLE(patterns);
         (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache, env, Absyn.CASE(pattern,NONE(),info,decls,cp,result,resultInfo,NONE(),info), tys, inputAliases, matchExpLocalTree, impl, st, performVectorization, pre);
       then (cache,elabCase,elabResult,resType,st);
 
@@ -2221,7 +2221,9 @@ algorithm
         (patternGuard1,a) = Expression.traverseExpOpt(patternGuard,func,a);
         (result1,a) = Expression.traverseExpOpt(result,func,a);
         (cases1,a) = traverseCases(cases,func,a);
-        cases = Util.if_(referenceEq(cases,cases1) and referenceEq(patternGuard,patternGuard1) and referenceEq(result,result1) and referenceEq(body,body1), inCases, DAE.CASE(patterns,patternGuard1,decls,body1,result1,resultInfo,jump,info)::cases1);
+        cases = if referenceEq(cases,cases1) and referenceEq(patternGuard,patternGuard1) and referenceEq(result,result1) and referenceEq(body,body1)
+          then inCases
+          else DAE.CASE(patterns,patternGuard1,decls,body1,result1,resultInfo,jump,info)::cases1;
       then (cases,a);
   end match;
 end traverseCases;
@@ -2275,7 +2277,7 @@ algorithm
         // Filter out the components (just to be sure)
         true = List.fold(List.map1(ld2, SCode.isComponentWithDirection, Absyn.BIDIR()), boolAnd, true);
         ((cache,b)) = List.fold1(ld2, checkLocalShadowing, env, (cache,false));
-        ld2 = Util.if_(b,{},ld2);
+        ld2 = if b then {} else ld2;
 
         // Transform the element list into a list of element,NOMOD
         ld_mod = InstUtil.addNomod(ld2);
@@ -2292,7 +2294,7 @@ algorithm
         names = List.map(ld2, SCode.elementName);
         declsTree = List.fold1(names, AvlTreeString.avlTreeAddFold, 0, AvlTreeString.avlTreeNew());
 
-        res = Util.if_(b,NONE(),SOME((env2,dae1,declsTree)));
+        res = if b then NONE() else SOME((env2,dae1,declsTree));
       then (cache,res);
 
     case (cache,_,ld,_,_,_)
@@ -2454,7 +2456,7 @@ algorithm
   // If both complexities are equal, keep the original ordering
   // If c1 is 0, and c2 is not 0 we move the left pattern to the end.
   // Else we move the cheaper pattern to the beginning
-  greater := Util.if_(c1 == c2, i1 > i2, Util.if_(c2 == 0, false, Util.if_(c1 == 0, true, c1 > c2)));
+  greater := if c1 == c2 then i1 > i2 else (if c2 == 0 then false else (if c1 == 0 then true else c1 > c2));
 end sortPatternsByComplexityWork;
 
 protected function patternComplexity

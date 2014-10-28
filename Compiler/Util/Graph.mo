@@ -42,7 +42,6 @@ encapsulated package Graph
 
 protected import Error;
 protected import List;
-protected import Util;
 
 public replaceable type NodeType subtypeof Any;
 public replaceable type ArgType subtypeof Any;
@@ -309,7 +308,7 @@ algorithm
         // cycle in the graph that the start node is not part of.
         start_node = List.last(inVisitedNodes);
         is_start_node = inEqualFunc(node, start_node);
-        opt_cycle = Util.if_(is_start_node, SOME(inVisitedNodes), NONE());
+        opt_cycle = if is_start_node then SOME(inVisitedNodes) else NONE();
       then
         opt_cycle;
 

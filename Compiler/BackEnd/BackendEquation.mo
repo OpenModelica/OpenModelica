@@ -648,7 +648,7 @@ algorithm
 
     case (BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts), source=source, expand=crefExpand, attr=attr), _, _) equation
       (stmts1, ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts, inFunc, inTypeA);
-      alg = Util.if_(referenceEq(stmts, stmts1), alg, DAE.ALGORITHM_STMTS(stmts1));
+      alg = if referenceEq(stmts, stmts1) then alg else DAE.ALGORITHM_STMTS(stmts1);
     then (BackendDAE.ALGORITHM(size, alg, source, crefExpand, attr), ext_arg_1);
 
     case (BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2, source=source, attr=attr), _, _) equation
@@ -1001,7 +1001,7 @@ algorithm
 
     case (oeqn as SOME(eqn), _, _) equation
       (eqn1, ext_arg) = func(eqn, inTypeA);
-      oeqn = Util.if_(referenceEq(eqn, eqn1), oeqn, SOME(eqn1));
+      oeqn = if referenceEq(eqn, eqn1) then oeqn else SOME(eqn1);
     then (oeqn, ext_arg);
 
     else equation
@@ -2717,7 +2717,7 @@ algorithm
 
     case (BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statementLst=stmts), source=src, expand=crefExpand, attr=attr)) equation
       (stmts1, _) = DAEUtil.traverseDAEEquationsStmts(stmts, Expression.replaceDerOpInExpTraverser, NONE());
-      alg = Util.if_(referenceEq(stmts, stmts1), alg, DAE.ALGORITHM_STMTS(stmts1));
+      alg = if referenceEq(stmts, stmts1) then alg else DAE.ALGORITHM_STMTS(stmts1);
     then BackendDAE.ALGORITHM(size, alg, src, crefExpand, attr);
 
     else inEqn;

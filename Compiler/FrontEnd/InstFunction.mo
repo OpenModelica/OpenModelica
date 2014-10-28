@@ -350,10 +350,8 @@ algorithm
         isImpure = SCode.isImpureFunctionRestriction(funcRest);
 
         // if we're not MetaModelica set it to non-partial
-        c = Util.if_(Config.acceptMetaModelicaGrammar(),
-                     inClass,
-                     SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), inClass));
-        cs = Util.if_(instFunctionTypeOnly, InstTypes.TYPE_CALL(), InstTypes.INNER_CALL());
+        c = if Config.acceptMetaModelicaGrammar() then inClass else SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), inClass);
+        cs = if instFunctionTypeOnly then InstTypes.TYPE_CALL() else InstTypes.INNER_CALL();
         //print("1 Prefix: " +& PrefixUtil.printPrefixStr(pre) +& " path: " +& n +& "\n");
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,_,_,_) =
           Inst.instClass(cache, env, ih, UnitAbsynBuilder.emptyInstStore(), mod, pre,
@@ -1008,7 +1006,7 @@ algorithm
         str2 = Absyn.pathStringNoQual(path1);
         b = Absyn.pathEqual(path1,path2);
         Error.assertionOrAddSourceMessage(b, Error.FUNCTION_RETURN_EXT_OBJ, {str1,str2}, info);
-        outTpl = Util.if_(b,inTpl,(ty,(path2,info,false)));
+        outTpl = if b then inTpl else (ty,(path2,info,false));
       then outTpl;
     else inTpl;
   end match;

@@ -174,10 +174,10 @@ algorithm
 
         //(cache,tp_1) = Inst.makeFullyQualified(cache,/* adrpo: cenv1?? FIXME */env, tp);
 
-        eq1_1 = Util.if_(isPartialInst, {}, eq1);
-        ieq1_1 = Util.if_(isPartialInst, {}, ieq1);
-        alg1_1 = Util.if_(isPartialInst, {}, alg1);
-        ialg1_1 = Util.if_(isPartialInst, {}, ialg1);
+        eq1_1 = if isPartialInst then {} else eq1;
+        ieq1_1 = if isPartialInst then {} else ieq1;
+        alg1_1 = if isPartialInst then {} else alg1;
+        ialg1_1 = if isPartialInst then {} else ialg1;
 
         // cenv1 = FGraph.createVersionScope(env, cenv1, cn, FNode.mkExtendsName(tp), pre, mod);
         cenv3 = FGraph.openScope(cenv1, encf, SOME(cn), FGraph.classInfToScopeType(ci_state));
@@ -246,7 +246,7 @@ algorithm
         // Filter out non-constants or parameters if partial inst
         notConst = not SCode.isConstant(var); // not (SCode.isConstant(var) or SCode.getEvaluateAnnotation(cmt));
         // we should always add it as the class that variable represents might contain constants!
-        compelts2 = Util.if_(notConst and isPartialInst,compelts2,(elt,DAE.NOMOD(),false)::compelts2);
+        compelts2 = if notConst and isPartialInst then compelts2 else ((elt,DAE.NOMOD(),false)::compelts2);
       then
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2);
 
@@ -839,7 +839,7 @@ algorithm
           "env = " +& FGraph.printGraphPathStr(inEnv) +&
           "\nmod = " +& Mod.printModStr(inMod) +&
           "\ncmod = " +& Mod.printModStr(cmod) +&
-          "\nbool = " +& Util.if_(b, "true", "false") +& "\n" +&
+          "\nbool = " +& boolString(b) +& "\n" +&
           SCodeDump.unparseElementStr(comp,SCodeDump.defaultOptions)
           );
       then
@@ -979,7 +979,7 @@ algorithm
         Debug.traceln("- InstExtends.fixLocalIdents failed for element:" +&
         SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions) +& " mods: " +&
         Mod.printModStr(mod) +& " class extends:" +&
-        Util.if_(b, "true", "false") +& " in env: " +& FGraph.printGraphPathStr(env)
+        boolString(b) +& " in env: " +& FGraph.printGraphPathStr(env)
         );
       then
         fail();
@@ -1590,7 +1590,7 @@ algorithm
         // isOutside = isPathOutsideScope(cache, env, path);
         //print("Try makeFullyQualified " +& Absyn.pathString(path) +& "\n");
         (cache,path) = Inst.makeFullyQualified(cache,env,path);
-        // path = Util.if_(isOutside, path, FGraph.pathStripGraphScopePrefix(path, env, false));
+        // path = if_(isOutside, path, FGraph.pathStripGraphScopePrefix(path, env, false));
         path = FGraph.pathStripGraphScopePrefix(path, env, false);
         //print("FullyQual: " +& Absyn.pathString(path) +& "\n");
       then (cache,path);
@@ -1695,7 +1695,7 @@ algorithm
         // isOutside = FGraph.graphPrefixOf(denv, env);
         denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),SOME(id),NONE());
         cref = Absyn.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
-        // cref = Util.if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
+        // cref = if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
         //Debug.fprintln(Flags.DEBUG, "Cref VAR fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
@@ -1711,7 +1711,7 @@ algorithm
         //Debug.fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));
         denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),SOME(id),NONE());
         cref = Absyn.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
-        // cref = Util.if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
+        // cref = if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
         //print("Cref CLASS fixed: " +& Absyn.printComponentRefStr(cref) +& "\n");
       then (cache,cref);

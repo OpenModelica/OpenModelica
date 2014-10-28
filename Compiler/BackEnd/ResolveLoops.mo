@@ -317,7 +317,7 @@ algorithm
   outEq := inEq;
   eqLst := inEqs;
   (eq,isSimple) := BackendEquation.traverseBackendDAEExpsEqn(inEq,isAddOrSubExp,true);
-  eqLst := Util.if_(isSimple,eq::eqLst,eqLst);
+  eqLst := if isSimple then eq::eqLst else eqLst;
 end getSimpleEquations;
 
 public function resolveLoops_findLoops "author:Waurich TUD 2014-02
@@ -400,7 +400,7 @@ algorithm
         //print("all simpleLoop-paths: \n"+&stringDelimitList(List.map(simpleLoops,HpcOmTaskGraph.intLstString)," / ")+&"\n");
         subLoop = connectPathsToOneLoop(simpleLoops,{});  // try to build a a closed loop from these paths
         isNoSingleLoop = List.isEmpty(subLoop);
-        simpleLoops = Util.if_(isNoSingleLoop,simpleLoops,{subLoop});
+        simpleLoops = if isNoSingleLoop then simpleLoops else {subLoop};
         paths0 = listAppend(simpleLoops,connectedPaths);
         paths0 = sortPathsAsChain(paths0);
 
@@ -419,7 +419,7 @@ algorithm
         (paths0,paths1) =  List.extract1OnTrue(paths,listLengthIs,listLength(List.last(paths)));
           //print("the shortest paths: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
 
-        paths1 = Util.if_(List.isEmpty(paths1),paths0,paths1);
+        paths1 = if List.isEmpty(paths1) then paths0 else paths1;
         closedPaths = List.map1(paths1,closePathDirectly,paths0);
         closedPaths = List.fold1(closedPaths,getReverseDoubles,closedPaths,{});   // all paths with just one direction
         closedPaths = List.map(closedPaths,List.unique);
@@ -433,7 +433,7 @@ algorithm
            //print("no crossNodes\n");
          varEqsLst = List.map1(eqsIn,Array.getIndexFirst,mIn);
          isNoSingleLoop = List.exist(varEqsLst,List.isEmpty);
-         subLoop = Util.if_(isNoSingleLoop,{},eqsIn);
+         subLoop = if isNoSingleLoop then {} else eqsIn;
        then
          {subLoop};
     case(_,_,_::_,_::_,_,_)
@@ -959,7 +959,7 @@ algorithm
         endNode = List.last(pathIn);
         path = findPathByEnds(pathLstIn,startNode,endNode);
         closed = List.isNotEmpty(path);
-        path = Util.if_(closed,path,{});
+        path = if closed then path else {};
         path = listAppend(pathIn,path);
         path = List.unique(path);
       then
@@ -1126,7 +1126,7 @@ protected
   Boolean repl;
 algorithm
   repl := List.isMemberOnTrue(entryIn,replNodes,intEq);
-  entryOut := Util.if_(repl,nodeIn,entryIn);
+  entryOut := if repl then nodeIn else entryIn;
 end replaceContractedNodes2;
 
 protected function priorizeEqsWithVarCrosses "author:Waurich TUD 2014-02
@@ -1192,9 +1192,9 @@ algorithm
   numOutLoop := listLength(nonLoopVars);
   r1 := intGe(numInLoop,numOutLoop-1) and intLe(numInLoop,6);
   r2 := intGe(numInLoop,numOutLoop-2);
-  r1 := Util.if_(intEq(Flags.getConfigInt(Flags.RESHUFFLE),1),r1,false);
-  r2 := Util.if_(intEq(Flags.getConfigInt(Flags.RESHUFFLE),2),r2,r1);
-  resolve := Util.if_(intEq(Flags.getConfigInt(Flags.RESHUFFLE),3),true,r2);
+  r1 := if intEq(Flags.getConfigInt(Flags.RESHUFFLE),1) then r1 else false;
+  r2 := if intEq(Flags.getConfigInt(Flags.RESHUFFLE),2) then r2 else r1;
+  resolve := if intEq(Flags.getConfigInt(Flags.RESHUFFLE),3) then true else r2;
 end evaluateLoop;
 
 protected function sumUp2Equations "author:Waurich TUD 2013-12
@@ -1232,7 +1232,7 @@ algorithm
   case(_, BackendDAE.EQUATION(exp=e1, scalar=e2)) equation
     (exists1, sign1) = expIsCref(e1, crefIn);
     (_, sign2) = expIsCref(e2, crefIn);
-    sign1 = Util.if_(exists1, not sign1, sign2);
+    sign1 = if exists1 then not sign1 else sign2;
   then sign1;
 
   else equation
@@ -1268,8 +1268,8 @@ algorithm
       (exists2,sign2) = expIsCref(exp2,crefIn);
       sign2 = boolNot(sign2);
       exists = boolOr(exists1,exists2);
-      sign = Util.if_(exists1,sign1,false);
-      sign = Util.if_(exists2,sign2,sign);
+      sign = exists1 and sign1;
+      sign = if exists2 then sign2 else sign;
     then
       (exists,sign);
   case(DAE.BINARY(exp1=exp1, operator = DAE.ADD(ty=_), exp2=exp2),_)
@@ -1278,8 +1278,8 @@ algorithm
       (exists1,sign1) = expIsCref(exp1,crefIn);
       (exists2,sign2) = expIsCref(exp2,crefIn);
       exists = boolOr(exists1,exists2);
-      sign = Util.if_(exists1,sign1,false);
-      sign = Util.if_(exists2,sign2,sign);
+      sign = exists1 and sign1;
+      sign = if exists2 then sign2 else sign;
     then
       (exists,sign);
   case(DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=exp1),_)
@@ -1438,7 +1438,7 @@ protected
   list<Integer> row;
 algorithm
   row := arrayGet(arrayIn,idx);
-  row := Util.if_(List.isEmpty(row),{idx},{});
+  row := if List.isEmpty(row) then {idx} else {};
   lstOut := listAppend(lstIn,row);
 end arrayGetIsEmptyLst;
 
@@ -1471,7 +1471,7 @@ algorithm
   row := arrayGet(m,idx);
   num := listLength(row);
   isCross := intGt(num,2);
-  lstOut := Util.if_(isCross,idx::lstIn,lstIn);
+  lstOut := if isCross then idx::lstIn else lstIn;
 end gatherCrossNodes;
 
 protected function isAddOrSubExp
@@ -1526,7 +1526,7 @@ protected
   DAE.Type ty;
 algorithm
   ty := DAE.T_REAL_DEFAULT;
-  op := Util.if_(sumUp,DAE.ADD(ty),DAE.SUB(ty));
+  op := if sumUp then DAE.ADD(ty) else DAE.SUB(ty);
   expOut := DAE.BINARY(exp1,op,exp2);
   (expOut,_) := ExpressionSimplify.simplify(expOut);
 end sumUp2Expressions;
@@ -1688,8 +1688,8 @@ algorithm
         startNode = List.first(path);
         endNode = List.last(path);
         closedALoop = intEq(startNode,endNode);
-        loops = Util.if_(closedALoop,path::loopsIn,loopsIn);
-        restPaths = Util.if_(closedALoop,restPathsIn,path::restPathsIn);
+        loops = if closedALoop then path::loopsIn else loopsIn;
+        restPaths = if closedALoop then restPathsIn else (path::restPathsIn);
       then
         (loops,restPaths);
     case(path::rest,_,_)
@@ -1714,7 +1714,7 @@ algorithm
         endPaths = listAppend(startPaths,endPaths);
         closedALoop = intGe(listLength(endPaths),1);
         loops = Debug.bcallret2(closedALoop,connectPaths,path,endPaths,{});
-        restPaths = Util.if_(closedALoop,restPathsIn,path::restPathsIn);
+        restPaths = if closedALoop then restPathsIn else (path::restPathsIn);
         loops = listAppend(loops,loopsIn);
         (loops,restPaths) = connect2PathsToLoops(rest,loops,restPaths);
       then

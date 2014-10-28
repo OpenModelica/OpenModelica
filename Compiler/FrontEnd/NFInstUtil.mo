@@ -677,8 +677,7 @@ algorithm
 
     case (NFInstTypes.TYPED_BINDING(bindingExp = exp, propagatedDims = pd), _, _)
       equation
-        index = Util.if_(intEq(pd, -1), inDimension,
-          inDimension + pd - inCompDimensions);
+        index = if intEq(pd, -1) then inDimension else (inDimension + pd - inCompDimensions);
       then
         getExpDimension(exp, index);
 
@@ -953,7 +952,7 @@ algorithm
   varArgs := match (inDir,inComment)
     case (Absyn.INPUT(),_)
       then
-        Util.if_(SCode.optCommentHasBooleanNamedAnnotation(SOME(inComment),"__OpenModelica_varArgs"),NFInstTypes.IS_VARARG(),NFInstTypes.NO_VARARG());
+        if SCode.optCommentHasBooleanNamedAnnotation(SOME(inComment),"__OpenModelica_varArgs") then NFInstTypes.IS_VARARG() else NFInstTypes.NO_VARARG();
       else NFInstTypes.NO_VARARG();
   end match;
 end makeVarArg;

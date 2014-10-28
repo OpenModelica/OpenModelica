@@ -337,17 +337,6 @@ algorithm
   (_, outValue, _ ,_ ,_ ,_ ) := inTuple;
 end tuple62;
 
-public function if_<T> "Takes a boolean and two values.
-  Returns the first value (second argument) if the boolean value is
-  true, otherwise the second value (third argument) is returned.
-  Example: if_(true,\"a\",\"b\") => \"a\""
-  input Boolean cond;
-  input T valTrue;
-  input T valFalse;
-  output T outVal := if cond then valTrue else valFalse;
-  annotation(__OpenModelica_EarlyInline = true);
-end if_;
-
 public function stringContainsChar "Returns true if a string contains a specified character"
   input String str;
   input String char;
@@ -1447,7 +1436,7 @@ algorithm
     case ("\n" :: rest_str, wl, delim, dl, acc_str, _, acc_strl)
       equation
         // The delimiter should not be applied to the first string.
-        delim = if_(listEmpty(acc_strl), "", delim);
+        delim = if listEmpty(acc_strl) then "" else delim;
         str = delim +& stringAppendList(listReverse(acc_str));
         acc_strl = str :: acc_strl;
       then
@@ -1458,7 +1447,7 @@ algorithm
     case ({}, _, delim, _, acc_str, _, acc_strl)
       equation
         // The delimiter should not be applied to the first string.
-        delim = if_(listEmpty(acc_strl), "", delim);
+        delim = if listEmpty(acc_strl) then "" else delim;
         str = delim +& stringAppendList(listReverse(acc_str));
         acc_strl = str :: acc_strl;
       then
@@ -1469,7 +1458,7 @@ algorithm
     case (_, wl, delim, dl, acc_str, sl, acc_strl)
       equation
         // The delimiter should not be applied to the first string.
-        ((delim, dl)) = if_(listEmpty(acc_strl), ("", 0), (delim, dl));
+        ((delim, dl)) = if listEmpty(acc_strl) then ("", 0) else (delim, dl);
         true = sl + dl >= wl;
         // Split the string at the first space (will be the last since the
         // string is reversed). The first part before the space will be the new

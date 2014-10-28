@@ -699,7 +699,7 @@ algorithm
         SOME(comp) = NFInstUtil.getComponentParent(inComponent);
         is_conn = NFInstUtil.isConnectorComponent(comp);
         // Connector => outside, not connector => inside.
-        face = Util.if_(is_conn, NFConnect2.OUTSIDE(), NFConnect2.INSIDE());
+        face = if is_conn then NFConnect2.OUTSIDE() else NFConnect2.INSIDE();
       then
         face;
 

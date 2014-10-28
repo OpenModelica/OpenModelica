@@ -1109,7 +1109,7 @@ algorithm
     case (DEBUG_FLAG(index = index, name = name), _)
       equation
         index_str = intString(index);
-        err_str = "Invalid flag " +& name +& " with index " +& index_str +&
+        err_str = "Invalid flag " + name + " with index " + index_str +
           " in Flags.allDebugFlags. Make sure that all flags are present and ordered correctly.";
         Error.addMessage(Error.INTERNAL_ERROR, {err_str});
       then fail();
@@ -1148,7 +1148,7 @@ algorithm
     case (CONFIG_FLAG(index = index, name = name), _, _)
       equation
         index_str = intString(index);
-        err_str = "Invalid flag " +& name +& " with index " +& index_str +&
+        err_str = "Invalid flag " + name + " with index " + index_str +
           " in Flags.allConfigFlags. Make sure that all flags are present and ordered correctly.";
         Error.addMessage(Error.INTERNAL_ERROR, {err_str});
       then
@@ -1291,7 +1291,7 @@ algorithm
       equation
         true = stringEq(stringGetStringChar(inArg, 1), "+");
         len = stringLength(inArg);
-        pos = Util.if_(len == 1, 1, 2); // Handle + without anything else.
+        pos = if len == 1 then 1 else 2; // Handle + without anything else.
         flag = System.substring(inArg, pos, len);
         parseFlag(flag, inFlags);
       then
@@ -1365,8 +1365,7 @@ algorithm
     case (CONFIG_FLAG(index = 2), _, _)
       equation
         values = List.map(inValues, System.tolower);
-        System.gettextInit(Util.if_(getConfigString(RUNNING_TESTSUITE) ==& "",
-          getConfigString(LOCALE_FLAG), "C"));
+        System.gettextInit(if getConfigString(RUNNING_TESTSUITE) == "" then getConfigString(LOCALE_FLAG) else "C");
         print(printHelp(values));
         setConfigString(HELP, "omc");
       then
@@ -1571,7 +1570,7 @@ algorithm
       equation
         enum_strs = List.map(enums, Util.tuple21);
       then
-        "one of the values {" +& stringDelimitList(enum_strs, ", ") +& "}";
+        "one of the values {" + stringDelimitList(enum_strs, ", ") + "}";
   end match;
 end printExpectedTypeStr;
 
@@ -1586,7 +1585,7 @@ algorithm
       Integer i;
 
     case {} then "nothing";
-    case {s} equation _ = Util.stringBool(s); then "the boolean value " +& s;
+    case {s} equation _ = Util.stringBool(s); then "the boolean value " + s;
     case {s}
       equation
         i = stringInt(s);
@@ -1594,13 +1593,13 @@ algorithm
         // actually succeeded.
         true = stringEq(intString(i), s);
       then
-        "the number " +& intString(i);
+        "the number " + intString(i);
     //case {s}
     //  equation
     //    _ = System.stringReal(s);
     //  then
-    //    "the number " +& intString(i);
-    case {s} then "the string \"" +& s +& "\"";
+    //    "the number " + intString(i);
+    case {s} then "the string \"" + s + "\"";
     case _ then "a list of values.";
   end matchcontinue;
 end printActualTypeStr;
@@ -1849,12 +1848,12 @@ algorithm
         };
         str = System.gettext("The available topics (help(\"topics\")) are as follows:\n");
         strs = List.map(topics,makeTopicString);
-        help = str +& stringDelimitList(strs,"\n") +& "\n";
+        help = str + stringDelimitList(strs,"\n") + "\n";
       then help;
 
     case {"simulation"}
       equation
-        help = System.gettext("The simulation executable takes the following flags:\n") +& System.getSimulationHelpText(true);
+        help = System.gettext("The simulation executable takes the following flags:\n") + System.getSimulationHelpText(true);
       then help;
 
     case {"debug"}
@@ -1885,20 +1884,20 @@ algorithm
     case {str}
       equation
         (config_flag as CONFIG_FLAG(name=name,description=desc)) = List.getMemberOnTrue(str, allConfigFlags, matchConfigFlag);
-        str1 = "+" +& name;
+        str1 = "+" + name;
         str2 = stringAppendList(Util.stringWrap(Util.translateContent(desc), System.getTerminalWidth(), "\n"));
         str = printFlagValidOptionsDesc(config_flag);
         help = stringAppendList({str1,"\n",str2,"\n",str});
       then help;
 
     case {str}
-      then "I'm sorry, I don't know what " +& str +& " is.\n";
+      then "I'm sorry, I don't know what " + str + " is.\n";
 
     case (str :: (rest_topics as _::_))
       equation
-        str = printHelp({str}) +& "\n";
+        str = printHelp({str}) + "\n";
         help = printHelp(rest_topics);
-      then str +& help;
+      then str + help;
 
   end matchcontinue;
 end printHelp;
@@ -1954,7 +1953,7 @@ protected
 algorithm
   (str1,str2) := topic;
   str1 := Util.stringPadRight(str1,13," ");
-  str := stringAppendList(Util.stringWrap(str1 +& str2, System.getTerminalWidth(), "\n               "));
+  str := stringAppendList(Util.stringWrap(str1 + str2, System.getTerminalWidth(), "\n               "));
 end makeTopicString;
 
 public function printUsage
@@ -2015,10 +2014,10 @@ algorithm
         desc_str = Util.translateContent(desc);
         name = Util.stringPadRight(printConfigFlagName(inFlag), 28, " ");
         flag_str = stringAppendList({name, " ", desc_str});
-        delim_str = descriptionIndent +& "  ";
+        delim_str = descriptionIndent + "  ";
         wrapped_str = Util.stringWrap(flag_str, System.getTerminalWidth(), delim_str);
         opt_str = printValidOptions(inFlag);
-        flag_str = stringDelimitList(wrapped_str, "\n") +& opt_str +& "\n";
+        flag_str = stringDelimitList(wrapped_str, "\n") + opt_str + "\n";
       then
         flag_str;
 
@@ -2037,11 +2036,11 @@ algorithm
 
     case CONFIG_FLAG(name = name, shortname = SOME(shortname))
       equation
-        shortname = Util.stringPadLeft("+" +& shortname, 4, " ");
+        shortname = Util.stringPadLeft("+" + shortname, 4, " ");
       then stringAppendList({shortname, ", +", name});
 
     case CONFIG_FLAG(name = name, shortname = NONE())
-      then "      +" +& name;
+      then "      +" + name;
 
   end match;
 end printConfigFlagName;
@@ -2060,13 +2059,13 @@ algorithm
     case CONFIG_FLAG(validOptions = NONE()) then "";
     case CONFIG_FLAG(validOptions = SOME(STRING_OPTION(options = strl)))
       equation
-        opt_str = "\n" +& descriptionIndent +& "   " +& System.gettext("Valid options:") +& " " +&
+        opt_str = "\n" + descriptionIndent + "   " + System.gettext("Valid options:") + " " +
           stringDelimitList(strl, ", ");
       then
         opt_str;
     case CONFIG_FLAG(validOptions = SOME(STRING_DESC_OPTION(options = descl)))
       equation
-        opt_str = "\n" +& descriptionIndent +& "   " +& System.gettext("Valid options:") +& "\n" +&
+        opt_str = "\n" + descriptionIndent + "   " + System.gettext("Valid options:") + "\n" +
           stringAppendList(List.map(descl, printFlagOptionDescShort));
       then
         opt_str;
@@ -2081,7 +2080,7 @@ protected
   String name;
 algorithm
   (name, _) := inOption;
-  outString := descriptionIndent +& "    * " +& name +& "\n";
+  outString := descriptionIndent + "    * " + name + "\n";
 end printFlagOptionDescShort;
 
 protected function printFlagValidOptionsDesc
@@ -2106,9 +2105,9 @@ protected
 algorithm
   (name, desc) := inOption;
   desc_str := Util.translateContent(desc);
-  str := Util.stringPadRight(" * " +& name +& " ", 30, " ") +& desc_str;
+  str := Util.stringPadRight(" * " + name + " ", 30, " ") + desc_str;
   outString := stringDelimitList(
-    Util.stringWrap(str, System.getTerminalWidth(), descriptionIndent +& "    "), "\n") +& "\n";
+    Util.stringWrap(str, System.getTerminalWidth(), descriptionIndent + "    "), "\n") + "\n";
 end printFlagOptionDesc;
 
 protected function printDebugFlag
@@ -2122,9 +2121,9 @@ protected
 algorithm
   DEBUG_FLAG(default = default, name = name, description = desc) := inFlag;
   desc_str := Util.translateContent(desc);
-  outString := Util.stringPadRight(Util.if_(default," + "," - ") +& name +& " ", 26, " ") +& desc_str;
+  outString := Util.stringPadRight((if default then " + " else " - ") + name + " ", 26, " ") + desc_str;
   outString := stringDelimitList(Util.stringWrap(outString, System.getTerminalWidth(),
-    descriptionIndent), "\n") +& "\n";
+    descriptionIndent), "\n") + "\n";
 end printDebugFlag;
 
 public function debugFlagName

@@ -4158,7 +4158,7 @@ algorithm
   (outStmtsLst,oextraArg) := List.map2Fold(inStmts,traverseDAEEquationsStmtsWork,func,opt,iextraArg);
   outStmts := List.flatten(outStmtsLst);
   b := List.allReferenceEq(inStmts,outStmts);
-  outStmts := Util.if_(b,inStmts,outStmts);
+  outStmts := if b then inStmts else outStmts;
 end traverseDAEEquationsStmtsList;
 
 protected function traverseStatementsOptionsEvalLhs
@@ -4222,21 +4222,21 @@ algorithm
       equation
         (e_1,extraArg) = traverseStatementsOptionsEvalLhs(e, extraArg, func, opt);
         (e_2,extraArg) = func(e2, extraArg);
-        x = Util.if_(referenceEq(e,e_1) and referenceEq(e2,e_2),inStmt,DAE.STMT_ASSIGN(tp,e_1,e_2,source));
+        x = if referenceEq(e,e_1) and referenceEq(e2,e_2) then inStmt else DAE.STMT_ASSIGN(tp,e_1,e_2,source);
       then (x::{},extraArg);
 
     case (DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e, source = source),_,_,extraArg)
       equation
         (e_1, extraArg) = func(e, extraArg);
         (DAE.TUPLE(expl2), extraArg) = traverseStatementsOptionsEvalLhs(DAE.TUPLE(expl1), extraArg, func, opt);
-        x = Util.if_(referenceEq(e,e_1) and referenceEq(expl1,expl2),inStmt,DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1,source));
+        x = if referenceEq(e,e_1) and referenceEq(expl1,expl2) then inStmt else DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1,source);
       then (x::{},extraArg);
 
     case (DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source),_,_,extraArg)
       equation
         (e_1, extraArg) = func(e, extraArg);
         (DAE.CREF(cr_1,_), extraArg) = traverseStatementsOptionsEvalLhs(Expression.crefExp(cr), extraArg, func, opt);
-        x = Util.if_(referenceEq(e,e_1) and referenceEq(cr,cr_1),inStmt,DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source));
+        x = if referenceEq(e,e_1) and referenceEq(cr,cr_1) then inStmt else DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source);
       then (x::{},extraArg);
 
     // NOTE: This is making the function use matchcontinue!
@@ -4244,7 +4244,7 @@ algorithm
       equation
         (e_1, extraArg) = func(e, extraArg);
         failure((DAE.CREF(_,_), _) = func(Expression.crefExp(cr), extraArg));
-        x = Util.if_(referenceEq(e,e_1),inStmt,DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source));
+        x = if referenceEq(e,e_1) then inStmt else DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source);
         /* We need to pass this through because simplify/etc may scalarize the cref...
         true = Flags.isSet(Flags.FAILTRACE);
         print(DAEDump.ppStatementStr(x));
@@ -4258,35 +4258,35 @@ algorithm
         (stmts2,extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
         (e_1,extraArg) = func(e, extraArg);
         (stmts1,b) = Algorithm.optimizeIf(e_1,stmts2,algElse1,source);
-        stmts1 = Util.if_(not b and referenceEq(e,e_1) and referenceEq(stmts,stmts2) and referenceEq(algElse,algElse1),inStmt::{},stmts1);
+        stmts1 = if not b and referenceEq(e,e_1) and referenceEq(stmts,stmts2) and referenceEq(algElse,algElse1) then (inStmt::{}) else stmts1;
       then (stmts1,extraArg);
 
     case (DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, source = source),_,_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
         (e_1, extraArg) = func(e, extraArg);
-        x = Util.if_(referenceEq(e,e_1) and referenceEq(stmts,stmts2),inStmt,DAE.STMT_FOR(tp,b1,id1,ix,e_1,stmts2,source));
+        x = if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_FOR(tp,b1,id1,ix,e_1,stmts2,source);
       then (x::{},extraArg);
 
     case (DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source),_,_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
         (e_1, extraArg) = func(e, extraArg);
-        x = Util.if_(referenceEq(e,e_1) and referenceEq(stmts,stmts2),inStmt,DAE.STMT_PARFOR(tp,b1,id1,ix,e_1,stmts2,loopPrlVars,source));
+        x = if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_PARFOR(tp,b1,id1,ix,e_1,stmts2,loopPrlVars,source);
       then (x::{},extraArg);
 
     case (DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source),_,_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
         (e_1, extraArg) = func(e, extraArg);
-        x = Util.if_(referenceEq(e,e_1) and referenceEq(stmts,stmts2),inStmt,DAE.STMT_WHILE(e_1,stmts2,source));
+        x = if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_WHILE(e_1,stmts2,source);
       then (x::{},extraArg);
 
     case (DAE.STMT_WHEN(exp=e,conditions=conditions,initialCall=initialCall,statementLst=stmts,elseWhen=NONE(),source=source),_,_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
         (e_1, extraArg) = func(e, extraArg);
-        x = Util.if_(referenceEq(e,e_1) and referenceEq(stmts,stmts2),inStmt,DAE.STMT_WHEN(e_1,conditions,initialCall,stmts2,NONE(),source));
+        x = if referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_WHEN(e_1,conditions,initialCall,stmts2,NONE(),source);
       then (x::{},extraArg);
 
     case (DAE.STMT_WHEN(exp=e,conditions=conditions,initialCall=initialCall,statementLst=stmts,elseWhen=SOME(ew),source=source),_,_,extraArg)
@@ -4294,7 +4294,7 @@ algorithm
         ({ew_1}, extraArg) = traverseDAEEquationsStmtsList({ew},func,opt,extraArg);
         (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
         (e_1, extraArg) = func(e, extraArg);
-        x = Util.if_(referenceEq(ew,ew_1) and referenceEq(e,e_1) and referenceEq(stmts,stmts2),inStmt,DAE.STMT_WHEN(e_1,conditions,initialCall,stmts2,SOME(ew),source));
+        x = if referenceEq(ew,ew_1) and referenceEq(e,e_1) and referenceEq(stmts,stmts2) then inStmt else DAE.STMT_WHEN(e_1,conditions,initialCall,stmts2,SOME(ew),source);
       then (x::{},extraArg);
 
     case (DAE.STMT_ASSERT(cond = e, msg=e2, level=e3, source = source),_,_,extraArg)
@@ -4302,26 +4302,26 @@ algorithm
         (e_1, extraArg) = func(e, extraArg);
         (e_2, extraArg) = func(e2, extraArg);
         (e_3, extraArg) = func(e3, extraArg);
-        x = Util.if_(referenceEq(e,e_1) and referenceEq(e2,e_2) and referenceEq(e3,e_3),inStmt,DAE.STMT_ASSERT(e_1,e_2,e_3,source));
+        x = if referenceEq(e,e_1) and referenceEq(e2,e_2) and referenceEq(e3,e_3) then inStmt else DAE.STMT_ASSERT(e_1,e_2,e_3,source);
       then (x::{},extraArg);
 
     case (DAE.STMT_TERMINATE(msg = e, source = source),_,_,extraArg)
       equation
         (e_1, extraArg) = func(e, extraArg);
-        x = Util.if_(referenceEq(e,e_1),inStmt,DAE.STMT_TERMINATE(e_1,source));
+        x = if referenceEq(e,e_1) then inStmt else DAE.STMT_TERMINATE(e_1,source);
       then (x::{},extraArg);
 
     case (DAE.STMT_REINIT(var = e,value=e2, source = source),_,_,extraArg)
       equation
         (e_1, extraArg) = func(e, extraArg);
         (e_2, extraArg) = func(e2, extraArg);
-        x = Util.if_(referenceEq(e,e_1) and referenceEq(e2,e_2),inStmt,DAE.STMT_REINIT(e_1,e_2,source));
+        x = if referenceEq(e,e_1) and referenceEq(e2,e_2) then inStmt else DAE.STMT_REINIT(e_1,e_2,source);
       then (x::{},extraArg);
 
     case (DAE.STMT_NORETCALL(exp = e, source = source),_,_,extraArg)
       equation
         (e_1, extraArg) = func(e, extraArg);
-        x = Util.if_(referenceEq(e,e_1),inStmt,DAE.STMT_NORETCALL(e_1,source));
+        x = if referenceEq(e,e_1) then inStmt else DAE.STMT_NORETCALL(e_1,source);
       then (x::{},extraArg);
 
     case (x as DAE.STMT_RETURN(source=_),_,_,extraArg)
@@ -4337,7 +4337,7 @@ algorithm
     case (DAE.STMT_FAILURE(body=stmts, source = source),_,_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
-        x = Util.if_(referenceEq(stmts,stmts2),inStmt,DAE.STMT_FAILURE(stmts2,source));
+        x = if referenceEq(stmts,stmts2) then inStmt else DAE.STMT_FAILURE(stmts2,source);
       then (x::{},extraArg);
 
     case (x,_,_,_)
@@ -4379,12 +4379,12 @@ algorithm
       (e_1,extraArg) = func(e, extraArg);
       outElse = Algorithm.optimizeElseIf(e_1,st_1,el_1);
       b = referenceEq(el,el_1) and referenceEq(st,st_1) and referenceEq(e,e_1);
-      outElse = Util.if_(b,inElse,outElse);
+      outElse = if b then inElse else outElse;
     then (outElse,extraArg);
   case(DAE.ELSE(st),_,_,extraArg)
     equation
       (st_1,extraArg) = traverseDAEEquationsStmtsList(st,func,opt,extraArg);
-      outElse = Util.if_(referenceEq(st,st_1),inElse,DAE.ELSE(st_1));
+      outElse = if referenceEq(st,st_1) then inElse else DAE.ELSE(st_1);
     then (outElse,extraArg);
 end match;
 end traverseDAEEquationsStmtsElse;
@@ -5018,7 +5018,7 @@ algorithm
           DAE.SOURCE(_ /* Discard */, partOfLst2, instanceOpt2, connectEquationOptLst2, typeLst2, operations2, comment2))
       equation
         p = List.union(partOfLst1, partOfLst2);
-        i = Util.if_(Util.isSome(instanceOpt1), instanceOpt1, instanceOpt2);
+        i = if Util.isSome(instanceOpt1) then instanceOpt1 else instanceOpt2;
         c = List.union(connectEquationOptLst1, connectEquationOptLst2);
         t = List.union(typeLst1, typeLst2);
         o = listAppend(operations1, operations2);
@@ -6507,7 +6507,7 @@ algorithm
         assertExps = List.map(asserts,Algorithm.getAssertCond);
         op1 = DAE.SOLVE(cr,exp1,exp2,exp,assertExps);
         op2 = DAE.SOLVED(cr,exp2) "If it was already on solved form";
-        op = Util.if_(Expression.expEqual(exp2,exp),op2,op1);
+        op = if Expression.expEqual(exp2,exp) then op2 else op1;
       then addSymbolicTransformation(source,op);
   end match;
 end addSymbolicTransformationSolve;
@@ -6743,7 +6743,7 @@ algorithm
       equation
         c = SCode.COMMENT(NONE(), SOME(message));
         b = listMember(c, comment);
-        comment = Util.if_(b, comment, c::comment);
+        comment = if b then comment else (c::comment);
       then
         DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment);
 

@@ -565,7 +565,7 @@ algorithm
     case (SCode.DERIVED(typeSpec = ty, modifications = mods, attributes = _),
         _, _ :: env, _, _)
       equation
-        env = Util.if_(inInModifierScope, inEnv, env);
+        env = if inInModifierScope then inEnv else env;
         nore_env = NFSCodeEnv.removeRedeclaresFromLocalScope(env);
         analyseTypeSpec(ty, nore_env, inInfo);
         (ty_item, _, ty_env) = NFSCodeLookup.lookupTypeSpec(ty, env, inInfo);

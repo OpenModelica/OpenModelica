@@ -118,7 +118,7 @@ algorithm
       equation
         b = topLevelInput(cr, dir, ct);
         ce = Expression.crefExp(cr);
-        size = Util.if_(b, 0, 1);
+        size = if b then 0 else 1;
         eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e1, source), ieqnslst);
         hs = Debug.bcallret2(not b, BaseHashSet.add, cr, ihs, ihs);
         (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize+size, ieqnSize+size, eqns, hs);
@@ -130,7 +130,7 @@ algorithm
       equation
         b = topLevelInput(cr, dir, ct);
         ce = Expression.crefExp(cr);
-        size = Util.if_(b, 0, 1);
+        size = if b then 0 else 1;
         eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e1, source), ieqnslst);
         hs = Debug.bcallret2(not b, BaseHashSet.add, cr, ihs, ihs);
         (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize+size, ieqnSize+size, eqns, hs);
@@ -141,7 +141,7 @@ algorithm
     case (DAE.VAR(componentRef=cr, kind = DAE.VARIABLE(), direction=dir, connectorType = ct)::rest, _, _, _, _)
       equation
         b = topLevelInput(cr, dir, ct);
-        size = Util.if_(b, 0, 1);
+        size = if b then 0 else 1;
         hs = Debug.bcallret2(not b, BaseHashSet.add, cr, ihs, ihs);
         (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize+size, ieqnSize, ieqnslst, hs);
       then
@@ -151,7 +151,7 @@ algorithm
     case (DAE.VAR(componentRef=cr, kind = DAE.DISCRETE(), direction=dir, connectorType = ct)::rest, _, _, _, _)
       equation
         b = topLevelInput(cr, dir, ct);
-        size = Util.if_(b, 0, 1);
+        size = if b then 0 else 1;
         hs = Debug.bcallret2(not b, BaseHashSet.add, cr, ihs, ihs);
         (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize+size, ieqnSize, ieqnslst, hs);
       then

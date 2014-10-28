@@ -781,7 +781,7 @@ algorithm
       str = str +& "RHS:\n";
       str = str +& ExpressionDump.dumpExpStr(e2, 0);
       str = str +& "\n";
-      str = Util.if_(printExpTree, str, "");
+      str = if printExpTree then str else "";
       print(str);
 
       dumpBackendDAEEqnList2(res, printExpTree);
@@ -800,7 +800,7 @@ algorithm
       str = str +& "RHS:\n";
       str = str +& ExpressionDump.dumpExpStr(e2, 0);
       str = str +& "\n";
-      str = Util.if_(printExpTree, str, "");
+      str = if printExpTree then str else "";
       print(str);
 
       dumpBackendDAEEqnList2(res,printExpTree);
@@ -812,7 +812,7 @@ algorithm
       print(str);
       print(" (" +& equationKindString(eqKind) +& ")\n");
       str = ExpressionDump.dumpExpStr(e,0);
-      str = Util.if_(printExpTree,str,"");
+      str = if printExpTree then str else "";
       print(str);
       print("\n");
       dumpBackendDAEEqnList2(res,printExpTree);
@@ -826,7 +826,7 @@ algorithm
 
       str = ExpressionDump.dumpExpStr(e, 0);
       str = str +& "\n";
-      str = Util.if_(printExpTree, str, "");
+      str = if printExpTree then str else "";
       print(str);
 
       dumpBackendDAEEqnList2(res, printExpTree);
@@ -838,7 +838,7 @@ algorithm
       print(str);
       str = str +& " (" +& equationKindString(eqKind) +& ")\n";
       str = ExpressionDump.dumpExpStr(e1,0);
-      str = Util.if_(printExpTree,str,"");
+      str = if printExpTree then str else "";
       print(str);
       print("\n");
       dumpBackendDAEEqnList2(res,printExpTree);
@@ -857,7 +857,7 @@ algorithm
       print(str);
       str = str +& " (" +& equationKindString(eqKind) +& ")\n";
       str = ExpressionDump.dumpExpStr(e,0);
-      str = Util.if_(printExpTree,str,"");
+      str = if printExpTree then str else "";
       print(str);
       print("\n");
       dumpBackendDAEEqnList2(res,printExpTree);
@@ -1014,7 +1014,7 @@ algorithm
         ();
     case (BackendDAE.TORNSYSTEM(tearingvars=vlst,residualequations=elst,otherEqnVarTpl=eqnsvartpllst,linear=b)::rest,_,_)
       equation
-        s = Util.if_(b,"linear","nonlinear");
+        s = if b then "linear" else "nonlinear";
         print("torn " +& s +& " Equationsystem:\n");
         vlst1 = List.flatten(List.map(eqnsvartpllst,Util.tuple22));
         elst1 = List.map(eqnsvartpllst,Util.tuple21);
@@ -1115,11 +1115,11 @@ algorithm
         var = BackendVariable.getVarAt(vars,v);
         c = BackendVariable.varCref(var);
         b = BackendVariable.isStateVar(var);
-        s = Util.if_(b,"der(","");
+        s = if b then "der(" else "";
         print(s);
         s = ComponentReference.printComponentRefStr(c);
         print(s);
-        s = Util.if_(b,") "," ");
+        s = if b then ") " else " ";
         print(s);
       then ();
     case (i::l,_,_)
@@ -1128,11 +1128,11 @@ algorithm
         var = BackendVariable.getVarAt(vars,v);
         c = BackendVariable.varCref(var);
         b = BackendVariable.isStateVar(var);
-        s = Util.if_(b,"der(","");
+        s = if b then "der(" else "";
         print(s);
         s = ComponentReference.printComponentRefStr(c);
         print(s);
-        s = Util.if_(b,") "," ");
+        s = if b then ") " else " ";
         print(s);
         dumpComponentsAdvanced3(l,v2,vars);
       then ();
@@ -1224,7 +1224,7 @@ algorithm
         s2 = stringDelimitList(ls, ", ");
         ls = List.map(vlst, intString);
         s3 = stringDelimitList(ls, ", ");
-        s4 = Util.if_(b,"linear","nonlinear");
+        s4 = if b then "linear" else "nonlinear";
         tmpStr = "{{" +& s +& "}\n,{" +& s2 +& ":" +& s3 +& "} Size: " +& intString(listLength(vlst)) +& " " +& s4 +& "\n";
       then tmpStr;
   end match;
@@ -1321,7 +1321,7 @@ algorithm
         ls = List.map(vlst, intString);
         s2 = stringDelimitList(ls, ", ");
         sj = intString(listLength(vlst));
-        sl = Util.if_(b,"linear","nonlinear");
+        sl = if b then "linear" else "nonlinear";
         s2 = stringAppendList({"torn ",sl," Equationsystem","{{",s,"},\n{",s1,":",s2,"} Size: ",sj});
       then
         s2;
@@ -2755,7 +2755,7 @@ protected
 algorithm
   BackendDAE.EQUATION_ATTRIBUTES(kind=kind, subPartitionIndex=subPartitionIndex) := inEqAttr;
   outString := "[" +& equationKindString(kind);
-  outString := Util.if_(Flags.isSet(Flags.DUMP_SYNCHRONOUS), outString +& ", sub-partition index: " +& subPartitionString(subPartitionIndex), outString);
+  outString := if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then (outString +& ", sub-partition index: " +& subPartitionString(subPartitionIndex)) else outString;
   outString := outString +& "]";
 end equationAttrString;
 
@@ -3498,9 +3498,15 @@ algorithm
   stStr := intString(st);
   dvarStr := intString(dvar);
   dstStr := intString(dst);
-  statesStr := Util.if_(Flags.isSet(Flags.DUMP_STATESELECTION_INFO)," (" +& stringDelimitList(List.map(states, ComponentReference.printComponentRefStr),",") +& ")"," ('+d=stateselection' for list of states)");
-  discvarsStr := Util.if_(Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO)," (" +& stringDelimitList(List.map(discvars, ComponentReference.printComponentRefStr),",") +& ")"," ('+d=discreteinfo' for list of discrete vars)");
-  discstatesStr := Util.if_(Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO)," (" +& stringDelimitList(List.map(discstates, ComponentReference.printComponentRefStr),",") +& ")"," ('+d=discreteinfo' for list of discrete states)");
+  statesStr := if Flags.isSet(Flags.DUMP_STATESELECTION_INFO)
+    then " (" +& stringDelimitList(List.map(states, ComponentReference.printComponentRefStr),",") +& ")"
+    else " ('+d=stateselection' for list of states)";
+  discvarsStr := if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO)
+    then " (" +& stringDelimitList(List.map(discvars, ComponentReference.printComponentRefStr),",") +& ")"
+    else " ('+d=discreteinfo' for list of discrete vars)";
+  discstatesStr := if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO)
+     then " (" +& stringDelimitList(List.map(discstates, ComponentReference.printComponentRefStr),",") +& ")"
+     else " ('+d=discreteinfo' for list of discrete states)";
   inpStr := intString(inp);
   stStr := stStr+&statesStr;
   dvarStr := dvarStr+&discvarsStr;
@@ -3588,7 +3594,7 @@ protected
   Integer len;
 algorithm
   len := listLength(eqs);
-  str := Util.if_(len == 0, "0", intString(len) +& " {" +& stringDelimitList(List.map(eqs,fn),",") +& "}");
+  str := if len == 0 then "0" else (intString(len) +& " {" +& stringDelimitList(List.map(eqs,fn),",") +& "}");
 end equationSizesStr;
 
 protected function sizeNumNonZeroTplString

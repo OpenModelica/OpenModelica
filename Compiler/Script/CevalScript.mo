@@ -227,13 +227,13 @@ protected constant list<String> simulationOptionsNames =
 public function getSimulationResultType
   output DAE.Type t;
 algorithm
-  t := Util.if_(Config.getRunningTestsuite(), simulationResultType_rtest, simulationResultType_full);
+  t := if Config.getRunningTestsuite() then simulationResultType_rtest else simulationResultType_full;
 end getSimulationResultType;
 
 public function getDrModelicaSimulationResultType
   output DAE.Type t;
 algorithm
-  t := Util.if_(Config.getRunningTestsuite(), simulationResultType_rtest, simulationResultType_drModelica);
+  t := if Config.getRunningTestsuite() then simulationResultType_rtest else simulationResultType_drModelica;
 end getDrModelicaSimulationResultType;
 
 public function createSimulationResult
@@ -418,7 +418,7 @@ algorithm
     case (GlobalScript.SIMULATION_OPTIONS(simflags = e),          "simflags")          then e;
     case (_,                                         name)
       equation
-        msg = "Unknown simulation option: " +& name;
+        msg = "Unknown simulation option: " + name;
         Error.addCompilerWarning(msg);
       then
         fail();
@@ -462,7 +462,7 @@ algorithm
         experimentAnnotationStr = System.stringReplace(experimentAnnotationStr, "}", "");
 
         GlobalScript.ISTMTS({GlobalScript.IEXP(exp = Absyn.CALL(functionArgs = Absyn.FUNCTIONARGS(_, named)))}, _)
-        = Parser.parsestringexp("experiment(" +& experimentAnnotationStr +& ");\n", "<experiment>");
+        = Parser.parsestringexp("experiment(" + experimentAnnotationStr + ");\n", "<experiment>");
 
         simOpt = populateSimulationOptions(defaults, named);
       then
@@ -486,8 +486,8 @@ protected
 algorithm
   UseOtimica := Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM);
   GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, options, outputFormat, variableFilter, cflags, simflags) := inSimOpt;
-  method := Util.if_(UseOtimica, DAE.SCONST("optimization"),method);
-  numberOfIntervals := Util.if_(UseOtimica, DAE.ICONST(50),numberOfIntervals);
+  method := if UseOtimica then DAE.SCONST("optimization") else method;
+  numberOfIntervals := if UseOtimica then DAE.ICONST(50) else numberOfIntervals;
   outSimOpt := GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, DAE.SCONST(inFileNamePrefix), options, outputFormat, variableFilter, cflags, simflags);
 end setFileNamePrefixInSimulationOptions;
 
@@ -525,7 +525,7 @@ algorithm
 
     case (exp,    _)
       equation
-        str = "CevalScript.getConst: experiment annotation contains unsupported expression: " +& Dump.printExpStr(exp) +& " of type " +& Types.unparseType(inExpType) +& "\n";
+        str = "CevalScript.getConst: experiment annotation contains unsupported expression: " + Dump.printExpStr(exp) + " of type " + Types.unparseType(inExpType) + "\n";
         Error.addCompilerError(str);
       then
         fail();
@@ -627,7 +627,7 @@ algorithm
 
     case (_,Absyn.NAMEDARG(argName = name, argValue = exp)::rest)
       equation
-        msg = "Ignoring unknown experiment annotation option: " +& name +& " = " +& Dump.printExpStr(exp);
+        msg = "Ignoring unknown experiment annotation option: " + name + " = " + Dump.printExpStr(exp);
         Error.addCompilerWarning(msg);
         simOpt = populateSimulationOptions(inSimOpt, rest);
       then
@@ -692,8 +692,8 @@ algorithm
         prio = stringDelimitList(rest, " ");
         // send "" priority if that is it, don't send "default"
         // see https://trac.openmodelica.org/OpenModelica/ticket/2422
-        // prio = Util.if_(stringEq(prio,""), "default", prio);
-        mp = System.realpath(dir +& "/../") +& System.groupDelimiter() +& Settings.getModelicaPath(Config.getRunningTestsuite());
+        // prio = if_(stringEq(prio,""), "default", prio);
+        mp = System.realpath(dir + "/../") + System.groupDelimiter() + Settings.getModelicaPath(Config.getRunningTestsuite());
         (p1,true) = loadModel((Absyn.IDENT(cname),{prio})::{}, mp, p, true, true, checkUses);
       then p1;
 
@@ -710,7 +710,7 @@ algorithm
     // failing
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadFile failed: "+&name+&"\n");
+        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadFile failed: "+name+"\n");
       then
         fail();
   end matchcontinue;
@@ -744,7 +744,7 @@ algorithm
         version = Debug.bcallret2(not b, getPackageVersion, path, pnew, "");
         Error.assertionOrAddSourceMessage(b or not notifyLoad or forceLoad,Error.NOTIFY_NOT_LOADED,{className,version},Absyn.dummyInfo);
         p = Interactive.updateProgram(pnew, p);
-        (p,b1) = loadModel(Util.if_(checkUses, Interactive.getUsesAnnotationOrDefault(pnew), {}), modelicaPath, p, false, notifyLoad, checkUses);
+        (p,b1) = loadModel(if checkUses then Interactive.getUsesAnnotationOrDefault(pnew) else {}, modelicaPath, p, false, notifyLoad, checkUses);
         (p,b2) = loadModel(modelsToLoad, modelicaPath, p, forceLoad, notifyLoad, checkUses);
       then (p,b1 and b2);
     case ((path,strings)::_,_,p,true,_,_)
@@ -1323,7 +1323,7 @@ algorithm
       equation
         true = FMI.checkFMIVersion(str1);
         str = Absyn.pathString(className);
-        filenameprefix = Util.if_(filenameprefix ==& "<default>", str, filenameprefix);
+        filenameprefix = if filenameprefix == "<default>" then str else filenameprefix;
         filenameprefix = Util.stringReplaceChar(filenameprefix,".","_");
         defaulSimOpt = buildSimulationOptionsFromModelExperimentAnnotation(st, className, filenameprefix, SOME(defaultSimulationOptions));
         simSettings = convertSimulationOptionsToSimCode(defaulSimOpt);
@@ -1500,7 +1500,7 @@ algorithm
         List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         (cache,st,compileDir,executable,_,_,initfilename,_,_) = buildModel(cache,env, vals, st, msg);
-        executable = Util.if_(not Config.getRunningTestsuite(),compileDir +& executable,executable);
+        executable = if not Config.getRunningTestsuite() then compileDir + executable else executable;
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
 
@@ -1532,7 +1532,7 @@ algorithm
     case (cache,env,"buildModelBeast",vals,st,_)
       equation
         (cache,st,compileDir,executable,_,initfilename) = buildModelBeast(cache,env,vals,st,msg);
-        executable = Util.if_(not Config.getRunningTestsuite(),compileDir +& executable,executable);
+        executable = if not Config.getRunningTestsuite() then compileDir + executable else executable;
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
 
@@ -1541,7 +1541,7 @@ algorithm
       equation
         crefCName = Absyn.pathToCref(className);
         false = Interactive.existClass(crefCName, p);
-        errMsg = "Simulation Failed. Model: " +& Absyn.pathString(className) +& " does not exist! Please load it first before simulation.";
+        errMsg = "Simulation Failed. Model: " + Absyn.pathString(className) + " does not exist! Please load it first before simulation.";
         simValue = createSimulationResultFailure(errMsg, simOptionsAsString(vals));
       then
         (cache,simValue,st);
@@ -1578,7 +1578,7 @@ algorithm
       equation
         _ = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
         str = Absyn.pathString(className);
-        res = "Failed to build model: " +& str;
+        res = "Failed to build model: " + str;
         simValue = createSimulationResultFailure(res, simOptionsAsString(vals));
       then
         (cache,simValue,st);
@@ -1587,7 +1587,7 @@ algorithm
       equation
         str = Absyn.pathString(className);
         simValue = createSimulationResultFailure(
-          "Simulation failed for model: " +& str +&
+          "Simulation failed for model: " + str +
           "\nEnvironment variable OPENMODELICAHOME not set.",
           simOptionsAsString(vals));
       then
@@ -1624,7 +1624,7 @@ algorithm
       equation
         crefCName = Absyn.pathToCref(className);
         true = Interactive.existClass(crefCName, p);
-        errMsg = "moveClass Error: Could not move the model " +& Absyn.pathString(className) +& ". Unknown error.";
+        errMsg = "moveClass Error: Could not move the model " + Absyn.pathString(className) + ". Unknown error.";
         Error.addMessage(Error.INTERNAL_ERROR, {errMsg});
         simValue = Values.BOOL(false);
       then
@@ -1719,7 +1719,7 @@ algorithm
       equation
         b = Error.getNumMessages() == 0;
         str = Absyn.pathString(path);
-        str = "Instantiation of " +& str +& " failed with no error message";
+        str = "Instantiation of " + str + " failed with no error message";
         Debug.bcall2(b, Error.addMessage, Error.INTERNAL_ERROR, {str,"<TOP>"});
       then
         (cache,Values.STRING(""),st);
@@ -1734,7 +1734,7 @@ algorithm
       equation
         Error.clearMessages() "Clear messages";
         true = System.regularFileExists(filename);
-        workdir = Util.if_(System.directoryExists(workdir), workdir, System.pwd());
+        workdir = if System.directoryExists(workdir) then workdir else System.pwd();
         /* Initialize FMI objects */
         (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) = FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel, inputConnectors, outputConnectors);
         true = b; /* if something goes wrong while initializing */
@@ -1747,7 +1747,7 @@ algorithm
         str2 = FMI.getFMIType(fmiInfo);
         str3 = FMI.getFMIVersion(fmiInfo);
         outputFile = stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"});
-        filename_1 = Util.if_(b1,stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"}),stringAppendList({str1,"_",str2,"_FMU.mo"}));
+        filename_1 = if b1 then stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"}) else stringAppendList({str1,"_",str2,"_FMU.mo"});
         System.writeFile(outputFile, str);
         /* Release FMI objects */
         FMIExt.releaseFMIImport(fmiModelVariablesInstance, fmiInstance, fmiContext, str3);
@@ -2178,7 +2178,7 @@ algorithm
         namesChanged = List.filterMap1(sp,getChangedClass,suffix);
         hashSetString = HashSetString.emptyHashSet();
         hashSetString = List.fold(namesChanged,BaseHashSet.add,hashSetString);
-        // print("namesChanged: " +& stringDelimitList(namesChanged, ",") +& "\n");
+        // print("namesChanged: " + stringDelimitList(namesChanged, ",") + "\n");
 
         depstransposed = Graph.transposeGraph(Graph.emptyGraph(names),deps,stringEq);
         depstransposedtransitive = Graph.buildGraph(namesPublic,buildTransitiveDependencyGraph,depstransposed);
@@ -2191,14 +2191,14 @@ algorithm
         // depsmerged = List.sort(depsmerged, compareNumberOfDependencies);
 
         /*
-         print("Total number of modules: " +& intString(listLength(depsmerged)) +& "\n");
+         print("Total number of modules: " + intString(listLength(depsmerged)) + "\n");
          str = stringDelimitList(List.map(depsmerged, transitiveDependencyString), "\n");
-         print(str +& "\n");
+         print(str + "\n");
         */
 
         depschanged = List.select1(depsmerged,isChanged,hashSetString);
         names = List.map(depschanged, Util.tuple21);
-        // print("Files to recompile (" +& intString(listLength(depschanged)) +& "): " +& stringDelimitList(names, ",") +& "\n");
+        // print("Files to recompile (" + intString(listLength(depschanged)) + "): " + stringDelimitList(names, ",") + "\n");
         fileNames = List.map1(names, stringAppend, suffix);
         _ = List.map(fileNames, System.removeFile);
         v = ValuesUtil.makeArray(List.map(names,ValuesUtil.makeString));
@@ -2520,11 +2520,11 @@ algorithm
         stopTime = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,stopTimeExp,Values.REAL(stopTime)));
         tolerance = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,toleranceExp,Values.REAL(tolerance)));
         Values.INTEGER(numberOfIntervals) = Util.makeValueOrDefault(Ceval.cevalSimple,intervalExp,Values.INTEGER(numberOfIntervals)); // number of intervals
-        interval = Util.if_(numberOfIntervals == 0, interval, realDiv(realSub(stopTime,startTime),intReal(intMax(numberOfIntervals,1))));
+        interval = if numberOfIntervals == 0 then interval else realDiv(realSub(stopTime,startTime),intReal(intMax(numberOfIntervals,1)));
         r1 = realSub(stopTime,startTime);
         r2 = realMax(interval,1e-30  /* TODO: Use real if-expressions to skip these things */);
         r = Debug.bcallret2(realGt(interval,0.0), realDiv, r1, r2, 0.0);
-        numberOfIntervals = Util.if_(numberOfIntervals == 0, Util.if_(realGt(interval,0.0),realInt(realCeil(r)),0), numberOfIntervals);
+        numberOfIntervals = if numberOfIntervals == 0 then (if realGt(interval,0.0) then realInt(realCeil(r)) else 0) else numberOfIntervals;
       then
         (cache,Values.TUPLE({Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance),Values.INTEGER(numberOfIntervals),Values.REAL(interval)}),st);
 
@@ -2609,7 +2609,7 @@ algorithm
         Dump.getAstAsCorbaString(p);
         Print.writeBuf(str);
         Print.clearBuf();
-        str = "Wrote result to file: " +& str;
+        str = "Wrote result to file: " + str;
       then
         (cache,Values.STRING(str),st);
 
@@ -2652,7 +2652,7 @@ algorithm
                   "CONFIGURE_CMDLINE"};
         omhome = Settings.getInstallationDirectoryPath();
         omlib = Settings.getModelicaPath(Config.getRunningTestsuite());
-        omcpath = omhome +& "/bin/omc" +& System.getExeExt();
+        omcpath = omhome + "/bin/omc" + System.getExeExt();
         systemPath = Util.makeValueOrDefault(System.readEnv,"PATH","");
         omdev = Util.makeValueOrDefault(System.readEnv,"OMDEV","");
         omcfound = System.regularFileExists(omcpath);
@@ -2660,18 +2660,18 @@ algorithm
         touch_file = "omc.checksettings.create_file_test";
         usercflags = Util.makeValueOrDefault(System.readEnv,"MODELICAUSERCFLAGS","");
         workdir = System.pwd();
-        touch_res = 0 == System.systemCall("touch " +& touch_file, "");
+        touch_res = 0 == System.systemCall("touch " + touch_file, "");
         _ = 0 == System.systemCall("uname -a", touch_file);
         uname = System.readFile(touch_file);
-        rm_res = 0 == System.systemCall("rm " +& touch_file, "");
+        rm_res = 0 == System.systemCall("rm " + touch_file, "");
         _ = System.platform();
         senddata = System.getRTLibs();
         gcc = System.getCCompiler();
         have_corba = Corba.haveCorba();
-        _ = System.systemCall("rm -f " +& touch_file, "");
-        gcc_res = 0 == System.systemCall(gcc +& " --version", touch_file);
+        _ = System.systemCall("rm -f " + touch_file, "");
+        gcc_res = 0 == System.systemCall(gcc + " --version", touch_file);
         gccVersion = System.readFile(touch_file);
-        _ = System.systemCall("rm -f " +& touch_file, "");
+        _ = System.systemCall("rm -f " + touch_file, "");
         confcmd = System.configureCommandLine();
         vals = {Values.STRING(omhome),
                 Values.STRING(omlib),
@@ -2698,7 +2698,7 @@ algorithm
         vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename_1 = Util.if_(System.strncmp("/",filename,1)==0,filename,stringAppendList({pwd,pd,filename}));
+        filename_1 = if System.strncmp("/",filename,1)==0 then filename else stringAppendList({pwd,pd,filename});
         value = ValuesUtil.readDataset(filename_1, vars_1, size);
       then
         (cache,value,st);
@@ -2712,7 +2712,7 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename_1 = Util.if_(System.strncmp("/",filename,1)==0,filename,stringAppendList({pwd,pd,filename}));
+        filename_1 = if System.strncmp("/",filename,1)==0 then filename else stringAppendList({pwd,pd,filename});
         i = SimulationResults.readSimulationResultSize(filename_1);
       then
         (cache,Values.INTEGER(i),st);
@@ -2721,7 +2721,7 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename_1 = Util.if_(System.strncmp("/",filename,1)==0,filename,stringAppendList({pwd,pd,filename}));
+        filename_1 = if System.strncmp("/",filename,1)==0 then filename else stringAppendList({pwd,pd,filename});
         args = SimulationResults.readVariables(filename_1,b);
         vals = List.map(args, ValuesUtil.makeString);
         v = ValuesUtil.makeArray(vals);
@@ -2732,10 +2732,10 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename = Util.if_(System.substring(filename,1,1) ==& "/",filename,stringAppendList({pwd,pd,filename}));
+        filename = if System.substring(filename,1,1) ==& "/" then filename else stringAppendList({pwd,pd,filename});
         filename_1 = Util.testsuiteFriendlyPath(filename_1);
-        filename_1 = Util.if_(System.substring(filename_1,1,1) ==& "/",filename_1,stringAppendList({pwd,pd,filename_1}));
-        filename2 = Util.if_(System.substring(filename2,1,1) ==& "/",filename2,stringAppendList({pwd,pd,filename2}));
+        filename_1 = if System.substring(filename_1,1,1) ==& "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
+        filename2 = if System.substring(filename2,1,1) ==& "/" then filename2 else stringAppendList({pwd,pd,filename2});
         vars_1 = List.map(cvars, ValuesUtil.extractValueString);
         strings = SimulationResults.cmpSimulationResults(Config.getRunningTestsuite(),filename,filename_1,filename2,x1,x2,vars_1);
         cvars = List.map(strings,ValuesUtil.makeString);
@@ -2750,10 +2750,10 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename = Util.if_(System.substring(filename,1,1) ==& "/",filename,stringAppendList({pwd,pd,filename}));
+        filename = if System.substring(filename,1,1) ==& "/" then filename else stringAppendList({pwd,pd,filename});
         filename_1 = Util.testsuiteFriendlyPath(filename_1);
-        filename_1 = Util.if_(System.substring(filename_1,1,1) ==& "/",filename_1,stringAppendList({pwd,pd,filename_1}));
-        filename2 = Util.if_(System.substring(filename2,1,1) ==& "/",filename2,stringAppendList({pwd,pd,filename2}));
+        filename_1 = if System.substring(filename_1,1,1) ==& "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
+        filename2 = if System.substring(filename2,1,1) ==& "/" then filename2 else stringAppendList({pwd,pd,filename2});
         vars_1 = List.map(cvars, ValuesUtil.extractValueString);
         (b,strings) = SimulationResults.diffSimulationResults(Config.getRunningTestsuite(),filename,filename_1,filename2,reltol,reltolDiffMinMax,rangeDelta,vars_1,b);
         cvars = List.map(strings,ValuesUtil.makeString);
@@ -2770,9 +2770,9 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename = Util.if_(System.substring(filename,1,1) ==& "/",filename,stringAppendList({pwd,pd,filename}));
+        filename = if System.substring(filename,1,1) ==& "/" then filename else stringAppendList({pwd,pd,filename});
         filename_1 = Util.testsuiteFriendlyPath(filename_1);
-        filename_1 = Util.if_(System.substring(filename_1,1,1) ==& "/",filename_1,stringAppendList({pwd,pd,filename_1}));
+        filename_1 = if System.substring(filename_1,1,1) ==& "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
         str = SimulationResults.diffSimulationResultsHtml(Config.getRunningTestsuite(),filename,filename_1,reltol,reltolDiffMinMax,rangeDelta,str);
       then
         (cache,Values.STRING(str),st);
@@ -2784,8 +2784,8 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename = Util.if_(System.substring(filename,1,1) ==& "/",filename,stringAppendList({pwd,pd,filename}));
-        filename_1 = Util.if_(System.substring(filename_1,1,1) ==& "/",filename_1,stringAppendList({pwd,pd,filename_1}));
+        filename = if System.substring(filename,1,1) ==& "/" then filename else stringAppendList({pwd,pd,filename});
+        filename_1 = if System.substring(filename_1,1,1) ==& "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
         strings = TaskGraphResults.checkTaskGraph(filename, filename_1);
         cvars = List.map(strings,ValuesUtil.makeString);
         v = ValuesUtil.makeArray(cvars);
@@ -2798,8 +2798,8 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename = Util.if_(System.substring(filename,1,1) ==& "/",filename,stringAppendList({pwd,pd,filename}));
-        filename_1 = Util.if_(System.substring(filename_1,1,1) ==& "/",filename_1,stringAppendList({pwd,pd,filename_1}));
+        filename = if System.substring(filename,1,1) ==& "/" then filename else stringAppendList({pwd,pd,filename});
+        filename_1 = if System.substring(filename_1,1,1) ==& "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
         strings = TaskGraphResults.checkCodeGraph(filename, filename_1);
         cvars = List.map(strings,ValuesUtil.makeString);
         v = ValuesUtil.makeArray(cvars);
@@ -2843,13 +2843,13 @@ algorithm
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         pd = System.pathDelimiter();
         // create absolute path of simulation result file
-        str1 = System.pwd() +& pd +& filename;
-        s1 = Util.if_(System.os() ==& "Windows_NT", ".exe", "");
-        filename = Util.if_(System.regularFileExists(str1), str1, filename);
+        str1 = System.pwd() + pd + filename;
+        s1 = if System.os() == "Windows_NT" then ".exe" else "";
+        filename = if System.regularFileExists(str1) then str1 else filename;
         // create the path till OMPlot
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
-        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --grid=" +& gridStr +& " --plotAll --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " --legend-position=\"" +& legendPosition +& "\" --footer=\"" +& footer +& "\"";
+        str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\"";
         call = stringAppendList({"\"",str2,"\""," ",str3});
         0 = System.spawnCall(str2, call);
       then
@@ -2882,8 +2882,8 @@ algorithm
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         pd = System.pathDelimiter();
         // create absolute path of simulation result file
-        str1 = System.pwd() +& pd +& filename;
-        filename = Util.if_(System.regularFileExists(str1), str1, filename);
+        str1 = System.pwd() + pd + filename;
+        filename = if System.regularFileExists(str1) then str1 else filename;
         logXStr = boolString(logX);
         logYStr = boolString(logY);
         x1Str = realString(x1);
@@ -2934,13 +2934,13 @@ algorithm
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         pd = System.pathDelimiter();
         // create absolute path of simulation result file
-        str1 = System.pwd() +& pd +& filename;
-        s1 = Util.if_(System.os() ==& "Windows_NT", ".exe", "");
-        filename = Util.if_(System.regularFileExists(str1), str1, filename);
+        str1 = System.pwd() + pd + filename;
+        s1 = if System.os() == "Windows_NT" then ".exe" else "";
+        filename = if System.regularFileExists(str1) then str1 else filename;
         // create the path till OMPlot
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
-        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --grid=" +& gridStr +& " --plot --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " --legend-position=\"" +& legendPosition +& "\" --footer=\"" +& footer +& "\" \"" +& str +& "\"";
+        str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" \"" + str + "\"";
         call = stringAppendList({"\"",str2,"\""," ",str3});
         0 = System.spawnCall(str2, call);
       then
@@ -2977,8 +2977,8 @@ algorithm
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         pd = System.pathDelimiter();
         // create absolute path of simulation result file
-        str1 = System.pwd() +& pd +& filename;
-        filename = Util.if_(System.regularFileExists(str1), str1, filename);
+        str1 = System.pwd() + pd + filename;
+        filename = if System.regularFileExists(str1) then str1 else filename;
         logXStr = boolString(logX);
         logYStr = boolString(logY);
         x1Str = realString(x1);
@@ -3012,17 +3012,17 @@ algorithm
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         pd = System.pathDelimiter();
         // create absolute path of simulation result file
-        str = System.pwd() +& pd +& filename;
-        filename = Util.if_(System.regularFileExists(str), str, filename);
+        str = System.pwd() + pd + filename;
+        filename = if System.regularFileExists(str) then str else filename;
         (_,visvar_str) = Interactive.getElementsOfVisType(className, p);
         // write the visualizing objects to the file
-        str1 = System.pwd() +& pd +& Absyn.pathString(className) +& ".visualize";
+        str1 = System.pwd() + pd + Absyn.pathString(className) + ".visualize";
         System.writeFile(str1, visvar_str);
-        s1 = Util.if_(System.os() ==& "Windows_NT", ".exe", "");
+        s1 = if System.os() == "Windows_NT" then ".exe" else "";
         // create the path till OMVisualize
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMVisualize",s1});
         // create the list of arguments for OMVisualize
-        str3 = "--visualizationfile=\"" +& str1 +& "\" --simulationfile=\"" +& filename +& "\"" +& " --new-window=" +& boolString(externalWindow);
+        str3 = "--visualizationfile=\"" + str1 + "\" --simulationfile=\"" + filename + "\"" + " --new-window=" + boolString(externalWindow);
         call = stringAppendList({"\"",str2,"\""," ",str3});
 
         0 = System.spawnCall(str2, call);
@@ -3258,20 +3258,20 @@ algorithm
         // check if plot is set to silent or not
         false = Config.getPlotSilent();
         // get the variables
-        str = ValuesUtil.printCodeVariableName(cvar) +& "\" \"" +& ValuesUtil.printCodeVariableName(cvar2);
+        str = ValuesUtil.printCodeVariableName(cvar) + "\" \"" + ValuesUtil.printCodeVariableName(cvar2);
         // get OPENMODELICAHOME
         omhome = Settings.getInstallationDirectoryPath();
         // get the simulation filename
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         pd = System.pathDelimiter();
         // create absolute path of simulation result file
-        str1 = System.pwd() +& pd +& filename;
-        s1 = Util.if_(System.os() ==& "Windows_NT", ".exe", "");
-        filename = Util.if_(System.regularFileExists(str1), str1, filename);
+        str1 = System.pwd() + pd + filename;
+        s1 = if System.os() == "Windows_NT" then ".exe" else "";
+        filename = if System.regularFileExists(str1) then str1 else filename;
         // create the path till OMPlot
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
-        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --grid=" +& gridStr +& " --plotParametric --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " --legend-position=\"" +& legendPosition +& "\" --footer=\"" +& footer +& "\" \"" +& str +& "\"";
+        str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotParametric --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" \"" + str + "\"";
         call = stringAppendList({"\"",str2,"\""," ",str3});
         0 = System.spawnCall(str2, call);
       then
@@ -3308,8 +3308,8 @@ algorithm
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         pd = System.pathDelimiter();
         // create absolute path of simulation result file
-        str1 = System.pwd() +& pd +& filename;
-        filename = Util.if_(System.regularFileExists(str1), str1, filename);
+        str1 = System.pwd() + pd + filename;
+        filename = if System.regularFileExists(str1) then str1 else filename;
         logXStr = boolString(logX);
         logYStr = boolString(logY);
         x1Str = realString(x1);
@@ -3604,11 +3604,11 @@ algorithm
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
         (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp)),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true);
-        print("Load deps:      " +& realString(System.realtimeTock(ClockIndexes.RT_CLOCK_FINST)) +& "\n");
+        print("Load deps:      " + realString(System.realtimeTock(ClockIndexes.RT_CLOCK_FINST)) + "\n");
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
-        print("Absyn->SCode:   " +& realString(System.realtimeTock(ClockIndexes.RT_CLOCK_FINST)) +& "\n");
+        print("Absyn->SCode:   " + realString(System.realtimeTock(ClockIndexes.RT_CLOCK_FINST)) + "\n");
 
         dae = FInst.instPath(className, scodeP);
         ic_1 = ic;
@@ -3649,7 +3649,7 @@ algorithm
         (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp)),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true);
 
         //System.stopTimer();
-        //print("\nExists+Dependency: " +& realString(System.getTimerIntervalTime()));
+        //print("\nExists+Dependency: " + realString(System.getTimerIntervalTime()));
 
         //System.startTimer();
         //print("\nAbsyn->SCode");
@@ -3659,16 +3659,16 @@ algorithm
         // TODO: Why not simply get the whole thing from the cached SCode? It's faster, just need to stop doing the silly Dependency stuff.
 
         //System.stopTimer();
-        //print("\nAbsyn->SCode: " +& realString(System.getTimerIntervalTime()));
+        //print("\nAbsyn->SCode: " + realString(System.getTimerIntervalTime()));
 
         //System.startTimer();
         //print("\nInst.instantiateClass");
         (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodeP,className);
 
-        FGraphDump.dumpGraph(env, "F:\\dev\\" +& Absyn.pathString(className) +& ".graph.graphml");
+        FGraphDump.dumpGraph(env, "F:\\dev\\" + Absyn.pathString(className) + ".graph.graphml");
 
         //System.stopTimer();
-        //print("\nInst.instantiateClass: " +& realString(System.getTimerIntervalTime()));
+        //print("\nInst.instantiateClass: " + realString(System.getTimerIntervalTime()));
 
         // adrpo: do not add it to the instantiated classes, it just consumes memory for nothing.
         ic_1 = ic;
@@ -3687,7 +3687,7 @@ algorithm
       equation
         str = Absyn.pathString(className);
         true = Error.getNumErrorMessages() == numError;
-        str = "Instantiation of " +& str +& " failed with no error message.";
+        str = "Instantiation of " + str + " failed with no error message.";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
@@ -3893,7 +3893,7 @@ algorithm
       equation
         errorMsg = Error.printMessagesStr(false);
         strEmpty = (stringCompare("",errorMsg)==0);
-        errorMsg = Util.if_(strEmpty,"Internal error, translating graphics to new version",errorMsg);
+        errorMsg = if strEmpty then "Internal error, translating graphics to new version" else errorMsg;
       then
         (cache,Values.STRING(errorMsg),st);
   end matchcontinue;
@@ -3933,7 +3933,7 @@ algorithm
         (cache, outSimSettings);
     else
       equation
-        s = "CevalScript.calculateSimulationSettings failed: " +& ValuesUtil.valString(Values.TUPLE(vals));
+        s = "CevalScript.calculateSimulationSettings failed: " + ValuesUtil.valString(Values.TUPLE(vals));
         Error.addMessage(Error.INTERNAL_ERROR, {s});
       then
         fail();
@@ -4109,10 +4109,10 @@ algorithm
         Error.clearMessages() "Clear messages";
         // Only compile if change occured after last build.
         (Absyn.CLASS(info = Absyn.INFO(buildTimes= Absyn.TIMESTAMP(build,_)))) = Interactive.getPathedClassInProgram(classname,p);
-        compileDir = System.pwd() +& System.pathDelimiter();
+        compileDir = System.pwd() + System.pathDelimiter();
         true = (build >. edit);
         init_filename = stringAppendList({filenameprefix,"_init.xml"});
-        exeFile = filenameprefix +& System.getExeExt();
+        exeFile = filenameprefix + System.getExeExt();
         existFile = System.regularFileExists(exeFile);
         true = existFile;
     then (cache,st,compileDir,filenameprefix,method_str,outputFormat_str,init_filename,simflags,zeroAdditionalSimulationResultValues);
@@ -4138,7 +4138,7 @@ algorithm
         (Values.STRING(simflags),vals) = getListFirstShowError(vals, "while retreaving the simflags (12 arg) from the buildModel arguments");
 
         Error.clearMessages() "Clear messages";
-        compileDir = System.pwd() +& System.pathDelimiter();
+        compileDir = System.pwd() + System.pathDelimiter();
         (cache,simSettings) = calculateSimulationSettings(cache, env, values, st, msg);
         SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str)
            = simSettings;
@@ -4149,10 +4149,10 @@ algorithm
         //  starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
-        init_filename = filenameprefix +& "_init.xml"; //a hack ? should be at one place somewhere
+        init_filename = filenameprefix + "_init.xml"; //a hack ? should be at one place somewhere
         //win1 = getWithinStatement(classname);
 
-        Debug.fprintln(Flags.DYN_LOAD, "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
+        Debug.fprintln(Flags.DYN_LOAD, "buildModel: about to compile model " + filenameprefix + ", " + file_dir);
         compileModel(filenameprefix, libs, file_dir, method_str);
         Debug.fprintln(Flags.DYN_LOAD, "buildModel: Compiling done.");
         // p = setBuildTime(p,classname);
@@ -4165,7 +4165,7 @@ algorithm
     // failure
     case (_,_,vals,_,_)
       equation
-        Error.assertion(listLength(vals) == 12, "buildModel failure, length = " +& intString(listLength(vals)), Absyn.dummyInfo);
+        Error.assertion(listLength(vals) == 12, "buildModel failure, length = " + intString(listLength(vals)), Absyn.dummyInfo);
       then fail();
   end matchcontinue;
 end buildModel;
@@ -4381,29 +4381,29 @@ algorithm
         //        to the environment variable! Don't ask me why, ask Microsoft.
         isWindows = System.os() ==& "Windows_NT";
         target = Config.simulationCodeTarget();
-        winCompileMode = Util.if_(Config.getRunningTestsuite(), "serial", "parallel");
-        omhome = Util.if_(isWindows, "set OPENMODELICAHOME=\"" +& System.stringReplace(omhome_1, "/", "\\") +& "\"&& ", "");
+        winCompileMode = if Config.getRunningTestsuite() then "serial" else "parallel";
+        omhome = if isWindows then "set OPENMODELICAHOME=\"" + System.stringReplace(omhome_1, "/", "\\") + "\"&& " else "";
         win_call = stringAppendList({omhome,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",target," ", winCompileMode});
         make = System.getMakeCommand();
-        numParallel = Util.if_(Config.getRunningTestsuite(), 1, Config.noProc());
+        numParallel = if Config.getRunningTestsuite() then 1 else Config.noProc();
         numParallelStr = intString(numParallel);
         make_call = stringAppendList({make," -j",numParallelStr," -f ",fileprefix,".makefile"});
-        s_call = Util.if_(isWindows, win_call, make_call);
-        Debug.fprintln(Flags.DYN_LOAD, "compileModel: running " +& s_call);
+        s_call = if isWindows then win_call else make_call;
+        Debug.fprintln(Flags.DYN_LOAD, "compileModel: running " + s_call);
 
         // remove .exe .dll .log!
-        fileEXE = fileprefix +& System.getExeExt();
-        fileDLL = fileprefix +& System.getDllExt();
-        fileLOG = fileprefix +& ".log";
+        fileEXE = fileprefix + System.getExeExt();
+        fileDLL = fileprefix + System.getDllExt();
+        fileLOG = fileprefix + ".log";
         0 = Debug.bcallret1(System.regularFileExists(fileEXE),System.removeFile,fileEXE,0);
         0 = Debug.bcallret1(System.regularFileExists(fileDLL),System.removeFile,fileDLL,0);
         0 = Debug.bcallret1(System.regularFileExists(fileLOG),System.removeFile,fileLOG,0);
 
         // call the system command to compile the model!
-        0 = System.systemCall(s_call,Util.if_(isWindows,"",fileLOG));
+        0 = System.systemCall(s_call,if isWindows then "" else fileLOG);
         Debug.bcall2(Config.getRunningTestsuite(), System.appendFile, Config.getRunningTestsuiteFile(),
-          fileEXE +& "\n" +& fileDLL +& "\n" +& fileLOG +& "\n" +& fileprefix +& ".o\n" +& fileprefix +& ".libs\n" +&
-          fileprefix +& "_records.o\n" +& fileprefix +& "_res.mat\n");
+          fileEXE + "\n" + fileDLL + "\n" + fileLOG + "\n" + fileprefix + ".o\n" + fileprefix + ".libs\n" +
+          fileprefix + "_records.o\n" + fileprefix + "_res.mat\n");
 
         Debug.fprintln(Flags.DYN_LOAD, "compileModel: successful! ");
       then
@@ -4523,7 +4523,7 @@ algorithm
       equation
         classNameStr = Absyn.pathString(className);
         false = Interactive.existClass(Absyn.pathToCref(className), p);
-        errorMsg = "Unknown model in checkModel: " +& classNameStr +& "\n";
+        errorMsg = "Unknown model in checkModel: " + classNameStr + "\n";
       then
         (cache,Values.STRING(errorMsg),st);
 
@@ -4533,7 +4533,7 @@ algorithm
       classNameStr = Absyn.pathString(className);
       errorMsg = Error.printMessagesStr(false);
       strEmpty = (stringCompare("",errorMsg)==0);
-      errorMsg = Util.if_(strEmpty,"Internal error! Check of: " +& classNameStr +& " failed with no error message.", errorMsg);
+      errorMsg = if strEmpty then "Internal error! Check of: " + classNameStr + " failed with no error message." else errorMsg;
     then
       (cache,Values.STRING(errorMsg),st);
 
@@ -4553,7 +4553,7 @@ algorithm
 
     else
       equation
-        s = inString +& selector;
+        s = inString + selector;
       then s;
   end matchcontinue;
 end selectIfNotEmpty;
@@ -4706,9 +4706,9 @@ algorithm
         (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
         description = DAEUtil.daeDescription(dae);
 
-        compileDir = System.pwd() +& System.pathDelimiter();
+        compileDir = System.pwd() + System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
-        filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
+        filenameprefix = if filenameprefix ==& "<default>" then cname_str else filenameprefix;
 
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix)); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
@@ -4722,7 +4722,7 @@ algorithm
         XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
-        compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
+        compileDir = if Config.getRunningTestsuite() then "" else compileDir;
 
         // clear the rewrite rules!
         Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
@@ -4746,9 +4746,9 @@ algorithm
         (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
         description = DAEUtil.daeDescription(dae);
 
-        compileDir = System.pwd() +& System.pathDelimiter();
+        compileDir = System.pwd() + System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
-        filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
+        filenameprefix = if filenameprefix ==& "<default>" then cname_str else filenameprefix;
 
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix)); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
@@ -4763,7 +4763,7 @@ algorithm
         XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
-        compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
+        compileDir = if Config.getRunningTestsuite() then "" else compileDir;
 
         // clear the rewrite rules!
         Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
@@ -4787,9 +4787,9 @@ algorithm
         (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
         description = DAEUtil.daeDescription(dae);
 
-        compileDir = System.pwd() +& System.pathDelimiter();
+        compileDir = System.pwd() + System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
-        filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
+        filenameprefix = if filenameprefix ==& "<default>" then cname_str else filenameprefix;
 
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow);
@@ -4802,7 +4802,7 @@ algorithm
         XMLDump.dumpBackendDAE(indexed_dlow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
-        compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
+        compileDir = if Config.getRunningTestsuite() then "" else compileDir;
 
         // clear the rewrite rules!
         Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
@@ -4826,9 +4826,9 @@ algorithm
         (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
         description = DAEUtil.daeDescription(dae);
 
-        compileDir = System.pwd() +& System.pathDelimiter();
+        compileDir = System.pwd() + System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
-        filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
+        filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow);
@@ -4841,7 +4841,7 @@ algorithm
         XMLDump.dumpBackendDAE(indexed_dlow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,true);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
-        compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
+        compileDir = if Config.getRunningTestsuite() then "" else compileDir;
 
         // clear the rewrite rules!
         Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
@@ -5029,10 +5029,10 @@ algorithm
     case (cache,env,_,b,(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
       equation
         allClassPaths = getAllClassPathsRecursive(className, b, p);
-        print("Number of classes to check: " +& intString(listLength(allClassPaths)) +& "\n");
-        // print ("All paths: \n" +& stringDelimitList(List.map(allClassPaths, Absyn.pathString), "\n") +& "\n");
+        print("Number of classes to check: " + intString(listLength(allClassPaths)) + "\n");
+        // print ("All paths: \n" + stringDelimitList(List.map(allClassPaths, Absyn.pathString), "\n") + "\n");
         checkAll(cache, env, allClassPaths, st, msg);
-        ret = "Number of classes checked: " +& intString(listLength(allClassPaths));
+        ret = "Number of classes checked: " + intString(listLength(allClassPaths));
       then
         (cache,Values.STRING(ret),st);
 
@@ -5096,14 +5096,14 @@ algorithm
         // false = Interactive.isFunction(cr, p);
         // filter out types
         false = Interactive.isType(cr, p);
-        print("Checking: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... ");
+        print("Checking: " + Dump.unparseClassAttributesStr(c) + " " + Absyn.pathString(className) + "... ");
         t1 = clock();
         Flags.setConfigBool(Flags.CHECK_MODEL, true);
         (_,Values.STRING(str),_) = checkModel(FCore.emptyCache(), env, className, st, msg);
         Flags.setConfigBool(Flags.CHECK_MODEL, false);
         (_,Values.STRING(str),_) = checkModel(FCore.emptyCache(), env, className, st, msg);
         t2 = clock(); elapsedTime = t2 -. t1; s = realString(elapsedTime);
-        print (s +& " seconds -> " +& failOrSuccess(str) +& "\n\t");
+        print (s + " seconds -> " + failOrSuccess(str) + "\n\t");
         print (System.stringReplace(str, "\n", "\n\t"));
         print ("\n");
         checkAll(cache, env, rest, st, msg);
@@ -5113,7 +5113,7 @@ algorithm
     case (cache,env,className::rest,(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
       equation
         c = Interactive.getPathedClassInProgram(className, p);
-        print("Checking skipped: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... \n");
+        print("Checking skipped: " + Dump.unparseClassAttributesStr(c) + " " + Absyn.pathString(className) + "... \n");
         checkAll(cache, env, rest, st, msg);
       then
         ();
@@ -5157,7 +5157,7 @@ algorithm
       equation
         _ = Interactive.getPathedClassInProgram(classname,p);
         Error.clearMessages() "Clear messages";
-        compileDir = System.pwd() +& System.pathDelimiter();
+        compileDir = System.pwd() + System.pathDelimiter();
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st,msg);
         (cache,st,_,libs,file_dir,_)
           = translateModel(cache,env, classname, st, filenameprefix,true,SOME(simSettings));
@@ -5166,7 +5166,7 @@ algorithm
         //(cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str,options_str,outputFormat_str)
         //= calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
         //SimCodeUtil.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, starttime_r, stoptime_r, interval_r,tolerance_r,method_str,options_str,outputFormat_str);
-        Debug.fprintln(Flags.DYN_LOAD, "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
+        Debug.fprintln(Flags.DYN_LOAD, "buildModel: about to compile model " + filenameprefix + ", " + file_dir);
         compileModel(filenameprefix, libs, file_dir, method_str);
         Debug.fprintln(Flags.DYN_LOAD, "buildModel: Compiling done.");
         // SimCodegen.generateMakefileBeast(makefilename, filenameprefix, libs, file_dir);
@@ -5209,8 +5209,8 @@ algorithm
         true = len > Global.maxFunctionFileLength;
         n1 = Absyn.pathFirstIdent(functionPath);
         n2 = Absyn.pathLastIdent(functionPath);
-        name = System.unquoteIdentifier(n1 +& "_" +& n2);
-        name = name +& "_" +& intString(tick());
+        name = System.unquoteIdentifier(n1 + "_" + n2);
+        name = name + "_" + intString(tick());
       then
         name;
     case (_)
@@ -5315,7 +5315,7 @@ algorithm
         (cache,false) = Static.isExternalObjectFunction(cache,env,path);
         pathstr = generateFunctionName(path);
         fileName = generateFunctionFileName(path);
-        pathstr = "CevalScript.cevalGenerateFunction failed:\nfunction: " +& pathstr +& "\nfile: " +& fileName +& "\n";
+        pathstr = "CevalScript.cevalGenerateFunction failed:\nfunction: " + pathstr + "\nfile: " + fileName + "\n";
         Debug.fprint(Flags.FAILTRACE, pathstr);
       then
         fail();
@@ -5355,7 +5355,7 @@ algorithm
     case (cache,env,_,SCode.CLASS(encapsulatedPrefix=SCode.NOT_ENCAPSULATED(),name=name,info=info as Absyn.INFO(fileName=file))::_,_)
       equation
         (n,_) = System.regex(file, "ModelicaBuiltin.mo$", 1, false, false);
-        Error.assertion(n > 0, "Not an encapsulated class (required for separate compilation): " +& name, info);
+        Error.assertion(n > 0, "Not an encapsulated class (required for separate compilation): " + name, info);
       then fail();
   end match;
 end generateFunctions;
@@ -5390,24 +5390,24 @@ algorithm
 
     case (cache,env,_,_,_,_,_,_)
       equation
-        cache = Util.if_(cleanCache, FCore.emptyCache(), cache);
+        cache = if cleanCache then FCore.emptyCache() else cache;
         paths = List.fold1(elementLst, findFunctionsToCompile, Absyn.FULLYQUALIFIED(Absyn.IDENT(name)), {});
         cache = instantiateDaeFunctions(cache, env, paths);
         funcs = FCore.getFunctionTree(cache);
         d = List.map2(paths, DAEUtil.getNamedFunctionWithError, funcs, info);
         (_,(_,dependencies)) = DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}),{});
-        // print(name +& " has dependencies: " +& stringDelimitList(dependencies,",") +& "\n");
+        // print(name + " has dependencies: " + stringDelimitList(dependencies,",") + "\n");
         dependencies = List.sort(dependencies,Util.strcmpBool);
         dependencies = List.map1(dependencies,stringAppend,".h");
-        nameHeader = name +& ".h";
+        nameHeader = name + ".h";
         strs = List.map1r(nameHeader::dependencies, stringAppend, "$(GEN_DIR)");
-        System.writeFile(name +& ".deps", "$(GEN_DIR)" +& name +& ".o: $(GEN_DIR)" +& name +& ".c" +& " " +& stringDelimitList(strs," "));
+        System.writeFile(name + ".deps", "$(GEN_DIR)" + name + ".o: $(GEN_DIR)" + name + ".c" + " " + stringDelimitList(strs," "));
         dependencies = List.map1(dependencies,stringAppend,"\"");
         dependencies = List.map1r(dependencies,stringAppend,"#include \"");
         SimCodeMain.translateFunctions(p, name, NONE(), d, {}, dependencies);
         str = Tpl.tplString(Unparsing.programExternalHeader, {cl});
-        System.writeFile(name +& "_records.c","#include <meta/meta_modelica.h>\n" +& str);
-        cache = Util.if_(cleanCache, icache, cache);
+        System.writeFile(name + "_records.c","#include <meta/meta_modelica.h>\n" + str);
+        cache = if cleanCache then icache else cache;
       then (cache,env);
     else
       equation
@@ -5454,7 +5454,7 @@ algorithm
     case (cache,_,{}) then cache;
     case (cache,env,path::paths)
       equation
-        // print("force inst: " +& Absyn.pathString(path));
+        // print("force inst: " + Absyn.pathString(path));
         (cache,Util.SUCCESS()) = Static.instantiateDaeFunctionForceInst(cache,env,path,false,NONE(),true);
         // print(" ok\n");
         cache = instantiateDaeFunctions(cache,env,paths);
@@ -5489,14 +5489,14 @@ algorithm
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
         (mp,name,isDir) = System.getLoadModelPath(name,{"default"},mps);
-        mp = Util.if_(isDir,mp +& name,mp);
+        mp = if isDir then mp + name else mp;
         bp = findModelicaPath2(mp,names,"",true);
       then bp;
     case ("file://",_,_,_,_) then "";
     case ("modelica://",name,_,mp,true)
       equation
         name::_ = System.strtok(name,".");
-        str = "Could not resolve modelica://" +& name +& " with MODELICAPATH: " +& mp;
+        str = "Could not resolve modelica://" + name + " with MODELICAPATH: " + mp;
         Error.addMessage(Error.COMPILER_ERROR,{str});
       then fail();
   end matchcontinue;
@@ -5535,35 +5535,35 @@ algorithm
     case (_,name::names,_,_)
       equation
         false = stringEq(version,"");
-        file = mp +& "/" +& name +& " " +& version;
+        file = mp + "/" + name + " " + version;
         true = System.directoryExists(file);
-        // print("Found file 1: " +& file +& "\n");
+        // print("Found file 1: " + file + "\n");
       then findModelicaPath2(file,names,"",true);
     case (_,name::_,_,_)
       equation
         false = stringEq(version,"");
-        file = mp +& "/" +& name +& " " +& version +& ".mo";
+        file = mp + "/" + name + " " + version + ".mo";
         true = System.regularFileExists(file);
-        // print("Found file 2: " +& file +& "\n");
+        // print("Found file 2: " + file + "\n");
       then mp;
 
     case (_,name::names,_,_)
       equation
-        file = mp +& "/" +& name;
+        file = mp + "/" + name;
         true = System.directoryExists(file);
-        // print("Found file 3: " +& file +& "\n");
+        // print("Found file 3: " + file + "\n");
       then findModelicaPath2(file,names,"",true);
     case (_,name::_,_,_)
       equation
-        file = mp +& "/" +& name +& ".mo";
+        file = mp + "/" + name + ".mo";
         true = System.regularFileExists(file);
-        // print("Found file 4: " +& file +& "\n");
+        // print("Found file 4: " + file + "\n");
       then mp;
 
       // This class is part of the current package.mo, or whatever...
     case (_,_,_,true)
       equation
-        // print("Did not find file 5: " +& mp +& " - " +& name +& "\n");
+        // print("Did not find file 5: " + mp + " - " + name + "\n");
       then mp;
   end matchcontinue;
 end findModelicaPath2;
@@ -5577,7 +5577,7 @@ protected
   String str1,str2,str3;
 algorithm
   (str1,str2,str3) := System.uriToClassAndPath(uri);
-  path := getBasePathFromUri(str1,str2,program,Settings.getModelicaPath(Config.getRunningTestsuite()),printError) +& str3;
+  path := getBasePathFromUri(str1,str2,program,Settings.getModelicaPath(Config.getRunningTestsuite()),printError) + str3;
 end getFullPathFromUri;
 
 protected function errorToValue
@@ -6967,7 +6967,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.EVAL_FUNC);
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
-        // Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: try constant evaluation: " +& Absyn.pathString(funcpath) +& "\n");
+        // Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: try constant evaluation: " + Absyn.pathString(funcpath) + "\n");
         (cache,
          sc as SCode.CLASS(
           partialPrefix = SCode.NOT_PARTIAL(),
@@ -6985,7 +6985,7 @@ algorithm
           {});
         func = FCore.getCachedInstFunc(cache, funcpath);
         (cache, newval, st) = CevalFunction.evaluate(cache, env, func, vallst, st);
-        // Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print, "[dynload]: constant evaluation SUCCESS: " +& Absyn.pathString(funcpath) +& "\n");
+        // Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print, "[dynload]: constant evaluation SUCCESS: " + Absyn.pathString(funcpath) + "\n");
       then
         (cache, newval, st);
 
@@ -6996,7 +6996,7 @@ algorithm
         true = bIsCompleteFunction;
         true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
-        Debug.fprintln(Flags.DYN_LOAD, "[dynload]: [func from file] check if is in CF list: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "[dynload]: [func from file] check if is in CF list: " + Absyn.pathString(funcpath));
 
         (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);
         Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(_),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(funcpath, p);
@@ -7004,11 +7004,11 @@ algorithm
         false = stringEq(fNew,""); // see if the WE have a file or not!
         false = Static.needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [func from file] About to execute function present in CF list: " +& Absyn.pathString(funcpath) +& "\n");
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [func from file] About to execute function present in CF list: " + Absyn.pathString(funcpath) + "\n");
 
         print_debug = Flags.isSet(Flags.DYN_LOAD);
         newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
-        //print("CALL: [func from file] CF LIST:\n\t" +& stringDelimitList(List.map(cflist, Interactive.dumpCompiledFunction), "\n\t") +& "\n");
+        //print("CALL: [func from file] CF LIST:\n\t" + stringDelimitList(List.map(cflist, Interactive.dumpCompiledFunction), "\n\t") + "\n");
       then
         (cache,newval,st);
 
@@ -7020,7 +7020,7 @@ algorithm
         true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [func from buffer] check if is in CF list: " +& Absyn.pathString(funcpath) +& "\n");
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [func from buffer] check if is in CF list: " + Absyn.pathString(funcpath) + "\n");
 
         (true, funcHandle, buildTime, _) = Static.isFunctionInCflist(cflist, funcpath);
         Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(_),_,Absyn.INFO(fileName = fNew, buildTimes= Absyn.TIMESTAMP(build,_))) = Interactive.getPathedClassInProgram(funcpath, p);
@@ -7031,7 +7031,7 @@ algorithm
         true = (buildTime >=. build);
         true = (buildTime >. edit);
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [func from buffer] About to execute function present in CF list: " +& Absyn.pathString(funcpath) +& "\n");
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [func from buffer] About to execute function present in CF list: " + Absyn.pathString(funcpath) + "\n");
 
         print_debug = Flags.isSet(Flags.DYN_LOAD);
         newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
@@ -7046,18 +7046,18 @@ algorithm
         true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [SOME SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath) +& "\n");
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [SOME SYMTAB] not in in CF list: " + Absyn.pathString(funcpath) + "\n");
 
         // remove it and all its dependencies as it might be there with an older build time.
         // get dependencies!
         (_, functionDependencies, _) = getFunctionDependencies(cache, funcpath);
-        //print("\nFunctions before:\n\t" +& stringDelimitList(List.map(cf, Interactive.dumpCompiledFunction), "\n\t") +& "\n");
+        //print("\nFunctions before:\n\t" + stringDelimitList(List.map(cf, Interactive.dumpCompiledFunction), "\n\t") + "\n");
         newCF = Interactive.removeCfAndDependencies(cf, funcpath::functionDependencies);
-        //print("\nFunctions after remove:\n\t" +& stringDelimitList(List.map(newCF, Interactive.dumpCompiledFunction), "\n\t") +& "\n");
+        //print("\nFunctions after remove:\n\t" + stringDelimitList(List.map(newCF, Interactive.dumpCompiledFunction), "\n\t") + "\n");
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [SOME SYMTAB] not in in CF list: removed deps:" +&
-          stringDelimitList(List.map(functionDependencies, Absyn.pathString) ,", ") +& "\n");
-        //print("\nfunctions in SYMTAB: " +& Interactive.dumpCompiledFunctions(syt)
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [SOME SYMTAB] not in in CF list: removed deps:" +
+          stringDelimitList(List.map(functionDependencies, Absyn.pathString) ,", ") + "\n");
+        //print("\nfunctions in SYMTAB: " + Interactive.dumpCompiledFunctions(syt)
 
         // now is safe to generate code
         (cache, funcstr, fileName) = cevalGenerateFunction(cache, env, p, funcpath);
@@ -7074,7 +7074,7 @@ algorithm
         ts = Absyn.setTimeStampBuild(ts, buildTime);
         w = Interactive.buildWithin(funcpath);
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: Updating build time for function path: " +& Absyn.pathString(funcpath) +& " within: " +& Dump.unparseWithin(w) +& "\n");
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: Updating build time for function path: " + Absyn.pathString(funcpath) + " within: " + Dump.unparseWithin(w) + "\n");
 
         p = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(funcRest),body,info)},w,ts), p);
         f = Absyn.getFileNameFromInfo(info);
@@ -7084,9 +7084,9 @@ algorithm
                 GlobalScript.CFunction(funcpath,DAE.T_UNKNOWN({funcpath}),funcHandle,buildTime,f)::newCF,
                 lf);
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [SOME SYMTAB] not in in CF list [finished]: " +&
-          Absyn.pathString(funcpath) +& "\n");
-        //print("\nfunctions in SYMTAB: " +& Interactive.dumpCompiledFunctions(syt));
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [SOME SYMTAB] not in in CF list [finished]: " +
+          Absyn.pathString(funcpath) + "\n");
+        //print("\nfunctions in SYMTAB: " + Interactive.dumpCompiledFunctions(syt));
       then
         (cache,newval,SOME(syt));
 
@@ -7098,14 +7098,14 @@ algorithm
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
         ErrorExt.setCheckpoint("cevalCallFunctionEvaluateOrGenerate_NO_SYMTAB");
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [NO SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath) +& "\n");
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [NO SYMTAB] not in in CF list: " + Absyn.pathString(funcpath) + "\n");
 
         // we might actually have a function loaded here already!
         // we need to unload all functions to not get conflicts!
         p = FCore.getProgramFromCache(cache);
         (cache,funcstr,fileName) = cevalGenerateFunction(cache, env, p, funcpath);
         // generate a uniquely named dll!
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: cevalCallFunction: about to execute " +& funcstr +& "\n");
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: cevalCallFunction: about to execute " + funcstr + "\n");
         print_debug = Flags.isSet(Flags.DYN_LOAD);
         libHandle = System.loadLibrary(fileName, print_debug);
         funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
@@ -7113,7 +7113,7 @@ algorithm
         System.freeFunction(funcHandle, print_debug);
         System.freeLibrary(libHandle, print_debug);
 
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: [NO SYMTAB] not in in CF list [finished]: " +& Absyn.pathString(funcpath) +& "\n");
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [NO SYMTAB] not in in CF list [finished]: " + Absyn.pathString(funcpath) + "\n");
         ErrorExt.rollBack("cevalCallFunctionEvaluateOrGenerate_NO_SYMTAB");
       then
         (cache,newval,NONE());
@@ -7130,7 +7130,7 @@ algorithm
 
     case (_,_,(DAE.CALL(path = funcpath,expLst = _)),_,_,_, _, _)
       equation
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: FAILED to constant evaluate function: " +& Absyn.pathString(funcpath) +& "\n");
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: FAILED to constant evaluate function: " + Absyn.pathString(funcpath) + "\n");
         _ = Absyn.pathString(funcpath);
         //TODO: readd this when testsuite is okay.
         //Error.addMessage(Error.FAILED_TO_EVALUATE_FUNCTION, {error_Str});
@@ -7265,7 +7265,7 @@ algorithm
     // Record constructors
     case(cache,env,(DAE.CALL(path = funcpath,attr = DAE.CALL_ATTR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst)))),pubVallst,_,st,msg,_)
       equation
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: func: " +& Absyn.pathString(funcpath) +& " type path: " +& Absyn.pathString(complexName));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: func: " + Absyn.pathString(funcpath) + " type path: " + Absyn.pathString(complexName));
         true = Absyn.pathEqual(funcpath,complexName);
         (pubVarLst,proVarLst) = List.splitOnTrue(varLst,Types.isPublicVar);
         expl = List.map1(proVarLst, Types.getBindingExp, funcpath);
@@ -7274,7 +7274,7 @@ algorithm
         proVarNames = List.map(proVarLst,Expression.varName);
         varNames = listAppend(pubVarNames, proVarNames);
         vallst = listAppend(pubVallst, proVallst);
-        // Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: [success] func: " +& Absyn.pathString(funcpath));
+        // Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: [success] func: " + Absyn.pathString(funcpath));
       then
         (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
 
@@ -7282,15 +7282,17 @@ algorithm
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), _, _, _, msg, _)
       equation
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: try to evaluate or generate function: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: try to evaluate or generate function: " + Absyn.pathString(funcpath));
 
         bIsCompleteFunction = isCompleteFunction(cache, env, funcpath);
         false = Types.hasMetaArray(ty);
 
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: is complete function: " +& Absyn.pathString(funcpath) +& " " +&  Util.if_(bIsCompleteFunction, "[true]", "[false]"));
+        if Flags.isSet(Flags.DYN_LOAD) then
+          Debug.traceln("CALL: is complete function: " + Absyn.pathString(funcpath) + " " +  (if bIsCompleteFunction then "[true]" else "[false]"));
+        end if;
         (cache, newval, st) = cevalCallFunctionEvaluateOrGenerate(inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg,bIsCompleteFunction);
 
-        // Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation success: " +& Absyn.pathString(funcpath));
+        // Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation success: " + Absyn.pathString(funcpath));
       then
         (cache, newval, st);
 
@@ -7300,7 +7302,7 @@ algorithm
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         false = isCompleteFunction(cache, env, funcpath);
 
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation failed (not complete function): " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation failed (not complete function): " + Absyn.pathString(funcpath));
       then
         fail();
 
@@ -7374,7 +7376,7 @@ algorithm
     case (_, _, _, Absyn.NO_MSG())
       equation
         (funcpath2, Absyn.IDENT("constructor")) = Absyn.splitQualAndIdentPath(funcpath);
-        info = Util.if_(valueEq(msg, Absyn.NO_MSG()), NONE(), SOME(Absyn.dummyInfo));
+        info = if valueEq(msg, Absyn.NO_MSG()) then NONE() else SOME(Absyn.dummyInfo);
         (_, tp, _) = Lookup.lookupType(cache, env, funcpath2, info);
         Types.externalObjectConstructorType(tp);
       then
@@ -7562,7 +7564,7 @@ algorithm
     case (_,_) then List.setDifference(Graph.allReachableNodes(({name},{}),oldgraph,stringEq),{name});
     else
       equation
-        str = "CevalScript.buildTransitiveDependencyGraph failed: " +& name;
+        str = "CevalScript.buildTransitiveDependencyGraph failed: " + name;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
@@ -7585,7 +7587,7 @@ algorithm
     case SCode.IMPORT(imp=Absyn.GROUP_IMPORT(prefix=path)) then Absyn.pathFirstIdent(path);
     case SCode.IMPORT(imp=imp,info=info)
       equation
-        str = "CevalScript.importDepenency could not handle:" +& Dump.unparseImportStr(imp);
+        str = "CevalScript.importDepenency could not handle:" + Dump.unparseImportStr(imp);
         Error.addSourceMessage(Error.INTERNAL_ERROR,{str},info);
       then fail();
   end match;
@@ -7622,7 +7624,7 @@ protected
   list<String> strs;
 algorithm
   (str,strs) := deps;
-  str := str +& " (" +& intString(listLength(strs)) +& "): " +& stringDelimitList(strs, ",");
+  str := str + " (" + intString(listLength(strs)) + "): " + stringDelimitList(strs, ",");
 end dependencyString;
 
 protected function transitiveDependencyString
@@ -7632,7 +7634,7 @@ protected
   list<String> strs;
 algorithm
   (str,strs) := deps;
-  str := intString(listLength(strs)) +& ": ("+&str+&") " +& stringDelimitList(strs, ",");
+  str := intString(listLength(strs)) + ": ("+str+") " + stringDelimitList(strs, ",");
 end transitiveDependencyString;
 
 protected function containsPublicInterface
@@ -7648,7 +7650,7 @@ algorithm
     else
       equation
         name = SCode.elementName(elt);
-        name = "CevalScript.containsPublicInterface failed: " +& name;
+        name = "CevalScript.containsPublicInterface failed: " + name;
         Error.addMessage(Error.INTERNAL_ERROR, {name});
       then fail();
   end match;
@@ -7667,11 +7669,11 @@ algorithm
     case SCode.CLASS(restriction=SCode.R_FUNCTION(_)) then false;
     case SCode.COMPONENT(prefixes=SCode.PREFIXES(visibility=SCode.PUBLIC()))
       equation
-        // print("public component " +& name +& ": ");
+        // print("public component " + name + ": ");
       then true;
     case SCode.CLASS(prefixes=SCode.PREFIXES(visibility=SCode.PUBLIC()))
       equation
-        // print("public class " +& name +& ": ");
+        // print("public class " + name + ": ");
       then true;
     else false;
   end match;
@@ -7691,7 +7693,7 @@ algorithm
     else
       equation
         name = SCode.elementName(elt);
-        name = "CevalScript.containsPublicInterface failed: " +& name;
+        name = "CevalScript.containsPublicInterface failed: " + name;
         Error.addMessage(Error.INTERNAL_ERROR, {name});
       then fail();
   end match;
@@ -7718,7 +7720,7 @@ protected
   String str;
 algorithm
   SCode.CLASS(name=str) := elt;
-  print(str +& ": " +& boolString(containsPublicInterface(elt)) +& "\n");
+  print(str + ": " + boolString(containsPublicInterface(elt)) + "\n");
 end printInterfaceString;
 
 protected function getChangedClass
@@ -7731,11 +7733,11 @@ algorithm
       String fileName;
     case (SCode.CLASS(name=name,info=Absyn.INFO(fileName=_)),_)
       equation
-        false = System.regularFileExists(name +& suffix);
+        false = System.regularFileExists(name + suffix);
       then name;
     case (SCode.CLASS(name=name,info=Absyn.INFO(fileName=fileName)),_)
       equation
-        true = System.fileIsNewerThan(fileName, name +& suffix);
+        true = System.fileIsNewerThan(fileName, name + suffix);
       then name;
   end matchcontinue;
 end getChangedClass;
@@ -7750,7 +7752,7 @@ protected
 algorithm
   (str,strs) := node;
   b := List.exist1(str::strs,BaseHashSet.has,hs);
-  // print(str +& ": " +&  boolString(b) +& "\n");
+  // print(str + ": " +  boolString(b) + "\n");
 end isChanged;
 
 protected function loadFileThread
@@ -7800,7 +7802,7 @@ algorithm
         _::allDepends = Graph.allReachableNodes((name::protectedDepends,{}),deps,stringEq);
         allDepends = List.map1r(allDepends, stringAppend, prefix);
         allDepends = List.map1(allDepends, stringAppend, ".interface.mo");
-        str = prefix +& name +& suffix +& ": $(RELPATH_" +& name +& ") " +& stringDelimitList(allDepends," ");
+        str = prefix + name + suffix + ": $(RELPATH_" + name + ") " + stringDelimitList(allDepends," ");
       then str;
     case (SCode.CLASS(name=name,info=info),_,_,_)
       equation
@@ -7859,13 +7861,13 @@ algorithm
   (NFSCodeEnv.CLASS(cls=SCode.CLASS(cmt=cmt)),_,_) := NFSCodeLookup.lookupClassName(classpath, env, Absyn.dummyInfo);
   scodeP := SCode.removeBuiltinsFromTopScope(scodeP);
   str := SCodeDump.programStr(scodeP,SCodeDump.defaultOptions);
-  str1 := Absyn.pathLastIdent(classpath) +& "_total";
+  str1 := Absyn.pathLastIdent(classpath) + "_total";
   str2 := SCodeDump.printCommentStr(cmt);
-  str2 := Util.if_(stringEq(str2,""), "", " " +& str2);
+  str2 := if stringEq(str2,"") then "" else (" " + str2);
   str3 := SCodeDump.printAnnotationStr(cmt,SCodeDump.defaultOptions);
-  str3 := Util.if_(stringEq(str3,""), "", str3 +& ";\n");
-  str1 := "\nmodel " +& str1 +& str2 +& "\n  extends " +& Absyn.pathString(classpath) +& ";\n" +& str3 +& "end " +& str1 +& ";\n";
-  System.writeFile(filename, str +& str1);
+  str3 := if stringEq(str3,"") then "" else (str3 + ";\n");
+  str1 := "\nmodel " + str1 + str2 + "\n  extends " + Absyn.pathString(classpath) + ";\n" + str3 + "end " + str1 + ";\n";
+  System.writeFile(filename, str + str1);
 end saveTotalModel;
 
 protected function verifyInterfaceType
