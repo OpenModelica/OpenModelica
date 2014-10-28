@@ -9506,31 +9506,27 @@ protected function vectorizeCallScalar
 "author: PA
   Helper function to vectorizeCall, vectorizes CALL expressions to
   array expressions."
-  input DAE.Exp inExp "e.g. abs(v)";
-  input DAE.Type inType " e.g. Real[3], result of vectorized call";
-  input Integer inInteger;
-  input list<Slot> inSlotLst;
+  input DAE.Exp exp "e.g. abs(v)";
+  input DAE.Type ty " e.g. Real[3], result of vectorized call";
+  input Integer dim;
+  input list<Slot> slots;
   output DAE.Exp outExp;
 algorithm
-  outExp:=
-  matchcontinue (inExp,inType,inInteger,inSlotLst)
+  outExp := matchcontinue exp
     local
       list<DAE.Exp> expl,args;
       Boolean scalar;
-      DAE.Exp new_exp,callexp;
-      DAE.Type e_type, arr_type;
-      Integer dim;
-      list<Slot> slots;
+      DAE.Exp new_exp;
+      DAE.Type e_type,arr_type;
 
-    case ((callexp as DAE.CALL(expLst = args)),e_type,dim,slots) /* cur_dim */
+    case DAE.CALL()
       equation
-        expl = vectorizeCallScalar2(args, slots, 1, dim, callexp);
-        e_type = Expression.unliftArray(e_type);
+        expl = vectorizeCallScalar2(exp.path, exp.expLst, exp.attr, slots, dim);
+        e_type = Expression.unliftArray(ty);
         scalar = Expression.typeBuiltin(e_type) " unlift vectorized dimension to find element type";
         arr_type = DAE.T_ARRAY(e_type, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource);
         new_exp = DAE.ARRAY(arr_type,scalar,expl);
-      then
-        new_exp;
+      then new_exp;
 
     else
       equation
@@ -9541,36 +9537,20 @@ algorithm
 end vectorizeCallScalar;
 
 protected function vectorizeCallScalar2
-"author: PA
-  Iterates through vectorized dimension an creates argument list according
-  to vectorized dimension in corresponding slot."
-  input list<DAE.Exp> inExpExpLst1;
-  input list<Slot> inSlotLst2;
-  input Integer inInteger3;
-  input Integer inInteger4;
-  input DAE.Exp inExp5;
-  output list<DAE.Exp> outExpExpLst;
+  "Iterates through vectorized dimension an creates argument list according to vectorized dimension in corresponding slot."
+  input Absyn.Path fn;
+  input list<DAE.Exp> exps;
+  input DAE.CallAttributes attr;
+  input list<Slot> slots;
+  input Integer dim;
+  output list<DAE.Exp> res := {};
+protected
+  list<DAE.Exp> callargs;
 algorithm
-  outExpExpLst:=
-  matchcontinue (inExpExpLst1,inSlotLst2,inInteger3,inInteger4,inExp5)
-    local
-      list<DAE.Exp> callargs,res,expl,args;
-      Integer cur_dim_1,cur_dim,dim;
-      list<Slot> slots;
-      Absyn.Path fn;
-      DAE.CallAttributes attr;
-    // cur_dim - current indx in dim dim - dimension size
-    case (expl,slots,cur_dim,dim,DAE.CALL(fn,_,attr))
-      equation
-        (cur_dim <= dim) = true;
-        callargs = vectorizeCallScalar3(expl, slots, cur_dim);
-
-        cur_dim_1 = cur_dim + 1;
-        res = vectorizeCallScalar2(expl, slots, cur_dim_1, dim, inExp5);
-      then
-        (DAE.CALL(fn,callargs,attr) :: res);
-    else {};
-  end matchcontinue;
+  for cur_dim in dim:-1:1 loop
+    callargs := vectorizeCallScalar3(exps, slots, cur_dim);
+    res := DAE.CALL(fn,callargs,attr) :: res;
+  end for;
 end vectorizeCallScalar2;
 
 protected function vectorizeCallScalar3
