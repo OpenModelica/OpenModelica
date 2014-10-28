@@ -1319,7 +1319,7 @@ algorithm
     new_row := {};
 
     for j in c_len:-1:1 loop
-      new_row := MetaModelica.Dangerous.arrayGetNoBoundsChecking(arrayGet(arr, j), i) :: new_row;  
+      new_row := MetaModelica.Dangerous.arrayGetNoBoundsChecking(arrayGet(arr, j), i) :: new_row;
     end for;
 
     outList := new_row :: outList;
