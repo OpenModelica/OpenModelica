@@ -579,17 +579,17 @@ algorithm
       list<DAE.Exp> expLst;
       ModeTable modes;
     case (
-	      BackendDAE.ALGORITHM(alg = DAE.ALGORITHM_STMTS(
-				  statementLst = {
-				    DAE.STMT_NORETCALL(
-				      exp = DAE.CALL(
-				        path = Absyn.IDENT(name = name),
-				        expLst = expLst
-				      )
-				    )
-				  }
-				)),
-			_)
+        BackendDAE.ALGORITHM(alg = DAE.ALGORITHM_STMTS(
+          statementLst = {
+            DAE.STMT_NORETCALL(
+              exp = DAE.CALL(
+                path = Absyn.IDENT(name = name),
+                expLst = expLst
+              )
+            )
+          }
+        )),
+      _)
       equation
         print("BTH-extractStates: "+ BackendDump.dumpEqnsStr({inEq}) +"\n");
         modes = extractState(name, expLst, inA);
