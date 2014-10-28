@@ -2437,7 +2437,7 @@ public function sortPatternsByComplexity
   input list<DAE.Pattern> inPatterns;
   output list<tuple<DAE.Pattern,Integer>> outPatterns;
 algorithm
-  outPatterns := List.toListWithPositions(inPatterns,0,{});
+  outPatterns := List.toListWithPositions(inPatterns);
   outPatterns := List.sort(outPatterns, sortPatternsByComplexityWork);
 end sortPatternsByComplexity;
 
