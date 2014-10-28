@@ -619,7 +619,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
           <<
           void <%lastIdentOfPath(name)%>::evaluateODE(const UPDATETYPE command)
           {
-             <%generateMeasureTimeStartCode("measuredFunctionStartValues")%>
+             <%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE")%>
              <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '//MeasureTimeValues **threadValues = new MeasureTimeValues*[<%getConfigInt(NUM_PROC)%>];'%>
              #pragma omp parallel num_threads(<%getConfigInt(NUM_PROC)%>)
              {
@@ -628,7 +628,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
                 /*MeasureTimeValues *valuesStart = MeasureTime::getZeroValues();
                 MeasureTimeValues *valuesEnd = MeasureTime::getZeroValues();
                 MeasureTime::getInstance()->initializeThread(getThreadNumber);
-                <%generateMeasureTimeStartCode('valuesStart')%>*/
+                <%generateMeasureTimeStartCode('valuesStart', "evaluateODEInner")%>*/
                 >>%>
 
                 <%odeEqs%>
@@ -682,7 +682,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
 
           void <%lastIdentOfPath(name)%>::evaluateODE(const UPDATETYPE command)
           {
-            /*<%generateMeasureTimeStartCode("measuredFunctionStartValues")%>*/
+            /*<%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE")%>*/
             this->_command = command;
             _evaluateBarrier.wait(); //start calculation
             _evaluateBarrier.wait(); //calculation finished
@@ -818,7 +818,7 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
     MeasureTimeValues *valuesStart = MeasureTime::getZeroValues();
     MeasureTimeValues *valuesEnd = MeasureTime::getZeroValues();
     MeasureTime::getInstance()->initializeThread(getThreadNumber);
-    //<%generateMeasureTimeStartCode('valuesStart')%>
+    //<%generateMeasureTimeStartCode('valuesStart', "evaluateODEThread")%>
     >>%>
 
     while(!_simulationFinished)
@@ -829,7 +829,7 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
             _evaluateBarrier.wait();
             break;
         }
-        <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '<%generateMeasureTimeStartCode("valuesStart")%>'%>
+        <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '<%generateMeasureTimeStartCode("valuesStart", "evaluateODEThread")%>'%>
         <%odeEqs%>
 
         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
@@ -1280,11 +1280,32 @@ end destroyLockByLockName;
 
 template assignLockByDepTask(Task depTask, String lockPrefix, String iType)
 ::=
-  let lockName = getLockNameByDepTask(depTask)
-  <<
-  <%assignLockByLockName(lockName, lockPrefix, iType)%>
-  >>
+  match(depTask)
+    case(DEPTASK(__)) then
+      let lockName = getLockNameByDepTask(depTask)
+      <<
+      /*<%printCommunicationInfoVariables(depTask.communicationInfo)%>*/
+      <%assignLockByLockName(lockName, lockPrefix, iType)%>
+      >>
+  end match
 end assignLockByDepTask;
+
+template printCommunicationInfoVariables(CommunicationInfo commInfo)
+::=
+  match(commInfo)
+    case(COMMUNICATION_INFO(__)) then
+      let floatVarsStr = floatVars |> v => '<%CodegenCpp.MemberVariableDefine2(v, "", false)%>' ;separator="\n"
+      let intVarsStr = intVars |> v => '<%CodegenCpp.MemberVariableDefine2(v, "", false)%>' ;separator="\n"
+      let boolVarsStr = boolVars |> v => '<%CodegenCpp.MemberVariableDefine2(v, "", false)%>' ;separator="\n"
+      <<
+      <%floatVarsStr%>
+      >>
+    else
+      <<
+      //unsupported communcation info
+      >>
+  end match
+end printCommunicationInfoVariables;
 
 template assignLockByLockName(String lockName, String lockPrefix, String iType)
 ::=
@@ -1375,6 +1396,13 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
 
   #include <SimCoreFactory/Policies/FactoryConfig.h>
   #include <SimController/ISimController.h>
+  <%
+    match(getConfigString(PROFILING_LEVEL))
+        case("none") then ''
+        case("all_perf") then '#include "Core/Utils/extension/measure_time_papi.hpp"'
+        else '#include "Core/Utils/extension/measure_time_rdtsc.hpp"'
+    end match
+  %>
 
   #if defined(_MSC_VER) || defined(__MINGW32__)
   #include <tchar.h>
@@ -1383,6 +1411,13 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   int main(int argc, const char* argv[])
   #endif
   {
+      <%
+      match(getConfigString(PROFILING_LEVEL))
+          case("none") then '//no profiling used'
+          case("all_perf") then 'MeasureTimePAPI::initialize();'
+          else 'MeasureTimeRDTSC::initialize();'
+      end match
+      %>
       try
       {
       boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new StaticOMCFactory());
@@ -1399,6 +1434,13 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
          #endif
             simulation.first->Start(system.first,simulation.second, "<%lastIdentOfPath(modelInfo.name)%>");
 
+            <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+                <<
+                MeasureTime::getInstance()->writeToJson();
+                //MeasureTimeRDTSC::deinitialize();
+                >>
+            %>
+            return 0;
 
       }
       catch(std::exception& ex)
@@ -1461,6 +1503,13 @@ template simulationMainFile(SimCode simCode)
       #include "ModelicaDefine.h"
       #include <SimCoreFactory/Policies/FactoryConfig.h>
       #include <SimController/ISimController.h>
+      <%
+      match(getConfigString(PROFILING_LEVEL))
+        case("none") then ''
+        case("all_perf") then '#include "Core/Utils/extension/measure_time_papi.hpp"'
+        else '#include "Core/Utils/extension/measure_time_rdtsc.hpp"'
+      end match
+      %>
 
       <%MPIHeaderInclude%>
 
@@ -1471,6 +1520,13 @@ template simulationMainFile(SimCode simCode)
         int main(int argc, const char* argv[])
       #endif
       {
+       <%
+      match(getConfigString(PROFILING_LEVEL))
+          case("none") then '//no profiling used'
+          case("all_perf") then 'MeasureTimePAPI::initialize();'
+          else 'MeasureTimeRDTSC::initialize();'
+      end match
+      %>
         try
         {
           <%MPICode%>
@@ -1485,6 +1541,14 @@ template simulationMainFile(SimCode simCode)
           simulation.first->Start(system.first, simulation.second, "<%lastIdentOfPath(modelInfo.name)%>");
 
           <%MPIFinalize%>
+          
+            <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+                <<
+                MeasureTime::getInstance()->writeToJson();
+                //MeasureTimeRDTSC::deinitialize();
+                >>
+            %>
+            return 0;
         }
         catch(std::exception& ex)
         {

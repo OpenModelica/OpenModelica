@@ -2,7 +2,7 @@ CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
 
 project(${ExtensionUtilitiesName})
 
-add_library(${ExtensionUtilitiesName} SHARED measure_time.cpp measure_time_rdtsc.cpp)
+add_library(${ExtensionUtilitiesName} SHARED measure_time.cpp measure_time_rdtsc.cpp measure_time_scorep.cpp)
 target_link_libraries (${ExtensionUtilitiesName} ${Boost_LIBRARIES})
 
 if (UNIX)
@@ -13,6 +13,7 @@ install (TARGETS ${ExtensionUtilitiesName} DESTINATION lib/omc/${LIBINSTALLEXT})
 
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/Utils/extension/measure_time.hpp
                 ${CMAKE_SOURCE_DIR}/Include/Core/Utils/extension/measure_time_rdtsc.hpp
+                ${CMAKE_SOURCE_DIR}/Include/Core/Utils/extension/measure_time_scorep.hpp
          DESTINATION include/omc/cpp/Core/Utils/extension)
 
 IF(PAPI_FOUND)

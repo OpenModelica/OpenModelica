@@ -1301,7 +1301,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   {
       <%
       match(getConfigString(PROFILING_LEVEL))
-          case("none") then ''
+          case("none") then '//no profiling used'
           case("all_perf") then 'MeasureTimePAPI::initialize();'
           else 'MeasureTimeRDTSC::initialize();'
       end match
@@ -4526,7 +4526,7 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
     //Write the current values
     else
     {
-      <%generateMeasureTimeStartCode("measuredFunctionStartValues")%>
+      <%generateMeasureTimeStartCode("measuredFunctionStartValues", "writeOutput")%>
       /* HistoryImplType::value_type_v v;
       HistoryImplType::value_type_dv v2; */
 
@@ -7741,7 +7741,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     else
       "NOT IMPLEMENTED EQUATION"
   end match
-  let &measureTimeStartVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then generateMeasureTimeStartCode("measuredProfileBlockStartValues") //else ""
+  let &measureTimeStartVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then generateMeasureTimeStartCode("measuredProfileBlockStartValues", 'evaluate<%ix_str%>') //else ""
   let &measureTimeEndVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then generateMeasureTimeEndCode("measuredProfileBlockStartValues", "measuredProfileBlockEndValues", 'measureTimeProfileBlocksArray[<%ix_str_array%>]') //else ""
   <<
     <%additionalFuncs%>
@@ -11847,7 +11847,7 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
   <<
   bool <%className%>::evaluateAll(const UPDATETYPE command)
   {
-    <%generateMeasureTimeStartCode("measuredFunctionStartValues")%>
+    <%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll")%>
     bool state_var_reinitialized = false;
 
     <%varDecls%>
@@ -11905,7 +11905,7 @@ template createEvaluate(list<list<SimEqSystem>> odeEquations,list<SimWhenClause>
   <<
   void <%className%>::evaluateODE(const UPDATETYPE command)
   {
-    <%generateMeasureTimeStartCode("measuredFunctionStartValues")%>
+    <%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE")%>
     <%varDecls%>
     /* Evaluate Equations*/
     <%equation_ode_func_calls%>
@@ -13401,11 +13401,12 @@ template generateTypeCast(Type ty, list<DAE.Exp> es, Boolean isClosure, Text &pr
   '(<%ret%>(*)(threadData_t*<%if isClosure then ", modelica_metatype"%><%inputs%><%outputs%>))'
 end generateTypeCast;
 
-template generateMeasureTimeStartCode(String varNameStartValues)
+template generateMeasureTimeStartCode(String varNameStartValues, String sectionName)
 ::=
   if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
   <<
-  MeasureTime::getTimeValuesStart(<%varNameStartValues%>);
+  //MeasureTime::getTimeValuesStart(<%varNameStartValues%>);
+  MEASURETIME_START(measuredFunctionStartValues, <%sectionName%>);
   >>
 end generateMeasureTimeStartCode;
 

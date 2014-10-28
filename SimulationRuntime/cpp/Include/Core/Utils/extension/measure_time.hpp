@@ -99,4 +99,8 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTime
   virtual void getTimeValuesStartP(MeasureTimeValues *res) = 0;
   virtual void getTimeValuesEndP(MeasureTimeValues *res) = 0;
 };
+
+#define MEASURETIME_START(valStart,name) MeasureTime::getTimeValuesStart(valStart)
+#define MEASURETIME_END(valStart, valEnd, valRes, name) { MeasureTime::getTimeValuesEnd(valEnd); valEnd->sub(valStart); valEnd->sub(MeasureTime::getOverhead()); valRes.sumMeasuredValues->add(valEnd); }
+
 #endif // MEASURE_TIME_HPP
