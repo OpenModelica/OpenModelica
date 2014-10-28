@@ -9439,7 +9439,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let eStart = daeExp(start, contextOther, &preExp, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     let eInterval = daeExp(interval, contextOther, &preExp, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     match context
-     case  ALGLOOP_CONTEXT(genInitialisation=false) then    
+     case  ALGLOOP_CONTEXT(genInitialisation=false) then
      '_system->_time_conditions[<%intSub(index, 1)%>]'
      else
      '_time_conditions[<%intSub(index, 1)%>]'
