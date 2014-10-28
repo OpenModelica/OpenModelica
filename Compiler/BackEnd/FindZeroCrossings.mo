@@ -93,52 +93,9 @@ protected
   list<BackendDAE.Var> vars;
 algorithm
   //BackendDump.dumpBackendDAE(inDAE, "findZeroCrossings: inDAE");
-  (dae, vars) := BackendDAEUtil.mapEqSystemAndFold(inDAE, findZeroCrossings1, {});
-  outDAE := findZeroCrossingsShared(dae, vars);
+  (outDAE, vars) := BackendDAEUtil.mapEqSystemAndFold(inDAE, findZeroCrossings1, {});
   //BackendDump.dumpBackendDAE(outDAE, "findZeroCrossings: outDAE");
 end findZeroCrossings;
-
-protected function findZeroCrossingsShared "This function finds all zerocrossings in the shared part of the DAE.
-  search in simple equations for zerocrossings"
-  input BackendDAE.BackendDAE inDAE;
-  input list<BackendDAE.Var> allvars;
-  output BackendDAE.BackendDAE outDAE;
-protected
-  BackendDAE.Variables vars, knvars, exobj, av;
-  BackendDAE.EquationArray remeqns, inieqns;
-  list<DAE.Constraint> constrs;
-  list<DAE.ClassAttributes> clsAttrs;
-  BackendDAE.EventInfo einfo, einfo1;
-  BackendDAE.ExternalObjectClasses eoc;
-  list<BackendDAE.TimeEvent> timeEvents;
-  list<BackendDAE.WhenClause> whenclauses;
-  list<BackendDAE.Equation> eqs_lst, eqs_lst1;
-  list<BackendDAE.ZeroCrossing> zero_crossings;
-  list<BackendDAE.ZeroCrossing> relationsLst, sampleLst;
-  Integer countRelations, countMathFunctions;
-  BackendDAE.BackendDAEType btp;
-  DAE.FunctionTree funcs;
-  BackendDAE.SymbolicJacobians symjacs;
-  FCore.Cache cache;
-  FCore.Graph graph;
-  BackendDAE.EqSystems systs;
-  BackendDAE.ExtraInfo ei;
-algorithm
-  BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs,
-    cache, graph, funcs, einfo, eoc, btp, symjacs, ei)) := inDAE;
-
- BackendDAE.EVENT_INFO(timeEvents=timeEvents, zeroCrossingLst=zero_crossings, relationsLst=relationsLst,
-    sampleLst=sampleLst, whenClauseLst=whenclauses, relationsNumber=countRelations,
-    numberMathEvents=countMathFunctions) := einfo;
-
-  vars := BackendVariable.listVar1(allvars);
-  eqs_lst := BackendEquation.equationList(remeqns);
-  (zero_crossings, _, whenclauses, countRelations, countMathFunctions, relationsLst, sampleLst) := findZeroCrossings2(vars, knvars, eqs_lst, 0, whenclauses, 0, countRelations, countMathFunctions, zero_crossings, relationsLst, sampleLst, {}, {});
-
-  Debug.fcall(Flags.RELIDX, print, "findZeroCrossings1 sample index: " +& intString(listLength(sampleLst)) +& "\n");
-  einfo1 := BackendDAE.EVENT_INFO(timeEvents, whenclauses, zero_crossings, sampleLst, relationsLst, countRelations, countMathFunctions);
-  outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo1, eoc, btp, symjacs, ei));
-end findZeroCrossingsShared;
 
 protected function findZeroCrossings1 "This function finds all zerocrossings in the list of equations and
   the list of when clauses."
