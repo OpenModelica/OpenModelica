@@ -9438,6 +9438,10 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp = buffer "" /*BUFD*/
     let eStart = daeExp(start, contextOther, &preExp, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
     let eInterval = daeExp(interval, contextOther, &preExp, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
+    match context
+     case  ALGLOOP_CONTEXT(genInitialisation=false) then    
+     '_system->_time_conditions[<%intSub(index, 1)%>]'
+     else
      '_time_conditions[<%intSub(index, 1)%>]'
   case CALL(path=IDENT(name="initial") ) then
      match context
@@ -9953,6 +9957,10 @@ template daeExpCallStart(Exp exp, Context context, Text &preExp /*BUFP*/,
   let &varDeclsCref = buffer "" /*BUFD*/
   match exp
   case cr as CREF(__) then
+  match context
+    case  ALGLOOP_CONTEXT(genInitialisation=false) then
+    '_system->get<%crefStartValueType(cr.componentRef)%>StartValue("<%cref(cr.componentRef, useFlatArrayNotation)%>")'
+    else
     'get<%crefStartValueType(cr.componentRef)%>StartValue("<%cref(cr.componentRef, useFlatArrayNotation)%>")'
   case ASUB(exp = cr as CREF(__), sub = {sub_exp}) then
     let offset = daeExp(sub_exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)
