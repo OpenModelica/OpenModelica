@@ -83,7 +83,6 @@ protected import TaskSystemDump;
 protected import SimCodeUtil;
 protected import System;
 protected import Util;
-protected import BackendDump; // BTH
 
 // protected import SerializeModelInfo; // TODO: Add me once we have switched to bootstrapped omc
 
@@ -102,7 +101,7 @@ protected
   Real stepSize;
   Integer numberOfIntervals;
 algorithm
-  numberOfIntervals := if inumberOfIntervals <= 0 then 1 else inumberOfIntervals;
+  numberOfIntervals := Util.if_(inumberOfIntervals <= 0, 1, inumberOfIntervals);
   stepSize := (stopTime -. startTime) /. intReal(numberOfIntervals);
   simSettings := SimCode.SIMULATION_SETTINGS(
     startTime, stopTime, numberOfIntervals, stepSize, tolerance,
@@ -227,7 +226,6 @@ algorithm
       FCore.Cache cache;
       DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
-      BackendDAE.EqSystems eqs, eqs1; // BTH
       String description;
       Boolean symbolicJacActivated;
       Boolean fmi20;
@@ -251,16 +249,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,graph,dae);
         description = DAEUtil.daeDescription(dae);
         dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
-
-        print("BTH-translateModel: Dump of dlow\n"); BackendDump.dumpBackendDAE(dlow, "Dump of dlow");
-        BackendDAE.DAE(eqs=eqs) = dlow;
-        print("BTH-translateModel: Dump of eqs of dlow\n"); BackendDump.dumpEqSystems(eqs, "Dump of eqs of dlow");
-        dlow_1 = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
-        //BackendDump.dumpBackendDAE(dlow, "Let's dump even more ...");
-        BackendDAE.DAE(eqs=eqs1) = dlow_1;
-        print("BTH-translateModel: Dump of eqs1 of dlow\n");
-        BackendDump.dumpEqSystems(eqs1, "Dump of eqs1 of dlow");
-
+        dlow_1 = BackendDAEUtil.getSolvedSystem(dlow);
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
         timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
