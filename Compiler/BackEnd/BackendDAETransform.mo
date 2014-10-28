@@ -60,6 +60,7 @@ protected import ExpressionDump;
 protected import Flags;
 protected import List;
 protected import SCode;
+protected import SymbolicJacobian;
 protected import System;
 protected import Util;
 protected import Values;
@@ -493,7 +494,7 @@ algorithm
       list<DAE.Exp> beqs;
     case(true,SOME(jac),_,_,_,_)
       equation
-        jacVals = BackendDAEOptimize.evaluateConstantJacobian(size,jac);
+        jacVals = SymbolicJacobian.evaluateConstantJacobian(size,jac);
         rhsVals = List.fill(0.0,size);
         (_,linInfo) = System.dgesv(jacVals,rhsVals);
         false = intEq(linInfo,0);

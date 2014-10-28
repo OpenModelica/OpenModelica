@@ -97,6 +97,7 @@ protected import ResolveLoops;
 protected import SCode;
 protected import SimCodeUtil;
 protected import System;
+protected import SymbolicJacobian;
 protected import SynchronousFeatures;
 protected import Tearing;
 protected import Types;
@@ -8849,24 +8850,24 @@ algorithm
                         (InlineArrayEquations.inlineArrayEqn, "inlineArrayEqn", false),
                         (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", false),
                         (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables", false),
-                        (BackendDAEOptimize.constantLinearSystem, "constantLinearSystem", false),
+                        (SymbolicJacobian.constantLinearSystem, "constantLinearSystem", false),
                         (OnRelaxation.relaxSystem, "relaxSystem", false),
                         (BackendDAEOptimize.countOperations, "countOperations", false),
                         (BackendDump.dumpComponentsGraphStr, "dumpComponentsGraphStr", false),
-                        (BackendDAEOptimize.generateSymbolicJacobianPast, "generateSymbolicJacobian", false),
-                        (BackendDAEOptimize.generateSymbolicLinearizationPast, "generateSymbolicLinearization", false),
+                        (SymbolicJacobian.generateSymbolicJacobianPast, "generateSymbolicJacobian", false),
+                        (SymbolicJacobian.generateSymbolicLinearizationPast, "generateSymbolicLinearization", false),
                         (BackendDAEOptimize.removeUnusedFunctions, "removeUnusedFunctions", false),
                         (BackendDAEOptimize.simplifyTimeIndepFuncCalls, "simplifyTimeIndepFuncCalls", false),
-                        (BackendDAEOptimize.inputDerivativesUsed, "inputDerivativesUsed", false),
+                        (SymbolicJacobian.inputDerivativesUsed, "inputDerivativesUsed", false),
                         (BackendDAEOptimize.simplifysemiLinear, "simplifysemiLinear", false),
                         (BackendDAEOptimize.removeConstants, "removeConstants", false),
                         (Initialization.optimizeInitialSystem, "optimizeInitialSystem", false),
-                        (BackendDAEOptimize.detectSparsePatternODE, "detectJacobianSparsePattern", false),
+                        (SymbolicJacobian.detectSparsePatternODE, "detectJacobianSparsePattern", false),
                         (Tearing.tearingSystem, "tearingSystem", false),
                         (HpcOmEqSystems.partitionLinearTornSystem, "partlintornsystem", false),
                         (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false),
-                        (BackendDAEOptimize.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false),
-                        (BackendDAEOptimize.calculateStateSetsJacobians, "calculateStateSetsJacobians", false),
+                        (SymbolicJacobian.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false),
+                        (SymbolicJacobian.calculateStateSetsJacobians, "calculateStateSetsJacobians", false),
                         (ResolveLoops.reshuffling_post, "reshufflePost", false)
                         };
 

@@ -76,6 +76,7 @@ protected import Config;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
+protected import Differentiate;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
@@ -93,6 +94,7 @@ protected import Mod;
 protected import PriorityQueue;
 protected import Settings;
 protected import SimCodeDump;
+protected import SymbolicJacobian;
 protected import System;
 protected import Util;
 protected import ValuesUtil;
@@ -1541,7 +1543,6 @@ algorithm
       list<DAE.Exp> lits;
       list<SimCodeVar.SimVar> tempvars, jacobianSimvars;
 
-      SimCode.JacobianMatrix jacG;
       list<SimCode.StateSet> stateSets;
       array<Integer> systemIndexMap;
       list<BackendDAE.TimeEvent> timeEvents;
@@ -1572,7 +1573,6 @@ algorithm
 
       // initialization stuff
       (residuals, initialEquations, removedInitialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow, initDAE, removedInitialEquationLst, uniqueEqIndex, {});
-      (jacG, uniqueEqIndex) = createInitialMatrices(dlow, uniqueEqIndex);
 
       // addInitialStmtsToAlgorithms
       dlow = BackendDAEOptimize.addInitialStmtsToAlgorithms(dlow);
@@ -1645,7 +1645,6 @@ algorithm
 
       // generate jacobian or linear model matrices
       (LinearMatrices,uniqueEqIndex) = createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
-      LinearMatrices = jacG::LinearMatrices;
 
       // collect jacobian equation only for equantion info file
       jacobianEquations = collectAllJacobianEquations(LinearMatrices, {});
@@ -4204,7 +4203,7 @@ algorithm
         (beqs, sources) = BackendDAEUtil.getEqnSysRhs(eqn, v, SOME(inFuncs));
         beqs = listReverse(beqs);
         rhsVals = ValuesUtil.valueReals(List.map(beqs, Ceval.cevalSimple));
-        jacVals = BackendDAEOptimize.evaluateConstantJacobian(listLength(simVars), jac);
+        jacVals = SymbolicJacobian.evaluateConstantJacobian(listLength(simVars), jac);
         (solvedVals, linInfo) = System.dgesv(jacVals, rhsVals);
         names = List.map(simVars, varName);
         checkLinearSystem(linInfo, names, jacVals, rhsVals);
@@ -4832,7 +4831,7 @@ algorithm
         x = DAE.CREF_IDENT(dummyVar, DAE.T_REAL_DEFAULT, {});
 
         residualVars = BackendVariable.listVar1(residualVarsLst);
-        columnVars = creatallDiffedVars(dependentVarsLst, x, residualVars, 0, (name, false), {});
+        columnVars = createAllDiffedSimVars(dependentVarsLst, x, residualVars, 0, (name, false), {});
 
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ diffed column variables +++---\n");
         Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, columnVars));
@@ -4996,7 +4995,7 @@ algorithm
         empty = BackendVariable.listVar(alldiffedVars);
         (_, (_, alldiffedVars)) = traveseSimVars(simvars, findSimVarsinAllVar, (empty, {}));
         alldiffedVars = listReverse(alldiffedVars);
-        columnVars = creatallDiffedVars(alldiffedVars, x, vars, 0, (name, false), {});
+        columnVars = createAllDiffedSimVars(alldiffedVars, x, vars, 0, (name, false), {});
 
         /*
         knvars = BackendVariable.daeKnVars(shared);
@@ -5093,9 +5092,7 @@ protected function compareSimVarName
        end matchcontinue;
 end compareSimVarName;
 
-protected function creatallDiffedVars
-  // function: help function for creatallDiffedVars
-  // author: wbraun
+protected function createAllDiffedSimVars "author: wbraun"
   input list<BackendDAE.Var> inVars;
   input DAE.ComponentRef inCref;
   input BackendDAE.Variables inAllVars;
@@ -5118,46 +5115,46 @@ algorithm
     // skip for dicrete variable
     case(BackendDAE.VAR(varName=_, varKind=BackendDAE.DISCRETE())::restVar, cref, _, _, _, _) equation
      then
-       creatallDiffedVars(restVar, cref, inAllVars, inIndex, inMatrixName, iVars);
+       createAllDiffedSimVars(restVar, cref, inAllVars, inIndex, inMatrixName, iVars);
 
      case(BackendDAE.VAR(varName=currVar, varKind=BackendDAE.STATE(index=_), values = dae_var_attr)::restVar, cref, _, _, _, _) equation
       ({_}, _) = BackendVariable.getVar(currVar, inAllVars);
       currVar = ComponentReference.crefPrefixDer(currVar);
-      derivedCref = BackendDAEOptimize.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
+      derivedCref = Differentiate.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
       isProtected = getProtected(dae_var_attr);
       r1 = SimCodeVar.SIMVAR(derivedCref, BackendDAE.STATE_DER(), "", "", "", inIndex, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, isProtected);
     then
-      creatallDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName, r1::iVars);
+      createAllDiffedSimVars(restVar, cref, inAllVars, inIndex+1, inMatrixName, r1::iVars);
 
     case(BackendDAE.VAR(varName=currVar, values = dae_var_attr)::restVar, cref, _, _, _, _) equation
       ({_}, _) = BackendVariable.getVar(currVar, inAllVars);
-      derivedCref = BackendDAEOptimize.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
+      derivedCref = Differentiate.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
       isProtected = getProtected(dae_var_attr);
       r1 = SimCodeVar.SIMVAR(derivedCref, BackendDAE.STATE_DER(), "", "", "", inIndex, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, isProtected);
     then
-      creatallDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName, r1::iVars);
+      createAllDiffedSimVars(restVar, cref, inAllVars, inIndex+1, inMatrixName, r1::iVars);
 
      case(BackendDAE.VAR(varName=currVar, varKind=BackendDAE.STATE(index=_), values = dae_var_attr)::restVar, cref, _, _, _, _) equation
       currVar = ComponentReference.crefPrefixDer(currVar);
-      derivedCref = BackendDAEOptimize.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
+      derivedCref = Differentiate.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
       isProtected = getProtected(dae_var_attr);
       r1 = SimCodeVar.SIMVAR(derivedCref, BackendDAE.VARIABLE(), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, isProtected);
     then
-      creatallDiffedVars(restVar, cref, inAllVars, inIndex, inMatrixName, r1::iVars);
+      createAllDiffedSimVars(restVar, cref, inAllVars, inIndex, inMatrixName, r1::iVars);
 
     case(BackendDAE.VAR(varName=currVar, values = dae_var_attr)::restVar, cref, _, _, _, _) equation
-      derivedCref = BackendDAEOptimize.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
+      derivedCref = Differentiate.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
       isProtected = getProtected(dae_var_attr);
       r1 = SimCodeVar.SIMVAR(derivedCref, BackendDAE.VARIABLE(), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, isProtected);
     then
-      creatallDiffedVars(restVar, cref, inAllVars, inIndex, inMatrixName, r1::iVars);
+      createAllDiffedSimVars(restVar, cref, inAllVars, inIndex, inMatrixName, r1::iVars);
 
     else
      equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function creatallDiffedVars failed"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createAllDiffedSimVars failed"});
     then fail();
   end matchcontinue;
-end creatallDiffedVars;
+end createAllDiffedSimVars;
 
 protected function addLinearizationMatrixes
 "fuction creates the jacobian column-wise
@@ -5182,119 +5179,6 @@ algorithm
     else {({}, {}, "A", ({}, {}, ({}, {})), {}, 0, -1), ({}, {}, "B", ({}, {}, ({}, {})), {}, 0, -1), ({}, {}, "C", ({}, {}, ({}, {})), {}, 0, -1), ({}, {}, "D", ({}, {}, ({}, {})), {}, 0, -1)};
   end matchcontinue;
 end addLinearizationMatrixes;
-
-protected function createInitSymbolicJacobianssSimCode
-"fuction creates the linear model matrices column-wise"
-  input BackendDAE.SymbolicJacobian inJacobian;
-  input BackendDAE.BackendDAE inBackendDAE;
-  input Integer inUniqueEqIndex;
-  output SimCode.JacobianMatrix outJacobian;
-  output Integer outUniqueEqIndex;
-algorithm
-  (outJacobian, outUniqueEqIndex) := matchcontinue(inJacobian, inBackendDAE, inUniqueEqIndex)
-    local
-      BackendDAE.StrongComponents comps;
-
-      list<BackendDAE.Var>  seedlst, origVarslst, diffVars, diffedVars, derivedVariableslst, alldiffedVars;
-      list<DAE.ComponentRef>   comref_seedVars, comref_vars;
-
-      BackendDAE.Variables v;
-
-      list< tuple<BackendDAE.Var, Integer> > sortdiffvars;
-
-      SimCode.JacobianMatrix jacobian;
-
-
-      String name;
-
-      list<SimCode.SimEqSystem> columnEquations;
-      list<SimCodeVar.SimVar> columnVars;
-      list<SimCodeVar.SimVar> columnVarsKn;
-      list<SimCodeVar.SimVar> seedVars, indexVars;
-
-      BackendDAE.Shared shared;
-      BackendDAE.EqSystem syst;
-      BackendDAE.EqSystems systs;
-      BackendDAE.Variables vars, origVars, knvars, empty;
-      String s;
-
-      list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsepattern;
-      BackendDAE.SparseColoring colsColors;
-      list<Integer> varsIndexes;
-      Integer maxColor;
-
-      DAE.ComponentRef x;
-      String dummyVarName;
-      BackendDAE.Variables derivedVariables;
-      Integer uniqueEqIndex;
-
-    case ((BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=_))}),
-           _, _, _, _),
-          BackendDAE.DAE(eqs=_), uniqueEqIndex) equation
-       /*
-      Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
-      (columnEquations, _, uniqueEqIndex, _) = createEquations(false, false, false, false, syst, shared, comps, {}, uniqueEqIndex, {});
-      Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
-
-      // create SimCodeVar.SimVars from jacobian vars
-      dummyVar = ("dummyVar" +& name);
-      x = DAE.CREF_IDENT(dummyVar, DAE.T_REAL_DEFAULT, {});
-      vars = BackendVariable.listVar1(diffedVars);
-      columnVars = creatallDiffedVars(alldiffedVars, x, vars, 0, (name, false), {});
-
-      knvars = BackendVariable.daeKnVars(shared);
-      empty = BackendVariable.emptyVars();
-      ((columnVarsKn, _)) =  BackendVariable.traverseBackendDAEVars(knvars, traversingdlowvarToSimvar, ({}, empty));
-      columnVars = listAppend(columnVars, columnVarsKn);
-      columnVars = listReverse(columnVars);
-
-      Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
-
-      (_, (_, seedVars)) = traveseSimVars(simvars, findSimVars, (diffCompRefs, {}));
-      (_, (_, indexVars)) = traveseSimVars(simvars, findSimVars, (diffedCompRefs, {}));
-
-      // generate sparse pattern
-      ((sparsepattern, (_, _)), colsColors) = BackendDAEOptimize.generateSparsePattern(inBackendDAE, diffVars, diffedVars);
-
-      maxColor = listLength(colsColors);
-       */
-      jacobian = ({}, {}, "G", ({}, {}, ({}, {})), {}, 0, -1);
-    then (jacobian, uniqueEqIndex);
-
-    else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: createInitSymbolicJacobianssSimCode failed"});
-    then fail();
-  end matchcontinue;
-end createInitSymbolicJacobianssSimCode;
-
-protected function createInitialMatrices "author: lochel
-  This function generates matrices for initialization."
-  input BackendDAE.BackendDAE inDAE;
-  input Integer inIniqueEqIndex;
-  output SimCode.JacobianMatrix outJacG;
-  output Integer outIniqueEqIndex;
-algorithm
-  (outJacG, outIniqueEqIndex) := matchcontinue(inDAE, inIniqueEqIndex)
-    local
-      BackendDAE.BackendDAE DAE;
-
-      SimCode.JacobianMatrix jacG;
-/*
-    case(DAE, _) equation
-      true = Flags.isSet(Flags.SYMBOLIC_INITIALIZATION);
-      (jacobian, _, DAE2) = BackendDAEOptimize.generateInitialMatrices(DAE);
-      (jacG, iniqueEqIndex) = createInitSymbolicJacobianssSimCode(jacobian, DAE2, inIniqueEqIndex);
-    then (jacG, iniqueEqIndex);
-*/
-    case(_, _) equation
-      jacG = ({}, {}, "G", ({}, {}, ({}, {})), {}, 0, -1);
-    then (jacG, inIniqueEqIndex);
-
-    else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: createInitialMatrices failed"});
-    then fail();
-  end matchcontinue;
-end createInitialMatrices;
 
 protected function collectAllJacobianEquations
   input list<SimCode.JacobianMatrix> inJacobianMatrix;

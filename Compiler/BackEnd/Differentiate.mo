@@ -2875,5 +2875,41 @@ algorithm
   end matchcontinue;
 end addElementVars2Dep;
 
+public function differentiateVarWithRespectToX "author: lochel
+  TODO: REMOVE ME"
+  input DAE.ComponentRef inCref;
+  input DAE.ComponentRef inX;
+  input tuple<String,Boolean> inMatrixName;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inCref, inX, inMatrixName)
+    local
+      DAE.ComponentRef cref, x;
+      String id,str;
+      String matrixName;
+
+    // replace the subscripts with strings because not all elements of the arrays may be derived, this avoid trouble when generate simulation code
+    case(cref, x, (matrixName,true)) equation
+      cref = ComponentReference.joinCrefs(ComponentReference.makeCrefIdent(BackendDAE.partialDerivativeNamePrefix, ComponentReference.crefType(cref), {}),cref);
+      cref = ComponentReference.appendStringCref(matrixName, cref);
+      cref = ComponentReference.joinCrefs(cref, x);
+      cref = ComponentReference.replaceSubsWithString(cref);
+    then cref;
+
+    case(cref, x, (matrixName,false)) equation
+      id = ComponentReference.printComponentRefStr(cref) +& BackendDAE.partialDerivativeNamePrefix +& matrixName +& "$P" +& ComponentReference.printComponentRefStr(x);
+      id = Util.stringReplaceChar(id, ",", "$c");
+      id = Util.stringReplaceChar(id, ".", "$P");
+      id = Util.stringReplaceChar(id, "[", "$lB");
+      id = Util.stringReplaceChar(id, "]", "$rB");
+    then ComponentReference.makeCrefIdent(id, DAE.T_REAL_DEFAULT, {});
+
+    case(cref, _, _) equation
+      str = "BackendDAEOptimize.differentiateVarWithRespectToX failed: " +&  ComponentReference.printComponentRefStr(cref);
+      Error.addMessage(Error.INTERNAL_ERROR, {str});
+    then fail();
+  end matchcontinue;
+end differentiateVarWithRespectToX;
+
 annotation(__OpenModelica_Interface="backend");
 end Differentiate;

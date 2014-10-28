@@ -134,56 +134,6 @@
     return TRUE;
   }
 
-
-  /*! \fn functionJacG_sparse
-   *
-   *  \param [ref] [data]
-   *  \param [out] [jac]
-   *
-   *  \author lochel
-   */
-  int functionJacG_sparse(DATA* data, double* jac)
-  {
-    int color, seedVar, i, l, k=0;
-
-    int index = data->callback->INDEX_JAC_G;
-    const int maxColor = data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors;
-    const int numSeedVars = data->simulationInfo.analyticJacobians[index].sizeCols;
-
-    for(color=0; color<maxColor; color++)
-    {
-      for(i=0; i<numSeedVars; i++)
-        if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[i]-1 == color)
-          data->simulationInfo.analyticJacobians[index].seedVars[i] = 1;
-
-      data->callback->functionJacG_column(data);
-
-      for(seedVar=0; seedVar<numSeedVars; seedVar++)
-      {
-        if(data->simulationInfo.analyticJacobians[index].seedVars[seedVar] == 1)
-        {
-          if(seedVar == 0)
-            i = 0;
-          else
-            i = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[seedVar-1];
-
-          for(; i < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[seedVar]; i++)
-          {
-            l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[i]-1;
-            jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[l];
-          }
-        }
-      }
-
-      for(i=0; i<numSeedVars; i++)
-        if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[i]-1 == color)
-          data->simulationInfo.analyticJacobians[index].seedVars[i] = 0;
-
-    }
-    return 0;
-  }
-
-
   /*! \fn ipopt_jac_g
    *
    *  \param [in]  [n]
@@ -208,58 +158,19 @@
       int i, j;
       int idx = 0;
 
-      if(ipopt_data->useSymbolic == 1)
+      /*
+       * DENSE
+       *
+       */
+      infoStreamPrint(LOG_INIT, 0, "ipopt using numeric dense jacobian G");
+      idx = 0;
+      for(i=0; i<n; ++i)
       {
-        /*
-         * SPARSE
-         *
-         */
-        infoStreamPrint(LOG_INIT, 0, "ipopt using symbolic sparse jacobian G");
-        if(ACTIVE_STREAM(LOG_INIT))
+        for(j=0; j<m; ++j)
         {
-          infoStreamPrint(LOG_INIT, 0, "sparsity pattern");
-          for(i=0; i<n; ++i) {
-            printf("        | | column %3d: [ ", i+1);
-            for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.leadindex[i]; ++j) {
-              if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.index[idx]) {
-                idx++;
-                printf("*");
-              } else {
-                printf("0");
-              }
-            }
-            for(; j<m; ++j)
-              printf("0");
-            printf("]\n");
-          }
-          printf("\n");
-        }
-
-        idx = 0;
-        for(i=0; i<n; ++i) {
-          for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.leadindex[i]; ++j) {
-            if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.index[idx]) {
-              jCol[idx] = i;
-              iRow[idx] = j;
-              idx++;
-            }
-          }
-        }
-      } else {
-        /*
-         * DENSE
-         *
-         */
-        infoStreamPrint(LOG_INIT, 0, "ipopt using numeric dense jacobian G");
-        idx = 0;
-        for(i=0; i<n; ++i)
-        {
-          for(j=0; j<m; ++j)
-          {
-            jCol[idx] = i;
-            iRow[idx] = j;
-            idx++;
-          }
+          jCol[idx] = i;
+          iRow[idx] = j;
+          idx++;
         }
       }
 
@@ -270,73 +181,42 @@
       /* return the values of the jacobian of the constraints */
       infoStreamPrint(LOG_DEBUG, 0, "ipopt jacobian G");
 
-      if(ipopt_data->useSymbolic == 1)
+      int i, j;
+      int idx = 0;
+      double h = 1e-6;
+      double hh;
+
+      double *gp = (double*)malloc(m * sizeof(double));
+      double *gn = (double*)malloc(m * sizeof(double));
+
+      for(i=0; i<n; ++i)
       {
-        functionJacG_sparse(ipopt_data->initData->simData, values);
+        hh = (abs(x[i]) > 1e-3) ? h*abs(x[i]) : h;
+        x[i] += hh;
+        ipopt_g(n, x, new_x, m, gp, user_data);
+        x[i] -= 2.0*hh;
+        ipopt_g(n, x, new_x, m, gn, user_data);
+        x[i] += hh;
 
-        if(ACTIVE_STREAM(LOG_DEBUG)) /* TODO: This is not XML data, is it? */
+        for(j=0; j<m; ++j)
         {
-          int i, j;
-          int idx = 0;
-          for(i=0; i<n; ++i)
-          {
-            printf("        | | column %3d: [ ", i+1);
-            for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
-            {
-              if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.index[idx])
-              {
-                printf("%10.5g ", values[idx]);
-                idx++;
-              }
-              else
-                printf("%10.5g ", 0.0);
-            }
-            for(; j<m; ++j)
-              printf("%10.5g ", 0.0);
-            printf("]\n");
-          }
+          values[idx] = (gp[j]-gn[j])/(2.0*hh);
+          idx++;
         }
-
       }
-      else
+
+      free(gp);
+      free(gn);
+
+      if(ACTIVE_STREAM(LOG_DEBUG))
       {
         int i, j;
-        int idx = 0;
-        double h = 1e-6;
-        double hh;
-
-        double *gp = (double*)malloc(m * sizeof(double));
-        double *gn = (double*)malloc(m * sizeof(double));
-
         for(i=0; i<n; ++i)
         {
-          hh = (abs(x[i]) > 1e-3) ? h*abs(x[i]) : h;
-          x[i] += hh;
-          ipopt_g(n, x, new_x, m, gp, user_data);
-          x[i] -= 2.0*hh;
-          ipopt_g(n, x, new_x, m, gn, user_data);
-          x[i] += hh;
-
+          printf("        | | column %3d: [ ", i+1);
           for(j=0; j<m; ++j)
-          {
-            values[idx] = (gp[j]-gn[j])/(2.0*hh);
-            idx++;
-          }
-        }
-
-        free(gp);
-        free(gn);
-
-        if(ACTIVE_STREAM(LOG_DEBUG))
-        {
-          int i, j;
-          for(i=0; i<n; ++i)
-          {
-            printf("        | | column %3d: [ ", i+1);
-            for(j=0; j<m; ++j)
-              printf("%10.5g ", values[j*n+i]);
-            printf("]\n");
-          }
+            printf("%10.5g ", values[j*n+i]);
+          printf("]\n");
         }
       }
     }
@@ -403,15 +283,7 @@
     ipopt_data.data = data;
     ipopt_data.initData = initData;
     ipopt_data.useScaling = useScaling;
-    ipopt_data.useSymbolic = (data->callback->initialAnalyticJacobianG(initData->simData) == 0 ? 1 : 0);
-
-    if(ipopt_data.useSymbolic == 1)
-    {
-      /* sparse */
-      nele_jac = initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.leadindex[n-1];
-      infoStreamPrint(LOG_INIT, 0, "number of zeros in the Jacobian of the constraints (jac_g):    %d", n*m-nele_jac);
-      infoStreamPrint(LOG_INIT, 0, "number of nonzeros in the Jacobian of the constraints (jac_g): %d", nele_jac);
-    }
+    ipopt_data.useSymbolic = 0;          /* lochel: obsolete */
 
     /* allocate space for the variable bounds */
     x_L = (double*)malloc(n * sizeof(double));

@@ -237,7 +237,6 @@ void (*function_initSample)(DATA *data);
 
 /* function for calculation Jacobian */
 /*#ifdef D_OMC_JACOBIAN*/
-const int INDEX_JAC_G;
 const int INDEX_JAC_A;
 const int INDEX_JAC_B;
 const int INDEX_JAC_C;
@@ -248,7 +247,6 @@ const int INDEX_JAC_D;
  * Return-value 0: jac is present
  * Return-value 1: jac is not present
  */
-int (*initialAnalyticJacobianG)(void* data);
 int (*initialAnalyticJacobianA)(void* data);
 int (*initialAnalyticJacobianB)(void* data);
 int (*initialAnalyticJacobianC)(void* data);
@@ -257,7 +255,6 @@ int (*initialAnalyticJacobianD)(void* data);
 /*
  * These functions calculate specific jacobian column.
  */
-int (*functionJacG_column)(void* data);
 int (*functionJacA_column)(void* data);
 int (*functionJacB_column)(void* data);
 int (*functionJacC_column)(void* data);
