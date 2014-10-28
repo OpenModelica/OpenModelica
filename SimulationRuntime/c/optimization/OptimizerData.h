@@ -183,6 +183,7 @@ typedef struct OptData{
   FILE * pFile;
 
   double *oldH;
+  int iter_;
 
 }OptData;
 

@@ -226,7 +226,7 @@ static inline void num_hessian0(double * v, const double * const lambda,
     v_save = (long double) v[ii];
     h = (long double)DF_STEP(v_save);
     v[ii] += h;
-    if( v[ii] >  vmax[ii]){
+    if( v[ii] >=  vmax[ii]){
       h *= -1.0;
       v[ii] = v_save + h;
     }

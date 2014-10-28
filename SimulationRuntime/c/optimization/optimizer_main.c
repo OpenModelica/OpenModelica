@@ -100,7 +100,8 @@ static inline void optimizationWithIpopt(OptData*optData){
 
   /*tol */
   AddIpoptNumOption(nlp, "tol", optData->data->simulationInfo.tolerance);
-
+  AddIpoptStrOption(nlp, "evaluate_orig_obj_at_resto_trial", "yes");
+  
   /* print level */
   if(ACTIVE_STREAM(LOG_IPOPT_FULL)){
     AddIpoptIntOption(nlp, "print_level", 7);
@@ -143,7 +144,8 @@ static inline void optimizationWithIpopt(OptData*optData){
   cflags = (char*)omc_flagValue[FLAG_LS_IPOPT];
   if(cflags)
     AddIpoptStrOption(nlp, "linear_solver", cflags);
-
+  AddIpoptNumOption(nlp,"mumps_pivtolmax",1e-5);
+  
 
   /* max iter */
   cflags = (char*)omc_flagValue[FLAG_IPOPT_MAX_ITER];
@@ -207,9 +209,11 @@ static inline void optimizationWithIpopt(OptData*optData){
   /********************************************************************/
 
 
-  if(max_iter >=0)
+  if(max_iter >=0){
+    optData->iter_ = 0.0;
     res = IpoptSolve(nlp, vopt, NULL, &obj, mult_g, mult_x_L, mult_x_U, (void*)optData);
-  if(res < 0 && !ACTIVE_STREAM(LOG_IPOPT))
+  }
+  if(res != 0 && !ACTIVE_STREAM(LOG_IPOPT))
     warningStreamPrint(LOG_STDOUT, 0, "No optimal solution found!\nUse -lv=LOG_IPOPT for more information.");
   FreeIpoptProblem(nlp);
 }

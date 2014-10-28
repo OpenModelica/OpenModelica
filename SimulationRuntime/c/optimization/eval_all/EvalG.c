@@ -65,6 +65,8 @@ static inline void structJacC(const modelica_real *const J, double *values,
 static inline void printMaxError(Number *g, const int m, const int nx, const int nJ, long double **t,
     const int np, const int nsi, DATA * data, OptData * optData);
 
+static inline void debugeJac(OptData * optData);
+
 
 /* eval constraints
  * author: Vitalij Ruge
@@ -87,8 +89,10 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
   double * vv[np+1];
   int i, j, k, shift;
 
-  if(new_x)
+  
+  if(new_x){
     optData2ModelData(optData, vopt, 1);
+  }
 
   v = optData->v;
   memcpy(a ,optData->rk.a, sizeof(optData->rk.a));
@@ -151,7 +155,6 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
     const int nJ = optData->dim.nJ;
     printMaxError(g, m, nx, nJ, optData->time.t, np ,nsi ,optData->data, optData);
   }
-
   return TRUE;
 }
 
@@ -204,9 +207,10 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
     modelica_boolean ** J = optData->s.JderCon;
     modelica_boolean ** Jf = optData->s.J[2];
     int i, j, k, l, ii, cindex;
-
-    if(new_x)
+    ++optData->iter_;
+    if(new_x){
       optData2ModelData(optData, vopt, 1);
+    }
     if(np == 3){
       /*****************************/
       for(j = 0, k = 0; j < np; ++j){
@@ -315,6 +319,9 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
     printf("\nvalues[%i] = %g",i,values[i]);
     assert(0);
     */
+#if 0
+    debugeJac(optData);
+#endif
   }
 
   return TRUE;
@@ -660,10 +667,10 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
   int index_x = 0;
   double gmax = -1;
   int i, j, k, l;
-  int ii, jj, kk = -1;
+  int ii=-1, jj=-1, kk = -1;
   double tmp, tmp1;
 
-  for(i = 0, l = 0; i < nsi-1; ++i){
+  for(i = 0, l = 0; i < nsi; ++i){
     for(j = 0; j < np; ++j){
       for(k=0; k< nx; ++k){
         tmp = fabs(g[l++]);
@@ -675,9 +682,9 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
         }
       }
       for(; k< nJ; ++k, ++l){
-        tmp1 = g[l] > optData->ipop.gmax[l] ? fabs(g[l] - optData->ipop.gmax[l]) : 0.0;
-        tmp  = g[l] < optData->ipop.gmin[l] ? fabs(g[l] - optData->ipop.gmin[l]) : 0.0;
-        tmp = fmax(tmp, tmp1);
+        tmp1 = g[l] - optData->ipop.gmax[l]; // > 0
+        tmp  = optData->ipop.gmin[l] - g[l]; // >0
+        tmp = fmaxl(fmaxl(tmp, tmp1),0.0);
         if(tmp > gmax){
           ii = i;
           jj = j;
@@ -688,37 +695,73 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
     }
   }
 
-  for(j = 0; j < np; ++j){
-    for(k=0; k< nx; ++k){
-      tmp = fabs(g[l++]);
-      if(tmp > gmax){
-        ii = nsi - 1;
-        jj = j;
-        kk = k;
-        gmax = tmp;
-      }
+  /*final constraints*/
+  for(k=nJ; k< nJ+optData->dim.ncf; ++k, ++l){
+    tmp1 = g[l] - optData->ipop.gmax[l]; // > 0
+    tmp  = optData->ipop.gmin[l] - g[l]; // >0
+    tmp = fmaxl(fmaxl(tmp, tmp1),0.0);
+    if(tmp > gmax){
+      ii = nsi- 1;
+      jj = np-1;
+      kk = k;
+      gmax = tmp;
     }
-    /*
-    for(; k< nJ+optData->dim.ncf; ++k, ++l){
-      tmp = fmax(fabs(g[l] - optData->ipop.gmax[l]),  fabs(g[l] - optData->ipop.gmin[l]));
-      if(tmp > gmax){
-        ii = nsi- 1;
-        jj = j;
-        kk = k;
-        gmax = tmp;
-      }
-    }
-    */
   }
-  if(k>0){
+   
+  if(kk>-1){
     if(kk < nx){
-      printf("\nmax error for |%s(%g) - collocation_poly| = %g\n",
-                              data->modelData.realVarsData[kk].info.name, (double)t[ii][jj], gmax);
+      printf("\nmax error is %g for the approximation of the state %s(time = %g)\n",
+              gmax, data->modelData.realVarsData[kk].info.name, (double)t[ii][jj]);
     }else if(kk < nJ){
-      printf("\nmax error for |cosntrain[%i](%g)| = %g\n", kk - nx, (double)t[ii][jj], gmax);
+      const int ll = kk - nx + optData->dim.index_con;
+      printf("\nmax violation is %g for the constraint %s(time = %g)\n", 
+              gmax, data->modelData.realVarsData[ll].info.name, (double)t[ii][jj]);
     }else{
-      printf("\nmax error for |final_cosntrain[%i](%g)| = %g\n", kk - nJ, (double)t[ii][jj], gmax);
+      const int ll = kk - nx + optData->dim.index_con;
+      printf("\nmax violation is %g for the final constraint %s(time = %g)\n", gmax, data->modelData.realVarsData[ll].info.name, (double)t[ii][jj]);
     }
   }
+}
 
+/*!
+ *  generated csv and python script for jacobian
+ *  author: Vitalij Ruge
+ **/
+static inline void debugeJac(OptData * optData){
+  int i,j,k, jj;
+  const int nv = optData->dim.nv;
+  const int nx = optData->dim.nx;
+  const int nu = optData->dim.nu;
+  const int nsi = optData->dim.nsi;
+  const int nJ = optData->dim.nJ;
+  const int np = optData->dim.np;
+  const int npv = np*nv;
+  double **J;
+  
+  FILE *pFile;
+  char buffer[4096];
+  
+  sprintf(buffer, "jac_ana_step_%i.csv", optData->iter_);
+  pFile = fopen(buffer, "wt");
+  
+  fprintf(pFile,"name;time;");
+  for(j = 0; j < nx; ++j)
+    fprintf(pFile,"%s;",optData->data->modelData.realVarsData[j].info.name);
+  for(j = 0; j < nu; ++j)
+    fprintf(pFile, "%s;", optData->dim.inputName[j]);
+  fprintf(pFile,"\n");
+  
+  for(i=0;i < nsi; ++i){
+    for(j = 0; j < nJ; ++j){
+      J = optData->J[i][j];
+      for(k = 0; k < nx; ++k){
+        fprintf(pFile,"%s;%g;",optData->data->modelData.realVarsData[k].info.name,(double)optData->time.t[i][j]);
+        for(jj = 0; jj < nv; ++jj)
+          fprintf(pFile,"%g;", J[k][jj]);
+        fprintf(pFile,"\n");
+      }
+    }
+  }
+  
+  fclose(pFile); 
 }

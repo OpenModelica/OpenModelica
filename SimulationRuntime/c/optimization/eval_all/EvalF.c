@@ -80,7 +80,7 @@ Bool evalfF(Index n, Number * vopt, Bool new_x, Number *objValue, void * useData
     }
 
     i = nsi - 1;
-    for(j = 0; j< np; ++j)
+    for(j = 0; j < np; ++j)
       erg1 += b[j]*v[i][j][il];
 
     lagrange = (erg*dt[0] + erg1*dt[1]);
@@ -144,8 +144,9 @@ Bool evalfDiffF(Index n, double * vopt, Bool new_x, Number *gradF, void * useDat
     modelica_real * gradM = optData->J[nsi - 1][np -1][nJ1];
     if(la){
       int i;
+      const int nnv = n - nv;
       for(i = 0; i < nv; ++i)
-        gradF[n-nv + i] += gradM[i];
+        gradF[nnv + i] += gradM[i];
     }else{
       memcpy(gradF + n - nv, gradM, nv*sizeof(modelica_real));
     }
