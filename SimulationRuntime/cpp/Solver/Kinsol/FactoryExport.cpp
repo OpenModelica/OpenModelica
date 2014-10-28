@@ -1,14 +1,26 @@
-
 #pragma once
-#include <Core/Modelica.h>
-#if defined(__vxworks)
 
+#include <Core/Modelica.h>
+
+#if defined(__vxworks) || defined(__TRICORE__)
+
+#include "Kinsol.h"
+#include "KinsolSettings.h"
+
+extern "C" IAlgLoopSolver* createKinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
+{
+    return new Kinsol(algLoop,settings);
+}
+
+extern "C" INonLinSolverSettings* createKinsolSettings()
+{
+    return new KinsolSettings();
+}
 
 #elif defined(SIMSTER_BUILD)
 
 #include "Kinsol.h"
 #include "KinsolSettings.h"
-
 
 /*Simster factory*/
 extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_kinsol(boost::extensions::factory_map & fm)
@@ -22,7 +34,6 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_kinsol(boost::exten
 #include "Kinsol.h"
 #include "KinsolSettings.h"
 
-
 using boost::extensions::factory;
 
 BOOST_EXTENSION_TYPE_MAP_FUNCTION {
@@ -30,8 +41,7 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
     ["kinsol"].set<Kinsol>();
   types.get<std::map<std::string, factory<INonLinSolverSettings> > >()
     ["kinsolSettings"].set<KinsolSettings>();
- }
-
+}
 
 #else
 error "operating system not supported"
