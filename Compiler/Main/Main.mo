@@ -796,13 +796,10 @@ algorithm
   try
     // call GC_init() the first thing we do!
     System.initGarbageCollector();
+    // Experimentally found to make the testsuite pass on asap.openmodelica.org. No clue why. Maybe GC_expand should be called only for larger tests or after loadModel. // Martin Sjölund, 2014-10-29
+    System.GC_expand_hp(1024*1024*1024);
     Global.initialize();
     ErrorExt.registerModelicaFormatError();
-
-    // cheat the function generation that this function is used
-    // this is needed because this function is used in the parser
-    // for the bootstrapped compiler
-    Absyn.isDerCref(Absyn.INTEGER(0));
 
     System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
     args_1 := Flags.new(args);
