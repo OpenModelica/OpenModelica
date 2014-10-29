@@ -659,6 +659,8 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Type ty;
 
+    case DAE.WILD() then "_";
+
     case DAE.CREF_IDENT(ident = s,identType=ty,subscriptLst = subs)
       equation
         str_1 = ExpressionDump.printListStr(subs, ExpressionDump.debugPrintSubscriptStr, ", ");
@@ -668,27 +670,22 @@ algorithm
       then
         str;
 
-    case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr)
-      equation
-        false = Config.modelicaOutput();
-        str_1 = ExpressionDump.printListStr(subs, ExpressionDump.debugPrintSubscriptStr, ", ");
-        str = s + (if stringLength(str_1) > 0 then "["+& str_1 +& "]" else "");
-        str2 = Types.unparseType(ty);
-        strrest = debugPrintComponentRefTypeStr(cr);
-        str = stringAppendList({str," [",str2,"] ", ".", strrest});
-      then
-        str;
-
-    case DAE.WILD() then "_";
-
     // Does not handle names with underscores
     case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr)
       equation
-        true = Config.modelicaOutput();
-        str = printComponentRef2Str(s, subs);
-        str2 = Types.unparseType(ty);
-        strrest = debugPrintComponentRefTypeStr(cr);
-        str = stringAppendList({str," [",str2,"] ", "__", strrest});
+        if (Config.modelicaOutput())
+        then
+          str = printComponentRef2Str(s, subs);
+          str2 = Types.unparseType(ty);
+          strrest = debugPrintComponentRefTypeStr(cr);
+          str = stringAppendList({str," [",str2,"] ", "__", strrest});
+        else
+          str_1 = ExpressionDump.printListStr(subs, ExpressionDump.debugPrintSubscriptStr, ", ");
+          str = s + (if stringLength(str_1) > 0 then "["+& str_1 +& "]" else "");
+          str2 = Types.unparseType(ty);
+          strrest = debugPrintComponentRefTypeStr(cr);
+          str = stringAppendList({str," [",str2,"] ", ".", strrest});
+        end if;        
       then
         str;
 
@@ -2552,18 +2549,16 @@ algorithm
     // qualified crefs, does not handle names with underscores
     case DAE.CREF_QUAL(ident = s,subscriptLst = subs,componentRef = cr)
       equation
-        true = Config.modelicaOutput();
-        printComponentRef2(s, subs);
-        Print.printBuf("__");
-        printComponentRef(cr);
-      then
-        ();
-    case DAE.CREF_QUAL(ident = s,subscriptLst = subs,componentRef = cr)
-      equation
-        false = Config.modelicaOutput();
-        printComponentRef2(s, subs);
-        Print.printBuf(".");
-        printComponentRef(cr);
+        if (Config.modelicaOutput())
+        then 
+          printComponentRef2(s, subs);
+          Print.printBuf("__");
+          printComponentRef(cr);
+        else
+          printComponentRef2(s, subs);
+          Print.printBuf(".");
+          printComponentRef(cr);
+        end if;
       then
         ();
   end matchcontinue;
@@ -2578,29 +2573,30 @@ algorithm
     local
       DAE.Ident s;
       list<DAE.Subscript> l;
+    
     case (s,{})
       equation
         Print.printBuf(s);
       then
         ();
+    
     case (s,l)
       equation
-        true = Config.modelicaOutput();
-        Print.printBuf(s);
-        Print.printBuf("_L");
-        ExpressionDump.printList(l, ExpressionDump.printSubscript, ",");
-        Print.printBuf("_R");
+        if (Config.modelicaOutput())
+        then
+          Print.printBuf(s);
+          Print.printBuf("_L");
+          ExpressionDump.printList(l, ExpressionDump.printSubscript, ",");
+          Print.printBuf("_R");
+        else
+          Print.printBuf(s);
+          Print.printBuf("[");
+          ExpressionDump.printList(l, ExpressionDump.printSubscript, ",");
+          Print.printBuf("]");
+        end if;
       then
         ();
-    case (s,l)
-      equation
-        false = Config.modelicaOutput();
-        Print.printBuf(s);
-        Print.printBuf("[");
-        ExpressionDump.printList(l, ExpressionDump.printSubscript, ",");
-        Print.printBuf("]");
-      then
-        ();
+  
   end matchcontinue;
 end printComponentRef2;
 

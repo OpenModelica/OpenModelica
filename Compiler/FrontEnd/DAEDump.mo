@@ -667,22 +667,24 @@ protected function getStartOrigin
   input Option<DAE.Exp> inStartOrigin;
   output String outStartOrigin;
 algorithm
-  outStartOrigin := matchcontinue(inStartOrigin)
+  outStartOrigin := match(inStartOrigin)
     local
       String str;
+
     case (NONE()) then "";
+
     case (_)
       equation
-        true = Flags.isSet(Flags.SHOW_START_ORIGIN);
-        str = Dump.getOptionWithConcatStr(inStartOrigin, ExpressionDump.printExpStr , "startOrigin = ");
+        if (Flags.isSet(Flags.SHOW_START_ORIGIN))
+        then
+          str = Dump.getOptionWithConcatStr(inStartOrigin, ExpressionDump.printExpStr , "startOrigin = ");
+        else
+          str = "";
+        end if;
       then
         str;
-    else
-      equation
-        false = Flags.isSet(Flags.SHOW_START_ORIGIN);
-      then
-        "";
-  end matchcontinue;
+
+  end match;
 end getStartOrigin;
 
 protected function dumpVarVisibilityStr "Prints 'protected' to a string for protected variables"

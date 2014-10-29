@@ -931,45 +931,43 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array={e})})) then e;
     case (DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ARRAY(array={e})})) then e;
 
-    // Try to unify the expressions :)
-    case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
-      equation
-        i1 = listLength(es);
-        es = List.union(es,es);
-        i2 = listLength(es);
-        false = i1 == i2;
-        e = Expression.makeScalarArray(es,tp);
-      then Expression.makePureBuiltinCall("min",{e},tp);
     case (DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
       equation
         i1 = listLength(es);
         es = List.union(es,es);
         i2 = listLength(es);
-        false = i1 == i2;
-        e = Expression.makeScalarArray(es,tp);
-      then Expression.makePureBuiltinCall("max",{e},tp);
-
-    case (DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
-      equation
-        i1 = listLength(es);
-        SOME(e) = List.fold(es, maxElement, NONE());
-        es = List.select(es, removeMinMaxFoldableValues);
-        es = e::es;
-        i2 = listLength(es);
-        true = i2 < i1;
-        e = Expression.makeScalarArray(es,tp);
-      then Expression.makePureBuiltinCall("max",{e},tp);
+        if i1 == i2
+        then
+          SOME(e) = List.fold(es, maxElement, NONE());
+          es = List.select(es, removeMinMaxFoldableValues);
+          es = e::es;
+          i2 = listLength(es);
+          true = i2 < i1;
+          e = Expression.makeScalarArray(es,tp);
+        else
+          e = Expression.makeScalarArray(es,tp);
+        end if;
+      then
+        Expression.makePureBuiltinCall("max",{e},tp);
 
     case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
       equation
         i1 = listLength(es);
-        SOME(e) = List.fold(es, minElement, NONE());
-        es = List.select(es, removeMinMaxFoldableValues);
-        es = e::es;
+        es = List.union(es,es);
         i2 = listLength(es);
-        true = i2 < i1;
-        e = Expression.makeScalarArray(es,tp);
-      then Expression.makePureBuiltinCall("min",{e},tp);
+        if i1 == i2
+        then
+          SOME(e) = List.fold(es, minElement, NONE());
+          es = List.select(es, removeMinMaxFoldableValues);
+          es = e::es;
+          i2 = listLength(es);
+          true = i2 < i1;
+          e = Expression.makeScalarArray(es,tp);
+        else
+          e = Expression.makeScalarArray(es,tp);
+        end if;
+      then
+        Expression.makePureBuiltinCall("min",{e},tp);
 
     case (DAE.CALL(path=Absyn.IDENT("min"),attr=DAE.CALL_ATTR(ty=tp),expLst={DAE.ARRAY(array={e1,e2})}))
       equation
@@ -1181,27 +1179,23 @@ algorithm
       then
         e;
 
-    case DAE.CALL(path=Absyn.IDENT("symmetric"),expLst=e::{},attr=DAE.CALL_ATTR(ty=_))
-      equation
-        {{}} = Expression.get2dArrayOrMatrixContent(e);
-      then e;
-
-    case DAE.CALL(path=Absyn.IDENT("symmetric"),expLst=e::{},attr=DAE.CALL_ATTR(ty=_))
-      equation
-        {{_}} = Expression.get2dArrayOrMatrixContent(e);
-      then e;
-
     case DAE.CALL(path=Absyn.IDENT("symmetric"),expLst=e::{},attr=DAE.CALL_ATTR(ty=tp))
       equation
         mexpl = Expression.get2dArrayOrMatrixContent(e);
-        marr = listArray(List.map(mexpl,listArray));
-        true = arrayLength(marr) == arrayLength(arrayGet(marr,1));
-        true = arrayLength(marr) > 1;
-        simplifySymmetric(marr, arrayLength(marr)-1, arrayLength(marr));
-        mexpl = List.map(arrayList(marr), arrayList);
-        tp1 = Types.unliftArray(tp);
-        es = List.map2(mexpl, Expression.makeArray, tp1, not Types.isArray(tp1,{}));
-        e = Expression.makeArray(es, tp, false);
+        e = match(mexpl)
+          case {{}} then e;
+          case {{_}} then e;
+          case _ equation
+            marr = listArray(List.map(mexpl,listArray));
+            true = arrayLength(marr) == arrayLength(arrayGet(marr,1));
+            true = arrayLength(marr) > 1;
+            simplifySymmetric(marr, arrayLength(marr)-1, arrayLength(marr));
+            mexpl = List.map(arrayList(marr), arrayList);
+            tp1 = Types.unliftArray(tp);
+            es = List.map2(mexpl, Expression.makeArray, tp1, not Types.isArray(tp1,{}));
+            e = Expression.makeArray(es, tp, false);
+          then e;
+        end match;
       then e;
 
     case DAE.CALL(path=Absyn.IDENT("scalar"),expLst=e::{},attr=DAE.CALL_ATTR(ty=tp))
@@ -2791,21 +2785,9 @@ algorithm
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = _),exp2 = DAE.RCONST(real = coeff)))
       then ((e1,coeff));
 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = _),exp2 = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.RCONST(real = coeff))))
+    case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = _),exp2 = DAE.UNARY(operator = DAE.UMINUS(ty = _), exp = DAE.RCONST(real = coeff))))
       equation
         coeff_1 = 0.0 -. coeff;
-      then
-        ((e1,coeff_1));
-
-    case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = _),exp2 = DAE.ICONST(integer = icoeff)))
-      equation
-        coeff_1 = intReal(icoeff);
-      then
-        ((e1,coeff_1));
-
-    case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = _),exp2 = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.ICONST(integer = icoeff))))
-      equation
-        coeff_1 = intReal(icoeff);
       then
         ((e1,coeff_1));
 
@@ -2813,7 +2795,13 @@ algorithm
       equation
         coeff_1 = intReal(icoeff);
       then
-        ((e1, coeff_1));
+        ((e1,coeff_1));
+
+    case (DAE.BINARY(exp1 = e1, operator = DAE.POW(ty = _), exp2 = DAE.UNARY(operator = DAE.UMINUS(ty = _), exp = DAE.ICONST(integer = icoeff))))
+      equation
+        coeff_1 = 0.0 -. intReal(icoeff);
+      then
+        ((e1,coeff_1));
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = e2))
       equation
@@ -3699,20 +3687,24 @@ algorithm
     //  then
     //    DAE.BINARY(e1,op2,DAE.BINARY(e2,op1,e3));
 
-    // e2 + (e*e2) = (1.0 + e)*e2;
-    case (op1 as DAE.ADD(ty = _), e1, DAE.BINARY(e2, op2 as DAE.MUL(ty=_),e3))
-      equation
-        false = Expression.isConstValue(e1);
-        true = Expression.expEqual(e1,e3);
-      then
-        DAE.BINARY(e1,op2,DAE.BINARY(DAE.RCONST(1.0),op1,e2));
+    // e2 + (e*e2) = (1.0 + e)*e2
     // e2 + (e2*e) = (1.0 + e)*e2;
     case (op1 as DAE.ADD(ty = _), e1, DAE.BINARY(e2, op2 as DAE.MUL(ty=_),e3))
       equation
         false = Expression.isConstValue(e1);
-        true = Expression.expEqual(e1,e2);
+        if Expression.expEqual(e1,e3)
+        then
+          exp = DAE.BINARY(e1,op2,DAE.BINARY(DAE.RCONST(1.0),op1,e2));
+        else if Expression.expEqual(e1,e2)
+             then
+               exp = DAE.BINARY(e1,op2,DAE.BINARY(DAE.RCONST(1.0),op1,e3));
+             else
+              fail();
+             end if;
+        end if;
       then
-        DAE.BINARY(e1,op2,DAE.BINARY(DAE.RCONST(1.0),op1,e3));
+        exp;
+
     // sqrt(e) * e => e^1.5
     case (DAE.MUL(ty = _),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1}),e2)
       equation
@@ -4210,24 +4202,27 @@ algorithm
 
     // a*x op2 b op1 c*x
     // x *(a op2 b op1 c)
+    // or
+    // a*x op2 b op1 x*c
+    // x *(a op2 b op1 c)
     case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(ty),DAE.BINARY(e2,op2,e3)), DAE.BINARY(e4,DAE.MUL(_),e5),false,false)
      equation
        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
               Expression.operatorEqual(op1,DAE.ADD(ty));
        true = Expression.operatorEqual(op2,DAE.MUL(ty)) or
               Expression.operatorEqual(op2,DAE.DIV(ty));
-       true = Expression.expEqual(e2,e5);
-     then DAE.BINARY(e5, oper, DAE.BINARY(DAE.BINARY(e1,op2,e3),op1,e4));
-    // a*x op2 b op1 x*c
-    // x *(a op2 b op1 c)
-    case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(ty),DAE.BINARY(e2,op2,e3)), DAE.BINARY(e5,DAE.MUL(_),e4),false,false)
-     equation
-       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
-              Expression.operatorEqual(op1,DAE.ADD(ty));
-       true = Expression.operatorEqual(op2,DAE.MUL(ty)) or
-              Expression.operatorEqual(op2,DAE.DIV(ty));
-       true = Expression.expEqual(e2,e5);
-     then DAE.BINARY(e5, oper, DAE.BINARY(DAE.BINARY(e1,op2,e3),op1,e4));
+       if Expression.expEqual(e2,e5)
+       then
+         outExp = DAE.BINARY(e5, oper, DAE.BINARY(DAE.BINARY(e1,op2,e3),op1,e4));
+       else if Expression.expEqual(e2,e4)
+            then
+              outExp = DAE.BINARY(e4, oper, DAE.BINARY(DAE.BINARY(e1,op2,e3),op1,e5));
+            else
+              fail();
+            end if;
+       end if;
+     then
+       outExp;
 
     // (a1a2...an)^e2 => a1^e2a2^e2..an^e2
     case (_,DAE.POW(ty = _),e1,e2,_,true)
@@ -4460,11 +4455,12 @@ algorithm
       then
         DAE.BINARY(DAE.BINARY(e2,op1,e),DAE.MUL(ty),e1);
 
+    // TODO! FIXME! is this correct? seems to be the same as the above case
     // (e1 / e2) op1 (e3 * e4) => (e1 * (1/e2)) op1 (e1 * e4 ) => e1*(1/e2 op1 e4)
     // e1 = e3; op1 \in {+, -}
-    case (_,DAE.MUL(ty),_,
+    case (_,DAE.DIV(ty),_,
           op1,
-          _,DAE.DIV(_),_,
+          _,DAE.MUL(_),_,
           true /*e1==e3*/,_,_,_,false /*isConst(e1)*/,_,_,_)
       equation
        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or

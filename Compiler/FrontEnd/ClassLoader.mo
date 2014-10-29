@@ -263,6 +263,7 @@ algorithm
       String pd,file,id;
       Absyn.ClassPart cp;
       Absyn.Class cl;
+      Boolean bDirectoryAndFileExists;
 
     case (CLASSPART(cp),_,_,_,_)
       equation
@@ -283,22 +284,19 @@ algorithm
       equation
         pd = System.pathDelimiter();
         file = mp +& pd +& id +& "/package.mo";
-        true = System.directoryExists(mp +& pd +& id) and System.regularFileExists(file);
-        cl = loadCompletePackageFromMp(id,id,mp,encoding,w1,Error.getNumErrorMessages());
-        ei = Absyn.makeClassElement(cl);
-        cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
-      then cps;
-
-    case (CLASSLOAD(id),_,_,_,_)
-      equation
-        pd = System.pathDelimiter();
-        file = mp +& pd +& id +& "/package.mo";
-        false = System.directoryExists(mp +& pd +& id) and System.regularFileExists(file);
-        file = mp +& pd +& id +& ".mo";
-        true = System.regularFileExists(file);
-        cl = parsePackageFile(file,encoding,false,w1,id);
-        ei = Absyn.makeClassElement(cl);
-        cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
+        bDirectoryAndFileExists = System.directoryExists(mp +& pd +& id) and System.regularFileExists(file);
+        if (bDirectoryAndFileExists)
+        then
+          cl = loadCompletePackageFromMp(id,id,mp,encoding,w1,Error.getNumErrorMessages());
+          ei = Absyn.makeClassElement(cl);
+          cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
+        else
+          file = mp +& pd +& id +& ".mo";
+          true = System.regularFileExists(file);
+          cl = parsePackageFile(file,encoding,false,w1,id);
+          ei = Absyn.makeClassElement(cl);
+          cps = mergeBefore(Absyn.PUBLIC({ei}),acc);        
+        end if;
       then cps;
 
   end matchcontinue;
@@ -375,58 +373,57 @@ algorithm
 
     case (Absyn.CLASS(body=Absyn.PARTS(classParts=cp),info=info),_,_,_)
       equation
-        true = System.regularFileExists(filename);
-        contents = System.readFile(filename);
-        namesToFind = System.strtok(contents, "\n");
-        namesToFind = List.removeOnTrue("",stringEqual,List.map(namesToFind,System.trimWhitespace));
-        duplicates = List.sortedDuplicates(List.sort(namesToFind,Util.strcmpBool),stringEq);
-        duplicatesStr = stringDelimitList(duplicates, ", ");
-        Error.assertionOrAddSourceMessage(List.isEmpty(duplicates),Error.PACKAGE_ORDER_DUPLICATES,{duplicatesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
+        if (System.regularFileExists(filename))
+        then
+          contents = System.readFile(filename);
+          namesToFind = System.strtok(contents, "\n");
+          namesToFind = List.removeOnTrue("",stringEqual,List.map(namesToFind,System.trimWhitespace));
+          duplicates = List.sortedDuplicates(List.sort(namesToFind,Util.strcmpBool),stringEq);
+          duplicatesStr = stringDelimitList(duplicates, ", ");
+          Error.assertionOrAddSourceMessage(List.isEmpty(duplicates),Error.PACKAGE_ORDER_DUPLICATES,{duplicatesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
 
-        // get all the .mo files in the directory!
-        mofiles = List.map(System.moFiles(mp), Util.removeLast3Char);
-        // get all the subdirs containing package.mo
-        subdirs = System.subDirectories(mp);
-        subdirs = List.filter1OnTrue(subdirs, existPackage, mp);
-        // build a list
-        intersection = List.intersectionOnTrue(subdirs,mofiles,stringEq);
-        differencesStr = stringDelimitList(List.map1(intersection, getBothPackageAndFilename, mp), ", ");
-        Error.assertionOrAddSourceMessage(List.isEmpty(intersection),Error.PACKAGE_DUPLICATE_CHILDREN,{differencesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
-        mofiles = listAppend(subdirs,mofiles);
-        // check if all are present in the package.order
-        differences = List.setDifference(mofiles, namesToFind);
-        // issue a warning if not all are present
-        differencesStr = stringDelimitList(differences, "\n\t");
-        Error.assertionOrAddSourceMessage(List.isEmpty(differences),Error.PACKAGE_ORDER_FILE_NOT_COMPLETE,{differencesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
-        po1 = getPackageContentNamesinParts(namesToFind,cp,{});
-        List.map2_0(po1,checkPackageOrderFilesExist,mp,info);
+          // get all the .mo files in the directory!
+          mofiles = List.map(System.moFiles(mp), Util.removeLast3Char);
+          // get all the subdirs containing package.mo
+          subdirs = System.subDirectories(mp);
+          subdirs = List.filter1OnTrue(subdirs, existPackage, mp);
+          // build a list
+          intersection = List.intersectionOnTrue(subdirs,mofiles,stringEq);
+          differencesStr = stringDelimitList(List.map1(intersection, getBothPackageAndFilename, mp), ", ");
+          Error.assertionOrAddSourceMessage(List.isEmpty(intersection),Error.PACKAGE_DUPLICATE_CHILDREN,{differencesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
+          mofiles = listAppend(subdirs,mofiles);
+          // check if all are present in the package.order
+          differences = List.setDifference(mofiles, namesToFind);
+          // issue a warning if not all are present
+          differencesStr = stringDelimitList(differences, "\n\t");
+          Error.assertionOrAddSourceMessage(List.isEmpty(differences),Error.PACKAGE_ORDER_FILE_NOT_COMPLETE,{differencesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
+          po1 = getPackageContentNamesinParts(namesToFind,cp,{});
+          List.map2_0(po1,checkPackageOrderFilesExist,mp,info);
 
-        po2 = List.map(differences, makeClassLoad);
+          po2 = List.map(differences, makeClassLoad);
 
-        po = List.appendNoCopy(po2, po1);
+          po = List.appendNoCopy(po2, po1);
+        else // file not found
+          mofiles = List.map(System.moFiles(mp), Util.removeLast3Char) "Here .mo files in same directory as package.mo should be loaded as sub-packages";
+          subdirs = System.subDirectories(mp);
+          subdirs = List.filter1OnTrue(subdirs, existPackage, mp);
+          mofiles = List.sort(listAppend(subdirs,mofiles), Util.strcmpBool);
+          // Look for duplicates
+          intersection = List.sortedDuplicates(mofiles,stringEq);
+          differencesStr = stringDelimitList(List.map1(intersection, getBothPackageAndFilename, mp), ", ");
+          Error.assertionOrAddSourceMessage(List.isEmpty(intersection),Error.PACKAGE_DUPLICATE_CHILDREN,{differencesStr},info);
+
+          po = listAppend(List.map(cp, makeClassPart),List.map(mofiles, makeClassLoad));
+        end if;
       then
         po;
-
-    case (Absyn.CLASS(body=Absyn.PARTS(classParts=cp),info=info),_,_,_)
-      equation
-        false = System.regularFileExists(filename);
-        mofiles = List.map(System.moFiles(mp), Util.removeLast3Char) "Here .mo files in same directory as package.mo should be loaded as sub-packages";
-        subdirs = System.subDirectories(mp);
-        subdirs = List.filter1OnTrue(subdirs, existPackage, mp);
-        mofiles = List.sort(listAppend(subdirs,mofiles), Util.strcmpBool);
-        // Look for duplicates
-        intersection = List.sortedDuplicates(mofiles,stringEq);
-        differencesStr = stringDelimitList(List.map1(intersection, getBothPackageAndFilename, mp), ", ");
-        Error.assertionOrAddSourceMessage(List.isEmpty(intersection),Error.PACKAGE_DUPLICATE_CHILDREN,{differencesStr},info);
-
-        po = listAppend(List.map(cp, makeClassPart),List.map(mofiles, makeClassLoad));
-      then po;
 
     case (Absyn.CLASS(info=info),_,_,_)
       equation
         true = numError == Error.getNumErrorMessages();
         Error.addSourceMessage(Error.INTERNAL_ERROR,{"getPackageContentNames failed for unknown reason"},info);
       then fail();
+  
   end matchcontinue;
 end getPackageContentNames;
 
@@ -580,20 +577,24 @@ protected function matchCompNames
 algorithm
   (outNames,matchedNames) := matchcontinue (names,comps,info)
     local
-      Boolean b;
+      Boolean b, b1;
       String n1,n2;
       list<String> rest1,rest2;
+    
     case (_,{},_) then (names,true);
+    
     case (n1::rest1,n2::rest2,_)
       equation
-        true = n1 ==& n2;
-        (rest1,b) = matchCompNames(rest1,rest2,info);
-        Error.assertionOrAddSourceMessage(b,Error.ORDER_FILE_COMPONENTS, {}, info);
-      then (rest1,true);
-    case (n1::rest1,n2::_,_)
-      equation
-        false = n1 ==& n2;
-      then (rest1,false);
+        if (n1 ==& n2)
+        then
+          (rest1,b) = matchCompNames(rest1,rest2,info);
+          Error.assertionOrAddSourceMessage(b, Error.ORDER_FILE_COMPONENTS, {}, info);
+          b1 = true;
+        else
+          b1 = false;
+        end if;
+      then (rest1,b1);
+  
   end matchcontinue;
 end matchCompNames;
 

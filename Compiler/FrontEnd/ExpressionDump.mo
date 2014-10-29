@@ -94,25 +94,9 @@ function: binopSymbol
   input DAE.Operator inOperator;
   output String outString;
 algorithm
-  outString := matchcontinue (inOperator)
-    local
-      String s;
-      DAE.Operator op;
-
-    case op
-      equation
-        false = Config.typeinfo();
-        s = binopSymbol1(op);
-      then
-        s;
-
-    case op
-      equation
-        true = Config.typeinfo();
-        s = binopSymbol2(op);
-      then
-        s;
-  end matchcontinue;
+  outString := if Config.typeinfo()
+               then binopSymbol2(inOperator)
+               else binopSymbol1(inOperator);
 end binopSymbol;
 
 public function binopSymbol1
@@ -1566,17 +1550,9 @@ protected function printExpIfDiff ""
   input DAE.Exp e1,e2;
   output String s;
 algorithm
-  s := matchcontinue(e1,e2)
-    case (_,_)
-      equation
-        true = Expression.expEqual(e1,e2);
-      then "";
-    case (_,_)
-      equation
-        false = Expression.expEqual(e1,e2);
-        s = printExpStr(e1) +& " =!= " +& printExpStr(e2) +& "\n";
-      then s;
-  end matchcontinue;
+  s := if Expression.expEqual(e1,e2)
+       then ""
+       else printExpStr(e1) +& " =!= " +& printExpStr(e2) +& "\n";
 end printExpIfDiff;
 
 public function printArraySizes "Function: printArraySizes"

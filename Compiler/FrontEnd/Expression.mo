@@ -296,10 +296,12 @@ algorithm
       ae2 = unelabExp(e2);
     then Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({ae1,ae2},{}));
 
+    /* WHAT? exactly the same case as above???!!!
     case(DAE.SIZE(e1,SOME(e2))) equation
       ae1 = unelabExp(e1);
       ae2 = unelabExp(e2);
     then Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({ae1,ae2},{}));
+    */
 
     case(DAE.CODE(code,_)) then Absyn.CODE(code);
 
@@ -644,7 +646,7 @@ public function negate
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(inExp)
+  outExp := match(inExp)
     local
       Type t;
       Operator op;
@@ -653,7 +655,7 @@ algorithm
       Integer i,i_1;
       DAE.Exp e;
 
-    // to avoid unnessecary --e
+    // to avoid un-necessary --e
     case(DAE.UNARY(DAE.UMINUS(_),e)) then e;
     case(DAE.UNARY(DAE.UMINUS_ARR(_),e)) then e;
     case(DAE.LUNARY(DAE.NOT(_),e)) then e;
@@ -671,27 +673,27 @@ algorithm
         b_1 = not b;
       then DAE.BCONST(b_1);
 
-    // -0 = 0
     case(e)
       equation
-        true = isZero(e);
+        if isZero(e) // -0 = 0
+        then
+          outExp = e;
+        else
+          t = typeof(e);
+          outExp = match (t)
+            case (DAE.T_BOOL(source=_)) // not e
+              then DAE.LUNARY(DAE.NOT(t),e);
+            else
+              equation
+                b = DAEUtil.expTypeArray(t);
+                op = if b then DAE.UMINUS_ARR(t) else DAE.UMINUS(t);
+              then DAE.UNARY(op,e);
+          end match;
+        end if;
       then
-        e;
-    // not e
-    case(e)
-      equation
-        (t as DAE.T_BOOL(source=_)) = typeof(e);
-      then
-        DAE.LUNARY(DAE.NOT(t),e);
+        outExp;
 
-    case(e)
-      equation
-        t = typeof(e);
-        b = DAEUtil.expTypeArray(t);
-        op = if b then DAE.UMINUS_ARR(t) else DAE.UMINUS(t);
-      then
-        DAE.UNARY(op,e);
-  end matchcontinue;
+  end match;
 end negate;
 
 public function negateReal
@@ -2748,30 +2750,31 @@ algorithm
       Type tp2,tp;
       DAE.Exp e1,e2,e;
       DAE.Operator op;
-    /*e1^e2 =>e1^(-e2)*/
+
+    // e1^e2 =>e1^(-e2)
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2))
       equation
         tp2 = typeof(e2);
       then
         DAE.BINARY(e1,DAE.POW(tp),DAE.UNARY(DAE.UMINUS(tp2),e2));
-    /*e1 / e2 = e2/ e1*/
+
+    // e1 / e2 = e2 / e1
     case (DAE.BINARY(exp1 = e1,operator = op as DAE.DIV(ty = _),exp2 = e2))
       equation
        false = isZero(e1);
       then
         DAE.BINARY(e2,op,e1);
+
     case e
       equation
-        DAE.T_REAL(varLst = _) = typeof(e);
         false = isZero(e);
+        tp = typeof(e);
+        e = match(tp)
+          case DAE.T_REAL(varLst = _) then DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),e);
+          case DAE.T_INTEGER(varLst = _) then DAE.BINARY(DAE.ICONST(1),DAE.DIV(DAE.T_INTEGER_DEFAULT),e);
+        end match;
       then
-        DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),e);
-    case e
-      equation
-        DAE.T_INTEGER(varLst = _) = typeof(e);
-        false = isZero(e);
-      then
-        DAE.BINARY(DAE.ICONST(1),DAE.DIV(DAE.T_INTEGER_DEFAULT),e);
+        e;
   end matchcontinue;
 end inverseFactors;
 
@@ -2920,44 +2923,28 @@ public function makeCrefExp
   input DAE.Type inExpType;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(inCref, inExpType)
+  outExp := match(inCref, inExpType)
     local
       ComponentRef cref;
       Type tGiven, tExisting;
-      DAE.Exp e;
 
-    // do not check type
     case (cref, tGiven)
       equation
-        false = Flags.isSet(Flags.CHECK_DAE_CREF_TYPE);
-        e = DAE.CREF(cref, tGiven);
-      then
-        e;
-
-    // check type, type the same
-    case (cref, tGiven)
-      equation
-        true = Flags.isSet(Flags.CHECK_DAE_CREF_TYPE);
-        tExisting = ComponentReference.crefLastType(cref);
-        equality(tGiven = tExisting); // true = valueEq(tGiven, tExisting);
-        e = DAE.CREF(cref, tGiven);
-      then
-        e;
-
-    // check type, type different, print warning
-    case (cref, tGiven)
-      equation
-        true = Flags.isSet(Flags.CHECK_DAE_CREF_TYPE);
-        tExisting = ComponentReference.crefLastType(cref);
-        failure(equality(tGiven = tExisting));
-        Debug.traceln("Warning: Expression.makeCrefExp: cref " +& ComponentReference.printComponentRefStr(cref) +& " was given type DAE.CREF.ty: " +&
+        if Flags.isSet(Flags.CHECK_DAE_CREF_TYPE)
+        then // check type
+          tExisting = ComponentReference.crefLastType(cref);
+          if not valueEq(tGiven, tExisting)
+          then // type not the same
+            Debug.traceln("Warning: Expression.makeCrefExp: cref " +& ComponentReference.printComponentRefStr(cref) +& " was given type DAE.CREF.ty: " +&
                       Types.unparseType(tGiven) +&
                       " is different from existing DAE.CREF.componentRef.ty: " +&
                       Types.unparseType(tExisting));
-        e = DAE.CREF(cref, tGiven);
+          end if;
+        end if;
       then
-        e;
-  end matchcontinue;
+        DAE.CREF(cref, tGiven);
+
+  end match;
 end makeCrefExp;
 
 public function crefExp "
@@ -2965,23 +2952,27 @@ Author: BZ, 2008-08
 generate an DAE.CREF(ComponentRef, Type) from a ComponenRef, make array type correct from subs"
   input DAE.ComponentRef cr;
   output DAE.Exp cref;
-algorithm cref := matchcontinue(cr)
-  local
-    Type ty1,ty2;
-    list<DAE.Subscript> subs;
-  case _
-    equation
-      (ty1 as DAE.T_ARRAY(ty = _)) = ComponentReference.crefLastType(cr);
-      subs = ComponentReference.crefLastSubs(cr);
-      ty2 = unliftArrayTypeWithSubs(subs,ty1);
-    then
-      DAE.CREF(cr,ty2);
-  case _
-    equation
-      ty1 = ComponentReference.crefLastType(cr);
-    then
-      DAE.CREF(cr,ty1);
-end matchcontinue;
+algorithm
+  cref := match(cr)
+    local
+      Type ty1,ty2;
+      list<DAE.Subscript> subs;
+
+    case _
+      equation
+        ty1 = ComponentReference.crefLastType(cr);
+        cref = match(ty1)
+          case DAE.T_ARRAY(ty = _)
+            equation
+              subs = ComponentReference.crefLastSubs(cr);
+              ty2 = unliftArrayTypeWithSubs(subs,ty1);
+            then DAE.CREF(cr,ty2);
+          else DAE.CREF(cr,ty1);
+        end match;
+      then
+        cref;
+
+  end match;
 end crefExp;
 
 public function makeASUB
@@ -2993,12 +2984,12 @@ public function makeASUB
   input list<DAE.Exp> inSubs;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(inExp,inSubs)
+  outExp := match(inExp,inSubs)
     local
       DAE.Exp exp;
       list<DAE.Exp> subs,subs1,subs2;
 
-      /* We need to be careful when constructing ASUB's. All subscripts should be in a list. */
+    // We need to be careful when constructing ASUB's. All subscripts should be in a list.
     case (DAE.ASUB(exp,subs1),subs2)
       equation
         subs = listAppend(subs1,subs2);
@@ -3006,35 +2997,27 @@ algorithm
       then
         exp;
 
-    // do not check the DAE.ASUB
-    case(_,_)
+    case(_, _)
       equation
-        false = Flags.isSet(Flags.CHECK_ASUB);
+        if Flags.isSet(Flags.CHECK_ASUB) // check the DAE.ASUB
+        then
+          _ = match(inExp) // check the DAE.ASUB so that the given expression is NOT a cref
+            case (DAE.CREF(componentRef = _))
+              equation
+                Debug.traceln("Warning: makeASUB: given expression: " +&
+                        ExpressionDump.printExpStr(inExp) +&
+                        " contains a component reference!\n" +&
+                        " Subscripts exps: [" +& stringDelimitList(List.map(inSubs, ExpressionDump.printExpStr), ",")+& "]\n" +&
+                        "DAE.ASUB should not be used for component references, instead the subscripts should be added directly to the component reference!");
+              then ();
+            else (); // check the DAE.ASUB -> was not a cref
+          end match;
+        end if;
         exp = DAE.ASUB(inExp,inSubs);
       then
         exp;
 
-    // check the DAE.ASUB so that the given expression is NOT a cref
-    case(DAE.CREF(componentRef = _), _)
-      equation
-        true = Flags.isSet(Flags.CHECK_ASUB);
-        Debug.traceln("Warning: makeASUB: given expression: " +&
-                      ExpressionDump.printExpStr(inExp) +&
-                      " contains a component reference!\n" +&
-                      " Subscripts exps: [" +& stringDelimitList(List.map(inSubs, ExpressionDump.printExpStr), ",")+& "]\n" +&
-                      "DAE.ASUB should not be used for component references, instead the subscripts should be added directly to the component reference!");
-        exp = DAE.ASUB(inExp,inSubs);
-      then
-        exp;
-
-    // check the DAE.ASUB -> was not a cref
-    else
-      equation
-        true = Flags.isSet(Flags.CHECK_ASUB);
-        exp = DAE.ASUB(inExp,inSubs);
-      then
-        exp;
-  end matchcontinue;
+  end match;
 end makeASUB;
 
 public function makeASUBSingleSub
@@ -3058,11 +3041,12 @@ algorithm outCrefExp := match(inVar,inCrefPrefix)
     DAE.Exp e;
 
   case (DAE.TYPES_VAR(name=name,ty=ty),_)
-  equation
-    cr = ComponentReference.crefPrependIdent(inCrefPrefix,name,{},ty);
-    e = makeCrefExp(cr, ty);
-  then
-    e;
+    equation
+      cr = ComponentReference.crefPrependIdent(inCrefPrefix,name,{},ty);
+      e = makeCrefExp(cr, ty);
+    then
+      e;
+
  end match;
 end generateCrefsExpFromExpVar;
 
@@ -3323,17 +3307,21 @@ algorithm
     case (_,_)
       equation
         tp = typeof(e1);
-        true = Types.isIntegerOrRealOrSubTypeOfEither(tp);
-        b = DAEUtil.expTypeArray(tp);
-        op = if b then DAE.SUB_ARR(tp) else DAE.SUB(tp);
+        if Types.isIntegerOrRealOrSubTypeOfEither(tp)
+        then
+          b = DAEUtil.expTypeArray(tp);
+          op = if b then DAE.SUB_ARR(tp) else DAE.SUB(tp);
+          outExp = DAE.BINARY(e1,op,e2);
+        else if Types.isEnumeration(tp)
+             then
+               outExp = DAE.BINARY(e1,DAE.SUB(tp),e2);
+             else
+               fail();
+             end if;
+        end if;
       then
-        DAE.BINARY(e1,op,e2);
-    else
-      equation
-        tp = typeof(e1);
-        true = Types.isEnumeration(tp);
-      then
-        DAE.BINARY(e1,DAE.SUB(tp),e2);
+        outExp;
+
   end matchcontinue;
 end expSub;
 
@@ -3344,19 +3332,11 @@ public function makeDiff
   input DAE.Exp e2;
   output DAE.Exp res;
 algorithm
-  res := matchcontinue(e1,e2)
-    local
-
-    case(_,_) equation
-      true = isZero(e2);
-    then e1;
-
-    case(_,_) equation
-      true = isZero(e1);
-    then negate(e2);
-
-    else expSub(e1,e2);
-  end matchcontinue;
+  res := if isZero(e2)
+         then e1
+         elseif isZero(e1)
+             then negate(e2)
+             else expSub(e1,e2);
 end makeDiff;
 
 public function makeDifference
@@ -3366,19 +3346,7 @@ public function makeDifference
   input DAE.Exp e2;
   output DAE.Exp res;
 algorithm
-  res := matchcontinue(e1,e2)
-    local
-
-    case(_,_)
-      equation
-        true = isZero(e2);
-      then e1;
-    case(_,_)
-      equation
-        true = isZero(e1);
-      then negate(e2);
-    else expSub(e1,e2);
-  end matchcontinue;
+  res := makeDiff(e1, e2);
 end makeDifference;
 
 public function makeLBinary
@@ -3586,8 +3554,8 @@ algorithm
       e = makeDiv(e, expPow(e3,e2));
       then e;
 
-    // (e1/r1)^r2 = c*e1^r2
-    case (DAE.BINARY(e3, DAE.MUL(_), DAE.RCONST(real = r1)) , DAE.RCONST(real = r2)) equation
+    // (e1/r1)^r2 = c*e1^r2 TODO! FIXME! SAME AS 2 cases ABOVE??!!
+    case (DAE.BINARY(e3, DAE.DIV(_), DAE.RCONST(real = r1)) , DAE.RCONST(real = r2)) equation
       e = expPow(DAE.RCONST(r1), DAE.RCONST(r2));
       e = makeDiv(DAE.RCONST(1.0), e);
       e = expMul(e, expPow(e3,e2));
@@ -4059,6 +4027,7 @@ algorithm
       arrexp = listToArray2(explst,dims,inType);
     then
       arrexp;
+
   end matchcontinue;
 end listToArray2;
 
@@ -4069,7 +4038,7 @@ protected function listToArray3
   input DAE.Type inType;
   output list<DAE.Exp> oExps;
 algorithm
-  oExps := matchcontinue(inList, iDim, inType)
+  oExps := match(inList, iDim, inType)
   local
     Integer i;
     DAE.Dimension d;
@@ -4081,23 +4050,19 @@ algorithm
     case(_, d, _)
       equation
         i = dimensionSize(d);
-        true = i > listLength(inList);
-        Error.addMessage(Error.INTERNAL_ERROR, {"Expression.listToArray3: Not enough elements left in list to fit dimension."});
-      then
-        fail();
-
-    case(_, d, _)
-      equation
-        i = dimensionSize(d);
-        (explst, restexps) = List.split(inList,i);
-
-        arrexp = DAE.ARRAY(DAE.T_ARRAY(inType,{DAE.DIM_INTEGER(i)},DAE.emptyTypeSource),false,explst);
-
-        restarr = listToArray3(restexps,d,inType);
+        if (i > listLength(inList))
+        then
+          Error.addMessage(Error.INTERNAL_ERROR, {"Expression.listToArray3: Not enough elements left in list to fit dimension."});
+          fail();
+        else
+          (explst, restexps) = List.split(inList,i);
+          arrexp = DAE.ARRAY(DAE.T_ARRAY(inType,{DAE.DIM_INTEGER(i)},DAE.emptyTypeSource),false,explst);
+          restarr = listToArray3(restexps,d,inType);
+        end if;
       then
         arrexp::restarr;
 
-  end matchcontinue;
+  end match;
 end listToArray3;
 
 
@@ -4107,13 +4072,15 @@ public function arrayFill
   output DAE.Exp oExp;
 algorithm
   oExp := matchcontinue(dims,inExp)
-    local
+
     case({},_) then inExp;
+
     else
       equation
         oExp = arrayFill2(dims,inExp);
       then
         oExp;
+
   end matchcontinue;
 end arrayFill;
 

@@ -697,71 +697,34 @@ algorithm
         (table, finalRoots) = addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);
 
         // generate the graphviz representation and display
-        // if brokenConnectsViaGraphViz is empty, the user wants to use the current breaking!
-        ("") = generateGraphViz(
-              modelNameQualified,
-              definiteRoots,
-              potentialRoots,
-              uniqueRoots,
-              branches,
-              connections,
-              finalRoots,
-              broken);
+        brokenConnectsViaGraphViz = generateGraphViz(modelNameQualified, definiteRoots, potentialRoots, uniqueRoots, branches, connections, finalRoots, broken);
+
+        if stringEq(brokenConnectsViaGraphViz, "")
+        then
+          // if brokenConnectsViaGraphViz is empty, the user wants to use the current breaking!
+        else
+          // interpret brokenConnectsViaGraphViz and pass it to the breaking algorithm again
+          // graphviz returns the broken connects as: cr1|cr2#cr3|cr4#
+          userBrokenLst = Util.stringSplitAtChar(brokenConnectsViaGraphViz, "#");
+          userBrokenLstLst = List.map1(userBrokenLst, Util.stringSplitAtChar, "|");
+          userBrokenTplLst = makeTuple(userBrokenLstLst);
+          Debug.traceln("User selected the following connect edges for breaking:\n\t" +& stringDelimitList(List.map(userBrokenTplLst, printTupleStr), "\n\t"));
+          // print("\nBefore ordering:\n");
+          printDaeEdges(connections);
+          // order the connects with the input given by the user!
+          connections = orderConnectsGuidedByUser(connections, userBrokenTplLst);
+          // reverse the reverse! uh oh!
+          connections = listReverse(connections);
+          print("\nAfer ordering:\n");
+          // printDaeEdges(connections);
+          // call findResultGraph again with ordered connects!
+          (finalRoots, connected, broken) =
+             findResultGraph(GRAPH(false, definiteRoots, potentialRoots, uniqueRoots, branches, connections), modelNameQualified);
+        end if;
+
       then
         (finalRoots, connected, broken);
 
-    // we have something in the connection graph
-    case (GRAPH(_, definiteRoots = definiteRoots, potentialRoots = potentialRoots, uniqueRoots = uniqueRoots,
-                   branches = branches, connections = connections), _)
-      equation
-        // reverse the conenction list to have them as in the model
-        connections = listReverse(connections);
-        // add definite roots to the table
-        table = resultGraphWithRoots(definiteRoots);
-        // add branches to the table
-        table = addBranchesToTable(table, branches);
-        // order potential roots in the order or priority
-        orderedPotentialRoots = List.sort(potentialRoots, ord);
-
-        Debug.fprintln(Flags.CGRAPH, "Ordered Potential Roots: " +& stringDelimitList(List.map(orderedPotentialRoots, printPotentialRootTuple), ", "));
-
-        // add connections to the table and return the broken/connected connections
-        (table,_, broken) = addConnections(table, connections);
-        // create a dummy root
-        dummyRoot = ComponentReference.makeCrefIdent("__DUMMY_ROOT", DAE.T_INTEGER_DEFAULT, {});
-        // select final roots
-        (table, finalRoots) = addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);
-
-        // generate the graphviz representation and display
-        // interpret brokenConnectsViaGraphViz and pass it to the breaking algorithm again
-        brokenConnectsViaGraphViz = generateGraphViz(
-              modelNameQualified,
-              definiteRoots,
-              potentialRoots,
-              uniqueRoots,
-              branches,
-              connections,
-              finalRoots,
-              broken);
-        // graphviz returns the broken connects as: cr1|cr2#cr3|cr4#
-        userBrokenLst = Util.stringSplitAtChar(brokenConnectsViaGraphViz, "#");
-        userBrokenLstLst = List.map1(userBrokenLst, Util.stringSplitAtChar, "|");
-        userBrokenTplLst = makeTuple(userBrokenLstLst);
-        Debug.traceln("User selected the following connect edges for breaking:\n\t" +& stringDelimitList(List.map(userBrokenTplLst, printTupleStr), "\n\t"));
-        // print("\nBefore ordering:\n");
-        printDaeEdges(connections);
-        // order the connects with the input given by the user!
-        connections = orderConnectsGuidedByUser(connections, userBrokenTplLst);
-        // reverse the reverse! uh oh!
-        connections = listReverse(connections);
-        print("\nAfer ordering:\n");
-        // printDaeEdges(connections);
-        // call findResultGraph again with ordered connects!
-        (finalRoots, connected, broken) =
-           findResultGraph(GRAPH(false, definiteRoots, potentialRoots, uniqueRoots, branches, connections),
-                           modelNameQualified);
-      then
-        (finalRoots, connected, broken);
   end matchcontinue;
 end findResultGraph;
 
@@ -781,7 +744,8 @@ algorithm
 
     // handle empty case
     case ({}, _) then {};
-    // handle match
+
+    // handle match and miss
     case ((e as (c1, c2, _))::rest, _)
       equation
         sc1 = ComponentReference.printComponentRefStr(c1);
@@ -790,25 +754,17 @@ algorithm
         // see both ways!
         b1 = listMember((sc1, sc2), inUserSelectedBreaking);
         b2 = listMember((sc2, sc1), inUserSelectedBreaking);
-        true = boolOr(b1, b2);
-        // put them at the end to be tried last (more chance to be broken)
-        ordered = listAppend(ordered, {e});
+        if (boolOr(b1, b2))
+        then
+          // put them at the end to be tried last (more chance to be broken)
+          ordered = listAppend(ordered, {e});
+        else
+          // put them at the front to be tried first (less chance to be broken)
+          ordered = e::ordered;
+        end if;
       then
         ordered;
-    // handle miss
-    case ((e as (c1, c2, _))::rest, _)
-      equation
-        sc1 = ComponentReference.printComponentRefStr(c1);
-        sc2 = ComponentReference.printComponentRefStr(c2);
-        ordered = orderConnectsGuidedByUser(rest, inUserSelectedBreaking);
-        // see both ways
-        b1 = listMember((sc1, sc2), inUserSelectedBreaking);
-        b2 = listMember((sc2, sc1), inUserSelectedBreaking);
-        false = boolOr(b1, b2);
-        // put them at the front to be tried first (less chance to be broken)
-        ordered = e::ordered;
-      then
-        ordered;
+
   end matchcontinue;
 end orderConnectsGuidedByUser;
 
@@ -965,23 +921,22 @@ protected function addConnectionRooted
   input HashTable3.HashTable itable;
   output HashTable3.HashTable otable;
 algorithm
-  otable := matchcontinue(cref1,cref2,itable)
+  otable := match(cref1,cref2,itable)
     local
       HashTable3.HashTable table;
       list<DAE.ComponentRef> crefs;
-    case(_,_,_)
+
+    case(_, _, _)
       equation
-        crefs = BaseHashTable.get(cref1,itable);
-        table = BaseHashTable.add((cref1,cref2::crefs),itable);
+          crefs = matchcontinue()
+            case () then BaseHashTable.get(cref1,itable);
+            else then {};
+          end matchcontinue;
+          table = BaseHashTable.add((cref1,cref2::crefs),itable);
       then
         table;
-    else
-      equation
-        failure( _ = BaseHashTable.get(cref1,itable));
-        table = BaseHashTable.add((cref1,{cref2}),itable);
-      then
-        table;
-  end matchcontinue;
+
+  end match;
 end addConnectionRooted;
 
 protected function evalConnectionsOperators
@@ -1653,7 +1608,7 @@ public function removeBrokenConnects
   input DaeEdges inBroken;
   output list<Connect.ConnectorElement> outConnects;
 algorithm
-  outConnects := matchcontinue(inConnects, inConnected, inBroken)
+  outConnects := match(inConnects, inConnected, inBroken)
     local
       list<DAE.ComponentRef> toRemove, toKeep, intersect;
       list<Connect.ConnectorElement> cset;
@@ -1664,31 +1619,39 @@ algorithm
     // if we have nothing toRemove then we don't care!
     case (_, _, _)
       equation
-        {} = filterFromSet(inConnects, inBroken, {});
-      then inConnects;
-
-    else
-      equation
         toRemove = filterFromSet(inConnects, inBroken, {});
-        toKeep = filterFromSet(inConnects, inConnected, {});
-        intersect = List.intersectionOnTrue(toRemove, toKeep, ComponentReference.crefEqualNoStringCompare);
 
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: keep: " +&
-          stringDelimitList(List.map(toKeep, ComponentReference.printComponentRefStr), ", "));
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: delete: " +&
-          stringDelimitList(List.map(toRemove, ComponentReference.printComponentRefStr), ", "));
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: allow = remove - keep: " +&
-          stringDelimitList(List.map(intersect, ComponentReference.printComponentRefStr), ", "));
+        if listEmpty(toRemove)
+        then
+          cset = inConnects;
+        else
+          toKeep = filterFromSet(inConnects, inConnected, {});
+          intersect = List.intersectionOnTrue(toRemove, toKeep, ComponentReference.crefEqualNoStringCompare);
 
-        toRemove = List.setDifference(toRemove, intersect);
+          if Flags.isSet(Flags.CGRAPH)
+          then
+            Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: keep: " +&
+              stringDelimitList(List.map(toKeep, ComponentReference.printComponentRefStr), ", "));
+            Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: delete: " +&
+              stringDelimitList(List.map(toRemove, ComponentReference.printComponentRefStr), ", "));
+            Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: allow = remove - keep: " +&
+              stringDelimitList(List.map(intersect, ComponentReference.printComponentRefStr), ", "));
+          end if;
 
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: allow - delete: " +&
-          stringDelimitList(List.map(toRemove, ComponentReference.printComponentRefStr), ", "));
+          toRemove = List.setDifference(toRemove, intersect);
 
-        cset = removeFromConnects(inConnects, toRemove);
-      then
-        cset;
-  end matchcontinue;
+          if Flags.isSet(Flags.CGRAPH)
+          then
+            Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: allow - delete: " +&
+              stringDelimitList(List.map(toRemove, ComponentReference.printComponentRefStr), ", "));
+          end if;
+
+          cset = removeFromConnects(inConnects, toRemove);
+        end if;
+
+      then cset;
+
+  end match;
 end removeBrokenConnects;
 
 protected function filterFromSet

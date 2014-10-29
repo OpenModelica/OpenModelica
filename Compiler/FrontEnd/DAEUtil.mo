@@ -1830,26 +1830,32 @@ public function findElement "
     input DAE.Element inElement;
   end FuncTypeElementTo;
 algorithm
-  outElementOption:=
-  matchcontinue (inElementLst,inFuncTypeElementTo)
+  outElementOption:= match (inElementLst,inFuncTypeElementTo)
     local
       DAE.Element e;
       list<DAE.Element> rest;
       FuncTypeElementTo f;
       Option<DAE.Element> e_1;
+
     case ({},_) then NONE();
-    case ((e::_),f)
+
+    case (e::rest, f)
       equation
-        f(e);
-      then
-        SOME(e);
-    case ((e::rest),f)
-      equation
-        failure(f(e));
-        e_1 = findElement(rest, f);
+        e_1 = matchcontinue ()
+          case ()
+            equation
+              f(e);
+            then SOME(e);
+          else
+            equation
+              failure(f(e));
+              e_1 = findElement(rest, f);
+            then e_1;
+        end matchcontinue;
       then
         e_1;
-  end matchcontinue;
+
+  end match;
 end findElement;
 
 public function getVariableBindingsStr "
@@ -3022,41 +3028,42 @@ protected function compareCrefList ""
   input list<list<DAE.ComponentRef>> inCrefs;
   output list<DAE.ComponentRef> outrefs;
   output Boolean matching;
-algorithm (outrefs,matching) := matchcontinue(inCrefs)
+algorithm (outrefs,matching) := match(inCrefs)
   local
     list<DAE.ComponentRef> crefs,recRefs;
     Integer i;
     Boolean b1,b2,b3;
     list<list<DAE.ComponentRef>> llrefs;
 
-  case({}) then ({},true);
-  case(crefs::{}) then (crefs,true);
-  case(crefs::llrefs) // this case will allways have revRefs >=1 unless we are supposed to have 0
-    equation
-      (recRefs,b3) = compareCrefList(llrefs);
-      i = listLength(recRefs);
-      // make sure is more than 0!
-      true = intGt(i, 0);
-      b1 = (0 == intMod(listLength(crefs),i));
-      crefs = List.unionOnTrueList({recRefs,crefs},ComponentReference.crefEqual);
-      b2 = intEq(listLength(crefs),i);
-      b1 = boolAnd(b1,boolAnd(b2,b3));
-    then
-      (crefs,b1);
 
-  // this deals with 0 as the number of set crefs in one of the branches, for example:
-  // if then reinint;reinit; else reinit;reinit; end if;
+  case({}) then ({},true);
+
+  case(crefs::{}) then (crefs,true);
+
   case(crefs::llrefs)
     equation
       (recRefs,b3) = compareCrefList(llrefs);
       i = listLength(recRefs);
-      // make sure both of them are 0!
-      true = intEq(i, 0);
-      true = intEq(listLength(crefs), 0);
+      // make sure is more than 0!
+      if (intGt(i, 0))
+      then
+        // this case will allways have revRefs >=1 unless we are supposed to have 0
+        b1 = (0 == intMod(listLength(crefs),i));
+        crefs = List.unionOnTrueList({recRefs,crefs},ComponentReference.crefEqual);
+        b2 = intEq(listLength(crefs),i);
+        b1 = boolAnd(b1,boolAnd(b2,b3));
+      else
+        // this deals with 0 as the number of set crefs in one of the branches, for example:
+        // if then reinint;reinit; else reinit;reinit; end if;
+        // make sure both of them are 0!
+        true = intEq(i, 0);
+        true = intEq(listLength(crefs), 0);
+        b1 = true;
+      end if;
     then
-      (crefs,true);
+      (crefs,b1);
 
-  end matchcontinue;
+  end match;
 end compareCrefList;
 
 public function evaluateAnnotation "lochel: This is not used.
@@ -4235,21 +4242,25 @@ algorithm
     case (DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source),_,_,extraArg)
       equation
         (e_1, extraArg) = func(e, extraArg);
-        (DAE.CREF(cr_1,_), extraArg) = traverseStatementsOptionsEvalLhs(Expression.crefExp(cr), extraArg, func, opt);
-        x = if referenceEq(e,e_1) and referenceEq(cr,cr_1) then inStmt else DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source);
-      then (x::{},extraArg);
-
-    // NOTE: This is making the function use matchcontinue!
-    case (DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source),_,_,extraArg)
-      equation
-        (e_1, extraArg) = func(e, extraArg);
-        failure((DAE.CREF(_,_), _) = func(Expression.crefExp(cr), extraArg));
-        x = if referenceEq(e,e_1) then inStmt else DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source);
-        /* We need to pass this through because simplify/etc may scalarize the cref...
-        true = Flags.isSet(Flags.FAILTRACE);
-        print(DAEDump.ppStatementStr(x));
-        print("Warning, not allowed to set the componentRef to a expression in DAEUtil.traverseDAEEquationsStmts\n");
-        */
+        _ = matchcontinue()
+          case ()
+            equation
+              (DAE.CREF(cr_1,_), extraArg) = traverseStatementsOptionsEvalLhs(Expression.crefExp(cr), extraArg, func, opt);
+               x = if referenceEq(e,e_1) and referenceEq(cr,cr_1) then inStmt else DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source);
+             then
+               ();
+          else
+            equation
+              failure((DAE.CREF(_,_), _) = func(Expression.crefExp(cr), extraArg));
+              x = if referenceEq(e,e_1) then inStmt else DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source);
+              /* We need to pass this through because simplify/etc may scalarize the cref...
+                 true = Flags.isSet(Flags.FAILTRACE);
+                 print(DAEDump.ppStatementStr(x));
+                 print("Warning, not allowed to set the componentRef to a expression in DAEUtil.traverseDAEEquationsStmts\n");
+              */
+            then
+              ();
+        end matchcontinue;
       then (x::{},extraArg);
 
     case (DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse, source = source),_,_,extraArg)
@@ -4442,20 +4453,25 @@ algorithm
     case (((x as DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source))::xs),_,extraArg)
       equation
         ((e_1, extraArg)) = func((e, x,  extraArg));
-        ((DAE.CREF(cr_1,_), extraArg)) = func((Expression.crefExp(cr),  x, extraArg));
-        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+        _ = matchcontinue()
+          case ()
+            equation
+              ((DAE.CREF(cr_1,_), extraArg)) = func((Expression.crefExp(cr),  x, extraArg));
+              (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+            then ();
+          else
+            equation
+              failure(((DAE.CREF(_,_), _)) = func((Expression.crefExp(cr), x, extraArg)));
+              // We need to pass this through because simplify/etc may scalarize the cref...
+              // true = Flags.isSet(Flags.FAILTRACE);
+              // print(DAEDump.ppStatementStr(x));
+              // print("Warning, not allowed to set the componentRef to a expression in DAEUtil.traverseDAEEquationsStmts\n");
+              cr_1 = cr;
+              (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+            then
+              ();
+        end matchcontinue;
       then (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source)::xs_1,extraArg);
-
-    case (((x as DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source))::xs),_,extraArg)
-      equation
-        ((e_1, extraArg)) = func((e, x, extraArg));
-        failure(((DAE.CREF(_,_), _)) = func((Expression.crefExp(cr), x, extraArg)));
-        // We need to pass this through because simplify/etc may scalarize the cref...
-        // true = Flags.isSet(Flags.FAILTRACE);
-        // print(DAEDump.ppStatementStr(x));
-        // print("Warning, not allowed to set the componentRef to a expression in DAEUtil.traverseDAEEquationsStmts\n");
-        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
-      then (DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source)::xs_1,extraArg);
 
     case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse, source = source))::xs),_,extraArg)
       equation

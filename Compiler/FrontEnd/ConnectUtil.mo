@@ -2214,26 +2214,27 @@ protected function setArrayAddConnection2
   input array<Set> inSets;
   output array<Set> outSets;
 algorithm
-  outSets := matchcontinue(inSetPointer, inSetPointee, inSets)
+  outSets := match(inSetPointer, inSetPointee, inSets)
     local
       Integer pointee;
+      Set set;
 
-    // If the set pointed at is a real set, add a pointer to it.
     case (_, _, _)
       equation
-        Connect.SET(elements = _) = arrayGet(inSets, inSetPointee);
+        set = arrayGet(inSets, inSetPointee);
+        outSets = match(set)
+                    // If the set pointed at is a real set, add a pointer to it.
+                    case Connect.SET(elements = _)
+                      then arrayUpdate(inSets, inSetPointer, Connect.SET_POINTER(inSetPointee));
+                    // If the set pointed at is itself a pointer, follow the pointer until a
+                    // real set is found (path compression).
+                    case Connect.SET_POINTER(index = pointee)
+                      then setArrayAddConnection2(inSetPointer, pointee, inSets);
+                 end match;
       then
-        arrayUpdate(inSets, inSetPointer, Connect.SET_POINTER(inSetPointee));
+        outSets;
 
-    // If the set pointed at is itself a pointer, follow the pointer until a
-    // real set is found (path compression).
-    else
-      equation
-        Connect.SET_POINTER(index = pointee) = arrayGet(inSets, inSetPointee);
-      then
-        setArrayAddConnection2(inSetPointer, pointee, inSets);
-
-  end matchcontinue;
+  end match;
 end setArrayAddConnection2;
 
 protected function generateSetArray2
@@ -3745,7 +3746,7 @@ public function isReferenceInConnects
   input DAE.ComponentRef inCref;
   output Boolean isThere;
 algorithm
-  isThere := matchcontinue(inConnects, inCref)
+  isThere := match(inConnects, inCref)
     local
       list<ConnectorElement> rest;
       DAE.ComponentRef name;
@@ -3753,19 +3754,15 @@ algorithm
 
     case ({}, _) then false;
 
-    case (Connect.CONNECTOR_ELEMENT(name = name)::_, _)
-      equation
-        true = ComponentReference.crefPrefixOf(inCref, name);
-      then
-        true;
-
     case (Connect.CONNECTOR_ELEMENT(name = name)::rest, _)
       equation
-        false = ComponentReference.crefPrefixOf(inCref, name);
-        b = isReferenceInConnects(rest, inCref);
+        b = if (ComponentReference.crefPrefixOf(inCref, name))
+            then true
+            else isReferenceInConnects(rest, inCref);
       then
         b;
-  end matchcontinue;
+
+  end match;
 end isReferenceInConnects;
 
 public function removeReferenceFromConnects
@@ -3785,21 +3782,19 @@ algorithm
     // not there
     case ({}, _, _) then (listReverse(inPrefix), false);
 
-    // there
-    case (Connect.CONNECTOR_ELEMENT(name = name)::rest, _, _)
-      equation
-        true = ComponentReference.crefPrefixOf(inCref, name);
-        all = listAppend(listReverse(inPrefix), rest);
-      then
-        (all, true);
-
-    // middleground
+    // there or middleground
     case ((e as Connect.CONNECTOR_ELEMENT(name = name))::rest, _, _)
       equation
-        false = ComponentReference.crefPrefixOf(inCref, name);
-        (all, b) = removeReferenceFromConnects(rest, inCref, e::inPrefix);
+        if (ComponentReference.crefPrefixOf(inCref, name))
+        then
+          all = listAppend(listReverse(inPrefix), rest);
+          b = true;
+        else
+          (all, b) = removeReferenceFromConnects(rest, inCref, e::inPrefix);
+        end if;
       then
         (all, b);
+
   end matchcontinue;
 end removeReferenceFromConnects;
 
