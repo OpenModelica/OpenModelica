@@ -41,8 +41,7 @@
  *
  *  allocate _omc_vector and memory of size rows for data
  *
- *  \param [in] [_omc_size] Number of rows
- *  \param [in] [_omc_size] Number of cols
+ *  \param [in]  [size] Number of elements
  */
 _omc_vector* _omc_allocateVectorData(const _omc_size size) {
   assertStreamPrint(NULL, size > 0, "size needs to be greater zero");
@@ -51,7 +50,7 @@ _omc_vector* _omc_allocateVectorData(const _omc_size size) {
   assertStreamPrint(NULL, NULL != vec, "out of memory");
 
   _omc_scalar* data = (_omc_scalar*) malloc(size * sizeof(_omc_scalar));
-  assertStreamPrint(NULL, NULL != vec, "out of memory");
+  assertStreamPrint(NULL, NULL != data, "out of memory");
 
   vec->size = size;
   vec->data = data;
@@ -63,7 +62,7 @@ _omc_vector* _omc_allocateVectorData(const _omc_size size) {
  *
  *  free memory in data
  *
- *  \param [ref]  [_omc_vector]
+ *  \param [ref] [vec] !TODO: DESCRIBE ME!
  */
 void _omc_deallocateVectorData(_omc_vector* vec) {
   free(vec->data);
@@ -74,8 +73,8 @@ void _omc_deallocateVectorData(_omc_vector* vec) {
  *
  *  creates a _omc_vector with a data of _omc_vector
  *
- *  \param [in]   [_omc_size] size of the vector
- *  \param [ref]  [_omc_scalar]
+ *  \param [in]  [size] size of the vector
+ *  \param [ref] [data] !TODO: DESCRIBE ME!
  */
 _omc_vector* _omc_createVector(const _omc_size size, _omc_scalar* data) {
   assertStreamPrint(NULL, size > 0, "size needs to be greater zero");
@@ -93,35 +92,34 @@ _omc_vector* _omc_createVector(const _omc_size size, _omc_scalar* data) {
  *
  *  free _omc_vector
  *
- *  \param [ref]  [_omc_vector]
+ *  \param [ref] [vec] !TODO: DESCRIBE ME!
  */
 void _omc_destroyVector(_omc_vector* vec) {
   free(vec);
 }
 
-/*! \fn _omc_vector* _omc_copyVector(_omc_vector* data)
+/*! \fn void _omc_copyVector(_omc_vector* dest, const _omc_vector* src)
  *
  *  creates a new _omc_vector by coping all data
  *
- *  \param [in]   [_omc_vector] the original vector
+ *  \param [in]  [dest] the destination vector
+ *  \param [in]  [src]  the original vector
  */
-_omc_vector* _omc_copyVector(_omc_vector* dest, const _omc_vector* src) {
-
+void _omc_copyVector(_omc_vector* dest, const _omc_vector* src)
+{
   assertStreamPrint(NULL, dest->size == src->size, "sizes of the vector need to be equal");
-
   memcpy(dest->data, src->data, sizeof(_omc_scalar) * dest->size);
-
-  return dest;
 }
 
 /*! \fn _omc_matrix* _omc_allocateMatrixData(_omc_size rows, _omc_size cols)
  *
  *  allocate _omc_matrix and memory of size rows*cols for data
  *
- *  \param [in] [_omc_size] Number of rows
- *  \param [in] [_omc_size] Number of cols
+ *  \param [in]  [rows] Number of rows
+ *  \param [in]  [cols] Number of cols
  */
-_omc_matrix* _omc_allocateMatrixData(const _omc_size rows, const _omc_size cols) {
+_omc_matrix* _omc_allocateMatrixData(const _omc_size rows, const _omc_size cols)
+{
   assertStreamPrint(NULL, rows > 0, "size of rows need greater zero");
   assertStreamPrint(NULL, cols > 0, "size of cols need greater zero");
 
@@ -129,7 +127,7 @@ _omc_matrix* _omc_allocateMatrixData(const _omc_size rows, const _omc_size cols)
   assertStreamPrint(NULL, NULL != mat, "out of memory");
 
   _omc_scalar* data = (_omc_scalar*) malloc(rows * cols * sizeof(_omc_scalar));
-  assertStreamPrint(NULL, NULL != mat, "out of memory");
+  assertStreamPrint(NULL, NULL != mat, "data of memory");
 
   mat->rows = rows;
   mat->cols = cols;
@@ -142,9 +140,10 @@ _omc_matrix* _omc_allocateMatrixData(const _omc_size rows, const _omc_size cols)
  *
  *  free memory in data
  *
- *  \param [ref]  [_omc_matrix]
+ *  \param [ref] [mat] !TODO: DESCRIBE ME!
  */
-void _omc_deallocateMatrixData(_omc_matrix* mat) {
+void _omc_deallocateMatrixData(_omc_matrix* mat)
+{
   free(mat->data);
   free(mat);
 }
@@ -153,12 +152,12 @@ void _omc_deallocateMatrixData(_omc_matrix* mat) {
  *
  *  creates a _omc_matrix with a data of _omc_matrix
  *
- *  \param [in]   [_omc_size] Number of rows
- *  \param [in]   [_omc_size] Number of cols
- *  \param [ref]  [_omc_scalar]
+ *  \param [in]  [rows] Number of rows
+ *  \param [in]  [cols] Number of cols
+ *  \param [ref] [data] !TODO: DESCRIBE ME!
  */
-_omc_matrix* _omc_createMatrix(const _omc_size rows, const _omc_size cols,
-    _omc_scalar* data) {
+_omc_matrix* _omc_createMatrix(const _omc_size rows, const _omc_size cols, _omc_scalar* data)
+{
   assertStreamPrint(NULL, rows > 0, "size of rows need greater zero");
   assertStreamPrint(NULL, cols > 0, "size of cols need greater zero");
 
@@ -176,21 +175,22 @@ _omc_matrix* _omc_createMatrix(const _omc_size rows, const _omc_size cols,
  *
  *  free _omc_matrix
  *
- *  \param [ref]  [_omc_matrix]
+ *  \param [ref] [mat] !TODO: DESCRIBE ME!
  */
-void _omc_destroyMatrix(_omc_matrix* mat) {
+void _omc_destroyMatrix(_omc_matrix* mat)
+{
   free(mat);
 }
 
-/*! \fn _omc_matrix* _omc_copyMatrix(_omc_matrix* data)
+/*! \fn _omc_matrix* _omc_copyMatrix(_omc_matrix* mat1)
  *
  *  creates a new _omc_matrix by coping all data
  *
- *  \param [in]   [_omc_matrix] the original matrix
+ *  \param [in]  [mat1] the original matrix
  */
-_omc_matrix* _omc_copyMatrix(_omc_matrix* mat1) {
-  assertStreamPrint(NULL, mat1->cols * mat1->rows > 0,
-      "size needs to be greater zero");
+_omc_matrix* _omc_copyMatrix(_omc_matrix* mat1)
+{
+  assertStreamPrint(NULL, mat1->cols * mat1->rows > 0, "size needs to be greater zero");
 
   _omc_matrix* mat = (_omc_matrix*) malloc(sizeof(_omc_matrix));
   assertStreamPrint(NULL, NULL != mat, "out of memory");
@@ -206,19 +206,21 @@ _omc_matrix* _omc_copyMatrix(_omc_matrix* mat1) {
  *
  *  get data of _omc_vector
  *
- *  \param [ref]  [_omc_vector]
+ *  \param [ref] [vec] !TODO: DESCRIBE ME!
  */
-_omc_scalar* _omc_getVectorData(_omc_vector* vec) {
+_omc_scalar* _omc_getVectorData(_omc_vector* vec)
+{
   return vec->data;
 }
 
-/*! \fn _omc_size _omc_getVectorRows(_omc_vector* vec)
+/*! \fn _omc_size _omc_getVectorSize(_omc_vector* vec)
  *
  *  get size of _omc_vector
  *
- *  \param [ref]  [_omc_vector]
+ *  \param [ref] [vec] !TODO: DESCRIBE ME!
  */
-_omc_size _omc_getVectorSize(_omc_vector* vec) {
+_omc_size _omc_getVectorSize(_omc_vector* vec)
+{
   return vec->size;
 }
 
@@ -226,12 +228,13 @@ _omc_size _omc_getVectorSize(_omc_vector* vec) {
  *
  *  get i-th element of _omc_vector
  *
- *  \param [ref]  [_omc_vector]
- *  \param [in]   [_omc_size]  element
+ *  \param [ref] [vec] !TODO: DESCRIBE ME!
+ *  \param [in]  [i]   element
  */
-_omc_scalar _omc_getVectorElement(_omc_vector* vec, const _omc_size i) {
-  assertStreamPrint(NULL, i < vec->size, "_omc_vector size %d smaller than %d",
-      vec->size, i);
+_omc_scalar _omc_getVectorElement(_omc_vector* vec, const _omc_size i)
+{
+  assertStreamPrint(NULL, 0 <= i, "index out of bounds: %d", i);
+  assertStreamPrint(NULL, i < vec->size, "_omc_vector size %d smaller than %d", vec->size, i);
   return vec->data[i];
 }
 
@@ -239,14 +242,14 @@ _omc_scalar _omc_getVectorElement(_omc_vector* vec, const _omc_size i) {
  *
  *  set i-th element of _omc_vector
  *
- *  \param [ref]  [_omc_vector]
- *  \param [in]   [_omc_size]   element
- *  \param [in]   [_omc_scalar]
+ *  \param [ref] [vec] !TODO: DESCRIBE ME!
+ *  \param [in]  [i]   element
+ *  \param [in]  [s]   !TODO: DESCRIBE ME!
  */
-void _omc_setVectorElement(_omc_vector* vec, const _omc_size i,
-    const _omc_scalar s) {
-  assertStreamPrint(NULL, i < vec->size, "_omc_vector size %d smaller than %d",
-      vec->size, i);
+void _omc_setVectorElement(_omc_vector* vec, const _omc_size i, const _omc_scalar s)
+{
+  assertStreamPrint(NULL, 0 <= i, "index out of bounds: %d", i);
+  assertStreamPrint(NULL, i < vec->size, "_omc_vector size %d smaller than %d", vec->size, i);
   vec->data[i] = s;
 }
 
@@ -254,10 +257,11 @@ void _omc_setVectorElement(_omc_vector* vec, const _omc_size i,
  *
  *  replaces data of _omc_vector and return the old one
  *
- *  \param [ref]  [_omc_vector]
- *  \param [ref]  [_omc_scalar*]
+ *  \param [ref] [vec]   !TODO: DESCRIBE ME!
+ *  \param [ref] [data*] !TODO: DESCRIBE ME!
  */
-_omc_scalar* _omc_setVectorData(_omc_vector* vec, _omc_scalar* data) {
+_omc_scalar* _omc_setVectorData(_omc_vector* vec, _omc_scalar* data)
+{
   _omc_scalar* output = vec->data;
   vec->data = data;
   return output;
@@ -267,19 +271,21 @@ _omc_scalar* _omc_setVectorData(_omc_vector* vec, _omc_scalar* data) {
  *
  *  get data of _omc_matrix
  *
- *  \param [ref]  [_omc_matrix]
+ *  \param [ref] [mat] !TODO: DESCRIBE ME!
  */
-_omc_scalar* _omc_getMatrixData(_omc_matrix* mat) {
+_omc_scalar* _omc_getMatrixData(_omc_matrix* mat)
+{
   return mat->data;
 }
 
-/*! \fn _omc_size getMatrixRows(_omc_matrix* mat)
+/*! \fn _omc_size _omc_getMatrixRows(_omc_matrix* mat)
  *
  *  get rows size of _omc_matrix
  *
- *  \param [ref]  [_omc_matrix]
+ *  \param [ref] [mat] !TODO: DESCRIBE ME!
  */
-_omc_size _omc_getMatrixRows(_omc_matrix* mat) {
+_omc_size _omc_getMatrixRows(_omc_matrix* mat)
+{
   return mat->rows;
 }
 
@@ -287,9 +293,10 @@ _omc_size _omc_getMatrixRows(_omc_matrix* mat) {
  *
  *  get cols size of _omc_matrix
  *
- *  \param [ref]  [_omc_matrix]
+ *  \param [ref] [mat] !TODO: DESCRIBE ME!
  */
-_omc_size _omc_getMatrixCols(_omc_matrix* mat) {
+_omc_size _omc_getMatrixCols(_omc_matrix* mat)
+{
   return mat->cols;
 }
 
@@ -297,9 +304,10 @@ _omc_size _omc_getMatrixCols(_omc_matrix* mat) {
  *
  *  get size of _omc_matrix
  *
- *  \param [ref]  [_omc_matrix]
+ *  \param [ref] [mat] !TODO: DESCRIBE ME!
  */
-_omc_size _omc_getMatrixSize(_omc_matrix* mat) {
+_omc_size _omc_getMatrixSize(_omc_matrix* mat)
+{
   return mat->rows * mat->cols;
 }
 
@@ -307,16 +315,16 @@ _omc_size _omc_getMatrixSize(_omc_matrix* mat) {
  *
  *  get (i,j)-th element of _omc_matrix
  *
- *  \param [ref]  [_omc_matrix]
- *  \param [in]   [_omc_size]   rows
- *  \param [in]   [_omc_size]   cols
+ *  \param [ref] [_omc_matrix] !TODO: DESCRIBE ME!
+ *  \param [in]  [_omc_size]   rows
+ *  \param [in]  [_omc_size]   cols
  */
-_omc_scalar _omc_getMatrixElement(_omc_matrix* mat, const _omc_size i,
-    const _omc_size j) {
-  assertStreamPrint(NULL, i < mat->rows,
-      "_omc_matrix rows(%d) too small for %d", mat->rows, i);
-  assertStreamPrint(NULL, j < mat->cols,
-      "_omc_matrix cols(%d) too small for %d", mat->cols, j);
+_omc_scalar _omc_getMatrixElement(_omc_matrix* mat, const _omc_size i, const _omc_size j)
+{
+  assertStreamPrint(NULL, 0 <= i, "index i out of bounds: %d", i);
+  assertStreamPrint(NULL, 0 <= j, "index j out of bounds: %d", j);
+  assertStreamPrint(NULL, i < mat->rows, "_omc_matrix rows(%d) too small for %d", mat->rows, i);
+  assertStreamPrint(NULL, j < mat->cols, "_omc_matrix cols(%d) too small for %d", mat->cols, j);
   return mat->data[i + j * mat->cols];
 }
 
@@ -324,17 +332,15 @@ _omc_scalar _omc_getMatrixElement(_omc_matrix* mat, const _omc_size i,
  *
  *  set i-th element of _omc_matrix
  *
- *  \param [ref]  [_omc_matrix]
- *  \param [in]   [_omc_size]   rows
- *  \param [in]   [_omc_size]   cols
- *  \param [in]   [_omc_scalar]
+ *  \param [ref] [mat] !TODO: DESCRIBE ME!
+ *  \param [in]  [i]   rows
+ *  \param [in]  [j]   cols
+ *  \param [in]  [s]   !TODO: DESCRIBE ME!
  */
-void _omc_setMatrixElement(_omc_matrix* mat, const _omc_size i,
-    const _omc_size j, _omc_scalar s) {
-  assertStreamPrint(NULL, i < mat->rows,
-      "_omc_matrix rows(%d) too small for %d", mat->rows, i);
-  assertStreamPrint(NULL, j < mat->cols,
-      "_omc_matrix cols(%d) too small for %d", mat->cols, j);
+void _omc_setMatrixElement(_omc_matrix* mat, const _omc_size i, const _omc_size j, _omc_scalar s)
+{
+  assertStreamPrint(NULL, i < mat->rows, "_omc_matrix rows(%d) too small for %d", mat->rows, i);
+  assertStreamPrint(NULL, j < mat->cols, "_omc_matrix cols(%d) too small for %d", mat->cols, j);
   mat->data[i + j * mat->cols] = s;
 }
 
@@ -342,9 +348,11 @@ void _omc_setMatrixElement(_omc_matrix* mat, const _omc_size i,
  *
  *  get data of _omc_matrix
  *
- *  \param [ref]  [_omc_matrix]
+ *  \param [ref] [mat]  !TODO: DESCRIBE ME!
+ *  \param [in]  [data] !TODO: DESCRIBE ME!
  */
-_omc_scalar* _omc_setMatrixData(_omc_matrix* mat, _omc_scalar* data) {
+_omc_scalar* _omc_setMatrixData(_omc_matrix* mat, _omc_scalar* data)
+{
   _omc_scalar* output = mat->data;
   mat->data = data;
   return output;
@@ -355,14 +363,16 @@ _omc_scalar* _omc_setMatrixData(_omc_matrix* mat, _omc_scalar* data) {
  *
  *  fill all elements of _omc_vector by s
  *
- *  \param [ref]  [_omc_vector]
- *  \param [in]   [_omc_scalar]
+ *  \param [ref] [vec] !TODO: DESCRIBE ME!
+ *  \param [in]  [s]   !TODO: DESCRIBE ME!
  */
-_omc_vector* _omc_fillVector(_omc_vector* vec, _omc_scalar s) {
+_omc_vector* _omc_fillVector(_omc_vector* vec, _omc_scalar s)
+{
   _omc_size i;
-  assertStreamPrint(NULL, NULL != vec->data,
-      "_omc_vector data is NULL pointer");
-  for (i = 0; i < vec->size; ++i) {
+
+  assertStreamPrint(NULL, NULL != vec->data, "_omc_vector data is NULL pointer");
+  for (i = 0; i < vec->size; ++i)
+  {
     vec->data[i] = s;
   }
 
@@ -373,13 +383,15 @@ _omc_vector* _omc_fillVector(_omc_vector* vec, _omc_scalar s) {
  *
  *  negate all elements of _omc_vector
  *
- *  \param [ref]  [_omc_vector]
+ *  \param [ref] [_omc_vector] !TODO: DESCRIBE ME!
  */
-_omc_vector* _omc_negateVector(_omc_vector* vec) {
+_omc_vector* _omc_negateVector(_omc_vector* vec)
+{
   _omc_size i;
-  assertStreamPrint(NULL, NULL != vec->data,
-      "_omc_vector data is NULL pointer");
-  for (i = 0; i < vec->size; ++i) {
+
+  assertStreamPrint(NULL, NULL != vec->data, "_omc_vector data is NULL pointer");
+  for (i = 0; i < vec->size; ++i)
+  {
     vec->data[i] = -vec->data[i];
   }
 
@@ -390,14 +402,16 @@ _omc_vector* _omc_negateVector(_omc_vector* vec) {
  *
  *  multiply all elements of _omc_vector by s
  *
- *  \param [ref]  [_omc_vector]
- *  \param [in]   [_omc_scalar]
+ *  \param [ref] [vec] !TODO: DESCRIBE ME!
+ *  \param [in]  [s]   !TODO: DESCRIBE ME!
  */
-_omc_vector* _omc_multiplyScalarVector(_omc_vector* vec, _omc_scalar s) {
+_omc_vector* _omc_multiplyScalarVector(_omc_vector* vec, _omc_scalar s)
+{
   _omc_size i;
-  assertStreamPrint(NULL, NULL != vec->data,
-      "_omc_vector data is NULL pointer");
-  for (i = 0; i < vec->size; ++i) {
+
+  assertStreamPrint(NULL, NULL != vec->data, "_omc_vector data is NULL pointer");
+  for (i = 0; i < vec->size; ++i)
+  {
     vec->data[i] *= s;
   }
 
@@ -408,10 +422,11 @@ _omc_vector* _omc_multiplyScalarVector(_omc_vector* vec, _omc_scalar s) {
  *
  *  addition of two vectors to the first one
  *
- *  \param [ref]  [_omc_vector]
- *  \param [ref]  [_omc_vector]
+ *  \param [ref] [dest] !TODO: DESCRIBE ME!
+ *  \param [ref] [src]  !TODO: DESCRIBE ME!
  */
-_omc_vector* _omc_addVector(_omc_vector* dest, const _omc_vector* src) {
+_omc_vector* _omc_addVector(_omc_vector* dest, const _omc_vector* src)
+{
   _omc_size i;
   assertStreamPrint(NULL, dest->size == src->size,
       "Vectors have not the same size %d != %d", dest->size, src->size);
@@ -428,16 +443,17 @@ _omc_vector* _omc_addVector(_omc_vector* dest, const _omc_vector* src) {
  *
  *  subtraction of two vectors to the first one
  *
- *  \param [ref]  [_omc_vector]
- *  \param [ref]  [_omc_vector]
+ *  \param [ref] [dest] !TODO: DESCRIBE ME!
+ *  \param [ref] [src]  !TODO: DESCRIBE ME!
  */
-_omc_vector* _omc_subVector(_omc_vector* dest, const _omc_vector* src) {
+_omc_vector* _omc_subVector(_omc_vector* dest, const _omc_vector* src)
+{
   _omc_size i;
-  assertStreamPrint(NULL, src->size == dest->size,
-      "Vectors have not the same size %d != %d", src->size, dest->size);
+  assertStreamPrint(NULL, src->size == dest->size, "Vectors have not the same size %d != %d", src->size, dest->size);
   assertStreamPrint(NULL, NULL != dest->data, "vector1 data is NULL pointer");
   assertStreamPrint(NULL, NULL != src->data, "vector2 data is NULL pointer");
-  for (i = 0; i < dest->size; ++i) {
+  for (i = 0; i < dest->size; ++i)
+  {
     dest->data[i] -= src->data[i];
   }
 
@@ -448,11 +464,12 @@ _omc_vector* _omc_subVector(_omc_vector* dest, const _omc_vector* src) {
  *
  *  addition of two vectors in a third one
  *
- *  \param [ref]  [_omc_vector]
- *  \param [ref]  [_omc_vector]
- *  \param [ref]  [_omc_vector]
+ *  \param [ref] [dest] !TODO: DESCRIBE ME!
+ *  \param [ref] [vec1] !TODO: DESCRIBE ME!
+ *  \param [ref] [vec2] !TODO: DESCRIBE ME!
  */
-_omc_vector* _omc_addVectorVector(_omc_vector* dest, const _omc_vector* vec1, const _omc_vector* vec2) {
+_omc_vector* _omc_addVectorVector(_omc_vector* dest, const _omc_vector* vec1, const _omc_vector* vec2)
+{
   _omc_size i;
   assertStreamPrint(NULL, vec1->size == vec2->size && dest->size == vec1->size,
       "Vectors have not the same size %d != %d != %d", dest->size, vec1->size, vec2->size);
@@ -470,18 +487,20 @@ _omc_vector* _omc_addVectorVector(_omc_vector* dest, const _omc_vector* vec1, co
  *
  *  subtraction of vec2 from vec1 in a third one
  *
- *  \param [ref]  [_omc_vector]
- *  \param [ref]  [_omc_vector]
- *  \param [ref]  [_omc_vector]
+ *  \param [ref] [dest] !TODO: DESCRIBE ME!
+ *  \param [ref] [vec1] !TODO: DESCRIBE ME!
+ *  \param [ref] [vec2] !TODO: DESCRIBE ME!
  */
-_omc_vector* _omc_subVectorVector(_omc_vector* dest, const _omc_vector* vec1, const _omc_vector* vec2) {
+_omc_vector* _omc_subVectorVector(_omc_vector* dest, const _omc_vector* vec1, const _omc_vector* vec2)
+{
   _omc_size i;
   assertStreamPrint(NULL, vec1->size == vec2->size && dest->size == vec1->size,
       "Vectors have not the same size %d != %d", vec1->size, vec2->size);
   assertStreamPrint(NULL, NULL != vec1->data, "vector1 data is NULL pointer");
   assertStreamPrint(NULL, NULL != vec2->data, "vector2 data is NULL pointer");
   assertStreamPrint(NULL, NULL != dest->data, "destination data is NULL pointer");
-  for (i = 0; i < vec1->size; ++i) {
+  for (i = 0; i < vec1->size; ++i)
+  {
     dest->data[i] = vec1->data[i] - vec2->data[i];
   }
 
@@ -492,18 +511,19 @@ _omc_vector* _omc_subVectorVector(_omc_vector* dest, const _omc_vector* vec1, co
  *
  *  _omc_vector multiplication of two vectors
  *
- *  \param [ref]  [_omc_vector]
- *  \param [ref]  [_omc_vector]
+ *  \param [ref] [vec1] !TODO: DESCRIBE ME!
+ *  \param [ref] [vec2] !TODO: DESCRIBE ME!
  */
-_omc_scalar _omc_scalarProduct(const _omc_vector* vec1, const _omc_vector* vec2) {
+_omc_scalar _omc_scalarProduct(const _omc_vector* vec1, const _omc_vector* vec2)
+{
   _omc_size i;
   _omc_size m = vec1->size, n = vec2->size;
   _omc_scalar result = 0;
-  assertStreamPrint(NULL, m == n, "Vectors size doesn't match to multiply"
-      " %d != %d ", m, n);
+  assertStreamPrint(NULL, m == n, "Vectors size doesn't match to multiply %d != %d ", m, n);
   assertStreamPrint(NULL, NULL != vec1->data, "vector1 data is NULL pointer");
   assertStreamPrint(NULL, NULL != vec2->data, "vector2 data is NULL pointer");
-  for (i = 0; i < n; ++i) {
+  for (i = 0; i < n; ++i)
+  {
     result += vec1->data[i] * vec2->data[i];
   }
 
@@ -514,13 +534,14 @@ _omc_scalar _omc_scalarProduct(const _omc_vector* vec1, const _omc_vector* vec2)
  *
  *  calculates the sum of all elements of the vector
  *
- *  \param [ref]  [_omc_vector]
+ *  \param [ref] [_omc_vector] !TODO: DESCRIBE ME!
  */
 _omc_scalar _omc_sumVector(const _omc_vector* vec) {
   _omc_size i;
   _omc_scalar sum = 0;
   assertStreamPrint(NULL, NULL != vec->data, "vector data is NULL pointer");
-  for (i = 0; i < vec->size; ++i) {
+  for (i = 0; i < vec->size; ++i)
+  {
     sum += vec->data[i];
   }
 
@@ -531,14 +552,13 @@ _omc_scalar _omc_sumVector(const _omc_vector* vec) {
  *
  *  fill all elements of _omc_matrix by s
  *
- *  \param [ref]  [_omc_matrix]
- *  \param [in]   [_omc_scalar]
+ *  \param [ref] [mat] !TODO: DESCRIBE ME!
+ *  \param [in]  [s]   !TODO: DESCRIBE ME!
  */
 _omc_matrix* _omc_fillMatrix(_omc_matrix* mat, _omc_scalar s) {
   _omc_size i;
   _omc_size size = mat->rows * mat->cols;
-  assertStreamPrint(NULL, NULL != mat->data,
-      "_omc_matrix data is NULL pointer");
+  assertStreamPrint(NULL, NULL != mat->data, "_omc_matrix data is NULL pointer");
   for (i = 0; i < size; ++i) {
     mat->data[i] = s;
   }
@@ -550,15 +570,16 @@ _omc_matrix* _omc_fillMatrix(_omc_matrix* mat, _omc_scalar s) {
  *
  *  fill identity _omc_matrix
  *
- *  \param [ref]  [_omc_matrix]
+ *  \param [ref] [mat] !TODO: DESCRIBE ME!
  */
-_omc_matrix* _omc_fillIndentityMatrix(_omc_matrix* mat) {
+_omc_matrix* _omc_fillIndentityMatrix(_omc_matrix* mat)
+{
   _omc_size i, min;
-  assertStreamPrint(NULL, NULL != mat->data,
-      "_omc_matrix data is NULL pointer");
+  assertStreamPrint(NULL, NULL != mat->data, "_omc_matrix data is NULL pointer");
   mat = _omc_fillMatrix(mat, 0);
   min = mat->rows <= mat->cols ? mat->rows : mat->cols;
-  for (i = 0; i < min; ++i) {
+  for (i = 0; i < min; ++i)
+  {
     _omc_setMatrixElement(mat, i, i, 1.0);
   }
 
@@ -569,12 +590,12 @@ _omc_matrix* _omc_fillIndentityMatrix(_omc_matrix* mat) {
  *
  *  negate all elements of _omc_matrix
  *
- *  \param [ref]  [_omc_matrix]
+ *  \param [ref] [mat] !TODO: DESCRIBE ME!
  */
-_omc_matrix* _omc_negateMatrix(_omc_matrix* mat) {
+_omc_matrix* _omc_negateMatrix(_omc_matrix* mat)
+{
   _omc_size i, size = mat->rows * mat->cols;
-  assertStreamPrint(NULL, NULL != mat->data,
-      "_omc_matrix data is NULL pointer");
+  assertStreamPrint(NULL, NULL != mat->data, "_omc_matrix data is NULL pointer");
   for (i = 0; i < size; ++i) {
     mat->data[i] = -mat->data[i];
   }
@@ -586,14 +607,15 @@ _omc_matrix* _omc_negateMatrix(_omc_matrix* mat) {
  *
  *  multiply all elements of _omc_matrix by s
  *
- *  \param [ref]  [_omc_matrix]
- *  \param [in]   [_omc_scalar]
+ *  \param [ref] [mat] !TODO: DESCRIBE ME!
+ *  \param [in]  [s]   !TODO: DESCRIBE ME!
  */
-_omc_matrix* _omc_multiplyScalarMatrix(_omc_matrix* mat, _omc_scalar s) {
+_omc_matrix* _omc_multiplyScalarMatrix(_omc_matrix* mat, _omc_scalar s)
+{
   _omc_size i, size = mat->rows * mat->cols;
-  assertStreamPrint(NULL, NULL != mat->data,
-      "_omc_matrix data is NULL pointer");
-  for (i = 0; i < size; ++i) {
+  assertStreamPrint(NULL, NULL != mat->data, "_omc_matrix data is NULL pointer");
+  for (i = 0; i < size; ++i)
+  {
     mat->data[i] *= s;
   }
 
@@ -604,10 +626,11 @@ _omc_matrix* _omc_multiplyScalarMatrix(_omc_matrix* mat, _omc_scalar s) {
  *
  *  addition of two matrixs to the first one
  *
- *  \param [ref]  [_omc_matrix]
- *  \param [ref]  [_omc_matrix]
+ *  \param [ref] [mat1] !TODO: DESCRIBE ME!
+ *  \param [ref] [mat2] !TODO: DESCRIBE ME!
  */
-_omc_matrix* _omc_addMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2) {
+_omc_matrix* _omc_addMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2)
+{
   _omc_size i, j;
   assertStreamPrint(NULL, mat1->rows == mat2->rows && mat1->cols == mat2->cols,
       "matrixes have not the same size ((%d,%d)!=(%d,%d))", mat1->rows,
@@ -629,10 +652,11 @@ _omc_matrix* _omc_addMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2) {
  *
  *  subtraction of two matrixs to the first one
  *
- *  \param [ref]  [_omc_matrix]
- *  \param [ref]  [_omc_matrix]
+ *  \param [ref] [mat1] !TODO: DESCRIBE ME!
+ *  \param [ref] [mat2] !TODO: DESCRIBE ME!
  */
-_omc_matrix* _omc_subtractMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2) {
+_omc_matrix* _omc_subtractMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2)
+{
   _omc_size i, j;
   assertStreamPrint(NULL, mat1->rows == mat2->rows && mat1->cols == mat2->cols,
       "matrixes have not the same size ((%d,%d)!=(%d,%d))", mat1->rows,
@@ -654,10 +678,11 @@ _omc_matrix* _omc_subtractMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2) {
  *
  *  _omc_matrix multiplication of two matrixes into matrix one
  *
- *  \param [ref]  [_omc_matrix]
- *  \param [ref]  [_omc_matrix]
+ *  \param [ref] [mat1] !TODO: DESCRIBE ME!
+ *  \param [ref] [mat2] !TODO: DESCRIBE ME!
  */
-_omc_matrix* _omc_multiplyMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2) {
+_omc_matrix* _omc_multiplyMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2)
+{
   _omc_size i, j, k;
   _omc_size l = mat1->rows, m = mat1->cols, n = mat2->cols;
   assertStreamPrint(NULL, mat1->cols == mat2->rows,
@@ -682,19 +707,24 @@ _omc_matrix* _omc_multiplyMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2) {
  *
  *  outputs the _omc_vector
  *
- *  \param [ref]  [_omc_vector]
- *  \param [in]   [char*]
- *  \param [in]   [int]
+ *  \param [in]  [vec]      !TODO: DESCRIBE ME!
+ *  \param [in]  [name]     !TODO: DESCRIBE ME!
+ *  \param [in]  [logLevel] !TODO: DESCRIBE ME!
  */
-void _omc_printVector(_omc_vector* vec, const char* name, const int logLevel) {
+void _omc_printVector(_omc_vector* vec, const char* name, const int logLevel)
+{
   _omc_size i;
-  if (!ACTIVE_STREAM(logLevel)) return;
+
+  if (!ACTIVE_STREAM(logLevel))
+    return;
 
   assertStreamPrint(NULL, NULL != vec->data, "Vector data is NULL pointer");
 
   infoStreamPrint(logLevel, 1, "%s", name);
   for (i = 0; i < vec->size; ++i)
+  {
     infoStreamPrint(logLevel, 0, "[%2d] %20.12g", i, vec->data[i]);
+  }
   messageClose(logLevel);
 }
 
@@ -702,9 +732,9 @@ void _omc_printVector(_omc_vector* vec, const char* name, const int logLevel) {
  *
  *  outputs the _omc_matrix
  *
- *  \param [ref]  [_omc_matrix]
- *  \param [in]   [char*]
- *  \param [in]   [int]
+ *  \param [in]  [mat]      !TODO: DESCRIBE ME!
+ *  \param [in]  [name]     !TODO: DESCRIBE ME!
+ *  \param [in]  [logLevel] !TODO: DESCRIBE ME!
  */
 void _omc_printMatrix(_omc_matrix* mat, const char* name, const int logLevel) {
   _omc_size i, j;
@@ -727,9 +757,10 @@ void _omc_printMatrix(_omc_matrix* mat, const char* name, const int logLevel) {
  *
  *  calculates the euclidean vector norm
  *
- *  \param [ref]  [_omc_vector]
+ *  \param [in]  [vec] !TODO: DESCRIBE ME!
  */
-_omc_scalar _omc_euclideanVectorNorm(const _omc_vector* vec) {
+_omc_scalar _omc_euclideanVectorNorm(const _omc_vector* vec)
+{
   _omc_size i;
   _omc_scalar result = 0;
   assertStreamPrint(NULL, vec->size > 0, "Vector size is greater the zero");
@@ -745,17 +776,20 @@ _omc_scalar _omc_euclideanVectorNorm(const _omc_vector* vec) {
  *
  *  calculates the maximum vector norm
  *
- *  \param [ref]  [_omc_vector]
+ *  \param [ref] [vec] !TODO: DESCRIBE ME!
  */
-_omc_scalar _omc_maximumVectorNorm(const _omc_vector* vec) {
+_omc_scalar _omc_maximumVectorNorm(const _omc_vector* vec)
+{
   _omc_size i;
   _omc_scalar result, tmp;
   assertStreamPrint(NULL, vec->size > 0, "Vector size is greater the zero");
   assertStreamPrint(NULL, NULL != vec->data, "Vector data is NULL pointer");
   result = fabs(vec->data[0]);
-  for (i = 1; i < vec->size; ++i) {
+  for (i = 1; i < vec->size; ++i)
+  {
     tmp = fabs(vec->data[i]);
-    if (result > tmp){
+    if (result > tmp)
+    {
       result = tmp;
     }
   }

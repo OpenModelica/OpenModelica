@@ -44,14 +44,14 @@ typedef unsigned long int _omc_size;
 typedef struct
 {
   _omc_size size;
-  _omc_scalar* data;
+  _omc_scalar *data;
 } _omc_vector;
 
 typedef struct
 {
   _omc_size rows;
   _omc_size cols;
-  _omc_scalar* data;
+  _omc_scalar *data;
 } _omc_matrix;
 
 /* memory management vector */
@@ -59,7 +59,7 @@ _omc_vector* _omc_allocateVectorData(const _omc_size size);
 void _omc_deallocateVectorData(_omc_vector* vec);
 _omc_vector* _omc_createVector(const _omc_size size, _omc_scalar* data);
 void _omc_destroyVector(_omc_vector* vec);
-_omc_vector* _omc_copyVector(_omc_vector* dest, const _omc_vector* src);
+void _omc_copyVector(_omc_vector* dest, const _omc_vector* src);
 
 /* memory management matrix */
 _omc_matrix* _omc_allocateMatrixData(const _omc_size rows, const _omc_size cols);
