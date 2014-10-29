@@ -2621,7 +2621,7 @@ algorithm
   for exp2 in rest_expl loop
     DAE.PROP(ty2, c2) :: rest_props := rest_props;
     ty2 := Types.getUniontypeIfMetarecordReplaceAllSubtypes(ty2);
-    
+
     // If the types are not equivalent, try type conversion.
     if not Types.equivtypes(ty1, ty2) then
       try
@@ -3003,8 +3003,8 @@ algorithm
 
     // Check that all rows have the same size, otherwise print an error and fail.
     if not Expression.dimensionsEqual(dim2, outDim2) then
-      dim1_str := ExpressionDump.dimensionString(dim1); 
-      dim2_str := ExpressionDump.dimensionString(dim2); 
+      dim1_str := ExpressionDump.dimensionString(dim1);
+      dim2_str := ExpressionDump.dimensionString(dim2);
       pre_str := PrefixUtil.printPrefixStr3(inPrefix);
       el_str := List.toString(expl, ExpressionDump.printExpStr, "", "{", ", ", "}", true);
       Error.addSourceMessageAndFail(Error.MATRIX_EXP_ROW_SIZE,
@@ -6766,10 +6766,10 @@ protected
   Absyn.Path name, envName;
 algorithm
   FCore.CACHE(modelName = name) := inCache;
-  
+
   if PrefixUtil.isNoPrefix(inPrefix) then
     envName := FGraph.getGraphName(inEnv);
-    str := if Absyn.pathEqual(envName, name) then 
+    str := if Absyn.pathEqual(envName, name) then
       Absyn.pathLastIdent(name) else Absyn.pathString(envName);
   else
     str := Absyn.pathLastIdent(name) + "." + PrefixUtil.printPrefixStr(inPrefix);
@@ -11223,16 +11223,16 @@ protected
   list<Slot> rest_slots := inSlotLst;
 algorithm
   DAE.FUNCARG(name = fa1, ty = ty1, const = c1) := inFuncArg;
-  
+
   while not listEmpty(rest_slots) loop
     slot :: rest_slots := rest_slots;
     SLOT(defaultArg = DAE.FUNCARG(name = fa2)) := slot;
-    
+
     // Check if this slot has the same name as the one we're looking for.
     if stringEq(fa1, fa2) then
       SLOT(defaultArg = DAE.FUNCARG(const = c2, par = prl, defaultBinding = binding),
         slotFilled = filled, idx = idx) := slot;
-      
+
       // Fail if the slot is already filled.
       if filled then
         pre_str := PrefixUtil.printPrefixStr3(inPrefix);

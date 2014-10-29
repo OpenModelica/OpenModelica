@@ -14899,7 +14899,7 @@ algorithm
   Absyn.CLASS(name = cls_name) := inClass;
   outReplace := cls_name == inClassName;
 end replaceClassInProgram2;
-  
+
 protected function replaceClassInProgram
 " This function takes a Class and a Program and replaces the class
    definition at the top level in the program by the class definition of
@@ -16216,7 +16216,7 @@ end addInstantiatedClass;
 
 protected function isInstantiatedClassNamed
   input Absyn.Path inName;
-  input GlobalScript.InstantiatedClass inClass; 
+  input GlobalScript.InstantiatedClass inClass;
   output Boolean outIsNamed;
 protected
   Absyn.Path path;
@@ -17052,8 +17052,8 @@ algorithm
     GlobalScript.FILE(name, loadtime, classes) := file;
 
     if stringEq(fileName, name) then
-      omodtime := System.getFileModificationTime(fileName); 
-      
+      omodtime := System.getFileModificationTime(fileName);
+
       if isSome(omodtime) then
         SOME(modtime) := omodtime;
 
@@ -18266,7 +18266,7 @@ algorithm
     Lookup.lookupClass(FCore.emptyCache(), inEnv, inClassPath, false);
   env := FGraph.openScope(env, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
   ci_state := ClassInf.start(restr, FGraph.getGraphName(env));
-  
+
   // First try partial instantiation
   try
     (_, outEnv) := Inst.partialInstClassIn(cache, env, InnerOuter.emptyInstHierarchy,
