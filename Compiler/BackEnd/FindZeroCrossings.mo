@@ -388,7 +388,7 @@ algorithm
   if Flags.isSet(Flags.RELIDX) then
     BackendDump.debugStrExpStr("start: ", e, "\n");
   end if;
-  (eres, ((outZeroCrossings, outrelationsinZC, outSamplesLst, outcountRelations, outcountMathFunctions), (_, _, _, _))) := Expression.traverseExpTopDown(e, collectZC, ((inZeroCrossings, inrelationsinZC, inSamplesLst, incountRelations, incountMathFunctions), (counteq, countwc, vars, knvars)));
+  (eres, ((outZeroCrossings, outrelationsinZC, outSamplesLst, outcountRelations, outcountMathFunctions), _)) := Expression.traverseExpTopDown(e, collectZC, ((inZeroCrossings, inrelationsinZC, inSamplesLst, incountRelations, incountMathFunctions), (counteq, countwc, vars, knvars)));
 end findZeroCrossings3;
 
 protected function collectZC "author: unknown
@@ -400,7 +400,7 @@ protected function collectZC "author: unknown
   output Boolean cont;
   output tuple<tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, Integer, BackendDAE.Variables, BackendDAE.Variables>> outTpl;
 algorithm
-  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue (inExp, inTpl)
     local
       DAE.Exp e, e1, e2, e_1, e_2, eres, eres1;
       BackendDAE.Variables vars, knvars;
@@ -411,14 +411,14 @@ algorithm
       DAE.CallAttributes attr;
       DAE.Type ty;
 
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "noEvent"))), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)))
-    then (e, false, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    case (DAE.CALL(path=Absyn.IDENT(name = "noEvent")), _)
+    then (inExp, false, inTpl);
 
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "smooth"))), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)))
-    then (e, false, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    case (DAE.CALL(path = Absyn.IDENT(name = "smooth")), _)
+    then (inExp, false, inTpl);
 
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "sample"))), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
-      zc = createZeroCrossing(e, {eq_count}, {wc_count});
+    case (DAE.CALL(path=Absyn.IDENT(name = "sample")), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+      zc = createZeroCrossing(inExp, {eq_count}, {wc_count});
       samples = listAppend(samples, {zc});
       samples = mergeZeroCrossings(samples, {});
       //itmp = (listLength(zc_lst)-listLength(zeroCrossings));
@@ -426,28 +426,28 @@ algorithm
       if Flags.isSet(Flags.RELIDX) then
         print("sample index: " +& intString(listLength(samples)) +& "\n");
       end if;
-    then (e, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    then (inExp, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
 
     // function with discrete expressions generate no zerocrossing
-    case ((e as DAE.LUNARY(operator = _, exp = e1)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.LUNARY(exp=e1), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
       true = BackendDAEUtil.isDiscreteExp(e1, vars, knvars);
       if Flags.isSet(Flags.RELIDX) then
         print("discrete LUNARY: " +& intString(numRelations) +& "\n");
       end if;
-      //fcall(Flags.RELIDX, BackendDump.debugExpStr, (e, "\n"));
-    then (e, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+      //fcall(Flags.RELIDX, BackendDump.debugExpStr, (inExp, "\n"));
+    then (inExp, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
 
-    case ((e as DAE.LBINARY(exp1 = e1, operator = _, exp2 = e2)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.LBINARY(exp1=e1, exp2=e2), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
       true = BackendDAEUtil.isDiscreteExp(e1, vars, knvars);
       true = BackendDAEUtil.isDiscreteExp(e2, vars, knvars);
       if Flags.isSet(Flags.RELIDX) then
         print("discrete LBINARY: " +& intString(numRelations) +& "\n");
       end if;
-      //fcall(Flags.RELIDX, BackendDump.debugExpStr, (e, "\n"));
-    then (e, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+      //fcall(Flags.RELIDX, BackendDump.debugExpStr, (inExp, "\n"));
+    then (inExp, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
 
     // coditions that are zerocrossings.
-    case ((e as DAE.LUNARY(exp = e1, operator = op)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.LUNARY(exp=e1, operator=op), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
       if Flags.isSet(Flags.RELIDX) then
         print("continues LUNARY: " +& intString(numRelations) +& "\n");
       end if;
@@ -461,10 +461,10 @@ algorithm
       end if;
     then (e_1, false, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
 
-    case ((e as DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.LBINARY(exp1=e1, operator=op, exp2=e2), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
       if Flags.isSet(Flags.RELIDX) then
         print("continues LBINARY: " +& intString(numRelations) +& "\n");
-        BackendDump.debugExpStr(e, "\n");
+        BackendDump.debugExpStr(inExp, "\n");
       end if;
       (e_1, ((_, relations, samples, numRelations1, numMathFunctions), (eq_count, wc_count, vars, knvars))) = Expression.traverseExpTopDown(e1, collectZC, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
       (e_2, ((_, relations, samples, numRelations1, numMathFunctions), (eq_count, wc_count, vars, knvars))) = Expression.traverseExpTopDown(e2, collectZC, ((zeroCrossings, relations, samples, numRelations1, numMathFunctions), (eq_count, wc_count, vars, knvars)));
@@ -479,18 +479,18 @@ algorithm
     then (e_1, false, ((zeroCrossings, relations, samples, numRelations1, numMathFunctions), (eq_count, wc_count, vars, knvars)));
 
     // function with discrete expressions generate no zerocrossing
-    case ((e as DAE.RELATION(exp1 = e1, operator = _, exp2 = e2)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.RELATION(exp1=e1, exp2=e2), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
       true = BackendDAEUtil.isDiscreteExp(e1, vars, knvars);
       true = BackendDAEUtil.isDiscreteExp(e2, vars, knvars);
       if Flags.isSet(Flags.RELIDX) then
         print("discrete RELATION: " +& intString(numRelations) +& "\n");
       end if;
-    then (e, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    then (inExp, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
 
     // All other functions generate zerocrossing.
-    case ((e as DAE.RELATION(exp1 = e1, operator = op, exp2 = e2)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.RELATION(exp1=e1, operator=op, exp2=e2), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
        if Flags.isSet(Flags.RELIDX) then
-         print("start collectZC : "  +& ExpressionDump.printExpStr(e) +& " numRelations: " +& intString(numRelations) +& "\n");
+         print("start collectZC : "  +& ExpressionDump.printExpStr(inExp) +& " numRelations: " +& intString(numRelations) +& "\n");
        end if;
        e_1 = DAE.RELATION(e1, op, e2, numRelations, NONE());
        zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
@@ -503,9 +503,9 @@ algorithm
     then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
 
     // math function that triggering events
-    case ((e as DAE.CALL(path=Absyn.IDENT("integer"), expLst={e1}, attr=attr)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("integer"), expLst={e1}, attr=attr), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
        if Flags.isSet(Flags.RELIDX) then
-         print("start collectZC : "  +& ExpressionDump.printExpStr(e) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
+         print("start collectZC : "  +& ExpressionDump.printExpStr(inExp) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
        end if;
 
        e_1 = DAE.CALL(Absyn.IDENT("integer"), {e1, DAE.ICONST(numMathFunctions)}, attr);
@@ -518,9 +518,9 @@ algorithm
        end if;
     then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
 
-    case ((e as DAE.CALL(path=Absyn.IDENT("floor"), expLst={e1}, attr=attr)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("floor"), expLst={e1}, attr=attr), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
        if Flags.isSet(Flags.RELIDX) then
-         print("start collectZC : "  +& ExpressionDump.printExpStr(e) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
+         print("start collectZC : "  +& ExpressionDump.printExpStr(inExp) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
        end if;
 
        e_1 = DAE.CALL(Absyn.IDENT("floor"), {e1, DAE.ICONST(numMathFunctions)}, attr);
@@ -533,9 +533,9 @@ algorithm
        end if;
     then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
 
-    case ((e as DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e1}, attr=attr)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e1}, attr=attr), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
        if Flags.isSet(Flags.RELIDX) then
-         print("start collectZC : "  +& ExpressionDump.printExpStr(e) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
+         print("start collectZC : "  +& ExpressionDump.printExpStr(inExp) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
        end if;
 
        e_1 = DAE.CALL(Absyn.IDENT("ceil"), {e1, DAE.ICONST(numMathFunctions)}, attr);
@@ -548,9 +548,9 @@ algorithm
        end if;
     then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
 
-    case ((e as DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2}, attr=attr)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2}, attr=attr), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
        if Flags.isSet(Flags.RELIDX) then
-         print("start collectZC : "  +& ExpressionDump.printExpStr(e) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
+         print("start collectZC : "  +& ExpressionDump.printExpStr(inExp) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
        end if;
 
        e_1 = DAE.CALL(Absyn.IDENT("div"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
@@ -564,9 +564,9 @@ algorithm
     then (eres, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
 
     /* mod is rewritten to x-floor(x/y)*y */
-    case (e as DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty = ty)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty=ty)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
        if Flags.isSet(Flags.RELIDX) then
-         print("start collectZC : "  +& ExpressionDump.printExpStr(e) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
+         print("start collectZC : "  +& ExpressionDump.printExpStr(inExp) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
        end if;
 
        e_1 = DAE.CALL(Absyn.IDENT("floor"), {DAE.BINARY(e1, DAE.DIV(ty), e2), DAE.ICONST(numMathFunctions)}, attr);
@@ -581,9 +581,9 @@ algorithm
     then (e_2, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
 
     /* rem is rewritten to div(x/y)*y - x */
-    case (e as DAE.CALL(path=Absyn.IDENT("rem"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty = ty)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("rem"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty=ty)), ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) equation
        if Flags.isSet(Flags.RELIDX) then
-         print("start collectZC : "  +& ExpressionDump.printExpStr(e) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
+         print("start collectZC : "  +& ExpressionDump.printExpStr(inExp) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
        end if;
 
        e_1 = DAE.CALL(Absyn.IDENT("div"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
@@ -597,8 +597,7 @@ algorithm
        end if;
     then (e_2, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
 
-    case (e, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)))
-    then (e, true, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
+    else (inExp, true, inTpl);
   end matchcontinue;
 end collectZC;
 
@@ -612,7 +611,7 @@ protected function collectZCAlgsFor "Collects zero crossings in for loops
   output Boolean cont;
   output tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> outTpl;
 algorithm
-  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,cont,outTpl) := matchcontinue (inExp, inTpl)
     local
       DAE.Exp e, e1, e2, e_1, e_2, eres, iterator, range, range2;
       list<DAE.Exp> inExpLst, explst;
@@ -630,13 +629,13 @@ algorithm
       DAE.Type ty;
       list<DAE.Exp> le;
 
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "noEvent"))), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)))
-    then (e, false, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
+    case (DAE.CALL(path=Absyn.IDENT(name="noEvent")), _)
+    then (inExp, false, inTpl);
 
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "smooth"))), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)))
-    then (e, false, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
+    case (DAE.CALL(path=Absyn.IDENT(name="smooth"))), _)
+    then (inExp, false, inTpl);
 
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "sample"))), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT(name="sample")), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       eqs = {alg_indx};
       zc = createZeroCrossing(e, eqs, {});
       samples = listAppend(samples, {zc});
@@ -644,17 +643,17 @@ algorithm
       if Flags.isSet(Flags.RELIDX) then
         print("sample index algotihm: " +& intString(alg_indx) +& "\n");
       end if;
-    then (e, true, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
+    then (inExp, true, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
 
-    case ((e as DAE.LUNARY(operator = _, exp = e1)), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+    case (DAE.LUNARY(exp=e1), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       true = BackendDAEUtil.isDiscreteExp(e1, vars, knvars);
       //fcall(Flags.RELIDX, print, "discrete LUNARY: " +& intString(indx) +& "\n");
-      //fcall(Flags.RELIDX, BackendDump.debugExpStr, (e, "\n"));
-    then (e, true, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
+      //fcall(Flags.RELIDX, BackendDump.debugExpStr, (inExp, "\n"));
+    then (inExp, true, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
 
     // coditions that are zerocrossings.
-    case (e as DAE.LUNARY(exp = e1, operator = op), (iterator, inExpLst, range as DAE.RANGE(start=_, step=_), (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
-      true = Expression.expContains(e, iterator);
+    case (DAE.LUNARY(exp=e1, operator=op), (iterator, inExpLst, range as DAE.RANGE(start=_), (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+      true = Expression.expContains(inExp, iterator);
       if Flags.isSet(Flags.RELIDX) then
         print("continues LUNARY with Iterator: " +& intString(numRelations) +& "\n");
       end if;
@@ -673,7 +672,7 @@ algorithm
     then (e_1, false, (iterator, inExpLst, range2, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
 
     // coditions that are zerocrossings.
-    case (DAE.LUNARY(exp = e1, operator = op), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+    case (DAE.LUNARY(exp=e1, operator=op), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       if Flags.isSet(Flags.RELIDX) then
         print("continues LUNARY: " +& intString(numRelations) +& "\n");
       end if;
@@ -688,17 +687,17 @@ algorithm
       end if;
     then (e_1, false, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
 
-    case ((e as DAE.LBINARY(exp1 = e1, operator = _, exp2 = e2)), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+    case (DAE.LBINARY(exp1=e1, exp2=e2), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       true = BackendDAEUtil.isDiscreteExp(e1, vars, knvars);
       true = BackendDAEUtil.isDiscreteExp(e2, vars, knvars);
       //fcall(Flags.RELIDX, print, "discrete LBINARY: " +& intString(numRelations) +& "\n");
-      //fcall(Flags.RELIDX, BackendDump.debugExpStr, (e, "\n"));
-    then (e, true, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
+      //fcall(Flags.RELIDX, BackendDump.debugExpStr, (inExp, "\n"));
+    then (inExp, true, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
 
-    case (e as DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+    case (DAE.LBINARY(exp1=e1, operator=op, exp2=e2), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       if Flags.isSet(Flags.RELIDX) then
         print("continues LBINARY: " +& intString(numRelations) +& "\n");
-        BackendDump.debugExpStr(e, "\n");
+        BackendDump.debugExpStr(inExp, "\n");
       end if;
       b1 = Expression.expContains(e1, iterator);
       b2 = Expression.expContains(e2, iterator);
@@ -719,10 +718,10 @@ algorithm
       end if;
     then (e_1, false, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations1, numMathFunctions), (alg_indx, vars, knvars)));
 
-    case (e as DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+    case (DAE.LBINARY(exp1=e1, operator=op, exp2=e2), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       if Flags.isSet(Flags.RELIDX) then
         print("continues LBINARY: " +& intString(numRelations) +& "\n");
-        BackendDump.debugExpStr(e, "\n");
+        BackendDump.debugExpStr(inExp, "\n");
       end if;
       (e_1, (iterator, inExpLst, range, (_, relations, samples, numRelations1, numMathFunctions), (alg_indx, vars, knvars))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
       (e_2, (iterator, inExpLst, range, (_, relations, samples, numRelations1, numMathFunctions), (alg_indx, vars, knvars))) = Expression.traverseExpTopDown(e2, collectZCAlgsFor, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations1, numMathFunctions), (alg_indx, vars, knvars)));
@@ -738,13 +737,13 @@ algorithm
     then (e_1, false, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations1, numMathFunctions), (alg_indx, vars, knvars)));
 
     // function with discrete expressions generate no zerocrossing.
-    case (e as DAE.RELATION(exp1 = e1, operator = _, exp2 = e2), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+    case (DAE.RELATION(exp1=e1, exp2=e2), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       true = BackendDAEUtil.isDiscreteExp(e1, vars, knvars);
       true = BackendDAEUtil.isDiscreteExp(e2, vars, knvars);
-    then (e, true, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
+    then (inExp, true, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
 
     // All other functions generate zerocrossing.
-    case (e as DAE.RELATION(exp1 = e1, operator = op, exp2 = e2), (iterator, inExpLst, range as DAE.RANGE(start=startvalue, step=stepvalueopt), (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+    case (DAE.RELATION(exp1=e1, operator=op, exp2=e2), (iterator, inExpLst, range as DAE.RANGE(start=startvalue, step=stepvalueopt), (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       b1 = Expression.expContains(e1, iterator);
       b2 = Expression.expContains(e2, iterator);
       true = Util.boolOrList({b1, b2});
@@ -755,7 +754,7 @@ algorithm
       istart = BackendDAECreate.expInt(startvalue, knvars);
       istep = BackendDAECreate.expInt(stepvalue, knvars);
       e_1 = DAE.RELATION(e1, op, e2, numRelations, SOME((iterator, istart, istep)));
-      (explst, itmp) = replaceIteratorwithStaticValues(e, iterator, inExpLst, numRelations);
+      (explst, itmp) = replaceIteratorwithStaticValues(inExp, iterator, inExpLst, numRelations);
       if Flags.isSet(Flags.RELIDX) then
         print(" number of new zc : " +& intString(listLength(explst)) +& "\n");
       end if;
@@ -770,7 +769,7 @@ algorithm
         print(" itmp : " +& intString(itmp) +& "\n");
       end if;
       numRelations = intAdd(itmp, numRelations);
-      eres = if itmp>0 then e_1 else e;
+      eres = if itmp>0 then e_1 else inExp;
       zeroCrossings = listAppend(zeroCrossings, zcLstNew);
       zeroCrossings = mergeZeroCrossings(zeroCrossings, {});
       if Flags.isSet(Flags.RELIDX) then
@@ -779,7 +778,7 @@ algorithm
     then (eres, true, (iterator, inExpLst, range, (zeroCrossings, zc_lst, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
 
     // All other functions generate zerocrossing.
-    case (e as DAE.RELATION(exp1 = e1, operator = op, exp2 = e2), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+    case (DAE.RELATION(exp1=e1, operator=op, exp2=e2), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       b1 = Expression.expContains(e1, iterator);
       b2 = Expression.expContains(e2, iterator);
       false = Util.boolOrList({b1, b2});
@@ -789,7 +788,7 @@ algorithm
       zc_lst = mergeZeroCrossings(zc_lst, {});
       itmp = (listLength(zc_lst)-listLength(relations));
       numRelations = numRelations + itmp;
-      eres = if itmp>0 then e_1 else e;
+      eres = if itmp>0 then e_1 else inExp;
       zeroCrossings = listAppend(zeroCrossings, {zc});
       zeroCrossings = mergeZeroCrossings(zeroCrossings, {});
       if Flags.isSet(Flags.RELIDX) then
@@ -798,9 +797,9 @@ algorithm
     then (eres, true, (iterator, inExpLst, range, (zeroCrossings, zc_lst, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
 
     // math function that triggering events
-    case (e as DAE.CALL(path=Absyn.IDENT("integer"), expLst={e1}, attr=attr), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("integer"), expLst={e1}, attr=attr), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC : "  +& ExpressionDump.printExpStr(e) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
+        print("start collectZC : "  +& ExpressionDump.printExpStr(inExp) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
       end if;
 
       e_1 = DAE.CALL(Absyn.IDENT("integer"), {e1, DAE.ICONST(numMathFunctions)}, attr);
@@ -813,9 +812,9 @@ algorithm
       end if;
     then (eres, true, (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
 
-    case (e as DAE.CALL(path=Absyn.IDENT("floor"), expLst={e1}, attr=attr), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("floor"), expLst={e1}, attr=attr), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC : "  +& ExpressionDump.printExpStr(e) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
+        print("start collectZC : "  +& ExpressionDump.printExpStr(inExp) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
       end if;
 
       e_1 = DAE.CALL(Absyn.IDENT("floor"), {e1, DAE.ICONST(numMathFunctions)}, attr);
@@ -828,9 +827,9 @@ algorithm
       end if;
     then (eres, true, (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
 
-    case (e as DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e1}, attr=attr), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e1}, attr=attr), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC : "  +& ExpressionDump.printExpStr(e) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
+        print("start collectZC : "  +& ExpressionDump.printExpStr(inExp) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
       end if;
 
       e_1 = DAE.CALL(Absyn.IDENT("ceil"), {e1, DAE.ICONST(numMathFunctions)}, attr);
@@ -843,9 +842,9 @@ algorithm
       end if;
     then (eres, true, (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
 
-    case (e as DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2}, attr=attr), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2}, attr=attr), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC : "  +& ExpressionDump.printExpStr(e) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
+        print("start collectZC : "  +& ExpressionDump.printExpStr(inExp) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
       end if;
 
       e_1 = DAE.CALL(Absyn.IDENT("div"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
@@ -859,9 +858,9 @@ algorithm
     then (eres, true, (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
 
     // mod is rewritten to x-floor(x/y)*y
-    case (e as DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty = ty)), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty = ty)), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC : "  +& ExpressionDump.printExpStr(e) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
+        print("start collectZC : "  +& ExpressionDump.printExpStr(inExp) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
       end if;
 
       e_1 = DAE.CALL(Absyn.IDENT("floor"), {DAE.BINARY(e1, DAE.DIV(ty), e2), DAE.ICONST(numMathFunctions)}, attr);
@@ -876,9 +875,9 @@ algorithm
     then (e_2, true, (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
 
     // rem is rewritten to div(x/y)*y - x
-    case (e as DAE.CALL(path=Absyn.IDENT("rem"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty = ty)), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+    case (DAE.CALL(path=Absyn.IDENT("rem"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty = ty)), (iterator, le, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC : "  +& ExpressionDump.printExpStr(e) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
+        print("start collectZC : "  +& ExpressionDump.printExpStr(inExp) +& " numMathFunctions: " +& intString(numMathFunctions) +& "\n");
       end if;
 
       e_1 = DAE.CALL(Absyn.IDENT("div"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
@@ -907,7 +906,7 @@ protected function replaceIteratorwithStaticValues "
 algorithm
   (outZeroCrossings, outIndex) := matchcontinue(inExp, inIterator, inExpLst, inIndex)
     local
-      DAE.Exp e, e1, e2, i, exp, res1, e_1;
+      DAE.Exp e, e1, e2, res1, e_1;
       DAE.Operator op;
       list<DAE.Exp> rest, res2;
       Integer index;
@@ -915,24 +914,24 @@ algorithm
     case (_, _, {}, _)
     then ({}, inIndex);
 
-    case (exp as DAE.RELATION(exp1 = e1, operator = op, exp2 = e2), i, e::rest, index) equation
-      e_1 = DAE.RELATION(e1, op, e2, index, NONE());
-      (res1, _) = Expression.replaceExpTpl(e_1, (i, e));
-      (res2, index) = replaceIteratorwithStaticValues(exp, i, rest, index+1);
-      res2 = res1 :: res2;
+    case (DAE.RELATION(exp1=e1, operator=op, exp2=e2), _, e::rest, _) equation
+      e_1 = DAE.RELATION(e1, op, e2, inIndex, NONE());
+      (res1, _) = Expression.replaceExpTpl(e_1, (inIterator, e));
+      (res2, index) = replaceIteratorwithStaticValues(inExp, inIterator, rest, inIndex+1);
+      res2 = res1::res2;
     then (res2, index);
 
-    case (exp as DAE.LUNARY(exp = e1, operator = op), i, e::rest, index) equation
+    case (DAE.LUNARY(exp=e1, operator=op), _, e::rest, _) equation
       e_1 = DAE.LUNARY(op, e1);
-      (res1, _) = Expression.replaceExpTpl(e_1, (i, e));
-      (res2, index) = replaceIteratorwithStaticValues(exp, i, rest, index+1);
+      (res1, _) = Expression.replaceExpTpl(e_1, (inIterator, e));
+      (res2, index) = replaceIteratorwithStaticValues(inExp, inIterator, rest, inIndex+1);
       res2 = res1 :: res2;
     then (res2, index);
 
-    case (exp as DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2), i, e::rest, index) equation
+    case (DAE.LBINARY(exp1=e1, operator=op, exp2=e2), _, e::rest, _) equation
       e_1 = DAE.LBINARY(e1, op, e2);
-      (res1, _) = Expression.replaceExpTpl(e_1, (i, e));
-      (res2, index) = replaceIteratorwithStaticValues(exp, i, rest, index+1);
+      (res1, _) = Expression.replaceExpTpl(e_1, (inIterator, e));
+      (res2, index) = replaceIteratorwithStaticValues(inExp, inIterator, rest, inIndex+1);
       res2 = res1 :: res2;
     then (res2, index);
 
@@ -1212,19 +1211,19 @@ algorithm
       ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_WHEN(e_1, conditions, initialCall, stmts, SOME(ew_1), source)::xs_1, extraArg));
 
-    case (((x as DAE.STMT_ASSERT(cond = _, msg=_))::xs), _, _) equation
+    case (((x as DAE.STMT_ASSERT(cond=_))::xs), _, _) equation
       ((xs_1, extraArg)) = traverseStmtsExps(xs, inExtraArg, inKnvars);
     then ((x::xs_1, extraArg));
 
-    case (((x as DAE.STMT_TERMINATE(msg = _))::xs), _, _) equation
+    case (((x as DAE.STMT_TERMINATE(msg=_))::xs), _, _) equation
       ((xs_1, extraArg)) = traverseStmtsExps(xs, inExtraArg, inKnvars);
     then ((x::xs_1, extraArg));
 
-    case (((x as DAE.STMT_REINIT(var = _, value=_))::xs), _, _) equation
+    case (((x as DAE.STMT_REINIT(var=_))::xs), _, _) equation
       ((xs_1, extraArg)) = traverseStmtsExps(xs, inExtraArg, inKnvars);
     then ((x::xs_1, extraArg));
 
-    case (((DAE.STMT_NORETCALL(exp = e, source = source))::xs), _, _) equation
+    case (((DAE.STMT_NORETCALL(exp=e, source=source))::xs), _, _) equation
       (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, inExtraArg);
       ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_NORETCALL(e_1, source)::xs_1, extraArg));
