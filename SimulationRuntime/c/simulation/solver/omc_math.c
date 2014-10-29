@@ -102,7 +102,7 @@ void _omc_destroyVector(_omc_vector* vec) {
  *
  *  creates a new _omc_vector by coping all data
  *
- *  \param [in]  [dest] the destination vector
+ *  \param [out] [dest] the destination vector, which need already be allocated
  *  \param [in]  [src]  the original vector
  */
 void _omc_copyVector(_omc_vector* dest, const _omc_vector* src)
