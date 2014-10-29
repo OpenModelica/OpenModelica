@@ -14,7 +14,7 @@
    id="svg3037"
    version="1.1"
    inkscape:version="0.48.4 r9939"
-   sodipodi:docname="flatmodel.svg">
+   sodipodi:docname="switch.svg">
   <sodipodi:namedview
      id="base"
      pagecolor="#ffffff"
@@ -23,7 +23,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="11.197802"
-     inkscape:cx="-11.862611"
+     inkscape:cx="-10.389599"
      inkscape:cy="14.076969"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -61,7 +61,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -71,47 +71,16 @@
      id="layer1">
     <rect
        class="fil0 str0"
-       height="30.731707"
+       height="30"
        width="30"
-       x="0.93896365"
-       y="0.66133642"
+       x="1"
+       y="1"
        id="rect14"
        style="fill:#49973c;fill-opacity:1;stroke:none" />
-    <rect
-       transform="matrix(1.000000,0.000000,0.000000,1.000000,0.000000,0.000000)"
-       class="fil2"
-       height="2.0"
-       width="23.0"
-       x="4.0"
-       y="6.0"
-       id="rect20"
-       style="fill:#ffffff;fill-opacity:1" />
-    <rect
-       transform="matrix(1.000000,0.000000,0.000000,1.000000,0.000000,0.000000)"
-       class="fil2"
-       height="2.0"
-       width="18.0"
-       x="9.0"
-       y="12.0"
-       id="rect24"
-       style="fill:#ffffff;fill-opacity:1" />
-    <rect
-       transform="matrix(1.000000,0.000000,0.000000,1.000000,0.000000,0.000000)"
-       class="fil2"
-       height="2.0"
-       width="18.0"
-       x="4.0"
-       y="18.0"
-       id="rect28"
-       style="fill:#ffffff;fill-opacity:1" />
-    <rect
-       transform="matrix(1.000000,0.000000,0.000000,1.000000,0.000000,0.000000)"
-       class="fil2"
-       height="2.0"
-       width="23.0"
-       x="4.0"
-       y="24.0"
-       id="rect32"
+    <path
+       inkscape:connector-curvature="0"
+       d="M 9.3200002,14.555555 4,20.777778 9.3200002,27 V 22.333333 H 18.666666 V 19.222222 H 9.3200002 V 14.555555 z M 28,11.444444 22.68,5.222222 V 9.888889 H 13.333333 V 13 H 22.68 v 4.666667 L 28,11.444444 z"
+       id="path4"
        style="fill:#ffffff;fill-opacity:1" />
   </g>
 </svg>

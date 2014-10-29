@@ -392,20 +392,24 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   // points navigation buttons
   mpMovePointUpButton = new QToolButton;
   mpMovePointUpButton->setObjectName("ShapePointsButton");
-  mpMovePointUpButton->setIcon(QIcon(":/Resources/icons/up.png"));
+  mpMovePointUpButton->setIcon(QIcon(":/Resources/icons/up.svg"));
+  mpMovePointUpButton->setToolTip(tr("Move point up"));
   connect(mpMovePointUpButton, SIGNAL(clicked()), SLOT(movePointUp()));
   mpMovePointDownButton = new QToolButton;
   mpMovePointDownButton->setObjectName("ShapePointsButton");
-  mpMovePointDownButton->setIcon(QIcon(":/Resources/icons/down.png"));
+  mpMovePointDownButton->setIcon(QIcon(":/Resources/icons/down.svg"));
+  mpMovePointDownButton->setToolTip(tr("Move point down"));
   connect(mpMovePointDownButton, SIGNAL(clicked()), SLOT(movePointDown()));
   // points manipulation buttons
   mpAddPointButton = new QToolButton;
   mpAddPointButton->setObjectName("ShapePointsButton");
   mpAddPointButton->setIcon(QIcon(":/Resources/icons/add-icon.svg"));
+  mpAddPointButton->setToolTip(tr("Add new point"));
   connect(mpAddPointButton, SIGNAL(clicked()), SLOT(addPoint()));
   mpRemovePointButton = new QToolButton;
   mpRemovePointButton->setObjectName("ShapePointsButton");
   mpRemovePointButton->setIcon(QIcon(":/Resources/icons/delete.svg"));
+  mpRemovePointButton->setToolTip(tr("Remove point"));
   connect(mpRemovePointButton, SIGNAL(clicked()), SLOT(removePoint()));
   mpPointsButtonBox = new QDialogButtonBox(Qt::Vertical);
   mpPointsButtonBox->addButton(mpMovePointUpButton, QDialogButtonBox::ActionRole);

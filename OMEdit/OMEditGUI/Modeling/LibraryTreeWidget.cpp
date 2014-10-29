@@ -62,15 +62,25 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   QPixmap pixmap;
   QRect decorationRect;
   value = index.data(Qt::DecorationRole);
-  if (value.isValid())
-  {
-    if (value.type() == QVariant::Icon)
-    {
-      icon = qvariant_cast<QIcon>(value);
+  if (value.isValid()) {
+    if (value.type() == QVariant::Icon) {
+      QPixmap componentPixmap;
+      LibraryTreeWidget *pLibraryTreeWidget = 0;
+      if (parent() && (pLibraryTreeWidget = qobject_cast<LibraryTreeWidget*>(parent()))) {
+        LibraryTreeNode *pLibraryTreeNode = static_cast<LibraryTreeNode*>(index.internalPointer());
+        LibraryComponent *pLibraryComponent = pLibraryTreeWidget->getLibraryComponentObject(pLibraryTreeNode->getNameStructure());
+        if (pLibraryComponent) {
+          int libraryIconSize = pLibraryTreeWidget->getMainWindow()->getOptionsDialog()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
+          componentPixmap = pLibraryComponent->getComponentPixmap(QSize(libraryIconSize, libraryIconSize));
+        }
+      }
+      if (componentPixmap.isNull()) {
+        icon = qvariant_cast<QIcon>(value);
+      } else {
+        icon = QIcon(componentPixmap);
+      }
       decorationRect = QRect(QPoint(0, 0), icon.actualSize(option.decorationSize, iconMode, iconState));
-    }
-    else
-    {
+    } else {
       pixmap = decoration(opt, value);
       decorationRect = QRect(QPoint(0, 0), option.decorationSize).intersected(pixmap.rect());
     }
@@ -78,12 +88,10 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   QString text;
   QRect displayRect;
   value = index.data(Qt::DisplayRole);
-  if (value.isValid())
-  {
-    if (value.type() == QVariant::Double)
+  if (value.isValid()) {
+    if (value.type() == QVariant::Double) {
       text = QLocale().toString(value.toDouble());
-    else
-    {
+    } else {
       text = value.toString();
       text.replace("\n", "<br />");
     }
@@ -92,8 +100,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   QRect checkRect;
   Qt::CheckState checkState = Qt::Unchecked;
   value = index.data(Qt::CheckStateRole);
-  if (value.isValid())
-  {
+  if (value.isValid()) {
     checkState = static_cast<Qt::CheckState>(value.toInt());
     checkRect = check(opt, opt.rect, value);
   }
@@ -108,17 +115,13 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   /*drawHover(painter, opt, index);*/
   drawCheck(painter, opt, checkRect, checkState);
   /* if draw grid flag is set */
-  if (mDrawGrid)
-  {
+  if (mDrawGrid) {
     QPen pen;
-    if (!mGridColor.isValid())
-    {
+    if (!mGridColor.isValid()) {
       int gridHint = qApp->style()->styleHint(QStyle::SH_Table_GridLineColor, &option);
       const QColor gridColor = static_cast<QRgb>(gridHint);
       pen.setColor(gridColor);
-    }
-    else
-    {
+    } else {
       pen.setColor(mGridColor);
     }
     painter->save();
@@ -128,8 +131,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     painter->restore();
   }
   /* if rich text flag is set */
-  if (mDrawRichText)
-  {
+  if (mDrawRichText) {
     QTextDocument doc;
     doc.setDefaultFont(opt.font);
     doc.setHtml(text);
@@ -138,19 +140,16 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     QRect clip(0, 0, displayRect.width(), displayRect.height());
     doc.drawContents(painter, clip);
     painter->restore();
-  }
-  else
-  {
+  } else {
     drawDisplay(painter, opt, displayRect, text);
   }
-  if (!icon.isNull())
+  if (!icon.isNull()) {
     icon.paint(painter, decorationRect, option.decorationAlignment, QIcon::Normal, QIcon::Off);
-  else
+  } else {
     drawDecoration(painter, opt, decorationRect, pixmap);
-  if (parent() && qobject_cast<VariablesTreeView*>(parent()))
-  {
-    if ((index.column() == 1) && (index.flags() & Qt::ItemIsEditable))
-    {
+  }
+  if (parent() && qobject_cast<VariablesTreeView*>(parent())) {
+    if ((index.column() == 1) && (index.flags() & Qt::ItemIsEditable)) {
       /* The display rect is slightly larger than the area because it include the outer line. */
       painter->drawRect(displayRect.adjusted(0, 0, -1, -1));
     }
@@ -172,43 +171,25 @@ void ItemDelegate::drawHover(QPainter *painter, const QStyleOptionViewItem &opti
 //! Reimplementation of sizeHint function. Defines the minimum height.
 QSize ItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-  int count = 1;
-  int height = 22;
+  QSize size = QItemDelegate::sizeHint(option, index);
   /* Only calculate the height of the item based on the text for MessagesTreeWidget items. Fix for multi line messages. Ticket #2269. */
-  if (parent() && qobject_cast<MessagesTreeWidget*>(parent()))
-  {
+  if (parent() && qobject_cast<MessagesTreeWidget*>(parent())) {
     QVariant value = index.data(Qt::DisplayRole);
     QString text;
-    if (value.isValid())
-    {
-      if (value.type() == QVariant::Double)
+    if (value.isValid()) {
+      if (value.type() == QVariant::Double) {
         text = QLocale().toString(value.toDouble());
-      else
-      {
+      } else {
         text = value.toString();
       }
     }
-    count = text.count("\n") + 1;
-    height = option.fontMetrics.height() * count + 7; /* 7 is added to add the padding space to the item. */
+    int count = text.count("\n") + 1;
+    int height = option.fontMetrics.height() * count + 7; /* 7 is added to add the padding space to the item. */
+    //Set very small height. A minimum apperantly stops at reasonable size.
+    size.rheight() = qMax(height, 22); //pixels
+  } else {
+    size.rheight() = size.height() + 2;
   }
-  QSize size = QItemDelegate::sizeHint(option, index);
-  //Set very small height. A minimum apperantly stops at reasonable size.
-  size.rheight() = qMax(height, 22); //pixels
-  return size;
-}
-
-OptionsItemDelegate::OptionsItemDelegate(QObject *pParent)
-  : ItemDelegate(pParent)
-{
-
-}
-
-//! Reimplementation of sizeHint function. Defines the minimum height.
-QSize OptionsItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
-{
-  QSize size = ItemDelegate::sizeHint(option, index);
-  //Set very small height. A minimum apperantly stops at reasonable size.
-  size.rheight() = 25; //pixels
   return size;
 }
 
@@ -331,7 +312,7 @@ QIcon LibraryTreeNode::getModelicaNodeIcon()
       case StringHandler::Class:
         return QIcon(":/Resources/icons/class-icon.svg");
       case StringHandler::Connector:
-        return QIcon(":/Resources/icons/connector-icon.svg");
+        return QIcon(":/Resources/icons/connect-mode.svg");
       case StringHandler::Record:
         return QIcon(":/Resources/icons/record-icon.svg");
       case StringHandler::Block:
@@ -494,7 +475,8 @@ LibraryTreeWidget::LibraryTreeWidget(bool isSearchTree, MainWindow *pParent)
   setHeaderLabel(isSearchTree ? tr("Searched Items") : Helper::libraries);
   setIndentation(Helper::treeIndentation);
   setDragEnabled(true);
-  setIconSize(Helper::iconSize);
+  int libraryIconSize = mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
+  setIconSize(QSize(libraryIconSize, libraryIconSize));
   setColumnCount(1);
   setExpandsOnDoubleClick(false);
   setContextMenuPolicy(Qt::CustomContextMenu);
@@ -599,7 +581,7 @@ void LibraryTreeWidget::createActions()
   mpUnloadXMLFileAction->setStatusTip(Helper::unloadXMLTip);
   connect(mpUnloadXMLFileAction, SIGNAL(triggered()), SLOT(unloadXMLFile()));
   // refresh Action
-  mpRefreshAction = new QAction(QIcon(":/Resources/icons/refresh.png"), Helper::refresh, this);
+  mpRefreshAction = new QAction(QIcon(":/Resources/icons/refresh.svg"), Helper::refresh, this);
   mpRefreshAction->setStatusTip(tr("Refresh the Modelica class"));
   connect(mpRefreshAction, SIGNAL(triggered()), SLOT(refresh()));
   // Export FMU Action
@@ -1918,29 +1900,23 @@ void LibraryTreeWidget::loadLibraryComponent(LibraryTreeNode *pLibraryTreeNode)
   OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
   QString result = pOMCProxy->getIconAnnotation(pLibraryTreeNode->getNameStructure());
   LibraryComponent *libComponent = new LibraryComponent(result, pLibraryTreeNode->getNameStructure(), pOMCProxy);
-  QPixmap pixmap = libComponent->getComponentPixmap(Helper::iconSize);
+  int libraryIconSize = mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
+  QPixmap pixmap = libComponent->getComponentPixmap(QSize(libraryIconSize, libraryIconSize));
   // if the component does not have icon annotation check if it has non standard dymola annotation or not.
-  if (pixmap.isNull())
-  {
+  if (pixmap.isNull()) {
     pOMCProxy->sendCommand("getNamedAnnotation(" + pLibraryTreeNode->getNameStructure() + ", __Dymola_DocumentationClass)");
-    if (StringHandler::unparseBool(StringHandler::removeFirstLastCurlBrackets(pOMCProxy->getResult())) || pLibraryTreeNode->isDocumentationClass())
-    {
-      result = pOMCProxy->getIconAnnotation("ModelicaReference.Icons.Information");
+    if (StringHandler::unparseBool(StringHandler::removeFirstLastCurlBrackets(pOMCProxy->getResult())) || pLibraryTreeNode->isDocumentationClass()) {
+      result = pOMCProxy->getIconAnnotation("Modelica.Icons.Information");
       libComponent = new LibraryComponent(result, pLibraryTreeNode->getNameStructure(), pOMCProxy);
-      pixmap = libComponent->getComponentPixmap(Helper::iconSize);
+      pixmap = libComponent->getComponentPixmap(QSize(libraryIconSize, libraryIconSize));
       // if still the pixmap is null for some unknown reasons then used the pre defined image
-      if (pixmap.isNull())
+      if (pixmap.isNull()) {
         pLibraryTreeNode->setIcon(0, QIcon(":/Resources/icons/info-icon.svg"));
-      else
-        pLibraryTreeNode->setIcon(0, QIcon(pixmap));
-    }
-    // if the component does not have non standard dymola annotation as well.
-    else
+      }
+    } else {
+      // if the component does not have non standard dymola annotation as well.
       pLibraryTreeNode->setIcon(0, pLibraryTreeNode->getModelicaNodeIcon());
-  }
-  else
-  {
-    pLibraryTreeNode->setIcon(0, QIcon(pixmap));
+    }
   }
   addLibraryComponentObject(libComponent);
 }
@@ -1958,8 +1934,9 @@ void LibraryTreeWidget::startDrag(Qt::DropActions supportedActions)
   LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(currentItem());
   // get the component pixmap to show on drag
   LibraryComponent *pLibraryComponent = getLibraryComponentObject(pLibraryTreeNode->getNameStructure());
-  if (isSearchedTree())
+  if (isSearchedTree()) {
     pLibraryTreeNode = mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNode(pLibraryTreeNode->getNameStructure());
+  }
   QByteArray itemData;
   QDataStream dataStream(&itemData, QIODevice::WriteOnly);
   dataStream << pLibraryTreeNode->getNameStructure();
@@ -1969,8 +1946,7 @@ void LibraryTreeWidget::startDrag(Qt::DropActions supportedActions)
   QDrag *drag = new QDrag(this);
   drag->setMimeData(mimeData);
   // if we have component pixmap
-  if (pLibraryComponent)
-  {
+  if (pLibraryComponent) {
     QPixmap pixmap = pLibraryComponent->getComponentPixmap(QSize(50, 50));
     drag->setPixmap(pixmap);
     drag->setHotSpot(QPoint((drag->hotSpot().x() + adjust), (drag->hotSpot().y() + adjust)));
@@ -2029,7 +2005,7 @@ QPixmap LibraryComponent::getComponentPixmap(QSize size)
   painter.scale(1.0, -1.0);
   mpGraphicsView->scene()->render(&painter, mRectangle, mpGraphicsView->sceneRect());
   painter.end();
-  return pixmap;
+  return pixmap.scaled(size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 }
 
 void LibraryComponent::hasIconAnnotation(Component *pComponent)

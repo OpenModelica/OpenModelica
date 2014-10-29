@@ -58,7 +58,7 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
   mpPreviousToolButton = new QToolButton;
   mpPreviousToolButton->setText(Helper::previous);
   mpPreviousToolButton->setToolTip(tr("click to go on previous (backspace)"));
-  mpPreviousToolButton->setIcon(QIcon(":/Resources/icons/previous.png"));
+  mpPreviousToolButton->setIcon(QIcon(":/Resources/icons/previous.svg"));
   mpPreviousToolButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
   mpPreviousToolButton->setDisabled(true);
   connect(mpPreviousToolButton, SIGNAL(clicked()), SLOT(previousDocumentation()));
@@ -66,7 +66,7 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
   mpNextToolButton = new QToolButton;
   mpNextToolButton->setText(Helper::next);
   mpNextToolButton->setToolTip(tr("click to go on next (shift+backspace)"));
-  mpNextToolButton->setIcon(QIcon(":/Resources/icons/next.png"));
+  mpNextToolButton->setIcon(QIcon(":/Resources/icons/next.svg"));
   mpNextToolButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
   mpNextToolButton->setDisabled(true);
   connect(mpNextToolButton, SIGNAL(clicked()), SLOT(nextDocumentation()));
@@ -274,7 +274,7 @@ void DocumentationViewer::showContextMenu(QPoint point)
 {
   Q_UNUSED(point);
   //! @todo Create the documentation actions here like the example below and then show them in the menu.
-  /*QAction *pTestAction = new QAction(QIcon(":/Resources/icons/options.png"), tr("Properties"), this);
+  /*QAction *pTestAction = new QAction(QIcon(":/Resources/icons/options.svg"), tr("Properties"), this);
   pTestAction->setStatusTip(tr("Shows the component properties"));
   connect(pTestAction, SIGNAL(triggered()), mpDocumentationWidget, SLOT(previousDocumentation()));
 

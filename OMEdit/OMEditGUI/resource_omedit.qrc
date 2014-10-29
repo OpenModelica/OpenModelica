@@ -38,89 +38,79 @@
         <file>Resources/icons/function-icon.svg</file>
         <file>Resources/icons/record-icon.svg</file>
         <file>Resources/icons/class-icon.svg</file>
-        <file>Resources/icons/connector-icon.svg</file>
         <file>Resources/icons/info-icon.svg</file>
         <file>Resources/icons/ellipse-shape.svg</file>
         <file>Resources/icons/text-shape.svg</file>
         <file>Resources/icons/line-shape.svg</file>
         <file>Resources/icons/rectangle-shape.svg</file>
         <file>Resources/icons/polygon-shape.svg</file>
-        <file>Resources/icons/search.png</file>
-        <file>Resources/icons/next.png</file>
-        <file>Resources/icons/previous.png</file>
+        <file>Resources/icons/next.svg</file>
+        <file>Resources/icons/previous.svg</file>
         <file>Resources/icons/type-icon.svg</file>
         <file>Resources/icons/bitmap-shape.svg</file>
-        <file>Resources/icons/bitmap-shape.png</file>
         <file>Resources/icons/import-omnotebook.svg</file>
         <file>Resources/icons/export-omnotebook.svg</file>
-        <file>Resources/icons/interactive-simulation.png</file>
-        <file>Resources/icons/pause.png</file>
-        <file>Resources/icons/start.png</file>
-        <file>Resources/icons/shutdown.png</file>
-        <file>Resources/icons/stop.png</file>
         <file>Resources/icons/omshell.svg</file>
-        <file>Resources/icons/fillstyle.png</file>
-        <file>Resources/icons/linestyle.png</file>
-        <file>Resources/icons/line-dash.png</file>
-        <file>Resources/icons/line-dash-dot.png</file>
-        <file>Resources/icons/line-dash-dot-dot.png</file>
-        <file>Resources/icons/line-dot.png</file>
-        <file>Resources/icons/line-none.png</file>
-        <file>Resources/icons/line-solid.png</file>
-        <file>Resources/icons/arrow-end-fill.png</file>
-        <file>Resources/icons/arrow-end-open.png</file>
-        <file>Resources/icons/arrow-end-open-half.png</file>
-        <file>Resources/icons/arrow-none.png</file>
-        <file>Resources/icons/arrow-start-fill.png</file>
-        <file>Resources/icons/arrow-start-open.png</file>
-        <file>Resources/icons/arrow-start-open-half.png</file>
-        <file>Resources/icons/fill-backward.png</file>
-        <file>Resources/icons/fill-cross.png</file>
-        <file>Resources/icons/fill-cross-diagnol.png</file>
-        <file>Resources/icons/fill-forward.png</file>
-        <file>Resources/icons/fill-horizontal.png</file>
-        <file>Resources/icons/fill-horizontal-cylinder.png</file>
-        <file>Resources/icons/fill-none.png</file>
-        <file>Resources/icons/fill-solid.png</file>
-        <file>Resources/icons/fill-sphere.png</file>
-        <file>Resources/icons/fill-vertical.png</file>
-        <file>Resources/icons/fill-vertical-cylinder.png</file>
+        <file>Resources/icons/fillstyle.svg</file>
+        <file>Resources/icons/linestyle.svg</file>
+        <file>Resources/icons/line-dash.svg</file>
+        <file>Resources/icons/line-dash-dot.svg</file>
+        <file>Resources/icons/line-dash-dot-dot.svg</file>
+        <file>Resources/icons/line-dot.svg</file>
+        <file>Resources/icons/line-none.svg</file>
+        <file>Resources/icons/line-solid.svg</file>
+        <file>Resources/icons/arrow-end-fill.svg</file>
+        <file>Resources/icons/arrow-end-open.svg</file>
+        <file>Resources/icons/arrow-end-open-half.svg</file>
+        <file>Resources/icons/arrow-start-fill.svg</file>
+        <file>Resources/icons/arrow-start-open.svg</file>
+        <file>Resources/icons/arrow-start-open-half.svg</file>
+        <file>Resources/icons/fill-backward.svg</file>
+        <file>Resources/icons/fill-cross.svg</file>
+        <file>Resources/icons/fill-cross-diagnol.svg</file>
+        <file>Resources/icons/fill-forward.svg</file>
+        <file>Resources/icons/fill-horizontal.svg</file>
+        <file>Resources/icons/fill-horizontal-cylinder.svg</file>
+        <file>Resources/icons/fill-none.svg</file>
+        <file>Resources/icons/fill-solid.svg</file>
+        <file>Resources/icons/fill-sphere.svg</file>
+        <file>Resources/icons/fill-vertical.svg</file>
+        <file>Resources/icons/fill-vertical-cylinder.svg</file>
         <file>Resources/icons/omplot.png</file>
         <file>Resources/icons/parametric-plot-window.svg</file>
         <file>Resources/icons/plot-window.svg</file>
         <file>Resources/icons/re-simulate.svg</file>
         <file>Resources/icons/export-fmu.svg</file>
         <file>Resources/icons/import-fmu.svg</file>
-        <file>Resources/icons/libraries.png</file>
-        <file>Resources/icons/erroricon.png</file>
-        <file>Resources/icons/notificationicon.png</file>
-        <file>Resources/icons/warningicon.png</file>
-        <file>Resources/icons/messages.png</file>
-        <file>Resources/icons/clearmessages.png</file>
-        <file>Resources/icons/switch.png</file>
-        <file>Resources/icons/quit.png</file>
-        <file>Resources/icons/lock.png</file>
-        <file>Resources/icons/unlock.png</file>
+        <file>Resources/icons/libraries.svg</file>
+        <file>Resources/icons/erroricon.svg</file>
+        <file>Resources/icons/notificationicon.svg</file>
+        <file>Resources/icons/warningicon.svg</file>
+        <file>Resources/icons/messages.svg</file>
+        <file>Resources/icons/clear.svg</file>
+        <file>Resources/icons/switch.svg</file>
+        <file>Resources/icons/quit.svg</file>
+        <file>Resources/icons/lock.svg</file>
+        <file>Resources/icons/unlock.svg</file>
         <file>Resources/icons/omedit.ico</file>
         <file>Resources/icons/omedit.png</file>
         <file>Resources/icons/omedit_splashscreen.png</file>
         <file>Resources/icons/modeling.png</file>
-        <file>Resources/icons/options.png</file>
-        <file>Resources/icons/general.png</file>
+        <file>Resources/icons/options.svg</file>
+        <file>Resources/icons/general.svg</file>
         <file>Resources/icons/about-us.png</file>
         <file>Resources/icons/flip-horizontal.svg</file>
         <file>Resources/icons/flip-vertical.svg</file>
-        <file>Resources/icons/connect-mode.png</file>
+        <file>Resources/icons/connect-mode.svg</file>
         <file>Resources/icons/export-xml.svg</file>
-        <file>Resources/icons/clear.png</file>
         <file>Resources/icons/optimization-icon.svg</file>
-        <file>Resources/icons/refresh.png</file>
+        <file>Resources/icons/refresh.svg</file>
         <file>Resources/icons/add-icon.svg</file>
         <file>Resources/icons/edit-icon.svg</file>
-        <file>Resources/icons/down.png</file>
-        <file>Resources/icons/up.png</file>
-        <file>Resources/icons/print.png</file>
-        <file>Resources/icons/duplicate.png</file>
+        <file>Resources/icons/down.svg</file>
+        <file>Resources/icons/up.svg</file>
+        <file>Resources/icons/print.svg</file>
+        <file>Resources/icons/duplicate.svg</file>
         <file>Resources/icons/mat.svg</file>
         <file>Resources/icons/plt.svg</file>
         <file>Resources/icons/csv.svg</file>
@@ -131,7 +121,6 @@
         <file>Resources/icons/step-over.svg</file>
         <file>Resources/icons/step-into.svg</file>
         <file>Resources/icons/step-return.svg</file>
-        <file>Resources/icons/arrow.svg</file>
         <file>Resources/icons/breakpoint_enabled.svg</file>
         <file>Resources/icons/breakpoint_disabled.svg</file>
     </qresource>

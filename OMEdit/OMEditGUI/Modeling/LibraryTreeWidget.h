@@ -66,13 +66,6 @@ public:
   virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
 };
 
-class OptionsItemDelegate : public ItemDelegate
-{
-public:
-  OptionsItemDelegate(QObject *pParent = 0);
-  virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
-};
-
 class SearchClassWidget : public QWidget
 {
   Q_OBJECT

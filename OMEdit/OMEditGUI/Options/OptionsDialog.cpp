@@ -109,9 +109,17 @@ void OptionsDialog::readGeneralSettings()
   if (mpSettings->contains("workingDirectory"))
     mpMainWindow->getOMCProxy()->changeDirectory(mpSettings->value("workingDirectory").toString());
   mpGeneralSettingsPage->setWorkingDirectory(mpMainWindow->getOMCProxy()->changeDirectory());
+  // read toolbar icon size
+  if (mpSettings->contains("toolbarIconSize")) {
+    mpGeneralSettingsPage->getToolbarIconSizeSpinBox()->setValue(mpSettings->value("toolbarIconSize").toInt());
+  }
   // read the user customizations
   if (mpSettings->contains("userCustomizations"))
     mpGeneralSettingsPage->setPreserveUserCustomizations(mpSettings->value("userCustomizations").toBool());
+  // read library icon size
+  if (mpSettings->contains("libraryIconSize")) {
+    mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->setValue(mpSettings->value("libraryIconSize").toInt());
+  }
   // read show protected classes
   if (mpSettings->contains("showProtectedClasses"))
     mpGeneralSettingsPage->setShowProtectedClasses(mpSettings->value("showProtectedClasses").toBool());
@@ -397,8 +405,16 @@ void OptionsDialog::saveGeneralSettings()
   // save working directory
   mpMainWindow->getOMCProxy()->changeDirectory(mpGeneralSettingsPage->getWorkingDirectory());
   mpSettings->setValue("workingDirectory", mpMainWindow->getOMCProxy()->changeDirectory());
+  // save toolbar icon size
+  mpSettings->setValue("toolbarIconSize", mpGeneralSettingsPage->getToolbarIconSizeSpinBox()->value());
   // save user customizations
   mpSettings->setValue("userCustomizations", mpGeneralSettingsPage->getPreserveUserCustomizations());
+  // save library icon size
+  int libraryIconSize = mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->value();
+  mpSettings->setValue("libraryIconSize", libraryIconSize);
+  if (mpMainWindow->getLibraryTreeWidget()->iconSize().width() != libraryIconSize) {
+    mpMainWindow->getLibraryTreeWidget()->setIconSize(QSize(libraryIconSize, libraryIconSize));
+  }
   // save show protected classes
   mpSettings->setValue("showProtectedClasses", mpGeneralSettingsPage->getShowProtectedClasses());
   // show/hide the protected classes
@@ -624,10 +640,10 @@ void OptionsDialog::saveDebuggerSettings()
 void OptionsDialog::setUpDialog()
 {
   mpOptionsList = new QListWidget;
-  mpOptionsList->setItemDelegate(new OptionsItemDelegate(mpOptionsList));
+  mpOptionsList->setItemDelegate(new ItemDelegate(mpOptionsList));
   mpOptionsList->setViewMode(QListView::ListMode);
   mpOptionsList->setMovement(QListView::Static);
-  mpOptionsList->setIconSize(QSize(22, 22));
+  mpOptionsList->setIconSize(QSize(24, 24));
   mpOptionsList->setCurrentRow(0, QItemSelectionModel::Select);
   connect(mpOptionsList, SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)), SLOT(changePage(QListWidgetItem*,QListWidgetItem*)));
   // add items to options list
@@ -640,6 +656,8 @@ void OptionsDialog::setUpDialog()
   mpOptionsList->setMaximumWidth(width);
   // create pages
   createPages();
+  mpChangesEffectLabel = new Label(tr("* The changes will take effect after restart."));
+  mpChangesEffectLabel->setElideMode(Qt::ElideMiddle);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -655,8 +673,9 @@ void OptionsDialog::setUpDialog()
   horizontalLayout->addWidget(mpPagesWidget, 1);
   // Create a layout
   QGridLayout *mainLayout = new QGridLayout;
-  mainLayout->addLayout(horizontalLayout, 0, 0);
-  mainLayout->addWidget(mpButtonBox, 1, 0);
+  mainLayout->addLayout(horizontalLayout, 0, 0, 1, 2);
+  mainLayout->addWidget(mpChangesEffectLabel, 1, 0);
+  mainLayout->addWidget(mpButtonBox, 1, 1);
   setLayout(mainLayout);
 }
 
@@ -665,12 +684,12 @@ void OptionsDialog::addListItems()
 {
   // General Settings Item
   QListWidgetItem *pGeneralSettingsItem = new QListWidgetItem(mpOptionsList);
-  pGeneralSettingsItem->setIcon(QIcon(":/Resources/icons/general.png"));
+  pGeneralSettingsItem->setIcon(QIcon(":/Resources/icons/general.svg"));
   pGeneralSettingsItem->setText(tr("General"));
   mpOptionsList->item(0)->setSelected(true);
   // Libraries Item
   QListWidgetItem *pLibrariesItem = new QListWidgetItem(mpOptionsList);
-  pLibrariesItem->setIcon(QIcon(":/Resources/icons/libraries.png"));
+  pLibrariesItem->setIcon(QIcon(":/Resources/icons/libraries.svg"));
   pLibrariesItem->setText(Helper::libraries);
   // Modelica Text Item
   QListWidgetItem *pModelicaTextEditorItem = new QListWidgetItem(mpOptionsList);
@@ -690,11 +709,11 @@ void OptionsDialog::addListItems()
   pNotificationsItem->setText(tr("Notifications"));
   // Pen Style Item
   QListWidgetItem *pLineStyleItem = new QListWidgetItem(mpOptionsList);
-  pLineStyleItem->setIcon(QIcon(":/Resources/icons/linestyle.png"));
+  pLineStyleItem->setIcon(QIcon(":/Resources/icons/linestyle.svg"));
   pLineStyleItem->setText(Helper::lineStyle);
   // Brush Style Item
   QListWidgetItem *pFillStyleItem = new QListWidgetItem(mpOptionsList);
-  pFillStyleItem->setIcon(QIcon(":/Resources/icons/fillstyle.png"));
+  pFillStyleItem->setIcon(QIcon(":/Resources/icons/fillstyle.svg"));
   pFillStyleItem->setText(Helper::fillStyle);
   // Curve Style Item
   QListWidgetItem *pCurveStyleItem = new QListWidgetItem(mpOptionsList);
@@ -837,7 +856,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
   mpOptionsDialog = pParent;
   mpGeneralSettingsGroupBox = new QGroupBox(Helper::general);
   // Language Option
-  mpLanguageLabel = new Label(tr("Language:"));
+  mpLanguageLabel = new Label(tr("Language: *"));
   mpLanguageComboBox = new QComboBox;
   mpLanguageComboBox->addItem(tr("Auto Detected"), "");
   /* Slow sorting, but works using regular Qt functions */
@@ -864,6 +883,11 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
   mpWorkingDirectoryBrowseButton = new QPushButton(Helper::browse);
   mpWorkingDirectoryBrowseButton->setAutoDefault(false);
   connect(mpWorkingDirectoryBrowseButton, SIGNAL(clicked()), SLOT(selectWorkingDirectory()));
+  // toolbar icon size
+  mpToolbarIconSizeLabel = new Label(tr("Toolbar Icon Size: *"));
+  mpToolbarIconSizeSpinBox = new QSpinBox;
+  mpToolbarIconSizeSpinBox->setMinimum(16); // icons smaller than 16.......naaaaahhhh!!!!!
+  mpToolbarIconSizeSpinBox->setValue(24);
   // Store Customizations Option
   mpPreserveUserCustomizations = new QCheckBox(tr("Preserve User's GUI Customizations"));
   // set the layout of general settings group
@@ -874,15 +898,26 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
   generalSettingsLayout->addWidget(mpWorkingDirectoryLabel, 1, 0);
   generalSettingsLayout->addWidget(mpWorkingDirectoryTextBox, 1, 1);
   generalSettingsLayout->addWidget(mpWorkingDirectoryBrowseButton, 1, 2);
-  generalSettingsLayout->addWidget(mpPreserveUserCustomizations, 2, 0, 1, 3);
+  generalSettingsLayout->addWidget(mpToolbarIconSizeLabel, 2, 0);
+  generalSettingsLayout->addWidget(mpToolbarIconSizeSpinBox, 2, 1, 1, 2);
+  generalSettingsLayout->addWidget(mpPreserveUserCustomizations, 3, 0, 1, 3);
   mpGeneralSettingsGroupBox->setLayout(generalSettingsLayout);
   // Libraries Browser group box
   mpLibrariesBrowserGroupBox = new QGroupBox(tr("Libraries Browser"));
+  // library icon size
+  mpLibraryIconSizeLabel = new Label(tr("Library Icon Size:"));
+  mpLibraryIconSizeSpinBox = new QSpinBox;
+  mpLibraryIconSizeSpinBox->setMinimum(16);
+  mpLibraryIconSizeSpinBox->setValue(24);
+  // show protected classes
   mpShowProtectedClasses = new QCheckBox(tr("Show Protected Classes"));
   // Libraries Browser group box layout
   QGridLayout *pLibrariesBrowserLayout = new QGridLayout;
   pLibrariesBrowserLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pLibrariesBrowserLayout->addWidget(mpShowProtectedClasses);
+  pLibrariesBrowserLayout->setColumnStretch(1, 1);
+  pLibrariesBrowserLayout->addWidget(mpLibraryIconSizeLabel, 0, 0);
+  pLibrariesBrowserLayout->addWidget(mpLibraryIconSizeSpinBox, 0, 1);
+  pLibrariesBrowserLayout->addWidget(mpShowProtectedClasses, 1, 0, 1, 2);
   mpLibrariesBrowserGroupBox->setLayout(pLibrariesBrowserLayout);
   // Modeling View Mode
   mpModelingViewModeGroupBox = new QGroupBox(tr("Modeling View Mode"));
@@ -1172,9 +1207,9 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
 {
   mpOptionsDialog = pParent;
   // system libraries groupbox
-  mpSystemLibrariesGroupBox = new QGroupBox(tr("System Libraries"));
+  mpSystemLibrariesGroupBox = new QGroupBox(tr("System Libraries *"));
   // system libraries note
-  mpSystemLibrariesNoteLabel = new Label(tr("* The system libraries are read from the MODELICAPATH and are always read-only."));
+  mpSystemLibrariesNoteLabel = new Label(tr("The system libraries are read from the MODELICAPATH and are always read-only."));
   mpSystemLibrariesNoteLabel->setElideMode(Qt::ElideMiddle);
   // MODELICAPATH
   mpModelicaPathLabel = new Label(QString("MODELICAPATH = ").append(Helper::OpenModelicaLibrary));
@@ -1217,7 +1252,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
   mpForceModelicaLoadCheckBox->setToolTip(tr("This will make sure that Modelica and ModelicaReference will always load even if user has removed them from the list of system libraries."));
   mpForceModelicaLoadCheckBox->setChecked(true);
   // user libraries groupbox
-  mpUserLibrariesGroupBox = new QGroupBox(tr("User Libraries"));
+  mpUserLibrariesGroupBox = new QGroupBox(tr("User Libraries *"));
   // user libraries tree
   mpUserLibrariesTree = new QTreeWidget;
   mpUserLibrariesTree->setItemDelegate(new ItemDelegate(mpUserLibrariesTree));
@@ -1249,16 +1284,12 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
   pUserLibrariesLayout->addWidget(mpUserLibrariesTree, 0, 0);
   pUserLibrariesLayout->addWidget(mpUserLibrariesButtonBox, 0, 1);
   mpUserLibrariesGroupBox->setLayout(pUserLibrariesLayout);
-  // libraries note label
-  mpLibrariesNoteLabel = new Label(tr("* The libraries changes will take effect after restart."));
-  mpLibrariesNoteLabel->setElideMode(Qt::ElideMiddle);
   // main layout
   QVBoxLayout *layout = new QVBoxLayout;
   layout->setContentsMargins(0, 0, 0, 0);
   layout->addWidget(mpSystemLibrariesGroupBox);
   layout->addWidget(mpForceModelicaLoadCheckBox);
   layout->addWidget(mpUserLibrariesGroupBox);
-  layout->addWidget(mpLibrariesNoteLabel);
   setLayout(layout);
 }
 
@@ -2857,6 +2888,7 @@ FigaroPage::FigaroPage(OptionsDialog *pParent)
   mpFigaroDatabaseFileLabel = new Label(tr("Figaro Database File:"));
   mpFigaroDatabaseFileTextBox = new QLineEdit;
   mpBrowseFigaroDatabaseFileButton = new QPushButton(Helper::browse);
+  mpBrowseFigaroDatabaseFileButton->setAutoDefault(false);
   connect(mpBrowseFigaroDatabaseFileButton, SIGNAL(clicked()), SLOT(browseFigaroLibraryFile()));
   // Figaro model
   mpFigaroModeLabel = new Label(tr("Figaro Mode:"));
@@ -2867,11 +2899,13 @@ FigaroPage::FigaroPage(OptionsDialog *pParent)
   mpFigaroOptionsFileLabel = new Label(tr("Figaro Options File:"));
   mpFigaroOptionsFileTextBox = new QLineEdit;
   mpBrowseFigaroOptionsFileButton = new QPushButton(Helper::browse);
+  mpBrowseFigaroOptionsFileButton->setAutoDefault(false);
   connect(mpBrowseFigaroOptionsFileButton, SIGNAL(clicked()), SLOT(browseFigaroOptionsFile()));
   // figaro process
   mpFigaroProcessLabel = new Label(tr("Figaro Process:"));
   mpFigaroProcessTextBox = new QLineEdit;
   mpBrowseFigaroProcessButton = new QPushButton(Helper::browse);
+  mpBrowseFigaroProcessButton->setAutoDefault(false);
   connect(mpBrowseFigaroProcessButton, SIGNAL(clicked()), SLOT(browseFigaroProcessFile()));
   // set the layout
   QGridLayout *pFigaroLayout = new QGridLayout;
@@ -2939,6 +2973,7 @@ DebuggerPage::DebuggerPage(OptionsDialog *pParent)
   mpGDBPathTextBox = new QLineEdit("gdb");
 #endif
   mpGDBPathBrowseButton = new QPushButton(Helper::browse);
+  mpGDBPathBrowseButton->setAutoDefault(false);
   connect(mpGDBPathBrowseButton, SIGNAL(clicked()), SLOT(browseGDBPath()));
   /* GDB Commanf Timeout */
   mpGDBCommandTimeoutLabel = new Label(tr("GDB Command Timeout:"));

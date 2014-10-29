@@ -125,6 +125,7 @@ private:
   QSettings *mpSettings;
   QListWidget *mpOptionsList;
   QStackedWidget *mpPagesWidget;
+  Label *mpChangesEffectLabel;
   QPushButton *mpCancelButton;
   QPushButton *mpOkButton;
   QDialogButtonBox *mpButtonBox;
@@ -138,8 +139,10 @@ public:
   QComboBox* getLanguageComboBox();
   void setWorkingDirectory(QString value);
   QString getWorkingDirectory();
+  QSpinBox* getToolbarIconSizeSpinBox() {return mpToolbarIconSizeSpinBox;}
   void setPreserveUserCustomizations(bool value);
   bool getPreserveUserCustomizations();
+  QSpinBox* getLibraryIconSizeSpinBox() {return mpLibraryIconSizeSpinBox;}
   void setShowProtectedClasses(bool value);
   bool getShowProtectedClasses();
   void setModelingViewMode(QString value);
@@ -163,8 +166,12 @@ private:
   Label *mpWorkingDirectoryLabel;
   QLineEdit *mpWorkingDirectoryTextBox;
   QPushButton *mpWorkingDirectoryBrowseButton;
+  Label *mpToolbarIconSizeLabel;
+  QSpinBox *mpToolbarIconSizeSpinBox;
   QCheckBox *mpPreserveUserCustomizations;
   QGroupBox *mpLibrariesBrowserGroupBox;
+  Label *mpLibraryIconSizeLabel;
+  QSpinBox *mpLibraryIconSizeSpinBox;
   QCheckBox *mpShowProtectedClasses;
   QGroupBox *mpModelingViewModeGroupBox;
   QRadioButton *mpModelingTabbedViewRadioButton;
@@ -216,7 +223,6 @@ private:
   QPushButton *mpRemoveUserLibraryButton;
   QPushButton *mpEditUserLibraryButton;
   QDialogButtonBox *mpUserLibrariesButtonBox;
-  Label *mpLibrariesNoteLabel;
   Label *mpModelicaPathLabel;
 private slots:
   void openAddSystemLibrary();

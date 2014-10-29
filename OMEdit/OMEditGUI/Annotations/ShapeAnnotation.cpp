@@ -390,7 +390,7 @@ void ShapeAnnotation::setDefaults()
   mOriginalFileName = "";
   mFileName = "";
   mImageSource = "";
-  mImage = QImage(":/Resources/icons/bitmap-shape.png");
+  mImage = QImage(":/Resources/icons/bitmap-shape.svg");
 }
 
 /*!

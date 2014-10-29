@@ -247,12 +247,12 @@ QComboBox* StringHandler::getLinePatternComboBox()
 {
   QComboBox *pLinePatternComboBox = new QComboBox;
   pLinePatternComboBox->setIconSize(QSize(58, 16));
-  pLinePatternComboBox->addItem(QIcon(":/Resources/icons/line-none.png"), getLinePatternString(LineNone));
-  pLinePatternComboBox->addItem(QIcon(":/Resources/icons/line-solid.png"), getLinePatternString(LineSolid));
-  pLinePatternComboBox->addItem(QIcon(":/Resources/icons/line-dash.png"), getLinePatternString(LineDash));
-  pLinePatternComboBox->addItem(QIcon(":/Resources/icons/line-dot.png"), getLinePatternString(LineDot));
-  pLinePatternComboBox->addItem(QIcon(":/Resources/icons/line-dash-dot.png"), getLinePatternString(LineDashDot));
-  pLinePatternComboBox->addItem(QIcon(":/Resources/icons/line-dash-dot-dot.png"), getLinePatternString(LineDashDotDot));
+  pLinePatternComboBox->addItem(QIcon(":/Resources/icons/line-none.svg"), getLinePatternString(LineNone));
+  pLinePatternComboBox->addItem(QIcon(":/Resources/icons/line-solid.svg"), getLinePatternString(LineSolid));
+  pLinePatternComboBox->addItem(QIcon(":/Resources/icons/line-dash.svg"), getLinePatternString(LineDash));
+  pLinePatternComboBox->addItem(QIcon(":/Resources/icons/line-dot.svg"), getLinePatternString(LineDot));
+  pLinePatternComboBox->addItem(QIcon(":/Resources/icons/line-dash-dot.svg"), getLinePatternString(LineDashDot));
+  pLinePatternComboBox->addItem(QIcon(":/Resources/icons/line-dash-dot-dot.svg"), getLinePatternString(LineDashDotDot));
   return pLinePatternComboBox;
 }
 
@@ -351,17 +351,17 @@ QString StringHandler::getFillPatternString(StringHandler::FillPattern type)
 QComboBox* StringHandler::getFillPatternComboBox()
 {
   QComboBox *pFillPatternComboBox = new QComboBox;
-  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-none.png"), getFillPatternString(FillNone));
-  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-solid.png"), getFillPatternString(FillSolid));
-  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-horizontal.png"), getFillPatternString(FillHorizontal));
-  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-vertical.png"), getFillPatternString(FillVertical));
-  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-cross.png"), getFillPatternString(FillCross));
-  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-forward.png"), getFillPatternString(FillForward));
-  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-backward.png"), getFillPatternString(FillBackward));
-  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-cross-diagnol.png"), getFillPatternString(FillCrossDiag));
-  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-horizontal-cylinder.png"), getFillPatternString(FillHorizontalCylinder));
-  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-vertical-cylinder.png"), getFillPatternString(FillVerticalCylinder));
-  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-sphere.png"), getFillPatternString(FillSphere));
+  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-none.svg"), getFillPatternString(FillNone));
+  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-solid.svg"), getFillPatternString(FillSolid));
+  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-horizontal.svg"), getFillPatternString(FillHorizontal));
+  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-vertical.svg"), getFillPatternString(FillVertical));
+  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-cross.svg"), getFillPatternString(FillCross));
+  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-forward.svg"), getFillPatternString(FillForward));
+  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-backward.svg"), getFillPatternString(FillBackward));
+  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-cross-diagnol.svg"), getFillPatternString(FillCrossDiag));
+  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-horizontal-cylinder.svg"), getFillPatternString(FillHorizontalCylinder));
+  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-vertical-cylinder.svg"), getFillPatternString(FillVerticalCylinder));
+  pFillPatternComboBox->addItem(QIcon(":/Resources/icons/fill-sphere.svg"), getFillPatternString(FillSphere));
   return pFillPatternComboBox;
 }
 
@@ -456,10 +456,10 @@ QComboBox* StringHandler::getStartArrowComboBox()
 {
   QComboBox *pStartArrowComboBox = new QComboBox;
   pStartArrowComboBox->setIconSize(QSize(58, 16));
-  pStartArrowComboBox->addItem(QIcon(":/Resources/icons/arrow-none.png"), getArrowString(ArrowNone));
-  pStartArrowComboBox->addItem(QIcon(":/Resources/icons/arrow-start-open.png"), getArrowString(ArrowOpen));
-  pStartArrowComboBox->addItem(QIcon(":/Resources/icons/arrow-start-fill.png"), getArrowString(ArrowFilled));
-  pStartArrowComboBox->addItem(QIcon(":/Resources/icons/arrow-start-open-half.png"), getArrowString(ArrowHalf));
+  pStartArrowComboBox->addItem(QIcon(":/Resources/icons/line-solid.svg"), getArrowString(ArrowNone));
+  pStartArrowComboBox->addItem(QIcon(":/Resources/icons/arrow-start-open.svg"), getArrowString(ArrowOpen));
+  pStartArrowComboBox->addItem(QIcon(":/Resources/icons/arrow-start-fill.svg"), getArrowString(ArrowFilled));
+  pStartArrowComboBox->addItem(QIcon(":/Resources/icons/arrow-start-open-half.svg"), getArrowString(ArrowHalf));
   return pStartArrowComboBox;
 }
 
@@ -467,10 +467,10 @@ QComboBox* StringHandler::getEndArrowComboBox()
 {
   QComboBox *pEndArrowComboBox = new QComboBox;
   pEndArrowComboBox->setIconSize(QSize(58, 16));
-  pEndArrowComboBox->addItem(QIcon(":/Resources/icons/arrow-none.png"), getArrowString(ArrowNone));
-  pEndArrowComboBox->addItem(QIcon(":/Resources/icons/arrow-end-open.png"), getArrowString(ArrowOpen));
-  pEndArrowComboBox->addItem(QIcon(":/Resources/icons/arrow-end-fill.png"), getArrowString(ArrowFilled));
-  pEndArrowComboBox->addItem(QIcon(":/Resources/icons/arrow-end-open-half.png"), getArrowString(ArrowHalf));
+  pEndArrowComboBox->addItem(QIcon(":/Resources/icons/line-solid.svg"), getArrowString(ArrowNone));
+  pEndArrowComboBox->addItem(QIcon(":/Resources/icons/arrow-end-open.svg"), getArrowString(ArrowOpen));
+  pEndArrowComboBox->addItem(QIcon(":/Resources/icons/arrow-end-fill.svg"), getArrowString(ArrowFilled));
+  pEndArrowComboBox->addItem(QIcon(":/Resources/icons/arrow-end-open-half.svg"), getArrowString(ArrowHalf));
   return pEndArrowComboBox;
 }
 

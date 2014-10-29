@@ -354,7 +354,6 @@ private:
   void switchToWelcomePerspective();
   void switchToModelingPerspective();
   void switchToPlottingPerspective();
-  void switchToInteractiveSimulationPerspective();
 protected:
   virtual void dragEnterEvent(QDragEnterEvent *event);
   virtual void dragMoveEvent(QDragMoveEvent *event);

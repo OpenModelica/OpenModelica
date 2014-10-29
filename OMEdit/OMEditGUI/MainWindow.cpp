@@ -230,9 +230,8 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
     if (mpMessagesWidget->getMessagesTreeWidget()->topLevelItemCount() > 0) restoreMessagesWidget = true;
     restoreState(pSettings->value("application/windowState").toByteArray());
     if (restoreMessagesWidget) mpMessagesDockWidget->show();
-    mpPerspectiveTabbar->setCurrentIndex(0);
-    switchToWelcomePerspective();
   }
+  switchToWelcomePerspective();
   // read last Open Directory location
   if (pSettings->contains("lastOpenDirectory"))
     StringHandler::setLastOpenDirectory(pSettings->value("lastOpenDirectory").toString());
@@ -1947,11 +1946,11 @@ void MainWindow::createActions()
   mpClearRecentFilesAction->setStatusTip(tr("Clears the recent files list"));
   connect(mpClearRecentFilesAction, SIGNAL(triggered()), SLOT(clearRecentFilesList()));
   // print  action
-  mpPrintModelAction = new QAction(QIcon(":/Resources/icons/print.png"), tr("Print..."), this);
+  mpPrintModelAction = new QAction(QIcon(":/Resources/icons/print.svg"), tr("Print..."), this);
   mpPrintModelAction->setShortcut(QKeySequence("Ctrl+p"));
   mpPrintModelAction->setEnabled(false);
   // close OMEdit action
-  mpQuitAction = new QAction(QIcon(":/Resources/icons/quit.png"), tr("Quit"), this);
+  mpQuitAction = new QAction(QIcon(":/Resources/icons/quit.svg"), tr("Quit"), this);
   mpQuitAction->setStatusTip(tr("Quit the ").append(Helper::applicationIntroText));
   mpQuitAction->setShortcut(QKeySequence("Ctrl+q"));
   connect(mpQuitAction, SIGNAL(triggered()), SLOT(close()));
@@ -1967,7 +1966,7 @@ void MainWindow::createActions()
   mpPasteAction = new QAction(QIcon(":/Resources/icons/paste.svg"), tr("Paste"), this);
   mpPasteAction->setShortcut(QKeySequence("Ctrl+v"));
   // find replace class action
-  mpFindReplaceAction = new QAction(QIcon(":/Resources/icons/search.png"), QString(Helper::findReplaceModelicaText), this);
+  mpFindReplaceAction = new QAction(QString(Helper::findReplaceModelicaText), this);
   mpFindReplaceAction->setStatusTip(tr("Shows the Find/Replace window"));
   mpFindReplaceAction->setShortcut(QKeySequence("Ctrl+f"));
   mpFindReplaceAction->setEnabled(false);
@@ -2089,7 +2088,7 @@ void MainWindow::createActions()
   mpImportNgspiceNetlistAction->setStatusTip(Helper::importNgspiceNetlistTip);
   connect(mpImportNgspiceNetlistAction, SIGNAL(triggered()), SLOT(importNgspiceNetlist()));
   // open options action
-  mpOptionsAction = new QAction(QIcon(":/Resources/icons/options.png"), tr("Options"), this);
+  mpOptionsAction = new QAction(QIcon(":/Resources/icons/options.svg"), tr("Options"), this);
   mpOptionsAction->setStatusTip(tr("Shows the options window"));
   mpOptionsAction->setMenuRole(QAction::PreferencesRole);
   connect(mpOptionsAction, SIGNAL(triggered()), SLOT(openConfigurationOptions()));
@@ -2158,7 +2157,7 @@ void MainWindow::createActions()
   mpBitmapShapeAction->setCheckable(true);
   connect(mpBitmapShapeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
   // connect/unconnect action
-  mpConnectModeAction = new QAction(QIcon(":/Resources/icons/connect-mode.png"), tr("Connect/Unconnect Mode"), mpShapesActionGroup);
+  mpConnectModeAction = new QAction(QIcon(":/Resources/icons/connect-mode.svg"), tr("Connect/Unconnect Mode"), mpShapesActionGroup);
   mpConnectModeAction->setStatusTip(tr("Changes to/from connect mode"));
   mpConnectModeAction->setCheckable(true);
   mpConnectModeAction->setChecked(true);
@@ -2183,7 +2182,7 @@ void MainWindow::createActions()
   mpNewParametricPlotWindowAction->setStatusTip(tr("Inserts new parametric plot window"));
   connect(mpNewParametricPlotWindowAction, SIGNAL(triggered()), SLOT(addNewParametricPlotWindow()));
   // clear plot window action
-  mpClearPlotWindowAction = new QAction(QIcon(":/Resources/icons/clearmessages.png"), tr("Clear Plot Window"), this);
+  mpClearPlotWindowAction = new QAction(QIcon(":/Resources/icons/clear.svg"), tr("Clear Plot Window"), this);
   mpClearPlotWindowAction->setStatusTip(tr("Clears all the curves from the plot window"));
   connect(mpClearPlotWindowAction, SIGNAL(triggered()), SLOT(clearPlotWindow()));
   // Other Actions
@@ -2395,7 +2394,8 @@ void MainWindow::switchToPlottingPerspective()
 //! Creates the toolbars
 void MainWindow::createToolbars()
 {
-  setIconSize(QSize(16, 16));
+  int toolbarIconSize = mpOptionsDialog->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
+  setIconSize(QSize(toolbarIconSize, toolbarIconSize));
   // File Toolbar
   mpFileToolBar = addToolBar(tr("File Toolbar"));
   mpFileToolBar->setObjectName("File Toolbar");
@@ -2464,13 +2464,12 @@ void MainWindow::createToolbars()
   mpModelSwitcherToolButton->setEnabled(false);
   mpModelSwitcherToolButton->setMenu(mpModelSwitcherMenu);
   mpModelSwitcherToolButton->setPopupMode(QToolButton::MenuButtonPopup);
-  mpModelSwitcherToolButton->setIcon(QIcon(":/Resources/icons/switch.png"));
+  mpModelSwitcherToolButton->setIcon(QIcon(":/Resources/icons/switch.svg"));
   mpModelSwitcherToolBar->addWidget(mpModelSwitcherToolButton);
   // Plot Toolbar
   mpPlotToolBar = addToolBar(tr("Plot Toolbar"));
   mpPlotToolBar->setObjectName("Plot Toolbar");
   mpPlotToolBar->setAllowedAreas(Qt::TopToolBarArea);
-  mpPlotToolBar->setEnabled(false);
   // add actions to Plot Toolbar
   mpPlotToolBar->addAction(mpReSimulateModelAction);
   mpPlotToolBar->addSeparator();
@@ -2540,7 +2539,7 @@ InfoBar::InfoBar(QWidget *pParent)
   mpInfoLabel->setWordWrap(true);
   mpCloseButton = new QToolButton;
   mpCloseButton->setAutoRaise(true);
-  mpCloseButton->setIcon(QIcon(":/Resources/icons/clear.png"));
+  mpCloseButton->setIcon(QIcon(":/Resources/icons/delete.svg"));
   mpCloseButton->setToolTip(Helper::close);
   connect(mpCloseButton, SIGNAL(clicked()), SLOT(hide()));
   // set the layout

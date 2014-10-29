@@ -456,7 +456,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   QToolButton *pReloadToolButton = new QToolButton;
   pReloadToolButton->setToolTip(Helper::reload);
   pReloadToolButton->setAutoRaise(true);
-  pReloadToolButton->setIcon(QIcon(":/Resources/icons/refresh.png"));
+  pReloadToolButton->setIcon(QIcon(":/Resources/icons/refresh.svg"));
   connect(pReloadToolButton, SIGNAL(clicked()), SLOT(reloadTransformations()));
   /* info xml file path label */
   Label *pInfoXMLFilePathLabel = new Label(mInfoXMLFullFileName, this);

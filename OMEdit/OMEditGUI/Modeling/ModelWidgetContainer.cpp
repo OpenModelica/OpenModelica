@@ -847,7 +847,7 @@ void GraphicsView::createActions()
   mpDeleteAction->setShortcut(QKeySequence::Delete);
   mpDeleteAction->setDisabled(isSystemLibrary);
   // Duplicate Action
-  mpDuplicateAction = new QAction(QIcon(":/Resources/icons/duplicate.png"), tr("Duplicate"), this);
+  mpDuplicateAction = new QAction(QIcon(":/Resources/icons/duplicate.svg"), tr("Duplicate"), this);
   mpDuplicateAction->setStatusTip(tr("Duplicates the item"));
   mpDuplicateAction->setShortcut(QKeySequence("Ctrl+d"));
   mpDuplicateAction->setDisabled(isSystemLibrary);
@@ -1789,7 +1789,7 @@ void WelcomePageWidget::addRecentFilesListItems()
   {
     RecentFile recentFile = qvariant_cast<RecentFile>(files[i]);
     QListWidgetItem *listItem = new QListWidgetItem(mpRecentItemsList);
-    listItem->setIcon(QIcon(":/Resources/icons/next.png"));
+    listItem->setIcon(QIcon(":/Resources/icons/next.svg"));
     listItem->setText(recentFile.fileName);
     listItem->setData(Qt::UserRole, recentFile.encoding);
   }
@@ -1856,7 +1856,7 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
                   break;
                 count++;
                 QListWidgetItem *listItem = new QListWidgetItem(mpLatestNewsListWidget);
-                listItem->setIcon(QIcon(":/Resources/icons/next.png"));
+                listItem->setIcon(QIcon(":/Resources/icons/next.svg"));
                 listItem->setText(title);
                 listItem->setData(Qt::UserRole, link);
                 break;
@@ -1919,7 +1919,7 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   // documentation view tool button
   mpFileLockToolButton = new QToolButton;
   mpFileLockToolButton->setText(mpLibraryTreeNode->isReadOnly() ? tr("Make writable") : tr("File is writable"));
-  mpFileLockToolButton->setIcon(QIcon(mpLibraryTreeNode->isReadOnly() ? ":/Resources/icons/lock.png" : ":/Resources/icons/unlock.png"));
+  mpFileLockToolButton->setIcon(QIcon(mpLibraryTreeNode->isReadOnly() ? ":/Resources/icons/lock.svg" : ":/Resources/icons/unlock.svg"));
   mpFileLockToolButton->setEnabled(mpLibraryTreeNode->isReadOnly());
   /* should be disabled for system library */
   if (mpLibraryTreeNode->isSystemLibrary())
@@ -2042,7 +2042,7 @@ ModelWidget::ModelWidget(QString text, LibraryTreeNode *pLibraryTreeNode, ModelW
   // documentation view tool button
   mpFileLockToolButton = new QToolButton;
   mpFileLockToolButton->setText(tr("File is writable"));
-  mpFileLockToolButton->setIcon(QIcon(":/Resources/icons/unlock.png"));
+  mpFileLockToolButton->setIcon(QIcon(":/Resources/icons/unlock.svg"));
   mpFileLockToolButton->setEnabled(false);
   mpFileLockToolButton->setIconSize(Helper::buttonIconSize);
   mpFileLockToolButton->setToolTip(mpFileLockToolButton->text());
@@ -2118,7 +2118,7 @@ ModelWidget::ModelWidget(QString text, QString Xml, LibraryTreeNode *pLibraryTre
   // documentation view tool button
   mpFileLockToolButton = new QToolButton;
   mpFileLockToolButton->setText(tr("File is writable"));
-  mpFileLockToolButton->setIcon(QIcon(":/Resources/icons/unlock.png"));
+  mpFileLockToolButton->setIcon(QIcon(":/Resources/icons/unlock.svg"));
   mpFileLockToolButton->setEnabled(false);
   mpFileLockToolButton->setIconSize(Helper::buttonIconSize);
   mpFileLockToolButton->setToolTip(mpFileLockToolButton->text());
@@ -2615,7 +2615,7 @@ void ModelWidget::makeFileWritAble()
   {
     mpLibraryTreeNode->setReadOnly(false);
     mpFileLockToolButton->setText(tr("File is writable"));
-    mpFileLockToolButton->setIcon(QIcon(":/Resources/icons/unlock.png"));
+    mpFileLockToolButton->setIcon(QIcon(":/Resources/icons/unlock.svg"));
     mpFileLockToolButton->setEnabled(false);
     mpFileLockToolButton->setToolTip(mpFileLockToolButton->text());
   }

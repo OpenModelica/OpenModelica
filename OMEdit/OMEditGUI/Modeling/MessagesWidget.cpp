@@ -57,7 +57,7 @@ MessagesWidget::MessagesWidget(MainWindow *pMainWindow)
   // create button for only showing notifications
   mpShowNotificationsToolButton = new QToolButton;
   QString showNotificationMsg = tr("Only Show Notifications");
-  mpShowNotificationsToolButton->setIcon(QIcon(":/Resources/icons/notificationicon.png"));
+  mpShowNotificationsToolButton->setIcon(QIcon(":/Resources/icons/notificationicon.svg"));
   mpShowNotificationsToolButton->setText(showNotificationMsg);
   mpShowNotificationsToolButton->setToolTip(showNotificationMsg);
   mpShowNotificationsToolButton->setCheckable(true);
@@ -65,7 +65,7 @@ MessagesWidget::MessagesWidget(MainWindow *pMainWindow)
   connect(mpShowNotificationsToolButton, SIGNAL(clicked()), SLOT(showNotifications()));
   // create button for only showing warnings
   mpShowWarningsToolButton = new QToolButton;
-  mpShowWarningsToolButton->setIcon(QIcon(":/Resources/icons/warningicon.png"));
+  mpShowWarningsToolButton->setIcon(QIcon(":/Resources/icons/warningicon.svg"));
   QString showWarningsMsg = tr("Only Show Warnings");
   mpShowWarningsToolButton->setText(showWarningsMsg);
   mpShowWarningsToolButton->setToolTip(showWarningsMsg);
@@ -74,7 +74,7 @@ MessagesWidget::MessagesWidget(MainWindow *pMainWindow)
   connect(mpShowWarningsToolButton, SIGNAL(clicked()), SLOT(showWarnings()));
   // create button for only showing errors
   mpShowErrorsToolButton = new QToolButton;
-  mpShowErrorsToolButton->setIcon(QIcon(":/Resources/icons/erroricon.png"));
+  mpShowErrorsToolButton->setIcon(QIcon(":/Resources/icons/erroricon.svg"));
   QString showErrorsMsg = tr("Only Show Errors");
   mpShowErrorsToolButton->setText(showErrorsMsg);
   mpShowErrorsToolButton->setToolTip(showErrorsMsg);
@@ -83,7 +83,7 @@ MessagesWidget::MessagesWidget(MainWindow *pMainWindow)
   connect(mpShowErrorsToolButton, SIGNAL(clicked()), SLOT(showErrors()));
   // create button for showing all Messages
   mpShowAllMessagesToolButton = new QToolButton;
-  mpShowAllMessagesToolButton->setIcon(QIcon(":/Resources/icons/messages.png"));
+  mpShowAllMessagesToolButton->setIcon(QIcon(":/Resources/icons/messages.svg"));
   QString showAllMessagesMsg = tr("Show All Messages");
   mpShowAllMessagesToolButton->setText(showAllMessagesMsg);
   mpShowAllMessagesToolButton->setToolTip(showAllMessagesMsg);
@@ -106,7 +106,7 @@ MessagesWidget::MessagesWidget(MainWindow *pMainWindow)
   mpClearMessagesToolButton = new QToolButton;
   mpClearMessagesToolButton->setContentsMargins(0, 0, 0, 0);
   QString clearMessagesMsg = tr("Clear All Messages");
-  mpClearMessagesToolButton->setIcon(QIcon(":/Resources/icons/clearmessages.png"));
+  mpClearMessagesToolButton->setIcon(QIcon(":/Resources/icons/clear.svg"));
   mpClearMessagesToolButton->setText(clearMessagesMsg);
   mpClearMessagesToolButton->setToolTip(clearMessagesMsg);
   mpClearMessagesToolButton->setAutoRaise(true);
@@ -669,17 +669,17 @@ void MessagesTreeItem::setColumnsText()
   {
     case StringHandler::Notification:
     {
-      setIcon(0, QIcon(":/Resources/icons/notificationicon.png"));
+      setIcon(0, QIcon(":/Resources/icons/notificationicon.svg"));
       break;
     }
     case StringHandler::Warning:
     {
-      setIcon(0, QIcon(":/Resources/icons/warningicon.png"));
+      setIcon(0, QIcon(":/Resources/icons/warningicon.svg"));
       break;
     }
     case StringHandler::OMError:
     {
-      setIcon(0, QIcon(":/Resources/icons/erroricon.png"));
+      setIcon(0, QIcon(":/Resources/icons/erroricon.svg"));
       break;
     }
   }
