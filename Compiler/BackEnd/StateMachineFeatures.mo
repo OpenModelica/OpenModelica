@@ -56,18 +56,6 @@ protected import HashSet;
 protected import BaseHashSet;
 protected import HashTableSM;
 
-
-public
-uniontype Mode "
-Tbd"
-  record MODE
-    String name;
-    Boolean isInitial;
-    HashSet.HashSet edges;
-//    list<Automaton> refinement;
-  end MODE;
-end Mode;
-
 /*
 public
 uniontype Transition "
@@ -90,6 +78,19 @@ uniontype Automaton
 end Automaton;
 */
 
+public
+uniontype Mode "
+Tbd"
+  record MODE
+    String name;
+    Boolean isInitial;
+    HashSet.HashSet edges; // needed?
+    BackendDAE.EquationArray eqs;
+//    list<Automaton> refinement;
+  end MODE;
+end Mode;
+
+// Table having crefs as keys and corresponding MODE as value
 type ModeTable = HashTableSM.HashTable;
 
 public
@@ -131,22 +132,22 @@ protected
   list<FlatAutomaton> flatAutomata;
   list<Composition> compositions;
   list<String> ss;
+  BackendDAE.EqSystem syst;
+  BackendDAE.Shared shared;
 algorithm
-  outDAE := match inDAE
+  (syst, shared) := match inDAE
     local
-      BackendDAE.EqSystem syst;
-      //list<BackendDAE.EqSystem> systs;
-      BackendDAE.Shared shared;
-
-    case (BackendDAE.DAE({syst}, shared)) equation
-      modes = buildSymRepr(syst, shared);
-    then BackendDAE.DAE({syst}, shared);
-
+      BackendDAE.EqSystem syst1;
+      BackendDAE.Shared shared1;
+    case (BackendDAE.DAE({syst1}, shared1)) then (syst1, shared1);
     else equation
-      BackendDAE.DAE({syst}, shared) = BackendDAEOptimize.collapseIndependentBlocks(inDAE);
-      modes = buildSymRepr(syst, shared);
-    then BackendDAE.DAE({syst}, shared);
+      BackendDAE.DAE({syst1}, shared1) = BackendDAEOptimize.collapseIndependentBlocks(inDAE);
+    then (syst1, shared1);
   end match;
+  outDAE := BackendDAE.DAE({syst}, shared); // dummy assignment as long as elabortion is not implemented
+
+  // Identify modes in the system
+  modes := identifyModes(shared);
   names := List.map(BaseHashTable.hashTableKeyList(modes), ComponentReference.crefLastIdent);
   print("SMF-stateMachineElab States: " + stringDelimitList(names, ",")  + "\n");
   print("SMF-stateMachineElab ModeTable:\n");
@@ -175,7 +176,70 @@ algorithm
   ss := List.map(compositions, dumpCompositionStr);
   print(stringDelimitList(ss, ",\n") + "\n");
 
+  print("SMF-stateMachineElab: annotate modes with additional information\n");
+  modes := annotateModes(modes, syst, shared);
+
 end stateMachineElab;
+
+protected function annotateModes "
+Author: BTH
+Collect mode relevant information, e.g., equations declared in that mode.
+Tbd."
+  input ModeTable modesIn;
+  input BackendDAE.EqSystem inSyst;
+  input BackendDAE.Shared inShared;
+  //output list<BackendDAE.EqSystem> outSysts;
+  output ModeTable modesOut;
+protected
+  BackendDAE.EquationArray removedEqs, orderedEqs;
+  //BackendDAE.Variables vars;
+  //BackendDAE.EquationArray eqs;
+  //BackendDAE.StateSets stateSets;
+algorithm
+  BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) := inSyst;
+  BackendDAE.SHARED(removedEqs=removedEqs) := inShared;
+
+  modesOut := BackendEquation.traverseBackendDAEEqns(orderedEqs, annotateMode, modesIn);
+  modesOut := BackendEquation.traverseBackendDAEEqns(removedEqs, annotateMode, modesOut);
+
+  //BackendDAE.EQSYSTEM(vars, eqs, _, _, _, stateSets, _) := inSyst;
+  //outSysts := {inSyst};
+end annotateModes;
+
+protected function annotateMode "
+Author: BTH
+Helper function to annotateModes
+Tbd."
+  input BackendDAE.Equation inEq;
+  input ModeTable inA;
+  output BackendDAE.Equation outEq;
+  output ModeTable outA;
+protected
+      DAE.ElementSource source "origin of equation";
+      Option<DAE.ComponentRef> instanceOpt "the instance(s) this element is part of";
+algorithm
+  // Just match any possible Equation type and extract the source field.
+  // TODO More specific handling with error handling (e.g., WHEN_EQUATION not allowed in a state)
+  source := match (inEq, inA)
+    local
+      DAE.ElementSource source1;
+    case (BackendDAE.EQUATION(source=source1),_) then source1;
+    case (BackendDAE.ARRAY_EQUATION(source=source1),_) then source1;
+    case (BackendDAE.SOLVED_EQUATION(source=source1),_) then source1;
+    case (BackendDAE.RESIDUAL_EQUATION(source=source1),_) then source1;
+    case (BackendDAE.ALGORITHM(source=source1),_) then source1;
+    case (BackendDAE.WHEN_EQUATION(source=source1),_) then source1;
+    case (BackendDAE.COMPLEX_EQUATION(source=source1),_) then source1;
+    case (BackendDAE.IF_EQUATION(source=source1),_) then source1;
+  end match;
+
+  DAE.SOURCE(instanceOpt=instanceOpt) := source;
+  // TODO
+  outEq := inEq; // TODO
+  outA := inA; // TODO
+end annotateMode;
+
+
 
 protected function dumpCompositionStr "
 Author: BTH
@@ -545,29 +609,24 @@ end createIncidenceTable;
 
 
 
-protected function buildSymRepr
-  input BackendDAE.EqSystem inSyst;
+protected function identifyModes "
+Author: BTH
+Traverse the equations, search for 'transition' and 'initialState' operators,
+extract the state arguments from them and collect them in the table.
+"
   input BackendDAE.Shared inShared;
-  //output list<BackendDAE.EqSystem> outSysts;
   output ModeTable modes;
 protected
   BackendDAE.EquationArray removedEqs;
-  BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqs;
-  BackendDAE.StateSets stateSets;
 algorithm
   BackendDAE.SHARED(removedEqs=removedEqs) := inShared;
-
   modes := BackendEquation.traverseBackendDAEEqns(removedEqs, extractStates, HashTableSM.emptyHashTable());
-
-  BackendDAE.EQSYSTEM(vars, eqs, _, _, _, stateSets, _) := inSyst;
-
-  //outSysts := {inSyst};
-end buildSymRepr;
+end identifyModes;
 
 
-public function extractStates "
-Author: BTH"
+protected function extractStates "
+Author: BTH
+Helper function to identifyModes"
   input BackendDAE.Equation inEq;
   input ModeTable inA;
   output BackendDAE.Equation outEq;
@@ -604,7 +663,9 @@ algorithm
 end extractStates;
 
 
-public function extractState
+protected function extractState "
+Author: BTH
+Helper function to extractStates"
   input String name;
   input list<DAE.Exp> expLst;
   input ModeTable inA;
@@ -619,14 +680,17 @@ algorithm
       String name1,name2;
       Boolean isInitial1,isInitial2;
       HashSet.HashSet edges1,edges2;
+      BackendDAE.EquationArray eqs1,eqs2;
+      //array<Option<BackendDAE.Equation>> equOptArr;
     case ("initialState", {DAE.CREF(componentRef=cstate1)})
       equation
         //print("SMF-printEq2: "+anyString(cstate1)+"\n");
         mode1 = if BaseHashTable.hasKey(cstate1, inA)
           then BaseHashTable.get(cstate1, inA)
-            else MODE(ComponentReference.crefLastIdent(cstate1), true, HashSet.emptyHashSet());
-        MODE(name1,isInitial1,edges1) = mode1;
-        mode1 = MODE(name1,true,edges1);
+            else MODE(ComponentReference.crefLastIdent(cstate1), true, HashSet.emptyHashSet(),
+                      BackendDAE.EQUATION_ARRAY(0,0,0,arrayCreate(0,NONE())));
+        MODE(name1,isInitial1,edges1,eqs1) = mode1;
+        mode1 = MODE(name1,true,edges1,eqs1);
         modes = BaseHashTable.add((cstate1, mode1), inA);
       then modes;
     case ("transition", DAE.CREF(componentRef=cstate1)::DAE.CREF(componentRef=cstate2)::_)
@@ -636,20 +700,22 @@ algorithm
         //printArgs(expLst);
         mode1 = if BaseHashTable.hasKey(cstate1, inA)
           then BaseHashTable.get(cstate1, inA)
-            else MODE(ComponentReference.crefLastIdent(cstate1), false, HashSet.emptyHashSet());
-        MODE(name1, isInitial1, edges1) = mode1;
+            else MODE(ComponentReference.crefLastIdent(cstate1), false, HashSet.emptyHashSet(),
+                      BackendDAE.EQUATION_ARRAY(0,0,0,arrayCreate(0,NONE())));
+        MODE(name1, isInitial1, edges1, eqs1) = mode1;
         isInitial1 = isInitial1 or false;
         edges1 = BaseHashSet.add(cstate2, edges1);
-        mode1 = MODE(name1, isInitial1, edges1);
+        mode1 = MODE(name1, isInitial1, edges1, eqs1);
         modes = BaseHashTable.add((cstate1, mode1), inA);
 
         mode2 = if BaseHashTable.hasKey(cstate2, modes)
           then BaseHashTable.get(cstate2, modes)
-            else MODE(ComponentReference.crefLastIdent(cstate1), false, HashSet.emptyHashSet());
-        MODE(name2, isInitial2, edges2) = mode2;
+            else MODE(ComponentReference.crefLastIdent(cstate1), false, HashSet.emptyHashSet(),
+                      BackendDAE.EQUATION_ARRAY(0,0,0,arrayCreate(0,NONE())));
+        MODE(name2, isInitial2, edges2, eqs2) = mode2;
         isInitial2 = isInitial2 or false;
         edges2 = BaseHashSet.add(cstate1, edges2);
-        mode2 = MODE(name2, isInitial2, edges2);
+        mode2 = MODE(name2, isInitial2, edges2, eqs2);
         modes = BaseHashTable.add((cstate2, mode2), modes);
       then modes;
   end match;

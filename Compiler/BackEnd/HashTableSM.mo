@@ -8,6 +8,7 @@ protected import StateMachineFeatures;
 protected import HashSet;
 protected import BaseHashSet;
 protected import List;
+protected import BackendDAE;
 
 
 public type Key = DAE.ComponentRef;
